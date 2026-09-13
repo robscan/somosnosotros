@@ -15,7 +15,7 @@ export default async function NuevoLugar() {
         ← Volver al mapa
       </Link>
       <h1 className="titulo">Registrar un lugar</h1>
-      <p className="subtitulo">Un centro cultural, foro, galería, colectivo o biblioteca de la ciudad. Lo publicas tú; puedes editarlo después.</p>
+      <p className="subtitulo">Con el nombre y la ubicación basta. Lo demás se puede agregar después.</p>
       <FormularioLugar accion={crearLugar} usuarioId={actual.perfil.id} />
     </main>
   );

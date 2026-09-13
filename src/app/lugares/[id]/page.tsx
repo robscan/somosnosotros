@@ -5,7 +5,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cambiarVisible } from "../acciones";
 import styles from "./ficha.module.css";
 
-type Params = { params: Promise<{ id: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string }> };
 
 async function cargarLugar(id: string): Promise<(Lugar & { autor: { nombre: string } | null }) | null> {
   const supabase = await clienteServidor();
@@ -26,14 +26,16 @@ export async function generateMetadata({ params }: Params) {
   return { title: lugar ? `${lugar.nombre} · somosnosotros` : "Lugar · somosnosotros" };
 }
 
-export default async function FichaLugar({ params }: Params) {
+export default async function FichaLugar({ params, searchParams }: Params) {
   const { id } = await params;
+  const { nuevo } = (await searchParams) ?? {};
   const [lugar, actual] = await Promise.all([cargarLugar(id), usuarioActual()]);
   if (!lugar) notFound();
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === lugar.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
   const redes = REDES.map((r) => ({ ...r, href: enlaceRed(r.clave, lugar.redes?.[r.clave] ?? "") })).filter((r) => r.href);
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
+  const faltanDetalles = !lugar.descripcion && !lugar.portada && Object.keys(lugar.redes ?? {}).length === 0;
 
   return (
     <main className="pagina">
@@ -43,6 +45,28 @@ export default async function FichaLugar({ params }: Params) {
       {lugar.portada && (
         // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
         <img src={lugar.portada} alt="" className={styles.portada} />
+      )}
+      {nuevo === "1" && (
+        <div className={styles.publicado} role="status">
+          <p>
+            <strong>Publicado.</strong> Ya está en el mapa.
+          </p>
+          <div className={styles.publicadoAcciones}>
+            <Link href="/lugares/nuevo" className={styles.botonPrincipal}>
+              Registrar otro lugar
+            </Link>
+            {puedeEditar && faltanDetalles && (
+              <Link href={`/lugares/${lugar.id}/editar`} className={styles.botonEnlace}>
+                Completar detalles
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+      {nuevo !== "1" && puedeEditar && faltanDetalles && (
+        <p className={styles.nota}>
+          Aún sin descripción, redes ni foto. <Link href={`/lugares/${lugar.id}/editar`}>Completar</Link>
+        </p>
       )}
       {!lugar.visible && (
         <p className="aviso-error" role="status">
