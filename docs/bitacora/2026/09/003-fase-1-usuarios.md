@@ -34,4 +34,6 @@ Rama `fase-1-usuarios`. Registro e inicio de sesión sin contraseñas, perfil, b
 
 ## Prueba de la fase
 
-El founder y una persona más se registran desde el teléfono en menos de un minuto. Pendiente: primero URL Configuration en Supabase Auth y merge del PR #2.
+- PR #2 mergeado a `main` (`6c853a4`) tras la URL Configuration del founder; producción con `/entrar` 200 y `/perfil` → 307 sin sesión.
+- **El founder entró desde el iPhone**: el enlace del correo funcionó y llegó a "Mi perfil". Detalle: entró con su correo de me.com, no con el de gmail que estaba en `admin_correos`, así que nació como `usuario`; se agregó ese correo a la lista y se puso su perfil en `admin` (una línea con la API de administración, fuera de git).
+- Queda por registrar a la segunda persona para completar la prueba tal como la define el plan; no bloquea el cierre operativo de OL-002.

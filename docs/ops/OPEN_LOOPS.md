@@ -1,20 +1,22 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — **Fase 1 (usuarios) en producción** (PR #2 mergeado; bitácora [003](../bitacora/2026/09/003-fase-1-usuarios.md)). URL Configuration de Supabase Auth hecha por el founder. Falta la prueba de la fase en el teléfono. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Fase 1 cerrada**: el founder entró desde el iPhone con el enlace del correo y su cuenta es admin (bitácora [003](../bitacora/2026/09/003-fase-1-usuarios.md)). Sigue OL-003 Lugares. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-002 · Fase 1 (usuarios)** — en producción (PR #2 mergeado 2026-09-13; `/entrar` responde 200, `/perfil` sin sesión redirige a `/entrar`, `/api/estado` ok). Migración aplicada, admin dado de alta, URL Configuration hecha. **Falta la prueba de la fase** en el iPhone: el founder (entra con su correo, nace como admin) y una persona más se registran en menos de un minuto.
-- **Google** (opcional; el correo ya sirve): credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
+- **OL-003 · Fase 2 (lugares)** — próxima. Alta de lugar desde el teléfono: nombre, tipo, dirección con autocompletado de Mapbox → pin ajustable con el dedo, descripción corta, redes/contacto, portada. Mapa con pins + lista; ficha del lugar; búsqueda por nombre; anti-duplicados (mismo nombre a <150 m avisa "¿es este?"). Aquí entra el panel inferior con sus estados (peek/medium/expanded) y se decide si conviene Tailwind + shadcn (Drawer). Prueba: 10 lugares reales cargados desde el teléfono, cada uno en menos de un minuto. La lista de lugares la gestiona el founder.
+- Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre (completa la prueba tal como la define el plan). **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
 - Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox solo en Production.
 
 ## Después (orden del plan)
 
-OL-003 Lugares → OL-004 Eventos → OL-005 Comunidad → OL-006 Alcance.
+OL-004 Eventos → OL-005 Comunidad → OL-006 Alcance.
 
 ## Cerrado
+
+- **OL-002 · Fase 1 (usuarios)** — 2026-09-13. Enlace mágico, perfil, borrar cuenta, roles, migración base. El founder entró desde el iPhone; su cuenta es admin. Bitácora [003](../bitacora/2026/09/003-fase-1-usuarios.md).
 
 - **OL-001 · Fase 0 (base)** — 2026-09-13. Prueba pasada: el mapa de San Luis Potosí abre en Safari del iPhone en somosnosotros.org. Bitácora [002](../bitacora/2026/09/002-fase-0-base.md).
 
