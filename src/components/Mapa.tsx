@@ -41,6 +41,12 @@ export default function Mapa() {
         logoPosition: "top-left",
       });
       mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), "top-right");
+      // Tema claro siempre: si el estilo se basa en Mapbox Standard (trae presets de luz
+      // día/atardecer/noche), se fuerza el de día aunque en Studio esté guardado otro.
+      mapa.on("style.load", () => {
+        const importaStandard = mapa?.getStyle()?.imports?.some((i) => i.id === "basemap");
+        if (importaStandard) mapa?.setConfigProperty("basemap", "lightPreset", "day");
+      });
       mapa.on("load", () => setEstado("listo"));
       mapa.on("error", (e) => {
         console.error("Mapbox:", e.error);
