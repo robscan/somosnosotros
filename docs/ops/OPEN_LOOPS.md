@@ -1,19 +1,21 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — **Fase 0 en producción**: somosnosotros.org abre con el mapa de San Luis Potosí (PR #1 mergeado; bitácora [002](../bitacora/2026/09/002-fase-0-base.md)). Falta la confirmación del founder en Safari del iPhone para cerrar OL-001. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Fase 0 cerrada**: el founder confirmó en Safari del iPhone que somosnosotros.org abre con el mapa de San Luis Potosí (bitácora [002](../bitacora/2026/09/002-fase-0-base.md)). Sigue OL-002 Usuarios. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-001 · Fase 0 (base)** — en producción. Verificado 2026-09-13 desde el navegador de escritorio a 390×844: `https://somosnosotros.org` responde 200 desde Vercel, el mapa claro (FLOWYA_Light, preset día) carga con el centro histórico y el panel inferior; `/api/estado` → `mapbox: configurado`, `supabase: ok`. El founder ya lo vio en producción. **Para cerrar:** confirmación en Safari del iPhone.
-- Cosmético, no bloquea: el estilo pide las fuentes "Noto Sans Medium/Bold" que no existen en la cuenta de Mapbox (404) y usa la de reserva. Se arregla en Mapbox Studio eligiendo una fuente disponible en la cuenta o subiendo esas dos.
-- Opcional: poner `NEXT_PUBLIC_MAPBOX_TOKEN` y `NEXT_PUBLIC_MAPBOX_STYLE` también en Preview para ver mapa en los previews de PR.
-- Datos que solo el founder tiene: correo del admin para el primer usuario (Fase 1).
+- **OL-002 · Fase 1 (usuarios)** — próxima. Registro e inicio de sesión con correo (enlace mágico) y Google; perfil (nombre, foto opcional, colonia opcional, una línea); borrar mi cuenta; roles `admin` y `usuario`. Se crea la primera migración con las 5 tablas del modelo (`docs/PLAN.md`) y sus permisos. Prueba: el founder y una persona más se registran desde el teléfono en menos de un minuto. Dato del founder: correo del administrador para el primer usuario.
+- Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva; se arregla en Studio); variables de Mapbox solo en Production (agregar a Preview si se quiere mapa en previews).
 
 ## Después (orden del plan)
 
-OL-002 Usuarios → OL-003 Lugares → OL-004 Eventos → OL-005 Comunidad → OL-006 Alcance.
+OL-003 Lugares → OL-004 Eventos → OL-005 Comunidad → OL-006 Alcance.
+
+## Cerrado
+
+- **OL-001 · Fase 0 (base)** — 2026-09-13. Prueba pasada: el mapa de San Luis Potosí abre en Safari del iPhone en somosnosotros.org. Bitácora [002](../bitacora/2026/09/002-fase-0-base.md).
 
 ## Decidido
 
