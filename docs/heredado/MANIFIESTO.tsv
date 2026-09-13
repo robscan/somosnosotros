@@ -1,0 +1,10 @@
+ios	product-definition/FLOWYA_UX_WRITING_SYSTEM.md	ux/UX_WRITING_SYSTEM.md	ADAPTAR	microcopy, errores, estados vacíos, anti-manipulación; la voz se reescribe en español para una comunidad local
+ios	product-definition/FLOWYA_ACCESSIBILITY_SYSTEM.md	ux/ACCESSIBILITY_SYSTEM.md	ADOPTAR	mobile real: luz exterior, targets de pulgar, foco, contraste
+ios	docs/design-system/handoff-2026-07-15/navegacion.md	ux/referencia-navegacion-flowya.md	REFERENCIA	solo el shell: mapa siempre visible + sheet inferior como home + cards⇄lista; el resto (MEMORIA/VISOR) no aplica
+ios	docs/design-system/handoff-2026-07-15/home.md	ux/referencia-home-flowya.md	REFERENCIA	sheet=home con secciones que no se dibujan si están vacías
+web	docs/contracts/CANONICAL_BOTTOM_SHEET.md	front/BOTTOM_SHEET.md	ADOPTAR	peek/medium/expanded, gestos y snap del sheet inferior sobre el mapa
+web	docs/contracts/KEYBOARD_AND_TEXT_INPUTS.md	front/KEYBOARD_AND_TEXT_INPUTS.md	ADOPTAR	formularios en móvil: el teclado nunca tapa el botón de guardar
+web	docs/contracts/MAPBOX_PLACE_ENRICHMENT.md	mapa/MAPBOX_GEOCODING.md	ADOPTAR	geocodificar UNA vez al crear el lugar, nunca al abrir la ficha
+web	docs/contracts/ANTI_DUPLICATE_SPOT_RULES.md	datos/ANTI_DUPLICADOS.md	ADAPTAR	mismo nombre normalizado a <150 m = mismo lugar; aplica a lugares y a eventos (mismo lugar + misma hora)
+web	docs/patterns/optimistic-mutations.md	front/optimistic-mutations.md	ADOPTAR	la UI responde al instante al guardar, sin carreras
+web	docs/definitions/UI/COMPONENT_LIBRARY_POLICY.md	front/COMPONENT_LIBRARY_POLICY.md	ADOPTAR	todo componente reutilizable a librería, con sus estados
