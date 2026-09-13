@@ -14,9 +14,17 @@ Rama `fase-1-usuarios`. Registro e inicio de sesión sin contraseñas, perfil, b
 - **Verificación**: lint, typecheck, 14 pruebas (`rutaSegura`, `validarPerfil`, `correoValido` + las de la Fase 0), build. Capturas 390×844 de `/entrar` (vacío y con error de correo) y del panel con "Entrar".
 - `npm run db:push` (`scripts/db-push.mjs`): lee `SUPABASE_DB_URL` de `.env`, codifica la contraseña y corre `supabase db push`.
 
-## Tropiezo: la URL de la base no se puede leer de Vercel
+## Migración aplicada y flujo probado de punta a punta
 
-La integración Supabase↔Vercel marcó sus variables como *sensibles*; `vercel env pull` devuelve literalmente `[SENSITIVE]`. La migración **no está aplicada todavía**: necesita que el founder ponga `SUPABASE_DB_URL` (Supabase → Connect → Direct connection, con contraseña) en `.env` y se corra `npm run db:push`; después se da de alta su correo en `admin_correos` con una sola línea de SQL (no va a git).
+- Vercel no deja leer las variables sensibles de la integración (`vercel env pull` devuelve `[SENSITIVE]`). El founder pegó en `.env` (ignorado) el bloque completo de variables de la integración; `npm run db:push` acepta `SUPABASE_DB_URL` o `POSTGRES_URL_NON_POOLING`. Aplicada `20260913120000_base.sql`: 6 tablas, 17 políticas en `public`, 4 en `storage`, bucket `fotos`, trigger `al_crear_usuario`. Correo del admin dado de alta en `admin_correos` con una línea de SQL (fuera de git).
+- Prueba real contra la base (usuario desechable `prueba-fase1@…`, creado con la API de administración y borrado al final), en el navegador a 390×844:
+  - el trigger creó el perfil con el nombre de los metadatos y rol `usuario`;
+  - `/auth/callback?token_hash=…&type=magiclink` creó la sesión y aterrizó en `/perfil` con correo y nombre;
+  - guardar "sobre mí" → "Guardado." y persistió en la base; el panel mostró avatar y primer nombre;
+  - un cliente anónimo lee nombre y bio (política pública), no puede editar (0 filas) y no ve `admin_correos`;
+  - "Borrar mi cuenta" → confirmación en dos pasos → vuelta al mapa con "Tu cuenta quedó borrada" y botón "Entrar"; en auth y en `perfiles` quedaron 0 filas.
+- Retoque: el panel muestra solo el primer nombre (con nombre completo se truncaba).
+- No probado aquí: el correo real del enlace mágico (depende de la URL Configuration de Supabase) y Google (depende de las credenciales). Lo prueba el founder en el iPhone.
 
 ## Pendiente del founder (Supabase → Authentication)
 
@@ -26,4 +34,4 @@ La integración Supabase↔Vercel marcó sus variables como *sensibles*; `vercel
 
 ## Prueba de la fase
 
-El founder y una persona más se registran desde el teléfono en menos de un minuto. Sin correr todavía.
+El founder y una persona más se registran desde el teléfono en menos de un minuto. Pendiente: primero URL Configuration en Supabase Auth y merge del PR #2.

@@ -8,6 +8,11 @@ import styles from "./Panel.module.css";
  * los estados medium/expanded y los gestos (docs/heredado/front/BOTTOM_SHEET.md)
  * entran cuando haya lugares y eventos que mostrar (Fases 2 y 3).
  */
+/** En el panel cabe poco: solo el primer nombre. */
+function primerNombre(nombre: string): string {
+  return nombre.trim().split(" ")[0] ?? "";
+}
+
 export default async function Panel({ cuentaBorrada = false }: { cuentaBorrada?: boolean }) {
   const actual = await usuarioActual();
   return (
@@ -26,7 +31,7 @@ export default async function Panel({ cuentaBorrada = false }: { cuentaBorrada?:
             ) : (
               <span className={styles.avatar}>{(actual.perfil.nombre || "?").slice(0, 1).toUpperCase()}</span>
             )}
-            <span className={styles.nombre}>{actual.perfil.nombre || "Mi perfil"}</span>
+            <span className={styles.nombre}>{primerNombre(actual.perfil.nombre) || "Mi perfil"}</span>
           </Link>
         ) : (
           <Link href="/entrar" className={styles.entrar}>

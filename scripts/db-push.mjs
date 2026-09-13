@@ -5,15 +5,23 @@
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
-let url = process.env.SUPABASE_DB_URL;
+// Sirve SUPABASE_DB_URL (Connect → Direct connection) o POSTGRES_URL_NON_POOLING (la que da la integración con Vercel).
+const NOMBRES = ["SUPABASE_DB_URL", "POSTGRES_URL_NON_POOLING"];
+let url = NOMBRES.map((n) => process.env[n]).find(Boolean);
 if (!url) {
   try {
-    const linea = readFileSync(".env", "utf8").split("\n").find((l) => l.startsWith("SUPABASE_DB_URL="));
-    url = linea?.slice("SUPABASE_DB_URL=".length).trim().replace(/^["']|["']$/g, "");
+    const lineas = readFileSync(".env", "utf8").split("\n");
+    for (const n of NOMBRES) {
+      const linea = lineas.find((l) => l.startsWith(`${n}=`));
+      if (linea) {
+        url = linea.slice(n.length + 1).trim().replace(/^["']|["']$/g, "");
+        break;
+      }
+    }
   } catch {}
 }
 if (!url) {
-  console.error("Falta SUPABASE_DB_URL en .env (Supabase → Connect → Direct connection, con la contraseña).");
+  console.error("Falta SUPABASE_DB_URL (o POSTGRES_URL_NON_POOLING) en .env.");
   process.exit(1);
 }
 const m = url.match(/^(postgres(?:ql)?):\/\/([^:]+):(.*)@([^@]+)$/);
