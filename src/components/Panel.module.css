@@ -1,0 +1,36 @@
+.panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  border-radius: 16px 16px 0 0;
+  background: #ffffff;
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+}
+
+.asa {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 12px;
+  border-radius: 2px;
+  background: #d9d9d9;
+}
+
+.titulo {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.ciudad {
+  margin-top: 2px;
+  font-size: 15px;
+  color: #5c5c5c;
+}
+
+.vacio {
+  margin-top: 12px;
+  font-size: 15px;
+  color: #5c5c5c;
+}
