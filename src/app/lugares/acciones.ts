@@ -42,7 +42,7 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
 
   revalidatePath("/");
-  redirect(`/lugares/${data.id}`);
+  redirect(`/lugares/${data.id}?nuevo=1`);
 }
 
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {

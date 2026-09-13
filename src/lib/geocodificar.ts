@@ -48,3 +48,12 @@ export async function buscarDirecciones(q: string, token: string, cerca: { lat: 
   if (!res.ok) return [];
   return interpretarRespuesta((await res.json()) as RespuestaV6);
 }
+
+/** Dirección aproximada de un punto (para cuando el pin se pone con el dedo o con "Estoy aquí"). */
+export async function direccionDesdePunto(p: { lat: number; lng: number }, token: string, fetchFn: FetchFn = fetch): Promise<string | null> {
+  const q = new URLSearchParams({ longitude: String(p.lng), latitude: String(p.lat), access_token: token, language: "es", types: "address,street", limit: "1" });
+  const res = await fetchFn(`https://api.mapbox.com/search/geocode/v6/reverse?${q.toString()}`);
+  if (!res.ok) return null;
+  const s = interpretarRespuesta((await res.json()) as RespuestaV6);
+  return s[0]?.direccion ?? null;
+}
