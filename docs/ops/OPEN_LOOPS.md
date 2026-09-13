@@ -1,13 +1,16 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — **Fase 1 cerrada**: el founder entró desde el iPhone con el enlace del correo y su cuenta es admin (bitácora [003](../bitacora/2026/09/003-fase-1-usuarios.md)). Sigue OL-003 Lugares. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — Fase 2 (lugares) construida en PR #3 (`fase-2-lugares`, bitácora [004](../bitacora/2026/09/004-fase-2-lugares.md)); migración 0002 aplicada; flujo probado contra la base real. Falta merge y la prueba de la fase (10 lugares desde el teléfono). Fases 0 y 1 cerradas. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-003 · Fase 2 (lugares)** — próxima. Alta de lugar desde el teléfono: nombre, tipo, dirección con autocompletado de Mapbox → pin ajustable con el dedo, descripción corta, redes/contacto, portada. Mapa con pins + lista; ficha del lugar; búsqueda por nombre; anti-duplicados (mismo nombre a <150 m avisa "¿es este?"). Aquí entra el panel inferior con sus estados (peek/medium/expanded) y se decide si conviene Tailwind + shadcn (Drawer). Prueba: 10 lugares reales cargados desde el teléfono, cada uno en menos de un minuto. La lista de lugares la gestiona el founder.
-- Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre (completa la prueba tal como la define el plan). **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
+- **OL-003 · Fase 2 (lugares)** — código en PR #3, verificado (lint, typecheck, 23 tests, build, capturas 390×844). Migración 0002 aplicada (duplicados a <150 m, portadas). Probado contra la base real: alta con autocompletado y pin, ficha, lista con búsqueda, panel con tres alturas, "¿Es este?", ocultar/mostrar por admin, RLS para anónimos. Pasos que quedan:
+  1. **Merge del PR #3** → producción.
+  2. **Prueba de la fase** en el iPhone: 10 lugares reales cargados desde el teléfono, cada uno en menos de un minuto (la lista la gestiona el founder). Revisar en cada uno que la dirección sugerida sea la correcta y ajustar el pin si hace falta.
+- Decisión de UI tomada en esta fase: el panel inferior con gestos se escribió a mano (~100 líneas); no hizo falta Tailwind ni shadcn. Se revisa de nuevo si la Fase 3 (eventos) lo pide.
+- Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre. **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
 - Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox solo en Production.
 
 ## Después (orden del plan)

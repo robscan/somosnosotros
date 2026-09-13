@@ -1,20 +1,3 @@
-.panel {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0px));
-  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
-  background: var(--fondo);
-  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
-}
-.asa {
-  width: 36px;
-  height: 4px;
-  margin: 0 auto 12px;
-  border-radius: 2px;
-  background: #d9d9d9;
-}
 .cabecera {
   display: flex;
   align-items: center;
@@ -72,10 +55,5 @@
 }
 .aviso {
   margin-top: var(--espacio-3);
-  color: var(--texto-suave);
-}
-.vacio {
-  margin-top: 12px;
-  font-size: 15px;
   color: var(--texto-suave);
 }
