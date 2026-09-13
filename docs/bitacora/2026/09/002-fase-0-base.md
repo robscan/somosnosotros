@@ -18,7 +18,8 @@ Primer commit de documentos en `main` y, en la rama `fase-0-base`, el proyecto N
 
 - Sin token: mapa en tono claro a pantalla completa, aviso centrado "Falta el token de Mapbox (NEXT_PUBLIC_MAPBOX_TOKEN).", panel inferior con asa, "somosnosotros", "San Luis Potosí", "Aún no hay lugares ni eventos." Nada recortado ni tocando bordes. Sin errores de consola.
 - Con token inválido (en `.env.local`, borrado después): mapbox-gl se descarga, aparece el logo de Mapbox, el estilo se pide con el token, Mapbox responde 401 y la pantalla dice "No se pudo cargar el mapa. Revisa el token de Mapbox." `/api/estado` devolvió `{"mapbox":"configurado","supabase":"error","detalle":"fetch failed"}` con una URL de Supabase inexistente.
-- **Pendiente:** el mapa real solo se ve con el token del founder. La prueba de la fase (somosnosotros.org abre en Safari del iPhone con el mapa) la hace el founder tras configurar Vercel y Supabase.
+- **Con las llaves reales del founder (`.env` local, ignorado por git):** `/api/estado` → `{"mapbox":"configurado","supabase":"ok"}` (Supabase creado y respondiendo). El mapa de San Luis Potosí carga en 390×844: centro histórico (Teatro de la Paz), estilo claro, etiquetas en español, atribución arriba a la derecha, panel abajo. Tropiezo encontrado: `NEXT_PUBLIC_MAPBOX_STYLE` traía un segundo token (`pk.…`) en vez de una URL `mapbox://styles/…`, y Mapbox respondía 404 al pedir el "estilo"; se dejó vacía (estilo claro estándar). Mismo cuidado al cargar variables en Vercel.
+- **Pendiente:** la prueba de la fase en el iPhone. La prueba de la fase (somosnosotros.org abre en Safari del iPhone con el mapa) la hace el founder tras configurar Vercel y Supabase.
 
 ## Vercel ya estaba conectado
 
