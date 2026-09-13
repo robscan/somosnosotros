@@ -33,6 +33,14 @@ El founder importó el repo en Vercel antes de que existiera `package.json`, as�
 - Sin manifest PWA todavía: la app instalable es Fase 5.
 - El cliente de Supabase es el básico (`@supabase/supabase-js`). En la Fase 1 (usuarios) se cambia a sesiones por cookie (`@supabase/ssr`); el esquema de las 5 tablas se crea ahí con su primera migración.
 
+## Cierre del día
+
+- El founder cargó las llaves en `.env` (ignorado) y en Vercel; primero con el estilo Dark, luego con **FLOWYA_Light** (preset día), verificado por nombre en los dos lados sin exponer valores.
+- La integración Supabase↔Vercel agregó sus variables (Postgres, service role, JWT): secretas, solo en Vercel.
+- Dominio somosnosotros.org y www agregados al proyecto; nameservers ya en Vercel (`vercel domains inspect` ✔); propagación DNS en curso al cerrar la sesión.
+- PR #1 mergeado a `main` con merge commit (`288fd43`); rama `fase-0-base` borrada.
+- **Producción verificada** (390×844, navegador de escritorio): `https://somosnosotros.org` → 200 desde Vercel; mapa claro de San Luis Potosí con Teatro de la Paz, colonias y parques; panel inferior; `/api/estado` → `{"mapbox":"configurado","supabase":"ok"}`. Únicos errores de consola: 404 de las fuentes "Noto Sans Medium/Bold" del estilo (no existen en la cuenta de Mapbox; usa la de reserva). El founder lo vio en producción; queda su confirmación en el iPhone.
+
 ## Qué sigue
 
 Lo que el founder configura en Vercel y Supabase está en `docs/ops/OPEN_LOOPS.md` (OL-001). Cuando el mapa abra en el iPhone, la Fase 0 cierra y empieza OL-002 (usuarios).

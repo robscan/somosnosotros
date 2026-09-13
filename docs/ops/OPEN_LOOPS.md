@@ -1,17 +1,14 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — Fase 0 construida, pendiente de prueba en el iPhone (bitácora [002](../bitacora/2026/09/002-fase-0-base.md)). `main` tiene los documentos; el código de la Fase 0 está en la rama `fase-0-base` (PR abierto). Dominio somosnosotros.org comprado; ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Fase 0 en producción**: somosnosotros.org abre con el mapa de San Luis Potosí (PR #1 mergeado; bitácora [002](../bitacora/2026/09/002-fase-0-base.md)). Falta la confirmación del founder en Safari del iPhone para cerrar OL-001. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-001 · Fase 0 (base)** — código listo y verificado (lint, typecheck, 8 tests, build, captura 390×844) en la rama `fase-0-base`. Verificado en local con las llaves reales: el mapa de San Luis Potosí carga y Supabase responde `ok`. Falta la prueba de la fase: **somosnosotros.org abre en Safari del iPhone con el mapa.** Pasos del founder, en orden:
-  1. **Mapbox** (account.mapbox.com → Tokens): un token público nuevo llamado `somosnosotros` con restricción de URL `https://somosnosotros.org/*` y `https://*.vercel.app/*` (para los previews). Opcional: copiar la URL de tu estilo claro (`mapbox://styles/TU_USUARIO/ID`).
-  2. **Supabase** (supabase.com → New project): organización propia, nombre `somosnosotros`, región **East US (North Virginia)**, contraseña de la base guardada en tu gestor de contraseñas. Al terminar, en Project Settings → API Keys: copiar la **Project URL** y la llave **publishable** (sirve también la `anon` legacy).
-  3. **Vercel** (ya importaste el repo: proyecto `somosnosotros`; el framework lo fija `vercel.json`, no hay que tocar el preset): en Settings → Environment Variables poner `NEXT_PUBLIC_MAPBOX_TOKEN`, `NEXT_PUBLIC_MAPBOX_STYLE` (opcional; la URL `mapbox://styles/robscan/…` del estilo **Light**, nunca un token; la app fuerza el preset de día de Standard por si acaso), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` para Production y Preview. Deploy.
-  4. **Dominio** (proyecto en Vercel → Settings → Domains): agregar `somosnosotros.org` y `www.somosnosotros.org`; Vercel dice qué registros DNS poner en el registrador del dominio (A `76.76.21.21` para el raíz y CNAME `cname.vercel-dns.com` para `www`, o cambiar los nameservers a los de Vercel). Esperar a que Vercel marque "Valid Configuration".
-  5. **Merge del PR** `fase-0-base` → `main`: Vercel publica en somosnosotros.org. En el iPhone abrir `https://somosnosotros.org` (el mapa) y `https://somosnosotros.org/api/estado` (debe decir `mapbox: configurado`, `supabase: ok`).
+- **OL-001 · Fase 0 (base)** — en producción. Verificado 2026-09-13 desde el navegador de escritorio a 390×844: `https://somosnosotros.org` responde 200 desde Vercel, el mapa claro (FLOWYA_Light, preset día) carga con el centro histórico y el panel inferior; `/api/estado` → `mapbox: configurado`, `supabase: ok`. El founder ya lo vio en producción. **Para cerrar:** confirmación en Safari del iPhone.
+- Cosmético, no bloquea: el estilo pide las fuentes "Noto Sans Medium/Bold" que no existen en la cuenta de Mapbox (404) y usa la de reserva. Se arregla en Mapbox Studio eligiendo una fuente disponible en la cuenta o subiendo esas dos.
+- Opcional: poner `NEXT_PUBLIC_MAPBOX_TOKEN` y `NEXT_PUBLIC_MAPBOX_STYLE` también en Preview para ver mapa en los previews de PR.
 - Datos que solo el founder tiene: correo del admin para el primer usuario (Fase 1).
 
 ## Después (orden del plan)
