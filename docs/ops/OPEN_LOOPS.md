@@ -1,16 +1,13 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — Fase 1 (usuarios) lista en PR #2 (`fase-1-usuarios`, bitácora [003](../bitacora/2026/09/003-fase-1-usuarios.md)); migración aplicada y flujo probado contra la base real. Faltan: URL Configuration en Supabase Auth, merge y la prueba en el teléfono. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Fase 1 (usuarios) en producción** (PR #2 mergeado; bitácora [003](../bitacora/2026/09/003-fase-1-usuarios.md)). URL Configuration de Supabase Auth hecha por el founder. Falta la prueba de la fase en el teléfono. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-002 · Fase 1 (usuarios)** — código en PR #2, verificado (lint, typecheck, 14 tests, build). **Migración aplicada** en Supabase (6 tablas, RLS, bucket `fotos`, trigger de perfil) y correo del admin dado de alta. Flujo entrar → perfil → guardar → borrar cuenta probado contra la base real con un usuario desechable (borrado). Pasos que quedan, en orden:
-  1. **Supabase → Authentication → URL Configuration**: Site URL `https://somosnosotros.org`; Redirect URLs `https://somosnosotros.org/auth/callback`, `https://*.vercel.app/auth/callback`, `http://localhost:3000/auth/callback`. Sin esto el enlace del correo manda a localhost.
-  2. **Merge del PR #2** → producción.
-  3. **Prueba de la fase** en el iPhone: el founder (entra con su correo, nace como admin) y una persona más se registran en menos de un minuto.
-  4. **Google** (opcional; el correo ya sirve): credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Providers → Google.
+- **OL-002 · Fase 1 (usuarios)** — en producción (PR #2 mergeado 2026-09-13; `/entrar` responde 200, `/perfil` sin sesión redirige a `/entrar`, `/api/estado` ok). Migración aplicada, admin dado de alta, URL Configuration hecha. **Falta la prueba de la fase** en el iPhone: el founder (entra con su correo, nace como admin) y una persona más se registran en menos de un minuto.
+- **Google** (opcional; el correo ya sirve): credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
 - Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox solo en Production.
 
 ## Después (orden del plan)
