@@ -1,12 +1,12 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — Alta de lugar rehecha para no teclear (PR #4, `fase-2b-alta-invisible`, bitácora [005](../bitacora/2026/09/005-alta-de-lugar-sin-teclear.md)) tras el feedback del founder; migración 0003 aplicada. Falta merge y la prueba de la Fase 2 (10 lugares). Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Alta de lugar sin teclear en producción** (PR #4 mergeado; bitácora [005](../bitacora/2026/09/005-alta-de-lugar-sin-teclear.md)). Falta la prueba de la Fase 2: 10 lugares reales desde el teléfono. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-003 · Fase 2 (lugares)** — en producción (PR #3). Feedback del founder: el alta era un formulario pasivo, "sin UX invisible". Rehecha en **PR #4**: nombre primero y Mapbox encuentra el lugar (dirección + pin + tipo en un toque), "Estoy aquí", dirección deducida del pin, aviso de duplicado al escribir, publicar con dos datos, "Registrar otro", borrador en el teléfono. Tres toques por lugar en la prueba. Pasos: (1) merge del PR #4; (2) **prueba de la fase** en el iPhone: 10 lugares reales, cada uno en menos de un minuto. Regla nueva de trabajo: antes de dar por buena una pantalla de captura, preguntar qué puede deducir el sistema y qué puede esperar a después de publicar.
+- **OL-003 · Fase 2 (lugares)** — en producción (PR #3). Feedback del founder: el alta era un formulario pasivo, "sin UX invisible". Rehecha en **PR #4**: nombre primero y Mapbox encuentra el lugar (dirección + pin + tipo en un toque), "Estoy aquí", dirección deducida del pin, aviso de duplicado al escribir, publicar con dos datos, "Registrar otro", borrador en el teléfono. Tres toques por lugar en la prueba. En producción (PR #4 mergeado). **Falta la prueba de la fase** en el iPhone: 10 lugares reales, cada uno en menos de un minuto. Ya hay 1 registrado por el founder ("Casa 1100", sin dirección: editarlo y usar "Estoy aquí" o el pin la deduce). Regla nueva de trabajo: antes de dar por buena una pantalla de captura, preguntar qué puede deducir el sistema y qué puede esperar a después de publicar.
 - Decisión de UI tomada en esta fase: el panel inferior con gestos se escribió a mano (~100 líneas); no hizo falta Tailwind ni shadcn. Se revisa de nuevo si la Fase 3 (eventos) lo pide.
 - Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre. **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
 - Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox solo en Production.
