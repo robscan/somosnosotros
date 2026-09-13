@@ -1,27 +1,30 @@
 import Link from "next/link";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import type { LugarResumen } from "@/lib/lugares";
 import { usuarioActual } from "@/lib/supabase/servidor";
+import ListaLugares from "./ListaLugares";
+import Sheet from "./Sheet";
 import styles from "./Panel.module.css";
 
-/**
- * Panel inferior sobre el mapa. Solo el estado "asomado" (peek);
- * los estados medium/expanded y los gestos (docs/heredado/front/BOTTOM_SHEET.md)
- * entran cuando haya lugares y eventos que mostrar (Fases 2 y 3).
- */
 /** En el panel cabe poco: solo el primer nombre. */
 function primerNombre(nombre: string): string {
   return nombre.trim().split(" ")[0] ?? "";
 }
 
-export default async function Panel({ cuentaBorrada = false }: { cuentaBorrada?: boolean }) {
+type Props = { lugares: LugarResumen[]; cuentaBorrada?: boolean };
+
+/** Panel inferior sobre el mapa: cabecera (marca, ciudad, sesión) y la lista de lugares con búsqueda. */
+export default async function Panel({ lugares, cuentaBorrada = false }: Props) {
   const actual = await usuarioActual();
-  return (
-    <section className={styles.panel} aria-label="Panel">
-      <div className={styles.asa} aria-hidden="true" />
+  const cabecera = (
+    <>
       <div className={styles.cabecera}>
         <div>
           <h1 className={styles.titulo}>somosnosotros</h1>
-          <p className={styles.ciudad}>{CIUDAD_INICIAL.nombre}</p>
+          <p className={styles.ciudad}>
+            {CIUDAD_INICIAL.nombre}
+            {lugares.length > 0 ? ` · ${lugares.length === 1 ? "1 lugar" : `${lugares.length} lugares`}` : ""}
+          </p>
         </div>
         {actual ? (
           <Link href="/perfil" className={styles.persona} aria-label="Mi perfil">
@@ -44,7 +47,11 @@ export default async function Panel({ cuentaBorrada = false }: { cuentaBorrada?:
           Tu cuenta quedó borrada. Gracias por haber estado.
         </p>
       )}
-      <p className={styles.vacio}>Aún no hay lugares ni eventos.</p>
-    </section>
+    </>
+  );
+  return (
+    <Sheet cabecera={cabecera} inicial={lugares.length > 0 ? "medium" : "peek"}>
+      <ListaLugares lugares={lugares} conSesion={!!actual} />
+    </Sheet>
   );
 }
