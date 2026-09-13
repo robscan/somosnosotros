@@ -17,3 +17,17 @@ npm run dev                  # http://localhost:3000
 ```
 
 Verificación: `npm run lint && npm run typecheck && npm test`. `/api/estado` dice si Mapbox y Supabase están configurados.
+
+## Base de datos
+
+El esquema vive en `supabase/migrations/`. Para aplicarlo al proyecto de Supabase, pon en `.env` la URL directa de la base (Supabase → Connect → Direct connection, con la contraseña; nunca en git):
+
+```
+SUPABASE_DB_URL=postgresql://postgres:CONTRASEÑA@db.XXXX.supabase.co:5432/postgres
+```
+
+y corre:
+
+```
+npm run db:push
+```

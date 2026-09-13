@@ -1,0 +1,39 @@
+.campo {
+  margin-bottom: var(--espacio-4);
+}
+.etiqueta {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--espacio-1);
+}
+.control {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: 16px;
+}
+.control:focus {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+.control[aria-invalid="true"] {
+  border-color: var(--error);
+}
+.area {
+  min-height: 88px;
+  resize: vertical;
+}
+.ayuda {
+  color: var(--texto-suave);
+  font-size: 14px;
+  margin-top: var(--espacio-1);
+}
+.error {
+  color: var(--error);
+  font-size: 14px;
+  margin-top: var(--espacio-1);
+}

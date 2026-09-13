@@ -1,0 +1,18 @@
+.separador {
+  text-align: center;
+  color: var(--texto-suave);
+  margin: var(--espacio-4) 0;
+}
+.nota {
+  color: var(--texto-suave);
+  margin-top: var(--espacio-2);
+}
+.enlaceBoton {
+  background: none;
+  border: none;
+  color: var(--acento);
+  min-height: var(--toque);
+  padding: 0;
+  margin-top: var(--espacio-2);
+  cursor: pointer;
+}

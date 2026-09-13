@@ -1,13 +1,17 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — **Fase 0 cerrada**: el founder confirmó en Safari del iPhone que somosnosotros.org abre con el mapa de San Luis Potosí (bitácora [002](../bitacora/2026/09/002-fase-0-base.md)). Sigue OL-002 Usuarios. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — Fase 1 (usuarios) lista en PR #2 (`fase-1-usuarios`, bitácora [003](../bitacora/2026/09/003-fase-1-usuarios.md)); migración aplicada y flujo probado contra la base real. Faltan: URL Configuration en Supabase Auth, merge y la prueba en el teléfono. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-002 · Fase 1 (usuarios)** — próxima. Registro e inicio de sesión con correo (enlace mágico) y Google; perfil (nombre, foto opcional, colonia opcional, una línea); borrar mi cuenta; roles `admin` y `usuario`. Se crea la primera migración con las 5 tablas del modelo (`docs/PLAN.md`) y sus permisos. Prueba: el founder y una persona más se registran desde el teléfono en menos de un minuto. Dato del founder: correo del administrador para el primer usuario.
-- Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva; se arregla en Studio); variables de Mapbox solo en Production (agregar a Preview si se quiere mapa en previews).
+- **OL-002 · Fase 1 (usuarios)** — código en PR #2, verificado (lint, typecheck, 14 tests, build). **Migración aplicada** en Supabase (6 tablas, RLS, bucket `fotos`, trigger de perfil) y correo del admin dado de alta. Flujo entrar → perfil → guardar → borrar cuenta probado contra la base real con un usuario desechable (borrado). Pasos que quedan, en orden:
+  1. **Supabase → Authentication → URL Configuration**: Site URL `https://somosnosotros.org`; Redirect URLs `https://somosnosotros.org/auth/callback`, `https://*.vercel.app/auth/callback`, `http://localhost:3000/auth/callback`. Sin esto el enlace del correo manda a localhost.
+  2. **Merge del PR #2** → producción.
+  3. **Prueba de la fase** en el iPhone: el founder (entra con su correo, nace como admin) y una persona más se registran en menos de un minuto.
+  4. **Google** (opcional; el correo ya sirve): credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Providers → Google.
+- Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox solo en Production.
 
 ## Después (orden del plan)
 
