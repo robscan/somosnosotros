@@ -20,6 +20,10 @@ Primer commit de documentos en `main` y, en la rama `fase-0-base`, el proyecto N
 - Con token inválido (en `.env.local`, borrado después): mapbox-gl se descarga, aparece el logo de Mapbox, el estilo se pide con el token, Mapbox responde 401 y la pantalla dice "No se pudo cargar el mapa. Revisa el token de Mapbox." `/api/estado` devolvió `{"mapbox":"configurado","supabase":"error","detalle":"fetch failed"}` con una URL de Supabase inexistente.
 - **Pendiente:** el mapa real solo se ve con el token del founder. La prueba de la fase (somosnosotros.org abre en Safari del iPhone con el mapa) la hace el founder tras configurar Vercel y Supabase.
 
+## Vercel ya estaba conectado
+
+El founder importó el repo en Vercel antes de que existiera `package.json`, así que el proyecto quedó con preset "Other" y el primer deploy del PR falló con `No Output Directory named "public"` aunque `next build` terminó bien. Arreglo en el repo: `vercel.json` con `"framework": "nextjs"` (manda sobre el preset del panel) y `engines.node = "22.x"`.
+
 ## Decisiones pequeñas
 
 - vitest 3 (no 5) y sin jsdom: el Node local es 22.6 y vitest 5 pide 22.12; las pruebas de esta fase son de lógica pura.

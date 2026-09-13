@@ -28,6 +28,6 @@
   },
   "description": "Directorio de centros culturales y agenda de eventos. San Luis Potosí.",
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   }
 }
