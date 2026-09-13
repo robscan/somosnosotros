@@ -4,11 +4,10 @@
   right: 0;
   bottom: 0;
   padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0px));
-  border-radius: 16px 16px 0 0;
-  background: #ffffff;
+  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+  background: var(--fondo);
   box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
 }
-
 .asa {
   width: 36px;
   height: 4px;
@@ -16,21 +15,67 @@
   border-radius: 2px;
   background: #d9d9d9;
 }
-
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+}
 .titulo {
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
 }
-
 .ciudad {
   margin-top: 2px;
   font-size: 15px;
-  color: #5c5c5c;
+  color: var(--texto-suave);
 }
-
+.entrar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--acento);
+  color: var(--acento-texto);
+  font-weight: 600;
+  text-decoration: none;
+}
+.persona {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: 44px;
+  max-width: 45%;
+  color: var(--texto);
+  text-decoration: none;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-suave);
+  display: inline-grid;
+  place-items: center;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+.nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.aviso {
+  margin-top: var(--espacio-3);
+  color: var(--texto-suave);
+}
 .vacio {
   margin-top: 12px;
   font-size: 15px;
-  color: #5c5c5c;
+  color: var(--texto-suave);
 }

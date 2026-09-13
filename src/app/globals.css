@@ -1,7 +1,28 @@
 :root {
   color-scheme: light; /* tema claro, sin modo oscuro (DEFINICION) */
+
+  /* Variables de diseño: una sola fuente de verdad para color, espacio y forma. */
   --fondo: #ffffff;
+  --fondo-suave: #f4f4f2;
   --texto: #1a1a1a;
+  --texto-suave: #5c5c5c;
+  --borde: #dcdcd8;
+  --acento: #b3261e; /* rojo tierra: botones principales y enlaces */
+  --acento-texto: #ffffff;
+  --error: #b3261e;
+  --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+  --radio: 12px;
+  --radio-grande: 16px;
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-5: 20px;
+  --espacio-6: 24px;
+  --toque: 48px; /* alto mínimo de cualquier cosa que se pulsa con el dedo */
+
+  --fuente: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
@@ -13,10 +34,62 @@
 html,
 body {
   height: 100%;
-  overflow: hidden; /* el mapa ocupa la pantalla; el panel scrollea por dentro cuando haga falta */
   background: var(--fondo);
   color: var(--texto);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--fuente);
+  font-size: 16px; /* 16px o más en inputs: Safari no hace zoom al enfocar */
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: var(--acento);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */
+.pagina {
+  min-height: 100dvh;
+  padding: calc(var(--espacio-5) + env(safe-area-inset-top, 0px)) var(--espacio-5)
+    calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px));
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.titulo {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: var(--espacio-2);
+}
+
+.subtitulo {
+  color: var(--texto-suave);
+  margin-bottom: var(--espacio-5);
+}
+
+.aviso-error {
+  color: var(--error);
+  margin: var(--espacio-3) 0;
+}
+
+.aviso-ok {
+  background: var(--fondo-suave);
+  border-radius: var(--radio);
+  padding: var(--espacio-4);
+  margin: var(--espacio-3) 0;
+}
+
+.enlace-volver {
+  display: inline-block;
+  min-height: var(--toque);
+  line-height: var(--toque);
+  color: var(--texto-suave);
+  text-decoration: none;
 }

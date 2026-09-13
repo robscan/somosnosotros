@@ -1,0 +1,30 @@
+.boton {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid transparent;
+  border-radius: var(--radio);
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.boton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.principal {
+  background: var(--acento);
+  color: var(--acento-texto);
+}
+.secundario {
+  background: var(--fondo);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+.peligro {
+  background: var(--fondo);
+  color: var(--error);
+  border-color: var(--borde);
+}

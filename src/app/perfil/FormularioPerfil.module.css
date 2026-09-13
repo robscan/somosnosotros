@@ -1,0 +1,62 @@
+.fotoFila {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-4);
+  margin-bottom: var(--espacio-5);
+}
+.avatar {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--fondo-suave);
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.subir {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  cursor: pointer;
+}
+.subir input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.acciones {
+  margin-top: var(--espacio-6);
+  padding-top: var(--espacio-5);
+  border-top: 1px solid var(--borde);
+  display: grid;
+  gap: var(--espacio-3);
+}
+.confirmar {
+  display: grid;
+  gap: var(--espacio-3);
+  padding: var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+}
+.enlaceBorrar {
+  background: none;
+  border: none;
+  color: var(--texto-suave);
+  min-height: var(--toque);
+  cursor: pointer;
+  text-decoration: underline;
+}
