@@ -1,12 +1,12 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — **Fase 2 cerrada** (el founder: "la experiencia ya funciona"); **Fase 3 (eventos) construida** en PR #5 (`fase-3-eventos`, bitácora [006](../bitacora/2026/09/006-fase-3-eventos.md)). Falta merge y la prueba de la fase. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Fase 3 (eventos) en producción** (PR #5 mergeado; bitácora [006](../bitacora/2026/09/006-fase-3-eventos.md)). Falta la prueba de la fase: primer evento publicado por alguien que no es el founder y compartido por WhatsApp. Fases 0, 1 y 2 cerradas. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-004 · Fase 3 (eventos)** — código en PR #5, verificado (lint, typecheck, 39 tests, build, capturas 390×844) y probado contra la base real. Publicar con dónde + qué + cuándo (dos acciones desde la ficha del lugar), agenda Hoy · Esta semana · Próximos en el panel, ficha con Compartir por WhatsApp (vista previa Open Graph) y Agregar a mi calendario (.ics), duplicar con otra fecha, ocultar por admin. Pasos: (1) merge del PR #5; (2) **prueba de la fase**: el primer evento publicado por alguien que no es el founder, y compartido por WhatsApp (revisar que la vista previa muestre título, fecha e imagen).
+- **OL-004 · Fase 3 (eventos)** — código en PR #5, verificado (lint, typecheck, 39 tests, build, capturas 390×844) y probado contra la base real. Publicar con dónde + qué + cuándo (dos acciones desde la ficha del lugar), agenda Hoy · Esta semana · Próximos en el panel, ficha con Compartir por WhatsApp (vista previa Open Graph) y Agregar a mi calendario (.ics), duplicar con otra fecha, ocultar por admin. En producción (PR #5 mergeado 2026-09-13). **Falta la prueba de la fase**: el primer evento publicado por alguien que no es el founder, y compartido por WhatsApp (revisar que la vista previa muestre título, fecha e imagen).
 - Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre. **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
 - Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox solo en Production.
 
