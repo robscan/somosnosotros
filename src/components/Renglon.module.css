@@ -1,0 +1,74 @@
+/* Renglón de lista (evento en la agenda, lugar en Lugares): foto a la izquierda en dos filas, título y
+   datos con icono a la derecha; sin envoltorios. Lo importan RenglonEvento y ListaLugares. */
+.renglon {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "foto titulo"
+    "foto meta";
+  column-gap: var(--espacio-3);
+  align-content: center;
+  min-height: 64px;
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.renglon:active {
+  background: var(--fondo);
+  box-shadow: 0 0 0 var(--espacio-5) var(--fondo); /* el resaltado llega a los bordes sin mover nada */
+}
+.foto {
+  grid-area: foto;
+  width: 64px;
+  height: 64px;
+  align-self: start;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.fotoVacia {
+  display: block;
+  background: var(--fondo);
+  border: 1px dashed var(--borde);
+}
+.titulo {
+  grid-area: titulo;
+  min-width: 0;
+  font-size: var(--letra-xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.meta {
+  grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--espacio-3);
+  margin-top: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* Variante en columna: un dato por línea (la calle y el próximo evento del lugar). */
+.metaColumna {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.meta > span > svg {
+  flex: none;
+}
+.meta .lugar {
+  white-space: normal;
+}
+.meta b {
+  color: var(--texto);
+  font-weight: 500;
+}

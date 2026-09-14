@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
+import Borrar from "@/components/Borrar";
+import BotonCompartir from "@/components/BotonCompartir";
+import Cartel from "@/components/Cartel";
+import Desplegable from "@/components/Desplegable";
+import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
-import { IconoBoleto, IconoCalendario, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
+import MenuAcciones from "@/components/ui/MenuAcciones";
+import ficha from "@/components/ui/Ficha.module.css";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { nombreSitio, textoCompartir } from "@/lib/eventos";
@@ -10,10 +17,6 @@ import { formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
-import BotonCompartir from "./BotonCompartir";
-import Cartel from "./Cartel";
-import Desplegable from "./Desplegable";
-import MenuFicha from "./MenuFicha";
 import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 
@@ -81,18 +84,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-const ICONO_COMPARTIR = (
-  <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-    <path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-  </svg>
-);
-const ICONO_RUTA = (
-  <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-    <path d="M12 3l9 9-9 9-9-9z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    <path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
 const ICONO_CANDADO = (
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
     <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -125,17 +116,51 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde) : "el día del evento";
 
   return (
-    <main className={styles.pagina}>
+    <main className={ficha.pagina}>
       <Barra
         volver={{ href: "/", texto: "Agenda" }}
-        derecha={<MenuFicha eventoId={e.id} conSesion={!!actual} puedeEditar={puedeEditar} esAdmin={!!esAdmin} visible={e.visible} avisoBorrar={avisoBorrar} cambiarVisible={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)} borrar={borrarEvento.bind(null, e.id, e.lugar_id)} />}
+        derecha={
+          <MenuAcciones>
+            {puedeEditar && (
+              <>
+                <li>
+                  <Link href={`/eventos/${e.id}/editar`} className={ficha.menuItem}>
+                    Editar
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`/eventos/nuevo?desde=${e.id}`} className={ficha.menuItem}>
+                    Duplicar con otra fecha
+                  </Link>
+                </li>
+              </>
+            )}
+            {esAdmin && (
+              <li>
+                <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>
+                  <button type="submit" className={ficha.menuItem}>
+                    {e.visible ? "Ocultar de la agenda" : "Volver a mostrar"}
+                  </button>
+                </form>
+              </li>
+            )}
+            <li className={ficha.menuItem}>
+              <Reportar tipo="evento" objetoId={e.id} volver={`/eventos/${e.id}`} conSesion={!!actual} />
+            </li>
+            {puedeEditar && (
+              <li className={ficha.menuItem}>
+                <Borrar que="el evento" aviso={avisoBorrar} accion={borrarEvento.bind(null, e.id, e.lugar_id)} />
+              </li>
+            )}
+          </MenuAcciones>
+        }
       />
       {nuevo === "1" && (
-        <div className={styles.publicado} role="status">
+        <div className={ficha.publicado} role="status">
           <div>
             <b>Publicado.</b>Ya está en la agenda.
           </div>
-          <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={styles.publicadoBoton}>
+          <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.publicadoBoton}>
             Compartir
           </BotonCompartir>
         </div>
@@ -146,21 +171,21 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         </p>
       )}
       {!e.visible && (
-        <p className={`aviso-error ${styles.oculto}`} role="status">
+        <p className={`aviso-error ${ficha.oculto}`} role="status">
           Este evento está oculto: solo lo ven su autor y el administrador.
         </p>
       )}
 
-      {e.imagen && <Cartel src={e.imagen} titulo={e.titulo} />}
-      <h1 className={styles.titulo}>{e.titulo}</h1>
+      {e.imagen && <Cartel src={e.imagen} alt={`Cartel de ${e.titulo}`} />}
+      <h1 className={ficha.titulo}>{e.titulo}</h1>
 
-      <ul className={styles.datos}>
-        <li className={styles.dato}>
+      <ul className={ficha.datos}>
+        <li className={ficha.dato}>
           <IconoReloj width={20} height={20} />
           <b>{formatearLargo(e.inicio, new Date(), e.fin)}</b>
         </li>
         {e.lugar && (
-          <li className={styles.dato}>
+          <li className={ficha.dato}>
             <IconoPin width={20} height={20} />
             <b>
               <Link href={`/lugares/${e.lugar.id}`}>{e.lugar.nombre}</Link>
@@ -169,13 +194,13 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </li>
         )}
         {!e.lugar && e.sitio_texto && !e.sitio_reservado && (
-          <li className={styles.dato}>
+          <li className={ficha.dato}>
             <IconoPin width={20} height={20} />
             <b>{e.sitio_texto}</b>
           </li>
         )}
         {e.sitio_reservado && (
-          <li className={styles.dato}>
+          <li className={ficha.dato}>
             {privado ? <IconoPin width={20} height={20} /> : ICONO_CANDADO}
             <b>{privado ? privado.direccion : `${e.sitio_texto} · sitio reservado`}</b>
             {privado ? (
@@ -186,44 +211,44 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               <small>Entra para ver la dirección cuando toque.</small>
             )}
             {!privado && !actual && (
-              <Link href={`/entrar?siguiente=${encodeURIComponent(`/eventos/${e.id}`)}`} className={styles.datoEnlace}>
+              <Link href={`/entrar?siguiente=${encodeURIComponent(`/eventos/${e.id}`)}`} className={ficha.datoEnlace}>
                 Entrar
               </Link>
             )}
           </li>
         )}
-        <li className={styles.dato}>
+        <li className={ficha.dato}>
           <IconoPersonas width={20} height={20} />
           <b>{n === 0 ? "Nadie ha dicho que va todavía" : n === 1 ? "Va 1 persona" : `Van ${n} personas`}</b>
           {n > 0 && (
-            <a href="#quien-va" className={styles.datoEnlace}>
+            <a href="#quien-va" className={ficha.datoEnlace}>
               ver
             </a>
           )}
         </li>
-        <li className={styles.dato}>
+        <li className={ficha.dato}>
           <IconoBoleto width={20} height={20} />
           <b>{e.precio ?? "Gratis"}</b>
         </li>
       </ul>
 
-      <div className={styles.acciones}>
-        <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={styles.accion}>
-          {ICONO_COMPARTIR}
+      <div className={ficha.acciones}>
+        <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>
+          <IconoCompartir />
           Compartir
         </BotonCompartir>
-        <a href={`/eventos/${e.id}/calendario`} className={styles.accion}>
+        <a href={`/eventos/${e.id}/calendario`} className={ficha.accion}>
           <IconoCalendario width={24} height={24} />
           Calendario
         </a>
         {comoLlegar ? (
-          <a href={comoLlegar} className={styles.accion} target="_blank" rel="noopener noreferrer">
-            {ICONO_RUTA}
+          <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
+            <IconoRuta />
             Cómo llegar
           </a>
         ) : (
-          <span className={styles.accion} aria-disabled="true">
-            {ICONO_RUTA}
+          <span className={ficha.accion} aria-disabled="true">
+            <IconoRuta />
             Cómo llegar
           </span>
         )}
@@ -238,7 +263,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
       <QuienVa van={asistencias.van} interesados={asistencias.interesados} conSesion={!!actual} />
 
-      <p className={styles.autor}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+      <p className={ficha.autor}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}.</p>
 
       <Asistencia
         eventoId={e.id}

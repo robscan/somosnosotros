@@ -1,0 +1,252 @@
+/* ==========================================================================
+   Lenguaje común de las fichas (evento y lugar):
+   1. Página y barra · 2. Información · 3. Acciones secundarias · 4. Autor ·
+   5. Barra inferior pegajosa · 6. Menú ··· · 7. Recién publicado
+   Lo propio de cada ficha va en su propio módulo, junto a su page.tsx.
+   ========================================================================== */
+
+/* 1. Página: deja sitio abajo para la barra pegajosa */
+.pagina {
+  min-height: 100dvh;
+  padding: calc(var(--espacio-2) + env(safe-area-inset-top, 0px)) var(--espacio-5) calc(96px + env(safe-area-inset-bottom, 0px));
+  max-width: 520px;
+  margin: 0 auto;
+}
+.iconoBarra {
+  display: inline-grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.iconoBarra:active {
+  background: var(--fondo-suave);
+}
+.oculto {
+  margin-bottom: var(--espacio-3);
+}
+
+/* 2. Información: título, etiqueta y renglones con icono, como en la agenda */
+.titulo {
+  font-size: var(--letra-2xl);
+  margin-bottom: var(--espacio-3);
+}
+.tituloConEtiqueta {
+  margin-bottom: 2px;
+}
+.etiqueta {
+  margin-bottom: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.datos {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  margin-bottom: var(--espacio-4);
+}
+/* Renglón de dato sin envoltorios: icono, principal, secundario (opcional) y acción (opcional) son hijos directos. */
+.dato {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-areas:
+    "icono principal accion"
+    "icono secundario accion";
+  column-gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  font-size: var(--letra-md);
+}
+.dato > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.dato b {
+  grid-area: principal;
+  font-weight: 500;
+}
+.dato small {
+  grid-area: secundario;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.dato .datoEnlace {
+  grid-area: accion;
+}
+.datoEnlace {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+
+/* 3. Acciones secundarias: botones de icono iguales, sin color de acción. Tres por fila; con más, la fila se desplaza. */
+.acciones {
+  display: flex;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-5);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.acciones::-webkit-scrollbar {
+  display: none;
+}
+.accion {
+  flex: 1 0 calc((100% - 2 * var(--espacio-2)) / 3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 60px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.accion:active {
+  background: var(--fondo-suave);
+}
+.accion[aria-disabled="true"] {
+  color: var(--texto-suave);
+  pointer-events: none;
+}
+
+/* 4. Autor, al pie */
+.autor {
+  padding: var(--espacio-3) 0;
+  border-top: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+
+/* 5. Barra inferior pegajosa: acción primaria, y luego estado */
+.accionFija {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--espacio-3);
+  align-items: center;
+  min-height: 72px;
+  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--fondo);
+  border-top: 1px solid var(--borde);
+}
+.accionUnica {
+  grid-template-columns: 1fr;
+}
+.accionEstado {
+  grid-template-columns: 1fr auto;
+}
+.primaria {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: none;
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.seleccionado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1.5px solid var(--primario);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.seleccionado > svg {
+  flex: none;
+}
+.seleccionado small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 500;
+}
+.secundario {
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 6. Menú ··· (dentro de la hoja) */
+.menu {
+  list-style: none;
+  margin-top: var(--espacio-4);
+}
+.menuItem {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-2) var(--espacio-1);
+  border: none;
+  border-bottom: 1px solid var(--borde);
+  background: none;
+  color: var(--texto);
+  font-size: var(--letra-md);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* 7. Recién publicado: evidencia y la siguiente acción */
+.publicado {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--espacio-3);
+  align-items: center;
+  margin: var(--espacio-2) 0 var(--espacio-4);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  font-size: var(--letra-sm);
+}
+.publicado b {
+  display: block;
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+}
+.publicadoBoton {
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--texto);
+  border-radius: 10px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enlaceRed, filtrarLugares, normalizarNombre, validarLugar } from "./lugares";
+import { calleCorta, conProximo, enlaceRed, filtrarLugares, normalizarNombre, ordenarLugares, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -48,5 +48,42 @@ describe("validarLugar", () => {
   it("revisa el WhatsApp", () => {
     expect(validarLugar({ ...base, whatsapp: "123" }).errores.whatsapp).toBeTruthy();
     expect(validarLugar({ ...base, whatsapp: "4441234567" }).errores.whatsapp).toBeUndefined();
+  });
+});
+
+describe("calleCorta", () => {
+  it("quita código postal, ciudad y estado", () => {
+    expect(calleCorta("C. 5 de Mayo 1100, 78000 San Luis Potosí, S.L.P.")).toBe("C. 5 de Mayo 1100");
+    expect(calleCorta("Av. Carranza 480, Centro, San Luis Potosí")).toBe("Av. Carranza 480");
+    expect(calleCorta("Jardín de Tequis 3")).toBe("Jardín de Tequis 3");
+    expect(calleCorta(null)).toBe("");
+  });
+});
+
+describe("ordenarLugares", () => {
+  const base = { tipo: "foro" as const, direccion: null, portada: null };
+  const a = { ...base, id: "a", nombre: "Zeta", lat: 22.15, lng: -100.98, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z" } };
+  const b = { ...base, id: "b", nombre: "Alfa", lat: 22.16, lng: -100.98, proximo: null };
+  const c = { ...base, id: "c", nombre: "Beta", lat: 22.2, lng: -100.9, proximo: { id: "e2", inicio: "2026-09-15T01:00:00Z" } };
+  it("sin ubicación: con eventos primero por fecha, luego alfabético", () => {
+    expect(ordenarLugares([a, b, c], null).lista.map((l) => l.id)).toEqual(["c", "a", "b"]);
+  });
+  it("con ubicación: por distancia, con los km", () => {
+    const { lista, km } = ordenarLugares([a, b, c], { lat: 22.16, lng: -100.98 });
+    expect(lista.map((l) => l.id)).toEqual(["b", "a", "c"]);
+    expect(km.get("b")).toBe(0);
+    expect(km.get("c")!).toBeGreaterThan(5);
+  });
+});
+
+describe("conProximo", () => {
+  it("toma el primer evento de cada lugar y deja null a los demás", () => {
+    const r = conProximo([{ id: "a" }, { id: "b" }], [
+      { id: "e1", inicio: "2026-09-15T01:00:00Z", lugar_id: "a" },
+      { id: "e2", inicio: "2026-09-16T01:00:00Z", lugar_id: "a" },
+      { id: "e3", inicio: "2026-09-17T01:00:00Z", lugar_id: null },
+    ]);
+    expect(r[0].proximo).toEqual({ id: "e1", inicio: "2026-09-15T01:00:00Z" });
+    expect(r[1].proximo).toBeNull();
   });
 });

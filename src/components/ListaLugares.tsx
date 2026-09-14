@@ -2,65 +2,72 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { etiquetaTipo, filtrarLugares, type LugarResumen } from "@/lib/lugares";
-import Tarjeta from "@/components/ui/Tarjeta";
+import type { Ciudad } from "@/lib/ciudad";
+import { textoDistancia } from "@/lib/agenda";
+import { calleCorta, filtrarLugares, ordenarLugares, textoProximo, type LugarLista } from "@/lib/lugares";
+import { IconoCalendario, IconoPin } from "./ui/Iconos";
+import renglon from "./Renglon.module.css";
 import styles from "./ListaLugares.module.css";
 
-type Props = { lugares: LugarResumen[]; conSesion: boolean; conAlta?: boolean };
+type Props = { lugares: LugarLista[]; punto: { lat: number; lng: number } | null; ciudad: Ciudad; conSesion: boolean };
 
 /** Umbral a partir del cual vale la pena buscar por nombre (progressive disclosure). */
 const UMBRAL_BUSCAR = 8;
 
-/** Lista de lugares con búsqueda por nombre (solo cuando hay muchos) y, si se pide, el enlace para registrar uno. */
-export default function ListaLugares({ lugares, conSesion, conAlta = true }: Props) {
+/**
+ * Lista de lugares: renglones como los de la agenda (foto, nombre, calle, próximo evento);
+ * con eventos primero, o por distancia con la ubicación; búsqueda por nombre solo cuando hay muchos.
+ */
+export default function ListaLugares({ lugares, punto, ciudad, conSesion }: Props) {
   const [busqueda, setBusqueda] = useState("");
-  const visibles = filtrarLugares(lugares, busqueda);
+  const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
   const hrefNuevo = conSesion ? "/lugares/nuevo" : "/entrar?siguiente=/lugares/nuevo";
-  const conBuscar = lugares.length >= UMBRAL_BUSCAR;
 
+  if (lugares.length === 0) {
+    return (
+      <section className={styles.vacio}>
+        <h2>Lugares</h2>
+        <p>Aún no hay lugares en {ciudad.nombre}. Registra el primero.</p>
+        <Link href={hrefNuevo} className={styles.registrar}>
+          Registrar un lugar
+        </Link>
+      </section>
+    );
+  }
   return (
-    <div>
-      {(conBuscar || conAlta) && (
-        <div className={styles.barra}>
-          {conBuscar && (
-            <input
-              type="search"
-              className={styles.buscar}
-              placeholder="Buscar un lugar por nombre"
-              aria-label="Buscar un lugar por nombre"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              autoCapitalize="none"
-              autoCorrect="off"
-            />
-          )}
-          {conAlta && (
-            <Link href={hrefNuevo} className={styles.nuevo}>
-              + Registrar un lugar
+    <section className={styles.lista} aria-label="Lugares">
+      {lugares.length >= UMBRAL_BUSCAR && (
+        <input type="search" className={styles.buscar} placeholder="Buscar un lugar por nombre" aria-label="Buscar un lugar por nombre" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} autoCapitalize="none" autoCorrect="off" />
+      )}
+      <p className={styles.conteo}>
+        {lista.length === 0 ? "Ningún lugar se llama así. Si existe, regístralo." : `${lista.length === 1 ? "1 lugar" : `${lista.length} lugares`}${punto ? " · ordenados por cercanía" : ""}`}
+      </p>
+      <ul>
+        {lista.map((l) => (
+          <li key={l.id}>
+            <Link href={`/lugares/${l.id}`} className={renglon.renglon}>
+              {l.portada ? (
+                // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
+                <img src={l.portada} alt="" className={renglon.foto} />
+              ) : (
+                <span className={`${renglon.foto} ${renglon.fotoVacia}`} aria-hidden="true" />
+              )}
+              <span className={renglon.titulo}>{l.nombre}</span>
+              <span className={`${renglon.meta} ${renglon.metaColumna}`}>
+                <span className={renglon.lugar}>
+                  <IconoPin width={15} height={15} />
+                  {calleCorta(l.direccion) || "Sin dirección"}
+                  {km.has(l.id) ? ` · ${textoDistancia(km.get(l.id)!)}` : ""}
+                </span>
+                <span>
+                  <IconoCalendario width={15} height={15} />
+                  {l.proximo ? <b>{textoProximo(l.proximo.inicio)}</b> : "Sin eventos próximos"}
+                </span>
+              </span>
             </Link>
-          )}
-        </div>
-      )}
-
-      {lugares.length === 0 ? (
-        <p className={styles.vacio}>Aún no hay lugares. Registra el primero.</p>
-      ) : visibles.length === 0 ? (
-        <p className={styles.vacio}>Ningún lugar se llama así. Si existe, regístralo.</p>
-      ) : (
-        <>
-          <p className={styles.conteo}>
-            {visibles.length === 1 ? "1 lugar" : `${visibles.length} lugares`}
-            {busqueda ? ` con "${busqueda.trim()}"` : ""}
-          </p>
-          <ul className={styles.lista}>
-            {visibles.map((l) => (
-              <li key={l.id}>
-                <Tarjeta href={`/lugares/${l.id}`} miniatura={{ src: l.portada, letra: l.nombre }} titulo={l.nombre} detalle={`${etiquetaTipo(l.tipo)}${l.direccion ? ` · ${l.direccion}` : ""}`} />
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

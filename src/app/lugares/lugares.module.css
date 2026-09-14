@@ -1,4 +1,9 @@
-/* Pestañas Lista · Mapa: la propia lista de pestañas es la cabecera pegajosa. */
+/* ==========================================================================
+   Lugares (docs/rediseno/06-lugares-flujo-y-estados.md)
+   1. Pestañas pegajosas · 2. Mapa: caja, botón de ubicación, tarjeta del pin · 3. Lista: chip Cerca de mí
+   ========================================================================== */
+
+/* 1. Pestañas Mapa · Lista: la propia lista de pestañas es la cabecera pegajosa */
 .pestanas {
   position: sticky;
   top: 0;
@@ -28,10 +33,131 @@
   border-bottom-color: var(--texto);
   font-weight: 700;
 }
-.contenido {
-  padding: var(--espacio-4) var(--espacio-5) 0;
+
+/* 2. Mapa: llena lo que queda entre las pestañas y la navegación; la página no se desplaza */
+.sinRelleno {
+  min-height: 0;
+  padding-bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px));
 }
 .cajaMapa {
-  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--alto-barra) - var(--espacio-2) - var(--toque-min) - var(--alto-nav) - env(safe-area-inset-bottom, 0px));
+  position: relative;
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--alto-barra) - var(--toque-min) - 1px - var(--alto-nav) - env(safe-area-inset-bottom, 0px));
   min-height: 320px;
+}
+.ubicame {
+  position: absolute;
+  left: var(--espacio-5);
+  bottom: var(--espacio-4);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ubicameActivo {
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+.notaMapa {
+  position: absolute;
+  top: var(--espacio-2);
+  left: var(--espacio-5);
+  right: var(--espacio-5);
+  z-index: 2;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--vidrio);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  text-align: center;
+}
+/* Tarjeta del pin tocado: el mismo renglón de la lista, flotando sobre el mapa, con "Ver" */
+.tarjeta {
+  position: absolute;
+  left: var(--espacio-5);
+  right: var(--espacio-5);
+  bottom: var(--espacio-4);
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "foto titulo ver"
+    "foto meta ver";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  padding: var(--espacio-3);
+  border-radius: 14px;
+  background: var(--fondo);
+  color: var(--texto);
+  text-decoration: none;
+  box-shadow: var(--sombra-flotante);
+}
+.tarjeta img,
+.tarjeta > span:first-child {
+  width: 56px;
+  height: 56px;
+}
+.tarjeta > span:nth-child(2) {
+  font-size: var(--letra-lg);
+}
+.ver {
+  grid-area: ver;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-4);
+  border-radius: 10px;
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-weight: 700;
+}
+
+/* 3. Lista: chip "Cerca de mí" bajo las pestañas */
+.contexto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: var(--espacio-3) var(--espacio-5) 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 var(--espacio-3) 0 10px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip > svg {
+  flex: none;
+  color: var(--texto-suave);
+}
+.chipActivo {
+  border-color: var(--texto);
+}
+.quitar {
+  margin: 0 -4px 0 2px;
+  color: var(--texto-suave);
+  font-weight: 400;
+}
+.nota {
+  flex: 1 1 100%;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.35;
 }
