@@ -1,0 +1,115 @@
+.campo {
+  margin-bottom: var(--espacio-4);
+  border: none;
+  padding: 0;
+}
+.etiqueta {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--espacio-1);
+}
+.etiquetaChica {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin: var(--espacio-3) 0 var(--espacio-1);
+}
+.control,
+.select {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.control[aria-invalid="true"],
+.select[aria-invalid="true"] {
+  border-color: var(--error);
+}
+.nota {
+  color: var(--texto-suave);
+  font-size: 14px;
+  margin-top: var(--espacio-1);
+}
+.error {
+  color: var(--error);
+  font-size: 14px;
+  margin-top: var(--espacio-1);
+}
+.enlaceBoton {
+  background: none;
+  border: none;
+  color: var(--acento);
+  min-height: 40px;
+  padding: 0;
+  margin-top: var(--espacio-1);
+  cursor: pointer;
+}
+.opciones {
+  display: flex;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-3);
+}
+.opcion {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  cursor: pointer;
+}
+.opcionActiva {
+  border-color: var(--acento);
+  color: var(--acento);
+  font-weight: 600;
+}
+.opcion input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.imagen {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: var(--radio);
+  margin-bottom: var(--espacio-2);
+}
+.subir {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  cursor: pointer;
+}
+.subir input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.desplegar {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  margin-bottom: var(--espacio-4);
+  padding: 0 var(--espacio-4);
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio);
+  background: none;
+  color: var(--texto-suave);
+  text-align: left;
+  cursor: pointer;
+}

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { EventoResumen } from "@/lib/eventos";
+import { formatearCuando } from "@/lib/fechas";
 import { REDES, enlaceRed, etiquetaTipo, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cambiarVisible } from "../acciones";
@@ -20,6 +22,14 @@ async function cargarLugar(id: string): Promise<(Lugar & { autor: { nombre: stri
   return { ...(data as unknown as Lugar), autor: autor as { nombre: string } | null };
 }
 
+async function cargarEventos(lugarId: string): Promise<EventoResumen[]> {
+  const supabase = await clienteServidor();
+  if (!supabase) return [];
+  const desde = new Date(Date.now() - 3 * 3600000).toISOString();
+  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id").eq("lugar_id", lugarId).eq("visible", true).gte("inicio", desde).order("inicio").limit(30);
+  return ((data ?? []) as Omit<EventoResumen, "lugar">[]).map((e) => ({ ...e, lugar: null }));
+}
+
 export async function generateMetadata({ params }: Params) {
   const { id } = await params;
   const lugar = await cargarLugar(id);
@@ -29,7 +39,7 @@ export async function generateMetadata({ params }: Params) {
 export default async function FichaLugar({ params, searchParams }: Params) {
   const { id } = await params;
   const { nuevo } = (await searchParams) ?? {};
-  const [lugar, actual] = await Promise.all([cargarLugar(id), usuarioActual()]);
+  const [lugar, actual, eventos] = await Promise.all([cargarLugar(id), usuarioActual(), cargarEventos(id)]);
   if (!lugar) notFound();
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === lugar.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
@@ -82,6 +92,30 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       </a>
 
       {lugar.descripcion && <p className={styles.descripcion}>{lugar.descripcion}</p>}
+
+      <section className={styles.eventos} aria-label="Eventos">
+        <div className={styles.eventosCabecera}>
+          <h2 className={styles.eventosTitulo}>Eventos</h2>
+          <Link href={actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`} className={styles.botonEnlace}>
+            + Publicar un evento aquí
+          </Link>
+        </div>
+        {eventos.length === 0 ? (
+          <p className={styles.nota}>Aún no hay eventos próximos aquí.</p>
+        ) : (
+          <ul className={styles.listaEventos}>
+            {eventos.map((e) => (
+              <li key={e.id}>
+                <Link href={`/eventos/${e.id}`} className={styles.evento}>
+                  <span className={styles.eventoCuando}>{formatearCuando(e.inicio, e.fin)}</span>
+                  <strong>{e.titulo}</strong>
+                  <span className={styles.eventoPrecio}>{e.precio ?? "Gratis"}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {redes.length > 0 && (
         <ul className={styles.redes} aria-label="Redes y contacto">
