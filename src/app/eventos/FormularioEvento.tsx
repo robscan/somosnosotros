@@ -6,6 +6,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { LIMITES_EVENTO, type Evento } from "@/lib/eventos";
 import { isoALocal, sugerirInicio } from "@/lib/fechas";
+import SelectorCuando from "./SelectorCuando";
 import type { LugarResumen } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import type { ResultadoEvento } from "./acciones";
@@ -32,7 +33,6 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [lugarId, setLugarId] = useState(evento?.lugar_id ?? lugarInicial ?? (lugares.length === 1 ? lugares[0].id : ""));
   const [inicio, setInicio] = useState(modo === "editar" ? isoALocal(evento?.inicio) : sugerirInicio());
   const [fin, setFin] = useState(modo === "editar" ? isoALocal(evento?.fin) : "");
-  const [conFin, setConFin] = useState(!!(modo === "editar" && evento?.fin));
   const [gratis, setGratis] = useState(!evento?.precio);
   const [imagen, setImagen] = useState<string | null>(evento?.imagen ?? null);
   const [subiendo, setSubiendo] = useState(false);
@@ -99,34 +99,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       <Campo etiqueta="Qué" name="titulo" defaultValue={evento?.titulo ?? ""} maxLength={LIMITES_EVENTO.titulo} placeholder="Ej. Noche de jazz" autoComplete="off" autoFocus={modo === "alta"} error={errores.titulo} required />
 
       {/* Cuándo */}
-      <div className={styles.campo}>
-        <label htmlFor="campo-inicio" className={styles.etiqueta}>
-          Cuándo
-        </label>
-        <input id="campo-inicio" type="datetime-local" name="inicio" className={styles.control} value={inicio} onChange={(e) => setInicio(e.target.value)} aria-invalid={!!errores.inicio} required />
-        {errores.inicio && (
-          <p className={styles.error} role="alert">
-            {errores.inicio}
-          </p>
-        )}
-        {conFin ? (
-          <>
-            <label htmlFor="campo-fin" className={styles.etiquetaChica}>
-              Termina
-            </label>
-            <input id="campo-fin" type="datetime-local" name="fin" className={styles.control} value={fin} onChange={(e) => setFin(e.target.value)} aria-invalid={!!errores.fin} />
-            {errores.fin && (
-              <p className={styles.error} role="alert">
-                {errores.fin}
-              </p>
-            )}
-          </>
-        ) : (
-          <button type="button" className={styles.enlaceBoton} onClick={() => setConFin(true)}>
-            + Agregar hora de fin
-          </button>
-        )}
-      </div>
+      <SelectorCuando inicio={inicio} fin={fin} onCambio={(i, f) => { setInicio(i); setFin(f); }} errorInicio={errores.inicio} errorFin={errores.fin} />
 
       {/* Cuánto */}
       <fieldset className={styles.campo}>

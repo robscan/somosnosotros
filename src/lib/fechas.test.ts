@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, formatearCuando, isoALocal, localAIso, sugerirInicio, tramo } from "./fechas";
+import { aFechaIcs, combinarFechaHora, formatearCuando, fraseCuando, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, tramo } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -30,5 +30,20 @@ describe("fechas", () => {
   });
   it("escribe fechas de calendario", () => {
     expect(aFechaIcs("2026-09-21T01:00:00.000Z")).toBe("20260921T010000Z");
+  });
+
+  it("ofrece los próximos días con nombre y combina fecha + hora", () => {
+    const dias = proximosDias(AHORA, 4);
+    expect(dias.map((d) => d.etiqueta)).toEqual(["Hoy", "Mañana", "lun 21", "mar 22"]);
+    expect(dias[2].valor).toBe("2026-09-21");
+    expect(combinarFechaHora("2026-09-21", "19:00")).toBe("2026-09-21T19:00");
+    expect(combinarFechaHora("", "19:00")).toBe("");
+  });
+  it("calcula el fin como duración y arma la frase", () => {
+    expect(sumarHoras("2026-09-19T19:00", 2)).toBe("2026-09-19T21:00");
+    expect(sumarHoras("2026-09-19T23:00", 2)).toBe("2026-09-20T01:00");
+    expect(fraseCuando("2026-09-19T19:00", "2026-09-19T21:00")).toBe("sábado, 19 de septiembre, 19:00 a 21:00");
+    expect(fraseCuando("2026-09-19T19:00")).toBe("sábado, 19 de septiembre, 19:00");
+    expect(fraseCuando("nada")).toBe("");
   });
 });
