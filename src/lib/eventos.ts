@@ -155,6 +155,15 @@ export type LecturaCartel = {
   enlace: string | null;
 };
 
+/** "@usuario" → Instagram; enlace o dominio → tal cual; teléfono u otra cosa → nada (ya va en la descripción). */
+export function enlaceDesdeCartel(v: string | null): string {
+  const t = (v ?? "").trim();
+  if (!t) return "";
+  if (/^@[\w.]+$/.test(t)) return `https://instagram.com/${t.slice(1)}`;
+  if (/^https?:\/\//i.test(t) || /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t)) return t;
+  return "";
+}
+
 /** Convierte la lectura del cartel en valores del formulario. Lo que falta se deja vacío para que la persona lo complete. */
 export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: string; fin: string; gratis: boolean; precio: string; descripcion: string; enlace: string; lugar: string; direccion: string } {
   const fechaOk = l.fecha && /^\d{4}-\d{2}-\d{2}$/.test(l.fecha) ? l.fecha : "";
@@ -167,7 +176,7 @@ export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: s
     gratis: l.gratis !== false && !l.precio,
     precio: (l.precio ?? "").trim().slice(0, LIMITES_EVENTO.precio),
     descripcion: (l.descripcion ?? "").trim().slice(0, LIMITES_EVENTO.descripcion),
-    enlace: (l.enlace ?? "").trim(),
+    enlace: enlaceDesdeCartel(l.enlace),
     lugar: (l.lugar ?? "").trim(),
     direccion: (l.direccion ?? "").trim(),
   };
