@@ -57,15 +57,16 @@ describe("nombreSitio", () => {
 
 describe("cartelAFormulario", () => {
   it("convierte la lectura en valores del formulario y tolera huecos", () => {
-    const v = cartelAFormulario({ titulo: " Noche de jazz ", fecha: "2026-09-20", hora: "20:30", hora_fin: "22:00", lugar: "Casa 1100", direccion: null, gratis: false, precio: "$150", descripcion: "Trío local.", enlace: null });
+    const v = cartelAFormulario({ titulo: " Noche de jazz ", fecha: "2026-09-20", hora: "20:30", hora_fin: "22:00", lugar: "Casa 1100", direccion: null, gratis: false, precio: "$150", descripcion: "Trío local.", enlace: null, artistas: [" Trío Local ", ""] });
     expect(v.inicio).toBe("2026-09-20T20:30");
     expect(v.fin).toBe("2026-09-20T22:00");
     expect(v.gratis).toBe(false);
     expect(v.titulo).toBe("Noche de jazz");
-    const sinHora = cartelAFormulario({ titulo: null, fecha: "2026-09-20", hora: null, hora_fin: null, lugar: null, direccion: null, gratis: null, precio: null, descripcion: null, enlace: null });
+    expect(v.artistas).toEqual(["Trío Local"]);
+    const sinHora = cartelAFormulario({ titulo: null, fecha: "2026-09-20", hora: null, hora_fin: null, lugar: null, direccion: null, gratis: null, precio: null, descripcion: null, enlace: null, artistas: null });
     expect(sinHora.inicio).toBe("2026-09-20T19:00");
     expect(sinHora.gratis).toBe(true);
-    expect(cartelAFormulario({ titulo: "x", fecha: "20 sep", hora: "8pm", hora_fin: null, lugar: null, direccion: null, gratis: null, precio: null, descripcion: null, enlace: null }).inicio).toBe("");
+    expect(cartelAFormulario({ titulo: "x", fecha: "20 sep", hora: "8pm", hora_fin: null, lugar: null, direccion: null, gratis: null, precio: null, descripcion: null, enlace: null, artistas: null }).inicio).toBe("");
   });
 });
 

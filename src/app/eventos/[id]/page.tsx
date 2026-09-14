@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
-import { IconoBoleto, IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoCompartir, IconoEstrella, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
+import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { nombreSitio, textoCompartir } from "@/lib/eventos";
@@ -102,7 +104,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
     await supabase?.from("asistencias").upsert({ usuario_id: actual.perfil.id, evento_id: e.id, estado: accion });
     redirect(`/eventos/${e.id}`);
   }
-  const asistencias = await cargarAsistencias(id, actual?.perfil.id ?? null);
+  const [asistencias, quien] = await Promise.all([cargarAsistencias(id, actual?.perfil.id ?? null), cargarQuien(id)]);
   const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
@@ -215,6 +217,20 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 Entrar
               </Link>
             )}
+          </li>
+        )}
+        {quien.length > 0 && (
+          <li className={ficha.dato}>
+            <IconoEstrella width={20} height={20} />
+            <b>
+              Con{" "}
+              {quien.map((q, i) => (
+                <Fragment key={q.id}>
+                  {i > 0 && (i === quien.length - 1 ? " y " : ", ")}
+                  <Link href={`/artistas/${q.id}`}>{q.nombre}</Link>
+                </Fragment>
+              ))}
+            </b>
           </li>
         )}
         <li className={ficha.dato}>

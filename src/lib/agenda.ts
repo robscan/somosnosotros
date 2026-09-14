@@ -73,6 +73,8 @@ export type ContextoFiltro = {
   punto: Punto | null;
   /** Lugares que sigue; null si no hay sesión. */
   seguidos: string[] | null;
+  /** Eventos en los que se presenta un artista que sigue (Artistas, decisión 10). */
+  eventosSeguidos?: string[];
   /** Día elegido con el chip (YYYY-MM-DD en la ciudad) o "". */
   fecha: string;
   ahora: Date;
@@ -90,7 +92,8 @@ export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: Context
     lista = [...lista].sort((a, b) => (km.get(a.id) ?? Infinity) - (km.get(b.id) ?? Infinity));
   } else if (ctx.filtro === "siguiendo") {
     const set = new Set(ctx.seguidos ?? []);
-    lista = lista.filter((e) => e.lugar_id && set.has(e.lugar_id));
+    const porArtista = new Set(ctx.eventosSeguidos ?? []);
+    lista = lista.filter((e) => (e.lugar_id && set.has(e.lugar_id)) || porArtista.has(e.id));
   } else if (ctx.filtro === "nuevos") {
     lista = lista.filter((e) => esNuevo(e.creado_en, ctx.ahora)).sort((a, b) => b.creado_en.localeCompare(a.creado_en));
   }

@@ -37,6 +37,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Resumen de un renglón opcional sin resolver: en gris, sin peso */
+.pendiente {
+  color: var(--texto-suave);
+  font-weight: 400;
+}
 .cambiar {
   font-size: var(--letra-sm);
   color: var(--primario);

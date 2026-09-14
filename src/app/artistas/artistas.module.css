@@ -1,13 +1,8 @@
-.seccion {
-  padding: var(--espacio-4) var(--espacio-5);
-  max-width: 520px;
-}
-.titulo {
-  font-size: var(--letra-2xl);
-  margin-bottom: var(--espacio-3);
-}
-.texto {
-  color: var(--texto-suave);
-  margin-bottom: var(--espacio-3);
-  line-height: 1.45;
+/* Artistas (raíz): lo propio de la página; la lista vive en components/ListaArtistas.module.css */
+.aviso {
+  margin: var(--espacio-3) var(--espacio-5) 0;
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  font-size: var(--letra-sm);
 }

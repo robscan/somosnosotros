@@ -1,0 +1,113 @@
+/* Renglón Quién del alta de evento (docs/rediseno/08-artistas-flujo-y-estados.md, decisión 12):
+   1. Elegidos como fichas con ✕ · 2. Campo · 3. Sugerencias (y "Crear a «…»") */
+.selector {
+  display: grid;
+  gap: var(--espacio-2);
+}
+
+/* 1. Elegidos */
+.elegidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+.elegido {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-3) 0 var(--espacio-4);
+  border: 1px solid var(--texto);
+  border-radius: 999px;
+  background: var(--primario-suave);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.elegido small {
+  color: var(--texto-suave);
+  font-weight: 400;
+}
+.elegido > span {
+  color: var(--texto-suave);
+  font-weight: 400;
+}
+
+/* 2. Campo */
+.etiqueta {
+  font-weight: 600;
+}
+.campo {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: var(--letra-md);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.campo:focus {
+  border-color: var(--texto);
+  outline: none;
+}
+
+/* 3. Sugerencias: renglón con miniatura redonda; la última crea */
+.sugerencias {
+  list-style: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  overflow: hidden;
+}
+.sugerencia {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 10px;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-2) var(--espacio-3);
+  border: none;
+  border-top: 1px solid var(--borde);
+  background: none;
+  color: var(--texto);
+  font-size: var(--letra-md);
+  text-align: left;
+  cursor: pointer;
+}
+.sugerencias li:first-child .sugerencia {
+  border-top: none;
+}
+.sugerencia small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+}
+.mini {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.miniVacia {
+  display: block;
+  background: var(--fondo);
+  border: 1px dashed var(--borde);
+}
+.miniCrear {
+  display: grid;
+  place-items: center;
+  background: var(--primario-suave);
+}
+.crear {
+  font-weight: 700;
+}
+.nota {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

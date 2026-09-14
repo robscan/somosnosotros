@@ -7,14 +7,18 @@ import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
 import { IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
-import { cambiarSeguimiento } from "../acciones";
 
 type Props = {
-  lugarId: string;
+  /** Lugar ("sus eventos") o artista ("sus fechas"): cambia la promesa y la hoja de avisos. */
+  que: "lugar" | "artista";
   nombre: string;
   sigo: boolean;
   conSesion: boolean;
-  /** Ya se le preguntó por los avisos (tras un Voy o al seguir otro lugar); no se vuelve a preguntar. */
+  /** Acción del servidor ya ligada al lugar o artista: seguir (true) o dejar de seguir (false). */
+  accion: (seguir: boolean) => Promise<void>;
+  /** A dónde volver tras entrar, con la intención de seguir ya puesta. */
+  hrefEntrar: string;
+  /** Ya se le preguntó por los avisos (tras un Voy o al seguir otra cosa); no se vuelve a preguntar. */
   avisosPreguntado: boolean;
   avisosCorreo: boolean;
   avisosPush: boolean;
@@ -26,18 +30,19 @@ type Props = {
 /**
  * Barra inferior pegajosa: "Seguir" lleno a lo ancho. Con decisión, estado "✓ Sigues" con la promesa concreta
  * (por correo, en el teléfono, o sin avisos) y "Dejar de seguir". Sin sesión, lleva a entrar y se aplica al volver.
- * La primera vez que sigue algo sin haber sido preguntado, emerge la hoja de avisos.
+ * La primera vez que sigue algo sin haber sido preguntado, emerge la hoja de avisos. Lugares (decisión 9) y Artistas (decisión 9).
  */
-export default function Seguir({ lugarId, nombre, sigo, conSesion, avisosPreguntado, avisosCorreo, avisosPush, correo, llavePush }: Props) {
+export default function Seguir({ que, nombre, sigo, conSesion, accion, hrefEntrar, avisosPreguntado, avisosCorreo, avisosPush, correo, llavePush }: Props) {
   const router = useRouter();
   const [pendiente, iniciar] = useTransition();
   const [estado, fijar] = useOptimistic(sigo, (_a, nuevo: boolean) => nuevo);
   const [hoja, setHoja] = useState(!avisosPreguntado && sigo && conSesion);
+  const cosas = que === "artista" ? "fechas" : "eventos";
 
   function cambiar(nuevo: boolean) {
     iniciar(async () => {
       fijar(nuevo);
-      await cambiarSeguimiento(lugarId, nuevo);
+      await accion(nuevo);
       if (nuevo && !avisosPreguntado) setHoja(true);
     });
   }
@@ -47,12 +52,12 @@ export default function Seguir({ lugarId, nombre, sigo, conSesion, avisosPregunt
   }
 
   const canales = [avisosCorreo && "por correo", avisosPush && "en el teléfono"].filter(Boolean);
-  const promesa = canales.length ? `Te avisamos ${canales.join(" y ")} de sus eventos` : avisosPreguntado ? "Sin avisos; se cambia en Mi perfil" : "Te avisamos de sus eventos";
+  const promesa = canales.length ? `Te avisamos ${canales.join(" y ")} de sus ${cosas}` : avisosPreguntado ? "Sin avisos; se cambia en Mi perfil" : `Te avisamos de sus ${cosas}`;
 
   if (!conSesion) {
     return (
       <div className={`${ficha.accionFija} ${ficha.accionUnica}`}>
-        <Link href={`/entrar?siguiente=${encodeURIComponent(`/lugares/${lugarId}?accion=seguir`)}`} className={ficha.primaria}>
+        <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEntrar)}`} className={ficha.primaria}>
           Seguir
         </Link>
       </div>
@@ -82,7 +87,7 @@ export default function Seguir({ lugarId, nombre, sigo, conSesion, avisosPregunt
       )}
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
-          <ConsentimientoAvisos contexto="seguir" titulo={nombre} correo={correo} llavePush={llavePush} onListo={cerrarHoja} />
+          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} correo={correo} llavePush={llavePush} onListo={cerrarHoja} />
         </Hoja>
       )}
     </>

@@ -1,0 +1,512 @@
+<title>Somos Nosotros · Artistas v1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* ==========================================================================
+     1. Tokens (los de globals.css; primario = tinta)
+     ========================================================================== */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --panel: #1f2933; --panel-texto: #e6e9ee; --panel-suave: #9aa5b1; --panel-borde: #34424f;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e; --ok: #1f6f43;
+    --primario: #1a1a1a; --primario-texto: #ffffff; --primario-suave: #ededeb;
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px;
+    --alto-estado: 48px; --alto-barra: 56px; --alto-nav: 83px; --alto-accion: 72px; --area-segura: 34px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  /* ==========================================================================
+     2. Base, estudio y teléfono
+     ========================================================================== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
+  button, input, select { font: inherit; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .pantalla.raiz { background: var(--fondo-contenido); padding-bottom: calc(var(--alto-nav) + 96px); }
+  .pantalla.interior { padding-bottom: calc(var(--alto-accion) + var(--area-segura)); }
+  .pantalla.formulario { padding-bottom: 40px; }
+
+  /* Barras */
+  .barra { display: flex; align-items: center; justify-content: space-between; min-height: var(--alto-barra); padding: 4px var(--gutter); background: var(--fondo); }
+  .barra.int { display: grid; grid-template-columns: 1fr auto 1fr; }
+  .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; }
+  .entrar { display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 999px; background: var(--primario); color: var(--primario-texto); font-weight: 700; font-size: 16px; text-decoration: none; }
+  .avatar-barra { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: inline-grid; place-items: center; color: #fff; font-weight: 700; font-size: 15px; }
+  .volver { display: inline-flex; align-items: center; min-height: var(--toque-min); color: var(--texto-suave); text-decoration: none; font-size: 17px; }
+  .barra-acciones { display: flex; justify-content: flex-end; }
+  .icono-barra { display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto); cursor: pointer; border-radius: 50%; }
+  .icono-barra svg { width: 24px; height: 24px; }
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--alto-nav); padding-bottom: var(--area-segura); background: var(--fondo); border-top: 1px solid var(--borde); }
+  .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--texto-suave); text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+  .nav-item.activo { color: var(--texto); }
+  .nav-item.activo span { font-weight: 700; }
+  .nav-item svg { width: 24px; height: 24px; }
+  .publicar { position: absolute; right: var(--gutter); bottom: calc(var(--alto-nav) + 16px); z-index: 3; display: inline-flex; align-items: center; gap: 8px; min-height: var(--toque); padding: 0 20px; border: none; border-radius: 999px; background: var(--primario); color: var(--primario-texto); font-size: 17px; font-weight: 700; box-shadow: var(--sombra-flotante); cursor: pointer; }
+  .publicar svg { width: 22px; height: 22px; }
+
+  /* ==========================================================================
+     3. Artistas: cabecera pegajosa (búsqueda), lista
+     ========================================================================== */
+  .fija { position: sticky; top: 0; z-index: 2; background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .contexto { display: flex; gap: 8px; padding: 12px var(--gutter); }
+  .buscar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: 8px; width: 100%; min-height: var(--toque-min); padding: 0 12px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); }
+  .buscar svg { width: 18px; height: 18px; color: var(--texto-suave); }
+  .buscar input { min-width: 0; border: none; background: none; font-size: 16px; outline: none; }
+  .buscar .limpiar { border: none; background: none; color: var(--texto-suave); font-size: 15px; cursor: pointer; min-height: var(--toque-min); }
+  .conteo { padding: 12px var(--gutter) 0; color: var(--texto-suave); font-size: 15px; }
+  .lista { list-style: none; padding: 0 var(--gutter); }
+  .renglon { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "foto titulo" "foto meta"; column-gap: 12px; align-content: center; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--borde); cursor: pointer; }
+  .renglon:active { background: var(--fondo); box-shadow: 0 0 0 var(--gutter) var(--fondo); }
+  .foto { grid-area: foto; width: 64px; height: 64px; align-self: start; border-radius: 10px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .foto.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); } .foto.c { background: linear-gradient(135deg, #d9c27a, #8a6d2b); } .foto.d { background: linear-gradient(135deg, #a9b7cc, #4a5d7a); } .foto.e { background: linear-gradient(135deg, #c99aa3, #6e3f4b); }
+  .foto.vacia { background: var(--fondo); border: 1px dashed var(--borde); }
+  .foto.redonda { border-radius: 50%; }
+  .titulo { grid-area: titulo; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .meta { grid-area: meta; display: grid; gap: 2px; margin-top: 4px; color: var(--texto-suave); font-size: 15px; }
+  .meta span { display: block; line-height: 1.3; }
+  .meta svg { width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; }
+  .meta b { color: var(--texto); font-weight: 500; }
+  .vacio-accion { padding: 24px var(--gutter) 0; }
+  .vacio-accion h2 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 6px; }
+  .vacio-accion p { color: var(--texto-suave); font-size: 15px; line-height: 1.4; margin-bottom: 14px; }
+  .secundario { min-height: var(--toque); padding: 0 20px; border: 1px solid var(--texto); border-radius: 12px; background: var(--fondo); color: var(--texto); font-size: 17px; font-weight: 700; cursor: pointer; }
+
+  /* ==========================================================================
+     4. Ficha de artista
+     ========================================================================== */
+  .contenido { padding: 0 var(--gutter); }
+  .banda { position: relative; width: 100%; height: 220px; margin: 4px 0 14px; border-radius: 12px; overflow: hidden; cursor: zoom-in; background: linear-gradient(160deg, #d9cfbe, #a99479 60%, #6e5a44); }
+  .lupa { position: absolute; right: 8px; bottom: 8px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.92); }
+  .lupa svg { width: 18px; height: 18px; }
+  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; margin-bottom: 2px; }
+  .tipo { color: var(--texto-suave); font-size: 15px; margin-bottom: 12px; }
+  .datos { list-style: none; display: grid; gap: 2px; margin-bottom: 16px; }
+  .dato { display: grid; grid-template-columns: 22px 1fr auto; grid-template-areas: "icono principal accion" "icono secundario accion"; column-gap: 10px; align-items: center; min-height: 40px; font-size: 17px; }
+  .dato > svg { grid-area: icono; width: 20px; height: 20px; color: var(--texto-suave); }
+  .dato b { grid-area: principal; font-weight: 500; }
+  .dato small { grid-area: secundario; color: var(--texto-suave); font-size: 15px; }
+  .dato button { grid-area: accion; border: none; background: none; color: var(--texto-suave); font-size: 15px; text-decoration: underline; cursor: pointer; }
+  .acciones { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)) 20px; padding: 0 var(--gutter); }
+  .acciones::-webkit-scrollbar { display: none; }
+  .accion { flex: 1 0 calc((100% - 16px) / 3); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 60px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); color: var(--texto); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .accion svg { width: 24px; height: 24px; }
+  .descripcion { font-size: 17px; line-height: 1.45; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .descripcion.abierta { display: block; }
+  .mas { display: block; min-height: 32px; margin-bottom: 16px; border: none; background: none; color: var(--texto-suave); font-size: 15px; text-decoration: underline; cursor: pointer; }
+  .grupo { margin-bottom: 20px; }
+  .grupo h2 { position: sticky; top: 0; z-index: 1; padding: 12px 0 6px; background: var(--fondo); border-bottom: 1px solid var(--texto); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .grupo h2 span { color: var(--texto-suave); font-weight: 500; }
+  .grupo .lista { padding: 0; }
+  .grupo h3 { font-size: 15px; font-weight: 700; color: var(--texto-suave); padding: 12px 0 4px; }
+  .vacio { color: var(--texto-suave); font-size: 15px; padding: 12px 0; line-height: 1.4; }
+  .publicar-aqui { display: block; width: 100%; margin: 12px 0 20px; }
+  .autor { color: var(--texto-suave); font-size: 15px; padding: 12px 0 24px; border-top: 1px solid var(--borde); }
+  .autor a { color: var(--texto); }
+  .publicado { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; margin: 8px 0 12px; padding: 12px 14px; border-radius: 12px; background: var(--primario-suave); font-size: 15px; }
+  .publicado b { display: block; }
+  .publicado button { min-height: 40px; padding: 0 14px; border: 1px solid var(--texto); border-radius: 10px; background: var(--fondo); font-weight: 700; cursor: pointer; }
+
+  .accion-fija { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: 1fr; gap: 12px; align-items: center; height: calc(var(--alto-accion) + var(--area-segura)); padding: 0 var(--gutter) var(--area-segura); background: var(--fondo); border-top: 1px solid var(--borde); }
+  .accion-fija.estado { grid-template-columns: 1fr auto; }
+  .seguir { min-height: var(--toque); border: none; border-radius: 12px; background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; cursor: pointer; }
+  .seleccionado { display: inline-flex; align-items: center; gap: 8px; min-height: var(--toque); padding: 0 16px; border: 1.5px solid var(--primario); border-radius: 12px; background: var(--primario-suave); color: var(--primario); font-size: 17px; font-weight: 700; line-height: 1.1; }
+  .seleccionado svg { width: 20px; height: 20px; flex: none; }
+  .seleccionado small { display: block; color: var(--texto-suave); font-size: 13px; font-weight: 500; }
+  .secundario.chico { min-height: var(--toque); padding: 0 14px; border-color: var(--borde); font-size: 15px; font-weight: 600; white-space: nowrap; }
+
+  /* ==========================================================================
+     5. Formularios: alta de artista y renglón Quién del alta de evento
+     ========================================================================== */
+  .formulario h1 { font-size: 26px; margin: 8px 0 16px; }
+  .campo { display: grid; gap: 6px; margin-bottom: 16px; }
+  .campo label { font-size: 14px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
+  .campo input { min-height: var(--toque); padding: 0 14px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); font-size: 17px; }
+  .campo input:focus { border-color: var(--texto); outline: none; }
+  .campo .ayuda { color: var(--texto-suave); font-size: 15px; }
+  .repetido { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--texto); border-radius: 12px; font-size: 15px; line-height: 1.3; }
+  .repetido button { min-height: 36px; padding: 0 10px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .repetido .si { border: none; background: var(--primario); color: var(--primario-texto); }
+  .repetido .no { border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+  .seccion { border-top: 1px solid var(--borde); }
+  .seccion:last-of-type { border-bottom: 1px solid var(--borde); }
+  .seccion-cab { display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: 12px; width: 100%; min-height: 56px; padding: 0; border: none; background: none; text-align: left; cursor: pointer; }
+  .seccion-cab .nombre { font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .seccion-cab .resumen { font-size: 17px; color: var(--texto); justify-self: end; text-align: right; }
+  .seccion-cab .resumen.pendiente { color: var(--texto-suave); }
+  .seccion-cab .resumen small { display: block; color: var(--texto-suave); font-size: 13px; }
+  .seccion-cab .cambiar { color: var(--texto-suave); font-size: 15px; text-decoration: underline; }
+  .seccion-cab svg { width: 20px; height: 20px; color: var(--texto-suave); }
+  .seccion-cuerpo { padding: 4px 0 16px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .chip[aria-pressed="true"] { border-color: var(--texto); background: var(--primario-suave); }
+  .chip .quitar { margin: 0 -6px 0 2px; color: var(--texto-suave); font-weight: 400; }
+  .deducido { color: var(--texto-suave); font-size: 15px; }
+  .subir { display: inline-flex; align-items: center; min-height: var(--toque); padding: 0 16px; border: 1px dashed var(--texto-suave); border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .interruptor { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; min-height: 56px; border-top: 1px solid var(--borde); font-size: 17px; }
+  .interruptor small { display: block; color: var(--texto-suave); font-size: 15px; }
+  .palanca { width: 51px; height: 31px; border: none; border-radius: 16px; background: var(--borde); position: relative; cursor: pointer; }
+  .palanca::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left 150ms; }
+  .palanca[aria-checked="true"] { background: var(--ok); }
+  .palanca[aria-checked="true"]::after { left: 22px; }
+  .desplegar { display: block; width: 100%; min-height: var(--toque); margin: 8px 0 16px; border: none; background: none; color: var(--texto-suave); font-size: 16px; text-align: left; text-decoration: underline; cursor: pointer; }
+  .primario { display: block; width: 100%; min-height: var(--toque); border: none; border-radius: 12px; background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; cursor: pointer; }
+  .elegidos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .sugerencias { list-style: none; border: 1px solid var(--borde); border-radius: 12px; overflow: hidden; margin-top: -8px; margin-bottom: 12px; }
+  .sugerencias li { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; min-height: var(--toque); padding: 0 12px; border-top: 1px solid var(--borde); font-size: 17px; cursor: pointer; }
+  .sugerencias li:first-child { border-top: none; }
+  .sugerencias li small { color: var(--texto-suave); font-size: 14px; margin-left: 6px; }
+  .sugerencias .mini { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .sugerencias .mini.vacia { background: var(--fondo); border: 1px dashed var(--borde); }
+  .sugerencias .crear { font-weight: 700; }
+  .sugerencias .crear .mini { display: grid; place-items: center; background: var(--primario-suave); border: none; }
+  .sugerencias .crear svg { width: 16px; height: 16px; }
+  .nota-campo { color: var(--texto-suave); font-size: 15px; margin-bottom: 12px; }
+
+  /* Hojas */
+  .hoja-fondo { position: absolute; inset: 0; z-index: 8; display: none; background: rgba(0,0,0,.32); }
+  .hoja-fondo.abierta { display: block; }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; max-height: calc(100% - 60px); overflow-y: auto; padding: 12px var(--gutter) calc(20px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .asa { width: 36px; height: 4px; margin: 0 auto 14px; border-radius: 2px; background: var(--borde); }
+  .hoja h3 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 4px; padding-right: 44px; }
+  .hoja .porque { color: var(--texto-suave); font-size: 15px; margin-bottom: 12px; }
+  .hoja .pregunta { font-weight: 700; margin-bottom: 10px; }
+  .opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opciones.una { grid-template-columns: 1fr; }
+  .opciones button { min-height: var(--toque); padding: 0 12px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .opciones .si { border: none; background: var(--primario); color: var(--primario-texto); }
+  .opciones .no { border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+  .gracias { display: block; width: 100%; min-height: var(--toque-min); margin-top: 4px; border: none; background: none; color: var(--texto-suave); font-size: 15px; text-decoration: underline; cursor: pointer; }
+  .hecho { display: flex; align-items: center; gap: 8px; font-size: 15px; line-height: 1.35; }
+  .hecho svg { width: 18px; height: 18px; flex: none; color: var(--ok); }
+  .menu { list-style: none; margin-top: 16px; }
+  .menu button { display: block; width: 100%; min-height: var(--toque); padding: 0 4px; border: none; border-bottom: 1px solid var(--borde); background: none; color: var(--texto); font-size: 17px; text-align: left; cursor: pointer; }
+  .menu .peligro { color: var(--error); }
+  .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 140px; z-index: 6; padding: 12px 14px; border-radius: 12px; background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
+  .nota.visible { opacity: 1; transform: none; }
+
+  /* Utilería */
+  .utileria { width: 300px; max-width: 100%; flex: none; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
+  .utileria h3 { margin-bottom: 4px; color: var(--panel-suave); font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .nota-utileria { margin-bottom: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.35; }
+  .control { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--panel-borde); }
+  .control:first-of-type { border-top: none; }
+  .control code { margin-right: 6px; color: var(--panel-suave); font-family: inherit; font-size: 12px; }
+  .control select { min-height: 36px; padding: 6px 8px; border: 1px solid var(--panel-borde); border-radius: 8px; background: #2b3a48; color: var(--panel-texto); }
+  .control input[type="checkbox"] { width: 20px; height: 20px; accent-color: #f0f0ee; }
+  .reiniciar { width: 100%; min-height: var(--toque-min); margin-top: 14px; border: 1px solid var(--panel-borde); border-radius: 10px; background: transparent; color: var(--panel-texto); font-weight: 700; cursor: pointer; }
+  .decisiones { margin-top: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.4; }
+  .decisiones a { color: var(--panel-texto); }
+  :focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .nota, .palanca::after { transition: none; } }
+  @media (max-width: 740px) { .telefono { height: auto; min-height: 720px; } .pantalla { height: auto; max-height: 700px; } }
+</style>
+
+<div class="estudio">
+  <p class="rotulo"><strong>Artistas v1</strong> <span>Lista con vida · ficha con Seguir y "Es mi nombre" · alta una cosa a la vez · renglón Quién en el alta de evento</span> <span>Datos de ejemplo, no reales</span></p>
+
+  <div class="telefono" id="telefono" aria-label="Teléfono de 390 por 844">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ⌾</span></div>
+    <div id="pantalla"></div>
+    <div class="nota" id="nota" role="status" aria-live="polite"></div>
+    <div class="hoja-fondo" id="hoja-avisos-fondo"><div class="hoja" role="dialog" aria-label="Avisos" id="hoja-avisos"></div></div>
+    <div class="hoja-fondo" id="hoja-menu-fondo"><div class="hoja" role="dialog" aria-label="Más acciones" id="hoja-menu"></div></div>
+    <div class="hoja-fondo" id="hoja-mio-fondo"><div class="hoja" role="dialog" aria-label="Es mi nombre" id="hoja-mio"></div></div>
+  </div>
+
+  <aside class="utileria" aria-label="Utilería de revisión">
+    <h3>Utilería de revisión</h3>
+    <p class="nota-utileria">No es parte del diseño. Cambia de pantalla y fuerza los estados; los ID corresponden a la tabla del documento.</p>
+    <label class="control"><span>Pantalla</span><select id="vista"><option value="lista">Artistas · Lista</option><option value="ficha">Ficha de artista</option><option value="alta">Registrar artista</option><option value="quien">Alta de evento · Quién</option></select></label>
+    <label class="control"><span><code>S1</code>Con sesión</span><input type="checkbox" id="s1"></label>
+    <label class="control"><span><code>A0</code>Sin artistas</span><input type="checkbox" id="a0"></label>
+    <label class="control"><span><code>F2</code>Ya sigo al artista</span><input type="checkbox" id="f2"></label>
+    <label class="control"><span><code>F3</code>Artista sin fechas</span><input type="checkbox" id="f3"></label>
+    <label class="control"><span><code>F4</code>Sin portada</span><input type="checkbox" id="f4"></label>
+    <label class="control"><span>Ya se preguntó por avisos</span><input type="checkbox" id="preg" checked></label>
+    <label class="control"><span><code>F5</code>Soy el autor</span><input type="checkbox" id="a1"></label>
+    <label class="control"><span><code>Q3</code>Mi cuenta es Los Vecinos</span><input type="checkbox" id="mio"></label>
+    <button class="reiniciar" id="reiniciar" type="button">Reiniciar datos</button>
+    <p class="decisiones">Decisiones 1 a 15 y estados: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/08-artistas-flujo-y-estados.md">08-artistas-flujo-y-estados.md</a>. En la lista, busca; en la ficha, toca Seguir y el menú ···; en el alta, escribe "Los" o "Trío"; en Quién, escribe "tr".</p>
+  </aside>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const estado = { vista: "lista", s1: false, a0: false, f2: false, f3: false, f4: false, preg: true, a1: false, mio: false, correo: null, telefono: null, descAbierta: false, busca: "", altaNombre: "", altaHace: "musica", altaEs: null, altaAbierta: null, altaSoy: false, altaRepetidoNo: false, quienAbierto: false, quienTexto: "", quienElegidos: null };
+  const inicial = JSON.parse(JSON.stringify(estado));
+  const ARTISTAS = [
+    { n: "Los Vecinos", hace: "Son huasteco", es: "Grupo", d: "musica", prox: "hoy · 19:30", donde: "Casa Ocho Ventanas", orden: 0, foto: "a", sig: 12 },
+    { n: "Trío Xochitl", hace: "Son huasteco", es: "Grupo", d: "musica", prox: "hoy · 19:30", donde: "Casa Ocho Ventanas", orden: 0, foto: "e" },
+    { n: "Compañía Trasluz", hace: "Teatro", es: "Colectivo", d: "teatro", prox: "mié 16 · 20:00", donde: "Foro Luz de Agua", orden: 1, foto: "d" },
+    { n: "Mariana Ledesma", hace: "Grabado", es: "Solista", d: "artes_visuales", prox: "vie 18 · 18:00", donde: "Galería Tres Patios", orden: 2, foto: "c" },
+    { n: "Ana Sofía Cruz", hace: "Poesía", es: "Solista", d: "letras", prox: "sáb 19 · 17:00", donde: "Biblioteca del Barrio", orden: 3, foto: null },
+    { n: "Colectivo Barro Vivo", hace: "Cerámica", es: "Colectivo", d: "artes_visuales", prox: null, orden: 99, foto: "b" },
+    { n: "La Nueva Tanda", hace: "Cumbia", es: "Grupo", d: "musica", prox: null, orden: 99, foto: null },
+    { n: "Pedro Ibarra", hace: "Jazz", es: "Solista", d: "musica", prox: null, orden: 99, foto: "d" },
+  ];
+  const DISCIPLINAS = [["musica", "Música"], ["teatro", "Teatro"], ["danza", "Danza"], ["artes_visuales", "Artes visuales"], ["letras", "Letras"], ["cine", "Cine"], ["otro", "Otro"]];
+  const I = {
+    pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    cal: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    reloj: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    personas: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    estrella: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    estrellaMas: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3l2.2 4.6 5 .7-3.6 3.5.9 5L10 14.4l-4.5 2.4.9-5L2.8 8.3l5-.7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M19 13v6M16 16h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>`,
+    nota: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    mascara: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5c2.5 1 13.5 1 16 0v7a8 8 0 0 1-16 0z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 10.5h2M13.5 10.5h2M9 15c1.5 1.5 4.5 1.5 6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    pincel: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4l-9 9M11 13l-1.5 1.5a3 3 0 1 1-4-4L7 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20c2 0 3-1 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    pluma: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20c0-8 6-14 16-16-2 10-8 16-16 16z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 20L14 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    buscar: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+    compartir: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>`,
+    ig: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.8" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="7" r="1" fill="currentColor"/></svg>`,
+    yt: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg>`,
+    sp: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 9.5c3-1 6.5-.8 9.5.8M8 12.5c2.5-.8 5.3-.6 7.5.6M8.5 15.3c2-.6 4-.5 5.8.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    wa: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-3.8A8 8 0 1 1 8 19.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 9.5c0 3 2 5 5 5l1-1.5-1.8-.8-.7.7c-.9-.4-1.5-1-1.9-1.9l.7-.7-.8-1.8z" fill="currentColor"/></svg>`,
+    caret: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    ok: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    mas: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+    lupa: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4 4M11 8.5v5M8.5 11h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+    puntos: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>`,
+    boleto: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 0 0 4v4h18v-4a2 2 0 0 1 0-4V4H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13 4v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2 2"/></svg>`,
+  };
+  const ICONO_D = { musica: I.nota, teatro: I.mascara, danza: I.mascara, artes_visuales: I.pincel, letras: I.pluma, cine: I.pincel, otro: I.estrella };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const foto = (a, extra = "") => `<span class="foto redonda ${a.foto ? a.foto : "vacia"} ${extra}" aria-hidden="true"></span>`;
+
+  function barraRaiz() {
+    return `<header class="barra"><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a>${estado.s1 ? `<span class="avatar-barra" aria-label="Mi perfil">R</span>` : `<a href="#" class="entrar">Entrar</a>`}</header>`;
+  }
+  function barraInterior(volver, conMenu) {
+    return `<header class="barra int"><a href="#" class="volver" id="volver">← ${volver}</a><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a><div class="barra-acciones">${conMenu ? `<button type="button" class="icono-barra" id="menu" aria-label="Más acciones">${I.puntos}</button>` : ""}</div></header>`;
+  }
+  function nav() {
+    return `<nav class="nav" aria-label="Secciones"><a href="#" class="nav-item">${I.cal}<span>Agenda</span></a><a href="#" class="nav-item">${I.pin}<span>Lugares</span></a><a href="#" class="nav-item activo" aria-current="page">${I.estrella}<span>Artistas</span></a></nav><button type="button" class="publicar" id="registrar" aria-label="Registrar un artista">${I.estrellaMas}Registrar artista</button>`;
+  }
+  function ordenados() {
+    return [...ARTISTAS].sort((a, b) => a.orden - b.orden || a.n.localeCompare(b.n));
+  }
+  function renglon(a, i) {
+    return `<li class="renglon" data-i="${i}" tabindex="0" role="link">
+      ${foto(a)}
+      <span class="titulo">${esc(a.n)}</span>
+      <span class="meta"><span>${ICONO_D[a.d]}${esc(a.hace)} · ${esc(a.es)}</span><span>${I.cal}${a.prox ? `<b>Próximo: ${a.prox}</b>&nbsp;· ${esc(a.donde)}` : "Sin fechas próximas"}</span></span>
+    </li>`;
+  }
+  function pantallaLista() {
+    let h = barraRaiz();
+    if (estado.a0) {
+      h += `<section class="vacio-accion"><h2>Artistas</h2><p>Aún no hay artistas registrados en San Luis Potosí. ¿Eres artista o grupo, o conoces a alguien? Regístralo.</p><button type="button" class="secundario" id="registrar-vacio">Registrar un artista</button></section>`;
+    } else {
+      h += `<div class="fija"><div class="contexto"><label class="buscar">${I.buscar}<input type="search" id="busca" placeholder="Buscar por nombre" value="${esc(estado.busca)}" aria-label="Buscar artista" autocomplete="off">${estado.busca ? `<button type="button" class="limpiar" id="limpiar" aria-label="Borrar la búsqueda">✕</button>` : ""}</label></div></div>`;
+      const q = norm(estado.busca);
+      const l = ordenados().filter((a) => !q || norm(a.n).includes(q));
+      if (l.length === 0) h += `<section class="vacio-accion"><p>Nadie se llama «${esc(estado.busca)}». ¿Lo registras?</p><button type="button" class="secundario" id="registrar-con-nombre">Registrar a «${esc(estado.busca)}»</button></section>`;
+      else h += `<p class="conteo">${l.length} ${l.length === 1 ? "artista" : "artistas"}</p><ul class="lista">${l.map((x) => renglon(x, ARTISTAS.indexOf(x))).join("")}</ul>`;
+    }
+    return `<main class="pantalla raiz" id="scroll">${h}</main>${nav()}`;
+  }
+
+  function renglonEvento(titulo, hora, lugar, van, costo, f) {
+    return `<li class="renglon"><span class="foto ${f}" aria-hidden="true"></span><span class="titulo">${titulo}</span><span class="meta"><span>${I.reloj}<b>${hora}</b>&nbsp;· ${I.pin}${lugar}</span><span>${van ? `${I.personas}${van} van&nbsp;· ` : ""}${I.boleto}${costo}</span></span></li>`;
+  }
+  function pantallaFicha() {
+    const a = ARTISTAS[0];
+    const sig = (a.sig || 0) + (estado.f2 ? 1 : 0);
+    let h = barraInterior("Artistas", true) + `<div class="contenido">`;
+    if (estado.recien) h += `<div class="publicado" role="status"><div><b>Publicado.</b>Ya está en Artistas.</div><button type="button" data-nota="Abriría la edición para añadir foto, redes y descripción">Completar</button></div>`;
+    if (!estado.f4) h += `<div class="banda" role="button" tabindex="0" aria-label="Ver la portada"><span class="lupa">${I.lupa}</span></div>`;
+    h += `<h1>${esc(a.n)}</h1><p class="tipo">${esc(a.hace)} · ${esc(a.es)}</p>`;
+    h += `<ul class="datos">
+      <li class="dato">${I.personas}<b>${sig === 0 ? "Nadie lo sigue todavía" : sig === 1 ? "1 persona lo sigue" : `${sig} personas lo siguen`}</b></li>
+      <li class="dato">${I.cal}<b>${estado.f3 ? "Sin fechas próximas" : "Próximo: hoy · 19:30"}</b>${estado.f3 ? "" : `<small>Casa Ocho Ventanas</small><button type="button" id="ir-fechas">ver</button>`}</li>
+    </ul>`;
+    h += `<div class="acciones"><button type="button" class="accion" data-nota="Abriría la hoja de compartir del teléfono">${I.compartir}Compartir</button><button type="button" class="accion" data-nota="Abriría Instagram">${I.ig}Instagram</button><button type="button" class="accion" data-nota="Abriría YouTube">${I.yt}YouTube</button><button type="button" class="accion" data-nota="Abriría Spotify">${I.sp}Spotify</button><button type="button" class="accion" data-nota="Abriría WhatsApp">${I.wa}WhatsApp</button></div>`;
+    h += `<p class="descripcion ${estado.descAbierta ? "abierta" : ""}">Trío de son huasteco de la colonia Tequis: violín, jarana y quinta huapanguera. Tocan desde 2019 en patios, fondas y plazas de San Luis Potosí; los viernes suelen estar en Casa Ocho Ventanas. Repertorio tradicional de la Huasteca potosina y versos propios; aceptan invitaciones a fandangos y fiestas de barrio.</p><button type="button" class="mas" id="mas">${estado.descAbierta ? "menos" : "más"}</button>`;
+    h += `<section class="grupo" id="fechas"><h2>Se presenta en${estado.f3 ? "" : " <span>· 3</span>"}</h2>`;
+    if (estado.f3) h += `<p class="vacio">Aún no tiene fechas publicadas. ¿Sabes de una? Publícala.</p>`;
+    else h += `<h3>Hoy</h3><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", 12, "Gratis", "a")}</ul><h3>sáb 19 de sep</h3><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", 4, "Gratis", "b")}</ul><h3>vie 25 de sep</h3><ul class="lista">${renglonEvento("Huapango en el foro", "21:00", "Foro Luz de Agua", 0, "$120", "d")}</ul>`;
+    h += `<button type="button" class="secundario publicar-aqui" id="publicar-fecha">Publicar una fecha de Los Vecinos</button></section>`;
+    h += `<p class="autor">Registrado por <a href="#">Rosa</a>.</p></div>`;
+    const canales = [estado.correo && "por correo", estado.telefono && "en el teléfono"].filter(Boolean);
+    const promesa = estado.f2 ? (canales.length ? `Te avisamos ${canales.join(" y ")} de sus fechas` : estado.preg ? "Sin avisos; se cambia en Mi perfil" : "Te avisamos de sus fechas") : "";
+    const barra = estado.f2
+      ? `<div class="accion-fija estado"><span class="seleccionado">${I.ok}<span>Sigues<small>${promesa}</small></span></span><button type="button" class="secundario chico" id="dejar">Dejar de seguir</button></div>`
+      : `<div class="accion-fija"><button type="button" class="seguir" id="seguir">Seguir</button></div>`;
+    return `<main class="pantalla interior" id="scroll">${h}</main>${barra}`;
+  }
+
+  /* Alta de artista: nombre → qué hace → es → foto → soy yo → más detalles */
+  function deducirEs(nombre) {
+    const n = norm(nombre);
+    if (/^colectivo\b/.test(n)) return "Colectivo";
+    if (/^(los|las|trio|cuarteto|banda|compania|orquesta|ensamble|dueto|coro)\b/.test(n)) return "Grupo";
+    return null;
+  }
+  function pantallaAlta() {
+    const nombre = estado.altaNombre;
+    const repetido = !estado.altaRepetidoNo && nombre.length > 1 ? ARTISTAS.find((a) => norm(a.n) === norm(nombre)) : null;
+    const deducido = deducirEs(nombre);
+    const es = estado.altaEs || deducido || "Solista";
+    const hace = DISCIPLINAS.find((d) => d[0] === estado.altaHace)[1];
+    let h = barraInterior("Artistas", false) + `<div class="contenido"><h1>Registrar artista</h1>`;
+    h += `<div class="campo"><label for="alta-nombre">Nombre</label><input id="alta-nombre" type="text" value="${esc(nombre)}" placeholder="Ej. Los Vecinos" autocomplete="off" maxlength="80">`;
+    if (repetido) h += `<div class="repetido" role="status"><span>Ya está registrado: <b>${esc(repetido.n)}</b> · ${esc(repetido.hace)}. ¿Es este?</span><button type="button" class="si" id="rep-si">Sí, es este</button><button type="button" class="no" id="rep-no">No, es otro</button></div>`;
+    h += `</div>`;
+    // Qué hace
+    const abiertaHace = estado.altaAbierta === "hace";
+    h += `<div class="seccion"><button type="button" class="seccion-cab" data-abrir="hace" aria-expanded="${abiertaHace}"><span class="nombre">Qué hace</span><span class="resumen">${esc(hace)}</span>${abiertaHace ? I.caret : `<span class="cambiar">Cambiar</span>`}</button>`;
+    if (abiertaHace) h += `<div class="seccion-cuerpo"><div class="chips">${DISCIPLINAS.map((d) => `<button type="button" class="chip" data-hace="${d[0]}" aria-pressed="${estado.altaHace === d[0]}">${d[1]}</button>`).join("")}</div><div class="campo"><label for="alta-detalle">En una palabra (opcional)</label><input id="alta-detalle" type="text" placeholder="Ej. son huasteco, jazz, grabado" maxlength="40"></div></div>`;
+    h += `</div>`;
+    // Es
+    const abiertaEs = estado.altaAbierta === "es";
+    h += `<div class="seccion"><button type="button" class="seccion-cab" data-abrir="es" aria-expanded="${abiertaEs}"><span class="nombre">Es</span><span class="resumen">${es}${!estado.altaEs && deducido ? `<small>por el nombre</small>` : ""}</span>${abiertaEs ? I.caret : `<span class="cambiar">Cambiar</span>`}</button>`;
+    if (abiertaEs) h += `<div class="seccion-cuerpo"><div class="chips">${["Solista", "Grupo", "Colectivo"].map((e) => `<button type="button" class="chip" data-es="${e}" aria-pressed="${es === e}">${e}</button>`).join("")}</div></div>`;
+    h += `</div>`;
+    h += `<div class="seccion"><div class="seccion-cab" style="cursor:default"><span class="nombre">Foto</span><span class="resumen pendiente">Opcional</span><button type="button" class="subir" data-nota="Abriría la cámara o el carrete">Elegir una foto</button></div></div>`;
+    h += `<div class="interruptor"><span>Soy yo / es mi grupo<small>Podrás editar la ficha y publicar sus fechas sin teclear el nombre.</small></span><button type="button" class="palanca" role="switch" aria-checked="${estado.altaSoy}" id="alta-soy" aria-label="Soy yo o es mi grupo"></button></div>`;
+    h += `<button type="button" class="desplegar" data-nota="Abriría redes (Instagram, Facebook, YouTube, Spotify, WhatsApp, sitio) y descripción">+ Más detalles: redes, descripción</button>`;
+    h += `<button type="button" class="primario" id="alta-publicar">Publicar artista</button></div>`;
+    return `<main class="pantalla formulario" id="scroll">${h}</main>`;
+  }
+
+  /* Alta de evento: solo lo necesario para ver el renglón Quién en su contexto */
+  function sugerencias() {
+    const q = norm(estado.quienTexto);
+    if (q.length < 2) return [];
+    const elegidos = estado.quienElegidos || [];
+    const l = ARTISTAS.filter((a) => !elegidos.includes(a.n) && norm(a.n).includes(q)).sort((a, b) => (estado.mio && a.n === "Los Vecinos" ? -1 : 0) - (estado.mio && b.n === "Los Vecinos" ? -1 : 0) || a.n.localeCompare(b.n)).slice(0, 5);
+    const exacto = ARTISTAS.some((a) => norm(a.n) === q) || elegidos.some((n) => norm(n) === q);
+    return { l, crear: !exacto };
+  }
+  function pantallaQuien() {
+    if (estado.quienElegidos === null) estado.quienElegidos = estado.mio ? ["Los Vecinos"] : [];
+    const elegidos = estado.quienElegidos;
+    let h = barraInterior("Agenda", false) + `<div class="contenido"><h1>Publicar evento</h1>`;
+    h += `<div class="campo"><label for="ev-que">Qué</label><input id="ev-que" type="text" value="Noche de son en el patio"></div>`;
+    h += `<div class="seccion"><button type="button" class="seccion-cab" data-nota="Abriría el selector de fecha y hora"><span class="nombre">Cuándo</span><span class="resumen">Hoy · 19:30</span><span class="cambiar">Cambiar</span></button></div>`;
+    h += `<div class="seccion"><button type="button" class="seccion-cab" data-nota="Abriría la lista de lugares"><span class="nombre">Dónde</span><span class="resumen">Casa Ocho Ventanas</span><span class="cambiar">Cambiar</span></button></div>`;
+    const resumenQuien = elegidos.length ? elegidos.map((n) => esc(n) + (estado.mio && n === "Los Vecinos" ? " · tú" : "")).join(" y ") : "Añadir quién se presenta";
+    h += `<div class="seccion"><button type="button" class="seccion-cab" id="quien-cab" aria-expanded="${estado.quienAbierto}"><span class="nombre">Quién</span><span class="resumen ${elegidos.length ? "" : "pendiente"}">${resumenQuien}</span>${estado.quienAbierto ? I.caret : `<span class="cambiar">${elegidos.length ? "Cambiar" : "Añadir"}</span>`}</button>`;
+    if (estado.quienAbierto) {
+      const s = sugerencias();
+      h += `<div class="seccion-cuerpo">`;
+      if (elegidos.length) h += `<div class="elegidos">${elegidos.map((n) => `<button type="button" class="chip" aria-pressed="true" data-quitar="${esc(n)}" aria-label="Quitar a ${esc(n)}">${esc(n)}<span class="quitar">✕</span></button>`).join("")}</div>`;
+      h += `<div class="campo"><label for="quien-texto">${elegidos.length ? "Otro artista o grupo" : "Nombre del artista o grupo"}</label><input id="quien-texto" type="text" value="${esc(estado.quienTexto)}" placeholder="Ej. Trío Xochitl" autocomplete="off" maxlength="80"></div>`;
+      if (s.l) {
+        h += `<ul class="sugerencias" role="listbox">${s.l.map((a) => `<li role="option" data-elige="${esc(a.n)}"><span class="mini ${a.foto ? a.foto : "vacia"}"></span><span>${esc(a.n)}<small>${esc(a.hace)}${estado.mio && a.n === "Los Vecinos" ? " · tú" : ""}</small></span></li>`).join("")}${s.crear ? `<li role="option" class="crear" data-crear="${esc(estado.quienTexto.trim())}"><span class="mini">${I.mas}</span><span>Crear a «${esc(estado.quienTexto.trim())}»<small>solo con el nombre; se completa después</small></span></li>` : ""}</ul>`;
+      } else if (!elegidos.length) h += `<p class="nota-campo">Escribe dos letras y te sugerimos los que ya están registrados. Si no está, lo creamos con el nombre.</p>`;
+      h += `</div>`;
+    }
+    h += `</div>`;
+    h += `<div class="seccion"><button type="button" class="seccion-cab" data-nota="Abriría Gratis / Con costo"><span class="nombre">Cuánto</span><span class="resumen">Gratis</span><span class="cambiar">Cambiar</span></button></div>`;
+    h += `<button type="button" class="desplegar" data-nota="Abriría cartel o foto, descripción y enlace">+ Más detalles: cartel o foto, descripción, enlace</button>`;
+    h += `<button type="button" class="primario" id="ev-publicar">Publicar evento</button></div>`;
+    return `<main class="pantalla formulario" id="scroll">${h}</main>`;
+  }
+
+  function render() {
+    const foco = document.activeElement && document.activeElement.id;
+    const sel = document.activeElement && document.activeElement.selectionStart;
+    $("pantalla").innerHTML = estado.vista === "ficha" ? pantallaFicha() : estado.vista === "alta" ? pantallaAlta() : estado.vista === "quien" ? pantallaQuien() : pantallaLista();
+    if (foco && $(foco) && $(foco).tagName === "INPUT") { const el = $(foco); el.focus(); try { el.setSelectionRange(sel, sel); } catch (e) {} }
+    // Hoja de avisos al seguir (solo si no se ha preguntado)
+    let cuerpo;
+    const ok = I.ok;
+    if (estado.correo === null && estado.telefono === null) cuerpo = `<p class="pregunta">¿Te avisamos de sus fechas?</p><div class="opciones"><button type="button" class="si" id="por-correo">Por correo</button><button type="button" class="si" id="en-telefono">En el teléfono</button></div><button type="button" class="gracias" id="no-gracias">No, gracias</button>`;
+    else if (estado.correo === true && estado.telefono === null) cuerpo = `<p class="hecho">${ok}<span>Te escribimos a ro…@gmail.com cuando publiquen una fecha.</span></p><p class="pregunta" style="margin-top:10px">¿También en el teléfono?</p><div class="opciones"><button type="button" class="si" id="en-telefono">Sí</button><button type="button" class="no" id="no-telefono">No</button></div>`;
+    else if (estado.telefono === true && estado.correo === null) cuerpo = `<p class="hecho">${ok}<span>Te avisamos en este teléfono cuando publiquen una fecha.</span></p><p class="pregunta" style="margin-top:10px">¿También por correo?</p><div class="opciones"><button type="button" class="si" id="por-correo">Sí</button><button type="button" class="no" id="no-correo">No</button></div>`;
+    else { const c = [estado.correo && "por correo", estado.telefono && "en el teléfono"].filter(Boolean); cuerpo = c.length ? `<p class="hecho">${ok}<span>Te avisamos ${c.join(" y ")} de sus fechas.</span></p>` : `<p class="hecho"><span>Sin avisos. Si cambias de idea, está en Mi perfil.</span></p>`; }
+    $("hoja-avisos").innerHTML = `<div class="asa" aria-hidden="true"></div><h3>Sigues Los Vecinos</h3><p class="porque">Sus fechas nuevas aparecerán en Siguiendo.</p>${cuerpo}`;
+    const items = ["Reportar", "Es mi nombre"].concat(estado.a1 ? ["Editar", "<span class='peligro'>Borrar el artista</span>"] : []);
+    $("hoja-menu").innerHTML = `<div class="asa" aria-hidden="true"></div><ul class="menu">${items.map((t) => `<li><button type="button" data-menu="${t.replace(/<[^>]+>/g, "")}">${t}</button></li>`).join("")}</ul>`;
+    const mio = estado.mioPaso;
+    $("hoja-mio").innerHTML = `<div class="asa" aria-hidden="true"></div><h3>${mio === "hecho" ? "Listo" : "¿Qué quieres hacer con Los Vecinos?"}</h3>` + (mio === "hecho"
+      ? `<p class="hecho">${ok}<span>El administrador lo revisa y te escribe a ro…@gmail.com.</span></p>`
+      : `<p class="porque">Lo registró otra persona. Puedes pedir la ficha para editarla tú, o pedir que se quite.</p><div class="opciones una"><button type="button" class="si" data-mio="editar">Quiero editarlo yo</button><button type="button" class="no" data-mio="quitar">Quiero que se quite</button></div>`);
+    $("vista").value = estado.vista; ["s1", "a0", "f2", "f3", "f4", "preg", "a1", "mio"].forEach((id) => { $(id).checked = estado[id]; });
+  }
+  let temporizador;
+  function nota(t) { const n = $("nota"); n.textContent = t; n.classList.add("visible"); clearTimeout(temporizador); temporizador = setTimeout(() => n.classList.remove("visible"), 2400); }
+  function cerrarHojas() { ["hoja-avisos-fondo", "hoja-menu-fondo", "hoja-mio-fondo"].forEach((id) => $(id).classList.remove("abierta")); }
+
+  $("vista").addEventListener("change", (e) => { estado.vista = e.target.value; estado.recien = false; render(); });
+  ["s1", "a0", "f2", "f3", "f4", "preg", "a1", "mio"].forEach((id) => $(id).addEventListener("change", (e) => { estado[id] = e.target.checked; if (id === "f2" && e.target.checked) estado.s1 = true; if (id === "mio") { estado.quienElegidos = null; if (e.target.checked) estado.s1 = true; } render(); }));
+  $("reiniciar").addEventListener("click", () => { Object.assign(estado, JSON.parse(JSON.stringify(inicial))); estado.recien = false; estado.mioPaso = null; cerrarHojas(); render(); });
+
+  document.addEventListener("input", (ev) => {
+    const t = ev.target;
+    if (t.id === "busca") { estado.busca = t.value; render(); }
+    if (t.id === "alta-nombre") { estado.altaNombre = t.value; estado.altaRepetidoNo = false; render(); }
+    if (t.id === "quien-texto") { estado.quienTexto = t.value; render(); }
+  });
+  document.addEventListener("click", (ev) => {
+    const t = ev.target;
+    if (t.closest("#limpiar")) { estado.busca = ""; render(); return; }
+    const r = t.closest(".renglon[data-i]"); if (r) { estado.vista = "ficha"; render(); return; }
+    if (t.closest("#registrar") || t.closest("#registrar-vacio") || t.closest("#registrar-con-nombre")) {
+      if (t.closest("#registrar-con-nombre")) estado.altaNombre = estado.busca;
+      if (!estado.s1) { nota("Sin sesión: abriría Entrar y volvería aquí"); estado.s1 = true; }
+      estado.vista = "alta"; render(); return;
+    }
+    if (t.closest("#volver")) { ev.preventDefault(); estado.vista = estado.vista === "quien" ? "ficha" : "lista"; estado.recien = false; render(); return; }
+    if (t.closest("#seguir")) {
+      if (!estado.s1) { nota("Sin sesión: abriría Entrar y al volver quedaría siguiendo"); estado.s1 = true; }
+      estado.f2 = true; render();
+      if (!estado.preg) $("hoja-avisos-fondo").classList.add("abierta");
+      return;
+    }
+    if (t.closest("#dejar")) { estado.f2 = false; render(); return; }
+    if (t.closest("#por-correo")) { estado.correo = true; render(); $("hoja-avisos-fondo").classList.add("abierta"); return; }
+    if (t.closest("#en-telefono")) { estado.telefono = true; render(); $("hoja-avisos-fondo").classList.add("abierta"); return; }
+    if (t.closest("#no-telefono")) { estado.telefono = false; estado.preg = true; render(); $("hoja-avisos-fondo").classList.add("abierta"); setTimeout(cerrarHojas, 1400); return; }
+    if (t.closest("#no-correo")) { estado.correo = false; estado.preg = true; render(); $("hoja-avisos-fondo").classList.add("abierta"); setTimeout(cerrarHojas, 1400); return; }
+    if (t.closest("#no-gracias")) { estado.correo = false; estado.telefono = false; estado.preg = true; render(); cerrarHojas(); return; }
+    if (t.closest("#menu")) { $("hoja-menu-fondo").classList.add("abierta"); return; }
+    const m = t.closest("[data-menu]");
+    if (m) {
+      cerrarHojas();
+      if (m.dataset.menu === "Es mi nombre") { if (!estado.s1) { nota("Sin sesión: abriría Entrar y volvería a esta hoja"); estado.s1 = true; } estado.mioPaso = null; render(); $("hoja-mio-fondo").classList.add("abierta"); }
+      else nota(`Abriría «${m.dataset.menu}»`);
+      return;
+    }
+    const mio = t.closest("[data-mio]");
+    if (mio) { estado.mioPaso = "hecho"; render(); $("hoja-mio-fondo").classList.add("abierta"); nota(mio.dataset.mio === "editar" ? "El administrador vería «Pasar la ficha a esta cuenta»" : "El administrador vería «Ocultar»"); return; }
+    if (t.closest("#mas")) { estado.descAbierta = !estado.descAbierta; render(); return; }
+    if (t.closest("#ir-fechas")) { $("fechas").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); return; }
+    if (t.closest("#publicar-fecha")) { estado.vista = "quien"; estado.quienElegidos = ["Los Vecinos"]; estado.quienAbierto = false; render(); nota("Alta de evento con Quién ya resuelto"); return; }
+    if (t.closest(".banda")) { nota("Abriría la portada a pantalla completa"); return; }
+    // Alta de artista
+    const ab = t.closest("[data-abrir]"); if (ab) { estado.altaAbierta = estado.altaAbierta === ab.dataset.abrir ? null : ab.dataset.abrir; render(); return; }
+    const ch = t.closest("[data-hace]"); if (ch) { estado.altaHace = ch.dataset.hace; render(); return; }
+    const ce = t.closest("[data-es]"); if (ce) { estado.altaEs = ce.dataset.es; render(); return; }
+    if (t.closest("#alta-soy")) { estado.altaSoy = !estado.altaSoy; render(); return; }
+    if (t.closest("#rep-si")) { estado.vista = "ficha"; estado.altaNombre = ""; render(); nota("Abriría la ficha que ya existe, sin duplicar"); return; }
+    if (t.closest("#rep-no")) { estado.altaRepetidoNo = true; render(); return; }
+    if (t.closest("#alta-publicar")) {
+      if (!estado.altaNombre.trim()) { nota("Faltaría el nombre: error en línea bajo el campo"); $("alta-nombre").focus(); return; }
+      if (estado.altaSoy) estado.mio = true;
+      estado.vista = "ficha"; estado.recien = true; estado.a1 = true; render(); return;
+    }
+    // Quién
+    if (t.closest("#quien-cab")) { estado.quienAbierto = !estado.quienAbierto; render(); if (estado.quienAbierto && $("quien-texto")) $("quien-texto").focus(); return; }
+    const q = t.closest("[data-quitar]"); if (q) { estado.quienElegidos = estado.quienElegidos.filter((n) => n !== q.dataset.quitar); render(); return; }
+    const e = t.closest("[data-elige]"); if (e) { estado.quienElegidos.push(e.dataset.elige); estado.quienTexto = ""; render(); return; }
+    const c = t.closest("[data-crear]"); if (c) { estado.quienElegidos.push(c.dataset.crear); estado.quienTexto = ""; render(); nota(`Se crearía «${c.dataset.crear}» solo con el nombre; su ficha se completa después`); return; }
+    if (t.closest("#ev-publicar")) { nota(estado.quienElegidos.length ? `Publicaría el evento con ${estado.quienElegidos.join(" y ")}` : "Publicaría el evento sin artista: Quién es opcional"); return; }
+    const n = t.closest("[data-nota]"); if (n) { nota(n.dataset.nota); return; }
+    if (t === $("hoja-avisos-fondo") || t === $("hoja-menu-fondo") || t === $("hoja-mio-fondo")) cerrarHojas();
+  });
+  render();
+</script>

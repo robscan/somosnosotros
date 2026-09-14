@@ -8,13 +8,14 @@ import { guardarSuscripcionPush } from "@/app/perfil/acciones";
 import { IconoOk } from "./ui/Iconos";
 import styles from "./ConsentimientoAvisos.module.css";
 
-/** "voy": tras el primer Voy a un evento. "seguir": al seguir un lugar. Misma pregunta, distinta promesa. */
-type Contexto = "voy" | "seguir";
+/** "voy": tras el primer Voy a un evento. "seguir": al seguir un lugar. "seguir-artista": al seguir a un artista. Misma pregunta, distinta promesa. */
+type Contexto = "voy" | "seguir" | "seguir-artista";
 type Props = { contexto?: Contexto; titulo: string; correo: string; llavePush: string; onListo?: () => void };
 
 const COPY: Record<Contexto, { motivo: (t: string) => string; porque: string; pregunta: string; cuando: string; promesa: string }> = {
   voy: { motivo: (t) => `Vas a ${t}`, porque: "Ya estás en la lista de quien va.", pregunta: "¿Te recordamos ese día?", cuando: "ese día", promesa: "ese día" },
   seguir: { motivo: (t) => `Sigues ${t}`, porque: "Sus eventos nuevos aparecerán en Siguiendo.", pregunta: "¿Te avisamos de sus eventos?", cuando: "cuando publiquen algo", promesa: "de sus eventos" },
+  "seguir-artista": { motivo: (t) => `Sigues a ${t}`, porque: "Sus fechas nuevas aparecerán en Siguiendo.", pregunta: "¿Te avisamos de sus fechas?", cuando: "cuando publiquen una fecha", promesa: "de sus fechas" },
 };
 type Canal = null | boolean;
 

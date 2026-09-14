@@ -14,6 +14,8 @@ type Props = {
   eventos: EventoAgenda[];
   /** Lugares que la persona sigue; null = sin sesión. */
   seguidos: string[] | null;
+  /** Eventos de los artistas que sigue (con sesión). */
+  eventosSeguidos?: string[];
   ciudad: Ciudad;
   ciudades: CiudadConEventos[];
   /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan). */
@@ -25,7 +27,7 @@ type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
  * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
-export default function AgendaInicio({ eventos, seguidos, ciudad, ciudades, hoy }: Props) {
+export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
   const [punto, setPunto] = useState<Punto | null>(null);
@@ -49,7 +51,7 @@ export default function AgendaInicio({ eventos, seguidos, ciudad, ciudades, hoy 
     );
   }
 
-  const { lista, km } = filtrarAgenda(eventos, { filtro, punto, seguidos, fecha, ahora });
+  const { lista, km } = filtrarAgenda(eventos, { filtro, punto, seguidos, eventosSeguidos, fecha, ahora });
   const hoyIso = localAIso(`${hoy}T12:00`) ?? new Date().toISOString();
 
   let cuerpo: React.ReactNode;
@@ -65,14 +67,14 @@ export default function AgendaInicio({ eventos, seguidos, ciudad, ciudades, hoy 
     );
   } else if (filtro === "siguiendo" && seguidos === null) {
     cuerpo = (
-      <VacioConAccion titulo="Siguiendo" texto="Aquí verás lo que pasa en los lugares que sigues. Entra para seguir a los tuyos.">
+      <VacioConAccion titulo="Siguiendo" texto="Aquí verás lo que pasa en los lugares y con los artistas que sigues. Entra para seguir a los tuyos.">
         <Link href="/entrar?siguiente=/" className={styles.accion}>
           Entrar
         </Link>
       </VacioConAccion>
     );
-  } else if (filtro === "siguiendo" && seguidos !== null && seguidos.length === 0) {
-    cuerpo = <VacioConAccion titulo="Siguiendo" texto="Todavía no sigues ningún lugar. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
+  } else if (filtro === "siguiendo" && seguidos !== null && seguidos.length === 0 && eventosSeguidos.length === 0) {
+    cuerpo = <VacioConAccion titulo="Siguiendo" texto="Todavía no sigues ningún lugar ni artista. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
   } else {
     let grupos: Grupo<EventoAgenda>[];
     let vacio: string;
@@ -87,7 +89,7 @@ export default function AgendaInicio({ eventos, seguidos, ciudad, ciudades, hoy 
       vacio = "Nada nuevo esta semana.";
     } else {
       grupos = agruparPorDia(lista, ahora);
-      vacio = filtro === "siguiendo" ? "Los lugares que sigues no tienen eventos próximos." : `Aún no hay eventos próximos en ${ciudad.nombre}. Si sabes de uno, publícalo.`;
+      vacio = filtro === "siguiendo" ? "Lo que sigues no tiene eventos próximos." : `Aún no hay eventos próximos en ${ciudad.nombre}. Si sabes de uno, publícalo.`;
     }
     cuerpo = grupos.length === 0 ? (
       <section className={styles.grupo}>

@@ -33,6 +33,10 @@
   background: var(--fondo);
   border: 1px dashed var(--borde);
 }
+/* Artistas: redonda, porque es gente; cuadrada es un lugar (decisión 1 de Artistas). */
+.fotoRedonda {
+  border-radius: 50%;
+}
 .titulo {
   grid-area: titulo;
   min-width: 0;
@@ -65,7 +69,8 @@
 .meta > span > svg {
   flex: none;
 }
-.meta .lugar {
+.meta .lugar,
+.meta .envuelve {
   white-space: normal;
 }
 .meta b {

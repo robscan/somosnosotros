@@ -11,7 +11,8 @@
 1. Registro de **usuarios**.
 2. Registro de **lugares** culturales (con mapa).
 3. Registro de **eventos** en esos lugares (agenda).
-4. **Comunidad**: decir "voy" a un evento y ver quién más va; seguir lugares; recibir avisos.
+4. **Comunidad**: decir "voy" a un evento y ver quién más va; seguir lugares y artistas; recibir avisos.
+5. **Artistas y grupos locales**: quiénes hacen la cultura de la ciudad, en qué eventos se presentan; cualquier persona con sesión los registra y el artista real puede reclamar o retirar su nombre.
 
 **Qué NO es.** No es un pasaporte ni una colección de lugares visitados. No es red social de likes ni ranking. No es app de tienda en su primera versión: es web móvil (instalable en el teléfono).
 

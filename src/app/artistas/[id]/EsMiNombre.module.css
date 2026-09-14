@@ -1,0 +1,52 @@
+/* "Es mi nombre": el enlace en el menú ··· y su hoja de dos salidas */
+.enlace {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--texto);
+  font-size: var(--letra-md);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+/* Desplegado dentro del menú: un bloque con aire, como la confirmación de Borrar */
+.caja {
+  padding: var(--espacio-2) 0 var(--espacio-3);
+}
+.titulo {
+  margin-bottom: var(--espacio-1);
+  font-size: var(--letra-xl);
+}
+.porque {
+  margin-bottom: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.editar,
+.quitar {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.quitar {
+  margin-top: var(--espacio-3);
+}
+.hecho {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.hecho > svg {
+  flex: none;
+  color: var(--ok);
+}
+.error {
+  margin-top: var(--espacio-3);
+  color: var(--error);
+  font-size: var(--letra-sm);
+}

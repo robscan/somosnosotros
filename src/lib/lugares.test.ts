@@ -26,6 +26,11 @@ describe("enlaceRed", () => {
     expect(enlaceRed("whatsapp", "444 123 4567")).toBe("https://wa.me/524441234567");
     expect(enlaceRed("whatsapp", "+52 444 123 4567")).toBe("https://wa.me/524441234567");
     expect(enlaceRed("sitio", "ejemplo.org")).toBe("https://ejemplo.org");
+    expect(enlaceRed("youtube", "losvecinos")).toBe("https://youtube.com/@losvecinos");
+    expect(enlaceRed("youtube", "@losvecinos")).toBe("https://youtube.com/@losvecinos");
+    expect(enlaceRed("youtube", "https://youtube.com/watch?v=abc")).toBe("https://youtube.com/watch?v=abc");
+    expect(enlaceRed("spotify", "https://open.spotify.com/artist/abc")).toBe("https://open.spotify.com/artist/abc");
+    expect(enlaceRed("spotify", "Los Vecinos")).toBe("https://open.spotify.com/search/Los%20Vecinos");
     expect(enlaceRed("sitio", "")).toBeNull();
   });
 });
