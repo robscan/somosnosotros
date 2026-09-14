@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Barra from "@/components/ui/Barra";
 import { notFound, redirect } from "next/navigation";
 import type { EventoResumen } from "@/lib/eventos";
 import { formatearCuando } from "@/lib/fechas";
@@ -36,7 +37,7 @@ async function cargarEventos(lugarId: string): Promise<EventoResumen[]> {
 export async function generateMetadata({ params }: Params) {
   const { id } = await params;
   const lugar = await cargarLugar(id);
-  return { title: lugar ? `${lugar.nombre} · somosnosotros` : "Lugar · somosnosotros" };
+  return { title: lugar ? `${lugar.nombre} · Somos Nosotros` : "Lugar · Somos Nosotros" };
 }
 
 export default async function FichaLugar({ params, searchParams }: Params) {
@@ -60,9 +61,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
 
   return (
     <main className="pagina">
-      <Link href={`/?lugar=${lugar.id}`} className="enlace-volver">
-        ← Ver en el mapa
-      </Link>
+      <Barra volver={{ href: `/?lugar=${lugar.id}`, texto: "Ver en el mapa" }} />
       {lugar.portada && (
         // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
         <img src={lugar.portada} alt="" className={styles.portada} />

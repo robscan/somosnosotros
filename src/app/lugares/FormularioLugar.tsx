@@ -11,6 +11,7 @@ import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from 
 import { direccionDesdePunto } from "@/lib/geocodificar";
 import { LIMITES_LUGAR, REDES, TIPOS, etiquetaTipo, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
+import { reducirImagen } from "@/lib/imagen";
 import type { ResultadoLugar } from "./acciones";
 import styles from "./FormularioLugar.module.css";
 
@@ -203,9 +204,10 @@ export default function FormularioLugar({ accion, lugar, usuarioId }: Props) {
     }
     setSubiendo(true);
     setErrorPortada(null);
-    const extension = (archivo.name.split(".").pop() || "jpg").toLowerCase();
+    const listo = await reducirImagen(archivo); // menos peso y menos espera: se reduce en el teléfono antes de subir
+    const extension = (listo.name.split(".").pop() || "jpg").toLowerCase();
     const ruta = `lugares/${usuarioId}/portada-${Date.now()}.${extension}`;
-    const { error } = await supabase.storage.from("fotos").upload(ruta, archivo, { upsert: true, contentType: archivo.type || undefined });
+    const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: true, contentType: listo.type || undefined });
     if (error) setErrorPortada("No se pudo subir la foto. Intenta con otra.");
     else setPortada(supabase.storage.from("fotos").getPublicUrl(ruta).data.publicUrl);
     setSubiendo(false);

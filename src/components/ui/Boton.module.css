@@ -5,8 +5,8 @@
   padding: var(--espacio-3) var(--espacio-4);
   border: 1px solid transparent;
   border-radius: var(--radio);
-  font-size: 17px;
-  font-weight: 600;
+  font-size: var(--letra-lg);
+  font-weight: 700;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }

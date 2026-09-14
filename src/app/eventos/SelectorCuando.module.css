@@ -7,38 +7,8 @@
 }
 .etiquetaChica {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin: var(--espacio-3) 0 var(--espacio-2);
-}
-.chips {
-  display: flex;
-  gap: var(--espacio-2);
-  overflow-x: auto;
-  padding-bottom: var(--espacio-1);
-  margin-bottom: var(--espacio-2);
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.chips::-webkit-scrollbar {
-  display: none;
-}
-.chip {
-  flex: none;
-  min-height: 40px;
-  padding: 0 var(--espacio-3);
-  border: 1px solid var(--borde);
-  border-radius: 999px;
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: 14px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.activo {
-  border-color: var(--acento);
-  background: var(--acento);
-  color: var(--acento-texto);
-  font-weight: 600;
 }
 .control {
   display: block;
@@ -49,7 +19,7 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: 16px;
+  font-size: var(--letra-md);
   -webkit-appearance: none;
   appearance: none;
 }
@@ -62,39 +32,12 @@
 }
 .error {
   color: var(--error);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-top: var(--espacio-1);
 }
 .nota {
   font-weight: 400;
   color: var(--texto-suave);
-}
-.chipNativo {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-/* El campo nativo va encima del chip, invisible y del mismo tamaño: el toque lo recibe él. */
-.encima {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  font-size: 16px;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.etiquetaChips {
-  flex: none;
-  align-self: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--texto-suave);
-  margin-right: var(--espacio-1);
 }
 .pasado {
   color: var(--error);

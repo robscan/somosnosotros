@@ -8,6 +8,7 @@ import InstalarAviso from "./InstalarAviso";
 import ListaLugares from "./ListaLugares";
 import Pestanas from "./Pestanas";
 import Sheet from "./Sheet";
+import Logotipo from "./ui/Logotipo";
 import styles from "./Panel.module.css";
 
 /** En el panel cabe poco: solo el primer nombre. */
@@ -29,22 +30,6 @@ export default async function Panel({ lugares, eventos, ciudad = CIUDAD_INICIAL,
   const cabecera = (
     <>
       <div className={styles.cabecera}>
-        <div>
-          <h1 className={styles.titulo}>somosnosotros</h1>
-          <p className={styles.ciudad}>
-            {ciudad.nombre}
-            {resumen ? ` · ${resumen}` : ""}
-          </p>
-          {CIUDADES.length > 1 && (
-            <p className={styles.ciudades}>
-              {CIUDADES.filter((c) => c.slug !== ciudad.slug).map((c) => (
-                <Link key={c.slug} href={`/?ciudad=${c.slug}`}>
-                  Ir a {c.nombre}
-                </Link>
-              ))}
-            </p>
-          )}
-        </div>
         {actual ? (
           <Link href="/perfil" className={styles.persona} aria-label="Mi perfil">
             {actual.perfil.foto ? (
@@ -60,7 +45,21 @@ export default async function Panel({ lugares, eventos, ciudad = CIUDAD_INICIAL,
             Entrar
           </Link>
         )}
+        <Logotipo />
       </div>
+      <p className={styles.ciudad}>
+        {ciudad.nombre}
+        {resumen ? ` · ${resumen}` : ""}
+      </p>
+      {CIUDADES.length > 1 && (
+        <p className={styles.ciudades}>
+          {CIUDADES.filter((c) => c.slug !== ciudad.slug).map((c) => (
+            <Link key={c.slug} href={`/?ciudad=${c.slug}`}>
+              Ir a {c.nombre}
+            </Link>
+          ))}
+        </p>
+      )}
       {cuentaBorrada && (
         <p className={styles.aviso} role="status">
           Tu cuenta quedó borrada. Gracias por haber estado.

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { etiquetaTipo, filtrarLugares, type LugarResumen } from "@/lib/lugares";
+import Tarjeta from "@/components/ui/Tarjeta";
 import styles from "./ListaLugares.module.css";
 
 type Props = { lugares: LugarResumen[]; conSesion: boolean };
@@ -44,23 +45,7 @@ export default function ListaLugares({ lugares, conSesion }: Props) {
           <ul className={styles.lista}>
             {visibles.map((l) => (
               <li key={l.id}>
-                <Link href={`/lugares/${l.id}`} className={styles.tarjeta}>
-                  <div className={styles.miniatura} aria-hidden="true">
-                    {l.portada ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                      <img src={l.portada} alt="" />
-                    ) : (
-                      <span>{l.nombre.slice(0, 1).toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div className={styles.texto}>
-                    <strong className={styles.nombre}>{l.nombre}</strong>
-                    <span className={styles.detalle}>
-                      {etiquetaTipo(l.tipo)}
-                      {l.direccion ? ` · ${l.direccion}` : ""}
-                    </span>
-                  </div>
-                </Link>
+                <Tarjeta href={`/lugares/${l.id}`} miniatura={{ src: l.portada, letra: l.nombre }} titulo={l.nombre} detalle={`${etiquetaTipo(l.tipo)}${l.direccion ? ` · ${l.direccion}` : ""}`} />
               </li>
             ))}
           </ul>

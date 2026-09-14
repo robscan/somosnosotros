@@ -13,7 +13,7 @@
   margin: var(--espacio-2) 0 var(--espacio-4);
 }
 .cuando {
-  font-size: 17px;
+  font-size: var(--letra-lg);
   font-weight: 600;
 }
 .precio {
@@ -29,7 +29,7 @@
 .direccion {
   display: block;
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
 }
 .acciones {
   display: grid;
@@ -47,8 +47,8 @@
   border-radius: var(--radio);
   background: var(--acento);
   color: var(--acento-texto);
-  font-size: 17px;
-  font-weight: 600;
+  font-size: var(--letra-lg);
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
 }
@@ -79,7 +79,7 @@
 }
 .autor {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-bottom: var(--espacio-5);
 }
 .gestion {
@@ -101,7 +101,7 @@
 }
 .nota {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
 }
 .quienVa {
   margin: var(--espacio-4) 0 var(--espacio-5);
@@ -124,7 +124,7 @@
   padding: 0 var(--espacio-4);
   border-radius: var(--radio);
   border: 1px solid var(--acento);
-  font-size: 17px;
+  font-size: var(--letra-lg);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -136,13 +136,13 @@
   color: var(--acento);
 }
 .botonVoyActivo {
-  background: #1f6f43;
-  border-color: #1f6f43;
+  background: var(--ok);
+  border-color: var(--ok);
 }
 .botonInteresActivo {
   background: var(--fondo);
-  color: #1f6f43;
-  border-color: #1f6f43;
+  color: var(--ok);
+  border-color: var(--ok);
 }
 .resumenVan {
   font-weight: 600;
@@ -157,7 +157,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-2);
-  min-height: 40px;
+  min-height: var(--toque-min);
   color: var(--texto);
   text-decoration: none;
 }
@@ -167,15 +167,15 @@
   flex: none;
   border-radius: 50%;
   object-fit: cover;
-  background: #e6e6e2;
+  background: var(--fondo-miniatura);
   display: inline-grid;
   place-items: center;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--letra-sm);
   color: var(--texto-suave);
 }
 .interesados {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-top: var(--espacio-2);
 }

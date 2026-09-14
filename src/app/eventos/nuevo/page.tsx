@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
 import { lecturaDeCartelActiva } from "@/lib/cartel";
 import type { Evento } from "@/lib/eventos";
@@ -7,7 +7,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioEvento from "../FormularioEvento";
 import { crearEvento } from "../acciones";
 
-export const metadata = { title: "Publicar un evento · somosnosotros" };
+export const metadata = { title: "Publicar un evento · Somos Nosotros" };
 
 export default async function NuevoEvento({ searchParams }: { searchParams: Promise<{ lugar?: string; desde?: string }> }) {
   const { lugar, desde } = await searchParams;
@@ -22,9 +22,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
   }
   return (
     <main className="pagina">
-      <Link href={base?.lugar_id ? `/lugares/${base.lugar_id}` : lugar ? `/lugares/${lugar}` : "/"} className="enlace-volver">
-        ← Volver
-      </Link>
+      <Barra volver={{ href: base?.lugar_id ? `/lugares/${base.lugar_id}` : lugar ? `/lugares/${lugar}` : "/", texto: "Volver" }} />
       <h1 className="titulo">{base ? "Duplicar evento" : "Publicar un evento"}</h1>
       <p className="subtitulo">{base ? "Mismo evento, nueva fecha. Cambia lo que haga falta." : "Qué y cuándo; lo demás ya está resuelto y se puede cambiar."}</p>
       <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} />

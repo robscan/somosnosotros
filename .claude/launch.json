@@ -4,8 +4,23 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "muestra-letra",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--directory",
+        "/private/tmp/claude-501/-Users-apple-1-somosnosotros/a1880f3f-0f60-448e-a5b6-274d7af0c2fd/scratchpad"
+      ],
+      "port": 8765
     }
   ]
 }

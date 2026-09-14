@@ -6,7 +6,7 @@
   padding: var(--espacio-2) var(--espacio-3);
   border-radius: var(--radio);
   background: var(--fondo-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
 }
 .texto {
   flex: 1;
@@ -33,6 +33,6 @@
   border: none;
   background: none;
   color: var(--texto-suave);
-  font-size: 16px;
+  font-size: var(--letra-md);
   cursor: pointer;
 }

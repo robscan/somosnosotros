@@ -22,8 +22,8 @@ const ORIGEN = "https://somosnosotros.org";
 export function correoNuevoEvento(p: { titulo: string; cuando: string; lugar: string; eventoId: string }): { asunto: string; texto: string; html: string } {
   const url = `${ORIGEN}/eventos/${p.eventoId}`;
   const asunto = `Nuevo en ${p.lugar}: ${p.titulo}`;
-  const texto = `${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento: ${url}\n\nRecibes esto porque sigues ${p.lugar} en somosnosotros. Para dejar de recibir avisos, apágalos en tu perfil: ${ORIGEN}/perfil`;
-  const html = `<p><strong>${escapar(p.titulo)}</strong><br>${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento</a></p><p style="color:#5c5c5c;font-size:13px">Recibes esto porque sigues ${escapar(p.lugar)} en somosnosotros. Para dejar de recibir avisos, apágalos en <a href="${ORIGEN}/perfil">tu perfil</a>.</p>`;
+  const texto = `${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento: ${url}\n\nRecibes esto porque sigues ${p.lugar} en Somos Nosotros. Para dejar de recibir avisos, apágalos en tu perfil: ${ORIGEN}/perfil`;
+  const html = `<p><strong>${escapar(p.titulo)}</strong><br>${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento</a></p><p style="color:#5c5c5c;font-size:13px">Recibes esto porque sigues ${escapar(p.lugar)} en Somos Nosotros. Para dejar de recibir avisos, apágalos en <a href="${ORIGEN}/perfil">tu perfil</a>.</p>`;
   return { asunto, texto, html };
 }
 

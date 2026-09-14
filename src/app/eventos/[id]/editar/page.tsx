@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Barra from "@/components/ui/Barra";
 import { notFound, redirect } from "next/navigation";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
@@ -6,7 +6,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioEvento from "../../FormularioEvento";
 import { actualizarEvento } from "../../acciones";
 
-export const metadata = { title: "Editar evento · somosnosotros" };
+export const metadata = { title: "Editar evento · Somos Nosotros" };
 
 export default async function EditarEvento({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,9 +21,7 @@ export default async function EditarEvento({ params }: { params: Promise<{ id: s
   const { data: privado } = evento.sitio_reservado ? ((await supabase?.from("eventos_sitio_privado").select("direccion, lat, lng, indicaciones, revelar_desde").eq("evento_id", id).maybeSingle()) ?? { data: null }) : { data: null };
   return (
     <main className="pagina">
-      <Link href={`/eventos/${id}`} className="enlace-volver">
-        ← Volver al evento
-      </Link>
+      <Barra volver={{ href: `/eventos/${id}`, texto: "Volver al evento" }} />
       <h1 className="titulo">Editar evento</h1>
       <FormularioEvento accion={actualizarEvento.bind(null, id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} privado={privado as SitioPrivado | null} modo="editar" usuarioId={actual.perfil.id} />
     </main>

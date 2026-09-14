@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { nombreSitio, type EventoResumen } from "@/lib/eventos";
 import { formatearCuando, tramo } from "@/lib/fechas";
+import Tarjeta from "@/components/ui/Tarjeta";
 import styles from "./Agenda.module.css";
 
 type Props = { eventos: EventoResumen[]; conSesion: boolean; hayLugares: boolean };
@@ -35,24 +36,13 @@ export default function Agenda({ eventos, conSesion, hayLugares }: Props) {
               <ul className={styles.lista}>
                 {grupos[clave].map((e) => (
                   <li key={e.id}>
-                    <Link href={`/eventos/${e.id}`} className={styles.tarjeta}>
-                      <div className={styles.miniatura} aria-hidden="true">
-                        {e.imagen || e.lugar?.portada ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                          <img src={(e.imagen ?? e.lugar?.portada) as string} alt="" />
-                        ) : (
-                          <span>{e.titulo.slice(0, 1).toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div className={styles.texto}>
-                        <span className={styles.cuando}>{formatearCuando(e.inicio, e.fin, ahora)}</span>
-                        <strong className={styles.titulo}>{e.titulo}</strong>
-                        <span className={styles.detalle}>
-                          {nombreSitio(e)}
-                          {e.precio ? ` · ${e.precio}` : " · Gratis"}
-                        </span>
-                      </div>
-                    </Link>
+                    <Tarjeta
+                      href={`/eventos/${e.id}`}
+                      miniatura={{ src: e.imagen ?? e.lugar?.portada, letra: e.titulo }}
+                      arriba={formatearCuando(e.inicio, e.fin, ahora)}
+                      titulo={e.titulo}
+                      detalle={`${nombreSitio(e)}${e.precio ? ` · ${e.precio}` : " · Gratis"}`}
+                    />
                   </li>
                 ))}
               </ul>

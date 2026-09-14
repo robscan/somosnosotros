@@ -24,21 +24,21 @@
   cursor: pointer;
 }
 .titulo {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--letra-xs);
+  font-weight: 500;
   color: var(--texto-suave);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 .resumen {
-  font-size: 16px;
+  font-size: var(--letra-md);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .cambiar {
-  font-size: 14px;
+  font-size: var(--letra-sm);
   color: var(--acento);
   font-weight: 600;
 }
@@ -46,10 +46,10 @@
   padding: var(--espacio-3) var(--espacio-4) var(--espacio-4);
 }
 .tituloAbierto {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--letra-xs);
+  font-weight: 500;
   color: var(--texto-suave);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   margin-bottom: var(--espacio-3);
 }

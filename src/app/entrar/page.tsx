@@ -1,10 +1,10 @@
-import Link from "next/link";
+import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { rutaSegura } from "@/lib/rutas";
 import FormularioEntrar from "./FormularioEntrar";
 
-export const metadata = { title: "Entrar · somosnosotros" };
+export const metadata = { title: "Entrar · Somos Nosotros" };
 
 export default async function Entrar({ searchParams }: { searchParams: Promise<{ siguiente?: string; error?: string }> }) {
   const { siguiente, error } = await searchParams;
@@ -12,9 +12,7 @@ export default async function Entrar({ searchParams }: { searchParams: Promise<{
   if (await usuarioActual()) redirect(destino);
   return (
     <main className="pagina">
-      <Link href="/" className="enlace-volver">
-        ← Volver al mapa
-      </Link>
+      <Barra volver={{ href: "/", texto: "Volver al mapa" }} />
       <h1 className="titulo">Entrar</h1>
       <p className="subtitulo">Sin contraseñas: te mandamos un enlace a tu correo, o entras con Google.</p>
       {error === "enlace" && (

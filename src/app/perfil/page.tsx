@@ -1,12 +1,14 @@
 import Link from "next/link";
+import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
 import { desdeReciente, formatearCuando } from "@/lib/fechas";
 import { nombreSitio, type EventoResumen } from "@/lib/eventos";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import Tarjeta from "@/components/ui/Tarjeta";
 import styles from "./perfil.module.css";
 import FormularioPerfil from "./FormularioPerfil";
 
-export const metadata = { title: "Mi perfil · somosnosotros" };
+export const metadata = { title: "Mi perfil · Somos Nosotros" };
 
 export default async function PaginaPerfil({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
@@ -26,9 +28,7 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
   return (
     <main className="pagina">
-      <Link href="/" className="enlace-volver">
-        ← Volver al mapa
-      </Link>
+      <Barra volver={{ href: "/", texto: "Volver al mapa" }} />
       <h1 className="titulo">Mi perfil</h1>
       <p className="subtitulo">
         {actual.correo}
@@ -47,11 +47,7 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
           <ul className={styles.lista}>
             {eventos.map((e) => (
               <li key={e.id}>
-                <Link href={`/eventos/${e.id}`} className={styles.tarjeta}>
-                  <span className={styles.cuando}>{formatearCuando(e.inicio, e.fin)}</span>
-                  <strong>{e.titulo}</strong>
-                  <span className={styles.detalle}>{nombreSitio(e)}</span>
-                </Link>
+                <Tarjeta href={`/eventos/${e.id}`} arriba={formatearCuando(e.inicio, e.fin)} titulo={e.titulo} detalle={nombreSitio(e)} />
               </li>
             ))}
           </ul>
@@ -65,9 +61,7 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
           <ul className={styles.lista}>
             {lugares.map((l) => (
               <li key={l.id}>
-                <Link href={`/lugares/${l.id}`} className={styles.tarjeta}>
-                  <strong>{l.nombre}</strong>
-                </Link>
+                <Tarjeta href={`/lugares/${l.id}`} titulo={l.nombre} />
               </li>
             ))}
           </ul>

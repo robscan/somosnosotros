@@ -1,0 +1,14 @@
+.logotipo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  font-size: var(--letra-logo);
+  font-weight: 800;
+  font-variation-settings: var(--ancho-titulo);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--texto);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}

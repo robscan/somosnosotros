@@ -13,7 +13,7 @@
   background: var(--fondo-suave);
   display: grid;
   place-items: center;
-  font-size: 28px;
+  font-size: var(--letra-3xl);
   font-weight: 600;
   color: var(--texto-suave);
 }
@@ -65,7 +65,7 @@
   align-items: flex-start;
   gap: var(--espacio-3);
   margin: var(--espacio-2) 0 var(--espacio-4);
-  font-size: 15px;
+  font-size: var(--letra-md);
   cursor: pointer;
 }
 .casilla input {
@@ -87,19 +87,19 @@
   border-radius: var(--radio);
   background: var(--fondo);
   color: var(--acento);
-  font-size: 16px;
+  font-size: var(--letra-md);
   font-weight: 600;
   cursor: pointer;
 }
 .pushNota {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
 }
 .pushEnlace {
   border: none;
   background: none;
   color: var(--acento);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   text-decoration: underline;
   cursor: pointer;
   padding: 0;
