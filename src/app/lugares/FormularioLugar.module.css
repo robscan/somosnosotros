@@ -129,7 +129,7 @@
   border: 1px solid var(--borde);
   border-radius: 999px;
   background: var(--fondo);
-  color: var(--acento);
+  color: var(--primario);
   font-weight: 600;
   cursor: pointer;
 }

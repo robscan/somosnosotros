@@ -114,7 +114,7 @@
   position: absolute;
   inset: -6px;
   border-radius: 50%;
-  border: 2px solid var(--acento);
+  border: 2px solid var(--primario);
 }
 .filaIos {
   display: flex;

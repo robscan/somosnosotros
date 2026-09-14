@@ -8,9 +8,12 @@
   --texto: #1a1a1a;
   --texto-suave: #5c5c5c;
   --borde: #dcdcd8;
-  --acento: #b3261e; /* rojo tierra: botones principales y enlaces */
-  --acento-texto: #ffffff;
-  --error: #b3261e;
+  --primario: #1a1a1a; /* tinta: la acción primaria es el negro del texto (decisión del founder, 2026-09-14) */
+  --primario-texto: #ffffff;
+  --primario-suave: #ededeb; /* fondo del estado seleccionado ("✓ Voy") */
+  --acento: var(--primario); /* OBSOLETO: alias de --primario; el rojo dejó de ser color de acción */
+  --acento-texto: var(--primario-texto);
+  --error: #b3261e; /* rojo solo para errores y borrar */
   --ok: #1f6f43; /* verde: "Voy" confirmado */
   --fondo-miniatura: #e6e6e2; /* miniaturas y avatares sin foto */
   --fondo-mapa: #eef0ec; /* tono claro mientras carga el mapa: nunca pantalla negra */
@@ -85,7 +88,9 @@ h3 {
 }
 
 a {
-  color: var(--acento);
+  color: var(--texto);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
 
 button,
@@ -167,7 +172,7 @@ button:active:not(:disabled) {
 
 /* Foco visible solo cuando se navega con teclado (o lector de pantalla), nunca tras un toque. */
 :focus-visible {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--primario);
   outline-offset: 2px;
 }
 :focus:not(:focus-visible) {

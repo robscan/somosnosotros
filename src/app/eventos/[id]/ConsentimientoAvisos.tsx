@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import HojaInstalar from "@/components/HojaInstalar";
 import { estadoPush, suscribirPush } from "@/lib/pushCliente";
 import { elegirAvisos } from "@/app/avisos/acciones";
@@ -16,7 +16,7 @@ type Canal = null | boolean;
  * evidencia y se ofrece el otro una sola vez. El correo también se pide: un correo no pedido se marca
  * como spam y bloquea la entrega del dominio (docs/rediseno/02-inicio-flujo-y-estados.md, decisión 10).
  */
-export default function ConsentimientoAvisos({ titulo, correo, llavePush }: Props) {
+export default function ConsentimientoAvisos({ titulo, correo, llavePush, onListo }: Props) {
   const [correoOk, setCorreoOk] = useState<Canal>(null);
   const [telefonoOk, setTelefonoOk] = useState<Canal>(null);
   const [hoja, setHoja] = useState(false);
@@ -79,6 +79,13 @@ export default function ConsentimientoAvisos({ titulo, correo, llavePush }: Prop
     setTelefonoOk(true);
     await elegirAvisos({ push: true });
   }
+
+  const terminado = correoOk !== null && telefonoOk !== null;
+  useEffect(() => {
+    if (!terminado || !onListo) return;
+    const id = setTimeout(onListo, 1600);
+    return () => clearTimeout(id);
+  }, [terminado, onListo]);
 
   const ok = (
     <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
@@ -160,6 +167,7 @@ export default function ConsentimientoAvisos({ titulo, correo, llavePush }: Prop
   return (
     <div className={styles.consent} role="status">
       <p className={styles.consentMotivo}>Vas a {titulo}</p>
+      <p className={styles.consentPorque}>Ya estás en la lista de quien va.</p>
       {cuerpo}
       {nota && <p className={styles.consentNota}>{nota}</p>}
       {hoja && <HojaInstalar onCerrar={cerrarHoja} />}

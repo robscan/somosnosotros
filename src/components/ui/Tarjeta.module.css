@@ -34,7 +34,7 @@
 .arriba {
   font-size: var(--letra-xs);
   font-weight: 600;
-  color: var(--acento);
+  color: var(--primario);
 }
 .titulo {
   font-size: var(--letra-xl);

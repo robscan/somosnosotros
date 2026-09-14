@@ -1,165 +1,273 @@
-.publicado {
-  margin: var(--espacio-2) 0 var(--espacio-4);
-  padding: var(--espacio-4);
-  border-radius: var(--radio);
+/* ==========================================================================
+   Ficha de evento (docs/rediseno/04-ficha-evento-flujo-y-estados.md)
+   1. Página y barra · 2. Cartel · 3. Información · 4. Acciones secundarias ·
+   5. Descripción y quién va · 6. Barra inferior pegajosa · 7. Menú · 8. Avisos
+   ========================================================================== */
+
+/* 1. Página: deja sitio abajo para la barra pegajosa */
+.pagina {
+  min-height: 100dvh;
+  padding: calc(var(--espacio-2) + env(safe-area-inset-top, 0px)) var(--espacio-5) calc(96px + env(safe-area-inset-bottom, 0px));
+  max-width: 520px;
+  margin: 0 auto;
+}
+.iconoBarra {
+  display: inline-grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.iconoBarra:active {
   background: var(--fondo-suave);
 }
-.imagen {
+.publicado {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--espacio-3);
+  align-items: center;
+  margin: var(--espacio-2) 0 var(--espacio-4);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  font-size: var(--letra-sm);
+}
+.publicado b {
+  display: block;
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+}
+.publicadoBoton {
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--texto);
+  border-radius: 10px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 2. Cartel: banda baja a ancho completo (cover); un toque lo enseña entero */
+.banda {
+  position: relative;
   display: block;
   width: 100%;
-  max-height: 360px;
-  object-fit: cover;
+  height: 220px;
+  margin: var(--espacio-1) 0 var(--espacio-4);
+  padding: 0;
+  border: none;
   border-radius: var(--radio);
-  margin: var(--espacio-2) 0 var(--espacio-4);
+  overflow: hidden;
+  background: var(--fondo-miniatura);
+  cursor: zoom-in;
 }
-.cuando {
-  font-size: var(--letra-lg);
-  font-weight: 600;
+.cartel {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
-.precio {
-  color: var(--texto-suave);
-  margin-bottom: var(--espacio-2);
+.lupa {
+  position: absolute;
+  right: var(--espacio-2);
+  bottom: var(--espacio-2);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--vidrio);
+  color: var(--texto);
 }
-.donde {
+.visor {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+.visorImagen {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.visorCerrar {
+  position: absolute;
+  top: calc(var(--espacio-3) + env(safe-area-inset-top, 0px));
+  right: var(--espacio-3);
+  width: var(--toque-min);
+  height: var(--toque-min);
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: var(--letra-xl);
+  cursor: pointer;
+}
+
+/* 3. Información: título y renglones con icono, como en la agenda */
+.titulo {
+  font-size: var(--letra-2xl);
+  margin-bottom: var(--espacio-3);
+}
+.datos {
+  list-style: none;
+  display: grid;
+  gap: 2px;
   margin-bottom: var(--espacio-4);
 }
-.donde a {
-  font-weight: 600;
+/* Renglón de dato sin envoltorios: icono, principal, secundario (opcional) y acción (opcional) son hijos directos. */
+.dato {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-areas:
+    "icono principal accion"
+    "icono secundario accion";
+  column-gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  font-size: var(--letra-md);
 }
-.direccion {
-  display: block;
+.dato > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.dato b {
+  grid-area: principal;
+  font-weight: 500;
+}
+.dato small {
+  grid-area: secundario;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+.dato .datoEnlace {
+  grid-area: accion;
+}
+.datoEnlace {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.oculto {
+  margin-bottom: var(--espacio-3);
+}
+
+/* 4. Acciones secundarias: tres botones de icono iguales, sin color de acción */
 .acciones {
   display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--espacio-2);
   margin-bottom: var(--espacio-5);
 }
-.botonPrincipal {
+.accion {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-5);
-  border: none;
-  border-radius: var(--radio);
-  background: var(--acento);
-  color: var(--acento-texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-}
-.botonEnlace {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-5);
+  gap: 4px;
+  min-height: 60px;
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  color: var(--acento);
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-xs);
   font-weight: 600;
   text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.botonSuave {
-  min-height: var(--toque);
-  padding: 0 var(--espacio-4);
+.accion:active {
+  background: var(--fondo-suave);
+}
+.accion[aria-disabled="true"] {
+  color: var(--texto-suave);
+  pointer-events: none;
+}
+
+/* 5. Descripción y quién va */
+.descripcion {
+  margin-bottom: var(--espacio-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-line;
+  line-height: 1.45;
+}
+.descripcionAbierta {
+  display: block;
+}
+.mas {
+  display: block;
+  min-height: 32px;
+  margin-bottom: var(--espacio-4);
   border: none;
   background: none;
   color: var(--texto-suave);
+  font-size: var(--letra-sm);
   text-decoration: underline;
   cursor: pointer;
 }
-.descripcion {
+.enlaceExterno {
+  display: block;
   margin-bottom: var(--espacio-5);
-  white-space: pre-line;
-}
-.autor {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  margin-bottom: var(--espacio-5);
-}
-.gestion {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--espacio-3);
-  padding-top: var(--espacio-4);
-  border-top: 1px solid var(--borde);
-}
-.reservado {
-  margin-bottom: var(--espacio-4);
-}
-.privado {
-  padding: var(--espacio-3) var(--espacio-4);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
-  font-weight: 600;
-}
-.nota {
-  color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
 .quienVa {
-  margin: var(--espacio-4) 0 var(--espacio-5);
-  padding: var(--espacio-4);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
+  margin-bottom: var(--espacio-5);
+  padding-top: var(--espacio-4);
+  border-top: 1px solid var(--borde);
 }
-.asistencia {
-  display: flex;
-  gap: var(--espacio-2);
-  margin-bottom: var(--espacio-3);
-}
-.botonVoy,
-.botonInteres {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-4);
-  border-radius: var(--radio);
-  border: 1px solid var(--acento);
-  font-size: var(--letra-lg);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  background: var(--acento);
-  color: var(--acento-texto);
-}
-.botonInteres {
-  background: var(--fondo);
-  color: var(--acento);
-}
-.botonVoyActivo {
-  background: var(--ok);
-  border-color: var(--ok);
-}
-.botonInteresActivo {
-  background: var(--fondo);
-  color: var(--ok);
-  border-color: var(--ok);
-}
-.resumenVan {
-  font-weight: 600;
+.quienVa h2 {
+  font-size: var(--letra-xl);
   margin-bottom: var(--espacio-2);
 }
-.listaVan {
-  list-style: none;
-  display: grid;
-  gap: var(--espacio-1);
+.nadie,
+.interesados {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
 }
-.persona {
-  display: inline-flex;
+.interesados {
+  margin-top: 6px;
+}
+.resumenVan {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
   align-items: center;
-  gap: var(--espacio-2);
+  width: 100%;
   min-height: var(--toque-min);
+  border: none;
+  background: none;
   color: var(--texto);
-  text-decoration: none;
+  font-size: var(--letra-md);
+  text-align: left;
+  cursor: pointer;
+}
+.resumenVan > svg {
+  color: var(--texto-suave);
+  transition: transform 200ms;
+}
+.resumenVan[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.pila {
+  display: flex;
+}
+.pila .avatar {
+  margin-left: -8px;
+  border: 2px solid var(--fondo);
+}
+.pila .avatar:first-child {
+  margin-left: 0;
 }
 .avatar {
   width: 32px;
@@ -170,35 +278,156 @@
   background: var(--fondo-miniatura);
   display: inline-grid;
   place-items: center;
-  font-weight: 600;
-  font-size: var(--letra-sm);
+  font-size: var(--letra-xs);
+  font-weight: 700;
   color: var(--texto-suave);
 }
-.interesados {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
+.listaVan {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-1);
   margin-top: var(--espacio-2);
 }
+.persona {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--toque-min);
+  color: var(--texto);
+  text-decoration: none;
+}
+.autor {
+  padding: var(--espacio-3) 0;
+  border-top: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 
-/* Pregunta de avisos tras el primer "Voy" (una decisión a la vez) */
-.consent {
-  margin: var(--espacio-3) 0;
-  padding: var(--espacio-4) var(--espacio-4) var(--espacio-3);
+/* 6. Barra inferior pegajosa: acción, y luego estado */
+.accionFija {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--espacio-3);
+  align-items: center;
+  min-height: 72px;
+  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--fondo);
+  border-top: 1px solid var(--borde);
+}
+.accionEstado {
+  grid-template-columns: 1fr auto;
+}
+.voy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: none;
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.voyChico {
+  padding: 0 var(--espacio-5);
+}
+.interesa {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
+  padding: 0 6px;
+  border: none;
+  background: none;
+  color: var(--texto);
+  font-size: var(--letra-md);
+  font-weight: 600;
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.seleccionado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1.5px solid var(--primario);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.seleccionado small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 500;
+}
+.secundario {
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 7. Menú ··· */
+.menu {
+  list-style: none;
+  margin-top: var(--espacio-4);
+}
+.menuItem {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-2) var(--espacio-1);
+  border: none;
+  border-bottom: 1px solid var(--borde);
+  background: none;
+  color: var(--texto);
+  font-size: var(--letra-md);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* 8. Pregunta de avisos tras el primer "Voy" (dentro de la hoja) */
+.consent {
+  padding-top: var(--espacio-2);
   font-size: var(--letra-sm);
   line-height: 1.35;
 }
 .consentMotivo {
-  font-size: var(--letra-lg);
+  padding-right: var(--toque-min);
+  font-size: var(--letra-xl);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
-  margin-bottom: var(--espacio-2);
+  line-height: 1.15;
+  margin-bottom: var(--espacio-1);
+}
+.consentPorque {
+  color: var(--texto-suave);
+  margin-bottom: var(--espacio-3);
 }
 .consentPregunta {
   font-weight: 700;
-  margin: var(--espacio-2) 0 var(--espacio-2);
+  margin: var(--espacio-2) 0;
 }
 .consentOpciones {
   display: grid;
@@ -216,8 +445,8 @@
 }
 .consentSi {
   border: none;
-  background: var(--texto);
-  color: var(--fondo);
+  background: var(--primario);
+  color: var(--primario-texto);
 }
 .consentNo {
   border: 1px solid var(--borde);
@@ -254,4 +483,10 @@
   margin-top: 6px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resumenVan > svg {
+    transition: none;
+  }
 }

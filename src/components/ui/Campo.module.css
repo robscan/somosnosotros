@@ -17,7 +17,7 @@
   font-size: var(--letra-md);
 }
 .control:focus {
-  outline: 2px solid var(--acento);
+  outline: 2px solid var(--primario);
   outline-offset: 1px;
 }
 .control[aria-invalid="true"] {

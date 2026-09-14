@@ -44,7 +44,7 @@
 .enlaceBoton {
   background: none;
   border: none;
-  color: var(--acento);
+  color: var(--primario);
   min-height: var(--toque-min);
   padding: 0;
   margin-top: var(--espacio-1);
@@ -67,8 +67,8 @@
   cursor: pointer;
 }
 .opcionActiva {
-  border-color: var(--acento);
-  color: var(--acento);
+  border-color: var(--primario);
+  color: var(--primario);
   font-weight: 600;
 }
 .opcion input {
@@ -120,8 +120,8 @@
   width: 100%;
   justify-content: center;
   border-style: dashed;
-  border-color: var(--acento);
-  color: var(--acento);
+  border-color: var(--primario);
+  color: var(--primario);
   font-weight: 600;
 }
 .opciones .opcion {
@@ -133,7 +133,7 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--toque);
-  color: var(--acento);
+  color: var(--primario);
   font-weight: 600;
   cursor: pointer;
 }
@@ -161,7 +161,7 @@
   border: 1px solid var(--borde);
   border-radius: 999px;
   background: var(--fondo);
-  color: var(--acento);
+  color: var(--primario);
   font-size: var(--letra-md);
   font-weight: 600;
   cursor: pointer;

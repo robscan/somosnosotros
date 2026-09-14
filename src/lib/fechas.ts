@@ -83,12 +83,16 @@ export function formatearCuando(inicio: string, fin?: string | null, ahora: Date
   return texto;
 }
 
-/** Fecha larga para la ficha: "sábado 20 de septiembre, 19:00" (con año si no es el de hoy). */
-export function formatearLargo(iso: string, ahora: Date = new Date()): string {
+/** Fecha larga para la ficha: "sábado 20 de septiembre · 19:00" (con año si no es el de hoy; con " a 21:00" si hay fin el mismo día). */
+export function formatearLargo(iso: string, ahora: Date = new Date(), fin?: string | null): string {
   const d = new Date(iso);
-  const fecha = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "long", day: "numeric", month: "long", ...conAnio(d, ahora) }).format(d);
-  const hora = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
-  return `${fecha}, ${hora}`;
+  const fecha = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "long", day: "numeric", month: "long", ...conAnio(d, ahora) }).format(d).replace(",", "");
+  let texto = `${fecha} · ${horaCorta(iso)}`;
+  if (fin) {
+    const f = new Date(fin);
+    texto += diaLocal(f) === diaLocal(d) ? ` a ${horaCorta(fin)}` : ` hasta ${formatearLargo(fin, ahora)}`;
+  }
+  return texto;
 }
 
 export type Tramo = "hoy" | "semana" | "proximos" | "pasado";
@@ -143,18 +147,11 @@ export function sumarHoras(local: string, horas: number): string {
   return isoALocal(new Date(new Date(iso).getTime() + horas * 3600000).toISOString());
 }
 
-/** Frase para confirmar: "sábado 19 de septiembre, 19:00" o "…, 19:00 a 21:00". */
-export function fraseCuando(inicioLocal: string, finLocal?: string): string {
+/** Frase para confirmar: "sábado 19 de septiembre · 19:00" o "… · 19:00 a 21:00". */
+export function fraseCuando(inicioLocal: string, finLocal?: string, ahora: Date = new Date()): string {
   const iso = localAIso(inicioLocal);
   if (!iso) return "";
-  let texto = formatearLargo(iso);
-  const finIso = finLocal ? localAIso(finLocal) : null;
-  if (finIso) {
-    const mismoDia = diaLocal(new Date(finIso)) === diaLocal(new Date(iso));
-    const horaFin = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(finIso));
-    texto += mismoDia ? ` a ${horaFin}` : ` hasta ${formatearLargo(finIso)}`;
-  }
-  return texto;
+  return formatearLargo(iso, ahora, finLocal ? localAIso(finLocal) : null);
 }
 
 /** ¿La hora elegida (en hora de la ciudad) ya pasó? */

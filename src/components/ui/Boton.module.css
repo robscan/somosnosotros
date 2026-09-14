@@ -15,8 +15,8 @@
   cursor: default;
 }
 .principal {
-  background: var(--acento);
-  color: var(--acento-texto);
+  background: var(--primario);
+  color: var(--primario-texto);
 }
 .secundario {
   background: var(--fondo);

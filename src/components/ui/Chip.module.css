@@ -25,9 +25,9 @@
   cursor: pointer;
 }
 .activo {
-  border-color: var(--acento);
-  background: var(--acento);
-  color: var(--acento-texto);
+  border-color: var(--primario);
+  background: var(--primario);
+  color: var(--primario-texto);
   font-weight: 600;
 }
 .chipNativo {

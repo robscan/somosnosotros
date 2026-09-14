@@ -18,14 +18,18 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
   const desde = desdeReciente();
   const [{ data: sigue }, { data: va }] = await Promise.all([
     supabase!.from("seguimientos").select("lugar:lugares(id, nombre)").eq("usuario_id", actual.perfil.id),
-    supabase!.from("asistencias").select("evento:eventos(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada))").eq("usuario_id", actual.perfil.id).eq("estado", "voy"),
+    supabase!.from("asistencias").select("estado, evento:eventos(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada))").eq("usuario_id", actual.perfil.id),
   ]);
   const lugares = (sigue ?? []).map((s) => (Array.isArray(s.lugar) ? s.lugar[0] : s.lugar)).filter(Boolean) as { id: string; nombre: string }[];
-  const eventos = (va ?? [])
-    .map((a) => (Array.isArray(a.evento) ? a.evento[0] : a.evento))
-    .filter((e): e is NonNullable<typeof e> => !!e && e.inicio >= desde)
-    .map((e) => ({ ...e, lugar: Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar }) as unknown as EventoResumen)
-    .sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const porEstado = (estado: "voy" | "me_interesa") =>
+    (va ?? [])
+      .filter((a) => a.estado === estado)
+      .map((a) => (Array.isArray(a.evento) ? a.evento[0] : a.evento))
+      .filter((e): e is NonNullable<typeof e> => !!e && e.inicio >= desde)
+      .map((e) => ({ ...e, lugar: Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar }) as unknown as EventoResumen)
+      .sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const eventos = porEstado("voy");
+  const interesan = porEstado("me_interesa");
   return (
     <main className="pagina">
       <Barra volver={{ href: "/", texto: "Agenda" }} />
@@ -53,6 +57,18 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
           </ul>
         )}
       </section>
+      {interesan.length > 0 && (
+        <section className={styles.seccion} aria-label="Eventos que me interesan">
+          <h2 className={styles.tituloSeccion}>Me interesa</h2>
+          <ul className={styles.lista}>
+            {interesan.map((e) => (
+              <li key={e.id}>
+                <Tarjeta href={`/eventos/${e.id}`} arriba={formatearCuando(e.inicio, e.fin)} titulo={e.titulo} detalle={nombreSitio(e)} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section className={styles.seccion} aria-label="Lugares que sigo">
         <h2 className={styles.tituloSeccion}>Sigo</h2>
         {lugares.length === 0 ? (

@@ -18,6 +18,7 @@
 .derecha {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
 }
 .interior {
   display: grid;
@@ -34,7 +35,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.hueco {
-  display: block;
 }
