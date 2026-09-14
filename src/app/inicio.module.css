@@ -1,0 +1,8 @@
+.aviso {
+  margin: 0 var(--espacio-5) var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  color: var(--texto);
+}

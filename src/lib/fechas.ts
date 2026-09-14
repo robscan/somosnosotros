@@ -41,20 +41,44 @@ function conAnio(d: Date, ahora: Date): { year?: "numeric" } {
   return partes(d).year === partes(ahora).year ? {} : { year: "numeric" };
 }
 
+/** "sáb 20 de sep" (con año si no es el actual). */
+function diaCortoDe(x: Date, ahora: Date): string {
+  return new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short", ...conAnio(x, ahora) }).format(x).replace(/[.,]/g, "");
+}
+
+/** "Hoy", "Mañana" o "sáb 20 de sep": el título del día en la agenda. */
+export function diaCorto(iso: string, ahora: Date = new Date()): string {
+  const d = new Date(iso);
+  const dia = diaLocal(d);
+  if (dia === diaLocal(ahora)) return "Hoy";
+  if (dia === diaLocal(new Date(ahora.getTime() + 86400000))) return "Mañana";
+  return diaCortoDe(d, ahora);
+}
+
+/** "sábado 19 de septiembre" (con año si no es el actual) a partir de un día YYYY-MM-DD de la ciudad. */
+export function diaLargo(fecha: string, ahora: Date = new Date()): string {
+  const iso = localAIso(`${fecha}T12:00`);
+  if (!iso) return fecha;
+  const d = new Date(iso);
+  return new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "long", day: "numeric", month: "long", ...conAnio(d, ahora) }).format(d).replace(",", "");
+}
+
+/** "19:00" en la hora de la ciudad. */
+export function horaCorta(iso: string): string {
+  return new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
+}
+
 /** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). Con año si no es el de hoy. */
 export function formatearCuando(inicio: string, fin?: string | null, ahora: Date = new Date()): string {
   const d = new Date(inicio);
-  const hoy = diaLocal(ahora);
   const dia = diaLocal(d);
-  const manana = diaLocal(new Date(ahora.getTime() + 86400000));
-  const corta = (x: Date) => new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short", ...conAnio(x, ahora) }).format(x).replace(/[.,]/g, "");
-  const fecha = dia === hoy ? "Hoy" : dia === manana ? "Mañana" : corta(d);
-  const hora = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+  const fecha = diaCorto(inicio, ahora);
+  const hora = horaCorta(inicio);
   let texto = `${fecha} · ${hora}`;
   if (fin) {
     const f = new Date(fin);
-    const horaFin = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(f);
-    texto += diaLocal(f) === dia ? `–${horaFin}` : ` → ${corta(f)} · ${horaFin}`;
+    const horaFin = horaCorta(fin);
+    texto += diaLocal(f) === dia ? `–${horaFin}` : ` → ${diaCortoDe(f, ahora)} · ${horaFin}`;
   }
   return texto;
 }

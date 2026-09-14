@@ -12,7 +12,7 @@ export default async function Entrar({ searchParams }: { searchParams: Promise<{
   if (await usuarioActual()) redirect(destino);
   return (
     <main className="pagina">
-      <Barra volver={{ href: "/", texto: "Volver al mapa" }} />
+      <Barra volver={{ href: "/", texto: "Agenda" }} />
       <h1 className="titulo">Entrar</h1>
       <p className="subtitulo">Sin contraseñas: te mandamos un enlace a tu correo, o entras con Google.</p>
       {error === "enlace" && (

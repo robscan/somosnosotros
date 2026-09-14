@@ -6,31 +6,41 @@ import { etiquetaTipo, filtrarLugares, type LugarResumen } from "@/lib/lugares";
 import Tarjeta from "@/components/ui/Tarjeta";
 import styles from "./ListaLugares.module.css";
 
-type Props = { lugares: LugarResumen[]; conSesion: boolean };
+type Props = { lugares: LugarResumen[]; conSesion: boolean; conAlta?: boolean };
 
-/** Lista de lugares del panel, con búsqueda por nombre y el botón para registrar uno. */
-export default function ListaLugares({ lugares, conSesion }: Props) {
+/** Umbral a partir del cual vale la pena buscar por nombre (progressive disclosure). */
+const UMBRAL_BUSCAR = 8;
+
+/** Lista de lugares con búsqueda por nombre (solo cuando hay muchos) y, si se pide, el enlace para registrar uno. */
+export default function ListaLugares({ lugares, conSesion, conAlta = true }: Props) {
   const [busqueda, setBusqueda] = useState("");
   const visibles = filtrarLugares(lugares, busqueda);
   const hrefNuevo = conSesion ? "/lugares/nuevo" : "/entrar?siguiente=/lugares/nuevo";
+  const conBuscar = lugares.length >= UMBRAL_BUSCAR;
 
   return (
     <div>
-      <div className={styles.barra}>
-        <input
-          type="search"
-          className={styles.buscar}
-          placeholder="Buscar un lugar por nombre"
-          aria-label="Buscar un lugar por nombre"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          autoCapitalize="none"
-          autoCorrect="off"
-        />
-        <Link href={hrefNuevo} className={styles.nuevo}>
-          + Registrar un lugar
-        </Link>
-      </div>
+      {(conBuscar || conAlta) && (
+        <div className={styles.barra}>
+          {conBuscar && (
+            <input
+              type="search"
+              className={styles.buscar}
+              placeholder="Buscar un lugar por nombre"
+              aria-label="Buscar un lugar por nombre"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              autoCapitalize="none"
+              autoCorrect="off"
+            />
+          )}
+          {conAlta && (
+            <Link href={hrefNuevo} className={styles.nuevo}>
+              + Registrar un lugar
+            </Link>
+          )}
+        </div>
+      )}
 
       {lugares.length === 0 ? (
         <p className={styles.vacio}>Aún no hay lugares. Registra el primero.</p>

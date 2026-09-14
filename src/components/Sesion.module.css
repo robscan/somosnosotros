@@ -1,0 +1,30 @@
+.entrar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--espacio-4);
+  border-radius: 999px;
+  background: var(--acento);
+  color: var(--acento-texto);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  text-decoration: none;
+}
+.perfil {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  text-decoration: none;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+  display: inline-grid;
+  place-items: center;
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  color: var(--texto-suave);
+}

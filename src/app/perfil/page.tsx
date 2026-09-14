@@ -28,7 +28,7 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
   return (
     <main className="pagina">
-      <Barra volver={{ href: "/", texto: "Volver al mapa" }} />
+      <Barra volver={{ href: "/", texto: "Agenda" }} />
       <h1 className="titulo">Mi perfil</h1>
       <p className="subtitulo">
         {actual.correo}

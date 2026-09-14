@@ -4,6 +4,7 @@
   /* Variables de diseño: una sola fuente de verdad para color, espacio y forma. */
   --fondo: #ffffff;
   --fondo-suave: #f4f4f2;
+  --fondo-contenido: #f6f5f1; /* zona de contenido de las pantallas raíz: distinta de la cabecera y la nav, que son blancas */
   --texto: #1a1a1a;
   --texto-suave: #5c5c5c;
   --borde: #dcdcd8;
@@ -18,6 +19,7 @@
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
   --sombra-suave: 0 1px 4px rgba(0, 0, 0, 0.08);
   --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+  --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
 
   --radio: 12px;
   --radio-grande: 16px;
@@ -27,6 +29,9 @@
   --espacio-4: 16px;
   --espacio-5: 20px;
   --espacio-6: 24px;
+  --alto-barra: 56px; /* barra superior: logotipo y sesión, o regreso y logotipo */
+  --alto-nav: 49px; /* barra de navegación inferior, sin el área segura */
+  --alto-cabecera-agenda: 101px; /* chips (56) + pestañas (44) + línea (1): lo que se pega en la agenda */
   --toque: 48px; /* alto de botones y campos: cómodo para el pulgar */
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
 
@@ -95,6 +100,21 @@ input,
 textarea,
 select {
   font-size: max(16px, var(--letra-md));
+}
+
+/* Pantallas raíz (Agenda, Lugares, Artistas): barra arriba, contenido en su tono, navegación inferior fija. */
+.raiz {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + 96px);
+  background: var(--fondo-contenido);
+}
+.raiz > .cabecera-raiz {
+  padding: 0 var(--espacio-5);
+  background: var(--fondo);
+}
+.raiz > .contenido-raiz {
+  padding: 0 var(--espacio-5);
 }
 
 /* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */

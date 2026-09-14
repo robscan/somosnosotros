@@ -1,0 +1,262 @@
+.agenda {
+  padding: 0 var(--espacio-5);
+}
+
+/* Cabecera pegajosa: chips de contexto y pestañas de filtro; blanca sobre el tono del contenido. */
+.fija {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin: 0 calc(-1 * var(--espacio-5));
+  padding: 0 var(--espacio-5);
+  background: var(--fondo);
+  border-bottom: 1px solid var(--borde);
+}
+.contexto {
+  display: flex;
+  gap: var(--espacio-2);
+  padding: var(--espacio-1) 0 var(--espacio-3);
+}
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 var(--espacio-3) 0 10px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chipActivo {
+  border-color: var(--texto);
+}
+.chip svg {
+  flex: none;
+  color: var(--texto-suave);
+}
+.quitar {
+  position: relative;
+  z-index: 1;
+  min-width: 32px;
+  min-height: 40px;
+  margin: 0 -8px 0 2px;
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-weight: 400;
+  cursor: pointer;
+}
+/* El campo nativo va encima del chip, invisible: el toque abre el selector del teléfono. */
+.encima {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0 calc(-1 * var(--espacio-5)) -1px;
+}
+.filtro {
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-1);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.filtro[aria-selected="true"] {
+  color: var(--texto);
+  border-bottom-color: var(--texto);
+  font-weight: 700;
+}
+
+/* Grupos por día con título pegajoso debajo de la cabecera. */
+.grupo {
+  margin-bottom: var(--espacio-6);
+}
+.grupo h2 {
+  position: sticky;
+  top: var(--alto-cabecera-agenda);
+  z-index: 5;
+  padding: 14px 0 6px;
+  background: var(--fondo-contenido);
+  border-bottom: 1px solid var(--texto);
+  font-size: var(--letra-xl);
+}
+.grupo h2 span {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+.vacio {
+  padding: var(--espacio-3) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.vacioAccion {
+  padding-top: var(--espacio-5);
+}
+.vacioAccion h2 {
+  position: static;
+  padding: 0 0 6px;
+  border: none;
+}
+.vacioAccion p {
+  margin-bottom: var(--espacio-4);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.accion {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-5);
+  border: 1px solid var(--texto);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.lista {
+  list-style: none;
+}
+
+/* Renglón de evento */
+.renglon {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--espacio-3);
+  align-items: center;
+  min-height: 64px;
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.renglon:active {
+  margin: 0 calc(-1 * var(--espacio-5));
+  padding-inline: var(--espacio-5);
+  background: var(--fondo);
+}
+.foto {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  align-self: start;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.fotoVacia {
+  display: block;
+  background: var(--fondo);
+  border: 1px dashed var(--borde);
+}
+.texto {
+  display: block;
+  min-width: 0;
+}
+.titulo {
+  display: block;
+  font-size: var(--letra-xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--espacio-3);
+  margin-top: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.meta .lugar {
+  white-space: normal;
+}
+.meta b {
+  color: var(--texto);
+  font-weight: 500;
+}
+
+/* Hoja de ciudades */
+.hojaFondo {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.32);
+}
+.hoja {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+  background: var(--fondo);
+  box-shadow: var(--sombra-panel);
+}
+.asa {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: 2px;
+  background: var(--asa);
+}
+.hoja h3 {
+  margin-bottom: var(--espacio-1);
+  font-size: var(--letra-xl);
+}
+.hoja p {
+  margin-bottom: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.opcion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-1);
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  text-decoration: none;
+}
+.opcion span:last-child {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.elegida {
+  font-weight: 700;
+}
