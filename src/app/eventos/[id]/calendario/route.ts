@@ -6,7 +6,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const supabase = await clienteServidor();
   if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return new Response("No encontrado", { status: 404 });
-  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, descripcion, lugar:lugares(nombre, direccion)").eq("id", id).maybeSingle();
+  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, descripcion, sitio_texto, lugar:lugares(nombre, direccion)").eq("id", id).maybeSingle();
   if (!data) return new Response("No encontrado", { status: 404 });
   const lugar = (Array.isArray(data.lugar) ? data.lugar[0] : data.lugar) as { nombre: string; direccion: string | null } | null;
   const fin = data.fin ?? new Date(new Date(data.inicio).getTime() + 2 * 3600000).toISOString();
@@ -21,7 +21,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     `DTSTART:${aFechaIcs(data.inicio)}`,
     `DTEND:${aFechaIcs(fin)}`,
     `SUMMARY:${escapar(data.titulo)}`,
-    lugar ? `LOCATION:${escapar([lugar.nombre, lugar.direccion].filter(Boolean).join(", "))}` : null,
+    lugar ? `LOCATION:${escapar([lugar.nombre, lugar.direccion].filter(Boolean).join(", "))}` : data.sitio_texto ? `LOCATION:${escapar(data.sitio_texto)}` : null,
     `DESCRIPTION:${escapar(`${data.descripcion ?? ""}\nhttps://somosnosotros.org/eventos/${data.id}`.trim())}`,
     `URL:https://somosnosotros.org/eventos/${data.id}`,
     "END:VEVENT",

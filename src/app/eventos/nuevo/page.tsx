@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { lecturaDeCartelActiva } from "@/lib/cartel";
 import type { Evento } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -26,7 +27,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
       </Link>
       <h1 className="titulo">{base ? "Duplicar evento" : "Publicar un evento"}</h1>
       <p className="subtitulo">{base ? "Mismo evento, nueva fecha. Cambia lo que haga falta." : "Dónde, qué y cuándo. Lo demás es opcional."}</p>
-      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} />
+      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} />
     </main>
   );
 }

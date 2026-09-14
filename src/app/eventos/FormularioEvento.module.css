@@ -113,3 +113,19 @@
   text-align: left;
   cursor: pointer;
 }
+.cartel {
+  margin-bottom: var(--espacio-5);
+}
+.subirCartel {
+  width: 100%;
+  justify-content: center;
+  border-style: dashed;
+  border-color: var(--acento);
+  color: var(--acento);
+  font-weight: 600;
+}
+.opciones .opcion {
+  font-size: 15px;
+  padding: 0 var(--espacio-2);
+  text-align: center;
+}

@@ -26,7 +26,7 @@ async function cargarEventos(lugarId: string): Promise<EventoResumen[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
   const desde = new Date(Date.now() - 3 * 3600000).toISOString();
-  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id").eq("lugar_id", lugarId).eq("visible", true).gte("inicio", desde).order("inicio").limit(30);
+  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado").eq("lugar_id", lugarId).eq("visible", true).gte("inicio", desde).order("inicio").limit(30);
   return ((data ?? []) as Omit<EventoResumen, "lugar">[]).map((e) => ({ ...e, lugar: null }));
 }
 

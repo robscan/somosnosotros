@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import type { Evento } from "@/lib/eventos";
-import { textoCompartir } from "@/lib/eventos";
+import type { Evento, SitioPrivado } from "@/lib/eventos";
+import { nombreSitio, textoCompartir } from "@/lib/eventos";
 import { formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cambiarVisibleEvento } from "../acciones";
@@ -29,13 +29,21 @@ async function cargarEvento(id: string): Promise<EventoConLugar | null> {
   return { ...fila, lugar: lugar as EventoConLugar["lugar"], autor: autor as EventoConLugar["autor"] };
 }
 
+/** La dirección reservada: la base decide si esta persona puede verla (autor, admin, o con sesión cuando toca). */
+async function cargarPrivado(id: string): Promise<SitioPrivado | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const { data } = await supabase.from("eventos_sitio_privado").select("direccion, lat, lng, indicaciones, revelar_desde").eq("evento_id", id).maybeSingle();
+  return (data as SitioPrivado | null) ?? null;
+}
+
 /** Vista previa al compartir (WhatsApp lee estas etiquetas): título, cuándo y dónde, imagen. */
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const e = await cargarEvento(id);
   if (!e) return { title: "Evento · somosnosotros" };
   const cuando = formatearLargo(e.inicio);
-  const descripcion = `${cuando}${e.lugar ? ` · ${e.lugar.nombre}` : ""}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
+  const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
   const imagen = e.imagen ?? e.lugar?.portada ?? undefined;
   return {
     title: `${e.titulo} · somosnosotros`,
@@ -50,12 +58,15 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const { nuevo } = (await searchParams) ?? {};
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
+  const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
+  const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
   const url = `${ORIGEN}/eventos/${e.id}`;
   const cuando = formatearCuando(e.inicio, e.fin);
-  const texto = textoCompartir(e.titulo, cuando, e.lugar?.nombre ?? null, url);
-  const comoLlegar = e.lugar ? `https://www.google.com/maps/dir/?api=1&destination=${e.lugar.lat},${e.lugar.lng}` : null;
+  const texto = textoCompartir(e.titulo, cuando, sitio, url);
+  const puntoLlegar = e.lugar ? { lat: e.lugar.lat, lng: e.lugar.lng } : privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : e.sitio_lat != null && e.sitio_lng != null ? { lat: e.sitio_lat, lng: e.sitio_lng } : null;
+  const comoLlegar = puntoLlegar ? `https://www.google.com/maps/dir/?api=1&destination=${puntoLlegar.lat},${puntoLlegar.lng}` : null;
 
   return (
     <main className="pagina">
@@ -86,6 +97,32 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <Link href={`/lugares/${e.lugar.id}`}>{e.lugar.nombre}</Link>
           {e.lugar.direccion ? <span className={styles.direccion}>{e.lugar.direccion}</span> : null}
         </p>
+      )}
+      {!e.lugar && e.sitio_texto && !e.sitio_reservado && (
+        <p className={styles.donde}>
+          <strong>{e.sitio_texto}</strong>
+        </p>
+      )}
+      {e.sitio_reservado && (
+        <div className={styles.reservado}>
+          <p className={styles.donde}>
+            <strong>{e.sitio_texto}</strong>
+            <span className={styles.direccion}>Sitio reservado</span>
+          </p>
+          {privado ? (
+            <p className={styles.privado}>
+              {privado.direccion}
+              {privado.indicaciones ? <span className={styles.direccion}>{privado.indicaciones}</span> : null}
+            </p>
+          ) : actual ? (
+            <p className={styles.nota}>La dirección exacta se revela aquí el {e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde) : "día del evento"}. Vuelve entonces.</p>
+          ) : (
+            <p className={styles.nota}>
+              La dirección exacta se revela a las personas registradas{e.sitio_revelar_desde ? ` el ${formatearLargo(e.sitio_revelar_desde)}` : ""}.{" "}
+              <Link href={`/entrar?siguiente=${encodeURIComponent(`/eventos/${e.id}`)}`}>Entra</Link> para verla cuando toque.
+            </p>
+          )}
+        </div>
       )}
 
       <div className={styles.acciones}>
