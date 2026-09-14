@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, nombreSitio, textoCompartir, validarEvento } from "./eventos";
+import { cartelAFormulario, enlaceDesdeCartel, nombreSitio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -66,6 +66,16 @@ describe("cartelAFormulario", () => {
     expect(sinHora.inicio).toBe("2026-09-20T19:00");
     expect(sinHora.gratis).toBe(true);
     expect(cartelAFormulario({ titulo: "x", fecha: "20 sep", hora: "8pm", hora_fin: null, lugar: null, direccion: null, gratis: null, precio: null, descripcion: null, enlace: null }).inicio).toBe("");
+  });
+});
+
+describe("enlaceDesdeCartel", () => {
+  it("convierte @usuario en Instagram, deja enlaces y descarta teléfonos", () => {
+    expect(enlaceDesdeCartel("@casa1100slp")).toBe("https://instagram.com/casa1100slp");
+    expect(enlaceDesdeCartel("boletos.mx/jazz")).toBe("boletos.mx/jazz");
+    expect(enlaceDesdeCartel("https://x.org")).toBe("https://x.org");
+    expect(enlaceDesdeCartel("444 123 4567")).toBe("");
+    expect(enlaceDesdeCartel(null)).toBe("");
   });
 });
 

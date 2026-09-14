@@ -28,6 +28,6 @@ Rama `eventos-sitio-y-cartel`. Tres pedidos del founder: que un evento no necesi
 - Anónimo por la web: solo "Entra para verla" y la hora; consulta anónima directa a `eventos_sitio_privado`: 0 filas.
 - Agenda: "Casa en Tequis · sitio reservado · Gratis". Lint, typecheck, 45 pruebas, build.
 
-## Pendiente del founder
+## Lectura del cartel probada con el modelo (mismo día, con la llave del founder)
 
-`ANTHROPIC_API_KEY` en Vercel (Production y Preview, sensible) y en `.env` local para probar la lectura del cartel.
+Cartel de prueba generado con PIL (título, "con Trío Bravo", "Sábado 26 de septiembre", "20:00 h", "Casa 1100", "Centro Histórico, San Luis Potosí", "Entrada $120 · Estudiantes $80", teléfono, "@casa1100slp"), subido a Storage y leído con `leerCartel` (tsx con `--conditions=react-server`). **5.1 s.** Resultado exacto: título "Noche de Jazz", fecha `2026-09-26` (año deducido bien: el sábado 26 más próximo), hora `20:00`, lugar "Casa 1100" (coincide con el registrado → se selecciona solo), precio "$120 · Estudiantes $80", descripción "Concierto de jazz a cargo del Trío Bravo. Reservas al 444 123 4567.", enlace "@casa1100slp". Ajuste: `enlaceDesdeCartel` convierte "@usuario" en enlace de Instagram, deja enlaces y dominios, y descarta teléfonos (ya van en la descripción). Llave en Vercel solo en Production (en Preview el botón no aparece).
