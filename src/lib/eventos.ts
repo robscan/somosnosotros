@@ -1,10 +1,21 @@
 import { localAIso } from "./fechas";
 
-export const LIMITES_EVENTO = { titulo: 120, descripcion: 1000, precio: 60 } as const;
+export const LIMITES_EVENTO = { titulo: 120, descripcion: 1000, precio: 60, sitio: 120, direccion: 200, indicaciones: 300 } as const;
+
+/** Dónde es el evento: en un lugar registrado, en otro sitio (público) o en un sitio reservado (dirección con condiciones). */
+export type ModoSitio = "lugar" | "otro" | "reservado";
+
+/** Cuánto antes del inicio se revela un sitio reservado a las personas con sesión. */
+export const REVELAR_OPCIONES = [
+  { horas: 3, etiqueta: "3 horas antes" },
+  { horas: 6, etiqueta: "6 horas antes" },
+  { horas: 24, etiqueta: "1 día antes" },
+  { horas: 48, etiqueta: "2 días antes" },
+] as const;
 
 export type Evento = {
   id: string;
-  lugar_id: string;
+  lugar_id: string | null;
   titulo: string;
   inicio: string;
   fin: string | null;
@@ -14,15 +25,23 @@ export type Evento = {
   enlace: string | null;
   creado_por: string | null;
   visible: boolean;
+  sitio_texto: string | null;
+  sitio_lat: number | null;
+  sitio_lng: number | null;
+  sitio_reservado: boolean;
+  sitio_revelar_desde: string | null;
 };
 
-/** Lo que la agenda necesita: el evento con el nombre de su lugar. */
-export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id"> & {
+/** Lo que la agenda necesita: el evento con el nombre de su lugar o su sitio. */
+export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado"> & {
   lugar: { nombre: string; portada: string | null } | null;
 };
 
+/** Dirección exacta de un sitio reservado (solo llega cuando la política de la base lo permite). */
+export type SitioPrivado = { direccion: string; lat: number | null; lng: number | null; indicaciones: string | null; revelar_desde: string };
+
 export type DatosEvento = {
-  lugar_id: string;
+  lugar_id: string | null;
   titulo: string;
   inicio: string;
   fin: string | null;
@@ -30,21 +49,51 @@ export type DatosEvento = {
   imagen: string | null;
   precio: string | null;
   enlace: string | null;
+  sitio_texto: string | null;
+  sitio_lat: number | null;
+  sitio_lng: number | null;
+  sitio_reservado: boolean;
+  sitio_revelar_desde: string | null;
+  /** Solo si es reservado: lo que va a la tabla privada. */
+  privado: { direccion: string; lat: number | null; lng: number | null; indicaciones: string | null; revelar_desde: string } | null;
 };
-export type ErroresEvento = Partial<Record<"lugar_id" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>>;
+export type ErroresEvento = Partial<
+  Record<"lugar_id" | "sitio_texto" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
+>;
 
 function limpiar(v: FormDataEntryValue | string | null | undefined): string {
   return typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "";
 }
+function numeroONull(v: FormDataEntryValue | null | undefined): number | null {
+  const t = limpiar(v);
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Nombre público del sitio para la agenda y la ficha. */
+export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_reservado">): string {
+  if (e.lugar?.nombre) return e.lugar.nombre;
+  if (e.sitio_texto) return e.sitio_reservado ? `${e.sitio_texto} · sitio reservado` : e.sitio_texto;
+  return "Sitio por confirmar";
+}
 
 export function validarEvento(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosEvento; errores: ErroresEvento } {
+  const modo = (limpiar(entrada.modo_sitio) || "lugar") as ModoSitio;
   const inicio = localAIso(limpiar(entrada.inicio));
   const finTexto = limpiar(entrada.fin);
   const fin = finTexto ? localAIso(finTexto) : null;
   const gratis = limpiar(entrada.gratis) !== "no";
   const enlaceTexto = limpiar(entrada.enlace);
+  const revelarHoras = Number(limpiar(entrada.revelar_horas)) || 24;
+  const revelarDesde = inicio ? new Date(new Date(inicio).getTime() - revelarHoras * 3600000).toISOString() : null;
+  const lugarId = limpiar(entrada.lugar_id);
+  const sitioTexto = limpiar(entrada.sitio_texto);
+  const direccionPrivada = limpiar(entrada.direccion_privada);
+  const esReservado = modo === "reservado";
+
   const datos: DatosEvento = {
-    lugar_id: limpiar(entrada.lugar_id),
+    lugar_id: modo === "lugar" ? lugarId || null : null,
     titulo: limpiar(entrada.titulo),
     inicio: inicio ?? "",
     fin,
@@ -52,9 +101,28 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
     imagen: limpiar(entrada.imagen) || null,
     precio: gratis ? null : limpiar(entrada.precio) || null,
     enlace: enlaceTexto ? (/^https?:\/\//i.test(enlaceTexto) ? enlaceTexto : `https://${enlaceTexto}`) : null,
+    sitio_texto: modo === "lugar" ? null : sitioTexto || null,
+    sitio_lat: modo === "otro" ? numeroONull(entrada.sitio_lat) : null,
+    sitio_lng: modo === "otro" ? numeroONull(entrada.sitio_lng) : null,
+    sitio_reservado: esReservado,
+    sitio_revelar_desde: esReservado ? revelarDesde : null,
+    privado: esReservado
+      ? {
+          direccion: direccionPrivada,
+          lat: numeroONull(entrada.privado_lat),
+          lng: numeroONull(entrada.privado_lng),
+          indicaciones: limpiar(entrada.indicaciones) || null,
+          revelar_desde: revelarDesde ?? "",
+        }
+      : null,
   };
+
   const errores: ErroresEvento = {};
-  if (!/^[0-9a-f-]{36}$/.test(datos.lugar_id)) errores.lugar_id = "Elige el lugar donde es.";
+  if (modo === "lugar" && !/^[0-9a-f-]{36}$/.test(lugarId)) errores.lugar_id = "Elige el lugar donde es.";
+  if (modo !== "lugar" && !sitioTexto) errores.sitio_texto = esReservado ? "Di cómo se anuncia el sitio (ej. \"Casa en Tequis\")." : "Di dónde es (ej. \"Plaza de Armas\").";
+  if (sitioTexto.length > LIMITES_EVENTO.sitio) errores.sitio_texto = `Máximo ${LIMITES_EVENTO.sitio} caracteres.`;
+  if (esReservado && !direccionPrivada) errores.direccion_privada = "Pon la dirección exacta: solo se revela cuando toca.";
+  if (direccionPrivada.length > LIMITES_EVENTO.direccion) errores.direccion_privada = `Máximo ${LIMITES_EVENTO.direccion} caracteres.`;
   if (!datos.titulo) errores.titulo = "Ponle título al evento.";
   else if (datos.titulo.length > LIMITES_EVENTO.titulo) errores.titulo = `Máximo ${LIMITES_EVENTO.titulo} caracteres.`;
   if (!inicio) errores.inicio = "Falta la fecha y hora. Sin fecha no se publica.";
@@ -71,4 +139,36 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
 /** Texto para compartir: título, cuándo, dónde y el enlace. */
 export function textoCompartir(titulo: string, cuando: string, lugar: string | null, url: string): string {
   return [`${titulo}`, `${cuando}${lugar ? ` · ${lugar}` : ""}`, url].join("\n");
+}
+
+/** Lo que se lee de un cartel (viene del modelo de visión). Todo puede faltar. */
+export type LecturaCartel = {
+  titulo: string | null;
+  fecha: string | null; // YYYY-MM-DD
+  hora: string | null; // HH:MM
+  hora_fin: string | null;
+  lugar: string | null;
+  direccion: string | null;
+  gratis: boolean | null;
+  precio: string | null;
+  descripcion: string | null;
+  enlace: string | null;
+};
+
+/** Convierte la lectura del cartel en valores del formulario. Lo que falta se deja vacío para que la persona lo complete. */
+export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: string; fin: string; gratis: boolean; precio: string; descripcion: string; enlace: string; lugar: string; direccion: string } {
+  const fechaOk = l.fecha && /^\d{4}-\d{2}-\d{2}$/.test(l.fecha) ? l.fecha : "";
+  const horaOk = l.hora && /^\d{2}:\d{2}$/.test(l.hora) ? l.hora : "";
+  const horaFinOk = l.hora_fin && /^\d{2}:\d{2}$/.test(l.hora_fin) ? l.hora_fin : "";
+  return {
+    titulo: (l.titulo ?? "").trim().slice(0, LIMITES_EVENTO.titulo),
+    inicio: fechaOk && horaOk ? `${fechaOk}T${horaOk}` : fechaOk ? `${fechaOk}T19:00` : "",
+    fin: fechaOk && horaFinOk ? `${fechaOk}T${horaFinOk}` : "",
+    gratis: l.gratis !== false && !l.precio,
+    precio: (l.precio ?? "").trim().slice(0, LIMITES_EVENTO.precio),
+    descripcion: (l.descripcion ?? "").trim().slice(0, LIMITES_EVENTO.descripcion),
+    enlace: (l.enlace ?? "").trim(),
+    lugar: (l.lugar ?? "").trim(),
+    direccion: (l.direccion ?? "").trim(),
+  };
 }

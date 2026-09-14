@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { EventoResumen } from "@/lib/eventos";
+import { nombreSitio, type EventoResumen } from "@/lib/eventos";
 import { formatearCuando, tramo } from "@/lib/fechas";
 import styles from "./Agenda.module.css";
 
@@ -48,7 +48,7 @@ export default function Agenda({ eventos, conSesion, hayLugares }: Props) {
                         <span className={styles.cuando}>{formatearCuando(e.inicio, e.fin, ahora)}</span>
                         <strong className={styles.titulo}>{e.titulo}</strong>
                         <span className={styles.detalle}>
-                          {e.lugar?.nombre ?? "Lugar por confirmar"}
+                          {nombreSitio(e)}
                           {e.precio ? ` · ${e.precio}` : " · Gratis"}
                         </span>
                       </div>

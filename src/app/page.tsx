@@ -10,7 +10,7 @@ async function cargar(): Promise<{ lugares: LugarResumen[]; eventos: EventoResum
   const desde = new Date(Date.now() - 3 * 3600000).toISOString(); // lo que empezó hace menos de 3 h sigue en la agenda
   const [l, e] = await Promise.all([
     supabase.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada").eq("visible", true).order("nombre"),
-    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, lugar:lugares(nombre, portada)").eq("visible", true).gte("inicio", desde).order("inicio").limit(200),
+    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada)").eq("visible", true).gte("inicio", desde).order("inicio").limit(200),
   ]);
   const eventos = ((e.data ?? []) as unknown as Array<Omit<EventoResumen, "lugar"> & { lugar: EventoResumen["lugar"] | EventoResumen["lugar"][] }>).map((x) => ({
     ...x,

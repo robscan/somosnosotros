@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import type { Evento } from "@/lib/eventos";
+import type { Evento, SitioPrivado } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioEvento from "../../FormularioEvento";
@@ -18,13 +18,14 @@ export default async function EditarEvento({ params }: { params: Promise<{ id: s
   const evento = data as Evento;
   if (actual.perfil.rol !== "admin" && evento.creado_por !== actual.perfil.id) redirect(`/eventos/${id}`);
   const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada").eq("visible", true).order("nombre")) ?? { data: [] };
+  const { data: privado } = evento.sitio_reservado ? ((await supabase?.from("eventos_sitio_privado").select("direccion, lat, lng, indicaciones, revelar_desde").eq("evento_id", id).maybeSingle()) ?? { data: null }) : { data: null };
   return (
     <main className="pagina">
       <Link href={`/eventos/${id}`} className="enlace-volver">
         ← Volver al evento
       </Link>
       <h1 className="titulo">Editar evento</h1>
-      <FormularioEvento accion={actualizarEvento.bind(null, id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} modo="editar" usuarioId={actual.perfil.id} />
+      <FormularioEvento accion={actualizarEvento.bind(null, id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} privado={privado as SitioPrivado | null} modo="editar" usuarioId={actual.perfil.id} />
     </main>
   );
 }
