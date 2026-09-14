@@ -94,3 +94,41 @@
   font-size: 14px;
   margin: var(--espacio-2) 0 var(--espacio-4);
 }
+.eventos {
+  margin: var(--espacio-5) 0;
+}
+.eventosCabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-3);
+}
+.eventosTitulo {
+  font-size: 18px;
+  font-weight: 600;
+}
+.listaEventos {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-2);
+}
+.evento {
+  display: grid;
+  min-height: 64px;
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  color: var(--texto);
+  text-decoration: none;
+}
+.eventoCuando {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--acento);
+}
+.eventoPrecio {
+  font-size: 14px;
+  color: var(--texto-suave);
+}

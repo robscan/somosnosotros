@@ -1,0 +1,89 @@
+/**
+ * Fechas de eventos. La ciudad vive en America/Mexico_City (sin horario de verano desde 2022, UTC−6).
+ * En la base se guarda timestamptz; en pantalla siempre se muestra en la hora de la ciudad.
+ */
+export const ZONA = "America/Mexico_City";
+const DESFASE = "-06:00";
+
+/** "2026-09-20T19:00" (selector del teléfono) → ISO con la zona de la ciudad. Null si no es una fecha. */
+export function localAIso(local: string | null | undefined): string | null {
+  const v = (local ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)) return null;
+  const d = new Date(`${v.slice(0, 16)}:00${DESFASE}`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/** ISO → "2026-09-20T19:00" en hora de la ciudad (para rellenar el selector). */
+export function isoALocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = partes(d);
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+
+function partes(d: Date): Record<string, string> {
+  const f = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false, weekday: "short" });
+  const out: Record<string, string> = {};
+  for (const { type, value } of f.formatToParts(d)) out[type] = value;
+  if (out.hour === "24") out.hour = "00";
+  return out;
+}
+
+/** Día (YYYY-MM-DD) en la ciudad. */
+export function diaLocal(d: Date): string {
+  const p = partes(d);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+/** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). */
+export function formatearCuando(inicio: string, fin?: string | null, ahora: Date = new Date()): string {
+  const d = new Date(inicio);
+  const hoy = diaLocal(ahora);
+  const dia = diaLocal(d);
+  const manana = diaLocal(new Date(ahora.getTime() + 86400000));
+  const fecha = dia === hoy ? "Hoy" : dia === manana ? "Mañana" : new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short" }).format(d).replace(/\./g, "");
+  const hora = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+  let texto = `${fecha} · ${hora}`;
+  if (fin) {
+    const f = new Date(fin);
+    const horaFin = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(f);
+    texto += diaLocal(f) === dia ? `–${horaFin}` : ` → ${new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short" }).format(f).replace(/\./g, "")} · ${horaFin}`;
+  }
+  return texto;
+}
+
+/** Fecha larga para la ficha: "sábado 20 de septiembre, 19:00". */
+export function formatearLargo(iso: string): string {
+  const d = new Date(iso);
+  const fecha = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "long", day: "numeric", month: "long" }).format(d);
+  const hora = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+  return `${fecha}, ${hora}`;
+}
+
+export type Tramo = "hoy" | "semana" | "proximos" | "pasado";
+
+/** Hoy · Esta semana (7 días) · Próximos. Un evento que empezó hace menos de 3 h sigue siendo de hoy. */
+export function tramo(inicio: string, ahora: Date = new Date()): Tramo {
+  const d = new Date(inicio);
+  if (d.getTime() < ahora.getTime() - 3 * 3600000) return "pasado";
+  const dia = diaLocal(d);
+  if (dia === diaLocal(ahora)) return "hoy";
+  const limite = new Date(ahora.getTime() + 7 * 86400000);
+  return dia <= diaLocal(limite) ? "semana" : "proximos";
+}
+
+/** Valor sugerido para el selector: hoy a las 19:00 si aún no pasa; si no, mañana a las 19:00. */
+export function sugerirInicio(ahora: Date = new Date()): string {
+  const p = partes(ahora);
+  const hoy19 = `${p.year}-${p.month}-${p.day}T19:00`;
+  if (Number(p.hour) < 18) return hoy19;
+  const m = new Date(ahora.getTime() + 86400000);
+  const q = partes(m);
+  return `${q.year}-${q.month}-${q.day}T19:00`;
+}
+
+/** Texto de calendario (.ics) en UTC. */
+export function aFechaIcs(iso: string): string {
+  return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}

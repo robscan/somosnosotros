@@ -1,0 +1,30 @@
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import type { Evento } from "@/lib/eventos";
+import type { LugarResumen } from "@/lib/lugares";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import FormularioEvento from "../../FormularioEvento";
+import { actualizarEvento } from "../../acciones";
+
+export const metadata = { title: "Editar evento · somosnosotros" };
+
+export default async function EditarEvento({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const actual = await usuarioActual();
+  if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/eventos/${id}/editar`)}`);
+  const supabase = await clienteServidor();
+  const { data } = (await supabase?.from("eventos").select("*").eq("id", id).maybeSingle()) ?? { data: null };
+  if (!data) notFound();
+  const evento = data as Evento;
+  if (actual.perfil.rol !== "admin" && evento.creado_por !== actual.perfil.id) redirect(`/eventos/${id}`);
+  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada").eq("visible", true).order("nombre")) ?? { data: [] };
+  return (
+    <main className="pagina">
+      <Link href={`/eventos/${id}`} className="enlace-volver">
+        ← Volver al evento
+      </Link>
+      <h1 className="titulo">Editar evento</h1>
+      <FormularioEvento accion={actualizarEvento.bind(null, id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} modo="editar" usuarioId={actual.perfil.id} />
+    </main>
+  );
+}
