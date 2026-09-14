@@ -7,6 +7,7 @@
 ## Ahora
 
 - **OL-005 · Fase 4 (comunidad)** — código en PR #12, verificado (lint, typecheck, 49 tests, build) y probado contra la base real con dos usuarios desechables: "Voy" / "Me interesa" con lista de quiénes van (aplicado solo al volver de entrar), seguir lugares, perfil público, "Voy a" y "Sigo" en Mi perfil. Avisos por correo listos pero **sin llave**: (1) cuenta en resend.com, dominio somosnosotros.org verificado y llave de API; (2) en Vercel (sensibles): `RESEND_API_KEY`, `CORREO_REMITENTE`, `CRON_SECRET`; el cron de recordatorios corre a las 9:00 de la ciudad. En producción (PR #12 mergeado). Pasos: llaves → **prueba de la fase**: el founder confirma que dos personas coincidieron en un evento gracias a la plataforma.
+- **Pendiente del founder: llaves de Resend.** Cuenta en resend.com, dominio somosnosotros.org verificado (registros DNS), llave de API; en Vercel (Production, sensibles): `RESEND_API_KEY`, `CORREO_REMITENTE`, `CRON_SECRET`. Hasta entonces no se manda ningún correo.
 - Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre. **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
 - Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox y Anthropic solo en Production.
 
