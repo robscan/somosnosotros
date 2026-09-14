@@ -103,3 +103,79 @@
   color: var(--texto-suave);
   font-size: 14px;
 }
+.quienVa {
+  margin: var(--espacio-4) 0 var(--espacio-5);
+  padding: var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+}
+.asistencia {
+  display: flex;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-3);
+}
+.botonVoy,
+.botonInteres {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border-radius: var(--radio);
+  border: 1px solid var(--acento);
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--acento);
+  color: var(--acento-texto);
+}
+.botonInteres {
+  background: var(--fondo);
+  color: var(--acento);
+}
+.botonVoyActivo {
+  background: #1f6f43;
+  border-color: #1f6f43;
+}
+.botonInteresActivo {
+  background: var(--fondo);
+  color: #1f6f43;
+  border-color: #1f6f43;
+}
+.resumenVan {
+  font-weight: 600;
+  margin-bottom: var(--espacio-2);
+}
+.listaVan {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-1);
+}
+.persona {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: 40px;
+  color: var(--texto);
+  text-decoration: none;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e6e6e2;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+.interesados {
+  color: var(--texto-suave);
+  font-size: 14px;
+  margin-top: var(--espacio-2);
+}

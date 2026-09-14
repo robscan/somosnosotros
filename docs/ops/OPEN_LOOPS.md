@@ -1,24 +1,22 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — Alta de evento una cosa a la vez, con el selector nativo de fecha/hora en el chip y menos chips (PR #11 mergeado; bitácora [010](../bitacora/2026/09/010-alta-de-evento-una-cosa-a-la-vez.md)). Falta la prueba de la Fase 3. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Fase 3 cerrada** por el founder; **Fase 4 (comunidad) construida** en PR #12 (`fase-4-comunidad`, bitácora [011](../bitacora/2026/09/011-fase-4-comunidad.md)); migración 0006 aplicada. Faltan merge, llaves de correo (Resend) y la prueba de la fase. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-004 · Fase 3 (eventos)** — código en PR #5, verificado (lint, typecheck, 39 tests, build, capturas 390×844) y probado contra la base real. Publicar con dónde + qué + cuándo (dos acciones desde la ficha del lugar), agenda Hoy · Esta semana · Próximos en el panel, ficha con Compartir por WhatsApp (vista previa Open Graph) y Agregar a mi calendario (.ics), duplicar con otra fecha, ocultar por admin. En producción (PR #5 mergeado 2026-09-13). **Falta la prueba de la fase**: el primer evento publicado por alguien que no es el founder, y compartido por WhatsApp (revisar que la vista previa muestre título, fecha e imagen).
-- **Toque instantáneo** (PR #6, bitácora [007](../bitacora/2026/09/007-toque-instantaneo.md)): el founder midió más de 400 ms sin respuesta al tocar. Pantallas de espera instantáneas, estado de pulsado, y sesión verificada localmente (sin ir a Supabase Auth en cada petición). Remedido en producción tras el merge (PR #6 mergeado): el tiempo del servidor sin sesión sigue en ~380–530 ms (es el costo base de la función en Vercel `iad1`, no de la app); lo que cambia es que el toque dibuja la pantalla de espera al instante y, con sesión, ya no hay dos viajes a Supabase Auth por página. El founder valida en el iPhone.
-- **Alta de evento una cosa a la vez** (PR #10 mergeado, bitácora [010](../bitacora/2026/09/010-alta-de-evento-una-cosa-a-la-vez.md)): título + tres renglones resueltos (cuándo, dónde, cuánto) que se abren solo para cambiar; "Otra fecha/hora" abre el selector nativo directo. Regla de trabajo reforzada: mostrar lo decidido, abrir solo lo que se toca o lo que falla.
-- **Cuándo con un toque** (PR #7 mergeado, bitácora [008](../bitacora/2026/09/008-fecha-con-ayuda.md)): chips de día y hora, fin como duración, frase de confirmación.
-- **Otro sitio, sitio reservado y cartel** (PR #8 mergeado, bitácora [009](../bitacora/2026/09/009-otro-sitio-reservado-cartel.md)): regla "el evento se anuncia; el sitio se guarda". Dirección reservada en tabla aparte con RLS (autor/admin siempre; con sesión desde X horas antes; anónimo nunca). Lectura del cartel **probada con el modelo** (5 s, todos los campos correctos; PR #9 convierte "@usuario" en enlace de Instagram). Llave en Vercel solo en Production.
+- **OL-005 · Fase 4 (comunidad)** — código en PR #12, verificado (lint, typecheck, 49 tests, build) y probado contra la base real con dos usuarios desechables: "Voy" / "Me interesa" con lista de quiénes van (aplicado solo al volver de entrar), seguir lugares, perfil público, "Voy a" y "Sigo" en Mi perfil. Avisos por correo listos pero **sin llave**: (1) cuenta en resend.com, dominio somosnosotros.org verificado y llave de API; (2) en Vercel (sensibles): `RESEND_API_KEY`, `CORREO_REMITENTE`, `CRON_SECRET`; el cron de recordatorios corre a las 9:00 de la ciudad. Pasos: merge del PR #12 → llaves → **prueba de la fase**: el founder confirma que dos personas coincidieron en un evento gracias a la plataforma.
 - Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre. **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
-- Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox solo en Production.
+- Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox y Anthropic solo en Production.
 
 ## Después (orden del plan)
 
-OL-005 Comunidad → OL-006 Alcance.
+OL-006 Alcance (PWA instalable, push, reportar contenido, panel de administración, segunda ciudad).
 
 ## Cerrado
+
+- **OL-004 · Fase 3 (eventos)** — 2026-09-13. Publicar en dos acciones, agenda, ficha compartible con vista previa, calendario, duplicar; luego fecha con un toque, toque instantáneo, otro sitio y sitio reservado, lectura del cartel, alta una cosa a la vez. Cerrada por el founder ("Cierra y avanza"). Bitácoras [006](../bitacora/2026/09/006-fase-3-eventos.md)–[010](../bitacora/2026/09/010-alta-de-evento-una-cosa-a-la-vez.md).
 
 - **OL-003 · Fase 2 (lugares)** — 2026-09-13. Alta desde el teléfono con Mapbox encontrando el lugar, mapa con pins, panel con tres alturas, ficha, anti-duplicados. Cerrada por el founder tras rehacer el alta sin teclear (PR #4): "la experiencia ya funciona". Bitácoras [004](../bitacora/2026/09/004-fase-2-lugares.md) y [005](../bitacora/2026/09/005-alta-de-lugar-sin-teclear.md).
 

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { avisarNuevoEvento } from "@/lib/avisos";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { cartelAFormulario, validarEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
@@ -62,6 +64,8 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
     return { ok: false, errores: {}, general: "No se pudo guardar la dirección reservada. Intenta de nuevo." };
   }
   revalidar(data.id, datos.lugar_id);
+  // Avisar a quienes siguen el lugar, después de responder (no retrasa la publicación).
+  after(() => avisarNuevoEvento(data.id, user.id));
   redirect(`/eventos/${data.id}?nuevo=1`);
 }
 
@@ -102,4 +106,16 @@ export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCart
     if (lugares.length === 1) lugarId = lugares[0].id;
   }
   return { ok: true, valores, lugarId };
+}
+
+export type EstadoAsistencia = "voy" | "me_interesa" | null;
+
+/** "Voy" / "Me interesa" / quitar. Un toque; la política de la base cuida que cada quien mueva solo lo suyo. */
+export async function cambiarAsistencia(eventoId: string, estado: EstadoAsistencia) {
+  const { supabase, user } = await sesionOEntrar(`/eventos/${eventoId}?accion=${estado ?? ""}`);
+  if (estado) await supabase.from("asistencias").upsert({ usuario_id: user.id, evento_id: eventoId, estado });
+  else await supabase.from("asistencias").delete().eq("usuario_id", user.id).eq("evento_id", eventoId);
+  revalidatePath(`/eventos/${eventoId}`);
+  revalidatePath("/perfil");
+  revalidatePath(`/personas/${user.id}`);
 }

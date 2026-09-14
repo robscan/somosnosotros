@@ -31,6 +31,7 @@ export type Perfil = {
   colonia: string | null;
   bio: string | null;
   rol: "admin" | "usuario";
+  avisos?: boolean;
 };
 
 /** Usuario con sesión y su perfil, o null si no hay sesión. */
@@ -43,7 +44,7 @@ export async function usuarioActual(): Promise<{ correo: string | null; perfil: 
   if (!claims?.sub) return null;
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("id, nombre, foto, colonia, bio, rol")
+    .select("id, nombre, foto, colonia, bio, rol, avisos")
     .eq("id", claims.sub)
     .maybeSingle();
   if (!perfil) return null;

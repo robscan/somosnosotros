@@ -132,3 +132,33 @@
   font-size: 14px;
   color: var(--texto-suave);
 }
+.seguir {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  margin: var(--espacio-3) 0 var(--espacio-4);
+}
+.botonSeguir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-5);
+  border-radius: var(--radio);
+  border: 1px solid var(--acento);
+  background: var(--acento);
+  color: var(--acento-texto);
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.botonSeguirActivo {
+  background: var(--fondo);
+  color: #1f6f43;
+  border-color: #1f6f43;
+}
+.seguidores {
+  color: var(--texto-suave);
+  font-size: 14px;
+}

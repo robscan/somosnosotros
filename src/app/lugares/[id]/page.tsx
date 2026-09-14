@@ -1,25 +1,26 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { EventoResumen } from "@/lib/eventos";
 import { formatearCuando } from "@/lib/fechas";
 import { REDES, enlaceRed, etiquetaTipo, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cambiarVisible } from "../acciones";
+import Seguir from "./Seguir";
 import styles from "./ficha.module.css";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string }> };
 
-async function cargarLugar(id: string): Promise<(Lugar & { autor: { nombre: string } | null }) | null> {
+async function cargarLugar(id: string): Promise<(Lugar & { autor: { id: string; nombre: string } | null }) | null> {
   const supabase = await clienteServidor();
   if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
   const { data } = await supabase
     .from("lugares")
-    .select("id, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, autor:perfiles!lugares_creado_por_fkey(nombre)")
+    .select("id, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, autor:perfiles!lugares_creado_por_fkey(id, nombre)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
   const autor = Array.isArray(data.autor) ? (data.autor[0] ?? null) : data.autor;
-  return { ...(data as unknown as Lugar), autor: autor as { nombre: string } | null };
+  return { ...(data as unknown as Lugar), autor: autor as { id: string; nombre: string } | null };
 }
 
 async function cargarEventos(lugarId: string): Promise<EventoResumen[]> {
@@ -38,9 +39,17 @@ export async function generateMetadata({ params }: Params) {
 
 export default async function FichaLugar({ params, searchParams }: Params) {
   const { id } = await params;
-  const { nuevo } = (await searchParams) ?? {};
+  const { nuevo, accion } = (await searchParams) ?? {};
   const [lugar, actual, eventos] = await Promise.all([cargarLugar(id), usuarioActual(), cargarEventos(id)]);
   if (!lugar) notFound();
+  const supabaseSeg = await clienteServidor();
+  if (actual && accion === "seguir") {
+    await supabaseSeg?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id });
+    redirect(`/lugares/${lugar.id}`);
+  }
+  const { data: seguimientos } = (await supabaseSeg?.from("seguimientos").select("usuario_id").eq("lugar_id", id)) ?? { data: [] };
+  const seguidores = (seguimientos ?? []).length;
+  const sigo = !!actual && (seguimientos ?? []).some((s) => s.usuario_id === actual.perfil.id);
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === lugar.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
   const redes = REDES.map((r) => ({ ...r, href: enlaceRed(r.clave, lugar.redes?.[r.clave] ?? "") })).filter((r) => r.href);
@@ -90,6 +99,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       <a href={comoLlegar} className={styles.botonEnlace} target="_blank" rel="noopener noreferrer">
         Cómo llegar
       </a>
+      <Seguir lugarId={lugar.id} sigo={sigo} seguidores={seguidores} conSesion={!!actual} />
 
       {lugar.descripcion && <p className={styles.descripcion}>{lugar.descripcion}</p>}
 
@@ -129,7 +139,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         </ul>
       )}
 
-      <p className={styles.autor}>Publicado por {lugar.autor?.nombre || "una cuenta borrada"}.</p>
+      <p className={styles.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
 
       {puedeEditar && (
         <div className={styles.acciones}>

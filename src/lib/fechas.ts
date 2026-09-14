@@ -132,3 +132,8 @@ export function yaPaso(local: string, ahora: Date = new Date()): boolean {
   const iso = localAIso(local);
   return !!iso && new Date(iso).getTime() < ahora.getTime();
 }
+
+/** Desde cuándo un evento sigue siendo "próximo": empezó hace menos de 3 h. (ISO) */
+export function desdeReciente(ahora: Date = new Date()): string {
+  return new Date(ahora.getTime() - 3 * 3600000).toISOString();
+}

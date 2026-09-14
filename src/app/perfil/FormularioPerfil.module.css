@@ -60,3 +60,18 @@
   cursor: pointer;
   text-decoration: underline;
 }
+.casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+  margin: var(--espacio-2) 0 var(--espacio-4);
+  font-size: 15px;
+  cursor: pointer;
+}
+.casilla input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  margin-top: 2px;
+  accent-color: var(--acento);
+}
