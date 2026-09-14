@@ -1,0 +1,55 @@
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-4);
+  margin-bottom: var(--espacio-3);
+}
+.avatar {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-suave);
+  display: inline-grid;
+  place-items: center;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+.dato,
+.detalle,
+.vacio {
+  color: var(--texto-suave);
+  font-size: 14px;
+}
+.bio {
+  margin-bottom: var(--espacio-5);
+}
+.seccion {
+  margin-bottom: var(--espacio-5);
+}
+.tituloSeccion {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: var(--espacio-3);
+}
+.lista {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-2);
+}
+.tarjeta {
+  display: grid;
+  min-height: 56px;
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  color: var(--texto);
+  text-decoration: none;
+}
+.cuando {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--acento);
+}

@@ -71,3 +71,13 @@ export async function cambiarVisible(id: string, visible: boolean) {
   revalidatePath(`/lugares/${id}`);
   redirect(`/lugares/${id}`);
 }
+
+/** Seguir / dejar de seguir un lugar. Un toque. */
+export async function cambiarSeguimiento(lugarId: string, seguir: boolean) {
+  const { supabase, user } = await sesionOEntrar(`/lugares/${lugarId}?accion=${seguir ? "seguir" : ""}`);
+  if (seguir) await supabase.from("seguimientos").upsert({ usuario_id: user.id, lugar_id: lugarId });
+  else await supabase.from("seguimientos").delete().eq("usuario_id", user.id).eq("lugar_id", lugarId);
+  revalidatePath(`/lugares/${lugarId}`);
+  revalidatePath("/perfil");
+  revalidatePath(`/personas/${user.id}`);
+}

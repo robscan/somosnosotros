@@ -66,6 +66,9 @@ export default function FormularioPerfil({ perfil }: { perfil: Perfil }) {
         <Campo etiqueta="Nombre" name="nombre" defaultValue={perfil.nombre} maxLength={LIMITES.nombre} autoComplete="name" error={errores.nombre} required />
         <Campo etiqueta="Colonia (opcional)" name="colonia" defaultValue={perfil.colonia ?? ""} maxLength={LIMITES.colonia} error={errores.colonia} ayuda="Para ordenar lo que te queda cerca." />
         <Campo etiqueta="Sobre mí (opcional)" name="bio" multilinea defaultValue={perfil.bio ?? ""} maxLength={LIMITES.bio} error={errores.bio} ayuda={`Una línea, hasta ${LIMITES.bio} caracteres.`} />
+        <label className={styles.casilla}>
+          <input type="checkbox" name="avisos" value="si" defaultChecked={perfil.avisos !== false} /> Avisarme por correo cuando haya un evento nuevo en un lugar que sigo, y el día de un evento al que voy.
+        </label>
 
         {resultado && !resultado.ok && resultado.general && (
           <p className="aviso-error" role="alert">

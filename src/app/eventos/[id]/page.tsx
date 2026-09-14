@@ -1,16 +1,18 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { nombreSitio, textoCompartir } from "@/lib/eventos";
 import { formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { cambiarVisibleEvento } from "../acciones";
+import { cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
+import type { Asistente } from "@/lib/comunidad";
+import Asistencia from "./Asistencia";
 import BotonCompartir from "./BotonCompartir";
 import styles from "./ficha.module.css";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string }> };
-type EventoConLugar = Evento & { lugar: { id: string; nombre: string; direccion: string | null; lat: number; lng: number; portada: string | null } | null; autor: { nombre: string } | null };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string }> };
+type EventoConLugar = Evento & { lugar: { id: string; nombre: string; direccion: string | null; lat: number; lng: number; portada: string | null } | null; autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
 
@@ -19,7 +21,7 @@ async function cargarEvento(id: string): Promise<EventoConLugar | null> {
   if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
   const { data } = await supabase
     .from("eventos")
-    .select("*, lugar:lugares(id, nombre, direccion, lat, lng, portada), autor:perfiles!eventos_creado_por_fkey(nombre)")
+    .select("*, lugar:lugares(id, nombre, direccion, lat, lng, portada), autor:perfiles!eventos_creado_por_fkey(id, nombre)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
@@ -27,6 +29,24 @@ async function cargarEvento(id: string): Promise<EventoConLugar | null> {
   const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
   const autor = Array.isArray(fila.autor) ? (fila.autor[0] ?? null) : fila.autor;
   return { ...fila, lugar: lugar as EventoConLugar["lugar"], autor: autor as EventoConLugar["autor"] };
+}
+
+/** Quién va (con nombre y foto), cuántos tienen interés, y mi estado. Lectura pública. */
+async function cargarAsistencias(id: string, miId: string | null): Promise<{ van: Asistente[]; interesados: number; miEstado: EstadoAsistencia }> {
+  const supabase = await clienteServidor();
+  if (!supabase) return { van: [], interesados: 0, miEstado: null };
+  const { data } = await supabase.from("asistencias").select("usuario_id, estado, perfil:perfiles(id, nombre, foto)").eq("evento_id", id);
+  const filas = (data ?? []) as unknown as Array<{ usuario_id: string; estado: string; perfil: { id: string; nombre: string; foto: string | null } | { id: string; nombre: string; foto: string | null }[] | null }>;
+  const van: Asistente[] = [];
+  let interesados = 0;
+  let miEstado: EstadoAsistencia = null;
+  for (const f of filas) {
+    const perfil = Array.isArray(f.perfil) ? f.perfil[0] : f.perfil;
+    if (f.usuario_id === miId) miEstado = f.estado as EstadoAsistencia;
+    if (f.estado === "voy" && perfil) van.push({ id: perfil.id, nombre: perfil.nombre, foto: perfil.foto });
+    else if (f.estado === "me_interesa") interesados++;
+  }
+  return { van, interesados, miEstado };
 }
 
 /** La dirección reservada: la base decide si esta persona puede verla (autor, admin, o con sesión cuando toca). */
@@ -55,9 +75,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function FichaEvento({ params, searchParams }: Params) {
   const { id } = await params;
-  const { nuevo } = (await searchParams) ?? {};
+  const { nuevo, accion } = (await searchParams) ?? {};
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
+  // Venía de entrar con la intención de decir "Voy" / "Me interesa": se aplica sola
+  // (directo en la base, sin revalidar: la URL limpia ya se genera fresca).
+  if (actual && (accion === "voy" || accion === "me_interesa")) {
+    const supabase = await clienteServidor();
+    await supabase?.from("asistencias").upsert({ usuario_id: actual.perfil.id, evento_id: e.id, estado: accion });
+    redirect(`/eventos/${e.id}`);
+  }
+  const asistencias = await cargarAsistencias(id, actual?.perfil.id ?? null);
   const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
@@ -142,9 +170,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         )}
       </div>
 
+      <Asistencia eventoId={e.id} miEstado={asistencias.miEstado} conSesion={!!actual} van={asistencias.van} interesados={asistencias.interesados} yo={actual ? { id: actual.perfil.id, nombre: actual.perfil.nombre, foto: actual.perfil.foto } : null} />
+
       {e.descripcion && <p className={styles.descripcion}>{e.descripcion}</p>}
 
-      <p className={styles.autor}>Publicado por {e.autor?.nombre || "una cuenta borrada"}.</p>
+      <p className={styles.autor}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}.</p>
 
       {puedeEditar && (
         <div className={styles.gestion}>

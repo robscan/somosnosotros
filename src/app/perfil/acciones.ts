@@ -24,7 +24,7 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
 
   const { error } = await supabase
     .from("perfiles")
-    .update({ nombre: datos.nombre, colonia: datos.colonia || null, bio: datos.bio || null, foto: datos.foto })
+    .update({ nombre: datos.nombre, colonia: datos.colonia || null, bio: datos.bio || null, foto: datos.foto, avisos: formData.get("avisos") === "si" })
     .eq("id", user.id);
   if (error) return { ok: false, errores: {}, general: "No se pudo guardar. Intenta de nuevo." };
 
