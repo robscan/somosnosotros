@@ -49,3 +49,19 @@ export async function borrarMiCuenta() {
   revalidatePath("/");
   redirect("/?cuenta=borrada");
 }
+
+/** Guarda la suscripción push de este teléfono (una fila por endpoint). */
+export async function guardarSuscripcionPush(sub: { endpoint: string; keys: { p256dh: string; auth: string } }): Promise<boolean> {
+  const supabase = await clienteServidor();
+  const {
+    data: { user },
+  } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
+  if (!supabase || !user || !sub?.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) return false;
+  const { error } = await supabase.from("suscripciones_push").upsert({ endpoint: sub.endpoint, usuario_id: user.id, p256dh: sub.keys.p256dh, auth: sub.keys.auth });
+  return !error;
+}
+
+export async function borrarSuscripcionPush(endpoint: string): Promise<void> {
+  const supabase = await clienteServidor();
+  await supabase?.from("suscripciones_push").delete().eq("endpoint", endpoint);
+}

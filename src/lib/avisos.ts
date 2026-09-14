@@ -3,6 +3,7 @@ import { correoNuevoEvento, correoRecordatorio } from "./comunidad";
 import { correoActivo, enviarCorreo } from "./correo";
 import { nombreSitio } from "./eventos";
 import { formatearCuando } from "./fechas";
+import { enviarPush } from "./push";
 import { clienteAdmin } from "./supabase/admin";
 
 type EventoAviso = { id: string; titulo: string; inicio: string; fin: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string; portada: string | null } | null };
@@ -24,10 +25,13 @@ async function correoDe(usuarioId: string): Promise<string | null> {
   return data.user?.email ?? null;
 }
 
-/** Manda el aviso a cada persona una sola vez (avisos_enviados) y solo si tiene los avisos encendidos. */
+/**
+ * Manda el aviso a cada persona una sola vez (avisos_enviados) y solo si tiene los avisos encendidos:
+ * push al teléfono si lo activó, y correo si hay llave. Cuenta como enviado si llegó por cualquiera de los dos.
+ */
 async function avisar(evento: EventoAviso, usuarios: string[], tipo: "nuevo_evento" | "recordatorio"): Promise<number> {
   const admin = clienteAdmin();
-  if (!admin || !correoActivo() || usuarios.length === 0) return 0;
+  if (!admin || usuarios.length === 0) return 0;
   const { data: perfiles } = await admin.from("perfiles").select("id, avisos").in("id", usuarios);
   const { data: ya } = await admin.from("avisos_enviados").select("usuario_id").eq("evento_id", evento.id).eq("tipo", tipo);
   const yaEnviados = new Set((ya ?? []).map((r) => r.usuario_id as string));
@@ -35,13 +39,17 @@ async function avisar(evento: EventoAviso, usuarios: string[], tipo: "nuevo_even
   const lugar = nombreSitio(evento);
   const plantilla = tipo === "nuevo_evento" ? correoNuevoEvento : correoRecordatorio;
   const correo = plantilla({ titulo: evento.titulo, cuando, lugar, eventoId: evento.id });
+  const aviso = { titulo: tipo === "nuevo_evento" ? `Nuevo en ${lugar}` : `Hoy: ${evento.titulo}`, cuerpo: tipo === "nuevo_evento" ? `${evento.titulo} · ${cuando}` : `${cuando} · ${lugar}`, url: `https://somosnosotros.org/eventos/${evento.id}` };
   let enviados = 0;
   for (const p of perfiles ?? []) {
     if (!p.avisos || yaEnviados.has(p.id)) continue;
-    const para = await correoDe(p.id);
-    if (!para) continue;
-    const ok = await enviarCorreo({ para, ...correo });
-    if (ok) {
+    const porPush = (await enviarPush([p.id], aviso)) > 0;
+    let porCorreo = false;
+    if (correoActivo()) {
+      const para = await correoDe(p.id);
+      if (para) porCorreo = await enviarCorreo({ para, ...correo });
+    }
+    if (porPush || porCorreo) {
       await admin.from("avisos_enviados").insert({ usuario_id: p.id, evento_id: evento.id, tipo });
       enviados++;
     }

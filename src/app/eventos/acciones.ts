@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { avisarNuevoEvento } from "@/lib/avisos";
+import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { cartelAFormulario, validarEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
@@ -26,10 +27,17 @@ function leer(formData: FormData) {
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 
-function filaEvento(datos: DatosEvento) {
+function filaEvento(datos: DatosEvento, ciudad: string) {
   const { privado: _p, ...fila } = datos;
   void _p;
-  return { ...fila, descripcion: fila.descripcion || null };
+  return { ...fila, descripcion: fila.descripcion || null, ciudad };
+}
+
+/** La ciudad del evento: la de su lugar, o la inicial si es otro sitio. */
+async function ciudadDe(supabase: NonNullable<Awaited<ReturnType<typeof clienteServidor>>>, lugarId: string | null): Promise<string> {
+  if (!lugarId) return CIUDAD_INICIAL.nombre;
+  const { data } = await supabase.from("lugares").select("ciudad").eq("id", lugarId).maybeSingle();
+  return data?.ciudad ?? CIUDAD_INICIAL.nombre;
 }
 
 function revalidar(id: string, lugarId: string | null) {
@@ -55,7 +63,7 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   if (Object.keys(errores).length) return { ok: false, errores };
   const { data, error } = await supabase
     .from("eventos")
-    .insert({ ...filaEvento(datos), creado_por: user.id })
+    .insert({ ...filaEvento(datos, await ciudadDe(supabase, datos.lugar_id)), creado_por: user.id })
     .select("id")
     .single();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo publicar el evento. Intenta de nuevo." };
@@ -73,7 +81,7 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const { supabase } = await sesionOEntrar(`/eventos/${id}/editar`);
   const { datos, errores } = validarEvento(leer(formData));
   if (Object.keys(errores).length) return { ok: false, errores };
-  const { data, error } = await supabase.from("eventos").update(filaEvento(datos)).eq("id", id).select("id").maybeSingle();
+  const { data, error } = await supabase.from("eventos").update(filaEvento(datos, await ciudadDe(supabase, datos.lugar_id))).eq("id", id).select("id").maybeSingle();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu evento?" };
   await guardarPrivado(supabase, id, datos);
   revalidar(id, datos.lugar_id);

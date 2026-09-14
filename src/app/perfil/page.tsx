@@ -75,8 +75,14 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
       </section>
       <p className={styles.publico}>
         Tu perfil público: <Link href={`/personas/${actual.perfil.id}`}>lo que ven los demás</Link>.
+        {actual.perfil.rol === "admin" && (
+          <>
+            {" "}
+            · <Link href="/admin">Administración</Link>
+          </>
+        )}
       </p>
-      <FormularioPerfil perfil={actual.perfil} />
+      <FormularioPerfil perfil={actual.perfil} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
     </main>
   );
 }

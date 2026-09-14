@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapaGL, Marker } from "mapbox-gl";
-import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import type { LugarResumen } from "@/lib/lugares";
 import styles from "./Mapa.module.css";
@@ -21,6 +21,7 @@ type Props = {
   onCambio?: (p: Punto) => void;
   /** Solo en "ver": lugar en el que centrar el mapa al abrir. */
   centrarEn?: Punto | null;
+  ciudad?: Ciudad;
 };
 
 const COLOR_PIN = "#b3261e";
@@ -29,7 +30,7 @@ const COLOR_PIN = "#b3261e";
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día.
  */
-export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambio, centrarEn = null }: Props) {
+export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const pinesRef = useRef<Marker[]>([]);
@@ -52,12 +53,12 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
       mapboxgl.accessToken = mapboxToken;
-      const inicio = centrarEn ?? valor ?? CIUDAD_INICIAL.centro;
+      const inicio = centrarEn ?? valor ?? ciudad.centro;
       mapa = new mapboxgl.Map({
         container: nodo,
         style: mapboxStyle,
         center: [inicio.lng, inicio.lat],
-        zoom: centrarEn || valor ? 16 : CIUDAD_INICIAL.zoom,
+        zoom: centrarEn || valor ? 16 : ciudad.zoom,
         language: "es",
         attributionControl: false,
         logoPosition: modo === "ver" ? "top-left" : "bottom-left",
@@ -147,7 +148,7 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
   }, [estado, modo, valor]);
 
   return (
-    <div className={modo === "ver" ? styles.mapa : styles.mapaEmbebido} aria-label={`Mapa de ${CIUDAD_INICIAL.nombre}`} role="region">
+    <div className={modo === "ver" ? styles.mapa : styles.mapaEmbebido} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
       <div ref={contenedor} className={styles.lienzo} />
       {estado !== "listo" && (
         <p className={styles.aviso} role="status">

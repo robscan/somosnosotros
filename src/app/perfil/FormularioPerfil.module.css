@@ -75,3 +75,32 @@
   margin-top: 2px;
   accent-color: var(--acento);
 }
+.push {
+  margin: 0 0 var(--espacio-4);
+}
+.pushBoton {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--acento);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pushNota {
+  color: var(--texto-suave);
+  font-size: 14px;
+}
+.pushEnlace {
+  border: none;
+  background: none;
+  color: var(--acento);
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}

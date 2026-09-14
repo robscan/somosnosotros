@@ -1,0 +1,64 @@
+.enlace {
+  border: none;
+  background: none;
+  padding: 0;
+  min-height: 40px;
+  color: var(--texto-suave);
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.gracias {
+  color: var(--texto-suave);
+  font-size: 14px;
+}
+.formulario {
+  margin-top: var(--espacio-2);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  display: grid;
+  gap: var(--espacio-2);
+}
+.motivos {
+  display: grid;
+  gap: var(--espacio-1);
+}
+.motivo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: 36px;
+  font-size: 15px;
+}
+.motivo input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--acento);
+}
+.detalle {
+  min-height: 44px;
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  font-size: 16px;
+}
+.error {
+  color: var(--error);
+  font-size: 14px;
+}
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+.enviar {
+  min-height: 44px;
+  padding: 0 var(--espacio-4);
+  border: none;
+  border-radius: var(--radio);
+  background: var(--acento);
+  color: var(--acento-texto);
+  font-weight: 600;
+  cursor: pointer;
+}

@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import { CIUDADES, CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import type { EventoResumen } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Agenda from "./Agenda";
+import InstalarAviso from "./InstalarAviso";
 import ListaLugares from "./ListaLugares";
 import Pestanas from "./Pestanas";
 import Sheet from "./Sheet";
@@ -14,10 +15,10 @@ function primerNombre(nombre: string): string {
   return nombre.trim().split(" ")[0] ?? "";
 }
 
-type Props = { lugares: LugarResumen[]; eventos: EventoResumen[]; cuentaBorrada?: boolean };
+type Props = { lugares: LugarResumen[]; eventos: EventoResumen[]; ciudad?: Ciudad; cuentaBorrada?: boolean };
 
 /** Panel inferior sobre el mapa: cabecera (marca, ciudad, sesión) y dos pestañas: Agenda y Lugares. */
-export default async function Panel({ lugares, eventos, cuentaBorrada = false }: Props) {
+export default async function Panel({ lugares, eventos, ciudad = CIUDAD_INICIAL, cuentaBorrada = false }: Props) {
   const actual = await usuarioActual();
   const resumen = [
     eventos.length > 0 ? `${eventos.length} ${eventos.length === 1 ? "evento" : "eventos"}` : null,
@@ -31,9 +32,18 @@ export default async function Panel({ lugares, eventos, cuentaBorrada = false }:
         <div>
           <h1 className={styles.titulo}>somosnosotros</h1>
           <p className={styles.ciudad}>
-            {CIUDAD_INICIAL.nombre}
+            {ciudad.nombre}
             {resumen ? ` · ${resumen}` : ""}
           </p>
+          {CIUDADES.length > 1 && (
+            <p className={styles.ciudades}>
+              {CIUDADES.filter((c) => c.slug !== ciudad.slug).map((c) => (
+                <Link key={c.slug} href={`/?ciudad=${c.slug}`}>
+                  Ir a {c.nombre}
+                </Link>
+              ))}
+            </p>
+          )}
         </div>
         {actual ? (
           <Link href="/perfil" className={styles.persona} aria-label="Mi perfil">
@@ -60,6 +70,7 @@ export default async function Panel({ lugares, eventos, cuentaBorrada = false }:
   );
   return (
     <Sheet cabecera={cabecera} inicial={lugares.length > 0 || eventos.length > 0 ? "medium" : "peek"}>
+      <InstalarAviso />
       <Pestanas
         inicial={eventos.length > 0 || lugares.length === 0 ? "agenda" : "lugares"}
         pestanas={[
