@@ -5,7 +5,7 @@ export function correoActivo(): boolean {
   return !!process.env.RESEND_API_KEY;
 }
 
-const REMITENTE = process.env.CORREO_REMITENTE || "somosnosotros <avisos@somosnosotros.org>";
+const REMITENTE = process.env.CORREO_REMITENTE || "Somos Nosotros <avisos@somosnosotros.org>";
 
 /** Manda un correo con Resend. Devuelve false si no hay llave o falla; nunca lanza. */
 export async function enviarCorreo(p: { para: string; asunto: string; texto: string; html: string }): Promise<boolean> {

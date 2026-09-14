@@ -18,14 +18,14 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: 16px;
+  font-size: var(--letra-md);
 }
 .select[aria-invalid="true"] {
   border-color: var(--error);
 }
 .error {
   color: var(--error);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-top: var(--espacio-1);
 }
 .sugerencias {
@@ -95,7 +95,7 @@
 }
 .sugerenciaDetalle {
   display: block;
-  font-size: 14px;
+  font-size: var(--letra-sm);
   color: var(--texto-suave);
 }
 .existentes {
@@ -110,7 +110,7 @@
 }
 .nota {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-top: var(--espacio-2);
 }
 .filaEtiqueta {
@@ -124,7 +124,7 @@
   margin-bottom: 0;
 }
 .botonChico {
-  min-height: 40px;
+  min-height: var(--toque-min);
   padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
   border-radius: 999px;

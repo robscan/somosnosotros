@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 /** La app se instala en el teléfono desde el navegador (PWA). */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "somosnosotros",
-    short_name: "somosnosotros",
+    name: "Somos Nosotros",
+    short_name: "Somos Nosotros",
     description: "Centros culturales y agenda de San Luis Potosí, para conocer gente local.",
     lang: "es",
     start_url: "/",

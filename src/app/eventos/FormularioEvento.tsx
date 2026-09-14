@@ -10,6 +10,7 @@ import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type Sit
 import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
+import { reducirImagen } from "@/lib/imagen";
 import { leerCartelAccion, type ResultadoEvento } from "./acciones";
 import SelectorCuando from "./SelectorCuando";
 import styles from "./FormularioEvento.module.css";
@@ -91,9 +92,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     }
     setSubiendo(true);
     setErrorImagen(null);
-    const extension = (archivo.name.split(".").pop() || "jpg").toLowerCase();
+    const listo = await reducirImagen(archivo); // menos peso y menos espera: se reduce en el teléfono antes de subir
+    const extension = (listo.name.split(".").pop() || "jpg").toLowerCase();
     const ruta = `lugares/${usuarioId}/evento-${Date.now()}.${extension}`;
-    const { error } = await supabase.storage.from("fotos").upload(ruta, archivo, { upsert: true, contentType: archivo.type || undefined });
+    const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: true, contentType: listo.type || undefined });
     setSubiendo(false);
     if (error) {
       setErrorImagen("No se pudo subir la imagen. Intenta con otra.");

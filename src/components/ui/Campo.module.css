@@ -14,7 +14,7 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: 16px;
+  font-size: var(--letra-md);
 }
 .control:focus {
   outline: 2px solid var(--acento);
@@ -29,11 +29,11 @@
 }
 .ayuda {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-top: var(--espacio-1);
 }
 .error {
   color: var(--error);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-top: var(--espacio-1);
 }

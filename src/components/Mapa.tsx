@@ -24,7 +24,7 @@ type Props = {
   ciudad?: Ciudad;
 };
 
-const COLOR_PIN = "#b3261e";
+const COLOR_PIN = "#b3261e"; // = var(--acento); Mapbox pide el color literal
 
 /**
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
@@ -34,6 +34,7 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const pinesRef = useRef<Marker[]>([]);
+  const encuadradoRef = useRef(false); // el encuadre a los pins se hace una sola vez, al abrir
   const pinElegirRef = useRef<Marker | null>(null);
   const onCambioRef = useRef(onCambio);
   useEffect(() => {
@@ -96,6 +97,16 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
       pinesRef.current.forEach((p) => p.remove());
+      // Al abrir, el encuadre muestra todos los pins (con el panel a media altura tapando la mitad de abajo).
+      // Con un lugar centrado por la URL no se toca; con cero pins queda la vista de la ciudad.
+      if (!encuadradoRef.current && !centrarEn && lugares.length > 0) {
+        encuadradoRef.current = true;
+        const limites = new mapboxgl.LngLatBounds();
+        lugares.forEach((l) => limites.extend([l.lng, l.lat]));
+        const alto = window.innerHeight;
+        const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        mapa.fitBounds(limites, { padding: { top: 72, left: 48, right: 48, bottom: Math.round(alto * 0.5) + 24 }, maxZoom: 15, duration: sinMovimiento ? 0 : 600 });
+      }
       pinesRef.current = lugares.map((l) => {
         const pin = new mapboxgl.Marker({ color: COLOR_PIN }).setLngLat([l.lng, l.lat]).addTo(mapa);
         const el = pin.getElement();
@@ -112,7 +123,7 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
     return () => {
       cancelado = true;
     };
-  }, [estado, modo, lugares, router]);
+  }, [estado, modo, lugares, router, centrarEn]);
 
   // Pin que se arrastra (modo elegir).
   useEffect(() => {

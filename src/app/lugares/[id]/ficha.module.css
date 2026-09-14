@@ -44,7 +44,7 @@
 .redes a {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
+  min-height: var(--toque-min);
   padding: 0 var(--espacio-4);
   border-radius: 999px;
   background: var(--fondo-suave);
@@ -53,7 +53,7 @@
 }
 .autor {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin: var(--espacio-5) 0;
 }
 .acciones {
@@ -86,12 +86,12 @@
   border-radius: var(--radio);
   background: var(--acento);
   color: var(--acento-texto);
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
 }
 .nota {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin: var(--espacio-2) 0 var(--espacio-4);
 }
 .eventos {
@@ -106,7 +106,7 @@
   margin-bottom: var(--espacio-3);
 }
 .eventosTitulo {
-  font-size: 18px;
+  font-size: var(--letra-xl);
   font-weight: 600;
 }
 .listaEventos {
@@ -124,12 +124,12 @@
   text-decoration: none;
 }
 .eventoCuando {
-  font-size: 13px;
+  font-size: var(--letra-xs);
   font-weight: 600;
   color: var(--acento);
 }
 .eventoPrecio {
-  font-size: 14px;
+  font-size: var(--letra-sm);
   color: var(--texto-suave);
 }
 .seguir {
@@ -148,17 +148,17 @@
   border: 1px solid var(--acento);
   background: var(--acento);
   color: var(--acento-texto);
-  font-size: 17px;
+  font-size: var(--letra-lg);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
 }
 .botonSeguirActivo {
   background: var(--fondo);
-  color: #1f6f43;
-  border-color: #1f6f43;
+  color: var(--ok);
+  border-color: var(--ok);
 }
 .seguidores {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
 }

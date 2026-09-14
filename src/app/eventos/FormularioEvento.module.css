@@ -11,7 +11,7 @@
 .etiquetaChica {
   display: block;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin: var(--espacio-3) 0 var(--espacio-1);
 }
 .control,
@@ -23,7 +23,7 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: 16px;
+  font-size: var(--letra-md);
   -webkit-appearance: none;
   appearance: none;
 }
@@ -33,19 +33,19 @@
 }
 .nota {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-top: var(--espacio-1);
 }
 .error {
   color: var(--error);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   margin-top: var(--espacio-1);
 }
 .enlaceBoton {
   background: none;
   border: none;
   color: var(--acento);
-  min-height: 40px;
+  min-height: var(--toque-min);
   padding: 0;
   margin-top: var(--espacio-1);
   cursor: pointer;
@@ -125,7 +125,7 @@
   font-weight: 600;
 }
 .opciones .opcion {
-  font-size: 15px;
+  font-size: var(--letra-md);
   padding: 0 var(--espacio-2);
   text-align: center;
 }
@@ -156,13 +156,13 @@
   margin: var(--espacio-2) 0 var(--espacio-1);
 }
 .pildora {
-  min-height: 40px;
+  min-height: var(--toque-min);
   padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
   border-radius: 999px;
   background: var(--fondo);
   color: var(--acento);
-  font-size: 15px;
+  font-size: var(--letra-md);
   font-weight: 600;
   cursor: pointer;
 }

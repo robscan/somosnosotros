@@ -1,0 +1,549 @@
+<title>Somos Nosotros · Inicio v1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* ==========================================================================
+     1. Tokens
+     La app es tema claro siempre (DEFINICION); estos son los de globals.css.
+     El "estudio" es el fondo alrededor del teléfono y sí sigue el tema del visor.
+     ========================================================================== */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6;
+    --estudio-texto: #3b3a37;
+    --estudio-suave: #8a8883;
+    --panel: #1f2933;
+    --panel-texto: #e6e9ee;
+    --panel-suave: #9aa5b1;
+    --panel-borde: #34424f;
+
+    --fondo: #ffffff;
+    --fondo-contenido: #f6f5f1; /* zona de contenido: tono cálido; cabecera y nav quedan blancas */
+    --fondo-suave: #f4f4f2;
+    --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a;
+    --texto-suave: #5c5c5c;
+    --borde: #dcdcd8;
+    --acento: #b3261e;
+    --sombra-suave: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75;
+    --ancho-texto: "wdth" 80;
+
+    --toque: 48px;
+    --toque-min: 44px;
+    --gutter: 20px;
+    --alto-estado: 48px; /* barra de estado del iPhone */
+    --alto-barra: 56px; /* logotipo + sesión */
+    --alto-cabecera: 101px; /* chips (56) + pestañas (44) + línea (1): lo que queda pegado */
+    --alto-nav: 83px; /* 49 + área segura de 34 */
+    --area-segura: 34px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+  }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  /* ==========================================================================
+     2. Base y estudio
+     ========================================================================== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--estudio);
+    color: var(--estudio-texto);
+    font-family: var(--fuente);
+    font-variation-settings: var(--ancho-texto);
+    font-optical-sizing: auto;
+    font-variant-numeric: tabular-nums;
+    padding-block: 24px;
+    padding-inline: 16px;
+    min-height: 100vh;
+  }
+  button, input { font: inherit; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+
+  /* ==========================================================================
+     3. El teléfono: marco, barra de estado, área que se desplaza, nav inferior
+     ========================================================================== */
+  .telefono {
+    position: relative;
+    width: 390px;
+    max-width: 100%;
+    height: 844px;
+    flex: none;
+    overflow: hidden;
+    border-radius: 40px;
+    background: var(--fondo);
+    color: var(--texto);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado) - var(--alto-nav)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .contenido { min-height: 100%; padding: 0 var(--gutter) 96px; background: var(--fondo-contenido); }
+
+  .nav {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    height: var(--alto-nav);
+    padding-bottom: var(--area-segura);
+    background: var(--fondo);
+    border-top: 1px solid var(--borde);
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--texto-suave); text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+  .nav-item.activo { color: var(--texto); }
+  .nav-item.activo span { font-weight: 700; }
+
+  /* ==========================================================================
+     4. Barra superior: logotipo a la izquierda, sesión a la derecha.
+        Se desplaza con el contenido (no se pega).
+     ========================================================================== */
+  .barra { display: flex; align-items: center; justify-content: space-between; min-height: var(--alto-barra); padding: 4px var(--gutter); background: var(--fondo); }
+  .logotipo { display: inline-flex; align-items: center; min-height: var(--toque-min); font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; }
+  .sesion { display: inline-flex; align-items: center; min-height: var(--toque-min); text-decoration: none; }
+  .sesion.entrar { min-height: 40px; padding: 0 18px; border-radius: 999px; background: var(--acento); color: #fff; font-weight: 700; font-size: 16px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: inline-grid; place-items: center; font-weight: 700; font-size: 15px; color: #fff; }
+
+  /* ==========================================================================
+     5. Cabecera pegajosa: chips de contexto + filtro segmentado (blanca sobre el contenido)
+     ========================================================================== */
+  .fija { position: sticky; top: 0; z-index: 2; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .fija + * { margin-top: 0; }
+
+  .contexto { display: flex; gap: 8px; padding: 4px 0 12px; }
+  .chip { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px 0 10px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .chip.activo { border-color: var(--texto); }
+  .chip svg { width: 16px; height: 16px; flex: none; color: var(--texto-suave); }
+  .chip .caret { width: 12px; height: 12px; }
+  .chip .quitar { position: relative; z-index: 1; margin: 0 -8px 0 2px; min-width: 32px; min-height: 40px; border: none; background: none; color: var(--texto-suave); font-weight: 400; cursor: pointer; }
+  /* El campo nativo va encima del chip, invisible: el toque abre el selector del teléfono. */
+  .chip .encima { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border: 0; opacity: 0; font-size: 16px; -webkit-appearance: none; appearance: none; }
+
+  /* Filtros como pestañas de texto (patrón de Resident Advisor): sin fondo; el activo lleva una línea debajo
+     que toca la línea de la cabecera, para que pestaña y contenido se lean como una sola cosa. */
+  .filtros { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0 calc(-1 * var(--gutter)); margin-bottom: -1px; }
+  .filtro { min-height: var(--toque-min); padding: 0 4px; border: none; border-bottom: 2px solid transparent; background: none; color: var(--texto-suave); font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .filtro[aria-selected="true"] { color: var(--texto); border-bottom-color: var(--texto); font-weight: 700; }
+
+  /* ==========================================================================
+     6. Contenido: aviso de instalar, grupos por tiempo, renglones de evento
+     ========================================================================== */
+  /* A · Confirmación del Voy con la pregunta del aviso al teléfono (en línea; en la app vive en la ficha del evento). */
+  .confirmacion { padding: 14px 14px 12px; margin: 16px 0 20px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); font-size: 15px; line-height: 1.35; }
+  .confirmacion .motivo { font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 4px; }
+  .confirmacion .porque { color: var(--texto-suave); margin-bottom: 12px; }
+  .confirmacion .pregunta { font-weight: 700; margin-bottom: 10px; }
+  .opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opciones button { min-height: var(--toque); padding: 0 12px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .opciones .si { border: none; background: var(--texto); color: var(--fondo); }
+  .opciones .no { border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+  .opciones.dos { grid-template-columns: 1fr 1fr; }
+  .opciones.cortas button { min-height: var(--toque-min); }
+  .confirmacion .gracias { display: block; width: 100%; min-height: var(--toque-min); margin-top: 4px; border: none; background: none; color: var(--texto-suave); font-size: 15px; cursor: pointer; text-decoration: underline; }
+  .confirmacion .hecho { display: flex; align-items: center; gap: 8px; color: var(--texto); }
+  .confirmacion .hecho svg { width: 18px; height: 18px; flex: none; }
+  .confirmacion .cambiar { color: var(--texto-suave); font-size: 14px; margin-top: 6px; }
+  /* B · Hoja emergente "Instala Somos Nosotros" (solo tras el sí). */
+  .hoja.instalar { max-height: calc(100% - 60px); overflow-y: auto; }
+  .hoja.instalar h3 { font-size: 24px; }
+  .hoja .cerrar { position: absolute; top: 8px; right: 8px; min-width: var(--toque-min); min-height: var(--toque-min); border: none; background: none; color: var(--texto-suave); font-size: 18px; cursor: pointer; }
+  .despues { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borde); font-size: 15px; }
+  .despues .glifo { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); }
+  .despues .glifo svg { width: 24px; height: 24px; color: var(--texto); }
+  .despues b { display: block; font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
+  /* Pasos para instalar en iPhone: secuencia vertical con los glifos reales de iOS y una miniatura de la barra de Safari. */
+  .pasos { display: grid; gap: 14px; margin-top: 12px; }
+  .paso { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; }
+  .paso .glifo { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); }
+  .paso .glifo svg { width: 26px; height: 26px; color: #0a7aff; }
+  .paso .num { display: block; margin-bottom: 2px; color: var(--texto-suave); font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .paso .que { display: block; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .paso .donde { display: block; margin-top: 2px; color: var(--texto-suave); font-size: 14px; }
+  .safari { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; margin-top: 8px; padding: 6px 10px; border-radius: 10px; background: var(--fondo-suave); }
+  .safari svg { width: 20px; height: 20px; margin: 0 auto; display: block; color: #0a7aff; }
+  .safari .aqui { position: relative; }
+  .safari .aqui::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--acento); }
+  .fila-ios { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--fondo-suave); font-size: 15px; }
+  .fila-ios svg { width: 22px; height: 22px; flex: none; color: var(--texto); }
+  .fila-ios span { flex: 1; }
+  .resultado { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borde); }
+  .icono-app { width: 52px; height: 52px; flex: none; display: grid; place-items: center; border-radius: 12px; background: var(--texto); color: var(--fondo); font-size: 11px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; text-align: center; }
+  .resultado p { margin: 0; font-size: 14px; color: var(--texto-suave); line-height: 1.35; }
+  .resultado p b { color: var(--texto); font-weight: 700; }
+  .agregar { width: 100%; min-height: var(--toque); margin-top: 12px; padding: 0 16px; border: none; border-radius: 12px; background: var(--texto); color: var(--fondo); font-size: 17px; font-weight: 700; cursor: pointer; }
+
+  .grupo { margin-bottom: 24px; }
+  .grupo h2 { position: sticky; top: var(--alto-cabecera); z-index: 1; padding: 14px 0 6px; background: var(--fondo-contenido); border-bottom: 1px solid var(--texto); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .grupo h2 span { color: var(--texto-suave); font-weight: 500; }
+  .vacio { padding: 12px 0; color: var(--texto-suave); font-size: 15px; }
+  .vacio-accion { padding: 20px 0 8px; }
+  .vacio-accion h2 { position: static; padding: 0 0 6px; border: none; background: none; }
+  .vacio-accion p { margin-bottom: 14px; color: var(--texto-suave); font-size: 15px; line-height: 1.4; }
+  .vacio-accion button { min-height: var(--toque); padding: 0 20px; border: 1px solid var(--texto); border-radius: 12px; background: var(--fondo); color: var(--texto); font-size: 17px; font-weight: 700; cursor: pointer; }
+  .lista { list-style: none; }
+
+  .evento { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--borde); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .evento:active { margin: 0 calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .evento .titulo { display: block; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; text-wrap: balance; }
+  .evento .detalle { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 4px; color: var(--texto-suave); font-size: 15px; }
+  .evento .detalle span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .evento .detalle .lugar { white-space: normal; }
+  .evento .detalle svg { width: 15px; height: 15px; flex: none; }
+  .evento .detalle b { color: var(--texto); font-weight: 500; }
+  .foto { width: 64px; height: 64px; flex: none; align-self: start; border-radius: 10px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .foto.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); }
+  .foto.c { background: linear-gradient(135deg, #d9c27a, #8a6d2b); }
+  .foto.d { background: linear-gradient(135deg, #a9b7cc, #4a5d7a); }
+  .foto.e { background: linear-gradient(135deg, #d4a5a5, #7a3f3f); }
+  .foto.vacia { background: var(--fondo); border: 1px dashed var(--borde); }
+
+  /* ==========================================================================
+     7. Estados de la pantalla: cargando y error
+     ========================================================================== */
+  .esqueleto { padding-top: 8px; }
+  .esqueleto div { height: 18px; margin-bottom: 14px; border-radius: 6px; background: var(--fondo-miniatura); animation: pulso 1.2s ease-in-out infinite; }
+  .esqueleto .t { width: 30%; height: 22px; margin-bottom: 20px; }
+  .esqueleto .m { width: 70%; }
+  .esqueleto .c { width: 50%; margin-bottom: 30px; }
+  @keyframes pulso { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .error { padding: 24px 0; }
+  .error p { margin-bottom: 12px; }
+  .error button { min-height: var(--toque); padding: 0 20px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); font-size: 17px; font-weight: 700; cursor: pointer; }
+
+  /* ==========================================================================
+     8. Capas flotantes: Publicar, nota de utilería, hoja de ubicación
+     ========================================================================== */
+  .publicar { position: absolute; right: var(--gutter); bottom: calc(var(--alto-nav) + 16px); z-index: 3; display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque); padding: 0 20px; border: none; border-radius: 999px; background: var(--texto); color: var(--fondo); font-size: 17px; font-weight: 700; box-shadow: var(--sombra-flotante); cursor: pointer; }
+  .publicar:active { transform: translateY(1px); }
+
+  .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--alto-nav) + 77px); z-index: 3; padding: 12px 14px; border-radius: 12px; background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
+  .nota.visible { opacity: 1; transform: none; }
+
+  .hoja-fondo { position: absolute; inset: 0; z-index: 4; display: none; background: rgba(0, 0, 0, 0.32); }
+  .hoja-fondo.abierta { display: block; }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px var(--gutter) calc(20px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1); }
+  .hoja .asa { width: 36px; height: 4px; margin: 0 auto 14px; border-radius: 2px; background: var(--borde); }
+  .hoja h3 { margin-bottom: 4px; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .hoja p { margin-bottom: 10px; color: var(--texto-suave); font-size: 15px; }
+  .opcion { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: var(--toque); padding: 0 4px; border: none; border-bottom: 1px solid var(--borde); background: none; color: var(--texto); font-size: 17px; text-align: left; cursor: pointer; }
+  .opcion span:last-child { color: var(--texto-suave); font-size: 15px; }
+  .opcion.elegida { font-weight: 700; }
+
+  /* ==========================================================================
+     9. Utilería de revisión (fuera del teléfono; no es diseño)
+     ========================================================================== */
+  .utileria { width: 300px; max-width: 100%; flex: none; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
+  .utileria h3 { margin-bottom: 4px; color: var(--panel-suave); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .nota-utileria { margin-bottom: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.35; }
+  .control { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--panel-borde); }
+  .control:first-of-type { border-top: none; }
+  .control code { margin-right: 6px; color: var(--panel-suave); font-family: inherit; font-size: 12px; }
+  .control select { min-height: 36px; padding: 6px 8px; border: 1px solid var(--panel-borde); border-radius: 8px; background: #2b3a48; color: var(--panel-texto); }
+  .control input[type="checkbox"] { width: 20px; height: 20px; accent-color: #f0f0ee; }
+  .reiniciar { width: 100%; min-height: var(--toque-min); margin-top: 14px; border: 1px solid var(--panel-borde); border-radius: 10px; background: transparent; color: var(--panel-texto); font-weight: 700; cursor: pointer; }
+  .decisiones { margin-top: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.4; }
+  .decisiones a { color: var(--panel-texto); }
+
+  /* ==========================================================================
+     10. Accesibilidad y pantallas angostas
+     ========================================================================== */
+  :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+  .utileria :focus-visible { outline-color: #f0f0ee; }
+  @media (prefers-reduced-motion: reduce) {
+    .esqueleto div { animation: none; }
+    .nota { transition: none; }
+  }
+  @media (max-width: 740px) {
+    .telefono { height: auto; min-height: 720px; }
+    .pantalla { height: auto; max-height: 700px; }
+  }
+</style>
+
+<div class="estudio">
+  <p class="rotulo"><strong>Inicio v2.2</strong> <span>Filtros Todos · Cercanos · Siguiendo · Nuevos como pestañas de texto con línea indicadora, unidas al contenido · chips de fecha y estado · títulos pegajosos</span> <span>Datos de ejemplo, no reales</span></p>
+
+  <div class="telefono" aria-label="Teléfono de 390 por 844">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ⌾</span></div>
+
+    <main class="pantalla" id="pantalla">
+      <header class="barra">
+        <a class="logotipo" href="#" aria-label="Somos Nosotros, inicio">SMSNSTRS</a>
+        <a class="sesion" href="#" id="sesion" aria-label="Entrar"></a>
+      </header>
+      <div class="contenido" id="contenido"></div>
+    </main>
+
+    <button class="publicar" id="publicar" type="button" aria-label="Publicar un evento o un lugar">+ Publicar</button>
+    <div class="nota" id="nota" role="status" aria-live="polite"></div>
+    <div class="hoja-fondo" id="hoja-fondo"><div class="hoja" role="dialog" aria-label="Dónde" id="hoja"></div></div>
+    <div class="hoja-fondo" id="hoja-instalar-fondo"><div class="hoja instalar" role="dialog" aria-label="Instala Somos Nosotros" id="hoja-instalar"></div></div>
+
+    <nav class="nav" aria-label="Secciones">
+      <a href="#" class="nav-item activo" aria-current="page" id="nav-agenda">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span>Agenda</span>
+      </a>
+      <a href="#" class="nav-item" id="nav-lugares">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span>Lugares</span>
+      </a>
+      <a href="#" class="nav-item" id="nav-artistas">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span>Artistas</span>
+      </a>
+    </nav>
+  </div>
+
+  <aside class="utileria" aria-label="Utilería de revisión">
+    <h3>Utilería de revisión</h3>
+    <p class="nota-utileria">No es parte del diseño. Fuerza cada estado de la pantalla para sentirlo; los ID corresponden a la tabla de estados del documento.</p>
+    <label class="control"><span><code>C1</code>Cargando</span><input type="checkbox" id="c1"></label>
+    <label class="control"><span><code>X1</code>Error de red</span><input type="checkbox" id="x1"></label>
+    <label class="control"><span><code>H1</code>Eventos de hoy</span>
+      <select id="hoy"><option value="3">3</option><option value="1">1</option><option value="0">0 (V2 si hay semana)</option></select></label>
+    <label class="control"><span><code>V1</code>Eventos de la semana</span>
+      <select id="semana"><option value="4">4</option><option value="0">0</option></select></label>
+    <label class="control"><span>Próximos</span>
+      <select id="proximos"><option value="2">2</option><option value="0">0</option></select></label>
+    <label class="control"><span><code>S1</code>Con sesión</span><input type="checkbox" id="s1"></label>
+    <label class="control"><span><code>U1</code>Ubicación concedida (Cercanos)</span><input type="checkbox" id="u1"></label>
+    <label class="control"><span><code>F1</code>Lugares o artistas que sigo</span><select id="sigue"><option value="2">2</option><option value="0">0</option></select></label>
+    <label class="control"><span><code>I1</code>Acaba de decir Voy (pregunta del aviso)</span><input type="checkbox" id="i1"></label>
+    <label class="control"><span>Teléfono</span><select id="tel"><option value="iphone">iPhone (dos toques)</option><option value="android">Android (un toque)</option></select></label>
+    <button class="reiniciar" id="reiniciar" type="button">Reiniciar datos</button>
+    <p class="decisiones">Decisiones 1 a 14 y estados: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/02-inicio-flujo-y-estados.md">02-inicio-flujo-y-estados.md</a>. Con 0 eventos en todo, se ve V1 (vacío total). Shell v1.1: logotipo a la izquierda y perfil a la derecha (Jakob); nav inferior con Agenda, Mapa y Artistas. v1.2: foto a la derecha en cada renglón (la del evento o la del lugar); aviso de instalar con motivo y pasos ilustrados, un toque en Android. v1.3: foto a la izquierda; iconos de hora, lugar, asistentes y costo; segmentado sutil con Todos por defecto. v1.4: Entrar en rojo como acción primaria; con sesión solo el avatar; chip de fecha que abre el selector del teléfono y filtra ese día; chip de estado con los que tienen eventos activos (Querétaro es un ejemplo ficticio para probar el cambio). v1.5: chips y filtro quedan fijos al desplazar; el título de cada grupo se pega mientras recorres sus renglones (como en Resident Advisor). v1.6: la barra con el logotipo y Entrar se desplaza con la lista; la zona de contenido lleva un tono distinto al de la cabecera. v1.7: filtros Todos · Cercanos · Siguiendo · Nuevos (patrón RA) como pestañas de texto; Cercanos pide la ubicación con un botón; Siguiendo pide entrar o seguir a alguien. v1.8: la sección Mapa pasa a llamarse Lugares (el mapa es una de sus vistas); el chip de fecha es una etiqueta del campo nativo con apertura por código de respaldo. v1.9: instrucciones de instalar en iPhone rediseñadas (pasos verticales, glifos de iOS, miniatura de la barra de Safari, cómo queda el icono). v2.0: tras el Voy se pregunta primero "¿También un aviso en tu teléfono?"; solo con el sí emerge la hoja "Instala Somos Nosotros", con el verbo instalar, el texto literal del iPhone entre comillas, el resultado (abrir desde el icono, sin Safari) y el paso de aceptar los avisos. v2.2: el correo también se pide (consentimiento por canal, con fecha): "¿Te recordamos ese día?" Por correo · En el teléfono · No, gracias; al elegir uno se confirma con evidencia y se ofrece el otro una sola vez.</p>
+  </aside>
+</div>
+
+<script>
+  // Datos de ejemplo (ficticios). Hoy es lunes 14 de septiembre.
+  const ICONO_CAL = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+  const ICONO_PIN = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
+  const CARET = `<svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  // Estados con eventos activos (datos de ejemplo): el chip de ubicación solo ofrece estos.
+  const ESTADOS = [
+    { n: "San Luis Potosí", eventos: 9 },
+    { n: "Querétaro", eventos: 2 },
+  ];
+  const QRO = [
+    { t: "Noche de trova en el andador", f: "2026-09-16", d: "mié 16", h: "20:00", l: "Casa del Faldón", foto: "e", v: 5, km: 210, sigo: false, nuevo: 4 },
+    { t: "Taller de cerámica negra", f: "2026-09-20", d: "dom 20", h: "11:00", l: "Patio de los Oficios", p: "$120", foto: "c", v: 2, km: 212, sigo: false, nuevo: 30 },
+  ];
+  const HOY = [
+    { t: "Taller de linograbado", f: "2026-09-14", h: "17:00", l: "Galería Tres Patios", p: "$80", foto: "c", v: 4, km: 2.4, sigo: false, nuevo: 1 },
+    { t: "Noche de son en el patio", f: "2026-09-14", h: "19:30", l: "Casa Ocho Ventanas", foto: "a", v: 12, km: 0.6, sigo: true, nuevo: 9 },
+    { t: "Lectura: poetas del Tangamanga", f: "2026-09-14", h: "20:00", l: "Foro Luz de Agua", foto: "d", v: 0, km: 1.1, sigo: false, nuevo: 3 },
+  ];
+  const SEMANA = [
+    { t: "Cineclub: documental potosino", f: "2026-09-16", d: "mié 16", h: "19:00", l: "Casa Ocho Ventanas", foto: "a", v: 3, km: 0.6, sigo: true, nuevo: 12 },
+    { t: "Ensayo abierto de danza", f: "2026-09-17", d: "jue 17", h: "18:00", l: "Foro Luz de Agua", foto: "d", v: 1, km: 1.1, sigo: false, nuevo: 2 },
+    { t: "Feria de fanzines", f: "2026-09-18", d: "vie 18", h: "16:00", l: "Biblioteca del Barrio", foto: "e", v: 21, km: 3.8, sigo: false, nuevo: 0 },
+    { t: "Concierto de cuerdas", f: "2026-09-19", d: "sáb 19", h: "20:00", l: "Galería Tres Patios", p: "$150", foto: "b", v: 8, km: 2.4, sigo: false, nuevo: 15 },
+  ];
+  const PROXIMOS = [
+    { t: "Domingo de títeres", f: "2026-09-27", d: "dom 27 de sep", h: "12:00", l: "Casa Ocho Ventanas", foto: "a", v: 2, km: 0.6, sigo: true, nuevo: 20 },
+    { t: "Noche de museos", f: "2026-10-03", d: "sáb 3 de oct", h: "19:00", l: "Centro Cultural Viejo Molino", v: 0, km: 5.2, sigo: false, nuevo: 1 },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const estado = { c1: false, x1: false, hoy: 3, semana: 4, proximos: 2, s1: false, i1: false, android: false, filtro: "todos", fecha: "", lugar: "San Luis Potosí", ubicacion: false, sigue: 2, correo: null, telefono: null };
+  function fechaLarga(iso) {
+    const d = new Date(iso + "T12:00:00");
+    return new Intl.DateTimeFormat("es-MX", { weekday: "long", day: "numeric", month: "long" }).format(d);
+  }
+  function fechaChip(iso) {
+    const d = new Date(iso + "T12:00:00");
+    return new Intl.DateTimeFormat("es-MX", { weekday: "short", day: "numeric", month: "short" }).format(d).replace(/\./g, "");
+  }
+  const inicial = { ...estado };
+
+  function esc(s) { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+  function renglon(e, cuando, conKm = false) {
+    const km = conKm ? ` · a ${e.km < 1 ? Math.round(e.km * 1000) + " m" : e.km.toFixed(1).replace(".0", "") + " km"}` : "";
+    const van = e.v > 0 ? `<span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>${e.v} ${e.v === 1 ? "va" : "van"}</span>` : "";
+    return `<li class="evento" tabindex="0" role="link" data-evento="${esc(e.t)}">
+      ${e.foto ? `<div class="foto ${e.foto}" aria-hidden="true"></div>` : `<div class="foto vacia" aria-hidden="true"></div>`}
+      <div><span class="titulo">${esc(e.t)}</span><span class="detalle">
+        <span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><b>${cuando}</b></span>
+        <span class="lugar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>${esc(e.l)}${km}</span>
+        ${van}
+        <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13 8v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2 2"/></svg>${e.p ? e.p : "Gratis"}</span>
+      </span></div>
+    </li>`;
+  }
+  function grupo(titulo, items, cuando, vacio, conKm = false) {
+    const n = items.length;
+    if (n === 0 && !vacio) return "";
+    return `<section class="grupo" aria-label="${titulo}">
+      <h2>${titulo}${n > 1 ? ` <span>· ${n}</span>` : ""}</h2>
+      ${n === 0 ? `<p class="vacio">${vacio}</p>` : `<ul class="lista">${items.map((e) => renglon(e, cuando(e), conKm)).join("")}</ul>`}
+    </section>`;
+  }
+  function vacioConAccion(titulo, texto, boton, id) {
+    return `<section class="grupo vacio-accion"><h2>${titulo}</h2><p>${texto}</p>${boton ? `<button type="button" id="${id}">${boton}</button>` : ""}</section>`;
+  }
+  const cuandoDe = (e) => (e.f === "2026-09-14" ? e.h : `${e.d} · ${e.h}`);
+
+  function render() {
+    $("sesion").innerHTML = estado.s1 ? `<span class="avatar" aria-hidden="true">R</span>` : `Entrar`;
+    $("sesion").className = estado.s1 ? "sesion" : "sesion entrar";
+    $("sesion").setAttribute("aria-label", estado.s1 ? "Mi perfil, Rosa" : "Entrar");
+    const conFecha = !!estado.fecha;
+    let html = `<div class="fija"><div class="contexto">
+      <label class="chip ${conFecha ? "activo" : ""}" id="chip-fecha" for="fecha">${ICONO_CAL}<span>${conFecha ? fechaChip(estado.fecha) : "lun 14 sep"}</span>${conFecha ? `<button type="button" class="quitar" id="quitar-fecha" aria-label="Quitar la fecha">✕</button>` : CARET}<input type="date" class="encima" id="fecha" value="${estado.fecha || "2026-09-14"}" min="2026-09-14" aria-label="Elegir una fecha"></label>
+      <button type="button" class="chip" id="chip-lugar">${ICONO_PIN}<span>${esc(estado.lugar)}</span>${CARET}</button>
+    </div>`;
+    const seg = (v, t) => `<button type="button" role="tab" class="filtro" data-filtro="${v}" aria-selected="${estado.filtro === v}">${t}</button>`;
+    html += `<div class="filtros" role="tablist" aria-label="Filtrar la agenda">${seg("todos", "Todos")}${seg("cercanos", "Cercanos")}${seg("siguiendo", "Siguiendo")}${seg("nuevos", "Nuevos")}</div></div>`;
+    if (estado.i1) {
+      const ok = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const correoDe = "ro…@gmail.com";
+      let cuerpo;
+      if (estado.correo === null && estado.telefono === null) {
+        cuerpo = `<p class="pregunta">¿Te recordamos ese día?</p><div class="opciones dos"><button type="button" class="si" id="por-correo">Por correo</button><button type="button" class="si" id="en-telefono">En el teléfono</button></div><button type="button" class="gracias" id="no-gracias">No, gracias</button>`;
+      } else if (estado.correo === true && estado.telefono === null) {
+        cuerpo = `<p class="hecho">${ok}<span>Te escribimos a ${correoDe} ese día.</span></p><p class="pregunta" style="margin-top:10px">¿También en el teléfono?</p><div class="opciones cortas"><button type="button" class="si" id="en-telefono">Sí</button><button type="button" class="no" id="no-telefono">No</button></div>`;
+      } else if (estado.telefono === true && estado.correo === null) {
+        cuerpo = `<p class="hecho">${ok}<span>Con la app instalada te avisamos ese día.</span></p><p class="pregunta" style="margin-top:10px">¿También por correo?</p><div class="opciones cortas"><button type="button" class="si" id="por-correo">Sí</button><button type="button" class="no" id="no-correo">No</button></div>`;
+      } else {
+        const canales = [estado.correo && "por correo", estado.telefono && "en el teléfono"].filter(Boolean);
+        cuerpo = canales.length
+          ? `<p class="hecho">${ok}<span>Te avisamos ${canales.join(" y ")} ese día.</span></p><p class="cambiar">Se cambia en Mi perfil.</p>`
+          : `<p class="hecho"><span>Sin avisos. Si cambias de idea, está en Mi perfil.</span></p>`;
+      }
+      html += `<div class="confirmacion" role="status"><p class="motivo">Vas a Noche de son en el patio</p>${cuerpo}</div>`;
+    }
+    if (estado.c1) {
+      html += `<div class="esqueleto" aria-busy="true" aria-label="Cargando la agenda"><div class="t"></div><div class="m"></div><div class="c"></div><div class="m"></div><div class="c"></div><div class="m"></div><div class="c"></div></div>`;
+    } else if (estado.x1) {
+      html += `<div class="error"><p><b>No pudimos cargar la agenda.</b></p><p class="vacio">Revisa tu conexión y vuelve a intentar.</p><button type="button" id="reintentar">Reintentar</button></div>`;
+    } else {
+      const enQro = estado.lugar === "Querétaro";
+      const hoy = enQro ? [] : HOY.slice(0, estado.hoy), semana = enQro ? QRO.slice(0, 1) : SEMANA.slice(0, estado.semana), prox = enQro ? QRO.slice(1) : PROXIMOS.slice(0, estado.proximos);
+      const total = hoy.length + semana.length + prox.length;
+      const todos = [...hoy, ...semana, ...prox];
+      const f = estado.filtro;
+      if (f === "cercanos" && !estado.ubicacion) {
+        html += vacioConAccion("Cercanos", "Para ordenar por cercanía necesitamos tu ubicación, solo mientras miras la agenda. No se guarda.", "Usar mi ubicación", "pedir-ubicacion");
+      } else if (f === "siguiendo" && !estado.s1) {
+        html += vacioConAccion("Siguiendo", "Aquí verás lo que pasa en los lugares y con los artistas que sigues. Entra para seguir a los tuyos.", "Entrar", "entrar-siguiendo");
+      } else if (f === "siguiendo" && estado.sigue === 0) {
+        html += vacioConAccion("Siguiendo", "Todavía no sigues ningún lugar ni artista. En su ficha, toca Seguir y sus eventos aparecerán aquí.", null, "");
+      } else if (f !== "todos") {
+        let lista = f === "cercanos" ? [...todos].sort((a, b) => a.km - b.km) : f === "siguiendo" ? todos.filter((e) => e.sigo) : todos.filter((e) => e.nuevo <= 7).sort((a, b) => a.nuevo - b.nuevo);
+        if (conFecha) lista = lista.filter((e) => e.f === estado.fecha);
+        const titulo = conFecha ? fechaLarga(estado.fecha) : f === "cercanos" ? "Cerca de ti" : f === "siguiendo" ? "De lo que sigues" : "Agregados esta semana";
+        const vacio = conFecha ? "Ese día no hay nada aquí. Quita la fecha para ver todo." : f === "nuevos" ? "Nada nuevo esta semana." : "Nada por ahora.";
+        html += grupo(titulo, lista, cuandoDe, vacio, f === "cercanos");
+      } else if (conFecha) {
+        const delDia = todos.filter((e) => e.f === estado.fecha);
+        html += grupo(fechaLarga(estado.fecha), delDia, (e) => e.h, "Ese día no hay nada todavía. Quita la fecha para ver todo.");
+      } else if (total === 0) {
+        html += `<section class="grupo"><h2>Próximos días</h2><p class="vacio">Aún no hay eventos próximos en ${esc(estado.lugar)}. Si sabes de uno, publícalo. Los lugares están en su sección.</p></section>`;
+      } else {
+        html += grupo("Hoy", hoy, (e) => e.h, semana.length ? "Hoy no hay nada. Esta semana sí:" : "Hoy no hay nada.");
+        html += grupo("Esta semana", semana, (e) => `${e.d} · ${e.h}`, null);
+        html += grupo("Próximos", prox, (e) => `${e.d} · ${e.h}`, null);
+      }
+    }
+    $("contenido").innerHTML = html;
+    $("hoja-instalar").innerHTML = hojaInstalar();
+    $("hoja").innerHTML = `<div class="asa" aria-hidden="true"></div><h3>Dónde</h3><p>Solo aparecen los estados con eventos activos.</p>${ESTADOS.map((x) => `<button type="button" class="opcion ${x.n === estado.lugar ? "elegida" : ""}" data-lugar="${esc(x.n)}"><span>${esc(x.n)}</span><span>${x.eventos} eventos</span></button>`).join("")}`;
+    $("c1").checked = estado.c1; $("x1").checked = estado.x1; $("s1").checked = estado.s1; $("i1").checked = estado.i1;
+    $("tel").value = estado.android ? "android" : "iphone";
+    $("u1").checked = estado.ubicacion; $("sigue").value = String(estado.sigue);
+    $("hoy").value = String(estado.hoy); $("semana").value = String(estado.semana); $("proximos").value = String(estado.proximos);
+  }
+
+  function hojaInstalar() {
+    const iconoCompartir = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>`;
+    const iconoAgregar = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>`;
+    const iconoCampana = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
+    const glifoAtras = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const glifoAdelante = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const glifoLibro = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+    const glifoPestanas = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="4" width="13" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 8v10a2 2 0 0 0 2 2h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+    const cabeza = `<div class="asa" aria-hidden="true"></div><button type="button" class="cerrar" id="cerrar-instalar" aria-label="Cerrar">✕</button><h3>Instala Somos Nosotros</h3><p>Solo la app instalada recibe avisos. ${estado.android ? "Un toque:" : "Dos toques:"}</p>`;
+    if (estado.android) {
+      return `${cabeza}<button type="button" class="agregar" id="agregar-apps">Instalar</button>
+        <div class="resultado"><div class="icono-app" aria-hidden="true">SMSN<br>STRS</div><p><b>Listo.</b> Ábrela desde tu pantalla de inicio.</p></div>`;
+    }
+    return `${cabeza}
+      <div class="pasos">
+        <div class="paso"><div class="glifo">${iconoCompartir}</div><div><span class="num">Paso 1</span><span class="que">Toca Compartir</span><span class="donde">Abajo, al centro.</span>
+          <div class="safari" aria-hidden="true">${glifoAtras}${glifoAdelante}<span class="aqui">${iconoCompartir}</span>${glifoLibro}${glifoPestanas}</div></div></div>
+        <div class="paso"><div class="glifo">${iconoAgregar}</div><div><span class="num">Paso 2</span><span class="que">Elige “Agregar a pantalla de inicio”</span><span class="donde">Así lo llama el iPhone.</span>
+          <div class="fila-ios" aria-hidden="true"><span>Agregar a pantalla de inicio</span>${iconoAgregar}</div></div></div>
+      </div>
+      <div class="resultado"><div class="icono-app" aria-hidden="true">SMSN<br>STRS</div><p><b>Listo.</b> Ábrela desde tu pantalla de inicio, sin Safari.</p></div>
+      <div class="despues"><div class="glifo">${iconoCampana}</div><div><b>Después</b>Al abrirla, acepta los avisos.</div></div>`;
+  }
+
+  let temporizador;
+  function nota(texto) {
+    const n = $("nota"); n.textContent = texto; n.classList.add("visible");
+    clearTimeout(temporizador); temporizador = setTimeout(() => n.classList.remove("visible"), 2200);
+  }
+
+  $("c1").addEventListener("change", (e) => { estado.c1 = e.target.checked; if (estado.c1) estado.x1 = false; render(); });
+  $("x1").addEventListener("change", (e) => { estado.x1 = e.target.checked; if (estado.x1) estado.c1 = false; render(); });
+  $("hoy").addEventListener("change", (e) => { estado.hoy = Number(e.target.value); render(); });
+  $("semana").addEventListener("change", (e) => { estado.semana = Number(e.target.value); render(); });
+  $("proximos").addEventListener("change", (e) => { estado.proximos = Number(e.target.value); render(); });
+  $("s1").addEventListener("change", (e) => { estado.s1 = e.target.checked; render(); });
+  $("u1").addEventListener("change", (e) => { estado.ubicacion = e.target.checked; render(); });
+  $("sigue").addEventListener("change", (e) => { estado.sigue = Number(e.target.value); render(); });
+  $("i1").addEventListener("change", (e) => { estado.i1 = e.target.checked; render(); });
+  $("tel").addEventListener("change", (e) => { estado.android = e.target.value === "android"; render(); });
+  $("reiniciar").addEventListener("click", () => { Object.assign(estado, inicial); render(); });
+  $("i1").addEventListener("change", () => { estado.correo = null; estado.telefono = null; });
+
+  $("pantalla").addEventListener("click", (ev) => {
+    const filtro = ev.target.closest(".filtro");
+    if (filtro) { estado.filtro = filtro.dataset.filtro; render(); return; }
+    if (ev.target.closest("#pedir-ubicacion")) { estado.ubicacion = true; render(); nota("El teléfono pediría permiso de ubicación una sola vez"); return; }
+    if (ev.target.closest("#entrar-siguiendo")) { nota("Abriría Entrar y volvería a Siguiendo"); return; }
+    if (ev.target.closest("#quitar-fecha")) { estado.fecha = ""; render(); return; }
+    if (ev.target.closest("#chip-fecha") && ev.target.id !== "fecha") {
+      // Respaldo: si el toque no cayó en el campo nativo, se abre por código donde el navegador lo permite.
+      const campo = $("fecha");
+      try { if (typeof campo.showPicker === "function") campo.showPicker(); else campo.focus(); } catch { campo.focus(); }
+    }
+    if (ev.target.closest("#chip-lugar")) { $("hoja-fondo").classList.add("abierta"); return; }
+    const evento = ev.target.closest(".evento");
+    if (evento) { nota(`Abriría la ficha: ${evento.dataset.evento}`); return; }
+    if (ev.target.closest("#reintentar")) { estado.x1 = false; estado.c1 = true; render(); setTimeout(() => { estado.c1 = false; render(); }, 900); return; }
+    if (ev.target.closest("#por-correo")) { estado.correo = true; render(); nota("Se guarda: correo sí, con fecha. Cada correo trae su baja de un toque"); return; }
+    if (ev.target.closest("#en-telefono")) { $("hoja-instalar-fondo").classList.add("abierta"); return; }
+    if (ev.target.closest("#no-telefono")) { estado.telefono = false; render(); return; }
+    if (ev.target.closest("#no-correo")) { estado.correo = false; render(); return; }
+    if (ev.target.closest("#no-gracias")) { estado.correo = false; estado.telefono = false; render(); nota("Se recuerda; no se vuelve a preguntar"); return; }
+  });
+  $("pantalla").addEventListener("change", (ev) => {
+    if (ev.target.id === "fecha") { estado.fecha = ev.target.value; render(); }
+  });
+  $("hoja-instalar-fondo").addEventListener("click", (ev) => {
+    if (ev.target.closest("#agregar-apps")) { $("hoja-instalar-fondo").classList.remove("abierta"); estado.telefono = true; render(); nota("Android: se abre el diálogo del sistema y queda instalada"); return; }
+    if (ev.target.closest("#cerrar-instalar") || ev.target === $("hoja-instalar-fondo")) { $("hoja-instalar-fondo").classList.remove("abierta"); estado.telefono = true; render(); }
+  });
+  $("hoja-fondo").addEventListener("click", (ev) => {
+    const op = ev.target.closest(".opcion");
+    if (op) { estado.lugar = op.dataset.lugar; estado.fecha = ""; }
+    if (op || ev.target === $("hoja-fondo")) { $("hoja-fondo").classList.remove("abierta"); render(); }
+  });
+  $("pantalla").addEventListener("keydown", (ev) => { if (ev.key === "Enter" && ev.target.matches(".evento, .destino")) ev.target.click(); });
+  $("nav-lugares").addEventListener("click", (ev) => { ev.preventDefault(); nota("Abriría Lugares: lista y mapa (siguiente prototipo)"); });
+  $("nav-artistas").addEventListener("click", (ev) => { ev.preventDefault(); nota("Abriría Artistas: quiénes hacen la cultura de la ciudad (por definir)"); });
+  $("nav-agenda").addEventListener("click", (ev) => { ev.preventDefault(); $("pantalla").scrollTo({ top: 0 }); });
+  $("publicar").addEventListener("click", () => nota(estado.s1 ? "Abriría Publicar un evento" : "Abriría Publicar; la sesión se pide al guardar"));
+  $("sesion").addEventListener("click", (ev) => { ev.preventDefault(); nota(estado.s1 ? "Abriría Mi perfil" : "Abriría Entrar"); });
+  document.querySelector(".logotipo").addEventListener("click", (ev) => { ev.preventDefault(); $("pantalla").scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); });
+
+  render();
+</script>

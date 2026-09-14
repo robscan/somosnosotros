@@ -2,27 +2,20 @@
   margin-bottom: var(--espacio-5);
 }
 .tituloSeccion {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--letra-xl);
+  font-weight: 700;
   margin-bottom: var(--espacio-3);
 }
 .vacio,
 .meta,
 .detalle {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
 }
 .lista {
   list-style: none;
   display: grid;
   gap: var(--espacio-2);
-}
-.tarjeta {
-  padding: var(--espacio-3) var(--espacio-4);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
-  display: grid;
-  gap: var(--espacio-1);
 }
 .fila {
   display: flex;
@@ -48,7 +41,7 @@
   gap: var(--espacio-3);
 }
 .botonSuave {
-  min-height: 40px;
+  min-height: var(--toque-min);
   padding: 0 var(--espacio-2);
   border: none;
   background: none;

@@ -5,12 +5,12 @@
 }
 .buscar {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--toque-min);
   padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo-suave);
-  font-size: 16px;
+  font-size: var(--letra-md);
   -webkit-appearance: none;
   appearance: none;
 }
@@ -22,7 +22,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: var(--toque-min);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   color: var(--acento);
@@ -32,55 +32,11 @@
 .vacio,
 .conteo {
   color: var(--texto-suave);
-  font-size: 15px;
+  font-size: var(--letra-md);
   margin: var(--espacio-2) 0 var(--espacio-3);
 }
 .lista {
   list-style: none;
   display: grid;
   gap: var(--espacio-2);
-}
-.tarjeta {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-3);
-  min-height: 64px;
-  padding: var(--espacio-2);
-  border-radius: var(--radio);
-  color: var(--texto);
-  text-decoration: none;
-  background: var(--fondo-suave);
-}
-.miniatura {
-  width: 56px;
-  height: 56px;
-  flex: none;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #e6e6e2;
-  display: grid;
-  place-items: center;
-  font-weight: 600;
-  color: var(--texto-suave);
-}
-.miniatura img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.texto {
-  display: grid;
-  min-width: 0;
-}
-.nombre {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.detalle {
-  font-size: 14px;
-  color: var(--texto-suave);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

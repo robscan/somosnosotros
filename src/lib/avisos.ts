@@ -40,21 +40,38 @@ async function avisar(evento: EventoAviso, usuarios: string[], tipo: "nuevo_even
   const plantilla = tipo === "nuevo_evento" ? correoNuevoEvento : correoRecordatorio;
   const correo = plantilla({ titulo: evento.titulo, cuando, lugar, eventoId: evento.id });
   const aviso = { titulo: tipo === "nuevo_evento" ? `Nuevo en ${lugar}` : `Hoy: ${evento.titulo}`, cuerpo: tipo === "nuevo_evento" ? `${evento.titulo} · ${cuando}` : `${cuando} · ${lugar}`, url: `https://somosnosotros.org/eventos/${evento.id}` };
+  const pendientes = (perfiles ?? []).filter((p) => p.avisos && !yaEnviados.has(p.id)).map((p) => p.id as string);
   let enviados = 0;
-  for (const p of perfiles ?? []) {
-    if (!p.avisos || yaEnviados.has(p.id)) continue;
-    const porPush = (await enviarPush([p.id], aviso)) > 0;
-    let porCorreo = false;
-    if (correoActivo()) {
-      const para = await correoDe(p.id);
-      if (para) porCorreo = await enviarCorreo({ para, ...correo });
-    }
-    if (porPush || porCorreo) {
-      await admin.from("avisos_enviados").insert({ usuario_id: p.id, evento_id: evento.id, tipo });
-      enviados++;
+  // Por lotes: cada persona recibe push y correo a la vez, y el lote entero en paralelo.
+  // Así 100 personas caben en el minuto que da Vercel; una por una no cabían.
+  for (const lote of lotes(pendientes, LOTE)) {
+    const resultados = await Promise.all(
+      lote.map(async (usuarioId) => {
+        const [porPush, porCorreo] = await Promise.all([
+          enviarPush([usuarioId], aviso).then((n) => n > 0),
+          correoActivo()
+            ? correoDe(usuarioId).then((para) => (para ? enviarCorreo({ para, ...correo }) : false))
+            : Promise.resolve(false),
+        ]);
+        return porPush || porCorreo ? usuarioId : null;
+      }),
+    );
+    const llegaron = resultados.filter((u): u is string => !!u);
+    if (llegaron.length > 0) {
+      await admin.from("avisos_enviados").insert(llegaron.map((usuario_id) => ({ usuario_id, evento_id: evento.id, tipo })));
+      enviados += llegaron.length;
     }
   }
   return enviados;
+}
+
+/** Cuántas personas se atienden a la vez. */
+const LOTE = 10;
+
+function lotes<T>(lista: T[], tamano: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < lista.length; i += tamano) out.push(lista.slice(i, i + tamano));
+  return out;
 }
 
 /** Nuevo evento en un lugar: aviso a quienes siguen ese lugar (menos al autor). */
@@ -68,18 +85,22 @@ export async function avisarNuevoEvento(eventoId: string, autorId: string | null
 }
 
 /** Recordatorio a quienes dijeron "Voy" a eventos que empiezan entre ahora y las próximas `horas`. */
-export async function enviarRecordatorios(horas = 24): Promise<{ eventos: number; enviados: number }> {
+export async function enviarRecordatorios(horas = 24): Promise<{ eventos: number; destinatarios: number; enviados: number; ms: number }> {
+  const t0 = Date.now();
   const admin = clienteAdmin();
-  if (!admin) return { eventos: 0, enviados: 0 };
+  if (!admin) return { eventos: 0, destinatarios: 0, enviados: 0, ms: 0 };
   const desde = new Date().toISOString();
   const hasta = new Date(Date.now() + horas * 3600000).toISOString();
   const { data: eventos } = await admin.from("eventos").select("id").eq("visible", true).gte("inicio", desde).lte("inicio", hasta);
   let enviados = 0;
+  let destinatarios = 0;
   for (const e of eventos ?? []) {
     const evento = await cargarEvento(e.id);
     if (!evento) continue;
     const { data } = await admin.from("asistencias").select("usuario_id").eq("evento_id", e.id).eq("estado", "voy");
-    enviados += await avisar(evento, (data ?? []).map((a) => a.usuario_id as string), "recordatorio");
+    const usuarios = (data ?? []).map((a) => a.usuario_id as string);
+    destinatarios += usuarios.length;
+    enviados += await avisar(evento, usuarios, "recordatorio");
   }
-  return { eventos: (eventos ?? []).length, enviados };
+  return { eventos: (eventos ?? []).length, destinatarios, enviados, ms: Date.now() - t0 };
 }

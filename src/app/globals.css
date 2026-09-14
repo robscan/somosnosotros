@@ -10,7 +10,14 @@
   --acento: #b3261e; /* rojo tierra: botones principales y enlaces */
   --acento-texto: #ffffff;
   --error: #b3261e;
+  --ok: #1f6f43; /* verde: "Voy" confirmado */
+  --fondo-miniatura: #e6e6e2; /* miniaturas y avatares sin foto */
+  --fondo-mapa: #eef0ec; /* tono claro mientras carga el mapa: nunca pantalla negra */
+  --asa: #d9d9d9; /* asa del panel inferior */
+  --vidrio: rgba(255, 255, 255, 0.92); /* rótulos sobre el mapa */
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --sombra-suave: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
 
   --radio: 12px;
   --radio-grande: 16px;
@@ -20,9 +27,25 @@
   --espacio-4: 16px;
   --espacio-5: 20px;
   --espacio-6: 24px;
-  --toque: 48px; /* alto mínimo de cualquier cosa que se pulsa con el dedo */
+  --toque: 48px; /* alto de botones y campos: cómodo para el pulgar */
+  --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
 
-  --fuente: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él.
+     Un punto más grande que con la letra del sistema: la condensada se percibe más chica (LINEA_GRAFICA). */
+  --letra-xs: 0.875rem; /* 14px: etiquetas en mayúsculas, cuándo */
+  --letra-sm: 0.9375rem; /* 15px: detalle, ayuda, error */
+  --letra-md: 1.0625rem; /* 17px: texto y campos */
+  --letra-lg: 1.125rem; /* 18px: botón principal */
+  --letra-xl: 1.1875rem; /* 19px: título de sección y de tarjeta */
+  --letra-2xl: 1.625rem; /* 26px: título de pantalla */
+  --letra-3xl: 1.875rem; /* 30px: nombre del lugar o evento */
+  --letra-logo: 1.375rem; /* 22px: SMSNSTRS en la barra */
+
+  /* Ancho de la letra (eje wdth de Bricolage Grotesque): condensada en todo, un poco más abierta en texto. */
+  --ancho-titulo: "wdth" 75;
+  --ancho-texto: "wdth" 80;
+
+  --fuente: var(--fuente-bricolage), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
@@ -37,10 +60,23 @@ body {
   background: var(--fondo);
   color: var(--texto);
   font-family: var(--fuente);
-  font-size: 16px; /* 16px o más en inputs: Safari no hace zoom al enfocar */
+  font-size: 100%; /* 16px por defecto; respeta el tamaño de texto que la persona eligió en su teléfono */
   line-height: 1.4;
+  font-variation-settings: var(--ancho-texto);
+  font-optical-sizing: auto; /* a lo grande enseña sus curvas; en texto chico queda limpia */
+  font-variant-numeric: tabular-nums; /* horas y fechas alineadas en las listas */
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
+}
+
+/* Títulos: condensados (ancho 75) y en negrita 700; la condensada a 600 se ve floja. */
+h1,
+h2,
+h3 {
+  font-variation-settings: var(--ancho-titulo);
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
 }
 
 a {
@@ -49,9 +85,16 @@ a {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
   color: inherit;
+}
+/* Los campos nunca bajan de 16px: por debajo, Safari hace zoom al enfocar. */
+input,
+textarea,
+select {
+  font-size: max(16px, var(--letra-md));
 }
 
 /* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */
@@ -64,8 +107,8 @@ textarea {
 }
 
 .titulo {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: var(--letra-2xl);
+  font-weight: 700;
   margin-bottom: var(--espacio-2);
 }
 
@@ -107,4 +150,25 @@ a:active,
 button:active:not(:disabled) {
   opacity: 0.6;
   transition: opacity 0s;
+}
+
+/* Foco visible solo cuando se navega con teclado (o lector de pantalla), nunca tras un toque. */
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Quien pidió menos movimiento en su teléfono no ve animaciones ni transiciones. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

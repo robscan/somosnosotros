@@ -1,6 +1,7 @@
 "use client";
 
 import { combinarFechaHora, fraseCuando, localAIso, proximosDias, sumarHoras, yaPaso, ZONA } from "@/lib/fechas";
+import { Chip, ChipNativo, Chips } from "@/components/ui/Chip";
 import styles from "./SelectorCuando.module.css";
 
 type Props = {
@@ -32,19 +33,6 @@ function etiquetaFecha(fecha: string): string {
   return iso ? new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short" }).format(new Date(iso)).replace(/\./g, "") : "Otra fecha";
 }
 
-/**
- * Chip que ES el campo nativo: el <input type="date|time"> va encima, invisible y del mismo tamaño,
- * para que el toque caiga en él y el teléfono abra su selector (Safari no lo abre por código).
- */
-function ChipNativo({ tipo, valor, activo, etiqueta, onCambio, ariaLabel }: { tipo: "date" | "time"; valor: string; activo: boolean; etiqueta: string; onCambio: (v: string) => void; ariaLabel: string }) {
-  return (
-    <span className={`${styles.chip} ${styles.chipNativo} ${activo ? styles.activo : ""}`}>
-      {etiqueta}
-      <input type={tipo} className={styles.encima} value={valor} step={tipo === "time" ? 300 : undefined} onChange={(e) => onCambio(e.target.value)} aria-label={ariaLabel} />
-    </span>
-  );
-}
-
 /** Cuándo, con un toque: pocos chips; "Otra fecha" / "Otra hora" son el selector nativo. La frase confirma en palabras. */
 export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, errorFin }: Props) {
   const dias = proximosDias(new Date(), 2); // Hoy, Mañana
@@ -64,38 +52,37 @@ export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, err
 
   return (
     <div className={styles.selector}>
-      <div className={styles.chips} role="group" aria-label="Día">
+      <Chips ariaLabel="Día">
         {dias.map((d) => (
-          <button key={d.valor} type="button" className={`${styles.chip} ${fecha === d.valor ? styles.activo : ""}`} onClick={() => fijar(d.valor, hora || "19:00")}>
+          <Chip key={d.valor} activo={fecha === d.valor} onClick={() => fijar(d.valor, hora || "19:00")}>
             {d.etiqueta}
-          </button>
+          </Chip>
         ))}
         <ChipNativo tipo="date" valor={fecha} activo={fechaEsOtra} etiqueta={fechaEsOtra ? etiquetaFecha(fecha) : "Otra fecha"} onCambio={(v) => v && fijar(v, hora || "19:00")} ariaLabel="Elegir otra fecha" />
-      </div>
+      </Chips>
 
-      <div className={styles.chips} role="group" aria-label="Hora">
+      <Chips ariaLabel="Hora">
         {HORAS.map((h) => (
-          <button key={h} type="button" className={`${styles.chip} ${hora === h ? styles.activo : ""}`} onClick={() => fijar(fecha || dias[0].valor, h)}>
+          <Chip key={h} activo={hora === h} onClick={() => fijar(fecha || dias[0].valor, h)}>
             {h}
-          </button>
+          </Chip>
         ))}
         <ChipNativo tipo="time" valor={hora} activo={horaEsOtra} etiqueta={horaEsOtra ? hora : "Otra hora"} onCambio={(v) => v && fijar(fecha || dias[0].valor, v)} ariaLabel="Elegir otra hora" />
-      </div>
+      </Chips>
       {errorInicio && (
         <p className={styles.error} role="alert">
           {errorInicio}
         </p>
       )}
 
-      <div className={styles.chips} role="group" aria-label="Termina">
-        <span className={styles.etiquetaChips}>Termina</span>
+      <Chips ariaLabel="Termina" etiqueta="Termina">
         {DURACIONES.map((d) => (
-          <button key={d.horas} type="button" className={`${styles.chip} ${!duracionEsOtra && (d.horas === 0 ? !fin : duracion === d.horas) ? styles.activo : ""}`} onClick={() => fijarDuracion(d.horas)}>
+          <Chip key={d.horas} activo={!duracionEsOtra && (d.horas === 0 ? !fin : duracion === d.horas)} onClick={() => fijarDuracion(d.horas)}>
             {d.etiqueta}
-          </button>
+          </Chip>
         ))}
         <ChipNativo tipo="time" valor={partir(fin).hora} activo={duracionEsOtra} etiqueta={duracionEsOtra ? partir(fin).hora : "Otra hora"} onCambio={(v) => onCambio(inicio, v ? combinarFechaHora(partir(fin).fecha || fecha, v) : "")} ariaLabel="Elegir hora de fin" />
-      </div>
+      </Chips>
       {errorFin && (
         <p className={styles.error} role="alert">
           {errorFin}

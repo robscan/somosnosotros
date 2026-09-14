@@ -2,15 +2,15 @@
   border: none;
   background: none;
   padding: 0;
-  min-height: 40px;
+  min-height: var(--toque-min);
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
   text-decoration: underline;
   cursor: pointer;
 }
 .gracias {
   color: var(--texto-suave);
-  font-size: 14px;
+  font-size: var(--letra-sm);
 }
 .formulario {
   margin-top: var(--espacio-2);
@@ -29,7 +29,7 @@
   align-items: center;
   gap: var(--espacio-2);
   min-height: 36px;
-  font-size: 15px;
+  font-size: var(--letra-md);
 }
 .motivo input {
   width: 20px;
@@ -37,15 +37,15 @@
   accent-color: var(--acento);
 }
 .detalle {
-  min-height: 44px;
+  min-height: var(--toque-min);
   padding: 0 var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  font-size: 16px;
+  font-size: var(--letra-md);
 }
 .error {
   color: var(--error);
-  font-size: 14px;
+  font-size: var(--letra-sm);
 }
 .acciones {
   display: flex;
@@ -53,7 +53,7 @@
   gap: var(--espacio-3);
 }
 .enviar {
-  min-height: 44px;
+  min-height: var(--toque-min);
   padding: 0 var(--espacio-4);
   border: none;
   border-radius: var(--radio);

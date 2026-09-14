@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, formatearCuando, fraseCuando, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, tramo } from "./fechas";
+import { aFechaIcs, combinarFechaHora, formatearCuando, formatearLargo, fraseCuando, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, tramo } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -16,6 +16,11 @@ describe("fechas", () => {
     expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA)).toBe("Hoy · 19:00");
     expect(formatearCuando("2026-09-21T01:00:00Z", "2026-09-21T03:00:00Z", AHORA)).toBe("Mañana · 19:00–21:00");
     expect(formatearCuando("2026-09-27T01:00:00Z", null, AHORA)).toBe("sáb 26 de sep · 19:00");
+  });
+  it("escribe el año solo cuando no es el actual", () => {
+    expect(formatearCuando("2027-08-23T01:00:00Z", null, AHORA)).toBe("dom 22 de ago de 2027 · 19:00");
+    expect(formatearLargo("2027-08-23T01:00:00Z", AHORA)).toBe("domingo, 22 de agosto de 2027, 19:00");
+    expect(formatearLargo("2026-09-21T01:00:00Z", AHORA)).toBe("domingo, 20 de septiembre, 19:00");
   });
   it("clasifica en hoy, semana, próximos y pasado", () => {
     expect(tramo("2026-09-20T01:00:00Z", AHORA)).toBe("hoy"); // 19:00 de hoy

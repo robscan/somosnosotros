@@ -1,0 +1,56 @@
+.chips {
+  display: flex;
+  gap: var(--espacio-2);
+  overflow-x: auto;
+  padding-bottom: var(--espacio-1);
+  margin-bottom: var(--espacio-2);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.chips::-webkit-scrollbar {
+  display: none;
+}
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.activo {
+  border-color: var(--acento);
+  background: var(--acento);
+  color: var(--acento-texto);
+  font-weight: 600;
+}
+.chipNativo {
+  position: relative;
+}
+/* El campo nativo va encima del chip, invisible y del mismo tamaño: el toque lo recibe él. */
+.encima {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.etiquetaChips {
+  flex: none;
+  align-self: center;
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  color: var(--texto-suave);
+  margin-right: var(--espacio-1);
+}

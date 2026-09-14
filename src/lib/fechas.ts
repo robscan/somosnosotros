@@ -36,27 +36,33 @@ export function diaLocal(d: Date): string {
   return `${p.year}-${p.month}-${p.day}`;
 }
 
-/** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). */
+/** El año solo se escribe cuando no es el actual: "sáb 20 de sep" este año, "sáb 20 de sep de 2027" el que viene. */
+function conAnio(d: Date, ahora: Date): { year?: "numeric" } {
+  return partes(d).year === partes(ahora).year ? {} : { year: "numeric" };
+}
+
+/** "sáb 20 sep · 19:00" (y "–21:00" si hay fin el mismo día). Con año si no es el de hoy. */
 export function formatearCuando(inicio: string, fin?: string | null, ahora: Date = new Date()): string {
   const d = new Date(inicio);
   const hoy = diaLocal(ahora);
   const dia = diaLocal(d);
   const manana = diaLocal(new Date(ahora.getTime() + 86400000));
-  const fecha = dia === hoy ? "Hoy" : dia === manana ? "Mañana" : new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short" }).format(d).replace(/\./g, "");
+  const corta = (x: Date) => new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short", ...conAnio(x, ahora) }).format(x).replace(/[.,]/g, "");
+  const fecha = dia === hoy ? "Hoy" : dia === manana ? "Mañana" : corta(d);
   const hora = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
   let texto = `${fecha} · ${hora}`;
   if (fin) {
     const f = new Date(fin);
     const horaFin = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(f);
-    texto += diaLocal(f) === dia ? `–${horaFin}` : ` → ${new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short" }).format(f).replace(/\./g, "")} · ${horaFin}`;
+    texto += diaLocal(f) === dia ? `–${horaFin}` : ` → ${corta(f)} · ${horaFin}`;
   }
   return texto;
 }
 
-/** Fecha larga para la ficha: "sábado 20 de septiembre, 19:00". */
-export function formatearLargo(iso: string): string {
+/** Fecha larga para la ficha: "sábado 20 de septiembre, 19:00" (con año si no es el de hoy). */
+export function formatearLargo(iso: string, ahora: Date = new Date()): string {
   const d = new Date(iso);
-  const fecha = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "long", day: "numeric", month: "long" }).format(d);
+  const fecha = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "long", day: "numeric", month: "long", ...conAnio(d, ahora) }).format(d);
   const hora = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
   return `${fecha}, ${hora}`;
 }

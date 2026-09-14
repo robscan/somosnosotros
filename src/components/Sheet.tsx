@@ -14,11 +14,21 @@ type Props = {
 const ORDEN: EstadoSheet[] = ["peek", "medium", "expanded"];
 const DURACION_MS = 300;
 
+/** Quien pidió menos movimiento en su teléfono no ve el panel deslizarse: salta. */
+function menosMovimiento(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 /**
  * Panel inferior sobre el mapa con tres alturas (docs/heredado/front/BOTTOM_SHEET.md):
  * peek = solo la cabecera · medium = la mitad · expanded = casi toda la pantalla.
  * Se arrastra desde el asa o la cabecera; tocar el asa cicla peek → medium → expanded → medium.
  * El contenido solo scrollea cuando el panel no está en peek.
+ *
+ * Excepciones declaradas al contrato heredado (§9 exige declararlas): este panel es el inicio, no una
+ * ficha, así que (1) no tiene botón de cerrar ni de compartir: nunca se cierra; (2) la cabecera es la
+ * marca, la ciudad y la sesión, no un título centrado; (3) mover el mapa no lo colapsa a peek: el mapa
+ * y la agenda conviven. Los gestos, umbrales (25 %) y la animación (300 ms) sí siguen el contrato.
  */
 export default function Sheet({ cabecera, children, inicial = "peek" }: Props) {
   const [estado, setEstado] = useState<EstadoSheet>(inicial);
@@ -81,7 +91,7 @@ export default function Sheet({ cabecera, children, inicial = "peek" }: Props) {
   return (
     <section
       className={styles.sheet}
-      style={{ height: alturas.expanded, transform: `translateY(${alturas.expanded - alturaVisible}px)`, transition: arrastre === null ? `transform ${DURACION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)` : "none" }}
+      style={{ height: alturas.expanded, transform: `translateY(${alturas.expanded - alturaVisible}px)`, transition: arrastre === null && !menosMovimiento() ? `transform ${DURACION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)` : "none" }}
       aria-label="Panel"
       data-estado={estado}
     >

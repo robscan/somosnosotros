@@ -1,9 +1,10 @@
-import Link from "next/link";
+import Barra from "@/components/ui/Barra";
 import { notFound } from "next/navigation";
 import { formatearCuando } from "@/lib/fechas";
 import { nombreSitio, type EventoResumen } from "@/lib/eventos";
 import { etiquetaTipo } from "@/lib/lugares";
 import { clienteServidor, type Perfil } from "@/lib/supabase/servidor";
+import Tarjeta from "@/components/ui/Tarjeta";
 import styles from "./perfil.module.css";
 
 type Params = { params: Promise<{ id: string }> };
@@ -30,7 +31,7 @@ async function cargar(id: string) {
 export async function generateMetadata({ params }: Params) {
   const { id } = await params;
   const d = await cargar(id);
-  return { title: d ? `${d.perfil.nombre} · somosnosotros` : "Persona · somosnosotros" };
+  return { title: d ? `${d.perfil.nombre} · Somos Nosotros` : "Persona · Somos Nosotros" };
 }
 
 /** Perfil público: quién es, qué lugares sigue y a qué eventos va. Es la forma de reconocerse. */
@@ -41,9 +42,7 @@ export default async function PaginaPersona({ params }: Params) {
   const { perfil, lugares, eventos } = d;
   return (
     <main className="pagina">
-      <Link href="/" className="enlace-volver">
-        ← Agenda
-      </Link>
+      <Barra volver={{ href: "/", texto: "Agenda" }} />
       <div className={styles.cabecera}>
         {perfil.foto ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
@@ -66,11 +65,7 @@ export default async function PaginaPersona({ params }: Params) {
           <ul className={styles.lista}>
             {eventos.map((e) => (
               <li key={e.id}>
-                <Link href={`/eventos/${e.id}`} className={styles.tarjeta}>
-                  <span className={styles.cuando}>{formatearCuando(e.inicio, e.fin)}</span>
-                  <strong>{e.titulo}</strong>
-                  <span className={styles.detalle}>{nombreSitio(e)}</span>
-                </Link>
+                <Tarjeta href={`/eventos/${e.id}`} arriba={formatearCuando(e.inicio, e.fin)} titulo={e.titulo} detalle={nombreSitio(e)} />
               </li>
             ))}
           </ul>
@@ -85,10 +80,7 @@ export default async function PaginaPersona({ params }: Params) {
           <ul className={styles.lista}>
             {lugares.map((l) => (
               <li key={l.id}>
-                <Link href={`/lugares/${l.id}`} className={styles.tarjeta}>
-                  <strong>{l.nombre}</strong>
-                  <span className={styles.detalle}>{etiquetaTipo(l.tipo)}</span>
-                </Link>
+                <Tarjeta href={`/lugares/${l.id}`} titulo={l.nombre} detalle={etiquetaTipo(l.tipo)} />
               </li>
             ))}
           </ul>

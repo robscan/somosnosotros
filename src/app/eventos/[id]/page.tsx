@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Barra from "@/components/ui/Barra";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
@@ -63,14 +64,14 @@ async function cargarPrivado(id: string): Promise<SitioPrivado | null> {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const e = await cargarEvento(id);
-  if (!e) return { title: "Evento · somosnosotros" };
+  if (!e) return { title: "Evento · Somos Nosotros" };
   const cuando = formatearLargo(e.inicio);
   const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
   const imagen = e.imagen ?? e.lugar?.portada ?? undefined;
   return {
-    title: `${e.titulo} · somosnosotros`,
+    title: `${e.titulo} · Somos Nosotros`,
     description: descripcion,
-    openGraph: { title: e.titulo, description: descripcion, url: `${ORIGEN}/eventos/${e.id}`, type: "article", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: "somosnosotros" },
+    openGraph: { title: e.titulo, description: descripcion, url: `${ORIGEN}/eventos/${e.id}`, type: "article", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
     twitter: { card: imagen ? "summary_large_image" : "summary", title: e.titulo, description: descripcion, images: imagen ? [imagen] : undefined },
   };
 }
@@ -100,9 +101,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
   return (
     <main className="pagina">
-      <Link href="/" className="enlace-volver">
-        ← Agenda
-      </Link>
+      <Barra volver={{ href: "/", texto: "Agenda" }} />
       {nuevo === "1" && (
         <div className={styles.publicado} role="status">
           <p>

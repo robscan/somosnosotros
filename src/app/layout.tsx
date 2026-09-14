@@ -1,13 +1,26 @@
 import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque } from "next/font/google";
 import RegistroSW from "@/components/RegistroSW";
 import "./globals.css";
 
+/**
+ * La única letra de la app (docs/diseno/LINEA_GRAFICA.md): Bricolage Grotesque variable, servida desde
+ * nuestro dominio por next/font (sin llamada a Google en cada visita, sin salto al cargar).
+ * Ejes: opsz (tamaño óptico automático) y wdth (condensada: 75 títulos, 80 texto).
+ */
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin", "latin-ext"],
+  axes: ["opsz", "wdth"],
+  display: "swap",
+  variable: "--fuente-bricolage",
+});
+
 export const metadata: Metadata = {
-  title: "somosnosotros",
+  title: "Somos Nosotros",
   description:
     "Directorio de centros culturales y agenda de eventos de San Luis Potosí, para conocer gente local.",
-  applicationName: "somosnosotros",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "somosnosotros" },
+  applicationName: "Somos Nosotros",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Somos Nosotros" },
   icons: { icon: "/icono-192.png", apple: "/apple-touch-icon.png" },
 };
 
@@ -21,7 +34,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" className={bricolage.variable}>
       <body>
         {children}
         <RegistroSW />

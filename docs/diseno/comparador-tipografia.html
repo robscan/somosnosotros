@@ -1,0 +1,392 @@
+<meta charset="utf-8">
+<title>Letra de Somos Nosotros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Latin:wdth,wght@75..125,100..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Asap+Condensed:wght@300;400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mohave:wght@300..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yanone+Kaffeesatz:wght@200..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders:opsz,wght@10..72,100..900&display=swap">
+<style>
+  :root {
+    /* Cromo de la página: los mismos tonos de la app, para no distraer del teléfono. */
+    --fondo: #ffffff;
+    --fondo-suave: #f4f4f2;
+    --texto: #1a1a1a;
+    --texto-suave: #5c5c5c;
+    --borde: #dcdcd8;
+    --acento: #b3261e;
+    --acento-suave: #f7e9e7;
+    --chip-activo: #1a1a1a;
+    --chip-activo-texto: #ffffff;
+    --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
+    /* La app es de tema claro por definición: el teléfono no cambia con el tema del visor. */
+    --app-fondo: #ffffff;
+    --app-fondo-suave: #f4f4f2;
+    --app-texto: #1a1a1a;
+    --app-texto-suave: #5c5c5c;
+    --app-borde: #dcdcd8;
+    --app-acento: #b3261e;
+    --app-miniatura: #e6e6e2;
+    --app-ok: #1f6f43;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fondo: #171614;
+      --fondo-suave: #201f1c;
+      --texto: #f1efe9;
+      --texto-suave: #a7a49c;
+      --borde: #36342f;
+      --acento: #e0574b;
+      --acento-suave: #33201d;
+      --chip-activo: #f1efe9;
+      --chip-activo-texto: #171614;
+      --sombra: 0 2px 16px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --fondo: #171614;
+    --fondo-suave: #201f1c;
+    --texto: #f1efe9;
+    --texto-suave: #a7a49c;
+    --borde: #36342f;
+    --acento: #e0574b;
+    --acento-suave: #33201d;
+    --chip-activo: #f1efe9;
+    --chip-activo-texto: #171614;
+    --sombra: 0 2px 16px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    padding-block: 20px 48px;
+    padding-inline: 16px;
+  }
+  .envoltura { max-width: 480px; margin: 0 auto; display: grid; gap: 20px; }
+
+  header h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; text-wrap: balance; }
+  header p { margin: 0; color: var(--texto-suave); font-size: 15px; }
+
+  .recomendada {
+    display: flex; gap: 10px; align-items: baseline;
+    background: var(--acento-suave); color: var(--texto);
+    border-radius: 12px; padding: 10px 14px; font-size: 14px;
+  }
+  .recomendada b { color: var(--acento); font-weight: 700; white-space: nowrap; }
+
+  /* Fila de opciones: se desplaza de lado en el teléfono. */
+  .opciones {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    margin-inline: -16px; padding-inline: 16px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .opciones::-webkit-scrollbar { display: none; }
+  .opcion {
+    flex: 0 0 auto; min-height: 44px; padding: 0 14px;
+    border: 1px solid var(--borde); border-radius: 999px;
+    background: var(--fondo); color: var(--texto);
+    font: inherit; font-size: 15px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .opcion .num { font-size: 12px; color: var(--texto-suave); font-variant-numeric: tabular-nums; }
+  .opcion[aria-pressed="true"] { background: var(--chip-activo); color: var(--chip-activo-texto); border-color: var(--chip-activo); }
+  .opcion[aria-pressed="true"] .num { color: inherit; opacity: 0.7; }
+  .opcion:focus-visible, .flecha:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+  /* El teléfono: 390 de ancho, como el iPhone del founder. */
+  .telefono {
+    font-family: var(--f);
+    background: var(--app-fondo); color: var(--app-texto);
+    border: 1px solid var(--borde); border-radius: 28px;
+    box-shadow: var(--sombra); overflow: hidden;
+    width: 100%; max-width: 390px; margin: 0 auto;
+    user-select: none; -webkit-user-select: none; touch-action: pan-y;
+  }
+  .barra {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 10px;
+  }
+  .barra .titulo { font-size: 24px; font-weight: var(--w-titulo); font-variation-settings: var(--var-texto); line-height: 1.1; }
+  .logo {
+    font-weight: var(--w-logo); font-variation-settings: var(--var-logo);
+    font-size: 21px; letter-spacing: var(--ls-logo, 0); line-height: 1;
+    text-transform: uppercase; color: var(--app-texto);
+  }
+  .filtros { display: flex; gap: 8px; padding: 6px 20px 14px; overflow-x: auto; scrollbar-width: none; }
+  .filtros::-webkit-scrollbar { display: none; }
+  .filtro {
+    font-size: 14px; font-weight: var(--w-medio); font-variation-settings: var(--var-texto);
+    border: 1px solid var(--app-borde); border-radius: 999px; padding: 7px 12px; color: var(--app-texto-suave); white-space: nowrap; flex: 0 0 auto;
+  }
+  .filtro.on { background: var(--app-texto); color: var(--app-fondo); border-color: var(--app-texto); }
+  .tarjeta { display: grid; grid-template-columns: 84px 1fr; gap: 14px; padding: 14px 20px; border-top: 1px solid var(--app-borde); }
+  .mini { width: 84px; height: 84px; border-radius: 12px; background: var(--app-miniatura); position: relative; overflow: hidden; }
+  .mini::after { content: ""; position: absolute; inset: auto 0 0 0; height: 40%; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.12)); }
+  .mini.b { background: #e3e6df; }
+  .cuando { font-size: 13px; color: var(--app-acento); font-weight: var(--w-medio); font-variation-settings: var(--var-texto); text-transform: uppercase; letter-spacing: 0.04em; }
+  .nombre { font-size: 20px; font-weight: var(--w-titulo); font-variation-settings: var(--var-texto); line-height: 1.15; margin: 2px 0 4px; text-wrap: balance; }
+  .lugar { font-size: 15px; color: var(--app-texto-suave); font-variation-settings: var(--var-texto); }
+  .pie { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; gap: 8px; }
+  .van { font-size: 14px; color: var(--app-texto-suave); font-variation-settings: var(--var-texto); }
+  .boton {
+    font-size: 17px; font-weight: var(--w-titulo); font-variation-settings: var(--var-texto);
+    background: var(--app-acento); color: #fff; border-radius: 10px; padding: 8px 18px; line-height: 1.2;
+  }
+  .boton.ok { background: var(--app-ok); }
+  .desc { font-size: 16px; line-height: 1.4; padding: 6px 20px 16px; color: var(--app-texto); font-variation-settings: var(--var-texto); border-top: 1px solid var(--app-borde); }
+  .desc small { display: block; font-size: 13px; color: var(--app-texto-suave); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; font-weight: var(--w-medio); }
+  .pestanas { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--app-borde); padding: 10px 0 14px; }
+  .pestana { text-align: center; font-size: 13px; color: var(--app-texto-suave); font-variation-settings: var(--var-texto); font-weight: var(--w-medio); }
+  .pestana.on { color: var(--app-texto); }
+  .pestana i { display: block; width: 22px; height: 22px; border-radius: 6px; margin: 0 auto 3px; background: currentColor; opacity: 0.18; }
+  .pestana.on i { opacity: 0.9; }
+
+  .navegar { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .flecha {
+    min-width: 44px; min-height: 44px; border-radius: 999px; border: 1px solid var(--borde);
+    background: var(--fondo); color: var(--texto); font: inherit; font-size: 18px; cursor: pointer;
+  }
+  .contador { font-size: 14px; color: var(--texto-suave); font-variant-numeric: tabular-nums; min-width: 4ch; text-align: center; }
+
+  /* Ficha de la letra elegida */
+  .ficha { display: grid; gap: 12px; }
+  .ficha h2 { margin: 0; font-size: 20px; font-weight: 700; }
+  .ficha .origen { margin: 0; font-size: 14px; color: var(--texto-suave); }
+  .muestra {
+    font-family: var(--f); background: var(--fondo-suave); border-radius: 16px; padding: 22px 20px 18px; overflow: hidden;
+  }
+  .muestra .grande {
+    font-weight: var(--w-logo); font-variation-settings: var(--var-logo); letter-spacing: var(--ls-logo, 0);
+    font-size: clamp(56px, 18vw, 84px); line-height: 0.95; text-transform: uppercase;
+  }
+  .muestra .marca { font-size: 30px; font-weight: var(--w-medio); font-variation-settings: var(--var-texto); margin-top: 8px; line-height: 1.1; }
+  .muestra .abc { font-size: 18px; margin-top: 12px; color: var(--texto-suave); font-variation-settings: var(--var-texto); line-height: 1.35; overflow-wrap: anywhere; }
+  .ficha p { margin: 0; font-size: 15px; }
+  .ficha dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 14px; }
+  .ficha dt { color: var(--texto-suave); }
+  .ficha dd { margin: 0; }
+
+  .descartes { border-top: 1px solid var(--borde); padding-top: 16px; }
+  .descartes h2 { font-size: 15px; margin: 0 0 8px; font-weight: 700; color: var(--texto-suave); text-transform: uppercase; letter-spacing: 0.05em; }
+  .descartes ul { margin: 0; padding-left: 18px; font-size: 14px; color: var(--texto-suave); display: grid; gap: 6px; }
+  .descartes li b { color: var(--texto); font-weight: 600; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .telefono, .muestra { transition: none; }
+  }
+</style>
+
+<div class="envoltura">
+  <header>
+    <h1>Siete letras condensadas, una app</h1>
+    <p>Toca una opción o desliza el teléfono. Todo lo que ves cambia de letra, incluido el logotipo arriba a la derecha.</p>
+  </header>
+
+  <div class="recomendada"><b>Recomendada</b><span>Bricolage Grotesque al 75 % de ancho: condensada, con carácter a lo grande y limpia en texto chico. Las otras seis están para compararla.</span></div>
+
+  <div class="opciones" id="opciones" role="group" aria-label="Tipografías"></div>
+
+  <div class="telefono" id="telefono" aria-live="polite">
+    <div class="barra">
+      <div class="titulo">Agenda</div>
+      <div class="logo">SMSNSTRS</div>
+    </div>
+    <div class="filtros">
+      <span class="filtro on">Hoy</span><span class="filtro">Fin de semana</span><span class="filtro">Cerca de mí</span>
+    </div>
+    <div class="tarjeta">
+      <div class="mini"></div>
+      <div>
+        <div class="cuando">Sáb 19 sep · 17:00</div>
+        <div class="nombre">Taller de grabado en linóleo</div>
+        <div class="lugar">Centro de las Artes de San Luis Potosí</div>
+        <div class="pie"><span class="van">12 personas van</span><span class="boton">Voy</span></div>
+      </div>
+    </div>
+    <div class="tarjeta">
+      <div class="mini b"></div>
+      <div>
+        <div class="cuando">Dom 20 sep · 20:00</div>
+        <div class="nombre">Noche de son huasteco y fandango</div>
+        <div class="lugar">La Casa del Poeta · Centro histórico</div>
+        <div class="pie"><span class="van">Tú y 5 más</span><span class="boton ok">Vas</span></div>
+      </div>
+    </div>
+    <div class="desc"><small>Sobre el lugar</small>Espacio independiente en la calle de Zaragoza. Talleres de grabado, cerámica y serigrafía; los viernes hay tianguis de arte con música en vivo. Entrada libre.</div>
+    <div class="pestanas">
+      <span class="pestana"><i></i>Mapa</span><span class="pestana on"><i></i>Agenda</span><span class="pestana"><i></i>Perfil</span>
+    </div>
+  </div>
+
+  <div class="navegar">
+    <button class="flecha" id="antes" aria-label="Anterior">‹</button>
+    <span class="contador" id="contador">1 / 7</span>
+    <button class="flecha" id="despues" aria-label="Siguiente">›</button>
+  </div>
+
+  <section class="ficha" id="ficha">
+    <div>
+      <h2 id="f-nombre"></h2>
+      <p class="origen" id="f-origen"></p>
+    </div>
+    <div class="muestra" id="muestra">
+      <div class="grande">SMSNSTRS</div>
+      <div class="marca">Somos Nosotros</div>
+      <div class="abc">San Luis Potosí · áéíóú ñ ü ¿¡ · Sábado 19 · 0123456789</div>
+    </div>
+    <p id="f-por"></p>
+    <dl>
+      <dt>Tiene</dt><dd id="f-ejes"></dd>
+      <dt>Riesgo</dt><dd id="f-riesgo"></dd>
+    </dl>
+  </section>
+
+  <section class="descartes">
+    <h2>Se quedaron fuera</h2>
+    <ul>
+      <li><b>Oswald, Roboto Condensed, Barlow Condensed, Bebas Neue.</b> Condensadas pero frías: son la letra de cualquier app de deportes o de noticias.</li>
+      <li><b>Truculenta, Homenaje, Acme.</b> Muy artísticas, pero cansan en texto corrido o traen un solo grosor.</li>
+      <li><b>Fjalla One, Ropa Sans, PT Sans Narrow.</b> Humanas, pero con uno o dos grosores no alcanzan para botones, títulos y texto.</li>
+      <li><b>Encode Sans Condensed, Fira Sans Condensed.</b> Buenas para trabajar, pero sin nada que las haga nuestras.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+  const letras = [
+    {
+      id: "bricolage", nombre: "Bricolage Grotesque",
+      f: "'Bricolage Grotesque', 'Arial Narrow', sans-serif",
+      varLogo: "'wdth' 75", varTexto: "'wdth' 78", wLogo: 800, wTitulo: 700, wMedio: 500, lsLogo: "-0.01em",
+      origen: "Mathieu Triay, 2022–2023. Libre (OFL).",
+      por: "Condensada al 75 % de ancho. A lo grande enseña trampas de tinta y curvas desiguales, como recortadas a mano; en texto de 16 px eso se apaga y queda una letra limpia. El logotipo y el cuerpo salen de la misma familia.",
+      ejes: "Peso 200 a 800, ancho 75 a 100 y tamaño óptico automático. Itálicas no.",
+      riesgo: "Está de moda en 2024–2026: la vamos a ver en otros sitios. El ancho 75 hay que fijarlo en CSS."
+    },
+    {
+      id: "afacad", nombre: "Afacad Flux",
+      f: "'Afacad Flux', 'Arial Narrow', sans-serif",
+      varLogo: "normal", varTexto: "normal", wLogo: 800, wTitulo: 700, wMedio: 500, lsLogo: "0",
+      origen: "Kostas Bartsokas, 2023. Libre (OFL).",
+      por: "Angosta y cálida. Los trazos terminan en corte diagonal, como hechos con pluma, y las curvas son abiertas. De las siete, la que mejor se lee en pantalla chica.",
+      ejes: "Peso 100 a 1000 e inclinación variable. Itálicas verdaderas.",
+      riesgo: "El logotipo queda correcto pero menos memorable que con Bricolage o Big Shoulders."
+    },
+    {
+      id: "anek", nombre: "Anek Latin",
+      f: "'Anek Latin', 'Arial Narrow', sans-serif",
+      varLogo: "'wdth' 75", varTexto: "'wdth' 78", wLogo: 800, wTitulo: 700, wMedio: 500, lsLogo: "0",
+      origen: "Ek Type (Mumbai), 2022. Libre (OFL).",
+      por: "Humanista y amable, hecha para convivir con escrituras de la India. Al 75 % de ancho se vuelve condensada sin perder la curva suave.",
+      ejes: "Peso 100 a 800, ancho 75 a 125. Itálicas no.",
+      riesgo: "Muy correcta, poco distinta: se parece a una letra de sistema bien hecha."
+    },
+    {
+      id: "asap", nombre: "Asap Condensed",
+      f: "'Asap Condensed', 'Arial Narrow', sans-serif",
+      varLogo: "normal", varTexto: "normal", wLogo: 800, wTitulo: 600, wMedio: 500, lsLogo: "0",
+      origen: "Omnibus-Type (Buenos Aires), 2017. Libre (OFL).",
+      por: "Terminales redondeadas, tono amistoso, dibujada en Latinoamérica. Es la opción más segura para leer largo y la que menos discute con el contenido.",
+      ejes: "Peso 200 a 900 con itálicas.",
+      riesgo: "Casi nada de arte: podría ser la letra de un banco simpático."
+    },
+    {
+      id: "mohave", nombre: "Mohave",
+      f: "'Mohave', 'Arial Narrow', sans-serif",
+      varLogo: "normal", varTexto: "normal", wLogo: 700, wTitulo: 600, wMedio: 500, lsLogo: "0.01em",
+      origen: "Gumpita Rahayu, 2019. Libre (OFL).",
+      por: "Condensada de cartel con las esquinas suavizadas. Títulos y logotipo lucen; la letra alta y estrecha se siente de afiche de concierto.",
+      ejes: "Peso 300 a 700 con itálicas.",
+      riesgo: "En texto corrido de 16 px cansa: habría que combinarla con otra letra para el cuerpo."
+    },
+    {
+      id: "yanone", nombre: "Yanone Kaffeesatz",
+      f: "'Yanone Kaffeesatz', 'Arial Narrow', sans-serif",
+      varLogo: "normal", varTexto: "normal", wLogo: 700, wTitulo: 600, wMedio: 400, lsLogo: "0.01em",
+      origen: "Jan Gerner, 2004–2010. Libre (OFL).",
+      por: "Nació para la carta de una cafetería. Humanista, ligera, con personalidad clara: es la más artística de las siete y la más cercana al espíritu de centro cultural.",
+      ejes: "Peso 200 a 700. Itálicas no.",
+      riesgo: "Se ha usado muchísimo desde 2010: puede verse fechada. Y es tan angosta que a 16 px pide un punto más de tamaño."
+    },
+    {
+      id: "bigshoulders", nombre: "Big Shoulders",
+      f: "'Big Shoulders', 'Arial Narrow', sans-serif",
+      varLogo: "normal", varTexto: "normal", wLogo: 900, wTitulo: 700, wMedio: 500, lsLogo: "0.01em",
+      origen: "Patric King (Chicago), 2019, reunida en una sola familia en 2024. Libre (OFL).",
+      por: "Inspirada en los rótulos pintados de la industria de Chicago. El logotipo sale fuerte y con presencia; el tamaño óptico la adapta al texto pequeño.",
+      ejes: "Peso 100 a 900 y tamaño óptico automático. Itálicas no.",
+      riesgo: "Es la menos orgánica: rígida y geométrica. Queda mejor en carteles que en una agenda que se lee todos los días."
+    }
+  ];
+
+  let actual = 0;
+  const raiz = document.documentElement;
+  const opciones = document.getElementById("opciones");
+  const contador = document.getElementById("contador");
+
+  letras.forEach((l, i) => {
+    const b = document.createElement("button");
+    b.className = "opcion"; b.id = "opcion-" + l.id; b.type = "button";
+    b.setAttribute("aria-pressed", "false");
+    b.innerHTML = '<span class="num">' + (i + 1) + "</span>" + l.nombre;
+    b.addEventListener("click", () => elegir(i));
+    opciones.appendChild(b);
+  });
+
+  function elegir(i) {
+    actual = (i + letras.length) % letras.length;
+    const l = letras[actual];
+    raiz.style.setProperty("--f", l.f);
+    raiz.style.setProperty("--var-logo", l.varLogo);
+    raiz.style.setProperty("--var-texto", l.varTexto);
+    raiz.style.setProperty("--w-logo", l.wLogo);
+    raiz.style.setProperty("--w-titulo", l.wTitulo);
+    raiz.style.setProperty("--w-medio", l.wMedio);
+    raiz.style.setProperty("--ls-logo", l.lsLogo);
+    document.getElementById("f-nombre").textContent = (actual + 1) + ". " + l.nombre;
+    document.getElementById("f-origen").textContent = l.origen;
+    document.getElementById("f-por").textContent = l.por;
+    document.getElementById("f-ejes").textContent = l.ejes;
+    document.getElementById("f-riesgo").textContent = l.riesgo;
+    contador.textContent = (actual + 1) + " / " + letras.length;
+    opciones.querySelectorAll(".opcion").forEach((b, j) => b.setAttribute("aria-pressed", String(j === actual)));
+    const activo = opciones.children[actual];
+    if (activo && activo.scrollIntoView) activo.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    try { localStorage.setItem("letra-elegida", String(actual)); } catch (e) {}
+  }
+
+  document.getElementById("antes").addEventListener("click", () => elegir(actual - 1));
+  document.getElementById("despues").addEventListener("click", () => elegir(actual + 1));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") elegir(actual - 1);
+    if (e.key === "ArrowRight") elegir(actual + 1);
+  });
+
+  // Deslizar sobre el teléfono cambia de letra.
+  let x0 = null;
+  const tel = document.getElementById("telefono");
+  tel.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+  tel.addEventListener("touchend", (e) => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if (Math.abs(dx) > 50) elegir(dx < 0 ? actual + 1 : actual - 1);
+  }, { passive: true });
+
+  let inicio = 0;
+  try { inicio = Number(localStorage.getItem("letra-elegida")) || 0; } catch (e) {}
+  elegir(inicio);
+
+  // Precarga las siete letras para que al tocar no haya un parpadeo con la letra del sistema.
+  if (document.fonts && document.fonts.load) {
+    letras.forEach((l) => { [400, 700, 800].forEach((w) => { document.fonts.load(w + " 16px " + l.f).catch(() => {}); }); });
+  }
+</script>

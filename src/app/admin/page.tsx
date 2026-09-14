@@ -1,12 +1,14 @@
 import Link from "next/link";
+import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
 import { formatearCuando } from "@/lib/fechas";
 import { etiquetaMotivo } from "@/lib/reportes";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { atenderReporte, cambiarVisibleDesdeAdmin } from "./acciones";
+import Tarjeta from "@/components/ui/Tarjeta";
 import styles from "./admin.module.css";
 
-export const metadata = { title: "Administración · somosnosotros" };
+export const metadata = { title: "Administración · Somos Nosotros" };
 
 type Reporte = { id: string; tipo: "lugar" | "evento" | "perfil"; objeto_id: string; motivo: string; detalle: string | null; creado_en: string; autor: { nombre: string } | { nombre: string }[] | null };
 
@@ -29,9 +31,7 @@ export default async function Admin() {
 
   return (
     <main className="pagina">
-      <Link href="/" className="enlace-volver">
-        ← Volver al mapa
-      </Link>
+      <Barra volver={{ href: "/", texto: "Volver al mapa" }} />
       <h1 className="titulo">Administración</h1>
       <p className="subtitulo">
         {perfiles.count ?? 0} personas · {lugares?.length ?? 0}+ lugares · {eventos?.length ?? 0}+ eventos · {asistencias.count ?? 0} “voy” · {seguimientos.count ?? 0} seguimientos
@@ -44,11 +44,15 @@ export default async function Admin() {
         ) : (
           <ul className={styles.lista}>
             {(reportes as unknown as Reporte[]).map((r) => (
-              <li key={r.id} className={styles.tarjeta}>
-                <p>
-                  <strong>{etiquetaMotivo(r.motivo)}</strong> · {r.tipo} · <Link href={rutaDe(r)}>ver</Link>
-                </p>
-                {r.detalle && <p className={styles.detalle}>{r.detalle}</p>}
+              <li key={r.id}>
+                <Tarjeta
+                  titulo={
+                    <>
+                      {etiquetaMotivo(r.motivo)} · {r.tipo} · <Link href={rutaDe(r)}>ver</Link>
+                    </>
+                  }
+                  detalle={r.detalle}
+                >
                 <p className={styles.meta}>
                   Reportó {nombreAutor(r.autor)} · {formatearCuando(r.creado_en)}
                 </p>
@@ -66,6 +70,7 @@ export default async function Admin() {
                     </button>
                   </form>
                 </div>
+                </Tarjeta>
               </li>
             ))}
           </ul>

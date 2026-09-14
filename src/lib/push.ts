@@ -22,16 +22,19 @@ export async function enviarPush(usuarios: string[], aviso: AvisoPush): Promise<
   if (!admin || !pushActivo() || usuarios.length === 0) return 0;
   configurar();
   const { data } = await admin.from("suscripciones_push").select("endpoint, p256dh, auth, usuario_id").in("usuario_id", usuarios);
-  let enviados = 0;
-  for (const s of data ?? []) {
-    try {
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(aviso), { TTL: 6 * 3600 });
-      enviados++;
-    } catch (e) {
-      const status = (e as { statusCode?: number }).statusCode;
-      if (status === 404 || status === 410) await admin.from("suscripciones_push").delete().eq("endpoint", s.endpoint);
-      else console.error("enviarPush:", status, e instanceof Error ? e.message : e);
-    }
-  }
-  return enviados;
+  // Todos los teléfonos a la vez: cada envío es una petición HTTP independiente.
+  const resultados = await Promise.all(
+    (data ?? []).map(async (s) => {
+      try {
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(aviso), { TTL: 6 * 3600 });
+        return true;
+      } catch (e) {
+        const status = (e as { statusCode?: number }).statusCode;
+        if (status === 404 || status === 410) await admin.from("suscripciones_push").delete().eq("endpoint", s.endpoint);
+        else console.error("enviarPush:", status, e instanceof Error ? e.message : e);
+        return false;
+      }
+    }),
+  );
+  return resultados.filter(Boolean).length;
 }

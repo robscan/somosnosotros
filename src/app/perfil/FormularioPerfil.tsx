@@ -5,6 +5,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { LIMITES } from "@/lib/perfil";
 import { clienteNavegador } from "@/lib/supabase/navegador";
+import { reducirImagen } from "@/lib/imagen";
 import type { Perfil } from "@/lib/supabase/servidor";
 import ActivarPush from "./ActivarPush";
 import { borrarMiCuenta, cerrarSesion, guardarPerfil, type ResultadoGuardar } from "./acciones";
@@ -29,9 +30,10 @@ export default function FormularioPerfil({ perfil, llavePush = "" }: { perfil: P
     }
     setSubiendo(true);
     setErrorFoto(null);
-    const extension = (archivo.name.split(".").pop() || "jpg").toLowerCase();
+    const listo = await reducirImagen(archivo); // menos peso y menos espera: se reduce en el teléfono antes de subir
+    const extension = (listo.name.split(".").pop() || "jpg").toLowerCase();
     const ruta = `perfiles/${perfil.id}/foto-${Date.now()}.${extension}`;
-    const { error } = await supabase.storage.from("fotos").upload(ruta, archivo, { upsert: true, contentType: archivo.type || undefined });
+    const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: true, contentType: listo.type || undefined });
     if (error) {
       setErrorFoto("No se pudo subir la foto. Intenta con otra.");
     } else {
