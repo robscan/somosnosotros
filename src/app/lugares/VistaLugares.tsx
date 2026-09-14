@@ -15,16 +15,14 @@ type Props = { lugares: LugarResumen[]; ciudad: Ciudad; conSesion: boolean; cent
 export default function VistaLugares({ lugares, ciudad, conSesion, centrarEn, vistaInicial }: Props) {
   const [vista, setVista] = useState<Vista>(vistaInicial);
   return (
-    <div className={styles.vista}>
-      <div className={styles.fija}>
-        <div className={styles.pestanas} role="tablist" aria-label="Cómo ver los lugares">
-          <button type="button" role="tab" className={styles.pestana} aria-selected={vista === "lista"} onClick={() => setVista("lista")}>
-            <IconoLista width={18} height={18} /> Lista
-          </button>
-          <button type="button" role="tab" className={styles.pestana} aria-selected={vista === "mapa"} onClick={() => setVista("mapa")}>
-            <IconoMapa width={18} height={18} /> Mapa
-          </button>
-        </div>
+    <>
+      <div className={styles.pestanas} role="tablist" aria-label="Cómo ver los lugares">
+        <button type="button" role="tab" className={styles.pestana} aria-selected={vista === "lista"} onClick={() => setVista("lista")}>
+          <IconoLista width={18} height={18} /> Lista
+        </button>
+        <button type="button" role="tab" className={styles.pestana} aria-selected={vista === "mapa"} onClick={() => setVista("mapa")}>
+          <IconoMapa width={18} height={18} /> Mapa
+        </button>
       </div>
       {vista === "lista" ? (
         <div className={styles.contenido}>
@@ -35,6 +33,6 @@ export default function VistaLugares({ lugares, ciudad, conSesion, centrarEn, vi
           <Mapa lugares={lugares} centrarEn={centrarEn} ciudad={ciudad} presentacion="caja" />
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -10,9 +10,7 @@ export const metadata = { title: "Artistas · Somos Nosotros" };
 export default function Artistas() {
   return (
     <main className="raiz">
-      <div className="cabecera-raiz">
-        <Barra derecha={<Sesion />} />
-      </div>
+      <Barra derecha={<Sesion />} />
       <section className={styles.seccion} aria-label="Artistas">
         <h1 className={styles.titulo}>Artistas</h1>
         <p className={styles.texto}>Aquí van las personas y los grupos que hacen la cultura de San Luis Potosí: quiénes son, dónde tocan, exponen o actúan, y cuándo.</p>

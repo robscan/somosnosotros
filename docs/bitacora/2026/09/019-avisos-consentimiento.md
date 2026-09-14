@@ -21,7 +21,7 @@ Rama `avisos-consentimiento`. Cierra OL-008 en código. Motivo (decisión 10 de 
 
 ## Corrección de maquetación señalada por el founder
 
-En producción (PR #16) quedaba un hueco gris entre la barra superior y la cabecera de filtros: el margen inferior de la barra se colapsaba fuera de su caja blanca y dejaba ver el tono del contenido. Corregido en `Barra.module.css`: en pantallas raíz la barra no lleva margen (el aire solo aplica en pantallas interiores, antes del título) y la cabecera pegajosa arranca a 56 px, pegada. Medido en el DOM: hueco 0 px.
+En producción (PR #16) quedaba un hueco gris entre la barra superior y la cabecera de filtros: el margen inferior de la barra se colapsaba fuera de su caja blanca y dejaba ver el tono del contenido. Corregido en `Barra.module.css`: en pantallas raíz la barra no lleva margen (el aire solo aplica en pantallas interiores, antes del título) y la cabecera pegajosa arranca a 56 px, pegada. Medido en el DOM: hueco 0 px. Además, a pedido del founder, la maquetación de las pantallas raíz se aplanó: `main` tiene como hijos directos la barra, la cabecera pegajosa, los grupos, Publicar y la navegación (se quitó el envoltorio `.cabecera-raiz` y el de la agenda); la cabecera pegajosa y los grupos ponen su propio gutter en vez de márgenes negativos; el renglón de evento es un grid con áreas (foto, título, datos) sin envoltorio de texto y el resaltado al pulsar se logra con `box-shadow`, sin mover márgenes.
 
 ## Pendiente del founder
 
