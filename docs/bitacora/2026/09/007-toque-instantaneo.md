@@ -17,3 +17,7 @@ Tiempo hasta el primer byte desde el escritorio, 3 muestras por pantalla: `/` 41
 - Lint, typecheck, 39 tests, build.
 - Con sesión real (usuario desechable, borrado): `/perfil` muestra correo y perfil leídos de los claims; el panel muestra el nombre. Logs del servidor: `proxy.ts: 6ms`.
 - Lo que no depende de nosotros: región `iad1` y arranques en frío de Vercel. Se mide en producción tras el merge.
+
+## Medición (producción, después)
+
+Mergeado (`cdbca64`). Sin sesión, el tiempo hasta el primer byte queda igual (`/` 0.53 s, `/entrar` 0.44–0.49 s, `/lugares/nuevo` 0.38–0.42 s, ficha 0.38–0.41 s; primeras muestras tras el deploy con arranque en frío: 1.3–1.6 s). Es el costo base de la función en Vercel, no de la app: sin sesión `getUser()` tampoco iba a la red. Lo que cambia para la persona: el toque dibuja la pantalla de espera al instante, y con sesión desaparecen dos viajes a Supabase Auth por página. Pendiente de validar en el iPhone del founder.
