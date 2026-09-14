@@ -1,16 +1,22 @@
 .barra {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--espacio-3);
-  min-height: var(--toque);
+  min-height: var(--alto-barra);
   margin-bottom: var(--espacio-2);
 }
-.izquierda {
+.raiz {
+  justify-content: space-between;
+  gap: var(--espacio-3);
+}
+.derecha {
   display: flex;
   align-items: center;
-  min-width: 0;
-  flex: 1;
+}
+.interior {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--espacio-2);
 }
 .volver {
   display: inline-flex;
@@ -21,4 +27,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.hueco {
+  display: block;
 }

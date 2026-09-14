@@ -11,7 +11,7 @@ export default async function NuevoLugar() {
   if (!actual) redirect("/entrar?siguiente=/lugares/nuevo");
   return (
     <main className="pagina">
-      <Barra volver={{ href: "/", texto: "Volver al mapa" }} />
+      <Barra volver={{ href: "/lugares", texto: "Lugares" }} />
       <h1 className="titulo">Registrar un lugar</h1>
       <p className="subtitulo">Con el nombre y la ubicación basta. Lo demás se puede agregar después.</p>
       <FormularioLugar accion={crearLugar} usuarioId={actual.perfil.id} />

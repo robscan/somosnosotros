@@ -31,7 +31,7 @@ export default async function Admin() {
 
   return (
     <main className="pagina">
-      <Barra volver={{ href: "/", texto: "Volver al mapa" }} />
+      <Barra volver={{ href: "/", texto: "Agenda" }} />
       <h1 className="titulo">Administración</h1>
       <p className="subtitulo">
         {perfiles.count ?? 0} personas · {lugares?.length ?? 0}+ lugares · {eventos?.length ?? 0}+ eventos · {asistencias.count ?? 0} “voy” · {seguimientos.count ?? 0} seguimientos

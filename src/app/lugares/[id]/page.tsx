@@ -61,7 +61,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
 
   return (
     <main className="pagina">
-      <Barra volver={{ href: `/?lugar=${lugar.id}`, texto: "Ver en el mapa" }} />
+      <Barra volver={{ href: `/lugares?lugar=${lugar.id}&vista=mapa`, texto: "Lugares" }} />
       {lugar.portada && (
         // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
         <img src={lugar.portada} alt="" className={styles.portada} />
@@ -69,7 +69,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       {nuevo === "1" && (
         <div className={styles.publicado} role="status">
           <p>
-            <strong>Publicado.</strong> Ya está en el mapa.
+            <strong>Publicado.</strong> Ya está en Lugares.
           </p>
           <div className={styles.publicadoAcciones}>
             <Link href="/lugares/nuevo" className={styles.botonPrincipal}>

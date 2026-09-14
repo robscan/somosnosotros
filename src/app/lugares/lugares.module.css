@@ -1,0 +1,42 @@
+.vista {
+  display: block;
+}
+.fija {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--fondo);
+  border-bottom: 1px solid var(--borde);
+}
+.pestanas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: -1px;
+}
+.pestana {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--toque-min);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pestana[aria-selected="true"] {
+  color: var(--texto);
+  border-bottom-color: var(--texto);
+  font-weight: 700;
+}
+.contenido {
+  padding: var(--espacio-4) var(--espacio-5) 0;
+}
+.cajaMapa {
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--alto-barra) - var(--espacio-2) - var(--toque-min) - var(--alto-nav) - env(safe-area-inset-bottom, 0px));
+  min-height: 320px;
+}

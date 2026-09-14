@@ -4,6 +4,13 @@
   background: var(--fondo-mapa);
 }
 
+.mapaCaja {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--fondo-mapa);
+}
+
 .mapaEmbebido {
   position: relative;
   height: 280px;

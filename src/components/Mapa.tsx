@@ -22,6 +22,8 @@ type Props = {
   /** Solo en "ver": lugar en el que centrar el mapa al abrir. */
   centrarEn?: Punto | null;
   ciudad?: Ciudad;
+  /** "pantalla": fijo a toda la pantalla (con panel encima). "caja": llena el contenedor donde se pone. */
+  presentacion?: "pantalla" | "caja";
 };
 
 const COLOR_PIN = "#b3261e"; // = var(--acento); Mapbox pide el color literal
@@ -30,7 +32,7 @@ const COLOR_PIN = "#b3261e"; // = var(--acento); Mapbox pide el color literal
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día.
  */
-export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL }: Props) {
+export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla" }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const pinesRef = useRef<Marker[]>([]);
@@ -105,7 +107,8 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
         lugares.forEach((l) => limites.extend([l.lng, l.lat]));
         const alto = window.innerHeight;
         const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        mapa.fitBounds(limites, { padding: { top: 72, left: 48, right: 48, bottom: Math.round(alto * 0.5) + 24 }, maxZoom: 15, duration: sinMovimiento ? 0 : 600 });
+        const abajo = presentacion === "pantalla" ? Math.round(alto * 0.5) + 24 : 48;
+        mapa.fitBounds(limites, { padding: { top: 72, left: 48, right: 48, bottom: abajo }, maxZoom: 15, duration: sinMovimiento ? 0 : 600 });
       }
       pinesRef.current = lugares.map((l) => {
         const pin = new mapboxgl.Marker({ color: COLOR_PIN }).setLngLat([l.lng, l.lat]).addTo(mapa);
@@ -123,7 +126,7 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
     return () => {
       cancelado = true;
     };
-  }, [estado, modo, lugares, router, centrarEn]);
+  }, [estado, modo, lugares, router, centrarEn, presentacion]);
 
   // Pin que se arrastra (modo elegir).
   useEffect(() => {
@@ -159,7 +162,7 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
   }, [estado, modo, valor]);
 
   return (
-    <div className={modo === "ver" ? styles.mapa : styles.mapaEmbebido} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
+    <div className={modo !== "ver" ? styles.mapaEmbebido : presentacion === "caja" ? styles.mapaCaja : styles.mapa} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
       <div ref={contenedor} className={styles.lienzo} />
       {estado !== "listo" && (
         <p className={styles.aviso} role="status">

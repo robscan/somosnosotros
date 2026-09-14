@@ -1,0 +1,13 @@
+.seccion {
+  padding: var(--espacio-4) var(--espacio-5);
+  max-width: 520px;
+}
+.titulo {
+  font-size: var(--letra-2xl);
+  margin-bottom: var(--espacio-3);
+}
+.texto {
+  color: var(--texto-suave);
+  margin-bottom: var(--espacio-3);
+  line-height: 1.45;
+}
