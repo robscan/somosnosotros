@@ -1,19 +1,18 @@
-# Prompt de inicio para el chat en `/Users/apple-1/somosnosotros/`
+# Prompt de inicio para el siguiente chat en `/Users/apple-1/somosnosotros/`
 
 Copia y pega esto como primer mensaje del chat nuevo (Claude Code abierto en esa carpeta):
 
 ---
 
-Este es somosnosotros: plataforma sin fines de lucro, directorio de centros culturales y agenda de eventos para que la gente local de San Luis Potosí se entere de qué hay y se conozca. Lee `CLAUDE.md`, después `docs/ops/OPEN_LOOPS.md`, `docs/DEFINICION.md` y `docs/PLAN.md`, en ese orden, antes de proponer nada.
+Este es somosnosotros: plataforma sin fines de lucro, directorio de centros culturales y agenda de eventos para que la gente local de San Luis Potosí se entere de qué hay y se conozca. Lee `CLAUDE.md`, después `docs/ops/OPEN_LOOPS.md` (estado real, empieza por "Ahora"), `docs/DEFINICION.md` y `docs/PLAN.md`, en ese orden. Las 6 fases del plan ya están en producción en somosnosotros.org; las bitácoras 001–014 en `docs/bitacora/2026/09/` cuentan cómo.
 
 Contexto que no está en los archivos:
-- Viene de Flowya (un pasaporte de viajes iOS y un web legado en Expo). De ahí se heredan solo 10 documentos en `docs/heredado/`. No traigas nada más de esos repos; no aplican fotos, Health, pasaporte ni motor de lugares.
-- Un council de 6 lentes ya evaluó la idea (acta en `docs/council/`): lo útil que quedó es "contenido antes que envase" y "un solo renderer de mapa". El interés de los centros y la lista de lugares los gestiono yo personalmente; no me pidas eso.
-- Publican el administrador (yo) y los usuarios registrados por su cuenta. Español, tema claro, mobile first. Sin app de tienda en la primera versión.
-- Repo `robscan/somosnosotros` público y vacío; la carpeta tiene `origin` apuntando ahí, sin commits. Tokens y llaves solo en Vercel y Supabase, nunca en git.
+- Mi cuenta real en la app es la de me.com (admin); no crees cuentas con mi Gmail.
+- Todas las llaves viven en Vercel (Production) y en mi `.env` local, ignorado por git; nunca las imprimas ni las metas al repo. Las variables sensibles de Vercel no se pueden leer de vuelta; si necesitas un valor, está en `.env`.
+- Para probar flujos con sesión, crea usuarios desechables con la API de administración de Supabase (correo `prueba-...@somosnosotros.org`), entra con `/auth/callback?token_hash=…&type=magiclink`, y bórralos al terminar. No toques mis lugares ni eventos reales.
+- Regla de trabajo que ya aprendimos: UX invisible. El sistema hace el trabajo (deduce, sugiere, evita pasos), muestra lo decidido y abre solo lo que se toca o falla; si una acción lleva a un selector nativo, se abre directo. Mide en toques.
+- Un PR por pieza, CI en verde, merge y despliegue; captura móvil 390×844 antes de dar algo por bueno; bitácora numerada y `OPEN_LOOPS.md` al cerrar.
 
-Tarea de hoy: Fase 0 del plan. (1) Haz el primer commit con los documentos y súbelo a `main`. (2) Crea el proyecto Next.js (App Router, TypeScript) con lint, typecheck y tests. (3) Deja listo el layout base mapa + panel inferior con Mapbox GL JS leyendo el token de una variable de entorno, y la conexión a Supabase por variables de entorno. (4) Dime exactamente qué tengo que hacer yo en Vercel (dominio, variables) y en Supabase (crear proyecto, región East US) para que somosnosotros.org abra en mi iPhone con el mapa. Prueba de la fase: el mapa de San Luis Potosí abre en Safari del iPhone. Mantén todo simple; una fase a la vez; nada de jerga sin explicarla.
+Tarea de hoy: [escribe aquí qué sigue: resultado de las pruebas en el iPhone, la segunda ciudad, WhatsApp, o lo que la ciudad pida].
 
 ---
-
-Al terminar cada sesión allá: bitácora numerada + `OPEN_LOOPS.md` actualizado.
