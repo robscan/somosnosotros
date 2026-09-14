@@ -8,13 +8,15 @@ export function correoActivo(): boolean {
 const REMITENTE = process.env.CORREO_REMITENTE || "Somos Nosotros <avisos@somosnosotros.org>";
 
 /** Manda un correo con Resend. Devuelve false si no hay llave o falla; nunca lanza. */
-export async function enviarCorreo(p: { para: string; asunto: string; texto: string; html: string }): Promise<boolean> {
+export async function enviarCorreo(p: { para: string; asunto: string; texto: string; html: string; bajaUrl?: string }): Promise<boolean> {
   if (!correoActivo()) return false;
   try {
+    // Baja de un toque: Gmail y Yahoo la exigen desde 2024 y muestran su propio botón "Cancelar suscripción".
+    const headers = p.bajaUrl ? { "List-Unsubscribe": `<${p.bajaUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : undefined;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: REMITENTE, to: [p.para], subject: p.asunto, text: p.texto, html: p.html }),
+      body: JSON.stringify({ from: REMITENTE, to: [p.para], subject: p.asunto, text: p.texto, html: p.html, headers }),
     });
     if (!res.ok) console.error("enviarCorreo:", res.status, await res.text());
     return res.ok;

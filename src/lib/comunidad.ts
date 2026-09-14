@@ -19,20 +19,40 @@ export function primerNombre(nombre: string): string {
 
 const ORIGEN = "https://somosnosotros.org";
 
-export function correoNuevoEvento(p: { titulo: string; cuando: string; lugar: string; eventoId: string }): { asunto: string; texto: string; html: string } {
+type Plantilla = { titulo: string; cuando: string; lugar: string; eventoId: string; bajaUrl?: string };
+
+/** Pie de todo aviso: por qué llega y cómo dejar de recibirlo con un toque, sin entrar. */
+function pie(porque: string, bajaUrl: string | undefined): { texto: string; html: string } {
+  const baja = bajaUrl ?? `${ORIGEN}/perfil`;
+  return {
+    texto: `${porque} Dejar de recibir avisos (un toque, sin entrar): ${baja}`,
+    html: `<p style="color:#5c5c5c;font-size:13px">${escapar(porque)} <a href="${baja}">Dejar de recibir avisos</a> (un toque, sin entrar).</p>`,
+  };
+}
+
+export function correoNuevoEvento(p: Plantilla): { asunto: string; texto: string; html: string } {
   const url = `${ORIGEN}/eventos/${p.eventoId}`;
   const asunto = `Nuevo en ${p.lugar}: ${p.titulo}`;
-  const texto = `${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento: ${url}\n\nRecibes esto porque sigues ${p.lugar} en Somos Nosotros. Para dejar de recibir avisos, apágalos en tu perfil: ${ORIGEN}/perfil`;
-  const html = `<p><strong>${escapar(p.titulo)}</strong><br>${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento</a></p><p style="color:#5c5c5c;font-size:13px">Recibes esto porque sigues ${escapar(p.lugar)} en Somos Nosotros. Para dejar de recibir avisos, apágalos en <a href="${ORIGEN}/perfil">tu perfil</a>.</p>`;
+  const f = pie(`Recibes esto porque sigues ${p.lugar} y pediste avisos por correo.`, p.bajaUrl);
+  const texto = `${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento: ${url}\n\n${f.texto}`;
+  const html = `<p><strong>${escapar(p.titulo)}</strong><br>${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento</a></p>${f.html}`;
   return { asunto, texto, html };
 }
 
-export function correoRecordatorio(p: { titulo: string; cuando: string; lugar: string; eventoId: string }): { asunto: string; texto: string; html: string } {
+export function correoRecordatorio(p: Plantilla): { asunto: string; texto: string; html: string } {
   const url = `${ORIGEN}/eventos/${p.eventoId}`;
   const asunto = `Hoy: ${p.titulo}`;
-  const texto = `Hoy vas a ${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento y quién más va: ${url}\n\nRecibes esto porque dijiste "Voy". Para dejar de recibir avisos, apágalos en tu perfil: ${ORIGEN}/perfil`;
-  const html = `<p>Hoy vas a <strong>${escapar(p.titulo)}</strong><br>${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento y quién más va</a></p><p style="color:#5c5c5c;font-size:13px">Recibes esto porque dijiste "Voy". Para dejar de recibir avisos, apágalos en <a href="${ORIGEN}/perfil">tu perfil</a>.</p>`;
+  const f = pie(`Recibes esto porque dijiste "Voy" y pediste el recordatorio por correo.`, p.bajaUrl);
+  const texto = `Hoy vas a ${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento y quién más va: ${url}\n\n${f.texto}`;
+  const html = `<p>Hoy vas a <strong>${escapar(p.titulo)}</strong><br>${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento y quién más va</a></p>${f.html}`;
   return { asunto, texto, html };
+}
+
+/** "robscan@gmail.com" → "ro…@gmail.com": evidencia de a dónde se escribe sin exponer el correo completo. */
+export function enmascararCorreo(correo: string): string {
+  const [usuario, dominio] = correo.split("@");
+  if (!usuario || !dominio) return correo;
+  return `${usuario.slice(0, 2)}…@${dominio}`;
 }
 
 function escapar(t: string): string {

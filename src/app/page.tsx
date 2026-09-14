@@ -46,9 +46,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
 
   return (
     <main className="raiz">
-      <div className="cabecera-raiz">
-        <Barra derecha={<Sesion />} />
-      </div>
+      <Barra derecha={<Sesion />} />
       {aviso && (
         <p className={styles.aviso} role="status">
           {aviso}

@@ -112,7 +112,7 @@ export default function AgendaInicio({ eventos, seguidos, ciudad, ciudades, hoy 
   }
 
   return (
-    <div className={styles.agenda}>
+    <>
       <div className={styles.fija}>
         <div className={styles.contexto}>
           <label className={`${styles.chip} ${fecha ? styles.chipActivo : ""}`} htmlFor="agenda-fecha">
@@ -157,7 +157,7 @@ export default function AgendaInicio({ eventos, seguidos, ciudad, ciudades, hoy 
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -183,9 +183,8 @@ function Renglon({ evento: e, km }: { evento: EventoAgenda; km?: number }) {
         ) : (
           <span className={`${styles.foto} ${styles.fotoVacia}`} aria-hidden="true" />
         )}
-        <span className={styles.texto}>
-          <span className={styles.titulo}>{e.titulo}</span>
-          <span className={styles.meta}>
+        <span className={styles.titulo}>{e.titulo}</span>
+        <span className={styles.meta}>
             <span>
               <IconoReloj width={15} height={15} />
               <b>{horaCorta(e.inicio)}</b>
@@ -205,7 +204,6 @@ function Renglon({ evento: e, km }: { evento: EventoAgenda; km?: number }) {
               <IconoBoleto width={15} height={15} />
               {e.precio ?? "Gratis"}
             </span>
-          </span>
         </span>
       </Link>
     </li>

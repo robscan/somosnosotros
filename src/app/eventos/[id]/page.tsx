@@ -3,6 +3,7 @@ import Barra from "@/components/ui/Barra";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
+import { enmascararCorreo } from "@/lib/comunidad";
 import { nombreSitio, textoCompartir } from "@/lib/eventos";
 import { formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -176,7 +177,18 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         )}
       </div>
 
-      <Asistencia eventoId={e.id} miEstado={asistencias.miEstado} conSesion={!!actual} van={asistencias.van} interesados={asistencias.interesados} yo={actual ? { id: actual.perfil.id, nombre: actual.perfil.nombre, foto: actual.perfil.foto } : null} />
+      <Asistencia
+        eventoId={e.id}
+        titulo={e.titulo}
+        miEstado={asistencias.miEstado}
+        conSesion={!!actual}
+        van={asistencias.van}
+        interesados={asistencias.interesados}
+        yo={actual ? { id: actual.perfil.id, nombre: actual.perfil.nombre, foto: actual.perfil.foto } : null}
+        avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
+        correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
+        llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+      />
 
       {e.descripcion && <p className={styles.descripcion}>{e.descripcion}</p>}
 

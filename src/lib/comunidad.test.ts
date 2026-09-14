@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { correoNuevoEvento, correoRecordatorio, resumenAsistentes } from "./comunidad";
+import { correoNuevoEvento, correoRecordatorio, enmascararCorreo, resumenAsistentes } from "./comunidad";
 
 describe("resumenAsistentes", () => {
   const a = (nombre: string) => ({ id: nombre, nombre, foto: null });
@@ -23,5 +23,13 @@ describe("correos", () => {
     const c = correoRecordatorio({ titulo: "Taller <niños>", cuando: "Hoy · 17:00", lugar: "Biblioteca", eventoId: "x" });
     expect(c.asunto).toBe("Hoy: Taller <niños>");
     expect(c.html).toContain("Taller &lt;niños&gt;");
+  });
+});
+
+describe("enmascararCorreo", () => {
+  it("deja dos letras y el dominio", () => {
+    expect(enmascararCorreo("robscan@gmail.com")).toBe("ro…@gmail.com");
+    expect(enmascararCorreo("a@b.mx")).toBe("a…@b.mx");
+    expect(enmascararCorreo("sin-arroba")).toBe("sin-arroba");
   });
 });

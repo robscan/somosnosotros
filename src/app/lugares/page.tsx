@@ -19,9 +19,7 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
   const centrarEn = lugar ? (lugares.find((l) => l.id === lugar) ?? null) : null;
   return (
     <main className="raiz">
-      <div className="cabecera-raiz">
-        <Barra derecha={<Sesion />} />
-      </div>
+      <Barra derecha={<Sesion />} />
       <VistaLugares lugares={lugares} ciudad={ciudad} conSesion={!!actual} centrarEn={centrarEn} vistaInicial={vista === "mapa" || !!centrarEn ? "mapa" : "lista"} />
       <Publicar hayLugares={lugares.length > 0} />
       <NavInferior />

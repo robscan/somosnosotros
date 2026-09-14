@@ -2,11 +2,18 @@
   display: flex;
   align-items: center;
   min-height: var(--alto-barra);
-  margin-bottom: var(--espacio-2);
 }
+/* Raíz: pinta su propio blanco y su gutter; la cabecera pegajosa (chips, filtros) va pegada debajo. */
 .raiz {
   justify-content: space-between;
   gap: var(--espacio-3);
+  margin: 0;
+  padding: 0 var(--espacio-5);
+  background: var(--fondo);
+}
+/* Interior: un poco de aire antes del título de la pantalla. */
+.interior {
+  margin-bottom: var(--espacio-2);
 }
 .derecha {
   display: flex;

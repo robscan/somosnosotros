@@ -1,17 +1,12 @@
-.vista {
-  display: block;
-}
-.fija {
+/* Pestañas Lista · Mapa: la propia lista de pestañas es la cabecera pegajosa. */
+.pestanas {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--fondo);
-  border-bottom: 1px solid var(--borde);
-}
-.pestanas {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin-bottom: -1px;
+  background: var(--fondo);
+  border-bottom: 1px solid var(--borde);
 }
 .pestana {
   display: inline-flex;

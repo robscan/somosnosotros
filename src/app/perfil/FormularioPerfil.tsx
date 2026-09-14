@@ -71,7 +71,7 @@ export default function FormularioPerfil({ perfil, llavePush = "" }: { perfil: P
         <Campo etiqueta="Sobre mí (opcional)" name="bio" multilinea defaultValue={perfil.bio ?? ""} maxLength={LIMITES.bio} error={errores.bio} ayuda={`Una línea, hasta ${LIMITES.bio} caracteres.`} />
         <ActivarPush llavePublica={llavePush} />
         <label className={styles.casilla}>
-          <input type="checkbox" name="avisos" value="si" defaultChecked={perfil.avisos !== false} /> Avisarme por correo cuando haya un evento nuevo en un lugar que sigo, y el día de un evento al que voy.
+          <input type="checkbox" name="avisos_correo" value="si" defaultChecked={perfil.avisos_correo === true} /> Avisarme por correo: el día de un evento al que voy y cuando haya algo nuevo en un lugar que sigo. Cada correo trae su baja de un toque.
         </label>
 
         {resultado && !resultado.ok && resultado.general && (

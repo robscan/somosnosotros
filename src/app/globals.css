@@ -109,13 +109,6 @@ select {
   padding-bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + 96px);
   background: var(--fondo-contenido);
 }
-.raiz > .cabecera-raiz {
-  padding: 0 var(--espacio-5);
-  background: var(--fondo);
-}
-.raiz > .contenido-raiz {
-  padding: 0 var(--espacio-5);
-}
 
 /* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */
 .pagina {

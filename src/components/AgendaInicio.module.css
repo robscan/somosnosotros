@@ -1,21 +1,16 @@
-.agenda {
-  padding: 0 var(--espacio-5);
-}
-
-/* Cabecera pegajosa: chips de contexto y pestañas de filtro; blanca sobre el tono del contenido. */
+/* Cabecera pegajosa: chips de contexto y pestañas de filtro; blanca sobre el tono del contenido.
+   Va a todo el ancho; el gutter lo ponen sus hijos, sin márgenes negativos. */
 .fija {
   position: sticky;
   top: 0;
   z-index: 10;
-  margin: 0 calc(-1 * var(--espacio-5));
-  padding: 0 var(--espacio-5);
   background: var(--fondo);
   border-bottom: 1px solid var(--borde);
 }
 .contexto {
   display: flex;
   gap: var(--espacio-2);
-  padding: var(--espacio-1) 0 var(--espacio-3);
+  padding: var(--espacio-1) var(--espacio-5) var(--espacio-3);
 }
 .chip {
   position: relative;
@@ -68,7 +63,7 @@
 .filtros {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin: 0 calc(-1 * var(--espacio-5)) -1px;
+  margin-bottom: -1px;
 }
 .filtro {
   min-height: var(--toque-min);
@@ -88,9 +83,9 @@
   font-weight: 700;
 }
 
-/* Grupos por día con título pegajoso debajo de la cabecera. */
+/* Grupos por día con título pegajoso debajo de la cabecera. Cada grupo pone su propio gutter. */
 .grupo {
-  margin-bottom: var(--espacio-6);
+  margin: 0 var(--espacio-5) var(--espacio-6);
 }
 .grupo h2 {
   position: sticky;
@@ -142,12 +137,15 @@
   list-style: none;
 }
 
-/* Renglón de evento */
+/* Renglón de evento: foto a la izquierda en dos filas, título y datos a la derecha; sin envoltorios. */
 .renglon {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: var(--espacio-3);
-  align-items: center;
+  grid-template-areas:
+    "foto titulo"
+    "foto meta";
+  column-gap: var(--espacio-3);
+  align-content: center;
   min-height: 64px;
   padding: var(--espacio-3) 0;
   border-bottom: 1px solid var(--borde);
@@ -156,14 +154,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 .renglon:active {
-  margin: 0 calc(-1 * var(--espacio-5));
-  padding-inline: var(--espacio-5);
   background: var(--fondo);
+  box-shadow: 0 0 0 var(--espacio-5) var(--fondo); /* el resaltado llega a los bordes sin mover nada */
 }
 .foto {
+  grid-area: foto;
   width: 64px;
   height: 64px;
-  flex: none;
   align-self: start;
   border-radius: 10px;
   object-fit: cover;
@@ -174,12 +171,9 @@
   background: var(--fondo);
   border: 1px dashed var(--borde);
 }
-.texto {
-  display: block;
-  min-width: 0;
-}
 .titulo {
-  display: block;
+  grid-area: titulo;
+  min-width: 0;
   font-size: var(--letra-xl);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
@@ -187,6 +181,7 @@
   text-wrap: balance;
 }
 .meta {
+  grid-area: meta;
   display: flex;
   flex-wrap: wrap;
   gap: 2px var(--espacio-3);
