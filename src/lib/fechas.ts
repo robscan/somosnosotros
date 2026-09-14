@@ -126,3 +126,9 @@ export function fraseCuando(inicioLocal: string, finLocal?: string): string {
   }
   return texto;
 }
+
+/** ¿La hora elegida (en hora de la ciudad) ya pasó? */
+export function yaPaso(local: string, ahora: Date = new Date()): boolean {
+  const iso = localAIso(local);
+  return !!iso && new Date(iso).getTime() < ahora.getTime();
+}

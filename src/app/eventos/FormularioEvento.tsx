@@ -5,8 +5,9 @@ import { useActionState, useState } from "react";
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import Seccion from "@/components/ui/Seccion";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
-import { isoALocal, sugerirInicio } from "@/lib/fechas";
+import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { leerCartelAccion, type ResultadoEvento } from "./acciones";
@@ -14,23 +15,22 @@ import SelectorCuando from "./SelectorCuando";
 import styles from "./FormularioEvento.module.css";
 
 type Punto = { lat: number; lng: number };
+type Seccion = "donde" | "cuando" | "cuanto" | null;
 type Props = {
   accion: (previo: ResultadoEvento | null, formData: FormData) => Promise<ResultadoEvento>;
   lugares: LugarResumen[];
   lugarInicial?: string;
   evento?: Partial<Evento>;
-  /** Dirección reservada existente (solo llega al autor o al admin al editar). */
   privado?: SitioPrivado | null;
   modo: "alta" | "editar" | "duplicar";
   usuarioId: string;
-  /** Hay llave de API en el servidor: se ofrece leer el cartel. */
   cartelActivo?: boolean;
 };
 
 /**
- * Alta de evento con lo mínimo: dónde, qué y cuándo. Gratis por defecto.
- * Si hay cartel, se lee primero y el formulario aparece lleno para revisar.
- * Dónde: un lugar registrado, otro sitio (público) o un sitio reservado (dirección con condiciones).
+ * Alta de evento con una cosa a la vez: el título, y tres renglones ya resueltos (cuándo, dónde, cuánto)
+ * que se abren solo para cambiarlos. Cartel, foto, descripción y enlace van en "Más detalles".
+ * Si al publicar falta algo, se abre solo el renglón que lo necesita.
  */
 export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, modo, usuarioId, cartelActivo = false }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
@@ -63,9 +63,24 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [leyendo, setLeyendo] = useState(false);
   const [avisoCartel, setAvisoCartel] = useState<string | null>(null);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
-  const [masDetalles, setMasDetalles] = useState(modo !== "alta" || !!evento?.descripcion || !!evento?.enlace);
+  const [masDetalles, setMasDetalles] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
+  const [seccionElegida, setSeccionElegida] = useState<Seccion | undefined>(undefined);
+
   const lugar = lugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && modo === "alta";
+  const dondeResuelto = modoSitio === "lugar" ? !!lugar : !!sitioTexto && (modoSitio !== "reservado" || !!direccionPrivada);
+  const errorDonde = !!(errores.lugar_id || errores.sitio_texto || errores.direccion_privada);
+  const errorCuando = !!(errores.inicio || errores.fin);
+  const errorCuanto = !!errores.precio;
+
+  // Qué renglón está abierto: el que la persona tocó; si no, el que tiene error; si no, "dónde" si falta.
+  const abierta: Seccion = seccionElegida !== undefined ? seccionElegida : errorDonde ? "donde" : errorCuando ? "cuando" : errorCuanto ? "cuanto" : dondeResuelto ? null : "donde";
+  const abrir = (s: Seccion) => setSeccionElegida(abierta === s ? null : s);
+
+  const resumenDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "Elige el lugar") : modoSitio === "otro" ? sitioTexto || "Otro sitio" : `${sitioTexto || "Sitio reservado"} · reservado`;
+  const inicioIso = localAIso(inicio);
+  const resumenCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin) : null) : "Elige cuándo";
+  const resumenCuanto = gratis ? "Gratis" : precio || "Con costo";
 
   async function subir(archivo: File): Promise<string | null> {
     const supabase = clienteNavegador();
@@ -114,14 +129,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       setFin(v.fin);
       setGratis(v.gratis);
       setPrecio(v.precio);
-      if (v.descripcion) {
-        setDescripcion(v.descripcion);
-        setMasDetalles(true);
-      }
-      if (v.enlace) {
-        setEnlace(v.enlace);
-        setMasDetalles(true);
-      }
+      if (v.descripcion) setDescripcion(v.descripcion);
+      if (v.enlace) setEnlace(v.enlace);
       if (r.lugarId) {
         setModoSitio("lugar");
         setLugarId(r.lugarId);
@@ -129,6 +138,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         setModoSitio("otro");
         setSitioTexto([v.lugar, v.direccion].filter(Boolean).join(" · ").slice(0, LIMITES_EVENTO.sitio));
       }
+      setSeccionElegida(undefined);
       const faltan = [!v.titulo && "el título", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "el lugar"].filter(Boolean);
       setAvisoCartel(faltan.length ? `Leí el cartel. Revisa ${faltan.join(", ")} y publica.` : "Leí el cartel. Revisa que todo esté bien y publica.");
     } finally {
@@ -140,9 +150,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     <form action={enviar} noValidate>
       {ofrecerCartel && (
         <div className={styles.cartel}>
-          <label className={`${styles.subir} ${styles.subirCartel}`}>
+          <label className={styles.enlaceCartel}>
             <input type="file" accept="image/*" onChange={leerCartel} disabled={subiendo || leyendo} />
-            {leyendo ? "Leyendo el cartel…" : subiendo ? "Subiendo…" : "¿Tienes el cartel? Súbelo y llenamos el evento"}
+            {leyendo ? "Leyendo el cartel…" : subiendo ? "Subiendo…" : "¿Tienes el cartel? Súbelo y llenamos todo"}
           </label>
           {avisoCartel && (
             <p className={styles.nota} role="status">
@@ -152,28 +162,21 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         </div>
       )}
 
-      {/* Dónde */}
-      <fieldset className={styles.campo}>
-        <legend className={styles.etiqueta}>Dónde</legend>
-        <div className={styles.opciones}>
-          {(
-            [
-              ["lugar", "Un lugar registrado"],
-              ["otro", "Otro sitio"],
-              ["reservado", "Sitio reservado"],
-            ] as [ModoSitio, string][]
-          ).map(([valor, etiqueta]) => (
-            <label key={valor} className={`${styles.opcion} ${modoSitio === valor ? styles.opcionActiva : ""}`}>
-              <input type="radio" name="modo_sitio" value={valor} checked={modoSitio === valor} onChange={() => setModoSitio(valor)} /> {etiqueta}
-            </label>
-          ))}
-        </div>
+      <Campo etiqueta="Qué" name="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={LIMITES_EVENTO.titulo} placeholder="Ej. Noche de jazz" autoComplete="off" autoFocus={modo === "alta"} error={errores.titulo} required />
 
+      {/* Cuándo */}
+      <Seccion titulo="Cuándo" resumen={resumenCuando} abierta={abierta === "cuando"} onAbrir={() => abrir("cuando")} error={errorCuando}>
+        <SelectorCuando inicio={inicio} fin={fin} onCambio={(i, f) => { setInicio(i); setFin(f); }} errorInicio={errores.inicio} errorFin={errores.fin} />
+      </Seccion>
+
+      {/* Dónde */}
+      <Seccion titulo="Dónde" resumen={resumenDonde} abierta={abierta === "donde"} onAbrir={() => abrir("donde")} error={errorDonde}>
+        <input type="hidden" name="modo_sitio" value={modoSitio} />
         {modoSitio === "lugar" && (
           <>
             {lugares.length === 0 ? (
               <p className={styles.nota}>
-                Todavía no hay lugares registrados. <Link href="/lugares/nuevo">Registra el lugar</Link>, o elige “Otro sitio”.
+                Todavía no hay lugares registrados. <Link href="/lugares/nuevo">Registra el lugar</Link>, o elige otro sitio abajo.
               </p>
             ) : (
               <select name="lugar_id" className={styles.select} value={lugarId} onChange={(e) => setLugarId(e.target.value)} aria-label="Lugar" aria-invalid={!!errores.lugar_id}>
@@ -187,42 +190,49 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 ))}
               </select>
             )}
-            {lugar?.direccion && <p className={styles.nota}>{lugar.direccion}</p>}
-            {lugares.length > 0 && (
-              <p className={styles.nota}>
-                ¿No está en la lista? <Link href="/lugares/nuevo">Registra el lugar</Link> o elige “Otro sitio”.
-              </p>
-            )}
             {errores.lugar_id && (
               <p className={styles.error} role="alert">
                 {errores.lugar_id}
               </p>
             )}
+            <p className={styles.nota}>
+              ¿No está en la lista? <Link href="/lugares/nuevo">Regístralo</Link>.
+            </p>
+            <div className={styles.pildoras}>
+              <button type="button" className={styles.pildora} onClick={() => setModoSitio("otro")}>
+                Es en otro sitio
+              </button>
+              <button type="button" className={styles.pildora} onClick={() => setModoSitio("reservado")}>
+                Sitio reservado
+              </button>
+            </div>
           </>
         )}
 
         {modoSitio === "otro" && (
           <>
-            <Campo etiqueta="Sitio" name="sitio_texto" value={sitioTexto} onChange={(e) => setSitioTexto(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Ej. Plaza de Armas, Calle Zaragoza 20" autoComplete="off" ayuda="Se muestra a todo el mundo." error={errores.sitio_texto} />
+            <Campo etiqueta="Sitio" name="sitio_texto" value={sitioTexto} onChange={(e) => setSitioTexto(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Ej. Plaza de Armas" autoComplete="off" error={errores.sitio_texto} autoFocus />
             <p className={styles.etiquetaChica}>Pin en el mapa (opcional)</p>
             <Mapa modo="elegir" valor={sitioPunto} onCambio={setSitioPunto} />
             <input type="hidden" name="sitio_lat" value={sitioPunto?.lat ?? ""} />
             <input type="hidden" name="sitio_lng" value={sitioPunto?.lng ?? ""} />
+            <div className={styles.pildoras}>
+              <button type="button" className={styles.pildora} onClick={() => setModoSitio("lugar")}>
+                Mejor un lugar registrado
+              </button>
+              <button type="button" className={styles.pildora} onClick={() => setModoSitio("reservado")}>
+                Sitio reservado
+              </button>
+            </div>
           </>
         )}
 
         {modoSitio === "reservado" && (
           <>
-            <p className={styles.nota}>El evento se anuncia; la dirección exacta se guarda aparte y solo la ven las personas registradas cuando tú digas. Tú y el administrador la ven siempre.</p>
-            <Campo etiqueta="Cómo se anuncia" name="sitio_texto" value={sitioTexto} onChange={(e) => setSitioTexto(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Ej. Casa en Tequis, Centro histórico" autoComplete="off" ayuda="Esto sí lo ve todo el mundo." error={errores.sitio_texto} />
-            <Campo etiqueta="Dirección exacta (reservada)" name="direccion_privada" value={direccionPrivada} onChange={(e) => setDireccionPrivada(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Calle y número, colonia" autoComplete="off" error={errores.direccion_privada} />
-            <Campo etiqueta="Indicaciones (opcional, reservadas)" name="indicaciones" value={indicaciones} onChange={(e) => setIndicaciones(e.target.value)} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Ej. Tocar el timbre azul, portón verde" autoComplete="off" />
-            <p className={styles.etiquetaChica}>Pin exacto (opcional, reservado)</p>
-            <Mapa modo="elegir" valor={privadoPunto} onCambio={setPrivadoPunto} />
-            <input type="hidden" name="privado_lat" value={privadoPunto?.lat ?? ""} />
-            <input type="hidden" name="privado_lng" value={privadoPunto?.lng ?? ""} />
+            <Campo etiqueta="Cómo se anuncia" name="sitio_texto" value={sitioTexto} onChange={(e) => setSitioTexto(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Ej. Casa en Tequis" autoComplete="off" ayuda="Esto lo ve todo el mundo." error={errores.sitio_texto} autoFocus />
+            <Campo etiqueta="Dirección exacta" name="direccion_privada" value={direccionPrivada} onChange={(e) => setDireccionPrivada(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Calle y número, colonia" autoComplete="off" ayuda="Solo la ven las personas registradas cuando toque; tú y el administrador, siempre." error={errores.direccion_privada} />
             <label htmlFor="campo-revelar" className={styles.etiquetaChica}>
-              Se revela a las personas registradas
+              Se revela
             </label>
             <select id="campo-revelar" name="revelar_horas" className={styles.select} value={revelarHoras} onChange={(e) => setRevelarHoras(Number(e.target.value))}>
               {REVELAR_OPCIONES.map((o) => (
@@ -231,19 +241,25 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 </option>
               ))}
             </select>
+            <Campo etiqueta="Indicaciones (opcional)" name="indicaciones" value={indicaciones} onChange={(e) => setIndicaciones(e.target.value)} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Ej. Portón verde, tocar dos veces" autoComplete="off" />
+            <p className={styles.etiquetaChica}>Pin exacto (opcional)</p>
+            <Mapa modo="elegir" valor={privadoPunto} onCambio={setPrivadoPunto} />
+            <input type="hidden" name="privado_lat" value={privadoPunto?.lat ?? ""} />
+            <input type="hidden" name="privado_lng" value={privadoPunto?.lng ?? ""} />
+            <div className={styles.pildoras}>
+              <button type="button" className={styles.pildora} onClick={() => setModoSitio("lugar")}>
+                Mejor un lugar registrado
+              </button>
+              <button type="button" className={styles.pildora} onClick={() => setModoSitio("otro")}>
+                Otro sitio, público
+              </button>
+            </div>
           </>
         )}
-      </fieldset>
-
-      {/* Qué */}
-      <Campo etiqueta="Qué" name="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={LIMITES_EVENTO.titulo} placeholder="Ej. Noche de jazz" autoComplete="off" autoFocus={modo === "alta" && !ofrecerCartel} error={errores.titulo} required />
-
-      {/* Cuándo */}
-      <SelectorCuando inicio={inicio} fin={fin} onCambio={(i, f) => { setInicio(i); setFin(f); }} errorInicio={errores.inicio} errorFin={errores.fin} />
+      </Seccion>
 
       {/* Cuánto */}
-      <fieldset className={styles.campo}>
-        <legend className={styles.etiqueta}>Cuánto</legend>
+      <Seccion titulo="Cuánto" resumen={resumenCuanto} abierta={abierta === "cuanto"} onAbrir={() => abrir("cuanto")} error={errorCuanto}>
         <div className={styles.opciones}>
           <label className={`${styles.opcion} ${gratis ? styles.opcionActiva : ""}`}>
             <input type="radio" name="gratis" value="si" checked={gratis} onChange={() => setGratis(true)} /> Gratis
@@ -252,36 +268,41 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             <input type="radio" name="gratis" value="no" checked={!gratis} onChange={() => setGratis(false)} /> Con costo
           </label>
         </div>
-        {!gratis && <Campo etiqueta="Precio" name="precio" value={precio} onChange={(e) => setPrecio(e.target.value)} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" inputMode="text" error={errores.precio} />}
-      </fieldset>
+        {!gratis && <Campo etiqueta="Precio" name="precio" value={precio} onChange={(e) => setPrecio(e.target.value)} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" inputMode="text" error={errores.precio} autoFocus />}
+      </Seccion>
 
-      {/* Imagen */}
-      <div className={styles.campo}>
-        <p className={styles.etiqueta}>Cartel o foto (opcional)</p>
-        {imagen && (
-          // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-          <img src={imagen} alt="" className={styles.imagen} />
-        )}
-        <label className={styles.subir}>
-          <input type="file" accept="image/*" onChange={subirImagen} disabled={subiendo || leyendo} />
-          {subiendo ? "Subiendo…" : imagen ? "Cambiar imagen" : "Elegir una imagen"}
-        </label>
-        <input type="hidden" name="imagen" value={imagen ?? ""} />
-        {(errorImagen || errores.imagen) && (
-          <p className={styles.error} role="alert">
-            {errorImagen ?? errores.imagen}
-          </p>
-        )}
-      </div>
-
+      {/* Más detalles */}
       {!masDetalles ? (
         <button type="button" className={styles.desplegar} onClick={() => setMasDetalles(true)}>
-          + Agregar descripción o enlace (opcional)
+          + Más detalles: {imagen ? "imagen" : "cartel o foto"}, descripción, enlace
         </button>
       ) : (
+        <div className={styles.detalles}>
+          <div className={styles.campo}>
+            <p className={styles.etiqueta}>Cartel o foto</p>
+            {imagen && (
+              // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
+              <img src={imagen} alt="" className={styles.imagen} />
+            )}
+            <label className={styles.subir}>
+              <input type="file" accept="image/*" onChange={subirImagen} disabled={subiendo || leyendo} />
+              {subiendo ? "Subiendo…" : imagen ? "Cambiar imagen" : "Elegir una imagen"}
+            </label>
+            {(errorImagen || errores.imagen) && (
+              <p className={styles.error} role="alert">
+                {errorImagen ?? errores.imagen}
+              </p>
+            )}
+          </div>
+          <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} />
+          <Campo etiqueta="Enlace" name="enlace" value={enlace} onChange={(e) => setEnlace(e.target.value)} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />
+        </div>
+      )}
+      <input type="hidden" name="imagen" value={imagen ?? ""} />
+      {!masDetalles && (
         <>
-          <Campo etiqueta="Descripción (opcional)" name="descripcion" multilinea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={LIMITES_EVENTO.descripcion} ayuda={`Hasta ${LIMITES_EVENTO.descripcion} caracteres.`} error={errores.descripcion} />
-          <Campo etiqueta="Enlace (opcional)" name="enlace" value={enlace} onChange={(e) => setEnlace(e.target.value)} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />
+          <input type="hidden" name="descripcion" value={descripcion} />
+          <input type="hidden" name="enlace" value={enlace} />
         </>
       )}
 

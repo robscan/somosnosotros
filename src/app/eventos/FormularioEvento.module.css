@@ -129,3 +129,40 @@
   padding: 0 var(--espacio-2);
   text-align: center;
 }
+.enlaceCartel {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
+  color: var(--acento);
+  font-weight: 600;
+  cursor: pointer;
+}
+.enlaceCartel input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.detalles {
+  padding: var(--espacio-3) var(--espacio-4) 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  margin-bottom: var(--espacio-4);
+}
+.pildoras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+  margin: var(--espacio-2) 0 var(--espacio-1);
+}
+.pildora {
+  min-height: 40px;
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--acento);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
