@@ -6,6 +6,7 @@ import { REDES, enlaceRed, etiquetaTipo, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cambiarVisible } from "../acciones";
 import Seguir from "./Seguir";
+import Reportar from "@/components/Reportar";
 import styles from "./ficha.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string }> };
@@ -139,7 +140,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         </ul>
       )}
 
-      <p className={styles.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+      <div className={styles.autor}>
+        Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}. <Reportar tipo="lugar" objetoId={lugar.id} volver={`/lugares/${lugar.id}`} conSesion={!!actual} />
+      </div>
 
       {puedeEditar && (
         <div className={styles.acciones}>

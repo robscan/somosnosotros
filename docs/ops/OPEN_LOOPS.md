@@ -1,18 +1,20 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — **Fase 4 (comunidad) en producción** (PR #12 mergeado; bitácora [011](../bitacora/2026/09/011-fase-4-comunidad.md)). Faltan las llaves de correo (Resend, CRON_SECRET) y la prueba de la fase. Fases 0–3 cerradas. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Fase 5 (alcance) construida** en PR #13 (`fase-5-alcance`, bitácora [012](../bitacora/2026/09/012-fase-5-alcance.md)): instalable, push, reportar, panel de administración, ciudad como campo; migraciones 0007/0008 aplicadas. Faltan merge, llaves VAPID y Resend en Vercel, y las pruebas de las Fases 4 y 5. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-005 · Fase 4 (comunidad)** — código en PR #12, verificado (lint, typecheck, 49 tests, build) y probado contra la base real con dos usuarios desechables: "Voy" / "Me interesa" con lista de quiénes van (aplicado solo al volver de entrar), seguir lugares, perfil público, "Voy a" y "Sigo" en Mi perfil. Avisos por correo listos pero **sin llave**: (1) cuenta en resend.com, dominio somosnosotros.org verificado y llave de API; (2) en Vercel (sensibles): `RESEND_API_KEY`, `CORREO_REMITENTE`, `CRON_SECRET`; el cron de recordatorios corre a las 9:00 de la ciudad. En producción (PR #12 mergeado). Pasos: llaves → **prueba de la fase**: el founder confirma que dos personas coincidieron en un evento gracias a la plataforma.
+- **OL-006 · Fase 5 (alcance)** — código en PR #13, verificado (lint, typecheck, 52 tests, build) y probado en Android emulado con la base real: manifiesto, service worker, aviso de instalación, reportar → panel `/admin` → atendido. Push y diálogo de instalación **sin probar en dispositivo**. Pasos: (1) merge; (2) founder copia de `.env` a Vercel `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`; (3) en el iPhone: instalar (Compartir → Agregar a inicio), Mi perfil → "Activar avisos en este teléfono", "Voy" a un evento de mañana → recordatorio a las 9:00 (necesita `CRON_SECRET`). Segunda ciudad: agregar una línea en `src/lib/ciudad.ts` cuando el founder la nombre.
+- **OL-005 · Fase 4 (comunidad)** — en producción. Falta la prueba: dos personas coincidieron en un evento gracias a la plataforma.
+- **Pendiente del founder: llaves de Resend.** Cuenta en resend.com, dominio somosnosotros.org verificado (registros DNS), llave de API; en Vercel (Production, sensibles): `RESEND_API_KEY`, `CORREO_REMITENTE`, `CRON_SECRET`. Hasta entonces no se manda ningún correo (los avisos push sí, cuando estén las llaves VAPID).
 - Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre. **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
-- Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox y Anthropic solo en Production.
+- Pendientes menores (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox y Anthropic solo en Production.
 
 ## Después (orden del plan)
 
-OL-006 Alcance (PWA instalable, push, reportar contenido, panel de administración, segunda ciudad).
+El plan de 6 fases está construido. Lo que sigue lo marca el uso real: pruebas de las Fases 4 y 5, y lo que la ciudad pida.
 
 ## Cerrado
 

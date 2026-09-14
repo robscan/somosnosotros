@@ -8,6 +8,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
 import type { Asistente } from "@/lib/comunidad";
 import Asistencia from "./Asistencia";
+import Reportar from "@/components/Reportar";
 import BotonCompartir from "./BotonCompartir";
 import styles from "./ficha.module.css";
 
@@ -174,7 +175,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
       {e.descripcion && <p className={styles.descripcion}>{e.descripcion}</p>}
 
-      <p className={styles.autor}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+      <div className={styles.autor}>
+        Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}. <Reportar tipo="evento" objetoId={e.id} volver={`/eventos/${e.id}`} conSesion={!!actual} />
+      </div>
 
       {puedeEditar && (
         <div className={styles.gestion}>
