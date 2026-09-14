@@ -5,14 +5,15 @@ import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { nombreSitio, textoCompartir } from "@/lib/eventos";
 import { formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
+import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
+import Borrar from "@/components/Borrar";
 import type { Asistente } from "@/lib/comunidad";
 import Asistencia from "./Asistencia";
 import Reportar from "@/components/Reportar";
 import BotonCompartir from "./BotonCompartir";
 import styles from "./ficha.module.css";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
 type EventoConLugar = Evento & { lugar: { id: string; nombre: string; direccion: string | null; lat: number; lng: number; portada: string | null } | null; autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
@@ -76,7 +77,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function FichaEvento({ params, searchParams }: Params) {
   const { id } = await params;
-  const { nuevo, accion } = (await searchParams) ?? {};
+  const { nuevo, accion, error } = (await searchParams) ?? {};
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
   // Venía de entrar con la intención de decir "Voy" / "Me interesa": se aplica sola
@@ -108,6 +109,11 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             <strong>Publicado.</strong> Ya está en la agenda. Compártelo para que la gente se entere.
           </p>
         </div>
+      )}
+      {error === "borrar" && (
+        <p className="aviso-error" role="alert">
+          No se pudo borrar. ¿Sigues con sesión y es tu evento?
+        </p>
       )}
       {!e.visible && (
         <p className="aviso-error" role="status">
@@ -194,6 +200,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               </button>
             </form>
           )}
+          <Borrar que="el evento" aviso={asistencias.van.length > 0 ? `Se borra el evento y los ${asistencias.van.length === 1 ? "1 \"Voy\"" : `${asistencias.van.length} "Voy"`} que tiene.` : "Se borra el evento."} accion={borrarEvento.bind(null, e.id, e.lugar_id)} />
         </div>
       )}
     </main>

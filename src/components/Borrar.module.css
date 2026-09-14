@@ -1,0 +1,34 @@
+.enlace {
+  border: none;
+  background: none;
+  padding: 0 var(--espacio-2);
+  min-height: var(--toque);
+  color: var(--texto-suave);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.caja {
+  width: 100%;
+  margin-top: var(--espacio-3);
+  padding: var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  display: grid;
+  gap: var(--espacio-3);
+}
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+.peligro {
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--error);
+  font-weight: 600;
+  cursor: pointer;
+}

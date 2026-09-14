@@ -20,15 +20,15 @@ async function cargar(ciudad: Ciudad): Promise<{ lugares: LugarResumen[]; evento
   return { lugares: (l.data ?? []) as LugarResumen[], eventos };
 }
 
-export default async function Inicio({ searchParams }: { searchParams: Promise<{ cuenta?: string; lugar?: string; ciudad?: string }> }) {
-  const { cuenta, lugar, ciudad: slug } = await searchParams;
+export default async function Inicio({ searchParams }: { searchParams: Promise<{ cuenta?: string; lugar?: string; ciudad?: string; borrado?: string }> }) {
+  const { cuenta, lugar, ciudad: slug, borrado } = await searchParams;
   const ciudad = ciudadPorSlug(slug);
   const { lugares, eventos } = await cargar(ciudad);
   const centrarEn = lugar ? (lugares.find((l) => l.id === lugar) ?? null) : null;
   return (
     <main>
       <Mapa lugares={lugares} centrarEn={centrarEn} ciudad={ciudad} />
-      <Panel lugares={lugares} eventos={eventos} ciudad={ciudad} cuentaBorrada={cuenta === "borrada"} />
+      <Panel lugares={lugares} eventos={eventos} ciudad={ciudad} cuentaBorrada={cuenta === "borrada"} aviso={borrado === "lugar" ? "Lugar borrado." : borrado === "evento" ? "Evento borrado." : undefined} />
     </main>
   );
 }

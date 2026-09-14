@@ -127,3 +127,13 @@ export async function cambiarAsistencia(eventoId: string, estado: EstadoAsistenc
   revalidatePath("/perfil");
   revalidatePath(`/personas/${user.id}`);
 }
+
+/** Borrar un evento: su autor o el admin (la política de la base lo exige). Se van también los "Voy". */
+export async function borrarEvento(id: string, lugarId: string | null) {
+  const { supabase } = await sesionOEntrar(`/eventos/${id}`);
+  const { data } = await supabase.from("eventos").delete().eq("id", id).select("id").maybeSingle();
+  if (!data) redirect(`/eventos/${id}?error=borrar`);
+  revalidatePath("/");
+  if (lugarId) revalidatePath(`/lugares/${lugarId}`);
+  redirect(lugarId ? `/lugares/${lugarId}?borrado=evento` : "/?borrado=evento");
+}
