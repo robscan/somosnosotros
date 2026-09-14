@@ -1,5 +1,6 @@
+import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
-import { REDES, normalizarNombre, type ClaveRed, type Redes } from "./lugares";
+import { normalizarNombre } from "./lugares";
 
 /** Qué hace: lista cerrada; "por_completar" es el artista creado con solo el nombre desde el alta de un evento. */
 export const DISCIPLINAS = [
@@ -19,9 +20,6 @@ export const TIPOS_ARTISTA = [
   { valor: "colectivo", etiqueta: "Colectivo" },
 ] as const;
 export type TipoArtista = (typeof TIPOS_ARTISTA)[number]["valor"];
-
-/** Redes de un artista, en el orden de la ficha (Compartir va antes, en la página). */
-export const REDES_ARTISTA = REDES.filter((r) => ["instagram", "facebook", "youtube", "spotify", "whatsapp", "sitio"].includes(r.clave));
 
 export const LIMITES_ARTISTA = { nombre: 80, detalle: 40, descripcion: 600 } as const;
 
@@ -45,7 +43,8 @@ export type ArtistaLista = ArtistaResumen & { proxima: ProximaFecha | null };
 export type Artista = ArtistaResumen & {
   descripcion: string | null;
   ciudad: string;
-  redes: Redes;
+  /** Enlaces y redes reconocidos (lib/enlaces); en la base es JSON. */
+  redes: Enlace[];
   creado_por: string | null;
   visible: boolean;
 };
@@ -149,20 +148,16 @@ export type DatosArtista = {
   tipo: TipoArtista;
   descripcion: string | null;
   foto: string | null;
-  redes: Redes;
+  redes: Enlace[];
 };
-export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | ClaveRed, string>>;
+export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "enlaces", string>>;
 
 function limpiar(v: FormDataEntryValue | string | null | undefined): string {
   return typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "";
 }
 
 export function validarArtista(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosArtista; errores: ErroresArtista } {
-  const redes: Redes = {};
-  for (const r of REDES_ARTISTA) {
-    const v = limpiar(entrada[r.clave]);
-    if (v) redes[r.clave] = v;
-  }
+  const redes = enlacesDesdeJson(entrada.enlaces);
   const disciplina = (limpiar(entrada.disciplina) || "por_completar") as Disciplina;
   const tipo = (limpiar(entrada.tipo) || "solista") as TipoArtista;
   const datos: DatosArtista = {
@@ -182,10 +177,6 @@ export function validarArtista(entrada: Record<string, FormDataEntryValue | null
   if (datos.detalle && datos.detalle.length > LIMITES_ARTISTA.detalle) errores.detalle = `Máximo ${LIMITES_ARTISTA.detalle} caracteres.`;
   if (datos.descripcion && datos.descripcion.length > LIMITES_ARTISTA.descripcion) errores.descripcion = `Máximo ${LIMITES_ARTISTA.descripcion} caracteres.`;
   if (datos.foto && !/^https:\/\/[^\s]+$/.test(datos.foto)) errores.foto = "La foto no se subió bien. Intenta de nuevo.";
-  for (const r of REDES_ARTISTA) {
-    const v = redes[r.clave];
-    if (v && v.length > 200) errores[r.clave] = "Demasiado largo.";
-    if (v && r.clave === "whatsapp" && v.replace(/\D/g, "").length < 10) errores.whatsapp = "Pon el número con lada (10 dígitos).";
-  }
+  if (redes.some((e) => e.url.length > 300)) errores.enlaces = "Hay un enlace demasiado largo.";
   return { datos, errores };
 }

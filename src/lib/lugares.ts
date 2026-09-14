@@ -1,3 +1,4 @@
+import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
 
 export const TIPOS = [
@@ -10,17 +11,6 @@ export const TIPOS = [
 ] as const;
 export type Tipo = (typeof TIPOS)[number]["valor"];
 
-/** Redes de lugares y artistas, en el orden de la fila de acciones. YouTube y Spotify llegaron con Artistas (decisión 7). */
-export const REDES = [
-  { clave: "instagram", etiqueta: "Instagram", ayuda: "usuario o enlace" },
-  { clave: "facebook", etiqueta: "Facebook", ayuda: "página o enlace" },
-  { clave: "youtube", etiqueta: "YouTube", ayuda: "canal (@usuario) o enlace" },
-  { clave: "spotify", etiqueta: "Spotify", ayuda: "enlace del artista" },
-  { clave: "whatsapp", etiqueta: "WhatsApp", ayuda: "número con lada, ej. 444 123 4567" },
-  { clave: "sitio", etiqueta: "Sitio web", ayuda: "enlace" },
-] as const;
-export type ClaveRed = (typeof REDES)[number]["clave"];
-export type Redes = Partial<Record<ClaveRed, string>>;
 
 /** Lo que el mapa y la lista necesitan de un lugar. */
 export type LugarResumen = {
@@ -42,18 +32,11 @@ export type LugarLista = LugarResumen & { proximo: ProximoEvento | null };
 export type Lugar = LugarResumen & {
   descripcion: string | null;
   ciudad: string;
-  redes: Redes;
+  /** Enlaces y redes reconocidos (lib/enlaces); en la base es JSON y puede venir en la forma vieja. */
+  redes: Enlace[];
   creado_por: string | null;
   visible: boolean;
 };
-
-/** Enlaces de contacto y redes del lugar, en el orden de REDES, solo los que existen. */
-export function enlacesRedes(redes: Redes | null | undefined): { clave: ClaveRed; etiqueta: string; href: string }[] {
-  return REDES.flatMap((r) => {
-    const href = enlaceRed(r.clave, redes?.[r.clave] ?? "");
-    return href ? [{ clave: r.clave, etiqueta: r.clave === "sitio" ? "Sitio" : r.etiqueta, href }] : [];
-  });
-}
 
 /** La calle sin código postal, ciudad ni estado: "C. 5 de Mayo 1100, 78000 San Luis Potosí, S.L.P." → "C. 5 de Mayo 1100". */
 export function calleCorta(direccion: string | null | undefined): string {
@@ -137,47 +120,20 @@ export type DatosLugar = {
   lat: number;
   lng: number;
   descripcion: string;
-  redes: Redes;
+  redes: Enlace[];
   portada: string | null;
 };
-export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | ClaveRed, string>>;
+export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces", string>>;
 
 function limpiar(v: FormDataEntryValue | string | null | undefined): string {
   return typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "";
-}
-
-/** Convierte "usuario", "@usuario" o el enlace completo en un enlace https. Devuelve null si va vacío. */
-export function enlaceRed(clave: ClaveRed, valor: string): string | null {
-  const v = valor.trim();
-  if (!v) return null;
-  if (/^https?:\/\//i.test(v)) return v;
-  switch (clave) {
-    case "instagram":
-      return `https://instagram.com/${v.replace(/^@/, "").replace(/^instagram\.com\//, "")}`;
-    case "facebook":
-      return `https://facebook.com/${v.replace(/^@/, "").replace(/^facebook\.com\//, "")}`;
-    case "whatsapp": {
-      const digitos = v.replace(/\D/g, "");
-      return digitos ? `https://wa.me/${digitos.length === 10 ? "52" + digitos : digitos}` : null;
-    }
-    case "youtube":
-      return `https://youtube.com/${v.replace(/^youtube\.com\//, "").replace(/^(?!@)/, "@")}`;
-    case "spotify":
-      return `https://open.spotify.com/search/${encodeURIComponent(v)}`;
-    case "sitio":
-      return `https://${v}`;
-  }
 }
 
 export function validarLugar(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosLugar; errores: ErroresLugar } {
   const lat = Number(limpiar(entrada.lat));
   const lng = Number(limpiar(entrada.lng));
   const tipo = limpiar(entrada.tipo) as Tipo;
-  const redes: Redes = {};
-  for (const r of REDES) {
-    const v = limpiar(entrada[r.clave]);
-    if (v) redes[r.clave] = v;
-  }
+  const redes = enlacesDesdeJson(entrada.enlaces);
   const datos: DatosLugar = {
     nombre: limpiar(entrada.nombre),
     tipo,
@@ -197,10 +153,6 @@ export function validarLugar(entrada: Record<string, FormDataEntryValue | null |
     errores.ubicacion = "Falta la ubicación: busca la dirección o mueve el pin en el mapa.";
   if (datos.descripcion.length > LIMITES_LUGAR.descripcion) errores.descripcion = `Máximo ${LIMITES_LUGAR.descripcion} caracteres.`;
   if (datos.portada && !/^https:\/\/[^\s]+$/.test(datos.portada)) errores.portada = "La foto no se subió bien. Intenta de nuevo.";
-  for (const r of REDES) {
-    const v = redes[r.clave];
-    if (v && v.length > 200) errores[r.clave] = "Demasiado largo.";
-    if (v && r.clave === "whatsapp" && v.replace(/\D/g, "").length < 10) errores.whatsapp = "Pon el número con lada (10 dígitos).";
-  }
+  if (redes.some((e) => e.url.length > 300)) errores.enlaces = "Hay un enlace demasiado largo.";
   return { datos, errores };
 }

@@ -1,0 +1,101 @@
+/* Enlaces y redes (docs/rediseno/09-enlaces-flujo-y-estados.md):
+   1. Los ya reconocidos, con icono y ✕ · 2. Campo para pegar el siguiente */
+.selector {
+  display: grid;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
+}
+
+/* 1. Reconocidos */
+.lista {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-1);
+}
+.enlace {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  min-height: var(--toque);
+  padding: 0 0 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+.enlace > svg {
+  color: var(--texto-suave);
+}
+.texto {
+  min-width: 0;
+  line-height: 1.2;
+}
+.texto b {
+  display: block;
+  font-weight: 600;
+}
+.texto small {
+  display: block;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quitar {
+  width: var(--toque);
+  height: var(--toque);
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  cursor: pointer;
+}
+
+/* 2. Campo y Añadir en una fila */
+.etiqueta {
+  font-weight: 600;
+}
+.fila {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--espacio-2);
+}
+.campo {
+  min-width: 0;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.campo:focus {
+  border-color: var(--texto);
+  outline: none;
+}
+.campo[aria-invalid="true"] {
+  border-color: var(--error);
+}
+.agregar {
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--texto);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font-weight: 700;
+  cursor: pointer;
+}
+.agregar:disabled {
+  border-color: var(--borde);
+  color: var(--texto-suave);
+}
+.ayuda {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.aviso {
+  color: var(--error);
+  font-size: var(--letra-sm);
+}

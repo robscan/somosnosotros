@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { artistaIgual, REDES_ARTISTA, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
+import { artistaIgual, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -20,7 +20,7 @@ async function sesionOEntrar(destino: string) {
 }
 
 function leer(formData: FormData) {
-  const claves = ["nombre", "disciplina", "detalle", "tipo", "descripcion", "foto", ...REDES_ARTISTA.map((r) => r.clave)];
+  const claves = ["nombre", "disciplina", "detalle", "tipo", "descripcion", "foto", "enlaces"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 

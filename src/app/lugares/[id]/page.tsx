@@ -9,13 +9,15 @@ import Desplegable from "@/components/Desplegable";
 import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendario, IconoCompartir, IconoFacebook, IconoInstagram, IconoPersonas, IconoPin, IconoRuta, IconoSitio, IconoSpotify, IconoWhatsApp, IconoYouTube } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
+import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { desdeReciente } from "@/lib/fechas";
-import { enlacesRedes, etiquetaTipo, textoProximo, type ClaveRed, type Lugar } from "@/lib/lugares";
+import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
+import { etiquetaTipo, textoProximo, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import Seguir from "@/components/Seguir";
 import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
@@ -25,7 +27,6 @@ type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?
 type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
-const ICONO_RED: Record<ClaveRed, React.ReactNode> = { instagram: <IconoInstagram />, facebook: <IconoFacebook />, youtube: <IconoYouTube />, spotify: <IconoSpotify />, whatsapp: <IconoWhatsApp />, sitio: <IconoSitio /> };
 
 async function cargarLugar(id: string): Promise<LugarConAutor | null> {
   const supabase = await clienteServidor();
@@ -88,7 +89,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const sigo = !!actual && (seguimientos ?? []).some((s) => s.usuario_id === actual.perfil.id);
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === lugar.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
-  const redes = enlacesRedes(lugar.redes);
+  const redes = normalizarRedes(lugar.redes);
   const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
   const url = `${ORIGEN}/lugares/${lugar.id}`;
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
@@ -204,9 +205,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           Compartir
         </BotonCompartir>
         {redes.map((r) => (
-          <a key={r.clave} href={r.href} className={ficha.accion} target="_blank" rel="noopener noreferrer">
-            {ICONO_RED[r.clave]}
-            {r.etiqueta}
+          <a key={r.url} href={r.url} className={ficha.accion} target="_blank" rel="noopener noreferrer">
+            <IconoRed red={r.red} />
+            {etiquetaEnlace(r)}
           </a>
         ))}
       </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, enlaceRed, filtrarLugares, normalizarNombre, ordenarLugares, validarLugar } from "./lugares";
+import { calleCorta, conProximo, filtrarLugares, normalizarNombre, ordenarLugares, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -19,29 +19,16 @@ describe("filtrarLugares", () => {
   });
 });
 
-describe("enlaceRed", () => {
-  it("arma enlaces desde usuario, @usuario, número o enlace completo", () => {
-    expect(enlaceRed("instagram", "@casadelacultura")).toBe("https://instagram.com/casadelacultura");
-    expect(enlaceRed("facebook", "https://facebook.com/x")).toBe("https://facebook.com/x");
-    expect(enlaceRed("whatsapp", "444 123 4567")).toBe("https://wa.me/524441234567");
-    expect(enlaceRed("whatsapp", "+52 444 123 4567")).toBe("https://wa.me/524441234567");
-    expect(enlaceRed("sitio", "ejemplo.org")).toBe("https://ejemplo.org");
-    expect(enlaceRed("youtube", "losvecinos")).toBe("https://youtube.com/@losvecinos");
-    expect(enlaceRed("youtube", "@losvecinos")).toBe("https://youtube.com/@losvecinos");
-    expect(enlaceRed("youtube", "https://youtube.com/watch?v=abc")).toBe("https://youtube.com/watch?v=abc");
-    expect(enlaceRed("spotify", "https://open.spotify.com/artist/abc")).toBe("https://open.spotify.com/artist/abc");
-    expect(enlaceRed("spotify", "Los Vecinos")).toBe("https://open.spotify.com/search/Los%20Vecinos");
-    expect(enlaceRed("sitio", "")).toBeNull();
-  });
-});
-
 describe("validarLugar", () => {
   const base = { nombre: "Foro X", tipo: "foro", direccion: "Calle 1", lat: "22.15", lng: "-100.97", descripcion: "", portada: "" };
   it("acepta un lugar mínimo y limpia", () => {
-    const { datos, errores } = validarLugar({ ...base, instagram: " @forox " });
+    const { datos, errores } = validarLugar({ ...base, enlaces: JSON.stringify([" @forox ", "vimeo.com/forox"]) });
     expect(errores).toEqual({});
     expect(datos.lat).toBeCloseTo(22.15);
-    expect(datos.redes).toEqual({ instagram: "@forox" });
+    expect(datos.redes).toEqual([
+      { red: "instagram", url: "https://instagram.com/forox" },
+      { red: "vimeo", url: "https://vimeo.com/forox" },
+    ]);
     expect(datos.portada).toBeNull();
   });
   it("exige nombre, tipo válido y ubicación", () => {
@@ -50,9 +37,9 @@ describe("validarLugar", () => {
     expect(errores.tipo).toBeTruthy();
     expect(errores.ubicacion).toBeTruthy();
   });
-  it("revisa el WhatsApp", () => {
-    expect(validarLugar({ ...base, whatsapp: "123" }).errores.whatsapp).toBeTruthy();
-    expect(validarLugar({ ...base, whatsapp: "4441234567" }).errores.whatsapp).toBeUndefined();
+  it("reconoce el WhatsApp por el número y descarta lo que no es nada", () => {
+    expect(validarLugar({ ...base, enlaces: JSON.stringify(["123"]) }).datos.redes).toEqual([]);
+    expect(validarLugar({ ...base, enlaces: JSON.stringify(["4441234567"]) }).datos.redes).toEqual([{ red: "whatsapp", url: "https://wa.me/524441234567" }]);
   });
 });
 
