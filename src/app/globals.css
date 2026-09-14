@@ -111,6 +111,7 @@ select {
 }
 .raiz > .cabecera-raiz {
   padding: 0 var(--espacio-5);
+  margin: 0;
   background: var(--fondo);
 }
 .raiz > .contenido-raiz {

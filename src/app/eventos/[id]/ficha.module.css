@@ -179,3 +179,79 @@
   font-size: var(--letra-sm);
   margin-top: var(--espacio-2);
 }
+
+/* Pregunta de avisos tras el primer "Voy" (una decisión a la vez) */
+.consent {
+  margin: var(--espacio-3) 0;
+  padding: var(--espacio-4) var(--espacio-4) var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.consentMotivo {
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  margin-bottom: var(--espacio-2);
+}
+.consentPregunta {
+  font-weight: 700;
+  margin: var(--espacio-2) 0 var(--espacio-2);
+}
+.consentOpciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espacio-2);
+}
+.consentSi,
+.consentNo {
+  min-height: var(--toque);
+  padding: 0 var(--espacio-3);
+  border-radius: var(--radio);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+.consentSi {
+  border: none;
+  background: var(--texto);
+  color: var(--fondo);
+}
+.consentNo {
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  color: var(--texto);
+}
+.consentCortas button {
+  min-height: var(--toque-min);
+}
+.consentGracias {
+  display: block;
+  width: 100%;
+  min-height: var(--toque-min);
+  margin-top: var(--espacio-1);
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.consentHecho {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  color: var(--texto);
+}
+.consentHecho svg {
+  flex: none;
+  color: var(--ok);
+}
+.consentCambiar,
+.consentNota {
+  margin-top: 6px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

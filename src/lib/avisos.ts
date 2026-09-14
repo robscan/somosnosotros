@@ -3,6 +3,7 @@ import { correoNuevoEvento, correoRecordatorio } from "./comunidad";
 import { correoActivo, enviarCorreo } from "./correo";
 import { nombreSitio } from "./eventos";
 import { formatearCuando } from "./fechas";
+import { urlBaja } from "./baja";
 import { enviarPush } from "./push";
 import { clienteAdmin } from "./supabase/admin";
 
@@ -26,34 +27,37 @@ async function correoDe(usuarioId: string): Promise<string | null> {
 }
 
 /**
- * Manda el aviso a cada persona una sola vez (avisos_enviados) y solo si tiene los avisos encendidos:
- * push al teléfono si lo activó, y correo si hay llave. Cuenta como enviado si llegó por cualquiera de los dos.
+ * Manda el aviso a cada persona una sola vez (avisos_enviados) y solo por los canales que consintió
+ * (avisos_push, avisos_correo). Cuenta como enviado si llegó por cualquiera de los dos.
  */
 async function avisar(evento: EventoAviso, usuarios: string[], tipo: "nuevo_evento" | "recordatorio"): Promise<number> {
   const admin = clienteAdmin();
   if (!admin || usuarios.length === 0) return 0;
-  const { data: perfiles } = await admin.from("perfiles").select("id, avisos").in("id", usuarios);
+  const { data: perfiles } = await admin.from("perfiles").select("id, avisos_correo, avisos_push").in("id", usuarios);
   const { data: ya } = await admin.from("avisos_enviados").select("usuario_id").eq("evento_id", evento.id).eq("tipo", tipo);
   const yaEnviados = new Set((ya ?? []).map((r) => r.usuario_id as string));
   const cuando = formatearCuando(evento.inicio, evento.fin);
   const lugar = nombreSitio(evento);
   const plantilla = tipo === "nuevo_evento" ? correoNuevoEvento : correoRecordatorio;
-  const correo = plantilla({ titulo: evento.titulo, cuando, lugar, eventoId: evento.id });
+  const llaveBaja = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
   const aviso = { titulo: tipo === "nuevo_evento" ? `Nuevo en ${lugar}` : `Hoy: ${evento.titulo}`, cuerpo: tipo === "nuevo_evento" ? `${evento.titulo} · ${cuando}` : `${cuando} · ${lugar}`, url: `https://somosnosotros.org/eventos/${evento.id}` };
-  const pendientes = (perfiles ?? []).filter((p) => p.avisos && !yaEnviados.has(p.id)).map((p) => p.id as string);
+  type Canales = { id: string; avisos_correo: boolean; avisos_push: boolean };
+  const pendientes = ((perfiles ?? []) as Canales[]).filter((p) => (p.avisos_correo || p.avisos_push) && !yaEnviados.has(p.id));
   let enviados = 0;
   // Por lotes: cada persona recibe push y correo a la vez, y el lote entero en paralelo.
   // Así 100 personas caben en el minuto que da Vercel; una por una no cabían.
   for (const lote of lotes(pendientes, LOTE)) {
     const resultados = await Promise.all(
-      lote.map(async (usuarioId) => {
+      lote.map(async (p) => {
+        const bajaUrl = llaveBaja ? urlBaja(p.id, llaveBaja) : undefined;
+        const correo = plantilla({ titulo: evento.titulo, cuando, lugar, eventoId: evento.id, bajaUrl });
         const [porPush, porCorreo] = await Promise.all([
-          enviarPush([usuarioId], aviso).then((n) => n > 0),
-          correoActivo()
-            ? correoDe(usuarioId).then((para) => (para ? enviarCorreo({ para, ...correo }) : false))
+          p.avisos_push ? enviarPush([p.id], aviso).then((n) => n > 0) : Promise.resolve(false),
+          p.avisos_correo && correoActivo()
+            ? correoDe(p.id).then((para) => (para ? enviarCorreo({ para, ...correo, bajaUrl }) : false))
             : Promise.resolve(false),
         ]);
-        return porPush || porCorreo ? usuarioId : null;
+        return porPush || porCorreo ? p.id : null;
       }),
     );
     const llegaron = resultados.filter((u): u is string => !!u);

@@ -1,0 +1,193 @@
+.fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.32);
+}
+.hoja {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: calc(100% - 48px);
+  overflow-y: auto;
+  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+  background: var(--fondo);
+  box-shadow: var(--sombra-panel);
+}
+.asa {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: 2px;
+  background: var(--asa);
+}
+.cerrar {
+  position: absolute;
+  top: var(--espacio-2);
+  right: var(--espacio-2);
+  min-width: var(--toque-min);
+  min-height: var(--toque-min);
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-xl);
+  cursor: pointer;
+}
+.titulo {
+  font-size: var(--letra-2xl);
+  margin-bottom: var(--espacio-1);
+}
+.sub {
+  color: var(--texto-suave);
+  margin-bottom: var(--espacio-3);
+}
+.pasos {
+  display: grid;
+  gap: var(--espacio-4);
+}
+.paso {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--espacio-3);
+  align-items: start;
+}
+.glifo {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: var(--fondo);
+}
+.glifo svg {
+  width: 26px;
+  height: 26px;
+  color: #0a7aff; /* azul de iOS: el glifo se reconoce tal como aparece en Safari */
+}
+.num {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.que {
+  display: block;
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+}
+.donde {
+  display: block;
+  margin-top: 2px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.safari {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  margin-top: var(--espacio-2);
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--fondo-suave);
+}
+.safari svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 0 auto;
+  color: #0a7aff;
+}
+.aqui {
+  position: relative;
+  display: block;
+}
+.aqui::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--acento);
+}
+.filaIos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: var(--espacio-2);
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--fondo-suave);
+  font-size: var(--letra-sm);
+}
+.filaIos span {
+  flex: 1;
+}
+.filaIos svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  color: var(--texto);
+}
+.resultado {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  margin-top: var(--espacio-4);
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--borde);
+}
+.resultado p {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.resultado b {
+  color: var(--texto);
+}
+.iconoApp {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--texto);
+  color: var(--fondo);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  font-variation-settings: var(--ancho-titulo);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-align: center;
+}
+.despues {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--espacio-3);
+  align-items: center;
+  margin-top: var(--espacio-3);
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--borde);
+  font-size: var(--letra-sm);
+}
+.despues .glifo svg {
+  width: 24px;
+  height: 24px;
+  color: var(--texto);
+}
+.despues b {
+  display: block;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

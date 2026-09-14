@@ -1,26 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { useOptimistic, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { resumenAsistentes, type Asistente } from "@/lib/comunidad";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
+import ConsentimientoAvisos from "./ConsentimientoAvisos";
 import styles from "./ficha.module.css";
 
-type Props = { eventoId: string; miEstado: EstadoAsistencia; conSesion: boolean; van: Asistente[]; interesados: number; yo: Asistente | null };
+type Props = {
+  eventoId: string;
+  titulo: string;
+  miEstado: EstadoAsistencia;
+  conSesion: boolean;
+  van: Asistente[];
+  interesados: number;
+  yo: Asistente | null;
+  /** Ya se le preguntó por los avisos; no se vuelve a preguntar. */
+  avisosPreguntado: boolean;
+  /** Correo enmascarado de la persona, para la confirmación. */
+  correo: string;
+  llavePush: string;
+};
 
 /**
  * "Voy" / "Me interesa" con respuesta instantánea (optimista) y la lista de quiénes van:
  * es la forma de conocer gente. Sin sesión, el botón lleva a entrar y el "Voy" se aplica al volver.
  */
-export default function Asistencia({ eventoId, miEstado, conSesion, van, interesados, yo }: Props) {
+export default function Asistencia({ eventoId, titulo, miEstado, conSesion, van, interesados, yo, avisosPreguntado, correo, llavePush }: Props) {
   const [pendiente, iniciar] = useTransition();
   const [estado, fijarOptimista] = useOptimistic<EstadoAsistencia, EstadoAsistencia>(miEstado, (_actual, nuevo) => nuevo);
+  // La pregunta de avisos aparece una sola vez, justo después del primer "Voy" (si venía de entrar con ?accion=voy, también).
+  const [preguntar, setPreguntar] = useState(!avisosPreguntado && miEstado === "voy" && conSesion);
 
   function cambiar(nuevo: EstadoAsistencia) {
     if (!conSesion) return; // los enlaces de abajo llevan a entrar
     iniciar(async () => {
       fijarOptimista(nuevo);
       await cambiarAsistencia(eventoId, nuevo);
+      if (nuevo === "voy" && !avisosPreguntado) setPreguntar(true);
     });
   }
 
@@ -58,6 +75,7 @@ export default function Asistencia({ eventoId, miEstado, conSesion, van, interes
   return (
     <section className={styles.quienVa} aria-label="Quién va">
       {botones}
+      {preguntar && estado === "voy" && <ConsentimientoAvisos titulo={titulo} correo={correo} llavePush={llavePush} />}
       {listaVan.length > 0 ? (
         <>
           <p className={styles.resumenVan}>{resumenAsistentes(listaVan)}</p>

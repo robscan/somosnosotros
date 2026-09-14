@@ -22,9 +22,20 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
   });
   if (Object.keys(errores).length) return { ok: false, errores };
 
+  const correo = formData.get("avisos_correo") === "si";
+  const { data: antes } = await supabase.from("perfiles").select("avisos_correo").eq("id", user.id).maybeSingle();
   const { error } = await supabase
     .from("perfiles")
-    .update({ nombre: datos.nombre, colonia: datos.colonia || null, bio: datos.bio || null, foto: datos.foto, avisos: formData.get("avisos") === "si" })
+    .update({
+      nombre: datos.nombre,
+      colonia: datos.colonia || null,
+      bio: datos.bio || null,
+      foto: datos.foto,
+      avisos_correo: correo,
+      avisos_preguntado: true,
+      ...(correo && !antes?.avisos_correo ? { avisos_correo_desde: new Date().toISOString(), avisos_correo_motivo: null } : {}),
+      ...(!correo ? { avisos_correo_desde: null } : {}),
+    })
     .eq("id", user.id);
   if (error) return { ok: false, errores: {}, general: "No se pudo guardar. Intenta de nuevo." };
 
@@ -58,10 +69,16 @@ export async function guardarSuscripcionPush(sub: { endpoint: string; keys: { p2
   } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
   if (!supabase || !user || !sub?.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) return false;
   const { error } = await supabase.from("suscripciones_push").upsert({ endpoint: sub.endpoint, usuario_id: user.id, p256dh: sub.keys.p256dh, auth: sub.keys.auth });
-  return !error;
+  if (error) return false;
+  await supabase.from("perfiles").update({ avisos_push: true, avisos_push_desde: new Date().toISOString(), avisos_preguntado: true }).eq("id", user.id);
+  return true;
 }
 
 export async function borrarSuscripcionPush(endpoint: string): Promise<void> {
   const supabase = await clienteServidor();
+  const {
+    data: { user },
+  } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
   await supabase?.from("suscripciones_push").delete().eq("endpoint", endpoint);
+  if (user) await supabase?.from("perfiles").update({ avisos_push: false, avisos_push_desde: null }).eq("id", user.id);
 }
