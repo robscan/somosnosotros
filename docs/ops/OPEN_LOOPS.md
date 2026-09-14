@@ -1,12 +1,12 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — **Fase 3 cerrada** por el founder; **Fase 4 (comunidad) construida** en PR #12 (`fase-4-comunidad`, bitácora [011](../bitacora/2026/09/011-fase-4-comunidad.md)); migración 0006 aplicada. Faltan merge, llaves de correo (Resend) y la prueba de la fase. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — **Fase 4 (comunidad) en producción** (PR #12 mergeado; bitácora [011](../bitacora/2026/09/011-fase-4-comunidad.md)). Faltan las llaves de correo (Resend, CRON_SECRET) y la prueba de la fase. Fases 0–3 cerradas. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
 
-- **OL-005 · Fase 4 (comunidad)** — código en PR #12, verificado (lint, typecheck, 49 tests, build) y probado contra la base real con dos usuarios desechables: "Voy" / "Me interesa" con lista de quiénes van (aplicado solo al volver de entrar), seguir lugares, perfil público, "Voy a" y "Sigo" en Mi perfil. Avisos por correo listos pero **sin llave**: (1) cuenta en resend.com, dominio somosnosotros.org verificado y llave de API; (2) en Vercel (sensibles): `RESEND_API_KEY`, `CORREO_REMITENTE`, `CRON_SECRET`; el cron de recordatorios corre a las 9:00 de la ciudad. Pasos: merge del PR #12 → llaves → **prueba de la fase**: el founder confirma que dos personas coincidieron en un evento gracias a la plataforma.
+- **OL-005 · Fase 4 (comunidad)** — código en PR #12, verificado (lint, typecheck, 49 tests, build) y probado contra la base real con dos usuarios desechables: "Voy" / "Me interesa" con lista de quiénes van (aplicado solo al volver de entrar), seguir lugares, perfil público, "Voy a" y "Sigo" en Mi perfil. Avisos por correo listos pero **sin llave**: (1) cuenta en resend.com, dominio somosnosotros.org verificado y llave de API; (2) en Vercel (sensibles): `RESEND_API_KEY`, `CORREO_REMITENTE`, `CRON_SECRET`; el cron de recordatorios corre a las 9:00 de la ciudad. En producción (PR #12 mergeado). Pasos: llaves → **prueba de la fase**: el founder confirma que dos personas coincidieron en un evento gracias a la plataforma.
 - Pendiente de la Fase 1 (no bloquea): que una segunda persona se registre. **Google** opcional: credenciales OAuth en Google Cloud con redirect `https://<ref>.supabase.co/auth/v1/callback`; Client ID y Secret en Supabase → Authentication → Providers → Google.
 - Pendientes menores de la Fase 0 (no bloquean): fuentes "Noto Sans Medium/Bold" ausentes en la cuenta de Mapbox (404, usa la de reserva); variables de Mapbox y Anthropic solo en Production.
 
