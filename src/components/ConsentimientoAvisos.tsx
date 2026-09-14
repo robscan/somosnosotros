@@ -1,22 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import HojaInstalar from "@/components/HojaInstalar";
+import HojaInstalar from "./HojaInstalar";
 import { estadoPush, suscribirPush } from "@/lib/pushCliente";
 import { elegirAvisos } from "@/app/avisos/acciones";
 import { guardarSuscripcionPush } from "@/app/perfil/acciones";
-import styles from "./ficha.module.css";
+import { IconoOk } from "./ui/Iconos";
+import styles from "./ConsentimientoAvisos.module.css";
 
-type Props = { titulo: string; correo: string; llavePush: string; onListo?: () => void };
+/** "voy": tras el primer Voy a un evento. "seguir": al seguir un lugar. Misma pregunta, distinta promesa. */
+type Contexto = "voy" | "seguir";
+type Props = { contexto?: Contexto; titulo: string; correo: string; llavePush: string; onListo?: () => void };
+
+const COPY: Record<Contexto, { motivo: (t: string) => string; porque: string; pregunta: string; cuando: string; promesa: string }> = {
+  voy: { motivo: (t) => `Vas a ${t}`, porque: "Ya estás en la lista de quien va.", pregunta: "¿Te recordamos ese día?", cuando: "ese día", promesa: "ese día" },
+  seguir: { motivo: (t) => `Sigues ${t}`, porque: "Sus eventos nuevos aparecerán en Siguiendo.", pregunta: "¿Te avisamos de sus eventos?", cuando: "cuando publiquen algo", promesa: "de sus eventos" },
+};
 type Canal = null | boolean;
 
 /**
- * Tras el primer "Voy": una pregunta, dos canales, una decisión a la vez.
+ * Tras el primer "Voy" (o al seguir un lugar): una pregunta, dos canales, una decisión a la vez.
  * "¿Te recordamos ese día?" Por correo · En el teléfono · No, gracias. Al elegir uno se confirma con
  * evidencia y se ofrece el otro una sola vez. El correo también se pide: un correo no pedido se marca
  * como spam y bloquea la entrega del dominio (docs/rediseno/02-inicio-flujo-y-estados.md, decisión 10).
  */
-export default function ConsentimientoAvisos({ titulo, correo, llavePush, onListo }: Props) {
+export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo, llavePush, onListo }: Props) {
+  const copy = COPY[contexto];
   const [correoOk, setCorreoOk] = useState<Canal>(null);
   const [telefonoOk, setTelefonoOk] = useState<Canal>(null);
   const [hoja, setHoja] = useState(false);
@@ -87,26 +96,22 @@ export default function ConsentimientoAvisos({ titulo, correo, llavePush, onList
     return () => clearTimeout(id);
   }, [terminado, onListo]);
 
-  const ok = (
-    <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18">
-      <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  const ok = <IconoOk width={18} height={18} />;
 
   let cuerpo: React.ReactNode;
   if (correoOk === null && telefonoOk === null) {
     cuerpo = (
       <>
-        <p className={styles.consentPregunta}>¿Te recordamos ese día?</p>
-        <div className={styles.consentOpciones}>
-          <button type="button" className={styles.consentSi} onClick={porCorreo} disabled={trabajando}>
+        <p className={styles.pregunta}>{copy.pregunta}</p>
+        <div className={styles.opciones}>
+          <button type="button" className={styles.si} onClick={porCorreo} disabled={trabajando}>
             Por correo
           </button>
-          <button type="button" className={styles.consentSi} onClick={enTelefono} disabled={trabajando}>
+          <button type="button" className={styles.si} onClick={enTelefono} disabled={trabajando}>
             En el teléfono
           </button>
         </div>
-        <button type="button" className={styles.consentGracias} onClick={noGracias} disabled={trabajando}>
+        <button type="button" className={styles.gracias} onClick={noGracias} disabled={trabajando}>
           No, gracias
         </button>
       </>
@@ -114,16 +119,16 @@ export default function ConsentimientoAvisos({ titulo, correo, llavePush, onList
   } else if (correoOk === true && telefonoOk === null) {
     cuerpo = (
       <>
-        <p className={styles.consentHecho}>
+        <p className={styles.hecho}>
           {ok}
-          <span>Te escribimos a {correo} ese día.</span>
+          <span>Te escribimos a {correo} {copy.cuando}.</span>
         </p>
-        <p className={styles.consentPregunta}>¿También en el teléfono?</p>
-        <div className={`${styles.consentOpciones} ${styles.consentCortas}`}>
-          <button type="button" className={styles.consentSi} onClick={enTelefono} disabled={trabajando}>
+        <p className={styles.pregunta}>¿También en el teléfono?</p>
+        <div className={`${styles.opciones} ${styles.cortas}`}>
+          <button type="button" className={styles.si} onClick={enTelefono} disabled={trabajando}>
             Sí
           </button>
-          <button type="button" className={styles.consentNo} onClick={() => setTelefonoOk(false)} disabled={trabajando}>
+          <button type="button" className={styles.no} onClick={() => setTelefonoOk(false)} disabled={trabajando}>
             No
           </button>
         </div>
@@ -132,16 +137,16 @@ export default function ConsentimientoAvisos({ titulo, correo, llavePush, onList
   } else if (telefonoOk === true && correoOk === null) {
     cuerpo = (
       <>
-        <p className={styles.consentHecho}>
+        <p className={styles.hecho}>
           {ok}
-          <span>Te avisamos en este teléfono ese día.</span>
+          <span>Te avisamos en este teléfono {copy.cuando}.</span>
         </p>
-        <p className={styles.consentPregunta}>¿También por correo?</p>
-        <div className={`${styles.consentOpciones} ${styles.consentCortas}`}>
-          <button type="button" className={styles.consentSi} onClick={porCorreo} disabled={trabajando}>
+        <p className={styles.pregunta}>¿También por correo?</p>
+        <div className={`${styles.opciones} ${styles.cortas}`}>
+          <button type="button" className={styles.si} onClick={porCorreo} disabled={trabajando}>
             Sí
           </button>
-          <button type="button" className={styles.consentNo} onClick={() => setCorreoOk(false)} disabled={trabajando}>
+          <button type="button" className={styles.no} onClick={() => setCorreoOk(false)} disabled={trabajando}>
             No
           </button>
         </div>
@@ -151,14 +156,14 @@ export default function ConsentimientoAvisos({ titulo, correo, llavePush, onList
     const canales = [correoOk && "por correo", telefonoOk && "en el teléfono"].filter(Boolean);
     cuerpo = canales.length ? (
       <>
-        <p className={styles.consentHecho}>
+        <p className={styles.hecho}>
           {ok}
-          <span>Te avisamos {canales.join(" y ")} ese día.</span>
+          <span>Te avisamos {canales.join(" y ")} {copy.promesa}.</span>
         </p>
-        <p className={styles.consentCambiar}>Se cambia en Mi perfil.</p>
+        <p className={styles.cambiar}>Se cambia en Mi perfil.</p>
       </>
     ) : (
-      <p className={styles.consentHecho}>
+      <p className={styles.hecho}>
         <span>Sin avisos. Si cambias de idea, está en Mi perfil.</span>
       </p>
     );
@@ -166,10 +171,10 @@ export default function ConsentimientoAvisos({ titulo, correo, llavePush, onList
 
   return (
     <div className={styles.consent} role="status">
-      <p className={styles.consentMotivo}>Vas a {titulo}</p>
-      <p className={styles.consentPorque}>Ya estás en la lista de quien va.</p>
+      <p className={styles.motivo}>{copy.motivo(titulo)}</p>
+      <p className={styles.porque}>{copy.porque}</p>
       {cuerpo}
-      {nota && <p className={styles.consentNota}>{nota}</p>}
+      {nota && <p className={styles.nota}>{nota}</p>}
       {hoja && <HojaInstalar onCerrar={cerrarHoja} />}
     </div>
   );

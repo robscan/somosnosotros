@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapaGL, Marker } from "mapbox-gl";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
-import type { LugarResumen } from "@/lib/lugares";
+import type { LugarLista } from "@/lib/lugares";
 import styles from "./Mapa.module.css";
 
 type EstadoMapa = "cargando" | "listo" | "sin-token" | "error";
@@ -15,7 +15,13 @@ type Punto = { lat: number; lng: number };
 type Props = {
   /** "ver": pantalla completa con pins. "elegir": recuadro con un pin que se arrastra (alta/edición). */
   modo?: "ver" | "elegir";
-  lugares?: LugarResumen[];
+  lugares?: LugarLista[];
+  /** Solo en "ver": al tocar un pin (o el mapa, con null). Sin esto, el pin navega a la ficha. */
+  onPin?: (lugar: LugarLista | null) => void;
+  /** Solo en "ver": id del pin resaltado (el de la tarjeta abierta). */
+  elegido?: string | null;
+  /** Solo en "ver": la persona en el mapa; `vez` cambia con cada toque al botón de ubicación para volver a centrar. */
+  ubicacion?: (Punto & { vez: number }) | null;
   /** Solo en "elegir": posición del pin; null = todavía no hay. */
   valor?: Punto | null;
   onCambio?: (p: Punto) => void;
@@ -26,16 +32,23 @@ type Props = {
   presentacion?: "pantalla" | "caja";
 };
 
-const COLOR_PIN = "#1a1a1a"; // = var(--primario); Mapbox pide el color literal
+const COLOR_PIN = "#1a1a1a"; // = var(--primario); Mapbox pide el color literal (pin que se arrastra)
+/** Pin de lugar: 28×36, relleno o hueco según la clase; el punto blanco lo lleva siempre. */
+const PIN_SVG = '<svg viewBox="0 0 28 36" width="28" height="36" aria-hidden="true"><path d="M14 35S3 21 3 13a11 11 0 0 1 22 0c0 8-11 22-11 22z" stroke-width="2"/><circle cx="14" cy="13" r="4"/></svg>';
 
 /**
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día.
  */
-export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla" }: Props) {
+export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla" }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
-  const pinesRef = useRef<Marker[]>([]);
+  const pinesRef = useRef<Map<string, Marker>>(new Map());
+  const yoRef = useRef<Marker | null>(null);
+  const onPinRef = useRef(onPin);
+  useEffect(() => {
+    onPinRef.current = onPin;
+  }, [onPin]);
   const encuadradoRef = useRef(false); // el encuadre a los pins se hace una sola vez, al abrir
   const pinElegirRef = useRef<Marker | null>(null);
   const onCambioRef = useRef(onCambio);
@@ -79,6 +92,8 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
       });
       if (modo === "elegir") {
         mapa.on("click", (e) => onCambioRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
+      } else {
+        mapa.on("click", () => onPinRef.current?.(null)); // tocar fuera cierra la tarjeta
       }
     });
 
@@ -91,7 +106,7 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pins de lugares (modo ver).
+  // Pins de lugares (modo ver): lleno con eventos próximos, hueco sin ellos.
   useEffect(() => {
     const mapa = mapaRef.current;
     if (estado !== "listo" || !mapa || modo !== "ver") return;
@@ -99,34 +114,68 @@ export default function Mapa({ modo = "ver", lugares = [], valor = null, onCambi
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
       pinesRef.current.forEach((p) => p.remove());
-      // Al abrir, el encuadre muestra todos los pins (con el panel a media altura tapando la mitad de abajo).
-      // Con un lugar centrado por la URL no se toca; con cero pins queda la vista de la ciudad.
+      // Al abrir, el encuadre muestra todos los pins. Con un lugar centrado por la URL no se toca; con cero pins queda la ciudad.
       if (!encuadradoRef.current && !centrarEn && lugares.length > 0) {
         encuadradoRef.current = true;
         const limites = new mapboxgl.LngLatBounds();
         lugares.forEach((l) => limites.extend([l.lng, l.lat]));
-        const alto = window.innerHeight;
         const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        const abajo = presentacion === "pantalla" ? Math.round(alto * 0.5) + 24 : 48;
-        mapa.fitBounds(limites, { padding: { top: 72, left: 48, right: 48, bottom: abajo }, maxZoom: 15, duration: sinMovimiento ? 0 : 600 });
+        const abajo = presentacion === "pantalla" ? Math.round(window.innerHeight * 0.5) + 24 : 72;
+        mapa.fitBounds(limites, { padding: { top: 56, left: 48, right: 48, bottom: abajo }, maxZoom: 15, duration: sinMovimiento ? 0 : 600 });
       }
-      pinesRef.current = lugares.map((l) => {
-        const pin = new mapboxgl.Marker({ color: COLOR_PIN }).setLngLat([l.lng, l.lat]).addTo(mapa);
-        const el = pin.getElement();
-        el.style.cursor = "pointer";
-        el.setAttribute("role", "link");
-        el.setAttribute("aria-label", l.nombre);
-        el.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          router.push(`/lugares/${l.id}`);
-        });
-        return pin;
-      });
+      pinesRef.current = new Map(
+        lugares.map((l) => {
+          const el = document.createElement("button");
+          el.type = "button";
+          el.className = `${styles.pin} ${l.proximo ? styles.pinLleno : styles.pinHueco}`;
+          el.setAttribute("aria-label", l.nombre);
+          el.innerHTML = PIN_SVG;
+          el.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            if (onPinRef.current) onPinRef.current(l);
+            else router.push(`/lugares/${l.id}`);
+          });
+          return [l.id, new mapboxgl.Marker({ element: el, anchor: "bottom" }).setLngLat([l.lng, l.lat]).addTo(mapa)];
+        }),
+      );
     });
     return () => {
       cancelado = true;
     };
   }, [estado, modo, lugares, router, centrarEn, presentacion]);
+
+  // El pin de la tarjeta abierta se ve más grande.
+  useEffect(() => {
+    pinesRef.current.forEach((p, id) => p.getElement().classList.toggle(styles.pinElegido, id === elegido));
+  }, [elegido, lugares, estado]);
+
+  // La persona en el mapa (punto azul con halo) y el mapa centrado ahí; cada toque al botón vuelve a centrar.
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    if (estado !== "listo" || !mapa || modo !== "ver") return;
+    if (!ubicacion) {
+      yoRef.current?.remove();
+      yoRef.current = null;
+      return;
+    }
+    let cancelado = false;
+    import("mapbox-gl").then(({ default: mapboxgl }) => {
+      if (cancelado) return;
+      if (!yoRef.current) {
+        const el = document.createElement("span");
+        el.className = styles.yo;
+        el.setAttribute("aria-label", "Tu ubicación");
+        yoRef.current = new mapboxgl.Marker({ element: el }).setLngLat([ubicacion.lng, ubicacion.lat]).addTo(mapa);
+      } else {
+        yoRef.current.setLngLat([ubicacion.lng, ubicacion.lat]);
+      }
+      const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      mapa.flyTo({ center: [ubicacion.lng, ubicacion.lat], zoom: Math.max(mapa.getZoom(), 14), duration: sinMovimiento ? 0 : 600 });
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [estado, modo, ubicacion]);
 
   // Pin que se arrastra (modo elegir).
   useEffect(() => {

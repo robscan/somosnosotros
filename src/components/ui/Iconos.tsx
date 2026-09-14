@@ -57,3 +57,65 @@ export const IconoMapa = (p: P) => (
     <path d="M9 4v14M15 6v14" />
   </svg>
 );
+export const IconoPinMas = (p: P) => (
+  <svg {...base({ strokeWidth: 1.9, ...p })}>
+    <path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" />
+    <path d="M12 8.5v5M9.5 11h5" />
+  </svg>
+);
+export const IconoUbicacion = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    <circle cx="12" cy="12" r="8" />
+  </svg>
+);
+export const IconoRuta = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 3l9 9-9 9-9-9z" />
+    <path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8" />
+  </svg>
+);
+export const IconoCompartir = (p: P) => (
+  <svg {...base({ strokeWidth: 1.9, ...p })}>
+    <path d="M12 3v12M8 7l4-4 4 4" />
+    <path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" />
+  </svg>
+);
+export const IconoInstagram = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+    <circle cx="12" cy="12" r="3.8" />
+    <circle cx="17" cy="7" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const IconoFacebook = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M13.5 20.5v-7h2.3l.4-2.8h-2.7V9c0-.8.3-1.4 1.4-1.4h1.4V5.2c-.3 0-1.1-.1-2-.1-2 0-3.4 1.2-3.4 3.5v2.1H8.6v2.8h2.3v7" />
+  </svg>
+);
+export const IconoWhatsApp = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 20l1.3-3.8A8 8 0 1 1 8 19.2z" />
+    <path d="M9.5 9.5c0 3 2 5 5 5l1-1.5-1.8-.8-.7.7c-.9-.4-1.5-1-1.9-1.9l.7-.7-.8-1.8z" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const IconoSitio = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" />
+  </svg>
+);
+export const IconoPuntos = (p: P) => (
+  <svg {...base({ fill: "currentColor", stroke: "none", ...p })}>
+    <circle cx="5" cy="12" r="1.8" />
+    <circle cx="12" cy="12" r="1.8" />
+    <circle cx="19" cy="12" r="1.8" />
+  </svg>
+);
+export const IconoOk = (p: P) => (
+  <svg {...base({ strokeWidth: 2.2, ...p })}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </svg>
+);

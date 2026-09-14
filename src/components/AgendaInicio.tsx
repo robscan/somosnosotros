@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { agruparPorDia, FILTROS, filtrarAgenda, textoDistancia, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
+import { agruparPorDia, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import type { Ciudad } from "@/lib/ciudad";
-import { nombreSitio } from "@/lib/eventos";
-import { diaCorto, diaLargo, horaCorta, localAIso } from "@/lib/fechas";
-import { IconoBoleto, IconoCalendario, IconoCaret, IconoPersonas, IconoPin, IconoReloj } from "./ui/Iconos";
+import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
+import RenglonEvento from "./RenglonEvento";
+import { IconoCalendario, IconoCaret, IconoPin } from "./ui/Iconos";
 import styles from "./AgendaInicio.module.css";
 
 type CiudadConEventos = Ciudad & { eventos: number };
@@ -103,7 +103,7 @@ export default function AgendaInicio({ eventos, seguidos, ciudad, ciudades, hoy 
           </h2>
           <ul className={styles.lista}>
             {g.eventos.map((e) => (
-              <Renglon key={e.id} evento={e} km={km.get(e.id)} />
+              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} />
             ))}
           </ul>
         </section>
@@ -168,44 +168,5 @@ function VacioConAccion({ titulo, texto, children }: { titulo: string; texto: st
       <p>{texto}</p>
       {children}
     </section>
-  );
-}
-
-/** Renglón de evento: foto a la izquierda (la del evento o la del lugar), título y datos con icono. */
-function Renglon({ evento: e, km }: { evento: EventoAgenda; km?: number }) {
-  const foto = e.imagen ?? e.lugar?.portada ?? null;
-  return (
-    <li>
-      <Link href={`/eventos/${e.id}`} className={styles.renglon}>
-        {foto ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-          <img src={foto} alt="" className={styles.foto} />
-        ) : (
-          <span className={`${styles.foto} ${styles.fotoVacia}`} aria-hidden="true" />
-        )}
-        <span className={styles.titulo}>{e.titulo}</span>
-        <span className={styles.meta}>
-            <span>
-              <IconoReloj width={15} height={15} />
-              <b>{horaCorta(e.inicio)}</b>
-            </span>
-            <span className={styles.lugar}>
-              <IconoPin width={15} height={15} />
-              {nombreSitio(e)}
-              {km !== undefined ? ` · ${textoDistancia(km)}` : ""}
-            </span>
-            {e.van > 0 && (
-              <span>
-                <IconoPersonas width={15} height={15} />
-                {e.van} {e.van === 1 ? "va" : "van"}
-              </span>
-            )}
-            <span>
-              <IconoBoleto width={15} height={15} />
-              {e.precio ?? "Gratis"}
-            </span>
-        </span>
-      </Link>
-    </li>
   );
 }

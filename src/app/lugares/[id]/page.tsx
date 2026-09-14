@@ -1,19 +1,33 @@
 import Link from "next/link";
-import Barra from "@/components/ui/Barra";
 import { notFound, redirect } from "next/navigation";
-import type { EventoResumen } from "@/lib/eventos";
-import { formatearCuando } from "@/lib/fechas";
-import { REDES, enlaceRed, etiquetaTipo, type Lugar } from "@/lib/lugares";
+import type { Metadata } from "next";
+import { Fragment } from "react";
+import Borrar from "@/components/Borrar";
+import BotonCompartir from "@/components/BotonCompartir";
+import Cartel from "@/components/Cartel";
+import Desplegable from "@/components/Desplegable";
+import RenglonEvento from "@/components/RenglonEvento";
+import Reportar from "@/components/Reportar";
+import Barra from "@/components/ui/Barra";
+import { IconoCalendario, IconoCompartir, IconoFacebook, IconoInstagram, IconoPersonas, IconoPin, IconoRuta, IconoSitio, IconoWhatsApp } from "@/components/ui/Iconos";
+import MenuAcciones from "@/components/ui/MenuAcciones";
+import ficha from "@/components/ui/Ficha.module.css";
+import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
+import { enmascararCorreo } from "@/lib/comunidad";
+import { desdeReciente } from "@/lib/fechas";
+import { enlacesRedes, etiquetaTipo, textoProximo, type ClaveRed, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarLugar, cambiarVisible } from "../acciones";
-import Borrar from "@/components/Borrar";
 import Seguir from "./Seguir";
-import Reportar from "@/components/Reportar";
 import styles from "./ficha.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string; borrado?: string }> };
+type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
 
-async function cargarLugar(id: string): Promise<(Lugar & { autor: { id: string; nombre: string } | null }) | null> {
+const ORIGEN = "https://somosnosotros.org";
+const ICONO_RED: Record<ClaveRed, React.ReactNode> = { instagram: <IconoInstagram />, facebook: <IconoFacebook />, whatsapp: <IconoWhatsApp />, sitio: <IconoSitio /> };
+
+async function cargarLugar(id: string): Promise<LugarConAutor | null> {
   const supabase = await clienteServidor();
   if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
   const { data } = await supabase
@@ -23,64 +37,111 @@ async function cargarLugar(id: string): Promise<(Lugar & { autor: { id: string; 
     .maybeSingle();
   if (!data) return null;
   const autor = Array.isArray(data.autor) ? (data.autor[0] ?? null) : data.autor;
-  return { ...(data as unknown as Lugar), autor: autor as { id: string; nombre: string } | null };
+  return { ...(data as unknown as Lugar), autor: autor as LugarConAutor["autor"] };
 }
 
-async function cargarEventos(lugarId: string): Promise<EventoResumen[]> {
+/** Los eventos próximos del lugar, con cuántos van, listos para el renglón de la agenda. */
+async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
-  const desde = new Date(Date.now() - 3 * 3600000).toISOString();
-  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado").eq("lugar_id", lugarId).eq("visible", true).gte("inicio", desde).order("inicio").limit(30);
-  return ((data ?? []) as Omit<EventoResumen, "lugar">[]).map((e) => ({ ...e, lugar: null }));
+  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).gte("inicio", desdeReciente()).order("inicio").limit(30);
+  const filas = (data ?? []) as Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng">[];
+  if (filas.length === 0) return [];
+  const { data: a } = await supabase
+    .from("asistencias")
+    .select("evento_id")
+    .eq("estado", "voy")
+    .in(
+      "evento_id",
+      filas.map((f) => f.id),
+    );
+  const van = new Map<string, number>();
+  for (const f of a ?? []) van.set(f.evento_id as string, (van.get(f.evento_id as string) ?? 0) + 1);
+  return filas.map((f) => ({ ...f, lugar: { nombre: lugar.nombre, portada: lugar.portada }, lat: lugar.lat, lng: lugar.lng, van: van.get(f.id) ?? 0 }));
 }
 
-export async function generateMetadata({ params }: Params) {
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const lugar = await cargarLugar(id);
-  return { title: lugar ? `${lugar.nombre} · Somos Nosotros` : "Lugar · Somos Nosotros" };
+  if (!lugar) return { title: "Lugar · Somos Nosotros" };
+  const descripcion = `${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`;
+  return {
+    title: `${lugar.nombre} · Somos Nosotros`,
+    description: descripcion,
+    openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}/lugares/${lugar.id}`, type: "website", images: lugar.portada ? [{ url: lugar.portada }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
+  };
 }
 
 export default async function FichaLugar({ params, searchParams }: Params) {
   const { id } = await params;
   const { nuevo, accion, error, borrado } = (await searchParams) ?? {};
-  const [lugar, actual, eventos] = await Promise.all([cargarLugar(id), usuarioActual(), cargarEventos(id)]);
+  const [lugar, actual] = await Promise.all([cargarLugar(id), usuarioActual()]);
   if (!lugar) notFound();
-  const supabaseSeg = await clienteServidor();
+  const supabase = await clienteServidor();
+  // Venía de entrar con la intención de seguir: se aplica sola.
   if (actual && accion === "seguir") {
-    await supabaseSeg?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id });
+    await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id });
     redirect(`/lugares/${lugar.id}`);
   }
-  const { data: seguimientos } = (await supabaseSeg?.from("seguimientos").select("usuario_id").eq("lugar_id", id)) ?? { data: [] };
+  const [eventos, { data: seguimientos }] = await Promise.all([cargarEventos(lugar), (supabase?.from("seguimientos").select("usuario_id").eq("lugar_id", id) ?? Promise.resolve({ data: [] })) as Promise<{ data: { usuario_id: string }[] | null }>]);
   const seguidores = (seguimientos ?? []).length;
   const sigo = !!actual && (seguimientos ?? []).some((s) => s.usuario_id === actual.perfil.id);
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === lugar.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
-  const redes = REDES.map((r) => ({ ...r, href: enlaceRed(r.clave, lugar.redes?.[r.clave] ?? "") })).filter((r) => r.href);
-  const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
-  const faltanDetalles = !lugar.descripcion && !lugar.portada && Object.keys(lugar.redes ?? {}).length === 0;
+  const redes = enlacesRedes(lugar.redes);
+  const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
+  const url = `${ORIGEN}/lugares/${lugar.id}`;
+  const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
+  const grupos = agruparPorDia(eventos);
+  const avisoBorrar = eventos.length > 0 ? `Se borra el lugar y sus ${eventos.length === 1 ? "1 evento próximo" : `${eventos.length} eventos próximos`} (y los pasados).` : "Se borra el lugar.";
 
   return (
-    <main className="pagina">
-      <Barra volver={{ href: `/lugares?lugar=${lugar.id}&vista=mapa`, texto: "Lugares" }} />
-      {lugar.portada && (
-        // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-        <img src={lugar.portada} alt="" className={styles.portada} />
-      )}
-      {nuevo === "1" && (
-        <div className={styles.publicado} role="status">
-          <p>
-            <strong>Publicado.</strong> Ya está en Lugares.
-          </p>
-          <div className={styles.publicadoAcciones}>
-            <Link href="/lugares/nuevo" className={styles.botonPrincipal}>
-              Registrar otro lugar
-            </Link>
-            {puedeEditar && faltanDetalles && (
-              <Link href={`/lugares/${lugar.id}/editar`} className={styles.botonEnlace}>
-                Completar detalles
-              </Link>
+    <main className={ficha.pagina}>
+      <Barra
+        volver={{ href: "/lugares", texto: "Lugares" }}
+        derecha={
+          <MenuAcciones>
+            {puedeEditar && (
+              <li>
+                <Link href={`/lugares/${lugar.id}/editar`} className={ficha.menuItem}>
+                  Editar
+                </Link>
+              </li>
             )}
+            {esAdmin && (
+              <li>
+                <form action={cambiarVisible.bind(null, lugar.id, !lugar.visible)}>
+                  <button type="submit" className={ficha.menuItem}>
+                    {lugar.visible ? "Ocultar del mapa" : "Volver a mostrar"}
+                  </button>
+                </form>
+              </li>
+            )}
+            <li className={ficha.menuItem}>
+              <Reportar tipo="lugar" objetoId={lugar.id} volver={`/lugares/${lugar.id}`} conSesion={!!actual} />
+            </li>
+            {puedeEditar && (
+              <li className={ficha.menuItem}>
+                <Borrar que="el lugar" aviso={avisoBorrar} accion={borrarLugar.bind(null, lugar.id)} />
+              </li>
+            )}
+          </MenuAcciones>
+        }
+      />
+      {nuevo === "1" && (
+        <div className={ficha.publicado} role="status">
+          <div>
+            <b>Publicado.</b>Ya está en Lugares.
           </div>
+          {puedeEditar && faltanDetalles ? (
+            <Link href={`/lugares/${lugar.id}/editar`} className={ficha.publicadoBoton}>
+              Completar
+            </Link>
+          ) : (
+            <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}`} url={url} className={ficha.publicadoBoton}>
+              Compartir
+            </BotonCompartir>
+          )}
         </div>
       )}
       {nuevo !== "1" && puedeEditar && faltanDetalles && (
@@ -104,76 +165,88 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         </p>
       )}
       {!lugar.visible && (
-        <p className="aviso-error" role="status">
+        <p className={`aviso-error ${ficha.oculto}`} role="status">
           Este lugar está oculto: solo lo ven su autor y el administrador.
         </p>
       )}
-      <h1 className="titulo">{lugar.nombre}</h1>
-      <p className="subtitulo">{etiquetaTipo(lugar.tipo)}</p>
 
-      {lugar.direccion && <p className={styles.direccion}>{lugar.direccion}</p>}
-      <a href={comoLlegar} className={styles.botonEnlace} target="_blank" rel="noopener noreferrer">
-        Cómo llegar
-      </a>
-      <Seguir lugarId={lugar.id} sigo={sigo} seguidores={seguidores} conSesion={!!actual} />
+      {lugar.portada && <Cartel src={lugar.portada} alt={`Portada de ${lugar.nombre}`} />}
+      <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{lugar.nombre}</h1>
+      <p className={ficha.etiqueta}>{etiquetaTipo(lugar.tipo)}</p>
 
-      {lugar.descripcion && <p className={styles.descripcion}>{lugar.descripcion}</p>}
+      <ul className={ficha.datos}>
+        <li className={ficha.dato}>
+          <IconoPin width={20} height={20} />
+          <b>{lugar.direccion ?? "Sin dirección"}</b>
+        </li>
+        <li className={ficha.dato}>
+          <IconoPersonas width={20} height={20} />
+          <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
+        </li>
+        <li className={ficha.dato}>
+          <IconoCalendario width={20} height={20} />
+          <b>{eventos[0] ? textoProximo(eventos[0].inicio) : "Sin eventos próximos"}</b>
+          {eventos[0] && (
+            <a href="#eventos" className={ficha.datoEnlace}>
+              ver
+            </a>
+          )}
+        </li>
+      </ul>
 
-      <section className={styles.eventos} aria-label="Eventos">
-        <div className={styles.eventosCabecera}>
-          <h2 className={styles.eventosTitulo}>Eventos</h2>
-          <Link href={actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`} className={styles.botonEnlace}>
-            + Publicar un evento aquí
-          </Link>
-        </div>
-        {eventos.length === 0 ? (
-          <p className={styles.nota}>Aún no hay eventos próximos aquí.</p>
-        ) : (
-          <ul className={styles.listaEventos}>
-            {eventos.map((e) => (
-              <li key={e.id}>
-                <Link href={`/eventos/${e.id}`} className={styles.evento}>
-                  <span className={styles.eventoCuando}>{formatearCuando(e.inicio, e.fin)}</span>
-                  <strong>{e.titulo}</strong>
-                  <span className={styles.eventoPrecio}>{e.precio ?? "Gratis"}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {redes.length > 0 && (
-        <ul className={styles.redes} aria-label="Redes y contacto">
-          {redes.map((r) => (
-            <li key={r.clave}>
-              <a href={r.href!} target="_blank" rel="noopener noreferrer">
-                {r.etiqueta}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className={styles.autor}>
-        Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}. <Reportar tipo="lugar" objetoId={lugar.id} volver={`/lugares/${lugar.id}`} conSesion={!!actual} />
+      <div className={ficha.acciones}>
+        <a href={`https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`} className={ficha.accion} target="_blank" rel="noopener noreferrer">
+          <IconoRuta />
+          Cómo llegar
+        </a>
+        <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`} url={url} className={ficha.accion}>
+          <IconoCompartir />
+          Compartir
+        </BotonCompartir>
+        {redes.map((r) => (
+          <a key={r.clave} href={r.href} className={ficha.accion} target="_blank" rel="noopener noreferrer">
+            {ICONO_RED[r.clave]}
+            {r.etiqueta}
+          </a>
+        ))}
       </div>
 
-      {puedeEditar && (
-        <div className={styles.acciones}>
-          <Link href={`/lugares/${lugar.id}/editar`} className={styles.botonEnlace}>
-            Editar
-          </Link>
-          {esAdmin && (
-            <form action={cambiarVisible.bind(null, lugar.id, !lugar.visible)}>
-              <button type="submit" className={styles.botonSuave}>
-                {lugar.visible ? "Ocultar del mapa" : "Volver a mostrar"}
-              </button>
-            </form>
-          )}
-          <Borrar que="el lugar" aviso={eventos.length > 0 ? `Se borra el lugar y sus ${eventos.length === 1 ? "1 evento próximo" : `${eventos.length} eventos próximos`} (y los pasados).` : "Se borra el lugar."} accion={borrarLugar.bind(null, lugar.id)} />
-        </div>
-      )}
+      {lugar.descripcion && <Desplegable texto={lugar.descripcion} />}
+
+      <section className={styles.eventos} id="eventos" aria-label="Próximos eventos">
+        <h2>
+          Próximos eventos
+          {eventos.length > 0 && <span> · {eventos.length}</span>}
+        </h2>
+        {eventos.length === 0 && <p className={styles.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
+        {grupos.map((g) => (
+          <Fragment key={g.clave}>
+            <h3>{g.titulo}</h3>
+            <ul aria-label={g.titulo}>
+              {g.eventos.map((e) => (
+                <RenglonEvento key={e.id} evento={e} sinSitio />
+              ))}
+            </ul>
+          </Fragment>
+        ))}
+        <Link href={hrefPublicarAqui} className={styles.publicarAqui}>
+          Publicar un evento aquí
+        </Link>
+      </section>
+
+      <p className={ficha.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+
+      <Seguir
+        lugarId={lugar.id}
+        nombre={lugar.nombre}
+        sigo={sigo}
+        conSesion={!!actual}
+        avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
+        avisosCorreo={actual?.perfil.avisos_correo ?? false}
+        avisosPush={actual?.perfil.avisos_push ?? false}
+        correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
+        llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+      />
     </main>
   );
 }

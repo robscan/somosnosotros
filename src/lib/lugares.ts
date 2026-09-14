@@ -1,3 +1,5 @@
+import { formatearCuando } from "./fechas";
+
 export const TIPOS = [
   { valor: "casa_de_cultura", etiqueta: "Casa de cultura" },
   { valor: "foro", etiqueta: "Foro" },
@@ -28,6 +30,12 @@ export type LugarResumen = {
   portada: string | null;
 };
 
+/** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
+export type ProximoEvento = { id: string; inicio: string };
+
+/** Lo que la lista, el mapa y la tarjeta del pin enseñan de cada lugar. */
+export type LugarLista = LugarResumen & { proximo: ProximoEvento | null };
+
 export type Lugar = LugarResumen & {
   descripcion: string | null;
   ciudad: string;
@@ -35,6 +43,66 @@ export type Lugar = LugarResumen & {
   creado_por: string | null;
   visible: boolean;
 };
+
+/** Enlaces de contacto y redes del lugar, en el orden de REDES, solo los que existen. */
+export function enlacesRedes(redes: Redes | null | undefined): { clave: ClaveRed; etiqueta: string; href: string }[] {
+  return REDES.flatMap((r) => {
+    const href = enlaceRed(r.clave, redes?.[r.clave] ?? "");
+    return href ? [{ clave: r.clave, etiqueta: r.clave === "sitio" ? "Sitio" : r.etiqueta, href }] : [];
+  });
+}
+
+/** La calle sin código postal, ciudad ni estado: "C. 5 de Mayo 1100, 78000 San Luis Potosí, S.L.P." → "C. 5 de Mayo 1100". */
+export function calleCorta(direccion: string | null | undefined): string {
+  if (!direccion) return "";
+  const partes = direccion
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p && !/\b\d{5}\b/.test(p) && !/san luis potos[íi]|s\.?l\.?p\.?$|méxico$|mexico$/i.test(p));
+  return partes[0] ?? direccion.trim();
+}
+
+type Distancia = { lat: number; lng: number };
+/** Distancia en km en línea recta (haversine); la misma que usa la agenda. */
+function kmEntre(a: Distancia, b: Distancia): number {
+  const R = 6371;
+  const rad = (x: number) => (x * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/**
+ * Orden de la lista: con ubicación, por distancia (y la distancia de cada uno); sin ella, primero los que
+ * tienen eventos próximos (por fecha del próximo) y luego el resto en alfabético.
+ */
+export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distancia | null): { lista: T[]; km: Map<string, number> } {
+  const km = new Map<string, number>();
+  if (punto) {
+    for (const l of lugares) km.set(l.id, kmEntre(punto, l));
+    return { lista: [...lugares].sort((a, b) => km.get(a.id)! - km.get(b.id)!), km };
+  }
+  const lista = [...lugares].sort((a, b) => {
+    if (a.proximo && b.proximo) return a.proximo.inicio.localeCompare(b.proximo.inicio) || a.nombre.localeCompare(b.nombre, "es");
+    if (a.proximo || b.proximo) return a.proximo ? -1 : 1;
+    return a.nombre.localeCompare(b.nombre, "es");
+  });
+  return { lista, km };
+}
+
+/** "Próximo: hoy · 19:30" · "Próximo: mié 16 de sep · 19:00". */
+export function textoProximo(inicio: string, ahora: Date = new Date()): string {
+  const cuando = formatearCuando(inicio, null, ahora);
+  return `Próximo: ${cuando.charAt(0).toLowerCase()}${cuando.slice(1)}`;
+}
+
+/** Une lugares con su evento más próximo (los eventos vienen ordenados por inicio). */
+export function conProximo<T extends { id: string }>(lugares: T[], eventos: { id: string; inicio: string; lugar_id: string | null }[]): (T & { proximo: ProximoEvento | null })[] {
+  const proximo = new Map<string, ProximoEvento>();
+  for (const e of eventos) if (e.lugar_id && !proximo.has(e.lugar_id)) proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio });
+  return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null }));
+}
 
 export const LIMITES_LUGAR = { nombre: 120, descripcion: 600, direccion: 200 } as const;
 

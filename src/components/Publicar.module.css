@@ -5,6 +5,7 @@
   z-index: 21;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   min-height: var(--toque);
   padding: 0 var(--espacio-5);
   border-radius: 999px;

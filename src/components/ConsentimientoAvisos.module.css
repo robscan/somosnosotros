@@ -1,0 +1,77 @@
+/* Pregunta de avisos (dentro de una hoja): tras el primer "Voy" o al seguir un lugar */
+.consent {
+  padding-top: var(--espacio-2);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.motivo {
+  padding-right: var(--toque-min);
+  font-size: var(--letra-xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+  margin-bottom: var(--espacio-1);
+}
+.porque {
+  color: var(--texto-suave);
+  margin-bottom: var(--espacio-3);
+}
+.pregunta {
+  font-weight: 700;
+  margin: var(--espacio-2) 0;
+}
+.opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espacio-2);
+}
+.si,
+.no {
+  min-height: var(--toque);
+  padding: 0 var(--espacio-3);
+  border-radius: var(--radio);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+.si {
+  border: none;
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.no {
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  color: var(--texto);
+}
+.cortas button {
+  min-height: var(--toque-min);
+}
+.gracias {
+  display: block;
+  width: 100%;
+  min-height: var(--toque-min);
+  margin-top: var(--espacio-1);
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.hecho {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  color: var(--texto);
+}
+.hecho svg {
+  flex: none;
+  color: var(--ok);
+}
+.cambiar,
+.nota {
+  margin-top: 6px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

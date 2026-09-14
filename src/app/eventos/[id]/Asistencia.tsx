@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
+import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
+import { IconoOk } from "@/components/ui/Iconos";
+import ficha from "@/components/ui/Ficha.module.css";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
-import ConsentimientoAvisos from "./ConsentimientoAvisos";
 import styles from "./ficha.module.css";
 
 type Props = {
@@ -19,11 +21,7 @@ type Props = {
   llavePush: string;
 };
 
-const OK = (
-  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-    <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+const OK = <IconoOk width={20} height={20} />;
 
 /**
  * Barra inferior pegajosa: la única acción primaria de la ficha. Sin decisión: "Me interesa" en texto y "Voy" lleno.
@@ -52,7 +50,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
         <Link href={entrar("me_interesa")} className={styles.interesa}>
           Me interesa
         </Link>
-        <Link href={entrar("voy")} className={styles.voy}>
+        <Link href={entrar("voy")} className={ficha.primaria}>
           Voy
         </Link>
       </>
@@ -60,14 +58,14 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
   } else if (estado === "voy") {
     contenido = (
       <>
-        <span className={styles.seleccionado} aria-live="polite">
+        <span className={ficha.seleccionado} aria-live="polite">
           {OK}
           <span>
             Voy
             <small>Ya estás en la lista</small>
           </span>
         </span>
-        <button type="button" className={styles.secundario} onClick={() => cambiar(null)} disabled={pendiente}>
+        <button type="button" className={ficha.secundario} onClick={() => cambiar(null)} disabled={pendiente}>
           Cancelar
         </button>
       </>
@@ -75,14 +73,14 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
   } else if (estado === "me_interesa") {
     contenido = (
       <>
-        <span className={styles.seleccionado} aria-live="polite">
+        <span className={ficha.seleccionado} aria-live="polite">
           {OK}
           <span>
             Me interesa
             <small>Guardado en Mi perfil</small>
           </span>
         </span>
-        <button type="button" className={`${styles.voy} ${styles.voyChico}`} onClick={() => cambiar("voy")} disabled={pendiente}>
+        <button type="button" className={`${ficha.primaria} ${ficha.primariaChico}`} onClick={() => cambiar("voy")} disabled={pendiente}>
           Voy
         </button>
       </>
@@ -93,7 +91,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
         <button type="button" className={styles.interesa} onClick={() => cambiar("me_interesa")} disabled={pendiente}>
           Me interesa
         </button>
-        <button type="button" className={styles.voy} onClick={() => cambiar("voy")} disabled={pendiente}>
+        <button type="button" className={ficha.primaria} onClick={() => cambiar("voy")} disabled={pendiente}>
           Voy
         </button>
       </>
@@ -102,10 +100,10 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
 
   return (
     <>
-      <div className={`${styles.accionFija} ${estado ? styles.accionEstado : ""}`}>{contenido}</div>
+      <div className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ""}`}>{contenido}</div>
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(false)}>
-          <ConsentimientoAvisos titulo={titulo} correo={correo} llavePush={llavePush} onListo={() => setHoja(false)} />
+          <ConsentimientoAvisos contexto="voy" titulo={titulo} correo={correo} llavePush={llavePush} onListo={() => setHoja(false)} />
         </Hoja>
       )}
     </>
