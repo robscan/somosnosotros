@@ -1,6 +1,6 @@
 # OPEN_LOOPS — somosnosotros
 
-**Last updated:** 2026-09-13 — Alta de evento "una cosa a la vez" en producción (PR #10 mergeado; bitácora [010](../bitacora/2026/09/010-alta-de-evento-una-cosa-a-la-vez.md)). Falta la prueba de la Fase 3. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
+**Last updated:** 2026-09-13 — Alta de evento una cosa a la vez, con el selector nativo de fecha/hora en el chip y menos chips (PR #11 mergeado; bitácora [010](../bitacora/2026/09/010-alta-de-evento-una-cosa-a-la-vez.md)). Falta la prueba de la Fase 3. Ciudad inicial San Luis Potosí; español; publican admin + usuarios.
 
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
