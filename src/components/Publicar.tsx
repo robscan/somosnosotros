@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { IconoPinMas } from "./ui/Iconos";
+import { IconoEstrellaMas, IconoPinMas } from "./ui/Iconos";
 import styles from "./Publicar.module.css";
 
 type Props = {
-  /** Agenda y Artistas: "+ Publicar" un evento (o el primer lugar si no hay). Lugares: "Registrar lugar". */
-  que?: "evento" | "lugar";
+  /** Agenda: "+ Publicar" un evento (o el primer lugar si no hay). Lugares: "Registrar lugar". Artistas: "Registrar artista". */
+  que?: "evento" | "lugar" | "artista";
   hayLugares?: boolean;
 };
 
@@ -19,6 +19,14 @@ export default function Publicar({ que = "evento", hayLugares = true }: Props) {
       <Link href="/lugares/nuevo" className={styles.publicar} aria-label="Registrar un lugar">
         <IconoPinMas width={22} height={22} />
         Registrar lugar
+      </Link>
+    );
+  }
+  if (que === "artista") {
+    return (
+      <Link href="/artistas/nuevo" className={styles.publicar} aria-label="Registrar un artista">
+        <IconoEstrellaMas width={22} height={22} />
+        Registrar artista
       </Link>
     );
   }

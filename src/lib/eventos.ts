@@ -153,6 +153,8 @@ export type LecturaCartel = {
   precio: string | null;
   descripcion: string | null;
   enlace: string | null;
+  /** Nombres de quienes se presentan, tal como aparecen en el cartel. */
+  artistas: string[] | null;
 };
 
 /** "@usuario" → Instagram; enlace o dominio → tal cual; teléfono u otra cosa → nada (ya va en la descripción). */
@@ -165,7 +167,7 @@ export function enlaceDesdeCartel(v: string | null): string {
 }
 
 /** Convierte la lectura del cartel en valores del formulario. Lo que falta se deja vacío para que la persona lo complete. */
-export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: string; fin: string; gratis: boolean; precio: string; descripcion: string; enlace: string; lugar: string; direccion: string } {
+export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: string; fin: string; gratis: boolean; precio: string; descripcion: string; enlace: string; lugar: string; direccion: string; artistas: string[] } {
   const fechaOk = l.fecha && /^\d{4}-\d{2}-\d{2}$/.test(l.fecha) ? l.fecha : "";
   const horaOk = l.hora && /^\d{2}:\d{2}$/.test(l.hora) ? l.hora : "";
   const horaFinOk = l.hora_fin && /^\d{2}:\d{2}$/.test(l.hora_fin) ? l.hora_fin : "";
@@ -179,5 +181,6 @@ export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: s
     enlace: enlaceDesdeCartel(l.enlace),
     lugar: (l.lugar ?? "").trim(),
     direccion: (l.direccion ?? "").trim(),
+    artistas: (l.artistas ?? []).map((a) => a.trim().replace(/\s+/g, " ").slice(0, 80)).filter(Boolean).slice(0, 6),
   };
 }

@@ -22,6 +22,7 @@ const Lectura = z.object({
   precio: z.string().nullable().describe("Precio tal como aparece, ej. '$150' o '$100 estudiantes'"),
   descripcion: z.string().nullable().describe("Una o dos frases con lo que se anuncia (quiénes, qué); sin repetir título, fecha ni lugar"),
   enlace: z.string().nullable().describe("Enlace, usuario de redes o teléfono de contacto si aparece"),
+  artistas: z.array(z.string()).nullable().describe("Nombres de los artistas, grupos o compañías que se presentan, tal como aparecen; null si no se nombra a nadie"),
 });
 
 /**

@@ -78,13 +78,19 @@ function lotes<T>(lista: T[], tamano: number): T[][] {
   return out;
 }
 
-/** Nuevo evento en un lugar: aviso a quienes siguen ese lugar (menos al autor). */
+/** Nuevo evento: aviso a quienes siguen el lugar o a alguno de los artistas que se presentan (menos al autor), una vez por persona. */
 export async function avisarNuevoEvento(eventoId: string, autorId: string | null): Promise<number> {
   const admin = clienteAdmin();
   const evento = await cargarEvento(eventoId);
-  if (!admin || !evento?.lugar_id) return 0;
-  const { data } = await admin.from("seguimientos").select("usuario_id").eq("lugar_id", evento.lugar_id);
-  const usuarios = (data ?? []).map((s) => s.usuario_id as string).filter((u) => u !== autorId);
+  if (!admin || !evento) return 0;
+  const { data: ea } = await admin.from("eventos_artistas").select("artista_id").eq("evento_id", eventoId);
+  const artistas = (ea ?? []).map((r) => r.artista_id as string);
+  if (!evento.lugar_id && artistas.length === 0) return 0;
+  const [porLugar, porArtista] = await Promise.all([
+    evento.lugar_id ? admin.from("seguimientos").select("usuario_id").eq("lugar_id", evento.lugar_id) : Promise.resolve({ data: [] as { usuario_id: string }[] }),
+    artistas.length ? admin.from("seguimientos").select("usuario_id").in("artista_id", artistas) : Promise.resolve({ data: [] as { usuario_id: string }[] }),
+  ]);
+  const usuarios = [...new Set([...(porLugar.data ?? []), ...(porArtista.data ?? [])].map((s) => s.usuario_id as string))].filter((u) => u !== autorId);
   return avisar(evento, usuarios, "nuevo_evento");
 }
 

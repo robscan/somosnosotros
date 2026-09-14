@@ -114,6 +114,60 @@ export const IconoPuntos = (p: P) => (
     <circle cx="19" cy="12" r="1.8" />
   </svg>
 );
+export const IconoEstrellaMas = (p: P) => (
+  <svg {...base({ strokeWidth: 1.9, ...p })}>
+    <path d="M10 3l2.2 4.6 5 .7-3.6 3.5.9 5L10 14.4l-4.5 2.4.9-5L2.8 8.3l5-.7z" />
+    <path d="M19 13v6M16 16h6" />
+  </svg>
+);
+export const IconoNota = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M9 18V6l10-2v12" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <circle cx="16.5" cy="16" r="2.5" />
+  </svg>
+);
+export const IconoMascara = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 5c2.5 1 13.5 1 16 0v7a8 8 0 0 1-16 0z" />
+    <path d="M8.5 10.5h2M13.5 10.5h2M9 15c1.5 1.5 4.5 1.5 6 0" />
+  </svg>
+);
+export const IconoPincel = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M20 4l-9 9M11 13l-1.5 1.5a3 3 0 1 1-4-4L7 9" />
+    <path d="M4 20c2 0 3-1 3-3" />
+  </svg>
+);
+export const IconoPluma = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 20c0-8 6-14 16-16-2 10-8 16-16 16z" />
+    <path d="M4 20L14 10" />
+  </svg>
+);
+export const IconoBuscar = (p: P) => (
+  <svg {...base({ strokeWidth: 2, ...p })}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4 4" />
+  </svg>
+);
+export const IconoYouTube = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="6" width="18" height="12" rx="4" />
+    <path d="M10 9.5v5l4.5-2.5z" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const IconoSpotify = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M7.5 9.5c3-1 6.5-.8 9.5.8M8 12.5c2.5-.8 5.3-.6 7.5.6M8.5 15.3c2-.6 4-.5 5.8.4" />
+  </svg>
+);
+export const IconoMas = (p: P) => (
+  <svg {...base({ strokeWidth: 2.2, ...p })}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
 export const IconoOk = (p: P) => (
   <svg {...base({ strokeWidth: 2.2, ...p })}>
     <path d="M5 12.5l4.5 4.5L19 7.5" />

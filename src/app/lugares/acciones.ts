@@ -75,7 +75,7 @@ export async function cambiarVisible(id: string, visible: boolean) {
 /** Seguir / dejar de seguir un lugar. Un toque. */
 export async function cambiarSeguimiento(lugarId: string, seguir: boolean) {
   const { supabase, user } = await sesionOEntrar(`/lugares/${lugarId}?accion=${seguir ? "seguir" : ""}`);
-  if (seguir) await supabase.from("seguimientos").upsert({ usuario_id: user.id, lugar_id: lugarId });
+  if (seguir) await supabase.from("seguimientos").upsert({ usuario_id: user.id, lugar_id: lugarId }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true });
   else await supabase.from("seguimientos").delete().eq("usuario_id", user.id).eq("lugar_id", lugarId);
   revalidatePath(`/lugares/${lugarId}`);
   revalidatePath("/perfil");

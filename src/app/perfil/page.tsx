@@ -17,10 +17,11 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
   const supabase = await clienteServidor();
   const desde = desdeReciente();
   const [{ data: sigue }, { data: va }] = await Promise.all([
-    supabase!.from("seguimientos").select("lugar:lugares(id, nombre)").eq("usuario_id", actual.perfil.id),
+    supabase!.from("seguimientos").select("lugar:lugares(id, nombre), artista:artistas(id, nombre)").eq("usuario_id", actual.perfil.id),
     supabase!.from("asistencias").select("estado, evento:eventos(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada))").eq("usuario_id", actual.perfil.id),
   ]);
   const lugares = (sigue ?? []).map((s) => (Array.isArray(s.lugar) ? s.lugar[0] : s.lugar)).filter(Boolean) as { id: string; nombre: string }[];
+  const artistas = (sigue ?? []).map((s) => (Array.isArray(s.artista) ? s.artista[0] : s.artista)).filter(Boolean) as { id: string; nombre: string }[];
   const porEstado = (estado: "voy" | "me_interesa") =>
     (va ?? [])
       .filter((a) => a.estado === estado)
@@ -71,13 +72,18 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
       )}
       <section className={styles.seccion} aria-label="Lugares que sigo">
         <h2 className={styles.tituloSeccion}>Sigo</h2>
-        {lugares.length === 0 ? (
-          <p className={styles.vacio}>Todavía no sigues ningún lugar. En la ficha de un lugar, toca “Seguir” y te avisamos de sus eventos.</p>
+        {lugares.length === 0 && artistas.length === 0 ? (
+          <p className={styles.vacio}>Todavía no sigues ningún lugar ni artista. En su ficha, toca “Seguir” y te avisamos de sus eventos.</p>
         ) : (
           <ul className={styles.lista}>
             {lugares.map((l) => (
               <li key={l.id}>
-                <Tarjeta href={`/lugares/${l.id}`} titulo={l.nombre} />
+                <Tarjeta href={`/lugares/${l.id}`} titulo={l.nombre} detalle="Lugar" />
+              </li>
+            ))}
+            {artistas.map((a) => (
+              <li key={a.id}>
+                <Tarjeta href={`/artistas/${a.id}`} titulo={a.nombre} detalle="Artista" />
               </li>
             ))}
           </ul>

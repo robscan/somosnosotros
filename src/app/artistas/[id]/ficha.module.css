@@ -1,0 +1,62 @@
+/* ==========================================================================
+   Ficha de artista (docs/rediseno/08-artistas-flujo-y-estados.md). Lo común con las otras fichas
+   (página, datos, acciones, autor, barra pegajosa, menú, publicado) está en components/ui/Ficha.module.css.
+   1. Nota al autor · 2. Se presenta en
+   ========================================================================== */
+
+/* 1. Al autor, cuando la ficha está por completar */
+.nota {
+  margin-bottom: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+
+/* 2. Se presenta en: como la agenda, por día, con el sitio; publicar una fecha va al final */
+.fechas {
+  margin-bottom: var(--espacio-5);
+  scroll-margin-top: var(--espacio-3);
+}
+.fechas h2 {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 12px 0 6px;
+  background: var(--fondo);
+  border-bottom: 1px solid var(--texto);
+  font-size: var(--letra-xl);
+}
+.fechas h2 span {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+.fechas h3 {
+  padding: 12px 0 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+}
+.fechas ul {
+  list-style: none;
+}
+.vacio {
+  padding: var(--espacio-3) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.publicarFecha {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--toque);
+  margin-top: var(--espacio-3);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--texto);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}

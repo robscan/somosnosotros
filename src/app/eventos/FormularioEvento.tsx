@@ -6,6 +6,8 @@ import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Seccion from "@/components/ui/Seccion";
+import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
+import { unirNombres } from "@/lib/artistas";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
 import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
@@ -13,10 +15,12 @@ import { clienteNavegador } from "@/lib/supabase/navegador";
 import { reducirImagen } from "@/lib/imagen";
 import { leerCartelAccion, type ResultadoEvento } from "./acciones";
 import SelectorCuando from "./SelectorCuando";
+import SelectorQuien from "./SelectorQuien";
+import seccion from "@/components/ui/Seccion.module.css";
 import styles from "./FormularioEvento.module.css";
 
 type Punto = { lat: number; lng: number };
-type Seccion = "donde" | "cuando" | "cuanto" | null;
+type Seccion = "donde" | "cuando" | "quien" | "cuanto" | null;
 type Props = {
   accion: (previo: ResultadoEvento | null, formData: FormData) => Promise<ResultadoEvento>;
   lugares: LugarResumen[];
@@ -26,6 +30,10 @@ type Props = {
   modo: "alta" | "editar" | "duplicar";
   usuarioId: string;
   cartelActivo?: boolean;
+  /** Quién se presenta, ya resuelto: al editar o duplicar, o al venir de la ficha de un artista. */
+  quienInicial?: QuienItem[];
+  /** Artistas ligados a mi cuenta: si es uno solo, Quién ya viene resuelto con él (decisión 12). */
+  mios?: ArtistaResumen[];
 };
 
 /**
@@ -33,7 +41,7 @@ type Props = {
  * que se abren solo para cambiarlos. Cartel, foto, descripción y enlace van en "Más detalles".
  * Si al publicar falta algo, se abre solo el renglón que lo necesita.
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, modo, usuarioId, cartelActivo = false }: Props) {
+export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, modo, usuarioId, cartelActivo = false, quienInicial, mios = [] }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
 
@@ -64,6 +72,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [leyendo, setLeyendo] = useState(false);
   const [avisoCartel, setAvisoCartel] = useState<string | null>(null);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
+  const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (modo === "alta" && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
   const [masDetalles, setMasDetalles] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
   const [seccionElegida, setSeccionElegida] = useState<Seccion | undefined>(undefined);
 
@@ -82,6 +91,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const inicioIso = localAIso(inicio);
   const resumenCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin) : null) : "Elige cuándo";
   const resumenCuanto = gratis ? "Gratis" : precio || "Con costo";
+  const resumenQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : <span className={seccion.pendiente}>Añadir quién se presenta</span>;
 
   async function subir(archivo: File): Promise<string | null> {
     const supabase = clienteNavegador();
@@ -133,6 +143,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       setPrecio(v.precio);
       if (v.descripcion) setDescripcion(v.descripcion);
       if (v.enlace) setEnlace(v.enlace);
+      if (r.quien.length) setQuien(r.quien);
       if (r.lugarId) {
         setModoSitio("lugar");
         setLugarId(r.lugarId);
@@ -259,6 +270,12 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           </>
         )}
       </Seccion>
+
+      {/* Quién: opcional, no detiene la publicación (Artistas, decisión 12) */}
+      <Seccion titulo="Quién" resumen={resumenQuien} abierta={abierta === "quien"} onAbrir={() => abrir("quien")} accion={quien.length ? "Cambiar" : "Añadir"}>
+        <SelectorQuien valor={quien} onCambio={setQuien} mios={mios} />
+      </Seccion>
+      <input type="hidden" name="quien" value={JSON.stringify(quien)} />
 
       {/* Cuánto */}
       <Seccion titulo="Cuánto" resumen={resumenCuanto} abierta={abierta === "cuanto"} onAbrir={() => abrir("cuanto")} error={errorCuanto}>

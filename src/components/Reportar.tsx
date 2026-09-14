@@ -6,7 +6,9 @@ import { MOTIVOS } from "@/lib/reportes";
 import { reportar, type ResultadoReporte } from "@/app/reportes";
 import styles from "./Reportar.module.css";
 
-type Props = { tipo: "lugar" | "evento" | "perfil"; objetoId: string; volver: string; conSesion: boolean };
+import type { TipoReportado } from "@/lib/reportes";
+
+type Props = { tipo: TipoReportado; objetoId: string; volver: string; conSesion: boolean };
 
 /** Un enlace discreto "Reportar"; al tocarlo, motivo y un renglón opcional. El admin lo revisa. */
 export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {

@@ -9,7 +9,7 @@ import Desplegable from "@/components/Desplegable";
 import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendario, IconoCompartir, IconoFacebook, IconoInstagram, IconoPersonas, IconoPin, IconoRuta, IconoSitio, IconoWhatsApp } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCompartir, IconoFacebook, IconoInstagram, IconoPersonas, IconoPin, IconoRuta, IconoSitio, IconoSpotify, IconoWhatsApp, IconoYouTube } from "@/components/ui/Iconos";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
@@ -17,15 +17,15 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { desdeReciente } from "@/lib/fechas";
 import { enlacesRedes, etiquetaTipo, textoProximo, type ClaveRed, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { borrarLugar, cambiarVisible } from "../acciones";
-import Seguir from "./Seguir";
+import Seguir from "@/components/Seguir";
+import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
 import styles from "./ficha.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string; borrado?: string }> };
 type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
-const ICONO_RED: Record<ClaveRed, React.ReactNode> = { instagram: <IconoInstagram />, facebook: <IconoFacebook />, whatsapp: <IconoWhatsApp />, sitio: <IconoSitio /> };
+const ICONO_RED: Record<ClaveRed, React.ReactNode> = { instagram: <IconoInstagram />, facebook: <IconoFacebook />, youtube: <IconoYouTube />, spotify: <IconoSpotify />, whatsapp: <IconoWhatsApp />, sitio: <IconoSitio /> };
 
 async function cargarLugar(id: string): Promise<LugarConAutor | null> {
   const supabase = await clienteServidor();
@@ -80,7 +80,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const supabase = await clienteServidor();
   // Venía de entrar con la intención de seguir: se aplica sola.
   if (actual && accion === "seguir") {
-    await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id });
+    await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true });
     redirect(`/lugares/${lugar.id}`);
   }
   const [eventos, { data: seguimientos }] = await Promise.all([cargarEventos(lugar), (supabase?.from("seguimientos").select("usuario_id").eq("lugar_id", id) ?? Promise.resolve({ data: [] })) as Promise<{ data: { usuario_id: string }[] | null }>]);
@@ -237,10 +237,12 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       <p className={ficha.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
 
       <Seguir
-        lugarId={lugar.id}
+        que="lugar"
         nombre={lugar.nombre}
         sigo={sigo}
         conSesion={!!actual}
+        accion={cambiarSeguimiento.bind(null, lugar.id)}
+        hrefEntrar={`/lugares/${lugar.id}?accion=seguir`}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
         avisosCorreo={actual?.perfil.avisos_correo ?? false}
         avisosPush={actual?.perfil.avisos_push ?? false}

@@ -6,15 +6,23 @@ export const MOTIVOS = [
   { valor: "otro", etiqueta: "Otra cosa" },
 ] as const;
 export type Motivo = (typeof MOTIVOS)[number]["valor"];
-export type TipoReportado = "lugar" | "evento" | "perfil";
+export type TipoReportado = "lugar" | "evento" | "perfil" | "artista";
+export const TIPOS_REPORTADOS: TipoReportado[] = ["lugar", "evento", "perfil", "artista"];
+
+/** "Es mi nombre" (ficha de artista): no salen en el formulario de reportar; los escribe su propia acción. */
+export const MOTIVOS_RECLAMO = [
+  { valor: "es_mio", etiqueta: "Es su nombre y quiere editar la ficha" },
+  { valor: "retirar", etiqueta: "Es su nombre y pide que se quite" },
+] as const;
+export type MotivoReclamo = (typeof MOTIVOS_RECLAMO)[number]["valor"];
 
 export function etiquetaMotivo(m: string): string {
-  return MOTIVOS.find((x) => x.valor === m)?.etiqueta ?? m;
+  return MOTIVOS.find((x) => x.valor === m)?.etiqueta ?? MOTIVOS_RECLAMO.find((x) => x.valor === m)?.etiqueta ?? m;
 }
 
 export function validarReporte(entrada: { tipo?: string; objeto_id?: string; motivo?: string; detalle?: string }): { ok: true; datos: { tipo: TipoReportado; objeto_id: string; motivo: Motivo; detalle: string | null } } | { ok: false; error: string } {
   const tipo = entrada.tipo as TipoReportado;
-  if (!["lugar", "evento", "perfil"].includes(tipo)) return { ok: false, error: "Tipo desconocido." };
+  if (!TIPOS_REPORTADOS.includes(tipo)) return { ok: false, error: "Tipo desconocido." };
   if (!/^[0-9a-f-]{36}$/.test(entrada.objeto_id ?? "")) return { ok: false, error: "No sé qué reportar." };
   if (!MOTIVOS.some((m) => m.valor === entrada.motivo)) return { ok: false, error: "Elige un motivo." };
   const detalle = (entrada.detalle ?? "").trim().replace(/\s+/g, " ");

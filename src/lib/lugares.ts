@@ -10,9 +10,12 @@ export const TIPOS = [
 ] as const;
 export type Tipo = (typeof TIPOS)[number]["valor"];
 
+/** Redes de lugares y artistas, en el orden de la fila de acciones. YouTube y Spotify llegaron con Artistas (decisión 7). */
 export const REDES = [
   { clave: "instagram", etiqueta: "Instagram", ayuda: "usuario o enlace" },
   { clave: "facebook", etiqueta: "Facebook", ayuda: "página o enlace" },
+  { clave: "youtube", etiqueta: "YouTube", ayuda: "canal (@usuario) o enlace" },
+  { clave: "spotify", etiqueta: "Spotify", ayuda: "enlace del artista" },
   { clave: "whatsapp", etiqueta: "WhatsApp", ayuda: "número con lada, ej. 444 123 4567" },
   { clave: "sitio", etiqueta: "Sitio web", ayuda: "enlace" },
 ] as const;
@@ -157,6 +160,10 @@ export function enlaceRed(clave: ClaveRed, valor: string): string | null {
       const digitos = v.replace(/\D/g, "");
       return digitos ? `https://wa.me/${digitos.length === 10 ? "52" + digitos : digitos}` : null;
     }
+    case "youtube":
+      return `https://youtube.com/${v.replace(/^youtube\.com\//, "").replace(/^(?!@)/, "@")}`;
+    case "spotify":
+      return `https://open.spotify.com/search/${encodeURIComponent(v)}`;
     case "sitio":
       return `https://${v}`;
   }
