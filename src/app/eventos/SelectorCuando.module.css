@@ -1,5 +1,5 @@
 .selector {
-  margin-bottom: var(--espacio-4);
+  position: relative;
 }
 .etiqueta {
   font-weight: 600;
@@ -68,4 +68,23 @@
 .nota {
   font-weight: 400;
   color: var(--texto-suave);
+}
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.etiquetaChips {
+  flex: none;
+  align-self: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-suave);
+  margin-right: var(--espacio-1);
+}
+.pasado {
+  color: var(--error);
+  font-weight: 400;
 }
