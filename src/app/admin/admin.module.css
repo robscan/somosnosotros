@@ -45,7 +45,7 @@
   padding: 0 var(--espacio-2);
   border: none;
   background: none;
-  color: var(--acento);
+  color: var(--primario);
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;

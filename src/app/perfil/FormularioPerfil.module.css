@@ -73,7 +73,7 @@
   height: 22px;
   flex: none;
   margin-top: 2px;
-  accent-color: var(--acento);
+  accent-color: var(--primario);
 }
 .push {
   margin: 0 0 var(--espacio-4);
@@ -86,7 +86,7 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  color: var(--acento);
+  color: var(--primario);
   font-size: var(--letra-md);
   font-weight: 600;
   cursor: pointer;
@@ -98,7 +98,7 @@
 .pushEnlace {
   border: none;
   background: none;
-  color: var(--acento);
+  color: var(--primario);
   font-size: var(--letra-sm);
   text-decoration: underline;
   cursor: pointer;

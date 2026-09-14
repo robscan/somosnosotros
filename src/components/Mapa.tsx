@@ -26,7 +26,7 @@ type Props = {
   presentacion?: "pantalla" | "caja";
 };
 
-const COLOR_PIN = "#b3261e"; // = var(--acento); Mapbox pide el color literal
+const COLOR_PIN = "#1a1a1a"; // = var(--primario); Mapbox pide el color literal
 
 /**
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").

@@ -1,0 +1,37 @@
+.fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.32);
+}
+.hoja {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: calc(100% - 48px);
+  overflow-y: auto;
+  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+  background: var(--fondo);
+  box-shadow: var(--sombra-panel);
+}
+.asa {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto var(--espacio-3);
+  border-radius: 2px;
+  background: var(--asa);
+}
+.cerrar {
+  position: absolute;
+  top: var(--espacio-2);
+  right: var(--espacio-2);
+  min-width: var(--toque-min);
+  min-height: var(--toque-min);
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-xl);
+  cursor: pointer;
+}

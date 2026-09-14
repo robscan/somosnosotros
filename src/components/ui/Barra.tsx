@@ -4,9 +4,9 @@ import Logotipo from "./Logotipo";
 import styles from "./Barra.module.css";
 
 type Props = {
-  /** Pantalla interior: regreso a la izquierda y logotipo al centro (nada a la derecha). */
+  /** Pantalla interior: regreso a la izquierda y logotipo al centro. */
   volver?: { href: string; texto: string };
-  /** Pantalla raíz: logotipo a la izquierda y esto a la derecha (la sesión). */
+  /** A la derecha: en raíz, la sesión; en interior, solo un menú "···" cuando hay algo que poner. */
   derecha?: ReactNode;
 };
 
@@ -22,7 +22,7 @@ export default function Barra({ volver, derecha }: Props) {
           ← {volver.texto}
         </Link>
         <Logotipo />
-        <span className={styles.hueco} aria-hidden="true" />
+        <div className={styles.derecha}>{derecha}</div>
       </header>
     );
   }

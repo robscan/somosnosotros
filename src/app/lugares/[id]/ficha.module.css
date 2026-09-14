@@ -21,7 +21,7 @@
   padding: 0 var(--espacio-5);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  color: var(--acento);
+  color: var(--primario);
   font-weight: 600;
   text-decoration: none;
 }
@@ -84,8 +84,8 @@
   min-height: var(--toque);
   padding: 0 var(--espacio-5);
   border-radius: var(--radio);
-  background: var(--acento);
-  color: var(--acento-texto);
+  background: var(--primario);
+  color: var(--primario-texto);
   font-weight: 700;
   text-decoration: none;
 }
@@ -126,7 +126,7 @@
 .eventoCuando {
   font-size: var(--letra-xs);
   font-weight: 600;
-  color: var(--acento);
+  color: var(--primario);
 }
 .eventoPrecio {
   font-size: var(--letra-sm);
@@ -145,9 +145,9 @@
   min-height: var(--toque);
   padding: 0 var(--espacio-5);
   border-radius: var(--radio);
-  border: 1px solid var(--acento);
-  background: var(--acento);
-  color: var(--acento-texto);
+  border: 1px solid var(--primario);
+  background: var(--primario);
+  color: var(--primario-texto);
   font-size: var(--letra-lg);
   font-weight: 600;
   text-decoration: none;

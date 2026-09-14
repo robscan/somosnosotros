@@ -5,7 +5,7 @@
   overflow: hidden;
 }
 .abierta {
-  border-color: var(--acento);
+  border-color: var(--primario);
 }
 .conError {
   border-color: var(--error);
@@ -39,7 +39,7 @@
 }
 .cambiar {
   font-size: var(--letra-sm);
-  color: var(--acento);
+  color: var(--primario);
   font-weight: 600;
 }
 .contenido {

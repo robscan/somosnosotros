@@ -1,18 +1,20 @@
 import Link from "next/link";
-import Barra from "@/components/ui/Barra";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
+import Barra from "@/components/ui/Barra";
+import { IconoBoleto, IconoCalendario, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
+import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { enmascararCorreo } from "@/lib/comunidad";
 import { nombreSitio, textoCompartir } from "@/lib/eventos";
 import { formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
-import Borrar from "@/components/Borrar";
-import type { Asistente } from "@/lib/comunidad";
 import Asistencia from "./Asistencia";
-import Reportar from "@/components/Reportar";
 import BotonCompartir from "./BotonCompartir";
+import Cartel from "./Cartel";
+import Desplegable from "./Desplegable";
+import MenuFicha from "./MenuFicha";
+import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
@@ -50,6 +52,8 @@ async function cargarAsistencias(id: string, miId: string | null): Promise<{ van
     if (f.estado === "voy" && perfil) van.push({ id: perfil.id, nombre: perfil.nombre, foto: perfil.foto });
     else if (f.estado === "me_interesa") interesados++;
   }
+  // Yo al frente de la lista: es la evidencia de que el "Voy" quedó.
+  if (miId) van.sort((a, b) => (a.id === miId ? -1 : b.id === miId ? 1 : 0));
   return { van, interesados, miEstado };
 }
 
@@ -77,13 +81,31 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+const ICONO_COMPARTIR = (
+  <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+    <path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+  </svg>
+);
+const ICONO_RUTA = (
+  <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+    <path d="M12 3l9 9-9 9-9-9z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    <path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const ICONO_CANDADO = (
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+  </svg>
+);
+
 export default async function FichaEvento({ params, searchParams }: Params) {
   const { id } = await params;
   const { nuevo, accion, error } = (await searchParams) ?? {};
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
-  // Venía de entrar con la intención de decir "Voy" / "Me interesa": se aplica sola
-  // (directo en la base, sin revalidar: la URL limpia ya se genera fresca).
+  // Venía de entrar con la intención de decir "Voy" / "Me interesa": se aplica sola.
   if (actual && (accion === "voy" || accion === "me_interesa")) {
     const supabase = await clienteServidor();
     await supabase?.from("asistencias").upsert({ usuario_id: actual.perfil.id, evento_id: e.id, estado: accion });
@@ -95,19 +117,27 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
   const url = `${ORIGEN}/eventos/${e.id}`;
-  const cuando = formatearCuando(e.inicio, e.fin);
-  const texto = textoCompartir(e.titulo, cuando, sitio, url);
+  const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin), sitio, url).replace(`\n${url}`, "");
   const puntoLlegar = e.lugar ? { lat: e.lugar.lat, lng: e.lugar.lng } : privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : e.sitio_lat != null && e.sitio_lng != null ? { lat: e.sitio_lat, lng: e.sitio_lng } : null;
-  const comoLlegar = puntoLlegar ? `https://www.google.com/maps/dir/?api=1&destination=${puntoLlegar.lat},${puntoLlegar.lng}` : null;
+  const comoLlegar = puntoLlegar && !(e.sitio_reservado && !privado) ? `https://www.google.com/maps/dir/?api=1&destination=${puntoLlegar.lat},${puntoLlegar.lng}` : null;
+  const n = asistencias.van.length;
+  const avisoBorrar = n > 0 ? `Se borra el evento y los ${n === 1 ? '1 "Voy"' : `${n} "Voy"`} que tiene.` : "Se borra el evento.";
+  const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde) : "el día del evento";
 
   return (
-    <main className="pagina">
-      <Barra volver={{ href: "/", texto: "Agenda" }} />
+    <main className={styles.pagina}>
+      <Barra
+        volver={{ href: "/", texto: "Agenda" }}
+        derecha={<MenuFicha eventoId={e.id} conSesion={!!actual} puedeEditar={puedeEditar} esAdmin={!!esAdmin} visible={e.visible} avisoBorrar={avisoBorrar} cambiarVisible={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)} borrar={borrarEvento.bind(null, e.id, e.lugar_id)} />}
+      />
       {nuevo === "1" && (
         <div className={styles.publicado} role="status">
-          <p>
-            <strong>Publicado.</strong> Ya está en la agenda. Compártelo para que la gente se entere.
-          </p>
+          <div>
+            <b>Publicado.</b>Ya está en la agenda.
+          </div>
+          <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={styles.publicadoBoton}>
+            Compartir
+          </BotonCompartir>
         </div>
       )}
       {error === "borrar" && (
@@ -116,104 +146,109 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         </p>
       )}
       {!e.visible && (
-        <p className="aviso-error" role="status">
+        <p className={`aviso-error ${styles.oculto}`} role="status">
           Este evento está oculto: solo lo ven su autor y el administrador.
         </p>
       )}
-      {e.imagen && (
-        // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-        <img src={e.imagen} alt="" className={styles.imagen} />
-      )}
-      <h1 className="titulo">{e.titulo}</h1>
-      <p className={styles.cuando}>{formatearLargo(e.inicio)}{e.fin ? ` · hasta ${formatearCuando(e.fin).split(" · ")[1] ?? ""}` : ""}</p>
-      <p className={styles.precio}>{e.precio ?? "Gratis"}</p>
-      {e.lugar && (
-        <p className={styles.donde}>
-          <Link href={`/lugares/${e.lugar.id}`}>{e.lugar.nombre}</Link>
-          {e.lugar.direccion ? <span className={styles.direccion}>{e.lugar.direccion}</span> : null}
-        </p>
-      )}
-      {!e.lugar && e.sitio_texto && !e.sitio_reservado && (
-        <p className={styles.donde}>
-          <strong>{e.sitio_texto}</strong>
-        </p>
-      )}
-      {e.sitio_reservado && (
-        <div className={styles.reservado}>
-          <p className={styles.donde}>
-            <strong>{e.sitio_texto}</strong>
-            <span className={styles.direccion}>Sitio reservado</span>
-          </p>
-          {privado ? (
-            <p className={styles.privado}>
-              {privado.direccion}
-              {privado.indicaciones ? <span className={styles.direccion}>{privado.indicaciones}</span> : null}
-            </p>
-          ) : actual ? (
-            <p className={styles.nota}>La dirección exacta se revela aquí el {e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde) : "día del evento"}. Vuelve entonces.</p>
-          ) : (
-            <p className={styles.nota}>
-              La dirección exacta se revela a las personas registradas{e.sitio_revelar_desde ? ` el ${formatearLargo(e.sitio_revelar_desde)}` : ""}.{" "}
-              <Link href={`/entrar?siguiente=${encodeURIComponent(`/eventos/${e.id}`)}`}>Entra</Link> para verla cuando toque.
-            </p>
+
+      {e.imagen && <Cartel src={e.imagen} titulo={e.titulo} />}
+      <h1 className={styles.titulo}>{e.titulo}</h1>
+
+      <ul className={styles.datos}>
+        <li className={styles.dato}>
+          <IconoReloj width={20} height={20} />
+          <b>{formatearLargo(e.inicio, new Date(), e.fin)}</b>
+        </li>
+        {e.lugar && (
+          <li className={styles.dato}>
+            <IconoPin width={20} height={20} />
+            <b>
+              <Link href={`/lugares/${e.lugar.id}`}>{e.lugar.nombre}</Link>
+            </b>
+            {e.lugar.direccion && <small>{e.lugar.direccion}</small>}
+          </li>
+        )}
+        {!e.lugar && e.sitio_texto && !e.sitio_reservado && (
+          <li className={styles.dato}>
+            <IconoPin width={20} height={20} />
+            <b>{e.sitio_texto}</b>
+          </li>
+        )}
+        {e.sitio_reservado && (
+          <li className={styles.dato}>
+            {privado ? <IconoPin width={20} height={20} /> : ICONO_CANDADO}
+            <b>{privado ? privado.direccion : `${e.sitio_texto} · sitio reservado`}</b>
+            {privado ? (
+              privado.indicaciones && <small>{privado.indicaciones}</small>
+            ) : actual ? (
+              <small>La dirección se revela aquí {e.sitio_revelar_desde ? `el ${revela}` : revela}.</small>
+            ) : (
+              <small>Entra para ver la dirección cuando toque.</small>
+            )}
+            {!privado && !actual && (
+              <Link href={`/entrar?siguiente=${encodeURIComponent(`/eventos/${e.id}`)}`} className={styles.datoEnlace}>
+                Entrar
+              </Link>
+            )}
+          </li>
+        )}
+        <li className={styles.dato}>
+          <IconoPersonas width={20} height={20} />
+          <b>{n === 0 ? "Nadie ha dicho que va todavía" : n === 1 ? "Va 1 persona" : `Van ${n} personas`}</b>
+          {n > 0 && (
+            <a href="#quien-va" className={styles.datoEnlace}>
+              ver
+            </a>
           )}
-        </div>
-      )}
+        </li>
+        <li className={styles.dato}>
+          <IconoBoleto width={20} height={20} />
+          <b>{e.precio ?? "Gratis"}</b>
+        </li>
+      </ul>
 
       <div className={styles.acciones}>
-        <BotonCompartir titulo={e.titulo} texto={texto.replace(`\n${url}`, "")} url={url} />
-        <a href={`/eventos/${e.id}/calendario`} className={styles.botonEnlace}>
-          Agregar a mi calendario
+        <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={styles.accion}>
+          {ICONO_COMPARTIR}
+          Compartir
+        </BotonCompartir>
+        <a href={`/eventos/${e.id}/calendario`} className={styles.accion}>
+          <IconoCalendario width={24} height={24} />
+          Calendario
         </a>
-        {comoLlegar && (
-          <a href={comoLlegar} className={styles.botonEnlace} target="_blank" rel="noopener noreferrer">
+        {comoLlegar ? (
+          <a href={comoLlegar} className={styles.accion} target="_blank" rel="noopener noreferrer">
+            {ICONO_RUTA}
             Cómo llegar
           </a>
-        )}
-        {e.enlace && (
-          <a href={e.enlace} className={styles.botonEnlace} target="_blank" rel="noopener noreferrer">
-            Más información
-          </a>
+        ) : (
+          <span className={styles.accion} aria-disabled="true">
+            {ICONO_RUTA}
+            Cómo llegar
+          </span>
         )}
       </div>
+
+      {e.descripcion && <Desplegable texto={e.descripcion} />}
+      {e.enlace && (
+        <a href={e.enlace} className={styles.enlaceExterno} target="_blank" rel="noopener noreferrer">
+          Más información en la página del evento →
+        </a>
+      )}
+
+      <QuienVa van={asistencias.van} interesados={asistencias.interesados} conSesion={!!actual} />
+
+      <p className={styles.autor}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}.</p>
 
       <Asistencia
         eventoId={e.id}
         titulo={e.titulo}
         miEstado={asistencias.miEstado}
         conSesion={!!actual}
-        van={asistencias.van}
-        interesados={asistencias.interesados}
-        yo={actual ? { id: actual.perfil.id, nombre: actual.perfil.nombre, foto: actual.perfil.foto } : null}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
         correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
         llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />
-
-      {e.descripcion && <p className={styles.descripcion}>{e.descripcion}</p>}
-
-      <div className={styles.autor}>
-        Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}. <Reportar tipo="evento" objetoId={e.id} volver={`/eventos/${e.id}`} conSesion={!!actual} />
-      </div>
-
-      {puedeEditar && (
-        <div className={styles.gestion}>
-          <Link href={`/eventos/${e.id}/editar`} className={styles.botonEnlace}>
-            Editar
-          </Link>
-          <Link href={`/eventos/nuevo?desde=${e.id}`} className={styles.botonEnlace}>
-            Duplicar con otra fecha
-          </Link>
-          {esAdmin && (
-            <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>
-              <button type="submit" className={styles.botonSuave}>
-                {e.visible ? "Ocultar de la agenda" : "Volver a mostrar"}
-              </button>
-            </form>
-          )}
-          <Borrar que="el evento" aviso={asistencias.van.length > 0 ? `Se borra el evento y los ${asistencias.van.length === 1 ? "1 \"Voy\"" : `${asistencias.van.length} "Voy"`} que tiene.` : "Se borra el evento."} accion={borrarEvento.bind(null, e.id, e.lugar_id)} />
-        </div>
-      )}
     </main>
   );
 }

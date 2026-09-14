@@ -1,0 +1,381 @@
+<title>Somos Nosotros · Ficha de evento v1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* ==========================================================================
+     1. Tokens (los de globals.css; el color primario se conmuta desde la utilería)
+     ========================================================================== */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6;
+    --estudio-texto: #3b3a37;
+    --estudio-suave: #8a8883;
+    --panel: #1f2933;
+    --panel-texto: #e6e9ee;
+    --panel-suave: #9aa5b1;
+    --panel-borde: #34424f;
+
+    --fondo: #ffffff;
+    --fondo-contenido: #f6f5f1;
+    --fondo-suave: #f4f4f2;
+    --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a;
+    --texto-suave: #5c5c5c;
+    --borde: #dcdcd8;
+    --error: #b3261e;
+    --ok: #1f6f43;
+    --primario: #1a1a1a; /* tinta: decidido por el founder */
+    --primario-texto: #ffffff;
+    --primario-suave: #ededeb; /* fondo del estado seleccionado */
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75;
+    --ancho-texto: "wdth" 80;
+    --toque: 48px;
+    --toque-min: 44px;
+    --gutter: 20px;
+    --alto-estado: 48px;
+    --alto-barra: 56px;
+    --alto-accion: 72px; /* barra inferior pegajosa con Voy */
+    --area-segura: 34px;
+  }
+  .telefono[data-color="morado"] { --primario: #5b2d90; --primario-suave: #efe9f6; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+  }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  /* ==========================================================================
+     2. Base y estudio
+     ========================================================================== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
+  button, input, select { font: inherit; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+
+  /* ==========================================================================
+     3. El teléfono
+     ========================================================================== */
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: calc(var(--alto-accion) + var(--area-segura)); }
+
+  /* Barra interior: regreso · logotipo · compartir y menú (única excepción del shell) */
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); padding: 4px var(--gutter); background: var(--fondo); }
+  .volver { display: inline-flex; align-items: center; min-height: var(--toque-min); color: var(--texto-suave); text-decoration: none; font-size: 17px; }
+  .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; }
+  .barra-acciones { display: flex; justify-content: flex-end; gap: 2px; }
+  .icono-barra { display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto); cursor: pointer; border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+  .icono-barra svg { width: 24px; height: 24px; }
+  .icono-barra:active { background: var(--fondo-suave); }
+
+  /* ==========================================================================
+     4. Contenido de la ficha
+     ========================================================================== */
+  .contenido { padding: 0 var(--gutter); }
+  .publicado { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; margin: 8px 0 16px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo-suave); font-size: 15px; }
+  .publicado b { display: block; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .publicado button { min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--texto); border-radius: 10px; background: var(--fondo); color: var(--texto); font-weight: 700; cursor: pointer; }
+  /* Cartel: banda a ancho completo, baja (220 px), con el cartel entero dentro sin recorte; toque para verlo grande. */
+  .banda { position: relative; width: 100%; height: 220px; margin: 4px 0 14px; border-radius: 12px; overflow: hidden; cursor: zoom-in; }
+  /* El cartel llena la banda (cover): se recorta arriba y abajo; el toque lo enseña entero. */
+  .banda .cartel-lienzo { position: absolute; left: 50%; top: 50%; width: 100%; height: auto; aspect-ratio: 3 / 4; transform: translate(-50%, -50%); font-size: 15px; }
+  .cartel-lienzo { background: linear-gradient(160deg, #e9e2cf, #c9b8a3 60%, #8f7b63); display: grid; place-items: center; color: #4a3d2f; font-size: 9px; font-weight: 600; text-align: center; padding: 8px; }
+  .cartel-lienzo span { display: block; font-size: 34px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1; margin-bottom: 4px; }
+  .lupa { position: absolute; right: 8px; bottom: 8px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.92); color: var(--texto); }
+  .lupa svg { width: 18px; height: 18px; }
+  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; margin-bottom: 10px; }
+
+  .datos { list-style: none; display: grid; gap: 2px; margin-bottom: 16px; }
+  .dato { display: grid; grid-template-columns: 22px 1fr auto; column-gap: 10px; align-items: center; min-height: 40px; font-size: 17px; }
+  .dato svg { width: 20px; height: 20px; color: var(--texto-suave); }
+  .dato b { font-weight: 500; }
+  .dato small { display: block; color: var(--texto-suave); font-size: 15px; }
+  .dato a { color: var(--texto); }
+  .dato .candado { color: var(--texto-suave); }
+  .dato button { border: none; background: none; color: var(--texto-suave); font-size: 15px; text-decoration: underline; cursor: pointer; }
+
+  /* Acciones secundarias: botones de icono con etiqueta, iguales, sin color de acción */
+  .acciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  .accion { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 60px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); color: var(--texto); font-size: 13px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .accion svg { width: 24px; height: 24px; }
+  .accion:active { background: var(--fondo-suave); }
+
+  .descripcion { color: var(--texto); font-size: 17px; line-height: 1.45; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .descripcion.abierta { display: block; }
+  .mas { border: none; background: none; color: var(--texto-suave); font-size: 15px; text-decoration: underline; cursor: pointer; margin-bottom: 20px; min-height: 32px; }
+  .enlace-externo { display: block; margin-bottom: 20px; color: var(--texto); font-size: 15px; }
+
+  .quienva { margin-bottom: 20px; padding-top: 16px; border-top: 1px solid var(--borde); }
+  .quienva h2 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 8px; }
+  .resumen { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; width: 100%; min-height: var(--toque-min); border: none; background: none; text-align: left; color: var(--texto); font-size: 17px; cursor: pointer; }
+  .pila { display: flex; }
+  .pila span { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--fondo); margin-left: -8px; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #fff; background: #8a6f5a; }
+  .pila span:first-child { margin-left: 0; }
+  .pila span:nth-child(2) { background: #4d6a5c; }
+  .pila span:nth-child(3) { background: #4a5d7a; }
+  .pila span:nth-child(4) { background: #7a3f3f; }
+  .resumen svg { width: 18px; height: 18px; color: var(--texto-suave); transition: transform 200ms; }
+  .resumen[aria-expanded="true"] svg { transform: rotate(180deg); }
+  .lista-van { list-style: none; display: grid; gap: 4px; margin-top: 8px; }
+  .lista-van li { display: flex; align-items: center; gap: 10px; min-height: var(--toque-min); font-size: 17px; }
+  .lista-van .av { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #fff; background: #8a6f5a; }
+  .interes { color: var(--texto-suave); font-size: 15px; margin-top: 6px; }
+  .nadie { color: var(--texto-suave); font-size: 15px; }
+  .autor { color: var(--texto-suave); font-size: 15px; padding: 12px 0 24px; border-top: 1px solid var(--borde); }
+  .autor a { color: var(--texto); }
+
+  /* ==========================================================================
+     5. Barra inferior pegajosa: la única acción primaria
+     ========================================================================== */
+  .accion-fija { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; height: calc(var(--alto-accion) + var(--area-segura)); padding: 0 var(--gutter) var(--area-segura); background: var(--fondo); border-top: 1px solid var(--borde); }
+  /* Con la decisión tomada, la barra deja de ser acción y pasa a ser estado: baja de altura y no grita */
+  .accion-fija.estado { grid-template-columns: 1fr auto; height: calc(56px + var(--area-segura)); }
+  /* Estado seleccionado: misma forma que el botón, pero en el tono suave del primario, con palomita. Se lee como "elegido". */
+  .accion-fija.estado { grid-template-columns: 1fr auto; height: calc(var(--alto-accion) + var(--area-segura)); }
+  .seleccionado { display: inline-flex; align-items: center; gap: 8px; min-height: var(--toque); padding: 0 16px; border: 1.5px solid var(--primario); border-radius: 12px; background: var(--primario-suave); color: var(--primario); font-size: 17px; font-weight: 700; }
+  .seleccionado svg { width: 20px; height: 20px; }
+  .seleccionado small { display: block; color: var(--texto-suave); font-size: 13px; font-weight: 500; line-height: 1.1; }
+  /* Botón secundario: borde y texto, se ve pulsable */
+  .secundario { min-height: var(--toque); padding: 0 16px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); color: var(--texto); font-size: 16px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .voy.chico { min-height: var(--toque); padding: 0 18px; }
+  .interesa { min-height: var(--toque); padding: 0 6px; border: none; background: none; color: var(--texto); font-size: 16px; font-weight: 600; text-decoration: underline; cursor: pointer; white-space: nowrap; }
+  .voy { min-height: var(--toque); border: none; border-radius: 12px; background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; cursor: pointer; }
+  .voy.dicho { background: var(--ok); }
+  .quitar { min-height: var(--toque); padding: 0 6px; border: none; background: none; color: var(--texto-suave); font-size: 16px; text-decoration: underline; cursor: pointer; }
+
+  /* ==========================================================================
+     6. Hojas: avisos tras el Voy, menú ···, cartel a pantalla completa
+     ========================================================================== */
+  .hoja-fondo { position: absolute; inset: 0; z-index: 8; display: none; background: rgba(0, 0, 0, 0.32); }
+  .hoja-fondo.abierta { display: block; }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; max-height: calc(100% - 60px); overflow-y: auto; padding: 12px var(--gutter) calc(20px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .asa { width: 36px; height: 4px; margin: 0 auto 14px; border-radius: 2px; background: var(--borde); }
+  .hoja h3 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 4px; }
+  .hoja .porque { color: var(--texto-suave); font-size: 15px; margin-bottom: 12px; }
+  .hoja .pregunta { font-weight: 700; margin-bottom: 10px; }
+  .opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opciones button { min-height: var(--toque); padding: 0 12px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .opciones .si { border: none; background: var(--primario); color: var(--primario-texto); }
+  .opciones .no { border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+  .gracias { display: block; width: 100%; min-height: var(--toque-min); margin-top: 4px; border: none; background: none; color: var(--texto-suave); font-size: 15px; text-decoration: underline; cursor: pointer; }
+  .hecho { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+  .hecho svg { width: 18px; height: 18px; flex: none; color: var(--ok); }
+  .cambiar { color: var(--texto-suave); font-size: 14px; margin-top: 6px; }
+  .menu { list-style: none; }
+  .menu button { display: block; width: 100%; min-height: var(--toque); padding: 0 4px; border: none; border-bottom: 1px solid var(--borde); background: none; color: var(--texto); font-size: 17px; text-align: left; cursor: pointer; }
+  .menu .peligro { color: var(--error); }
+  .visor { position: absolute; inset: 0; z-index: 9; display: none; background: #000; place-items: center; }
+  .visor.abierto { display: grid; }
+  .visor .cartel-lienzo { width: 100%; height: auto; aspect-ratio: 3 / 4; font-size: 15px; }
+  .visor .cartel-lienzo span { font-size: 34px; }
+  .visor button { position: absolute; top: 56px; right: 12px; width: var(--toque-min); height: var(--toque-min); border: none; border-radius: 50%; background: rgba(255, 255, 255, 0.9); font-size: 18px; cursor: pointer; }
+
+  .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--alto-accion) + var(--area-segura) + 12px); z-index: 6; padding: 12px 14px; border-radius: 12px; background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
+  .nota.visible { opacity: 1; transform: none; }
+
+  /* ==========================================================================
+     7. Utilería de revisión
+     ========================================================================== */
+  .utileria { width: 300px; max-width: 100%; flex: none; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
+  .utileria h3 { margin-bottom: 4px; color: var(--panel-suave); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .nota-utileria { margin-bottom: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.35; }
+  .control { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--panel-borde); }
+  .control:first-of-type { border-top: none; }
+  .control code { margin-right: 6px; color: var(--panel-suave); font-family: inherit; font-size: 12px; }
+  .control select { min-height: 36px; padding: 6px 8px; border: 1px solid var(--panel-borde); border-radius: 8px; background: #2b3a48; color: var(--panel-texto); }
+  .control input[type="checkbox"] { width: 20px; height: 20px; accent-color: #f0f0ee; }
+  .reiniciar { width: 100%; min-height: var(--toque-min); margin-top: 14px; border: 1px solid var(--panel-borde); border-radius: 10px; background: transparent; color: var(--panel-texto); font-weight: 700; cursor: pointer; }
+  .decisiones { margin-top: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.4; }
+  .decisiones a { color: var(--panel-texto); }
+
+  :focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; }
+  .utileria :focus-visible { outline-color: #f0f0ee; }
+  @media (prefers-reduced-motion: reduce) { .nota, .resumen svg { transition: none; } }
+  @media (max-width: 740px) { .telefono { height: auto; min-height: 720px; } .pantalla { height: auto; max-height: 700px; } }
+</style>
+
+<div class="estudio">
+  <p class="rotulo"><strong>Ficha de evento v1.4</strong> <span>Tinta como color primario · cartel a ancho completo llenando una banda baja · estado "✓ Voy" como selección con Cancelar como botón · Compartir solo en la fila de acciones · tras la decisión, la barra pasa a estado · flujo de Me interesa</span> <span>Datos de ejemplo, no reales</span></p>
+
+  <div class="telefono" id="telefono" data-color="tinta" aria-label="Teléfono de 390 por 844">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ⌾</span></div>
+    <main class="pantalla" id="pantalla">
+      <header class="barra">
+        <a href="#" class="volver" id="volver">← Agenda</a>
+        <a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a>
+        <div class="barra-acciones">
+          <button type="button" class="icono-barra" id="menu-barra" aria-label="Más acciones" aria-haspopup="dialog">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </header>
+      <div class="contenido" id="contenido"></div>
+    </main>
+
+    <div class="accion-fija" id="accion-fija"></div>
+    <div class="nota" id="nota" role="status" aria-live="polite"></div>
+    <div class="hoja-fondo" id="hoja-avisos-fondo"><div class="hoja" role="dialog" aria-label="Avisos" id="hoja-avisos"></div></div>
+    <div class="hoja-fondo" id="hoja-menu-fondo"><div class="hoja" role="dialog" aria-label="Más acciones" id="hoja-menu"></div></div>
+    <div class="visor" id="visor"><div class="cartel-lienzo"><div><span>22 de agosto</span>Una noche para celebrar y sentirte vivo · Casa 1100 · Trae tu bebida</div></div><button type="button" id="cerrar-visor" aria-label="Cerrar">✕</button></div>
+  </div>
+
+  <aside class="utileria" aria-label="Utilería de revisión">
+    <h3>Utilería de revisión</h3>
+    <p class="nota-utileria">No es parte del diseño. Fuerza cada estado para sentirlo; los ID corresponden a la tabla de estados del documento.</p>
+    <label class="control"><span>Color primario</span><select id="color"><option value="tinta">Tinta (decidido)</option><option value="morado">Morado (descartado)</option></select></label>
+    <label class="control"><span><code>S1</code>Con sesión</span><input type="checkbox" id="s1"></label>
+    <label class="control"><span><code>S2</code>Ya dije Voy</span><input type="checkbox" id="s2"></label>
+    <label class="control"><span><code>C0</code>Sin cartel</span><input type="checkbox" id="c0"></label>
+    <label class="control"><span><code>R</code>Sitio reservado</span><select id="reservado"><option value="no">No</option><option value="r1">Sin sesión (R1)</option><option value="r2">Antes de la hora (R2)</option><option value="r3">Revelado (R3)</option></select></label>
+    <label class="control"><span>Quiénes van</span><select id="van"><option value="12">12</option><option value="3">3</option><option value="0">0</option></select></label>
+    <label class="control"><span><code>P1</code>Recién publicado</span><input type="checkbox" id="p1"></label>
+    <label class="control"><span><code>A1</code>Soy el autor</span><input type="checkbox" id="a1"></label>
+    <label class="control"><span>Con descripción</span><input type="checkbox" id="desc" checked></label>
+    <button class="reiniciar" id="reiniciar" type="button">Reiniciar datos</button>
+    <p class="decisiones">Decisiones 1 a 14 y estados: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/04-ficha-evento-flujo-y-estados.md">04-ficha-evento-flujo-y-estados.md</a>. Toca Voy para ver la hoja de avisos; toca "···" para el menú; toca el cartel para verlo entero.</p>
+  </aside>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const estado = { s1: false, s2: false, interesa: false, c0: false, reservado: "no", van: 12, p1: false, a1: false, desc: true, color: "tinta", correo: null, telefono: null, listaAbierta: false, descAbierta: false };
+  const inicial = { ...estado };
+  const NOMBRES = ["Ana", "Luis", "Rosa", "Teo", "Mireya", "Pablo", "Sofía", "Iván", "Carla", "Nico", "Lupe", "Daniel"];
+  const ICONO = {
+    reloj: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    personas: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    boleto: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13 8v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2 2"/></svg>`,
+    candado: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    compartir: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>`,
+    calendario: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    ruta: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    caret: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    ok: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  };
+  function esc(s) { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+  function render() {
+    $("telefono").dataset.color = estado.color;
+    const n = estado.van + (estado.s2 ? 1 : 0);
+    const nombres = (estado.s2 ? ["Rosa (tú)"] : []).concat(NOMBRES.slice(0, estado.van));
+    let h = "";
+    if (estado.p1) h += `<div class="publicado" role="status"><div><b>Publicado.</b>Ya está en la agenda.</div><button type="button" id="compartir-publicado">Compartir</button></div>`;
+    if (!estado.c0) h += `<div class="banda" id="cartel" role="button" tabindex="0" aria-label="Ver el cartel entero"><div class="cartel-lienzo"><div><span>22 de agosto</span>Una noche para celebrar · Casa 1100 · Trae tu bebida</div></div><span class="lupa" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4 4M11 8.5v5M8.5 11h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></div>`;
+    h += `<h1>Una noche para celebrar y sentirte vivo</h1>`;
+
+    let donde;
+    if (estado.reservado === "no") donde = `<li class="dato">${ICONO.pin}<div><b><a href="#">Casa 1100</a></b><small>Calle 5 de Mayo 1100, Centro</small></div></li>`;
+    else if (estado.reservado === "r1") donde = `<li class="dato">${ICONO.candado}<div><b>Casa de Rosa · sitio reservado</b><small>Entra para ver la dirección cuando toque.</small></div><button type="button" id="entrar-dato">Entrar</button></li>`;
+    else if (estado.reservado === "r2") donde = `<li class="dato">${ICONO.candado}<div><b>Casa de Rosa · sitio reservado</b><small>La dirección se revela aquí el sábado a las 16:00.</small></div></li>`;
+    else donde = `<li class="dato">${ICONO.pin}<div><b>Casa de Rosa</b><small>Privada de los Nogales 14 · Toca el timbre azul</small></div></li>`;
+    h += `<ul class="datos">
+      <li class="dato">${ICONO.reloj}<div><b>domingo 22 de agosto de 2027 · 20:00 a 23:00</b></div></li>
+      ${donde}
+      <li class="dato">${ICONO.personas}<div><b>${n === 0 ? "Nadie ha dicho que va todavía" : n === 1 ? "Va 1 persona" : `Van ${n} personas`}</b></div>${n > 0 ? `<button type="button" id="ir-quienva">ver</button>` : ""}</li>
+      <li class="dato">${ICONO.boleto}<div><b>Gratis</b></div></li>
+    </ul>`;
+    h += `<div class="acciones">
+      <button type="button" class="accion" id="compartir">${ICONO.compartir}Compartir</button>
+      <button type="button" class="accion" id="calendario">${ICONO.calendario}Calendario</button>
+      <button type="button" class="accion" id="llegar" ${estado.reservado === "r1" || estado.reservado === "r2" ? "disabled" : ""}>${ICONO.ruta}Cómo llegar</button>
+    </div>`;
+    if (estado.desc) {
+      h += `<p class="descripcion ${estado.descAbierta ? "abierta" : ""}" id="descripcion">Una noche para celebrar la vida con música en vivo, lectura de poemas y una mesa compartida. Trae tu bebida y tu mejor vibra. Empezamos a las ocho con el son de la casa; a las nueve sube al escenario el trío de cuerdas y después abrimos el micrófono para quien quiera leer. Habrá café de olla y pan de la panadería de la esquina. La entrada es libre; si puedes, coopera con lo que gustes para los músicos.</p>`;
+      h += `<button type="button" class="mas" id="mas">${estado.descAbierta ? "menos" : "más"}</button>`;
+      h += `<a href="#" class="enlace-externo">Más información en la página del evento →</a>`;
+    }
+    h += `<section class="quienva" id="quienva"><h2>Quién va</h2>`;
+    if (n === 0) h += `<p class="nadie">Nadie ha dicho que va todavía. ${estado.s1 ? "Sé la primera persona." : "Entra y sé la primera persona."}</p>`;
+    else {
+      const pila = nombres.slice(0, 4).map((x) => `<span aria-hidden="true">${esc(x.slice(0, 1))}</span>`).join("");
+      const primeros = nombres.slice(0, 2).map((x) => x.replace(" (tú)", "")).join(", ");
+      const resto = n - Math.min(2, n);
+      const texto = n === 1 ? `Va ${primeros}` : `Van ${n}: ${primeros}${resto > 0 ? ` y ${resto} más` : ""}`;
+      h += `<button type="button" class="resumen" id="desplegar" aria-expanded="${estado.listaAbierta}"><span class="pila">${pila}</span><span>${esc(texto)}</span>${ICONO.caret}</button>`;
+      if (estado.listaAbierta) h += `<ul class="lista-van">${nombres.map((x) => `<li><span class="av" aria-hidden="true">${esc(x.slice(0, 1))}</span>${esc(x)}</li>`).join("")}</ul>`;
+      h += `<p class="interes">A 3 personas les interesa.</p>`;
+    }
+    h += `</section>`;
+    h += `<p class="autor">Publicado por <a href="#">Rosa</a>.</p>`;
+    $("contenido").innerHTML = h;
+
+    // Barra inferior
+    const fija = $("accion-fija");
+    if (estado.s2) {
+      fija.className = "accion-fija estado";
+      fija.innerHTML = `<span class="seleccionado" aria-live="polite">${ICONO.ok}<span>Voy<small>Ya estás en la lista</small></span></span><button type="button" class="secundario" id="quitar">Cancelar</button>`;
+    } else if (estado.interesa) {
+      fija.className = "accion-fija estado";
+      fija.innerHTML = `<span class="seleccionado">${ICONO.ok}<span>Me interesa<small>Guardado en Mi perfil</small></span></span><button type="button" class="voy chico" id="voy">Voy</button>`;
+    } else {
+      fija.className = "accion-fija";
+      fija.innerHTML = `<button type="button" class="interesa" id="interesa">Me interesa</button><button type="button" class="voy" id="voy">Voy</button>`;
+    }
+
+    // Hoja de avisos (fases de la decisión 10 del inicio)
+    const ok = ICONO.ok;
+    let cuerpo;
+    if (estado.correo === null && estado.telefono === null) cuerpo = `<p class="pregunta">¿Te recordamos ese día?</p><div class="opciones"><button type="button" class="si" id="por-correo">Por correo</button><button type="button" class="si" id="en-telefono">En el teléfono</button></div><button type="button" class="gracias" id="no-gracias">No, gracias</button>`;
+    else if (estado.correo === true && estado.telefono === null) cuerpo = `<p class="hecho">${ok}<span>Te escribimos a ro…@gmail.com ese día.</span></p><p class="pregunta" style="margin-top:10px">¿También en el teléfono?</p><div class="opciones"><button type="button" class="si" id="en-telefono">Sí</button><button type="button" class="no" id="no-telefono">No</button></div>`;
+    else if (estado.telefono === true && estado.correo === null) cuerpo = `<p class="hecho">${ok}<span>Te avisamos en este teléfono ese día.</span></p><p class="pregunta" style="margin-top:10px">¿También por correo?</p><div class="opciones"><button type="button" class="si" id="por-correo">Sí</button><button type="button" class="no" id="no-correo">No</button></div>`;
+    else {
+      const canales = [estado.correo && "por correo", estado.telefono && "en el teléfono"].filter(Boolean);
+      cuerpo = canales.length ? `<p class="hecho">${ok}<span>Te avisamos ${canales.join(" y ")} ese día.</span></p><p class="cambiar">Se cambia en Mi perfil.</p>` : `<p class="hecho"><span>Sin avisos. Si cambias de idea, está en Mi perfil.</span></p>`;
+    }
+    $("hoja-avisos").innerHTML = `<div class="asa" aria-hidden="true"></div><h3>Vas a Una noche para celebrar y sentirte vivo</h3><p class="porque">Ya estás en la lista de quien va.</p>${cuerpo}`;
+
+    // Menú ···
+    const items = ["Reportar"].concat(estado.a1 ? ["Editar", "Duplicar con otra fecha"] : []).concat(estado.a1 ? ["<span class='peligro'>Borrar el evento</span>"] : []);
+    $("hoja-menu").innerHTML = `<div class="asa" aria-hidden="true"></div><ul class="menu">${items.map((t) => `<li><button type="button">${t}</button></li>`).join("")}</ul>`;
+
+    $("color").value = estado.color; $("s1").checked = estado.s1; $("s2").checked = estado.s2; $("c0").checked = estado.c0; $("reservado").value = estado.reservado; $("van").value = String(estado.van); $("p1").checked = estado.p1; $("a1").checked = estado.a1; $("desc").checked = estado.desc;
+  }
+
+  let temporizador;
+  function nota(texto) { const n = $("nota"); n.textContent = texto; n.classList.add("visible"); clearTimeout(temporizador); temporizador = setTimeout(() => n.classList.remove("visible"), 2200); }
+  function cerrarHojas() { $("hoja-avisos-fondo").classList.remove("abierta"); $("hoja-menu-fondo").classList.remove("abierta"); }
+
+  ["s1", "s2", "c0", "p1", "a1", "desc"].forEach((id) => $(id).addEventListener("change", (e) => { estado[id] = e.target.checked; if (id === "s2" && e.target.checked) estado.s1 = true; render(); }));
+  $("color").addEventListener("change", (e) => { estado.color = e.target.value; render(); });
+  $("reservado").addEventListener("change", (e) => { estado.reservado = e.target.value; if (e.target.value === "r2" || e.target.value === "r3") estado.s1 = true; render(); });
+  $("van").addEventListener("change", (e) => { estado.van = Number(e.target.value); render(); });
+  $("reiniciar").addEventListener("click", () => { Object.assign(estado, inicial); cerrarHojas(); render(); });
+
+  document.addEventListener("click", (ev) => {
+    const t = ev.target;
+    if (t.closest("#voy")) {
+      if (estado.s2) return;
+      if (!estado.s1) { nota("Sin sesión: abriría Entrar y al volver el Voy queda aplicado"); estado.s1 = true; }
+      estado.s2 = true; estado.interesa = false; render();
+      if (estado.correo === null && estado.telefono === null) $("hoja-avisos-fondo").classList.add("abierta");
+      return;
+    }
+    if (t.closest("#quitar")) { estado.s2 = false; render(); return; }
+    if (t.closest("#interesa")) {
+      if (!estado.s1) { nota("Sin sesión: abriría Entrar y al volver queda guardado"); estado.s1 = true; }
+      estado.interesa = true; render(); return;
+    }
+    if (t.closest("#por-correo")) { estado.correo = true; render(); $("hoja-avisos-fondo").classList.add("abierta"); return; }
+    if (t.closest("#en-telefono")) { estado.telefono = true; render(); $("hoja-avisos-fondo").classList.add("abierta"); nota("En iPhone sin instalar emergería la hoja Instala Somos Nosotros"); return; }
+    if (t.closest("#no-telefono")) { estado.telefono = false; render(); $("hoja-avisos-fondo").classList.add("abierta"); setTimeout(cerrarHojas, 1400); return; }
+    if (t.closest("#no-correo")) { estado.correo = false; render(); $("hoja-avisos-fondo").classList.add("abierta"); setTimeout(cerrarHojas, 1400); return; }
+    if (t.closest("#no-gracias")) { estado.correo = false; estado.telefono = false; render(); cerrarHojas(); return; }
+    if (t.closest("#menu-barra")) { $("hoja-menu-fondo").classList.add("abierta"); return; }
+    if (t.closest("#compartir, #compartir-publicado")) { nota("Abriría la hoja de compartir del teléfono (WhatsApp primero)"); return; }
+    if (t.closest("#calendario")) { nota("Descargaría el .ics y el teléfono lo abre en Calendario"); return; }
+    if (t.closest("#llegar")) { nota("Abriría Mapas con la ruta"); return; }
+    if (t.closest("#ir-quienva")) { estado.listaAbierta = true; render(); $("quienva").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); return; }
+    if (t.closest("#desplegar")) { estado.listaAbierta = !estado.listaAbierta; render(); return; }
+    if (t.closest("#mas")) { estado.descAbierta = !estado.descAbierta; render(); return; }
+    if (t.closest("#cartel")) { $("visor").classList.add("abierto"); return; }
+    if (t.closest("#cerrar-visor")) { $("visor").classList.remove("abierto"); return; }
+    if (t.closest("#entrar-dato")) { nota("Abriría Entrar y volvería aquí"); return; }
+    if (t.closest("#volver")) { ev.preventDefault(); nota("Volvería a la agenda"); return; }
+    if (t === $("hoja-avisos-fondo") || t === $("hoja-menu-fondo")) cerrarHojas();
+  });
+  render();
+</script>

@@ -19,8 +19,9 @@ describe("fechas", () => {
   });
   it("escribe el año solo cuando no es el actual", () => {
     expect(formatearCuando("2027-08-23T01:00:00Z", null, AHORA)).toBe("dom 22 de ago de 2027 · 19:00");
-    expect(formatearLargo("2027-08-23T01:00:00Z", AHORA)).toBe("domingo, 22 de agosto de 2027, 19:00");
-    expect(formatearLargo("2026-09-21T01:00:00Z", AHORA)).toBe("domingo, 20 de septiembre, 19:00");
+    expect(formatearLargo("2027-08-23T01:00:00Z", AHORA)).toBe("domingo 22 de agosto de 2027 · 19:00");
+    expect(formatearLargo("2026-09-21T01:00:00Z", AHORA)).toBe("domingo 20 de septiembre · 19:00");
+    expect(formatearLargo("2026-09-21T01:00:00Z", AHORA, "2026-09-21T03:00:00Z")).toBe("domingo 20 de septiembre · 19:00 a 21:00");
   });
   it("clasifica en hoy, semana, próximos y pasado", () => {
     expect(tramo("2026-09-20T01:00:00Z", AHORA)).toBe("hoy"); // 19:00 de hoy
@@ -47,8 +48,8 @@ describe("fechas", () => {
   it("calcula el fin como duración y arma la frase", () => {
     expect(sumarHoras("2026-09-19T19:00", 2)).toBe("2026-09-19T21:00");
     expect(sumarHoras("2026-09-19T23:00", 2)).toBe("2026-09-20T01:00");
-    expect(fraseCuando("2026-09-19T19:00", "2026-09-19T21:00")).toBe("sábado, 19 de septiembre, 19:00 a 21:00");
-    expect(fraseCuando("2026-09-19T19:00")).toBe("sábado, 19 de septiembre, 19:00");
+    expect(fraseCuando("2026-09-19T19:00", "2026-09-19T21:00", AHORA)).toBe("sábado 19 de septiembre · 19:00 a 21:00");
+    expect(fraseCuando("2026-09-19T19:00", undefined, AHORA)).toBe("sábado 19 de septiembre · 19:00");
     expect(fraseCuando("nada")).toBe("");
   });
 });
