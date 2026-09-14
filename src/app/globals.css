@@ -93,3 +93,18 @@ textarea {
   color: var(--texto-suave);
   text-decoration: none;
 }
+
+/* El toque responde al instante: sin espera de doble toque y con estado de pulsado visible. */
+a,
+button,
+[role="button"],
+label,
+input,
+select {
+  touch-action: manipulation;
+}
+a:active,
+button:active:not(:disabled) {
+  opacity: 0.6;
+  transition: opacity 0s;
+}

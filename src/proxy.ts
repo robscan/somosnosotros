@@ -21,7 +21,8 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-  await supabase.auth.getUser();
+  // Verifica el token localmente (sin ir a Supabase Auth) y refresca la sesión solo si hace falta.
+  await supabase.auth.getClaims();
   return respuesta;
 }
 
