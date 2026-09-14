@@ -87,3 +87,42 @@ export function sugerirInicio(ahora: Date = new Date()): string {
 export function aFechaIcs(iso: string): string {
   return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
+
+/** Próximos días para elegir con un toque: Hoy, Mañana y luego "sáb 19", "dom 20"… */
+export function proximosDias(ahora: Date = new Date(), cuantos = 7): { valor: string; etiqueta: string }[] {
+  const dias: { valor: string; etiqueta: string }[] = [];
+  for (let i = 0; i < cuantos; i++) {
+    const d = new Date(ahora.getTime() + i * 86400000);
+    const valor = diaLocal(d);
+    const etiqueta =
+      i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric" }).format(d).replace(/\./g, "");
+    dias.push({ valor, etiqueta });
+  }
+  return dias;
+}
+
+/** "2026-09-19" + "19:00" → "2026-09-19T19:00" (lo que entiende localAIso). */
+export function combinarFechaHora(fecha: string, hora: string): string {
+  return fecha && hora ? `${fecha}T${hora}` : "";
+}
+
+/** Suma horas a un "YYYY-MM-DDTHH:MM" en hora de la ciudad. */
+export function sumarHoras(local: string, horas: number): string {
+  const iso = localAIso(local);
+  if (!iso) return "";
+  return isoALocal(new Date(new Date(iso).getTime() + horas * 3600000).toISOString());
+}
+
+/** Frase para confirmar: "sábado 19 de septiembre, 19:00" o "…, 19:00 a 21:00". */
+export function fraseCuando(inicioLocal: string, finLocal?: string): string {
+  const iso = localAIso(inicioLocal);
+  if (!iso) return "";
+  let texto = formatearLargo(iso);
+  const finIso = finLocal ? localAIso(finLocal) : null;
+  if (finIso) {
+    const mismoDia = diaLocal(new Date(finIso)) === diaLocal(new Date(iso));
+    const horaFin = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(finIso));
+    texto += mismoDia ? ` a ${horaFin}` : ` hasta ${formatearLargo(finIso)}`;
+  }
+  return texto;
+}

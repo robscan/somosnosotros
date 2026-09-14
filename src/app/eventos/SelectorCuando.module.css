@@ -1,0 +1,71 @@
+.selector {
+  margin-bottom: var(--espacio-4);
+}
+.etiqueta {
+  font-weight: 600;
+  margin-bottom: var(--espacio-2);
+}
+.etiquetaChica {
+  font-weight: 600;
+  font-size: 14px;
+  margin: var(--espacio-3) 0 var(--espacio-2);
+}
+.chips {
+  display: flex;
+  gap: var(--espacio-2);
+  overflow-x: auto;
+  padding-bottom: var(--espacio-1);
+  margin-bottom: var(--espacio-2);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.chips::-webkit-scrollbar {
+  display: none;
+}
+.chip {
+  flex: none;
+  min-height: 40px;
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: 15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.activo {
+  border-color: var(--acento);
+  background: var(--acento);
+  color: var(--acento-texto);
+  font-weight: 600;
+}
+.control {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-3) var(--espacio-4);
+  margin-bottom: var(--espacio-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.frase {
+  margin-top: var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  font-weight: 600;
+}
+.error {
+  color: var(--error);
+  font-size: 14px;
+  margin-top: var(--espacio-1);
+}
+.nota {
+  font-weight: 400;
+  color: var(--texto-suave);
+}
