@@ -4,12 +4,13 @@ import type { EventoResumen } from "@/lib/eventos";
 import { formatearCuando } from "@/lib/fechas";
 import { REDES, enlaceRed, etiquetaTipo, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { cambiarVisible } from "../acciones";
+import { borrarLugar, cambiarVisible } from "../acciones";
+import Borrar from "@/components/Borrar";
 import Seguir from "./Seguir";
 import Reportar from "@/components/Reportar";
 import styles from "./ficha.module.css";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string; borrado?: string }> };
 
 async function cargarLugar(id: string): Promise<(Lugar & { autor: { id: string; nombre: string } | null }) | null> {
   const supabase = await clienteServidor();
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: Params) {
 
 export default async function FichaLugar({ params, searchParams }: Params) {
   const { id } = await params;
-  const { nuevo, accion } = (await searchParams) ?? {};
+  const { nuevo, accion, error, borrado } = (await searchParams) ?? {};
   const [lugar, actual, eventos] = await Promise.all([cargarLugar(id), usuarioActual(), cargarEventos(id)]);
   if (!lugar) notFound();
   const supabaseSeg = await clienteServidor();
@@ -86,6 +87,21 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       {nuevo !== "1" && puedeEditar && faltanDetalles && (
         <p className={styles.nota}>
           Aún sin descripción, redes ni foto. <Link href={`/lugares/${lugar.id}/editar`}>Completar</Link>
+        </p>
+      )}
+      {error === "tiene-eventos" && (
+        <p className="aviso-error" role="alert">
+          Este lugar tiene eventos publicados por otras personas; no se puede borrar. Si ya no existe, ocúltalo o avisa al administrador.
+        </p>
+      )}
+      {error === "borrar" && (
+        <p className="aviso-error" role="alert">
+          No se pudo borrar. ¿Sigues con sesión y es tu lugar?
+        </p>
+      )}
+      {borrado === "evento" && (
+        <p className="aviso-ok" role="status">
+          Evento borrado.
         </p>
       )}
       {!lugar.visible && (
@@ -156,6 +172,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
               </button>
             </form>
           )}
+          <Borrar que="el lugar" aviso={eventos.length > 0 ? `Se borra el lugar y sus ${eventos.length === 1 ? "1 evento próximo" : `${eventos.length} eventos próximos`} (y los pasados).` : "Se borra el lugar."} accion={borrarLugar.bind(null, lugar.id)} />
         </div>
       )}
     </main>

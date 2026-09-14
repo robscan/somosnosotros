@@ -15,10 +15,10 @@ function primerNombre(nombre: string): string {
   return nombre.trim().split(" ")[0] ?? "";
 }
 
-type Props = { lugares: LugarResumen[]; eventos: EventoResumen[]; ciudad?: Ciudad; cuentaBorrada?: boolean };
+type Props = { lugares: LugarResumen[]; eventos: EventoResumen[]; ciudad?: Ciudad; cuentaBorrada?: boolean; aviso?: string };
 
 /** Panel inferior sobre el mapa: cabecera (marca, ciudad, sesión) y dos pestañas: Agenda y Lugares. */
-export default async function Panel({ lugares, eventos, ciudad = CIUDAD_INICIAL, cuentaBorrada = false }: Props) {
+export default async function Panel({ lugares, eventos, ciudad = CIUDAD_INICIAL, cuentaBorrada = false, aviso }: Props) {
   const actual = await usuarioActual();
   const resumen = [
     eventos.length > 0 ? `${eventos.length} ${eventos.length === 1 ? "evento" : "eventos"}` : null,
@@ -64,6 +64,11 @@ export default async function Panel({ lugares, eventos, ciudad = CIUDAD_INICIAL,
       {cuentaBorrada && (
         <p className={styles.aviso} role="status">
           Tu cuenta quedó borrada. Gracias por haber estado.
+        </p>
+      )}
+      {aviso && (
+        <p className={styles.aviso} role="status">
+          {aviso}
         </p>
       )}
     </>
