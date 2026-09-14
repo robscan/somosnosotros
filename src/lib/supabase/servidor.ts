@@ -37,15 +37,15 @@ export type Perfil = {
 export async function usuarioActual(): Promise<{ correo: string | null; perfil: Perfil } | null> {
   const supabase = await clienteServidor();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase
+  // El token se verifica localmente (sin ir a Supabase Auth): una sola consulta de red, la del perfil.
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  const { data: perfil } = await supabase
     .from("perfiles")
     .select("id, nombre, foto, colonia, bio, rol")
-    .eq("id", user.id)
+    .eq("id", claims.sub)
     .maybeSingle();
-  if (!data) return null;
-  return { correo: user.email ?? null, perfil: data as Perfil };
+  if (!perfil) return null;
+  return { correo: (claims.email as string | undefined) ?? null, perfil: perfil as Perfil };
 }
