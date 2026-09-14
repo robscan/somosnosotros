@@ -17,3 +17,7 @@ Rama `alta-evento-progresiva`. El founder, tras probar la Fase 3: "insisto en UX
 - Sin lugar preseleccionado: "Dónde" abierto con el select y las píldoras.
 - "Cuándo" abierto: tres filas de chips y la frase. "Otra fecha" → `showPicker` disponible y llamado; al elegir 24 de septiembre el chip dice "jue 24 de sep" y la frase "jueves, 24 de septiembre, 19:00".
 - Lint, typecheck, 46 pruebas, build.
+
+## Segunda vuelta (mismo día): el selector nativo no abría en el iPhone
+
+El founder: "no sirve botón de otra fecha/hora, disminuye opciones de chips". Safari en iOS no abre el selector de fecha/hora por código (`showPicker()`/`focus()`): solo cuando el dedo toca el propio campo. Arreglo: el chip **es** el campo. `ChipNativo` pone el `<input type="date|time">` encima del chip, invisible y del mismo tamaño (`position:absolute; inset:0; opacity:0`), así el toque cae en él y el teléfono abre su selector; al elegir, el chip muestra lo elegido. Verificado con `elementFromPoint` sobre el centro del chip → el campo. Menos chips: Hoy · Mañana · Otra fecha; 18:00 · 19:00 · 20:00 · Otra hora; Termina: Sin fin · 2 h · Otra hora. Relleno y letra de los chips reducidos para que cada fila quepa en 390 px sin desplazarse (medido: `scrollWidth == clientWidth` en las tres filas).

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { combinarFechaHora, fraseCuando, localAIso, proximosDias, sumarHoras, yaPaso, ZONA } from "@/lib/fechas";
 import styles from "./SelectorCuando.module.css";
 
@@ -12,12 +11,10 @@ type Props = {
   errorFin?: string;
 };
 
-const HORAS = ["17:00", "18:00", "19:00", "20:00", "21:00"];
+const HORAS = ["18:00", "19:00", "20:00"];
 const DURACIONES = [
   { horas: 0, etiqueta: "Sin fin" },
-  { horas: 1, etiqueta: "1 h" },
   { horas: 2, etiqueta: "2 h" },
-  { horas: 3, etiqueta: "3 h" },
 ];
 
 function partir(local: string): { fecha: string; hora: string } {
@@ -35,33 +32,28 @@ function etiquetaFecha(fecha: string): string {
   return iso ? new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short" }).format(new Date(iso)).replace(/\./g, "") : "Otra fecha";
 }
 
-/** Abre el selector nativo del teléfono directamente (showPicker); si el navegador no lo tiene, enfoca el campo. */
-function abrirSelector(input: HTMLInputElement | null) {
-  if (!input) return;
-  try {
-    if (typeof input.showPicker === "function") input.showPicker();
-    else input.focus();
-  } catch {
-    input.focus();
-  }
+/**
+ * Chip que ES el campo nativo: el <input type="date|time"> va encima, invisible y del mismo tamaño,
+ * para que el toque caiga en él y el teléfono abra su selector (Safari no lo abre por código).
+ */
+function ChipNativo({ tipo, valor, activo, etiqueta, onCambio, ariaLabel }: { tipo: "date" | "time"; valor: string; activo: boolean; etiqueta: string; onCambio: (v: string) => void; ariaLabel: string }) {
+  return (
+    <span className={`${styles.chip} ${styles.chipNativo} ${activo ? styles.activo : ""}`}>
+      {etiqueta}
+      <input type={tipo} className={styles.encima} value={valor} step={tipo === "time" ? 300 : undefined} onChange={(e) => onCambio(e.target.value)} aria-label={ariaLabel} />
+    </span>
+  );
 }
 
-/**
- * Cuándo, con un toque: día, hora y duración en chips. "Otra fecha" / "Otra hora" abren el selector
- * nativo al instante y el chip pasa a mostrar lo elegido. La frase de abajo confirma en palabras.
- */
+/** Cuándo, con un toque: pocos chips; "Otra fecha" / "Otra hora" son el selector nativo. La frase confirma en palabras. */
 export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, errorFin }: Props) {
-  const dias = proximosDias();
+  const dias = proximosDias(new Date(), 2); // Hoy, Mañana
   const { fecha, hora } = partir(inicio);
   const fechaEsOtra = !!fecha && !dias.some((d) => d.valor === fecha);
   const horaEsOtra = !!hora && !HORAS.includes(hora);
   const duracion = fin ? horasEntre(inicio, fin) : 0;
   const duracionEsOtra = !!fin && !DURACIONES.some((d) => d.horas === duracion);
-  const refFecha = useRef<HTMLInputElement>(null);
-  const refHora = useRef<HTMLInputElement>(null);
-  const refFin = useRef<HTMLInputElement>(null);
 
-  /** Cambia día u hora conservando la duración. */
   function fijar(nuevaFecha: string, nuevaHora: string) {
     const nuevoInicio = combinarFechaHora(nuevaFecha, nuevaHora);
     onCambio(nuevoInicio, nuevoInicio && duracion > 0 ? sumarHoras(nuevoInicio, duracion) : "");
@@ -78,10 +70,7 @@ export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, err
             {d.etiqueta}
           </button>
         ))}
-        <button type="button" className={`${styles.chip} ${fechaEsOtra ? styles.activo : ""}`} onClick={() => abrirSelector(refFecha.current)}>
-          {fechaEsOtra ? etiquetaFecha(fecha) : "Otra fecha"}
-        </button>
-        <input ref={refFecha} type="date" className={styles.oculto} value={fecha} onChange={(e) => e.target.value && fijar(e.target.value, hora || "19:00")} tabIndex={-1} aria-label="Elegir otra fecha" />
+        <ChipNativo tipo="date" valor={fecha} activo={fechaEsOtra} etiqueta={fechaEsOtra ? etiquetaFecha(fecha) : "Otra fecha"} onCambio={(v) => v && fijar(v, hora || "19:00")} ariaLabel="Elegir otra fecha" />
       </div>
 
       <div className={styles.chips} role="group" aria-label="Hora">
@@ -90,10 +79,7 @@ export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, err
             {h}
           </button>
         ))}
-        <button type="button" className={`${styles.chip} ${horaEsOtra ? styles.activo : ""}`} onClick={() => abrirSelector(refHora.current)}>
-          {horaEsOtra ? hora : "Otra hora"}
-        </button>
-        <input ref={refHora} type="time" className={styles.oculto} value={hora} step={300} onChange={(e) => e.target.value && fijar(fecha || dias[0].valor, e.target.value)} tabIndex={-1} aria-label="Elegir otra hora" />
+        <ChipNativo tipo="time" valor={hora} activo={horaEsOtra} etiqueta={horaEsOtra ? hora : "Otra hora"} onCambio={(v) => v && fijar(fecha || dias[0].valor, v)} ariaLabel="Elegir otra hora" />
       </div>
       {errorInicio && (
         <p className={styles.error} role="alert">
@@ -108,10 +94,7 @@ export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, err
             {d.etiqueta}
           </button>
         ))}
-        <button type="button" className={`${styles.chip} ${duracionEsOtra ? styles.activo : ""}`} onClick={() => abrirSelector(refFin.current)}>
-          {duracionEsOtra ? partir(fin).hora : "Otra hora"}
-        </button>
-        <input ref={refFin} type="time" className={styles.oculto} value={partir(fin).hora} step={300} onChange={(e) => onCambio(inicio, e.target.value ? combinarFechaHora(partir(fin).fecha || fecha, e.target.value) : "")} tabIndex={-1} aria-label="Elegir hora de fin" />
+        <ChipNativo tipo="time" valor={partir(fin).hora} activo={duracionEsOtra} etiqueta={duracionEsOtra ? partir(fin).hora : "Otra hora"} onCambio={(v) => onCambio(inicio, v ? combinarFechaHora(partir(fin).fecha || fecha, v) : "")} ariaLabel="Elegir hora de fin" />
       </div>
       {errorFin && (
         <p className={styles.error} role="alert">
