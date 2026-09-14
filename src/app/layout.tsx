@@ -9,7 +9,7 @@ import "./globals.css";
  * Ejes: opsz (tamaño óptico automático) y wdth (condensada: 75 títulos, 80 texto).
  */
 const bricolage = Bricolage_Grotesque({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"], // español; latin-ext (56 KB) se quitó el 2026-09-14 por decisión del founder
   axes: ["opsz", "wdth"],
   display: "swap",
   variable: "--fuente-bricolage",
