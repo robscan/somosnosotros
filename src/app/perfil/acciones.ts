@@ -57,7 +57,7 @@ export async function borrarMiCuenta() {
   const supabase = await clienteServidor();
   if (!supabase) redirect("/");
   const { error } = await supabase.rpc("borrar_mi_cuenta");
-  if (error) redirect("/perfil?error=borrar");
+  if (error) redirect("/ajustes?error=borrar");
   await supabase.auth.signOut();
   revalidatePath("/");
   redirect("/?cuenta=borrada");

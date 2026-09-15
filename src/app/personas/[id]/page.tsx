@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import FichaPersona from "@/components/FichaPersona";
 import Barra from "@/components/ui/Barra";
 import ficha from "@/components/ui/Ficha.module.css";
+import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarPersona } from "../consultas";
 
 type Params = { params: Promise<{ id: string }> };
@@ -28,12 +29,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 /** Ficha de una persona: la misma que Mi perfil, sin nada que tocar (decisión 5). Es la forma de reconocerse. */
 export default async function PaginaPersona({ params }: Params) {
   const { id } = await params;
-  const d = await cargarPersona(id);
+  const [d, actual] = await Promise.all([cargarPersona(id), usuarioActual()]);
   if (!d) notFound();
+  if (actual?.perfil.id === id) redirect("/perfil");
+  // "Van a lo mismo": los eventos a los que vamos los dos (decisión 7); lo calcula el sistema, solo con sesión.
+  const mios = actual ? await cargarPersona(actual.perfil.id) : null;
+  const misIds = new Set((mios?.eventos ?? []).map((e) => e.id));
+  const juntos = d.eventos.filter((e) => misIds.has(e.id));
   return (
     <main className={ficha.pagina}>
       <Barra volver={{ href: "/", texto: "Agenda" }} />
-      <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} lugares={d.lugares} artistas={d.artistas} origen={ORIGEN} />
+      <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} juntos={juntos} lugares={d.lugares} artistas={d.artistas} origen={ORIGEN} />
     </main>
   );
 }

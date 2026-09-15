@@ -1,18 +1,17 @@
-/* Ficha de persona (Mi perfil y ficha ajena; docs/rediseno/11, decisiones 5 a 9).
-   1. Cabecera · 2. Datos (Completa tu perfil, Avisos) · 3. Grupos (Voy a, Sigo) */
+/* Ficha de persona (Mi perfil y ficha ajena; docs/rediseno/13, decisiones 5 a 7).
+   1. Cabecera · 2. Sobre mí y completar · 3. Listas por pestaña */
 
-/* 1. Cabecera plana: foto redonda a la izquierda en tres filas; nombre, colonia y Editar a la derecha. */
+/* 1. Cabecera plana: foto | nombre + Compartir a la derecha; colonia; Ajustes (solo la mía). */
 .cabecera {
   display: grid;
-  grid-template-columns: 96px 1fr;
+  grid-template-columns: 96px 1fr auto;
   grid-template-areas:
-    "foto nombre"
-    "foto colonia"
-    "foto editar";
+    "foto nombre compartir"
+    "foto colonia colonia"
+    "foto ajustes ajustes";
   column-gap: var(--espacio-4);
   align-items: center;
-  align-content: center;
-  margin: var(--espacio-3) 0 var(--espacio-4);
+  margin: var(--espacio-3) 0 var(--espacio-3);
 }
 .avatar {
   grid-area: foto;
@@ -40,99 +39,68 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-/* Editar y Compartir en fila bajo el nombre; la ajena solo trae Compartir. */
-.editar {
-  grid-area: editar;
-  justify-self: start;
-  display: flex;
-  gap: var(--espacio-2);
-}
-.compartir {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-4);
+/* Acciones de icono: 44 pt, con borde para que se lean como botones; el nombre va en aria-label. */
+.accion {
+  display: inline-grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
   border: 1px solid var(--borde);
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--fondo);
   color: var(--texto);
-  font-size: var(--letra-sm);
-  font-weight: 700;
   cursor: pointer;
 }
+.compartir {
+  grid-area: compartir;
+  align-self: end;
+}
+.ajustes {
+  grid-area: ajustes;
+  justify-self: start;
+  margin-top: 6px;
+}
+
+/* 2. Sobre mí y el aviso de completar (solo la mía, si falta algo). */
 .sobreMi {
-  margin-bottom: var(--espacio-4);
+  margin-bottom: var(--espacio-2);
   font-size: var(--letra-md);
   line-height: 1.4;
 }
-
-/* 2. Datos: renglones planos con icono, principal, secundario y acción (mismo dibujo que las fichas). */
-.datos {
-  list-style: none;
+.completa {
   display: grid;
-  gap: var(--espacio-2);
-  margin-bottom: var(--espacio-5);
-}
-.dato {
-  display: grid;
-  grid-template-columns: 22px 1fr auto;
-  grid-template-areas:
-    "icono principal accion"
-    "icono secundario accion";
-  column-gap: 10px;
+  grid-template-columns: 24px 1fr auto;
+  column-gap: 12px;
   align-items: center;
-  min-height: 44px;
-  font-size: var(--letra-md);
+  margin: var(--espacio-2) 0;
+  padding: 10px 14px;
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
 }
-.dato > svg {
-  grid-area: icono;
-  color: var(--texto-suave);
+.completa > svg {
+  color: var(--primario);
 }
-.dato > b {
-  grid-area: principal;
-  font-weight: 600;
+.completa > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-weight: 700;
+  text-decoration: none;
 }
-.dato > small {
-  grid-area: secundario;
+.reservada {
+  padding: var(--espacio-4) 0;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
-  line-height: 1.3;
-}
-.dato > button,
-.dato > a {
-  grid-area: accion;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-3);
-  border: none;
-  background: none;
-  color: var(--primario);
-  font-size: var(--letra-md);
-  font-weight: 700;
-  cursor: pointer;
-}
-/* Sin icono: el principal ocupa desde la primera columna. */
-.dato > b:first-child {
-  grid-column: icono / accion;
-}
-.dato > b:first-child + small {
-  grid-column: icono / accion;
 }
 
-/* 3. Grupos: como "Se presenta en" de la ficha de artista: título con conteo, días en gris, renglones. */
-.grupo {
-  margin-bottom: var(--espacio-5);
-}
-.grupo h2 {
-  padding: 12px 0 6px;
-  border-bottom: 1px solid var(--texto);
-  font-size: var(--letra-xl);
-}
-.grupo h2 span {
-  color: var(--texto-suave);
-  font-weight: 500;
-}
-.grupo h3 {
+/* 3. Listas: días en gris, renglones de la agenda o de lugares y artistas; vacíos con salida. */
+.dia h3 {
   padding: 12px 0 4px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
@@ -150,44 +118,4 @@
 .vacio a {
   color: var(--primario);
   font-weight: 600;
-}
-
-/* Invitación al sitio, al pie de Mi perfil: renglón discreto con icono, sin color de acción. */
-.invitar {
-  display: grid;
-  grid-template-columns: 22px 1fr;
-  column-gap: 10px;
-  align-items: center;
-  width: 100%;
-  min-height: 56px;
-  margin-bottom: var(--espacio-4);
-  padding: var(--espacio-2) 0;
-  border: none;
-  border-top: 1px solid var(--borde);
-  background: none;
-  color: var(--texto);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.invitar > svg {
-  color: var(--texto-suave);
-}
-.invitar span {
-  display: grid;
-  gap: 2px;
-}
-.invitar b {
-  font-weight: 600;
-}
-.invitar small {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-
-/* Ficha ajena reservada: una línea en gris en lugar de las secciones. */
-.reservada {
-  padding: var(--espacio-4) 0;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
 }

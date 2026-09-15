@@ -5,30 +5,30 @@ import { useActionState, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Hoja from "@/components/ui/Hoja";
+import { IconoChevronDerecha, IconoLapiz } from "@/components/ui/Iconos";
 import { LIMITES } from "@/lib/perfil";
 import { subirFoto } from "@/lib/subirFoto";
 import type { Perfil } from "@/lib/supabase/servidor";
+import ajustes from "@/app/ajustes/ajustes.module.css";
 import { guardarPerfil, type ResultadoGuardar } from "./acciones";
 import styles from "./EditarPerfil.module.css";
 
 type Props = { perfil: Perfil; correo: string };
 
 /**
- * "Editar" abre una hoja con la foto (tocar para cambiar), Nombre, Colonia y Sobre mí (decisión 6).
- * El correo se dice aquí y solo aquí. Al guardar, la ficha se actualiza y la hoja se cierra.
- * `?editar=1` (desde el menú ···) la abre al llegar.
+ * Fila "Editar" de Ajustes: abre una hoja con la foto (tocar para cambiar), Nombre, Colonia y Sobre mí (decisión 6).
+ * El correo se dice aquí y solo aquí. Al guardar, la hoja se cierra. `?editar=1` (desde "Completar" en Mi perfil) la abre al llegar.
  */
 export default function EditarPerfil({ perfil, correo }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const [abierta, setAbierta] = useState(() => params.get("editar") === "1");
-  // Guardado: la ficha de atrás se vuelve a leer y la hoja se cierra.
   const [resultado, guardar, guardando] = useActionState<ResultadoGuardar | null, FormData>(async (previo, fd) => {
     const r = await guardarPerfil(previo, fd);
     if (r.ok) {
       setAbierta(false);
       router.refresh();
-      if (params.get("editar")) router.replace("/perfil");
+      if (params.get("editar")) router.replace("/ajustes");
     }
     return r;
   }, null);
@@ -39,7 +39,7 @@ export default function EditarPerfil({ perfil, correo }: Props) {
 
   function cerrar() {
     setAbierta(false);
-    if (params.get("editar")) router.replace("/perfil");
+    if (params.get("editar")) router.replace("/ajustes");
   }
   async function alElegirFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
@@ -53,9 +53,14 @@ export default function EditarPerfil({ perfil, correo }: Props) {
   }
 
   return (
-    <>
-      <button type="button" className={styles.editar} onClick={() => setAbierta(true)} aria-haspopup="dialog">
-        Editar
+    <li>
+      <button type="button" className={ajustes.fila} onClick={() => setAbierta(true)} aria-haspopup="dialog">
+        <IconoLapiz width={20} height={20} />
+        <b>Editar</b>
+        <small>Foto, nombre, colonia, sobre ti</small>
+        <span className={ajustes.valor}>
+          <IconoChevronDerecha />
+        </span>
       </button>
       {abierta && (
         <Hoja etiqueta="Editar perfil" onCerrar={cerrar}>
@@ -94,6 +99,6 @@ export default function EditarPerfil({ perfil, correo }: Props) {
           </form>
         </Hoja>
       )}
-    </>
+    </li>
   );
 }
