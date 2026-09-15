@@ -125,6 +125,8 @@ export async function avisarCambioEvento(eventoId: string, editorId: string | nu
   const { data } = await admin.from("asistencias").select("usuario_id").eq("evento_id", eventoId).eq("estado", "voy");
   const usuarios = (data ?? []).map((a) => a.usuario_id as string).filter((u) => u !== editorId);
   if (usuarios.length === 0) return 0;
+  // Queda en Novedades para todos los que van, tengan o no avisos activados (docs/rediseno/13, decisión 1).
+  await admin.from("novedades").insert(usuarios.map((usuario_id) => ({ usuario_id, evento_id: eventoId, tipo: "cambio", detalle: cambio })));
   await admin.from("avisos_enviados").delete().eq("evento_id", eventoId).eq("tipo", "cambio");
   return avisar(evento, usuarios, "cambio", cambio);
 }

@@ -8,9 +8,9 @@
 
 /* Raíz: logotipo a la izquierda y sesión a la derecha, con su gutter; la cabecera pegajosa (chips, filtros) va debajo. */
 .raiz {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--espacio-3);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--espacio-2);
   padding: 0 var(--gutter);
 }
 

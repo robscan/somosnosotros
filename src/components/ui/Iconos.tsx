@@ -24,6 +24,18 @@ export const IconoPersonas = (p: P) => (
     <path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.3" />
   </svg>
 );
+export const IconoCampana = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+  </svg>
+);
+export const IconoTelefono = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="7" y="2.5" width="10" height="19" rx="2" />
+    <path d="M10.5 18h3" />
+  </svg>
+);
 export const IconoBoleto = (p: P) => (
   <svg {...base(p)}>
     <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z" />

@@ -30,3 +30,23 @@
   font-weight: 700;
   color: var(--texto-suave);
 }
+
+/* Campana de Novedades: 44 pt, con un punto del color de acción cuando hay algo no visto. */
+.campana {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  color: var(--texto);
+}
+.punto {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--primario);
+  box-shadow: 0 0 0 2px var(--fondo);
+}

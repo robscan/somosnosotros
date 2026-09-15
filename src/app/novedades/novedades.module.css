@@ -1,0 +1,103 @@
+/* Novedades: título, grupos por día, renglón con icono por causa; lo no visto lleva un punto a la derecha. */
+.titulo {
+  font-size: var(--letra-2xl);
+  margin: var(--espacio-3) 0 var(--espacio-2);
+}
+.vacio {
+  padding: var(--espacio-3) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.5;
+}
+.vacio a {
+  color: var(--primario);
+  font-weight: 600;
+}
+.grupo h2 {
+  padding: 12px 0 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+}
+.lista {
+  list-style: none;
+}
+.novedad {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  grid-template-areas:
+    "icono que"
+    "icono evento"
+    "icono cuando";
+  column-gap: 12px;
+  padding: 12px 20px 12px 0;
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto);
+  text-decoration: none;
+}
+.novedad > svg {
+  grid-area: icono;
+  margin-top: 2px;
+  color: var(--texto-suave);
+}
+.que {
+  grid-area: que;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.evento {
+  grid-area: evento;
+  font-size: var(--letra-xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+}
+.cuando {
+  grid-area: cuando;
+  margin-top: 2px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.nueva .que {
+  color: var(--primario);
+  font-weight: 700;
+}
+.nueva::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 18px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--primario);
+}
+/* Al pie, solo si el teléfono está apagado: icono, frase y la acción. */
+.telefono {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  column-gap: 12px;
+  align-items: center;
+  margin-top: var(--espacio-4);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.telefono > svg {
+  color: var(--texto-suave);
+}
+.telefono a {
+  min-height: var(--toque-min);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  color: var(--primario);
+  font-weight: 700;
+  text-decoration: none;
+}
