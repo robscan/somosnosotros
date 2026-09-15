@@ -17,7 +17,7 @@ export default async function NuevoLugar({ searchParams }: { searchParams: Promi
       <Barra volver={siguiente ? { href: siguiente, texto: "Volver" } : { href: "/lugares", texto: "Lugares" }} />
       <h1 className="titulo">Registrar un lugar</h1>
       <p className="subtitulo">Con el nombre y la ubicación basta. Lo demás se puede agregar después.</p>
-      <FormularioLugar accion={crearLugar} usuarioId={actual.perfil.id} siguiente={siguiente || undefined} />
+      <FormularioLugar accion={crearLugar} usuarioId={actual.perfil.id} siguiente={siguiente || undefined} esAdmin={actual.perfil.rol === "admin"} />
     </main>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
-import { Chip, ChipEnlace, Chips } from "@/components/ui/Chip";
+import { Chip, ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import ListaLugares from "@/components/ListaLugares";
 import Aviso from "@/components/ui/Aviso";
 import Mapa from "@/components/Mapa";
@@ -16,11 +16,13 @@ import {
   IconoUbicacion,
 } from "@/components/ui/Iconos";
 import type { Ciudad } from "@/lib/ciudad";
-import { etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
+import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import renglon from "@/components/Renglon.module.css";
 import styles from "./lugares.module.css";
 
 type Vista = "mapa" | "lista";
+/** Cuántos resultados de la búsqueda se listan sobre el mapa (el resto se ve en los pines o en la Lista). */
+const MAX_RESULTADOS_MAPA = 6;
 type Punto = { lat: number; lng: number };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 type Props = {
@@ -59,21 +61,32 @@ export default function VistaLugares({
   const [busqueda, setBusqueda] = useState("");
   const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
   const [encuadre, setEncuadre] = useState<{ puntos: Punto[]; vez: number } | null>(null);
+  // Lo encontrado se lista bajo el buscador mientras se escribe; al tocar uno se abre su tarjeta y la lista se cierra.
+  const [listaAbierta, setListaAbierta] = useState(false);
+  const resultados = listaAbierta && busqueda.trim() ? enMapa.slice(0, MAX_RESULTADOS_MAPA) : [];
   function buscarEnMapa(v: string) {
     setBusqueda(v);
+    setListaAbierta(true);
     const hallados = v.trim() ? filtrarLugares(lugaresDelTipo, v) : [];
     setElegido(hallados.length === 1 ? hallados[0] : null); // sin resultado o con varios, la tarjeta se cierra
     if (hallados.length === 0) return;
     setEncuadre((e) => ({ puntos: hallados.map((l) => ({ lat: l.lat, lng: l.lng })), vez: (e?.vez ?? 0) + 1 }));
   }
+  function elegirResultado(l: LugarLista) {
+    setListaAbierta(false);
+    setElegido(l);
+    setEncuadre((e) => ({ puntos: [{ lat: l.lat, lng: l.lng }], vez: (e?.vez ?? 0) + 1 }));
+  }
   const chipsTipo = tipos.length > 1 && (
     <>
       <ChipEnlace activo={!tipo} href={hrefTipo(null)}>
         Todos
+        <Cuenta n={lugares.length} />
       </ChipEnlace>
       {tipos.map((t) => (
         <ChipEnlace key={t.valor} activo={tipo === t.valor} href={hrefTipo(tipo === t.valor ? null : t.valor)}>
           {t.etiqueta}
+          <Cuenta n={t.n} />
         </ChipEnlace>
       ))}
     </>
@@ -147,7 +160,23 @@ export default function VistaLugares({
           />
           <div className={styles.sobreMapa}>
             {lugares.length >= UMBRAL_BUSCAR_LUGARES && (
-              <input type="search" className={styles.buscarMapa} placeholder="Buscar un lugar por nombre" aria-label="Buscar un lugar por nombre" value={busqueda} onChange={(e) => buscarEnMapa(e.target.value)} autoCapitalize="none" autoCorrect="off" />
+              <input type="search" className={styles.buscarMapa} placeholder="Buscar un lugar por nombre" aria-label="Buscar un lugar por nombre" value={busqueda} onChange={(e) => buscarEnMapa(e.target.value)} onFocus={() => setListaAbierta(true)} autoCapitalize="none" autoCorrect="off" />
+            )}
+            {resultados.length > 0 && (
+              <ul className={styles.resultadosMapa} role="listbox" aria-label="Lugares encontrados">
+                {resultados.map((l) => (
+                  <li key={l.id}>
+                    <button type="button" className={styles.resultadoMapa} onClick={() => elegirResultado(l)} role="option" aria-selected={elegido?.id === l.id}>
+                      <strong>{l.nombre}</strong>
+                      <span>
+                        {etiquetaTipo(l.tipo)}
+                        {calleCorta(l.direccion) ? ` · ${calleCorta(l.direccion)}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                {enMapa.length > resultados.length && <li className={styles.resultadoMas}>Y {enMapa.length - resultados.length} más en el mapa</li>}
+              </ul>
             )}
             {chipsTipo && <Chips ariaLabel="Tipo de lugar">{chipsTipo}</Chips>}
             {busqueda.trim() && enMapa.length === 0 && <p className={styles.nadaMapa}>Ningún lugar se llama así. Si existe, regístralo.</p>}
@@ -183,7 +212,7 @@ export default function VistaLugares({
               )}
               <span className={renglon.titulo}>{elegido.nombre}</span>
               <span className={`${renglon.meta} ${renglon.metaColumna}`}>
-                <span>{etiquetaTipo(elegido.tipo)}</span>
+                <span>{elegido.privado ? "Solo tú lo ves" : etiquetaTipo(elegido.tipo)}</span>
                 <span>
                   <IconoCalendario width={15} height={15} />
                   {elegido.proximo ? (

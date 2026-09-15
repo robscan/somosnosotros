@@ -24,10 +24,14 @@ export const FILTROS: { clave: Filtro; etiqueta: string }[] = [
 export type Punto = { lat: number; lng: number };
 export type Grupo<T> = { clave: string; titulo: string; eventos: T[] };
 
-/** Agrupa por día en la hora de la ciudad: "Hoy", "Mañana" y luego cada día con eventos, en orden. */
-export function agruparPorDia<T extends { inicio: string }>(eventos: T[], ahora: Date = new Date()): Grupo<T>[] {
+/**
+ * Agrupa por día en la hora de la ciudad: "Hoy", "Mañana" y luego cada día con eventos, en orden.
+ * Dentro de cada día van por hora; con `ordenDado`, en el orden en que llegan (Cercanos: por distancia).
+ */
+export function agruparPorDia<T extends { inicio: string }>(eventos: T[], ahora: Date = new Date(), ordenDado = false): Grupo<T>[] {
   const grupos = new Map<string, Grupo<T>>();
-  for (const e of [...eventos].sort((a, b) => a.inicio.localeCompare(b.inicio))) {
+  const lista = ordenDado ? eventos : [...eventos].sort((a, b) => a.inicio.localeCompare(b.inicio));
+  for (const e of lista) {
     const clave = diaLocal(new Date(e.inicio));
     let g = grupos.get(clave);
     if (!g) {
@@ -36,7 +40,7 @@ export function agruparPorDia<T extends { inicio: string }>(eventos: T[], ahora:
     }
     g.eventos.push(e);
   }
-  return [...grupos.values()];
+  return [...grupos.values()].sort((a, b) => a.clave.localeCompare(b.clave));
 }
 
 export { distanciaKm };

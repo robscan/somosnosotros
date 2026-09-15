@@ -26,6 +26,8 @@ export type LugarResumen = {
   lat: number;
   lng: number;
   portada: string | null;
+  /** Mapeo personal del administrador: solo lo ve él. La base ya lo esconde a los demás; aquí solo se señala. */
+  privado?: boolean;
 };
 
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
@@ -120,10 +122,11 @@ export const UMBRAL_BUSCAR_LUGARES = 8;
 /** Umbral a partir del cual aparecen los chips de tipo (lista y mapa). */
 export const UMBRAL_CHIPS_LUGARES = 8;
 
-/** Los tipos con al menos un lugar, en el orden de la lista cerrada (Todos va aparte). */
-export function tiposPresentes<T extends { tipo?: string }>(lugares: T[]): { valor: string; etiqueta: string }[] {
-  const hay = new Set(lugares.map((l) => l.tipo));
-  return TIPOS.filter((t) => hay.has(t.valor));
+/** Los tipos con al menos un lugar y cuántos hay de cada uno, en el orden de la lista cerrada (Todos va aparte). */
+export function tiposPresentes<T extends { tipo?: string }>(lugares: T[]): { valor: string; etiqueta: string; n: number }[] {
+  const cuenta = new Map<string, number>();
+  for (const l of lugares) if (l.tipo) cuenta.set(l.tipo, (cuenta.get(l.tipo) ?? 0) + 1);
+  return TIPOS.filter((t) => cuenta.has(t.valor)).map((t) => ({ ...t, n: cuenta.get(t.valor)! }));
 }
 
 export type DatosLugar = {
@@ -135,6 +138,7 @@ export type DatosLugar = {
   descripcion: string;
   redes: Enlace[];
   portada: string | null;
+  privado: boolean;
 };
 export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces", string>>;
 
@@ -153,6 +157,7 @@ export function validarLugar(entrada: Record<string, FormDataEntryValue | null |
     descripcion: limpiar(entrada.descripcion),
     redes,
     portada: limpiar(entrada.portada) || null,
+    privado: limpiar(entrada.privado) === "1",
   };
   const errores: ErroresLugar = {};
   if (!datos.nombre) errores.nombre = "Escribe el nombre del lugar.";

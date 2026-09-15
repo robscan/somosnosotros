@@ -35,6 +35,17 @@
   flex: none;
   margin-right: 6px;
 }
+/* El número de resultados del chip: más chico y suave; en el activo, del color del texto. */
+.cuenta {
+  margin-left: 6px;
+  font-size: var(--letra-xs);
+  font-weight: 500;
+  color: var(--texto-suave);
+}
+.activo .cuenta {
+  color: inherit;
+  opacity: 0.85;
+}
 .chip:disabled {
   color: var(--texto-suave);
   cursor: default;

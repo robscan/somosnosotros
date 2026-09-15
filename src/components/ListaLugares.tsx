@@ -76,6 +76,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
               )}
               <span className={renglon.titulo}>{l.nombre}</span>
               <span className={`${renglon.meta} ${renglon.metaColumna}`}>
+                {l.privado && <span className={renglon.sello}>Solo tú lo ves</span>}
                 <span className={renglon.lugar}>
                   <IconoPin width={15} height={15} />
                   {calleCorta(l.direccion) || "Sin dirección"}

@@ -1,98 +1,26 @@
-import { esUuid } from "@/lib/formulario";
-import Barra from "@/components/ui/Barra";
 import { notFound } from "next/navigation";
-import { eventoPaso, filtroSinPasar, formatearCuando } from "@/lib/fechas";
-import { nombreSitio, type EventoResumen } from "@/lib/eventos";
-import { etiquetaArtista, type Disciplina, type TipoArtista } from "@/lib/artistas";
-import { etiquetaTipo } from "@/lib/lugares";
-import { clienteServidor, type Perfil } from "@/lib/supabase/servidor";
-import Tarjeta from "@/components/ui/Tarjeta";
-import styles from "./perfil.module.css";
+import FichaPersona from "@/components/FichaPersona";
+import Barra from "@/components/ui/Barra";
+import ficha from "@/components/ui/Ficha.module.css";
+import { cargarPersona } from "../consultas";
 
 type Params = { params: Promise<{ id: string }> };
 
-async function cargar(id: string) {
-  const supabase = await clienteServidor();
-  if (!supabase || !esUuid(id)) return null;
-  const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, rol").eq("id", id).maybeSingle();
-  if (!perfil) return null;
-  const [{ data: sigue }, { data: va }] = await Promise.all([
-    supabase.from("seguimientos").select("lugar:lugares(id, nombre, tipo, portada), artista:artistas(id, nombre, disciplina, detalle, tipo)").eq("usuario_id", id),
-    supabase.from("asistencias").select("evento:eventos!inner(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada))").eq("usuario_id", id).eq("estado", "voy").or(filtroSinPasar(), { referencedTable: "evento" }),
-  ]);
-  const lugares = (sigue ?? []).map((s) => (Array.isArray(s.lugar) ? s.lugar[0] : s.lugar)).filter(Boolean) as { id: string; nombre: string; tipo: string; portada: string | null }[];
-  const artistas = (sigue ?? []).map((s) => (Array.isArray(s.artista) ? s.artista[0] : s.artista)).filter(Boolean) as { id: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista }[];
-  const eventos = (va ?? [])
-    .map((a) => (Array.isArray(a.evento) ? a.evento[0] : a.evento))
-    .filter((e): e is NonNullable<typeof e> => !!e && !eventoPaso(e.inicio, e.fin))
-    .map((e) => ({ ...e, lugar: Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar }) as unknown as EventoResumen)
-    .sort((a, b) => a.inicio.localeCompare(b.inicio));
-  return { perfil: perfil as Perfil, lugares, artistas, eventos };
-}
-
 export async function generateMetadata({ params }: Params) {
   const { id } = await params;
-  const d = await cargar(id);
+  const d = await cargarPersona(id);
   return { title: d ? `${d.perfil.nombre} · Somos Nosotros` : "Persona · Somos Nosotros" };
 }
 
-/** Perfil público: quién es, qué lugares sigue y a qué eventos va. Es la forma de reconocerse. */
+/** Ficha de una persona: la misma que Mi perfil, sin nada que tocar (decisión 5). Es la forma de reconocerse. */
 export default async function PaginaPersona({ params }: Params) {
   const { id } = await params;
-  const d = await cargar(id);
+  const d = await cargarPersona(id);
   if (!d) notFound();
-  const { perfil, lugares, artistas, eventos } = d;
   return (
-    <main className="pagina">
+    <main className={ficha.pagina}>
       <Barra volver={{ href: "/", texto: "Agenda" }} />
-      <div className={styles.cabecera}>
-        {perfil.foto ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-          <img src={perfil.foto} alt="" className={styles.avatar} />
-        ) : (
-          <span className={styles.avatar}>{(perfil.nombre || "?").slice(0, 1).toUpperCase()}</span>
-        )}
-        <div>
-          <h1 className="titulo">{perfil.nombre}</h1>
-          {perfil.colonia && <p className={styles.dato}>{perfil.colonia}</p>}
-        </div>
-      </div>
-      {perfil.bio && <p className={styles.bio}>{perfil.bio}</p>}
-
-      <section className={styles.seccion} aria-label="Eventos a los que va">
-        <h2 className={styles.tituloSeccion}>Va a</h2>
-        {eventos.length === 0 ? (
-          <p className={styles.vacio}>Todavía no ha dicho que va a ningún evento.</p>
-        ) : (
-          <ul className={styles.lista}>
-            {eventos.map((e) => (
-              <li key={e.id}>
-                <Tarjeta href={`/eventos/${e.id}`} arriba={formatearCuando(e.inicio, e.fin)} titulo={e.titulo} detalle={nombreSitio(e)} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className={styles.seccion} aria-label="Lugares que sigue">
-        <h2 className={styles.tituloSeccion}>Sigue</h2>
-        {lugares.length === 0 && artistas.length === 0 ? (
-          <p className={styles.vacio}>Todavía no sigue ningún lugar ni artista.</p>
-        ) : (
-          <ul className={styles.lista}>
-            {lugares.map((l) => (
-              <li key={l.id}>
-                <Tarjeta href={`/lugares/${l.id}`} titulo={l.nombre} detalle={etiquetaTipo(l.tipo)} />
-              </li>
-            ))}
-            {artistas.map((a) => (
-              <li key={a.id}>
-                <Tarjeta href={`/artistas/${a.id}`} titulo={a.nombre} detalle={etiquetaArtista(a)} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} lugares={d.lugares} artistas={d.artistas} />
     </main>
   );
 }

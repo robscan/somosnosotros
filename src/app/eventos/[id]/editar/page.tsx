@@ -25,7 +25,7 @@ export default async function EditarEvento({ params }: { params: Promise<{ id: s
     <main className="pagina">
       <Barra volver={{ href: `/eventos/${id}`, texto: "Volver al evento" }} />
       <h1 className="titulo">Editar evento</h1>
-      <FormularioEvento accion={actualizarEvento.bind(null, id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} privado={privado as SitioPrivado | null} modo="editar" usuarioId={actual.perfil.id} quienInicial={quien} mios={mios} />
+      <FormularioEvento accion={actualizarEvento.bind(null, id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} privado={privado as SitioPrivado | null} modo="editar" usuarioId={actual.perfil.id} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} />
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import CampoImagenUrl from "@/components/CampoImagenUrl";
 import Seccion from "@/components/ui/Seccion";
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
@@ -12,6 +13,7 @@ import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type Sit
 import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
 import { subirFoto } from "@/lib/subirFoto";
+import { leerUbicacion } from "@/lib/ubicacion";
 import { leerCartelAccion, type ResultadoEvento } from "./acciones";
 import SelectorCuando from "./SelectorCuando";
 import SelectorQuien from "./SelectorQuien";
@@ -63,6 +65,8 @@ type Props = {
   quienInicial?: QuienItem[];
   /** Artistas ligados a mi cuenta: si es uno solo, Quién ya viene resuelto con él (decisión 12). */
   mios?: ArtistaResumen[];
+  /** El administrador puede pegar la dirección de una imagen (eventos importados). */
+  esAdmin?: boolean;
 };
 
 /**
@@ -70,7 +74,7 @@ type Props = {
  * que se abren solo para cambiarlos. Cartel, foto, descripción y enlace van en "Más detalles".
  * Si al publicar falta algo, se abre solo el renglón que lo necesita.
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, modo, usuarioId, cartelActivo = false, quienInicial, mios = [] }: Props) {
+export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
 
@@ -103,6 +107,23 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
   const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (modo === "alta" && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
   const [masDetalles, setMasDetalles] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
+  // "Estoy aquí" en el pin de otro sitio o del sitio reservado: la persona en el mapa (punto azul) y el pin donde está.
+  const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
+  const [ubicando, setUbicando] = useState(false);
+  const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
+  async function estoyAqui(poner: (p: Punto) => void) {
+    setUbicando(true);
+    setAvisoUbicacion(null);
+    try {
+      const p = await leerUbicacion(true);
+      setYo((y) => ({ ...p, vez: (y?.vez ?? 0) + 1 }));
+      poner(p);
+    } catch (e) {
+      setAvisoUbicacion(e === "sin-soporte" ? "Este teléfono no da su ubicación. Toca el mapa donde es." : "No se pudo leer tu ubicación. Toca el mapa donde es.");
+    } finally {
+      setUbicando(false);
+    }
+  }
   const [seccionElegida, setSeccionElegida] = useState<Seccion | undefined>(undefined);
 
   // Borrador (solo en el alta): se restaura tras el primer pintado (el servidor no lo conoce) y se guarda con cada cambio.
@@ -295,8 +316,14 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         {modoSitio === "otro" && (
           <>
             <Campo etiqueta="Sitio" name="sitio_texto" value={sitioTexto} onChange={(e) => setSitioTexto(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Ej. Plaza de Armas" autoComplete="off" error={errores.sitio_texto} autoFocus />
-            <p className={styles.etiquetaChica}>Pin en el mapa (opcional)</p>
-            <Mapa modo="elegir" valor={sitioPunto} onCambio={setSitioPunto} />
+            <div className={styles.filaEtiqueta}>
+              <p className={styles.etiquetaChica}>Pin en el mapa (opcional)</p>
+              <button type="button" className={styles.pildora} onClick={() => estoyAqui(setSitioPunto)} disabled={ubicando}>
+                {ubicando ? "Ubicando…" : "Estoy aquí"}
+              </button>
+            </div>
+            <Mapa modo="elegir" valor={sitioPunto} onCambio={setSitioPunto} ubicacion={yo} />
+            {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
             <input type="hidden" name="sitio_lat" value={sitioPunto?.lat ?? ""} />
             <input type="hidden" name="sitio_lng" value={sitioPunto?.lng ?? ""} />
             <div className={styles.pildoras}>
@@ -325,8 +352,14 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               ))}
             </select>
             <Campo etiqueta="Indicaciones (opcional)" name="indicaciones" value={indicaciones} onChange={(e) => setIndicaciones(e.target.value)} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Ej. Portón verde, tocar dos veces" autoComplete="off" />
-            <p className={styles.etiquetaChica}>Pin exacto (opcional)</p>
-            <Mapa modo="elegir" valor={privadoPunto} onCambio={setPrivadoPunto} />
+            <div className={styles.filaEtiqueta}>
+              <p className={styles.etiquetaChica}>Pin exacto (opcional)</p>
+              <button type="button" className={styles.pildora} onClick={() => estoyAqui(setPrivadoPunto)} disabled={ubicando}>
+                {ubicando ? "Ubicando…" : "Estoy aquí"}
+              </button>
+            </div>
+            <Mapa modo="elegir" valor={privadoPunto} onCambio={setPrivadoPunto} ubicacion={yo} />
+            {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
             <input type="hidden" name="privado_lat" value={privadoPunto?.lat ?? ""} />
             <input type="hidden" name="privado_lng" value={privadoPunto?.lng ?? ""} />
             <div className={styles.pildoras}>
@@ -382,6 +415,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 {errorImagen ?? errores.imagen}
               </p>
             )}
+            {esAdmin && <CampoImagenUrl valor={imagen} onCambio={setImagen} />}
           </div>
           <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} />
           <Campo etiqueta="Enlace" name="enlace" value={enlace} onChange={(e) => setEnlace(e.target.value)} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />

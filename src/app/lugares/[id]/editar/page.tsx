@@ -20,7 +20,7 @@ export default async function EditarLugar({ params }: { params: Promise<{ id: st
     <main className="pagina">
       <Barra volver={{ href: `/lugares/${id}`, texto: "Volver al lugar" }} />
       <h1 className="titulo">Editar lugar</h1>
-      <FormularioLugar accion={actualizarLugar.bind(null, id)} lugar={lugar} usuarioId={actual.perfil.id} />
+      <FormularioLugar accion={actualizarLugar.bind(null, id)} lugar={lugar} usuarioId={actual.perfil.id} esAdmin={actual.perfil.rol === "admin"} />
     </main>
   );
 }

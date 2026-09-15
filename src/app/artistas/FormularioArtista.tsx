@@ -12,6 +12,7 @@ import { normalizarRedes } from "@/lib/enlaces";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
+import CampoImagenUrl from "@/components/CampoImagenUrl";
 import type { ResultadoArtista } from "./acciones";
 import styles from "./FormularioArtista.module.css";
 
@@ -22,6 +23,8 @@ type Props = {
   usuarioId: string;
   /** Viene de la búsqueda de la lista ("Registrar a «…»"). */
   nombreInicial?: string;
+  /** El administrador puede pegar la dirección de una foto (fichas importadas). */
+  esAdmin?: boolean;
 };
 
 type Abierta = "hace" | "es" | null;
@@ -42,7 +45,7 @@ function leerBorrador(): Borrador | null {
  * ("Qué hace", "Es", deducido del nombre) que se abren solo para cambiarlos; foto opcional;
  * "Soy yo / es mi grupo"; redes y descripción bajo "Más detalles". Si el nombre ya existe, "¿Es este?" (decisión 5).
  */
-export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial }: Props) {
+export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false }: Props) {
   const esAlta = !artista;
   const [resultado, enviar, enviando] = useActionState<ResultadoArtista | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
@@ -214,6 +217,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           </p>
         )}
       </div>
+      {esAdmin && <CampoImagenUrl valor={foto} onCambio={setFoto} />}
       <input type="hidden" name="foto" value={foto ?? ""} />
 
       {/* 5. Soy yo / es mi grupo (solo en el alta; después lo liga el administrador) */}

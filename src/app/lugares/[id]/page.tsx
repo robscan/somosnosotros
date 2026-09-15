@@ -171,10 +171,16 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           Evento borrado.
         </p>
       )}
-      {!lugar.visible && (
-        <p className={`aviso-error ${ficha.oculto}`} role="status">
-          Este lugar está oculto: solo lo ven su autor y el administrador.
+      {lugar.privado ? (
+        <p className={`aviso-ok ${ficha.oculto}`} role="status">
+          Lugar privado: solo lo ves tú. No sale en el mapa ni en la lista para nadie más.
         </p>
+      ) : (
+        !lugar.visible && (
+          <p className={`aviso-error ${ficha.oculto}`} role="status">
+            Este lugar está oculto: solo lo ven su autor y el administrador.
+          </p>
+        )
       )}
 
       {lugar.portada && <Cartel src={lugar.portada} alt={`Portada de ${lugar.nombre}`} />}

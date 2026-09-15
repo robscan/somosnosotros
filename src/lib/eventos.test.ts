@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, enlaceDesdeCartel, nombreSitio, textoCompartir, validarEvento } from "./eventos";
+import { cartelAFormulario, enlaceDesdeCartel, nombreSitio, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -85,5 +85,19 @@ describe("textoCompartir", () => {
     expect(textoCompartir("Noche de jazz", "Hoy · 19:00", "Teatro de la Paz", "https://somosnosotros.org/eventos/1")).toBe(
       "Noche de jazz\nHoy · 19:00 · Teatro de la Paz\nhttps://somosnosotros.org/eventos/1",
     );
+  });
+});
+
+describe("queCambio", () => {
+  const base = { inicio: "2026-09-20T19:00:00.000Z", fin: null, lugar_id: "l1", sitio_texto: null };
+  it("nada si solo cambian título o descripción (los mismos datos con otra escritura de la hora)", () => {
+    expect(queCambio(base, { ...base, inicio: "2026-09-20T19:00:00+00:00" })).toBeNull();
+  });
+  it("cuándo, dónde o ambos", () => {
+    expect(queCambio(base, { ...base, inicio: "2026-09-21T19:00:00.000Z" })).toBe("cuando");
+    expect(queCambio(base, { ...base, fin: "2026-09-20T21:00:00.000Z" })).toBe("cuando");
+    expect(queCambio(base, { ...base, lugar_id: "l2" })).toBe("donde");
+    expect(queCambio(base, { ...base, lugar_id: null, sitio_texto: "Plaza de Armas" })).toBe("donde");
+    expect(queCambio(base, { ...base, inicio: "2026-09-21T19:00:00.000Z", lugar_id: "l2" })).toBe("ambos");
   });
 });

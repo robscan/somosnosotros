@@ -82,10 +82,11 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       grupos = lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora), eventos: lista }] : [];
       vacio = "Ese día no hay nada todavía. Quita la fecha para ver todo.";
     } else if (filtro === "cercanos") {
-      grupos = lista.length ? [{ clave: "cerca", titulo: "Cerca de ti", eventos: lista }] : [];
+      // Por día, y dentro de cada día del más cercano al más lejano.
+      grupos = agruparPorDia(lista, ahora, true);
       vacio = "Nada cerca por ahora.";
     } else if (filtro === "nuevos") {
-      grupos = lista.length ? [{ clave: "nuevos", titulo: "Agregados esta semana", eventos: lista }] : [];
+      grupos = agruparPorDia(lista, ahora);
       vacio = "Nada nuevo esta semana.";
     } else {
       grupos = agruparPorDia(lista, ahora);
@@ -117,18 +118,24 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     <>
       <div className={styles.fija}>
         <div className={styles.contexto}>
-          <label className={`${styles.chip} ${fecha ? styles.chipActivo : ""}`} htmlFor="agenda-fecha">
-            <IconoCalendario width={16} height={16} />
-            <span>{fecha ? diaCorto(localAIso(`${fecha}T12:00`) ?? hoyIso, ahora) : diaCorto(hoyIso, ahora)}</span>
-            {fecha ? (
+          {fecha ? (
+            // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
+            <span className={`${styles.chip} ${styles.chipActivo}`}>
+              <IconoCalendario width={16} height={16} />
+              <span>{diaCorto(localAIso(`${fecha}T12:00`) ?? hoyIso, ahora)}</span>
               <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
                 ✕
               </button>
-            ) : (
+            </span>
+          ) : (
+            // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
+            <label className={styles.chip} htmlFor="agenda-fecha">
+              <IconoCalendario width={16} height={16} />
+              <span>{diaCorto(hoyIso, ahora)}</span>
               <IconoCaret width={12} height={12} />
-            )}
-            <input type="date" id="agenda-fecha" className={styles.encima} min={hoy} value={fecha || hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
-          </label>
+              <input type="date" id="agenda-fecha" className={styles.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
+            </label>
+          )}
           {ciudades.length > 1 ? (
             <button type="button" className={styles.chip} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
               <IconoPin width={16} height={16} />

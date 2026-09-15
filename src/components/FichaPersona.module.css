@@ -1,0 +1,136 @@
+/* Ficha de persona (Mi perfil y ficha ajena; docs/rediseno/11, decisiones 5 a 9).
+   1. Cabecera · 2. Datos (Completa tu perfil, Avisos) · 3. Grupos (Voy a, Sigo) */
+
+/* 1. Cabecera plana: foto redonda a la izquierda en tres filas; nombre, colonia y Editar a la derecha. */
+.cabecera {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  grid-template-areas:
+    "foto nombre"
+    "foto colonia"
+    "foto editar";
+  column-gap: var(--espacio-4);
+  align-items: center;
+  align-content: center;
+  margin: var(--espacio-3) 0 var(--espacio-4);
+}
+.avatar {
+  grid-area: foto;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.avatarVacio {
+  display: grid;
+  place-items: center;
+  color: var(--texto-suave);
+  font-size: var(--letra-3xl);
+  font-weight: 700;
+}
+.nombre {
+  grid-area: nombre;
+  align-self: end;
+  font-size: var(--letra-2xl);
+  line-height: 1.1;
+}
+.colonia {
+  grid-area: colonia;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.editar {
+  grid-area: editar;
+  justify-self: start;
+}
+.sobreMi {
+  margin-bottom: var(--espacio-4);
+  font-size: var(--letra-md);
+  line-height: 1.4;
+}
+
+/* 2. Datos: renglones planos con icono, principal, secundario y acción (mismo dibujo que las fichas). */
+.datos {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-5);
+}
+.dato {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-areas:
+    "icono principal accion"
+    "icono secundario accion";
+  column-gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--letra-md);
+}
+.dato > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.dato > b {
+  grid-area: principal;
+  font-weight: 600;
+}
+.dato > small {
+  grid-area: secundario;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.3;
+}
+.dato > button,
+.dato > a {
+  grid-area: accion;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-3);
+  border: none;
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+/* Sin icono: el principal ocupa desde la primera columna. */
+.dato > b:first-child {
+  grid-column: icono / accion;
+}
+.dato > b:first-child + small {
+  grid-column: icono / accion;
+}
+
+/* 3. Grupos: como "Se presenta en" de la ficha de artista: título con conteo, días en gris, renglones. */
+.grupo {
+  margin-bottom: var(--espacio-5);
+}
+.grupo h2 {
+  padding: 12px 0 6px;
+  border-bottom: 1px solid var(--texto);
+  font-size: var(--letra-xl);
+}
+.grupo h2 span {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+.grupo h3 {
+  padding: 12px 0 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+}
+.lista {
+  list-style: none;
+}
+.vacio {
+  padding: var(--espacio-3) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.vacio a {
+  color: var(--primario);
+  font-weight: 600;
+}

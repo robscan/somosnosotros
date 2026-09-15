@@ -12,8 +12,17 @@ export type ResultadoLugar =
 
 
 function leer(formData: FormData) {
-  const claves = ["nombre", "tipo", "direccion", "lat", "lng", "descripcion", "portada", "enlaces"];
+  const claves = ["nombre", "tipo", "direccion", "lat", "lng", "descripcion", "portada", "enlaces", "privado"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
+}
+
+type Cliente = Awaited<ReturnType<typeof sesionOEntrar>>["supabase"];
+
+/** "Privado" solo lo puede marcar el administrador (la política de la base lo exige también). */
+async function privadoPermitido(supabase: Cliente, usuarioId: string, pedido: boolean): Promise<boolean> {
+  if (!pedido) return false;
+  const { data } = await supabase.from("perfiles").select("rol").eq("id", usuarioId).maybeSingle();
+  return data?.rol === "admin";
 }
 
 /** Alta de lugar. Si hay uno parecido a menos de 150 m y no se confirmó, devuelve los parecidos para preguntar "¿es este?". */
@@ -29,7 +38,7 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
 
   const { data, error } = await supabase
     .from("lugares")
-    .insert({ ...datos, descripcion: datos.descripcion || null, direccion: datos.direccion || null, creado_por: user.id })
+    .insert({ ...datos, privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null, creado_por: user.id })
     .select("id")
     .single();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
@@ -41,13 +50,13 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
 }
 
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
-  const { supabase } = await sesionOEntrar(`/lugares/${id}/editar`);
+  const { supabase, user } = await sesionOEntrar(`/lugares/${id}/editar`);
   const { datos, errores } = validarLugar(leer(formData));
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const { data, error } = await supabase
     .from("lugares")
-    .update({ ...datos, descripcion: datos.descripcion || null, direccion: datos.direccion || null })
+    .update({ ...datos, privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null })
     .eq("id", id)
     .select("id")
     .maybeSingle();

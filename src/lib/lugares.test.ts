@@ -30,6 +30,9 @@ describe("filtrarLugares", () => {
 });
 
 describe("tiposPresentes", () => {
+  it("cuenta cuántos lugares hay de cada tipo", () => {
+    expect(tiposPresentes([{ tipo: "museo" }, { tipo: "foro" }, { tipo: "museo" }]).map((t) => `${t.valor}:${t.n}`)).toEqual(["museo:2", "foro:1"]);
+  });
   it("Museo y Escuela entran en el orden de los chips con su etiqueta", () => {
     const l = [{ tipo: "escuela" }, { tipo: "foro" }, { tipo: "museo" }];
     expect(tiposPresentes(l).map((t) => t.etiqueta)).toEqual(["Museo", "Foro", "Escuela"]);
@@ -47,6 +50,8 @@ describe("validarLugar", () => {
       { red: "vimeo", url: "https://vimeo.com/forox" },
     ]);
     expect(datos.portada).toBeNull();
+    expect(datos.privado).toBe(false);
+    expect(validarLugar({ ...base, privado: "1" }).datos.privado).toBe(true);
   });
   it("exige nombre, tipo válido y ubicación", () => {
     const { errores } = validarLugar({ ...base, nombre: "", tipo: "bar", lat: "0", lng: "0" });

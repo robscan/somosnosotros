@@ -15,7 +15,7 @@ export default async function NuevoArtista({ searchParams }: { searchParams: Pro
       <Barra volver={{ href: "/artistas", texto: "Artistas" }} />
       <h1 className="titulo">Registrar artista</h1>
       <p className="subtitulo">Con el nombre basta. Lo demás se puede completar después.</p>
-      <FormularioArtista accion={crearArtista} usuarioId={actual.perfil.id} nombreInicial={nombre?.slice(0, 80)} />
+      <FormularioArtista accion={crearArtista} usuarioId={actual.perfil.id} nombreInicial={nombre?.slice(0, 80)} esAdmin={actual.perfil.rol === "admin"} />
     </main>
   );
 }
