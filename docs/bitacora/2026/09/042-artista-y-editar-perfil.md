@@ -18,5 +18,8 @@ El doc 15 decía en A1 "Si es otro con el mismo nombre, sigue". La base no admit
 - Alta de evento en 390×844 con otro usuario desechable: pantalla al llegar igual al prototipo, hoja con los 58 lugares y su filtro ("arte" deja 7), otro sitio reservado con dirección, Dónde resuelto, publicación con la ficha correcta y la edición cargando todos los valores. Evento y usuario borrados.
 - Editar perfil con el mismo usuario: Colonia abierta con foco, Guardar encendido al cambiar, guardado en la base y vuelta a Ajustes. El panel del navegador estaba oculto al final, así que la captura de Editar perfil queda para el iPhone del founder.
 
+## Firma
+El founder firmó los tres formularios al cierre del día ("Te firmo, gracias").
+
 ## Queda
-- Nada de los formularios: los tres están en producción. La firma en el iPhone del founder.
+- Nada de los formularios.
