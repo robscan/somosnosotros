@@ -79,8 +79,23 @@ export function etiquetaArtista(a: Pick<ArtistaResumen, "disciplina" | "detalle"
 export function deducirTipoArtista(nombre: string): TipoArtista | null {
   const n = normalizarNombre(nombre);
   if (/^colectivo\b/.test(n)) return "colectivo";
-  if (/^(los|las|trio|cuarteto|quinteto|banda|compania|orquesta|ensamble|dueto|duo|coro|grupo|sonora|mariachi|conjunto)\b/.test(n)) return "grupo";
+  if (/^(los|las|trio|cuarteto|quinteto|banda|compania|orquesta|ensamble|dueto|duo|coro|grupo|sonora|mariachi|conjunto|ballet)\b/.test(n)) return "grupo";
   return null;
+}
+
+/**
+ * Del nombre se deduce qué hace (decisión 4 de docs/rediseno/15): "Ballet Folclórico" baila, "Compañía de Teatro" actúa,
+ * "Coro", "Orquesta" o "Mariachi" tocan. Sin pista, Música, que es lo más común; el renglón se cambia con un toque.
+ */
+export function deducirDisciplina(nombre: string): Disciplina {
+  const n = normalizarNombre(nombre);
+  if (/\b(teatro|teatral|titeres|clown|payas[oa]s?)\b/.test(n)) return "teatro";
+  if (/\b(danza|ballet|bailarin[a]?|bailes?)\b/.test(n)) return "danza";
+  if (/\b(cine|cineclub|filmes?|documental(es)?)\b/.test(n)) return "cine";
+  if (/\b(circo|circense|malabar(es|istas?)|acrobat[ai]s?)\b/.test(n)) return "circo";
+  if (/\b(grabado|grafica|pintura|escultura|fotografia|ceramica|muralis[mt][oa]s?|ilustracion)\b/.test(n)) return "artes_visuales";
+  if (/\b(poesia|poetas?|letras|literari[oa]|narrador(a|es)?|cuentacuentos)\b/.test(n)) return "letras";
+  return "musica";
 }
 
 /** Orden de la lista: con fechas próximas primero (por la fecha), luego alfabético (decisión 2). */

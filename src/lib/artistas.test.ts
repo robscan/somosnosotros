@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { artistaIgual, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, ordenarArtistas, quienDesdeJson, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
+import { artistaIgual, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, ordenarArtistas, quienDesdeJson, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
+
+describe("deducirDisciplina", () => {
+  it("lee la disciplina del nombre y, sin pista, propone música", () => {
+    expect(deducirDisciplina("Ballet Folclórico Universitario")).toBe("danza");
+    expect(deducirDisciplina("Compañía de Teatro La Carpa")).toBe("teatro");
+    expect(deducirDisciplina("Taller de Gráfica Índigo")).toBe("artes_visuales");
+    expect(deducirDisciplina("Cineclub Alameda")).toBe("cine");
+    expect(deducirDisciplina("Los Vecinos")).toBe("musica");
+    expect(deducirDisciplina("")).toBe("musica");
+  });
+});
 
 describe("deducirTipoArtista", () => {
   it("propone grupo o colectivo por el nombre; solista se queda sin propuesta", () => {

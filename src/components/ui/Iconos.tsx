@@ -304,3 +304,26 @@ export const IconoOk = (p: P) => (
     <path d="M5 12.5l4.5 4.5L19 7.5" />
   </svg>
 );
+export const IconoCamara = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" />
+    <circle cx="12" cy="13" r="3.2" />
+  </svg>
+);
+export const IconoCandado = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="5" y="10.5" width="14" height="10" rx="2" />
+    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+  </svg>
+);
+export const IconoCasa = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 11l8-7 8 7v9H4z" />
+    <path d="M10 20v-6h4v6" />
+  </svg>
+);
+export const IconoTexto = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M5 7h14M5 12h14M5 17h9" />
+  </svg>
+);
