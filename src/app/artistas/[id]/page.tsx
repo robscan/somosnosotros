@@ -20,7 +20,7 @@ import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { etiquetaArtista, textoProximaFecha, type Artista } from "@/lib/artistas";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { nombreSitio } from "@/lib/eventos";
-import { desdeReciente } from "@/lib/fechas";
+import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from "../acciones";
@@ -55,7 +55,7 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
     .select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en, lugar:lugares(nombre, portada, lat, lng), eventos_artistas!inner(artista_id)")
     .eq("eventos_artistas.artista_id", artistaId)
     .eq("visible", true)
-    .gte("inicio", desdeReciente())
+    .or(filtroSinPasar())
     .order("inicio")
     .limit(30);
   const filas = (data ?? []) as unknown as FilaEvento[];

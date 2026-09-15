@@ -16,7 +16,7 @@ import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { nombreSitio, textoCompartir } from "@/lib/eventos";
-import { formatearCuando, formatearLargo } from "@/lib/fechas";
+import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
@@ -75,7 +75,8 @@ async function cargarPrivado(id: string): Promise<SitioPrivado | null> {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const e = await cargarEvento(id);
-  if (!e) return { title: "Evento · Somos Nosotros" };
+  // Un evento que ya pasó no se anuncia al compartir (decisión del founder, 2026-09-14).
+  if (!e || eventoPaso(e.inicio, e.fin)) return { title: "Evento · Somos Nosotros" };
   const cuando = formatearLargo(e.inicio);
   const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
   const imagen = e.imagen ?? e.lugar?.portada ?? undefined;
@@ -99,6 +100,10 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const { nuevo, accion, error } = (await searchParams) ?? {};
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
+  const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
+  // Un evento que ya pasó se oculta como uno oculto: solo lo ven su autor y el administrador (decisión del founder, 2026-09-14).
+  const paso = eventoPaso(e.inicio, e.fin);
+  if (paso && !puedeEditar) notFound();
   // Venía de entrar con la intención de decir "Voy" / "Me interesa": se aplica sola.
   if (actual && (accion === "voy" || accion === "me_interesa")) {
     const supabase = await clienteServidor();
@@ -108,7 +113,6 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const [asistencias, quien] = await Promise.all([cargarAsistencias(id, actual?.perfil.id ?? null), cargarQuien(id)]);
   const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
-  const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
   const url = `${ORIGEN}/eventos/${e.id}`;
   const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin), sitio, url).replace(`\n${url}`, "");
@@ -173,9 +177,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           No se pudo borrar. ¿Sigues con sesión y es tu evento?
         </p>
       )}
-      {!e.visible && (
+      {(!e.visible || paso) && (
         <p className={`aviso-error ${ficha.oculto}`} role="status">
-          Este evento está oculto: solo lo ven su autor y el administrador.
+          {paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven su autor y el administrador.
         </p>
       )}
 
