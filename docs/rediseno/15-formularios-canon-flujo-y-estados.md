@@ -52,4 +52,4 @@ flowchart TD
 ## Qué sigue
 
 1. ~~El founder corrige 14, recorre el prototipo y firma.~~ Firmado el 2026-09-15 (noche): todo, con Editar perfil en pantalla completa en vez de hoja.
-2. ~~PR E: alta de artista.~~ Hecho (PR #48, 2026-09-15). ~~PR F: Editar perfil en pantalla completa (`/ajustes/editar`).~~ Hecho (PR #49). Queda el PR D: alta de evento (cierra el PR 4 de OL-010), para otra sesión por decisión del founder.
+2. ~~PR E: alta de artista.~~ Hecho (PR #48, 2026-09-15). ~~PR F: Editar perfil en pantalla completa (`/ajustes/editar`).~~ Hecho (PR #49). ~~PR D: alta de evento.~~ Hecho (PR #50, misma noche): cierra el PR 4 de OL-010 y la decisión 11 de [11](11-restantes-flujo-y-estados.md).
