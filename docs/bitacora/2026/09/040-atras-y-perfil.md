@@ -1,6 +1,6 @@
 # 040 · Atrás genérico y ajustes al perfil desde el iPhone
 
-**Fecha:** 2026-09-15 · **Rama:** `atras-y-perfil` → PR · **Pieza:** OL-019 (corrección del founder tras probar el PR #39 en su iPhone)
+**Fecha:** 2026-09-15 · **Rama:** `atras-y-perfil` → [PR #41](https://github.com/robscan/somosnosotros/pull/41), fusionado y en producción el mismo día · **Pieza:** OL-019 (corrección del founder tras probar el PR #39 en su iPhone)
 
 ## Qué pidió el founder
 Con la captura de Mi perfil en su iPhone: (1) Ajustes y Compartir son acciones y deben vivir en la misma región; (2) el resumen en números en una sola línea, manteniendo la diferencia de tamaños, con aspecto de pestañas y una línea horizontal en la base que las relacione; (3) el botón de atrás decía "Agenda" pero la navegación no es lineal (se llega a una ficha desde un lugar, un artista o un enlace): que sea un atrás genérico.
