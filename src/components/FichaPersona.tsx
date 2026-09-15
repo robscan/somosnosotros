@@ -159,7 +159,7 @@ export default function FichaPersona({
                 : "una línea sobre ti"}
             : así te reconocen en “quién va”.
           </span>
-          <Link href="/ajustes?editar=1">Completar</Link>
+          <Link href="/ajustes/editar">Completar</Link>
         </p>
       )}
       {reservada ? (
