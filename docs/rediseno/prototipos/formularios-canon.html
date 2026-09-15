@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formularios con el canon v1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens: los de globals.css de somosnosotros (línea gráfica firmada). */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --panel: #1f2933; --panel-texto: #e6e9ee; --panel-suave: #9aa5b1; --panel-borde: #34424f;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px; --alto-estado: 48px; --alto-barra: 56px; --alto-teclado: 260px; --area-segura: 34px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  svg { width: 20px; height: 20px; flex: none; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 var(--gutter) 120px; }
+
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; }
+  .volver { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px 0 8px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; text-decoration: none; justify-self: start; }
+  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; margin: 14px 0 6px; }
+  .subtitulo { color: var(--texto-suave); font-size: 15px; margin-bottom: 14px; line-height: 1.4; }
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after, [data-tip]:focus-visible::after { content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); z-index: 7; padding: 4px 8px; border-radius: 6px; background: var(--texto); color: var(--fondo); font-size: 13px; font-weight: 500; white-space: nowrap; pointer-events: none; }
+
+  /* El canon: campo con icono; sugerencias; renglones resueltos (icono | clave / valor | acción; cuerpo debajo). */
+  .campo { position: relative; display: grid; margin-bottom: 12px; }
+  .campo > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); pointer-events: none; }
+  .campo > input, .campo > textarea { min-height: var(--toque); padding: 0 14px 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 17px; }
+  .campo > textarea { padding: 12px 14px; min-height: 84px; resize: none; }
+  .campo.sin-icono > input { padding-left: 14px; }
+  .campo > input:focus, .campo > textarea:focus { border-color: var(--texto); outline: none; }
+  .campo > .accion-campo { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); display: inline-grid; place-items: center; width: 40px; height: 40px; border: none; border-radius: 50%; background: none; color: var(--primario); cursor: pointer; }
+  .campo > .accion-campo svg { width: 22px; height: 22px; }
+  .sugerencias { list-style: none; margin: -6px 0 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); overflow: hidden; }
+  .sugerencias li { display: grid; grid-template-columns: 24px 1fr; grid-template-areas: "icono nombre" "icono detalle"; column-gap: 10px; align-items: center; min-height: var(--toque); padding: 8px 14px; border-top: 1px solid var(--borde); cursor: pointer; }
+  .sugerencias li:first-child { border-top: none; }
+  .sugerencias li > svg { grid-area: icono; color: var(--texto-suave); }
+  .sugerencias li > b { grid-area: nombre; font-weight: 700; }
+  .sugerencias li > small { grid-area: detalle; color: var(--texto-suave); font-size: 14px; }
+  .sugerencias li.atajo > b { color: var(--primario); font-weight: 600; }
+  .existe { display: grid; grid-template-columns: 24px 1fr; column-gap: 10px; align-items: center; margin: -4px 0 12px; padding: 10px 14px; border-radius: var(--radio); background: var(--primario-suave); font-size: 15px; line-height: 1.4; }
+  .existe svg { color: var(--primario); }
+  .existe a { color: var(--primario); font-weight: 700; }
+  .renglones { list-style: none; display: grid; gap: 8px; margin-bottom: 16px; }
+  .resuelto { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono clave accion" "icono valor accion" "cuerpo cuerpo cuerpo"; column-gap: 12px; align-items: center; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+  .resuelto.pendiente { border-style: dashed; }
+  .resuelto.abierta { border-color: var(--texto); }
+  .resuelto > svg { grid-area: icono; color: var(--texto-suave); }
+  .resuelto > .clave { grid-area: clave; font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
+  .resuelto > .valor { grid-area: valor; font-size: 17px; font-weight: 600; line-height: 1.2; }
+  .resuelto > .valor.falta { color: var(--texto-suave); font-weight: 500; }
+  .resuelto > .cambiar { grid-area: accion; min-height: var(--toque-min); padding: 0 8px; border: none; background: none; color: var(--primario); font-size: 15px; font-weight: 700; cursor: pointer; }
+  .resuelto > .opciones { grid-area: accion; display: flex; gap: 6px; }
+  .resuelto > .palanca { grid-area: accion; }
+  .accion { display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); cursor: pointer; }
+  .accion svg { width: 22px; height: 22px; }
+  .resuelto > .cuerpo { grid-area: cuerpo; display: grid; gap: 10px; padding-top: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .chip[aria-pressed="true"] { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+  .cuerpo .campo { margin: 0; }
+  .cuerpo .campo > input { min-height: var(--toque-min); padding-left: 14px; }
+  .palanca { position: relative; width: 51px; height: 31px; border: none; border-radius: 16px; background: var(--borde); cursor: pointer; }
+  .palanca::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left 150ms; }
+  .palanca[aria-checked="true"] { background: var(--primario); }
+  .palanca[aria-checked="true"]::after { left: 22px; }
+  .avatar-chico { grid-area: icono; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); }
+  .primario { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: var(--toque); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; cursor: pointer; }
+  .primario[aria-disabled="true"] { background: var(--fondo-miniatura); color: var(--texto-suave); }
+  .primario small { font-size: 13px; font-weight: 500; }
+  .acciones-fijas { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 10px var(--gutter) calc(10px + var(--area-segura)); background: var(--fondo); border-top: 1px solid var(--borde); }
+  .teclado { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: var(--alto-teclado); background: #d1d3d9; display: grid; grid-template-rows: repeat(4, 1fr); gap: 8px; padding: 10px 6px 30px; }
+  .teclado .fila-teclas { display: flex; gap: 6px; justify-content: center; }
+  .teclado span { flex: 1; max-width: 34px; height: 100%; border-radius: 6px; background: #fff; }
+  .teclado .ancha { max-width: 160px; }
+  .sobre-teclado { position: absolute; left: 0; right: 0; bottom: var(--alto-teclado); z-index: 4; padding: 8px var(--gutter); background: var(--fondo); border-top: 1px solid var(--borde); }
+
+  /* Hojas: "Dónde es" (buscar lugar) y "Editar perfil". */
+  .hoja-fondo { position: absolute; inset: 0; z-index: 8; display: none; background: rgba(0,0,0,.32); }
+  .hoja-fondo.abierta { display: block; }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 10px; align-content: start; max-height: calc(100% - 48px); overflow-y: auto; padding: 12px var(--gutter) calc(16px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .hoja.alta { height: calc(100% - 48px); }
+  .asa { width: 36px; height: 4px; margin: 0 auto; border-radius: 2px; background: var(--borde); }
+  .hoja h3 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); padding-right: 44px; }
+  .cerrar { position: absolute; top: 8px; right: 8px; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto-suave); font-size: 19px; cursor: pointer; }
+  .hoja .campo { margin: 0; }
+  .hoja .sugerencias { margin: 0; }
+  .hoja .renglones { margin: 0; }
+  .lista-lugares { list-style: none; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); overflow: hidden; }
+  .lista-lugares li { display: grid; grid-template-columns: 40px 1fr; grid-template-areas: "foto nombre" "foto detalle"; column-gap: 12px; align-items: center; min-height: 56px; padding: 8px 14px; border-top: 1px solid var(--borde); cursor: pointer; }
+  .lista-lugares li:first-child { border-top: none; }
+  .lista-lugares .foto { grid-area: foto; width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .lista-lugares .foto.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); }
+  .lista-lugares b { grid-area: nombre; font-weight: 700; }
+  .lista-lugares small { grid-area: detalle; color: var(--texto-suave); font-size: 14px; }
+  .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 140px; z-index: 9; padding: 12px 14px; border-radius: var(--radio); background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
+  .nota.visible { opacity: 1; transform: none; }
+
+  /* Ajustes de fondo para la hoja Editar */
+  .ajustes { display: grid; gap: 24px; margin-top: 4px; }
+  .ajustes > h2 { margin-bottom: -16px; padding-left: 4px; color: var(--texto-suave); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .tarjeta { list-style: none; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); overflow: hidden; }
+  .fila { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono etiqueta accion" "icono detalle accion"; column-gap: 12px; align-items: center; min-height: 52px; padding: 8px 14px; border-top: 1px solid var(--borde); }
+  .fila:first-child { border-top: none; }
+  .fila > svg { grid-area: icono; color: var(--texto-suave); }
+  .fila > b { grid-area: etiqueta; font-size: 17px; font-weight: 600; }
+  .fila > small { grid-area: detalle; color: var(--texto-suave); font-size: 15px; }
+  .fila > .valor { grid-area: accion; color: var(--texto-suave); font-size: 15px; }
+
+  /* Utilería */
+  .utileria { width: 300px; max-width: 100%; flex: none; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
+  .utileria h3 { margin-bottom: 4px; color: var(--panel-suave); font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .nota-utileria { margin-bottom: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.35; }
+  .control { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--panel-borde); }
+  .control:first-of-type { border-top: none; }
+  .control code { margin-right: 6px; color: var(--panel-suave); font-family: inherit; font-size: 12px; }
+  .control select { min-height: 36px; padding: 6px 8px; border: 1px solid var(--panel-borde); border-radius: 8px; background: #2b3a48; color: var(--panel-texto); }
+  .reiniciar { width: 100%; min-height: var(--toque-min); margin-top: 14px; border: 1px solid var(--panel-borde); border-radius: 10px; background: transparent; color: var(--panel-texto); font-weight: 700; cursor: pointer; }
+  .decisiones { margin-top: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.4; }
+  .decisiones a { color: var(--panel-texto); }
+  :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .nota, .palanca::after { transition: none; } }
+  @media (max-width: 740px) { .telefono { height: auto; min-height: 720px; } .pantalla { height: auto; max-height: 700px; } }
+</style>
+</head>
+<body>
+
+<div class="estudio">
+  <p class="rotulo"><strong>Formularios con el canon v1</strong> <span>El alta de evento, el alta de artista y la hoja Editar perfil, cuestionados con el canon del alta de lugar</span> <span>Datos de ejemplo, no reales</span></p>
+
+  <div class="telefono">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+    <main class="pantalla" id="pantalla"></main>
+    <div class="acciones-fijas" id="pie" hidden></div>
+    <div class="hoja-fondo" id="hoja-fondo"><div class="hoja" role="dialog" id="hoja"></div></div>
+    <p class="nota" id="nota" role="status"></p>
+  </div>
+
+  <aside class="utileria" aria-label="Utilería de revisión">
+    <h3>Utilería de revisión</h3>
+    <p class="nota-utileria">No es parte del diseño. Cambia de pantalla y fuerza los estados; los ID corresponden a la tabla del documento.</p>
+    <label class="control"><span>Pantalla</span><select id="vista"><option value="evento">Publicar evento</option><option value="artista">Registrar artista</option><option value="editar">Editar perfil (hoja)</option></select></label>
+    <label class="control"><span><code>V0–V4</code>Evento</span><select id="eventoEstado"><option value="V0">V0 · llega</option><option value="V1">V1 · escribió el nombre</option><option value="V2">V2 · hoja Dónde es</option><option value="V3">V3 · lugar elegido</option><option value="V4">V4 · otro sitio</option></select></label>
+    <label class="control"><span><code>A0–A2</code>Artista</span><select id="artistaEstado"><option value="A0">A0 · llega</option><option value="A1">A1 · escribió "los vecinos"</option><option value="A2">A2 · nombre nuevo, Soy yo</option></select></label>
+    <label class="control"><span><code>P0–P1</code>Editar perfil</span><select id="editarEstado"><option value="P0">P0 · hoja</option><option value="P1">P1 · colonia abierta</option></select></label>
+    <button type="button" class="reiniciar" id="reiniciar">Reiniciar datos</button>
+    <p class="decisiones">Fricciones y decisiones: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/15-formularios-canon-flujo-y-estados.md">15-formularios-canon-flujo-y-estados.md</a>. Pasa el ratón por los iconos para ver su nombre.</p>
+  </aside>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const estado = { vista: "evento", evento: "V0", artista: "A0", editar: "P0", cuandoAbierto: false, cuantoAbierto: false, quien: false, soy: false };
+  const inicial = JSON.parse(JSON.stringify(estado));
+  const I = {
+    pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    reloj: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    cal: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    personas: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 19a6 6 0 0 1 12 0M15 5.5a3.2 3.2 0 0 1 0 6.3M21 19a6 6 0 0 0-4.5-5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    persona: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    boleto: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 6v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2 2"/></svg>`,
+    lupa: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    camara: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    estrella: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9-4.3-4.1 5.9-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    nota: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    mas: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    ok: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4.5-1 10-10-3.5-3.5-10 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13 7.5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    ojo: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    casa: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20v-6h4v6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    texto: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    candado: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+  };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const barra = () => `<header class="barra"><a href="#" class="volver" aria-label="Atrás">‹ Atrás</a><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a><span></span></header>`;
+  const teclado = () => { const f = (n) => `<div class="fila-teclas">${"<span></span>".repeat(n)}</div>`; return `<div class="teclado" aria-hidden="true">${f(10)}${f(9)}${f(7)}<div class="fila-teclas"><span></span><span class="ancha"></span><span></span></div></div>`; };
+  const renglon = (icono, clave, valor, accion, cuerpo = "", clase = "") => `<li class="resuelto ${clase}">${icono}<span class="clave">${clave}</span><span class="valor ${valor.falta ? "falta" : ""}">${valor.texto}</span>${accion}${cuerpo ? `<div class="cuerpo">${cuerpo}</div>` : ""}</li>`;
+  const cambiar = (id, texto = "Cambiar") => `<button type="button" class="cambiar" id="${id}">${texto}</button>`;
+
+  /* Publicar evento */
+  function pantallaEvento() {
+    const e = estado.evento;
+    const nombre = e === "V0" ? "" : "Noche de son en el patio";
+    const lugar = e === "V3" ? "Casa Ocho Ventanas" : e === "V4" ? "Jardín de Tequis · otro sitio" : null;
+    const listo = !!nombre && !!lugar;
+    let h = barra() + `<h1>Publicar un evento</h1><p class="subtitulo">Con el nombre y dónde basta. Lo demás ya está resuelto.</p>`;
+    /* El nombre, con el cartel como icono dentro del campo (decisión V2 del doc 11): tocarlo sube el cartel y llena todo. */
+    h += `<label class="campo sin-icono"><input id="nombre" type="text" placeholder="Nombre del evento" aria-label="Nombre del evento" value="${esc(nombre)}" ${e === "V0" || e === "V1" ? "autofocus" : ""}><button type="button" class="accion-campo" data-tip="Leer el cartel" aria-label="Leer el cartel" data-nota="Abriría la cámara o el carrete; con el cartel se llena el nombre, cuándo, dónde y cuánto">${I.camara}</button></label>`;
+    h += `<ul class="renglones">`;
+    h += renglon(I.reloj, "Cuándo", { texto: "Hoy · 19:00" }, cambiar("abrir-cuando", estado.cuandoAbierto ? "Listo" : "Cambiar"), estado.cuandoAbierto ? `<div class="chips"><button type="button" class="chip" aria-pressed="true">Hoy</button><button type="button" class="chip">Mañana</button><button type="button" class="chip">sáb 19</button><button type="button" class="chip">Otro día…</button></div><div class="chips"><button type="button" class="chip">18:00</button><button type="button" class="chip" aria-pressed="true">19:00</button><button type="button" class="chip">20:00</button><button type="button" class="chip">Otra hora…</button></div>` : "", estado.cuandoAbierto ? "abierta" : "");
+    /* Dónde: un solo camino, la lupa abre la hoja "Dónde es" con los lugares registrados, otro sitio y registrar uno nuevo. */
+    h += lugar
+      ? renglon(I.pin, "Dónde", { texto: lugar }, cambiar("abrir-donde"))
+      : renglon(I.pin, "Dónde", { texto: "Falta", falta: true }, `<span class="opciones"><button type="button" class="accion" id="abrir-donde" data-tip="Buscar el lugar" aria-label="Buscar el lugar">${I.lupa}</button></span>`, "", "pendiente");
+    h += renglon(I.personas, "Quién", estado.quien ? { texto: "Los Vecinos" } : { texto: "Sin artista", falta: true }, cambiar("abrir-quien", estado.quien ? "Cambiar" : "Agregar"), "", estado.quien ? "" : "pendiente");
+    h += renglon(I.boleto, "Cuánto", { texto: estado.cuantoAbierto ? "Con costo" : "Gratis" }, cambiar("abrir-cuanto", estado.cuantoAbierto ? "Listo" : "Cambiar"), estado.cuantoAbierto ? `<div class="chips"><button type="button" class="chip">Gratis</button><button type="button" class="chip" aria-pressed="true">Con costo</button></div><label class="campo"><input type="text" placeholder="Ej. $150, o $100 estudiantes"></label>` : "", estado.cuantoAbierto ? "abierta" : "");
+    h += renglon(I.mas, "Más", { texto: "Descripción, enlace, foto", falta: true }, cambiar("abrir-mas", "Agregar"), "", "pendiente");
+    h += `</ul>`;
+    const boton = `<button type="button" class="primario" ${listo ? `data-nota="Publicado: iría a la ficha con Compartir"` : `aria-disabled="true"`}>Publicar evento${listo ? "" : `<small>${nombre ? "falta dónde" : "falta el nombre"}</small>`}</button>`;
+    return { h, pie: e === "V0" || e === "V1" ? `<div class="sobre-teclado">${boton}</div>${teclado()}` : boton };
+  }
+  function hojaDonde() {
+    return `<div class="asa" aria-hidden="true"></div><button type="button" class="cerrar" id="cerrar-hoja" aria-label="Cerrar">✕</button><h3>Dónde es</h3><label class="campo">${I.lupa}<input id="buscar-lugar" type="text" placeholder="Nombre del lugar" aria-label="Buscar el lugar" autofocus></label><ul class="lista-lugares"><li data-lugar="V3"><span class="foto" aria-hidden="true"></span><b>Casa Ocho Ventanas</b><small>Casa de cultura · Calle 5 de Mayo 1100</small></li><li data-lugar="V3"><span class="foto b" aria-hidden="true"></span><b>Casa del Poeta Ramón López Velarde</b><small>Casa de cultura · Profr. Pedro Vallejo 300-B</small></li></ul><ul class="sugerencias"><li class="atajo" data-lugar="V4">${I.pin}<b>Es en otro sitio</b><small>Una plaza, un parque, una casa: lo escribes y pones el pin; reservado si solo lo ven quienes van</small></li><li class="atajo" data-nota="Iría a Registrar un lugar y volvería con él elegido">${I.mas}<b>Registrar un lugar nuevo</b><small>Vuelves aquí con él elegido</small></li></ul>`;
+  }
+
+  /* Registrar artista */
+  function pantallaArtista() {
+    const a = estado.artista;
+    const nombre = a === "A0" ? "" : a === "A1" ? "los vecinos" : "Trío Mezquite";
+    const listo = a === "A2" || a === "A1";
+    let h = barra() + `<h1>Registrar artista</h1><p class="subtitulo">Con el nombre basta. Lo demás se puede completar después.</p>`;
+    h += `<label class="campo">${I.estrella}<input id="nombre-artista" type="text" placeholder="Nombre del artista o grupo" aria-label="Nombre" value="${esc(nombre)}" ${a === "A0" || a === "A1" ? "autofocus" : ""}></label>`;
+    if (a === "A1") h += `<p class="existe">${I.ok}<span><b>Ya está registrado:</b> <a href="#" data-nota="Abriría la ficha">Los Vecinos · Son huasteco</a>. Si es otro con el mismo nombre, sigue.</span></p>`;
+    h += `<ul class="renglones">`;
+    h += renglon(I.nota, "Qué hace", { texto: nombre ? "Música" : "Por el nombre", falta: !nombre }, cambiar("abrir-hace"), "", "");
+    h += renglon(I.persona, "Es", { texto: nombre === "Trío Mezquite" ? "Grupo" : "Solista" }, cambiar("abrir-es"));
+    h += renglon(I.camara, "Foto", { texto: "Sin foto", falta: true }, `<span class="opciones"><button type="button" class="accion" data-tip="Elegir una foto" aria-label="Elegir una foto" data-nota="Abriría el carrete">${I.camara}</button></span>`, "", "pendiente");
+    h += `<li class="resuelto">${I.persona}<span class="clave">Soy yo / es mi grupo</span><span class="valor ${estado.soy ? "" : "falta"}">${estado.soy ? "Sí: podrás editar la ficha y publicar sus fechas" : "No"}</span><button type="button" class="palanca" role="switch" id="soy" aria-checked="${estado.soy}" aria-label="Soy yo / es mi grupo"></button></li>`;
+    h += renglon(I.mas, "Más", { texto: "Redes, descripción", falta: true }, cambiar("abrir-mas-a", "Agregar"), "", "pendiente");
+    h += `</ul>`;
+    const boton = `<button type="button" class="primario" ${listo ? `data-nota="Publicado: iría a la ficha"` : `aria-disabled="true"`}>Publicar artista${listo ? "" : `<small>falta el nombre</small>`}</button>`;
+    return { h, pie: a === "A0" || a === "A1" ? `<div class="sobre-teclado">${boton}</div>${teclado()}` : boton };
+  }
+
+  /* Editar perfil: hoja sobre Ajustes, con renglones resueltos que se abren de uno en uno. */
+  function pantallaAjustes() {
+    return barra() + `<h1>Ajustes</h1><div class="ajustes"><h2>Tu ficha</h2><ul class="tarjeta"><li class="fila">${I.lapiz}<b>Editar</b><small>Foto, nombre, colonia, sobre ti</small><span class="valor">›</span></li><li class="fila">${I.ojo}<b>Perfil</b><small>Tu ficha y tu nombre en “quién va” se ven</small><span class="valor">Público ›</span></li></ul><h2>Avisos</h2><ul class="tarjeta"><li class="fila">${I.persona}<b>Por correo</b><small>ro…@gmail.com</small><span class="valor">●</span></li></ul></div>`;
+  }
+  function hojaEditar() {
+    const abierta = estado.editar === "P1";
+    return `<div class="asa" aria-hidden="true"></div><button type="button" class="cerrar" id="cerrar-hoja" aria-label="Cerrar">✕</button><h3>Editar perfil</h3><ul class="renglones">
+      <li class="resuelto"><span class="avatar-chico" aria-hidden="true"></span><span class="clave">Foto</span><span class="valor">Tu foto</span><span class="opciones"><button type="button" class="accion" data-tip="Cambiar la foto" aria-label="Cambiar la foto" data-nota="Abriría el carrete">${I.camara}</button></span></li>
+      ${renglon(I.persona, "Nombre", { texto: "Rosa Prueba" }, cambiar("abrir-nombre"))}
+      ${renglon(I.casa, "Colonia", { texto: "Tequis" }, cambiar("abrir-colonia", abierta ? "Listo" : "Cambiar"), abierta ? `<label class="campo"><input type="text" value="Tequis" placeholder="Para ordenar lo que te queda cerca" aria-label="Colonia" autofocus></label>` : "", abierta ? "abierta" : "")}
+      ${renglon(I.texto, "Sobre ti", { texto: "Vecina de Tequis. Me gusta el son huasteco y el grabado." }, cambiar("abrir-sobre"))}
+      <li class="resuelto">${I.candado}<span class="clave">Entras con</span><span class="valor">ro…@gmail.com</span></li>
+    </ul><button type="button" class="primario" id="guardar" data-nota="Guardado: la ficha se relee y la hoja se cierra">Guardar</button>`;
+  }
+
+  function render() {
+    let h, pie = "";
+    if (estado.vista === "evento") { const r = pantallaEvento(); h = r.h; pie = r.pie; }
+    else if (estado.vista === "artista") { const r = pantallaArtista(); h = r.h; pie = r.pie; }
+    else { h = pantallaAjustes(); }
+    $("pantalla").innerHTML = h;
+    const esTeclado = pie.includes("teclado");
+    $("pie").hidden = !pie || esTeclado; $("pie").innerHTML = esTeclado ? "" : pie;
+    document.querySelectorAll(".telefono > .teclado, .telefono > .sobre-teclado").forEach((n) => n.remove());
+    if (esTeclado) $("pantalla").insertAdjacentHTML("afterend", pie);
+    const hoja = $("hoja");
+    if (estado.vista === "editar") { hoja.className = "hoja"; hoja.setAttribute("aria-label", "Editar perfil"); hoja.innerHTML = hojaEditar(); $("hoja-fondo").classList.add("abierta"); }
+    else if (estado.vista === "evento" && estado.evento === "V2") { hoja.className = "hoja alta"; hoja.setAttribute("aria-label", "Dónde es"); hoja.innerHTML = hojaDonde(); $("hoja-fondo").classList.add("abierta"); }
+    else { $("hoja-fondo").classList.remove("abierta"); hoja.innerHTML = ""; }
+    $("vista").value = estado.vista; $("eventoEstado").value = estado.evento; $("artistaEstado").value = estado.artista; $("editarEstado").value = estado.editar;
+  }
+  let notaT;
+  function nota(t) { const n = $("nota"); n.textContent = t; n.classList.add("visible"); clearTimeout(notaT); notaT = setTimeout(() => n.classList.remove("visible"), 1800); }
+
+  document.addEventListener("click", (ev) => {
+    const t = ev.target.closest("button, a, li[data-lugar], li[data-nota]");
+    if (!t) return;
+    if (t.tagName === "A") ev.preventDefault();
+    const id = t.id;
+    if (id === "abrir-donde") { estado.evento = "V2"; render(); return; }
+    if (id === "cerrar-hoja") { if (estado.vista === "evento") estado.evento = estado.evento === "V2" ? "V1" : estado.evento; if (estado.vista === "editar") { estado.vista = "editar"; } $("hoja-fondo").classList.remove("abierta"); return; }
+    if (t.dataset.lugar) { estado.evento = t.dataset.lugar; render(); nota(t.dataset.lugar === "V3" ? "Lugar elegido: dónde resuelto" : "Otro sitio: escribes el nombre y pones el pin en la hoja"); return; }
+    if (id === "abrir-cuando") { estado.cuandoAbierto = !estado.cuandoAbierto; render(); return; }
+    if (id === "abrir-cuanto") { estado.cuantoAbierto = !estado.cuantoAbierto; render(); return; }
+    if (id === "abrir-quien") { estado.quien = !estado.quien; render(); nota(estado.quien ? "Ligado a Los Vecinos (sugerido al escribir)" : "Sin artista"); return; }
+    if (id === "soy") { estado.soy = !estado.soy; render(); return; }
+    if (id === "abrir-colonia") { estado.editar = estado.editar === "P1" ? "P0" : "P1"; render(); return; }
+    if (id === "guardar") { estado.editar = "P0"; render(); nota("Guardado: la ficha se relee y la hoja se cierra"); return; }
+    if (t.dataset.nota) { nota(t.dataset.nota); return; }
+    if (id && id.startsWith("abrir-")) { nota("Se abriría este renglón"); return; }
+  });
+  document.addEventListener("input", (ev) => {
+    if (ev.target.id === "nombre") { const v = ev.target.value.trim(); const nuevo = v ? (estado.evento === "V0" ? "V1" : estado.evento) : "V0"; if (nuevo !== estado.evento) { estado.evento = nuevo; render(); const c = $("nombre"); c.focus(); c.value = ev.target.value; } }
+    if (ev.target.id === "nombre-artista") { const v = ev.target.value.trim().toLowerCase(); const nuevo = !v ? "A0" : v.startsWith("los vec") ? "A1" : "A2"; if (nuevo !== estado.artista) { estado.artista = nuevo; render(); const c = $("nombre-artista"); c.focus(); c.value = ev.target.value; } }
+  });
+  $("hoja-fondo").addEventListener("click", (e) => { if (e.target === $("hoja-fondo")) { if (estado.vista === "evento" && estado.evento === "V2") estado.evento = "V1"; $("hoja-fondo").classList.remove("abierta"); } });
+  $("vista").addEventListener("change", (e) => { estado.vista = e.target.value; render(); });
+  $("eventoEstado").addEventListener("change", (e) => { estado.evento = e.target.value; render(); });
+  $("artistaEstado").addEventListener("change", (e) => { estado.artista = e.target.value; render(); });
+  $("editarEstado").addEventListener("change", (e) => { estado.editar = e.target.value; estado.vista = "editar"; render(); });
+  $("reiniciar").addEventListener("click", () => { Object.assign(estado, JSON.parse(JSON.stringify(inicial))); render(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("hoja-fondo").classList.remove("abierta"); });
+  render();
+</script>
+
+</body>
+</html>
