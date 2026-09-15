@@ -32,7 +32,7 @@ flowchart TD
 | ID | Estado | Qué ve la persona | Qué puede hacer |
 |---|---|---|---|
 | A0 | Llega | Campo con estrella "Nombre del artista o grupo" con foco; Qué hace · Por el nombre; Es · Solista; Foto · Sin foto (cámara); Soy yo / es mi grupo · No (interruptor); Más; Publicar dice "falta el nombre" | Escribir |
-| A1 | Escribió un nombre que existe | "Ya está registrado: Los Vecinos · Son huasteco. Si es otro con el mismo nombre, sigue."; Qué hace deducido | Abrir el existente; publicar |
+| A1 | Escribió un nombre que existe | "Ya está registrado: Los Vecinos · Son huasteco. Ábrelo y, si es tuyo, dilo ahí."; el botón dice "ya está registrado" (la base no admite dos artistas con el mismo nombre, decisión 5 de [08](08-artistas-flujo-y-estados.md); corregido al construir el PR E) | Abrir el existente |
 | A2 | Nombre nuevo, Soy yo | Soy yo · "Sí: podrás editar la ficha y publicar sus fechas" | Publicar |
 
 4. **Campo con icono y placeholder, sin etiqueta ni frase**; "Qué hace" y "Es" deducidos, sin "cámbialo si no es". *Hick, UX invisible.* (A0)
@@ -52,4 +52,4 @@ flowchart TD
 ## Qué sigue
 
 1. ~~El founder corrige 14, recorre el prototipo y firma.~~ Firmado el 2026-09-15 (noche): todo, con Editar perfil en pantalla completa en vez de hoja.
-2. PR D: alta de evento (cierra el PR 4 de OL-010). PR E: alta de artista. PR F: Editar perfil en pantalla completa (`/ajustes/editar`).
+2. ~~PR E: alta de artista.~~ Hecho (PR #48, 2026-09-15). ~~PR F: Editar perfil en pantalla completa (`/ajustes/editar`).~~ Hecho (PR #49). Queda el PR D: alta de evento (cierra el PR 4 de OL-010), para otra sesión por decisión del founder.
