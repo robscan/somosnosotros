@@ -23,5 +23,7 @@ El founder probó en el iPhone: Atrás funciona; los números estaban al revés.
 
 - **Sigo por tipo** (pregunta del founder: ¿chips o control segmentado?): subtítulos "Lugares · N" y "Artistas · N" como los días de "Voy a", sin control extra (Hick, Similitud; la foto cuadrada y la redonda ya distinguen el renglón). [PR #45](https://github.com/robscan/somosnosotros/pull/45).
 
+- **Chips en Sigo con muchos seguidos** (el founder prevé listas largas: hoy hay 522 artistas y 58 lugares): a partir de 12 seguidos con lugares y artistas, chips "Todo · Lugares · Artistas" con conteo que filtran la lista (`components/ListaSeguidos`, mismo umbral que los chips de Artistas); con menos, los subtítulos. Mirado con un usuario que seguía 9 lugares y 5 artistas. [PR #46](https://github.com/robscan/somosnosotros/pull/46).
+
 ## Pendiente
 - Firma del founder en el iPhone.

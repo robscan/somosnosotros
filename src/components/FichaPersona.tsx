@@ -1,21 +1,13 @@
 import Link from "next/link";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
-import { etiquetaArtista } from "@/lib/artistas";
-import { calleCorta, etiquetaTipo } from "@/lib/lugares";
 import { textoCompartirPersona } from "@/lib/perfil";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import type { Perfil } from "@/lib/supabase/servidor";
 import BotonCompartir from "./BotonCompartir";
-import { IconoDisciplina } from "./ListaArtistas";
+import ListaSeguidos from "./ListaSeguidos";
 import PestanasPersona, { type Pestana } from "./PestanasPersona";
 import RenglonEvento from "./RenglonEvento";
-import {
-  IconoCompartir,
-  IconoEngrane,
-  IconoPersona,
-  IconoPin,
-} from "./ui/Iconos";
-import renglon from "./Renglon.module.css";
+import { IconoCompartir, IconoEngrane, IconoPersona } from "./ui/Iconos";
 import styles from "./FichaPersona.module.css";
 
 type Props = {
@@ -97,95 +89,7 @@ export default function FichaPersona({
             )}
           </p>
         ) : (
-          // Lugares y artistas en grupos con subtítulo, como los días de "Voy a" (misma jerarquía, sin control extra).
-          <>
-            {lugares.length > 0 && (
-              <div className={styles.dia}>
-                <h3>Lugares · {lugares.length}</h3>
-                <ul className={styles.lista}>
-                  {lugares.map((l) => (
-                    <li key={l.id}>
-                      <Link
-                        href={`/lugares/${l.id}`}
-                        className={renglon.renglon}
-                      >
-                        {l.portada ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                          <img
-                            src={l.portada}
-                            alt=""
-                            className={renglon.foto}
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        ) : (
-                          <span
-                            className={`${renglon.foto} ${renglon.fotoVacia}`}
-                            aria-hidden="true"
-                          >
-                            <IconoPin width={26} height={26} />
-                          </span>
-                        )}
-                        <span className={renglon.titulo}>{l.nombre}</span>
-                        <span className={renglon.meta}>
-                          <span className={renglon.envuelve}>
-                            <IconoPin width={15} height={15} />
-                            {etiquetaTipo(l.tipo)}
-                            {calleCorta(l.direccion)
-                              ? ` · ${calleCorta(l.direccion)}`
-                              : ""}
-                          </span>
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {artistas.length > 0 && (
-              <div className={styles.dia}>
-                <h3>Artistas · {artistas.length}</h3>
-                <ul className={styles.lista}>
-                  {artistas.map((a) => (
-                    <li key={a.id}>
-                      <Link
-                        href={`/artistas/${a.id}`}
-                        className={renglon.renglon}
-                      >
-                        {a.foto ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                          <img
-                            src={a.foto}
-                            alt=""
-                            className={`${renglon.foto} ${renglon.fotoRedonda}`}
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        ) : (
-                          <span
-                            className={`${renglon.foto} ${renglon.fotoVacia} ${renglon.fotoRedonda}`}
-                            aria-hidden="true"
-                          >
-                            <IconoDisciplina
-                              disciplina={a.disciplina}
-                              size={26}
-                            />
-                          </span>
-                        )}
-                        <span className={renglon.titulo}>{a.nombre}</span>
-                        <span className={renglon.meta}>
-                          <span className={renglon.envuelve}>
-                            <IconoDisciplina disciplina={a.disciplina} />
-                            {etiquetaArtista(a)}
-                          </span>
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </>
+          <ListaSeguidos lugares={lugares} artistas={artistas} />
         ),
     },
   ];
