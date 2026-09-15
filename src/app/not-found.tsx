@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Atras from "@/components/ui/Atras";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "No está · Somos Nosotros" };
@@ -9,9 +9,7 @@ export default function NoEncontrado() {
     <main className="pagina">
       <h1 className="titulo">Esto ya no está</h1>
       <p className="subtitulo">Puede que lo hayan borrado o que el enlace esté incompleto.</p>
-      <Link href="/" className="enlace-volver">
-        ← Ver la agenda
-      </Link>
+      <Atras href="/" texto="Ver la agenda" />
     </main>
   );
 }

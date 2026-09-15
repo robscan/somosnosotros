@@ -26,13 +26,8 @@
   align-items: center;
   gap: var(--espacio-2);
 }
-.volver {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque-min);
-  color: var(--texto-suave);
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* El regreso (ui/Atras) va en la primera columna, pegado a la izquierda */
+.interior > a:first-child {
+  justify-self: start;
+  min-width: 0;
 }

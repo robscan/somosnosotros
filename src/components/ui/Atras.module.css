@@ -1,0 +1,29 @@
+/* Regreso: píldora secundaria con chevron corto; el texto se recorta si la barra va apretada */
+.atras {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0 var(--espacio-4) 0 var(--espacio-2);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.atras > svg {
+  flex: none;
+  color: var(--texto-suave);
+}
+.atras > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atras:active {
+  background: var(--fondo-suave);
+}
