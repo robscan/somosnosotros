@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novedades, perfil y alta de lugar v1</title>
+<title>Novedades, perfil y alta de lugar v2</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
 <style>
-  /* Tokens: los de globals.css de somosnosotros (línea gráfica firmada). */
+  /* ==========================================================================
+     1. Tokens: los de globals.css de somosnosotros (línea gráfica firmada)
+     ========================================================================== */
   :root {
     color-scheme: light dark;
     --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
@@ -14,155 +16,193 @@
     --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2; --fondo-mapa: #eef0ec;
     --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e; --ok: #1f6f43;
     --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
-    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra: 0 2px 8px rgba(0, 0, 0, 0.12);
     --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
-    --toque: 48px; --toque-min: 44px; --gutter: 20px; --alto-estado: 48px; --alto-barra: 56px; --alto-nav: 60px; --alto-teclado: 260px; --area-segura: 34px;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px;
+    --alto-estado: 48px; --alto-barra: 56px; --alto-nav: 60px; --alto-teclado: 260px; --area-segura: 34px;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
   :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
 
+  /* ==========================================================================
+     2. Estudio y teléfono. Dentro del teléfono: estado iOS, main.pantalla (con el gutter), nav.
+     ========================================================================== */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
   button, input, select, textarea { font: inherit; color: inherit; }
+  svg { width: 20px; height: 20px; flex: none; }
   .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
   .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
   .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
   .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08); }
   .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
-  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 100px; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 var(--gutter) 110px; }
 
-  /* Barras: raíz (logotipo + campana + avatar) e interior (regreso, logotipo, acción). */
-  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); padding: 4px var(--gutter); background: var(--fondo); }
-  .barra.raiz { grid-template-columns: 1fr auto; }
+  /* Franjas blancas a lo ancho dentro de la columna: barra, contexto y filtros de la agenda. */
+  .barra, .contexto, .filtros { margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .barra { display: grid; grid-template-columns: 1fr auto auto; align-items: center; column-gap: 4px; min-height: var(--alto-barra); }
+  .barra.interior { grid-template-columns: 1fr auto 1fr; }
+  .barra.interior > :last-child { justify-self: end; }
   .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; }
   .volver { display: inline-flex; align-items: center; min-height: var(--toque-min); color: var(--texto-suave); text-decoration: none; font-size: 17px; }
-  .barra-acciones { display: flex; justify-content: flex-end; align-items: center; gap: 4px; }
-  .icono-barra { position: relative; display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto); cursor: pointer; border-radius: 50%; }
-  .icono-barra svg { width: 24px; height: 24px; }
-  .icono-barra .punto { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--primario); box-shadow: 0 0 0 2px var(--fondo); }
-  .avatar-barra { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: grid; place-items: center; color: #fff; font-weight: 700; }
+  .icono { position: relative; display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; border-radius: 50%; background: none; color: var(--texto); cursor: pointer; }
+  .icono svg { width: 24px; height: 24px; }
+  .icono .punto { position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--primario); box-shadow: 0 0 0 2px var(--fondo); }
+  .avatar-barra { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: grid; place-items: center; color: #fff; font-weight: 700; text-decoration: none; }
+  .contexto { display: flex; gap: 8px; padding-block: 4px 10px; }
+  .filtros { display: flex; gap: 18px; padding-bottom: 0; color: var(--texto-suave); font-size: 15px; font-weight: 600; }
+  .filtros span { padding-bottom: 8px; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .filtros span[aria-current] { color: var(--primario); border-color: var(--primario); }
   .nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); height: calc(var(--alto-nav) + var(--area-segura)); padding-bottom: var(--area-segura); background: var(--fondo); box-shadow: 0 -1px 0 var(--borde); }
   .nav a { display: grid; place-items: center; gap: 2px; color: var(--texto-suave); font-size: 12px; font-weight: 600; text-decoration: none; }
-  .nav a.activa { color: var(--primario); }
+  .nav a[aria-current] { color: var(--primario); }
   .nav svg { width: 24px; height: 24px; }
 
-  .contenido { padding: 0 var(--gutter); }
-  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; margin: 12px 0 6px; }
-  .subtitulo { color: var(--texto-suave); font-size: 15px; margin-bottom: 16px; line-height: 1.4; }
+  /* Tooltip: título corto al pasar o enfocar (escritorio); en el teléfono la nota de abajo lo dice. */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after, [data-tip]:focus-visible::after { content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); z-index: 7; padding: 4px 8px; border-radius: 6px; background: var(--texto); color: var(--fondo); font-size: 13px; font-weight: 500; white-space: nowrap; pointer-events: none; }
 
-  /* Ficha de persona (lo firmado) */
-  .cabecera { display: grid; grid-template-columns: 96px 1fr; grid-template-areas: "foto nombre" "foto colonia" "foto acciones"; column-gap: 16px; align-items: center; margin: 12px 0 16px; }
-  .avatar { grid-area: foto; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: grid; place-items: center; color: #fff; font-size: 40px; font-weight: 700; }
-  .avatar.vacio { background: var(--fondo-miniatura); color: var(--texto-suave); }
-  .cabecera h1 { grid-area: nombre; margin: 0; align-self: end; }
-  .cabecera .colonia { grid-area: colonia; color: var(--texto-suave); font-size: 15px; }
-  .cabecera .acciones { grid-area: acciones; display: flex; gap: 8px; margin-top: 6px; }
-  .pildora { display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque-min); padding: 0 16px; white-space: nowrap; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 700; cursor: pointer; }
-  .pildora svg { width: 18px; height: 18px; }
-  .sobre-mi { font-size: 17px; line-height: 1.45; margin-bottom: 16px; }
-  .datos { list-style: none; display: grid; gap: 2px; margin-bottom: 16px; }
-  .dato { display: grid; grid-template-columns: 22px 1fr auto; grid-template-areas: "icono principal accion" "icono secundario accion"; column-gap: 10px; align-items: center; min-height: 44px; font-size: 17px; }
-  .dato > svg { grid-area: icono; width: 20px; height: 20px; color: var(--texto-suave); }
-  .dato b { grid-area: principal; font-weight: 600; }
-  .dato small { grid-area: secundario; color: var(--texto-suave); font-size: 15px; line-height: 1.3; }
-  .dato button { grid-area: accion; min-height: var(--toque-min); padding: 0 12px; border: none; background: none; color: var(--primario); font-size: 17px; font-weight: 700; cursor: pointer; }
-  .dato.peligro b { color: var(--error); font-weight: 500; }
-  .dato.completa b { color: var(--texto); font-weight: 600; }
-  .grupo { margin-bottom: 20px; }
-  .grupo h2 { padding: 12px 0 6px; border-bottom: 1px solid var(--texto); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
-  .grupo h2 span { color: var(--texto-suave); font-weight: 500; }
-  .grupo h3 { font-size: 15px; font-weight: 700; color: var(--texto-suave); padding: 12px 0 4px; }
+  /* ==========================================================================
+     3. Tipografía y piezas comunes: chip, píldora, título de grupo, renglón, vacío
+     ========================================================================== */
+  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; margin: 14px 0 12px; }
+  .chip, .pildora { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px 0 10px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .chip svg { width: 16px; height: 16px; color: var(--texto-suave); }
+  .pildora { min-height: var(--toque-min); font-weight: 700; }
+  .pildora[aria-pressed="true"] { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+  .grupo { display: grid; margin-top: 8px; }
+  .grupo > h2 { padding: 12px 0 6px; border-bottom: 1px solid var(--texto); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .grupo > h2 span { color: var(--texto-suave); font-weight: 500; }
+  .grupo > h3 { padding: 12px 0 4px; color: var(--texto-suave); font-size: 15px; font-weight: 700; }
   .lista { list-style: none; }
-  .renglon { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "foto titulo" "foto meta"; column-gap: 12px; align-content: center; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--borde); cursor: pointer; }
-  .foto { grid-area: foto; width: 64px; height: 64px; align-self: start; border-radius: 10px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .renglon { display: grid; grid-template-columns: 64px 1fr; grid-template-areas: "foto titulo" "foto meta"; column-gap: 12px; align-content: center; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--borde); cursor: pointer; }
+  .foto { grid-area: foto; width: 64px; height: 64px; border-radius: 10px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
   .foto.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); } .foto.c { background: linear-gradient(135deg, #d9c27a, #8a6d2b); }
   .foto.redonda { border-radius: 50%; }
   .titulo { grid-area: titulo; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
-  .meta { grid-area: meta; display: grid; gap: 2px; margin-top: 4px; color: var(--texto-suave); font-size: 15px; }
-  .meta span { display: block; line-height: 1.3; }
-  .meta svg { width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; }
+  .meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 4px; color: var(--texto-suave); font-size: 15px; }
+  .meta svg { width: 15px; height: 15px; }
   .meta b { color: var(--texto); font-weight: 500; }
-  .vacio { color: var(--texto-suave); font-size: 15px; padding: 12px 0; line-height: 1.5; }
-  .vacio a, .vacio button.enlace { color: var(--primario); font-weight: 600; text-decoration: none; }
-  .pie { margin-top: 8px; padding: 12px 0; border-top: 1px solid var(--borde); color: var(--texto-suave); font-size: 15px; }
+  .vacio { padding: 12px 0; color: var(--texto-suave); font-size: 15px; line-height: 1.5; }
+  .vacio a { color: var(--primario); font-weight: 600; text-decoration: none; }
+  .pie { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--borde); color: var(--texto-suave); font-size: 15px; }
   .pie a { color: var(--texto-suave); }
 
-  /* Novedades: renglones con icono por causa; lo no visto lleva un punto. */
-  .novedad { display: grid; grid-template-columns: 28px 1fr; grid-template-areas: "icono que" "icono evento" "icono cuando"; column-gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--borde); cursor: pointer; }
+  /* ==========================================================================
+     4. Novedades: renglón con icono por causa; lo no visto lleva un punto
+     ========================================================================== */
+  .novedad { position: relative; display: grid; grid-template-columns: 28px 1fr; grid-template-areas: "icono que" "icono evento" "icono cuando"; column-gap: 12px; padding: 12px 20px 12px 0; border-bottom: 1px solid var(--borde); cursor: pointer; }
   .novedad > svg { grid-area: icono; width: 22px; height: 22px; margin-top: 2px; color: var(--texto-suave); }
-  .novedad .que { grid-area: que; font-size: 15px; color: var(--texto-suave); }
-  .novedad.nueva .que { color: var(--primario); font-weight: 700; }
+  .novedad .que { grid-area: que; color: var(--texto-suave); font-size: 15px; }
   .novedad .evento { grid-area: evento; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
   .novedad .cuando { grid-area: cuando; margin-top: 2px; color: var(--texto-suave); font-size: 15px; }
   .novedad .cuando b { color: var(--texto); font-weight: 500; }
-  .novedad.nueva { position: relative; }
+  .novedad.nueva .que { color: var(--primario); font-weight: 700; }
   .novedad.nueva::after { content: ""; position: absolute; right: 0; top: 18px; width: 9px; height: 9px; border-radius: 50%; background: var(--primario); }
-  .aviso-tel { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--fondo); border: 1px solid var(--borde); font-size: 15px; line-height: 1.4; }
-  .aviso-tel b { display: block; }
-  .aviso-tel button { margin-top: 6px; min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--primario); font-weight: 700; cursor: pointer; }
+  .tarjeta-aviso { display: grid; grid-template-columns: 24px 1fr auto; column-gap: 12px; align-items: center; margin-top: 16px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 15px; line-height: 1.35; }
+  .tarjeta-aviso svg { color: var(--texto-suave); }
 
-  /* Alta de lugar: renglones resueltos como en el alta de evento (decisión 10, doc 11). */
-  .campo { display: grid; gap: 6px; margin-bottom: 12px; }
-  .campo label { font-weight: 600; }
-  .campo input { min-height: var(--toque); padding: 0 14px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); font-size: 17px; }
-  .campo input:focus { border-color: var(--texto); outline: none; }
-  .campo .ayuda { color: var(--texto-suave); font-size: 15px; }
-  .sugerencias { list-style: none; margin: -6px 0 12px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); overflow: hidden; }
-  .sugerencias li { display: grid; min-height: var(--toque); padding: 10px 14px; border-top: 1px solid var(--borde); cursor: pointer; }
+  /* ==========================================================================
+     5. Ficha de persona: cabecera plana (foto | nombre / colonia / acciones)
+     ========================================================================== */
+  .cabecera { display: grid; grid-template-columns: 96px 1fr; grid-template-areas: "foto nombre" "foto colonia" "foto acciones"; column-gap: 16px; align-items: center; margin: 14px 0 16px; }
+  .avatar { grid-area: foto; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: grid; place-items: center; color: #fff; font-size: 40px; font-weight: 700; }
+  .avatar.vacio { background: var(--fondo-miniatura); color: var(--texto-suave); }
+  .cabecera h1 { grid-area: nombre; margin: 0; align-self: end; }
+  .colonia { grid-area: colonia; color: var(--texto-suave); font-size: 15px; }
+  .acciones { grid-area: acciones; display: flex; gap: 8px; margin-top: 6px; }
+  /* Acciones de icono: 44 pt, con borde para que se lean como botones; el nombre va en tooltip y en aria-label. */
+  .accion { display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); cursor: pointer; }
+  .accion svg { width: 22px; height: 22px; }
+  .sobre-mi { font-size: 17px; line-height: 1.45; margin-bottom: 8px; }
+  .completa { display: grid; grid-template-columns: 24px 1fr auto; column-gap: 12px; align-items: center; margin: 8px 0 12px; padding: 10px 14px; border-radius: var(--radio); background: var(--primario-suave); font-size: 15px; line-height: 1.35; }
+  .completa svg { color: var(--primario); }
+  .completa button { min-height: 36px; padding: 0 12px; border: none; border-radius: 999px; background: var(--primario); color: var(--primario-texto); font-weight: 700; cursor: pointer; }
+
+  /* ==========================================================================
+     6. Ajustes: grupos con rótulo y tarjeta de filas (región común); espacio entre grupos (proximidad);
+        mismas filas dentro de la tarjeta = misma familia (conectividad uniforme). Lo destructivo aparte.
+     ========================================================================== */
+  .ajustes { display: grid; gap: 24px; margin-top: 4px; }
+  .ajustes > h2 { margin-bottom: -16px; padding-left: 4px; color: var(--texto-suave); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .tarjeta { list-style: none; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); overflow: hidden; }
+  .fila { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono etiqueta accion" "icono detalle accion"; column-gap: 12px; align-items: center; min-height: 52px; padding: 8px 14px; border-top: 1px solid var(--borde); cursor: pointer; }
+  .fila:first-child { border-top: none; }
+  .fila > svg { grid-area: icono; color: var(--texto-suave); }
+  .fila > b { grid-area: etiqueta; font-size: 17px; font-weight: 600; }
+  .fila > small { grid-area: detalle; color: var(--texto-suave); font-size: 15px; line-height: 1.3; }
+  .fila > .valor { grid-area: accion; display: inline-flex; align-items: center; gap: 4px; color: var(--texto-suave); font-size: 15px; }
+  .fila > .valor svg { width: 16px; height: 16px; }
+  .fila > .palanca { grid-area: accion; }
+  .palanca { position: relative; width: 51px; height: 31px; border: none; border-radius: 16px; background: var(--borde); cursor: pointer; }
+  .palanca::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left 150ms; }
+  .palanca[aria-checked="true"] { background: var(--primario); }
+  .palanca[aria-checked="true"]::after { left: 22px; }
+  .peligro { justify-self: start; min-height: var(--toque-min); padding: 0 4px; border: none; background: none; color: var(--error); font-size: 15px; font-weight: 600; cursor: pointer; }
+
+  /* ==========================================================================
+     7. Registrar lugar: campo con icono, sugerencias, renglones resueltos (icono | clave / valor | acción)
+     ========================================================================== */
+  .campo { position: relative; display: grid; margin-bottom: 12px; }
+  .campo > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); pointer-events: none; }
+  .campo > input { min-height: var(--toque); padding: 0 14px 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 17px; }
+  .campo > input:focus { border-color: var(--texto); outline: none; }
+  .sugerencias { list-style: none; margin: -6px 0 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); overflow: hidden; }
+  .sugerencias li { display: grid; grid-template-columns: 24px 1fr; grid-template-areas: "icono nombre" "icono detalle"; column-gap: 10px; align-items: center; min-height: var(--toque); padding: 8px 14px; border-top: 1px solid var(--borde); cursor: pointer; }
   .sugerencias li:first-child { border-top: none; }
-  .sugerencias li b { font-weight: 700; }
-  .sugerencias li small { color: var(--texto-suave); font-size: 14px; }
-  .sugerencias li.direccion b { font-weight: 500; }
-  .sugerencias li.direccion small { color: var(--primario); font-weight: 600; }
-  .seccion { border: 1px solid var(--borde); border-radius: 12px; margin-bottom: 12px; background: var(--fondo); overflow: hidden; }
-  .seccion.abierta { border-color: var(--texto); }
-  .seccion.pendiente { border-style: dashed; }
-  .seccion-cab { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; column-gap: 8px; width: 100%; min-height: 56px; padding: 12px 14px; border: none; background: none; text-align: left; cursor: pointer; }
-  .seccion-cab .nombre { font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
-  .seccion-cab .resumen { font-size: 17px; font-weight: 600; line-height: 1.2; }
-  .seccion-cab .resumen small { display: block; color: var(--texto-suave); font-size: 13px; font-weight: 400; }
-  .seccion-cab .resumen.falta { color: var(--texto-suave); font-weight: 500; }
-  .seccion-cab .cambiar { color: var(--primario); font-size: 15px; font-weight: 700; white-space: nowrap; }
-  .seccion-cuerpo { padding: 4px 14px 14px; }
+  .sugerencias li > svg { grid-area: icono; color: var(--texto-suave); }
+  .sugerencias li > b { grid-area: nombre; font-weight: 700; }
+  .sugerencias li > small { grid-area: detalle; color: var(--texto-suave); font-size: 14px; }
+  .sugerencias li.direccion > b { font-weight: 500; }
+  .sugerencias li.direccion > small { color: var(--primario); font-weight: 600; }
+  .existe { display: grid; grid-template-columns: 24px 1fr; column-gap: 10px; align-items: center; margin: -4px 0 12px; padding: 10px 14px; border-radius: var(--radio); background: var(--primario-suave); font-size: 15px; line-height: 1.4; }
+  .existe svg { color: var(--primario); }
+  .existe a { color: var(--primario); font-weight: 700; }
+  .renglones { list-style: none; display: grid; gap: 8px; }
+  .resuelto { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono clave accion" "icono valor accion" "cuerpo cuerpo cuerpo"; column-gap: 12px; align-items: center; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+  .resuelto.pendiente { border-style: dashed; }
+  .resuelto.abierta { border-color: var(--texto); }
+  .resuelto > svg { grid-area: icono; color: var(--texto-suave); }
+  .resuelto > .clave { grid-area: clave; font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
+  .resuelto > .valor { grid-area: valor; font-size: 17px; font-weight: 600; line-height: 1.2; }
+  .resuelto > .valor.falta { color: var(--texto-suave); font-weight: 500; }
+  .resuelto > .cambiar { grid-area: accion; min-height: var(--toque-min); padding: 0 8px; border: none; background: none; color: var(--primario); font-size: 15px; font-weight: 700; cursor: pointer; }
+  .resuelto > .opciones { grid-area: accion; display: flex; gap: 6px; }
+  .resuelto > .cuerpo { grid-area: cuerpo; display: grid; gap: 10px; padding-top: 10px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { display: inline-flex; align-items: center; min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; cursor: pointer; }
-  .chip[aria-pressed="true"] { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
-  .desplegar { display: block; width: 100%; min-height: var(--toque); margin: 4px 0 16px; padding: 0 16px; border: 1px dashed var(--borde); border-radius: 12px; background: none; color: var(--texto-suave); text-align: left; cursor: pointer; }
-  .primario { display: flex; align-items: center; justify-content: center; width: 100%; min-height: var(--toque); border: none; border-radius: 12px; background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; cursor: pointer; }
+  .cuerpo .campo { margin: 0; }
+  .cuerpo .campo > input { min-height: var(--toque-min); padding-left: 14px; }
+  .primario { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: var(--toque); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; cursor: pointer; }
   .primario[aria-disabled="true"] { background: var(--fondo-miniatura); color: var(--texto-suave); }
-  .primario small { font-size: 13px; font-weight: 500; margin-left: 8px; }
+  .primario small { font-size: 13px; font-weight: 500; }
   .acciones-fijas { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 10px var(--gutter) calc(10px + var(--area-segura)); background: var(--fondo); border-top: 1px solid var(--borde); }
   .teclado { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: var(--alto-teclado); background: #d1d3d9; display: grid; grid-template-rows: repeat(4, 1fr); gap: 8px; padding: 10px 6px 30px; }
-  .teclado .fila { display: flex; gap: 6px; justify-content: center; }
+  .teclado .fila-teclas { display: flex; gap: 6px; justify-content: center; }
   .teclado span { flex: 1; max-width: 34px; height: 100%; border-radius: 6px; background: #fff; }
   .teclado .ancha { max-width: 160px; }
   .sobre-teclado { position: absolute; left: 0; right: 0; bottom: var(--alto-teclado); z-index: 4; padding: 8px var(--gutter); background: var(--fondo); border-top: 1px solid var(--borde); }
-  .existe { margin: -4px 0 12px; padding: 10px 14px; border-radius: 12px; background: var(--primario-suave); font-size: 15px; line-height: 1.4; }
-  .existe a { color: var(--primario); font-weight: 700; }
 
-  /* Hoja de "Dónde": a toda la pantalla, el mapa manda. */
+  /* Hoja "Dónde está": a toda la pantalla; el mapa manda y trae su botón de ubicación como el mapa de Lugares. */
   .hoja-fondo { position: absolute; inset: 0; z-index: 8; display: none; background: rgba(0,0,0,.32); }
   .hoja-fondo.abierta { display: block; }
-  .hoja { position: absolute; left: 0; right: 0; bottom: 0; max-height: calc(100% - 48px); overflow-y: auto; padding: 12px var(--gutter) calc(20px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
-  .hoja.alta { height: calc(100% - 48px); display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 10px; }
-  .asa { width: 36px; height: 4px; margin: 0 auto 6px; border-radius: 2px; background: var(--borde); }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-rows: auto auto auto 1fr auto auto; gap: 10px; height: calc(100% - 48px); padding: 12px var(--gutter) calc(16px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .asa { width: 36px; height: 4px; margin: 0 auto; border-radius: 2px; background: var(--borde); }
   .hoja h3 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); padding-right: 44px; }
-  .hoja .porque { color: var(--texto-suave); font-size: 15px; }
   .cerrar { position: absolute; top: 8px; right: 8px; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto-suave); font-size: 19px; cursor: pointer; }
-  .fila-mapa { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
-  .mapa { position: relative; min-height: 220px; border-radius: 12px; background: var(--fondo-mapa); background-image: linear-gradient(#e1e3dd 1px, transparent 1px), linear-gradient(90deg, #e1e3dd 1px, transparent 1px); background-size: 40px 40px; overflow: hidden; }
+  .hoja .campo { margin: 0; }
+  .mapa { position: relative; border-radius: var(--radio); background: var(--fondo-mapa); background-image: linear-gradient(#e1e3dd 1px, transparent 1px), linear-gradient(90deg, #e1e3dd 1px, transparent 1px); background-size: 40px 40px; overflow: hidden; }
   .mapa .pin { position: absolute; left: 50%; top: 50%; width: 28px; height: 36px; transform: translate(-50%, -100%); }
-  .mapa .pin svg { width: 28px; height: 36px; }
   .mapa .pin path { fill: var(--primario); stroke: var(--primario); }
   .mapa .yo { position: absolute; left: 34%; top: 62%; width: 40px; height: 40px; border-radius: 50%; background: rgba(26,115,232,.18); }
   .mapa .yo::after { content: ""; position: absolute; inset: 13px; border-radius: 50%; background: #1a73e8; border: 2.5px solid #fff; }
   .mapa .rotulo-mapa { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,.92); color: var(--texto-suave); font-size: 13px; white-space: nowrap; }
-  .direccion-deducida { color: var(--texto-suave); font-size: 15px; }
-  .direccion-deducida b { color: var(--texto); font-weight: 600; }
-  .menu { list-style: none; margin-top: 16px; }
-  .menu button { display: block; width: 100%; min-height: var(--toque); padding: 0 4px; border: none; border-bottom: 1px solid var(--borde); background: none; color: var(--texto); font-size: 17px; text-align: left; cursor: pointer; }
-  .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 140px; z-index: 9; padding: 12px 14px; border-radius: 12px; background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
+  .mapa .ubicame { position: absolute; left: 10px; bottom: 10px; width: var(--toque); height: var(--toque); border: none; border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); cursor: pointer; display: grid; place-items: center; }
+  .mapa .ubicame svg { width: 22px; height: 22px; }
+  .deducida { display: grid; grid-template-columns: 24px 1fr; column-gap: 10px; align-items: center; color: var(--texto-suave); font-size: 15px; }
+  .deducida svg { color: var(--texto-suave); }
+  .deducida b { color: var(--texto); font-weight: 600; }
+  .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 140px; z-index: 9; padding: 12px 14px; border-radius: var(--radio); background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
   .nota.visible { opacity: 1; transform: none; }
 
   /* Utilería */
@@ -178,20 +218,21 @@
   .decisiones { margin-top: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.4; }
   .decisiones a { color: var(--panel-texto); }
   :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
-  @media (prefers-reduced-motion: reduce) { .nota { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .nota, .palanca::after { transition: none; } }
   @media (max-width: 740px) { .telefono { height: auto; min-height: 720px; } .pantalla { height: auto; max-height: 700px; } }
 </style>
 </head>
 <body>
 
 <div class="estudio">
-  <p class="rotulo"><strong>Novedades, perfil y alta de lugar v1</strong> <span>Novedades como sección · Mi perfil solo actividad y Ajustes aparte · alta de lugar con renglones resueltos y el mapa en su hoja</span> <span>Datos de ejemplo, no reales</span></p>
+  <p class="rotulo"><strong>Novedades, perfil y alta de lugar v2</strong> <span>Campana y Novedades · Mi perfil solo actividad, Ajustes desde la cabecera · alta de lugar con dos salidas en Dónde y el mapa en su hoja</span> <span>Datos de ejemplo, no reales</span></p>
 
   <div class="telefono">
     <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
-    <div id="pantalla"></div>
-    <div class="hoja-fondo" id="hoja-donde-fondo"><div class="hoja alta" role="dialog" aria-label="Dónde" id="hoja-donde"></div></div>
-    <div class="hoja-fondo" id="hoja-menu-fondo"><div class="hoja" role="dialog" aria-label="Más" id="hoja-menu"></div></div>
+    <main class="pantalla" id="pantalla"></main>
+    <nav class="nav" id="nav" hidden></nav>
+    <div class="acciones-fijas" id="pie" hidden></div>
+    <div class="hoja-fondo" id="hoja-fondo"><div class="hoja" role="dialog" aria-label="Dónde está" id="hoja"></div></div>
     <p class="nota" id="nota" role="status"></p>
   </div>
 
@@ -199,19 +240,19 @@
     <h3>Utilería de revisión</h3>
     <p class="nota-utileria">No es parte del diseño. Cambia de pantalla y fuerza los estados; los ID corresponden a la tabla del documento.</p>
     <label class="control"><span>Pantalla</span><select id="vista"><option value="agenda">Agenda (campana)</option><option value="novedades">Novedades</option><option value="perfil">Mi perfil</option><option value="persona">Persona (ajena)</option><option value="ajustes">Ajustes</option><option value="lugar">Registrar lugar</option></select></label>
-    <label class="control"><span><code>N0–N3</code>Novedades</span><select id="novedadesEstado"><option value="hay">Hay nuevas</option><option value="nada">Nada nuevo</option><option value="sinseguir">No sigue nada</option><option value="sinsesion">Sin sesión</option></select></label>
+    <label class="control"><span><code>N0–N4</code>Novedades</span><select id="novedadesEstado"><option value="hay">Hay nuevas</option><option value="nada">Nada nuevo</option><option value="sinseguir">No sigue nada</option><option value="sinsesion">Sin sesión</option></select></label>
     <label class="control"><span><code>P1</code>Perfil incompleto</span><input type="checkbox" id="incompleto"></label>
     <label class="control"><span><code>R1</code>Coincidencias en la ajena</span><input type="checkbox" id="coincide" checked></label>
-    <label class="control"><span><code>A0</code>Es administrador</span><input type="checkbox" id="admin"></label>
-    <label class="control"><span><code>L0–L3</code>Alta de lugar</span><select id="lugarEstado"><option value="L0">L0 · llega</option><option value="L1">L1 · escribió "workshop"</option><option value="L2">L2 · sugerencia elegida</option><option value="L3">L3 · dirección elegida</option><option value="L4">L4 · ya existe cerca</option></select></label>
+    <label class="control"><span><code>S0</code>Es administrador</span><input type="checkbox" id="admin"></label>
+    <label class="control"><span><code>L0–L4</code>Alta de lugar</span><select id="lugarEstado"><option value="L0">L0 · llega</option><option value="L1">L1 · escribió "workshop"</option><option value="L2">L2 · lugar elegido</option><option value="L3">L3 · dirección o pin</option><option value="L4">L4 · ya existe cerca</option></select></label>
     <button type="button" class="reiniciar" id="reiniciar">Reiniciar datos</button>
-    <p class="decisiones">Fricciones y decisiones: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/13-novedades-perfil-alta-flujo-y-estados.md">13-novedades-perfil-alta-flujo-y-estados.md</a>. En Agenda toca la campana; en Mi perfil toca el engrane; en el lugar toca "Dónde" o "Cambiar".</p>
+    <p class="decisiones">Fricciones y decisiones: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/13-novedades-perfil-alta-flujo-y-estados.md">13-novedades-perfil-alta-flujo-y-estados.md</a>. Pasa el ratón por los iconos para ver su nombre; en el teléfono aparece abajo al tocarlos.</p>
   </aside>
 </div>
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const estado = { vista: "agenda", novedades: "hay", incompleto: false, coincide: true, admin: false, lugar: "L0", leidas: false, tipoElegido: null };
+  const estado = { vista: "agenda", novedades: "hay", incompleto: false, coincide: true, admin: false, lugar: "L0", leidas: false, tipoElegido: null, tipoAbierto: false, queEs: "", correo: true, telefono: false, reservado: false };
   const inicial = JSON.parse(JSON.stringify(estado));
   const I = {
     pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
@@ -221,159 +262,166 @@
     campana: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
     persona: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
     personas: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 19a6 6 0 0 1 12 0M15 5.5a3.2 3.2 0 0 1 0 6.3M21 19a6 6 0 0 0-4.5-5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
-    engrane: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    engrane: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3h3.4l.5 2.3a7 7 0 0 1 1.9 1.1l2.2-.8 1.7 3-1.8 1.5a7 7 0 0 1 0 2.2l1.8 1.5-1.7 3-2.2-.8a7 7 0 0 1-1.9 1.1l-.5 2.3h-3.4l-.5-2.3a7 7 0 0 1-1.9-1.1l-2.2.8-1.7-3 1.8-1.5a7 7 0 0 1 0-2.2L4 8.6l1.7-3 2.2.8a7 7 0 0 1 1.9-1.1z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>`,
     compartir: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-    mapa: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    lupa: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    ubicacion: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    etiqueta: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.5" fill="currentColor"/></svg>`,
+    mas: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
     estrella: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9-4.3-4.1 5.9-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
     nota: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
     correo: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    telefono: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10.5 18h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
     salir: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M14 8l4 4-4 4M8 12h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4.5-1 10-10-3.5-3.5-10 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M13 7.5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    ojo: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    escudo: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    libro: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    chevron: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    ok: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     pinMapa: `<svg viewBox="0 0 28 36" aria-hidden="true"><path d="M14 35S3 21 3 13a11 11 0 0 1 22 0c0 8-11 22-11 22z" stroke-width="2"/><circle cx="14" cy="13" r="4" fill="#fff"/></svg>`,
   };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  function barraInterior(volver, derecha = "") {
-    return `<header class="barra"><a href="#" class="volver" id="volver">← ${esc(volver)}</a><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a><div class="barra-acciones">${derecha}</div></header>`;
-  }
+  /* Barras: hijos directos, sin envoltorios. */
+  const barraInterior = (volver, derecha = "<span></span>") => `<header class="barra interior"><a href="#" class="volver" id="volver">← ${esc(volver)}</a><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a>${derecha}</header>`;
   function barraRaiz() {
     const conSesion = estado.novedades !== "sinsesion";
     const hayNuevas = estado.novedades === "hay" && !estado.leidas;
-    const campana = conSesion ? `<button type="button" class="icono-barra" id="campana" aria-label="Novedades${hayNuevas ? ", hay nuevas" : ""}">${I.campana}${hayNuevas ? `<span class="punto"></span>` : ""}</button>` : "";
-    const sesion = conSesion ? `<a href="#" class="avatar-barra" id="ir-perfil" aria-label="Mi perfil">R</a>` : `<button type="button" class="pildora" style="background:var(--primario);color:#fff;border-color:var(--primario)">Entrar</button>`;
-    return `<header class="barra raiz"><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a><div class="barra-acciones">${campana}${sesion}</div></header>`;
+    const campana = conSesion ? `<button type="button" class="icono" id="campana" data-tip="Novedades" aria-label="Novedades${hayNuevas ? ", hay nuevas" : ""}">${I.campana}${hayNuevas ? `<span class="punto"></span>` : ""}</button>` : `<span></span>`;
+    const sesion = conSesion ? `<a href="#" class="avatar-barra" id="ir-perfil" aria-label="Mi perfil">R</a>` : `<button type="button" class="pildora" aria-pressed="true">Entrar</button>`;
+    return `<header class="barra"><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a>${campana}${sesion}</header>`;
   }
-  function nav(activa) {
-    return `<nav class="nav" aria-label="Secciones"><a href="#" class="${activa === "agenda" ? "activa" : ""}">${I.cal}Agenda</a><a href="#">${I.pin}Lugares</a><a href="#">${I.estrella}Artistas</a></nav>`;
-  }
-  function teclado() {
-    const fila = (n) => `<div class="fila">${"<span></span>".repeat(n)}</div>`;
-    return `<div class="teclado" aria-hidden="true">${fila(10) + fila(9) + fila(7)}<div class="fila"><span></span><span class="ancha"></span><span></span></div></div>`;
-  }
-  function renglonEvento(t, hora, lugar, f) {
-    return `<li class="renglon"><span class="foto ${f}" aria-hidden="true"></span><span class="titulo">${t}</span><span class="meta"><span>${I.reloj}<b>${hora}</b> · ${I.pin}${lugar}</span></span></li>`;
-  }
+  const nav = () => `<a href="#" aria-current="page">${I.cal}Agenda</a><a href="#">${I.pin}Lugares</a><a href="#">${I.estrella}Artistas</a>`;
+  const teclado = () => { const f = (n) => `<div class="fila-teclas">${"<span></span>".repeat(n)}</div>`; return `<div class="teclado" aria-hidden="true">${f(10)}${f(9)}${f(7)}<div class="fila-teclas"><span></span><span class="ancha"></span><span></span></div></div>`; };
+  const renglonEvento = (t, hora, lugar, f) => `<li class="renglon" data-nota="Abriría la ficha del evento"><span class="foto ${f}" aria-hidden="true"></span><span class="titulo">${t}</span><span class="meta">${I.reloj}<b>${hora}</b>${I.pin}${lugar}</span></li>`;
 
-  /* Agenda: solo la barra raíz con la campana; el cuerpo es el firmado. */
+  /* Agenda: lo firmado, con la campana. */
   function pantallaAgenda() {
-    return `<main class="pantalla" id="scroll">${barraRaiz()}<div class="contenido" style="background:var(--fondo);margin:0 calc(-1 * var(--gutter));padding:0 var(--gutter) 8px"><div style="display:flex;gap:8px;margin:4px 0 10px"><span class="pildora">${I.cal}Hoy</span><span class="pildora">${I.pin}San Luis Potosí</span></div><div style="display:flex;gap:18px;color:var(--texto-suave);font-weight:600;font-size:15px"><span style="color:var(--primario);border-bottom:2px solid var(--primario);padding-bottom:6px">Todos</span><span>Cercanos</span><span>Siguiendo</span><span>Nuevos</span></div></div><div class="contenido"><section class="grupo"><h2>Hoy <span>· 2</span></h2><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "a")}${renglonEvento("Lectura del taller de creación literaria", "19:00", "Casa del Poeta", "c")}</ul></section><section class="grupo"><h2>sáb 19 de sep <span>· 3</span></h2><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", "b")}</ul></section></div></main>${nav("agenda")}`;
+    return `${barraRaiz()}<div class="contexto"><span class="chip">${I.cal}Hoy</span><span class="chip">${I.pin}San Luis Potosí</span></div><nav class="filtros" aria-label="Filtrar la agenda"><span aria-current="true">Todos</span><span>Cercanos</span><span>Siguiendo</span><span>Nuevos</span></nav><section class="grupo"><h2>Hoy <span>· 2</span></h2><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "a")}${renglonEvento("Lectura del taller de creación literaria", "19:00", "Casa del Poeta", "c")}</ul></section><section class="grupo"><h2>sáb 19 de sep <span>· 3</span></h2><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", "b")}</ul></section>`;
   }
 
   /* Novedades */
-  function novedad(tipo, que, evento, cuando, nueva) {
-    const icono = tipo === "nuevo" ? I.calMas : tipo === "cambio" ? I.reloj : tipo === "hoy" ? I.campana : I.personas;
-    return `<li class="novedad ${nueva ? "nueva" : ""}" data-nota="Abriría la ficha del evento">${icono}<span class="que">${que}</span><span class="evento">${evento}</span><span class="cuando">${cuando}</span></li>`;
-  }
+  const novedad = (tipo, que, evento, cuando, nueva) => `<li class="novedad ${nueva ? "nueva" : ""}" data-nota="Abriría la ficha del evento">${tipo === "nuevo" ? I.calMas : tipo === "cambio" ? I.reloj : tipo === "hoy" ? I.campana : I.personas}<span class="que">${que}</span><span class="evento">${evento}</span><span class="cuando">${cuando}</span></li>`;
   function pantallaNovedades() {
-    let h = barraInterior("Agenda") + `<div class="contenido"><h1>Novedades</h1>`;
-    if (estado.novedades === "sinsesion") {
-      h += `<p class="vacio">Aquí verás lo nuevo en los lugares y artistas que sigas, y los cambios en lo que vas. <a href="#" data-nota="Iría a Entrar">Entra</a> para seguir a los tuyos.</p>`;
-    } else if (estado.novedades === "sinseguir") {
-      h += `<p class="vacio">Todavía no sigues nada. En la ficha de un lugar o artista toca Seguir y aquí verás lo que publiquen. <a href="#" data-nota="Iría a Lugares">Ver lugares</a> · <a href="#" data-nota="Iría a Artistas">Ver artistas</a></p>`;
-    } else if (estado.novedades === "nada") {
-      h += `<p class="vacio">Nada nuevo desde el lunes. Sigues 3 lugares y 2 artistas.</p>`;
-      h += `<section class="grupo"><h3>Esta semana</h3><ul class="lista">${novedad("hoy", "Fuiste el jueves", "La Banda de Música del Estado", "<b>jue 17 · 20:00</b> · Parroquia de San Sebastián", false)}</ul></section>`;
-    } else {
+    let h = barraInterior("Agenda") + `<h1>Novedades</h1>`;
+    if (estado.novedades === "sinsesion") h += `<p class="vacio">Aquí verás lo nuevo en los lugares y artistas que sigas, y los cambios en lo que vas. <a href="#" data-nota="Iría a Entrar">Entra</a> para seguir a los tuyos.</p>`;
+    else if (estado.novedades === "sinseguir") h += `<p class="vacio">Todavía no sigues nada. En la ficha de un lugar o artista toca Seguir y aquí verás lo que publiquen. <a href="#" data-nota="Iría a Lugares">Ver lugares</a> · <a href="#" data-nota="Iría a Artistas">Ver artistas</a></p>`;
+    else if (estado.novedades === "nada") h += `<p class="vacio">Nada nuevo desde el lunes. Sigues 3 lugares y 2 artistas.</p><section class="grupo"><h3>Esta semana</h3><ul class="lista">${novedad("hoy", "Fuiste el jueves", "La Banda de Música del Estado", "<b>jue 17 · 20:00</b> · Parroquia de San Sebastián", false)}</ul></section>`;
+    else {
       const nueva = !estado.leidas;
       h += `<section class="grupo"><h3>Hoy</h3><ul class="lista">${novedad("hoy", "Hoy vas", "Noche de son en el patio", "<b>19:30</b> · Casa Ocho Ventanas · van 12", nueva)}${novedad("cambio", "Cambió la fecha", "Fandango de barrio", "Ahora es <b>sáb 19 · 18:00</b> · Jardín de Tequis", nueva)}</ul></section>`;
       h += `<section class="grupo"><h3>Ayer</h3><ul class="lista">${novedad("nuevo", "Nuevo en Casa Ocho Ventanas", "Taller de grabado para principiantes", "<b>dom 27 · 11:00</b> · Gratis", nueva)}${novedad("juntos", "Ana y Luis también van", "Noche de son en el patio", "<b>Hoy · 19:30</b>", false)}</ul></section>`;
       h += `<section class="grupo"><h3>Esta semana</h3><ul class="lista">${novedad("nuevo", "Nueva fecha de Los Vecinos", "Los Vecinos en el Jardín de Tequis", "<b>sáb 26 · 18:00</b> · Gratis", false)}</ul></section>`;
-      h += `<div class="aviso-tel"><b>Esto también te llega por correo.</b>En el teléfono aún no: actívalo y te avisamos al momento.<br><button type="button" data-nota="Abriría la hoja de avisos de Ajustes">Activar en este teléfono</button></div>`;
+      if (!estado.telefono) h += `<p class="tarjeta-aviso">${I.telefono}<span>Esto te llega por correo. En el teléfono aún no.</span><button type="button" class="pildora" id="activar-telefono">Activar</button></p>`;
     }
-    h += `</div>`;
-    return `<main class="pantalla" id="scroll">${h}</main>`;
+    return h;
   }
 
   /* Mi perfil (solo actividad) y persona ajena */
   function pantallaPersona(mia) {
     const incompleto = mia && estado.incompleto;
-    const derecha = mia ? `<button type="button" class="icono-barra" id="ir-ajustes" aria-label="Ajustes">${I.engrane}</button>` : "";
-    let h = barraInterior("Agenda", derecha) + `<div class="contenido">`;
-    h += `<div class="cabecera"><span class="avatar ${incompleto ? "vacio" : ""}">${incompleto ? "R" : ""}</span><h1>Rosa Prueba</h1>${incompleto ? "" : `<span class="colonia">Tequis</span>`}<div class="acciones">${mia ? `<button type="button" class="pildora" data-nota="Abriría la hoja Editar (ya firmada)">Editar</button>` : ""}<button type="button" class="pildora" data-nota="Abriría la hoja nativa de compartir">${I.compartir}Compartir</button></div></div>`;
+    let h = barraInterior("Agenda");
+    const acciones = (mia ? `<button type="button" class="accion" id="ir-ajustes" data-tip="Ajustes" aria-label="Ajustes">${I.engrane}</button>` : "") + `<button type="button" class="accion" data-tip="Compartir" aria-label="Compartir" data-nota="Abriría la hoja nativa de compartir">${I.compartir}</button>`;
+    h += `<div class="cabecera"><span class="avatar ${incompleto ? "vacio" : ""}">${incompleto ? "R" : ""}</span><h1>Rosa Prueba</h1>${incompleto ? "" : `<span class="colonia">Tequis</span>`}<div class="acciones">${acciones}</div></div>`;
     if (!incompleto) h += `<p class="sobre-mi">Vecina de Tequis. Me gusta el son huasteco y el grabado; casi siempre ando por Casa Ocho Ventanas.</p>`;
-    if (incompleto) h += `<ul class="datos"><li class="dato completa">${I.persona}<b>Completa tu perfil: colonia y una línea sobre ti</b><small>Así la gente te reconoce en “quién va”.</small><button type="button" data-nota="Abriría la hoja Editar">Editar</button></li></ul>`;
-    if (!mia && estado.coincide) {
-      h += `<section class="grupo"><h2>Van a lo mismo <span>· 1</span></h2><ul class="lista">${renglonEvento("Noche de son en el patio", "Hoy · 19:30", "Casa Ocho Ventanas", "a")}</ul></section>`;
-    }
+    if (incompleto) h += `<p class="completa">${I.persona}<span>Falta tu colonia y una línea sobre ti: así te reconocen en “quién va”.</span><button type="button" id="ir-ajustes">Completar</button></p>`;
+    if (!mia && estado.coincide) h += `<section class="grupo"><h2>Van a lo mismo <span>· 1</span></h2><ul class="lista">${renglonEvento("Noche de son en el patio", "Hoy · 19:30", "Casa Ocho Ventanas", "a")}</ul></section>`;
     h += `<section class="grupo"><h2>${mia ? "Voy a" : "Va a"} <span>· 2</span></h2><h3>Hoy</h3><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "a")}</ul><h3>sáb 19 de sep</h3><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", "b")}</ul></section>`;
-    h += `<section class="grupo"><h2>${mia ? "Sigo" : "Sigue"} <span>· 2</span></h2><ul class="lista"><li class="renglon"><span class="foto a" aria-hidden="true"></span><span class="titulo">Casa Ocho Ventanas</span><span class="meta"><span>${I.pin}Casa de cultura · Calle 5 de Mayo 1100</span></span></li><li class="renglon"><span class="foto c redonda" aria-hidden="true"></span><span class="titulo">Los Vecinos</span><span class="meta"><span>${I.nota}Son huasteco · Grupo</span></span></li></ul></section>`;
-    if (mia) h += `<p class="pie"><a href="#" data-nota="Abriría la ficha como la ven los demás">Así te ven los demás</a></p>`;
-    h += `</div>`;
-    return `<main class="pantalla" id="scroll">${h}</main>`;
+    h += `<section class="grupo"><h2>${mia ? "Sigo" : "Sigue"} <span>· 2</span></h2><ul class="lista"><li class="renglon" data-nota="Abriría el lugar"><span class="foto a" aria-hidden="true"></span><span class="titulo">Casa Ocho Ventanas</span><span class="meta">${I.pin}Casa de cultura · Calle 5 de Mayo 1100</span></li><li class="renglon" data-nota="Abriría al artista"><span class="foto c redonda" aria-hidden="true"></span><span class="titulo">Los Vecinos</span><span class="meta">${I.nota}Son huasteco · Grupo</span></li></ul></section>`;
+    return h;
   }
 
-  /* Ajustes */
+  /* Ajustes: grupos de filas. Editar vive aquí. */
+  const fila = (icono, etiqueta, detalle, accion, nota) => `<li class="fila" ${nota ? `data-nota="${esc(nota)}"` : ""}>${icono}<b>${etiqueta}</b>${detalle ? `<small>${detalle}</small>` : ""}${accion}</li>`;
+  const valor = (t) => `<span class="valor">${t}${I.chevron}</span>`;
+  const palanca = (id, on, etiqueta) => `<button type="button" class="palanca" role="switch" id="${id}" aria-checked="${on}" aria-label="${etiqueta}"></button>`;
   function pantallaAjustes() {
-    let h = barraInterior("Mi perfil") + `<div class="contenido"><h1>Ajustes</h1><ul class="datos">`;
-    h += `<li class="dato">${I.campana}<b>Avisos · Por correo</b><small>El día de un evento al que vas y cuando publiquen lo que sigues</small><button type="button" data-nota="Abriría la hoja de avisos (ya firmada)">Cambiar</button></li>`;
-    h += `<li class="dato">${I.persona}<b>Perfil · Público</b><small>Tu ficha y tu nombre en “quién va” se ven</small><button type="button" data-nota="Abriría la hoja de perfil reservado (ya en producción)">Cambiar</button></li>`;
-    h += `<li class="dato">${I.correo}<b>Entras con ro…@gmail.com</b><small>Sin contraseña: cada vez te mandamos un código</small></li>`;
-    h += `<li class="dato">${I.compartir}<b>Invita a tus amigos a Somos Nosotros</b><small>Se comparte el enlace del sitio</small><button type="button" data-nota="Abriría la hoja nativa de compartir">Invitar</button></li>`;
-    if (estado.admin) h += `<li class="dato">${I.estrella}<b>Administración</b><small>Reportes, ocultar y mostrar fichas</small><button type="button" data-nota="Iría al panel">Abrir</button></li>`;
-    h += `<li class="dato">${I.salir}<b>Cerrar sesión</b><button type="button" data-nota="Cerraría la sesión y volvería a la agenda">Salir</button></li>`;
-    h += `</ul><ul class="datos" style="margin-top:24px"><li class="dato peligro"><span></span><b>Borrar mi cuenta</b><small>Se borra tu cuenta y tu perfil. Lo que publicaste se queda, sin tu nombre.</small><button type="button" style="color:var(--error)" data-nota="Pediría confirmación en dos pasos (ya existe)">Borrar</button></li></ul>`;
-    h += `<p class="pie"><a href="#">Aviso de privacidad</a> · <a href="#">Reglas de uso</a></p></div>`;
-    return `<main class="pantalla" id="scroll">${h}</main>`;
+    let h = barraInterior("Mi perfil") + `<h1>Ajustes</h1><div class="ajustes">`;
+    h += `<h2>Tu ficha</h2><ul class="tarjeta">${fila(I.lapiz, "Editar", "Foto, nombre, colonia, sobre ti", valor(""), "Abriría la hoja Editar (ya firmada)")}${fila(I.ojo, "Perfil", null, valor(estado.reservado ? "Reservado" : "Público"), "Abriría la hoja Perfil (ya en producción)")}</ul>`;
+    h += `<h2>Avisos</h2><ul class="tarjeta">${fila(I.correo, "Por correo", "ro…@gmail.com", palanca("sw-correo", estado.correo, "Avisos por correo"))}${fila(I.telefono, "En el teléfono", estado.telefono ? "Activados en este teléfono" : "Solo con la app instalada en inicio", palanca("sw-telefono", estado.telefono, "Avisos en el teléfono"))}</ul>`;
+    h += `<h2>Cuenta</h2><ul class="tarjeta">${fila(I.persona, "Entras con ro…@gmail.com", "Sin contraseña: te mandamos un código", "")}${fila(I.salir, "Cerrar sesión", null, valor(""), "Cerraría la sesión y volvería a la agenda")}</ul>`;
+    h += `<h2>Somos Nosotros</h2><ul class="tarjeta">${fila(I.compartir, "Invita a tus amigos", null, valor(""), "Abriría la hoja nativa de compartir")}${estado.admin ? fila(I.estrella, "Administración", null, valor(""), "Iría al panel") : ""}${fila(I.escudo, "Aviso de privacidad", null, valor(""), "Abriría /privacidad")}${fila(I.libro, "Reglas de uso", null, valor(""), "Abriría /reglas")}</ul>`;
+    h += `<button type="button" class="peligro" data-nota="Pediría confirmación en dos pasos (ya existe)">Borrar mi cuenta</button></div>`;
+    return h;
   }
 
   /* Registrar lugar */
   const SUG = [
-    { poi: true, nombre: "Workshop 850", direccion: "Av. Venustiano Carranza 850, Centro", tipo: "otro", etiqueta: "Otro", categoria: "Cafetería y taller" },
-    { poi: true, nombre: "Workshop Bicicletas", direccion: "Av. Himno Nacional 1250, Tangamanga", tipo: "otro", etiqueta: "Otro", categoria: "Tienda" },
+    { poi: true, nombre: "Workshop 850", direccion: "Av. Venustiano Carranza 850, Centro", categoria: "Cafetería y taller" },
+    { poi: true, nombre: "Workshop Bicicletas", direccion: "Av. Himno Nacional 1250, Tangamanga", categoria: "Tienda" },
     { poi: false, nombre: "Calle 850", direccion: "Av. Venustiano Carranza 850, Centro" },
   ];
+  const TIPOS = { casa_de_cultura: "Casa de cultura", museo: "Museo", foro: "Foro", galeria: "Galería", escuela: "Escuela", colectivo: "Colectivo", biblioteca: "Biblioteca", otro: "Otro" };
   function pantallaLugar() {
     const e = estado.lugar;
-    const nombre = e === "L0" ? "" : "Workshop 850";
+    const nombre = e === "L0" ? "" : e === "L1" ? "workshop" : "Workshop 850";
     const donde = e === "L2" || e === "L3" || e === "L4" ? "Av. Venustiano Carranza 850, Centro" : null;
-    const tipo = estado.tipoElegido ?? (e === "L2" || e === "L4" ? "otro" : nombre ? "otro" : null);
-    const listo = !!nombre && !!donde;
-    let h = barraInterior("Lugares") + `<div class="contenido"><h1>Registrar un lugar</h1><p class="subtitulo">Con el nombre y dónde está basta. Lo demás se puede agregar después.</p>`;
-    h += `<div class="campo"><label for="nombre">Nombre del lugar</label><input id="nombre" type="text" placeholder="Ej. Casa de la Cultura" autocomplete="off" value="${esc(e === "L1" ? "workshop" : nombre)}" ${e === "L0" || e === "L1" ? "autofocus" : ""}>${e === "L0" ? `<span class="ayuda">Escríbelo y elige el lugar si aparece: llenamos lo demás.</span>` : ""}</div>`;
-    if (e === "L1") {
-      h += `<ul class="sugerencias" role="listbox" aria-label="Lugares encontrados">${SUG.map((s, i) => s.poi ? `<li data-sug="${i}" role="option"><b>${s.nombre}</b><small>${s.categoria} · ${s.direccion}</small></li>` : `<li class="direccion" data-sug="${i}" role="option"><b>workshop</b><small>Usar la dirección ${s.direccion}</small></li>`).join("")}</ul>`;
-    }
-    if (e === "L4") h += `<div class="existe"><b>Ya está registrado:</b> <a href="#" data-nota="Abriría la ficha">Workshop 850 · Otro · Av. Venustiano Carranza 850</a><br><span style="color:var(--texto-suave)">Si es otro con el mismo nombre, sigue adelante.</span></div>`;
-    /* Dónde: resuelto cuando algo lo resolvió; si no, pendiente y abierto al toque */
-    h += `<div class="seccion ${donde ? "" : "pendiente"}"><button type="button" class="seccion-cab" id="abrir-donde"><span class="nombre">Dónde</span>${donde ? `<span class="resumen">${esc(donde)}<small>${e === "L3" ? "Dirección elegida · el pin está en esa calle" : "Lo trajo el nombre · a 400 m de ti"}</small></span><span class="cambiar">Cambiar</span>` : `<span class="resumen falta">Elige el lugar arriba, o dinos dónde está</span><span class="cambiar">Estoy aquí</span>`}</button></div>`;
-    /* Tipo: deducido; chips al abrir */
-    h += `<div class="seccion ${estado.tipoAbierto ? "abierta" : ""}"><button type="button" class="seccion-cab" id="abrir-tipo"><span class="nombre">Tipo</span><span class="resumen ${tipo ? "" : "falta"}">${tipo ? `${etiquetaTipo(tipo)}<small>${estado.tipoElegido ? "Lo elegiste tú" : e === "L2" ? "Por lo que dice Mapbox del lugar" : "Por el nombre; cámbialo si no es"}</small>` : "Se deduce del nombre"}</span><span class="cambiar">${estado.tipoAbierto ? "Listo" : "Cambiar"}</span></button>${estado.tipoAbierto ? `<div class="seccion-cuerpo"><div class="chips">${["casa_de_cultura","museo","foro","galeria","escuela","colectivo","biblioteca","otro"].map((t) => `<button type="button" class="chip" data-tipo="${t}" aria-pressed="${tipo === t}">${etiquetaTipo(t)}</button>`).join("")}</div></div>` : ""}</div>`;
-    h += `<button type="button" class="desplegar" data-nota="Abriría descripción, un campo de enlace y foto">+ Más detalles: descripción, redes o foto (puedes hacerlo después)</button>`;
-    h += `</div>`;
-    const pie = e === "L1" ? `<div class="sobre-teclado"><button type="button" class="primario" aria-disabled="true">Publicar lugar <small>falta dónde está</small></button></div>${teclado()}` : `<div class="acciones-fijas"><button type="button" class="primario" ${listo ? `data-nota="Publicado: iría a la ficha con Completar / Compartir"` : `aria-disabled="true"`}>Publicar lugar${listo ? "" : ` <small>${nombre ? "falta dónde está" : "falta el nombre"}</small>`}</button></div>`;
-    return `<main class="pantalla" id="scroll">${h}</main>${pie}`;
+    const tipo = estado.tipoElegido ?? (nombre ? "otro" : null);
+    const listo = e !== "L0" && e !== "L1" && !!donde;
+    let h = barraInterior("Lugares") + `<h1>Registrar un lugar</h1>`;
+    h += `<label class="campo">${I.lupa}<input id="nombre" type="text" placeholder="Nombre del lugar" autocomplete="off" aria-label="Nombre del lugar" value="${esc(nombre)}" ${e === "L0" || e === "L1" ? "autofocus" : ""}></label>`;
+    if (e === "L1") h += `<ul class="sugerencias" role="listbox" aria-label="Lugares encontrados">${SUG.map((s, i) => s.poi ? `<li data-sug="${i}" role="option">${I.pin}<b>${s.nombre}</b><small>${s.categoria} · ${s.direccion}</small></li>` : `<li class="direccion" data-sug="${i}" role="option">${I.pin}<b>workshop</b><small>Usar la dirección ${s.direccion}</small></li>`).join("")}</ul>`;
+    if (e === "L4") h += `<p class="existe">${I.ok}<span><b>Ya está registrado:</b> <a href="#" data-nota="Abriría la ficha">Workshop 850 · Av. Venustiano Carranza 850</a>. Si es otro con el mismo nombre, sigue.</span></p>`;
+    h += `<ul class="renglones">`;
+    /* Dónde: resuelto, o pendiente con dos salidas por intención: descubrí un lugar (estoy aquí) / sé dónde está (buscar) */
+    h += donde
+      ? `<li class="resuelto">${I.pin}<span class="clave">Dónde</span><span class="valor">${esc(donde)}</span><button type="button" class="cambiar" id="abrir-donde">Cambiar</button></li>`
+      : `<li class="resuelto pendiente">${I.pin}<span class="clave">Dónde</span><span class="valor falta">Falta</span><span class="opciones"><button type="button" class="accion" id="estoy-aqui" data-tip="Estoy aquí" aria-label="Estoy aquí">${I.ubicacion}</button><button type="button" class="accion" id="abrir-donde" data-tip="Buscar la dirección" aria-label="Buscar la dirección">${I.lupa}</button></span></li>`;
+    /* Tipo: deducido; chips al abrir; con Otro, qué es (opcional) */
+    h += `<li class="resuelto ${estado.tipoAbierto ? "abierta" : ""}">${I.etiqueta}<span class="clave">Tipo</span><span class="valor ${tipo ? "" : "falta"}">${tipo ? TIPOS[tipo] + (tipo === "otro" && estado.queEs ? ` · ${esc(estado.queEs)}` : "") : "Por el nombre"}</span><button type="button" class="cambiar" id="abrir-tipo">${estado.tipoAbierto ? "Listo" : "Cambiar"}</button>${estado.tipoAbierto ? `<div class="cuerpo"><div class="chips">${Object.keys(TIPOS).map((t) => `<button type="button" class="pildora" data-tipo="${t}" aria-pressed="${tipo === t}">${TIPOS[t]}</button>`).join("")}</div>${tipo === "otro" ? `<label class="campo"><input id="que-es" type="text" placeholder="¿Qué es? Ej. taller de cerámica (opcional)" value="${esc(estado.queEs)}" aria-label="Qué es"></label>` : ""}</div>` : ""}</li>`;
+    h += `<li class="resuelto pendiente">${I.mas}<span class="clave">Más</span><span class="valor falta">Descripción, redes, foto</span><button type="button" class="cambiar" data-nota="Abriría descripción, un campo de enlace y foto; puede hacerse después">Agregar</button></li></ul>`;
+    const boton = `<button type="button" class="primario" ${listo ? `data-nota="Publicado: iría a la ficha con Completar / Compartir"` : `aria-disabled="true"`}>Publicar lugar${listo ? "" : `<small>${nombre ? "falta dónde está" : "falta el nombre"}</small>`}</button>`;
+    return { h, pie: e === "L1" ? `<div class="sobre-teclado">${boton}</div>${teclado()}` : boton };
   }
-  function etiquetaTipo(t) { return { casa_de_cultura: "Casa de cultura", museo: "Museo", foro: "Foro", galeria: "Galería", escuela: "Escuela", colectivo: "Colectivo", biblioteca: "Biblioteca", otro: "Otro" }[t]; }
-  function hojaDonde() {
-    const conDireccion = estado.lugar !== "L0" && estado.lugar !== "L1";
-    return `<div class="asa" aria-hidden="true"></div><button type="button" class="cerrar" id="cerrar-donde" aria-label="Cerrar">✕</button><h3>Dónde está</h3><div class="fila-mapa"><div class="campo" style="margin:0"><input type="text" placeholder="Calle y número, o el nombre de la zona" value="${conDireccion ? "Av. Venustiano Carranza 850" : ""}" aria-label="Dirección"></div><button type="button" class="pildora" data-nota="Pondría el pin donde estás">Estoy aquí</button></div><div class="mapa" role="img" aria-label="Mapa con el pin"><span class="rotulo-mapa">${conDireccion ? "Arrastra el pin o toca el mapa para ajustar" : "Toca el mapa donde está el lugar"}</span><span class="yo" aria-hidden="true"></span>${conDireccion ? `<span class="pin" aria-hidden="true">${I.pinMapa}</span>` : ""}</div><div><p class="direccion-deducida">${conDireccion ? `Dirección: <b>Av. Venustiano Carranza 850, Centro</b> · se deduce del pin` : "La dirección se deduce sola al poner el pin."}</p><button type="button" class="primario" id="listo-donde" style="margin-top:10px">Listo</button></div>`;
+  function hoja() {
+    const con = estado.lugar !== "L0" && estado.lugar !== "L1";
+    return `<div class="asa" aria-hidden="true"></div><button type="button" class="cerrar" id="cerrar-hoja" aria-label="Cerrar">✕</button><h3>Dónde está</h3><label class="campo">${I.lupa}<input id="direccion" type="text" placeholder="Calle y número, o colonia" value="${con ? "Av. Venustiano Carranza 850" : ""}" aria-label="Dirección"></label><div class="mapa" role="img" aria-label="Mapa con el pin"><span class="rotulo-mapa">${con ? "Arrastra el pin o toca el mapa" : "Toca el mapa donde está el lugar"}</span><span class="yo" aria-hidden="true"></span>${con ? `<span class="pin" aria-hidden="true">${I.pinMapa}</span>` : ""}<button type="button" class="ubicame" id="ubicame" data-tip="Estoy aquí" aria-label="Estoy aquí">${I.ubicacion}</button></div><p class="deducida">${I.pin}<span>${con ? `<b>Av. Venustiano Carranza 850, Centro</b> · se dedujo del pin` : "La dirección se deduce sola al poner el pin"}</span></p><button type="button" class="primario" id="listo-hoja">Listo</button>`;
   }
 
   function render() {
-    $("pantalla").innerHTML = estado.vista === "agenda" ? pantallaAgenda() : estado.vista === "novedades" ? pantallaNovedades() : estado.vista === "perfil" ? pantallaPersona(true) : estado.vista === "persona" ? pantallaPersona(false) : estado.vista === "ajustes" ? pantallaAjustes() : pantallaLugar();
-    $("hoja-donde").innerHTML = hojaDonde();
+    let h, pie = "", conNav = false;
+    if (estado.vista === "agenda") { h = pantallaAgenda(); conNav = true; }
+    else if (estado.vista === "novedades") h = pantallaNovedades();
+    else if (estado.vista === "perfil") h = pantallaPersona(true);
+    else if (estado.vista === "persona") h = pantallaPersona(false);
+    else if (estado.vista === "ajustes") h = pantallaAjustes();
+    else { const r = pantallaLugar(); h = r.h; pie = r.pie; }
+    $("pantalla").innerHTML = h;
+    $("nav").hidden = !conNav; $("nav").innerHTML = conNav ? nav() : "";
+    const esTeclado = pie.includes("teclado");
+    $("pie").hidden = !pie || esTeclado; $("pie").innerHTML = esTeclado ? "" : pie;
+    document.querySelectorAll(".telefono > .teclado, .telefono > .sobre-teclado").forEach((n) => n.remove());
+    if (esTeclado) $("pantalla").insertAdjacentHTML("afterend", pie);
+    $("hoja").innerHTML = hoja();
     $("vista").value = estado.vista; $("novedadesEstado").value = estado.novedades; $("incompleto").checked = estado.incompleto; $("coincide").checked = estado.coincide; $("admin").checked = estado.admin; $("lugarEstado").value = estado.lugar;
   }
   let notaT;
   function nota(t) { const n = $("nota"); n.textContent = t; n.classList.add("visible"); clearTimeout(notaT); notaT = setTimeout(() => n.classList.remove("visible"), 1800); }
-  function cerrarHojas() { document.querySelectorAll(".hoja-fondo").forEach((f) => f.classList.remove("abierta")); }
+  const abrirHoja = (foco) => { $("hoja-fondo").classList.add("abierta"); if (foco) setTimeout(() => $("direccion")?.focus(), 50); };
+  const cerrarHoja = () => $("hoja-fondo").classList.remove("abierta");
 
   document.addEventListener("click", (ev) => {
-    const t = ev.target.closest("[data-nota], button, a, li[data-sug]");
+    const t = ev.target.closest("button, a, li[data-sug], li[data-nota], .fila[data-nota]");
     if (!t) return;
-    if (t.tagName === "A" && !t.dataset.nota && t.id !== "ir-perfil") ev.preventDefault();
-    if (t.id === "campana") { estado.vista = "novedades"; estado.leidas = true; render(); return; }
-    if (t.id === "ir-perfil") { ev.preventDefault(); estado.vista = "perfil"; render(); return; }
-    if (t.id === "ir-ajustes") { estado.vista = "ajustes"; render(); return; }
-    if (t.id === "volver") { estado.vista = estado.vista === "ajustes" ? "perfil" : "agenda"; render(); return; }
-    if (t.id === "abrir-donde") { $("hoja-donde-fondo").classList.add("abierta"); return; }
-    if (t.id === "cerrar-donde") { cerrarHojas(); return; }
-    if (t.id === "listo-donde") { cerrarHojas(); if (estado.lugar === "L0" || estado.lugar === "L1") estado.lugar = "L3"; render(); nota("Dónde resuelto: la dirección se dedujo del pin"); return; }
-    if (t.id === "abrir-tipo") { estado.tipoAbierto = !estado.tipoAbierto; render(); return; }
-    if (t.dataset.tipo) { estado.tipoElegido = t.dataset.tipo; estado.tipoAbierto = false; render(); return; }
-    if (t.dataset.sug !== undefined) { const s = SUG[t.dataset.sug]; estado.lugar = s.poi ? "L2" : "L3"; render(); nota(s.poi ? "Lugar elegido: dirección, pin y tipo resueltos" : "Dirección elegida: el nombre que escribiste se queda"); return; }
-    if (t.id === "nombre") return;
+    if (t.tagName === "A") ev.preventDefault();
+    const id = t.id;
+    if (id === "campana") { estado.vista = "novedades"; estado.leidas = true; render(); return; }
+    if (id === "ir-perfil") { estado.vista = "perfil"; render(); return; }
+    if (id === "ir-ajustes") { estado.vista = "ajustes"; render(); return; }
+    if (id === "volver") { estado.vista = estado.vista === "ajustes" ? "perfil" : "agenda"; render(); return; }
+    if (id === "activar-telefono") { estado.telefono = true; render(); nota("Avisos activados en este teléfono"); return; }
+    if (id === "sw-correo") { estado.correo = !estado.correo; render(); nota("Guardado"); return; }
+    if (id === "sw-telefono") { estado.telefono = !estado.telefono; render(); nota(estado.telefono ? "Guardado" : "Avisos del teléfono apagados"); return; }
+    if (id === "abrir-donde") { abrirHoja(true); return; }
+    if (id === "estoy-aqui") { estado.lugar = "L3"; render(); nota("Pin donde estás; la dirección se dedujo sola"); return; }
+    if (id === "ubicame") { estado.lugar = "L3"; render(); abrirHoja(false); nota("Pin donde estás"); return; }
+    if (id === "cerrar-hoja") { cerrarHoja(); return; }
+    if (id === "listo-hoja") { cerrarHoja(); if (estado.lugar === "L0" || estado.lugar === "L1") estado.lugar = "L3"; render(); return; }
+    if (id === "abrir-tipo") { estado.tipoAbierto = !estado.tipoAbierto; render(); return; }
+    if (t.dataset.tipo) { estado.tipoElegido = t.dataset.tipo; if (t.dataset.tipo !== "otro") { estado.tipoAbierto = false; estado.queEs = ""; } render(); return; }
+    if (t.dataset.sug !== undefined) { const s = SUG[t.dataset.sug]; estado.lugar = s.poi ? "L2" : "L3"; render(); nota(s.poi ? "Lugar elegido: dirección y pin resueltos" : "Dirección elegida: el nombre que escribiste se queda"); return; }
     if (t.dataset.nota) { nota(t.dataset.nota); return; }
-    if (t.closest(".hoja-fondo") && !t.closest(".hoja")) { cerrarHojas(); return; }
   });
   document.addEventListener("input", (ev) => {
     if (ev.target.id === "nombre") {
@@ -381,16 +429,18 @@
       const nuevo = v.length === 0 ? "L0" : v.startsWith("workshop 850") ? estado.lugar : v.length >= 3 ? "L1" : "L0";
       if (nuevo !== estado.lugar) { estado.lugar = nuevo; render(); const c = $("nombre"); c.focus(); c.value = ev.target.value; }
     }
+    if (ev.target.id === "que-es") estado.queEs = ev.target.value;
   });
-  document.querySelectorAll(".hoja-fondo").forEach((f) => f.addEventListener("click", (e) => { if (e.target === f) cerrarHojas(); }));
+  document.addEventListener("change", (ev) => { if (ev.target.id === "que-es") render(); });
+  $("hoja-fondo").addEventListener("click", (e) => { if (e.target === $("hoja-fondo")) cerrarHoja(); });
   $("vista").addEventListener("change", (e) => { estado.vista = e.target.value; render(); });
   $("novedadesEstado").addEventListener("change", (e) => { estado.novedades = e.target.value; estado.leidas = false; render(); });
   $("incompleto").addEventListener("change", (e) => { estado.incompleto = e.target.checked; render(); });
   $("coincide").addEventListener("change", (e) => { estado.coincide = e.target.checked; render(); });
   $("admin").addEventListener("change", (e) => { estado.admin = e.target.checked; render(); });
-  $("lugarEstado").addEventListener("change", (e) => { estado.lugar = e.target.value; estado.tipoElegido = null; estado.tipoAbierto = false; render(); });
+  $("lugarEstado").addEventListener("change", (e) => { estado.lugar = e.target.value; estado.tipoElegido = null; estado.tipoAbierto = false; estado.queEs = ""; render(); });
   $("reiniciar").addEventListener("click", () => { Object.assign(estado, JSON.parse(JSON.stringify(inicial))); render(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarHojas(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarHoja(); });
   render();
 </script>
 
