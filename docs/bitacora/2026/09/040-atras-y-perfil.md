@@ -17,5 +17,7 @@ Lint, typecheck, 134 pruebas y build en verde. Mirado a 390×844 con un usuario 
 ## Corrección posterior (mismo día)
 El founder probó en el iPhone: Atrás funciona; los números estaban al revés. Ahora es "Voy a 2 · Sigo 6" (etiqueta y luego el número grande). [PR #42](https://github.com/robscan/somosnosotros/pull/42).
 
+- "Así te ven los demás" no cambiaba nada: la ficha pública redirigía a Mi perfil cuando era la propia. Ahora la muestra como la ven los demás (sin Ajustes ni coincidencias), con el aviso y Atrás a Mi perfil. [PR #43](https://github.com/robscan/somosnosotros/pull/43).
+
 ## Pendiente
 - Firma del founder en el iPhone.
