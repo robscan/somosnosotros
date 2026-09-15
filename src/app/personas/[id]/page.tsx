@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import FichaPersona from "@/components/FichaPersona";
 import Barra from "@/components/ui/Barra";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -31,14 +31,20 @@ export default async function PaginaPersona({ params }: Params) {
   const { id } = await params;
   const [d, actual] = await Promise.all([cargarPersona(id), usuarioActual()]);
   if (!d) notFound();
-  if (actual?.perfil.id === id) redirect("/perfil");
+  // La propia ficha, vista como la ven los demás ("Así te ven los demás" en Mi perfil): sin Ajustes ni coincidencias.
+  const soyYo = actual?.perfil.id === id;
   // "Van a lo mismo": los eventos a los que vamos los dos (decisión 7); lo calcula el sistema, solo con sesión.
-  const mios = actual ? await cargarPersona(actual.perfil.id) : null;
+  const mios = actual && !soyYo ? await cargarPersona(actual.perfil.id) : null;
   const misIds = new Set((mios?.eventos ?? []).map((e) => e.id));
   const juntos = d.eventos.filter((e) => misIds.has(e.id));
   return (
     <main className={ficha.pagina}>
-      <Barra volver={{ href: "/", texto: "Agenda" }} />
+      <Barra volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }} />
+      {soyYo && (
+        <p className="aviso-ok" role="status">
+          Así te ven los demás.
+        </p>
+      )}
       <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} juntos={juntos} lugares={d.lugares} artistas={d.artistas} origen={ORIGEN} />
     </main>
   );
