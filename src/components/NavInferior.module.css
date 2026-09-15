@@ -25,7 +25,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 .activo {
-  color: var(--texto);
+  color: var(--primario);
 }
 .activo span {
   font-weight: 700;
