@@ -160,7 +160,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           </MenuAcciones>
         }
       />
-      {/* Volvió de entrar con "Es mi nombre" en la mano: la hoja se abre sola. */}
+      {/* Volvió de entrar con "Soy yo / es mi grupo" en la mano: la hoja se abre sola. */}
       {actual && accion === "mio" && !puedeEditar && <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion correo={correo} soloHoja />}
       {nuevo === "1" && (
         <div className={ficha.publicado} role="status">

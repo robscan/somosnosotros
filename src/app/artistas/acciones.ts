@@ -103,7 +103,7 @@ export async function borrarArtista(id: string) {
 export type ResultadoReclamo = { ok: true } | { ok: false; error: string };
 
 /**
- * "Es mi nombre" (decisión 11): la persona pide la ficha para editarla o pide que se quite.
+ * "Soy yo / es mi grupo" (decisión 11): la persona pide la ficha para llevarla ella o pide que se quite.
  * Queda como reporte con su cuenta; el administrador lo atiende desde su panel.
  */
 export async function reclamarArtista(artistaId: string, motivo: MotivoReclamo): Promise<ResultadoReclamo> {

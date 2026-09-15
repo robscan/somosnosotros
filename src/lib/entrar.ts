@@ -26,7 +26,7 @@ export function motivoEntrar(siguiente: string): Motivo {
   if (accion === "voy" && seccion === "eventos") return { tipo: "voy", titulo: "Entra para decir que vas", origen };
   if (accion === "me_interesa" && seccion === "eventos") return { tipo: "interesa", titulo: "Entra para marcar que te interesa", origen };
   if (accion === "seguir" && (seccion === "lugares" || seccion === "artistas") && id && UUID.test(id)) return { tipo: "seguir", titulo: "Entra para seguir", origen, tabla: seccion, id };
-  if (accion === "mio" && seccion === "artistas") return { tipo: "mio", titulo: "Entra para decir que es tu nombre", origen };
+  if (accion === "mio" && seccion === "artistas") return { tipo: "mio", titulo: "Entra para decir que eres tú", origen };
   if (id === "nuevo" && seccion === "eventos") return { tipo: "publicar", titulo: "Entra para publicar", origen: "/" };
   if (id === "nuevo" && (seccion === "lugares" || seccion === "artistas")) return { tipo: "registrar", titulo: `Entra para registrar ${seccion === "lugares" ? "un lugar" : "un artista"}`, origen: `/${seccion}` };
   if (seccion === "perfil" || seccion === "admin") return { tipo: "ninguno", titulo: "Entrar", origen: "/" };

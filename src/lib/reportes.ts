@@ -9,10 +9,10 @@ export type Motivo = (typeof MOTIVOS)[number]["valor"];
 export type TipoReportado = "lugar" | "evento" | "perfil" | "artista";
 export const TIPOS_REPORTADOS: TipoReportado[] = ["lugar", "evento", "perfil", "artista"];
 
-/** "Es mi nombre" (ficha de artista): no salen en el formulario de reportar; los escribe su propia acción. */
+/** "Soy yo / es mi grupo" (ficha de artista): no salen en el formulario de reportar; los escribe su propia acción. */
 export const MOTIVOS_RECLAMO = [
-  { valor: "es_mio", etiqueta: "Es su nombre y quiere editar la ficha" },
-  { valor: "retirar", etiqueta: "Es su nombre y pide que se quite" },
+  { valor: "es_mio", etiqueta: "Dice que es él o su grupo y quiere llevar la ficha" },
+  { valor: "retirar", etiqueta: "Dice que es él o su grupo y pide que se quite" },
 ] as const;
 export type MotivoReclamo = (typeof MOTIVOS_RECLAMO)[number]["valor"];
 
