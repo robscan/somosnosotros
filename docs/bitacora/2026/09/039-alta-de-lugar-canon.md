@@ -1,6 +1,6 @@
 # 039 · Alta de lugar con el canon
 
-**Fecha:** 2026-09-15 · **Rama:** `alta-lugar-canon` → PR · **Pieza:** OL-019, PR C (diseño firmado en [13](../../rediseno/13-novedades-perfil-alta-flujo-y-estados.md), decisiones 8 a 12); cierra el PR 3 de OL-010
+**Fecha:** 2026-09-15 · **Rama:** `alta-lugar-canon` → [PR #40](https://github.com/robscan/somosnosotros/pull/40), fusionado y en producción el mismo día · **Pieza:** OL-019, PR C (diseño firmado en [13](../../rediseno/13-novedades-perfil-alta-flujo-y-estados.md), decisiones 8 a 12); cierra el PR 3 de OL-010
 
 ## Qué pidió el founder
 Cuestionar fuerte el alta de lugar (fricción entre el campo de nombre y el mapa; propuso paginar). Firmó la alternativa: una cosa a la vez con renglones resueltos, el mapa en su hoja y solo cuando hace falta, dos salidas por intención en Dónde, sin frases de ayuda, iconos con tooltip, y "¿Qué es?" con tipo Otro. Lo fijó como canon para cuestionar los demás formularios.
