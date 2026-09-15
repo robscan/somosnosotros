@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { leerUrlSeccion } from "@/lib/memoriaPantalla";
+import { pedirVuelta } from "./MemoriaScroll";
 import type { Seccion } from "./MemoriaPantalla";
 import { IconoCalendario, IconoEstrella, IconoPin } from "./ui/Iconos";
 import styles from "./NavInferior.module.css";
@@ -44,7 +45,7 @@ export default function NavInferior() {
       {DESTINOS.map(({ seccion, href, etiqueta, Icono }, i) => {
         const activo = href === "/" ? ruta === "/" : ruta.startsWith(href);
         return (
-          <Link key={href} href={activo ? href : ultimaValida(seccion, href, ultimas[i]) ?? href} className={`${styles.destino} ${activo ? styles.activo : ""}`} aria-current={activo ? "page" : undefined}>
+          <Link key={href} href={activo ? href : ultimaValida(seccion, href, ultimas[i]) ?? href} onClick={activo ? undefined : pedirVuelta} className={`${styles.destino} ${activo ? styles.activo : ""}`} aria-current={activo ? "page" : undefined}>
             <span className={styles.icono}>
               <Icono width={26} height={26} />
             </span>

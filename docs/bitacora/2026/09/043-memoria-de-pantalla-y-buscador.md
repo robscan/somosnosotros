@@ -18,10 +18,19 @@ Al navegar la agenda y tocar un evento, volver hacía reset del scroll y tardaba
 - El campo de búsqueda pasa a `CampoBuscar` (mismo aspecto en Artistas y en la agenda) y se esconde la ✕ que Safari y Chrome pintan en `type="search"` (había dos ✕).
 - `experimental.staleTimes.dynamic: 60` en `next.config.ts`: al cambiar de sección con la barra inferior, una página vista hace menos de un minuto se reutiliza sin esperar al servidor. Publicar, Voy, Seguir y borrar ya revalidan sus rutas, así que no se ve nada viejo. **Es una decisión aparte y reversible** si el founder ve algo raro.
 
+## Lo que rompió el founder en el iPhone (y la corrección)
+Con la app instalada en el inicio, en producción, tras poner Voy y volver con Atrás la agenda salía rota: la cabecera con chips y pestañas y el título del día no se pintaban (quedaba el hueco) y después un bloque blanco tapaba la mitad de arriba. Solo con navegar no pasaba. Lo reproduje en el simulador de iPhone (iOS 26.3) con la app añadida al inicio: en Safari normal no pasa; en modo app sí, y solo cuando la vuelta obliga a pedir la agenda otra vez (Voy, Seguir o Cancelar revalidan `/` y Next tira su copia de historial).
+
+**Causa.** En modo app WebKit repone el scroll por su cuenta al volver, mientras la página todavía es la pantalla de carga (corta). Cuando llega el contenido, la vista del sistema y el documento quedan desincronizados: el documento dice scroll 0 con todo en su sitio, pero la cabecera pegajosa se pinta como un bloque blanco. Cualquier `scrollTo` real lo cura; si no hay movimiento (volver arriba), no se cura solo.
+
+**Corrección (en este PR).** El navegador deja de reponer el scroll (`history.scrollRestoration = "manual"`) y lo hace la app para todas las pantallas: `MemoriaScroll` en el layout guarda el scroll por URL (sessionStorage) y al volver (Atrás, gesto o recarga) espera a que la página tenga altura y lo repone; si la posición no cambia, da un salto de 1 px y vuelve un instante después para que WebKit resincronice. El hook `useMemoriaPantalla` se queda con el estado (pestaña, día, búsqueda, vista) y la última URL de la sección.
+
+**Probado en el simulador, app instalada, con Voy y Cancelar:** vuelta a 800 y a 843 con datos frescos; vuelta a 0 exacto desde el evento de arriba. Tres de tres bien; con la reposición desactivada a propósito, el bloque blanco vuelve a salir. Chrome a 390×844 sigue bien.
+
 ## Evidencia
 - `npm run lint && npm run typecheck && npm test` en verde (141 pruebas: 5 nuevas de la memoria y 1 del buscador); `npm run build` en verde.
 - Servidor local a 390×844: Nuevos + scroll 700 → ficha → Atrás: vuelve a Nuevos y a 700 en 230 ms. Buscar «camerata» halla dos (por título y por artista); «jazz museo» da el vacío con causa; ficha y Atrás devuelven el campo abierto con «camerata» y sin foco. Lugares en Lista a 900 → ficha → Atrás: Lista y 900. Artistas a 1200 → ficha → Atrás: 1200. Desde Artistas, el tab Agenda vuelve a la agenda con su pestaña y su búsqueda.
 
 ## Queda
-- Prueba del founder en el iPhone (Safari y, si la usa, la app instalada): volver por Atrás y por el gesto, con y sin Voy en la ficha.
+- Prueba del founder en la app instalada tras el despliegue: volver por Atrás y por el gesto, con y sin Voy en la ficha.
 - Commit y PR cuando el founder lo pida.

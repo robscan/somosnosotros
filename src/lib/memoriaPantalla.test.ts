@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claveDeUrl, guardarMemoria, guardarUrlSeccion, leerMemoria, leerUrlSeccion, type Almacen } from "./memoriaPantalla";
+import { claveDeUrl, guardarMemoria, guardarScroll, guardarUrlSeccion, leerMemoria, leerScroll, leerUrlSeccion, type Almacen } from "./memoriaPantalla";
 
 function almacen(): Almacen & { datos: Map<string, string> } {
   const datos = new Map<string, string>();
@@ -7,23 +7,34 @@ function almacen(): Almacen & { datos: Map<string, string> } {
 }
 
 describe("memoria de pantalla", () => {
-  it("guarda y devuelve el estado y el scroll de una URL", () => {
+  it("guarda y devuelve el estado de una URL", () => {
     const a = almacen();
-    guardarMemoria("/", { estado: { filtro: "nuevos", busqueda: "jazz" }, scroll: 1800 }, a);
-    expect(leerMemoria("/", a)).toEqual({ estado: { filtro: "nuevos", busqueda: "jazz" }, scroll: 1800 });
+    guardarMemoria("/", { estado: { filtro: "nuevos", busqueda: "jazz" } }, a);
+    expect(leerMemoria("/", a)).toEqual({ estado: { filtro: "nuevos", busqueda: "jazz" } });
     expect(leerMemoria("/lugares", a)).toBeNull();
+  });
+  it("guarda y devuelve el scroll de una URL, aparte del estado", () => {
+    const a = almacen();
+    guardarScroll("/", 1800.4, a);
+    guardarScroll("/eventos/x", -3, a);
+    expect(leerScroll("/", a)).toBe(1800);
+    expect(leerScroll("/eventos/x", a)).toBe(0);
+    expect(leerScroll("/lugares", a)).toBeNull();
+    expect(leerScroll("/", null)).toBeNull();
   });
   it("sin almacén (modo privado) no rompe: no hay memoria", () => {
     expect(leerMemoria("/", null)).toBeNull();
-    guardarMemoria("/", { estado: 1, scroll: 0 }, null);
+    guardarMemoria("/", { estado: 1 }, null);
     expect(leerUrlSeccion("agenda", null)).toBeNull();
   });
   it("ignora lo que no sea una memoria válida", () => {
     const a = almacen();
     a.setItem("somosnosotros:pantalla:/", "no es json");
     expect(leerMemoria("/", a)).toBeNull();
-    a.setItem("somosnosotros:pantalla:/", JSON.stringify({ estado: { x: 1 }, scroll: -5 }));
-    expect(leerMemoria("/", a)).toEqual({ estado: { x: 1 }, scroll: 0 });
+    a.setItem("somosnosotros:pantalla:/", JSON.stringify({ scroll: 5 }));
+    expect(leerMemoria("/", a)).toBeNull();
+    a.setItem("somosnosotros:pantalla:/", JSON.stringify({ estado: { x: 1 } }));
+    expect(leerMemoria("/", a)).toEqual({ estado: { x: 1 } });
   });
   it("recuerda la última URL de cada sección, solo si es una ruta de la app", () => {
     const a = almacen();
