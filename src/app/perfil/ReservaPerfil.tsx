@@ -6,7 +6,7 @@ import Hoja from "@/components/ui/Hoja";
 import { IconoChevronDerecha, IconoOjo } from "@/components/ui/Iconos";
 import ajustes from "@/app/ajustes/ajustes.module.css";
 import { elegirReserva } from "./acciones";
-import styles from "./AvisosPerfil.module.css";
+import styles from "./ReservaPerfil.module.css";
 
 /**
  * Fila "Perfil · Público / Reservado" de Ajustes: abre una hoja con un interruptor que se guarda al tocar.

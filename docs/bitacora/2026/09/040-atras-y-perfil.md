@@ -19,5 +19,7 @@ El founder probó en el iPhone: Atrás funciona; los números estaban al revés.
 
 - "Así te ven los demás" no cambiaba nada: la ficha pública redirigía a Mi perfil cuando era la propia. Ahora la muestra como la ven los demás (sin Ajustes ni coincidencias), con el aviso y Atrás a Mi perfil. [PR #43](https://github.com/robscan/somosnosotros/pull/43).
 
+- **Doble línea al pie y limpieza** (aviso del founder: "no dejes basura, optimiza y limpia"): el pie "Así te ven los demás" tenía borde superior encima del borde del último renglón; se quita. Revisión de clases sin uso módulo por módulo (con el alias real de cada importador): `.dato` en la hoja de reserva (que pasa a `ReservaPerfil.module.css`, porque `AvisosPerfil` ya no la usa), `.editar` en `EditarPerfil.module.css` y `.peligro` en `ajustes.module.css`; quitadas. Medido Mi perfil en el navegador: 107 nodos, profundidad 9 (contando los trazos de los iconos), cero envoltorios de layout sin función (los seis `span` sin clase con un solo hijo son icono + texto en los renglones de la agenda, no envoltorios). [PR #44](https://github.com/robscan/somosnosotros/pull/44).
+
 ## Pendiente
 - Firma del founder en el iPhone.

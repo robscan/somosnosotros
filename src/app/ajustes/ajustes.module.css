@@ -110,17 +110,6 @@ a.fila {
 .palanca:disabled {
   opacity: 0.6;
 }
-.peligro {
-  justify-self: start;
-  min-height: var(--toque-min);
-  padding: 0 4px;
-  border: none;
-  background: none;
-  color: var(--error);
-  font-size: var(--letra-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
 .nota {
   padding: 0 14px 10px;
   color: var(--texto-suave);

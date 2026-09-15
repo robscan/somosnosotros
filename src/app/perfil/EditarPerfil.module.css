@@ -1,15 +1,3 @@
-/* "Editar" en la cabecera: píldora chica sin color de acción (la acción primaria de la ficha no es esta). */
-.editar {
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--borde);
-  border-radius: 999px;
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  cursor: pointer;
-}
 .titulo {
   padding-right: var(--toque-min);
   font-size: var(--letra-xl);
