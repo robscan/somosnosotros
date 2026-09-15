@@ -6,7 +6,9 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { Chip, Chips } from "@/components/ui/Chip";
 import Seccion from "@/components/ui/Seccion";
-import { artistaIgual, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, LIMITES_ARTISTA, REDES_ARTISTA, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type TipoArtista } from "@/lib/artistas";
+import SelectorEnlaces from "@/components/SelectorEnlaces";
+import { artistaIgual, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, LIMITES_ARTISTA, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type TipoArtista } from "@/lib/artistas";
+import { normalizarRedes } from "@/lib/enlaces";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { reducirImagen } from "@/lib/imagen";
@@ -231,12 +233,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </button>
       ) : (
         <>
-          <fieldset className={styles.grupo}>
-            <legend className={styles.etiqueta}>Redes (opcional)</legend>
-            {REDES_ARTISTA.map((r) => (
-              <Campo key={r.clave} etiqueta={r.etiqueta} name={r.clave} defaultValue={artista?.redes?.[r.clave] ?? ""} ayuda={r.ayuda} error={errores[r.clave]} autoComplete="off" autoCapitalize="none" inputMode={r.clave === "whatsapp" ? "tel" : "url"} />
-            ))}
-          </fieldset>
+          <SelectorEnlaces inicial={normalizarRedes(artista?.redes)} error={errores.enlaces} />
           <Campo etiqueta="Descripción (opcional)" name="descripcion" multilinea defaultValue={artista?.descripcion ?? ""} maxLength={LIMITES_ARTISTA.descripcion} ayuda={`Qué hace y dónde suele estar. Hasta ${LIMITES_ARTISTA.descripcion} caracteres.`} error={errores.descripcion} />
         </>
       )}

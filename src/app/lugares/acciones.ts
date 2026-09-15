@@ -19,7 +19,7 @@ async function sesionOEntrar(destino: string) {
 }
 
 function leer(formData: FormData) {
-  const claves = ["nombre", "tipo", "direccion", "lat", "lng", "descripcion", "portada", "instagram", "facebook", "whatsapp", "sitio"];
+  const claves = ["nombre", "tipo", "direccion", "lat", "lng", "descripcion", "portada", "enlaces"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 

@@ -9,7 +9,9 @@ import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
 import { direccionDesdePunto } from "@/lib/geocodificar";
-import { LIMITES_LUGAR, REDES, TIPOS, etiquetaTipo, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
+import SelectorEnlaces from "@/components/SelectorEnlaces";
+import { normalizarRedes } from "@/lib/enlaces";
+import { LIMITES_LUGAR, TIPOS, etiquetaTipo, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { reducirImagen } from "@/lib/imagen";
 import type { ResultadoLugar } from "./acciones";
@@ -351,12 +353,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId }: Props) {
       {mostrarDetalles && (
         <>
           <Campo etiqueta="Descripción corta (opcional)" name="descripcion" multilinea defaultValue={lugar?.descripcion ?? ""} maxLength={LIMITES_LUGAR.descripcion} ayuda={`Qué es y qué pasa ahí. Hasta ${LIMITES_LUGAR.descripcion} caracteres.`} error={errores.descripcion} />
-          <fieldset className={styles.grupo}>
-            <legend className={styles.etiqueta}>Redes y contacto (opcional)</legend>
-            {REDES.map((r) => (
-              <Campo key={r.clave} etiqueta={r.etiqueta} name={r.clave} defaultValue={lugar?.redes?.[r.clave] ?? ""} ayuda={r.ayuda} error={errores[r.clave]} autoComplete="off" autoCapitalize="none" inputMode={r.clave === "whatsapp" ? "tel" : "url"} />
-            ))}
-          </fieldset>
+          <SelectorEnlaces inicial={normalizarRedes(lugar?.redes)} error={errores.enlaces} />
           <div className={styles.campo}>
             <p className={styles.etiqueta}>Foto de portada (opcional)</p>
             {portada && (

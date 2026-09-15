@@ -81,14 +81,14 @@ describe("quienDesdeJson", () => {
 
 describe("validarArtista", () => {
   it("acepta lo mínimo y limpia", () => {
-    const { datos, errores } = validarArtista({ nombre: "  Los Vecinos ", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", instagram: "@losvecinos", foto: "" });
+    const { datos, errores } = validarArtista({ nombre: "  Los Vecinos ", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", enlaces: JSON.stringify(["@losvecinos"]), foto: "" });
     expect(errores).toEqual({});
-    expect(datos).toMatchObject({ nombre: "Los Vecinos", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", foto: null, redes: { instagram: "@losvecinos" } });
+    expect(datos).toMatchObject({ nombre: "Los Vecinos", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", foto: null, redes: [{ red: "instagram", url: "https://instagram.com/losvecinos" }] });
   });
-  it("avisa del nombre vacío, la disciplina desconocida y el WhatsApp corto", () => {
-    const { errores } = validarArtista({ nombre: "", disciplina: "pintura", tipo: "grupo", whatsapp: "123" });
+  it("avisa del nombre vacío y la disciplina desconocida; un enlace que no es nada se descarta sin error", () => {
+    const { datos, errores } = validarArtista({ nombre: "", disciplina: "pintura", tipo: "grupo", enlaces: JSON.stringify(["hola"]) });
     expect(errores.nombre).toBeDefined();
     expect(errores.disciplina).toBeDefined();
-    expect(errores.whatsapp).toBeDefined();
+    expect(datos.redes).toEqual([]);
   });
 });

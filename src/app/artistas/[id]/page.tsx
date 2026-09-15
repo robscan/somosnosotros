@@ -10,7 +10,8 @@ import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendario, IconoCompartir, IconoFacebook, IconoInstagram, IconoPersonas, IconoSitio, IconoSpotify, IconoWhatsApp, IconoYouTube } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCompartir, IconoPersonas } from "@/components/ui/Iconos";
+import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
@@ -18,7 +19,7 @@ import { etiquetaArtista, textoProximaFecha, type Artista } from "@/lib/artistas
 import { enmascararCorreo } from "@/lib/comunidad";
 import { nombreSitio } from "@/lib/eventos";
 import { desdeReciente } from "@/lib/fechas";
-import { enlacesRedes, type ClaveRed } from "@/lib/lugares";
+import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from "../acciones";
 import EsMiNombre from "./EsMiNombre";
@@ -29,7 +30,6 @@ type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null 
 type FilaEvento = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng"> & { lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
-const ICONO_RED: Record<ClaveRed, React.ReactNode> = { instagram: <IconoInstagram />, facebook: <IconoFacebook />, youtube: <IconoYouTube />, spotify: <IconoSpotify />, whatsapp: <IconoWhatsApp />, sitio: <IconoSitio /> };
 
 async function cargarArtista(id: string): Promise<ArtistaConAutor | null> {
   const supabase = await clienteServidor();
@@ -112,7 +112,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);
   const puedeEditar = esAdmin || esAutor || estaLigado;
   const puedeBorrar = esAdmin || esAutor;
-  const redes = enlacesRedes(a.redes);
+  const redes = normalizarRedes(a.redes);
   const faltanDetalles = a.disciplina === "por_completar" || (!a.descripcion && !a.foto && redes.length === 0);
   const url = `${ORIGEN}/artistas/${a.id}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
@@ -220,9 +220,9 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           Compartir
         </BotonCompartir>
         {redes.map((r) => (
-          <a key={r.clave} href={r.href} className={ficha.accion} target="_blank" rel="noopener noreferrer">
-            {ICONO_RED[r.clave]}
-            {r.etiqueta}
+          <a key={r.url} href={r.url} className={ficha.accion} target="_blank" rel="noopener noreferrer">
+            <IconoRed red={r.red} />
+            {etiquetaEnlace(r)}
           </a>
         ))}
       </div>

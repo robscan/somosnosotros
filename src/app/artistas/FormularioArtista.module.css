@@ -65,6 +65,7 @@
 }
 .etiqueta {
   grid-area: etiqueta;
+  margin-bottom: var(--espacio-1);
   font-weight: 600;
 }
 .opcional {
@@ -164,12 +165,4 @@
   color: var(--texto-suave);
   text-align: left;
   cursor: pointer;
-}
-.grupo {
-  border: none;
-  padding: 0;
-  margin-bottom: var(--espacio-2);
-}
-.grupo legend {
-  margin-bottom: var(--espacio-2);
 }
