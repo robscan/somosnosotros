@@ -2,7 +2,7 @@ import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import { ciudadPorSlug } from "@/lib/ciudad";
 import { desdeReciente } from "@/lib/fechas";
-import { conProximo, type LugarLista, type LugarResumen } from "@/lib/lugares";
+import { conProximo, TIPOS, type LugarLista, type LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import VistaLugares from "./VistaLugares";
 
@@ -19,9 +19,11 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
   return conProximo((l.data ?? []) as LugarResumen[], (e.data ?? []) as { id: string; inicio: string; lugar_id: string | null }[]);
 }
 
-export default async function Lugares({ searchParams }: { searchParams: Promise<{ vista?: string; ciudad?: string }> }) {
-  const { vista, ciudad: slug } = await searchParams;
+export default async function Lugares({ searchParams }: { searchParams: Promise<{ vista?: string; ciudad?: string; tipo?: string }> }) {
+  const { vista, ciudad: slug, tipo } = await searchParams;
   const ciudad = ciudadPorSlug(slug);
   const [lugares, actual] = await Promise.all([cargar(ciudad.nombre), usuarioActual()]);
-  return <VistaLugares lugares={lugares} ciudad={ciudad} conSesion={!!actual} vistaInicial={vista === "lista" ? "lista" : "mapa"} barra={<Barra derecha={<Sesion />} />} />;
+  // El tipo elegido vive en la URL (se comparte y sobrevive al volver atrás); solo vale si existe.
+  const tipoElegido = tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
+  return <VistaLugares lugares={lugares} ciudad={ciudad} conSesion={!!actual} vistaInicial={vista === "lista" ? "lista" : "mapa"} tipo={tipoElegido} barra={<Barra derecha={<Sesion />} />} />;
 }

@@ -78,11 +78,23 @@ function lotes<T>(lista: T[], tamano: number): T[][] {
   return out;
 }
 
+/** Tope de eventos por autor y día que disparan avisos: a partir del cuarto, el evento se publica pero no avisa
+ *  (una cuenta nueva no puede quemar el dominio de correo ni cansar a los seguidores; revisión 2026-09-14, M2). */
+export const TOPE_AVISOS_POR_AUTOR_DIA = 3;
+
 /** Nuevo evento: aviso a quienes siguen el lugar o a alguno de los artistas que se presentan (menos al autor), una vez por persona. */
 export async function avisarNuevoEvento(eventoId: string, autorId: string | null): Promise<number> {
   const admin = clienteAdmin();
   const evento = await cargarEvento(eventoId);
   if (!admin || !evento) return 0;
+  if (autorId) {
+    const hace24h = new Date(Date.now() - 24 * 3600000).toISOString();
+    const { count } = await admin.from("eventos").select("id", { count: "exact", head: true }).eq("creado_por", autorId).gte("creado_en", hace24h);
+    if ((count ?? 0) > TOPE_AVISOS_POR_AUTOR_DIA) {
+      console.info(`avisos: ${autorId} lleva ${count} eventos en 24 h; el ${eventoId} se publica sin avisar`);
+      return 0;
+    }
+  }
   const { data: ea } = await admin.from("eventos_artistas").select("artista_id").eq("evento_id", eventoId);
   const artistas = (ea ?? []).map((r) => r.artista_id as string);
   if (!evento.lugar_id && artistas.length === 0) return 0;

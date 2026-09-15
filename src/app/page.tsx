@@ -16,19 +16,22 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   const supabase = await clienteServidor();
   if (!supabase) return { eventos: [] as EventoAgenda[], seguidos: usuarioId ? [] : null, eventosSeguidos: [] as string[], hayLugares: false, porCiudad: new Map<string, number>() };
   const desde = desdeReciente();
-  const [e, l, a, s] = await Promise.all([
-    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng)").eq("visible", true).gte("inicio", desde).order("inicio").limit(300),
+  // Solo la ciudad (decisión "sin segunda ciudad"); cuántos van se cuenta en la base para los eventos cargados,
+  // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
+  const [e, l, s] = await Promise.all([
+    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng)").eq("visible", true).eq("ciudad", ciudad.nombre).gte("inicio", desde).order("inicio").limit(300),
     supabase.from("lugares").select("id", { count: "exact", head: true }).eq("visible", true).eq("ciudad", ciudad.nombre),
-    supabase.from("asistencias").select("evento_id").eq("estado", "voy"),
     usuarioId ? supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId) : Promise.resolve({ data: null }),
   ]);
+  const ids = (e.data ?? []).map((x) => x.id as string);
+  const a = ids.length ? await supabase.rpc("van_por_evento", { ids }) : { data: [] as { evento_id: string; n: number }[] };
   const seguimientos = (s.data ?? []) as { lugar_id: string | null; artista_id: string | null }[];
   const artistasSeguidos = seguimientos.map((x) => x.artista_id).filter((x): x is string => !!x);
   // Eventos en los que se presenta un artista que sigue: entran en "Siguiendo" (Artistas, decisión 10).
   const ea = artistasSeguidos.length ? await supabase.from("eventos_artistas").select("evento_id").in("artista_id", artistasSeguidos) : { data: [] as { evento_id: string }[] };
   const eventosSeguidos = [...new Set((ea.data ?? []).map((x) => x.evento_id as string))];
   const van = new Map<string, number>();
-  for (const fila of a.data ?? []) van.set(fila.evento_id as string, (van.get(fila.evento_id as string) ?? 0) + 1);
+  for (const fila of (a.data ?? []) as { evento_id: string; n: number }[]) van.set(fila.evento_id, Number(fila.n));
   const porCiudad = new Map<string, number>();
   const eventos: EventoAgenda[] = [];
   for (const fila of (e.data ?? []) as unknown as (Fila & { ciudad: string })[]) {

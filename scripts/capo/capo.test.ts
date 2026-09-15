@@ -47,7 +47,7 @@ describe("extraerRegistros", () => {
     expect(v.conImagen).toBe(true);
   });
   it("dos encabezados seguidos son alias y nombre: el segundo pasa a párrafo; el origen entre paréntesis se ignora", () => {
-    const t = regs.find((r) => r.nombre === '"Trezde Xantos"')!;
+    const t = regs.find((r) => r.nombre === "Trezde Xantos")!; // las comillas que envuelven el nombre se quitan
     expect(t.parrafos).toEqual(["Juan Alberto Rodríguez", "(San Luis Potosí, 1990)", "Escritor de graffiti."]);
     expect(regs.find((r) => r.nombre === "Tristana Landeros")!.parrafos).toEqual(["Poeta."]);
     expect(regs.some((r) => r.nombre.startsWith("("))).toBe(false);
@@ -56,7 +56,7 @@ describe("extraerRegistros", () => {
     const s = regs.filter((r) => r.nombre === "SERES Arte Inclusivo");
     expect(s).toHaveLength(1);
     expect(s[0].enlaces).toEqual(["https://www.instagram.com/seres"]);
-    expect(regs.map((r) => r.nombre)).toEqual(["Vitalis", '"Trezde Xantos"', "SERES Arte Inclusivo", "Tristana Landeros", "Natalie Rodriguez", "Xochitini", "Ático Espacio Escénico", "Gallery 337", "BajoCeiba"]);
+    expect(regs.map((r) => r.nombre)).toEqual(["Vitalis", "Trezde Xantos", "SERES Arte Inclusivo", "Tristana Landeros", "Natalie Rodriguez", "Xochitini", "Ático Espacio Escénico", "Gallery 337", "BajoCeiba"]);
   });
   it("el primer h1 es el título; los demás h1 son nombres; un párrafo corto seguido del origen también es un nombre", () => {
     expect(regs.find((r) => r.nombre === "Natalie Rodriguez")).toMatchObject({ parrafos: ["(san luis Potosí, 1981)", "Bailarina y coreógrafa."], conImagen: true });
@@ -84,7 +84,7 @@ describe("clasificarPagina", () => {
   it("escénicas, letras, visuales, cine y circo", () => {
     expect(clasificarPagina(`${base}/disciplinas/artes-escénicas/teatro/teatro_4`).disciplina).toBe("teatro");
     expect(clasificarPagina(`${base}/disciplinas/artes-escénicas/danza/02-danza`).disciplina).toBe("danza");
-    expect(clasificarPagina(`${base}/disciplinas/artes-escénicas/artes-circenses/artes-circenses`)).toMatchObject({ disciplina: "otro", detalle: "artes circenses" });
+    expect(clasificarPagina(`${base}/disciplinas/artes-escénicas/artes-circenses/artes-circenses`)).toMatchObject({ disciplina: "circo", detalle: "" });
     expect(clasificarPagina(`${base}/disciplinas/literatura/literatura_2`).disciplina).toBe("letras");
     expect(clasificarPagina(`${base}/disciplinas/artes-visuales_1/fotografía/01-fotografía`)).toMatchObject({ disciplina: "artes_visuales", detalle: "fotografía" });
     expect(clasificarPagina(`${base}/disciplinas/artes-visuales_1/cine/01-cine`).disciplina).toBe("cine");

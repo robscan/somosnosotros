@@ -4,8 +4,7 @@ import { useActionState, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { LIMITES } from "@/lib/perfil";
-import { clienteNavegador } from "@/lib/supabase/navegador";
-import { reducirImagen } from "@/lib/imagen";
+import { subirFoto } from "@/lib/subirFoto";
 import type { Perfil } from "@/lib/supabase/servidor";
 import ActivarPush from "./ActivarPush";
 import { borrarMiCuenta, cerrarSesion, guardarPerfil, type ResultadoGuardar } from "./acciones";
@@ -19,26 +18,14 @@ export default function FormularioPerfil({ perfil, llavePush = "" }: { perfil: P
   const [confirmarBorrar, setConfirmarBorrar] = useState(false);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
 
-  async function subirFoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function alElegirFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
-    const supabase = clienteNavegador();
-    if (!supabase) return;
-    if (archivo.size > 5 * 1024 * 1024) {
-      setErrorFoto("La foto pesa más de 5 MB. Elige otra.");
-      return;
-    }
     setSubiendo(true);
     setErrorFoto(null);
-    const listo = await reducirImagen(archivo); // menos peso y menos espera: se reduce en el teléfono antes de subir
-    const extension = (listo.name.split(".").pop() || "jpg").toLowerCase();
-    const ruta = `perfiles/${perfil.id}/foto-${Date.now()}.${extension}`;
-    const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: true, contentType: listo.type || undefined });
-    if (error) {
-      setErrorFoto("No se pudo subir la foto. Intenta con otra.");
-    } else {
-      setFoto(supabase.storage.from("fotos").getPublicUrl(ruta).data.publicUrl);
-    }
+    const r = await subirFoto("perfiles", perfil.id, "foto", archivo);
+    if ("error" in r) setErrorFoto(r.error);
+    else setFoto(r.url);
     setSubiendo(false);
   }
 
@@ -55,7 +42,7 @@ export default function FormularioPerfil({ perfil, llavePush = "" }: { perfil: P
             )}
           </div>
           <label className={styles.subir}>
-            <input type="file" accept="image/*" onChange={subirFoto} disabled={subiendo} />
+            <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} />
             {subiendo ? "Subiendo…" : foto ? "Cambiar foto" : "Poner una foto (opcional)"}
           </label>
         </div>

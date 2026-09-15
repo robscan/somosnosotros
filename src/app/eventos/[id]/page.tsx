@@ -1,3 +1,4 @@
+import { esUuid } from "@/lib/formulario";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -29,7 +30,7 @@ const ORIGEN = "https://somosnosotros.org";
 
 async function cargarEvento(id: string): Promise<EventoConLugar | null> {
   const supabase = await clienteServidor();
-  if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
+  if (!supabase || !esUuid(id)) return null;
   const { data } = await supabase
     .from("eventos")
     .select("*, lugar:lugares(id, nombre, direccion, lat, lng, portada), autor:perfiles!eventos_creado_por_fkey(id, nombre)")
@@ -266,6 +267,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <span className={ficha.accion} aria-disabled="true">
             <IconoRuta />
             Cómo llegar
+            <small>sin dirección</small>
           </span>
         )}
       </div>

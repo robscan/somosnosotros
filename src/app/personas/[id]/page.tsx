@@ -1,3 +1,4 @@
+import { esUuid } from "@/lib/formulario";
 import Barra from "@/components/ui/Barra";
 import { notFound } from "next/navigation";
 import { formatearCuando } from "@/lib/fechas";
@@ -12,13 +13,13 @@ type Params = { params: Promise<{ id: string }> };
 
 async function cargar(id: string) {
   const supabase = await clienteServidor();
-  if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
+  if (!supabase || !esUuid(id)) return null;
   const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, rol").eq("id", id).maybeSingle();
   if (!perfil) return null;
   const desde = new Date(Date.now() - 3 * 3600000).toISOString();
   const [{ data: sigue }, { data: va }] = await Promise.all([
     supabase.from("seguimientos").select("lugar:lugares(id, nombre, tipo, portada), artista:artistas(id, nombre, disciplina, detalle, tipo)").eq("usuario_id", id),
-    supabase.from("asistencias").select("evento:eventos(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada))").eq("usuario_id", id).eq("estado", "voy"),
+    supabase.from("asistencias").select("evento:eventos!inner(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada))").eq("usuario_id", id).eq("estado", "voy").gte("evento.inicio", desde),
   ]);
   const lugares = (sigue ?? []).map((s) => (Array.isArray(s.lugar) ? s.lugar[0] : s.lugar)).filter(Boolean) as { id: string; nombre: string; tipo: string; portada: string | null }[];
   const artistas = (sigue ?? []).map((s) => (Array.isArray(s.artista) ? s.artista[0] : s.artista)).filter(Boolean) as { id: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista }[];

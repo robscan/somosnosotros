@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Chip, ChipEnlace, Chips } from "@/components/ui/Chip";
 import ListaLugares from "@/components/ListaLugares";
 import Aviso from "@/components/ui/Aviso";
 import Mapa from "@/components/Mapa";
@@ -11,10 +12,11 @@ import {
   IconoCalendario,
   IconoLista,
   IconoMapa,
+  IconoPin,
   IconoUbicacion,
 } from "@/components/ui/Iconos";
 import type { Ciudad } from "@/lib/ciudad";
-import { etiquetaTipo, textoProximo, type LugarLista } from "@/lib/lugares";
+import { etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import renglon from "@/components/Renglon.module.css";
 import styles from "./lugares.module.css";
 
@@ -26,6 +28,8 @@ type Props = {
   ciudad: Ciudad;
   conSesion: boolean;
   vistaInicial: Vista;
+  /** Tipo elegido, leído de la URL (`?tipo=`); vale para el mapa y la lista. */
+  tipo: string | null;
   barra: ReactNode;
 };
 
@@ -39,6 +43,7 @@ export default function VistaLugares({
   ciudad,
   conSesion,
   vistaInicial,
+  tipo,
   barra,
 }: Props) {
   const [vista, setVista] = useState<Vista>(vistaInicial);
@@ -46,6 +51,33 @@ export default function VistaLugares({
   const [punto, setPunto] = useState<Punto | null>(null);
   const [vez, setVez] = useState(0);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
+  // El tipo elegido vive en la URL y vale para las dos vistas: cambiar de Mapa a Lista no lo pierde.
+  const tipos = lugares.length >= UMBRAL_CHIPS_LUGARES ? tiposPresentes(lugares) : [];
+  const hrefTipo = (t: string | null) => `/lugares?vista=${vista}${t ? `&tipo=${t}` : ""}`;
+  const lugaresDelTipo = useMemo(() => (tipo ? lugares.filter((l) => l.tipo === tipo) : lugares), [lugares, tipo]);
+  // Una sola búsqueda para las dos vistas. En el mapa, lo encontrado se encuadra; si es uno solo, se abre su tarjeta.
+  const [busqueda, setBusqueda] = useState("");
+  const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
+  const [encuadre, setEncuadre] = useState<{ puntos: Punto[]; vez: number } | null>(null);
+  function buscarEnMapa(v: string) {
+    setBusqueda(v);
+    const hallados = v.trim() ? filtrarLugares(lugaresDelTipo, v) : [];
+    setElegido(hallados.length === 1 ? hallados[0] : null); // sin resultado o con varios, la tarjeta se cierra
+    if (hallados.length === 0) return;
+    setEncuadre((e) => ({ puntos: hallados.map((l) => ({ lat: l.lat, lng: l.lng })), vez: (e?.vez ?? 0) + 1 }));
+  }
+  const chipsTipo = tipos.length > 1 && (
+    <>
+      <ChipEnlace activo={!tipo} href={hrefTipo(null)}>
+        Todos
+      </ChipEnlace>
+      {tipos.map((t) => (
+        <ChipEnlace key={t.valor} activo={tipo === t.valor} href={hrefTipo(tipo === t.valor ? null : t.valor)}>
+          {t.etiqueta}
+        </ChipEnlace>
+      ))}
+    </>
+  );
 
   function pedirUbicacion() {
     if (!("geolocation" in navigator)) {
@@ -105,13 +137,21 @@ export default function VistaLugares({
       {vista === "mapa" ? (
         <div className={styles.cajaMapa}>
           <Mapa
-            lugares={lugares}
+            lugares={enMapa}
+            encuadre={encuadre}
             ciudad={ciudad}
             presentacion="caja"
             onPin={setElegido}
             elegido={elegido?.id ?? null}
             ubicacion={punto ? { ...punto, vez } : null}
           />
+          <div className={styles.sobreMapa}>
+            {lugares.length >= UMBRAL_BUSCAR_LUGARES && (
+              <input type="search" className={styles.buscarMapa} placeholder="Buscar un lugar por nombre" aria-label="Buscar un lugar por nombre" value={busqueda} onChange={(e) => buscarEnMapa(e.target.value)} autoCapitalize="none" autoCorrect="off" />
+            )}
+            {chipsTipo && <Chips ariaLabel="Tipo de lugar">{chipsTipo}</Chips>}
+            {busqueda.trim() && enMapa.length === 0 && <p className={styles.nadaMapa}>Ningún lugar se llama así. Si existe, regístralo.</p>}
+          </div>
           {!elegido && (
             <button
               type="button"
@@ -137,10 +177,9 @@ export default function VistaLugares({
                 // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
                 <img src={elegido.portada} alt="" className={renglon.foto} />
               ) : (
-                <span
-                  className={`${renglon.foto} ${renglon.fotoVacia}`}
-                  aria-hidden="true"
-                />
+                <span className={`${renglon.foto} ${renglon.fotoVacia}`} aria-hidden="true">
+                  <IconoPin width={24} height={24} />
+                </span>
               )}
               <span className={renglon.titulo}>{elegido.nombre}</span>
               <span className={`${renglon.meta} ${renglon.metaColumna}`}>
@@ -159,32 +198,31 @@ export default function VistaLugares({
           )}
         </div>
       ) : (
-        <>
-          <div className={styles.contexto}>
-            <button
-              type="button"
-              className={`${styles.chip} ${punto ? styles.chipActivo : ""}`}
-              onClick={punto ? () => setPunto(null) : pedirUbicacion}
-              disabled={geo === "pidiendo"}
-              aria-pressed={!!punto}
-            >
-              <IconoUbicacion width={16} height={16} />
-              <span>{geo === "pidiendo" ? "Un momento…" : "Cerca de mí"}</span>
-              {punto && (
-                <span className={styles.quitar} aria-hidden="true">
-                  ✕
-                </span>
-              )}
-            </button>
-            {notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoLista} />}
-          </div>
-          <ListaLugares
-            lugares={lugares}
-            punto={punto}
-            ciudad={ciudad}
-            conSesion={conSesion}
-          />
-        </>
+        <ListaLugares
+          lugares={lugaresDelTipo}
+          tipo={tipo}
+          total={lugares.length}
+          busqueda={busqueda}
+          onBusqueda={setBusqueda}
+          punto={punto}
+          ciudad={ciudad}
+          conSesion={conSesion}
+          chips={
+            <>
+              <Chip activo={!!punto} onClick={punto ? () => setPunto(null) : pedirUbicacion} disabled={geo === "pidiendo"}>
+                <IconoUbicacion width={16} height={16} />
+                {geo === "pidiendo" ? "Un momento…" : "Cerca de mí"}
+                {punto && (
+                  <span className={styles.quitar} aria-hidden="true">
+                    ✕
+                  </span>
+                )}
+              </Chip>
+              {chipsTipo}
+            </>
+          }
+          aviso={notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoLista} />}
+        />
       )}
 
       {!elegido && <Publicar que="lugar" />}

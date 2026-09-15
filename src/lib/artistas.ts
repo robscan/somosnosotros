@@ -1,6 +1,7 @@
+import { esUuid, limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
-import { normalizarNombre } from "./lugares";
+import { compararNombres, normalizarNombre } from "./lugares";
 import type { Origen } from "./origen";
 
 /** Qué hace: lista cerrada; "por_completar" es el artista creado con solo el nombre desde el alta de un evento. */
@@ -11,6 +12,7 @@ export const DISCIPLINAS = [
   { valor: "artes_visuales", etiqueta: "Artes visuales" },
   { valor: "letras", etiqueta: "Letras" },
   { valor: "cine", etiqueta: "Cine" },
+  { valor: "circo", etiqueta: "Artes circenses" },
   { valor: "otro", etiqueta: "Otro" },
 ] as const;
 export type Disciplina = (typeof DISCIPLINAS)[number]["valor"] | "por_completar";
@@ -26,6 +28,10 @@ export const LIMITES_ARTISTA = { nombre: 80, detalle: 40, descripcion: 600 } as 
 
 /** Umbral a partir del cual aparece la búsqueda por nombre (decisión 2). */
 export const UMBRAL_BUSCAR_ARTISTAS = 8;
+/** Umbral a partir del cual aparecen los chips de disciplina (decisión 2). */
+export const UMBRAL_CHIPS_ARTISTAS = 12;
+/** Un detalle (género, técnica) merece chip cuando lo comparten al menos tantos artistas de la disciplina elegida. */
+export const MINIMO_POR_DETALLE = 3;
 
 export type ArtistaResumen = {
   id: string;
@@ -80,17 +86,72 @@ export function deducirTipoArtista(nombre: string): TipoArtista | null {
 /** Orden de la lista: con fechas próximas primero (por la fecha), luego alfabético (decisión 2). */
 export function ordenarArtistas<T extends ArtistaLista>(artistas: T[]): T[] {
   return [...artistas].sort((a, b) => {
-    if (a.proxima && b.proxima) return a.proxima.inicio.localeCompare(b.proxima.inicio) || a.nombre.localeCompare(b.nombre, "es");
+    if (a.proxima && b.proxima) return a.proxima.inicio.localeCompare(b.proxima.inicio) || compararNombres(a.nombre, b.nombre);
     if (a.proxima || b.proxima) return a.proxima ? -1 : 1;
-    return a.nombre.localeCompare(b.nombre, "es");
+    return compararNombres(a.nombre, b.nombre);
   });
 }
 
 /** Filtra por nombre escrito a medias, sin acentos ni mayúsculas. */
-export function filtrarArtistas<T extends { nombre: string; detalle?: string | null }>(artistas: T[], busqueda: string): T[] {
+export type FiltroArtistas = { disciplina?: string | null; detalle?: string | null };
+
+/** Cuántos artistas trae cada página de la lista; "Ver más" suma otros tantos. */
+export const PAGINA_ARTISTAS = 100;
+
+/** Lo que va en la URL de /artistas: qué hacen (`hace`), qué en concreto (`que`), lo escrito (`q`) y cuántos se ven (`n`). */
+export type FiltroUrlArtistas = { hace?: string | null; que?: string | null; q?: string | null; n?: number | null };
+
+/** La URL de la lista con un filtro; sin parámetros vacíos, para que el enlace sea limpio y compartible. */
+export function hrefArtistas(f: FiltroUrlArtistas): string {
+  const p = new URLSearchParams();
+  if (f.hace) p.set("hace", f.hace);
+  if (f.que) p.set("que", f.que);
+  if (f.q?.trim()) p.set("q", f.q.trim());
+  if (f.n && f.n > PAGINA_ARTISTAS) p.set("n", String(f.n));
+  const s = p.toString();
+  return s ? `/artistas?${s}` : "/artistas";
+}
+
+/** Lee el filtro de la URL con valores seguros: la disciplina debe existir; `n` es un múltiplo de la página. */
+export type FiltroLeido = { hace: string | null; que: string | null; q: string | null; n: number };
+export function filtroDesdeUrl(p: { hace?: string; que?: string; q?: string; n?: string }): FiltroLeido {
+  const hace = p.hace && DISCIPLINAS.some((d) => d.valor === p.hace) ? p.hace : null;
+  const n = Number(p.n);
+  return { hace, que: hace && p.que?.trim() ? p.que.trim().slice(0, 60) : null, q: p.q?.trim().slice(0, 80) || null, n: Number.isInteger(n) && n > PAGINA_ARTISTAS ? Math.min(n, 5000) : PAGINA_ARTISTAS };
+}
+
+/** Por nombre o detalle escrito, y por los chips: disciplina y, dentro de ella, detalle (género, técnica). */
+export function filtrarArtistas<T extends { nombre: string; disciplina?: string; detalle?: string | null }>(artistas: T[], busqueda: string, filtro: FiltroArtistas = {}): T[] {
   const q = normalizarNombre(busqueda);
-  if (!q) return artistas;
-  return artistas.filter((a) => normalizarNombre(`${a.nombre} ${a.detalle ?? ""}`).includes(q));
+  const detalle = filtro.detalle ? normalizarNombre(filtro.detalle) : null;
+  return artistas.filter((a) => {
+    if (filtro.disciplina && a.disciplina !== filtro.disciplina) return false;
+    if (detalle && normalizarNombre(a.detalle ?? "") !== detalle) return false;
+    return !q || normalizarNombre(`${a.nombre} ${a.detalle ?? ""}`).includes(q);
+  });
+}
+
+/** Las disciplinas con al menos un artista, en el orden de la lista cerrada (Todos va aparte). */
+export function disciplinasPresentes<T extends { disciplina?: string }>(artistas: T[]): { valor: string; etiqueta: string }[] {
+  const hay = new Set(artistas.map((a) => a.disciplina));
+  return DISCIPLINAS.filter((d) => hay.has(d.valor));
+}
+
+/**
+ * Segundo nivel de chips: los detalles (género musical, técnica) de la disciplina elegida que comparten
+ * al menos MINIMO_POR_DETALLE artistas, de más a menos frecuente. Con menos de dos, no hay segundo nivel.
+ */
+export function detallesDe<T extends { disciplina?: string; detalle?: string | null }>(artistas: T[], disciplina: string): { valor: string; etiqueta: string }[] {
+  const cuenta = new Map<string, { etiqueta: string; n: number }>();
+  for (const a of artistas) {
+    if (a.disciplina !== disciplina || !a.detalle) continue;
+    const clave = normalizarNombre(a.detalle);
+    const actual = cuenta.get(clave);
+    if (actual) actual.n += 1;
+    else cuenta.set(clave, { etiqueta: a.detalle.charAt(0).toUpperCase() + a.detalle.slice(1), n: 1 });
+  }
+  const lista = [...cuenta.entries()].filter(([, v]) => v.n >= MINIMO_POR_DETALLE).sort((a, b) => b[1].n - a[1].n || a[1].etiqueta.localeCompare(b[1].etiqueta, "es"));
+  return lista.length >= 2 ? lista.map(([valor, v]) => ({ valor, etiqueta: v.etiqueta })) : [];
 }
 
 /** El registrado cuyo nombre es igual al escrito (sin acentos ni mayúsculas), si lo hay. */
@@ -138,7 +199,7 @@ export function quienDesdeJson(texto: FormDataEntryValue | string | null | undef
     const clave = normalizarNombre(nombre);
     if (!clave || vistos.has(clave)) continue;
     vistos.add(clave);
-    out.push(typeof id === "string" && /^[0-9a-f-]{36}$/.test(id) ? { id, nombre } : { nombre });
+    out.push(esUuid(id) ? { id, nombre } : { nombre });
     if (out.length === 6) break;
   }
   return out;
@@ -155,9 +216,6 @@ export type DatosArtista = {
 };
 export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "enlaces", string>>;
 
-function limpiar(v: FormDataEntryValue | string | null | undefined): string {
-  return typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "";
-}
 
 export function validarArtista(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosArtista; errores: ErroresArtista } {
   const redes = enlacesDesdeJson(entrada.enlaces);

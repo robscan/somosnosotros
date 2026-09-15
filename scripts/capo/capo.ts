@@ -92,7 +92,8 @@ const NO_ES_NOMBRE = /^(registro|aviso de privacidad|disciplinas?|m[uú]sica|art
 const TOKEN = /<h([1-3])(?=[\s>])[^>]*>([\s\S]*?)<\/h\1>|<p(?=[\s>])[^>]*>([\s\S]*?)<\/p>|<a\s[^>]*href="([^"]+)"[^>]*>|<img\s[^>]*src="(https:\/\/lh[^"]+)"/gi;
 
 function nuevo(nombre: string, conImagen: boolean): Registro {
-  return { nombre, parrafos: [], enlaces: [], correos: [], conImagen };
+  // "Afinque Orquesta" → Afinque Orquesta: las comillas que envuelven el nombre entero no son parte de él.
+  return { nombre: nombre.replace(/^"([^"]+)"$/, "$1"), parrafos: [], enlaces: [], correos: [], conImagen };
 }
 function vacio(r: Registro): boolean {
   return r.parrafos.length === 0 && r.enlaces.length === 0 && r.correos.length === 0;
@@ -234,7 +235,7 @@ export function clasificarPagina(url: string): Pagina {
     if (grupo === "artes-escenicas" && sub) {
       if (sub === "teatro") return { ...base, clase: "artista", disciplina: "teatro" };
       if (sub === "danza") return { ...base, clase: "artista", disciplina: "danza" };
-      if (sub === "artes-circenses") return { ...base, clase: "artista", disciplina: "otro", detalle: "artes circenses" };
+      if (sub === "artes-circenses") return { ...base, clase: "artista", disciplina: "circo", detalle: "" };
     }
     if (grupo === "literatura" && sub) return { ...base, clase: "artista", disciplina: "letras" };
     if (grupo === "artes-visuales" && sub) {

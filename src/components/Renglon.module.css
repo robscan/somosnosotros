@@ -15,16 +15,33 @@
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
+/* Estados del renglón (pedido del founder, 2026-09-14): pulsado y, con ratón, al pasar por encima, el renglón se
+   levanta en blanco con una marca del color de acción a la izquierda; el elegido (aria-current) va en el tono suave
+   del color de acción. El resaltado llega a los bordes del gutter sin mover nada (sombra extendida). */
 .renglon:active {
   background: var(--fondo);
-  box-shadow: 0 0 0 var(--espacio-5) var(--fondo); /* el resaltado llega a los bordes sin mover nada */
+  box-shadow: 0 0 0 var(--espacio-5) var(--fondo);
 }
-/* Con ratón, el mismo resaltado al pasar por encima */
 @media (hover: hover) {
+  .renglon {
+    transition: background-color 120ms, box-shadow 120ms;
+  }
   .renglon:hover {
     background: var(--fondo);
-    box-shadow: 0 0 0 var(--espacio-5) var(--fondo);
+    box-shadow: 0 0 0 var(--espacio-5) var(--fondo), inset 3px 0 0 var(--primario);
   }
+  .renglon:hover .titulo {
+    color: var(--primario);
+  }
+}
+.renglon[aria-current="true"] {
+  background: var(--primario-suave);
+  box-shadow: 0 0 0 var(--espacio-5) var(--primario-suave), inset 3px 0 0 var(--primario);
+}
+.renglon:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: -2px;
+  border-radius: 4px;
 }
 .foto {
   grid-area: foto;
@@ -35,10 +52,12 @@
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
+/* Sin foto: el icono de lo que es (disciplina, lugar, evento) sobre el gris de miniatura; nada de cuadros punteados que prometen una foto. */
 .fotoVacia {
-  display: block;
-  background: var(--fondo);
-  border: 1px dashed var(--borde);
+  display: grid;
+  place-items: center;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
 }
 /* Artistas: redonda, porque es gente; cuadrada es un lugar (decisión 1 de Artistas). */
 .fotoRedonda {

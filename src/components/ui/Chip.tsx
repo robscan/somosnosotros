@@ -1,14 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import styles from "./Chip.module.css";
 
 /** Opción de un toque (día, hora, duración, tipo). Activa = elegida. */
-export function Chip({ activo = false, children, onClick, ariaLabel }: { activo?: boolean; children: ReactNode; onClick: () => void; ariaLabel?: string }) {
+export function Chip({ activo = false, children, onClick, ariaLabel, disabled = false }: { activo?: boolean; children: ReactNode; onClick: () => void; ariaLabel?: string; disabled?: boolean }) {
   return (
-    <button type="button" className={`${styles.chip} ${activo ? styles.activo : ""}`} onClick={onClick} aria-pressed={activo} aria-label={ariaLabel}>
+    <button type="button" className={`${styles.chip} ${activo ? styles.activo : ""}`} onClick={onClick} aria-pressed={activo} aria-label={ariaLabel} disabled={disabled}>
       {children}
     </button>
+  );
+}
+
+/** Chip que es un enlace: el filtro vive en la URL (se comparte, se vuelve atrás, lo filtra el servidor). */
+export function ChipEnlace({ activo = false, href, children }: { activo?: boolean; href: string; children: ReactNode }) {
+  return (
+    <Link href={href} scroll={false} className={`${styles.chip} ${activo ? styles.activo : ""}`} aria-current={activo ? "true" : undefined}>
+      {children}
+    </Link>
   );
 }
 

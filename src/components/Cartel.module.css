@@ -12,6 +12,19 @@
   background: var(--fondo-miniatura);
   cursor: zoom-in;
 }
+/* Avatar de la ficha de artista: redondo, 112 px, sin lupa; el toque lo abre entero igual */
+.avatar {
+  display: block;
+  width: 112px;
+  height: 112px;
+  margin: var(--espacio-1) 0 var(--espacio-3);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--fondo-miniatura);
+  cursor: zoom-in;
+}
 .imagen {
   display: block;
   width: 100%;

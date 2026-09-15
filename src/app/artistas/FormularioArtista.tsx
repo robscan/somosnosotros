@@ -11,7 +11,7 @@ import { artistaIgual, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquet
 import { normalizarRedes } from "@/lib/enlaces";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
-import { reducirImagen } from "@/lib/imagen";
+import { subirFoto } from "@/lib/subirFoto";
 import type { ResultadoArtista } from "./acciones";
 import styles from "./FormularioArtista.module.css";
 
@@ -50,6 +50,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
 
   const [nombre, setNombre] = useState(artista?.nombre ?? nombreInicial ?? "");
   const [disciplina, setDisciplina] = useState<Disciplina>(artista?.disciplina && artista.disciplina !== "por_completar" ? artista.disciplina : "musica");
+  // En el alta, "Música" es un valor puesto por defecto, no elegido: el renglón lo dice hasta que la persona lo toque.
+  const [haceElegido, setHaceElegido] = useState(!esAlta);
   const [detalle, setDetalle] = useState(artista?.detalle ?? "");
   const [tipoElegido, setTipoElegido] = useState<TipoArtista | "">(artista?.tipo ?? "");
   const [soy, setSoy] = useState(false);
@@ -73,6 +75,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       if (b && b.nombre && !nombreInicial) {
         setNombre(b.nombre);
         setDisciplina(b.disciplina);
+        setHaceElegido(true);
         setDetalle(b.detalle);
         setTipoElegido(b.tipo);
         setSoy(b.soy);
@@ -103,30 +106,21 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
     return () => clearTimeout(t);
   }, [nombre, artista?.id]);
 
-  async function subirFoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function alElegirFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
-    const supabase = clienteNavegador();
-    if (!supabase) return;
-    if (archivo.size > 5 * 1024 * 1024) {
-      setErrorFoto("La foto pesa más de 5 MB. Elige otra.");
-      return;
-    }
     setSubiendo(true);
     setErrorFoto(null);
-    const listo = await reducirImagen(archivo);
-    const extension = (listo.name.split(".").pop() || "jpg").toLowerCase();
-    const ruta = `artistas/${usuarioId}/foto-${Date.now()}.${extension}`;
-    const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: true, contentType: listo.type || undefined });
-    if (error) setErrorFoto("No se pudo subir la foto. Intenta con otra.");
-    else setFoto(supabase.storage.from("fotos").getPublicUrl(ruta).data.publicUrl);
+    const r = await subirFoto("artistas", usuarioId, "foto", archivo);
+    if ("error" in r) setErrorFoto(r.error);
+    else setFoto(r.url);
     setSubiendo(false);
   }
 
   const clave = normalizarNombre(nombre);
   const coincide = (a: ArtistaResumen | null | undefined) => !!a && clave.length > 0 && normalizarNombre(a.nombre) === clave && clave !== descartado;
   const repetido = coincide(existente) ? existente : coincide(existenteServidor) ? existenteServidor : null;
-  const resumenHace = detalle.trim() ? `${etiquetaDisciplina(disciplina)} · ${detalle.trim()}` : etiquetaDisciplina(disciplina);
+  const resumenHace = detalle.trim() ? `${etiquetaDisciplina(disciplina)} · ${detalle.trim()}` : haceElegido ? etiquetaDisciplina(disciplina) : `${etiquetaDisciplina(disciplina)} · cámbialo si no es`;
 
   return (
     <form
@@ -162,7 +156,14 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       <Seccion titulo="Qué hace" resumen={resumenHace} abierta={abierta === "hace"} onAbrir={() => setAbierta(abierta === "hace" ? null : "hace")} error={!!errores.disciplina || !!errores.detalle}>
         <Chips ariaLabel="Qué hace">
           {DISCIPLINAS.map((d) => (
-            <Chip key={d.valor} activo={disciplina === d.valor} onClick={() => setDisciplina(d.valor)}>
+            <Chip
+              key={d.valor}
+              activo={disciplina === d.valor}
+              onClick={() => {
+                setDisciplina(d.valor);
+                setHaceElegido(true);
+              }}
+            >
               {d.etiqueta}
             </Chip>
           ))}
@@ -204,7 +205,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           <span className={styles.opcional}>Opcional</span>
         )}
         <label className={styles.subir}>
-          <input type="file" accept="image/*" onChange={subirFoto} disabled={subiendo} />
+          <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} />
           {subiendo ? "Subiendo…" : foto ? "Cambiar" : "Elegir una foto"}
         </label>
         {(errorFoto || errores.foto) && (

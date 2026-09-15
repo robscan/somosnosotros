@@ -129,11 +129,19 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
             )}
             <input type="date" id="agenda-fecha" className={styles.encima} min={hoy} value={fecha || hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
           </label>
-          <button type="button" className={styles.chip} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
-            <IconoPin width={16} height={16} />
-            <span>{ciudad.nombre}</span>
-            <IconoCaret width={12} height={12} />
-          </button>
+          {ciudades.length > 1 ? (
+            <button type="button" className={styles.chip} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
+              <IconoPin width={16} height={16} />
+              <span>{ciudad.nombre}</span>
+              <IconoCaret width={12} height={12} />
+            </button>
+          ) : (
+            // Una sola ciudad: se dice, no se elige (nada que abrir).
+            <span className={styles.chip}>
+              <IconoPin width={16} height={16} />
+              <span>{ciudad.nombre}</span>
+            </span>
+          )}
         </div>
         <div className={styles.filtros} role="tablist" aria-label="Filtrar la agenda">
           {FILTROS.map((f) => (

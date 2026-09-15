@@ -1,5 +1,5 @@
-import Cargando from "@/components/ui/Cargando";
+import CargandoRaiz from "@/components/ui/CargandoRaiz";
 
 export default function Loading() {
-  return <Cargando />;
+  return <CargandoRaiz />;
 }

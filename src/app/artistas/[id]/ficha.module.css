@@ -18,10 +18,10 @@
 }
 .fechas h2 {
   position: sticky;
-  top: 0;
+  top: var(--alto-barra);
   z-index: 5;
   padding: 12px 0 6px;
-  background: var(--fondo);
+  background: var(--fondo-contenido);
   border-bottom: 1px solid var(--texto);
   font-size: var(--letra-xl);
 }

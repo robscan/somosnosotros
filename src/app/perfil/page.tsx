@@ -18,7 +18,7 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
   const desde = desdeReciente();
   const [{ data: sigue }, { data: va }] = await Promise.all([
     supabase!.from("seguimientos").select("lugar:lugares(id, nombre), artista:artistas(id, nombre)").eq("usuario_id", actual.perfil.id),
-    supabase!.from("asistencias").select("estado, evento:eventos(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada))").eq("usuario_id", actual.perfil.id),
+    supabase!.from("asistencias").select("estado, evento:eventos!inner(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada))").eq("usuario_id", actual.perfil.id).gte("evento.inicio", desde),
   ]);
   const lugares = (sigue ?? []).map((s) => (Array.isArray(s.lugar) ? s.lugar[0] : s.lugar)).filter(Boolean) as { id: string; nombre: string }[];
   const artistas = (sigue ?? []).map((s) => (Array.isArray(s.artista) ? s.artista[0] : s.artista)).filter(Boolean) as { id: string; nombre: string }[];
@@ -99,6 +99,9 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
         )}
       </p>
       <FormularioPerfil perfil={actual.perfil} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
+      <p className="nota-legal">
+        <a href="/privacidad">Aviso de privacidad</a> · <a href="/reglas">Reglas de uso</a>
+      </p>
     </main>
   );
 }

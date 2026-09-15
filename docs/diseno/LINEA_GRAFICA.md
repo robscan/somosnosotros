@@ -29,17 +29,26 @@ Por qué esta y no otra: condensada, con toques humanos y artísticos a tamaño 
 - **Navegación inferior**: blanca, con borde y sombra hacia arriba; 60 px más el área segura. El destino activo lleva una **píldora de 60×32 en el color de acción** detrás del icono (icono en blanco) y la etiqueta en ese color; los demás, en gris. La píldora ocupa su sitio siempre, así nada salta al cambiar. Ajuste del founder, 2026-09-14: "la nav tiene que notarse".
 - **Avisos persistentes** (`ui/Aviso`): tinta sobre blanco, 15 px, con ✕; no desaparecen solos. Para errores con salida ("No pudimos leer tu ubicación. Actívala…") encima del mapa o bajo los chips. Nunca un texto gris sobre vidrio.
 
+## Las tres franjas del shell
+
+Toda pantalla tiene cabecera blanca, contenido en `--fondo-contenido` (hueso) y una franja blanca abajo (la nav en las pantallas raíz; la barra de acciones en las fichas). Las fichas lo cumplen desde el 2026-09-14: la cabecera interior (`ui/Barra`, regreso · SMSNSTRS · ···) es una franja de borde a borde, pegajosa arriba, con borde inferior; lo que se lee va sobre el hueso; los botones y tarjetas van en blanco encima.
+
+## Estados del renglón de lista
+
+Con ratón, al pasar por encima el renglón se levanta en blanco con una marca de 3 px del color de acción a la izquierda y el título en ese color; pulsado, igual sin marca; el elegido (`aria-current="true"`) va en `--primario-suave`; el foco de teclado lleva el aro interior. El hueco sin foto muestra el icono de lo que es (disciplina, lugar, evento) sobre `--fondo-miniatura`: nunca un cuadro punteado. La línea de calendario solo aparece cuando hay fecha.
+
 ## Una columna en cualquier pantalla
 
-La app se diseña para el teléfono y se ve en tablet y escritorio con **la misma maquetación**: una columna de 600 px centrada. Tres tokens en `globals.css`: `--columna` (600 px), `--al-centro` (lo que sobra a cada lado; negativo en el teléfono) y `--gutter: max(20px, --al-centro)`. En el teléfono el gutter vale 20 px, como siempre; en pantallas anchas crece hasta centrar la columna.
+La app se diseña para el teléfono y se ve en tablet y escritorio con **la misma maquetación**: una columna de 600 px centrada. Tres tokens en `globals.css`: `--columna` (600 px), `--al-centro` (lo que sobra a cada lado, calculado sobre el ancho de la ventana para que valga lo mismo dentro de cualquier caja; negativo en el teléfono) y `--gutter: max(20px, --al-centro)`. En el teléfono el gutter vale 20 px, como siempre; en pantallas anchas crece hasta centrar la columna.
 
 - **Regla:** todo gutter horizontal de página se escribe `var(--gutter)`. Los rellenos de botones y las sangrías siguen con `--espacio-N`.
 - **Las barras van a lo ancho; el contenido, en la columna.** Barra superior, nav inferior, barra pegajosa de las fichas, hojas y cabeceras pegajosas pintan su fondo de borde a borde y alinean sus hijos con la columna. El mapa llena la pantalla; sus controles y la tarjeta del lugar se alinean con la columna.
 - Sin media queries de ancho, sin envoltorios, sin componentes por tamaño (maquetación plana). Con ratón (`@media (hover: hover)`), los renglones se resaltan al pasar por encima.
+- **Las filas de chips corren a todo lo ancho**, nunca recortadas en el borde de la columna: su caja no pone gutter, la fila lleva `padding-inline: var(--gutter)` (el primer chip alineado con la columna) y sigue hasta el borde de la pantalla; los demás hijos de la caja ponen el gutter como margen.
 
 ## El mapa de Lugares
 
-Plano (el estilo de la cuenta lleva `show3dObjects: false`). Cada lugar es un **punto** de 10 px relleno del color de acción con una línea blanca de 1.5 px; el elegido crece a 16 px. (El founder descartó el punto hueco para "sin eventos": el blanco se deja para la línea.) El **nombre va debajo** del círculo, a 13 px con halo blanco, como una etiqueta más del mapa: si dos chocan, gana el lugar con eventos y el otro aparece al acercar. Son capas de Mapbox (no elementos encima), así el mapa resuelve las colisiones y el zoom. Decisión del founder, 2026-09-14 (sustituye a los pins y a la perspectiva de ese mismo día).
+Plano (el estilo de la cuenta lleva `show3dObjects: false`). Cada lugar es un **punto** de 10 px relleno del color de acción con una línea blanca de 1.5 px; el elegido crece a 16 px. (El founder descartó el punto hueco para "sin eventos": el blanco se deja para la línea.) El **nombre va debajo** del punto, en el color de acción, negrita (DIN Pro Bold) a 14 px con halo blanco de 2 px, para distinguirse de las colonias y calles del estilo (gris, mayúsculas): si dos chocan, gana el lugar con eventos y el otro aparece al acercar. Son capas de Mapbox (no elementos encima), así el mapa resuelve las colisiones y el zoom. Decisión del founder, 2026-09-14 (sustituye a los pins y a la perspectiva de ese mismo día).
 
 ## El regreso
 

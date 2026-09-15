@@ -1,3 +1,4 @@
+import { esUuid } from "@/lib/formulario";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -5,7 +6,7 @@ import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
-import PieOrigen from "@/components/PieOrigen";
+import { ORIGENES } from "@/lib/origen";
 import Desplegable from "@/components/Desplegable";
 import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
@@ -34,7 +35,7 @@ const ORIGEN = "https://somosnosotros.org";
 
 async function cargarArtista(id: string): Promise<ArtistaConAutor | null> {
   const supabase = await clienteServidor();
-  if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
+  if (!supabase || !esUuid(id)) return null;
   const { data } = await supabase
     .from("artistas")
     .select("id, nombre, disciplina, detalle, tipo, foto, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)")
@@ -99,16 +100,18 @@ export default async function FichaArtista({ params, searchParams }: Params) {
     await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, artista_id: a.id }, { onConflict: "usuario_id,artista_id", ignoreDuplicates: true });
     redirect(`/artistas/${a.id}`);
   }
-  const [fechas, seg, lig] = await Promise.all([
+  // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
+  const [fechas, cuenta, mio, lig] = await Promise.all([
     cargarFechas(a.id),
-    supabase?.from("seguimientos").select("usuario_id").eq("artista_id", a.id) ?? Promise.resolve({ data: [] as { usuario_id: string }[] }),
+    supabase?.from("seguimientos").select("usuario_id", { count: "exact", head: true }).eq("artista_id", a.id) ?? Promise.resolve({ count: 0 }),
+    actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("artista_id", a.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
     supabase?.from("artistas_cuentas").select("perfil_id").eq("artista_id", a.id) ?? Promise.resolve({ data: [] as { perfil_id: string }[] }),
   ]);
-  const seguimientos = (seg.data ?? []) as { usuario_id: string }[];
   const ligados = (lig.data ?? []) as { perfil_id: string }[];
-  const seguidores = seguimientos.length;
-  const sigo = !!actual && seguimientos.some((s) => s.usuario_id === actual.perfil.id);
+  const seguidores = cuenta.count ?? 0;
+  const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
+  const porConfirmar = !!a.origen && !a.autor;
   const esAutor = !!actual && actual.perfil.id === a.creado_por;
   const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);
   const puedeEditar = esAdmin || esAutor || estaLigado;
@@ -148,7 +151,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
             <li className={ficha.menuItem}>
               <Reportar tipo="artista" objetoId={a.id} volver={`/artistas/${a.id}`} conSesion={!!actual} />
             </li>
-            {!puedeEditar && (
+            {!puedeEditar && !porConfirmar && (
               <li className={ficha.menuItem}>
                 <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion={!!actual} correo={correo} />
               </li>
@@ -195,24 +198,34 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         </p>
       )}
 
-      {a.foto && <Cartel src={a.foto} alt={`Foto de ${a.nombre}`} />}
+      {a.foto && <Cartel src={a.foto} alt={`Foto de ${a.nombre}`} forma="avatar" />}
       <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{a.nombre}</h1>
       <p className={ficha.etiqueta}>{etiquetaArtista(a)}</p>
 
       <ul className={ficha.datos}>
-        <li className={ficha.dato}>
-          <IconoPersonas width={20} height={20} />
-          <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
-        </li>
-        <li className={ficha.dato}>
-          <IconoCalendario width={20} height={20} />
-          <b>{proxima ? textoProximaFecha(proxima) : "Sin fechas próximas"}</b>
-          {proxima && (
-            <a href="#fechas" className={ficha.datoEnlace}>
-              ver
-            </a>
-          )}
-        </li>
+        {/* Sin fechas ni seguidores: una sola línea en gris; las dos negaciones no merecen dos renglones. */}
+        {seguidores === 0 && !proxima ? (
+          <li className={ficha.dato}>
+            <IconoCalendario width={20} height={20} />
+            <span className={ficha.suave}>Sin fechas próximas · Nadie lo sigue todavía</span>
+          </li>
+        ) : (
+          <>
+            <li className={ficha.dato}>
+              <IconoPersonas width={20} height={20} />
+              <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
+            </li>
+            <li className={ficha.dato}>
+              <IconoCalendario width={20} height={20} />
+              <b>{proxima ? textoProximaFecha(proxima) : "Sin fechas próximas"}</b>
+              {proxima && (
+                <a href="#fechas" className={ficha.datoEnlace}>
+                  ver
+                </a>
+              )}
+            </li>
+          </>
+        )}
       </ul>
 
       <div className={ficha.acciones}>
@@ -247,19 +260,14 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           </Fragment>
         ))}
         <Link href={hrefPublicarFecha} className={styles.publicarFecha}>
-          Publicar una fecha de {a.nombre}
+          Publicar una fecha
         </Link>
       </section>
 
-      {a.origen && !a.autor ? (
-        <PieOrigen origen={a.origen} className={ficha.autor}>
-          {!puedeEditar && (
-            <>
-              {" "}
-              ¿Eres tú? <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion={!!actual} correo={correo} />
-            </>
-          )}
-        </PieOrigen>
+      {/* Ficha traída de un catálogo y sin dueño: al final, discreto y solo con sesión (sin sesión no se ofrece, para no
+          invitar a reclamos ajenos), un letrero que abre la hoja con el origen y las dos salidas. Sin pie de origen aparte. */}
+      {porConfirmar ? (
+        actual && !puedeEditar && <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion correo={correo} origen={ORIGENES[a.origen!].nombre} discreto />
       ) : (
         <p className={ficha.autor}>Registrado por {a.autor ? <Link href={`/personas/${a.autor.id}`}>{a.autor.nombre}</Link> : "una cuenta borrada"}.</p>
       )}

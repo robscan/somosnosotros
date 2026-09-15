@@ -1,3 +1,5 @@
+import { distanciaKm, type Punto } from "./geo";
+import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
 import type { Origen } from "./origen";
@@ -51,16 +53,7 @@ export function calleCorta(direccion: string | null | undefined): string {
   return partes[0] ?? direccion.trim();
 }
 
-type Distancia = { lat: number; lng: number };
-/** Distancia en km en línea recta (haversine); la misma que usa la agenda. */
-function kmEntre(a: Distancia, b: Distancia): number {
-  const R = 6371;
-  const rad = (x: number) => (x * Math.PI) / 180;
-  const dLat = rad(b.lat - a.lat);
-  const dLng = rad(b.lng - a.lng);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
+type Distancia = Punto;
 
 /**
  * Orden de la lista: con ubicación, por distancia (y la distancia de cada uno); sin ella, primero los que
@@ -69,13 +62,13 @@ function kmEntre(a: Distancia, b: Distancia): number {
 export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distancia | null): { lista: T[]; km: Map<string, number> } {
   const km = new Map<string, number>();
   if (punto) {
-    for (const l of lugares) km.set(l.id, kmEntre(punto, l));
+    for (const l of lugares) km.set(l.id, distanciaKm(punto, l));
     return { lista: [...lugares].sort((a, b) => km.get(a.id)! - km.get(b.id)!), km };
   }
   const lista = [...lugares].sort((a, b) => {
-    if (a.proximo && b.proximo) return a.proximo.inicio.localeCompare(b.proximo.inicio) || a.nombre.localeCompare(b.nombre, "es");
+    if (a.proximo && b.proximo) return a.proximo.inicio.localeCompare(b.proximo.inicio) || compararNombres(a.nombre, b.nombre);
     if (a.proximo || b.proximo) return a.proximo ? -1 : 1;
-    return a.nombre.localeCompare(b.nombre, "es");
+    return compararNombres(a.nombre, b.nombre);
   });
   return { lista, km };
 }
@@ -100,6 +93,11 @@ export function etiquetaTipo(tipo: string): string {
 }
 
 /** Mismo criterio que normalizar_nombre() en la base: minúsculas, sin acentos, solo letras y números. */
+/** Orden alfabético de verdad: sin acentos, mayúsculas ni signos ("¡Caracoles!" va en la C, no antes de la A). */
+export function compararNombres(a: string, b: string): number {
+  return normalizarNombre(a).localeCompare(normalizarNombre(b), "es") || a.localeCompare(b, "es");
+}
+
 export function normalizarNombre(t: string): string {
   return t
     .normalize("NFD")
@@ -110,10 +108,20 @@ export function normalizarNombre(t: string): string {
 }
 
 /** Filtra la lista por nombre (y dirección) escrito a medias, sin importar acentos ni mayúsculas. */
-export function filtrarLugares<T extends { nombre: string; direccion: string | null }>(lugares: T[], busqueda: string): T[] {
+export function filtrarLugares<T extends { nombre: string; direccion: string | null; tipo?: string }>(lugares: T[], busqueda: string, tipo: string | null = null): T[] {
   const q = normalizarNombre(busqueda);
-  if (!q) return lugares;
-  return lugares.filter((l) => normalizarNombre(`${l.nombre} ${l.direccion ?? ""}`).includes(q));
+  return lugares.filter((l) => (!tipo || l.tipo === tipo) && (!q || normalizarNombre(`${l.nombre} ${l.direccion ?? ""}`).includes(q)));
+}
+
+/** Umbral a partir del cual aparece la búsqueda por nombre (lista y mapa). */
+export const UMBRAL_BUSCAR_LUGARES = 8;
+/** Umbral a partir del cual aparecen los chips de tipo (lista y mapa). */
+export const UMBRAL_CHIPS_LUGARES = 8;
+
+/** Los tipos con al menos un lugar, en el orden de la lista cerrada (Todos va aparte). */
+export function tiposPresentes<T extends { tipo?: string }>(lugares: T[]): { valor: string; etiqueta: string }[] {
+  const hay = new Set(lugares.map((l) => l.tipo));
+  return TIPOS.filter((t) => hay.has(t.valor));
 }
 
 export type DatosLugar = {
@@ -128,9 +136,6 @@ export type DatosLugar = {
 };
 export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces", string>>;
 
-function limpiar(v: FormDataEntryValue | string | null | undefined): string {
-  return typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "";
-}
 
 export function validarLugar(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosLugar; errores: ErroresLugar } {
   const lat = Number(limpiar(entrada.lat));

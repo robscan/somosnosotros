@@ -82,3 +82,16 @@
   text-decoration: none;
   cursor: default;
 }
+
+/* La nota del iPhone solo en iOS (-webkit-touch-callout existe solo ahí); en Android y escritorio, la corta */
+.soloIos {
+  display: none;
+}
+@supports (-webkit-touch-callout: none) {
+  .soloIos {
+    display: block;
+  }
+  .sinIos {
+    display: none;
+  }
+}
