@@ -1,0 +1,367 @@
+<title>Somos Nosotros · Entrar, perfil y alta de lugar v1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* ==========================================================================
+     1. Tokens (los de globals.css; primario = tinta)
+     ========================================================================== */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --panel: #1f2933; --panel-texto: #e6e9ee; --panel-suave: #9aa5b1; --panel-borde: #34424f;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2; --fondo-mapa: #eef0ec;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e; --ok: #1f6f43;
+    --primario: #1a1a1a; --primario-texto: #ffffff; --primario-suave: #ededeb;
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px;
+    --alto-estado: 48px; --alto-barra: 56px; --alto-teclado: 260px; --area-segura: 34px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  /* ==========================================================================
+     2. Base, estudio y teléfono
+     ========================================================================== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 40px; }
+
+  /* Barras */
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); padding: 4px var(--gutter); background: var(--fondo); }
+  .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; }
+  .volver { display: inline-flex; align-items: center; min-height: var(--toque-min); color: var(--texto-suave); text-decoration: none; font-size: 17px; }
+  .barra-acciones { display: flex; justify-content: flex-end; }
+  .icono-barra { display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto); cursor: pointer; border-radius: 50%; }
+  .icono-barra svg { width: 24px; height: 24px; }
+
+  /* ==========================================================================
+     3. Formularios: campos, renglones resueltos, chips, botones
+     ========================================================================== */
+  .contenido { padding: 0 var(--gutter); }
+  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; margin: 8px 0 6px; }
+  .subtitulo { color: var(--texto-suave); font-size: 15px; margin-bottom: 16px; line-height: 1.4; }
+  .campo { display: grid; gap: 6px; margin-bottom: 16px; }
+  .campo label { font-weight: 600; }
+  .campo input, .campo textarea { min-height: var(--toque); padding: 0 14px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); font-size: 17px; }
+  .campo textarea { padding: 12px 14px; min-height: 88px; resize: none; }
+  .campo input:focus, .campo textarea:focus { border-color: var(--texto); outline: none; }
+  .campo .ayuda { color: var(--texto-suave); font-size: 15px; }
+  .campo .error { color: var(--error); font-size: 15px; }
+  .seccion { border: 1px solid var(--borde); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+  .seccion.abierta { border-color: var(--texto); }
+  .seccion-cab { display: grid; grid-template-columns: 72px 1fr auto; align-items: center; column-gap: 8px; width: 100%; min-height: 56px; padding: 12px 16px; border: none; background: none; text-align: left; cursor: pointer; }
+  .seccion-cab .nombre { font-size: 14px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
+  .seccion-cab .resumen { font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .seccion-cab .resumen small { color: var(--texto-suave); font-size: 13px; font-weight: 400; }
+  .seccion-cab .cambiar { color: var(--texto); font-size: 15px; font-weight: 600; }
+  .seccion-cuerpo { padding: 12px 16px 16px; }
+  .seccion-cuerpo .nombre { display: block; font-size: 14px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .chip[aria-pressed="true"] { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+  .fila-etiqueta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .boton-chico { min-height: var(--toque-min); padding: 0 16px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-weight: 600; cursor: pointer; }
+  .mapa { position: relative; height: 200px; margin-bottom: 12px; border-radius: 12px; background: var(--fondo-mapa); background-image: linear-gradient(#e1e3dd 1px, transparent 1px), linear-gradient(90deg, #e1e3dd 1px, transparent 1px); background-size: 40px 40px; overflow: hidden; }
+  .mapa .pin { position: absolute; left: 50%; top: 50%; width: 28px; height: 36px; transform: translate(-50%, -100%); }
+  .mapa .pin svg { width: 28px; height: 36px; }
+  .mapa .pin path { fill: var(--primario); stroke: var(--primario); }
+  .mapa .rotulo-mapa { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,.92); color: var(--texto-suave); font-size: 13px; white-space: nowrap; }
+  .primario { display: flex; align-items: center; justify-content: center; width: 100%; min-height: var(--toque); border: none; border-radius: 12px; background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; cursor: pointer; }
+  .secundario { display: flex; align-items: center; justify-content: center; width: 100%; min-height: var(--toque); border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); color: var(--texto); font-size: 17px; font-weight: 600; cursor: pointer; }
+  .enlace { display: inline-block; min-height: var(--toque-min); line-height: var(--toque-min); border: none; background: none; color: var(--texto-suave); font-size: 15px; text-decoration: underline; cursor: pointer; }
+  .desplegar { display: block; width: 100%; min-height: var(--toque); margin: 4px 0 16px; padding: 0 16px; border: 1px dashed var(--borde); border-radius: 12px; background: none; color: var(--texto-suave); text-align: left; cursor: pointer; }
+  .sugerencias { list-style: none; margin: -8px 0 16px; border: 1px solid var(--borde); border-radius: 12px; overflow: hidden; }
+  .sugerencias li { min-height: var(--toque); padding: 10px 14px; border-top: 1px solid var(--borde); cursor: pointer; }
+  .sugerencias li:first-child { border-top: none; }
+  .sugerencias li small { display: block; color: var(--texto-suave); font-size: 14px; }
+  .acciones-fijas { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; padding: 10px var(--gutter) calc(10px + var(--area-segura)); background: var(--fondo); border-top: 1px solid var(--borde); }
+  /* Teclado dibujado: el botón principal viaja encima */
+  .teclado { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: var(--alto-teclado); background: #d1d3d9; display: grid; grid-template-rows: repeat(4, 1fr); gap: 8px; padding: 10px 6px 30px; }
+  .teclado .fila { display: flex; gap: 6px; justify-content: center; }
+  .teclado span { flex: 1; max-width: 34px; height: 100%; border-radius: 6px; background: #fff; }
+  .teclado .ancha { max-width: 160px; }
+  .sobre-teclado { position: absolute; left: 0; right: 0; bottom: var(--alto-teclado); z-index: 4; padding: 8px var(--gutter); background: var(--fondo); border-top: 1px solid var(--borde); }
+
+  /* Código de 6 dígitos */
+  .codigo { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 12px; }
+  .codigo span { display: grid; place-items: center; height: 56px; border: 1px solid var(--borde); border-radius: 10px; font-size: 24px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .codigo span.activa { border-color: var(--texto); }
+  .codigo.mal span { border-color: var(--error); }
+  .aviso-error { color: var(--error); font-size: 15px; margin-bottom: 12px; }
+  .enviado { padding: 12px 14px; border-radius: 12px; background: var(--fondo-suave); font-size: 15px; line-height: 1.4; margin-bottom: 16px; }
+  .enviado b { display: block; font-size: 17px; }
+  .separador { text-align: center; color: var(--texto-suave); font-size: 15px; margin: 12px 0; }
+
+  /* ==========================================================================
+     4. Ficha de persona
+     ========================================================================== */
+  .cabecera { display: grid; grid-template-columns: 96px 1fr; grid-template-areas: "foto nombre" "foto colonia" "foto editar"; column-gap: 16px; align-items: center; margin: 4px 0 16px; }
+  .avatar { grid-area: foto; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: grid; place-items: center; color: #fff; font-size: 40px; font-weight: 700; cursor: pointer; }
+  .avatar.vacio { background: var(--fondo-miniatura); color: var(--texto-suave); }
+  .cabecera h1 { grid-area: nombre; margin: 0; }
+  .cabecera .colonia { grid-area: colonia; color: var(--texto-suave); font-size: 15px; }
+  .cabecera .editar { grid-area: editar; justify-self: start; min-height: 36px; padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 6px; }
+  .sobre-mi { font-size: 17px; line-height: 1.45; margin-bottom: 16px; }
+  .datos { list-style: none; display: grid; gap: 2px; margin-bottom: 16px; }
+  .dato { display: grid; grid-template-columns: 22px 1fr auto; grid-template-areas: "icono principal accion" "icono secundario accion"; column-gap: 10px; align-items: center; min-height: 44px; font-size: 17px; }
+  .dato > svg { grid-area: icono; width: 20px; height: 20px; color: var(--texto-suave); }
+  .dato b { grid-area: principal; font-weight: 500; }
+  .dato small { grid-area: secundario; color: var(--texto-suave); font-size: 15px; }
+  .dato button { grid-area: accion; min-height: var(--toque-min); border: none; background: none; color: var(--texto); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .dato.completa b { color: var(--texto-suave); font-weight: 400; }
+  .grupo { margin-bottom: 20px; }
+  .grupo h2 { position: sticky; top: 0; z-index: 1; padding: 12px 0 6px; background: var(--fondo); border-bottom: 1px solid var(--texto); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .grupo h2 span { color: var(--texto-suave); font-weight: 500; }
+  .grupo h3 { font-size: 15px; font-weight: 700; color: var(--texto-suave); padding: 12px 0 4px; }
+  .lista { list-style: none; }
+  .renglon { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "foto titulo" "foto meta"; column-gap: 12px; align-content: center; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--borde); cursor: pointer; }
+  .foto { grid-area: foto; width: 64px; height: 64px; align-self: start; border-radius: 10px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .foto.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); } .foto.c { background: linear-gradient(135deg, #d9c27a, #8a6d2b); }
+  .foto.redonda { border-radius: 50%; }
+  .titulo { grid-area: titulo; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .meta { grid-area: meta; display: grid; gap: 2px; margin-top: 4px; color: var(--texto-suave); font-size: 15px; }
+  .meta span { display: block; line-height: 1.3; }
+  .meta svg { width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; }
+  .meta b { color: var(--texto); font-weight: 500; }
+  .vacio { color: var(--texto-suave); font-size: 15px; padding: 12px 0; line-height: 1.5; }
+  .vacio a { color: var(--texto); }
+
+  /* Hojas */
+  .hoja-fondo { position: absolute; inset: 0; z-index: 8; display: none; background: rgba(0,0,0,.32); }
+  .hoja-fondo.abierta { display: block; }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; max-height: calc(100% - 60px); overflow-y: auto; padding: 12px var(--gutter) calc(20px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .asa { width: 36px; height: 4px; margin: 0 auto 14px; border-radius: 2px; background: var(--borde); }
+  .hoja h3 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 12px; padding-right: 44px; }
+  .hoja .porque { color: var(--texto-suave); font-size: 15px; margin: -8px 0 12px; }
+  .menu { list-style: none; margin-top: 16px; }
+  .menu button { display: block; width: 100%; min-height: var(--toque); padding: 0 4px; border: none; border-bottom: 1px solid var(--borde); background: none; color: var(--texto); font-size: 17px; text-align: left; cursor: pointer; }
+  .menu .peligro { color: var(--error); }
+  .interruptor { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; min-height: 56px; border-top: 1px solid var(--borde); font-size: 17px; }
+  .interruptor:first-of-type { border-top: none; }
+  .interruptor small { display: block; color: var(--texto-suave); font-size: 15px; }
+  .palanca { width: 51px; height: 31px; border: none; border-radius: 16px; background: var(--borde); position: relative; cursor: pointer; }
+  .palanca::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left 150ms; }
+  .palanca[aria-checked="true"] { background: var(--ok); }
+  .palanca[aria-checked="true"]::after { left: 22px; }
+  .hoja .avatar-fila { display: grid; grid-template-columns: 72px 1fr; align-items: center; column-gap: 14px; margin-bottom: 16px; }
+  .hoja .avatar-fila .avatar { width: 72px; height: 72px; font-size: 30px; }
+  .hoja .avatar-fila .cambiar-foto { justify-self: start; min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); font-weight: 600; cursor: pointer; }
+  .correo-nota { color: var(--texto-suave); font-size: 15px; margin: -4px 0 16px; }
+  .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 140px; z-index: 6; padding: 12px 14px; border-radius: 12px; background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
+  .nota.visible { opacity: 1; transform: none; }
+
+  /* Utilería */
+  .utileria { width: 300px; max-width: 100%; flex: none; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
+  .utileria h3 { margin-bottom: 4px; color: var(--panel-suave); font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .nota-utileria { margin-bottom: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.35; }
+  .control { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--panel-borde); }
+  .control:first-of-type { border-top: none; }
+  .control code { margin-right: 6px; color: var(--panel-suave); font-family: inherit; font-size: 12px; }
+  .control select { min-height: 36px; padding: 6px 8px; border: 1px solid var(--panel-borde); border-radius: 8px; background: #2b3a48; color: var(--panel-texto); }
+  .control input[type="checkbox"] { width: 20px; height: 20px; accent-color: #f0f0ee; }
+  .reiniciar { width: 100%; min-height: var(--toque-min); margin-top: 14px; border: 1px solid var(--panel-borde); border-radius: 10px; background: transparent; color: var(--panel-texto); font-weight: 700; cursor: pointer; }
+  .decisiones { margin-top: 16px; color: var(--panel-suave); font-size: 13px; line-height: 1.4; }
+  .decisiones a { color: var(--panel-texto); }
+  :focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .nota, .palanca::after { transition: none; } }
+  @media (max-width: 740px) { .telefono { height: auto; min-height: 720px; } .pantalla { height: auto; max-height: 700px; } }
+</style>
+
+<div class="estudio">
+  <p class="rotulo"><strong>Entrar, perfil y alta de lugar v1</strong> <span>Entrar con motivo y código de 6 dígitos · una sola ficha de persona con Editar y Avisos · alta de lugar con renglones resueltos</span> <span>Datos de ejemplo, no reales</span></p>
+
+  <div class="telefono" id="telefono" aria-label="Teléfono de 390 por 844">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ⌾</span></div>
+    <div id="pantalla"></div>
+    <div class="nota" id="nota" role="status" aria-live="polite"></div>
+    <div class="hoja-fondo" id="hoja-editar-fondo"><div class="hoja" role="dialog" aria-label="Editar perfil" id="hoja-editar"></div></div>
+    <div class="hoja-fondo" id="hoja-avisos-fondo"><div class="hoja" role="dialog" aria-label="Avisos" id="hoja-avisos"></div></div>
+    <div class="hoja-fondo" id="hoja-menu-fondo"><div class="hoja" role="dialog" aria-label="Más acciones" id="hoja-menu"></div></div>
+  </div>
+
+  <aside class="utileria" aria-label="Utilería de revisión">
+    <h3>Utilería de revisión</h3>
+    <p class="nota-utileria">No es parte del diseño. Cambia de pantalla y fuerza los estados; los ID corresponden a la tabla del documento.</p>
+    <label class="control"><span>Pantalla</span><select id="vista"><option value="entrar">Entrar</option><option value="perfil">Mi perfil</option><option value="persona">Persona (ajena)</option><option value="lugar">Registrar lugar</option></select></label>
+    <label class="control"><span><code>E0</code>Motivo</span><select id="motivo"><option value="voy">Decir que vas</option><option value="seguir">Seguir a Los Vecinos</option><option value="publicar">Publicar</option><option value="">Ninguno (barra)</option></select></label>
+    <label class="control"><span><code>E5</code>Google configurado</span><input type="checkbox" id="google"></label>
+    <label class="control"><span><code>P1</code>Perfil incompleto</span><input type="checkbox" id="incompleto"></label>
+    <label class="control"><span><code>P4</code>Voy a vacío</span><input type="checkbox" id="voyVacio"></label>
+    <label class="control"><span><code>P5</code>Sigo vacío</span><input type="checkbox" id="sigoVacio"></label>
+    <label class="control"><span><code>L1</code>Lugar: sugerencia elegida</span><input type="checkbox" id="elegido"></label>
+    <button class="reiniciar" id="reiniciar" type="button">Reiniciar datos</button>
+    <p class="decisiones">Decisiones 1 a 12 y estados: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/11-restantes-flujo-y-estados.md">11-restantes-flujo-y-estados.md</a>. En Entrar, escribe un correo y manda; en el perfil, toca Editar, Cambiar y ···; en el lugar, escribe "casa".</p>
+  </aside>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const estado = { vista: "entrar", motivo: "voy", google: false, incompleto: false, voyVacio: false, sigoVacio: false, elegido: false, fase: "correo", correo: "", codigo: "", codigoMal: false, correoOk: true, telefonoOk: false, lugarNombre: "", lugarAbierto: null, lugarTipo: null, lugarDonde: false };
+  const inicial = JSON.parse(JSON.stringify(estado));
+  const I = {
+    pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    cal: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    reloj: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    campana: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    persona: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    puntos: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>`,
+    nota: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    pinMapa: `<svg viewBox="0 0 28 36" aria-hidden="true"><path d="M14 35S3 21 3 13a11 11 0 0 1 22 0c0 8-11 22-11 22z" stroke-width="2"/><circle cx="14" cy="13" r="4" fill="#fff"/></svg>`,
+  };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const MOTIVO = { voy: { titulo: "Entra para decir que vas", volver: "Noche de son" }, seguir: { titulo: "Entra para seguir a Los Vecinos", volver: "Los Vecinos" }, publicar: { titulo: "Entra para publicar", volver: "Agenda" }, "": { titulo: "Entrar", volver: "Agenda" } };
+
+  function barra(volver, derecha = "") {
+    return `<header class="barra"><a href="#" class="volver" id="volver">← ${esc(volver)}</a><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a><div class="barra-acciones">${derecha}</div></header>`;
+  }
+  function teclado(numerico) {
+    const fila = (n) => `<div class="fila">${"<span></span>".repeat(n)}</div>`;
+    return `<div class="teclado" aria-hidden="true">${numerico ? fila(3) + fila(3) + fila(3) + `<div class="fila"><span></span><span></span></div>` : fila(10) + fila(9) + fila(7) + `<div class="fila"><span></span><span class="ancha"></span><span></span></div>`}</div>`;
+  }
+
+  /* Entrar */
+  function pantallaEntrar() {
+    const m = MOTIVO[estado.motivo];
+    let h = barra(m.volver) + `<div class="contenido"><h1>${esc(m.titulo)}</h1>`;
+    let pie = "";
+    if (estado.fase === "correo") {
+      h += `<p class="subtitulo">Sin contraseñas: te mandamos un código a tu correo.</p>`;
+      h += `<div class="campo"><label for="correo">Tu correo</label><input id="correo" type="email" inputmode="email" autocomplete="email" placeholder="nombre@correo.com" value="${esc(estado.correo)}" autofocus>${estado.correoOk ? "" : `<span class="error">Revisa el correo: le falta algo.</span>`}</div>`;
+      if (estado.google) h += `<p class="separador">o</p><button type="button" class="secundario" data-nota="Abriría la cuenta de Google">Continuar con Google</button>`;
+      pie = `<div class="sobre-teclado"><button type="button" class="primario" id="mandar">Mandarme el código</button></div>${teclado(false)}`;
+    } else {
+      const c = estado.correo || "ro…@gmail.com";
+      h += `<div class="enviado"><b>Te mandamos un código a ${esc(enmascarar(c))}</b>También trae un enlace, por si prefieres tocarlo.</div>`;
+      const d = estado.codigo.padEnd(6, " ").split("");
+      h += `<div class="codigo ${estado.codigoMal ? "mal" : ""}" role="group" aria-label="Código de 6 dígitos">${d.map((x, i) => `<span class="${i === estado.codigo.length ? "activa" : ""}">${x.trim()}</span>`).join("")}</div>`;
+      if (estado.codigoMal) h += `<p class="aviso-error">Ese código no es, o ya caducó.</p>`;
+      h += `<p class="subtitulo">Tecléalo o pégalo; el iPhone lo ofrece solo encima del teclado.</p>`;
+      h += `<button type="button" class="enlace" id="reenviar">¿No llega? Reenviar</button> · <button type="button" class="enlace" id="otro-correo">Usar otro correo</button>`;
+      pie = `<div class="sobre-teclado"><button type="button" class="primario" id="entrar-codigo">Entrar</button></div>${teclado(true)}`;
+    }
+    h += `</div>`;
+    return `<main class="pantalla" id="scroll">${h}</main>${pie}`;
+  }
+  function enmascarar(c) { const [u, d] = c.split("@"); return d ? `${u.slice(0, 2)}…@${d}` : c; }
+
+  /* Ficha de persona */
+  function renglonEvento(t, hora, lugar, f) {
+    return `<li class="renglon"><span class="foto ${f}" aria-hidden="true"></span><span class="titulo">${t}</span><span class="meta"><span>${I.reloj}<b>${hora}</b> · ${I.pin}${lugar}</span></span></li>`;
+  }
+  function pantallaPersona(mia) {
+    const nombre = "Rosa Prueba";
+    const incompleto = mia && estado.incompleto;
+    const derecha = mia ? `<button type="button" class="icono-barra" id="menu" aria-label="Más acciones">${I.puntos}</button>` : "";
+    let h = barra("Agenda", derecha) + `<div class="contenido">`;
+    h += `<div class="cabecera"><span class="avatar ${incompleto ? "vacio" : ""}" ${mia ? 'id="avatar" role="button" tabindex="0" aria-label="Cambiar la foto"' : ""}>${incompleto ? "R" : ""}</span><h1>${nombre}</h1>${incompleto ? "" : `<span class="colonia">Tequis</span>`}${mia ? `<button type="button" class="editar" id="editar">Editar</button>` : ""}</div>`;
+    if (!incompleto) h += `<p class="sobre-mi">Vecina de Tequis. Me gusta el son huasteco y el grabado; casi siempre ando por Casa Ocho Ventanas.</p>`;
+    if (mia) {
+      const canales = [estado.correoOk && "Por correo", estado.telefonoOk && "en el teléfono"].filter(Boolean);
+      const texto = canales.length ? canales.join(" y ") : "Sin avisos";
+      h += `<ul class="datos">`;
+      if (incompleto) h += `<li class="dato completa">${I.persona}<b>Completa tu perfil: colonia y una línea sobre ti</b><button type="button" id="editar-2">Editar</button></li>`;
+      h += `<li class="dato">${I.campana}<b>Avisos · ${texto}</b><small>${canales.length ? "El día de un evento al que vas y cuando publiquen lo que sigues" : "No te avisamos de nada"}</small><button type="button" id="cambiar-avisos">Cambiar</button></li></ul>`;
+    }
+    const va = estado.voyVacio ? [] : [1];
+    const sigue = estado.sigoVacio ? [] : [1];
+    h += `<section class="grupo"><h2>${mia ? "Voy a" : "Va a"}${va.length ? ` <span>· 2</span>` : ""}</h2>`;
+    if (!va.length) h += `<p class="vacio">${mia ? "Todavía no vas a nada. <a href='#' data-nota='Abriría la agenda'>Ver la agenda</a>" : "Todavía no ha dicho que va a ningún evento."}</p>`;
+    else h += `<h3>Hoy</h3><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "a")}</ul><h3>sáb 19 de sep</h3><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", "b")}</ul>`;
+    h += `</section><section class="grupo"><h2>${mia ? "Sigo" : "Sigue"}${sigue.length ? ` <span>· 2</span>` : ""}</h2>`;
+    if (!sigue.length) h += `<p class="vacio">${mia ? "Todavía no sigues nada. <a href='#' data-nota='Abriría Lugares'>Ver lugares</a> · <a href='#' data-nota='Abriría Artistas'>Ver artistas</a>" : "Todavía no sigue ningún lugar ni artista."}</p>`;
+    else h += `<ul class="lista"><li class="renglon"><span class="foto a" aria-hidden="true"></span><span class="titulo">Casa Ocho Ventanas</span><span class="meta"><span>${I.pin}Casa de cultura · Calle 5 de Mayo 1100</span></span></li><li class="renglon"><span class="foto c redonda" aria-hidden="true"></span><span class="titulo">Los Vecinos</span><span class="meta"><span>${I.nota}Son huasteco · Grupo</span></span></li></ul>`;
+    h += `</section></div>`;
+    return `<main class="pantalla" id="scroll">${h}</main>`;
+  }
+
+  /* Alta de lugar */
+  const TIPOS = ["Casa de cultura", "Foro", "Galería", "Colectivo", "Biblioteca", "Otro"];
+  function deducirTipo(n) { const s = n.toLowerCase(); if (/casa/.test(s)) return "Casa de cultura"; if (/foro|teatro/.test(s)) return "Foro"; if (/galer/.test(s)) return "Galería"; if (/colectivo/.test(s)) return "Colectivo"; if (/biblio/.test(s)) return "Biblioteca"; return null; }
+  function pantallaLugar() {
+    const n = estado.lugarNombre;
+    const resuelto = estado.elegido || estado.lugarDonde;
+    const deducido = deducirTipo(n);
+    const tipo = estado.lugarTipo || deducido || "Otro";
+    const abiertoDonde = estado.lugarAbierto === "donde" || (!resuelto && estado.lugarAbierto !== "tipo");
+    let h = barra("Lugares") + `<div class="contenido"><h1>Registrar un lugar</h1><p class="subtitulo">Con el nombre y dónde está basta. Lo demás se puede completar después.</p>`;
+    h += `<div class="campo"><label for="lugar-nombre">Nombre del lugar</label><input id="lugar-nombre" type="text" value="${esc(n)}" placeholder="Ej. Casa de la Cultura" autocomplete="off"><span class="ayuda">Escríbelo y elige el lugar si aparece: llenamos lo demás.</span></div>`;
+    if (n.trim().length >= 3 && !estado.elegido) h += `<ul class="sugerencias" role="listbox"><li data-elige="1">Casa de Cultura de San Luis<small>Av. Venustiano Carranza 1815, Centro</small></li><li data-elige="2">Casa del Poeta Ramón López Velarde<small>Vallejo 200, Centro</small></li></ul>`;
+    // Dónde
+    h += `<div class="seccion ${abiertoDonde ? "abierta" : ""}">`;
+    if (abiertoDonde) {
+      h += `<div class="seccion-cuerpo"><div class="fila-etiqueta"><span class="nombre" style="margin:0">Dónde</span><button type="button" class="boton-chico" id="estoy-aqui">Estoy aquí</button></div><div class="mapa" id="mapa"><span class="rotulo-mapa">${resuelto ? "Mueve el pin si hace falta" : "Toca el mapa donde está el lugar"}</span>${resuelto ? `<span class="pin">${I.pinMapa}</span>` : ""}</div><div class="campo"><label for="lugar-dir">Dirección</label><input id="lugar-dir" type="text" value="${resuelto ? "Av. Venustiano Carranza 1815, Centro" : ""}" placeholder="Se llena sola con el pin"></div></div>`;
+    } else {
+      h += `<button type="button" class="seccion-cab" data-abrir="donde"><span class="nombre">Dónde</span><span class="resumen">Av. Venustiano Carranza 1815, Centro</span><span class="cambiar">Cambiar</span></button>`;
+    }
+    h += `</div>`;
+    // Tipo
+    const abiertoTipo = estado.lugarAbierto === "tipo";
+    h += `<div class="seccion ${abiertoTipo ? "abierta" : ""}">`;
+    if (abiertoTipo) h += `<div class="seccion-cuerpo"><span class="nombre">Tipo</span><div class="chips">${TIPOS.map((t) => `<button type="button" class="chip" data-tipo="${t}" aria-pressed="${tipo === t}">${t}</button>`).join("")}</div></div>`;
+    else h += `<button type="button" class="seccion-cab" data-abrir="tipo"><span class="nombre">Tipo</span><span class="resumen">${tipo}${!estado.lugarTipo && deducido ? ` <small>· por el nombre</small>` : ""}</span><span class="cambiar">Cambiar</span></button>`;
+    h += `</div>`;
+    h += `<button type="button" class="desplegar" data-nota="Abriría descripción, el campo de enlaces y la foto">+ Más detalles: descripción, redes, foto</button>`;
+    h += `<button type="button" class="primario" id="publicar-lugar">Publicar lugar</button></div>`;
+    return `<main class="pantalla" id="scroll">${h}</main>`;
+  }
+
+  function render() {
+    const foco = document.activeElement && document.activeElement.id;
+    const sel = document.activeElement && document.activeElement.selectionStart;
+    $("pantalla").innerHTML = estado.vista === "entrar" ? pantallaEntrar() : estado.vista === "perfil" ? pantallaPersona(true) : estado.vista === "persona" ? pantallaPersona(false) : pantallaLugar();
+    if (foco && $(foco) && $(foco).tagName === "INPUT") { const el = $(foco); el.focus(); try { el.setSelectionRange(sel, sel); } catch (e) {} }
+    $("hoja-editar").innerHTML = `<div class="asa" aria-hidden="true"></div><h3>Editar perfil</h3><div class="avatar-fila"><span class="avatar ${estado.incompleto ? "vacio" : ""}">${estado.incompleto ? "R" : ""}</span><button type="button" class="cambiar-foto" data-nota="Abriría la cámara o el carrete">${estado.incompleto ? "Poner una foto" : "Cambiar la foto"}</button></div><div class="campo"><label>Nombre</label><input type="text" value="Rosa Prueba"></div><div class="campo"><label>Colonia</label><input type="text" value="${estado.incompleto ? "" : "Tequis"}" placeholder="Para ordenar lo que te queda cerca"></div><div class="campo"><label>Sobre mí</label><textarea placeholder="Una línea, hasta 140 caracteres">${estado.incompleto ? "" : "Vecina de Tequis. Me gusta el son huasteco y el grabado; casi siempre ando por Casa Ocho Ventanas."}</textarea></div><p class="correo-nota">Entras con ro…@gmail.com.</p><button type="button" class="primario" id="guardar-perfil">Guardar</button>`;
+    $("hoja-avisos").innerHTML = `<div class="asa" aria-hidden="true"></div><h3>Avisos</h3><p class="porque">El día de un evento al que vas y cuando publiquen lo que sigues. Se guarda al tocar.</p><label class="interruptor"><span>Por correo<small>ro…@gmail.com · cada correo trae su baja</small></span><button type="button" class="palanca" role="switch" aria-checked="${estado.correoOk}" id="palanca-correo" aria-label="Por correo"></button></label><label class="interruptor"><span>En el teléfono<small>${estado.telefonoOk ? "Este iPhone" : "Solo con la app instalada en inicio"}</small></span><button type="button" class="palanca" role="switch" aria-checked="${estado.telefonoOk}" id="palanca-telefono" aria-label="En el teléfono"></button></label>`;
+    $("hoja-menu").innerHTML = `<div class="asa" aria-hidden="true"></div><ul class="menu"><li><button type="button" data-menu="editar">Editar</button></li><li><button type="button" data-menu="avisos">Avisos</button></li><li><button type="button" data-menu="salir">Cerrar sesión</button></li><li><button type="button" class="peligro" data-menu="borrar">Borrar mi cuenta</button></li></ul>`;
+    $("vista").value = estado.vista; $("motivo").value = estado.motivo; ["google", "incompleto", "voyVacio", "sigoVacio", "elegido"].forEach((id) => { $(id).checked = estado[id]; });
+  }
+  let temporizador;
+  function nota(t) { const n = $("nota"); n.textContent = t; n.classList.add("visible"); clearTimeout(temporizador); temporizador = setTimeout(() => n.classList.remove("visible"), 2400); }
+  function cerrarHojas() { ["hoja-editar-fondo", "hoja-avisos-fondo", "hoja-menu-fondo"].forEach((id) => $(id).classList.remove("abierta")); }
+
+  $("vista").addEventListener("change", (e) => { estado.vista = e.target.value; render(); });
+  $("motivo").addEventListener("change", (e) => { estado.motivo = e.target.value; render(); });
+  ["google", "incompleto", "voyVacio", "sigoVacio", "elegido"].forEach((id) => $(id).addEventListener("change", (e) => { estado[id] = e.target.checked; if (id === "elegido") { estado.lugarNombre = e.target.checked ? "Casa de Cultura de San Luis" : ""; estado.lugarAbierto = null; } render(); }));
+  $("reiniciar").addEventListener("click", () => { Object.assign(estado, JSON.parse(JSON.stringify(inicial))); cerrarHojas(); render(); });
+
+  document.addEventListener("input", (ev) => {
+    const t = ev.target;
+    if (t.id === "correo") { estado.correo = t.value; estado.correoOk = true; }
+    if (t.id === "lugar-nombre") { estado.lugarNombre = t.value; estado.elegido = false; estado.lugarTipo = null; render(); }
+  });
+  document.addEventListener("click", (ev) => {
+    const t = ev.target;
+    if (t.closest("#volver")) { ev.preventDefault(); nota(`Volvería a ${MOTIVO[estado.motivo].volver}`); return; }
+    if (t.closest("#mandar")) { if (!/^\S+@\S+\.\S+$/.test(estado.correo.trim())) { estado.correoOk = false; render(); return; } estado.fase = "codigo"; estado.codigo = ""; estado.codigoMal = false; render(); return; }
+    if (t.closest(".teclado") && estado.fase === "codigo") { if (estado.codigo.length < 6) { estado.codigo += String(Math.floor(Math.random() * 10)); estado.codigoMal = false; render(); } return; }
+    if (t.closest("#entrar-codigo")) { if (estado.codigo.length < 6) { estado.codigoMal = true; render(); return; } nota(`Dentro: ${estado.motivo === "voy" ? "en la ficha con ✓ Voy" : estado.motivo === "seguir" ? "en la ficha con ✓ Sigues" : estado.motivo === "publicar" ? "en el alta" : "en Mi perfil"}`); estado.vista = "perfil"; estado.fase = "correo"; render(); return; }
+    if (t.closest("#reenviar")) { nota("Mandaría otro código (tras 30 segundos)"); return; }
+    if (t.closest("#otro-correo")) { estado.fase = "correo"; estado.correo = ""; render(); return; }
+    // Perfil
+    if (t.closest("#editar") || t.closest("#editar-2") || t.closest("#avatar")) { $("hoja-editar-fondo").classList.add("abierta"); return; }
+    if (t.closest("#guardar-perfil")) { estado.incompleto = false; cerrarHojas(); render(); nota("Guardado"); return; }
+    if (t.closest("#cambiar-avisos")) { $("hoja-avisos-fondo").classList.add("abierta"); return; }
+    if (t.closest("#palanca-correo")) { estado.correoOk = !estado.correoOk; render(); $("hoja-avisos-fondo").classList.add("abierta"); return; }
+    if (t.closest("#palanca-telefono")) { if (!estado.telefonoOk) nota("En un iPhone sin la app instalada abriría la hoja «Instala Somos Nosotros»"); estado.telefonoOk = !estado.telefonoOk; render(); $("hoja-avisos-fondo").classList.add("abierta"); return; }
+    if (t.closest("#menu")) { $("hoja-menu-fondo").classList.add("abierta"); return; }
+    const m = t.closest("[data-menu]");
+    if (m) { cerrarHojas(); if (m.dataset.menu === "editar") $("hoja-editar-fondo").classList.add("abierta"); else if (m.dataset.menu === "avisos") $("hoja-avisos-fondo").classList.add("abierta"); else if (m.dataset.menu === "salir") nota("Cerraría la sesión y volvería a la agenda"); else nota("Pediría la confirmación de dos pasos que ya existe"); return; }
+    // Lugar
+    const el = t.closest("[data-elige]"); if (el) { estado.elegido = true; estado.lugarNombre = el.textContent.split("\n")[0].trim().replace(/Av\..*$/, "").replace(/Vallejo.*$/, "").trim(); estado.lugarAbierto = null; render(); return; }
+    if (t.closest("#estoy-aqui")) { estado.lugarDonde = true; estado.lugarAbierto = null; render(); nota("El teléfono pediría permiso y deduciría la dirección"); return; }
+    if (t.closest("#mapa")) { estado.lugarDonde = true; render(); return; }
+    const ab = t.closest("[data-abrir]"); if (ab) { estado.lugarAbierto = estado.lugarAbierto === ab.dataset.abrir ? null : ab.dataset.abrir; render(); return; }
+    const tp = t.closest("[data-tipo]"); if (tp) { estado.lugarTipo = tp.dataset.tipo; estado.lugarAbierto = null; render(); return; }
+    if (t.closest("#publicar-lugar")) { nota(estado.elegido || estado.lugarDonde ? "Publicaría y abriría la ficha con «Publicado»" : "Faltaría dónde está: el renglón Dónde queda abierto con error"); return; }
+    const n = t.closest("[data-nota]"); if (n) { ev.preventDefault(); nota(n.dataset.nota); return; }
+    if (t === $("hoja-editar-fondo") || t === $("hoja-avisos-fondo") || t === $("hoja-menu-fondo")) cerrarHojas();
+  });
+  render();
+</script>
