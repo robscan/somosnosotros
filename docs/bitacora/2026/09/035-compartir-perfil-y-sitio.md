@@ -1,6 +1,6 @@
 # 035 · Compartir el perfil y el sitio
 
-**Fecha:** 2026-09-15 · **Rama:** `compartir-perfil-y-sitio` → PR · **Pieza:** OL-018 (7)
+**Fecha:** 2026-09-15 · **Rama:** `compartir-perfil-y-sitio` → [PR #35](https://github.com/robscan/somosnosotros/pull/35), fusionado y en producción el mismo día · **Pieza:** OL-018 (7)
 
 ## Qué pidió el founder
 "Necesitamos una acción de compartir para perfil y otra para el sitio completo." Aceptó la recomendación: compartir el perfil junto a Editar (y como única acción en la ficha ajena), y la invitación al sitio donde la persona ya recibió valor, no en la barra ni en la nav.
