@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { Map as MapaGL, Marker } from "mapbox-gl";
+import type { IControl, Map as MapaGL, Marker } from "mapbox-gl";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import type { LugarLista } from "@/lib/lugares";
@@ -30,17 +30,75 @@ type Props = {
   ciudad?: Ciudad;
   /** "pantalla": fijo a toda la pantalla (con panel encima). "caja": llena el contenedor donde se pone. */
   presentacion?: "pantalla" | "caja";
+  /** Solo en "ver": abre inclinado, con los edificios en 3D, y un botón 3D/2D para cambiarlo. */
+  perspectiva?: boolean;
 };
 
-const COLOR_PIN = "#1a1a1a"; // = var(--primario); Mapbox pide el color literal (pin que se arrastra)
+const COLOR_PIN = "#1a1a1a"; // tinta, como los pins de lugares; Mapbox pide el color literal (pin que se arrastra)
+/** Inclinación de la perspectiva en el mapa de Lugares (decisión del founder, 2026-09-14). */
+const INCLINACION = 50;
 /** Pin de lugar: 28×36, relleno o hueco según la clase; el punto blanco lo lleva siempre. */
 const PIN_SVG = '<svg viewBox="0 0 28 36" width="28" height="36" aria-hidden="true"><path d="M14 35S3 21 3 13a11 11 0 0 1 22 0c0 8-11 22-11 22z" stroke-width="2"/><circle cx="14" cy="13" r="4"/></svg>';
+
+/** Botón 3D/2D sobre el mapa: inclina o aplana la vista; respeta "reducir movimiento". */
+function controlPerspectiva(): IControl {
+  let boton: HTMLButtonElement | null = null;
+  const pintar = (m: MapaGL) => {
+    if (!boton) return;
+    const inclinado = m.getPitch() > 5;
+    boton.textContent = inclinado ? "2D" : "3D";
+    boton.setAttribute("aria-label", inclinado ? "Ver el mapa plano" : "Ver el mapa en perspectiva");
+    boton.setAttribute("aria-pressed", String(inclinado));
+  };
+  return {
+    onAdd(m: MapaGL) {
+      boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = styles.perspectiva;
+      boton.addEventListener("click", () => {
+        const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        m.easeTo({ pitch: m.getPitch() > 5 ? 0 : INCLINACION, duration: sinMovimiento ? 0 : 500 });
+      });
+      m.on("pitchend", () => pintar(m));
+      pintar(m);
+      return boton;
+    },
+    onRemove() {
+      boton?.remove();
+      boton = null;
+    },
+  };
+}
+
+/** Capa de edificios en 3D (altura real de Mapbox Streets) para estilos clásicos; discreta, del tono del fondo. */
+function agregarEdificios(mapa: MapaGL) {
+  if (mapa.getLayer("edificios-3d") || !mapa.getSource("composite")) return;
+  const capas = mapa.getStyle()?.layers ?? [];
+  const primeraEtiqueta = capas.find((c) => c.type === "symbol" && (c.layout as { "text-field"?: unknown } | undefined)?.["text-field"])?.id;
+  mapa.addLayer(
+    {
+      id: "edificios-3d",
+      type: "fill-extrusion",
+      source: "composite",
+      "source-layer": "building",
+      filter: ["==", ["get", "extrude"], "true"],
+      minzoom: 14,
+      paint: {
+        "fill-extrusion-color": "#e4e2dc",
+        "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 14, 0, 15, ["get", "height"]],
+        "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 14, 0, 15, ["get", "min_height"]],
+        "fill-extrusion-opacity": 0.75,
+      },
+    },
+    primeraEtiqueta,
+  );
+}
 
 /**
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día.
  */
-export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla" }: Props) {
+export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla", perspectiva = false }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const pinesRef = useRef<Map<string, Marker>>(new Map());
@@ -78,12 +136,16 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
         language: "es",
         attributionControl: false,
         logoPosition: modo === "ver" ? "top-left" : "bottom-left",
+        pitch: perspectiva ? INCLINACION : 0,
       });
       mapaRef.current = mapa;
       mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), modo === "ver" ? "top-right" : "bottom-right");
+      if (perspectiva) mapa.addControl(controlPerspectiva(), "top-right");
       mapa.on("style.load", () => {
         const importaStandard = mapa?.getStyle()?.imports?.some((i) => i.id === "basemap");
         if (importaStandard) mapa?.setConfigProperty("basemap", "lightPreset", "day");
+        // Edificios en 3D con perspectiva: Mapbox Standard ya los trae; un estilo clásico los dibuja desde su capa de edificios.
+        if (perspectiva && !importaStandard && mapa) agregarEdificios(mapa);
       });
       mapa.on("load", () => setEstado("listo"));
       mapa.on("error", (e) => {
@@ -121,7 +183,8 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
         lugares.forEach((l) => limites.extend([l.lng, l.lat]));
         const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const abajo = presentacion === "pantalla" ? Math.round(window.innerHeight * 0.5) + 24 : 72;
-        mapa.fitBounds(limites, { padding: { top: 56, left: 48, right: 48, bottom: abajo }, maxZoom: 15, duration: sinMovimiento ? 0 : 600 });
+        // El encuadre de Mapbox pone la cámara plana; con perspectiva se conserva la inclinación.
+        mapa.fitBounds(limites, { padding: { top: 56, left: 48, right: 48, bottom: abajo }, maxZoom: 15, pitch: perspectiva ? INCLINACION : 0, duration: sinMovimiento ? 0 : 600 });
       }
       pinesRef.current = new Map(
         lugares.map((l) => {
@@ -142,7 +205,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     return () => {
       cancelado = true;
     };
-  }, [estado, modo, lugares, router, centrarEn, presentacion]);
+  }, [estado, modo, lugares, router, centrarEn, presentacion, perspectiva]);
 
   // El pin de la tarjeta abierta se ve más grande.
   useEffect(() => {

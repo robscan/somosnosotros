@@ -10,3 +10,6 @@ coverage/
 next-env.d.ts
 *.pem
 .sim-proofs/
+
+# Datos capturados del CAPO (traen correos personales): nunca en git
+scripts/capo/salida/

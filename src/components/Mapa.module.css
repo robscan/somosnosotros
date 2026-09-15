@@ -114,3 +114,25 @@
     transition: none;
   }
 }
+
+/* Botón 3D/2D sobre el mapa (control de Mapbox, arriba a la derecha bajo la atribución) */
+.perspectiva {
+  display: grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  margin: var(--espacio-2) var(--espacio-2) 0 0;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+  box-shadow: var(--sombra);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.perspectiva[aria-pressed="true"] {
+  border-color: var(--primario);
+  color: var(--primario);
+}
