@@ -45,6 +45,6 @@ El founder lo vio en "La Banda de Música del Estado en el templo de San Sebasti
 Lint, typecheck, 127 pruebas y build en verde (pruebas nuevas: `agruparPorDia` con orden dado, `tiposPresentes` con conteo, `queCambio`, `correoCambioEvento`, `validarLugar` con `privado`). Mirado a 390×844 en el servidor local contra producción: Nuevos con "jue 17 de sep · 3" y "vie 18 de sep · 5"; chip "vie 18 de sep ✕" que vuelve a "Hoy" con selector; mapa con "museo" → lista de 6 y "Y 7 más en el mapa", "mac" → "Museo de Arte Contemporáneo (MAC)" con su tarjeta; chips "Todos 58 · Casa de cultura 15 · Museo 13" y "Todos 522 · Música 306 · Teatro 52". No mirado (exige sesión de admin): "Estoy aquí" en el alta de evento, el interruptor de privado, el campo de URL de imagen y el aviso de cambio; el founder los prueba en su iPhone.
 
 ## Pendiente
-- Fotos del CAPO (312) por la vía del navegador real; las 194 de carrusel se quedan fuera (son obras, no retratos).
+- ~~Fotos del CAPO (312) por la vía del navegador real~~ Hecho en la tarde: 308 en producción con `scripts/capo/fotos-chrome/` (Chrome sin ventana); 4 sin foto en la página guardada; las 194 de carrusel se quedan fuera (son obras, no retratos).
 - Firma del founder en el iPhone.
 - Decidido por el founder (tarde): asignar fichas de artista desde el admin sin reporte queda para después, si se pide; el prompt de redes lo corre él más tarde.
