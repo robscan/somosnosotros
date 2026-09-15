@@ -10,6 +10,7 @@
   z-index: 10;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  padding: 0 var(--gutter);
   background: var(--fondo);
   border-bottom: 1px solid var(--borde);
 }
@@ -46,7 +47,7 @@
 }
 .ubicame {
   position: absolute;
-  left: var(--espacio-5);
+  left: var(--gutter);
   bottom: var(--espacio-4);
   z-index: 2;
   display: grid;
@@ -68,16 +69,16 @@
 /* Aviso de ubicación sobre el mapa: flota arriba, a lo ancho, encima de los controles */
 .avisoMapa {
   position: absolute;
-  top: 64px; /* debajo del botón 3D/2D y la atribución */
-  left: var(--espacio-5);
-  right: var(--espacio-5);
+  top: 64px; /* debajo del logotipo de Mapbox y la atribución */
+  left: var(--gutter);
+  right: var(--gutter);
   z-index: 4;
 }
 /* Tarjeta del pin tocado: el mismo renglón de la lista, flotando sobre el mapa, con "Ver" */
 .tarjeta {
   position: absolute;
-  left: var(--espacio-5);
-  right: var(--espacio-5);
+  left: var(--gutter);
+  right: var(--gutter);
   bottom: var(--espacio-4);
   z-index: 3;
   display: grid;
@@ -120,7 +121,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--espacio-2);
-  padding: var(--espacio-3) var(--espacio-5) 0;
+  padding: var(--espacio-3) var(--gutter) 0;
 }
 .chip {
   display: inline-flex;

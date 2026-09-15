@@ -108,7 +108,6 @@ export default function VistaLugares({
             lugares={lugares}
             ciudad={ciudad}
             presentacion="caja"
-            perspectiva
             onPin={setElegido}
             elegido={elegido?.id ?? null}
             ubicacion={punto ? { ...punto, vez } : null}

@@ -1,6 +1,6 @@
 .publicar {
   position: fixed;
-  right: var(--espacio-5);
+  right: var(--gutter);
   bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + var(--espacio-4));
   z-index: 21;
   display: inline-flex;

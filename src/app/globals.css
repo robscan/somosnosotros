@@ -38,6 +38,14 @@
   --toque: 48px; /* alto de botones y campos: cómodo para el pulgar */
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
 
+  /* Una sola columna en cualquier pantalla (decisión de maquetación, 2026-09-14). En el teléfono el gutter es 20px;
+     en tablet y escritorio crece solo lo que sobra a cada lado de la columna, así el contenido queda centrado y
+     las barras (superior, inferior, hojas) siguen a lo ancho. Sin media queries ni envoltorios: todo gutter
+     horizontal de página se escribe var(--gutter). Los botones y sangrías siguen con --espacio-N. */
+  --columna: 600px;
+  --al-centro: calc((100% - var(--columna)) / 2); /* lo que sobra a cada lado; negativo en el teléfono */
+  --gutter: max(var(--espacio-5), var(--al-centro));
+
   /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él.
      Un punto más grande que con la letra del sistema: la condensada se percibe más chica (LINEA_GRAFICA). */
   --letra-xs: 0.875rem; /* 14px: etiquetas en mayúsculas, cuándo */
@@ -118,10 +126,8 @@ select {
 /* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */
 .pagina {
   min-height: 100dvh;
-  padding: calc(var(--espacio-5) + env(safe-area-inset-top, 0px)) var(--espacio-5)
+  padding: calc(var(--espacio-5) + env(safe-area-inset-top, 0px)) var(--gutter)
     calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px));
-  max-width: 520px;
-  margin: 0 auto;
 }
 
 .titulo {
