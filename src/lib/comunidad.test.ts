@@ -11,6 +11,14 @@ describe("resumenAsistentes", () => {
   });
 });
 
+describe("resumenAsistentes con reservados", () => {
+  it("cuenta a los reservados sin nombre", () => {
+    expect(resumenAsistentes([{ id: "a", nombre: "Ana López", foto: null }], 2, 3)).toBe("Van 3: Ana y 2 más");
+    expect(resumenAsistentes([], 2, 2)).toBe("Van 2");
+    expect(resumenAsistentes([], 2, 1)).toBe("Va 1 persona");
+  });
+});
+
 describe("correos", () => {
   it("nuevo evento: asunto con el lugar, enlace y cómo apagar avisos", () => {
     const c = correoNuevoEvento({ titulo: "Noche de jazz", cuando: "sáb 26 de sep · 20:00", lugar: "Casa 1100", eventoId: "abc" });

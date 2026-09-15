@@ -11,6 +11,7 @@ import { cargarPersona } from "@/app/personas/consultas";
 import ficha from "@/components/ui/Ficha.module.css";
 import AvisosPerfil from "./AvisosPerfil";
 import EditarPerfil from "./EditarPerfil";
+import ReservaPerfil from "./ReservaPerfil";
 import { borrarMiCuenta, cerrarSesion } from "./acciones";
 import styles from "./perfil.module.css";
 
@@ -77,6 +78,7 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
           mia
           editar={<EditarPerfil perfil={perfil} correo={correo} />}
           avisos={<AvisosPerfil correo={perfil.avisos_correo === true} telefono={perfil.avisos_push === true} correoTexto={correo} llavePush={llavePush} />}
+          reserva={<ReservaPerfil reservado={perfil.reservado === true} />}
           eventos={persona.eventos}
           interesan={persona.interesan}
           lugares={persona.lugares}

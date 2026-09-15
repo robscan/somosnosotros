@@ -88,10 +88,10 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
   const [eventos, cuenta, mio] = await Promise.all([
     cargarEventos(lugar),
-    supabase?.from("seguimientos").select("usuario_id", { count: "exact", head: true }).eq("lugar_id", id) ?? Promise.resolve({ count: 0 }),
+    supabase?.rpc("cuenta_seguidores", { p_lugar: id }) ?? Promise.resolve({ data: 0 }),
     actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("lugar_id", id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
-  const seguidores = cuenta.count ?? 0;
+  const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
   const sigo = !!mio.data;
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === lugar.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";

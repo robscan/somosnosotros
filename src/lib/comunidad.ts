@@ -2,13 +2,17 @@
 
 export type Asistente = { id: string; nombre: string; foto: string | null };
 
-/** "Van 3: Ana, Luis y 1 más" · "Va Ana" · "" si nadie. */
-export function resumenAsistentes(asistentes: Asistente[], maximo = 2): string {
-  const n = asistentes.length;
+/**
+ * "Van 3: Ana, Luis y 1 más" · "Va Ana" · "" si nadie. `total` cuenta también a quienes tienen el perfil
+ * reservado (llegan sin nombre): "Van 3: Ana y 2 más" · "Van 2" si nadie se deja ver.
+ */
+export function resumenAsistentes(asistentes: Asistente[], maximo = 2, total = asistentes.length): string {
+  const n = Math.max(total, asistentes.length);
   if (n === 0) return "";
   const nombres = asistentes.map((a) => primerNombre(a.nombre)).filter(Boolean);
   const primeros = nombres.slice(0, maximo);
   const resto = n - primeros.length;
+  if (primeros.length === 0) return n === 1 ? "Va 1 persona" : `Van ${n}`;
   const lista = resto > 0 ? `${primeros.join(", ")} y ${resto} más` : primeros.length === 2 ? `${primeros[0]} y ${primeros[1]}` : primeros.join(", ");
   return n === 1 ? `Va ${lista}` : `Van ${n}: ${lista}`;
 }

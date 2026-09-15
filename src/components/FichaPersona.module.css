@@ -184,3 +184,10 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+
+/* Ficha ajena reservada: una línea en gris en lugar de las secciones. */
+.reservada {
+  padding: var(--espacio-4) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

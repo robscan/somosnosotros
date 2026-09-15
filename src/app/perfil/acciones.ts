@@ -32,6 +32,20 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
   return { ok: true };
 }
 
+/** Perfil público o reservado: se guarda al tocar el interruptor (migración 0020). */
+export async function elegirReserva(reservado: boolean): Promise<boolean> {
+  const supabase = await clienteServidor();
+  const {
+    data: { user },
+  } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
+  if (!supabase || !user) return false;
+  const { error } = await supabase.from("perfiles").update({ reservado }).eq("id", user.id);
+  if (error) return false;
+  revalidatePath("/perfil");
+  revalidatePath(`/personas/${user.id}`);
+  return true;
+}
+
 export async function cerrarSesion() {
   const supabase = await clienteServidor();
   await supabase?.auth.signOut();
