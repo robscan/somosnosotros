@@ -14,5 +14,8 @@ Con la captura de Mi perfil en su iPhone: (1) Ajustes y Compartir son acciones y
 ## Verificación
 Lint, typecheck, 134 pruebas y build en verde. Mirado a 390×844 con un usuario desechable (borrado al terminar): Mi perfil con los dos iconos juntos arriba a la derecha y "3 Voy a · 2 Sigo" en una línea con la raya. Atrás: Lugares → Casa del Poeta → evento → Atrás vuelve a la Casa del Poeta (antes iba a Agenda). Enlace directo en una pestaña nueva: el contador arranca en 1 y Atrás lleva a la pantalla madre. Trampa conocida: si el navegador duplica la pestaña (window.open o "Duplicar"), copia el contador y Atrás puede salir de la app; en el iPhone un enlace compartido abre limpio.
 
+## Corrección posterior (mismo día)
+El founder probó en el iPhone: Atrás funciona; los números estaban al revés. Ahora es "Voy a 2 · Sigo 6" (etiqueta y luego el número grande). [PR #42](https://github.com/robscan/somosnosotros/pull/42).
+
 ## Pendiente
 - Firma del founder en el iPhone.
