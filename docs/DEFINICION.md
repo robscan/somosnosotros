@@ -21,6 +21,7 @@
 - Publican el administrador y los usuarios registrados por su cuenta; el administrador puede editar u ocultar cualquier cosa.
 - Todo lo publicado tiene autor visible y se puede corregir o borrar por su autor.
 - Un lugar es un lugar: mismo nombre a menos de 150 m es el mismo (no se duplica).
+- Un lugar es un espacio cultural, no un negocio: bares, cafés y foros de conciertos comerciales no entran, aunque tengan programa cultural.
 - Un evento tiene fecha y hora. Sin fecha no se publica.
 - Ubicación del usuario solo si la pide con un botón; sirve para ordenar por cercanía, nada más.
 - Lo vacío se dice ("aún no hay eventos"), no se rellena.

@@ -29,6 +29,13 @@ describe("filtrarLugares", () => {
   });
 });
 
+describe("tiposPresentes", () => {
+  it("Museo y Escuela entran en el orden de los chips con su etiqueta", () => {
+    const l = [{ tipo: "escuela" }, { tipo: "foro" }, { tipo: "museo" }];
+    expect(tiposPresentes(l).map((t) => t.etiqueta)).toEqual(["Museo", "Foro", "Escuela"]);
+  });
+});
+
 describe("validarLugar", () => {
   const base = { nombre: "Foro X", tipo: "foro", direccion: "Calle 1", lat: "22.15", lng: "-100.97", descripcion: "", portada: "" };
   it("acepta un lugar mínimo y limpia", () => {
