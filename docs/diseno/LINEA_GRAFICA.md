@@ -15,10 +15,12 @@ Por qué esta y no otra: condensada, con toques humanos y artísticos a tamaño 
 
 ## El logotipo
 
-- La composición es **SMSNSTRS**, siempre en mayúsculas, compuesta en Bricolage Grotesque: peso 800, ancho 75, interletrado −0.01em, interlineado 1. No es una imagen: es texto, para que se vea nítido en cualquier pantalla y respete el tamaño de texto del teléfono.
-- Va **arriba a la izquierda** de la barra superior de las pantallas raíz (Agenda, Mapa), con el perfil a la derecha: es el estándar que la gente ya conoce (ley de Jakob; corrección del founder el 2026-09-14, antes decía "a la derecha"). En pantallas interiores, el regreso va a la izquierda y el logotipo al centro. A 21–22 px, en el color del texto (`--texto`), nunca en rojo. Es un enlace al inicio. No lleva icono ni palabra al lado.
+- **Aprobado por el founder el 2026-09-15:** el logotipo es el dibujo **SMSNSTRS con manos y pies** ([logotipo/](logotipo/README.md)), hecho sobre Bricolage Grotesque peso 800 y ancho 75. Se sirve como SVG en tinta: `public/logotipo.svg` (completo) y `public/logotipo-chico.svg` (dedos más gruesos y calzado sin cordones, para tamaños chicos). Su altura va en rem, así crece si la persona agranda el texto del teléfono. Sustituye al logotipo en texto.
+- Va **arriba a la izquierda** de la barra superior de las pantallas raíz (Agenda, Mapa), con el perfil a la derecha: es el estándar que la gente ya conoce (ley de Jakob; corrección del founder el 2026-09-14, antes decía "a la derecha"). En pantallas interiores, el regreso va a la izquierda y el logotipo al centro. El completo mide 28 px de alto en las pantallas raíz (`--alto-logo`); al centro de las interiores va la versión chica a 24 px (`--alto-logo-chico`). A 40 px el founder lo vio "demasiado gigante" (2026-09-15). Siempre en tinta, nunca en rojo. Es un enlace al inicio. No lleva icono ni palabra al lado.
 - El nombre se escribe **Somos Nosotros** (dos palabras, mayúscula inicial) en cualquier texto que la gente lea: título de la pestaña, nombre de la app instalada, correos, avisos. El dominio (somosnosotros.org) y el repo siguen en minúsculas y pegados.
 - Muestra grande del logotipo: SMSNSTRS a 56–84 px se usa en la pantalla de entrada y en cualquier pieza de presentación.
+- **Favicon:** SN liso en tinta sobre el hueso de la app (`src/app/favicon.ico`, capas de 16, 32 y 48 px): a tamaño de pestaña las manos serían ruido.
+- **Icono de instalación** («Añadir a inicio»): el par SN del logotipo, la S del pulgar arriba y la N que hace la paz, en tinta sobre hueso: `public/apple-touch-icon.png` (180 px, iPhone), `icono-192.png` e `icono-512.png` (manifiesto) e `icono-maskable-512.png` (Android, con el dibujo dentro del círculo seguro). Se regeneran con `docs/diseno/logotipo/iconos.py`.
 
 ## El color de acción
 
@@ -58,7 +60,7 @@ En pantallas interiores, el regreso es una **píldora secundaria** (borde `--bor
 
 | Rol | Peso | Ancho | Tamaño | Notas |
 |---|---|---|---|---|
-| Logotipo SMSNSTRS | 800 | 75 | 21–22 px en barra | mayúsculas, interletrado −0.01em; a la izquierda en pantallas raíz, al centro en interiores |
+| Logotipo SMSNSTRS (dibujo SVG) | — | — | 28 px de alto en raíz, 24 px en interiores | a la izquierda en pantallas raíz, al centro en interiores |
 | Título de pantalla, nombre de lugar o evento | 700 | 75 | 26–30 px | `text-wrap: balance` |
 | Título de sección, título de tarjeta | 700 | 75 | 19–20 px | |
 | Botón principal | 700 | 80 | 18 px | |
@@ -79,4 +81,4 @@ Una condensada se percibe más chica que la letra del sistema: la escala de `glo
 6. **Verificar:** `npm run lint && npm run typecheck && npm test`; build verde; capturas 390×844 de inicio, agenda, ficha de evento, formulario de evento y perfil; comprobar que ningún campo baja de 16 px; mirar el peso del archivo de fuente que genera `next/font` (debe quedar en un solo archivo variable con subconjunto latino).
 7. **Cerrar:** bitácora de la sesión y `OPEN_LOOPS.md`. Un PR; el founder firma en su iPhone (Safari).
 
-Fuera de este trabajo, para decidir después con el founder: iconos de la PWA con SMSNSTRS, pantalla de entrada con el logotipo grande, tipografía del mapa de Mapbox (usa la suya).
+Fuera de este trabajo, para decidir después con el founder: pantalla de entrada con el logotipo grande, tipografía del mapa de Mapbox (usa la suya). Los iconos de la app ya están hechos (2026-09-15).

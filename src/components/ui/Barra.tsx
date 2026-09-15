@@ -6,7 +6,7 @@ import styles from "./Barra.module.css";
 type Props = {
   /** Pantalla interior: regreso a la izquierda y logotipo al centro. */
   volver?: { href: string; texto: string };
-  /** A la derecha: en raíz, la sesión; en interior, solo un menú "···" cuando hay algo que poner. */
+  /** A la derecha, como hijo directo de la barra: en raíz, la sesión; en interior, solo un menú "···" cuando hay algo que poner. */
   derecha?: ReactNode;
 };
 
@@ -19,15 +19,15 @@ export default function Barra({ volver, derecha }: Props) {
     return (
       <header className={`${styles.barra} ${styles.interior}`}>
         <Atras href={volver.href} texto={volver.texto} />
-        <Logotipo />
-        <div className={styles.derecha}>{derecha}</div>
+        <Logotipo chico />
+        {derecha}
       </header>
     );
   }
   return (
     <header className={`${styles.barra} ${styles.raiz}`}>
       <Logotipo />
-      <div className={styles.derecha}>{derecha}</div>
+      {derecha}
     </header>
   );
 }

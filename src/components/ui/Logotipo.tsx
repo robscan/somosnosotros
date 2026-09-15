@@ -1,14 +1,29 @@
+import Image from "next/image";
 import Link from "next/link";
 import styles from "./Logotipo.module.css";
 
+type Props = {
+  /** Versión para tamaños chicos: dedos más gruesos y calzado sin cordones (barra interior). */
+  chico?: boolean;
+};
+
 /**
- * El logotipo es texto, no imagen (docs/diseno/LINEA_GRAFICA.md): SMSNSTRS en Bricolage Grotesque,
- * peso 800, ancho 75, en el color del texto. Va arriba a la derecha de cada barra y lleva al inicio.
+ * El logotipo es el dibujo SMSNSTRS con manos y pies (docs/diseno/logotipo), un SVG en public/.
+ * Grande a la izquierda en las pantallas raíz; la versión chica al centro en las interiores. Lleva al inicio.
+ * Dos nodos: el enlace (área de toque de 44 px) y el dibujo. La altura va en rem y crece con el texto del teléfono.
  */
-export default function Logotipo() {
+export default function Logotipo({ chico = false }: Props) {
   return (
     <Link href="/" className={styles.logotipo} aria-label="Somos Nosotros, ir al inicio">
-      SMSNSTRS
+      <Image
+        src={chico ? "/logotipo-chico.svg" : "/logotipo.svg"}
+        alt=""
+        width={3903}
+        height={790}
+        className={chico ? styles.chico : styles.completo}
+        unoptimized
+        preload
+      />
     </Link>
   );
 }
