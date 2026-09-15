@@ -9,7 +9,7 @@ describe("motivoEntrar", () => {
     expect(motivoEntrar(`/eventos/${ID}?accion=me_interesa`).tipo).toBe("interesa");
     expect(motivoEntrar(`/artistas/${ID}?accion=seguir`)).toEqual({ tipo: "seguir", titulo: "Entra para seguir", origen: `/artistas/${ID}`, tabla: "artistas", id: ID });
     expect(motivoEntrar(`/lugares/${ID}?accion=seguir`).tipo).toBe("seguir");
-    expect(motivoEntrar(`/artistas/${ID}?accion=mio`).titulo).toBe("Entra para decir que es tu nombre");
+    expect(motivoEntrar(`/artistas/${ID}?accion=mio`).titulo).toBe("Entra para decir que eres tú");
   });
   it("publicar y registrar vuelven a su sección; perfil y sin destino, a Entrar a secas", () => {
     expect(motivoEntrar("/eventos/nuevo?lugar=abc")).toEqual({ tipo: "publicar", titulo: "Entra para publicar", origen: "/" });

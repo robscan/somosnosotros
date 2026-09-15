@@ -20,7 +20,8 @@ type Props = {
 };
 
 /**
- * "Es mi nombre" (decisión 11): el artista real que encuentra su ficha registrada por otra persona.
+ * "Soy yo / es mi grupo" (decisión 11; texto elegido por el founder el 2026-09-14, el mismo del interruptor del alta):
+ * el artista real que encuentra su ficha registrada por otra persona.
  * Dentro del menú ··· se despliega en el sitio, como Reportar y Borrar: dos salidas, "Quiero editarlo yo"
  * o "Quiero que se quite". Termina con evidencia, no promesa: quién lo revisa y por dónde responde.
  * Sin sesión, entra y vuelve con la pregunta ya abierta.
@@ -34,7 +35,7 @@ export default function EsMiNombre({ artistaId, nombre, conSesion, correo, soloH
   if (!conSesion) {
     return (
       <Link href={`/entrar?siguiente=${encodeURIComponent(`/artistas/${artistaId}?accion=mio`)}`} className={styles.enlace}>
-        Es mi nombre
+        Soy yo / es mi grupo
       </Link>
     );
   }
@@ -56,13 +57,13 @@ export default function EsMiNombre({ artistaId, nombre, conSesion, correo, soloH
       </>
     ) : (
       <>
-        <h3 className={styles.titulo}>¿Qué quieres hacer con {nombre}?</h3>
-        <p className={styles.porque}>Lo registró otra persona. Puedes pedir la ficha para editarla tú, o pedir que se quite.</p>
+        <h3 className={styles.titulo}>¿Eres {nombre}?</h3>
+        <p className={styles.porque}>Esta ficha la registró otra persona. Puedes pedirla para llevarla tú, o pedir que se quite.</p>
         <button type="button" className={`${ficha.primaria} ${styles.editar}`} onClick={() => pedir("es_mio")} disabled={pendiente}>
-          Quiero editarlo yo
+          Sí, quiero llevar yo la ficha
         </button>
         <button type="button" className={`${ficha.secundario} ${styles.quitar}`} onClick={() => pedir("retirar")} disabled={pendiente}>
-          Quiero que se quite
+          Sí, y quiero que se quite
         </button>
         {error && (
           <p className={styles.error} role="alert">
@@ -74,7 +75,7 @@ export default function EsMiNombre({ artistaId, nombre, conSesion, correo, soloH
 
   if (soloHoja) {
     return abierta ? (
-      <Hoja etiqueta="Es mi nombre" onCerrar={() => setAbierta(false)}>
+      <Hoja etiqueta="Soy yo / es mi grupo" onCerrar={() => setAbierta(false)}>
         {cuerpo}
       </Hoja>
     ) : null;
@@ -82,12 +83,12 @@ export default function EsMiNombre({ artistaId, nombre, conSesion, correo, soloH
   if (!abierta) {
     return (
       <button type="button" className={styles.enlace} onClick={() => setAbierta(true)}>
-        Es mi nombre
+        Soy yo / es mi grupo
       </button>
     );
   }
   return (
-    <div className={styles.caja} role="group" aria-label="Es mi nombre">
+    <div className={styles.caja} role="group" aria-label="Soy yo / es mi grupo">
       {cuerpo}
     </div>
   );
