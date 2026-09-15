@@ -1,8 +1,6 @@
-/* Al pie de Mi perfil: cómo me ven los demás. */
+/* Al pie de Mi perfil: cómo me ven los demás. Sin borde propio: el último renglón de la lista ya cierra con su línea. */
 .pie {
-  margin-top: var(--espacio-4);
-  padding-top: var(--espacio-3);
-  border-top: 1px solid var(--borde);
+  padding: var(--espacio-4) 0;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
