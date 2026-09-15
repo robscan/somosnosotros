@@ -1,0 +1,134 @@
+/* Ajustes (docs/rediseno/13, decisión 6): grupos con rótulo y tarjeta de filas (región común); aire entre grupos
+   (proximidad); todas las filas con el mismo dibujo: icono | etiqueta / detalle | acción (conectividad uniforme).
+   Lo destructivo suelto al final. Las filas las pintan los componentes de perfil (Editar, Perfil, Avisos) con estas clases. */
+.titulo {
+  font-size: var(--letra-2xl);
+  margin: var(--espacio-3) 0 var(--espacio-4);
+}
+.ajustes {
+  display: grid;
+  gap: var(--espacio-5);
+}
+.ajustes > h2 {
+  margin-bottom: calc(-1 * var(--espacio-5) + var(--espacio-2));
+  padding-left: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tarjeta {
+  list-style: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  overflow: hidden;
+}
+.tarjeta > li + li {
+  border-top: 1px solid var(--borde);
+}
+/* La fila es un botón o un enlace (toda ella se toca) o un div (información, interruptor). */
+.fila {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  grid-template-areas:
+    "icono etiqueta accion"
+    "icono detalle accion";
+  column-gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+button.fila,
+a.fila {
+  cursor: pointer;
+}
+.fila > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.fila > b {
+  grid-area: etiqueta;
+  font-size: var(--letra-md);
+  font-weight: 600;
+}
+.fila > small {
+  grid-area: detalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.3;
+}
+.valor {
+  grid-area: accion;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.valor > svg {
+  width: 16px;
+  height: 16px;
+}
+.palanca {
+  grid-area: accion;
+  position: relative;
+  width: 51px;
+  height: 31px;
+  border: none;
+  border-radius: 999px;
+  background: var(--borde);
+  cursor: pointer;
+  transition: background-color 150ms;
+}
+.palanca::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: var(--fondo);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 150ms;
+}
+.palanca[aria-checked="true"] {
+  background: var(--primario);
+}
+.palanca[aria-checked="true"]::after {
+  transform: translateX(20px);
+}
+.palanca:disabled {
+  opacity: 0.6;
+}
+.peligro {
+  justify-self: start;
+  min-height: var(--toque-min);
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--error);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.nota {
+  padding: 0 14px 10px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+@media (prefers-reduced-motion: reduce) {
+  .palanca,
+  .palanca::after {
+    transition: none;
+  }
+}

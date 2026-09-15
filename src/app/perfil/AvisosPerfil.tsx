@@ -1,37 +1,27 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import HojaInstalar from "@/components/HojaInstalar";
-import Hoja from "@/components/ui/Hoja";
+import { IconoCorreo, IconoTelefono } from "@/components/ui/Iconos";
 import { elegirAvisos } from "@/app/avisos/acciones";
-import { textoAvisos } from "@/lib/perfil";
 import { desuscribirPush, estadoPush, suscribirPush } from "@/lib/pushCliente";
+import ajustes from "@/app/ajustes/ajustes.module.css";
 import { borrarSuscripcionPush, guardarSuscripcionPush } from "./acciones";
-import styles from "./AvisosPerfil.module.css";
 
 type Props = { correo: boolean; telefono: boolean; correoTexto: string; llavePush: string };
 
 /**
- * Renglón de estado "Avisos · Por correo y en el teléfono" con Cambiar → hoja con dos interruptores que se guardan
- * al tocar (decisión 7). En iPhone sin instalar, la hoja de instalar. `?avisos=1` (desde el menú ···) la abre al llegar.
+ * Las dos filas de Avisos en Ajustes, cada una con su interruptor, que guardan al tocar (decisión 7 de docs/rediseno/13).
+ * En iPhone sin instalar, la hoja de instalar; si el navegador bloquea los avisos, se dice en una nota.
  */
 export default function AvisosPerfil({ correo: correoInicial, telefono: telefonoInicial, correoTexto, llavePush }: Props) {
   const router = useRouter();
-  const params = useSearchParams();
-  const [abierta, setAbierta] = useState(() => params.get("avisos") === "1");
   const [correo, setCorreo] = useState(correoInicial);
   const [telefono, setTelefono] = useState(telefonoInicial);
   const [trabajando, setTrabajando] = useState(false);
   const [instalar, setInstalar] = useState(false);
   const [nota, setNota] = useState<string | null>(null);
-
-  function cerrar() {
-    setAbierta(false);
-    setNota(null);
-    router.refresh(); // el renglón lee lo recién guardado
-    if (params.get("avisos")) router.replace("/perfil");
-  }
 
   async function cambiarCorreo() {
     const nuevo = !correo;
@@ -39,10 +29,11 @@ export default function AvisosPerfil({ correo: correoInicial, telefono: telefono
     setNota(null);
     const ok = await elegirAvisos({ correo: nuevo });
     setTrabajando(false);
-    if (ok) setCorreo(nuevo);
-    else setNota("No se pudo guardar. Intenta de nuevo.");
+    if (ok) {
+      setCorreo(nuevo);
+      router.refresh();
+    } else setNota("No se pudo guardar. Intenta de nuevo.");
   }
-
   async function cambiarTelefono() {
     setTrabajando(true);
     setNota(null);
@@ -52,6 +43,7 @@ export default function AvisosPerfil({ correo: correoInicial, telefono: telefono
         if (endpoint) await borrarSuscripcionPush(endpoint);
         else await elegirAvisos({ push: false });
         setTelefono(false);
+        router.refresh();
         return;
       }
       const estado = await estadoPush(llavePush);
@@ -73,8 +65,10 @@ export default function AvisosPerfil({ correo: correoInicial, telefono: telefono
         return;
       }
       const ok = await guardarSuscripcionPush(r.sub);
-      if (ok) setTelefono(true);
-      else setNota("No se pudo guardar. Intenta de nuevo.");
+      if (ok) {
+        setTelefono(true);
+        router.refresh();
+      } else setNota("No se pudo guardar. Intenta de nuevo.");
     } catch {
       setNota("No se activaron los avisos.");
     } finally {
@@ -86,45 +80,29 @@ export default function AvisosPerfil({ correo: correoInicial, telefono: telefono
     setInstalar(false);
     await elegirAvisos({ push: true });
     setTelefono(true);
+    router.refresh();
   }
 
-  const estado = textoAvisos(correo, telefono);
   return (
-    <li className={styles.dato}>
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16zM10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-      </svg>
-      <b>Avisos · {estado}</b>
-      <small>{correo || telefono ? "El día de un evento al que vas y cuando publiquen lo que sigues" : "No te avisamos de nada"}</small>
-      <button type="button" onClick={() => setAbierta(true)} aria-haspopup="dialog">
-        Cambiar
-      </button>
-      {abierta && (
-        <Hoja etiqueta="Avisos" onCerrar={cerrar}>
-          <h3 className={styles.titulo}>Avisos</h3>
-          <p className={styles.porque}>El día de un evento al que vas y cuando publiquen lo que sigues. Se guarda al tocar.</p>
-          <div className={styles.interruptor}>
-            <span>
-              Por correo
-              <small>{correoTexto} · cada correo trae su baja</small>
-            </span>
-            <button type="button" role="switch" aria-checked={correo} aria-label="Por correo" className={styles.palanca} onClick={cambiarCorreo} disabled={trabajando} />
-          </div>
-          <div className={styles.interruptor}>
-            <span>
-              En el teléfono
-              <small>Solo con la app instalada en inicio</small>
-            </span>
-            <button type="button" role="switch" aria-checked={telefono} aria-label="En el teléfono" className={styles.palanca} onClick={cambiarTelefono} disabled={trabajando} />
-          </div>
-          {nota && (
-            <p className={styles.nota} role="status">
-              {nota}
-            </p>
-          )}
-          {instalar && <HojaInstalar onCerrar={cerrarInstalar} />}
-        </Hoja>
+    <>
+      <li className={ajustes.fila}>
+        <IconoCorreo width={20} height={20} />
+        <b>Por correo</b>
+        <small>{correoTexto} · cada correo trae su baja</small>
+        <button type="button" role="switch" aria-checked={correo} aria-label="Avisos por correo" className={ajustes.palanca} onClick={cambiarCorreo} disabled={trabajando} />
+      </li>
+      <li className={ajustes.fila}>
+        <IconoTelefono width={20} height={20} />
+        <b>En el teléfono</b>
+        <small>{telefono ? "Activados en este teléfono" : "Solo con la app instalada en inicio"}</small>
+        <button type="button" role="switch" aria-checked={telefono} aria-label="Avisos en el teléfono" className={ajustes.palanca} onClick={cambiarTelefono} disabled={trabajando} />
+      </li>
+      {nota && (
+        <li className={ajustes.nota} role="status">
+          {nota}
+        </li>
       )}
-    </li>
+      {instalar && <HojaInstalar onCerrar={cerrarInstalar} />}
+    </>
   );
 }

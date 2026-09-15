@@ -3,11 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Hoja from "@/components/ui/Hoja";
+import { IconoChevronDerecha, IconoOjo } from "@/components/ui/Iconos";
+import ajustes from "@/app/ajustes/ajustes.module.css";
 import { elegirReserva } from "./acciones";
 import styles from "./AvisosPerfil.module.css";
 
 /**
- * Renglón "Perfil · Público / Reservado" con Cambiar → hoja con un interruptor que se guarda al tocar.
+ * Fila "Perfil · Público / Reservado" de Ajustes: abre una hoja con un interruptor que se guarda al tocar.
  * Reservado: a qué va y qué sigue solo lo ve la persona; en "quién va" cuenta sin nombre ni foto (decisión del founder, 2026-09-15).
  */
 export default function ReservaPerfil({ reservado: inicial }: { reservado: boolean }) {
@@ -32,15 +34,15 @@ export default function ReservaPerfil({ reservado: inicial }: { reservado: boole
   }
 
   return (
-    <li className={styles.dato}>
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="1.8" />
-        <path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      </svg>
-      <b>Perfil · {reservado ? "Reservado" : "Público"}</b>
-      <small>{reservado ? "Solo tú ves a qué vas y qué sigues" : "Tu ficha y tu nombre en “quién va” se ven"}</small>
-      <button type="button" onClick={() => setAbierta(true)} aria-haspopup="dialog">
-        Cambiar
+    <li>
+      <button type="button" className={ajustes.fila} onClick={() => setAbierta(true)} aria-haspopup="dialog">
+        <IconoOjo width={20} height={20} />
+        <b>Perfil</b>
+        <small>{reservado ? "Solo tú ves a qué vas y qué sigues" : "Tu ficha y tu nombre en “quién va” se ven"}</small>
+        <span className={ajustes.valor}>
+          {reservado ? "Reservado" : "Público"}
+          <IconoChevronDerecha />
+        </span>
       </button>
       {abierta && (
         <Hoja etiqueta="Perfil" onCerrar={cerrar}>

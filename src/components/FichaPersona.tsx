@@ -1,27 +1,26 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { etiquetaArtista } from "@/lib/artistas";
 import { calleCorta, etiquetaTipo } from "@/lib/lugares";
-import { TEXTO_INVITAR, textoCompartirPersona } from "@/lib/perfil";
-import BotonCompartir from "./BotonCompartir";
+import { textoCompartirPersona } from "@/lib/perfil";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import type { Perfil } from "@/lib/supabase/servidor";
+import BotonCompartir from "./BotonCompartir";
 import { IconoDisciplina } from "./ListaArtistas";
+import PestanasPersona, { type Pestana } from "./PestanasPersona";
 import RenglonEvento from "./RenglonEvento";
-import { IconoCompartir, IconoPin } from "./ui/Iconos";
+import { IconoCompartir, IconoEngrane, IconoPersona, IconoPin } from "./ui/Iconos";
 import renglon from "./Renglon.module.css";
 import styles from "./FichaPersona.module.css";
 
 type Props = {
   perfil: Perfil;
-  /** Mi perfil: con Editar (botón) y el renglón de Avisos, que llegan ya armados desde la página. */
+  /** Mi perfil: con el engrane de Ajustes bajo la colonia y el aviso de completar. */
   mia: boolean;
-  editar?: ReactNode;
-  avisos?: ReactNode;
-  reserva?: ReactNode;
   eventos: EventoAgenda[];
   interesan?: EventoAgenda[];
+  /** Eventos a los que vamos los dos (ficha ajena con sesión). */
+  juntos?: EventoAgenda[];
   lugares: LugarSeguido[];
   artistas: ArtistaSeguido[];
   /** Origen público del sitio, para los enlaces que se comparten. */
@@ -29,28 +28,111 @@ type Props = {
 };
 
 /**
- * Una sola ficha de persona para Mi perfil y para la ficha ajena (decisión 5 de docs/rediseno/11): foto redonda,
- * nombre, colonia y sobre mí; luego a qué va (por día, como la agenda) y qué sigue (lugares cuadrados, artistas redondos).
- * La mía trae Editar y Avisos; la ajena, nada que tocar salvo los renglones.
+ * Una sola ficha de persona para Mi perfil y para la ficha ajena (docs/rediseno/13, decisiones 5 y 7): foto redonda,
+ * nombre con Compartir a la derecha, colonia, sobre mí; luego el resumen en números que hace de pestañas
+ * (Voy a · Sigo · Van a lo mismo) y la lista de la pestaña. Lo que se configura vive en Ajustes.
  */
-export default function FichaPersona({
-  perfil,
-  mia,
-  editar,
-  avisos,
-  reserva,
-  eventos,
-  interesan = [],
-  lugares,
-  artistas,
-  origen,
-}: Props) {
-  // Ajena y reservada: solo la cabecera; la base ya esconde sus asistencias y seguimientos.
+export default function FichaPersona({ perfil, mia, eventos, interesan = [], juntos = [], lugares, artistas, origen }: Props) {
   const reservada = !mia && !!perfil.reservado;
   const incompleto = mia && (!perfil.colonia || !perfil.bio);
-  const grupos = agruparPorDia(eventos);
-  const gruposInteres = agruparPorDia(interesan);
-  const sigue = lugares.length + artistas.length;
+  const listaEventos = (lista: EventoAgenda[], vacio: React.ReactNode) =>
+    lista.length === 0 ? (
+      <p className={styles.vacio}>{vacio}</p>
+    ) : (
+      agruparPorDia(lista).map((g) => (
+        <div key={g.clave} className={styles.dia}>
+          <h3>{g.titulo}</h3>
+          <ul className={styles.lista}>
+            {g.eventos.map((e) => (
+              <RenglonEvento key={e.id} evento={e} />
+            ))}
+          </ul>
+        </div>
+      ))
+    );
+  const pestanas: Pestana[] = [
+    {
+      clave: "va",
+      n: eventos.length,
+      etiqueta: mia ? "Voy a" : "Va a",
+      contenido: listaEventos(
+        eventos,
+        mia ? (
+          <>
+            Todavía no vas a nada. <Link href="/">Ver la agenda</Link>
+          </>
+        ) : (
+          "Todavía no ha dicho que va a ningún evento."
+        ),
+      ),
+    },
+    {
+      clave: "sigue",
+      n: lugares.length + artistas.length,
+      etiqueta: mia ? "Sigo" : "Sigue",
+      contenido:
+        lugares.length + artistas.length === 0 ? (
+          <p className={styles.vacio}>
+            {mia ? (
+              <>
+                Todavía no sigues nada. <Link href="/lugares">Ver lugares</Link> · <Link href="/artistas">Ver artistas</Link>
+              </>
+            ) : (
+              "Todavía no sigue ningún lugar ni artista."
+            )}
+          </p>
+        ) : (
+          <ul className={styles.lista}>
+            {lugares.map((l) => (
+              <li key={l.id}>
+                <Link href={`/lugares/${l.id}`} className={renglon.renglon}>
+                  {l.portada ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
+                    <img src={l.portada} alt="" className={renglon.foto} loading="lazy" decoding="async" />
+                  ) : (
+                    <span className={`${renglon.foto} ${renglon.fotoVacia}`} aria-hidden="true">
+                      <IconoPin width={26} height={26} />
+                    </span>
+                  )}
+                  <span className={renglon.titulo}>{l.nombre}</span>
+                  <span className={renglon.meta}>
+                    <span className={renglon.envuelve}>
+                      <IconoPin width={15} height={15} />
+                      {etiquetaTipo(l.tipo)}
+                      {calleCorta(l.direccion) ? ` · ${calleCorta(l.direccion)}` : ""}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+            {artistas.map((a) => (
+              <li key={a.id}>
+                <Link href={`/artistas/${a.id}`} className={renglon.renglon}>
+                  {a.foto ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
+                    <img src={a.foto} alt="" className={`${renglon.foto} ${renglon.fotoRedonda}`} loading="lazy" decoding="async" />
+                  ) : (
+                    <span className={`${renglon.foto} ${renglon.fotoVacia} ${renglon.fotoRedonda}`} aria-hidden="true">
+                      <IconoDisciplina disciplina={a.disciplina} size={26} />
+                    </span>
+                  )}
+                  <span className={renglon.titulo}>{a.nombre}</span>
+                  <span className={renglon.meta}>
+                    <span className={renglon.envuelve}>
+                      <IconoDisciplina disciplina={a.disciplina} />
+                      {etiquetaArtista(a)}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ),
+    },
+  ];
+  if (juntos.length > 0) pestanas.push({ clave: "juntos", n: juntos.length, etiqueta: "Van a lo mismo", contenido: listaEventos(juntos, "") });
+  if (mia && interesan.length > 0) pestanas.push({ clave: "interesa", n: interesan.length, etiqueta: "Me interesa", contenido: listaEventos(interesan, "") });
+
   return (
     <>
       <div className={styles.cabecera}>
@@ -58,221 +140,30 @@ export default function FichaPersona({
           // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
           <img src={perfil.foto} alt="" className={styles.avatar} />
         ) : (
-          <span
-            className={`${styles.avatar} ${styles.avatarVacio}`}
-            aria-hidden="true"
-          >
+          <span className={`${styles.avatar} ${styles.avatarVacio}`} aria-hidden="true">
             {(perfil.nombre || "?").slice(0, 1).toUpperCase()}
           </span>
         )}
         <h1 className={styles.nombre}>{perfil.nombre}</h1>
+        <BotonCompartir titulo={perfil.nombre} texto={textoCompartirPersona(perfil.nombre, eventos.length, mia)} url={`${origen}/personas/${perfil.id}`} className={`${styles.accion} ${styles.compartir}`} ariaLabel="Compartir">
+          <IconoCompartir width={22} height={22} />
+        </BotonCompartir>
         {perfil.colonia && <p className={styles.colonia}>{perfil.colonia}</p>}
-        <div className={styles.editar}>
-          {editar}
-          <BotonCompartir
-            titulo={perfil.nombre}
-            texto={textoCompartirPersona(perfil.nombre, eventos.length, mia)}
-            url={`${origen}/personas/${perfil.id}`}
-            className={styles.compartir}
-          >
-            <IconoCompartir width={18} height={18} />
-            Compartir
-          </BotonCompartir>
-        </div>
+        {mia && (
+          <Link href="/ajustes" className={`${styles.accion} ${styles.ajustes}`} aria-label="Ajustes">
+            <IconoEngrane width={22} height={22} />
+          </Link>
+        )}
       </div>
       {perfil.bio && <p className={styles.sobreMi}>{perfil.bio}</p>}
-      {mia && (
-        <ul className={styles.datos}>
-          {incompleto && (
-            <li className={styles.dato}>
-              <b>
-                Completa tu perfil:{" "}
-                {!perfil.colonia && !perfil.bio
-                  ? "colonia y una línea sobre ti"
-                  : !perfil.colonia
-                    ? "tu colonia"
-                    : "una línea sobre ti"}
-              </b>
-              <small>Así la gente te reconoce en “quién va”.</small>
-            </li>
-          )}
-          {avisos}
-          {reserva}
-        </ul>
-      )}
-      {reservada && (
-        <p className={styles.reservada}>
-          Perfil reservado: solo se ve el nombre.
+      {incompleto && (
+        <p className={styles.completa}>
+          <IconoPersona width={20} height={20} />
+          <span>Falta {!perfil.colonia && !perfil.bio ? "tu colonia y una línea sobre ti" : !perfil.colonia ? "tu colonia" : "una línea sobre ti"}: así te reconocen en “quién va”.</span>
+          <Link href="/ajustes?editar=1">Completar</Link>
         </p>
       )}
-
-      {!reservada && (
-        <>
-          <section
-            className={styles.grupo}
-            aria-label={mia ? "Eventos a los que voy" : "Eventos a los que va"}
-          >
-            <h2>
-              {mia ? "Voy a" : "Va a"}
-              {eventos.length > 0 && <span> · {eventos.length}</span>}
-            </h2>
-            {eventos.length === 0 ? (
-              <p className={styles.vacio}>
-                {mia ? (
-                  <>
-                    Todavía no vas a nada. <Link href="/">Ver la agenda</Link>
-                  </>
-                ) : (
-                  "Todavía no ha dicho que va a ningún evento."
-                )}
-              </p>
-            ) : (
-              grupos.map((g) => (
-                <div key={g.clave}>
-                  <h3>{g.titulo}</h3>
-                  <ul className={styles.lista}>
-                    {g.eventos.map((e) => (
-                      <RenglonEvento key={e.id} evento={e} />
-                    ))}
-                  </ul>
-                </div>
-              ))
-            )}
-          </section>
-
-          {mia && interesan.length > 0 && (
-            <section
-              className={styles.grupo}
-              aria-label="Eventos que me interesan"
-            >
-              <h2>
-                Me interesa<span> · {interesan.length}</span>
-              </h2>
-              {gruposInteres.map((g) => (
-                <div key={g.clave}>
-                  <h3>{g.titulo}</h3>
-                  <ul className={styles.lista}>
-                    {g.eventos.map((e) => (
-                      <RenglonEvento key={e.id} evento={e} />
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </section>
-          )}
-
-          <section
-            className={styles.grupo}
-            aria-label={mia ? "Lo que sigo" : "Lo que sigue"}
-          >
-            <h2>
-              {mia ? "Sigo" : "Sigue"}
-              {sigue > 0 && <span> · {sigue}</span>}
-            </h2>
-            {sigue === 0 ? (
-              <p className={styles.vacio}>
-                {mia ? (
-                  <>
-                    Todavía no sigues nada.{" "}
-                    <Link href="/lugares">Ver lugares</Link> ·{" "}
-                    <Link href="/artistas">Ver artistas</Link>
-                  </>
-                ) : (
-                  "Todavía no sigue ningún lugar ni artista."
-                )}
-              </p>
-            ) : (
-              <ul className={styles.lista}>
-                {lugares.map((l) => (
-                  <li key={l.id}>
-                    <Link href={`/lugares/${l.id}`} className={renglon.renglon}>
-                      {l.portada ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                        <img
-                          src={l.portada}
-                          alt=""
-                          className={renglon.foto}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <span
-                          className={`${renglon.foto} ${renglon.fotoVacia}`}
-                          aria-hidden="true"
-                        >
-                          <IconoPin width={26} height={26} />
-                        </span>
-                      )}
-                      <span className={renglon.titulo}>{l.nombre}</span>
-                      <span className={renglon.meta}>
-                        <span className={renglon.envuelve}>
-                          <IconoPin width={15} height={15} />
-                          {etiquetaTipo(l.tipo)}
-                          {calleCorta(l.direccion)
-                            ? ` · ${calleCorta(l.direccion)}`
-                            : ""}
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-                {artistas.map((a) => (
-                  <li key={a.id}>
-                    <Link
-                      href={`/artistas/${a.id}`}
-                      className={renglon.renglon}
-                    >
-                      {a.foto ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                        <img
-                          src={a.foto}
-                          alt=""
-                          className={`${renglon.foto} ${renglon.fotoRedonda}`}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <span
-                          className={`${renglon.foto} ${renglon.fotoVacia} ${renglon.fotoRedonda}`}
-                          aria-hidden="true"
-                        >
-                          <IconoDisciplina
-                            disciplina={a.disciplina}
-                            size={26}
-                          />
-                        </span>
-                      )}
-                      <span className={renglon.titulo}>{a.nombre}</span>
-                      <span className={renglon.meta}>
-                        <span className={renglon.envuelve}>
-                          <IconoDisciplina disciplina={a.disciplina} />
-                          {etiquetaArtista(a)}
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </>
-      )}
-
-      {/* Invitar al sitio: donde la persona ya recibió valor, no en la barra (decisión del founder, 2026-09-15). */}
-      {mia && (
-        <BotonCompartir
-          titulo="Somos Nosotros"
-          texto={TEXTO_INVITAR}
-          url={origen}
-          className={styles.invitar}
-        >
-          <IconoCompartir width={20} height={20} />
-          <span>
-            <b>Invita a tus amigos a Somos Nosotros</b>
-            <small>Se comparte el enlace del sitio</small>
-          </span>
-        </BotonCompartir>
-      )}
+      {reservada ? <p className={styles.reservada}>Perfil reservado: solo se ve el nombre.</p> : <PestanasPersona pestanas={pestanas} />}
     </>
   );
 }

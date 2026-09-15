@@ -63,7 +63,7 @@ export default async function Novedades() {
         <p className={styles.telefono}>
           <IconoTelefono width={22} height={22} />
           <span>Esto te llega por correo. En el teléfono aún no.</span>
-          <Link href="/perfil?avisos=1">Activar</Link>
+          <Link href="/ajustes">Activar</Link>
         </p>
       )}
     </main>

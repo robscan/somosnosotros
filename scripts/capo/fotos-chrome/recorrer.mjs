@@ -22,7 +22,7 @@ const browser = await chromium.launch({ channel: "chrome", headless: true });
 const ctx = await browser.newContext({ viewport:{width:1280,height:900}, locale:"es-MX" });
 const page = await ctx.newPage();
 const cuerpos = new Map();
-page.on("response", async r => { const u=r.url(); if(!u.includes("googleusercontent.com/sitesv")||!r.ok()) return; const ct=r.headers()["content-type"]||""; if(!ct.startsWith("image/")) return; try { cuerpos.set(base(u), { ct, body: await r.body() }); } catch(e){} });
+page.on("response", async r => { const u=r.url(); if(!u.includes("googleusercontent.com/sitesv")||!r.ok()) return; const ct=r.headers()["content-type"]||""; if(!ct.startsWith("image/")) return; try { cuerpos.set(base(u), { ct, body: await r.body() }); } catch{} });
 const resultado = []; const registro = [];
 for (const [pi,u] of paginas.entries()) {
   const f = nombreCache(u); const arts = img.filter(x=>x.url_fuente===u);
