@@ -29,8 +29,8 @@
   -webkit-tap-highlight-color: transparent;
 }
 .pestana[aria-selected="true"] {
-  color: var(--texto);
-  border-bottom-color: var(--texto);
+  color: var(--primario);
+  border-bottom-color: var(--primario);
   font-weight: 700;
 }
 
@@ -148,7 +148,7 @@
   color: var(--texto-suave);
 }
 .chipActivo {
-  border-color: var(--texto);
+  border-color: var(--primario);
 }
 .quitar {
   margin: 0 -4px 0 2px;

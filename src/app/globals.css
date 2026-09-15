@@ -8,9 +8,9 @@
   --texto: #1a1a1a;
   --texto-suave: #5c5c5c;
   --borde: #dcdcd8;
-  --primario: #1a1a1a; /* tinta: la acción primaria es el negro del texto (decisión del founder, 2026-09-14) */
+  --primario: #0f6b7c; /* azul petróleo: acciones primarias y estado activo (decisión del founder, 2026-09-14; la tinta no se distinguía en la nav) */
   --primario-texto: #ffffff;
-  --primario-suave: #ededeb; /* fondo del estado seleccionado ("✓ Voy") */
+  --primario-suave: #e3f0f2; /* fondo del estado seleccionado ("✓ Voy") */
   --acento: var(--primario); /* OBSOLETO: alias de --primario; el rojo dejó de ser color de acción */
   --acento-texto: var(--primario-texto);
   --error: #b3261e; /* rojo solo para errores y borrar */

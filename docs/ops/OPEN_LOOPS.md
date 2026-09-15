@@ -35,6 +35,7 @@ El plan de 6 fases está construido. Lo que sigue lo marca el uso real: pruebas 
 
 ## Decidido
 
+- **2026-09-14 · Color de acción: azul petróleo `#0f6b7c`.** Sustituye a la tinta como primario (Publicar, Voy, Seguir, Entrar, nav activa, pestañas y chips activos); la tinta no dejaba ver el estado activo de la nav. Sugerido y aplicado a petición del founder; detalle en [LINEA_GRAFICA.md](../diseno/LINEA_GRAFICA.md). El rojo sigue solo para errores y borrar.
 - **2026-09-14 · Tipografía: Bricolage Grotesque.** Una sola familia, condensada (ancho 75 en títulos y logotipo, 80 en texto), cargada con `next/font`. Logotipo = texto SMSNSTRS arriba a la derecha; nombre visible "Somos Nosotros". Sustituye a la "fuente del sistema" de la Fase 0. Spec: [LINEA_GRAFICA.md](../diseno/LINEA_GRAFICA.md); comparación: [comparador-tipografia.html](../diseno/comparador-tipografia.html).
 - **2026-09-14 · Sin segunda ciudad.** Todo el esfuerzo en San Luis Potosí; `src/lib/ciudad.ts` se queda como está, sin promesa de abrir otra. Rediseño con el método robscan; el founder firma cada pantalla.
 
