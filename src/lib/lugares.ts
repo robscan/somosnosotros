@@ -1,5 +1,6 @@
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
+import type { Origen } from "./origen";
 
 export const TIPOS = [
   { valor: "casa_de_cultura", etiqueta: "Casa de cultura" },
@@ -36,6 +37,8 @@ export type Lugar = LugarResumen & {
   redes: Enlace[];
   creado_por: string | null;
   visible: boolean;
+  /** De qué catálogo externo se trajo la ficha (por confirmar), o null si la registró alguien aquí. */
+  origen: Origen | null;
 };
 
 /** La calle sin código postal, ciudad ni estado: "C. 5 de Mayo 1100, 78000 San Luis Potosí, S.L.P." → "C. 5 de Mayo 1100". */
