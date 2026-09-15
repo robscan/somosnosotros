@@ -1,18 +1,84 @@
+/* Entrar (docs/rediseno/11-restantes-flujo-y-estados.md): 1. Correo · 2. Código de 6 dígitos */
+
+/* 1. Correo: Google, solo si está configurado */
 .separador {
   text-align: center;
   color: var(--texto-suave);
   margin: var(--espacio-4) 0;
 }
+
+/* 2. Código */
+.enviado {
+  margin-bottom: var(--espacio-4);
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.enviado b {
+  display: block;
+  font-size: var(--letra-md);
+}
+.etiqueta {
+  display: block;
+  margin-bottom: var(--espacio-1);
+  font-weight: 600;
+}
+.codigo {
+  display: block;
+  width: 100%;
+  min-height: 64px;
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: var(--letra-2xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  letter-spacing: 0.25em;
+  text-align: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.codigo::placeholder {
+  color: var(--borde);
+  letter-spacing: 0.25em;
+}
+.codigo:focus {
+  border-color: var(--texto);
+  outline: none;
+}
+.codigoMal {
+  border-color: var(--error);
+}
+.error {
+  margin-top: var(--espacio-1);
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
 .nota {
+  margin: var(--espacio-2) 0 var(--espacio-4);
   color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.otras {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espacio-3);
   margin-top: var(--espacio-2);
 }
 .enlaceBoton {
-  background: none;
-  border: none;
-  color: var(--primario);
   min-height: var(--toque);
   padding: 0;
-  margin-top: var(--espacio-2);
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  text-decoration: underline;
   cursor: pointer;
+}
+.enlaceBoton:disabled {
+  text-decoration: none;
+  cursor: default;
 }
