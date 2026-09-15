@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import ListaLugares from "@/components/ListaLugares";
+import Aviso from "@/components/ui/Aviso";
 import Mapa from "@/components/Mapa";
 import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
@@ -126,11 +127,7 @@ export default function VistaLugares({
               <IconoUbicacion width={22} height={22} />
             </button>
           )}
-          {notaGeo && (
-            <p className={styles.notaMapa} role="status">
-              {notaGeo}
-            </p>
-          )}
+          {notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoMapa} />}
           {elegido && (
             <Link
               href={`/lugares/${elegido.id}`}
@@ -180,7 +177,7 @@ export default function VistaLugares({
                 </span>
               )}
             </button>
-            {notaGeo && <span className={styles.nota}>{notaGeo}</span>}
+            {notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoLista} />}
           </div>
           <ListaLugares
             lugares={lugares}

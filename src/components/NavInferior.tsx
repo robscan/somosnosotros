@@ -13,7 +13,8 @@ const DESTINOS = [
 
 /**
  * Barra de navegación inferior de las pantallas raíz: Agenda · Lugares · Artistas.
- * Navega, no actúa (publicar es el botón flotante). El destino activo va en color de texto y peso 700.
+ * Navega, no actúa (publicar es el botón flotante). El destino activo lleva una píldora de color detrás del icono
+ * y la etiqueta en el color de acción (ajuste del founder, 2026-09-14: la nav tiene que notarse).
  */
 export default function NavInferior() {
   const ruta = usePathname();
@@ -23,7 +24,9 @@ export default function NavInferior() {
         const activo = href === "/" ? ruta === "/" : ruta.startsWith(href);
         return (
           <Link key={href} href={href} className={`${styles.destino} ${activo ? styles.activo : ""}`} aria-current={activo ? "page" : undefined}>
-            <Icono />
+            <span className={styles.icono}>
+              <Icono width={26} height={26} />
+            </span>
             <span>{etiqueta}</span>
           </Link>
         );

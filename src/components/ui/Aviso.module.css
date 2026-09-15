@@ -1,0 +1,24 @@
+/* Aviso persistente: tinta sobre blanco para que se vea encima de cualquier cosa (mapa, lista) */
+.aviso {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: var(--espacio-2);
+  padding: var(--espacio-3) var(--espacio-2) var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--texto);
+  color: var(--fondo);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+  box-shadow: var(--sombra-flotante);
+}
+.cerrar {
+  width: var(--toque-min);
+  height: var(--toque-min);
+  margin: calc(-1 * var(--espacio-2)) 0;
+  border: none;
+  background: none;
+  color: var(--fondo);
+  font-size: var(--letra-sm);
+  cursor: pointer;
+}

@@ -24,6 +24,11 @@ Por qué esta y no otra: condensada, con toques humanos y artísticos a tamaño 
 
 **Azul petróleo `#0f6b7c`** (`--primario`) para acciones primarias (Publicar, Voy, Seguir, Entrar, Mandarme el código), el estado activo de la navegación inferior, la pestaña elegida (Todos · Cercanos…, Mapa · Lista) y los chips activos; `--primario-suave` `#e3f0f2` para el fondo del estado seleccionado ("✓ Voy", "✓ Sigues"). Sustituye a la tinta como color de acción (decisión del founder, 2026-09-14): con la tinta, el estado activo de la nav no se distinguía del resto. Por qué este: contrasta 6:1 sobre blanco (texto blanco encima legible), es complementario del fondo cálido de la app, no se confunde con el rojo de error ni con el verde de "Voy confirmado", y no es el morado que ya se descartó. El logotipo y el texto siguen en tinta; el rojo sigue solo para errores y borrar.
 
+## La navegación inferior y los avisos
+
+- **Navegación inferior**: blanca, con borde y sombra hacia arriba; 60 px más el área segura. El destino activo lleva una **píldora de 60×32 en el color de acción** detrás del icono (icono en blanco) y la etiqueta en ese color; los demás, en gris. La píldora ocupa su sitio siempre, así nada salta al cambiar. Ajuste del founder, 2026-09-14: "la nav tiene que notarse".
+- **Avisos persistentes** (`ui/Aviso`): tinta sobre blanco, 15 px, con ✕; no desaparecen solos. Para errores con salida ("No pudimos leer tu ubicación. Actívala…") encima del mapa o bajo los chips. Nunca un texto gris sobre vidrio.
+
 ## El regreso
 
 En pantallas interiores, el regreso es una **píldora secundaria** (borde `--borde`, fondo blanco, 40 px de alto) con un chevron corto `‹` y el texto del destino ("Volver", "Artistas"), alineada a la izquierda de la barra. Nunca una flecha larga suelta. Componente `ui/Atras`, también en las páginas de error. Ajuste del founder, 2026-09-14.

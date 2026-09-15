@@ -65,18 +65,13 @@
   border-color: #1a73e8;
   color: #1a73e8;
 }
-.notaMapa {
+/* Aviso de ubicación sobre el mapa: flota arriba, a lo ancho, encima de los controles */
+.avisoMapa {
   position: absolute;
-  top: var(--espacio-2);
+  top: 64px; /* debajo del botón 3D/2D y la atribución */
   left: var(--espacio-5);
   right: var(--espacio-5);
-  z-index: 2;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--vidrio);
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-  text-align: center;
+  z-index: 4;
 }
 /* Tarjeta del pin tocado: el mismo renglón de la lista, flotando sobre el mapa, con "Ver" */
 .tarjeta {
@@ -155,9 +150,7 @@
   color: var(--texto-suave);
   font-weight: 400;
 }
-.nota {
+/* Aviso de ubicación en la lista: bajo el chip, a lo ancho */
+.avisoLista {
   flex: 1 1 100%;
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-  line-height: 1.35;
 }
