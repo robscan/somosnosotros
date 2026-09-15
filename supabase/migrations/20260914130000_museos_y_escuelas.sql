@@ -1,7 +1,5 @@
--- Pasa a Museo y Escuela los lugares de la investigación del 2026-09-14 (bitácora 032).
--- NO está en supabase/migrations a propósito: se aplica DESPUÉS de desplegar el código con los tipos nuevos. Antes,
--- la app publicada no los conoce (los etiqueta "Otro", no les da chip y no deja editarlos). Cuando toque: copiarlo a
--- supabase/migrations con la fecha del día y correr `npm run db:push`.
+-- somosnosotros · lugares de la investigación del 2026-09-14 a los tipos Museo y Escuela (bitácora 032)
+-- Va DESPUÉS de desplegar el código con los tipos nuevos (PR #32): antes, la app publicada no los conocía.
 -- Casa Museo Mariano Jiménez y Caja Real se quedan como Casa de cultura (el SIC los registra como centros culturales).
 
 update public.lugares set tipo = 'museo' where id in (
