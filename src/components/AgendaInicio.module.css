@@ -150,6 +150,8 @@
   left: 0;
   right: 0;
   bottom: 0;
+  max-width: var(--columna); /* en escritorio, del ancho de la columna y centrada */
+  margin-inline: auto;
   padding: var(--espacio-3) var(--gutter) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
   border-radius: var(--radio-grande) var(--radio-grande) 0 0;
   background: var(--fondo);

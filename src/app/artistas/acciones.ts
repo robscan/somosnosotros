@@ -3,21 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { artistaIgual, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
+import { esUuid } from "@/lib/formulario";
 import type { MotivoReclamo } from "@/lib/reportes";
+import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 export type ResultadoArtista =
   | { ok: true; id: string }
   | { ok: false; errores: ErroresArtista; general?: string; existente?: ArtistaResumen };
 
-async function sesionOEntrar(destino: string) {
-  const supabase = await clienteServidor();
-  const {
-    data: { user },
-  } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
-  if (!supabase || !user) redirect(`/entrar?siguiente=${encodeURIComponent(destino)}`);
-  return { supabase, user };
-}
 
 function leer(formData: FormData) {
   const claves = ["nombre", "disciplina", "detalle", "tipo", "descripcion", "foto", "enlaces"];
@@ -108,7 +102,7 @@ export type ResultadoReclamo = { ok: true } | { ok: false; error: string };
  */
 export async function reclamarArtista(artistaId: string, motivo: MotivoReclamo): Promise<ResultadoReclamo> {
   const { supabase, user } = await sesionOEntrar(`/artistas/${artistaId}?accion=mio`);
-  if (!/^[0-9a-f-]{36}$/.test(artistaId) || !["es_mio", "retirar"].includes(motivo)) return { ok: false, error: "No sé qué ficha es." };
+  if (!esUuid(artistaId) || !["es_mio", "retirar"].includes(motivo)) return { ok: false, error: "No sé qué ficha es." };
   const { error } = await supabase.from("reportes").insert({ tipo: "artista", objeto_id: artistaId, motivo, creado_por: user.id });
   if (error) return { ok: false, error: "No se pudo enviar. Intenta de nuevo." };
   return { ok: true };

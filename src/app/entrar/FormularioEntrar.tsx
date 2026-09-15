@@ -174,7 +174,8 @@ export default function FormularioEntrar({ siguiente, google, largo }: Props) {
           {error}
         </p>
       )}
-      <p className={styles.nota}>Tecléalo o pégalo; el iPhone lo ofrece solo encima del teclado.</p>
+      <p className={`${styles.nota} ${styles.soloIos}`}>Tecléalo o pégalo; el iPhone lo ofrece solo encima del teclado.</p>
+      <p className={`${styles.nota} ${styles.sinIos}`}>Tecléalo o pégalo.</p>
       <Boton type="submit" disabled={entrando || codigo.length < largo}>
         {entrando ? "Entrando…" : "Entrar"}
       </Boton>

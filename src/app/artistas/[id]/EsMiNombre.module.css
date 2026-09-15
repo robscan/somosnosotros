@@ -12,6 +12,19 @@
   text-decoration: none;
   cursor: pointer;
 }
+/* Letrero discreto al final de la ficha por confirmar: una pregunta en gris, subrayada, que abre la hoja */
+.discreto {
+  display: inline-block;
+  min-height: var(--toque-min);
+  padding: var(--espacio-3) 0;
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
 /* Desplegado dentro del menú: un bloque con aire, como la confirmación de Borrar */
 .caja {
   padding: var(--espacio-2) 0 var(--espacio-3);

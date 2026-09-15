@@ -10,18 +10,11 @@ import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { cartelAFormulario, validarEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
+import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 export type ResultadoEvento = { ok: true; id: string } | { ok: false; errores: ErroresEvento; general?: string };
 
-async function sesionOEntrar(destino: string) {
-  const supabase = await clienteServidor();
-  const {
-    data: { user },
-  } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
-  if (!supabase || !user) redirect(`/entrar?siguiente=${encodeURIComponent(destino)}`);
-  return { supabase, user };
-}
 
 function leer(formData: FormData) {
   const claves = ["modo_sitio", "lugar_id", "sitio_texto", "sitio_lat", "sitio_lng", "direccion_privada", "privado_lat", "privado_lng", "indicaciones", "revelar_horas", "titulo", "inicio", "fin", "descripcion", "imagen", "gratis", "precio", "enlace"];

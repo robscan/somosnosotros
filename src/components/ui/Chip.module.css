@@ -14,6 +14,7 @@
   flex: none;
   display: inline-flex;
   align-items: center;
+  text-decoration: none;
   min-height: var(--toque-min);
   padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
@@ -29,6 +30,14 @@
   background: var(--primario);
   color: var(--primario-texto);
   font-weight: 600;
+}
+.chip > svg {
+  flex: none;
+  margin-right: 6px;
+}
+.chip:disabled {
+  color: var(--texto-suave);
+  cursor: default;
 }
 .chipNativo {
   position: relative;

@@ -27,6 +27,8 @@ type Props = {
   onCambio?: (p: Punto) => void;
   /** Solo en "ver": lugar en el que centrar el mapa al abrir. */
   centrarEn?: Punto | null;
+  /** Solo en "ver": puntos que encuadrar (lo que encontró la búsqueda); `vez` cambia con cada búsqueda. Uno solo: se acerca a él. */
+  encuadre?: { puntos: Punto[]; vez: number } | null;
   ciudad?: Ciudad;
   /** "pantalla": fijo a toda la pantalla (con panel encima). "caja": llena el contenedor donde se pone. */
   presentacion?: "pantalla" | "caja";
@@ -38,7 +40,7 @@ const FUENTE_LUGARES = "lugares";
 const CAPA_PUNTOS = "lugares-puntos";
 const CAPA_NOMBRES = "lugares-nombres";
 /** Fuente de los nombres: existe en la cuenta de Mapbox (Noto Sans, la del estilo, da 404; ver OPEN_LOOPS). */
-const FUENTE_NOMBRES = ["DIN Pro Medium", "Arial Unicode MS Regular"];
+const FUENTE_NOMBRES = ["DIN Pro Bold", "Arial Unicode MS Bold"];
 /** Radio del toque alrededor de un punto (el punto mide 10 px; el dedo necesita más). */
 const RADIO_TOQUE = 18;
 
@@ -64,7 +66,6 @@ function aGeoJSON(lugares: LugarLista[]): GeoJSON.FeatureCollection<GeoJSON.Poin
 function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
   const primario = colorDiseno("--primario", "#0f6b7c");
   const fondo = colorDiseno("--fondo", "#ffffff");
-  const texto = colorDiseno("--texto", "#1a1a1a");
   mapa.addSource(FUENTE_LUGARES, { type: "geojson", data: datos, promoteId: "id" });
   mapa.addLayer({
     id: CAPA_PUNTOS,
@@ -84,17 +85,19 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
     layout: {
       "text-field": ["get", "nombre"],
       "text-font": FUENTE_NOMBRES,
-      "text-size": 13,
+      "text-size": 14,
       "text-anchor": "top",
-      "text-offset": [0, 0.6],
+      "text-offset": [0, 0.55],
       "text-max-width": 9,
       "text-line-height": 1.1,
+      "text-letter-spacing": 0.01,
       "symbol-sort-key": ["case", ["get", "proximo"], 0, 1], // con eventos gana el sitio si dos nombres chocan
     },
+    // Del color de acción, en negrita y con halo ancho: se distinguen de las colonias y calles (gris, mayúsculas).
     paint: {
-      "text-color": texto,
+      "text-color": primario,
       "text-halo-color": fondo,
-      "text-halo-width": 1.5,
+      "text-halo-width": 2,
     },
   });
 }
@@ -126,7 +129,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla" }: Props) {
+export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, encuadre = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla" }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
@@ -167,10 +170,10 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
         zoom: centrarEn || valor ? 16 : ciudad.zoom,
         language: "es",
         attributionControl: false,
-        logoPosition: modo === "ver" ? "top-left" : "bottom-left",
+        logoPosition: "bottom-left", // arriba van los chips de tipo
       });
       mapaRef.current = mapa;
-      mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), modo === "ver" ? "top-right" : "bottom-right");
+      mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), modo === "ver" ? "bottom-left" : "bottom-right");
       mapa.on("style.load", () => {
         const importaStandard = mapa?.getStyle()?.imports?.some((i) => i.id === "basemap");
         if (importaStandard) mapa?.setConfigProperty("basemap", "lightPreset", "day");
@@ -232,6 +235,29 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
       };
     }
   }, [estado, modo, lugares, centrarEn, presentacion]);
+
+  // Lo que encontró la búsqueda: uno solo, el mapa se acerca (dejando sitio a la tarjeta); varios, se encuadran bajo la búsqueda.
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    if (estado !== "listo" || !mapa || modo !== "ver" || !encuadre || encuadre.puntos.length === 0) return;
+    const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const duration = sinMovimiento ? 0 : 600;
+    if (encuadre.puntos.length === 1) {
+      const p = encuadre.puntos[0];
+      mapa.flyTo({ center: [p.lng, p.lat], zoom: Math.max(mapa.getZoom(), 15), offset: [0, -48], duration });
+      return;
+    }
+    let cancelado = false;
+    import("mapbox-gl").then(({ default: mapboxgl }) => {
+      if (cancelado) return;
+      const limites = new mapboxgl.LngLatBounds();
+      encuadre.puntos.forEach((p) => limites.extend([p.lng, p.lat]));
+      mapa.fitBounds(limites, { padding: { top: 132, left: 48, right: 48, bottom: 96 }, maxZoom: 15, duration });
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [estado, modo, encuadre]);
 
   // El lugar de la tarjeta abierta se ve más grande.
   useEffect(() => {

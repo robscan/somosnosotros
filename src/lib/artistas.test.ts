@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artistaIgual, conProximaFecha, deducirTipoArtista, etiquetaArtista, filtrarArtistas, ordenarArtistas, quienDesdeJson, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
+import { artistaIgual, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, ordenarArtistas, quienDesdeJson, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
 
 describe("deducirTipoArtista", () => {
   it("propone grupo o colectivo por el nombre; solista se queda sin propuesta", () => {
@@ -40,6 +40,41 @@ describe("ordenarArtistas y filtrarArtistas", () => {
   it("encuentra al igual sin acentos ni mayúsculas", () => {
     expect(artistaIgual([{ nombre: "Trío Xóchitl" }], " trio xochitl ")?.nombre).toBe("Trío Xóchitl");
     expect(artistaIgual([{ nombre: "Trío Xóchitl" }], "trio")).toBeNull();
+  });
+});
+
+describe("chips de disciplina y detalle", () => {
+  const l = [
+    { nombre: "A", disciplina: "musica", detalle: "rock, metal y alternativo" },
+    { nombre: "B", disciplina: "musica", detalle: "Rock, metal y alternativo" },
+    { nombre: "C", disciplina: "musica", detalle: "rock, metal y alternativo" },
+    { nombre: "D", disciplina: "musica", detalle: "jazz, blues y soul" },
+    { nombre: "E", disciplina: "musica", detalle: "jazz, blues y soul" },
+    { nombre: "F", disciplina: "musica", detalle: "jazz, blues y soul" },
+    { nombre: "G", disciplina: "musica", detalle: "cumbia" },
+    { nombre: "H", disciplina: "teatro", detalle: null },
+    { nombre: "I", disciplina: "teatro", detalle: "compañía de teatro" },
+  ];
+  it("lista las disciplinas presentes en el orden cerrado", () => {
+    expect(disciplinasPresentes(l).map((d) => d.valor)).toEqual(["musica", "teatro"]);
+  });
+  it("filtra por disciplina y por detalle sin distinguir mayúsculas", () => {
+    expect(filtrarArtistas(l, "", { disciplina: "teatro" }).map((a) => a.nombre)).toEqual(["H", "I"]);
+    expect(filtrarArtistas(l, "", { disciplina: "musica", detalle: "rock, metal y alternativo" }).map((a) => a.nombre)).toEqual(["A", "B", "C"]);
+    expect(filtrarArtistas(l, "b", { disciplina: "musica", detalle: "rock, metal y alternativo" }).map((a) => a.nombre)).toEqual(["B"]);
+  });
+  it("da el segundo nivel solo con detalles compartidos por varios, de más a menos", () => {
+    expect(detallesDe(l, "musica").map((d) => d.etiqueta)).toEqual(["Jazz, blues y soul", "Rock, metal y alternativo"]);
+    expect(detallesDe(l, "teatro")).toEqual([]);
+  });
+});
+
+describe("hrefArtistas y filtroDesdeUrl", () => {
+  it("arma la URL sin parámetros vacíos y la lee de vuelta con valores seguros", () => {
+    expect(hrefArtistas({})).toBe("/artistas");
+    expect(hrefArtistas({ hace: "musica", que: "jazz, blues y soul", q: " Pedro ", n: 200 })).toBe("/artistas?hace=musica&que=jazz%2C+blues+y+soul&q=Pedro&n=200");
+    expect(filtroDesdeUrl({ hace: "musica", que: "jazz", q: "x", n: "200" })).toEqual({ hace: "musica", que: "jazz", q: "x", n: 200 });
+    expect(filtroDesdeUrl({ hace: "no-existe", que: "jazz", n: "abc" })).toEqual({ hace: null, que: null, q: null, n: 100 });
   });
 });
 

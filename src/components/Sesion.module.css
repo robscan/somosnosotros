@@ -13,6 +13,8 @@
 .perfil {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: var(--toque-min);
   min-height: var(--toque-min);
   text-decoration: none;
 }

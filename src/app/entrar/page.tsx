@@ -38,6 +38,9 @@ export default async function Entrar({ searchParams }: { searchParams: Promise<{
         </p>
       )}
       <FormularioEntrar siguiente={destino} google={process.env.NEXT_PUBLIC_GOOGLE_ACTIVO === "1"} largo={largoCodigo()} />
+      <p className="nota-legal">
+        Al entrar aceptas las <a href="/reglas">reglas de uso</a> y el <a href="/privacidad">aviso de privacidad</a>.
+      </p>
     </main>
   );
 }

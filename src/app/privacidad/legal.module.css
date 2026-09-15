@@ -1,0 +1,24 @@
+/* Páginas de texto (aviso de privacidad, reglas de uso): lectura cómoda, nada más */
+.texto {
+  max-width: 62ch;
+}
+.texto h2 {
+  margin: var(--espacio-6) 0 var(--espacio-2);
+  font-size: var(--letra-xl);
+}
+.texto p,
+.texto li {
+  margin-bottom: var(--espacio-3);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  line-height: 1.5;
+}
+.texto ul {
+  padding-left: var(--espacio-5);
+}
+.texto small {
+  display: block;
+  margin-top: var(--espacio-6);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

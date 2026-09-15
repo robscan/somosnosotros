@@ -1,0 +1,36 @@
+/* Campo de búsqueda con icono y ✕: el mismo en Artistas y donde haga falta */
+.buscar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: var(--espacio-2);
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+}
+.buscar > svg {
+  color: var(--texto-suave);
+}
+.buscar input {
+  min-width: 0;
+  border: none;
+  background: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.buscar input:focus {
+  outline: none;
+}
+.buscar:focus-within {
+  border-color: var(--texto);
+}
+.limpiar {
+  min-height: var(--toque-min);
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  cursor: pointer;
+}

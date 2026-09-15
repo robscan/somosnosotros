@@ -11,9 +11,16 @@
   padding: 0 var(--gutter);
   background: var(--fondo);
 }
-/* Interior: un poco de aire antes del título de la pantalla. */
+/* Interior: franja blanca de borde a borde (sale del gutter de la página con margen negativo), pegajosa arriba;
+   un poco de aire antes del título de la pantalla. */
 .interior {
-  margin-bottom: var(--espacio-2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin: 0 calc(-1 * var(--gutter)) var(--espacio-3);
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
+  background: var(--fondo);
+  border-bottom: 1px solid var(--borde);
 }
 .derecha {
   display: flex;

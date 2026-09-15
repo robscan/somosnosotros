@@ -3,7 +3,7 @@ import type { EventoAgenda } from "@/lib/agenda";
 import { textoDistancia } from "@/lib/agenda";
 import { nombreSitio } from "@/lib/eventos";
 import { horaCorta } from "@/lib/fechas";
-import { IconoBoleto, IconoPersonas, IconoPin, IconoReloj } from "./ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoPersonas, IconoPin, IconoReloj } from "./ui/Iconos";
 import styles from "./Renglon.module.css";
 
 type Props = {
@@ -23,7 +23,9 @@ export default function RenglonEvento({ evento: e, km, sinSitio = false }: Props
           // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
           <img src={foto} alt="" className={styles.foto} />
         ) : (
-          <span className={`${styles.foto} ${styles.fotoVacia}`} aria-hidden="true" />
+          <span className={`${styles.foto} ${styles.fotoVacia}`} aria-hidden="true">
+            <IconoCalendario width={26} height={26} />
+          </span>
         )}
         <span className={styles.titulo}>{e.titulo}</span>
         <span className={styles.meta}>

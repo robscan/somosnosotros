@@ -37,3 +37,57 @@
     opacity: 0.55;
   }
 }
+
+/* Espera de las pantallas raíz (CargandoRaiz): cabecera blanca con un campo, y renglones con foto y dos líneas */
+.pildora {
+  display: block;
+  width: 84px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--fondo-suave);
+}
+.cabecera {
+  padding: var(--espacio-3) var(--gutter);
+  background: var(--fondo);
+  border-bottom: 1px solid var(--borde);
+}
+.campo {
+  height: var(--toque-min);
+  margin: 0;
+  border-radius: var(--radio);
+}
+.renglones {
+  list-style: none;
+  padding: var(--espacio-3) var(--gutter) 0;
+}
+.renglon {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "foto titulo"
+    "foto meta";
+  column-gap: var(--espacio-3);
+  align-content: center;
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.foto {
+  grid-area: foto;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background: var(--fondo-suave);
+  animation: pulso 1.2s ease-in-out infinite;
+}
+.renglon .titulo {
+  grid-area: titulo;
+  height: 22px;
+  margin: 4px 0 8px;
+}
+.renglon .media {
+  grid-area: meta;
+  margin: 0;
+}
+.renglones + .texto {
+  padding: var(--espacio-3) var(--gutter);
+}

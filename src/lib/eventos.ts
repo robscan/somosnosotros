@@ -1,3 +1,4 @@
+import { esUuid, limpiar } from "./formulario";
 import { localAIso } from "./fechas";
 
 export const LIMITES_EVENTO = { titulo: 120, descripcion: 1000, precio: 60, sitio: 120, direccion: 200, indicaciones: 300 } as const;
@@ -61,9 +62,6 @@ export type ErroresEvento = Partial<
   Record<"lugar_id" | "sitio_texto" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
 >;
 
-function limpiar(v: FormDataEntryValue | string | null | undefined): string {
-  return typeof v === "string" ? v.trim().replace(/\s+/g, " ") : "";
-}
 function numeroONull(v: FormDataEntryValue | null | undefined): number | null {
   const t = limpiar(v);
   if (!t) return null;
@@ -118,7 +116,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
   };
 
   const errores: ErroresEvento = {};
-  if (modo === "lugar" && !/^[0-9a-f-]{36}$/.test(lugarId)) errores.lugar_id = "Elige el lugar donde es.";
+  if (modo === "lugar" && !esUuid(lugarId)) errores.lugar_id = "Elige el lugar donde es.";
   if (modo !== "lugar" && !sitioTexto) errores.sitio_texto = esReservado ? "Di cómo se anuncia el sitio (ej. \"Casa en Tequis\")." : "Di dónde es (ej. \"Plaza de Armas\").";
   if (sitioTexto.length > LIMITES_EVENTO.sitio) errores.sitio_texto = `Máximo ${LIMITES_EVENTO.sitio} caracteres.`;
   if (esReservado && !direccionPrivada) errores.direccion_privada = "Pon la dirección exacta: solo se revela cuando toca.";

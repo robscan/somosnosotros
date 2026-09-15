@@ -25,8 +25,8 @@ type Plantilla = { titulo: string; cuando: string; lugar: string; eventoId: stri
 function pie(porque: string, bajaUrl: string | undefined): { texto: string; html: string } {
   const baja = bajaUrl ?? `${ORIGEN}/perfil`;
   return {
-    texto: `${porque} Dejar de recibir avisos (un toque, sin entrar): ${baja}`,
-    html: `<p style="color:#5c5c5c;font-size:13px">${escapar(porque)} <a href="${baja}">Dejar de recibir avisos</a> (un toque, sin entrar).</p>`,
+    texto: `${porque} Dejar de recibir avisos (un toque, sin entrar): ${baja}\nAviso de privacidad: ${ORIGEN}/privacidad`,
+    html: `<p style="color:#5c5c5c;font-size:13px">${escapar(porque)} <a href="${baja}">Dejar de recibir avisos</a> (un toque, sin entrar). <a href="${ORIGEN}/privacidad">Aviso de privacidad</a>.</p>`,
   };
 }
 

@@ -13,7 +13,7 @@ import SelectorEnlaces from "@/components/SelectorEnlaces";
 import { normalizarRedes } from "@/lib/enlaces";
 import { LIMITES_LUGAR, TIPOS, etiquetaTipo, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
-import { reducirImagen } from "@/lib/imagen";
+import { subirFoto } from "@/lib/subirFoto";
 import type { ResultadoLugar } from "./acciones";
 import styles from "./FormularioLugar.module.css";
 
@@ -23,6 +23,8 @@ type Props = {
   /** Sin lugar = alta (corta, con ayuda). Con lugar = edición (todos los campos). */
   lugar?: Lugar;
   usuarioId: string;
+  /** Desde dónde se vino (el alta de evento): al publicar el lugar se vuelve ahí con el lugar ya elegido. */
+  siguiente?: string;
 };
 
 const CLAVE_BORRADOR = "somosnosotros:borrador-lugar";
@@ -42,7 +44,7 @@ function leerBorrador(): Borrador | null {
  * (dirección + punto + tipo); o tocas "Estoy aquí" y deduce la dirección del pin. Lo demás
  * (descripción, redes, foto) es opcional y puede esperar a después de publicar.
  */
-export default function FormularioLugar({ accion, lugar, usuarioId }: Props) {
+export default function FormularioLugar({ accion, lugar, usuarioId, siguiente }: Props) {
   const esAlta = !lugar;
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
@@ -198,20 +200,11 @@ export default function FormularioLugar({ accion, lugar, usuarioId }: Props) {
   async function subirPortada(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
-    const supabase = clienteNavegador();
-    if (!supabase) return;
-    if (archivo.size > 5 * 1024 * 1024) {
-      setErrorPortada("La foto pesa más de 5 MB. Elige otra.");
-      return;
-    }
     setSubiendo(true);
     setErrorPortada(null);
-    const listo = await reducirImagen(archivo); // menos peso y menos espera: se reduce en el teléfono antes de subir
-    const extension = (listo.name.split(".").pop() || "jpg").toLowerCase();
-    const ruta = `lugares/${usuarioId}/portada-${Date.now()}.${extension}`;
-    const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: true, contentType: listo.type || undefined });
-    if (error) setErrorPortada("No se pudo subir la foto. Intenta con otra.");
-    else setPortada(supabase.storage.from("fotos").getPublicUrl(ruta).data.publicUrl);
+    const r = await subirFoto("lugares", usuarioId, "portada", archivo);
+    if ("error" in r) setErrorPortada(r.error);
+    else setPortada(r.url);
     setSubiendo(false);
   }
 
@@ -293,6 +286,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId }: Props) {
         <Mapa modo="elegir" valor={punto} onCambio={alMoverPin} />
         <input type="hidden" name="lat" value={punto?.lat ?? ""} />
         <input type="hidden" name="lng" value={punto?.lng ?? ""} />
+        {siguiente && <input type="hidden" name="siguiente" value={siguiente} />}
         {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
         {errores.ubicacion && (
           <p className={styles.error} role="alert">

@@ -2,21 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { rutaSegura } from "@/lib/rutas";
 import { validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
-import { clienteServidor } from "@/lib/supabase/servidor";
+import { sesionOEntrar } from "@/lib/supabase/sesion";
 
 export type ResultadoLugar =
   | { ok: true; id: string }
   | { ok: false; errores: ErroresLugar; general?: string; parecidos?: LugarResumen[] };
 
-async function sesionOEntrar(destino: string) {
-  const supabase = await clienteServidor();
-  const {
-    data: { user },
-  } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
-  if (!supabase || !user) redirect(`/entrar?siguiente=${encodeURIComponent(destino)}`);
-  return { supabase, user };
-}
 
 function leer(formData: FormData) {
   const claves = ["nombre", "tipo", "direccion", "lat", "lng", "descripcion", "portada", "enlaces"];
@@ -42,7 +35,9 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
 
   revalidatePath("/");
-  redirect(`/lugares/${data.id}?nuevo=1`);
+  // Si se vino del alta de evento, se vuelve con el lugar ya elegido; si no, a la ficha recién publicada.
+  const siguiente = rutaSegura(formData.get("siguiente") as string | null, "");
+  redirect(siguiente ? `${siguiente}${siguiente.includes("?") ? "&" : "?"}lugar=${data.id}` : `/lugares/${data.id}?nuevo=1`);
 }
 
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {

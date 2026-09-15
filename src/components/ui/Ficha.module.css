@@ -5,10 +5,12 @@
    Lo propio de cada ficha va en su propio módulo, junto a su page.tsx.
    ========================================================================== */
 
-/* 1. Página: deja sitio abajo para la barra pegajosa */
+/* 1. Página: las tres franjas del shell, como en las pantallas raíz: cabecera blanca (ui/Barra interior),
+   contenido en su tono, barra de acciones blanca abajo. Deja sitio abajo para la barra pegajosa. */
 .pagina {
   min-height: 100dvh;
-  padding: calc(var(--espacio-2) + env(safe-area-inset-top, 0px)) var(--gutter) calc(96px + env(safe-area-inset-bottom, 0px));
+  padding: 0 var(--gutter) calc(96px + env(safe-area-inset-bottom, 0px));
+  background: var(--fondo-contenido);
 }
 .iconoBarra {
   display: inline-grid;
@@ -68,6 +70,12 @@
   grid-area: principal;
   font-weight: 500;
 }
+/* Dato en gris que ocupa la línea principal ("Sin fechas próximas · Nadie lo sigue todavía") */
+.dato .suave {
+  grid-area: principal;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 .dato small {
   grid-area: secundario;
   color: var(--texto-suave);
@@ -77,8 +85,19 @@
   grid-area: accion;
 }
 .datoEnlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-2);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+}
+
+/* Acción deshabilitada con explicación ("Cómo llegar · sin dirección") */
+.accion small {
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
 /* 3. Acciones secundarias: botones de icono iguales, sin color de acción. Tres por fila; con más, la fila se desplaza. */

@@ -1,3 +1,4 @@
+import { esUuid } from "@/lib/formulario";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -5,7 +6,6 @@ import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
-import PieOrigen from "@/components/PieOrigen";
 import Desplegable from "@/components/Desplegable";
 import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
@@ -31,7 +31,7 @@ const ORIGEN = "https://somosnosotros.org";
 
 async function cargarLugar(id: string): Promise<LugarConAutor | null> {
   const supabase = await clienteServidor();
-  if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
+  if (!supabase || !esUuid(id)) return null;
   const { data } = await supabase
     .from("lugares")
     .select("id, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)")
@@ -85,9 +85,14 @@ export default async function FichaLugar({ params, searchParams }: Params) {
     await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true });
     redirect(`/lugares/${lugar.id}`);
   }
-  const [eventos, { data: seguimientos }] = await Promise.all([cargarEventos(lugar), (supabase?.from("seguimientos").select("usuario_id").eq("lugar_id", id) ?? Promise.resolve({ data: [] })) as Promise<{ data: { usuario_id: string }[] | null }>]);
-  const seguidores = (seguimientos ?? []).length;
-  const sigo = !!actual && (seguimientos ?? []).some((s) => s.usuario_id === actual.perfil.id);
+  // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
+  const [eventos, cuenta, mio] = await Promise.all([
+    cargarEventos(lugar),
+    supabase?.from("seguimientos").select("usuario_id", { count: "exact", head: true }).eq("lugar_id", id) ?? Promise.resolve({ count: 0 }),
+    actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("lugar_id", id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const seguidores = cuenta.count ?? 0;
+  const sigo = !!mio.data;
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === lugar.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
   const redes = normalizarRedes(lugar.redes);
@@ -181,19 +186,29 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           <IconoPin width={20} height={20} />
           <b>{lugar.direccion ?? "Sin dirección"}</b>
         </li>
-        <li className={ficha.dato}>
-          <IconoPersonas width={20} height={20} />
-          <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
-        </li>
-        <li className={ficha.dato}>
-          <IconoCalendario width={20} height={20} />
-          <b>{eventos[0] ? textoProximo(eventos[0].inicio) : "Sin eventos próximos"}</b>
-          {eventos[0] && (
-            <a href="#eventos" className={ficha.datoEnlace}>
-              ver
-            </a>
-          )}
-        </li>
+        {/* Sin eventos ni seguidores: una sola línea en gris; las dos negaciones no merecen dos renglones. */}
+        {seguidores === 0 && !eventos[0] ? (
+          <li className={ficha.dato}>
+            <IconoCalendario width={20} height={20} />
+            <span className={ficha.suave}>Sin eventos próximos · Nadie lo sigue todavía</span>
+          </li>
+        ) : (
+          <>
+            <li className={ficha.dato}>
+              <IconoPersonas width={20} height={20} />
+              <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
+            </li>
+            <li className={ficha.dato}>
+              <IconoCalendario width={20} height={20} />
+              <b>{eventos[0] ? textoProximo(eventos[0].inicio) : "Sin eventos próximos"}</b>
+              {eventos[0] && (
+                <a href="#eventos" className={ficha.datoEnlace}>
+                  ver
+                </a>
+              )}
+            </li>
+          </>
+        )}
       </ul>
 
       <div className={ficha.acciones}>
@@ -236,9 +251,8 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         </Link>
       </section>
 
-      {lugar.origen && !lugar.autor ? (
-        <PieOrigen origen={lugar.origen} className={ficha.autor} />
-      ) : (
+      {/* Sin pie de origen para las fichas del catálogo (decisión del founder, 2026-09-14): solo se dice quién la publicó cuando hay quién. */}
+      {!(lugar.origen && !lugar.autor) && (
         <p className={ficha.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
       )}
 

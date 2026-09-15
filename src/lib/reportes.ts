@@ -1,3 +1,4 @@
+import { esUuid } from "./formulario";
 export const MOTIVOS = [
   { valor: "falso", etiqueta: "No existe o es falso" },
   { valor: "ofensivo", etiqueta: "Es ofensivo o inapropiado" },
@@ -23,7 +24,7 @@ export function etiquetaMotivo(m: string): string {
 export function validarReporte(entrada: { tipo?: string; objeto_id?: string; motivo?: string; detalle?: string }): { ok: true; datos: { tipo: TipoReportado; objeto_id: string; motivo: Motivo; detalle: string | null } } | { ok: false; error: string } {
   const tipo = entrada.tipo as TipoReportado;
   if (!TIPOS_REPORTADOS.includes(tipo)) return { ok: false, error: "Tipo desconocido." };
-  if (!/^[0-9a-f-]{36}$/.test(entrada.objeto_id ?? "")) return { ok: false, error: "No sé qué reportar." };
+  if (!esUuid(entrada.objeto_id ?? "")) return { ok: false, error: "No sé qué reportar." };
   if (!MOTIVOS.some((m) => m.valor === entrada.motivo)) return { ok: false, error: "Elige un motivo." };
   const detalle = (entrada.detalle ?? "").trim().replace(/\s+/g, " ");
   if (detalle.length > 500) return { ok: false, error: "Máximo 500 caracteres." };

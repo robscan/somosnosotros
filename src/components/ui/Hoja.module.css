@@ -9,6 +9,8 @@
   left: 0;
   right: 0;
   bottom: 0;
+  max-width: var(--columna); /* en escritorio, del ancho de la columna y centrada */
+  margin-inline: auto;
   max-height: calc(100% - 48px);
   overflow-y: auto;
   padding: var(--espacio-3) var(--gutter) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));

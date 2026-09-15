@@ -1,3 +1,4 @@
+import { esUuid } from "@/lib/formulario";
 import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
 import { cargarMisArtistas, cargarQuien } from "@/app/artistas/consultas";
@@ -20,7 +21,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
   const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada").eq("visible", true).order("nombre")) ?? { data: [] };
   let base: Partial<Evento> | undefined;
   let quien: QuienItem[] | undefined;
-  if (desde && /^[0-9a-f-]{36}$/.test(desde)) {
+  if (desde && esUuid(desde)) {
     const { data } = (await supabase?.from("eventos").select("*").eq("id", desde).maybeSingle()) ?? { data: null };
     if (data) {
       base = { ...(data as Evento), id: undefined, inicio: undefined, fin: undefined };
@@ -28,7 +29,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
     }
   }
   // Desde la ficha de un artista ("Publicar una fecha de X"): Quién ya viene resuelto.
-  if (!quien && artista && /^[0-9a-f-]{36}$/.test(artista)) {
+  if (!quien && artista && esUuid(artista)) {
     const { data } = (await supabase?.from("artistas").select("id, nombre").eq("id", artista).maybeSingle()) ?? { data: null };
     if (data) quien = [{ id: data.id as string, nombre: data.nombre as string }];
   }

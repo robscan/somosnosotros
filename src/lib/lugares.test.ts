@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, filtrarLugares, normalizarNombre, ordenarLugares, validarLugar } from "./lugares";
+import { calleCorta, conProximo, filtrarLugares, normalizarNombre, ordenarLugares, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -16,6 +16,16 @@ describe("filtrarLugares", () => {
     expect(filtrarLugares(lugares, "angel").map((l) => l.nombre)).toEqual(["Galería Ángel"]);
     expect(filtrarLugares(lugares, "VILLER").map((l) => l.nombre)).toEqual(["Teatro de la Paz"]);
     expect(filtrarLugares(lugares, "")).toHaveLength(2);
+  });
+  it("filtra por tipo y lista los tipos presentes en el orden cerrado", () => {
+    const l = [
+      { nombre: "Foro Uno", direccion: null, tipo: "foro" },
+      { nombre: "Galería Dos", direccion: null, tipo: "galeria" },
+      { nombre: "Foro Tres", direccion: "Calle 3", tipo: "foro" },
+    ];
+    expect(filtrarLugares(l, "", "foro").map((x) => x.nombre)).toEqual(["Foro Uno", "Foro Tres"]);
+    expect(filtrarLugares(l, "tres", "foro").map((x) => x.nombre)).toEqual(["Foro Tres"]);
+    expect(tiposPresentes(l).map((t) => t.valor)).toEqual(["foro", "galeria"]);
   });
 });
 

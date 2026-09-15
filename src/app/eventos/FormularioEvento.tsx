@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -11,8 +11,7 @@ import { unirNombres } from "@/lib/artistas";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
 import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
 import type { LugarResumen } from "@/lib/lugares";
-import { clienteNavegador } from "@/lib/supabase/navegador";
-import { reducirImagen } from "@/lib/imagen";
+import { subirFoto } from "@/lib/subirFoto";
 import { leerCartelAccion, type ResultadoEvento } from "./acciones";
 import SelectorCuando from "./SelectorCuando";
 import SelectorQuien from "./SelectorQuien";
@@ -21,6 +20,36 @@ import styles from "./FormularioEvento.module.css";
 
 type Punto = { lat: number; lng: number };
 type Seccion = "donde" | "cuando" | "quien" | "cuanto" | null;
+
+/** Borrador del alta guardado en el teléfono: salir a registrar un lugar (o cerrar la app) no pierde lo escrito. */
+const CLAVE_BORRADOR = "somosnosotros:borrador-evento";
+type Borrador = {
+  titulo: string;
+  inicio: string;
+  fin: string;
+  gratis: boolean;
+  precio: string;
+  descripcion: string;
+  enlace: string;
+  imagen: string | null;
+  modoSitio: ModoSitio;
+  lugarId: string;
+  sitioTexto: string;
+  sitioPunto: Punto | null;
+  direccionPrivada: string;
+  indicaciones: string;
+  revelarHoras: number;
+  quien: QuienItem[];
+  masDetalles: boolean;
+};
+function leerBorrador(): Borrador | null {
+  try {
+    const raw = localStorage.getItem(CLAVE_BORRADOR);
+    return raw ? (JSON.parse(raw) as Borrador) : null;
+  } catch {
+    return null;
+  }
+}
 type Props = {
   accion: (previo: ResultadoEvento | null, formData: FormData) => Promise<ResultadoEvento>;
   lugares: LugarResumen[];
@@ -76,6 +105,46 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [masDetalles, setMasDetalles] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
   const [seccionElegida, setSeccionElegida] = useState<Seccion | undefined>(undefined);
 
+  // Borrador (solo en el alta): se restaura tras el primer pintado (el servidor no lo conoce) y se guarda con cada cambio.
+  // Un lugar o artista que viene en la URL (?lugar=, desde la ficha o al volver de registrar un lugar) manda sobre el borrador.
+  const esAlta = modo === "alta";
+  const guardarBorrador = useRef(false);
+  useEffect(() => {
+    if (!esAlta) return;
+    const id = requestAnimationFrame(() => {
+      const b = leerBorrador();
+      if (b && (b.titulo || b.lugarId || b.sitioTexto || b.quien.length)) {
+        setTitulo(b.titulo);
+        setInicio(b.inicio);
+        setFin(b.fin);
+        setGratis(b.gratis);
+        setPrecio(b.precio);
+        setDescripcion(b.descripcion);
+        setEnlace(b.enlace);
+        setImagen(b.imagen);
+        setModoSitio(lugarInicial ? "lugar" : b.modoSitio);
+        setLugarId(lugarInicial ?? b.lugarId);
+        setSitioTexto(b.sitioTexto);
+        setSitioPunto(b.sitioPunto);
+        setDireccionPrivada(b.direccionPrivada);
+        setIndicaciones(b.indicaciones);
+        setRevelarHoras(b.revelarHoras);
+        if (!quienInicial?.length) setQuien(b.quien);
+        setMasDetalles(b.masDetalles);
+      }
+      guardarBorrador.current = true;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [esAlta, lugarInicial, quienInicial]);
+  useEffect(() => {
+    if (!esAlta || !guardarBorrador.current) return;
+    try {
+      const vacio = !titulo && !lugarId && !sitioTexto && !quien.length && !descripcion && !imagen;
+      if (vacio) localStorage.removeItem(CLAVE_BORRADOR);
+      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, sitioTexto, sitioPunto, direccionPrivada, indicaciones, revelarHoras, quien, masDetalles } satisfies Borrador));
+    } catch {}
+  }, [esAlta, titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, sitioTexto, sitioPunto, direccionPrivada, indicaciones, revelarHoras, quien, masDetalles]);
+
   const lugar = lugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && modo === "alta";
   const dondeResuelto = modoSitio === "lugar" ? !!lugar : !!sitioTexto && (modoSitio !== "reservado" || !!direccionPrivada);
@@ -94,26 +163,16 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const resumenQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : <span className={seccion.pendiente}>Añadir quién se presenta</span>;
 
   async function subir(archivo: File): Promise<string | null> {
-    const supabase = clienteNavegador();
-    if (!supabase) return null;
-    if (archivo.size > 5 * 1024 * 1024) {
-      setErrorImagen("La imagen pesa más de 5 MB. Elige otra.");
-      return null;
-    }
     setSubiendo(true);
     setErrorImagen(null);
-    const listo = await reducirImagen(archivo); // menos peso y menos espera: se reduce en el teléfono antes de subir
-    const extension = (listo.name.split(".").pop() || "jpg").toLowerCase();
-    const ruta = `lugares/${usuarioId}/evento-${Date.now()}.${extension}`;
-    const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: true, contentType: listo.type || undefined });
+    const r = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen");
     setSubiendo(false);
-    if (error) {
-      setErrorImagen("No se pudo subir la imagen. Intenta con otra.");
+    if ("error" in r) {
+      setErrorImagen(r.error);
       return null;
     }
-    const url = supabase.storage.from("fotos").getPublicUrl(ruta).data.publicUrl;
-    setImagen(url);
-    return url;
+    setImagen(r.url);
+    return r.url;
   }
 
   async function subirImagen(e: React.ChangeEvent<HTMLInputElement>) {
@@ -160,7 +219,18 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   }
 
   return (
-    <form action={enviar} noValidate>
+    <form
+      action={(fd) => {
+        // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
+        if (esAlta) {
+          try {
+            localStorage.removeItem(CLAVE_BORRADOR);
+          } catch {}
+        }
+        enviar(fd);
+      }}
+      noValidate
+    >
       {ofrecerCartel && (
         <div className={styles.cartel}>
           <label className={styles.enlaceCartel}>
@@ -189,7 +259,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           <>
             {lugares.length === 0 ? (
               <p className={styles.nota}>
-                Todavía no hay lugares registrados. <Link href="/lugares/nuevo">Registra el lugar</Link>, o elige otro sitio abajo.
+                Todavía no hay lugares registrados. <Link href="/lugares/nuevo?siguiente=/eventos/nuevo">Registra el lugar</Link>, o elige otro sitio abajo.
               </p>
             ) : (
               <select name="lugar_id" className={styles.select} value={lugarId} onChange={(e) => setLugarId(e.target.value)} aria-label="Lugar" aria-invalid={!!errores.lugar_id}>
@@ -209,7 +279,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               </p>
             )}
             <p className={styles.nota}>
-              ¿No está en la lista? <Link href="/lugares/nuevo">Regístralo</Link>.
+              ¿No está en la lista? <Link href="/lugares/nuevo?siguiente=/eventos/nuevo">Regístralo</Link> y vuelves aquí con él elegido.
             </p>
             <div className={styles.pildoras}>
               <button type="button" className={styles.pildora} onClick={() => setModoSitio("otro")}>

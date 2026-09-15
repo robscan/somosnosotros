@@ -1,3 +1,4 @@
+import { esUuid } from "@/lib/formulario";
 import { aFechaIcs } from "@/lib/fechas";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -5,7 +6,7 @@ import { clienteServidor } from "@/lib/supabase/servidor";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await clienteServidor();
-  if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return new Response("No encontrado", { status: 404 });
+  if (!supabase || !esUuid(id)) return new Response("No encontrado", { status: 404 });
   const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, descripcion, sitio_texto, lugar:lugares(nombre, direccion)").eq("id", id).maybeSingle();
   if (!data) return new Response("No encontrado", { status: 404 });
   const lugar = (Array.isArray(data.lugar) ? data.lugar[0] : data.lugar) as { nombre: string; direccion: string | null } | null;

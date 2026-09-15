@@ -43,7 +43,8 @@
      las barras (superior, inferior, hojas) siguen a lo ancho. Sin media queries ni envoltorios: todo gutter
      horizontal de página se escribe var(--gutter). Los botones y sangrías siguen con --espacio-N. */
   --columna: 600px;
-  --al-centro: calc((100% - var(--columna)) / 2); /* lo que sobra a cada lado; negativo en el teléfono */
+  --al-centro: calc((100vw - var(--columna)) / 2); /* lo que sobra a cada lado; negativo en el teléfono. Sobre el ancho de la
+     ventana, no del contenedor: así vale lo mismo dentro de cualquier caja y un margen negativo llega al borde de la pantalla */
   --gutter: max(var(--espacio-5), var(--al-centro));
 
   /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él.
@@ -139,6 +140,17 @@ select {
 .subtitulo {
   color: var(--texto-suave);
   margin-bottom: var(--espacio-5);
+}
+
+/* Enlaces legales al pie de Entrar y Mi perfil */
+.nota-legal {
+  margin-top: var(--espacio-5);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.nota-legal a {
+  color: var(--texto-suave);
 }
 
 .aviso-error {

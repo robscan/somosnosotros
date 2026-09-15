@@ -1,3 +1,4 @@
+import { esUuid } from "./formulario";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
@@ -19,7 +20,7 @@ export function firmarBaja(usuarioId: string, llave: string): string {
 export function verificarBaja(token: string | null | undefined, llave: string): string | null {
   if (!token || !llave) return null;
   const [id, sig] = token.split(".");
-  if (!id || !sig || !/^[0-9a-f-]{36}$/.test(id) || sig.length !== 32) return null;
+  if (!id || !sig || !esUuid(id) || sig.length !== 32) return null;
   const esperada = Buffer.from(firma(id, llave));
   const recibida = Buffer.from(sig);
   return esperada.length === recibida.length && timingSafeEqual(esperada, recibida) ? id : null;

@@ -1,6 +1,6 @@
 /* ==========================================================================
    Lugares (docs/rediseno/06-lugares-flujo-y-estados.md)
-   1. Pestañas pegajosas · 2. Mapa: caja, botón de ubicación, tarjeta del pin · 3. Lista: chip Cerca de mí
+   1. Pestañas pegajosas · 2. Mapa: caja, botón de ubicación, tarjeta del pin · 3. Lista: ✕ de Cerca de mí y aviso
    ========================================================================== */
 
 /* 1. Pestañas Mapa · Lista: la propia lista de pestañas es la cabecera pegajosa */
@@ -48,7 +48,7 @@
 .ubicame {
   position: absolute;
   left: var(--gutter);
-  bottom: var(--espacio-4);
+  bottom: calc(var(--espacio-4) + 32px); /* encima del logotipo y la atribución de Mapbox */
   z-index: 2;
   display: grid;
   place-items: center;
@@ -69,10 +69,56 @@
 /* Aviso de ubicación sobre el mapa: flota arriba, a lo ancho, encima de los controles */
 .avisoMapa {
   position: absolute;
-  top: 64px; /* debajo del logotipo de Mapbox y la atribución */
+  top: 128px; /* debajo de la búsqueda y los chips de tipo */
   left: var(--gutter);
   right: var(--gutter);
   z-index: 4;
+}
+/* Búsqueda y chips de tipo sobre el mapa: flotan arriba; la búsqueda en la columna y los chips a todo lo ancho */
+.sobreMapa {
+  position: absolute;
+  top: var(--espacio-3);
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: grid;
+  gap: var(--espacio-2);
+}
+.sobreMapa > * {
+  margin-inline: var(--gutter);
+}
+.sobreMapa > div {
+  margin-inline: 0;
+  margin-bottom: 0;
+  padding: 0 var(--gutter) 0;
+}
+.sobreMapa button {
+  box-shadow: var(--sombra);
+}
+.buscarMapa {
+  width: auto; /* hijo del grid con margen a los lados: nunca 100 %, se saldría */
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: var(--letra-md);
+  box-shadow: var(--sombra);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.buscarMapa:focus {
+  outline: 2px solid var(--primario);
+  outline-offset: 1px;
+}
+.nadaMapa {
+  justify-self: start;
+  padding: var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--vidrio);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  box-shadow: var(--sombra);
 }
 /* Tarjeta del pin tocado: el mismo renglón de la lista, flotando sobre el mapa, con "Ver" */
 .tarjeta {
@@ -115,43 +161,13 @@
   font-weight: 700;
 }
 
-/* 3. Lista: chip "Cerca de mí" bajo las pestañas */
-.contexto {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--espacio-2);
-  padding: var(--espacio-3) var(--gutter) 0;
-}
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 var(--espacio-3) 0 10px;
-  border: 1px solid var(--borde);
-  border-radius: 999px;
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.chip > svg {
-  flex: none;
-  color: var(--texto-suave);
-}
-.chipActivo {
-  border-color: var(--primario);
-}
+/* 3. Lista: el chip "Cerca de mí" va en la fila de chips de la lista (ui/Chip); aquí solo su ✕ y el aviso */
 .quitar {
-  margin: 0 -4px 0 2px;
-  color: var(--texto-suave);
+  margin: 0 -4px 0 8px;
+  opacity: 0.8; /* hereda el blanco del chip activo */
   font-weight: 400;
 }
-/* Aviso de ubicación en la lista: bajo el chip, a lo ancho */
+/* Aviso de ubicación en la lista: bajo la fila de chips, en la columna */
 .avisoLista {
-  flex: 1 1 100%;
+  margin: 0 var(--gutter) var(--espacio-2);
 }
