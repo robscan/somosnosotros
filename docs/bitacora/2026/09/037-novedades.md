@@ -1,6 +1,6 @@
 # 037 · Novedades
 
-**Fecha:** 2026-09-15 · **Rama:** `novedades` → PR · **Pieza:** OL-019, PR A (diseño firmado en [13](../../rediseno/13-novedades-perfil-alta-flujo-y-estados.md), decisiones 1 a 4)
+**Fecha:** 2026-09-15 · **Rama:** `novedades` → [PR #38](https://github.com/robscan/somosnosotros/pull/38), fusionado y en producción el mismo día · **Pieza:** OL-019, PR A (diseño firmado en [13](../../rediseno/13-novedades-perfil-alta-flujo-y-estados.md), decisiones 1 a 4)
 
 ## Qué pidió el founder
 Una sección de notificaciones "para formar las notificaciones que el usuario podría estarse perdiendo". Firmó el diseño el mismo día tras dos correcciones, con la redacción "Van a lo mismo".
