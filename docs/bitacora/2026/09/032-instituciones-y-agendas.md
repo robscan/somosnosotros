@@ -1,6 +1,6 @@
 # 032 · Instituciones culturales y agendas
 
-**Fecha:** 2026-09-14 · **Rama:** trabajo sin commit sobre `main` (el founder decide el PR) · **Pieza:** OL-016
+**Fecha:** 2026-09-14 · **Rama:** `instituciones-y-tipos` → [PR #32](https://github.com/robscan/somosnosotros/pull/32), fusionado y desplegado el mismo día · **Pieza:** OL-016
 
 ## Qué pidió el founder
 Investigar centros culturales de San Luis Potosí que no estuvieran en la base (museos, casas de cultura, escuelas de arte y otras instituciones), darlos de alta primero, luego localizar sus agendas y proponer eventos para la agenda.
@@ -27,7 +27,7 @@ Cómo entran: publicados por la cuenta admin del founder, como Laboratorio Centr
 - `entorno.ts` (argumentos, `.env`, informe) y `correr.mjs` (compila con esbuild dentro de `node_modules/.cache` para encontrar `@supabase/supabase-js` sin ensuciar git).
 - El pin: Mapbox por nombre (la puerta del edificio) contra Mapbox por dirección. Si discrepan, desempatan las coordenadas de la fuente (fichas del SIC) o que el lugar hallado por nombre tenga la calle y el número investigados; una dirección que Mapbox interpola nunca le gana a una ficha oficial. Lo pidieron el MAC (su dirección caía a 4,5 km), el Teatro Doroteo Arango (1,7 km) y la Casa de Cultura de San Miguelito (411 m). Las coordenadas del SIC coincidieron a unos 50 m con los puntos por nombre en todos los museos.
 
-## Eventos: propuesta, sin cargar
+## Eventos: propuesta (cargada después, ver abajo)
 `scripts/instituciones/eventos.json`: 35 eventos (48 funciones) del 17 de septiembre al 6 de diciembre, de fuentes oficiales: Agenda Cultural de septiembre 2026 de la Secretaría de Cultura, programa de Fotovisión 31 (IPBA), cartelera Escenarios IMSS-Cultura y boletines de la Secretaría. Simulación: los 48 encuentran su sede; ninguno se liga a un artista del CAPO. Fuera a propósito: conciertos de Songkick (hora de puertas), tributo a Metallica (precio de agregador), sedes sin dirección (La Casa de las Bóvedas) y lo de año dudoso (Xantolo "sábado 25 de octubre" y Estupendulo Fest eran de 2025).
 
 Dónde publica cada institución y la rutina de cada mes: [AGENDAS_CULTURALES.md](../../../ops/AGENDAS_CULTURALES.md).
