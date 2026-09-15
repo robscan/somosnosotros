@@ -1,27 +1,27 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
-import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
-import Seccion from "@/components/ui/Seccion";
+import { Chip } from "@/components/ui/Chip";
+import { IconoBoleto, IconoBuscar, IconoCamara, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
 import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
+import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { leerCartelAccion, type ResultadoEvento } from "./acciones";
+import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
 import SelectorQuien from "./SelectorQuien";
-import seccion from "@/components/ui/Seccion.module.css";
+import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./FormularioEvento.module.css";
 
-type Punto = { lat: number; lng: number };
-type Seccion = "donde" | "cuando" | "quien" | "cuanto" | null;
+type Abierta = "cuando" | "quien" | "cuanto" | null;
 
 /** Borrador del alta guardado en el teléfono: salir a registrar un lugar (o cerrar la app) no pierde lo escrito. */
 const CLAVE_BORRADOR = "somosnosotros:borrador-evento";
@@ -36,13 +36,8 @@ type Borrador = {
   imagen: string | null;
   modoSitio: ModoSitio;
   lugarId: string;
-  sitioTexto: string;
-  sitioPunto: Punto | null;
-  direccionPrivada: string;
-  indicaciones: string;
-  revelarHoras: number;
+  otro: OtroSitio;
   quien: QuienItem[];
-  masDetalles: boolean;
 };
 function leerBorrador(): Borrador | null {
   try {
@@ -67,32 +62,38 @@ type Props = {
   mios?: ArtistaResumen[];
   /** El administrador puede pegar la dirección de una imagen (eventos importados). */
   esAdmin?: boolean;
+  /** Adónde vuelve "Registrar un lugar nuevo" con el lugar elegido. */
+  volverA?: string;
 };
 
 /**
- * Alta de evento con una cosa a la vez: el título, y tres renglones ya resueltos (cuándo, dónde, cuánto)
- * que se abren solo para cambiarlos. Cartel, foto, descripción y enlace van en "Más detalles".
- * Si al publicar falta algo, se abre solo el renglón que lo necesita.
+ * Alta de evento con el canon (docs/rediseno/15, decisiones 1 a 3): un campo arriba, el nombre, con la cámara dentro
+ * (leer el cartel llena todo); debajo, renglones resueltos con el mismo dibujo: Cuándo (hoy · 19:00), Dónde (una sola
+ * salida: la lupa abre la hoja "Dónde es"), Quién, Cuánto (gratis) y Más. El botón dice qué falta. Sin frases de ayuda.
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false }: Props) {
+export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo" }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
+  const esAlta = modo === "alta";
 
   const modoInicial: ModoSitio = evento?.sitio_reservado ? "reservado" : evento?.sitio_texto ? "otro" : "lugar";
   const [modoSitio, setModoSitio] = useState<ModoSitio>(modoInicial);
   const [lugarId, setLugarId] = useState(evento?.lugar_id ?? lugarInicial ?? (lugares.length === 1 ? lugares[0].id : ""));
-  const [sitioTexto, setSitioTexto] = useState(evento?.sitio_texto ?? "");
-  const [sitioPunto, setSitioPunto] = useState<Punto | null>(evento?.sitio_lat != null && evento?.sitio_lng != null ? { lat: evento.sitio_lat, lng: evento.sitio_lng } : null);
-  const [direccionPrivada, setDireccionPrivada] = useState(privado?.direccion ?? "");
-  const [indicaciones, setIndicaciones] = useState(privado?.indicaciones ?? "");
-  const [privadoPunto, setPrivadoPunto] = useState<Punto | null>(privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : null);
-  const [revelarHoras, setRevelarHoras] = useState<number>(() => {
-    if (evento?.sitio_revelar_desde && evento?.inicio) {
-      const h = Math.round((new Date(evento.inicio).getTime() - new Date(evento.sitio_revelar_desde).getTime()) / 3600000);
-      return REVELAR_OPCIONES.some((o) => o.horas === h) ? h : 24;
-    }
-    return 24;
-  });
+  const [otro, setOtro] = useState<OtroSitio>(() => ({
+    reservado: modoInicial === "reservado",
+    sitioTexto: evento?.sitio_texto ?? "",
+    sitioPunto: evento?.sitio_lat != null && evento?.sitio_lng != null ? { lat: evento.sitio_lat, lng: evento.sitio_lng } : null,
+    direccionPrivada: privado?.direccion ?? "",
+    privadoPunto: privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : null,
+    revelarHoras: (() => {
+      if (evento?.sitio_revelar_desde && evento?.inicio) {
+        const h = Math.round((new Date(evento.inicio).getTime() - new Date(evento.sitio_revelar_desde).getTime()) / 3600000);
+        return REVELAR_OPCIONES.some((o) => o.horas === h) ? h : 24;
+      }
+      return 24;
+    })(),
+    indicaciones: privado?.indicaciones ?? "",
+  }));
   const [titulo, setTitulo] = useState(evento?.titulo ?? "");
   const [inicio, setInicio] = useState(modo === "editar" ? isoALocal(evento?.inicio) : sugerirInicio());
   const [fin, setFin] = useState(modo === "editar" ? isoALocal(evento?.fin) : "");
@@ -105,9 +106,11 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [leyendo, setLeyendo] = useState(false);
   const [avisoCartel, setAvisoCartel] = useState<string | null>(null);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
-  const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (modo === "alta" && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
-  const [masDetalles, setMasDetalles] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
-  // "Estoy aquí" en el pin de otro sitio o del sitio reservado: la persona en el mapa (punto azul) y el pin donde está.
+  const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (esAlta && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
+  const [abierta, setAbierta] = useState<Abierta>(null);
+  const [masAbierto, setMasAbierto] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
+  const [hoja, setHoja] = useState(false);
+  // "Estoy aquí" en el pin de otro sitio: la persona en el mapa (punto azul) y el pin donde está.
   const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
   const [ubicando, setUbicando] = useState(false);
   const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
@@ -124,17 +127,15 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       setUbicando(false);
     }
   }
-  const [seccionElegida, setSeccionElegida] = useState<Seccion | undefined>(undefined);
 
   // Borrador (solo en el alta): se restaura tras el primer pintado (el servidor no lo conoce) y se guarda con cada cambio.
   // Un lugar o artista que viene en la URL (?lugar=, desde la ficha o al volver de registrar un lugar) manda sobre el borrador.
-  const esAlta = modo === "alta";
   const guardarBorrador = useRef(false);
   useEffect(() => {
     if (!esAlta) return;
     const id = requestAnimationFrame(() => {
       const b = leerBorrador();
-      if (b && (b.titulo || b.lugarId || b.sitioTexto || b.quien.length)) {
+      if (b && (b.titulo || b.lugarId || b.otro?.sitioTexto || b.quien.length)) {
         setTitulo(b.titulo);
         setInicio(b.inicio);
         setFin(b.fin);
@@ -145,13 +146,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         setImagen(b.imagen);
         setModoSitio(lugarInicial ? "lugar" : b.modoSitio);
         setLugarId(lugarInicial ?? b.lugarId);
-        setSitioTexto(b.sitioTexto);
-        setSitioPunto(b.sitioPunto);
-        setDireccionPrivada(b.direccionPrivada);
-        setIndicaciones(b.indicaciones);
-        setRevelarHoras(b.revelarHoras);
+        if (b.otro) setOtro(b.otro);
         if (!quienInicial?.length) setQuien(b.quien);
-        setMasDetalles(b.masDetalles);
+        if (b.descripcion || b.enlace || b.imagen) setMasAbierto(true);
       }
       guardarBorrador.current = true;
     });
@@ -160,28 +157,35 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   useEffect(() => {
     if (!esAlta || !guardarBorrador.current) return;
     try {
-      const vacio = !titulo && !lugarId && !sitioTexto && !quien.length && !descripcion && !imagen;
+      const vacio = !titulo && !lugarId && !otro.sitioTexto && !quien.length && !descripcion && !imagen;
       if (vacio) localStorage.removeItem(CLAVE_BORRADOR);
-      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, sitioTexto, sitioPunto, direccionPrivada, indicaciones, revelarHoras, quien, masDetalles } satisfies Borrador));
+      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien } satisfies Borrador));
     } catch {}
-  }, [esAlta, titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, sitioTexto, sitioPunto, direccionPrivada, indicaciones, revelarHoras, quien, masDetalles]);
+  }, [esAlta, titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien]);
 
   const lugar = lugares.find((l) => l.id === lugarId);
-  const ofrecerCartel = cartelActivo && modo === "alta";
-  const dondeResuelto = modoSitio === "lugar" ? !!lugar : !!sitioTexto && (modoSitio !== "reservado" || !!direccionPrivada);
-  const errorDonde = !!(errores.lugar_id || errores.sitio_texto || errores.direccion_privada);
-  const errorCuando = !!(errores.inicio || errores.fin);
-  const errorCuanto = !!errores.precio;
+  const ofrecerCartel = cartelActivo && esAlta;
+  const dondeResuelto = modoSitio === "lugar" ? !!lugar : !!otro.sitioTexto.trim() && (modoSitio !== "reservado" || !!otro.direccionPrivada.trim());
+  const errorDonde = errores.lugar_id ?? errores.sitio_texto ?? errores.direccion_privada;
+  const faltaNombre = titulo.trim().length === 0;
+  const listo = !faltaNombre && dondeResuelto;
 
-  // Qué renglón está abierto: el que la persona tocó; si no, el que tiene error; si no, "dónde" si falta.
-  const abierta: Seccion = seccionElegida !== undefined ? seccionElegida : errorDonde ? "donde" : errorCuando ? "cuando" : errorCuanto ? "cuanto" : dondeResuelto ? null : "donde";
-  const abrir = (s: Seccion) => setSeccionElegida(abierta === s ? null : s);
-
-  const resumenDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "Elige el lugar") : modoSitio === "otro" ? sitioTexto || "Otro sitio" : `${sitioTexto || "Sitio reservado"} · reservado`;
+  const valorDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "") : `${otro.sitioTexto.trim()} · ${modoSitio === "reservado" ? "reservado" : "otro sitio"}`;
   const inicioIso = localAIso(inicio);
-  const resumenCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin) : null) : "Elige cuándo";
-  const resumenCuanto = gratis ? "Gratis" : precio || "Con costo";
-  const resumenQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : <span className={seccion.pendiente}>Añadir quién se presenta</span>;
+  const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin) : null) : "Falta";
+  const valorCuanto = gratis ? "Gratis" : precio.trim() || "Con costo";
+  const valorQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : "Sin artista";
+
+  /** Lo que sale de la hoja: un lugar registrado, o un sitio (reservado o no). */
+  function elegirLugar(id: string) {
+    setModoSitio("lugar");
+    setLugarId(id);
+    setHoja(false);
+  }
+  function cambiarOtro(o: OtroSitio) {
+    setOtro(o);
+    setModoSitio(o.reservado ? "reservado" : "otro");
+  }
 
   async function subir(archivo: File): Promise<string | null> {
     setSubiendo(true);
@@ -195,13 +199,12 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     setImagen(r.url);
     return r.url;
   }
-
   async function subirImagen(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     if (archivo) await subir(archivo);
   }
 
-  /** Cartel → se sube, se lee y el formulario se llena. La persona revisa y publica. */
+  /** Cartel → se sube, se lee y los renglones se llenan. La persona revisa y publica. */
   async function leerCartel(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
@@ -229,10 +232,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         setLugarId(r.lugarId);
       } else if (v.lugar || v.direccion) {
         setModoSitio("otro");
-        setSitioTexto([v.lugar, v.direccion].filter(Boolean).join(" · ").slice(0, LIMITES_EVENTO.sitio));
+        setOtro((o) => ({ ...o, reservado: false, sitioTexto: [v.lugar, v.direccion].filter(Boolean).join(" · ").slice(0, LIMITES_EVENTO.sitio) }));
       }
-      setSeccionElegida(undefined);
-      const faltan = [!v.titulo && "el título", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "el lugar"].filter(Boolean);
+      const faltan = [!v.titulo && "el nombre", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "dónde"].filter(Boolean);
       setAvisoCartel(faltan.length ? `Leí el cartel. Revisa ${faltan.join(", ")} y publica.` : "Leí el cartel. Revisa que todo esté bien y publica.");
     } finally {
       setLeyendo(false);
@@ -240,203 +242,225 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   }
 
   return (
-    <form
-      action={(fd) => {
-        // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
-        if (esAlta) {
-          try {
-            localStorage.removeItem(CLAVE_BORRADOR);
-          } catch {}
-        }
-        enviar(fd);
-      }}
-      noValidate
-    >
-      {ofrecerCartel && (
-        <div className={styles.cartel}>
-          <label className={styles.enlaceCartel}>
-            <input type="file" accept="image/*" onChange={leerCartel} disabled={subiendo || leyendo} />
-            {leyendo ? "Leyendo el cartel…" : subiendo ? "Subiendo…" : "¿Tienes el cartel? Súbelo y llenamos todo"}
-          </label>
-          {avisoCartel && (
-            <p className={styles.nota} role="status">
-              {avisoCartel}
-            </p>
+    <>
+      <form
+        action={(fd) => {
+          // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
+          if (esAlta) {
+            try {
+              localStorage.removeItem(CLAVE_BORRADOR);
+            } catch {}
+          }
+          enviar(fd);
+        }}
+        noValidate
+      >
+        {/* 1. El nombre, con la cámara dentro: leer el cartel llena todo (decisión 1). */}
+        <label className={`${canon.campo} ${canon.sinIcono} ${ofrecerCartel ? canon.conAccion : ""}`}>
+          <input name="titulo" type="text" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={LIMITES_EVENTO.titulo} placeholder="Nombre del evento" aria-label="Nombre del evento" aria-invalid={!!errores.titulo} autoComplete="off" autoFocus={esAlta} required />
+          {ofrecerCartel && (
+            <span className={canon.accionCampo} title="Leer el cartel" aria-disabled={subiendo || leyendo}>
+              <IconoCamara width={22} height={22} />
+              <input type="file" accept="image/*" onChange={leerCartel} disabled={subiendo || leyendo} aria-label="Leer el cartel" />
+            </span>
           )}
-        </div>
-      )}
+        </label>
+        {(leyendo || (subiendo && !masAbierto)) && <p className={canon.estado}>{leyendo ? "Leyendo el cartel…" : "Subiendo…"}</p>}
+        {errores.titulo && (
+          <p className={canon.error} role="alert">
+            {errores.titulo}
+          </p>
+        )}
+        {avisoCartel && (
+          <p className={styles.aviso} role="status">
+            {avisoCartel}
+          </p>
+        )}
 
-      <Campo etiqueta="Qué" name="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={LIMITES_EVENTO.titulo} placeholder="Ej. Noche de jazz" autoComplete="off" autoFocus={modo === "alta"} error={errores.titulo} required />
-
-      {/* Cuándo */}
-      <Seccion titulo="Cuándo" resumen={resumenCuando} abierta={abierta === "cuando"} onAbrir={() => abrir("cuando")} error={errorCuando}>
-        <SelectorCuando inicio={inicio} fin={fin} onCambio={(i, f) => { setInicio(i); setFin(f); }} errorInicio={errores.inicio} errorFin={errores.fin} />
-      </Seccion>
-
-      {/* Dónde */}
-      <Seccion titulo="Dónde" resumen={resumenDonde} abierta={abierta === "donde"} onAbrir={() => abrir("donde")} error={errorDonde}>
-        <input type="hidden" name="modo_sitio" value={modoSitio} />
-        {modoSitio === "lugar" && (
-          <>
-            {lugares.length === 0 ? (
-              <p className={styles.nota}>
-                Todavía no hay lugares registrados. <Link href="/lugares/nuevo?siguiente=/eventos/nuevo">Registra el lugar</Link>, o elige otro sitio abajo.
+        <ul className={canon.renglones}>
+          {/* 2. Cuándo: hoy a las 19:00 ya resuelto; al abrir, Empieza y Termina como el calendario del teléfono. */}
+          <li className={`${canon.resuelto} ${abierta === "cuando" ? canon.abierta : ""}`}>
+            <IconoReloj width={20} height={20} />
+            <span className={canon.clave}>Cuándo</span>
+            <span className={`${canon.valor} ${inicioIso ? "" : canon.falta}`}>{valorCuando}</span>
+            <button type="button" className={canon.cambiar} onClick={() => setAbierta((a) => (a === "cuando" ? null : "cuando"))} aria-expanded={abierta === "cuando"}>
+              {abierta === "cuando" ? "Listo" : "Cambiar"}
+            </button>
+            {abierta === "cuando" && (
+              <div className={canon.cuerpo}>
+                <SelectorCuando
+                  inicio={inicio}
+                  fin={fin}
+                  onCambio={(i, f) => {
+                    setInicio(i);
+                    setFin(f);
+                  }}
+                  errorInicio={errores.inicio}
+                  errorFin={errores.fin}
+                />
+              </div>
+            )}
+            {abierta !== "cuando" && (errores.inicio || errores.fin) && (
+              <p className={canon.cuerpoNota} role="alert">
+                {errores.inicio ?? errores.fin}
               </p>
+            )}
+          </li>
+
+          {/* 3. Dónde: una sola salida, la lupa abre la hoja "Dónde es" (decisión 2). */}
+          <li className={`${canon.resuelto} ${dondeResuelto ? "" : canon.pendiente}`}>
+            <IconoPin width={20} height={20} />
+            <span className={canon.clave}>Dónde</span>
+            {dondeResuelto ? (
+              <>
+                <span className={canon.valor}>{valorDonde}</span>
+                <button type="button" className={canon.cambiar} onClick={() => setHoja(true)}>
+                  Cambiar
+                </button>
+              </>
             ) : (
-              <select name="lugar_id" className={styles.select} value={lugarId} onChange={(e) => setLugarId(e.target.value)} aria-label="Lugar" aria-invalid={!!errores.lugar_id}>
-                <option value="" disabled>
-                  Elige el lugar
-                </option>
-                {lugares.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.nombre}
-                  </option>
-                ))}
-              </select>
+              <>
+                <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
+                <span className={canon.opciones}>
+                  <button type="button" className={canon.accionIcono} onClick={() => setHoja(true)} aria-label="Buscar el lugar" title="Buscar el lugar">
+                    <IconoBuscar width={22} height={22} />
+                  </button>
+                </span>
+              </>
             )}
-            {errores.lugar_id && (
-              <p className={styles.error} role="alert">
-                {errores.lugar_id}
+            {errorDonde && (
+              <p className={canon.cuerpoNota} role="alert">
+                {errorDonde}
               </p>
             )}
-            <p className={styles.nota}>
-              ¿No está en la lista? <Link href="/lugares/nuevo?siguiente=/eventos/nuevo">Regístralo</Link> y vuelves aquí con él elegido.
-            </p>
-            <div className={styles.pildoras}>
-              <button type="button" className={styles.pildora} onClick={() => setModoSitio("otro")}>
-                Es en otro sitio
-              </button>
-              <button type="button" className={styles.pildora} onClick={() => setModoSitio("reservado")}>
-                Sitio reservado
-              </button>
-            </div>
-          </>
-        )}
+          </li>
 
-        {modoSitio === "otro" && (
-          <>
-            <Campo etiqueta="Sitio" name="sitio_texto" value={sitioTexto} onChange={(e) => setSitioTexto(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Ej. Plaza de Armas" autoComplete="off" error={errores.sitio_texto} autoFocus />
-            <div className={styles.filaEtiqueta}>
-              <p className={styles.etiquetaChica}>Pin en el mapa (opcional)</p>
-              <button type="button" className={styles.pildora} onClick={() => estoyAqui(setSitioPunto)} disabled={ubicando}>
-                {ubicando ? "Ubicando…" : "Estoy aquí"}
-              </button>
-            </div>
-            <Mapa modo="elegir" valor={sitioPunto} onCambio={setSitioPunto} ubicacion={yo} />
-            {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
-            <input type="hidden" name="sitio_lat" value={sitioPunto?.lat ?? ""} />
-            <input type="hidden" name="sitio_lng" value={sitioPunto?.lng ?? ""} />
-            <div className={styles.pildoras}>
-              <button type="button" className={styles.pildora} onClick={() => setModoSitio("lugar")}>
-                Mejor un lugar registrado
-              </button>
-              <button type="button" className={styles.pildora} onClick={() => setModoSitio("reservado")}>
-                Sitio reservado
-              </button>
-            </div>
-          </>
-        )}
-
-        {modoSitio === "reservado" && (
-          <>
-            <Campo etiqueta="Cómo se anuncia" name="sitio_texto" value={sitioTexto} onChange={(e) => setSitioTexto(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Ej. Casa en Tequis" autoComplete="off" ayuda="Esto lo ve todo el mundo." error={errores.sitio_texto} autoFocus />
-            <Campo etiqueta="Dirección exacta" name="direccion_privada" value={direccionPrivada} onChange={(e) => setDireccionPrivada(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Calle y número, colonia" autoComplete="off" ayuda="Solo la ven las personas registradas cuando toque; tú y el administrador, siempre." error={errores.direccion_privada} />
-            <label htmlFor="campo-revelar" className={styles.etiquetaChica}>
-              Se revela
-            </label>
-            <select id="campo-revelar" name="revelar_horas" className={styles.select} value={revelarHoras} onChange={(e) => setRevelarHoras(Number(e.target.value))}>
-              {REVELAR_OPCIONES.map((o) => (
-                <option key={o.horas} value={o.horas}>
-                  {o.etiqueta}
-                </option>
-              ))}
-            </select>
-            <Campo etiqueta="Indicaciones (opcional)" name="indicaciones" value={indicaciones} onChange={(e) => setIndicaciones(e.target.value)} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Ej. Portón verde, tocar dos veces" autoComplete="off" />
-            <div className={styles.filaEtiqueta}>
-              <p className={styles.etiquetaChica}>Pin exacto (opcional)</p>
-              <button type="button" className={styles.pildora} onClick={() => estoyAqui(setPrivadoPunto)} disabled={ubicando}>
-                {ubicando ? "Ubicando…" : "Estoy aquí"}
-              </button>
-            </div>
-            <Mapa modo="elegir" valor={privadoPunto} onCambio={setPrivadoPunto} ubicacion={yo} />
-            {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
-            <input type="hidden" name="privado_lat" value={privadoPunto?.lat ?? ""} />
-            <input type="hidden" name="privado_lng" value={privadoPunto?.lng ?? ""} />
-            <div className={styles.pildoras}>
-              <button type="button" className={styles.pildora} onClick={() => setModoSitio("lugar")}>
-                Mejor un lugar registrado
-              </button>
-              <button type="button" className={styles.pildora} onClick={() => setModoSitio("otro")}>
-                Otro sitio, público
-              </button>
-            </div>
-          </>
-        )}
-      </Seccion>
-
-      {/* Quién: opcional, no detiene la publicación (Artistas, decisión 12) */}
-      <Seccion titulo="Quién" resumen={resumenQuien} abierta={abierta === "quien"} onAbrir={() => abrir("quien")} accion={quien.length ? "Cambiar" : "Añadir"}>
-        <SelectorQuien valor={quien} onCambio={setQuien} mios={mios} />
-      </Seccion>
-      <input type="hidden" name="quien" value={JSON.stringify(quien)} />
-
-      {/* Cuánto */}
-      <Seccion titulo="Cuánto" resumen={resumenCuanto} abierta={abierta === "cuanto"} onAbrir={() => abrir("cuanto")} error={errorCuanto}>
-        <div className={styles.opciones}>
-          <label className={`${styles.opcion} ${gratis ? styles.opcionActiva : ""}`}>
-            <input type="radio" name="gratis" value="si" checked={gratis} onChange={() => setGratis(true)} /> Gratis
-          </label>
-          <label className={`${styles.opcion} ${!gratis ? styles.opcionActiva : ""}`}>
-            <input type="radio" name="gratis" value="no" checked={!gratis} onChange={() => setGratis(false)} /> Con costo
-          </label>
-        </div>
-        {!gratis && <Campo etiqueta="Precio" name="precio" value={precio} onChange={(e) => setPrecio(e.target.value)} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" inputMode="text" error={errores.precio} autoFocus />}
-      </Seccion>
-
-      {/* Más detalles */}
-      {!masDetalles ? (
-        <button type="button" className={styles.desplegar} onClick={() => setMasDetalles(true)}>
-          + Más detalles: {imagen ? "imagen" : "cartel o foto"}, descripción, enlace
-        </button>
-      ) : (
-        <div className={styles.detalles}>
-          <div className={styles.campo}>
-            <p className={styles.etiqueta}>Cartel o foto</p>
-            {imagen && (
-              // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-              <img src={imagen} alt="" className={styles.imagen} />
+          {/* 4. Quién: opcional, no detiene la publicación (Artistas, decisión 12). */}
+          <li className={`${canon.resuelto} ${abierta === "quien" ? canon.abierta : quien.length ? "" : canon.pendiente}`}>
+            <IconoPersonas width={20} height={20} />
+            <span className={canon.clave}>Quién</span>
+            <span className={`${canon.valor} ${quien.length ? "" : canon.falta}`}>{valorQuien}</span>
+            <button type="button" className={canon.cambiar} onClick={() => setAbierta((a) => (a === "quien" ? null : "quien"))} aria-expanded={abierta === "quien"}>
+              {abierta === "quien" ? "Listo" : quien.length ? "Cambiar" : "Agregar"}
+            </button>
+            {abierta === "quien" && (
+              <div className={canon.cuerpo}>
+                <SelectorQuien valor={quien} onCambio={setQuien} mios={mios} />
+              </div>
             )}
-            <label className={styles.subir}>
-              <input type="file" accept="image/*" onChange={subirImagen} disabled={subiendo || leyendo} />
-              {subiendo ? "Subiendo…" : imagen ? "Cambiar imagen" : "Elegir una imagen"}
-            </label>
-            {(errorImagen || errores.imagen) && (
-              <p className={styles.error} role="alert">
-                {errorImagen ?? errores.imagen}
+          </li>
+
+          {/* 5. Cuánto: gratis ya resuelto; al abrir, Gratis / Con costo y el precio. */}
+          <li className={`${canon.resuelto} ${abierta === "cuanto" ? canon.abierta : ""}`}>
+            <IconoBoleto width={20} height={20} />
+            <span className={canon.clave}>Cuánto</span>
+            <span className={canon.valor}>{valorCuanto}</span>
+            <button type="button" className={canon.cambiar} onClick={() => setAbierta((a) => (a === "cuanto" ? null : "cuanto"))} aria-expanded={abierta === "cuanto"}>
+              {abierta === "cuanto" ? "Listo" : "Cambiar"}
+            </button>
+            {abierta === "cuanto" && (
+              <div className={canon.cuerpo}>
+                <div className={canon.chips}>
+                  <Chip activo={gratis} onClick={() => setGratis(true)}>
+                    Gratis
+                  </Chip>
+                  <Chip activo={!gratis} onClick={() => setGratis(false)}>
+                    Con costo
+                  </Chip>
+                </div>
+                {!gratis && <input type="text" name="precio" value={precio} onChange={(e) => setPrecio(e.target.value)} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" aria-label="Precio" className={canon.entrada} autoComplete="off" autoFocus />}
+                {errores.precio && (
+                  <p className={canon.error} role="alert">
+                    {errores.precio}
+                  </p>
+                )}
+              </div>
+            )}
+            {abierta !== "cuanto" && errores.precio && (
+              <p className={canon.cuerpoNota} role="alert">
+                {errores.precio}
               </p>
             )}
-            {esAdmin && <CampoImagenUrl valor={imagen} onCambio={setImagen} />}
-          </div>
-          <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} />
-          <Campo etiqueta="Enlace" name="enlace" value={enlace} onChange={(e) => setEnlace(e.target.value)} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />
-        </div>
-      )}
-      <input type="hidden" name="imagen" value={imagen ?? ""} />
-      {!masDetalles && (
-        <>
-          <input type="hidden" name="descripcion" value={descripcion} />
-          <input type="hidden" name="enlace" value={enlace} />
-        </>
-      )}
+          </li>
 
-      {resultado && !resultado.ok && resultado.general && (
-        <p className="aviso-error" role="alert">
-          {resultado.general}
-        </p>
+          {/* 6. Más: descripción, enlace, cartel o foto. Se esconde, no se desmonta. */}
+          <li className={`${canon.resuelto} ${masAbierto ? canon.abierta : canon.pendiente}`}>
+            <IconoMas width={20} height={20} />
+            <span className={canon.clave}>Más</span>
+            <span className={`${canon.valor} ${canon.falta}`}>Descripción, enlace, {imagen ? "imagen" : "foto"}</span>
+            <button type="button" className={canon.cambiar} onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
+              {masAbierto ? "Listo" : "Agregar"}
+            </button>
+            <div className={canon.cuerpo} hidden={!masAbierto}>
+              <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} />
+              <Campo etiqueta="Enlace" name="enlace" value={enlace} onChange={(e) => setEnlace(e.target.value)} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />
+              {imagen && (
+                // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
+                <img src={imagen} alt="" className={styles.imagen} />
+              )}
+              <label className={canon.subir}>
+                <input type="file" accept="image/*" onChange={subirImagen} disabled={subiendo || leyendo} />
+                {subiendo ? "Subiendo…" : imagen ? "Cambiar la imagen" : "Poner el cartel o una foto"}
+              </label>
+              {(errorImagen || errores.imagen) && (
+                <p className={canon.error} role="alert">
+                  {errorImagen ?? errores.imagen}
+                </p>
+              )}
+              {esAdmin && <CampoImagenUrl valor={imagen} onCambio={setImagen} />}
+            </div>
+          </li>
+        </ul>
+
+        {/* Todo viaja escondido: la hoja vive fuera del formulario y los renglones cerrados no tienen campos. */}
+        <input type="hidden" name="modo_sitio" value={modoSitio} />
+        <input type="hidden" name="lugar_id" value={modoSitio === "lugar" ? lugarId : ""} />
+        <input type="hidden" name="sitio_texto" value={modoSitio === "lugar" ? "" : otro.sitioTexto} />
+        <input type="hidden" name="sitio_lat" value={modoSitio === "otro" && otro.sitioPunto ? otro.sitioPunto.lat : ""} />
+        <input type="hidden" name="sitio_lng" value={modoSitio === "otro" && otro.sitioPunto ? otro.sitioPunto.lng : ""} />
+        <input type="hidden" name="direccion_privada" value={modoSitio === "reservado" ? otro.direccionPrivada : ""} />
+        <input type="hidden" name="privado_lat" value={modoSitio === "reservado" && otro.privadoPunto ? otro.privadoPunto.lat : ""} />
+        <input type="hidden" name="privado_lng" value={modoSitio === "reservado" && otro.privadoPunto ? otro.privadoPunto.lng : ""} />
+        <input type="hidden" name="revelar_horas" value={otro.revelarHoras} />
+        <input type="hidden" name="indicaciones" value={modoSitio === "reservado" ? otro.indicaciones : ""} />
+        {abierta !== "cuando" && (
+          <>
+            <input type="hidden" name="inicio" value={inicio} />
+            <input type="hidden" name="fin" value={fin} />
+          </>
+        )}
+        <input type="hidden" name="quien" value={JSON.stringify(quien)} />
+        <input type="hidden" name="gratis" value={gratis ? "si" : "no"} />
+        {(gratis || abierta !== "cuanto") && <input type="hidden" name="precio" value={gratis ? "" : precio} />}
+        <input type="hidden" name="imagen" value={imagen ?? ""} />
+
+        {resultado && !resultado.ok && resultado.general && (
+          <p className="aviso-error" role="alert">
+            {resultado.general}
+          </p>
+        )}
+        {/* El botón dice qué falta (decisión 3). */}
+        <Boton type="submit" disabled={enviando || subiendo || leyendo || !listo}>
+          {enviando ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Publicar evento"}
+          {!enviando && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde"}</small>}
+        </Boton>
+      </form>
+      {hoja && (
+        <HojaDondeEs
+          lugares={lugares}
+          modoSitio={modoSitio}
+          lugarId={lugarId}
+          otro={otro}
+          yo={yo}
+          ubicando={ubicando}
+          avisoUbicacion={avisoUbicacion}
+          volverA={volverA}
+          onLugar={elegirLugar}
+          onOtro={cambiarOtro}
+          onEstoyAqui={estoyAqui}
+          onCerrar={() => setHoja(false)}
+        />
       )}
-      <Boton type="submit" disabled={enviando || subiendo || leyendo}>
-        {enviando ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Publicar evento"}
-      </Boton>
-    </form>
+    </>
   );
 }
