@@ -12,7 +12,7 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
   const {
     data: { user },
   } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
-  if (!supabase || !user) redirect("/entrar?siguiente=/perfil");
+  if (!supabase || !user) redirect("/entrar?siguiente=/ajustes/editar");
 
   const { datos, errores } = validarPerfil({
     nombre: formData.get("nombre"),
@@ -28,8 +28,10 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
 
   revalidatePath("/");
   revalidatePath("/perfil");
+  revalidatePath("/ajustes");
   revalidatePath(`/personas/${user.id}`);
-  return { ok: true };
+  // Guardado: de vuelta a Ajustes, con la ficha releída.
+  redirect("/ajustes");
 }
 
 /** Perfil público o reservado: se guarda al tocar el interruptor (migración 0020). */

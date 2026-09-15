@@ -1,16 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Barra from "@/components/ui/Barra";
-import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoEstrella, IconoLibro, IconoPersona, IconoSalir } from "@/components/ui/Iconos";
+import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoEstrella, IconoLapiz, IconoLibro, IconoPersona, IconoSalir } from "@/components/ui/Iconos";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { TEXTO_INVITAR } from "@/lib/perfil";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import ficha from "@/components/ui/Ficha.module.css";
 import AvisosPerfil from "@/app/perfil/AvisosPerfil";
-import EditarPerfil from "@/app/perfil/EditarPerfil";
 import ReservaPerfil from "@/app/perfil/ReservaPerfil";
 import { borrarMiCuenta, cerrarSesion } from "@/app/perfil/acciones";
 import styles from "./ajustes.module.css";
@@ -20,7 +18,7 @@ const ORIGEN = "https://somosnosotros.org";
 
 /**
  * Ajustes: lo que se configura, fuera de la ficha (docs/rediseno/13, decisiones 5 y 6). Cuatro grupos en tarjetas
- * (Tu ficha · Avisos · Cuenta · Somos Nosotros) y Borrar mi cuenta suelto al final.
+ * (Tu ficha · Avisos · Cuenta · Somos Nosotros) y Borrar mi cuenta suelto al final. Editar abre su propia pantalla (/ajustes/editar).
  */
 export default async function Ajustes({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
@@ -40,9 +38,16 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
       <div className={styles.ajustes}>
         <h2>Tu ficha</h2>
         <ul className={styles.tarjeta}>
-          <Suspense>
-            <EditarPerfil perfil={perfil} correo={correo} />
-          </Suspense>
+          <li>
+            <Link href="/ajustes/editar" className={styles.fila}>
+              <IconoLapiz width={20} height={20} />
+              <b>Editar</b>
+              <small>Foto, nombre, colonia, sobre ti</small>
+              <span className={styles.valor}>
+                <IconoChevronDerecha />
+              </span>
+            </Link>
+          </li>
           <ReservaPerfil reservado={perfil.reservado === true} />
         </ul>
 
