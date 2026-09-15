@@ -334,7 +334,7 @@
     /* Resumen en números = pestañas: Va a · Sigue · (Van a lo mismo, solo en la ajena con coincidencias) */
     const coinciden = !mia && estado.coincide;
     const pestana = coinciden || estado.pestana !== "juntos" ? estado.pestana : "va";
-    const kpi = (clave, n, etiqueta) => `<button type="button" class="kpi" role="tab" data-pestana="${clave}" aria-selected="${pestana === clave}"><b>${n}</b>${etiqueta}</button>`;
+    const kpi = (clave, n, etiqueta) => `<button type="button" class="kpi" role="tab" data-pestana="${clave}" aria-selected="${pestana === clave}">${etiqueta} <b>${n}</b></button>`;
     h += `<div class="kpis" role="tablist" aria-label="Actividad">${kpi("va", 2, mia ? "Voy a" : "Va a")}${kpi("sigue", 2, mia ? "Sigo" : "Sigue")}${coinciden ? kpi("juntos", 1, "Van a lo mismo") : ""}</div>`;
     if (pestana === "va") h += `<section class="grupo" role="tabpanel"><h3>Hoy</h3><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "a")}</ul><h3>sáb 19 de sep</h3><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", "b")}</ul></section>`;
     else if (pestana === "sigue") h += `<section class="grupo" role="tabpanel"><ul class="lista"><li class="renglon" data-nota="Abriría el lugar"><span class="foto a" aria-hidden="true"></span><span class="titulo">Casa Ocho Ventanas</span><span class="meta">${I.pin}Casa de cultura · Calle 5 de Mayo 1100</span></li><li class="renglon" data-nota="Abriría al artista"><span class="foto c redonda" aria-hidden="true"></span><span class="titulo">Los Vecinos</span><span class="meta">${I.nota}Son huasteco · Grupo</span></li></ul></section>`;

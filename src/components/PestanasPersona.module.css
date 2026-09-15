@@ -1,5 +1,6 @@
-/* Resumen en números como pestañas, en una sola línea: número grande y etiqueta chica en cada una; una raya común
-   en la base y la elegida con la raya del color de acción, como los filtros de la agenda (Similitud). */
+/* Resumen en números como pestañas, en una sola línea: la etiqueta y luego el número grande ("Voy a 2"; corrección
+   del founder, 2026-09-15); una raya común en la base y la elegida con la raya del color de acción, como los filtros
+   de la agenda (Similitud). */
 .kpis {
   display: flex;
   gap: var(--espacio-5);

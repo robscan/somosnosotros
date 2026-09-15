@@ -17,8 +17,8 @@ export default function PestanasPersona({ pestanas }: { pestanas: Pestana[] }) {
       <div className={styles.kpis} role="tablist" aria-label="Actividad">
         {pestanas.map((p) => (
           <button key={p.clave} type="button" role="tab" className={styles.kpi} aria-selected={p.clave === actual?.clave} onClick={() => setActiva(p.clave)}>
-            <b>{p.n}</b>
             {p.etiqueta}
+            <b>{p.n}</b>
           </button>
         ))}
       </div>
