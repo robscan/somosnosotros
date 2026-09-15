@@ -38,6 +38,8 @@ export type LugarLista = LugarResumen & { proximo: ProximoEvento | null };
 
 export type Lugar = LugarResumen & {
   descripcion: string | null;
+  /** Qué es, cuando el tipo es Otro (opcional; migración 0022). */
+  detalle?: string | null;
   ciudad: string;
   /** Enlaces y redes reconocidos (lib/enlaces); en la base es JSON y puede venir en la forma vieja. */
   redes: Enlace[];
@@ -90,7 +92,12 @@ export function conProximo<T extends { id: string }>(lugares: T[], eventos: { id
   return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null }));
 }
 
-export const LIMITES_LUGAR = { nombre: 120, descripcion: 600, direccion: 200 } as const;
+export const LIMITES_LUGAR = { nombre: 120, descripcion: 600, direccion: 200, detalle: 60 } as const;
+
+/** "Museo" · "Otro · Taller de cerámica": el tipo con el detalle cuando es Otro. */
+export function etiquetaLugar(l: { tipo: string; detalle?: string | null }): string {
+  return l.tipo === "otro" && l.detalle ? `Otro · ${l.detalle}` : etiquetaTipo(l.tipo);
+}
 
 export function etiquetaTipo(tipo: string): string {
   return TIPOS.find((t) => t.valor === tipo)?.etiqueta ?? "Otro";
@@ -139,8 +146,9 @@ export type DatosLugar = {
   redes: Enlace[];
   portada: string | null;
   privado: boolean;
+  detalle: string | null;
 };
-export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces", string>>;
+export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces" | "detalle", string>>;
 
 
 export function validarLugar(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosLugar; errores: ErroresLugar } {
@@ -158,8 +166,10 @@ export function validarLugar(entrada: Record<string, FormDataEntryValue | null |
     redes,
     portada: limpiar(entrada.portada) || null,
     privado: limpiar(entrada.privado) === "1",
+    detalle: tipo === "otro" ? limpiar(entrada.detalle) || null : null,
   };
   const errores: ErroresLugar = {};
+  if (datos.detalle && datos.detalle.length > LIMITES_LUGAR.detalle) errores.detalle = `Máximo ${LIMITES_LUGAR.detalle} caracteres.`;
   if (!datos.nombre) errores.nombre = "Escribe el nombre del lugar.";
   else if (datos.nombre.length > LIMITES_LUGAR.nombre) errores.nombre = `Máximo ${LIMITES_LUGAR.nombre} caracteres.`;
   if (!TIPOS.some((t) => t.valor === tipo)) errores.tipo = "Elige qué tipo de lugar es.";

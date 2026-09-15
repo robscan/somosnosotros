@@ -2,27 +2,29 @@
 
 import Link from "next/link";
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
-import Mapa from "@/components/Mapa";
+import CampoImagenUrl from "@/components/CampoImagenUrl";
+import SelectorEnlaces from "@/components/SelectorEnlaces";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
-import CampoImagenUrl from "@/components/CampoImagenUrl";
+import { Chip } from "@/components/ui/Chip";
+import { IconoBuscar, IconoEtiqueta, IconoMas, IconoOk, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
-import { direccionDesdePunto } from "@/lib/geocodificar";
-import SelectorEnlaces from "@/components/SelectorEnlaces";
 import { normalizarRedes } from "@/lib/enlaces";
-import { LIMITES_LUGAR, TIPOS, etiquetaTipo, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
+import { direccionDesdePunto } from "@/lib/geocodificar";
+import type { Punto } from "@/lib/geo";
+import { etiquetaTipo, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import type { ResultadoLugar } from "./acciones";
+import HojaDonde from "./HojaDonde";
 import styles from "./FormularioLugar.module.css";
 
-type Punto = { lat: number; lng: number };
 type Props = {
   accion: (previo: ResultadoLugar | null, formData: FormData) => Promise<ResultadoLugar>;
-  /** Sin lugar = alta (corta, con ayuda). Con lugar = edición (todos los campos). */
+  /** Sin lugar = alta. Con lugar = edición (todo resuelto de entrada). */
   lugar?: Lugar;
   usuarioId: string;
   /** Desde dónde se vino (el alta de evento): al publicar el lugar se vuelve ahí con el lugar ya elegido. */
@@ -32,7 +34,7 @@ type Props = {
 };
 
 const CLAVE_BORRADOR = "somosnosotros:borrador-lugar";
-type Borrador = { nombre: string; tipo: Tipo | ""; direccion: string; punto: Punto | null };
+type Borrador = { nombre: string; tipo: Tipo | ""; direccion: string; punto: Punto | null; detalle: string };
 
 function leerBorrador(): Borrador | null {
   try {
@@ -44,9 +46,10 @@ function leerBorrador(): Borrador | null {
 }
 
 /**
- * Alta de lugar pensada para no teclear: escribes el nombre y el sistema encuentra el lugar
- * (dirección + punto + tipo); o tocas "Estoy aquí" y deduce la dirección del pin. Lo demás
- * (descripción, redes, foto) es opcional y puede esperar a después de publicar.
+ * Alta de lugar, el canon de formulario (docs/rediseno/13, decisiones 8 a 12): un campo arriba (el nombre, que
+ * resuelve lo demás con Mapbox) y debajo tres renglones resueltos: Dónde (con dos salidas cuando falta: Estoy aquí
+ * y Buscar, que abre la hoja del mapa), Tipo (deducido; chips al abrir; con Otro, qué es) y Más (descripción,
+ * redes, foto). El botón dice qué falta. Sin frases de ayuda.
  */
 export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false }: Props) {
   const esAlta = !lugar;
@@ -57,16 +60,19 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const [nombre, setNombre] = useState(lugar?.nombre ?? "");
   const [tipo, setTipo] = useState<Tipo | "">(lugar?.tipo ?? "");
   const [tipoElegidoAMano, setTipoElegidoAMano] = useState(!!lugar);
+  const [detalle, setDetalle] = useState(lugar?.detalle ?? "");
   const [direccion, setDireccion] = useState(lugar?.direccion ?? "");
   const [punto, setPunto] = useState<Punto | null>(lugar ? { lat: lugar.lat, lng: lugar.lng } : null);
   const [sugeridos, setSugeridos] = useState<LugarSugerido[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [recuperando, setRecuperando] = useState(false);
-  const [ubicando, setUbicando] = useState(false);
-  const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null); // la persona en el mapa (punto azul), tras "Estoy aquí"
-  const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
   const [existentes, setExistentes] = useState<LugarResumen[]>([]);
-  const [mostrarDetalles, setMostrarDetalles] = useState(!esAlta);
+  const [tipoAbierto, setTipoAbierto] = useState(false);
+  const [masAbierto, setMasAbierto] = useState(!esAlta);
+  const [hoja, setHoja] = useState<null | { conFoco: boolean }>(null);
+  const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
+  const [ubicando, setUbicando] = useState(false);
+  const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
   const [portada, setPortada] = useState<string | null>(lugar?.portada ?? null);
   const [subiendo, setSubiendo] = useState(false);
   const [errorPortada, setErrorPortada] = useState<string | null>(null);
@@ -88,6 +94,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
       if (b && (b.nombre || b.punto)) {
         setNombre(b.nombre);
         setTipo(b.tipo);
+        setDetalle(b.detalle ?? "");
         setDireccion(b.direccion);
         setPunto(b.punto);
         nombreElegido.current = b.nombre;
@@ -100,9 +107,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     if (!esAlta || !guardarBorrador.current) return;
     try {
       if (!nombre && !punto) localStorage.removeItem(CLAVE_BORRADOR);
-      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ nombre, tipo, direccion, punto } satisfies Borrador));
+      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ nombre, tipo, direccion, punto, detalle } satisfies Borrador));
     } catch {}
-  }, [esAlta, nombre, tipo, direccion, punto]);
+  }, [esAlta, nombre, tipo, direccion, punto, detalle]);
 
   // Nombre → lugares sugeridos por Mapbox (350 ms tras dejar de escribir) y lugares ya registrados.
   useEffect(() => {
@@ -126,19 +133,17 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     return () => clearTimeout(t);
   }, [nombre, lugar?.id]);
 
-  /** Al escribir el nombre: limpia listas si es corto y deduce el tipo si nadie lo eligió a mano. */
+  /** Al escribir el nombre: limpia listas si es corto y deduce el tipo si nadie lo eligió a mano (Otro si no hay pista). */
   function alEscribirNombre(valor: string) {
     setNombre(valor);
     if (valor.trim().length < 3) {
       setSugeridos([]);
       setExistentes([]);
     }
-    if (!tipoElegidoAMano) {
-      const deducido = deducirTipo(valor);
-      if (deducido) setTipo(deducido);
-    }
+    if (!tipoElegidoAMano) setTipo(valor.trim() ? (deducirTipo(valor) ?? "otro") : "");
   }
 
+  /** Lugares ya registrados cuyo nombre contiene lo escrito (RPC lugares_con_nombre, mínimo 4 letras). */
   async function buscarExistentes(texto: string): Promise<LugarResumen[]> {
     const supabase = clienteNavegador();
     if (!supabase) return [];
@@ -192,7 +197,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
       setYo((y) => ({ ...p, vez: (y?.vez ?? 0) + 1 }));
       alMoverPin(p);
     } catch (e) {
-      setAvisoUbicacion(e === "sin-soporte" ? "Este teléfono no da su ubicación. Toca el mapa donde está el lugar." : "No se pudo leer tu ubicación. Toca el mapa donde está el lugar.");
+      setAvisoUbicacion(e === "sin-soporte" ? "Este teléfono no da su ubicación. Busca la dirección o toca el mapa." : "No se pudo leer tu ubicación. Busca la dirección o toca el mapa.");
     } finally {
       setUbicando(false);
     }
@@ -209,219 +214,225 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     setSubiendo(false);
   }
 
-  function alEnviar() {
-    // El borrador se limpia cuando el servidor responde con éxito (redirige), no antes.
-  }
-
-  const listo = nombre.trim().length > 0 && !!punto && !!tipo;
+  const faltaNombre = nombre.trim().length === 0;
+  const faltaDonde = !punto;
+  const listo = !faltaNombre && !faltaDonde && !!tipo;
 
   return (
-    <form
-      action={(fd) => {
-        alEnviar();
-        if (esAlta) {
-          try {
-            localStorage.removeItem(CLAVE_BORRADOR);
-          } catch {}
-        }
-        enviar(fd);
-      }}
-      noValidate
-      className={styles.formulario}
-    >
-      {/* 1. Nombre: el sistema encuentra el lugar. */}
-      <div className={styles.campo}>
-        <Campo
-          etiqueta="Nombre del lugar"
-          name="nombre"
-          value={nombre}
-          onChange={(e) => alEscribirNombre(e.target.value)}
-          maxLength={LIMITES_LUGAR.nombre}
-          placeholder="Ej. Casa de la Cultura"
-          autoComplete="off"
-          autoFocus={esAlta}
-          ayuda={recuperando ? "Trayendo la ubicación…" : buscando ? "Buscando…" : esAlta ? "Escríbelo y elige el lugar si aparece: llenamos lo demás." : undefined}
-          error={errores.nombre}
-          required
-        />
+    <>
+      <form
+        action={(fd) => {
+          if (esAlta) {
+            try {
+              localStorage.removeItem(CLAVE_BORRADOR);
+            } catch {}
+          }
+          enviar(fd);
+        }}
+        noValidate
+        className={styles.formulario}
+      >
+        {/* 1. El nombre: el sistema encuentra el lugar. */}
+        <label className={styles.nombre}>
+          <IconoBuscar width={20} height={20} />
+          <input name="nombre" type="text" value={nombre} onChange={(e) => alEscribirNombre(e.target.value)} maxLength={LIMITES_LUGAR.nombre} placeholder="Nombre del lugar" aria-label="Nombre del lugar" aria-invalid={!!errores.nombre} autoComplete="off" autoFocus={esAlta} required />
+        </label>
+        {(buscando || recuperando) && <p className={styles.estado}>{recuperando ? "Trayendo la ubicación…" : "Buscando…"}</p>}
+        {errores.nombre && (
+          <p className={styles.error} role="alert">
+            {errores.nombre}
+          </p>
+        )}
         {sugeridos.length > 0 && (
           <ul className={styles.sugerencias} role="listbox" aria-label="Lugares encontrados">
             {sugeridos.map((s) => (
               <li key={s.mapboxId}>
-                <button type="button" className={styles.sugerencia} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
-                  {s.esDireccion ? (
-                    <>
-                      <strong>{nombre.trim()}</strong>
-                      <span className={styles.sugerenciaDetalle}>Usar la dirección {s.direccion || s.nombre}</span>
-                    </>
-                  ) : (
-                    <>
-                      <strong>{s.nombre}</strong>
-                      {s.direccion && <span className={styles.sugerenciaDetalle}>{s.direccion}</span>}
-                    </>
-                  )}
+                <button type="button" className={`${styles.sugerencia} ${s.esDireccion ? styles.direccion : ""}`} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
+                  <IconoPin width={20} height={20} />
+                  <b>{s.esDireccion ? nombre.trim() : s.nombre}</b>
+                  <small>{s.esDireccion ? `Usar la dirección ${s.direccion || s.nombre}` : s.direccion}</small>
                 </button>
               </li>
             ))}
           </ul>
         )}
         {existentes.length > 0 && (
-          <div className={styles.existentes} role="status">
+          <p className={styles.existe} role="status">
+            <IconoOk width={20} height={20} />
+            <span>
+              <b>Ya está registrado:</b>{" "}
+              {existentes.map((e, i) => (
+                <span key={e.id}>
+                  {i > 0 ? " · " : ""}
+                  <Link href={`/lugares/${e.id}`}>{e.nombre}</Link>
+                </span>
+              ))}
+              . Si es otro con el mismo nombre, sigue.
+            </span>
+          </p>
+        )}
+
+        <ul className={styles.renglones}>
+          {/* 2. Dónde: resuelto en cuanto algo lo resuelve; si falta, dos salidas por intención. */}
+          <li className={`${styles.resuelto} ${punto ? "" : styles.pendiente}`}>
+            <IconoPin width={20} height={20} />
+            <span className={styles.clave}>Dónde</span>
+            {punto ? (
+              <>
+                <span className={styles.valor}>{direccion || "Pin en el mapa"}</span>
+                <button type="button" className={styles.cambiar} onClick={() => setHoja({ conFoco: false })}>
+                  Cambiar
+                </button>
+              </>
+            ) : (
+              <>
+                <span className={`${styles.valor} ${styles.falta}`}>Falta</span>
+                <span className={styles.opciones}>
+                  <button type="button" className={styles.accionIcono} onClick={estoyAqui} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+                    <IconoUbicacion width={22} height={22} />
+                  </button>
+                  <button type="button" className={styles.accionIcono} onClick={() => setHoja({ conFoco: true })} aria-label="Buscar la dirección" title="Buscar la dirección">
+                    <IconoBuscar width={22} height={22} />
+                  </button>
+                </span>
+              </>
+            )}
+            {(avisoUbicacion || errores.ubicacion || errores.direccion) && (
+              <p className={styles.cuerpoNota} role={errores.ubicacion ? "alert" : undefined}>
+                {errores.ubicacion ?? errores.direccion ?? avisoUbicacion}
+              </p>
+            )}
+          </li>
+
+          {/* 3. Tipo: deducido del nombre; chips al abrir; con Otro, qué es (opcional). */}
+          <li className={`${styles.resuelto} ${tipoAbierto ? styles.abierta : ""}`}>
+            <IconoEtiqueta width={20} height={20} />
+            <span className={styles.clave}>Tipo</span>
+            <span className={`${styles.valor} ${tipo ? "" : styles.falta}`}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre"}</span>
+            <button type="button" className={styles.cambiar} onClick={() => setTipoAbierto((a) => !a)} aria-expanded={tipoAbierto}>
+              {tipoAbierto ? "Listo" : "Cambiar"}
+            </button>
+            {tipoAbierto && (
+              <div className={styles.cuerpo}>
+                <div className={styles.chips}>
+                  {TIPOS.map((t) => (
+                    <Chip
+                      key={t.valor}
+                      activo={tipo === t.valor}
+                      onClick={() => {
+                        setTipo(t.valor);
+                        setTipoElegidoAMano(true);
+                        if (t.valor !== "otro") setTipoAbierto(false);
+                      }}
+                    >
+                      {t.etiqueta}
+                    </Chip>
+                  ))}
+                </div>
+                {tipo === "otro" && <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_LUGAR.detalle} placeholder="¿Qué es? Ej. taller de cerámica (opcional)" aria-label="Qué es" className={styles.queEs} autoComplete="off" />}
+                {errores.detalle && (
+                  <p className={styles.error} role="alert">
+                    {errores.detalle}
+                  </p>
+                )}
+              </div>
+            )}
+          </li>
+
+          {/* 4. Más: descripción, redes, foto (y lo del administrador). Puede hacerse después. */}
+          <li className={`${styles.resuelto} ${masAbierto ? styles.abierta : styles.pendiente}`}>
+            <IconoMas width={20} height={20} />
+            <span className={styles.clave}>Más</span>
+            <span className={`${styles.valor} ${styles.falta}`}>Descripción, redes, foto</span>
+            <button type="button" className={styles.cambiar} onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
+              {masAbierto ? "Listo" : "Agregar"}
+            </button>
+            {/* Se esconde, no se desmonta: lo escrito y los enlaces se quedan aunque se cierre. */}
+            <div className={styles.cuerpo} hidden={!masAbierto}>
+              <Campo etiqueta="Descripción corta" name="descripcion" multilinea defaultValue={lugar?.descripcion ?? ""} maxLength={LIMITES_LUGAR.descripcion} placeholder="Qué es y qué pasa ahí" error={errores.descripcion} />
+              <SelectorEnlaces inicial={normalizarRedes(lugar?.redes)} error={errores.enlaces} />
+              {portada && (
+                // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
+                <img src={portada} alt="" className={styles.portada} />
+              )}
+              <label className={styles.subir}>
+                <input type="file" accept="image/*" onChange={subirPortada} disabled={subiendo} />
+                {subiendo ? "Subiendo…" : portada ? "Cambiar la foto" : "Poner una foto de portada"}
+              </label>
+              {(errorPortada || errores.portada) && (
+                <p className={styles.error} role="alert">
+                  {errorPortada ?? errores.portada}
+                </p>
+              )}
+              {esAdmin && <CampoImagenUrl valor={portada} onCambio={setPortada} />}
+              {esAdmin && (
+                <label className={styles.interruptor}>
+                  <input type="checkbox" checked={privado} onChange={(e) => setPrivado(e.target.checked)} />
+                  <span>
+                    <strong>Solo yo lo veo</strong>
+                    <small>Mapeo privado: no sale en el mapa, la lista ni la búsqueda para nadie más.</small>
+                  </span>
+                </label>
+              )}
+            </div>
+          </li>
+        </ul>
+
+        <input type="hidden" name="tipo" value={tipo} />
+        <input type="hidden" name="direccion" value={direccion} />
+        <input type="hidden" name="lat" value={punto?.lat ?? ""} />
+        <input type="hidden" name="lng" value={punto?.lng ?? ""} />
+        <input type="hidden" name="portada" value={portada ?? ""} />
+        <input type="hidden" name="privado" value={privado ? "1" : ""} />
+        {!(tipoAbierto && tipo === "otro") && <input type="hidden" name="detalle" value={detalle} />}
+        {siguiente && <input type="hidden" name="siguiente" value={siguiente} />}
+
+        {parecidos && parecidos.length > 0 && !confirmado && (
+          <div className={styles.parecidos} role="alert">
             <p>
-              <strong>Ya está registrado:</strong>
+              <strong>¿Es este?</strong> Ya hay un lugar con ese nombre muy cerca:
             </p>
             <ul>
-              {existentes.map((e) => (
-                <li key={e.id}>
-                  <Link href={`/lugares/${e.id}`}>
-                    {e.nombre} · {etiquetaTipo(e.tipo)}
-                    {e.direccion ? ` · ${e.direccion}` : ""}
+              {parecidos.map((p) => (
+                <li key={p.id}>
+                  <Link href={`/lugares/${p.id}`}>
+                    {p.nombre} · {etiquetaTipo(p.tipo)}
+                    {p.direccion ? ` · ${p.direccion}` : ""}
                   </Link>
                 </li>
               ))}
             </ul>
-            <p className={styles.nota}>Si es otro con el mismo nombre, sigue adelante.</p>
+            <Boton type="button" variante="secundario" onClick={() => setConfirmado(true)}>
+              No, es otro: publicar de todos modos
+            </Boton>
           </div>
         )}
-      </div>
+        <input type="hidden" name="confirmado" value={confirmado ? "1" : ""} />
 
-      {/* 2. Ubicación: elegida arriba, "Estoy aquí", o el dedo en el mapa. */}
-      <div className={styles.campo}>
-        <div className={styles.filaEtiqueta}>
-          <p className={styles.etiqueta}>Ubicación</p>
-          <button type="button" className={styles.botonChico} onClick={estoyAqui} disabled={ubicando}>
-            {ubicando ? "Ubicando…" : "Estoy aquí"}
-          </button>
-        </div>
-        <Mapa modo="elegir" valor={punto} onCambio={alMoverPin} ubicacion={yo} />
-        <input type="hidden" name="lat" value={punto?.lat ?? ""} />
-        <input type="hidden" name="lng" value={punto?.lng ?? ""} />
-        {siguiente && <input type="hidden" name="siguiente" value={siguiente} />}
-        {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
-        {errores.ubicacion && (
-          <p className={styles.error} role="alert">
-            {errores.ubicacion}
+        {resultado && !resultado.ok && resultado.general && (
+          <p className="aviso-error" role="alert">
+            {resultado.general}
           </p>
         )}
-        <Campo
-          etiqueta="Dirección"
-          name="direccion"
-          value={direccion}
-          onChange={(e) => setDireccion(e.target.value)}
-          maxLength={LIMITES_LUGAR.direccion}
-          placeholder="Se llena sola con el pin; corrígela si hace falta"
-          autoComplete="off"
-          error={errores.direccion}
+        {/* El botón dice qué falta (decisión 11). */}
+        <Boton type="submit" disabled={enviando || subiendo || recuperando || !listo}>
+          {enviando ? "Guardando…" : lugar ? "Guardar cambios" : "Publicar lugar"}
+          {!enviando && !listo && <small className={styles.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde está"}</small>}
+        </Boton>
+      </form>
+      {hoja && (
+        <HojaDonde
+          conFoco={hoja.conFoco}
+          punto={punto}
+          direccion={direccion}
+          yo={yo}
+          ubicando={ubicando}
+          onPunto={alMoverPin}
+          onDireccion={setDireccion}
+          onEstoyAqui={estoyAqui}
+          onCerrar={() => setHoja(null)}
         />
-      </div>
-
-      {/* 3. Tipo: deducido; se puede cambiar. */}
-      <div className={styles.campo}>
-        <label htmlFor="campo-tipo" className={styles.etiqueta}>
-          Tipo
-        </label>
-        <select
-          id="campo-tipo"
-          name="tipo"
-          className={styles.select}
-          value={tipo}
-          onChange={(e) => {
-            setTipo(e.target.value as Tipo);
-            setTipoElegidoAMano(true);
-          }}
-          aria-invalid={!!errores.tipo}
-          required
-        >
-          <option value="" disabled>
-            Elige uno
-          </option>
-          {TIPOS.map((t) => (
-            <option key={t.valor} value={t.valor}>
-              {t.etiqueta}
-            </option>
-          ))}
-        </select>
-        {errores.tipo && (
-          <p className={styles.error} role="alert">
-            {errores.tipo}
-          </p>
-        )}
-      </div>
-
-      {/* 4. Detalles: opcionales; en el alta van plegados. */}
-      {esAlta && !mostrarDetalles && (
-        <button type="button" className={styles.desplegar} onClick={() => setMostrarDetalles(true)}>
-          + Agregar descripción, redes o foto (puedes hacerlo después)
-        </button>
       )}
-      {mostrarDetalles && (
-        <>
-          <Campo etiqueta="Descripción corta (opcional)" name="descripcion" multilinea defaultValue={lugar?.descripcion ?? ""} maxLength={LIMITES_LUGAR.descripcion} ayuda={`Qué es y qué pasa ahí. Hasta ${LIMITES_LUGAR.descripcion} caracteres.`} error={errores.descripcion} />
-          <SelectorEnlaces inicial={normalizarRedes(lugar?.redes)} error={errores.enlaces} />
-          <div className={styles.campo}>
-            <p className={styles.etiqueta}>Foto de portada (opcional)</p>
-            {portada && (
-              // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-              <img src={portada} alt="" className={styles.portada} />
-            )}
-            <label className={styles.subir}>
-              <input type="file" accept="image/*" onChange={subirPortada} disabled={subiendo} />
-              {subiendo ? "Subiendo…" : portada ? "Cambiar foto" : "Elegir una foto"}
-            </label>
-            {(errorPortada || errores.portada) && (
-              <p className={styles.error} role="alert">
-                {errorPortada ?? errores.portada}
-              </p>
-            )}
-            {esAdmin && <CampoImagenUrl valor={portada} onCambio={setPortada} />}
-          </div>
-        </>
-      )}
-      <input type="hidden" name="portada" value={portada ?? ""} />
-
-      {/* Solo el administrador: mapeo personal que nadie más ve (no es "oculto"). */}
-      {esAdmin && (
-        <label className={styles.interruptor}>
-          <input type="checkbox" checked={privado} onChange={(e) => setPrivado(e.target.checked)} />
-          <span>
-            <strong>Solo yo lo veo</strong>
-            <small>Mapeo privado: no sale en el mapa, la lista ni la búsqueda para nadie más.</small>
-          </span>
-        </label>
-      )}
-      <input type="hidden" name="privado" value={privado ? "1" : ""} />
-
-      {parecidos && parecidos.length > 0 && !confirmado && (
-        <div className={styles.parecidos} role="alert">
-          <p>
-            <strong>¿Es este?</strong> Ya hay un lugar con ese nombre muy cerca:
-          </p>
-          <ul>
-            {parecidos.map((p) => (
-              <li key={p.id}>
-                <Link href={`/lugares/${p.id}`}>
-                  {p.nombre} · {etiquetaTipo(p.tipo)}
-                  {p.direccion ? ` · ${p.direccion}` : ""}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <Boton type="button" variante="secundario" onClick={() => setConfirmado(true)}>
-            No, es otro: publicar de todos modos
-          </Boton>
-        </div>
-      )}
-      <input type="hidden" name="confirmado" value={confirmado ? "1" : ""} />
-
-      {resultado && !resultado.ok && resultado.general && (
-        <p className="aviso-error" role="alert">
-          {resultado.general}
-        </p>
-      )}
-      <Boton type="submit" disabled={enviando || subiendo || recuperando}>
-        {enviando ? "Guardando…" : lugar ? "Guardar cambios" : "Publicar lugar"}
-      </Boton>
-      {esAlta && !listo && <p className={styles.nota}>Con el nombre y la ubicación basta para publicar.</p>}
-    </form>
+    </>
   );
 }

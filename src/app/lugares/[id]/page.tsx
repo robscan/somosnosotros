@@ -18,7 +18,7 @@ import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
-import { etiquetaTipo, textoProximo, type Lugar } from "@/lib/lugares";
+import { etiquetaLugar, etiquetaTipo, textoProximo, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import Seguir from "@/components/Seguir";
 import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
@@ -185,7 +185,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
 
       {lugar.portada && <Cartel src={lugar.portada} alt={`Portada de ${lugar.nombre}`} />}
       <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{lugar.nombre}</h1>
-      <p className={ficha.etiqueta}>{etiquetaTipo(lugar.tipo)}</p>
+      <p className={ficha.etiqueta}>{etiquetaLugar(lugar)}</p>
 
       <ul className={ficha.datos}>
         <li className={ficha.dato}>

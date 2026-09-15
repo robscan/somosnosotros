@@ -1,37 +1,57 @@
+/* ==========================================================================
+   Alta de lugar, el canon de formulario (docs/rediseno/13, decisiones 8 a 12):
+   1. Nombre con lupa · 2. Sugerencias y "ya está registrado" · 3. Renglones resueltos
+   (icono | clave / valor | acción; cuerpo debajo al abrir) · 4. Más (descripción, foto, admin) · 5. Parecidos y botón
+   ========================================================================== */
+
 .formulario {
   display: block;
 }
-.campo {
-  margin-bottom: var(--espacio-4);
+
+/* 1. El nombre: campo con la lupa dentro, sin frase de ayuda. */
+.nombre {
   position: relative;
+  display: grid;
+  margin-bottom: var(--espacio-3);
 }
-.etiqueta {
-  display: block;
-  font-weight: 600;
-  margin-bottom: var(--espacio-1);
+.nombre > svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texto-suave);
+  pointer-events: none;
 }
-.select {
-  display: block;
-  width: 100%;
+.nombre > input {
   min-height: var(--toque);
-  padding: var(--espacio-3) var(--espacio-4);
+  padding: 0 14px 0 44px;
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: var(--letra-md);
+  font-size: max(16px, var(--letra-md));
 }
-.select[aria-invalid="true"] {
+.nombre > input:focus {
+  border-color: var(--texto);
+  outline: none;
+}
+.nombre > input[aria-invalid="true"] {
   border-color: var(--error);
 }
+.estado {
+  margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 .error {
+  margin: var(--espacio-1) 0 var(--espacio-2);
   color: var(--error);
   font-size: var(--letra-sm);
-  margin-top: var(--espacio-1);
 }
+
+/* 2. Sugerencias (lugar con nombre, o "usar la dirección") y lo que ya está registrado. */
 .sugerencias {
   list-style: none;
-  margin-top: -8px;
-  margin-bottom: var(--espacio-3);
+  margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
@@ -39,36 +59,201 @@
   overflow: hidden;
 }
 .sugerencia {
-  display: block;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  grid-template-areas:
+    "icono nombre"
+    "icono detalle";
+  column-gap: 10px;
+  align-items: center;
   width: 100%;
   min-height: var(--toque);
-  padding: var(--espacio-3) var(--espacio-4);
+  padding: 8px 14px;
   border: none;
-  border-bottom: 1px solid var(--borde);
+  border-top: 1px solid var(--borde);
   background: none;
+  color: var(--texto);
+  font: inherit;
   text-align: left;
   cursor: pointer;
+}
+.sugerencias li:first-child .sugerencia {
+  border-top: none;
 }
 .sugerencia:hover,
 .sugerencia:focus {
   background: var(--fondo-suave);
 }
-.grupo {
-  border: none;
-  padding: 0;
-  margin-bottom: var(--espacio-2);
+.sugerencia > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
 }
+.sugerencia > b {
+  grid-area: nombre;
+  font-weight: 700;
+}
+.sugerencia > small {
+  grid-area: detalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.direccion > b {
+  font-weight: 500;
+}
+.direccion > small {
+  color: var(--primario);
+  font-weight: 600;
+}
+.existe {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  column-gap: 10px;
+  align-items: center;
+  margin-bottom: var(--espacio-3);
+  padding: 10px 14px;
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.existe > svg {
+  color: var(--primario);
+}
+.existe a {
+  color: var(--primario);
+  font-weight: 700;
+}
+
+/* 3. Renglones resueltos: icono | clave / valor | acción; el cuerpo, al abrir, debajo a lo ancho. */
+.renglones {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
+}
+.resuelto {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  grid-template-areas:
+    "icono clave accion"
+    "icono valor accion"
+    "cuerpo cuerpo cuerpo";
+  column-gap: 12px;
+  align-items: center;
+  min-height: 60px;
+  padding: 10px 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.pendiente {
+  border-style: dashed;
+}
+.abierta {
+  border-color: var(--texto);
+}
+.resuelto > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.clave {
+  grid-area: clave;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.valor {
+  grid-area: valor;
+  font-size: var(--letra-md);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.falta {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+.cambiar {
+  grid-area: accion;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-2);
+  border: none;
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+/* Dos salidas por intención cuando falta Dónde: icono de ubicación (acabo de descubrirlo) y lupa (sé dónde está). */
+.opciones {
+  grid-area: accion;
+  display: flex;
+  gap: 6px;
+}
+.accionIcono {
+  display: inline-grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  cursor: pointer;
+}
+.accionIcono:disabled {
+  opacity: 0.6;
+}
+.cuerpo {
+  grid-area: cuerpo;
+  display: grid;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-3);
+}
+.cuerpo[hidden] {
+  display: none;
+}
+.cuerpoNota {
+  grid-area: cuerpo;
+  padding-top: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.cuerpoNota[role="alert"] {
+  color: var(--error);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+.queEs {
+  min-height: var(--toque-min);
+  padding: 0 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: max(16px, var(--letra-md));
+}
+.queEs:focus {
+  border-color: var(--texto);
+  outline: none;
+}
+
+/* 4. Más: foto de portada, subir, interruptor del administrador. */
 .portada {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: var(--radio);
-  margin-bottom: var(--espacio-2);
 }
 .subir {
+  position: relative;
   display: inline-flex;
   align-items: center;
+  justify-self: start;
   min-height: var(--toque);
   padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
@@ -81,81 +266,10 @@
   height: 1px;
   opacity: 0;
 }
-.parecidos {
-  padding: var(--espacio-4);
-  margin-bottom: var(--espacio-4);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
-  display: grid;
-  gap: var(--espacio-3);
-}
-.parecidos ul {
-  padding-left: var(--espacio-5);
-}
-.sugerenciaDetalle {
-  display: block;
-  font-size: var(--letra-sm);
-  color: var(--texto-suave);
-}
-.existentes {
-  margin: -4px 0 var(--espacio-3);
-  padding: var(--espacio-3) var(--espacio-4);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
-}
-.existentes ul {
-  padding-left: var(--espacio-5);
-  margin: var(--espacio-1) 0;
-}
-.nota {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  margin-top: var(--espacio-2);
-}
-.filaEtiqueta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--espacio-3);
-  margin-bottom: var(--espacio-1);
-}
-.filaEtiqueta .etiqueta {
-  margin-bottom: 0;
-}
-.botonChico {
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--borde);
-  border-radius: 999px;
-  background: var(--fondo);
-  color: var(--primario);
-  font-weight: 600;
-  cursor: pointer;
-}
-.botonChico:disabled {
-  opacity: 0.55;
-}
-.desplegar {
-  display: block;
-  width: 100%;
-  min-height: var(--toque);
-  margin-bottom: var(--espacio-4);
-  padding: 0 var(--espacio-4);
-  border: 1px dashed var(--borde);
-  border-radius: var(--radio);
-  background: none;
-  color: var(--texto-suave);
-  text-align: left;
-  cursor: pointer;
-}
-
-/* Interruptor con explicación (solo el administrador lo ve). */
 .interruptor {
   display: flex;
   align-items: flex-start;
   gap: var(--espacio-3);
-  margin-bottom: var(--espacio-4);
   cursor: pointer;
 }
 .interruptor input {
@@ -172,4 +286,21 @@
 .interruptor small {
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+}
+
+/* 5. Parecidos ("¿Es este?") y el botón que dice qué falta. */
+.parecidos {
+  margin-bottom: var(--espacio-4);
+  padding: var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+}
+.parecidos ul {
+  margin: var(--espacio-2) 0 var(--espacio-3) var(--espacio-4);
+}
+.faltaBoton {
+  margin-left: var(--espacio-2);
+  font-size: var(--letra-xs);
+  font-weight: 500;
 }
