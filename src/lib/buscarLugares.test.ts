@@ -37,6 +37,10 @@ describe("deducirTipo", () => {
     expect(deducirTipo("Teatro de la Paz", ["theatre"])).toBe("foro");
     expect(deducirTipo("Biblioteca Central")).toBe("biblioteca");
     expect(deducirTipo("Galería Ángel")).toBe("galeria");
+    expect(deducirTipo("Museo Nacional de la Máscara")).toBe("museo");
+    expect(deducirTipo("Casa Museo Manuel José Othón")).toBe("museo");
+    expect(deducirTipo("Escuela Estatal de Teatro")).toBe("escuela");
+    expect(deducirTipo("Instituto Potosino de Bellas Artes")).toBe("escuela");
     expect(deducirTipo("Casa de la Cultura de SLP")).toBe("casa_de_cultura");
     expect(deducirTipo("Centro Cultural Universitario Bicentenario")).toBe("casa_de_cultura");
     expect(deducirTipo("Colectivo Nido")).toBe("colectivo");

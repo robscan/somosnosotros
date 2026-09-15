@@ -6,8 +6,10 @@ import type { Origen } from "./origen";
 
 export const TIPOS = [
   { valor: "casa_de_cultura", etiqueta: "Casa de cultura" },
+  { valor: "museo", etiqueta: "Museo" },
   { valor: "foro", etiqueta: "Foro" },
   { valor: "galeria", etiqueta: "Galería" },
+  { valor: "escuela", etiqueta: "Escuela" },
   { valor: "colectivo", etiqueta: "Colectivo" },
   { valor: "biblioteca", etiqueta: "Biblioteca" },
   { valor: "otro", etiqueta: "Otro" },

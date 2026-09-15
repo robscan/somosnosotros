@@ -1,0 +1,1010 @@
+[
+  {
+    "nombre": "Museo Laberinto de las Ciencias y las Artes",
+    "alias": [
+      "Museo Laberinto",
+      "Laberinto de las Ciencias y las Artes"
+    ],
+    "categoria": "museo",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "Blvd. Antonio Rocha Cordero s/n, Col. Tierra Blanca, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo interactivo de ciencia y arte junto al Parque Tangamanga I, a cargo de la Secretaría de Cultura del Estado. Tiene salas con módulos para experimentar, talleres y actividades para familias y grupos escolares.",
+    "enlaces": [
+      "https://museolaberinto.com/",
+      "https://www.facebook.com/Laberinto.SLP",
+      "https://www.instagram.com/museo.laberinto"
+    ],
+    "lat": 22.117403,
+    "lng": -100.999204,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=1231",
+      "https://cultura.slp.gob.mx/museos/",
+      "https://planoinformativo.com/1145246/con-mas-de-100-actividades-san-luis-abre-sus-museos-",
+      "https://sanluis.eluniversal.com.mx/mas-de-san-luis/aprovecha-esta-semana-santa-para-visitar-estos-museos-en-slp/"
+    ]
+  },
+  {
+    "nombre": "Museo Nacional de la Máscara",
+    "alias": [
+      "Museo de la Máscara"
+    ],
+    "categoria": "museo",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "Villerías 2, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo de la Secretaría de Cultura del Estado en una casona porfiriana frente al Teatro de la Paz. Exhibe más de mil máscaras y trajes de danza de México, a partir de la colección donada por Víctor José Moya Rubio; organiza exposiciones y actividades.",
+    "enlaces": [
+      "http://museonacionaldelamascaraslp.com.mx/",
+      "https://www.facebook.com/museonacionaldelamascara"
+    ],
+    "lat": 22.150707,
+    "lng": -100.974321,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=887",
+      "http://museonacionaldelamascaraslp.com.mx/",
+      "https://cultura.slp.gob.mx/museos/",
+      "https://pulsoslp.com.mx/cultura/dia-internacional-de-los-museos/2047040"
+    ]
+  },
+  {
+    "nombre": "Museo Regional Potosino",
+    "alias": [],
+    "categoria": "museo",
+    "operador": "INAH",
+    "direccion": "Hermenegildo Galeana 450, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo del INAH en el antiguo convento franciscano, junto a la Capilla de Aranzazú. Sus salas recorren la arqueología de Mesoamérica y la Huasteca, la vida en el periodo virreinal y la fundación de San Luis Potosí. Ofrece visitas guiadas.",
+    "enlaces": [
+      "https://www.inah.gob.mx/museos/museo-regional-potosino",
+      "https://www.facebook.com/profile.php?id=61550945761465"
+    ],
+    "lat": 22.149053,
+    "lng": -100.9782,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=660",
+      "https://lugares.inah.gob.mx/en/node/4255",
+      "https://www.inah.gob.mx/museos/museo-regional-potosino"
+    ]
+  },
+  {
+    "nombre": "Museo Federico Silva Escultura Contemporánea",
+    "alias": [
+      "Museo Federico Silva"
+    ],
+    "categoria": "museo",
+    "operador": "Secretaría de Cultura del Estado (organismo descentralizado)",
+    "direccion": "Álvaro Obregón 80, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo dedicado a la escultura contemporánea y a la obra de Federico Silva, frente al Jardín de San Juan de Dios. Organismo de la Secretaría de Cultura del Estado con exposiciones permanentes y temporales, biblioteca y programa educativo.",
+    "enlaces": [
+      "https://museofedericosilva.org/",
+      "https://www.facebook.com/MuseoFedericoSilva",
+      "https://www.instagram.com/museo_federico_silva"
+    ],
+    "lat": 22.152993,
+    "lng": -100.974482,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=522",
+      "https://cultura.slp.gob.mx/museos/",
+      "https://slp.gob.mx/noticias/2025/5/19/slp-celebr%C3%B3-sus-museos-con-cultura-sin-l%C3%ADmites/",
+      "https://pulsoslp.com.mx/cultura/dia-internacional-de-los-museos/2047040"
+    ]
+  },
+  {
+    "nombre": "Museo Leonora Carrington",
+    "alias": [
+      "Museo Leonora Carrington San Luis Potosí"
+    ],
+    "categoria": "museo",
+    "operador": "Centro de las Artes de San Luis Potosí / Secretaría de Cultura del Estado",
+    "direccion": "Calzada de Guadalupe 705, Col. Julián Carrillo, 78340, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo dentro del Centro de las Artes (antigua penitenciaría) dedicado a Leonora Carrington: escultura, joyería, gráfica y objetos personales. Depende de la Secretaría de Cultura del Estado y presenta exposiciones temporales y actividades.",
+    "enlaces": [
+      "https://www.facebook.com/museoleonoracarrington",
+      "https://www.instagram.com/museoleonoracarrington"
+    ],
+    "lat": 22.138323,
+    "lng": -100.970602,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=1799",
+      "https://cultura.slp.gob.mx/museos/",
+      "https://planoinformativo.com/1145246/con-mas-de-100-actividades-san-luis-abre-sus-museos-"
+    ]
+  },
+  {
+    "nombre": "Museo Francisco Cossío",
+    "alias": [
+      "Casa de la Cultura de San Luis Potosí"
+    ],
+    "categoria": "museo",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "Av. Venustiano Carranza 1815, Col. Jardín, 78270, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo de la Secretaría de Cultura del Estado en la antigua Casa de la Cultura, abierta en 1970 sobre Av. Carranza. Presenta exposiciones de arte, visitas guiadas, talleres y cursos, y eventos en su jardín como lecturas y conciertos.",
+    "enlaces": [
+      "https://www.museofranciscocossio.org/",
+      "https://www.facebook.com/museo.francisco.cossio"
+    ],
+    "lat": 22.148467,
+    "lng": -101.003298,
+    "fuentes": [
+      "https://www.museofranciscocossio.org/",
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=524",
+      "https://cultura.slp.gob.mx/museos/"
+    ]
+  },
+  {
+    "nombre": "Museo del Virreinato",
+    "alias": [
+      "Museo del Virreinato de San Luis Potosí"
+    ],
+    "categoria": "museo",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "Villerías 115, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo de la Secretaría de Cultura del Estado en el antiguo convento del Carmen. Muestra pintura, escultura, platería y documentos del periodo virreinal en salas permanentes y temporales; ofrece visitas guiadas, conciertos, conferencias y talleres.",
+    "enlaces": [
+      "https://www.facebook.com/museodelvirreinato"
+    ],
+    "lat": 22.15132,
+    "lng": -100.973752,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=440",
+      "https://cultura.slp.gob.mx/museos/",
+      "https://sanluis.eluniversal.com.mx/mas-de-san-luis/aprovecha-esta-semana-santa-para-visitar-estos-museos-en-slp/",
+      "https://pulsoslp.com.mx/cultura/dia-internacional-de-los-museos/2047040"
+    ]
+  },
+  {
+    "nombre": "Casa Museo Manuel José Othón",
+    "alias": [
+      "Museo Othoniano",
+      "Casa de Othón"
+    ],
+    "categoria": "museo",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "Manuel José Othón 225, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Casa donde vivió el poeta Manuel José Othón, a cargo de la Secretaría de Cultura del Estado. Exhibe manuscritos, objetos personales, mobiliario de época y fotografías; ofrece visitas guiadas, talleres de literatura, conferencias y biblioteca. Entrada libre.",
+    "enlaces": [
+      "https://slp.gob.mx/lugares/casa-manuel-jose-othon/",
+      "https://www.facebook.com/profile.php?id=100076257930275"
+    ],
+    "lat": 22.151599,
+    "lng": -100.975029,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=519",
+      "https://cultura.slp.gob.mx/museos/"
+    ]
+  },
+  {
+    "nombre": "Museo de Arte Contemporáneo de San Luis Potosí",
+    "alias": [
+      "MAC",
+      "MAC SLP",
+      "Museo de Arte Contemporáneo"
+    ],
+    "categoria": "museo",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "Morelos 235, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo de arte contemporáneo de la Secretaría de Cultura del Estado, en el antiguo edificio de Correos del Centro Histórico. Presenta exposiciones temporales de artistas locales, nacionales e internacionales.",
+    "enlaces": [
+      "https://www.facebook.com/museomacslp"
+    ],
+    "lat": 22.154023,
+    "lng": -100.97537,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=1361",
+      "https://macsanluispotosi.com/",
+      "https://cultura.slp.gob.mx/noticias/2025/5/12/museo-de-arte-contempor%C3%A1neo-abre-nuevas-exposiciones/",
+      "https://pulsoslp.com.mx/cultura/dia-internacional-de-los-museos/2047040"
+    ]
+  },
+  {
+    "nombre": "Museo del Ferrocarril Jesús García Corona",
+    "alias": [
+      "Museo del Ferrocarril"
+    ],
+    "categoria": "museo",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "Manuel José Othón s/n esq. Chico Sein, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo en la antigua estación de trenes de estilo art decó, a cargo de la Secretaría de Cultura del Estado. Muestra locomotoras de vapor y la historia del ferrocarril en México; tiene tren escénico y organiza recorridos especiales, como los nocturnos.",
+    "enlaces": [
+      "https://museodelferrocarril.gob.mx/",
+      "https://www.facebook.com/museodelferrocarrilslp/",
+      "https://www.instagram.com/museodelferrocarrilslp"
+    ],
+    "lat": 22.152839,
+    "lng": -100.971099,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=1362",
+      "https://cultura.slp.gob.mx/noticias/2025/10/27/recorridos-nocturnos-en-el-museo-del-ferrocarril/",
+      "https://pulsoslp.com.mx/cultura/dia-internacional-de-los-museos/2047040"
+    ]
+  },
+  {
+    "nombre": "Casa Museo Mariano Jiménez",
+    "alias": [
+      "Casa Museo Cap. Gral. José Mariano Jiménez Maldonado",
+      "Centro Cultural Cap. Gral. José Mariano Jiménez"
+    ],
+    "categoria": "centro_cultural",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "5 de Mayo 610, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Casa del siglo XVIII donde nació el insurgente José Mariano Jiménez, a cargo de la Secretaría de Cultura del Estado. Funciona como centro cultural con galerías de exposiciones temporales, una sala dedicada al personaje, foro escénico y clases de música.",
+    "enlaces": [
+      "https://www.facebook.com/profile.php?id=100083024627941"
+    ],
+    "lat": 22.148214,
+    "lng": -100.976125,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=1136",
+      "https://slp.gob.mx/noticias/2026/8/5/casa-museo-mariano-jim%C3%A9nez-presenta-pintando-sembrando-vida-de-carlos-de-la-cruz/",
+      "https://cultura.slp.gob.mx/museos/"
+    ]
+  },
+  {
+    "nombre": "Centro Cultural Universitario Caja Real",
+    "alias": [
+      "Caja Real UASLP",
+      "Museo del Centro Cultural Universitario Caja Real de la UASLP"
+    ],
+    "categoria": "museo",
+    "operador": "UASLP",
+    "direccion": "Francisco I. Madero s/n esq. Ignacio Aldama, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Recinto de la UASLP en el edificio histórico de la Caja Real, en el Centro. Presenta exposiciones temporales de arte con obra nacional e internacional, clases magistrales y conversatorios. Entrada libre.",
+    "enlaces": [
+      "https://www.facebook.com/CajaRealUASLP",
+      "https://www.instagram.com/cajarealuaslp"
+    ],
+    "lat": 22.151144,
+    "lng": -100.977552,
+    "fuentes": [
+      "https://sic.gob.mx/ficha.php?table=museo&table_id=2570",
+      "https://www.futurosanluis.com/2026/02/22/uaslp-presentara-la-exposicion-sanctus-et-profanus-de-roberto-cortazar-en-el-centro-cultural-universitario-caja-real/",
+      "https://wp.uaslp.mx/noticias/arteycultura/uaslp-ofrecera-actividades-interactivas-en-el-dia-internacional-de-los-museos-2025/"
+    ],
+    "tipo": "casa_de_cultura"
+  },
+  {
+    "nombre": "MUNI Museo Universitario UASLP",
+    "alias": [
+      "MUNI",
+      "Museo Universitario UASLP"
+    ],
+    "categoria": "museo",
+    "operador": "UASLP (Secretaría de Difusión Cultural)",
+    "direccion": "Sierra Leona 550, Lomas de San Luis 2a. Sección, 78210, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo de la UASLP abierto en octubre de 2024 en Lomas de San Luis. Junta arte, ciencia y educación en tres galerías con exposiciones temporales, murales y actividades para la comunidad universitaria y el público. Entrada libre.",
+    "enlaces": [
+      "https://www.uaslp.mx/DifusionCultural/Paginas/Sedes/7316",
+      "https://www.facebook.com/muniuaslp",
+      "https://www.instagram.com/muni_uaslp/"
+    ],
+    "lat": 22.151499,
+    "lng": -101.025586,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=2468",
+      "https://wp.uaslp.mx/noticias/arteycultura/uaslp-ofrecera-actividades-interactivas-en-el-dia-internacional-de-los-museos-2025/",
+      "https://wp.uaslp.mx/noticias/arteycultura/museo-universitario-de-la-uaslp-listo-para-abrir-sus-puertas-este-3-de-octubre/"
+    ]
+  },
+  {
+    "nombre": "Museo de Sitio UASLP",
+    "alias": [
+      "Museo de Sitio de la Universidad Autónoma de San Luis Potosí"
+    ],
+    "categoria": "museo",
+    "operador": "UASLP (Secretaría de Difusión Cultural)",
+    "direccion": "Álvaro Obregón 64 (Edificio Central UASLP), Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Museo en el ala poniente del Edificio Central de la UASLP, abierto en 2019. Cuenta la historia del inmueble desde el colegio jesuita de 1623 hasta la universidad actual, con documentos, libros antiguos, instrumentos científicos y obra artística. Entrada libre.",
+    "enlaces": [
+      "https://www.uaslp.mx/DifusionCultural/Paginas/Sedes/585",
+      "https://www.facebook.com/museodesitiouaslp/"
+    ],
+    "lat": 22.152423,
+    "lng": -100.978163,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=2170",
+      "https://www.uaslp.mx/DifusionCultural/Paginas/Sedes/585",
+      "https://sanluis.eluniversal.com.mx/cultura/22-11-2019/la-uaslp-abrio-su-museo-de-sitio/"
+    ]
+  },
+  {
+    "nombre": "Casa Doña María Pons",
+    "alias": [
+      "Casa de Doña María Pons",
+      "Fundación Herdez San Luis Potosí"
+    ],
+    "categoria": "museo",
+    "operador": "Fundación Herdez A.C.",
+    "direccion": "Av. de la Paz 216, Barrio de Tlaxcala, 78038, San Luis Potosí, S.L.P.",
+    "descripcion": "Sede de Fundación Herdez en la casa y primera fábrica de María Pons, creadora del mole Doña María. Tiene exposición permanente sobre su vida, muestras sobre cultura alimentaria, biblioteca de gastronomía, huerto educativo, talleres y cursos de cocina.",
+    "enlaces": [
+      "https://casadonamariapons.com/",
+      "https://www.facebook.com/casadonamariapons",
+      "https://www.instagram.com/casa_donamariapons"
+    ],
+    "lat": 22.167553,
+    "lng": -100.978014,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=museo&table_id=2583",
+      "https://casadonamariapons.com/",
+      "https://fundacionherdez.com/se-inaugura-casa-dona-maria-pons-en-slp/",
+      "https://potosinoticias.com/2025/06/29/casa-dona-maria-pons-una-joya-historica-y-gastronomica-en-san-luis-potosi/"
+    ]
+  },
+  {
+    "nombre": "Instituto Potosino de Bellas Artes",
+    "alias": [
+      "IPBA"
+    ],
+    "categoria": "escuela",
+    "operador": "Secretaría de Cultura del Estado",
+    "direccion": "Av. Universidad esq. Constitución s/n, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Instituto de la Secretaría de Cultura del Estado que imparte cursos y talleres de artes visuales, danza, teatro, música, fotografía y literatura para personas desde los tres años. Tiene galería, sala de teatro y biblioteca, y presenta conciertos, funciones y exposiciones.",
+    "enlaces": [
+      "https://institutopotosinodebellasartes.com/",
+      "https://www.facebook.com/InstitutoPotosinodeBellasArtes/",
+      "https://www.instagram.com/ipbaslp_/"
+    ],
+    "lat": 22.149857,
+    "lng": -100.972101,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_educacion&table_id=101",
+      "https://institutopotosinodebellasartes.com/",
+      "https://mcnoticiasslp.blog/2026/08/20/continuan-abiertas-las-inscripciones-en-el-instituto-potosino-de-bellas-artes/"
+    ],
+    "tipo": "escuela"
+  },
+  {
+    "nombre": "Escuela Estatal de Danza",
+    "alias": [
+      "Escuela Estatal de Danza del SEER",
+      "Escuela Estatal de Danza (SEER)"
+    ],
+    "categoria": "escuela",
+    "operador": "Secretaría de Educación del Estado (Sistema Educativo Estatal Regular, SEER)",
+    "direccion": "Constitución 400-2, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Escuela pública de nivel superior del Sistema Educativo Estatal Regular (SEER) que imparte las licenciaturas en Danza Contemporánea y en Danza Folklórica, de ocho semestres, para formar intérpretes, docentes y coreógrafos. Su alumnado hace demostraciones y funciones.",
+    "enlaces": [
+      "https://www.facebook.com/p/Escuela-Estatal-de-Danza-del-SEER-100078902494879/",
+      "https://www.instagram.com/esc.est.danza.seer/"
+    ],
+    "lat": 22.150987,
+    "lng": -100.973065,
+    "fuentes": [
+      "https://sic.gob.mx/ficha.php?table=centro_educacion&table_id=97",
+      "https://sic.cultura.gob.mx/ficha.php?table=educacion_artistica&table_id=347",
+      "https://www.mexicoescultura.com/recinto/69398/escuela-estatal-de-danza-seer-.html"
+    ]
+  },
+  {
+    "nombre": "Escuela Estatal de Música",
+    "alias": [
+      "Escuela Estatal de Música del SEER",
+      "Escuela Estatal de Música de San Luis Potosí"
+    ],
+    "categoria": "escuela",
+    "operador": "Secretaría de Educación del Estado (Sistema Educativo Estatal Regular, SEER)",
+    "direccion": "Constitución 400, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Escuela pública de nivel superior del Sistema Educativo Estatal Regular (SEER) con licenciaturas en Educación Musical, Composición e Instrumento. Su alumnado y su coro polifónico dan conciertos abiertos al público.",
+    "enlaces": [
+      "https://www.facebook.com/escuelaestatal.demusicadeslp/"
+    ],
+    "lat": 22.150991,
+    "lng": -100.973132,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_educacion&table_id=99",
+      "https://noticentro2.wordpress.com/2026/06/23/exitosa-aplicacion-del-examen-ceneval-en-la-escuela-estatal-de-musica-de-san-luis-potosi/",
+      "https://potosinoticias.com/2026/04/24/impulsan-promocion-artistica-en-san-luis-potosi-con-concierto-de-alto-nivel/"
+    ]
+  },
+  {
+    "nombre": "Escuela Estatal de Teatro",
+    "alias": [
+      "Escuela Estatal de Teatro (SEER)",
+      "EET San Luis Potosí"
+    ],
+    "categoria": "escuela",
+    "operador": "Secretaría de Educación del Estado (Sistema Educativo Estatal Regular, SEER)",
+    "direccion": "Framboyán 855-A, Col. Industrial Mexicana, 78309, San Luis Potosí, S.L.P.",
+    "descripcion": "Escuela pública de nivel superior del SEER, fundada en 1987, que imparte la Licenciatura en Arte Dramático. Sus estudiantes presentan montajes al público y la escuela organiza cada marzo un encuentro internacional por el Día Mundial del Teatro.",
+    "enlaces": [],
+    "lat": 22.162986,
+    "lng": -100.966072,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_educacion&table_id=100",
+      "https://sic.gob.mx/ficha.php?table=centro_cultural&table_id=1870",
+      "https://pulsoslp.com.mx/slp/alumnos-mantienen-tomada-la-escuela-estatal-de-teatro/1902430",
+      "https://seer.slp.gob.mx/noticias/2025/1/27/alumnos-de-la-escuela-estatal-de-teatro-presentan-historias-del-distrito-federal/",
+      "https://cultivarte.mx/inicia-xiii-encuentro-internacional-por-el-dia-mundial-del-teatro/"
+    ]
+  },
+  {
+    "nombre": "Escuela Estatal de Artes Plásticas",
+    "alias": [
+      "Escuela Estatal de Artes Plásticas del SEER",
+      "Escuela Estatal de Artes Plásticas (SEER)"
+    ],
+    "categoria": "escuela",
+    "operador": "Secretaría de Educación del Estado (Sistema Educativo Estatal Regular, SEER)",
+    "direccion": "Ignacio Comonfort 306, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Escuela pública de nivel superior del SEER, creada en 1987, que imparte la Licenciatura en Artes Plásticas en ocho semestres. Su alumnado muestra y vende obra en exposiciones y expo-ventas.",
+    "enlaces": [
+      "https://www.facebook.com/artesplasticasslp",
+      "https://www.instagram.com/estatal.deartesplasticas/"
+    ],
+    "lat": 22.148572,
+    "lng": -100.973148,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_educacion&table_id=98",
+      "https://sic.cultura.gob.mx/ficha.php?table=educacion_artistica&table_id=754",
+      "https://cultivarte.mx/realizaran-expo-venta-cultural-de-la-escuela-estatal-de-artes-plasticas/",
+      "https://revistapuntodevista.com.mx/destacadas/escuela-estatal-de-artes-plasticas-se-suma-a-los-festejos-del-seer/864340/"
+    ]
+  },
+  {
+    "nombre": "Escuela Estatal de Iniciación Musical Julián Carrillo",
+    "alias": [
+      "Escuela de Iniciación Musical Julián Carrillo",
+      "EEIM Julián Carrillo"
+    ],
+    "categoria": "escuela",
+    "operador": "Secretaría de Educación del Estado",
+    "direccion": "Miguel Barragán 535, Barrio de San Miguelito, 78339, San Luis Potosí, S.L.P.",
+    "descripcion": "Escuela pública de la Secretaría de Educación del Estado que da formación musical inicial a niñas, niños y jóvenes: violín, violonchelo, piano, guitarra, solfeo y coro. Tiene orquesta infantil y juvenil y coro, que dan conciertos abiertos al público.",
+    "enlaces": [
+      "https://www.facebook.com/escuelaestataldeiniciacionmusicaljuliancarrillo/",
+      "https://www.instagram.com/eedim.juliancarrillo/"
+    ],
+    "lat": 22.145211,
+    "lng": -100.978019,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_educacion&table_id=96",
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=1871",
+      "https://lajornadasanluis.com.mx/ultimas-publicaciones/exitoso-concierto-de-la-escuela-estatal-de-iniciacion-musical-julian-carrillo/",
+      "https://www.lanoticiasanluis.com/cultura/gran-despliegue-de-la-escuela-de-musica-julian-carrillo"
+    ]
+  },
+  {
+    "nombre": "Departamento de Arte y Cultura de la UASLP",
+    "alias": [
+      "Arte y Cultura UASLP",
+      "DAC UASLP"
+    ],
+    "categoria": "escuela",
+    "operador": "UASLP (Secretaría de Difusión Cultural)",
+    "direccion": "Mariano Arista 475, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Departamento de la Secretaría de Difusión Cultural de la UASLP que ofrece cada semestre cursos y talleres con costo, abiertos a todo público y sin requisitos previos, de música, danza, artes plásticas, literatura e historia cultural. Es sede de grupos artísticos universitarios.",
+    "enlaces": [
+      "https://cursos-arte.uaslp.mx/",
+      "https://www.facebook.com/ArteyCulturaUASLP/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://bekaab.org/places/arte-y-cultura-uaslp/",
+      "https://mcnoticiasslp.blog/2026/07/07/uaslp-abre-inscripciones-a-cursos-y-talleres-de-arte-y-cultura-para-el-semestre-agosto-diciembre-2026/",
+      "https://acontecersanluis.wordpress.com/2026/07/07/uaslp-abre-inscripciones-a-cursos-y-talleres-de-arte-y-cultura-para-el-semestre-agosto-diciembre-2026/"
+    ]
+  },
+  {
+    "nombre": "Teatro de la Paz",
+    "alias": [],
+    "categoria": "teatro",
+    "operador": "Secretaría de Cultura del Gobierno del Estado de San Luis Potosí",
+    "direccion": "Villerías 205, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Teatro histórico del Centro a cargo de la Secretaría de Cultura estatal. Presenta conciertos de la Orquesta Sinfónica de San Luis Potosí, danza, teatro y espectáculos; el edificio incluye la Galería Germán Gedovius y la sala Flavio F. Carlos.",
+    "enlaces": [
+      "https://cultura.slp.gob.mx/lugares/teatro-de-la-paz-slp/",
+      "https://www.instagram.com/teatrodelapazslp/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://cultura.slp.gob.mx/lugares/teatro-de-la-paz-slp/",
+      "https://sic.cultura.gob.mx/lista.php?table=teatro&estado_id=24&municipio_id=28",
+      "https://liderlife.liderempresarial.com/que-hacer-en-san-luis-potosi-en-septiembre-de-2026-10-eventos-para-tu-agenda/"
+    ]
+  },
+  {
+    "nombre": "Centro de las Artes de San Luis Potosí Centenario",
+    "alias": [
+      "Centro de las Artes de San Luis Potosí",
+      "CEART San Luis Potosí",
+      "Centro Estatal de las Artes San Luis Potosí Centenario"
+    ],
+    "categoria": "centro_cultural",
+    "operador": "Gobierno del Estado de San Luis Potosí (Secretaría de Cultura); parte de la Red Nacional de Centros de las Artes",
+    "direccion": "Calzada de Guadalupe 705, Julián Carrillo, 78340, San Luis Potosí, S.L.P.",
+    "descripcion": "Complejo estatal de formación y producción artística abierto en 2008 en la antigua penitenciaría. Ofrece cursos de artes visuales, música, danza, teatro y fotografía para todas las edades, exposiciones, conciertos y residencias; alberga el Teatro Polivalente y el Museo Leonora Carrington.",
+    "enlaces": [
+      "https://ceartsanluis.mx/",
+      "https://www.facebook.com/centrodelasartesslp/",
+      "https://www.instagram.com/ceart_sanluis/",
+      "https://slp.gob.mx/lugares/centro-de-las-artes-de-san-luis-potosi/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=2065",
+      "https://ceartsanluis.mx/",
+      "https://cultura.slp.gob.mx/lugares/?page=2"
+    ]
+  },
+  {
+    "nombre": "Cineteca Alameda",
+    "alias": [
+      "Cineteca Alameda San Luis Potosí",
+      "La Casa del Cine Potosino"
+    ],
+    "categoria": "cine",
+    "operador": "Secretaría de Cultura del Gobierno del Estado de San Luis Potosí",
+    "direccion": "Av. Universidad 575, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Cineteca pública del Gobierno del Estado en el Centro. Exhibe cine de autor, estrenos independientes, ciclos y la Muestra Internacional de Cine con cuotas de recuperación bajas; organiza también recorridos culturales.",
+    "enlaces": [
+      "https://cinetecaalameda.com.mx/",
+      "https://www.facebook.com/CinetecaAlameda1941",
+      "https://www.instagram.com/cinetecaalameda/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://cinetecaalameda.com.mx/",
+      "https://cultura.slp.gob.mx/noticias/2026/1/23/secult-invita-a-disfrutar-un-fin-de-semana-en-cineteca-alameda/",
+      "https://sic.cultura.gob.mx/lista.php?table=teatro&estado_id=24&municipio_id=28"
+    ]
+  },
+  {
+    "nombre": "Casa de Cultura del Barrio de Tlaxcala",
+    "alias": [],
+    "categoria": "casa_de_cultura",
+    "operador": "Secretaría de Cultura del Gobierno del Estado de San Luis Potosí",
+    "direccion": "Eje Vial Ponciano Arriaga 883, Barrio de Tlaxcala, 78038, San Luis Potosí, S.L.P.",
+    "descripcion": "Casa de cultura estatal del barrio de Tlaxcala. Imparte talleres de música, artes plásticas, danza, teatro y diseño de moda para niñas y niños desde seis años, jóvenes, adultos y personas mayores, con cuota mensual; algunos talleres para mayores son gratuitos.",
+    "enlaces": [
+      "https://www.facebook.com/casa.de.cultura.barrio.de.tlaxcala",
+      "https://slp.gob.mx/lugares/casa-de-cultura-del-barrio-de-tlaxcala/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=1129",
+      "https://slp.gob.mx/lugares/casa-de-cultura-del-barrio-de-tlaxcala/",
+      "https://sanluispotosi.quadratin.com.mx/turismo/inician-talleres-en-la-casa-de-cultura-del-barrio-de-tlaxcala/"
+    ]
+  },
+  {
+    "nombre": "Casa de Cultura del Barrio de San Sebastián",
+    "alias": [
+      "Casa de Cultura Barrio San Sebastián"
+    ],
+    "categoria": "casa_de_cultura",
+    "operador": "Secretaría de Cultura del Gobierno del Estado de San Luis Potosí",
+    "direccion": "Jardín Lerdo de Tejada 3, Barrio de San Sebastián, 78340, San Luis Potosí, S.L.P.",
+    "descripcion": "Casa de cultura estatal en el jardín del barrio de San Sebastián. Ofrece talleres de música, pintura, bordado, fotografía, baile de salón y ritmos latinos, entre otros; tiene sala de exposiciones, biblioteca y el museo comunitario El Pariancito sobre la historia del barrio.",
+    "enlaces": [
+      "https://www.facebook.com/profile.php?id=100064259666716",
+      "https://www.instagram.com/casadelbarrioss/",
+      "https://slp.gob.mx/lugares/casa-de-cultura-barrio-san-sebastian/"
+    ],
+    "lat": 22.146272957325,
+    "lng": -100.97193539143,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=1112",
+      "https://slp.gob.mx/lugares/casa-de-cultura-barrio-san-sebastian/",
+      "https://cultivarte.mx/casa-de-cultura-barrio-san-sebastian-abre-talleres-artisticos/"
+    ]
+  },
+  {
+    "nombre": "Casa de Cultura del Barrio de San Miguelito",
+    "alias": [],
+    "categoria": "casa_de_cultura",
+    "operador": "Secretaría de Cultura del Gobierno del Estado de San Luis Potosí",
+    "direccion": "Calzada de Guadalupe 489, Barrio de San Miguelito, 78339, San Luis Potosí, S.L.P.",
+    "descripcion": "Casa de cultura estatal fundada en 1994 en el barrio de San Miguelito. Imparte talleres de baile, guitarra, piano y canto, presenta actividades artísticas y organiza fiestas tradicionales del barrio como San Miguel Arcángel, posadas, carnaval y altares de Día de Muertos.",
+    "enlaces": [
+      "https://www.facebook.com/CasaCultura.SanMiguelito/",
+      "https://cultura.slp.gob.mx/lugares/casa-de-cultura-del-barrio-de-san-miguelito/"
+    ],
+    "lat": 22.141455793753,
+    "lng": -100.97311045043,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=1139",
+      "https://cultura.slp.gob.mx/lugares/casa-de-cultura-del-barrio-de-san-miguelito/",
+      "https://cultura.slp.gob.mx/noticias/2025/8/26/la-casa-de-cultura-de-san-miguelito-en-la-fenapo/"
+    ]
+  },
+  {
+    "nombre": "Centro Cultural Julián Carrillo",
+    "alias": [
+      "Centro Julián Carrillo",
+      "Centro de Formación, Investigación y Documentación Julián Carrillo"
+    ],
+    "categoria": "centro_cultural",
+    "operador": "Secretaría de Cultura del Gobierno del Estado de San Luis Potosí",
+    "direccion": "Jardín Guerrero 10, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Centro estatal dedicado al compositor potosino Julián Carrillo: resguarda sus archivos, partituras y pianos del Sonido 13, y cuenta con sala de usos múltiples y un auditorio para 360 personas donde se programan conciertos y actividades.",
+    "enlaces": [
+      "https://cultura.slp.gob.mx/lugares/centro-cultural-julian-carrillo/",
+      "https://www.instagram.com/centro_julian_carrillo/",
+      "https://www.facebook.com/CentroJulianCarrillo/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://cultura.slp.gob.mx/lugares/centro-cultural-julian-carrillo/",
+      "https://cultura.slp.gob.mx/noticias/2025/4/22/vive-una-semana-santa-llena-de-arte-y-sonido-en-el-centro-juli%C3%A1n-carrillo/",
+      "https://www.mexicoescultura.com/recinto/68326/centro-julian-carrillo.html"
+    ]
+  },
+  {
+    "nombre": "Centro de Difusión Cultural Raúl Gamboa",
+    "alias": [
+      "Centro de Difusión Cultural Raúl Gamboa Cantón (IPBA)",
+      "Teatro Arq. Marco Antonio Garfias de los Santos"
+    ],
+    "categoria": "centro_cultural",
+    "operador": "Instituto Potosino de Bellas Artes (IPBA), sector cultura del Gobierno del Estado",
+    "direccion": "Av. Universidad s/n esq. Negrete, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Recinto de difusión del Instituto Potosino de Bellas Artes con el Teatro Arq. Marco Antonio Garfias de los Santos (unas 300 butacas), cuatro galerías y biblioteca. Presenta obras escénicas, exposiciones de pintura, escultura y fotografía, y actividades del instituto.",
+    "enlaces": [
+      "https://institutopotosinodebellasartes.com/",
+      "https://www.facebook.com/InstitutoPotosinodeBellasArtes/",
+      "https://www.youtube.com/@IPBASLP"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=291",
+      "https://sic.gob.mx/ficha.php?table=teatro&table_id=382",
+      "https://cultura.slp.gob.mx/lugares/",
+      "https://mcnoticiasslp.blog/2026/08/20/continuan-abiertas-las-inscripciones-en-el-instituto-potosino-de-bellas-artes/"
+    ]
+  },
+  {
+    "nombre": "Teatro Carlos Amador",
+    "alias": [
+      "Cine Teatro Carlos Amador"
+    ],
+    "categoria": "teatro",
+    "operador": "Gobierno del Estado de San Luis Potosí (Sistema DIF Estatal, según el SIC)",
+    "direccion": "Av. La Troje s/n, Parque Tangamanga I, Fracc. Tangamanga, 78269, San Luis Potosí, S.L.P.",
+    "descripcion": "Teatro de 552 butacas dentro del Parque Tangamanga I, abierto en 1991 como cine teatro y reabierto en 2007. Recibe eventos culturales, artísticos, educativos e institucionales y, desde marzo de 2026, una galería de arte de entrada libre con obra de artistas potosinos.",
+    "enlaces": [
+      "https://slp.gob.mx/lugares/teatro-carlos-amador/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=teatro&table_id=379",
+      "https://slp.gob.mx/lugares/teatro-carlos-amador/",
+      "https://www.futurosanluis.com/2026/03/06/parque-tangamanga-i-suma-galeria-de-arte-con-acceso-gratuito-en-el-teatro-carlos-amador/"
+    ]
+  },
+  {
+    "nombre": "Centro Cultural Universitario Bicentenario (CC200)",
+    "alias": [
+      "CC200",
+      "Centro Cultural Bicentenario UASLP",
+      "Centro Cultural Universitario Bicentenario"
+    ],
+    "categoria": "centro_cultural",
+    "operador": "Universidad Autónoma de San Luis Potosí (Secretaría de Difusión Cultural)",
+    "direccion": "Sierra Leona 550 esq. Camino a la Presa, Lomas 2a Sección, 78210, San Luis Potosí, S.L.P.",
+    "descripcion": "Centro cultural de la UASLP abierto en 2010, con un teatro de cerca de 1,400 lugares y 13 salas. Programa conciertos, teatro, danza, cine y literatura para la comunidad universitaria y el público, y recibe ceremonias y ferias universitarias.",
+    "enlaces": [
+      "https://cc200.uaslp.mx/",
+      "https://www.facebook.com/cc200uaslp/",
+      "https://www.instagram.com/cc200uaslp/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=2444",
+      "https://wp.uaslp.mx/noticias/tag/cc200/",
+      "https://sic.cultura.gob.mx/lista.php?table=teatro&estado_id=24&municipio_id=28"
+    ]
+  },
+  {
+    "nombre": "Auditorio Rafael Nieto",
+    "alias": [
+      "Paraninfo Universitario",
+      "Auditorio Rafael Nieto UASLP"
+    ],
+    "categoria": "otro",
+    "operador": "Universidad Autónoma de San Luis Potosí",
+    "direccion": "Álvaro Obregón 64, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Antiguo paraninfo art déco del Edificio Central de la UASLP, con 268 lugares. Es sede del CineClub UASLP y de conciertos, presentaciones y ceremonias universitarias, varias abiertas al público y gratuitas.",
+    "enlaces": [
+      "https://www.facebook.com/p/Auditorio-Rafael-Nieto-UASLP-100064585216009/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=auditorio&table_id=1671",
+      "https://periodicoelmomento.com/el-auditorio-rafael-nieto-sera-sede-de-un-encuentro-que-reunira-a-agrupaciones-invitadas/",
+      "https://cultivarte.mx/cineclub-uaslp-proyecta-el-retorno-del-rey-en-version-extendida/"
+    ],
+    "tipo": "foro"
+  },
+  {
+    "nombre": "Centro Cultural Palacio Municipal",
+    "alias": [
+      "Centro Cultural Palacio Municipal de San Luis Potosí"
+    ],
+    "categoria": "centro_cultural",
+    "operador": "Ayuntamiento de San Luis Potosí (Dirección de Cultura Municipal)",
+    "direccion": "Jardín Hidalgo 5, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Espacio cultural del Ayuntamiento en el ala norte del Palacio Municipal, edificio de 1835 que fue residencia episcopal. Presenta exposiciones, conferencias, presentaciones de libros, cursos y talleres con entrada libre, y cuenta con el auditorio Foro Lupe Vélez.",
+    "enlaces": [
+      "https://sitio.sanluis.gob.mx/CulturaMunicipal/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=1492",
+      "https://sanluis.capital/centro-cultural-palacio-municipal-de-san-luis-capital/",
+      "https://mcnoticiasslp.blog/2026/09/09/invitan-a-la-presentacion-del-libro-chac-mool-memoria-grafica-exposicion-itinerante-san-luis-capital-verano-2026/",
+      "https://www.noticias-sanluis.com/ayuntamiento-slp/2026/04/06/506100/"
+    ]
+  },
+  {
+    "nombre": "Teatro del IMSS San Luis Potosí",
+    "alias": [
+      "Teatro IMSS San Luis Potosí"
+    ],
+    "categoria": "teatro",
+    "operador": "Instituto Mexicano del Seguro Social (IMSS)",
+    "direccion": "Tomasa Estévez 805, Tequisquiapan, 78250, San Luis Potosí, S.L.P.",
+    "descripcion": "Teatro de 261 butacas con escenario a la italiana, abierto en 1961 junto al Centro de Seguridad Social del IMSS. Presenta funciones gratuitas de teatro para público infantil, juvenil y familiar dentro del programa Escenarios IMSS-Cultura con compañías independientes.",
+    "enlaces": [
+      "https://www.facebook.com/p/Teatro-IMSS-San-Luis-Potos%C3%AD-100083266566275/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://inba.gob.mx/prensa/24217/escenarios-imss-cultura-20262027-llega-a-san-luis-potosi-con-una-bala-lleva-tu-nombre",
+      "https://sic.cultura.gob.mx/ficha.php?table=teatro&table_id=256",
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=2534"
+    ]
+  },
+  {
+    "nombre": "Teatro El Rinoceronte Enamorado",
+    "alias": [
+      "El Rino"
+    ],
+    "categoria": "teatro",
+    "operador": "Compañía teatral El Rinoceronte Enamorado (independiente)",
+    "direccion": "Carlos Tovar 315, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Sala teatral independiente de la compañía El Rinoceronte Enamorado, fundada en 1994, con un espacio que combina escenario a la italiana y caja experimental. Programa temporadas propias y de compañías invitadas, incluidas extranjeras.",
+    "enlaces": [
+      "https://www.elrino.mx/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://www.elrino.mx/",
+      "https://sic.cultura.gob.mx/lista.php?table=teatro&estado_id=24&municipio_id=28",
+      "https://www.mexicoescultura.com/recinto/66672/teatro-el-rinoceronte-enamorado.html"
+    ]
+  },
+  {
+    "nombre": "Casa del Poeta Ramón López Velarde",
+    "alias": [],
+    "categoria": "centro_cultural",
+    "operador": "Secretaría de Cultura del Gobierno del Estado de San Luis Potosí (Dirección de Publicaciones y Literatura)",
+    "direccion": "Profr. Pedro Vallejo 300-B, Barrio de San Miguelito, San Luis Potosí, S.L.P.",
+    "descripcion": "Centro de difusión literaria de la Secretaría de Cultura estatal en la casa donde vivió el poeta Ramón López Velarde. Tiene biblioteca especializada y programa talleres de creación literaria, lecturas, conferencias y presentaciones de libros.",
+    "enlaces": [
+      "https://www.facebook.com/crlvslp"
+    ],
+    "lat": 22.147112488747,
+    "lng": -100.97670435905,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=1124"
+    ]
+  },
+  {
+    "nombre": "Teatro y Centro Cultural Doroteo Arango",
+    "alias": [
+      "Teatro y Centro Cultural de Soledad",
+      "Teatro Doroteo Arango"
+    ],
+    "categoria": "teatro",
+    "operador": "Ayuntamiento de Soledad de Graciano Sánchez (Dirección de Cultura)",
+    "direccion": "Santa Martha 521, Fracc. Rancho Blanco, Soledad de Graciano Sánchez, S.L.P.",
+    "descripcion": "Teatro municipal de Soledad inaugurado en 2023, con 1,213 butacas, salas de usos múltiples y accesibilidad universal. Presenta teatro, danza, conciertos y cine gratuito, y ofrece talleres permanentes y cursos de verano de la Dirección de Cultura.",
+    "enlaces": [
+      "https://www.facebook.com/profile.php?id=61556798734736"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://www.municipiosoledad.gob.mx/node/7872",
+      "https://www.municipiosoledad.gob.mx/node/10035",
+      "https://www.municipiosoledad.gob.mx/node/9384",
+      "https://www.expres.com.mx/nota.php?story_id=309554"
+    ]
+  },
+  {
+    "nombre": "Casa de la Cultura de Soledad",
+    "alias": [
+      "Casa de la Cultura de Soledad Bicentenario y Centenario de la Nación",
+      "Casa de Cultura Soledad de Graciano Sánchez"
+    ],
+    "categoria": "casa_de_cultura",
+    "operador": "Ayuntamiento de Soledad de Graciano Sánchez (Dirección de Cultura)",
+    "direccion": "Blas Escontría 604, Zona Centro, 78433, Soledad de Graciano Sánchez, S.L.P.",
+    "descripcion": "Casa de cultura municipal donde despacha la Dirección de Cultura de Soledad. Ofrece talleres gratuitos o de bajo costo (guitarra, canto, danzón, lenguas náhuatl y tének), cineclub y cursos de verano, y exhibe obra de Rufino Tamayo del acervo de la Cooperativa Pascual.",
+    "enlaces": [
+      "https://es-la.facebook.com/pages/category/Product-Service/Casa-de-Cultura-Soledad-de-Graciano-S%C3%A1nchez-150821958283552/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=2209",
+      "https://www.municipiosoledad.gob.mx/node/9384",
+      "https://www.municipiosoledad.gob.mx/node/10035"
+    ]
+  },
+  {
+    "nombre": "Alianza Francesa de San Luis Potosí",
+    "alias": [
+      "Alianza Francesa San Luis",
+      "Alianza Franco-Mexicana",
+      "La Galerie des Artistes"
+    ],
+    "categoria": "centro_cultural",
+    "operador": "A.C. (Federación de Alianzas Francesas de México)",
+    "direccion": "Av. SCOP 535, Col. Jardín, 78270, San Luis Potosí, S.L.P.",
+    "descripcion": "Institución que enseña francés y mantiene una agenda cultural abierta al público: galería con exposiciones de artistas locales y extranjeros (La Galerie des Artistes), cineclub, mediateca, conferencias y conciertos como la Fiesta de la Música.",
+    "enlaces": [
+      "https://alianzafrancesa.org.mx/san-luis-potosi/",
+      "https://www.facebook.com/alianza.sanluis/",
+      "https://www.instagram.com/alianzafrslp/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://alianzafrancesa.org.mx/san-luis-potosi/centro-cultural/",
+      "https://alianzafrancesa.org.mx/san-luis-potosi/agenda/",
+      "https://sic.cultura.gob.mx/lista.php?table=galeria&estado_id=24&municipio_id=28"
+    ]
+  },
+  {
+    "nombre": "Centro Cultural Alemán de San Luis Potosí",
+    "alias": [
+      "CCA SLP",
+      "Centro Cultural Alemán San Luis Potosí A.C."
+    ],
+    "categoria": "centro_cultural",
+    "operador": "A.C. (vinculada al Goethe-Institut)",
+    "direccion": "Av. S.C.O.P. 900 esq. 18 de Marzo, Col. Jardín, 78270, San Luis Potosí, S.L.P.",
+    "descripcion": "Asociación civil sin fines de lucro que desde 1995 enseña alemán y difunde la cultura alemana con apoyo del Goethe-Institut: promueve el festival de cine México-Alemania CineMA, conciertos, exposiciones, presentaciones de libros y una biblioteca.",
+    "enlaces": [
+      "https://www.ccaslp.com/",
+      "https://www.facebook.com/p/Centro-Cultural-Alem%C3%A1n-de-San-Luis-Potos%C3%AD-100064591125262/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://www.ccaslp.com/",
+      "https://www.festival-cinema.com/",
+      "https://sic.cultura.gob.mx/ficha.php?table=centro_cultural&table_id=1479"
+    ]
+  },
+  {
+    "nombre": "Biblioteca Central del Estado",
+    "alias": [
+      "Biblioteca Pública Central Estatal"
+    ],
+    "categoria": "biblioteca",
+    "operador": "Secretaría de Cultura del Estado de San Luis Potosí",
+    "direccion": "Manuel José Othón s/n esq. Chicosein, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Biblioteca pública principal del estado, con unos 26 mil volúmenes en estantería abierta: sala general y de consulta, área infantil, hemeroteca, videoteca, fondo de bibliografía potosina y colección en braille. Presta a domicilio con credencial y recibe presentaciones de libros.",
+    "enlaces": [],
+    "lat": 22.1532,
+    "lng": -100.971,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=rnbp&table_id=75522",
+      "https://www.mexicoescultura.com/recinto/68894/biblioteca-central-del-estado-slp.html",
+      "https://cultura.slp.gob.mx/noticias/2026/9/7/presentar%C3%A1-jeanne-karen-su-novela-glitch-en-la-biblioteca-central-del-estado/"
+    ]
+  },
+  {
+    "nombre": "Biblioteca Pública Prof. José Nereo Rodríguez Barragán",
+    "alias": [
+      "Biblioteca Pública Nereo Rodríguez Barragán"
+    ],
+    "categoria": "biblioteca",
+    "operador": "Ayuntamiento de San Luis Potosí (Red Nacional de Bibliotecas Públicas)",
+    "direccion": "Lado oriente de la Alameda Juan Sarabia s/n, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Biblioteca pública municipal junto a la Alameda Juan Sarabia, parte de la red nacional de bibliotecas. Además de sala general y de consulta tiene bebeteca, ludoteca, hemeroteca, secciones infantil y juvenil y servicios para personas con discapacidad visual.",
+    "enlaces": [],
+    "lat": 22.151979,
+    "lng": -100.96914,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=rnbp&table_id=75257",
+      "https://sanluis.eluniversal.com.mx/metropoli/estas-son-las-principales-bibliotecas-publicas-en-san-luis-potosi/"
+    ]
+  },
+  {
+    "nombre": "Biblioteca Pública Universitaria",
+    "alias": [
+      "BPU",
+      "Biblioteca Pública Universitaria de la UASLP"
+    ],
+    "categoria": "biblioteca",
+    "operador": "UASLP (Sistema de Bibliotecas)",
+    "direccion": "Av. Damián Carmona 130, Centro Histórico, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Biblioteca de la UASLP abierta a cualquier persona, sin necesidad de ser universitaria: consulta en sala, préstamo externo de algunos materiales, reservas y orientación. En el mismo edificio funciona el Centro de Documentación Histórica Rafael Montejano y Aguiñaga.",
+    "enlaces": [
+      "https://bpu.uaslp.mx/",
+      "https://www.facebook.com/LaBPU.UASLP/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://bpu.uaslp.mx/ubicaciones.html",
+      "https://bpu.uaslp.mx/servicios.html",
+      "https://sanluis.eluniversal.com.mx/metropoli/estas-son-las-principales-bibliotecas-publicas-en-san-luis-potosi/",
+      "https://sic.cultura.gob.mx/lista.php?table=otra_bib&estado_id=24&municipio_id=28"
+    ]
+  },
+  {
+    "nombre": "Archivo Histórico del Estado de San Luis Potosí",
+    "alias": [
+      "Archivo Histórico del Estado de San Luis Potosí Lic. Antonio Rocha",
+      "AHESLP"
+    ],
+    "categoria": "otro",
+    "operador": "Secretaría de Cultura del Estado de San Luis Potosí",
+    "direccion": "Mariano Arista 400, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Archivo del Gobierno del Estado con fondos documentales, fotográficos y bibliográficos sobre la historia potosina y regiones vecinas. Tiene sala de consulta abierta al público, reproducción y certificación de documentos (registro civil de 1860 a 1940) y actividades de difusión.",
+    "enlaces": [
+      "https://cultura.slp.gob.mx/archivo-historico/",
+      "https://www.facebook.com/archivohistoricoslp/"
+    ],
+    "lat": 22.152907,
+    "lng": -100.980048,
+    "fuentes": [
+      "https://sic.cultura.gob.mx/ficha.php?table=archivo&table_id=956",
+      "https://cultura.slp.gob.mx/archivo-historico/",
+      "https://cultura.slp.gob.mx/archivo-historico/tramites-y-servicios/"
+    ]
+  },
+  {
+    "nombre": "Galería José Jayme",
+    "alias": [
+      "Galería José Jayme de la Secretaría de Cultura"
+    ],
+    "categoria": "galeria",
+    "operador": "Secretaría de Cultura del Estado de San Luis Potosí",
+    "direccion": "Jardín Guerrero 6, Centro, 78000, San Luis Potosí, S.L.P.",
+    "descripcion": "Galería de la Secretaría de Cultura del Estado, en el inmueble de sus oficinas frente al Jardín Guerrero. Se usa para exposiciones y para charlas y conversatorios abiertos al público.",
+    "enlaces": [
+      "https://cultura.slp.gob.mx/lugares/galeria-jose-jayme-de-la-secretaria-de-cultura/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://cultura.slp.gob.mx/lugares/galeria-jose-jayme-de-la-secretaria-de-cultura/",
+      "https://potosinoticias.com/2026/03/10/agenda-cultural-social-y-de-espectaculos-en-san-luis-potosi/"
+    ]
+  },
+  {
+    "nombre": "ACHE Galería",
+    "alias": [
+      "ACHE"
+    ],
+    "categoria": "galeria",
+    "operador": "independiente",
+    "direccion": "Valentín Gama 840, Las Águilas 3a Secc., San Luis Potosí, S.L.P.",
+    "descripcion": "Galería independiente que presenta exposiciones temporales de artistas nacionales y extranjeros. En 2026 forma parte del programa del festival de fotografía Fotovisión, con recorridos guiados por sus muestras.",
+    "enlaces": [
+      "https://www.achegaleria.com/"
+    ],
+    "lat": null,
+    "lng": null,
+    "fuentes": [
+      "https://www.achegaleria.com/",
+      "https://institutopotosinodebellasartes.com/festival-fotografico-fotovision/"
+    ]
+  }
+]

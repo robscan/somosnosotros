@@ -92,7 +92,10 @@ export function deducirTipo(nombre: string, categorias: string[] = []): Tipo | n
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase();
   if (/\b(biblioteca|library)\b/.test(n) || /library/.test(c)) return "biblioteca";
-  if (/\b(galeria|museo|museum|gallery)\b/.test(n) || /gallery|museum/.test(c)) return "galeria";
+  if (/\b(museo|museum)\b/.test(n) || /museum/.test(c)) return "museo";
+  if (/\b(galeria|gallery)\b/.test(n) || /gallery/.test(c)) return "galeria";
+  // Antes que centro cultural y teatro: "Escuela Estatal de Teatro" es escuela, no foro.
+  if (/\b(escuela|academia|conservatorio|bellas artes)\b/.test(n)) return "escuela";
   if (/\b(casa de (la )?cultura|centro cultural|centro de las artes|centro de artes)\b/.test(n) || /cultural|community center|arts cent/.test(c)) return "casa_de_cultura";
   if (/\b(teatro|foro|auditorio|theater|theatre)\b/.test(n) || /theat|concert|music venue|performing/.test(c)) return "foro";
   if (/\b(colectivo|taller|cooperativa)\b/.test(n)) return "colectivo";
