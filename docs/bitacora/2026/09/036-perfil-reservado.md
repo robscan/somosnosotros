@@ -1,6 +1,6 @@
 # 036 · Perfil reservado
 
-**Fecha:** 2026-09-15 · **Rama:** `perfil-reservado` → PR · **Pieza:** OL-018 (8)
+**Fecha:** 2026-09-15 · **Rama:** `perfil-reservado` → [PR #36](https://github.com/robscan/somosnosotros/pull/36), fusionado y en producción el mismo día · **Pieza:** OL-018 (8)
 
 ## Qué pidió el founder
 "Permitir a los usuarios decidir si restringir su perfil." Aceptó la propuesta: un solo interruptor con dos estados, aplicado en la base y no solo en pantalla.
