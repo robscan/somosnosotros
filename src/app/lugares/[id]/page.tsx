@@ -5,6 +5,7 @@ import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
+import PieOrigen from "@/components/PieOrigen";
 import Desplegable from "@/components/Desplegable";
 import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
@@ -33,7 +34,7 @@ async function cargarLugar(id: string): Promise<LugarConAutor | null> {
   if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
   const { data } = await supabase
     .from("lugares")
-    .select("id, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, autor:perfiles!lugares_creado_por_fkey(id, nombre)")
+    .select("id, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
@@ -235,7 +236,11 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         </Link>
       </section>
 
-      <p className={ficha.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+      {lugar.origen && !lugar.autor ? (
+        <PieOrigen origen={lugar.origen} className={ficha.autor} />
+      ) : (
+        <p className={ficha.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+      )}
 
       <Seguir
         que="lugar"

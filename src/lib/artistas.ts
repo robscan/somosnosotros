@@ -1,6 +1,7 @@
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
 import { normalizarNombre } from "./lugares";
+import type { Origen } from "./origen";
 
 /** Qué hace: lista cerrada; "por_completar" es el artista creado con solo el nombre desde el alta de un evento. */
 export const DISCIPLINAS = [
@@ -47,6 +48,8 @@ export type Artista = ArtistaResumen & {
   redes: Enlace[];
   creado_por: string | null;
   visible: boolean;
+  /** De qué catálogo externo se trajo la ficha (por confirmar), o null si la registró alguien aquí. */
+  origen: Origen | null;
 };
 
 /** Un artista elegido en el renglón Quién: ya registrado (con id) o por crear con solo el nombre. */

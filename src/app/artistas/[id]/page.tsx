@@ -5,6 +5,7 @@ import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
+import PieOrigen from "@/components/PieOrigen";
 import Desplegable from "@/components/Desplegable";
 import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
@@ -36,7 +37,7 @@ async function cargarArtista(id: string): Promise<ArtistaConAutor | null> {
   if (!supabase || !/^[0-9a-f-]{36}$/.test(id)) return null;
   const { data } = await supabase
     .from("artistas")
-    .select("id, nombre, disciplina, detalle, tipo, foto, descripcion, ciudad, redes, creado_por, visible, autor:perfiles!artistas_creado_por_fkey(id, nombre)")
+    .select("id, nombre, disciplina, detalle, tipo, foto, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
@@ -250,7 +251,18 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         </Link>
       </section>
 
-      <p className={ficha.autor}>Registrado por {a.autor ? <Link href={`/personas/${a.autor.id}`}>{a.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+      {a.origen && !a.autor ? (
+        <PieOrigen origen={a.origen} className={ficha.autor}>
+          {!puedeEditar && (
+            <>
+              {" "}
+              ¿Eres tú? <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion={!!actual} correo={correo} />
+            </>
+          )}
+        </PieOrigen>
+      ) : (
+        <p className={ficha.autor}>Registrado por {a.autor ? <Link href={`/personas/${a.autor.id}`}>{a.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+      )}
 
       <Seguir
         que="artista"
