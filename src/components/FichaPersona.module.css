@@ -1,17 +1,22 @@
 /* Ficha de persona (Mi perfil y ficha ajena; docs/rediseno/13, decisiones 5 a 7).
    1. Cabecera · 2. Sobre mí y completar · 3. Listas por pestaña */
 
-/* 1. Cabecera plana: foto | nombre + Compartir a la derecha; colonia; Ajustes (solo la mía). */
+/* 1. Cabecera plana: foto | nombre + acciones (Ajustes y Compartir) a la derecha; colonia debajo. */
 .cabecera {
   display: grid;
   grid-template-columns: 96px 1fr auto;
   grid-template-areas:
-    "foto nombre compartir"
-    "foto colonia colonia"
-    "foto ajustes ajustes";
+    "foto nombre acciones"
+    "foto colonia colonia";
   column-gap: var(--espacio-4);
   align-items: center;
   margin: var(--espacio-3) 0 var(--espacio-3);
+}
+.acciones {
+  grid-area: acciones;
+  align-self: end;
+  display: flex;
+  gap: var(--espacio-2);
 }
 .avatar {
   grid-area: foto;
@@ -50,15 +55,6 @@
   background: var(--fondo);
   color: var(--texto);
   cursor: pointer;
-}
-.compartir {
-  grid-area: compartir;
-  align-self: end;
-}
-.ajustes {
-  grid-area: ajustes;
-  justify-self: start;
-  margin-top: 6px;
 }
 
 /* 2. Sobre mí y el aviso de completar (solo la mía, si falta algo). */

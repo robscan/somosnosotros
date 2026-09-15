@@ -145,15 +145,18 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], jun
           </span>
         )}
         <h1 className={styles.nombre}>{perfil.nombre}</h1>
-        <BotonCompartir titulo={perfil.nombre} texto={textoCompartirPersona(perfil.nombre, eventos.length, mia)} url={`${origen}/personas/${perfil.id}`} className={`${styles.accion} ${styles.compartir}`} ariaLabel="Compartir">
-          <IconoCompartir width={22} height={22} />
-        </BotonCompartir>
+        {/* Las dos acciones de la ficha juntas, arriba a la derecha (corrección del founder, 2026-09-15). */}
+        <div className={styles.acciones}>
+          {mia && (
+            <Link href="/ajustes" className={styles.accion} aria-label="Ajustes">
+              <IconoEngrane width={22} height={22} />
+            </Link>
+          )}
+          <BotonCompartir titulo={perfil.nombre} texto={textoCompartirPersona(perfil.nombre, eventos.length, mia)} url={`${origen}/personas/${perfil.id}`} className={styles.accion} ariaLabel="Compartir">
+            <IconoCompartir width={22} height={22} />
+          </BotonCompartir>
+        </div>
         {perfil.colonia && <p className={styles.colonia}>{perfil.colonia}</p>}
-        {mia && (
-          <Link href="/ajustes" className={`${styles.accion} ${styles.ajustes}`} aria-label="Ajustes">
-            <IconoEngrane width={22} height={22} />
-          </Link>
-        )}
       </div>
       {perfil.bio && <p className={styles.sobreMi}>{perfil.bio}</p>}
       {incompleto && (

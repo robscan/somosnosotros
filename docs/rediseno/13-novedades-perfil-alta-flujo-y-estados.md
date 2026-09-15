@@ -1,4 +1,4 @@
-# Novedades, perfil y alta de lugar · flujo, estados y decisiones (v1.2)
+# Novedades, perfil y alta de lugar · flujo, estados y decisiones (v1.3)
 
 **Fecha:** 2026-09-15 · **Base:** [12-novedades-perfil-alta-fricciones.md](12-novedades-perfil-alta-fricciones.md) (v1, pendiente de la corrección del founder) · **Carta:** [PRINCIPIOS_UX.md](../PRINCIPIOS_UX.md) · **Prototipo navegable:** [prototipos/novedades-perfil-alta.html](prototipos/novedades-perfil-alta.html) (publicado para el iPhone en https://claude.ai/artifact/5GDgjLVpsy3h26TgsnYEaN) · **Quién firma:** el founder.
 
@@ -42,7 +42,7 @@ flowchart TD
 | R0 | Persona | Ficha con Compartir junto al nombre; resumen en números (Va a · Sigue) como pestañas | Tocar renglones, cambiar de pestaña |
 | R1 | Coincidencias | Tercer número "Van a lo mismo · N" en el resumen (con sesión y si hay), con su lista al tocarlo | Tocar |
 
-5. **Mi perfil es la ficha**: Compartir arriba a la derecha junto al nombre (en la mía y en la ajena); lo único distinto de la ajena son el engrane de Ajustes bajo la colonia (donde estaba Editar) y el aviso de completar. **El resumen en números es la pestaña** (corrección del founder, v1.2): Va a · Sigue (· Van a lo mismo) con su cifra grande; tocar uno muestra su lista; un solo control para leer y para navegar. Editar, Avisos, Perfil reservado, Invitar, Cerrar sesión, Borrar y Administración viven en Ajustes; el menú ··· desaparece de Mi perfil. Iconos convencionales con nombre en tooltip y aria-label. *Hick, Progressive disclosure, Jakob, intención.* (P0, S0)
+5. **Mi perfil es la ficha**: Ajustes y Compartir juntos, arriba a la derecha junto al nombre (corrección del founder en el iPhone, v1.3: dos acciones, una región); en la ajena solo Compartir. Lo único distinto de la ajena es el engrane y el aviso de completar. **El resumen en números es la pestaña**: Va a · Sigue (· Van a lo mismo) en una sola línea, número grande y etiqueta chica, con una raya común abajo y la elegida del color de acción, como los filtros de la agenda (v1.3); tocar uno muestra su lista. Editar, Avisos, Perfil reservado, Invitar, Cerrar sesión, Borrar y Administración viven en Ajustes; el menú ··· desaparece de Mi perfil. Iconos convencionales con nombre en tooltip y aria-label. *Hick, Progressive disclosure, Jakob, intención.* (P0, S0)
 6. **Ajustes son grupos en tarjetas** con rótulo y aire entre ellos; dentro, filas con el mismo dibujo (icono, etiqueta, detalle, acción); los interruptores de avisos van en la fila y guardan al tocar; lo destructivo suelto al final y en rojo, con la confirmación de dos pasos que ya existe. *Región común, proximidad, conectividad uniforme, Von Restorff.* (S0)
 7. **"Van a lo mismo"** lo calcula el sistema y solo aparece, como tercer número del resumen, con sesión y si hay coincidencias. Firmado por el founder (2026-09-15). *UX invisible, Peak-End.* (R1)
 
@@ -73,6 +73,8 @@ flowchart TD
 10. **Dónde pendiente ofrece dos salidas por intención**: Estoy aquí (acabo de descubrir el lugar: pone el pin sin abrir nada) y Buscar (sé dónde está: abre la hoja con el campo de dirección enfocado). **El mapa vive en la hoja "Dónde está"**, a toda la pantalla, con el mismo botón de ubicación del mapa de Lugares; la dirección se deduce del pin. Sin frases de ayuda: el valor del renglón dice el estado y los iconos llevan tooltip. *Intención, Fitts, UX invisible, Similitud.* (L0, H)
 12. **Tipo "Otro" admite decir qué es** (campo opcional "¿Qué es? Ej. taller de cerámica"): se guarda como detalle y sirve para ir formando tipos nuevos sin obligar a nadie. *Postel, UX invisible.* (L2, L3)
 11. **Publicar dice qué falta** cuando está deshabilitado ("falta el nombre", "falta dónde está") y viaja sobre el teclado mientras se escribe. *Evidencia, Fitts.* (L0, L1)
+
+13. **Atrás genérico** (pedido del founder en el iPhone, 2026-09-15): la navegación no es lineal (a una ficha se llega desde la agenda, un lugar, un artista o un enlace compartido), así que el regreso de la barra interior vuelve a la pantalla anterior de verdad; si la pestaña no ha visto otra pantalla de la app (enlace compartido), va a la pantalla madre. Dice "Atrás", sin el nombre del nivel. *Jakob, Evidencia.*
 
 **Excepciones declaradas:** ninguna.
 
