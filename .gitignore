@@ -13,3 +13,4 @@ next-env.d.ts
 
 # Datos capturados del CAPO (traen correos personales): nunca en git
 scripts/capo/salida/
+scripts/instituciones/salida/
