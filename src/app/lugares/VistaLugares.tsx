@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { Chip, ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import ListaLugares from "@/components/ListaLugares";
+import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import Aviso from "@/components/ui/Aviso";
 import Mapa from "@/components/Mapa";
 import NavInferior from "@/components/NavInferior";
@@ -59,6 +60,11 @@ export default function VistaLugares({
   const lugaresDelTipo = useMemo(() => (tipo ? lugares.filter((l) => l.tipo === tipo) : lugares), [lugares, tipo]);
   // Una sola búsqueda para las dos vistas. En el mapa, lo encontrado se encuadra; si es uno solo, se abre su tarjeta.
   const [busqueda, setBusqueda] = useState("");
+  // Al volver de una ficha, la misma vista, lo escrito y el scroll de la lista (el tipo ya viene en la URL).
+  useMemoriaPantalla<{ vista: Vista; busqueda: string }>("lugares", { vista, busqueda }, (r) => {
+    if (r.vista === "mapa" || r.vista === "lista") setVista(r.vista);
+    if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
+  });
   const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
   const [encuadre, setEncuadre] = useState<{ puntos: Punto[]; vez: number } | null>(null);
   // Lo encontrado se lista bajo el buscador mientras se escribe; al tocar uno se abre su tarjeta y la lista se cierra.

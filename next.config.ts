@@ -14,6 +14,9 @@ const CABECERAS = [
 ];
 
 const nextConfig: NextConfig = {
+  // Al cambiar de sección con la barra inferior (Agenda · Lugares · Artistas) la página vista hace menos de un minuto
+  // se reutiliza en el teléfono sin esperar al servidor; publicar, Voy y Seguir la invalidan (revalidatePath).
+  experimental: { staleTimes: { dynamic: 60 } },
   async headers() {
     return [{ source: "/(.*)", headers: CABECERAS }];
   },

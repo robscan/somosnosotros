@@ -60,6 +60,24 @@
   -webkit-appearance: none;
   appearance: none;
 }
+/* La lupa: un chip redondo con solo el icono, pegado a la derecha de los chips de contexto. */
+.lupa {
+  width: 40px;
+  margin-left: auto;
+  padding: 0;
+  justify-content: center;
+}
+.lupa svg {
+  color: var(--texto);
+}
+/* El campo de búsqueda ocupa la fila de los chips con su mismo alto: la cabecera pegajosa no se mueve. */
+.campoBusqueda {
+  flex: 1;
+  min-height: 40px;
+}
+.campoBusqueda input {
+  font-size: var(--letra-md);
+}
 .filtros {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

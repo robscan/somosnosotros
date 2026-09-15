@@ -9,7 +9,7 @@ import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./inicio.module.css";
 
-type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng"> & { sitio_lat: number | null; sitio_lng: number | null; lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][] };
+type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & { sitio_lat: number | null; sitio_lng: number | null; lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][]; artistas: { artista: { nombre: string } | { nombre: string }[] | null }[] | null };
 
 /** La agenda de la ciudad: eventos próximos con su lugar, cuántos van, y los lugares que la persona sigue. */
 async function cargar(ciudad: Ciudad, usuarioId: string | null) {
@@ -18,7 +18,7 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   // Solo la ciudad (decisión "sin segunda ciudad"); cuántos van se cuenta en la base para los eventos cargados,
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   const [e, l, s] = await Promise.all([
-    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").limit(300),
+    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").limit(300),
     supabase.from("lugares").select("id", { count: "exact", head: true }).eq("visible", true).eq("ciudad", ciudad.nombre),
     usuarioId ? supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId) : Promise.resolve({ data: null }),
   ]);
@@ -37,7 +37,9 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
     porCiudad.set(fila.ciudad, (porCiudad.get(fila.ciudad) ?? 0) + 1);
     if (fila.ciudad !== ciudad.nombre) continue;
     const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
-    eventos.push({ ...fila, lugar, lat: fila.sitio_lat, lng: fila.sitio_lng, van: van.get(fila.id) ?? 0 });
+    // Quién se presenta, solo el nombre: sirve al buscador ("camerata" halla su concierto).
+    const artistas = (fila.artistas ?? []).map((x) => (Array.isArray(x.artista) ? x.artista[0] : x.artista)?.nombre).filter((n): n is string => !!n);
+    eventos.push({ ...fila, lugar, artistas, lat: fila.sitio_lat, lng: fila.sitio_lng, van: van.get(fila.id) ?? 0 });
   }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
   return { eventos, seguidos, eventosSeguidos, hayLugares: (l.count ?? 0) > 0, porCiudad };

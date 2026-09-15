@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { agruparPorDia, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
+import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import type { Ciudad } from "@/lib/ciudad";
 import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
+import { useMemoriaPantalla } from "./MemoriaPantalla";
 import RenglonEvento from "./RenglonEvento";
-import { IconoCalendario, IconoCaret, IconoPin } from "./ui/Iconos";
+import { CampoBuscar } from "./ui/Buscador";
+import { IconoBuscar, IconoCalendario, IconoCaret, IconoPin } from "./ui/Iconos";
 import styles from "./AgendaInicio.module.css";
 
 type CiudadConEventos = Ciudad & { eventos: number };
@@ -22,14 +24,27 @@ type Props = {
   hoy: string;
 };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
+/** Lo que la agenda recuerda al salir a una ficha y volver: pestaña, día elegido y búsqueda (decisión 17 de 02). */
+type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: boolean };
 
 /**
- * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, filtros como pestañas),
+ * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
 export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
+  // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
+  const [busqueda, setBusqueda] = useState("");
+  const [buscando, setBuscando] = useState(false);
+  // El foco (y el teclado) solo cuando la lupa acaba de abrir el campo; al volver de una ficha no se roba el foco.
+  const [enfocar, setEnfocar] = useState(false);
+  useMemoriaPantalla<Recordado>("agenda", { filtro, fecha, busqueda, buscando }, (r) => {
+    if (FILTROS.some((f) => f.clave === r.filtro)) setFiltro(r.filtro);
+    if (typeof r.fecha === "string") setFecha(r.fecha);
+    if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
+    setBuscando(!!r.buscando || !!r.busqueda);
+  });
   const [punto, setPunto] = useState<Punto | null>(null);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   const [hojaCiudad, setHojaCiudad] = useState(false);
@@ -51,7 +66,9 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     );
   }
 
-  const { lista, km } = filtrarAgenda(eventos, { filtro, punto, seguidos, eventosSeguidos, fecha, ahora });
+  const { lista: filtrada, km } = filtrarAgenda(eventos, { filtro, punto, seguidos, eventosSeguidos, fecha, ahora });
+  const lista = buscarEventos(filtrada, busqueda);
+  const hayBusqueda = busqueda.trim().length > 0;
   const hoyIso = localAIso(`${hoy}T12:00`) ?? new Date().toISOString();
 
   let cuerpo: React.ReactNode;
@@ -78,7 +95,12 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   } else {
     let grupos: Grupo<EventoAgenda>[];
     let vacio: string;
-    if (fecha) {
+    if (hayBusqueda) {
+      grupos = fecha && lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora), eventos: lista }] : agruparPorDia(lista, ahora, filtro === "cercanos");
+      // Vacío por causa: dice qué se buscó y dónde, y la salida (Todos, o quitar la fecha).
+      const donde = filtro !== "todos" ? ` en ${FILTROS.find((f) => f.clave === filtro)?.etiqueta}` : "";
+      vacio = `Nada con «${busqueda.trim()}»${donde}${fecha ? " ese día" : ""}.${filtro !== "todos" ? " Prueba en Todos." : fecha ? " Quita la fecha para buscar en todo." : ""}`;
+    } else if (fecha) {
       grupos = lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora), eventos: lista }] : [];
       vacio = "Ese día no hay nada todavía. Quita la fecha para ver todo.";
     } else if (filtro === "cercanos") {
@@ -94,7 +116,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     }
     cuerpo = grupos.length === 0 ? (
       <section className={styles.grupo}>
-        <h2>{fecha ? diaLargo(fecha, ahora) : "Próximos días"}</h2>
+        <h2>{hayBusqueda ? "Buscar" : fecha ? diaLargo(fecha, ahora) : "Próximos días"}</h2>
         <p className={styles.vacio}>{vacio}</p>
       </section>
     ) : (
@@ -118,36 +140,46 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     <>
       <div className={styles.fija}>
         <div className={styles.contexto}>
-          {fecha ? (
-            // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
-            <span className={`${styles.chip} ${styles.chipActivo}`}>
-              <IconoCalendario width={16} height={16} />
-              <span>{diaCorto(localAIso(`${fecha}T12:00`) ?? hoyIso, ahora)}</span>
-              <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
-                ✕
+          {buscando ? (
+            // La lupa abrió el campo en el sitio de los chips: la cabecera no cambia de alto y la ✕ lo cierra.
+            <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, sitio o artista" ariaLabel="Buscar un evento" autoFocus={enfocar} className={styles.campoBusqueda} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />
+          ) : (
+            <>
+              {fecha ? (
+                // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
+                <span className={`${styles.chip} ${styles.chipActivo}`}>
+                  <IconoCalendario width={16} height={16} />
+                  <span>{diaCorto(localAIso(`${fecha}T12:00`) ?? hoyIso, ahora)}</span>
+                  <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
+                    ✕
+                  </button>
+                </span>
+              ) : (
+                // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
+                <label className={styles.chip} htmlFor="agenda-fecha">
+                  <IconoCalendario width={16} height={16} />
+                  <span>{diaCorto(hoyIso, ahora)}</span>
+                  <IconoCaret width={12} height={12} />
+                  <input type="date" id="agenda-fecha" className={styles.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
+                </label>
+              )}
+              {ciudades.length > 1 ? (
+                <button type="button" className={styles.chip} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
+                  <IconoPin width={16} height={16} />
+                  <span>{ciudad.nombre}</span>
+                  <IconoCaret width={12} height={12} />
+                </button>
+              ) : (
+                // Una sola ciudad: se dice, no se elige (nada que abrir).
+                <span className={styles.chip}>
+                  <IconoPin width={16} height={16} />
+                  <span>{ciudad.nombre}</span>
+                </span>
+              )}
+              <button type="button" className={`${styles.chip} ${styles.lupa}`} onClick={() => { setBuscando(true); setEnfocar(true); }} aria-label="Buscar un evento">
+                <IconoBuscar width={18} height={18} />
               </button>
-            </span>
-          ) : (
-            // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
-            <label className={styles.chip} htmlFor="agenda-fecha">
-              <IconoCalendario width={16} height={16} />
-              <span>{diaCorto(hoyIso, ahora)}</span>
-              <IconoCaret width={12} height={12} />
-              <input type="date" id="agenda-fecha" className={styles.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
-            </label>
-          )}
-          {ciudades.length > 1 ? (
-            <button type="button" className={styles.chip} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
-              <IconoPin width={16} height={16} />
-              <span>{ciudad.nombre}</span>
-              <IconoCaret width={12} height={12} />
-            </button>
-          ) : (
-            // Una sola ciudad: se dice, no se elige (nada que abrir).
-            <span className={styles.chip}>
-              <IconoPin width={16} height={16} />
-              <span>{ciudad.nombre}</span>
-            </span>
+            </>
           )}
         </div>
         <div className={styles.filtros} role="tablist" aria-label="Filtrar la agenda">
