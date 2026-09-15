@@ -1,4 +1,4 @@
-# Novedades, perfil y alta de lugar · flujo, estados y decisiones (v1.1)
+# Novedades, perfil y alta de lugar · flujo, estados y decisiones (v1.2)
 
 **Fecha:** 2026-09-15 · **Base:** [12-novedades-perfil-alta-fricciones.md](12-novedades-perfil-alta-fricciones.md) (v1, pendiente de la corrección del founder) · **Carta:** [PRINCIPIOS_UX.md](../PRINCIPIOS_UX.md) · **Prototipo navegable:** [prototipos/novedades-perfil-alta.html](prototipos/novedades-perfil-alta.html) (publicado para el iPhone en https://claude.ai/artifact/5GDgjLVpsy3h26TgsnYEaN) · **Quién firma:** el founder.
 
@@ -36,15 +36,15 @@ flowchart TD
 
 | ID | Estado | Qué ve la persona | Qué puede hacer |
 |---|---|---|---|
-| P0 | Mi perfil | Ficha idéntica a la ajena + dos iconos bajo el nombre: Ajustes (engrane) y Compartir | Ir a Ajustes, compartir |
+| P0 | Mi perfil | Ficha idéntica a la ajena: Compartir arriba a la derecha junto al nombre; Ajustes (engrane) bajo la colonia; resumen en números que hace de pestañas (Voy a · Sigo) y la lista de la pestaña | Ir a Ajustes, compartir, cambiar de pestaña |
 | P1 | Incompleto | Aviso "Falta tu colonia y una línea sobre ti" con Completar (lleva a Ajustes · Editar) | Completar |
 | S0 | Ajustes | Cuatro grupos en tarjetas: Tu ficha (Editar · Perfil) · Avisos (Por correo · En el teléfono, interruptores en la fila) · Cuenta (Entras con · Cerrar sesión) · Somos Nosotros (Invitar · Administración · Privacidad · Reglas); Borrar mi cuenta suelto al final, en rojo | Tocar una fila; los interruptores guardan al tocar |
-| R0 | Persona | Ficha sin acciones salvo Compartir | Tocar renglones |
-| R1 | Coincidencias | "Van a lo mismo · N" antes de "Va a" (con sesión y si hay) | Tocar |
+| R0 | Persona | Ficha con Compartir junto al nombre; resumen en números (Va a · Sigue) como pestañas | Tocar renglones, cambiar de pestaña |
+| R1 | Coincidencias | Tercer número "Van a lo mismo · N" en el resumen (con sesión y si hay), con su lista al tocarlo | Tocar |
 
-5. **Mi perfil es la ficha**: lo único distinto de la ajena son el icono de Ajustes junto a Compartir (bajo el nombre, donde estaba Editar) y el aviso de completar. Editar, Avisos, Perfil reservado, Invitar, Cerrar sesión, Borrar y Administración viven en Ajustes; el menú ··· desaparece de Mi perfil. Iconos convencionales con nombre en tooltip y aria-label. *Hick, Progressive disclosure, Jakob, intención.* (P0, S0)
+5. **Mi perfil es la ficha**: Compartir arriba a la derecha junto al nombre (en la mía y en la ajena); lo único distinto de la ajena son el engrane de Ajustes bajo la colonia (donde estaba Editar) y el aviso de completar. **El resumen en números es la pestaña** (corrección del founder, v1.2): Va a · Sigue (· Van a lo mismo) con su cifra grande; tocar uno muestra su lista; un solo control para leer y para navegar. Editar, Avisos, Perfil reservado, Invitar, Cerrar sesión, Borrar y Administración viven en Ajustes; el menú ··· desaparece de Mi perfil. Iconos convencionales con nombre en tooltip y aria-label. *Hick, Progressive disclosure, Jakob, intención.* (P0, S0)
 6. **Ajustes son grupos en tarjetas** con rótulo y aire entre ellos; dentro, filas con el mismo dibujo (icono, etiqueta, detalle, acción); los interruptores de avisos van en la fila y guardan al tocar; lo destructivo suelto al final y en rojo, con la confirmación de dos pasos que ya existe. *Región común, proximidad, conectividad uniforme, Von Restorff.* (S0)
-7. **"Van a lo mismo"** lo calcula el sistema y solo aparece con sesión y si hay coincidencias. Por decidir. *UX invisible, Peak-End.* (R1)
+7. **"Van a lo mismo"** lo calcula el sistema y solo aparece, como tercer número del resumen, con sesión y si hay coincidencias. Por decidir. *UX invisible, Peak-End.* (R1)
 
 ## Alta de lugar
 

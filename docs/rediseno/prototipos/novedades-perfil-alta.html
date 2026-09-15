@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novedades, perfil y alta de lugar v2</title>
+<title>Novedades, perfil y alta de lugar v3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
 <style>
   /* ==========================================================================
@@ -106,12 +106,19 @@
   /* ==========================================================================
      5. Ficha de persona: cabecera plana (foto | nombre / colonia / acciones)
      ========================================================================== */
-  .cabecera { display: grid; grid-template-columns: 96px 1fr; grid-template-areas: "foto nombre" "foto colonia" "foto acciones"; column-gap: 16px; align-items: center; margin: 14px 0 16px; }
+  .cabecera { display: grid; grid-template-columns: 96px 1fr auto; grid-template-areas: "foto nombre compartir" "foto colonia colonia" "foto ajustes ajustes"; column-gap: 16px; align-items: center; margin: 14px 0 12px; }
   .avatar { grid-area: foto; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: grid; place-items: center; color: #fff; font-size: 40px; font-weight: 700; }
   .avatar.vacio { background: var(--fondo-miniatura); color: var(--texto-suave); }
   .cabecera h1 { grid-area: nombre; margin: 0; align-self: end; }
+  .cabecera > .compartir { grid-area: compartir; align-self: end; }
   .colonia { grid-area: colonia; color: var(--texto-suave); font-size: 15px; }
-  .acciones { grid-area: acciones; display: flex; gap: 8px; margin-top: 6px; }
+  .cabecera > .ajustes-entrada { grid-area: ajustes; justify-self: start; margin-top: 6px; }
+  /* Resumen en números: Va a · Sigue · Van a lo mismo; cada uno es la pestaña de su lista (una decisión, un control). */
+  .kpis { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin: 12px 0 4px; }
+  .kpi { display: grid; justify-items: start; gap: 2px; min-height: 64px; padding: 10px 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); color: var(--texto-suave); font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+  .kpi b { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1; color: var(--texto); }
+  .kpi[aria-selected="true"] { border-color: var(--primario); color: var(--primario); box-shadow: inset 0 -3px 0 var(--primario); }
+  .kpi[aria-selected="true"] b { color: var(--primario); }
   /* Acciones de icono: 44 pt, con borde para que se lean como botones; el nombre va en tooltip y en aria-label. */
   .accion { display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); cursor: pointer; }
   .accion svg { width: 22px; height: 22px; }
@@ -225,7 +232,7 @@
 <body>
 
 <div class="estudio">
-  <p class="rotulo"><strong>Novedades, perfil y alta de lugar v2</strong> <span>Campana y Novedades · Mi perfil solo actividad, Ajustes desde la cabecera · alta de lugar con dos salidas en Dónde y el mapa en su hoja</span> <span>Datos de ejemplo, no reales</span></p>
+  <p class="rotulo"><strong>Novedades, perfil y alta de lugar v3</strong> <span>Campana y Novedades · perfil con resumen en números que hace de pestañas, Compartir junto al nombre y Ajustes bajo la colonia · alta de lugar con dos salidas en Dónde y el mapa en su hoja</span> <span>Datos de ejemplo, no reales</span></p>
 
   <div class="telefono">
     <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
@@ -252,7 +259,7 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const estado = { vista: "agenda", novedades: "hay", incompleto: false, coincide: true, admin: false, lugar: "L0", leidas: false, tipoElegido: null, tipoAbierto: false, queEs: "", correo: true, telefono: false, reservado: false };
+  const estado = { vista: "agenda", novedades: "hay", incompleto: false, coincide: true, admin: false, lugar: "L0", leidas: false, tipoElegido: null, tipoAbierto: false, queEs: "", correo: true, telefono: false, reservado: false, pestana: "va" };
   const inicial = JSON.parse(JSON.stringify(estado));
   const I = {
     pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
@@ -322,13 +329,17 @@
   function pantallaPersona(mia) {
     const incompleto = mia && estado.incompleto;
     let h = barraInterior("Agenda");
-    const acciones = (mia ? `<button type="button" class="accion" id="ir-ajustes" data-tip="Ajustes" aria-label="Ajustes">${I.engrane}</button>` : "") + `<button type="button" class="accion" data-tip="Compartir" aria-label="Compartir" data-nota="Abriría la hoja nativa de compartir">${I.compartir}</button>`;
-    h += `<div class="cabecera"><span class="avatar ${incompleto ? "vacio" : ""}">${incompleto ? "R" : ""}</span><h1>Rosa Prueba</h1>${incompleto ? "" : `<span class="colonia">Tequis</span>`}<div class="acciones">${acciones}</div></div>`;
+    h += `<div class="cabecera"><span class="avatar ${incompleto ? "vacio" : ""}">${incompleto ? "R" : ""}</span><h1>Rosa Prueba</h1><button type="button" class="accion compartir" data-tip="Compartir" aria-label="Compartir" data-nota="Abriría la hoja nativa de compartir">${I.compartir}</button>${incompleto ? "" : `<span class="colonia">Tequis</span>`}${mia ? `<button type="button" class="accion ajustes-entrada" id="ir-ajustes" data-tip="Ajustes" aria-label="Ajustes">${I.engrane}</button>` : ""}</div>`;
     if (!incompleto) h += `<p class="sobre-mi">Vecina de Tequis. Me gusta el son huasteco y el grabado; casi siempre ando por Casa Ocho Ventanas.</p>`;
     if (incompleto) h += `<p class="completa">${I.persona}<span>Falta tu colonia y una línea sobre ti: así te reconocen en “quién va”.</span><button type="button" id="ir-ajustes">Completar</button></p>`;
-    if (!mia && estado.coincide) h += `<section class="grupo"><h2>Van a lo mismo <span>· 1</span></h2><ul class="lista">${renglonEvento("Noche de son en el patio", "Hoy · 19:30", "Casa Ocho Ventanas", "a")}</ul></section>`;
-    h += `<section class="grupo"><h2>${mia ? "Voy a" : "Va a"} <span>· 2</span></h2><h3>Hoy</h3><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "a")}</ul><h3>sáb 19 de sep</h3><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", "b")}</ul></section>`;
-    h += `<section class="grupo"><h2>${mia ? "Sigo" : "Sigue"} <span>· 2</span></h2><ul class="lista"><li class="renglon" data-nota="Abriría el lugar"><span class="foto a" aria-hidden="true"></span><span class="titulo">Casa Ocho Ventanas</span><span class="meta">${I.pin}Casa de cultura · Calle 5 de Mayo 1100</span></li><li class="renglon" data-nota="Abriría al artista"><span class="foto c redonda" aria-hidden="true"></span><span class="titulo">Los Vecinos</span><span class="meta">${I.nota}Son huasteco · Grupo</span></li></ul></section>`;
+    /* Resumen en números = pestañas: Va a · Sigue · (Van a lo mismo, solo en la ajena con coincidencias) */
+    const coinciden = !mia && estado.coincide;
+    const pestana = coinciden || estado.pestana !== "juntos" ? estado.pestana : "va";
+    const kpi = (clave, n, etiqueta) => `<button type="button" class="kpi" role="tab" data-pestana="${clave}" aria-selected="${pestana === clave}"><b>${n}</b>${etiqueta}</button>`;
+    h += `<div class="kpis" role="tablist" aria-label="Actividad">${kpi("va", 2, mia ? "Voy a" : "Va a")}${kpi("sigue", 2, mia ? "Sigo" : "Sigue")}${coinciden ? kpi("juntos", 1, "Van a lo mismo") : ""}</div>`;
+    if (pestana === "va") h += `<section class="grupo" role="tabpanel"><h3>Hoy</h3><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "a")}</ul><h3>sáb 19 de sep</h3><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", "b")}</ul></section>`;
+    else if (pestana === "sigue") h += `<section class="grupo" role="tabpanel"><ul class="lista"><li class="renglon" data-nota="Abriría el lugar"><span class="foto a" aria-hidden="true"></span><span class="titulo">Casa Ocho Ventanas</span><span class="meta">${I.pin}Casa de cultura · Calle 5 de Mayo 1100</span></li><li class="renglon" data-nota="Abriría al artista"><span class="foto c redonda" aria-hidden="true"></span><span class="titulo">Los Vecinos</span><span class="meta">${I.nota}Son huasteco · Grupo</span></li></ul></section>`;
+    else h += `<section class="grupo" role="tabpanel"><h3>Hoy</h3><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "a")}</ul></section>`;
     return h;
   }
 
@@ -419,6 +430,7 @@
     if (id === "cerrar-hoja") { cerrarHoja(); return; }
     if (id === "listo-hoja") { cerrarHoja(); if (estado.lugar === "L0" || estado.lugar === "L1") estado.lugar = "L3"; render(); return; }
     if (id === "abrir-tipo") { estado.tipoAbierto = !estado.tipoAbierto; render(); return; }
+    if (t.dataset.pestana) { estado.pestana = t.dataset.pestana; render(); return; }
     if (t.dataset.tipo) { estado.tipoElegido = t.dataset.tipo; if (t.dataset.tipo !== "otro") { estado.tipoAbierto = false; estado.queEs = ""; } render(); return; }
     if (t.dataset.sug !== undefined) { const s = SUG[t.dataset.sug]; estado.lugar = s.poi ? "L2" : "L3"; render(); nota(s.poi ? "Lugar elegido: dirección y pin resueltos" : "Dirección elegida: el nombre que escribiste se queda"); return; }
     if (t.dataset.nota) { nota(t.dataset.nota); return; }
