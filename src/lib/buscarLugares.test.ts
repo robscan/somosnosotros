@@ -16,7 +16,7 @@ describe("buscarLugares", () => {
         { name: "sin id" },
       ],
     });
-    expect(s).toEqual([{ mapboxId: "a", nombre: "Teatro de la Paz", direccion: "Villerías 2, Centro", categorias: ["theatre"] }]);
+    expect(s).toEqual([{ mapboxId: "a", nombre: "Teatro de la Paz", direccion: "Villerías 2, Centro", categorias: ["theatre"], esDireccion: false }]);
   });
   it("recupera coordenadas del primer resultado", () => {
     const r = interpretarRecuperado({ features: [{ geometry: { coordinates: [-100.97, 22.15] }, properties: { name: "X", full_address: "Y" } }] });
@@ -45,5 +45,18 @@ describe("deducirTipo", () => {
     expect(deducirTipo("Centro Cultural Universitario Bicentenario")).toBe("casa_de_cultura");
     expect(deducirTipo("Colectivo Nido")).toBe("colectivo");
     expect(deducirTipo("La Bodega")).toBeNull();
+  });
+});
+
+describe("interpretarSugerencias · direcciones", () => {
+  it("marca las direcciones para que no se conviertan en nombre", () => {
+    const r = interpretarSugerencias({
+      suggestions: [
+        { mapbox_id: "a", name: "Workshop 850", full_address: "Av. Carranza 850, Centro", poi_category: ["cafe"], feature_type: "poi" },
+        { mapbox_id: "b", name: "Calle 850", address: "Calle 850", place_formatted: "Centro, San Luis Potosí", feature_type: "address" },
+      ],
+    });
+    expect(r.map((s) => s.esDireccion)).toEqual([false, true]);
+    expect(r[1].direccion).toBe("Calle 850, Centro, San Luis Potosí");
   });
 });

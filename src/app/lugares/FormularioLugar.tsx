@@ -153,7 +153,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     setSugeridos([]);
     try {
       const r = await recuperarLugar(s.mapboxId, mapboxToken, sesionRef.current);
-      const nombreFinal = s.nombre || r?.nombre || nombre;
+      // Una dirección ubica, no nombra: el nombre escrito por la persona se queda ("Workshop 850" no pasa a ser "Calle 850").
+      const nombreFinal = s.esDireccion ? nombre.trim() || s.nombre : s.nombre || r?.nombre || nombre;
       nombreElegido.current = nombreFinal;
       ultimaBusqueda.current = nombreFinal;
       setNombre(nombreFinal);
@@ -163,7 +164,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
       } else {
         setDireccion(s.direccion);
       }
-      if (!tipoElegidoAMano) {
+      if (!tipoElegidoAMano && !s.esDireccion) {
         const deducido = deducirTipo(nombreFinal, [...s.categorias, ...(r?.categorias ?? [])]);
         if (deducido) setTipo(deducido);
       }
@@ -248,8 +249,17 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             {sugeridos.map((s) => (
               <li key={s.mapboxId}>
                 <button type="button" className={styles.sugerencia} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
-                  <strong>{s.nombre}</strong>
-                  {s.direccion && <span className={styles.sugerenciaDetalle}>{s.direccion}</span>}
+                  {s.esDireccion ? (
+                    <>
+                      <strong>{nombre.trim()}</strong>
+                      <span className={styles.sugerenciaDetalle}>Usar la dirección {s.direccion || s.nombre}</span>
+                    </>
+                  ) : (
+                    <>
+                      <strong>{s.nombre}</strong>
+                      {s.direccion && <span className={styles.sugerenciaDetalle}>{s.direccion}</span>}
+                    </>
+                  )}
                 </button>
               </li>
             ))}
