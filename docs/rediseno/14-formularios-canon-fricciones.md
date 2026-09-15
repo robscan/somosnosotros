@@ -1,4 +1,4 @@
-# Formularios con el canon · lista de fricciones (v1, para corrección del founder)
+# Formularios con el canon · lista de fricciones (v1, firmado el 2026-09-15 con una corrección: Editar perfil en pantalla completa, no en hoja)
 
 **Fecha:** 2026-09-15 · **Pantallas:** alta de evento (`/eventos/nuevo`), alta de artista (`/artistas/nuevo`), hoja Editar perfil (`/ajustes` → Editar) · **Mirada:** capturas 390×844 en el servidor de desarrollo con un usuario desechable · **Vara:** el canon del alta de lugar, firmado el 2026-09-15 (bitácora [039](../bitacora/2026/09/039-alta-de-lugar-canon.md)): un campo arriba con icono y foco, renglones resueltos (icono | clave / valor | acción), salidas por intención cuando falta algo, lo pesado en una hoja, botón que dice qué falta, sin frases de ayuda, iconos con tooltip · **Prototipo:** [prototipos/formularios-canon.html](prototipos/formularios-canon.html) (publicado para el iPhone en https://claude.ai/artifact/Xkr2KNKgss57WtxFR7UgVo) · **Quién decide:** el founder corrige, tacha y firma.
 

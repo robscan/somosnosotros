@@ -14,6 +14,9 @@ Los 79 se cruzaron con los 48 eventos en producción por día local y palabras d
 ## Imágenes
 En la Mac del founder solo estaba el cartel del MAC (`museomacslp_DdCrB9kH79u_1.jpg`); el índice anota 61 archivos más que no están en Descargas ni en ninguna carpeta, y el JSON no trae direcciones de imagen. El cartel del MAC se subió a `fotos/lugares/<admin>/importadas/` y quedó como imagen de "Inauguración de la nueva temporada de exposiciones del MAC" (24 sep, 19:00, entrada libre). Los otros 45 van sin cartel hasta que lleguen los archivos.
 
+## Corrección (misma noche)
+Al buscar la dirección para registrarlos como lugares resultó que el Museo Interactivo de Astronomía El Meteorito está en Charcas y el Museo Tamuantzán en Ciudad Valles: fuera de la ciudad. Se borraron sus 9 eventos (incluida la Ruta literaria por la Paz, que cita al Centro Cultural de la Huasteca; si era en la capital, se recarga). Quedan 37 eventos nuevos de redes. Imágenes: con el Chrome del founder se leen las publicaciones y se descargan las fotos desde la propia página, pero Chrome bloquea las descargas automáticas repetidas desde instagram.com; hace falta permitirlas una vez.
+
 ## Pendiente
 - Si el founder pasa la carpeta con los archivos del índice, revisarlos y cargarlos como carteles (`scripts/fotos/correr.mjs eventos` acepta URL; para archivos locales hace falta un paso de subida como el del MAC).
 - Registrar como lugares, si el founder quiere, los sitios que se repiten: Museo Interactivo de Astronomía El Meteorito (5 eventos) y Museo Tamuantzán (3).

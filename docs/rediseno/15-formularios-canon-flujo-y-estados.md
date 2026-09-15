@@ -1,4 +1,4 @@
-# Formularios con el canon · flujo, estados y decisiones (v1)
+# Formularios con el canon · flujo, estados y decisiones (v1.1, firmado con una corrección)
 
 **Fecha:** 2026-09-15 · **Base:** [14-formularios-canon-fricciones.md](14-formularios-canon-fricciones.md) (v1, pendiente de la corrección del founder) · **Carta:** [PRINCIPIOS_UX.md](../PRINCIPIOS_UX.md) · **Canon:** bitácora [039](../bitacora/2026/09/039-alta-de-lugar-canon.md) · **Prototipo navegable:** [prototipos/formularios-canon.html](prototipos/formularios-canon.html) (publicado para el iPhone en https://claude.ai/artifact/Xkr2KNKgss57WtxFR7UgVo) · **Quién firma:** el founder.
 
@@ -38,18 +38,18 @@ flowchart TD
 4. **Campo con icono y placeholder, sin etiqueta ni frase**; "Qué hace" y "Es" deducidos, sin "cámbialo si no es". *Hick, UX invisible.* (A0)
 5. **Foto y Soy yo como renglones**: la cámara como acción; el interruptor en el renglón y el valor explica lo que da. *Similitud, Región común.* (A0, A2)
 
-## Editar perfil (hoja)
+## Editar perfil (pantalla completa)
 
 | ID | Estado | Qué ve la persona | Qué puede hacer |
 |---|---|---|---|
-| P0 | Hoja | Foto · Tu foto (cámara); Nombre; Colonia; Sobre ti; Entras con ro…@ (sin acción); Guardar | Tocar Cambiar en uno |
+| P0 | Pantalla | Interior con Atrás a Ajustes; Foto · Tu foto (cámara); Nombre; Colonia; Sobre ti; Entras con ro…@ (sin acción); Guardar abajo, que viaja sobre el teclado | Tocar Cambiar en uno |
 | P1 | Un renglón abierto | El campo dentro del renglón, con foco; "Listo" | Escribir; guardar |
 
-6. **Renglones que se abren de uno en uno**; el correo como renglón con candado y sin acción; Guardar cuando hay un cambio. *Progressive disclosure, Hick, Similitud.* (P0, P1)
+6. **Renglones que se abren de uno en uno**; el correo como renglón con candado y sin acción; Guardar cuando hay un cambio. **En pantalla completa, no en hoja** (corrección del founder al firmar, 2026-09-15: con el teclado abierto la hoja se recorre y dificulta la lectura); el botón viaja sobre el teclado como en las altas. *Progressive disclosure, Hick, Similitud, Fitts.* (P0, P1)
 
 **Excepciones declaradas:** ninguna.
 
 ## Qué sigue
 
-1. El founder corrige 14, recorre el prototipo y firma.
-2. PR D: alta de evento (cierra el PR 4 de OL-010). PR E: alta de artista. PR F: hoja Editar.
+1. ~~El founder corrige 14, recorre el prototipo y firma.~~ Firmado el 2026-09-15 (noche): todo, con Editar perfil en pantalla completa en vez de hoja.
+2. PR D: alta de evento (cierra el PR 4 de OL-010). PR E: alta de artista. PR F: Editar perfil en pantalla completa (`/ajustes/editar`).
