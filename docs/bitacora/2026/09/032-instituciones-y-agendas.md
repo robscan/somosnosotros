@@ -33,7 +33,7 @@ Cómo entran: publicados por la cuenta admin del founder, como Laboratorio Centr
 Dónde publica cada institución y la rutina de cada mes: [AGENDAS_CULTURALES.md](../../../ops/AGENDAS_CULTURALES.md).
 
 ## Visto al revisar
-- Durante este chat alguien borró de la base VAGO GALERÍA, el Taller de expresión artística INTEGRAME DOWN y Ático Espacio Escénico Independiente. No fue este trabajo (solo se insertó) y la base no guarda quién. Si se repite la importación del CAPO, volverían.
+- Durante este chat el founder borró de la base VAGO GALERÍA, el Taller de expresión artística INTEGRAME DOWN y Ático Espacio Escénico Independiente (lo confirmó al cierre: «fui yo»). Si se repite la importación del CAPO volverían, así que no se reimportan.
 - Pendientes del CAPO: CM Produzioni (Sensea) no es potosina y no se da de alta; la Carpa Medel es itinerante (sus funciones irían como evento en otro sitio, por ejemplo el Jardín de Tlaxcala); Casa-estudio 1864, Gallery 337 y BajoCeiba no tienen dirección pública.
 
 ## Evidencia
