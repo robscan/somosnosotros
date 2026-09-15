@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novedades, perfil y alta de lugar v3</title>
+<title>Novedades, perfil y alta de lugar v4</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
 <style>
   /* ==========================================================================
@@ -106,18 +106,17 @@
   /* ==========================================================================
      5. Ficha de persona: cabecera plana (foto | nombre / colonia / acciones)
      ========================================================================== */
-  .cabecera { display: grid; grid-template-columns: 96px 1fr auto; grid-template-areas: "foto nombre compartir" "foto colonia colonia" "foto ajustes ajustes"; column-gap: 16px; align-items: center; margin: 14px 0 12px; }
+  .cabecera { display: grid; grid-template-columns: 96px 1fr auto; grid-template-areas: "foto nombre acciones" "foto colonia colonia"; column-gap: 16px; align-items: center; margin: 14px 0 12px; }
   .avatar { grid-area: foto; width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); display: grid; place-items: center; color: #fff; font-size: 40px; font-weight: 700; }
   .avatar.vacio { background: var(--fondo-miniatura); color: var(--texto-suave); }
   .cabecera h1 { grid-area: nombre; margin: 0; align-self: end; }
-  .cabecera > .compartir { grid-area: compartir; align-self: end; }
+  .cabecera > .acciones { grid-area: acciones; align-self: end; display: flex; gap: 8px; }
   .colonia { grid-area: colonia; color: var(--texto-suave); font-size: 15px; }
-  .cabecera > .ajustes-entrada { grid-area: ajustes; justify-self: start; margin-top: 6px; }
-  /* Resumen en números: Va a · Sigue · Van a lo mismo; cada uno es la pestaña de su lista (una decisión, un control). */
-  .kpis { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin: 12px 0 4px; }
-  .kpi { display: grid; justify-items: start; gap: 2px; min-height: 64px; padding: 10px 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); color: var(--texto-suave); font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+  /* Resumen en números como pestañas, en una línea: número grande y etiqueta chica; raya común abajo y la elegida del color de acción (como los filtros de la agenda). */
+  .kpis { display: flex; gap: 20px; margin: 12px 0 8px; border-bottom: 1px solid var(--borde); }
+  .kpi { display: inline-flex; align-items: baseline; gap: 6px; min-height: 44px; padding: 4px 2px 10px; margin-bottom: -1px; border: none; border-bottom: 2px solid transparent; background: none; color: var(--texto-suave); font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; }
   .kpi b { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1; color: var(--texto); }
-  .kpi[aria-selected="true"] { border-color: var(--primario); color: var(--primario); box-shadow: inset 0 -3px 0 var(--primario); }
+  .kpi[aria-selected="true"] { border-color: var(--primario); color: var(--primario); }
   .kpi[aria-selected="true"] b { color: var(--primario); }
   /* Acciones de icono: 44 pt, con borde para que se lean como botones; el nombre va en tooltip y en aria-label. */
   .accion { display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); cursor: pointer; }
@@ -232,7 +231,7 @@
 <body>
 
 <div class="estudio">
-  <p class="rotulo"><strong>Novedades, perfil y alta de lugar v3</strong> <span>Campana y Novedades · perfil con resumen en números que hace de pestañas, Compartir junto al nombre y Ajustes bajo la colonia · alta de lugar con dos salidas en Dónde y el mapa en su hoja</span> <span>Datos de ejemplo, no reales</span></p>
+  <p class="rotulo"><strong>Novedades, perfil y alta de lugar v4</strong> <span>Campana y Novedades · perfil con Ajustes y Compartir juntos arriba a la derecha y el resumen en números como pestañas en una línea · Atrás genérico · alta de lugar con dos salidas en Dónde y el mapa en su hoja</span> <span>Datos de ejemplo, no reales</span></p>
 
   <div class="telefono">
     <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
@@ -291,7 +290,7 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   /* Barras: hijos directos, sin envoltorios. */
-  const barraInterior = (volver, derecha = "<span></span>") => `<header class="barra interior"><a href="#" class="volver" id="volver">← ${esc(volver)}</a><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a>${derecha}</header>`;
+  const barraInterior = (volver, derecha = "<span></span>") => `<header class="barra interior"><a href="#" class="volver" id="volver" aria-label="Atrás (${esc(volver)})">← Atrás</a><a href="#" class="logotipo" aria-label="Somos Nosotros, inicio">SMSNSTRS</a>${derecha}</header>`;
   function barraRaiz() {
     const conSesion = estado.novedades !== "sinsesion";
     const hayNuevas = estado.novedades === "hay" && !estado.leidas;
@@ -329,7 +328,7 @@
   function pantallaPersona(mia) {
     const incompleto = mia && estado.incompleto;
     let h = barraInterior("Agenda");
-    h += `<div class="cabecera"><span class="avatar ${incompleto ? "vacio" : ""}">${incompleto ? "R" : ""}</span><h1>Rosa Prueba</h1><button type="button" class="accion compartir" data-tip="Compartir" aria-label="Compartir" data-nota="Abriría la hoja nativa de compartir">${I.compartir}</button>${incompleto ? "" : `<span class="colonia">Tequis</span>`}${mia ? `<button type="button" class="accion ajustes-entrada" id="ir-ajustes" data-tip="Ajustes" aria-label="Ajustes">${I.engrane}</button>` : ""}</div>`;
+    h += `<div class="cabecera"><span class="avatar ${incompleto ? "vacio" : ""}">${incompleto ? "R" : ""}</span><h1>Rosa Prueba</h1><div class="acciones">${mia ? `<button type="button" class="accion" id="ir-ajustes" data-tip="Ajustes" aria-label="Ajustes">${I.engrane}</button>` : ""}<button type="button" class="accion" data-tip="Compartir" aria-label="Compartir" data-nota="Abriría la hoja nativa de compartir">${I.compartir}</button></div>${incompleto ? "" : `<span class="colonia">Tequis</span>`}</div>`;
     if (!incompleto) h += `<p class="sobre-mi">Vecina de Tequis. Me gusta el son huasteco y el grabado; casi siempre ando por Casa Ocho Ventanas.</p>`;
     if (incompleto) h += `<p class="completa">${I.persona}<span>Falta tu colonia y una línea sobre ti: así te reconocen en “quién va”.</span><button type="button" id="ir-ajustes">Completar</button></p>`;
     /* Resumen en números = pestañas: Va a · Sigue · (Van a lo mismo, solo en la ajena con coincidencias) */

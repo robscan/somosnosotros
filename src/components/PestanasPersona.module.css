@@ -1,24 +1,30 @@
-/* Resumen en números = pestañas: dos o tres cajas iguales a lo ancho; la elegida lleva el color de acción y una raya abajo. */
+/* Resumen en números como pestañas, en una sola línea: número grande y etiqueta chica en cada una; una raya común
+   en la base y la elegida con la raya del color de acción, como los filtros de la agenda (Similitud). */
 .kpis {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: var(--espacio-2);
-  margin: var(--espacio-3) 0 var(--espacio-1);
+  display: flex;
+  gap: var(--espacio-5);
+  margin: var(--espacio-3) 0 var(--espacio-2);
+  border-bottom: 1px solid var(--borde);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.kpis::-webkit-scrollbar {
+  display: none;
 }
 .kpi {
-  display: grid;
-  justify-items: start;
-  gap: 2px;
-  min-height: 64px;
-  padding: 10px 12px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: var(--toque-min);
+  padding: 4px 2px 10px;
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
   color: var(--texto-suave);
-  font-size: var(--letra-xs);
+  font-size: var(--letra-sm);
   font-weight: 600;
-  text-align: left;
+  white-space: nowrap;
   cursor: pointer;
 }
 .kpi > b {
@@ -31,7 +37,6 @@
 .kpi[aria-selected="true"] {
   border-color: var(--primario);
   color: var(--primario);
-  box-shadow: inset 0 -3px 0 var(--primario);
 }
 .kpi[aria-selected="true"] > b {
   color: var(--primario);
