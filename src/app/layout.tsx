@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Somos Nosotros" },
   // El favicon (SN) lo sirve src/app/favicon.ico; el icono de "Añadir a inicio", apple-touch-icon y el manifiesto.
   icons: { apple: "/apple-touch-icon.png" },
+  // Vista previa al pegar el enlace del sitio (WhatsApp, Messages): el logotipo sobre hueso, docs/diseno/logotipo/portada.html.
+  metadataBase: new URL("https://somosnosotros.org"),
+  openGraph: { title: "Somos Nosotros", description: "Agenda cultural y directorio de lugares de San Luis Potosí. Gratis, sin cuenta para mirar.", url: "https://somosnosotros.org", type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
+  twitter: { card: "summary_large_image", title: "Somos Nosotros", description: "Agenda cultural y directorio de lugares de San Luis Potosí.", images: ["/portada.png"] },
 };
 
 export const viewport: Viewport = {

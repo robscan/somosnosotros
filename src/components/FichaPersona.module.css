@@ -40,9 +40,26 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+/* Editar y Compartir en fila bajo el nombre; la ajena solo trae Compartir. */
 .editar {
   grid-area: editar;
   justify-self: start;
+  display: flex;
+  gap: var(--espacio-2);
+}
+.compartir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  cursor: pointer;
 }
 .sobreMi {
   margin-bottom: var(--espacio-4);
@@ -133,4 +150,37 @@
 .vacio a {
   color: var(--primario);
   font-weight: 600;
+}
+
+/* Invitación al sitio, al pie de Mi perfil: renglón discreto con icono, sin color de acción. */
+.invitar {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  column-gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  margin-bottom: var(--espacio-4);
+  padding: var(--espacio-2) 0;
+  border: none;
+  border-top: 1px solid var(--borde);
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.invitar > svg {
+  color: var(--texto-suave);
+}
+.invitar span {
+  display: grid;
+  gap: 2px;
+}
+.invitar b {
+  font-weight: 600;
+}
+.invitar small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
 }
