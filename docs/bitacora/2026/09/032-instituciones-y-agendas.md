@@ -1,6 +1,6 @@
 # 032 · Instituciones culturales y agendas
 
-**Fecha:** 2026-09-14 · **Rama:** `instituciones-y-tipos` → [PR #32](https://github.com/robscan/somosnosotros/pull/32), fusionado y desplegado el mismo día · **Pieza:** OL-016
+**Fecha:** 2026-09-14 · **Ramas:** `instituciones-y-tipos` → [PR #32](https://github.com/robscan/somosnosotros/pull/32) y `eventos-pasados-ocultos` → [PR #33](https://github.com/robscan/somosnosotros/pull/33), fusionados y desplegados el mismo día · **Pieza:** OL-016
 
 ## Qué pidió el founder
 Investigar centros culturales de San Luis Potosí que no estuvieran en la base (museos, casas de cultura, escuelas de arte y otras instituciones), darlos de alta primero, luego localizar sus agendas y proponer eventos para la agenda.
@@ -48,4 +48,10 @@ Respuesta del founder: "los negocios no entran! tomo tus recomendaciones".
 
 ## Pendiente
 - La Agenda Cultural de octubre de la Secretaría: el 14 de septiembre su PDF aún no existía (sale entre el 30 de septiembre y el 5 de octubre).
-- Eventos que ya pasaron (pregunta del founder): no se borran; las listas los esconden 3 h después de empezar y guardan quién fue. Propuesto: que la ficha de un evento pasado diga «Ya pasó» en vez de ofrecer «Voy» y calendario.
+
+## Eventos que ya pasaron: se ocultan
+Pregunta del founder: «¿Qué pasa cuando los eventos ya sucedieron? ¿Los borramos?». No se borran: se perderían sus «Voy» y los artistas ligados, y los enlaces compartidos no llevarían a nada. Las listas ya los esconden 3 h después de empezar. Decisión del founder: «si evento es pasado mejor ocultarlo».
+
+En producción ([PR #33](https://github.com/robscan/somosnosotros/pull/33)): `eventoPaso` en `lib/fechas` (un evento pasó cuando terminó o, sin hora de fin, 3 h después de empezar). La ficha de un evento pasado responde como la de uno oculto: el público ve «Esto ya no está», con el texto nuevo «Puede que ya haya pasado…», y su autor y el administrador la siguen viendo con el aviso «Este evento ya pasó» para poder duplicarlo. La vista previa al compartir no lo anuncia y su archivo de calendario da 404. Lint, typecheck y 122 pruebas en verde; CI y despliegue de Vercel en verde. Mirado a 390×844 en el servidor local: la ficha de un evento futuro no cambia y un enlace que ya no lleva a nada muestra la página con el texto nuevo (responde 200 y no 404, como ya pasaba con eventos borrados). La ficha de un evento pasado no se pudo mirar: la base no tiene ninguno.
+
+Las listas (agenda de inicio, Lugares, ficha de lugar, Artistas, ficha de artista, Mi perfil y perfil público) usan la misma regla con `filtroSinPasar` en la consulta, por decisión del founder («adelante y cerremos»). Antes cortaban 3 h después de empezar aunque el evento tuviera hora de fin: el «Sábado de puertas abiertas» del Museo Federico Silva, de 11:00 a 18:00, salía de la agenda a las 14:00. Probado contra la base, solo lectura: simulando el sábado 26 a las 15:00, la consulta da los mismos 21 eventos que la regla en JS (la regla vieja daba 20). A 390×844, en local y después en producción, la agenda de inicio sale igual que antes y un enlace que ya no lleva a nada muestra el texto nuevo; en local también la lista de Lugares y la ficha del Teatro del IMSS.
