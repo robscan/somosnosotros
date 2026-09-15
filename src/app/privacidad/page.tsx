@@ -4,8 +4,8 @@ import styles from "./legal.module.css";
 
 export const metadata: Metadata = { title: "Aviso de privacidad · Somos Nosotros" };
 
-/** Quién responde por los datos y por dónde se le escribe. Lo completa el founder antes de invitar por correo. */
-export const RESPONSABLE = { nombre: "Somos Nosotros", contacto: "hola@somosnosotros.org" };
+/** Quién responde por los datos y por dónde se le escribe (correo personal del founder, decidido el 2026-09-14: el dominio no recibe correo). */
+export const RESPONSABLE = { nombre: "Somos Nosotros", contacto: "oscar@agenciaparadigma.com" };
 
 /**
  * Aviso de privacidad (Ley Federal de Protección de Datos Personales en Posesión de los Particulares).
