@@ -1,6 +1,6 @@
 # 038 · Ajustes aparte y Mi perfil con resumen en números
 
-**Fecha:** 2026-09-15 · **Rama:** `ajustes-y-perfil` → PR · **Pieza:** OL-019, PR B (diseño firmado en [13](../../rediseno/13-novedades-perfil-alta-flujo-y-estados.md), decisiones 5 a 7)
+**Fecha:** 2026-09-15 · **Rama:** `ajustes-y-perfil` → [PR #39](https://github.com/robscan/somosnosotros/pull/39), fusionado y en producción el mismo día · **Pieza:** OL-019, PR B (diseño firmado en [13](../../rediseno/13-novedades-perfil-alta-flujo-y-estados.md), decisiones 5 a 7)
 
 ## Qué pidió el founder
 Separar la configuración del perfil de su actividad, porque la ficha se comparte y va a tener tráfico; en los perfiles, un resumen con números (Va a · Sigue · Van a lo mismo) que haga de pestañas; Compartir arriba a la derecha junto al nombre; Ajustes donde estaba Editar y Editar dentro de Ajustes; Ajustes con grupos separados (región común, proximidad, conectividad uniforme); iconos en vez de letreros.
