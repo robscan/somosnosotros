@@ -149,3 +149,27 @@
   text-align: left;
   cursor: pointer;
 }
+
+/* Interruptor con explicación (solo el administrador lo ve). */
+.interruptor {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+  margin-bottom: var(--espacio-4);
+  cursor: pointer;
+}
+.interruptor input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 2px 0 0;
+  accent-color: var(--primario);
+}
+.interruptor span {
+  display: grid;
+  gap: 2px;
+}
+.interruptor small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

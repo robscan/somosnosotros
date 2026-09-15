@@ -35,6 +35,11 @@ export function ChipNativo({ tipo, valor, activo, etiqueta, onCambio, ariaLabel 
   );
 }
 
+/** Cuántos resultados da el chip, en chico y a la derecha del texto. */
+export function Cuenta({ n }: { n: number }) {
+  return <span className={styles.cuenta}>{n}</span>;
+}
+
 /** Fila de chips que se desliza a lo ancho sin barra de scroll. */
 export function Chips({ etiqueta, children, ariaLabel }: { etiqueta?: string; children: ReactNode; ariaLabel: string }) {
   return (

@@ -103,3 +103,12 @@
   color: var(--texto);
   font-weight: 500;
 }
+
+/* Sello chico ("Solo tú lo ves"): del color de acción, en mayúsculas pequeñas. */
+.sello {
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--primario);
+}

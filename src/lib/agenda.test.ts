@@ -17,6 +17,15 @@ describe("agenda", () => {
     expect(grupos.map((g) => g.titulo)).toEqual(["Hoy", "Mañana", "mié 16 de sep"]);
     expect(grupos[0].eventos.map((e) => e.id)).toEqual(["a2", "a"]); // 17:00 y 19:00 de hoy
   });
+  it("con orden dado, respeta el orden dentro del día (Cercanos: por distancia) y los días siguen en orden", () => {
+    const grupos = agruparPorDia(
+      [evento({ id: "lejos-manana", inicio: "2026-09-16T01:00:00Z" }), evento({ id: "cerca-hoy-tarde", inicio: "2026-09-15T01:00:00Z" }), evento({ id: "lejos-hoy-temprano", inicio: "2026-09-14T23:00:00Z" })],
+      AHORA,
+      true,
+    );
+    expect(grupos.map((g) => g.titulo)).toEqual(["Hoy", "Mañana"]);
+    expect(grupos[0].eventos.map((e) => e.id)).toEqual(["cerca-hoy-tarde", "lejos-hoy-temprano"]);
+  });
   it("mide distancias y las escribe en metros o kilómetros", () => {
     const plaza = { lat: 22.1497, lng: -100.9764 };
     const km = distanciaKm(plaza, { lat: 22.1449, lng: -100.9753 });

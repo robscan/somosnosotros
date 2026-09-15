@@ -1,12 +1,12 @@
 import Link from "next/link";
 import Buscador from "@/components/ui/Buscador";
-import { ChipEnlace, Chips } from "@/components/ui/Chip";
+import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaArtista, etiquetaDisciplina, hrefArtistas, textoProximaFecha, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type Disciplina, type FiltroLeido } from "@/lib/artistas";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoPincel, IconoPluma } from "./ui/Iconos";
 import renglon from "./Renglon.module.css";
 import styles from "./ListaArtistas.module.css";
 
-type Opcion = { valor: string; etiqueta: string };
+type Opcion = { valor: string; etiqueta: string; n?: number };
 type Props = {
   artistas: ArtistaLista[];
   total: number;
@@ -72,10 +72,12 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
             <Chips ariaLabel="Qué hacen">
               <ChipEnlace activo={!filtro.hace} href={hrefArtistas({ q: filtro.q })}>
                 Todos
+                <Cuenta n={totalCiudad} />
               </ChipEnlace>
               {disciplinas.map((d) => (
                 <ChipEnlace key={d.valor} activo={filtro.hace === d.valor} href={hrefArtistas({ hace: filtro.hace === d.valor ? null : d.valor, q: filtro.q })}>
                   {d.etiqueta}
+                  {d.n != null && <Cuenta n={d.n} />}
                 </ChipEnlace>
               ))}
             </Chips>
@@ -84,10 +86,12 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
             <Chips ariaLabel={`Qué ${etiquetaDisciplina(filtro.hace!).toLowerCase()}`}>
               <ChipEnlace activo={!filtro.que} href={hrefArtistas({ hace: filtro.hace, q: filtro.q })}>
                 Todo
+                {disciplinas.find((d) => d.valor === filtro.hace)?.n != null && <Cuenta n={disciplinas.find((d) => d.valor === filtro.hace)!.n!} />}
               </ChipEnlace>
               {detalles.map((d) => (
                 <ChipEnlace key={d.valor} activo={filtro.que === d.valor} href={hrefArtistas({ hace: filtro.hace, que: filtro.que === d.valor ? null : d.valor, q: filtro.q })}>
                   {d.etiqueta}
+                  {d.n != null && <Cuenta n={d.n} />}
                 </ChipEnlace>
               ))}
             </Chips>

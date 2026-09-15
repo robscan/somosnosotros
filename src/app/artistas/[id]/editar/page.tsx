@@ -24,7 +24,7 @@ export default async function EditarArtista({ params }: { params: Promise<{ id: 
     <main className="pagina">
       <Barra volver={{ href: `/artistas/${id}`, texto: "Volver a la ficha" }} />
       <h1 className="titulo">Editar artista</h1>
-      <FormularioArtista accion={actualizarArtista.bind(null, id)} artista={artista} usuarioId={actual.perfil.id} />
+      <FormularioArtista accion={actualizarArtista.bind(null, id)} artista={artista} usuarioId={actual.perfil.id} esAdmin={actual.perfil.rol === "admin"} />
     </main>
   );
 }

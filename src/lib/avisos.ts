@@ -1,7 +1,7 @@
 import "server-only";
-import { correoNuevoEvento, correoRecordatorio } from "./comunidad";
+import { correoCambioEvento, correoNuevoEvento, correoRecordatorio, textoCambio } from "./comunidad";
 import { correoActivo, enviarCorreo } from "./correo";
-import { nombreSitio } from "./eventos";
+import { nombreSitio, type CambioEvento } from "./eventos";
 import { formatearCuando } from "./fechas";
 import { urlBaja } from "./baja";
 import { enviarPush } from "./push";
@@ -30,7 +30,10 @@ async function correoDe(usuarioId: string): Promise<string | null> {
  * Manda el aviso a cada persona una sola vez (avisos_enviados) y solo por los canales que consintió
  * (avisos_push, avisos_correo). Cuenta como enviado si llegó por cualquiera de los dos.
  */
-async function avisar(evento: EventoAviso, usuarios: string[], tipo: "nuevo_evento" | "recordatorio"): Promise<number> {
+type TipoAviso = "nuevo_evento" | "recordatorio" | "cambio";
+type Cambio = Exclude<CambioEvento, null>;
+
+async function avisar(evento: EventoAviso, usuarios: string[], tipo: TipoAviso, cambio: Cambio = "ambos"): Promise<number> {
   const admin = clienteAdmin();
   if (!admin || usuarios.length === 0) return 0;
   const { data: perfiles } = await admin.from("perfiles").select("id, avisos_correo, avisos_push").in("id", usuarios);
@@ -38,9 +41,14 @@ async function avisar(evento: EventoAviso, usuarios: string[], tipo: "nuevo_even
   const yaEnviados = new Set((ya ?? []).map((r) => r.usuario_id as string));
   const cuando = formatearCuando(evento.inicio, evento.fin);
   const lugar = nombreSitio(evento);
-  const plantilla = tipo === "nuevo_evento" ? correoNuevoEvento : correoRecordatorio;
+  const plantilla = tipo === "nuevo_evento" ? correoNuevoEvento : tipo === "cambio" ? (p: Parameters<typeof correoNuevoEvento>[0]) => correoCambioEvento({ ...p, cambio }) : correoRecordatorio;
   const llaveBaja = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  const aviso = { titulo: tipo === "nuevo_evento" ? `Nuevo en ${lugar}` : `Hoy: ${evento.titulo}`, cuerpo: tipo === "nuevo_evento" ? `${evento.titulo} · ${cuando}` : `${cuando} · ${lugar}`, url: `https://somosnosotros.org/eventos/${evento.id}` };
+  const aviso =
+    tipo === "nuevo_evento"
+      ? { titulo: `Nuevo en ${lugar}`, cuerpo: `${evento.titulo} · ${cuando}`, url: `https://somosnosotros.org/eventos/${evento.id}` }
+      : tipo === "cambio"
+        ? { titulo: `Cambió ${textoCambio(cambio)}: ${evento.titulo}`, cuerpo: `Ahora es ${cuando} · ${lugar}`, url: `https://somosnosotros.org/eventos/${evento.id}` }
+        : { titulo: `Hoy: ${evento.titulo}`, cuerpo: `${cuando} · ${lugar}`, url: `https://somosnosotros.org/eventos/${evento.id}` };
   type Canales = { id: string; avisos_correo: boolean; avisos_push: boolean };
   const pendientes = ((perfiles ?? []) as Canales[]).filter((p) => (p.avisos_correo || p.avisos_push) && !yaEnviados.has(p.id));
   let enviados = 0;
@@ -104,6 +112,21 @@ export async function avisarNuevoEvento(eventoId: string, autorId: string | null
   ]);
   const usuarios = [...new Set([...(porLugar.data ?? []), ...(porArtista.data ?? [])].map((s) => s.usuario_id as string))].filter((u) => u !== autorId);
   return avisar(evento, usuarios, "nuevo_evento");
+}
+
+/**
+ * Cambió la fecha o el lugar: aviso a quienes dijeron "Voy" (menos a quien editó). Cada cambio avisa de nuevo:
+ * se borra el registro del aviso de cambio anterior para que "una vez por persona" cuente por cambio, no por evento.
+ */
+export async function avisarCambioEvento(eventoId: string, editorId: string | null, cambio: Cambio): Promise<number> {
+  const admin = clienteAdmin();
+  const evento = await cargarEvento(eventoId);
+  if (!admin || !evento) return 0;
+  const { data } = await admin.from("asistencias").select("usuario_id").eq("evento_id", eventoId).eq("estado", "voy");
+  const usuarios = (data ?? []).map((a) => a.usuario_id as string).filter((u) => u !== editorId);
+  if (usuarios.length === 0) return 0;
+  await admin.from("avisos_enviados").delete().eq("evento_id", eventoId).eq("tipo", "cambio");
+  return avisar(evento, usuarios, "cambio", cambio);
 }
 
 /** Recordatorio a quienes dijeron "Voy" a eventos que empiezan entre ahora y las próximas `horas`. */

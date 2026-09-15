@@ -53,8 +53,8 @@ async function cargar(f: FiltroLeido): Promise<Cargado> {
   const conFecha = [...proxima.keys()];
   const porDisciplina = ((d1.data ?? []) as { disciplina: string; n: number }[]).filter((x) => x.n > 0);
   const totalCiudad = porDisciplina.reduce((s, x) => s + Number(x.n), 0);
-  const disciplinas = DISCIPLINAS.filter((d) => porDisciplina.some((x) => x.disciplina === d.valor));
-  const detalles = ((d2.data ?? []) as { clave: string; etiqueta: string; n: number }[]).length >= 2 ? (d2.data as { clave: string; etiqueta: string }[]).map((x) => ({ valor: x.clave, etiqueta: x.etiqueta.charAt(0).toUpperCase() + x.etiqueta.slice(1) })) : [];
+  const disciplinas = DISCIPLINAS.filter((d) => porDisciplina.some((x) => x.disciplina === d.valor)).map((d) => ({ ...d, n: Number(porDisciplina.find((x) => x.disciplina === d.valor)?.n ?? 0) }));
+  const detalles = ((d2.data ?? []) as { clave: string; etiqueta: string; n: number }[]).length >= 2 ? (d2.data as { clave: string; etiqueta: string; n: number }[]).map((x) => ({ valor: x.clave, etiqueta: x.etiqueta.charAt(0).toUpperCase() + x.etiqueta.slice(1), n: Number(x.n) })) : [];
 
   const q = f.q ? normalizarNombre(f.q).replace(/[,()]/g, "") : "";
   const base = () => {

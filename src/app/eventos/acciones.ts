@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { avisarNuevoEvento } from "@/lib/avisos";
+import { avisarCambioEvento, avisarNuevoEvento } from "@/lib/avisos";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
-import { cartelAFormulario, validarEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
+import { cartelAFormulario, queCambio, validarEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
@@ -111,11 +111,15 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const { supabase, user } = await sesionOEntrar(`/eventos/${id}/editar`);
   const { datos, errores } = validarEvento(leer(formData));
   if (Object.keys(errores).length) return { ok: false, errores };
+  // Cómo estaba antes, para avisar a quienes van si cambia cuándo o dónde.
+  const { data: antes } = await supabase.from("eventos").select("inicio, fin, lugar_id, sitio_texto").eq("id", id).maybeSingle();
   const { data, error } = await supabase.from("eventos").update(filaEvento(datos, await ciudadDe(supabase, datos.lugar_id))).eq("id", id).select("id").maybeSingle();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu evento?" };
   await guardarPrivado(supabase, id, datos);
   const artistas = await guardarQuien(supabase, user.id, id, quienDesdeJson(formData.get("quien")));
   revalidar(id, datos.lugar_id, artistas);
+  const cambio = antes ? queCambio(antes, datos) : null;
+  if (cambio) after(() => avisarCambioEvento(id, user.id, cambio));
   redirect(`/eventos/${id}`);
 }
 

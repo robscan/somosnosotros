@@ -1,0 +1,50 @@
+# 034 · Hallazgos del founder tras pruebas
+
+**Fecha:** 2026-09-15 · **Rama:** `hallazgos-2026-09-15` → PR (el founder pidió llevarlo a producción; la bitácora 033 del logotipo va en el mismo PR, en su propio commit) · **Pieza:** OL-017
+
+## Qué pidió el founder
+Una lista de 14 hallazgos tras probar la app, revisada primero contra el código (mañana) y luego decidida punto por punto (tarde): mantener los asistentes visibles sin sesión; la sigla como parte del nombre del lugar, sin campo nuevo ("Museo de Arte Contemporáneo (MAC)"); imágenes por URL y ponerlas todas a las fichas importadas; un prompt para investigar las agendas en redes sociales desde Chrome con la extensión; lugares que solo vea el administrador como estado propio (un mapeo personal de casas abandonadas del Centro para huertos, no un castigo); y las demás recomendaciones aceptadas: ubicación actual en el selector de sitio del evento, lista de resultados al buscar en el mapa, contador en los chips, aviso de cambio a quienes van. Además dos fallas de la agenda: sin separador de fecha en Cercanos y Nuevos, y el chip de fecha que abría el selector al quitar la fecha.
+
+## Qué se hizo
+
+### Base (tres migraciones, aplicadas a producción con `npx supabase db push`)
+- `20260915100000_aviso_cambio.sql`: `avisos_enviados.tipo` admite `cambio`.
+- `20260915110000_lugares_privados.sql`: columna `lugares.privado` (default false). Lectura: lo público es `visible and not privado`; el autor y el administrador ven lo suyo. Solo el administrador puede marcar `privado` (alta y edición lo exigen en la política). Las RPC `lugares_parecidos` y `lugares_con_nombre` no revelan privados.
+- `20260915120000_nombres_alternativos.sql`: MAC, CEART e IPBA con la sigla entre paréntesis en el nombre (`nombre_orden` la recoge por el trigger y la búsqueda la encuentra). `lugares.json` y `eventos.json` de instituciones actualizados con los mismos nombres para que una recarga no duplique.
+
+### Código
+- **Agenda** (`AgendaInicio`, `lib/agenda`): Cercanos y Nuevos se agrupan por día como Todos; en Cercanos, dentro de cada día del más cercano al más lejano (`agruparPorDia(…, ordenDado)`). El chip de fecha: sin fecha es el selector nativo; con fecha es un chip con ✕ que vuelve a hoy sin abrir nada (antes el `<input type="date">` seguía encima del ✕).
+- **Ubicación en el alta de evento**: botón "Estoy aquí" junto al pin de "Otro sitio" y de "Sitio reservado" (`FormularioEvento`), con el punto azul de la persona en el mapa (`Mapa` ya lo pinta también en modo "elegir", sin volar: el pin centra). `lib/ubicacion.ts · leerUbicacion` reúne la lectura de geolocalización que estaba copiada en cuatro sitios; el alta de lugar la usa también y muestra el punto azul.
+- **Buscar en el mapa** (`VistaLugares`): al escribir aparece la lista de hasta 6 resultados bajo el buscador (nombre, tipo · calle) y "Y n más en el mapa"; tocar uno abre su tarjeta y cierra la lista.
+- **Chips con contador** (`ui/Chip · Cuenta`): Lugares cuenta por tipo en el navegador (`tiposPresentes` devuelve `n`); Artistas usa el `n` que ya daban las RPC `disciplinas_con_artistas` y `detalles_de_disciplina`. "Todos" lleva el total.
+- **Aviso de cambio** (`lib/avisos · avisarCambioEvento`, `lib/comunidad · correoCambioEvento`, `lib/eventos · queCambio`): al guardar la edición se compara cuándo (inicio, fin) y dónde (lugar, sitio) con lo de antes; si cambió, tras responder se avisa por push y correo a quienes dijeron "Voy" (menos a quien editó): "Cambió la fecha / el lugar / la fecha y el lugar: título · Ahora es …". Cada cambio avisa de nuevo (se borra el registro `cambio` anterior).
+- **Lugares privados**: interruptor "Solo yo lo veo" al final del alta y la edición de lugar, solo para el administrador; el servidor lo ignora si no es admin. En el mapa el punto y el nombre van en gris; en la lista y la tarjeta dice "Solo tú lo ves"; la ficha lo dice como aviso verde, distinto del aviso rojo de "oculto".
+- **Imagen por URL**: campo "O pega la dirección de una imagen" (`components/CampoImagenUrl`) bajo la foto en los formularios de lugar, evento y artista, solo para el administrador; el servidor ya aceptaba cualquier `https://`.
+- **Fotos a las fichas importadas** (`scripts/fotos/correr.mjs <artistas|lugares|eventos> <json> --autor <id> [--simular] [--hotlink]`): baja cada imagen, la sube a `fotos/<carpeta>/<admin>/importadas/<slug>` y guarda la URL pública; solo toca fichas sin foto; empareja por nombre normalizado (eventos por título). **47 instituciones con portada en producción** (`scripts/instituciones/fotos.json`: 16 de Wikimedia Commons con licencia CC, 17 del SIC, 12 de sitios oficiales, 2 de México es Cultura; ACHE Galería pedida reducida porque la original pesa 5.5 MB). **CAPO: 0 de 312.** `scripts/capo/capturar-fotos.mjs` saca de las páginas del catálogo la URL de la foto de 506 artistas (312 "de bloque" y 194 de carrusel, que son obras); `scripts/capo/salida/fotos-capo.json`. Al probar en la mañana, Google servía las de bloque sin firma; al bajar las 312 seguidas respondió 403 a todas y sigue en 403 desde este equipo (curl, node y el navegador de la app, con y sin Referer, tras una pausa). Pendiente: bajarlas desde un navegador real que cargue las páginas del catálogo (Playwright interceptando las respuestas de imagen, o la extensión de Chrome), y luego `correr.mjs artistas` con el JSON.
+- **Prompt para redes**: [PROMPT_REDES.md](../../ops/PROMPT_REDES.md), con las cuentas por institución, el formato de salida (el de `eventos.json` más `imagen` e `imagen_pagina`) y los dos comandos de carga (eventos y carteles el mismo día, porque las URL de Facebook e Instagram caducan).
+
+### Perfil: la ficha de persona del rediseño (PR 2 de OL-010, pedido por el founder en la tarde)
+- `components/FichaPersona` (servidor) es **una sola ficha** para `/perfil` y `/personas/[id]` (decisión 5): foto redonda de 96 px (o la inicial), nombre, colonia, sobre mí; "Voy a · N" por día con el renglón de la agenda (decisión 9) y "Sigo · N" con lugares (foto cuadrada, tipo · calle) y artistas (redonda, qué hacen). Vacíos con salida: "Ver la agenda", "Ver lugares · Ver artistas". La ajena ("Va a", "Sigue") no tiene nada que tocar. "Me interesa" solo aparece en la mía y si hay algo. La consulta común está en `app/personas/consultas.ts` (con `van_por_evento` para el conteo).
+- **Editar en una hoja** (`perfil/EditarPerfil`, decisión 6): píldora "Editar" en la cabecera; la hoja trae la foto (tocarla abre el carrete), Nombre, Colonia, Sobre mí y "Entras con ro…@"; al guardar la ficha se relee y la hoja se cierra. El correo ya no está a la vista en la ficha.
+- **Avisos como renglón de estado** (`perfil/AvisosPerfil`, decisión 7): "Avisos · Por correo y en el teléfono / Sin avisos" con Cambiar → hoja con dos interruptores que se guardan al tocar (correo con `elegirAvisos`; teléfono con la suscripción push de este teléfono, la hoja de instalar en iPhone sin instalar, y aviso si está bloqueado). `lib/perfil · textoAvisos` con prueba.
+- **Menú ···** (decisión 8): Editar · Avisos · (Administración, solo admin) · Cerrar sesión · Borrar mi cuenta (dos pasos, `components/Borrar`). Editar y Avisos del menú abren su hoja por `?editar=1` / `?avisos=1`.
+- "Completa tu perfil: colonia y una línea sobre ti" como renglón cuando falta algo (P1). Al pie: "Así te ven los demás · Aviso de privacidad · Reglas de uso".
+- Se van `FormularioPerfil`, `ActivarPush` y el `perfil.module.css` duplicado de personas; `guardarPerfil` ya no toca los avisos.
+- Mirado a 390×844 con un usuario desechable (Rosa Prueba, Tequis, dos "Voy", un lugar y un artista seguidos): la ficha coincide con el prototipo (cabecera, sobre mí, renglón de Avisos, "Voy a · 2" por día, "Sigo · 2"); el menú ··· lista Editar · Avisos · Cerrar sesión · Borrar mi cuenta. El usuario se borró al terminar.
+
+### Lo que no se cambió, con razón
+- Asistentes sin sesión: se quedan (decisión del founder: conocer gente).
+- Tamaño de letra: la escala va en `rem` sobre `font-size: 100%`, así que ya sigue el ajuste del sistema; sin control propio.
+- Reclamar una banda desde el admin: el botón "Pasar la ficha a esta cuenta" solo aparece con un reporte "Soy yo / es mi grupo" pendiente; sin reporte no hay botón. Queda como pregunta al founder si quiere asignar sin reporte.
+- POIs del mapa: los activó el founder en el estilo de Mapbox; el código no los toca.
+
+### El caso de los asistentes borrados
+El founder lo vio en "La Banda de Música del Estado en el templo de San Sebastián" al cambiar el lugar. El código no lo explica: editar es un `update` sobre la misma fila y nada toca `asistencias` (sin trigger; la cascada solo aplica al borrar el evento o su lugar). En producción el evento tiene hoy "1 va" (el founder se volvió a apuntar). No se reprodujo; si vuelve a pasar, anotar la hora exacta y si se usó Editar o Duplicar.
+
+## Verificación
+Lint, typecheck, 127 pruebas y build en verde (pruebas nuevas: `agruparPorDia` con orden dado, `tiposPresentes` con conteo, `queCambio`, `correoCambioEvento`, `validarLugar` con `privado`). Mirado a 390×844 en el servidor local contra producción: Nuevos con "jue 17 de sep · 3" y "vie 18 de sep · 5"; chip "vie 18 de sep ✕" que vuelve a "Hoy" con selector; mapa con "museo" → lista de 6 y "Y 7 más en el mapa", "mac" → "Museo de Arte Contemporáneo (MAC)" con su tarjeta; chips "Todos 58 · Casa de cultura 15 · Museo 13" y "Todos 522 · Música 306 · Teatro 52". No mirado (exige sesión de admin): "Estoy aquí" en el alta de evento, el interruptor de privado, el campo de URL de imagen y el aviso de cambio; el founder los prueba en su iPhone.
+
+## Pendiente
+- Fotos del CAPO (312) por la vía del navegador real; las 194 de carrusel se quedan fuera (son obras, no retratos).
+- Firma del founder en el iPhone.
+- Decidido por el founder (tarde): asignar fichas de artista desde el admin sin reporte queda para después, si se pide; el prompt de redes lo corre él más tarde.

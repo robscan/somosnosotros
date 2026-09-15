@@ -22,25 +22,13 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
   });
   if (Object.keys(errores).length) return { ok: false, errores };
 
-  const correo = formData.get("avisos_correo") === "si";
-  const { data: antes } = await supabase.from("perfiles").select("avisos_correo").eq("id", user.id).maybeSingle();
-  const { error } = await supabase
-    .from("perfiles")
-    .update({
-      nombre: datos.nombre,
-      colonia: datos.colonia || null,
-      bio: datos.bio || null,
-      foto: datos.foto,
-      avisos_correo: correo,
-      avisos_preguntado: true,
-      ...(correo && !antes?.avisos_correo ? { avisos_correo_desde: new Date().toISOString(), avisos_correo_motivo: null } : {}),
-      ...(!correo ? { avisos_correo_desde: null } : {}),
-    })
-    .eq("id", user.id);
+  // Los avisos ya no van aquí: se cambian en su propia hoja, al tocar (avisos/acciones · elegirAvisos).
+  const { error } = await supabase.from("perfiles").update({ nombre: datos.nombre, colonia: datos.colonia || null, bio: datos.bio || null, foto: datos.foto }).eq("id", user.id);
   if (error) return { ok: false, errores: {}, general: "No se pudo guardar. Intenta de nuevo." };
 
   revalidatePath("/");
   revalidatePath("/perfil");
+  revalidatePath(`/personas/${user.id}`);
   return { ok: true };
 }
 

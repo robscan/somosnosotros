@@ -5,6 +5,7 @@ import { useActionState, useCallback, useEffect, useRef, useState } from "react"
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import CampoImagenUrl from "@/components/CampoImagenUrl";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
@@ -14,6 +15,7 @@ import { normalizarRedes } from "@/lib/enlaces";
 import { LIMITES_LUGAR, TIPOS, etiquetaTipo, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
+import { leerUbicacion } from "@/lib/ubicacion";
 import type { ResultadoLugar } from "./acciones";
 import styles from "./FormularioLugar.module.css";
 
@@ -25,6 +27,8 @@ type Props = {
   usuarioId: string;
   /** Desde dónde se vino (el alta de evento): al publicar el lugar se vuelve ahí con el lugar ya elegido. */
   siguiente?: string;
+  /** El administrador puede pegar la dirección de una imagen y marcar el lugar como privado (mapeo personal). */
+  esAdmin?: boolean;
 };
 
 const CLAVE_BORRADOR = "somosnosotros:borrador-lugar";
@@ -44,7 +48,7 @@ function leerBorrador(): Borrador | null {
  * (dirección + punto + tipo); o tocas "Estoy aquí" y deduce la dirección del pin. Lo demás
  * (descripción, redes, foto) es opcional y puede esperar a después de publicar.
  */
-export default function FormularioLugar({ accion, lugar, usuarioId, siguiente }: Props) {
+export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false }: Props) {
   const esAlta = !lugar;
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
@@ -59,6 +63,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente }:
   const [buscando, setBuscando] = useState(false);
   const [recuperando, setRecuperando] = useState(false);
   const [ubicando, setUbicando] = useState(false);
+  const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null); // la persona en el mapa (punto azul), tras "Estoy aquí"
   const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
   const [existentes, setExistentes] = useState<LugarResumen[]>([]);
   const [mostrarDetalles, setMostrarDetalles] = useState(!esAlta);
@@ -66,6 +71,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente }:
   const [subiendo, setSubiendo] = useState(false);
   const [errorPortada, setErrorPortada] = useState<string | null>(null);
   const [confirmado, setConfirmado] = useState(false);
+  const [privado, setPrivado] = useState(!!lugar?.privado);
   const sesionRef = useRef<string>("");
   const ultimaBusqueda = useRef("");
   const nombreElegido = useRef("");
@@ -177,24 +183,18 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente }:
     });
   }, []);
 
-  function estoyAqui() {
-    if (!("geolocation" in navigator)) {
-      setAvisoUbicacion("Este teléfono no da su ubicación. Toca el mapa donde está el lugar.");
-      return;
-    }
+  async function estoyAqui() {
     setUbicando(true);
     setAvisoUbicacion(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUbicando(false);
-        alMoverPin({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      },
-      () => {
-        setUbicando(false);
-        setAvisoUbicacion("No se pudo leer tu ubicación. Toca el mapa donde está el lugar.");
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
-    );
+    try {
+      const p = await leerUbicacion(true);
+      setYo((y) => ({ ...p, vez: (y?.vez ?? 0) + 1 }));
+      alMoverPin(p);
+    } catch (e) {
+      setAvisoUbicacion(e === "sin-soporte" ? "Este teléfono no da su ubicación. Toca el mapa donde está el lugar." : "No se pudo leer tu ubicación. Toca el mapa donde está el lugar.");
+    } finally {
+      setUbicando(false);
+    }
   }
 
   async function subirPortada(e: React.ChangeEvent<HTMLInputElement>) {
@@ -283,7 +283,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente }:
             {ubicando ? "Ubicando…" : "Estoy aquí"}
           </button>
         </div>
-        <Mapa modo="elegir" valor={punto} onCambio={alMoverPin} />
+        <Mapa modo="elegir" valor={punto} onCambio={alMoverPin} ubicacion={yo} />
         <input type="hidden" name="lat" value={punto?.lat ?? ""} />
         <input type="hidden" name="lng" value={punto?.lng ?? ""} />
         {siguiente && <input type="hidden" name="siguiente" value={siguiente} />}
@@ -363,10 +363,23 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente }:
                 {errorPortada ?? errores.portada}
               </p>
             )}
+            {esAdmin && <CampoImagenUrl valor={portada} onCambio={setPortada} />}
           </div>
         </>
       )}
       <input type="hidden" name="portada" value={portada ?? ""} />
+
+      {/* Solo el administrador: mapeo personal que nadie más ve (no es "oculto"). */}
+      {esAdmin && (
+        <label className={styles.interruptor}>
+          <input type="checkbox" checked={privado} onChange={(e) => setPrivado(e.target.checked)} />
+          <span>
+            <strong>Solo yo lo veo</strong>
+            <small>Mapeo privado: no sale en el mapa, la lista ni la búsqueda para nadie más.</small>
+          </span>
+        </label>
+      )}
+      <input type="hidden" name="privado" value={privado ? "1" : ""} />
 
       {parecidos && parecidos.length > 0 && !confirmado && (
         <div className={styles.parecidos} role="alert">

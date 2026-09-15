@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { correoValido, validarPerfil } from "./perfil";
+import { correoValido, textoAvisos, validarPerfil } from "./perfil";
 
 describe("validarPerfil", () => {
   it("limpia espacios y acepta un perfil mínimo", () => {
@@ -26,5 +26,14 @@ describe("correoValido", () => {
     expect(correoValido(" alguien@ejemplo.org ")).toBe(true);
     expect(correoValido("alguien")).toBe(false);
     expect(correoValido("a@b")).toBe(false);
+  });
+});
+
+describe("textoAvisos", () => {
+  it("dice por dónde llegan los avisos, o que no hay", () => {
+    expect(textoAvisos(true, true)).toBe("Por correo y en el teléfono");
+    expect(textoAvisos(true, false)).toBe("Por correo");
+    expect(textoAvisos(false, true)).toBe("En el teléfono");
+    expect(textoAvisos(false, false)).toBe("Sin avisos");
   });
 });

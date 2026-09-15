@@ -111,6 +111,43 @@
   outline: 2px solid var(--primario);
   outline-offset: 1px;
 }
+/* Lo que encontró la búsqueda, bajo el buscador: renglones planos, el toque abre la tarjeta del lugar. */
+.resultadosMapa {
+  list-style: none;
+  margin-block: 0; /* a los lados manda el gutter de .sobreMapa */
+  padding: 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+.resultadoMapa {
+  display: grid;
+  width: 100%;
+  min-height: var(--toque-min);
+  padding: var(--espacio-2) var(--espacio-4);
+  border: 0;
+  border-bottom: 1px solid var(--borde);
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.resultadoMapa:hover,
+.resultadoMapa[aria-selected="true"] {
+  background: var(--fondo-suave, #f4f4f4);
+}
+.resultadoMapa span {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.resultadoMas {
+  padding: var(--espacio-2) var(--espacio-4);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 .nadaMapa {
   justify-self: start;
   padding: var(--espacio-2) var(--espacio-3);

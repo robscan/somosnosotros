@@ -39,6 +39,26 @@ export function correoNuevoEvento(p: Plantilla): { asunto: string; texto: string
   return { asunto, texto, html };
 }
 
+/** Qué cambió, en palabras: "la fecha", "el lugar" o "la fecha y el lugar". */
+export function textoCambio(cambio: "cuando" | "donde" | "ambos"): string {
+  return cambio === "ambos" ? "la fecha y el lugar" : cambio === "cuando" ? "la fecha" : "el lugar";
+}
+
+export function correoCambioEvento(p: Plantilla & { cambio: "cuando" | "donde" | "ambos" }): { asunto: string; texto: string; html: string } {
+  const url = `${ORIGEN}/eventos/${p.eventoId}`;
+  const que = textoCambio(p.cambio);
+  const asunto = `Cambió ${que}: ${p.titulo}`;
+  const f = pie(`Recibes esto porque dijiste "Voy" a este evento y pediste avisos por correo.`, p.bajaUrl);
+  const texto = `Cambió ${que} de ${p.titulo}.
+Ahora es: ${p.cuando} · ${p.lugar}
+
+Ver el evento: ${url}
+
+${f.texto}`;
+  const html = `<p>Cambió ${que} de <strong>${escapar(p.titulo)}</strong>.<br>Ahora es: ${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento</a></p>${f.html}`;
+  return { asunto, texto, html };
+}
+
 export function correoRecordatorio(p: Plantilla): { asunto: string; texto: string; html: string } {
   const url = `${ORIGEN}/eventos/${p.eventoId}`;
   const asunto = `Hoy: ${p.titulo}`;

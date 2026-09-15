@@ -1,46 +1,10 @@
-.cabecera {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-4);
-  margin-bottom: var(--espacio-3);
-}
-.avatar {
-  width: 64px;
-  height: 64px;
-  flex: none;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--fondo-suave);
-  display: inline-grid;
-  place-items: center;
-  font-size: var(--letra-2xl);
-  font-weight: 600;
-  color: var(--texto-suave);
-}
-.dato,
-.detalle,
-.vacio {
+/* Al pie de Mi perfil: cómo me ven, privacidad y reglas. */
+.legal {
+  padding: var(--espacio-3) 0;
+  border-top: 1px solid var(--borde);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-.bio {
-  margin-bottom: var(--espacio-5);
-}
-.seccion {
-  margin-bottom: var(--espacio-5);
-}
-.tituloSeccion {
-  font-size: var(--letra-xl);
-  font-weight: 700;
-  margin-bottom: var(--espacio-3);
-}
-.lista {
-  list-style: none;
-  display: grid;
-  gap: var(--espacio-2);
-}
-.publico {
+.legal a {
   color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  margin-bottom: var(--espacio-5);
 }

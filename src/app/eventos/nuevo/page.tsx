@@ -40,7 +40,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
       <Barra volver={{ href: volver, texto: "Volver" }} />
       <h1 className="titulo">{base ? "Duplicar evento" : "Publicar un evento"}</h1>
       <p className="subtitulo">{base ? "Mismo evento, nueva fecha. Cambia lo que haga falta." : "Qué y cuándo; lo demás ya está resuelto y se puede cambiar."}</p>
-      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} />
+      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} />
     </main>
   );
 }

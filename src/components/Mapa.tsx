@@ -20,7 +20,7 @@ type Props = {
   onPin?: (lugar: LugarLista | null) => void;
   /** Solo en "ver": id del lugar resaltado (el de la tarjeta abierta). */
   elegido?: string | null;
-  /** Solo en "ver": la persona en el mapa; `vez` cambia con cada toque al botón de ubicación para volver a centrar. */
+  /** La persona en el mapa (punto azul); `vez` cambia con cada toque al botón de ubicación para volver a centrar. En "elegir" solo se pinta: el pin es quien centra. */
   ubicacion?: (Punto & { vez: number }) | null;
   /** Solo en "elegir": posición del pin; null = todavía no hay. */
   valor?: Punto | null;
@@ -57,7 +57,7 @@ function aGeoJSON(lugares: LugarLista[]): GeoJSON.FeatureCollection<GeoJSON.Poin
       type: "Feature",
       id: l.id,
       geometry: { type: "Point", coordinates: [l.lng, l.lat] },
-      properties: { id: l.id, nombre: l.nombre, proximo: !!l.proximo },
+      properties: { id: l.id, nombre: l.nombre, proximo: !!l.proximo, privado: !!l.privado },
     })),
   };
 }
@@ -66,6 +66,7 @@ function aGeoJSON(lugares: LugarLista[]): GeoJSON.FeatureCollection<GeoJSON.Poin
 function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
   const primario = colorDiseno("--primario", "#0f6b7c");
   const fondo = colorDiseno("--fondo", "#ffffff");
+  const suave = colorDiseno("--texto-suave", "#5c5c5c"); // los privados (solo los ve el admin) van en gris
   mapa.addSource(FUENTE_LUGARES, { type: "geojson", data: datos, promoteId: "id" });
   mapa.addLayer({
     id: CAPA_PUNTOS,
@@ -73,7 +74,7 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
     source: FUENTE_LUGARES,
     paint: {
       "circle-radius": ["case", ["boolean", ["feature-state", "elegido"], false], 8, 5],
-      "circle-color": primario,
+      "circle-color": ["case", ["get", "privado"], suave, primario],
       "circle-stroke-color": fondo,
       "circle-stroke-width": 1.5,
     },
@@ -95,7 +96,7 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
     },
     // Del color de acción, en negrita y con halo ancho: se distinguen de las colonias y calles (gris, mayúsculas).
     paint: {
-      "text-color": primario,
+      "text-color": ["case", ["get", "privado"], suave, primario],
       "text-halo-color": fondo,
       "text-halo-width": 2,
     },
@@ -267,10 +268,10 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     if (elegido) mapa.setFeatureState({ source: FUENTE_LUGARES, id: elegido }, { elegido: true });
   }, [elegido, lugares, estado]);
 
-  // La persona en el mapa (punto azul con halo) y el mapa centrado ahí; cada toque al botón vuelve a centrar.
+  // La persona en el mapa (punto azul con halo) y, en "ver", el mapa centrado ahí; cada toque al botón vuelve a centrar.
   useEffect(() => {
     const mapa = mapaRef.current;
-    if (estado !== "listo" || !mapa || modo !== "ver") return;
+    if (estado !== "listo" || !mapa) return;
     if (!ubicacion) {
       yoRef.current?.remove();
       yoRef.current = null;
@@ -287,6 +288,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
       } else {
         yoRef.current.setLngLat([ubicacion.lng, ubicacion.lat]);
       }
+      if (modo !== "ver") return;
       const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       mapa.flyTo({ center: [ubicacion.lng, ubicacion.lat], zoom: Math.max(mapa.getZoom(), 14), duration: sinMovimiento ? 0 : 600 });
     });

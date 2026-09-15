@@ -1,0 +1,62 @@
+/* "Editar" en la cabecera: píldora chica sin color de acción (la acción primaria de la ficha no es esta). */
+.editar {
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.titulo {
+  padding-right: var(--toque-min);
+  font-size: var(--letra-xl);
+  margin-bottom: var(--espacio-3);
+}
+.formulario {
+  display: grid;
+  gap: var(--espacio-2);
+}
+/* Foto: tocarla (o el texto) abre el carrete; el campo de archivo va escondido. */
+.fotoFila {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-4);
+  margin-bottom: var(--espacio-2);
+  cursor: pointer;
+}
+.avatar {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  font-size: var(--letra-3xl);
+  font-weight: 700;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cambiarFoto {
+  color: var(--primario);
+  font-weight: 700;
+}
+.archivo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.correo {
+  margin: var(--espacio-1) 0 var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

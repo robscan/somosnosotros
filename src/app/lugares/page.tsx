@@ -13,7 +13,7 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
   const [l, e] = await Promise.all([
-    supabase.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada").eq("visible", true).eq("ciudad", ciudadNombre).order("nombre"),
+    supabase.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, privado").eq("visible", true).eq("ciudad", ciudadNombre).order("nombre"),
     supabase.from("eventos").select("id, inicio, lugar_id").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
   ]);
   return conProximo((l.data ?? []) as LugarResumen[], (e.data ?? []) as { id: string; inicio: string; lugar_id: string | null }[]);

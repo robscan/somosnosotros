@@ -14,6 +14,16 @@
   font-size: var(--letra-sm);
   margin: var(--espacio-3) 0 var(--espacio-1);
 }
+/* Etiqueta con un botón chico a la derecha ("Estoy aquí" junto al pin). */
+.filaEtiqueta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+}
+.filaEtiqueta .etiquetaChica {
+  margin-bottom: 0;
+}
 .control,
 .select {
   display: block;

@@ -69,6 +69,16 @@ function numeroONull(v: FormDataEntryValue | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Lo que importa a quien ya dijo "Voy": cuándo y dónde. Al editar, si cambia alguno se avisa. */
+export type CambioEvento = "cuando" | "donde" | "ambos" | null;
+type Comparable = { inicio: string; fin: string | null; lugar_id: string | null; sitio_texto: string | null };
+export function queCambio(antes: Comparable, despues: Comparable): CambioEvento {
+  const ms = (v: string | null) => (v ? new Date(v).getTime() : null);
+  const cuando = ms(antes.inicio) !== ms(despues.inicio) || ms(antes.fin) !== ms(despues.fin);
+  const donde = (antes.lugar_id ?? null) !== (despues.lugar_id ?? null) || (antes.sitio_texto ?? null) !== (despues.sitio_texto ?? null);
+  return cuando && donde ? "ambos" : cuando ? "cuando" : donde ? "donde" : null;
+}
+
 /** Nombre público del sitio para la agenda y la ficha. */
 export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_reservado">): string {
   if (e.lugar?.nombre) return e.lugar.nombre;

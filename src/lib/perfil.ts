@@ -31,3 +31,10 @@ export function validarPerfil(entrada: {
 export function correoValido(correo: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo.trim());
 }
+
+/** El estado de avisos en palabras, para el renglón de Mi perfil: "Por correo y en el teléfono", "Sin avisos". */
+export function textoAvisos(correo: boolean, telefono: boolean): string {
+  const canales = [correo && "Por correo", telefono && "en el teléfono"].filter(Boolean) as string[];
+  if (canales.length === 0) return "Sin avisos";
+  return canales.length === 2 ? canales.join(" y ") : canales[0].charAt(0).toUpperCase() + canales[0].slice(1);
+}
