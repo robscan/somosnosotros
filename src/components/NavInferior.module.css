@@ -1,3 +1,4 @@
+/* Navegación inferior: fija, elevada sobre el contenido; el destino activo lleva una píldora detrás del icono */
 .nav {
   position: fixed;
   left: 0;
@@ -7,16 +8,17 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   height: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding: 0 var(--espacio-2) env(safe-area-inset-bottom, 0px);
   background: var(--fondo);
   border-top: 1px solid var(--borde);
+  box-shadow: var(--sombra-panel);
 }
 .destino {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   color: var(--texto-suave);
   text-decoration: none;
   font-size: 0.75rem;
@@ -24,9 +26,25 @@
   letter-spacing: 0.02em;
   -webkit-tap-highlight-color: transparent;
 }
+/* La píldora: siempre ocupa su sitio (nada salta al cambiar de destino); solo el activo la pinta */
+.icono {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 32px;
+  border-radius: 16px;
+  transition: background-color 150ms;
+}
+.destino:active .icono {
+  background: var(--fondo-suave);
+}
 .activo {
   color: var(--primario);
 }
-.activo span {
+.activo .icono {
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.activo span:last-child {
   font-weight: 700;
 }
