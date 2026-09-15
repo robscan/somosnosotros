@@ -1,7 +1,7 @@
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import { ciudadPorSlug } from "@/lib/ciudad";
-import { desdeReciente } from "@/lib/fechas";
+import { filtroSinPasar } from "@/lib/fechas";
 import { conProximo, TIPOS, type LugarLista, type LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import VistaLugares from "./VistaLugares";
@@ -14,7 +14,7 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
   if (!supabase) return [];
   const [l, e] = await Promise.all([
     supabase.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada").eq("visible", true).eq("ciudad", ciudadNombre).order("nombre"),
-    supabase.from("eventos").select("id, inicio, lugar_id").eq("visible", true).not("lugar_id", "is", null).gte("inicio", desdeReciente()).order("inicio").limit(500),
+    supabase.from("eventos").select("id, inicio, lugar_id").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
   ]);
   return conProximo((l.data ?? []) as LugarResumen[], (e.data ?? []) as { id: string; inicio: string; lugar_id: string | null }[]);
 }

@@ -6,7 +6,7 @@ import Barra from "@/components/ui/Barra";
 import { DISCIPLINAS, filtroDesdeUrl, ordenarArtistas, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FiltroLeido, type ProximaFecha } from "@/lib/artistas";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { nombreSitio } from "@/lib/eventos";
-import { desdeReciente } from "@/lib/fechas";
+import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./artistas.module.css";
@@ -38,7 +38,7 @@ async function cargar(f: FiltroLeido): Promise<Cargado> {
   const ciudad = CIUDAD_INICIAL.nombre;
 
   const [f1, d1, d2] = await Promise.all([
-    supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, inicio, sitio_texto, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).gte("evento.inicio", desdeReciente()).order("inicio", { referencedTable: "eventos" }).limit(500),
+    supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, inicio, sitio_texto, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("inicio", { referencedTable: "eventos" }).limit(500),
     supabase.rpc("disciplinas_con_artistas", { p_ciudad: ciudad }),
     f.hace ? supabase.rpc("detalles_de_disciplina", { p_ciudad: ciudad, p_disciplina: f.hace }) : Promise.resolve({ data: [] as { clave: string; etiqueta: string; n: number }[] }),
   ]);

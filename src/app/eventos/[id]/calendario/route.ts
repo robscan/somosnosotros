@@ -1,5 +1,5 @@
 import { esUuid } from "@/lib/formulario";
-import { aFechaIcs } from "@/lib/fechas";
+import { aFechaIcs, eventoPaso } from "@/lib/fechas";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /** GET /eventos/[id]/calendario — archivo .ics: el teléfono lo abre en Calendario. */
@@ -8,7 +8,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const supabase = await clienteServidor();
   if (!supabase || !esUuid(id)) return new Response("No encontrado", { status: 404 });
   const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, descripcion, sitio_texto, lugar:lugares(nombre, direccion)").eq("id", id).maybeSingle();
-  if (!data) return new Response("No encontrado", { status: 404 });
+  // Un evento que ya pasó se oculta: tampoco se entrega su archivo de calendario.
+  if (!data || eventoPaso(data.inicio, data.fin)) return new Response("No encontrado", { status: 404 });
   const lugar = (Array.isArray(data.lugar) ? data.lugar[0] : data.lugar) as { nombre: string; direccion: string | null } | null;
   const fin = data.fin ?? new Date(new Date(data.inicio).getTime() + 2 * 3600000).toISOString();
   const escapar = (t: string) => t.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");

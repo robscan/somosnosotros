@@ -5,7 +5,7 @@ import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import type { EventoAgenda } from "@/lib/agenda";
 import { CIUDADES, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
-import { desdeReciente, diaLocal } from "@/lib/fechas";
+import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./inicio.module.css";
 
@@ -15,11 +15,10 @@ type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng"> & { sitio_lat: n
 async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   const supabase = await clienteServidor();
   if (!supabase) return { eventos: [] as EventoAgenda[], seguidos: usuarioId ? [] : null, eventosSeguidos: [] as string[], hayLugares: false, porCiudad: new Map<string, number>() };
-  const desde = desdeReciente();
   // Solo la ciudad (decisión "sin segunda ciudad"); cuántos van se cuenta en la base para los eventos cargados,
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   const [e, l, s] = await Promise.all([
-    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng)").eq("visible", true).eq("ciudad", ciudad.nombre).gte("inicio", desde).order("inicio").limit(300),
+    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").limit(300),
     supabase.from("lugares").select("id", { count: "exact", head: true }).eq("visible", true).eq("ciudad", ciudad.nombre),
     usuarioId ? supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId) : Promise.resolve({ data: null }),
   ]);

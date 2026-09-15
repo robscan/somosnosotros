@@ -164,3 +164,15 @@ export function yaPaso(local: string, ahora: Date = new Date()): boolean {
 export function desdeReciente(ahora: Date = new Date()): string {
   return new Date(ahora.getTime() - 3 * 3600000).toISOString();
 }
+
+/** ¿Ya pasó el evento? Cuando terminó o, si no tiene hora de fin, 3 h después de empezar (el margen de la agenda).
+ *  Un evento que ya pasó se oculta: solo lo ven su autor y el administrador. */
+export function eventoPaso(inicio: string, fin: string | null, ahora: Date = new Date()): boolean {
+  const termina = fin ? new Date(fin).getTime() : new Date(inicio).getTime() + 3 * 3600000;
+  return termina < ahora.getTime();
+}
+
+/** La misma regla como filtro de la base (PostgREST, para `.or()`): termina después de ahora o, sin hora de fin, empezó hace menos de 3 h. */
+export function filtroSinPasar(ahora: Date = new Date()): string {
+  return `fin.gte."${ahora.toISOString()}",and(fin.is.null,inicio.gte."${desdeReciente(ahora)}")`;
+}

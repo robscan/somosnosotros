@@ -16,7 +16,7 @@ import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
-import { desdeReciente } from "@/lib/fechas";
+import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { etiquetaTipo, textoProximo, type Lugar } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -46,7 +46,7 @@ async function cargarLugar(id: string): Promise<LugarConAutor | null> {
 async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
-  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).gte("inicio", desdeReciente()).order("inicio").limit(30);
+  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).or(filtroSinPasar()).order("inicio").limit(30);
   const filas = (data ?? []) as Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng">[];
   if (filas.length === 0) return [];
   const { data: a } = await supabase
