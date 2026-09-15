@@ -1,6 +1,6 @@
 # 034 · Hallazgos del founder tras pruebas
 
-**Fecha:** 2026-09-15 · **Rama:** `hallazgos-2026-09-15` → PR (el founder pidió llevarlo a producción; la bitácora 033 del logotipo va en el mismo PR, en su propio commit) · **Pieza:** OL-017
+**Fecha:** 2026-09-15 · **Rama:** `hallazgos-2026-09-15` → [PR #34](https://github.com/robscan/somosnosotros/pull/34), fusionado y desplegado el mismo día por orden del founder (la bitácora 033 del logotipo va en el mismo PR, en su propio commit) · **Pieza:** OL-017
 
 ## Qué pidió el founder
 Una lista de 14 hallazgos tras probar la app, revisada primero contra el código (mañana) y luego decidida punto por punto (tarde): mantener los asistentes visibles sin sesión; la sigla como parte del nombre del lugar, sin campo nuevo ("Museo de Arte Contemporáneo (MAC)"); imágenes por URL y ponerlas todas a las fichas importadas; un prompt para investigar las agendas en redes sociales desde Chrome con la extensión; lugares que solo vea el administrador como estado propio (un mapeo personal de casas abandonadas del Centro para huertos, no un castigo); y las demás recomendaciones aceptadas: ubicación actual en el selector de sitio del evento, lista de resultados al buscar en el mapa, contador en los chips, aviso de cambio a quienes van. Además dos fallas de la agenda: sin separador de fecha en Cercanos y Nuevos, y el chip de fecha que abría el selector al quitar la fecha.
