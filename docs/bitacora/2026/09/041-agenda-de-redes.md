@@ -17,6 +17,9 @@ En la Mac del founder solo estaba el cartel del MAC (`museomacslp_DdCrB9kH79u_1.
 ## Corrección (misma noche)
 Al buscar la dirección para registrarlos como lugares resultó que el Museo Interactivo de Astronomía El Meteorito está en Charcas y el Museo Tamuantzán en Ciudad Valles: fuera de la ciudad. Se borraron sus 9 eventos (incluida la Ruta literaria por la Paz, que cita al Centro Cultural de la Huasteca; si era en la capital, se recarga). Quedan 37 eventos nuevos de redes. Imágenes: con el Chrome del founder se leen las publicaciones y se descargan las fotos desde la propia página, pero Chrome bloquea las descargas automáticas repetidas desde instagram.com; hace falta permitirlas una vez.
 
+## Carteles (misma noche, después de permitir las descargas)
+Con las descargas permitidas, un guion en la página de cada publicación recorre el carrusel (botón Siguiente), baja cada foto con `fetch` desde la propia página y guarda un paquete JSON por publicación: 26 publicaciones, 76 fotos. Lo que aprendí: la página de publicación no tiene `article`; las fotos del post se distinguen de la cuadrícula "Más publicaciones" por su posición vertical, y en algunas cuentas las fotos miden menos de 800 px (umbral 600); un `fetch` sin tiempo límite se colgaba, ahora aborta a los 8 s. Resultado: 14 carteles puestos en 14 eventos sin imagen (solo se llena lo vacío), 15 eventos futuros con cartel contando el MAC. El cartel de Cultura para el 17 a las 20:00 en la Parroquia de San Sebastián dice Orquesta Sinfónica y la agenda cargada dice Banda del Estado: se deja al founder.
+
 ## Pendiente
 - Si el founder pasa la carpeta con los archivos del índice, revisarlos y cargarlos como carteles (`scripts/fotos/correr.mjs eventos` acepta URL; para archivos locales hace falta un paso de subida como el del MAC).
 - Registrar como lugares, si el founder quiere, los sitios que se repiten: Museo Interactivo de Astronomía El Meteorito (5 eventos) y Museo Tamuantzán (3).
