@@ -10,7 +10,6 @@ import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import styles from "./artistas.module.css";
 
 export const metadata = { title: "Artistas · Somos Nosotros" };
 
@@ -75,18 +74,12 @@ async function cargar(f: FiltroLeido): Promise<Cargado> {
 }
 
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */
-export default async function Artistas({ searchParams }: { searchParams: Promise<{ borrado?: string; hace?: string; que?: string; q?: string; n?: string }> }) {
-  const { borrado, ...resto } = await searchParams;
-  const filtro = filtroDesdeUrl(resto);
+export default async function Artistas({ searchParams }: { searchParams: Promise<{ hace?: string; que?: string; q?: string; n?: string }> }) {
+  const filtro = filtroDesdeUrl(await searchParams);
   const [cargado, actual] = await Promise.all([cargar(filtro), usuarioActual()]);
   return (
     <main className="raiz">
       <Barra derecha={<Sesion />} />
-      {borrado === "artista" && (
-        <p className={styles.aviso} role="status">
-          Artista borrado.
-        </p>
-      )}
       <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} />
       {/* El filtro vive en la URL; lo que se recuerda al volver de una ficha es el scroll. */}
       <MemoriaPantalla seccion="artistas" />

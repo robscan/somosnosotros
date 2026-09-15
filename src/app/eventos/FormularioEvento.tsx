@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import Hoja from "@/components/ui/Hoja";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBoleto, IconoBuscar, IconoCamara, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
@@ -12,9 +13,11 @@ import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type Sit
 import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
+import { ponerGuardia, quitarGuardia, type Guardia } from "@/lib/guardiaSalida";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { leerCartelAccion, type ResultadoEvento } from "./acciones";
+import { CLAVE_BORRADOR, olvidarBorrador, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
 import SelectorQuien from "./SelectorQuien";
@@ -23,8 +26,7 @@ import styles from "./FormularioEvento.module.css";
 
 type Abierta = "cuando" | "quien" | "cuanto" | null;
 
-/** Borrador del alta guardado en el teléfono: salir a registrar un lugar (o cerrar la app) no pierde lo escrito. */
-const CLAVE_BORRADOR = "somosnosotros:borrador-evento";
+/** Lo que se guarda del alta en el teléfono (ver borrador.ts: solo vuelve al regresar de registrar un lugar). */
 type Borrador = {
   titulo: string;
   inicio: string;
@@ -128,13 +130,15 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     }
   }
 
-  // Borrador (solo en el alta): se restaura tras el primer pintado (el servidor no lo conoce) y se guarda con cada cambio.
-  // Un lugar o artista que viene en la URL (?lugar=, desde la ficha o al volver de registrar un lugar) manda sobre el borrador.
+  // Borrador (solo en el alta): vuelve tras el primer pintado únicamente si se dejó la señal al ir a registrar un lugar;
+  // si no, se olvida. Un lugar o artista que viene en la URL (?lugar=, ?artista=) manda sobre el borrador.
   const guardarBorrador = useRef(false);
   useEffect(() => {
     if (!esAlta) return;
     const id = requestAnimationFrame(() => {
-      const b = leerBorrador();
+      const volviendo = vengoDeRegistrarLugar();
+      const b = volviendo ? leerBorrador() : null;
+      if (!volviendo) olvidarBorrador();
       if (b && (b.titulo || b.lugarId || b.otro?.sitioTexto || b.quien.length)) {
         setTitulo(b.titulo);
         setInicio(b.inicio);
@@ -162,6 +166,23 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien } satisfies Borrador));
     } catch {}
   }, [esAlta, titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien]);
+
+  // Con algo escrito sin publicar, Atrás pregunta antes de irse; al confirmar, el borrador se olvida.
+  const hayAlgo = !!(titulo.trim() || (modoSitio === "lugar" ? lugarId && lugarId !== lugarInicial : otro.sitioTexto) || descripcion || imagen || (quien.length && !quienInicial?.length));
+  const [salida, setSalida] = useState<(() => void) | null>(null);
+  useEffect(() => {
+    if (modo === "editar" || !hayAlgo) return;
+    const g: Guardia = (continuar) => setSalida(() => continuar);
+    ponerGuardia(g);
+    return () => quitarGuardia(g);
+  }, [modo, hayAlgo]);
+  function salirYBorrar() {
+    const continuar = salida;
+    setSalida(null);
+    olvidarBorrador();
+    quitarGuardia();
+    continuar?.();
+  }
 
   const lugar = lugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && esAlta;
@@ -246,11 +267,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       <form
         action={(fd) => {
           // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
-          if (esAlta) {
-            try {
-              localStorage.removeItem(CLAVE_BORRADOR);
-            } catch {}
-          }
+          if (esAlta) olvidarBorrador();
+          quitarGuardia();
           enviar(fd);
         }}
         noValidate
@@ -460,6 +478,20 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           onEstoyAqui={estoyAqui}
           onCerrar={() => setHoja(false)}
         />
+      )}
+      {salida && (
+        <Hoja etiqueta="Salir sin publicar" onCerrar={() => setSalida(null)}>
+          <div className={styles.salida}>
+            <h3>¿Salir sin publicar?</h3>
+            <p>Se borra lo que escribiste.</p>
+            <Boton type="button" onClick={() => setSalida(null)}>
+              Seguir editando
+            </Boton>
+            <Boton type="button" variante="peligro" onClick={salirYBorrar}>
+              Salir y borrar
+            </Boton>
+          </div>
+        </Hoja>
       )}
     </>
   );
