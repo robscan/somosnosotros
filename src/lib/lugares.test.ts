@@ -52,6 +52,9 @@ describe("validarLugar", () => {
     expect(datos.portada).toBeNull();
     expect(datos.privado).toBe(false);
     expect(validarLugar({ ...base, privado: "1" }).datos.privado).toBe(true);
+    // "Qué es" solo cuenta con tipo Otro.
+    expect(validarLugar({ ...base, tipo: "otro", detalle: " Taller de cerámica " }).datos.detalle).toBe("Taller de cerámica");
+    expect(validarLugar({ ...base, detalle: "Taller" }).datos.detalle).toBeNull();
   });
   it("exige nombre, tipo válido y ubicación", () => {
     const { errores } = validarLugar({ ...base, nombre: "", tipo: "bar", lat: "0", lng: "0" });

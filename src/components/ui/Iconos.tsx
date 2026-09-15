@@ -42,6 +42,12 @@ export const IconoPersona = (p: P) => (
     <path d="M5 20a7 7 0 0 1 14 0" />
   </svg>
 );
+export const IconoEtiqueta = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3 12V4h8l10 10-8 8z" />
+    <circle cx="7.5" cy="8.5" r="1.2" fill="currentColor" />
+  </svg>
+);
 export const IconoEngrane = (p: P) => (
   <svg {...base(p)}>
     <path d="M10.3 3h3.4l.5 2.3a7 7 0 0 1 1.9 1.1l2.2-.8 1.7 3-1.8 1.5a7 7 0 0 1 0 2.2l1.8 1.5-1.7 3-2.2-.8a7 7 0 0 1-1.9 1.1l-.5 2.3h-3.4l-.5-2.3a7 7 0 0 1-1.9-1.1l-2.2.8-1.7-3 1.8-1.5a7 7 0 0 1 0-2.2L4 8.6l1.7-3 2.2.8a7 7 0 0 1 1.9-1.1z" />
