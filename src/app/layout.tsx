@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
 import Navegacion from "@/components/Navegacion";
 import RegistroSW from "@/components/RegistroSW";
+import MemoriaScroll from "@/components/MemoriaScroll";
 import "./globals.css";
 
 /**
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <RegistroSW />
         <Navegacion />
+        <MemoriaScroll />
       </body>
     </html>
   );

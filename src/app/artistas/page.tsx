@@ -1,4 +1,5 @@
 import ListaArtistas from "@/components/ListaArtistas";
+import MemoriaPantalla from "@/components/MemoriaPantalla";
 import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
@@ -87,6 +88,8 @@ export default async function Artistas({ searchParams }: { searchParams: Promise
         </p>
       )}
       <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} />
+      {/* El filtro vive en la URL; lo que se recuerda al volver de una ficha es el scroll. */}
+      <MemoriaPantalla seccion="artistas" />
       <Publicar que="artista" />
       <NavInferior />
     </main>

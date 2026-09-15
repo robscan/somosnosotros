@@ -5,6 +5,33 @@ import { useRef, useState } from "react";
 import { IconoBuscar } from "./Iconos";
 import styles from "./Buscador.module.css";
 
+type PropsCampo = {
+  valor: string;
+  onCambiar: (v: string) => void;
+  placeholder: string;
+  ariaLabel: string;
+  /** Con foco al aparecer (cuando lo abre un toque, como la lupa de la agenda). */
+  autoFocus?: boolean;
+  /** Al borrar con la ✕ (si no se da, la ✕ solo vacía el texto). */
+  onCerrar?: () => void;
+  className?: string;
+};
+
+/** El campo de búsqueda a secas (icono, texto, ✕): lo usan el Buscador de la URL y la agenda, que filtra en el teléfono. */
+export function CampoBuscar({ valor, onCambiar, placeholder, ariaLabel, autoFocus = false, onCerrar, className = "" }: PropsCampo) {
+  return (
+    <label className={`${styles.buscar} ${className}`}>
+      <IconoBuscar width={18} height={18} />
+      <input type="search" placeholder={placeholder} aria-label={ariaLabel} value={valor} onChange={(e) => onCambiar(e.target.value)} autoCapitalize="none" autoCorrect="off" autoFocus={autoFocus} enterKeyHint="search" />
+      {(valor || onCerrar) && (
+        <button type="button" className={styles.limpiar} onClick={() => (onCerrar ? onCerrar() : onCambiar(""))} aria-label={onCerrar ? "Cerrar la búsqueda" : "Borrar la búsqueda"}>
+          ✕
+        </button>
+      )}
+    </label>
+  );
+}
+
 type Props = { valor: string; placeholder: string; ariaLabel: string; clave?: string };
 
 /**
@@ -32,15 +59,5 @@ export default function Buscador({ valor, placeholder, ariaLabel, clave = "q" }:
     window.clearTimeout(espera.current);
     espera.current = window.setTimeout(() => ir(v), 300);
   }
-  return (
-    <label className={styles.buscar}>
-      <IconoBuscar width={18} height={18} />
-      <input type="search" placeholder={placeholder} aria-label={ariaLabel} value={texto} onChange={(e) => cambiar(e.target.value)} autoCapitalize="none" autoCorrect="off" />
-      {texto && (
-        <button type="button" className={styles.limpiar} onClick={() => cambiar("")} aria-label="Borrar la búsqueda">
-          ✕
-        </button>
-      )}
-    </label>
-  );
+  return <CampoBuscar valor={texto} onCambiar={cambiar} placeholder={placeholder} ariaLabel={ariaLabel} />;
 }

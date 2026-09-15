@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agruparPorDia, distanciaKm, esNuevo, filtrarAgenda, textoDistancia, type EventoAgenda } from "./agenda";
+import { agruparPorDia, buscarEventos, distanciaKm, esNuevo, filtrarAgenda, textoDistancia, type EventoAgenda } from "./agenda";
 
 // "ahora": lunes 14 sep 2026, 12:00 hora de la ciudad (18:00Z)
 const AHORA = new Date("2026-09-14T18:00:00Z");
@@ -46,5 +46,20 @@ describe("agenda", () => {
     expect(filtrarAgenda(eventos, { filtro: "todos", punto: null, seguidos: null, fecha: "2026-09-14", ahora: AHORA }).lista.map((e) => e.id)).toEqual(["lejos", "cerca"]);
     expect(filtrarAgenda(eventos, { filtro: "todos", punto: null, seguidos: null, fecha: "2026-09-20", ahora: AHORA }).lista).toEqual([]);
     expect(esNuevo("2026-09-01T00:00:00Z", AHORA)).toBe(false);
+  });
+
+  it("busca por título, sitio o artista, a medias y sin acentos; cada palabra escrita tiene que estar", () => {
+    const lista = [
+      evento({ id: "a", inicio: "2026-09-15T01:00:00Z", titulo: "Noche de jazz", lugar: { nombre: "Museo Leonora Carrington", portada: null } }),
+      evento({ id: "b", inicio: "2026-09-15T01:00:00Z", titulo: "Función de títeres", sitio_texto: "Jardín de San Miguelito", artistas: ["Camerata de San Luis"] }),
+      evento({ id: "c", inicio: "2026-09-15T01:00:00Z", titulo: "Lectura", lugar: null }),
+    ];
+    expect(buscarEventos(lista, "").map((e) => e.id)).toEqual(["a", "b", "c"]);
+    expect(buscarEventos(lista, "JAZZ").map((e) => e.id)).toEqual(["a"]);
+    expect(buscarEventos(lista, "carrington").map((e) => e.id)).toEqual(["a"]);
+    expect(buscarEventos(lista, "camerata").map((e) => e.id)).toEqual(["b"]);
+    expect(buscarEventos(lista, "titeres jardin").map((e) => e.id)).toEqual(["b"]);
+    expect(buscarEventos(lista, "jazz jardin")).toEqual([]);
+    expect(buscarEventos(lista, "sitio por confirmar").map((e) => e.id)).toEqual(["c"]);
   });
 });

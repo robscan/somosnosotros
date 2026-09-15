@@ -1,6 +1,8 @@
 import { distanciaKm } from "./geo";
 import type { EventoResumen } from "./eventos";
+import { nombreSitio } from "./eventos";
 import { diaCorto, diaLocal } from "./fechas";
+import { normalizarNombre } from "./lugares";
 
 /** Lo que la agenda del inicio necesita de cada evento, además del resumen. */
 export type EventoAgenda = EventoResumen & {
@@ -11,6 +13,8 @@ export type EventoAgenda = EventoResumen & {
   /** Cuántas personas dijeron "Voy". */
   van: number;
   lugar: (EventoResumen["lugar"] & { lat?: number; lng?: number }) | null;
+  /** Nombres de los artistas que se presentan (para el buscador). */
+  artistas?: string[];
 };
 
 export type Filtro = "todos" | "cercanos" | "siguiendo" | "nuevos";
@@ -95,4 +99,17 @@ export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: Context
     lista = lista.filter((e) => esNuevo(e.creado_en, ctx.ahora)).sort((a, b) => b.creado_en.localeCompare(a.creado_en));
   }
   return { lista, km };
+}
+
+/**
+ * Buscador de la agenda (pedido del founder, 2026-09-15): por título, sitio o artista, escrito a medias,
+ * sin importar acentos ni mayúsculas; cada palabra escrita tiene que estar ("jazz museo" halla el jazz del museo).
+ */
+export function buscarEventos<T extends Pick<EventoAgenda, "titulo" | "lugar" | "sitio_texto" | "sitio_reservado" | "artistas">>(eventos: T[], busqueda: string): T[] {
+  const palabras = normalizarNombre(busqueda).split(" ").filter(Boolean);
+  if (palabras.length === 0) return eventos;
+  return eventos.filter((e) => {
+    const texto = normalizarNombre(`${e.titulo} ${nombreSitio(e)} ${(e.artistas ?? []).join(" ")}`);
+    return palabras.every((p) => texto.includes(p));
+  });
 }

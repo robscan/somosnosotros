@@ -34,3 +34,9 @@
   font-size: var(--letra-sm);
   cursor: pointer;
 }
+/* La ✕ es la nuestra: el navegador no pone la suya encima (Safari y Chrome la dibujan en type="search"). */
+.buscar input::-webkit-search-cancel-button,
+.buscar input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
