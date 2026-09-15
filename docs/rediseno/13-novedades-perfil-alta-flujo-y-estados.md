@@ -19,7 +19,7 @@ flowchart TD
 | N3 | Sin sesión | No hay campana; la ruta responde con la invitación a entrar | Entrar |
 | N4 | Teléfono apagado | Al pie: "Esto también te llega por correo. En el teléfono aún no: actívalo" | Activar |
 
-1. **Novedades se calcula, no se administra**: nuevos de las últimas dos semanas en lo que sigue, cambios en lo que va, hoy vas, y (si el founder lo firma) quién más va. Una sola fecha guardada por persona (`novedades_vistas_en`) decide el punto de la campana y el punto por renglón. *UX invisible, Evidencia.* (N0)
+1. **Novedades se calcula, no se administra**: nuevos de las últimas dos semanas en lo que sigue, cambios en lo que va, hoy vas, y "Van a lo mismo · Ana y Luis" (firmado por el founder con esa redacción). Una sola fecha guardada por persona (`novedades_vistas_en`) decide el punto de la campana y el punto por renglón. *UX invisible, Evidencia.* (N0)
 2. **Campana solo con sesión**, con punto y sin número. *Hick, Evidencia.* (N0, N3)
 3. **Cuatro vacíos por causa** (N1 a N4), cada uno con su salida. *Evidencia.*
 4. **El aviso del teléfono aparece solo cuando está apagado** y desaparece al activarlo. *UX invisible.* (N4)
@@ -44,7 +44,7 @@ flowchart TD
 
 5. **Mi perfil es la ficha**: Compartir arriba a la derecha junto al nombre (en la mía y en la ajena); lo único distinto de la ajena son el engrane de Ajustes bajo la colonia (donde estaba Editar) y el aviso de completar. **El resumen en números es la pestaña** (corrección del founder, v1.2): Va a · Sigue (· Van a lo mismo) con su cifra grande; tocar uno muestra su lista; un solo control para leer y para navegar. Editar, Avisos, Perfil reservado, Invitar, Cerrar sesión, Borrar y Administración viven en Ajustes; el menú ··· desaparece de Mi perfil. Iconos convencionales con nombre en tooltip y aria-label. *Hick, Progressive disclosure, Jakob, intención.* (P0, S0)
 6. **Ajustes son grupos en tarjetas** con rótulo y aire entre ellos; dentro, filas con el mismo dibujo (icono, etiqueta, detalle, acción); los interruptores de avisos van en la fila y guardan al tocar; lo destructivo suelto al final y en rojo, con la confirmación de dos pasos que ya existe. *Región común, proximidad, conectividad uniforme, Von Restorff.* (S0)
-7. **"Van a lo mismo"** lo calcula el sistema y solo aparece, como tercer número del resumen, con sesión y si hay coincidencias. Por decidir. *UX invisible, Peak-End.* (R1)
+7. **"Van a lo mismo"** lo calcula el sistema y solo aparece, como tercer número del resumen, con sesión y si hay coincidencias. Firmado por el founder (2026-09-15). *UX invisible, Peak-End.* (R1)
 
 ## Alta de lugar
 
@@ -80,5 +80,5 @@ flowchart TD
 
 ## Qué sigue
 
-1. El founder corrige 12, recorre el prototipo y firma.
+1. ~~El founder corrige 12, recorre el prototipo y firma.~~ Firmado el 2026-09-15 tras dos correcciones; "Van a lo mismo" en Novedades y en la ficha.
 2. PR A: Novedades (ruta, campana, fecha de visto). PR B: Ajustes y Mi perfil solo actividad (mueve lo ya hecho). PR C: alta de lugar con renglones resueltos y la hoja del mapa (cierra el PR 3 de OL-010).

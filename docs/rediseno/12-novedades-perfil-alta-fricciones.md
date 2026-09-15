@@ -13,7 +13,7 @@ Tres cosas. **Los avisos solo viven en el correo y el push**: si la persona no l
 | N1 | Avisos | Lo que pasa en lo que sigo solo llega por correo o push; sin ellos, no hay dónde verlo | Evidencia · Zeigarnik | Alta | Sección "Novedades" con lo mismo que se avisa: nuevo en lo que sigo, cambios en lo que voy, hoy vas; por día |
 | N2 | Avisos | La campana no existe; el único indicio de algo nuevo es el filtro "Siguiendo" de la agenda | Evidencia | Media | Campana en la barra raíz junto al avatar, con un punto cuando hay algo no visto; se apaga al abrir |
 | N3 | Avisos | Nadie dice que los avisos del teléfono están apagados cuando más importa | Evidencia · UX invisible | Media | Al pie de Novedades, "Esto también te llega por correo. En el teléfono aún no: actívalo" (solo si están apagados) |
-| N4 | Avisos | No hay señal social: quién más va a lo que voy | Peak-End | Baja | Renglón "Ana y Luis también van" (solo con perfil público; opcional, por decidir) |
+| N4 | Avisos | No hay señal social: quién más va a lo que voy | Peak-End | Baja | Renglón "Van a lo mismo · Ana y Luis" (solo perfiles públicos). **Decidido por el founder: entra, con esa redacción** |
 | P1 | Mi perfil | Ajustes (Avisos, Perfil reservado) entre la actividad; el menú ··· mezcla Editar con Cerrar sesión y Borrar | Hick · Progressive disclosure | Alta | Mi perfil = la ficha tal como la ven los demás. Bajo el nombre, dos iconos: Ajustes (engrane) y Compartir. Editar vive dentro de Ajustes (corrección del founder) |
 | P2 | Mi perfil | "Así te ven los demás" es un enlace suelto que nadie necesita si la ficha ya es la misma | Evidencia | Baja | Se queda como pie discreto (comprueba en un toque que no hay diferencia) |
 | P3 | Mi perfil | El correo con el que entro no aparece en ningún sitio salvo dentro de la hoja de edición | Evidencia | Baja | Renglón "Entras con ro…@" en Ajustes |
@@ -42,9 +42,9 @@ Tres cosas. **Los avisos solo viven en el correo y el push**: si la persona no l
 **Propuesta.** Al pie de la lista, solo si los avisos del teléfono están apagados: "Esto también te llega por correo. En el teléfono aún no: actívalo y te avisamos al momento" con el botón que abre la hoja de avisos (la de Ajustes). Una vez activados, desaparece. *UX invisible, Evidencia.*
 **Tu decisión:** ☐ de acuerdo ☐ cambia: ______
 
-### N4 · "Ana y Luis también van"
-**Propuesta.** Renglón de Novedades cuando alguien con perfil público dice "Voy" a un evento al que ya voy. Es la señal social más barata de producir y la más cercana a la misión (conocerse). Es opcional: si el founder la ve como ruido, no entra. *Peak-End.*
-**Tu decisión:** ☐ entra ☐ no entra
+### N4 · "Van a lo mismo · Ana y Luis"
+**Propuesta.** Renglón de Novedades cuando alguien con perfil público dice "Voy" a un evento al que ya voy. Es la señal social más barata de producir y la más cercana a la misión (conocerse). *Peak-End.*
+**Tu decisión:** ☒ entra, con la redacción "Van a lo mismo" (2026-09-15)
 
 ### P1 · Mi perfil solo actividad; Ajustes aparte
 **Qué se ve.** Hoy Mi perfil trae, entre la cabecera y "Voy a", dos renglones de configuración (Avisos, Perfil) y el menú ··· mezcla Editar con Cerrar sesión, Borrar y Administración.
@@ -53,7 +53,7 @@ Tres cosas. **Los avisos solo viven en el correo y el push**: si la persona no l
 
 ### R1 · Van a lo mismo
 **Propuesta.** En la ficha ajena, si la persona que mira tiene sesión y comparte eventos próximos con la persona de la ficha, una sección "Van a lo mismo · N" antes de "Va a". Lo calcula el sistema; no aparece si no hay coincidencias ni sin sesión. Es lo que la ficha ajena puede afirmar que a nadie más le sirve. *UX invisible, Peak-End.*
-**Tu decisión:** ☐ entra ☐ no entra
+**Tu decisión:** ☒ entra (2026-09-15)
 
 ### L2 · Dónde como renglón resuelto y el mapa en su hoja
 **Qué se ve.** Nombre; debajo "Ubicación" con "Estoy aquí", un mapa de 280 px y un campo de dirección; luego el tipo. Todo a la vez, antes de escribir.

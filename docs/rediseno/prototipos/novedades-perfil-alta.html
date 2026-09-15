@@ -318,7 +318,7 @@
     else {
       const nueva = !estado.leidas;
       h += `<section class="grupo"><h3>Hoy</h3><ul class="lista">${novedad("hoy", "Hoy vas", "Noche de son en el patio", "<b>19:30</b> · Casa Ocho Ventanas · van 12", nueva)}${novedad("cambio", "Cambió la fecha", "Fandango de barrio", "Ahora es <b>sáb 19 · 18:00</b> · Jardín de Tequis", nueva)}</ul></section>`;
-      h += `<section class="grupo"><h3>Ayer</h3><ul class="lista">${novedad("nuevo", "Nuevo en Casa Ocho Ventanas", "Taller de grabado para principiantes", "<b>dom 27 · 11:00</b> · Gratis", nueva)}${novedad("juntos", "Ana y Luis también van", "Noche de son en el patio", "<b>Hoy · 19:30</b>", false)}</ul></section>`;
+      h += `<section class="grupo"><h3>Ayer</h3><ul class="lista">${novedad("nuevo", "Nuevo en Casa Ocho Ventanas", "Taller de grabado para principiantes", "<b>dom 27 · 11:00</b> · Gratis", nueva)}${novedad("juntos", "Van a lo mismo · Ana y Luis", "Noche de son en el patio", "<b>Hoy · 19:30</b>", false)}</ul></section>`;
       h += `<section class="grupo"><h3>Esta semana</h3><ul class="lista">${novedad("nuevo", "Nueva fecha de Los Vecinos", "Los Vecinos en el Jardín de Tequis", "<b>sáb 26 · 18:00</b> · Gratis", false)}</ul></section>`;
       if (!estado.telefono) h += `<p class="tarjeta-aviso">${I.telefono}<span>Esto te llega por correo. En el teléfono aún no.</span><button type="button" class="pildora" id="activar-telefono">Activar</button></p>`;
     }
