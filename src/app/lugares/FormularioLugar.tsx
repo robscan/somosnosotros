@@ -20,6 +20,7 @@ import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import type { ResultadoLugar } from "./acciones";
 import HojaDonde from "./HojaDonde";
+import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./FormularioLugar.module.css";
 
 type Props = {
@@ -233,13 +234,13 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         className={styles.formulario}
       >
         {/* 1. El nombre: el sistema encuentra el lugar. */}
-        <label className={styles.nombre}>
+        <label className={canon.campo}>
           <IconoBuscar width={20} height={20} />
           <input name="nombre" type="text" value={nombre} onChange={(e) => alEscribirNombre(e.target.value)} maxLength={LIMITES_LUGAR.nombre} placeholder="Nombre del lugar" aria-label="Nombre del lugar" aria-invalid={!!errores.nombre} autoComplete="off" autoFocus={esAlta} required />
         </label>
-        {(buscando || recuperando) && <p className={styles.estado}>{recuperando ? "Trayendo la ubicación…" : "Buscando…"}</p>}
+        {(buscando || recuperando) && <p className={canon.estado}>{recuperando ? "Trayendo la ubicación…" : "Buscando…"}</p>}
         {errores.nombre && (
-          <p className={styles.error} role="alert">
+          <p className={canon.error} role="alert">
             {errores.nombre}
           </p>
         )}
@@ -257,7 +258,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           </ul>
         )}
         {existentes.length > 0 && (
-          <p className={styles.existe} role="status">
+          <p className={canon.existe} role="status">
             <IconoOk width={20} height={20} />
             <span>
               <b>Ya está registrado:</b>{" "}
@@ -272,49 +273,49 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           </p>
         )}
 
-        <ul className={styles.renglones}>
+        <ul className={canon.renglones}>
           {/* 2. Dónde: resuelto en cuanto algo lo resuelve; si falta, dos salidas por intención. */}
-          <li className={`${styles.resuelto} ${punto ? "" : styles.pendiente}`}>
+          <li className={`${canon.resuelto} ${punto ? "" : canon.pendiente}`}>
             <IconoPin width={20} height={20} />
-            <span className={styles.clave}>Dónde</span>
+            <span className={canon.clave}>Dónde</span>
             {punto ? (
               <>
-                <span className={styles.valor}>{direccion || "Pin en el mapa"}</span>
-                <button type="button" className={styles.cambiar} onClick={() => setHoja({ conFoco: false })}>
+                <span className={canon.valor}>{direccion || "Pin en el mapa"}</span>
+                <button type="button" className={canon.cambiar} onClick={() => setHoja({ conFoco: false })}>
                   Cambiar
                 </button>
               </>
             ) : (
               <>
-                <span className={`${styles.valor} ${styles.falta}`}>Falta</span>
-                <span className={styles.opciones}>
-                  <button type="button" className={styles.accionIcono} onClick={estoyAqui} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+                <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
+                <span className={canon.opciones}>
+                  <button type="button" className={canon.accionIcono} onClick={estoyAqui} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
                     <IconoUbicacion width={22} height={22} />
                   </button>
-                  <button type="button" className={styles.accionIcono} onClick={() => setHoja({ conFoco: true })} aria-label="Buscar la dirección" title="Buscar la dirección">
+                  <button type="button" className={canon.accionIcono} onClick={() => setHoja({ conFoco: true })} aria-label="Buscar la dirección" title="Buscar la dirección">
                     <IconoBuscar width={22} height={22} />
                   </button>
                 </span>
               </>
             )}
             {(avisoUbicacion || errores.ubicacion || errores.direccion) && (
-              <p className={styles.cuerpoNota} role={errores.ubicacion ? "alert" : undefined}>
+              <p className={canon.cuerpoNota} role={errores.ubicacion ? "alert" : undefined}>
                 {errores.ubicacion ?? errores.direccion ?? avisoUbicacion}
               </p>
             )}
           </li>
 
           {/* 3. Tipo: deducido del nombre; chips al abrir; con Otro, qué es (opcional). */}
-          <li className={`${styles.resuelto} ${tipoAbierto ? styles.abierta : ""}`}>
+          <li className={`${canon.resuelto} ${tipoAbierto ? canon.abierta : ""}`}>
             <IconoEtiqueta width={20} height={20} />
-            <span className={styles.clave}>Tipo</span>
-            <span className={`${styles.valor} ${tipo ? "" : styles.falta}`}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre"}</span>
-            <button type="button" className={styles.cambiar} onClick={() => setTipoAbierto((a) => !a)} aria-expanded={tipoAbierto}>
+            <span className={canon.clave}>Tipo</span>
+            <span className={`${canon.valor} ${tipo ? "" : canon.falta}`}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre"}</span>
+            <button type="button" className={canon.cambiar} onClick={() => setTipoAbierto((a) => !a)} aria-expanded={tipoAbierto}>
               {tipoAbierto ? "Listo" : "Cambiar"}
             </button>
             {tipoAbierto && (
-              <div className={styles.cuerpo}>
-                <div className={styles.chips}>
+              <div className={canon.cuerpo}>
+                <div className={canon.chips}>
                   {TIPOS.map((t) => (
                     <Chip
                       key={t.valor}
@@ -329,9 +330,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
                     </Chip>
                   ))}
                 </div>
-                {tipo === "otro" && <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_LUGAR.detalle} placeholder="¿Qué es? Ej. taller de cerámica (opcional)" aria-label="Qué es" className={styles.queEs} autoComplete="off" />}
+                {tipo === "otro" && <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_LUGAR.detalle} placeholder="¿Qué es? Ej. taller de cerámica (opcional)" aria-label="Qué es" className={canon.entrada} autoComplete="off" />}
                 {errores.detalle && (
-                  <p className={styles.error} role="alert">
+                  <p className={canon.error} role="alert">
                     {errores.detalle}
                   </p>
                 )}
@@ -340,27 +341,27 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           </li>
 
           {/* 4. Más: descripción, redes, foto (y lo del administrador). Puede hacerse después. */}
-          <li className={`${styles.resuelto} ${masAbierto ? styles.abierta : styles.pendiente}`}>
+          <li className={`${canon.resuelto} ${masAbierto ? canon.abierta : canon.pendiente}`}>
             <IconoMas width={20} height={20} />
-            <span className={styles.clave}>Más</span>
-            <span className={`${styles.valor} ${styles.falta}`}>Descripción, redes, foto</span>
-            <button type="button" className={styles.cambiar} onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
+            <span className={canon.clave}>Más</span>
+            <span className={`${canon.valor} ${canon.falta}`}>Descripción, redes, foto</span>
+            <button type="button" className={canon.cambiar} onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
               {masAbierto ? "Listo" : "Agregar"}
             </button>
             {/* Se esconde, no se desmonta: lo escrito y los enlaces se quedan aunque se cierre. */}
-            <div className={styles.cuerpo} hidden={!masAbierto}>
+            <div className={canon.cuerpo} hidden={!masAbierto}>
               <Campo etiqueta="Descripción corta" name="descripcion" multilinea defaultValue={lugar?.descripcion ?? ""} maxLength={LIMITES_LUGAR.descripcion} placeholder="Qué es y qué pasa ahí" error={errores.descripcion} />
               <SelectorEnlaces inicial={normalizarRedes(lugar?.redes)} error={errores.enlaces} />
               {portada && (
                 // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
                 <img src={portada} alt="" className={styles.portada} />
               )}
-              <label className={styles.subir}>
+              <label className={canon.subir}>
                 <input type="file" accept="image/*" onChange={subirPortada} disabled={subiendo} />
                 {subiendo ? "Subiendo…" : portada ? "Cambiar la foto" : "Poner una foto de portada"}
               </label>
               {(errorPortada || errores.portada) && (
-                <p className={styles.error} role="alert">
+                <p className={canon.error} role="alert">
                   {errorPortada ?? errores.portada}
                 </p>
               )}
@@ -417,7 +418,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         {/* El botón dice qué falta (decisión 11). */}
         <Boton type="submit" disabled={enviando || subiendo || recuperando || !listo}>
           {enviando ? "Guardando…" : lugar ? "Guardar cambios" : "Publicar lugar"}
-          {!enviando && !listo && <small className={styles.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde está"}</small>}
+          {!enviando && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde está"}</small>}
         </Boton>
       </form>
       {hoja && (
