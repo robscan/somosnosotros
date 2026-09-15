@@ -10,6 +10,8 @@ export type LugarSugerido = {
   nombre: string;
   direccion: string;
   categorias: string[];
+  /** Es una dirección (calle y número), no un lugar con nombre: sirve para ubicar, nunca para nombrar. */
+  esDireccion: boolean;
 };
 
 export type LugarRecuperado = { nombre: string; direccion: string; lat: number; lng: number; categorias: string[] };
@@ -39,7 +41,7 @@ export function urlRecuperar(mapboxId: string, token: string, sesion: string): s
 }
 
 type RespuestaSugerir = {
-  suggestions?: Array<{ mapbox_id?: string; name?: string; full_address?: string; place_formatted?: string; address?: string; poi_category?: string[] }>;
+  suggestions?: Array<{ mapbox_id?: string; name?: string; full_address?: string; place_formatted?: string; address?: string; poi_category?: string[]; feature_type?: string }>;
 };
 type RespuestaRecuperar = {
   features?: Array<{ geometry?: { coordinates?: [number, number] }; properties?: { name?: string; full_address?: string; place_formatted?: string; poi_category?: string[] } }>;
@@ -52,6 +54,7 @@ export function interpretarSugerencias(json: RespuestaSugerir): LugarSugerido[] 
       nombre: s.name ?? "",
       direccion: s.full_address ?? [s.address, s.place_formatted].filter(Boolean).join(", "),
       categorias: s.poi_category ?? [],
+      esDireccion: s.feature_type === "address" || (!s.poi_category?.length && s.feature_type !== "poi" && !!s.address),
     }))
     .filter((s) => s.mapboxId && s.nombre);
 }
