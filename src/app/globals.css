@@ -147,14 +147,6 @@ select {
   margin: var(--espacio-3) 0;
 }
 
-.enlace-volver {
-  display: inline-block;
-  min-height: var(--toque);
-  line-height: var(--toque);
-  color: var(--texto-suave);
-  text-decoration: none;
-}
-
 /* El toque responde al instante: sin espera de doble toque y con estado de pulsado visible. */
 a,
 button,

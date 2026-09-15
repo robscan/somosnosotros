@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import Atras from "./Atras";
 import Logotipo from "./Logotipo";
 import styles from "./Barra.module.css";
 
@@ -18,9 +18,7 @@ export default function Barra({ volver, derecha }: Props) {
   if (volver) {
     return (
       <header className={`${styles.barra} ${styles.interior}`}>
-        <Link href={volver.href} className={styles.volver}>
-          ← {volver.texto}
-        </Link>
+        <Atras href={volver.href} texto={volver.texto} />
         <Logotipo />
         <div className={styles.derecha}>{derecha}</div>
       </header>

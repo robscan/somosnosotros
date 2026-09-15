@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
+import Atras from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 
 /** Algo falló al cargar una pantalla. Se dice en español, se ofrece reintentar y volver a la agenda. */
@@ -17,9 +17,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         Intentar de nuevo
       </Boton>
       <p style={{ marginTop: "var(--espacio-4)" }}>
-        <Link href="/" className="enlace-volver">
-          ← Ver la agenda
-        </Link>
+        <Atras href="/" texto="Ver la agenda" />
       </p>
     </main>
   );

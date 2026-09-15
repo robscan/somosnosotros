@@ -215,6 +215,11 @@ export const IconoEnlace = (p: P) => (
     <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5" />
   </svg>
 );
+export const IconoChevronIzquierda = (p: P) => (
+  <svg {...base({ strokeWidth: 2, ...p })}>
+    <path d="M14.5 6l-6 6 6 6" />
+  </svg>
+);
 export const IconoMas = (p: P) => (
   <svg {...base({ strokeWidth: 2.2, ...p })}>
     <path d="M12 5v14M5 12h14" />
