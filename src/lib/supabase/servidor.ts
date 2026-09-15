@@ -34,6 +34,8 @@ export type Perfil = {
   avisos_correo?: boolean;
   avisos_push?: boolean;
   avisos_preguntado?: boolean;
+  /** Ficha reservada: a qué va y qué sigue solo lo ve ella (migración 0020). */
+  reservado?: boolean;
 };
 
 /** Usuario con sesión y su perfil, o null si no hay sesión. */
@@ -46,7 +48,7 @@ export async function usuarioActual(): Promise<{ correo: string | null; perfil: 
   if (!claims?.sub) return null;
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("id, nombre, foto, colonia, bio, rol, avisos_correo, avisos_push, avisos_preguntado")
+    .select("id, nombre, foto, colonia, bio, rol, avisos_correo, avisos_push, avisos_preguntado, reservado")
     .eq("id", claims.sub)
     .maybeSingle();
   if (!perfil) return null;

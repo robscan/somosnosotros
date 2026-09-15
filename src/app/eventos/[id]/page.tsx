@@ -110,7 +110,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
     await supabase?.from("asistencias").upsert({ usuario_id: actual.perfil.id, evento_id: e.id, estado: accion });
     redirect(`/eventos/${e.id}`);
   }
-  const [asistencias, quien] = await Promise.all([cargarAsistencias(id, actual?.perfil.id ?? null), cargarQuien(id)]);
+  const [asistencias, quien, conteo] = await Promise.all([cargarAsistencias(id, actual?.perfil.id ?? null), cargarQuien(id), (await clienteServidor())?.rpc("van_por_evento", { ids: [id] }) ?? Promise.resolve({ data: [] as { evento_id: string; n: number }[] })]);
+  // Cuántos van en total, también los de perfil reservado, que la política de la base no deja ver por nombre.
+  const totalVan = Math.max(Number(((conteo.data ?? []) as { evento_id: string; n: number }[])[0]?.n ?? 0), asistencias.van.length);
   const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
@@ -118,7 +120,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin), sitio, url).replace(`\n${url}`, "");
   const puntoLlegar = e.lugar ? { lat: e.lugar.lat, lng: e.lugar.lng } : privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : e.sitio_lat != null && e.sitio_lng != null ? { lat: e.sitio_lat, lng: e.sitio_lng } : null;
   const comoLlegar = puntoLlegar && !(e.sitio_reservado && !privado) ? `https://www.google.com/maps/dir/?api=1&destination=${puntoLlegar.lat},${puntoLlegar.lng}` : null;
-  const n = asistencias.van.length;
+  const n = totalVan;
   const avisoBorrar = n > 0 ? `Se borra el evento y los ${n === 1 ? '1 "Voy"' : `${n} "Voy"`} que tiene.` : "Se borra el evento.";
   const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde) : "el día del evento";
 
@@ -283,7 +285,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         </a>
       )}
 
-      <QuienVa van={asistencias.van} interesados={asistencias.interesados} conSesion={!!actual} />
+      <QuienVa van={asistencias.van} total={totalVan} interesados={asistencias.interesados} conSesion={!!actual} />
 
       <p className={ficha.autor}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}.</p>
 

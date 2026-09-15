@@ -15,7 +15,7 @@ type FilaEvento = { id: string; titulo: string; inicio: string; fin: string | nu
 export async function cargarPersona(id: string): Promise<Persona | null> {
   const supabase = await clienteServidor();
   if (!supabase || !esUuid(id)) return null;
-  const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, rol, avisos_correo, avisos_push, avisos_preguntado").eq("id", id).maybeSingle();
+  const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, rol, avisos_correo, avisos_push, avisos_preguntado, reservado").eq("id", id).maybeSingle();
   if (!perfil) return null;
   const [{ data: sigue }, { data: va }] = await Promise.all([
     supabase.from("seguimientos").select("lugar:lugares(id, nombre, tipo, direccion, portada), artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id),
