@@ -54,41 +54,6 @@
   pointer-events: none;
 }
 
-/* Pins de lugar: lleno (tinta) con eventos próximos, hueco sin ellos; el tocado crece desde la punta. */
-.pin {
-  width: 28px;
-  height: 36px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--primario);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.pin svg {
-  display: block;
-  transform-origin: bottom center;
-  transition: transform 150ms;
-}
-.pin path {
-  stroke: currentColor;
-}
-.pinLleno path {
-  fill: currentColor;
-}
-.pinLleno circle {
-  fill: var(--fondo);
-}
-.pinHueco path {
-  fill: var(--fondo);
-}
-.pinHueco circle {
-  fill: currentColor;
-}
-.pinElegido svg {
-  transform: scale(1.2);
-}
-
 /* La persona: punto azul con halo, el estándar de los mapas. */
 .yo {
   display: grid;
@@ -107,32 +72,4 @@
   background: #1a73e8;
   border: 2.5px solid #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pin svg {
-    transition: none;
-  }
-}
-
-/* Botón 3D/2D sobre el mapa (control de Mapbox, arriba a la derecha bajo la atribución) */
-.perspectiva {
-  display: grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  margin: var(--espacio-2) var(--espacio-2) 0 0;
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-xs);
-  font-weight: 700;
-  box-shadow: var(--sombra);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.perspectiva[aria-pressed="true"] {
-  border-color: var(--primario);
-  color: var(--primario);
 }

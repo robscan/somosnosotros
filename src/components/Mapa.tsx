@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { IControl, Map as MapaGL, Marker } from "mapbox-gl";
+import type { GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker } from "mapbox-gl";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import type { LugarLista } from "@/lib/lugares";
@@ -13,12 +13,12 @@ type EstadoMapa = "cargando" | "listo" | "sin-token" | "error";
 type Punto = { lat: number; lng: number };
 
 type Props = {
-  /** "ver": pantalla completa con pins. "elegir": recuadro con un pin que se arrastra (alta/edición). */
+  /** "ver": pantalla completa con los lugares. "elegir": recuadro con un pin que se arrastra (alta/edición). */
   modo?: "ver" | "elegir";
   lugares?: LugarLista[];
-  /** Solo en "ver": al tocar un pin (o el mapa, con null). Sin esto, el pin navega a la ficha. */
+  /** Solo en "ver": al tocar un lugar (o el mapa, con null). Sin esto, el lugar navega a su ficha. */
   onPin?: (lugar: LugarLista | null) => void;
-  /** Solo en "ver": id del pin resaltado (el de la tarjeta abierta). */
+  /** Solo en "ver": id del lugar resaltado (el de la tarjeta abierta). */
   elegido?: string | null;
   /** Solo en "ver": la persona en el mapa; `vez` cambia con cada toque al botón de ubicación para volver a centrar. */
   ubicacion?: (Punto & { vez: number }) | null;
@@ -30,90 +30,122 @@ type Props = {
   ciudad?: Ciudad;
   /** "pantalla": fijo a toda la pantalla (con panel encima). "caja": llena el contenedor donde se pone. */
   presentacion?: "pantalla" | "caja";
-  /** Solo en "ver": abre inclinado, con los edificios en 3D, y un botón 3D/2D para cambiarlo. */
-  perspectiva?: boolean;
 };
 
-const COLOR_PIN = "#1a1a1a"; // tinta, como los pins de lugares; Mapbox pide el color literal (pin que se arrastra)
-/** Inclinación de la perspectiva en el mapa de Lugares (decisión del founder, 2026-09-14). */
-const INCLINACION = 50;
-/** Pin de lugar: 28×36, relleno o hueco según la clase; el punto blanco lo lleva siempre. */
-const PIN_SVG = '<svg viewBox="0 0 28 36" width="28" height="36" aria-hidden="true"><path d="M14 35S3 21 3 13a11 11 0 0 1 22 0c0 8-11 22-11 22z" stroke-width="2"/><circle cx="14" cy="13" r="4"/></svg>';
+const COLOR_PIN = "#1a1a1a"; // tinta; Mapbox pide el color literal (pin que se arrastra del alta)
+/** Los lugares van en capas del propio mapa (no en elementos encima): círculo y nombre debajo, como las etiquetas de Mapbox. */
+const FUENTE_LUGARES = "lugares";
+const CAPA_PUNTOS = "lugares-puntos";
+const CAPA_NOMBRES = "lugares-nombres";
+/** Fuente de los nombres: existe en la cuenta de Mapbox (Noto Sans, la del estilo, da 404; ver OPEN_LOOPS). */
+const FUENTE_NOMBRES = ["DIN Pro Medium", "Arial Unicode MS Regular"];
+/** Radio del toque alrededor de un punto (el punto mide 10 px; el dedo necesita más). */
+const RADIO_TOQUE = 18;
 
-/** Botón 3D/2D sobre el mapa: inclina o aplana la vista; respeta "reducir movimiento". */
-function controlPerspectiva(): IControl {
-  let boton: HTMLButtonElement | null = null;
-  const pintar = (m: MapaGL) => {
-    if (!boton) return;
-    const inclinado = m.getPitch() > 5;
-    boton.textContent = inclinado ? "2D" : "3D";
-    boton.setAttribute("aria-label", inclinado ? "Ver el mapa plano" : "Ver el mapa en perspectiva");
-    boton.setAttribute("aria-pressed", String(inclinado));
-  };
+/** Color de una variable de diseño, porque Mapbox pide el valor literal. */
+function colorDiseno(nombre: string, reserva: string) {
+  if (typeof document === "undefined") return reserva;
+  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || reserva;
+}
+
+function aGeoJSON(lugares: LugarLista[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
   return {
-    onAdd(m: MapaGL) {
-      boton = document.createElement("button");
-      boton.type = "button";
-      boton.className = styles.perspectiva;
-      boton.addEventListener("click", () => {
-        const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        m.easeTo({ pitch: m.getPitch() > 5 ? 0 : INCLINACION, duration: sinMovimiento ? 0 : 500 });
-      });
-      m.on("pitchend", () => pintar(m));
-      pintar(m);
-      return boton;
-    },
-    onRemove() {
-      boton?.remove();
-      boton = null;
-    },
+    type: "FeatureCollection",
+    features: lugares.map((l) => ({
+      type: "Feature",
+      id: l.id,
+      geometry: { type: "Point", coordinates: [l.lng, l.lat] },
+      properties: { id: l.id, nombre: l.nombre, proximo: !!l.proximo },
+    })),
   };
 }
 
-/** Capa de edificios en 3D (altura real de Mapbox Streets) para estilos clásicos; discreta, del tono del fondo. */
-function agregarEdificios(mapa: MapaGL) {
-  if (mapa.getLayer("edificios-3d") || !mapa.getSource("composite")) return;
-  const capas = mapa.getStyle()?.layers ?? [];
-  const primeraEtiqueta = capas.find((c) => c.type === "symbol" && (c.layout as { "text-field"?: unknown } | undefined)?.["text-field"])?.id;
-  mapa.addLayer(
-    {
-      id: "edificios-3d",
-      type: "fill-extrusion",
-      source: "composite",
-      "source-layer": "building",
-      filter: ["==", ["get", "extrude"], "true"],
-      minzoom: 14,
-      paint: {
-        "fill-extrusion-color": "#e4e2dc",
-        "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 14, 0, 15, ["get", "height"]],
-        "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 14, 0, 15, ["get", "min_height"]],
-        "fill-extrusion-opacity": 0.75,
-      },
+/** Punto chico del color de acción con borde blanco; el elegido crece. El nombre va debajo y cede sitio si choca con otro. */
+function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
+  const primario = colorDiseno("--primario", "#0f6b7c");
+  const fondo = colorDiseno("--fondo", "#ffffff");
+  const texto = colorDiseno("--texto", "#1a1a1a");
+  mapa.addSource(FUENTE_LUGARES, { type: "geojson", data: datos, promoteId: "id" });
+  mapa.addLayer({
+    id: CAPA_PUNTOS,
+    type: "circle",
+    source: FUENTE_LUGARES,
+    paint: {
+      "circle-radius": ["case", ["boolean", ["feature-state", "elegido"], false], 8, 5],
+      "circle-color": primario,
+      "circle-stroke-color": fondo,
+      "circle-stroke-width": 1.5,
     },
-    primeraEtiqueta,
+  });
+  mapa.addLayer({
+    id: CAPA_NOMBRES,
+    type: "symbol",
+    source: FUENTE_LUGARES,
+    layout: {
+      "text-field": ["get", "nombre"],
+      "text-font": FUENTE_NOMBRES,
+      "text-size": 13,
+      "text-anchor": "top",
+      "text-offset": [0, 0.6],
+      "text-max-width": 9,
+      "text-line-height": 1.1,
+      "symbol-sort-key": ["case", ["get", "proximo"], 0, 1], // con eventos gana el sitio si dos nombres chocan
+    },
+    paint: {
+      "text-color": texto,
+      "text-halo-color": fondo,
+      "text-halo-width": 1.5,
+    },
+  });
+}
+
+/** El lugar bajo el toque: se busca en un cuadro alrededor del punto (círculo o nombre) y gana el más cercano. */
+function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
+  if (!mapa.getLayer(CAPA_PUNTOS)) return null;
+  const { x, y } = e.point;
+  const cerca = mapa.queryRenderedFeatures(
+    [
+      [x - RADIO_TOQUE, y - RADIO_TOQUE],
+      [x + RADIO_TOQUE, y + RADIO_TOQUE],
+    ],
+    { layers: [CAPA_PUNTOS, CAPA_NOMBRES] },
   );
+  let mejor: { id: string; d: number } | null = null;
+  for (const f of cerca) {
+    const id = f.properties?.id as string | undefined;
+    const g = f.geometry;
+    if (!id || g.type !== "Point") continue;
+    const p = mapa.project(g.coordinates as [number, number]);
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (!mejor || d < mejor.d) mejor = { id, d };
+  }
+  return mejor?.id ?? null;
 }
 
 /**
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
- * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día.
+ * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla", perspectiva = false }: Props) {
+export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla" }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
-  const pinesRef = useRef<Map<string, Marker>>(new Map());
+  const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
   const yoRef = useRef<Marker | null>(null);
   const onPinRef = useRef(onPin);
   useEffect(() => {
     onPinRef.current = onPin;
   }, [onPin]);
-  const encuadradoRef = useRef(false); // el encuadre a los pins se hace una sola vez, al abrir
+  const encuadradoRef = useRef(false); // el encuadre a los lugares se hace una sola vez, al abrir
   const pinElegirRef = useRef<Marker | null>(null);
   const onCambioRef = useRef(onCambio);
   useEffect(() => {
     onCambioRef.current = onCambio;
   }, [onCambio]);
   const router = useRouter();
+  const routerRef = useRef(router);
+  useEffect(() => {
+    routerRef.current = router;
+  }, [router]);
   const [estado, setEstado] = useState<EstadoMapa>(() => (configPublica().mapboxToken ? "cargando" : "sin-token"));
 
   // Crear el mapa una vez.
@@ -136,16 +168,12 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
         language: "es",
         attributionControl: false,
         logoPosition: modo === "ver" ? "top-left" : "bottom-left",
-        pitch: perspectiva ? INCLINACION : 0,
       });
       mapaRef.current = mapa;
       mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), modo === "ver" ? "top-right" : "bottom-right");
-      if (perspectiva) mapa.addControl(controlPerspectiva(), "top-right");
       mapa.on("style.load", () => {
         const importaStandard = mapa?.getStyle()?.imports?.some((i) => i.id === "basemap");
         if (importaStandard) mapa?.setConfigProperty("basemap", "lightPreset", "day");
-        // Edificios en 3D con perspectiva: Mapbox Standard ya los trae; un estilo clásico los dibuja desde su capa de edificios.
-        if (perspectiva && !importaStandard && mapa) agregarEdificios(mapa);
       });
       mapa.on("load", () => setEstado("listo"));
       mapa.on("error", (e) => {
@@ -155,7 +183,17 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
       if (modo === "elegir") {
         mapa.on("click", (e) => onCambioRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
       } else {
-        mapa.on("click", () => onPinRef.current?.(null)); // tocar fuera cierra la tarjeta
+        // Tocar un lugar abre su tarjeta (o su ficha); tocar fuera cierra la tarjeta.
+        mapa.on("click", (e) => {
+          const id = mapa ? lugarTocado(mapa, e) : null;
+          const lugar = id ? (lugaresRef.current.get(id) ?? null) : null;
+          if (lugar && !onPinRef.current) routerRef.current.push(`/lugares/${lugar.id}`);
+          else onPinRef.current?.(lugar);
+        });
+        // Con ratón, la mano sobre un lugar.
+        mapa.on("mousemove", (e) => {
+          if (mapa) mapa.getCanvas().style.cursor = lugarTocado(mapa, e) ? "pointer" : "";
+        });
       }
     });
 
@@ -168,48 +206,39 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pins de lugares (modo ver): lleno con eventos próximos, hueco sin ellos.
+  // Lugares (modo ver): capas de círculo y nombre; se crean una vez y luego solo cambian los datos.
   useEffect(() => {
     const mapa = mapaRef.current;
     if (estado !== "listo" || !mapa || modo !== "ver") return;
-    let cancelado = false;
-    import("mapbox-gl").then(({ default: mapboxgl }) => {
-      if (cancelado) return;
-      pinesRef.current.forEach((p) => p.remove());
-      // Al abrir, el encuadre muestra todos los pins. Con un lugar centrado por la URL no se toca; con cero pins queda la ciudad.
-      if (!encuadradoRef.current && !centrarEn && lugares.length > 0) {
-        encuadradoRef.current = true;
+    lugaresRef.current = new Map(lugares.map((l) => [l.id, l]));
+    const datos = aGeoJSON(lugares);
+    const fuente = mapa.getSource(FUENTE_LUGARES) as GeoJSONSource | undefined;
+    if (fuente) fuente.setData(datos);
+    else agregarCapas(mapa, datos);
+    // Al abrir, el encuadre muestra todos los lugares. Con uno centrado por la URL no se toca; con cero queda la ciudad.
+    if (!encuadradoRef.current && !centrarEn && lugares.length > 0) {
+      encuadradoRef.current = true;
+      let cancelado = false;
+      import("mapbox-gl").then(({ default: mapboxgl }) => {
+        if (cancelado) return;
         const limites = new mapboxgl.LngLatBounds();
         lugares.forEach((l) => limites.extend([l.lng, l.lat]));
         const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const abajo = presentacion === "pantalla" ? Math.round(window.innerHeight * 0.5) + 24 : 72;
-        // El encuadre de Mapbox pone la cámara plana; con perspectiva se conserva la inclinación.
-        mapa.fitBounds(limites, { padding: { top: 56, left: 48, right: 48, bottom: abajo }, maxZoom: 15, pitch: perspectiva ? INCLINACION : 0, duration: sinMovimiento ? 0 : 600 });
-      }
-      pinesRef.current = new Map(
-        lugares.map((l) => {
-          const el = document.createElement("button");
-          el.type = "button";
-          el.className = `${styles.pin} ${l.proximo ? styles.pinLleno : styles.pinHueco}`;
-          el.setAttribute("aria-label", l.nombre);
-          el.innerHTML = PIN_SVG;
-          el.addEventListener("click", (ev) => {
-            ev.stopPropagation();
-            if (onPinRef.current) onPinRef.current(l);
-            else router.push(`/lugares/${l.id}`);
-          });
-          return [l.id, new mapboxgl.Marker({ element: el, anchor: "bottom" }).setLngLat([l.lng, l.lat]).addTo(mapa)];
-        }),
-      );
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, [estado, modo, lugares, router, centrarEn, presentacion, perspectiva]);
+        mapa.fitBounds(limites, { padding: { top: 56, left: 48, right: 48, bottom: abajo }, maxZoom: 15, duration: sinMovimiento ? 0 : 600 });
+      });
+      return () => {
+        cancelado = true;
+      };
+    }
+  }, [estado, modo, lugares, centrarEn, presentacion]);
 
-  // El pin de la tarjeta abierta se ve más grande.
+  // El lugar de la tarjeta abierta se ve más grande.
   useEffect(() => {
-    pinesRef.current.forEach((p, id) => p.getElement().classList.toggle(styles.pinElegido, id === elegido));
+    const mapa = mapaRef.current;
+    if (estado !== "listo" || !mapa || !mapa.getSource(FUENTE_LUGARES)) return;
+    mapa.removeFeatureState({ source: FUENTE_LUGARES });
+    if (elegido) mapa.setFeatureState({ source: FUENTE_LUGARES, id: elegido }, { elegido: true });
   }, [elegido, lugares, estado]);
 
   // La persona en el mapa (punto azul con halo) y el mapa centrado ahí; cada toque al botón vuelve a centrar.

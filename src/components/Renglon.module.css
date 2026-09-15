@@ -19,6 +19,13 @@
   background: var(--fondo);
   box-shadow: 0 0 0 var(--espacio-5) var(--fondo); /* el resaltado llega a los bordes sin mover nada */
 }
+/* Con ratón, el mismo resaltado al pasar por encima */
+@media (hover: hover) {
+  .renglon:hover {
+    background: var(--fondo);
+    box-shadow: 0 0 0 var(--espacio-5) var(--fondo);
+  }
+}
 .foto {
   grid-area: foto;
   width: 64px;

@@ -8,9 +8,7 @@
 /* 1. Página: deja sitio abajo para la barra pegajosa */
 .pagina {
   min-height: 100dvh;
-  padding: calc(var(--espacio-2) + env(safe-area-inset-top, 0px)) var(--espacio-5) calc(96px + env(safe-area-inset-bottom, 0px));
-  max-width: 520px;
-  margin: 0 auto;
+  padding: calc(var(--espacio-2) + env(safe-area-inset-top, 0px)) var(--gutter) calc(96px + env(safe-area-inset-bottom, 0px));
 }
 .iconoBarra {
   display: inline-grid;
@@ -140,7 +138,7 @@
   gap: var(--espacio-3);
   align-items: center;
   min-height: 72px;
-  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-3) + env(safe-area-inset-bottom, 0px));
+  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-3) + env(safe-area-inset-bottom, 0px));
   background: var(--fondo);
   border-top: 1px solid var(--borde);
 }

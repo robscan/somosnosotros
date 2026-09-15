@@ -11,7 +11,7 @@
   bottom: 0;
   max-height: calc(100% - 48px);
   overflow-y: auto;
-  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
+  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
   border-radius: var(--radio-grande) var(--radio-grande) 0 0;
   background: var(--fondo);
   box-shadow: var(--sombra-panel);

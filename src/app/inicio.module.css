@@ -1,5 +1,5 @@
 .aviso {
-  margin: 0 var(--espacio-5) var(--espacio-3);
+  margin: 0 var(--gutter) var(--espacio-3);
   padding: var(--espacio-3) var(--espacio-4);
   border-radius: var(--radio);
   background: var(--fondo);

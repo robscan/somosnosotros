@@ -1,6 +1,6 @@
 /* Lista de lugares: pone su propio gutter; los renglones vienen de Renglon.module.css */
 .lista {
-  padding: 0 var(--espacio-5);
+  padding: 0 var(--gutter);
 }
 .lista ul {
   list-style: none;
@@ -29,7 +29,7 @@
 
 /* Sin lugares: vacío con causa y la acción */
 .vacio {
-  padding: var(--espacio-5) var(--espacio-5) 0;
+  padding: var(--espacio-5) var(--gutter) 0;
 }
 .vacio h2 {
   margin-bottom: 6px;

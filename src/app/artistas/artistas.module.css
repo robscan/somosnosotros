@@ -1,6 +1,6 @@
 /* Artistas (raíz): lo propio de la página; la lista vive en components/ListaArtistas.module.css */
 .aviso {
-  margin: var(--espacio-3) var(--espacio-5) 0;
+  margin: var(--espacio-3) var(--gutter) 0;
   padding: var(--espacio-3) var(--espacio-4);
   border-radius: var(--radio);
   background: var(--fondo-suave);

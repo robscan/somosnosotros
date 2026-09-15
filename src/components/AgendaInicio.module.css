@@ -10,7 +10,7 @@
 .contexto {
   display: flex;
   gap: var(--espacio-2);
-  padding: var(--espacio-1) var(--espacio-5) var(--espacio-3);
+  padding: var(--espacio-1) var(--gutter) var(--espacio-3);
 }
 .chip {
   position: relative;
@@ -63,6 +63,7 @@
 .filtros {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  padding: 0 var(--gutter);
   margin-bottom: -1px;
 }
 .filtro {
@@ -85,7 +86,7 @@
 
 /* Grupos por día con título pegajoso debajo de la cabecera. Cada grupo pone su propio gutter. */
 .grupo {
-  margin: 0 var(--espacio-5) var(--espacio-6);
+  margin: 0 var(--gutter) var(--espacio-6);
 }
 .grupo h2 {
   position: sticky;
@@ -149,7 +150,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
+  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
   border-radius: var(--radio-grande) var(--radio-grande) 0 0;
   background: var(--fondo);
   box-shadow: var(--sombra-panel);

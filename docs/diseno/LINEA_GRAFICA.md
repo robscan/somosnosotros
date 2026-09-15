@@ -29,6 +29,18 @@ Por qué esta y no otra: condensada, con toques humanos y artísticos a tamaño 
 - **Navegación inferior**: blanca, con borde y sombra hacia arriba; 60 px más el área segura. El destino activo lleva una **píldora de 60×32 en el color de acción** detrás del icono (icono en blanco) y la etiqueta en ese color; los demás, en gris. La píldora ocupa su sitio siempre, así nada salta al cambiar. Ajuste del founder, 2026-09-14: "la nav tiene que notarse".
 - **Avisos persistentes** (`ui/Aviso`): tinta sobre blanco, 15 px, con ✕; no desaparecen solos. Para errores con salida ("No pudimos leer tu ubicación. Actívala…") encima del mapa o bajo los chips. Nunca un texto gris sobre vidrio.
 
+## Una columna en cualquier pantalla
+
+La app se diseña para el teléfono y se ve en tablet y escritorio con **la misma maquetación**: una columna de 600 px centrada. Tres tokens en `globals.css`: `--columna` (600 px), `--al-centro` (lo que sobra a cada lado; negativo en el teléfono) y `--gutter: max(20px, --al-centro)`. En el teléfono el gutter vale 20 px, como siempre; en pantallas anchas crece hasta centrar la columna.
+
+- **Regla:** todo gutter horizontal de página se escribe `var(--gutter)`. Los rellenos de botones y las sangrías siguen con `--espacio-N`.
+- **Las barras van a lo ancho; el contenido, en la columna.** Barra superior, nav inferior, barra pegajosa de las fichas, hojas y cabeceras pegajosas pintan su fondo de borde a borde y alinean sus hijos con la columna. El mapa llena la pantalla; sus controles y la tarjeta del lugar se alinean con la columna.
+- Sin media queries de ancho, sin envoltorios, sin componentes por tamaño (maquetación plana). Con ratón (`@media (hover: hover)`), los renglones se resaltan al pasar por encima.
+
+## El mapa de Lugares
+
+Plano (el estilo de la cuenta lleva `show3dObjects: false`). Cada lugar es un **punto** de 10 px relleno del color de acción con una línea blanca de 1.5 px; el elegido crece a 16 px. (El founder descartó el punto hueco para "sin eventos": el blanco se deja para la línea.) El **nombre va debajo** del círculo, a 13 px con halo blanco, como una etiqueta más del mapa: si dos chocan, gana el lugar con eventos y el otro aparece al acercar. Son capas de Mapbox (no elementos encima), así el mapa resuelve las colisiones y el zoom. Decisión del founder, 2026-09-14 (sustituye a los pins y a la perspectiva de ese mismo día).
+
 ## El regreso
 
 En pantallas interiores, el regreso es una **píldora secundaria** (borde `--borde`, fondo blanco, 40 px de alto) con un chevron corto `‹` y el texto del destino ("Volver", "Artistas"), alineada a la izquierda de la barra. Nunca una flecha larga suelta. Componente `ui/Atras`, también en las páginas de error. Ajuste del founder, 2026-09-14.
