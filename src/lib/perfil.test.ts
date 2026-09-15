@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { correoValido, textoAvisos, validarPerfil } from "./perfil";
+import { correoValido, textoAvisos, textoCompartirPersona, validarPerfil } from "./perfil";
 
 describe("validarPerfil", () => {
   it("limpia espacios y acepta un perfil mínimo", () => {
@@ -35,5 +35,13 @@ describe("textoAvisos", () => {
     expect(textoAvisos(true, false)).toBe("Por correo");
     expect(textoAvisos(false, true)).toBe("En el teléfono");
     expect(textoAvisos(false, false)).toBe("Sin avisos");
+  });
+});
+
+describe("textoCompartirPersona", () => {
+  it("cuenta los eventos próximos y distingue mi ficha de la ajena", () => {
+    expect(textoCompartirPersona("Rosa", 2, false)).toBe("Rosa va a 2 eventos próximos en San Luis Potosí. Mira cuáles:");
+    expect(textoCompartirPersona("Rosa", 1, true)).toBe("Voy a 1 evento próximo en San Luis Potosí. Mira cuál:");
+    expect(textoCompartirPersona("Rosa", 0, false)).toContain("Rosa está en Somos Nosotros");
   });
 });

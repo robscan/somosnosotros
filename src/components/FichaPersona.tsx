@@ -3,11 +3,13 @@ import type { ReactNode } from "react";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { etiquetaArtista } from "@/lib/artistas";
 import { calleCorta, etiquetaTipo } from "@/lib/lugares";
+import { TEXTO_INVITAR, textoCompartirPersona } from "@/lib/perfil";
+import BotonCompartir from "./BotonCompartir";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import type { Perfil } from "@/lib/supabase/servidor";
 import { IconoDisciplina } from "./ListaArtistas";
 import RenglonEvento from "./RenglonEvento";
-import { IconoPin } from "./ui/Iconos";
+import { IconoCompartir, IconoPin } from "./ui/Iconos";
 import renglon from "./Renglon.module.css";
 import styles from "./FichaPersona.module.css";
 
@@ -21,6 +23,8 @@ type Props = {
   interesan?: EventoAgenda[];
   lugares: LugarSeguido[];
   artistas: ArtistaSeguido[];
+  /** Origen público del sitio, para los enlaces que se comparten. */
+  origen: string;
 };
 
 /**
@@ -28,7 +32,7 @@ type Props = {
  * nombre, colonia y sobre mí; luego a qué va (por día, como la agenda) y qué sigue (lugares cuadrados, artistas redondos).
  * La mía trae Editar y Avisos; la ajena, nada que tocar salvo los renglones.
  */
-export default function FichaPersona({ perfil, mia, editar, avisos, eventos, interesan = [], lugares, artistas }: Props) {
+export default function FichaPersona({ perfil, mia, editar, avisos, eventos, interesan = [], lugares, artistas, origen }: Props) {
   const incompleto = mia && (!perfil.colonia || !perfil.bio);
   const grupos = agruparPorDia(eventos);
   const gruposInteres = agruparPorDia(interesan);
@@ -46,7 +50,13 @@ export default function FichaPersona({ perfil, mia, editar, avisos, eventos, int
         )}
         <h1 className={styles.nombre}>{perfil.nombre}</h1>
         {perfil.colonia && <p className={styles.colonia}>{perfil.colonia}</p>}
-        {editar && <div className={styles.editar}>{editar}</div>}
+        <div className={styles.editar}>
+          {editar}
+          <BotonCompartir titulo={perfil.nombre} texto={textoCompartirPersona(perfil.nombre, eventos.length, mia)} url={`${origen}/personas/${perfil.id}`} className={styles.compartir}>
+            <IconoCompartir width={18} height={18} />
+            Compartir
+          </BotonCompartir>
+        </div>
       </div>
       {perfil.bio && <p className={styles.sobreMi}>{perfil.bio}</p>}
       {mia && (
@@ -171,6 +181,17 @@ export default function FichaPersona({ perfil, mia, editar, avisos, eventos, int
           </ul>
         )}
       </section>
+
+      {/* Invitar al sitio: donde la persona ya recibió valor, no en la barra (decisión del founder, 2026-09-15). */}
+      {mia && (
+        <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={origen} className={styles.invitar}>
+          <IconoCompartir width={20} height={20} />
+          <span>
+            <b>Invita a tus amigos a Somos Nosotros</b>
+            <small>Se comparte el enlace del sitio</small>
+          </span>
+        </BotonCompartir>
+      )}
     </>
   );
 }

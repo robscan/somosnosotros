@@ -38,3 +38,13 @@ export function textoAvisos(correo: boolean, telefono: boolean): string {
   if (canales.length === 0) return "Sin avisos";
   return canales.length === 2 ? canales.join(" y ") : canales[0].charAt(0).toUpperCase() + canales[0].slice(1);
 }
+
+/** Texto para compartir la ficha de una persona: cuántos eventos próximos tiene, o solo que está aquí. */
+export function textoCompartirPersona(nombre: string, eventos: number, mia: boolean): string {
+  const quien = mia ? "Voy" : `${nombre} va`;
+  if (eventos === 0) return mia ? "Estoy en Somos Nosotros, la agenda cultural de San Luis Potosí. Mira a qué voy:" : `${nombre} está en Somos Nosotros, la agenda cultural de San Luis Potosí:`;
+  return `${quien} a ${eventos === 1 ? "1 evento próximo" : `${eventos} eventos próximos`} en San Luis Potosí. Mira ${eventos === 1 ? "cuál" : "cuáles"}:`;
+}
+
+/** Texto de la invitación al sitio, desde Mi perfil. */
+export const TEXTO_INVITAR = "Agenda cultural y directorio de lugares de San Luis Potosí. Gratis, sin cuenta para mirar:";

@@ -15,6 +15,7 @@ import { borrarMiCuenta, cerrarSesion } from "./acciones";
 import styles from "./perfil.module.css";
 
 export const metadata = { title: "Mi perfil · Somos Nosotros" };
+const ORIGEN = "https://somosnosotros.org";
 
 /**
  * Mi perfil: la misma ficha de persona que ven los demás, con Editar (hoja), el renglón de Avisos (hoja con
@@ -80,6 +81,7 @@ export default async function PaginaPerfil({ searchParams }: { searchParams: Pro
           interesan={persona.interesan}
           lugares={persona.lugares}
           artistas={persona.artistas}
+          origen={ORIGEN}
         />
       </Suspense>
       <p className={styles.legal}>
