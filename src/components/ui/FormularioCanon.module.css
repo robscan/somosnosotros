@@ -34,6 +34,39 @@
   border-color: var(--error);
 }
 
+/* Sin icono a la izquierda y con una acción a la derecha (la cámara que lee el cartel). */
+.sinIcono > input {
+  padding-left: 14px;
+}
+.conAccion > input {
+  padding-right: 52px;
+}
+.accionCampo {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--primario);
+  cursor: pointer;
+}
+.accionCampo > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.accionCampo:disabled,
+.accionCampo[aria-disabled="true"] {
+  opacity: 0.5;
+}
+
 /* 2. Estado ("Buscando…"), error y lo que ya está registrado. */
 .estado {
   margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-2);
