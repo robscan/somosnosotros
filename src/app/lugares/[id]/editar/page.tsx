@@ -12,10 +12,14 @@ export default async function EditarLugar({ params }: { params: Promise<{ id: st
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/lugares/${id}/editar`)}`);
   const supabase = await clienteServidor();
-  const { data } = (await supabase?.from("lugares").select("*").eq("id", id).maybeSingle()) ?? { data: null };
+  const [{ data }, { data: liga }] = await Promise.all([
+    supabase?.from("lugares").select("*").eq("id", id).maybeSingle() ?? Promise.resolve({ data: null }),
+    supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", id).eq("perfil_id", actual.perfil.id).maybeSingle() ?? Promise.resolve({ data: null }),
+  ]);
   if (!data) notFound();
   const lugar = data as Lugar;
-  if (actual.perfil.rol !== "admin" && lugar.creado_por !== actual.perfil.id) redirect(`/lugares/${id}`);
+  // Edita el autor, la cuenta ligada ("¿Es tu espacio?") o el administrador.
+  if (actual.perfil.rol !== "admin" && lugar.creado_por !== actual.perfil.id && !liga) redirect(`/lugares/${id}`);
   return (
     <main className="pagina">
       <Barra volver={{ href: `/lugares/${id}`, texto: "Volver al lugar" }} />
