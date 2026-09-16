@@ -1,6 +1,15 @@
 /* Hoja "Dónde es" del alta de evento (docs/rediseno/15, decisión 2):
    1. Título y campo (canon) · 2. Lugares registrados con foto · 3. Atajos: otro sitio, registrar · 4. Otro sitio: mapa y reservado */
 
+/* 1. El campo se queda arriba al recorrer la lista (founder, 2026-09-16); la sombra del color del fondo tapa lo que pasa por debajo */
+.pegajoso {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--fondo);
+  box-shadow: 0 0 0 var(--espacio-3) var(--fondo);
+}
+
 /* 2. Lugares y atajos: renglones de ui/Sugerencia; aquí solo el respiro entre listas */
 .lista {
   margin-bottom: var(--espacio-3);

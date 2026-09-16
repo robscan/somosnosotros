@@ -166,19 +166,12 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
                   <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
                 </label>
               )}
-              {ciudades.length > 1 ? (
-                <button type="button" className={`${chip.chip} ${styles.chipContexto}`} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
-                  <IconoPin width={16} height={16} />
-                  <span>{ciudad.nombre}</span>
-                  <IconoCaret width={12} height={12} />
-                </button>
-              ) : (
-                // Una sola ciudad: se dice, no se elige (nada que abrir).
-                <span className={`${chip.chip} ${styles.chipContexto}`}>
-                  <IconoPin width={16} height={16} />
-                  <span>{ciudad.nombre}</span>
-                </span>
-              )}
+              {/* Siempre se abre, aunque hoy haya una sola ciudad: la lista es la puerta a las que vengan (founder, 2026-09-16). */}
+              <button type="button" className={`${chip.chip} ${styles.chipContexto}`} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
+                <IconoPin width={16} height={16} />
+                <span>{ciudad.nombre}</span>
+                <IconoCaret width={12} height={12} />
+              </button>
               <button type="button" className={`${chip.chip} ${styles.chipContexto} ${styles.lupa}`} onClick={() => { setBuscando(true); setEnfocar(true); }} aria-label="Buscar un evento">
                 <IconoBuscar width={18} height={18} />
               </button>
