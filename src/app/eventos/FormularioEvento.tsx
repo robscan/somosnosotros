@@ -14,6 +14,8 @@ import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type Sit
 import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
+import { configPublica } from "@/lib/config";
+import { lugarDesdePunto } from "@/lib/geocodificar";
 import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto } from "@/lib/subirFoto";
@@ -97,6 +99,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       return 24;
     })(),
     indicaciones: privado?.indicaciones ?? "",
+    ciudad: (evento as { ciudad?: string } | undefined)?.ciudad ?? null,
   }));
   const [titulo, setTitulo] = useState(evento?.titulo ?? "");
   const [inicio, setInicio] = useState(modo === "editar" ? isoALocal(evento?.inicio) : sugerirInicio());
@@ -195,6 +198,14 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   function cambiarOtro(o: OtroSitio) {
     setOtro(o);
     setModoSitio(o.reservado ? "reservado" : "otro");
+    // Con el pin puesto o movido, Mapbox dice en qué ciudad cae (la agenda de esa ciudad lo mostrará).
+    const p = o.reservado ? o.privadoPunto : o.sitioPunto;
+    const anterior = otro.reservado ? otro.privadoPunto : otro.sitioPunto;
+    const { mapboxToken } = configPublica();
+    if (!p || !mapboxToken || (anterior && anterior.lat === p.lat && anterior.lng === p.lng)) return;
+    lugarDesdePunto(p, mapboxToken).then((r) => {
+      if (r?.ciudad) setOtro((actual) => ({ ...actual, ciudad: r.ciudad }));
+    });
   }
 
   async function subir(archivo: File): Promise<string | null> {
@@ -435,6 +446,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         <input type="hidden" name="privado_lng" value={modoSitio === "reservado" && otro.privadoPunto ? otro.privadoPunto.lng : ""} />
         <input type="hidden" name="revelar_horas" value={otro.revelarHoras} />
         <input type="hidden" name="indicaciones" value={modoSitio === "reservado" ? otro.indicaciones : ""} />
+        <input type="hidden" name="ciudad" value={modoSitio === "lugar" ? "" : (otro.ciudad ?? "")} />
         {abierta !== "cuando" && (
           <>
             <input type="hidden" name="inicio" value={inicio} />

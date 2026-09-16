@@ -1,3 +1,4 @@
+import { ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
 import { localAIso } from "./fechas";
 
@@ -57,6 +58,8 @@ export type DatosEvento = {
   sitio_revelar_desde: string | null;
   /** Solo si es reservado: lo que va a la tabla privada. */
   privado: { direccion: string; lat: number | null; lng: number | null; indicaciones: string | null; revelar_desde: string } | null;
+  /** En otro sitio: la ciudad del pin, deducida por Mapbox (null si no se supo; el servidor pone la del lugar o la inicial). */
+  ciudad: string | null;
 };
 export type ErroresEvento = Partial<
   Record<"lugar_id" | "sitio_texto" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
@@ -114,6 +117,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
     sitio_lng: modo === "otro" ? numeroONull(entrada.sitio_lng) : null,
     sitio_reservado: esReservado,
     sitio_revelar_desde: esReservado ? revelarDesde : null,
+    ciudad: modo === "lugar" ? null : ciudadCanonica(limpiar(entrada.ciudad)).slice(0, 80) || null,
     privado: esReservado
       ? {
           direccion: direccionPrivada,

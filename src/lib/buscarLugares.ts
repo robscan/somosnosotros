@@ -3,6 +3,7 @@
  * Dos pasos, como pide Mapbox: sugerir (nombre + dirección) y recuperar (coordenadas) con un
  * mismo session_token. Se usa solo al dar de alta; la ficha nunca vuelve a consultar.
  */
+import { ciudadDelContexto, type Contexto } from "./geocodificar";
 import type { Tipo } from "./lugares";
 
 export type LugarSugerido = {
@@ -14,7 +15,7 @@ export type LugarSugerido = {
   esDireccion: boolean;
 };
 
-export type LugarRecuperado = { nombre: string; direccion: string; lat: number; lng: number; categorias: string[] };
+export type LugarRecuperado = { nombre: string; direccion: string; lat: number; lng: number; categorias: string[]; ciudad: string | null };
 
 type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 type Punto = { lat: number; lng: number };
@@ -27,7 +28,7 @@ export function urlSugerir(q: string, token: string, cerca: Punto, sesion: strin
     access_token: token,
     session_token: sesion,
     language: "es",
-    country: "mx",
+    country: "mx", // Mapbox ordena mal sin país (Madrid antes que la ciudad); se abre a otros países cuando haga falta
     limit: "5",
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "poi,address",
@@ -36,7 +37,7 @@ export function urlSugerir(q: string, token: string, cerca: Punto, sesion: strin
 }
 
 export function urlRecuperar(mapboxId: string, token: string, sesion: string): string {
-  const p = new URLSearchParams({ access_token: token, session_token: sesion });
+  const p = new URLSearchParams({ access_token: token, session_token: sesion, language: "es" });
   return `${BASE}/retrieve/${encodeURIComponent(mapboxId)}?${p.toString()}`;
 }
 
@@ -44,7 +45,7 @@ type RespuestaSugerir = {
   suggestions?: Array<{ mapbox_id?: string; name?: string; full_address?: string; place_formatted?: string; address?: string; poi_category?: string[]; feature_type?: string }>;
 };
 type RespuestaRecuperar = {
-  features?: Array<{ geometry?: { coordinates?: [number, number] }; properties?: { name?: string; full_address?: string; place_formatted?: string; poi_category?: string[] } }>;
+  features?: Array<{ geometry?: { coordinates?: [number, number] }; properties?: { name?: string; full_address?: string; place_formatted?: string; poi_category?: string[]; context?: Contexto } }>;
 };
 
 export function interpretarSugerencias(json: RespuestaSugerir): LugarSugerido[] {
@@ -70,6 +71,7 @@ export function interpretarRecuperado(json: RespuestaRecuperar): LugarRecuperado
     lng: c[0],
     lat: c[1],
     categorias: p.poi_category ?? [],
+    ciudad: ciudadDelContexto(p.context),
   };
 }
 

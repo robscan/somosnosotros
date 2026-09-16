@@ -14,7 +14,7 @@ import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
 import { normalizarRedes } from "@/lib/enlaces";
-import { direccionDesdePunto } from "@/lib/geocodificar";
+import { lugarDesdePunto } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
 import { etiquetaTipo, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { quitarGuardia } from "@/lib/guardiaSalida";
@@ -57,6 +57,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const [detalle, setDetalle] = useState(lugar?.detalle ?? "");
   const [direccion, setDireccion] = useState(lugar?.direccion ?? "");
   const [punto, setPunto] = useState<Punto | null>(lugar ? { lat: lugar.lat, lng: lugar.lng } : null);
+  const [ciudad, setCiudad] = useState(lugar?.ciudad ?? "");
   const [sugeridos, setSugeridos] = useState<LugarSugerido[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [recuperando, setRecuperando] = useState(false);
@@ -96,7 +97,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
       setBuscando(true);
       try {
         const [sug, ex] = await Promise.all([
-          mapboxToken ? sugerirLugares(texto, mapboxToken, CIUDAD_INICIAL.centro, sesionRef.current) : Promise.resolve([]),
+          mapboxToken ? sugerirLugares(texto, mapboxToken, punto ?? yo ?? CIUDAD_INICIAL.centro, sesionRef.current) : Promise.resolve([]),
           buscarExistentes(texto),
         ]);
         setSugeridos(sug);
@@ -106,7 +107,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
       }
     }, 350);
     return () => clearTimeout(t);
-  }, [esAlta, nombre]);
+  }, [esAlta, nombre, punto, yo]);
 
   /** Al escribir el nombre: limpia listas si es corto y deduce el tipo si nadie lo eligió a mano (Otro si no hay pista). */
   function alEscribirNombre(valor: string) {
@@ -141,6 +142,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
       if (r) {
         setPunto({ lat: r.lat, lng: r.lng });
         setDireccion(r.direccion || s.direccion);
+        if (r.ciudad) setCiudad(r.ciudad);
       } else {
         setDireccion(s.direccion);
       }
@@ -159,8 +161,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     setPunto(p);
     const { mapboxToken } = configPublica();
     if (!mapboxToken) return;
-    direccionDesdePunto(p, mapboxToken).then((d) => {
-      if (d) setDireccion(d);
+    lugarDesdePunto(p, mapboxToken).then((r) => {
+      if (r?.direccion) setDireccion(r.direccion);
+      if (r?.ciudad) setCiudad(r.ciudad);
     });
   }, []);
 
@@ -359,6 +362,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         <input type="hidden" name="lat" value={punto?.lat ?? ""} />
         <input type="hidden" name="lng" value={punto?.lng ?? ""} />
         <input type="hidden" name="portada" value={portada ?? ""} />
+        <input type="hidden" name="ciudad" value={ciudad} />
         <input type="hidden" name="privado" value={privado ? "1" : ""} />
         {!(tipoAbierto && tipo === "otro") && <input type="hidden" name="detalle" value={detalle} />}
         {siguiente && <input type="hidden" name="siguiente" value={siguiente} />}
@@ -405,6 +409,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           ubicando={ubicando}
           onPunto={alMoverPin}
           onDireccion={setDireccion}
+          onCiudad={setCiudad}
           onEstoyAqui={estoyAqui}
           onCerrar={() => setHoja(null)}
         />

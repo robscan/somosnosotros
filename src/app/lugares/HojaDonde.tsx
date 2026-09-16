@@ -25,6 +25,8 @@ type Props = {
   ubicando: boolean;
   onPunto: (p: Punto) => void;
   onDireccion: (d: string) => void;
+  /** La ciudad de la dirección elegida (Mapbox la da; la inicial si no). */
+  onCiudad: (c: string) => void;
   onEstoyAqui: () => void;
   onCerrar: () => void;
 };
@@ -33,7 +35,7 @@ type Props = {
  * Hoja "Dónde está" del alta de lugar (docs/rediseno/13, decisión 10): campo de dirección con sugerencias, mapa con
  * el pin y el botón de ubicación del mapa de Lugares, y la dirección deducida del pin. Se abre solo si hace falta.
  */
-export default function HojaDonde({ conFoco, punto, direccion, yo, ubicando, onPunto, onDireccion, onEstoyAqui, onCerrar }: Props) {
+export default function HojaDonde({ conFoco, punto, direccion, yo, ubicando, onPunto, onDireccion, onCiudad, onEstoyAqui, onCerrar }: Props) {
   const [q, setQ] = useState("");
   const [sugerencias, setSugerencias] = useState<Sugerencia[]>([]);
 
@@ -42,7 +44,7 @@ export default function HojaDonde({ conFoco, punto, direccion, yo, ubicando, onP
     const texto = q.trim();
     const { mapboxToken } = configPublica();
     const corta = texto.length < 3 || !mapboxToken;
-    const t = setTimeout(async () => setSugerencias(corta ? [] : await buscarDirecciones(texto, mapboxToken!, punto ?? CIUDAD_INICIAL.centro)), corta ? 0 : 350);
+    const t = setTimeout(async () => setSugerencias(corta ? [] : await buscarDirecciones(texto, mapboxToken!, punto ?? yo ?? CIUDAD_INICIAL.centro)), corta ? 0 : 350);
     return () => clearTimeout(t);
     // el punto solo afina la cercanía; no hace falta buscar de nuevo cuando cambia
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,6 +54,7 @@ export default function HojaDonde({ conFoco, punto, direccion, yo, ubicando, onP
     setSugerencias([]);
     setQ("");
     onDireccion(s.direccion);
+    if (s.ciudad) onCiudad(s.ciudad);
     onPunto({ lat: s.lat, lng: s.lng });
   }
 

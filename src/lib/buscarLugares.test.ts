@@ -20,7 +20,8 @@ describe("buscarLugares", () => {
   });
   it("recupera coordenadas del primer resultado", () => {
     const r = interpretarRecuperado({ features: [{ geometry: { coordinates: [-100.97, 22.15] }, properties: { name: "X", full_address: "Y" } }] });
-    expect(r).toEqual({ nombre: "X", direccion: "Y", lng: -100.97, lat: 22.15, categorias: [] });
+    expect(r).toEqual({ nombre: "X", direccion: "Y", lng: -100.97, lat: 22.15, categorias: [], ciudad: null });
+    expect(interpretarRecuperado({ features: [{ geometry: { coordinates: [-100.4, 20.6] }, properties: { name: "X", context: { place: { name: "Querétaro" } } } }] })?.ciudad).toBe("Querétaro");
     expect(interpretarRecuperado({})).toBeNull();
   });
   it("no llama a la red con menos de 3 letras y tolera errores", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CIUDADES, CIUDAD_INICIAL, ciudadPorNombre, ciudadPorSlug } from "./ciudad";
+import { armarCiudades, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadPorNombre, ciudadPorSlug, slugDeCiudad } from "./ciudad";
 
 describe("ciudad", () => {
   it("empieza en San Luis Potosí, centrada en el centro histórico", () => {
@@ -13,5 +13,33 @@ describe("ciudad", () => {
     expect(ciudadPorSlug("otra").nombre).toBe(CIUDAD_INICIAL.nombre);
     expect(ciudadPorNombre("San Luis Potosí").slug).toBe("san-luis-potosi");
     expect(CIUDADES.every((c) => /^[a-z0-9-]+$/.test(c.slug))).toBe(true);
+  });
+  it("hace slugs sin acentos y unifica el área metropolitana", () => {
+    expect(slugDeCiudad("Querétaro")).toBe("queretaro");
+    expect(slugDeCiudad("  Ciudad de México ")).toBe("ciudad-de-mexico");
+    expect(ciudadCanonica("Soledad de Graciano Sánchez")).toBe("San Luis Potosí");
+    expect(ciudadCanonica("soledad de graciano sanchez")).toBe("San Luis Potosí");
+    expect(ciudadCanonica("  Guadalajara ")).toBe("Guadalajara");
+    expect(ciudadCanonica("")).toBe("");
+    expect(ciudadCanonica(null)).toBe("");
+  });
+  it("arma las ciudades a partir de los lugares y los eventos: la inicial siempre y primero", () => {
+    const c = armarCiudades(
+      [
+        { ciudad: "Querétaro", lat: 20.58, lng: -100.38 },
+        { ciudad: "Querétaro", lat: 20.60, lng: -100.40 },
+        { ciudad: "Soledad de Graciano Sánchez", lat: 22.18, lng: -100.94 },
+        { ciudad: "Guadalajara", lat: 20.67, lng: -103.35 },
+      ],
+      [{ ciudad: "Querétaro" }, { ciudad: "San Luis Potosí" }, { ciudad: "" }],
+    );
+    expect(c.map((x) => x.nombre)).toEqual(["San Luis Potosí", "Querétaro", "Guadalajara"]);
+    expect(c[0]).toMatchObject({ slug: "san-luis-potosi", lugares: 1, eventos: 2, centro: CIUDAD_INICIAL.centro });
+    expect(c[1]).toMatchObject({ slug: "queretaro", lugares: 2, eventos: 1, zoom: 13 });
+    expect(c[1].centro.lat).toBeCloseTo(20.59, 2);
+    expect(c[1].centro.lng).toBeCloseTo(-100.39, 2);
+    expect(ciudadPorSlug("queretaro", c).nombre).toBe("Querétaro");
+    expect(ciudadPorSlug("nada", c).nombre).toBe("San Luis Potosí");
+    expect(armarCiudades([], []).map((x) => x.nombre)).toEqual(["San Luis Potosí"]);
   });
 });

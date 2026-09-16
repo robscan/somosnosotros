@@ -16,7 +16,8 @@ import {
   IconoPin,
   IconoUbicacion,
 } from "@/components/ui/Iconos";
-import type { Ciudad } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
+import ChipCiudad from "@/components/Ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import renglon from "@/components/Renglon.module.css";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
@@ -32,6 +33,7 @@ type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 type Props = {
   lugares: LugarLista[];
   ciudad: Ciudad;
+  ciudades: CiudadConDatos[];
   conSesion: boolean;
   vistaInicial: Vista;
   /** Tipo elegido, leído de la URL (`?tipo=`); vale para el mapa y la lista. */
@@ -47,6 +49,7 @@ type Props = {
 export default function VistaLugares({
   lugares,
   ciudad,
+  ciudades,
   conSesion,
   vistaInicial,
   tipo,
@@ -59,7 +62,10 @@ export default function VistaLugares({
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   // El tipo elegido vive en la URL y vale para las dos vistas: cambiar de Mapa a Lista no lo pierde.
   const tipos = lugares.length >= UMBRAL_CHIPS_LUGARES ? tiposPresentes(lugares) : [];
-  const hrefTipo = (t: string | null) => `/lugares?vista=${vista}${t ? `&tipo=${t}` : ""}`;
+  const enCiudad = ciudad.slug === CIUDAD_INICIAL.slug ? "" : `&ciudad=${ciudad.slug}`;
+  const hrefTipo = (t: string | null) => `/lugares?vista=${vista}${enCiudad}${t ? `&tipo=${t}` : ""}`;
+  // El chip de ciudad va primero en las dos vistas; cambiar de ciudad conserva la vista y suelta el tipo.
+  const chipCiudad = <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => `/lugares?vista=${vista}${c.slug === CIUDAD_INICIAL.slug ? "" : `&ciudad=${c.slug}`}`} />;
   const lugaresDelTipo = useMemo(() => (tipo ? lugares.filter((l) => l.tipo === tipo) : lugares), [lugares, tipo]);
   // Una sola búsqueda para las dos vistas. En el mapa, lo encontrado se encuadra; si es uno solo, se abre su tarjeta.
   const [busqueda, setBusqueda] = useState("");
@@ -171,7 +177,10 @@ export default function VistaLugares({
                 {enMapa.length > resultados.length && <li className={styles.resultadoMas}>Y {enMapa.length - resultados.length} más en el mapa</li>}
               </ul>
             )}
-            {chipsTipo && <Chips ariaLabel="Tipo de lugar">{chipsTipo}</Chips>}
+            <Chips ariaLabel="Ciudad y tipo de lugar">
+              {chipCiudad}
+              {chipsTipo}
+            </Chips>
             {busqueda.trim() && enMapa.length === 0 && <p className={styles.nadaMapa}>Ningún lugar se llama así. Si existe, regístralo.</p>}
           </div>
           {!elegido && (
@@ -231,6 +240,7 @@ export default function VistaLugares({
           conSesion={conSesion}
           chips={
             <>
+              {chipCiudad}
               <Chip activo={!!punto} onClick={punto ? () => setPunto(null) : pedirUbicacion} disabled={geo === "pidiendo"}>
                 <IconoUbicacion width={16} height={16} />
                 {geo === "pidiendo" ? "Un momento…" : "Cerca de mí"}

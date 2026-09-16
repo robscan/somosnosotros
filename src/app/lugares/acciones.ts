@@ -12,7 +12,7 @@ export type ResultadoLugar =
 
 
 function leer(formData: FormData) {
-  const claves = ["nombre", "tipo", "direccion", "lat", "lng", "descripcion", "portada", "enlaces", "privado", "detalle"];
+  const claves = ["nombre", "tipo", "direccion", "lat", "lng", "descripcion", "portada", "enlaces", "privado", "detalle", "ciudad"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 
