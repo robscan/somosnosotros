@@ -96,7 +96,7 @@
 }
 
 /* 3. Listas: días en gris, renglones de la agenda o de lugares y artistas; vacíos con salida. */
-.dia h3 {
+.dia {
   padding: 12px 0 4px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);

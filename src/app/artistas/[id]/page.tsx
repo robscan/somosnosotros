@@ -12,6 +12,7 @@ import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import Barra from "@/components/ui/Barra";
+import Boton from "@/components/ui/Boton";
 import { IconoCalendario, IconoCompartir, IconoPersonas } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
@@ -25,7 +26,7 @@ import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from "../acciones";
 import EsMiNombre from "./EsMiNombre";
-import styles from "./ficha.module.css";
+import styles from "@/components/ui/FichaLista.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
 type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null };
@@ -158,7 +159,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
             )}
             {puedeBorrar && (
               <li className={ficha.menuItem}>
-                <Borrar que="la ficha" aviso={avisoBorrar} accion={borrarArtista.bind(null, a.id)} />
+                <Borrar que="la ficha" icono="artista" aviso={avisoBorrar} accion={borrarArtista.bind(null, a.id)} />
               </li>
             )}
           </MenuAcciones>
@@ -168,9 +169,8 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       {actual && accion === "mio" && !puedeEditar && <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion correo={correo} soloHoja />}
       {nuevo === "1" && (
         <div className={ficha.publicado} role="status">
-          <div>
-            <b>Publicado.</b>Ya está en Artistas.
-          </div>
+          <b>Publicado.</b>
+          Ya está en Artistas.
           {puedeEditar && faltanDetalles ? (
             <Link href={`/artistas/${a.id}/editar`} className={ficha.publicadoBoton}>
               Completar
@@ -243,7 +243,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
 
       {a.descripcion && <Desplegable texto={a.descripcion} />}
 
-      <section className={styles.fechas} id="fechas" aria-label="Se presenta en">
+      <section className={styles.lista} id="fechas" aria-label="Se presenta en">
         <h2>
           Se presenta en
           {fechas.length > 0 && <span> · {fechas.length}</span>}
@@ -259,9 +259,9 @@ export default async function FichaArtista({ params, searchParams }: Params) {
             </ul>
           </Fragment>
         ))}
-        <Link href={hrefPublicarFecha} className={styles.publicarFecha}>
+        <Boton href={hrefPublicarFecha} variante="secundario" className={styles.publicar}>
           Publicar una fecha
-        </Link>
+        </Boton>
       </section>
 
       {/* Ficha traída de un catálogo y sin dueño: al final, discreto y solo con sesión (sin sesión no se ofrece, para no

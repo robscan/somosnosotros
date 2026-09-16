@@ -89,9 +89,6 @@
 }
 
 /* 3. Barra pegajosa: "Voy" es la primaria común; "Me interesa" va en texto */
-.voyChico {
-  padding: 0 var(--espacio-5);
-}
 .interesa {
   display: inline-flex;
   align-items: center;

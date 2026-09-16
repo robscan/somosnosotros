@@ -97,10 +97,10 @@ export function formatearLargo(iso: string, ahora: Date = new Date(), fin?: stri
 
 export type Tramo = "hoy" | "semana" | "proximos" | "pasado";
 
-/** Hoy · Esta semana (7 días) · Próximos. Un evento que empezó hace menos de 3 h sigue siendo de hoy. */
+/** Hoy · Esta semana (7 días) · Próximos. Un evento de hoy sigue siendo de hoy hasta que acabe el día (la misma regla que `eventoPaso`). */
 export function tramo(inicio: string, ahora: Date = new Date()): Tramo {
   const d = new Date(inicio);
-  if (d.getTime() < ahora.getTime() - 3 * 3600000) return "pasado";
+  if (eventoPaso(inicio, null, ahora)) return "pasado";
   const dia = diaLocal(d);
   if (dia === diaLocal(ahora)) return "hoy";
   const limite = new Date(ahora.getTime() + 7 * 86400000);
@@ -160,19 +160,20 @@ export function yaPaso(local: string, ahora: Date = new Date()): boolean {
   return !!iso && new Date(iso).getTime() < ahora.getTime();
 }
 
-/** Desde cuándo un evento sigue siendo "próximo": empezó hace menos de 3 h. (ISO) */
-export function desdeReciente(ahora: Date = new Date()): string {
-  return new Date(ahora.getTime() - 3 * 3600000).toISOString();
+/** Las 00:00 de hoy en la hora de la ciudad (ISO): desde cuándo un evento sin hora de fin sigue siendo de hoy. */
+export function inicioDelDia(ahora: Date = new Date()): string {
+  return localAIso(`${diaLocal(ahora)}T00:00`) ?? ahora.toISOString();
 }
 
-/** ¿Ya pasó el evento? Cuando terminó o, si no tiene hora de fin, 3 h después de empezar (el margen de la agenda).
+/** ¿Ya pasó el evento? Con hora de fin, cuando terminó; sin ella, cuando acabó su día en la ciudad (pedido del founder,
+ *  2026-09-16: los eventos de hoy se quedan a la vista hasta que termine el día o termine el evento).
  *  Un evento que ya pasó se oculta: solo lo ven su autor y el administrador. */
 export function eventoPaso(inicio: string, fin: string | null, ahora: Date = new Date()): boolean {
-  const termina = fin ? new Date(fin).getTime() : new Date(inicio).getTime() + 3 * 3600000;
-  return termina < ahora.getTime();
+  if (fin) return new Date(fin).getTime() < ahora.getTime();
+  return diaLocal(new Date(inicio)) < diaLocal(ahora);
 }
 
-/** La misma regla como filtro de la base (PostgREST, para `.or()`): termina después de ahora o, sin hora de fin, empezó hace menos de 3 h. */
+/** La misma regla como filtro de la base (PostgREST, para `.or()`): termina después de ahora o, sin hora de fin, empieza hoy o después. */
 export function filtroSinPasar(ahora: Date = new Date()): string {
-  return `fin.gte."${ahora.toISOString()}",and(fin.is.null,inicio.gte."${desdeReciente(ahora)}")`;
+  return `fin.gte."${ahora.toISOString()}",and(fin.is.null,inicio.gte."${inicioDelDia(ahora)}")`;
 }

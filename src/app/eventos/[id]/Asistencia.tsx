@@ -60,10 +60,8 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
       <>
         <span className={ficha.seleccionado} aria-live="polite">
           {OK}
-          <span>
-            Voy
-            <small>Ya estás en la lista</small>
-          </span>
+          Voy
+          <small>Ya estás en la lista</small>
         </span>
         <button type="button" className={ficha.secundario} onClick={() => cambiar(null)} disabled={pendiente}>
           Cancelar
@@ -75,12 +73,10 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
       <>
         <span className={ficha.seleccionado} aria-live="polite">
           {OK}
-          <span>
-            Me interesa
-            <small>Guardado en Mi perfil</small>
-          </span>
+          Me interesa
+          <small>Guardado en Mi perfil</small>
         </span>
-        <button type="button" className={`${ficha.primaria} ${ficha.primariaChico}`} onClick={() => cambiar("voy")} disabled={pendiente}>
+        <button type="button" className={ficha.primaria} onClick={() => cambiar("voy")} disabled={pendiente}>
           Voy
         </button>
       </>

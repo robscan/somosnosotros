@@ -11,8 +11,6 @@
   --primario: #0f6b7c; /* azul petróleo: acciones primarias y estado activo (decisión del founder, 2026-09-14; la tinta no se distinguía en la nav) */
   --primario-texto: #ffffff;
   --primario-suave: #e3f0f2; /* fondo del estado seleccionado ("✓ Voy") */
-  --acento: var(--primario); /* OBSOLETO: alias de --primario; el rojo dejó de ser color de acción */
-  --acento-texto: var(--primario-texto);
   --error: #b3261e; /* rojo solo para errores y borrar */
   --ok: #1f6f43; /* verde: "Voy" confirmado */
   --fondo-miniatura: #e6e6e2; /* miniaturas y avatares sin foto */
@@ -20,7 +18,6 @@
   --asa: #d9d9d9; /* asa del panel inferior */
   --vidrio: rgba(255, 255, 255, 0.92); /* rótulos sobre el mapa */
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
-  --sombra-suave: 0 1px 4px rgba(0, 0, 0, 0.08);
   --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
   --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
 

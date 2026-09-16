@@ -156,41 +156,7 @@
   list-style: none;
 }
 
-/* Hoja de ciudades */
-.hojaFondo {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: rgba(0, 0, 0, 0.32);
-}
-.hoja {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-width: var(--columna); /* en escritorio, del ancho de la columna y centrada */
-  margin-inline: auto;
-  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
-  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
-  background: var(--fondo);
-  box-shadow: var(--sombra-panel);
-}
-.asa {
-  width: 36px;
-  height: 4px;
-  margin: 0 auto 14px;
-  border-radius: 2px;
-  background: var(--asa);
-}
-.hoja h3 {
-  margin-bottom: var(--espacio-1);
-  font-size: var(--letra-xl);
-}
-.hoja p {
-  margin-bottom: var(--espacio-2);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
+/* Hoja de ciudades (ui/Hoja): solo las opciones son propias */
 .opcion {
   display: flex;
   justify-content: space-between;

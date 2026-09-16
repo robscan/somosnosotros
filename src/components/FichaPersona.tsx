@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { textoCompartirPersona } from "@/lib/perfil";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
@@ -46,14 +47,14 @@ export default function FichaPersona({
       <p className={styles.vacio}>{vacio}</p>
     ) : (
       agruparPorDia(lista).map((g) => (
-        <div key={g.clave} className={styles.dia}>
-          <h3>{g.titulo}</h3>
+        <Fragment key={g.clave}>
+          <h3 className={styles.dia}>{g.titulo}</h3>
           <ul className={styles.lista}>
             {g.eventos.map((e) => (
               <RenglonEvento key={e.id} evento={e} />
             ))}
           </ul>
-        </div>
+        </Fragment>
       ))
     );
   const pestanas: Pestana[] = [

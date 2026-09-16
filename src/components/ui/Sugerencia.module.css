@@ -1,0 +1,94 @@
+/* ==========================================================================
+   Lista de sugerencias: la caja con borde y el renglón (icono o foto | nombre / detalle). La usan Dónde está,
+   el alta de lugar, Dónde es, Quién y los resultados del mapa de Lugares (pasada de maquetación, 2026-09-16).
+   ========================================================================== */
+.lista {
+  list-style: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  overflow: hidden;
+}
+.lista > li + li {
+  border-top: 1px solid var(--borde);
+}
+.renglon {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  grid-template-areas:
+    "icono nombre"
+    "icono detalle";
+  column-gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: var(--toque);
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.renglon:hover,
+.renglon:focus,
+.renglon[aria-selected="true"] {
+  background: var(--fondo-suave);
+}
+.renglon > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.renglon > b {
+  grid-area: nombre;
+  font-weight: 700;
+}
+.renglon > small {
+  grid-area: detalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* Con foto cuadrada (lugares) o miniatura redonda (artistas); sin icono (resultados del mapa) */
+.conFoto {
+  grid-template-columns: 40px 1fr;
+  column-gap: 12px;
+}
+.foto {
+  grid-area: icono;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.fotoVacia {
+  display: grid;
+  place-items: center;
+  color: var(--texto-suave);
+}
+.conMini {
+  grid-template-columns: 28px 1fr;
+}
+.mini {
+  grid-area: icono;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.sinIcono {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "nombre"
+    "detalle";
+}
+/* Una dirección como sugerencia (alta de lugar): el nombre en normal y "Usar la dirección" en color de acción */
+.direccion > b {
+  font-weight: 500;
+}
+.direccion > small {
+  color: var(--primario);
+  font-weight: 600;
+}

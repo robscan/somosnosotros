@@ -35,3 +35,12 @@
 .interior > :nth-child(3) {
   justify-self: end;
 }
+/* Alta: sin regreso; el logotipo va a la columna del centro y la ✕ a la derecha, sin hueco vacío en el árbol */
+.alta > :first-child {
+  grid-column: 2;
+  justify-self: center;
+}
+.alta > :last-child {
+  grid-column: 3;
+  justify-self: end;
+}

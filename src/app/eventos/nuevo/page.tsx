@@ -37,7 +37,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
   const volver = base?.lugar_id ? `/lugares/${base.lugar_id}` : lugar ? `/lugares/${lugar}` : artista ? `/artistas/${artista}` : "/";
   return (
     <main className="pagina">
-      <Barra volver={{ href: volver, texto: "Volver" }} />
+      <Barra cerrar={{ href: volver, texto: "Volver" }} />
       <h1 className="titulo">{base ? "Duplicar evento" : "Publicar un evento"}</h1>
       <p className="subtitulo">{base ? "Mismo evento, nueva fecha. Cambia lo que haga falta." : "Con el nombre y dónde basta. Lo demás ya está resuelto."}</p>
       <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} />

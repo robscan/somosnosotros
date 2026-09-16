@@ -158,7 +158,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             </li>
             {puedeEditar && (
               <li className={ficha.menuItem}>
-                <Borrar que="el evento" aviso={avisoBorrar} accion={borrarEvento.bind(null, e.id, e.lugar_id)} />
+                <Borrar que="el evento" icono="evento" aviso={avisoBorrar} accion={borrarEvento.bind(null, e.id, e.lugar_id)} />
               </li>
             )}
           </MenuAcciones>
@@ -166,9 +166,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       />
       {nuevo === "1" && (
         <div className={ficha.publicado} role="status">
-          <div>
-            <b>Publicado.</b>Ya está en la agenda.
-          </div>
+          <b>Publicado.</b>
+          Ya está en la agenda.
           <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.publicadoBoton}>
             Compartir
           </BotonCompartir>

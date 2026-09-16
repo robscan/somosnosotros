@@ -1,0 +1,19 @@
+/* Lo común de las listas de Lugares y Artistas: el conteo bajo los chips, el vacío con causa (su acción es el Botón secundario con enlace) */
+.conteo {
+  padding: var(--espacio-3) var(--gutter) var(--espacio-1);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.vacio {
+  padding: var(--espacio-5) var(--gutter) 0;
+}
+.vacio h2 {
+  margin-bottom: 6px;
+  font-size: var(--letra-xl);
+}
+.vacio p {
+  margin-bottom: var(--espacio-4);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}

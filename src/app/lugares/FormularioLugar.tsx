@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useActionState, useCallback, useEffect, useRef, useState } from "react";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import Boton from "@/components/ui/Boton";
@@ -21,6 +21,7 @@ import { leerUbicacion } from "@/lib/ubicacion";
 import type { ResultadoLugar } from "./acciones";
 import HojaDonde from "./HojaDonde";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./FormularioLugar.module.css";
 
 type Props = {
@@ -112,8 +113,10 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     } catch {}
   }, [esAlta, nombre, tipo, direccion, punto, detalle]);
 
-  // Nombre → lugares sugeridos por Mapbox (350 ms tras dejar de escribir) y lugares ya registrados.
+  // Nombre → lugares sugeridos por Mapbox (350 ms tras dejar de escribir) y lugares ya registrados. Solo en el alta:
+  // al editar, el lugar ya está ubicado y con nombre (la lista salía debajo del título al abrir; founder, 2026-09-16).
   useEffect(() => {
+    if (!esAlta) return;
     const texto = nombre.trim();
     if (texto.length < 3 || texto === ultimaBusqueda.current || texto === nombreElegido.current) return;
     const { mapboxToken } = configPublica();
@@ -126,13 +129,13 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           buscarExistentes(texto),
         ]);
         setSugeridos(sug);
-        setExistentes(ex.filter((e) => e.id !== lugar?.id));
+        setExistentes(ex);
       } finally {
         setBuscando(false);
       }
     }, 350);
     return () => clearTimeout(t);
-  }, [nombre, lugar?.id]);
+  }, [esAlta, nombre]);
 
   /** Al escribir el nombre: limpia listas si es corto y deduce el tipo si nadie lo eligió a mano (Otro si no hay pista). */
   function alEscribirNombre(valor: string) {
@@ -245,10 +248,10 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           </p>
         )}
         {sugeridos.length > 0 && (
-          <ul className={styles.sugerencias} role="listbox" aria-label="Lugares encontrados">
+          <ul className={`${sug.lista} ${styles.flotante}`} role="listbox" aria-label="Lugares encontrados">
             {sugeridos.map((s) => (
               <li key={s.mapboxId}>
-                <button type="button" className={`${styles.sugerencia} ${s.esDireccion ? styles.direccion : ""}`} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
+                <button type="button" className={`${sug.renglon} ${s.esDireccion ? sug.direccion : ""}`} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
                   <IconoPin width={20} height={20} />
                   <b>{s.esDireccion ? nombre.trim() : s.nombre}</b>
                   <small>{s.esDireccion ? `Usar la dirección ${s.direccion || s.nombre}` : s.direccion}</small>
@@ -263,10 +266,10 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             <span>
               <b>Ya está registrado:</b>{" "}
               {existentes.map((e, i) => (
-                <span key={e.id}>
+                <Fragment key={e.id}>
                   {i > 0 ? " · " : ""}
                   <Link href={`/lugares/${e.id}`}>{e.nombre}</Link>
-                </span>
+                </Fragment>
               ))}
               . Si es otro con el mismo nombre, sigue.
             </span>
@@ -369,10 +372,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
               {esAdmin && (
                 <label className={styles.interruptor}>
                   <input type="checkbox" checked={privado} onChange={(e) => setPrivado(e.target.checked)} />
-                  <span>
-                    <strong>Solo yo lo veo</strong>
-                    <small>Mapeo privado: no sale en el mapa, la lista ni la búsqueda para nadie más.</small>
-                  </span>
+                  <strong>Solo yo lo veo</strong>
+                  <small>Mapeo privado: no sale en el mapa, la lista ni la búsqueda para nadie más.</small>
                 </label>
               )}
             </div>

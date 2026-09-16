@@ -55,45 +55,7 @@
   outline: none;
 }
 
-/* 3. Sugerencias: renglón con miniatura redonda; la última crea */
-.sugerencias {
-  list-style: none;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  overflow: hidden;
-}
-.sugerencia {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  column-gap: 10px;
-  width: 100%;
-  min-height: var(--toque);
-  padding: var(--espacio-2) var(--espacio-3);
-  border: none;
-  border-top: 1px solid var(--borde);
-  background: none;
-  color: var(--texto);
-  font-size: var(--letra-md);
-  text-align: left;
-  cursor: pointer;
-}
-.sugerencias li:first-child .sugerencia {
-  border-top: none;
-}
-.sugerencia small {
-  display: block;
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-}
-.mini {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-}
+/* 3. Sugerencias: renglones de ui/Sugerencia con miniatura redonda; aquí las dos miniaturas especiales */
 .miniVacia {
   display: block;
   background: var(--fondo);
@@ -103,9 +65,6 @@
   display: grid;
   place-items: center;
   background: var(--primario-suave);
-}
-.crear {
-  font-weight: 700;
 }
 .nota {
   color: var(--texto-suave);

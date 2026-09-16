@@ -1,0 +1,16 @@
+/* Cerrar: botón redondo secundario con la ✕, del mismo alto que la píldora de Atrás */
+.cerrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  -webkit-tap-highlight-color: transparent;
+}
+.cerrar:active {
+  background: var(--fondo-suave);
+}

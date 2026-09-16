@@ -19,6 +19,7 @@ import {
 import type { Ciudad } from "@/lib/ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import renglon from "@/components/Renglon.module.css";
+import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./lugares.module.css";
 
 type Vista = "mapa" | "lista";
@@ -169,15 +170,15 @@ export default function VistaLugares({
               <input type="search" className={styles.buscarMapa} placeholder="Buscar un lugar por nombre" aria-label="Buscar un lugar por nombre" value={busqueda} onChange={(e) => buscarEnMapa(e.target.value)} onFocus={() => setListaAbierta(true)} autoCapitalize="none" autoCorrect="off" />
             )}
             {resultados.length > 0 && (
-              <ul className={styles.resultadosMapa} role="listbox" aria-label="Lugares encontrados">
+              <ul className={`${sug.lista} ${styles.resultadosMapa}`} role="listbox" aria-label="Lugares encontrados">
                 {resultados.map((l) => (
                   <li key={l.id}>
-                    <button type="button" className={styles.resultadoMapa} onClick={() => elegirResultado(l)} role="option" aria-selected={elegido?.id === l.id}>
-                      <strong>{l.nombre}</strong>
-                      <span>
+                    <button type="button" className={`${sug.renglon} ${sug.sinIcono}`} onClick={() => elegirResultado(l)} role="option" aria-selected={elegido?.id === l.id}>
+                      <b>{l.nombre}</b>
+                      <small>
                         {etiquetaTipo(l.tipo)}
                         {calleCorta(l.direccion) ? ` · ${calleCorta(l.direccion)}` : ""}
-                      </span>
+                      </small>
                     </button>
                   </li>
                 ))}

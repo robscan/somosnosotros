@@ -1,66 +1,26 @@
 /* Hoja de "Perfil" (público / reservado): título, explicación e interruptor. */
-.titulo {
-  padding-right: var(--toque-min);
-  font-size: var(--letra-xl);
-  margin-bottom: var(--espacio-1);
-}
-.porque {
-  margin-bottom: var(--espacio-3);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.35;
-}
-/* Interruptor: texto con detalle a la izquierda, palanca a la derecha; una fila por canal. */
+/* Interruptor: grid con áreas; el texto suelto ("Reservado") cae en la celda libre, el detalle debajo y la palanca
+   (la de Ajustes, con grid-area: accion) a la derecha. */
 .interruptor {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "etiqueta accion"
+    "detalle accion";
+  column-gap: var(--espacio-3);
+  row-gap: 2px;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--espacio-3);
   min-height: 56px;
+  padding-block: var(--espacio-2);
   border-top: 1px solid var(--borde);
   font-size: var(--letra-md);
   font-weight: 600;
 }
-.interruptor > span {
-  display: grid;
-  gap: 2px;
-}
 .interruptor small {
+  grid-area: detalle;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   font-weight: 400;
-}
-.palanca {
-  flex: none;
-  position: relative;
-  width: 51px;
-  height: 31px;
-  border: none;
-  border-radius: 999px;
-  background: var(--borde);
-  cursor: pointer;
-  transition: background-color 150ms;
-}
-.palanca::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 27px;
-  height: 27px;
-  border-radius: 50%;
-  background: var(--fondo);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform 150ms;
-}
-.palanca[aria-checked="true"] {
-  background: var(--primario);
-}
-.palanca[aria-checked="true"]::after {
-  transform: translateX(20px);
-}
-.palanca:disabled {
-  opacity: 0.6;
 }
 .nota {
   margin-top: var(--espacio-3);

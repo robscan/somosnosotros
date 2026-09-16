@@ -18,12 +18,30 @@
   background: var(--fondo);
   box-shadow: var(--sombra-panel);
 }
-.asa {
+/* El asa se dibuja con ::before: ningún elemento vacío en el árbol */
+.hoja::before {
+  content: "";
+  display: block;
   width: 36px;
   height: 4px;
   margin: 0 auto var(--espacio-3);
   border-radius: 2px;
   background: var(--asa);
+}
+/* Título y texto de apoyo como hijos directos de la hoja. Con :where() no pesan: una hoja puede afinar los suyos. */
+:where(.hoja) > h3 {
+  margin-bottom: var(--espacio-3);
+  padding-right: var(--toque-min);
+  font-size: var(--letra-xl);
+}
+:where(.hoja) > h3:has(+ p) {
+  margin-bottom: var(--espacio-1);
+}
+:where(.hoja) > h3 + p {
+  margin-bottom: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
 }
 .cerrar {
   position: absolute;

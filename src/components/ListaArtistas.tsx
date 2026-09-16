@@ -3,6 +3,8 @@ import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaArtista, etiquetaDisciplina, hrefArtistas, textoProximaFecha, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type Disciplina, type FiltroLeido } from "@/lib/artistas";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoPincel, IconoPluma } from "./ui/Iconos";
+import Boton from "@/components/ui/Boton";
+import comun from "./Lista.module.css";
 import renglon from "./Renglon.module.css";
 import styles from "./ListaArtistas.module.css";
 
@@ -54,12 +56,12 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
 
   if (totalCiudad === 0) {
     return (
-      <section className={styles.vacio}>
+      <section className={comun.vacio}>
         <h2>Artistas</h2>
         <p>Aún no hay artistas registrados en San Luis Potosí. ¿Eres artista o grupo, o conoces a alguien? Regístralo.</p>
-        <Link href={hrefNuevo()} className={styles.registrar}>
+        <Boton href={hrefNuevo()} variante="secundario">
           Registrar un artista
-        </Link>
+        </Boton>
       </section>
     );
   }
@@ -99,21 +101,21 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
         </div>
       )}
       {artistas.length === 0 && !filtro.q ? (
-        <section className={styles.vacio}>
+        <div className={comun.vacio}>
           <p>Todavía no hay artistas de {queHacen?.toLowerCase()} registrados.</p>
-        </section>
+        </div>
       ) : artistas.length === 0 ? (
-        <section className={styles.vacio}>
+        <div className={comun.vacio}>
           <p>
             Nadie {queHacen ? `de ${queHacen.toLowerCase()} ` : ""}se llama «{filtro.q}». ¿Lo registras?
           </p>
-          <Link href={hrefNuevo(filtro.q!)} className={styles.registrar}>
+          <Boton href={hrefNuevo(filtro.q!)} variante="secundario">
             Registrar a «{filtro.q}»
-          </Link>
-        </section>
+          </Boton>
+        </div>
       ) : (
         <>
-          <p className={styles.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
+          <p className={comun.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
           <ul className={styles.lista}>
             {artistas.map((a) => (
               <li key={a.id}>
@@ -144,9 +146,9 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
             ))}
           </ul>
           {total > artistas.length && (
-            <Link href={hrefArtistas({ ...filtro, n: filtro.n + pagina })} className={styles.verMas} scroll={false}>
+            <Boton href={hrefArtistas({ ...filtro, n: filtro.n + pagina })} variante="secundario" className={styles.verMas} scroll={false}>
               Ver más ({total - artistas.length} más)
-            </Link>
+            </Boton>
           )}
         </>
       )}

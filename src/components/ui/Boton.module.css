@@ -7,6 +7,8 @@
   border-radius: var(--radio);
   font-size: var(--letra-lg);
   font-weight: 700;
+  text-align: center;
+  text-decoration: none; /* también cuando es un enlace */
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }

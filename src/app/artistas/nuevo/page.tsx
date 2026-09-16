@@ -12,7 +12,7 @@ export default async function NuevoArtista({ searchParams }: { searchParams: Pro
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/artistas/nuevo${nombre ? `?nombre=${encodeURIComponent(nombre)}` : ""}`)}`);
   return (
     <main className="pagina">
-      <Barra volver={{ href: "/artistas", texto: "Artistas" }} />
+      <Barra cerrar={{ href: "/artistas", texto: "Artistas" }} />
       <h1 className="titulo">Registrar artista</h1>
       <p className="subtitulo">Con el nombre basta. Lo demás se puede completar después.</p>
       <FormularioArtista accion={crearArtista} usuarioId={actual.perfil.id} nombreInicial={nombre?.slice(0, 80)} esAdmin={actual.perfil.rol === "admin"} />

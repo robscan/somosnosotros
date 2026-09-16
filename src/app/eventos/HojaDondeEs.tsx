@@ -11,6 +11,8 @@ import type { Punto } from "@/lib/geo";
 import { etiquetaLugar, normalizarNombre, type LugarResumen } from "@/lib/lugares";
 import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import mapa from "@/components/Mapa.module.css";
+import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaDondeEs.module.css";
 
 /** Lo que resuelve Dónde cuando no es un lugar registrado: el sitio, su pin y, si es reservado, la dirección exacta. */
@@ -59,14 +61,14 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     const ponerPunto = (p: Punto) => cambiar(otro.reservado ? { privadoPunto: p } : { sitioPunto: p });
     return (
       <Hoja etiqueta="Es en otro sitio" onCerrar={onCerrar}>
-        <h3 className={styles.titulo}>Es en otro sitio</h3>
+        <h3>Es en otro sitio</h3>
         <div className={styles.otro}>
           <label className={`${canon.campo} ${canon.sinIcono}`}>
             <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
           </label>
           <div className={styles.mapa}>
             <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} />
-            <button type="button" className={styles.ubicame} onClick={() => onEstoyAqui(ponerPunto)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+            <button type="button" className={mapa.ubicame} onClick={() => onEstoyAqui(ponerPunto)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
               <IconoUbicacion width={22} height={22} />
             </button>
           </div>
@@ -103,21 +105,21 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
 
   return (
     <Hoja etiqueta="Dónde es" onCerrar={onCerrar}>
-      <h3 className={styles.titulo}>Dónde es</h3>
+      <h3>Dónde es</h3>
       <label className={canon.campo}>
         <IconoBuscar width={20} height={20} />
         <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre del lugar" aria-label="Buscar el lugar" autoComplete="off" autoFocus />
       </label>
       {filtrados.length > 0 ? (
-        <ul className={styles.lista} role="listbox" aria-label="Lugares registrados">
+        <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">
           {filtrados.map((l) => (
             <li key={l.id}>
-              <button type="button" role="option" aria-selected={l.id === lugarId} className={styles.lugar} onClick={() => onLugar(l.id)}>
+              <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => onLugar(l.id)}>
                 {l.portada ? (
                   // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                  <img src={l.portada} alt="" className={styles.foto} />
+                  <img src={l.portada} alt="" className={sug.foto} />
                 ) : (
-                  <span className={`${styles.foto} ${styles.fotoVacia}`} aria-hidden="true">
+                  <span className={`${sug.foto} ${sug.fotoVacia}`} aria-hidden="true">
                     <IconoPin width={18} height={18} />
                   </span>
                 )}
@@ -130,16 +132,16 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       ) : (
         <p className={styles.nadie}>{lugares.length ? `Ningún lugar registrado se llama «${q.trim()}».` : "Todavía no hay lugares registrados."}</p>
       )}
-      <ul className={styles.lista}>
+      <ul className={`${sug.lista} ${styles.lista}`}>
         <li>
-          <button type="button" className={`${styles.lugar} ${styles.atajo}`} onClick={() => setVista("otro")}>
+          <button type="button" className={sug.renglon} onClick={() => setVista("otro")}>
             <IconoPin width={20} height={20} />
             <b>Es en otro sitio</b>
             <small>Una plaza, un parque, una casa: lo escribes y pones el pin</small>
           </button>
         </li>
         <li>
-          <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} className={`${styles.lugar} ${styles.atajo}`} onClick={avisarQueVuelvo}>
+          <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} className={sug.renglon} onClick={avisarQueVuelvo}>
             <IconoMas width={20} height={20} />
             <b>Registrar un lugar nuevo</b>
             <small>Vuelves aquí con él elegido</small>
