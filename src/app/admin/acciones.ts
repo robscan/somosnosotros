@@ -30,18 +30,26 @@ export async function cambiarVisibleDesdeAdmin(tipo: keyof typeof TABLA, id: str
   revalidatePath(`${RUTA[tipo]}/${id}`);
 }
 
+/** Dónde se guarda cada liga y con qué nombre de columna. */
+const LIGA = {
+  artista: { tabla: "artistas_cuentas", columna: "artista_id" },
+  lugar: { tabla: "lugares_cuentas", columna: "lugar_id" },
+} as const;
+
 /**
- * "Quiero editarlo yo" (Artistas, decisión 11): la ficha pasa a la cuenta que lo pidió. Queda ligada
- * (edita y publica sus fechas sin teclear el nombre) y pasa a ser su autora: quien la registró deja de
- * poder editarla, y "Registrado por" cambia. El reporte queda atendido.
+ * "Quiero llevar yo la ficha" ("Soy yo / es mi grupo" en Artistas, "¿Es tu espacio?" en Lugares):
+ * la ficha pasa a la cuenta que la pidió. Queda ligada (la edita) y pasa a ser su autora: quien la
+ * registró deja de poder editarla, y el pie de la ficha cambia. El reporte queda atendido.
  */
-export async function ligarArtistaDesdeAdmin(artistaId: string, perfilId: string | null, reporteId: string) {
+export async function ligarFichaDesdeAdmin(tipo: keyof typeof LIGA, objetoId: string, perfilId: string | null, reporteId: string) {
   const supabase = await soloAdmin();
+  const { tabla, columna } = LIGA[tipo];
   if (perfilId) {
-    await supabase.from("artistas_cuentas").upsert({ artista_id: artistaId, perfil_id: perfilId }, { onConflict: "artista_id,perfil_id", ignoreDuplicates: true });
-    await supabase.from("artistas").update({ creado_por: perfilId }).eq("id", artistaId);
+    await supabase.from(tabla).upsert({ [columna]: objetoId, perfil_id: perfilId }, { onConflict: `${columna},perfil_id`, ignoreDuplicates: true });
+    await supabase.from(TABLA[tipo]).update({ creado_por: perfilId }).eq("id", objetoId);
   }
   await supabase.from("reportes").update({ atendido: true }).eq("id", reporteId);
   revalidatePath("/admin");
-  revalidatePath(`/artistas/${artistaId}`);
+  revalidatePath(RUTA[tipo]);
+  revalidatePath(`${RUTA[tipo]}/${objetoId}`);
 }

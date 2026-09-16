@@ -20,9 +20,11 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { etiquetaLugar, etiquetaTipo, textoProximo, type Lugar } from "@/lib/lugares";
+import { ORIGENES } from "@/lib/origen";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import Seguir from "@/components/Seguir";
 import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
+import EsMiEspacio from "./EsMiEspacio";
 import styles from "@/components/ui/FichaLista.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
@@ -87,21 +89,28 @@ export default async function FichaLugar({ params, searchParams }: Params) {
     redirect(`/lugares/${lugar.id}`);
   }
   // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
-  const [eventos, cuenta, mio] = await Promise.all([
+  const [eventos, cuenta, mio, lig] = await Promise.all([
     cargarEventos(lugar),
     supabase?.rpc("cuenta_seguidores", { p_lugar: id }) ?? Promise.resolve({ data: 0 }),
     actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("lugar_id", id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
+    supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", id) ?? Promise.resolve({ data: [] as { perfil_id: string }[] }),
   ]);
+  const ligados = (lig.data ?? []) as { perfil_id: string }[];
   const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
   const sigo = !!mio.data;
-  const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === lugar.creado_por);
   const esAdmin = actual?.perfil.rol === "admin";
+  // Edita el autor, la cuenta ligada ("¿Es tu espacio?", atendido por el administrador) o el administrador.
+  const esAutor = !!actual && actual.perfil.id === lugar.creado_por;
+  const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);
+  const puedeEditar = esAdmin || esAutor || estaLigado;
+  const puedeBorrar = esAdmin || esAutor; // borrar es del autor y del administrador (la política de la base lo exige)
   const redes = normalizarRedes(lugar.redes);
   const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
   const url = `${ORIGEN}/lugares/${lugar.id}`;
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
   const grupos = agruparPorDia(eventos);
   const avisoBorrar = eventos.length > 0 ? `Se borra el lugar y sus ${eventos.length === 1 ? "1 evento próximo" : `${eventos.length} eventos próximos`} (y los pasados).` : "Se borra el lugar.";
+  const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
 
   return (
     <main className={ficha.pagina}>
@@ -128,7 +137,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
             <li className={ficha.menuItem}>
               <Reportar tipo="lugar" objetoId={lugar.id} volver={`/lugares/${lugar.id}`} conSesion={!!actual} />
             </li>
-            {puedeEditar && (
+            {puedeBorrar && (
               <li className={ficha.menuItem}>
                 <Borrar que="el lugar" icono="lugar" aviso={avisoBorrar} accion={borrarLugar.bind(null, lugar.id)} />
               </li>
@@ -173,7 +182,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       ) : (
         !lugar.visible && (
           <p className={`aviso-error ${ficha.oculto}`} role="status">
-            Este lugar está oculto: solo lo ven su autor y el administrador.
+            Este lugar está oculto: solo lo ven su autor, su cuenta ligada y el administrador.
           </p>
         )
       )}
@@ -256,6 +265,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       {!(lugar.origen && !lugar.autor) && (
         <p className={ficha.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
       )}
+      {/* Quien lleva el espacio de verdad puede pedir la ficha: al final, discreto y solo con sesión (sin sesión
+          no se ofrece, para no invitar a reclamos ajenos). El origen se dice dentro de la hoja, no en la ficha. */}
+      {actual && !puedeEditar && <EsMiEspacio lugarId={lugar.id} nombre={lugar.nombre} correo={correo} origen={lugar.origen ? ORIGENES[lugar.origen].nombre : undefined} />}
 
       <Seguir
         que="lugar"
@@ -267,7 +279,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
         avisosCorreo={actual?.perfil.avisos_correo ?? false}
         avisosPush={actual?.perfil.avisos_push ?? false}
-        correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
+        correo={correo}
         llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />
     </main>

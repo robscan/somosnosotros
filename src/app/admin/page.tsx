@@ -2,9 +2,9 @@ import Link from "next/link";
 import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
 import { formatearCuando } from "@/lib/fechas";
-import { etiquetaMotivo } from "@/lib/reportes";
+import { etiquetaMotivo, pideLlevarLaFicha } from "@/lib/reportes";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { atenderReporte, cambiarVisibleDesdeAdmin, ligarArtistaDesdeAdmin } from "./acciones";
+import { atenderReporte, cambiarVisibleDesdeAdmin, ligarFichaDesdeAdmin } from "./acciones";
 import Tarjeta from "@/components/ui/Tarjeta";
 import styles from "./admin.module.css";
 
@@ -49,7 +49,7 @@ export default async function Admin() {
                 <Tarjeta
                   titulo={
                     <>
-                      {etiquetaMotivo(r.motivo)} · {r.tipo} · <Link href={rutaDe(r)}>ver</Link>
+                      {etiquetaMotivo(r.motivo, r.tipo)} · {r.tipo} · <Link href={rutaDe(r)}>ver</Link>
                     </>
                   }
                   detalle={r.detalle}
@@ -58,8 +58,8 @@ export default async function Admin() {
                   Reportó {nombreAutor(r.autor)} · {formatearCuando(r.creado_en)}
                 </p>
                 <div className={styles.acciones}>
-                  {r.tipo === "artista" && r.motivo === "es_mio" && (
-                    <form action={ligarArtistaDesdeAdmin.bind(null, r.objeto_id, r.creado_por, r.id)}>
+                  {pideLlevarLaFicha(r.tipo, r.motivo) && (
+                    <form action={ligarFichaDesdeAdmin.bind(null, r.tipo, r.objeto_id, r.creado_por, r.id)}>
                       <button type="submit" className={styles.botonSuave}>
                         Pasar la ficha a esta cuenta
                       </button>

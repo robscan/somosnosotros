@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { esUuid } from "@/lib/formulario";
 import { rutaSegura } from "@/lib/rutas";
 import { validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
+import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 
 export type ResultadoLugar =
@@ -101,4 +103,19 @@ export async function borrarLugar(id: string) {
   if (!data) redirect(`/lugares/${id}?error=borrar`);
   revalidatePath("/");
   redirect("/borrado?que=lugar");
+}
+
+export type ResultadoReclamo = { ok: true } | { ok: false; error: string };
+
+/**
+ * "¿Es tu espacio?": quien lleva el lugar de verdad pide la ficha para editarla, o pide que se quite.
+ * Lo mismo que "Soy yo / es mi grupo" en Artistas: queda como reporte con su cuenta y lo atiende el
+ * administrador desde su panel (los lugares del catálogo y los institucionales no tienen dueño).
+ */
+export async function reclamarLugar(lugarId: string, motivo: MotivoReclamo): Promise<ResultadoReclamo> {
+  const { supabase, user } = await sesionOEntrar(`/lugares/${lugarId}?accion=mio`);
+  if (!esUuid(lugarId) || !["es_mio", "retirar"].includes(motivo)) return { ok: false, error: "No sé qué ficha es." };
+  const { error } = await supabase.from("reportes").insert({ tipo: "lugar", objeto_id: lugarId, motivo, creado_por: user.id });
+  if (error) return { ok: false, error: "No se pudo enviar. Intenta de nuevo." };
+  return { ok: true };
 }

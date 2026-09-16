@@ -7,7 +7,7 @@ import { IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { reclamarArtista } from "../acciones";
-import styles from "./EsMiNombre.module.css";
+import styles from "@/components/ui/Reclamar.module.css";
 
 type Props = {
   artistaId: string;
