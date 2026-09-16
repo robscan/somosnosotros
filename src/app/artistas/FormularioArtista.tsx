@@ -12,6 +12,8 @@ import SelectorEnlaces from "@/components/SelectorEnlaces";
 import { artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, LIMITES_ARTISTA, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type TipoArtista } from "@/lib/artistas";
 import { normalizarRedes } from "@/lib/enlaces";
 import { normalizarNombre } from "@/lib/lugares";
+import { quitarGuardia } from "@/lib/guardiaSalida";
+import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
@@ -30,18 +32,6 @@ type Props = {
 };
 
 type Abierta = "hace" | "es" | null;
-const CLAVE_BORRADOR = "somosnosotros:borrador-artista";
-type Borrador = { nombre: string; disciplina: Disciplina | ""; detalle: string; tipo: TipoArtista | ""; soy: boolean };
-
-function leerBorrador(): Borrador | null {
-  try {
-    const raw = localStorage.getItem(CLAVE_BORRADOR);
-    return raw ? (JSON.parse(raw) as Borrador) : null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Alta de artista con el canon (docs/rediseno/15, decisiones 4 y 5): un campo arriba con la estrella y, debajo,
  * renglones resueltos: Qué hace y Es deducidos del nombre (chips al abrir), Foto con la cámara como acción,
@@ -65,36 +55,14 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const [abierta, setAbierta] = useState<Abierta>(null);
   const [masAbierto, setMasAbierto] = useState(!esAlta);
   const [existente, setExistente] = useState<ArtistaResumen | null>(null);
-  const guardarBorrador = useRef(false);
+  // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
+  const formRef = useRef<HTMLFormElement>(null);
+  const hojaSalir = useSalirSinPublicar(formRef, esAlta);
 
   // Lo deducido del nombre manda hasta que la persona lo cambie a mano (decisión 4).
   const hayNombre = nombre.trim().length > 0;
   const disciplina: Disciplina | "" = disciplinaElegida || (hayNombre ? deducirDisciplina(nombre) : "");
   const tipo: TipoArtista = tipoElegido || deducirTipoArtista(nombre) || "solista";
-
-  // Borrador en el teléfono (Zeigarnik: salir y volver no pierde lo escrito).
-  useEffect(() => {
-    if (!esAlta) return;
-    const id = requestAnimationFrame(() => {
-      const b = leerBorrador();
-      if (b && b.nombre && !nombreInicial) {
-        setNombre(b.nombre);
-        setDisciplinaElegida(b.disciplina);
-        setDetalle(b.detalle);
-        setTipoElegido(b.tipo);
-        setSoy(b.soy);
-      }
-      guardarBorrador.current = true;
-    });
-    return () => cancelAnimationFrame(id);
-  }, [esAlta, nombreInicial]);
-  useEffect(() => {
-    if (!esAlta || !guardarBorrador.current) return;
-    try {
-      if (!nombre) localStorage.removeItem(CLAVE_BORRADOR);
-      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ nombre, disciplina: disciplinaElegida, detalle, tipo: tipoElegido, soy } satisfies Borrador));
-    } catch {}
-  }, [esAlta, nombre, disciplinaElegida, detalle, tipoElegido, soy]);
 
   // Un artista es un artista: mientras se escribe, ¿ya hay uno que se llama igual?
   useEffect(() => {
@@ -129,13 +97,11 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre";
 
   return (
+    <>
     <form
+      ref={formRef}
       action={(fd) => {
-        if (esAlta) {
-          try {
-            localStorage.removeItem(CLAVE_BORRADOR);
-          } catch {}
-        }
+        quitarGuardia();
         enviar(fd);
       }}
       noValidate
@@ -289,5 +255,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         {!enviando && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "ya está registrado"}</small>}
       </Boton>
     </form>
+    {hojaSalir}
+    </>
   );
 }

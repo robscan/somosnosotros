@@ -17,6 +17,8 @@ import { normalizarRedes } from "@/lib/enlaces";
 import { direccionDesdePunto } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
 import { etiquetaTipo, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
+import { quitarGuardia } from "@/lib/guardiaSalida";
+import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
@@ -36,18 +38,6 @@ type Props = {
   /** El administrador puede pegar la dirección de una imagen y marcar el lugar como privado (mapeo personal). */
   esAdmin?: boolean;
 };
-
-const CLAVE_BORRADOR = "somosnosotros:borrador-lugar";
-type Borrador = { nombre: string; tipo: Tipo | ""; direccion: string; punto: Punto | null; detalle: string };
-
-function leerBorrador(): Borrador | null {
-  try {
-    const raw = localStorage.getItem(CLAVE_BORRADOR);
-    return raw ? (JSON.parse(raw) as Borrador) : null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Alta de lugar, el canon de formulario (docs/rediseno/13, decisiones 8 a 12): un campo arriba (el nombre, que
@@ -85,35 +75,14 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const sesionRef = useRef<string>("");
   const ultimaBusqueda = useRef("");
   const nombreElegido = useRef("");
-  const guardarBorrador = useRef(false); // solo después de intentar restaurar; si no, el montaje pisa lo guardado
+  // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
+  const formRef = useRef<HTMLFormElement>(null);
+  const hojaSalir = useSalirSinPublicar(formRef, esAlta);
 
-  // Sesión de búsqueda de Mapbox (una por formulario) y borrador guardado en el teléfono.
+  // Sesión de búsqueda de Mapbox (una por formulario).
   useEffect(() => {
     sesionRef.current = crypto.randomUUID();
-    if (!esAlta) return;
-    // Se restaura tras el primer pintado (el servidor no conoce el borrador; evita desajustes de hidratación).
-    // Sin guarda de "ya corrí": en desarrollo React monta dos veces y la limpieza cancela la primera.
-    const id = requestAnimationFrame(() => {
-      const b = leerBorrador();
-      if (b && (b.nombre || b.punto)) {
-        setNombre(b.nombre);
-        setTipo(b.tipo);
-        setDetalle(b.detalle ?? "");
-        setDireccion(b.direccion);
-        setPunto(b.punto);
-        nombreElegido.current = b.nombre;
-      }
-      guardarBorrador.current = true;
-    });
-    return () => cancelAnimationFrame(id);
-  }, [esAlta]);
-  useEffect(() => {
-    if (!esAlta || !guardarBorrador.current) return;
-    try {
-      if (!nombre && !punto) localStorage.removeItem(CLAVE_BORRADOR);
-      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ nombre, tipo, direccion, punto, detalle } satisfies Borrador));
-    } catch {}
-  }, [esAlta, nombre, tipo, direccion, punto, detalle]);
+  }, []);
 
   // Nombre → lugares sugeridos por Mapbox (350 ms tras dejar de escribir) y lugares ya registrados. Solo en el alta:
   // al editar, el lugar ya está ubicado y con nombre (la lista salía debajo del título al abrir; founder, 2026-09-16).
@@ -227,12 +196,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   return (
     <>
       <form
+        ref={formRef}
         action={(fd) => {
-          if (esAlta) {
-            try {
-              localStorage.removeItem(CLAVE_BORRADOR);
-            } catch {}
-          }
+          quitarGuardia();
           enviar(fd);
         }}
         noValidate
@@ -443,6 +409,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           onCerrar={() => setHoja(null)}
         />
       )}
+      {hojaSalir}
     </>
   );
 }
