@@ -19,4 +19,4 @@ Todo vive en `components/SalirSinPublicar` (`useSalirSinPublicar(formRef, activa
 - Navegador integrado a 390 con usuario desechable (borrado al final): alta de evento abierta desde un lugar, sin tocar nada, la ✕ se va sin preguntar; con un nombre escrito, la ✕ abre la hoja y Seguir editando la cierra sin perder el nombre; alta de lugar con un nombre escrito, la ✕ abre la hoja; alta de artista con el nombre puesto desde la URL y sin tocar, la ✕ se va sin preguntar.
 
 ## Firma
-Pendiente en el iPhone.
+Firmado por el founder en el iPhone (2026-09-16, tarde): "Te firmo todo".

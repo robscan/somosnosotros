@@ -20,3 +20,6 @@
 ## Queda
 - Firma del founder en el iPhone.
 - Visto al pasar, sin tocar: en la hoja "Dónde está", buscar "Plaza de Armas" trae calles de Querétaro, Zacatecas y Saltillo antes que la de San Luis; la búsqueda de dirección no está acotada a la ciudad.
+
+## Firma
+Firmado por el founder en el iPhone (2026-09-16, tarde): "Te firmo todo".

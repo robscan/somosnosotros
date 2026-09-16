@@ -13,4 +13,4 @@
 - Capturas a 390 de ancho: agenda con chips y pestañas (medida la cabecera: 100 px), Lugares con Mapa · Lista, ficha de persona con "Va a 0 · Sigue 1".
 
 ## Firma
-Pendiente en el iPhone (la agenda es la pantalla más afinada: mirarla con calma).
+Firmado por el founder en el iPhone (2026-09-16, tarde): "Te firmo todo".

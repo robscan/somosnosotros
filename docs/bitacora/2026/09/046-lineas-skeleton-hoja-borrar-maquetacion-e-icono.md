@@ -35,4 +35,4 @@
 - Navegador integrado (390 de ancho): skeleton raíz sin rayas; hoja "¿Borrar mi cuenta?" con icono, textos centrados y los dos botones (usuario desechable, sin confirmar, borrado al final); hoja "Instalar" con los pasos planos; ficha de evento con "Publicado." en grid; fichas de lugar y artista con el módulo común; ✓ Voy con el grid nuevo.
 
 ## Firma
-Pendiente en el iPhone.
+Firmado por el founder en el iPhone (2026-09-16, tarde): "Te firmo todo".

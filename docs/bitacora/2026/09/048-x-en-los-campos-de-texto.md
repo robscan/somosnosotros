@@ -15,4 +15,4 @@
 - Navegador integrado a 390 con usuario desechable (borrado al final): nombre del evento con la ✕ a la izquierda de la cámara; al tocarla el campo queda vacío, con el foco, y el botón vuelve a decir "falta el nombre"; Quién con la ✕; Es en otro sitio con la ✕; buscador de Lugares en lista con su ✕.
 
 ## Firma
-Pendiente en el iPhone (probar sobre todo que al tocar la ✕ el teclado no se cierra).
+Firmado por el founder en el iPhone (2026-09-16, tarde): "Te firmo todo".

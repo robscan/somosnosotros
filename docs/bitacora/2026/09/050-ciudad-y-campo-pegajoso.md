@@ -16,3 +16,6 @@ Estimado: media jornada, con migración (columna ya existe) y pruebas. No se emp
 
 ## Evidencia
 lint, typecheck y 145 pruebas en verde. Navegador integrado a 390: la hoja "Dónde" se abre desde el chip; "Dónde es" con la lista desplazada y el campo arriba (usuario desechable, borrado).
+
+## Firma
+Firmado por el founder en el iPhone (2026-09-16, tarde): "Te firmo todo".

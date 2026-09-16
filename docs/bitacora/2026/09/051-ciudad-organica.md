@@ -24,4 +24,4 @@
 - Navegador integrado a 390 con usuario desechable (borrado al final): al elegir una sugerencia de Madrid el campo escondido dice "Madrid" y la dirección es la de Madrid; con el país restaurado, "Teatro de la Paz" vuelve a ser el de Villerías; la hoja "Dónde" en la agenda lista "San Luis Potosí · 58 lugares · 85 eventos"; el chip de ciudad aparece en el mapa de Lugares.
 
 ## Firma
-Pendiente en el iPhone.
+Firmado por el founder en el iPhone (2026-09-16, tarde): "Te firmo todo".
