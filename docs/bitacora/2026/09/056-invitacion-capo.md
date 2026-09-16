@@ -42,3 +42,6 @@ Los otros 14 de la tanda de hoy (correo enmascarado): José Gerardo Méndez Gonz
 
 ## Firma
 Pendiente del founder.
+
+## Primera tanda (2026-09-16, noche)
+El founder aprobó el texto mandando la primera tanda él mismo: `npx tsx scripts/capo/invitar.ts --enviar` → 15 mandados, 0 fallidos, 461 pendientes. Los 15 quedaron anotados en `invitaciones_enviadas` con su id de Resend. Cadencia: una tanda al día.
