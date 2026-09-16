@@ -5,7 +5,8 @@ import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import { DISCIPLINAS, filtroDesdeUrl, ordenarArtistas, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FiltroLeido, type ProximaFecha } from "@/lib/artistas";
-import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
+import { cargarCiudades } from "@/lib/ciudades";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
@@ -31,11 +32,11 @@ export type Cargado = {
  * la disciplina, el detalle y lo escrito vienen de la URL (revisión 2026-09-14, A2). Los que tienen fecha próxima van
  * primero (todos los que cumplen el filtro); el resto, en orden alfabético real (`nombre_orden`), de `n` en `n`.
  */
-async function cargar(f: FiltroLeido): Promise<Cargado> {
+async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const vacio: Cargado = { artistas: [], total: 0, totalCiudad: 0, disciplinas: [], detalles: [] };
   const supabase = await clienteServidor();
   if (!supabase) return vacio;
-  const ciudad = CIUDAD_INICIAL.nombre;
+  const ciudad = ciudadNombre;
 
   const [f1, d1, d2] = await Promise.all([
     supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, inicio, sitio_texto, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("inicio", { referencedTable: "eventos" }).limit(500),
@@ -74,16 +75,20 @@ async function cargar(f: FiltroLeido): Promise<Cargado> {
 }
 
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */
-export default async function Artistas({ searchParams }: { searchParams: Promise<{ hace?: string; que?: string; q?: string; n?: string }> }) {
-  const filtro = filtroDesdeUrl(await searchParams);
-  const [cargado, actual] = await Promise.all([cargar(filtro), usuarioActual()]);
+export default async function Artistas({ searchParams }: { searchParams: Promise<{ ciudad?: string; hace?: string; que?: string; q?: string; n?: string }> }) {
+  const { ciudad: slug, ...resto } = await searchParams;
+  const filtro = filtroDesdeUrl(resto);
+  // Un artista no tiene punto del que deducir ciudad: se registra en la que la persona tiene elegida (bitácora 051).
+  const [ciudades, actual] = await Promise.all([cargarCiudades(await clienteServidor()), usuarioActual()]);
+  const ciudad: Ciudad = ciudadPorSlug(slug, ciudades);
+  const cargado = await cargar(filtro, ciudad.nombre);
   return (
     <main className="raiz">
       <Barra derecha={<Sesion />} />
-      <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} />
-      {/* El filtro vive en la URL; lo que se recuerda al volver de una ficha es el scroll. */}
+      <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} ciudad={ciudad} ciudades={ciudades} />
+      {/* El filtro y la ciudad viven en la URL; lo que se recuerda al volver de una ficha es el scroll. */}
       <MemoriaPantalla seccion="artistas" />
-      <Publicar que="artista" />
+      <Publicar que="artista" ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
       <NavInferior />
     </main>
   );

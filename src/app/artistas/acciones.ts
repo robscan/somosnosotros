@@ -14,7 +14,7 @@ export type ResultadoArtista =
 
 
 function leer(formData: FormData) {
-  const claves = ["nombre", "disciplina", "detalle", "tipo", "descripcion", "foto", "enlaces"];
+  const claves = ["nombre", "disciplina", "detalle", "tipo", "descripcion", "foto", "enlaces", "ciudad"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 
@@ -57,7 +57,10 @@ export async function actualizarArtista(id: string, _previo: ResultadoArtista | 
   const { datos, errores } = validarArtista(leer(formData));
   if (Object.keys(errores).length) return { ok: false, errores };
 
-  const { data, error } = await supabase.from("artistas").update(datos).eq("id", id).select("id").maybeSingle();
+  // Editar no cambia la ciudad (decisión del founder, 2026-09-16): el formulario de edición no manda ese campo.
+  const { nombre, disciplina, detalle, tipo, descripcion, foto, redes } = datos;
+  const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, redes };
+  const { data, error } = await supabase.from("artistas").update(cambios).eq("id", id).select("id").maybeSingle();
   if (error?.code === "23505") return { ok: false, errores: { nombre: "Ya hay otro artista con ese nombre." } };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu ficha?" };
 

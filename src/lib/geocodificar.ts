@@ -1,3 +1,5 @@
+import { distanciaKm } from "./geo";
+
 /**
  * Autocompletado de direcciones con Mapbox (Geocoding v6). Se usa UNA vez, al dar de alta el lugar
  * (docs/heredado/mapa/MAPBOX_GEOCODING.md); la ficha nunca vuelve a geocodificar. Se puede registrar en cualquier
@@ -7,6 +9,9 @@ export type Sugerencia = { nombre: string; direccion: string; lat: number; lng: 
 
 type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 
+/** Cuántas sugerencias se muestran, ya ordenadas por cercanía (ver buscarDirecciones). */
+const MAX_SUGERENCIAS = 5;
+
 export function urlGeocodificar(q: string, token: string, cerca: { lat: number; lng: number }): string {
   const p = new URLSearchParams({
     q,
@@ -14,7 +19,10 @@ export function urlGeocodificar(q: string, token: string, cerca: { lat: number; 
     autocomplete: "true",
     country: "mx", // ver buscarLugares: sin país, Mapbox pone otras ciudades del mundo antes que la propia
     language: "es",
-    limit: "5",
+    // Se piden más de las que se muestran porque Mapbox no siempre ordena por cercanía real dentro del país
+    // (buscando "Plaza de Armas" desde San Luis, antepone las de Querétaro, Zacatecas o Saltillo); se reordenan
+    // aquí (buscarDirecciones) y se recorta a MAX_SUGERENCIAS.
+    limit: "10",
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "address,street,place,locality,neighborhood",
   });
@@ -54,7 +62,9 @@ export async function buscarDirecciones(q: string, token: string, cerca: { lat: 
   if (texto.length < 3) return [];
   const res = await fetchFn(urlGeocodificar(texto, token, cerca));
   if (!res.ok) return [];
-  return interpretarRespuesta((await res.json()) as RespuestaV6);
+  const sugerencias = interpretarRespuesta((await res.json()) as RespuestaV6);
+  // Se reordena por distancia real al punto de cercanía (Mapbox no siempre lo hace bien) y se muestran las más cercanas.
+  return sugerencias.sort((a, b) => distanciaKm(cerca, a) - distanciaKm(cerca, b)).slice(0, MAX_SUGERENCIAS);
 }
 
 /** Dirección aproximada y ciudad de un punto (para cuando el pin se pone con el dedo o con "Estoy aquí"). */

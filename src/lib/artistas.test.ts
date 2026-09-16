@@ -87,6 +87,10 @@ describe("hrefArtistas y filtroDesdeUrl", () => {
     expect(filtroDesdeUrl({ hace: "musica", que: "jazz", q: "x", n: "200" })).toEqual({ hace: "musica", que: "jazz", q: "x", n: 200 });
     expect(filtroDesdeUrl({ hace: "no-existe", que: "jazz", n: "abc" })).toEqual({ hace: null, que: null, q: null, n: 100 });
   });
+  it("la ciudad va en la URL, salvo que sea la inicial (crecimiento orgánico, bitácora 051)", () => {
+    expect(hrefArtistas({ ciudad: "san-luis-potosi" })).toBe("/artistas");
+    expect(hrefArtistas({ ciudad: "queretaro", hace: "musica" })).toBe("/artistas?ciudad=queretaro&hace=musica");
+  });
 });
 
 describe("conProximaFecha y textoProximaFecha", () => {
@@ -136,5 +140,10 @@ describe("validarArtista", () => {
     expect(errores.nombre).toBeDefined();
     expect(errores.disciplina).toBeDefined();
     expect(datos.redes).toEqual([]);
+  });
+  it("toma la ciudad en la que estaba la persona (un artista no tiene punto del que deducirla); sin ciudad, la inicial", () => {
+    expect(validarArtista({ nombre: "Los Vecinos", ciudad: "Querétaro" }).datos.ciudad).toBe("Querétaro");
+    expect(validarArtista({ nombre: "Los Vecinos", ciudad: "" }).datos.ciudad).toBe("San Luis Potosí");
+    expect(validarArtista({ nombre: "Los Vecinos" }).datos.ciudad).toBe("San Luis Potosí");
   });
 });

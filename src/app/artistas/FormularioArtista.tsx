@@ -29,6 +29,8 @@ type Props = {
   nombreInicial?: string;
   /** El administrador puede pegar la dirección de una foto (fichas importadas). */
   esAdmin?: boolean;
+  /** Solo en el alta: la ciudad en la que estaba la persona al registrar (un artista no tiene punto del que deducirla). */
+  ciudad?: string;
 };
 
 type Abierta = "hace" | "es" | null;
@@ -38,7 +40,7 @@ type Abierta = "hace" | "es" | null;
  * Soy yo / es mi grupo con interruptor y Más (redes, descripción). Si el nombre ya existe, se dice con enlace.
  * El botón dice qué falta. Sin frases de ayuda.
  */
-export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false }: Props) {
+export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false, ciudad }: Props) {
   const esAlta = !artista;
   const [resultado, enviar, enviando] = useActionState<ResultadoArtista | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
@@ -243,6 +245,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       <input type="hidden" name="foto" value={foto ?? ""} />
       <input type="hidden" name="soy" value={soy ? "1" : ""} />
       {abierta !== "hace" && <input type="hidden" name="detalle" value={detalle} />}
+      {/* Editar no cambia la ciudad: solo el alta la manda. */}
+      {esAlta && <input type="hidden" name="ciudad" value={ciudad ?? ""} />}
 
       {resultado && !resultado.ok && resultado.general && !repetido && (
         <p className="aviso-error" role="alert">

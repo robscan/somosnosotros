@@ -6,6 +6,8 @@ type Props = {
   /** Agenda: "Publicar evento" (o el primer lugar si no hay). Lugares: "Registrar lugar". Artistas: "Registrar artista". */
   que?: "evento" | "lugar" | "artista";
   hayLugares?: boolean;
+  /** Solo para "artista": la ciudad en la que se está (slug), para que el alta empiece ahí (bitácora 051 y 053). */
+  ciudad?: string | null;
 };
 
 /**
@@ -13,7 +15,7 @@ type Props = {
  * Con o sin sesión lleva al alta; la sesión se pide después, con el valor por delante.
  * Cada sección tiene su verbo e icono para que se distingan a simple vista (misma forma, distinta acción).
  */
-export default function Publicar({ que = "evento", hayLugares = true }: Props) {
+export default function Publicar({ que = "evento", hayLugares = true, ciudad }: Props) {
   if (que === "lugar") {
     return (
       <Link href="/lugares/nuevo" className={styles.publicar} aria-label="Registrar un lugar">
@@ -24,7 +26,7 @@ export default function Publicar({ que = "evento", hayLugares = true }: Props) {
   }
   if (que === "artista") {
     return (
-      <Link href="/artistas/nuevo" className={styles.publicar} aria-label="Registrar un artista">
+      <Link href={`/artistas/nuevo${ciudad ? `?ciudad=${ciudad}` : ""}`} className={styles.publicar} aria-label="Registrar un artista">
         <IconoEstrellaMas width={22} height={22} />
         Registrar artista
       </Link>
