@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import Hoja from "@/components/ui/Hoja";
+import { Pestana, Pestanas } from "@/components/ui/Pestanas";
+import chip from "@/components/ui/Chip.module.css";
 import { useState } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import type { Ciudad } from "@/lib/ciudad";
@@ -148,7 +150,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
             <>
               {fecha ? (
                 // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
-                <span className={`${styles.chip} ${styles.chipActivo}`}>
+                <span className={`${chip.chip} ${styles.chipContexto} ${styles.marcado}`}>
                   <IconoCalendario width={16} height={16} />
                   <span>{diaCorto(localAIso(`${fecha}T12:00`) ?? hoyIso, ahora)}</span>
                   <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
@@ -157,39 +159,39 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
                 </span>
               ) : (
                 // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
-                <label className={styles.chip} htmlFor="agenda-fecha">
+                <label className={`${chip.chip} ${styles.chipContexto}`} htmlFor="agenda-fecha">
                   <IconoCalendario width={16} height={16} />
                   <span>{diaCorto(hoyIso, ahora)}</span>
                   <IconoCaret width={12} height={12} />
-                  <input type="date" id="agenda-fecha" className={styles.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
+                  <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
                 </label>
               )}
               {ciudades.length > 1 ? (
-                <button type="button" className={styles.chip} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
+                <button type="button" className={`${chip.chip} ${styles.chipContexto}`} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
                   <IconoPin width={16} height={16} />
                   <span>{ciudad.nombre}</span>
                   <IconoCaret width={12} height={12} />
                 </button>
               ) : (
                 // Una sola ciudad: se dice, no se elige (nada que abrir).
-                <span className={styles.chip}>
+                <span className={`${chip.chip} ${styles.chipContexto}`}>
                   <IconoPin width={16} height={16} />
                   <span>{ciudad.nombre}</span>
                 </span>
               )}
-              <button type="button" className={`${styles.chip} ${styles.lupa}`} onClick={() => { setBuscando(true); setEnfocar(true); }} aria-label="Buscar un evento">
+              <button type="button" className={`${chip.chip} ${styles.chipContexto} ${styles.lupa}`} onClick={() => { setBuscando(true); setEnfocar(true); }} aria-label="Buscar un evento">
                 <IconoBuscar width={18} height={18} />
               </button>
             </>
           )}
         </div>
-        <div className={styles.filtros} role="tablist" aria-label="Filtrar la agenda">
+        <Pestanas ariaLabel="Filtrar la agenda" repartidas className={styles.filtros}>
           {FILTROS.map((f) => (
-            <button key={f.clave} type="button" role="tab" className={styles.filtro} aria-selected={filtro === f.clave} onClick={() => setFiltro(f.clave)}>
+            <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => setFiltro(f.clave)}>
               {f.etiqueta}
-            </button>
+            </Pestana>
           ))}
-        </div>
+        </Pestanas>
       </div>
       {cuerpo}
       {hojaCiudad && (

@@ -5,36 +5,26 @@
   top: 0;
   z-index: 10;
   background: var(--fondo);
-  border-bottom: 1px solid var(--borde);
 }
 .contexto {
   display: flex;
   gap: var(--espacio-2);
   padding: var(--espacio-1) var(--gutter) var(--espacio-3);
 }
-.chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
+/* Chips de contexto: el dibujo es el de ui/Chip; aquí solo lo propio (más bajos y en negrita, con el icono suave).
+   Van dentro de .fija para pesar más que la clase base sin depender del orden de los módulos. */
+.fija .chipContexto {
   gap: 6px;
   min-height: 40px;
   padding: 0 var(--espacio-3) 0 10px;
-  border: 1px solid var(--borde);
-  border-radius: 999px;
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-sm);
   font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
-.chipActivo {
-  border-color: var(--primario);
-}
-.chip svg {
-  flex: none;
+.fija .chipContexto > svg {
+  margin-right: 0;
   color: var(--texto-suave);
+}
+.fija .marcado {
+  border-color: var(--primario);
 }
 .quitar {
   position: relative;
@@ -48,18 +38,6 @@
   font-weight: 400;
   cursor: pointer;
 }
-/* El campo nativo va encima del chip, invisible: el toque abre el selector del teléfono. */
-.encima {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  border: 0;
-  opacity: 0;
-  -webkit-appearance: none;
-  appearance: none;
-}
 /* La lupa: un chip redondo con solo el icono, pegado a la derecha de los chips de contexto. */
 .lupa {
   width: 40px;
@@ -67,7 +45,7 @@
   padding: 0;
   justify-content: center;
 }
-.lupa svg {
+.fija .lupa > svg {
   color: var(--texto);
 }
 /* El campo de búsqueda ocupa la fila de los chips con su mismo alto: la cabecera pegajosa no se mueve. */
@@ -78,28 +56,9 @@
 .campoBusqueda input {
   font-size: var(--letra-md);
 }
+/* Las pestañas de filtro (ui/Pestanas, repartidas): solo el gutter */
 .filtros {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
   padding: 0 var(--gutter);
-  margin-bottom: -1px;
-}
-.filtro {
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-1);
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  font-weight: 600;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.filtro[aria-selected="true"] {
-  color: var(--primario);
-  border-bottom-color: var(--primario);
-  font-weight: 700;
 }
 
 /* Grupos por día con título pegajoso debajo de la cabecera. Cada grupo pone su propio gutter. */

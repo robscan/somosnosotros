@@ -31,7 +31,7 @@
   --espacio-6: 24px;
   --alto-barra: 56px; /* barra superior: logotipo y sesión, o regreso y logotipo */
   --alto-nav: 60px; /* barra de navegación inferior (píldora de 32 + etiqueta), sin el área segura */
-  --alto-cabecera-agenda: 101px; /* chips (56) + pestañas (44) + línea (1): lo que se pega en la agenda */
+  --alto-cabecera-agenda: 100px; /* chips (56) + pestañas con su raya (44): lo que se pega en la agenda */
   --toque: 48px; /* alto de botones y campos: cómodo para el pulgar */
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
 

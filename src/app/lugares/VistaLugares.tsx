@@ -19,6 +19,7 @@ import {
 import type { Ciudad } from "@/lib/ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import renglon from "@/components/Renglon.module.css";
+import { Pestana, Pestanas } from "@/components/ui/Pestanas";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./lugares.module.css";
 
@@ -129,30 +130,14 @@ export default function VistaLugares({
   return (
     <main className={`raiz ${vista === "mapa" ? styles.sinRelleno : ""}`}>
       {barra}
-      <div
-        className={styles.pestanas}
-        role="tablist"
-        aria-label="Cómo ver los lugares"
-      >
-        <button
-          type="button"
-          role="tab"
-          className={styles.pestana}
-          aria-selected={vista === "mapa"}
-          onClick={() => cambiarVista("mapa")}
-        >
+      <Pestanas ariaLabel="Cómo ver los lugares" repartidas className={styles.pestanas}>
+        <Pestana activa={vista === "mapa"} onClick={() => cambiarVista("mapa")}>
           <IconoMapa width={18} height={18} /> Mapa
-        </button>
-        <button
-          type="button"
-          role="tab"
-          className={styles.pestana}
-          aria-selected={vista === "lista"}
-          onClick={() => cambiarVista("lista")}
-        >
+        </Pestana>
+        <Pestana activa={vista === "lista"} onClick={() => cambiarVista("lista")}>
           <IconoLista width={18} height={18} /> Lista
-        </button>
-      </div>
+        </Pestana>
+      </Pestanas>
 
       {vista === "mapa" ? (
         <div className={styles.cajaMapa}>
