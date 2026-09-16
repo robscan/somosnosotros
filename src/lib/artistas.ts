@@ -1,3 +1,4 @@
+import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
@@ -113,12 +114,16 @@ export type FiltroArtistas = { disciplina?: string | null; detalle?: string | nu
 /** Cuántos artistas trae cada página de la lista; "Ver más" suma otros tantos. */
 export const PAGINA_ARTISTAS = 100;
 
-/** Lo que va en la URL de /artistas: qué hacen (`hace`), qué en concreto (`que`), lo escrito (`q`) y cuántos se ven (`n`). */
-export type FiltroUrlArtistas = { hace?: string | null; que?: string | null; q?: string | null; n?: number | null };
+/**
+ * Lo que va en la URL de /artistas: la ciudad (slug; ausente = la inicial), qué hacen (`hace`), qué en concreto
+ * (`que`), lo escrito (`q`) y cuántos se ven (`n`).
+ */
+export type FiltroUrlArtistas = { ciudad?: string | null; hace?: string | null; que?: string | null; q?: string | null; n?: number | null };
 
 /** La URL de la lista con un filtro; sin parámetros vacíos, para que el enlace sea limpio y compartible. */
 export function hrefArtistas(f: FiltroUrlArtistas): string {
   const p = new URLSearchParams();
+  if (f.ciudad && f.ciudad !== CIUDAD_INICIAL.slug) p.set("ciudad", f.ciudad);
   if (f.hace) p.set("hace", f.hace);
   if (f.que) p.set("que", f.que);
   if (f.q?.trim()) p.set("q", f.q.trim());
@@ -228,6 +233,8 @@ export type DatosArtista = {
   descripcion: string | null;
   foto: string | null;
   redes: Enlace[];
+  /** La ciudad en la que la persona estaba navegando al registrar (un artista no tiene punto del que deducirla). */
+  ciudad: string;
 };
 export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "enlaces", string>>;
 
@@ -244,6 +251,7 @@ export function validarArtista(entrada: Record<string, FormDataEntryValue | null
     descripcion: limpiar(entrada.descripcion) || null,
     foto: limpiar(entrada.foto) || null,
     redes,
+    ciudad: ciudadCanonica(limpiar(entrada.ciudad)) || CIUDAD_INICIAL.nombre,
   };
   const errores: ErroresArtista = {};
   if (!datos.nombre) errores.nombre = "Escribe el nombre del artista o grupo.";

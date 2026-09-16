@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import ChipCiudad from "@/components/Ciudad";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaArtista, etiquetaDisciplina, hrefArtistas, textoProximaFecha, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type Disciplina, type FiltroLeido } from "@/lib/artistas";
+import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoPincel, IconoPluma } from "./ui/Iconos";
 import Boton from "@/components/ui/Boton";
 import comun from "./Lista.module.css";
@@ -19,6 +23,8 @@ type Props = {
   conChips: boolean;
   pagina: number;
   conSesion: boolean;
+  ciudad: Ciudad;
+  ciudades: CiudadConDatos[];
 };
 
 /** Icono de lo que hace: nota (música), máscara (teatro, danza, circo), pincel (artes visuales, cine), pluma (letras). */
@@ -47,18 +53,27 @@ export function IconoDisciplina({ disciplina, size = 15 }: { disciplina: Discipl
  * dentro de una disciplina con muchos artistas, un segundo nivel de chips por detalle (género, técnica).
  * Todo el filtro vive en la URL y lo aplica el servidor: la página trae `pagina` artistas y "Ver más" pide otros tantos.
  */
-export default function ListaArtistas({ artistas, total, totalCiudad, disciplinas, detalles, filtro, conChips, pagina, conSesion }: Props) {
+export default function ListaArtistas({ artistas, total, totalCiudad, disciplinas, detalles, filtro, conChips, pagina, conSesion, ciudad, ciudades }: Props) {
+  // La ciudad viaja en la URL como en la agenda y Lugares (ausente = la inicial, para que el enlace sea limpio).
+  const cSlug = ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug;
   const hrefNuevo = (nombre?: string) => {
-    const destino = `/artistas/nuevo${nombre ? `?nombre=${encodeURIComponent(nombre)}` : ""}`;
+    const p = new URLSearchParams();
+    if (cSlug) p.set("ciudad", cSlug);
+    if (nombre) p.set("nombre", nombre);
+    const s = p.toString();
+    const destino = `/artistas/nuevo${s ? `?${s}` : ""}`;
     return conSesion ? destino : `/entrar?siguiente=${encodeURIComponent(destino)}`;
   };
+  // Cambiar de ciudad suelta el filtro (disciplina y detalle son de la ciudad que se deja); como en Lugares.
+  const chipCiudad = <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => hrefArtistas({ ciudad: c.slug === CIUDAD_INICIAL.slug ? null : c.slug })} />;
   const queHacen = filtro.que ? (detalles.find((x) => x.valor === filtro.que)?.etiqueta ?? filtro.que) : filtro.hace ? etiquetaDisciplina(filtro.hace) : null;
 
   if (totalCiudad === 0) {
     return (
       <section className={comun.vacio}>
         <h2>Artistas</h2>
-        <p>Aún no hay artistas registrados en San Luis Potosí. ¿Eres artista o grupo, o conoces a alguien? Regístralo.</p>
+        <Chips ariaLabel="Ciudad">{chipCiudad}</Chips>
+        <p>Aún no hay artistas registrados en {ciudad.nombre}. ¿Eres artista o grupo, o conoces a alguien? Regístralo.</p>
         <Boton href={hrefNuevo()} variante="secundario">
           Registrar un artista
         </Boton>
@@ -70,28 +85,31 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
       {totalCiudad >= UMBRAL_BUSCAR_ARTISTAS && (
         <div className={styles.fija}>
           <Buscador valor={filtro.q ?? ""} placeholder="Buscar por nombre" ariaLabel="Buscar artista por nombre" />
-          {conChips && disciplinas.length > 1 && (
-            <Chips ariaLabel="Qué hacen">
-              <ChipEnlace activo={!filtro.hace} href={hrefArtistas({ q: filtro.q })}>
-                Todos
-                <Cuenta n={totalCiudad} />
-              </ChipEnlace>
-              {disciplinas.map((d) => (
-                <ChipEnlace key={d.valor} activo={filtro.hace === d.valor} href={hrefArtistas({ hace: filtro.hace === d.valor ? null : d.valor, q: filtro.q })}>
-                  {d.etiqueta}
-                  {d.n != null && <Cuenta n={d.n} />}
+          <Chips ariaLabel="Ciudad y qué hacen">
+            {chipCiudad}
+            {conChips && disciplinas.length > 1 && (
+              <>
+                <ChipEnlace activo={!filtro.hace} href={hrefArtistas({ ciudad: cSlug, q: filtro.q })}>
+                  Todos
+                  <Cuenta n={totalCiudad} />
                 </ChipEnlace>
-              ))}
-            </Chips>
-          )}
+                {disciplinas.map((d) => (
+                  <ChipEnlace key={d.valor} activo={filtro.hace === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace === d.valor ? null : d.valor, q: filtro.q })}>
+                    {d.etiqueta}
+                    {d.n != null && <Cuenta n={d.n} />}
+                  </ChipEnlace>
+                ))}
+              </>
+            )}
+          </Chips>
           {conChips && detalles.length > 0 && (
             <Chips ariaLabel={`Qué ${etiquetaDisciplina(filtro.hace!).toLowerCase()}`}>
-              <ChipEnlace activo={!filtro.que} href={hrefArtistas({ hace: filtro.hace, q: filtro.q })}>
+              <ChipEnlace activo={!filtro.que} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, q: filtro.q })}>
                 Todo
                 {disciplinas.find((d) => d.valor === filtro.hace)?.n != null && <Cuenta n={disciplinas.find((d) => d.valor === filtro.hace)!.n!} />}
               </ChipEnlace>
               {detalles.map((d) => (
-                <ChipEnlace key={d.valor} activo={filtro.que === d.valor} href={hrefArtistas({ hace: filtro.hace, que: filtro.que === d.valor ? null : d.valor, q: filtro.q })}>
+                <ChipEnlace key={d.valor} activo={filtro.que === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, que: filtro.que === d.valor ? null : d.valor, q: filtro.q })}>
                   {d.etiqueta}
                   {d.n != null && <Cuenta n={d.n} />}
                 </ChipEnlace>
@@ -146,7 +164,7 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
             ))}
           </ul>
           {total > artistas.length && (
-            <Boton href={hrefArtistas({ ...filtro, n: filtro.n + pagina })} variante="secundario" className={styles.verMas} scroll={false}>
+            <Boton href={hrefArtistas({ ...filtro, ciudad: cSlug, n: filtro.n + pagina })} variante="secundario" className={styles.verMas} scroll={false}>
               Ver más ({total - artistas.length} más)
             </Boton>
           )}

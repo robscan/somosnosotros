@@ -1,21 +1,30 @@
 import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
-import { usuarioActual } from "@/lib/supabase/servidor";
+import { ciudadPorSlug, CIUDAD_INICIAL } from "@/lib/ciudad";
+import { cargarCiudades } from "@/lib/ciudades";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioArtista from "../FormularioArtista";
 import { crearArtista } from "../acciones";
 
 export const metadata = { title: "Registrar artista · Somos Nosotros" };
 
-export default async function NuevoArtista({ searchParams }: { searchParams: Promise<{ nombre?: string }> }) {
-  const { nombre } = await searchParams;
+export default async function NuevoArtista({ searchParams }: { searchParams: Promise<{ nombre?: string; ciudad?: string }> }) {
+  const { nombre, ciudad: slug } = await searchParams;
+  const p = new URLSearchParams();
+  if (slug) p.set("ciudad", slug);
+  if (nombre) p.set("nombre", nombre);
+  const q = p.toString();
   const actual = await usuarioActual();
-  if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/artistas/nuevo${nombre ? `?nombre=${encodeURIComponent(nombre)}` : ""}`)}`);
+  if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/artistas/nuevo${q ? `?${q}` : ""}`)}`);
+  // Un artista no tiene punto del que deducir ciudad: se registra en la que la persona tenía elegida (bitácora 051).
+  const ciudades = await cargarCiudades(await clienteServidor());
+  const ciudad = ciudadPorSlug(slug, ciudades);
   return (
     <main className="pagina">
-      <Barra cerrar={{ href: "/artistas", texto: "Artistas" }} />
+      <Barra cerrar={{ href: `/artistas${ciudad.slug === CIUDAD_INICIAL.slug ? "" : `?ciudad=${ciudad.slug}`}`, texto: "Artistas" }} />
       <h1 className="titulo">Registrar artista</h1>
       <p className="subtitulo">Con el nombre basta. Lo demás se puede completar después.</p>
-      <FormularioArtista accion={crearArtista} usuarioId={actual.perfil.id} nombreInicial={nombre?.slice(0, 80)} esAdmin={actual.perfil.rol === "admin"} />
+      <FormularioArtista accion={crearArtista} usuarioId={actual.perfil.id} nombreInicial={nombre?.slice(0, 80)} esAdmin={actual.perfil.rol === "admin"} ciudad={ciudad.nombre} />
     </main>
   );
 }
