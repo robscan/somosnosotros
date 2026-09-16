@@ -14,7 +14,7 @@
 4. **Comunidad**: decir "voy" a un evento y ver quién más va; seguir lugares y artistas; recibir avisos.
 5. **Artistas y grupos locales**: quiénes hacen la cultura de la ciudad, en qué eventos se presentan; cualquier persona con sesión los registra y el artista real puede reclamar o retirar su nombre.
 
-**Qué NO es.** No es un pasaporte ni una colección de lugares visitados. No es red social de likes ni ranking. No es app de tienda en su primera versión: es web móvil (instalable en el teléfono).
+**Qué NO es.** No es un pasaporte ni una colección de lugares visitados. No es red social de likes ni ranking. No es app de tienda: es web móvil, instalable en el inicio del teléfono (la app de iPhone en la tienda se decidió y se detuvo el 2026-09-16).
 
 **Reglas simples.**
 - Español. Mobile first. Tema claro.
