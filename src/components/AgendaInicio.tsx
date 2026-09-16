@@ -159,7 +159,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
                 </span>
               ) : (
                 // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
-                <label className={`${chip.chip} ${styles.chipContexto}`} htmlFor="agenda-fecha">
+                <label className={`${chip.chip} ${chip.chipNativo} ${styles.chipContexto}`} htmlFor="agenda-fecha">
                   <IconoCalendario width={16} height={16} />
                   <span>{diaCorto(hoyIso, ahora)}</span>
                   <IconoCaret width={12} height={12} />
