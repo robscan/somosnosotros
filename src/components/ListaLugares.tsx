@@ -8,6 +8,7 @@ import { calleCorta, etiquetaTipo, filtrarLugares, ordenarLugares, textoProximo,
 import { Chips } from "./ui/Chip";
 import { IconoCalendario, IconoPin } from "./ui/Iconos";
 import Boton from "@/components/ui/Boton";
+import { CampoBuscar } from "@/components/ui/Buscador";
 import comun from "./Lista.module.css";
 import renglon from "./Renglon.module.css";
 import styles from "./ListaLugares.module.css";
@@ -53,7 +54,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
   return (
     <section className={styles.lista} aria-label="Lugares">
       {total >= UMBRAL_BUSCAR_LUGARES && (
-        <input type="search" className={styles.buscar} placeholder="Buscar un lugar por nombre" aria-label="Buscar un lugar por nombre" value={busqueda} onChange={(e) => onBusqueda(e.target.value)} autoCapitalize="none" autoCorrect="off" />
+        <CampoBuscar className={styles.buscar} placeholder="Buscar un lugar por nombre" ariaLabel="Buscar un lugar por nombre" valor={busqueda} onCambiar={onBusqueda} />
       )}
       {chips && <Chips ariaLabel="Cerca de mí y tipo de lugar">{chips}</Chips>}
       {aviso}

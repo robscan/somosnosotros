@@ -69,24 +69,11 @@
   margin-bottom: 0;
   padding: 0 var(--gutter) 0;
 }
-.sobreMapa button {
-  box-shadow: var(--sombra);
+.sobreMapa > div button {
+  box-shadow: var(--sombra); /* los chips de tipo; la ✕ del buscador no */
 }
 .buscarMapa {
-  width: auto; /* hijo del grid con margen a los lados: nunca 100 %, se saldría */
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  font-size: var(--letra-md);
-  box-shadow: var(--sombra);
-  -webkit-appearance: none;
-  appearance: none;
-}
-.buscarMapa:focus {
-  outline: 2px solid var(--primario);
-  outline-offset: 1px;
+  box-shadow: var(--sombra); /* el buscador es ui/Buscador (con su ✕); aquí solo flota */
 }
 /* Lo que encontró la búsqueda, bajo el buscador: renglones de ui/Sugerencia; la caja flota con sombra */
 .resultadosMapa {

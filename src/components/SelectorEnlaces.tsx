@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { etiquetaEnlace, LIMITE_ENLACES, reconocerEnlace, type Enlace } from "@/lib/enlaces";
 import IconoRed from "./ui/IconoRed";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./SelectorEnlaces.module.css";
 
 type Props = { inicial: Enlace[]; error?: string };
@@ -63,30 +65,33 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
             {enlaces.length ? "Otro enlace" : "Redes y contacto (opcional)"}
           </label>
           <div className={styles.fila}>
-            <input
-              id="campo-enlace"
-              type="text"
-              className={styles.campo}
-              value={texto}
-              onChange={(e) => {
-                setTexto(e.target.value);
-                setAviso(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  agregar();
-                }
-              }}
-              onBlur={() => texto.trim() && agregar()}
-              placeholder="Ej. instagram.com/losvecinos, @losvecinos, vimeo.com/…"
-              inputMode="url"
-              autoCapitalize="none"
-              autoCorrect="off"
-              autoComplete="off"
-              aria-describedby={aviso || error ? "campo-enlace-aviso" : undefined}
-              aria-invalid={!!aviso || !!error}
-            />
+            <span className={limpiar.caja}>
+              <input
+                id="campo-enlace"
+                type="text"
+                className={styles.campo}
+                value={texto}
+                onChange={(e) => {
+                  setTexto(e.target.value);
+                  setAviso(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    agregar();
+                  }
+                }}
+                onBlur={() => texto.trim() && agregar()}
+                placeholder="Ej. instagram.com/losvecinos, @losvecinos, vimeo.com/…"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="off"
+                aria-describedby={aviso || error ? "campo-enlace-aviso" : undefined}
+                aria-invalid={!!aviso || !!error}
+              />
+              <Limpiar visible={!!texto} />
+            </span>
             <button type="button" className={styles.agregar} onClick={agregar} disabled={!texto.trim()}>
               Añadir
             </button>

@@ -5,6 +5,8 @@ import { useState } from "react";
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import { IconoBuscar, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type ModoSitio } from "@/lib/eventos";
 import type { Punto } from "@/lib/geo";
@@ -65,6 +67,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
         <div className={styles.otro}>
           <label className={`${canon.campo} ${canon.sinIcono}`}>
             <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
+            <Limpiar visible={!!otro.sitioTexto} />
           </label>
           <div className={styles.mapa}>
             <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} />
@@ -80,7 +83,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           </div>
           {otro.reservado && (
             <>
-              <input type="text" value={otro.direccionPrivada} onChange={(e) => cambiar({ direccionPrivada: e.target.value })} maxLength={LIMITES_EVENTO.direccion} placeholder="Dirección exacta: calle y número, colonia" aria-label="Dirección exacta" className={canon.entrada} autoComplete="off" />
+              <span className={limpiar.caja}>
+                <input type="text" value={otro.direccionPrivada} onChange={(e) => cambiar({ direccionPrivada: e.target.value })} maxLength={LIMITES_EVENTO.direccion} placeholder="Dirección exacta: calle y número, colonia" aria-label="Dirección exacta" className={canon.entrada} autoComplete="off" />
+                <Limpiar visible={!!otro.direccionPrivada} />
+              </span>
               <select value={otro.revelarHoras} onChange={(e) => cambiar({ revelarHoras: Number(e.target.value) })} aria-label="Cuándo se revela" className={styles.select}>
                 {REVELAR_OPCIONES.map((o) => (
                   <option key={o.horas} value={o.horas}>
@@ -88,7 +94,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
                   </option>
                 ))}
               </select>
-              <input type="text" value={otro.indicaciones} onChange={(e) => cambiar({ indicaciones: e.target.value })} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Indicaciones, ej. portón verde (opcional)" aria-label="Indicaciones" className={canon.entrada} autoComplete="off" />
+              <span className={limpiar.caja}>
+                <input type="text" value={otro.indicaciones} onChange={(e) => cambiar({ indicaciones: e.target.value })} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Indicaciones, ej. portón verde (opcional)" aria-label="Indicaciones" className={canon.entrada} autoComplete="off" />
+                <Limpiar visible={!!otro.indicaciones} />
+              </span>
             </>
           )}
           <button type="button" className={styles.volver} onClick={() => setVista("lista")}>
@@ -109,6 +118,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       <label className={canon.campo}>
         <IconoBuscar width={20} height={20} />
         <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre del lugar" aria-label="Buscar el lugar" autoComplete="off" autoFocus />
+        <Limpiar visible={!!q} />
       </label>
       {filtrados.length > 0 ? (
         <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">

@@ -1,4 +1,6 @@
 import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
+import Limpiar from "./Limpiar";
+import limpiar from "./Limpiar.module.css";
 import styles from "./Campo.module.css";
 
 type Base = { etiqueta: string; ayuda?: string; error?: string; name: string };
@@ -24,7 +26,10 @@ export default function Campo(props: PropsInput | PropsArea) {
           {...omitir(props)}
         />
       ) : (
-        <input id={id} className={styles.control} aria-invalid={!!error} aria-describedby={describedBy} {...omitir(props)} />
+        <span className={limpiar.caja}>
+          <input id={id} className={styles.control} aria-invalid={!!error} aria-describedby={describedBy} {...omitir(props)} />
+          <Limpiar visible={typeof props.value === "string" && props.value.length > 0} />
+        </span>
       )}
       {ayuda && !error && (
         <p id={`${id}-ayuda`} className={styles.ayuda}>

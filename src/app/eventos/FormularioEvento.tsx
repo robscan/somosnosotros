@@ -4,6 +4,8 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Hoja from "@/components/ui/Hoja";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBoleto, IconoBuscar, IconoCamara, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
@@ -276,6 +278,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         {/* 1. El nombre, con la cámara dentro: leer el cartel llena todo (decisión 1). */}
         <label className={`${canon.campo} ${canon.sinIcono} ${ofrecerCartel ? canon.conAccion : ""}`}>
           <input name="titulo" type="text" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={LIMITES_EVENTO.titulo} placeholder="Nombre del evento" aria-label="Nombre del evento" aria-invalid={!!errores.titulo} autoComplete="off" autoFocus={esAlta} required />
+          <Limpiar visible={!!titulo} desplazada={ofrecerCartel} />
           {ofrecerCartel && (
             <span className={canon.accionCampo} title="Leer el cartel" aria-disabled={subiendo || leyendo}>
               <IconoCamara width={22} height={22} />
@@ -384,7 +387,12 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                     Con costo
                   </Chip>
                 </div>
-                {!gratis && <input type="text" name="precio" value={precio} onChange={(e) => setPrecio(e.target.value)} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" aria-label="Precio" className={canon.entrada} autoComplete="off" autoFocus />}
+                {!gratis && (
+                <span className={limpiar.caja}>
+                  <input type="text" name="precio" value={precio} onChange={(e) => setPrecio(e.target.value)} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" aria-label="Precio" className={canon.entrada} autoComplete="off" autoFocus />
+                  <Limpiar visible={!!precio} />
+                </span>
+              )}
                 {errores.precio && (
                   <p className={canon.error} role="alert">
                     {errores.precio}

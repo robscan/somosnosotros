@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
-import { IconoBuscar } from "./Iconos";
+import { IconoBuscar, IconoCerrar } from "./Iconos";
 import styles from "./Buscador.module.css";
 
 type PropsCampo = {
@@ -14,18 +14,19 @@ type PropsCampo = {
   autoFocus?: boolean;
   /** Al borrar con la ✕ (si no se da, la ✕ solo vacía el texto). */
   onCerrar?: () => void;
+  onFocus?: () => void;
   className?: string;
 };
 
 /** El campo de búsqueda a secas (icono, texto, ✕): lo usan el Buscador de la URL y la agenda, que filtra en el teléfono. */
-export function CampoBuscar({ valor, onCambiar, placeholder, ariaLabel, autoFocus = false, onCerrar, className = "" }: PropsCampo) {
+export function CampoBuscar({ valor, onCambiar, placeholder, ariaLabel, autoFocus = false, onCerrar, onFocus, className = "" }: PropsCampo) {
   return (
     <label className={`${styles.buscar} ${className}`}>
       <IconoBuscar width={18} height={18} />
-      <input type="search" placeholder={placeholder} aria-label={ariaLabel} value={valor} onChange={(e) => onCambiar(e.target.value)} autoCapitalize="none" autoCorrect="off" autoFocus={autoFocus} enterKeyHint="search" />
+      <input type="search" placeholder={placeholder} aria-label={ariaLabel} value={valor} onChange={(e) => onCambiar(e.target.value)} autoCapitalize="none" autoCorrect="off" autoFocus={autoFocus} onFocus={onFocus} enterKeyHint="search" />
       {(valor || onCerrar) && (
-        <button type="button" className={styles.limpiar} onClick={() => (onCerrar ? onCerrar() : onCambiar(""))} aria-label={onCerrar ? "Cerrar la búsqueda" : "Borrar la búsqueda"}>
-          ✕
+        <button type="button" className={styles.limpiar} onMouseDown={(e) => e.preventDefault()} onClick={() => (onCerrar ? onCerrar() : onCambiar(""))} aria-label={onCerrar ? "Cerrar la búsqueda" : "Borrar la búsqueda"}>
+          <IconoCerrar width={16} height={16} />
         </button>
       )}
     </label>

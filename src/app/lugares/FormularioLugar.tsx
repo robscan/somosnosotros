@@ -6,6 +6,8 @@ import CampoImagenUrl from "@/components/CampoImagenUrl";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBuscar, IconoEtiqueta, IconoMas, IconoOk, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
@@ -240,6 +242,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         <label className={canon.campo}>
           <IconoBuscar width={20} height={20} />
           <input name="nombre" type="text" value={nombre} onChange={(e) => alEscribirNombre(e.target.value)} maxLength={LIMITES_LUGAR.nombre} placeholder="Nombre del lugar" aria-label="Nombre del lugar" aria-invalid={!!errores.nombre} autoComplete="off" autoFocus={esAlta} required />
+          <Limpiar visible={!!nombre} />
         </label>
         {(buscando || recuperando) && <p className={canon.estado}>{recuperando ? "Trayendo la ubicación…" : "Buscando…"}</p>}
         {errores.nombre && (
@@ -333,7 +336,12 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
                     </Chip>
                   ))}
                 </div>
-                {tipo === "otro" && <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_LUGAR.detalle} placeholder="¿Qué es? Ej. taller de cerámica (opcional)" aria-label="Qué es" className={canon.entrada} autoComplete="off" />}
+                {tipo === "otro" && (
+                  <span className={limpiar.caja}>
+                    <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_LUGAR.detalle} placeholder="¿Qué es? Ej. taller de cerámica (opcional)" aria-label="Qué es" className={canon.entrada} autoComplete="off" />
+                    <Limpiar visible={!!detalle} />
+                  </span>
+                )}
                 {errores.detalle && (
                   <p className={canon.error} role="alert">
                     {errores.detalle}

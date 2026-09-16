@@ -7,20 +7,7 @@
 .lista > div {
   padding-inline: var(--gutter); /* fila de chips: el primero alineado con la columna */
 }
+/* El buscador (ui/Buscador, con su ✕) en la columna */
 .buscar {
-  display: block;
-  width: calc(100% - 2 * var(--gutter)); /* un input no se estira solo: ancho de la columna */
-  min-height: var(--toque-min);
   margin: var(--espacio-3) var(--gutter) var(--espacio-2);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  font-size: var(--letra-md);
-  -webkit-appearance: none;
-  appearance: none;
-}
-.buscar:focus {
-  outline: 2px solid var(--primario);
-  outline-offset: 1px;
 }
