@@ -91,7 +91,7 @@ export async function borrarArtista(id: string) {
   if (!data) redirect(`/artistas/${id}?error=borrar`);
   revalidatePath("/artistas");
   revalidatePath("/");
-  redirect("/artistas?borrado=artista");
+  redirect("/borrado?que=artista");
 }
 
 export type ResultadoReclamo = { ok: true } | { ok: false; error: string };

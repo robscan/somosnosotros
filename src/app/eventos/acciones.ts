@@ -177,5 +177,5 @@ export async function borrarEvento(id: string, lugarId: string | null) {
   if (!data) redirect(`/eventos/${id}?error=borrar`);
   revalidatePath("/");
   if (lugarId) revalidatePath(`/lugares/${lugarId}`);
-  redirect(lugarId ? `/lugares/${lugarId}?borrado=evento` : "/?borrado=evento");
+  redirect("/borrado?que=evento");
 }

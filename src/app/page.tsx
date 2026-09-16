@@ -45,13 +45,13 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   return { eventos, seguidos, eventosSeguidos, hayLugares: (l.count ?? 0) > 0, porCiudad };
 }
 
-export default async function Inicio({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string; borrado?: string }> }) {
-  const { cuenta, ciudad: slug, borrado } = await searchParams;
+export default async function Inicio({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }) {
+  const { cuenta, ciudad: slug } = await searchParams;
   const ciudad = ciudadPorSlug(slug);
   const actual = await usuarioActual();
   const { eventos, seguidos, eventosSeguidos, hayLugares, porCiudad } = await cargar(ciudad, actual?.perfil.id ?? null);
   const ciudades = CIUDADES.map((c) => ({ ...c, eventos: porCiudad.get(c.nombre) ?? 0 })).filter((c) => c.eventos > 0 || c.slug === ciudad.slug);
-  const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : borrado === "lugar" ? "Lugar borrado." : borrado === "evento" ? "Evento borrado." : null;
+  const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
 
   return (
     <main className="raiz">

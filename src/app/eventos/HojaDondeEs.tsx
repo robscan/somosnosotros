@@ -9,6 +9,7 @@ import { IconoBuscar, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type ModoSitio } from "@/lib/eventos";
 import type { Punto } from "@/lib/geo";
 import { etiquetaLugar, normalizarNombre, type LugarResumen } from "@/lib/lugares";
+import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./HojaDondeEs.module.css";
 
@@ -138,7 +139,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           </button>
         </li>
         <li>
-          <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} className={`${styles.lugar} ${styles.atajo}`}>
+          <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} className={`${styles.lugar} ${styles.atajo}`} onClick={avisarQueVuelvo}>
             <IconoMas width={20} height={20} />
             <b>Registrar un lugar nuevo</b>
             <small>Vuelves aquí con él elegido</small>

@@ -24,7 +24,7 @@ import Seguir from "@/components/Seguir";
 import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
 import styles from "./ficha.module.css";
 
-type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string; borrado?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
 type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function FichaLugar({ params, searchParams }: Params) {
   const { id } = await params;
-  const { nuevo, accion, error, borrado } = (await searchParams) ?? {};
+  const { nuevo, accion, error } = (await searchParams) ?? {};
   const [lugar, actual] = await Promise.all([cargarLugar(id), usuarioActual()]);
   if (!lugar) notFound();
   const supabase = await clienteServidor();
@@ -164,11 +164,6 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       {error === "borrar" && (
         <p className="aviso-error" role="alert">
           No se pudo borrar. ¿Sigues con sesión y es tu lugar?
-        </p>
-      )}
-      {borrado === "evento" && (
-        <p className="aviso-ok" role="status">
-          Evento borrado.
         </p>
       )}
       {lugar.privado ? (

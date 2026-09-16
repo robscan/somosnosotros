@@ -1,0 +1,47 @@
+/* Estado vacío tras borrar: icono, qué pasó, la salida principal y otra discreta. Centrado, sin cajas. */
+.vacio {
+  display: grid;
+  justify-items: center;
+  gap: var(--espacio-2);
+  padding: 48px var(--gutter) 0;
+  text-align: center;
+}
+.icono {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--espacio-2);
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+}
+.vacio h1 {
+  font-size: var(--letra-2xl);
+  font-weight: 700;
+}
+.vacio p {
+  max-width: 32ch;
+  margin-bottom: var(--espacio-4);
+  color: var(--texto-suave);
+  line-height: 1.4;
+}
+.accion {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-5);
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  text-decoration: none;
+}
+.otro {
+  min-height: var(--toque-min);
+  display: inline-flex;
+  align-items: center;
+  color: var(--texto);
+  font-weight: 600;
+}

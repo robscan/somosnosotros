@@ -49,6 +49,10 @@ flowchart TD
 
 **Excepciones declaradas:** ninguna.
 
+7. **La hoja sigue al teclado** (reto del founder 2026-09-15). Cuando una hoja abre el teclado, se coloca en el área visible (visual viewport) en vez de en la ventana entera, así el campo y los botones quedan a la vista; sin teclado no cambia nada. Se queda la hoja: no hace falta pantalla completa. *Fitts (el campo donde está el dedo), El gesto del usuario gana.*
+8. **Salir del alta con algo escrito pregunta** (reto del founder 2026-09-15). Atrás con nombre, sitio, artista, descripción o foto abre la hoja "¿Salir sin publicar? Se borra lo que escribiste." con Seguir editando primero y Salir y borrar en rojo. El borrador ya no vuelve solo: solo regresa al volver de "Registrar un lugar nuevo"; en cualquier otro caso el alta empieza limpia. *Prevención antes que corrección, Evidencia (dice qué se pierde), lo destructivo detrás de una capa.*
+9. **Borrar confirma con un estado vacío** (reto del founder 2026-09-15). Borrar un evento, un lugar o un artista lleva a una pantalla raíz "Evento borrado" con qué pasó, Ir a la agenda como salida principal y "Publicar otro evento" discreto; antes abría otra ficha con un aviso arriba y parecía que se había abierto otra cosa. *Peak-End (el final del flujo se escribe), Evidencia, Jakob.*
+
 ## Qué sigue
 
 1. ~~El founder corrige 14, recorre el prototipo y firma.~~ Firmado el 2026-09-15 (noche): todo, con Editar perfil en pantalla completa en vez de hoja.

@@ -100,5 +100,5 @@ export async function borrarLugar(id: string) {
   const { data } = await supabase.from("lugares").delete().eq("id", id).select("id").maybeSingle();
   if (!data) redirect(`/lugares/${id}?error=borrar`);
   revalidatePath("/");
-  redirect("/?borrado=lugar");
+  redirect("/borrado?que=lugar");
 }
