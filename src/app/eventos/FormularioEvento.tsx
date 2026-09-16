@@ -3,7 +3,6 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
-import Hoja from "@/components/ui/Hoja";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
@@ -15,7 +14,8 @@ import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type Sit
 import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
-import { ponerGuardia, quitarGuardia, type Guardia } from "@/lib/guardiaSalida";
+import { quitarGuardia } from "@/lib/guardiaSalida";
+import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { leerCartelAccion, type ResultadoEvento } from "./acciones";
@@ -169,22 +169,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     } catch {}
   }, [esAlta, titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien]);
 
-  // Con algo escrito sin publicar, Atrás pregunta antes de irse; al confirmar, el borrador se olvida.
-  const hayAlgo = !!(titulo.trim() || (modoSitio === "lugar" ? lugarId && lugarId !== lugarInicial : otro.sitioTexto) || descripcion || imagen || (quien.length && !quienInicial?.length));
-  const [salida, setSalida] = useState<(() => void) | null>(null);
-  useEffect(() => {
-    if (modo === "editar" || !hayAlgo) return;
-    const g: Guardia = (continuar) => setSalida(() => continuar);
-    ponerGuardia(g);
-    return () => quitarGuardia(g);
-  }, [modo, hayAlgo]);
-  function salirYBorrar() {
-    const continuar = salida;
-    setSalida(null);
-    olvidarBorrador();
-    quitarGuardia();
-    continuar?.();
-  }
+  // Atrás o la ✕ preguntan solo si el formulario cambió desde que se abrió (guardia estándar de las altas); al confirmar, el borrador se olvida.
+  const formRef = useRef<HTMLFormElement>(null);
+  const hojaSalir = useSalirSinPublicar(formRef, modo !== "editar", olvidarBorrador);
 
   const lugar = lugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && esAlta;
@@ -267,6 +254,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   return (
     <>
       <form
+        ref={formRef}
         action={(fd) => {
           // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
           if (esAlta) olvidarBorrador();
@@ -485,20 +473,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           onCerrar={() => setHoja(false)}
         />
       )}
-      {salida && (
-        <Hoja etiqueta="Salir sin publicar" onCerrar={() => setSalida(null)}>
-          <div className={styles.salida}>
-            <h3>¿Salir sin publicar?</h3>
-            <p>Se borra lo que escribiste.</p>
-            <Boton type="button" onClick={() => setSalida(null)}>
-              Seguir editando
-            </Boton>
-            <Boton type="button" variante="peligro" onClick={salirYBorrar}>
-              Salir y borrar
-            </Boton>
-          </div>
-        </Hoja>
-      )}
+      {hojaSalir}
     </>
   );
 }

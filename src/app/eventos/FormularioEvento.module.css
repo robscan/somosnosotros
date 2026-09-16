@@ -16,16 +16,3 @@
 }
 
 /* Hoja "¿Salir sin publicar?": la pregunta, la consecuencia y dos salidas, seguir editando primero. */
-.salida {
-  display: grid;
-  gap: var(--espacio-3);
-  padding-top: var(--espacio-2);
-}
-.salida h3 {
-  font-size: var(--letra-xl);
-}
-.salida p {
-  margin-top: calc(-1 * var(--espacio-2));
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
