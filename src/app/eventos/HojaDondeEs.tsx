@@ -115,7 +115,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   return (
     <Hoja etiqueta="Dónde es" onCerrar={onCerrar}>
       <h3>Dónde es</h3>
-      <label className={canon.campo}>
+      <label className={`${canon.campo} ${styles.pegajoso}`}>
         <IconoBuscar width={20} height={20} />
         <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre del lugar" aria-label="Buscar el lugar" autoComplete="off" autoFocus />
         <Limpiar visible={!!q} />
