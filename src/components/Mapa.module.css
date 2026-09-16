@@ -73,3 +73,24 @@
   border: 2.5px solid #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
+
+/* "Estoy aquí" sobre un mapa embebido (las hojas Dónde está y Dónde es): abajo a la izquierda, redondo, sin borde */
+.ubicame {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  border: none;
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+}
+.ubicame:disabled {
+  opacity: 0.6;
+}

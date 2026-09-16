@@ -43,7 +43,6 @@ export default function Hoja({ etiqueta, onCerrar, children }: Props) {
   return createPortal(
     <div className={styles.fondo} style={marco ? { top: marco.top, height: marco.height, bottom: "auto" } : undefined} onClick={onCerrar}>
       <div className={styles.hoja} role="dialog" aria-label={etiqueta} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.asa} aria-hidden="true" />
         <button type="button" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar">
           ✕
         </button>

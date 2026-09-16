@@ -1,22 +1,22 @@
 /* ==========================================================================
-   Ficha de artista (docs/rediseno/08-artistas-flujo-y-estados.md). Lo común con las otras fichas
-   (página, datos, acciones, autor, barra pegajosa, menú, publicado) está en components/ui/Ficha.module.css.
-   1. Nota al autor · 2. Se presenta en
+   Lo propio de las fichas de lugar (docs/rediseno/06) y de artista (docs/rediseno/08), idéntico en ambas.
+   Lo común con la ficha de evento (página, datos, acciones, autor, barra pegajosa, menú, publicado) está en Ficha.module.css.
+   1. Nota al autor · 2. Lista por día (Próximos eventos · Se presenta en) con el botón de publicar al final
    ========================================================================== */
 
-/* 1. Al autor, cuando la ficha está por completar */
+/* 1. Al autor, cuando faltan descripción, redes o foto */
 .nota {
   margin-bottom: var(--espacio-3);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
 
-/* 2. Se presenta en: como la agenda, por día, con el sitio; publicar una fecha va al final */
-.fechas {
+/* 2. Como la agenda, por día; el título de la sección se queda pegado bajo la barra */
+.lista {
   margin-bottom: var(--espacio-5);
   scroll-margin-top: var(--espacio-3);
 }
-.fechas h2 {
+.lista h2 {
   position: sticky;
   top: var(--alto-barra);
   z-index: 5;
@@ -25,17 +25,17 @@
   border-bottom: 1px solid var(--texto);
   font-size: var(--letra-xl);
 }
-.fechas h2 span {
+.lista h2 span {
   color: var(--texto-suave);
   font-weight: 500;
 }
-.fechas h3 {
+.lista h3 {
   padding: 12px 0 4px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   font-weight: 700;
 }
-.fechas ul {
+.lista ul {
   list-style: none;
 }
 .vacio {
@@ -44,19 +44,7 @@
   font-size: var(--letra-sm);
   line-height: 1.4;
 }
-.publicarFecha {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--toque);
+/* Publicar aquí / una fecha: el Botón secundario con enlace, tras la lista */
+.publicar {
   margin-top: var(--espacio-3);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--texto);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  text-align: center;
-  text-decoration: none;
 }

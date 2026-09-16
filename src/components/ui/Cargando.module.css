@@ -38,7 +38,8 @@
   }
 }
 
-/* Espera de las pantallas raíz (CargandoRaiz): cabecera blanca con un campo, y renglones con foto y dos líneas */
+/* Espera de las pantallas raíz (CargandoRaiz): cabecera blanca con un campo, y renglones con foto y dos líneas.
+   Sin divisores: con los bloques tan pálidos, las rayas parecían líneas sueltas (founder, 2026-09-16). */
 .pildora {
   display: block;
   width: 84px;
@@ -49,7 +50,6 @@
 .cabecera {
   padding: var(--espacio-3) var(--gutter);
   background: var(--fondo);
-  border-bottom: 1px solid var(--borde);
 }
 .campo {
   height: var(--toque-min);
@@ -69,7 +69,6 @@
   column-gap: var(--espacio-3);
   align-content: center;
   padding: var(--espacio-3) 0;
-  border-bottom: 1px solid var(--borde);
 }
 .foto {
   grid-area: foto;

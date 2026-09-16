@@ -182,10 +182,16 @@
   text-decoration: none;
   cursor: pointer;
 }
+/* Grid con áreas: icono a la izquierda; el texto suelto ("Voy") cae en la celda libre de arriba y small abajo */
 .seleccionado {
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "icono texto"
+    "icono nota";
+  column-gap: var(--espacio-2);
   align-items: center;
-  gap: var(--espacio-2);
+  align-content: center;
   min-height: var(--toque);
   padding: 0 var(--espacio-4);
   border: 1.5px solid var(--primario);
@@ -197,10 +203,10 @@
   line-height: 1.1;
 }
 .seleccionado > svg {
-  flex: none;
+  grid-area: icono;
 }
 .seleccionado small {
-  display: block;
+  grid-area: nota;
   color: var(--texto-suave);
   font-size: var(--letra-xs);
   font-weight: 500;
@@ -239,10 +245,14 @@
 }
 
 /* 7. Recién publicado: evidencia y la siguiente acción */
+/* Grid con áreas: el título, el texto suelto (cae en la celda libre) y el botón a la derecha */
 .publicado {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: var(--espacio-3);
+  grid-template-areas:
+    "titulo boton"
+    "texto boton";
+  column-gap: var(--espacio-3);
   align-items: center;
   margin: var(--espacio-2) 0 var(--espacio-4);
   padding: var(--espacio-3) var(--espacio-4);
@@ -252,12 +262,14 @@
   font-size: var(--letra-sm);
 }
 .publicado b {
-  display: block;
+  grid-area: titulo;
   font-size: var(--letra-lg);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
 }
 .publicadoBoton {
+  grid-area: boton;
+
   min-height: var(--toque-min);
   padding: 0 var(--espacio-4);
   border: 1px solid var(--texto);

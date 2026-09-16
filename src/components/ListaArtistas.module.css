@@ -1,5 +1,5 @@
 /* Lista de artistas (docs/rediseno/08-artistas-flujo-y-estados.md, decisiones 1 y 2):
-   1. Búsqueda pegajosa (a partir de 8) · 2. Conteo y renglones (Renglon.module.css) · 3. Vacío con causa */
+   1. Búsqueda pegajosa (a partir de 8) · 2. Renglones (Renglon.module.css); conteo y vacío en Lista.module.css */
 
 /* 1. Búsqueda y chips: la propia caja es la cabecera pegajosa. La caja no pone gutter: la búsqueda va en la
    columna y las filas de chips corren a todo lo ancho (en escritorio no se recortan en el borde de la columna). */
@@ -23,57 +23,15 @@
   padding-inline: var(--gutter); /* el primer chip queda alineado con la columna */
 }
 
-/* Ver más: botón secundario a lo ancho de la columna, tras la última página */
+/* Ver más: el Botón secundario, con el gutter de la columna, tras la última página */
 .verMas {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--toque);
+  width: auto;
   margin: var(--espacio-4) var(--gutter) 0;
-  border: 1px solid var(--texto);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  text-decoration: none;
 }
 
-/* 2. Conteo y renglones */
-.conteo {
-  padding: var(--espacio-3) var(--gutter) var(--espacio-1);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
+/* 2. Renglones (el conteo y el vacío vienen de Lista.module.css) */
 .lista {
   list-style: none;
   padding: 0 var(--gutter);
 }
 
-/* 3. Vacío con causa y la acción */
-.vacio {
-  padding: var(--espacio-5) var(--gutter) 0;
-}
-.vacio h2 {
-  margin-bottom: 6px;
-  font-size: var(--letra-xl);
-}
-.vacio p {
-  margin-bottom: var(--espacio-4);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.4;
-}
-.registrar {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-5);
-  border: 1px solid var(--texto);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  text-decoration: none;
-}

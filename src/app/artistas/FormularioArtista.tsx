@@ -229,12 +229,10 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           )}
           <span className={canon.clave}>Foto</span>
           <span className={`${canon.valor} ${foto ? "" : canon.falta}`}>{subiendo ? "Subiendo…" : foto ? "Lista" : "Sin foto"}</span>
-          <span className={canon.opciones}>
-            <label className={canon.accionIcono} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
-              <IconoCamara width={22} height={22} />
-              <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
-            </label>
-          </span>
+          <label className={canon.accionIcono} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
+            <IconoCamara width={22} height={22} />
+            <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
+          </label>
           {(errorFoto || errores.foto) && (
             <p className={canon.cuerpoNota} role="alert">
               {errorFoto ?? errores.foto}

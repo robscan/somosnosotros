@@ -10,6 +10,7 @@ import Desplegable from "@/components/Desplegable";
 import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
+import Boton from "@/components/ui/Boton";
 import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
@@ -22,7 +23,7 @@ import { etiquetaLugar, etiquetaTipo, textoProximo, type Lugar } from "@/lib/lug
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import Seguir from "@/components/Seguir";
 import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
-import styles from "./ficha.module.css";
+import styles from "@/components/ui/FichaLista.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
 type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
@@ -129,7 +130,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
             </li>
             {puedeEditar && (
               <li className={ficha.menuItem}>
-                <Borrar que="el lugar" aviso={avisoBorrar} accion={borrarLugar.bind(null, lugar.id)} />
+                <Borrar que="el lugar" icono="lugar" aviso={avisoBorrar} accion={borrarLugar.bind(null, lugar.id)} />
               </li>
             )}
           </MenuAcciones>
@@ -137,9 +138,8 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       />
       {nuevo === "1" && (
         <div className={ficha.publicado} role="status">
-          <div>
-            <b>Publicado.</b>Ya está en Lugares.
-          </div>
+          <b>Publicado.</b>
+          Ya está en Lugares.
           {puedeEditar && faltanDetalles ? (
             <Link href={`/lugares/${lugar.id}/editar`} className={ficha.publicadoBoton}>
               Completar
@@ -231,7 +231,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
 
       {lugar.descripcion && <Desplegable texto={lugar.descripcion} />}
 
-      <section className={styles.eventos} id="eventos" aria-label="Próximos eventos">
+      <section className={styles.lista} id="eventos" aria-label="Próximos eventos">
         <h2>
           Próximos eventos
           {eventos.length > 0 && <span> · {eventos.length}</span>}
@@ -247,9 +247,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
             </ul>
           </Fragment>
         ))}
-        <Link href={hrefPublicarAqui} className={styles.publicarAqui}>
+        <Boton href={hrefPublicarAqui} variante="secundario" className={styles.publicar}>
           Publicar un evento aquí
-        </Link>
+        </Boton>
       </section>
 
       {/* Sin pie de origen para las fichas del catálogo (decisión del founder, 2026-09-14): solo se dice quién la publicó cuando hay quién. */}

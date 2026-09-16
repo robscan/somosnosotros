@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, tramo } from "./fechas";
+import { aFechaIcs, combinarFechaHora, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, inicioDelDia, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, tramo } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -26,7 +26,8 @@ describe("fechas", () => {
   it("clasifica en hoy, semana, próximos y pasado", () => {
     expect(tramo("2026-09-20T01:00:00Z", AHORA)).toBe("hoy"); // 19:00 de hoy
     expect(tramo("2026-09-19T14:00:00Z", AHORA)).toBe("hoy"); // empezó hace 2 h
-    expect(tramo("2026-09-19T12:00:00Z", AHORA)).toBe("pasado"); // hace 4 h
+    expect(tramo("2026-09-19T12:00:00Z", AHORA)).toBe("hoy"); // empezó a las 6:00: sigue siendo de hoy
+    expect(tramo("2026-09-19T03:00:00Z", AHORA)).toBe("pasado"); // ayer a las 21:00
     expect(tramo("2026-09-24T01:00:00Z", AHORA)).toBe("semana");
     expect(tramo("2026-10-05T01:00:00Z", AHORA)).toBe("proximos");
   });
@@ -52,13 +53,15 @@ describe("fechas", () => {
     expect(fraseCuando("2026-09-19T19:00", undefined, AHORA)).toBe("sábado 19 de septiembre · 19:00");
     expect(fraseCuando("nada")).toBe("");
   });
-  it("un evento ya pasó cuando terminó o, sin hora de fin, 3 h después de empezar", () => {
-    expect(eventoPaso("2026-09-19T14:30:00Z", null, AHORA)).toBe(false);
-    expect(eventoPaso("2026-09-19T12:30:00Z", null, AHORA)).toBe(true);
-    expect(eventoPaso("2026-09-19T11:00:00Z", "2026-09-19T17:00:00Z", AHORA)).toBe(false);
-    expect(eventoPaso("2026-09-19T11:00:00Z", "2026-09-19T15:59:00Z", AHORA)).toBe(true);
+  it("un evento ya pasó cuando terminó o, sin hora de fin, cuando acabó su día en la ciudad", () => {
+    expect(eventoPaso("2026-09-19T14:30:00Z", null, AHORA)).toBe(false); // hoy 8:30, sin fin: se queda todo el día
+    expect(eventoPaso("2026-09-19T06:00:00Z", null, AHORA)).toBe(false); // hoy 0:00, sin fin: se queda todo el día
+    expect(eventoPaso("2026-09-19T05:59:00Z", null, AHORA)).toBe(true); // ayer 23:59, sin fin: ya pasó
+    expect(eventoPaso("2026-09-19T11:00:00Z", "2026-09-19T17:00:00Z", AHORA)).toBe(false); // termina a las 11:00
+    expect(eventoPaso("2026-09-19T11:00:00Z", "2026-09-19T15:59:00Z", AHORA)).toBe(true); // terminó a las 9:59
+    expect(inicioDelDia(AHORA)).toBe("2026-09-19T06:00:00.000Z");
   });
   it("las listas usan la misma regla como filtro de la base", () => {
-    expect(filtroSinPasar(AHORA)).toBe(`fin.gte."2026-09-19T16:00:00.000Z",and(fin.is.null,inicio.gte."2026-09-19T13:00:00.000Z")`);
+    expect(filtroSinPasar(AHORA)).toBe(`fin.gte."2026-09-19T16:00:00.000Z",and(fin.is.null,inicio.gte."2026-09-19T06:00:00.000Z")`);
   });
 });

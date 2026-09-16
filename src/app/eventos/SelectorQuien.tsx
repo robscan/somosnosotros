@@ -5,6 +5,7 @@ import { IconoMas } from "@/components/ui/Iconos";
 import { artistaIgual, etiquetaArtista, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
+import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./SelectorQuien.module.css";
 
 type Props = {
@@ -108,35 +109,32 @@ export default function SelectorQuien({ valor, onCambio, mios }: Props) {
         aria-autocomplete="list"
       />
       {(sugerencias.length > 0 || ofrecerCrear) && (
-        <ul className={styles.sugerencias} role="listbox" aria-label="Artistas encontrados">
+        <ul className={sug.lista} role="listbox" aria-label="Artistas encontrados">
           {sugerencias.map((a) => (
             <li key={a.id}>
-              <button type="button" role="option" aria-selected={false} className={styles.sugerencia} onClick={() => elegir(a)}>
+              <button type="button" role="option" aria-selected={false} className={`${sug.renglon} ${sug.conMini}`} onClick={() => elegir(a)}>
                 {a.foto ? (
                   // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                  <img src={a.foto} alt="" className={styles.mini} />
+                  <img src={a.foto} alt="" className={sug.mini} />
                 ) : (
-                  <span className={`${styles.mini} ${styles.miniVacia}`} aria-hidden="true" />
+                  <span className={`${sug.mini} ${styles.miniVacia}`} aria-hidden="true" />
                 )}
-                <span>
-                  {a.nombre}
-                  <small>
-                    {etiquetaArtista(a)}
-                    {esMio(a.id) ? " · tú" : ""}
-                  </small>
-                </span>
+                <b>{a.nombre}</b>
+                <small>
+                  {etiquetaArtista(a)}
+                  {esMio(a.id) ? " · tú" : ""}
+                </small>
               </button>
             </li>
           ))}
           {ofrecerCrear && (
             <li>
-              <button type="button" role="option" aria-selected={false} className={`${styles.sugerencia} ${styles.crear}`} onClick={crear}>
-                <span className={`${styles.mini} ${styles.miniCrear}`} aria-hidden="true">
+              <button type="button" role="option" aria-selected={false} className={`${sug.renglon} ${sug.conMini}`} onClick={crear}>
+                <span className={`${sug.mini} ${styles.miniCrear}`} aria-hidden="true">
                   <IconoMas width={16} height={16} />
                 </span>
-                <span>
-                  Crear a «{texto.trim()}»<small>solo con el nombre; se completa después</small>
-                </span>
+                <b>Crear a «{texto.trim()}»</b>
+                <small>solo con el nombre; se completa después</small>
               </button>
             </li>
           )}

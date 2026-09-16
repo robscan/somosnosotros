@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Hoja from "@/components/ui/Hoja";
 import { useState } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import type { Ciudad } from "@/lib/ciudad";
@@ -192,19 +193,16 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       </div>
       {cuerpo}
       {hojaCiudad && (
-        <div className={styles.hojaFondo} onClick={() => setHojaCiudad(false)}>
-          <div className={styles.hoja} role="dialog" aria-label="Dónde" onClick={(e) => e.stopPropagation()}>
-            <div className={styles.asa} aria-hidden="true" />
-            <h3>Dónde</h3>
-            <p>Solo aparecen las ciudades con eventos próximos.</p>
-            {ciudades.map((c) => (
-              <Link key={c.slug} href={c.slug === ciudades[0]?.slug ? "/" : `/?ciudad=${c.slug}`} className={`${styles.opcion} ${c.slug === ciudad.slug ? styles.elegida : ""}`} onClick={() => setHojaCiudad(false)}>
-                <span>{c.nombre}</span>
-                <span>{c.eventos === 1 ? "1 evento" : `${c.eventos} eventos`}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
+        <Hoja etiqueta="Dónde" onCerrar={() => setHojaCiudad(false)}>
+          <h3>Dónde</h3>
+          <p>Solo aparecen las ciudades con eventos próximos.</p>
+          {ciudades.map((c) => (
+            <Link key={c.slug} href={c.slug === ciudades[0]?.slug ? "/" : `/?ciudad=${c.slug}`} className={`${styles.opcion} ${c.slug === ciudad.slug ? styles.elegida : ""}`} onClick={() => setHojaCiudad(false)}>
+              <span>{c.nombre}</span>
+              <span>{c.eventos === 1 ? "1 evento" : `${c.eventos} eventos`}</span>
+            </Link>
+          ))}
+        </Hoja>
       )}
     </>
   );

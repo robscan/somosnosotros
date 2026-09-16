@@ -120,7 +120,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
           </li>
         </ul>
 
-        <Borrar que="mi cuenta" aviso="Se borra tu cuenta y tu perfil. Lo que publicaste se queda, sin tu nombre." accion={borrarMiCuenta} />
+        <Borrar que="mi cuenta" icono="persona" aviso="Se borra tu cuenta y tu perfil. Lo que publicaste se queda, sin tu nombre." accion={borrarMiCuenta} />
       </div>
     </main>
   );

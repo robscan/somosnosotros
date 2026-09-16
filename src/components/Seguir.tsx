@@ -69,10 +69,8 @@ export default function Seguir({ que, nombre, sigo, conSesion, accion, hrefEntra
         <div className={`${ficha.accionFija} ${ficha.accionEstado}`}>
           <span className={ficha.seleccionado} aria-live="polite">
             <IconoOk width={20} height={20} />
-            <span>
-              Sigues
-              <small>{promesa}</small>
-            </span>
+            Sigues
+            <small>{promesa}</small>
           </span>
           <button type="button" className={ficha.secundario} onClick={() => cambiar(false)} disabled={pendiente}>
             Dejar de seguir

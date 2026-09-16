@@ -7,6 +7,8 @@ import { textoDistancia } from "@/lib/agenda";
 import { calleCorta, etiquetaTipo, filtrarLugares, ordenarLugares, textoProximo, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
 import { Chips } from "./ui/Chip";
 import { IconoCalendario, IconoPin } from "./ui/Iconos";
+import Boton from "@/components/ui/Boton";
+import comun from "./Lista.module.css";
 import renglon from "./Renglon.module.css";
 import styles from "./ListaLugares.module.css";
 
@@ -39,12 +41,12 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
 
   if (lugares.length === 0 && !tipo) {
     return (
-      <section className={styles.vacio}>
+      <section className={comun.vacio}>
         <h2>Lugares</h2>
         <p>Aún no hay lugares en {ciudad.nombre}. Registra el primero.</p>
-        <Link href={hrefNuevo} className={styles.registrar}>
+        <Boton href={hrefNuevo} variante="secundario">
           Registrar un lugar
-        </Link>
+        </Boton>
       </section>
     );
   }
@@ -55,7 +57,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       )}
       {chips && <Chips ariaLabel="Cerca de mí y tipo de lugar">{chips}</Chips>}
       {aviso}
-      <p className={styles.conteo}>
+      <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()
             ? "Ningún lugar se llama así. Si existe, regístralo."

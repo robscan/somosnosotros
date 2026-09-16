@@ -1,5 +1,5 @@
 /* Lista de lugares: cada hijo pone su gutter, y la fila de chips corre a todo lo ancho (en escritorio no se
-   recorta en el borde de la columna); los renglones vienen de Renglon.module.css */
+   recorta en el borde de la columna); los renglones vienen de Renglon.module.css; el conteo y el vacío, de Lista.module.css */
 .lista ul {
   list-style: none;
   padding: 0 var(--gutter);
@@ -23,37 +23,4 @@
 .buscar:focus {
   outline: 2px solid var(--primario);
   outline-offset: 1px;
-}
-.conteo {
-  padding: var(--espacio-3) var(--gutter) var(--espacio-1);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-
-/* Sin lugares: vacío con causa y la acción */
-.vacio {
-  padding: var(--espacio-5) var(--gutter) 0;
-}
-.vacio h2 {
-  margin-bottom: 6px;
-  font-size: var(--letra-xl);
-}
-.vacio p {
-  margin-bottom: var(--espacio-4);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.4;
-}
-.registrar {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-5);
-  border: 1px solid var(--texto);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  text-decoration: none;
 }

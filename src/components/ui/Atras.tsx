@@ -7,20 +7,17 @@ import { IconoChevronIzquierda } from "./Iconos";
 import styles from "./Atras.module.css";
 
 /**
- * Atrás genérico (pedido del founder, 2026-09-15): la navegación no es lineal (se llega a una ficha desde la agenda,
- * un lugar, un artista o un enlace compartido), así que vuelve a la pantalla anterior de verdad. Sin historia propia
- * (enlace compartido, app recién abierta) lleva a `href`, la pantalla madre. Píldora con chevron, alineada a la
- * izquierda (topografía de navegación). `texto` se conserva para quien lo lea (aria-label); a la vista, "Atrás".
- * Si la pantalla tiene algo sin publicar (guardia de salida), primero pregunta ella.
+ * Cómo se vuelve (lo comparten Atrás y Cerrar): a la pantalla anterior de verdad si esta pestaña ya vio otra dentro de
+ * la app; si no (enlace compartido, app recién abierta), a `href`, la pantalla madre. Si la pantalla tiene algo sin
+ * publicar (guardia de salida), primero pregunta ella y se le entrega la salida.
  */
-export default function Atras({ href, texto }: { href: string; texto: string }) {
+export function useVolver(href: string): (e: React.MouseEvent<HTMLAnchorElement>) => void {
   const router = useRouter();
-  function volver(e: React.MouseEvent<HTMLAnchorElement>) {
+  return function volver(e) {
     let vistas = 0;
     try {
       vistas = Number(sessionStorage.getItem(CLAVE_NAVEGADAS) ?? "0");
     } catch {}
-    // Hay una pantalla anterior dentro de la app (esta pestaña ya vio otra): se vuelve a ella.
     const hayAnterior = vistas > 1 && window.history.length > 1;
     const irse = () => (hayAnterior ? router.back() : window.location.assign(href));
     if (pedirSalida(irse)) {
@@ -31,7 +28,18 @@ export default function Atras({ href, texto }: { href: string; texto: string }) 
       e.preventDefault();
       router.back();
     }
-  }
+  };
+}
+
+/**
+ * Atrás genérico (pedido del founder, 2026-09-15): la navegación no es lineal (se llega a una ficha desde la agenda,
+ * un lugar, un artista o un enlace compartido), así que vuelve a la pantalla anterior de verdad. Sin historia propia
+ * (enlace compartido, app recién abierta) lleva a `href`, la pantalla madre. Píldora con chevron, alineada a la
+ * izquierda (topografía de navegación). `texto` se conserva para quien lo lea (aria-label); a la vista, "Atrás".
+ * Si la pantalla tiene algo sin publicar (guardia de salida), primero pregunta ella.
+ */
+export default function Atras({ href, texto }: { href: string; texto: string }) {
+  const volver = useVolver(href);
   return (
     <a href={href} className={styles.atras} onClick={volver} aria-label={`Atrás (${texto})`}>
       <IconoChevronIzquierda width={18} height={18} />

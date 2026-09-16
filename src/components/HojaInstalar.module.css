@@ -1,42 +1,4 @@
-.fondo {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: rgba(0, 0, 0, 0.32);
-}
-.hoja {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-width: var(--columna); /* en escritorio, del ancho de la columna y centrada */
-  margin-inline: auto;
-  max-height: calc(100% - 48px);
-  overflow-y: auto;
-  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
-  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
-  background: var(--fondo);
-  box-shadow: var(--sombra-panel);
-}
-.asa {
-  width: 36px;
-  height: 4px;
-  margin: 0 auto 14px;
-  border-radius: 2px;
-  background: var(--asa);
-}
-.cerrar {
-  position: absolute;
-  top: var(--espacio-2);
-  right: var(--espacio-2);
-  min-width: var(--toque-min);
-  min-height: var(--toque-min);
-  border: none;
-  background: none;
-  color: var(--texto-suave);
-  font-size: var(--letra-xl);
-  cursor: pointer;
-}
+/* Hoja "Instala Somos Nosotros": sobre ui/Hoja; aquí solo lo propio */
 .titulo {
   font-size: var(--letra-2xl);
   margin-bottom: var(--espacio-1);
@@ -45,17 +7,22 @@
   color: var(--texto-suave);
   margin-bottom: var(--espacio-3);
 }
-.pasos {
-  display: grid;
-  gap: var(--espacio-4);
-}
 .paso {
   display: grid;
   grid-template-columns: 44px 1fr;
-  gap: var(--espacio-3);
+  grid-template-areas:
+    "glifo num"
+    "glifo que"
+    "glifo donde"
+    "glifo muestra";
+  column-gap: var(--espacio-3);
   align-items: start;
 }
+.paso + .paso {
+  margin-top: var(--espacio-4);
+}
 .glifo {
+  grid-area: glifo;
   width: 44px;
   height: 44px;
   display: grid;
@@ -70,7 +37,7 @@
   color: #0a7aff; /* azul de iOS: el glifo se reconoce tal como aparece en Safari */
 }
 .num {
-  display: block;
+  grid-area: num;
   margin-bottom: 2px;
   color: var(--texto-suave);
   font-size: 0.75rem;
@@ -79,19 +46,20 @@
   text-transform: uppercase;
 }
 .que {
-  display: block;
+  grid-area: que;
   font-size: var(--letra-lg);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
   line-height: 1.15;
 }
 .donde {
-  display: block;
+  grid-area: donde;
   margin-top: 2px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
 .safari {
+  grid-area: muestra;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
@@ -119,6 +87,7 @@
   border: 2px solid var(--primario);
 }
 .filaIos {
+  grid-area: muestra;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -173,7 +142,10 @@
 .despues {
   display: grid;
   grid-template-columns: 44px 1fr;
-  gap: var(--espacio-3);
+  grid-template-areas:
+    "glifo titulo"
+    "glifo texto";
+  column-gap: var(--espacio-3);
   align-items: center;
   margin-top: var(--espacio-3);
   padding-top: var(--espacio-3);
@@ -186,10 +158,15 @@
   color: var(--texto);
 }
 .despues b {
-  display: block;
+  grid-area: titulo;
+  align-self: end;
   color: var(--texto-suave);
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+.despues > span:last-child {
+  grid-area: texto;
+  align-self: start;
 }

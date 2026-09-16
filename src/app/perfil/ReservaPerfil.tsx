@@ -46,14 +46,12 @@ export default function ReservaPerfil({ reservado: inicial }: { reservado: boole
       </button>
       {abierta && (
         <Hoja etiqueta="Perfil" onCerrar={cerrar}>
-          <h3 className={styles.titulo}>Perfil</h3>
-          <p className={styles.porque}>Se guarda al tocar.</p>
+          <h3>Perfil</h3>
+          <p>Se guarda al tocar.</p>
           <div className={styles.interruptor}>
-            <span>
-              Reservado
-              <small>Tu ficha muestra solo nombre, foto y colonia. En “quién va” cuentas en el número, sin nombre ni foto. Sigues recibiendo avisos.</small>
-            </span>
-            <button type="button" role="switch" aria-checked={reservado} aria-label="Perfil reservado" className={styles.palanca} onClick={cambiar} disabled={trabajando} />
+            Reservado
+            <small>Tu ficha muestra solo nombre, foto y colonia. En “quién va” cuentas en el número, sin nombre ni foto. Sigues recibiendo avisos.</small>
+            <button type="button" role="switch" aria-checked={reservado} aria-label="Perfil reservado" className={ajustes.palanca} onClick={cambiar} disabled={trabajando} />
           </div>
           {nota && (
             <p className={styles.nota} role="status">

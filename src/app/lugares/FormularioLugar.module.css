@@ -1,67 +1,16 @@
 /* ==========================================================================
    Alta de lugar: lo propio, fuera del canon (ui/FormularioCanon.module.css):
-   1. Sugerencias de Mapbox · 2. Más: portada e interruptor del administrador · 3. Parecidos
+   1. Sugerencias de Mapbox (renglón de ui/Sugerencia) · 2. Más: portada e interruptor del administrador · 3. Parecidos
    ========================================================================== */
 
 .formulario {
   display: block;
 }
 
-/* 1. Sugerencias (lugar con nombre, o "usar la dirección"). */
-.sugerencias {
-  list-style: none;
+/* 1. Sugerencias (ui/Sugerencia): flotan pegadas al campo, con sombra. */
+.flotante {
   margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-3);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
   box-shadow: var(--sombra);
-  overflow: hidden;
-}
-.sugerencia {
-  display: grid;
-  grid-template-columns: 24px 1fr;
-  grid-template-areas:
-    "icono nombre"
-    "icono detalle";
-  column-gap: 10px;
-  align-items: center;
-  width: 100%;
-  min-height: var(--toque);
-  padding: 8px 14px;
-  border: none;
-  border-top: 1px solid var(--borde);
-  background: none;
-  color: var(--texto);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.sugerencias li:first-child .sugerencia {
-  border-top: none;
-}
-.sugerencia:hover,
-.sugerencia:focus {
-  background: var(--fondo-suave);
-}
-.sugerencia > svg {
-  grid-area: icono;
-  color: var(--texto-suave);
-}
-.sugerencia > b {
-  grid-area: nombre;
-  font-weight: 700;
-}
-.sugerencia > small {
-  grid-area: detalle;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.direccion > b {
-  font-weight: 500;
-}
-.direccion > small {
-  color: var(--primario);
-  font-weight: 600;
 }
 
 /* 2. Más: foto de portada e interruptor del administrador. */
@@ -73,23 +22,27 @@
   border-radius: var(--radio);
 }
 .interruptor {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--espacio-3);
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  grid-template-areas:
+    "caja titulo"
+    "caja nota";
+  column-gap: var(--espacio-3);
+  row-gap: 2px;
   cursor: pointer;
 }
 .interruptor input {
-  flex: none;
+  grid-area: caja;
   width: 22px;
   height: 22px;
   margin: 2px 0 0;
   accent-color: var(--primario);
 }
-.interruptor span {
-  display: grid;
-  gap: 2px;
+.interruptor strong {
+  grid-area: titulo;
 }
 .interruptor small {
+  grid-area: nota;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }

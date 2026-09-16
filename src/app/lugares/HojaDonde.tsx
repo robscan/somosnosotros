@@ -9,6 +9,9 @@ import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
+import canon from "@/components/ui/FormularioCanon.module.css";
+import mapa from "@/components/Mapa.module.css";
+import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaDonde.module.css";
 
 type Props = {
@@ -53,16 +56,16 @@ export default function HojaDonde({ conFoco, punto, direccion, yo, ubicando, onP
 
   return (
     <Hoja etiqueta="Dónde está" onCerrar={onCerrar}>
-      <h3 className={styles.titulo}>Dónde está</h3>
-      <label className={styles.buscar}>
+      <h3>Dónde está</h3>
+      <label className={canon.campo}>
         <IconoBuscar width={20} height={20} />
         <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off" autoFocus={conFoco} />
       </label>
       {sugerencias.length > 0 && (
-        <ul className={styles.sugerencias} role="listbox" aria-label="Direcciones encontradas">
+        <ul className={`${sug.lista} ${styles.sugerencias}`} role="listbox" aria-label="Direcciones encontradas">
           {sugerencias.map((s) => (
             <li key={`${s.lat},${s.lng}`}>
-              <button type="button" className={styles.sugerencia} onClick={() => elegir(s)} role="option" aria-selected={false}>
+              <button type="button" className={sug.renglon} onClick={() => elegir(s)} role="option" aria-selected={false}>
                 <IconoPin width={20} height={20} />
                 <b>{s.nombre || s.direccion}</b>
                 {s.nombre && <small>{s.direccion}</small>}
@@ -73,7 +76,7 @@ export default function HojaDonde({ conFoco, punto, direccion, yo, ubicando, onP
       )}
       <div className={styles.mapa}>
         <Mapa modo="elegir" valor={punto} onCambio={onPunto} ubicacion={yo} />
-        <button type="button" className={styles.ubicame} onClick={onEstoyAqui} disabled={ubicando} aria-label="Estoy aquí">
+        <button type="button" className={mapa.ubicame} onClick={onEstoyAqui} disabled={ubicando} aria-label="Estoy aquí">
           <IconoUbicacion width={22} height={22} />
         </button>
       </div>

@@ -339,11 +339,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             ) : (
               <>
                 <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
-                <span className={canon.opciones}>
-                  <button type="button" className={canon.accionIcono} onClick={() => setHoja(true)} aria-label="Buscar el lugar" title="Buscar el lugar">
-                    <IconoBuscar width={22} height={22} />
-                  </button>
-                </span>
+                <button type="button" className={canon.accionIcono} onClick={() => setHoja(true)} aria-label="Buscar el lugar" title="Buscar el lugar">
+                  <IconoBuscar width={22} height={22} />
+                </button>
               </>
             )}
             {errorDonde && (

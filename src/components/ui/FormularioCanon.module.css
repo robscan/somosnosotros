@@ -176,6 +176,7 @@
   gap: 6px;
 }
 .accionIcono {
+  grid-area: accion; /* solo, va directo al área; dentro de .opciones (flex) no aplica */
   position: relative;
   display: inline-grid;
   place-items: center;

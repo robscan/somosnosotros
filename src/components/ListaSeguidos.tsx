@@ -57,8 +57,8 @@ export default function ListaSeguidos({
         </Chips>
       )}
       {verLugares && (
-        <div className={styles.dia}>
-          {!conChips && <h3>Lugares · {lugares.length}</h3>}
+        <>
+          {!conChips && <h3 className={styles.dia}>Lugares · {lugares.length}</h3>}
           <ul className={styles.lista}>
             {lugares.map((l) => (
               <li key={l.id}>
@@ -94,11 +94,11 @@ export default function ListaSeguidos({
               </li>
             ))}
           </ul>
-        </div>
+        </>
       )}
       {verArtistas && (
-        <div className={styles.dia}>
-          {!conChips && <h3>Artistas · {artistas.length}</h3>}
+        <>
+          {!conChips && <h3 className={styles.dia}>Artistas · {artistas.length}</h3>}
           <ul className={styles.lista}>
             {artistas.map((a) => (
               <li key={a.id}>
@@ -131,7 +131,7 @@ export default function ListaSeguidos({
               </li>
             ))}
           </ul>
-        </div>
+        </>
       )}
     </>
   );

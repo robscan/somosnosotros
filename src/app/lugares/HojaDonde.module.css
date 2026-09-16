@@ -1,100 +1,13 @@
-/* Hoja "Dónde está": título, campo con lupa, sugerencias, mapa con su botón de ubicación, dirección deducida, Listo. */
-.titulo {
-  padding-right: var(--toque-min);
-  font-size: var(--letra-xl);
-  margin-bottom: var(--espacio-3);
-}
-.buscar {
-  position: relative;
-  display: grid;
-  margin-bottom: var(--espacio-3);
-}
-.buscar > svg {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--texto-suave);
-  pointer-events: none;
-}
-.buscar > input {
-  min-height: var(--toque);
-  padding: 0 14px 0 44px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  font-size: max(16px, var(--letra-md));
-}
-.buscar > input:focus {
-  border-color: var(--texto);
-  outline: none;
-}
+/* Hoja "Dónde está": sugerencias, mapa con su botón de ubicación (Mapa.module.css), dirección deducida, Listo.
+   El título es el de ui/Hoja y el campo con lupa, el del canon. */
+/* Sugerencias (ui/Sugerencia): pegadas al campo */
 .sugerencias {
-  list-style: none;
   margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-3);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  overflow: hidden;
 }
-.sugerencia {
-  display: grid;
-  grid-template-columns: 24px 1fr;
-  grid-template-areas:
-    "icono nombre"
-    "icono detalle";
-  column-gap: 10px;
-  align-items: center;
-  width: 100%;
-  min-height: var(--toque);
-  padding: 8px 14px;
-  border: none;
-  border-top: 1px solid var(--borde);
-  background: none;
-  color: var(--texto);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.sugerencias li:first-child .sugerencia {
-  border-top: none;
-}
-.sugerencia > svg {
-  grid-area: icono;
-  color: var(--texto-suave);
-}
-.sugerencia > b {
-  grid-area: nombre;
-  font-weight: 700;
-}
-.sugerencia > small {
-  grid-area: detalle;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-/* El mapa con su botón de ubicación encima, como en el mapa de Lugares. */
+/* El mapa con su botón de ubicación encima (Mapa.module.css .ubicame). */
 .mapa {
   position: relative;
   margin-bottom: var(--espacio-3);
-}
-.ubicame {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  width: var(--toque);
-  height: var(--toque);
-  border: none;
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  box-shadow: var(--sombra);
-  cursor: pointer;
-}
-.ubicame:disabled {
-  opacity: 0.6;
 }
 .deducida {
   display: grid;
