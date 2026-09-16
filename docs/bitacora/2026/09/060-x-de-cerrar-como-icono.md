@@ -1,6 +1,6 @@
 # 060 · La ✕ de cerrar, dibujada como icono
 
-**Fecha:** 2026-09-16 (noche) · **Base:** hallazgo al probar el flujo de avisos en el simulador (iPhone 15 Pro, iOS 26.3): la ✕ de la hoja que sale tras tocar "Voy" se dibujaba como un cuadro con un signo de interrogación · **Rama:** `x-de-cerrar-icono`.
+**Fecha:** 2026-09-16 (noche) · **Base:** hallazgo al probar el flujo de avisos en el simulador (iPhone 15 Pro, iOS 26.3): la ✕ de la hoja que sale tras tocar "Voy" se dibujaba como un cuadro con un signo de interrogación · **Rama:** `x-de-cerrar-icono` · **PR:** [#65](https://github.com/robscan/somosnosotros/pull/65).
 
 ## Qué pasó
 - Ocho piezas escribían la ✕ como letra (el carácter U+2715). Safari del simulador no la encuentra en ninguna fuente y pinta el cuadro de "letra que falta".
