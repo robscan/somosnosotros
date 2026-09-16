@@ -17,10 +17,12 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   const supabase = await clienteServidor();
   if (!supabase) return { lista: [], sigue: 0, hay: false };
   const desde = new Date(ahora.getTime() - DIAS_NOVEDADES * 86400000).toISOString();
+  // Topes explícitos (una sola persona): de sobra para lo que sigue, a lo que va y sus novedades recientes;
+  // guardan del corte silencioso de PostgREST en 1 000 filas sin tocar lo que hoy se ve (revisión 2026-09-14, A1).
   const [{ data: seguidos }, { data: van }, { data: cambios }] = await Promise.all([
-    supabase.from("seguimientos").select("lugar_id, artista_id, lugar:lugares(nombre), artista:artistas(nombre)").eq("usuario_id", usuarioId),
-    supabase.from("asistencias").select(`evento:eventos!inner(${CAMPOS})`).eq("usuario_id", usuarioId).eq("estado", "voy"),
-    supabase.from("novedades").select(`detalle, creado_en, evento:eventos!inner(${CAMPOS})`).eq("usuario_id", usuarioId).gte("creado_en", desde),
+    supabase.from("seguimientos").select("lugar_id, artista_id, lugar:lugares(nombre), artista:artistas(nombre)").eq("usuario_id", usuarioId).limit(1000),
+    supabase.from("asistencias").select(`evento:eventos!inner(${CAMPOS})`).eq("usuario_id", usuarioId).eq("estado", "voy").limit(1000),
+    supabase.from("novedades").select(`detalle, creado_en, evento:eventos!inner(${CAMPOS})`).eq("usuario_id", usuarioId).gte("creado_en", desde).limit(500),
   ]);
   const lugares = new Map<string, string>();
   const artistas = new Map<string, string>();
@@ -35,9 +37,10 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   const cuandoDe = (e: EventoBase) => `${formatearCuando(e.inicio, e.fin, ahora)} · ${nombreSitio({ lugar: uno(e.lugar), sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}`;
 
   // 1. Nuevo en lo que sigo (lugares) y nueva fecha de quien sigo (artistas), últimos 14 días, no publicados por mí.
+  // Acotado a los últimos DIAS_NOVEDADES días; el tope es cinturón y tirantes contra el corte silencioso de PostgREST.
   const [porLugar, porArtista] = await Promise.all([
-    lugares.size ? supabase.from("eventos").select(CAMPOS).eq("visible", true).gte("creado_en", desde).in("lugar_id", [...lugares.keys()]) : Promise.resolve({ data: [] as EventoBase[] }),
-    artistas.size ? supabase.from("eventos_artistas").select(`artista_id, evento:eventos!inner(${CAMPOS})`).in("artista_id", [...artistas.keys()]).gte("evento.creado_en", desde) : Promise.resolve({ data: [] as { artista_id: string; evento: EventoBase }[] }),
+    lugares.size ? supabase.from("eventos").select(CAMPOS).eq("visible", true).gte("creado_en", desde).in("lugar_id", [...lugares.keys()]).limit(500) : Promise.resolve({ data: [] as EventoBase[] }),
+    artistas.size ? supabase.from("eventos_artistas").select(`artista_id, evento:eventos!inner(${CAMPOS})`).in("artista_id", [...artistas.keys()]).gte("evento.creado_en", desde).limit(500) : Promise.resolve({ data: [] as { artista_id: string; evento: EventoBase }[] }),
   ]);
   const vistos = new Set<string>();
   for (const e of (porLugar.data ?? []) as EventoBase[]) {
@@ -67,7 +70,8 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   }
   // 4. Van a lo mismo: quién más dijo "Voy" (perfil público: la política de la base ya esconde a los reservados) en los últimos 14 días.
   if (misEventos.length) {
-    const { data: otros } = await supabase.from("asistencias").select("evento_id, usuario_id, creado_en, perfil:perfiles(nombre)").in("evento_id", misEventos.map((e) => e.id)).eq("estado", "voy").neq("usuario_id", usuarioId).gte("creado_en", desde).order("creado_en", { ascending: false });
+    // Quién más va a mis próximos eventos, en los últimos días: tope de sobra contra el corte silencioso de PostgREST.
+    const { data: otros } = await supabase.from("asistencias").select("evento_id, usuario_id, creado_en, perfil:perfiles(nombre)").in("evento_id", misEventos.map((e) => e.id)).eq("estado", "voy").neq("usuario_id", usuarioId).gte("creado_en", desde).order("creado_en", { ascending: false }).limit(1000);
     const porEvento = new Map<string, { nombres: string[]; fecha: string }>();
     for (const o of (otros ?? []) as { evento_id: string; creado_en: string; perfil: { nombre: string } | { nombre: string }[] | null }[]) {
       const p = uno(o.perfil);

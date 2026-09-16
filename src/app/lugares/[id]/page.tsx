@@ -50,6 +50,7 @@ async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
   const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).or(filtroSinPasar()).order("inicio").limit(30);
   const filas = (data ?? []) as Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng">[];
   if (filas.length === 0) return [];
+  // Solo se cuenta, no se muestra quién; tope de sobra contra el corte silencioso de PostgREST.
   const { data: a } = await supabase
     .from("asistencias")
     .select("evento_id")
@@ -57,7 +58,8 @@ async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
     .in(
       "evento_id",
       filas.map((f) => f.id),
-    );
+    )
+    .limit(2000);
   const van = new Map<string, number>();
   for (const f of a ?? []) van.set(f.evento_id as string, (van.get(f.evento_id as string) ?? 0) + 1);
   return filas.map((f) => ({ ...f, lugar: { nombre: lugar.nombre, portada: lugar.portada }, lat: lugar.lat, lng: lugar.lng, van: van.get(f.id) ?? 0 }));
