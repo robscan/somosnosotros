@@ -8,7 +8,7 @@ Plataforma sin fines de lucro: directorio de centros culturales y agenda de even
 3. `docs/PLAN.md` — fases 0→5 con su prueba; modelo de datos de 5 tablas.
 
 ## Stack (decidido, no re-litigar)
-Next.js (App Router, TypeScript) · Supabase (Postgres + Auth + Storage, proyecto nuevo) · Mapbox GL JS (estilo claro de la cuenta del founder, token restringido al dominio) · Vercel. Sin app de tienda en V1. Sin capacidades nativas de iOS, sin fotos del carrete, sin Apple Health, sin "pasaporte".
+Next.js (App Router, TypeScript) · Supabase (Postgres + Auth + Storage, proyecto nuevo) · Mapbox GL JS (estilo claro de la cuenta del founder, token restringido al dominio) · Vercel. Sin app de tienda: la app es la web instalada en el inicio del teléfono. El founder decidió la app de iPhone en la tienda y la detuvo la misma noche (2026-09-16): no suma valor todavía y, en fase de pruebas, cada actualización costaría el doble. Sin capacidades nativas de iOS, sin fotos del carrete, sin Apple Health, sin "pasaporte".
 
 ## Cómo se trabaja
 - Una fase a la vez; la siguiente no empieza hasta que la anterior pase su prueba en el iPhone del founder (Safari).
