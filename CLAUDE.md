@@ -15,7 +15,7 @@ Next.js (App Router, TypeScript) · Supabase (Postgres + Auth + Storage, proyect
 - Mantenerlo simple: si una pieza no sirve a registrar usuarios, lugares o eventos, o a que la gente se conozca, no entra.
 - Publican el admin y los usuarios registrados por su cuenta. El admin edita u oculta cualquier cosa.
 - Frases llanas con el founder: nada de jerga (spike, doctrina, gate) sin explicarla en una línea. No pedirle datos que ya dijo que gestiona él (interés de los centros, lista de lugares).
-- Git: un PR por fase o pieza grande; commits y push solo cuando el founder lo pida. Bitácora numerada en `docs/bitacora/AAAA/MM/NNN-*.md` por sesión y `OPEN_LOOPS.md` actualizado al cerrar.
+- Git: reglas en `docs/ops/GESTION_DE_CAMBIOS.md` (obligatorias: hay varios chats a la vez). Cada pieza en su rama, nunca código sobre `main`; `git add` por nombre, nunca `-A`; número de bitácora y de OL con `scripts/ops/siguiente-bitacora.sh`; commit local al cerrar el chat siempre; push y merge solo cuando el founder lo pida. Un PR por fase o pieza grande. Bitácora numerada en `docs/bitacora/AAAA/MM/NNN-*.md` por sesión y una línea propia en `OPEN_LOOPS.md` al cerrar.
 - Nada se declara verificado sin evidencia: build verde + tests + una captura móvil (390×844) del estado.
 - UI: skill `front-visual` (mirar la pantalla antes de razonar). Decisiones grandes de producto: skill `council`.
 - `docs/heredado/` son 10 documentos traídos de Flowya con su procedencia; no editarlos a mano (se regeneran con `scripts/heredar.sh`). Un doc heredado vale cuando una fase lo use; si estorba, se borra.
