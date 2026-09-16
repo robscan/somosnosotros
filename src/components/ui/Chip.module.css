@@ -46,6 +46,29 @@
   color: inherit;
   opacity: 0.85;
 }
+/* Al tocar, respuesta inmediata aunque el servidor tarde */
+.chip:active {
+  background: var(--fondo-suave);
+}
+/* En camino: el toque ya se mandó y el servidor no ha respondido; el chip late con el color de acción */
+.chip:has(> .enCamino) {
+  border-color: var(--primario);
+  background: var(--primario-suave);
+  color: var(--primario);
+  animation: latido 0.9s ease-in-out infinite;
+}
+.activo:has(> .enCamino) {
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.enCamino {
+  display: none;
+}
+@keyframes latido {
+  50% {
+    opacity: 0.55;
+  }
+}
 .chip:disabled {
   color: var(--texto-suave);
   cursor: default;

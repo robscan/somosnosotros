@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import type { ReactNode } from "react";
 import styles from "./Chip.module.css";
 
@@ -13,11 +13,22 @@ export function Chip({ activo = false, children, onClick, ariaLabel, disabled = 
   );
 }
 
-/** Chip que es un enlace: el filtro vive en la URL (se comparte, se vuelve atrás, lo filtra el servidor). */
+/** Mientras el servidor responde al toque, el chip lo dice (el CSS lo pinta en camino al ver este hijo). */
+function EnCamino() {
+  const { pending } = useLinkStatus();
+  return pending ? <span className={styles.enCamino} aria-hidden="true" /> : null;
+}
+
+/**
+ * Chip que es un enlace: el filtro vive en la URL (se comparte, se vuelve atrás, lo filtra el servidor). Como la lista
+ * no cambia hasta que el servidor responde, el chip tocado se pone en camino al instante (founder, 2026-09-16:
+ * "a veces no pasa nada").
+ */
 export function ChipEnlace({ activo = false, href, children }: { activo?: boolean; href: string; children: ReactNode }) {
   return (
     <Link href={href} scroll={false} className={`${styles.chip} ${activo ? styles.activo : ""}`} aria-current={activo ? "true" : undefined}>
       {children}
+      <EnCamino />
     </Link>
   );
 }
