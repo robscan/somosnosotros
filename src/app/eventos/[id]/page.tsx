@@ -47,7 +47,9 @@ async function cargarEvento(id: string): Promise<EventoConLugar | null> {
 async function cargarAsistencias(id: string, miId: string | null): Promise<{ van: Asistente[]; interesados: number; miEstado: EstadoAsistencia }> {
   const supabase = await clienteServidor();
   if (!supabase) return { van: [], interesados: 0, miEstado: null };
-  const { data } = await supabase.from("asistencias").select("usuario_id, estado, perfil:perfiles(id, nombre, foto)").eq("evento_id", id);
+  // Necesita venir completa (decide "reservados" y la lista de nombres); tope de sobra contra el corte silencioso
+  // de PostgREST, muy por encima de lo que junta hoy un evento.
+  const { data } = await supabase.from("asistencias").select("usuario_id, estado, perfil:perfiles(id, nombre, foto)").eq("evento_id", id).limit(2000);
   const filas = (data ?? []) as unknown as Array<{ usuario_id: string; estado: string; perfil: { id: string; nombre: string; foto: string | null } | { id: string; nombre: string; foto: string | null }[] | null }>;
   const van: Asistente[] = [];
   let interesados = 0;

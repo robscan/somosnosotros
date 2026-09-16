@@ -6,7 +6,8 @@ import { clienteServidor } from "@/lib/supabase/servidor";
 export async function cargarQuien(eventoId: string): Promise<{ id: string; nombre: string }[]> {
   const supabase = await clienteServidor();
   if (!supabase || !esUuid(eventoId)) return [];
-  const { data } = await supabase.from("eventos_artistas").select("orden, artista:artistas(id, nombre)").eq("evento_id", eventoId).order("orden");
+  // Un cartel no lleva más de unas decenas de nombres; tope explícito contra el corte silencioso de PostgREST.
+  const { data } = await supabase.from("eventos_artistas").select("orden, artista:artistas(id, nombre)").eq("evento_id", eventoId).order("orden").limit(50);
   return (data ?? [])
     .map((f) => (Array.isArray(f.artista) ? f.artista[0] : f.artista))
     .filter((a): a is { id: string; nombre: string } => !!a);
@@ -16,7 +17,8 @@ export async function cargarQuien(eventoId: string): Promise<{ id: string; nombr
 export async function cargarMisArtistas(perfilId: string): Promise<ArtistaResumen[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
-  const { data } = await supabase.from("artistas_cuentas").select("artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("perfil_id", perfilId);
+  // Nadie liga decenas de fichas a su cuenta; tope explícito contra el corte silencioso de PostgREST.
+  const { data } = await supabase.from("artistas_cuentas").select("artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("perfil_id", perfilId).limit(50);
   return (data ?? [])
     .map((f) => (Array.isArray(f.artista) ? f.artista[0] : f.artista))
     .filter((a): a is ArtistaResumen => !!a);

@@ -14,7 +14,9 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
   const [l, e] = await Promise.all([
-    supabase.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, privado").eq("visible", true).eq("ciudad", ciudadNombre).order("nombre"),
+    // 1 000 lugares en una sola ciudad son muchos más de los que hay hoy (decenas); tope explícito para no
+    // depender del corte silencioso de PostgREST si la ciudad crece (revisión 2026-09-14, A1).
+    supabase.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, privado").eq("visible", true).eq("ciudad", ciudadNombre).order("nombre").limit(1000),
     supabase.from("eventos").select("id, inicio, lugar_id").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
   ]);
   return conProximo((l.data ?? []) as LugarResumen[], (e.data ?? []) as { id: string; inicio: string; lugar_id: string | null }[]);

@@ -21,7 +21,9 @@ export async function enviarPush(usuarios: string[], aviso: AvisoPush): Promise<
   const admin = clienteAdmin();
   if (!admin || !pushActivo() || usuarios.length === 0) return 0;
   configurar();
-  const { data } = await admin.from("suscripciones_push").select("endpoint, p256dh, auth, usuario_id").in("usuario_id", usuarios);
+  // Necesita venir completa: a quien no se manda aquí no le llega el push. Tope de sobra contra el corte
+  // silencioso de PostgREST (hoy se llama con una persona a la vez).
+  const { data } = await admin.from("suscripciones_push").select("endpoint, p256dh, auth, usuario_id").in("usuario_id", usuarios).limit(5000);
   // Todos los teléfonos a la vez: cada envío es una petición HTTP independiente.
   const resultados = await Promise.all(
     (data ?? []).map(async (s) => {

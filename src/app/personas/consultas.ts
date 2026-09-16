@@ -17,13 +17,16 @@ export async function cargarPersona(id: string): Promise<Persona | null> {
   if (!supabase || !esUuid(id)) return null;
   const { data: perfil } = await supabase.from("perfiles").select("id, nombre, foto, colonia, bio, rol, avisos_correo, avisos_push, avisos_preguntado, reservado").eq("id", id).maybeSingle();
   if (!perfil) return null;
+  // Topes explícitos (una sola persona): de sobra para lo que sigue y a lo que va; guardan del corte silencioso
+  // de PostgREST en 1 000 filas sin tocar lo que hoy se ve (revisión 2026-09-14, A1).
   const [{ data: sigue }, { data: va }] = await Promise.all([
-    supabase.from("seguimientos").select("lugar:lugares(id, nombre, tipo, direccion, portada), artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id),
+    supabase.from("seguimientos").select("lugar:lugares(id, nombre, tipo, direccion, portada), artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
     supabase
       .from("asistencias")
       .select("estado, evento:eventos!inner(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, lugar:lugares(nombre, portada, lat, lng))")
       .eq("usuario_id", id)
-      .or(filtroSinPasar(), { referencedTable: "evento" }),
+      .or(filtroSinPasar(), { referencedTable: "evento" })
+      .limit(1000),
   ]);
   const uno = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
   const lugares = (sigue ?? []).map((s) => uno(s.lugar)).filter(Boolean) as LugarSeguido[];

@@ -61,6 +61,7 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
     .limit(30);
   const filas = (data ?? []) as unknown as FilaEvento[];
   if (filas.length === 0) return [];
+  // Solo se cuenta, no se muestra quién; tope de sobra contra el corte silencioso de PostgREST.
   const { data: a } = await supabase
     .from("asistencias")
     .select("evento_id")
@@ -68,7 +69,8 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
     .in(
       "evento_id",
       filas.map((f) => f.id),
-    );
+    )
+    .limit(2000);
   const van = new Map<string, number>();
   for (const f of a ?? []) van.set(f.evento_id as string, (van.get(f.evento_id as string) ?? 0) + 1);
   return filas.map((f) => {

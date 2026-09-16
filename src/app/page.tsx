@@ -21,14 +21,16 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   const [e, l, s] = await Promise.all([
     supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").limit(300),
     supabase.from("lugares").select("id", { count: "exact", head: true }).eq("visible", true).eq("ciudad", ciudad.nombre),
-    usuarioId ? supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId) : Promise.resolve({ data: null }),
+    // Lo que sigue una sola persona: tope de sobra para no depender del corte silencioso de PostgREST.
+    usuarioId ? supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId).limit(1000) : Promise.resolve({ data: null }),
   ]);
   const ids = (e.data ?? []).map((x) => x.id as string);
   const a = ids.length ? await supabase.rpc("van_por_evento", { ids }) : { data: [] as { evento_id: string; n: number }[] };
   const seguimientos = (s.data ?? []) as { lugar_id: string | null; artista_id: string | null }[];
   const artistasSeguidos = seguimientos.map((x) => x.artista_id).filter((x): x is string => !!x);
   // Eventos en los que se presenta un artista que sigue: entran en "Siguiendo" (Artistas, decisión 10).
-  const ea = artistasSeguidos.length ? await supabase.from("eventos_artistas").select("evento_id").in("artista_id", artistasSeguidos) : { data: [] as { evento_id: string }[] };
+  // Tope de sobra (más artistas seguidos que fechas cabrían) para no depender del corte silencioso de PostgREST.
+  const ea = artistasSeguidos.length ? await supabase.from("eventos_artistas").select("evento_id").in("artista_id", artistasSeguidos).limit(1000) : { data: [] as { evento_id: string }[] };
   const eventosSeguidos = [...new Set((ea.data ?? []).map((x) => x.evento_id as string))];
   const van = new Map<string, number>();
   for (const fila of (a.data ?? []) as { evento_id: string; n: number }[]) van.set(fila.evento_id, Number(fila.n));
