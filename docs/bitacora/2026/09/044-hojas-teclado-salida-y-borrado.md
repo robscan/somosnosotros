@@ -19,5 +19,8 @@
 - Chrome a 390×844 con usuario desechable: nombre escrito → Atrás abre la hoja; Seguir editando la cierra sin perder nada; Salir y borrar vuelve y el alta reabierta está vacía. `/borrado?que=evento` con su estado vacío.
 - Simulador iOS 26.3 (Safari, teclado en pantalla): la hoja "Dónde es" queda encima del teclado con el título, el campo y la lista a la vista; la lista se desplaza dentro de la hoja.
 
+## Firma
+PR #52 en producción por orden del founder ("Dale todo a prod") y firmado en el iPhone al cierre de la noche ("Firma!").
+
 ## Queda
-- Firma del founder en el iPhone: hoja "Dónde es" con teclado, aviso al salir del alta, borrar un evento.
+- Nada.

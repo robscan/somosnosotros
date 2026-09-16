@@ -31,6 +31,8 @@ Con la app instalada en el inicio, en producción, tras poner Voy y volver con A
 - `npm run lint && npm run typecheck && npm test` en verde (141 pruebas: 5 nuevas de la memoria y 1 del buscador); `npm run build` en verde.
 - Servidor local a 390×844: Nuevos + scroll 700 → ficha → Atrás: vuelve a Nuevos y a 700 en 230 ms. Buscar «camerata» halla dos (por título y por artista); «jazz museo» da el vacío con causa; ficha y Atrás devuelven el campo abierto con «camerata» y sin foco. Lugares en Lista a 900 → ficha → Atrás: Lista y 900. Artistas a 1200 → ficha → Atrás: 1200. Desde Artistas, el tab Agenda vuelve a la agenda con su pestaña y su búsqueda.
 
+## Firma
+PR #51 en producción por orden del founder ("Manda a prod") y firmado en la app instalada al cierre de la noche.
+
 ## Queda
-- Prueba del founder en la app instalada tras el despliegue: volver por Atrás y por el gesto, con y sin Voy en la ficha.
-- Commit y PR cuando el founder lo pida.
+- Nada.
