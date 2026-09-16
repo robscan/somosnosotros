@@ -3,36 +3,13 @@
    1. Pestañas pegajosas · 2. Mapa: caja, botón de ubicación, tarjeta del pin · 3. Lista: ✕ de Cerca de mí y aviso
    ========================================================================== */
 
-/* 1. Pestañas Mapa · Lista: la propia lista de pestañas es la cabecera pegajosa */
+/* 1. Pestañas Mapa · Lista (ui/Pestanas, repartidas): la propia tira es la cabecera pegajosa */
 .pestanas {
   position: sticky;
   top: 0;
   z-index: 10;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   padding: 0 var(--gutter);
   background: var(--fondo);
-  border-bottom: 1px solid var(--borde);
-}
-.pestana {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: var(--toque-min);
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  font-weight: 600;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.pestana[aria-selected="true"] {
-  color: var(--primario);
-  border-bottom-color: var(--primario);
-  font-weight: 700;
 }
 
 /* 2. Mapa: llena lo que queda entre las pestañas y la navegación; la página no se desplaza */
@@ -42,7 +19,7 @@
 }
 .cajaMapa {
   position: relative;
-  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--alto-barra) - var(--toque-min) - 1px - var(--alto-nav) - env(safe-area-inset-bottom, 0px));
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--alto-barra) - var(--toque-min) - var(--alto-nav) - env(safe-area-inset-bottom, 0px)); /* la tira de pestañas mide --toque-min con su raya */
   min-height: 320px;
 }
 .ubicame {
