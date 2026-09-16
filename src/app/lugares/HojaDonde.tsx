@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
+import Limpiar from "@/components/ui/Limpiar";
 import { IconoBuscar, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
@@ -60,6 +61,7 @@ export default function HojaDonde({ conFoco, punto, direccion, yo, ubicando, onP
       <label className={canon.campo}>
         <IconoBuscar width={20} height={20} />
         <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off" autoFocus={conFoco} />
+        <Limpiar visible={!!q} />
       </label>
       {sugerencias.length > 0 && (
         <ul className={`${sug.lista} ${styles.sugerencias}`} role="listbox" aria-label="Direcciones encontradas">

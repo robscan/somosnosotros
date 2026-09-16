@@ -1,0 +1,41 @@
+/* La ✕ de un campo de texto: redonda, dentro del campo a la derecha; el campo le deja sitio cuando está */
+.caja {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+.limpiar {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.limpiar:active {
+  background: var(--fondo-suave);
+}
+/* Corrida a la izquierda cuando el campo ya tiene una acción a la derecha (la cámara del alta de evento) */
+.desplazada {
+  right: 46px;
+}
+/* El campo deja sitio a la ✕. La clase va dos veces para pesar más que el relleno propio de cada campo. */
+:is(input, textarea):has(+ .limpiar.limpiar) {
+  padding-right: 44px;
+}
+:is(input, textarea):has(+ .limpiar.limpiar.desplazada) {
+  padding-right: 84px;
+}
+/* Y la ✕ nativa de type="search" no se dibuja encima */
+input:has(+ .limpiar.limpiar)::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}

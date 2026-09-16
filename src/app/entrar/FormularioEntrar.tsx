@@ -7,6 +7,8 @@ import Campo from "@/components/ui/Campo";
 import { enmascararCorreo, limpiarCodigo } from "@/lib/entrar";
 import { correoValido } from "@/lib/perfil";
 import { clienteNavegador } from "@/lib/supabase/navegador";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./FormularioEntrar.module.css";
 
 type Props = { siguiente: string; google: boolean; /** Dígitos del código que manda Supabase. */ largo: number };
@@ -153,22 +155,25 @@ export default function FormularioEntrar({ siguiente, google, largo }: Props) {
       <label htmlFor="campo-codigo" className={styles.etiqueta}>
         Código de {largo} dígitos
       </label>
-      <input
-        id="campo-codigo"
-        ref={campoCodigo}
-        className={`${styles.codigo} ${error ? styles.codigoMal : ""}`}
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        autoComplete="one-time-code"
-        maxLength={largo}
-        value={codigo}
-        onChange={(e) => alEscribirCodigo(e.target.value)}
-        placeholder={"·".repeat(largo)}
-        aria-invalid={!!error}
-        aria-describedby={error ? "codigo-error" : undefined}
-        disabled={entrando}
-      />
+      <span className={limpiar.caja}>
+        <input
+          id="campo-codigo"
+          ref={campoCodigo}
+          className={`${styles.codigo} ${error ? styles.codigoMal : ""}`}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="one-time-code"
+          maxLength={largo}
+          value={codigo}
+          onChange={(e) => alEscribirCodigo(e.target.value)}
+          placeholder={"·".repeat(largo)}
+          aria-invalid={!!error}
+          aria-describedby={error ? "codigo-error" : undefined}
+          disabled={entrando}
+        />
+        <Limpiar visible={!!codigo} />
+      </span>
       {error && (
         <p id="codigo-error" className={styles.error} role="alert">
           {error}

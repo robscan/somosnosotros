@@ -7,6 +7,8 @@ import { LIMITES } from "@/lib/perfil";
 import { subirFoto } from "@/lib/subirFoto";
 import type { Perfil } from "@/lib/supabase/servidor";
 import { guardarPerfil, type ResultadoGuardar } from "@/app/perfil/acciones";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import canon from "@/components/ui/FormularioCanon.module.css";
 
 type Props = { perfil: Perfil; correo: string };
@@ -59,7 +61,10 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
             {multilinea ? (
               <textarea name={clave} value={valor} onChange={(e) => setValor(e.target.value)} maxLength={maxLength} placeholder={placeholder} aria-label={etiqueta} className={canon.entrada} autoFocus />
             ) : (
-              <input type="text" name={clave} value={valor} onChange={(e) => setValor(e.target.value)} maxLength={maxLength} placeholder={placeholder} aria-label={etiqueta} className={canon.entrada} autoComplete={clave === "nombre" ? "name" : "off"} autoFocus />
+              <span className={limpiar.caja}>
+                <input type="text" name={clave} value={valor} onChange={(e) => setValor(e.target.value)} maxLength={maxLength} placeholder={placeholder} aria-label={etiqueta} className={canon.entrada} autoComplete={clave === "nombre" ? "name" : "off"} autoFocus />
+                <Limpiar visible={!!valor} />
+              </span>
             )}
             {error && (
               <p className={canon.error} role="alert">

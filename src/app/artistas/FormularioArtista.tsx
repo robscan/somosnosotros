@@ -6,6 +6,8 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { Chip } from "@/components/ui/Chip";
 import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas } from "@/components/ui/Iconos";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import { artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, LIMITES_ARTISTA, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type TipoArtista } from "@/lib/artistas";
 import { normalizarRedes } from "@/lib/enlaces";
@@ -142,6 +144,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       <label className={canon.campo}>
         <IconoEstrella width={20} height={20} />
         <input name="nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={LIMITES_ARTISTA.nombre} placeholder="Nombre del artista o grupo" aria-label="Nombre del artista o grupo" aria-invalid={!!errores.nombre} autoComplete="off" autoCapitalize="words" autoFocus={esAlta} required />
+        <Limpiar visible={!!nombre} />
       </label>
       {errores.nombre && (
         <p className={canon.error} role="alert">
@@ -176,7 +179,10 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
                   </Chip>
                 ))}
               </div>
-              <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_ARTISTA.detalle} placeholder="Ej. son huasteco, jazz (opcional)" aria-label="En una palabra" className={canon.entrada} autoComplete="off" />
+              <span className={limpiar.caja}>
+                <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_ARTISTA.detalle} placeholder="Ej. son huasteco, jazz (opcional)" aria-label="En una palabra" className={canon.entrada} autoComplete="off" />
+                <Limpiar visible={!!detalle} />
+              </span>
               {(errores.disciplina || errores.detalle) && (
                 <p className={canon.error} role="alert">
                   {errores.disciplina ?? errores.detalle}

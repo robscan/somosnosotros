@@ -5,6 +5,8 @@ import { IconoMas } from "@/components/ui/Iconos";
 import { artistaIgual, etiquetaArtista, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./SelectorQuien.module.css";
 
@@ -89,25 +91,28 @@ export default function SelectorQuien({ valor, onCambio, mios }: Props) {
       <label htmlFor="campo-quien" className={styles.etiqueta}>
         {valor.length ? "Otro artista o grupo" : "Nombre del artista o grupo"}
       </label>
-      <input
-        id="campo-quien"
-        type="text"
-        className={styles.campo}
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            if (sugerencias[0] && artistaIgual(sugerencias, texto)) elegir(artistaIgual(sugerencias, texto)!);
-            else if (ofrecerCrear) crear();
-          }
-        }}
-        placeholder="Ej. Trío Xochitl"
-        maxLength={80}
-        autoComplete="off"
-        autoCapitalize="words"
-        aria-autocomplete="list"
-      />
+      <span className={limpiar.caja}>
+        <input
+          id="campo-quien"
+          type="text"
+          className={styles.campo}
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (sugerencias[0] && artistaIgual(sugerencias, texto)) elegir(artistaIgual(sugerencias, texto)!);
+              else if (ofrecerCrear) crear();
+            }
+          }}
+          placeholder="Ej. Trío Xochitl"
+          maxLength={80}
+          autoComplete="off"
+          autoCapitalize="words"
+          aria-autocomplete="list"
+        />
+        <Limpiar visible={!!texto} />
+      </span>
       {(sugerencias.length > 0 || ofrecerCrear) && (
         <ul className={sug.lista} role="listbox" aria-label="Artistas encontrados">
           {sugerencias.map((a) => (

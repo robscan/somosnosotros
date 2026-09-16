@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { MOTIVOS } from "@/lib/reportes";
 import { reportar, type ResultadoReporte } from "@/app/reportes";
+import Limpiar from "@/components/ui/Limpiar";
+import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./Reportar.module.css";
 
 import type { TipoReportado } from "@/lib/reportes";
@@ -13,6 +15,7 @@ type Props = { tipo: TipoReportado; objetoId: string; volver: string; conSesion:
 /** Un enlace discreto "Reportar"; al tocarlo, motivo y un renglón opcional. El admin lo revisa. */
 export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {
   const [abierto, setAbierto] = useState(false);
+  const [detalle, setDetalle] = useState("");
   const [resultado, enviar, enviando] = useActionState<ResultadoReporte | null, FormData>(reportar, null);
 
   if (resultado?.ok) return <p className={styles.gracias}>Gracias. El administrador lo revisa.</p>;
@@ -40,7 +43,10 @@ export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {
           </label>
         ))}
       </div>
-      <input name="detalle" className={styles.detalle} placeholder="Algo más que deba saber el administrador (opcional)" maxLength={500} />
+      <span className={limpiar.caja}>
+        <input name="detalle" className={styles.detalle} placeholder="Algo más que deba saber el administrador (opcional)" maxLength={500} value={detalle} onChange={(e) => setDetalle(e.target.value)} />
+        <Limpiar visible={!!detalle} />
+      </span>
       {resultado && !resultado.ok && (
         <p className={styles.error} role="alert">
           {resultado.error}

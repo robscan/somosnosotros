@@ -20,6 +20,7 @@ import type { Ciudad } from "@/lib/ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import renglon from "@/components/Renglon.module.css";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
+import { CampoBuscar } from "@/components/ui/Buscador";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./lugares.module.css";
 
@@ -152,7 +153,7 @@ export default function VistaLugares({
           />
           <div className={styles.sobreMapa}>
             {lugares.length >= UMBRAL_BUSCAR_LUGARES && (
-              <input type="search" className={styles.buscarMapa} placeholder="Buscar un lugar por nombre" aria-label="Buscar un lugar por nombre" value={busqueda} onChange={(e) => buscarEnMapa(e.target.value)} onFocus={() => setListaAbierta(true)} autoCapitalize="none" autoCorrect="off" />
+              <CampoBuscar className={styles.buscarMapa} placeholder="Buscar un lugar por nombre" ariaLabel="Buscar un lugar por nombre" valor={busqueda} onCambiar={buscarEnMapa} onFocus={() => setListaAbierta(true)} />
             )}
             {resultados.length > 0 && (
               <ul className={`${sug.lista} ${styles.resultadosMapa}`} role="listbox" aria-label="Lugares encontrados">
