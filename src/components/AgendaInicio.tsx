@@ -1,20 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import Hoja from "@/components/ui/Hoja";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
 import { useState } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
-import type { Ciudad } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
+import ChipCiudad from "./Ciudad";
 import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
-import { IconoBuscar, IconoCalendario, IconoCaret, IconoPin } from "./ui/Iconos";
+import { IconoBuscar, IconoCalendario, IconoCaret } from "./ui/Iconos";
 import styles from "./AgendaInicio.module.css";
 
-type CiudadConEventos = Ciudad & { eventos: number };
 type Props = {
   eventos: EventoAgenda[];
   /** Lugares que la persona sigue; null = sin sesión. */
@@ -22,7 +21,7 @@ type Props = {
   /** Eventos de los artistas que sigue (con sesión). */
   eventosSeguidos?: string[];
   ciudad: Ciudad;
-  ciudades: CiudadConEventos[];
+  ciudades: CiudadConDatos[];
   /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan). */
   hoy: string;
 };
@@ -50,7 +49,6 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   });
   const [punto, setPunto] = useState<Punto | null>(null);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
-  const [hojaCiudad, setHojaCiudad] = useState(false);
   const ahora = new Date();
 
   function pedirUbicacion() {
@@ -166,12 +164,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
                   <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
                 </label>
               )}
-              {/* Siempre se abre, aunque hoy haya una sola ciudad: la lista es la puerta a las que vengan (founder, 2026-09-16). */}
-              <button type="button" className={`${chip.chip} ${styles.chipContexto}`} onClick={() => setHojaCiudad(true)} aria-haspopup="dialog">
-                <IconoPin width={16} height={16} />
-                <span>{ciudad.nombre}</span>
-                <IconoCaret width={12} height={12} />
-              </button>
+              <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${c.slug}`)} className={styles.chipContexto} />
               <button type="button" className={`${chip.chip} ${styles.chipContexto} ${styles.lupa}`} onClick={() => { setBuscando(true); setEnfocar(true); }} aria-label="Buscar un evento">
                 <IconoBuscar width={18} height={18} />
               </button>
@@ -187,18 +180,6 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
         </Pestanas>
       </div>
       {cuerpo}
-      {hojaCiudad && (
-        <Hoja etiqueta="Dónde" onCerrar={() => setHojaCiudad(false)}>
-          <h3>Dónde</h3>
-          <p>Solo aparecen las ciudades con eventos próximos.</p>
-          {ciudades.map((c) => (
-            <Link key={c.slug} href={c.slug === ciudades[0]?.slug ? "/" : `/?ciudad=${c.slug}`} className={`${styles.opcion} ${c.slug === ciudad.slug ? styles.elegida : ""}`} onClick={() => setHojaCiudad(false)}>
-              <span>{c.nombre}</span>
-              <span>{c.eventos === 1 ? "1 evento" : `${c.eventos} eventos`}</span>
-            </Link>
-          ))}
-        </Hoja>
-      )}
     </>
   );
 }

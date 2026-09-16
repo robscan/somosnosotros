@@ -4,7 +4,8 @@ import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import type { EventoAgenda } from "@/lib/agenda";
-import { CIUDADES, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
+import { ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
+import { cargarCiudades } from "@/lib/ciudades";
 import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./inicio.module.css";
@@ -14,7 +15,7 @@ type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & {
 /** La agenda de la ciudad: eventos próximos con su lugar, cuántos van, y los lugares que la persona sigue. */
 async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   const supabase = await clienteServidor();
-  if (!supabase) return { eventos: [] as EventoAgenda[], seguidos: usuarioId ? [] : null, eventosSeguidos: [] as string[], hayLugares: false, porCiudad: new Map<string, number>() };
+  if (!supabase) return { eventos: [] as EventoAgenda[], seguidos: usuarioId ? [] : null, eventosSeguidos: [] as string[], hayLugares: false };
   // Solo la ciudad (decisión "sin segunda ciudad"); cuántos van se cuenta en la base para los eventos cargados,
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   const [e, l, s] = await Promise.all([
@@ -31,26 +32,23 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   const eventosSeguidos = [...new Set((ea.data ?? []).map((x) => x.evento_id as string))];
   const van = new Map<string, number>();
   for (const fila of (a.data ?? []) as { evento_id: string; n: number }[]) van.set(fila.evento_id, Number(fila.n));
-  const porCiudad = new Map<string, number>();
   const eventos: EventoAgenda[] = [];
   for (const fila of (e.data ?? []) as unknown as (Fila & { ciudad: string })[]) {
-    porCiudad.set(fila.ciudad, (porCiudad.get(fila.ciudad) ?? 0) + 1);
-    if (fila.ciudad !== ciudad.nombre) continue;
     const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
     // Quién se presenta, solo el nombre: sirve al buscador ("camerata" halla su concierto).
     const artistas = (fila.artistas ?? []).map((x) => (Array.isArray(x.artista) ? x.artista[0] : x.artista)?.nombre).filter((n): n is string => !!n);
     eventos.push({ ...fila, lugar, artistas, lat: fila.sitio_lat, lng: fila.sitio_lng, van: van.get(fila.id) ?? 0 });
   }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
-  return { eventos, seguidos, eventosSeguidos, hayLugares: (l.count ?? 0) > 0, porCiudad };
+  return { eventos, seguidos, eventosSeguidos, hayLugares: (l.count ?? 0) > 0 };
 }
 
 export default async function Inicio({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }) {
   const { cuenta, ciudad: slug } = await searchParams;
-  const ciudad = ciudadPorSlug(slug);
-  const actual = await usuarioActual();
-  const { eventos, seguidos, eventosSeguidos, hayLugares, porCiudad } = await cargar(ciudad, actual?.perfil.id ?? null);
-  const ciudades = CIUDADES.map((c) => ({ ...c, eventos: porCiudad.get(c.nombre) ?? 0 })).filter((c) => c.eventos > 0 || c.slug === ciudad.slug);
+  // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16).
+  const [ciudades, actual] = await Promise.all([cargarCiudades(await clienteServidor()), usuarioActual()]);
+  const ciudad = ciudadPorSlug(slug, ciudades);
+  const { eventos, seguidos, eventosSeguidos, hayLugares } = await cargar(ciudad, actual?.perfil.id ?? null);
   const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
 
   return (

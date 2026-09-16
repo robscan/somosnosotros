@@ -1,0 +1,20 @@
+/* Hoja de ciudades: un renglón por ciudad, nombre a la izquierda y lo que tiene a la derecha */
+.opcion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-1);
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  text-decoration: none;
+}
+.opcion span:last-child {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.elegida {
+  font-weight: 700;
+}

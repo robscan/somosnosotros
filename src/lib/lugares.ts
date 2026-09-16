@@ -1,3 +1,4 @@
+import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
@@ -147,6 +148,8 @@ export type DatosLugar = {
   portada: string | null;
   privado: boolean;
   detalle: string | null;
+  /** Deducida por Mapbox al ubicar el lugar; la inicial si no dijo nada. */
+  ciudad: string;
 };
 export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces" | "detalle", string>>;
 
@@ -167,6 +170,7 @@ export function validarLugar(entrada: Record<string, FormDataEntryValue | null |
     portada: limpiar(entrada.portada) || null,
     privado: limpiar(entrada.privado) === "1",
     detalle: tipo === "otro" ? limpiar(entrada.detalle) || null : null,
+    ciudad: (ciudadCanonica(limpiar(entrada.ciudad)) || CIUDAD_INICIAL.nombre).slice(0, 80),
   };
   const errores: ErroresLugar = {};
   if (datos.detalle && datos.detalle.length > LIMITES_LUGAR.detalle) errores.detalle = `Máximo ${LIMITES_LUGAR.detalle} caracteres.`;

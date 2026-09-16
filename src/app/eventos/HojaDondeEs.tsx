@@ -26,6 +26,8 @@ export type OtroSitio = {
   privadoPunto: Punto | null;
   revelarHoras: number;
   indicaciones: string;
+  /** La ciudad del pin, deducida por Mapbox al ponerlo (null hasta entonces). */
+  ciudad: string | null;
 };
 
 type Props = {

@@ -17,7 +17,7 @@ export type ResultadoEvento = { ok: true; id: string } | { ok: false; errores: E
 
 
 function leer(formData: FormData) {
-  const claves = ["modo_sitio", "lugar_id", "sitio_texto", "sitio_lat", "sitio_lng", "direccion_privada", "privado_lat", "privado_lng", "indicaciones", "revelar_horas", "titulo", "inicio", "fin", "descripcion", "imagen", "gratis", "precio", "enlace"];
+  const claves = ["modo_sitio", "lugar_id", "sitio_texto", "sitio_lat", "sitio_lng", "direccion_privada", "privado_lat", "privado_lng", "indicaciones", "revelar_horas", "titulo", "inicio", "fin", "descripcion", "imagen", "gratis", "precio", "enlace", "ciudad"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 
@@ -27,10 +27,10 @@ function filaEvento(datos: DatosEvento, ciudad: string) {
   return { ...fila, descripcion: fila.descripcion || null, ciudad };
 }
 
-/** La ciudad del evento: la de su lugar, o la inicial si es otro sitio. */
-async function ciudadDe(supabase: NonNullable<Awaited<ReturnType<typeof clienteServidor>>>, lugarId: string | null): Promise<string> {
-  if (!lugarId) return CIUDAD_INICIAL.nombre;
-  const { data } = await supabase.from("lugares").select("ciudad").eq("id", lugarId).maybeSingle();
+/** La ciudad del evento: la de su lugar; en otro sitio, la del pin (Mapbox); si no se supo, la inicial. */
+async function ciudadDe(supabase: NonNullable<Awaited<ReturnType<typeof clienteServidor>>>, datos: DatosEvento): Promise<string> {
+  if (!datos.lugar_id) return datos.ciudad || CIUDAD_INICIAL.nombre;
+  const { data } = await supabase.from("lugares").select("ciudad").eq("id", datos.lugar_id).maybeSingle();
   return data?.ciudad ?? CIUDAD_INICIAL.nombre;
 }
 
@@ -92,7 +92,7 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   if (Object.keys(errores).length) return { ok: false, errores };
   const { data, error } = await supabase
     .from("eventos")
-    .insert({ ...filaEvento(datos, await ciudadDe(supabase, datos.lugar_id)), creado_por: user.id })
+    .insert({ ...filaEvento(datos, await ciudadDe(supabase, datos)), creado_por: user.id })
     .select("id")
     .single();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo publicar el evento. Intenta de nuevo." };
@@ -113,7 +113,7 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   if (Object.keys(errores).length) return { ok: false, errores };
   // Cómo estaba antes, para avisar a quienes van si cambia cuándo o dónde.
   const { data: antes } = await supabase.from("eventos").select("inicio, fin, lugar_id, sitio_texto").eq("id", id).maybeSingle();
-  const { data, error } = await supabase.from("eventos").update(filaEvento(datos, await ciudadDe(supabase, datos.lugar_id))).eq("id", id).select("id").maybeSingle();
+  const { data, error } = await supabase.from("eventos").update(filaEvento(datos, await ciudadDe(supabase, datos))).eq("id", id).select("id").maybeSingle();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu evento?" };
   await guardarPrivado(supabase, id, datos);
   const artistas = await guardarQuien(supabase, user.id, id, quienDesdeJson(formData.get("quien")));
