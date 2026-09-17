@@ -49,7 +49,7 @@
   - El acceso directo de prueba se borró del simulador al terminar.
 
 ## Queda
-- Probar en el iPhone del founder, en Safari y en la app instalada, también con el gesto de atrás: en el simulador el gesto no se pudo simular y se usó la flecha de atrás de Safari.
+- ~~Probar en el iPhone del founder~~: probado y firmado tras la revisión del PR #87 (abajo, **Firma**).
 - ~~**Visto y sin tocar**: al saltar, la sección queda a 12 px del borde, bajo la barra pegajosa.~~ Arreglado en la revisión del PR #87 (abajo, punto 4).
 - ~~**Por comprobar**: las acciones de publicar redirigen apilando.~~ Confirmado y arreglado en la revisión del PR #87 (abajo, punto 2).
 - Push y PR cuando el founder lo pida (el PR #87 lo abrió gestión de cambios; los arreglos de la revisión van en commits locales).
@@ -95,3 +95,6 @@ El chat de gestión de cambios probó la navegación con datos reales y pasa: la
 - Al salir de la pantalla de error recargando, la entrada nueva cuenta con una pantalla detrás (el referente es la propia app). No se nota: la agenda no tiene Atrás.
 - Tras Entrar, la intención (Seguir, Voy) se aplica dos veces, al reemplazar y al releer, como antes. Es idempotente.
 - Los márgenes con el área segura no se probaron en un iPhone con muesca.
+
+## Firma
+- **2026-09-17:** el founder lo probó y lo firmó: «probado y te firmo». La versión probada es la de la revisión (gestión de cambios subió los commits al PR #87). Queda mezclarlo cuando lo decida gestión de cambios; lo pendiente de arriba sigue en OL-055.
