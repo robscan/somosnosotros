@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, enlaceDesdeCartel, nombreSitio, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { cartelAFormulario, enlaceDesdeCartel, jsonLdEvento, nombreSitio, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -112,5 +112,29 @@ describe("queCambio", () => {
     expect(queCambio(base, { ...base, lugar_id: "l2" })).toBe("donde");
     expect(queCambio(base, { ...base, lugar_id: null, sitio_texto: "Plaza de Armas" })).toBe("donde");
     expect(queCambio(base, { ...base, inicio: "2026-09-21T19:00:00.000Z", lugar_id: "l2" })).toBe("ambos");
+  });
+});
+
+describe("jsonLdEvento", () => {
+  const base = { id: "e1", titulo: "Noche de jazz", descripcion: null, inicio: "2026-09-20T19:00:00.000Z", fin: null, imagen: null, gratis: true, sitioNombre: "Teatro de la Paz", sitioLat: null, sitioLng: null };
+  it("trae lo mínimo: tipo, nombre, fecha y sitio", () => {
+    const d = jsonLdEvento(base);
+    expect(d).toMatchObject({ "@context": "https://schema.org", "@type": "Event", name: "Noche de jazz", startDate: base.inicio, location: { "@type": "Place", name: "Teatro de la Paz" }, isAccessibleForFree: true, url: "https://somosnosotros.org/eventos/e1" });
+  });
+  it("con coordenada pública, suma el geo; sin ella, no", () => {
+    expect(jsonLdEvento(base).location).not.toHaveProperty("geo");
+    const conPin = jsonLdEvento({ ...base, sitioLat: 22.15, sitioLng: -100.98 });
+    expect(conPin.location).toMatchObject({ geo: { "@type": "GeoCoordinates", latitude: 22.15, longitude: -100.98 } });
+  });
+  it("no inventa precio: sin gratis, no hay isAccessibleForFree ni offers", () => {
+    const d = jsonLdEvento({ ...base, gratis: false });
+    expect(d).not.toHaveProperty("isAccessibleForFree");
+    expect(d).not.toHaveProperty("offers");
+  });
+  it("descripción e imagen solo si vienen", () => {
+    expect(jsonLdEvento(base)).not.toHaveProperty("description");
+    expect(jsonLdEvento(base)).not.toHaveProperty("image");
+    const lleno = jsonLdEvento({ ...base, descripcion: "Con la Camerata", imagen: "https://x/y.jpg", fin: "2026-09-20T22:00:00.000Z" });
+    expect(lleno).toMatchObject({ description: "Con la Camerata", image: ["https://x/y.jpg"], endDate: "2026-09-20T22:00:00.000Z" });
   });
 });

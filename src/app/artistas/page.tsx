@@ -14,7 +14,8 @@ import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
-export const metadata = { title: "Artistas · Somos Nosotros" };
+// El canonical apunta siempre a la lista sin filtros (OL-059): "?hace=musica" es la misma página para Google, no una nueva.
+export const metadata = { title: "Artistas · Somos Nosotros", alternates: { canonical: "/artistas" } };
 
 type FilaFecha = { artista_id: string; evento: Evento | Evento[] | null };
 type Evento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };

@@ -9,7 +9,8 @@ import { conProximo, TIPOS, type LugarLista, type LugarResumen, type ProximoEven
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import VistaLugares from "./VistaLugares";
 
-export const metadata = { title: "Lugares · Somos Nosotros" };
+// El canonical apunta siempre a la lista sin filtros (OL-059): "?tipo=museo" es la misma página para Google, no una nueva.
+export const metadata = { title: "Lugares · Somos Nosotros", alternates: { canonical: "/lugares" } };
 
 /** Los lugares de la ciudad con su próximo evento: el mapa primero, la lista como segunda vista. */
 async function cargar(ciudadNombre: string): Promise<LugarLista[]> {

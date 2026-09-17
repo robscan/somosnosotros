@@ -12,7 +12,7 @@ import Pendientes from "./Pendientes";
 import Reintentar from "./Reintentar";
 import styles from "./admin.module.css";
 
-export const metadata = { title: "Administración · Somos Nosotros" };
+export const metadata = { title: "Administración · Somos Nosotros", robots: { index: false, follow: false } };
 
 const ICONO = { personas: IconoPersonas, lugares: IconoPin, eventos: IconoCalendario, artistas: IconoEstrella };
 const SECCIONES = [

@@ -13,6 +13,13 @@ import { leerTira } from "@/lib/destacados";
 import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./inicio.module.css";
+import type { Metadata } from "next";
+
+// Título propio (OL-059): sin esto, Google mostraba el genérico del layout raíz para la página más buscada del sitio.
+export const metadata: Metadata = {
+  title: "Agenda cultural de San Luis Potosí · Somos Nosotros",
+  description: "Qué hay hoy y esta semana en los centros culturales de San Luis Potosí. Gratis, sin cuenta para mirar.",
+};
 
 type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & { sitio_lat: number | null; sitio_lng: number | null; lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][]; artistas: { artista: { nombre: string } | { nombre: string }[] | null }[] | null };
 

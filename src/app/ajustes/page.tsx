@@ -16,7 +16,7 @@ import { contarPendientes } from "@/app/admin/consultas";
 import InstalarApp from "./InstalarApp";
 import styles from "./ajustes.module.css";
 
-export const metadata = { title: "Ajustes · Somos Nosotros" };
+export const metadata = { title: "Ajustes · Somos Nosotros", robots: { index: false, follow: false } };
 const ORIGEN = "https://somosnosotros.org";
 
 /**

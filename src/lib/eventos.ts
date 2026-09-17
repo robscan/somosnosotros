@@ -93,6 +93,47 @@ export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "si
   return "Sitio por confirmar";
 }
 
+export type DatosJsonLdEvento = {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  inicio: string;
+  fin: string | null;
+  imagen: string | null;
+  /** precio === null, para no inventar un número a partir de un texto libre ("$150", "taquilla"...). */
+  gratis: boolean;
+  sitioNombre: string;
+  /** Solo si es público (el lugar o el pin de "otro sitio"); un sitio reservado nunca manda su coordenada real aquí. */
+  sitioLat: number | null;
+  sitioLng: number | null;
+};
+
+/**
+ * JSON-LD tipo Event para la ficha (OL-059, bitácora 088): para que Google pueda mostrar fecha y lugar en el
+ * buscador. Solo campos públicos — nunca quién va, nunca la dirección de un sitio reservado (por eso recibe ya
+ * resueltos el nombre del sitio y su coordenada, no el registro privado). Sin precio si no se pudo escribir como
+ * número: mejor omitirlo que inventarlo a partir de un texto libre.
+ */
+export function jsonLdEvento(e: DatosJsonLdEvento): Record<string, unknown> {
+  const location: Record<string, unknown> = { "@type": "Place", name: e.sitioNombre };
+  if (e.sitioLat != null && e.sitioLng != null) location.geo = { "@type": "GeoCoordinates", latitude: e.sitioLat, longitude: e.sitioLng };
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: e.titulo,
+    startDate: e.inicio,
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    location,
+    url: `https://somosnosotros.org/eventos/${e.id}`,
+  };
+  if (e.fin) data.endDate = e.fin;
+  if (e.descripcion) data.description = e.descripcion;
+  if (e.imagen) data.image = [e.imagen];
+  if (e.gratis) data.isAccessibleForFree = true;
+  return data;
+}
+
 /** Lee el formulario del evento. Las horas del selector se leen en `zona`, la del sitio del evento. */
 export function validarEvento(entrada: Record<string, FormDataEntryValue | null | undefined>, zona: string = ZONA_INICIAL): { datos: DatosEvento; errores: ErroresEvento } {
   const modo = (limpiar(entrada.modo_sitio) || "lugar") as ModoSitio;

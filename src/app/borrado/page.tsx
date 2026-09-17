@@ -5,7 +5,7 @@ import Barra from "@/components/ui/Barra";
 import { IconoCalendario, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import styles from "./borrado.module.css";
 
-export const metadata = { title: "Borrado · Somos Nosotros" };
+export const metadata = { title: "Borrado · Somos Nosotros", robots: { index: false, follow: false } };
 
 /** Confirmación de borrado con estado vacío (pedido del founder, 2026-09-15): antes, borrar abría otra ficha. */
 const TEXTOS = {

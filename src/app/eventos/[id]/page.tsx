@@ -19,7 +19,7 @@ import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { nombreSitio, textoCompartir } from "@/lib/eventos";
+import { jsonLdEvento, nombreSitio, textoCompartir } from "@/lib/eventos";
 import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
@@ -130,9 +130,26 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const n = totalVan;
   const avisoBorrar = n > 0 ? `Se borra el evento y los ${n === 1 ? '1 "Voy"' : `${n} "Voy"`} que tiene.` : "Se borra el evento.";
   const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde, new Date(), null, e.zona) : "el día del evento";
+  // JSON-LD (OL-059, bitácora 088): la coordenada solo si es pública — nunca la de un sitio reservado (`privado`),
+  // y nunca la de un lugar oculto o marcado "Solo tú lo ves". Solo se manda si es lo que también vería un visitante
+  // sin sesión (evento visible y no pasado); si no, `notFound()` ya lo detuvo arriba salvo para el autor o el admin.
+  const geoPublico =
+    e.lugar && e.lugar.visible && !e.lugar.privado
+      ? { lat: e.lugar.lat, lng: e.lugar.lng }
+      : !e.sitio_reservado && e.sitio_lat != null && e.sitio_lng != null
+        ? { lat: e.sitio_lat, lng: e.sitio_lng }
+        : null;
+  const jsonLd =
+    e.visible && !paso
+      ? jsonLdEvento({ id: e.id, titulo: e.titulo, descripcion: e.descripcion, inicio: e.inicio, fin: e.fin, imagen: e.imagen, gratis: e.precio === null, sitioNombre: sitio, sitioLat: geoPublico?.lat ?? null, sitioLng: geoPublico?.lng ?? null })
+      : null;
 
   return (
     <main className={ficha.pagina}>
+      {jsonLd && (
+        // Se escapa "<" para que un título o descripción con "</script>" no rompa la página (gestión de cambios, OL-059).
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      )}
       <Barra
         volver={{ href: "/", texto: "Agenda" }}
         derecha={
