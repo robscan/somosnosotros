@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -128,5 +128,49 @@ describe("fechas en la zona del evento", () => {
     expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA, "Marte/Olimpo")).toBe("Hoy · 19:00");
     expect(localAIso("2026-02-31T19:00")).toBeNull();
     expect(localAIso("2026-09-20T24:00")).toBeNull();
+  });
+});
+
+// Banco por zona: Ciudad de México, Bogotá y Madrid, con los dos cambios de horario de Madrid. Los valores de `terminaDe`
+// son los mismos que la base calcula en `eventos.termina` (comprobados en un Postgres local): la misma regla en los dos lados.
+describe("banco por zona", () => {
+  const casos = [
+    { zona: "America/Mexico_City", local: "2026-09-20T19:00", iso: "2026-09-21T01:00:00.000Z", termina: "2026-09-21T06:00:00.000Z" },
+    { zona: "America/Bogota", local: "2026-09-20T19:00", iso: "2026-09-21T00:00:00.000Z", termina: "2026-09-21T05:00:00.000Z" },
+    { zona: "Europe/Madrid", local: "2026-09-20T19:00", iso: "2026-09-20T17:00:00.000Z", termina: "2026-09-20T22:00:00.000Z" },
+    // Madrid adelanta el reloj el 29 mar (un día de 23 horas) y lo atrasa el 25 oct (de 25 horas).
+    { zona: "Europe/Madrid", local: "2026-03-29T01:30", iso: "2026-03-29T00:30:00.000Z", termina: "2026-03-29T22:00:00.000Z" },
+    { zona: "Europe/Madrid", local: "2026-10-25T01:30", iso: "2026-10-24T23:30:00.000Z", termina: "2026-10-25T23:00:00.000Z" },
+  ];
+  const min = 60000;
+  for (const c of casos) {
+    it(`${c.zona} ${c.local}: hora, Hoy y Mañana, y cuándo deja de verse`, () => {
+      expect(localAIso(c.local, c.zona)).toBe(c.iso);
+      expect(isoALocal(c.iso, c.zona)).toBe(c.local);
+      expect(terminaDe(c.iso, null, c.zona)).toBe(c.termina);
+      // La base lo muestra mientras termina >= ahora: hasta ese instante, no después.
+      expect(eventoPaso(c.iso, null, new Date(c.termina), c.zona)).toBe(false);
+      expect(eventoPaso(c.iso, null, new Date(Date.parse(c.termina) + min), c.zona)).toBe(true);
+      const medianoche = Date.parse(localAIso(`${c.local.slice(0, 10)}T00:00`, c.zona)!);
+      expect(diaCorto(c.iso, new Date(medianoche + min), c.zona)).toBe("Hoy");
+      expect(diaCorto(c.iso, new Date(medianoche - min), c.zona)).toBe("Mañana");
+      expect(terminaDe(c.iso, "2026-12-01T00:00:00.000Z", c.zona)).toBe("2026-12-01T00:00:00.000Z");
+    });
+  }
+  it("el mismo instante en las tres zonas", () => {
+    // 04:30 UTC del 21 sep: 23:30 del 20 en Bogotá, 22:30 del 20 en San Luis, 06:30 del 21 en Madrid.
+    const ahora = new Date("2026-09-21T04:30:00Z");
+    const inicio = "2026-09-21T05:30:00Z";
+    expect(formatearCuando(inicio, null, ahora, "America/Bogota")).toBe("Mañana · 00:30");
+    expect(formatearCuando(inicio, null, ahora, "America/Mexico_City")).toBe("Hoy · 23:30");
+    expect(formatearCuando(inicio, null, ahora, "Europe/Madrid")).toBe("Hoy · 07:30");
+  });
+  it("una fila sin zona se lee como de la ciudad inicial, sin romperse", () => {
+    const sinZona = null as unknown as string;
+    expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA, sinZona)).toBe("Hoy · 19:00");
+    expect(horaCorta("2026-09-20T01:00:00Z", undefined)).toBe("19:00");
+    expect(terminaDe("2026-09-21T01:00:00.000Z", null, sinZona)).toBe("2026-09-21T06:00:00.000Z");
+    expect(eventoPaso("2026-09-19T05:59:00Z", null, AHORA, sinZona)).toBe(true);
+    expect(localAIso("2026-09-20T19:00", sinZona)).toBe("2026-09-21T01:00:00.000Z");
   });
 });

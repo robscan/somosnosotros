@@ -7,7 +7,11 @@ La [067](067-artistas-con-ciudad.md) abrió los artistas a cualquier país ("som
 
 > "Te doy mi sí para la pieza de migración, pero comunica con gestión de cambios."
 
-Se avisó al chat de gestión de cambios antes de empezar (números y nombre de la migración) y otra vez al terminar.
+Se avisó al chat de gestión de cambios antes de empezar. Respondió:
+- reservó la bitácora 075, OL-048 y el nombre de la migración;
+- la migración se aplica antes de que llegue el código, así que tiene que ser compatible con el que corre hoy, y el código nuevo debe aguantar filas sin zona;
+- `filtroSinPasar` y la `sin_pasar` del panel tienen que seguir con la misma regla;
+- pidió un banco de pruebas con Ciudad de México, Bogotá y Madrid, con cambio de horario, y capturas de Hoy/Mañana.
 
 ## Qué dependía de la hora de la Ciudad de México
 Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.ts`, UTC−6). Un evento en Madrid a las 19:00 se habría visto a las 11:00. El inventario:
@@ -23,7 +27,15 @@ Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.
   - `lugares.zona` y `eventos.zona`, con el nombre de la zona ("Europe/Madrid"). Lo que ya existe queda en la de la Ciudad de México, que es la de San Luis Potosí. Una zona que no es ("CST", "Marte/Olimpo") no entra.
   - Un evento en un lugar tiene siempre la zona del lugar, la mande quien la mande. Si el lugar cambia de zona, sus eventos cambian con él, sean de quien sean.
   - `eventos.termina`: la hora de fin o, sin ella, las 00:00 del día siguiente en la zona del evento. La calcula la base y las listas filtran con ella. Así cada evento se oculta con su reloj.
-- **`lib/fechas.ts`:** cada función recibe la zona del evento. Sin zona, usa la de la ciudad inicial, como hasta hoy.
+  - **El panel, con la misma regla:** la 0028 había copiado la regla de las listas como `sin_pasar(inicio, fin)`, con el día de México, en 17 lugares de 8 funciones. Esas funciones vuelven a crearse tal cual, salvo `public.sin_pasar(e.inicio, e.fin)`, que pasa a ser `e.termina >= now()`. Un script copió cada función y otro comprobó que solo cambian esos renglones.
+  - **Compatible con el código de hoy:**
+    - solo añade: columnas con valor por defecto, una función, dos disparadores, dos índices;
+    - las funciones del panel conservan su firma y sus permisos;
+    - nada se quita: `sin_pasar` se queda, ya sin uso.
+
+    Con el código viejo, todo evento nuevo cae en la zona de México, donde `termina` da lo mismo que `sin_pasar`. Nada cambia hasta que llegue el código nuevo. Todas las escrituras de hoy arman la fila con los datos del formulario, así que ninguna manda `termina`.
+- **`lib/fechas.ts`:** cada función recibe la zona del evento. Sin zona (o con `null`), usa la de la ciudad inicial, como hasta hoy.
+  - `terminaDe` es la misma cuenta que `eventos.termina`, y `eventoPaso` la usa: la app, las listas y el panel ocultan con la misma regla.
   - La hora del formulario se lee en esa zona, también en los cambios de horario (Madrid adelanta el reloj el 29 de marzo).
   - "Mañana" se cuenta en días de calendario: un día de 25 horas ya no lo confunde.
   - `zonaSegura`: una zona rota no tumba la agenda, cae en la inicial.
@@ -47,14 +59,26 @@ Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.
 - **De paso, en Novedades:** "Hoy vas" contaba desde las 00:00 del reloj del servidor, que en Vercel es UTC (las 18:00 del día anterior en San Luis). Por eso probablemente caía en "Ayer" hasta las 18:00. Ahora cuenta desde las 00:00 de la zona del evento.
 
 ## Evidencia
-- **lint** (el aviso viejo del script del logotipo, ajeno), **tipos**, **270 pruebas** y **build** en verde.
-  - Pruebas nuevas: Madrid, Costa Rica y Córdoba; cambios de horario; el día de 25 horas; zona rota; la zona de un punto; agenda y chip de fecha con dos zonas; ciudades con zona; recordatorio Hoy/Mañana; sugerencias por cercanía; formulario en la zona del sitio.
-- **La migración en un Postgres local (PGlite)**, sin producción: las 29 migraciones y 31 comprobaciones, entre ellas:
+- **lint** (el aviso viejo del script del logotipo, ajeno), **tipos**, **277 pruebas** y **build** en verde.
+  - **Banco por zona:** Ciudad de México, Bogotá y Madrid, más los dos cambios de horario de Madrid (29 mar, 23 horas; 25 oct, 25 horas). En cada uno se prueban la hora del selector de ida y vuelta, "Hoy" un minuto después de la medianoche y "Mañana" uno antes, y `terminaDe`, con los mismos valores que da la base. También se prueba cuándo deja de verse (en ese instante todavía se ve, un minuto después ya no).
+  - **El mismo instante en las tres zonas:** "Mañana · 00:30" en Bogotá, "Hoy · 23:30" en San Luis y "Hoy · 07:30" en Madrid.
+  - **Filas sin zona** se leen como de la ciudad inicial.
+  - **Pruebas nuevas:**
+    - Costa Rica y Córdoba;
+    - la zona de un punto;
+    - agenda y chip de fecha con dos zonas;
+    - ciudades con zona;
+    - recordatorio Hoy/Mañana;
+    - sugerencias por cercanía;
+    - formulario en la zona del sitio.
+- **La migración en un Postgres local (PGlite)**, sin producción: las 29 migraciones y 39 comprobaciones, entre ellas:
   - la zona por defecto y siete zonas rechazadas;
   - el evento toma la zona del lugar aunque mande otra, también en un lugar privado que no ve;
   - al cambiar la zona del lugar, cambian los eventos de otra persona;
-  - `termina` en San Luis, Madrid, Costa Rica y el día del cambio de horario;
-  - `termina` no se escribe a mano y se lee sin sesión.
+  - `termina` en San Luis, Bogotá, Madrid, Costa Rica, Canarias y los dos cambios de horario;
+  - `termina` no se escribe a mano y se lee sin sesión;
+  - **el panel con la zona del evento:** hay un evento en Madrid, sin hora de fin, cuyo inicio cae entre el "hoy" de México y el de Madrid, así que la regla vieja y la nueva no coinciden. `panel_eventos` lo trata como `termina`. Los próximos de `panel_fichas_conteos` y del resumen son los de `termina >= now()`.
+  - las funciones del panel conservan sus permisos, y una cuenta que no es de administración sigue sin ver sus conteos.
 
   El banco del panel (`supabase/tests/panel_administracion.mjs`) también pasa con la 0029: 95 comprobaciones.
 - **Pantallas a 390×844**, con un respaldo 100 % local (lugares y eventos inventados, sin producción). A las 21:55 del 16 en San Luis, que ya eran las 5:55 del 17 en Madrid:
@@ -62,6 +86,7 @@ Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.
   - **San Luis Potosí**, igual que siempre: "Hoy · 20:00" (sin hora de fin, se queda hasta que acaba el día) y "Mañana · 19:00".
   - **Ficha del jazz:** "jueves 17 de septiembre · 19:00 a 21:00".
   - **Lugares de Madrid:** "Próximo: hoy · 19:00" y "hoy · 20:30".
+  - **Bogotá, Colombia** (a las 23:04 de allá): "Hoy", la cumbia a las 21:00; "Mañana · 2", la tertulia a las 00:30 y la danza a las 19:00. Con el reloj de México, la tertulia habría salido en "Hoy · 23:30".
   - **Calendario:** `DTSTART:20260917T170000Z` (19:00 en Madrid).
   - Las listas piden `termina.gte`.
 - **Sin probar:**
@@ -81,7 +106,8 @@ Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.
   - hasta 24 tareas diarias en `vercel.json` (el plan gratuito deja 100), una por hora, cada una para las zonas donde son las 9:00. Pide separar la foto diaria de indicadores del panel, que va en la misma tarea.
 
   Mientras todo esté en México, no hace falta.
-- **Panel de administración (migración 0028, ya aplicada):** `sin_pasar(inicio, fin)` y la lista de eventos del panel siguen con el reloj de México. Para un evento de fuera sin hora de fin, el conteo puede variar unas horas cerca de la medianoche. Con la 0029 aplicada, basta cambiar `public.sin_pasar(e.inicio, e.fin)` por `e.termina >= now()`: es terreno del panel, avisado al gestor.
+- **Panel de administración:** ya cuenta y oculta con la zona de cada evento, pero sus listas todavía escriben la hora con el reloj de México (`formatearCuando` sin zona en `lib/panel.ts`). Para escribirla bien, `panel_eventos` tendría que devolver la zona: eso cambia lo que devuelve y pide borrar y volver a crear la función, así que no cabe en una migración que llega antes del código.
+- **Por qué no se partió en dos**, como sugirió el gestor si crecía (alta sin filtro de México y columna, por un lado; cálculos por zona, por otro): abrir el alta a otros países sin los cálculos mostraría mal las horas de esos lugares mientras llega la segunda parte. Es justo lo que la 067 decidió evitar. Son 48 archivos, la mayoría pruebas y llamadas que ahora pasan la zona.
 - **El lector de carteles** sigue diciendo "carteles de eventos culturales de San Luis Potosí, México" y calcula "hoy" con el reloj de México.
 - **En el formulario, un evento nuevo en otro sitio** avisa "Esa hora ya pasó" con el reloj de la ciudad inicial hasta que se guarda. Lo que se guarda sí va en la zona del pin.
 - **Lugares que ya existen:** todos quedan en la zona de la Ciudad de México. Uno en Cancún o Tijuana tomaría su zona al volver a guardarse.

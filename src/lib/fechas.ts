@@ -213,17 +213,25 @@ export function inicioDelDia(ahora: Date = new Date(), zona: string = ZONA_INICI
   return localAIso(`${diaLocal(ahora, zona)}T00:00`, zona) ?? ahora.toISOString();
 }
 
+/**
+ * Cuándo deja de verse un evento: la hora de fin o, sin ella, las 00:00 del día siguiente en su zona. Es la columna
+ * `eventos.termina` de la base (migración 0029), con la que filtran las listas y el panel: la misma regla en los dos lados.
+ */
+export function terminaDe(inicio: string, fin: string | null, zona: string = ZONA_INICIAL): string {
+  if (fin) return new Date(fin).toISOString();
+  return localAIso(`${sumarDias(diaLocal(new Date(inicio), zona), 1)}T00:00`, zona) ?? new Date(inicio).toISOString();
+}
+
 /** ¿Ya pasó el evento? Con hora de fin, cuando terminó; sin ella, cuando acabó su día en su zona (pedido del founder,
  *  2026-09-16: los eventos de hoy se quedan a la vista hasta que termine el día o termine el evento).
  *  Un evento que ya pasó se oculta: solo lo ven su autor y el administrador. */
 export function eventoPaso(inicio: string, fin: string | null, ahora: Date = new Date(), zona: string = ZONA_INICIAL): boolean {
-  if (fin) return new Date(fin).getTime() < ahora.getTime();
-  return diaLocal(new Date(inicio), zona) < diaLocal(ahora, zona);
+  return new Date(terminaDe(inicio, fin, zona)).getTime() < ahora.getTime();
 }
 
 /**
- * La misma regla como filtro de la base (PostgREST, para `.or()`): `termina` (migración 0029) es la hora de fin o, sin
- * ella, el final del día del evento en su zona; la calcula la base, así cada evento usa su zona y no la de la inicial.
+ * La misma regla como filtro de la base (PostgREST, para `.or()`): `termina >= ahora` (ver `terminaDe`). La calcula la
+ * base con la zona de cada evento; el panel la usa igual (migración 0029).
  */
 export function filtroSinPasar(ahora: Date = new Date()): string {
   return `termina.gte."${ahora.toISOString()}"`;
