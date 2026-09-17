@@ -102,7 +102,7 @@ Sin verificar la marca, la pantalla de Google dice "ir a somosnosotros.org". Con
 - **Tus cuentas.**
   - Tu cuenta de administrador es la de me.com: con Apple y "Compartir mi correo" entras a esa.
   - Con Google y robscan@gmail.com se crearía otra cuenta, también de administrador porque ese correo está en `admin_correos`. Para probar Google conviene otra cuenta de Google.
-- **Foto.** Google trae la foto de perfil y queda como foto de la ficha, pública en "quién va", como ya decía el plan original. Se cambia en Mi perfil.
+- **Foto.** Google trae la foto de perfil y queda como foto de la ficha, pública en "quién va", como ya decía el plan original. Se cambia en Mi perfil. Confirmado por el founder el 2026-09-16: «de acuerdo en que se use la foto de perfil».
 
 ## Nota sobre www
 
