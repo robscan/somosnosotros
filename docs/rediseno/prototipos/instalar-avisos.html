@@ -1,0 +1,580 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Instalar y activar avisos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens: los de globals.css de somosnosotros (línea gráfica firmada). El teléfono siempre en tema claro, como la app; el estudio sigue el tema de quien mira. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --panel: #1f2933; --panel-texto: #e6e9ee; --panel-suave: #9aa5b1; --panel-borde: #34424f; --panel-campo: #2b3a48;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e; --ok: #1f6f43;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --ios-azul: #0a84ff; --ios-rojo: #ff3b30; --ios-fondo: #f2f2f7; --ios-gris: #8e8e93; --ios-linea: rgba(60, 60, 67, 0.29); --ios-alerta: rgba(242, 242, 247, 0.97);
+    --chrome-gris: #f1f3f4; --chrome-texto: #202124; --chrome-azul: #0b57d0;
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --fuente-sistema: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px;
+    --alto-estado: 48px; --alto-barra: 56px; --alto-nav: 60px; --area-segura: 34px; --alto-safari: 78px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  .puntos { font-family: var(--fuente-sistema); font-weight: 700; letter-spacing: 1px; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
+  button, input, select { font: inherit; color: inherit; }
+  svg { width: 20px; height: 20px; flex: none; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+
+  /* El teléfono: columna con el estado, la barra del navegador (si hay) y la pantalla; lo que flota va encima. */
+  .telefono { position: relative; display: flex; flex-direction: column; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .telefono.compu { border-radius: 12px; }
+  .estado-ios { flex: none; height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-family: var(--fuente-sistema); font-size: 15px; font-weight: 600; }
+  .pantalla { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--gutter) 130px; }
+  .telefono.con-safari .pantalla { padding-bottom: 210px; }
+
+  /* Barras de los navegadores (aproximadas: las dibuja el teléfono, no la app) */
+  .navegador { flex: none; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; min-height: 52px; padding: 6px 10px; background: var(--fondo); border-bottom: 1px solid var(--borde); font-family: var(--fuente-sistema); color: var(--chrome-texto); }
+  .navegador .direccion { display: flex; align-items: center; gap: 8px; min-width: 0; height: 36px; padding: 0 12px; border-radius: 999px; background: var(--chrome-gris); font-size: 15px; white-space: nowrap; overflow: hidden; }
+  .navegador .direccion svg { width: 16px; height: 16px; color: #5f6368; }
+  .navegador .glifo-nav { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #5f6368; font-size: 20px; line-height: 1; }
+  .navegador .icono-instalar { color: var(--chrome-texto); }
+  .navegador.instagram .direccion { justify-content: center; background: none; font-weight: 600; }
+  .safari { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; display: grid; grid-template-columns: 48px 1fr 48px; gap: 10px; align-items: center; padding: 10px 16px 26px; background: linear-gradient(rgba(246, 245, 241, 0), rgba(246, 245, 241, 0.94) 40%); font-family: var(--fuente-sistema); pointer-events: none; }
+  .safari > span { display: grid; place-items: center; height: 48px; border-radius: 999px; background: rgba(255, 255, 255, 0.95); box-shadow: 0 1px 8px rgba(0, 0, 0, 0.14); color: var(--texto); font-size: 15px; }
+  .safari .mas-safari { font-size: 22px; font-weight: 700; letter-spacing: 1px; line-height: 1; }
+
+  /* Barras de la app */
+  .barra, .contexto, .filtros { margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .barra { display: grid; grid-template-columns: 1fr auto auto; align-items: center; column-gap: 4px; min-height: var(--alto-barra); }
+  .barra.interior { grid-template-columns: 1fr auto 1fr; border-bottom: 1px solid var(--borde); }
+  .barra.interior > :last-child { justify-self: end; }
+  .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; }
+  .volver { justify-self: start; display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px 0 10px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; }
+  .icono { position: relative; display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; border-radius: 50%; background: none; color: var(--texto); cursor: pointer; }
+  .icono svg { width: 24px; height: 24px; }
+  .avatar-barra { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #d8c7b5, #8a6f5a); color: #fff; font-weight: 700; }
+  .contexto { display: flex; gap: 8px; padding-block: 4px 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px 0 10px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .chip svg { width: 16px; height: 16px; color: var(--texto-suave); }
+  .filtros { display: flex; gap: 18px; border-bottom: 1px solid var(--borde); color: var(--texto-suave); font-size: 15px; font-weight: 600; }
+  .filtros span { padding: 4px 0 8px; margin-bottom: -1px; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .filtros span[aria-current] { color: var(--primario); border-color: var(--primario); }
+  .grupo { display: grid; margin-top: 8px; }
+  .grupo > h2 { padding: 12px 0 6px; border-bottom: 1px solid var(--texto); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .grupo > h2 span { color: var(--texto-suave); font-weight: 500; }
+  .lista { list-style: none; }
+  .renglon { display: grid; grid-template-columns: 64px 1fr; grid-template-areas: "foto titulo" "foto meta"; column-gap: 12px; align-content: center; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--borde); }
+  .foto { grid-area: foto; width: 64px; height: 64px; border-radius: 10px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .foto.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); } .foto.c { background: linear-gradient(135deg, #d9c27a, #8a6d2b); }
+  .titulo { grid-area: titulo; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 4px; color: var(--texto-suave); font-size: 15px; }
+  .meta svg { width: 15px; height: 15px; }
+  .meta b { color: var(--texto); font-weight: 500; }
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); height: calc(var(--alto-nav) + var(--area-segura)); padding-bottom: var(--area-segura); background: var(--fondo); box-shadow: 0 -1px 0 var(--borde); }
+  .nav span { display: grid; place-items: center; gap: 2px; color: var(--texto-suave); font-size: 12px; font-weight: 600; }
+  .nav span[aria-current] { color: var(--primario); }
+  .nav svg { width: 24px; height: 24px; }
+  .telefono.con-safari .acciones-fijas { bottom: var(--alto-safari); padding-bottom: 8px; }
+
+  /* Tarjeta con una acción: el dibujo de "Completar" de Mi perfil (icono, frase, botón) más la ✕ de "ahora no". */
+  .tarjeta-accion { display: grid; grid-template-columns: 24px 1fr auto auto; grid-template-areas: "icono que boton cerrar" "icono detalle boton cerrar"; column-gap: 10px; align-items: center; margin: 12px 0 4px; padding: 10px 4px 10px 14px; border-radius: var(--radio); background: var(--primario-suave); font-size: 15px; line-height: 1.3; }
+  .tarjeta-accion > svg { grid-area: icono; color: var(--primario); }
+  .tarjeta-accion > b { grid-area: que; font-weight: 700; }
+  .tarjeta-accion > small { grid-area: detalle; color: var(--texto-suave); font-size: 14px; }
+  .tarjeta-accion > .boton-pildora { grid-area: boton; }
+  .tarjeta-accion > .cerrar-chico { grid-area: cerrar; }
+  .tarjeta-accion.hecha { grid-template-columns: 24px 1fr; grid-template-areas: "icono que"; padding-right: 14px; }
+  .tarjeta-accion.hecha > svg { color: var(--ok); }
+  .tarjeta-accion.neutra { background: var(--fondo); border: 1px solid var(--borde); grid-template-columns: 24px 1fr auto; grid-template-areas: "icono que cerrar" "icono detalle cerrar"; }
+  .tarjeta-accion.neutra > svg { color: var(--texto-suave); }
+  .boton-pildora { min-height: 36px; padding: 0 14px; border: none; border-radius: 999px; background: var(--primario); color: var(--primario-texto); font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .cerrar-chico { display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto-suave); cursor: pointer; }
+  .cerrar-chico svg { width: 18px; height: 18px; }
+
+  /* Ficha de evento de fondo; K0: el botón "A mi calendario" */
+  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; margin: 16px 0 10px; }
+  .datos { list-style: none; display: grid; gap: 10px; margin-bottom: 14px; }
+  .datos li { display: grid; grid-template-columns: 24px 1fr; column-gap: 10px; font-size: 17px; }
+  .datos li svg { color: var(--texto-suave); margin-top: 1px; }
+  .datos small { grid-column: 2; color: var(--texto-suave); font-size: 15px; }
+  .tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .tres > * { display: grid; place-items: center; gap: 4px; min-height: 56px; padding: 8px 4px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); color: var(--texto); font-size: 14px; font-weight: 600; cursor: pointer; }
+  .tres svg { width: 24px; height: 24px; }
+  .tres .resaltado { border-color: var(--primario); box-shadow: 0 0 0 3px var(--primario-suave); color: var(--primario); }
+  .descripcion { font-size: 17px; line-height: 1.45; }
+  .acciones-fijas { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 10px var(--gutter) calc(10px + var(--area-segura)); background: var(--fondo); border-top: 1px solid var(--borde); }
+  .seleccionado { display: grid; grid-template-columns: 22px auto; grid-template-areas: "ok que" "ok detalle"; column-gap: 8px; align-items: center; min-height: var(--toque); padding: 4px 14px; border: 1px solid var(--primario); border-radius: var(--radio); background: var(--primario-suave); color: var(--primario); font-size: 17px; font-weight: 700; }
+  .seleccionado svg { grid-area: ok; }
+  .seleccionado small { grid-area: detalle; color: var(--texto-suave); font-size: 13px; font-weight: 500; }
+  .secundario { min-height: var(--toque); padding: 0 16px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-weight: 700; }
+
+  /* Hoja y la pregunta de avisos (como ConsentimientoAvisos) */
+  .hoja-fondo { position: absolute; inset: 0; z-index: 8; display: none; background: rgba(0, 0, 0, 0.32); }
+  .hoja-fondo.abierta { display: block; }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 4px; max-height: calc(100% - 56px); overflow-y: auto; padding: 12px var(--gutter) calc(18px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); font-size: 15px; line-height: 1.35; }
+  .telefono.con-safari .hoja { padding-bottom: calc(10px + var(--alto-safari)); }
+  .asa { width: 36px; height: 4px; margin: 0 auto 6px; border-radius: 2px; background: var(--borde); }
+  .cerrar-hoja { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto-suave); cursor: pointer; }
+  .motivo { padding-right: var(--toque-min); font-size: 21px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .porque { color: var(--texto-suave); margin-bottom: 8px; }
+  .pregunta { font-weight: 700; margin: 8px 0; }
+  .opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .si, .no { min-height: var(--toque); padding: 0 12px; border-radius: var(--radio); font-size: 17px; font-weight: 700; cursor: pointer; }
+  .si { border: none; background: var(--primario); color: var(--primario-texto); }
+  .no { border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+  .opciones.cortas button { min-height: var(--toque-min); }
+  .gracias { display: block; width: 100%; min-height: var(--toque-min); margin-top: 4px; border: none; background: none; color: var(--texto-suave); font-size: 15px; text-decoration: underline; cursor: pointer; }
+  .hecho { display: grid; grid-template-columns: 22px 1fr; column-gap: 8px; align-items: start; margin: 4px 0; }
+  .hecho svg { color: var(--ok); margin-top: 1px; }
+  .hecho.pendiente svg { color: var(--texto-suave); }
+  .suave { color: var(--texto-suave); }
+  .enlace { justify-self: start; min-height: var(--toque-min); padding: 0; border: none; background: none; color: var(--primario); font-weight: 700; cursor: pointer; }
+  /* Línea con una acción al final de la tarjeta: Instalar (Chrome, Android) o A mi calendario (tras "No, gracias") */
+  .linea-accion { display: grid; grid-template-columns: 24px 1fr auto; column-gap: 10px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--borde); }
+  .linea-accion > svg { color: var(--texto-suave); }
+  .linea-accion small { display: block; color: var(--texto-suave); font-size: 14px; }
+
+  /* Hoja de instalar del iPhone: los cinco toques de Safari en iOS 26, con sus iconos */
+  .hoja h3 { padding-right: var(--toque-min); font-size: 21px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .pasos { list-style: none; display: grid; margin: 8px 0 4px; border: 1px solid var(--borde); border-radius: var(--radio); overflow: hidden; }
+  .pasos li { display: grid; grid-template-columns: 22px 60px 1fr; grid-template-areas: "num glifo que" "num glifo donde"; column-gap: 10px; align-items: center; min-height: 56px; padding: 6px 14px; border-top: 1px solid var(--borde); }
+  .pasos li:first-child { border-top: none; }
+  .pasos .num { grid-area: num; color: var(--texto-suave); font-size: 15px; font-weight: 700; }
+  .pasos .glifo { grid-area: glifo; justify-self: center; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--chrome-gris); color: var(--texto); font-family: var(--fuente-sistema); font-size: 20px; font-weight: 700; line-height: 1; }
+  .pasos .glifo svg { width: 22px; height: 22px; }
+  .pasos .glifo.agregar { width: 60px; height: 30px; border-radius: 999px; background: var(--ios-azul); color: #fff; font-size: 13px; font-weight: 600; }
+  .pasos b { grid-area: que; font-weight: 700; font-size: 17px; line-height: 1.2; }
+  .pasos small { grid-area: donde; color: var(--texto-suave); font-size: 14px; }
+  .resultado { display: grid; grid-template-columns: 52px 1fr; column-gap: 12px; align-items: center; margin-top: 6px; }
+  .icono-app { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px; background: #f6f5f1; box-shadow: inset 0 0 0 1px var(--borde); color: var(--texto); font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.02em; }
+
+  /* Diálogos y hojas del sistema (aproximados: los dibuja el teléfono) */
+  .dialogo-fondo { position: absolute; inset: 0; z-index: 10; display: grid; background: rgba(0, 0, 0, 0.28); font-family: var(--fuente-sistema); }
+  .alerta-ios { align-self: center; justify-self: center; width: 280px; border-radius: 14px; background: var(--ios-alerta); text-align: center; overflow: hidden; }
+  .alerta-ios h4 { padding: 18px 16px 2px; font-size: 17px; font-weight: 600; line-height: 1.25; }
+  .alerta-ios p { padding: 2px 16px 16px; font-size: 13px; line-height: 1.3; }
+  .alerta-ios .botones { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--ios-linea); }
+  .alerta-ios button { min-height: 44px; border: none; background: none; color: var(--ios-azul); font-size: 17px; cursor: pointer; }
+  .alerta-ios button + button { border-left: 1px solid var(--ios-linea); font-weight: 600; }
+  .chrome-dialogo { align-self: end; justify-self: stretch; margin: 12px; padding: 20px; border-radius: 24px; background: #fff; color: var(--chrome-texto); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); }
+  .compu .chrome-dialogo { align-self: start; justify-self: end; width: 330px; margin: 58px 10px 0; border-radius: 12px; }
+  .chrome-dialogo h4 { font-size: 18px; font-weight: 500; margin-bottom: 12px; }
+  .chrome-dialogo .app { display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; align-items: center; margin-bottom: 16px; font-size: 15px; }
+  .chrome-dialogo .app small { display: block; color: #5f6368; font-size: 13px; }
+  .chrome-dialogo .app .icono-app { width: 40px; height: 40px; font-size: 17px; border-radius: 10px; }
+  .chrome-dialogo .botones { display: flex; justify-content: flex-end; gap: 8px; }
+  .chrome-dialogo button { min-height: 40px; padding: 0 18px; border: none; border-radius: 999px; background: none; color: var(--chrome-azul); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .chrome-dialogo button.lleno { background: var(--chrome-azul); color: #fff; }
+  /* K1: la hoja del calendario del iPhone, como se midió en iOS 26.3, ya con la alerta */
+  .hoja-ios { position: absolute; left: 0; right: 0; bottom: 0; top: 56px; display: grid; align-content: start; gap: 12px; padding: 12px 16px 24px; border-radius: 14px 14px 0 0; background: var(--ios-fondo); color: #000; overflow-y: auto; }
+  .hoja-ios .cabeza { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 44px; }
+  .hoja-ios .cancelar { justify-self: start; border: none; background: none; color: var(--ios-azul); font-size: 17px; cursor: pointer; }
+  .hoja-ios .ok { display: grid; place-items: center; width: 40px; height: 40px; border: none; border-radius: 50%; background: var(--ios-azul); color: #fff; cursor: pointer; }
+  .hoja-ios h4 { font-size: 22px; font-weight: 700; line-height: 1.2; }
+  .hoja-ios .lugar-ios, .hoja-ios .cuando-ios { font-size: 15px; line-height: 1.35; color: #3c3c43; }
+  .hoja-ios .dia { display: grid; grid-template-columns: 44px 1fr; row-gap: 0; padding: 10px 12px; border-radius: 12px; background: #fff; font-size: 12px; color: var(--ios-gris); }
+  .hoja-ios .dia span { height: 26px; border-top: 1px solid #e5e5ea; padding-top: 2px; }
+  .hoja-ios .dia .bloque { grid-column: 2; grid-row: 2 / span 2; align-self: stretch; margin: 13px 0 0; padding: 4px 8px; border-radius: 6px; background: var(--ios-azul); color: #fff; font-size: 12px; font-weight: 600; line-height: 1.25; }
+  .hoja-ios .grupo-ios { border-radius: 12px; background: #fff; overflow: hidden; }
+  .hoja-ios .fila-ios { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 44px; padding: 0 14px; font-size: 17px; }
+  .hoja-ios .fila-ios + .fila-ios { border-top: 1px solid #e5e5ea; }
+  .hoja-ios .valor-ios { color: var(--ios-gris); }
+  .hoja-ios .valor-ios.con-alerta { color: #000; font-weight: 600; }
+  .hoja-ios .enlace-ios { color: var(--ios-azul); font-size: 15px; }
+  .hoja-ios .agregar-ios { justify-self: center; min-height: 44px; padding: 0 22px; border: none; border-radius: 999px; background: #fff; box-shadow: 0 1px 8px rgba(0, 0, 0, 0.14); color: #000; font-size: 16px; font-weight: 600; cursor: pointer; }
+
+  /* Ajustes */
+  .ajustes { display: grid; gap: 24px; margin-top: 4px; }
+  .ajustes > h2 { margin-bottom: -16px; padding-left: 4px; color: var(--texto-suave); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .tarjeta { list-style: none; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); overflow: hidden; }
+  .fila { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono etiqueta accion" "icono detalle accion"; column-gap: 12px; align-items: center; width: 100%; min-height: 52px; padding: 8px 14px; border: none; border-top: 1px solid var(--borde); background: none; text-align: left; }
+  .tarjeta > .fila:first-child, .tarjeta > li:first-child > .fila { border-top: none; }
+  button.fila { cursor: pointer; }
+  .fila > svg { grid-area: icono; color: var(--texto-suave); }
+  .fila > b { grid-area: etiqueta; font-size: 17px; font-weight: 600; }
+  .fila > small { grid-area: detalle; color: var(--texto-suave); font-size: 15px; line-height: 1.3; }
+  .fila > .valor { grid-area: accion; display: inline-flex; align-items: center; gap: 4px; color: var(--texto-suave); font-size: 15px; }
+  .fila > .valor svg { width: 16px; height: 16px; }
+  .fila > .palanca { grid-area: accion; }
+  .fila.apagada > b, .fila.apagada > svg { color: var(--texto-suave); }
+  .palanca { position: relative; width: 51px; height: 31px; border: none; border-radius: 16px; background: var(--borde); cursor: pointer; }
+  .palanca::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: left 150ms; }
+  .palanca[aria-checked="true"] { background: var(--primario); }
+  .palanca[aria-checked="true"]::after { left: 22px; }
+  .palanca[aria-disabled="true"] { opacity: 0.45; cursor: default; }
+
+  .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 150px; z-index: 11; padding: 12px 14px; border-radius: var(--radio); background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
+  .nota.visible { opacity: 1; transform: none; }
+
+  /* Utilería */
+  .utileria { width: 300px; max-width: 100%; flex: none; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
+  .utileria h3 { margin-bottom: 4px; color: var(--panel-suave); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .nota-utileria { margin-bottom: 12px; color: var(--panel-suave); font-size: 13px; line-height: 1.35; }
+  .control { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--panel-borde); }
+  .control:first-of-type { border-top: none; }
+  .control select { width: 100%; min-height: 38px; padding: 6px 8px; border: 1px solid var(--panel-borde); border-radius: 8px; background: var(--panel-campo); color: var(--panel-texto); }
+  .explica { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--panel-campo); color: var(--panel-texto); font-size: 13px; line-height: 1.4; }
+  .explica b { color: #fff; }
+  .reiniciar { width: 100%; min-height: var(--toque-min); margin-top: 14px; border: 1px solid var(--panel-borde); border-radius: 10px; background: transparent; color: var(--panel-texto); font-weight: 700; cursor: pointer; }
+  .decisiones { margin-top: 14px; color: var(--panel-suave); font-size: 13px; line-height: 1.4; }
+  .decisiones a { color: var(--panel-texto); }
+  :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .nota, .palanca::after { transition: none; } }
+</style>
+
+<div class="estudio">
+  <p class="rotulo"><strong>Instalar y activar avisos v1.1</strong> <span>La pregunta tras Voy, la hoja de instalar del iPhone con los pasos de iOS 26, la tarjeta al abrir la app instalada, Ajustes por teléfono y A mi calendario</span> <span>Decidido: nada arriba para quien visita; sin app de la tienda</span> <span>Datos de ejemplo, no reales</span></p>
+
+  <div class="telefono" id="telefono">
+    <div class="estado-ios" id="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+    <div id="arriba"></div>
+    <main class="pantalla" id="pantalla"></main>
+    <nav class="nav" id="nav" hidden></nav>
+    <div class="acciones-fijas" id="pie" hidden></div>
+    <div class="hoja-fondo" id="hoja-fondo"><div class="hoja" role="dialog" aria-label="Avisos" id="hoja"></div></div>
+    <div class="safari" id="safari" hidden aria-hidden="true"><span>‹</span><span>somosnosotros.org</span><span class="mas-safari">···</span></div>
+    <div id="dialogo"></div>
+    <p class="nota" id="nota" role="status"></p>
+  </div>
+
+  <aside class="utileria" aria-label="Utilería de revisión">
+    <h3>Utilería de revisión</h3>
+    <p class="nota-utileria">No es parte del diseño. Elige pantalla, teléfono y estado; los ID son los de la tabla del documento 17. Los diálogos y hojas del iPhone y de Chrome son aproximados: los dibuja el teléfono.</p>
+    <label class="control" for="vista"><span>Pantalla</span><select id="vista">
+      <option value="ficha">Ficha de evento · avisos y calendario</option>
+      <option value="app">App instalada · al abrirla</option>
+      <option value="ajustes">Ajustes</option>
+    </select></label>
+    <label class="control" for="telefono-sel"><span>Teléfono</span><select id="telefono-sel">
+      <option value="iphone">iPhone en Safari</option>
+      <option value="iphone-app">iPhone, app instalada</option>
+      <option value="android">Android en Chrome</option>
+      <option value="compu">Computadora en Chrome</option>
+      <option value="instagram">Dentro de Instagram</option>
+    </select></label>
+    <label class="control" for="estado-sel"><span>Estado</span><select id="estado-sel"></select></label>
+    <p class="explica" id="explica"></p>
+    <button type="button" class="reiniciar" id="reiniciar">Reiniciar</button>
+    <p class="decisiones">Fricciones: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/16-instalar-avisos-fricciones.md">16-instalar-avisos-fricciones.md</a> · decisiones: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/17-instalar-avisos-flujo-y-estados.md">17-instalar-avisos-flujo-y-estados.md</a>. Los botones del teléfono funcionan: prueba el camino completo.</p>
+  </aside>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const I = {
+    pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    cal: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    calAgregar: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 10h17M8 3v4M15 3v4M18 15v6M15 18h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    reloj: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    campana: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    personas: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 19a6 6 0 0 1 12 0M15 5.5a3.2 3.2 0 0 1 0 6.3M21 19a6 6 0 0 0-4.5-5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    persona: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    boleto: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    estrella: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9-4.3-4.1 5.9-.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    compartir: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    ruta: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l9.2 9.2-9.2 9.2L2.8 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 14v-2.5a1.5 1.5 0 0 1 1.5-1.5H15M13 8l2 2-2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    verMas: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    agregarInicio: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>`,
+    correo: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    telefono: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10.5 18h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    compu: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 20h8M12 16.5V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    instalar: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v7M9.2 11.3L12 14l2.8-2.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    instalarCompu: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 20h8M12 7.5v5.5M9.5 10.8L12 13.2l2.5-2.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    ok: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    falta: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3 2.6"/><path d="M12 8v4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="15.8" r="1" fill="currentColor"/></svg>`,
+    cerrar: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+    puntos: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></svg>`,
+    lapiz: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4.5-1 10-10-3.5-3.5-10 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    ojo: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+    salir: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M14 8l4 4-4 4M8 12h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    escudo: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    libro: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    chevron: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    candado: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+  };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* Estados por pantalla: el ID de la tabla del documento 17, y el teléfono que ese estado exige. */
+  const ESTADOS = {
+    ficha: [
+      ["P0", "P0 · la pregunta"], ["P1", "P1 · hoja de instalar (iPhone en Safari)"], ["P2", "P2 · falta un paso"], ["P3", "P3 · permiso del sistema"],
+      ["P4", "P4 · dado de alta"], ["P4f", "P4 · final con Instalar (Chrome)"], ["P5", "P5 · bloqueados"], ["P6", "P6 · falló el alta"], ["P7", "P7 · dentro de Instagram"],
+      ["K0", "K0 · botón A mi calendario"], ["K1", "K1 · hoja del calendario (iPhone)"], ["K2", "K2 · No, gracias con calendario"],
+    ],
+    app: [["A0", "A0 · tarjeta Activar"], ["A1", "A1 · permiso del iPhone"], ["A2", "A2 · listo"], ["A3", "A3 · ahora no"], ["Ab", "No permitió · bloqueados"]],
+    ajustes: [["apagados", "J0 · apagados"], ["activados", "J0 · activados"], ["bloqueados", "J0 · bloqueados"]],
+  };
+  const TELEFONO_DE = { P1: "iphone", P2: "iphone", P7: "instagram", A0: "iphone-app", A1: "iphone-app", A2: "iphone-app", A3: "iphone-app", Ab: "iphone-app", P4f: "android" };
+
+  const inicial = { vista: "ficha", telefono: "iphone", paso: "P0", correo: null, instalada: false, app: "A0", permiso: "apagados", hojaAbierta: true, dialogo: null, ajustesHoja: false };
+  let estado = JSON.parse(JSON.stringify(inicial));
+
+  const esCompu = () => estado.telefono === "compu";
+  const esChrome = () => estado.telefono === "android" || estado.telefono === "compu";
+  const esIphone = () => estado.telefono === "iphone" || estado.telefono === "iphone-app";
+  const canal = () => (esCompu() ? "en esta computadora" : "en este teléfono");
+  const canalBoton = () => (esCompu() ? "En esta computadora" : "En el teléfono");
+
+  /* Piezas de la app */
+  const nav = () => `<span aria-current="page">${I.cal}Agenda</span><span>${I.pin}Lugares</span><span>${I.estrella}Artistas</span>`;
+  const renglonEvento = (t, hora, lugar, f) => `<li class="renglon"><span class="foto ${f}" aria-hidden="true"></span><span class="titulo">${t}</span><span class="meta">${I.reloj}<b>${hora}</b>${I.pin}${lugar}</span></li>`;
+  const barraRaiz = () => `<header class="barra"><span class="logotipo" aria-label="Somos Nosotros">SMSNSTRS</span><button type="button" class="icono" aria-label="Novedades">${I.campana}</button><span class="avatar-barra" aria-label="Mi perfil">R</span></header>`;
+  const barraInterior = (volver) => `<header class="barra interior"><span class="volver">‹ ${esc(volver)}</span><span class="logotipo">SMSNSTRS</span><span class="icono" aria-hidden="true">${I.puntos}</span></header>`;
+  const cabeceraAgenda = () => `<div class="contexto"><span class="chip">${I.cal}Hoy</span><span class="chip">${I.pin}San Luis Potosí</span></div><nav class="filtros" aria-label="Filtrar la agenda"><span aria-current="true">Todos</span><span>Cercanos</span><span>Siguiendo</span><span>Nuevos</span></nav>`;
+  const gruposAgenda = () => `<section class="grupo"><h2>Hoy <span>· 2</span></h2><ul class="lista">${renglonEvento("Noche de son en el patio", "19:30", "Casa Ocho Ventanas", "")}${renglonEvento("Lectura del taller de creación literaria", "19:00", "Casa del Poeta", "c")}</ul></section><section class="grupo"><h2>sáb 19 de sep <span>· 3</span></h2><ul class="lista">${renglonEvento("Fandango de barrio", "18:00", "Jardín de Tequis", "b")}${renglonEvento("Taller de grabado para principiantes", "11:00", "Casa Ocho Ventanas", "")}</ul></section>`;
+
+  /* Barra del navegador según el teléfono */
+  function barraNavegador() {
+    const t = estado.telefono;
+    if (t === "android") return `<div class="navegador"><span class="glifo-nav" aria-hidden="true">⌂</span><span class="direccion">${I.candado}somosnosotros.org</span><span class="glifo-nav" aria-hidden="true">⋮</span></div>`;
+    if (t === "compu") return `<div class="navegador"><span class="glifo-nav" aria-hidden="true">‹</span><span class="direccion">${I.candado}somosnosotros.org</span><span class="glifo-nav icono-instalar" title="El icono de instalar de Chrome (el que viste)" aria-label="Instalar (de Chrome)">${I.instalarCompu}</span></div>`;
+    if (t === "instagram") return `<div class="navegador instagram"><span class="glifo-nav" aria-hidden="true">✕</span><span class="direccion">somosnosotros.org</span><span class="glifo-nav" aria-hidden="true">···</span></div>`;
+    return "";
+  }
+
+  /* ---------- Ficha de evento: la pregunta de avisos y A mi calendario ---------- */
+  function pantallaFicha() {
+    const resaltado = estado.paso === "K0" ? "resaltado" : "";
+    return `${barraInterior("Atrás")}<h1>Noche de son en el patio</h1><ul class="datos"><li>${I.reloj}<span>sáb 19 de sep · 19:30</span></li><li>${I.pin}<span>Casa Ocho Ventanas</span><small>Calle 5 de Mayo 1100, Centro</small></li><li>${I.personas}<span>Van 12</span></li><li>${I.boleto}<span>Gratis</span></li></ul><div class="tres"><button type="button" data-accion="nota-compartir">${I.compartir}Compartir</button><button type="button" class="${resaltado}" data-accion="calendario">${I.calAgregar}A mi calendario</button><button type="button" data-accion="nota-ruta">${I.ruta}Cómo llegar</button></div><p class="descripcion">Son huasteco en el patio de la casa, con músicos de la ciudad y zapateado abierto a quien quiera subirse a la tarima.</p>`;
+  }
+  const pieFicha = () => `<span class="seleccionado">${I.ok}Voy<small>Ya estás en la lista</small></span><button type="button" class="secundario">Cancelar</button>`;
+  const cerrarHoja = () => `<button type="button" class="cerrar-hoja" data-accion="cerrar-hoja" aria-label="Cerrar">${I.cerrar}</button>`;
+  const cabezaPregunta = () => `<div class="asa" aria-hidden="true"></div>${cerrarHoja()}<p class="motivo">Vas a Noche de son en el patio</p><p class="porque">Ya estás en la lista de quien va.</p>`;
+  const lineaCorreo = (pregunta) => `<p class="pregunta">${pregunta}</p><div class="opciones cortas"><button type="button" class="si" data-accion="correo-si">Sí</button><button type="button" class="no" data-accion="correo-no">No</button></div>`;
+  function lineaInstalar() {
+    if (!esChrome()) return "";
+    if (estado.instalada) return `<p class="hecho">${I.ok}<span>Instalada: ${esCompu() ? "la abres como app, en su propia ventana" : "está en tu pantalla de inicio"}.</span></p>`;
+    return `<div class="linea-accion">${esCompu() ? I.instalarCompu : I.instalar}<span><b>${esCompu() ? "Tenla como app" : "Tenla en tu inicio"}</b><small>${esCompu() ? "En su propia ventana" : "Un toque, sin tienda"}</small></span><button type="button" class="boton-pildora" data-accion="instalar">Instalar</button></div>`;
+  }
+  const lineaCalendario = () => `<div class="linea-accion">${I.calAgregar}<span><b>A mi calendario</b><small>Con una alerta 1 hora antes</small></span><button type="button" class="boton-pildora" data-accion="calendario">Agregar</button></div>`;
+
+  function hojaFicha() {
+    const p = estado.paso;
+    if (p === "P1") return hojaInstalar();
+    let h = cabezaPregunta();
+    if (p === "P0" || p === "P3") {
+      h += `<p class="pregunta">¿Te recordamos ese día?</p><div class="opciones"><button type="button" class="si" data-accion="correo-primero">Por correo</button><button type="button" class="si" data-accion="en-telefono">${canalBoton()}</button></div><button type="button" class="gracias" data-accion="no-gracias">No, gracias</button>`;
+    } else if (p === "P2") {
+      h += `<p class="hecho pendiente">${I.falta}<span><b>Falta un paso:</b> instálala y, al abrirla, toca Activar.</span></p><button type="button" class="enlace" data-accion="ver-pasos">Ver los pasos</button>`;
+      h += estado.correo === null ? lineaCorreo("Mientras, ¿por correo?") : `<p class="suave">${estado.correo ? "Mientras, te escribimos a ro…@gmail.com ese día." : "Sin correo."} Se cambia en Ajustes.</p>`;
+    } else if (p === "P4" || p === "P4f") {
+      if (estado.correo === null) h += `<p class="hecho">${I.ok}<span>Te avisamos ${canal()} ese día.</span></p>${lineaCorreo("¿También por correo?")}`;
+      else h += `<p class="hecho">${I.ok}<span>Te avisamos ${canal()}${estado.correo ? " y por correo" : ""} ese día.</span></p><p class="suave">Se cambia en Ajustes.</p>${lineaInstalar()}`;
+    } else if (p === "P5") {
+      h += `<p class="hecho pendiente">${I.falta}<span><b>Los avisos quedaron bloqueados ${canal()}.</b> ${estado.telefono === "iphone-app" ? "Se activan en Ajustes del iPhone › Notificaciones › Somos Nosotros." : "Se activan en Chrome, en la configuración del sitio."}</span></p>`;
+      h += estado.correo === null ? lineaCorreo("Mientras, ¿por correo?") : `<p class="suave">${estado.correo ? "Te escribimos a ro…@gmail.com ese día." : "Sin avisos."} Se cambia en Ajustes.</p>`;
+    } else if (p === "P6") {
+      h += `<p class="hecho pendiente">${I.falta}<span><b>No pudimos darte de alta ${canal()}.</b></span></p><div class="opciones cortas"><button type="button" class="si" data-accion="en-telefono">Intentar de nuevo</button><button type="button" class="no" data-accion="correo-primero">Por correo</button></div>`;
+    } else if (p === "P7") {
+      h += estado.correo === true ? `<p class="hecho">${I.ok}<span>Te escribimos a ro…@gmail.com ese día.</span></p><p class="suave">Se cambia en Ajustes.</p>` : `<p class="hecho pendiente">${I.falta}<span><b>Aquí no llegan avisos:</b> estás en el navegador de Instagram. Ábrela en Safari o elige por correo.</span></p><div class="opciones cortas"><button type="button" class="si" data-accion="correo-primero">Por correo</button><button type="button" class="no" data-accion="cerrar-hoja">Ahora no</button></div>`;
+    } else if (p === "correo") {
+      h += `<p class="hecho">${I.ok}<span>Te escribimos a ro…@gmail.com ese día.</span></p><p class="suave">Se cambia en Ajustes.</p>`;
+    } else if (p === "K2") {
+      h += `<p class="suave">Sin avisos. Se cambia en Ajustes.</p>${lineaCalendario()}`;
+    }
+    return h;
+  }
+
+  /* P1: hoja de instalar del iPhone, con los pasos del Safari de iOS 26 */
+  function hojaInstalar() {
+    const paso = (n, glifo, que, donde, clase = "") => `<li><span class="num">${n}</span><span class="glifo ${clase}" aria-hidden="true">${glifo}</span><b>${que}</b><small>${donde}</small></li>`;
+    return `<div class="asa" aria-hidden="true"></div>${cerrarHoja()}<h3>Instala Somos Nosotros</h3><p class="suave">Los avisos del iPhone llegan a la app instalada.</p><ol class="pasos">${paso(1, "···", `Toca <span class="puntos">···</span>`, "Abajo a la derecha")}${paso(2, I.compartir, "Compartir", "El primero del menú")}${paso(3, I.verMas, "Ver más", "Junto a Copiar")}${paso(4, I.agregarInicio, "Agregar a pantalla de inicio", "En la lista")}${paso(5, "Agregar", "Agregar", "Arriba a la derecha", "agregar")}</ol><div class="resultado"><span class="icono-app" aria-hidden="true">SN</span><p><b>Después</b>, ábrela desde tu inicio y toca Activar.</p></div>`;
+  }
+
+  /* ---------- App instalada: la tarjeta al abrirla ---------- */
+  function pantallaApp() {
+    const a = estado.app;
+    let tarjeta = "";
+    if (a === "A0" || a === "A1") tarjeta = `<p class="tarjeta-accion">${I.campana}<b>Activa los avisos en este teléfono</b><small>Para recordarte lo que vas</small><button type="button" class="boton-pildora" data-accion="activar">Activar</button><button type="button" class="cerrar-chico" data-accion="ahora-no" aria-label="Ahora no">${I.cerrar}</button></p>`;
+    else if (a === "A2") tarjeta = `<p class="tarjeta-accion hecha">${I.ok}<b>Listo: te avisamos en este teléfono</b></p>`;
+    else if (a === "Ab") tarjeta = `<p class="tarjeta-accion neutra">${I.falta}<b>Quedaron bloqueados</b><small>Se activan en Ajustes del iPhone › Notificaciones › Somos Nosotros</small><button type="button" class="cerrar-chico" data-accion="ahora-no" aria-label="Cerrar">${I.cerrar}</button></p>`;
+    return `${barraRaiz()}${cabeceraAgenda()}${tarjeta}${gruposAgenda()}`;
+  }
+
+  /* ---------- Ajustes: cada teléfono dice su verdad ---------- */
+  function filaTelefono() {
+    const t = estado.telefono, pm = estado.permiso;
+    const icono = esCompu() ? I.compu : I.telefono;
+    const etiqueta = esCompu() ? "En esta computadora" : "En el teléfono";
+    const palanca = (on, deshabilitada, accion) => `<button type="button" class="palanca" role="switch" aria-checked="${on}" ${deshabilitada ? `aria-disabled="true"` : `data-accion="${accion}"`} aria-label="Avisos ${etiqueta.toLowerCase()}"></button>`;
+    if (t === "iphone") return `<li class="fila">${icono}<b>${etiqueta}</b><small>Instala la app para recibirlos</small>${palanca(false, false, "abrir-instalar")}</li>`;
+    if (t === "instagram") return `<li class="fila apagada">${icono}<b>${etiqueta}</b><small>Este navegador no los recibe: ábrela en Safari</small>${palanca(false, true)}</li>`;
+    const lugar = esCompu() ? "en esta computadora" : "en este teléfono";
+    if (pm === "activados") return `<li class="fila">${icono}<b>${etiqueta}</b><small>Activados ${lugar}</small>${palanca(true, false, "apagar")}</li>`;
+    if (pm === "bloqueados") return `<li class="fila apagada">${icono}<b>${etiqueta}</b><small>Bloqueados: se activan en ${t === "iphone-app" ? "Ajustes del iPhone › Notificaciones" : "Chrome, en la configuración del sitio"}</small>${palanca(false, true)}</li>`;
+    return `<li class="fila">${icono}<b>${etiqueta}</b><small>Apagados ${lugar}</small>${palanca(false, false, "encender")}</li>`;
+  }
+  function filaInstalar() {
+    const t = estado.telefono;
+    if (t === "iphone-app" || estado.instalada) return "";
+    if (t === "instagram") return `<li class="fila apagada">${I.instalar}<b>Instalar la app</b><small>Ábrela en Safari para instalarla</small></li>`;
+    const detalle = t === "iphone" ? "Cinco toques en Safari" : t === "compu" ? "Como app, en su propia ventana" : "Un toque, sin tienda";
+    return `<li><button type="button" class="fila" data-accion="${t === "iphone" ? "abrir-instalar" : "instalar"}">${esCompu() ? I.instalarCompu : I.instalar}<b>Instalar la app</b><small>${detalle}</small><span class="valor">${I.chevron}</span></button></li>`;
+  }
+  function pantallaAjustes() {
+    return `${barraInterior("Mi perfil")}<h1>Ajustes</h1><div class="ajustes">
+      <h2>Tu ficha</h2><ul class="tarjeta"><li class="fila">${I.lapiz}<b>Editar</b><small>Foto, nombre, colonia, sobre ti</small><span class="valor">${I.chevron}</span></li><li class="fila">${I.ojo}<b>Perfil</b><small>Tu ficha y tu nombre en “quién va” se ven</small><span class="valor">Público ${I.chevron}</span></li></ul>
+      <h2>Avisos</h2><ul class="tarjeta"><li class="fila">${I.correo}<b>Por correo</b><small>ro…@gmail.com · cada correo trae su baja</small><button type="button" class="palanca" role="switch" aria-checked="true" aria-label="Avisos por correo" data-accion="nada"></button></li>${filaTelefono()}</ul>
+      <h2>Cuenta</h2><ul class="tarjeta"><li class="fila">${I.persona}<b>Entras con ro…@gmail.com</b><small>Sin contraseña: cada vez te mandamos un código</small></li><li class="fila">${I.salir}<b>Cerrar sesión</b><span class="valor">${I.chevron}</span></li></ul>
+      <h2>Somos Nosotros</h2><ul class="tarjeta">${filaInstalar()}<li class="fila">${I.compartir}<b>Invita a tus amigos</b><small>Se comparte el enlace del sitio</small><span class="valor">${I.chevron}</span></li><li class="fila">${I.escudo}<b>Aviso de privacidad</b><span class="valor">${I.chevron}</span></li><li class="fila">${I.libro}<b>Reglas de uso</b><span class="valor">${I.chevron}</span></li></ul>
+    </div>`;
+  }
+
+  /* ---------- Diálogos y hojas del sistema ---------- */
+  function dialogo() {
+    const d = estado.dialogo;
+    if (!d) return "";
+    if (d === "permiso" && estado.telefono === "iphone-app") return `<div class="dialogo-fondo"><div class="alerta-ios" role="alertdialog" aria-label="Permiso de notificaciones"><h4>“Somos Nosotros” quiere enviarte notificaciones</h4><p>Las notificaciones pueden incluir alertas, sonidos y globos en el icono. Se configuran en Ajustes.</p><div class="botones"><button type="button" data-accion="no-permitir">No permitir</button><button type="button" data-accion="permitir">Permitir</button></div></div></div>`;
+    if (d === "permiso") return `<div class="dialogo-fondo"><div class="chrome-dialogo" role="alertdialog" aria-label="Permiso de Chrome"><h4>somosnosotros.org quiere mostrar notificaciones</h4><div class="botones"><button type="button" data-accion="no-permitir">Bloquear</button><button type="button" class="lleno" data-accion="permitir">Permitir</button></div></div></div>`;
+    if (d === "instalar") return `<div class="dialogo-fondo"><div class="chrome-dialogo" role="alertdialog" aria-label="Instalar app"><h4>¿Instalar app?</h4><div class="app"><span class="icono-app" aria-hidden="true">SN</span><span>Somos Nosotros<small>somosnosotros.org</small></span></div><div class="botones"><button type="button" data-accion="cancelar-instalar">Cancelar</button><button type="button" class="lleno" data-accion="confirmar-instalar">Instalar</button></div></div></div>`;
+    if (d === "calendario") return `<div class="dialogo-fondo"><div class="hoja-ios" role="dialog" aria-label="Calendario del iPhone">
+      <div class="cabeza"><button type="button" class="cancelar" data-accion="cerrar-calendario">Cancelar</button><button type="button" class="ok" data-accion="agregar-calendario" aria-label="Agregar">${I.ok}</button></div>
+      <h4>Noche de son en el patio</h4>
+      <p class="lugar-ios">Casa Ocho Ventanas, Calle 5 de Mayo 1100, Centro, San Luis Potosí</p>
+      <p class="cuando-ios">sábado, 19 de septiembre de 2026<br>19:30 a 21:30</p>
+      <div class="dia" aria-hidden="true"><span>19:00</span><span></span><span>20:00</span><span class="bloque">Noche de son en el patio · Casa Ocho Ventanas</span><span>21:00</span><span></span><span>22:00</span><span></span></div>
+      <div class="grupo-ios"><div class="fila-ios"><span>Alerta</span><span class="valor-ios con-alerta">1 hora antes ⌃</span></div></div>
+      <div class="grupo-ios"><div class="fila-ios"><span>URL</span><span class="enlace-ios">somosnosotros.org/eventos/…</span></div></div>
+      <button type="button" class="agregar-ios" data-accion="agregar-calendario">Agregar a Calendario</button>
+    </div></div>`;
+    return "";
+  }
+
+  const EXPLICA = {
+    ficha: "Toca <b>En el teléfono</b> con cada teléfono: iPhone en Safari abre la hoja de instalar (P1) y al cerrarla queda <b>Falta un paso</b> (P2); la app instalada, Android y la computadora piden el permiso (P3); dentro de Instagram, correo (P7). Toca <b>A mi calendario</b> o <b>No, gracias</b> › Agregar para ver la hoja del calendario del iPhone con la alerta 1 hora antes (K1).",
+    app: "La tarjeta sale solo si la persona pidió avisos en el teléfono y este teléfono no tiene permiso. <b>Activar</b> es el toque que el iPhone exige para mostrar su permiso; la ✕ es “ahora no” y no vuelve.",
+    ajustes: "El renglón dice el estado de <b>este</b> teléfono, no el de la cuenta. <b>Instalar la app</b> sale solo donde se puede y se va cuando ya está instalada. Cambia de teléfono para verlo.",
+  };
+
+  function render() {
+    const t = estado.telefono, v = estado.vista;
+    const tel = $("telefono");
+    const conSafari = t === "iphone" && (v === "ficha" || v === "ajustes");
+    tel.classList.toggle("compu", t === "compu");
+    tel.classList.toggle("con-safari", conSafari);
+    $("estado-ios").hidden = t === "compu";
+    $("safari").hidden = !conSafari;
+    $("arriba").innerHTML = t === "iphone-app" ? "" : barraNavegador();
+
+    let h = "", pie = "", conNav = false, hoja = "";
+    if (v === "ficha") { h = pantallaFicha(); pie = pieFicha(); if (estado.hojaAbierta) hoja = hojaFicha(); }
+    else if (v === "app") { h = pantallaApp(); conNav = true; }
+    else if (v === "ajustes") { h = pantallaAjustes(); if (estado.ajustesHoja) hoja = hojaInstalar(); }
+    $("pantalla").innerHTML = h;
+    $("nav").hidden = !conNav; $("nav").innerHTML = conNav ? nav() : "";
+    $("pie").hidden = !pie; $("pie").innerHTML = pie;
+    $("hoja").innerHTML = hoja; $("hoja-fondo").classList.toggle("abierta", !!hoja);
+    $("dialogo").innerHTML = dialogo();
+
+    $("vista").value = v; $("telefono-sel").value = t;
+    const opciones = ESTADOS[v];
+    const actual = v === "ficha" ? (estado.dialogo === "calendario" ? "K1" : estado.paso) : v === "app" ? estado.app : estado.permiso;
+    $("estado-sel").innerHTML = opciones.map(([id, texto]) => `<option value="${id}">${esc(texto)}</option>`).join("");
+    $("estado-sel").value = opciones.some(([id]) => id === actual) ? actual : opciones[0][0];
+    $("explica").innerHTML = EXPLICA[v];
+  }
+
+  let notaT;
+  function nota(texto) { const n = $("nota"); n.textContent = texto; n.classList.add("visible"); clearTimeout(notaT); notaT = setTimeout(() => n.classList.remove("visible"), 2600); }
+  let listoT;
+
+  /* A mi calendario: en iPhone, la hoja del calendario; en los demás, lo que hay que comprobar */
+  function abrirCalendario() {
+    if (esIphone()) { estado.dialogo = "calendario"; render(); return; }
+    if (estado.telefono === "android") nota("Por comprobar en un Android: si Chrome solo descarga el archivo, abrirá el evento en Google Calendar");
+    else if (estado.telefono === "compu") nota("En la computadora se abre el calendario del equipo, con la alerta 1 hora antes");
+    else nota("Por comprobar dentro de Instagram; si no abre, la salida es Safari");
+  }
+
+  /* Elegir un estado desde la utilería */
+  function fijarEstado(id) {
+    const v = estado.vista;
+    if (TELEFONO_DE[id]) estado.telefono = TELEFONO_DE[id];
+    if (v === "ficha") {
+      estado.hojaAbierta = true; estado.correo = null; estado.dialogo = null; estado.instalada = false;
+      if (id === "P3") { if (estado.telefono === "iphone" || estado.telefono === "instagram") estado.telefono = "iphone-app"; estado.paso = "P3"; estado.dialogo = "permiso"; }
+      else if (id === "P4f") { estado.paso = "P4f"; estado.correo = false; }
+      else if ((id === "P4" || id === "P5" || id === "P6") && (estado.telefono === "iphone" || estado.telefono === "instagram")) { estado.telefono = "iphone-app"; estado.paso = id; }
+      else if (id === "K0") { estado.paso = "K0"; estado.hojaAbierta = false; }
+      else if (id === "K1") { estado.paso = "K0"; estado.hojaAbierta = false; if (!esIphone()) estado.telefono = "iphone"; estado.dialogo = "calendario"; }
+      else estado.paso = id;
+    } else if (v === "app") {
+      estado.app = id; estado.dialogo = id === "A1" ? "permiso" : null;
+      if (id === "A3") nota("No vuelve en este teléfono; queda en Ajustes");
+    } else if (v === "ajustes") {
+      estado.permiso = id; estado.ajustesHoja = false; estado.dialogo = null;
+      if (estado.telefono === "iphone" || estado.telefono === "instagram") estado.telefono = "iphone-app";
+    }
+    render();
+  }
+
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-accion]");
+    if (!b) return;
+    const a = b.dataset.accion;
+    const v = estado.vista;
+    if (a === "nada") return;
+    if (a === "nota-compartir") { nota("Abriría compartir, como hoy"); return; }
+    if (a === "nota-ruta") { nota("Abriría el mapa con la ruta, como hoy"); return; }
+    if (a === "calendario") { abrirCalendario(); return; }
+    if (a === "cerrar-calendario") { estado.dialogo = null; render(); return; }
+    if (a === "agregar-calendario") { estado.dialogo = null; render(); nota("El iPhone lo agrega con la alerta. La app no sabe si se agregó, así que no afirma nada"); return; }
+    if (a === "cerrar-hoja") {
+      if (v === "ficha" && estado.paso === "P1") { estado.paso = "P2"; render(); return; }
+      if (v === "ajustes") { estado.ajustesHoja = false; render(); return; }
+      estado.hojaAbierta = false; render(); nota("Ahora no: se pregunta otra vez en el siguiente Voy o Seguir"); return;
+    }
+    if (a === "correo-primero") { estado.correo = true; estado.paso = estado.paso === "P7" ? "P7" : "correo"; render(); return; }
+    if (a === "no-gracias") { estado.paso = "K2"; render(); return; }
+    if (a === "en-telefono") {
+      const t = estado.telefono;
+      if (t === "iphone") { estado.paso = "P1"; render(); return; }
+      if (t === "instagram") { estado.paso = "P7"; render(); return; }
+      estado.paso = "P3"; estado.dialogo = "permiso"; render(); return;
+    }
+    if (a === "ver-pasos") { estado.paso = "P1"; render(); return; }
+    if (a === "correo-si" || a === "correo-no") { estado.correo = a === "correo-si"; render(); return; }
+    if (a === "permitir" || a === "no-permitir") {
+      const si = a === "permitir";
+      estado.dialogo = null;
+      if (v === "ficha") { estado.paso = si ? "P4" : "P5"; estado.correo = null; }
+      else if (v === "app") {
+        estado.app = si ? "A2" : "Ab";
+        if (si) { clearTimeout(listoT); listoT = setTimeout(() => { if (estado.vista === "app" && estado.app === "A2") { estado.app = "A3"; render(); } }, 1600); }
+      } else if (v === "ajustes") { estado.permiso = si ? "activados" : "bloqueados"; }
+      render(); return;
+    }
+    if (a === "activar" || a === "encender") { estado.dialogo = "permiso"; if (v === "app") estado.app = "A1"; render(); return; }
+    if (a === "apagar") { estado.permiso = "apagados"; render(); nota("Apagados en este teléfono; los demás siguen igual"); return; }
+    if (a === "ahora-no") { estado.app = "A3"; render(); nota("No vuelve en este teléfono; queda en Ajustes"); return; }
+    if (a === "abrir-instalar") { estado.ajustesHoja = true; render(); return; }
+    if (a === "instalar") { estado.dialogo = "instalar"; render(); return; }
+    if (a === "cancelar-instalar") { estado.dialogo = null; render(); return; }
+    if (a === "confirmar-instalar") { estado.dialogo = null; estado.instalada = true; render(); nota(esCompu() ? "Instalada: se abre en su propia ventana" : "Instalada: el icono está en tu inicio"); return; }
+  });
+
+  $("vista").addEventListener("change", (e) => {
+    estado.vista = e.target.value; estado.dialogo = null; estado.ajustesHoja = false;
+    if (estado.vista === "app") estado.telefono = "iphone-app";
+    if (estado.vista === "ficha") { estado.paso = "P0"; estado.correo = null; estado.hojaAbierta = true; }
+    render();
+  });
+  $("telefono-sel").addEventListener("change", (e) => {
+    estado.telefono = e.target.value; estado.dialogo = null; estado.instalada = false; estado.ajustesHoja = false;
+    if (estado.vista === "ficha") { estado.paso = "P0"; estado.correo = null; estado.hojaAbierta = true; }
+    if (estado.vista === "app" && estado.telefono !== "iphone-app") { estado.vista = "ajustes"; nota("La tarjeta vive en la app instalada: te llevo a Ajustes"); }
+    render();
+  });
+  $("estado-sel").addEventListener("change", (e) => fijarEstado(e.target.value));
+  $("reiniciar").addEventListener("click", () => { estado = JSON.parse(JSON.stringify(inicial)); render(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && estado.dialogo) { estado.dialogo = null; render(); } });
+  render();
+</script>
