@@ -4,7 +4,8 @@ import FichaPersona from "@/components/FichaPersona";
 import Barra from "@/components/ui/Barra";
 import ficha from "@/components/ui/Ficha.module.css";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import { cargarPersona } from "../consultas";
+import { avisosParaListas } from "@/app/avisos/paraListas";
+import { cargarPersona, relacionDe } from "../consultas";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -29,14 +30,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 /** Ficha de una persona: la misma que Mi perfil, sin nada que tocar (decisión 5). Es la forma de reconocerse. */
 export default async function PaginaPersona({ params }: Params) {
   const { id } = await params;
-  const [d, actual] = await Promise.all([cargarPersona(id), usuarioActual()]);
+  const [d, actual] = await Promise.all([cargarPersona(id, { conProximos: true }), usuarioActual()]);
   if (!d) notFound();
-  // La propia ficha, vista como la ven los demás ("Así te ven los demás" en Mi perfil): sin Ajustes ni coincidencias.
+  // La propia ficha, vista como la ven los demás ("Así te ven los demás" en Mi perfil): sin Ajustes, coincidencias ni gestos.
   const soyYo = actual?.perfil.id === id;
-  // "Van a lo mismo": los eventos a los que vamos los dos (decisión 7); lo calcula el sistema, solo con sesión.
+  // Los gestos son de quien mira (OL-057): lo que decidió en los eventos de esta ficha y lo que sigue de lo que ella sigue,
+  // leídos con su sesión y solo para ella. De ahí sale también "Van a lo mismo" (decisión 7). Sin sesión, a Entrar.
   const mios = actual && !soyYo ? await cargarPersona(actual.perfil.id) : null;
-  const misIds = new Set((mios?.eventos ?? []).map((e) => e.id));
-  const juntos = d.eventos.filter((e) => misIds.has(e.id));
+  const gestos = soyYo ? null : { ...(mios ? relacionDe(mios, d) : { decididas: null, seguidos: null }), avisos: avisosParaListas(actual) };
   return (
     <main className={ficha.pagina}>
       <Barra volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }} />
@@ -45,7 +46,7 @@ export default async function PaginaPersona({ params }: Params) {
           Así te ven los demás.
         </p>
       )}
-      <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} juntos={juntos} lugares={d.lugares} artistas={d.artistas} origen={ORIGEN} />
+      <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} lugares={d.lugares} artistas={d.artistas} gestos={gestos} origen={ORIGEN} />
     </main>
   );
 }

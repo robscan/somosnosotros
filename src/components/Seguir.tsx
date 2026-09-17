@@ -8,6 +8,7 @@ import Hecho from "@/components/Hecho";
 import Hoja from "@/components/ui/Hoja";
 import { IconoMas, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
+import { useAltoBarraFija } from "@/components/ui/useAltoBarraFija";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { enEste } from "@/lib/plataforma";
@@ -50,6 +51,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   const [estado, fijar] = useOptimistic(sigo, (_a, nuevo: boolean) => nuevo);
   const [hoja, setHoja] = useState(false);
   const toques = useRef<Toques>({});
+  const barra = useAltoBarraFija<HTMLDivElement>();
   const [fallo, setFallo] = useState<{ vez: number; reintentar: () => void } | null>(null);
   const [telefono] = useEstadoPush(llavePush, conSesion && sigo);
   const cosas = que === "artista" ? "fechas" : "eventos";
@@ -90,7 +92,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
 
   if (!conSesion) {
     return (
-      <div className={`${ficha.accionFija} ${ficha.accionUnica}`}>
+      <div ref={barra} className={`${ficha.accionFija} ${ficha.accionUnica}`}>
         <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEntrar)}`} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
           <IconoMas width={20} height={20} />
           Seguir
@@ -100,7 +102,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   }
   return (
     <>
-      <div className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ficha.accionUnica}`}>
+      <div ref={barra} className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ficha.accionUnica}`}>
         {estado ? (
           <>
             <span className={ficha.seleccionado} aria-live="polite">

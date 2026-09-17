@@ -1,13 +1,10 @@
 import Link from "next/link";
-import { Fragment } from "react";
-import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
+import type { EventoAgenda } from "@/lib/agenda";
 import { textoCompartirPersona } from "@/lib/perfil";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import type { Perfil } from "@/lib/supabase/servidor";
+import ActividadPersona, { type Gestos } from "./ActividadPersona";
 import BotonCompartir from "./BotonCompartir";
-import ListaSeguidos from "./ListaSeguidos";
-import PestanasPersona, { type Pestana } from "./PestanasPersona";
-import RenglonEvento from "./RenglonEvento";
 import { IconoCompartir, IconoEngrane, IconoPersona } from "./ui/Iconos";
 import styles from "./FichaPersona.module.css";
 
@@ -16,11 +13,12 @@ type Props = {
   /** Mi perfil: con el engrane de Ajustes bajo la colonia y el aviso de completar. */
   mia: boolean;
   eventos: EventoAgenda[];
+  /** Solo en Mi perfil. */
   interesan?: EventoAgenda[];
-  /** Eventos a los que vamos los dos (ficha ajena con sesión). */
-  juntos?: EventoAgenda[];
   lugares: LugarSeguido[];
   artistas: ArtistaSeguido[];
+  /** Los gestos de quien mira sobre los renglones (ActividadPersona); null en la propia ficha vista como la ven los demás. */
+  gestos: Gestos | null;
   /** Origen público del sitio, para los enlaces que se comparten. */
   origen: string;
 };
@@ -28,86 +26,12 @@ type Props = {
 /**
  * Una sola ficha de persona para Mi perfil y para la ficha ajena (docs/rediseno/13, decisiones 5 y 7): foto redonda,
  * nombre con Compartir a la derecha, colonia, sobre mí; luego el resumen en números que hace de pestañas
- * (Voy a · Sigo · Van a lo mismo) y la lista de la pestaña. Lo que se configura vive en Ajustes.
+ * (Voy a · Sigo · Van a lo mismo) y la lista de la pestaña, con los renglones y gestos de las listas (ActividadPersona,
+ * OL-057). Lo que se configura vive en Ajustes. Un perfil reservado no pinta ni manda sus listas.
  */
-export default function FichaPersona({
-  perfil,
-  mia,
-  eventos,
-  interesan = [],
-  juntos = [],
-  lugares,
-  artistas,
-  origen,
-}: Props) {
+export default function FichaPersona({ perfil, mia, eventos, interesan = [], lugares, artistas, gestos, origen }: Props) {
   const reservada = !mia && !!perfil.reservado;
   const incompleto = mia && (!perfil.colonia || !perfil.bio);
-  const listaEventos = (lista: EventoAgenda[], vacio: React.ReactNode) =>
-    lista.length === 0 ? (
-      <p className={styles.vacio}>{vacio}</p>
-    ) : (
-      agruparPorDia(lista).map((g) => (
-        <Fragment key={g.clave}>
-          <h3 className={styles.dia}>{g.titulo}</h3>
-          <ul className={styles.lista}>
-            {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} />
-            ))}
-          </ul>
-        </Fragment>
-      ))
-    );
-  const pestanas: Pestana[] = [
-    {
-      clave: "va",
-      n: eventos.length,
-      etiqueta: mia ? "Voy a" : "Va a",
-      contenido: listaEventos(
-        eventos,
-        mia ? (
-          <>
-            Todavía no vas a nada. <Link href="/">Ver la agenda</Link>
-          </>
-        ) : (
-          "Todavía no ha dicho que va a ningún evento."
-        ),
-      ),
-    },
-    {
-      clave: "sigue",
-      n: lugares.length + artistas.length,
-      etiqueta: mia ? "Sigo" : "Sigue",
-      contenido:
-        lugares.length + artistas.length === 0 ? (
-          <p className={styles.vacio}>
-            {mia ? (
-              <>
-                Todavía no sigues nada. <Link href="/lugares">Ver lugares</Link>{" "}
-                · <Link href="/artistas">Ver artistas</Link>
-              </>
-            ) : (
-              "Todavía no sigue ningún lugar ni artista."
-            )}
-          </p>
-        ) : (
-          <ListaSeguidos lugares={lugares} artistas={artistas} />
-        ),
-    },
-  ];
-  if (juntos.length > 0)
-    pestanas.push({
-      clave: "juntos",
-      n: juntos.length,
-      etiqueta: "Van a lo mismo",
-      contenido: listaEventos(juntos, ""),
-    });
-  if (mia && interesan.length > 0)
-    pestanas.push({
-      clave: "interesa",
-      n: interesan.length,
-      etiqueta: "Me interesa",
-      contenido: listaEventos(interesan, ""),
-    });
 
   return (
     <>
@@ -168,7 +92,7 @@ export default function FichaPersona({
           Perfil reservado: solo se ve el nombre.
         </p>
       ) : (
-        <PestanasPersona pestanas={pestanas} />
+        <ActividadPersona mia={mia} eventos={eventos} interesan={mia ? interesan : []} lugares={lugares} artistas={artistas} gestos={gestos} />
       )}
     </>
   );

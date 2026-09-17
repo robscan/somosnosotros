@@ -1,36 +1,40 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { etiquetaArtista } from "@/lib/artistas";
-import { SIN_FOTO } from "@/lib/imagen";
-import { calleCorta, etiquetaTipo } from "@/lib/lugares";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
-import { IconoDisciplina } from "./RenglonArtista";
+import RenglonArtista from "./RenglonArtista";
+import RenglonLugar from "./RenglonLugar";
 import { Chip, Chips, Cuenta } from "./ui/Chip";
-import { IconoPin } from "./ui/Iconos";
-import renglon from "./Renglon.module.css";
+import type { AccionDeslizable } from "./ui/Deslizable";
 import styles from "./FichaPersona.module.css";
 
 /** A partir de cuántos seguidos aparecen los chips para filtrar (misma regla que las listas de Lugares y Artistas). */
 export const UMBRAL_CHIPS_SEGUIDOS = 12;
 type Filtro = "todo" | "lugares" | "artistas";
 
-/**
- * Lo que sigue una persona: lugares (foto cuadrada) y artistas (redonda) en grupos con subtítulo, como los días de
- * "Va a". Con muchos seguidos, chips para ver solo lugares o solo artistas (pedido del founder, 2026-09-15).
- */
-export default function ListaSeguidos({
-  lugares,
-  artistas,
-}: {
+/** Los gestos de quien mira sobre un tipo de renglón (useSeguirEnLista): si ya lo sigue y sus acciones al deslizar. */
+export type GestosSeguir = { sigo: (id: string) => boolean; acciones: (id: string, nombre: string) => AccionDeslizable[] };
+
+type Props = {
   lugares: LugarSeguido[];
   artistas: ArtistaSeguido[];
-}) {
+  /** Con chips o con subtítulos: se decide al abrir, para que no cambie mientras se quitan renglones. */
+  conChips: boolean;
+  /** Sin gestos, los renglones solo abren la ficha. */
+  lugar?: GestosSeguir;
+  artista?: GestosSeguir;
+  /** "Sigues" en el renglón: en la ficha de otra persona dice lo de quien mira; en Mi perfil sobra (todo lo sigo). */
+  conSello: boolean;
+};
+
+/**
+ * Lo que sigue una persona: lugares (foto cuadrada) y artistas (redonda) en grupos con subtítulo, como los días de
+ * "Va a". Con muchos seguidos, chips para ver solo lugares o solo artistas (pedido del founder, 2026-09-15). Los
+ * renglones son los de las listas de Lugares y Artistas, con Seguir al deslizar para quien mira (OL-057).
+ */
+export default function ListaSeguidos({ lugares, artistas, conChips, lugar, artista, conSello }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todo");
   const total = lugares.length + artistas.length;
-  const conChips =
-    total >= UMBRAL_CHIPS_SEGUIDOS && lugares.length > 0 && artistas.length > 0;
   const verLugares = filtro !== "artistas" && lugares.length > 0;
   const verArtistas = filtro !== "lugares" && artistas.length > 0;
   return (
@@ -41,17 +45,11 @@ export default function ListaSeguidos({
             Todo
             <Cuenta n={total} />
           </Chip>
-          <Chip
-            activo={filtro === "lugares"}
-            onClick={() => setFiltro("lugares")}
-          >
+          <Chip activo={filtro === "lugares"} onClick={() => setFiltro("lugares")}>
             Lugares
             <Cuenta n={lugares.length} />
           </Chip>
-          <Chip
-            activo={filtro === "artistas"}
-            onClick={() => setFiltro("artistas")}
-          >
+          <Chip activo={filtro === "artistas"} onClick={() => setFiltro("artistas")}>
             Artistas
             <Cuenta n={artistas.length} />
           </Chip>
@@ -62,28 +60,7 @@ export default function ListaSeguidos({
           {!conChips && <h3 className={styles.dia}>Lugares · {lugares.length}</h3>}
           <ul className={styles.lista}>
             {lugares.map((l) => (
-              <li key={l.id}>
-                <Link href={`/lugares/${l.id}`} className={renglon.renglon}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                  <img
-                    src={l.portada ?? SIN_FOTO}
-                    alt=""
-                    className={renglon.foto}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <span className={renglon.titulo}>{l.nombre}</span>
-                  <span className={renglon.meta}>
-                    <span className={renglon.envuelve}>
-                      <IconoPin width={15} height={15} />
-                      {etiquetaTipo(l.tipo)}
-                      {calleCorta(l.direccion)
-                        ? ` · ${calleCorta(l.direccion)}`
-                        : ""}
-                    </span>
-                  </span>
-                </Link>
-              </li>
+              <RenglonLugar key={l.id} lugar={l} sigo={conSello && !!lugar?.sigo(l.id)} acciones={lugar?.acciones(l.id, l.nombre)} />
             ))}
           </ul>
         </>
@@ -93,25 +70,7 @@ export default function ListaSeguidos({
           {!conChips && <h3 className={styles.dia}>Artistas · {artistas.length}</h3>}
           <ul className={styles.lista}>
             {artistas.map((a) => (
-              <li key={a.id}>
-                <Link href={`/artistas/${a.id}`} className={renglon.renglon}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                  <img
-                    src={a.foto ?? SIN_FOTO}
-                    alt=""
-                    className={`${renglon.foto} ${renglon.fotoRedonda}`}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <span className={renglon.titulo}>{a.nombre}</span>
-                  <span className={renglon.meta}>
-                    <span className={renglon.envuelve}>
-                      <IconoDisciplina disciplina={a.disciplina} />
-                      {etiquetaArtista(a)}
-                    </span>
-                  </span>
-                </Link>
-              </li>
+              <RenglonArtista key={a.id} artista={a} sigo={conSello && !!artista?.sigo(a.id)} acciones={artista?.acciones(a.id, a.nombre)} />
             ))}
           </ul>
         </>

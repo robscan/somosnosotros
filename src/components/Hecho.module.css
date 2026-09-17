@@ -1,9 +1,10 @@
-/* Confirmación con Deshacer: tinta sobre blanco como ui/Aviso, flotando sobre la barra inferior, en la columna. */
+/* Confirmación con Deshacer: tinta sobre blanco como ui/Aviso, en la columna. Flota sobre la barra inferior o, en una
+   ficha, sobre su barra de acción fija, que publica su alto real (ui/useAltoBarraFija). */
 .hecho {
   position: fixed;
   left: var(--gutter);
   right: var(--gutter);
-  bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + var(--espacio-3));
+  bottom: calc(var(--alto-barra-fija, calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px))) + var(--espacio-3));
   z-index: 30;
   display: grid;
   grid-template-columns: 1fr auto;

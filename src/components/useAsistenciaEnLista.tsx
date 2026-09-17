@@ -8,17 +8,15 @@ import { accionesEvento, asistenciaTras, recortar, textoHecho, type Asistencia, 
 import { anotarIntencion } from "@/lib/intencionAvisos";
 import { alRecibir, elegir, esElUltimo, siSigueSiendoElUltimo, tocar, trasGuardar, type Elegidas, type Toques } from "@/lib/toques";
 import ConsentimientoAvisos from "./ConsentimientoAvisos";
-import Hecho from "./Hecho";
 import type { AccionDeslizable } from "./ui/Deslizable";
 import Hoja from "./ui/Hoja";
 import { IconoEstrella, IconoOk } from "./ui/Iconos";
+import { AvisoAbajo, useCanalDeListas, type CanalDeListas } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
 
 /** Lo que la persona decidió en cada evento cargado; null = sin sesión. */
 export type Decididas = Record<string, Exclude<Asistencia, null>> | null;
 type EventoLista = { id: string; titulo: string };
-/** El aviso de abajo: lo hecho con Deshacer, o que no se pudo guardar con Reintentar. */
-type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: boolean; vez: number };
 
 /**
  * Voy y Me interesa al deslizar un evento (decisión del founder, 2026-09-17; bitácora 085): lo que la persona decidió, las
@@ -28,8 +26,11 @@ type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: bool
  *
  * Lo que llega del servidor manda (al volver de la ficha, en la respuesta de la acción): lo elegido aquí se superpone
  * solo mientras se guarda. Cada toque lleva su número por renglón (lib/toques): lo que trae un guardado viejo se ignora.
+ *
+ * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
+ * la lista tiene los suyos y pinta su aviso en `extras`.
  */
-export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null): { estado: (id: string) => Asistencia; acciones: (e: EventoLista) => AccionDeslizable[]; extras: ReactNode } {
+export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null, canal?: CanalDeListas): { estado: (id: string) => Asistencia; acciones: (e: EventoLista) => AccionDeslizable[]; extras: ReactNode; hojaAbierta: boolean } {
   const router = useRouter();
   const [, iniciar] = useTransition();
   const [elegidas, setElegidas] = useState<Elegidas<Asistencia>>({});
@@ -39,13 +40,11 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     setElegidas(alRecibir);
   }
   const toques = useRef<Toques>({});
-  // Una sola pregunta por pantalla. Se lee al guardar, no al pintar: dos Voy seguidos no la hacen dos veces.
-  const pregunte = useRef(false);
+  const propio = useCanalDeListas();
+  const { avisar, tomarPregunta } = canal ?? propio;
   const [hoja, setHoja] = useState<EventoLista | null>(null);
-  const [aviso, setAviso] = useState<Aviso | null>(null);
 
   const estado = (id: string): Asistencia => (id in elegidas ? elegidas[id].valor : (decididas?.[id] ?? null));
-  const avisar = (a: Omit<Aviso, "vez">) => setAviso((previo) => ({ ...a, vez: (previo?.vez ?? 0) + 1 }));
 
   /**
    * Un toque: muestra `valor` al momento y lo guarda. Si al terminar ya hubo otro toque en el renglón, no hace nada más.
@@ -79,9 +78,9 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
       nuevo,
       () => hacer(e, clave, previo),
       () => {
-        // La pregunta, tras el primer Voy guardado; no si esta cuenta ya contestó en esta visita (la página puede ser de hace un rato).
-        if (nuevo !== "voy" || !avisos || pregunte.current || !hayQuePreguntar(avisos.cuenta, avisos.preguntado)) return;
-        pregunte.current = true;
+        // La pregunta, tras el primer Voy guardado de la pantalla; no si esta cuenta ya contestó en esta visita (la página
+        // puede ser de hace un rato). Se toma al guardar, no al pintar: dos Voy seguidos no la hacen dos veces.
+        if (nuevo !== "voy" || !avisos || !hayQuePreguntar(avisos.cuenta, avisos.preguntado) || !tomarPregunta()) return;
         setHoja(e);
       },
     );
@@ -113,9 +112,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
 
   const extras = (
     <>
-      {/* Con la hoja de avisos abierta, el aviso espera: sale (con su tiempo completo) al cerrarla. Cada aviso cierra solo
-          el suyo: Reintentar pone uno nuevo en el mismo toque. */}
-      {aviso && !hoja && <Hecho key={aviso.vez} texto={aviso.texto} onDeshacer={aviso.boton} etiqueta={aviso.etiqueta} fallo={aviso.fallo} onCerrar={() => setAviso((a) => (a?.vez === aviso.vez ? null : a))} />}
+      {!canal && <AvisoAbajo canal={propio} enEspera={!!hoja} />}
       {hoja && avisos && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
           <ConsentimientoAvisos contexto="voy" titulo={hoja.titulo} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} calendarioUrl={`/eventos/${hoja.id}/calendario`} />
@@ -124,5 +121,5 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     </>
   );
 
-  return { estado, acciones, extras };
+  return { estado, acciones, extras, hojaAbierta: !!hoja };
 }

@@ -7,6 +7,7 @@ import Hecho from "@/components/Hecho";
 import Hoja from "@/components/ui/Hoja";
 import { IconoEstrella, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
+import { useAltoBarraFija } from "@/components/ui/useAltoBarraFija";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
@@ -45,6 +46,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
   const [estado, fijarOptimista] = useOptimistic<EstadoAsistencia, EstadoAsistencia>(miEstado, (_a, nuevo) => nuevo);
   const [hoja, setHoja] = useState(false);
   const toques = useRef<Toques>({});
+  const barra = useAltoBarraFija<HTMLDivElement>();
   const [fallo, setFallo] = useState<{ vez: number; reintentar: () => void } | null>(null);
   const ruta = `/eventos/${eventoId}`;
 
@@ -133,7 +135,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
 
   return (
     <>
-      <div className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ""}`}>
+      <div ref={barra} className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ""}`}>
         {contenido}
         {fallo && <Hecho key={fallo.vez} texto="No se pudo guardar" etiqueta="Reintentar" fallo sobreBarra onDeshacer={fallo.reintentar} onCerrar={() => setFallo((f) => (f?.vez === fallo.vez ? null : f))} />}
       </div>

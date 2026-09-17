@@ -4,13 +4,12 @@ import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import { ORIGENES } from "@/lib/origen";
 import Desplegable from "@/components/Desplegable";
-import RenglonEvento from "@/components/RenglonEvento";
+import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import Barra from "@/components/ui/Barra";
@@ -20,7 +19,7 @@ import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
-import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
+import type { EventoAgenda } from "@/lib/agenda";
 import { etiquetaArtista, textoProximaFecha, type Artista } from "@/lib/artistas";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
@@ -28,6 +27,8 @@ import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { avisosParaListas } from "@/app/avisos/paraListas";
+import { decididasDe } from "@/app/eventos/decididas";
 import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from "../acciones";
 import EsMiNombre from "./EsMiNombre";
 import styles from "@/components/ui/FichaLista.module.css";
@@ -131,7 +132,8 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const url = `${ORIGEN}/artistas/${a.id}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
   const hrefPublicarFecha = actual ? `/eventos/nuevo?artista=${a.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?artista=${a.id}`)}`;
-  const grupos = agruparPorDia(fechas);
+  // Voy y Me interesa al deslizar sus fechas, para quien mira (OL-057).
+  const decididas = await decididasDe(actual?.perfil.id ?? null, fechas.map((e) => e.id));
   const proxima = fechas[0] ? { id: fechas[0].id, inicio: fechas[0].inicio, sitio: nombreSitio(fechas[0]), zona: fechas[0].zona } : null;
   const avisoBorrar = fechas.length > 0 ? `Se borra la ficha; sus ${fechas.length === 1 ? "1 fecha próxima se queda" : `${fechas.length} fechas próximas se quedan`} sin artista.` : "Se borra la ficha.";
   const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
@@ -264,16 +266,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           {fechas.length > 0 && <span> · {fechas.length}</span>}
         </h2>
         {fechas.length === 0 && <p className={styles.vacio}>Aún no tiene fechas publicadas. ¿Sabes de una? Publícala.</p>}
-        {grupos.map((g) => (
-          <Fragment key={g.clave}>
-            <h3>{g.titulo}</h3>
-            <ul aria-label={g.titulo}>
-              {g.eventos.map((e) => (
-                <RenglonEvento key={e.id} evento={e} />
-              ))}
-            </ul>
-          </Fragment>
-        ))}
+        <EventosPorDia eventos={fechas} decididas={decididas} avisos={avisosParaListas(actual)} />
         <Boton href={hrefPublicarFecha} variante="secundario" className={styles.publicar}>
           Publicar una fecha
         </Boton>

@@ -1,0 +1,86 @@
+import { describe, expect, it } from "vitest";
+import { pestanasDePersona, unirVistos } from "./actividad";
+import type { Asistencia } from "./deslizar";
+
+const ev = (id: string) => ({ id });
+const eventos = [ev("e1"), ev("e2"), ev("e3"), ev("e4")];
+const lugares = [ev("l1"), ev("l2")];
+const artistas = [ev("a1")];
+
+/** Lo que quien mira decidió, como lo da el hook: un mapa que el test cambia entre toques. */
+function mirada(estados: Record<string, Asistencia>, seguidos: string[]) {
+  return { estado: (id: string) => estados[id] ?? null, sigo: (id: string) => seguidos.includes(id) };
+}
+const resumen = (ps: ReturnType<typeof pestanasDePersona>) => ps.map((p) => `${p.etiqueta} ${p.n}: ${[...p.eventos, ...p.lugares, ...p.artistas].map((x) => x.id).join(",")}`);
+
+describe("pestañas de Mi perfil", () => {
+  const estados: Record<string, Asistencia> = { e1: "voy", e2: "me_interesa", e3: "voy", e4: "me_interesa" };
+  const abrir = { juntos: 0, interesa: 2 };
+
+  it("cada evento va en la pestaña de lo que decidí, en orden", () => {
+    const ps = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada(estados, ["l1", "l2", "a1"]), alAbrir: abrir });
+    expect(resumen(ps)).toEqual(["Voy a 2: e1,e3", "Sigo 3: l1,l2,a1", "Me interesa 2: e2,e4"]);
+  });
+
+  it("No voy lo quita al instante y Deshacer lo devuelve a su sitio", () => {
+    const quitado = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada({ ...estados, e1: null }, ["l1", "l2", "a1"]), alAbrir: abrir });
+    expect(resumen(quitado)[0]).toBe("Voy a 1: e3");
+    const deshecho = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada(estados, ["l1", "l2", "a1"]), alAbrir: abrir });
+    expect(resumen(deshecho)[0]).toBe("Voy a 2: e1,e3");
+  });
+
+  it("Voy desde Me interesa lo pasa a Voy a y los números cambian", () => {
+    const ps = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada({ ...estados, e2: "voy" }, []), alAbrir: abrir });
+    expect(resumen(ps)).toEqual(["Voy a 3: e1,e2,e3", "Sigo 0: ", "Me interesa 1: e4"]);
+  });
+
+  it("Me interesa se queda aunque se vacíe, y aparece al llenarse si no había", () => {
+    const vacia = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada({ e1: "voy", e2: null, e3: "voy", e4: null }, []), alAbrir: abrir });
+    expect(resumen(vacia)[2]).toBe("Me interesa 0: ");
+    const sinHaber = { e1: "voy", e2: "voy", e3: "voy", e4: "voy" } as Record<string, Asistencia>;
+    expect(pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada(sinHaber, []), alAbrir: { juntos: 0, interesa: 0 } })).toHaveLength(2);
+    const llena = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada({ ...sinHaber, e4: "me_interesa" }, []), alAbrir: { juntos: 0, interesa: 0 } });
+    expect(resumen(llena)[2]).toBe("Me interesa 1: e4");
+  });
+
+  it("dejar de seguir lo saca de Sigo", () => {
+    const ps = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada(estados, ["l2"]), alAbrir: abrir });
+    expect(resumen(ps)[1]).toBe("Sigo 1: l2");
+  });
+});
+
+describe("pestañas de la ficha de otra persona", () => {
+  it("Va a y Sigue son suyos: mis gestos no los cambian", () => {
+    const ps = pestanasDePersona({ mia: false, eventos, lugares, artistas, ...mirada({ e1: null, e2: "me_interesa" }, []), alAbrir: { juntos: 0, interesa: 0 } });
+    expect(resumen(ps)).toEqual(["Va a 4: e1,e2,e3,e4", "Sigue 3: l1,l2,a1"]);
+  });
+
+  it("Van a lo mismo sigue a mi Voy: sale con No voy, se queda la pestaña y entra al decir Voy", () => {
+    const abrir = { juntos: 2, interesa: 0 };
+    expect(resumen(pestanasDePersona({ mia: false, eventos, lugares, artistas, ...mirada({ e1: "voy", e3: "voy" }, []), alAbrir: abrir }))[2]).toBe("Van a lo mismo 2: e1,e3");
+    expect(resumen(pestanasDePersona({ mia: false, eventos, lugares, artistas, ...mirada({ e3: "voy" }, []), alAbrir: abrir }))[2]).toBe("Van a lo mismo 1: e3");
+    expect(resumen(pestanasDePersona({ mia: false, eventos, lugares, artistas, ...mirada({}, []), alAbrir: abrir }))[2]).toBe("Van a lo mismo 0: ");
+    expect(resumen(pestanasDePersona({ mia: false, eventos, lugares, artistas, ...mirada({ e4: "voy" }, []), alAbrir: { juntos: 0, interesa: 0 } }))[2]).toBe("Van a lo mismo 1: e4");
+  });
+
+  it("sin sesión (nada decidido) no hay Van a lo mismo", () => {
+    expect(pestanasDePersona({ mia: false, eventos, lugares, artistas, ...mirada({}, []), alAbrir: { juntos: 0, interesa: 0 } })).toHaveLength(2);
+  });
+});
+
+describe("lo visto en la visita", () => {
+  it("lo quitado y guardado se queda (Deshacer lo devuelve al instante); lo que llega reemplaza y lo nuevo se suma", () => {
+    const vistos = [{ id: "e1", v: 1 }, { id: "e2", v: 1 }, { id: "e3", v: 1 }];
+    // Llega la página tras quitar e2: ya no lo trae, e3 viene al día y aparece e4.
+    const unidos = unirVistos(vistos, [{ id: "e1", v: 1 }, { id: "e3", v: 2 }, { id: "e4", v: 1 }]);
+    expect(unidos).toEqual([{ id: "e1", v: 1 }, { id: "e2", v: 1 }, { id: "e3", v: 2 }, { id: "e4", v: 1 }]);
+  });
+
+  it("con lo quitado en la lista, la pestaña no lo muestra hasta deshacerlo", () => {
+    const eventosVistos = unirVistos(eventos, [ev("e1"), ev("e3"), ev("e4")]);
+    const quitado = pestanasDePersona({ mia: true, eventos: eventosVistos, lugares: [], artistas: [], ...mirada({ e1: "voy", e3: "voy" }, []), alAbrir: { juntos: 0, interesa: 0 } });
+    expect(quitado[0].eventos.map((e) => e.id)).toEqual(["e1", "e3"]);
+    const deshecho = pestanasDePersona({ mia: true, eventos: eventosVistos, lugares: [], artistas: [], ...mirada({ e1: "voy", e2: "voy", e3: "voy" }, []), alAbrir: { juntos: 0, interesa: 0 } });
+    expect(deshecho[0].eventos.map((e) => e.id)).toEqual(["e1", "e2", "e3"]);
+  });
+});
