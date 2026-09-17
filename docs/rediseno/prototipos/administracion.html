@@ -1,0 +1,665 @@
+<title>Administración de Somos Nosotros</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens de la app (globals.css): el teléfono siempre en tema claro, como la app. El estudio sigue el tema de quien mira. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #75736d; --estudio-borde: #d6d4ce;
+    --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --error: #b3261e; --ok: #1f6f43;
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --fuente-sistema: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px; --area-segura: 34px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #9a978f; --estudio-borde: #3a3935; } }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #9a978f; --estudio-borde: #3a3935; }
+
+  /* Base */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; line-height: 1.4; padding-block: 28px 64px; padding-inline: 16px; }
+  button, input { font: inherit; color: inherit; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+  .i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Estudio: presentación, recorridos y rótulos de cada estado */
+  .intro { max-width: 820px; margin: 0 auto 36px; display: grid; gap: 10px; }
+  .intro h1 { font-size: clamp(30px, 6vw, 44px); font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.02; letter-spacing: -0.01em; text-wrap: balance; }
+  .intro p { max-width: 64ch; color: var(--estudio-suave); font-size: 17px; }
+  .intro p b { color: var(--estudio-texto); font-weight: 600; }
+  .recorrido { max-width: 820px; margin: 0 auto 44px; display: flex; flex-wrap: wrap; gap: 28px 24px; justify-content: center; }
+  .recorrido > h2 { width: 100%; padding-bottom: 8px; border-bottom: 1px solid var(--estudio-borde); font-size: 22px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .caso { display: grid; gap: 10px; width: 390px; max-width: 100%; }
+  .caso figcaption { display: grid; gap: 2px; font-size: 15px; color: var(--estudio-suave); }
+  .caso figcaption strong { color: var(--estudio-texto); font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+
+  /* El teléfono: estado, pantalla con scroll propio y, encima, velo y hoja */
+  .telefono { position: relative; display: flex; flex-direction: column; height: 844px; overflow: hidden; border-radius: 40px; background: var(--fondo); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08); font-variant-numeric: tabular-nums; }
+  .estado-ios { flex: none; display: flex; align-items: flex-end; justify-content: space-between; height: 48px; padding: 0 30px 6px; font-family: var(--fuente-sistema); font-size: 15px; font-weight: 600; }
+  .pantalla { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--gutter) 48px; scrollbar-width: none; }
+  .pantalla::-webkit-scrollbar { display: none; }
+
+  /* Barra interior: Atrás a la izquierda, logotipo al centro */
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 56px; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); border-bottom: 1px solid var(--borde); }
+  .volver { justify-self: start; display: inline-flex; align-items: center; gap: 2px; min-height: 40px; padding: 0 14px 0 8px; border: 1px solid var(--borde); border-radius: 999px; font-size: 15px; font-weight: 600; text-decoration: none; }
+  .volver .i { width: 18px; height: 18px; stroke-width: 2; }
+  .logotipo { font-size: 20px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; }
+
+  /* Títulos de pantalla y de grupo (como Ajustes) */
+  .pantalla h1 { margin: 16px 0 4px; font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; }
+  .grupo { display: flex; align-items: baseline; gap: 8px; margin: 22px 0 8px; padding-left: 2px; color: var(--texto-suave); font-size: 14px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .grupo b { color: var(--primario); font-weight: 700; }
+  .nota-grupo { margin: -4px 0 10px 2px; color: var(--texto-suave); font-size: 14px; }
+
+  /* Pendiente: nada, una tarjeta por reclamo o reporte, y la línea de lo hecho */
+  .nada, .hecho { display: grid; grid-template-columns: 22px 1fr auto; grid-template-areas: "icono que accion" "icono detalle accion"; column-gap: 10px; align-items: center; min-height: 56px; padding: 8px 14px; border: 1px solid var(--borde); border-radius: var(--radio); }
+  .nada > .i, .hecho > .i { grid-area: icono; color: var(--ok); stroke-width: 2.2; }
+  .nada > b { grid-area: que; font-size: 17px; font-weight: 600; }
+  .nada > small { grid-area: detalle; color: var(--texto-suave); font-size: 15px; }
+  .hecho { grid-template-areas: "icono que accion"; margin-bottom: 8px; background: var(--fondo-contenido); font-size: 16px; line-height: 1.3; }
+  .hecho > span { grid-area: que; }
+  .hecho > .enlace { grid-area: accion; }
+  .pendientes { list-style: none; display: grid; gap: 10px; }
+  .pendiente { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono que que" "icono ficha ficha" ". mensaje mensaje" ". quien quien" "dejar dejar actuar"; column-gap: 10px; row-gap: 3px; padding: 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo-contenido); }
+  .pendiente > .i { grid-area: icono; margin-top: 1px; color: var(--texto); }
+  .pendiente.reclamo > .i { color: var(--primario); }
+  .pendiente > b { grid-area: que; font-size: 15px; font-weight: 600; color: var(--texto-suave); }
+  .pendiente > .ficha { grid-area: ficha; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.2; text-decoration: none; }
+  .pendiente > .ficha span { color: var(--texto-suave); font-weight: 500; }
+  .pendiente > q { grid-area: mensaje; margin-top: 4px; font-size: 16px; line-height: 1.35; }
+  .pendiente > small { grid-area: quien; margin-top: 4px; color: var(--texto-suave); font-size: 15px; }
+  .pendiente > small a { color: var(--texto); font-weight: 600; }
+  .pendiente > .dejar { grid-area: dejar; justify-self: start; margin-top: 12px; }
+  .pendiente > .actuar { grid-area: actuar; margin-top: 12px; }
+  .boton { min-height: var(--toque-min); padding: 0 16px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 16px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .boton.principal { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+  .boton.quitar { border-color: var(--error); color: var(--error); }
+  .enlace { min-height: var(--toque-min); padding: 0 2px; border: none; background: none; color: var(--primario); font-size: 16px; font-weight: 700; text-decoration: none; cursor: pointer; }
+
+  /* Últimos 7 días: cuadrícula de indicadores; el desglose ocupa la fila de abajo */
+  .indicadores { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .indicador { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "nombre nombre" "valor tendencia" "base base" "cambio cambio"; column-gap: 8px; align-items: end; align-content: start; width: 100%; height: 100%; min-height: 132px; padding: 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; cursor: pointer; }
+  .indicador > .nombre { grid-area: nombre; font-size: 15px; font-weight: 600; line-height: 1.2; }
+  .indicador > .valor { grid-area: valor; margin-top: 8px; font-size: 40px; font-weight: 700; font-variation-settings: var(--ancho-titulo); font-variant-numeric: proportional-nums; line-height: 1; }
+  .indicador > .tendencia { grid-area: tendencia; justify-self: end; width: 100%; max-width: 88px; height: 28px; margin-bottom: 4px; }
+  .tendencia polyline { fill: none; stroke: var(--texto-suave); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .tendencia circle { fill: var(--primario); }
+  .indicador > small { grid-area: base; margin-top: 6px; color: var(--texto-suave); font-size: 14px; line-height: 1.25; }
+  .indicador > .cambio { grid-area: cambio; margin-top: 6px; font-size: 14px; font-weight: 600; }
+  .indicador[aria-expanded="true"] { border-color: var(--primario); box-shadow: 0 0 0 3px var(--primario-suave); }
+  .desglose { grid-column: 1 / -1; display: grid; gap: 6px; padding: 12px 14px 4px; border-radius: var(--radio); background: var(--primario-suave); font-size: 15px; line-height: 1.35; }
+  .desglose > ul { list-style: none; display: grid; gap: 2px; }
+  .desglose > ul > li::before { content: "· "; color: var(--primario); font-weight: 700; }
+  .desglose > .enlace { justify-self: start; }
+
+  /* Tarjeta de renglones: navegación (Gestionar) y datos (ficha de una persona) */
+  .tarjeta { list-style: none; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); overflow: hidden; }
+  .tarjeta > li + li { border-top: 1px solid var(--borde); }
+  .fila { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono etiqueta accion" "icono detalle accion"; column-gap: 12px; align-items: center; min-height: 56px; padding: 8px 14px; text-decoration: none; }
+  .fila > .i { grid-area: icono; color: var(--texto-suave); }
+  .fila > b { grid-area: etiqueta; font-size: 17px; font-weight: 600; }
+  .fila > small { grid-area: detalle; color: var(--texto-suave); font-size: 15px; line-height: 1.3; }
+  .fila > .total { grid-area: accion; display: inline-flex; align-items: center; gap: 4px; color: var(--texto-suave); font-size: 17px; }
+  .fila > .total .i { width: 16px; height: 16px; }
+  .fila > .pildora { grid-area: accion; }
+  .dato { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono clave accion" "icono valor accion"; column-gap: 12px; align-items: center; min-height: 58px; padding: 8px 14px; text-decoration: none; }
+  .dato > .i { grid-area: icono; color: var(--texto-suave); }
+  .dato > small { grid-area: clave; color: var(--texto-suave); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .dato > b { grid-area: valor; font-size: 17px; font-weight: 600; line-height: 1.25; }
+  .dato > .pildora, .dato > .total { grid-area: accion; }
+  .dato > .total .i { width: 16px; height: 16px; color: var(--texto-suave); }
+  .pildora { min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--primario); font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .pildora.quitar { color: var(--error); }
+  .aviso-rol { margin-bottom: 8px; }
+
+  /* Buscar y filtros: la franja de chips sale del margen con una sola regla */
+  .buscar { display: grid; grid-template-columns: 24px 1fr; column-gap: 8px; align-items: center; min-height: var(--toque); margin-top: 12px; padding: 0 12px; border: 1px solid var(--borde); border-radius: var(--radio); color: var(--texto-suave); }
+  .buscar input { min-width: 0; border: none; background: none; color: var(--texto); font-size: 17px; outline: none; }
+  .chips { display: flex; gap: 8px; margin-inline: calc(-1 * var(--gutter)); padding: 12px var(--gutter); overflow-x: auto; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .chips a span { color: var(--texto-suave); font-weight: 500; }
+  .chips a[aria-current] { border-color: var(--primario); background: var(--primario-suave); color: var(--primario); }
+  .chips a[aria-current] span { color: var(--primario); }
+
+  /* Renglones de Personas y de fichas */
+  .renglones { list-style: none; }
+  .renglones > li + li { border-top: 1px solid var(--borde); }
+  .persona { display: grid; grid-template-columns: 44px 1fr 16px; grid-template-areas: "avatar nombre chevron" "avatar detalle chevron"; column-gap: 12px; align-items: center; min-height: 68px; padding: 10px 0; text-decoration: none; }
+  .avatar { grid-area: avatar; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--fondo-miniatura); color: var(--texto-suave); font-size: 15px; font-weight: 700; }
+  .avatar.a { background: linear-gradient(135deg, #c9b8a3, #7d6b58); color: #fff; }
+  .avatar.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); color: #fff; }
+  .avatar.c { background: linear-gradient(135deg, #d9c27a, #8a6d2b); color: #fff; }
+  .persona > b { grid-area: nombre; min-width: 0; font-size: 17px; font-weight: 600; }
+  .persona > small { grid-area: detalle; color: var(--texto-suave); font-size: 15px; line-height: 1.3; }
+  .persona > .i { grid-area: chevron; width: 16px; height: 16px; color: var(--texto-suave); }
+  .etiqueta { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--fondo-suave); color: var(--texto-suave); font-size: 12px; font-weight: 600; vertical-align: 2px; white-space: nowrap; }
+  .etiqueta.rol { background: var(--primario-suave); color: var(--primario); }
+  .ficha-fila { display: grid; grid-template-columns: 1fr var(--toque-min); align-items: center; column-gap: 4px; }
+  .ficha-fila > a { display: grid; grid-template-columns: 48px 1fr; grid-template-areas: "foto nombre" "foto detalle"; column-gap: 12px; align-items: center; min-width: 0; min-height: 68px; padding: 10px 0; text-decoration: none; }
+  .foto { grid-area: foto; width: 48px; height: 48px; border-radius: 10px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .foto.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); } .foto.c { background: linear-gradient(135deg, #d9c27a, #8a6d2b); } .foto.vacia { background: var(--fondo-miniatura); }
+  .ficha-fila b { grid-area: nombre; min-width: 0; overflow: hidden; font-size: 17px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+  .ficha-fila small { grid-area: detalle; overflow: hidden; color: var(--texto-suave); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+  .ficha-fila.oculta b, .ficha-fila.oculta small { color: var(--texto-suave); }
+  .ficha-fila.oculta .foto { opacity: 0.45; }
+  .puntos { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; border-radius: 50%; background: none; color: var(--texto-suave); cursor: pointer; }
+  .puntos .i { width: 22px; height: 22px; }
+
+  /* Ficha de administración de una persona */
+  .cabecera-persona { display: grid; grid-template-columns: 64px 1fr; grid-template-areas: "avatar nombre" "avatar detalle"; column-gap: 14px; align-items: center; margin-top: 16px; }
+  .cabecera-persona > .avatar { width: 64px; height: 64px; font-size: 21px; }
+  .cabecera-persona > h1 { grid-area: nombre; margin: 0; }
+  .cabecera-persona > small { grid-area: detalle; color: var(--texto-suave); font-size: 15px; }
+  .salida { display: flex; align-items: center; justify-content: space-between; min-height: 52px; margin-top: 12px; padding: 0 2px; color: var(--primario); font-size: 16px; font-weight: 700; text-decoration: none; }
+  .salida .i { width: 16px; height: 16px; }
+
+  /* Velo y hoja (como ui/Hoja): nace de un toque, se cierra con la ✕ o tocando fuera */
+  .velo { position: absolute; inset: 0; z-index: 8; background: rgba(0, 0, 0, 0.32); }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; display: grid; gap: 10px; padding: 10px var(--gutter) calc(18px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .hoja > .asa { justify-self: center; width: 36px; height: 4px; border-radius: 2px; background: var(--borde); }
+  .hoja > .cerrar-hoja { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto-suave); cursor: pointer; }
+  .hoja > .cerrar-hoja .i { stroke-width: 2; }
+  .hoja > h3 { padding-right: var(--toque-min); font-size: 22px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; text-wrap: balance; }
+  .hoja > p { color: var(--texto-suave); font-size: 16px; line-height: 1.35; }
+  .hoja > .boton { width: 100%; min-height: var(--toque); margin-top: 6px; font-size: 17px; }
+  .puede { list-style: none; display: grid; gap: 8px; }
+  .puede > li { display: grid; grid-template-columns: 22px 1fr; column-gap: 10px; font-size: 16px; line-height: 1.35; }
+  .puede > li > .i { color: var(--primario); stroke-width: 2.2; margin-top: 1px; }
+  .menu { list-style: none; margin-inline: calc(-1 * var(--gutter)); }
+  .menu > li > button { display: grid; grid-template-columns: 24px 1fr; column-gap: 14px; align-items: center; width: 100%; min-height: 54px; padding: 0 var(--gutter); border: none; background: none; font-size: 17px; font-weight: 600; text-align: left; cursor: pointer; }
+  .menu > li > button .i { color: var(--texto-suave); }
+  .menu > .aparte { margin-top: 6px; border-top: 1px solid var(--borde); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<svg width="0" height="0" hidden>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-atras" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-personas" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.3"/></symbol>
+  <symbol id="i-persona" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></symbol>
+  <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-estrella" viewBox="0 0 24 24"><path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/></symbol>
+  <symbol id="i-bandera" viewBox="0 0 24 24"><path d="M5.5 21V4"/><path d="M5.5 4.5h11l-2.2 4 2.2 4h-11"/></symbol>
+  <symbol id="i-correo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+  <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-campana" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-boleto" viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z"/><path d="M13 8v8" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-lapiz" viewBox="0 0 24 24"><path d="M4 20l4.5-1 10-10-3.5-3.5-10 10z"/><path d="M13 7.5l3.5 3.5"/></symbol>
+  <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></symbol>
+  <symbol id="i-ojo" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-ojo-no" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></symbol>
+  <symbol id="i-puntos" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.8" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+</svg>
+
+<header class="intro">
+  <h1>Administración de Somos Nosotros</h1>
+  <p>Prototipo v1 para tu firma, con diez estados en tres recorridos. <b>El resumen de hoy lleva los conteos reales del 16 de septiembre;</b> lo demás son datos de ejemplo, con nombres inventados.</p>
+  <p>Muestra las opciones recomendadas: <b>D1 B</b> (solo tus cuentas cambian el rol), <b>D2 A</b> (el correo, oculto hasta tocar «Ver») y <b>D3 A</b> (el último día que alguien abrió la app). Los indicadores, las tarjetas, «Hacer administrador» y los tres puntos responden al toque.</p>
+</header>
+
+<section class="recorrido" aria-label="Resumen">
+  <h2>El resumen: lo pendiente, cómo va y dónde gestionar</h2>
+
+  <figure class="caso">
+    <figcaption><strong>A0 · Resumen de hoy</strong>Conteos reales de producción, sin nombres. Primera semana: aún no hay con qué comparar.</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:30</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <h1>Administración</h1>
+
+        <h2 class="grupo">Pendiente</h2>
+        <p class="nada"><svg class="i"><use href="#i-ok"/></svg><b>Nada pendiente</b><small>Sin reportes ni reclamos</small></p>
+
+        <h2 class="grupo">Últimos 7 días</h2>
+        <p class="nota-grupo">Primera semana: aún sin comparación</p>
+        <ul class="indicadores">
+          <li><button type="button" class="indicador" aria-expanded="false"><span class="nombre">Personas activas</span><b class="valor">3</b><small>de 4 cuentas, sin administradores</small></button></li>
+          <li><button type="button" class="indicador" aria-expanded="false"><span class="nombre">Coincidencias</span><b class="valor">0</b><small>eventos con 2 o más que van, de 36</small></button></li>
+          <li><button type="button" class="indicador" aria-expanded="false"><span class="nombre">Agenda de la semana</span><b class="valor">36</b><small>eventos · 17 de 58 lugares con fecha</small></button></li>
+          <li><button type="button" class="indicador" aria-expanded="false"><span class="nombre">Publica la comunidad</span><b class="valor">0</b><small>de 85 eventos próximos</small></button></li>
+        </ul>
+
+        <h2 class="grupo">Gestionar</h2>
+        <ul class="tarjeta">
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-personas"/></svg><b>Personas</b><small>4 nuevas · 1 nunca entró</small><span class="total">5<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-pin"/></svg><b>Lugares</b><small>41 sin fecha próxima · 1 oculto</small><span class="total">58<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-calendario"/></svg><b>Eventos</b><small>70 sin imagen</small><span class="total">85<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-estrella"/></svg><b>Artistas</b><small>1 llevado por su gente · 15 invitaciones</small><span class="total">522<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+        </ul>
+      </main>
+    </div>
+  </figure>
+
+  <figure class="caso">
+    <figcaption><strong>A1 y A2 · Con pendientes y un indicador abierto</strong>Ejemplo. Del más viejo al más nuevo; una decisión por tarjeta. Toca otro indicador.</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:30</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <h1>Administración</h1>
+
+        <h2 class="grupo">Pendiente <b>2</b></h2>
+        <ul class="pendientes">
+          <li class="pendiente">
+            <svg class="i"><use href="#i-bandera"/></svg>
+            <b>Reporte: no es cultural</b>
+            <a class="ficha" href="#">Foro Escénico La Lonja <span>· Lugar</span></a>
+            <q>Es un bar, no un centro cultural.</q>
+            <small><a href="#">Ana Pérez</a> · mar 15 sep</small>
+            <button type="button" class="boton dejar" data-hecho="Reporte cerrado; la ficha sigue igual">Dejarla como está</button>
+            <button type="button" class="boton quitar actuar" data-hecho="Foro Escénico La Lonja quedó oculto" data-reverso="Mostrar">Ocultar la ficha</button>
+          </li>
+          <li class="pendiente reclamo">
+            <svg class="i"><use href="#i-persona"/></svg>
+            <b>Pide llevar la ficha</b>
+            <a class="ficha" href="#">Colectivo Barro <span>· Artista</span></a>
+            <q>Soy integrante del colectivo, quiero actualizar las fotos y las redes.</q>
+            <small><a href="#">Luis Rangel</a> · hace 5 h</small>
+            <button type="button" class="boton dejar" data-hecho="Reclamo cerrado; la ficha sigue igual">Dejarla como está</button>
+            <button type="button" class="boton principal actuar" data-hecho="Colectivo Barro ahora lo lleva Luis Rangel">Pasarle la ficha</button>
+          </li>
+        </ul>
+
+        <h2 class="grupo">Últimos 7 días</h2>
+        <p class="nota-grupo">Comparado con los 7 anteriores</p>
+        <ul class="indicadores" data-interactivo>
+          <li><button type="button" class="indicador" aria-expanded="false" data-indicador="activas"><span class="nombre">Personas activas</span><b class="valor">38</b><svg class="tendencia" data-serie="0,3,5,8,12,15,19,22,27,30,32,38" aria-hidden="true"></svg><small>de 112 cuentas, sin administradores</small><span class="cambio">▲ 6 más</span></button></li>
+          <li><button type="button" class="indicador" aria-expanded="true" data-indicador="coincidencias"><span class="nombre">Coincidencias</span><b class="valor">9</b><svg class="tendencia" data-serie="0,0,1,1,2,3,3,5,4,6,6,9" aria-hidden="true"></svg><small>eventos con 2 o más que van, de 41</small><span class="cambio">▲ 3 más</span></button></li>
+          <li class="desglose"><p>Eventos de los próximos 7 días donde 2 o más personas dijeron Voy, sin contar administradores.</p><ul><li>5 con 2 personas</li><li>3 con 3 a 5</li><li>1 con 6 o más: Jam de jazz de los jueves, 7 van</li></ul><a href="#" class="enlace">Ver los 9 eventos ›</a></li>
+          <li><button type="button" class="indicador" aria-expanded="false" data-indicador="agenda"><span class="nombre">Agenda de la semana</span><b class="valor">41</b><svg class="tendencia" data-serie="36,38,40,41,43,42,45,44,47,46,45,41" aria-hidden="true"></svg><small>eventos · 29 de 64 lugares con fecha</small><span class="cambio">▼ 4 menos</span></button></li>
+          <li><button type="button" class="indicador" aria-expanded="false" data-indicador="comunidad"><span class="nombre">Publica la comunidad</span><b class="valor">23</b><svg class="tendencia" data-serie="0,0,1,2,4,5,8,11,14,16,18,23" aria-hidden="true"></svg><small>de 97 eventos próximos</small><span class="cambio">▲ 7 esta semana</span></button></li>
+        </ul>
+
+        <h2 class="grupo">Gestionar</h2>
+        <ul class="tarjeta">
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-personas"/></svg><b>Personas</b><small>14 nuevas · 9 nunca entraron · 1 correo rebota</small><span class="total">112<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-pin"/></svg><b>Lugares</b><small>35 sin fecha próxima · 2 ocultos</small><span class="total">64<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-calendario"/></svg><b>Eventos</b><small>51 sin imagen</small><span class="total">97<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-estrella"/></svg><b>Artistas</b><small>18 llevados por su gente · 120 invitaciones</small><span class="total">531<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+        </ul>
+      </main>
+    </div>
+  </figure>
+
+  <figure class="caso">
+    <figcaption><strong>A3 · Después de decidir</strong>Ejemplo. Cada tarjeta deja escrito lo que pasó y, si se puede, su reverso.</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:31</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <h1>Administración</h1>
+
+        <h2 class="grupo">Pendiente</h2>
+        <p class="hecho"><svg class="i"><use href="#i-ok"/></svg><span>Foro Escénico La Lonja quedó oculto</span><button type="button" class="enlace">Mostrar</button></p>
+        <p class="hecho"><svg class="i"><use href="#i-ok"/></svg><span>Colectivo Barro ahora lo lleva Luis Rangel</span></p>
+
+        <h2 class="grupo">Últimos 7 días</h2>
+        <p class="nota-grupo">Comparado con los 7 anteriores</p>
+        <ul class="indicadores">
+          <li><button type="button" class="indicador" aria-expanded="false"><span class="nombre">Personas activas</span><b class="valor">38</b><svg class="tendencia" data-serie="0,3,5,8,12,15,19,22,27,30,32,38" aria-hidden="true"></svg><small>de 112 cuentas, sin administradores</small><span class="cambio">▲ 6 más</span></button></li>
+          <li><button type="button" class="indicador" aria-expanded="false"><span class="nombre">Coincidencias</span><b class="valor">9</b><svg class="tendencia" data-serie="0,0,1,1,2,3,3,5,4,6,6,9" aria-hidden="true"></svg><small>eventos con 2 o más que van, de 41</small><span class="cambio">▲ 3 más</span></button></li>
+          <li><button type="button" class="indicador" aria-expanded="false"><span class="nombre">Agenda de la semana</span><b class="valor">41</b><svg class="tendencia" data-serie="36,38,40,41,43,42,45,44,47,46,45,41" aria-hidden="true"></svg><small>eventos · 29 de 64 lugares con fecha</small><span class="cambio">▼ 4 menos</span></button></li>
+          <li><button type="button" class="indicador" aria-expanded="false"><span class="nombre">Publica la comunidad</span><b class="valor">23</b><svg class="tendencia" data-serie="0,0,1,2,4,5,8,11,14,16,18,23" aria-hidden="true"></svg><small>de 97 eventos próximos</small><span class="cambio">▲ 7 esta semana</span></button></li>
+        </ul>
+
+        <h2 class="grupo">Gestionar</h2>
+        <ul class="tarjeta">
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-personas"/></svg><b>Personas</b><small>14 nuevas · 9 nunca entraron · 1 correo rebota</small><span class="total">112<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-pin"/></svg><b>Lugares</b><small>35 sin fecha próxima · 3 ocultos</small><span class="total">63<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-calendario"/></svg><b>Eventos</b><small>51 sin imagen</small><span class="total">97<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li><a class="fila" href="#"><svg class="i"><use href="#i-estrella"/></svg><b>Artistas</b><small>19 llevados por su gente · 120 invitaciones</small><span class="total">531<svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+        </ul>
+      </main>
+    </div>
+  </figure>
+</section>
+
+<section class="recorrido" aria-label="Personas y rol">
+  <h2>Personas y rol: hacer administrador a alguien y quitárselo</h2>
+
+  <figure class="caso">
+    <figcaption><strong>P0 · Personas</strong>Ejemplo. Buscar por nombre o correo, filtros con conteo, lo más significativo de cada quien.</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:32</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <h1>Personas</h1>
+        <label class="buscar"><svg class="i"><use href="#i-buscar"/></svg><input id="buscar-personas" type="search" placeholder="Buscar por nombre o correo" aria-label="Buscar por nombre o correo"></label>
+        <nav class="chips" aria-label="Filtros"><a href="#" aria-current="true">Todas <span>112</span></a><a href="#">Nuevas <span>14</span></a><a href="#">Sin entrar <span>9</span></a><a href="#">Administración <span>2</span></a></nav>
+        <ul class="renglones">
+          <li><a class="persona" href="#"><span class="avatar a">OM</span><b>Tú <span class="etiqueta rol">Administración</span></b><small>Abriste la app hoy · 12 voy</small><svg class="i"><use href="#i-chevron"/></svg></a></li>
+          <li><a class="persona" href="#"><span class="avatar b">LR</span><b>Luis Rangel</b><small>Abrió la app hoy · 3 voy · lleva Colectivo Barro</small><svg class="i"><use href="#i-chevron"/></svg></a></li>
+          <li><a class="persona" href="#"><span class="avatar">DH</span><b>Diego Hernández</b><small>Perfil reservado · abrió la app hoy</small><svg class="i"><use href="#i-chevron"/></svg></a></li>
+          <li><a class="persona" href="#"><span class="avatar c">AP</span><b>Ana Pérez</b><small>Abrió la app ayer · sigue 4 lugares</small><svg class="i"><use href="#i-chevron"/></svg></a></li>
+          <li><a class="persona" href="#"><span class="avatar">VR</span><b>Valeria Robles <span class="etiqueta rol">Administración</span></b><small>Hace 3 días · sigue 12 lugares</small><svg class="i"><use href="#i-chevron"/></svg></a></li>
+          <li><a class="persona" href="#"><span class="avatar">JS</span><b>Jorge Salas</b><small>Hace 5 días · publicó 2 eventos</small><svg class="i"><use href="#i-chevron"/></svg></a></li>
+          <li><a class="persona" href="#"><span class="avatar">MI</span><b>Marta Ibarra</b><small>Nunca entró · alta hace 2 días</small><svg class="i"><use href="#i-chevron"/></svg></a></li>
+          <li><a class="persona" href="#"><span class="avatar">RT</span><b>Rocío Tapia</b><small>Hace 3 semanas · 1 voy</small><svg class="i"><use href="#i-chevron"/></svg></a></li>
+        </ul>
+      </main>
+    </div>
+  </figure>
+
+  <figure class="caso" data-flujo-rol>
+    <figcaption><strong>P3 · Su ficha de administración</strong>Ejemplo. Cuenta y Actividad para leer; Rol al final y solo. Toca «Ver» y «Hacer administrador».</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:33</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <header class="cabecera-persona"><span class="avatar b">LR</span><h1>Luis Rangel</h1><small>Tequisquiapan · perfil público</small></header>
+
+        <h2 class="grupo">Cuenta</h2>
+        <ul class="tarjeta">
+          <li class="dato"><svg class="i"><use href="#i-correo"/></svg><small>Correo</small><b data-correo>lu…@gmail.com</b><button type="button" class="pildora" data-ver-correo>Ver</button></li>
+          <li class="dato"><svg class="i"><use href="#i-calendario"/></svg><small>Alta</small><b>13 sep · hace 3 días</b></li>
+          <li class="dato"><svg class="i"><use href="#i-reloj"/></svg><small>Última vez</small><b>Abrió la app hoy</b></li>
+          <li class="dato"><svg class="i"><use href="#i-campana"/></svg><small>Avisos</small><b>En el teléfono · correo apagado</b></li>
+        </ul>
+
+        <h2 class="grupo">Actividad</h2>
+        <ul class="tarjeta">
+          <li class="dato"><svg class="i"><use href="#i-boleto"/></svg><small>Va a</small><b>3 eventos próximos</b></li>
+          <li class="dato"><svg class="i"><use href="#i-estrella"/></svg><small>Sigue</small><b>4 lugares · 2 artistas</b></li>
+          <li class="dato"><svg class="i"><use href="#i-lapiz"/></svg><small>Publicó</small><b>Nada aún</b></li>
+          <li><a class="dato" href="#"><svg class="i"><use href="#i-persona"/></svg><small>Lleva</small><b>Colectivo Barro</b><span class="total"><svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li class="dato"><svg class="i"><use href="#i-bandera"/></svg><small>Reclamos y reportes</small><b>1 reclamo, atendido</b></li>
+        </ul>
+
+        <h2 class="grupo">Rol</h2>
+        <p class="hecho aviso-rol" data-aviso-rol hidden><svg class="i"><use href="#i-ok"/></svg><span>Ya es administrador</span></p>
+        <ul class="tarjeta">
+          <li class="fila" data-rol><svg class="i"><use href="#i-escudo"/></svg><b>Usuario</b><small>Publica, dice Voy y sigue</small><button type="button" class="pildora" data-abrir="hacer">Hacer administrador</button></li>
+        </ul>
+        <a class="salida" href="#">Ver su ficha pública<svg class="i"><use href="#i-chevron"/></svg></a>
+      </main>
+      <div class="velo" hidden></div>
+      <section class="hoja" data-hoja="hacer" role="dialog" aria-label="Hacer administrador" hidden>
+        <span class="asa"></span>
+        <button type="button" class="cerrar-hoja" aria-label="Cerrar"><svg class="i"><use href="#i-cerrar"/></svg></button>
+        <h3>¿Hacer administrador a Luis Rangel?</h3>
+        <p>Podrá:</p>
+        <ul class="puede">
+          <li><svg class="i"><use href="#i-ok"/></svg>Atender reportes y reclamos, y pasar fichas a otras cuentas</li>
+          <li><svg class="i"><use href="#i-ok"/></svg>Ocultar, mostrar y editar cualquier lugar, evento o artista</li>
+          <li><svg class="i"><use href="#i-ok"/></svg>Ver la actividad y el correo de todas las personas</li>
+        </ul>
+        <p>No podrá hacer ni quitar administradores.</p>
+        <button type="button" class="boton principal" data-confirmar="hacer">Hacer administrador</button>
+      </section>
+      <section class="hoja" data-hoja="quitar" role="dialog" aria-label="Quitar administración" hidden>
+        <span class="asa"></span>
+        <button type="button" class="cerrar-hoja" aria-label="Cerrar"><svg class="i"><use href="#i-cerrar"/></svg></button>
+        <h3>¿Quitar la administración a Luis Rangel?</h3>
+        <p>Deja de ver Administración. Lo que publicó, ocultó o atendió se queda como está.</p>
+        <button type="button" class="boton quitar" data-confirmar="quitar">Quitar administración</button>
+      </section>
+    </div>
+  </figure>
+
+  <figure class="caso">
+    <figcaption><strong>P4 · Hoja: hacer administrador</strong>Qué podrá y qué no, un solo botón. Se cierra con la ✕ o tocando fuera.</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:33</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <header class="cabecera-persona"><span class="avatar b">LR</span><h1>Luis Rangel</h1><small>Tequisquiapan · perfil público</small></header>
+        <h2 class="grupo">Cuenta</h2>
+        <ul class="tarjeta">
+          <li class="dato"><svg class="i"><use href="#i-correo"/></svg><small>Correo</small><b>lu…@gmail.com</b><button type="button" class="pildora">Ver</button></li>
+          <li class="dato"><svg class="i"><use href="#i-calendario"/></svg><small>Alta</small><b>13 sep · hace 3 días</b></li>
+          <li class="dato"><svg class="i"><use href="#i-reloj"/></svg><small>Última vez</small><b>Abrió la app hoy</b></li>
+        </ul>
+      </main>
+      <div class="velo"></div>
+      <section class="hoja" role="dialog" aria-label="Hacer administrador">
+        <span class="asa"></span>
+        <button type="button" class="cerrar-hoja" aria-label="Cerrar"><svg class="i"><use href="#i-cerrar"/></svg></button>
+        <h3>¿Hacer administrador a Luis Rangel?</h3>
+        <p>Podrá:</p>
+        <ul class="puede">
+          <li><svg class="i"><use href="#i-ok"/></svg>Atender reportes y reclamos, y pasar fichas a otras cuentas</li>
+          <li><svg class="i"><use href="#i-ok"/></svg>Ocultar, mostrar y editar cualquier lugar, evento o artista</li>
+          <li><svg class="i"><use href="#i-ok"/></svg>Ver la actividad y el correo de todas las personas</li>
+        </ul>
+        <p>No podrá hacer ni quitar administradores.</p>
+        <button type="button" class="boton principal">Hacer administrador</button>
+      </section>
+    </div>
+  </figure>
+
+  <figure class="caso">
+    <figcaption><strong>P5 · Ya es administrador</strong>La línea confirma lo hecho; el renglón dice desde cuándo y quién, y ofrece quitarlo.</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:34</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <header class="cabecera-persona"><span class="avatar b">LR</span><h1>Luis Rangel</h1><small>Tequisquiapan · perfil público</small></header>
+        <h2 class="grupo">Actividad</h2>
+        <ul class="tarjeta">
+          <li class="dato"><svg class="i"><use href="#i-boleto"/></svg><small>Va a</small><b>3 eventos próximos</b></li>
+          <li class="dato"><svg class="i"><use href="#i-estrella"/></svg><small>Sigue</small><b>4 lugares · 2 artistas</b></li>
+          <li class="dato"><svg class="i"><use href="#i-lapiz"/></svg><small>Publicó</small><b>Nada aún</b></li>
+          <li><a class="dato" href="#"><svg class="i"><use href="#i-persona"/></svg><small>Lleva</small><b>Colectivo Barro</b><span class="total"><svg class="i"><use href="#i-chevron"/></svg></span></a></li>
+          <li class="dato"><svg class="i"><use href="#i-bandera"/></svg><small>Reclamos y reportes</small><b>1 reclamo, atendido</b></li>
+        </ul>
+        <h2 class="grupo">Rol</h2>
+        <p class="hecho aviso-rol"><svg class="i"><use href="#i-ok"/></svg><span>Ya es administrador</span></p>
+        <ul class="tarjeta">
+          <li class="fila"><svg class="i"><use href="#i-escudo"/></svg><b>Administrador</b><small>Desde hoy, lo nombraste tú</small><button type="button" class="pildora quitar">Quitar</button></li>
+        </ul>
+        <a class="salida" href="#">Ver su ficha pública<svg class="i"><use href="#i-chevron"/></svg></a>
+      </main>
+    </div>
+  </figure>
+
+  <figure class="caso">
+    <figcaption><strong>P6 · Hoja: quitar la administración</strong>Lo que deja de ver y lo que se queda; botón de borde rojo. Nunca al último administrador ni a tus cuentas.</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:35</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <header class="cabecera-persona"><span class="avatar b">LR</span><h1>Luis Rangel</h1><small>Tequisquiapan · perfil público</small></header>
+        <h2 class="grupo">Rol</h2>
+        <ul class="tarjeta">
+          <li class="fila"><svg class="i"><use href="#i-escudo"/></svg><b>Administrador</b><small>Desde hoy, lo nombraste tú</small><button type="button" class="pildora quitar">Quitar</button></li>
+        </ul>
+      </main>
+      <div class="velo"></div>
+      <section class="hoja" role="dialog" aria-label="Quitar administración">
+        <span class="asa"></span>
+        <button type="button" class="cerrar-hoja" aria-label="Cerrar"><svg class="i"><use href="#i-cerrar"/></svg></button>
+        <h3>¿Quitar la administración a Luis Rangel?</h3>
+        <p>Deja de ver Administración. Lo que publicó, ocultó o atendió se queda como está.</p>
+        <button type="button" class="boton quitar">Quitar administración</button>
+      </section>
+    </div>
+  </figure>
+</section>
+
+<section class="recorrido" aria-label="Fichas">
+  <h2>Fichas: buscar, filtrar y ocultar detrás de una capa</h2>
+
+  <figure class="caso" data-lista-fichas>
+    <figcaption><strong>L0 y L2 · Lugares</strong>Ejemplo. Filtros por lo que pide atención; lo oculto se ve oculto. Toca los tres puntos.</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:36</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <h1>Lugares</h1>
+        <label class="buscar"><svg class="i"><use href="#i-buscar"/></svg><input id="buscar-lugares" type="search" placeholder="Buscar lugar" aria-label="Buscar lugar"></label>
+        <nav class="chips" aria-label="Filtros"><a href="#" aria-current="true">Todos <span>66</span></a><a href="#">Ocultos <span data-ocultos>2</span></a><a href="#">Sin fecha próxima <span>35</span></a><a href="#">Sin foto <span>12</span></a><a href="#">Del catálogo <span>9</span></a></nav>
+        <ul class="renglones">
+          <li class="ficha-fila"><a href="#"><span class="foto"></span><b>Casa de Cultura del Barrio de San Miguelito</b><small>Casa de cultura · 3 fechas próximas</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila oculta"><a href="#"><span class="foto b"></span><b>Foro Escénico La Lonja <span class="etiqueta">Oculto</span></b><small>Foro · sin fecha próxima</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila"><a href="#"><span class="foto c"></span><b>Galería Pozos Luz</b><small>Galería · 1 fecha próxima · la lleva Andrea Méndez</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila"><a href="#"><span class="foto vacia"></span><b>Colectivo Mezquite</b><small>Colectivo · del catálogo, por reclamar</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila oculta"><a href="#"><span class="foto"></span><b>Biblioteca Pública Central <span class="etiqueta">Oculto</span></b><small>Biblioteca · sin fecha próxima</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila"><a href="#"><span class="foto b"></span><b>Centro Cultural Tangamanga</b><small>Centro cultural · 6 fechas próximas</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila"><a href="#"><span class="foto c"></span><b>Teatro de la Paz</b><small>Teatro · 4 fechas próximas</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila"><a href="#"><span class="foto vacia"></span><b>Museo del Ferrocarril</b><small>Museo · sin fecha próxima</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+        </ul>
+      </main>
+      <div class="velo" hidden></div>
+      <section class="hoja" role="dialog" aria-label="Más acciones" hidden>
+        <span class="asa"></span>
+        <button type="button" class="cerrar-hoja" aria-label="Cerrar"><svg class="i"><use href="#i-cerrar"/></svg></button>
+        <h3 data-nombre>Colectivo Mezquite</h3>
+        <ul class="menu">
+          <li><button type="button"><svg class="i"><use href="#i-ojo"/></svg>Ver la ficha</button></li>
+          <li><button type="button"><svg class="i"><use href="#i-lapiz"/></svg>Editar</button></li>
+          <li class="aparte"><button type="button" data-alternar><svg class="i"><use href="#i-ojo-no"/></svg><span>Ocultar del mapa</span></button></li>
+        </ul>
+      </section>
+    </div>
+  </figure>
+
+  <figure class="caso">
+    <figcaption><strong>L1 · El menú de los tres puntos</strong>El mismo menú de las fichas. Ocultar va al final y aparte; al ocultar, la fila muestra «Oculto».</figcaption>
+    <div class="telefono">
+      <div class="estado-ios"><span>19:36</span><span>5G ▮▮▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a class="volver" href="#"><svg class="i"><use href="#i-atras"/></svg>Atrás</a><span class="logotipo">SMSNSTRS</span></header>
+        <h1>Lugares</h1>
+        <label class="buscar"><svg class="i"><use href="#i-buscar"/></svg><input id="buscar-lugares-menu" type="search" placeholder="Buscar lugar" aria-label="Buscar lugar"></label>
+        <nav class="chips" aria-label="Filtros"><a href="#" aria-current="true">Todos <span>66</span></a><a href="#">Ocultos <span>2</span></a><a href="#">Sin fecha próxima <span>35</span></a><a href="#">Sin foto <span>12</span></a></nav>
+        <ul class="renglones">
+          <li class="ficha-fila"><a href="#"><span class="foto"></span><b>Casa de Cultura del Barrio de San Miguelito</b><small>Casa de cultura · 3 fechas próximas</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila oculta"><a href="#"><span class="foto b"></span><b>Foro Escénico La Lonja <span class="etiqueta">Oculto</span></b><small>Foro · sin fecha próxima</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+          <li class="ficha-fila"><a href="#"><span class="foto c"></span><b>Galería Pozos Luz</b><small>Galería · 1 fecha próxima · la lleva Andrea Méndez</small></a><button type="button" class="puntos" aria-label="Más acciones"><svg class="i"><use href="#i-puntos"/></svg></button></li>
+        </ul>
+      </main>
+      <div class="velo"></div>
+      <section class="hoja" role="dialog" aria-label="Más acciones">
+        <span class="asa"></span>
+        <button type="button" class="cerrar-hoja" aria-label="Cerrar"><svg class="i"><use href="#i-cerrar"/></svg></button>
+        <h3>Colectivo Mezquite</h3>
+        <ul class="menu">
+          <li><button type="button"><svg class="i"><use href="#i-ojo"/></svg>Ver la ficha</button></li>
+          <li><button type="button"><svg class="i"><use href="#i-lapiz"/></svg>Editar</button></li>
+          <li class="aparte"><button type="button"><svg class="i"><use href="#i-ojo-no"/></svg>Ocultar del mapa</button></li>
+        </ul>
+      </section>
+    </div>
+  </figure>
+</section>
+
+<script>
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const icono = (id) => `<svg class="i"><use href="#i-${id}"/></svg>`;
+
+  // Líneas de tendencia: 12 semanas, la última en el color de acción (solo con 4 semanas de historia).
+  for (const svg of $$("svg.tendencia[data-serie]")) {
+    const v = svg.dataset.serie.split(",").map(Number);
+    const ancho = 88, alto = 28, m = 3, max = Math.max(...v), min = Math.min(...v);
+    const x = (i) => (m + (i * (ancho - 2 * m)) / (v.length - 1)).toFixed(1);
+    const y = (n) => (alto - m - ((n - min) * (alto - 2 * m)) / (max - min || 1)).toFixed(1);
+    svg.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
+    svg.innerHTML = `<polyline points="${v.map((n, i) => `${x(i)},${y(n)}`).join(" ")}"/><circle cx="${x(v.length - 1)}" cy="${y(v[v.length - 1])}" r="2.6"/>`;
+  }
+
+  // Indicadores: tocar abre qué cuenta y el desglose debajo de su fila; tocar otra vez lo cierra.
+  const DESGLOSE = {
+    activas: ["Cuentas que en 7 días abrieron la app, entraron o hicieron algo: Voy, Seguir, publicar o reportar. Sin administradores.", ["22 solo abrieron la app", "11 dijeron Voy", "4 publicaron", "14 cuentas nuevas"], "Ver las 38 personas"],
+    coincidencias: ["Eventos de los próximos 7 días donde 2 o más personas dijeron Voy, sin contar administradores.", ["5 con 2 personas", "3 con 3 a 5", "1 con 6 o más: Jam de jazz de los jueves, 7 van"], "Ver los 9 eventos"],
+    agenda: ["Eventos visibles en los próximos 7 días, los publique quien los publique.", ["29 de 64 lugares tienen alguna fecha próxima", "35 no tienen ninguna"], "Ver los lugares sin fecha"],
+    comunidad: ["Eventos próximos que publicó una cuenta que no es de administración.", ["23 de 97 eventos próximos", "de 11 personas", "7 publicados esta semana"], "Ver los 23 eventos"],
+  };
+  for (const lista of $$("ul.indicadores[data-interactivo]")) {
+    const botones = $$("button.indicador", lista);
+    const desglose = $("li.desglose", lista);
+    for (const boton of botones) {
+      boton.addEventListener("click", () => {
+        const abierto = boton.getAttribute("aria-expanded") === "true";
+        botones.forEach((b) => b.setAttribute("aria-expanded", "false"));
+        if (abierto) return desglose.remove();
+        const [que, partes, enlace] = DESGLOSE[boton.dataset.indicador];
+        desglose.innerHTML = `<p>${que}</p><ul>${partes.map((p) => `<li>${p}</li>`).join("")}</ul><a href="#" class="enlace">${enlace} ›</a>`;
+        boton.setAttribute("aria-expanded", "true");
+        botones[Math.min(botones.indexOf(boton) | 1, botones.length - 1)].parentElement.after(desglose);
+      });
+    }
+  }
+
+  // Tarjetas pendientes: la decisión deja su línea, con el reverso si lo hay.
+  for (const boton of $$(".pendiente [data-hecho]")) {
+    boton.addEventListener("click", () => {
+      const linea = document.createElement("li");
+      linea.className = "hecho";
+      linea.innerHTML = `${icono("ok")}<span>${boton.dataset.hecho}</span>${boton.dataset.reverso ? `<button type="button" class="enlace">${boton.dataset.reverso}</button>` : ""}`;
+      boton.closest(".pendiente").replaceWith(linea);
+      linea.querySelector(".enlace")?.addEventListener("click", (e) => {
+        e.target.remove();
+        linea.querySelector("span").textContent = "Foro Escénico La Lonja se ve otra vez";
+      });
+    });
+  }
+
+  // Rol: hoja para hacer administrador y para quitarlo; el renglón y la línea dicen lo hecho.
+  const flujo = $("[data-flujo-rol]");
+  if (flujo) {
+    const velo = $(".velo", flujo), hojas = $$(".hoja", flujo), rol = $("[data-rol]", flujo), aviso = $("[data-aviso-rol]", flujo);
+    const USUARIO = `${icono("escudo")}<b>Usuario</b><small>Publica, dice Voy y sigue</small><button type="button" class="pildora" data-abrir="hacer">Hacer administrador</button>`;
+    const ADMIN = `${icono("escudo")}<b>Administrador</b><small>Desde hoy, lo nombraste tú</small><button type="button" class="pildora quitar" data-abrir="quitar">Quitar</button>`;
+    const cerrar = () => { velo.hidden = true; hojas.forEach((h) => (h.hidden = true)); };
+    velo.addEventListener("click", cerrar);
+    flujo.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      if (b.dataset.abrir) { velo.hidden = false; $(`[data-hoja="${b.dataset.abrir}"]`, flujo).hidden = false; }
+      if (b.matches(".cerrar-hoja")) cerrar();
+      if (b.dataset.confirmar) {
+        const hacer = b.dataset.confirmar === "hacer";
+        cerrar();
+        rol.innerHTML = hacer ? ADMIN : USUARIO;
+        aviso.hidden = false;
+        $("span", aviso).textContent = hacer ? "Ya es administrador" : "Ya no es administrador";
+      }
+      if (b.matches("[data-ver-correo]")) {
+        if (b.textContent === "Ver") { $("[data-correo]", flujo).textContent = "luis.rangel@gmail.com"; b.textContent = "Copiar"; }
+        else b.textContent = "Copiado";
+      }
+    });
+  }
+
+  // Lista de fichas: los tres puntos abren el menú; ocultar deja la etiqueta y sube el conteo.
+  const lista = $("[data-lista-fichas]");
+  if (lista) {
+    const velo = $(".velo", lista), hoja = $(".hoja", lista), alternar = $("[data-alternar]", lista), ocultos = $("[data-ocultos]", lista);
+    let fila = null;
+    const cerrar = () => { velo.hidden = hoja.hidden = true; };
+    velo.addEventListener("click", cerrar);
+    $(".cerrar-hoja", hoja).addEventListener("click", cerrar);
+    for (const puntos of $$(".puntos", lista)) {
+      puntos.addEventListener("click", () => {
+        fila = puntos.closest(".ficha-fila");
+        $("[data-nombre]", hoja).textContent = $("b", fila).firstChild.textContent.trim();
+        $("span", alternar).textContent = fila.classList.contains("oculta") ? "Volver a mostrar" : "Ocultar del mapa";
+        $("use", alternar).setAttribute("href", fila.classList.contains("oculta") ? "#i-ojo" : "#i-ojo-no");
+        velo.hidden = hoja.hidden = false;
+      });
+    }
+    alternar.addEventListener("click", () => {
+      const ocultar = !fila.classList.contains("oculta");
+      fila.classList.toggle("oculta", ocultar);
+      const nombre = $("b", fila);
+      if (ocultar) nombre.insertAdjacentHTML("beforeend", ' <span class="etiqueta">Oculto</span>');
+      else $(".etiqueta", nombre)?.remove();
+      ocultos.textContent = String(Number(ocultos.textContent) + (ocultar ? 1 : -1));
+      cerrar();
+    });
+  }
+</script>
