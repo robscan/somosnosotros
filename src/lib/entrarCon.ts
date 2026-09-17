@@ -19,7 +19,7 @@ export const NOMBRE_PROVEEDOR: Record<Proveedor, string> = { apple: "Apple", goo
  */
 export const CLIENTES: Record<Proveedor, string | null> = {
   apple: "org.somosnosotros.web", // Services ID de Apple
-  google: null, // ID de cliente web de Google Cloud (termina en .apps.googleusercontent.com)
+  google: "540749799366-fje7u1fcbkcjaj0cuhfvfo83oerti2ai.apps.googleusercontent.com", // cliente web "somosnosotros.org" del proyecto de Google Cloud somos-nosotros-508902
 };
 
 export function esProveedor(valor: unknown): valor is Proveedor {

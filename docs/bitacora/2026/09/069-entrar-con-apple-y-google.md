@@ -88,13 +88,28 @@ Desde el navegador de la app, con la sesión del founder.
   - No estorba: Apple mira el SPF del remitente técnico (`send.`, el Return-Path de Resend) y la firma DKIM del dominio del From (`somosnosotros.org`, que Resend firma).
   - Si algún correo a una dirección oculta rebota, el remedio es un TXT `v=spf1 include:amazonses.com ~all` en el dominio principal.
 - **Durante la escritura, la página de Apple escribió en el portapapeles del founder:** avisado.
-- **Supabase y Google Cloud piden iniciar sesión en el navegador de la app:** lo hace el founder.
+- **Google Cloud y Supabase, desde el Chrome del founder.** El navegador de la app no muestra la validación con huella de Google (llaves de acceso con Touch ID); el founder pidió seguir en su Chrome («sigue entonces con Chrome») y aceptó los textos legales («y si a aceptar textos»).
+- **Google (guía, G1 a G6), hecho con la cuenta robscan@gmail.com:**
+  - proyecto "Somos Nosotros" (`somos-nosotros-508902`, sin organización);
+  - Google Auth Platform: app "Somos Nosotros", usuarios externos, contacto robscan@gmail.com, Política de Datos del Usuario aceptada;
+  - marca: inicio `https://somosnosotros.org`, privacidad `/privacidad`, condiciones `/reglas`, dominio autorizado `somosnosotros.org`;
+  - publicada: "En producción" (sin logotipo ni permisos sensibles, así que no pide verificación);
+  - cliente web "somosnosotros.org" con vueltas `https://somosnosotros.org/auth/google` y `https://www.somosnosotros.org/auth/google`; su ID va en `CLIENTES.google`;
+  - el secreto del cliente no se copió ni se guardó: no se usa.
+  - Google avisa que un cliente nuevo puede tardar de 5 minutos a unas horas en funcionar.
+- **Supabase (guía, S1 y S2), hecho:**
+  - Apple encendido con Client IDs `org.somosnosotros.web`;
+  - Google encendido con el Client ID del cliente web;
+  - sin secretos y con "Skip nonce checks" apagado;
+  - comprobado en `/auth/v1/settings`: `apple: true`, `google: true`.
+  - Producción no cambia hasta mezclar la rama: el código de hoy no enseña esos botones.
+  - Tropiezo: la tecla Escape cierra el panel de Supabase sin guardar; se repitió el alta de Google y se guardó con su botón.
 
 ## Pendiente del founder
 
 1. ~~Crear en Apple el Services ID `org.somosnosotros.web` con sus dos direcciones de vuelta y registrar los orígenes de correo (guía, A).~~ Hecho (arriba).
-2. Iniciar sesión en Google Cloud y en Supabase en el navegador de la app, para que yo siga con los pasos G y S.
-3. Decir si se hace push y se abre el PR. El PR no cambia nada a la vista mientras Supabase siga apagado.
+2. ~~Iniciar sesión en Google Cloud y en Supabase para los pasos G y S.~~ Hecho desde su Chrome (arriba).
+3. Decir si se hace push, se abre el PR y se mezcla. Con Supabase ya encendido, **al desplegar salen Apple y Google en Entrar**.
 5. Decidir si la foto de Google se queda como foto pública de la ficha. Así estaba diseñado desde la Fase 1 y el aviso de privacidad ya lo dice. Recomendación: sí, ayuda a reconocerse en los eventos.
 
 ## Notas

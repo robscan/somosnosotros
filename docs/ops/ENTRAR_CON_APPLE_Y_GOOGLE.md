@@ -2,6 +2,13 @@
 
 Bitácora [069](../bitacora/2026/09/069-entrar-con-apple-y-google.md) · OL-043.
 
+**Estado (2026-09-16, noche): A, G y S hechos.**
+- Apple: Services ID `org.somosnosotros.web`.
+- Google: proyecto `somos-nosotros-508902`, cuenta robscan@gmail.com, publicado; cliente web "somosnosotros.org".
+- Supabase: Apple y Google encendidos.
+
+Esta guía queda para repetir o revisar la configuración.
+
 ## Cómo funciona, en corto
 
 La persona toca "Continuar con Apple" (o Google), Apple le pregunta con Face ID y la devuelve a somosnosotros.org con su identidad firmada. Supabase comprueba esa firma y abre la sesión.

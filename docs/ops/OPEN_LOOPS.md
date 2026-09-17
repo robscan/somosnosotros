@@ -14,9 +14,11 @@
 
     Sin migración ni variables nuevas; se va `NEXT_PUBLIC_GOOGLE_ACTIVO` (reemplaza la línea "Google (entrar con Google): para después" de más abajo).
   - **Verificado:** lint, tipos, 222 pruebas y build; pantallas a 390×844 y en el Safari del simulador con un intermediario de solo lectura; rutas probadas con peticiones reales, nada escrito en producción. Antes de construir se midió en la app instalada del simulador (iOS 26.3) que Apple y Google abren dentro de la app y la vuelta regresa a pantalla completa con su almacenamiento.
-  - **Apple configurado** («haz los pasos tu», 2026-09-16, noche): Services ID `org.somosnosotros.web` con dominios y vueltas de `somosnosotros.org` y `www`, y orígenes de correo (`send.` pasa SPF).
-  - **Pendiente** (guía con valores exactos: [ENTRAR_CON_APPLE_Y_GOOGLE.md](ENTRAR_CON_APPLE_Y_GOOGLE.md)):
-    - el founder inicia sesión en Google Cloud y en Supabase en el navegador de la app, y yo creo el cliente web y enciendo los dos proveedores;
+  - **Configurado por encargo del founder** («haz los pasos tu», 2026-09-16, noche; guía: [ENTRAR_CON_APPLE_Y_GOOGLE.md](ENTRAR_CON_APPLE_Y_GOOGLE.md)):
+    - Apple: Services ID `org.somosnosotros.web` con dominios y vueltas de `somosnosotros.org` y `www`, y orígenes de correo (`send.` pasa SPF);
+    - Google, desde su Chrome: proyecto `somos-nosotros-508902` publicado y cliente web con su ID en el código;
+    - Supabase: Apple y Google encendidos (`/auth/v1/settings` lo confirma). Producción no cambia hasta mezclar la rama.
+  - **Pendiente:**
     - decir si se hace push y se abre el PR;
     - decidir si la foto de Google queda como foto pública de la ficha (recomendación: sí).
   - **Queda para el iPhone del founder:** la entrada completa con Face ID, en Safari y en la app instalada.
