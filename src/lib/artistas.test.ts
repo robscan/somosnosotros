@@ -94,13 +94,32 @@ describe("hrefArtistas y filtroDesdeUrl", () => {
 });
 
 describe("conProximaFecha y textoProximaFecha", () => {
-  it("toma la fecha más cercana de cada artista y la escribe con el sitio", () => {
-    const r = conProximaFecha([{ id: "a" }, { id: "b" }], [
-      { artista_id: "a", evento: { id: "e2", inicio: "2026-09-20T01:00:00Z", sitio: "Foro" } },
-      { artista_id: "a", evento: { id: "e1", inicio: "2026-09-15T01:00:00Z", sitio: "Casa" } },
-    ]);
-    expect(r[0].proxima?.id).toBe("e1");
-    expect(r[1].proxima).toBeNull();
+  // Como pueden llegar de la base: la Orquesta tiene dos fechas y la más lejana llega primero; el Mariachi tiene dos a la
+  // misma hora (va la del título que va antes en orden alfabético, "Demostración").
+  const llegada = [
+    { artista_id: "orquesta", evento: { id: "e-mayas", titulo: "La noche de los Mayas", inicio: "2026-09-26T02:00:00Z", sitio: "Teatro de la Paz" } },
+    { artista_id: "mariachi", evento: { id: "e-mariachi", titulo: "Mariachi Universitario", inicio: "2026-09-18T01:00:00Z", sitio: "Patio de la UASLP" } },
+    { artista_id: "coro", evento: { id: "e-poemas", titulo: "Presentación editorial", inicio: "2026-09-18T23:30:00Z", sitio: "CEART" } },
+    { artista_id: "orquesta", evento: { id: "e-sinfonica", titulo: "Sinfónica en San Sebastián", inicio: "2026-09-18T02:00:00Z", sitio: "Parroquia de San Sebastián" } },
+    { artista_id: "mariachi", evento: { id: "e-demostracion", titulo: "Demostración folclórica", inicio: "2026-09-18T01:00:00Z", sitio: "Teatro de la Paz" } },
+  ];
+  const base = { disciplina: "musica" as const, detalle: null, tipo: "grupo" as const, foto: null };
+  const artistas = [
+    { ...base, id: "coro", nombre: "Coro Vuela Alto" },
+    { ...base, id: "orquesta", nombre: "Orquesta de Cámara" },
+    { ...base, id: "mariachi", nombre: "Mariachi Femenil" },
+    { ...base, id: "sin-fechas", nombre: "Afinque" },
+  ];
+  it("toma la fecha más próxima de cada artista llegue como llegue, y a la misma hora desempata por título", () => {
+    for (const fechas of [llegada, [...llegada].reverse()]) {
+      const r = conProximaFecha(artistas, fechas);
+      expect(r.map((a) => [a.id, a.proxima?.id ?? null])).toEqual([["coro", "e-poemas"], ["orquesta", "e-sinfonica"], ["mariachi", "e-demostracion"], ["sin-fechas", null]]);
+      expect(r[1].proxima).toEqual({ id: "e-sinfonica", inicio: "2026-09-18T02:00:00Z", sitio: "Parroquia de San Sebastián" });
+      // La lista va por la fecha elegida: la Orquesta (jueves, 20:00) antes que el Coro (viernes).
+      expect(ordenarArtistas(r).map((a) => a.id)).toEqual(["mariachi", "orquesta", "coro", "sin-fechas"]);
+    }
+  });
+  it("escribe la próxima fecha con el sitio", () => {
     const ahora = new Date("2026-09-14T18:00:00Z");
     expect(textoProximaFecha({ id: "e1", inicio: "2026-09-15T01:30:00Z", sitio: "Casa" }, ahora)).toMatch(/^Próximo: hoy · 19:30 · Casa$/);
   });
