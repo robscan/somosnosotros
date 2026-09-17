@@ -39,7 +39,8 @@ export default async function Admin() {
     <main className={ficha.pagina}>
       <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} />
       <h1 className={styles.titulo}>Administración</h1>
-      <Pendientes iniciales={pendientes.map((p) => ({ ...p, cuando: cuandoPaso(p.creado_en, ahora) }))} error={errorPendientes} />
+      {/* La llave cambia cuando la lista pasa de no leída a leída (Intentar de nuevo): así se monta con los pendientes reales. */}
+      <Pendientes key={errorPendientes ? "sin-leer" : "leidos"} iniciales={pendientes.map((p) => ({ ...p, cuando: cuandoPaso(p.creado_en, ahora) }))} error={errorPendientes} />
 
       <h2 className={styles.grupo}>Últimos 7 días</h2>
       {resumen ? <Indicadores lista={lista} nota={notaSemana(lista)} /> : <Reintentar texto="No pudimos leer los indicadores." />}

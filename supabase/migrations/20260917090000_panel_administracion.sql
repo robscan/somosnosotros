@@ -1,4 +1,4 @@
--- somosnosotros · migración 0025 · panel de administración (docs/rediseno/18 y 19, firmados por el founder el 2026-09-16)
+-- somosnosotros · migración 0028 · panel de administración (docs/rediseno/18 y 19, firmados por el founder el 2026-09-16)
 -- Lo que el panel lee y hace, y ningún cliente puede por sí mismo:
 --   · cuatro indicadores de los últimos 7 días y su foto diaria (conteos, sin datos personales);
 --   · lo pendiente con el nombre de la ficha; personas con su cuenta de acceso (correo oculto) y su actividad;
@@ -69,6 +69,31 @@ language sql stable security definer set search_path = public as $$
     where p.id = auth.uid() and p.rol = 'admin'
   );
 $$;
+
+-- ---------- el rol lo cambian solo las cuentas de origen, por cualquier camino (revisión de seguridad del PR #74) ----------
+-- Sustituye al proteger_rol de la migración 20260914080000, que solo exigía es_admin(). Con el permiso de tabla,
+-- authenticated conserva UPDATE sobre perfiles.rol (hallazgo P2 de docs/rediseno/18): un administrador nombrado podía
+-- hacer o quitar administradores, también a las cuentas de origen, con un update directo, sin cambiar_rol y sin registro.
+-- Ahora, cambie el rol quien lo cambie y por donde lo cambie:
+--   · hace falta una cuenta de origen (D1);
+--   · a una cuenta de origen no se le baja el rol;
+--   · el cambio queda en cambios_de_rol, con quién y cuándo.
+create or replace function public.proteger_rol() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.rol is distinct from old.rol then
+    if not public.es_admin_de_origen() then
+      raise exception 'solo quien fundó Somos Nosotros cambia el rol' using errcode = '42501';
+    end if;
+    if new.rol <> 'admin' and exists (
+      select 1 from auth.users u join public.admin_correos a on lower(a.correo) = lower(u.email) where u.id = old.id
+    ) then
+      raise exception 'a una cuenta de origen no se le quita el rol' using errcode = '42501';
+    end if;
+    insert into public.cambios_de_rol (perfil_id, rol, por) values (new.id, new.rol, auth.uid());
+  end if;
+  return new;
+end $$;
 
 -- ---------- indicadores de ahora (sin permiso para clientes: los usan panel_resumen y guardar_indicadores) ----------
 create function public.indicadores_ahora() returns json
@@ -226,8 +251,8 @@ language sql stable security definer set search_path = public as $$
     left join public.cuentas_vistas v on v.perfil_id = p.id
     where public.es_admin()
       and (coalesce(trim(p_buscar), '') = ''
-        or public.normalizar_nombre(p.nombre) like '%' || public.normalizar_nombre(p_buscar) || '%'
-        or lower(u.email) like '%' || lower(trim(p_buscar)) || '%')
+        or (public.normalizar_nombre(p_buscar) <> '' and public.normalizar_nombre(p.nombre) like '%' || public.normalizar_nombre(p_buscar) || '%')
+        or lower(u.email) like '%' || replace(replace(replace(lower(trim(p_buscar)), '\', '\\'), '%', '\%'), '_', '\_') || '%')
       and case coalesce(p_filtro, 'todas')
         when 'nuevas' then p.rol <> 'admin' and p.creado_en >= now() - interval '7 days'
         when 'sin_entrar' then u.last_sign_in_at is null
@@ -324,7 +349,7 @@ $$;
 
 -- ---------- hacer o quitar administradores (decisión 9, D1) ----------
 -- Devuelve 'ok' o la causa por la que no se hizo: sin_permiso, rol_desconocido, no_existe, sin_cambio, sin_confirmar,
--- a_ti_mismo, de_origen, ultimo. El trigger proteger_rol sigue como segunda barrera.
+-- a_ti_mismo, de_origen, ultimo. El trigger proteger_rol es la segunda barrera y deja el registro.
 create function public.cambiar_rol(p_perfil uuid, p_rol text) returns text
 language plpgsql security definer set search_path = public as $$
 declare
@@ -363,8 +388,8 @@ begin
       return 'ultimo';
     end if;
   end if;
+  -- El trigger proteger_rol vuelve a exigir lo mismo y deja el registro en cambios_de_rol.
   update public.perfiles set rol = p_rol where id = p_perfil;
-  insert into public.cambios_de_rol (perfil_id, rol, por) values (p_perfil, p_rol, auth.uid());
   return 'ok';
 end $$;
 
@@ -388,7 +413,7 @@ language sql stable security definer set search_path = public as $$
     count(*) over ()
   from public.lugares l
   where public.es_admin()
-    and (coalesce(trim(p_buscar), '') = '' or public.normalizar_nombre(l.nombre) like '%' || public.normalizar_nombre(p_buscar) || '%')
+    and (coalesce(trim(p_buscar), '') = '' or public.normalizar_nombre(p_buscar) <> '' and public.normalizar_nombre(l.nombre) like '%' || public.normalizar_nombre(p_buscar) || '%')
     and case coalesce(p_filtro, 'todos')
       when 'ocultos' then not l.visible
       when 'sin_fecha' then l.visible and not l.privado
@@ -412,7 +437,7 @@ language sql stable security definer set search_path = public as $$
   left join public.perfiles p on p.id = e.creado_por
   where public.es_admin()
     and public.sin_pasar(e.inicio, e.fin)
-    and (coalesce(trim(p_buscar), '') = '' or public.normalizar_nombre(e.titulo) like '%' || public.normalizar_nombre(p_buscar) || '%')
+    and (coalesce(trim(p_buscar), '') = '' or public.normalizar_nombre(p_buscar) <> '' and public.normalizar_nombre(e.titulo) like '%' || public.normalizar_nombre(p_buscar) || '%')
     and case coalesce(p_filtro, 'proximos')
       when 'semana' then e.visible and e.inicio < now() + interval '7 days'
       when 'sin_imagen' then e.visible and e.imagen is null
@@ -435,7 +460,7 @@ language sql stable security definer set search_path = public as $$
     count(*) over ()
   from public.artistas a
   where public.es_admin()
-    and (coalesce(trim(p_buscar), '') = '' or public.normalizar_nombre(a.nombre) like '%' || public.normalizar_nombre(p_buscar) || '%')
+    and (coalesce(trim(p_buscar), '') = '' or public.normalizar_nombre(p_buscar) <> '' and public.normalizar_nombre(a.nombre) like '%' || public.normalizar_nombre(p_buscar) || '%')
     and case coalesce(p_filtro, 'todos')
       when 'por_reclamar' then a.origen = 'capo' and not exists (select 1 from public.artistas_cuentas c where c.artista_id = a.id)
       when 'llevados' then exists (select 1 from public.artistas_cuentas c where c.artista_id = a.id)

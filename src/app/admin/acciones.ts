@@ -59,6 +59,7 @@ export async function decidirPendiente(reporteId: string, decision: Decision): P
   }
   if (decision === "pasar") {
     if (r.tipo !== "artista" && r.tipo !== "lugar") return { ok: false, error: "Esta ficha no se pasa a otra cuenta." };
+    if (r.motivo !== "es_mio") return { ok: false, error: "Solo se pasa la ficha a quien pidió llevarla." };
     if (!r.creado_por) return { ok: false, error: "La cuenta que la pidió ya no existe." };
     const tipo = r.tipo as keyof typeof LIGA;
     const { tabla, columna } = LIGA[tipo];

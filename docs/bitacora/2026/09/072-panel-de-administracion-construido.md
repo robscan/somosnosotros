@@ -67,6 +67,36 @@
 - **A4:** la espera no escribe "Administración". Sirve también para las listas, y un título que no corresponde no sería evidencia.
 - **D3 en la práctica:** "abrió la app" es abrir con sesión una pantalla raíz (Agenda, Lugares o Artistas), que es donde vive `Sesion`.
 
+## Revisión de seguridad del PR #74 (2026-09-16, noche)
+El encargado de gestión de cambios subió la rama al [PR #74](https://github.com/robscan/somosnosotros/pull/74) por orden del founder. Una revisión aparte encontró tres cosas que había que corregir antes de aplicar la migración. Están corregidas en la rama, con commit local y sin push.
+
+1. **D1 se podía saltar con un update directo.**
+   - **El problema:** `cambiar_rol` exigía una cuenta de origen, pero el trigger `proteger_rol` solo pedía `es_admin()`, y `authenticated` conserva UPDATE sobre `perfiles.rol` (P2). Un administrador nombrado podía hacer o quitar administradores, también a las cuentas de origen, sin dejar registro.
+   - **Arreglo, dentro de la migración:** `proteger_rol` se reemplaza. Ahora exige una cuenta de origen, no deja bajar de rol a una cuenta de origen por ningún camino y deja él mismo el registro en `cambios_de_rol` (`cambiar_rol` ya no lo inserta).
+   - **Probado:** con una copia de la migración sin el arreglo, el banco falla 32 comprobaciones: una administradora nombrada le quita el rol al fundador y lo demás se cae detrás. Con el arreglo, 95 en verde.
+2. **Pendiente se quedaba vacío al reintentar.**
+   - **El problema:** `useState(iniciales)` no vuelve a leer la lista después de "Intentar de nuevo". Si la primera carga fallaba, pintaba "Nada pendiente".
+   - **Arreglo:** la página le pone al componente una llave que cambia entre "sin leer" y "leídos", así se monta otra vez con la lista real.
+   - **Visto con el respaldo local:** error → Intentar de nuevo → "Pendiente 2" con sus dos tarjetas.
+3. **Un error en la ficha de persona se leía como "cuenta borrada".**
+   - **El problema:** `cargarPersona` devolvía null en los dos casos.
+   - **Arreglo:** ahora devuelve `{ persona, error }`. Con error: "No pudimos leer esta cuenta · Intentar de nuevo"; sin cuenta: "Esta cuenta ya no existe".
+   - **Visto:** los dos estados.
+
+**Menores:**
+- `decidirPendiente` solo pasa la ficha si el motivo es "es mío".
+- En la búsqueda, `%` y `_` del correo cuentan como letras. Si lo buscado no deja letras ni números, no encuentra nada: antes lo encontraba todo, en Personas y en las listas.
+- La espera lleva `role="status"`.
+- La cabecera de la migración dice 0028.
+
+**Banco en el repo:** `supabase/tests/panel_administracion.mjs`, con 95 comprobaciones. PGlite no es dependencia: se instala aparte y la cabecera del archivo dice cómo.
+
+**Verificación:** lint (0 errores), tipos, 236 pruebas y build.
+
+**Notas:**
+- A las 21:01 apareció en este árbol de trabajo un `.env` con llaves de producción. No lo creó este chat y quedó intacto. Para mirar las pantallas, `.env.local` dejó vacías esas llaves y apuntó Supabase al respaldo local; se borró al terminar.
+- `admin_correos` puede tener correos sin cuenta. Con la confirmación de cambio de correo de Supabase activada (lo normal), nadie puede ponerse ese correo. Si se desactivara, alguien podría convertirse en cuenta de origen cambiando su correo a uno de la lista. Conviene dejarla activada o quitar de la lista los correos que no se usan.
+
 ## Queda
 - **Founder, antes de mezclar:**
   1. aplicar la migración (`npm run db:push`);

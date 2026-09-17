@@ -11,6 +11,13 @@
   - Lugares, Eventos y Artistas con filtros, "Oculto" y el menú de los tres puntos;
   - Ajustes dice lo pendiente, y el aviso de privacidad suma el último día que se abrió la app y el uso del correo.
 
+  **Revisión de seguridad del [PR #74](https://github.com/robscan/somosnosotros/pull/74)** (subido por el encargado): tres correcciones hechas en la rama, con commit local (bitácora [072](../bitacora/2026/09/072-panel-de-administracion-construido.md)):
+  - D1 también frente a un update directo al rol, con registro de todo cambio;
+  - Pendiente ya no se queda vacío al reintentar;
+  - un error en la ficha de persona ya no se lee como cuenta borrada.
+
+  El banco de la base vive en `supabase/tests/panel_administracion.mjs` (95 comprobaciones).
+
   **Verificado:** lint, tipos, 236 pruebas y build; la migración en un Postgres local (las 28 migraciones y 85 comprobaciones); pantallas a 390×844 con datos inventados, sin producción. **Queda, del founder:**
   - aplicar la migración `20260917090000_panel_administracion.sql` antes de mezclar;
   - push y PR;

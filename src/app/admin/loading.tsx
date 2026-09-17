@@ -5,7 +5,7 @@ import styles from "./admin.module.css";
 export default function Loading() {
   return (
     <main className={ficha.pagina} aria-busy="true" aria-live="polite">
-      <p className={styles.esqueleto} aria-label="Cargando">
+      <p className={styles.esqueleto} role="status" aria-label="Cargando">
         <span />
         <span />
         <span />

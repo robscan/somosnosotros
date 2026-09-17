@@ -142,7 +142,7 @@ flowchart TD
 - **Resumen:** una función de la base, solo para administradores, que devuelve en un viaje los cuatro indicadores, sus comparaciones y los conteos de Gestionar. Lo pendiente sigue con su consulta, ahora con el nombre de la ficha.
 - **Personas:** una función solo para administradores que junta el perfil con su cuenta de acceso (correo oculto, alta, última entrada) y sus conteos. Búsqueda, filtro y páginas de 30, en el servidor.
 - **Rol:** una función `cambiar_rol(persona, rol)` con las guardas de la decisión 9, que registra quién y cuándo.
-  - El trigger `proteger_rol` se queda como segunda barrera.
+  - El trigger `proteger_rol` se queda como segunda barrera. Tras la revisión de seguridad del PR #74 (bitácora 072), exige también una cuenta de origen, no deja bajar de rol a una cuenta de origen por ningún camino y deja el registro él mismo; un update directo ya no se salta D1.
   - Hay que confirmar en la base si `authenticated` conserva el permiso de actualizar `perfiles` entero (P2 de [18](18-administracion-fricciones.md)). Si lo conserva, se cierra por columnas, en su propia pieza.
 - **Nada nuevo en `perfiles`:** esa tabla se lee sin sesión. El registro de roles y el último día que se abrió la app van en tablas que solo lee la administración, y el día se escribe una vez al día por cuenta.
 - **Qué pide al founder:** aplicar una migración (funciones y dos tablas). No hay variables de entorno nuevas. El aviso de privacidad suma una línea por D2 y otra por D3.

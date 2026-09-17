@@ -33,11 +33,12 @@ export async function cargarPersonas(l: Lista): Promise<Cargado<PersonaFila>> {
   return { filas, total: Number(filas[0]?.total ?? 0), conteos: (c.data as Record<string, number> | null) ?? null, error: !!f.error };
 }
 
-export async function cargarPersona(id: string): Promise<PersonaFicha | null> {
-  if (!esUuid(id)) return null;
+/** La ficha de administración de una persona. `error` no es lo mismo que `persona: null` (la cuenta ya no existe). */
+export async function cargarPersona(id: string): Promise<{ persona: PersonaFicha | null; error: boolean }> {
+  if (!esUuid(id)) return { persona: null, error: false };
   const supabase = (await clienteServidor())!;
-  const { data } = await supabase.rpc("panel_persona", { p_perfil: id });
-  return (data as PersonaFicha | null) ?? null;
+  const { data, error } = await supabase.rpc("panel_persona", { p_perfil: id });
+  return { persona: error ? null : ((data as PersonaFicha | null) ?? null), error: !!error };
 }
 
 export type FilaDe = { lugares: LugarFila; eventos: EventoFila; artistas: ArtistaFila };

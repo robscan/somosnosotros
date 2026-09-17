@@ -7,6 +7,7 @@ import { datosPersona, estadoRol, unir } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Avatar from "../../Avatar";
 import { cargarPersona } from "../../consultas";
+import Reintentar from "../../Reintentar";
 import CorreoPersona from "./CorreoPersona";
 import RolPersona from "./RolPersona";
 import styles from "../../admin.module.css";
@@ -22,7 +23,16 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=/admin/personas/${id}`);
   if (actual.perfil.rol !== "admin") redirect("/");
-  const f = await cargarPersona(id);
+  const { persona: f, error } = await cargarPersona(id);
+  if (error) {
+    return (
+      <main className={ficha.pagina}>
+        <Barra volver={{ href: "/admin/personas", texto: "Personas" }} />
+        <h1 className={styles.titulo}>Persona</h1>
+        <Reintentar texto="No pudimos leer esta cuenta." />
+      </main>
+    );
+  }
   if (!f) {
     return (
       <main className={ficha.pagina}>
