@@ -1,20 +1,45 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca } from "@/lib/historial";
 
-export const CLAVE_NAVEGADAS = "somosnosotros:navegadas";
+const INSTALADA = "__somosnosotrosMarca";
+
+/** Quienes necesitan enterarse de una vuelta antes de que se pinte la pantalla de destino. */
+const alVolverSuscritos = new Set<() => void>();
 
 /**
- * Cuenta las pantallas vistas en esta pestaña (sessionStorage). Con eso "Atrás" sabe si hay una pantalla anterior
- * dentro de la app o si se llegó por un enlace compartido y debe ir a la pantalla madre. No pinta nada.
+ * Atrás, adelante o el gesto (popstate). React pinta la pantalla de destino dentro del mismo evento, así que quien
+ * tenga que actuar antes (guardar la posición de la pantalla que se deja, saber que la siguiente es una vuelta) se
+ * apunta aquí: este módulo escucha antes que el router de Next.js porque carga con la primera pantalla, y quien se
+ * apunta puede cargar después (MemoriaScroll va dentro de un Suspense).
+ */
+export function alVolver(fn: () => void): void {
+  alVolverSuscritos.add(fn);
+}
+
+// Una sola vez, al cargar este módulo en el teléfono, antes de la primera navegación de la app: la marca propia de
+// navegación (OL-055; cada entrada del historial lleva cuántas pantallas de la app tiene detrás) y el aviso de vuelta.
+if (typeof window !== "undefined") {
+  const w = window as Window & { [INSTALADA]?: true };
+  if (!w[INSTALADA]) {
+    w[INSTALADA] = true;
+    try {
+      ponerMarca(window.history, marcaDeLlegada(document.referrer, window.location.origin));
+    } catch {}
+    window.addEventListener("popstate", () => alVolverSuscritos.forEach((fn) => fn()));
+  }
+}
+
+/** Si Atrás puede volver con el historial a una pantalla de la app (lo pregunta Atrás al tocarlo). */
+export function hayAnterior(): boolean {
+  return hayPantallaAnterior(leerMarca(window.history.state), window.history.length);
+}
+
+/**
+ * Va en el layout, fuera de todo Suspense, para que este módulo cargue con la primera pantalla. Con la marca, "Atrás"
+ * sabe si hay una pantalla anterior dentro de la app o si se llegó por un enlace compartido y debe ir a la pantalla
+ * madre. No pinta nada.
  */
 export default function Navegacion() {
-  const ruta = usePathname();
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(CLAVE_NAVEGADAS, String(Number(sessionStorage.getItem(CLAVE_NAVEGADAS) ?? "0") + 1));
-    } catch {}
-  }, [ruta]);
   return null;
 }

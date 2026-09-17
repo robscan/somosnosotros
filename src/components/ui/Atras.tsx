@@ -2,38 +2,32 @@
 
 import { useRouter } from "next/navigation";
 import { pedirSalida } from "@/lib/guardiaSalida";
-import { CLAVE_NAVEGADAS } from "../Navegacion";
+import { hayAnterior } from "../Navegacion";
 import { IconoChevronIzquierda } from "./Iconos";
 import styles from "./Atras.module.css";
 
 /**
- * Cómo se vuelve (lo comparten Atrás y Cerrar): a la pantalla anterior de verdad si esta pestaña ya vio otra dentro de
- * la app; si no (enlace compartido, app recién abierta), a `href`, la pantalla madre. Si la pantalla tiene algo sin
- * publicar (guardia de salida), primero pregunta ella y se le entrega la salida.
+ * Cómo se vuelve (lo comparten Atrás y Cerrar): a la pantalla anterior de verdad si la entrada del historial tiene una
+ * pantalla de la app detrás (marca propia, `Navegacion`); si no (enlace compartido, app recién abierta, o ya de vuelta
+ * en la primera), a `href`, la pantalla madre, reemplazando la entrada para que el gesto de atrás no regrese aquí.
+ * Si la pantalla tiene algo sin publicar (guardia de salida), primero pregunta ella y se le entrega la salida.
  */
 export function useVolver(href: string): (e: React.MouseEvent<HTMLAnchorElement>) => void {
   const router = useRouter();
   return function volver(e) {
-    let vistas = 0;
-    try {
-      vistas = Number(sessionStorage.getItem(CLAVE_NAVEGADAS) ?? "0");
-    } catch {}
-    const hayAnterior = vistas > 1 && window.history.length > 1;
-    const irse = () => (hayAnterior ? router.back() : window.location.assign(href));
-    if (pedirSalida(irse)) {
-      e.preventDefault();
-      return;
-    }
-    if (hayAnterior) {
-      e.preventDefault();
-      router.back();
-    }
+    // Abrir en otra pestaña (Cmd, Ctrl, clic central) sigue siendo cosa del navegador.
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    const anterior = hayAnterior();
+    const irse = () => (anterior ? router.back() : router.replace(href));
+    if (pedirSalida(irse)) return;
+    irse();
   };
 }
 
 /**
  * Atrás genérico (pedido del founder, 2026-09-15): la navegación no es lineal (se llega a una ficha desde la agenda,
- * un lugar, un artista o un enlace compartido), así que vuelve a la pantalla anterior de verdad. Sin historia propia
+ * un lugar, un artista o un enlace compartido), así que vuelve a la pantalla anterior de verdad. Sin pantalla anterior
  * (enlace compartido, app recién abierta) lleva a `href`, la pantalla madre. Píldora con chevron, alineada a la
  * izquierda (topografía de navegación). `texto` se conserva para quien lo lea (aria-label); a la vista, "Atrás".
  * Si la pantalla tiene algo sin publicar (guardia de salida), primero pregunta ella.

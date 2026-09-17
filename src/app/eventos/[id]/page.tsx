@@ -11,6 +11,7 @@ import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
 import { IconoBoleto, IconoCalendarioAgregar, IconoCompartir, IconoEstrella, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import MenuAcciones from "@/components/ui/MenuAcciones";
+import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
 import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
@@ -245,9 +246,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <IconoPersonas width={20} height={20} />
           <b>{n === 0 ? "Nadie ha dicho que va todavía" : n === 1 ? "Va 1 persona" : `Van ${n} personas`}</b>
           {n > 0 && (
-            <a href="#quien-va" className={ficha.datoEnlace}>
+            <Salto destino="quien-va" className={ficha.datoEnlace}>
               ver
-            </a>
+            </Salto>
           )}
         </li>
         <li className={ficha.dato}>

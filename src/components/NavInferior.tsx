@@ -20,7 +20,8 @@ const DESTINOS = [
  * Navega, no actúa (publicar es el botón flotante). El destino activo lleva una píldora de color detrás del icono
  * y la etiqueta en el color de acción (ajuste del founder, 2026-09-14: la nav tiene que notarse).
  * Cada sección vuelve a la última URL que se vio en ella (su filtro), y la pantalla repone su scroll:
- * como las pestañas del teléfono (pedido del founder, 2026-09-15).
+ * como las pestañas del teléfono (pedido del founder, 2026-09-15). Tocar la sección en la que ya se está la lleva a su
+ * raíz sin apilar historial: sigue siendo la misma pantalla (OL-055).
  */
 function sinSuscripcion() {
   return () => {};
@@ -45,7 +46,7 @@ export default function NavInferior() {
       {DESTINOS.map(({ seccion, href, etiqueta, Icono }, i) => {
         const activo = href === "/" ? ruta === "/" : ruta.startsWith(href);
         return (
-          <Link key={href} href={activo ? href : ultimaValida(seccion, href, ultimas[i]) ?? href} onClick={activo ? undefined : pedirVuelta} className={`${styles.destino} ${activo ? styles.activo : ""}`} aria-current={activo ? "page" : undefined}>
+          <Link key={href} href={activo ? href : ultimaValida(seccion, href, ultimas[i]) ?? href} replace={activo} onClick={activo ? undefined : pedirVuelta} className={`${styles.destino} ${activo ? styles.activo : ""}`} aria-current={activo ? "page" : undefined}>
             <span className={styles.icono}>
               <Icono width={26} height={26} />
             </span>

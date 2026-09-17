@@ -16,6 +16,7 @@ import Boton from "@/components/ui/Boton";
 import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
+import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { etiquetaArtista, textoProximaFecha, type Artista } from "@/lib/artistas";
@@ -228,9 +229,9 @@ export default async function FichaArtista({ params, searchParams }: Params) {
               <IconoCalendario width={20} height={20} />
               <b>{proxima ? textoProximaFecha(proxima) : "Sin fechas próximas"}</b>
               {proxima && (
-                <a href="#fechas" className={ficha.datoEnlace}>
+                <Salto destino="fechas" className={ficha.datoEnlace}>
                   ver
-                </a>
+                </Salto>
               )}
             </li>
           </>
