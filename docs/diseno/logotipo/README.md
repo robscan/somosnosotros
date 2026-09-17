@@ -1,6 +1,16 @@
 # Logotipo SMSNSTRS con manos y pies
 
-**Estado: aprobado por el founder el 2026-09-15 (borrador 3) y en la app:** barra superior, favicon e icono de instalación. Reglas de uso en [LINEA_GRAFICA.md](../LINEA_GRAFICA.md).
+**Estado:** en la barra sigue el dibujo generado (borrador 3, aprobado el 2026-09-15); el favicon, los iconos de instalación y la insignia salen del símbolo SN del arte final del founder (2026-09-16, `LogoFinal/`). Reglas de uso en [LINEA_GRAFICA.md](../LINEA_GRAFICA.md).
+
+## Arte final del founder (2026-09-16)
+
+- `LogoFinal/SMNSTRS - logo.svg` — el logotipo SMSNSTRS con manos y pies, dibujado por el founder. **No va en la barra:** a 28 y 24 px las manos y los pies se vuelven textura y el trazo pesa más (decisión del founder al verlo en la vista previa, 2026-09-17); la barra conserva `public/logotipo.svg` y `public/logotipo-chico.svg` del dibujo generado. Queda para piezas grandes (entrada, presentación).
+- `LogoFinal/SN - Symbol.svg` — el par SN. De él salen `src/app/favicon.ico` (16, 32 y 48), `public/apple-touch-icon.png` (180), `public/icono-192.png`, `public/icono-512.png`, `public/icono-maskable-512.png` (Android, dentro del círculo seguro) y `public/icono-aviso.png` (insignia de Android: silueta blanca sobre transparente). **Fondo blanco opaco en todos:** iOS pinta oscuro lo transparente (visto en el iPhone del founder el 2026-09-16).
+- `LogoFinal/SMSNSTRS - Emblema.svg` — el logotipo con "somosnosotros.org" debajo, para piezas de presentación. Aún sin uso en la app.
+- Regenerar iconos: `node docs/diseno/logotipo/iconos-sn.mjs` (usa `sharp`, ya instalado con Next). Deja también `iconos-revision.png` para mirar favicon, inicio de iPhone claro y oscuro, icono adaptable e insignia.
+
+Lo que sigue es el dibujo generado con código (borradores 1 a 3), que sigue en la barra.
+
 
 Historia: el borrador 1 (círculos y rectángulos pegados a las letras) se rechazó por calidad. El borrador 2 (manos y zapatos iguales) le pareció bien al founder, que pidió rasgos más orgánicos: manos distintas, algunas haciendo señas, terminaciones que se doblan para dar dirección y pies más claros, con tenis o zapatos.
 
@@ -20,7 +30,7 @@ Historia: el borrador 1 (círculos y rectángulos pegados a las letras) se recha
 - `smsnstrs.svg` — dibujo completo, para 28 px de altura de mayúscula o más.
 - `smsnstrs-chico.svg` — dedos más gruesos y calzado sin cordones, para tamaños menores. Mismas posiciones de letra.
 - `cabecera.py` — exporta `public/logotipo.svg` y `public/logotipo-chico.svg` (coordenadas enteras, tinta fija, 17 y 14 KB).
-- `iconos.py` — favicon SN liso (16, 32 y 48 px) e iconos de instalación con el SN dibujado (180, 192, 512 y 512 adaptable).
+- `iconos.py` — generaba el favicon y los iconos del dibujo anterior (ya no se usa: ver `iconos-sn.mjs`).
 - `gestos.py` (manos con dedos independientes: base, ángulo, largo, grosor y curvatura), `calzado.py` (tenis, tenis de bota, zapato), `terminal.py` (brazos que nacen del trazo y se doblan), `piezas6.py` (cada letra), `espaciado.py` y `espaciado2.py` (espaciado medido sobre el contorno real), `lt.py` (curvas, booleanas, render), `generar.py`, `instancia.py`.
 
 ## Regenerar

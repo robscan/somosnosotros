@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "Directorio de centros culturales y agenda de eventos de San Luis Potosí, para conocer gente local.",
   applicationName: "Somos Nosotros",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Somos Nosotros" },
-  // El favicon (SN) lo sirve src/app/favicon.ico; el icono de "Añadir a inicio", apple-touch-icon y el manifiesto.
+  // El favicon (símbolo SN sobre blanco) lo sirve src/app/favicon.ico; el icono de "Añadir a inicio", apple-touch-icon y el manifiesto (docs/diseno/logotipo/iconos-sn.mjs).
   icons: { apple: "/apple-touch-icon.png" },
   // Vista previa al pegar el enlace del sitio (WhatsApp, Messages): el logotipo sobre hueso, docs/diseno/logotipo/portada.html.
   metadataBase: new URL("https://somosnosotros.org"),
