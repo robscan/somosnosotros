@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { etiquetaArtista } from "@/lib/artistas";
+import { SIN_FOTO } from "@/lib/imagen";
 import { calleCorta, etiquetaTipo } from "@/lib/lugares";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import { IconoDisciplina } from "./ListaArtistas";
@@ -63,23 +64,14 @@ export default function ListaSeguidos({
             {lugares.map((l) => (
               <li key={l.id}>
                 <Link href={`/lugares/${l.id}`} className={renglon.renglon}>
-                  {l.portada ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                    <img
-                      src={l.portada}
-                      alt=""
-                      className={renglon.foto}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <span
-                      className={`${renglon.foto} ${renglon.fotoVacia}`}
-                      aria-hidden="true"
-                    >
-                      <IconoPin width={26} height={26} />
-                    </span>
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+                  <img
+                    src={l.portada ?? SIN_FOTO}
+                    alt=""
+                    className={renglon.foto}
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <span className={renglon.titulo}>{l.nombre}</span>
                   <span className={renglon.meta}>
                     <span className={renglon.envuelve}>
@@ -103,23 +95,14 @@ export default function ListaSeguidos({
             {artistas.map((a) => (
               <li key={a.id}>
                 <Link href={`/artistas/${a.id}`} className={renglon.renglon}>
-                  {a.foto ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                    <img
-                      src={a.foto}
-                      alt=""
-                      className={`${renglon.foto} ${renglon.fotoRedonda}`}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <span
-                      className={`${renglon.foto} ${renglon.fotoVacia} ${renglon.fotoRedonda}`}
-                      aria-hidden="true"
-                    >
-                      <IconoDisciplina disciplina={a.disciplina} size={26} />
-                    </span>
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+                  <img
+                    src={a.foto ?? SIN_FOTO}
+                    alt=""
+                    className={`${renglon.foto} ${renglon.fotoRedonda}`}
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <span className={renglon.titulo}>{a.nombre}</span>
                   <span className={renglon.meta}>
                     <span className={renglon.envuelve}>

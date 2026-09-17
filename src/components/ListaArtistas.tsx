@@ -5,6 +5,7 @@ import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaArtista, etiquetaDisciplina, hrefArtistas, textoProximaFecha, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type Disciplina, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
+import { SIN_FOTO } from "@/lib/imagen";
 import Deslizable from "./ui/Deslizable";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoOk, IconoPincel, IconoPluma } from "./ui/Iconos";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
@@ -33,8 +34,8 @@ type Props = {
 };
 
 /** Icono de lo que hace: nota (música), máscara (teatro, danza, circo), pincel (artes visuales, cine), pluma (letras). */
-export function IconoDisciplina({ disciplina, size = 15 }: { disciplina: Disciplina; size?: number }) {
-  const p = { width: size, height: size };
+export function IconoDisciplina({ disciplina }: { disciplina: Disciplina }) {
+  const p = { width: 15, height: 15 };
   switch (disciplina) {
     case "musica":
       return <IconoNota {...p} />;
@@ -144,14 +145,8 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
           <ul className={styles.lista}>
             {artistas.map((a) => (
               <Deslizable key={a.id} href={`/artistas/${a.id}`} className={renglon.renglon} acciones={seguir.acciones(a.id, a.nombre)}>
-                {a.foto ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                  <img src={a.foto} alt="" className={`${renglon.foto} ${renglon.fotoRedonda}`} loading="lazy" decoding="async" />
-                ) : (
-                  <span className={`${renglon.foto} ${renglon.fotoVacia} ${renglon.fotoRedonda}`} aria-hidden="true">
-                    <IconoDisciplina disciplina={a.disciplina} size={26} />
-                  </span>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+                <img src={a.foto ?? SIN_FOTO} alt="" className={`${renglon.foto} ${renglon.fotoRedonda}`} loading="lazy" decoding="async" />
                 <span className={renglon.titulo}>{a.nombre}</span>
                 <span className={`${renglon.meta} ${renglon.metaColumna}`}>
                   {seguir.sigo(a.id) && (

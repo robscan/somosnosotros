@@ -52,13 +52,6 @@
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
-/* Sin foto: el icono de lo que es (disciplina, lugar, evento) sobre el gris de miniatura; nada de cuadros punteados que prometen una foto. */
-.fotoVacia {
-  display: grid;
-  place-items: center;
-  background: var(--fondo-miniatura);
-  color: var(--texto-suave);
-}
 /* Artistas: redonda, porque es gente; cuadrada es un lugar (decisión 1 de Artistas). */
 .fotoRedonda {
   border-radius: 50%;

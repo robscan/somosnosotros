@@ -62,11 +62,6 @@
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
-.fotoVacia {
-  display: grid;
-  place-items: center;
-  color: var(--texto-suave);
-}
 .conMini {
   grid-template-columns: 28px 1fr;
 }

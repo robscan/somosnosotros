@@ -202,7 +202,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         </p>
       )}
 
-      {a.foto && <Cartel src={a.foto} alt={`Foto de ${a.nombre}`} forma="avatar" />}
+      <Cartel src={a.foto} alt={`Foto de ${a.nombre}`} forma="avatar" />
       <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{a.nombre}</h1>
       <p className={ficha.etiqueta}>{etiquetaArtista(a)}</p>
 

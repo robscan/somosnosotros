@@ -15,10 +15,10 @@ import {
   IconoCerrar,
   IconoLista,
   IconoMapa,
-  IconoPin,
   IconoUbicacion,
 } from "@/components/ui/Iconos";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
+import { SIN_FOTO } from "@/lib/imagen";
 import ChipCiudad from "@/components/Ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import renglon from "@/components/Renglon.module.css";
@@ -211,14 +211,8 @@ export default function VistaLugares({
               className={styles.tarjeta}
               aria-label={`Ver ${elegido.nombre}`}
             >
-              {elegido.portada ? (
-                // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                <img src={elegido.portada} alt="" className={renglon.foto} />
-              ) : (
-                <span className={`${renglon.foto} ${renglon.fotoVacia}`} aria-hidden="true">
-                  <IconoPin width={24} height={24} />
-                </span>
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+              <img src={elegido.portada ?? SIN_FOTO} alt="" className={renglon.foto} />
               <span className={renglon.titulo}>{elegido.nombre}</span>
               <span className={`${renglon.meta} ${renglon.metaColumna}`}>
                 <span>{elegido.privado ? "Solo tú lo ves" : etiquetaTipo(elegido.tipo)}</span>

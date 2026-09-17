@@ -4,8 +4,8 @@ import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
-import { IconoCalendario, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
+import { SIN_FOTO } from "@/lib/imagen";
 import { detalleArtista, detalleEvento, detalleLugar, esSeccionFichas, FILTROS, hrefLista, leerLista, PAGINA_PANEL, vacioDe, type ArtistaFila, type EventoFila, type LugarFila } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarFichas } from "../consultas";
@@ -42,7 +42,6 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
       : seccion === "eventos"
         ? (filas as EventoFila[]).map((x) => ({ id: x.id, nombre: x.titulo, foto: x.imagen, visible: x.visible, detalle: detalleEvento(x, ahora) }))
         : (filas as ArtistaFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, detalle: detalleArtista(x) }));
-  const Icono = seccion === "lugares" ? IconoPin : seccion === "eventos" ? IconoCalendario : IconoEstrella;
   const redonda = seccion === "artistas" ? styles.redonda : "";
 
   return (
@@ -67,14 +66,8 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
           {renglones.map((r) => (
             <li key={r.id} className={`${styles.renglonFicha} ${r.visible ? "" : styles.oculta}`}>
               <Link href={`/${seccion}/${r.id}`}>
-                {r.foto ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                  <img src={r.foto} alt="" className={`${styles.foto} ${redonda}`} loading="lazy" decoding="async" />
-                ) : (
-                  <span className={`${styles.foto} ${styles.fotoVacia} ${redonda}`} aria-hidden="true">
-                    <Icono width={22} height={22} />
-                  </span>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+                <img src={r.foto ?? SIN_FOTO} alt="" className={`${styles.foto} ${redonda}`} loading="lazy" decoding="async" />
                 <b>
                   {r.nombre}
                   {!r.visible && (

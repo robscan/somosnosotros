@@ -37,7 +37,7 @@ Toda pantalla tiene cabecera blanca, contenido en `--fondo-contenido` (hueso) y 
 
 ## Estados del renglón de lista
 
-Con ratón, al pasar por encima el renglón se levanta en blanco con una marca de 3 px del color de acción a la izquierda y el título en ese color; pulsado, igual sin marca; el elegido (`aria-current="true"`) va en `--primario-suave`; el foco de teclado lleva el aro interior. El hueco sin foto muestra el icono de lo que es (disciplina, lugar, evento) sobre `--fondo-miniatura`: nunca un cuadro punteado. La línea de calendario solo aparece cuando hay fecha.
+Con ratón, al pasar por encima el renglón se levanta en blanco con una marca de 3 px del color de acción a la izquierda y el título en ese color; pulsado, igual sin marca; el elegido (`aria-current="true"`) va en `--primario-suave`; el foco de teclado lleva el aro interior. Lo que no tiene portada (evento, lugar o artista) muestra una imagen con el símbolo SN al centro, `#b1b0a9` sobre `--fondo-miniatura` (founder, 2026-09-16): `public/sin-foto.png` en miniaturas y avatares, y `public/sin-foto-ancha.png` en la banda de las fichas. Se generan una vez con `docs/diseno/logotipo/sin-foto-sn.mjs`; nunca se componen en vivo ni son un cuadro punteado. Lo de artistas va siempre en contenedor redondo, como su avatar. La línea de calendario solo aparece cuando hay fecha.
 
 ## Una columna en cualquier pantalla
 
