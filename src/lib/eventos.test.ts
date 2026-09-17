@@ -116,15 +116,15 @@ describe("queCambio", () => {
 });
 
 describe("jsonLdEvento", () => {
-  const base = { id: "e1", titulo: "Noche de jazz", descripcion: null, inicio: "2026-09-20T19:00:00.000Z", fin: null, imagen: null, gratis: true, sitioNombre: "Teatro de la Paz", direccionPublica: "Av. Venustiano Carranza 1815", sitioLat: null, sitioLng: null };
-  it("trae lo mínimo: tipo, nombre, dirección, fecha y sitio", () => {
+  const base = { id: "e1", titulo: "Noche de jazz", descripcion: null, inicio: "2026-09-20T19:00:00.000Z", fin: null, imagen: null, gratis: true, sitioNombre: "Teatro de la Paz", direccionPublica: "Av. Venustiano Carranza 1815", ciudadPublica: "San Luis Potosí", sitioLat: null, sitioLng: null };
+  it("trae lo mínimo: tipo, nombre, dirección con ciudad, fecha y sitio", () => {
     const d = jsonLdEvento(base);
     expect(d).toMatchObject({
       "@context": "https://schema.org",
       "@type": "Event",
       name: "Noche de jazz",
       startDate: base.inicio,
-      location: { "@type": "Place", name: "Teatro de la Paz", address: { "@type": "PostalAddress", streetAddress: "Av. Venustiano Carranza 1815" } },
+      location: { "@type": "Place", name: "Teatro de la Paz", address: { "@type": "PostalAddress", streetAddress: "Av. Venustiano Carranza 1815", addressLocality: "San Luis Potosí" } },
       isAccessibleForFree: true,
       url: "https://somosnosotros.org/eventos/e1",
     });
@@ -144,5 +144,9 @@ describe("jsonLdEvento", () => {
     expect(jsonLdEvento(base)).not.toHaveProperty("image");
     const lleno = jsonLdEvento({ ...base, descripcion: "Con la Camerata", imagen: "https://x/y.jpg", fin: "2026-09-20T22:00:00.000Z" });
     expect(lleno).toMatchObject({ description: "Con la Camerata", image: ["https://x/y.jpg"], endDate: "2026-09-20T22:00:00.000Z" });
+  });
+  it("la ciudad de la dirección es la del sitio, no siempre San Luis Potosí ('otro sitio' de otro país)", () => {
+    const otraCiudad = jsonLdEvento({ ...base, sitioNombre: "Plaza Mayor", direccionPublica: "Plaza Mayor", ciudadPublica: "Córdoba, España" });
+    expect(otraCiudad.location).toMatchObject({ address: { streetAddress: "Plaza Mayor", addressLocality: "Córdoba, España" } });
   });
 });

@@ -10,7 +10,8 @@ import { ORIGEN } from "@/lib/sitemap";
  * llevan su propio `noindex` y necesitan que Google pueda entrar a leerlo.
  * Lo que sigue bloqueado es lo que de verdad conviene que Google ni intente:
  *   `/avisos` sirve HTML sin `noindex` (la baja de correo) y, peor, verla ejecuta la baja — nunca debe rastrearse;
- *   `/auth` no tiene nada que leer por GET (el relevo real solo responde a POST, que Google no manda).
+ *   `/auth` sí responde a GET (manda a Apple o Google y vuelve a traer la sesión), pero solo para redirigir — no
+ *   hay ninguna página propia que enseñar, así que no hace falta que Google ni lo intente.
  */
 export default function robots(): MetadataRoute.Robots {
   return {

@@ -20,14 +20,16 @@ type SearchParams = { ciudad?: string; hace?: string; que?: string; q?: string; 
 /**
  * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
  * resto de filtros ("?hace=musica" es la misma lista para Google, no una nueva). Sin esto, la lista de otra ciudad
- * se declaraba duplicada de la de San Luis Potosí y Google podía no ofrecerla nunca (OL-059).
+ * se declaraba duplicada de la de San Luis Potosí y Google podía no ofrecerla nunca (OL-059). El título y la
+ * descripción son propios, sin nombre de ciudad (no del layout raíz, que decía siempre San Luis Potosí) — por lo
+ * mismo que el inicio (ver su comentario): esta página se reutiliza hasta 60 s al cambiar de ciudad sin recargar.
  */
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
-  const ciudades = await cargarCiudadesDeArtistas(await clienteServidor());
+  const ciudades = await cargarCiudadesDeArtistas();
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/artistas" : `/artistas?ciudad=${resuelta.slug}`;
-  return { title: "Artistas · Somos Nosotros", alternates: { canonical } };
+  return { title: "Artistas · Somos Nosotros", description: "Quiénes hacen la cultura local: artistas y grupos, con su próxima fecha.", alternates: { canonical } };
 }
 
 type FilaFecha = { artista_id: string; evento: Evento | Evento[] | null };
@@ -104,7 +106,7 @@ export default async function Artistas({ searchParams }: { searchParams: Promise
   const { ciudad: slug, ...resto } = await searchParams;
   const filtro = filtroDesdeUrl(resto);
   // Las ciudades de Artistas salen de los artistas que hay; la del alta es la elegida aquí y se cambia en el formulario.
-  const [ciudades, actual] = await Promise.all([cargarCiudadesDeArtistas(await clienteServidor()), usuarioActual()]);
+  const [ciudades, actual] = await Promise.all([cargarCiudadesDeArtistas(), usuarioActual()]);
   const ciudad: Ciudad = ciudadPorSlug(slug, ciudades);
   const cargado = await cargar(filtro, ciudad.nombre);
   // Con sesión, los artistas que sigue: la lista los marca y deja seguir al deslizar (bitácora 071).

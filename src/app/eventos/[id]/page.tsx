@@ -28,7 +28,7 @@ import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
-type EventoConLugar = Evento & { lugar: { id: string; nombre: string; direccion: string | null; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null };
+type EventoConLugar = Evento & { lugar: { id: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
 
@@ -37,7 +37,7 @@ async function cargarEvento(id: string): Promise<EventoConLugar | null> {
   if (!supabase || !esUuid(id)) return null;
   const { data } = await supabase
     .from("eventos")
-    .select("*, lugar:lugares(id, nombre, direccion, lat, lng, portada, visible, privado), autor:perfiles!eventos_creado_por_fkey(id, nombre)")
+    .select("*, lugar:lugares(id, nombre, direccion, ciudad, lat, lng, portada, visible, privado), autor:perfiles!eventos_creado_por_fkey(id, nombre)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
@@ -141,15 +141,30 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       : !e.sitio_reservado && e.sitio_lat != null && e.sitio_lng != null
         ? { lat: e.sitio_lat, lng: e.sitio_lng }
         : null;
-  const direccionPublica =
+  // La dirección pública y su ciudad van de la mano: la del lugar (con la ciudad del lugar), o la de "otro sitio"
+  // (con la ciudad del propio evento). Sin dirección pública no hay JSON-LD que mandar.
+  const direccionYCiudad =
     e.lugar && e.lugar.visible && !e.lugar.privado && e.lugar.direccion
-      ? e.lugar.direccion
+      ? { direccion: e.lugar.direccion, ciudad: e.lugar.ciudad }
       : !e.sitio_reservado && e.sitio_texto
-        ? e.sitio_texto
+        ? { direccion: e.sitio_texto, ciudad: e.ciudad }
         : null;
   const jsonLd =
-    e.visible && !paso && direccionPublica
-      ? jsonLdEvento({ id: e.id, titulo: e.titulo, descripcion: e.descripcion, inicio: e.inicio, fin: e.fin, imagen: e.imagen, gratis: e.precio === null, sitioNombre: sitio, direccionPublica, sitioLat: geoPublico?.lat ?? null, sitioLng: geoPublico?.lng ?? null })
+    e.visible && !paso && direccionYCiudad
+      ? jsonLdEvento({
+          id: e.id,
+          titulo: e.titulo,
+          descripcion: e.descripcion,
+          inicio: e.inicio,
+          fin: e.fin,
+          imagen: e.imagen,
+          gratis: e.precio === null,
+          sitioNombre: sitio,
+          direccionPublica: direccionYCiudad.direccion,
+          ciudadPublica: direccionYCiudad.ciudad,
+          sitioLat: geoPublico?.lat ?? null,
+          sitioLng: geoPublico?.lng ?? null,
+        })
       : null;
 
   return (

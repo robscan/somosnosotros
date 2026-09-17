@@ -12,7 +12,7 @@ import CorreoPersona from "./CorreoPersona";
 import RolPersona from "./RolPersona";
 import styles from "../../admin.module.css";
 
-export const metadata = { title: "Persona · Administración · Somos Nosotros" };
+export const metadata = { title: "Persona · Administración · Somos Nosotros", robots: { index: false, follow: false } };
 
 /**
  * La ficha de administración de una persona (decisión 8): cabecera, Cuenta y Actividad con el dibujo de Ajustes, y Rol

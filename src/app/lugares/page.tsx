@@ -15,14 +15,16 @@ type SearchParams = { vista?: string; ciudad?: string; tipo?: string };
 /**
  * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
  * resto de filtros ("?tipo=museo" es la misma lista para Google, no una nueva). Sin esto, la lista de otra ciudad
- * se declaraba duplicada de la de San Luis Potosí y Google podía no ofrecerla nunca (OL-059).
+ * se declaraba duplicada de la de San Luis Potosí y Google podía no ofrecerla nunca (OL-059). El título y la
+ * descripción son propios, sin nombre de ciudad (no del layout raíz, que decía siempre San Luis Potosí) — por lo
+ * mismo que el inicio (ver su comentario): esta página se reutiliza hasta 60 s al cambiar de ciudad sin recargar.
  */
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
-  const ciudades = await cargarCiudades(await clienteServidor());
+  const ciudades = await cargarCiudades();
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/lugares" : `/lugares?ciudad=${resuelta.slug}`;
-  return { title: "Lugares · Somos Nosotros", alternates: { canonical } };
+  return { title: "Lugares · Somos Nosotros", description: "Centros culturales cerca de ti: mapa y lista, con su próximo evento.", alternates: { canonical } };
 }
 
 /** Los lugares de la ciudad con su próximo evento: el mapa primero, la lista como segunda vista. */
@@ -40,7 +42,7 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
 
 export default async function Lugares({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { vista, ciudad: slug, tipo } = await searchParams;
-  const ciudades = await cargarCiudades(await clienteServidor());
+  const ciudades = await cargarCiudades();
   const ciudad = ciudadPorSlug(slug, ciudades);
   const [lugares, actual, destacados] = await Promise.all([cargar(ciudad.nombre), usuarioActual(), clienteServidor().then((s) => leerTira(s, "lugares", ciudad.nombre))]);
   // Con sesión, los lugares que sigue: la lista los marca y deja seguir al deslizar (bitácora 071).

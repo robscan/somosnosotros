@@ -34,6 +34,8 @@ export type Evento = {
   sitio_revelar_desde: string | null;
   /** Zona horaria (IANA) del evento: sus horas se leen y se muestran en ella (migración 0029). */
   zona: string;
+  /** La ciudad del evento (migración 0029: cualquier país); la del lugar, o la del pin en "otro sitio". */
+  ciudad: string;
 };
 
 /** Lo que la agenda necesita: el evento con el nombre de su lugar o su sitio. */
@@ -110,6 +112,9 @@ export type DatosJsonLdEvento = {
    * tiene ninguna dirección que sea correcto publicar.
    */
   direccionPublica: string;
+  /** La ciudad de esa misma dirección pública (la del lugar, o la del evento en "otro sitio") — sin ella, el
+   *  `streetAddress` repetía el nombre del sitio y no había ninguna localidad que decir (gestión de cambios). */
+  ciudadPublica: string;
   /** Solo si es público (el lugar o el pin de "otro sitio"); un sitio reservado nunca manda su coordenada real aquí. */
   sitioLat: number | null;
   sitioLng: number | null;
@@ -122,7 +127,7 @@ export type DatosJsonLdEvento = {
  * se pudo escribir como número: mejor omitirlo que inventarlo a partir de un texto libre.
  */
 export function jsonLdEvento(e: DatosJsonLdEvento): Record<string, unknown> {
-  const location: Record<string, unknown> = { "@type": "Place", name: e.sitioNombre, address: { "@type": "PostalAddress", streetAddress: e.direccionPublica } };
+  const location: Record<string, unknown> = { "@type": "Place", name: e.sitioNombre, address: { "@type": "PostalAddress", streetAddress: e.direccionPublica, addressLocality: e.ciudadPublica } };
   if (e.sitioLat != null && e.sitioLng != null) location.geo = { "@type": "GeoCoordinates", latitude: e.sitioLat, longitude: e.sitioLng };
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
