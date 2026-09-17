@@ -14,6 +14,19 @@ describe("validarEvento", () => {
     expect(datos.sitio_reservado).toBe(false);
     expect(datos.privado).toBeNull();
   });
+  it("lee las horas en la zona del sitio y la guarda con el evento", () => {
+    expect(validarEvento(base).datos.zona).toBe("America/Mexico_City");
+    const { datos, errores } = validarEvento({ ...base, fin: "2026-09-20T21:00" }, "Europe/Madrid");
+    expect(errores).toEqual({});
+    expect(datos.zona).toBe("Europe/Madrid");
+    expect(datos.inicio).toBe("2026-09-20T17:00:00.000Z");
+    expect(datos.fin).toBe("2026-09-20T19:00:00.000Z");
+    // Un sitio reservado se revela contando desde la hora de allá.
+    const reservado = validarEvento({ ...base, modo_sitio: "reservado", sitio_texto: "Casa", direccion_privada: "Calle 1", revelar_horas: "3" }, "Europe/Madrid");
+    expect(reservado.datos.sitio_revelar_desde).toBe("2026-09-20T14:00:00.000Z");
+    // Una zona que no es se lee como la de la ciudad inicial.
+    expect(validarEvento(base, "Marte/Olimpo").datos).toMatchObject({ zona: "America/Mexico_City", inicio: "2026-09-21T01:00:00.000Z" });
+  });
   it("sin fecha no se publica; el fin va después del inicio", () => {
     expect(validarEvento({ ...base, inicio: "" }).errores.inicio).toBeTruthy();
     expect(validarEvento({ ...base, fin: "2026-09-20T18:00" }).errores.fin).toBeTruthy();

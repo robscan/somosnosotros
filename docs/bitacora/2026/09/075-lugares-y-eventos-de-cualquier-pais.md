@@ -1,0 +1,91 @@
+# 075 · Lugares y eventos de cualquier país: cada evento con la hora de su zona
+
+**Fecha:** 2026-09-16 (noche) · **Rama:** `cualquier-pais` (commits locales, sin push) · **Pieza:** OL-048 · **Migración:** `20260917100000_zona_horaria.sql` (0029), por aplicar antes de mezclar.
+
+## Qué pidió el founder
+La [067](067-artistas-con-ciudad.md) abrió los artistas a cualquier país ("somos context aware, eso es diferente a limitar a un país o ciudad") y dejó pendiente lo mismo para lugares y eventos, porque pedía migración. El founder dio su sí:
+
+> "Te doy mi sí para la pieza de migración, pero comunica con gestión de cambios."
+
+Se avisó al chat de gestión de cambios antes de empezar (números y nombre de la migración) y otra vez al terminar.
+
+## Qué dependía de la hora de la Ciudad de México
+Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.ts`, UTC−6). Un evento en Madrid a las 19:00 se habría visto a las 11:00. El inventario:
+- **Leer la hora del formulario** (`localAIso` con "−06:00" fijo) y **rellenarlo al editar**.
+- **Mostrar:** la hora del renglón, la ficha, "Próximo" en Lugares y Artistas, Novedades, los avisos y el texto para compartir.
+- **Hoy, Mañana y los días:** los títulos de la agenda, el chip de fecha, la hora sugerida (hoy a las 19:00 o mañana), "Esa hora ya pasó".
+- **Cuándo se oculta un evento:** sin hora de fin, al acabar su día. Estaba en la app (`eventoPaso`) y en el filtro de la base (`filtroSinPasar`, con las 00:00 de México).
+- **El recordatorio de las 9:00:** una tarea diaria de Vercel a las 15:00 UTC, que siempre decía "Hoy".
+- **Las búsquedas del alta de lugar**, limitadas a México por eso mismo.
+
+## Qué se hizo
+- **Migración 0029:**
+  - `lugares.zona` y `eventos.zona`, con el nombre de la zona ("Europe/Madrid"). Lo que ya existe queda en la de la Ciudad de México, que es la de San Luis Potosí. Una zona que no es ("CST", "Marte/Olimpo") no entra.
+  - Un evento en un lugar tiene siempre la zona del lugar, la mande quien la mande. Si el lugar cambia de zona, sus eventos cambian con él, sean de quien sean.
+  - `eventos.termina`: la hora de fin o, sin ella, las 00:00 del día siguiente en la zona del evento. La calcula la base y las listas filtran con ella. Así cada evento se oculta con su reloj.
+- **`lib/fechas.ts`:** cada función recibe la zona del evento. Sin zona, usa la de la ciudad inicial, como hasta hoy.
+  - La hora del formulario se lee en esa zona, también en los cambios de horario (Madrid adelanta el reloj el 29 de marzo).
+  - "Mañana" se cuenta en días de calendario: un día de 25 horas ya no lo confunde.
+  - `zonaSegura`: una zona rota no tumba la agenda, cae en la inicial.
+- **La zona sale del punto en el mapa** (`lib/zona.ts`), en el servidor al guardar y sin red. Usa `@photostructure/tz-lookup`:
+  - licencia CC0, sin dependencias, unos 70 KB;
+  - no viaja al teléfono;
+  - versión 11.6.1, de agosto, en vez de la publicada el día anterior.
+
+  Se probó con San Luis, Cancún, Tijuana, Costa Rica, Madrid, Canarias y Córdoba (Argentina).
+- **Al guardar:**
+  - un lugar, la zona de su punto;
+  - un evento, la de su lugar o la del pin (el público o el de la dirección reservada);
+  - sin pin, la de la ciudad inicial, igual que su ciudad.
+- **Pantallas:**
+  - agenda: "Hoy" y el chip de fecha con la zona de la ciudad, y cada evento en el día de la suya;
+  - la hora del renglón, la ficha, el archivo de calendario;
+  - "Próximo" en Lugares y Artistas, Novedades y la ficha de persona.
+- **Cada ciudad tiene zona:** la que más se repite entre sus lugares y eventos.
+- **Avisos:** el recordatorio dice "Hoy" o "Mañana" según el día en la zona del evento. Antes decía "Hoy" también a un evento de mañana a las 8:00, que cae en sus 24 horas.
+- **Alta de lugar sin país:** la búsqueda por nombre y la de direcciones buscan en cualquier país. Las sugerencias por nombre se ordenan por la distancia que da Mapbox: se piden 10 y se muestran las 5 más cercanas, como ya se hacía con las direcciones.
+- **De paso, en Novedades:** "Hoy vas" contaba desde las 00:00 del reloj del servidor, que en Vercel es UTC (las 18:00 del día anterior en San Luis). Por eso probablemente caía en "Ayer" hasta las 18:00. Ahora cuenta desde las 00:00 de la zona del evento.
+
+## Evidencia
+- **lint** (el aviso viejo del script del logotipo, ajeno), **tipos**, **270 pruebas** y **build** en verde.
+  - Pruebas nuevas: Madrid, Costa Rica y Córdoba; cambios de horario; el día de 25 horas; zona rota; la zona de un punto; agenda y chip de fecha con dos zonas; ciudades con zona; recordatorio Hoy/Mañana; sugerencias por cercanía; formulario en la zona del sitio.
+- **La migración en un Postgres local (PGlite)**, sin producción: las 29 migraciones y 31 comprobaciones, entre ellas:
+  - la zona por defecto y siete zonas rechazadas;
+  - el evento toma la zona del lugar aunque mande otra, también en un lugar privado que no ve;
+  - al cambiar la zona del lugar, cambian los eventos de otra persona;
+  - `termina` en San Luis, Madrid, Costa Rica y el día del cambio de horario;
+  - `termina` no se escribe a mano y se lee sin sesión.
+
+  El banco del panel (`supabase/tests/panel_administracion.mjs`) también pasa con la 0029: 95 comprobaciones.
+- **Pantallas a 390×844**, con un respaldo 100 % local (lugares y eventos inventados, sin producción). A las 21:55 del 16 en San Luis, que ya eran las 5:55 del 17 en Madrid:
+  - **Madrid, España:** "Hoy · 2" con el jazz a las 19:00 y la lectura a las 20:30; "Mañana", el taller a las 11:00. Con el reloj de México habrían sido "Mañana · 11:00" y "12:30".
+  - **San Luis Potosí**, igual que siempre: "Hoy · 20:00" (sin hora de fin, se queda hasta que acaba el día) y "Mañana · 19:00".
+  - **Ficha del jazz:** "jueves 17 de septiembre · 19:00 a 21:00".
+  - **Lugares de Madrid:** "Próximo: hoy · 19:00" y "hoy · 20:30".
+  - **Calendario:** `DTSTART:20260917T170000Z` (19:00 en Madrid).
+  - Las listas piden `termina.gte`.
+- **Sin probar:**
+  - guardar de verdad (sería escribir en producción);
+  - el formulario con sesión;
+  - la búsqueda de Mapbox sin país en vivo (el token solo responde desde el dominio);
+  - el iPhone.
+
+## Queda
+- **Del founder, en este orden:**
+  1. aplicar la migración `20260917100000_zona_horaria.sql`;
+  2. mezclar.
+
+  El código lee `zona` y `termina`: sin la migración, las listas se quedan vacías.
+- **La hora del recordatorio fuera de México (decisión del founder).** La tarea diaria corre a las 9:00 de San Luis: el plan gratuito de Vercel solo permite una vez al día, con una hora de margen. En otra zona, el recordatorio llega en el mismo instante (a las 17:00 en Madrid) para lo que empieza en las 24 horas siguientes. Ahora dice bien "Hoy" o "Mañana". Para que llegue a las 9:00 de cada zona hay dos salidas:
+  - Vercel Pro, con la tarea cada hora;
+  - hasta 24 tareas diarias en `vercel.json` (el plan gratuito deja 100), una por hora, cada una para las zonas donde son las 9:00. Pide separar la foto diaria de indicadores del panel, que va en la misma tarea.
+
+  Mientras todo esté en México, no hace falta.
+- **Panel de administración (migración 0028, ya aplicada):** `sin_pasar(inicio, fin)` y la lista de eventos del panel siguen con el reloj de México. Para un evento de fuera sin hora de fin, el conteo puede variar unas horas cerca de la medianoche. Con la 0029 aplicada, basta cambiar `public.sin_pasar(e.inicio, e.fin)` por `e.termina >= now()`: es terreno del panel, avisado al gestor.
+- **El lector de carteles** sigue diciendo "carteles de eventos culturales de San Luis Potosí, México" y calcula "hoy" con el reloj de México.
+- **En el formulario, un evento nuevo en otro sitio** avisa "Esa hora ya pasó" con el reloj de la ciudad inicial hasta que se guarda. Lo que se guarda sí va en la zona del pin.
+- **Lugares que ya existen:** todos quedan en la zona de la Ciudad de México. Uno en Cancún o Tijuana tomaría su zona al volver a guardarse.
+- **De la 067, siguen siendo decisiones del founder:**
+  - ciudades con el mismo nombre en el mismo país;
+  - abrir en la ciudad aproximada de quien llega de fuera.
+- **Hallado al probar la migración, fuera de esta pieza:** el administrador no puede dar de alta un lugar privado. La política de lectura de la 0024 no ve la fila recién creada cuando la app pide su id. Quedó como tarea aparte.
