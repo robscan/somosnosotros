@@ -8,7 +8,7 @@ Con la firma del founder, dio rama, bitácora, mismo OL-060 y el nombre de la mi
 
 ## Qué se hizo
 
-- **Prototipo** en [prototipos/panel-como-va.html](../../../rediseno/prototipos/panel-como-va.html), con la disciplina `front-visual` (RENDER → MIRAR el frame completo → describir → medir): la sección nueva se agrega a la Administración que ya existe, entre «Últimos 7 días» y «Gestionar» (marcada de color solo en el prototipo, para que se note dónde va), sin tocar el resto de la pantalla.
+- **Prototipo** en [prototipos/panel-como-va.html](../../../rediseno/prototipos/panel-como-va.html), publicado para el iPhone en https://claude.ai/artifact/D7sKbWe65gVCE4PxoAwS5C, con la disciplina `front-visual` (RENDER → MIRAR el frame completo → describir → medir): la sección nueva se agrega a la Administración que ya existe, entre «Últimos 7 días» y «Gestionar» (marcada de color solo en el prototipo, para que se note dónde va), sin tocar el resto de la pantalla.
   - Un embudo de tres pasos (se registraron → hicieron algo en su primera semana → siguen volviendo después), con una barra de proporción por paso, mismo lenguaje visual que los indicadores existentes.
   - Dos estados: uno con algo de historia (números de ejemplo) y uno con la escala real de hoy, donde «siguen volviendo» sale atenuado con un guion — muy pocos días de vida para decir algo ahí todavía, y lo dice.
   - Una nota bajo el embudo explicando el límite de `cuentas_vistas` (recién empezó a guardarse).
