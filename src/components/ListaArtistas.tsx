@@ -3,17 +3,14 @@
 import ChipCiudad from "@/components/Ciudad";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
-import { etiquetaArtista, etiquetaDisciplina, hrefArtistas, textoProximaFecha, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type Disciplina, type FiltroLeido } from "@/lib/artistas";
+import { etiquetaDisciplina, hrefArtistas, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
 import { tarjetaArtista } from "@/lib/destacados";
-import { SIN_FOTO } from "@/lib/imagen";
 import Destacados from "./Destacados";
-import Deslizable from "./ui/Deslizable";
-import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoOk, IconoPincel, IconoPluma } from "./ui/Iconos";
+import RenglonArtista from "./RenglonArtista";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
 import comun from "./Lista.module.css";
-import renglon from "./Renglon.module.css";
 import styles from "./ListaArtistas.module.css";
 
 type Opcion = { valor: string; etiqueta: string; n?: number };
@@ -36,26 +33,6 @@ type Props = {
   /** Para la pregunta de avisos tras el primer Seguir; null = sin sesión. */
   avisos?: AvisosLista | null;
 };
-
-/** Icono de lo que hace: nota (música), máscara (teatro, danza, circo), pincel (artes visuales, cine), pluma (letras). */
-export function IconoDisciplina({ disciplina }: { disciplina: Disciplina }) {
-  const p = { width: 15, height: 15 };
-  switch (disciplina) {
-    case "musica":
-      return <IconoNota {...p} />;
-    case "teatro":
-    case "danza":
-    case "circo":
-      return <IconoMascara {...p} />;
-    case "artes_visuales":
-    case "cine":
-      return <IconoPincel {...p} />;
-    case "letras":
-      return <IconoPluma {...p} />;
-    default:
-      return <IconoEstrella {...p} />;
-  }
-}
 
 /**
  * Lista de artistas: renglones como los de Lugares (foto redonda, nombre, qué hace, próxima fecha y dónde);
@@ -149,29 +126,7 @@ export default function ListaArtistas({ artistas, destacados = [], total, totalC
           <p className={comun.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
           <ul className={styles.lista}>
             {artistas.map((a) => (
-              <Deslizable key={a.id} href={`/artistas/${a.id}`} className={renglon.renglon} acciones={seguir.acciones(a.id, a.nombre)}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                <img src={a.foto ?? SIN_FOTO} alt="" className={`${renglon.foto} ${renglon.fotoRedonda}`} loading="lazy" decoding="async" />
-                <span className={renglon.titulo}>{a.nombre}</span>
-                <span className={`${renglon.meta} ${renglon.metaColumna}`}>
-                  {seguir.sigo(a.id) && (
-                    <span className={renglon.estado}>
-                      <IconoOk width={14} height={14} />
-                      Sigues
-                    </span>
-                  )}
-                  <span>
-                    <IconoDisciplina disciplina={a.disciplina} />
-                    {etiquetaArtista(a)}
-                  </span>
-                  {a.proxima && (
-                    <span className={renglon.envuelve}>
-                      <IconoCalendario width={15} height={15} />
-                      <b>{textoProximaFecha(a.proxima)}</b>
-                    </span>
-                  )}
-                </span>
-              </Deslizable>
+              <RenglonArtista key={a.id} artista={a} sigo={seguir.sigo(a.id)} acciones={seguir.acciones(a.id, a.nombre)} />
             ))}
           </ul>
           {seguir.extras}
