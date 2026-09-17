@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hecho from "@/components/Hecho";
 import Hoja from "@/components/ui/Hoja";
@@ -9,6 +9,7 @@ import { IconoEstrella, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
+import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
 import styles from "./ficha.module.css";
 
@@ -36,12 +37,15 @@ const ESTRELLA = <IconoEstrella width={20} height={20} />;
  * Sin sesión, los botones llevan a entrar y la decisión se aplica al volver. La hoja de avisos sale tras el toque de
  * "Voy" (o al volver de entrar tras tocarlo), nunca sola al abrir la ficha (decisión 6 de docs/rediseno/17). Si no se
  * pudo guardar (o no hay red), la barra vuelve a como estaba y un aviso ofrece Reintentar, como en las listas (bitácora 085).
+ * Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de un fallo anterior, y Reintentar solo actúa si su
+ * toque sigue siendo el último.
  */
 export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuenta, avisosPreguntado, correo, llavePush }: Props) {
   const [pendiente, iniciar] = useTransition();
   const [estado, fijarOptimista] = useOptimistic<EstadoAsistencia, EstadoAsistencia>(miEstado, (_a, nuevo) => nuevo);
   const [hoja, setHoja] = useState(false);
-  const [fallo, setFallo] = useState<{ nuevo: EstadoAsistencia; vez: number } | null>(null);
+  const toques = useRef<Toques>({});
+  const [fallo, setFallo] = useState<{ vez: number; reintentar: () => void } | null>(null);
   const ruta = `/eventos/${eventoId}`;
 
   // Volvió de entrar tras tocar "Voy": la pregunta continúa ese toque, una sola vez.
@@ -50,6 +54,8 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
   }, [conSesion, miEstado, cuenta, avisosPreguntado, ruta]);
 
   function cambiar(nuevo: EstadoAsistencia) {
+    const vez = tocar(toques.current, eventoId);
+    setFallo(null);
     iniciar(async () => {
       fijarOptimista(nuevo);
       let guardado = false;
@@ -58,8 +64,9 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
       } catch {
         guardado = false;
       }
+      if (!esElUltimo(toques.current, eventoId, vez)) return;
       if (!guardado) {
-        setFallo((f) => ({ nuevo, vez: (f?.vez ?? 0) + 1 }));
+        setFallo({ vez, reintentar: siSigueSiendoElUltimo(toques.current, eventoId, vez, () => cambiar(nuevo)) });
         return;
       }
       // La pregunta solo tras guardar, y no si esta cuenta ya contestó en esta visita (la ficha puede venir de una copia de hace un rato).
@@ -126,8 +133,10 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
 
   return (
     <>
-      <div className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ""}`}>{contenido}</div>
-      {fallo && <Hecho key={fallo.vez} texto="No se pudo guardar" etiqueta="Reintentar" fallo sobreBarra onDeshacer={() => cambiar(fallo.nuevo)} onCerrar={() => setFallo((f) => (f?.vez === fallo.vez ? null : f))} />}
+      <div className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ""}`}>
+        {contenido}
+        {fallo && <Hecho key={fallo.vez} texto="No se pudo guardar" etiqueta="Reintentar" fallo sobreBarra onDeshacer={fallo.reintentar} onCerrar={() => setFallo((f) => (f?.vez === fallo.vez ? null : f))} />}
+      </div>
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(false)}>
           <ConsentimientoAvisos contexto="voy" titulo={titulo} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={() => setHoja(false)} calendarioUrl={`${ruta}/calendario`} />

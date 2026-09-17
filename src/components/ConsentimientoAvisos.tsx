@@ -52,18 +52,34 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
   const [problema, setProblema] = useState<Problema>(null);
   const [hoja, setHoja] = useState(false);
   const [instalada, setInstalada] = useState(false);
-  const [nota, setNota] = useState<string | null>(null);
+  /** Lo que no se pudo guardar, con qué repetirlo. */
+  const [fallo, setFallo] = useState<{ reintentar: () => void } | null>(null);
   const [trabajando, setTrabajando] = useState(false);
   const aqui = enEste(plataforma);
   const enElTelefono = plataforma?.computadora ? "En esta computadora" : "En el teléfono";
 
-  async function porCorreo() {
+  /**
+   * Guarda con la hoja ocupada. Si no se pudo (o no hay red), dice «No se pudo guardar · Reintentar» y devuelve false: la
+   * hoja sigue como estaba, sin dar por hecho lo que no quedó guardado y sin cerrarse sola.
+   */
+  async function guardar(accion: () => Promise<boolean>, reintentar: () => void): Promise<boolean> {
     setTrabajando(true);
-    const ok = await elegirAvisos({ correo: true });
-    setTrabajando(false);
-    if (!ok) return setNota("No se pudo guardar. Intenta de nuevo.");
+    setFallo(null);
+    let ok = false;
+    try {
+      ok = await accion();
+    } catch {
+      ok = false;
+    } finally {
+      setTrabajando(false);
+    }
+    if (!ok) setFallo({ reintentar });
+    return ok;
+  }
+
+  async function porCorreo() {
+    if (!(await guardar(() => elegirAvisos({ correo: true }), porCorreo))) return;
     marcarAvisosContestados(cuenta);
-    setNota(null);
     setCorreoOk(true);
     // Con un problema del teléfono a la vista, el correo cierra el asunto: el teléfono queda como estaba.
     if (problema) {
@@ -73,7 +89,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
   }
   async function enTelefono() {
     setTrabajando(true);
-    setNota(null);
+    setFallo(null);
     try {
       const estado = await estadoPush(llavePush);
       if (estado === "instalar-primero") return setHoja(true);
@@ -85,15 +101,19 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
         setProblema(null);
         setTelefono("hecho");
       } else setProblema("fallo");
+    } catch {
+      // Sin red, o el teléfono no respondió: como cualquier alta que no se pudo, con Intentar de nuevo.
+      setProblema("fallo");
     } finally {
       setTrabajando(false);
     }
   }
   async function noGracias() {
+    // "Sin avisos" solo cuando quedó guardado; si no, la pregunta sigue a la vista con Reintentar.
+    if (!(await guardar(() => elegirAvisos({ correo: false, push: false }), noGracias))) return;
+    marcarAvisosContestados(cuenta);
     setCorreoOk(false);
     setTelefono("no");
-    // Queda contestada solo si se guardó; si no, la pregunta vuelve en el siguiente Voy o Seguir.
-    if (await elegirAvisos({ correo: false, push: false })) marcarAvisosContestados(cuenta);
   }
   /** "Ahora no" ante un problema: no se guarda nada; la pregunta vuelve en el siguiente Voy o Seguir. */
   function ahoraNo() {
@@ -103,9 +123,11 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
   }
   async function cerrarHoja() {
     // Quiere avisos en el teléfono: queda dicho en la cuenta, y al abrir la app instalada se ofrece Activar (decisión 4).
+    // "Falta un paso" solo cuando quedó guardado.
     setHoja(false);
+    if (!(await guardar(() => elegirAvisos({ push: true }), cerrarHoja))) return;
+    marcarAvisosContestados(cuenta);
     setTelefono("pendiente");
-    if (await elegirAvisos({ push: true })) marcarAvisosContestados(cuenta);
   }
   async function tenerlaEnInicio() {
     if (await instalar()) setInstalada(true);
@@ -309,7 +331,14 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
       <p className={styles.motivo}>{copy.motivo(titulo)}</p>
       <p className={styles.porque}>{copy.porque}</p>
       {cuerpo}
-      {nota && <p className={styles.nota}>{nota}</p>}
+      {fallo && (
+        <p className={styles.nota} role="alert">
+          No se pudo guardar.
+          <button type="button" className={styles.enlace} onClick={fallo.reintentar} disabled={trabajando}>
+            Reintentar
+          </button>
+        </p>
+      )}
       {hoja && <HojaInstalar onCerrar={cerrarHoja} />}
     </div>
   );

@@ -109,3 +109,52 @@ describe("toques en un renglón", () => {
     expect(esElUltimo(toques, "x", x)).toBe(true);
   });
 });
+
+/** La barra de una ficha (Asistencia, Seguir): lo que hace `cambiar` con cada toque, guardando al momento. */
+function ficha<V>(inicial: V) {
+  const toques: Toques = {};
+  const f = {
+    servidor: inicial,
+    aviso: null as { vez: number; reintentar: () => void } | null,
+    cambiar(valor: V, seGuarda: boolean) {
+      const vez = tocar(toques, "ficha");
+      f.aviso = null; // cada toque nuevo cierra el aviso de un fallo anterior
+      if (seGuarda) f.servidor = valor;
+      if (!esElUltimo(toques, "ficha", vez)) return;
+      if (!seGuarda) f.aviso = { vez, reintentar: siSigueSiendoElUltimo(toques, "ficha", vez, () => f.cambiar(valor, true)) };
+    },
+  };
+  return f;
+}
+
+describe("toques en la barra de una ficha", () => {
+  it("evento: Me interesa falla y Voy se guarda; el aviso se cierra y su Reintentar ya no pisa el Voy", () => {
+    const f = ficha<Asistencia>(null);
+    f.cambiar("me_interesa", false);
+    const viejo = f.aviso;
+    expect(viejo).not.toBeNull();
+    f.cambiar("voy", true);
+    expect(f.aviso).toBeNull();
+    viejo?.reintentar();
+    expect(f.servidor).toBe("voy");
+  });
+
+  it("lugar: Seguir falla, Seguir se guarda y Dejar de seguir se guarda; el Reintentar viejo no vuelve a seguir", () => {
+    const f = ficha(false);
+    f.cambiar(true, false);
+    const viejo = f.aviso;
+    f.cambiar(true, true);
+    f.cambiar(false, true);
+    viejo?.reintentar();
+    expect(f.servidor).toBe(false);
+    expect(f.aviso).toBeNull();
+  });
+
+  it("el Reintentar del último fallo sí guarda", () => {
+    const f = ficha(false);
+    f.cambiar(true, false);
+    f.aviso?.reintentar();
+    expect(f.servidor).toBe(true);
+    expect(f.aviso).toBeNull();
+  });
+});

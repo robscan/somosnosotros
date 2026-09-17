@@ -139,6 +139,35 @@ Gestión de cambios verificó los arreglos con tres revisores escépticos, cada 
   - **Ficha de lugar:** lo mismo con Seguir.
   - **Teclado:** ← abre, → a la última y Tab cierran el renglón con el foco en él; las clases sin `undefined`.
 
+## Tercera revisión del PR #88, arreglada
+Gestión de cambios dejó las listas por buenas: un modelo al azar con 20 renglones y 5000 pasos, con fallos y respuestas en desorden, dio 0 estados rotos. Quedaba una cosa importante en las fichas y tres menores.
+
+- **Fichas: Reintentar atado al último toque.**
+  - Antes el aviso de fallo seguía a la vista tras otro toque que sí se guardaba, y su Reintentar pisaba lo nuevo:
+    - en un evento, Me interesa fallaba, Voy se guardaba y Reintentar volvía a Me interesa;
+    - en un lugar, Seguir fallaba, Seguir se guardaba, Dejar de seguir se guardaba, y Reintentar volvía a seguir.
+  - Ahora `Asistencia` y `Seguir` usan `lib/toques`:
+    - cada toque nuevo cierra el aviso de un fallo anterior;
+    - lo que trae un guardado viejo se ignora;
+    - Reintentar solo actúa si su toque sigue siendo el último.
+  - La prueba de esos dos casos está en `toques.test.ts`.
+- **La hoja de avisos no da por hecho lo que no se guardó:**
+  - "No, gracias", cerrar los pasos de instalar y "Por correo" guardan con la hoja ocupada (try/finally);
+  - si no se pudo, o no hay red, dice «No se pudo guardar · Reintentar» y la hoja sigue como estaba: sin "Sin avisos", sin "Falta un paso", sin cerrarse sola y sin quedar bloqueada;
+  - "En el teléfono" sin red cae en "No pudimos darte de alta", con Intentar de nuevo.
+- **El aviso de la ficha va dentro de su barra fija**, justo encima de ella, mida lo que mida (antes eran 72 px fijos y tapaba "Dejar de seguir" con la promesa en dos líneas o con letra grande). `Seguir` pinta una sola barra para sus dos estados.
+
+### Evidencia de la tercera revisión
+- **lint** (el aviso viejo del logotipo), **tipos**, **319 pruebas** y **build** en verde; `main` sin cambios.
+- **Navegador a 390×844** con el respaldo local, sin producción.
+  - **Ficha de evento:**
+    - Me interesa falla y sale el aviso dentro de la barra;
+    - tocar Voy lo cierra al momento, Voy se guarda y sale la pregunta;
+    - el Reintentar viejo ya no está en la página y el respaldo queda en voy.
+  - **Hoja, "No, gracias" con fallo:** tras 2,8 s sigue abierta con la pregunta, los botones activos y «No se pudo guardar · Reintentar»; Reintentar guarda y dice "Sin avisos", con A mi calendario.
+  - **Hoja, "Por correo" sin red:** el aviso con Reintentar y los botones activos; con red, "Te escribimos a…".
+  - **Ficha de lugar** con la promesa en dos líneas (barra de 77 px) y "Dejar de seguir" con fallo: el aviso queda 12 px encima de la barra. Con letra al 150 % (barra de 172 px), igual, sin tapar "Dejar de seguir".
+
 ## Queda
 - **Firma del founder en el iPhone:**
   - las dos acciones y sus estados;
@@ -146,7 +175,10 @@ Gestión de cambios verificó los arreglos con tres revisores escépticos, cada 
   - la pregunta tras el primer Voy.
 - **Para después:**
   - tras actuar con teclado, el foco vuelve al renglón: el aviso con Deshacer y la hoja de avisos no lo reciben;
-  - cambiar los avisos en Ajustes no apunta la marca: una pantalla abierta antes podría preguntar una vez más (la base ya dice que se preguntó y se toma al recargar).
+  - cambiar los avisos en Ajustes no apunta la marca: una pantalla abierta antes podría preguntar una vez más (la base ya dice que se preguntó y se toma al recargar);
+  - en las listas hay un solo aviso para todos los renglones: el fallo de uno tapa el Deshacer o el Reintentar de otro;
+  - un Voy guardado seguido de otro toque que falla deja "voy" en el servidor sin la pregunta;
+  - la misma cuenta en dos pestañas, o en Safari y en la app, puede preguntar una vez más.
 - **Pieza B** (086, OL-057, rama `deslizar-en-todas-las-listas`), cuando esta esté en `main`:
   - los mismos renglones y acciones en las pestañas del perfil, en la ficha de persona, en "Sigo" y en los próximos eventos de las fichas de lugar y artista;
   - el gesto actúa sobre quien mira;

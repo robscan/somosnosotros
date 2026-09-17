@@ -70,7 +70,12 @@
   color: var(--ok);
 }
 .cambiar,
+/* «No se pudo guardar · Reintentar»: el texto y su botón en una línea. */
 .nota {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--espacio-2);
   margin-top: 6px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);

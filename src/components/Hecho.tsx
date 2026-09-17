@@ -11,7 +11,7 @@ type Props = {
   etiqueta?: string;
   /** No se pudo guardar: se anuncia como alerta. */
   fallo?: boolean;
-  /** En una ficha: flota sobre su barra de acción fija, que ocupa el lugar de la barra inferior. */
+  /** En una ficha: va dentro de su barra de acción fija y flota justo encima, mida lo que mida la barra. */
   sobreBarra?: boolean;
 };
 
