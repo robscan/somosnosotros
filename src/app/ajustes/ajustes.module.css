@@ -110,6 +110,11 @@ a.fila {
 .palanca:disabled {
   opacity: 0.6;
 }
+/* Fila sin acción posible aquí (dice por qué en su detalle): la etiqueta y el icono en gris. */
+.apagada > b,
+.apagada > svg {
+  color: var(--texto-suave);
+}
 .nota {
   padding: 0 14px 10px;
   color: var(--texto-suave);

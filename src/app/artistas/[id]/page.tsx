@@ -283,7 +283,6 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         hrefEntrar={`/artistas/${a.id}?accion=seguir`}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
         avisosCorreo={actual?.perfil.avisos_correo ?? false}
-        avisosPush={actual?.perfil.avisos_push ?? false}
         correo={correo}
         llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />

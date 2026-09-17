@@ -299,6 +299,41 @@ export const IconoCalendarioMas = (p: P) => (
     <path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5" />
   </svg>
 );
+/** Agregar a mi calendario: el + en la esquina (convención de Apple y Google), distinto del + al centro de Publicar evento. */
+export const IconoCalendarioAgregar = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M20 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7.5" />
+    <path d="M3 10h17M8 3v4M15 3v4M18 15v6M15 18h6" />
+  </svg>
+);
+/** Algo pendiente o que no se pudo: círculo punteado con el signo (lo provisional se ve provisional). */
+export const IconoPendiente = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" strokeDasharray="3 2.6" />
+    <path d="M12 8v4.5" />
+    <circle cx="12" cy="15.8" r="0.6" fill="currentColor" />
+  </svg>
+);
+/** Instalar la app en el teléfono: el teléfono con la flecha que entra. */
+export const IconoInstalar = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="7" y="2.5" width="10" height="19" rx="2" />
+    <path d="M12 7v7M9.2 11.3L12 14l2.8-2.7" />
+  </svg>
+);
+export const IconoComputadora = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="4.5" width="18" height="12" rx="1.5" />
+    <path d="M8 20h8M12 16.5V20" />
+  </svg>
+);
+/** Instalar la app en la computadora: la pantalla con la flecha que entra. */
+export const IconoInstalarComputadora = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="4.5" width="18" height="12" rx="1.5" />
+    <path d="M8 20h8M12 7.5v5.5M9.5 10.8L12 13.2l2.5-2.4" />
+  </svg>
+);
 export const IconoMas = (p: P) => (
   <svg {...base({ strokeWidth: 2.2, ...p })}>
     <path d="M12 5v14M5 12h14" />

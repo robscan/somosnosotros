@@ -75,3 +75,65 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+/* Lo pendiente o lo que no se pudo se ve provisional: icono punteado en gris, no la palomita verde. */
+.pendiente svg {
+  color: var(--texto-suave);
+}
+.separado {
+  margin-top: var(--espacio-3);
+}
+.enlace {
+  min-height: var(--toque-min);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+/* Una línea con una acción al final de la tarjeta: Instalar (Chrome, Android) o A mi calendario (tras "No, gracias"). Toda la línea se toca. */
+.linea {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  grid-template-areas:
+    "icono que accion"
+    "icono detalle accion";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  width: 100%;
+  margin-top: var(--espacio-3);
+  padding: var(--espacio-3) 0 0;
+  border: none;
+  border-top: 1px solid var(--borde);
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.linea > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.linea > b {
+  grid-area: que;
+  font-weight: 700;
+}
+.linea > small {
+  grid-area: detalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.pildora {
+  grid-area: accion;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-weight: 700;
+}

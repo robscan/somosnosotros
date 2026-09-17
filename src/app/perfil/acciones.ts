@@ -84,5 +84,8 @@ export async function borrarSuscripcionPush(endpoint: string): Promise<void> {
     data: { user },
   } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
   await supabase?.from("suscripciones_push").delete().eq("endpoint", endpoint);
-  if (user) await supabase?.from("perfiles").update({ avisos_push: false, avisos_push_desde: null }).eq("id", user.id);
+  if (!supabase || !user) return;
+  // Apagar en un teléfono no apaga los demás: la cuenta sigue con avisos mientras quede otro dado de alta (decisión 5 de docs/rediseno/17).
+  const { count } = await supabase.from("suscripciones_push").select("endpoint", { count: "exact", head: true }).eq("usuario_id", user.id);
+  if (!count) await supabase.from("perfiles").update({ avisos_push: false, avisos_push_desde: null }).eq("id", user.id);
 }

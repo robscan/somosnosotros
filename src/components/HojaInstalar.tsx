@@ -1,78 +1,82 @@
 "use client";
 
+import Image from "next/image";
+import type { ReactNode } from "react";
 import Hoja from "./ui/Hoja";
+import { pasosInstalar, type Glifo } from "@/lib/plataforma";
+import { usePlataforma } from "@/lib/useAvisosTelefono";
 import styles from "./HojaInstalar.module.css";
 
+const trazo = { fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+
+/** Los iconos como los muestra Safari de iOS 26: tinta, y el botón Agregar en azul. */
+const GLIFOS: Record<Glifo, ReactNode> = {
+  puntos: <span className={styles.puntos}>···</span>,
+  compartir: (
+    <svg viewBox="0 0 24 24">
+      <path d="M12 3v12M8 7l4-4 4 4" {...trazo} />
+      <path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" {...trazo} />
+    </svg>
+  ),
+  "ver-mas": (
+    <svg viewBox="0 0 24 24">
+      <path d="M6 9l6 6 6-6" {...trazo} strokeWidth={2} />
+    </svg>
+  ),
+  "agregar-inicio": (
+    <svg viewBox="0 0 24 24">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4" {...trazo} />
+      <path d="M12 8v8M8 12h8" {...trazo} />
+    </svg>
+  ),
+  agregar: <span className={styles.agregar}>Agregar</span>,
+};
+
+/** "Toca ···": los tres puntos en la letra del sistema, como el botón de Safari. */
+function conPuntos(texto: string): ReactNode {
+  const [antes, despues] = texto.split("···");
+  if (despues === undefined) return texto;
+  return (
+    <>
+      {antes}
+      <span className={styles.puntosTexto}>···</span>
+      {despues}
+    </>
+  );
+}
+
 /**
- * Hoja "Instala Somos Nosotros" para iPhone: dos toques con los glifos reales de iOS, una miniatura de la
- * barra de Safari, cómo queda el icono y el paso que hace que lleguen los avisos.
- * Solo emerge tras un gesto de la persona (dijo que sí a los avisos en el teléfono).
+ * Hoja "Instala Somos Nosotros" para iPhone (decisión 2 de docs/rediseno/17): los pasos del Safari de la persona, uno
+ * por renglón con el icono que va a ver, y al pie lo que sigue (tocar Activar al abrirla). En iOS 26 son cinco toques;
+ * fuera de Safari (Chrome del iPhone, otra app) se le pide abrirla en Safari. Solo emerge tras un toque.
  */
 export default function HojaInstalar({ onCerrar }: { onCerrar: () => void }) {
-  const compartir = (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3v12M8 7l4-4 4 4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-    </svg>
-  );
-  const agregar = (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" strokeWidth="1.9" />
-      <path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-    </svg>
-  );
-  const trazo = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const p = usePlataforma();
+  const pasos = pasosInstalar(p?.versionSafari ?? null);
+  const fueraDeSafari = !!p && p.ios && !p.safari;
 
   return (
     <Hoja etiqueta="Instala Somos Nosotros" onCerrar={onCerrar}>
       <h3 className={styles.titulo}>Instala Somos Nosotros</h3>
-      <p className={styles.sub}>Solo la app instalada recibe avisos. Dos toques:</p>
-
-      {/* Cada paso es un grid con áreas: glifo a la izquierda; número, qué, dónde y la muestra apilados */}
-      <div className={styles.paso}>
-        <span className={styles.glifo}>{compartir}</span>
-        <span className={styles.num}>Paso 1</span>
-        <span className={styles.que}>Toca Compartir</span>
-        <span className={styles.donde}>Abajo, al centro.</span>
-        <div className={styles.safari} aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" {...trazo} /></svg>
-          <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" {...trazo} /></svg>
-          <span className={styles.aqui}>{compartir}</span>
-          <svg viewBox="0 0 24 24"><path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" {...trazo} strokeWidth="1.8" /></svg>
-          <svg viewBox="0 0 24 24"><rect x="7" y="4" width="13" height="13" rx="2" {...trazo} strokeWidth="1.8" /><path d="M4 8v10a2 2 0 0 0 2 2h10" {...trazo} strokeWidth="1.8" /></svg>
-        </div>
-      </div>
-      <div className={styles.paso}>
-        <span className={styles.glifo}>{agregar}</span>
-        <span className={styles.num}>Paso 2</span>
-        <span className={styles.que}>Elige “Agregar a pantalla de inicio”</span>
-        <span className={styles.donde}>Así lo llama el iPhone.</span>
-        <div className={styles.filaIos} aria-hidden="true">
-          <span>Agregar a pantalla de inicio</span>
-          {agregar}
-        </div>
-      </div>
-
-      <div className={styles.resultado}>
-        <span className={styles.iconoApp} aria-hidden="true">
-          SMSN
-          <br />
-          STRS
+      <p className={styles.sub}>{fueraDeSafari ? "Los avisos del iPhone llegan a la app instalada, y se instala desde Safari: ábrela ahí y sigue estos pasos." : "Los avisos del iPhone llegan a la app instalada."}</p>
+      <ol className={styles.pasos}>
+        {pasos.map((paso, i) => (
+          <li key={paso.glifo} className={styles.paso}>
+            <span className={styles.num}>{i + 1}</span>
+            <span className={paso.glifo === "agregar" ? styles.glifoSolo : styles.glifo} aria-hidden="true">
+              {GLIFOS[paso.glifo]}
+            </span>
+            <b>{conPuntos(paso.que)}</b>
+            <small>{paso.donde}</small>
+          </li>
+        ))}
+      </ol>
+      <p className={styles.despues}>
+        <Image src="/apple-touch-icon.png" alt="" width={44} height={44} className={styles.icono} />
+        <span>
+          <b>Después</b>, ábrela desde tu inicio y toca Activar.
         </span>
-        <p>
-          <b>Listo.</b> Ábrela desde tu pantalla de inicio, sin Safari.
-        </p>
-      </div>
-      <div className={styles.despues}>
-        <span className={styles.glifo}>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-            <path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" strokeWidth="1.8" />
-          </svg>
-        </span>
-        <b>Después</b>
-        <span>Al abrirla, acepta los avisos.</span>
-      </div>
+      </p>
     </Hoja>
   );
 }

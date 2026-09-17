@@ -9,7 +9,7 @@ import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
-import { IconoBoleto, IconoCalendario, IconoCompartir, IconoEstrella, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoCalendarioAgregar, IconoCompartir, IconoEstrella, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
 import { cargarQuien } from "@/app/artistas/consultas";
@@ -261,9 +261,10 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <IconoCompartir />
           Compartir
         </BotonCompartir>
+        {/* Dice lo que hace: agrega el evento, con su alerta, al calendario del teléfono (decisión 12 de docs/rediseno/17). */}
         <a href={`/eventos/${e.id}/calendario`} className={ficha.accion}>
-          <IconoCalendario width={24} height={24} />
-          Calendario
+          <IconoCalendarioAgregar width={24} height={24} />
+          A mi calendario
         </a>
         {comoLlegar ? (
           <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
