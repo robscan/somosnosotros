@@ -7,6 +7,7 @@ import Campo from "@/components/ui/Campo";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
+import { useAbrirConError } from "@/components/ui/abrirConError";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBoleto, IconoBuscar, IconoCamara, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
@@ -170,6 +171,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (esAlta && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
   const [abierta, setAbierta] = useState<Abierta>(null);
   const [masAbierto, setMasAbierto] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
+  // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
+  useAbrirConError(setMasAbierto, errores.descripcion, errores.enlace, errores.imagen, errorImagen);
   const [hoja, setHoja] = useState(false);
   // "Estoy aquí" en el pin de otro sitio: la persona en el mapa (punto azul) y el pin donde está.
   const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
