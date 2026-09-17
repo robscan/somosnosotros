@@ -2,7 +2,7 @@ import { distanciaKm } from "./geo";
 import type { EventoResumen } from "./eventos";
 import { nombreSitio } from "./eventos";
 import { diaCorto, diaLocal } from "./fechas";
-import { normalizarNombre } from "./lugares";
+import { compararNombres, normalizarNombre } from "./lugares";
 
 /** Lo que la agenda del inicio necesita de cada evento, además del resumen. */
 export type EventoAgenda = EventoResumen & {
@@ -28,13 +28,24 @@ export const FILTROS: { clave: Filtro; etiqueta: string }[] = [
 export type Punto = { lat: number; lng: number };
 export type Grupo<T> = { clave: string; titulo: string; eventos: T[] };
 
+type Ordenable = Pick<EventoAgenda, "id" | "titulo" | "inicio">;
+
+/**
+ * Orden de agenda: por hora y, a la misma hora, por título (alfabético, como Lugares y Artistas) y por id. La base no
+ * garantiza el orden de los empates: sin desempate, dos cargas traían en otro orden los eventos de las 19:00 y la
+ * memoria de pantalla reponía el scroll sobre otro evento (bitácora 062).
+ */
+export function compararEventos(a: Ordenable, b: Ordenable): number {
+  return a.inicio.localeCompare(b.inicio) || compararNombres(a.titulo, b.titulo) || a.id.localeCompare(b.id);
+}
+
 /**
  * Agrupa por día en la hora de la ciudad: "Hoy", "Mañana" y luego cada día con eventos, en orden.
- * Dentro de cada día van por hora; con `ordenDado`, en el orden en que llegan (Cercanos: por distancia).
+ * Dentro de cada día van en orden de agenda; con `ordenDado`, en el orden en que llegan (Cercanos: por distancia).
  */
-export function agruparPorDia<T extends { inicio: string }>(eventos: T[], ahora: Date = new Date(), ordenDado = false): Grupo<T>[] {
+export function agruparPorDia<T extends Ordenable>(eventos: T[], ahora: Date = new Date(), ordenDado = false): Grupo<T>[] {
   const grupos = new Map<string, Grupo<T>>();
-  const lista = ordenDado ? eventos : [...eventos].sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const lista = ordenDado ? eventos : [...eventos].sort(compararEventos);
   for (const e of lista) {
     const clave = diaLocal(new Date(e.inicio));
     let g = grupos.get(clave);
@@ -81,9 +92,13 @@ export type ContextoFiltro = {
   ahora: Date;
 };
 
-/** Aplica el filtro de la pestaña y el día del chip. Devuelve la lista (ordenada por cercanía si aplica) y la distancia por evento. */
+/**
+ * Aplica el filtro de la pestaña y el día del chip. Devuelve la lista y la distancia por evento. La lista va en orden de
+ * agenda sin importar cómo llegue de la base (con un día elegido se pinta tal cual); Cercanos la ordena por distancia y
+ * Nuevos por lo más reciente, con los empates en orden de agenda (los `sort` son estables).
+ */
 export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: ContextoFiltro): { lista: T[]; km: Map<string, number> } {
-  let lista = eventos.filter((e) => !ctx.fecha || diaLocal(new Date(e.inicio)) === ctx.fecha);
+  let lista = eventos.filter((e) => !ctx.fecha || diaLocal(new Date(e.inicio)) === ctx.fecha).sort(compararEventos);
   const km = new Map<string, number>();
   if (ctx.filtro === "cercanos" && ctx.punto) {
     for (const e of lista) {

@@ -46,19 +46,19 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   for (const e of (porLugar.data ?? []) as EventoBase[]) {
     if (e.creado_por === usuarioId || eventoPaso(e.inicio, e.fin, ahora) || vistos.has(e.id)) continue;
     vistos.add(e.id);
-    lista.push({ clave: `nuevo-${e.id}`, tipo: "nuevo", que: `Nuevo en ${lugares.get(e.lugar_id ?? "") ?? "un lugar que sigues"}`, eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), fecha: e.creado_en, nueva: esNueva(e.creado_en, vistasEn) });
+    lista.push({ clave: `nuevo-${e.id}`, tipo: "nuevo", que: `Nuevo en ${lugares.get(e.lugar_id ?? "") ?? "un lugar que sigues"}`, eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), inicio: e.inicio, fecha: e.creado_en, nueva: esNueva(e.creado_en, vistasEn) });
   }
   for (const f of (porArtista.data ?? []) as { artista_id: string; evento: EventoBase | EventoBase[] }[]) {
     const e = uno(f.evento);
     if (!e || e.creado_por === usuarioId || eventoPaso(e.inicio, e.fin, ahora) || vistos.has(e.id)) continue;
     vistos.add(e.id);
-    lista.push({ clave: `nuevo-${e.id}`, tipo: "nuevo", que: `Nueva fecha de ${artistas.get(f.artista_id) ?? "alguien que sigues"}`, eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), fecha: e.creado_en, nueva: esNueva(e.creado_en, vistasEn) });
+    lista.push({ clave: `nuevo-${e.id}`, tipo: "nuevo", que: `Nueva fecha de ${artistas.get(f.artista_id) ?? "alguien que sigues"}`, eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), inicio: e.inicio, fecha: e.creado_en, nueva: esNueva(e.creado_en, vistasEn) });
   }
   // 2. Cambió la fecha o el lugar de algo a lo que voy (lo guarda el servidor al editar).
   for (const c of (cambios ?? []) as { detalle: string | null; creado_en: string; evento: EventoBase | EventoBase[] }[]) {
     const e = uno(c.evento);
     if (!e) continue;
-    lista.push({ clave: `cambio-${e.id}-${c.creado_en}`, tipo: "cambio", que: queCambio(c.detalle), eventoId: e.id, titulo: e.titulo, cuando: `Ahora es ${cuandoDe(e)}`, fecha: c.creado_en, nueva: esNueva(c.creado_en, vistasEn) });
+    lista.push({ clave: `cambio-${e.id}-${c.creado_en}`, tipo: "cambio", que: queCambio(c.detalle), eventoId: e.id, titulo: e.titulo, cuando: `Ahora es ${cuandoDe(e)}`, inicio: e.inicio, fecha: c.creado_en, nueva: esNueva(c.creado_en, vistasEn) });
   }
   // 3. Hoy vas: cuenta como novedad del día (nueva hasta que se abre la sección ese día).
   const hoy = diaLocal(ahora);
@@ -66,7 +66,7 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   inicioHoy.setHours(0, 0, 0, 0);
   for (const e of misEventos) {
     if (diaLocal(new Date(e.inicio)) !== hoy) continue;
-    lista.push({ clave: `hoy-${e.id}`, tipo: "hoy", que: "Hoy vas", eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), fecha: inicioHoy.toISOString(), nueva: !vistasEn || new Date(vistasEn) < inicioHoy });
+    lista.push({ clave: `hoy-${e.id}`, tipo: "hoy", que: "Hoy vas", eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), inicio: e.inicio, fecha: inicioHoy.toISOString(), nueva: !vistasEn || new Date(vistasEn) < inicioHoy });
   }
   // 4. Van a lo mismo: quién más dijo "Voy" (perfil público: la política de la base ya esconde a los reservados) en los últimos 14 días.
   if (misEventos.length) {
@@ -83,7 +83,7 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
     for (const e of misEventos) {
       const g = porEvento.get(e.id);
       if (!g) continue;
-      lista.push({ clave: `juntos-${e.id}`, tipo: "juntos", que: queJuntos(g.nombres), eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), fecha: g.fecha, nueva: esNueva(g.fecha, vistasEn) });
+      lista.push({ clave: `juntos-${e.id}`, tipo: "juntos", que: queJuntos(g.nombres), eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), inicio: e.inicio, fecha: g.fecha, nueva: esNueva(g.fecha, vistasEn) });
     }
   }
   return { lista, sigue: lugares.size + artistas.size, hay: hayNuevas(lista) };
