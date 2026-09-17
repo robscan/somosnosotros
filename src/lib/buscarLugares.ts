@@ -28,7 +28,7 @@ export function urlSugerir(q: string, token: string, cerca: Punto, sesion: strin
     access_token: token,
     session_token: sesion,
     language: "es",
-    country: "mx", // Mapbox ordena mal sin país (Madrid antes que la ciudad); se abre a otros países cuando haga falta
+    country: "mx", // pendiente: el contexto ordena, no limita (founder, 2026-09-16); se quita junto con la zona horaria de los eventos (bitácora 067)
     limit: "5",
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "poi,address",
