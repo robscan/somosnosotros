@@ -6,7 +6,8 @@ import ficha from "@/components/ui/Ficha.module.css";
 import { diaLocal } from "@/lib/fechas";
 import { cuandoPaso, indicadores, notaSemana, renglonesGestionar } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import { cargarResumen } from "./consultas";
+import { cargarComunidad, cargarResumen } from "./consultas";
+import ComunidadComoVa from "./ComunidadComoVa";
 import Indicadores from "./Indicadores";
 import Pendientes from "./Pendientes";
 import Reintentar from "./Reintentar";
@@ -31,7 +32,7 @@ export default async function Admin() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin");
   if (actual.perfil.rol !== "admin") redirect("/");
-  const { resumen, pendientes, errorPendientes } = await cargarResumen();
+  const [{ resumen, pendientes, errorPendientes }, comunidad] = await Promise.all([cargarResumen(), cargarComunidad()]);
   const ahora = new Date();
   const lista = resumen ? indicadores(resumen, diaLocal(ahora)) : [];
   const renglones = resumen ? renglonesGestionar(resumen.gestionar) : SECCIONES.map((s) => ({ ...s, total: null, detalle: null }));
@@ -44,6 +45,9 @@ export default async function Admin() {
 
       <h2 className={styles.grupo}>Últimos 7 días</h2>
       {resumen ? <Indicadores lista={lista} nota={notaSemana(lista)} /> : <Reintentar texto="No pudimos leer los indicadores." />}
+
+      <h2 className={styles.grupo}>Cómo va la comunidad</h2>
+      {comunidad ? <ComunidadComoVa comunidad={comunidad} /> : <Reintentar texto="No pudimos leer el embudo de la comunidad." />}
 
       <h2 className={styles.grupo}>Gestionar</h2>
       <ul className={styles.tarjeta}>
