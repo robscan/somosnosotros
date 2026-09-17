@@ -130,18 +130,26 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const n = totalVan;
   const avisoBorrar = n > 0 ? `Se borra el evento y los ${n === 1 ? '1 "Voy"' : `${n} "Voy"`} que tiene.` : "Se borra el evento.";
   const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde, new Date(), null, e.zona) : "el día del evento";
-  // JSON-LD (OL-059, bitácora 088): la coordenada solo si es pública — nunca la de un sitio reservado (`privado`),
-  // y nunca la de un lugar oculto o marcado "Solo tú lo ves". Solo se manda si es lo que también vería un visitante
-  // sin sesión (evento visible y no pasado); si no, `notFound()` ya lo detuvo arriba salvo para el autor o el admin.
+  // JSON-LD (OL-059, bitácora 088): la coordenada y la dirección solo si son públicas — nunca las de un sitio
+  // reservado (`privado`), y nunca las de un lugar oculto o marcado "Solo tú lo ves". Sin una dirección pública
+  // (Google la exige para mostrar el evento) no hay nada que mandar. Solo se manda si es lo que también vería un
+  // visitante sin sesión (evento visible y no pasado); si no, `notFound()` ya lo detuvo arriba salvo para el autor
+  // o el administrador.
   const geoPublico =
     e.lugar && e.lugar.visible && !e.lugar.privado
       ? { lat: e.lugar.lat, lng: e.lugar.lng }
       : !e.sitio_reservado && e.sitio_lat != null && e.sitio_lng != null
         ? { lat: e.sitio_lat, lng: e.sitio_lng }
         : null;
+  const direccionPublica =
+    e.lugar && e.lugar.visible && !e.lugar.privado && e.lugar.direccion
+      ? e.lugar.direccion
+      : !e.sitio_reservado && e.sitio_texto
+        ? e.sitio_texto
+        : null;
   const jsonLd =
-    e.visible && !paso
-      ? jsonLdEvento({ id: e.id, titulo: e.titulo, descripcion: e.descripcion, inicio: e.inicio, fin: e.fin, imagen: e.imagen, gratis: e.precio === null, sitioNombre: sitio, sitioLat: geoPublico?.lat ?? null, sitioLng: geoPublico?.lng ?? null })
+    e.visible && !paso && direccionPublica
+      ? jsonLdEvento({ id: e.id, titulo: e.titulo, descripcion: e.descripcion, inicio: e.inicio, fin: e.fin, imagen: e.imagen, gratis: e.precio === null, sitioNombre: sitio, direccionPublica, sitioLat: geoPublico?.lat ?? null, sitioLng: geoPublico?.lng ?? null })
       : null;
 
   return (

@@ -10,7 +10,9 @@ export const ORIGEN = "https://somosnosotros.org";
 /** Páginas fijas, sin ficha: no hace falta traerlas de la base. */
 export const RUTAS_ESTATICAS = ["/", "/lugares", "/artistas", "/reglas", "/privacidad"] as const;
 
-export type EntradaSitemap = { url: string; lastModified: string };
+/** `lastModified` solo en fichas (viene de `actualizado_en`, un dato real); una ruta fija no tiene una fecha propia que
+ *  decir, y poner "ahora" en cada visita mentiría (cambiaría en cada rastreo aunque la página no haya cambiado). */
+export type EntradaSitemap = { url: string; lastModified?: string };
 
 export type FilaLugarSitemap = { id: string; visible: boolean; privado: boolean; actualizado_en: string };
 export type FilaEventoSitemap = { id: string; visible: boolean; termina: string; actualizado_en: string };
@@ -23,8 +25,7 @@ export type FilaArtistaSitemap = { id: string; visible: boolean; origen: string 
 export const CAPO_SIN_RECLAMAR_EN_SITEMAP = false;
 
 export function rutasEstaticas(): EntradaSitemap[] {
-  const hoy = new Date().toISOString();
-  return RUTAS_ESTATICAS.map((ruta) => ({ url: `${ORIGEN}${ruta}`, lastModified: hoy }));
+  return RUTAS_ESTATICAS.map((ruta) => ({ url: `${ORIGEN}${ruta}` }));
 }
 
 /** Lugares visibles y públicos: uno "Solo tú lo ves" (privado) no es un lugar que Google deba ofrecer. */

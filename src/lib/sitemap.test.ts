@@ -7,6 +7,10 @@ describe("sitemap", () => {
     expect(urls).toEqual([`${ORIGEN}/`, `${ORIGEN}/lugares`, `${ORIGEN}/artistas`, `${ORIGEN}/reglas`, `${ORIGEN}/privacidad`]);
   });
 
+  it("las rutas fijas no llevan lastModified: no tienen una fecha propia y 'ahora' cambiaría en cada rastreo", () => {
+    for (const e of rutasEstaticas()) expect(e).not.toHaveProperty("lastModified");
+  });
+
   it("una ficha de lugar oculta no sale", () => {
     const filas = [
       { id: "visible", visible: true, privado: false, actualizado_en: "2026-09-10T00:00:00Z" },

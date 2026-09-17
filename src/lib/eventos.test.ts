@@ -116,10 +116,18 @@ describe("queCambio", () => {
 });
 
 describe("jsonLdEvento", () => {
-  const base = { id: "e1", titulo: "Noche de jazz", descripcion: null, inicio: "2026-09-20T19:00:00.000Z", fin: null, imagen: null, gratis: true, sitioNombre: "Teatro de la Paz", sitioLat: null, sitioLng: null };
-  it("trae lo mínimo: tipo, nombre, fecha y sitio", () => {
+  const base = { id: "e1", titulo: "Noche de jazz", descripcion: null, inicio: "2026-09-20T19:00:00.000Z", fin: null, imagen: null, gratis: true, sitioNombre: "Teatro de la Paz", direccionPublica: "Av. Venustiano Carranza 1815", sitioLat: null, sitioLng: null };
+  it("trae lo mínimo: tipo, nombre, dirección, fecha y sitio", () => {
     const d = jsonLdEvento(base);
-    expect(d).toMatchObject({ "@context": "https://schema.org", "@type": "Event", name: "Noche de jazz", startDate: base.inicio, location: { "@type": "Place", name: "Teatro de la Paz" }, isAccessibleForFree: true, url: "https://somosnosotros.org/eventos/e1" });
+    expect(d).toMatchObject({
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: "Noche de jazz",
+      startDate: base.inicio,
+      location: { "@type": "Place", name: "Teatro de la Paz", address: { "@type": "PostalAddress", streetAddress: "Av. Venustiano Carranza 1815" } },
+      isAccessibleForFree: true,
+      url: "https://somosnosotros.org/eventos/e1",
+    });
   });
   it("con coordenada pública, suma el geo; sin ella, no", () => {
     expect(jsonLdEvento(base).location).not.toHaveProperty("geo");

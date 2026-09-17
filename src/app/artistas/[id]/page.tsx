@@ -9,6 +9,7 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import { ORIGENES } from "@/lib/origen";
+import { CAPO_SIN_RECLAMAR_EN_SITEMAP } from "@/lib/sitemap";
 import Desplegable from "@/components/Desplegable";
 import RenglonEvento from "@/components/RenglonEvento";
 import Reportar from "@/components/Reportar";
@@ -90,9 +91,18 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const a = await cargarArtista(id);
   if (!a) return { title: "Artista · Somos Nosotros" };
   const descripcion = etiquetaArtista(a);
+  // Del CAPO y sin reclamar (OL-059): mismo interruptor que el sitemap (src/lib/sitemap.ts). Sin esto la ficha seguía
+  // indexable por el enlace desde /artistas aunque el interruptor la dejara fuera del mapa del sitio.
+  let sinIndexar = false;
+  if (a.origen === "capo" && !CAPO_SIN_RECLAMAR_EN_SITEMAP) {
+    const supabase = await clienteServidor();
+    const { data } = (await supabase?.from("artistas_cuentas").select("perfil_id").eq("artista_id", a.id).limit(1)) ?? { data: [] };
+    sinIndexar = !data?.length;
+  }
   return {
     title: `${a.nombre} · Somos Nosotros`,
     description: descripcion,
+    ...(sinIndexar ? { robots: { index: false } } : {}),
     openGraph: { title: a.nombre, description: descripcion, url: `${ORIGEN}/artistas/${a.id}`, type: "profile", images: a.foto ? [{ url: a.foto }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
   };
 }

@@ -52,8 +52,35 @@ Aparte, el founder reportó que en la app instalada desde Chrome en su Mac el t�
 - **Captura móvil (390×844)**, navegador integrado sobre el mismo `next start` local: el inicio pinta bien, con el título nuevo en la pestaña ("Agenda cultural de San Luis Potosí · Somos Nosotros") y el estado vacío de siempre (sin datos locales); Lugares también, con su aviso ya conocido de falta de token de Mapbox (no hay `.env` en este árbol, nada que ver con esta pieza). No se pudo capturar una ficha de evento real (este árbol no tiene backend con datos; probarlo así exige el respaldo local completo de [[project-somosnosotros]], que no se justificaba para un cambio sin UI visible) — la consola mostró un error genérico de carga de script ajeno a este cambio (mismo aviso con o sin las páginas tocadas; probable intento del service worker o de un prefetch, sin request fallida visible en la red más allá de prefetches de Next abortados) y la pantalla no se vio afectada.
 - **`tituloInstalada` en vivo:** confirmado con JavaScript en el navegador integrado que, en una pestaña normal (`display-mode: standalone` en `false`), el título de Lugares se queda completo — "Lugares · Somos Nosotros" — sin tocar. No se pudo forzar el modo instalado desde este navegador (no hay manera de emularlo sin abrir la app real desde el icono, y `plataformaActual()` guarda su respuesta la primera vez que se pide en la pestaña, así que parchar `matchMedia` después no sirve); la transformación en sí queda cubierta por las 3 pruebas de arriba. Falta que el founder lo confirme en su app instalada de escritorio.
 
+## Corrección tras revisión adversarial de gestión de cambios
+
+Gestión de cambios sometió 137a349 a una revisión adversarial (cada hallazgo pasado por un escéptico aparte); tres importantes y cuatro menores se sostuvieron:
+
+1. **`robots.ts` anulaba el `noindex` propio.** Un `Disallow` le gana a la etiqueta `robots: {index:false}` de la propia página: si Google no puede leerla, tampoco lee que no debe indexarla, y la URL podía salir igual en resultados (con el nombre de la persona como texto del enlace, desde "quién va" en las fichas que ahora sí están en el sitemap). Corregido: `/admin`, `/ajustes`, `/perfil`, `/entrar`, `/borrado` y `/personas` salen del `Disallow` (ya llevan su propio `noindex`, y ahora Google puede leerlo). Se quedan bloqueadas `/avisos` (sirve HTML sin `noindex`, y verla ejecuta la baja de correo: nunca debe rastrearse) y `/auth` (nada que leer por GET; el relevo real solo responde a POST, que Google no manda).
+2. **El JSON-LD de evento no traía `location.address`**, que Google exige para mostrar el evento en el buscador. `jsonLdEvento` ahora recibe la dirección pública ya resuelta (la del lugar si es visible y no privado, o el texto de "otro sitio" si no es reservado) y la manda como `PostalAddress`; **sin una dirección pública no se manda el JSON-LD entero**, en vez de mandarlo a medias.
+3. **`TituloInstalada` no cumplía su objetivo.** Gestión de cambios lo reprodujo con `next build` + `next start`: React vuelve a escribir el título completo poco después de que el efecto lo recorta (al hidratar, y en cambios que no tocan la ruta como `router.refresh()` o un filtro con `router.replace()`). Corregido: en vez de un efecto atado a la ruta, un `MutationObserver` vigila el `<head>` mientras la app esté montada y corrige cada vez que algo vuelve a escribir el título, sin escribir nunca un título vacío.
+4. **El interruptor del CAPO solo sacaba las fichas del sitemap**, seguían indexables y enlazadas desde `/artistas`. Mientras el founder no decida, `artistas/[id]/page.tsx` también manda `robots: {index:false}` cuando el artista es del CAPO, nadie lo ha reclamado y el interruptor sigue apagado — el mismo interruptor de `src/lib/sitemap.ts`, sin `Disallow`.
+5. **El canonical fijo de Lugares y Artistas descartaba `?ciudad=`**, así que la lista de otra ciudad quedaba declarada duplicada de la de San Luis Potosí. Las dos páginas pasan a `generateMetadata` y conservan la ciudad en el canonical cuando no es la inicial (el resto de filtros se sigue descartando).
+6. **El título y la descripción del inicio decían "San Luis Potosí" incluso con `?ciudad=` de otra.** También a `generateMetadata`, por ciudad; de paso, canonical igual que Lugares y Artistas (no pedido explícitamente, mismo razonamiento del punto 5, misma página).
+7. **`lastModified` de las rutas fijas del sitemap cambiaba en cada petición** (`new Date()` en cada llamada). Quitado de las rutas fijas (no tienen una fecha propia que decir); se queda solo en las fichas, con `actualizado_en`.
+
+**Refutados, sin tocar** (gestión de cambios los pasó también por el escéptico y no se sostuvieron): `isAccessibleForFree` con `precio === null` (en el modelo, null es gratis y la ficha lo dice así), las fechas en UTC con `Z` (válidas para Google), y los nombres de "quién va" en el HTML (de antes de esta pieza, ya dicho en el aviso de privacidad).
+
+**Verificación:** lint (limpio), tipos (limpio), `npm test` (**335 pruebas, 35 archivos**, una nueva: rutas fijas sin `lastModified`), build verde. `/robots.txt` de la build local:
+```
+User-Agent: *
+Allow: /
+Disallow: /avisos
+Disallow: /auth
+
+Sitemap: https://somosnosotros.org/sitemap.xml
+```
+`/sitemap.xml` confirmado sin `<lastmod>` en las rutas fijas. Canonical y título confirmados con JavaScript en el navegador integrado: inicio (`/`, canonical `.../`, título "Agenda cultural de San Luis Potosí · Somos Nosotros") y Lugares (canonical `.../lugares`, título "Lugares · Somos Nosotros"), sin errores nuevos en consola. La corrección de `TituloInstalada` sigue sin poder probarse en vivo desde este navegador (mismo límite que antes: no se puede forzar `display-mode: standalone` antes de que la app lea `matchMedia` la primera vez); descansa en la reproducción de gestión de cambios y en que el código sigue exactamente lo que encontraron.
+
+Antes de este commit, se trajo `origin/main` (cd98722 → 1d7f93f, PR #89 y #90) a la rama: un solo conflicto, en `docs/ops/OPEN_LOOPS.md`, resuelto sin perder ninguna línea de ningún lado (verificado a mano, entrada por entrada).
+
 ## Pendiente
 
 - **Founder:** ¿los 520 artistas del CAPO sin reclamar entran al sitemap, o siguen fuera hasta que reclamen su ficha? (interruptor ya listo, apagado por defecto).
-- **Founder:** confirmar en su app instalada de escritorio (Chrome, Mac) que el título ya no se repite — no se pudo forzar el modo "instalado" desde el navegador integrado para verlo en vivo (ver Verificación).
+- **Founder:** confirmar en su app instalada de escritorio (Chrome, Mac) que el título ya no se repite, ahora con la corrección del `MutationObserver`.
 - Verificar en producción, tras el despliegue, que `/sitemap.xml` trae las fichas reales y que una búsqueda en Google Search Console (cuenta del founder, fuera de este repo) lo toma — no se creó cuenta de Search Console en esta pieza, no se pidió.

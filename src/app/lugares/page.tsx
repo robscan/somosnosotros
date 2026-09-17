@@ -1,6 +1,7 @@
+import type { Metadata } from "next";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
-import { ciudadPorSlug } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { leerTira } from "@/lib/destacados";
@@ -9,8 +10,20 @@ import { conProximo, TIPOS, type LugarLista, type LugarResumen, type ProximoEven
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import VistaLugares from "./VistaLugares";
 
-// El canonical apunta siempre a la lista sin filtros (OL-059): "?tipo=museo" es la misma página para Google, no una nueva.
-export const metadata = { title: "Lugares · Somos Nosotros", alternates: { canonical: "/lugares" } };
+type SearchParams = { vista?: string; ciudad?: string; tipo?: string };
+
+/**
+ * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
+ * resto de filtros ("?tipo=museo" es la misma lista para Google, no una nueva). Sin esto, la lista de otra ciudad
+ * se declaraba duplicada de la de San Luis Potosí y Google podía no ofrecerla nunca (OL-059).
+ */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
+  const { ciudad: slug } = await searchParams;
+  const ciudades = await cargarCiudades(await clienteServidor());
+  const resuelta = ciudadPorSlug(slug, ciudades);
+  const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/lugares" : `/lugares?ciudad=${resuelta.slug}`;
+  return { title: "Lugares · Somos Nosotros", alternates: { canonical } };
+}
 
 /** Los lugares de la ciudad con su próximo evento: el mapa primero, la lista como segunda vista. */
 async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
@@ -25,7 +38,7 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
   return conProximo((l.data ?? []) as LugarResumen[], (e.data ?? []) as (ProximoEvento & { lugar_id: string | null })[]);
 }
 
-export default async function Lugares({ searchParams }: { searchParams: Promise<{ vista?: string; ciudad?: string; tipo?: string }> }) {
+export default async function Lugares({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { vista, ciudad: slug, tipo } = await searchParams;
   const ciudades = await cargarCiudades(await clienteServidor());
   const ciudad = ciudadPorSlug(slug, ciudades);

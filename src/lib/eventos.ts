@@ -103,6 +103,13 @@ export type DatosJsonLdEvento = {
   /** precio === null, para no inventar un número a partir de un texto libre ("$150", "taquilla"...). */
   gratis: boolean;
   sitioNombre: string;
+  /**
+   * La dirección pública del sitio: la del lugar (visible y no privado) o el texto de "otro sitio" cuando no es
+   * reservado. Sin ella no hay JSON-LD que mandar — Google exige `location.address` para mostrar el evento en el
+   * buscador (revisión de gestión de cambios, OL-059), y un sitio reservado o un lugar que un anónimo no ve no
+   * tiene ninguna dirección que sea correcto publicar.
+   */
+  direccionPublica: string;
   /** Solo si es público (el lugar o el pin de "otro sitio"); un sitio reservado nunca manda su coordenada real aquí. */
   sitioLat: number | null;
   sitioLng: number | null;
@@ -111,11 +118,11 @@ export type DatosJsonLdEvento = {
 /**
  * JSON-LD tipo Event para la ficha (OL-059, bitácora 088): para que Google pueda mostrar fecha y lugar en el
  * buscador. Solo campos públicos — nunca quién va, nunca la dirección de un sitio reservado (por eso recibe ya
- * resueltos el nombre del sitio y su coordenada, no el registro privado). Sin precio si no se pudo escribir como
- * número: mejor omitirlo que inventarlo a partir de un texto libre.
+ * resueltos el nombre del sitio, su dirección pública y su coordenada, no el registro privado). Sin precio si no
+ * se pudo escribir como número: mejor omitirlo que inventarlo a partir de un texto libre.
  */
 export function jsonLdEvento(e: DatosJsonLdEvento): Record<string, unknown> {
-  const location: Record<string, unknown> = { "@type": "Place", name: e.sitioNombre };
+  const location: Record<string, unknown> = { "@type": "Place", name: e.sitioNombre, address: { "@type": "PostalAddress", streetAddress: e.direccionPublica } };
   if (e.sitioLat != null && e.sitioLng != null) location.geo = { "@type": "GeoCoordinates", latitude: e.sitioLat, longitude: e.sitioLng };
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",

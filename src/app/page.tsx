@@ -6,7 +6,7 @@ import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
-import { ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { leerTira } from "@/lib/destacados";
@@ -15,11 +15,23 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./inicio.module.css";
 import type { Metadata } from "next";
 
-// Título propio (OL-059): sin esto, Google mostraba el genérico del layout raíz para la página más buscada del sitio.
-export const metadata: Metadata = {
-  title: "Agenda cultural de San Luis Potosí · Somos Nosotros",
-  description: "Qué hay hoy y esta semana en los centros culturales de San Luis Potosí. Gratis, sin cuenta para mirar.",
-};
+/**
+ * Título propio (OL-059): sin esto, Google mostraba el genérico del layout raíz para la página más buscada del
+ * sitio. Por ciudad ("el contexto ordena, no limita": OL-029) — con `?ciudad=` de otra, ni dice San Luis Potosí ni
+ * cae en un título neutro sin sentido, dice la ciudad que de verdad se está mirando. El canonical, igual que en
+ * Lugares y Artistas, conserva la ciudad cuando no es la inicial.
+ */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }): Promise<Metadata> {
+  const { ciudad: slug } = await searchParams;
+  const ciudades = await cargarCiudades(await clienteServidor());
+  const resuelta = ciudadPorSlug(slug, ciudades);
+  const esInicial = resuelta.slug === CIUDAD_INICIAL.slug;
+  return {
+    title: `Agenda cultural de ${resuelta.nombre} · Somos Nosotros`,
+    description: `Qué hay hoy y esta semana en los centros culturales de ${resuelta.nombre}. Gratis, sin cuenta para mirar.`,
+    alternates: { canonical: esInicial ? "/" : `/?ciudad=${resuelta.slug}` },
+  };
+}
 
 type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & { sitio_lat: number | null; sitio_lng: number | null; lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][]; artistas: { artista: { nombre: string } | { nombre: string }[] | null }[] | null };
 
