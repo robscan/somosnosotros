@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { etiquetaEnlace, LIMITE_ENLACES, reconocerEnlace, type Enlace } from "@/lib/enlaces";
 import IconoRed from "./ui/IconoRed";
+import { IconoCerrar } from "./ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./SelectorEnlaces.module.css";
@@ -53,7 +54,7 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
                 <small>{e.url.replace(/^https?:\/\/(www\.)?/, "")}</small>
               </span>
               <button type="button" className={styles.quitar} onClick={() => quitar(e)} aria-label={`Quitar ${etiquetaEnlace(e)}`}>
-                ✕
+                <IconoCerrar width={18} height={18} />
               </button>
             </li>
           ))}
