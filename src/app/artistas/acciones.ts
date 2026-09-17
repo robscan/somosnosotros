@@ -69,7 +69,7 @@ export async function actualizarArtista(id: string, _previo: ResultadoArtista | 
   redirect(`/artistas/${id}`);
 }
 
-/** Ocultar o volver a mostrar: el admin (la política de la base lo exige). */
+/** Ocultar o volver a mostrar: solo la administración (la base lo exige con el trigger proteger_autor_y_visible). */
 export async function cambiarVisibleArtista(id: string, visible: boolean) {
   const { supabase } = await sesionOEntrar(`/artistas/${id}`);
   await supabase.from("artistas").update({ visible }).eq("id", id);

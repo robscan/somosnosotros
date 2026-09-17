@@ -37,7 +37,7 @@ async function cargarLugar(id: string): Promise<LugarConAutor | null> {
   if (!supabase || !esUuid(id)) return null;
   const { data } = await supabase
     .from("lugares")
-    .select("id, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)")
+    .select("id, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, privado, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;

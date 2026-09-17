@@ -69,7 +69,7 @@ export async function actualizarLugar(id: string, _previo: ResultadoLugar | null
   redirect(`/lugares/${id}`);
 }
 
-/** Solo el admin (o el autor) puede ocultar/mostrar; lo decide la política de la base. */
+/** Ocultar o volver a mostrar: solo la administración (la base lo exige con el trigger proteger_autor_y_visible). */
 export async function cambiarVisible(id: string, visible: boolean) {
   const { supabase } = await sesionOEntrar(`/lugares/${id}`);
   await supabase.from("lugares").update({ visible }).eq("id", id);
