@@ -60,7 +60,7 @@ Permisos (RLS): lectura pública de lo visible; escritura solo con sesión; cada
 ## Qué NO entra (para mantenerlo simple)
 
 - Nada de fotos del carrete ni capacidades nativas de iOS; nada de Apple Health; nada de "pasaporte".
-- Sin likes, comentarios ni ranking. Sin tienda de apps: la app de iPhone en la tienda se detuvo el 2026-09-16 (decisión del founder); la app es la web instalada en el inicio.
+- Sin likes, comentarios ni ranking. Los destacados sí entran: lo que elige el administrador y lo que tiene más asistentes, sin contar visitas (founder, 2026-09-16). Sin tienda de apps: la app de iPhone en la tienda se detuvo el 2026-09-16 (decisión del founder); la app es la web instalada en el inicio.
 - Sin push antes de la Fase 5; los avisos empiezan por correo.
 
 ## Cómo se trabaja
