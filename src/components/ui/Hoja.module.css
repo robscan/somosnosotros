@@ -13,7 +13,10 @@
   margin-inline: auto;
   max-height: calc(100% - 48px);
   overflow-y: auto;
-  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
+  /* A los lados, el relleno del teléfono y no var(--gutter): el gutter crece con la ventana para centrar lo que va a todo
+     lo ancho, y dentro de una hoja que ya mide la columna se comía el ancho (en escritorio el texto quedaba en una tira de
+     44 px; founder, 2026-09-16). En el teléfono es el mismo valor. */
+  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
   border-radius: var(--radio-grande) var(--radio-grande) 0 0;
   background: var(--fondo);
   box-shadow: var(--sombra-panel);

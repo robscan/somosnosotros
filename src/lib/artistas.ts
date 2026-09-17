@@ -241,7 +241,7 @@ export type DatosArtista = {
   descripcion: string | null;
   foto: string | null;
   redes: Enlace[];
-  /** La ciudad en la que la persona estaba navegando al registrar (un artista no tiene punto del que deducirla). */
+  /** La ciudad del renglón Ciudad (de entrada, la elegida en Artistas); vacía, la inicial. */
   ciudad: string;
 };
 export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "enlaces", string>>;
