@@ -1,0 +1,30 @@
+/* Confirmación con Deshacer: tinta sobre blanco como ui/Aviso, flotando sobre la barra inferior, en la columna. */
+.hecho {
+  position: fixed;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + var(--espacio-3));
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: var(--espacio-2);
+  min-height: 52px;
+  padding: var(--espacio-1) var(--espacio-1) var(--espacio-1) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--texto);
+  color: var(--fondo);
+  font-size: var(--letra-sm);
+  line-height: 1.3;
+  box-shadow: var(--sombra-flotante);
+}
+.hecho button {
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-3);
+  border: none;
+  background: none;
+  color: var(--primario-suave);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

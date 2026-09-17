@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { Chip, ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import ListaLugares from "@/components/ListaLugares";
+import type { AvisosLista } from "@/components/useSeguirEnLista";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import Aviso from "@/components/ui/Aviso";
 import Mapa from "@/components/Mapa";
@@ -40,6 +41,9 @@ type Props = {
   /** Tipo elegido, leído de la URL (`?tipo=`); vale para el mapa y la lista. */
   tipo: string | null;
   barra: ReactNode;
+  /** Los lugares que la persona sigue (la lista los marca y deja seguir al deslizar); null = sin sesión. */
+  seguidos: string[] | null;
+  avisos: AvisosLista | null;
 };
 
 /**
@@ -55,6 +59,8 @@ export default function VistaLugares({
   vistaInicial,
   tipo,
   barra,
+  seguidos,
+  avisos,
 }: Props) {
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [elegido, setElegido] = useState<LugarLista | null>(null);
@@ -239,6 +245,8 @@ export default function VistaLugares({
           punto={punto}
           ciudad={ciudad}
           conSesion={conSesion}
+          seguidos={seguidos}
+          avisos={avisos}
           chips={
             <>
               {chipCiudad}
