@@ -3,14 +3,16 @@ import { redirect } from "next/navigation";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Barra from "@/components/ui/Barra";
-import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoEstrella, IconoLapiz, IconoLibro, IconoPersona, IconoSalir } from "@/components/ui/Iconos";
+import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoLapiz, IconoLibro, IconoPersona, IconoSalir, IconoTablero } from "@/components/ui/Iconos";
 import { enmascararCorreo } from "@/lib/comunidad";
+import { textoPendientes } from "@/lib/panel";
 import { TEXTO_INVITAR } from "@/lib/perfil";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import ficha from "@/components/ui/Ficha.module.css";
 import AvisosPerfil from "@/app/perfil/AvisosPerfil";
 import ReservaPerfil from "@/app/perfil/ReservaPerfil";
 import { borrarMiCuenta, cerrarSesion } from "@/app/perfil/acciones";
+import { contarPendientes } from "@/app/admin/consultas";
 import InstalarApp from "./InstalarApp";
 import styles from "./ajustes.module.css";
 
@@ -27,6 +29,8 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
   if (!actual) redirect("/entrar?siguiente=/ajustes");
   const { perfil } = actual;
   const correo = actual.correo ? enmascararCorreo(actual.correo) : "tu correo";
+  // Administración dice lo pendiente (docs/rediseno/19, decisión 12).
+  const pendientes = perfil.rol === "admin" ? await contarPendientes() : null;
   return (
     <main className={ficha.pagina}>
       <Barra volver={{ href: "/perfil", texto: "Mi perfil" }} />
@@ -93,9 +97,9 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
           {perfil.rol === "admin" && (
             <li>
               <Link href="/admin" className={styles.fila}>
-                <IconoEstrella width={20} height={20} />
+                <IconoTablero width={20} height={20} />
                 <b>Administración</b>
-                <small>Reportes, ocultar y mostrar fichas</small>
+                <small>{pendientes === null ? "Pendientes, indicadores, personas y fichas" : textoPendientes(pendientes)}</small>
                 <span className={styles.valor}>
                   <IconoChevronDerecha />
                 </span>
