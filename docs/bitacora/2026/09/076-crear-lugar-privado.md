@@ -25,17 +25,18 @@
 Las demás reglas con funciones de búsqueda (`eventos_artistas`, `lugares_cuentas`, `artistas_cuentas`) buscan la ficha padre, ya guardada, y se leen con `using (true)`: sin problema.
 
 ## Qué se hizo
-- **Migración `supabase/migrations/20260917093000_lectura_al_crear.sql`, sin aplicar.** Cambia solo la expresión de dos reglas de lectura, con `alter policy`:
+- **Migración `supabase/migrations/20260917110000_lectura_al_crear.sql`, sin aplicar.** Cambia solo la expresión de dos reglas de lectura, con `alter policy`:
   - lugares: `(visible and not privado) or creado_por = auth.uid() or es_admin() or gestiona_lugar(id)`;
   - artistas: `visible or creado_por = auth.uid() or es_admin() or gestiona_artista(id)`.
 
   Primero se mira la propia fila (su autor o el administrador), como antes de 0024. `gestiona_*` queda para las cuentas ligadas, que solo existen sobre fichas ya guardadas. Para lo ya guardado nada cambia: `gestiona_*` ya incluía al autor y al administrador.
-- **Nombre de la migración:** propuesto al chat de gestión de cambios, que no había respondido al cerrar esta bitácora. Va después de `20260917090000_panel_administracion.sql` (ya aplicada) y antes de `20260917100000_zona_horaria.sql` (sin commit en el árbol `cualquier-pais`). Si la de zona horaria se aplicara primero, `db push` pediría `--include-all` para esta. Sin número en la cabecera, para no chocar con el "0029" de la zona horaria.
+- **Nombre de la migración:** lo dio el chat de gestión de cambios. Primero propuse `20260917093000`. Como la de zona horaria (`20260917100000_zona_horaria.sql`, del árbol `cualquier-pais`) se aplica antes, esta va después: `20260917110000`. Así `db push` no la ve más vieja que la última aplicada. Es compatible con el código que corre hoy: solo cambia dos reglas. Sin número en la cabecera, para no chocar con el "0029" de la zona horaria.
 - **Banco de pruebas `supabase/tests/lectura_al_crear.mjs`**, como el del panel (PGlite instalado fuera del repo):
   - con las migraciones de antes reproduce el fallo;
   - aplica la migración y las que sigan;
   - compara lo que ve cada quien de lo ya guardado (sin sesión, dos usuarias, una cuenta ligada y el administrador): las mismas fichas antes y después;
   - comprueba que lo privado u oculto se crea y se devuelve, que nadie más lo ve (tampoco en la búsqueda por nombre ni en el aviso de duplicado), que un usuario no puede marcar privado y que la cuenta ligada sigue leyendo y editando.
+- **La ficha dice que el lugar es privado** (`src/app/lugares/[id]/page.tsx`). La consulta de la ficha no pedía la columna `privado`, así que el aviso verde "Lugar privado: solo lo ves tú" no salía nunca. Ahora la pide. Se vio al probar el alta de punta a punta.
 
 ## Verificación
 - **Banco nuevo:** 42 comprobaciones en verde.
@@ -48,14 +49,22 @@ Las demás reglas con funciones de búsqueda (`eventos_artistas`, `lugares_cuent
 
   `FORZAR_FALLO=1` también sale con error.
 - **Banco del panel** con la migración nueva: 29 migraciones y 95 comprobaciones en verde.
+- **Con la zona horaria aplicada antes**, como se hará en producción: se copió al scratchpad la versión sin commit de `20260917100000_zona_horaria.sql` (árbol `cualquier-pais`). Este banco dio 42 y el del panel 95, con 30 migraciones.
+- **De punta a punta, a 390×844:** la app de esta rama (`next dev`) contra una API local de prueba, en el scratchpad y sin red. La API imita a Supabase (entrar y la API de datos) sobre PGlite y corre cada consulta con el rol y el usuario de la sesión, así que las reglas de permisos son las reales. Sesiones inventadas del administrador y de Ana (usuaria). En el alta, "Estoy aquí" usó una ubicación simulada en el navegador de prueba. Alta: "Huerto de la calle Zaragoza", tipo Otro, "Solo yo lo veo".
+  - **Antes** (sin la migración nueva): "No se pudo guardar el lugar. Intenta de nuevo." El registro de la API: `403 POST /rest/v1/lugares?select=id → 42501 new row violates row-level security policy for table "lugares"`, el mismo fallo.
+  - **Después** (con la migración): abre la ficha con "Publicado. Ya está en Lugares." y el aviso verde "Lugar privado: solo lo ves tú. No sale en el mapa ni en la lista para nadie más."
+  - **La misma dirección con la sesión de Ana y sin sesión:** "Esto ya no está". Su consulta llega a la base y vuelve vacía.
+  - Al terminar se apagaron los dos servidores, se borraron el `.env.local` temporal y la cookie de prueba, y se restauró `CLAUDE.md`, que `next dev` reescribe.
 - **Código:** lint (0 errores; el aviso ajeno de `docs/diseno/logotipo/iconos-sn.mjs`), tipos, 258 pruebas y build en verde.
-- **Sin captura de pantalla:** el cambio no toca pantallas, y no hay Supabase local. El respaldo de datos inventados no aplica permisos por fila, así que una captura no probaría nada. La prueba es el banco, que corre sobre Postgres.
 - Nada se leyó ni se escribió en producción.
+
+## Visto al pasar (no se tocó)
+Tras un error al guardar, la casilla "Solo yo lo veo" se ve desmarcada, aunque el formulario la sigue mandando marcada. React limpia el formulario al terminar la acción, y una casilla no guarda su estado en el HTML como un campo de texto. Con este arreglo el error ya no sale al crear un lugar privado, pero puede volver a verse con otro fallo, por ejemplo sin conexión.
 
 ## Hallazgo aparte (no se tocó; tarea propuesta)
 Las reglas de edición de lugares (0024) y artistas (0010) usan `gestiona_*` también para validar la fila nueva, pero la función lee la fila guardada. Quien gestiona una ficha puede cambiar `creado_por` llamando a la API directamente. Una cuenta ligada que no es la autora puede hacerse autora y después borrar el lugar, y con él los eventos que otras personas publicaron ahí. Se comprobó en PGlite. La app no lo ofrece: solo el administrador cambia el autor, al pasar la ficha. Arreglo propuesto: un trigger como `proteger_rol` (el `revoke` por columna no sirve, ver 072). Quedó como tarea aparte ("Block changing creado_por in lugares and artistas").
 
 ## Queda
-- **El founder aplica la migración** `20260917093000_lectura_al_crear.sql` (`npm run db:push` desde esta rama, o después de mezclar). No depende de código nuevo: el arreglo vale en cuanto se aplica.
-- **Firma en el iPhone:** crear un lugar con "Solo yo lo veo" y ver que abre su ficha.
-- Push, PR y merge cuando el founder lo diga.
+- **La migración** `20260917110000_lectura_al_crear.sql` la aplica el founder cuando lo indique gestión de cambios, después de la de zona horaria. No depende de código nuevo: crear lugares privados vuelve a funcionar en cuanto se aplica. El aviso verde de la ficha llega con el merge.
+- **Push, PR y merge:** los lleva gestión de cambios.
+- **Firma en el iPhone:** crear un lugar con "Solo yo lo veo" y ver que abre su ficha con el aviso verde.

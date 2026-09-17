@@ -1,4 +1,4 @@
-// Banco de pruebas de la migración 20260917093000_lectura_al_crear.sql, sin red ni producción.
+// Banco de pruebas de la migración 20260917110000_lectura_al_crear.sql, sin red ni producción.
 // Con las migraciones de antes reproduce el fallo (un administrador no crea un lugar privado con INSERT … RETURNING, que
 // es lo que manda supabase-js con .insert().select()); después aplica la migración y las que sigan, y comprueba que lo
 // privado u oculto se crea y se devuelve, que nadie más lo ve, que las cuentas ligadas siguen leyendo y editando, y que
@@ -20,7 +20,7 @@ const modulo = (ruta) => import(pathToFileURL(join(process.env.PGLITE, "node_mod
 const { PGlite } = await modulo("index.js");
 const { unaccent } = await modulo("contrib/unaccent.js");
 
-const MIGRACION = "20260917093000_lectura_al_crear.sql";
+const MIGRACION = "20260917110000_lectura_al_crear.sql";
 const RAIZ = fileURLToPath(new URL("../..", import.meta.url));
 const dir = join(RAIZ, "supabase/migrations");
 const db = new PGlite({ extensions: { unaccent } });
