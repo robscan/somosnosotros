@@ -22,6 +22,8 @@
 -- llave de servicio, las migraciones ni el editor de Supabase. Por eso la función no es security definer: current_user
 -- tiene que ser quien hace el cambio.
 -- Los eventos ya tenían el autor protegido por su política (creado_por = auth.uid() en la fila nueva); aquí se repite.
+-- Se puede aplicar antes de que llegue el código de su rama: la app de hoy solo cambia creado_por o visible con la sesión de
+-- la administración (pasarle la ficha, ocultar y volver a mostrar); los formularios de alta y edición no los mandan.
 -- Banco de pruebas: supabase/tests/autor_y_visible_solo_admin.mjs.
 
 create function public.proteger_autor_y_visible() returns trigger
