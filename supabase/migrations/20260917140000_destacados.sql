@@ -5,7 +5,7 @@
 --     cuentan quienes van a sus próximos eventos (D1);
 --   · la administración también quita lo que entra por asistentes, por el mismo tiempo (D3);
 --   · hasta 8 por sección, solo de la ciudad que se ve, y nunca algo oculto, privado o que ya pasó.
--- No se cuentan visitas ni se guarda nada nuevo de las personas. Solo añade: una tabla y cuatro funciones.
+-- No se cuentan visitas ni se guarda nada de las personas. Solo añade: una tabla y tres funciones.
 
 -- ---------- lo que decide la administración ----------
 -- Una ficha por renglón: elegida (quitado = false) o quitada aunque tenga asistentes (quitado = true).
@@ -17,7 +17,6 @@ create table public.destacados (
   quitado boolean not null default false,
   -- Lugares y artistas: hasta cuándo. Eventos: null, vale mientras no pase.
   hasta timestamptz,
-  creado_por uuid default auth.uid() references public.perfiles (id) on delete set null,
   creado_en timestamptz not null default now(),
   constraint destacados_una_ficha check (num_nonnulls(evento_id, lugar_id, artista_id) = 1),
   constraint destacados_hasta check ((evento_id is null) = (hasta is not null))
@@ -27,9 +26,10 @@ create unique index destacados_evento_unico on public.destacados (evento_id) whe
 create unique index destacados_lugar_unico on public.destacados (lugar_id) where lugar_id is not null;
 create unique index destacados_artista_unico on public.destacados (artista_id) where artista_id is not null;
 
+-- Se lee sin sesión (qué fichas eligió o quitó la administración, sin datos de personas) y no se escribe de frente:
+-- sin políticas de escritura, el único camino es cambiar_destacado.
 alter table public.destacados enable row level security;
-create policy "destacados: solo la administración" on public.destacados for all to authenticated
-  using (public.es_admin()) with check (public.es_admin());
+create policy "destacados: lectura pública" on public.destacados for select using (true);
 
 -- ---------- la tira de una sección ----------
 -- Definer, como van_por_evento: cuenta los «Voy» de todas las cuentas, también las reservadas, sin decir de quién.
@@ -79,15 +79,15 @@ $$;
 comment on function public.tira_destacados(text, text) is 'La tira de destacados de una sección (eventos, lugares o artistas) en una ciudad: id, por qué (elegido o asistentes), hasta cuándo y cuántos van.';
 
 -- ---------- destacar, quitar o dejar como estaba ----------
--- Invoker: la regla por fila vuelve a exigir la administración.
+-- Definer: la tabla no tiene políticas de escritura; la guarda es la administración, comprobada aquí.
 create function public.cambiar_destacado(p_tipo text, p_id uuid, p_estado text) returns void
-language plpgsql security invoker set search_path = public as $$
+language plpgsql security definer set search_path = public as $$
 begin
   if not public.es_admin() then
-    raise exception 'Solo la administración cambia los destacados' using errcode = '42501';
+    raise exception 'sin_permiso' using errcode = '42501';
   end if;
   if p_tipo not in ('eventos', 'lugares', 'artistas') or p_estado not in ('elegido', 'quitado', 'ninguno') then
-    raise exception 'Destacado no válido' using errcode = '22023';
+    raise exception 'destacado_no_valido' using errcode = '22023';
   end if;
   delete from public.destacados
   where case p_tipo when 'eventos' then evento_id when 'lugares' then lugar_id else artista_id end = p_id;

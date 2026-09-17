@@ -13,13 +13,15 @@ La imagen sin foto con el símbolo SN (OL-054, bitácora [081](081-imagen-sin-fo
 
 ## Qué se hizo
 - **Migración `20260917140000_destacados.sql`**, con el nombre que dio el encargado. Solo añade:
-  - la tabla `destacados`: un renglón por ficha, elegido o quitado, y `hasta` en lugares y artistas. Borrar la ficha borra su renglón y la regla por fila es solo de la administración;
+  - la tabla `destacados`: un renglón por ficha, elegido o quitado, y `hasta` en lugares y artistas, sin datos de personas. Borrar la ficha borra su renglón. Se lee sin sesión y no tiene reglas de escritura (condición del encargado): solo se escribe con `cambiar_destacado`;
   - `tira_destacados(p_tipo, p_ciudad)`: hasta 8, primero lo elegido (lo más reciente antes) y después lo que tiene al menos 3 «Voy» sin contar a la administración. En la agenda van por día y hora. Nunca algo oculto, privado o que ya pasó (`eventos.termina`, de la zona horaria). Definer, como `van_por_evento`;
-  - `cambiar_destacado(p_tipo, p_id, p_estado)`: elegir, quitar o dejar como estaba. Es invoker y exige la administración;
-  - `panel_destacados(p_tipo)`: los destacados de todas las ciudades, con nombre y foto.
+  - `cambiar_destacado(p_tipo, p_id, p_estado)`: elegir, quitar o dejar como estaba. Definer; comprueba la administración y, si no, responde `sin_permiso`. Sin permiso de ejecución para anon;
+  - `panel_destacados(p_tipo)`: los destacados de todas las ciudades, con nombre y foto. Comprueba la administración por dentro y no la ejecuta anon.
 
   No toca las funciones del panel que reescribió la zona horaria.
-- **Banco `supabase/tests/destacados.mjs`** (PGlite): 35 comprobaciones. Si el mínimo baja a 2 y la administración cuenta, fallan 6.
+- **Banco `supabase/tests/destacados.mjs`** (PGlite, sesión en UTC): 41 comprobaciones.
+  - Cubre la regla con 2, con 3 y con 3 más la administración; D3; la caducidad; la ciudad; lo oculto, privado o pasado, también lo elegido que después se oculta; que la tira no devuelve datos de personas; los permisos de anon, de una persona y de la administración; y la cascada al borrar.
+  - Lo detecta: con el mínimo en 2 y la administración contada fallan 6, y sin la comprobación de administración en `cambiar_destacado`, 1.
 - **La tira** (`components/Destacados`): título y carril que se desliza, con la siguiente tarjeta asomando.
   - Tarjetas de 220×200 con foto, cuántos van, título y detalle.
   - En Artistas, redondas de 104 px, como su avatar.
@@ -53,13 +55,14 @@ La imagen sin foto con el símbolo SN (OL-054, bitácora [081](081-imagen-sin-fo
 
 ## Evidencia
 - Lint con 0 errores (1 aviso previo en `iconos-sn.mjs`), tipos, 287 pruebas y build en verde.
-- **Bancos PGlite con las 32 migraciones:** destacados (35), panel (95), autor y ocultar (68), lectura al crear (50) y zona horaria (44). Todos en verde con la nueva aplicada.
+- **Bancos PGlite con las 32 migraciones:** destacados (41), panel (95), autor y ocultar (68), lectura al crear (50) y zona horaria (44). Todos en verde con la nueva aplicada.
 - **Capturas a 390×844** con `next dev` de la rama contra una API falsa local de solo lectura y una sesión de administrador inventada, sin producción:
   - la tira en la Agenda, en Lugares › Lista (con la imagen del símbolo) y en Artistas (redondas);
   - el menú de una ficha con «Quitar de destacados» y, al tocarlo, «Ya no es destacado · Deshacer»;
-  - el panel con el filtro Destacados, las etiquetas y el menú del renglón.
-- **Sin mirar en pantalla:** el mapa en naranja y su tarjeta, porque en local no hay Mapbox. Se revisaron las expresiones de las capas.
+  - el panel con el filtro Destacados, las etiquetas y el menú del renglón;
+  - el mapa con el token público de `.env` (sin imprimirlo; carga en localhost): Casa de la Cultura de Soledad, Teatro de la Paz y Museo Leonora Carrington en naranja, más grandes y con su nombre, y el punto azul de al lado sin rótulo. Al tocar el Teatro, su tarjeta dice «Destacado».
 - El puerto de la API falsa lo usaba el respaldo de otro chat («Atrás»). No se tocó; la de esta pieza fue a otro puerto.
+- **Tras el primer «listo», el encargado pidió** lectura pública de la tabla sin reglas de escritura, la función de destacar como definer y nada de personas. Se ajustó la migración (se quitó `creado_por`), el banco pasó de 35 a 41 comprobaciones y se volvieron a correr los cinco bancos.
 - Al terminar se apagaron los dos servidores, se borraron `.env.local` y la cookie, y se restauró `CLAUDE.md`.
 
 ## Queda

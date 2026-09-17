@@ -2,7 +2,8 @@
 // Aplica todas las migraciones y comprueba la tira de cada sección: lo que elige la administración y lo que tiene al menos
 // 3 «Voy» sin contar a la administración (D1, D2); que se quita también lo que entra por asistentes (D3); la ciudad, lo
 // oculto, lo privado y lo que ya pasó; hasta 8 y su orden; que un lugar o un artista caduca a las dos semanas y un evento
-// al pasar; que solo la administración cambia y lee lo que decidió; y que borrar la ficha borra su renglón.
+// al pasar; que la tabla se lee sin sesión y solo se escribe con cambiar_destacado, de la administración; que la tira no
+// devuelve datos de personas; y que borrar la ficha borra su renglón.
 //
 // PGlite no es dependencia del repo: se instala aparte, una vez, fuera del proyecto.
 //   npm install --prefix /tmp/pglite @electric-sql/pglite@0.5.8
@@ -151,21 +152,27 @@ ok(JSON.stringify(ids(t)) === JSON.stringify([A_LLENO]), "artistas: el trío va 
 ok(ids(await tira("eventos", "Madrid")).join() === E_MADRID && ids(await tira("lugares", "Madrid")).join() === P_MADRID, "Madrid: cada ciudad con lo suyo");
 ok((await tira("eventos", "Córdoba")).length === 0, "una ciudad sin nada: tira vacía");
 ok((await tira("otro", SLP)).length === 0, "un tipo que no existe: tira vacía");
+ok(JSON.stringify((await db.query(`select * from public.tira_destacados('eventos', $1)`, [SLP])).fields.map((c) => c.name)) === JSON.stringify(["id", "motivo", "hasta", "van"]), "la tira solo dice qué ficha, por qué, hasta cuándo y cuántos van: nada de quién");
 
 // ---------- solo la administración cambia ----------
 ok((await falla(`select public.cambiar_destacado('lugares', $1, 'elegido')`, [P_CASA])) !== null, "sin sesión no se puede destacar");
+ok(/permission denied/.test((await falla(`select * from public.panel_destacados('lugares')`)) ?? ""), "sin sesión no se abre el panel de destacados");
+ok(Array.isArray(await filas(`select * from public.destacados`)), "la tabla se lee sin sesión");
+ok((await falla(`insert into public.destacados (lugar_id, hasta) values ($1, now() + interval '1 day')`, [P_CASA])) !== null, "sin sesión no se escribe en la tabla");
 await como("authenticated", U1);
-ok(/administración/.test((await falla(`select public.cambiar_destacado('lugares', $1, 'elegido')`, [P_CASA])) ?? ""), "una persona no puede destacar");
+ok(/sin_permiso/.test((await falla(`select public.cambiar_destacado('lugares', $1, 'elegido')`, [P_CASA])) ?? ""), "una persona no puede destacar: sin_permiso");
 ok((await falla(`insert into public.destacados (lugar_id, hasta) values ($1, now() + interval '1 day')`, [P_CASA])) !== null, "ni escribir en la tabla");
-ok((await filas(`select * from public.destacados`)).length === 0, "ni leerla");
-ok((await filas(`select * from public.panel_destacados('lugares')`)).length === 0, "ni ver el panel de destacados");
+ok((await filas(`select * from public.panel_destacados('lugares')`)).length === 0, "ni ver el panel de destacados: vacío");
 
 await como("authenticated", F);
+ok((await falla(`insert into public.destacados (lugar_id, hasta) values ($1, now() + interval '1 day')`, [P_CASA])) !== null, "tampoco la administración escribe de frente: solo con cambiar_destacado");
 ok((await falla(`select public.cambiar_destacado('plazas', $1, 'elegido')`, [P_CASA])) !== null, "un tipo que no existe se rechaza");
 ok((await falla(`select public.cambiar_destacado('lugares', $1, 'fijo')`, [P_CASA])) !== null, "un estado que no existe se rechaza");
+await como(null, null);
 ok((await falla(`insert into public.destacados (lugar_id, artista_id, hasta) values ($1, $2, now())`, [P_CASA, A_MEDIO])) !== null, "un renglón no puede ser de dos fichas");
 ok((await falla(`insert into public.destacados (evento_id, hasta) values ($1, now())`, [E_SITIO])) !== null, "un evento no lleva fecha de caducidad");
 ok((await falla(`insert into public.destacados (lugar_id) values ($1)`, [P_CASA])) !== null, "un lugar sí la lleva");
+await como("authenticated", F);
 
 // ---------- elegir ----------
 await cambiar("lugares", P_CASA, "elegido");
@@ -173,8 +180,8 @@ await cambiar("eventos", E_SITIO, "elegido");
 await cambiar("artistas", A_MEDIO, "elegido");
 await cambiar("lugares", P_PRIVADO, "elegido");
 await cambiar("lugares", P_OCULTO, "elegido");
-const renglon = (await filas(`select hasta, creado_por from public.destacados where lugar_id = $1`, [P_CASA]))[0];
-ok(renglon && Math.abs(new Date(renglon.hasta) - Date.now() - 14 * 864e5) < 60e3 && renglon.creado_por === F, "elegir un lugar: dos semanas, y queda quién", renglon);
+const renglon = (await filas(`select hasta from public.destacados where lugar_id = $1`, [P_CASA]))[0];
+ok(renglon && Math.abs(new Date(renglon.hasta) - Date.now() - 14 * 864e5) < 60e3, "elegir un lugar: dos semanas", renglon);
 await como("anon", null);
 t = await tira("lugares");
 ok(JSON.stringify(ids(t)) === JSON.stringify([P_CASA, P_FORO]), "lugares: primero lo elegido y después por asistentes; lo privado y lo oculto no salen aunque se elijan", t);
@@ -184,6 +191,14 @@ ok(JSON.stringify(ids(t)) === JSON.stringify([E_LLENO, E_SITIO]), "eventos: por 
 ok(t[1]?.motivo === "elegido" && t[1]?.hasta === null, "eventos: el elegido no caduca por fecha; vale hasta que pasa", t[1]);
 t = await tira("artistas");
 ok(JSON.stringify(ids(t)) === JSON.stringify([A_MEDIO, A_LLENO]), "artistas: el elegido y el de asistentes", t);
+await como(null, null);
+await db.query(`update public.artistas set visible = false where id = $1`, [A_MEDIO]);
+await db.query(`update public.eventos set visible = false where id = $1`, [E_SITIO]);
+await como("anon", null);
+ok(!ids(await tira("artistas")).includes(A_MEDIO) && !ids(await tira("eventos")).includes(E_SITIO), "lo elegido que después se oculta no sale");
+await como(null, null);
+await db.query(`update public.artistas set visible = true where id = $1`, [A_MEDIO]);
+await db.query(`update public.eventos set visible = true where id = $1`, [E_SITIO]);
 
 // ---------- quitar, también lo que entra por asistentes (D3) ----------
 await como("authenticated", F);
@@ -234,6 +249,9 @@ ok((await filas(`select id from public.destacados`)).length > 0, "la administrac
 await como(null, null);
 await db.query(`delete from public.lugares where id = $1`, [nuevos[0]]);
 ok((await filas(`select id from public.destacados where lugar_id = $1`, [nuevos[0]])).length === 0, "borrar un lugar borra su destacado");
+await db.query(`delete from public.eventos where id = $1`, [E_SITIO]);
+await db.query(`delete from public.artistas where id = $1`, [A_MEDIO]);
+ok((await filas(`select id from public.destacados where evento_id = $1 or artista_id = $2`, [E_SITIO, A_MEDIO])).length === 0, "y borrar un evento o un artista, el suyo");
 
 console.log(fallos ? `✗ ${fallos} fallos, ${pasan} pasan` : `✓ ${pasan} comprobaciones en verde`);
 process.exit(fallos ? 1 : 0);
