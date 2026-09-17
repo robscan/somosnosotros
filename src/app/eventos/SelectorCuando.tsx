@@ -1,13 +1,15 @@
 "use client";
 
-import { combinarFechaHora, localAIso, sumarHoras, yaPaso, ZONA } from "@/lib/fechas";
+import { combinarFechaHora, localAIso, sumarHoras, yaPaso } from "@/lib/fechas";
 import { ChipNativo } from "@/components/ui/Chip";
 import { IconoCerrar } from "@/components/ui/Iconos";
 import styles from "./SelectorCuando.module.css";
 
 type Props = {
-  inicio: string; // "YYYY-MM-DDTHH:MM" en hora de la ciudad
+  inicio: string; // "YYYY-MM-DDTHH:MM" en la hora del sitio del evento
   fin: string;
+  /** Zona horaria del sitio del evento: con ella se sabe si la hora ya pasó y cuánto dura. */
+  zona: string;
   onCambio: (inicio: string, fin: string) => void;
   errorInicio?: string;
   errorFin?: string;
@@ -17,16 +19,16 @@ function partir(local: string): { fecha: string; hora: string } {
   const [fecha = "", hora = ""] = local.split("T");
   return { fecha, hora: hora.slice(0, 5) };
 }
-function horasEntre(inicio: string, fin: string): number {
-  const a = localAIso(inicio);
-  const b = localAIso(fin);
+function horasEntre(inicio: string, fin: string, zona: string): number {
+  const a = localAIso(inicio, zona);
+  const b = localAIso(fin, zona);
   if (!a || !b) return 0;
   return Math.round(((new Date(b).getTime() - new Date(a).getTime()) / 3600000) * 4) / 4;
 }
-/** "14 sep 2026" */
+/** "14 sep 2026": el día de calendario, igual en cualquier zona (se escribe su mediodía en UTC). */
 function etiquetaFecha(fecha: string): string {
-  const iso = localAIso(`${fecha}T12:00`);
-  return iso ? new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "") : "Fecha";
+  const iso = localAIso(`${fecha}T12:00`, "Etc/UTC");
+  return iso ? new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }).format(new Date(iso)).replace(/\./g, "") : "Fecha";
 }
 /** "9:00 p.m." */
 function etiquetaHora(hora: string): string {
@@ -39,15 +41,15 @@ function etiquetaHora(hora: string): string {
  * Cuándo, como en el calendario del teléfono (referencia del founder, 2026-09-14): dos renglones, Empieza y Termina,
  * cada uno con su fecha y su hora en píldoras que abren el selector nativo. Sin frase de confirmación: las píldoras ya lo dicen.
  */
-export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, errorFin }: Props) {
+export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInicio, errorFin }: Props) {
   const { fecha, hora } = partir(inicio);
   const finP = partir(fin);
-  const duracion = fin ? horasEntre(inicio, fin) : 0;
+  const duracion = fin ? horasEntre(inicio, fin, zona) : 0;
 
   function fijarInicio(nuevaFecha: string, nuevaHora: string) {
     const nuevoInicio = combinarFechaHora(nuevaFecha, nuevaHora);
     // Al mover el inicio, el fin se mueve con él (misma duración).
-    onCambio(nuevoInicio, nuevoInicio && duracion > 0 ? sumarHoras(nuevoInicio, duracion) : "");
+    onCambio(nuevoInicio, nuevoInicio && duracion > 0 ? sumarHoras(nuevoInicio, duracion, zona) : "");
   }
   function fijarFin(nuevaFecha: string, nuevaHora: string) {
     onCambio(inicio, nuevaHora ? combinarFechaHora(nuevaFecha || fecha, nuevaHora) : "");
@@ -81,7 +83,7 @@ export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, err
         </p>
       )}
 
-      {inicio && yaPaso(inicio) && (
+      {inicio && yaPaso(inicio, new Date(), zona) && (
         <p className={styles.error} role="alert">
           Esa hora ya pasó.
         </p>

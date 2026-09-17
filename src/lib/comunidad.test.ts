@@ -38,6 +38,9 @@ describe("correos", () => {
     const c = correoRecordatorio({ titulo: "Taller <niños>", cuando: "Hoy · 17:00", lugar: "Biblioteca", eventoId: "x" });
     expect(c.asunto).toBe("Hoy: Taller <niños>");
     expect(c.html).toContain("Taller &lt;niños&gt;");
+    const manana = correoRecordatorio({ titulo: "Taller", cuando: "Mañana · 08:00", lugar: "Biblioteca", eventoId: "x", dia: "Mañana" });
+    expect(manana.asunto).toBe("Mañana: Taller");
+    expect(manana.texto.startsWith("Mañana vas a Taller")).toBe(true);
   });
 });
 

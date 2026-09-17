@@ -50,5 +50,14 @@ export async function cargarFichas<S extends keyof FilaDe>(seccion: S, l: Lista)
     supabase.rpc("panel_fichas_conteos", { p_tipo: seccion }),
   ]);
   const filas = (f.data ?? []) as FilaDe[S][];
+  // `panel_eventos` no devuelve la zona de cada evento (migración 0028): se lee aparte, en tandas de 100 para no alargar la
+  // dirección de la consulta, y así la hora se escribe en la zona del evento. El administrador lee todos los eventos.
+  if (seccion === "eventos" && filas.length) {
+    const eventos = filas as EventoFila[];
+    const tandas = Array.from({ length: Math.ceil(eventos.length / 100) }, (_, i) => eventos.slice(i * 100, (i + 1) * 100).map((x) => x.id));
+    const leidas = await Promise.all(tandas.map((ids) => supabase.from("eventos").select("id, zona").in("id", ids).limit(ids.length)));
+    const zonas = new Map(leidas.flatMap((r) => (r.data ?? []) as { id: string; zona: string }[]).map((x) => [x.id, x.zona]));
+    for (const x of eventos) x.zona = zonas.get(x.id);
+  }
   return { filas, total: Number(filas[0]?.total ?? 0), conteos: (c.data as Record<string, number> | null) ?? null, error: !!f.error };
 }

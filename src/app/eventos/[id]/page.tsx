@@ -78,8 +78,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const e = await cargarEvento(id);
   // Un evento que ya pasó no se anuncia al compartir (decisión del founder, 2026-09-14).
-  if (!e || eventoPaso(e.inicio, e.fin)) return { title: "Evento · Somos Nosotros" };
-  const cuando = formatearLargo(e.inicio);
+  if (!e || eventoPaso(e.inicio, e.fin, new Date(), e.zona)) return { title: "Evento · Somos Nosotros" };
+  const cuando = formatearLargo(e.inicio, new Date(), null, e.zona);
   const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
   const imagen = e.imagen ?? e.lugar?.portada ?? undefined;
   return {
@@ -104,7 +104,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   if (!e) notFound();
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
   // Un evento que ya pasó se oculta como uno oculto: solo lo ven su autor y el administrador (decisión del founder, 2026-09-14).
-  const paso = eventoPaso(e.inicio, e.fin);
+  const paso = eventoPaso(e.inicio, e.fin, new Date(), e.zona);
   if (paso && !puedeEditar) notFound();
   // Venía de entrar con la intención de decir "Voy" / "Me interesa": se aplica sola.
   if (actual && (accion === "voy" || accion === "me_interesa")) {
@@ -119,12 +119,12 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
   const url = `${ORIGEN}/eventos/${e.id}`;
-  const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin), sitio, url).replace(`\n${url}`, "");
+  const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "");
   const puntoLlegar = e.lugar ? { lat: e.lugar.lat, lng: e.lugar.lng } : privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : e.sitio_lat != null && e.sitio_lng != null ? { lat: e.sitio_lat, lng: e.sitio_lng } : null;
   const comoLlegar = puntoLlegar && !(e.sitio_reservado && !privado) ? `https://www.google.com/maps/dir/?api=1&destination=${puntoLlegar.lat},${puntoLlegar.lng}` : null;
   const n = totalVan;
   const avisoBorrar = n > 0 ? `Se borra el evento y los ${n === 1 ? '1 "Voy"' : `${n} "Voy"`} que tiene.` : "Se borra el evento.";
-  const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde) : "el día del evento";
+  const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde, new Date(), null, e.zona) : "el día del evento";
 
   return (
     <main className={ficha.pagina}>
@@ -192,7 +192,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       <ul className={ficha.datos}>
         <li className={ficha.dato}>
           <IconoReloj width={20} height={20} />
-          <b>{formatearLargo(e.inicio, new Date(), e.fin)}</b>
+          <b>{formatearLargo(e.inicio, new Date(), e.fin, e.zona)}</b>
         </li>
         {e.lugar && (
           <li className={ficha.dato}>

@@ -43,7 +43,7 @@ export default function RenglonEvento({ evento: e, km, sinSitio = false, estado 
         )}
         <span>
           <IconoReloj width={15} height={15} />
-          <b>{horaCorta(e.inicio)}</b>
+          <b>{horaCorta(e.inicio, e.zona)}</b>
         </span>
         {!sinSitio && (
           <span className={styles.lugar}>

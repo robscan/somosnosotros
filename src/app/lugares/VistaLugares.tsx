@@ -219,7 +219,7 @@ export default function VistaLugares({
                 <span>
                   <IconoCalendario width={15} height={15} />
                   {elegido.proximo ? (
-                    <b>{textoProximo(elegido.proximo.inicio)}</b>
+                    <b>{textoProximo(elegido.proximo)}</b>
                   ) : (
                     "Sin eventos próximos"
                   )}

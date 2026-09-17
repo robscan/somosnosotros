@@ -23,7 +23,7 @@ export function primerNombre(nombre: string): string {
 
 const ORIGEN = "https://somosnosotros.org";
 
-type Plantilla = { titulo: string; cuando: string; lugar: string; eventoId: string; bajaUrl?: string };
+type Plantilla = { titulo: string; cuando: string; lugar: string; eventoId: string; bajaUrl?: string; /** Recordatorio: el día en la zona del evento. */ dia?: "Hoy" | "Mañana" };
 
 /** Pie de todo aviso: por qué llega y cómo dejar de recibirlo con un toque, sin entrar. */
 function pie(porque: string, bajaUrl: string | undefined): { texto: string; html: string } {
@@ -65,10 +65,11 @@ ${f.texto}`;
 
 export function correoRecordatorio(p: Plantilla): { asunto: string; texto: string; html: string } {
   const url = `${ORIGEN}/eventos/${p.eventoId}`;
-  const asunto = `Hoy: ${p.titulo}`;
+  const dia = p.dia ?? "Hoy";
+  const asunto = `${dia}: ${p.titulo}`;
   const f = pie(`Recibes esto porque dijiste "Voy" y pediste el recordatorio por correo.`, p.bajaUrl);
-  const texto = `Hoy vas a ${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento y quién más va: ${url}\n\n${f.texto}`;
-  const html = `<p>Hoy vas a <strong>${escapar(p.titulo)}</strong><br>${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento y quién más va</a></p>${f.html}`;
+  const texto = `${dia} vas a ${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento y quién más va: ${url}\n\n${f.texto}`;
+  const html = `<p>${dia} vas a <strong>${escapar(p.titulo)}</strong><br>${escapar(p.cuando)} · ${escapar(p.lugar)}</p><p><a href="${url}">Ver el evento y quién más va</a></p>${f.html}`;
   return { asunto, texto, html };
 }
 
