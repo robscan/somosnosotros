@@ -21,7 +21,7 @@ const BUSCAR = { lugares: "Buscar lugar", eventos: "Buscar evento", artistas: "B
 
 export async function generateMetadata({ params }: { params: Promise<{ seccion: string }> }) {
   const { seccion } = await params;
-  return { title: `${esSeccionFichas(seccion) ? TITULO[seccion] : "Administración"} · Administración · Somos Nosotros` };
+  return { title: `${esSeccionFichas(seccion) ? TITULO[seccion] : "Administración"} · Administración · Somos Nosotros`, robots: { index: false, follow: false } };
 }
 
 /** `destacable`: lo que puede salir en la tira, con la misma regla que la ficha (`puedeDestacarse`). */

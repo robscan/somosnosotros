@@ -2,7 +2,7 @@ import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
 import { ciudadPorSlug, CIUDAD_INICIAL } from "@/lib/ciudad";
 import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
-import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { usuarioActual } from "@/lib/supabase/servidor";
 import FormularioArtista from "../FormularioArtista";
 import { crearArtista } from "../acciones";
 
@@ -17,7 +17,7 @@ export default async function NuevoArtista({ searchParams }: { searchParams: Pro
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(`/artistas/nuevo${q ? `?${q}` : ""}`)}`);
   // Un artista no tiene punto del que deducir ciudad: de entrada, la que la persona tenía elegida en Artistas; se cambia en el renglón Ciudad.
-  const ciudades = await cargarCiudadesDeArtistas(await clienteServidor());
+  const ciudades = await cargarCiudadesDeArtistas();
   const ciudad = ciudadPorSlug(slug, ciudades);
   return (
     <main className="pagina">
