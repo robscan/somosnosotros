@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { IconoCerrar, IconoMas } from "@/components/ui/Iconos";
 import { artistaIgual, etiquetaArtista, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
+import { SIN_FOTO } from "@/lib/imagen";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import Limpiar from "@/components/ui/Limpiar";
@@ -118,12 +119,8 @@ export default function SelectorQuien({ valor, onCambio, mios }: Props) {
           {sugerencias.map((a) => (
             <li key={a.id}>
               <button type="button" role="option" aria-selected={false} className={`${sug.renglon} ${sug.conMini}`} onClick={() => elegir(a)}>
-                {a.foto ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                  <img src={a.foto} alt="" className={sug.mini} />
-                ) : (
-                  <span className={`${sug.mini} ${styles.miniVacia}`} aria-hidden="true" />
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+                <img src={a.foto ?? SIN_FOTO} alt="" className={sug.mini} />
                 <b>{a.nombre}</b>
                 <small>
                   {etiquetaArtista(a)}

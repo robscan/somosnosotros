@@ -186,7 +186,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         </p>
       )}
 
-      {e.imagen && <Cartel src={e.imagen} alt={`Cartel de ${e.titulo}`} />}
+      <Cartel src={e.imagen} alt={`Cartel de ${e.titulo}`} />
       <h1 className={ficha.titulo}>{e.titulo}</h1>
 
       <ul className={ficha.datos}>

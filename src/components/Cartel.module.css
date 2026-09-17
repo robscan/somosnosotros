@@ -25,6 +25,11 @@
   background: var(--fondo-miniatura);
   cursor: zoom-in;
 }
+/* Sin portada: la imagen del símbolo SN llena la caja y no se abre */
+.sinFoto {
+  object-fit: cover;
+  cursor: default;
+}
 .imagen {
   display: block;
   width: 100%;

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
 import { textoDistancia } from "@/lib/agenda";
+import { SIN_FOTO } from "@/lib/imagen";
 import { calleCorta, etiquetaTipo, filtrarLugares, ordenarLugares, textoProximo, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
 import { Chips } from "./ui/Chip";
 import Deslizable from "./ui/Deslizable";
@@ -75,14 +76,8 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       <ul>
         {lista.map((l) => (
           <Deslizable key={l.id} href={`/lugares/${l.id}`} className={renglon.renglon} acciones={seguir.acciones(l.id, l.nombre)}>
-            {l.portada ? (
-              // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-              <img src={l.portada} alt="" className={renglon.foto} />
-            ) : (
-              <span className={`${renglon.foto} ${renglon.fotoVacia}`} aria-hidden="true">
-                <IconoPin width={26} height={26} />
-              </span>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+            <img src={l.portada ?? SIN_FOTO} alt="" className={renglon.foto} />
             <span className={renglon.titulo}>{l.nombre}</span>
             <span className={`${renglon.meta} ${renglon.metaColumna}`}>
               {seguir.sigo(l.id) && (
