@@ -1,9 +1,9 @@
 # 074 · Deslizar en las listas: Me interesa en la agenda, Seguir en Lugares y Artistas
 
-**Fecha:** 2026-09-16 (noche) · **Rama:** `deslizar-acciones` (commit local, sin push) · **Pieza:** OL-047. La 073 queda libre por el choque del número 072 entre `iconos-acciones` y `panel-admin`, que resuelve el gestor.
+**Fecha:** 2026-09-16 (noche) · **Rama:** `deslizar-acciones` (commit local, sin push) · **Pieza:** OL-047 (bitácora y OL reservados por el gestor de cambios).
 
 ## Qué pidió el founder
-Tras el prototipo ([071](071-prototipo-deslizar.md)) y su v1.1 ([072 de `iconos-acciones`](072-iconos-en-las-acciones.md)):
+Tras el prototipo ([071](071-prototipo-deslizar.md)) y su v1.1 ([073](073-iconos-en-las-acciones.md)):
 
 > "Perfecto, acepto tus propuestas, sigue observando reglas de desarrollo y respeta chats activos, implementa por favor."
 
