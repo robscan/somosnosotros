@@ -92,7 +92,7 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
         </ul>
       )}
       {total > renglones.length && (
-        <Boton href={hrefLista(seccion, { ...l, n: l.n + PAGINA_PANEL })} variante="secundario" className={styles.verMas} scroll={false}>
+        <Boton href={hrefLista(seccion, { ...l, n: l.n + PAGINA_PANEL })} variante="secundario" className={styles.verMas} scroll={false} replace>
           Ver más ({total - renglones.length} más)
         </Boton>
       )}
