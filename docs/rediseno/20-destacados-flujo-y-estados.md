@@ -1,6 +1,14 @@
-# Destacados · flujo, estados y decisiones (v1: para la firma del founder)
+# Destacados · flujo, estados y decisiones (v1: firmadas por el founder el 2026-09-16; construidas en la rama destacados, bitácora 082)
 
 **Fecha:** 2026-09-16 (noche) · **Carta:** [PRINCIPIOS_UX.md](../PRINCIPIOS_UX.md) · **Canon:** memoria de pantalla (bitácora [043](../bitacora/2026/09/043-memoria-de-pantalla-y-buscador.md)), menú de los tres puntos ([19](19-administracion-flujo-y-estados.md), decisión 10), [línea gráfica](../diseno/LINEA_GRAFICA.md) · **Prototipo navegable:** [prototipos/destacados.html](prototipos/destacados.html) (publicado para el iPhone en https://claude.ai/artifact/DojyjHo44BgwM3xj2e4zwc) · **Quién firma:** el founder.
+
+**Firma del founder (2026-09-16, noche):** «1A, 2A, 3A, 4A»: D1, D2 y D3 como se recomiendan abajo y el naranja cempasúchil.
+
+**Construcción (bitácora [082](../bitacora/2026/09/082-destacados-construido.md)):** todo lo de abajo, con estas desviaciones:
+- no hay «solo con foto» (regla 3, decisión 5 y estado A3): lo que no tiene portada lleva la imagen con el símbolo SN (OL-054);
+- en la ficha, lo hecho queda en su renglón del menú con Deshacer, como «Reportar», en vez de un aviso (A4);
+- en el panel, como Ocultar: la hoja se cierra y la etiqueta es la evidencia;
+- la migración no toca las funciones de listas del panel: el filtro sale de `panel_destacados`.
 
 **En corto:** una tira de tarjetas con foto arriba de la Agenda, de la lista de Lugares y de Artistas, con lo que elige el admin y lo que tiene más asistentes. Se desliza con el dedo, se va cuando la persona ya busca algo y no existe si no hay destacados. En el mapa, los destacados van en naranja cempasúchil. El admin destaca y quita desde los tres puntos. No se cuentan visitas.
 

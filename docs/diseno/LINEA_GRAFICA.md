@@ -52,6 +52,12 @@ La app se diseña para el teléfono y se ve en tablet y escritorio con **la mism
 
 Plano (el estilo de la cuenta lleva `show3dObjects: false`). Cada lugar es un **punto** de 10 px relleno del color de acción con una línea blanca de 1.5 px; el elegido crece a 16 px. (El founder descartó el punto hueco para "sin eventos": el blanco se deja para la línea.) El **nombre va debajo** del punto, en el color de acción, negrita (DIN Pro Bold) a 14 px con halo blanco de 2 px, para distinguirse de las colonias y calles del estilo (gris, mayúsculas): si dos chocan, gana el lugar con eventos y el otro aparece al acercar. Son capas de Mapbox (no elementos encima), así el mapa resuelve las colisiones y el zoom. Decisión del founder, 2026-09-14 (sustituye a los pins y a la perspectiva de ese mismo día).
 
+Un **destacado** (docs/rediseno/20, founder, 2026-09-16) va en **naranja cempasúchil** `--destacado` `#d35400`: 2 px más grande, con línea blanca de 2 px y encima de los demás. Su nombre va en `--destacado-texto` `#a94400` y gana el sitio a los demás. El color nunca va solo: tamaño y orden dicen lo mismo. Contrasta 3.8:1 con el fondo del mapa y se distingue del azul petróleo también con daltonismo.
+
+## La tira de destacados
+
+Arriba de la Agenda, de Lugares › Lista y de Artistas: el título «Destacados» y un carril que se desliza con el dedo, sin avance automático, con la siguiente tarjeta asomando. Tarjetas de 220 px con la foto de 132 px de alto, cuántos van encima de la foto, el título en dos renglones y el detalle en uno. En Artistas son redondas de 104 px, como su avatar. Con una sola, la tarjeta va a lo ancho con la foto a la izquierda. En el panel, la etiqueta «Destacado» va en `--destacado-suave` con letra `--destacado-texto`.
+
 ## El regreso
 
 En pantallas interiores, el regreso es una **píldora secundaria** (borde `--borde`, fondo blanco, 40 px de alto) con un chevron corto `‹` y el texto del destino ("Volver", "Artistas"), alineada a la izquierda de la barra. Nunca una flecha larga suelta. Componente `ui/Atras`, también en las páginas de error. Ajuste del founder, 2026-09-14.
