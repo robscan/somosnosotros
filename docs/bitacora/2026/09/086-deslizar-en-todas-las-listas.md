@@ -229,8 +229,8 @@ vuelve a verla y un guardado que falla no pregunta. Quedaban tres cosas:
    la hoja no llega a pintarse. Sin sesión esa pantalla ya no hace gestos, así que la consecuencia es mínima.
 
 ### Evidencia de la cuarta revisión
-- **lint** (solo el aviso viejo del logotipo), **tipos**, **362 pruebas en 39 archivos** y **build** en verde, con
-  `main` (ecc913a) dentro.
+- **lint** (solo el aviso viejo del logotipo), **tipos**, **371 pruebas en 41 archivos** y **build** en verde, con
+  `main` (a59d676) dentro.
 - **Lugares, con Mapa y Lista, a 390×844:** Seguir en un lugar → hoja (1.ª); Mapa → Lista; Seguir en otro → hoja (2.ª);
   Mapa → Lista; dejar de seguir y volver a seguir el tercero → **sin hoja**, solo el aviso "Sigues … · Deshacer". Antes,
   cada vuelta a la Lista empezaba de cero.
