@@ -92,6 +92,7 @@
 .interesa {
   display: inline-flex;
   align-items: center;
+  gap: 6px; /* la estrella y el texto */
   min-height: var(--toque);
   padding: 0 6px;
   border: none;
