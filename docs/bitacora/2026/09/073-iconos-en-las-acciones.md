@@ -1,6 +1,6 @@
-# 072 · Iconos en Voy, Me interesa y Seguir; la agenda sin Calendario al deslizar
+# 073 · Iconos en Voy, Me interesa y Seguir; la agenda sin Calendario al deslizar
 
-**Fecha:** 2026-09-16 (noche) · **Rama:** `iconos-acciones` (commit local, sin push) · **Pieza:** OL-046.
+**Fecha:** 2026-09-16 (noche) · **Rama:** `iconos-acciones` (commit local, sin push) · **Pieza:** OL-046. Numerada 072 al principio; pasó a 073 porque `panel-admin` tomó la 072 casi a la vez (decisión del gestor de cambios).
 
 ## Qué pidió el founder
 Tras ver el prototipo de la bitácora [071](071-prototipo-deslizar.md):
