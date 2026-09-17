@@ -37,8 +37,9 @@
 
   /* Una sola columna en cualquier pantalla (decisión de maquetación, 2026-09-14). En el teléfono el gutter es 20px;
      en tablet y escritorio crece solo lo que sobra a cada lado de la columna, así el contenido queda centrado y
-     las barras (superior, inferior, hojas) siguen a lo ancho. Sin media queries ni envoltorios: todo gutter
-     horizontal de página se escribe var(--gutter). Los botones y sangrías siguen con --espacio-N. */
+     las barras (superior, inferior) siguen a lo ancho. Sin media queries ni envoltorios: todo gutter
+     horizontal de página se escribe var(--gutter). Los botones y sangrías siguen con --espacio-N.
+     Solo en cajas que van a todo lo ancho de la ventana: una caja que ya mide la columna (ui/Hoja) usa --espacio-5. */
   --columna: 600px;
   --al-centro: calc((100vw - var(--columna)) / 2); /* lo que sobra a cada lado; negativo en el teléfono. Sobre el ancho de la
      ventana, no del contenedor: así vale lo mismo dentro de cualquier caja y un margen negativo llega al borde de la pantalla */
