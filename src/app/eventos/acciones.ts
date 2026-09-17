@@ -183,7 +183,8 @@ export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCart
   const { supabaseUrl } = configPublica();
   if (!supabaseUrl || !urlImagen.startsWith(`${supabaseUrl}/storage/v1/object/public/fotos/`)) return { ok: false, mensaje: "La imagen no es de aquí." };
   const lectura = await leerCartel(urlImagen);
-  if (!lectura) return { ok: false, mensaje: "No pude leer el cartel. Llena los datos a mano." };
+  // El titular ("No pude leer el cartel") lo pone la tarjeta; aquí solo va lo que toca hacer.
+  if (!lectura) return { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." };
   const valores = cartelAFormulario(lectura);
   let lugarId: string | null = null;
   if (valores.lugar) {

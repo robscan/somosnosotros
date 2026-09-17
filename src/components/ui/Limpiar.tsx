@@ -9,12 +9,12 @@ import styles from "./Limpiar.module.css";
  * persona hubiera borrado (dispara el evento `input`, así el `onChange` de React y todo lo que cuelga de él corren),
  * y deja el foco en el campo para seguir escribiendo.
  */
-export default function Limpiar({ visible, desplazada = false, etiqueta = "Borrar lo escrito" }: { visible: boolean; desplazada?: boolean; etiqueta?: string }) {
+export default function Limpiar({ visible, etiqueta = "Borrar lo escrito" }: { visible: boolean; etiqueta?: string }) {
   if (!visible) return null;
   return (
     <button
       type="button"
-      className={`${styles.limpiar} ${desplazada ? styles.desplazada : ""}`}
+      className={styles.limpiar}
       aria-label={etiqueta}
       onMouseDown={(e) => e.preventDefault()} /* el campo no pierde el foco ni se cierra el teclado */
       onClick={(e) => {

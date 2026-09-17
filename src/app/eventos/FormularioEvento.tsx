@@ -9,7 +9,7 @@ import limpiar from "@/components/ui/Limpiar.module.css";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import { useAbrirConError } from "@/components/ui/abrirConError";
 import { Chip } from "@/components/ui/Chip";
-import { IconoBoleto, IconoBuscar, IconoCamara, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoBuscar, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
@@ -20,12 +20,14 @@ import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
-import { subirFoto } from "@/lib/subirFoto";
+import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { leerCartelAccion, zonaDelPunto, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
+import TarjetaCartel from "./TarjetaCartel";
+import { falloAlLeer, falloAlSubir, falloDeCorte, leido, type EstadoCartel } from "./estadoCartel";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./FormularioEvento.module.css";
@@ -91,9 +93,10 @@ type Props = {
 };
 
 /**
- * Alta de evento con el canon (docs/rediseno/15, decisiones 1 a 3): un campo arriba, el nombre, con la cámara dentro
- * (leer el cartel llena todo); debajo, renglones resueltos con el mismo dibujo: Cuándo (hoy · 19:00), Dónde (una sola
- * salida: la lupa abre la hoja "Dónde es"), Quién, Cuánto (gratis) y Más. El botón dice qué falta. Sin frases de ayuda.
+ * Alta de evento con el canon (docs/rediseno/15, decisiones 1 a 3; docs/rediseno/22): arriba la tarjeta del cartel,
+ * que al subirlo llena el formulario y es lo único que explica la pantalla; luego el nombre, y debajo los renglones
+ * resueltos con el mismo dibujo: Cuándo (hoy · 19:00), Dónde (una sola salida: la lupa abre la hoja "Dónde es"),
+ * Quién, Cuánto (gratis) y Más. El botón dice qué falta. Sin frases de ayuda.
  */
 export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo" }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
@@ -166,13 +169,12 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [imagen, setImagen] = useState<string | null>(evento?.imagen ?? null);
   const [subiendo, setSubiendo] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
-  const [avisoCartel, setAvisoCartel] = useState<string | null>(null);
+  // Lo que cuenta la tarjeta del cartel: en qué va, qué decir y la foto que se subió. Sin tarjeta, está en reposo.
+  const [cartel, setCartel] = useState<EstadoCartel>(null);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
   const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (esAlta && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
   const [abierta, setAbierta] = useState<Abierta>(null);
   const [masAbierto, setMasAbierto] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
-  // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
-  useAbrirConError(setMasAbierto, errores.descripcion, errores.enlace, errores.imagen, errorImagen);
   const [hoja, setHoja] = useState(false);
   // "Estoy aquí" en el pin de otro sitio: la persona en el mapa (punto azul) y el pin donde está.
   const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
@@ -237,6 +239,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
 
   // Atrás o la ✕ preguntan solo si el formulario cambió desde que se abrió (guardia estándar de las altas); al confirmar, el borrador se olvida.
   const formRef = useRef<HTMLFormElement>(null);
+  // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
+  useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlace, errores.imagen, errorImagen);
   const hojaSalir = useSalirSinPublicar(formRef, modo !== "editar", olvidarBorrador);
 
   const lugar = lugares.find((l) => l.id === lugarId);
@@ -273,35 +277,52 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     });
   }
 
-  async function subir(archivo: File): Promise<string | null> {
+  /**
+   * Sube la foto y la deja como imagen del evento. El fallo lo coloca quien llamó, donde la persona esté mirando.
+   * No lanza nunca y siempre apaga "Subiendo…": si se cae la señal a mitad, el botón de publicar no puede quedarse
+   * apagado hasta recargar (revisión de la bitácora 095).
+   */
+  async function subir(archivo: File): Promise<{ url: string } | { error: string; motivo: FalloAlSubir }> {
     setSubiendo(true);
     setErrorImagen(null);
-    const r = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen");
-    setSubiendo(false);
-    if ("error" in r) {
-      setErrorImagen(r.error);
-      return null;
+    try {
+      const r = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen");
+      if (!("error" in r)) setImagen(r.url);
+      return r;
+    } catch {
+      return { error: "No se pudo subir. Revisa tu conexión y prueba otra vez.", motivo: "subida" };
+    } finally {
+      setSubiendo(false);
     }
-    setImagen(r.url);
-    return r.url;
   }
   async function subirImagen(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
-    if (archivo) await subir(archivo);
+    if (!archivo) return;
+    const r = await subir(archivo);
+    setErrorImagen("error" in r ? r.error : null);
   }
 
-  /** Cartel → se sube, se lee y los renglones se llenan. La persona revisa y publica. */
+  /**
+   * Cartel → se sube, se lee y los renglones se llenan. La persona revisa y publica.
+   * Todo va dentro de un try: si la promesa se rompe (se cae la señal, el servidor tarda de más, la función se
+   * agota), la tarjeta no puede quedarse en "Leyendo el cartel…" para siempre (revisión de la bitácora 095).
+   */
   async function leerCartel(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
-    const url = await subir(archivo);
-    if (!url) return;
+    setCartel({ estado: "leyendo" });
     setLeyendo(true);
-    setAvisoCartel(null);
     try {
+      const subida = await subir(archivo);
+      if ("error" in subida) {
+        setCartel(falloAlSubir(imagen, subida.error, subida.motivo));
+        return;
+      }
+      const url = subida.url;
+      setCartel({ estado: "leyendo", foto: url });
       const r = await leerCartelAccion(url);
       if (!r.ok) {
-        setAvisoCartel(r.mensaje);
+        setCartel(falloAlLeer(url, r.mensaje));
         return;
       }
       const v = r.valores;
@@ -320,8 +341,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         setModoSitio("otro");
         setOtro((o) => ({ ...o, reservado: false, sitioTexto: [v.lugar, v.direccion].filter(Boolean).join(" · ").slice(0, LIMITES_EVENTO.sitio) }));
       }
-      const faltan = [!v.titulo && "el nombre", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "dónde"].filter(Boolean);
-      setAvisoCartel(faltan.length ? `Leí el cartel. Revisa ${faltan.join(", ")} y publica.` : "Leí el cartel. Revisa que todo esté bien y publica.");
+      const faltan = [!v.titulo && "el nombre", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "dónde"].filter(Boolean) as string[];
+      setCartel(leido(url, faltan));
+    } catch {
+      setCartel((actual) => falloDeCorte(actual, imagen));
     } finally {
       setLeyendo(false);
     }
@@ -339,27 +362,19 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         }}
         noValidate
       >
-        {/* 1. El nombre, con la cámara dentro: leer el cartel llena todo (decisión 1). */}
-        {/* Caja, no <label>: dentro va la cámara con su propio <label>, y un <label> solo puede mandar el toque a un campo. */}
-        <div className={`${canon.campo} ${canon.sinIcono} ${ofrecerCartel ? canon.conAccion : ""}`}>
+        {/* 1. El cartel, antes del formulario: subirlo lo llena todo. Es lo único que explica la pantalla
+            (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
+        {ofrecerCartel && <TarjetaCartel cartel={cartel} ocupado={subiendo || leyendo} onElegir={leerCartel} />}
+
+        {/* 2. El nombre, solo con su ✕. */}
+        <div className={`${canon.campo} ${canon.sinIcono}`}>
           <input name="titulo" type="text" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={LIMITES_EVENTO.titulo} placeholder="Nombre del evento" aria-label="Nombre del evento" aria-invalid={!!errores.titulo} autoComplete="off" autoFocus={esAlta} required />
-          <Limpiar visible={!!titulo} desplazada={ofrecerCartel} />
-          {ofrecerCartel && (
-            <label className={canon.accionCampo} title="Leer el cartel" aria-disabled={subiendo || leyendo}>
-              <IconoCamara width={22} height={22} />
-              <input type="file" accept="image/*" onChange={leerCartel} disabled={subiendo || leyendo} aria-label="Leer el cartel" />
-            </label>
-          )}
+          <Limpiar visible={!!titulo} />
         </div>
-        {(leyendo || (subiendo && !masAbierto)) && <p className={canon.estado}>{leyendo ? "Leyendo el cartel…" : "Subiendo…"}</p>}
+        {subiendo && !cartel && !masAbierto && <p className={canon.estado}>Subiendo…</p>}
         {errores.titulo && (
           <p className={canon.error} role="alert">
             {errores.titulo}
-          </p>
-        )}
-        {avisoCartel && (
-          <p className={styles.aviso} role="status">
-            {avisoCartel}
           </p>
         )}
 

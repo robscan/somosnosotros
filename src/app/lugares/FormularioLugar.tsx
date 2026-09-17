@@ -88,8 +88,6 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const [portada, setPortada] = useState<string | null>(lugar?.portada ?? null);
   const [subiendo, setSubiendo] = useState(false);
   const [errorPortada, setErrorPortada] = useState<string | null>(null);
-  // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
-  useAbrirConError(setMasAbierto, errores.descripcion, errores.enlaces, errores.portada, errorPortada);
   const [confirmado, setConfirmado] = useState(false);
   const [privado, setPrivado] = useState(!!lugar?.privado);
   const sesionRef = useRef<string>("");
@@ -97,6 +95,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const nombreElegido = useRef("");
   // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
   const formRef = useRef<HTMLFormElement>(null);
+  // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
+  useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces, errores.portada, errorPortada);
   const hojaSalir = useSalirSinPublicar(formRef, esAlta);
 
   // Sesión de búsqueda de Mapbox (una por formulario).
