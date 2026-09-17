@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alAvisar, alCerrar, alLimpiar, cerrojoDePregunta, type Aviso } from "./avisoDePantalla";
+import { alAvisar, alCerrar, alLimpiar, cerrojoDePregunta, VECES_QUE_PREGUNTA, type Aviso } from "./avisoDePantalla";
 
 const nada = () => {};
 const aviso = (de: string, texto: string, fallo = false): Omit<Aviso, "vez"> => ({ texto, boton: nada, de, fallo });
@@ -27,16 +27,36 @@ describe("el aviso de abajo de una pantalla", () => {
 });
 
 describe("el cerrojo de la pregunta de avisos", () => {
-  it("evita dos hojas a la vez, pero cerrarla sin contestar la deja volver", () => {
+  it("nunca dos hojas a la vez", () => {
     const c = cerrojoDePregunta();
     expect(c.tomar()).toBe(true);
     // La barra intenta abrir la suya con la de la lista abierta: no.
     expect(c.tomar()).toBe(false);
-    // Se cerró sin contestar (la ✕, tocar fuera o Escape): el siguiente Voy vuelve a preguntar, como en main.
+  });
+
+  it("la segunda vez sí, la tercera ya no", () => {
+    const c = cerrojoDePregunta();
+    // Primer Voy: sale. Se cierra sin contestar (la ✕, tocar fuera, Escape) y el gesto siguiente vuelve a preguntar.
+    expect(c.tomar()).toBe(true);
+    c.soltar();
+    expect(c.tomar()).toBe(true);
+    // Y ya no más en esta pantalla: no se insiste gesto tras gesto ni se tapa el Deshacer.
+    c.soltar();
+    expect(c.tomar()).toBe(false);
+    c.soltar();
+    expect(c.tomar()).toBe(false);
+    expect(VECES_QUE_PREGUNTA).toBe(2);
+  });
+
+  it("soltarla de más no regala preguntas", () => {
+    const c = cerrojoDePregunta();
+    // Se suelta por cualquier camino (cerrada, contestada, "Ahora no" que cierra sola, o la pantalla que se va).
+    c.soltar();
     c.soltar();
     expect(c.tomar()).toBe(true);
     c.soltar();
-    c.soltar();
     expect(c.tomar()).toBe(true);
+    c.soltar();
+    expect(c.tomar()).toBe(false);
   });
 });

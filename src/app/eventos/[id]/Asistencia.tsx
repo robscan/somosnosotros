@@ -50,7 +50,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
   const propio = useCanalDeListas();
   const dePantalla = useCanalDePantalla();
   const canal = dePantalla ?? propio;
-  const { avisar, limpiar, tomarPregunta, soltarPregunta } = canal;
+  const { avisar, limpiar, tomarPregunta } = canal;
   // El dueño de sus avisos en la pantalla: al tocar quita el suyo, nunca el Reintentar de un renglón.
   const de = useId();
   const ruta = `/eventos/${eventoId}`;
@@ -79,11 +79,6 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
       // La pregunta solo tras guardar, una por pantalla, y no si esta cuenta ya contestó en esta visita.
       if (nuevo === "voy" && hayQuePreguntar(cuenta, avisosPreguntado) && tomarPregunta()) setHoja(true);
     });
-  }
-  /** Se cerró la hoja sin que la respuesta quedara guardada (la ✕, tocar fuera, Escape): la pregunta vuelve a estar libre. */
-  function cerrarHoja() {
-    setHoja(false);
-    soltarPregunta();
   }
   const entrar = (accion: string) => `/entrar?siguiente=${encodeURIComponent(`${ruta}?accion=${accion}`)}`;
 
@@ -151,7 +146,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
       {!dePantalla && <AvisoAbajo canal={propio} />}
       {hoja && <HojaAbierta canal={canal} />}
       {hoja && (
-        <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
+        <Hoja etiqueta="Avisos" onCerrar={() => setHoja(false)}>
           <ConsentimientoAvisos contexto="voy" titulo={titulo} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={() => setHoja(false)} calendarioUrl={`${ruta}/calendario`} />
         </Hoja>
       )}

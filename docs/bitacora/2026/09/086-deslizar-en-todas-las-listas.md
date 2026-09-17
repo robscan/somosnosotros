@@ -163,6 +163,52 @@ desapareciera). Quedaban tres cosas, las tres reproducidas con prueba propia:
   código anterior a la pieza y 2 son el modelo aleatorio, cuya regla "ninguna pestaña que ya se vio desaparece" ya no
   vale para una pestaña que nació de un gesto que nunca se guardó.
 
+## Tercera revisión adversarial (PR 2, commit 338a4fb)
+Gestión de cambios volvió a montar los componentes con React 19 y a medir en Chrome: nunca dos hojas a la vez, el
+"Reintentar" de un renglón sobrevive a un Seguir de la barra, no hay avisos huérfanos, el `useId` del dueño no rompe la
+hidratación y 480 corridas del modelo pasan con la regla nueva. Cuatro cosas más, las cuatro reproducidas:
+
+1. **La pregunta volvía en cada gesto (regresión de la ronda anterior).** Al soltar el cerrojo en cada cierre, la hoja
+   salía 4 de 4 veces al decir Voy en cuatro eventos y 3 de 3 al seguir tres lugares, y encima tapaba el Deshacer.
+   **Arreglo:** el cerrojo lleva la cuenta (`VECES_QUE_PREGUNTA = 2`): **la primera sí, la segunda —si se cerró sin
+   contestar— también, y ya no más en esa pantalla.**
+2. **"Ahora no" dejaba la pregunta trabada.** Cuando el teléfono no puede con los avisos (bloqueados, navegador sin
+   soporte o un alta que falla), la hoja se cierra sola a los 1,6 s por `onListo`, que no soltaba el cerrojo: la
+   pregunta no volvía nunca. **Arreglo:** soltar el cerrojo **en todos los cierres**, sea contestada, cerrada a mano o
+   cerrada sola. Lo hace `HojaAbierta` al desmontarse, así que no depende de que cada pantalla se acuerde; con la regla
+   de arriba, soltarlo siempre no hace que insista.
+3. **Un fallo en cualquier lista borraba la memoria de las otras.** `ActividadPersona` le pasaba a `recordar` la suma de
+   los fallos de las tres listas, pero "Van a lo mismo" y "Me interesa" solo las llena la de eventos: las otras dos no
+   podían sumar a esa memoria y sí tirarla. **Arreglo:** solo los fallos de la lista que alimenta esas pestañas, y al
+   devolver lo suyo no se baja hasta lo guardado, sino hasta **lo guardado o lo que se ve ahora, lo que sea más alto**;
+   así un fallo nunca se lleva por delante una pestaña que sigue con renglones.
+4. **La hoja que dejaba de pintarse sin cerrarse.** Si `avisos` pasaba a null, la hoja desaparecía pero el contador de
+   hojas abiertas no bajaba: los avisos de toda la pantalla se quedaban mudos y el cerrojo, trabado. **Arreglo:** la
+   misma condición para la hoja y para `HojaAbierta`, la hoja se cierra de verdad al quedarse sin datos para preguntar,
+   y el cerrojo se suelta también si la pantalla se va con ella abierta.
+
+**Lo que cuesta el arreglo de la pestaña fantasma, y se acepta:** si un guardado falla, la pestaña que había nacido con
+ese toque desaparece aunque sea la que se está mirando, y el panel salta a otra. Es el precio de no dejar una pestaña
+vacía y mentirosa, y es lo que hace `main` hoy. Una pestaña **con renglones dentro** nunca desaparece.
+
+### Evidencia de la tercera revisión
+- **lint** (solo el aviso viejo del logotipo), **tipos**, **362 pruebas en 39 archivos** y **build** en verde, con
+  `main` (ecc913a) dentro. Nuevas: el cerrojo que pregunta dos veces y no tres, y que soltarlo de más no regala
+  preguntas; y en `lib/actividad`, que un fallo no se lleva una pestaña que sigue llena.
+- **Cuántas veces sale la hoja** (banco propio con React de verdad, contando la hoja gesto a gesto):
+
+  | | cuatro Voy | tres Seguir | tras "Ahora no" |
+  | --- | --- | --- | --- |
+  | antes de la ronda 3 (ebd4d1e) | 1 de 4 | 1 de 3 | no vuelve |
+  | ronda 3 (338a4fb) | 4 de 4 | 3 de 3 | no vuelve |
+  | ahora | **2 de 4** | **2 de 3** | **vuelve una vez** |
+
+- **Navegador a 390×844** (agenda, sesión inventada, cuatro gestos en la misma pantalla): la hoja sale en el primer Voy
+  y en el segundo; en el tercero y el cuarto ya no, y en su lugar se ve el aviso "Vas a «…» · Deshacer", que antes
+  quedaba tapado.
+- La pestaña fantasma sigue arreglada con la memoria nueva: un Voy que no se guarda no deja pestaña (comprobado con las
+  pruebas de gestión de cambios, que sujetan lo viejo y siguen fallando por eso).
+
 ## Queda
 - **Firma del founder en el iPhone:** las pestañas de Mi perfil y de otra persona, quitar al instante con Deshacer, y los próximos eventos de las fichas.
 - La pestaña en la que se estaba no se recuerda al volver de una ficha; ya pasaba antes y no se añadió.

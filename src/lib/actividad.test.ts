@@ -102,6 +102,25 @@ describe("pestañas de la ficha de otra persona", () => {
     expect(paso({ e1: "voy" }, { e1: "voy" }, 2)[2]).toBe("Van a lo mismo 1: e1");
   });
 
+  it("un fallo no se lleva por delante una pestaña que sigue llena", () => {
+    const cero = { juntos: 0, interesa: 0 };
+    const entrada = (estados: Record<string, Asistencia>, vistas: { juntos: number; interesa: number }) => ({ mia: false, eventos, lugares, artistas, ...mirada(estados, []), vistas });
+    let memoria: Memoria = { guardadas: cero, todas: cero, fallos: 0 };
+    const paso = (ahora: Record<string, Asistencia>, guardado: Record<string, Asistencia>, fallos: number) => {
+      const pintadas = pestanasDePersona(entrada(ahora, memoria.todas));
+      memoria = recordar(memoria, pestanasDePersona(entrada(guardado, memoria.todas)), pintadas, fallos);
+      return resumen(pintadas);
+    };
+    // Dos Voy en vuelo; falla uno solo: el otro sigue en la pestaña, así que la pestaña no puede irse bajo el dedo.
+    expect(paso({ e1: "voy", e3: "voy" }, {}, 0)[2]).toBe("Van a lo mismo 2: e1,e3");
+    expect(paso({ e3: "voy" }, {}, 1)[2]).toBe("Van a lo mismo 1: e3");
+    expect(memoria.todas.juntos).toBe(1);
+    // Y cuando ya no queda ninguno, la pestaña se va: no se queda vacía y mentirosa.
+    paso({}, {}, 2);
+    expect(memoria.todas).toEqual(cero);
+    expect(paso({}, {}, 2)).toHaveLength(2);
+  });
+
   it("sin sesión (nada decidido) no hay Van a lo mismo", () => {
     expect(pestanasDePersona({ mia: false, eventos, lugares, artistas, ...mirada({}, []), vistas: { juntos: 0, interesa: 0 } })).toHaveLength(2);
   });

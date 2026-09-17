@@ -7,9 +7,10 @@
  * - **Cada aviso tiene dueño.** Un toque nuevo limpia lo que él mismo puso, nunca lo de otro: si la barra borrara el
  *   "No se pudo guardar · Reintentar" de un renglón, ese renglón se quedaría sin guardar y sin que nadie lo viera
  *   (revisión de gestión de cambios, 2026-09-17).
- * - **La pregunta de avisos es un cerrojo, no un cupo.** Evita dos hojas a la vez en la pantalla; al cerrar la hoja sin
- *   que la respuesta quedara guardada, vuelve a estar libre, porque tocar fuera sin querer no puede dejar a la persona
- *   sin la única puerta a los recordatorios en toda la visita. A quien contesta lo cubre la marca por cuenta
+ * - **La pregunta de avisos se hace como mucho dos veces por pantalla.** El cerrojo evita dos hojas a la vez; al
+ *   cerrarse la hoja (contestada o no) queda libre, porque tocar fuera sin querer no puede dejar a la persona sin la
+ *   única puerta a los recordatorios en toda la visita. Pero la devuelve **una sola vez**: la segunda sí, la tercera ya
+ *   no, para no insistir gesto tras gesto ni tapar el Deshacer. A quien contesta lo cubre además la marca por cuenta
  *   (`lib/avisosPreguntados`).
  */
 
@@ -40,13 +41,18 @@ export function alLimpiar(previo: Aviso | null, de: string): Aviso | null {
   return previo && previo.de === de ? null : previo;
 }
 
-/** El cerrojo de la pregunta de avisos de una pantalla: una hoja a la vez; al cerrarse, libre otra vez. */
+/** Cuántas veces puede salir la hoja de avisos en una pantalla: la primera y, si se cerró, una segunda. */
+export const VECES_QUE_PREGUNTA = 2;
+
+/** El cerrojo de la pregunta de avisos de una pantalla: una hoja a la vez y como mucho dos en toda la pantalla. */
 export function cerrojoDePregunta(): { tomar: () => boolean; soltar: () => void } {
   let tomado = false;
+  let veces = 0;
   return {
     tomar: () => {
-      if (tomado) return false;
+      if (tomado || veces >= VECES_QUE_PREGUNTA) return false;
       tomado = true;
+      veces += 1;
       return true;
     },
     soltar: () => {

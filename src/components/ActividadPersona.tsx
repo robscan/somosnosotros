@@ -94,7 +94,9 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
   // aunque la página todavía no haya vuelto del servidor, para que la pestaña no se vaya bajo el dedo.
   const sigoGuardado = (id: string) => (esLugar.has(id) ? seguirLugar.sigoGuardado(id) : seguirArtista.sigoGuardado(id));
   const confirmada = enPestanas(gestos ? asistencia.guardado : () => null, gestos ? sigoGuardado : () => true);
-  const ahora = recordar(memoria, confirmada, actividad, asistencia.fallos + seguirLugar.fallos + seguirArtista.fallos);
+  // Solo los fallos de los eventos: "Van a lo mismo" y "Me interesa" las llena esa lista, así que solo ella puede
+  // devolver lo que añadió un toque que no se guardó (un Seguir que falla no tiene nada que ver con ellas).
+  const ahora = recordar(memoria, confirmada, actividad, asistencia.fallos);
   if (!mismaMemoria(ahora, memoria)) setMemoria(ahora);
 
   const pestanas: Pestana[] = actividad.map((p) => ({

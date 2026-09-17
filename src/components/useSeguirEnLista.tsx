@@ -40,13 +40,17 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
   }
   const toques = useRef<Toques>({});
   const propio = useCanalDeListas();
-  const { avisar, tomarPregunta, soltarPregunta } = canal ?? propio;
+  const { avisar, tomarPregunta } = canal ?? propio;
   // El dueño de sus avisos en la pantalla: nadie más los limpia sin poner otro en su lugar.
   const de = useId();
   const [hoja, setHoja] = useState<string | null>(null);
   // Cuántos guardados han fallado: quien pinte pestañas devuelve lo que añadió un toque que no se guardó.
   const [fallos, setFallos] = useState(0);
   const ruta = (id: string) => `/${que === "lugar" ? "lugares" : "artistas"}/${id}`;
+
+  // Sin datos para preguntar, la hoja se cierra de verdad: si no, quedaría "abierta" sin pintarse, con la pantalla muda
+  // y la pregunta trabada.
+  if (hoja && !avisos) setHoja(null);
 
   const sigo = (id: string) => (id in elegidos ? elegidos[id].valor : !!iniciales?.includes(id));
   /** Lo mismo, pero solo con lo que ya quedó guardado: lo que se está guardando (y lo que falló) no cuenta. */
@@ -98,12 +102,6 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     guardar(id, nombre, antes, () => deshacer(id, nombre, antes));
   }
 
-  /** Se cerró la hoja sin que la respuesta quedara guardada (la ✕, tocar fuera, Escape): la pregunta vuelve a estar libre. */
-  function cerrarHoja() {
-    setHoja(null);
-    soltarPregunta();
-  }
-
   function acciones(id: string, nombre: string): AccionDeslizable[] {
     const antes = sigo(id);
     const accion = accionSeguir(antes);
@@ -126,9 +124,9 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
   const extras = (
     <>
       {!canal && <AvisoAbajo canal={propio} />}
-      {hoja && <HojaAbierta canal={canal ?? propio} />}
+      {hoja && avisos && <HojaAbierta canal={canal ?? propio} />}
       {hoja && avisos && (
-        <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
+        <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
           <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={hoja} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} />
         </Hoja>
       )}

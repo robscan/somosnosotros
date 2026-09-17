@@ -62,14 +62,17 @@ export function masVistas<E, L, A>(vistas: Vistas, actividad: Actividad<E, L, A>
  *   vacía tras un No voy guardado, con su texto y su Deshacer.
  * - `todas`: lo mismo contando lo que se está guardando, para que la pestaña se vea desde el toque y no salte bajo el
  *   dedo si la persona cambia de idea antes de que responda el servidor.
- * - **Un guardado que falla devuelve lo suyo:** al cambiar `fallos`, `todas` vuelve a lo guardado, así un Voy que no se
- *   pudo guardar no deja una pestaña vacía y mentirosa el resto de la visita (revisión de gestión de cambios).
+ * - **Un guardado que falla devuelve lo suyo:** al cambiar `fallos`, `todas` vuelve a lo guardado **o a lo que se ve
+ *   ahora, lo que sea más alto**, así un Voy que no se pudo guardar no deja una pestaña vacía y mentirosa el resto de la
+ *   visita, y un fallo no se lleva por delante una pestaña que sigue llena (revisión de gestión de cambios).
+ *   `fallos` son los de la lista que alimenta estas pestañas (los eventos): la de lugares y artistas no las llena, así
+ *   que tampoco puede vaciarlas.
  */
 export type Memoria = { guardadas: Vistas; todas: Vistas; fallos: number };
 
 export function recordar<E, L, A>(memoria: Memoria, confirmada: Actividad<E, L, A>[], ahora: Actividad<E, L, A>[], fallos: number): Memoria {
   const guardadas = masVistas(memoria.guardadas, confirmada);
-  const todas = fallos !== memoria.fallos ? guardadas : masVistas(memoria.todas, ahora);
+  const todas = fallos !== memoria.fallos ? masVistas(guardadas, ahora) : masVistas(memoria.todas, ahora);
   return { guardadas, todas, fallos };
 }
 

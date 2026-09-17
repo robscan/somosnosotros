@@ -20,7 +20,7 @@ export type CanalDeListas = {
   limpiar: (de: string) => void;
   /** ¿Se abre la hoja de la pregunta de avisos? Solo si no hay otra abierta en la pantalla. */
   tomarPregunta: () => boolean;
-  /** Se cerró la hoja: la pregunta vuelve a estar libre (quien contestó ya queda cubierto por la marca de su cuenta). */
+  /** Se fue la hoja (cerrada, contestada o con la pantalla): la pregunta vuelve a estar libre, una sola vez por pantalla. */
   soltarPregunta: () => void;
   /** Cuántas hojas de avisos hay abiertas: con alguna, el aviso espera y sale al cerrarla. */
   hojas: number;
@@ -52,13 +52,20 @@ export function AvisoAbajo({ canal }: { canal: CanalDeListas }) {
   return <Hecho key={aviso.vez} texto={aviso.texto} onDeshacer={aviso.boton} etiqueta={aviso.etiqueta} fallo={aviso.fallo} onCerrar={() => canal.cerrar(aviso.vez)} />;
 }
 
-/** Lo pinta quien tiene una hoja de avisos abierta: mientras esté, el aviso de la pantalla espera. */
+/**
+ * Lo pinta quien tiene una hoja de avisos abierta, con la misma condición que la hoja: mientras esté, el aviso de la
+ * pantalla espera, y al irse —cerrada, contestada o porque la pantalla se fue con ella abierta— suelta la pregunta, para
+ * que no quede trabada. Devolverla una sola vez por pantalla ya lo cuida el cerrojo.
+ */
 export function HojaAbierta({ canal }: { canal: CanalDeListas }) {
-  const { anotarHoja } = canal;
+  const { anotarHoja, soltarPregunta } = canal;
   useEffect(() => {
     anotarHoja(true);
-    return () => anotarHoja(false);
-  }, [anotarHoja]);
+    return () => {
+      anotarHoja(false);
+      soltarPregunta();
+    };
+  }, [anotarHoja, soltarPregunta]);
   return null;
 }
 

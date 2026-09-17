@@ -56,7 +56,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   const propio = useCanalDeListas();
   const dePantalla = useCanalDePantalla();
   const canal = dePantalla ?? propio;
-  const { avisar, limpiar, tomarPregunta, soltarPregunta } = canal;
+  const { avisar, limpiar, tomarPregunta } = canal;
   // El dueño de sus avisos en la pantalla: al tocar quita el suyo, nunca el Reintentar de un renglón.
   const de = useId();
   const [telefono] = useEstadoPush(llavePush, conSesion && sigo);
@@ -88,16 +88,11 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       if (nuevo && hayQuePreguntar(cuenta, avisosPreguntado) && tomarPregunta()) setHoja(true);
     });
   }
-  /** Contestada: se cierra y la barra relee el consentimiento recién guardado. */
-  function contestada() {
+  /** Se va la hoja (contestada, cerrada o cerrada sola porque el teléfono no puede con los avisos): la barra relee el
+   *  consentimiento recién guardado. Soltar la pregunta lo hace `HojaAbierta` al desmontarse, venga por donde venga. */
+  function cerrarHoja() {
     setHoja(false);
     router.refresh();
-  }
-  /** Cerrada sin contestar (la ✕, tocar fuera, Escape): la pregunta vuelve a estar libre, porque un toque de más no
-   *  puede dejar a nadie sin la única puerta a los recordatorios en toda la visita. */
-  function cerrarHoja() {
-    contestada();
-    soltarPregunta();
   }
 
   const canales = [avisosCorreo && "por correo", telefono === "encendido" && enEste(plataforma)].filter(Boolean);
@@ -138,7 +133,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       {hoja && <HojaAbierta canal={canal} />}
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
-          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={contestada} />
+          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={cerrarHoja} />
         </Hoja>
       )}
     </>
