@@ -18,6 +18,10 @@
   line-height: 1.3;
   box-shadow: var(--sombra-flotante);
 }
+/* En una ficha no hay barra inferior: la barra de acción fija (Ficha.module.css, 72 px más el área segura) ocupa su lugar. */
+.sobreBarra {
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px) + var(--espacio-3));
+}
 .hecho button {
   min-height: var(--toque-min);
   padding: 0 var(--espacio-3);

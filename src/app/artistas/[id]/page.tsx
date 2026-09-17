@@ -292,6 +292,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         nombre={a.nombre}
         sigo={sigo}
         conSesion={!!actual}
+        cuenta={actual?.perfil.id ?? ""}
         accion={cambiarSeguimientoArtista.bind(null, a.id)}
         hrefEntrar={`/artistas/${a.id}?accion=seguir`}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}

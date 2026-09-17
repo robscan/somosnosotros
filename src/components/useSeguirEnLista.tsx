@@ -4,19 +4,18 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarSeguimientoArtista } from "@/app/artistas/acciones";
 import { cambiarSeguimiento } from "@/app/lugares/acciones";
-import { avisosYaContestados } from "@/lib/avisosPreguntados";
+import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { accionSeguir, recortar, textoHecho, type ClaveAccion } from "@/lib/deslizar";
 import { anotarIntencion } from "@/lib/intencionAvisos";
+import { alRecibir, elegir, esElUltimo, siSigueSiendoElUltimo, tocar, trasGuardar, type Elegidas, type Toques } from "@/lib/toques";
 import ConsentimientoAvisos from "./ConsentimientoAvisos";
 import Hecho from "./Hecho";
 import type { AccionDeslizable } from "./ui/Deslizable";
 import Hoja from "./ui/Hoja";
 import { IconoMas, IconoOk } from "./ui/Iconos";
 
-/** Lo que pide la pregunta de avisos tras el primer Seguir (como en la ficha). */
-export type AvisosLista = { preguntado: boolean; correo: string; llavePush: string };
-/** Lo que se eligió aquí y todavía no llegó de vuelta del servidor. */
-type Elegido = { valor: boolean; guardado: boolean };
+/** Lo que pide la pregunta de avisos tras el primer Voy o Seguir (como en la ficha); `cuenta`, el id de quien mira. */
+export type AvisosLista = { cuenta: string; preguntado: boolean; correo: string; llavePush: string };
 /** El aviso de abajo: lo hecho con Deshacer, o que no se pudo guardar con Reintentar. */
 type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: boolean; vez: number };
 
@@ -26,18 +25,19 @@ type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: bool
  * que la ficha. Se guarda con la misma acción de la ficha; sin sesión, lleva a entrar y la ficha lo aplica al volver. Si
  * no se pudo guardar, deshace lo mostrado y ofrece Reintentar, sin tumbar la pantalla (bitácora 085).
  *
- * Lo que llega del servidor manda: lo elegido aquí se superpone solo mientras se guarda (como en la agenda).
+ * Lo que llega del servidor manda (la respuesta de la acción trae la página al día): lo elegido aquí se superpone solo
+ * mientras se guarda, y cada toque lleva su número por renglón (lib/toques), como en la agenda.
  */
 export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] | null, avisos: AvisosLista | null): { sigo: (id: string) => boolean; acciones: (id: string, nombre: string) => AccionDeslizable[]; extras: ReactNode } {
   const router = useRouter();
   const [, iniciar] = useTransition();
-  const [elegidos, setElegidos] = useState<Record<string, Elegido>>({});
+  const [elegidos, setElegidos] = useState<Elegidas<boolean>>({});
   const [recibidos, setRecibidos] = useState(iniciales);
   if (iniciales !== recibidos) {
-    // Datos nuevos del servidor: lo ya guardado se toma de ellos; lo que sigue guardándose, no.
     setRecibidos(iniciales);
-    setElegidos((e) => Object.fromEntries(Object.entries(e).filter(([, v]) => !v.guardado)));
+    setElegidos(alRecibir);
   }
+  const toques = useRef<Toques>({});
   // Una sola pregunta por pantalla. Se lee al guardar, no al pintar: dos Seguir seguidos no la hacen dos veces.
   const pregunte = useRef(false);
   const [hoja, setHoja] = useState<string | null>(null);
@@ -47,9 +47,13 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
   const sigo = (id: string) => (id in elegidos ? elegidos[id].valor : !!iniciales?.includes(id));
   const avisar = (a: Omit<Aviso, "vez">) => setAviso((previo) => ({ ...a, vez: (previo?.vez ?? 0) + 1 }));
 
-  /** Muestra el cambio al momento y lo guarda; si no se pudo, lo deshace y ofrece `reintentar`. `alGuardar`, solo si se guardó. */
-  function guardar(id: string, nombre: string, seguir: boolean, reintentar: () => void, alGuardar?: () => void) {
-    setElegidos((x) => ({ ...x, [id]: { valor: seguir, guardado: false } }));
+  /**
+   * Un toque: muestra `seguir` al momento y lo guarda. Si al terminar ya hubo otro toque en el renglón, no hace nada más.
+   * Si no se pudo guardar, quita lo mostrado y ofrece `reintentar`; si se guardó, `alGuardar`. Devuelve el número del toque.
+   */
+  function guardar(id: string, nombre: string, seguir: boolean, reintentar: () => void, alGuardar?: () => void): number {
+    const vez = tocar(toques.current, id);
+    setElegidos((x) => elegir(x, id, seguir, vez));
     iniciar(async () => {
       let guardado = false;
       try {
@@ -57,38 +61,35 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
       } catch {
         guardado = false;
       }
+      if (!esElUltimo(toques.current, id, vez)) return;
+      setElegidos((x) => trasGuardar(x, id, vez, guardado));
       if (!guardado) {
-        setElegidos((x) => {
-          if (x[id]?.valor !== seguir) return x;
-          const sin = { ...x };
-          delete sin[id];
-          return sin;
-        });
-        avisar({ texto: `No se pudo guardar «${recortar(nombre)}»`, boton: reintentar, etiqueta: "Reintentar", fallo: true });
+        avisar({ texto: `No se pudo guardar «${recortar(nombre)}»`, boton: siSigueSiendoElUltimo(toques.current, id, vez, reintentar), etiqueta: "Reintentar", fallo: true });
         return;
       }
-      setElegidos((x) => (x[id]?.valor === seguir ? { ...x, [id]: { valor: seguir, guardado: true } } : x));
       alGuardar?.();
-      // Los datos de la página al día: en Lugares la lista se vuelve a montar al pasar por el Mapa y los necesita.
-      router.refresh();
     });
+    return vez;
   }
 
   function hacer(id: string, nombre: string, clave: ClaveAccion, antes: boolean) {
-    const deshacer = () => guardar(id, nombre, antes, deshacer);
-    avisar({ texto: textoHecho(clave, nombre, que), boton: deshacer });
-    guardar(
+    const vez = guardar(
       id,
       nombre,
       !antes,
       () => hacer(id, nombre, clave, antes),
       () => {
-        // La pregunta, tras el primer Seguir guardado; no si ya se contestó en esta visita (la página puede ser de hace un rato).
-        if (antes || !avisos || avisos.preguntado || pregunte.current || avisosYaContestados()) return;
+        // La pregunta, tras el primer Seguir guardado; no si esta cuenta ya contestó en esta visita (la página puede ser de hace un rato).
+        if (antes || !avisos || pregunte.current || !hayQuePreguntar(avisos.cuenta, avisos.preguntado)) return;
         pregunte.current = true;
         setHoja(nombre);
       },
     );
+    avisar({ texto: textoHecho(clave, nombre, que), boton: siSigueSiendoElUltimo(toques.current, id, vez, () => deshacer(id, nombre, antes)) });
+  }
+
+  function deshacer(id: string, nombre: string, antes: boolean) {
+    guardar(id, nombre, antes, () => deshacer(id, nombre, antes));
   }
 
   function acciones(id: string, nombre: string): AccionDeslizable[] {
@@ -117,7 +118,7 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
       {aviso && !hoja && <Hecho key={aviso.vez} texto={aviso.texto} onDeshacer={aviso.boton} etiqueta={aviso.etiqueta} fallo={aviso.fallo} onCerrar={() => setAviso((a) => (a?.vez === aviso.vez ? null : a))} />}
       {hoja && avisos && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
-          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={hoja} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} />
+          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={hoja} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} />
         </Hoja>
       )}
     </>

@@ -11,6 +11,8 @@ type Props = {
   etiqueta?: string;
   /** No se pudo guardar: se anuncia como alerta. */
   fallo?: boolean;
+  /** En una ficha: flota sobre su barra de acción fija, que ocupa el lugar de la barra inferior. */
+  sobreBarra?: boolean;
 };
 
 /**
@@ -18,7 +20,7 @@ type Props = {
  * pudo guardar, con Reintentar. Se va solo a los 7 s (con 5 no daba tiempo a decidir). Quien lo usa le da una `key` nueva
  * en cada acción para reiniciar el tiempo.
  */
-export default function Hecho({ texto, onDeshacer, onCerrar, etiqueta = "Deshacer", fallo = false }: Props) {
+export default function Hecho({ texto, onDeshacer, onCerrar, etiqueta = "Deshacer", fallo = false, sobreBarra = false }: Props) {
   const cerrar = useRef(onCerrar);
   useEffect(() => {
     cerrar.current = onCerrar;
@@ -28,7 +30,7 @@ export default function Hecho({ texto, onDeshacer, onCerrar, etiqueta = "Deshace
     return () => clearTimeout(t);
   }, []);
   return (
-    <p className={styles.hecho} role={fallo ? "alert" : "status"}>
+    <p className={sobreBarra ? `${styles.hecho} ${styles.sobreBarra}` : styles.hecho} role={fallo ? "alert" : "status"}>
       <span>{texto}</span>
       {onDeshacer && (
         <button

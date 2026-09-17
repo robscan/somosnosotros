@@ -282,6 +282,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         nombre={lugar.nombre}
         sigo={sigo}
         conSesion={!!actual}
+        cuenta={actual?.perfil.id ?? ""}
         accion={cambiarSeguimiento.bind(null, lugar.id)}
         hrefEntrar={`/lugares/${lugar.id}?accion=seguir`}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}

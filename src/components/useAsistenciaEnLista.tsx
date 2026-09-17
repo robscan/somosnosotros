@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarAsistencia } from "@/app/eventos/acciones";
-import { avisosYaContestados } from "@/lib/avisosPreguntados";
+import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { accionesEvento, asistenciaTras, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
 import { anotarIntencion } from "@/lib/intencionAvisos";
+import { alRecibir, elegir, esElUltimo, siSigueSiendoElUltimo, tocar, trasGuardar, type Elegidas, type Toques } from "@/lib/toques";
 import ConsentimientoAvisos from "./ConsentimientoAvisos";
 import Hecho from "./Hecho";
 import type { AccionDeslizable } from "./ui/Deslizable";
@@ -16,8 +17,6 @@ import type { AvisosLista } from "./useSeguirEnLista";
 /** Lo que la persona decidió en cada evento cargado; null = sin sesión. */
 export type Decididas = Record<string, Exclude<Asistencia, null>> | null;
 type EventoLista = { id: string; titulo: string };
-/** Lo que se eligió aquí y todavía no llegó de vuelta del servidor. */
-type Elegida = { valor: Asistencia; guardada: boolean };
 /** El aviso de abajo: lo hecho con Deshacer, o que no se pudo guardar con Reintentar. */
 type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: boolean; vez: number };
 
@@ -28,18 +27,18 @@ type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: bool
  * aplica al volver. Si no se pudo guardar, deshace lo mostrado y ofrece Reintentar, sin tumbar la pantalla.
  *
  * Lo que llega del servidor manda (al volver de la ficha, en la respuesta de la acción): lo elegido aquí se superpone
- * solo mientras se guarda.
+ * solo mientras se guarda. Cada toque lleva su número por renglón (lib/toques): lo que trae un guardado viejo se ignora.
  */
 export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null): { estado: (id: string) => Asistencia; acciones: (e: EventoLista) => AccionDeslizable[]; extras: ReactNode } {
   const router = useRouter();
   const [, iniciar] = useTransition();
-  const [elegidas, setElegidas] = useState<Record<string, Elegida>>({});
+  const [elegidas, setElegidas] = useState<Elegidas<Asistencia>>({});
   const [recibidas, setRecibidas] = useState(decididas);
   if (decididas !== recibidas) {
-    // Datos nuevos del servidor: lo ya guardado se toma de ellos; lo que sigue guardándose, no.
     setRecibidas(decididas);
-    setElegidas((e) => Object.fromEntries(Object.entries(e).filter(([, v]) => !v.guardada)));
+    setElegidas(alRecibir);
   }
+  const toques = useRef<Toques>({});
   // Una sola pregunta por pantalla. Se lee al guardar, no al pintar: dos Voy seguidos no la hacen dos veces.
   const pregunte = useRef(false);
   const [hoja, setHoja] = useState<EventoLista | null>(null);
@@ -48,46 +47,49 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
   const estado = (id: string): Asistencia => (id in elegidas ? elegidas[id].valor : (decididas?.[id] ?? null));
   const avisar = (a: Omit<Aviso, "vez">) => setAviso((previo) => ({ ...a, vez: (previo?.vez ?? 0) + 1 }));
 
-  /** Muestra el cambio al momento y lo guarda; si no se pudo, lo deshace y ofrece `reintentar`. `alGuardar`, solo si se guardó. */
-  function guardar(e: EventoLista, nuevo: Asistencia, reintentar: () => void, alGuardar?: () => void) {
-    setElegidas((x) => ({ ...x, [e.id]: { valor: nuevo, guardada: false } }));
+  /**
+   * Un toque: muestra `valor` al momento y lo guarda. Si al terminar ya hubo otro toque en el renglón, no hace nada más.
+   * Si no se pudo guardar, quita lo mostrado y ofrece `reintentar`; si se guardó, `alGuardar`. Devuelve el número del toque.
+   */
+  function guardar(e: EventoLista, valor: Asistencia, reintentar: () => void, alGuardar?: () => void): number {
+    const vez = tocar(toques.current, e.id);
+    setElegidas((x) => elegir(x, e.id, valor, vez));
     iniciar(async () => {
       let guardado = false;
       try {
-        guardado = await cambiarAsistencia(e.id, nuevo);
+        guardado = await cambiarAsistencia(e.id, valor);
       } catch {
         guardado = false;
       }
+      if (!esElUltimo(toques.current, e.id, vez)) return;
+      setElegidas((x) => trasGuardar(x, e.id, vez, guardado));
       if (!guardado) {
-        setElegidas((x) => {
-          if (x[e.id]?.valor !== nuevo) return x;
-          const sin = { ...x };
-          delete sin[e.id];
-          return sin;
-        });
-        avisar({ texto: `No se pudo guardar «${recortar(e.titulo)}»`, boton: reintentar, etiqueta: "Reintentar", fallo: true });
+        avisar({ texto: `No se pudo guardar «${recortar(e.titulo)}»`, boton: siSigueSiendoElUltimo(toques.current, e.id, vez, reintentar), etiqueta: "Reintentar", fallo: true });
         return;
       }
-      setElegidas((x) => (x[e.id]?.valor === nuevo ? { ...x, [e.id]: { valor: nuevo, guardada: true } } : x));
       alGuardar?.();
     });
+    return vez;
   }
 
   function hacer(e: EventoLista, clave: ClaveAccion, previo: Asistencia) {
     const nuevo = asistenciaTras(clave);
-    const deshacer = () => guardar(e, previo, deshacer);
-    avisar({ texto: textoHecho(clave, e.titulo), boton: deshacer });
-    guardar(
+    const vez = guardar(
       e,
       nuevo,
       () => hacer(e, clave, previo),
       () => {
-        // La pregunta, tras el primer Voy guardado; no si ya se contestó en esta visita (la página puede ser de hace un rato).
-        if (nuevo !== "voy" || !avisos || avisos.preguntado || pregunte.current || avisosYaContestados()) return;
+        // La pregunta, tras el primer Voy guardado; no si esta cuenta ya contestó en esta visita (la página puede ser de hace un rato).
+        if (nuevo !== "voy" || !avisos || pregunte.current || !hayQuePreguntar(avisos.cuenta, avisos.preguntado)) return;
         pregunte.current = true;
         setHoja(e);
       },
     );
+    avisar({ texto: textoHecho(clave, e.titulo), boton: siSigueSiendoElUltimo(toques.current, e.id, vez, () => deshacer(e, previo)) });
+  }
+
+  function deshacer(e: EventoLista, previo: Asistencia) {
+    guardar(e, previo, () => deshacer(e, previo));
   }
 
   function acciones(e: EventoLista): AccionDeslizable[] {
@@ -116,7 +118,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
       {aviso && !hoja && <Hecho key={aviso.vez} texto={aviso.texto} onDeshacer={aviso.boton} etiqueta={aviso.etiqueta} fallo={aviso.fallo} onCerrar={() => setAviso((a) => (a?.vez === aviso.vez ? null : a))} />}
       {hoja && avisos && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
-          <ConsentimientoAvisos contexto="voy" titulo={hoja.titulo} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} calendarioUrl={`/eventos/${hoja.id}/calendario`} />
+          <ConsentimientoAvisos contexto="voy" titulo={hoja.titulo} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} calendarioUrl={`/eventos/${hoja.id}/calendario`} />
         </Hoja>
       )}
     </>

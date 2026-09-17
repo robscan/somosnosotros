@@ -151,9 +151,10 @@ export default function Deslizable({ href, className, acciones, children }: Prop
     if (e.key !== "ArrowLeft" || conModificador(e) || abierto) return;
     e.preventDefault();
     abrir();
-    // Si un scroll lo cerró antes del siguiente cuadro, el foco se queda en el renglón y no en un botón oculto.
+    // Si un scroll lo cerró antes del siguiente cuadro, el foco se queda en el renglón y no en un botón oculto. Sin
+    // desplazar la página: ese desplazamiento cerraría el renglón recién abierto.
     requestAnimationFrame(() => {
-      if (abiertoActual?.quien === quien) caja.current?.querySelector("button")?.focus();
+      if (abiertoActual?.quien === quien) caja.current?.querySelector("button")?.focus({ preventScroll: true });
     });
   }
   function alTeclaAccion(e: React.KeyboardEvent<HTMLButtonElement>) {
@@ -170,7 +171,9 @@ export default function Deslizable({ href, className, acciones, children }: Prop
     frente.current?.focus();
   }
   function alSalirFoco(e: React.FocusEvent<HTMLLIElement>) {
-    if (abierto && !li.current?.contains(e.relatedTarget as Node | null)) cerrar();
+    // Se cierra si el foco sale del renglón, o si pasa de las acciones al enlace del mismo renglón (Tab desde la última).
+    const destino = e.relatedTarget as Node | null;
+    if (abierto && (!li.current?.contains(destino) || destino === frente.current)) cerrar();
   }
   function alTocarRenglon(e: React.MouseEvent<HTMLAnchorElement>) {
     if (suprimirClic.current) {
@@ -191,7 +194,7 @@ export default function Deslizable({ href, className, acciones, children }: Prop
           <button
             key={a.clave}
             type="button"
-            className={`${styles.accion} ${styles[a.tono]}`}
+            className={styles[a.tono] ? `${styles.accion} ${styles[a.tono]}` : styles.accion}
             tabIndex={abierto ? 0 : -1}
             onKeyDown={alTeclaAccion}
             onClick={(e) => {

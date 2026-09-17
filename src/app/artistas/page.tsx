@@ -97,7 +97,7 @@ export default async function Artistas({ searchParams }: { searchParams: Promise
   const supabase = actual ? await clienteServidor() : null;
   const s = supabase && actual ? await supabase.from("seguimientos").select("artista_id").eq("usuario_id", actual.perfil.id).not("artista_id", "is", null).limit(1000) : null;
   const seguidos = actual ? ((s?.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id) : null;
-  const avisos = actual ? { preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
+  const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
   return (
     <main className="raiz">
       <Barra derecha={<Sesion />} />

@@ -95,14 +95,58 @@ Gestión de cambios revisó el PR y pidió estos arreglos para cerrar la pieza; 
   - **Teclado:** el anillo blanco en Voy (azul), en Me interesa (tinta) y en Seguir; ← y → entre acciones; → en la última y Esc cierran y vuelven al renglón; Alt+← y Cmd+← no abren; un scroll o un toque fuera con el foco en una acción lo devuelve al renglón.
 - **Sin repetir en el simulador:** el gesto no cambió.
 
+## Segunda revisión del PR #88, arreglada
+Gestión de cambios verificó los arreglos con tres revisores escépticos, cada uno con sus propias pruebas. Encontraron tres fallos importantes y no lo mezcló. El enfoque cierra la familia de casos, no uno por uno.
+
+- **La marca de "ya contestó" va atada a la cuenta** (`hayQuePreguntar(cuenta, preguntado)` en `lib/avisosPreguntados`):
+  - antes vivía en el módulo sin cuenta: si alguien contestaba, cerraba sesión y otra persona entraba con código en la misma pestaña, a la segunda no se le preguntaba (le pasa al founder con usuarios desechables);
+  - las páginas pasan el id de quien mira a las listas, las fichas y la hoja de avisos;
+  - la vuelta de Entrar con intención también la mira.
+- **Un número de toque por renglón** (`lib/toques`, lógica pura con pruebas), en la agenda y en Lugares y Artistas:
+  - cada toque (Voy, Me interesa, Seguir, Deshacer, Reintentar) lleva el número siguiente de su renglón;
+  - lo que trae un guardado (confirmar, quitar lo mostrado, la pregunta de avisos, ofrecer Reintentar) solo cuenta si su toque sigue siendo el último; si no, se ignora en silencio;
+  - Deshacer y Reintentar solo actúan si su toque sigue siendo el último.
+
+  Así ya no pasa:
+  - que la pregunta salga para un Voy o Seguir ya deshecho (y gaste la única pregunta);
+  - que un Reintentar viejo vuelva a poner Voy encima de un Me interesa ya guardado;
+  - que Voy · No voy · Voy borre el "Vas" un momento.
+- **Menores:**
+  - "No, gracias" y cerrar los pasos de instalar marcan "contestó" solo si se guardó, como Por correo y En el teléfono;
+  - **las fichas avisan como las listas:** si `cambiarAsistencia` o seguir no guardan, o no hay red, la barra vuelve a como estaba y sale «No se pudo guardar · Reintentar» sobre la barra de la ficha (`Hecho` con `sobreBarra`), en vez de deshacer en silencio o caer a la pantalla de error;
+  - fuera el `router.refresh()` de `useSeguirEnLista`: la respuesta de la acción ya trae la página al día;
+  - **teclado:**
+    - el foco a la primera acción no desplaza la página (el desplazamiento cerraba el renglón recién abierto);
+    - Tab desde la última acción cierra y deja el foco en el renglón;
+    - el tono azul ya no pinta la clase `undefined`;
+  - `elegirAvisos` y `guardarSuscripcionPush` invalidan solo `/perfil` y `/`: con `layout` marcaban como vieja cada página del sitio, y la pregunta ya no depende de eso.
+
+### Evidencia de la segunda revisión
+- **lint** (el aviso viejo del script del logotipo, ajeno), **tipos**, **316 pruebas** y **build** en verde; `main` ya estaba traído.
+- **Pruebas nuevas:**
+  - `toques.test.ts`: Voy deshecho sin pregunta, fallo viejo sin Reintentar, Reintentar viejo que no pisa, Voy · No voy · Voy;
+  - `avisosPreguntados.test.ts`: cambio de cuenta en la misma pestaña.
+- **Navegador a 390×844** con el respaldo local, sin producción. El respaldo tiene dos cuentas inventadas, un retraso configurable al guardar y fallos a propósito.
+  - **Voy y Deshacer antes de que llegue el Voy:** sin pregunta ni "Vas", y el respaldo guardó y borró.
+  - **Voy · No voy · Voy rápido:** "Vas" a la vista en las 50 muestras de 5 s y una sola pregunta, al final.
+  - **Voy que falla despacio y Me interesa encima:** nunca sale Reintentar, "Te interesa" todo el tiempo y el respaldo queda en me_interesa.
+  - **Cambio de cuenta sin recargar:** la cuenta 1 contesta en la agenda; entra la cuenta 2 y Seguir en Lugares le pregunta.
+  - **"No, gracias" que no se guarda:** a la cuenta 2 se le vuelve a preguntar en la ficha de un evento.
+  - **Lugares sin `router.refresh()`:** "Sigues" sigue tras pasar por el Mapa.
+  - **Ficha de evento:**
+    - con fallo, «No se pudo guardar · Reintentar» sobre la barra y la barra como estaba; Reintentar guarda y pregunta;
+    - sin red (la llamada a la acción falla en el navegador), el mismo aviso y ninguna pantalla de error.
+  - **Ficha de lugar:** lo mismo con Seguir.
+  - **Teclado:** ← abre, → a la última y Tab cierran el renglón con el foco en él; las clases sin `undefined`.
+
 ## Queda
 - **Firma del founder en el iPhone:**
   - las dos acciones y sus estados;
   - Deshacer;
   - la pregunta tras el primer Voy.
-- **Para después (de la revisión del PR #88):**
-  - con toques rápidos (Voy, Deshacer, Voy), el "Vas" puede borrarse un momento hasta que llega lo del servidor;
-  - tras actuar con teclado, el foco vuelve al renglón: el aviso con Deshacer y la hoja de avisos no lo reciben.
+- **Para después:**
+  - tras actuar con teclado, el foco vuelve al renglón: el aviso con Deshacer y la hoja de avisos no lo reciben;
+  - cambiar los avisos en Ajustes no apunta la marca: una pantalla abierta antes podría preguntar una vez más (la base ya dice que se preguntó y se toma al recargar).
 - **Pieza B** (086, OL-057, rama `deslizar-en-todas-las-listas`), cuando esta esté en `main`:
   - los mismos renglones y acciones en las pestañas del perfil, en la ficha de persona, en "Sigo" y en los próximos eventos de las fichas de lugar y artista;
   - el gesto actúa sobre quien mira;

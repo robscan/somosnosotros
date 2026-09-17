@@ -28,7 +28,9 @@ export async function elegirAvisos(eleccion: EleccionAvisos): Promise<boolean> {
   }
   const { error } = await supabase.from("perfiles").update(cambios).eq("id", user.id);
   if (error) return false;
-  // Todas las pantallas que preguntan (agenda, listas, fichas) se reutilizan un rato en el teléfono: que ya no pregunten.
-  revalidatePath("/", "layout");
+  // Ajustes y la agenda muestran lo elegido. Que no se vuelva a preguntar no depende de esto: lo apunta la hoja para la
+  // cuenta (lib/avisosPreguntados).
+  revalidatePath("/perfil");
+  revalidatePath("/");
   return true;
 }
