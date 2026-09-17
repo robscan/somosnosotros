@@ -337,16 +337,17 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         noValidate
       >
         {/* 1. El nombre, con la cámara dentro: leer el cartel llena todo (decisión 1). */}
-        <label className={`${canon.campo} ${canon.sinIcono} ${ofrecerCartel ? canon.conAccion : ""}`}>
+        {/* Caja, no <label>: dentro va la cámara con su propio <label>, y un <label> solo puede mandar el toque a un campo. */}
+        <div className={`${canon.campo} ${canon.sinIcono} ${ofrecerCartel ? canon.conAccion : ""}`}>
           <input name="titulo" type="text" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={LIMITES_EVENTO.titulo} placeholder="Nombre del evento" aria-label="Nombre del evento" aria-invalid={!!errores.titulo} autoComplete="off" autoFocus={esAlta} required />
           <Limpiar visible={!!titulo} desplazada={ofrecerCartel} />
           {ofrecerCartel && (
-            <span className={canon.accionCampo} title="Leer el cartel" aria-disabled={subiendo || leyendo}>
+            <label className={canon.accionCampo} title="Leer el cartel" aria-disabled={subiendo || leyendo}>
               <IconoCamara width={22} height={22} />
               <input type="file" accept="image/*" onChange={leerCartel} disabled={subiendo || leyendo} aria-label="Leer el cartel" />
-            </span>
+            </label>
           )}
-        </label>
+        </div>
         {(leyendo || (subiendo && !masAbierto)) && <p className={canon.estado}>{leyendo ? "Leyendo el cartel…" : "Subiendo…"}</p>}
         {errores.titulo && (
           <p className={canon.error} role="alert">
