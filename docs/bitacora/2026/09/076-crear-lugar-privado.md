@@ -25,7 +25,7 @@
 Las demás reglas con funciones de búsqueda (`eventos_artistas`, `lugares_cuentas`, `artistas_cuentas`) buscan la ficha padre, ya guardada, y se leen con `using (true)`: sin problema.
 
 ## Qué se hizo
-- **Migración `supabase/migrations/20260917110000_lectura_al_crear.sql`, sin aplicar.** Cambia solo la expresión de dos reglas de lectura, con `alter policy`:
+- **Migración `supabase/migrations/20260917093000_lectura_al_crear.sql`, sin aplicar.** Cambia solo la expresión de dos reglas de lectura, con `alter policy`:
   - lugares: `(visible and not privado) or creado_por = auth.uid() or es_admin() or gestiona_lugar(id)`;
   - artistas: `visible or creado_por = auth.uid() or es_admin() or gestiona_artista(id)`.
 
@@ -65,6 +65,6 @@ Tras un error al guardar, la casilla "Solo yo lo veo" se ve desmarcada, aunque e
 Las reglas de edición de lugares (0024) y artistas (0010) usan `gestiona_*` también para validar la fila nueva, pero la función lee la fila guardada. Quien gestiona una ficha puede cambiar `creado_por` llamando a la API directamente. Una cuenta ligada que no es la autora puede hacerse autora y después borrar el lugar, y con él los eventos que otras personas publicaron ahí. Se comprobó en PGlite. La app no lo ofrece: solo el administrador cambia el autor, al pasar la ficha. Arreglo propuesto: un trigger como `proteger_rol` (el `revoke` por columna no sirve, ver 072). Quedó como tarea aparte ("Block changing creado_por in lugares and artistas").
 
 ## Queda
-- **La migración** `20260917110000_lectura_al_crear.sql` la aplica el founder cuando lo indique gestión de cambios, después de la de zona horaria. No depende de código nuevo: crear lugares privados vuelve a funcionar en cuanto se aplica. El aviso verde de la ficha llega con el merge.
+- **La migración** `20260917093000_lectura_al_crear.sql` la aplica el founder cuando lo indique gestión de cambios, después de la de zona horaria. No depende de código nuevo: crear lugares privados vuelve a funcionar en cuanto se aplica. El aviso verde de la ficha llega con el merge.
 - **Push, PR y merge:** los lleva gestión de cambios.
 - **Firma en el iPhone:** crear un lugar con "Solo yo lo veo" y ver que abre su ficha con el aviso verde.
