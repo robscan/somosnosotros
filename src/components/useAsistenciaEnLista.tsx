@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarAsistencia } from "@/app/eventos/acciones";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { accionesEvento, asistenciaTras, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
@@ -40,6 +40,15 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     setElegidas(alRecibir);
   }
   const toques = useRef<Toques>({});
+  // ¿La lista sigue en la pantalla? El canal es de la pantalla y la sobrevive (Lugares, con Mapa y Lista): un guardado
+  // que termina cuando la lista ya no está no puede tomar la pregunta, porque nadie pintaría la hoja ni la soltaría.
+  const vivo = useRef(true);
+  useEffect(() => {
+    vivo.current = true;
+    return () => {
+      vivo.current = false;
+    };
+  }, []);
   const propio = useCanalDeListas();
   const { avisar, tomarPregunta } = canal ?? propio;
   // El dueño de sus avisos en la pantalla: nadie más los limpia sin poner otro en su lugar.
@@ -91,7 +100,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
       () => {
         // La pregunta, tras el primer Voy guardado de la pantalla; no si esta cuenta ya contestó en esta visita (la página
         // puede ser de hace un rato). Se toma al guardar, no al pintar: dos Voy seguidos no la hacen dos veces.
-        if (nuevo !== "voy" || !avisos || !hayQuePreguntar(avisos.cuenta, avisos.preguntado) || !tomarPregunta()) return;
+        if (!vivo.current || nuevo !== "voy" || !avisos || !hayQuePreguntar(avisos.cuenta, avisos.preguntado) || !tomarPregunta()) return;
         setHoja(e);
       },
     );

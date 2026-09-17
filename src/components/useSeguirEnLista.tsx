@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarSeguimientoArtista } from "@/app/artistas/acciones";
 import { cambiarSeguimiento } from "@/app/lugares/acciones";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
@@ -39,6 +39,15 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     setElegidos(alRecibir);
   }
   const toques = useRef<Toques>({});
+  // ¿La lista sigue en la pantalla? El canal es de la pantalla y la sobrevive (Lugares, con Mapa y Lista): un guardado
+  // que termina cuando la lista ya no está no puede tomar la pregunta, porque nadie pintaría la hoja ni la soltaría.
+  const vivo = useRef(true);
+  useEffect(() => {
+    vivo.current = true;
+    return () => {
+      vivo.current = false;
+    };
+  }, []);
   const propio = useCanalDeListas();
   const { avisar, tomarPregunta } = canal ?? propio;
   // El dueño de sus avisos en la pantalla: nadie más los limpia sin poner otro en su lugar.
@@ -91,7 +100,7 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
       () => {
         // La pregunta, tras el primer Seguir guardado de la pantalla; no si esta cuenta ya contestó en esta visita (la página
         // puede ser de hace un rato). Se toma al guardar, no al pintar: dos Seguir seguidos no la hacen dos veces.
-        if (antes || !avisos || !hayQuePreguntar(avisos.cuenta, avisos.preguntado) || !tomarPregunta()) return;
+        if (!vivo.current || antes || !avisos || !hayQuePreguntar(avisos.cuenta, avisos.preguntado) || !tomarPregunta()) return;
         setHoja(nombre);
       },
     );

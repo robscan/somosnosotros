@@ -238,6 +238,29 @@ vuelve a verla y un guardado que falla no pregunta. Quedaban tres cosas:
   misma ficha **no** abre una segunda (antes del arreglo salían 2); tres Voy seguidos siguen dando hoja, hoja y nada; y
   "Ahora no" sigue devolviendo la pregunta una vez.
 
+## Quinta revisión adversarial (PR 2, commit c5eaa77)
+Gestión de cambios dio por buena la pieza de Lugares (dos preguntas por pantalla aunque se pase por el Mapa, cinco idas
+y vueltas sin gastar ninguna, el aviso de abajo sobrevive al cambio de vista con su Deshacer, el HTML y la memoria de
+pantalla idénticos a `main`, y el modo estricto en orden). Quedaba una carrera, nueva justo porque ahora el canal
+sobrevive a la Lista:
+
+- **Un guardado que termina con la Lista fuera se comía una pregunta.** En Lugares: deslizar un renglón, tocar Seguir y
+  pasar al Mapa **antes de que conteste el servidor**. La Lista se desmonta, pero el canal sigue vivo en la pantalla;
+  al terminar la acción, el hook tomaba la pregunta y `setHoja` ya no hacía nada, así que nadie pintaba la hoja y nadie
+  soltaba el cerrojo: al volver a la Lista, ningún Seguir volvía a preguntar en toda la visita, y la hoja no se había
+  visto ni una vez. Desde fuera no se notaba, porque el gesto se guardaba igual y el aviso salía.
+  **Arreglo:** los dos hooks llevan una marca de vivo (`vivo`, un ref que el efecto pone al montar y quita al
+  desmontar) y no toman la pregunta si su lista ya no está. Igual en `useAsistenciaEnLista`, aunque hoy sus listas no
+  se desmonten solas.
+
+### Evidencia de la quinta revisión
+- **lint** (solo el aviso viejo del logotipo), **tipos**, **371 pruebas en 41 archivos** y **build** en verde.
+- **La carrera, en un banco con React real:** Seguir con la respuesta retenida → Mapa → responde el servidor (el gesto
+  se guarda, sin hoja) → Lista → Seguir en otro renglón: **con el arreglo sale la hoja; con el commit anterior, no**.
+- **En el navegador a 390×844** (Lugares, respaldo local tardando 2,5 s): Seguir en "Foro de Prueba" y al Mapa antes de
+  que conteste; al volver, "Foro" queda seguido y el siguiente Seguir, en "Biblioteca de Prueba", **abre la hoja**
+  («Sigues Biblioteca de Prueba · ¿Te avisamos de sus eventos?»).
+
 ## Queda
 - **Firma del founder en el iPhone:** las pestañas de Mi perfil y de otra persona, quitar al instante con Deshacer, y los próximos eventos de las fichas.
 - La pestaña en la que se estaba no se recuerda al volver de una ficha; ya pasaba antes y no se añadió.
