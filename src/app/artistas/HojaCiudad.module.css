@@ -1,0 +1,5 @@
+/* Hoja "Ciudad" del alta de artista: el título es el de ui/Hoja, el campo con lupa el del canon y los renglones los de
+   ui/Sugerencia. La lista va pegada al campo, como en "Dónde está" del alta de lugar. */
+.lista {
+  margin-top: calc(-1 * var(--espacio-2));
+}

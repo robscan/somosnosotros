@@ -1,9 +1,11 @@
+import { ciudadCanonica } from "./ciudad";
 import { distanciaKm } from "./geo";
 
 /**
  * Autocompletado de direcciones con Mapbox (Geocoding v6). Se usa UNA vez, al dar de alta el lugar
- * (docs/heredado/mapa/MAPBOX_GEOCODING.md); la ficha nunca vuelve a geocodificar. Se puede registrar en cualquier
- * ciudad de México (decisión del founder, 2026-09-16); la ciudad viene en el contexto de Mapbox.
+ * (docs/heredado/mapa/MAPBOX_GEOCODING.md); la ficha nunca vuelve a geocodificar. La ciudad viene en el contexto de
+ * Mapbox. El contexto ordena, no limita (founder, 2026-09-16): la ciudad de los artistas ya se busca en cualquier país;
+ * las direcciones de lugares siguen en México hasta que los eventos tengan la zona horaria de su ciudad (bitácora 067).
  */
 export type Sugerencia = { nombre: string; direccion: string; lat: number; lng: number; ciudad: string | null };
 
@@ -17,7 +19,7 @@ export function urlGeocodificar(q: string, token: string, cerca: { lat: number; 
     q,
     access_token: token,
     autocomplete: "true",
-    country: "mx", // ver buscarLugares: sin país, Mapbox pone otras ciudades del mundo antes que la propia
+    country: "mx", // pendiente, como en buscarLugares: se quita junto con la zona horaria de los eventos (bitácora 067)
     language: "es",
     // Se piden más de las que se muestran porque Mapbox no siempre ordena por cercanía real dentro del país
     // (buscando "Plaza de Armas" desde San Luis, antepone las de Querétaro, Zacatecas o Saltillo); se reordenan
@@ -29,10 +31,17 @@ export function urlGeocodificar(q: string, token: string, cerca: { lat: number; 
   return `https://api.mapbox.com/search/geocode/v6/forward?${p.toString()}`;
 }
 
-/** Dónde cae un resultado, según Mapbox: la ciudad (place) o, en poblaciones chicas, la localidad. */
-export type Contexto = { place?: { name?: string }; locality?: { name?: string } };
+/** Dónde cae un resultado, según Mapbox: la ciudad (place) o, en poblaciones chicas, la localidad; y el país. */
+export type Contexto = { place?: { name?: string }; locality?: { name?: string }; country?: { name?: string; country_code?: string } };
+/**
+ * El nombre de la ciudad con el que se guarda. Fuera de México lleva el país ("Córdoba, España"), para no juntarla con
+ * Córdoba, Veracruz; las de México van sin país porque así están todas las que ya hay.
+ */
 export function ciudadDelContexto(c: Contexto | undefined): string | null {
-  return c?.place?.name ?? c?.locality?.name ?? null;
+  const nombre = c?.place?.name ?? c?.locality?.name ?? null;
+  const pais = c?.country;
+  if (!nombre || !pais?.name || !pais.country_code || pais.country_code.toLowerCase() === "mx") return nombre;
+  return `${nombre}, ${pais.name}`;
 }
 
 type RespuestaV6 = {
@@ -78,4 +87,49 @@ export async function lugarDesdePunto(p: { lat: number; lng: number }, token: st
 
 export async function direccionDesdePunto(p: { lat: number; lng: number }, token: string, fetchFn: FetchFn = fetch): Promise<string | null> {
   return (await lugarDesdePunto(p, token, fetchFn))?.direccion ?? null;
+}
+
+/** Una ciudad encontrada: el nombre con el que se guarda y dónde queda ("Estado de Jalisco, México"). */
+export type CiudadEncontrada = { ciudad: string; donde: string };
+
+/**
+ * Búsqueda del renglón Ciudad del alta de artista: solo ciudades (`place`), de cualquier país, en español. El contexto
+ * ordena y no limita (founder, 2026-09-16): la cercanía a la ciudad que se ve pone primero las de aquí, y se piden 10
+ * porque un nombre repetido ("San José") trae la de Costa Rica hasta el décimo lugar.
+ */
+export function urlCiudades(q: string, token: string, cerca: { lat: number; lng: number }): string {
+  const p = new URLSearchParams({ q, access_token: token, autocomplete: "true", language: "es", limit: "10", proximity: `${cerca.lng},${cerca.lat}`, types: "place" });
+  return `https://api.mapbox.com/search/geocode/v6/forward?${p.toString()}`;
+}
+
+type RespuestaCiudades = { features?: Array<{ properties?: { name?: string; place_formatted?: string; context?: Contexto } }> };
+
+/**
+ * El nombre sale del contexto, como la ciudad de un lugar ("Mexico DF" llega con "Ciudad de México" en el contexto;
+ * fuera de México, con su país) y se unifica con su área metropolitana (`ciudadCanonica`). Si el nombre ya dice el
+ * país, "dónde" no lo repite ("Córdoba, España" · "Provincia de Córdoba"). La misma ciudad del mismo estado no se repite.
+ */
+export function interpretarCiudades(json: RespuestaCiudades): CiudadEncontrada[] {
+  const vistas = new Set<string>();
+  const out: CiudadEncontrada[] = [];
+  for (const f of json.features ?? []) {
+    const p = f.properties ?? {};
+    const ciudad = ciudadCanonica(ciudadDelContexto(p.context) ?? p.name);
+    const pais = p.context?.country?.name;
+    let donde = (p.place_formatted ?? "").trim();
+    if (pais && ciudad.endsWith(`, ${pais}`) && donde.endsWith(`, ${pais}`)) donde = donde.slice(0, -(pais.length + 2));
+    if (!ciudad || vistas.has(`${ciudad}|${donde}`)) continue;
+    vistas.add(`${ciudad}|${donde}`);
+    out.push({ ciudad, donde: donde.charAt(0).toUpperCase() + donde.slice(1) });
+  }
+  return out;
+}
+
+/** Con menos de 2 letras no se busca. Si Mapbox falla, lanza: la hoja lo dice en vez de fingir que no hay ciudades. */
+export async function buscarCiudades(q: string, token: string, cerca: { lat: number; lng: number }, fetchFn: FetchFn = fetch): Promise<CiudadEncontrada[]> {
+  const texto = q.trim();
+  if (texto.length < 2) return [];
+  const res = await fetchFn(urlCiudades(texto, token, cerca));
+  if (!res.ok) throw new Error(`Mapbox respondió ${res.status}`);
+  return interpretarCiudades((await res.json()) as RespuestaCiudades);
 }
