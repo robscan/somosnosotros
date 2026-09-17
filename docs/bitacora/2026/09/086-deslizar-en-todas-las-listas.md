@@ -1,6 +1,6 @@
 # 086 · Deslizar en todas las listas: los mismos renglones y acciones (OL-057, pieza B)
 
-**Fecha:** 2026-09-17 · **Ramas:** `deslizar-en-todas-las-listas` (PR 1, en producción con el [PR #91](https://github.com/robscan/somosnosotros/pull/91)) y `deslizar-en-perfil-y-fichas` (PR 2, desde `main` en c3fda3b; commit local, sin push) · **Pieza B** de deslizar; la A está en la [085](085-voy-y-me-interesa-al-deslizar.md).
+**Fecha:** 2026-09-17 · **Ramas:** `deslizar-en-todas-las-listas` (PR 1, en producción con el [PR #91](https://github.com/robscan/somosnosotros/pull/91)) y `deslizar-en-perfil-y-fichas` (PR 2, desde `main` en c3fda3b y con `main` al día en fb18f46; commit local, sin push) · **Pieza B** de deslizar; la A está en la [085](085-voy-y-me-interesa-al-deslizar.md).
 
 ## Qué pidió el founder
 > «Existen varias tabs con listas y por consistencia deberían heredar comportamiento, de hecho deberían usar los mismos componentes» (2026-09-16, noche).
@@ -73,7 +73,7 @@ El PR 1 pasó la verificación independiente de gestión de cambios: en 23 casos
 - **Un solo aviso y una sola pregunta por pantalla** (`useCanalDeListas`, nuevo): las tres listas de la ficha de persona comparten el aviso de abajo (el nuevo reemplaza al anterior, y cada uno cierra solo el suyo) y la pregunta de avisos. Los dos hooks lo aceptan como opción; las listas de siempre siguen con los suyos.
 - **Fichas de lugar y de artista:**
   - sus próximos eventos (`EventosPorDia`, nuevo) traen Voy y Me interesa para quien mira, leídos con su sesión (`decididasDe`);
-  - el aviso flota encima de la barra fija, que publica su alto real (`ui/useAltoBarraFija`, en `Seguir` y `Asistencia`).
+  - el aviso flota encima de la barra fija, que publica su alto real (`ui/useAltoBarraFija`, en `Seguir` y `Asistencia`), y lo comparte con ella (ver la revisión, más abajo).
 - `avisosParaListas` junta los datos de la pregunta de avisos para las páginas.
 - Sin tocar `metadata` ni `generateMetadata`. Sin migración.
 
@@ -100,7 +100,22 @@ El PR 1 pasó la verificación independiente de gestión de cambios: en 23 casos
   - en "Sigue", deslizar "Foro" abre Seguir;
   - tocarlo lleva a "Entra para seguir a Foro de Prueba".
 
+## Revisión adversarial de gestión de cambios (PR 2, commit 227e1c1)
+Tres hallazgos importantes, los tres reproducidos antes de tocar nada y arreglados en la misma rama.
+
+1. **Dos preguntas de avisos en una ficha.** En la ficha de un lugar o de un artista, la lista de eventos y la barra de Seguir tenían cada una su canal: el primer Voy en la lista abría la hoja de avisos y el Seguir de la barra abría otra encima (o al revés). **Arreglo:** el canal ahora es de la pantalla, no del hook. `useCanalDeListas` expone `PantallaConAviso`, que lo pone en un contexto de React, y cada ficha lo monta en su `template.tsx` (`/lugares/[id]` y `/artistas/[id]`; `template` y no `layout` para que cada ficha empiece con el suyo). La lista (`EventosPorDia`) y las barras (`Seguir`, `Asistencia`) lo toman con `useCanalDePantalla()`; quien no encuentre canal de pantalla sigue con el suyo, así que las listas de siempre no cambian. La pregunta se pide con `tomarPregunta()`, que la da **una sola vez por pantalla**: si la hoja se cierra sin contestar, el gesto siguiente guarda sin volver a preguntar.
+2. **El aviso de la lista tapaba el Reintentar de la barra.** El aviso de la lista flotaba encima de la barra fija y el de la barra se pintaba debajo (`sobreBarra`): si fallaba Seguir mientras había un aviso de la lista, su "Reintentar" quedaba debajo y no se podía tocar; y con la lista arriba, el fallo de la barra ni se veía. **Arreglo:** las barras publican por el mismo canal (`avisar`), así que **hay un solo aviso abajo** y el nuevo reemplaza al anterior; al tocar, la barra limpia el aviso viejo (`limpiar()`), para que no quede un "Hecho" de otra cosa. `Hecho` pierde `sobreBarra` y su regla de CSS: todos los avisos se colocan igual, encima de la barra fija cuando la hay (`--alto-barra-fija`).
+3. **La pestaña saltaba bajo el dedo.** En la ficha de otra persona, "Van a lo mismo" nace al decir Voy; al decir No voy se quedaba vacía, pero si desaparecía (o cambiaba de sitio) el panel saltaba a otra pestaña y el Deshacer quedaba lejos. **Arreglo:** `lib/actividad` recuerda **lo más que ha habido en la visita** (`Vistas` y `masVistas`), así que una pestaña que ya se mostró no se va aunque se vacíe ("Ya no van a lo mismo.") y Deshacer la vuelve a llenar; `PestanasPersona` corrige la pestaña activa si la que estaba se fue, en vez de dejar el índice apuntando a otra.
+
+### Evidencia de la revisión
+- **lint** (solo el aviso viejo del logotipo), **tipos**, **349 pruebas en 37 archivos** (una nueva de esta ronda: "una pestaña que nace en la visita se queda aunque se vacíe, y Deshacer la vuelve a llenar"; las demás nuevas llegan con `main`) y **build** en verde, ya con `main` (fb18f46) dentro.
+- **Navegador a 390×844**, respaldo local y cuentas inventadas:
+  - **Una sola hoja en la ficha:** en la ficha de Foro (sesión de Beto), Voy al deslizar un evento abre **una** hoja de avisos; se cierra sin contestar y el Seguir de la barra guarda ("Sigues") sin abrir otra (`hojas: 0`).
+  - **Un solo aviso con la barra:** con el aviso de la lista puesto ("Te interesa…"), un "Dejar de seguir" que falla lo reemplaza por "No se pudo guardar · Reintentar"; `elementFromPoint` en el centro del botón devuelve el botón (nadie lo tapa) y Reintentar deja de seguir.
+  - **La pestaña que nace, se vacía y vuelve:** en la ficha de Admin (sesión de Beto), Voy en un evento hace nacer "Van a lo mismo" sin mover el panel; No voy la deja en 0 con "Ya no van a lo mismo." y **sigue activa**; Deshacer la vuelve a llenar.
+  - **Sin regresiones en las dos barras:** el aviso de fallo cae en 707–759 y la barra ocupa 784–832 (`--alto-barra-fija`: 73 px), en la ficha de lugar (Seguir) y en la de evento (Voy); Reintentar guarda de verdad en las dos (el respaldo se queda sin el seguimiento, y el evento pasa a "Va 1 persona").
+  - **Lo que no prueba el respaldo local:** no cuenta seguidores, así que la ficha sigue diciendo "Nadie lo sigue todavía" aunque el seguimiento se guarde; eso no lo toca esta pieza.
+
 ## Queda
 - **Firma del founder en el iPhone:** las pestañas de Mi perfil y de otra persona, quitar al instante con Deshacer, y los próximos eventos de las fichas.
 - La pestaña en la que se estaba no se recuerda al volver de una ficha; ya pasaba antes y no se añadió.
-- En las fichas de lugar y de artista, la barra de Seguir y la lista de eventos tienen cada una su aviso y su pregunta de avisos.

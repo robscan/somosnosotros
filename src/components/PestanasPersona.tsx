@@ -13,6 +13,8 @@ export type Pestana = { clave: string; n: number; etiqueta: string; contenido: R
 export default function PestanasPersona({ pestanas }: { pestanas: Pestana[] }) {
   const [activa, setActiva] = useState(pestanas[0]?.clave ?? "");
   const actual = pestanas.find((p) => p.clave === activa) ?? pestanas[0];
+  // Si la que estaba ya no está (las pestañas cambian con los gestos), la activa pasa a ser la que se muestra.
+  if (actual && actual.clave !== activa) setActiva(actual.clave);
   return (
     <>
       <Pestanas ariaLabel="Actividad" className={styles.kpis}>

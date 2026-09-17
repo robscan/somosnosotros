@@ -12,7 +12,7 @@ import ConsentimientoAvisos from "./ConsentimientoAvisos";
 import type { AccionDeslizable } from "./ui/Deslizable";
 import Hoja from "./ui/Hoja";
 import { IconoMas, IconoOk } from "./ui/Iconos";
-import { AvisoAbajo, useCanalDeListas, type CanalDeListas } from "./useCanalDeListas";
+import { AvisoAbajo, HojaAbierta, useCanalDeListas, type CanalDeListas } from "./useCanalDeListas";
 
 /** Lo que pide la pregunta de avisos tras el primer Voy o Seguir (como en la ficha); `cuenta`, el id de quien mira. */
 export type AvisosLista = { cuenta: string; preguntado: boolean; correo: string; llavePush: string };
@@ -29,7 +29,7 @@ export type AvisosLista = { cuenta: string; preguntado: boolean; correo: string;
  * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
  * la lista tiene los suyos y pinta su aviso en `extras`.
  */
-export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] | null, avisos: AvisosLista | null, canal?: CanalDeListas): { sigo: (id: string) => boolean; acciones: (id: string, nombre: string) => AccionDeslizable[]; extras: ReactNode; hojaAbierta: boolean } {
+export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] | null, avisos: AvisosLista | null, canal?: CanalDeListas): { sigo: (id: string) => boolean; acciones: (id: string, nombre: string) => AccionDeslizable[]; extras: ReactNode } {
   const router = useRouter();
   const [, iniciar] = useTransition();
   const [elegidos, setElegidos] = useState<Elegidas<boolean>>({});
@@ -112,7 +112,8 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
 
   const extras = (
     <>
-      {!canal && <AvisoAbajo canal={propio} enEspera={!!hoja} />}
+      {!canal && <AvisoAbajo canal={propio} />}
+      {hoja && <HojaAbierta canal={canal ?? propio} />}
       {hoja && avisos && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
           <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={hoja} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} />
@@ -121,5 +122,5 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     </>
   );
 
-  return { sigo, acciones, extras, hojaAbierta: !!hoja };
+  return { sigo, acciones, extras };
 }

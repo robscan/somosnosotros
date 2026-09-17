@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import RenglonEvento from "./RenglonEvento";
 import { useAsistenciaEnLista, type Decididas } from "./useAsistenciaEnLista";
+import { useCanalDePantalla } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
 
 type Props = {
@@ -17,11 +18,12 @@ type Props = {
 
 /**
  * Los próximos eventos de una ficha (lugar, artista) por día, con Voy y Me interesa al deslizar para quien mira, como en la
- * agenda (OL-057). El título del día y la lista toman sus estilos de la sección que los contiene; el aviso flota sobre la
- * barra fija de la ficha (ui/useAltoBarraFija).
+ * agenda (OL-057). El título del día y la lista toman sus estilos de la sección que los contiene; el aviso, uno para toda
+ * la ficha, flota sobre su barra fija (ui/useAltoBarraFija).
  */
 export default function EventosPorDia({ eventos, sinSitio = false, decididas, avisos }: Props) {
-  const asistencia = useAsistenciaEnLista(decididas, avisos);
+  // El aviso y la pregunta son de toda la ficha: los comparte con su barra (Seguir o Voy).
+  const asistencia = useAsistenciaEnLista(decididas, avisos, useCanalDePantalla());
   return (
     <>
       {agruparPorDia(eventos).map((g) => (

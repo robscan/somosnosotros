@@ -11,7 +11,7 @@ import ConsentimientoAvisos from "./ConsentimientoAvisos";
 import type { AccionDeslizable } from "./ui/Deslizable";
 import Hoja from "./ui/Hoja";
 import { IconoEstrella, IconoOk } from "./ui/Iconos";
-import { AvisoAbajo, useCanalDeListas, type CanalDeListas } from "./useCanalDeListas";
+import { AvisoAbajo, HojaAbierta, useCanalDeListas, type CanalDeListas } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
 
 /** Lo que la persona decidió en cada evento cargado; null = sin sesión. */
@@ -30,7 +30,7 @@ type EventoLista = { id: string; titulo: string };
  * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
  * la lista tiene los suyos y pinta su aviso en `extras`.
  */
-export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null, canal?: CanalDeListas): { estado: (id: string) => Asistencia; acciones: (e: EventoLista) => AccionDeslizable[]; extras: ReactNode; hojaAbierta: boolean } {
+export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null, canal?: CanalDeListas): { estado: (id: string) => Asistencia; acciones: (e: EventoLista) => AccionDeslizable[]; extras: ReactNode } {
   const router = useRouter();
   const [, iniciar] = useTransition();
   const [elegidas, setElegidas] = useState<Elegidas<Asistencia>>({});
@@ -112,7 +112,8 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
 
   const extras = (
     <>
-      {!canal && <AvisoAbajo canal={propio} enEspera={!!hoja} />}
+      {!canal && <AvisoAbajo canal={propio} />}
+      {hoja && <HojaAbierta canal={canal ?? propio} />}
       {hoja && avisos && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
           <ConsentimientoAvisos contexto="voy" titulo={hoja.titulo} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} calendarioUrl={`/eventos/${hoja.id}/calendario`} />
@@ -121,5 +122,5 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     </>
   );
 
-  return { estado, acciones, extras, hojaAbierta: !!hoja };
+  return { estado, acciones, extras };
 }

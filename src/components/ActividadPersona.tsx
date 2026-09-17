@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment, useState, type ReactNode } from "react";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
-import { pestanasDePersona, unirVistos } from "@/lib/actividad";
+import { masVistas, pestanasDePersona, unirVistos } from "@/lib/actividad";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import ListaSeguidos, { UMBRAL_CHIPS_SEGUIDOS } from "./ListaSeguidos";
 import PestanasPersona, { type Pestana } from "./PestanasPersona";
@@ -56,7 +56,9 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
     setVistos((v) => ({ eventos: enOrden(unirVistos(v.eventos, [...eventos, ...interesan])), lugares: unirVistos(v.lugares, lugares), artistas: unirVistos(v.artistas, artistas) }));
   }
   const lista = mia ? vistos : { eventos, lugares, artistas };
-  const [alAbrir] = useState(() => ({
+  // Lo más que ha habido en la visita en las pestañas que nacen o se vacían: una que ya se mostró no se va, para que el
+  // panel no salte de pestaña bajo el dedo (y Deshacer la vuelva a llenar).
+  const [vistas, setVistas] = useState(() => ({
     juntos: mia ? 0 : eventos.filter((e) => decididas?.[e.id] === "voy").length,
     interesa: mia ? interesan.length : 0,
   }));
@@ -81,7 +83,11 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
       ))
     );
 
-  const pestanas: Pestana[] = pestanasDePersona({ mia, eventos: lista.eventos, lugares: lista.lugares, artistas: lista.artistas, estado, sigo: gestos ? sigo : () => true, alAbrir }).map((p) => ({
+  const actividad = pestanasDePersona({ mia, eventos: lista.eventos, lugares: lista.lugares, artistas: lista.artistas, estado, sigo: gestos ? sigo : () => true, vistas });
+  const ahora = masVistas(vistas, actividad);
+  if (ahora.juntos !== vistas.juntos || ahora.interesa !== vistas.interesa) setVistas(ahora);
+
+  const pestanas: Pestana[] = actividad.map((p) => ({
     clave: p.clave,
     etiqueta: p.etiqueta,
     n: p.n,
@@ -122,7 +128,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
   return (
     <>
       <PestanasPersona pestanas={pestanas} />
-      <AvisoAbajo canal={canal} enEspera={asistencia.hojaAbierta || seguirLugar.hojaAbierta || seguirArtista.hojaAbierta} />
+      <AvisoAbajo canal={canal} />
       {asistencia.extras}
       {seguirLugar.extras}
       {seguirArtista.extras}
