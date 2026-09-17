@@ -38,4 +38,4 @@ Los eventos de una misma hora van en orden alfabético. «ΚΟΣΜΟΣ: Camerata
 
 ## Queda
 - **Lista de Artistas.** La "Próxima" fecha de cada artista es la primera fila de su consulta, y esa consulta pide el orden por hora a los eventos ligados (`referencedTable`), no a las filas. Con `!inner` suele salir en ese orden, pero la base no lo garantiza: con dos fechas podría mostrar una que no es la más próxima. Hoy no se ve (ningún artista tiene fechas ligadas). Va como tarea aparte.
-- **`main` local con commits sin publicar** (bitácoras 057 a 059 y 061, reglas de gestión de cambios). Esta rama sale de `origin/main` para no publicarlos con este PR. Cuando el founder publique `main`, se trae a la rama y se juntan las dos entradas de OPEN_LOOPS.
+- **Subir el merge de `main`.** `main` local (bitácoras 057 a 059 y 061, reglas de gestión de cambios) ya está traído a la rama y OPEN_LOOPS quedó con las dos entradas, en commits locales. No se subieron: harían públicos los commits de `main` antes de que el founder lo publique. Se suben cuando `main` esté en GitHub.
