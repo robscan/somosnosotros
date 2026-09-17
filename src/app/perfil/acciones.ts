@@ -75,6 +75,8 @@ export async function guardarSuscripcionPush(sub: { endpoint: string; keys: { p2
   const { error } = await supabase.from("suscripciones_push").upsert({ endpoint: sub.endpoint, usuario_id: user.id, p256dh: sub.keys.p256dh, auth: sub.keys.auth });
   if (error) return false;
   await supabase.from("perfiles").update({ avisos_push: true, avisos_push_desde: new Date().toISOString(), avisos_preguntado: true }).eq("id", user.id);
+  // Las pantallas que preguntan se reutilizan un rato en el teléfono: que ya no pregunten.
+  revalidatePath("/", "layout");
   return true;
 }
 

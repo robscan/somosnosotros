@@ -10,8 +10,6 @@ export type AccionDeslizable = {
   etiqueta: string;
   tono: Tono;
   icono: ReactNode;
-  /** Se ve pero no hace nada ("Vas"): dice el estado sin ofrecer un cambio que vive en la ficha. */
-  deshabilitada?: boolean;
   alTocar?: () => void;
 };
 
@@ -28,6 +26,11 @@ type Arrastre = { id: number; x0: number; y0: number; base: number; ancho: numbe
 /** El renglón abierto ahora: abrir otro lo cierra (uno a la vez). */
 let abiertoActual: { quien: object; cerrar: () => void } | null = null;
 
+/** Una flecha con Alt, Cmd, Ctrl o Mayúsculas es del navegador o del sistema (Alt+← y Cmd+← es atrás), no del renglón. */
+function conModificador(e: React.KeyboardEvent) {
+  return e.altKey || e.metaKey || e.ctrlKey || e.shiftKey;
+}
+
 function mover(el: HTMLElement | null, x: number, animar: boolean) {
   if (!el) return;
   const quieto = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -39,8 +42,10 @@ function mover(el: HTMLElement | null, x: number, animar: boolean) {
  * Renglón de lista que se desliza de derecha a izquierda para mostrar sus acciones (lib/deslizar; bitácora 071). Las
  * acciones van detrás, a la derecha, y se confirman con un toque. Se cierra deslizando de vuelta, tocando el renglón,
  * tocando fuera o con el scroll. Un gesto que empieza en el borde izquierdo es del navegador (atrás) y no se toma.
- * Con teclado, ← en el renglón abre las acciones y lleva el foco a la primera; Esc o → las cierra y vuelve al renglón;
- * salir con Tab también cierra. Con VoiceOver, las mismas acciones están en la ficha.
+ * Con teclado, ← en el renglón abre las acciones y lleva el foco a la primera; → pasa a la siguiente y, desde la última,
+ * las cierra y vuelve al renglón (← regresa a la anterior); Esc las cierra; salir con Tab también cierra. Las flechas con
+ * Alt, Cmd, Ctrl o Mayúsculas son del navegador (Alt+← y Cmd+← es atrás) y no se toman. Con VoiceOver, las mismas
+ * acciones están en la ficha.
  */
 export default function Deslizable({ href, className, acciones, children }: Props) {
   const li = useRef<HTMLLIElement>(null);
@@ -68,18 +73,23 @@ export default function Deslizable({ href, className, acciones, children }: Prop
     abiertoActual = { quien, cerrar };
   }
 
-  // Abierto: tocar fuera o desplazar la página lo cierra.
+  // Abierto: tocar fuera o desplazar la página lo cierra. Si el foco estaba en una acción, vuelve al renglón: no se queda
+  // en un botón que ya no se ve.
   useEffect(() => {
     if (!abierto) return;
-    const fuera = (e: PointerEvent) => {
-      if (li.current && !li.current.contains(e.target as Node)) cerrar();
+    const cerrarDesdeFuera = () => {
+      const enAccion = !!caja.current?.contains(document.activeElement);
+      cerrar();
+      if (enAccion) frente.current?.focus({ preventScroll: true });
     };
-    const alDesplazar = () => cerrar();
+    const fuera = (e: PointerEvent) => {
+      if (li.current && !li.current.contains(e.target as Node)) cerrarDesdeFuera();
+    };
     document.addEventListener("pointerdown", fuera, true);
-    window.addEventListener("scroll", alDesplazar, { passive: true });
+    window.addEventListener("scroll", cerrarDesdeFuera, { passive: true });
     return () => {
       document.removeEventListener("pointerdown", fuera, true);
-      window.removeEventListener("scroll", alDesplazar);
+      window.removeEventListener("scroll", cerrarDesdeFuera);
     };
   }, [abierto, cerrar]);
   useEffect(
@@ -138,12 +148,22 @@ export default function Deslizable({ href, className, acciones, children }: Prop
     else cerrar();
   }
   function alTeclaRenglon(e: React.KeyboardEvent<HTMLAnchorElement>) {
-    if (e.key !== "ArrowLeft" || abierto) return;
+    if (e.key !== "ArrowLeft" || conModificador(e) || abierto) return;
     e.preventDefault();
     abrir();
-    requestAnimationFrame(() => caja.current?.querySelector("button")?.focus());
+    // Si un scroll lo cerró antes del siguiente cuadro, el foco se queda en el renglón y no en un botón oculto.
+    requestAnimationFrame(() => {
+      if (abiertoActual?.quien === quien) caja.current?.querySelector("button")?.focus();
+    });
   }
   function alTeclaAccion(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (conModificador(e)) return;
+    const vecina = e.key === "ArrowRight" ? e.currentTarget.nextElementSibling : e.key === "ArrowLeft" ? e.currentTarget.previousElementSibling : null;
+    if (vecina instanceof HTMLElement) {
+      e.preventDefault();
+      vecina.focus();
+      return;
+    }
     if (e.key !== "Escape" && e.key !== "ArrowRight") return;
     e.preventDefault();
     cerrar();
@@ -173,13 +193,12 @@ export default function Deslizable({ href, className, acciones, children }: Prop
             type="button"
             className={`${styles.accion} ${styles[a.tono]}`}
             tabIndex={abierto ? 0 : -1}
-            aria-disabled={a.deshabilitada || undefined}
             onKeyDown={alTeclaAccion}
             onClick={(e) => {
               cerrar();
               // Con teclado (Enter o espacio: detail 0), el foco vuelve al renglón en vez de quedarse en un botón oculto.
               if (e.detail === 0) frente.current?.focus();
-              if (!a.deshabilitada) a.alTocar?.();
+              a.alTocar?.();
             }}
           >
             {a.icono}

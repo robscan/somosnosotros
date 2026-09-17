@@ -37,15 +37,14 @@
   background: var(--texto);
   color: var(--fondo);
 }
-.gris {
-  background: var(--texto-suave);
-  color: var(--fondo);
-}
-.accion[aria-disabled="true"] {
-  cursor: default;
-}
-.accion:not([aria-disabled="true"]):active {
+.accion:active {
   filter: brightness(0.88);
+}
+/* Foco con teclado por dentro del botón: por fuera lo recorta el renglón, y el anillo azul de siempre no se ve sobre el
+   azul. Va en el color del texto de cada acción, que ya contrasta con su fondo (azul o tinta). */
+.accion:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -5px;
 }
 
 /* El renglón encima: tapa las acciones con el fondo de la lista y lleva dentro el gutter y su raya. El resaltado

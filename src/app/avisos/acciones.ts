@@ -28,6 +28,7 @@ export async function elegirAvisos(eleccion: EleccionAvisos): Promise<boolean> {
   }
   const { error } = await supabase.from("perfiles").update(cambios).eq("id", user.id);
   if (error) return false;
-  revalidatePath("/perfil");
+  // Todas las pantallas que preguntan (agenda, listas, fichas) se reutilizan un rato en el teléfono: que ya no pregunten.
+  revalidatePath("/", "layout");
   return true;
 }

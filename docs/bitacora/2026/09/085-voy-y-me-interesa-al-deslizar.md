@@ -1,6 +1,6 @@
 # 085 · Voy y Me interesa al deslizar un evento en la agenda, las dos con Deshacer (OL-056)
 
-**Fecha:** 2026-09-17 (madrugada) · **Rama:** `deslizar-voy-agenda`, desde `main` con Destacados (#86) ya mezclado (commit local, sin push) · **Pieza A** de dos; la B (los mismos componentes en todas las listas) va en la 086 cuando esta esté en `main`.
+**Fecha:** 2026-09-17 (madrugada) · **Rama:** `deslizar-voy-agenda`, desde `main` con Destacados (#86) ya mezclado ([PR #88](https://github.com/robscan/somosnosotros/pull/88); los arreglos de la revisión, commit local y sin push) · **Pieza A** de dos; la B (los mismos componentes en todas las listas) va en la 086 cuando esta esté en `main`.
 
 ## Qué pidió el founder
 La [074](074-deslizar-en-las-listas.md) dejó una acción por lista: "Me interesa" en la agenda, y "Voy" en la ficha. Al probarlo, el founder la cambió:
@@ -65,11 +65,44 @@ Sin migración ni variables nuevas.
   - VoiceOver, que sigue teniendo las acciones en la ficha;
   - Android.
 
+## Revisión del PR #88, arreglada
+Gestión de cambios revisó el PR y pidió estos arreglos para cerrar la pieza; el founder eligió hacerlos ahora (2026-09-17, madrugada).
+
+- **La pregunta de avisos ya no se repite:**
+  - la agenda, Lugares y Artistas leían "ya se preguntó" solo al abrir la pantalla; ahora lo toman de lo que llega del servidor en cada toque;
+  - contestar (por correo, en el teléfono o "No, gracias") queda apuntado en el teléfono mientras la app esté abierta (`lib/avisosPreguntados`): Next reutiliza un rato las pantallas ya vistas, con el dato de cuando se cargaron;
+  - la respuesta, también la del teléfono, invalida todas las pantallas (`revalidatePath("/", "layout")`);
+  - la pregunta sale solo después de guardar el Voy o el Seguir, en las listas y en las fichas.
+- **Si no se pudo guardar, la pantalla ya no se cae.** Antes, un fallo al guardar dejaba la agenda en "Algo falló":
+  - `cambiarAsistencia`, `cambiarSeguimiento` y `cambiarSeguimientoArtista` ahora dicen si guardaron;
+  - la lista deshace lo que mostró y avisa «No se pudo guardar «…» · Reintentar»;
+  - lo mismo en Lugares y Artistas, que además toman lo que llega del servidor, como la agenda.
+- **Con la hoja de avisos abierta, el aviso con Deshacer espera** y sale, con su tiempo completo, al cerrarla.
+- **Foco visible con teclado en las acciones:** un anillo por dentro del botón, en el color de su texto, que se ve sobre el azul y sobre la tinta (por fuera lo recortaba el renglón). También en Seguir.
+- **Flechas:**
+  - → pasa de Voy a Me interesa y, desde la última, cierra y vuelve al renglón; ← regresa a la anterior;
+  - Alt+← y Cmd+← son atrás del navegador y ya no abren el renglón.
+- **Al cerrar por scroll o tocando fuera,** si el foco estaba en una acción, vuelve al renglón. Si un scroll cierra el renglón justo al abrirlo con ←, el foco se queda en el renglón y no en un botón oculto.
+- **Limpieza:** fuera los restos del "Vas" gris (`deshabilitada`, `aria-disabled`, el tono gris y su CSS) y el `router.refresh()` repetido de la agenda (la acción ya refresca la pantalla).
+- **Encontrado al probar:** Reintentar borraba en el mismo toque su aviso nuevo («Vas a…»), porque el botón cierra el aviso después de actuar. Ahora cada aviso cierra solo el suyo.
+
+### Evidencia de la revisión
+- **lint** (el aviso viejo del script del logotipo, ajeno), **tipos**, **307 pruebas** y **build** en verde, con `main` traído.
+- **Navegador a 390×844**, con el respaldo local y una sesión inventada, sin producción. El respaldo guarda asistencias y seguimientos en memoria y puede rechazar las escrituras a propósito.
+  - **Agenda con fallo:** la agenda sigue a la vista, el renglón vuelve a Voy · Me interesa y sale «No se pudo guardar «Son huasteco de prueba» · Reintentar», sin la pregunta.
+  - **Reintentar, ya guardando:** "✓ Vas" y la pregunta de avisos, con el aviso de Deshacer en espera. "No, gracias" y cerrar: sale «Vas a «Son huasteco de prueba» · Deshacer». Otro Voy ya no pregunta.
+  - **Pantalla vieja:** Lugares abierto antes de contestar, contestar en la agenda y volver atrás. Seguir con fallo y Reintentar: "✓ Sigues" y «Sigues Casa de Prueba del Centro · Deshacer», sin la pregunta. Deshacer quita "Sigues" y el respaldo queda sin ese seguimiento. La ficha del lugar deja de seguir con la acción nueva.
+  - **Teclado:** el anillo blanco en Voy (azul), en Me interesa (tinta) y en Seguir; ← y → entre acciones; → en la última y Esc cierran y vuelven al renglón; Alt+← y Cmd+← no abren; un scroll o un toque fuera con el foco en una acción lo devuelve al renglón.
+- **Sin repetir en el simulador:** el gesto no cambió.
+
 ## Queda
 - **Firma del founder en el iPhone:**
   - las dos acciones y sus estados;
   - Deshacer;
   - la pregunta tras el primer Voy.
+- **Para después (de la revisión del PR #88):**
+  - con toques rápidos (Voy, Deshacer, Voy), el "Vas" puede borrarse un momento hasta que llega lo del servidor;
+  - tras actuar con teclado, el foco vuelve al renglón: el aviso con Deshacer y la hoja de avisos no lo reciben.
 - **Pieza B** (086, OL-057, rama `deslizar-en-todas-las-listas`), cuando esta esté en `main`:
   - los mismos renglones y acciones en las pestañas del perfil, en la ficha de persona, en "Sigo" y en los próximos eventos de las fichas de lugar y artista;
   - el gesto actúa sobre quien mira;

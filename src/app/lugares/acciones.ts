@@ -81,14 +81,17 @@ export async function cambiarVisible(id: string, visible: boolean) {
   redirect(`/lugares/${id}`);
 }
 
-/** Seguir / dejar de seguir un lugar. Un toque. */
-export async function cambiarSeguimiento(lugarId: string, seguir: boolean) {
+/** Seguir / dejar de seguir un lugar. Un toque. Devuelve si se guardó (la lista deshace y ofrece Reintentar si no). */
+export async function cambiarSeguimiento(lugarId: string, seguir: boolean): Promise<boolean> {
   const { supabase, user } = await sesionOEntrar(`/lugares/${lugarId}?accion=${seguir ? "seguir" : ""}`);
-  if (seguir) await supabase.from("seguimientos").upsert({ usuario_id: user.id, lugar_id: lugarId }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true });
-  else await supabase.from("seguimientos").delete().eq("usuario_id", user.id).eq("lugar_id", lugarId);
+  const { error } = seguir
+    ? await supabase.from("seguimientos").upsert({ usuario_id: user.id, lugar_id: lugarId }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true })
+    : await supabase.from("seguimientos").delete().eq("usuario_id", user.id).eq("lugar_id", lugarId);
+  if (error) return false;
   revalidatePath(`/lugares/${lugarId}`);
   revalidatePath("/perfil");
   revalidatePath(`/personas/${user.id}`);
+  return true;
 }
 
 /**

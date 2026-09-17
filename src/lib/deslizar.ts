@@ -16,8 +16,8 @@ export const VELOCIDAD_TIRON = 0.35;
 
 export type Asistencia = "voy" | "me_interesa" | null;
 export type ClaveAccion = "voy" | "no_voy" | "me_interesa" | "quitar_interes" | "seguir" | "dejar_de_seguir";
-export type Tono = "primario" | "tinta" | "gris";
-export type AccionRenglon = { clave: ClaveAccion; etiqueta: string; tono: Tono; deshabilitada?: boolean };
+export type Tono = "primario" | "tinta";
+export type AccionRenglon = { clave: ClaveAccion; etiqueta: string; tono: Tono };
 
 /**
  * Las dos acciones de un evento según lo que la persona ya decidió, como en la ficha: sin decisión, Voy y Me interesa;

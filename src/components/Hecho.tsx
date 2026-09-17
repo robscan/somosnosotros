@@ -3,13 +3,22 @@
 import { useEffect, useRef } from "react";
 import styles from "./Hecho.module.css";
 
-type Props = { texto: string; onDeshacer?: () => void; onCerrar: () => void };
+type Props = {
+  texto: string;
+  onDeshacer?: () => void;
+  onCerrar: () => void;
+  /** El botón: "Deshacer" tras un éxito; "Reintentar" si no se pudo guardar. */
+  etiqueta?: string;
+  /** No se pudo guardar: se anuncia como alerta. */
+  fallo?: boolean;
+};
 
 /**
- * Confirmación breve de algo hecho desde una lista al deslizar ("Te interesa «…»", "Sigues a …"), con Deshacer.
- * Solo para éxitos; se va sola a los 7 s (con 5 no daba tiempo a decidir deshacer). Quien la usa le da una `key` nueva en cada acción para reiniciar el tiempo.
+ * Aviso breve de algo hecho desde una lista al deslizar ("Te interesa «…»", "Sigues a …"), con Deshacer; o de que no se
+ * pudo guardar, con Reintentar. Se va solo a los 7 s (con 5 no daba tiempo a decidir). Quien lo usa le da una `key` nueva
+ * en cada acción para reiniciar el tiempo.
  */
-export default function Hecho({ texto, onDeshacer, onCerrar }: Props) {
+export default function Hecho({ texto, onDeshacer, onCerrar, etiqueta = "Deshacer", fallo = false }: Props) {
   const cerrar = useRef(onCerrar);
   useEffect(() => {
     cerrar.current = onCerrar;
@@ -19,7 +28,7 @@ export default function Hecho({ texto, onDeshacer, onCerrar }: Props) {
     return () => clearTimeout(t);
   }, []);
   return (
-    <p className={styles.hecho} role="status">
+    <p className={styles.hecho} role={fallo ? "alert" : "status"}>
       <span>{texto}</span>
       {onDeshacer && (
         <button
@@ -29,7 +38,7 @@ export default function Hecho({ texto, onDeshacer, onCerrar }: Props) {
             onCerrar();
           }}
         >
-          Deshacer
+          {etiqueta}
         </button>
       )}
     </p>

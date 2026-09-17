@@ -6,6 +6,7 @@ import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
 import { IconoEstrella, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
+import { avisosYaContestados } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
 import styles from "./ficha.module.css";
@@ -46,8 +47,9 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
   function cambiar(nuevo: EstadoAsistencia) {
     iniciar(async () => {
       fijarOptimista(nuevo);
-      await cambiarAsistencia(eventoId, nuevo);
-      if (nuevo === "voy" && !avisosPreguntado) setHoja(true);
+      const guardado = await cambiarAsistencia(eventoId, nuevo);
+      // La pregunta solo tras guardar, y no si ya se contestó en esta visita (la ficha puede venir de una copia de hace un rato).
+      if (guardado && nuevo === "voy" && !avisosPreguntado && !avisosYaContestados()) setHoja(true);
     });
   }
   const entrar = (accion: string) => `/entrar?siguiente=${encodeURIComponent(`${ruta}?accion=${accion}`)}`;

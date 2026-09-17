@@ -7,6 +7,7 @@ import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
 import { IconoMas, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
+import { avisosYaContestados } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { enEste } from "@/lib/plataforma";
 import { useEstadoPush, usePlataforma } from "@/lib/useAvisosTelefono";
@@ -17,8 +18,8 @@ type Props = {
   nombre: string;
   sigo: boolean;
   conSesion: boolean;
-  /** Acción del servidor ya ligada al lugar o artista: seguir (true) o dejar de seguir (false). */
-  accion: (seguir: boolean) => Promise<void>;
+  /** Acción del servidor ya ligada al lugar o artista: seguir (true) o dejar de seguir (false). Devuelve si se guardó. */
+  accion: (seguir: boolean) => Promise<boolean>;
   /** A dónde volver tras entrar, con la intención de seguir ya puesta. */
   hrefEntrar: string;
   /** Ya se le preguntó por los avisos (tras un Voy o al seguir otra cosa); no se vuelve a preguntar. */
@@ -53,8 +54,9 @@ export default function Seguir({ que, nombre, sigo, conSesion, accion, hrefEntra
   function cambiar(nuevo: boolean) {
     iniciar(async () => {
       fijar(nuevo);
-      await accion(nuevo);
-      if (nuevo && !avisosPreguntado) setHoja(true);
+      const guardado = await accion(nuevo);
+      // La pregunta solo tras guardar, y no si ya se contestó en esta visita (la ficha puede venir de una copia de hace un rato).
+      if (guardado && nuevo && !avisosPreguntado && !avisosYaContestados()) setHoja(true);
     });
   }
   function cerrarHoja() {

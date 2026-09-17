@@ -6,6 +6,7 @@ import { dondeSeActivan, enEste } from "@/lib/plataforma";
 import { estadoPush, suscribirPush } from "@/lib/pushCliente";
 import { useInstalarApp, usePlataforma } from "@/lib/useAvisosTelefono";
 import { elegirAvisos } from "@/app/avisos/acciones";
+import { marcarAvisosContestados } from "@/lib/avisosPreguntados";
 import { guardarSuscripcionPush } from "@/app/perfil/acciones";
 import { IconoCalendarioAgregar, IconoInstalar, IconoInstalarComputadora, IconoOk, IconoPendiente } from "./ui/Iconos";
 import styles from "./ConsentimientoAvisos.module.css";
@@ -59,6 +60,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
     const ok = await elegirAvisos({ correo: true });
     setTrabajando(false);
     if (!ok) return setNota("No se pudo guardar. Intenta de nuevo.");
+    marcarAvisosContestados();
     setNota(null);
     setCorreoOk(true);
     // Con un problema del teléfono a la vista, el correo cierra el asunto: el teléfono queda como estaba.
@@ -77,6 +79,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
       const alta = await suscribirPush(llavePush);
       if (!alta.ok) return setProblema(alta.motivo);
       if (await guardarSuscripcionPush(alta.sub)) {
+        marcarAvisosContestados();
         setProblema(null);
         setTelefono("hecho");
       } else setProblema("fallo");
@@ -87,6 +90,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
   async function noGracias() {
     setCorreoOk(false);
     setTelefono("no");
+    marcarAvisosContestados();
     await elegirAvisos({ correo: false, push: false });
   }
   /** "Ahora no" ante un problema: no se guarda nada; la pregunta vuelve en el siguiente Voy o Seguir. */
@@ -99,6 +103,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
     // Quiere avisos en el teléfono: queda dicho en la cuenta, y al abrir la app instalada se ofrece Activar (decisión 4).
     setHoja(false);
     setTelefono("pendiente");
+    marcarAvisosContestados();
     await elegirAvisos({ push: true });
   }
   async function tenerlaEnInicio() {

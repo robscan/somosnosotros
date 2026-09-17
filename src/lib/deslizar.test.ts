@@ -7,7 +7,8 @@ describe("deslizar", () => {
     expect(etiquetas(null)).toEqual(["Voy", "Me interesa"]);
     expect(etiquetas("voy")).toEqual(["No voy", "Me interesa"]);
     expect(etiquetas("me_interesa")).toEqual(["Voy", "Ya no"]);
-    expect(accionesEvento(null).every((a) => !a.deshabilitada)).toBe(true);
+    // Las dos se tocan siempre (ya no hay «Vas» gris): Voy en azul, Me interesa en tinta.
+    expect(accionesEvento("voy").map((a) => a.tono)).toEqual(["primario", "tinta"]);
     // Voy y Me interesa se reemplazan entre sí; No voy y Ya no dejan el evento sin decisión.
     expect(accionesEvento("me_interesa").map((a) => asistenciaTras(a.clave))).toEqual(["voy", null]);
     expect(accionesEvento("voy").map((a) => asistenciaTras(a.clave))).toEqual([null, "me_interesa"]);
