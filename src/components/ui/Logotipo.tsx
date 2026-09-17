@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { raizConCiudad } from "@/lib/ciudad";
 import styles from "./Logotipo.module.css";
 
 type Props = {
@@ -10,11 +14,19 @@ type Props = {
 /**
  * El logotipo es el dibujo SMSNSTRS con manos y pies (docs/diseno/logotipo), un SVG en public/.
  * Grande a la izquierda en las pantallas raíz; la versión chica al centro en las interiores. Lleva al inicio.
+ * Ya en el inicio (con o sin filtro) no apila historial y conserva la ciudad: sigue siendo la misma pantalla (OL-055).
  * Dos nodos: el enlace (área de toque de 44 px) y el dibujo. La altura va en rem y crece con el texto del teléfono.
  */
 export default function Logotipo({ chico = false }: Props) {
+  const enInicio = usePathname() === "/";
+  const router = useRouter();
+  function alTocar(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (!enInicio || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    router.replace(raizConCiudad("/", window.location.search));
+  }
   return (
-    <Link href="/" className={styles.logotipo} aria-label="Somos Nosotros, ir al inicio">
+    <Link href="/" replace={enInicio} onClick={alTocar} className={styles.logotipo} aria-label="Somos Nosotros, ir al inicio">
       <Image
         src={chico ? "/logotipo-chico.svg" : "/logotipo.svg"}
         alt=""

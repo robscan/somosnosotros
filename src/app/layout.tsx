@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
 import Script from "next/script";
+import { Suspense } from "react";
 import Navegacion from "@/components/Navegacion";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
@@ -52,7 +53,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <RegistroSW />
         <Navegacion />
-        <MemoriaScroll />
+        {/* Lee la consulta de la URL: en las pantallas estáticas se monta ya en el teléfono, sin frenar al resto. */}
+        <Suspense fallback={null}>
+          <MemoriaScroll />
+        </Suspense>
       </body>
     </html>
   );

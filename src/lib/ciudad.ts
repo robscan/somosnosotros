@@ -113,3 +113,12 @@ export function ciudadPorNombre<T extends Ciudad>(nombre: string | null | undefi
   const canon = ciudadCanonica(nombre);
   return ciudades.find((c) => c.nombre === canon) ?? ciudades.find((c) => c.slug === CIUDAD_INICIAL.slug) ?? (CIUDAD_INICIAL as T);
 }
+
+/**
+ * La raíz de una sección (/, /lugares, /artistas) con la ciudad que se está viendo y nada más (OL-055): tocar la
+ * sección en la que ya se está, o el logotipo en el inicio, suelta los filtros pero no la ciudad.
+ */
+export function raizConCiudad(raiz: string, consulta: string): string {
+  const ciudad = new URLSearchParams(consulta).get("ciudad");
+  return ciudad ? `${raiz}?ciudad=${encodeURIComponent(ciudad)}` : raiz;
+}

@@ -16,6 +16,7 @@ import Boton from "@/components/ui/Boton";
 import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
+import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
@@ -219,9 +220,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
               <IconoCalendario width={20} height={20} />
               <b>{eventos[0] ? textoProximo(eventos[0]) : "Sin eventos próximos"}</b>
               {eventos[0] && (
-                <a href="#eventos" className={ficha.datoEnlace}>
+                <Salto destino="eventos" className={ficha.datoEnlace}>
                   ver
-                </a>
+                </Salto>
               )}
             </li>
           </>

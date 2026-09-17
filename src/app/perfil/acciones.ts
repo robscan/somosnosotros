@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { validarPerfil, type ErroresPerfil } from "@/lib/perfil";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
-export type ResultadoGuardar = { ok: true } | { ok: false; errores: ErroresPerfil; general?: string };
+export type ResultadoGuardar = { ok: true; volver: string } | { ok: false; errores: ErroresPerfil; general?: string };
 
 export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: FormData): Promise<ResultadoGuardar> {
   const supabase = await clienteServidor();
@@ -30,8 +30,8 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
   revalidatePath("/perfil");
   revalidatePath("/ajustes");
   revalidatePath(`/personas/${user.id}`);
-  // Guardado: de vuelta a Ajustes, con la ficha releída.
-  redirect("/ajustes");
+  // Guardado: de vuelta a Ajustes, con la ficha releída (el formulario termina la tarea sin dejarla en el historial).
+  return { ok: true, volver: "/ajustes" };
 }
 
 /** Perfil público o reservado: se guarda al tocar el interruptor (migración 0020). */
