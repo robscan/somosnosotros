@@ -1,17 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
-import { useState, type ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
+import { cambiarAsistencia } from "@/app/eventos/acciones";
+import { accionEvento, textoHecho, type Asistencia } from "@/lib/deslizar";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import ChipCiudad from "./Ciudad";
+import Hecho from "./Hecho";
 import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
-import { IconoBuscar, IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
+import type { AccionDeslizable } from "./ui/Deslizable";
+import { IconoBuscar, IconoCalendario, IconoCaret, IconoCerrar, IconoEstrella, IconoOk } from "./ui/Iconos";
 import styles from "./AgendaInicio.module.css";
 
 type Props = {
@@ -26,6 +31,8 @@ type Props = {
   hoy: string;
   /** Lo que va entre la cabecera y la lista: la tarjeta "Activa los avisos" de la app instalada (docs/rediseno/17, decisión 4). */
   antes?: ReactNode;
+  /** Lo que la persona decidió en los eventos cargados (Voy, Me interesa); null = sin sesión. */
+  asistencias?: Record<string, Exclude<Asistencia, null>> | null;
 };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 /** Lo que la agenda recuerda al salir a una ficha y volver: pestaña, día elegido y búsqueda (decisión 17 de 02). */
@@ -35,7 +42,7 @@ type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: bo
  * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
-export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, antes }: Props) {
+export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, antes, asistencias = null }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
   // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
@@ -52,6 +59,38 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const [punto, setPunto] = useState<Punto | null>(null);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   const ahora = new Date();
+
+  // Al deslizar un evento: Me interesa (decisión del founder, 2026-09-16; bitácora 071). Se ve al momento y se guarda
+  // con la misma acción de la ficha; el aviso permite deshacer. Sin sesión, lleva a entrar y se aplica al volver.
+  const router = useRouter();
+  const [, iniciar] = useTransition();
+  const [mias, setMias] = useState<Record<string, Asistencia>>(asistencias ?? {});
+  const [hecho, setHecho] = useState<{ texto: string; deshacer: () => void; vez: number } | null>(null);
+  function guardar(eventoId: string, nuevo: Asistencia) {
+    setMias((m) => ({ ...m, [eventoId]: nuevo }));
+    iniciar(async () => {
+      await cambiarAsistencia(eventoId, nuevo);
+    });
+  }
+  function accionesDe(e: EventoAgenda): AccionDeslizable[] {
+    const previo = mias[e.id] ?? null;
+    const accion = accionEvento(previo);
+    const icono = accion.clave === "vas" ? <IconoOk width={22} height={22} /> : <IconoEstrella width={22} height={22} />;
+    return [
+      {
+        ...accion,
+        icono,
+        alTocar: () => {
+          if (asistencias === null) {
+            router.push(`/entrar?siguiente=${encodeURIComponent(`/eventos/${e.id}?accion=me_interesa`)}`);
+            return;
+          }
+          guardar(e.id, accion.clave === "me_interesa" ? "me_interesa" : null);
+          setHecho((h) => ({ texto: textoHecho(accion.clave, e.titulo), deshacer: () => guardar(e.id, previo), vez: (h?.vez ?? 0) + 1 }));
+        },
+      },
+    ];
+  }
 
   function pedirUbicacion() {
     if (!("geolocation" in navigator)) {
@@ -131,7 +170,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
           </h2>
           <ul className={styles.lista}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} />
+              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} estado={mias[e.id] ?? null} acciones={accionesDe(e)} />
             ))}
           </ul>
         </section>
@@ -183,6 +222,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       </div>
       {antes}
       {cuerpo}
+      {hecho && <Hecho key={hecho.vez} texto={hecho.texto} onDeshacer={hecho.deshacer} onCerrar={() => setHecho(null)} />}
     </>
   );
 }

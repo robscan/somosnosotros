@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
 import { textoDistancia } from "@/lib/agenda";
 import { calleCorta, etiquetaTipo, filtrarLugares, ordenarLugares, textoProximo, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
 import { Chips } from "./ui/Chip";
-import { IconoCalendario, IconoPin } from "./ui/Iconos";
+import Deslizable from "./ui/Deslizable";
+import { IconoCalendario, IconoOk, IconoPin } from "./ui/Iconos";
+import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
 import { CampoBuscar } from "@/components/ui/Buscador";
 import comun from "./Lista.module.css";
@@ -29,6 +30,10 @@ type Props = {
   chips?: ReactNode;
   /** El aviso de ubicación, bajo la fila de chips. */
   aviso?: ReactNode;
+  /** Los lugares que la persona sigue (se ven y cambian al deslizar); null = sin sesión. */
+  seguidos?: string[] | null;
+  /** Para la pregunta de avisos tras el primer Seguir; null = sin sesión. */
+  avisos?: AvisosLista | null;
 };
 
 /**
@@ -36,8 +41,10 @@ type Props = {
  * con eventos primero, o por distancia con la ubicación; búsqueda por nombre y chips de tipo solo cuando hay muchos.
  * Una sola fila de chips: Cerca de mí · Todos · tipos (la pinta VistaLugares, que comparte el tipo con el mapa).
  */
-export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso }: Props) {
+export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso, seguidos = null, avisos = null }: Props) {
   const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
+  // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
+  const seguir = useSeguirEnLista("lugar", seguidos, avisos);
   const hrefNuevo = conSesion ? "/lugares/nuevo" : "/entrar?siguiente=/lugares/nuevo";
 
   if (lugares.length === 0 && !tipo) {
@@ -67,35 +74,40 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       </p>
       <ul>
         {lista.map((l) => (
-          <li key={l.id}>
-            <Link href={`/lugares/${l.id}`} className={renglon.renglon}>
-              {l.portada ? (
-                // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                <img src={l.portada} alt="" className={renglon.foto} />
-              ) : (
-                <span className={`${renglon.foto} ${renglon.fotoVacia}`} aria-hidden="true">
-                  <IconoPin width={26} height={26} />
+          <Deslizable key={l.id} href={`/lugares/${l.id}`} className={renglon.renglon} acciones={seguir.acciones(l.id, l.nombre)}>
+            {l.portada ? (
+              // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
+              <img src={l.portada} alt="" className={renglon.foto} />
+            ) : (
+              <span className={`${renglon.foto} ${renglon.fotoVacia}`} aria-hidden="true">
+                <IconoPin width={26} height={26} />
+              </span>
+            )}
+            <span className={renglon.titulo}>{l.nombre}</span>
+            <span className={`${renglon.meta} ${renglon.metaColumna}`}>
+              {seguir.sigo(l.id) && (
+                <span className={renglon.estado}>
+                  <IconoOk width={14} height={14} />
+                  Sigues
                 </span>
               )}
-              <span className={renglon.titulo}>{l.nombre}</span>
-              <span className={`${renglon.meta} ${renglon.metaColumna}`}>
-                {l.privado && <span className={renglon.sello}>Solo tú lo ves</span>}
-                <span className={renglon.lugar}>
-                  <IconoPin width={15} height={15} />
-                  {calleCorta(l.direccion) || "Sin dirección"}
-                  {km.has(l.id) ? ` · ${textoDistancia(km.get(l.id)!)}` : ""}
-                </span>
-                {l.proximo && (
-                  <span>
-                    <IconoCalendario width={15} height={15} />
-                    <b>{textoProximo(l.proximo.inicio)}</b>
-                  </span>
-                )}
+              {l.privado && <span className={renglon.sello}>Solo tú lo ves</span>}
+              <span className={renglon.lugar}>
+                <IconoPin width={15} height={15} />
+                {calleCorta(l.direccion) || "Sin dirección"}
+                {km.has(l.id) ? ` · ${textoDistancia(km.get(l.id)!)}` : ""}
               </span>
-            </Link>
-          </li>
+              {l.proximo && (
+                <span>
+                  <IconoCalendario width={15} height={15} />
+                  <b>{textoProximo(l.proximo.inicio)}</b>
+                </span>
+              )}
+            </span>
+          </Deslizable>
         ))}
       </ul>
+      {seguir.extras}
     </section>
   );
 }
