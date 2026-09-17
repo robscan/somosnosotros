@@ -1,6 +1,6 @@
 # 062 · Los eventos a la misma hora ya no cambian de orden entre cargas
 
-**Fecha:** 2026-09-16 (noche) · **Rama:** `orden-estable-agenda` · **Pieza:** OL-037, hallazgo anotado al verificar la ✕ como icono (bitácora 060, [PR #65](https://github.com/robscan/somosnosotros/pull/65)).
+**Fecha:** 2026-09-16 (noche) · **Rama:** `orden-estable-agenda` ([PR #66](https://github.com/robscan/somosnosotros/pull/66)) · **Pieza:** OL-037, hallazgo anotado al verificar la ✕ como icono (bitácora 060, [PR #65](https://github.com/robscan/somosnosotros/pull/65)).
 
 ## Qué vio el founder
 En el simulador del iPhone, con la agenda en el jueves 17, los eventos de las 19:00 salieron en distinto orden entre dos cargas de la misma pantalla: primero "Demostración folclórica…" y en la siguiente "Lectura del Taller de Creación Literaria…".
