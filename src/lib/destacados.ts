@@ -22,11 +22,15 @@ export const TIPO_DE: Record<Seccion, TipoFicha> = { eventos: "evento", lugares:
 export const SECCION_DE: Record<TipoFicha, Seccion> = { evento: "eventos", lugar: "lugares", artista: "artistas" };
 /** Lo que la administración decidió sobre una ficha: la eligió, la quitó aunque tenga asistentes, o nada. */
 export type EstadoDestacado = "elegido" | "quitado" | "ninguno";
+/** Lo decidido que sigue vigente, con su plazo y cuándo se decidió: Deshacer lo repone tal cual. */
+export type Decidido = { estado: EstadoDestacado; plazo: string | null; creado: string | null };
+export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: null };
 /** Una tarjeta de la tira, lista para pintarse. */
 export type Tarjeta = { id: string; href: string; foto: string; titulo: string; detalle: string; van: number };
 
 /** Lo que elige la administración en lugares y artistas dura dos semanas; un evento, hasta que pasa. */
 export const DIAS_DESTACADO = 14;
+const DOS_SEMANAS_MS = DIAS_DESTACADO * 86400000;
 
 /** La tira de una sección en una ciudad; vacía si no hay base o falla (la lista sigue: la tira es un atajo). */
 export async function leerTira(supabase: SupabaseClient | null, seccion: Seccion, ciudad: string): Promise<Destacado[]> {
@@ -62,7 +66,7 @@ function hasta(iso: string, ahora: Date, zona: string): string {
   return dia === "Hoy" || dia === "Mañana" ? `hasta ${minuscula(dia)}` : `hasta el ${dia}`;
 }
 
-const enDosSemanas = (ahora: Date) => new Date(ahora.getTime() + DIAS_DESTACADO * 86400000).toISOString();
+const enDosSemanas = (ahora: Date) => new Date(ahora.getTime() + DOS_SEMANAS_MS).toISOString();
 
 /** Debajo de «Destacar», en el menú: hasta cuándo quedaría. */
 export function textoDestacar(tipo: TipoFicha, ahora = new Date(), zona = ZONA_INICIAL): string {
@@ -82,18 +86,36 @@ export function textoHecho(estado: EstadoDestacado, tipo: TipoFicha, ahora = new
 }
 
 /** Lo que la administración decidió sobre una ficha, si sigue vigente: con el plazo vencido, cuenta como nada. */
-export function estadoVigente(renglon: { quitado: boolean; hasta: string | null } | null, ahora = new Date()): EstadoDestacado {
-  if (!renglon || (renglon.hasta && new Date(renglon.hasta) <= ahora)) return "ninguno";
-  return renglon.quitado ? "quitado" : "elegido";
+export function decididoVigente(renglon: { quitado: boolean; hasta: string | null; creado_en: string } | null, ahora = new Date()): Decidido {
+  if (!renglon || (renglon.hasta && new Date(renglon.hasta) <= ahora)) return SIN_DECIDIR;
+  return { estado: renglon.quitado ? "quitado" : "elegido", plazo: renglon.hasta, creado: renglon.creado_en };
 }
 
 /**
- * El renglón «Destacar» del menú de una ficha. Está destacada si la administración la eligió (aunque no quepa en la tira
- * de 8) o si entra por asistentes y nadie la quitó; entonces se ofrece quitarla. El motivo sale de lo decidido y, si no
- * hay nada decidido, de la tira.
+ * Los límites de `cambiar_destacado` para lo que repone Deshacer: el plazo, por venir y de dos semanas como mucho; la
+ * fecha de la decisión, no futura. La acción los comprueba antes de llamar a la base.
  */
-export function opcionDestacar(tipo: TipoFicha, estado: EstadoDestacado, plazo: string | null, enTira: Destacado | null, ahora = new Date(), zona = ZONA_INICIAL): { quitar: boolean; detalle: string } {
-  if (estado === "elegido") return { quitar: true, detalle: textoMotivo({ motivo: "elegido", hasta: plazo, van: 0 }, tipo, ahora, zona) };
+export function fechasValidas(plazo: string | null, creado: string | null, ahora = new Date()): boolean {
+  const hasta = plazo === null ? null : Date.parse(plazo);
+  const desde = creado === null ? null : Date.parse(creado);
+  return (hasta === null || (hasta > ahora.getTime() && hasta <= ahora.getTime() + DOS_SEMANAS_MS)) && (desde === null || desde <= ahora.getTime());
+}
+
+/**
+ * Si una ficha puede salir en la tira, con la regla de `tira_destacados`: visible; un lugar, además, no privado; un
+ * evento, sin pasar y sin lugar o en uno visible y no privado. A lo que nunca puede salir no se le ofrece «Destacar».
+ */
+export function puedeDestacarse(ficha: { visible: boolean; privado?: boolean; paso?: boolean; lugar?: { visible: boolean; privado: boolean } | null }): boolean {
+  return ficha.visible && !ficha.privado && !ficha.paso && (!ficha.lugar || (ficha.lugar.visible && !ficha.lugar.privado));
+}
+
+/**
+ * El renglón «Destacar» del menú de una ficha y del panel. Está destacada si la administración la eligió (aunque no quepa
+ * en la tira de 8) o si entra por asistentes y nadie la quitó; entonces se ofrece quitarla. El motivo sale de lo decidido
+ * y, si no hay nada decidido, de la tira.
+ */
+export function opcionDestacar(tipo: TipoFicha, decidido: Decidido, enTira: Destacado | null, ahora = new Date(), zona = ZONA_INICIAL): { quitar: boolean; detalle: string } {
+  if (decidido.estado === "elegido") return { quitar: true, detalle: textoMotivo({ motivo: "elegido", hasta: decidido.plazo, van: 0 }, tipo, ahora, zona) };
   if (enTira) return { quitar: true, detalle: textoMotivo(enTira, tipo, ahora, zona) };
   return { quitar: false, detalle: textoDestacar(tipo, ahora, zona) };
 }

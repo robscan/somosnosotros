@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EventoAgenda } from "./agenda";
 import type { ArtistaLista } from "./artistas";
-import { enOrden, estadoVigente, opcionDestacar, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
+import { decididoVigente, enOrden, fechasValidas, opcionDestacar, puedeDestacarse, SIN_DECIDIR, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
 import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 import type { LugarLista } from "./lugares";
 
@@ -62,21 +62,31 @@ describe("textos del menú", () => {
 describe("lo decidido y el menú de la ficha", () => {
   const vigente = "2026-09-25T20:00:00Z";
   const vencido = "2026-09-10T20:00:00Z";
-  it("un plazo vencido cuenta como nada; un evento no lleva plazo", () => {
-    expect(estadoVigente(null, AHORA)).toBe("ninguno");
-    expect(estadoVigente({ quitado: true, hasta: vencido }, AHORA)).toBe("ninguno");
-    expect(estadoVigente({ quitado: true, hasta: vigente }, AHORA)).toBe("quitado");
-    expect(estadoVigente({ quitado: false, hasta: vigente }, AHORA)).toBe("elegido");
-    expect(estadoVigente({ quitado: false, hasta: null }, AHORA)).toBe("elegido");
+  const creado = "2026-09-11T20:00:00.123456+00:00";
+  it("un plazo vencido cuenta como nada; lo vigente guarda su plazo y su fecha para Deshacer", () => {
+    expect(decididoVigente(null, AHORA)).toEqual(SIN_DECIDIR);
+    expect(decididoVigente({ quitado: true, hasta: vencido, creado_en: creado }, AHORA)).toEqual(SIN_DECIDIR);
+    expect(decididoVigente({ quitado: true, hasta: vigente, creado_en: creado }, AHORA)).toEqual({ estado: "quitado", plazo: vigente, creado });
+    expect(decididoVigente({ quitado: false, hasta: null, creado_en: creado }, AHORA)).toEqual({ estado: "elegido", plazo: null, creado });
+  });
+  it("lo que repone Deshacer, con los límites de la base: plazo por venir y de dos semanas como mucho, fecha no futura", () => {
+    expect(fechasValidas(null, null, AHORA)).toBe(true);
+    expect(fechasValidas(vigente, creado, AHORA)).toBe(true);
+    expect(fechasValidas("2026-10-01T00:00:00Z", null, AHORA)).toBe(true);
+    expect(fechasValidas("2026-10-01T00:00:01Z", null, AHORA)).toBe(false);
+    expect(fechasValidas(vencido, null, AHORA)).toBe(false);
+    expect(fechasValidas("infinity", null, AHORA)).toBe(false);
+    expect(fechasValidas(null, "2026-09-17T00:00:01Z", AHORA)).toBe(false);
+    expect(fechasValidas(null, "ayer", AHORA)).toBe(false);
   });
   it("lo elegido se ofrece quitar aunque no quepa en la tira, con su plazo", () => {
-    expect(opcionDestacar("lugar", "elegido", vigente, null, AHORA)).toEqual({ quitar: true, detalle: "Destacado hasta el vie 25 de sep" });
+    expect(opcionDestacar("lugar", { estado: "elegido", plazo: vigente, creado }, null, AHORA)).toEqual({ quitar: true, detalle: "Destacado hasta el vie 25 de sep" });
   });
   it("lo que entra por asistentes se ofrece quitar; lo quitado vigente o sin nada, destacar", () => {
     const tira: Destacado = { id: "l1", motivo: "asistentes", hasta: null, van: 4 };
-    expect(opcionDestacar("lugar", "ninguno", null, tira, AHORA)).toEqual({ quitar: true, detalle: "Destacado: 4 van a sus eventos" });
-    expect(opcionDestacar("lugar", "quitado", vigente, null, AHORA)).toEqual({ quitar: false, detalle: "Dos semanas: hasta el mié 30 de sep" });
-    expect(opcionDestacar("evento", "ninguno", null, null, AHORA)).toEqual({ quitar: false, detalle: "Hasta que pase el evento" });
+    expect(opcionDestacar("lugar", SIN_DECIDIR, tira, AHORA)).toEqual({ quitar: true, detalle: "Destacado: 4 van a sus eventos" });
+    expect(opcionDestacar("lugar", { estado: "quitado", plazo: vigente, creado }, null, AHORA)).toEqual({ quitar: false, detalle: "Dos semanas: hasta el mié 30 de sep" });
+    expect(opcionDestacar("evento", SIN_DECIDIR, null, AHORA)).toEqual({ quitar: false, detalle: "Hasta que pase el evento" });
   });
   it("las fechas van en la zona de la ficha", () => {
     // 25 de sep a las 23:30 en México es 26 de sep en Madrid.
@@ -84,3 +94,16 @@ describe("lo decidido y el menú de la ficha", () => {
   });
 });
 
+describe("qué se puede destacar", () => {
+  it("con la regla de la tira: visible; un lugar, no privado; un evento, sin pasar y en un lugar que se ve", () => {
+    const lugarVisto = { visible: true, privado: false };
+    expect(puedeDestacarse({ visible: true })).toBe(true);
+    expect(puedeDestacarse({ visible: false })).toBe(false);
+    expect(puedeDestacarse({ visible: true, privado: true })).toBe(false);
+    expect(puedeDestacarse({ visible: true, paso: false, lugar: null })).toBe(true);
+    expect(puedeDestacarse({ visible: true, paso: false, lugar: lugarVisto })).toBe(true);
+    expect(puedeDestacarse({ visible: true, paso: true, lugar: lugarVisto })).toBe(false);
+    expect(puedeDestacarse({ visible: true, paso: false, lugar: { visible: true, privado: true } })).toBe(false);
+    expect(puedeDestacarse({ visible: true, paso: false, lugar: { visible: false, privado: false } })).toBe(false);
+  });
+});

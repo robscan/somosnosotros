@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { EstadoDestacado } from "@/lib/destacados";
+import { fechasValidas, type EstadoDestacado } from "@/lib/destacados";
 import { esUuid } from "@/lib/formulario";
 import { textoCodigoRol, type Decision } from "@/lib/panel";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -91,12 +91,14 @@ export async function cambiarVisibilidad(tipo: TipoOcultable, id: string, visibl
  * Destacar una ficha, quitarla de destacados (también si entró por asistentes) o dejarla como estaba al deshacer
  * (docs/rediseno/20, decisiones 6 a 8). La base vuelve a exigir la administración (cambiar_destacado).
  */
-export async function cambiarDestacado(tipo: TipoOcultable, id: string, estado: EstadoDestacado, plazo: string | null = null): Promise<Resultado> {
-  if (!esOcultable(tipo) || !esUuid(id) || !["elegido", "quitado", "ninguno"].includes(estado) || (plazo !== null && Number.isNaN(Date.parse(plazo)))) return { ok: false, error: "No encontramos esa ficha." };
+export async function cambiarDestacado(tipo: TipoOcultable, id: string, estado: EstadoDestacado, plazo: string | null = null, creado: string | null = null): Promise<Resultado> {
+  if (!esOcultable(tipo) || !esUuid(id) || !["elegido", "quitado", "ninguno"].includes(estado)) return { ok: false, error: "No encontramos esa ficha." };
+  const fallo = { ok: false, error: estado === "elegido" ? "No se pudo destacar. Intenta de nuevo." : "No se pudo cambiar. Intenta de nuevo." } as const;
+  // Deshacer repone el plazo y cuándo se decidió, con los límites de la base; sin ellos, la base pone dos semanas desde ahora.
+  if (!fechasValidas(plazo, creado)) return fallo;
   const supabase = await soloAdmin();
-  // Con plazo, Deshacer repone el que había; sin él, la base pone dos semanas.
-  const { error } = await supabase.rpc("cambiar_destacado", { p_tipo: TABLA[tipo], p_id: id, p_estado: estado, p_hasta: plazo });
-  if (error) return { ok: false, error: estado === "elegido" ? "No se pudo destacar. Intenta de nuevo." : "No se pudo cambiar. Intenta de nuevo." };
+  const { error } = await supabase.rpc("cambiar_destacado", { p_tipo: TABLA[tipo], p_id: id, p_estado: estado, p_hasta: plazo, p_creado_en: creado });
+  if (error) return fallo;
   revalidarFicha(tipo, id);
   return { ok: true };
 }

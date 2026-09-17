@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useLayoutEffect, useRef } from "react";
+import { useCallback, useId, useRef, type UIEvent } from "react";
 import type { Tarjeta } from "@/lib/destacados";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import { IconoPersonas } from "./ui/Iconos";
@@ -14,26 +14,38 @@ import styles from "./Destacados.module.css";
  */
 export default function Destacados({ tarjetas, redondas = false }: { tarjetas: Tarjeta[]; redondas?: boolean }) {
   const titulo = useId();
-  const carril = useRef<HTMLUListElement>(null);
-  const temporizador = useRef(0);
-  useLayoutEffect(() => {
+  /** El guardado que espera: la URL donde se deslizó y su temporizador. */
+  const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
+  // Al aparecer, el carril vuelve a donde estaba; al irse, guarda lo que esperaba, y quien desliza y toca una tarjeta antes
+  // de 100 ms no pierde la posición. Al irse el carril sigue en la página, pero la URL ya puede ser la de la ficha: por eso
+  // se guarda con la URL del desplazamiento.
+  const recordar = useCallback((carril: HTMLUListElement) => {
     const x = leerScroll(claveTira());
-    if (x && carril.current) carril.current.scrollLeft = x;
+    if (x) carril.scrollLeft = x;
+    return () => {
+      const espera = pendiente.current;
+      if (!espera) return;
+      window.clearTimeout(espera.temporizador);
+      pendiente.current = null;
+      guardarScroll(espera.clave, carril.scrollLeft);
+    };
   }, []);
-  useEffect(() => () => window.clearTimeout(temporizador.current), []);
   // Como MemoriaScroll: se guarda al vuelo, como mucho cada 100 ms.
-  function alDesplazar() {
-    if (temporizador.current) return;
-    temporizador.current = window.setTimeout(() => {
-      temporizador.current = 0;
-      if (carril.current) guardarScroll(claveTira(), carril.current.scrollLeft);
+  function alDesplazar(e: UIEvent<HTMLUListElement>) {
+    if (pendiente.current) return;
+    const carril = e.currentTarget;
+    const clave = claveTira();
+    const temporizador = window.setTimeout(() => {
+      pendiente.current = null;
+      guardarScroll(clave, carril.scrollLeft);
     }, 100);
+    pendiente.current = { clave, temporizador };
   }
   if (tarjetas.length === 0) return null;
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <h2 id={titulo}>Destacados</h2>
-      <ul ref={carril} className={`${styles.carril} ${tarjetas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""}`} onScroll={alDesplazar}>
+      <ul ref={recordar} className={`${styles.carril} ${tarjetas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""}`} onScroll={alDesplazar}>
         {tarjetas.map((t) => (
           <li key={t.id}>
             <Link href={t.href} className={styles.tarjeta}>

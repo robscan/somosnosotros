@@ -5,7 +5,8 @@ import Boton from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import ficha from "@/components/ui/Ficha.module.css";
-import { TIPO_DE, textoMotivo } from "@/lib/destacados";
+import { puedeDestacarse, SIN_DECIDIR, TIPO_DE, textoMotivo } from "@/lib/destacados";
+import { eventoPaso } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
 import { normalizarNombre } from "@/lib/lugares";
 import { detalleArtista, detalleEvento, detalleLugar, esSeccionFichas, FILTROS, hrefLista, leerLista, PAGINA_PANEL, vacioDe, type ArtistaFila, type EventoFila, type LugarFila } from "@/lib/panel";
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ seccion: 
   return { title: `${esSeccionFichas(seccion) ? TITULO[seccion] : "Administración"} · Administración · Somos Nosotros` };
 }
 
-/** `destacable`: lo que puede salir en la tira (visible y, si es lugar, no privado), como en la ficha. */
+/** `destacable`: lo que puede salir en la tira, con la misma regla que la ficha (`puedeDestacarse`). */
 type Renglon = { id: string; nombre: string; foto: string | null; visible: boolean; destacable: boolean; detalle: string };
 
 /**
@@ -37,7 +38,7 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
   if (!actual) redirect(`/entrar?siguiente=/admin/${seccion}`);
   if (actual.perfil.rol !== "admin") redirect("/");
   const l = leerLista(seccion, await searchParams);
-  const { filas, total, conteos, error, destacados } = await cargarFichas(seccion, l);
+  const { filas, total, conteos, error, destacados, decididos } = await cargarFichas(seccion, l);
   const ahora = new Date();
   const destacadoDe = new Map(destacados.map((d) => [d.id, d]));
   const renglones: Renglon[] =
@@ -45,10 +46,10 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
     l.filtro === "destacados"
       ? destacados.filter((d) => !l.q || normalizarNombre(d.nombre).includes(normalizarNombre(l.q))).map((d) => ({ id: d.id, nombre: d.nombre, foto: d.foto, visible: true, destacable: true, detalle: textoMotivo(d, TIPO_DE[seccion], ahora) }))
       : seccion === "lugares"
-      ? (filas as LugarFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, destacable: x.visible && !x.privado, detalle: detalleLugar(x) }))
+      ? (filas as LugarFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, destacable: puedeDestacarse(x), detalle: detalleLugar(x) }))
       : seccion === "eventos"
-        ? (filas as EventoFila[]).map((x) => ({ id: x.id, nombre: x.titulo, foto: x.imagen, visible: x.visible, destacable: x.visible, detalle: detalleEvento(x, ahora) }))
-        : (filas as ArtistaFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, destacable: x.visible, detalle: detalleArtista(x) }));
+        ? (filas as EventoFila[]).map((x) => ({ id: x.id, nombre: x.titulo, foto: x.imagen, visible: x.visible, destacable: puedeDestacarse({ visible: x.visible, paso: eventoPaso(x.inicio, x.fin, ahora, x.zona), lugar: x.lugar }), detalle: detalleEvento(x, ahora) }))
+        : (filas as ArtistaFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, destacable: puedeDestacarse(x), detalle: detalleArtista(x) }));
   const redonda = seccion === "artistas" ? styles.redonda : "";
 
   return (
@@ -92,7 +93,7 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
                 </b>
                 <small>{r.detalle}</small>
               </Link>
-              <MenuFicha seccion={seccion} id={r.id} nombre={r.nombre} visible={r.visible} destacable={r.destacable} destacado={destacadoDe.get(r.id) ?? null} />
+              <MenuFicha seccion={seccion} id={r.id} nombre={r.nombre} visible={r.visible} destacable={r.destacable} decidido={decididos.get(r.id) ?? SIN_DECIDIR} enTira={destacadoDe.get(r.id) ?? null} />
             </li>
           ))}
         </ul>

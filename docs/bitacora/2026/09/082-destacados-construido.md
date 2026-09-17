@@ -92,6 +92,23 @@ El encargado subió la rama al [PR #86](https://github.com/robscan/somosnosotros
   - restando conteos se puede inferir cuántos administradores van;
   - «Próximo:» en la tarjeta de artista.
 
+## Segunda verificación y correcciones
+El encargado subió a8a1cba al PR #86 y la verificó. Confirmó el conteo de personas, la privacidad (eventos en lugares privados, artistas ocultos), los permisos, los nulos y casi todo Deshacer. Quedaban cinco cosas, corregidas encima:
+- **Deshacer no reponía la prioridad** (lo vieron dos lentes por separado). `cambiar_destacado` borra e inserta, y `creado_en` volvía a ser la de ahora. Como la tira ordena lo elegido por esa fecha y se queda con 8, Quitar → Deshacer mandaba lo repuesto al frente y podía sacar a otro.
+  - Ahora la función recibe también `p_creado_en`: nulo por defecto, solo al reponer, ni futuro ni infinito.
+  - Deshacer manda la fecha tal como la dio la base, con sus microsegundos.
+  - El banco comprueba que la tira queda idéntica tras Quitar → Deshacer, con uno fuera y otro dentro de los 8.
+- **`p_hasta` sin límites:** aceptaba 100 años, `infinity` o fechas pasadas. Ahora va por venir y de dos semanas como mucho; si no, `destacado_no_valido`. La acción comprueba lo mismo antes de llamar (`fechasValidas`).
+- **«Destacar» en eventos que nunca pueden salir:** los de lugares privados u ocultos y, en el panel, los que ya pasaron. La ficha y el panel usan la regla de la tira (`puedeDestacarse`); el panel lee si el lugar de cada evento se ve junto con su zona.
+- **El panel decía otra cosa que la ficha** con lo elegido fuera de los 8: ofrecía «Destacar» y, al tocarlo, lo renovaba y lo pasaba al frente. Ahora los dos deciden con lo decidido vigente (`decididoVigente`, antes `estadoVigente`), que la administración lee de la tabla para los renglones que se ven, en tandas de 100.
+- **La memoria del carril** cancelaba el guardado pendiente al desmontar. Ahora lo hace, con la URL donde se deslizó, porque al irse la URL ya puede ser la de la ficha. El carril usa un ref con limpieza (React 19), así que también vale si la tira aparece después del primer render.
+- **Verificado:**
+  - banco de destacados con 53 comprobaciones. Mutaciones: sin reponer la fecha fallan 2 (el que estaba fuera entra primero y saca a otro), sin límites al plazo falla 1 y sin límites a la fecha, 1. Los otros cuatro bancos, en verde (95, 68, 50, 44);
+  - 13 pruebas de `lib/destacados`, 293 en total; lint con 0 errores; tipos; build;
+  - con la API falsa a 390×844, en el panel: un elegido fuera de la tira dice «Quitar de destacados · Destacado hasta el dom 27 de sep», igual que su ficha, y un lugar privado y un evento en él no ofrecen «Destacar», ni en el panel ni en la ficha;
+  - en la ficha, Quitar manda plazo y fecha vacíos, y Deshacer, los de antes (`2026-09-13T18:00:00.123456+00:00`);
+  - en la Agenda, al quitar la tira justo después de deslizar, la posición (232) se guarda al instante y la tira vuelve ahí.
+
 ## Queda
 - **Antes de mezclar:** aplicar `20260917140000_destacados.sql`. Sin ella la app no se rompe (la tira sale vacía), pero destacar falla.
 - Push, PR y producción: el encargado.

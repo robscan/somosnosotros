@@ -19,6 +19,7 @@ import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
+import { puedeDestacarse } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { etiquetaLugar, etiquetaTipo, textoProximo, type Lugar } from "@/lib/lugares";
@@ -103,7 +104,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
-  const destacable = esAdmin && lugar.visible && !lugar.privado ? await cargarDestacado("lugar", lugar.id) : null;
+  const destacable = esAdmin && puedeDestacarse(lugar) ? await cargarDestacado("lugar", lugar.id) : null;
   // Edita el autor, la cuenta ligada ("¿Es tu espacio?", atendido por el administrador) o el administrador.
   const esAutor = !!actual && actual.perfil.id === lugar.creado_por;
   const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);

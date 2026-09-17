@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import Hoja from "@/components/ui/Hoja";
 import { IconoDestello, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPuntos } from "@/components/ui/Iconos";
-import { TIPO_DE, textoDestacar, textoMotivo, type Destacado } from "@/lib/destacados";
+import { opcionDestacar, TIPO_DE, type Decidido, type Destacado } from "@/lib/destacados";
 import { rutaEditar, textoOcultar } from "@/lib/panel";
 import { cambiarDestacado, cambiarVisibilidad } from "../acciones";
 import styles from "../admin.module.css";
@@ -12,12 +12,14 @@ import styles from "../admin.module.css";
 /**
  * Los tres puntos de cada renglón (decisión 10): el mismo menú de las fichas, con ocultar al final y aparte. Ocultar no
  * pregunta: el menú es la capa y la etiqueta "Oculto" del renglón, que llega de nuevo del servidor, es la evidencia.
+ * «Destacar» o «Quitar de destacados» sale de lo decidido, como en la ficha, no de la tira de 8.
  */
-export default function MenuFicha({ seccion, id, nombre, visible, destacable, destacado }: { seccion: "lugares" | "eventos" | "artistas"; id: string; nombre: string; visible: boolean; destacable: boolean; destacado: Destacado | null }) {
+export default function MenuFicha({ seccion, id, nombre, visible, destacable, decidido, enTira }: { seccion: "lugares" | "eventos" | "artistas"; id: string; nombre: string; visible: boolean; destacable: boolean; decidido: Decidido; enTira: Destacado | null }) {
   const [abierto, setAbierto] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enCamino, iniciar] = useTransition();
   const [destacando, iniciarDestacado] = useTransition();
+  const opcion = opcionDestacar(TIPO_DE[seccion], decidido, enTira);
 
   function alternar() {
     setError(null);
@@ -32,7 +34,7 @@ export default function MenuFicha({ seccion, id, nombre, visible, destacable, de
   function destacar() {
     setError(null);
     iniciarDestacado(async () => {
-      const r = await cambiarDestacado(TIPO_DE[seccion], id, destacado ? "quitado" : "elegido");
+      const r = await cambiarDestacado(TIPO_DE[seccion], id, opcion.quitar ? "quitado" : "elegido");
       if (r.ok) setAbierto(false);
       else setError(r.error);
     });
@@ -63,8 +65,8 @@ export default function MenuFicha({ seccion, id, nombre, visible, destacable, de
               <li>
                 <button type="button" className={`${styles.menuItem} ${styles.menuDestacar}`} disabled={enCamino || destacando} onClick={destacar}>
                   <IconoDestello width={20} height={20} />
-                  {destacado ? "Quitar de destacados" : "Destacar"}
-                  <small>{destacado ? textoMotivo(destacado, TIPO_DE[seccion]) : textoDestacar(TIPO_DE[seccion])}</small>
+                  {opcion.quitar ? "Quitar de destacados" : "Destacar"}
+                  <small>{opcion.detalle}</small>
                 </button>
               </li>
             )}

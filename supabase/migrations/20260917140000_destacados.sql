@@ -102,28 +102,33 @@ $$;
 comment on function public.tira_destacados(text, text) is 'La tira de destacados de una sección (eventos, lugares o artistas) en una ciudad: id, por qué (elegido o asistentes), hasta cuándo y cuántos van.';
 
 -- ---------- destacar, quitar o dejar como estaba ----------
--- Definer: la tabla no tiene políticas de escritura; la guarda es la administración, comprobada aquí. `p_hasta` sirve a
--- Deshacer, que repone el plazo que había; sin él, un lugar o un artista queda dos semanas. Un evento vale hasta que pasa.
-create function public.cambiar_destacado(p_tipo text, p_id uuid, p_estado text, p_hasta timestamptz default null) returns void
+-- Definer: la tabla no tiene políticas de escritura; la guarda es la administración, comprobada aquí. Deshacer repone lo
+-- que había: el plazo (`p_hasta`, por venir y de dos semanas como mucho) y cuándo se eligió (`p_creado_en`, ni futuro
+-- ni infinito), porque la tira ordena lo elegido por esa fecha y, con la de ahora, lo repuesto pasaría al frente y
+-- sacaría a otro. Sin ellos, un lugar o un artista queda dos semanas desde ahora. Un evento vale hasta que pasa.
+create function public.cambiar_destacado(p_tipo text, p_id uuid, p_estado text, p_hasta timestamptz default null, p_creado_en timestamptz default null) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.es_admin() then
     raise exception 'sin_permiso' using errcode = '42501';
   end if;
   if p_tipo is null or p_id is null or p_estado is null
-    or p_tipo not in ('eventos', 'lugares', 'artistas') or p_estado not in ('elegido', 'quitado', 'ninguno') then
+    or p_tipo not in ('eventos', 'lugares', 'artistas') or p_estado not in ('elegido', 'quitado', 'ninguno')
+    or p_hasta <= now() or p_hasta > now() + interval '14 days'
+    or not isfinite(p_creado_en) or p_creado_en > now() then
     raise exception 'destacado_no_valido' using errcode = '22023';
   end if;
   delete from public.destacados
   where case p_tipo when 'eventos' then evento_id when 'lugares' then lugar_id else artista_id end = p_id;
   if p_estado <> 'ninguno' then
-    insert into public.destacados (evento_id, lugar_id, artista_id, quitado, hasta)
+    insert into public.destacados (evento_id, lugar_id, artista_id, quitado, hasta, creado_en)
     values (
       case when p_tipo = 'eventos' then p_id end,
       case when p_tipo = 'lugares' then p_id end,
       case when p_tipo = 'artistas' then p_id end,
       p_estado = 'quitado',
-      case when p_tipo <> 'eventos' then coalesce(p_hasta, now() + interval '14 days') end
+      case when p_tipo <> 'eventos' then coalesce(p_hasta, now() + interval '14 days') end,
+      coalesce(p_creado_en, now())
     );
   end if;
 end;
@@ -148,8 +153,8 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- ---------- permisos ----------
-revoke execute on function public.cambiar_destacado(text, uuid, text, timestamptz) from public, anon;
+revoke execute on function public.cambiar_destacado(text, uuid, text, timestamptz, timestamptz) from public, anon;
 revoke execute on function public.panel_destacados(text) from public, anon;
 grant execute on function public.tira_destacados(text, text) to anon, authenticated;
-grant execute on function public.cambiar_destacado(text, uuid, text, timestamptz) to authenticated;
+grant execute on function public.cambiar_destacado(text, uuid, text, timestamptz, timestamptz) to authenticated;
 grant execute on function public.panel_destacados(text) to authenticated;

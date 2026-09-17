@@ -2,8 +2,9 @@
 // Aplica todas las migraciones y comprueba la tira de cada sección: lo que elige la administración y lo que tiene al menos
 // 3 «Voy» sin contar a la administración (D1, D2); que se quita también lo que entra por asistentes (D3); la ciudad, lo
 // oculto, lo privado y lo que ya pasó; hasta 8 y su orden; que un lugar o un artista caduca a las dos semanas y un evento
-// al pasar; que la tabla solo la lee la administración y solo se escribe con cambiar_destacado; que la tira no
-// devuelve datos de personas; y que borrar la ficha borra su renglón.
+// al pasar; que Deshacer deja la tira como estaba, orden incluido, y lo que repone tiene límites; que la tabla solo la
+// lee la administración y solo se escribe con cambiar_destacado; que la tira no devuelve datos de personas; y que borrar
+// la ficha borra su renglón.
 //
 // PGlite no es dependencia del repo: se instala aparte, una vez, fuera del proyecto.
 //   npm install --prefix /tmp/pglite @electric-sql/pglite@0.5.8
@@ -154,7 +155,8 @@ console.log("✓ datos sembrados");
 
 const tira = async (tipo, ciudad = SLP) => filas(`select id, motivo, hasta, van from public.tira_destacados($1, $2)`, [tipo, ciudad]);
 const ids = (r) => r.map((x) => x.id);
-const cambiar = (tipo, id, estado, hasta = null) => db.query(`select public.cambiar_destacado($1, $2, $3, $4)`, [tipo, id, estado, hasta]);
+const cambiar = (tipo, id, estado, hasta = null, creado = null) => db.query(`select public.cambiar_destacado($1, $2, $3, $4, $5)`, [tipo, id, estado, hasta, creado]);
+const enDias = (dias) => new Date(Date.now() + dias * 864e5).toISOString();
 
 // ---------- por asistentes, sin que nadie elija ----------
 await como("anon", null);
@@ -206,7 +208,10 @@ const renglon = (await filas(`select hasta from public.destacados where lugar_id
 ok(renglon && Math.abs(new Date(renglon.hasta) - Date.now() - 14 * 864e5) < 60e3, "elegir un lugar: dos semanas", renglon);
 await como("authenticated", F);
 ok((await falla(`select public.cambiar_destacado(null, $1, 'elegido')`, [P_CASA])) !== null && (await falla(`select public.cambiar_destacado('lugares', $1, null)`, [P_CASA])) !== null && (await falla(`select public.cambiar_destacado('lugares', null, 'elegido')`)) !== null, "con tipo, ficha o estado vacíos, avisa");
-const plazo = new Date(Date.now() + 5 * 864e5).toISOString();
+const noValido = async (hasta, creado = null) => /destacado_no_valido/.test((await falla(`select public.cambiar_destacado('lugares', $1, 'elegido', $2, $3)`, [P_CASA, hasta, creado])) ?? "");
+ok((await noValido(enDias(-0.001))) && (await noValido(enDias(15))) && (await noValido(enDias(36500))) && (await noValido("infinity")), "el plazo que repone Deshacer va por venir y de dos semanas como mucho: pasado, de 15 días, de 100 años o infinito se rechaza");
+ok((await noValido(null, enDias(0.001))) && (await noValido(null, "-infinity")), "y la fecha de elección no puede ser futura ni infinita");
+const plazo = enDias(5);
 await cambiar("lugares", P_CASA, "elegido", plazo);
 await cambiar("eventos", E_SITIO, "elegido", plazo);
 await como(null, null);
@@ -269,6 +274,19 @@ await como("anon", null);
 t = await tira("lugares");
 ok(t.length === 8, "lugares: nunca más de 8", t.length);
 ok(JSON.stringify(ids(t)) === JSON.stringify(nuevos.slice(2).reverse()), "lugares: con más de 8 elegidos, los 8 más recientes, el último primero", ids(t));
+
+// Quitar y Deshacer deja la tira como estaba, también el orden: Deshacer repone el plazo y cuándo se eligió, como texto
+// (con sus microsegundos), igual que la app, que los recibe de la base y se los devuelve.
+async function quitarYDeshacer(id) {
+  await como("authenticated", F);
+  const antes = (await filas(`select hasta::text, creado_en::text from public.destacados where lugar_id = $1`, [id]))[0];
+  await cambiar("lugares", id, "quitado");
+  await cambiar("lugares", id, "elegido", antes.hasta, antes.creado_en);
+  await como("anon", null);
+  return tira("lugares");
+}
+ok(JSON.stringify(await quitarYDeshacer(nuevos[1])) === JSON.stringify(t), "Quitar y Deshacer uno que no cabe en los 8: no entra ni saca a nadie", ids(await tira("lugares")));
+ok(JSON.stringify(await quitarYDeshacer(nuevos[5])) === JSON.stringify(t), "Quitar y Deshacer uno de los 8: vuelve a su sitio", ids(await tira("lugares")));
 
 // ---------- el panel ----------
 await como("authenticated", F);

@@ -122,7 +122,7 @@ export type PersonaFicha = {
 };
 
 export type LugarFila = { id: string; nombre: string; foto: string | null; tipo: string; detalle: string | null; visible: boolean; privado: boolean; origen: string | null; proximas: number; lleva: string | null; lleva_n: number; total: number };
-export type EventoFila = { id: string; titulo: string; imagen: string | null; inicio: string; fin: string | null; visible: boolean; sitio: string | null; autor: string | null; autor_admin: boolean; van: number; total: number; /** La zona del evento: el panel no la devuelve, se lee aparte (admin/consultas). */ zona?: string };
+export type EventoFila = { id: string; titulo: string; imagen: string | null; inicio: string; fin: string | null; visible: boolean; sitio: string | null; autor: string | null; autor_admin: boolean; van: number; total: number; /** La zona del evento y si su lugar se ve: el panel no los devuelve, se leen aparte (admin/consultas). */ zona?: string; lugar?: { visible: boolean; privado: boolean } | null };
 export type ArtistaFila = { id: string; nombre: string; foto: string | null; disciplina: string; detalle: string | null; visible: boolean; origen: string | null; proximas: number; lleva: string | null; lleva_n: number; total: number };
 
 // ---------- números en palabras ----------
