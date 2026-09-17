@@ -1,4 +1,5 @@
 import { diaLocal } from "./fechas";
+import { compararNombres } from "./lugares";
 
 /** Una novedad: qué pasó ("Nuevo en Casa Ocho Ventanas"), a qué evento, cuándo pasó y si es posterior a la última visita. */
 export type TipoNovedad = "nuevo" | "cambio" | "hoy" | "juntos";
@@ -9,6 +10,8 @@ export type Novedad = {
   eventoId: string;
   titulo: string;
   cuando: string;
+  /** Cuándo empieza el evento (ISO): desempata lo que pasó a la vez, como los "Hoy vas" del día. */
+  inicio: string;
   /** Cuándo pasó (ISO): ordena y agrupa por día. */
   fecha: string;
   nueva: boolean;
@@ -27,11 +30,14 @@ export function tituloDia(fecha: string, ahora: Date = new Date()): string {
   return "Hace más";
 }
 
-/** De más reciente a más antigua, en grupos por día (Hoy · Ayer · Esta semana · Hace más). */
+/**
+ * De más reciente a más antigua, en grupos por día (Hoy · Ayer · Esta semana · Hace más). Lo que pasó a la vez va en
+ * orden de agenda (hora del evento, título) y por clave, para que dos cargas no lo traigan distinto (bitácora 062).
+ */
 export function agruparNovedades(lista: Novedad[], ahora: Date = new Date()): GrupoNovedades[] {
   const orden = ["Hoy", "Ayer", "Esta semana", "Hace más"];
   const grupos = new Map<string, GrupoNovedades>();
-  for (const n of [...lista].sort((a, b) => b.fecha.localeCompare(a.fecha))) {
+  for (const n of [...lista].sort((a, b) => b.fecha.localeCompare(a.fecha) || a.inicio.localeCompare(b.inicio) || compararNombres(a.titulo, b.titulo) || a.clave.localeCompare(b.clave))) {
     const titulo = tituloDia(n.fecha, ahora);
     let g = grupos.get(titulo);
     if (!g) {

@@ -29,9 +29,10 @@
   color: var(--texto-suave);
   font-weight: 400;
 }
-.elegido > span {
+/* La ✕ es IconoCerrar: el margen descuenta su aire interno para que quede donde quedaba la letra */
+.elegido > svg {
+  margin-inline: -3px;
   color: var(--texto-suave);
-  font-weight: 400;
 }
 
 /* 2. Campo */

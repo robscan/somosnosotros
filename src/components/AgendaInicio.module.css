@@ -29,13 +29,14 @@
 .quitar {
   position: relative;
   z-index: 1;
+  display: grid;
+  place-items: center;
   min-width: 32px;
   min-height: 40px;
   margin: 0 -8px 0 2px;
   border: none;
   background: none;
   color: var(--texto-suave);
-  font-weight: 400;
   cursor: pointer;
 }
 /* La lupa: un chip redondo con solo el icono, pegado a la derecha de los chips de contexto. */

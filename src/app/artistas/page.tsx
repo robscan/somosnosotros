@@ -4,7 +4,7 @@ import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
-import { DISCIPLINAS, filtroDesdeUrl, ordenarArtistas, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FiltroLeido, type ProximaFecha } from "@/lib/artistas";
+import { conProximaFecha, DISCIPLINAS, filtroDesdeUrl, ordenarArtistas, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FechaDeArtista, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { nombreSitio } from "@/lib/eventos";
@@ -15,7 +15,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 export const metadata = { title: "Artistas · Somos Nosotros" };
 
 type FilaFecha = { artista_id: string; evento: Evento | Evento[] | null };
-type Evento = { id: string; inicio: string; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
+type Evento = { id: string; titulo: string; inicio: string; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
 type Opcion = { valor: string; etiqueta: string };
 export type Cargado = {
   artistas: ArtistaLista[];
@@ -39,19 +39,21 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const ciudad = ciudadNombre;
 
   const [f1, d1, d2] = await Promise.all([
-    supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, inicio, sitio_texto, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("inicio", { referencedTable: "eventos" }).limit(500),
+    // Las filas van por la hora de su evento (`evento(inicio)` ordena las filas; `order` con `referencedTable` solo ordenaba
+    // dentro del evento ligado), así el corte de 500 se queda con lo más próximo. Lo que se ordena debe ir en el select.
+    supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, titulo, inicio, sitio_texto, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("evento(inicio)").order("evento(titulo)").order("evento(id)").order("artista_id").limit(500),
     supabase.rpc("disciplinas_con_artistas", { p_ciudad: ciudad }),
     f.hace ? supabase.rpc("detalles_de_disciplina", { p_ciudad: ciudad, p_disciplina: f.hace }) : Promise.resolve({ data: [] as { clave: string; etiqueta: string; n: number }[] }),
   ]);
-  // Próxima fecha por artista (la primera, porque vienen ordenadas por inicio).
-  const proxima = new Map<string, ProximaFecha>();
+  // Todas las fechas con su sitio; la próxima de cada artista la elige `conProximaFecha`, no el orden de llegada.
+  const fechas: FechaDeArtista[] = [];
   for (const fila of (f1.data ?? []) as unknown as FilaFecha[]) {
     const e = Array.isArray(fila.evento) ? fila.evento[0] : fila.evento;
-    if (!e || proxima.has(fila.artista_id)) continue;
+    if (!e) continue;
     const lugar = Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar;
-    proxima.set(fila.artista_id, { id: e.id, inicio: e.inicio, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado }) });
+    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado }) } });
   }
-  const conFecha = [...proxima.keys()];
+  const conFecha = [...new Set(fechas.map((x) => x.artista_id))];
   const porDisciplina = ((d1.data ?? []) as { disciplina: string; n: number }[]).filter((x) => x.n > 0);
   const totalCiudad = porDisciplina.reduce((s, x) => s + Number(x.n), 0);
   const disciplinas = DISCIPLINAS.filter((d) => porDisciplina.some((x) => x.disciplina === d.valor)).map((d) => ({ ...d, n: Number(porDisciplina.find((x) => x.disciplina === d.valor)?.n ?? 0) }));
@@ -69,7 +71,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
     conFecha.length ? base().in("id", conFecha) : Promise.resolve({ data: [] as ArtistaResumen[], count: 0 }),
     (conFecha.length ? base().not("id", "in", `(${conFecha.join(",")})`) : base()).order("nombre_orden").range(0, f.n - 1),
   ]);
-  const primero = ordenarArtistas(((a.data ?? []) as ArtistaResumen[]).map((x) => ({ ...x, proxima: proxima.get(x.id) ?? null })));
+  const primero = ordenarArtistas(conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas));
   const resto = ((b.data ?? []) as ArtistaResumen[]).map((x) => ({ ...x, proxima: null }));
   return { artistas: [...primero, ...resto], total: primero.length + (b.count ?? 0), totalCiudad, disciplinas, detalles };
 }

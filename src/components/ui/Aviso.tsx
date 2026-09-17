@@ -1,5 +1,6 @@
 "use client";
 
+import { IconoCerrar } from "./Iconos";
 import styles from "./Aviso.module.css";
 
 type Props = { texto: string; onCerrar?: () => void; className?: string };
@@ -14,7 +15,7 @@ export default function Aviso({ texto, onCerrar, className = "" }: Props) {
       <span>{texto}</span>
       {onCerrar && (
         <button type="button" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar el aviso">
-          ✕
+          <IconoCerrar width={18} height={18} />
         </button>
       )}
     </p>

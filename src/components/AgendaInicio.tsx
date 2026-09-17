@@ -11,7 +11,7 @@ import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
-import { IconoBuscar, IconoCalendario, IconoCaret } from "./ui/Iconos";
+import { IconoBuscar, IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
 import styles from "./AgendaInicio.module.css";
 
 type Props = {
@@ -154,7 +154,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
                   <IconoCalendario width={16} height={16} />
                   <span>{diaCorto(localAIso(`${fecha}T12:00`) ?? hoyIso, ahora)}</span>
                   <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
-                    ✕
+                    <IconoCerrar width={18} height={18} />
                   </button>
                 </span>
               ) : (

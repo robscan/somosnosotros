@@ -1,3 +1,4 @@
+import { compararEventos } from "./agenda";
 import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
@@ -187,10 +188,17 @@ export function textoProximaFecha(f: ProximaFecha, ahora: Date = new Date()): st
   return `Próximo: ${cuando.charAt(0).toLowerCase()}${cuando.slice(1)} · ${f.sitio}`;
 }
 
-/** Une artistas con su fecha más próxima (las filas vienen ordenadas por inicio). */
-export function conProximaFecha<T extends { id: string }>(artistas: T[], fechas: { artista_id: string; evento: { id: string; inicio: string; sitio: string } }[]): (T & { proxima: ProximaFecha | null })[] {
+/** Una fecha de un artista como llega de la base: el evento, con el título que desempata, y dónde es. */
+export type FechaDeArtista = { artista_id: string; evento: ProximaFecha & { titulo: string } };
+
+/**
+ * Une artistas con su fecha más próxima: la primera en orden de agenda (hora, título, id), llegue como llegue de la base.
+ * Tomar la primera fila que llegaba no bastaba: la base no garantiza ese orden y un artista con dos fechas podía mostrar
+ * la que no es la más próxima (bitácora 063).
+ */
+export function conProximaFecha<T extends { id: string }>(artistas: T[], fechas: FechaDeArtista[]): (T & { proxima: ProximaFecha | null })[] {
   const proxima = new Map<string, ProximaFecha>();
-  for (const f of [...fechas].sort((a, b) => a.evento.inicio.localeCompare(b.evento.inicio))) if (!proxima.has(f.artista_id)) proxima.set(f.artista_id, { ...f.evento });
+  for (const { artista_id, evento: e } of [...fechas].sort((a, b) => compararEventos(a.evento, b.evento))) if (!proxima.has(artista_id)) proxima.set(artista_id, { id: e.id, inicio: e.inicio, sitio: e.sitio });
   return artistas.map((a) => ({ ...a, proxima: proxima.get(a.id) ?? null }));
 }
 
