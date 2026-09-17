@@ -72,11 +72,11 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<Abierta>(null);
   const [masAbierto, setMasAbierto] = useState(!esAlta);
-  // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
-  useAbrirConError(setMasAbierto, errores.descripcion, errores.enlaces);
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
   const formRef = useRef<HTMLFormElement>(null);
+  // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
+  useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces);
   const hojaSalir = useSalirSinPublicar(formRef, esAlta);
 
   // Lo deducido del nombre manda hasta que la persona lo cambie a mano (decisión 4).

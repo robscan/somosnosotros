@@ -39,8 +39,9 @@ describe("renglones", () => {
       return cuerposQueSeEsconden(fuente)
         .filter(({ estado, conAviso }) => {
           if (!conAviso) return false;
-          const abridor = `useAbrirConError(set${estado[0].toUpperCase()}${estado.slice(1)}`;
-          return !fuente.includes(abridor);
+          // El que abre ese cuerpo, esté donde esté entre los argumentos.
+          const abridor = new RegExp(`useAbrirConError\\([^)]*\\bset${estado[0].toUpperCase()}${estado.slice(1)}\\b`);
+          return !abridor.test(fuente);
         })
         .map(({ estado }) => `${ruta.slice(RAIZ.length)}: el cuerpo de "${estado}" esconde avisos y no usa useAbrirConError`);
     });
