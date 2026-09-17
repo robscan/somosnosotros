@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Fragment, useState, type ReactNode } from "react";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
-import { masVistas, pestanasDePersona, unirVistos } from "@/lib/actividad";
+import { mismaMemoria, pestanasDePersona, recordar, unirVistos, type Memoria } from "@/lib/actividad";
+import type { Asistencia } from "@/lib/deslizar";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import ListaSeguidos, { UMBRAL_CHIPS_SEGUIDOS } from "./ListaSeguidos";
 import PestanasPersona, { type Pestana } from "./PestanasPersona";
@@ -57,11 +58,13 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
   }
   const lista = mia ? vistos : { eventos, lugares, artistas };
   // Lo más que ha habido en la visita en las pestañas que nacen o se vacían: una que ya se mostró no se va, para que el
-  // panel no salte de pestaña bajo el dedo (y Deshacer la vuelva a llenar).
-  const [vistas, setVistas] = useState(() => ({
-    juntos: mia ? 0 : eventos.filter((e) => decididas?.[e.id] === "voy").length,
-    interesa: mia ? interesan.length : 0,
-  }));
+  // panel no salte de pestaña bajo el dedo (y Deshacer la vuelva a llenar); un guardado que falla devuelve lo suyo
+  // (lib/actividad: `recordar`).
+  const [memoria, setMemoria] = useState<Memoria>(() => {
+    const abierta = { juntos: mia ? 0 : eventos.filter((e) => decididas?.[e.id] === "voy").length, interesa: mia ? interesan.length : 0 };
+    return { guardadas: abierta, todas: abierta, fallos: 0 };
+  });
+  const vistas = memoria.todas;
   const [conChips] = useState(() => lugares.length + artistas.length >= UMBRAL_CHIPS_SEGUIDOS && lugares.length > 0 && artistas.length > 0);
   const esLugar = new Set(lista.lugares.map((l) => l.id));
   const estado = gestos ? asistencia.estado : () => null;
@@ -83,9 +86,16 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
       ))
     );
 
-  const actividad = pestanasDePersona({ mia, eventos: lista.eventos, lugares: lista.lugares, artistas: lista.artistas, estado, sigo: gestos ? sigo : () => true, vistas });
-  const ahora = masVistas(vistas, actividad);
-  if (ahora.juntos !== vistas.juntos || ahora.interesa !== vistas.interesa) setVistas(ahora);
+  const enPestanas = (estado: (id: string) => Asistencia, sigo: (id: string) => boolean) => pestanasDePersona({ mia, eventos: lista.eventos, lugares: lista.lugares, artistas: lista.artistas, estado, sigo, vistas });
+  const actividad = enPestanas(estado, gestos ? sigo : () => true);
+  // Las pestañas que se quedan crecen solo con lo que ya quedó guardado, no con lo que se está guardando: si el guardado
+  // falla, el gesto se deshace y no puede dejar una pestaña vacía y mentirosa el resto de la visita (revisión de gestión
+  // de cambios, 2026-09-17). Mientras se guarda, la pestaña ya se ve porque la pinta `actividad`; y lo guardado cuenta
+  // aunque la página todavía no haya vuelto del servidor, para que la pestaña no se vaya bajo el dedo.
+  const sigoGuardado = (id: string) => (esLugar.has(id) ? seguirLugar.sigoGuardado(id) : seguirArtista.sigoGuardado(id));
+  const confirmada = enPestanas(gestos ? asistencia.guardado : () => null, gestos ? sigoGuardado : () => true);
+  const ahora = recordar(memoria, confirmada, actividad, asistencia.fallos + seguirLugar.fallos + seguirArtista.fallos);
+  if (!mismaMemoria(ahora, memoria)) setMemoria(ahora);
 
   const pestanas: Pestana[] = actividad.map((p) => ({
     clave: p.clave,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
 import { IconoEstrella, IconoOk } from "@/components/ui/Iconos";
@@ -50,7 +50,9 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
   const propio = useCanalDeListas();
   const dePantalla = useCanalDePantalla();
   const canal = dePantalla ?? propio;
-  const { avisar, limpiar, tomarPregunta } = canal;
+  const { avisar, limpiar, tomarPregunta, soltarPregunta } = canal;
+  // El dueño de sus avisos en la pantalla: al tocar quita el suyo, nunca el Reintentar de un renglón.
+  const de = useId();
   const ruta = `/eventos/${eventoId}`;
 
   // Volvió de entrar tras tocar "Voy": la pregunta continúa ese toque, una sola vez.
@@ -60,7 +62,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
 
   function cambiar(nuevo: EstadoAsistencia) {
     const vez = tocar(toques.current, eventoId);
-    limpiar();
+    limpiar(de);
     iniciar(async () => {
       fijarOptimista(nuevo);
       let guardado = false;
@@ -71,12 +73,17 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
       }
       if (!esElUltimo(toques.current, eventoId, vez)) return;
       if (!guardado) {
-        avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, boton: siSigueSiendoElUltimo(toques.current, eventoId, vez, () => cambiar(nuevo)) });
+        avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, de, boton: siSigueSiendoElUltimo(toques.current, eventoId, vez, () => cambiar(nuevo)) });
         return;
       }
       // La pregunta solo tras guardar, una por pantalla, y no si esta cuenta ya contestó en esta visita.
       if (nuevo === "voy" && hayQuePreguntar(cuenta, avisosPreguntado) && tomarPregunta()) setHoja(true);
     });
+  }
+  /** Se cerró la hoja sin que la respuesta quedara guardada (la ✕, tocar fuera, Escape): la pregunta vuelve a estar libre. */
+  function cerrarHoja() {
+    setHoja(false);
+    soltarPregunta();
   }
   const entrar = (accion: string) => `/entrar?siguiente=${encodeURIComponent(`${ruta}?accion=${accion}`)}`;
 
@@ -144,7 +151,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
       {!dePantalla && <AvisoAbajo canal={propio} />}
       {hoja && <HojaAbierta canal={canal} />}
       {hoja && (
-        <Hoja etiqueta="Avisos" onCerrar={() => setHoja(false)}>
+        <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
           <ConsentimientoAvisos contexto="voy" titulo={titulo} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={() => setHoja(false)} calendarioUrl={`${ruta}/calendario`} />
         </Hoja>
       )}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
 import { IconoMas, IconoOk } from "@/components/ui/Iconos";
@@ -56,7 +56,9 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   const propio = useCanalDeListas();
   const dePantalla = useCanalDePantalla();
   const canal = dePantalla ?? propio;
-  const { avisar, limpiar, tomarPregunta } = canal;
+  const { avisar, limpiar, tomarPregunta, soltarPregunta } = canal;
+  // El dueño de sus avisos en la pantalla: al tocar quita el suyo, nunca el Reintentar de un renglón.
+  const de = useId();
   const [telefono] = useEstadoPush(llavePush, conSesion && sigo);
   const cosas = que === "artista" ? "fechas" : "eventos";
   const ruta = hrefEntrar.split("?")[0];
@@ -68,7 +70,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
 
   function cambiar(nuevo: boolean) {
     const vez = tocar(toques.current, ruta);
-    limpiar();
+    limpiar(de);
     iniciar(async () => {
       fijar(nuevo);
       let guardado = false;
@@ -79,16 +81,23 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       }
       if (!esElUltimo(toques.current, ruta, vez)) return;
       if (!guardado) {
-        avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, boton: siSigueSiendoElUltimo(toques.current, ruta, vez, () => cambiar(nuevo)) });
+        avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, de, boton: siSigueSiendoElUltimo(toques.current, ruta, vez, () => cambiar(nuevo)) });
         return;
       }
       // La pregunta solo tras guardar, una por pantalla, y no si esta cuenta ya contestó en esta visita.
       if (nuevo && hayQuePreguntar(cuenta, avisosPreguntado) && tomarPregunta()) setHoja(true);
     });
   }
-  function cerrarHoja() {
+  /** Contestada: se cierra y la barra relee el consentimiento recién guardado. */
+  function contestada() {
     setHoja(false);
-    router.refresh(); // la promesa de la barra lee el consentimiento recién guardado
+    router.refresh();
+  }
+  /** Cerrada sin contestar (la ✕, tocar fuera, Escape): la pregunta vuelve a estar libre, porque un toque de más no
+   *  puede dejar a nadie sin la única puerta a los recordatorios en toda la visita. */
+  function cerrarHoja() {
+    contestada();
+    soltarPregunta();
   }
 
   const canales = [avisosCorreo && "por correo", telefono === "encendido" && enEste(plataforma)].filter(Boolean);
@@ -129,7 +138,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       {hoja && <HojaAbierta canal={canal} />}
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
-          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={cerrarHoja} />
+          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={contestada} />
         </Hoja>
       )}
     </>

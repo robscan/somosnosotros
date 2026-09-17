@@ -56,6 +56,27 @@ export function masVistas<E, L, A>(vistas: Vistas, actividad: Actividad<E, L, A>
   return { juntos: Math.max(vistas.juntos, n("juntos")), interesa: Math.max(vistas.interesa, n("interesa")) };
 }
 
+/**
+ * La memoria de las pestañas que se quedan, con dos cuentas y el número de fallos que se han visto:
+ * - `guardadas`: lo más que ha habido de lo que el servidor ya tiene. Nunca baja: por eso "Van a lo mismo" se queda
+ *   vacía tras un No voy guardado, con su texto y su Deshacer.
+ * - `todas`: lo mismo contando lo que se está guardando, para que la pestaña se vea desde el toque y no salte bajo el
+ *   dedo si la persona cambia de idea antes de que responda el servidor.
+ * - **Un guardado que falla devuelve lo suyo:** al cambiar `fallos`, `todas` vuelve a lo guardado, así un Voy que no se
+ *   pudo guardar no deja una pestaña vacía y mentirosa el resto de la visita (revisión de gestión de cambios).
+ */
+export type Memoria = { guardadas: Vistas; todas: Vistas; fallos: number };
+
+export function recordar<E, L, A>(memoria: Memoria, confirmada: Actividad<E, L, A>[], ahora: Actividad<E, L, A>[], fallos: number): Memoria {
+  const guardadas = masVistas(memoria.guardadas, confirmada);
+  const todas = fallos !== memoria.fallos ? guardadas : masVistas(memoria.todas, ahora);
+  return { guardadas, todas, fallos };
+}
+
+export function mismaMemoria(a: Memoria, b: Memoria): boolean {
+  return a.fallos === b.fallos && a.guardadas.juntos === b.guardadas.juntos && a.guardadas.interesa === b.guardadas.interesa && a.todas.juntos === b.todas.juntos && a.todas.interesa === b.todas.interesa;
+}
+
 export function pestanasDePersona<E extends { id: string }, L extends { id: string }, A extends { id: string }>(p: Entrada<E, L, A>): Actividad<E, L, A>[] {
   if (p.mia) {
     const interesa = p.eventos.filter((e) => p.estado(e.id) === "me_interesa");

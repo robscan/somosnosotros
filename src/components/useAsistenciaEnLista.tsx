@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import { useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarAsistencia } from "@/app/eventos/acciones";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { accionesEvento, asistenciaTras, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
@@ -30,7 +30,7 @@ type EventoLista = { id: string; titulo: string };
  * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
  * la lista tiene los suyos y pinta su aviso en `extras`.
  */
-export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null, canal?: CanalDeListas): { estado: (id: string) => Asistencia; acciones: (e: EventoLista) => AccionDeslizable[]; extras: ReactNode } {
+export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null, canal?: CanalDeListas): { estado: (id: string) => Asistencia; guardado: (id: string) => Asistencia; fallos: number; acciones: (e: EventoLista) => AccionDeslizable[]; extras: ReactNode } {
   const router = useRouter();
   const [, iniciar] = useTransition();
   const [elegidas, setElegidas] = useState<Elegidas<Asistencia>>({});
@@ -41,10 +41,16 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
   }
   const toques = useRef<Toques>({});
   const propio = useCanalDeListas();
-  const { avisar, tomarPregunta } = canal ?? propio;
+  const { avisar, tomarPregunta, soltarPregunta } = canal ?? propio;
+  // El dueño de sus avisos en la pantalla: nadie más los limpia sin poner otro en su lugar.
+  const de = useId();
   const [hoja, setHoja] = useState<EventoLista | null>(null);
+  // Cuántos guardados han fallado: quien pinte pestañas devuelve lo que añadió un toque que no se guardó.
+  const [fallos, setFallos] = useState(0);
 
   const estado = (id: string): Asistencia => (id in elegidas ? elegidas[id].valor : (decididas?.[id] ?? null));
+  /** Lo mismo, pero solo con lo que ya quedó guardado: lo que se está guardando (y lo que falló) no cuenta. */
+  const guardado = (id: string): Asistencia => (elegidas[id]?.guardada ? elegidas[id].valor : (decididas?.[id] ?? null));
 
   /**
    * Un toque: muestra `valor` al momento y lo guarda. Si al terminar ya hubo otro toque en el renglón, no hace nada más.
@@ -63,7 +69,8 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
       if (!esElUltimo(toques.current, e.id, vez)) return;
       setElegidas((x) => trasGuardar(x, e.id, vez, guardado));
       if (!guardado) {
-        avisar({ texto: `No se pudo guardar «${recortar(e.titulo)}»`, boton: siSigueSiendoElUltimo(toques.current, e.id, vez, reintentar), etiqueta: "Reintentar", fallo: true });
+        setFallos((n) => n + 1);
+        avisar({ texto: `No se pudo guardar «${recortar(e.titulo)}»`, boton: siSigueSiendoElUltimo(toques.current, e.id, vez, reintentar), etiqueta: "Reintentar", fallo: true, de });
         return;
       }
       alGuardar?.();
@@ -84,11 +91,17 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
         setHoja(e);
       },
     );
-    avisar({ texto: textoHecho(clave, e.titulo), boton: siSigueSiendoElUltimo(toques.current, e.id, vez, () => deshacer(e, previo)) });
+    avisar({ texto: textoHecho(clave, e.titulo), boton: siSigueSiendoElUltimo(toques.current, e.id, vez, () => deshacer(e, previo)), de });
   }
 
   function deshacer(e: EventoLista, previo: Asistencia) {
     guardar(e, previo, () => deshacer(e, previo));
+  }
+
+  /** Se cerró la hoja sin que la respuesta quedara guardada (la ✕, tocar fuera, Escape): la pregunta vuelve a estar libre. */
+  function cerrarHoja() {
+    setHoja(null);
+    soltarPregunta();
   }
 
   function acciones(e: EventoLista): AccionDeslizable[] {
@@ -115,12 +128,12 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
       {!canal && <AvisoAbajo canal={propio} />}
       {hoja && <HojaAbierta canal={canal ?? propio} />}
       {hoja && avisos && (
-        <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
+        <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
           <ConsentimientoAvisos contexto="voy" titulo={hoja.titulo} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} calendarioUrl={`/eventos/${hoja.id}/calendario`} />
         </Hoja>
       )}
     </>
   );
 
-  return { estado, acciones, extras };
+  return { estado, guardado, fallos, acciones, extras };
 }

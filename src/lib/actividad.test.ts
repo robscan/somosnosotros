@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { masVistas, pestanasDePersona, unirVistos } from "./actividad";
+import { masVistas, pestanasDePersona, recordar, unirVistos, type Memoria } from "./actividad";
 import type { Asistencia } from "./deslizar";
 
 const ev = (id: string) => ({ id });
@@ -76,6 +76,30 @@ describe("pestañas de la ficha de otra persona", () => {
     expect(resumen(vacia)[2]).toBe("Van a lo mismo 0: ");
     expect(masVistas(vistas, vacia)).toEqual({ juntos: 1, interesa: 0 });
     expect(resumen(pestanasDePersona(entrada({ e1: "voy" }, vistas)))[2]).toBe("Van a lo mismo 1: e1");
+  });
+
+  it("una pestaña que nace de un gesto que no se guardó no se queda; una guardada sí", () => {
+    const cero = { juntos: 0, interesa: 0 };
+    const entrada = (estados: Record<string, Asistencia>, vistas: { juntos: number; interesa: number }) => ({ mia: false, eventos, lugares, artistas, ...mirada(estados, []), vistas });
+    let memoria: Memoria = { guardadas: cero, todas: cero, fallos: 0 };
+    const paso = (ahora: Record<string, Asistencia>, guardado: Record<string, Asistencia>, fallos: number) => {
+      const pintadas = pestanasDePersona(entrada(ahora, memoria.todas));
+      memoria = recordar(memoria, pestanasDePersona(entrada(guardado, memoria.todas)), pintadas, fallos);
+      return resumen(pintadas);
+    };
+    // Toqué Voy: la pestaña nace mientras se guarda (el servidor todavía no lo tiene).
+    expect(paso({ e1: "voy" }, {}, 0)[2]).toBe("Van a lo mismo 1: e1");
+    // No se pudo guardar: el fallo devuelve lo que había añadido ese toque (React vuelve a pintar con la memoria nueva),
+    // así que la pestaña se va en vez de quedarse vacía y mentirosa.
+    paso({}, {}, 1);
+    expect(memoria.todas).toEqual(cero);
+    expect(paso({}, {}, 1)).toHaveLength(2);
+    // Con el mismo toque guardado, la pestaña se queda aunque después se vacíe, y Deshacer la vuelve a llenar.
+    expect(paso({ e1: "voy" }, { e1: "voy" }, 1)[2]).toBe("Van a lo mismo 1: e1");
+    expect(paso({}, {}, 1)[2]).toBe("Van a lo mismo 0: ");
+    expect(paso({ e1: "voy" }, { e1: "voy" }, 1)[2]).toBe("Van a lo mismo 1: e1");
+    // Y un fallo de otro renglón no se lleva por delante la pestaña que ya se ganó guardando.
+    expect(paso({ e1: "voy" }, { e1: "voy" }, 2)[2]).toBe("Van a lo mismo 1: e1");
   });
 
   it("sin sesión (nada decidido) no hay Van a lo mismo", () => {

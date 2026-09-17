@@ -116,6 +116,53 @@ Tres hallazgos importantes, los tres reproducidos antes de tocar nada y arreglad
   - **Sin regresiones en las dos barras:** el aviso de fallo cae en 707–759 y la barra ocupa 784–832 (`--alto-barra-fija`: 73 px), en la ficha de lugar (Seguir) y en la de evento (Voy); Reintentar guarda de verdad en las dos (el respaldo se queda sin el seguimiento, y el evento pasa a "Va 1 persona").
   - **Lo que no prueba el respaldo local:** no cuenta seguidores, así que la ficha sigue diciendo "Nadie lo sigue todavía" aunque el seguimiento se guarde; eso no lo toca esta pieza.
 
+## Segunda revisión adversarial (PR 2, commit ebd4d1e)
+Gestión de cambios montó los componentes con React 19 de verdad y midió la geometría en Chrome: lo de la ronda anterior
+cierra (nunca dos hojas ni dos preguntas, un solo aviso 13 px encima de la barra y con letra grande, el `template` se
+vuelve a montar al navegar pero no con `router.refresh`, y 5 040 pasos de modelo aleatorio sin que una pestaña ya vista
+desapareciera). Quedaban tres cosas, las tres reproducidas con prueba propia:
+
+1. **La pregunta de avisos, cerrada sin contestar, no volvía en toda la visita.** `tomarPregunta()` era un cupo de una
+   sola vez por pantalla: si la hoja se cerraba con la ✕, tocando fuera o con Escape, ningún gesto posterior volvía a
+   preguntar, ni en la misma lista ni en la barra (el canal es compartido). Tocar fuera es el gesto accidental más común
+   en el teléfono, y dejaba a esa persona sin la única puerta a los recordatorios. **Arreglo:** el cerrojo
+   (`lib/avisoDePantalla`, `cerrojoDePregunta`) solo evita **dos hojas a la vez**; al cerrar sin que la respuesta
+   quedara guardada se suelta (`soltarPregunta()`), así el gesto siguiente vuelve a preguntar, como en `main`. Quien
+   contesta queda cubierto por la marca de su cuenta (`lib/avisosPreguntados`) y, además, el camino de "contestada" no
+   suelta el cerrojo.
+2. **Tocar la barra borraba el «No se pudo guardar · Reintentar» de un renglón.** `limpiar()` vaciaba el canal entero,
+   así que un Seguir que sí guardaba se llevaba por delante el Reintentar de un renglón que no se había guardado, sin
+   poner nada en su lugar: se perdía sin que nadie lo viera. **Arreglo:** cada aviso lleva dueño (`de`) y `limpiar(de)`
+   solo quita el suyo (`alLimpiar`). El aviso de otro se reemplaza solo cuando hay uno nuevo que enseñar.
+3. **Un guardado que fallaba dejaba una pestaña vacía y mentirosa.** "Van a lo mismo" (o "Me interesa" en Mi perfil)
+   nacía con el toque y se quedaba aunque el guardado fallara: 0 renglones y "Ya no van a lo mismo." el resto de la
+   visita. **Arreglo:** la memoria de pestañas (`lib/actividad`, `recordar`) lleva dos cuentas y los fallos vistos: lo
+   **guardado** nunca baja (por eso un No voy guardado deja la pestaña vacía con su Deshacer), lo que se está guardando
+   se ve desde el toque (para que no salte bajo el dedo si la persona cambia de idea), y **un fallo devuelve lo suyo**.
+   Los dos hooks cuentan sus fallos y dicen qué quedó guardado (`guardado`, `sigoGuardado`).
+
+### Evidencia de la segunda revisión
+- **lint** (solo el aviso viejo del logotipo), **tipos**, **358 pruebas en 39 archivos** (nuevas: `lib/avisoDePantalla`
+  con el cerrojo y el dueño del aviso; en `lib/actividad`, la pestaña que nace de un gesto que no se guardó) y **build**
+  en verde, con `main` (f8e4b57) dentro.
+- **Comparado con `main` en la hoja de avisos** (suite del verificador, con React de verdad): cerrando con la ✕, tocando
+  fuera y con Escape, `main` y esta rama dan lo mismo — `1er Voy → hoja`, `cierro sin contestar`, `Cancelar`,
+  `2º Voy → hoja` —; antes de esta ronda el 2º Voy se quedaba mudo. Contestando ("Listo") sí se queda callada.
+- **Navegador a 390×844**, respaldo local y dos cuentas inventadas:
+  - *La pregunta vuelve:* en la ficha de evento, Voy abre la hoja, Escape la cierra, Cancelar, y el Voy siguiente vuelve
+    a abrirla (una sola cada vez). En la ficha de lugar, cerrar la de la lista y tocar Seguir abre la de la barra.
+  - *El Reintentar de un renglón sobrevive a la barra:* con el fallo del renglón puesto, Seguir guarda (la barra pasa a
+    "Dejar de seguir") y el aviso **sigue ahí**, con `elementFromPoint` devolviendo el botón; al tocarlo, el renglón se
+    guarda.
+  - *El fallo no deja pestaña:* en la ficha ajena, con el respaldo tardando 1,5 s, "Van a lo mismo 1" se ve mientras se
+    guarda y, al fallar, las pestañas vuelven a "Va a · Sigue" con el aviso de "No se pudo guardar".
+  - *Y lo guardado sigue quedándose:* Voy guardado la crea, No voy guardado la deja en 0 con "Ya no van a lo mismo." y
+    activa, y Deshacer la vuelve a llenar.
+- **Las pruebas del verificador** (18 archivos, 50 casos) corridas contra esta rama: **36 pasan**. Los 14 que no son los
+  que sujetan lo viejo: 8 reproducen la pestaña fantasma, 3 el aviso que desaparecía al tocar la barra, 1 compara con el
+  código anterior a la pieza y 2 son el modelo aleatorio, cuya regla "ninguna pestaña que ya se vio desaparece" ya no
+  vale para una pestaña que nació de un gesto que nunca se guardó.
+
 ## Queda
 - **Firma del founder en el iPhone:** las pestañas de Mi perfil y de otra persona, quitar al instante con Deshacer, y los próximos eventos de las fichas.
 - La pestaña en la que se estaba no se recuerda al volver de una ficha; ya pasaba antes y no se añadió.

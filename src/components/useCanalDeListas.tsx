@@ -1,25 +1,27 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { alAvisar, alCerrar, alLimpiar, cerrojoDePregunta, type Aviso } from "@/lib/avisoDePantalla";
 import Hecho from "./Hecho";
 
-/** El aviso de abajo: lo hecho con Deshacer, o que no se pudo guardar con Reintentar. */
-export type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: boolean; vez: number };
+export type { Aviso };
 
 /**
  * Lo que comparten las listas y las barras de una misma pantalla (OL-057): un solo aviso abajo (el nuevo reemplaza al
  * anterior y cada uno cierra solo el suyo) y una sola pregunta de avisos. Una lista suelta (agenda, Lugares, Artistas)
  * tiene el suyo; la ficha de una persona y las de lugar y artista comparten uno, para que los avisos no se encimen ni la
- * pregunta salga dos veces.
+ * pregunta salga dos veces. Las reglas, en `lib/avisoDePantalla`.
  */
 export type CanalDeListas = {
   aviso: Aviso | null;
   avisar: (a: Omit<Aviso, "vez">) => void;
   cerrar: (vez: number) => void;
-  /** Un toque nuevo que todavía no tiene su aviso (las barras de las fichas) cierra el anterior. */
-  limpiar: () => void;
-  /** ¿Se hace la pregunta de avisos? Solo la primera vez en la pantalla: al decir que sí, queda tomada. */
+  /** Un toque nuevo que todavía no tiene su aviso (las barras de las fichas) quita el suyo anterior, no el de otro. */
+  limpiar: (de: string) => void;
+  /** ¿Se abre la hoja de la pregunta de avisos? Solo si no hay otra abierta en la pantalla. */
   tomarPregunta: () => boolean;
+  /** Se cerró la hoja: la pregunta vuelve a estar libre (quien contestó ya queda cubierto por la marca de su cuenta). */
+  soltarPregunta: () => void;
   /** Cuántas hojas de avisos hay abiertas: con alguna, el aviso espera y sale al cerrarla. */
   hojas: number;
   anotarHoja: (abierta: boolean) => void;
@@ -30,16 +32,13 @@ export function useCanalDeListas(): CanalDeListas {
   const [hojas, setHojas] = useState(0);
   // Las funciones, fijas desde el primer render: así un efecto puede anotar su hoja sin volver a correr.
   const [fijas] = useState(() => {
-    let pregunte = false;
+    const pregunta = cerrojoDePregunta();
     return {
-      avisar: (a: Omit<Aviso, "vez">) => setAviso((previo) => ({ ...a, vez: (previo?.vez ?? 0) + 1 })),
-      cerrar: (vez: number) => setAviso((a) => (a?.vez === vez ? null : a)),
-      limpiar: () => setAviso(null),
-      tomarPregunta: () => {
-        if (pregunte) return false;
-        pregunte = true;
-        return true;
-      },
+      avisar: (a: Omit<Aviso, "vez">) => setAviso((previo) => alAvisar(previo, a)),
+      cerrar: (vez: number) => setAviso((a) => alCerrar(a, vez)),
+      limpiar: (de: string) => setAviso((a) => alLimpiar(a, de)),
+      tomarPregunta: pregunta.tomar,
+      soltarPregunta: pregunta.soltar,
       anotarHoja: (abierta: boolean) => setHojas((n) => Math.max(0, n + (abierta ? 1 : -1))),
     };
   });
