@@ -1,8 +1,17 @@
 "use client";
 
-import { hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca, vuelveA } from "@/lib/historial";
+import { hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca, reponerPantallaAnterior, vuelveA } from "@/lib/historial";
 
 const INSTALADA = "__somosnosotrosMarca";
+
+/** El almacén de la pestaña, o null donde el navegador lo niega (modo privado, almacenamiento bloqueado). */
+function sesion(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
 
 /** Quienes necesitan enterarse de una vuelta antes de que se pinte la pantalla de destino. */
 const alVolverSuscritos = new Set<() => void>();
@@ -29,6 +38,9 @@ if (typeof window !== "undefined") {
     w[INSTALADA] = true;
     try {
       ponerMarca(window.history, marcaDeLlegada(document.referrer, window.location.origin, window.history.length), () => window.location.pathname + window.location.search);
+      // Antes de que Next.js arranque: si esta carga es la vuelta de entrar con Apple o Google, la pantalla de la que
+      // se vino se repone en el historial, para que Atrás (y el gesto) no salgan del sitio a la del proveedor.
+      reponerPantallaAnterior(window.history, sesion(), window.location.pathname + window.location.search, Date.now());
     } catch {}
     window.addEventListener("popstate", () => alVolverSuscritos.forEach((fn) => fn()));
   }

@@ -9,6 +9,7 @@ import { IconoCorreo } from "@/components/ui/Iconos";
 import { LogoApple, LogoGoogle } from "@/components/ui/LogosEntrar";
 import { enmascararCorreo, limpiarCodigo } from "@/lib/entrar";
 import { NOMBRE_PROVEEDOR, type Proveedor } from "@/lib/entrarCon";
+import { apuntarVuelta, desdeElReferente, leerDesde } from "@/lib/historial";
 import { correoValido } from "@/lib/perfil";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import Limpiar from "@/components/ui/Limpiar";
@@ -120,6 +121,35 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
     if (v.length === largo) void entrarConCodigo(v); // al último dígito entra solo: un toque menos
   }
 
+  /**
+   * De qué pantalla se vino a Entrar: la que anotó la marca del historial al apilar esta entrada y, si se llegó con una
+   * carga completa (un toque antes de que la pantalla responda al dedo, un enlace compartido), la que diga el referente.
+   */
+  function deDondeVengo(): string | null {
+    return leerDesde(window.history.state) ?? desdeElReferente(document.referrer, window.location.origin, window.location.pathname);
+  }
+
+  /**
+   * Se apunta de qué pantalla se vino antes de salir hacia Apple o Google (OL-069). La vuelta del proveedor es una carga
+   * completa y deja su pantalla pegada detrás del destino; con el apunte, `Navegacion` repone la de la persona y Atrás
+   * no sale del sitio. Se apunta al llegar, no al tocar el botón: así vale aunque el toque llegue antes que el
+   * JavaScript. Si no se sabe de dónde se vino, no se apunta nada y Atrás hace lo de siempre.
+   */
+  useEffect(() => {
+    if (proveedores.length === 0) return; // sin botones de Apple o Google no hay salida del sitio que reponer
+    const desde = deDondeVengo();
+    if (desde) apuntarVuelta(window.sessionStorage, { desde, siguiente, cuando: Date.now() });
+    // Solo al llegar a la pantalla; al tocar el botón se refresca la hora por si la persona se quedó un rato.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Al tocar el botón del proveedor, el apunte se refresca: uno viejo caduca a los 10 minutos. */
+  function refrescarApunte(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // otra pestaña: su historial es suyo
+    const desde = deDondeVengo();
+    if (desde) apuntarVuelta(window.sessionStorage, { desde, siguiente, cuando: Date.now() });
+  }
+
   /** El campo aparece y se enfoca dentro del mismo toque: así el iPhone abre el teclado sin un toque más. */
   function abrirCorreo() {
     flushSync(() => setFase("correo"));
@@ -137,7 +167,7 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
               {proveedores.map((p, i) => (
                 // Enlace normal, no <Link>: la ida pasa por el servidor (/auth/apple) y sale del sitio.
                 // Apple negro solo cuando va primero (en sus dispositivos); detrás de Google, su variante blanca, para que el primero siga siendo el que más pesa.
-                <a key={p} href={`/auth/${p}?siguiente=${encodeURIComponent(siguiente)}`} className={`${styles.opcion} ${p === "apple" && i > 0 ? styles.appleBlanco : styles[p]}`}>
+                <a key={p} href={`/auth/${p}?siguiente=${encodeURIComponent(siguiente)}`} onClick={refrescarApunte} className={`${styles.opcion} ${p === "apple" && i > 0 ? styles.appleBlanco : styles[p]}`}>
                   {p === "apple" ? <LogoApple className={styles.logo} /> : <LogoGoogle className={styles.logo} />}
                   Continuar con {NOMBRE_PROVEEDOR[p]}
                 </a>

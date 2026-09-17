@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { conMarca, hayPantallaAnterior, leerDesde, leerMarca, marcaAlApilar, marcaAlReemplazar, marcaDeLlegada, ponerMarca, rutaDe, vuelveA, type Historial } from "./historial";
+import { APUNTE_VUELTA, apuntarVuelta, conMarca, desdeElReferente, hayPantallaAnterior, leerDesde, leerMarca, leerVuelta, marcaAlApilar, marcaAlReemplazar, marcaDeLlegada, ponerMarca, reponerPantallaAnterior, rutaDe, vuelveA, type Almacen, type Historial } from "./historial";
 
 /** Un historial de navegador de mentira: entradas con estado y URL, apilar corta las de adelante, atrás y adelante. */
 class HistorialDePrueba implements Historial {
@@ -173,5 +173,142 @@ describe("marca de navegación: sobre un historial", () => {
       [1, "/"],
       [2, "/eventos/1"],
     ]);
+  });
+});
+
+/** El almacén de la pestaña, de mentira. */
+class AlmacenDePrueba implements Almacen {
+  datos = new Map<string, string>();
+  getItem(k: string) {
+    return this.datos.get(k) ?? null;
+  }
+  setItem(k: string, v: string) {
+    this.datos.set(k, v);
+  }
+  removeItem(k: string) {
+    this.datos.delete(k);
+  }
+}
+
+const conApunte = (apunte: unknown) => {
+  const a = new AlmacenDePrueba();
+  a.setItem(APUNTE_VUELTA, JSON.stringify(apunte));
+  return a;
+};
+
+describe("volver de entrar con Apple o Google (OL-069)", () => {
+  it("el relevo del proveedor no cuenta como pantalla de la app detrás", () => {
+    const origen = "https://somosnosotros.org";
+    // Detrás de la llegada está la pantalla del proveedor, aunque el referente sea del sitio.
+    expect(marcaDeLlegada(`${origen}/auth/google`, origen, 4)).toBe(0);
+    expect(marcaDeLlegada(`${origen}/auth/apple`, origen, 4)).toBe(0);
+    expect(marcaDeLlegada(`${origen}/auth/callback?siguiente=/perfil`, origen, 4)).toBe(0);
+    expect(marcaDeLlegada(`${origen}/auth`, origen, 4)).toBe(0);
+    // Una pantalla de la app sigue contando, incluso si su ruta empieza parecido.
+    expect(marcaDeLlegada(`${origen}/entrar`, origen, 4)).toBe(1);
+    expect(marcaDeLlegada(`${origen}/authores`, origen, 4)).toBe(1);
+  });
+  it("sin marca en la entrada, de dónde se vino lo dice el referente", () => {
+    const origen = "https://somosnosotros.org";
+    // Llegada a Entrar con una carga completa (el toque llegó antes que el JavaScript, o es un enlace compartido).
+    expect(desdeElReferente(`${origen}/lugares?ciudad=slp`, origen, "/entrar")).toBe("/lugares?ciudad=slp");
+    // No cuenta: de fuera, de la vuelta de un proveedor, de esta misma pantalla (una recarga), o sin referente.
+    expect(desdeElReferente("https://www.google.com/", origen, "/entrar")).toBeNull();
+    expect(desdeElReferente(`${origen}/auth/google`, origen, "/entrar")).toBeNull();
+    expect(desdeElReferente(`${origen}/entrar?siguiente=/perfil`, origen, "/entrar")).toBeNull();
+    expect(desdeElReferente("", origen, "/entrar")).toBeNull();
+    expect(desdeElReferente("no es una url", origen, "/entrar")).toBeNull();
+  });
+  it("el apunte sirve una sola vez, caduca y solo vale para la vuelta que esperaba", () => {
+    const bueno = { desde: "/lugares?ciudad=slp", siguiente: "/perfil", cuando: 1000 };
+    const a = conApunte(bueno);
+    expect(leerVuelta(a, "/perfil", 2000)).toBe("/lugares?ciudad=slp");
+    expect(a.getItem(APUNTE_VUELTA)).toBeNull(); // se borra al leerlo
+    expect(leerVuelta(a, "/perfil", 2000)).toBeNull();
+    // Caducado (más de 10 minutos) o con la hora movida hacia atrás.
+    expect(leerVuelta(conApunte(bueno), "/perfil", 1000 + 600_001)).toBeNull();
+    expect(leerVuelta(conApunte({ ...bueno, cuando: 500_000 }), "/perfil", 1000)).toBeNull();
+    // Otra carga: el proveedor falló y volvió a Entrar, o la persona fue a otro sitio.
+    expect(leerVuelta(conApunte(bueno), "/entrar?siguiente=/perfil&error=google", 2000)).toBeNull();
+    // Sin apunte, ilegible o incompleto: Atrás hace lo de siempre.
+    expect(leerVuelta(new AlmacenDePrueba(), "/perfil", 2000)).toBeNull();
+    expect(leerVuelta(null, "/perfil", 2000)).toBeNull();
+    const roto = new AlmacenDePrueba();
+    roto.setItem(APUNTE_VUELTA, "{no es json");
+    expect(leerVuelta(roto, "/perfil", 2000)).toBeNull();
+    expect(leerVuelta(conApunte({ siguiente: "/perfil", cuando: 1000 }), "/perfil", 2000)).toBeNull();
+  });
+  it("el apunte no puede mandar a la persona fuera del sitio", () => {
+    const fuera = (desde: string) => leerVuelta(conApunte({ desde, siguiente: "/perfil", cuando: 1000 }), "/perfil", 2000);
+    expect(fuera("https://otro.sitio/robo")).toBe("/");
+    expect(fuera("http://otro.sitio/robo")).toBe("/");
+    expect(fuera("//otro.sitio/robo")).toBe("/");
+    expect(fuera("/\\otro.sitio")).toBe("/");
+    expect(fuera("javascript:alert(1)")).toBe("/");
+    expect(fuera("")).toBe("/");
+    // Con espacios o saltos de línea delante, para colarse por delante de la comprobación.
+    expect(fuera(" //otro.sitio")).toBe("/");
+    expect(fuera("\n//otro.sitio")).toBe("/");
+    expect(fuera("\t//otro.sitio")).toBe("/");
+    expect(fuera("\nhttps://otro.sitio")).toBe("/");
+    expect(fuera(" /lugares")).toBe("/");
+    // Y lo que sí es una ruta del sitio pasa entera, con su consulta y su ancla.
+    expect(fuera("/lugares/7")).toBe("/lugares/7");
+    expect(fuera("/artistas?hace=musica#fechas")).toBe("/artistas?hace=musica#fechas");
+  });
+  it("sin almacén, con el almacén bloqueado o sin apunte, el historial se queda como estaba", () => {
+    // Modo privado o almacenamiento negado: el navegador lanza al leer o al escribir.
+    const bloqueado: Almacen = {
+      getItem() {
+        throw new Error("bloqueado");
+      },
+      setItem() {
+        throw new Error("bloqueado");
+      },
+      removeItem() {
+        throw new Error("bloqueado");
+      },
+    };
+    expect(() => apuntarVuelta(bloqueado, { desde: "/lugares", siguiente: "/perfil", cuando: 1000 })).not.toThrow();
+    expect(leerVuelta(bloqueado, "/perfil", 2000)).toBeNull();
+    const h = new HistorialDePrueba("/perfil");
+    instalar(h);
+    const antes = structuredClone(h.entradas);
+    expect(reponerPantallaAnterior(h, bloqueado, "/perfil", 2000)).toBeNull();
+    expect(reponerPantallaAnterior(h, null, "/perfil", 2000)).toBeNull();
+    expect(h.entradas).toEqual(antes);
+    // Y Atrás sigue decidiendo con la marca de siempre.
+    expect(atrasVuelve(h)).toBe(false);
+  });
+  it("lo apuntado por Entrar es lo que lee la vuelta", () => {
+    const a = new AlmacenDePrueba();
+    apuntarVuelta(a, { desde: "/artistas", siguiente: "/eventos/1?accion=voy", cuando: 1000 });
+    expect(leerVuelta(a, "/eventos/1?accion=voy", 1500)).toBe("/artistas");
+    expect(() => apuntarVuelta(null, { desde: "/x", siguiente: "/y", cuando: 1 })).not.toThrow();
+  });
+  it("Atrás vuelve a la pantalla de la que se vino, no a la del proveedor", () => {
+    // El historial tal como queda medido: la pantalla del proveedor y, encima, el destino. El relevo no deja entrada
+    // propia (se reenvía antes de cargar del todo), así que el proveedor queda pegado detrás.
+    const h = new HistorialDePrueba("https://accounts.google.com/o/oauth2/v2/auth");
+    h.pushState(null, "", "/perfil");
+    instalar(h, marcaDeLlegada("https://somosnosotros.org/auth/google", "https://somosnosotros.org", h.length));
+    expect(atrasVuelve(h)).toBe(false); // sin la reposición, Atrás iría a la pantalla madre
+    expect(reponerPantallaAnterior(h, conApunte({ desde: "/artistas?hace=musica", siguiente: "/perfil", cuando: 1000 }), "/perfil", 2000)).toBe("/artistas?hace=musica");
+    next.reemplazar(h, "/perfil"); // Next.js arranca sobre el destino
+    expect(h.url).toBe("/perfil");
+    expect(atrasVuelve(h)).toBe(true);
+    h.back();
+    expect(h.url).toBe("/artistas?hace=musica");
+    expect((h.state as { __NA?: true }).__NA).toBeUndefined(); // sin la pantalla guardada de Next.js: la recarga entera
+    expect(atrasVuelve(h)).toBe(false); // y desde ahí, a la pantalla madre: tampoco sale a la del proveedor
+  });
+  it("por cualquier otro camino el historial se queda como estaba", () => {
+    const h = new HistorialDePrueba("/lugares");
+    instalar(h);
+    next.apilar(h, "/perfil");
+    const antes = structuredClone(h.entradas);
+    expect(reponerPantallaAnterior(h, new AlmacenDePrueba(), "/perfil", 2000)).toBeNull();
+    expect(h.entradas).toEqual(antes);
+    expect(h.length).toBe(2);
   });
 });
