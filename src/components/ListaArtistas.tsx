@@ -176,7 +176,7 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
           </ul>
           {seguir.extras}
           {total > artistas.length && (
-            <Boton href={hrefArtistas({ ...filtro, ciudad: cSlug, n: filtro.n + pagina })} variante="secundario" className={styles.verMas} scroll={false}>
+            <Boton href={hrefArtistas({ ...filtro, ciudad: cSlug, n: filtro.n + pagina })} variante="secundario" className={styles.verMas} scroll={false} replace>
               Ver más ({total - artistas.length} más)
             </Boton>
           )}

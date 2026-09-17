@@ -37,7 +37,7 @@ export default function ChipCiudad({ ciudad, ciudades, hrefDe, className = "" }:
           <h3>Dónde</h3>
           <p>{deArtistas ? "Las ciudades donde ya hay artistas registrados. Registra un artista en otra ciudad y aparecerá aquí." : "Las ciudades donde ya hay lugares registrados. Registra un lugar en otra ciudad y aparecerá aquí."}</p>
           {ciudades.map((c) => (
-            <Link key={c.slug} href={hrefDe(c)} className={`${styles.opcion} ${c.slug === ciudad.slug ? styles.elegida : ""}`} onClick={() => setAbierta(false)} aria-current={c.slug === ciudad.slug ? "true" : undefined}>
+            <Link key={c.slug} href={hrefDe(c)} replace className={`${styles.opcion} ${c.slug === ciudad.slug ? styles.elegida : ""}`} onClick={() => setAbierta(false)} aria-current={c.slug === ciudad.slug ? "true" : undefined}>
               <span>{c.nombre}</span>
               <span>{resumen(c)}</span>
             </Link>

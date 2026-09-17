@@ -69,7 +69,7 @@ export default async function Personas({ searchParams }: { searchParams: Promise
         </ul>
       )}
       {total > filas.length && (
-        <Boton href={hrefLista("personas", { ...l, n: l.n + PAGINA_PANEL })} variante="secundario" className={styles.verMas} scroll={false}>
+        <Boton href={hrefLista("personas", { ...l, n: l.n + PAGINA_PANEL })} variante="secundario" className={styles.verMas} scroll={false} replace>
           Ver más ({total - filas.length} más)
         </Boton>
       )}
