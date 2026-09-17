@@ -105,6 +105,14 @@ Esta vez la reconstrucción se verificó por completo antes de guardar: los segm
 
 **Verificación:** lint, tipos, `npm test` (**336 pruebas, 35 archivos**, una nueva: la ciudad de la dirección en JSON-LD con "otro sitio" de otro país), build en verde. Comprobado con `curl` y el user agent de Googlebot que `<title>`, `<meta name="description">` y el canonical llegan antes de `</head>` en `/`, `/lugares`, `/lugares?ciudad=cdmx` (cae a la ciudad inicial, sin inventar una ciudad falsa), `/artistas` y `/reglas`; con una cuenta de navegador normal, el inicio sigue mostrando el mismo título. `/robots.txt` sin cambios (`/avisos` y `/auth`).
 
+## Tercera revisión: openGraph y twitter heredados
+
+Gestión de cambios verificó bd7599c con build real y lo dio casi todo por bueno (14 corridas del título instalado con metadata a distintas velocidades, siempre un solo `<title>`; 27 combinaciones de `title`/`description`/canonical/`robots` antes de `</head>` para Googlebot con Safari sin bloquear; 22 agentes de vista previa comprobados contra `htmlLimitedBots`; una sola consulta por visita; el CAPO con `noindex` incluso si la consulta falla; el JSON-LD limpio en 9 casos). Quedaba un detalle: `/`, `/lugares` y `/artistas` no repetían `openGraph` ni `twitter` en su `generateMetadata`, así que los heredaban del layout raíz (Next reemplaza ese objeto entero, no lo combina) — compartir `/lugares?ciudad=monterrey` enseñaba el título y la descripción de San Luis Potosí, y `og:url` apuntaba a la raíz en vez del canonical de esa ciudad.
+
+**Arreglo:** las tres páginas repiten `openGraph` y `twitter`, con el mismo título y descripción neutrales que ya tenían, `url` igual al `canonical` (la misma variable, así no pueden desalinearse) e `images`/`type`/`locale`/`siteName` iguales a los del layout.
+
+**Verificación:** lint, tipos, 336 pruebas y build en verde. Con `curl` y el user agent de Googlebot, `og:url` coincide con el `<link rel="canonical">` en `/`, `/lugares` y `/artistas`, con y sin `?ciudad=` (sin datos reales en este árbol, `?ciudad=cdmx` cae a la ciudad inicial, como siempre en este entorno — la igualdad no depende de eso: vienen de la misma variable en el código). `og:image`, `og:type`, `og:locale` y `og:site_name` siguen presentes.
+
 ## Pendiente
 
 - **Founder:** ¿los 520 artistas del CAPO sin reclamar entran al sitemap, o siguen fuera hasta que reclamen su ficha? (interruptor ya listo, apagado por defecto).

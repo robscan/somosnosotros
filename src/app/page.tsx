@@ -28,10 +28,18 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const ciudades = await cargarCiudades();
   const resuelta = ciudadPorSlug(slug, ciudades);
   const esInicial = resuelta.slug === CIUDAD_INICIAL.slug;
+  const titulo = "Agenda cultural · Somos Nosotros";
+  const descripcion = "Qué hay hoy y esta semana en los centros culturales cerca de ti. Gratis, sin cuenta para mirar.";
+  const canonical = esInicial ? "/" : `/?ciudad=${resuelta.slug}`;
   return {
-    title: "Agenda cultural · Somos Nosotros",
-    description: "Qué hay hoy y esta semana en los centros culturales cerca de ti. Gratis, sin cuenta para mirar.",
-    alternates: { canonical: esInicial ? "/" : `/?ciudad=${resuelta.slug}` },
+    title: titulo,
+    description: descripcion,
+    alternates: { canonical },
+    // Next reemplaza openGraph y twitter enteros: sin repetirlos aquí, esta página heredaba los del layout raíz
+    // (título/descripción de San Luis Potosí, url la raíz) aunque se mirara con ?ciudad= de otra — la vista previa
+    // al compartir no coincidía con lo que se veía, ni con el canonical (gestión de cambios, OL-059).
+    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
+    twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: ["/portada.png"] },
   };
 }
 

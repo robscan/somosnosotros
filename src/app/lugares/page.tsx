@@ -18,13 +18,24 @@ type SearchParams = { vista?: string; ciudad?: string; tipo?: string };
  * se declaraba duplicada de la de San Luis Potosí y Google podía no ofrecerla nunca (OL-059). El título y la
  * descripción son propios, sin nombre de ciudad (no del layout raíz, que decía siempre San Luis Potosí) — por lo
  * mismo que el inicio (ver su comentario): esta página se reutiliza hasta 60 s al cambiar de ciudad sin recargar.
+ * Repite openGraph y twitter (Next reemplaza el objeto entero, no lo combina con el del layout raíz): sin esto,
+ * compartir `/lugares?ciudad=…` enseñaba el título y la descripción de San Luis Potosí del layout, con `og:url`
+ * apuntando a la raíz en vez del canonical de esa ciudad (gestión de cambios, OL-059).
  */
 export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
   const ciudades = await cargarCiudades();
   const resuelta = ciudadPorSlug(slug, ciudades);
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/lugares" : `/lugares?ciudad=${resuelta.slug}`;
-  return { title: "Lugares · Somos Nosotros", description: "Centros culturales cerca de ti: mapa y lista, con su próximo evento.", alternates: { canonical } };
+  const titulo = "Lugares · Somos Nosotros";
+  const descripcion = "Centros culturales cerca de ti: mapa y lista, con su próximo evento.";
+  return {
+    title: titulo,
+    description: descripcion,
+    alternates: { canonical },
+    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
+    twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: ["/portada.png"] },
+  };
 }
 
 /** Los lugares de la ciudad con su próximo evento: el mapa primero, la lista como segunda vista. */
