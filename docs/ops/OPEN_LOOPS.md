@@ -33,7 +33,7 @@
   - el fallo de antes también se reproduce con la consulta de supabase-js;
   - mirar quién ve una fila sin id cuenta como fallo.
 
-  **Verificado:** 50 comprobaciones en verde; en rojo las cinco versiones rotas de antes y m10, m11 y m13, que antes pasaban; bancos del panel (95) y de autor y ocultar (66); lint, tipos, 258 pruebas y build.
+  **Verificado:** 50 comprobaciones en verde; en rojo las cinco versiones rotas de antes y m10, m11 y m13, que antes pasaban; bancos del panel (95), de autor y ocultar (68) y de zona horaria (44); lint, tipos, 280 pruebas y build, con `main` traído.
 - **OL-052 · Destacados en Agenda, Lugares y Artistas: prototipo para firma.** Pedido del founder (2026-09-16, noche): una sección de destacados arriba de cada listado, con lo más visitado y lo que elija el admin, en carrusel con foto. Tras la opinión decidió que entran lo que elige el admin y lo que tiene más asistentes, con color propio en el mapa, dos semanas para lugares y artistas, y sin sección si no hay destacados. **Hecho en la rama `prototipo-destacados`, solo documentos, commit local y sin push** (bitácora [079](../bitacora/2026/09/079-prototipo-destacados.md)): decisiones en [20](../rediseno/20-destacados-flujo-y-estados.md) y [prototipo](https://claude.ai/artifact/DojyjHo44BgwM3xj2e4zwc). **Prototipo en `main` con el [PR #83](https://github.com/robscan/somosnosotros/pull/83) (2026-09-17); falta la firma del founder.**
   - La tira se desliza con el dedo, asoma la siguiente tarjeta y se va cuando la persona ya busca algo.
   - En el mapa, los destacados van en naranja cempasúchil (`#d35400`), más grandes y encima.

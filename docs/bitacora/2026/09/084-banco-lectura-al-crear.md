@@ -28,7 +28,7 @@ Solo en `supabase/tests/lectura_al_crear.mjs`, sin migración ni código de la a
 - **El fallo de antes, como lo manda la app:** también se reproduce con la consulta de supabase-js.
 
 ## Verificación
-- **Banco en la rama:** 50 comprobaciones en verde, con las 29 migraciones de `main`. `FORZAR_FALLO=1` sale con error.
+- **Banco en la rama:** 50 comprobaciones en verde, con las 31 migraciones de `main`, zona horaria incluida (PR #78, traído a la rama antes de repetir todo). `FORZAR_FALLO=1` sale con error.
 - **Versiones rotas de la migración:** m10, m11 y m13 tal cual las dio gestión de cambios, más las cinco de la bitácora 076. En todas, artistas lleva la regla real. La misma prueba, con el banco de `main` y con el nuevo:
 
   | Versión | Banco de `main` | Banco nuevo |
@@ -45,8 +45,8 @@ Solo en `supabase/tests/lectura_al_crear.mjs`, sin migración ni código de la a
 
   - **Por qué fallan las tres nuevas:** con m11, Carla pierde "Casona Privada". Con m10 y m13, además, Olga pierde "Mapeo de Olga" y "Terreno de Olga".
   - **Por qué suben las cuentas:** con la migración vacía y con "solo lugares" hay más fallos porque cada "quién lo ve" sin id ahora sale en rojo con su motivo.
-- **Otros bancos:** el del panel da 95 y el de autor y ocultar da 66, en verde.
-- **Código:** lint (0 errores; el aviso ajeno de `docs/diseno/logotipo/iconos-sn.mjs`), tipos, 258 pruebas y build en verde.
+- **Otros bancos:** el del panel da 95, el de autor y ocultar 68 y el de zona horaria 44, en verde.
+- **Código:** lint (0 errores; el aviso ajeno de `docs/diseno/logotipo/iconos-sn.mjs`), tipos, 280 pruebas y build en verde.
 - **Sin pantallas:** el cambio es solo del banco. Nada se leyó ni se escribió en producción.
 
 ## Queda
