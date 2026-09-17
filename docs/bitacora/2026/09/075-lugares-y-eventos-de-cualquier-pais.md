@@ -113,7 +113,10 @@ Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.
   - en Novedades, el "Hoy vas" de un evento al este de México sale bajo "Ayer" (`lib/novedades.ts`, que agrupa con el día de México);
   - agrupar por día eventos de varias zonas puede dar dos títulos "Hoy";
   - sin pin, el alta de lugar busca y abre el mapa en San Luis;
-  - si se revierte el PR con la migración aplicada, lo que se cree en un lugar de otra zona queda corrido.
+  - si se revierte el PR con la migración aplicada, lo que se cree en un lugar de otra zona queda corrido;
+  - editar un evento viejo "en otro sitio" con el pin fuera de la zona de México cambia la hora a la vista sin tocar nada (hoy hay 0 así en producción);
+  - en el formulario, `claveConZona` se marca antes de tener la respuesta de la zona y, si la petición falla, no se vuelve a pedir;
+  - el panel cae en silencio a la hora de México si falla la lectura de zonas (no revisa `r.error`).
 - **Lugares que ya existen:** todos quedan en la zona de la Ciudad de México. Uno en Cancún o Tijuana tomaría su zona al volver a guardarse.
 - **De la 067, siguen siendo decisiones del founder:**
   - ciudades con el mismo nombre en el mismo país;
@@ -140,3 +143,15 @@ El gestor hizo una revisión a fondo: cuatro lentes y cada hallazgo comprobado p
   - **"Editar evento"** de un picnic en el Retiro guardado con la zona de México: Cuándo dice "dom 20 de sep · 03:00", la hora de Madrid. Al pulsar "Guardar cambios", el servidor intentó guardar el mismo instante (`2026-09-20T01:00Z`) con la zona `Europe/Madrid`. El respaldo rechazó la escritura.
   - **"Publicar un evento"** en un lugar de Madrid, a las 22:38 del 16 en San Luis (6:38 del 17 en Madrid): sugiere "Hoy · 19:00" (el 17). Con el reloj de México habría dicho "Mañana".
 - **Verificación:** lint (el aviso viejo), tipos, 278 pruebas y build en verde. Pruebas nuevas: la zona del sitio, y una hora del panel en Madrid.
+
+## Segunda verificación del gestor (b3e9db6)
+Confirmó que la cascada conserva la hora a la vista en 8 zonas seguidas, con medias horas y Lord Howe. Pidió dos arreglos antes de aplicar:
+- **El hueco del cambio de horario en la cascada.** Convertir inicio y fin por separado podía romper `fin > inicio`. Pasaba cuando el inicio caía en el hueco de la zona nueva: las 02:30 del 29 de marzo no existen en Madrid, Postgres las pasa a las 03:30, y un fin a las 03:00 sí existe, así que quedaba antes. Como el disparador va dentro del guardado del lugar, se deshacía todo (punto, nombre…), también con eventos de otras personas. Ahora, si el fin convertido queda en o antes del inicio convertido, el fin es el inicio convertido más la duración original, contada en segundos.
+- **El fin detrás de la hora sugerida.** Al cambiar de zona, `resugerir` movía solo el inicio. Si la sugerencia pasaba al día siguiente, el fin quedaba antes y el servidor rechazaba el evento. Ahora `resugerirCuando` (`lib/fechas.ts`, con pruebas) mueve el fin con la misma duración, como `SelectorCuando` al mover el inicio. El formulario solo cambia lo que siga igual a lo último que pintó.
+
+**Evidencia:**
+- **Banco de zona**, con `main` traído (#80 y #82): 31 migraciones y 44 comprobaciones en verde.
+  - Un evento de 02:30 a 03:00 que se muda a Madrid el 29 de marzo: el guardado del lugar no se deshace, el inicio pasa a las 03:30 y el fin conserva la media hora (04:00).
+  - Con el disparador anterior, en una copia temporal, fallan justo esas 2 comprobaciones (`violates check constraint "eventos_check"`).
+- **Verificación:** lint (el aviso viejo), tipos, 280 pruebas y build; bancos en el orden de producción: lectura 42, autor 68, panel 95 y zona 44.
+- **Prueba de la sugerencia:** a las 18:00 de Madrid, 19:00–21:00 pasa a mañana 19:00–21:00. Un fin que pasa la medianoche conserva sus horas, y no se toca lo que la persona cambió.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -172,5 +172,22 @@ describe("banco por zona", () => {
     expect(terminaDe("2026-09-21T01:00:00.000Z", null, sinZona)).toBe("2026-09-21T06:00:00.000Z");
     expect(eventoPaso("2026-09-19T05:59:00Z", null, AHORA, sinZona)).toBe(true);
     expect(localAIso("2026-09-20T19:00", sinZona)).toBe("2026-09-21T01:00:00.000Z");
+  });
+});
+
+describe("la hora sugerida sigue a la zona del sitio", () => {
+  // AHORA: 10:00 del sábado 19 en San Luis, 18:00 en Madrid (ya no se sugiere hoy allá).
+  it("la mueve a la zona nueva con el fin detrás, sin que el fin quede antes", () => {
+    const sugerida = sugerirInicio(AHORA);
+    expect(sugerida).toBe("2026-09-19T19:00");
+    expect(resugerirCuando({ inicio: sugerida, fin: "2026-09-19T21:00" }, sugerida, "Europe/Madrid", AHORA)).toEqual({ inicio: "2026-09-20T19:00", fin: "2026-09-20T21:00" });
+    expect(resugerirCuando({ inicio: sugerida, fin: "" }, sugerida, "Europe/Madrid", AHORA)).toEqual({ inicio: "2026-09-20T19:00", fin: "" });
+    // Un fin que pasa la medianoche conserva sus horas.
+    expect(resugerirCuando({ inicio: sugerida, fin: "2026-09-20T01:30" }, sugerida, "Europe/Madrid", AHORA)).toEqual({ inicio: "2026-09-20T19:00", fin: "2026-09-21T01:30" });
+  });
+  it("no toca lo que la persona ya cambió ni lo que no se mueve", () => {
+    expect(resugerirCuando({ inicio: "2026-09-25T20:00", fin: "2026-09-25T22:00" }, "2026-09-19T19:00", "Europe/Madrid", AHORA)).toBeNull();
+    expect(resugerirCuando({ inicio: "2026-09-19T19:00", fin: "" }, "2026-09-19T19:00", "America/Bogota", AHORA)).toBeNull();
+    expect(resugerirCuando({ inicio: "2026-09-19T19:00", fin: "" }, "", "Europe/Madrid", AHORA)).toBeNull();
   });
 });

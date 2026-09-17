@@ -46,17 +46,28 @@ create trigger eventos_zona_del_lugar before insert or update of lugar_id, zona 
 
 -- Si el lugar cambia de zona (se corrigió su punto, o un lugar de Cancún deja la de México por defecto al volver a
 -- guardarse), sus eventos cambian con él, sean de quien sean, y conservan la hora a la vista: sus horas se escribieron en
--- la zona vieja, así que "19:00" sigue siendo las 19:00 en la nueva (cambia el instante, no la hora de pared). En un SET,
--- `zona` y las horas son las de antes del cambio. El disparador de eventos vuelve a poner la zona del lugar: la misma.
+-- la zona vieja, así que "19:00" sigue siendo las 19:00 en la nueva (cambia el instante, no la hora de pared). Se calcula
+-- con la zona que tenía cada evento. El disparador de eventos vuelve a poner la zona del lugar: la misma.
+-- Si el inicio cae en el hueco del cambio de horario de la zona nueva (las 02:30 del día que el reloj salta de 02:00 a
+-- 03:00 no existen y Postgres las pasa a las 03:30), un fin que sí existe quedaría antes y rompería `fin > inicio`: se
+-- deshacía el guardado entero del lugar. Entonces el fin conserva la duración, contada en segundos.
 create function public.lugares_zona_a_sus_eventos() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
   update public.eventos e set
-    inicio = pg_catalog.timezone(new.zona, pg_catalog.timezone(e.zona, e.inicio)),
-    fin = pg_catalog.timezone(new.zona, pg_catalog.timezone(e.zona, e.fin)),
-    sitio_revelar_desde = pg_catalog.timezone(new.zona, pg_catalog.timezone(e.zona, e.sitio_revelar_desde)),
+    inicio = c.inicio,
+    fin = case when c.fin <= c.inicio then c.inicio + pg_catalog.make_interval(secs => extract(epoch from e.fin) - extract(epoch from e.inicio)) else c.fin end,
+    sitio_revelar_desde = c.revelar,
     zona = new.zona
-  where e.lugar_id = new.id and e.zona <> new.zona;
+  from (
+    select x.id,
+      pg_catalog.timezone(new.zona, pg_catalog.timezone(x.zona, x.inicio)) as inicio,
+      pg_catalog.timezone(new.zona, pg_catalog.timezone(x.zona, x.fin)) as fin,
+      pg_catalog.timezone(new.zona, pg_catalog.timezone(x.zona, x.sitio_revelar_desde)) as revelar
+    from public.eventos x
+    where x.lugar_id = new.id and x.zona <> new.zona
+  ) c
+  where e.id = c.id;
   return null;
 end;
 $$;

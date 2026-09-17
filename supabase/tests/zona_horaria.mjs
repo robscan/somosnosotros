@@ -185,6 +185,17 @@ for (const [zona, termina] of [
   ok(c.zona === zona && c.pared === "2026-09-20 19:00" && c.pared_fin === "21:00" && c.revela === "16:00", `→ ${zona}: sigue a las 19:00 (fin 21:00, revela 16:00)`, c);
   ok(j.zona === zona && j.pared === "2026-09-20 19:00" && j.termina === termina, `→ ${zona}: sin fin, termina a las 00:00 de allá`, j);
 }
+// El día que Madrid adelanta el reloj (29 mar, de 02:00 a 03:00), un evento de 02:30 a 03:00 que se muda allá: las 02:30
+// no existen y Postgres las pasa a las 03:30, así que el fin (03:00, que sí existe) quedaría antes. El guardado del lugar
+// no se deshace y el fin conserva la media hora.
+const madrugada = await lugar("Casa de la madrugada", null);
+const hueco = await evento({ lugar_id: madrugada.id, titulo: "Madrugada", inicio: "2026-03-29 02:30-06", fin: "2026-03-29 03:00-06" }, [BETO]);
+await como("authenticated", ANA);
+const errHueco = await falla("update public.lugares set zona = 'Europe/Madrid', nombre = 'Casa de la madrugada (Madrid)' where id = $1", [madrugada.id]);
+await como(null);
+const trasHueco = await uno(`select ${FILA}, extract(epoch from fin - inicio)::int as segundos, (select nombre from public.lugares where id = $2) as nombre from public.eventos where id = $1`, [hueco.id, madrugada.id]);
+ok(!errHueco && trasHueco.nombre === "Casa de la madrugada (Madrid)", "mudar a Madrid el día del cambio de horario no deshace el guardado del lugar", errHueco ?? trasHueco);
+ok(trasHueco.zona === "Europe/Madrid" && trasHueco.pared === "2026-03-29 03:30" && trasHueco.pared_fin === "04:00" && trasHueco.segundos === 1800, "el inicio en el hueco pasa a las 03:30 y el fin conserva la media hora", trasHueco);
 const antesDeGuardar = await uno("select inicio::text from public.eventos where id = $1", [jazz.id]);
 await como("authenticated", ANA);
 await db.query("update public.lugares set descripcion = 'Nueva foto' where id = $1", [casa.id]);
