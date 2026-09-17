@@ -2,7 +2,7 @@
 // Aplica todas las migraciones y comprueba la tira de cada sección: lo que elige la administración y lo que tiene al menos
 // 3 «Voy» sin contar a la administración (D1, D2); que se quita también lo que entra por asistentes (D3); la ciudad, lo
 // oculto, lo privado y lo que ya pasó; hasta 8 y su orden; que un lugar o un artista caduca a las dos semanas y un evento
-// al pasar; que la tabla se lee sin sesión y solo se escribe con cambiar_destacado, de la administración; que la tira no
+// al pasar; que la tabla solo la lee la administración y solo se escribe con cambiar_destacado; que la tira no
 // devuelve datos de personas; y que borrar la ficha borra su renglón.
 //
 // PGlite no es dependencia del repo: se instala aparte, una vez, fuera del proyecto.
@@ -157,11 +157,12 @@ ok(JSON.stringify((await db.query(`select * from public.tira_destacados('eventos
 // ---------- solo la administración cambia ----------
 ok((await falla(`select public.cambiar_destacado('lugares', $1, 'elegido')`, [P_CASA])) !== null, "sin sesión no se puede destacar");
 ok(/permission denied/.test((await falla(`select * from public.panel_destacados('lugares')`)) ?? ""), "sin sesión no se abre el panel de destacados");
-ok(Array.isArray(await filas(`select * from public.destacados`)), "la tabla se lee sin sesión");
+ok((await falla(`select * from public.destacados`)) !== null, "sin sesión no se lee la tabla");
 ok((await falla(`insert into public.destacados (lugar_id, hasta) values ($1, now() + interval '1 day')`, [P_CASA])) !== null, "sin sesión no se escribe en la tabla");
 await como("authenticated", U1);
 ok(/sin_permiso/.test((await falla(`select public.cambiar_destacado('lugares', $1, 'elegido')`, [P_CASA])) ?? ""), "una persona no puede destacar: sin_permiso");
 ok((await falla(`insert into public.destacados (lugar_id, hasta) values ($1, now() + interval '1 day')`, [P_CASA])) !== null, "ni escribir en la tabla");
+ok((await filas(`select * from public.destacados`)).length === 0, "ni leer la tabla: vacía");
 ok((await filas(`select * from public.panel_destacados('lugares')`)).length === 0, "ni ver el panel de destacados: vacío");
 
 await como("authenticated", F);
@@ -180,6 +181,7 @@ await cambiar("eventos", E_SITIO, "elegido");
 await cambiar("artistas", A_MEDIO, "elegido");
 await cambiar("lugares", P_PRIVADO, "elegido");
 await cambiar("lugares", P_OCULTO, "elegido");
+await como(null, null);
 const renglon = (await filas(`select hasta from public.destacados where lugar_id = $1`, [P_CASA]))[0];
 ok(renglon && Math.abs(new Date(renglon.hasta) - Date.now() - 14 * 864e5) < 60e3, "elegir un lugar: dos semanas", renglon);
 await como("anon", null);
@@ -243,7 +245,7 @@ ok(JSON.stringify(ids(t)) === JSON.stringify(nuevos.slice(2).reverse()), "lugare
 await como("authenticated", F);
 const panel = await filas(`select * from public.panel_destacados('lugares')`);
 ok(panel.length === 9 && panel.some((x) => x.id === P_MADRID && x.nombre === "Sala de Madrid"), "panel: los destacados de todas las ciudades, con su nombre", panel.length);
-ok((await filas(`select id from public.destacados`)).length > 0, "la administración lee lo que decidió");
+ok((await filas(`select id from public.destacados`)).length > 0, "la administración lee lo que decidió (el menú de la ficha pregunta si la quitó)");
 
 // ---------- borrar la ficha borra su renglón ----------
 await como(null, null);

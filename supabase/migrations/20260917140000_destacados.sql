@@ -26,10 +26,13 @@ create unique index destacados_evento_unico on public.destacados (evento_id) whe
 create unique index destacados_lugar_unico on public.destacados (lugar_id) where lugar_id is not null;
 create unique index destacados_artista_unico on public.destacados (artista_id) where artista_id is not null;
 
--- Se lee sin sesión (qué fichas eligió o quitó la administración, sin datos de personas) y no se escribe de frente:
--- sin políticas de escritura, el único camino es cambiar_destacado.
+-- Solo la lee la administración (el menú de una ficha pregunta si la quitó) y nadie la escribe de frente. Leerla sin
+-- sesión dejaría ver el id de fichas ocultas o de lugares privados que alguna vez se marcaron: la tira sale de
+-- tira_destacados y el panel de panel_destacados (definer), y el único camino de escritura es cambiar_destacado.
 alter table public.destacados enable row level security;
-create policy "destacados: lectura pública" on public.destacados for select using (true);
+revoke all on public.destacados from public, anon, authenticated;
+grant select on public.destacados to authenticated;
+create policy "destacados: lee la administración" on public.destacados for select to authenticated using (public.es_admin());
 
 -- ---------- la tira de una sección ----------
 -- Definer, como van_por_evento: cuenta los «Voy» de todas las cuentas, también las reservadas, sin decir de quién.

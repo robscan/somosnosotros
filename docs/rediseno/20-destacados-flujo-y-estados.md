@@ -114,7 +114,7 @@ Mide 220 × 200 px y la siguiente asoma 138 px. Tocarla abre la ficha; al volver
 
 - **Migración**, con el nombre que asigne gestión de cambios al construirla y solo para añadir:
   - una tabla `destacados` con la ficha, hasta cuándo, quién y cuándo, y si se eligió o se quitó;
-  - lectura pública de lo vigente y escritura solo de la administración;
+  - la tabla solo la lee la administración y nadie la escribe de frente: la tira la sirve `tira_destacados`, el panel `panel_destacados` y escribe solo `cambiar_destacado`;
   - una función de lectura que junta lo elegido con lo que tiene asistentes, con las reglas de arriba, en un viaje por sección.
 - **Tokens** `--destacado`, `--destacado-texto` y `--destacado-suave` en `globals.css`, y su párrafo en la [línea gráfica](../diseno/LINEA_GRAFICA.md).
 - **Un componente para las tres listas**, con la memoria de pantalla del desplazamiento horizontal.

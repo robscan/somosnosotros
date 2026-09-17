@@ -63,6 +63,7 @@ La imagen sin foto con el símbolo SN (OL-054, bitácora [081](081-imagen-sin-fo
   - el mapa con el token público de `.env` (sin imprimirlo; carga en localhost): Casa de la Cultura de Soledad, Teatro de la Paz y Museo Leonora Carrington en naranja, más grandes y con su nombre, y el punto azul de al lado sin rótulo. Al tocar el Teatro, su tarjeta dice «Destacado».
 - El puerto de la API falsa lo usaba el respaldo de otro chat («Atrás»). No se tocó; la de esta pieza fue a otro puerto.
 - **Tras el primer «listo», el encargado pidió** lectura pública de la tabla sin reglas de escritura, la función de destacar como definer y nada de personas. Se ajustó la migración (se quitó `creado_por`), el banco pasó de 35 a 41 comprobaciones y se volvieron a correr los cinco bancos.
+- **Después, el encargado corrigió esa condición y lo aplicó en la rama:** la tabla la lee solo la administración (política `es_admin()`, como las tablas del panel; el menú de la ficha pregunta si la quitó) y `revoke all` a anon, porque la lectura pública dejaba ver el id de fichas ocultas o privadas que se marcaron; la tira y el panel leen por sus funciones definer. El banco comprueba que sin sesión da error, una persona la ve vacía y la administración la lee.
 - Al terminar se apagaron los dos servidores, se borraron `.env.local` y la cookie, y se restauró `CLAUDE.md`.
 
 ## Queda
