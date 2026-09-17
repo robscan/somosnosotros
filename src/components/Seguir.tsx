@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
-import { IconoOk } from "@/components/ui/Iconos";
+import { IconoMas, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { enEste } from "@/lib/plataforma";
@@ -69,6 +69,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, accion, hrefEntra
     return (
       <div className={`${ficha.accionFija} ${ficha.accionUnica}`}>
         <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEntrar)}`} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
+          <IconoMas width={20} height={20} />
           Seguir
         </Link>
       </div>
@@ -90,6 +91,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, accion, hrefEntra
       ) : (
         <div className={`${ficha.accionFija} ${ficha.accionUnica}`}>
           <button type="button" className={ficha.primaria} onClick={() => cambiar(true)} disabled={pendiente}>
+            <IconoMas width={20} height={20} />
             Seguir
           </button>
         </div>
