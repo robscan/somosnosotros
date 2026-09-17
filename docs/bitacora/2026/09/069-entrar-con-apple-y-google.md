@@ -110,7 +110,7 @@ Desde el navegador de la app, con la sesión del founder.
 1. ~~Crear en Apple el Services ID `org.somosnosotros.web` con sus dos direcciones de vuelta y registrar los orígenes de correo (guía, A).~~ Hecho (arriba).
 2. ~~Iniciar sesión en Google Cloud y en Supabase para los pasos G y S.~~ Hecho desde su Chrome (arriba).
 3. Decir si se hace push, se abre el PR y se mezcla. Con Supabase ya encendido, **al desplegar salen Apple y Google en Entrar**.
-5. Decidir si la foto de Google se queda como foto pública de la ficha. Así estaba diseñado desde la Fase 1 y el aviso de privacidad ya lo dice. Recomendación: sí, ayuda a reconocerse en los eventos.
+4. ~~Decidir si la foto de Google se queda como foto pública de la ficha.~~ **Decidido por el founder (2026-09-16, noche):** «de acuerdo en que se use la foto de perfil». Así estaba diseñado desde la Fase 1 y el aviso de privacidad ya lo dice.
 
 ## Notas
 
