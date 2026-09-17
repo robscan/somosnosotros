@@ -22,11 +22,11 @@ type Props = {
 
 /** Renglón de evento: foto a la izquierda (la del evento o la del lugar), título y datos con icono. */
 export default function RenglonEvento({ evento: e, km, sinSitio = false, estado = null, acciones }: Props) {
-  const foto = e.imagen ?? e.lugar?.portada ?? null;
+  const foto = e.imagen ?? e.lugar?.portada ?? SIN_FOTO;
   const contenido = (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-      <img src={foto ?? SIN_FOTO} alt="" className={styles.foto} />
+      <img src={foto} alt="" className={styles.foto} />
       <span className={styles.titulo}>{e.titulo}</span>
       <span className={styles.meta}>
         {estado === "voy" && (

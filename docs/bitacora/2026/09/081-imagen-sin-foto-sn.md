@@ -54,7 +54,7 @@ El plan se mandó al encargado antes de empezar. Respondió:
 
 ## Hallazgos de paso
 - `src/components/ui/Tarjeta.tsx` no se importa en ningún sitio.
-- En su ficha, un evento sin cartel no usa la foto de su lugar (en el renglón sí) y ahora muestra el símbolo. Si se prefiere la foto del lugar, es un cambio de una línea.
+- En su ficha, un evento sin cartel no usaba la foto de su lugar (en el renglón y al compartir sí). **Resuelto por gestión de cambios tras la revisión:** la ficha usa el cartel, si no la foto del lugar (texto "Foto de…"), y el símbolo solo si no hay ninguna; también se quitaron el selector sin uso `.tarjeta > span:first-child` y el `?? null` sobrante de `RenglonEvento`.
 - Para una sesión inventada, la firma del token debe ser base64url válida: `getClaims` rechaza `firma` con «JWT not in base64url format».
 
 ## Queda
