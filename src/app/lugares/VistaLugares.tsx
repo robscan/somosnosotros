@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { Chip, ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import ListaLugares from "@/components/ListaLugares";
+import PantallaConAviso from "@/components/useCanalDeListas";
 import type { AvisosLista } from "@/components/useSeguirEnLista";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import Aviso from "@/components/ui/Aviso";
@@ -146,126 +147,130 @@ export default function VistaLugares({
         ? "No pudimos leer tu ubicación."
         : null;
 
+  // El aviso de abajo y la pregunta de avisos son de la pantalla, no de la Lista: al cambiar a Mapa y volver, la lista se
+  // vuelve a montar, y con un canal suyo la pregunta empezaría de cero cada vez (OL-057, revisión de gestión de cambios).
   return (
-    <main className={`raiz ${vista === "mapa" ? styles.sinRelleno : ""}`}>
-      {barra}
-      <Pestanas ariaLabel="Cómo ver los lugares" repartidas className={styles.pestanas}>
-        <Pestana activa={vista === "mapa"} onClick={() => cambiarVista("mapa")}>
-          <IconoMapa width={18} height={18} /> Mapa
-        </Pestana>
-        <Pestana activa={vista === "lista"} onClick={() => cambiarVista("lista")}>
-          <IconoLista width={18} height={18} /> Lista
-        </Pestana>
-      </Pestanas>
+    <PantallaConAviso>
+      <main className={`raiz ${vista === "mapa" ? styles.sinRelleno : ""}`}>
+        {barra}
+        <Pestanas ariaLabel="Cómo ver los lugares" repartidas className={styles.pestanas}>
+          <Pestana activa={vista === "mapa"} onClick={() => cambiarVista("mapa")}>
+            <IconoMapa width={18} height={18} /> Mapa
+          </Pestana>
+          <Pestana activa={vista === "lista"} onClick={() => cambiarVista("lista")}>
+            <IconoLista width={18} height={18} /> Lista
+          </Pestana>
+        </Pestanas>
 
-      {vista === "mapa" ? (
-        <div className={styles.cajaMapa}>
-          <Mapa
-            lugares={enMapa}
-            encuadre={encuadre}
-            ciudad={ciudad}
-            presentacion="caja"
-            onPin={setElegido}
-            elegido={elegido?.id ?? null}
-            ubicacion={punto ? { ...punto, vez } : null}
-            destacados={enTira}
-          />
-          <div className={styles.sobreMapa}>
-            {lugares.length >= UMBRAL_BUSCAR_LUGARES && (
-              <CampoBuscar className={styles.buscarMapa} placeholder="Buscar un lugar por nombre" ariaLabel="Buscar un lugar por nombre" valor={busqueda} onCambiar={buscarEnMapa} onFocus={() => setListaAbierta(true)} />
+        {vista === "mapa" ? (
+          <div className={styles.cajaMapa}>
+            <Mapa
+              lugares={enMapa}
+              encuadre={encuadre}
+              ciudad={ciudad}
+              presentacion="caja"
+              onPin={setElegido}
+              elegido={elegido?.id ?? null}
+              ubicacion={punto ? { ...punto, vez } : null}
+              destacados={enTira}
+            />
+            <div className={styles.sobreMapa}>
+              {lugares.length >= UMBRAL_BUSCAR_LUGARES && (
+                <CampoBuscar className={styles.buscarMapa} placeholder="Buscar un lugar por nombre" ariaLabel="Buscar un lugar por nombre" valor={busqueda} onCambiar={buscarEnMapa} onFocus={() => setListaAbierta(true)} />
+              )}
+              {resultados.length > 0 && (
+                <ul className={`${sug.lista} ${styles.resultadosMapa}`} role="listbox" aria-label="Lugares encontrados">
+                  {resultados.map((l) => (
+                    <li key={l.id}>
+                      <button type="button" className={`${sug.renglon} ${sug.sinIcono}`} onClick={() => elegirResultado(l)} role="option" aria-selected={elegido?.id === l.id}>
+                        <b>{l.nombre}</b>
+                        <small>
+                          {etiquetaTipo(l.tipo)}
+                          {calleCorta(l.direccion) ? ` · ${calleCorta(l.direccion)}` : ""}
+                        </small>
+                      </button>
+                    </li>
+                  ))}
+                  {enMapa.length > resultados.length && <li className={styles.resultadoMas}>Y {enMapa.length - resultados.length} más en el mapa</li>}
+                </ul>
+              )}
+              <Chips ariaLabel="Ciudad y tipo de lugar">
+                {chipCiudad}
+                {chipsTipo}
+              </Chips>
+              {busqueda.trim() && enMapa.length === 0 && <p className={styles.nadaMapa}>Ningún lugar se llama así. Si existe, regístralo.</p>}
+            </div>
+            {!elegido && (
+              <button
+                type="button"
+                className={`${styles.ubicame} ${punto ? styles.ubicameActivo : ""}`}
+                onClick={punto ? () => setVez((v) => v + 1) : pedirUbicacion}
+                disabled={geo === "pidiendo"}
+                aria-pressed={!!punto}
+                aria-label={
+                  punto ? "Centrar en mi ubicación" : "Mostrar mi ubicación"
+                }
+              >
+                <IconoUbicacion width={22} height={22} />
+              </button>
             )}
-            {resultados.length > 0 && (
-              <ul className={`${sug.lista} ${styles.resultadosMapa}`} role="listbox" aria-label="Lugares encontrados">
-                {resultados.map((l) => (
-                  <li key={l.id}>
-                    <button type="button" className={`${sug.renglon} ${sug.sinIcono}`} onClick={() => elegirResultado(l)} role="option" aria-selected={elegido?.id === l.id}>
-                      <b>{l.nombre}</b>
-                      <small>
-                        {etiquetaTipo(l.tipo)}
-                        {calleCorta(l.direccion) ? ` · ${calleCorta(l.direccion)}` : ""}
-                      </small>
-                    </button>
-                  </li>
-                ))}
-                {enMapa.length > resultados.length && <li className={styles.resultadoMas}>Y {enMapa.length - resultados.length} más en el mapa</li>}
-              </ul>
-            )}
-            <Chips ariaLabel="Ciudad y tipo de lugar">
-              {chipCiudad}
-              {chipsTipo}
-            </Chips>
-            {busqueda.trim() && enMapa.length === 0 && <p className={styles.nadaMapa}>Ningún lugar se llama así. Si existe, regístralo.</p>}
-          </div>
-          {!elegido && (
-            <button
-              type="button"
-              className={`${styles.ubicame} ${punto ? styles.ubicameActivo : ""}`}
-              onClick={punto ? () => setVez((v) => v + 1) : pedirUbicacion}
-              disabled={geo === "pidiendo"}
-              aria-pressed={!!punto}
-              aria-label={
-                punto ? "Centrar en mi ubicación" : "Mostrar mi ubicación"
-              }
-            >
-              <IconoUbicacion width={22} height={22} />
-            </button>
-          )}
-          {notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoMapa} />}
-          {elegido && (
-            <Link
-              href={`/lugares/${elegido.id}`}
-              className={styles.tarjeta}
-              aria-label={`Ver ${elegido.nombre}`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-              <img src={elegido.portada ?? SIN_FOTO} alt="" className={renglon.foto} />
-              <span className={renglon.titulo}>{elegido.nombre}</span>
-              <span className={`${renglon.meta} ${renglon.metaColumna}`}>
-                {enTira.includes(elegido.id) && <span className={styles.destacado}>Destacado</span>}
-                <span>{elegido.privado ? "Solo tú lo ves" : etiquetaTipo(elegido.tipo)}</span>
-                <span>
-                  <IconoCalendario width={15} height={15} />
-                  {elegido.proximo ? (
-                    <b>{textoProximo(elegido.proximo)}</b>
-                  ) : (
-                    "Sin eventos próximos"
-                  )}
+            {notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoMapa} />}
+            {elegido && (
+              <Link
+                href={`/lugares/${elegido.id}`}
+                className={styles.tarjeta}
+                aria-label={`Ver ${elegido.nombre}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+                <img src={elegido.portada ?? SIN_FOTO} alt="" className={renglon.foto} />
+                <span className={renglon.titulo}>{elegido.nombre}</span>
+                <span className={`${renglon.meta} ${renglon.metaColumna}`}>
+                  {enTira.includes(elegido.id) && <span className={styles.destacado}>Destacado</span>}
+                  <span>{elegido.privado ? "Solo tú lo ves" : etiquetaTipo(elegido.tipo)}</span>
+                  <span>
+                    <IconoCalendario width={15} height={15} />
+                    {elegido.proximo ? (
+                      <b>{textoProximo(elegido.proximo)}</b>
+                    ) : (
+                      "Sin eventos próximos"
+                    )}
+                  </span>
                 </span>
-              </span>
-              <span className={styles.ver}>Ver</span>
-            </Link>
-          )}
-        </div>
-      ) : (
-        <ListaLugares
-          lugares={lugaresDelTipo}
-          tipo={tipo}
-          total={lugares.length}
-          busqueda={busqueda}
-          onBusqueda={setBusqueda}
-          punto={punto}
-          ciudad={ciudad}
-          conSesion={conSesion}
-          seguidos={seguidos}
-          avisos={avisos}
-          destacados={destacados}
-          chips={
-            <>
-              {chipCiudad}
-              <Chip activo={!!punto} onClick={punto ? () => setPunto(null) : pedirUbicacion} disabled={geo === "pidiendo"}>
-                <IconoUbicacion width={16} height={16} />
-                {geo === "pidiendo" ? "Un momento…" : "Cerca de mí"}
-                {punto && <IconoCerrar width={18} height={18} className={styles.quitar} />}
-              </Chip>
-              {chipsTipo}
-            </>
-          }
-          aviso={notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoLista} />}
-        />
-      )}
+                <span className={styles.ver}>Ver</span>
+              </Link>
+            )}
+          </div>
+        ) : (
+          <ListaLugares
+            lugares={lugaresDelTipo}
+            tipo={tipo}
+            total={lugares.length}
+            busqueda={busqueda}
+            onBusqueda={setBusqueda}
+            punto={punto}
+            ciudad={ciudad}
+            conSesion={conSesion}
+            seguidos={seguidos}
+            avisos={avisos}
+            destacados={destacados}
+            chips={
+              <>
+                {chipCiudad}
+                <Chip activo={!!punto} onClick={punto ? () => setPunto(null) : pedirUbicacion} disabled={geo === "pidiendo"}>
+                  <IconoUbicacion width={16} height={16} />
+                  {geo === "pidiendo" ? "Un momento…" : "Cerca de mí"}
+                  {punto && <IconoCerrar width={18} height={18} className={styles.quitar} />}
+                </Chip>
+                {chipsTipo}
+              </>
+            }
+            aviso={notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoLista} />}
+          />
+        )}
 
-      {!elegido && <Publicar que="lugar" />}
-      <NavInferior />
-    </main>
+          {!elegido && <Publicar que="lugar" />}
+          <NavInferior />
+      </main>
+    </PantallaConAviso>
   );
 }

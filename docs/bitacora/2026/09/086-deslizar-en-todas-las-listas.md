@@ -177,7 +177,8 @@ hidratación y 480 corridas del modelo pasan con la regla nueva. Cuatro cosas m�
    pregunta no volvía nunca. **Arreglo:** soltar el cerrojo **en todos los cierres**, sea contestada, cerrada a mano o
    cerrada sola. Lo hace `HojaAbierta` al desmontarse, así que no depende de que cada pantalla se acuerde; con la regla
    de arriba, soltarlo siempre no hace que insista.
-3. **Un fallo en cualquier lista borraba la memoria de las otras.** `ActividadPersona` le pasaba a `recordar` la suma de
+3. **Un fallo en cualquier lista borraba la memoria de las otras.** (De este arreglo, lo que se ve es pasar solo los
+   fallos de la lista de eventos en vez de la suma de las tres; el resto es corrección interna.) `ActividadPersona` le pasaba a `recordar` la suma de
    los fallos de las tres listas, pero "Van a lo mismo" y "Me interesa" solo las llena la de eventos: las otras dos no
    podían sumar a esa memoria y sí tirarla. **Arreglo:** solo los fallos de la lista que alimenta esas pestañas, y al
    devolver lo suyo no se baja hasta lo guardado, sino hasta **lo guardado o lo que se ve ahora, lo que sea más alto**;
@@ -208,6 +209,34 @@ vacía y mentirosa, y es lo que hace `main` hoy. Una pestaña **con renglones de
   quedaba tapado.
 - La pestaña fantasma sigue arreglada con la memoria nueva: un Voy que no se guarda no deja pestaña (comprobado con las
   pruebas de gestión de cambios, que sujetan lo viejo y siguen fallando por eso).
+
+## Cuarta revisión adversarial (PR 2, commit 18f34f1)
+Gestión de cambios midió la cuenta de la hoja con React real contra tres árboles (esta rama, la anterior y `main`): la
+agenda pregunta 2 de 4, Lugares 2 de 3, la ficha de lugar 2 en toda la pantalla (main, 3) y la de evento 2 de 4 (main,
+4); refrescar no reinicia, cambiar de pestaña en el perfil tampoco, otra hoja distinta no gasta, quien contesta no
+vuelve a verla y un guardado que falla no pregunta. Quedaban tres cosas:
+
+1. **Lugares reiniciaba la cuenta al pasar por el Mapa.** `VistaLugares` desmonta la Lista al cambiar de vista, y con
+   ella nacía otro canal: tres idas y vueltas daban **6 hojas en la misma pantalla** (main da 3). Era la única pantalla
+   con ese agujero. **Arreglo:** el canal vive por encima del interruptor — `VistaLugares` envuelve su pantalla en
+   `PantallaConAviso` y `ListaLugares` lo toma con `useCanalDePantalla()` —, así Mapa y Lista comparten las dos
+   preguntas y el único aviso de abajo.
+2. **Solo en desarrollo:** con `next dev` en modo estricto React monta, limpia y vuelve a montar los efectos, y la
+   limpieza repetida soltaba el cerrojo con la hoja abierta: se podían apilar dos. **Arreglo:** `HojaAbierta` vuelve a
+   tomar el cerrojo al montarse (`retomar`), sin gastar cuenta. En producción no cambia nada, y "Ahora no" sigue
+   devolviendo la pregunta una vez.
+3. **Anotado, no arreglado:** si la sesión se cae entre el toque y la respuesta del servidor, la pregunta queda tomada y
+   la hoja no llega a pintarse. Sin sesión esa pantalla ya no hace gestos, así que la consecuencia es mínima.
+
+### Evidencia de la cuarta revisión
+- **lint** (solo el aviso viejo del logotipo), **tipos**, **362 pruebas en 39 archivos** y **build** en verde, con
+  `main` (ecc913a) dentro.
+- **Lugares, con Mapa y Lista, a 390×844:** Seguir en un lugar → hoja (1.ª); Mapa → Lista; Seguir en otro → hoja (2.ª);
+  Mapa → Lista; dejar de seguir y volver a seguir el tercero → **sin hoja**, solo el aviso "Sigues … · Deshacer". Antes,
+  cada vuelta a la Lista empezaba de cero.
+- **Modo estricto** (banco propio, con `<StrictMode>`): con la hoja de la lista abierta, un Seguir de la barra de la
+  misma ficha **no** abre una segunda (antes del arreglo salían 2); tres Voy seguidos siguen dando hoja, hoja y nada; y
+  "Ahora no" sigue devolviendo la pregunta una vez.
 
 ## Queda
 - **Firma del founder en el iPhone:** las pestañas de Mi perfil y de otra persona, quitar al instante con Deshacer, y los próximos eventos de las fichas.

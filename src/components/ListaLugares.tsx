@@ -7,6 +7,7 @@ import { etiquetaTipo, filtrarLugares, ordenarLugares, UMBRAL_BUSCAR_LUGARES, ty
 import { Chips } from "./ui/Chip";
 import Destacados from "./Destacados";
 import RenglonLugar from "./RenglonLugar";
+import { useCanalDePantalla } from "./useCanalDeListas";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
 import { CampoBuscar } from "@/components/ui/Buscador";
@@ -45,7 +46,9 @@ type Props = {
 export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso, seguidos = null, avisos = null, destacados = [] }: Props) {
   const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
   // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
-  const seguir = useSeguirEnLista("lugar", seguidos, avisos);
+  // Si la pantalla puso su canal (Lugares, con Mapa y Lista), el aviso y la pregunta son de ella: cambiar de vista no
+  // empieza de cero. Sin canal de pantalla, la lista sigue con el suyo.
+  const seguir = useSeguirEnLista("lugar", seguidos, avisos, useCanalDePantalla());
   const hrefNuevo = conSesion ? "/lugares/nuevo" : "/entrar?siguiente=/lugares/nuevo";
 
   if (lugares.length === 0 && !tipo) {

@@ -22,6 +22,8 @@ export type CanalDeListas = {
   tomarPregunta: () => boolean;
   /** Se fue la hoja (cerrada, contestada o con la pantalla): la pregunta vuelve a estar libre, una sola vez por pantalla. */
   soltarPregunta: () => void;
+  /** La hoja abierta se vuelve a montar (desarrollo repite los efectos): sigue tomada, sin gastar cuenta. */
+  retomarPregunta: () => void;
   /** Cuántas hojas de avisos hay abiertas: con alguna, el aviso espera y sale al cerrarla. */
   hojas: number;
   anotarHoja: (abierta: boolean) => void;
@@ -39,6 +41,7 @@ export function useCanalDeListas(): CanalDeListas {
       limpiar: (de: string) => setAviso((a) => alLimpiar(a, de)),
       tomarPregunta: pregunta.tomar,
       soltarPregunta: pregunta.soltar,
+      retomarPregunta: pregunta.retomar,
       anotarHoja: (abierta: boolean) => setHojas((n) => Math.max(0, n + (abierta ? 1 : -1))),
     };
   });
@@ -58,14 +61,16 @@ export function AvisoAbajo({ canal }: { canal: CanalDeListas }) {
  * que no quede trabada. Devolverla una sola vez por pantalla ya lo cuida el cerrojo.
  */
 export function HojaAbierta({ canal }: { canal: CanalDeListas }) {
-  const { anotarHoja, soltarPregunta } = canal;
+  const { anotarHoja, soltarPregunta, retomarPregunta } = canal;
   useEffect(() => {
     anotarHoja(true);
+    // En desarrollo React monta, limpia y vuelve a montar: al volver, la pregunta sigue tomada (no se abren dos hojas).
+    retomarPregunta();
     return () => {
       anotarHoja(false);
       soltarPregunta();
     };
-  }, [anotarHoja, soltarPregunta]);
+  }, [anotarHoja, soltarPregunta, retomarPregunta]);
   return null;
 }
 

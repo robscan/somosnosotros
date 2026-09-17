@@ -45,7 +45,7 @@ export function alLimpiar(previo: Aviso | null, de: string): Aviso | null {
 export const VECES_QUE_PREGUNTA = 2;
 
 /** El cerrojo de la pregunta de avisos de una pantalla: una hoja a la vez y como mucho dos en toda la pantalla. */
-export function cerrojoDePregunta(): { tomar: () => boolean; soltar: () => void } {
+export function cerrojoDePregunta(): { tomar: () => boolean; retomar: () => void; soltar: () => void } {
   let tomado = false;
   let veces = 0;
   return {
@@ -54,6 +54,10 @@ export function cerrojoDePregunta(): { tomar: () => boolean; soltar: () => void 
       tomado = true;
       veces += 1;
       return true;
+    },
+    /** La hoja que ya estaba abierta vuelve a montarse (React repite el efecto en desarrollo): sigue tomada, sin gastar cuenta. */
+    retomar: () => {
+      tomado = true;
     },
     soltar: () => {
       tomado = false;
