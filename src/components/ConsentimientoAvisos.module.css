@@ -70,15 +70,17 @@
   color: var(--ok);
 }
 .cambiar,
+.nota {
+  margin-top: 6px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 /* «No se pudo guardar · Reintentar»: el texto y su botón en una línea. */
 .nota {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   column-gap: var(--espacio-2);
-  margin-top: 6px;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
 }
 /* Lo pendiente o lo que no se pudo se ve provisional: icono punteado en gris, no la palomita verde. */
 .pendiente svg {

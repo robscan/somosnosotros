@@ -168,6 +168,24 @@ Gestión de cambios dejó las listas por buenas: un modelo al azar con 20 renglo
   - **Hoja, "Por correo" sin red:** el aviso con Reintentar y los botones activos; con red, "Te escribimos a…".
   - **Ficha de lugar** con la promesa en dos líneas (barra de 77 px) y "Dejar de seguir" con fallo: el aviso queda 12 px encima de la barra. Con letra al 150 % (barra de 172 px), igual, sin tapar "Dejar de seguir".
 
+## Cuarta revisión del PR #88, arreglada
+Las fichas quedaron limpias (8 casos con `Asistencia` y `Seguir` de verdad). En la hoja de avisos había un fallo importante: el aviso «No se pudo guardar · Reintentar» seguía a la vista tras otra respuesta, y su Reintentar guardaba justo lo que la persona había rechazado. Se reprodujo con el componente real en cuatro casos:
+- "Sí" al correo falla y luego "No": Reintentar guardaba el correo;
+- en iPhone, "Mientras, ¿por correo?" falla y luego "No": igual;
+- con los avisos bloqueados, "Por correo" falla y luego "Ahora no": Reintentar guardaba el correo y la marca de contestada;
+- cerrar los pasos de instalar falla y luego "No": Reintentar guardaba los avisos en el teléfono.
+
+**Arreglo:**
+- Toda respuesta de la hoja (cada botón y cerrar los pasos) pasa por un solo sitio, `responder`, que cierra el aviso anterior antes de actuar; es la misma regla que en las fichas. Sin cambios de aspecto ni de textos.
+- **Menores:**
+  - el CSS de la nota ya no le pone `display: flex` a "Se cambia en Ajustes.": la regla compartida quedó como estaba y el flex va en una regla propia de `.nota`;
+  - en `toques.test.ts`, la secuencia que imitaba las fichas se llama por lo que prueba (toques de uno en uno con un aviso de fallo) y ya no promete probar los componentes.
+
+**Evidencia:**
+- lint (el aviso viejo del logotipo), tipos, 319 pruebas y build en verde;
+- las pruebas del verificador de gestión de cambios, fuera del repo (38, con el componente real): pasan los cuatro casos que fallaban y siguen en verde las fichas.
+- Sin captura nueva: no cambia nada a la vista.
+
 ## Queda
 - **Firma del founder en el iPhone:**
   - las dos acciones y sus estados;
