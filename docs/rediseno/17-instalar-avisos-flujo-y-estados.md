@@ -1,4 +1,4 @@
-# Instalar la app y activar los avisos · flujo, estados y decisiones (v1.1: 1 a 9 aceptadas; 10 y 11 decididas por el founder; 12 a 14, el calendario, para firma)
+# Instalar la app y activar los avisos · flujo, estados y decisiones (v1.2: firmadas por el founder el 2026-09-16; construidas en la rama instalar-y-avisos, bitácora 064)
 
 **Fecha:** 2026-09-16 (noche) · **Base:** [16-instalar-avisos-fricciones.md](16-instalar-avisos-fricciones.md) (v1.1) · **Carta:** [PRINCIPIOS_UX.md](../PRINCIPIOS_UX.md) · **Firmado antes:** F4 de [01](01-inicio-fricciones.md) y decisión 10 de [02](02-inicio-flujo-y-estados.md) · **Prototipo navegable:** [prototipos/instalar-avisos.html](prototipos/instalar-avisos.html) (publicado para el iPhone en https://claude.ai/artifact/LHH9XsGDzf6V5CFk5CwfV4) · **Quién firma:** el founder.
 
@@ -31,14 +31,14 @@ flowchart TD
 | ID | Estado | Qué ve la persona | Qué puede hacer |
 |---|---|---|---|
 | P0 | Pregunta tras Voy o Seguir (como hoy) | "Vas a X · Ya estás en la lista de quien va · ¿Te recordamos ese día?"; Por correo · En el teléfono (en la computadora, "En esta computadora"); No, gracias | Elegir un canal; cerrar ("ahora no") |
-| P1 | iPhone en Safari: hoja "Instala Somos Nosotros" | "Los avisos del iPhone llegan a la app instalada." Cinco renglones con los iconos de Safari: Toca ··· (abajo a la derecha) · Compartir · Ver más · Agregar a pantalla de inicio · Agregar (arriba a la derecha). Al pie, el icono SN: "Ábrela desde tu inicio y toca Activar" | Seguir los pasos con la hoja abierta; cerrar |
+| P1 | iPhone en Safari: hoja "Instala Somos Nosotros" | "Los avisos del iPhone llegan a la app instalada." Cinco renglones con los iconos de Safari: Toca ··· (abajo a la derecha) · Compartir (el primero del menú) · Ver más (al final de la fila) · Agregar a Inicio (debajo de Buscar en la página) · Agregar (arriba a la derecha). Al pie, el icono SN: "Ábrela desde tu inicio y toca Activar" | Seguir los pasos con la hoja abierta; cerrar |
 | P2 | iPhone en Safari: cerró la hoja | Sin palomita: "Falta un paso: instálala y, al abrirla, toca Activar" · Ver los pasos; "Mientras, ¿por correo?" Sí · No | Ver los pasos; elegir correo |
 | P3 | App instalada, Android o computadora | El permiso del sistema (iPhone: "Somos Nosotros quiere enviarte notificaciones"; Chrome: "somosnosotros.org quiere mostrar notificaciones") | Permitir; no permitir |
 | P4 | Dado de alta | "✓ Te avisamos en este teléfono ese día"; "¿También por correo?" Sí · No. En Chrome o Android sin instalar, al final: "Tenla en tu inicio · Instalar" | Elegir correo; instalar en un toque |
 | P5 | Bloqueados | "Los avisos quedaron bloqueados en este teléfono. Se activan en Ajustes del iPhone › Notificaciones › Somos Nosotros" (en Chrome: "en la configuración del sitio"); "Mientras, ¿por correo?" | Elegir correo; ir a los ajustes del teléfono |
 | P6 | Falló el alta | "No pudimos darte de alta en este teléfono." · Intentar de nuevo; "o por correo" | Reintentar; correo |
 | P7 | Dentro de Instagram o Facebook | "Aquí no llegan avisos: estás en el navegador de Instagram. Ábrela en Safari o elige por correo." · Por correo | Correo |
-| A0 | App instalada, primer arranque con avisos pedidos | Arriba de la agenda, con el dibujo de "Completar": campana · "Activa los avisos en este teléfono" · "Para recordarte lo que vas" · Activar · ✕ | Activar; ✕ (ahora no) |
+| A0 | App instalada, primer arranque con avisos pedidos | Arriba de la agenda, con el dibujo de "Completar": campana · "Activa los avisos en este teléfono" · "Para recordarte lo que vas y lo que sigues" · Activar · ✕ | Activar; ✕ (ahora no) |
 | A1 | Tocó Activar | El permiso del iPhone | Permitir; no permitir |
 | A2 | Permitió | La tarjeta pasa a "✓ Listo: te avisamos en este teléfono" y se va sola en 1.6 s | — |
 | A3 | ✕ | La tarjeta se va y no vuelve en ese teléfono; el renglón de Ajustes queda como camino | — |
@@ -58,7 +58,7 @@ flowchart TD
    - dentro de otra app (Instagram, Facebook): correo, con "Ábrela en Safari" (P7).
 
    "No se puede" solo se dice donde es verdad, con el correo a la vista. Un "sí" nunca se guarda como "no". *UX invisible, Evidencia.* (I1)
-2. **La hoja da los pasos del Safari de la persona.** En iOS 26, cinco renglones con los iconos reales y la posición de cada uno; en versiones anteriores, Compartir abajo al centro › Agregar a pantalla de inicio › Agregar. En Chrome del iPhone, sus propios pasos (por comprobar al construir). Sin frases de ayuda; al pie, el resultado y el paso que sigue ("toca Activar"). *Evidencia, Jakob.* (I2, P1)
+2. **La hoja da los pasos del Safari de la persona.** En iOS 26, cinco renglones con los iconos reales, los nombres que muestra el iPhone en español (medidos al construir: la opción se llama "Agregar a Inicio") y la posición de cada uno; en versiones anteriores, Compartir abajo al centro › Agregar a pantalla de inicio › Agregar. Fuera de Safari (Chrome del iPhone, otra app) pide abrirla en Safari: los pasos de Chrome del iPhone no se pudieron comprobar. Sin frases de ayuda; al pie, el resultado y el paso que sigue ("toca Activar"). *Evidencia, Jakob.* (I2, P1)
 3. **Lo pendiente se ve pendiente.** Al cerrar la hoja, "Falta un paso" sin palomita, con la oferta del correo una sola vez. La cuenta guarda que quiere avisos en el teléfono. *Evidencia, Zeigarnik.* (I3, P2)
 4. **La tarjeta "Activa los avisos" al abrir la app instalada.** Es el objeto arriba que pidió el founder, con motivo.
    - **Cuándo sale:** solo si la persona pidió avisos en el teléfono y este teléfono no tiene permiso.
@@ -106,8 +106,8 @@ flowchart TD
 
 ## Qué sigue
 
-1. El founder recorre en el prototipo el calendario (12 a 14) y firma. 1 a 11 ya están aceptadas o decididas.
-2. Un PR "Instalar y avisos" con las decisiones 1 a 9 y 12 a 14. Sin migración: la tabla de altas por teléfono ya existe. Lo que se recuerda por teléfono (la ✕ de la tarjeta) vive en ese teléfono.
+1. ~~El founder recorre en el prototipo el calendario (12 a 14) y firma.~~ Firmado el 2026-09-16 (noche): «Me quedo con tu propuesta».
+2. ~~Un PR "Instalar y avisos" con las decisiones 1 a 9 y 12 a 14.~~ Construido en la rama `instalar-y-avisos` y probado en el simulador (bitácora [064](../bitacora/2026/09/064-instalar-y-avisos-construido.md)); sin migración. Falta el push y el PR cuando el founder lo diga.
 3. Firma en el iPhone del founder:
    - Safari › Voy › En el teléfono › hoja › instalar › Activar › recordatorio de las 9:00 de un evento del día siguiente;
    - "A mi calendario" con su alerta;

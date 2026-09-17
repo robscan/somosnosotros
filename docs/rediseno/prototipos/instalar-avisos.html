@@ -231,7 +231,7 @@
 </style>
 
 <div class="estudio">
-  <p class="rotulo"><strong>Instalar y activar avisos v1.1</strong> <span>La pregunta tras Voy, la hoja de instalar del iPhone con los pasos de iOS 26, la tarjeta al abrir la app instalada, Ajustes por teléfono y A mi calendario</span> <span>Decidido: nada arriba para quien visita; sin app de la tienda</span> <span>Datos de ejemplo, no reales</span></p>
+  <p class="rotulo"><strong>Instalar y activar avisos v1.2</strong> <span>La pregunta tras Voy, la hoja de instalar del iPhone con los pasos de iOS 26, la tarjeta al abrir la app instalada, Ajustes por teléfono y A mi calendario</span> <span>Decidido: nada arriba para quien visita; sin app de la tienda</span> <span>Datos de ejemplo, no reales</span></p>
 
   <div class="telefono" id="telefono">
     <div class="estado-ios" id="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
@@ -386,14 +386,14 @@
   /* P1: hoja de instalar del iPhone, con los pasos del Safari de iOS 26 */
   function hojaInstalar() {
     const paso = (n, glifo, que, donde, clase = "") => `<li><span class="num">${n}</span><span class="glifo ${clase}" aria-hidden="true">${glifo}</span><b>${que}</b><small>${donde}</small></li>`;
-    return `<div class="asa" aria-hidden="true"></div>${cerrarHoja()}<h3>Instala Somos Nosotros</h3><p class="suave">Los avisos del iPhone llegan a la app instalada.</p><ol class="pasos">${paso(1, "···", `Toca <span class="puntos">···</span>`, "Abajo a la derecha")}${paso(2, I.compartir, "Compartir", "El primero del menú")}${paso(3, I.verMas, "Ver más", "Junto a Copiar")}${paso(4, I.agregarInicio, "Agregar a pantalla de inicio", "En la lista")}${paso(5, "Agregar", "Agregar", "Arriba a la derecha", "agregar")}</ol><div class="resultado"><span class="icono-app" aria-hidden="true">SN</span><p><b>Después</b>, ábrela desde tu inicio y toca Activar.</p></div>`;
+    return `<div class="asa" aria-hidden="true"></div>${cerrarHoja()}<h3>Instala Somos Nosotros</h3><p class="suave">Los avisos del iPhone llegan a la app instalada.</p><ol class="pasos">${paso(1, "···", `Toca <span class="puntos">···</span>`, "Abajo a la derecha")}${paso(2, I.compartir, "Compartir", "El primero del menú")}${paso(3, I.verMas, "Ver más", "Al final de la fila")}${paso(4, I.agregarInicio, "Agregar a Inicio", "Debajo de Buscar en la página")}${paso(5, "Agregar", "Agregar", "Arriba a la derecha", "agregar")}</ol><div class="resultado"><span class="icono-app" aria-hidden="true">SN</span><p><b>Después</b>, ábrela desde tu inicio y toca Activar.</p></div>`;
   }
 
   /* ---------- App instalada: la tarjeta al abrirla ---------- */
   function pantallaApp() {
     const a = estado.app;
     let tarjeta = "";
-    if (a === "A0" || a === "A1") tarjeta = `<p class="tarjeta-accion">${I.campana}<b>Activa los avisos en este teléfono</b><small>Para recordarte lo que vas</small><button type="button" class="boton-pildora" data-accion="activar">Activar</button><button type="button" class="cerrar-chico" data-accion="ahora-no" aria-label="Ahora no">${I.cerrar}</button></p>`;
+    if (a === "A0" || a === "A1") tarjeta = `<p class="tarjeta-accion">${I.campana}<b>Activa los avisos en este teléfono</b><small>Para recordarte lo que vas y lo que sigues</small><button type="button" class="boton-pildora" data-accion="activar">Activar</button><button type="button" class="cerrar-chico" data-accion="ahora-no" aria-label="Ahora no">${I.cerrar}</button></p>`;
     else if (a === "A2") tarjeta = `<p class="tarjeta-accion hecha">${I.ok}<b>Listo: te avisamos en este teléfono</b></p>`;
     else if (a === "Ab") tarjeta = `<p class="tarjeta-accion neutra">${I.falta}<b>Quedaron bloqueados</b><small>Se activan en Ajustes del iPhone › Notificaciones › Somos Nosotros</small><button type="button" class="cerrar-chico" data-accion="ahora-no" aria-label="Cerrar">${I.cerrar}</button></p>`;
     return `${barraRaiz()}${cabeceraAgenda()}${tarjeta}${gruposAgenda()}`;
