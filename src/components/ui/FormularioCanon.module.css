@@ -46,9 +46,6 @@
   position: relative;
   display: grid;
   grid-template-columns: 44px 1fr;
-  grid-template-areas:
-    "icono titulo"
-    "icono detalle";
   column-gap: 14px;
   align-items: center;
   min-height: 76px;
@@ -71,8 +68,11 @@
   outline: 2px solid var(--primario);
   outline-offset: 2px;
 }
+.textoCartel {
+  display: grid;
+  gap: 2px;
+}
 .marcoCartel {
-  grid-area: icono;
   display: inline-grid;
   place-items: center;
   width: 44px;
@@ -82,20 +82,17 @@
   color: var(--primario-texto);
 }
 .miniaturaCartel {
-  grid-area: icono;
   width: 44px;
   height: 44px;
   border-radius: 8px;
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
-.cartel > b {
-  grid-area: titulo;
+.cartel b {
   font-size: var(--letra-md);
   font-weight: 700;
 }
-.cartel > small {
-  grid-area: detalle;
+.cartel small {
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   line-height: 1.35;
@@ -111,7 +108,7 @@
   /* Rojo muy lavado: no hay token para el fondo de error porque solo se usa aquí. */
   background: #fdf3f2;
 }
-.cartelFallo > small {
+.cartelFallo small {
   color: var(--error);
 }
 /* "Probar con otra foto": lo dice, pero el control es el recuadro entero (nada interactivo dentro de un label). */

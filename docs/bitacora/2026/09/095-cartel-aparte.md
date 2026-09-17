@@ -77,6 +77,38 @@ El prototipo se rehízo con eso y se volvió a mirar: la variante B se retiró (
 - **La miniatura sale rota en las capturas** porque el respaldo no sirve imágenes de verdad; en producción la dirección es la que Storage acaba de aceptar.
 - **Publicar con el cartel subido** pide una dirección `https` y el respaldo sirve por `http`, así que para cerrar el flujo se pegó una dirección de imagen válida. Es la misma limitación de la bitácora 094.
 
+---
+
+# Revisión adversarial: cinco arreglos
+
+Gestión de cambios corrió una revisión de dos lentes con el componente real. Refutó cinco sospechas (elegir la misma foto otra vez, el orden del tabulador, el párrafo «Subiendo…», quedarse sin frase si falta la llave, y la pastilla que «engañaría») y confirmó que el toque no tiene puntos muertos en los cinco estados. Quedaron cinco cosas, dos importantes, y **las dos importantes eran mías**.
+
+## 1. La tarjeta se quedaba colgada para siempre (importante)
+
+Si la promesa de la lectura se rompía —se cae la señal, un 504, la función se agota— la tarjeta se quedaba en «Leyendo el cartel… No cierres la pantalla» con la barrita girando, sin salida y sin nada que hacer más que recargar. Y si lo que se rompía era la subida, `subiendo` se quedaba en `true`: el cartel, «Más» y el botón de publicar, apagados.
+
+**Esto no pasaba en `main`**, y lo rompí yo al mudar el estado: antes ese texto lo pintaba `{leyendo && …}` y el `finally` lo borraba; al pasar el estado a la tarjeta, el `finally` ya no lo alcanzaba.
+
+Arreglo: todo el cuerpo de `leerCartel` dentro de un `try`, con un `catch` que deja la tarjeta en fallo con un motivo honesto («Se cortó a la mitad · Revisa tu conexión y prueba otra vez») y un `finally` que apaga `leyendo`; y `subir()` con su propio `try/finally`, así **no lanza nunca y siempre apaga «Subiendo…»**.
+
+**Comprobado de verdad, no razonado:** con la pantalla cargada en el simulador se tiró el servidor de desarrollo y se subió un cartel. La subida funciona (va al respaldo local) y la lectura se rompe. Antes: girando para siempre. Ahora: «Se cortó a la mitad», con la foto conservada y la salida para reintentar. Captura en la pieza.
+
+## 2. Revivía OL-063, lo que acabábamos de arreglar (importante)
+
+Al repartir los errores por donde mira la persona, se me cayó el `setErrorImagen(null)` del principio de `subir()`, que en `main` sí estaba. Con un aviso viejo pegado, `useAbrirConError` ya no vuelve a dispararse (el error nunca pasa de «no hay» a «hay»), así que el renglón «Más» deja de abrirse solo: exactamente el bug de la bitácora 094. Repuesto.
+
+**Prueba nueva con control negativo** en `renglones.test.ts`: todo aviso propio que abra un renglón tiene que limpiarse al reintentar. Sin el arreglo falla señalando `"errorImagen" abre un renglón y nunca se limpia`. Los otros dos formularios ya cumplían la regla; ahora está escrita.
+
+## 3, 4 y 5
+
+- **El fallo de subida se decía dos y tres veces.** «No pude usar esa foto» + «No se pudo subir la imagen. Intenta con otra.» `subirFoto` ahora devuelve también **por qué** falló (`motivo: "pesa" | "subida"`), sin cambiar su `error`, que los otros dos formularios siguen usando tal cual. Con eso la tarjeta escribe el motivo cuando lo hay («La imagen pesa más de 5 MB. Elige otra.») y lo que toca hacer cuando no («Intenta con otra foto.»), bajo un titular que ya dice que falló.
+- **Se perdía la miniatura.** Si ya había un cartel leído y la segunda foto no subía, la tarjeta se quedaba sin foto aunque el formulario conservara la imagen anterior. Ahora la conserva y lo dice: «El cartel de antes se queda».
+- **El lector de pantalla no oía el titular.** El `role="status"` solo envolvía el detalle, así que «Leí el cartel» y «No pude…» nunca se anunciaban. Ahora la región viva incluye titular y detalle, con el texto en un solo bloque (la rejilla de la tarjeta pasa de cuatro áreas a dos columnas: más plana y una sola cosa que mover).
+
+## Pruebas nuevas
+
+`src/lib/estadoCartel.test.ts`: las transiciones de la tarjeta salieron del componente a `src/app/eventos/estadoCartel.ts` para poder probarlas. Cubren el corte a mitad, que el fallo de subida no repita el titular, y que la foto anterior sobreviva. **352 pruebas en 39 archivos**, con lint, tipos y build en verde.
+
 ## Lo que sigue
 
-`topes-de-campos` (OL-065, bitácora 096), avisando antes a gestión de cambios.
+`topes-de-campos` (OL-065, bitácora 096), avisando antes a gestión de cambios. Antes va `tope-de-lecturas` (OL-067, bitácora 098), que pidió el founder.

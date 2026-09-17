@@ -20,13 +20,14 @@ import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
-import { subirFoto } from "@/lib/subirFoto";
+import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { leerCartelAccion, zonaDelPunto, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
-import TarjetaCartel, { type EstadoCartel } from "./TarjetaCartel";
+import TarjetaCartel from "./TarjetaCartel";
+import { falloAlLeer, falloAlSubir, falloDeCorte, leido, type EstadoCartel } from "./estadoCartel";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./FormularioEvento.module.css";
@@ -276,13 +277,23 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     });
   }
 
-  /** Sube la foto y la deja como imagen del evento. El fallo lo coloca quien llamó, donde la persona esté mirando. */
-  async function subir(archivo: File): Promise<{ url: string } | { error: string }> {
+  /**
+   * Sube la foto y la deja como imagen del evento. El fallo lo coloca quien llamó, donde la persona esté mirando.
+   * No lanza nunca y siempre apaga "Subiendo…": si se cae la señal a mitad, el botón de publicar no puede quedarse
+   * apagado hasta recargar (revisión de la bitácora 095).
+   */
+  async function subir(archivo: File): Promise<{ url: string } | { error: string; motivo: FalloAlSubir }> {
     setSubiendo(true);
-    const r = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen");
-    setSubiendo(false);
-    if (!("error" in r)) setImagen(r.url);
-    return r;
+    setErrorImagen(null);
+    try {
+      const r = await subirFoto("lugares", usuarioId, "evento", archivo, "imagen");
+      if (!("error" in r)) setImagen(r.url);
+      return r;
+    } catch {
+      return { error: "No se pudo subir. Revisa tu conexión y prueba otra vez.", motivo: "subida" };
+    } finally {
+      setSubiendo(false);
+    }
   }
   async function subirImagen(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
@@ -291,23 +302,28 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     setErrorImagen("error" in r ? r.error : null);
   }
 
-  /** Cartel → se sube, se lee y los renglones se llenan. La persona revisa y publica. */
+  /**
+   * Cartel → se sube, se lee y los renglones se llenan. La persona revisa y publica.
+   * Todo va dentro de un try: si la promesa se rompe (se cae la señal, el servidor tarda de más, la función se
+   * agota), la tarjeta no puede quedarse en "Leyendo el cartel…" para siempre (revisión de la bitácora 095).
+   */
   async function leerCartel(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
+    const anterior = cartel?.foto;
     setCartel({ estado: "leyendo" });
-    const subida = await subir(archivo);
-    if ("error" in subida) {
-      setCartel({ estado: "fallo", titulo: "No pude usar esa foto", mensaje: subida.error });
-      return;
-    }
-    const url = subida.url;
-    setCartel({ estado: "leyendo", foto: url });
     setLeyendo(true);
     try {
+      const subida = await subir(archivo);
+      if ("error" in subida) {
+        setCartel(falloAlSubir(anterior, subida.error, subida.motivo));
+        return;
+      }
+      const url = subida.url;
+      setCartel({ estado: "leyendo", foto: url });
       const r = await leerCartelAccion(url);
       if (!r.ok) {
-        setCartel({ estado: "fallo", mensaje: r.mensaje, foto: url });
+        setCartel(falloAlLeer(url, r.mensaje));
         return;
       }
       const v = r.valores;
@@ -326,9 +342,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         setModoSitio("otro");
         setOtro((o) => ({ ...o, reservado: false, sitioTexto: [v.lugar, v.direccion].filter(Boolean).join(" · ").slice(0, LIMITES_EVENTO.sitio) }));
       }
-      const faltan = [!v.titulo && "el nombre", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "dónde"].filter(Boolean);
-      // El título de la tarjeta ya dice "Leí el cartel": aquí solo va lo que toca hacer.
-      setCartel({ estado: "leido", foto: url, mensaje: faltan.length ? `Revisa ${faltan.join(", ")} y publica.` : "Revisa que todo esté bien y publica." });
+      const faltan = [!v.titulo && "el nombre", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "dónde"].filter(Boolean) as string[];
+      setCartel(leido(url, faltan));
+    } catch {
+      setCartel((actual) => falloDeCorte(actual, anterior));
     } finally {
       setLeyendo(false);
     }

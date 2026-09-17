@@ -32,6 +32,16 @@ export function cuerposQueSeEsconden(fuente: string): { estado: string; conAviso
   });
 }
 
+/** Los avisos que el propio formulario levanta (no los del servidor) y que abren un renglón al llegar. */
+export function avisosPropios(fuente: string): string[] {
+  const llamada = fuente.match(/useAbrirConError\(([^)]*)\)/);
+  if (!llamada) return [];
+  return llamada[1]
+    .split(",")
+    .map((a) => a.trim())
+    .filter((a) => /^error[A-Z]\w*$/.test(a));
+}
+
 describe("renglones", () => {
   it("todo cuerpo escondido con avisos se abre solo al llegar un error", () => {
     const culpables = pantallas(RAIZ).flatMap((ruta) => {
@@ -44,6 +54,18 @@ describe("renglones", () => {
           return !abridor.test(fuente);
         })
         .map(({ estado }) => `${ruta.slice(RAIZ.length)}: el cuerpo de "${estado}" esconde avisos y no usa useAbrirConError`);
+    });
+    expect(culpables).toEqual([]);
+  });
+
+  it("el aviso que abre un renglón se limpia al reintentar", () => {
+    // Si un aviso viejo se queda pegado, el renglón ya no vuelve a abrirse solo con el siguiente error: el
+    // formulario deja de avisar y volvemos al bug de OL-063. Salió en la revisión de la bitácora 095.
+    const culpables = pantallas(RAIZ).flatMap((ruta) => {
+      const fuente = readFileSync(ruta, "utf8");
+      return avisosPropios(fuente)
+        .filter((aviso) => !fuente.includes(`set${aviso[0].toUpperCase()}${aviso.slice(1)}(null)`))
+        .map((aviso) => `${ruta.slice(RAIZ.length)}: "${aviso}" abre un renglón y nunca se limpia`);
     });
     expect(culpables).toEqual([]);
   });

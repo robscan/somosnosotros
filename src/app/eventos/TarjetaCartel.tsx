@@ -2,9 +2,7 @@
 
 import { IconoCamara } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
-
-/** En qué va el cartel: sin esto, la tarjeta está en reposo pidiendo el primero. */
-export type EstadoCartel = { estado: "leyendo" | "leido" | "fallo"; titulo?: string; mensaje?: string; foto?: string } | null;
+import type { EstadoCartel } from "./estadoCartel";
 
 /**
  * La tarjeta del cartel, antes del formulario (docs/rediseno/22, firmada por el founder el 2026-09-17).
@@ -14,6 +12,9 @@ export type EstadoCartel = { estado: "leyendo" | "leido" | "fallo"; titulo?: str
  * metida en el campo del nombre no lo recibía, porque un <label> solo manda el toque a un campo y ese era
  * el del nombre (bitácora 093). Por eso tampoco va nada interactivo dentro: "Probar con otra foto" lo dice,
  * pero quien recibe el toque es la tarjeta.
+ *
+ * El titular y el detalle van juntos en una región viva: si solo lo estuviera el detalle, un lector de
+ * pantalla nunca oiría "Leí el cartel" ni "No pude…" (revisión de la bitácora 095).
  */
 export default function TarjetaCartel({ cartel, ocupado, onElegir }: { cartel: EstadoCartel; ocupado: boolean; onElegir: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
   const leyendo = cartel?.estado === "leyendo";
@@ -30,24 +31,16 @@ export default function TarjetaCartel({ cartel, ocupado, onElegir }: { cartel: E
           <IconoCamara width={24} height={24} />
         </span>
       )}
-      <b>{leyendo ? "Leyendo el cartel…" : leido ? "Leí el cartel" : fallo ? (cartel.titulo ?? "No pude leer el cartel") : "Sube el cartel"}</b>
-      <small role="status">
-        {leyendo ? (
-          <>
-            Tarda unos segundos. No cierres la pantalla.
-            <span className={canon.barritaCartel} aria-hidden="true">
-              <span />
-            </span>
-          </>
-        ) : cartel?.mensaje ? (
-          <>
-            {cartel.mensaje}
-            {fallo && <span className={canon.rehacerCartel}>Probar con otra foto</span>}
-          </>
-        ) : (
-          "Leemos el nombre, la fecha, el lugar y el precio."
+      <span className={canon.textoCartel} role="status">
+        <b>{leyendo ? "Leyendo el cartel…" : leido ? "Leí el cartel" : fallo ? (cartel.titulo ?? "No pude leer el cartel") : "Sube el cartel"}</b>
+        <small>{leyendo ? "Tarda unos segundos. No cierres la pantalla." : (cartel?.mensaje ?? "Leemos el nombre, la fecha, el lugar y el precio.")}</small>
+        {leyendo && (
+          <span className={canon.barritaCartel} aria-hidden="true">
+            <span />
+          </span>
         )}
-      </small>
+        {fallo && <span className={canon.rehacerCartel}>Probar con otra foto</span>}
+      </span>
       <input type="file" accept="image/*" onChange={onElegir} disabled={ocupado} aria-label={nombre} />
     </label>
   );
