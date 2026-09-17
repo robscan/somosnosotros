@@ -58,6 +58,8 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
     .eq("visible", true)
     .or(filtroSinPasar())
     .order("inicio")
+    .order("titulo")
+    .order("id")
     .limit(30);
   const filas = (data ?? []) as unknown as FilaEvento[];
   if (filas.length === 0) return [];

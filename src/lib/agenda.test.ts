@@ -26,6 +26,25 @@ describe("agenda", () => {
     expect(grupos.map((g) => g.titulo)).toEqual(["Hoy", "Mañana"]);
     expect(grupos[0].eventos.map((e) => e.id)).toEqual(["cerca-hoy-tarde", "lejos-hoy-temprano"]);
   });
+  it("a la misma hora ordena por título y luego por id, llegue como llegue de la base", () => {
+    // Jueves 17 a las 19:00 en la ciudad, en el mismo lugar y agregados a la vez: empatan también en Cercanos y Nuevos.
+    const comun = { inicio: "2026-09-18T01:00:00Z", creado_en: "2026-09-13T00:00:00Z", lugar_id: "L1", lugar: { nombre: "Casa", portada: null, lat: 22.1449, lng: -100.9753 } };
+    const llegada = [
+      evento({ ...comun, id: "e1", titulo: "Lectura del Taller de Creación Literaria" }),
+      evento({ ...comun, id: "e4", titulo: "Mariachi" }),
+      evento({ ...comun, id: "e2", titulo: "Demostración folclórica" }),
+      evento({ ...comun, id: "e3", titulo: "Mariachi" }),
+    ];
+    const esperado = ["e2", "e1", "e3", "e4"];
+    for (const eventos of [llegada, [...llegada].reverse()]) {
+      expect(agruparPorDia(eventos, AHORA)[0].eventos.map((e) => e.id)).toEqual(esperado);
+      // Con el día elegido la lista se pinta tal cual sale del filtro (el caso del jueves 17 en el iPhone).
+      for (const filtro of ["todos", "cercanos", "siguiendo", "nuevos"] as const) {
+        const { lista } = filtrarAgenda(eventos, { filtro, punto: { lat: 22.1497, lng: -100.9764 }, seguidos: ["L1"], fecha: "2026-09-17", ahora: AHORA });
+        expect(lista.map((e) => e.id)).toEqual(esperado);
+      }
+    }
+  });
   it("mide distancias y las escribe en metros o kilómetros", () => {
     const plaza = { lat: 22.1497, lng: -100.9764 };
     const km = distanciaKm(plaza, { lat: 22.1449, lng: -100.9753 });
