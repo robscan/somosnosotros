@@ -15,10 +15,14 @@
 4. **PR #65:** traje `main` a su rama y resolví OPEN_LOOPS conservando OL-034 y OL-035. Queda listo para el merge cuando el founder lo firme.
 5. **Aviso a los dos chats que siguen corriendo:** rama propia, números reservados (Desempatar: bitácora 062 y OL-037), `git add` por nombre, una sola línea en OPEN_LOOPS.
 
+## Visto al pasar
+`npm run lint` fallaba en la Mac con 19 650 avisos: eslint entraba a `.claude/worktrees/` (los árboles de los otros chats, con su `node_modules`). El código está limpio y en CI pasa. Arreglo de una línea en la rama `lint-ignora-worktrees` (eslint ignora `.claude/`), sin push; con ella `lint`, `typecheck` y los 178 tests pasan en la Mac.
+
 ## Regla nueva que cambia una costumbre (para que el founder la confirme)
 Hasta hoy, "commits solo cuando el founder lo pida". Desde hoy, **el commit local del cierre se hace siempre** (no publica nada); **el push y el merge siguen siendo del founder**. Es la única forma de que nada quede en el aire entre chats.
 
 ## Pendiente del founder
 1. Decir "sube" para el push de `main` (dos commits: lo de la noche y esta gestión).
 2. Firmar el PR #65 en su vista previa; con la firma se hace el merge.
+4. Decir "sube" también para la rama `lint-ignora-worktrees` (un PR de una línea).
 3. Confirmar la regla nueva del commit local.
