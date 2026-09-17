@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { EventoAgenda } from "./agenda";
 import type { ArtistaLista } from "./artistas";
-import { enOrden, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
-import { SIN_FOTO } from "./imagen";
+import { enOrden, estadoVigente, opcionDestacar, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
+import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 import type { LugarLista } from "./lugares";
 
 // Miércoles 16 de septiembre de 2026, 18:00 en San Luis Potosí.
@@ -25,13 +25,13 @@ describe("enOrden", () => {
 });
 
 describe("tarjetas", () => {
-  it("evento: su cartel, si no la foto del lugar, si no la imagen del símbolo; cuándo y dónde", () => {
+  it("evento: su cartel, si no la foto del lugar, si no la imagen ancha del símbolo; cuándo y dónde", () => {
     expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", detalle: "mañana · 19:00 · Teatro de la Paz", van: 14 });
     expect(tarjetaEvento(evento({ lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).foto).toBe("/teatro.jpg");
-    expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: SIN_FOTO, detalle: "mañana · 19:00 · Plaza de Armas" });
+    expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: SIN_FOTO_ANCHA, detalle: "mañana · 19:00 · Plaza de Armas" });
   });
   it("lugar: su próximo evento o, sin él, qué es", () => {
-    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: SIN_FOTO, detalle: "Próximo: mañana · 19:00" });
+    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: SIN_FOTO_ANCHA, detalle: "Próximo: mañana · 19:00" });
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA)).toMatchObject({ foto: "/casa.jpg", detalle: "Casa de cultura" });
   });
   it("artista: la fecha sin el sitio, o lo que hace", () => {
@@ -58,3 +58,29 @@ describe("textos del menú", () => {
     expect(textoHecho("quitado", "artista", AHORA)).toBe("Ya no es destacado");
   });
 });
+
+describe("lo decidido y el menú de la ficha", () => {
+  const vigente = "2026-09-25T20:00:00Z";
+  const vencido = "2026-09-10T20:00:00Z";
+  it("un plazo vencido cuenta como nada; un evento no lleva plazo", () => {
+    expect(estadoVigente(null, AHORA)).toBe("ninguno");
+    expect(estadoVigente({ quitado: true, hasta: vencido }, AHORA)).toBe("ninguno");
+    expect(estadoVigente({ quitado: true, hasta: vigente }, AHORA)).toBe("quitado");
+    expect(estadoVigente({ quitado: false, hasta: vigente }, AHORA)).toBe("elegido");
+    expect(estadoVigente({ quitado: false, hasta: null }, AHORA)).toBe("elegido");
+  });
+  it("lo elegido se ofrece quitar aunque no quepa en la tira, con su plazo", () => {
+    expect(opcionDestacar("lugar", "elegido", vigente, null, AHORA)).toEqual({ quitar: true, detalle: "Destacado hasta el vie 25 de sep" });
+  });
+  it("lo que entra por asistentes se ofrece quitar; lo quitado vigente o sin nada, destacar", () => {
+    const tira: Destacado = { id: "l1", motivo: "asistentes", hasta: null, van: 4 };
+    expect(opcionDestacar("lugar", "ninguno", null, tira, AHORA)).toEqual({ quitar: true, detalle: "Destacado: 4 van a sus eventos" });
+    expect(opcionDestacar("lugar", "quitado", vigente, null, AHORA)).toEqual({ quitar: false, detalle: "Dos semanas: hasta el mié 30 de sep" });
+    expect(opcionDestacar("evento", "ninguno", null, null, AHORA)).toEqual({ quitar: false, detalle: "Hasta que pase el evento" });
+  });
+  it("las fechas van en la zona de la ficha", () => {
+    // 25 de sep a las 23:30 en México es 26 de sep en Madrid.
+    expect(textoMotivo({ motivo: "elegido", hasta: "2026-09-26T05:30:00Z", van: 0 }, "lugar", AHORA, "Europe/Madrid")).toBe("Destacado hasta el sáb 26 de sep");
+  });
+});
+

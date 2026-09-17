@@ -2,8 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventoAgenda } from "./agenda";
 import { etiquetaArtista, type ArtistaLista } from "./artistas";
 import { nombreSitio } from "./eventos";
-import { diaCorto, formatearCuando } from "./fechas";
-import { SIN_FOTO } from "./imagen";
+import { diaCorto, formatearCuando, ZONA_INICIAL } from "./fechas";
+import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 import { etiquetaTipo, textoProximo, type LugarLista } from "./lugares";
 
 /**
@@ -44,11 +44,11 @@ export function enOrden<T extends { id: string }>(tira: Destacado[], fichas: T[]
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): Tarjeta {
-  return { id: e.id, href: `/eventos/${e.id}`, foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van };
+  return { id: e.id, href: `/eventos/${e.id}`, foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van };
 }
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
-  return { id: l.id, href: `/lugares/${l.id}`, foto: l.portada ?? SIN_FOTO, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0 };
+  return { id: l.id, href: `/lugares/${l.id}`, foto: l.portada ?? SIN_FOTO_ANCHA, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0 };
 }
 
 /** La tarjeta de artista es redonda y angosta: la fecha va sin el sitio. */
@@ -56,27 +56,44 @@ export function tarjetaArtista(a: ArtistaLista, ahora = new Date()): Tarjeta {
   return { id: a.id, href: `/artistas/${a.id}`, foto: a.foto ?? SIN_FOTO, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0 };
 }
 
-/** "hasta mañana" o "hasta el mié 30 de sep". */
-function hasta(iso: string, ahora: Date): string {
-  const dia = diaCorto(iso, ahora);
+/** "hasta mañana" o "hasta el mié 30 de sep", en la zona de la ficha. */
+function hasta(iso: string, ahora: Date, zona: string): string {
+  const dia = diaCorto(iso, ahora, zona);
   return dia === "Hoy" || dia === "Mañana" ? `hasta ${minuscula(dia)}` : `hasta el ${dia}`;
 }
 
 const enDosSemanas = (ahora: Date) => new Date(ahora.getTime() + DIAS_DESTACADO * 86400000).toISOString();
 
 /** Debajo de «Destacar», en el menú: hasta cuándo quedaría. */
-export function textoDestacar(tipo: TipoFicha, ahora = new Date()): string {
-  return tipo === "evento" ? "Hasta que pase el evento" : `Dos semanas: ${hasta(enDosSemanas(ahora), ahora)}`;
+export function textoDestacar(tipo: TipoFicha, ahora = new Date(), zona = ZONA_INICIAL): string {
+  return tipo === "evento" ? "Hasta que pase el evento" : `Dos semanas: ${hasta(enDosSemanas(ahora), ahora, zona)}`;
 }
 
 /** Por qué está destacada una ficha, en el menú y en el panel. */
-export function textoMotivo(d: Pick<Destacado, "motivo" | "hasta" | "van">, tipo: TipoFicha, ahora = new Date()): string {
+export function textoMotivo(d: Pick<Destacado, "motivo" | "hasta" | "van">, tipo: TipoFicha, ahora = new Date(), zona = ZONA_INICIAL): string {
   if (d.motivo === "asistentes") return `Destacado: ${d.van} van${tipo === "evento" ? "" : " a sus eventos"}`;
-  return d.hasta ? `Destacado ${hasta(d.hasta, ahora)}` : "Destacado hasta que pase";
+  return d.hasta ? `Destacado ${hasta(d.hasta, ahora, zona)}` : "Destacado hasta que pase";
 }
 
 /** Lo que queda escrito en el menú después de destacar o quitar. */
-export function textoHecho(estado: EstadoDestacado, tipo: TipoFicha, ahora = new Date()): string {
+export function textoHecho(estado: EstadoDestacado, tipo: TipoFicha, ahora = new Date(), zona = ZONA_INICIAL): string {
   if (estado !== "elegido") return "Ya no es destacado";
-  return textoMotivo({ motivo: "elegido", hasta: tipo === "evento" ? null : enDosSemanas(ahora), van: 0 }, tipo, ahora);
+  return textoMotivo({ motivo: "elegido", hasta: tipo === "evento" ? null : enDosSemanas(ahora), van: 0 }, tipo, ahora, zona);
+}
+
+/** Lo que la administración decidió sobre una ficha, si sigue vigente: con el plazo vencido, cuenta como nada. */
+export function estadoVigente(renglon: { quitado: boolean; hasta: string | null } | null, ahora = new Date()): EstadoDestacado {
+  if (!renglon || (renglon.hasta && new Date(renglon.hasta) <= ahora)) return "ninguno";
+  return renglon.quitado ? "quitado" : "elegido";
+}
+
+/**
+ * El renglón «Destacar» del menú de una ficha. Está destacada si la administración la eligió (aunque no quepa en la tira
+ * de 8) o si entra por asistentes y nadie la quitó; entonces se ofrece quitarla. El motivo sale de lo decidido y, si no
+ * hay nada decidido, de la tira.
+ */
+export function opcionDestacar(tipo: TipoFicha, estado: EstadoDestacado, plazo: string | null, enTira: Destacado | null, ahora = new Date(), zona = ZONA_INICIAL): { quitar: boolean; detalle: string } {
+  if (estado === "elegido") return { quitar: true, detalle: textoMotivo({ motivo: "elegido", hasta: plazo, van: 0 }, tipo, ahora, zona) };
+  if (enTira) return { quitar: true, detalle: textoMotivo(enTira, tipo, ahora, zona) };
+  return { quitar: false, detalle: textoDestacar(tipo, ahora, zona) };
 }

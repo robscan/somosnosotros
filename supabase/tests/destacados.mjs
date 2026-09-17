@@ -93,15 +93,21 @@ const P_CASA = uuid(102); // sin asistentes
 const P_PRIVADO = uuid(103);
 const P_OCULTO = uuid(104);
 const P_MADRID = uuid(105);
+const P_UNO = uuid(106); // tres eventos a los que va la misma persona
 const E_LLENO = uuid(201); // 3 personas y el fundador van
 const E_MEDIO = uuid(202); // 2 personas
 const E_PASADO = uuid(203); // 4 personas, ya pasó
 const E_OCULTO = uuid(204); // 4 personas, oculto
 const E_SITIO = uuid(205); // sin lugar ni asistentes
 const E_MADRID = uuid(206); // 3 personas, en Madrid
+const E_UNO = [uuid(207), uuid(208), uuid(209)]; // en P_UNO, con U4 en los tres
+const E_PRIVADO = uuid(210); // 3 personas, en el estudio privado
+const E_EN_OCULTO = uuid(211); // 3 personas, en la galería oculta
 const A_LLENO = uuid(301); // se presenta en E_LLENO
 const A_MEDIO = uuid(302); // se presenta en E_MEDIO
 const A_MADRID = uuid(303);
+const A_UNO = uuid(304); // se presenta en los tres eventos de P_UNO
+const A_PRIVADO = uuid(305); // se presenta en el evento del estudio privado
 await db.exec(`
   insert into public.admin_correos (correo) values ('fundador@ejemplo.org');
   insert into auth.users (id, email) values ('${F}', 'fundador@ejemplo.org'), ('${U1}', 'u1@ejemplo.org'), ('${U2}', 'u2@ejemplo.org'),
@@ -110,7 +116,8 @@ await db.exec(`
     ('${P_FORO}', 'Foro Lleno', 'foro', 22.15, -100.98, '${F}', '${SLP}', false, true),
     ('${P_CASA}', 'Casa Tranquila', 'casa_de_cultura', 22.16, -100.97, '${F}', '${SLP}', false, true),
     ('${P_PRIVADO}', 'Estudio Privado', 'otro', 22.17, -100.96, '${F}', '${SLP}', true, true),
-    ('${P_OCULTO}', 'Galería Oculta', 'galeria', 22.18, -100.95, '${F}', '${SLP}', false, false);
+    ('${P_OCULTO}', 'Galería Oculta', 'galeria', 22.18, -100.95, '${F}', '${SLP}', false, false),
+    ('${P_UNO}', 'Foro de Una', 'foro', 22.19, -100.94, '${F}', '${SLP}', false, true);
   insert into public.lugares (id, nombre, tipo, lat, lng, creado_por, ciudad, zona) values
     ('${P_MADRID}', 'Sala de Madrid', 'foro', 40.41, -3.70, '${F}', 'Madrid', 'Europe/Madrid');
   insert into public.eventos (id, lugar_id, titulo, inicio, creado_por, ciudad, visible) values
@@ -118,7 +125,12 @@ await db.exec(`
     ('${E_MEDIO}', '${P_FORO}', 'Ensayo abierto', now() + interval '1 day', '${F}', '${SLP}', true),
     ('${E_PASADO}', '${P_FORO}', 'Función pasada', now() - interval '3 days', '${F}', '${SLP}', true),
     ('${E_OCULTO}', '${P_CASA}', 'Taller oculto', now() + interval '3 days', '${F}', '${SLP}', false),
-    ('${E_MADRID}', '${P_MADRID}', 'Recital en Madrid', now() + interval '2 days', '${F}', 'Madrid', true);
+    ('${E_MADRID}', '${P_MADRID}', 'Recital en Madrid', now() + interval '2 days', '${F}', 'Madrid', true),
+    ('${E_UNO[0]}', '${P_UNO}', 'Uno', now() + interval '1 day', '${F}', '${SLP}', true),
+    ('${E_UNO[1]}', '${P_UNO}', 'Dos', now() + interval '2 days', '${F}', '${SLP}', true),
+    ('${E_UNO[2]}', '${P_UNO}', 'Tres', now() + interval '3 days', '${F}', '${SLP}', true),
+    ('${E_PRIVADO}', '${P_PRIVADO}', 'Sesión privada', now() + interval '2 days', '${F}', '${SLP}', true),
+    ('${E_EN_OCULTO}', '${P_OCULTO}', 'Muestra en la galería oculta', now() + interval '2 days', '${F}', '${SLP}', true);
   insert into public.eventos (id, titulo, inicio, creado_por, ciudad, sitio_texto) values
     ('${E_SITIO}', 'Feria en la plaza', now() + interval '4 days', '${F}', '${SLP}', 'Plaza de Armas');
   insert into public.asistencias (usuario_id, evento_id, estado) values
@@ -127,28 +139,36 @@ await db.exec(`
     ('${U1}', '${E_MEDIO}', 'voy'), ('${U2}', '${E_MEDIO}', 'voy'), ('${F}', '${E_MEDIO}', 'voy'),
     ('${U1}', '${E_PASADO}', 'voy'), ('${U2}', '${E_PASADO}', 'voy'), ('${U3}', '${E_PASADO}', 'voy'), ('${U4}', '${E_PASADO}', 'voy'),
     ('${U1}', '${E_OCULTO}', 'voy'), ('${U2}', '${E_OCULTO}', 'voy'), ('${U3}', '${E_OCULTO}', 'voy'), ('${U4}', '${E_OCULTO}', 'voy'),
-    ('${U1}', '${E_MADRID}', 'voy'), ('${U2}', '${E_MADRID}', 'voy'), ('${U3}', '${E_MADRID}', 'voy');
+    ('${U1}', '${E_MADRID}', 'voy'), ('${U2}', '${E_MADRID}', 'voy'), ('${U3}', '${E_MADRID}', 'voy'),
+    ('${U4}', '${E_UNO[0]}', 'voy'), ('${U4}', '${E_UNO[1]}', 'voy'), ('${U4}', '${E_UNO[2]}', 'voy'),
+    ('${U1}', '${E_PRIVADO}', 'voy'), ('${U2}', '${E_PRIVADO}', 'voy'), ('${U3}', '${E_PRIVADO}', 'voy'),
+    ('${U1}', '${E_EN_OCULTO}', 'voy'), ('${U2}', '${E_EN_OCULTO}', 'voy'), ('${U3}', '${E_EN_OCULTO}', 'voy');
   insert into public.artistas (id, nombre, creado_por, ciudad) values
-    ('${A_LLENO}', 'Trío Lleno', '${F}', '${SLP}'), ('${A_MEDIO}', 'Dúo Medio', '${F}', '${SLP}'), ('${A_MADRID}', 'Coro de Madrid', '${F}', 'Madrid');
-  insert into public.eventos_artistas (evento_id, artista_id) values ('${E_LLENO}', '${A_LLENO}'), ('${E_MEDIO}', '${A_MEDIO}'), ('${E_MADRID}', '${A_MADRID}');
+    ('${A_LLENO}', 'Trío Lleno', '${F}', '${SLP}'), ('${A_MEDIO}', 'Dúo Medio', '${F}', '${SLP}'), ('${A_MADRID}', 'Coro de Madrid', '${F}', 'Madrid'),
+    ('${A_UNO}', 'Solista de Una', '${F}', '${SLP}'), ('${A_PRIVADO}', 'Dúo Privado', '${F}', '${SLP}');
+  insert into public.eventos_artistas (evento_id, artista_id) values ('${E_LLENO}', '${A_LLENO}'), ('${E_MEDIO}', '${A_MEDIO}'), ('${E_MADRID}', '${A_MADRID}'),
+    ('${E_UNO[0]}', '${A_UNO}'), ('${E_UNO[1]}', '${A_UNO}'), ('${E_UNO[2]}', '${A_UNO}'), ('${E_PRIVADO}', '${A_PRIVADO}');
 `);
 ok((await filas(`select rol from public.perfiles where id = $1`, [F]))[0]?.rol === "admin", "el fundador nace administrador");
 console.log("✓ datos sembrados");
 
 const tira = async (tipo, ciudad = SLP) => filas(`select id, motivo, hasta, van from public.tira_destacados($1, $2)`, [tipo, ciudad]);
 const ids = (r) => r.map((x) => x.id);
-const cambiar = (tipo, id, estado) => db.query(`select public.cambiar_destacado($1, $2, $3)`, [tipo, id, estado]);
+const cambiar = (tipo, id, estado, hasta = null) => db.query(`select public.cambiar_destacado($1, $2, $3, $4)`, [tipo, id, estado, hasta]);
 
 // ---------- por asistentes, sin que nadie elija ----------
 await como("anon", null);
 let t = await tira("eventos");
-ok(JSON.stringify(ids(t)) === JSON.stringify([E_LLENO]), "eventos: entra solo el de 3 personas; 2 no bastan, y lo pasado y lo oculto no cuentan", t);
+ok(JSON.stringify(ids(t)) === JSON.stringify([E_LLENO]), "eventos: entra solo el de 3 personas; 2 no bastan, y no cuentan lo pasado, lo oculto ni lo que pasa en un lugar privado u oculto", t);
 ok(t[0]?.motivo === "asistentes" && t[0]?.van === 3 && t[0]?.hasta === null, "eventos: por asistentes, 3 (el «Voy» del fundador y el «Me interesa» no cuentan)", t[0]);
 t = await tira("lugares");
-ok(JSON.stringify(ids(t)) === JSON.stringify([P_FORO]), "lugares: el foro suma los que van a sus próximos eventos (3 + 2); el pasado no cuenta", t);
-ok(t[0]?.van === 5, "lugares: 5 van a sus eventos", t[0]);
+ok(JSON.stringify(ids(t)) === JSON.stringify([P_FORO]), "lugares: entra el foro por quienes van a sus próximos eventos; el pasado no cuenta", t);
+ok(t[0]?.van === 3, "lugares: cuentan personas, no «Voy»: van 3 aunque dos van a los dos eventos", t[0]);
+ok(!ids(t).includes(P_UNO), "lugares: una persona con «Voy» en tres eventos del mismo lugar no lo destaca");
 t = await tira("artistas");
 ok(JSON.stringify(ids(t)) === JSON.stringify([A_LLENO]), "artistas: el trío va con 3; el dúo, con 2, no", t);
+ok(!ids(t).includes(A_UNO), "artistas: una persona en tres de sus eventos no lo destaca");
+ok(!ids(t).includes(A_PRIVADO), "artistas: lo que pasa en un lugar privado no cuenta");
 ok(ids(await tira("eventos", "Madrid")).join() === E_MADRID && ids(await tira("lugares", "Madrid")).join() === P_MADRID, "Madrid: cada ciudad con lo suyo");
 ok((await tira("eventos", "Córdoba")).length === 0, "una ciudad sin nada: tira vacía");
 ok((await tira("otro", SLP)).length === 0, "un tipo que no existe: tira vacía");
@@ -184,6 +204,15 @@ await cambiar("lugares", P_OCULTO, "elegido");
 await como(null, null);
 const renglon = (await filas(`select hasta from public.destacados where lugar_id = $1`, [P_CASA]))[0];
 ok(renglon && Math.abs(new Date(renglon.hasta) - Date.now() - 14 * 864e5) < 60e3, "elegir un lugar: dos semanas", renglon);
+await como("authenticated", F);
+ok((await falla(`select public.cambiar_destacado(null, $1, 'elegido')`, [P_CASA])) !== null && (await falla(`select public.cambiar_destacado('lugares', $1, null)`, [P_CASA])) !== null && (await falla(`select public.cambiar_destacado('lugares', null, 'elegido')`)) !== null, "con tipo, ficha o estado vacíos, avisa");
+const plazo = new Date(Date.now() + 5 * 864e5).toISOString();
+await cambiar("lugares", P_CASA, "elegido", plazo);
+await cambiar("eventos", E_SITIO, "elegido", plazo);
+await como(null, null);
+ok((await filas(`select id from public.destacados where lugar_id = $1`, [P_CASA])).length === 1, "y no borra lo que había");
+ok(new Date((await filas(`select hasta from public.destacados where lugar_id = $1`, [P_CASA]))[0].hasta).toISOString() === plazo, "Deshacer repone el plazo que había");
+ok((await filas(`select hasta from public.destacados where evento_id = $1`, [E_SITIO]))[0].hasta === null, "a un evento no se le pone plazo");
 await como("anon", null);
 t = await tira("lugares");
 ok(JSON.stringify(ids(t)) === JSON.stringify([P_CASA, P_FORO]), "lugares: primero lo elegido y después por asistentes; lo privado y lo oculto no salen aunque se elijan", t);

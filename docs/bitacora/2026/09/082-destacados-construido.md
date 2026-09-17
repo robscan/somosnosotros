@@ -49,7 +49,7 @@ La imagen sin foto con el símbolo SN (OL-054, bitácora [081](081-imagen-sin-fo
 - **En el panel, como Ocultar:** la hoja se cierra y la etiqueta del renglón es la evidencia. El reverso está en el mismo menú.
 
 ## Maquetación
-- Cada tarjeta es un grid de hijos directos: `img`, cuántos van (en el área de la foto), `b` y `small`, sin envoltorios.
+- Cada tarjeta es un grid de hijos directos: `img`, `b`, `small` y, al final, cuántos van (el grid lo pone sobre la foto), sin envoltorios.
 - La tira de la agenda, con 3 tarjetas: 23 nodos y profundidad 6 (`section`, `ul`, `li`, `a` y el icono de personas con su trazo). Mide 253 px; la primera fila baja de 199 a 452 px.
 - **Tras mirarla, un arreglo:** en las redondas el texto se salía de su tarjeta y se montaba en la vecina. `justify-items: center` dejaba cada texto de su ancho natural; ahora se estira al de la tarjeta y se corta con puntos suspensivos.
 
@@ -65,6 +65,32 @@ La imagen sin foto con el símbolo SN (OL-054, bitácora [081](081-imagen-sin-fo
 - **Tras el primer «listo», el encargado pidió** lectura pública de la tabla sin reglas de escritura, la función de destacar como definer y nada de personas. Se ajustó la migración (se quitó `creado_por`), el banco pasó de 35 a 41 comprobaciones y se volvieron a correr los cinco bancos.
 - **Después, el encargado corrigió esa condición y lo aplicó en la rama:** la tabla la lee solo la administración (política `es_admin()`, como las tablas del panel; el menú de la ficha pregunta si la quitó) y `revoke all` a anon, porque la lectura pública dejaba ver el id de fichas ocultas o privadas que se marcaron; la tira y el panel leen por sus funciones definer. El banco comprueba que sin sesión da error, una persona la ve vacía y la administración la lee.
 - Al terminar se apagaron los dos servidores, se borraron `.env.local` y la cookie, y se restauró `CLAUDE.md`.
+
+## Revisión adversarial y correcciones
+El encargado subió la rama al [PR #86](https://github.com/robscan/somosnosotros/pull/86) y la revisó con tres lentes: la seguridad de la migración, la app y que la mezcla no perdiera nada. Antes, ajustó los permisos de la tabla (161c055): la lee solo la administración, porque la lectura pública dejaba ver ids de fichas ocultas o privadas. Correcciones hechas encima de su commit:
+- **Se sumaban «Voy», no personas (rompía D2).** En lugares y artistas, una persona con «Voy» en tres eventos contaba como 3. Ahora hay un conteo de personas distintas por lugar y por artista, sin la administración y con solo próximos eventos visibles, unido con `left join`; ya no hay subconsultas por fila. El banco esperaba 5 en el foro y son 3 personas; se corrigió y se añadió el caso de una persona en tres eventos.
+- **Deshacer podía no deshacer.** El menú deducía el estado de la tira y de un renglón que podía estar vencido. Ahora sale de lo decidido vigente (`estadoVigente`: con el plazo vencido cuenta como nada). Lo elegido se ofrece quitar aunque no quepa entre los 8, y Deshacer repone el plazo que había (`cambiar_destacado` recibe `p_hasta`). Hay pruebas de los cuatro casos.
+- **Menores:**
+  - los eventos en lugares privados u ocultos ya no entran ni cuentan para artistas;
+  - `cambiar_destacado` avisa con tipo, ficha o estado nulos, en vez de borrar;
+  - en el panel, Destacar y Ocultar tienen cada uno su espera («Ocultando…» salía al destacar), y Destacar no se ofrece en lugares privados;
+  - las tarjetas anchas usan la imagen ancha del símbolo;
+  - las fechas del menú van en la zona de la ficha;
+  - en la tira, el anillo de foco ya no se recorta y el lector oye el título antes que «14 van». En Lugares, la regla `.lista ul` de la lista le quitaba ese relleno a la tira (se vio en pantalla); ahora solo toca su propia lista (`.lista > ul`);
+  - la memoria de la tira se guarda cada 100 ms como mucho;
+  - fuera un margen que no hacía nada;
+  - OPEN_LOOPS con las fechas en orden.
+- **Verificado después:**
+  - banco de destacados con 49 comprobaciones (si se vuelven a sumar «Voy» o se deja pasar lo de lugares privados, fallan 8) y los otros cuatro en verde;
+  - 11 pruebas de `lib/destacados`;
+  - lint con 0 errores, tipos, 291 pruebas y build;
+  - capturas a 390×844 contra la API falsa: la tira en la Agenda, en Lugares (imagen ancha del símbolo y, con el teclado, el anillo de foco entero) y en Artistas; en la ficha de un lugar, «Destacar · Dos semanas: hasta el mié 30 de sep», «Quitar de destacados» y «Ya no es destacado · Deshacer», que vuelve atrás.
+- **Para después (en OL-052):**
+  - lo quitado, lo elegido fuera de los 8 y lo elegido oculto no salen en `panel_destacados`;
+  - el panel calcula la tira por cada ciudad;
+  - la Agenda solo ve destacados dentro de sus 300 eventos;
+  - restando conteos se puede inferir cuántos administradores van;
+  - «Próximo:» en la tarjeta de artista.
 
 ## Queda
 - **Antes de mezclar:** aplicar `20260917140000_destacados.sql`. Sin ella la app no se rompe (la tira sale vacía), pero destacar falla.

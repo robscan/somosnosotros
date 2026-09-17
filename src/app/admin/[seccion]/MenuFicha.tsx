@@ -13,10 +13,11 @@ import styles from "../admin.module.css";
  * Los tres puntos de cada renglón (decisión 10): el mismo menú de las fichas, con ocultar al final y aparte. Ocultar no
  * pregunta: el menú es la capa y la etiqueta "Oculto" del renglón, que llega de nuevo del servidor, es la evidencia.
  */
-export default function MenuFicha({ seccion, id, nombre, visible, destacado }: { seccion: "lugares" | "eventos" | "artistas"; id: string; nombre: string; visible: boolean; destacado: Destacado | null }) {
+export default function MenuFicha({ seccion, id, nombre, visible, destacable, destacado }: { seccion: "lugares" | "eventos" | "artistas"; id: string; nombre: string; visible: boolean; destacable: boolean; destacado: Destacado | null }) {
   const [abierto, setAbierto] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enCamino, iniciar] = useTransition();
+  const [destacando, iniciarDestacado] = useTransition();
 
   function alternar() {
     setError(null);
@@ -30,7 +31,7 @@ export default function MenuFicha({ seccion, id, nombre, visible, destacado }: {
   // Destacar o quitar no pregunta: el menú es la capa y la etiqueta del renglón, la evidencia (como Ocultar).
   function destacar() {
     setError(null);
-    iniciar(async () => {
+    iniciarDestacado(async () => {
       const r = await cambiarDestacado(TIPO_DE[seccion], id, destacado ? "quitado" : "elegido");
       if (r.ok) setAbierto(false);
       else setError(r.error);
@@ -58,9 +59,9 @@ export default function MenuFicha({ seccion, id, nombre, visible, destacado }: {
                 Editar
               </Link>
             </li>
-            {visible && (
+            {destacable && (
               <li>
-                <button type="button" className={`${styles.menuItem} ${styles.menuDestacar}`} disabled={enCamino} onClick={destacar}>
+                <button type="button" className={`${styles.menuItem} ${styles.menuDestacar}`} disabled={enCamino || destacando} onClick={destacar}>
                   <IconoDestello width={20} height={20} />
                   {destacado ? "Quitar de destacados" : "Destacar"}
                   <small>{destacado ? textoMotivo(destacado, TIPO_DE[seccion]) : textoDestacar(TIPO_DE[seccion])}</small>
@@ -68,7 +69,7 @@ export default function MenuFicha({ seccion, id, nombre, visible, destacado }: {
               </li>
             )}
             <li>
-              <button type="button" className={styles.menuItem} disabled={enCamino} onClick={alternar}>
+              <button type="button" className={styles.menuItem} disabled={enCamino || destacando} onClick={alternar}>
                 {visible ? <IconoOjoTachado width={20} height={20} /> : <IconoOjo width={20} height={20} />}
                 {enCamino ? (visible ? "Ocultando…" : "Mostrando…") : textoOcultar(seccion, visible)}
               </button>

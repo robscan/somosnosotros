@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useLayoutEffect, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useRef } from "react";
 import type { Tarjeta } from "@/lib/destacados";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import { IconoPersonas } from "./ui/Iconos";
@@ -15,28 +15,39 @@ import styles from "./Destacados.module.css";
 export default function Destacados({ tarjetas, redondas = false }: { tarjetas: Tarjeta[]; redondas?: boolean }) {
   const titulo = useId();
   const carril = useRef<HTMLUListElement>(null);
+  const temporizador = useRef(0);
   useLayoutEffect(() => {
     const x = leerScroll(claveTira());
     if (x && carril.current) carril.current.scrollLeft = x;
   }, []);
+  useEffect(() => () => window.clearTimeout(temporizador.current), []);
+  // Como MemoriaScroll: se guarda al vuelo, como mucho cada 100 ms.
+  function alDesplazar() {
+    if (temporizador.current) return;
+    temporizador.current = window.setTimeout(() => {
+      temporizador.current = 0;
+      if (carril.current) guardarScroll(claveTira(), carril.current.scrollLeft);
+    }, 100);
+  }
   if (tarjetas.length === 0) return null;
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <h2 id={titulo}>Destacados</h2>
-      <ul ref={carril} className={`${styles.carril} ${tarjetas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""}`} onScroll={(e) => guardarScroll(claveTira(), e.currentTarget.scrollLeft)}>
+      <ul ref={carril} className={`${styles.carril} ${tarjetas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""}`} onScroll={alDesplazar}>
         {tarjetas.map((t) => (
           <li key={t.id}>
             <Link href={t.href} className={styles.tarjeta}>
               {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
               <img src={t.foto} alt="" className={styles.foto} loading="lazy" decoding="async" />
+              <b>{t.titulo}</b>
+              <small>{t.detalle}</small>
+              {/* Va al final para que se oiga después del título; el grid lo pone sobre la foto. */}
               {t.van > 0 && (
                 <span className={styles.van}>
                   <IconoPersonas width={14} height={14} />
                   {t.van === 1 ? "1 va" : `${t.van} van`}
                 </span>
               )}
-              <b>{t.titulo}</b>
-              <small>{t.detalle}</small>
             </Link>
           </li>
         ))}

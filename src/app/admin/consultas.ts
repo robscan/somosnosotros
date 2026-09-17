@@ -1,5 +1,5 @@
 import "server-only";
-import { SECCION_DE, type Destacado, type FilaDestacada, type TipoFicha } from "@/lib/destacados";
+import { estadoVigente, SECCION_DE, type Destacado, type EstadoDestacado, type FilaDestacada, type TipoFicha } from "@/lib/destacados";
 import { esUuid } from "@/lib/formulario";
 import type { ArtistaFila, EventoFila, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
 import { PAGINA_PANEL } from "@/lib/panel";
@@ -67,14 +67,18 @@ export async function cargarFichas<S extends keyof FilaDe>(seccion: S, l: Lista)
   return { filas, total: Number(filas[0]?.total ?? 0), conteos, error: !!f.error || (l.filtro === "destacados" && !!d.error), destacados };
 }
 
-/** Para el menú de una ficha: si está en la tira de su ciudad y por qué, y si la administración la quitó. */
-export async function cargarDestacado(tipo: TipoFicha, id: string): Promise<{ destacado: Destacado | null; quitado: boolean }> {
+/**
+ * Para el menú de una ficha: lo que decidió la administración, si sigue vigente, con su plazo (lo repone Deshacer); si
+ * está en la tira de su ciudad y por qué; y la zona de la ficha para escribir las fechas. Los artistas no tienen zona.
+ */
+export async function cargarDestacado(tipo: TipoFicha, id: string): Promise<{ enTira: Destacado | null; estado: EstadoDestacado; plazo: string | null; zona?: string }> {
   const supabase = (await clienteServidor())!;
   const seccion = SECCION_DE[tipo];
   const [c, q] = await Promise.all([
-    supabase.from(seccion).select("ciudad").eq("id", id).maybeSingle(),
-    supabase.from("destacados").select("quitado").eq(`${tipo}_id`, id).maybeSingle(),
+    supabase.from(seccion).select(tipo === "artista" ? "ciudad" : "ciudad, zona").eq("id", id).maybeSingle<{ ciudad: string; zona?: string }>(),
+    supabase.from("destacados").select("quitado, hasta").eq(`${tipo}_id`, id).maybeSingle<{ quitado: boolean; hasta: string | null }>(),
   ]);
   const t = c.data ? await supabase.rpc("tira_destacados", { p_tipo: seccion, p_ciudad: c.data.ciudad }) : { data: [] };
-  return { destacado: ((t.data ?? []) as Destacado[]).find((d) => d.id === id) ?? null, quitado: !!q.data?.quitado };
+  const estado = estadoVigente(q.data);
+  return { enTira: ((t.data ?? []) as Destacado[]).find((d) => d.id === id) ?? null, estado, plazo: estado === "ninguno" ? null : (q.data?.hasta ?? null), zona: c.data?.zona };
 }

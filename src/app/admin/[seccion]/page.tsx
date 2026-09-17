@@ -23,7 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ seccion: 
   return { title: `${esSeccionFichas(seccion) ? TITULO[seccion] : "Administración"} · Administración · Somos Nosotros` };
 }
 
-type Renglon = { id: string; nombre: string; foto: string | null; visible: boolean; detalle: string };
+/** `destacable`: lo que puede salir en la tira (visible y, si es lugar, no privado), como en la ficha. */
+type Renglon = { id: string; nombre: string; foto: string | null; visible: boolean; destacable: boolean; detalle: string };
 
 /**
  * Lugares, Eventos y Artistas en el panel (decisión 10): búsqueda, filtros con conteo por lo que pide atención y un
@@ -42,12 +43,12 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
   const renglones: Renglon[] =
     // Destacados: por qué y hasta cuándo en su renglón (docs/rediseno/20, A5); la búsqueda filtra aquí.
     l.filtro === "destacados"
-      ? destacados.filter((d) => !l.q || normalizarNombre(d.nombre).includes(normalizarNombre(l.q))).map((d) => ({ id: d.id, nombre: d.nombre, foto: d.foto, visible: true, detalle: textoMotivo(d, TIPO_DE[seccion], ahora) }))
+      ? destacados.filter((d) => !l.q || normalizarNombre(d.nombre).includes(normalizarNombre(l.q))).map((d) => ({ id: d.id, nombre: d.nombre, foto: d.foto, visible: true, destacable: true, detalle: textoMotivo(d, TIPO_DE[seccion], ahora) }))
       : seccion === "lugares"
-      ? (filas as LugarFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, detalle: detalleLugar(x) }))
+      ? (filas as LugarFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, destacable: x.visible && !x.privado, detalle: detalleLugar(x) }))
       : seccion === "eventos"
-        ? (filas as EventoFila[]).map((x) => ({ id: x.id, nombre: x.titulo, foto: x.imagen, visible: x.visible, detalle: detalleEvento(x, ahora) }))
-        : (filas as ArtistaFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, detalle: detalleArtista(x) }));
+        ? (filas as EventoFila[]).map((x) => ({ id: x.id, nombre: x.titulo, foto: x.imagen, visible: x.visible, destacable: x.visible, detalle: detalleEvento(x, ahora) }))
+        : (filas as ArtistaFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, destacable: x.visible, detalle: detalleArtista(x) }));
   const redonda = seccion === "artistas" ? styles.redonda : "";
 
   return (
@@ -91,7 +92,7 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
                 </b>
                 <small>{r.detalle}</small>
               </Link>
-              <MenuFicha seccion={seccion} id={r.id} nombre={r.nombre} visible={r.visible} destacado={destacadoDe.get(r.id) ?? null} />
+              <MenuFicha seccion={seccion} id={r.id} nombre={r.nombre} visible={r.visible} destacable={r.destacable} destacado={destacadoDe.get(r.id) ?? null} />
             </li>
           ))}
         </ul>

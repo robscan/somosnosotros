@@ -35,36 +35,56 @@ grant select on public.destacados to authenticated;
 create policy "destacados: lee la administración" on public.destacados for select to authenticated using (public.es_admin());
 
 -- ---------- la tira de una sección ----------
--- Definer, como van_por_evento: cuenta los «Voy» de todas las cuentas, también las reservadas, sin decir de quién.
+-- Definer, como van_por_evento: cuenta a quienes van, también a las cuentas reservadas, sin decir quiénes son.
 create function public.tira_destacados(p_tipo text, p_ciudad text)
 returns table (id uuid, motivo text, hasta timestamptz, van integer)
 language sql stable security definer set search_path = public as $$
   with
-  van as (
-    select a.evento_id, count(*)::int as n
+  -- Lo que puede salir: eventos visibles que no han terminado, sin lugar o en un lugar visible y no privado.
+  proximos as (
+    select e.id, e.lugar_id, e.ciudad, e.inicio, e.titulo
+    from public.eventos e
+    left join public.lugares l on l.id = e.lugar_id
+    where e.visible and e.termina >= now() and (e.lugar_id is null or (l.visible and not l.privado))
+  ),
+  -- Quién va a cada uno, sin contar a la administración (D2).
+  voy as (
+    select a.evento_id, a.usuario_id
     from public.asistencias a
     join public.perfiles p on p.id = a.usuario_id
-    join public.eventos e on e.id = a.evento_id
-    where a.estado = 'voy' and p.rol <> 'admin' and e.visible and e.termina >= now()
-    group by a.evento_id
+    join proximos e on e.id = a.evento_id
+    where a.estado = 'voy' and p.rol <> 'admin'
+  ),
+  van_evento as (select evento_id, count(*)::int as n from voy group by evento_id),
+  -- En un lugar o un artista cuentan personas, no «Voy»: quien va a tres eventos del mismo foro cuenta una vez (D1, D2).
+  van_lugar as (
+    select e.lugar_id, count(distinct v.usuario_id)::int as n
+    from voy v join proximos e on e.id = v.evento_id
+    where e.lugar_id is not null
+    group by e.lugar_id
+  ),
+  van_artista as (
+    select ea.artista_id, count(distinct v.usuario_id)::int as n
+    from voy v join public.eventos_artistas ea on ea.evento_id = v.evento_id
+    group by ea.artista_id
   ),
   fichas as (
     select e.id, e.inicio, e.titulo as nombre, d.quitado, d.creado_en, d.hasta, coalesce(v.n, 0) as van
-    from public.eventos e
+    from proximos e
     left join public.destacados d on d.evento_id = e.id
-    left join van v on v.evento_id = e.id
-    where p_tipo = 'eventos' and e.visible and e.ciudad = p_ciudad and e.termina >= now()
+    left join van_evento v on v.evento_id = e.id
+    where p_tipo = 'eventos' and e.ciudad = p_ciudad
     union all
-    select l.id, null, l.nombre, d.quitado, d.creado_en, d.hasta,
-      coalesce((select sum(v.n) from van v join public.eventos e on e.id = v.evento_id where e.lugar_id = l.id), 0)::int
+    select l.id, null, l.nombre, d.quitado, d.creado_en, d.hasta, coalesce(v.n, 0)
     from public.lugares l
     left join public.destacados d on d.lugar_id = l.id and d.hasta > now()
+    left join van_lugar v on v.lugar_id = l.id
     where p_tipo = 'lugares' and l.visible and not l.privado and l.ciudad = p_ciudad
     union all
-    select a.id, null, a.nombre, d.quitado, d.creado_en, d.hasta,
-      coalesce((select sum(v.n) from van v join public.eventos_artistas ea on ea.evento_id = v.evento_id where ea.artista_id = a.id), 0)::int
+    select a.id, null, a.nombre, d.quitado, d.creado_en, d.hasta, coalesce(v.n, 0)
     from public.artistas a
     left join public.destacados d on d.artista_id = a.id and d.hasta > now()
+    left join van_artista v on v.artista_id = a.id
     where p_tipo = 'artistas' and a.visible and a.ciudad = p_ciudad
   ),
   -- Primero lo elegido, lo más reciente antes; después por asistentes. Se quedan 8.
@@ -82,14 +102,16 @@ $$;
 comment on function public.tira_destacados(text, text) is 'La tira de destacados de una sección (eventos, lugares o artistas) en una ciudad: id, por qué (elegido o asistentes), hasta cuándo y cuántos van.';
 
 -- ---------- destacar, quitar o dejar como estaba ----------
--- Definer: la tabla no tiene políticas de escritura; la guarda es la administración, comprobada aquí.
-create function public.cambiar_destacado(p_tipo text, p_id uuid, p_estado text) returns void
+-- Definer: la tabla no tiene políticas de escritura; la guarda es la administración, comprobada aquí. `p_hasta` sirve a
+-- Deshacer, que repone el plazo que había; sin él, un lugar o un artista queda dos semanas. Un evento vale hasta que pasa.
+create function public.cambiar_destacado(p_tipo text, p_id uuid, p_estado text, p_hasta timestamptz default null) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.es_admin() then
     raise exception 'sin_permiso' using errcode = '42501';
   end if;
-  if p_tipo not in ('eventos', 'lugares', 'artistas') or p_estado not in ('elegido', 'quitado', 'ninguno') then
+  if p_tipo is null or p_id is null or p_estado is null
+    or p_tipo not in ('eventos', 'lugares', 'artistas') or p_estado not in ('elegido', 'quitado', 'ninguno') then
     raise exception 'destacado_no_valido' using errcode = '22023';
   end if;
   delete from public.destacados
@@ -101,7 +123,7 @@ begin
       case when p_tipo = 'lugares' then p_id end,
       case when p_tipo = 'artistas' then p_id end,
       p_estado = 'quitado',
-      case when p_tipo <> 'eventos' then now() + interval '14 days' end
+      case when p_tipo <> 'eventos' then coalesce(p_hasta, now() + interval '14 days') end
     );
   end if;
 end;
@@ -126,8 +148,8 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- ---------- permisos ----------
-revoke execute on function public.cambiar_destacado(text, uuid, text) from public, anon;
+revoke execute on function public.cambiar_destacado(text, uuid, text, timestamptz) from public, anon;
 revoke execute on function public.panel_destacados(text) from public, anon;
 grant execute on function public.tira_destacados(text, text) to anon, authenticated;
-grant execute on function public.cambiar_destacado(text, uuid, text) to authenticated;
+grant execute on function public.cambiar_destacado(text, uuid, text, timestamptz) to authenticated;
 grant execute on function public.panel_destacados(text) to authenticated;
