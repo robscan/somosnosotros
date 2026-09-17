@@ -137,6 +137,20 @@ p.hecho {
   color: var(--texto-suave);
   font-weight: 500;
 }
+/* Enlaces dentro de la tarjeta: el área de toque llega a 44 px de alto (Fitts) sin mover el dibujo */
+a.ficha,
+.pendiente > small > a {
+  position: relative;
+}
+a.ficha::after,
+.pendiente > small > a::after {
+  content: "";
+  position: absolute;
+  inset: -11px -4px;
+}
+.pendiente > small > a::after {
+  inset: -14px -4px;
+}
 .pendiente > q {
   grid-area: mensaje;
   margin-top: 4px;
