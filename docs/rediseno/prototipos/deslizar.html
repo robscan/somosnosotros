@@ -220,7 +220,7 @@
   <aside class="panel" id="panel" aria-label="Notas del prototipo">
     <div>
       <h1>Acciones al deslizar</h1>
-      <p class="fecha">Prototipo para el iPhone · 16 de septiembre de 2026</p>
+      <p class="fecha">Prototipo v1.1 para el iPhone · 16 de septiembre de 2026</p>
     </div>
     <div>
       <h2>Cómo se usa</h2>
@@ -243,7 +243,7 @@
       <ul>
         <li>¿Lo descubrirías sin que nadie te lo diga?</li>
         <li>¿Se confunde con el scroll de la lista?</li>
-        <li>¿Tres botones caben bien bajo el pulgar?</li>
+        <li>¿Las acciones caben bien bajo el pulgar?</li>
         <li>¿"Voy" desde la lista se siente bien con la pregunta del recordatorio?</li>
       </ul>
     </div>
@@ -339,11 +339,11 @@
   ];
 
   const ACCIONES = {
-    tuya: { evento: ["voy", "interesa", "calendario"], lugar: ["seguir", "llegar"], artista: ["seguir"] },
+    tuya: { evento: ["voy", "interesa"], lugar: ["seguir", "llegar"], artista: ["seguir"] }, // sin Calendario en la agenda (founder, v1.1)
     mia: { evento: ["interesa"], lugar: ["seguir"], artista: ["seguir"] },
   };
   const DETALLE = {
-    tuya: [["Evento", "Voy · Me interesa · Calendario"], ["Lugar", "Seguir · Cómo llegar"], ["Artista", "Seguir"]],
+    tuya: [["Evento", "Voy · Me interesa"], ["Lugar", "Seguir · Cómo llegar"], ["Artista", "Seguir"]],
     mia: [["Evento", "Me interesa"], ["Lugar", "Seguir"], ["Artista", "Seguir"]],
   };
   const FLOTANTE = { agenda: ["calendarioMas", "Publicar evento"], lugares: ["pin", "Registrar lugar"], artistas: ["estrellaMas", "Registrar artista"] };
@@ -375,7 +375,6 @@
     const b = {
       voy: ["", e === "voy" ? "ok" : "ok", e === "voy" ? "No voy" : "Voy"],
       interesa: ["tinta", "estrella", e === "interesa" ? "Ya no" : "Me interesa"],
-      calendario: ["gris", "calendarioMas", "Calendario"],
       seguir: ["", e === "sigo" ? "ok" : "mas", e === "sigo" ? "Dejar de seguir" : "Seguir"],
       llegar: ["gris", "ruta", "Cómo llegar"],
     }[accion];
@@ -542,7 +541,6 @@
     const d = item[id];
     const antes = estado[id] ?? null;
     cerrar(li);
-    if (accion === "calendario") return avisar(`Se abriría tu calendario con «${corto(d.titulo)}»`);
     if (accion === "llegar") return avisar(`Se abriría Mapas: ${d.direccion}`);
     let texto = "";
     if (accion === "voy") { estado[id] = antes === "voy" ? null : "voy"; texto = estado[id] ? `Vas a «${corto(d.titulo)}»` : `Ya no vas a «${corto(d.titulo)}»`; }

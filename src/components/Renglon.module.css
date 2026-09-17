@@ -104,6 +104,17 @@
   font-weight: 500;
 }
 
+/* Lo que la persona ya decidió (Vas, Te interesa, Sigues): del color de acción sobre su tono suave, con el icono de la
+   acción, como la barra de la ficha. Va primero en los datos del renglón. */
+.meta > .estado {
+  gap: 3px;
+  padding: 0 var(--espacio-2) 0 6px;
+  border-radius: 999px;
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+}
 /* Sello chico ("Solo tú lo ves"): del color de acción, en mayúsculas pequeñas. */
 .sello {
   font-size: var(--letra-xs);

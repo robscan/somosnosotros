@@ -1,51 +1,713 @@
-.seccion {
-  margin-bottom: var(--espacio-5);
+/* Panel de administración (docs/rediseno/19). La página es la de Ajustes (ui/Ficha .pagina): barra blanca, contenido en
+   su tono, grupos con rótulo y tarjetas de renglones. Maquetación plana: cada bloque es hijo directo de main y cada dato,
+   hijo directo de su renglón con grid-template-areas.
+   1. Títulos y grupos · 2. Pendiente · 3. Indicadores · 4. Renglones (Gestionar y ficha de persona) ·
+   5. Listas (Personas y fichas) · 6. Hojas · 7. Vacíos, errores y espera */
+
+/* ---------- 1. Títulos y grupos ---------- */
+.titulo {
+  margin: var(--espacio-3) 0 var(--espacio-1);
+  font-size: var(--letra-2xl);
 }
-.tituloSeccion {
-  font-size: var(--letra-xl);
-  font-weight: 700;
-  margin-bottom: var(--espacio-3);
+.grupo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espacio-2);
+  margin: var(--espacio-5) 0 var(--espacio-2);
+  padding-left: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.vacio,
-.meta {
+.grupo > b {
+  color: var(--primario);
+}
+.nota {
+  margin: calc(-1 * var(--espacio-1)) 0 var(--espacio-2) 4px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-.lista {
+/* Los chips de las listas corren a todo lo ancho: la franja sale del gutter con una sola regla */
+.lista > [role="group"] {
+  margin: var(--espacio-3) calc(-1 * var(--gutter)) 0;
+  padding-inline: var(--gutter);
+}
+
+/* ---------- 2. Pendiente: nada, una tarjeta por reclamo o reporte y la línea de lo hecho ---------- */
+.pendientes {
   list-style: none;
   display: grid;
-  gap: var(--espacio-2);
-}
-.fila {
-  display: flex;
-  align-items: center;
   gap: var(--espacio-3);
-  min-height: 48px;
-  padding: 0 var(--espacio-3);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
 }
-.nombre {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.nada,
+.hecho {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-areas:
+    "icono que accion"
+    "icono detalle accion";
+  column-gap: 10px;
+  align-items: center;
+  min-height: 56px;
+  padding: var(--espacio-2) 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.nada > svg,
+.hecho > svg {
+  grid-area: icono;
+  color: var(--ok);
+}
+.nada > b {
+  grid-area: que;
+  font-size: var(--letra-md);
   font-weight: 600;
+}
+.nada > small {
+  grid-area: detalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.hecho {
+  grid-template-areas: "icono que accion";
+  font-size: var(--letra-md);
+  line-height: 1.3;
+}
+.hecho > span {
+  grid-area: que;
+}
+.hecho em {
+  color: var(--error);
+  font-style: normal;
+}
+/* Sobre la tarjeta del rol, la línea de lo hecho lleva aire propio (en la lista de pendientes lo pone el gap) */
+p.hecho {
+  margin-bottom: var(--espacio-2);
+}
+.hecho > button {
+  grid-area: accion;
+}
+.pendiente {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  grid-template-areas:
+    "icono que que"
+    "icono ficha ficha"
+    ". mensaje mensaje"
+    ". quien quien"
+    ". error error"
+    "dejar dejar actuar"
+    "apagada apagada apagada";
+  column-gap: 10px;
+  row-gap: 3px;
+  padding: 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.pendiente > svg {
+  grid-area: icono;
+  margin-top: 1px;
   color: var(--texto);
+}
+.reclamo > svg {
+  color: var(--primario);
+}
+.pendiente > b {
+  grid-area: que;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+}
+.ficha {
+  grid-area: ficha;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--texto);
+  font-size: var(--letra-xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.2;
   text-decoration: none;
 }
-.acciones {
-  display: flex;
-  gap: var(--espacio-3);
+.ficha > span {
+  color: var(--texto-suave);
+  font-weight: 500;
 }
-.botonSuave {
+/* Enlaces dentro de la tarjeta: el área de toque llega a 44 px de alto (Fitts) sin mover el dibujo */
+a.ficha,
+.pendiente > small > a {
+  position: relative;
+}
+a.ficha::after,
+.pendiente > small > a::after {
+  content: "";
+  position: absolute;
+  inset: -11px -4px;
+}
+.pendiente > small > a::after {
+  inset: -14px -4px;
+}
+.pendiente > q {
+  grid-area: mensaje;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  font-size: var(--letra-md);
+  line-height: 1.35;
+}
+.pendiente > small {
+  grid-area: quien;
+  margin-top: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.pendiente > small > a {
+  color: var(--texto);
+  font-weight: 600;
+}
+.pendiente > [role="alert"] {
+  grid-area: error;
+  margin-top: var(--espacio-2);
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
+/* Dos salidas separadas (Fitts): dejarla como está a la izquierda, la acción a la derecha */
+.dejar,
+.actuar {
   min-height: var(--toque-min);
-  padding: 0 var(--espacio-2);
+  margin-top: var(--espacio-3);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dejar {
+  grid-area: dejar;
+  justify-self: start;
+}
+.actuar {
+  grid-area: actuar;
+}
+.principal {
+  border-color: var(--primario);
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.peligro {
+  border-color: var(--error);
+  color: var(--error);
+}
+.dejar:disabled,
+.actuar:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.pendiente > .apagada {
+  grid-area: apagada;
+  justify-self: end;
+  margin-top: var(--espacio-1);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* El reverso de lo hecho ("Mostrar") y los enlaces de acción dentro del panel */
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  padding: 0 2px;
   border: none;
   background: none;
   color: var(--primario);
-  font-weight: 600;
-  text-decoration: underline;
+  font-size: var(--letra-md);
+  font-weight: 700;
+  text-decoration: none;
   cursor: pointer;
+}
+
+/* ---------- 3. Últimos 7 días: cuadrícula de indicadores; el desglose ocupa la fila de abajo ---------- */
+.indicadores {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espacio-2);
+}
+.indicador {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "nombre nombre"
+    "valor tendencia"
+    "base base"
+    "cambio cambio";
+  align-items: end;
+  align-content: start;
+  column-gap: var(--espacio-2);
+  width: 100%;
+  height: 100%;
+  min-height: 132px;
+  padding: var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.indicador[aria-expanded="true"] {
+  border-color: var(--primario);
+  box-shadow: 0 0 0 3px var(--primario-suave);
+}
+.nombreIndicador {
+  grid-area: nombre;
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  line-height: 1.2;
+}
+/* El número es la figura: grande, condensado y con cifras proporcionales */
+.indicador > b {
+  grid-area: valor;
+  margin-top: var(--espacio-2);
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  font-variant-numeric: proportional-nums;
+  line-height: 1;
+}
+.indicador > svg {
+  grid-area: tendencia;
+  justify-self: end;
+  width: 100%;
+  max-width: 88px;
+  height: 28px;
+  margin-bottom: 4px;
+}
+.indicador > svg polyline {
+  fill: none;
+  stroke: var(--texto-suave);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.indicador > svg circle {
+  fill: var(--primario);
+}
+.indicador > small {
+  grid-area: base;
+  margin-top: 6px;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.25;
+}
+.cambio {
+  grid-area: cambio;
+  margin-top: 6px;
+  font-size: var(--letra-xs);
+  font-weight: 600;
+}
+.desglose {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  padding: var(--espacio-3) 14px var(--espacio-1);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.desglose > ul {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+.desglose > ul > li::before {
+  content: "· ";
+  color: var(--primario);
+  font-weight: 700;
+}
+.desglose > a {
+  justify-self: start;
+}
+
+/* ---------- 4. Renglones en tarjeta: Gestionar (etiqueta y detalle) y la ficha de una persona (clave y valor) ---------- */
+.tarjeta {
+  list-style: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  overflow: hidden;
+}
+.tarjeta > li + li {
+  border-top: 1px solid var(--borde);
+}
+.fila,
+.dato {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  grid-template-areas:
+    "icono etiqueta accion"
+    "icono detalle accion"
+    "icono error error";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: var(--espacio-2) 14px;
+  color: var(--texto);
+  text-decoration: none;
+}
+.fila > svg,
+.dato > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.fila > b {
+  grid-area: etiqueta;
+  font-size: var(--letra-md);
+  font-weight: 600;
+}
+.fila > small {
+  grid-area: detalle;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.3;
+}
+.total {
+  grid-area: accion;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-md);
+  font-variant-numeric: tabular-nums;
+}
+.total > svg {
+  width: 16px;
+  height: 16px;
+}
+.dato > small {
+  grid-area: etiqueta;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dato > b {
+  grid-area: detalle;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--letra-md);
+  font-weight: 600;
+  line-height: 1.25;
+}
+.fila > [role="alert"],
+.dato > [role="alert"] {
+  grid-area: error;
+  margin-top: 2px;
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
+.pildora {
+  grid-area: accion;
+  min-height: var(--toque-min);
+  padding: 0 14px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pildora:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.quitar {
+  color: var(--error);
+}
+.cabecera {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  grid-template-areas:
+    "avatar nombre"
+    "avatar detalle";
+  column-gap: 14px;
+  align-items: center;
+  margin-top: var(--espacio-3);
+}
+.cabecera > h1 {
+  grid-area: nombre;
+  align-self: end;
+  overflow-wrap: anywhere;
+  font-size: var(--letra-2xl);
+}
+.cabecera > small {
+  grid-area: detalle;
+  align-self: start;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.salida {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  margin-top: var(--espacio-3);
+  padding: 0 2px;
+  color: var(--primario);
+  font-weight: 700;
+  text-decoration: none;
+}
+.salida > svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- 5. Listas: Personas y fichas ---------- */
+.renglones {
+  list-style: none;
+  margin-top: var(--espacio-1);
+}
+.renglones > li + li {
+  border-top: 1px solid var(--borde);
+}
+.persona {
+  display: grid;
+  grid-template-columns: 44px 1fr 16px;
+  grid-template-areas:
+    "avatar nombre chevron"
+    "avatar detalle chevron";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  min-height: 68px;
+  padding: 10px 0;
+  color: var(--texto);
+  text-decoration: none;
+}
+.avatar {
+  grid-area: avatar;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  font-weight: 700;
+}
+.cabecera > .avatar {
+  width: 64px;
+  height: 64px;
+  font-size: var(--letra-xl);
+}
+.persona > b,
+.renglonFicha > a > b {
+  grid-area: nombre;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--letra-md);
+  font-weight: 600;
+  line-height: 1.25;
+}
+.persona > small,
+.renglonFicha > a > small {
+  grid-area: detalle;
+  min-width: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.3;
+}
+.persona > svg {
+  grid-area: chevron;
+  color: var(--texto-suave);
+}
+.etiqueta {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+.etiquetaRol {
+  background: var(--primario-suave);
+  color: var(--primario);
+}
+.renglonFicha {
+  display: grid;
+  grid-template-columns: 1fr var(--toque-min);
+  column-gap: var(--espacio-1);
+  align-items: center;
+}
+.renglonFicha > a {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  grid-template-areas:
+    "foto nombre"
+    "foto detalle";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  min-width: 0;
+  min-height: 68px;
+  padding: 10px 0;
+  color: var(--texto);
+  text-decoration: none;
+}
+.foto {
+  grid-area: foto;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.fotoVacia {
+  display: grid;
+  place-items: center;
+  color: var(--texto-suave);
+}
+.redonda {
+  border-radius: 50%;
+}
+.oculta > a > b,
+.oculta > a > small {
+  color: var(--texto-suave);
+}
+.oculta > a > .foto {
+  opacity: 0.45;
+}
+.puntos {
+  display: grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+}
+.puntos:active {
+  background: var(--fondo-suave);
+}
+.verMas {
+  margin-top: var(--espacio-4);
+}
+
+/* ---------- 6. Hojas: hacer o quitar administrador, y el menú de cada ficha ---------- */
+.puede {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-3);
+}
+.puede > li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  column-gap: 10px;
+  font-size: var(--letra-md);
+  line-height: 1.35;
+}
+.puede > li > svg {
+  margin-top: 1px;
+  color: var(--primario);
+}
+.noPodra {
+  margin-bottom: var(--espacio-4);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.menu {
+  list-style: none;
+  margin-inline: calc(-1 * var(--gutter));
+}
+.menu > li:last-child {
+  margin-top: 6px;
+  border-top: 1px solid var(--borde);
+}
+.menuItem {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  column-gap: 14px;
+  align-items: center;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 var(--gutter);
+  border: none;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--letra-md);
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.menuItem > svg {
+  color: var(--texto-suave);
+}
+.menuItem:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ---------- 7. Vacíos por causa, errores con salida y espera ---------- */
+.vacio {
+  margin: var(--espacio-5) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.error {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  padding: var(--espacio-2) 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
+.esqueleto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espacio-2);
+}
+.esqueleto > span {
+  height: 132px;
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  animation: pulso 1.2s ease-in-out infinite;
+}
+.esqueleto > span:first-child {
+  grid-column: 1 / -1;
+  width: 60%;
+  height: 28px;
+  margin: var(--espacio-3) 0 var(--espacio-4);
+}
+.esqueleto > span:nth-child(n + 6) {
+  grid-column: 1 / -1;
+  height: 56px;
+}
+@keyframes pulso {
+  50% {
+    opacity: 0.55;
+  }
 }

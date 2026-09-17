@@ -1,0 +1,83 @@
+/* Renglón deslizable (ui/Deslizable, lib/deslizar): detrás, las acciones pegadas a la derecha; encima, el renglón de
+   siempre. Sale del gutter lo mismo que su resaltado (--espacio-5): en el teléfono llega al borde de la pantalla y en
+   escritorio a los 20 px que ya ocupaba el resaltado al pasar el ratón. */
+.deslizable {
+  position: relative;
+  overflow: hidden;
+  margin-inline: calc(-1 * var(--espacio-5));
+}
+/* Un píxel adentro arriba y abajo: los renglones caen en medio píxel y, con el borde justo debajo del renglón, el color
+   de la acción asomaba como una raya. */
+.acciones {
+  position: absolute;
+  inset: 1px 0 1px auto;
+  display: flex;
+}
+.accion {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--espacio-1);
+  min-width: 84px;
+  padding: 0 var(--espacio-3);
+  border: none;
+  background: var(--primario);
+  color: var(--primario-texto);
+  font: inherit;
+  font-size: var(--letra-xs);
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+}
+.una .accion {
+  min-width: 104px;
+}
+.tinta {
+  background: var(--texto);
+  color: var(--fondo);
+}
+.gris {
+  background: var(--texto-suave);
+  color: var(--fondo);
+}
+.accion[aria-disabled="true"] {
+  cursor: default;
+}
+.accion:not([aria-disabled="true"]):active {
+  filter: brightness(0.88);
+}
+
+/* El renglón encima: tapa las acciones con el fondo de la lista y lleva dentro el gutter y su raya. El resaltado
+   (Renglon.module.css) se dibuja igual que antes: blanco a lo ancho y la marca a la altura de la columna. */
+.deslizable > .frente {
+  position: relative;
+  padding-inline: var(--espacio-5);
+  border-bottom: none;
+  background: var(--fondo-contenido);
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.deslizable > .frente::after {
+  content: "";
+  position: absolute;
+  left: var(--espacio-5);
+  right: var(--espacio-5);
+  bottom: 0;
+  height: 1px;
+  background: var(--borde);
+}
+.deslizable > .frente:active {
+  background: var(--fondo);
+  box-shadow: none;
+}
+@media (hover: hover) {
+  .deslizable > .frente:hover {
+    background: linear-gradient(90deg, var(--fondo) var(--espacio-5), var(--primario) var(--espacio-5), var(--primario) calc(var(--espacio-5) + 3px), var(--fondo) calc(var(--espacio-5) + 3px));
+    box-shadow: none;
+  }
+}
+.abierto > .frente {
+  box-shadow: 6px 0 12px -8px rgba(0, 0, 0, 0.25);
+}

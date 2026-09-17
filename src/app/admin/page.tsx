@@ -1,148 +1,69 @@
 import Link from "next/link";
-import Barra from "@/components/ui/Barra";
 import { redirect } from "next/navigation";
-import { formatearCuando } from "@/lib/fechas";
-import { etiquetaMotivo, pideLlevarLaFicha } from "@/lib/reportes";
-import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
-import { atenderReporte, cambiarVisibleDesdeAdmin, ligarFichaDesdeAdmin } from "./acciones";
-import Tarjeta from "@/components/ui/Tarjeta";
+import Barra from "@/components/ui/Barra";
+import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
+import ficha from "@/components/ui/Ficha.module.css";
+import { diaLocal } from "@/lib/fechas";
+import { cuandoPaso, indicadores, notaSemana, renglonesGestionar } from "@/lib/panel";
+import { usuarioActual } from "@/lib/supabase/servidor";
+import { cargarResumen } from "./consultas";
+import Indicadores from "./Indicadores";
+import Pendientes from "./Pendientes";
+import Reintentar from "./Reintentar";
 import styles from "./admin.module.css";
 
 export const metadata = { title: "Administración · Somos Nosotros" };
 
-type Reporte = { id: string; tipo: "lugar" | "evento" | "perfil" | "artista"; objeto_id: string; motivo: string; detalle: string | null; creado_en: string; creado_por: string | null; autor: { nombre: string } | { nombre: string }[] | null };
+const ICONO = { personas: IconoPersonas, lugares: IconoPin, eventos: IconoCalendario, artistas: IconoEstrella };
+const SECCIONES = [
+  { clave: "personas", titulo: "Personas", href: "/admin/personas" },
+  { clave: "lugares", titulo: "Lugares", href: "/admin/lugares" },
+  { clave: "eventos", titulo: "Eventos", href: "/admin/eventos" },
+  { clave: "artistas", titulo: "Artistas", href: "/admin/artistas" },
+] as const;
 
-/** Panel simple para el administrador: reportes, lo último publicado, conteos. */
+/**
+ * Administración (docs/rediseno/18 y 19, firmados por el founder el 2026-09-16): una pantalla con tres grupos en el
+ * orden de la intención. Pendiente (lo que pide una acción), Últimos 7 días (cómo va, sin contar a la administración)
+ * y Gestionar (entrar a una lista). Se entra desde Ajustes y Atrás vuelve ahí.
+ */
 export default async function Admin() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin");
   if (actual.perfil.rol !== "admin") redirect("/");
-  const supabase = (await clienteServidor())!;
-  const [{ data: reportes }, { data: lugares }, { data: eventos }, { data: artistas }, perfiles, asistencias, seguimientos] = await Promise.all([
-    supabase.from("reportes").select("id, tipo, objeto_id, motivo, detalle, creado_en, creado_por, autor:perfiles!reportes_creado_por_fkey(nombre)").eq("atendido", false).order("creado_en", { ascending: false }).limit(50),
-    supabase.from("lugares").select("id, nombre, visible, creado_en").order("creado_en", { ascending: false }).limit(10),
-    supabase.from("eventos").select("id, titulo, inicio, visible, creado_en").order("creado_en", { ascending: false }).limit(10),
-    supabase.from("artistas").select("id, nombre, visible, creado_en").order("creado_en", { ascending: false }).limit(10),
-    supabase.from("perfiles").select("*", { count: "exact", head: true }),
-    supabase.from("asistencias").select("*", { count: "exact", head: true }),
-    supabase.from("seguimientos").select("*", { count: "exact", head: true }),
-  ]);
-  const rutaDe = (r: Reporte) => (r.tipo === "lugar" ? `/lugares/${r.objeto_id}` : r.tipo === "evento" ? `/eventos/${r.objeto_id}` : r.tipo === "artista" ? `/artistas/${r.objeto_id}` : `/personas/${r.objeto_id}`);
-  const nombreAutor = (a: Reporte["autor"]) => (Array.isArray(a) ? a[0]?.nombre : a?.nombre) ?? "cuenta borrada";
-
+  const { resumen, pendientes, errorPendientes } = await cargarResumen();
+  const ahora = new Date();
+  const lista = resumen ? indicadores(resumen, diaLocal(ahora)) : [];
+  const renglones = resumen ? renglonesGestionar(resumen.gestionar) : SECCIONES.map((s) => ({ ...s, total: null, detalle: null }));
   return (
-    <main className="pagina">
-      <Barra volver={{ href: "/", texto: "Agenda" }} />
-      <h1 className="titulo">Administración</h1>
-      <p className="subtitulo">
-        {perfiles.count ?? 0} personas · {lugares?.length ?? 0}+ lugares · {eventos?.length ?? 0}+ eventos · {artistas?.length ?? 0}+ artistas · {asistencias.count ?? 0} “voy” · {seguimientos.count ?? 0} seguimientos
-      </p>
+    <main className={ficha.pagina}>
+      <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} />
+      <h1 className={styles.titulo}>Administración</h1>
+      {/* La llave cambia cuando la lista pasa de no leída a leída (Intentar de nuevo): así se monta con los pendientes reales. */}
+      <Pendientes key={errorPendientes ? "sin-leer" : "leidos"} iniciales={pendientes.map((p) => ({ ...p, cuando: cuandoPaso(p.creado_en, ahora) }))} error={errorPendientes} />
 
-      <section className={styles.seccion} aria-label="Reportes pendientes">
-        <h2 className={styles.tituloSeccion}>Reportes pendientes {reportes && reportes.length > 0 ? `(${reportes.length})` : ""}</h2>
-        {!reportes || reportes.length === 0 ? (
-          <p className={styles.vacio}>Nada pendiente.</p>
-        ) : (
-          <ul className={styles.lista}>
-            {(reportes as unknown as Reporte[]).map((r) => (
-              <li key={r.id}>
-                <Tarjeta
-                  titulo={
-                    <>
-                      {etiquetaMotivo(r.motivo, r.tipo)} · {r.tipo} · <Link href={rutaDe(r)}>ver</Link>
-                    </>
-                  }
-                  detalle={r.detalle}
-                >
-                <p className={styles.meta}>
-                  Reportó {nombreAutor(r.autor)} · {formatearCuando(r.creado_en)}
-                </p>
-                <div className={styles.acciones}>
-                  {pideLlevarLaFicha(r.tipo, r.motivo) && (
-                    <form action={ligarFichaDesdeAdmin.bind(null, r.tipo, r.objeto_id, r.creado_por, r.id)}>
-                      <button type="submit" className={styles.botonSuave}>
-                        Pasar la ficha a esta cuenta
-                      </button>
-                    </form>
-                  )}
-                  {(r.tipo === "lugar" || r.tipo === "evento" || r.tipo === "artista") && (
-                    <form action={cambiarVisibleDesdeAdmin.bind(null, r.tipo, r.objeto_id, false)}>
-                      <button type="submit" className={styles.botonSuave}>
-                        Ocultar
-                      </button>
-                    </form>
-                  )}
-                  <form action={atenderReporte.bind(null, r.id)}>
-                    <button type="submit" className={styles.botonSuave}>
-                      Marcar atendido
-                    </button>
-                  </form>
-                </div>
-                </Tarjeta>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <h2 className={styles.grupo}>Últimos 7 días</h2>
+      {resumen ? <Indicadores lista={lista} nota={notaSemana(lista)} /> : <Reintentar texto="No pudimos leer los indicadores." />}
 
-      <section className={styles.seccion} aria-label="Últimos eventos">
-        <h2 className={styles.tituloSeccion}>Últimos eventos</h2>
-        <ul className={styles.lista}>
-          {(eventos ?? []).map((e) => (
-            <li key={e.id} className={styles.fila}>
-              <Link href={`/eventos/${e.id}`} className={styles.nombre}>
-                {e.titulo}
+      <h2 className={styles.grupo}>Gestionar</h2>
+      <ul className={styles.tarjeta}>
+        {renglones.map((r) => {
+          const Icono = ICONO[r.clave];
+          return (
+            <li key={r.clave}>
+              <Link href={r.href} className={styles.fila}>
+                <Icono width={20} height={20} />
+                <b>{r.titulo}</b>
+                {r.detalle && <small>{r.detalle}</small>}
+                <span className={styles.total}>
+                  {r.total}
+                  <IconoChevronDerecha />
+                </span>
               </Link>
-              <span className={styles.meta}>{formatearCuando(e.inicio)}</span>
-              <form action={cambiarVisibleDesdeAdmin.bind(null, "evento", e.id, !e.visible)}>
-                <button type="submit" className={styles.botonSuave}>
-                  {e.visible ? "Ocultar" : "Mostrar"}
-                </button>
-              </form>
             </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className={styles.seccion} aria-label="Últimos artistas">
-        <h2 className={styles.tituloSeccion}>Últimos artistas</h2>
-        {!artistas || artistas.length === 0 ? (
-          <p className={styles.vacio}>Todavía no hay artistas registrados.</p>
-        ) : (
-          <ul className={styles.lista}>
-            {artistas.map((a) => (
-              <li key={a.id} className={styles.fila}>
-                <Link href={`/artistas/${a.id}`} className={styles.nombre}>
-                  {a.nombre}
-                </Link>
-                <form action={cambiarVisibleDesdeAdmin.bind(null, "artista", a.id, !a.visible)}>
-                  <button type="submit" className={styles.botonSuave}>
-                    {a.visible ? "Ocultar" : "Mostrar"}
-                  </button>
-                </form>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className={styles.seccion} aria-label="Últimos lugares">
-        <h2 className={styles.tituloSeccion}>Últimos lugares</h2>
-        <ul className={styles.lista}>
-          {(lugares ?? []).map((l) => (
-            <li key={l.id} className={styles.fila}>
-              <Link href={`/lugares/${l.id}`} className={styles.nombre}>
-                {l.nombre}
-              </Link>
-              <form action={cambiarVisibleDesdeAdmin.bind(null, "lugar", l.id, !l.visible)}>
-                <button type="submit" className={styles.botonSuave}>
-                  {l.visible ? "Ocultar" : "Mostrar"}
-                </button>
-              </form>
-            </li>
-          ))}
-        </ul>
-      </section>
+          );
+        })}
+      </ul>
     </main>
   );
 }

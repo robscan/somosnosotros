@@ -2,12 +2,14 @@ import Link from "next/link";
 import { cargarNovedades } from "@/app/novedades/consultas";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { IconoCampana } from "./ui/Iconos";
+import VistoHoy from "./VistoHoy";
 import styles from "./Sesion.module.css";
 
 /**
  * Lado derecho de la barra raíz: sin sesión, "Entrar" como acción primaria (lo único con color de acción);
  * con sesión, la campana de Novedades (con punto si hay algo no visto; decisión 2 de docs/rediseno/13) y la foto
- * de perfil, que lleva a Mi perfil. Dos hijos directos de la barra, sin envoltorio.
+ * de perfil, que lleva a Mi perfil. Dos hijos directos de la barra, sin envoltorio (VistoHoy no pinta nada: guarda que
+ * abrió la app hoy, D3 de docs/rediseno/18).
  */
 export default async function Sesion() {
   const actual = await usuarioActual();
@@ -34,6 +36,7 @@ export default async function Sesion() {
           <span className={styles.avatar}>{inicial}</span>
         )}
       </Link>
+      <VistoHoy />
     </>
   );
 }
