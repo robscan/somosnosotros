@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artistasParaSitemap, eventosParaSitemap, lugaresParaSitemap, ORIGEN, rutasEstaticas } from "./sitemap";
+import { artistasParaSitemap, CAPO_SIN_RECLAMAR_EN_SITEMAP, eventosParaSitemap, lugaresParaSitemap, ORIGEN, rutasEstaticas } from "./sitemap";
 
 describe("sitemap", () => {
   it("trae las rutas fijas, sin ninguna privada ni de administración", () => {
@@ -55,11 +55,22 @@ describe("sitemap", () => {
     expect(artistasParaSitemap(filas).map((e) => e.url)).toEqual([`${ORIGEN}/artistas/propio`]);
   });
 
-  it("un artista del CAPO sin reclamar no sale (interruptor apagado); reclamado sí sale", () => {
+  it("con la decisión del founder («si entran todos los contenidos del sitio»), un artista del CAPO sale aunque nadie lo haya reclamado", () => {
     const filas = [
       { id: "sin-reclamar", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: false },
       { id: "reclamado", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: true },
     ];
-    expect(artistasParaSitemap(filas).map((e) => e.url)).toEqual([`${ORIGEN}/artistas/reclamado`]);
+    expect(artistasParaSitemap(filas).map((e) => e.url).sort()).toEqual([`${ORIGEN}/artistas/reclamado`, `${ORIGEN}/artistas/sin-reclamar`]);
+  });
+
+  it("las dos caras del interruptor van juntas: sitemap y el noindex de la ficha leen la misma constante", () => {
+    // src/app/artistas/[id]/page.tsx calcula su noindex como
+    //   a.origen === "capo" && !CAPO_SIN_RECLAMAR_EN_SITEMAP && (sin cuenta ligada)
+    // con el interruptor en `true`, ese "!CAPO_SIN_RECLAMAR_EN_SITEMAP" es `false`: la ficha nunca lleva noindex por
+    // esta causa — igual que aquí, donde el mismo artista sin reclamar entra al sitemap. Si alguna vez se apaga el
+    // interruptor sin querer, esta prueba avisa antes que un cambio silencioso en las dos caras.
+    expect(CAPO_SIN_RECLAMAR_EN_SITEMAP).toBe(true);
+    const filas = [{ id: "sin-reclamar", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: false }];
+    expect(artistasParaSitemap(filas).map((e) => e.url)).toEqual([`${ORIGEN}/artistas/sin-reclamar`]);
   });
 });

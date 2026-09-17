@@ -19,10 +19,12 @@ export type FilaEventoSitemap = { id: string; visible: boolean; termina: string;
 export type FilaArtistaSitemap = { id: string; visible: boolean; origen: string | null; actualizado_en: string };
 
 /**
- * Los 520 artistas traídos del CAPO no reclamaron su ficha y la invitación por correo sigue pendiente (OL-018,
- * OL-059): mientras el founder no decida si entran al sitemap, quedan fuera. Interruptor de una línea.
+ * Los artistas traídos del CAPO que no han reclamado su ficha SÍ entran al mapa del sitio y al índice de Google.
+ * Decisión del founder (2026-09-17, en el chat): «si entran todos los contenidos del sitio» — ya es información
+ * pública del Catálogo de Artistas Potosinos, y el aviso de privacidad lo explica (OL-066, bitácora 097; cierra la
+ * pregunta que había quedado pendiente en OL-018 y OL-059).
  */
-export const CAPO_SIN_RECLAMAR_EN_SITEMAP = false;
+export const CAPO_SIN_RECLAMAR_EN_SITEMAP = true;
 
 export function rutasEstaticas(): EntradaSitemap[] {
   return RUTAS_ESTATICAS.map((ruta) => ({ url: `${ORIGEN}${ruta}` }));
