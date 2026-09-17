@@ -5,6 +5,7 @@ import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import { conProximaFecha, DISCIPLINAS, filtroDesdeUrl, ordenarArtistas, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FechaDeArtista, type FiltroLeido } from "@/lib/artistas";
+import type { Metadata } from "next";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
@@ -14,7 +15,33 @@ import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
-export const metadata = { title: "Artistas · Somos Nosotros" };
+type SearchParams = { ciudad?: string; hace?: string; que?: string; q?: string; n?: string };
+
+/**
+ * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
+ * resto de filtros ("?hace=musica" es la misma lista para Google, no una nueva). Sin esto, la lista de otra ciudad
+ * se declaraba duplicada de la de San Luis Potosí y Google podía no ofrecerla nunca (OL-059). El título y la
+ * descripción son propios, sin nombre de ciudad (no del layout raíz, que decía siempre San Luis Potosí) — por lo
+ * mismo que el inicio (ver su comentario): esta página se reutiliza hasta 60 s al cambiar de ciudad sin recargar.
+ * Repite openGraph y twitter (Next reemplaza el objeto entero, no lo combina con el del layout raíz): sin esto,
+ * compartir `/artistas?ciudad=…` enseñaba el título y la descripción de San Luis Potosí del layout, con `og:url`
+ * apuntando a la raíz en vez del canonical de esa ciudad (gestión de cambios, OL-059).
+ */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
+  const { ciudad: slug } = await searchParams;
+  const ciudades = await cargarCiudadesDeArtistas();
+  const resuelta = ciudadPorSlug(slug, ciudades);
+  const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/artistas" : `/artistas?ciudad=${resuelta.slug}`;
+  const titulo = "Artistas · Somos Nosotros";
+  const descripcion = "Quiénes hacen la cultura local: artistas y grupos, con su próxima fecha.";
+  return {
+    title: titulo,
+    description: descripcion,
+    alternates: { canonical },
+    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
+    twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: ["/portada.png"] },
+  };
+}
 
 type FilaFecha = { artista_id: string; evento: Evento | Evento[] | null };
 type Evento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
@@ -86,11 +113,11 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
 }
 
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */
-export default async function Artistas({ searchParams }: { searchParams: Promise<{ ciudad?: string; hace?: string; que?: string; q?: string; n?: string }> }) {
+export default async function Artistas({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug, ...resto } = await searchParams;
   const filtro = filtroDesdeUrl(resto);
   // Las ciudades de Artistas salen de los artistas que hay; la del alta es la elegida aquí y se cambia en el formulario.
-  const [ciudades, actual] = await Promise.all([cargarCiudadesDeArtistas(await clienteServidor()), usuarioActual()]);
+  const [ciudades, actual] = await Promise.all([cargarCiudadesDeArtistas(), usuarioActual()]);
   const ciudad: Ciudad = ciudadPorSlug(slug, ciudades);
   const cargado = await cargar(filtro, ciudad.nombre);
   // Con sesión, los artistas que sigue: la lista los marca y deja seguir al deslizar (bitácora 071).

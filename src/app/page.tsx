@@ -6,13 +6,42 @@ import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
-import { ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { leerTira } from "@/lib/destacados";
 import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./inicio.module.css";
+import type { Metadata } from "next";
+
+/**
+ * Título propio (OL-059): sin esto, Google mostraba el genérico del layout raíz para la página más buscada del
+ * sitio. Título y descripción neutrales, sin nombre de ciudad (a propósito: al cambiar de ciudad desde la hoja, sin
+ * recargar, esta página se reutiliza hasta 60 s sin volver a pedirle al servidor — `staleTimes` de next.config.ts —
+ * así que un título por ciudad se quedaba con la ciudad anterior hasta que la persona recargaba a mano; gestión de
+ * cambios lo reprodujo 3 de 3 veces). El canonical sí conserva la ciudad, igual que en Lugares y Artistas — eso no
+ * depende de lo que ya esté pintado en la pestaña.
+ */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }): Promise<Metadata> {
+  const { ciudad: slug } = await searchParams;
+  const ciudades = await cargarCiudades();
+  const resuelta = ciudadPorSlug(slug, ciudades);
+  const esInicial = resuelta.slug === CIUDAD_INICIAL.slug;
+  const titulo = "Agenda cultural · Somos Nosotros";
+  const descripcion = "Qué hay hoy y esta semana en los centros culturales cerca de ti. Gratis, sin cuenta para mirar.";
+  const canonical = esInicial ? "/" : `/?ciudad=${resuelta.slug}`;
+  return {
+    title: titulo,
+    description: descripcion,
+    alternates: { canonical },
+    // Next reemplaza openGraph y twitter enteros: sin repetirlos aquí, esta página heredaba los del layout raíz
+    // (título/descripción de San Luis Potosí, url la raíz) aunque se mirara con ?ciudad= de otra — la vista previa
+    // al compartir no coincidía con lo que se veía, ni con el canonical (gestión de cambios, OL-059).
+    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
+    twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: ["/portada.png"] },
+  };
+}
 
 type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & { sitio_lat: number | null; sitio_lng: number | null; lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][]; artistas: { artista: { nombre: string } | { nombre: string }[] | null }[] | null };
 
@@ -62,7 +91,7 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
 export default async function Inicio({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }) {
   const { cuenta, ciudad: slug } = await searchParams;
   // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16).
-  const [ciudades, actual] = await Promise.all([cargarCiudades(await clienteServidor()), usuarioActual()]);
+  const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
   const { eventos, seguidos, eventosSeguidos, hayLugares, asistencias, destacados } = await cargar(ciudad, actual?.perfil.id ?? null);
   const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;

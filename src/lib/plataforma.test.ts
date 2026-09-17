@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decidirEstadoPush, decidirInstalar, enEste, leerPlataforma, pasosInstalar } from "./plataforma";
+import { decidirEstadoPush, decidirInstalar, enEste, leerPlataforma, pasosInstalar, tituloInstalada } from "./plataforma";
 
 const IPHONE_SAFARI_26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
 const IPHONE_SAFARI_18 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
@@ -88,5 +88,18 @@ describe("enEste", () => {
     expect(enEste(leerPlataforma(MAC_CHROME, 0, false))).toBe("en esta computadora");
     expect(enEste(leerPlataforma(IPHONE_SAFARI_18, 5, false))).toBe("en este teléfono");
     expect(enEste(null)).toBe("en este teléfono");
+  });
+});
+
+describe("tituloInstalada", () => {
+  it("quita la marca del final: la ventana instalada ya la pone", () => {
+    expect(tituloInstalada("Lugares · Somos Nosotros")).toBe("Lugares");
+    expect(tituloInstalada("Agenda cultural de San Luis Potosí · Somos Nosotros")).toBe("Agenda cultural de San Luis Potosí");
+  });
+  it("sin la marca al final, no toca nada", () => {
+    expect(tituloInstalada("Somos Nosotros")).toBe("Somos Nosotros");
+  });
+  it("si no queda nada tras quitarla, se queda con el nombre del sitio (nunca una pestaña en blanco)", () => {
+    expect(tituloInstalada(" · Somos Nosotros")).toBe("Somos Nosotros");
   });
 });
