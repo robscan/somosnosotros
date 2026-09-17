@@ -1,6 +1,6 @@
 # 063 · La próxima fecha de cada artista ya no depende del orden en que llegan las filas
 
-**Fecha:** 2026-09-16 (noche) · **Rama:** `proxima-fecha-artistas` · **Pieza:** OL-038, lo que quedó aparte en la bitácora [062](062-orden-estable-a-la-misma-hora.md) ([PR #66](https://github.com/robscan/somosnosotros/pull/66)).
+**Fecha:** 2026-09-16 (noche) · **Rama:** `proxima-fecha-artistas` ([PR #67](https://github.com/robscan/somosnosotros/pull/67)) · **Pieza:** OL-038, lo que quedó aparte en la bitácora [062](062-orden-estable-a-la-misma-hora.md) ([PR #66](https://github.com/robscan/somosnosotros/pull/66)).
 
 ## El hallazgo
 En la lista de Artistas, quien tiene fechas muestra "Próximo: …" con la más cercana, y esos artistas van primero, ordenados por esa fecha. La página tomaba la primera fila que le llegaba de cada artista, con la idea de que llegaban por hora. Nada lo garantizaba:
