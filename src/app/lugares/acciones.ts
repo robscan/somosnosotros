@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { esUuid } from "@/lib/formulario";
 import { rutaSegura } from "@/lib/rutas";
 import { validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
@@ -9,8 +9,9 @@ import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { zonaDePunto } from "@/lib/zona";
 
+/** Publicar lleva a la ficha nueva reemplazando el alta; guardar, o publicar desde el alta de evento, devuelve a dónde volver. */
 export type ResultadoLugar =
-  | { ok: true; id: string }
+  | { ok: true; id: string; volver: string }
   | { ok: false; errores: ErroresLugar; general?: string; parecidos?: LugarResumen[] };
 
 
@@ -47,9 +48,10 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
 
   revalidatePath("/");
-  // Si se vino del alta de evento, se vuelve con el lugar ya elegido; si no, a la ficha recién publicada.
+  // Si se vino del alta de evento, el formulario vuelve a ella con el lugar ya elegido; si no, a la ficha recién publicada.
   const siguiente = rutaSegura(formData.get("siguiente") as string | null, "");
-  redirect(siguiente ? `${siguiente}${siguiente.includes("?") ? "&" : "?"}lugar=${data.id}` : `/lugares/${data.id}?nuevo=1`);
+  if (siguiente) return { ok: true, id: data.id, volver: siguiente };
+  redirect(`/lugares/${data.id}?nuevo=1`, RedirectType.replace);
 }
 
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
@@ -67,7 +69,7 @@ export async function actualizarLugar(id: string, _previo: ResultadoLugar | null
 
   revalidatePath("/");
   revalidatePath(`/lugares/${id}`);
-  redirect(`/lugares/${id}`);
+  return { ok: true, id, volver: `/lugares/${id}` };
 }
 
 /** Ocultar o volver a mostrar: solo la administración (la base lo exige con el trigger proteger_autor_y_visible). */

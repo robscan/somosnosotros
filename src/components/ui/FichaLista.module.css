@@ -11,14 +11,15 @@
   font-size: var(--letra-sm);
 }
 
-/* 2. Como la agenda, por día; el título de la sección se queda pegado bajo la barra */
+/* 2. Como la agenda, por día; el título de la sección se queda pegado bajo la barra. "ver" la deja justo debajo de la
+   barra pegajosa, que con la app instalada suma el margen seguro de arriba (OL-055). */
 .lista {
   margin-bottom: var(--espacio-5);
-  scroll-margin-top: var(--espacio-3);
+  scroll-margin-top: calc(var(--alto-barra) + env(safe-area-inset-top, 0px));
 }
 .lista h2 {
   position: sticky;
-  top: var(--alto-barra);
+  top: calc(var(--alto-barra) + env(safe-area-inset-top, 0px));
   z-index: 5;
   padding: 12px 0 6px;
   background: var(--fondo-contenido);

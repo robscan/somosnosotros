@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadPorNombre, ciudadPorSlug, slugDeCiudad } from "./ciudad";
+import { armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadPorNombre, ciudadPorSlug, raizConCiudad, slugDeCiudad } from "./ciudad";
 
 describe("ciudad", () => {
+  it("la raíz de una sección conserva la ciudad y suelta lo demás", () => {
+    expect(raizConCiudad("/lugares", "?vista=lista&tipo=museo&ciudad=madrid")).toBe("/lugares?ciudad=madrid");
+    expect(raizConCiudad("/", "?cuenta=borrada")).toBe("/");
+    expect(raizConCiudad("/artistas", "")).toBe("/artistas");
+    expect(raizConCiudad("/", "?ciudad=cordoba-espana")).toBe("/?ciudad=cordoba-espana");
+  });
   it("empieza en San Luis Potosí, centrada en el centro histórico", () => {
     expect(CIUDAD_INICIAL.nombre).toBe("San Luis Potosí");
     expect(CIUDAD_INICIAL.centro.lat).toBeCloseTo(22.15, 1);

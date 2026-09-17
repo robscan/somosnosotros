@@ -1,15 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { artistaIgual, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
 import { esUuid } from "@/lib/formulario";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
+/** Publicar lleva a la ficha nueva reemplazando el alta; guardar devuelve a dónde volver (el formulario termina la tarea). */
 export type ResultadoArtista =
-  | { ok: true; id: string }
+  | { ok: true; id: string; volver: string }
   | { ok: false; errores: ErroresArtista; general?: string; existente?: ArtistaResumen };
 
 
@@ -49,7 +50,7 @@ export async function crearArtista(_previo: ResultadoArtista | null, formData: F
   if (formData.get("soy") === "1") await supabase.from("artistas_cuentas").insert({ artista_id: data.id, perfil_id: user.id });
 
   revalidatePath("/artistas");
-  redirect(`/artistas/${data.id}?nuevo=1`);
+  redirect(`/artistas/${data.id}?nuevo=1`, RedirectType.replace);
 }
 
 export async function actualizarArtista(id: string, _previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
@@ -66,7 +67,7 @@ export async function actualizarArtista(id: string, _previo: ResultadoArtista | 
 
   revalidar(id);
   revalidatePath("/");
-  redirect(`/artistas/${id}`);
+  return { ok: true, id, volver: `/artistas/${id}` };
 }
 
 /** Ocultar o volver a mostrar: solo la administración (la base lo exige con el trigger proteger_autor_y_visible). */

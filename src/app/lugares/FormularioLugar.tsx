@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { Fragment, useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { recordarLugarNuevo } from "@/app/eventos/borrador";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
+import { useTerminar } from "@/components/ui/Atras";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -48,6 +50,20 @@ type Props = {
 export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false }: Props) {
   const esAlta = !lugar;
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(accion, null);
+  // Guardado, o publicado desde el alta de evento («Regístralo»): la tarea termina sin quedarse en el historial.
+  // Al alta de evento se vuelve con el historial (sin apilar otra) y el lugar llega por su borrador; si no se vino de
+  // ella, se va con el lugar en la URL, como antes. Mientras vuelve, el botón sigue ocupado.
+  const terminar = useTerminar();
+  const terminado = resultado?.ok === true;
+  useEffect(() => {
+    if (!resultado?.ok) return;
+    if (!siguiente) {
+      terminar(resultado.volver);
+      return;
+    }
+    recordarLugarNuevo(resultado.id);
+    terminar(siguiente, { siNo: `${siguiente}${siguiente.includes("?") ? "&" : "?"}lugar=${resultado.id}` });
+  }, [resultado, siguiente, terminar]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const parecidos = resultado && !resultado.ok ? resultado.parecidos : undefined;
 
@@ -395,9 +411,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           </p>
         )}
         {/* El botón dice qué falta (decisión 11). */}
-        <Boton type="submit" disabled={enviando || subiendo || recuperando || !listo}>
-          {enviando ? "Guardando…" : lugar ? "Guardar cambios" : "Publicar lugar"}
-          {!enviando && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde está"}</small>}
+        <Boton type="submit" disabled={enviando || terminado || subiendo || recuperando || !listo}>
+          {enviando || terminado ? "Guardando…" : lugar ? "Guardar cambios" : "Publicar lugar"}
+          {!enviando && !terminado && !listo &&<small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde está"}</small>}
         </Boton>
       </form>
       {hoja && (

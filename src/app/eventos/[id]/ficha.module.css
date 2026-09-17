@@ -16,6 +16,8 @@
   margin-bottom: var(--espacio-5);
   padding-top: var(--espacio-4);
   border-top: 1px solid var(--borde);
+  /* "ver" la deja justo debajo de la barra pegajosa (OL-055) */
+  scroll-margin-top: calc(var(--alto-barra) + env(safe-area-inset-top, 0px));
 }
 .quienVa h2 {
   font-size: var(--letra-xl);

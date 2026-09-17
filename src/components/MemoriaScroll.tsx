@@ -1,8 +1,9 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
+import { alVolver } from "./Navegacion";
 
 /** Cuánto se espera a que llegue el contenido antes de dejar el scroll donde esté. */
 const ESPERA_MAX_MS = 4000;
@@ -15,6 +16,29 @@ const VIGILANCIA_MS = 600;
 let vueltaPedida = false;
 export function pedirVuelta() {
   vueltaPedida = true;
+}
+
+/** La URL que está en pantalla, la única cuya posición se guarda (la fija el efecto de ruta; null hasta montar). */
+let enPantalla: string | null = null;
+/** Hay una vuelta en marcha: al cambiar la URL se repone el scroll de esa URL y, mientras, no se guarda nada. */
+let pendiente = false;
+
+/** Guarda la posición de la pantalla que se ve; no durante una vuelta ni si la barra ya muestra otra URL (navegación en curso). */
+function guardar() {
+  if (pendiente || !enPantalla || enPantalla !== claveDeUrl(window.location)) return;
+  guardarScroll(enPantalla, window.scrollY);
+}
+
+// Atrás, adelante o el gesto, avisados por Navegacion antes de que React pinte la pantalla de destino (en el mismo
+// evento): el efecto de ruta tiene que saber ya que es una vuelta.
+if (typeof window !== "undefined") {
+  alVolver(() => {
+    // Misma URL (un ancla de la misma pantalla): no hay otra pantalla que reponer.
+    if (enPantalla && claveDeUrl(window.location) === enPantalla) return;
+    // Con el gesto de atrás no hay toque: lo que se ve sigue siendo la pantalla que se deja, y su posición se guarda ya.
+    if (enPantalla && !pendiente) guardarScroll(enPantalla, window.scrollY);
+    pendiente = true;
+  });
 }
 
 /**
@@ -42,46 +66,52 @@ function reponer(y: number, alTerminar: () => void) {
  * pintaba como un bloque blanco (bitácora 043). Con `scrollRestoration = "manual"` el navegador no toca nada y
  * este componente, único para toda la app, guarda el scroll por URL (sessionStorage) y lo repone al volver
  * (Atrás, gesto, recarga o la barra inferior) en cuanto la página tiene altura para ello. No pinta nada.
+ * La URL es la ruta con su consulta: un filtro o "Ver más" es otra URL de la misma ruta, con su propia posición.
+ * Va dentro de un Suspense en el layout porque lee la consulta.
  */
 export default function MemoriaScroll() {
   const ruta = usePathname();
-  /** Hay una vuelta en marcha: al cambiar la ruta se repone el scroll de esa URL y, mientras, no se guarda nada. */
-  const pendiente = useRef(false);
+  const consulta = useSearchParams().toString();
 
   useEffect(() => {
     if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
     const tipo = (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined)?.type;
-    if (tipo === "reload" || tipo === "back_forward") pendiente.current = true;
-    function alVolver() {
-      pendiente.current = true;
-    }
+    if (tipo === "reload" || tipo === "back_forward") pendiente = true;
     // El scroll se guarda al vuelo, como mucho cada 100 ms, para la URL que sigue en pantalla.
     let temporizador = 0;
     function alDesplazar() {
       if (temporizador) return;
       temporizador = window.setTimeout(() => {
         temporizador = 0;
-        if (pendiente.current) return;
-        guardarScroll(claveDeUrl(window.location), window.scrollY);
+        guardar();
       }, 100);
     }
-    window.addEventListener("popstate", alVolver);
     window.addEventListener("scroll", alDesplazar, { passive: true });
+    // Al tocar (en captura, antes de que un enlace navegue y la página suba) y al salir de la página: la posición exacta.
+    document.addEventListener("click", guardar, true);
+    window.addEventListener("pagehide", guardar);
     return () => {
-      window.removeEventListener("popstate", alVolver);
       window.removeEventListener("scroll", alDesplazar);
+      document.removeEventListener("click", guardar, true);
+      window.removeEventListener("pagehide", guardar);
       if (temporizador) window.clearTimeout(temporizador);
     };
   }, []);
 
-  // Al llegar a una ruta viniendo de atrás (o de la barra inferior): esperar a que la página tenga altura y reponer.
+  // Al cambiar la URL: si se viene de atrás (o de la barra inferior), esperar a que la página tenga altura y reponer.
   useEffect(() => {
+    const clave = claveDeUrl(window.location);
+    enPantalla = clave;
     if (vueltaPedida) {
       vueltaPedida = false;
-      pendiente.current = true;
+      pendiente = true;
     }
-    if (!pendiente.current) return;
-    const objetivo = leerScroll(claveDeUrl(window.location)) ?? 0;
+    if (!pendiente) {
+      // Se llegó sin vuelta (pantalla nueva, filtro, "Ver más"): la posición de esta URL es la de ahora, aunque no se desplace.
+      guardarScroll(clave, window.scrollY);
+      return;
+    }
+    const objetivo = leerScroll(clave) ?? 0;
     const inicio = performance.now();
     let temporizador = 0;
     const intentar = () => {
@@ -94,7 +124,7 @@ export default function MemoriaScroll() {
           const vigilar = () => {
             if (Math.abs(window.scrollY - objetivo) > 1 && document.documentElement.scrollHeight - window.innerHeight >= objetivo) window.scrollTo({ top: objetivo, behavior: "instant" });
             if (performance.now() < fin) temporizador = window.setTimeout(vigilar, PASO_MS);
-            else pendiente.current = false;
+            else pendiente = false;
           };
           vigilar();
         });
@@ -106,7 +136,7 @@ export default function MemoriaScroll() {
     return () => {
       if (temporizador) window.clearTimeout(temporizador);
     };
-  }, [ruta]);
+  }, [ruta, consulta]);
 
   return null;
 }

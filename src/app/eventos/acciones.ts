@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
 import { avisarCambioEvento, avisarNuevoEvento } from "@/lib/avisos";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
@@ -16,7 +16,8 @@ import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
 
-export type ResultadoEvento = { ok: true; id: string } | { ok: false; errores: ErroresEvento; general?: string };
+/** Publicar lleva a la ficha nueva reemplazando el alta; guardar devuelve a dónde volver (el formulario termina la tarea). */
+export type ResultadoEvento = { ok: true; id: string; volver: string } | { ok: false; errores: ErroresEvento; general?: string };
 
 
 function leer(formData: FormData) {
@@ -143,7 +144,7 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   revalidar(data.id, datos.lugar_id, artistas);
   // Avisar a quienes siguen el lugar, después de responder (no retrasa la publicación).
   after(() => avisarNuevoEvento(data.id, user.id));
-  redirect(`/eventos/${data.id}?nuevo=1`);
+  redirect(`/eventos/${data.id}?nuevo=1`, RedirectType.replace);
 }
 
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
@@ -162,7 +163,7 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   revalidar(id, datos.lugar_id, artistas);
   const cambio = antes ? queCambio(antes, datos) : null;
   if (cambio) after(() => avisarCambioEvento(id, user.id, cambio));
-  redirect(`/eventos/${id}`);
+  return { ok: true, id, volver: `/eventos/${id}` };
 }
 
 export async function cambiarVisibleEvento(id: string, lugarId: string | null, visible: boolean) {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import { IconoCamara, IconoCandado, IconoCasa, IconoPersona, IconoTexto } from "@/components/ui/Iconos";
 import { LIMITES } from "@/lib/perfil";
@@ -20,6 +21,12 @@ type Renglon = "nombre" | "colonia" | "bio";
  */
 export default function FormularioPerfil({ perfil, correo }: Props) {
   const [resultado, guardar, guardando] = useActionState<ResultadoGuardar | null, FormData>(guardarPerfil, null);
+  // Guardado: de vuelta a Ajustes sin dejar la edición en el historial; mientras vuelve, el botón sigue ocupado.
+  const terminar = useTerminar();
+  const terminado = resultado?.ok === true;
+  useEffect(() => {
+    if (resultado?.ok) terminar(resultado.volver);
+  }, [resultado, terminar]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const [nombre, setNombre] = useState(perfil.nombre);
   const [colonia, setColonia] = useState(perfil.colonia ?? "");
@@ -126,9 +133,9 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
         </p>
       )}
       {/* Guardar se enciende cuando hay un cambio; dice qué falta si el nombre quedó vacío. */}
-      <Boton type="submit" disabled={guardando || subiendo || !hayCambio || faltaNombre}>
-        {guardando ? "Guardando…" : "Guardar"}
-        {!guardando && faltaNombre && <small className={canon.faltaBoton}>falta el nombre</small>}
+      <Boton type="submit" disabled={guardando || terminado || subiendo || !hayCambio || faltaNombre}>
+        {guardando || terminado ? "Guardando…" : "Guardar"}
+        {!guardando && !terminado && faltaNombre &&<small className={canon.faltaBoton}>falta el nombre</small>}
       </Boton>
     </form>
   );
