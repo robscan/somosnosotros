@@ -27,6 +27,7 @@
   .rotulo { flex: 0 0 100%; margin-bottom: 8px; color: var(--estudio-suave); font-size: 14px; line-height: 1.5; }
   .rotulo > span { display: block; max-width: 860px; margin-inline: auto; }
   .rotulo strong { display: block; color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 22px; margin-bottom: 4px; }
+  .rotulo em { font-style: normal; color: var(--estudio-texto); font-weight: 700; }
   .par { display: grid; gap: 10px; justify-items: center; }
   .par > figcaption { max-width: 390px; color: var(--estudio-suave); font-size: 13px; line-height: 1.45; text-align: left; }
   .par > figcaption b { display: block; color: var(--estudio-texto); font-size: 15px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 2px; }
@@ -37,9 +38,8 @@
   .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
   .logotipo { grid-column: 2; font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1; }
   .cerrar-barra { grid-column: 3; justify-self: end; display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); }
-  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; margin: 14px 0 6px; }
+  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; margin: 14px 0 14px; }
   .subtitulo { color: var(--texto-suave); font-size: 15px; margin-bottom: 14px; line-height: 1.4; }
-  .subtitulo em { font-style: normal; color: var(--texto); font-weight: 700; }
 
   /* El canon */
   .campo { position: relative; display: grid; margin-bottom: 12px; }
@@ -65,23 +65,19 @@
   .primario { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: var(--toque); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; }
   .primario[aria-disabled="true"] { background: #a8c5cb; color: #fff; }
   .primario small { font-size: 13px; font-weight: 500; }
-  .estado { margin: -6px 0 10px; color: var(--texto-suave); font-size: 14px; }
-  .aviso { margin: -4px 0 12px; padding: 10px 14px; border-radius: var(--radio); background: var(--primario-suave); color: var(--texto); font-size: 15px; line-height: 1.4; }
 
-  /* Lo nuevo: el cartel, fuera del campo. */
-  .cartel { display: grid; grid-template-columns: 44px 1fr; grid-template-areas: "icono titulo" "icono detalle"; column-gap: 14px; align-items: center; width: 100%; min-height: 76px; margin-bottom: 14px; padding: 12px 16px; border: 1px solid var(--primario); border-radius: var(--radio); background: var(--primario-suave); text-align: left; }
+  /* Lo nuevo: el cartel, fuera del campo. Hace todo el trabajo de explicar: no hay frase debajo del título. */
+  .cartel { display: grid; grid-template-columns: 44px 1fr; grid-template-areas: "icono titulo" "icono detalle"; column-gap: 14px; align-items: center; width: 100%; min-height: 76px; margin-bottom: 24px; padding: 12px 16px; border: 1px solid var(--primario); border-radius: var(--radio); background: var(--primario-suave); text-align: left; }
   .cartel > .marco { grid-area: icono; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
   .cartel > .marco svg { width: 24px; height: 24px; }
   .cartel > b { grid-area: titulo; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
   .cartel > small { grid-area: detalle; color: var(--texto-suave); font-size: 14px; line-height: 1.35; }
-  .cartel.leido { border-color: var(--borde); background: var(--fondo); }
+  .cartel.leido { margin-bottom: 14px; border-color: var(--borde); background: var(--fondo); }
   .cartel.leido > .marco { background: var(--fondo-miniatura); }
   .cartel.fallo { border-color: var(--error); background: #fdf3f2; }
   .cartel.fallo > small { color: var(--error); }
   .miniatura { grid-area: icono; width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: linear-gradient(135deg, #c94f7c, #f2a33c); }
   .rehacer { display: block; width: fit-content; margin-top: 8px; min-height: 36px; padding: 0 12px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--primario); font-size: 14px; font-weight: 700; }
-  .oborde { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin: 0 0 12px; color: var(--texto-suave); font-size: 13px; }
-  .oborde::before, .oborde::after { content: ""; height: 1px; background: var(--borde); }
   .barrita { display: block; height: 4px; margin-top: 8px; border-radius: 2px; background: #cfe3e6; overflow: hidden; }
   .barrita span { display: block; width: 55%; height: 100%; border-radius: 2px; background: var(--primario); }
   @media (max-width: 860px) { .telefono { height: auto; min-height: 700px; } .pantalla { height: auto; max-height: 680px; } }
@@ -93,8 +89,8 @@
   <p class="rotulo">
     <span>
       <strong>El cartel, fuera del campo del nombre</strong>
-      Pedido del founder (2026-09-17): «con esa x el riesgo de error aumenta, te propongo sacar el accionable de capturar desde flyer (foto o galería) y ponerlo por separado. De hecho es una funcion estelar, pienso que hay que decirlo desde la descripción que se tiene esa super herramienta».
-      Tres variantes y los estados de la elegida. Datos de ejemplo, no reales. La primera pantalla es la que hay hoy en producción, para comparar.
+      <em>Firmado por el founder el 2026-09-17:</em> la variante de la tarjeta ancha, <em>sin</em> línea de separación y <em>sin</em> frase debajo del título: «no agregues más texto a la instrucción, el texto de la tarjeta ancha debe hacer ese trabajo». Y fuera la promesa de mínimos: «no digas que basta con nombre y lugar, que llene lo que quiera, no promovemos la creación de eventos incompletos».
+      La primera pantalla es la que hay hoy en producción, para comparar. Datos de ejemplo, no reales.
     </span>
   </p>
 
@@ -104,7 +100,7 @@
       <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
       <main class="pantalla">
         <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
-        <h1>Publicar un evento</h1>
+        <h1 style="margin-bottom:6px">Publicar un evento</h1>
         <p class="subtitulo">Con el nombre y dónde basta. Lo demás ya está resuelto.</p>
         <div class="campo con-accion con-limpiar">
           <input type="text" value="Noche de son jarocho" aria-label="Nombre del evento">
@@ -121,23 +117,21 @@
         <button type="button" class="primario" aria-disabled="true">Publicar evento <small>falta dónde</small></button>
       </main>
     </div>
-    <figcaption><b>Hoy, en producción</b>La cámara y la ✕ comparten los 40 px de la derecha del campo. Es la zona más apretada de la app y nadie sabe que ese icono lee el cartel. El subtítulo no lo menciona.</figcaption>
+    <figcaption><b>Hoy, en producción</b>La cámara y la ✕ comparten los 40 px de la derecha del campo. Nadie sabe que ese icono lee el cartel. Y la frase de debajo del título invita a publicar con lo mínimo.</figcaption>
   </figure>
 
-  <!-- A -->
+  <!-- FIRMADA -->
   <figure class="par">
     <div class="telefono">
       <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
       <main class="pantalla">
         <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
         <h1>Publicar un evento</h1>
-        <p class="subtitulo"><em>Con el cartel lo llenamos por ti.</em> Si no lo tienes, con el nombre y dónde basta.</p>
         <button type="button" class="cartel">
           <span class="marco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span>
           <b>Sube el cartel</b>
           <small>Leemos el nombre, la fecha, el lugar y el precio.</small>
         </button>
-        <p class="oborde"><span>o escríbelo tú</span></p>
         <div class="campo">
           <input type="text" placeholder="Nombre del evento" aria-label="Nombre del evento">
         </div>
@@ -151,48 +145,21 @@
         <button type="button" class="primario" aria-disabled="true">Publicar evento <small>falta el nombre</small></button>
       </main>
     </div>
-    <figcaption><b>A · La tarjeta arriba (recomendada)</b>El cartel es lo primero y dice qué hace. El campo del nombre se queda solo con su ✕. El subtítulo lo anuncia. Cuesta 76 px de alto y una línea de separación.</figcaption>
+    <figcaption><b>Firmada · Llega</b>Título, tarjeta y a llenar. La tarjeta es lo único que explica: no hay frase debajo del título ni línea de separación. Lo que separa los dos caminos es el aire (24 px), no una etiqueta.</figcaption>
   </figure>
 
-  <!-- B -->
+  <!-- LEYENDO -->
   <figure class="par">
     <div class="telefono">
       <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
       <main class="pantalla">
         <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
         <h1>Publicar un evento</h1>
-        <p class="subtitulo"><em>Con el cartel lo llenamos por ti.</em> Si no lo tienes, con el nombre y dónde basta.</p>
-        <div class="campo">
-          <input type="text" placeholder="Nombre del evento" aria-label="Nombre del evento">
-        </div>
-        <ul class="renglones">
-          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span class="clave">Cartel</span><span class="valor falta">Súbelo y llenamos todo</span><button type="button" class="accion"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></li>
-          <li class="resuelto"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Cuándo</span><span class="valor">Hoy · 19:00</span><button type="button" class="cambiar">Cambiar</button></li>
-          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span class="clave">Dónde</span><span class="valor falta">Falta</span><button type="button" class="accion"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></li>
-          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 19a6 6 0 0 1 12 0M15 5.5a3.2 3.2 0 0 1 0 6.3M21 19a6 6 0 0 0-4.5-5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Quién</span><span class="valor falta">Sin artista</span><button type="button" class="cambiar">Agregar</button></li>
-          <li class="resuelto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 6v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2 2"/></svg><span class="clave">Cuánto</span><span class="valor">Gratis</span><button type="button" class="cambiar">Cambiar</button></li>
-          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v8M8 12h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Más</span><span class="valor falta">Descripción, enlace, foto</span><button type="button" class="cambiar">Agregar</button></li>
-        </ul>
-        <button type="button" class="primario" aria-disabled="true">Publicar evento <small>falta el nombre</small></button>
-      </main>
-    </div>
-    <figcaption><b>B · Un renglón más</b>Sin patrón nuevo: el cartel es un renglón del canon, como Cuándo o Dónde. Lo malo: queda debajo del nombre y con el mismo peso que lo demás, así que sigue sin verse como la herramienta estelar. Y es el único renglón que no guarda un dato: hace un trabajo.</figcaption>
-  </figure>
-
-  <!-- A, leyendo -->
-  <figure class="par">
-    <div class="telefono">
-      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
-      <main class="pantalla">
-        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
-        <h1>Publicar un evento</h1>
-        <p class="subtitulo"><em>Con el cartel lo llenamos por ti.</em> Si no lo tienes, con el nombre y dónde basta.</p>
         <div class="cartel">
           <img class="miniatura" alt="" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
           <b>Leyendo el cartel…</b>
           <small>Tarda unos segundos. No cierres la pantalla.<span class="barrita"><span></span></span></small>
         </div>
-        <p class="oborde"><span>o escríbelo tú</span></p>
         <div class="campo">
           <input type="text" placeholder="Nombre del evento" aria-label="Nombre del evento">
         </div>
@@ -205,17 +172,16 @@
         <button type="button" class="primario" aria-disabled="true">Publicar evento <small>falta el nombre</small></button>
       </main>
     </div>
-    <figcaption><b>A · Leyendo</b>La miniatura de lo que subió sustituye al icono, en el mismo sitio. La espera se dice donde estaba el detalle, no en otra parte de la pantalla.</figcaption>
+    <figcaption><b>Firmada · Leyendo</b>La miniatura de lo que subió sustituye al icono, en el mismo sitio. La espera se dice donde estaba el detalle, con una barra fina. Nada se mueve de lugar.</figcaption>
   </figure>
 
-  <!-- A, leído -->
+  <!-- LEÍDO -->
   <figure class="par">
     <div class="telefono">
       <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
       <main class="pantalla">
         <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
         <h1>Publicar un evento</h1>
-        <p class="subtitulo"><em>Con el cartel lo llenamos por ti.</em> Si no lo tienes, con el nombre y dónde basta.</p>
         <div class="cartel leido">
           <img class="miniatura" alt="" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
           <b>Leí el cartel</b>
@@ -235,23 +201,21 @@
         <button type="button" class="primario">Publicar evento</button>
       </main>
     </div>
-    <figcaption><b>A · Leído</b>La tarjeta baja de tono (ya hizo su trabajo) y el formulario queda lleno con todo resuelto. El cartel subido se queda como imagen del evento, dentro de «Más». El botón ya no dice qué falta.</figcaption>
+    <figcaption><b>Firmada · Leído</b>La tarjeta baja de tono (ya hizo su trabajo) y los renglones quedan llenos, nada en «Falta». El cartel se queda como imagen del evento, dentro de «Más».</figcaption>
   </figure>
 
-  <!-- A, no pude -->
+  <!-- FALLÓ -->
   <figure class="par">
     <div class="telefono">
       <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
       <main class="pantalla">
         <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
         <h1>Publicar un evento</h1>
-        <p class="subtitulo"><em>Con el cartel lo llenamos por ti.</em> Si no lo tienes, con el nombre y dónde basta.</p>
         <div class="cartel fallo">
           <img class="miniatura" alt="" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
           <b>No pude leer el cartel</b>
           <small>Llena los datos a mano; la imagen se queda puesta.<button type="button" class="rehacer">Probar con otra foto</button></small>
         </div>
-        <p class="oborde"><span>o escríbelo tú</span></p>
         <div class="campo">
           <input type="text" placeholder="Nombre del evento" aria-label="Nombre del evento">
         </div>
@@ -264,7 +228,7 @@
         <button type="button" class="primario" aria-disabled="true">Publicar evento <small>falta el nombre</small></button>
       </main>
     </div>
-    <figcaption><b>A · No pude leerlo</b>El aviso vive en la tarjeta, no debajo del campo del nombre como hoy. La imagen no se pierde: queda como imagen del evento. Reintentar está en la propia tarjeta.</figcaption>
+    <figcaption><b>Firmada · No pude leerlo</b>El aviso vive en la tarjeta, no debajo del campo del nombre como hoy. La imagen no se pierde: queda como imagen del evento. Reintentar está en la propia tarjeta.</figcaption>
   </figure>
 </div>
 </body>

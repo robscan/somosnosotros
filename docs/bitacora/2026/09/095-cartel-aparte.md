@@ -28,8 +28,20 @@ Dos defectos que solo salieron mirando el render, no leyendo el código:
 
 Los dos corregidos y vueltos a mirar.
 
-## Lo que falta
+## Firmado el mismo día
 
-La firma del founder, con tres preguntas abiertas: si se queda la línea «o escríbelo tú», si la tarjeta va en color de acción o solo con borde, y si esto vale también para las cámaras del alta de lugar y de artista (mi opinión: no, porque ahí la foto no llena nada).
+El founder tomó la variante A y con ella dos recortes:
 
-Sin código todavía: la pieza toca `FormularioEvento.tsx`, los mismos archivos que `topes-de-campos` (OL-065), y no se escribe hasta que el founder firme.
+> «Tomo tu recomendación y no agregues más texto a la instrucción, el texto de la tarjeta ancha debe hacer ese trabajo. En el texto debajo de titulo de publicar evento, no digas que basta con nombre y lugar, que llene lo que quiera, no promovemos la creación de eventos incompletos».
+
+Tres decisiones firmes, ya en el prototipo:
+
+1. **Se va la frase de debajo del título** en el alta de evento. La pantalla queda título → tarjeta → formulario; la tarjeta es lo único que explica.
+2. **Fuera la promesa de mínimos.** «Con el nombre y dónde basta. Lo demás ya está resuelto.» desaparece. La validación no cambia (se sigue pudiendo publicar con nombre y lugar: «que llene lo que quiera»), pero la pantalla ya no lo invita. «Duplicar evento» conserva su línea, que informa de otra cosa.
+3. **Sin línea de separación.** Nada de «o escríbelo tú»: lo que separa los dos caminos es el aire, 24 px.
+
+El prototipo se rehízo con eso y se volvió a mirar: la variante B se retiró (ya está decidido) y quedan la pantalla de hoy, para comparar, y los cuatro estados de la firmada.
+
+## Lo que sigue
+
+El código, que ya tiene las dos condiciones que puso gestión de cambios: la pieza anterior (OL-063) está en producción y el founder firmó. Toca `FormularioEvento.tsx`, `FormularioCanon.module.css` y `eventos/nuevo/page.tsx`, y va antes de `topes-de-campos` (OL-065), que toca los mismos archivos.

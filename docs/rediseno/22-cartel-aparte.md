@@ -1,6 +1,6 @@
 # 22 · El cartel, fuera del campo del nombre
 
-**Estado:** propuesta sin firmar. **Prototipo:** [`prototipos/cartel-aparte.html`](prototipos/cartel-aparte.html) · **OL:** OL-064 · **Bitácora:** [095](../bitacora/2026/09/095-cartel-aparte.md)
+**Estado:** **firmado por el founder el 2026-09-17.** **Prototipo:** [`prototipos/cartel-aparte.html`](prototipos/cartel-aparte.html) · **OL:** OL-064 · **Bitácora:** [095](../bitacora/2026/09/095-cartel-aparte.md)
 
 ## Lo que pidió el founder
 
@@ -25,11 +25,25 @@ Son dos cosas: **sacarlo del campo** y **anunciarlo**.
 
 **Recomiendo A.** Es la única que cumple las dos cosas que pidió el founder: lo saca del campo *y* lo anuncia por sí sola. B lo saca del campo pero lo vuelve a esconder.
 
+## Lo que firmó el founder (2026-09-17)
+
+Tomó la variante A y con ella dos recortes:
+
+> «no agregues más texto a la instrucción, el texto de la tarjeta ancha debe hacer ese trabajo»
+
+> «En el texto debajo de titulo de publicar evento, no digas que basta con nombre y lugar, que llene lo que quiera, no promovemos la creación de eventos incompletos»
+
+De ahí salen tres decisiones firmes:
+
+1. **La frase de debajo del título se va.** En el alta de evento no hay subtítulo: la tarjeta es lo único que explica. La pantalla queda título → tarjeta → formulario.
+2. **Fuera la promesa de mínimos.** «Con el nombre y dónde basta. Lo demás ya está resuelto.» desaparece. El sistema sigue dejando publicar con el nombre y el lugar (la validación no cambia: «que llene lo que quiera»), pero la pantalla ya no lo invita.
+3. **Sin línea de separación.** No hay «o escríbelo tú». Lo que separa los dos caminos es el aire: 24 px entre la tarjeta y el campo del nombre.
+
+«Duplicar evento» conserva su propia línea («Mismo evento, nueva fecha. Cambia lo que haga falta.»): informa de otra cosa y no promete mínimos.
+
 ## Los textos de A
 
-- **Subtítulo:** «**Con el cartel lo llenamos por ti.** Si no lo tienes, con el nombre y dónde basta.» (la primera frase en negrita; la segunda conserva la promesa de hoy).
 - **Tarjeta:** «Sube el cartel» · «Leemos el nombre, la fecha, el lugar y el precio.»
-- **Separación:** «o escríbelo tú».
 - **Leyendo:** «Leyendo el cartel…» · «Tarda unos segundos. No cierres la pantalla.»
 - **Leído:** «Leí el cartel» · «Revisa que todo esté bien y publica.»
 - **Falló:** «No pude leer el cartel» · «Llena los datos a mano; la imagen se queda puesta.» + botón «Probar con otra foto».
@@ -38,20 +52,19 @@ No hace falta ofrecer «foto o galería» como dos salidas: el iPhone ya pregunt
 
 ## Los cuatro estados
 
-1. **Llega:** tarjeta en color de acción, el formulario vacío debajo.
+1. **Llega:** tarjeta en color de acción justo bajo el título, el formulario vacío debajo.
 2. **Leyendo:** la miniatura de lo que subió sustituye al icono, en el mismo sitio; la espera se dice donde estaba el detalle, con una barra fina. Nada se mueve de sitio.
-3. **Leído:** la tarjeta baja de tono (ya hizo su trabajo), desaparece la línea de separación y los renglones quedan llenos. El cartel se queda como imagen del evento, dentro de «Más».
+3. **Leído:** la tarjeta baja de tono (ya hizo su trabajo) y los renglones quedan llenos, ninguno en «Falta». Es el estado que mejor cumple lo que pidió el founder: por el camino del cartel el evento sale completo. El cartel se queda como imagen del evento, dentro de «Más».
 4. **Falló:** la tarjeta se pone en rojo con el motivo y el botón de reintentar dentro. Hoy ese aviso sale debajo del campo del nombre, lejos de donde se tocó.
 
 ## Qué cambia en el código (cuando esté firmado)
 
 - `src/app/eventos/FormularioEvento.tsx`: el `<label className={canon.accionCampo}>` de la cámara sale del campo del nombre y se vuelve la tarjeta; los estados `subiendo`, `leyendo` y `avisoCartel` se pintan dentro de ella en vez de en párrafos sueltos.
-- `src/components/ui/FormularioCanon.module.css`: nace `.cartel` (y sus estados) y se puede retirar `.accionCampo`, `.conAccion` y la ✕ desplazada (`Limpiar desplazada`), que solo existían para que la cámara cupiera en el campo.
-- El subtítulo vive en `src/app/eventos/nuevo/page.tsx`.
+- `src/components/ui/FormularioCanon.module.css`: nace `.cartel` (y sus estados) y se puede retirar `.accionCampo`, `.conAccion` y la ✕ desplazada (`Limpiar desplazada`), que solo existían para que la cámara cupiera en el campo. Con ellas se va también la prueba de marcado que nació del bug: ya no hay dos campos bajo un `<label>` (`src/lib/marcado.test.ts` sigue vigilando que no vuelva).
+- `src/app/eventos/nuevo/page.tsx`: se quita el `<p className="subtitulo">` del alta (se queda el de duplicar).
 - La pieza toca los mismos archivos que `topes-de-campos` (OL-065), así que van una después de la otra, no a la vez.
 
-## Lo que falta decidir (para la firma)
+## Dos cosas que quedaron cerradas al tomar la recomendación, y conviene mirar en el iPhone
 
-1. **¿La línea «o escríbelo tú»?** Ayuda a separar los dos caminos, pero es texto de ayuda, y la regla es tener el menos posible. Sin ella, el campo del nombre queda justo debajo de la tarjeta.
-2. **¿La tarjeta en color de acción?** Así se ve estelar, pero cuando el botón «Publicar evento» se enciende hay dos cosas en el mismo color, una arriba y otra abajo. La alternativa es la tarjeta con borde de color y fondo blanco.
-3. **¿Vale también para el alta de lugar y de artista?** Las dos tienen cámara (foto de portada, foto del artista), pero ahí la foto **no llena nada**: es solo una foto. No la tocaría en esta pieza.
+1. **La tarjeta va en color de acción.** Es lo que se firmó. Cuando «Publicar evento» se enciende hay dos cosas del mismo color, una arriba y otra abajo; en el prototipo no estorba porque el botón está apagado hasta que el evento está listo. Si en el teléfono molesta, la tarjeta con borde de color y fondo blanco es un cambio de una línea.
+2. **No se toca el alta de lugar ni la de artista.** Las dos tienen cámara, pero ahí la foto no llena nada: es solo una foto. Su sitio actual (un renglón propio con la cámara a la derecha) no tiene el problema del campo apretado.
