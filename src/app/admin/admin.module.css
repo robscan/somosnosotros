@@ -545,6 +545,10 @@ a.ficha::after,
   vertical-align: 2px;
   white-space: nowrap;
 }
+.destacada {
+  background: var(--destacado-suave);
+  color: var(--destacado-texto);
+}
 .etiquetaRol {
   background: var(--primario-suave);
   color: var(--primario);
@@ -660,6 +664,17 @@ a.ficha::after,
 .menuItem:disabled {
   opacity: 0.55;
   cursor: default;
+}
+/* Destacar: el destello en naranja y, debajo del verbo, hasta cuándo o por qué (docs/rediseno/20) */
+.menuDestacar > svg {
+  grid-row: span 2;
+  color: var(--destacado);
+}
+.menuDestacar > small {
+  grid-column: 2;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 500;
 }
 
 /* ---------- 7. Vacíos por causa, errores con salida y espera ---------- */

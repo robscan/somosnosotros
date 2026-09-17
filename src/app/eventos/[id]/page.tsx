@@ -1,4 +1,6 @@
 import { esUuid } from "@/lib/formulario";
+import { cargarDestacado } from "@/app/admin/consultas";
+import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -118,6 +120,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
+  const destacable = esAdmin && e.visible && !paso ? await cargarDestacado("evento", e.id) : null;
   const url = `${ORIGEN}/eventos/${e.id}`;
   const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin), sitio, url).replace(`\n${url}`, "");
   const puntoLlegar = e.lugar ? { lat: e.lugar.lat, lng: e.lugar.lng } : privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : e.sitio_lat != null && e.sitio_lng != null ? { lat: e.sitio_lat, lng: e.sitio_lng } : null;
@@ -146,6 +149,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 </li>
               </>
             )}
+            {destacable && <DestacarFicha tipo="evento" id={e.id} {...destacable} />}
             {esAdmin && (
               <li>
                 <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>

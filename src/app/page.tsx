@@ -8,6 +8,7 @@ import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
 import { ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
+import { leerTira } from "@/lib/destacados";
 import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./inicio.module.css";
@@ -17,15 +18,16 @@ type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & {
 /** La agenda de la ciudad: eventos próximos con su lugar, cuántos van, lo que la persona sigue y lo que decidió en cada evento. */
 async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   const supabase = await clienteServidor();
-  if (!supabase) return { eventos: [] as EventoAgenda[], seguidos: usuarioId ? [] : null, eventosSeguidos: [] as string[], hayLugares: false, asistencias: usuarioId ? {} : null };
+  if (!supabase) return { eventos: [] as EventoAgenda[], seguidos: usuarioId ? [] : null, eventosSeguidos: [] as string[], hayLugares: false, asistencias: usuarioId ? {} : null, destacados: [] };
   // Solo la ciudad (decisión "sin segunda ciudad"); cuántos van se cuenta en la base para los eventos cargados,
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   // Los empates de hora se desempatan también en la base (título, id) para que el corte de 300 no cambie entre cargas.
-  const [e, l, s] = await Promise.all([
+  const [e, l, s, destacados] = await Promise.all([
     supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(300),
     supabase.from("lugares").select("id", { count: "exact", head: true }).eq("visible", true).eq("ciudad", ciudad.nombre),
     // Lo que sigue una sola persona: tope de sobra para no depender del corte silencioso de PostgREST.
     usuarioId ? supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId).limit(1000) : Promise.resolve({ data: null }),
+    leerTira(supabase, "eventos", ciudad.nombre),
   ]);
   const ids = (e.data ?? []).map((x) => x.id as string);
   // Cuántos van y, con sesión, qué decidió la persona en esos eventos (se ve en el renglón y cambia al deslizar).
@@ -53,7 +55,7 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
     eventos.push({ ...fila, lugar, artistas, lat: fila.sitio_lat, lng: fila.sitio_lng, van: van.get(fila.id) ?? 0 });
   }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
-  return { eventos, seguidos, eventosSeguidos, hayLugares: (l.count ?? 0) > 0, asistencias };
+  return { eventos, seguidos, eventosSeguidos, hayLugares: (l.count ?? 0) > 0, asistencias, destacados };
 }
 
 export default async function Inicio({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }) {
@@ -61,7 +63,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
   // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16).
   const [ciudades, actual] = await Promise.all([cargarCiudades(await clienteServidor()), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
-  const { eventos, seguidos, eventosSeguidos, hayLugares, asistencias } = await cargar(ciudad, actual?.perfil.id ?? null);
+  const { eventos, seguidos, eventosSeguidos, hayLugares, asistencias, destacados } = await cargar(ciudad, actual?.perfil.id ?? null);
   const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
 
   return (
@@ -80,6 +82,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
         ciudades={ciudades}
         hoy={diaLocal(new Date())}
         asistencias={asistencias}
+        destacados={destacados}
         antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
       />
       <Publicar hayLugares={hayLugares} />

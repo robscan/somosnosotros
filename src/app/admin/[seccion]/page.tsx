@@ -5,7 +5,9 @@ import Boton from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import ficha from "@/components/ui/Ficha.module.css";
+import { TIPO_DE, textoMotivo } from "@/lib/destacados";
 import { SIN_FOTO } from "@/lib/imagen";
+import { normalizarNombre } from "@/lib/lugares";
 import { detalleArtista, detalleEvento, detalleLugar, esSeccionFichas, FILTROS, hrefLista, leerLista, PAGINA_PANEL, vacioDe, type ArtistaFila, type EventoFila, type LugarFila } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarFichas } from "../consultas";
@@ -34,10 +36,14 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
   if (!actual) redirect(`/entrar?siguiente=/admin/${seccion}`);
   if (actual.perfil.rol !== "admin") redirect("/");
   const l = leerLista(seccion, await searchParams);
-  const { filas, total, conteos, error } = await cargarFichas(seccion, l);
+  const { filas, total, conteos, error, destacados } = await cargarFichas(seccion, l);
   const ahora = new Date();
+  const destacadoDe = new Map(destacados.map((d) => [d.id, d]));
   const renglones: Renglon[] =
-    seccion === "lugares"
+    // Destacados: por qué y hasta cuándo en su renglón (docs/rediseno/20, A5); la búsqueda filtra aquí.
+    l.filtro === "destacados"
+      ? destacados.filter((d) => !l.q || normalizarNombre(d.nombre).includes(normalizarNombre(l.q))).map((d) => ({ id: d.id, nombre: d.nombre, foto: d.foto, visible: true, detalle: textoMotivo(d, TIPO_DE[seccion], ahora) }))
+      : seccion === "lugares"
       ? (filas as LugarFila[]).map((x) => ({ id: x.id, nombre: x.nombre, foto: x.foto, visible: x.visible, detalle: detalleLugar(x) }))
       : seccion === "eventos"
         ? (filas as EventoFila[]).map((x) => ({ id: x.id, nombre: x.titulo, foto: x.imagen, visible: x.visible, detalle: detalleEvento(x, ahora) }))
@@ -76,10 +82,16 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
                       <span className={styles.etiqueta}>Oculto</span>
                     </>
                   )}
+                  {l.filtro !== "destacados" && destacadoDe.has(r.id) && (
+                    <>
+                      {" "}
+                      <span className={`${styles.etiqueta} ${styles.destacada}`}>Destacado</span>
+                    </>
+                  )}
                 </b>
                 <small>{r.detalle}</small>
               </Link>
-              <MenuFicha seccion={seccion} id={r.id} nombre={r.nombre} visible={r.visible} />
+              <MenuFicha seccion={seccion} id={r.id} nombre={r.nombre} visible={r.visible} destacado={destacadoDe.get(r.id) ?? null} />
             </li>
           ))}
         </ul>

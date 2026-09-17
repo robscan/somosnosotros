@@ -473,6 +473,7 @@ export const FILTROS = {
   ],
   lugares: [
     { valor: "todos", etiqueta: "Todos", vacio: "Aún no hay lugares." },
+    { valor: "destacados", etiqueta: "Destacados", vacio: "Ningún lugar destacado ahora." },
     { valor: "ocultos", etiqueta: "Ocultos", vacio: "Ningún lugar oculto." },
     { valor: "sin_fecha", etiqueta: "Sin fecha próxima", vacio: "Todos los lugares tienen alguna fecha próxima." },
     { valor: "sin_foto", etiqueta: "Sin foto", vacio: "Todos los lugares tienen foto." },
@@ -480,6 +481,7 @@ export const FILTROS = {
   ],
   eventos: [
     { valor: "proximos", etiqueta: "Próximos", vacio: "No hay eventos próximos." },
+    { valor: "destacados", etiqueta: "Destacados", vacio: "Ningún evento destacado ahora." },
     { valor: "semana", etiqueta: "Esta semana", vacio: "No hay eventos en los próximos 7 días." },
     { valor: "sin_imagen", etiqueta: "Sin imagen", vacio: "Todos los eventos próximos tienen imagen." },
     { valor: "comunidad", etiqueta: "De la comunidad", vacio: "Aún no hay eventos próximos de la comunidad." },
@@ -487,6 +489,7 @@ export const FILTROS = {
   ],
   artistas: [
     { valor: "todos", etiqueta: "Todos", vacio: "Aún no hay artistas." },
+    { valor: "destacados", etiqueta: "Destacados", vacio: "Ningún artista destacado ahora." },
     { valor: "por_reclamar", etiqueta: "Por reclamar", vacio: "No hay fichas del catálogo por reclamar." },
     { valor: "llevados", etiqueta: "Llevados por su gente", vacio: "Aún nadie lleva su ficha." },
     { valor: "sin_foto", etiqueta: "Sin foto", vacio: "Todos los artistas tienen foto." },

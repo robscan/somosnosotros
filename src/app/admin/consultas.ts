@@ -1,4 +1,5 @@
 import "server-only";
+import { SECCION_DE, type Destacado, type FilaDestacada, type TipoFicha } from "@/lib/destacados";
 import { esUuid } from "@/lib/formulario";
 import type { ArtistaFila, EventoFila, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
 import { PAGINA_PANEL } from "@/lib/panel";
@@ -43,12 +44,28 @@ export async function cargarPersona(id: string): Promise<{ persona: PersonaFicha
 
 export type FilaDe = { lugares: LugarFila; eventos: EventoFila; artistas: ArtistaFila };
 
-export async function cargarFichas<S extends keyof FilaDe>(seccion: S, l: Lista): Promise<Cargado<FilaDe[S]>> {
+export async function cargarFichas<S extends keyof FilaDe>(seccion: S, l: Lista): Promise<Cargado<FilaDe[S]> & { destacados: FilaDestacada[] }> {
   const supabase = (await clienteServidor())!;
-  const [f, c] = await Promise.all([
-    supabase.rpc(`panel_${seccion}`, { p_buscar: l.q, p_filtro: l.filtro, p_limite: Math.max(l.n, PAGINA_PANEL), p_desde: 0 }),
+  // Con el filtro Destacados, los renglones salen de panel_destacados (docs/rediseno/20, A5).
+  const [f, c, d] = await Promise.all([
+    l.filtro === "destacados" ? Promise.resolve({ data: [], error: null }) : supabase.rpc(`panel_${seccion}`, { p_buscar: l.q, p_filtro: l.filtro, p_limite: Math.max(l.n, PAGINA_PANEL), p_desde: 0 }),
     supabase.rpc("panel_fichas_conteos", { p_tipo: seccion }),
+    supabase.rpc("panel_destacados", { p_tipo: seccion }),
   ]);
   const filas = (f.data ?? []) as FilaDe[S][];
-  return { filas, total: Number(filas[0]?.total ?? 0), conteos: (c.data as Record<string, number> | null) ?? null, error: !!f.error };
+  const destacados = (d.data ?? []) as FilaDestacada[];
+  const conteos = c.data ? { ...(c.data as Record<string, number>), destacados: destacados.length } : null;
+  return { filas, total: Number(filas[0]?.total ?? 0), conteos, error: !!f.error || (l.filtro === "destacados" && !!d.error), destacados };
+}
+
+/** Para el menú de una ficha: si está en la tira de su ciudad y por qué, y si la administración la quitó. */
+export async function cargarDestacado(tipo: TipoFicha, id: string): Promise<{ destacado: Destacado | null; quitado: boolean }> {
+  const supabase = (await clienteServidor())!;
+  const seccion = SECCION_DE[tipo];
+  const [c, q] = await Promise.all([
+    supabase.from(seccion).select("ciudad").eq("id", id).maybeSingle(),
+    supabase.from("destacados").select("quitado").eq(`${tipo}_id`, id).maybeSingle(),
+  ]);
+  const t = c.data ? await supabase.rpc("tira_destacados", { p_tipo: seccion, p_ciudad: c.data.ciudad }) : { data: [] };
+  return { destacado: ((t.data ?? []) as Destacado[]).find((d) => d.id === id) ?? null, quitado: !!q.data?.quitado };
 }

@@ -9,7 +9,9 @@ import { cambiarAsistencia } from "@/app/eventos/acciones";
 import { accionEvento, textoHecho, type Asistencia } from "@/lib/deslizar";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
+import { enOrden, tarjetaEvento, type Destacado } from "@/lib/destacados";
 import ChipCiudad from "./Ciudad";
+import Destacados from "./Destacados";
 import Hecho from "./Hecho";
 import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
@@ -33,6 +35,8 @@ type Props = {
   antes?: ReactNode;
   /** Lo que la persona decidió en los eventos cargados (Voy, Me interesa); null = sin sesión. */
   asistencias?: Record<string, Exclude<Asistencia, null>> | null;
+  /** La tira de destacados de la ciudad (docs/rediseno/20). */
+  destacados?: Destacado[];
 };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 /** Lo que la agenda recuerda al salir a una ficha y volver: pestaña, día elegido y búsqueda (decisión 17 de 02). */
@@ -42,7 +46,7 @@ type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: bo
  * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
-export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, antes, asistencias = null }: Props) {
+export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, antes, asistencias = null, destacados = [] }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
   // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
@@ -221,6 +225,8 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
         </Pestanas>
       </div>
       {antes}
+      {/* La tira se va cuando la persona ya busca algo: otra pestaña, una fecha o la búsqueda (decisión 3). */}
+      {filtro === "todos" && !fecha && !buscando && <Destacados tarjetas={enOrden(destacados, eventos).map((e) => tarjetaEvento(e, ahora))} />}
       {cuerpo}
       {hecho && <Hecho key={hecho.vez} texto={hecho.texto} onDeshacer={hecho.deshacer} onCerrar={() => setHecho(null)} />}
     </>
