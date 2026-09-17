@@ -42,6 +42,24 @@ describe("ciudad", () => {
     expect(ciudadPorSlug("nada", c).nombre).toBe("San Luis Potosí");
     expect(armarCiudades([], []).map((x) => x.nombre)).toEqual(["San Luis Potosí"]);
   });
+  it("cada ciudad tiene la zona que más se repite entre sus lugares y eventos; sin ninguna, la inicial", () => {
+    const c = armarCiudades(
+      [
+        { ciudad: "Madrid, España", lat: 40.42, lng: -3.7, zona: "Europe/Madrid" },
+        { ciudad: "Madrid, España", lat: 40.41, lng: -3.71, zona: "Europe/Madrid" },
+        { ciudad: "San Luis Potosí", lat: 22.15, lng: -100.97, zona: "America/Mexico_City" },
+        { ciudad: "Querétaro", lat: 20.58, lng: -100.38 },
+      ],
+      [{ ciudad: "San José, Costa Rica", zona: "America/Costa_Rica" }, { ciudad: "Madrid, España", zona: "Atlantic/Canary" }],
+    );
+    expect(Object.fromEntries(c.map((x) => [x.nombre, x.zona]))).toEqual({
+      "San Luis Potosí": "America/Mexico_City",
+      "Madrid, España": "Europe/Madrid",
+      Querétaro: "America/Mexico_City",
+      "San José, Costa Rica": "America/Costa_Rica",
+    });
+    expect(armarCiudades([], [])[0].zona).toBe("America/Mexico_City");
+  });
   it("arma las ciudades de Artistas a partir de los artistas: la inicial siempre y primero, las demás por cuántos tienen", () => {
     const c = armarCiudadesDeArtistas([
       { ciudad: "Guadalajara" },

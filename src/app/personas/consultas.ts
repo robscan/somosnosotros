@@ -9,7 +9,7 @@ export type LugarSeguido = { id: string; nombre: string; tipo: string; direccion
 export type ArtistaSeguido = { id: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null };
 export type Persona = { perfil: Perfil; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
-type FilaEvento = { id: string; titulo: string; inicio: string; fin: string | null; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; sitio_lat: number | null; sitio_lng: number | null; creado_en: string; lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
+type FilaEvento = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; sitio_lat: number | null; sitio_lng: number | null; creado_en: string; lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
 
 /** La ficha de una persona: quién es, a qué va y qué sigue. La misma consulta para Mi perfil y para la ficha ajena. */
 export async function cargarPersona(id: string): Promise<Persona | null> {
@@ -23,7 +23,7 @@ export async function cargarPersona(id: string): Promise<Persona | null> {
     supabase.from("seguimientos").select("lugar:lugares(id, nombre, tipo, direccion, portada), artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
     supabase
       .from("asistencias")
-      .select("estado, evento:eventos!inner(id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, lugar:lugares(nombre, portada, lat, lng))")
+      .select("estado, evento:eventos!inner(id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, lugar:lugares(nombre, portada, lat, lng))")
       .eq("usuario_id", id)
       .or(filtroSinPasar(), { referencedTable: "evento" })
       .limit(1000),
@@ -31,7 +31,7 @@ export async function cargarPersona(id: string): Promise<Persona | null> {
   const uno = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
   const lugares = (sigue ?? []).map((s) => uno(s.lugar)).filter(Boolean) as LugarSeguido[];
   const artistas = (sigue ?? []).map((s) => uno(s.artista)).filter(Boolean) as ArtistaSeguido[];
-  const filas = (va ?? []).map((a) => ({ estado: a.estado as string, e: uno(a.evento as unknown as FilaEvento | FilaEvento[]) })).filter((x): x is { estado: string; e: FilaEvento } => !!x.e && !eventoPaso(x.e.inicio, x.e.fin));
+  const filas = (va ?? []).map((a) => ({ estado: a.estado as string, e: uno(a.evento as unknown as FilaEvento | FilaEvento[]) })).filter((x): x is { estado: string; e: FilaEvento } => !!x.e && !eventoPaso(x.e.inicio, x.e.fin, new Date(), x.e.zona));
   // Cuántos van a cada uno, contado en la base.
   const ids = filas.map((x) => x.e.id);
   const { data: conteo } = ids.length ? await supabase.rpc("van_por_evento", { ids }) : { data: [] as { evento_id: string; n: number }[] };

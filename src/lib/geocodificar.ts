@@ -4,8 +4,8 @@ import { distanciaKm } from "./geo";
 /**
  * Autocompletado de direcciones con Mapbox (Geocoding v6). Se usa UNA vez, al dar de alta el lugar
  * (docs/heredado/mapa/MAPBOX_GEOCODING.md); la ficha nunca vuelve a geocodificar. La ciudad viene en el contexto de
- * Mapbox. El contexto ordena, no limita (founder, 2026-09-16): la ciudad de los artistas ya se busca en cualquier país;
- * las direcciones de lugares siguen en México hasta que los eventos tengan la zona horaria de su ciudad (bitácora 067).
+ * Mapbox. El contexto ordena, no limita (founder, 2026-09-16): se busca en cualquier país y lo cercano va primero. Las
+ * horas de los eventos se leen en la zona de su lugar (migración 0029), así que un lugar de fuera ya no las corre.
  */
 export type Sugerencia = { nombre: string; direccion: string; lat: number; lng: number; ciudad: string | null };
 
@@ -19,11 +19,10 @@ export function urlGeocodificar(q: string, token: string, cerca: { lat: number; 
     q,
     access_token: token,
     autocomplete: "true",
-    country: "mx", // pendiente, como en buscarLugares: se quita junto con la zona horaria de los eventos (bitácora 067)
     language: "es",
-    // Se piden más de las que se muestran porque Mapbox no siempre ordena por cercanía real dentro del país
-    // (buscando "Plaza de Armas" desde San Luis, antepone las de Querétaro, Zacatecas o Saltillo); se reordenan
-    // aquí (buscarDirecciones) y se recorta a MAX_SUGERENCIAS.
+    // Sin país. Se piden más de las que se muestran porque Mapbox no siempre ordena por cercanía real (buscando
+    // "Plaza de Armas" desde San Luis, antepone las de Querétaro, Zacatecas o Saltillo); se reordenan aquí
+    // (buscarDirecciones) y se recorta a MAX_SUGERENCIAS.
     limit: "10",
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "address,street,place,locality,neighborhood",

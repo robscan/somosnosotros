@@ -4,7 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { CIUDAD_INICIAL } from "./ciudad";
 import type { LecturaCartel } from "./eventos";
-import { ZONA } from "./fechas";
+import { ZONA_INICIAL } from "./fechas";
 
 /** La lectura de carteles se activa cuando hay llave de API de Anthropic en el servidor. */
 export function lecturaDeCartelActiva(): boolean {
@@ -32,7 +32,7 @@ const Lectura = z.object({
 export async function leerCartel(urlImagen: string, ahora: Date = new Date()): Promise<LecturaCartel | null> {
   if (!lecturaDeCartelActiva()) return null;
   const client = new Anthropic();
-  const hoy = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA, weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(ahora);
+  const hoy = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA_INICIAL, weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(ahora);
   try {
     const respuesta = await client.messages.parse({
       model: "claude-opus-5",

@@ -275,6 +275,8 @@ describe("listas", () => {
     expect(detalleLugar({ id: "l", nombre: "Pozos", foto: null, tipo: "galeria", detalle: null, visible: true, privado: false, origen: null, proximas: 1, lleva: "Andrea Méndez", lleva_n: 1, total: 1 })).toBe("Galería · 1 fecha próxima · la lleva Andrea Méndez");
     expect(detalleEvento({ id: "e", titulo: "Jam", imagen: null, inicio: "2026-09-18T01:00:00Z", fin: null, visible: true, sitio: "Foro Sur", autor: "Jorge Salas", autor_admin: false, van: 3, total: 1 }, AHORA)).toBe("Mañana · 19:00 · Foro Sur · publicó Jorge Salas · 3 van");
     expect(detalleEvento({ id: "e", titulo: "Son", imagen: null, inicio: "2026-09-18T01:00:00Z", fin: null, visible: true, sitio: null, autor: null, autor_admin: false, van: 1, total: 1 }, AHORA)).toBe("Mañana · 19:00 · publicó una cuenta borrada · 1 va");
+    // Con la zona del evento, su hora: el mismo instante es las 3:00 en Madrid.
+    expect(detalleEvento({ id: "e", titulo: "Jazz", imagen: null, inicio: "2026-09-18T01:00:00Z", fin: null, visible: true, sitio: "Sala", autor: null, autor_admin: true, van: 0, total: 1, zona: "Europe/Madrid" }, AHORA)).toBe("Mañana · 03:00 · Sala");
     expect(detalleArtista({ id: "a", nombre: "Barro", foto: null, disciplina: "musica", detalle: "son huasteco", visible: true, origen: "capo", proximas: 0, lleva: null, lleva_n: 0, total: 1 })).toBe("Música · son huasteco · sin fecha próxima · del catálogo, por reclamar");
   });
   it("el menú usa las palabras de cada ficha", () => {

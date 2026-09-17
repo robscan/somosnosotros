@@ -9,9 +9,12 @@ import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { cartelAFormulario, queCambio, validarEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
+import { zonaSegura } from "@/lib/fechas";
+import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
+import { zonaDePunto } from "@/lib/zona";
 
 export type ResultadoEvento = { ok: true; id: string } | { ok: false; errores: ErroresEvento; general?: string };
 
@@ -27,11 +30,37 @@ function filaEvento(datos: DatosEvento, ciudad: string) {
   return { ...fila, descripcion: fila.descripcion || null, ciudad };
 }
 
+type Entrada = ReturnType<typeof leer>;
+type LugarDelEvento = { ciudad: string; zona: string } | null;
+
+/** El lugar registrado donde es el evento (su ciudad y su zona), o null si es en otro sitio. */
+async function lugarDelEvento(supabase: Cliente, entrada: Entrada): Promise<LugarDelEvento> {
+  const id = typeof entrada.lugar_id === "string" ? entrada.lugar_id.trim() : "";
+  if ((entrada.modo_sitio || "lugar") !== "lugar" || !esUuid(id)) return null;
+  const { data } = await supabase.from("lugares").select("ciudad, zona").eq("id", id).maybeSingle();
+  return data;
+}
+
+/**
+ * La zona horaria del evento, que decide cómo se leen sus horas: la de su lugar (la base la vuelve a poner desde el
+ * lugar); en otro sitio, la del punto, el público o el reservado; sin punto, la de la inicial, como su ciudad.
+ */
+function zonaDelEvento(entrada: Entrada, lugar: LugarDelEvento): string {
+  if (lugar) return zonaSegura(lugar.zona);
+  const numero = (v: FormDataEntryValue | null) => (typeof v === "string" && v.trim() && Number.isFinite(Number(v)) ? Number(v) : null);
+  const reservado = entrada.modo_sitio === "reservado";
+  return zonaDePunto(numero(entrada[reservado ? "privado_lat" : "sitio_lat"]), numero(entrada[reservado ? "privado_lng" : "sitio_lng"]));
+}
+
+/** La zona de un punto, para que el formulario lea las horas en la misma zona en la que las leerá el servidor al guardar. */
+export async function zonaDelPunto(lat: number, lng: number): Promise<string> {
+  return zonaDePunto(lat, lng);
+}
+
 /** La ciudad del evento: la de su lugar; en otro sitio, la del pin (Mapbox); si no se supo, la inicial. */
-async function ciudadDe(supabase: NonNullable<Awaited<ReturnType<typeof clienteServidor>>>, datos: DatosEvento): Promise<string> {
+function ciudadDe(datos: DatosEvento, lugar: LugarDelEvento): string {
   if (!datos.lugar_id) return datos.ciudad || CIUDAD_INICIAL.nombre;
-  const { data } = await supabase.from("lugares").select("ciudad").eq("id", datos.lugar_id).maybeSingle();
-  return data?.ciudad ?? CIUDAD_INICIAL.nombre;
+  return lugar?.ciudad ?? CIUDAD_INICIAL.nombre;
 }
 
 function revalidar(id: string, lugarId: string | null, artistas: string[] = []) {
@@ -95,9 +124,11 @@ async function guardarPrivado(supabase: Awaited<ReturnType<typeof clienteServido
 
 export async function crearEvento(_previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar("/eventos/nuevo");
-  const { datos, errores } = validarEvento(leer(formData));
+  const entrada = leer(formData);
+  const lugar = await lugarDelEvento(supabase, entrada);
+  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
   if (Object.keys(errores).length) return { ok: false, errores };
-  const ciudad = await ciudadDe(supabase, datos);
+  const ciudad = ciudadDe(datos, lugar);
   const { data, error } = await supabase
     .from("eventos")
     .insert({ ...filaEvento(datos, ciudad), creado_por: user.id })
@@ -117,11 +148,13 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
 
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar(`/eventos/${id}/editar`);
-  const { datos, errores } = validarEvento(leer(formData));
+  const entrada = leer(formData);
+  const lugar = await lugarDelEvento(supabase, entrada);
+  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
   if (Object.keys(errores).length) return { ok: false, errores };
   // Cómo estaba antes, para avisar a quienes van si cambia cuándo o dónde.
   const { data: antes } = await supabase.from("eventos").select("inicio, fin, lugar_id, sitio_texto").eq("id", id).maybeSingle();
-  const ciudad = await ciudadDe(supabase, datos);
+  const ciudad = ciudadDe(datos, lugar);
   const { data, error } = await supabase.from("eventos").update(filaEvento(datos, ciudad)).eq("id", id).select("id").maybeSingle();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu evento?" };
   await guardarPrivado(supabase, id, datos);
