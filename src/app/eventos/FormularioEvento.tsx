@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import Limpiar from "@/components/ui/Limpiar";
@@ -21,7 +22,7 @@ import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { leerCartelAccion, zonaDelPunto, type ResultadoEvento } from "./acciones";
-import { CLAVE_BORRADOR, olvidarBorrador, vengoDeRegistrarLugar } from "./borrador";
+import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
 import SelectorQuien from "./SelectorQuien";
@@ -97,6 +98,12 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const esAlta = modo === "alta";
+  // Guardado (al editar): la tarea termina sin quedarse en el historial; mientras vuelve, el botón sigue ocupado.
+  const terminar = useTerminar();
+  const terminado = resultado?.ok === true;
+  useEffect(() => {
+    if (resultado?.ok) terminar(resultado.volver);
+  }, [resultado, terminar]);
 
   const modoInicial: ModoSitio = evento?.sitio_reservado ? "reservado" : evento?.sitio_texto ? "otro" : "lugar";
   const [modoSitio, setModoSitio] = useState<ModoSitio>(modoInicial);
@@ -190,6 +197,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     const id = requestAnimationFrame(() => {
       const volviendo = vengoDeRegistrarLugar();
       const b = volviendo ? leerBorrador() : null;
+      const lugarNuevo = volviendo ? tomarLugarNuevo() : null;
       if (!volviendo) olvidarBorrador();
       if (b && (b.titulo || b.lugarId || b.otro?.sitioTexto || b.quien.length)) {
         setTitulo(b.titulo);
@@ -205,6 +213,11 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         if (b.otro) setOtro(b.otro);
         if (!quienInicial?.length) setQuien(b.quien);
         if (b.descripcion || b.enlace || b.imagen) setMasAbierto(true);
+      }
+      // Volviendo de registrar un lugar: ese lugar queda elegido (llega por el borrador, no por la URL).
+      if (lugarNuevo) {
+        setModoSitio("lugar");
+        setLugarId(lugarNuevo);
       }
       guardarBorrador.current = true;
     });
@@ -514,9 +527,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           </p>
         )}
         {/* El botón dice qué falta (decisión 3). */}
-        <Boton type="submit" disabled={enviando || subiendo || leyendo || !listo}>
-          {enviando ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Publicar evento"}
-          {!enviando && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde"}</small>}
+        <Boton type="submit" disabled={enviando || terminado || subiendo || leyendo || !listo}>
+          {enviando || terminado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Publicar evento"}
+          {!enviando && !terminado && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde"}</small>}
         </Boton>
       </form>
       {hoja && (

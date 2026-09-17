@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { IconoCorreo } from "@/components/ui/Iconos";
@@ -34,7 +34,7 @@ const ESPERA_REENVIO = 30;
  * al validarlo la persona vuelve a donde iba con la acción aplicada. Decisión 2 de docs/rediseno/11-restantes-flujo-y-estados.md.
  */
 export default function FormularioEntrar({ siguiente, proveedores, largo }: Props) {
-  const router = useRouter();
+  const terminar = useTerminar();
   const [fase, setFase] = useState<Fase>(proveedores.length > 0 ? "elegir" : "correo");
   const [correo, setCorreo] = useState("");
   const [codigo, setCodigo] = useState("");
@@ -108,8 +108,9 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
       requestAnimationFrame(() => campoCodigo.current?.focus());
       return;
     }
-    router.replace(siguiente); // la pantalla de origen aplica la intención (Voy, Seguir…) al cargar con sesión
-    router.refresh();
+    // La pantalla de origen aplica la intención (Voy, Seguir…) al cargar con sesión. Si se vino de ella, se vuelve con el
+    // historial en vez de apilar otra copia (el primer Atrás no hacía nada); con sesión nueva, se relee.
+    terminar(siguiente, { refrescar: true });
   }
 
   function alEscribirCodigo(texto: string) {

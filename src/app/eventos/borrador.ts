@@ -5,12 +5,35 @@
  */
 export const CLAVE_BORRADOR = "somosnosotros:borrador-evento";
 const CLAVE_VOLVER = "somosnosotros:borrador-evento:volver";
+const CLAVE_LUGAR = "somosnosotros:borrador-evento:lugar";
 
 export function olvidarBorrador(): void {
   try {
     localStorage.removeItem(CLAVE_BORRADOR);
     sessionStorage.removeItem(CLAVE_VOLVER);
+    sessionStorage.removeItem(CLAVE_LUGAR);
   } catch {}
+}
+
+/**
+ * El lugar recién registrado desde el alta (OL-055): el alta de lugar vuelve con el historial a la misma alta de evento,
+ * sin apilar otra, y el lugar llega por aquí en vez de por la URL.
+ */
+export function recordarLugarNuevo(id: string): void {
+  try {
+    sessionStorage.setItem(CLAVE_LUGAR, id);
+  } catch {}
+}
+
+/** El lugar recién registrado, una sola vez (lo consume). */
+export function tomarLugarNuevo(): string | null {
+  try {
+    const id = sessionStorage.getItem(CLAVE_LUGAR);
+    sessionStorage.removeItem(CLAVE_LUGAR);
+    return id;
+  } catch {
+    return null;
+  }
 }
 
 /** Al ir a registrar un lugar, el alta deja la señal para que el borrador vuelva con ella (y solo entonces). */

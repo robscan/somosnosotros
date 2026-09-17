@@ -30,6 +30,15 @@ export default function Salto({ destino, className, children }: { destino: strin
       seccion.setAttribute("tabindex", "-1");
       // Safari pinta el anillo de foco alrededor de toda la sección tras un toque; no es un control y el salto ya se ve.
       seccion.style.outline = "none";
+      // Al perder el foco, la sección vuelve a ser la de antes (no queda enfocable para siempre).
+      seccion.addEventListener(
+        "blur",
+        () => {
+          seccion.removeAttribute("tabindex");
+          seccion.style.removeProperty("outline");
+        },
+        { once: true },
+      );
     }
     seccion.focus({ preventScroll: true });
   }

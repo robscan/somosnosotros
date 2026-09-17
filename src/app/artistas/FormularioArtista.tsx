@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { Chip } from "@/components/ui/Chip";
@@ -50,6 +51,12 @@ type Abierta = "hace" | "es" | "ciudad" | null;
 export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false, ciudadInicial, ciudades }: Props) {
   const esAlta = !artista;
   const [resultado, enviar, enviando] = useActionState<ResultadoArtista | null, FormData>(accion, null);
+  // Guardado (al editar): la tarea termina sin quedarse en el historial; mientras vuelve, el botón sigue ocupado.
+  const terminar = useTerminar();
+  const terminado = resultado?.ok === true;
+  useEffect(() => {
+    if (resultado?.ok) terminar(resultado.volver);
+  }, [resultado, terminar]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const existenteServidor = resultado && !resultado.ok ? resultado.existente : undefined;
 
@@ -272,9 +279,9 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </p>
       )}
       {/* El botón dice qué falta. */}
-      <Boton type="submit" disabled={enviando || subiendo || !listo}>
-        {enviando ? "Guardando…" : artista ? "Guardar cambios" : "Publicar artista"}
-        {!enviando && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "ya está registrado"}</small>}
+      <Boton type="submit" disabled={enviando || terminado || subiendo || !listo}>
+        {enviando || terminado ? "Guardando…" : artista ? "Guardar cambios" : "Publicar artista"}
+        {!enviando && !terminado && !listo &&<small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "ya está registrado"}</small>}
       </Boton>
     </form>
     {abierta === "ciudad" && <HojaCiudad ciudad={ciudad} ciudades={ciudades} onElegir={setCiudad} onCerrar={() => setAbierta(null)} />}

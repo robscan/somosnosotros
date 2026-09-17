@@ -1,6 +1,6 @@
 "use client";
 
-import { hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca } from "@/lib/historial";
+import { hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca, vuelveA } from "@/lib/historial";
 
 const INSTALADA = "__somosnosotrosMarca";
 
@@ -11,20 +11,24 @@ const alVolverSuscritos = new Set<() => void>();
  * Atrás, adelante o el gesto (popstate). React pinta la pantalla de destino dentro del mismo evento, así que quien
  * tenga que actuar antes (guardar la posición de la pantalla que se deja, saber que la siguiente es una vuelta) se
  * apunta aquí: este módulo escucha antes que el router de Next.js porque carga con la primera pantalla, y quien se
- * apunta puede cargar después (MemoriaScroll va dentro de un Suspense).
+ * apunta puede cargar después (MemoriaScroll va dentro de un Suspense). Devuelve cómo borrarse.
  */
-export function alVolver(fn: () => void): void {
+export function alVolver(fn: () => void): () => void {
   alVolverSuscritos.add(fn);
+  return () => {
+    alVolverSuscritos.delete(fn);
+  };
 }
 
 // Una sola vez, al cargar este módulo en el teléfono, antes de la primera navegación de la app: la marca propia de
-// navegación (OL-055; cada entrada del historial lleva cuántas pantallas de la app tiene detrás) y el aviso de vuelta.
+// navegación (OL-055; cada entrada del historial lleva cuántas pantallas de la app tiene detrás y de cuál se vino) y
+// el aviso de vuelta.
 if (typeof window !== "undefined") {
   const w = window as Window & { [INSTALADA]?: true };
   if (!w[INSTALADA]) {
     w[INSTALADA] = true;
     try {
-      ponerMarca(window.history, marcaDeLlegada(document.referrer, window.location.origin));
+      ponerMarca(window.history, marcaDeLlegada(document.referrer, window.location.origin, window.history.length), () => window.location.pathname + window.location.search);
     } catch {}
     window.addEventListener("popstate", () => alVolverSuscritos.forEach((fn) => fn()));
   }
@@ -33,6 +37,11 @@ if (typeof window !== "undefined") {
 /** Si Atrás puede volver con el historial a una pantalla de la app (lo pregunta Atrás al tocarlo). */
 export function hayAnterior(): boolean {
   return hayPantallaAnterior(leerMarca(window.history.state), window.history.length);
+}
+
+/** Si terminar una tarea puede volver con el historial a `destino` (la pantalla de detrás tiene su misma ruta). */
+export function vuelveADestino(destino: string): boolean {
+  return vuelveA(window.history.state, window.history.length, destino);
 }
 
 /**
