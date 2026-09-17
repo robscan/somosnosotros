@@ -1,4 +1,4 @@
-// Banco de pruebas de la migración 20260917120000_autor_y_visible_solo_admin.sql, sin red ni producción.
+// Banco de pruebas de la migración 20260917095000_autor_y_visible_solo_admin.sql, sin red ni producción.
 // Con las migraciones de antes reproduce el fallo: el autor le pasa su ficha a otra cuenta; una cuenta ligada se pone de
 // autora y la borra, y con el lugar se va el evento que publicó otra persona; el autor y la cuenta ligada vuelven a mostrar
 // lo que ocultó la administración. Después aplica la migración y las que sigan. La migración se aplica antes de que llegue
@@ -23,7 +23,7 @@ const modulo = (ruta) => import(pathToFileURL(join(process.env.PGLITE, "node_mod
 const { PGlite } = await modulo("index.js");
 const { unaccent } = await modulo("contrib/unaccent.js");
 
-const MIGRACION = "20260917120000_autor_y_visible_solo_admin.sql";
+const MIGRACION = "20260917095000_autor_y_visible_solo_admin.sql";
 const RAIZ = fileURLToPath(new URL("../..", import.meta.url));
 const dir = join(RAIZ, "supabase/migrations");
 const db = new PGlite({ extensions: { unaccent } });
