@@ -43,7 +43,20 @@ Aprobada la lógica (solo lectura, sin tablas ni columnas; `security definer` co
 
 También se corrigió una pérdida propia en `OPEN_LOOPS.md`: la resolución anterior había sustituido la entrada OL-060 completa de `origin/main` (1333 caracteres, con la tabla de 7 preguntas y las tres opciones) por un resumen más corto. Gestión de cambios lo notó por el tamaño. Rehecho partiendo del párrafo de `origin/main` tal cual (verificado byte a byte) y cambiando solo el sub-renglón final, que sí estaba desactualizado.
 
+## La pantalla
+
+Con la migración aprobada, se escribió el código de React:
+
+- **`src/lib/panel.ts`:** `Comunidad` (lo que devuelve `panel_comunidad()`, en bruto) y `embudoComunidad()`, función pura que arma los tres pasos con su porcentaje. El paso "Siguen volviendo" lleva `porcentaje: null` cuando `vuelven_base` es 0 (nadie con 7 días de vida todavía) — se pinta sin barra ni cifra, no un 0% que sugeriría que sí se supo y fue cero. 3 pruebas nuevas en `panel.test.ts` (27 en el archivo).
+- **`src/app/admin/consultas.ts`:** `cargarComunidad()`, aparte de `cargarResumen()` — si `panel_comunidad` falla, no tumba el resto de la pantalla (A5, como ya hacían los indicadores).
+- **`src/app/admin/ComunidadComoVa.tsx`** (nuevo, sin interactividad — a diferencia de `Indicadores`, no hay nada que expandir): el embudo de tres pasos con su barra de proporción, la nota sobre el límite de `cuentas_vistas` y el enlace "Ver las personas". CSS nuevo en `admin.module.css` (sección 3b), con los tokens que ya usa el resto del panel (`--espacio-*`, `--letra-*`, `--primario`, `--borde`).
+- **`src/app/admin/page.tsx`:** la sección "Cómo va la comunidad" entre "Últimos 7 días" y "Gestionar", cargada en paralelo con el resumen.
+
+**Verificado con `front-visual`:** una ruta temporal (`src/app/verificacion-temporal`, nunca comiteada, borrada al terminar) montó `ComunidadComoVa` con datos de ejemplo — los mismos dos estados del prototipo firmado (con historia, y hoy mismo sin historia con "Siguen volviendo después" atenuado y en guion) — para mirarla con datos reales de React y las fuentes/colores de verdad, sin depender de un backend. A 390×844: las tres filas, las barras proporcionales, la nota en tres líneas y el enlace, todo cabe sin recortes; el paso atenuado se ve más claro que los otros, como debía. Sin errores nuevos en consola (el aviso de siempre, ajeno). `.next` se limpió después (una ruta que ya no existe había dejado un tipo generado suelto que rompía el typecheck).
+
+**Verificación del repo:** lint, tipos, 339 pruebas (35 archivos) y build en verde. No se tocó `/api/recordatorios` ni `guardar_indicadores()`.
+
 ## Pendiente
 
-- Escribir la pantalla en `src/app/admin/page.tsx` (o donde corresponda) llamando a `panel_comunidad()`: solo `/admin`, con `front-visual`, capturas a 390×844, sin tocar `/api/recordatorios` ni `guardar_indicadores()`.
-- Mandar el hash final a gestión de cambios para que aplique la migración.
+- Mandar el hash final a gestión de cambios para que aplique la migración y suba la rama.
+- **Founder:** probar la pantalla real en producción cuando se despliegue (esta verificación fue con datos de ejemplo, sin backend).

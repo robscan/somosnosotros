@@ -53,6 +53,27 @@ export type Gestionar = {
 };
 export type Resumen = { ahora: Ahora; historia: Foto[]; gestionar: Gestionar };
 
+/** Lo que devuelve `panel_comunidad()` (migración 20260917150000, doc 21 opción A): el embudo en bruto. */
+export type Comunidad = { registradas: number; hicieron_algo: number; vuelven_base: number; vuelven: number };
+
+export type EmbudoComunidad = {
+  registradas: number;
+  hicieronAlgo: { valor: number; porcentaje: number };
+  /** `porcentaje` null cuando nadie tiene aún 7 días de vida (`vuelven_base` en 0): se pinta sin barra ni cifra, no
+   *  un 0% que sugiere que sí se supo y fue cero. */
+  vuelven: { valor: number; porcentaje: number | null };
+};
+
+/** El embudo listo para pintar (OL-060): de las cuentas nuevas de los últimos 30 días, cuántas hicieron algo en su
+ *  primera semana y, de las que ya llevan más de 7 días, cuántas siguen volviendo. */
+export function embudoComunidad(c: Comunidad): EmbudoComunidad {
+  return {
+    registradas: c.registradas,
+    hicieronAlgo: { valor: c.hicieron_algo, porcentaje: c.registradas > 0 ? Math.round((c.hicieron_algo / c.registradas) * 100) : 0 },
+    vuelven: { valor: c.vuelven, porcentaje: c.vuelven_base > 0 ? Math.round((c.vuelven / c.vuelven_base) * 100) : null },
+  };
+}
+
 export type TipoFicha = "lugar" | "evento" | "artista" | "perfil";
 export type Pendiente = {
   id: string;
