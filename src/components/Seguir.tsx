@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
-import Hecho from "@/components/Hecho";
 import Hoja from "@/components/ui/Hoja";
 import { IconoMas, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
+import { useAltoBarraFija } from "@/components/ui/useAltoBarraFija";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { enEste } from "@/lib/plataforma";
 import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
 import { useEstadoPush, usePlataforma } from "@/lib/useAvisosTelefono";
+import { AvisoAbajo, HojaAbierta, useCanalDeListas, useCanalDePantalla } from "./useCanalDeListas";
 
 type Props = {
   /** Lugar ("sus eventos") o artista ("sus fechas"): cambia la promesa y la hoja de avisos. */
@@ -41,7 +42,8 @@ type Props = {
  * al abrir la ficha (decisión 6); la promesa dice "en este teléfono" solo si este teléfono está dado de alta (decisión 5).
  * Si no se pudo guardar (o no hay red), la barra vuelve a como estaba y un aviso ofrece Reintentar, como en las listas
  * (bitácora 085). Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de un fallo anterior, y Reintentar
- * solo actúa si su toque sigue siendo el último.
+ * solo actúa si su toque sigue siendo el último. El aviso y la pregunta son de toda la pantalla (useCanalDeListas): en una
+ * ficha los comparte con su lista de eventos, así no se encinan ni se pregunta dos veces (OL-057).
  */
 export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, hrefEntrar, avisosPreguntado, avisosCorreo, correo, llavePush }: Props) {
   const router = useRouter();
@@ -50,19 +52,25 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   const [estado, fijar] = useOptimistic(sigo, (_a, nuevo: boolean) => nuevo);
   const [hoja, setHoja] = useState(false);
   const toques = useRef<Toques>({});
-  const [fallo, setFallo] = useState<{ vez: number; reintentar: () => void } | null>(null);
+  const barra = useAltoBarraFija<HTMLDivElement>();
+  const propio = useCanalDeListas();
+  const dePantalla = useCanalDePantalla();
+  const canal = dePantalla ?? propio;
+  const { avisar, limpiar, tomarPregunta } = canal;
+  // El dueño de sus avisos en la pantalla: al tocar quita el suyo, nunca el Reintentar de un renglón.
+  const de = useId();
   const [telefono] = useEstadoPush(llavePush, conSesion && sigo);
   const cosas = que === "artista" ? "fechas" : "eventos";
   const ruta = hrefEntrar.split("?")[0];
 
   // Volvió de entrar tras tocar Seguir: la pregunta continúa ese toque, una sola vez.
   useEffect(() => {
-    if (conSesion && sigo && hayQuePreguntar(cuenta, avisosPreguntado) && tomarIntencion(ruta)) queueMicrotask(() => setHoja(true));
-  }, [conSesion, sigo, cuenta, avisosPreguntado, ruta]);
+    if (conSesion && sigo && hayQuePreguntar(cuenta, avisosPreguntado) && tomarIntencion(ruta) && tomarPregunta()) queueMicrotask(() => setHoja(true));
+  }, [conSesion, sigo, cuenta, avisosPreguntado, ruta, tomarPregunta]);
 
   function cambiar(nuevo: boolean) {
     const vez = tocar(toques.current, ruta);
-    setFallo(null);
+    limpiar(de);
     iniciar(async () => {
       fijar(nuevo);
       let guardado = false;
@@ -73,16 +81,18 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       }
       if (!esElUltimo(toques.current, ruta, vez)) return;
       if (!guardado) {
-        setFallo({ vez, reintentar: siSigueSiendoElUltimo(toques.current, ruta, vez, () => cambiar(nuevo)) });
+        avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, de, boton: siSigueSiendoElUltimo(toques.current, ruta, vez, () => cambiar(nuevo)) });
         return;
       }
-      // La pregunta solo tras guardar, y no si esta cuenta ya contestó en esta visita (la ficha puede venir de una copia de hace un rato).
-      if (nuevo && hayQuePreguntar(cuenta, avisosPreguntado)) setHoja(true);
+      // La pregunta solo tras guardar, una por pantalla, y no si esta cuenta ya contestó en esta visita.
+      if (nuevo && hayQuePreguntar(cuenta, avisosPreguntado) && tomarPregunta()) setHoja(true);
     });
   }
+  /** Se va la hoja (contestada, cerrada o cerrada sola porque el teléfono no puede con los avisos): la barra relee el
+   *  consentimiento recién guardado. Soltar la pregunta lo hace `HojaAbierta` al desmontarse, venga por donde venga. */
   function cerrarHoja() {
     setHoja(false);
-    router.refresh(); // la promesa de la barra lee el consentimiento recién guardado
+    router.refresh();
   }
 
   const canales = [avisosCorreo && "por correo", telefono === "encendido" && enEste(plataforma)].filter(Boolean);
@@ -90,7 +100,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
 
   if (!conSesion) {
     return (
-      <div className={`${ficha.accionFija} ${ficha.accionUnica}`}>
+      <div ref={barra} className={`${ficha.accionFija} ${ficha.accionUnica}`}>
         <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEntrar)}`} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
           <IconoMas width={20} height={20} />
           Seguir
@@ -100,7 +110,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   }
   return (
     <>
-      <div className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ficha.accionUnica}`}>
+      <div ref={barra} className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ficha.accionUnica}`}>
         {estado ? (
           <>
             <span className={ficha.seleccionado} aria-live="polite">
@@ -118,8 +128,9 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
             Seguir
           </button>
         )}
-        {fallo && <Hecho key={fallo.vez} texto="No se pudo guardar" etiqueta="Reintentar" fallo sobreBarra onDeshacer={fallo.reintentar} onCerrar={() => setFallo((f) => (f?.vez === fallo.vez ? null : f))} />}
       </div>
+      {!dePantalla && <AvisoAbajo canal={propio} />}
+      {hoja && <HojaAbierta canal={canal} />}
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
           <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={cerrarHoja} />

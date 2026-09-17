@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarSeguimientoArtista } from "@/app/artistas/acciones";
 import { cambiarSeguimiento } from "@/app/lugares/acciones";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
@@ -9,15 +9,13 @@ import { accionSeguir, recortar, textoHecho, type ClaveAccion } from "@/lib/desl
 import { anotarIntencion } from "@/lib/intencionAvisos";
 import { alRecibir, elegir, esElUltimo, siSigueSiendoElUltimo, tocar, trasGuardar, type Elegidas, type Toques } from "@/lib/toques";
 import ConsentimientoAvisos from "./ConsentimientoAvisos";
-import Hecho from "./Hecho";
 import type { AccionDeslizable } from "./ui/Deslizable";
 import Hoja from "./ui/Hoja";
 import { IconoMas, IconoOk } from "./ui/Iconos";
+import { AvisoAbajo, HojaAbierta, useCanalDeListas, type CanalDeListas } from "./useCanalDeListas";
 
 /** Lo que pide la pregunta de avisos tras el primer Voy o Seguir (como en la ficha); `cuenta`, el id de quien mira. */
 export type AvisosLista = { cuenta: string; preguntado: boolean; correo: string; llavePush: string };
-/** El aviso de abajo: lo hecho con Deshacer, o que no se pudo guardar con Reintentar. */
-type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: boolean; vez: number };
 
 /**
  * Seguir al deslizar un renglón de Lugares o Artistas (decisión del founder, 2026-09-16; bitácora 071): lo que la persona
@@ -27,8 +25,11 @@ type Aviso = { texto: string; boton: () => void; etiqueta?: string; fallo?: bool
  *
  * Lo que llega del servidor manda (la respuesta de la acción trae la página al día): lo elegido aquí se superpone solo
  * mientras se guarda, y cada toque lleva su número por renglón (lib/toques), como en la agenda.
+ *
+ * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
+ * la lista tiene los suyos y pinta su aviso en `extras`.
  */
-export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] | null, avisos: AvisosLista | null): { sigo: (id: string) => boolean; acciones: (id: string, nombre: string) => AccionDeslizable[]; extras: ReactNode } {
+export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] | null, avisos: AvisosLista | null, canal?: CanalDeListas): { sigo: (id: string) => boolean; sigoGuardado: (id: string) => boolean; fallos: number; acciones: (id: string, nombre: string) => AccionDeslizable[]; extras: ReactNode } {
   const router = useRouter();
   const [, iniciar] = useTransition();
   const [elegidos, setElegidos] = useState<Elegidas<boolean>>({});
@@ -38,14 +39,31 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     setElegidos(alRecibir);
   }
   const toques = useRef<Toques>({});
-  // Una sola pregunta por pantalla. Se lee al guardar, no al pintar: dos Seguir seguidos no la hacen dos veces.
-  const pregunte = useRef(false);
+  // ¿La lista sigue en la pantalla? El canal es de la pantalla y la sobrevive (Lugares, con Mapa y Lista): un guardado
+  // que termina cuando la lista ya no está no puede tomar la pregunta, porque nadie pintaría la hoja ni la soltaría.
+  const vivo = useRef(true);
+  useEffect(() => {
+    vivo.current = true;
+    return () => {
+      vivo.current = false;
+    };
+  }, []);
+  const propio = useCanalDeListas();
+  const { avisar, tomarPregunta } = canal ?? propio;
+  // El dueño de sus avisos en la pantalla: nadie más los limpia sin poner otro en su lugar.
+  const de = useId();
   const [hoja, setHoja] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<Aviso | null>(null);
+  // Cuántos guardados han fallado: quien pinte pestañas devuelve lo que añadió un toque que no se guardó.
+  const [fallos, setFallos] = useState(0);
   const ruta = (id: string) => `/${que === "lugar" ? "lugares" : "artistas"}/${id}`;
 
+  // Sin datos para preguntar, la hoja se cierra de verdad: si no, quedaría "abierta" sin pintarse, con la pantalla muda
+  // y la pregunta trabada.
+  if (hoja && !avisos) setHoja(null);
+
   const sigo = (id: string) => (id in elegidos ? elegidos[id].valor : !!iniciales?.includes(id));
-  const avisar = (a: Omit<Aviso, "vez">) => setAviso((previo) => ({ ...a, vez: (previo?.vez ?? 0) + 1 }));
+  /** Lo mismo, pero solo con lo que ya quedó guardado: lo que se está guardando (y lo que falló) no cuenta. */
+  const sigoGuardado = (id: string) => (elegidos[id]?.guardada ? elegidos[id].valor : !!iniciales?.includes(id));
 
   /**
    * Un toque: muestra `seguir` al momento y lo guarda. Si al terminar ya hubo otro toque en el renglón, no hace nada más.
@@ -64,7 +82,8 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
       if (!esElUltimo(toques.current, id, vez)) return;
       setElegidos((x) => trasGuardar(x, id, vez, guardado));
       if (!guardado) {
-        avisar({ texto: `No se pudo guardar «${recortar(nombre)}»`, boton: siSigueSiendoElUltimo(toques.current, id, vez, reintentar), etiqueta: "Reintentar", fallo: true });
+        setFallos((n) => n + 1);
+        avisar({ texto: `No se pudo guardar «${recortar(nombre)}»`, boton: siSigueSiendoElUltimo(toques.current, id, vez, reintentar), etiqueta: "Reintentar", fallo: true, de });
         return;
       }
       alGuardar?.();
@@ -79,13 +98,13 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
       !antes,
       () => hacer(id, nombre, clave, antes),
       () => {
-        // La pregunta, tras el primer Seguir guardado; no si esta cuenta ya contestó en esta visita (la página puede ser de hace un rato).
-        if (antes || !avisos || pregunte.current || !hayQuePreguntar(avisos.cuenta, avisos.preguntado)) return;
-        pregunte.current = true;
+        // La pregunta, tras el primer Seguir guardado de la pantalla; no si esta cuenta ya contestó en esta visita (la página
+        // puede ser de hace un rato). Se toma al guardar, no al pintar: dos Seguir seguidos no la hacen dos veces.
+        if (!vivo.current || antes || !avisos || !hayQuePreguntar(avisos.cuenta, avisos.preguntado) || !tomarPregunta()) return;
         setHoja(nombre);
       },
     );
-    avisar({ texto: textoHecho(clave, nombre, que), boton: siSigueSiendoElUltimo(toques.current, id, vez, () => deshacer(id, nombre, antes)) });
+    avisar({ texto: textoHecho(clave, nombre, que), boton: siSigueSiendoElUltimo(toques.current, id, vez, () => deshacer(id, nombre, antes)), de });
   }
 
   function deshacer(id: string, nombre: string, antes: boolean) {
@@ -113,9 +132,8 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
 
   const extras = (
     <>
-      {/* Con la hoja de avisos abierta, el aviso espera: sale (con su tiempo completo) al cerrarla. Cada aviso cierra solo
-          el suyo: Reintentar pone uno nuevo en el mismo toque. */}
-      {aviso && !hoja && <Hecho key={aviso.vez} texto={aviso.texto} onDeshacer={aviso.boton} etiqueta={aviso.etiqueta} fallo={aviso.fallo} onCerrar={() => setAviso((a) => (a?.vez === aviso.vez ? null : a))} />}
+      {!canal && <AvisoAbajo canal={propio} />}
+      {hoja && avisos && <HojaAbierta canal={canal ?? propio} />}
       {hoja && avisos && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
           <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={hoja} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} />
@@ -124,5 +142,5 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     </>
   );
 
-  return { sigo, acciones, extras };
+  return { sigo, sigoGuardado, fallos, acciones, extras };
 }

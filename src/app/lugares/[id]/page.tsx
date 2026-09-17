@@ -4,12 +4,11 @@ import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
-import RenglonEvento from "@/components/RenglonEvento";
+import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
@@ -18,7 +17,7 @@ import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
-import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
+import type { EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
@@ -27,6 +26,8 @@ import { etiquetaLugar, etiquetaTipo, textoProximo, type Lugar } from "@/lib/lug
 import { ORIGENES } from "@/lib/origen";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import Seguir from "@/components/Seguir";
+import { avisosParaListas } from "@/app/avisos/paraListas";
+import { decididasDe } from "@/app/eventos/decididas";
 import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
 import EsMiEspacio from "./EsMiEspacio";
 import styles from "@/components/ui/FichaLista.module.css";
@@ -115,7 +116,8 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
   const url = `${ORIGEN}/lugares/${lugar.id}`;
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
-  const grupos = agruparPorDia(eventos);
+  // Voy y Me interesa al deslizar sus eventos, para quien mira (OL-057).
+  const decididas = await decididasDe(actual?.perfil.id ?? null, eventos.map((e) => e.id));
   const avisoBorrar = eventos.length > 0 ? `Se borra el lugar y sus ${eventos.length === 1 ? "1 evento próximo" : `${eventos.length} eventos próximos`} (y los pasados).` : "Se borra el lugar.";
   const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
 
@@ -254,16 +256,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           {eventos.length > 0 && <span> · {eventos.length}</span>}
         </h2>
         {eventos.length === 0 && <p className={styles.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
-        {grupos.map((g) => (
-          <Fragment key={g.clave}>
-            <h3>{g.titulo}</h3>
-            <ul aria-label={g.titulo}>
-              {g.eventos.map((e) => (
-                <RenglonEvento key={e.id} evento={e} sinSitio />
-              ))}
-            </ul>
-          </Fragment>
-        ))}
+        <EventosPorDia eventos={eventos} sinSitio decididas={decididas} avisos={avisosParaListas(actual)} />
         <Boton href={hrefPublicarAqui} variante="secundario" className={styles.publicar}>
           Publicar un evento aquí
         </Boton>
