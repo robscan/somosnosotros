@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { decididoVigente, SECCION_DE, SIN_DECIDIR, TIPO_DE, type Decidido, type Destacado, type FilaDestacada, type TipoFicha } from "@/lib/destacados";
 import { esUuid } from "@/lib/formulario";
-import type { ArtistaFila, EventoFila, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
+import type { ArtistaFila, Comunidad, EventoFila, Lista, LugarFila, Pendiente, PersonaFicha, PersonaFila, Resumen } from "@/lib/panel";
 import { PAGINA_PANEL } from "@/lib/panel";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
@@ -16,6 +16,14 @@ export async function cargarResumen(): Promise<{ resumen: Resumen | null; pendie
   const supabase = (await clienteServidor())!;
   const [r, p] = await Promise.all([supabase.rpc("panel_resumen"), supabase.rpc("panel_pendientes")]);
   return { resumen: r.error ? null : (r.data as Resumen), pendientes: (p.data ?? []) as Pendiente[], errorPendientes: !!p.error };
+}
+
+/** El embudo de "Cómo va la comunidad" (migración 20260917150000, doc 21 opción A). Aparte de `panel_resumen`: si
+ *  falla, no tumba el resto de la pantalla. */
+export async function cargarComunidad(): Promise<Comunidad | null> {
+  const supabase = (await clienteServidor())!;
+  const { data, error } = await supabase.rpc("panel_comunidad");
+  return error ? null : (data as Comunidad);
 }
 
 /** Cuántos reclamos y reportes esperan; null si no se pudo leer (entonces no se afirma "Nada pendiente"). */

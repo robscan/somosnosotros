@@ -337,6 +337,60 @@ a.ficha::after,
   justify-self: start;
 }
 
+/* ---------- 3b. Cómo va la comunidad: el embudo de alta (OL-060) ---------- */
+.embudo {
+  display: grid;
+  gap: var(--espacio-2);
+  padding: var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.pasoEmbudo {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: var(--espacio-2);
+  align-items: baseline;
+}
+.pasoEmbudo > span {
+  font-size: var(--letra-sm);
+  font-weight: 600;
+}
+.pasoEmbudo > b {
+  font-size: var(--letra-xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  font-variant-numeric: proportional-nums;
+}
+.pasoEmbudo > b > small {
+  margin-left: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+}
+.flojo > b {
+  color: var(--texto-suave);
+}
+.barraEmbudo {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--fondo-suave);
+  overflow: hidden;
+}
+.barraEmbudo > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primario);
+  font-style: normal;
+}
+.notaEmbudo {
+  margin-top: 2px;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.35;
+}
+
 /* ---------- 4. Renglones en tarjeta: Gestionar (etiqueta y detalle) y la ficha de una persona (clave y valor) ---------- */
 .tarjeta {
   list-style: none;

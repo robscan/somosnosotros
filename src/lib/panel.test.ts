@@ -3,6 +3,7 @@ import {
   accionDe,
   cuandoPaso,
   datosPersona,
+  embudoComunidad,
   detalleArtista,
   detalleEvento,
   detalleLugar,
@@ -284,5 +285,20 @@ describe("listas", () => {
     expect(textoOcultar("eventos", true)).toBe("Ocultar de la agenda");
     expect(textoOcultar("artistas", true)).toBe("Ocultar de Artistas");
     expect(textoOcultar("artistas", false)).toBe("Volver a mostrar");
+  });
+});
+
+describe("embudoComunidad", () => {
+  it("calcula el porcentaje de cada paso sobre su propia base", () => {
+    const e = embudoComunidad({ registradas: 9, hicieron_algo: 6, vuelven_base: 4, vuelven: 3 });
+    expect(e).toEqual({ registradas: 9, hicieronAlgo: { valor: 6, porcentaje: 67 }, vuelven: { valor: 3, porcentaje: 75 } });
+  });
+  it("sin cuentas con 7 días de vida (vuelven_base en 0), el porcentaje de 'vuelven' es null, no 0%", () => {
+    const e = embudoComunidad({ registradas: 4, hicieron_algo: 3, vuelven_base: 0, vuelven: 0 });
+    expect(e.vuelven).toEqual({ valor: 0, porcentaje: null });
+  });
+  it("sin cuentas nuevas, no divide entre cero", () => {
+    const e = embudoComunidad({ registradas: 0, hicieron_algo: 0, vuelven_base: 0, vuelven: 0 });
+    expect(e).toEqual({ registradas: 0, hicieronAlgo: { valor: 0, porcentaje: 0 }, vuelven: { valor: 0, porcentaje: null } });
   });
 });
