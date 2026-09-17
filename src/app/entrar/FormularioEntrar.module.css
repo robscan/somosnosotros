@@ -1,10 +1,58 @@
-/* Entrar (docs/rediseno/11-restantes-flujo-y-estados.md): 1. Correo · 2. Código de 6 dígitos */
+/* Entrar (docs/rediseno/11-restantes-flujo-y-estados.md; bitácora 069): 0. Elegir · 1. Correo · 2. Código */
 
-/* 1. Correo: Google, solo si está configurado */
-.separador {
-  text-align: center;
-  color: var(--texto-suave);
-  margin: var(--espacio-4) 0;
+/* 0. Elegir: Apple y Google primero, el correo detrás de su botón. Los tres del mismo alto, con el logo junto al título.
+   Colores fijados por Apple (negro con logo y título blancos) y por Google (blanco, borde #747775, texto #1f1f1f); el
+   título a ~43 % del alto del botón, la proporción que pide Apple. */
+.opciones {
+  display: grid;
+  gap: var(--espacio-3);
+  margin-top: var(--espacio-4); /* se funde con el margen del título: 16 px, más que los 12 entre botones, y el título encabeza los tres */
+}
+.opcion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-2) var(--espacio-4);
+  border: 1px solid transparent;
+  border-radius: var(--radio);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.apple {
+  background: #000000;
+  color: #ffffff;
+}
+.appleBlanco {
+  background: #ffffff;
+  color: #000000;
+  border-color: #747775;
+}
+.google {
+  background: #ffffff;
+  color: #1f1f1f;
+  border-color: #747775;
+}
+.correo {
+  background: var(--fondo);
+  color: var(--texto);
+  border-color: var(--borde);
+}
+.logo {
+  flex: none;
+  width: auto;
+  height: 1.1em;
+}
+
+/* 1. Correo, abierto debajo de Apple y Google */
+.conProveedores {
+  margin-top: var(--espacio-5);
 }
 
 /* 2. Código */

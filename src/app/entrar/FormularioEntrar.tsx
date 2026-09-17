@@ -2,29 +2,40 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import { IconoCorreo } from "@/components/ui/Iconos";
+import { LogoApple, LogoGoogle } from "@/components/ui/LogosEntrar";
 import { enmascararCorreo, limpiarCodigo } from "@/lib/entrar";
+import { NOMBRE_PROVEEDOR, type Proveedor } from "@/lib/entrarCon";
 import { correoValido } from "@/lib/perfil";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./FormularioEntrar.module.css";
 
-type Props = { siguiente: string; google: boolean; /** Dígitos del código que manda Supabase. */ largo: number };
-type Fase = "correo" | "codigo" | "entrando";
+type Props = {
+  siguiente: string;
+  /** Apple y Google encendidos en Supabase, en el orden de este navegador (src/lib/entrarCon.ts). */
+  proveedores: Proveedor[];
+  /** Dígitos del código que manda Supabase. */
+  largo: number;
+};
+type Fase = "elegir" | "correo" | "codigo" | "entrando";
 
 /** Segundos antes de poder pedir otro código. */
 const ESPERA_REENVIO = 30;
 
 /**
- * Sin contraseñas: el correo trae un código de varios dígitos (8 en este proyecto) y un enlace. Aquí se pide el código
- * (el iPhone lo ofrece solo sobre el teclado) y al validarlo la persona vuelve a donde iba con la
- * acción aplicada. Decisión 2 de docs/rediseno/11-restantes-flujo-y-estados.md.
+ * Sin contraseñas. Con Apple o Google encendidos, entrar es un toque: esos botones van primero y el correo espera detrás
+ * del suyo (bitácora 069; el código por correo era la barrera principal para registrarse). El correo trae un código de
+ * varios dígitos (8 en este proyecto) y un enlace; aquí se pide el código (el iPhone lo ofrece solo sobre el teclado) y
+ * al validarlo la persona vuelve a donde iba con la acción aplicada. Decisión 2 de docs/rediseno/11-restantes-flujo-y-estados.md.
  */
-export default function FormularioEntrar({ siguiente, google, largo }: Props) {
+export default function FormularioEntrar({ siguiente, proveedores, largo }: Props) {
   const router = useRouter();
-  const [fase, setFase] = useState<Fase>("correo");
+  const [fase, setFase] = useState<Fase>(proveedores.length > 0 ? "elegir" : "correo");
   const [correo, setCorreo] = useState("");
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -108,34 +119,44 @@ export default function FormularioEntrar({ siguiente, google, largo }: Props) {
     if (v.length === largo) void entrarConCodigo(v); // al último dígito entra solo: un toque menos
   }
 
-  async function entrarConGoogle() {
-    const supabase = clienteNavegador();
-    if (!supabase) return;
-    setOcupado(true);
-    const { error: e } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: urlCallback() } });
-    if (e) {
-      setOcupado(false);
-      setError("No se pudo abrir Google. Intenta con tu correo.");
-    }
+  /** El campo aparece y se enfoca dentro del mismo toque: así el iPhone abre el teclado sin un toque más. */
+  function abrirCorreo() {
+    flushSync(() => setFase("correo"));
+    document.getElementById("campo-correo")?.focus();
   }
 
-  if (fase === "correo") {
+  if (fase === "elegir" || fase === "correo") {
+    const conProveedores = proveedores.length > 0;
     return (
-      <form onSubmit={enviarCorreo} noValidate>
-        <p className="subtitulo">Sin contraseñas: te mandamos un código a tu correo.</p>
-        <Campo etiqueta="Tu correo" name="correo" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" placeholder="nombre@correo.com" value={correo} onChange={(e) => setCorreo(e.target.value)} error={error ?? undefined} autoFocus required />
-        <Boton type="submit" disabled={ocupado}>
-          {ocupado ? "Mandando…" : "Mandarme el código"}
-        </Boton>
-        {google && (
-          <>
-            <p className={styles.separador}>o</p>
-            <Boton type="button" variante="secundario" onClick={entrarConGoogle} disabled={ocupado}>
-              Continuar con Google
-            </Boton>
-          </>
+      <>
+        {conProveedores && (
+          <div className={styles.opciones}>
+            {proveedores.map((p, i) => (
+              // Enlace normal, no <Link>: la ida pasa por el servidor (/auth/apple) y sale del sitio.
+              // Apple negro solo cuando va primero (en sus dispositivos); detrás de Google, su variante blanca, para que el primero siga siendo el que más pesa.
+              <a key={p} href={`/auth/${p}?siguiente=${encodeURIComponent(siguiente)}`} className={`${styles.opcion} ${p === "apple" && i > 0 ? styles.appleBlanco : styles[p]}`}>
+                {p === "apple" ? <LogoApple className={styles.logo} /> : <LogoGoogle className={styles.logo} />}
+                Continuar con {NOMBRE_PROVEEDOR[p]}
+              </a>
+            ))}
+            {fase === "elegir" && (
+              <button type="button" className={`${styles.opcion} ${styles.correo}`} onClick={abrirCorreo}>
+                <IconoCorreo className={styles.logo} />
+                Continuar con tu correo
+              </button>
+            )}
+          </div>
         )}
-      </form>
+        {fase === "correo" && (
+          <form onSubmit={enviarCorreo} noValidate className={conProveedores ? styles.conProveedores : undefined}>
+            {!conProveedores && <p className="subtitulo">Sin contraseñas: te mandamos un código a tu correo.</p>}
+            <Campo etiqueta="Tu correo" name="correo" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" placeholder="nombre@correo.com" value={correo} onChange={(e) => setCorreo(e.target.value)} error={error ?? undefined} autoFocus={!conProveedores} required />
+            <Boton type="submit" disabled={ocupado}>
+              {ocupado ? "Mandando…" : "Mandarme el código"}
+            </Boton>
+          </form>
+        )}
+      </>
     );
   }
 
@@ -192,9 +213,9 @@ export default function FormularioEntrar({ siguiente, google, largo }: Props) {
           type="button"
           className={styles.enlaceBoton}
           onClick={() => {
-            setFase("correo");
             setCodigo("");
             setError(null);
+            abrirCorreo();
           }}
         >
           Usar otro correo

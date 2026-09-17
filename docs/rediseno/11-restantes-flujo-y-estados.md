@@ -20,11 +20,11 @@ flowchart TD
 | E2 | Código enviado | "Te mandamos un código a ro…@gmail.com. También trae un enlace, por si prefieres." Seis casillas con foco, teclado numérico | Teclear o pegar; Reenviar (tras 30 s); Usar otro correo |
 | E3 | Código mal o caducado | "Ese código no es, o ya caducó." + Reenviar | Reintentar |
 | E4 | Dentro | La pantalla de origen con la acción aplicada (✓ Voy, ✓ Sigues, el alta) | Seguir |
-| E5 | Google configurado | Además, "Continuar con Google" bajo el campo | Elegir |
+| E5 | ~~Google configurado~~ Apple o Google encendidos en Supabase (2026-09-16) | ~~Además, "Continuar con Google" bajo el campo~~ "Continuar con Apple", "Continuar con Google" y "Continuar con tu correo"; el correo se abre en su lugar al tocarlo (bitácora 069) | Elegir |
 
 1. **Motivo en el título** según `siguiente`: "Entra para decir que vas", "Entra para seguir a X", "Entra para publicar", "Entrar". El regreso vuelve al origen. *Gradiente de meta, Evidencia.* (E3)
 2. **Código de 8 dígitos y enlace**: el correo trae ambos; la pantalla pide el código (ocho casillas, `inputmode=numeric`, `autocomplete=one-time-code` para que el iPhone lo ofrezca solo), con Reenviar y Usar otro correo. El enlace sigue vivo. Precondición: `{{ .Token }}` en la plantilla "Magic Link" de Supabase (hecho por el founder el 2026-09-14). El largo del código lo fija Supabase (Authentication → Providers → Email → OTP length); en este proyecto son 8 dígitos y la pantalla lo lee de `NEXT_PUBLIC_LARGO_CODIGO` (8 por defecto). *Peak-End, Evidencia.* (E1)
-3. **Google solo si hay credenciales** (variable pública que lo anuncia). *Evidencia, nunca promesa.* (E2)
+3. ~~**Google solo si hay credenciales** (variable pública que lo anuncia).~~ **Apple y Google primero, cuando Supabase los tiene encendidos** (2026-09-16, pedido del founder: el código por correo era la principal barrera para registrarse). Primero el de la casa (Apple en iPhone, iPad y Mac; Google en lo demás); Google no sale en el navegador de otra app, donde no deja entrar. Sin llaves que caduquen: Apple y Google vuelven a somosnosotros.org y Supabase verifica la identidad (bitácora [069](../bitacora/2026/09/069-entrar-con-apple-y-google.md)). *Evidencia, nunca promesa; Hick.* (E2)
 4. **Foco, teclado y botón sobre el teclado.** *Fitts.* (E4)
 
 ## Mi perfil y perfil de persona

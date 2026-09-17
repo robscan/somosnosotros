@@ -3,7 +3,7 @@ import { clienteServidor } from "@/lib/supabase/servidor";
 import { rutaSegura } from "@/lib/rutas";
 
 /**
- * Aquí aterriza el enlace del correo o la vuelta de Google.
+ * Aquí aterriza el enlace del correo (Apple y Google vuelven por /auth/[proveedor]).
  * Cambia el código por una sesión (cookies) y manda a la persona a donde iba.
  */
 export async function GET(request: NextRequest) {
