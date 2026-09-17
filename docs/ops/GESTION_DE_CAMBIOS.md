@@ -7,7 +7,7 @@ Hay varios chats trabajando a la vez sobre la misma carpeta. Este documento dice
 1. **Cada pieza en su rama.** Código nunca se escribe sobre `main`. Se abre un árbol de trabajo (worktree) o una rama con nombre de la pieza. Un PR por pieza.
 2. **Lo que se escribe se guarda.** Antes de cerrar el chat, todo queda en un commit local (código en su rama; documentos de cierre pueden ir en `main` si son solo documentos). Un commit local no publica nada: el push y el merge siguen siendo del founder.
 3. **`git add` por nombre, nunca `git add -A`.** Otros chats tienen archivos sin commit en la misma carpeta.
-4. **Los números se piden al script.** Antes de crear la bitácora o una entrada nueva en OPEN_LOOPS:
+4. **Los números los reserva el encargado; el script es la comprobación.** Al empezar una pieza, el chat pide su bitácora, su OL y, si trae migración, el nombre de archivo de la migración al encargado, que los reserva en orden (el 2026-09-16 dos chats tomaron la 072 con 29 s de diferencia, y otro iba a tomar la 075 que ya tenía reservada una pieza sin archivos). Las migraciones se nombran en el orden en que se aplicarán: `supabase db push` rechaza una más vieja que la última aplicada. Antes de crear la bitácora o una entrada nueva en OPEN_LOOPS, comprobar:
    ```
    scripts/ops/siguiente-bitacora.sh
    ```
