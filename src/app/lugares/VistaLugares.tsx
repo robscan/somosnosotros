@@ -18,6 +18,7 @@ import {
   IconoUbicacion,
 } from "@/components/ui/Iconos";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
+import type { Destacado } from "@/lib/destacados";
 import { SIN_FOTO } from "@/lib/imagen";
 import ChipCiudad from "@/components/Ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
@@ -44,6 +45,8 @@ type Props = {
   /** Los lugares que la persona sigue (la lista los marca y deja seguir al deslizar); null = sin sesión. */
   seguidos: string[] | null;
   avisos: AvisosLista | null;
+  /** La tira de destacados de la ciudad (docs/rediseno/20): arriba de la lista y, en naranja, en el mapa. */
+  destacados: Destacado[];
 };
 
 /**
@@ -61,6 +64,7 @@ export default function VistaLugares({
   barra,
   seguidos,
   avisos,
+  destacados,
 }: Props) {
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [elegido, setElegido] = useState<LugarLista | null>(null);
@@ -82,6 +86,7 @@ export default function VistaLugares({
     if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
   });
   const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
+  const enTira = useMemo(() => destacados.map((d) => d.id), [destacados]);
   const [encuadre, setEncuadre] = useState<{ puntos: Punto[]; vez: number } | null>(null);
   // Lo encontrado se lista bajo el buscador mientras se escribe; al tocar uno se abre su tarjeta y la lista se cierra.
   const [listaAbierta, setListaAbierta] = useState(false);
@@ -163,6 +168,7 @@ export default function VistaLugares({
             onPin={setElegido}
             elegido={elegido?.id ?? null}
             ubicacion={punto ? { ...punto, vez } : null}
+            destacados={enTira}
           />
           <div className={styles.sobreMapa}>
             {lugares.length >= UMBRAL_BUSCAR_LUGARES && (
@@ -215,6 +221,7 @@ export default function VistaLugares({
               <img src={elegido.portada ?? SIN_FOTO} alt="" className={renglon.foto} />
               <span className={renglon.titulo}>{elegido.nombre}</span>
               <span className={`${renglon.meta} ${renglon.metaColumna}`}>
+                {enTira.includes(elegido.id) && <span className={styles.destacado}>Destacado</span>}
                 <span>{elegido.privado ? "Solo tú lo ves" : etiquetaTipo(elegido.tipo)}</span>
                 <span>
                   <IconoCalendario width={15} height={15} />
@@ -241,6 +248,7 @@ export default function VistaLugares({
           conSesion={conSesion}
           seguidos={seguidos}
           avisos={avisos}
+          destacados={destacados}
           chips={
             <>
               {chipCiudad}

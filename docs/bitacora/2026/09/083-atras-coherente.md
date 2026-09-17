@@ -50,6 +50,48 @@
 
 ## Queda
 - Probar en el iPhone del founder, en Safari y en la app instalada, también con el gesto de atrás: en el simulador el gesto no se pudo simular y se usó la flecha de atrás de Safari.
-- **Visto y sin tocar** (la regla era cambiar solo los enlaces "ver"): al saltar, la sección queda a 12 px del borde, bajo la barra pegajosa. En lugar y artista, el título pegajoso tapa la etiqueta del primer día; en Quién va, la sección no tiene margen y su título queda bajo la barra. Con el ancla pasaba igual. Arreglo probable: `scroll-margin-top` con el alto de la barra en `FichaLista.module.css` y en `.quienVa`.
-- **Por comprobar** (leído en el código, no probado): las acciones de publicar redirigen apilando, así que Atrás desde la ficha recién creada podría volver al formulario.
-- Push y PR cuando el founder lo pida.
+- ~~**Visto y sin tocar**: al saltar, la sección queda a 12 px del borde, bajo la barra pegajosa.~~ Arreglado en la revisión del PR #87 (abajo, punto 4).
+- ~~**Por comprobar**: las acciones de publicar redirigen apilando.~~ Confirmado y arreglado en la revisión del PR #87 (abajo, punto 2).
+- Push y PR cuando el founder lo pida (el PR #87 lo abrió gestión de cambios; los arreglos de la revisión van en commits locales).
+
+## Revisión del PR #87 (2026-09-17, madrugada)
+El chat de gestión de cambios probó la navegación con datos reales y pasa: la lista con filtro repone filtro y posición exactos, el enlace directo sale a Lugares, "ver" no toca URL ni historial y los chips siguen sin apilar. Su revisión adversarial (3 lentes, 8 agentes, ninguno refutado) pidió siete arreglos antes de mezclar.
+
+### Qué se arregló
+1. **La pantalla de error de la agenda no tenía salida (lo metía esta rama).** Sin nada detrás, Atrás hacía `router.replace("/")` estando ya en `/`, y Next.js solo quita la pantalla de error cuando cambia la ruta; en la app instalada no había cómo salir (antes, el enlace recargaba la página).
+   - Ahora, si la pantalla madre tiene la misma ruta, Atrás recarga reemplazando la entrada (`location.replace`).
+   - "Intentar de nuevo" usa `retry`, que vuelve a pedir la pantalla, en vez de `reset`.
+2. **Publicar y guardar apilaban** (ya pasaba en `main`): `redirect()` dentro de una acción apila por defecto, así que Atrás o la ✕ volvían al formulario.
+   - Publicar un evento, un lugar o un artista redirige **reemplazando** el alta.
+   - Guardar una edición o el perfil, y publicar un lugar desde el alta de evento, ya no redirigen desde el servidor: devuelven a dónde volver y el formulario termina con `useTerminar`. Si la pantalla de detrás tiene la misma ruta (la ficha que se editó, Ajustes, el alta de evento), vuelve a ella con el historial y la relee; si no, reemplaza.
+   - Reemplazar no bastaba en esos casos: dejaba la ficha dos veces y el primer Atrás no hacía nada (lo mismo que el punto 5).
+   - Mientras vuelve, el botón sigue en "Guardando…", para no publicar dos veces.
+   - Para saber de qué pantalla se vino, la marca anota también, en cada entrada, la pantalla desde la que se apiló (`somosnosotrosDesde`).
+   - **Decisión sobre «Regístralo»:** la vuelta al alta de evento no reemplaza, **vuelve con el historial** a la misma alta, y el lugar nuevo llega por el borrador (`recordarLugarNuevo`), no por `?lugar=`. Volver y después cambiar la URL montaba el alta dos veces y perdía lo escrito. Si el alta de lugar no se abrió desde el alta de evento, se va a `?lugar=` como antes. Resultado: una sola ✕ (antes, tres).
+3. **Pestaña nueva abierta desde la app** (Cmd+clic, "abrir en pestaña nueva"): el referente del mismo sitio contaba como pantalla detrás y, tras ir y volver, Atrás no hacía nada. Ahora cuenta solo si el historial tiene más de una entrada al llegar. Prueba nueva.
+4. **"ver" dejaba la sección bajo la barra pegajosa:** `scroll-margin-top` con `--alto-barra` y el área segura de arriba en `FichaLista.module.css` y en Quién va. El título pegajoso de la lista usa el mismo alto, que en la app instalada suma el área segura.
+5. **Entrar con código dejaba la ficha dos veces en el historial:** termina con `useTerminar` (vuelve a la ficha de la que se vino y la relee con la sesión nueva).
+6. **La pestaña activa y el logotipo soltaban `?ciudad=`**, y con `replace` ya no había cómo volver a ella: conservan la ciudad (`raizConCiudad`, leída al tocar).
+7. **`Salto`:** al perder el foco, la sección pierde `tabindex` y `outline`.
+
+### Verificación
+- lint (0 errores), tipos, 307 pruebas (con `main` traído: PR #86, sin conflictos en código) y build.
+- **Navegador integrado a 390×844**, con el `next dev` de la rama y el respaldo local de datos inventados. El árbol tiene el `.env` del encargado con llaves reales; el `.env.local` temporal las dejó todas vacías, se comprobó con el cargador de variables de Next.js antes de arrancar y se borró al terminar.
+  - **(1)** Con la agenda rota a propósito, `/?cuenta=borrada` → "Algo falló" → Atrás → la agenda, con el historial igual. "Intentar de nuevo" sale del error sin recargar.
+  - **(2)**
+    - Lugares › Lista → ficha → Editar → Guardar → la misma entrada de la ficha → Atrás → la lista.
+    - Artistas → Registrar → Publicar → la ficha nueva → Atrás → Artistas.
+    - Evento → Duplicar → Publicar → Atrás → el evento original.
+    - Alta de evento con título → Registrar un lugar nuevo → Publicar lugar → la misma alta, con el título y el lugar elegido → una ✕ con "Salir y borrar" → la agenda.
+    - Ajustes → Editar perfil → Guardar → Ajustes.
+  - **(4)** "ver" en lugar y artista: la sección a 56 px, justo bajo la barra, con el día y el primer renglón a la vista. En evento, igual (con la página alargada a mano, porque la ficha de prueba es corta).
+  - **(5)** Sin sesión, ficha → Seguir → Entrar con código → la misma entrada de la ficha, con Seguir aplicado.
+  - **(6)** `/lugares?ciudad=madrid&vista=lista&tipo=museo`, `/artistas?ciudad=madrid&hace=musica` y `/?ciudad=madrid&dia=manana` → su raíz con `?ciudad=madrid`, sin apilar. El logotipo en `/?ciudad=madrid&x=1` → `/?ciudad=madrid`.
+  - **(7)** Con clics reales (con el panel sin foco no llegan los eventos de foco): al salir de la sección se quitan `tabindex` y `outline`.
+
+### Queda (para OL-055)
+- Entrar abierto sin nada detrás hacia una página protegida: la pantalla madre es esa misma página y hace un bucle; debería ser "/".
+- `MemoriaScroll`: mientras repone (0,6 a 4,6 s), un filtro o "Ver más" se toma como vuelta y no guarda.
+- Al salir de la pantalla de error recargando, la entrada nueva cuenta con una pantalla detrás (el referente es la propia app). No se nota: la agenda no tiene Atrás.
+- Tras Entrar, la intención (Seguir, Voy) se aplica dos veces, al reemplazar y al releer, como antes. Es idempotente.
+- Los márgenes con el área segura no se probaron en un iPhone con muesca.
