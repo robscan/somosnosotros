@@ -5,11 +5,12 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import { Chip } from "@/components/ui/Chip";
-import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas } from "@/components/ui/Iconos";
+import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import { artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, LIMITES_ARTISTA, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type TipoArtista } from "@/lib/artistas";
+import type { CiudadConArtistas } from "@/lib/ciudad";
 import { normalizarRedes } from "@/lib/enlaces";
 import { normalizarNombre } from "@/lib/lugares";
 import { quitarGuardia } from "@/lib/guardiaSalida";
@@ -18,6 +19,7 @@ import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import type { ResultadoArtista } from "./acciones";
+import HojaCiudad from "./HojaCiudad";
 import canon from "@/components/ui/FormularioCanon.module.css";
 
 type Props = {
@@ -29,18 +31,23 @@ type Props = {
   nombreInicial?: string;
   /** El administrador puede pegar la dirección de una foto (fichas importadas). */
   esAdmin?: boolean;
-  /** Solo en el alta: la ciudad en la que estaba la persona al registrar (un artista no tiene punto del que deducirla). */
-  ciudad?: string;
+  /** De entrada: en el alta, la que la persona tenía elegida en Artistas; al editar, la del artista. */
+  ciudadInicial: string;
+  /** Las ciudades que ya tienen artistas: las primeras opciones de la hoja Ciudad. */
+  ciudades: CiudadConArtistas[];
 };
+/** Lo que trae la búsqueda por nombre: el artista con su ciudad (el mismo nombre en otra ciudad es otro artista). */
+type Candidato = ArtistaResumen & { ciudad: string };
 
-type Abierta = "hace" | "es" | null;
+type Abierta = "hace" | "es" | "ciudad" | null;
 /**
  * Alta de artista con el canon (docs/rediseno/15, decisiones 4 y 5): un campo arriba con la estrella y, debajo,
- * renglones resueltos: Qué hace y Es deducidos del nombre (chips al abrir), Foto con la cámara como acción,
+ * renglones resueltos: Qué hace y Es deducidos del nombre (chips al abrir), Ciudad (la elegida en Artistas; se busca
+ * en una hoja, pedido del founder del 2026-09-16, noche), Foto con la cámara como acción,
  * Soy yo / es mi grupo con interruptor y Más (redes, descripción). Si el nombre ya existe, se dice con enlace.
  * El botón dice qué falta. Sin frases de ayuda.
  */
-export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false, ciudad }: Props) {
+export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false, ciudadInicial, ciudades }: Props) {
   const esAlta = !artista;
   const [resultado, enviar, enviando] = useActionState<ResultadoArtista | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
@@ -50,13 +57,14 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const [disciplinaElegida, setDisciplinaElegida] = useState<Disciplina | "">(artista?.disciplina && artista.disciplina !== "por_completar" ? artista.disciplina : "");
   const [detalle, setDetalle] = useState(artista?.detalle ?? "");
   const [tipoElegido, setTipoElegido] = useState<TipoArtista | "">(artista?.tipo ?? "");
+  const [ciudad, setCiudad] = useState(ciudadInicial);
   const [soy, setSoy] = useState(false);
   const [foto, setFoto] = useState<string | null>(artista?.foto ?? null);
   const [subiendo, setSubiendo] = useState(false);
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<Abierta>(null);
   const [masAbierto, setMasAbierto] = useState(!esAlta);
-  const [existente, setExistente] = useState<ArtistaResumen | null>(null);
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
   const formRef = useRef<HTMLFormElement>(null);
   const hojaSalir = useSalirSinPublicar(formRef, esAlta);
@@ -74,8 +82,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       const supabase = clienteNavegador();
       if (!supabase) return;
       const { data } = await supabase.rpc("artistas_con_nombre", { p_nombre: q });
-      const igual = artistaIgual((data ?? []) as ArtistaResumen[], q);
-      setExistente(igual && igual.id !== artista?.id ? igual : null);
+      setCandidatos(((data ?? []) as Candidato[]).filter((a) => a.id !== artista?.id));
     }, 300);
     return () => clearTimeout(t);
   }, [nombre, artista?.id]);
@@ -93,7 +100,9 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
 
   const clave = normalizarNombre(nombre);
   const coincide = (a: ArtistaResumen | null | undefined) => !!a && clave.length > 0 && normalizarNombre(a.nombre) === clave;
-  const repetido = coincide(existente) ? existente : coincide(existenteServidor) ? existenteServidor : null;
+  // Un artista es un artista en su ciudad (decisión 5 de 08 y la base): con otra ciudad, el mismo nombre es otro artista.
+  const existente = artistaIgual(candidatos.filter((a) => a.ciudad === ciudad), nombre);
+  const repetido = existente ?? (coincide(existenteServidor) ? existenteServidor : null);
   const faltaNombre = !hayNombre;
   const listo = !faltaNombre && !repetido;
   const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre";
@@ -193,7 +202,17 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           )}
         </li>
 
-        {/* 4. Foto: la cámara como acción; la foto puesta ocupa el sitio del icono. */}
+        {/* 4. Ciudad: la de entrada casi siempre es la buena; si no, se busca en una hoja (el teclado no tapa los resultados). */}
+        <li className={canon.resuelto}>
+          <IconoPin width={20} height={20} />
+          <span className={canon.clave}>Ciudad</span>
+          <span className={canon.valor}>{ciudad}</span>
+          <button type="button" className={canon.cambiar} onClick={() => setAbierta("ciudad")} aria-haspopup="dialog">
+            Cambiar
+          </button>
+        </li>
+
+        {/* 5. Foto: la cámara como acción; la foto puesta ocupa el sitio del icono. */}
         <li className={`${canon.resuelto} ${foto ? "" : canon.pendiente}`}>
           {foto ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
@@ -214,7 +233,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           )}
         </li>
 
-        {/* 5. Soy yo / es mi grupo (solo en el alta; después lo liga el administrador). Al encender, el valor dice qué da. */}
+        {/* 6. Soy yo / es mi grupo (solo en el alta; después lo liga el administrador). Al encender, el valor dice qué da. */}
         {esAlta && (
           <li className={canon.resuelto}>
             <IconoPersona width={20} height={20} />
@@ -224,7 +243,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           </li>
         )}
 
-        {/* 6. Más: redes y descripción. Se esconde, no se desmonta: lo escrito se queda aunque se cierre. */}
+        {/* 7. Más: redes y descripción. Se esconde, no se desmonta: lo escrito se queda aunque se cierre. */}
         <li className={`${canon.resuelto} ${masAbierto ? canon.abierta : canon.pendiente}`}>
           <IconoMas width={20} height={20} />
           <span className={canon.clave}>Más</span>
@@ -245,8 +264,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       <input type="hidden" name="foto" value={foto ?? ""} />
       <input type="hidden" name="soy" value={soy ? "1" : ""} />
       {abierta !== "hace" && <input type="hidden" name="detalle" value={detalle} />}
-      {/* Editar no cambia la ciudad: solo el alta la manda. */}
-      {esAlta && <input type="hidden" name="ciudad" value={ciudad ?? ""} />}
+      <input type="hidden" name="ciudad" value={ciudad} />
 
       {resultado && !resultado.ok && resultado.general && !repetido && (
         <p className="aviso-error" role="alert">
@@ -259,6 +277,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         {!enviando && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "ya está registrado"}</small>}
       </Boton>
     </form>
+    {abierta === "ciudad" && <HojaCiudad ciudad={ciudad} ciudades={ciudades} onElegir={setCiudad} onCerrar={() => setAbierta(null)} />}
     {hojaSalir}
     </>
   );

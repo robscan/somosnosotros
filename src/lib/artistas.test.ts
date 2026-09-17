@@ -160,8 +160,9 @@ describe("validarArtista", () => {
     expect(errores.disciplina).toBeDefined();
     expect(datos.redes).toEqual([]);
   });
-  it("toma la ciudad en la que estaba la persona (un artista no tiene punto del que deducirla); sin ciudad, la inicial", () => {
+  it("toma la ciudad del renglón Ciudad, unida a su área metropolitana; sin ciudad, la inicial", () => {
     expect(validarArtista({ nombre: "Los Vecinos", ciudad: "Querétaro" }).datos.ciudad).toBe("Querétaro");
+    expect(validarArtista({ nombre: "Los Vecinos", ciudad: "Soledad de Graciano Sánchez" }).datos.ciudad).toBe("San Luis Potosí");
     expect(validarArtista({ nombre: "Los Vecinos", ciudad: "" }).datos.ciudad).toBe("San Luis Potosí");
     expect(validarArtista({ nombre: "Los Vecinos" }).datos.ciudad).toBe("San Luis Potosí");
   });
