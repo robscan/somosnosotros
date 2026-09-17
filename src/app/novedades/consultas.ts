@@ -1,13 +1,13 @@
 import "server-only";
 import { primerNombre } from "@/lib/comunidad";
 import { nombreSitio } from "@/lib/eventos";
-import { diaLocal, eventoPaso, formatearCuando } from "@/lib/fechas";
+import { diaLocal, eventoPaso, formatearCuando, inicioDelDia } from "@/lib/fechas";
 import { DIAS_NOVEDADES, esNueva, hayNuevas, queCambio, queJuntos, type Novedad } from "@/lib/novedades";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
-type EventoBase = { id: string; titulo: string; inicio: string; fin: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; creado_en: string; creado_por: string | null; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
+type EventoBase = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; creado_en: string; creado_por: string | null; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
 const uno = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
-const CAMPOS = "id, titulo, inicio, fin, lugar_id, sitio_texto, sitio_reservado, creado_en, creado_por, lugar:lugares(nombre, portada)";
+const CAMPOS = "id, titulo, inicio, fin, zona, lugar_id, sitio_texto, sitio_reservado, creado_en, creado_por, lugar:lugares(nombre, portada)";
 
 /**
  * Las novedades de una persona, calculadas (decisión 1 de docs/rediseno/13): nuevo en lo que sigue, cambios en
@@ -32,9 +32,9 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
     if (s.lugar_id && l) lugares.set(s.lugar_id, l.nombre);
     if (s.artista_id && a) artistas.set(s.artista_id, a.nombre);
   }
-  const misEventos = ((van ?? []) as { evento: EventoBase | EventoBase[] }[]).map((v) => uno(v.evento)).filter((e): e is EventoBase => !!e && !eventoPaso(e.inicio, e.fin, ahora));
+  const misEventos = ((van ?? []) as { evento: EventoBase | EventoBase[] }[]).map((v) => uno(v.evento)).filter((e): e is EventoBase => !!e && !eventoPaso(e.inicio, e.fin, ahora, e.zona));
   const lista: Novedad[] = [];
-  const cuandoDe = (e: EventoBase) => `${formatearCuando(e.inicio, e.fin, ahora)} · ${nombreSitio({ lugar: uno(e.lugar), sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}`;
+  const cuandoDe = (e: EventoBase) => `${formatearCuando(e.inicio, e.fin, ahora, e.zona)} · ${nombreSitio({ lugar: uno(e.lugar), sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}`;
 
   // 1. Nuevo en lo que sigo (lugares) y nueva fecha de quien sigo (artistas), últimos 14 días, no publicados por mí.
   // Acotado a los últimos DIAS_NOVEDADES días; el tope es cinturón y tirantes contra el corte silencioso de PostgREST.
@@ -44,13 +44,13 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   ]);
   const vistos = new Set<string>();
   for (const e of (porLugar.data ?? []) as EventoBase[]) {
-    if (e.creado_por === usuarioId || eventoPaso(e.inicio, e.fin, ahora) || vistos.has(e.id)) continue;
+    if (e.creado_por === usuarioId || eventoPaso(e.inicio, e.fin, ahora, e.zona) || vistos.has(e.id)) continue;
     vistos.add(e.id);
     lista.push({ clave: `nuevo-${e.id}`, tipo: "nuevo", que: `Nuevo en ${lugares.get(e.lugar_id ?? "") ?? "un lugar que sigues"}`, eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), inicio: e.inicio, fecha: e.creado_en, nueva: esNueva(e.creado_en, vistasEn) });
   }
   for (const f of (porArtista.data ?? []) as { artista_id: string; evento: EventoBase | EventoBase[] }[]) {
     const e = uno(f.evento);
-    if (!e || e.creado_por === usuarioId || eventoPaso(e.inicio, e.fin, ahora) || vistos.has(e.id)) continue;
+    if (!e || e.creado_por === usuarioId || eventoPaso(e.inicio, e.fin, ahora, e.zona) || vistos.has(e.id)) continue;
     vistos.add(e.id);
     lista.push({ clave: `nuevo-${e.id}`, tipo: "nuevo", que: `Nueva fecha de ${artistas.get(f.artista_id) ?? "alguien que sigues"}`, eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), inicio: e.inicio, fecha: e.creado_en, nueva: esNueva(e.creado_en, vistasEn) });
   }
@@ -61,11 +61,11 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
     lista.push({ clave: `cambio-${e.id}-${c.creado_en}`, tipo: "cambio", que: queCambio(c.detalle), eventoId: e.id, titulo: e.titulo, cuando: `Ahora es ${cuandoDe(e)}`, inicio: e.inicio, fecha: c.creado_en, nueva: esNueva(c.creado_en, vistasEn) });
   }
   // 3. Hoy vas: cuenta como novedad del día (nueva hasta que se abre la sección ese día).
-  const hoy = diaLocal(ahora);
-  const inicioHoy = new Date(ahora);
-  inicioHoy.setHours(0, 0, 0, 0);
+  // Hoy es el del evento, en su zona; la novedad cuenta desde las 00:00 de ese día (antes, las 00:00 del reloj del
+  // servidor, que en Vercel es UTC: las 18:00 del día anterior en San Luis, y la novedad caía en "Ayer").
   for (const e of misEventos) {
-    if (diaLocal(new Date(e.inicio)) !== hoy) continue;
+    if (diaLocal(new Date(e.inicio), e.zona) !== diaLocal(ahora, e.zona)) continue;
+    const inicioHoy = new Date(inicioDelDia(ahora, e.zona));
     lista.push({ clave: `hoy-${e.id}`, tipo: "hoy", que: "Hoy vas", eventoId: e.id, titulo: e.titulo, cuando: cuandoDe(e), inicio: e.inicio, fecha: inicioHoy.toISOString(), nueva: !vistasEn || new Date(vistasEn) < inicioHoy });
   }
   // 4. Van a lo mismo: quién más dijo "Voy" (perfil público: la política de la base ya esconde a los reservados) en los últimos 14 días.

@@ -8,10 +8,10 @@ export async function cargarCiudades(supabase: SupabaseClient | null): Promise<C
   // Tope explícito para no chocar con el corte silencioso de PostgREST en 1 000 filas; 5 000 cubre por mucho
   // el país entero de lugares y eventos próximos de hoy (revisión 2026-09-14, A1).
   const [l, e] = await Promise.all([
-    supabase.from("lugares").select("ciudad, lat, lng").eq("visible", true).eq("privado", false).limit(5000),
-    supabase.from("eventos").select("ciudad").eq("visible", true).or(filtroSinPasar()).limit(5000),
+    supabase.from("lugares").select("ciudad, lat, lng, zona").eq("visible", true).eq("privado", false).limit(5000),
+    supabase.from("eventos").select("ciudad, zona").eq("visible", true).or(filtroSinPasar()).limit(5000),
   ]);
-  return armarCiudades((l.data ?? []) as { ciudad: string; lat: number; lng: number }[], (e.data ?? []) as { ciudad: string }[]);
+  return armarCiudades((l.data ?? []) as { ciudad: string; lat: number; lng: number; zona: string }[], (e.data ?? []) as { ciudad: string; zona: string }[]);
 }
 
 /** Las ciudades de Artistas, a partir de los artistas visibles (Artistas y su alta). */

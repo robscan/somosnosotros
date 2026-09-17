@@ -1,6 +1,6 @@
 import { ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
-import { localAIso } from "./fechas";
+import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 export const LIMITES_EVENTO = { titulo: 120, descripcion: 1000, precio: 60, sitio: 120, direccion: 200, indicaciones: 300 } as const;
 
@@ -32,10 +32,12 @@ export type Evento = {
   sitio_lng: number | null;
   sitio_reservado: boolean;
   sitio_revelar_desde: string | null;
+  /** Zona horaria (IANA) del evento: sus horas se leen y se muestran en ella (migración 0029). */
+  zona: string;
 };
 
 /** Lo que la agenda necesita: el evento con el nombre de su lugar o su sitio. */
-export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado"> & {
+export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado" | "zona"> & {
   lugar: { nombre: string; portada: string | null } | null;
 };
 
@@ -60,6 +62,8 @@ export type DatosEvento = {
   privado: { direccion: string; lat: number | null; lng: number | null; indicaciones: string | null; revelar_desde: string } | null;
   /** En otro sitio: la ciudad del pin, deducida por Mapbox (null si no se supo; el servidor pone la del lugar o la inicial). */
   ciudad: string | null;
+  /** La zona en la que se leyeron las horas: la del lugar o la del punto del sitio (la decide el servidor antes de validar). */
+  zona: string;
 };
 export type ErroresEvento = Partial<
   Record<"lugar_id" | "sitio_texto" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
@@ -89,11 +93,13 @@ export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "si
   return "Sitio por confirmar";
 }
 
-export function validarEvento(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosEvento; errores: ErroresEvento } {
+/** Lee el formulario del evento. Las horas del selector se leen en `zona`, la del sitio del evento. */
+export function validarEvento(entrada: Record<string, FormDataEntryValue | null | undefined>, zona: string = ZONA_INICIAL): { datos: DatosEvento; errores: ErroresEvento } {
   const modo = (limpiar(entrada.modo_sitio) || "lugar") as ModoSitio;
-  const inicio = localAIso(limpiar(entrada.inicio));
+  const zonaSitio = zonaSegura(zona);
+  const inicio = localAIso(limpiar(entrada.inicio), zonaSitio);
   const finTexto = limpiar(entrada.fin);
-  const fin = finTexto ? localAIso(finTexto) : null;
+  const fin = finTexto ? localAIso(finTexto, zonaSitio) : null;
   const gratis = limpiar(entrada.gratis) !== "no";
   const enlaceTexto = limpiar(entrada.enlace);
   const revelarHoras = Number(limpiar(entrada.revelar_horas)) || 24;
@@ -118,6 +124,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
     sitio_reservado: esReservado,
     sitio_revelar_desde: esReservado ? revelarDesde : null,
     ciudad: modo === "lugar" ? null : ciudadCanonica(limpiar(entrada.ciudad)).slice(0, 80) || null,
+    zona: zonaSitio,
     privado: esReservado
       ? {
           direccion: direccionPrivada,

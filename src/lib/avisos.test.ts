@@ -9,6 +9,7 @@ const evento = (extra: Partial<EventoParaAviso> = {}): EventoParaAviso => ({
   titulo: "Noche de jazz",
   inicio: "2026-09-27T01:00:00Z",
   fin: null,
+  zona: "America/Mexico_City",
   sitio_texto: null,
   sitio_reservado: false,
   lugar: { nombre: "Casa 1100", portada: null },
@@ -84,10 +85,16 @@ describe("contenidoPush", () => {
     expect(c.titulo).toBe("Cambió la fecha y el lugar: Noche de jazz");
     expect(c.cuerpo).toBe("Ahora es sáb 26 de sep · 19:00 · Casa 1100");
   });
-  it("recordatorio: título 'Hoy' con el título del evento", () => {
-    const c = contenidoPush("recordatorio", evento(), "ambos", AHORA);
-    expect(c.titulo).toBe("Hoy: Noche de jazz");
-    expect(c.cuerpo).toBe("sáb 26 de sep · 19:00 · Casa 1100");
+  it("recordatorio: 'Hoy' o 'Mañana' en la zona del evento, con el título", () => {
+    const hoy = contenidoPush("recordatorio", evento({ inicio: "2026-09-20T01:00:00Z" }), "ambos", AHORA);
+    expect(hoy.titulo).toBe("Hoy: Noche de jazz");
+    expect(hoy.cuerpo).toBe("Hoy · 19:00 · Casa 1100");
+    // Mañana a las 8:00, dentro de las 24 horas del recordatorio de las 9:00: antes decía "Hoy".
+    expect(contenidoPush("recordatorio", evento({ inicio: "2026-09-20T14:00:00Z" }), "ambos", AHORA).titulo).toBe("Mañana: Noche de jazz");
+    // El mismo instante en Madrid es la 1:00 del domingo: mañana allá.
+    const madrid = contenidoPush("recordatorio", evento({ inicio: "2026-09-19T23:00:00Z", zona: "Europe/Madrid" }), "ambos", AHORA);
+    expect(madrid.titulo).toBe("Mañana: Noche de jazz");
+    expect(madrid.cuerpo).toBe("Mañana · 01:00 · Casa 1100");
   });
   it("sin lugar registrado, usa el sitio escrito a mano (o 'sitio reservado')", () => {
     const c = contenidoPush("nuevo_evento", evento({ lugar: null, sitio_texto: "Plaza de armas" }), "ambos", AHORA);

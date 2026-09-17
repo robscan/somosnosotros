@@ -7,6 +7,7 @@ import type { QuienItem } from "@/lib/artistas";
 import type { Evento } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { zonaDelSitio } from "@/lib/zona";
 import FormularioEvento from "../FormularioEvento";
 import { crearEvento } from "../acciones";
 
@@ -18,7 +19,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
   const volverA = `/eventos/nuevo${lugar ? `?lugar=${lugar}` : artista ? `?artista=${artista}` : ""}`;
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(volverA)}`);
   const supabase = await clienteServidor();
-  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada").eq("visible", true).order("nombre")) ?? { data: [] };
+  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona").eq("visible", true).order("nombre")) ?? { data: [] };
   let base: Partial<Evento> | undefined;
   let quien: QuienItem[] | undefined;
   if (desde && esUuid(desde)) {
@@ -40,7 +41,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
       <Barra cerrar={{ href: volver, texto: "Volver" }} />
       <h1 className="titulo">{base ? "Duplicar evento" : "Publicar un evento"}</h1>
       <p className="subtitulo">{base ? "Mismo evento, nueva fecha. Cambia lo que haga falta." : "Con el nombre y dónde basta. Lo demás ya está resuelto."}</p>
-      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} />
+      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} zonaSitio={zonaDelSitio(base)} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} />
     </main>
   );
 }
