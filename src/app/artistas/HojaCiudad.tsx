@@ -66,14 +66,14 @@ export default function HojaCiudad({ ciudad, ciudades, onElegir, onCerrar }: Pro
   return (
     <Hoja etiqueta="Ciudad" onCerrar={onCerrar}>
       <h3>Ciudad</h3>
-      <label className={canon.campo}>
+      <label className={`${canon.campo} ${styles.pegajoso}`}>
         <IconoBuscar width={20} height={20} />
         <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca la ciudad" aria-label="Buscar la ciudad" autoComplete="off" autoCapitalize="words" autoFocus />
         <Limpiar visible={!!q} />
       </label>
 
       {!buscando && (
-        <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Ciudades con artistas">
+        <ul className={sug.lista} role="listbox" aria-label="Ciudades con artistas">
           {ciudades.map((c) => (
             <li key={c.slug}>
               <button type="button" className={sug.renglon} onClick={() => elegir(c.nombre)} role="option" aria-selected={c.nombre === ciudad}>
@@ -87,7 +87,7 @@ export default function HojaCiudad({ ciudad, ciudades, onElegir, onCerrar }: Pro
       )}
 
       {buscando && !llego && (
-        <p className={canon.estado} role="status">
+        <p className={styles.nota} role="status">
           Buscando…
         </p>
       )}
@@ -97,12 +97,12 @@ export default function HojaCiudad({ ciudad, ciudades, onElegir, onCerrar }: Pro
         </p>
       )}
       {llego && "ciudades" in llego && llego.ciudades.length === 0 && (
-        <p className={canon.estado} role="status">
+        <p className={styles.nota} role="status">
           No encontramos «{texto}». Prueba con el país, como «San José, Costa Rica».
         </p>
       )}
       {llego && "ciudades" in llego && llego.ciudades.length > 0 && (
-        <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Ciudades encontradas">
+        <ul className={sug.lista} role="listbox" aria-label="Ciudades encontradas">
           {llego.ciudades.map((c) => (
             <li key={`${c.ciudad}|${c.donde}`}>
               <button type="button" className={sug.renglon} onClick={() => elegir(c.ciudad)} role="option" aria-selected={c.ciudad === ciudad}>

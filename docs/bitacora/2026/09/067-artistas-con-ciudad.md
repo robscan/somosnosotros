@@ -21,8 +21,10 @@ A media pieza cuestionó el límite de país:
 1. **Hoja del chip en Artistas.** Dice "Las ciudades donde ya hay artistas registrados. Registra un artista en otra ciudad y aparecerá aquí." y cada ciudad con sus artistas ("San Luis Potosí · 522 artistas"). La lista sale de los artistas, como la de Lugares sale de los lugares (`armarCiudadesDeArtistas`, `cargarCiudadesDeArtistas`): una ciudad aparece en cuanto alguien registra ahí un artista. La agenda y Lugares no cambian. Es el mismo componente (`components/Ciudad`): habla de lo que cuenta la lista que recibe.
 2. **Renglón Ciudad en el alta y la edición**, con el dibujo del canon: pin | CIUDAD / San Luis Potosí | Cambiar, después de "Es".
    - De entrada: en el alta, la ciudad elegida en Artistas; al editar, la del artista.
-   - "Cambiar" abre la hoja "Ciudad": campo "Busca la ciudad" con foco. Sin escribir, muestra las ciudades que ya tienen artistas. Al escribir, las ciudades de **cualquier país**, primero las cercanas a la ciudad que se ve: "Guadal" da Guadalajara (Jalisco) primero; "Córdoba" da España, Argentina, Veracruz, Colombia…; "Heredia" da Heredia, Costa Rica. Se piden 10 porque "San José" trae la de Costa Rica hasta el décimo lugar. Un toque elige y cierra.
-   - **Fuera de México, la ciudad lleva su país** ("Córdoba, España"), para no juntarla con Córdoba, Veracruz. Las de México van sin país, como todas las que ya hay. La regla vive en `ciudadDelContexto`: vale igual para lugares y eventos cuando se abran.
+   - "Cambiar" abre la hoja "Ciudad": campo "Busca la ciudad" con foco. Sin escribir, muestra las ciudades que ya tienen artistas. Al escribir, las ciudades de **cualquier país**. Un toque elige y cierra.
+   - **Primero las cercanas a la ciudad que se ve.** Mapbox antepone las famosas: con "San" daba San Petersburgo y San Francisco antes que San Luis Potosí. Ahora se reordenan por distancia real, como las direcciones de la 053. "San" da San Luis Potosí, San Luis de la Paz, San Miguel de Allende…; "Córdoba" da Veracruz antes que España o Argentina; "Heredia" da Heredia, Costa Rica. Se piden 10 porque "San José" trae la de Costa Rica hasta el décimo lugar.
+   - **El campo se queda arriba** al recorrer los resultados, como en "Dónde es" (OL-030).
+   - **Fuera de México, la ciudad lleva su país** ("Córdoba, España"), para no juntarla con Córdoba, Veracruz. Las de México van sin país, como todas las que ya hay. El renglón de abajo no repite el país: "Provincia de Córdoba"; y "San Petersburgo, Rusia" va sin nada más. La regla vive en `ciudadDelContexto`: vale igual para lugares y eventos cuando se abran.
    - Estados de la hoja: "Buscando…"; "No encontramos «…». Prueba con el país, como «San José, Costa Rica»."; y si Mapbox falla, "No se pudo buscar. Revisa tu conexión e intenta de nuevo."
    - El nombre se guarda igual que la ciudad de un lugar: el de Mapbox, unido a su área (Soledad → San Luis Potosí). "Mexico DF" llega de Mapbox como "Ciudad de México".
    - Editar ya guarda la ciudad. Antes no la tocaba: lo había decidido el agente de la 053, no el founder.
@@ -48,12 +50,26 @@ Sin migración: la columna ya existía.
 - **Ciudades con el mismo nombre en el mismo país** se juntan: tres Córdoba en Colombia; Guadalupe de Zacatecas y la de Nuevo León (esto ya pasa hoy).
 - **Contexto de quien llega de fuera:** la app abre en San Luis Potosí. Se podría abrir en la ciudad aproximada de quien entra, sin pedir permiso ni guardarla. Es una decisión del founder: DEFINICION solo habla de la ubicación que se pide con un botón.
 
+## Con el teclado del iPhone (pregunta del founder)
+"¿Ese buscador de ciudad está considerando recalcular ubicación con teclado de celular fuera?" Probado en el simulador (iPhone 15 Pro, iOS 26.3, Safari, teclado en pantalla, tecleando con toques):
+- **Sí se recalcula.** Al tocar "Cambiar", la hoja se abre con el teclado arriba y se acomoda justo encima, con el campo enfocado. Al escribir "San", los resultados llenan el espacio visible sobre el teclado.
+- **Había un fallo, y no solo de esta hoja.** Con el teclado arriba, al arrastrar los resultados se movía la página de atrás en vez de la lista, y la hoja quedaba recortada con un hueco blanco debajo. Se reprodujo dos veces.
+  - En "Dónde es" (alta de evento) no pasa: su lista ya desborda al abrir.
+  - Sin teclado, la lista de "Ciudad" se recorre bien.
+  - Falla cuando la hoja se vuelve desplazable después de que el teclado ya está arriba: iOS le manda el arrastre a la página.
+- **El arreglo va en la hoja común (`ui/Hoja`), en la rama `hojas-en-escritorio`** (bitácora 068):
+  - mientras hay una hoja abierta, la página de atrás no se desplaza;
+  - arrastrar la hoja con el teclado arriba guarda el teclado, como en las búsquedas del iPhone.
+
+  Probado con el cambio puesto de forma temporal en esta rama: el arrastre guarda el teclado, la hoja crece a toda la altura y la lista se recorre con el campo arriba, sin recorte. **Esta rama conviene mezclarla junto con la de hojas o después.**
+
 ## Evidencia
-- lint (un aviso viejo en `docs/diseno/logotipo/iconos-sn.mjs`, ajeno), typecheck, **211 pruebas** y build en verde. Hay 5 pruebas nuevas y 1 ampliada:
+- lint (un aviso viejo en `docs/diseno/logotipo/iconos-sn.mjs`, ajeno), typecheck, **212 pruebas** y build en verde. Hay 6 pruebas nuevas y 1 ampliada:
   - ciudades de Artistas a partir de los artistas;
   - URL de la búsqueda de ciudades, sin país y con 10;
   - la ciudad con país fuera de México;
   - lectura de la respuesta de Mapbox con formas reales medidas hoy: contexto, área, país sin repetir, las tres Córdoba;
+  - orden por cercanía con "San", en el orden en que llegó de Mapbox;
   - no buscar con menos de 2 letras y decir el error;
   - la ciudad de Soledad en `validarArtista`.
 - **Mirado en pantalla a 390×844**, con el build de la rama servido en local (`next start`, puerto 3107) y datos de producción, solo lectura. El `next dev` de otro chat impide levantar un segundo servidor de desarrollo: Next toma la carpeta principal como raíz.
@@ -68,8 +84,9 @@ Sin migración: la columna ya existía.
   - Consola sin errores. **No se publicó nada.**
 - **Sin probar en pantalla:**
   - la edición (el usuario de prueba no puede editar fichas; usa el mismo formulario);
-  - la hoja con el teclado del iPhone;
   - guardar de verdad (sería escribir en producción).
+
+  El teclado se probó en el simulador (arriba); falta el iPhone real.
 
 ## Pregunta del founder, sin decidir: acciones al deslizar en los listados
 Propuso Voy, Me interesa y calendario en eventos; Seguir y Cómo llegar en lugares; Seguir en artistas. Mi opinión, dada en el chat:

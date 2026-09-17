@@ -89,25 +89,26 @@ export async function direccionDesdePunto(p: { lat: number; lng: number }, token
   return (await lugarDesdePunto(p, token, fetchFn))?.direccion ?? null;
 }
 
-/** Una ciudad encontrada: el nombre con el que se guarda y dónde queda ("Estado de Jalisco, México"). */
-export type CiudadEncontrada = { ciudad: string; donde: string };
+/** Una ciudad encontrada: el nombre con el que se guarda, dónde queda ("Estado de Jalisco, México") y su punto. */
+export type CiudadEncontrada = { ciudad: string; donde: string; lat: number; lng: number };
 
 /**
  * Búsqueda del renglón Ciudad del alta de artista: solo ciudades (`place`), de cualquier país, en español. El contexto
- * ordena y no limita (founder, 2026-09-16): la cercanía a la ciudad que se ve pone primero las de aquí, y se piden 10
- * porque un nombre repetido ("San José") trae la de Costa Rica hasta el décimo lugar.
+ * ordena y no limita (founder, 2026-09-16): se piden 10, porque un nombre repetido ("San José") trae la de Costa Rica
+ * hasta el décimo lugar, y buscarCiudades las pone por cercanía a la ciudad que se ve.
  */
 export function urlCiudades(q: string, token: string, cerca: { lat: number; lng: number }): string {
   const p = new URLSearchParams({ q, access_token: token, autocomplete: "true", language: "es", limit: "10", proximity: `${cerca.lng},${cerca.lat}`, types: "place" });
   return `https://api.mapbox.com/search/geocode/v6/forward?${p.toString()}`;
 }
 
-type RespuestaCiudades = { features?: Array<{ properties?: { name?: string; place_formatted?: string; context?: Contexto } }> };
+type RespuestaCiudades = { features?: Array<{ properties?: { name?: string; place_formatted?: string; coordinates?: { latitude: number; longitude: number }; context?: Contexto } }> };
 
 /**
  * El nombre sale del contexto, como la ciudad de un lugar ("Mexico DF" llega con "Ciudad de México" en el contexto;
  * fuera de México, con su país) y se unifica con su área metropolitana (`ciudadCanonica`). Si el nombre ya dice el
- * país, "dónde" no lo repite ("Córdoba, España" · "Provincia de Córdoba"). La misma ciudad del mismo estado no se repite.
+ * país, "dónde" no lo repite ("Córdoba, España" · "Provincia de Córdoba"; "San Petersburgo, Rusia" sin nada más).
+ * La misma ciudad del mismo estado no se repite; lo que llega sin punto se descarta.
  */
 export function interpretarCiudades(json: RespuestaCiudades): CiudadEncontrada[] {
   const vistas = new Set<string>();
@@ -117,19 +118,23 @@ export function interpretarCiudades(json: RespuestaCiudades): CiudadEncontrada[]
     const ciudad = ciudadCanonica(ciudadDelContexto(p.context) ?? p.name);
     const pais = p.context?.country?.name;
     let donde = (p.place_formatted ?? "").trim();
-    if (pais && ciudad.endsWith(`, ${pais}`) && donde.endsWith(`, ${pais}`)) donde = donde.slice(0, -(pais.length + 2));
-    if (!ciudad || vistas.has(`${ciudad}|${donde}`)) continue;
+    if (pais && ciudad.endsWith(`, ${pais}`)) donde = donde === pais ? "" : donde.endsWith(`, ${pais}`) ? donde.slice(0, -(pais.length + 2)) : donde;
+    if (!ciudad || !p.coordinates || vistas.has(`${ciudad}|${donde}`)) continue;
     vistas.add(`${ciudad}|${donde}`);
-    out.push({ ciudad, donde: donde.charAt(0).toUpperCase() + donde.slice(1) });
+    out.push({ ciudad, donde: donde.charAt(0).toUpperCase() + donde.slice(1), lat: p.coordinates.latitude, lng: p.coordinates.longitude });
   }
   return out;
 }
 
-/** Con menos de 2 letras no se busca. Si Mapbox falla, lanza: la hoja lo dice en vez de fingir que no hay ciudades. */
+/**
+ * Con menos de 2 letras no se busca. Mapbox antepone las ciudades famosas ("San" da San Petersburgo y San Francisco antes
+ * que San Luis Potosí): se reordenan por distancia real a la ciudad que se ve, como las direcciones. Si Mapbox falla,
+ * lanza: la hoja lo dice en vez de fingir que no hay ciudades.
+ */
 export async function buscarCiudades(q: string, token: string, cerca: { lat: number; lng: number }, fetchFn: FetchFn = fetch): Promise<CiudadEncontrada[]> {
   const texto = q.trim();
   if (texto.length < 2) return [];
   const res = await fetchFn(urlCiudades(texto, token, cerca));
   if (!res.ok) throw new Error(`Mapbox respondió ${res.status}`);
-  return interpretarCiudades((await res.json()) as RespuestaCiudades);
+  return interpretarCiudades((await res.json()) as RespuestaCiudades).sort((a, b) => distanciaKm(cerca, a) - distanciaKm(cerca, b));
 }

@@ -1,5 +1,19 @@
 /* Hoja "Ciudad" del alta de artista: el título es el de ui/Hoja, el campo con lupa el del canon y los renglones los de
-   ui/Sugerencia. La lista va pegada al campo, como en "Dónde está" del alta de lugar. */
-.lista {
-  margin-top: calc(-1 * var(--espacio-2));
+   ui/Sugerencia. */
+
+/* El campo se queda arriba al recorrer los resultados, como en "Dónde es" (founder, 2026-09-16): con el teclado abierto
+   la hoja se achica al área visible y los resultados se recorren debajo; la sombra del color del fondo tapa lo que pasa. */
+.pegajoso {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--fondo);
+  box-shadow: 0 0 0 var(--espacio-3) var(--fondo);
+}
+
+/* "Buscando…" y "No encontramos": sin el margen negativo del canon, que quedaría bajo la sombra del campo. */
+.nota {
+  margin: 0 0 var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
 }
