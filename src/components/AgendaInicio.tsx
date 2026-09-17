@@ -31,6 +31,8 @@ type Props = {
   ciudades: CiudadConDatos[];
   /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan). */
   hoy: string;
+  /** Zona horaria de la ciudad (la de "hoy" y el chip de fecha); cada evento se agrupa en el día de la suya. */
+  zona?: string;
   /** Lo que va entre la cabecera y la lista: la tarjeta "Activa los avisos" de la app instalada (docs/rediseno/17, decisión 4). */
   antes?: ReactNode;
   /** Lo que la persona decidió en los eventos cargados (Voy, Me interesa); null = sin sesión. */
@@ -46,7 +48,7 @@ type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: bo
  * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
-export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, antes, asistencias = null, destacados = [] }: Props) {
+export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, destacados = [] }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
   // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
@@ -115,7 +117,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const { lista: filtrada, km } = filtrarAgenda(eventos, { filtro, punto, seguidos, eventosSeguidos, fecha, ahora });
   const lista = buscarEventos(filtrada, busqueda);
   const hayBusqueda = busqueda.trim().length > 0;
-  const hoyIso = localAIso(`${hoy}T12:00`) ?? new Date().toISOString();
+  const hoyIso = localAIso(`${hoy}T12:00`, zona) ?? new Date().toISOString();
 
   let cuerpo: React.ReactNode;
   if (filtro === "cercanos" && !punto) {
@@ -142,12 +144,12 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     let grupos: Grupo<EventoAgenda>[];
     let vacio: string;
     if (hayBusqueda) {
-      grupos = fecha && lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora), eventos: lista }] : agruparPorDia(lista, ahora, filtro === "cercanos");
+      grupos = fecha && lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora, zona), eventos: lista }] : agruparPorDia(lista, ahora, filtro === "cercanos");
       // Vacío por causa: dice qué se buscó y dónde, y la salida (Todos, o quitar la fecha).
       const donde = filtro !== "todos" ? ` en ${FILTROS.find((f) => f.clave === filtro)?.etiqueta}` : "";
       vacio = `Nada con «${busqueda.trim()}»${donde}${fecha ? " ese día" : ""}.${filtro !== "todos" ? " Prueba en Todos." : fecha ? " Quita la fecha para buscar en todo." : ""}`;
     } else if (fecha) {
-      grupos = lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora), eventos: lista }] : [];
+      grupos = lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora, zona), eventos: lista }] : [];
       vacio = "Ese día no hay nada todavía. Quita la fecha para ver todo.";
     } else if (filtro === "cercanos") {
       // Por día, y dentro de cada día del más cercano al más lejano.
@@ -162,7 +164,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     }
     cuerpo = grupos.length === 0 ? (
       <section className={styles.grupo}>
-        <h2>{hayBusqueda ? "Buscar" : fecha ? diaLargo(fecha, ahora) : "Próximos días"}</h2>
+        <h2>{hayBusqueda ? "Buscar" : fecha ? diaLargo(fecha, ahora, zona) : "Próximos días"}</h2>
         <p className={styles.vacio}>{vacio}</p>
       </section>
     ) : (
@@ -195,7 +197,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
                 // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
                 <span className={`${chip.chip} ${styles.chipContexto} ${styles.marcado}`}>
                   <IconoCalendario width={16} height={16} />
-                  <span>{diaCorto(localAIso(`${fecha}T12:00`) ?? hoyIso, ahora)}</span>
+                  <span>{diaCorto(localAIso(`${fecha}T12:00`, zona) ?? hoyIso, ahora, zona)}</span>
                   <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
                     <IconoCerrar width={18} height={18} />
                   </button>
@@ -204,7 +206,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
                 // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
                 <label className={`${chip.chip} ${chip.chipNativo} ${styles.chipContexto}`} htmlFor="agenda-fecha">
                   <IconoCalendario width={16} height={16} />
-                  <span>{diaCorto(hoyIso, ahora)}</span>
+                  <span>{diaCorto(hoyIso, ahora, zona)}</span>
                   <IconoCaret width={12} height={12} />
                   <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
                 </label>

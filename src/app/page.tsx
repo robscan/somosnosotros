@@ -23,7 +23,7 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   // Los empates de hora se desempatan también en la base (título, id) para que el corte de 300 no cambie entre cargas.
   const [e, l, s, destacados] = await Promise.all([
-    supabase.from("eventos").select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(300),
+    supabase.from("eventos").select("id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(300),
     supabase.from("lugares").select("id", { count: "exact", head: true }).eq("visible", true).eq("ciudad", ciudad.nombre),
     // Lo que sigue una sola persona: tope de sobra para no depender del corte silencioso de PostgREST.
     usuarioId ? supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId).limit(1000) : Promise.resolve({ data: null }),
@@ -80,7 +80,8 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
         eventosSeguidos={eventosSeguidos}
         ciudad={ciudad}
         ciudades={ciudades}
-        hoy={diaLocal(new Date())}
+        hoy={diaLocal(new Date(), ciudad.zona)}
+        zona={ciudad.zona}
         asistencias={asistencias}
         destacados={destacados}
         antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}

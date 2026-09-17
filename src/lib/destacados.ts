@@ -44,16 +44,16 @@ export function enOrden<T extends { id: string }>(tira: Destacado[], fichas: T[]
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): Tarjeta {
-  return { id: e.id, href: `/eventos/${e.id}`, foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora))} · ${nombreSitio(e)}`, van: e.van };
+  return { id: e.id, href: `/eventos/${e.id}`, foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van };
 }
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
-  return { id: l.id, href: `/lugares/${l.id}`, foto: l.portada ?? SIN_FOTO, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo.inicio, ahora) : etiquetaTipo(l.tipo), van: 0 };
+  return { id: l.id, href: `/lugares/${l.id}`, foto: l.portada ?? SIN_FOTO, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0 };
 }
 
 /** La tarjeta de artista es redonda y angosta: la fecha va sin el sitio. */
 export function tarjetaArtista(a: ArtistaLista, ahora = new Date()): Tarjeta {
-  return { id: a.id, href: `/artistas/${a.id}`, foto: a.foto ?? SIN_FOTO, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora)) : etiquetaArtista(a), van: 0 };
+  return { id: a.id, href: `/artistas/${a.id}`, foto: a.foto ?? SIN_FOTO, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0 };
 }
 
 /** "hasta mañana" o "hasta el mié 30 de sep". */

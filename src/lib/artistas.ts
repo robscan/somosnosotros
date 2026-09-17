@@ -45,7 +45,7 @@ export type ArtistaResumen = {
 };
 
 /** La fecha más cercana de un artista: qué día y dónde. */
-export type ProximaFecha = { id: string; inicio: string; sitio: string };
+export type ProximaFecha = { id: string; inicio: string; sitio: string; zona: string };
 
 export type ArtistaLista = ArtistaResumen & { proxima: ProximaFecha | null };
 
@@ -182,9 +182,9 @@ export function artistaIgual<T extends { nombre: string }>(artistas: T[], nombre
   return artistas.find((a) => normalizarNombre(a.nombre) === q) ?? null;
 }
 
-/** "Próximo: hoy · 19:30 · Casa Ocho Ventanas". */
+/** "Próximo: hoy · 19:30 · Casa Ocho Ventanas", con la hora de la zona del evento. */
 export function textoProximaFecha(f: ProximaFecha, ahora: Date = new Date()): string {
-  const cuando = formatearCuando(f.inicio, null, ahora);
+  const cuando = formatearCuando(f.inicio, null, ahora, f.zona);
   return `Próximo: ${cuando.charAt(0).toLowerCase()}${cuando.slice(1)} · ${f.sitio}`;
 }
 
@@ -198,7 +198,7 @@ export type FechaDeArtista = { artista_id: string; evento: ProximaFecha & { titu
  */
 export function conProximaFecha<T extends { id: string }>(artistas: T[], fechas: FechaDeArtista[]): (T & { proxima: ProximaFecha | null })[] {
   const proxima = new Map<string, ProximaFecha>();
-  for (const { artista_id, evento: e } of [...fechas].sort((a, b) => compararEventos(a.evento, b.evento))) if (!proxima.has(artista_id)) proxima.set(artista_id, { id: e.id, inicio: e.inicio, sitio: e.sitio });
+  for (const { artista_id, evento: e } of [...fechas].sort((a, b) => compararEventos(a.evento, b.evento))) if (!proxima.has(artista_id)) proxima.set(artista_id, { id: e.id, inicio: e.inicio, sitio: e.sitio, zona: e.zona });
   return artistas.map((a) => ({ ...a, proxima: proxima.get(a.id) ?? null }));
 }
 

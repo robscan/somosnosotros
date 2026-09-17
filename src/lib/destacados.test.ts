@@ -8,9 +8,10 @@ import type { LugarLista } from "./lugares";
 // Miércoles 16 de septiembre de 2026, 18:00 en San Luis Potosí.
 const AHORA = new Date("2026-09-17T00:00:00Z");
 const MANANA_19 = "2026-09-18T01:00:00Z";
+const ZONA = "America/Mexico_City";
 
 const evento = (cambios: Partial<EventoAgenda> = {}): EventoAgenda => ({
-  id: "e1", titulo: "Gala de arias", inicio: MANANA_19, fin: null, imagen: null, precio: null, lugar_id: "l1", sitio_texto: null, sitio_reservado: false,
+  id: "e1", titulo: "Gala de arias", inicio: MANANA_19, fin: null, imagen: null, precio: null, lugar_id: "l1", sitio_texto: null, sitio_reservado: false, zona: ZONA,
   lugar: { nombre: "Teatro de la Paz", portada: null }, creado_en: "2026-09-14T00:00:00Z", lat: null, lng: null, van: 0, ...cambios,
 });
 const lugar = (cambios: Partial<LugarLista> = {}): LugarLista => ({ id: "l1", nombre: "Casa de la Cultura", tipo: "casa_de_cultura", direccion: null, lat: 22.15, lng: -100.98, portada: null, proximo: null, ...cambios }) as LugarLista;
@@ -30,11 +31,11 @@ describe("tarjetas", () => {
     expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: SIN_FOTO, detalle: "mañana · 19:00 · Plaza de Armas" });
   });
   it("lugar: su próximo evento o, sin él, qué es", () => {
-    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19 } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: SIN_FOTO, detalle: "Próximo: mañana · 19:00" });
+    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: SIN_FOTO, detalle: "Próximo: mañana · 19:00" });
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA)).toMatchObject({ foto: "/casa.jpg", detalle: "Casa de cultura" });
   });
   it("artista: la fecha sin el sitio, o lo que hace", () => {
-    expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/a1", foto: SIN_FOTO, detalle: "mañana · 19:00" });
+    expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/a1", foto: SIN_FOTO, detalle: "mañana · 19:00" });
     expect(tarjetaArtista(artista({ foto: "/trio.jpg" }), AHORA)).toMatchObject({ foto: "/trio.jpg", detalle: "Música · Grupo" });
   });
 });

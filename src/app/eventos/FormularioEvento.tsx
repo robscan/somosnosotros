@@ -11,7 +11,7 @@ import { IconoBoleto, IconoBuscar, IconoCamara, IconoMas, IconoPersonas, IconoPi
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
-import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
+import { formatearCuando, isoALocal, localAIso, resugerirCuando, sugerirInicio, ZONA_INICIAL, zonaSegura } from "@/lib/fechas";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
 import { configPublica } from "@/lib/config";
@@ -20,7 +20,7 @@ import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
-import { leerCartelAccion, type ResultadoEvento } from "./acciones";
+import { leerCartelAccion, zonaDelPunto, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
@@ -53,12 +53,28 @@ function leerBorrador(): Borrador | null {
     return null;
   }
 }
+type Cambio = (cambio: (actual: string) => string) => void;
+/**
+ * Si la hora sigue siendo la sugerida (nadie la tocó), la vuelve a sugerir en la zona nueva y mueve el fin con la misma
+ * duración (resugerirCuando). `cuando` es lo último que se pintó; cada cambio comprueba que no cambió entretanto.
+ */
+function resugerir(sugerida: { current: string }, cuando: { current: { inicio: string; fin: string } }, setInicio: Cambio, setFin: Cambio, zona: string) {
+  const antes = cuando.current;
+  const nuevo = resugerirCuando(antes, sugerida.current, zona);
+  if (!nuevo) return;
+  sugerida.current = nuevo.inicio;
+  setInicio((actual) => (actual === antes.inicio ? nuevo.inicio : actual));
+  setFin((actual) => (actual === antes.fin ? nuevo.fin : actual));
+}
+
 type Props = {
   accion: (previo: ResultadoEvento | null, formData: FormData) => Promise<ResultadoEvento>;
   lugares: LugarResumen[];
   lugarInicial?: string;
   evento?: Partial<Evento>;
   privado?: SitioPrivado | null;
+  /** En otro sitio, la zona de su punto tal como la calcula el servidor al guardar (lib/zona). */
+  zonaSitio?: string;
   modo: "alta" | "editar" | "duplicar";
   usuarioId: string;
   cartelActivo?: boolean;
@@ -77,7 +93,7 @@ type Props = {
  * (leer el cartel llena todo); debajo, renglones resueltos con el mismo dibujo: Cuándo (hoy · 19:00), Dónde (una sola
  * salida: la lupa abre la hoja "Dónde es"), Quién, Cuánto (gratis) y Más. El botón dice qué falta. Sin frases de ayuda.
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo" }: Props) {
+export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo" }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const esAlta = modo === "alta";
@@ -102,8 +118,39 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     ciudad: (evento as { ciudad?: string } | undefined)?.ciudad ?? null,
   }));
   const [titulo, setTitulo] = useState(evento?.titulo ?? "");
-  const [inicio, setInicio] = useState(modo === "editar" ? isoALocal(evento?.inicio) : sugerirInicio());
-  const [fin, setFin] = useState(modo === "editar" ? isoALocal(evento?.fin) : "");
+  // Las horas del selector son las del sitio del evento y se leen en su zona, la misma que usará el servidor al guardar
+  // (zonaDelEvento): la del lugar elegido o, en otro sitio, la de su punto.
+  const zonaInicial = zonaSegura(modoInicial === "lugar" ? (lugares.find((l) => l.id === (evento?.lugar_id ?? lugarInicial))?.zona ?? evento?.zona) : zonaSitio);
+  const [inicio, setInicio] = useState(modo === "editar" ? isoALocal(evento?.inicio, zonaInicial) : sugerirInicio(new Date(), zonaInicial));
+  const [fin, setFin] = useState(modo === "editar" ? isoALocal(evento?.fin, zonaInicial) : "");
+  // En otro sitio, la zona sale del punto (el público o el reservado) con la misma cuenta del servidor; se pide cada vez
+  // que el punto cambia (hoja, borrador). Sin punto, la de la ciudad inicial, como al guardar.
+  const puntoActivo = modoSitio === "reservado" ? otro.privadoPunto : modoSitio === "otro" ? otro.sitioPunto : null;
+  const clavePunto = puntoActivo ? `${puntoActivo.lat},${puntoActivo.lng}` : "";
+  const [zonaPin, setZonaPin] = useState(zonaSitio);
+  // Mientras nadie la toque, la hora sugerida sigue a la zona del sitio (resugerir), con el fin detrás.
+  const sugerida = useRef(modo === "editar" ? "" : inicio);
+  const cuando = useRef({ inicio, fin });
+  useEffect(() => {
+    cuando.current = { inicio, fin };
+  }, [inicio, fin]);
+  const claveConZona = useRef(modoInicial === "lugar" ? "" : clavePunto);
+  useEffect(() => {
+    if (!clavePunto || clavePunto === claveConZona.current) return;
+    claveConZona.current = clavePunto;
+    const [lat, lng] = clavePunto.split(",").map(Number);
+    let vigente = true;
+    zonaDelPunto(lat, lng)
+      .then((z) => {
+        if (!vigente) return;
+        setZonaPin(z);
+        resugerir(sugerida, cuando, setInicio, setFin, z);
+      })
+      .catch(() => {});
+    return () => {
+      vigente = false;
+    };
+  }, [clavePunto]);
   const [gratis, setGratis] = useState(!evento?.precio);
   const [precio, setPrecio] = useState(evento?.precio ?? "");
   const [descripcion, setDescripcion] = useState(evento?.descripcion ?? "");
@@ -184,8 +231,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const listo = !faltaNombre && dondeResuelto;
 
   const valorDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "") : `${otro.sitioTexto.trim()} · ${modoSitio === "reservado" ? "reservado" : "otro sitio"}`;
-  const inicioIso = localAIso(inicio);
-  const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin) : null) : "Falta";
+  const zona = zonaSegura(modoSitio === "lugar" ? (lugar?.zona ?? evento?.zona) : clavePunto ? zonaPin : ZONA_INICIAL);
+  const inicioIso = localAIso(inicio, zona);
+  const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin, zona) : null, new Date(), zona) : "Falta";
   const valorCuanto = gratis ? "Gratis" : precio.trim() || "Con costo";
   const valorQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : "Sin artista";
 
@@ -194,6 +242,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     setModoSitio("lugar");
     setLugarId(id);
     setHoja(false);
+    resugerir(sugerida, cuando, setInicio, setFin, zonaSegura(lugares.find((l) => l.id === id)?.zona));
   }
   function cambiarOtro(o: OtroSitio) {
     setOtro(o);
@@ -311,6 +360,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 <SelectorCuando
                   inicio={inicio}
                   fin={fin}
+                  zona={zona}
                   onCambio={(i, f) => {
                     setInicio(i);
                     setFin(f);

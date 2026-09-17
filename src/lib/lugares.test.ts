@@ -79,9 +79,9 @@ describe("calleCorta", () => {
 
 describe("ordenarLugares", () => {
   const base = { tipo: "foro" as const, direccion: null, portada: null };
-  const a = { ...base, id: "a", nombre: "Zeta", lat: 22.15, lng: -100.98, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z" } };
+  const a = { ...base, id: "a", nombre: "Zeta", lat: 22.15, lng: -100.98, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City" } };
   const b = { ...base, id: "b", nombre: "Alfa", lat: 22.16, lng: -100.98, proximo: null };
-  const c = { ...base, id: "c", nombre: "Beta", lat: 22.2, lng: -100.9, proximo: { id: "e2", inicio: "2026-09-15T01:00:00Z" } };
+  const c = { ...base, id: "c", nombre: "Beta", lat: 22.2, lng: -100.9, proximo: { id: "e2", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City" } };
   it("sin ubicación: con eventos primero por fecha, luego alfabético", () => {
     expect(ordenarLugares([a, b, c], null).lista.map((l) => l.id)).toEqual(["c", "a", "b"]);
   });
@@ -96,11 +96,11 @@ describe("ordenarLugares", () => {
 describe("conProximo", () => {
   it("toma el primer evento de cada lugar y deja null a los demás", () => {
     const r = conProximo([{ id: "a" }, { id: "b" }], [
-      { id: "e1", inicio: "2026-09-15T01:00:00Z", lugar_id: "a" },
-      { id: "e2", inicio: "2026-09-16T01:00:00Z", lugar_id: "a" },
-      { id: "e3", inicio: "2026-09-17T01:00:00Z", lugar_id: null },
+      { id: "e1", inicio: "2026-09-15T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" },
+      { id: "e2", inicio: "2026-09-16T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" },
+      { id: "e3", inicio: "2026-09-17T01:00:00Z", lugar_id: null, zona: "America/Mexico_City" },
     ]);
-    expect(r[0].proximo).toEqual({ id: "e1", inicio: "2026-09-15T01:00:00Z" });
+    expect(r[0].proximo).toEqual({ id: "e1", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City" });
     expect(r[1].proximo).toBeNull();
   });
 });

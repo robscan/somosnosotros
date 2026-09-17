@@ -3,10 +3,10 @@ import { distanciaKm } from "./geo";
 import { buscarCiudades, buscarDirecciones, ciudadDelContexto, direccionDesdePunto, interpretarCiudades, interpretarRespuesta, lugarDesdePunto, urlCiudades, urlGeocodificar } from "./geocodificar";
 
 describe("geocodificar", () => {
-  it("arma la URL con cercanía, país y español", () => {
+  it("arma la URL con cercanía y español, sin país", () => {
     const u = new URL(urlGeocodificar("Villerías 2", "pk.x", { lat: 22.15, lng: -100.97 }));
     expect(u.searchParams.get("q")).toBe("Villerías 2");
-    expect(u.searchParams.get("country")).toBe("mx");
+    expect(u.searchParams.has("country")).toBe(false);
     expect(u.searchParams.get("language")).toBe("es");
     expect(u.searchParams.get("proximity")).toBe("-100.97,22.15");
   });

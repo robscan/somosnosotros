@@ -2,7 +2,9 @@
 // Con las migraciones de antes reproduce el fallo (un administrador no crea un lugar privado con INSERT … RETURNING, que
 // es lo que manda supabase-js con .insert().select()); después aplica la migración y las que sigan, y comprueba que lo
 // privado u oculto se crea y se devuelve, que nadie más lo ve, que las cuentas ligadas siguen leyendo y editando, y que
-// de lo ya guardado cada quien ve exactamente las mismas filas que antes.
+// de lo ya guardado cada quien ve exactamente las mismas filas que antes. Lo guardado incluye lugares privados que no son
+// del administrador (de una autora que dejó de administrar, y uno ligado a otra cuenta): sin ellos, una regla que les
+// quitara lo privado a esas cuentas pasaba el banco (bitácora 084).
 //
 // PGlite no es dependencia del repo: se instala aparte, una vez, fuera del proyecto.
 //   npm install --prefix /tmp/pglite @electric-sql/pglite@0.5.8
@@ -99,22 +101,29 @@ console.log(`✓ ${corte} migraciones de antes aplicadas (la última: ${archivos
 const F = "00000000-0000-4000-8000-0000000000f1"; // fundador, administrador
 const L = "00000000-0000-4000-8000-0000000000a1"; // Luis, publica
 const A = "00000000-0000-4000-8000-0000000000a2"; // Ana, sin relación con nada
-const C = "00000000-0000-4000-8000-0000000000a3"; // Carla, cuenta ligada a fichas del catálogo
+const C = "00000000-0000-4000-8000-0000000000a3"; // Carla, cuenta ligada a fichas del catálogo y a un lugar privado
+const O = "00000000-0000-4000-8000-0000000000a4"; // Olga, ya no administra (se le quitó el rol): sus mapeos privados siguen siendo suyos
 const P_CATALOGO = "00000000-0000-4000-8000-000000000102";
 const P_OCULTO_LIGADO = "00000000-0000-4000-8000-000000000103";
 const P_PRIVADO = "00000000-0000-4000-8000-000000000104";
 const P_OCULTO_LUIS = "00000000-0000-4000-8000-000000000105";
+const P_PRIVADO_OLGA = "00000000-0000-4000-8000-000000000106";
+const P_OCULTO_PRIVADO_OLGA = "00000000-0000-4000-8000-000000000107";
+const P_PRIVADO_LIGADO = "00000000-0000-4000-8000-000000000108";
 const AR_OCULTO_LIGADO = "00000000-0000-4000-8000-000000000302";
 await db.exec(`
   insert into public.admin_correos (correo) values ('fundador@ejemplo.org');
-  insert into auth.users (id, email) values ('${F}', 'fundador@ejemplo.org'), ('${L}', 'luis@ejemplo.org'), ('${A}', 'ana@ejemplo.org'), ('${C}', 'carla@ejemplo.org');
+  insert into auth.users (id, email) values ('${F}', 'fundador@ejemplo.org'), ('${L}', 'luis@ejemplo.org'), ('${A}', 'ana@ejemplo.org'), ('${C}', 'carla@ejemplo.org'), ('${O}', 'olga@ejemplo.org');
   insert into public.lugares (id, nombre, tipo, lat, lng, creado_por, visible, privado, origen) values
     ('00000000-0000-4000-8000-000000000101', 'Casa de Cultura Norte', 'casa_de_cultura', 22.15, -100.98, '${F}', true, false, null),
     ('${P_CATALOGO}', 'Foro del Catálogo', 'foro', 22.17, -100.96, null, true, false, 'capo'),
     ('${P_OCULTO_LIGADO}', 'Galería Oculta', 'galeria', 22.19, -100.94, null, false, false, 'capo'),
     ('${P_PRIVADO}', 'Mapeo Privado', 'otro', 22.21, -100.92, '${F}', true, true, null),
-    ('${P_OCULTO_LUIS}', 'Taller de Luis', 'otro', 22.23, -100.90, '${L}', false, false, null);
-  insert into public.lugares_cuentas (lugar_id, perfil_id) values ('${P_CATALOGO}', '${C}'), ('${P_OCULTO_LIGADO}', '${C}');
+    ('${P_OCULTO_LUIS}', 'Taller de Luis', 'otro', 22.23, -100.90, '${L}', false, false, null),
+    ('${P_PRIVADO_OLGA}', 'Mapeo de Olga', 'otro', 22.27, -100.86, '${O}', true, true, null),
+    ('${P_OCULTO_PRIVADO_OLGA}', 'Terreno de Olga', 'otro', 22.29, -100.84, '${O}', false, true, null),
+    ('${P_PRIVADO_LIGADO}', 'Casona Privada', 'otro', 22.31, -100.82, '${F}', true, true, null);
+  insert into public.lugares_cuentas (lugar_id, perfil_id) values ('${P_CATALOGO}', '${C}'), ('${P_OCULTO_LIGADO}', '${C}'), ('${P_PRIVADO_LIGADO}', '${C}');
   insert into public.artistas (id, nombre, visible, creado_por, origen) values
     ('00000000-0000-4000-8000-000000000301', 'Colectivo Barro', true, null, 'capo'),
     ('${AR_OCULTO_LIGADO}', 'Solista Oculta', false, null, 'capo'),
@@ -130,13 +139,14 @@ const RLS = "new row violates row-level security policy";
 // ---------- antes: el fallo ----------
 await como("authenticated", F);
 ok((await falla(`${LUGAR} returning id`, ["Huerto de antes", true, true]))?.includes(RLS), "antes: el administrador no crea un lugar privado con RETURNING (el fallo)");
+ok((await falla(`with pgrst_source as (${LUGAR} returning "public"."lugares"."id") select id from pgrst_source`, ["Huerto de antes", true, true]))?.includes(RLS), "antes: tampoco con la forma de consulta de la API (CTE con RETURNING, como supabase-js)");
 ok((await falla(LUGAR, ["Huerto de antes", true, true])) === null, "antes: sin RETURNING sí se guardaba");
 await como("authenticated", L);
 ok((await falla(`${ARTISTA} returning id`, ["Dúo de antes", false]))?.includes(RLS), "antes: un artista oculto tampoco se creaba con RETURNING");
 ok((await falla(ARTISTA, ["Dúo de antes", false])) === null, "antes: sin RETURNING sí se guardaba");
 
 // Lo que ve cada quien de lo ya guardado (nombres de las fichas, en orden).
-const QUIENES = [["anon", null, "sin sesión"], ["authenticated", L, "Luis"], ["authenticated", A, "Ana"], ["authenticated", C, "Carla"], ["authenticated", F, "el administrador"]];
+const QUIENES = [["anon", null, "sin sesión"], ["authenticated", L, "Luis"], ["authenticated", A, "Ana"], ["authenticated", C, "Carla"], ["authenticated", O, "Olga"], ["authenticated", F, "el administrador"]];
 async function loQueVe() {
   const vista = {};
   for (const [rol, sub, nombre] of QUIENES) {
@@ -150,7 +160,7 @@ async function loQueVe() {
   return vista;
 }
 const antes = await loQueVe();
-ok(antes["sin sesión"].lugares.length === 2 && antes.Carla.lugares.includes("Galería Oculta") && antes.Luis.lugares.includes("Taller de Luis") && antes["el administrador"].lugares.length === 6, "antes: cada quien ve algo distinto (la comparación no es vacía)", antes);
+ok(antes["sin sesión"].lugares.length === 2 && antes.Carla.lugares.includes("Galería Oculta") && antes.Carla.lugares.includes("Casona Privada") && antes.Olga.lugares.includes("Mapeo de Olga") && antes.Olga.lugares.includes("Terreno de Olga") && antes.Luis.lugares.includes("Taller de Luis") && antes["el administrador"].lugares.length === 9, "antes: cada quien ve algo distinto (la comparación no es vacía)", antes);
 
 // ---------- la migración y las que sigan ----------
 await aplicar(archivos.slice(corte));
@@ -183,8 +193,12 @@ const artistaOculto = await devuelve(`${ARTISTA} returning id`, ["Cuarteto Ocult
 ok(artistaOculto.filas.length === 1, "Luis crea un artista oculto con RETURNING", artistaOculto.error);
 
 // ---------- nadie más lo ve ----------
+// Sin id (la creación falló) no hay fila que mirar: cuenta como fallo, para que "nadie más lo ve" no pase en falso.
 async function loVe(rol, sub, tabla, id, llave = "id") {
-  if (!id) return false;
+  if (!id) {
+    ok(false, `sin id no se puede mirar quién ve la fila de ${tabla}: la creación falló`);
+    return false;
+  }
   await como(rol, sub);
   const n = (await filas(`select ${llave} from public.${tabla} where ${llave} = $1`, [id])).length;
   await como(null, null);
@@ -207,6 +221,16 @@ ok((await loVe("authenticated", L, "lugares", idOcultoLuis)) && (await loVe("aut
 const idArtistaOculto = artistaOculto.filas[0]?.id;
 ok(!(await loVe("anon", null, "artistas", idArtistaOculto)) && !(await loVe("authenticated", A, "artistas", idArtistaOculto)), "el artista oculto de Luis: ni sin sesión ni Ana");
 ok((await loVe("authenticated", L, "artistas", idArtistaOculto)) && (await loVe("authenticated", F, "artistas", idArtistaOculto)), "el artista oculto de Luis: él y el administrador");
+
+// ---------- lo privado que no es del administrador: su autora y la cuenta ligada lo siguen viendo ----------
+ok((await loVe("authenticated", O, "lugares", P_PRIVADO_OLGA)) && (await loVe("authenticated", O, "lugares", P_OCULTO_PRIVADO_OLGA)), "Olga, que ya no administra, sigue viendo sus mapeos privados (el visible y el oculto)");
+ok(await loVe("authenticated", C, "lugares", P_PRIVADO_LIGADO), "Carla ve el lugar privado que tiene ligado");
+for (const [rol, sub, nombre] of [["anon", null, "sin sesión"], ["authenticated", A, "Ana"], ["authenticated", L, "Luis"]]) {
+  const ve = [];
+  for (const id of [P_PRIVADO_OLGA, P_OCULTO_PRIVADO_OLGA, P_PRIVADO_LIGADO]) ve.push(await loVe(rol, sub, "lugares", id));
+  ok(!ve.includes(true), `${nombre}: ni los mapeos de Olga ni el privado ligado a Carla`, ve);
+}
+ok(!(await loVe("authenticated", C, "lugares", P_PRIVADO_OLGA)) && !(await loVe("authenticated", C, "lugares", P_OCULTO_PRIVADO_OLGA)) && !(await loVe("authenticated", O, "lugares", P_PRIVADO_LIGADO)), "Carla no ve los mapeos de Olga, ni Olga el privado ligado a Carla");
 
 // ---------- las cuentas ligadas siguen leyendo y editando ----------
 ok(await loVe("authenticated", C, "lugares", P_OCULTO_LIGADO), "Carla lee el lugar oculto que tiene ligado");

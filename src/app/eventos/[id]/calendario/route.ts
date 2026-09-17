@@ -8,9 +8,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const supabase = await clienteServidor();
   if (!supabase || !esUuid(id)) return new Response("No encontrado", { status: 404 });
-  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, descripcion, sitio_texto, lugar:lugares(nombre, direccion)").eq("id", id).maybeSingle();
+  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, zona, descripcion, sitio_texto, lugar:lugares(nombre, direccion)").eq("id", id).maybeSingle();
   // Un evento que ya pasó se oculta: tampoco se entrega su archivo de calendario.
-  if (!data || eventoPaso(data.inicio, data.fin)) return new Response("No encontrado", { status: 404 });
+  if (!data || eventoPaso(data.inicio, data.fin, new Date(), data.zona)) return new Response("No encontrado", { status: 404 });
   const lugar = (Array.isArray(data.lugar) ? data.lugar[0] : data.lugar) as { nombre: string; direccion: string | null } | null;
   const donde = lugar ? [lugar.nombre, lugar.direccion].filter(Boolean).join(", ") : (data.sitio_texto ?? null);
   const ics = archivoIcs({ id: data.id, titulo: data.titulo, inicio: data.inicio, fin: data.fin, descripcion: data.descripcion, lugar: donde });

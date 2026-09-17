@@ -2,17 +2,17 @@ import "server-only";
 import { correoCambioEvento, correoNuevoEvento, correoRecordatorio, textoCambio } from "./comunidad";
 import { correoActivo, enviarCorreo } from "./correo";
 import { nombreSitio, type CambioEvento } from "./eventos";
-import { formatearCuando } from "./fechas";
+import { diaCorto, formatearCuando } from "./fechas";
 import { urlBaja } from "./baja";
 import { enviarPush, type AvisoPush } from "./push";
 import { clienteAdmin } from "./supabase/admin";
 
-type EventoAviso = { id: string; titulo: string; inicio: string; fin: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string; portada: string | null } | null };
+type EventoAviso = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string; portada: string | null } | null };
 
 async function cargarEvento(id: string): Promise<EventoAviso | null> {
   const admin = clienteAdmin();
   if (!admin) return null;
-  const { data } = await admin.from("eventos").select("id, titulo, inicio, fin, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada)").eq("id", id).eq("visible", true).maybeSingle();
+  const { data } = await admin.from("eventos").select("id, titulo, inicio, fin, zona, lugar_id, sitio_texto, sitio_reservado, lugar:lugares(nombre, portada)").eq("id", id).eq("visible", true).maybeSingle();
   if (!data) return null;
   const lugar = Array.isArray(data.lugar) ? (data.lugar[0] ?? null) : data.lugar;
   return { ...(data as unknown as EventoAviso), lugar: lugar as EventoAviso["lugar"] };
@@ -32,17 +32,25 @@ async function correoDe(usuarioId: string): Promise<string | null> {
  */
 type TipoAviso = "nuevo_evento" | "recordatorio" | "cambio";
 type Cambio = Exclude<CambioEvento, null>;
-export type EventoParaAviso = Pick<EventoAviso, "id" | "titulo" | "inicio" | "fin" | "sitio_texto" | "sitio_reservado" | "lugar">;
+export type EventoParaAviso = Pick<EventoAviso, "id" | "titulo" | "inicio" | "fin" | "zona" | "sitio_texto" | "sitio_reservado" | "lugar">;
 export type Canales = { id: string; avisos_correo: boolean; avisos_push: boolean };
 
-/** El título, cuerpo y enlace del aviso push, según el tipo. Puro: mismos textos que antes de extraerla. */
+/**
+ * El día del recordatorio en la zona del evento: "Hoy" o "Mañana". El recordatorio sale una vez al día (9:00 en San Luis)
+ * para lo que empieza en las 24 horas siguientes; en otra zona, o antes de las 9:00, eso cae mañana.
+ */
+export function diaDelRecordatorio(evento: Pick<EventoParaAviso, "inicio" | "zona">, ahora: Date = new Date()): "Hoy" | "Mañana" {
+  return diaCorto(evento.inicio, ahora, evento.zona) === "Mañana" ? "Mañana" : "Hoy";
+}
+
+/** El título, cuerpo y enlace del aviso push, según el tipo. Puro. */
 export function contenidoPush(tipo: TipoAviso, evento: EventoParaAviso, cambio: Cambio = "ambos", ahora: Date = new Date()): AvisoPush {
-  const cuando = formatearCuando(evento.inicio, evento.fin, ahora);
+  const cuando = formatearCuando(evento.inicio, evento.fin, ahora, evento.zona);
   const lugar = nombreSitio(evento);
   const url = `https://somosnosotros.org/eventos/${evento.id}`;
   if (tipo === "nuevo_evento") return { titulo: `Nuevo en ${lugar}`, cuerpo: `${evento.titulo} · ${cuando}`, url };
   if (tipo === "cambio") return { titulo: `Cambió ${textoCambio(cambio)}: ${evento.titulo}`, cuerpo: `Ahora es ${cuando} · ${lugar}`, url };
-  return { titulo: `Hoy: ${evento.titulo}`, cuerpo: `${cuando} · ${lugar}`, url };
+  return { titulo: `${diaDelRecordatorio(evento, ahora)}: ${evento.titulo}`, cuerpo: `${cuando} · ${lugar}`, url };
 }
 
 /** Quién falta por avisar: tiene algún canal activo (correo o push) y no está ya en avisos_enviados. Puro. */
@@ -58,11 +66,13 @@ async function avisar(evento: EventoAviso, usuarios: string[], tipo: TipoAviso, 
   const { data: perfiles } = await admin.from("perfiles").select("id, avisos_correo, avisos_push").in("id", usuarios).limit(5000);
   const { data: ya } = await admin.from("avisos_enviados").select("usuario_id").eq("evento_id", evento.id).eq("tipo", tipo).limit(5000);
   const yaEnviados = new Set((ya ?? []).map((r) => r.usuario_id as string));
-  const cuando = formatearCuando(evento.inicio, evento.fin);
+  const ahora = new Date();
+  const cuando = formatearCuando(evento.inicio, evento.fin, ahora, evento.zona);
+  const dia = diaDelRecordatorio(evento, ahora);
   const lugar = nombreSitio(evento);
   const plantilla = tipo === "nuevo_evento" ? correoNuevoEvento : tipo === "cambio" ? (p: Parameters<typeof correoNuevoEvento>[0]) => correoCambioEvento({ ...p, cambio }) : correoRecordatorio;
   const llaveBaja = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  const aviso = contenidoPush(tipo, evento, cambio);
+  const aviso = contenidoPush(tipo, evento, cambio, ahora);
   const pendientes = pendientesDeAviso((perfiles ?? []) as Canales[], yaEnviados);
   let enviados = 0;
   // Por lotes: cada persona recibe push y correo a la vez, y el lote entero en paralelo.
@@ -71,7 +81,7 @@ async function avisar(evento: EventoAviso, usuarios: string[], tipo: TipoAviso, 
     const resultados = await Promise.all(
       lote.map(async (p) => {
         const bajaUrl = llaveBaja ? urlBaja(p.id, llaveBaja) : undefined;
-        const correo = plantilla({ titulo: evento.titulo, cuando, lugar, eventoId: evento.id, bajaUrl });
+        const correo = plantilla({ titulo: evento.titulo, cuando, dia, lugar, eventoId: evento.id, bajaUrl });
         const [porPush, porCorreo] = await Promise.all([
           p.avisos_push ? enviarPush([p.id], aviso).then((n) => n > 0) : Promise.resolve(false),
           p.avisos_correo && correoActivo()
