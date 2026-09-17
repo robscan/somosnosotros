@@ -39,7 +39,8 @@ function mover(el: HTMLElement | null, x: number, animar: boolean) {
  * Renglón de lista que se desliza de derecha a izquierda para mostrar sus acciones (lib/deslizar; bitácora 071). Las
  * acciones van detrás, a la derecha, y se confirman con un toque. Se cierra deslizando de vuelta, tocando el renglón,
  * tocando fuera o con el scroll. Un gesto que empieza en el borde izquierdo es del navegador (atrás) y no se toma.
- * Con VoiceOver o teclado no hay gesto: las mismas acciones están en la ficha.
+ * Con teclado, ← en el renglón abre las acciones y lleva el foco a la primera; Esc o → las cierra y vuelve al renglón;
+ * salir con Tab también cierra. Con VoiceOver, las mismas acciones están en la ficha.
  */
 export default function Deslizable({ href, className, acciones, children }: Props) {
   const li = useRef<HTMLLIElement>(null);
@@ -136,6 +137,21 @@ export default function Deslizable({ href, className, acciones, children }: Prop
     if (alSoltar(a.x, a.ancho, 0) === "abrir") abrir();
     else cerrar();
   }
+  function alTeclaRenglon(e: React.KeyboardEvent<HTMLAnchorElement>) {
+    if (e.key !== "ArrowLeft" || abierto) return;
+    e.preventDefault();
+    abrir();
+    requestAnimationFrame(() => caja.current?.querySelector("button")?.focus());
+  }
+  function alTeclaAccion(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key !== "Escape" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    cerrar();
+    frente.current?.focus();
+  }
+  function alSalirFoco(e: React.FocusEvent<HTMLLIElement>) {
+    if (abierto && !li.current?.contains(e.relatedTarget as Node | null)) cerrar();
+  }
   function alTocarRenglon(e: React.MouseEvent<HTMLAnchorElement>) {
     if (suprimirClic.current) {
       e.preventDefault();
@@ -149,7 +165,7 @@ export default function Deslizable({ href, className, acciones, children }: Prop
   }
 
   return (
-    <li ref={li} className={`${styles.deslizable} ${abierto ? styles.abierto : ""}`}>
+    <li ref={li} className={`${styles.deslizable} ${abierto ? styles.abierto : ""}`} onBlur={alSalirFoco}>
       <div ref={caja} className={`${styles.acciones} ${acciones.length === 1 ? styles.una : ""}`} aria-hidden={!abierto}>
         {acciones.map((a) => (
           <button
@@ -158,8 +174,11 @@ export default function Deslizable({ href, className, acciones, children }: Prop
             className={`${styles.accion} ${styles[a.tono]}`}
             tabIndex={abierto ? 0 : -1}
             aria-disabled={a.deshabilitada || undefined}
-            onClick={() => {
+            onKeyDown={alTeclaAccion}
+            onClick={(e) => {
               cerrar();
+              // Con teclado (Enter o espacio: detail 0), el foco vuelve al renglón en vez de quedarse en un botón oculto.
+              if (e.detail === 0) frente.current?.focus();
               if (!a.deshabilitada) a.alTocar?.();
             }}
           >
@@ -168,7 +187,7 @@ export default function Deslizable({ href, className, acciones, children }: Prop
           </button>
         ))}
       </div>
-      <Link ref={frente} href={href} className={`${className} ${styles.frente}`} draggable={false} onPointerDown={alBajar} onPointerMove={alMover} onPointerUp={alSubir} onPointerCancel={alCancelar} onClickCapture={alTocarRenglon}>
+      <Link ref={frente} href={href} className={`${className} ${styles.frente}`} draggable={false} aria-keyshortcuts="ArrowLeft" onKeyDown={alTeclaRenglon} onPointerDown={alBajar} onPointerMove={alMover} onPointerUp={alSubir} onPointerCancel={alCancelar} onClickCapture={alTocarRenglon}>
         {children}
       </Link>
     </li>

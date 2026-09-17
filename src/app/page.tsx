@@ -8,6 +8,7 @@ import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
 import { ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
+import { enmascararCorreo } from "@/lib/comunidad";
 import { leerTira } from "@/lib/destacados";
 import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
@@ -65,6 +66,8 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
   const ciudad = ciudadPorSlug(slug, ciudades);
   const { eventos, seguidos, eventosSeguidos, hayLugares, asistencias, destacados } = await cargar(ciudad, actual?.perfil.id ?? null);
   const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
+  // La pregunta de avisos tras el primer Voy al deslizar, como en la ficha.
+  const avisos = actual ? { preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
 
   return (
     <main className="raiz">
@@ -83,6 +86,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
         hoy={diaLocal(new Date(), ciudad.zona)}
         zona={ciudad.zona}
         asistencias={asistencias}
+        avisos={avisos}
         destacados={destacados}
         antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
       />

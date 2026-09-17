@@ -208,6 +208,8 @@ export async function cambiarAsistencia(eventoId: string, estado: EstadoAsistenc
   if (estado) await supabase.from("asistencias").upsert({ usuario_id: user.id, evento_id: eventoId, estado });
   else await supabase.from("asistencias").delete().eq("usuario_id", user.id).eq("evento_id", eventoId);
   revalidatePath(`/eventos/${eventoId}`);
+  // La agenda muestra lo decidido en cada renglón (y se reutiliza hasta un minuto): al volver de la ficha, al día.
+  revalidatePath("/");
   revalidatePath("/perfil");
   revalidatePath(`/personas/${user.id}`);
 }

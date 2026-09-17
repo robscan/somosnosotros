@@ -1,24 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
-import { useState, useTransition, type ReactNode } from "react";
-import { cambiarAsistencia } from "@/app/eventos/acciones";
-import { accionEvento, textoHecho, type Asistencia } from "@/lib/deslizar";
+import { useState, type ReactNode } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { enOrden, tarjetaEvento, type Destacado } from "@/lib/destacados";
 import ChipCiudad from "./Ciudad";
 import Destacados from "./Destacados";
-import Hecho from "./Hecho";
 import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
-import type { AccionDeslizable } from "./ui/Deslizable";
-import { IconoBuscar, IconoCalendario, IconoCaret, IconoCerrar, IconoEstrella, IconoOk } from "./ui/Iconos";
+import { IconoBuscar, IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
+import { useAsistenciaEnLista, type Decididas } from "./useAsistenciaEnLista";
+import type { AvisosLista } from "./useSeguirEnLista";
 import styles from "./AgendaInicio.module.css";
 
 type Props = {
@@ -36,7 +33,9 @@ type Props = {
   /** Lo que va entre la cabecera y la lista: la tarjeta "Activa los avisos" de la app instalada (docs/rediseno/17, decisión 4). */
   antes?: ReactNode;
   /** Lo que la persona decidió en los eventos cargados (Voy, Me interesa); null = sin sesión. */
-  asistencias?: Record<string, Exclude<Asistencia, null>> | null;
+  asistencias?: Decididas;
+  /** Lo que pide la pregunta de avisos tras el primer Voy al deslizar (como en la ficha); null = sin sesión. */
+  avisos?: AvisosLista | null;
   /** La tira de destacados de la ciudad (docs/rediseno/20). */
   destacados?: Destacado[];
 };
@@ -48,7 +47,7 @@ type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: bo
  * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
-export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, destacados = [] }: Props) {
+export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, avisos = null, destacados = [] }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
   // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
@@ -66,37 +65,9 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   const ahora = new Date();
 
-  // Al deslizar un evento: Me interesa (decisión del founder, 2026-09-16; bitácora 071). Se ve al momento y se guarda
-  // con la misma acción de la ficha; el aviso permite deshacer. Sin sesión, lleva a entrar y se aplica al volver.
-  const router = useRouter();
-  const [, iniciar] = useTransition();
-  const [mias, setMias] = useState<Record<string, Asistencia>>(asistencias ?? {});
-  const [hecho, setHecho] = useState<{ texto: string; deshacer: () => void; vez: number } | null>(null);
-  function guardar(eventoId: string, nuevo: Asistencia) {
-    setMias((m) => ({ ...m, [eventoId]: nuevo }));
-    iniciar(async () => {
-      await cambiarAsistencia(eventoId, nuevo);
-    });
-  }
-  function accionesDe(e: EventoAgenda): AccionDeslizable[] {
-    const previo = mias[e.id] ?? null;
-    const accion = accionEvento(previo);
-    const icono = accion.clave === "vas" ? <IconoOk width={22} height={22} /> : <IconoEstrella width={22} height={22} />;
-    return [
-      {
-        ...accion,
-        icono,
-        alTocar: () => {
-          if (asistencias === null) {
-            router.push(`/entrar?siguiente=${encodeURIComponent(`/eventos/${e.id}?accion=me_interesa`)}`);
-            return;
-          }
-          guardar(e.id, accion.clave === "me_interesa" ? "me_interesa" : null);
-          setHecho((h) => ({ texto: textoHecho(accion.clave, e.titulo), deshacer: () => guardar(e.id, previo), vez: (h?.vez ?? 0) + 1 }));
-        },
-      },
-    ];
-  }
+  // Al deslizar un evento: Voy y Me interesa, las dos con Deshacer (decisión del founder, 2026-09-17; bitácora 085). Se
+  // ven al momento y se guardan con la misma acción de la ficha. Sin sesión, llevan a entrar y se aplican al volver.
+  const asistencia = useAsistenciaEnLista(asistencias, avisos);
 
   function pedirUbicacion() {
     if (!("geolocation" in navigator)) {
@@ -176,7 +147,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
           </h2>
           <ul className={styles.lista}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} estado={mias[e.id] ?? null} acciones={accionesDe(e)} />
+              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} estado={asistencia.estado(e.id)} acciones={asistencia.acciones(e)} />
             ))}
           </ul>
         </section>
@@ -230,7 +201,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       {/* La tira se va cuando la persona ya busca algo: otra pestaña, una fecha o la búsqueda (decisión 3). */}
       {filtro === "todos" && !fecha && !buscando && <Destacados tarjetas={enOrden(destacados, eventos).map((e) => tarjetaEvento(e, ahora))} />}
       {cuerpo}
-      {hecho && <Hecho key={hecho.vez} texto={hecho.texto} onDeshacer={hecho.deshacer} onCerrar={() => setHecho(null)} />}
+      {asistencia.extras}
     </>
   );
 }

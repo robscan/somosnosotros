@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { accionEvento, accionSeguir, alSoltar, decidirGesto, desplazamiento, recortar, textoHecho } from "./deslizar";
+import { accionesEvento, accionSeguir, alSoltar, asistenciaTras, decidirGesto, desplazamiento, recortar, textoHecho } from "./deslizar";
 
 describe("deslizar", () => {
-  it("un evento ofrece Me interesa; con interés, quitarlo; con Voy, solo dice Vas (cancelar vive en la ficha)", () => {
-    expect(accionEvento(null)).toEqual({ clave: "me_interesa", etiqueta: "Me interesa", tono: "primario" });
-    expect(accionEvento("me_interesa")).toMatchObject({ clave: "quitar_interes", etiqueta: "Ya no" });
-    expect(accionEvento("voy")).toMatchObject({ clave: "vas", deshabilitada: true });
+  it("un evento ofrece Voy y Me interesa, y cada una se deshace volviendo a deslizar", () => {
+    const etiquetas = (estado: Parameters<typeof accionesEvento>[0]) => accionesEvento(estado).map((a) => a.etiqueta);
+    expect(etiquetas(null)).toEqual(["Voy", "Me interesa"]);
+    expect(etiquetas("voy")).toEqual(["No voy", "Me interesa"]);
+    expect(etiquetas("me_interesa")).toEqual(["Voy", "Ya no"]);
+    expect(accionesEvento(null).every((a) => !a.deshabilitada)).toBe(true);
+    // Voy y Me interesa se reemplazan entre sí; No voy y Ya no dejan el evento sin decisión.
+    expect(accionesEvento("me_interesa").map((a) => asistenciaTras(a.clave))).toEqual(["voy", null]);
+    expect(accionesEvento("voy").map((a) => asistenciaTras(a.clave))).toEqual([null, "me_interesa"]);
   });
   it("Seguir y Dejar de seguir", () => {
     expect(accionSeguir(false).clave).toBe("seguir");
@@ -33,6 +38,8 @@ describe("deslizar", () => {
     expect(alSoltar(-90, 100, 0.5)).toBe("cerrar");
   });
   it("el aviso nombra lo que se hizo, con el nombre recortado", () => {
+    expect(textoHecho("voy", "Huapangueada sobre rieles")).toBe("Vas a «Huapangueada sobre rieles»");
+    expect(textoHecho("no_voy", "Huapangueada sobre rieles")).toBe("Ya no vas a «Huapangueada sobre rieles»");
     expect(textoHecho("me_interesa", "Gala de arias de las óperas de Julián Carrillo")).toBe("Te interesa «Gala de arias de las óperas de Julián C…»");
     expect(textoHecho("quitar_interes", "Huapangueada sobre rieles")).toBe("Ya no te interesa «Huapangueada sobre rieles»");
     expect(textoHecho("seguir", "Teatro de la Paz", "lugar")).toBe("Sigues Teatro de la Paz");
