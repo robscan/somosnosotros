@@ -27,8 +27,9 @@ El identificador de la app `org.somosnosotros.app` ya tiene "Sign In with Apple"
    - Next › Done › Continue › **Save**.
 3. **Correos a quien oculta su dirección.** En **Services › Sign in with Apple for Email Communication › Configure**, en Email Sources toca **+** y pon `somosnosotros.org,send.somosnosotros.org` › Next › Register.
    - Sin esto, los recordatorios por correo no llegan a quien eligió "Ocultar mi correo".
-   - `send.` es el remitente técnico de Resend y ya pasa la comprobación SPF.
-   - `somosnosotros.org` es el de la firma DKIM.
+   - `send.` es el remitente técnico de Resend y ya pasa la comprobación SPF (✓).
+   - `somosnosotros.org` es el de la firma DKIM. Sale en rojo en SPF porque el dominio principal no tiene ese registro, y no estorba: Apple mira el SPF de `send.`.
+   - Si algún correo a una dirección oculta rebota: TXT `v=spf1 include:amazonses.com ~all` en el dominio principal.
 
 No se crea ninguna llave (Keys): no hace falta.
 

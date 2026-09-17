@@ -75,12 +75,26 @@ Un reporte de 2023 decía que, en la app instalada del iPhone, abrir appleid.app
   - un POST mal formado no rompe.
 - **Por comprobar con el founder** (exige sus cuentas): la entrada completa con Face ID en Safari y en la app instalada, el nombre de Apple la primera vez, y Google con su identificador.
 
+## Configuración hecha por encargo del founder («haz los pasos tu», 2026-09-16, noche)
+
+Desde el navegador de la app, con la sesión del founder.
+
+- **Apple (guía, A1 a A3), hecho:**
+  - Services ID `org.somosnosotros.web`, "Somos Nosotros";
+  - Sign In with Apple activado con App ID principal `org.somosnosotros.app`;
+  - dominios `somosnosotros.org` y `www.somosnosotros.org`;
+  - vueltas `https://somosnosotros.org/auth/apple` y `https://www.somosnosotros.org/auth/apple` (leídas de nuevo tras guardar).
+- **Orígenes de correo registrados:** `send.somosnosotros.org` pasa SPF (✓). `somosnosotros.org` sale en rojo porque el dominio principal no tiene registro SPF.
+  - No estorba: Apple mira el SPF del remitente técnico (`send.`, el Return-Path de Resend) y la firma DKIM del dominio del From (`somosnosotros.org`, que Resend firma).
+  - Si algún correo a una dirección oculta rebota, el remedio es un TXT `v=spf1 include:amazonses.com ~all` en el dominio principal.
+- **Durante la escritura, la página de Apple escribió en el portapapeles del founder:** avisado.
+- **Supabase y Google Cloud piden iniciar sesión en el navegador de la app:** lo hace el founder.
+
 ## Pendiente del founder
 
-1. Crear en Apple el Services ID `org.somosnosotros.web` con sus dos direcciones de vuelta y registrar los orígenes de correo (guía, A).
-2. Crear el cliente web en Google Cloud, publicar la app y pasar el Client ID (guía, G). Yo lo pongo en `src/lib/entrarCon.ts`.
-3. Encender Apple y Google en Supabase, con Client IDs y sin secretos (guía, S).
-4. Decir si se hace push y se abre el PR. El PR no cambia nada a la vista mientras Supabase siga apagado.
+1. ~~Crear en Apple el Services ID `org.somosnosotros.web` con sus dos direcciones de vuelta y registrar los orígenes de correo (guía, A).~~ Hecho (arriba).
+2. Iniciar sesión en Google Cloud y en Supabase en el navegador de la app, para que yo siga con los pasos G y S.
+3. Decir si se hace push y se abre el PR. El PR no cambia nada a la vista mientras Supabase siga apagado.
 5. Decidir si la foto de Google se queda como foto pública de la ficha. Así estaba diseñado desde la Fase 1 y el aviso de privacidad ya lo dice. Recomendación: sí, ayuda a reconocerse en los eventos.
 
 ## Notas
