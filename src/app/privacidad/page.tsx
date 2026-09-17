@@ -27,7 +27,7 @@ export default function Privacidad() {
 
         <h2>Qué datos guardamos</h2>
         <ul>
-          <li>Al entrar: tu correo. Con él te mandamos el código de acceso y, si lo pides, los avisos.</li>
+          <li>Al entrar: tu correo. Con él te mandamos el código de acceso y, si lo pides, los avisos. Si entras con Apple o con Google, ellos nos dan tu correo y tu nombre (Google, también tu foto de perfil); los cambias en «Mi perfil». Si en Apple eliges ocultar tu correo, guardamos la dirección que Apple te da y los avisos te llegan a través de Apple.</li>
           <li>Tu perfil, si lo llenas: nombre, foto, colonia y una línea sobre ti. El nombre y la foto son públicos: aparecen en «quién va» a un evento.</li>
           <li>Lo que haces en la app: a qué eventos dices «Voy» o «Me interesa», y qué lugares y artistas sigues. Quien abre tu perfil puede ver los eventos próximos a los que vas.</li>
           <li>Si activas avisos en el teléfono: la suscripción que nos da tu navegador para mandarte notificaciones. No es tu número.</li>
@@ -50,7 +50,7 @@ export default function Privacidad() {
 
         <h2>Con quién se comparten</h2>
         <p>
-          Con las empresas que hacen funcionar el sitio, y solo para eso: Supabase (base de datos y acceso), Vercel (servidor), Resend (correos), Mapbox (mapa y direcciones) y Anthropic (lectura automática del cartel de un evento, solo la imagen que subes). No vendemos ni cedemos tus datos a nadie más.
+          Con las empresas que hacen funcionar el sitio, y solo para eso: Supabase (base de datos y acceso), Vercel (servidor), Resend (correos), Mapbox (mapa y direcciones) y Anthropic (lectura automática del cartel de un evento, solo la imagen que subes). Si eliges entrar con Apple o con Google, ellos confirman quién eres y saben que entraste a Somos Nosotros; no les mandamos nada más. No vendemos ni cedemos tus datos a nadie más.
         </p>
 
         <h2>Tus derechos</h2>
@@ -59,7 +59,7 @@ export default function Privacidad() {
         </p>
 
         <h2>Cookies</h2>
-        <p>Usamos solo la cookie de sesión que te mantiene dentro. Sin rastreo ni publicidad.</p>
+        <p>Usamos solo la cookie de sesión que te mantiene dentro y, mientras entras con Apple o con Google, otra que dura 10 minutos y comprueba que la vuelta es tuya. Sin rastreo ni publicidad.</p>
 
         <h2>Cambios</h2>
         <p>Si este aviso cambia, lo verás aquí con la fecha nueva. Si el cambio afecta a cómo usamos tus datos, te lo diremos por correo.</p>

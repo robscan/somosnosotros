@@ -12,7 +12,7 @@ Cada fase deja algo usable en el teléfono. La siguiente fase no empieza hasta q
 
 ## Fase 1 · Usuarios
 
-- Registro e inicio de sesión con correo (enlace mágico) y Google. Sin contraseñas que recordar.
+- Registro e inicio de sesión con Apple, Google o correo (código). Sin contraseñas que recordar. **2026-09-16, founder:** «Mi principal barrera para registro de usuarios sigue siendo envío de código a mail, se ha vuelto muy importante habilitar log in con apple y google»: Apple y Google van primero y el correo queda como alternativa (bitácora 069).
 - Perfil: nombre, foto opcional, colonia opcional, una línea "sobre mí". Borrar mi cuenta.
 - Roles: `admin` (founder) y `usuario`.
 - **Prueba:** el founder y una persona más se registran desde el teléfono en menos de un minuto.
