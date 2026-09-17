@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
@@ -8,6 +9,7 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import { ORIGENES } from "@/lib/origen";
+import { CAPO_SIN_RECLAMAR_EN_SITEMAP } from "@/lib/sitemap";
 import Desplegable from "@/components/Desplegable";
 import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
@@ -38,6 +40,16 @@ type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null 
 type FilaEvento = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng"> & { lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
+
+/**
+ * Quién lleva la ficha (una fila por cuenta ligada). `generateMetadata` y la ficha necesitan la misma pregunta —
+ * `cache()` de React la memoiza por petición para no pedirla dos veces por visita (gestión de cambios, OL-059).
+ */
+const cargarLigadas = cache(async (id: string): Promise<{ perfil_id: string }[]> => {
+  const supabase = await clienteServidor();
+  const { data } = (await supabase?.from("artistas_cuentas").select("perfil_id").eq("artista_id", id)) ?? { data: [] as { perfil_id: string }[] };
+  return (data ?? []) as { perfil_id: string }[];
+});
 
 async function cargarArtista(id: string): Promise<ArtistaConAutor | null> {
   const supabase = await clienteServidor();
@@ -91,9 +103,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const a = await cargarArtista(id);
   if (!a) return { title: "Artista · Somos Nosotros" };
   const descripcion = etiquetaArtista(a);
+  // Del CAPO y sin reclamar (OL-059): mismo interruptor que el sitemap (src/lib/sitemap.ts). Sin esto la ficha seguía
+  // indexable por el enlace desde /artistas aunque el interruptor la dejara fuera del mapa del sitio.
+  const sinIndexar = a.origen === "capo" && !CAPO_SIN_RECLAMAR_EN_SITEMAP && (await cargarLigadas(a.id)).length === 0;
   return {
     title: `${a.nombre} · Somos Nosotros`,
     description: descripcion,
+    ...(sinIndexar ? { robots: { index: false } } : {}),
     openGraph: { title: a.nombre, description: descripcion, url: `${ORIGEN}/artistas/${a.id}`, type: "profile", images: a.foto ? [{ url: a.foto }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
   };
 }
@@ -111,13 +127,12 @@ export default async function FichaArtista({ params, searchParams }: Params) {
     redirect(`/artistas/${a.id}`);
   }
   // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
-  const [fechas, cuenta, mio, lig] = await Promise.all([
+  const [fechas, cuenta, mio, ligados] = await Promise.all([
     cargarFechas(a.id),
     supabase?.rpc("cuenta_seguidores", { p_artista: a.id }) ?? Promise.resolve({ data: 0 }),
     actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("artista_id", a.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
-    supabase?.from("artistas_cuentas").select("perfil_id").eq("artista_id", a.id) ?? Promise.resolve({ data: [] as { perfil_id: string }[] }),
+    cargarLigadas(a.id),
   ]);
-  const ligados = (lig.data ?? []) as { perfil_id: string }[];
   const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";

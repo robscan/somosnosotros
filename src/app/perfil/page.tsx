@@ -8,7 +8,7 @@ import { cargarPersona, relacionDe } from "@/app/personas/consultas";
 import ficha from "@/components/ui/Ficha.module.css";
 import styles from "./perfil.module.css";
 
-export const metadata = { title: "Mi perfil · Somos Nosotros" };
+export const metadata = { title: "Mi perfil · Somos Nosotros", robots: { index: false, follow: false } };
 const ORIGEN = "https://somosnosotros.org";
 
 /** Mi perfil: la misma ficha que ven los demás, con Ajustes bajo la colonia. Lo que se configura vive en /ajustes (docs/rediseno/13, decisión 5). */
