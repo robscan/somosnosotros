@@ -201,3 +201,10 @@ Las fichas quedaron limpias (8 casos con `Asistencia` y `Seguir` de verdad). En 
   - los mismos renglones y acciones en las pestañas del perfil, en la ficha de persona, en "Sigo" y en los próximos eventos de las fichas de lugar y artista;
   - el gesto actúa sobre quien mira;
   - quitar desde Mi perfil desaparece al instante, con Deshacer que devuelve el renglón a su sitio.
+
+## En producción
+
+- 2026-09-17, madrugada: gestión de cambios mezcló el [PR #88](https://github.com/robscan/somosnosotros/pull/88) tras la cuarta revisión. No lleva migración.
+- Comprobado antes de mezclar: las 38 pruebas del verificador en verde y 6 en rojo al quitar el arreglo de la hoja de avisos; lint, tipos, 319 pruebas, build y CI en verde.
+- Comprobado después: despliegue de Vercel en verde; en somosnosotros.org la agenda muestra 86 eventos, la ficha de evento tiene Voy y Me interesa, y las fichas de lugar y de artista tienen Seguir.
+- Falta la firma del founder en el iPhone.
