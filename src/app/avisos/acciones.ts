@@ -28,6 +28,9 @@ export async function elegirAvisos(eleccion: EleccionAvisos): Promise<boolean> {
   }
   const { error } = await supabase.from("perfiles").update(cambios).eq("id", user.id);
   if (error) return false;
+  // Ajustes y la agenda muestran lo elegido. Que no se vuelva a preguntar no depende de esto: lo apunta la hoja para la
+  // cuenta (lib/avisosPreguntados).
   revalidatePath("/perfil");
+  revalidatePath("/");
   return true;
 }

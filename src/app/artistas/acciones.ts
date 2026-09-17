@@ -78,14 +78,17 @@ export async function cambiarVisibleArtista(id: string, visible: boolean) {
   redirect(`/artistas/${id}`);
 }
 
-/** Seguir / dejar de seguir a un artista. Un toque. */
-export async function cambiarSeguimientoArtista(artistaId: string, seguir: boolean) {
+/** Seguir / dejar de seguir a un artista. Un toque. Devuelve si se guardó (la lista deshace y ofrece Reintentar si no). */
+export async function cambiarSeguimientoArtista(artistaId: string, seguir: boolean): Promise<boolean> {
   const { supabase, user } = await sesionOEntrar(`/artistas/${artistaId}?accion=${seguir ? "seguir" : ""}`);
-  if (seguir) await supabase.from("seguimientos").upsert({ usuario_id: user.id, artista_id: artistaId }, { onConflict: "usuario_id,artista_id", ignoreDuplicates: true });
-  else await supabase.from("seguimientos").delete().eq("usuario_id", user.id).eq("artista_id", artistaId);
+  const { error } = seguir
+    ? await supabase.from("seguimientos").upsert({ usuario_id: user.id, artista_id: artistaId }, { onConflict: "usuario_id,artista_id", ignoreDuplicates: true })
+    : await supabase.from("seguimientos").delete().eq("usuario_id", user.id).eq("artista_id", artistaId);
+  if (error) return false;
   revalidatePath(`/artistas/${artistaId}`);
   revalidatePath("/perfil");
   revalidatePath(`/personas/${user.id}`);
+  return true;
 }
 
 /** Borrar un artista: su autor o el admin. Sus ligas con eventos y sus seguidores se van con él (cascada). */

@@ -6,6 +6,7 @@ import { dondeSeActivan, enEste } from "@/lib/plataforma";
 import { estadoPush, suscribirPush } from "@/lib/pushCliente";
 import { useInstalarApp, usePlataforma } from "@/lib/useAvisosTelefono";
 import { elegirAvisos } from "@/app/avisos/acciones";
+import { marcarAvisosContestados } from "@/lib/avisosPreguntados";
 import { guardarSuscripcionPush } from "@/app/perfil/acciones";
 import { IconoCalendarioAgregar, IconoInstalar, IconoInstalarComputadora, IconoOk, IconoPendiente } from "./ui/Iconos";
 import styles from "./ConsentimientoAvisos.module.css";
@@ -15,6 +16,8 @@ type Contexto = "voy" | "seguir" | "seguir-artista";
 type Props = {
   contexto?: Contexto;
   titulo: string;
+  /** El id de quien contesta: la respuesta queda apuntada para su cuenta (lib/avisosPreguntados). */
+  cuenta: string;
   correo: string;
   llavePush: string;
   onListo?: () => void;
@@ -40,7 +43,7 @@ type Problema = null | "bloqueado" | "fallo" | "no-soportado" | "otra-app";
  * antes de tiempo); lo que no se puede se dice con su causa y el correo como salida, y un "sí" nunca se guarda como "no";
  * dado de alta en Chrome o Android se ofrece instalar en un toque; y a quien no quiere avisos, su calendario.
  */
-export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo, llavePush, onListo, calendarioUrl }: Props) {
+export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta, correo, llavePush, onListo, calendarioUrl }: Props) {
   const copy = COPY[contexto];
   const plataforma = usePlataforma();
   const { puede: puedeInstalar, instalar } = useInstalarApp();
@@ -49,17 +52,42 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
   const [problema, setProblema] = useState<Problema>(null);
   const [hoja, setHoja] = useState(false);
   const [instalada, setInstalada] = useState(false);
-  const [nota, setNota] = useState<string | null>(null);
+  /** Lo que no se pudo guardar, con qué repetirlo. */
+  const [fallo, setFallo] = useState<{ reintentar: () => void } | null>(null);
   const [trabajando, setTrabajando] = useState(false);
   const aqui = enEste(plataforma);
   const enElTelefono = plataforma?.computadora ? "En esta computadora" : "En el teléfono";
 
-  async function porCorreo() {
+  /**
+   * Toda respuesta de la hoja pasa por aquí: la nueva cierra el aviso de un fallo anterior, cuyo Reintentar guardaría lo
+   * que la persona ya no eligió (un "No" tras un "Sí" que falló, "Ahora no" tras "Por correo").
+   */
+  const responder = (accion: () => unknown) => () => {
+    setFallo(null);
+    accion();
+  };
+
+  /**
+   * Guarda con la hoja ocupada. Si no se pudo (o no hay red), dice «No se pudo guardar · Reintentar» y devuelve false: la
+   * hoja sigue como estaba, sin dar por hecho lo que no quedó guardado y sin cerrarse sola.
+   */
+  async function guardar(accion: () => Promise<boolean>, reintentar: () => void): Promise<boolean> {
     setTrabajando(true);
-    const ok = await elegirAvisos({ correo: true });
-    setTrabajando(false);
-    if (!ok) return setNota("No se pudo guardar. Intenta de nuevo.");
-    setNota(null);
+    let ok = false;
+    try {
+      ok = await accion();
+    } catch {
+      ok = false;
+    } finally {
+      setTrabajando(false);
+    }
+    if (!ok) setFallo({ reintentar });
+    return ok;
+  }
+
+  async function porCorreo() {
+    if (!(await guardar(() => elegirAvisos({ correo: true }), porCorreo))) return;
+    marcarAvisosContestados(cuenta);
     setCorreoOk(true);
     // Con un problema del teléfono a la vista, el correo cierra el asunto: el teléfono queda como estaba.
     if (problema) {
@@ -69,7 +97,6 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
   }
   async function enTelefono() {
     setTrabajando(true);
-    setNota(null);
     try {
       const estado = await estadoPush(llavePush);
       if (estado === "instalar-primero") return setHoja(true);
@@ -77,17 +104,23 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
       const alta = await suscribirPush(llavePush);
       if (!alta.ok) return setProblema(alta.motivo);
       if (await guardarSuscripcionPush(alta.sub)) {
+        marcarAvisosContestados(cuenta);
         setProblema(null);
         setTelefono("hecho");
       } else setProblema("fallo");
+    } catch {
+      // Sin red, o el teléfono no respondió: como cualquier alta que no se pudo, con Intentar de nuevo.
+      setProblema("fallo");
     } finally {
       setTrabajando(false);
     }
   }
   async function noGracias() {
+    // "Sin avisos" solo cuando quedó guardado; si no, la pregunta sigue a la vista con Reintentar.
+    if (!(await guardar(() => elegirAvisos({ correo: false, push: false }), noGracias))) return;
+    marcarAvisosContestados(cuenta);
     setCorreoOk(false);
     setTelefono("no");
-    await elegirAvisos({ correo: false, push: false });
   }
   /** "Ahora no" ante un problema: no se guarda nada; la pregunta vuelve en el siguiente Voy o Seguir. */
   function ahoraNo() {
@@ -97,9 +130,11 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
   }
   async function cerrarHoja() {
     // Quiere avisos en el teléfono: queda dicho en la cuenta, y al abrir la app instalada se ofrece Activar (decisión 4).
+    // "Falta un paso" solo cuando quedó guardado.
     setHoja(false);
+    if (!(await guardar(() => elegirAvisos({ push: true }), cerrarHoja))) return;
+    marcarAvisosContestados(cuenta);
     setTelefono("pendiente");
-    await elegirAvisos({ push: true });
   }
   async function tenerlaEnInicio() {
     if (await instalar()) setInstalada(true);
@@ -123,10 +158,10 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
     <>
       <p className={styles.pregunta}>{pregunta}</p>
       <div className={`${styles.opciones} ${styles.cortas}`}>
-        <button type="button" className={styles.si} onClick={porCorreo} disabled={trabajando}>
+        <button type="button" className={styles.si} onClick={responder(porCorreo)} disabled={trabajando}>
           Sí
         </button>
-        <button type="button" className={styles.no} onClick={() => setCorreoOk(false)} disabled={trabajando}>
+        <button type="button" className={styles.no} onClick={responder(() => setCorreoOk(false))} disabled={trabajando}>
           No
         </button>
       </div>
@@ -140,7 +175,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
           <b>Falta un paso:</b> instálala y, al abrirla, toca Activar.
         </span>
       </p>
-      <button type="button" className={styles.enlace} onClick={() => setHoja(true)}>
+      <button type="button" className={styles.enlace} onClick={responder(() => setHoja(true))}>
         Ver los pasos
       </button>
     </>
@@ -170,17 +205,17 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
         </p>
         <div className={`${styles.opciones} ${styles.cortas}`}>
           {problema === "fallo" && (
-            <button type="button" className={styles.si} onClick={enTelefono} disabled={trabajando}>
+            <button type="button" className={styles.si} onClick={responder(enTelefono)} disabled={trabajando}>
               Intentar de nuevo
             </button>
           )}
           {correoOk === null && (
-            <button type="button" className={problema === "fallo" ? styles.no : styles.si} onClick={porCorreo} disabled={trabajando}>
+            <button type="button" className={problema === "fallo" ? styles.no : styles.si} onClick={responder(porCorreo)} disabled={trabajando}>
               Por correo
             </button>
           )}
         </div>
-        <button type="button" className={styles.gracias} onClick={ahoraNo} disabled={trabajando}>
+        <button type="button" className={styles.gracias} onClick={responder(ahoraNo)} disabled={trabajando}>
           Ahora no
         </button>
       </>
@@ -190,14 +225,14 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
       <>
         <p className={styles.pregunta}>{copy.pregunta}</p>
         <div className={styles.opciones}>
-          <button type="button" className={styles.si} onClick={porCorreo} disabled={trabajando}>
+          <button type="button" className={styles.si} onClick={responder(porCorreo)} disabled={trabajando}>
             Por correo
           </button>
-          <button type="button" className={styles.si} onClick={enTelefono} disabled={trabajando}>
+          <button type="button" className={styles.si} onClick={responder(enTelefono)} disabled={trabajando}>
             {enElTelefono}
           </button>
         </div>
-        <button type="button" className={styles.gracias} onClick={noGracias} disabled={trabajando}>
+        <button type="button" className={styles.gracias} onClick={responder(noGracias)} disabled={trabajando}>
           No, gracias
         </button>
       </>
@@ -213,10 +248,10 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
         </p>
         <p className={styles.pregunta}>¿También {enElTelefono.toLowerCase()}?</p>
         <div className={`${styles.opciones} ${styles.cortas}`}>
-          <button type="button" className={styles.si} onClick={enTelefono} disabled={trabajando}>
+          <button type="button" className={styles.si} onClick={responder(enTelefono)} disabled={trabajando}>
             Sí
           </button>
-          <button type="button" className={styles.no} onClick={() => setTelefono("no")} disabled={trabajando}>
+          <button type="button" className={styles.no} onClick={responder(() => setTelefono("no"))} disabled={trabajando}>
             No
           </button>
         </div>
@@ -273,7 +308,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
               <span>Instalada: {plataforma?.computadora ? "se abre en su propia ventana" : "está en tu inicio"}.</span>
             </p>
           ) : (
-            <button type="button" className={styles.linea} onClick={tenerlaEnInicio}>
+            <button type="button" className={styles.linea} onClick={responder(tenerlaEnInicio)}>
               {plataforma?.computadora ? <IconoInstalarComputadora width={22} height={22} /> : <IconoInstalar width={22} height={22} />}
               <b>{plataforma?.computadora ? "Tenla como app" : "Tenla en tu inicio"}</b>
               <small>{plataforma?.computadora ? "En su propia ventana" : "Un toque, sin tienda"}</small>
@@ -303,8 +338,15 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, correo,
       <p className={styles.motivo}>{copy.motivo(titulo)}</p>
       <p className={styles.porque}>{copy.porque}</p>
       {cuerpo}
-      {nota && <p className={styles.nota}>{nota}</p>}
-      {hoja && <HojaInstalar onCerrar={cerrarHoja} />}
+      {fallo && (
+        <p className={styles.nota} role="alert">
+          No se pudo guardar.
+          <button type="button" className={styles.enlace} onClick={responder(fallo.reintentar)} disabled={trabajando}>
+            Reintentar
+          </button>
+        </p>
+      )}
+      {hoja && <HojaInstalar onCerrar={responder(cerrarHoja)} />}
     </div>
   );
 }

@@ -203,14 +203,22 @@ export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCart
 
 export type EstadoAsistencia = "voy" | "me_interesa" | null;
 
-/** "Voy" / "Me interesa" / quitar. Un toque; la política de la base cuida que cada quien mueva solo lo suyo. */
-export async function cambiarAsistencia(eventoId: string, estado: EstadoAsistencia) {
+/**
+ * "Voy" / "Me interesa" / quitar. Un toque; la política de la base cuida que cada quien mueva solo lo suyo. Devuelve si
+ * se guardó: las listas deshacen lo que mostraron y ofrecen Reintentar (bitácora 085).
+ */
+export async function cambiarAsistencia(eventoId: string, estado: EstadoAsistencia): Promise<boolean> {
   const { supabase, user } = await sesionOEntrar(`/eventos/${eventoId}?accion=${estado ?? ""}`);
-  if (estado) await supabase.from("asistencias").upsert({ usuario_id: user.id, evento_id: eventoId, estado });
-  else await supabase.from("asistencias").delete().eq("usuario_id", user.id).eq("evento_id", eventoId);
+  const { error } = estado
+    ? await supabase.from("asistencias").upsert({ usuario_id: user.id, evento_id: eventoId, estado })
+    : await supabase.from("asistencias").delete().eq("usuario_id", user.id).eq("evento_id", eventoId);
+  if (error) return false;
   revalidatePath(`/eventos/${eventoId}`);
+  // La agenda muestra lo decidido en cada renglón (y se reutiliza hasta un minuto): al volver de la ficha, al día.
+  revalidatePath("/");
   revalidatePath("/perfil");
   revalidatePath(`/personas/${user.id}`);
+  return true;
 }
 
 /** Borrar un evento: su autor o el admin (la política de la base lo exige). Se van también los "Voy". */

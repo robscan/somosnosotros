@@ -302,6 +302,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         titulo={e.titulo}
         miEstado={asistencias.miEstado}
         conSesion={!!actual}
+        cuenta={actual?.perfil.id ?? ""}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
         correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
         llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
