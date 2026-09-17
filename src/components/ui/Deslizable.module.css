@@ -72,9 +72,13 @@
   background: var(--fondo);
   box-shadow: none;
 }
+/* El frente siempre opaco, también mientras cambia: las acciones están detrás. El blanco va en background-color y la
+   marca en una imagen transparente alrededor; con `background: linear-gradient(…)` el color pasaba por transparente en
+   la transición de Renglon (120 ms) y la acción asomaba al entrar y salir con el ratón. */
 @media (hover: hover) {
   .deslizable > .frente:hover {
-    background: linear-gradient(90deg, var(--fondo) var(--espacio-5), var(--primario) var(--espacio-5), var(--primario) calc(var(--espacio-5) + 3px), var(--fondo) calc(var(--espacio-5) + 3px));
+    background-color: var(--fondo);
+    background-image: linear-gradient(90deg, transparent var(--espacio-5), var(--primario) var(--espacio-5), var(--primario) calc(var(--espacio-5) + 3px), transparent calc(var(--espacio-5) + 3px));
     box-shadow: none;
   }
 }
