@@ -171,6 +171,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--espacio-2); /* icono y texto (Voy, Seguir) */
   min-height: var(--toque);
   padding: 0 var(--espacio-4);
   border: none;

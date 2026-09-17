@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
-import { IconoOk } from "@/components/ui/Iconos";
+import { IconoEstrella, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
@@ -22,7 +22,9 @@ type Props = {
   llavePush: string;
 };
 
+/** Los mismos iconos que las acciones al deslizar (prototipo de la bitácora 071): Voy con palomita, Me interesa con estrella. */
 const OK = <IconoOk width={20} height={20} />;
+const ESTRELLA = <IconoEstrella width={20} height={20} />;
 
 /**
  * Barra inferior pegajosa: la única acción primaria de la ficha. Sin decisión: "Me interesa" en texto y "Voy" lleno.
@@ -55,9 +57,11 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
     contenido = (
       <>
         <Link href={entrar("me_interesa")} className={styles.interesa}>
+          {ESTRELLA}
           Me interesa
         </Link>
         <Link href={entrar("voy")} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
+          {OK}
           Voy
         </Link>
       </>
@@ -79,11 +83,12 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
     contenido = (
       <>
         <span className={ficha.seleccionado} aria-live="polite">
-          {OK}
+          {ESTRELLA}
           Me interesa
           <small>Guardado en Mi perfil</small>
         </span>
         <button type="button" className={ficha.primaria} onClick={() => cambiar("voy")} disabled={pendiente}>
+          {OK}
           Voy
         </button>
       </>
@@ -92,9 +97,11 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
     contenido = (
       <>
         <button type="button" className={styles.interesa} onClick={() => cambiar("me_interesa")} disabled={pendiente}>
+          {ESTRELLA}
           Me interesa
         </button>
         <button type="button" className={ficha.primaria} onClick={() => cambiar("voy")} disabled={pendiente}>
+          {OK}
           Voy
         </button>
       </>
