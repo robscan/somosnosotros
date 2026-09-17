@@ -1,0 +1,941 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Destacados de Somos Nosotros</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens de la app: los de globals.css (línea gráfica firmada). El teléfono va siempre en tema claro, como la app;
+     el estudio que lo rodea sigue el tema de quien mira. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #34332f; --estudio-suave: #6f6d67; --estudio-panel: #f7f6f2; --estudio-borde: #d5d3cc;
+    --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2; --ok: #1f6f43; --ok-suave: #e3f1e8; --error: #b3261e;
+    /* Propuesta: naranja cempasúchil para lo destacado. El punto contrasta 3.8:1 con el mapa (pide 3:1);
+       el texto, 5.5:1 con el fondo (pide 4.5:1). Frente al azul petróleo se distingue también con daltonismo. */
+    --destacado: #d35400; --destacado-texto: #a94400; --destacado-suave: #fbebdd;
+    --sombra: 0 2px 12px rgba(0, 0, 0, 0.08); --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --fuente-sistema: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --fuente-mapa: "DIN Condensed", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --gutter: 20px; --toque: 48px; --toque-min: 44px; --radio: 12px; --alto-nav: 60px; --area-segura: 0px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --estudio: #242422; --estudio-texto: #e2e0da; --estudio-suave: #a09e97; --estudio-panel: #2d2d2a; --estudio-borde: #42413d; }
+  }
+  :root[data-theme="dark"] { --estudio: #242422; --estudio-texto: #e2e0da; --estudio-suave: #a09e97; --estudio-panel: #2d2d2a; --estudio-borde: #42413d; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; line-height: 1.4; padding-block: 24px; padding-inline: 16px; }
+  button, input { font: inherit; color: inherit; }
+  a { color: inherit; }
+  svg { flex: none; }
+  :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+
+  /* ---------- Estudio: el teléfono y, a su lado, las notas ---------- */
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 860px; margin: 0 auto; }
+  .telefono { position: relative; display: flex; flex-direction: column; width: 390px; max-width: 100%; height: 844px; overflow: hidden; border-radius: 44px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08); --area-segura: 28px; }
+  .estado-ios { flex: none; display: flex; align-items: flex-end; justify-content: space-between; height: 50px; padding: 0 30px 6px 36px; background: var(--fondo); font-family: var(--fuente-sistema); font-size: 15px; font-weight: 600; }
+  .estado-ios span:last-child { letter-spacing: 1px; font-size: 12px; }
+  .tira-prototipo { display: none; }
+  .pantalla { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: calc(var(--alto-nav) + var(--area-segura) + 96px); }
+  .pantalla.con-mapa { overflow: hidden; padding-bottom: 0; }
+  .telefono[data-vista="ficha"] .pantalla { padding-bottom: calc(80px + var(--area-segura)); }
+  .telefono[data-vista="panel"] .pantalla { padding-bottom: calc(24px + var(--area-segura)); }
+
+  /* ---------- Cabeceras de la app ---------- */
+  .cabecera { position: sticky; top: 0; z-index: 3; background: var(--fondo); }
+  .barra { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px; min-height: 56px; padding-inline: var(--gutter); }
+  .logotipo { display: block; height: 26px; aspect-ratio: 3903 / 790; background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii01OSAtNzcwIDM5MDMgNzkwIiB3aWR0aD0iMzkwMyIgaGVpZ2h0PSI3OTAiPjxwYXRoIHRyYW5zZm9ybT0ic2NhbGUoMSwtMSkiIGZpbGw9IiMxYTFhMWEiIGQ9Ik0yMjA4IC0xMlEyMjc4IC0xMiAyMzIwIDEyUTIzNjMgMzUgMjM4MiA3NlEyNDAyIDExOCAyNDAyIDE3MFEyNDAyIDIxNiAyMzkwIDI1MVEyMzc3IDI4NiAyMzU2IDMxM1EyMzM0IDM0MCAyMzA3IDM2MlEyMjkyIDM3NCAyMjc2IDM4NUMyMjc4IDM4NCAyMjgxIDM4NCAyMjgzIDM4NUMyMjkxIDM4NyAyMjk2IDM5NSAyMjk0IDQwMkMyMjkzIDQwNCAyMjkzIDQwNiAyMjkzIDQwOEMyMjkxIDQxNSAyMjkxIDQyMCAyMjkxIDQyOEMyMjkwIDQyOSAyMjkxIDQzMiAyMjkxIDQzMkMyMjkxIDQzMiAyMjkzIDQyNiAyMjkzIDQyMkMyMjk1IDQxMiAyMjk3IDQwNiAyMzAwIDM5NkMyMzAxIDM5MiAyMzAyIDM5MCAyMzAzIDM4NkMyMzA1IDM3OCAyMzE0IDM3MyAyMzIzIDM3NUMyMzI5IDM3NyAyMzMzIDM4MiAyMzM0IDM4OEMyMzM2IDM4MCAyMzQ1IDM3NCAyMzU0IDM3NkMyMzYzIDM3NyAyMzY5IDM4NyAyMzY3IDM5NkMyMzY3IDM5NiAyMzY3IDM5NyAyMzY3IDM5OEMyMzY5IDM5MCAyMzc3IDM4NSAyMzg1IDM4NkMyMzk0IDM4NyAyNDAxIDM5NiAyMzk5IDQwNUMyMzk5IDQwOCAyMzk5IDQxMCAyMzk5IDQxM0MyMzk4IDQyMSAyMzk4IDQyNyAyMzk3IDQzNUMyNDAyIDQzMiAyNDA4IDQzMSAyNDEzIDQzNUMyNDE5IDQzOSAyNDIwIDQ0NSAyNDE5IDQ1MkMyNDE5IDQ1MiAyNDIwIDQ1MSAyNDIxIDQ1MUMyNDI3IDQ0OCAyNDM0IDQ1MCAyNDM3IDQ1NkMyNDM5IDQ1OSAyNDQxIDQ2MSAyNDQyIDQ2NUMyNDQzIDQ2OCAyNDQ0IDQ3MCAyNDQ1IDQ3MkMyNDQ1IDQ2OSAyNDQ0IDQ2NiAyNDQzIDQ2M0MyNDQyIDQ1OSAyNDQxIDQ1NiAyNDQwIDQ1MkMyNDM4IDQ0NiAyNDQyIDQzOCAyNDQ4IDQzNkMyNDU1IDQzNCAyNDYyIDQzOCAyNDY1IDQ0NUMyNDY2IDQ0OSAyNDY3IDQ1MSAyNDY4IDQ1NUMyNDcwIDQ2MiAyNDcyIDQ2NyAyNDc1IDQ3M0MyNDc0IDQ2OSAyNDczIDQ2NSAyNDcyIDQ2MEMyNDcwIDQ1NiAyNDcwIDQ1NCAyNDY5IDQ1MEMyNDY2IDQ0NCAyNDY5IDQzNyAyNDc2IDQzNUMyNDgyIDQzMiAyNDg5IDQzNSAyNDkxIDQ0MkMyNDkzIDQ0NiAyNDk0IDQ0OCAyNDk1IDQ1MkMyNDk4IDQ2MSAyNTAwIDQ2NyAyNTAyIDQ3NkMyNTAyIDQ3OCAyNTA0IDQ4MCAyNTA0IDQ4MEMyNTA0IDQ4MCAyNTA0IDQ3OCAyNTA0IDQ3N0MyNTAzIDQ3MSAyNTAzIDQ2NyAyNTAxIDQ2MEMyNTAwIDQ1OCAyNTAwIDQ1NiAyNDk5IDQ1NEMyNDk3IDQ0OCAyNTAwIDQ0MiAyNTA2IDQ0MEMyNTExIDQzOCAyNTE3IDQ0MSAyNTE5IDQ0N0MyNTIwIDQ1MCAyNTIxIDQ1MSAyNTIyIDQ1NEMyNTI0IDQ2MiAyNTI2IDQ2NiAyNTI3IDQ3NEMyNTI4IDQ4MCAyNTMwIDQ4MyAyNTMyIDQ4OUMyNTMzIDQ5MyAyNTM0IDQ5NiAyNTM1IDQ5OUMyNTM2IDUwMyAyNTM2IDUwNiAyNTM3IDUxMEMyNTM4IDUxNSAyNTM4IDUxOCAyNTM4IDUyMkMyNTM5IDUyNyAyNTM5IDUzMCAyNTM5IDUzNUgyNTcwVjE3MkMyNTcwIDEzNyAyNTY1IDExNiAyNTY1IDgwQzI1NjUgNzAgMjU1OCA2NSAyNTU1IDU1QzI1NTEgNDcgMjU0OSA0MiAyNTQ4IDM0QzI1NDcgMzIgMjU0NyAzMSAyNTQ3IDI5TDI1NDcgMjlDMjU0NSAyMiAyNTQ0IDE3IDI1NDUgOUMyNTQ2IDQgMjU1MCAwIDI1NTUgMEgyODA2QzI4MTIgMCAyODE4IDMgMjgxOSA5QzI4MjAgMTEgMjgyMCAxMiAyODIwIDEzTDI4MjAgMTNMMjgyMCAxM0MyODIxIDE4IDI4MjIgMjIgMjgyMSAyOEMyODE5IDM3IDI4MTggNDMgMjgxMiA1MUMyODA2IDU5IDI4MDEgNjIgMjc5MiA2NkMyNzgxIDcxIDI3NzMgNjkgMjc2MiA3NEMyNzU3IDc2IDI3NTMgNzcgMjc0OSA3OEMyNzQ5IDc4IDI3NDkgNzcgMjc0OSA3N0MyNzQ4IDc1IDI3NDcgNzMgMjc0NSA3MUMyNzQ0IDY5IDI3NDQgNjcgMjc0MiA2NUMyNzQxIDY0IDI3MzkgNjQgMjczOCA2NEMyNzM3IDY1IDI3MzcgNjcgMjczNyA2OEMyNzM4IDcxIDI3MzkgNzIgMjc0MCA3NEMyNzQyIDc2IDI3NDIgNzggMjc0NCA4MEwyNzQ0IDgwQzI3NDAgODIgMjczNyA4NSAyNzM1IDg5QzI3MjQgMTEzIDI3MjQgMTMwIDI3MjQgMTU2VjUzNUgyNzU0QzI3NTQgNTMwIDI3NTQgNTI3IDI3NTUgNTIyQzI3NTUgNTE4IDI3NTUgNTE1IDI3NTYgNTEwQzI3NTcgNTA2IDI3NTcgNTAzIDI3NTggNDk5QzI3NTkgNDk2IDI3NjAgNDkzIDI3NjEgNDg5QzI3NjMgNDgzIDI3NjUgNDgwIDI3NjYgNDc0QzI3NjcgNDY2IDI3NjkgNDYyIDI3NzIgNDU0QzI3NzMgNDUxIDI3NzQgNDQ5IDI3NzYgNDQ1QzI3NzggNDQwIDI3ODQgNDM4IDI3OTAgNDQwQzI3OTUgNDQyIDI3OTcgNDQ5IDI3OTUgNDU0QzI3OTQgNDU3IDI3OTQgNDU4IDI3OTMgNDYxQzI3OTEgNDY3IDI3OTAgNDcxIDI3ODkgNDc4QzI3ODkgNDc5IDI3ODkgNDgxIDI3ODkgNDgxQzI3ODkgNDgxIDI3OTEgNDc3IDI3OTIgNDc0QzI3OTQgNDY1IDI3OTcgNDU5IDI4MDAgNDUwQzI4MDEgNDQ2IDI4MDIgNDQzIDI4MDQgNDM5QzI4MDYgNDMyIDI4MTMgNDI5IDI4MTkgNDMxQzI4MjYgNDM0IDI4MjkgNDQxIDI4MjcgNDQ3QzI4MjUgNDUxIDI4MjQgNDU0IDI4MjMgNDU4QzI4MjIgNDYxIDI4MjEgNDY0IDI4MjEgNDY3QzI4MjIgNDYyIDI4MjQgNDU4IDI4MjYgNDUyQzI4MjggNDQ3IDI4MzAgNDQ1IDI4MzIgNDQwQzI4MzUgNDM0IDI4NDIgNDMxIDI4NDkgNDM0QzI4NTUgNDM2IDI4NTggNDQ0IDI4NTUgNDUwQzI4NTUgNDUxIDI4NTUgNDUxIDI4NTUgNDUxQzI4NTggNDQ4IDI4NjMgNDQ3IDI4NjcgNDQ4QzI4NzQgNDUwIDI4NzcgNDU3IDI4NzYgNDYzQzI4NzUgNDY3IDI4NzQgNDY5IDI4NzMgNDczQzI4NzEgNDgwIDI4NzAgNDg1IDI4NjggNDkyQzI4NzQgNDg5IDI4NzkgNDg4IDI4ODQgNDkyQzI4ODQgNDkyIDI4ODQgNDkyIDI4ODQgNDkyVjEzNkMyODg0IDExNCAyODc5IDEwMSAyODc5IDgwQzI4NzkgNzAgMjg3MiA2NSAyODY5IDU1QzI4NjUgNDcgMjg2MyA0MiAyODYyIDM0QzI4NjEgMzIgMjg2MSAzMSAyODYxIDI5TDI4NjEgMjlMMjg2MSAyOUMyODU5IDIyIDI4NTggMTcgMjg1OSA5QzI4NjAgNCAyODY0IDAgMjg2OSAwSDMwODlDMzA5NSAwIDMxMDAgMiAzMTAyIDdDMzEwMyAzIDMxMDYgMCAzMTExIDBIMzM0M0MzMzUwIDAgMzM1NiAzIDMzNTcgOUMzMzU3IDExIDMzNTggMTIgMzM1OCAxM0wzMzU4IDEzTDMzNTggMTNDMzM1OSAxOCAzMzYwIDIyIDMzNTkgMjdDMzM1NyAzNyAzMzU1IDQzIDMzNDkgNTBDMzM0NCA1OCAzMzM4IDYxIDMzMzAgNjVDMzMyNSA2OCAzMzIyIDY5IDMzMTggNzBDMzMxOCA2OSAzMzE4IDY4IDMzMTggNjdDMzMxNyA2NCAzMzE2IDYzIDMzMTQgNjFDMzMxMyA1OSAzMzEzIDU3IDMzMTEgNTZDMzMxMCA1NCAzMzA4IDU0IDMzMDcgNTVDMzMwNiA1NSAzMzA2IDU3IDMzMDYgNThDMzMwNyA2MSAzMzA4IDYyIDMzMDkgNjRDMzMxMSA2NiAzMzExIDY4IDMzMTMgNzBDMzMxMyA3MCAzMzEzIDcwIDMzMTQgNzFDMzMxMiA3MSAzMzEwIDcyIDMzMDkgNzNDMzMwNiA3NCAzMzA0IDc2IDMzMDMgNzdDMzMwMyA3NyAzMzAzIDc2IDMzMDMgNzZDMzMwMiA3NCAzMzAwIDczIDMyOTkgNzBDMzI5OCA2OCAzMjk4IDY2IDMyOTYgNjVDMzI5NSA2NCAzMjkzIDYzIDMyOTIgNjRDMzI5MCA2NCAzMjkwIDY2IDMyOTEgNjhDMzI5MSA3MCAzMjkzIDcxIDMyOTQgNzNDMzI5NSA3NSAzMjk2IDc3IDMyOTggNzlDMzI5OCA3OSAzMjk5IDgwIDMyOTkgODBDMzI5NiA4MyAzMjkzIDg2IDMyODkgODhDMzI4NiA5MCAzMjgzIDkwIDMyODAgOTBDMzI3NiA5MCAzMjcyIDkwIDMyNzIgOTRMMzI3MSAxMDFMMzI2NyAxMjlRMzI2MiAxNzMgMzI1MSAyMDZRMzI0MCAyNDAgMzIxMyAyNjBRMzE4NiAyODAgMzEzMyAyODJWMjkxUTMxNjkgMjk3IDMxOTUgMzEyUTMyMjEgMzI4IDMyMzggMzUwUTMyNTYgMzczIDMyNjQgNDAyUTMyNzIgNDMxIDMyNzIgNDY0UTMyNzIgNTA0IDMyNjIgNTM2UTMyNTEgNTY3IDMyMzIgNTkwUTMyMTMgNjEzIDMxODggNjI5UTMxNjIgNjQ1IDMxMzEgNjUyUTMxMDAgNjYwIDMwNjYgNjYwSDI4ODRWNTEwQzI4ODIgNTE0IDI4NzkgNTE4IDI4NzYgNTIyQzI4NzQgNTI0IDI4NzAgNTIzIDI4NjcgNTIzQzI4NjQgNTIyIDI4NjEgNTIyIDI4NjAgNTI1QzI4NjAgNTI2IDI4NjAgNTI3IDI4NjAgNTI4QzI4NTkgNTI5IDI4NTkgNTMwIDI4NTkgNTMxQzI4NTkgNTMzIDI4NTkgNTM0IDI4NTkgNTM1VjY2MEgyNDM0VjUzNUMyNDM0IDUzNCAyNDM0IDUzMyAyNDM0IDUzMUMyNDM0IDUzMCAyNDM0IDUyOSAyNDMzIDUyOEMyNDMzIDUyNyAyNDMzIDUyNiAyNDMzIDUyNUMyNDMyIDUyMiAyNDI5IDUyMiAyNDI1IDUyMkMyNDIyIDUyMiAyNDE5IDUyMyAyNDE3IDUyMEMyNDEwIDUxMiAyNDAyIDQ5OSAyNDExIDQ5MkMyNDE1IDQ4OSAyNDIwIDQ4OSAyNDI0IDQ5MkMyNDIzIDQ4NiAyNDIyIDQ4MiAyNDE5IDQ3NkMyNDE4IDQ3MyAyNDE3IDQ3MSAyNDE1IDQ2OEMyNDE1IDQ2NyAyNDE0IDQ2NSAyNDE0IDQ2NEMyNDEzIDQ2NiAyNDEyIDQ2OCAyNDExIDQ2OUMyNDA5IDQ3MiAyNDA1IDQ3MiAyNDAxIDQ3MUMyMzk2IDQ3MSAyMzkyIDQ3MCAyMzkyIDQ3NEMyMzkxIDQ3NiAyMzkxIDQ3NyAyMzkxIDQ3OEMyMzkxIDQ4MCAyMzkxIDQ4MSAyMzkxIDQ4M0MyMzkxIDQ4NiAyMzkwIDQ4NyAyMzkwIDQ4OVEyMzkwIDUzMyAyMzc4IDU2OFEyMzU5IDYxOCAyMzE2IDY0NVEyMjcyIDY3MiAyMjA0IDY3MlEyMTQ0IDY3MiAyMTAyIDY1MFEyMDU5IDYyOSAyMDM3IDU5MFEyMDE1IDU1MiAyMDE1IDUwMVEyMDE1IDQ2MiAyMDI2IDQzMlEyMDM4IDQwMiAyMDU3IDM3OFEyMDc2IDM1NSAyMDk5IDMzNlEyMTIyIDMxOCAyMTQ0IDMwMlEyMTY5IDI4NSAyMTkzIDI2NVEyMjE3IDI0NSAyMjMyIDIxOFEyMjQ4IDE5MiAyMjQ4IDE1NVEyMjQ4IDEzNiAyMjQ0IDEyNFEyMjM5IDExMiAyMjMwIDEwNlEyMjIyIDEwMCAyMjEwIDEwMFEyMTg1IDEwMCAyMTc0IDEyMlEyMTYzIDE0NSAyMTYyIDE4MFEyMTYyIDE4NSAyMTYyIDE4OVYxODlMMjE2MiAxODlDMjE2MiAxOTMgMjE2MCAxOTQgMjE2MCAxOTdDMjE2MCAyMDIgMjE1OCAyMDUgMjE1OCAyMDlDMjE1NyAyMTMgMjE1NSAyMTUgMjE1NSAyMTlDMjE1NCAyMjQgMjE1NCAyMjcgMjE1MyAyMzJDMjE1MyAyMzggMjE1MCAyNDEgMjE1MCAyNDZDMjE1MCAyNDkgMjE1MCAyNTIgMjE1MCAyNTVDMjE0OSAyNTkgMjE0OSAyNjMgMjE0OSAyNjhDMjE0OSAyNjkgMjE0OSAyNzAgMjE0OSAyNzJWMjcyQzIxNDkgMjczIDIxNDkgMjc0IDIxNDkgMjc2QzIxNTAgMjgzIDIxNDQgMjkwIDIxMzYgMjkwQzIxMjkgMjkxIDIxMjIgMjg1IDIxMjIgMjc3QzIxMjIgMjc0IDIxMjEgMjcyIDIxMjEgMjY5QzIxMjEgMjY1IDIxMjEgMjYyIDIxMjEgMjU5TDIxMjEgMjU5TDIxMjEgMjU5QzIxMjAgMjU1IDIxMjAgMjUxIDIxMjAgMjQ2QzIxMjAgMjQ0IDIxMjAgMjQyIDIxMjAgMjQyQzIxMjAgMjQyIDIxMTggMjQ3IDIxMTggMjUwQzIxMTcgMjYxIDIxMTUgMjY3IDIxMTUgMjc3QzIxMTUgMjgyIDIxMTQgMjg1IDIxMTQgMjg5QzIxMTMgMjk3IDIxMDYgMzA0IDIwOTggMzA0QzIwODkgMzAzIDIwODMgMjk2IDIwODMgMjg3QzIwODMgMjg1IDIwODMgMjgzIDIwODMgMjgyVjI4MkMyMDgzIDI4MCAyMDgzIDI3OCAyMDgzIDI3NkMyMDg0IDI2OSAyMDg0IDI2MyAyMDg0IDI1OEMyMDgzIDI2NCAyMDgxIDI2OSAyMDgwIDI3NkMyMDgwIDI4MSAyMDc5IDI4MyAyMDc5IDI4OEMyMDc4IDI5NyAyMDY5IDMwMyAyMDYxIDMwMkMyMDUyIDMwMSAyMDQ1IDI5MyAyMDQ2IDI4NEMyMDQ2IDI4MCAyMDQ2IDI3NyAyMDQ3IDI3MkMyMDQ4IDI2NiAyMDQ4IDI2MiAyMDQ4IDI1N0MyMDQ3IDI2MCAyMDQ2IDI2NCAyMDQ1IDI2OEMyMDQ0IDI3MSAyMDQzIDI3MyAyMDQyIDI3NkMyMDM5IDI4NCAyMDMwIDI4OSAyMDIyIDI4N0MyMDE0IDI4NCAyMDA5IDI3NSAyMDExIDI2N0MyMDEyIDI2NCAyMDEzIDI2MiAyMDEzIDI1OUMyMDE1IDI1MiAyMDE2IDI0NyAyMDE3IDI0MUMyMDA4IDI0NyAxOTk4IDI0OSAxOTkyIDI0MkMxOTgyIDIzMSAxOTk1IDIxNiAyMDA2IDIwNkMyMDA4IDIwNCAyMDExIDIwNSAyMDE1IDIwNkMyMDE4IDIwNiAyMDIxIDIwNyAyMDIyIDIwNEMyMDIyIDIwMyAyMDIxIDIwMyAyMDIxIDIwMkMyMDIxIDIwMiAyMDIwIDIwMSAyMDIwIDIwMUMyMDIwIDIwMCAyMDIwIDIwMCAyMDE5IDE5OUMyMDE5IDE5OSAyMDE4IDE5OCAyMDE4IDE5N0MyMDE4IDE5NiAyMDE4IDE5NSAyMDE3IDE5M0MyMDE3IDE5MyAyMDE2IDE5MiAyMDE2IDE5MUwyMDE2IDE5MVEyMDE2IDE5MCAyMDE2IDE5MFEyMDEyIDE1OSAyMDE2IDEzMlEyMDIxIDg3IDIwNDUgNTRRMjA2OSAyMiAyMTEwIDVRMjE1MSAtMTIgMjIwOCAtMTJaTTU5NyAxMTNWNTIwSDYwMEw2NzIgMEg4MjRMODk2IDUyMEg4OTlWMTI4Qzg5OSAxMDggODk1IDk1IDg5NSA3NUM4OTUgNjYgODg4IDYxIDg4NCA1MkM4ODIgNDUgODgwIDQwIDg3OCAzMkM4NzggMzAgODc3IDI5IDg3NyAyOEM4NzYgMjEgODc1IDE2IDg3NiA5Qzg3NyA0IDg4MCAwIDg4NCAwSDExMTJDMTExOCAwIDExMjQgMyAxMTI1IDlDMTEyNSAxMCAxMTI2IDExIDExMjYgMTJDMTEyNyAxNyAxMTI4IDIxIDExMjcgMjZDMTEyNSAzNSAxMTIzIDQxIDExMTggNDhDMTExMiA1NSAxMTA3IDU4IDEwOTkgNjJDMTA5MyA2NiAxMDg3IDY2IDEwODEgNjhDMTA4MiA2NyAxMDgyIDY1IDEwODIgNjRDMTA4MSA2MSAxMDgwIDYwIDEwNzkgNThDMTA3NyA1NiAxMDc3IDU1IDEwNzUgNTNDMTA3NCA1MiAxMDczIDUxIDEwNzIgNTJDMTA3MCA1MyAxMDcwIDU0IDEwNzEgNTZDMTA3MSA1OCAxMDczIDU5IDEwNzQgNjFDMTA3NSA2MyAxMDc1IDY1IDEwNzcgNjdDMTA3OCA2NyAxMDc5IDY4IDEwODAgNjhDMTA3OCA2OCAxMDc3IDY5IDEwNzYgNzBDMTA3MyA3MSAxMDcwIDcyIDEwNjggNzNDMTA2OCA3MyAxMDY3IDczIDEwNjcgNzNDMTA2NyA3MCAxMDY1IDY5IDEwNjQgNjdDMTA2MyA2NSAxMDYzIDYzIDEwNjEgNjJDMTA2MCA2MSAxMDU4IDYwIDEwNTcgNjFDMTA1NiA2MSAxMDU2IDYzIDEwNTYgNjRDMTA1NyA2NyAxMDU4IDY4IDEwNTkgNzBDMTA2MSA3MiAxMDYxIDc0IDEwNjMgNzVDMTA2MyA3NiAxMDYzIDc2IDEwNjMgNzZDMTA2MCA3OCAxMDU3IDgwIDEwNTQgODRDMTA0NyA5NCAxMDQ0IDEwMSAxMDQ0IDExM1Y2NjBIODAwTDc1NyAxNDBINzU0TDcwNSA2NjBINDUyVjEyOEM0NTIgMTA4IDQ0OCA5NSA0NDggNzVDNDQ4IDY2IDQ0MSA2MSA0MzggNTJDNDM1IDQ1IDQzMyA0MCA0MzEgMzJDNDMxIDMwIDQzMCAyOSA0MzAgMjhDNDI5IDIxIDQyOCAxNiA0MjkgOUM0MzAgNCA0MzMgMCA0MzggMEg2MzNDNjM5IDAgNjQ1IDMgNjQ2IDlDNjQ3IDEwIDY0NyAxMSA2NDcgMTJDNjQ4IDE3IDY0OSAyMSA2NDggMjZDNjQ2IDM1IDY0NCA0MSA2MzkgNDhDNjM0IDU1IDYyNyA1NiA2MjAgNjJDNjE4IDY1IDYxNyA2NyA2MTUgNzBDNjEyIDc1IDYxMCA3OCA2MDcgODRDNjAzIDk1IDU5NyAxMDEgNTk3IDExM1pNMTY2NiAxMDhWMzk1SDE2NjlMMTc5MSAwSDIwMjJDMjAyNiAwIDIwMjkgMiAyMDMxIDZDMjAzMiA3IDIwMzMgOCAyMDM0IDEwTDIwMzQgMTBDMjAzNiAxMyAyMDM4IDE2IDIwMzcgMjBDMjAzNCAyOSAyMDI4IDMzIDIwMjEgMzlDMjAxMiA0NiAyMDA1IDQ3IDE5OTYgNTRDMTk4NyA2MSAxOTgxIDY2IDE5NzQgNzVDMTk2NyA4NyAxOTYwIDk0IDE5NjAgMTA3VjU5MEMxOTYwIDU5NSAxOTYwIDU5OCAxOTYwIDYwM0MxOTYwIDYwOCAxOTU5IDYxMSAxOTU5IDYxNkMxOTU5IDYyMCAxOTU5IDYyMiAxOTU4IDYyN0MxOTU4IDYyOSAxOTU4IDYzMiAxOTU5IDYzNEMxOTU5IDYzNiAxOTYwIDYzOSAxOTU5IDY0MUMxOTU5IDY1MiAxOTU2IDY1OCAxOTU2IDY2OEMxOTU1IDY3OCAxOTQ3IDY4NiAxOTM3IDY4NkMxOTMxIDY4NiAxOTI2IDY4MiAxOTIzIDY3N0MxOTIwIDY4NiAxOTExIDY5MiAxOTAyIDY5MkMxODk4IDY5MSAxODk0IDY4OSAxODkxIDY4N0MxODkwIDY5MCAxODkwIDY5NCAxODkwIDY5N0MxODkwIDcwMyAxODg5IDcxMCAxODg5IDcxN0MxODg5IDcyOCAxODg4IDczNSAxODg4IDc0NkMxODg4IDc1NSAxODgwIDc2MyAxODcwIDc2MkMxODYxIDc2MiAxODUzIDc1NCAxODUzIDc0NUMxODU0IDczOSAxODU0IDczNCAxODUzIDczMFY3MzBDMTg1MyA3MjYgMTg1MyA3MjIgMTg1MyA3MTdDMTg1NCA3MDcgMTg1MyA2OTkgMTg1MyA2OTFDMTg1MyA2ODcgMTg1MyA2ODIgMTg1MyA2NzdDMTg0NyA2OTAgMTg0MiA2OTggMTgzNiA3MTJDMTgzMiA3MjIgMTgyOSA3MjcgMTgyNSA3MzZDMTgyMSA3NDUgMTgxMSA3NDkgMTgwMyA3NDVDMTc5NCA3NDEgMTc5MCA3MzEgMTc5NCA3MjJDMTc5OCA3MTMgMTgwMCA3MDggMTgwNCA2OThDMTgxMSA2ODMgMTgxNCA2NzMgMTgyMCA2NThDMTgyMiA2NTQgMTgyMiA2NDggMTgyMiA2NDRDMTgyMiA2NDQgMTgyMiA2NDQgMTgyMiA2NDRDMTgxMyA2NTUgMTc5NyA2NjUgMTc4NyA2NTVDMTc3NiA2NDYgMTc4MyA2MjkgMTc5MyA2MTlDMTc5NSA2MTYgMTgwMCA2MTYgMTgwNCA2MTZDMTgwOSA2MTYgMTgxMyA2MTYgMTgxNCA2MTFDMTgxNCA2MDkgMTgxNCA2MDcgMTgxNCA2MDVDMTgxNSA2MDIgMTgxNSA2MDAgMTgxNSA1OTdDMTgxNSA1OTUgMTgxNSA1OTMgMTgxNSA1OTBWMjY1SDE4MTJMMTY4OCA2NjBIMTUyMFYxMjNDMTUyMCAxMDUgMTUxNiA5NCAxNTE2IDc2QzE1MTYgNjcgMTUxMiA2MSAxNTEwIDUzQzE1MDYgMzkgMTUwMSAzMSAxNTAwIDE4QzE1MDAgMTcgMTUwMCAxNyAxNTAwIDE2QzE1MDAgOSAxNDk5IDAgMTUwNSAwSDE3MzZDMTc0MCAwIDE3NDMgMiAxNzQ1IDZDMTc0NiA3IDE3NDYgOCAxNzQ3IDEwQzE3NTAgMTMgMTc1MiAxNiAxNzUxIDIwQzE3NDggMzAgMTc0MiAzNCAxNzM1IDM5QzE3MjUgNDcgMTcxNiA0NyAxNzA2IDU0QzE2OTUgNjEgMTY4OCA2NiAxNjgxIDc2QzE2NzMgODcgMTY2NiA5NSAxNjY2IDEwOFpNMjA4IC0xMlEyNzggLTEyIDMyMCAxMlEzNjMgMzUgMzgyIDc2UTQwMiAxMTggNDAyIDE3MFE0MDIgMjE2IDM5MCAyNTFRMzc3IDI4NiAzNTYgMzEzUTMzNCAzNDAgMzA3IDM2MlEyOTIgMzczIDI3NyAzODRDMjc5IDM4NCAyODEgMzg0IDI4MyAzODRDMjkwIDM4NiAyOTYgMzk0IDI5NCA0MDFDMjkzIDQwNCAyOTMgNDA1IDI5MyA0MDdDMjkxIDQxNSAyOTIgNDIwIDI5MSA0MjdDMjkwIDQyOSAyOTEgNDMyIDI5MSA0MzJDMjkxIDQzMiAyOTMgNDI3IDI5MyA0MjRDMjk0IDQxMyAyOTYgNDA2IDI5OSAzOTVDMzAwIDM5MSAzMDEgMzg5IDMwMyAzODRDMzA1IDM3NiAzMTQgMzcxIDMyMyAzNzRDMzI4IDM3NiAzMzMgMzgxIDMzNCAzODZDMzM3IDM3OSAzNDQgMzc0IDM1MyAzNzVDMzYyIDM3NyAzNjggMzg2IDM2NyAzOTVDMzY2IDM5OSAzNjYgNDAxIDM2NiA0MDRDMzY1IDQwOCAzNjUgNDExIDM2NSA0MTRDMzY1IDQxMiAzNjYgNDEwIDM2NiA0MDhDMzY3IDQwNCAzNjggNDAyIDM2OCAzOTlDMzcxIDM5MCAzODAgMzg1IDM4OCAzODdDMzk3IDM4OSA0MDMgMzk4IDQwMSA0MDdDNDAwIDQxMCA0MDAgNDEyIDM5OSA0MTVDMzk3IDQyMyAzOTcgNDI5IDM5NyA0MzdDNDAzIDQzMyA0MTAgNDMzIDQxNiA0MzdDNDI2IDQ0NiA0MTkgNDYxIDQxMCA0NzFDNDA4IDQ3NCA0MDQgNDczIDQwMCA0NzJDMzk2IDQ3MSAzOTIgNDcxIDM5MiA0NzRDMzkxIDQ3NiAzOTEgNDc3IDM5MSA0NzhDMzkxIDQ4MCAzOTEgNDgxIDM5MSA0ODNDMzkxIDQ4NiAzOTAgNDg3IDM5MCA0ODlRMzkwIDUzMyAzNzggNTY4UTM1OSA2MTggMzE2IDY0NVEyNzIgNjcyIDIwNCA2NzJRMTQ0IDY3MiAxMDIgNjUwUTU5IDYyOSAzNyA1OTBRMTUgNTUyIDE1IDUwMVExNSA0NjIgMjYgNDMyUTM4IDQwMiA1NyAzNzhRNzYgMzU1IDk5IDMzNlExMjIgMzE4IDE0NCAzMDJRMTY5IDI4NSAxOTMgMjY1UTIxNyAyNDUgMjMyIDIxOFEyNDggMTkyIDI0OCAxNTVRMjQ4IDEzNiAyNDQgMTI0UTIzOSAxMTIgMjMwIDEwNlEyMjIgMTAwIDIxMCAxMDBRMTg1IDEwMCAxNzQgMTIyUTE2MyAxNDUgMTYyIDE4MFExNjIgMTgyIDE2MiAxODNMMTYyIDE4NEMxNjIgMjAwIDE1OCAyMDkgMTU0IDIyNUMxNTAgMjQyIDE0NCAyNTEgMTM1IDI2NUMxMjggMjc4IDEyMSAyODQgMTExIDI5NUMxMDcgMjk4IDEwNiAzMDEgMTAxIDMwNEM5NyAzMDcgOTEgMzA1IDkwIDMxMEM4NyAzMTkgODQgMzI0IDgxIDMzM0M4MCAzMzcgNzkgMzM5IDc3IDM0NEM3NSAzNTAgNjggMzU0IDYxIDM1MkM1NCAzNDkgNTEgMzQyIDUzIDMzNUM1NCAzMzEgNTUgMzI5IDU2IDMyNUM1OSAzMTYgNjAgMzEwIDYzIDMwMUM2NCAyOTkgNjYgMjk1IDY2IDI5NUM2NiAyOTUgNjMgMjk2IDYyIDI5N0M1NSAzMDggNTAgMzE0IDQzIDMyNEM0MCAzMzAgMzcgMzMzIDMzIDMzOEMyOSAzNDUgMTkgMzQ2IDEzIDM0MkM2IDMzNyA1IDMyOCA5IDMyMkMxMyAzMTYgMTUgMzEzIDE4IDMwN0MyNCAyOTkgMjggMjkyIDMzIDI4NEMyNCAyOTIgMTggMjk3IDkgMzA1QzQgMzEwIDAgMzEyIC00IDMxN0MtMTEgMzIzIC0yMSAzMjIgLTI2IDMxNkMtMzIgMzEwIC0zMiAzMDAgLTI2IDI5NEMtMjEgMjg5IC0xOCAyODYgLTEzIDI4MkMtNSAyNzQgMCAyNjggNyAyNjFDLTEgMjY1IC03IDI2OCAtMTYgMjczQy0yMSAyNzYgLTI0IDI3NyAtMjkgMjgwQy0zNiAyODQgLTQ1IDI4MSAtNDkgMjc0Qy01MyAyNjcgLTUxIDI1OCAtNDQgMjU0Qy0zOSAyNTEgLTM2IDI0OSAtMzEgMjQ2Qy0yMSAyNDAgLTE2IDIzNiAtNiAyMzFDLTIyIDIyOCAtNDAgMjIzIC0zOCAyMDdDLTM2IDE5MCAtMTIgMTkyIDUgMTk0QzcgMTk0IDkgMTk3IDExIDIwMEMxMiAyMDMgMTMgMjA1IDE1IDIwM0MxNiAyMDIgMTYgMjAxIDE2IDIwMEMxNiAxOTkgMTYgMTk4IDE3IDE5N0MxOCAxOTYgMTcgMTk1IDE3IDE5NEMxNyAxOTIgMTcgMTkxIDE3IDE5MEMxOCAxODggMTcgMTg3IDE2IDE4NUMxNiAxODQgMTUgMTgzIDE1IDE4MkwxNSAxODJRMTUgMTgxIDE1IDE4MVExMyAxNTUgMTYgMTMyUTIxIDg3IDQ1IDU0UTY5IDIyIDExMCA1UTE1MSAtMTIgMjA4IC0xMlpNMzUzMSAtMTJRMzYwMSAtMTIgMzY0NCAxMlEzNjg2IDM1IDM3MDYgNzZRMzcyNSAxMTggMzcyNSAxNzBRMzcyNSAyMTYgMzcxMiAyNTFRMzcwMCAyODYgMzY3OCAzMTNRMzY1NyAzNDAgMzYzMCAzNjJRMzYwMyAzODMgMzU3NCA0MDJRMzU1MyA0MTYgMzUzNCA0MzBRMzUxNCA0NDUgMzUwMiA0NjRRMzQ5MCA0ODIgMzQ5MCA1MDdRMzQ5MCA1MjIgMzQ5NCA1MzJRMzQ5OSA1NDMgMzUwOCA1NDlRMzUxNiA1NTUgMzUyNyA1NTVRMzU0MyA1NTUgMzU1NCA1NDRRMzU2NCA1MzQgMzU2OSA1MTZRMzU3MSA1MTAgMzU3MiA1MDRMMzU3MiA1MDRDMzU3NiA0ODMgMzU4MSA0NzEgMzU5MSA0NTJDMzYwMCA0MzMgMzYwOSA0MjMgMzYyNCA0MDhDMzYzNiAzOTUgMzY0NiAzODkgMzY2MSAzODBDMzY2NiAzNzcgMzY2NyAzNzQgMzY3MiAzNzFDMzY4MCAzNjYgMzY4NiAzNjQgMzY5NCAzNTlDMzcwMiAzNTQgMzcxMiAzNTYgMzcxNyAzNjNDMzcyMCAzNjcgMzcyMSAzNzMgMzcxOSAzNzhDMzcyNyAzNzYgMzczNiAzNzkgMzc0MCAzODZDMzc0MyAzOTEgMzc0NCAzOTYgMzc0MiA0MDFDMzc0OSA0MDEgMzc1NiA0MDQgMzc2MCA0MTFDMzc2MyA0MTYgMzc2MyA0MjEgMzc2MiA0MjZDMzc3MCA0MjIgMzc3OCA0MTggMzc4OCA0MTNDMzc5NyA0MDggMzgwMyA0MDUgMzgxMiA0MDBDMzgyMCAzOTYgMzgzMCAzOTkgMzgzNCA0MDdDMzgzOSA0MTUgMzgzNiA0MjUgMzgyOCA0MjlDMzgxOSA0MzQgMzgxNCA0MzggMzgwNSA0NDNDMzc5MCA0NTEgMzc4MSA0NTcgMzc2NyA0NjVDMzc2MyA0NjcgMzc1NyA0NzAgMzc1MiA0NzJDMzc2NCA0NzQgMzc3NiA0ODAgMzc3NiA0OTFDMzc3NSA1MDQgMzc1OSA1MDggMzc0NiA1MDdDMzc0MiA1MDcgMzc0MCA1MDQgMzczNyA1MDBDMzczNSA0OTcgMzczMyA0OTMgMzcyOSA0OTVDMzcyNSA0OTggMzcyNCA1MDAgMzcyMSA1MDNDMzcxNyA1MDcgMzcxNiA1MTEgMzcxMyA1MTVDMzcxMSA1MjAgMzcxMSA1MjMgMzcxMSA1MjhMMzcxMCA1MjhMMzcxMCA1MjhRMzcwNyA1NDkgMzcwMCA1NjhRMzY4MiA2MTggMzYzOCA2NDVRMzU5NSA2NzIgMzUyNyA2NzJRMzQ2NyA2NzIgMzQyNCA2NTBRMzM4MiA2MjkgMzM2MCA1OTBRMzMzOCA1NTIgMzMzOCA1MDFRMzMzOCA0NjIgMzM1MCA0MzJRMzM2MSA0MDIgMzM4MCAzNzhRMzM5OSAzNTUgMzQyMiAzMzZRMzQ0NSAzMTggMzQ2NyAzMDJRMzQ5MiAyODUgMzUxNiAyNjVRMzU0MCAyNDUgMzU1NiAyMThRMzU3MSAxOTIgMzU3MSAxNTVRMzU3MSAxMzYgMzU2NiAxMjRRMzU2MiAxMTIgMzU1NCAxMDZRMzU0NSAxMDAgMzUzMyAxMDBRMzUwOCAxMDAgMzQ5NyAxMjJRMzQ4NiAxNDUgMzQ4NSAxODBRMzQ4NSAxODUgMzQ4NSAxODlWMTg5TDM0ODUgMTg5QzM0ODUgMTkzIDM0ODMgMTk0IDM0ODMgMTk3QzM0ODMgMjAyIDM0ODEgMjA1IDM0ODEgMjA5QzM0ODAgMjEzIDM0NzggMjE1IDM0NzggMjE5QzM0NzcgMjI0IDM0NzcgMjI3IDM0NzYgMjMyQzM0NzYgMjM1IDM0NzUgMjM3IDM0NzUgMjM5QzM0NzQgMjQyIDM0NzMgMjQ1IDM0NzMgMjQ5QzM0NzMgMjUzIDM0NzMgMjU2IDM0NzMgMjU5TDM0NzMgMjU5QzM0NzMgMjYzIDM0NzIgMjY3IDM0NzMgMjcxQzM0NzMgMjczIDM0NzMgMjc0IDM0NzMgMjc2QzM0NzMgMjc3IDM0NzMgMjc5IDM0NzMgMjgwQzM0NzMgMjg4IDM0NjcgMjk0IDM0NjAgMjk0QzM0NTMgMjk1IDM0NDYgMjg5IDM0NDYgMjgyQzM0NDYgMjc4IDM0NDUgMjc2IDM0NDUgMjczQzM0NDUgMjY0IDM0NDQgMjU5IDM0NDQgMjUwQzM0NDQgMjUyIDM0NDQgMjUzIDM0NDMgMjU1QzM0NDMgMjY0IDM0MzQgMjcyIDM0MjUgMjcxQzM0MTkgMjcxIDM0MTQgMjY4IDM0MTEgMjY0QzM0MDcgMjY4IDM0MDAgMjcwIDMzOTQgMjcwQzMzODggMjY5IDMzODIgMjY2IDMzNzkgMjYxQzMzNzcgMjY3IDMzNzUgMjczIDMzNzMgMjgxQzMzNzIgMjg3IDMzNzAgMjkwIDMzNjkgMjk2QzMzNjcgMzA1IDMzNTggMzEwIDMzNTAgMzA4QzMzNDEgMzA2IDMzMzYgMjk3IDMzMzggMjg5QzMzNDAgMjgzIDMzNDAgMjc5IDMzNDEgMjczQzMzNDUgMjYxIDMzNDYgMjUzIDMzNDkgMjQxQzMzNTAgMjM4IDMzNDkgMjMyIDMzNDkgMjMyQzMzNDkgMjMyIDMzNDkgMjM2IDMzNDggMjM2QzMzMzIgMjQzIDMzMTAgMjQ5IDMzMDMgMjMzQzMyOTcgMjE4IDMzMTcgMjA3IDMzMzMgMjAxQzMzMzUgMjAwIDMzMzggMjAyIDMzNDAgMjAzQzMzNDMgMjA1IDMzNDUgMjA2IDMzNDUgMjA0QzMzNDUgMjAzIDMzNDQgMjAzIDMzNDQgMjAyQzMzNDQgMjAyIDMzNDMgMjAxIDMzNDMgMjAxQzMzNDMgMjAwIDMzNDMgMjAwIDMzNDIgMTk5QzMzNDIgMTk5IDMzNDEgMTk4IDMzNDEgMTk3QzMzNDEgMTk2IDMzNDEgMTk1IDMzNDAgMTkzQzMzNDAgMTkzIDMzMzkgMTkyIDMzMzkgMTkxTDMzMzkgMTkxUTMzMzkgMTkwIDMzMzkgMTkwUTMzMzUgMTU5IDMzMzggMTMyUTMzNDQgODcgMzM2OCA1NFEzMzkyIDIyIDM0MzMgNVEzNDc0IC0xMiAzNTMxIC0xMlpNMTI5OCAtMTJRMTM2OCAtMTIgMTQxMCAxMlExNDUzIDM1IDE0NzIgNzZRMTQ5MiAxMTggMTQ5MiAxNzBRMTQ5MiAyMTYgMTQ4MCAyNTFRMTQ2NyAyODYgMTQ0NiAzMTNRMTQyNCAzNDAgMTM5NyAzNjJRMTM3MCAzODMgMTM0MSA0MDJRMTMyMCA0MTYgMTMwMCA0MzBRMTI4MSA0NDUgMTI2OSA0NjRRMTI1NyA0ODIgMTI1NyA1MDdRMTI1NyA1MjIgMTI2MiA1MzJRMTI2NiA1NDMgMTI3NCA1NDlRMTI4MyA1NTUgMTI5NCA1NTVRMTMxMCA1NTUgMTMyMCA1NDRRMTMzMSA1MzQgMTMzNiA1MTZRMTM0MCA1MDEgMTM0MSA0ODJMMTM0MSA0ODJDMTM0MSA0ODAgMTM0MSA0NzkgMTM0MiA0NzZDMTM0MiA0NzMgMTM0MiA0NzIgMTM0MiA0NjlDMTM0MiA0NjYgMTM0MiA0NjUgMTM0MyA0NjJDMTM0MyA0NTcgMTM0MyA0NTQgMTM0NCA0NDhDMTM0NSA0NDEgMTM0NyA0MzcgMTM0OCA0MzBDMTM0OCA0MjIgMTM1MCA0MTcgMTM1MSA0MDhDMTM1MSA0MDUgMTM1MiA0MDMgMTM1MiA0MDFDMTM1MyAzOTMgMTM2MCAzODcgMTM2OCAzODhDMTM3NiAzODkgMTM4MSAzOTcgMTM4MCA0MDRDMTM4MCA0MDcgMTM4MCA0MDkgMTM4MCA0MTFDMTM3OSA0MTkgMTM3OSA0MjQgMTM3OSA0MzNDMTM3OSA0MzQgMTM3OSA0MzcgMTM3OSA0MzdDMTM3OSA0MzcgMTM4MSA0MzMgMTM4MSA0MzFDMTM4MSA0MjAgMTM4MyA0MTQgMTM4NiA0MDNDMTM4NiAzOTkgMTM4NyAzOTcgMTM4OCAzOTRDMTM5MCAzODUgMTM5OSAzODAgMTQwOCAzODJDMTQxNiAzODQgMTQyMSAzOTMgMTQxOSA0MDJDMTQxOCA0MDUgMTQxOCA0MDcgMTQxOCA0MTBDMTQxNyA0MTQgMTQxNiA0MTcgMTQxNiA0MjBDMTQxOCA0MTQgMTQxOSA0MDggMTQyMSA0MDBDMTQyMiAzOTYgMTQyMyAzOTMgMTQyNSAzODlDMTQyNyAzODAgMTQzNyAzNzQgMTQ0NiAzNzdDMTQ1NSAzNzkgMTQ2MCAzODkgMTQ1OCAzOThDMTQ1NyA0MDIgMTQ1NiA0MDQgMTQ1NSA0MDhDMTQ1NSA0MTIgMTQ1NCA0MTUgMTQ1NCA0MThDMTQ1NCA0MTYgMTQ1NSA0MTQgMTQ1NSA0MTJDMTQ1NiA0MDkgMTQ1NyA0MDggMTQ1OCA0MDVDMTQ2MCAzOTcgMTQ3MCAzOTIgMTQ3OCAzOTRDMTQ4NyAzOTcgMTQ5MiA0MDYgMTQ4OSA0MTVDMTQ4OSA0MTcgMTQ4OSA0MTkgMTQ4OCA0MjFDMTQ4NiA0MjkgMTQ4NiA0MzQgMTQ4NSA0NDFDMTQ5MSA0MzggMTQ5NyA0MzcgMTUwMyA0NDFDMTUxMyA0NDkgMTUwNyA0NjUgMTQ5OSA0NzVDMTQ5NyA0NzggMTQ5MyA0NzYgMTQ4OSA0NzVDMTQ4NSA0NzQgMTQ4MiA0NzMgMTQ4MSA0NzZDMTQ4MSA0NzggMTQ4MSA0NzggMTQ4MSA0ODBDMTQ4MSA0ODEgMTQ4MSA0ODIgMTQ4MSA0ODRDMTQ4MSA0ODYgMTQ4MCA0ODcgMTQ4MCA0ODlRMTQ4MCA1MzMgMTQ2OCA1NjhRMTQ0OSA2MTggMTQwNiA2NDVRMTM2MiA2NzIgMTI5NCA2NzJRMTIzNCA2NzIgMTE5MiA2NTBRMTE0OSA2MjkgMTEyNyA1OTBRMTEwNSA1NTIgMTEwNSA1MDFRMTEwNSA0NjIgMTExNiA0MzJRMTEyOCA0MDIgMTE0NyAzNzhRMTE2NiAzNTUgMTE4OSAzMzZRMTIxMiAzMTggMTIzNCAzMDJRMTI1OSAyODUgMTI4MyAyNjVRMTMwNyAyNDUgMTMyMiAyMThRMTMzOCAxOTIgMTMzOCAxNTVRMTMzOCAxMzYgMTMzNCAxMjRRMTMyOSAxMTIgMTMyMCAxMDZRMTMxMiAxMDAgMTMwMCAxMDBRMTI3NSAxMDAgMTI2NCAxMjJRMTI1MyAxNDUgMTI1MiAxODBRMTI1MiAxODUgMTI1MiAxODlWMTg5TDEyNTIgMTg5QzEyNTIgMTkxIDEyNTEgMTkyIDEyNTEgMTkzQzEyNTAgMTk0IDEyNTAgMTk1IDEyNTAgMTk3QzEyNTAgMTk5IDEyNDkgMjAwIDEyNDggMjAyQzEyNDggMjA0IDEyNDcgMjA1IDEyNDcgMjA4QzEyNDcgMjExIDEyNDQgMjEzIDEyNDQgMjE3TDEyNDQgMjIxQzEyNDQgMjIzIDEyNDUgMjIzIDEyNDcgMjI0QzEyNDggMjI1IDEyNTAgMjI2IDEyNTEgMjI3QzEyNTIgMjMwIDEyNTIgMjMyIDEyNTEgMjM1QzEyNDkgMjM4IDEyNDQgMjM5IDEyNDQgMjM5QzEyNDQgMjM5IDEyNDkgMjQyIDEyNTAgMjQ1QzEyNTIgMjQ4IDEyNTEgMjUwIDEyNTAgMjUzQzEyNDggMjU2IDEyNDQgMjU3IDEyNDQgMjU3QzEyNDQgMjU3IDEyNDggMjYwIDEyNDkgMjYzQzEyNTAgMjY2IDEyNDkgMjY5IDEyNDggMjcyQzEyNDYgMjc0IDEyNDEgMjc2IDEyNDEgMjc2QzEyNDEgMjc2IDEyNDcgMjc5IDEyNDYgMjgxQzEyNDIgMjg3IDEyMzcgMjg5IDEyMzAgMjkwQzEyMjAgMjkyIDEyMTMgMjkxIDEyMDMgMjkwQzEyMDEgMjkwIDExOTkgMjkwIDExOTYgMjkwQzExODcgMjg5IDExNzMgMjg2IDExNzMgMjg2QzExNzMgMjg2IDExNjggMjk4IDExNjcgMzA1QzExNjcgMzEzIDExNjYgMzE4IDExNjEgMzIzQzExNTcgMzI4IDExNTIgMzMxIDExNDYgMzMxQzExMzkgMzMwIDExMzUgMzI3IDExMzIgMzIxQzExMjggMzE1IDExMjkgMzEwIDExMzAgMzAyQzExMzAgMzAxIDExMzAgMjk5IDExMzAgMjk4QzExMzEgMjk0IDExMzIgMjkxIDExMjkgMjg3QzExMjUgMjc5IDExMTYgMjgwIDExMTIgMjcyQzExMDcgMjYzIDExMDYgMjU2IDExMDYgMjQ1QzExMDggMjMwIDExMTIgMjIxIDExMTMgMjA2QzExMTMgMjA2IDExMTMgMjA1IDExMTIgMjA0QzExMTIgMjA0IDExMTEgMjAzIDExMTEgMjAyQzExMTEgMjAyIDExMTEgMjAxIDExMTAgMjAwQzExMTAgMjAwIDExMDkgMTk5IDExMDkgMTk4QzExMDkgMTk1IDExMDcgMTk0IDExMDYgMTkxTDExMDYgMTkxUTExMDYgMTkwIDExMDYgMTkwUTExMDIgMTU5IDExMDYgMTMyUTExMTEgODcgMTEzNSA1NFExMTU5IDIyIDEyMDAgNVExMjQxIC0xMiAxMjk4IC0xMlpNMzAzOCAzMzBWNTM3SDMwNThRMzA4OSA1MzcgMzEwMyA1MTVRMzExNyA0OTMgMzExNyA0NDBRMzExNyAzODIgMzEwMCAzNTZRMzA4NCAzMzAgMzA1MCAzMzBaTTMwMzggMTIwVjIyOEgzMDQ1UTMwNzUgMjI3IDMwODggMjExUTMxMDIgMTk1IDMxMDcgMTY4UTMxMDkgMTU1IDMxMTEgMTQwQzMxMDMgMTMyIDMxMDggMTExIDMxMTIgOTBDMzExNSA4MSAzMTE3IDcyIDMxMTcgNjRDMzExOCA2MSAzMTE2IDYwIDMxMTQgNTlDMzExMyA1OCAzMTEyIDU2IDMxMTEgNTVDMzEwNyA0NyAzMTA2IDQyIDMxMDQgMzNDMzEwNCAzMyAzMTA0IDMyIDMxMDQgMzFDMzEwMiAzOSAzMTAwIDQ0IDMwOTUgNTFDMzA4OSA1OSAzMDgzIDYxIDMwNzUgNjZDMzA3MCA2OSAzMDY3IDcwIDMwNjMgNzRDMzA1NyA3OSAzMDUzIDgyIDMwNDkgODlDMzA0MyAxMDAgMzAzOCAxMDggMzAzOCAxMjBaTTIyNjkgMzkwUTIyNjAgMzk2IDIyNTEgNDAyUTIyMzAgNDE2IDIyMTAgNDMwUTIxOTEgNDQ1IDIxNzkgNDY0UTIxNjcgNDgyIDIxNjcgNTA3UTIxNjcgNTIyIDIxNzIgNTMyUTIxNzYgNTQzIDIxODQgNTQ5UTIxOTMgNTU1IDIyMDQgNTU1UTIyMjAgNTU1IDIyMzAgNTQ0UTIyNDEgNTM0IDIyNDYgNTE2UTIyNTAgNTAxIDIyNTEgNDgyTDIyNTEgNDgyQzIyNTEgNDc5IDIyNTEgNDc3IDIyNTIgNDc0QzIyNTIgNDcwIDIyNTIgNDY4IDIyNTMgNDY0QzIyNTMgNDYxIDIyNTMgNDU5IDIyNTQgNDU2QzIyNTQgNDUwIDIyNTQgNDQ3IDIyNTUgNDQyQzIyNTcgNDM1IDIyNTkgNDMxIDIyNjAgNDI0QzIyNjEgNDE2IDIyNjIgNDEwIDIyNjQgNDAyQzIyNjUgMzk5IDIyNjUgMzk4IDIyNjYgMzk1QzIyNjcgMzkzIDIyNjcgMzkyIDIyNjkgMzkwWk0yNjggMzkxUTI2MCAzOTYgMjUxIDQwMlEyMzAgNDE2IDIxMCA0MzBRMTkxIDQ0NSAxNzkgNDY0UTE2NyA0ODIgMTY3IDUwN1ExNjcgNTIyIDE3MiA1MzJRMTc2IDU0MyAxODQgNTQ5UTE5MyA1NTUgMjA0IDU1NVEyMjAgNTU1IDIzMCA1NDRRMjQxIDUzNCAyNDYgNTE2UTI1MCA1MDEgMjUxIDQ4MkwyNTEgNDgyQzI1MSA0NzkgMjUxIDQ3NyAyNTIgNDc0QzI1MiA0NzAgMjUyIDQ2OCAyNTMgNDY0QzI1MyA0NjEgMjUzIDQ1OSAyNTQgNDU2QzI1NCA0NTAgMjU0IDQ0NyAyNTUgNDQyQzI1NyA0MzUgMjU5IDQzMSAyNjAgNDIzQzI2MSA0MTUgMjYzIDQxMCAyNjQgNDAyQzI2NSAzOTkgMjY1IDM5OCAyNjYgMzk1QzI2NiAzOTQgMjY3IDM5MiAyNjggMzkxWk0yNzUyIDU5QzI3NTMgNjIgMjc1NCA2MyAyNzU2IDY1QzI3NTcgNjcgMjc1NyA2OSAyNzU5IDcxQzI3NjAgNzIgMjc2MiA3MyAyNzYzIDcyQzI3NjUgNzEgMjc2NSA2OSAyNzY0IDY4QzI3NjQgNjUgMjc2MiA2NCAyNzYxIDYyQzI3NTkgNjAgMjc1OSA1OCAyNzU3IDU2QzI3NTYgNTUgMjc1NSA1NCAyNzUzIDU1QzI3NTIgNTYgMjc1MiA1OCAyNzUyIDU5WiIvPjwvc3ZnPgo=") no-repeat left center / contain; }
+  .avatar-barra { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #cdb7a0, #7c6450); color: #fff; font-weight: 700; font-size: 15px; }
+  .icono-barra { display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; border-radius: 50%; background: none; color: var(--texto); cursor: pointer; }
+  .fila-chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px var(--gutter) 12px; scrollbar-width: none; }
+  .fila-chips::-webkit-scrollbar { display: none; }
+  .chip { display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .chip svg { color: var(--texto-suave); }
+  .chip small { color: var(--texto-suave); font-size: 13px; font-weight: 500; }
+  .chip.activo { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); }
+  .chip.activo svg, .chip.activo small { color: #cfe6ea; }
+  .con-lupa { display: grid; grid-template-columns: 1fr auto; align-items: start; padding-right: 12px; }
+  .buscador { display: flex; align-items: center; gap: 10px; height: 44px; margin: 4px var(--gutter) 10px; padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto-suave); font-size: 16px; }
+  .buscador input { flex: 1; min-width: 0; height: 100%; border: none; background: none; color: var(--texto); font-size: 16px; outline: none; }
+  .buscador input::placeholder { color: var(--texto-suave); }
+  .buscar-agenda { display: grid; grid-template-columns: 1fr auto; align-items: center; padding-right: 8px; }
+  .buscar-agenda .buscador { margin-right: 4px; }
+  .texto-boton { min-height: var(--toque-min); padding: 0 8px; border: none; background: none; color: var(--primario); font-size: 16px; font-weight: 700; cursor: pointer; }
+  .pestanas { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding-inline: var(--gutter); border-bottom: 1px solid var(--borde); }
+  .pestanas button { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; margin-bottom: -1px; border: none; border-bottom: 2px solid transparent; background: none; color: var(--texto-suave); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .pestanas button[aria-selected="true"] { color: var(--primario); border-color: var(--primario); }
+  .grupo { position: sticky; top: 156px; z-index: 2; display: flex; gap: 6px; align-items: baseline; margin: 10px var(--gutter) 0; padding: 12px 0 6px; border-bottom: 1px solid var(--texto); background: var(--fondo-contenido); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .grupo span { color: var(--texto-suave); font-weight: 500; }
+  .conteo { margin: 12px var(--gutter) 2px; color: var(--texto-suave); font-size: 15px; }
+  .vacio { margin: 20px var(--gutter); color: var(--texto-suave); font-size: 16px; }
+  .lista { list-style: none; }
+
+  /* ---------- Renglones de siempre ---------- */
+  .renglon { position: relative; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "foto titulo" "foto meta"; column-gap: 12px; align-content: center; min-height: 88px; padding: 12px var(--gutter); color: var(--texto); text-decoration: none; }
+  .renglon::after { content: ""; position: absolute; left: var(--gutter); right: var(--gutter); bottom: 0; height: 1px; background: var(--borde); }
+  .foto { grid-area: foto; display: grid; place-items: center; width: 64px; height: 64px; align-self: start; border-radius: 10px; background: var(--fondo-miniatura); color: var(--texto-suave); }
+  .foto.redonda { border-radius: 50%; }
+  .titulo { grid-area: titulo; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 3px 10px; margin-top: 5px; color: var(--texto-suave); font-size: 15px; }
+  .meta > span { display: inline-flex; align-items: center; gap: 4px; }
+  .meta b { color: var(--texto); font-weight: 600; }
+  .meta.columna { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .t1 { background: linear-gradient(140deg, #c9b39b, #6f5a47); } .t2 { background: linear-gradient(140deg, #a9bfb0, #45685a); }
+  .t3 { background: linear-gradient(140deg, #d8b1a4, #8b4f43); } .t4 { background: linear-gradient(140deg, #d6c48a, #86712e); }
+  .t5 { background: linear-gradient(140deg, #aab7c9, #4b5d78); } .t6 { background: linear-gradient(140deg, #3b3b3b, #121212); }
+
+  /* ---------- La tira de destacados ---------- */
+  .destacados { display: grid; gap: 10px; padding-top: 14px; }
+  .destacados > h2 { padding-inline: var(--gutter); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+  .carril { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: 220px; gap: 12px; overflow-x: auto; padding: 0 var(--gutter) 6px; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
+  .carril::-webkit-scrollbar { display: none; }
+  .carril > li { min-width: 0; scroll-snap-align: start; }
+  .tarjeta { display: grid; grid-template-rows: 132px auto auto; grid-template-areas: "imagen" "titulo" "meta"; row-gap: 4px; color: var(--texto); text-decoration: none; }
+  .tarjeta .imagen { grid-area: imagen; position: relative; margin-bottom: 4px; border-radius: var(--radio); }
+  .tarjeta .imagen.retrato { background-position: center 20%; }
+  .tarjeta .van { position: absolute; left: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px 2px 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.95); font-size: 14px; font-weight: 700; }
+  .tarjeta b { grid-area: titulo; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .tarjeta small { grid-area: meta; overflow: hidden; color: var(--texto-suave); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+  /* Con uno solo: la tarjeta ocupa el ancho y la foto va a la izquierda (nada queda solo en un carril). */
+  .carril.uno { grid-auto-columns: 100%; }
+  .carril.uno .tarjeta { grid-template-columns: 124px 1fr; grid-template-rows: auto auto; grid-template-areas: "imagen titulo" "imagen meta"; align-items: start; column-gap: 12px; }
+  .carril.uno .imagen { height: 93px; margin-bottom: 0; }
+  .carril.uno small { white-space: normal; }
+
+  /* ---------- Lugares: el mapa (un dibujo, no Mapbox) ---------- */
+  [data-vista="lugares"].en-mapa { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+  .sub-mapa { position: relative; min-height: 0; margin-bottom: calc(var(--alto-nav) + var(--area-segura)); overflow: hidden; background: #efeee8; }
+  .dibujo { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sobre-mapa { position: absolute; top: 12px; left: 0; right: 0; z-index: 2; }
+  .sobre-mapa .buscador { margin-top: 0; box-shadow: var(--sombra); }
+  .sobre-mapa .chip { box-shadow: var(--sombra); }
+  .localizar { position: absolute; left: var(--gutter); bottom: 18px; z-index: 2; display: grid; place-items: center; width: var(--toque); height: var(--toque); border: none; border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); }
+  .punto { cursor: pointer; }
+  .punto .marca { fill: var(--primario); stroke: #fff; stroke-width: 1.5; }
+  .punto.destacado .marca { fill: var(--destacado); stroke-width: 2; }
+  .punto.decorativo { pointer-events: none; }
+  .rotulo { font-family: var(--fuente-mapa); font-size: 13px; font-weight: 700; fill: var(--primario); paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; text-anchor: middle; pointer-events: none; }
+  .rotulo.destacado { fill: var(--destacado-texto); }
+  .escudo text { font-family: var(--fuente-mapa); font-size: 8px; font-weight: 700; fill: #4d4d49; text-anchor: middle; }
+  .tarjeta-mapa { position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--alto-nav) + var(--area-segura) + 16px); z-index: 4; display: grid; grid-template-columns: 56px 1fr auto; grid-template-areas: "foto marca ver" "foto nombre ver" "foto tipo ver" "foto cuando ver"; column-gap: 12px; align-items: center; padding: 12px; border-radius: 16px; background: var(--fondo); box-shadow: var(--sombra-flotante); }
+  .tarjeta-mapa .foto { width: 56px; height: 56px; align-self: center; }
+  .tarjeta-mapa b { grid-area: nombre; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .tarjeta-mapa small { grid-area: tipo; color: var(--texto-suave); font-size: 14px; }
+  .tarjeta-mapa .cuando { grid-area: cuando; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 14px; }
+  .tarjeta-mapa .ver { grid-area: ver; min-height: var(--toque); padding: 0 16px; border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 16px; font-weight: 700; cursor: pointer; }
+  .marca-destacado { grid-area: marca; display: inline-flex; align-items: center; gap: 6px; color: var(--destacado-texto); font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+  .marca-destacado::before { content: ""; width: 10px; height: 10px; border: 2px solid #fff; border-radius: 50%; background: var(--destacado); box-shadow: 0 0 0 1px var(--destacado); }
+
+  /* ---------- Ficha e interior ---------- */
+  .barra-interior { position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 56px; padding-inline: 12px; border-bottom: 1px solid var(--borde); background: var(--fondo); }
+  .barra-interior .logotipo { height: 22px; }
+  .barra-interior .titulo-barra { font-size: 17px; font-weight: 700; }
+  .atras { justify-self: start; display: inline-flex; align-items: center; gap: 2px; min-height: 40px; padding: 0 14px 0 8px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .puntos { justify-self: end; display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; border-radius: 50%; background: none; color: var(--texto); cursor: pointer; }
+  .ficha { display: grid; gap: 14px; padding: 12px var(--gutter) 24px; }
+  .ficha-foto { height: 220px; border-radius: var(--radio); background-color: var(--fondo-miniatura); }
+  .ficha-foto.vacia { display: grid; place-items: center; color: var(--texto-suave); }
+  .ficha h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; }
+  .ficha .sub { margin-top: -10px; color: var(--texto-suave); font-size: 15px; }
+  .ficha-datos { list-style: none; display: grid; gap: 12px; font-size: 16px; line-height: 1.35; }
+  .ficha-datos li { display: grid; grid-template-columns: 22px 1fr; column-gap: 10px; align-items: start; }
+  .ficha-datos svg { margin-top: 1px; color: var(--texto-suave); }
+  .ficha-botones { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+  .ficha-botones span { display: grid; justify-items: center; gap: 6px; padding: 12px 6px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 14px; font-weight: 600; }
+  .accion-ficha { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; padding: 12px var(--gutter) calc(12px + var(--area-segura)); background: var(--fondo-contenido); box-shadow: 0 -1px 0 var(--borde); }
+  .accion-ficha span { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--toque); border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 17px; font-weight: 700; }
+  .accion-ficha span.secundaria { border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+
+  /* ---------- Panel: lista de lugares ---------- */
+  .panel-lista { padding: 8px 0 0; }
+  .panel-lista .chip.activo { border-color: var(--primario); background: var(--primario-suave); color: var(--primario); }
+  .panel-lista .chip.activo small { color: var(--primario); }
+  .renglones { list-style: none; margin-inline: var(--gutter); }
+  .renglones > li + li { border-top: 1px solid var(--borde); }
+  .ficha-fila { display: grid; grid-template-columns: 1fr var(--toque-min); align-items: center; column-gap: 4px; }
+  .ficha-fila > a { display: grid; grid-template-columns: 48px 1fr; grid-template-areas: "foto nombre" "foto detalle"; column-gap: 12px; align-items: center; min-width: 0; min-height: 68px; padding: 10px 0; text-decoration: none; }
+  .ficha-fila .foto { width: 48px; height: 48px; align-self: center; }
+  .ficha-fila b { grid-area: nombre; min-width: 0; font-size: 17px; font-weight: 600; line-height: 1.25; }
+  .ficha-fila small { grid-area: detalle; overflow: hidden; color: var(--texto-suave); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+  .etiqueta { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--destacado-suave); color: var(--destacado-texto); font-size: 12px; font-weight: 700; vertical-align: 2px; white-space: nowrap; }
+
+  /* ---------- Lo que flota: botón de publicar, aviso, navegación ---------- */
+  .flotante { position: absolute; right: var(--gutter); bottom: calc(var(--alto-nav) + var(--area-segura) + 16px); z-index: 4; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px 0 14px; border: none; border-radius: 999px; background: var(--primario); color: var(--primario-texto); font-size: 17px; font-weight: 700; box-shadow: var(--sombra-flotante); }
+  .aviso { position: absolute; left: 12px; right: 12px; bottom: calc(var(--alto-nav) + var(--area-segura) + 12px); z-index: 7; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-height: 52px; padding: 6px 6px 6px 16px; border-radius: 14px; background: #1f2326; color: #f2f2f2; font-size: 15px; line-height: 1.3; box-shadow: var(--sombra-flotante); }
+  .telefono[data-vista="ficha"] .aviso, .telefono[data-vista="panel"] .aviso { bottom: calc(84px + var(--area-segura)); }
+  .telefono:has(.tarjeta-mapa:not([hidden])) .aviso { bottom: calc(var(--alto-nav) + var(--area-segura) + 128px); }
+  .aviso button { min-height: 40px; padding: 0 12px; border: none; border-radius: 10px; background: none; color: #8fd3df; font-weight: 700; cursor: pointer; }
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); height: calc(var(--alto-nav) + var(--area-segura)); padding-bottom: var(--area-segura); background: var(--fondo); box-shadow: 0 -1px 0 var(--borde); }
+  .nav button { display: grid; place-items: center; align-content: center; gap: 2px; border: none; background: none; color: var(--texto-suave); font-size: 12px; font-weight: 600; cursor: pointer; }
+  .nav .pildora { display: grid; place-items: center; width: 56px; height: 32px; border-radius: 16px; }
+  .nav button[aria-current="page"] { color: var(--primario); }
+  .nav button[aria-current="page"] .pildora { background: var(--primario); color: #fff; }
+  .telefono[data-vista="ficha"] :is(.nav, .flotante), .telefono[data-vista="panel"] :is(.nav, .flotante) { display: none; }
+
+  /* ---------- Hoja de los tres puntos (como ui/Hoja) ---------- */
+  .velo { position: absolute; inset: 0; z-index: 8; background: rgba(0, 0, 0, 0.32); }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; display: grid; gap: 8px; padding: 10px var(--gutter) calc(18px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .hoja > .asa { justify-self: center; width: 36px; height: 4px; border-radius: 2px; background: var(--borde); }
+  .hoja > .cerrar-hoja { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto-suave); cursor: pointer; }
+  .hoja > h3 { padding-right: var(--toque-min); font-size: 21px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; text-wrap: balance; }
+  .menu { list-style: none; margin: 4px calc(-1 * var(--gutter)) 0; }
+  .menu button { display: grid; grid-template-columns: 24px 1fr; grid-template-areas: "icono texto" "icono detalle"; column-gap: 14px; align-items: center; width: 100%; min-height: 54px; padding: 6px var(--gutter); border: none; background: none; font-size: 17px; font-weight: 600; text-align: left; cursor: pointer; }
+  .menu button svg { grid-area: icono; color: var(--texto-suave); }
+  .menu button > span { grid-area: texto; }
+  .menu button > small { grid-area: detalle; color: var(--texto-suave); font-size: 14px; font-weight: 500; }
+  .menu .destacar svg { color: var(--destacado); }
+  .menu .peligro { color: var(--error); }
+  .menu .peligro svg { color: var(--error); }
+  .menu button:disabled { cursor: default; }
+  .menu button:disabled > span, .menu button:disabled svg { color: var(--texto-suave); opacity: 0.6; }
+  .menu > .aparte { margin-top: 6px; border-top: 1px solid var(--borde); }
+
+  /* ---------- Notas del prototipo ---------- */
+  .panel { display: grid; gap: 18px; width: 340px; max-width: 100%; padding: 22px 22px 24px; border: 1px solid var(--estudio-borde); border-radius: 18px; background: var(--estudio-panel); font-size: 15px; line-height: 1.45; }
+  .panel h1 { font-size: 26px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.05; text-wrap: balance; }
+  .panel .fecha { margin-top: 4px; color: var(--estudio-suave); font-size: 14px; }
+  .panel h2 { margin-bottom: 6px; color: var(--estudio-suave); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .panel ul { display: grid; gap: 6px; padding-left: 18px; }
+  .panel b { font-weight: 700; }
+  .muestra-color { display: inline-block; width: 12px; height: 12px; margin-right: 4px; border: 2px solid #fff; border-radius: 50%; background: var(--destacado); box-shadow: 0 0 0 1px var(--destacado); vertical-align: -1px; }
+  .segmentos { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 999px; background: var(--estudio); }
+  .segmentos button { min-height: 38px; padding: 0 10px; border: none; border-radius: 999px; background: none; color: var(--estudio-texto); font-weight: 700; cursor: pointer; }
+  .segmentos button[aria-pressed="true"] { background: var(--primario); color: #fff; }
+  .pie-panel { display: flex; flex-wrap: wrap; gap: 8px; }
+  .boton-estudio { min-height: 40px; padding: 0 16px; border: 1px solid var(--estudio-borde); border-radius: 999px; background: none; font-weight: 700; cursor: pointer; }
+  .cerrar-notas { display: none; }
+
+  /* ---------- En el teléfono: la app a pantalla completa y las notas en una hoja ---------- */
+  @media (max-width: 759px) {
+    body { padding: 0; }
+    .estudio { display: block; height: 100%; max-width: none; }
+    .telefono { width: 100%; height: 100%; border-radius: 0; box-shadow: none; --area-segura: 0px; }
+    .estado-ios { display: none; }
+    .tira-prototipo { flex: none; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; min-height: 48px; padding: 4px 8px 4px 14px; background: #1f2326; color: #e9ecef; font-size: 13px; }
+    .tira-prototipo > span { font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #9aa5ad; }
+    .tira-prototipo .segmentos { background: #30363a; }
+    .tira-prototipo .segmentos button { min-height: 34px; color: #e9ecef; font-size: 14px; }
+    .tira-prototipo .ayuda { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #4a5258; border-radius: 50%; background: none; color: #e9ecef; font-weight: 700; cursor: pointer; }
+    .panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; width: auto; max-height: 84%; overflow-y: auto; border-radius: 18px 18px 0 0; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3); transform: translateY(105%); transition: transform 240ms ease; }
+    .estudio.notas .panel { transform: none; }
+    .panel .solo-escritorio { display: none; }
+    .cerrar-notas { display: block; justify-self: stretch; min-height: 44px; border: none; border-radius: 12px; background: var(--estudio); font-weight: 700; cursor: pointer; }
+    .velo-notas { position: fixed; inset: 0; z-index: 19; background: rgba(0, 0, 0, 0.4); }
+  }
+  @media (prefers-reduced-motion: reduce) { .panel { transition: none; } .carril { scroll-behavior: auto; } }
+</style>
+
+<main class="estudio" id="estudio">
+  <section class="telefono" id="telefono" data-vista="agenda" aria-label="Somos Nosotros en el teléfono">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+    <div class="tira-prototipo">
+      <span>Prototipo</span>
+      <div class="segmentos" role="group" aria-label="Quién mira">
+        <button type="button" data-rol="persona" aria-pressed="true">Persona</button>
+        <button type="button" data-rol="admin" aria-pressed="false">Admin</button>
+      </div>
+      <button type="button" class="ayuda" id="abrir-notas" aria-label="Qué probar">?</button>
+    </div>
+
+    <div class="pantalla" id="pantalla">
+      <!-- Agenda -->
+      <div data-vista="agenda">
+        <div class="cabecera">
+          <div class="barra"><span class="logotipo" role="img" aria-label="Somos Nosotros"></span><span class="avatar-barra" aria-hidden="true">O</span></div>
+          <div class="con-lupa" id="fila-agenda">
+            <div class="fila-chips"><button type="button" class="chip" id="chip-fecha"></button><span class="chip" data-icono-chip="pin">San Luis Potosí<span data-icono-caret></span></span></div>
+            <button type="button" class="icono-barra" id="lupa-agenda" aria-label="Buscar en la agenda" data-icono="buscar"></button>
+          </div>
+          <div class="buscar-agenda" id="buscar-agenda" hidden>
+            <label class="buscador"><span data-icono="buscar"></span><input type="search" id="q-agenda" placeholder="Buscar en la agenda" autocomplete="off"></label>
+            <button type="button" class="texto-boton" id="cancelar-agenda">Cancelar</button>
+          </div>
+          <div class="pestanas" role="tablist" aria-label="Filtro">
+            <button type="button" role="tab" data-filtro="todos" aria-selected="true">Todos</button>
+            <button type="button" role="tab" data-filtro="cercanos" aria-selected="false">Cercanos</button>
+            <button type="button" role="tab" data-filtro="siguiendo" aria-selected="false">Siguiendo</button>
+            <button type="button" role="tab" data-filtro="nuevos" aria-selected="false">Nuevos</button>
+          </div>
+        </div>
+        <div id="tira-eventos"></div>
+        <div id="lista-agenda"></div>
+      </div>
+
+      <!-- Lugares -->
+      <div data-vista="lugares" hidden>
+        <div class="cabecera">
+          <div class="barra"><span class="logotipo" role="img" aria-label="Somos Nosotros"></span><span class="avatar-barra" aria-hidden="true">O</span></div>
+          <div class="pestanas" role="tablist" aria-label="Vista">
+            <button type="button" role="tab" data-sub="mapa" data-icono-pestana="mapa" aria-selected="true">Mapa</button>
+            <button type="button" role="tab" data-sub="lista" data-icono-pestana="lista" aria-selected="false">Lista</button>
+          </div>
+        </div>
+        <div class="sub-mapa" data-sub-vista="mapa">
+          <svg class="dibujo" id="mapa" viewBox="0 0 390 690" preserveAspectRatio="xMidYMid slice" aria-label="Mapa de San Luis Potosí">
+            <defs>
+              <pattern id="calles" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(9)"><path d="M0 .5H13M.5 0V13" stroke="#e9e6df" stroke-width="1" fill="none"/></pattern>
+              <pattern id="calles-2" width="19" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(-33)"><path d="M0 .5H19M.5 0V16" stroke="#ebe8e2" stroke-width=".9" fill="none"/></pattern>
+              <pattern id="cerro" width="14" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(-18)"><path d="M0 6c4-3 9-3 14 0" stroke="#cbd9bb" stroke-width=".8" fill="none"/></pattern>
+              <path id="via-1" d="M-10 312c70-8 128-58 204-104 64-40 128-56 206-50"/>
+              <path id="via-2" d="M-10 336c72 6 126 70 176 116 44 40 104 36 160 16 26-10 48-22 74-30"/>
+              <path id="via-3" d="M296-10c14 90 26 160 26 240 0 80-8 160-2 240 4 80 16 160 24 230"/>
+              <path id="via-4" d="M192 330c-8 40-24 78-36 118-10 34-18 70-22 110"/>
+              <path id="via-5" d="M192 330c-50-4-100-8-202 4"/>
+              <path id="via-6" d="M192 330c50-20 110-50 208-80"/>
+              <path id="via-7" d="M192 330c4-60 10-130 24-220"/>
+              <path id="via-8" d="M36 442c80-16 170-38 264-62"/>
+            </defs>
+            <rect width="390" height="690" fill="#efeee8" data-fondo-mapa/>
+            <path d="M0 468c40-22 86-18 124 8 42 29 82 52 130 50 54-2 96 28 136 58V690H0z" fill="#e2ead7"/>
+            <path d="M0 468c40-22 86-18 124 8 42 29 82 52 130 50 54-2 96 28 136 58V690H0z" fill="url(#cerro)"/>
+            <path d="M0 556c34-12 70-4 102 18 38 26 70 58 118 70 40 10 60 30 70 46H0z" fill="#d6e2c7"/>
+            <path d="M8 196c52-58 150-84 250-74 62 6 108 26 132 44v330c-40-18-84-30-128-26-44 4-78-12-104-40-26-26-66-40-104-34-22 4-40 12-54 22V222z" fill="#f7f6f2"/>
+            <path d="M8 196c52-58 150-84 250-74 62 6 108 26 132 44v330c-40-18-84-30-128-26-44 4-78-12-104-40-26-26-66-40-104-34-22 4-40 12-54 22V222z" fill="url(#calles)"/>
+            <path d="M230 150c50-10 110 0 160 26v150c-40 10-90 4-130-10-30-12-46-40-44-70 2-40 0-80 14-96z" fill="url(#calles-2)"/>
+            <path d="M66 396c22-18 64-18 82 8 16 22 12 64-8 80-22 18-58 8-72-14-14-20-18-60-2-74z" fill="#d3e5c3"/>
+            <path d="M72 288c10-8 28-6 32 6 4 12-6 24-18 24s-22-18-14-30z" fill="#d3e5c3"/>
+            <path d="M0 240c10-4 20 4 18 16-2 12-12 16-18 14z" fill="#bdd6e6"/>
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <g stroke="#d9d5cc" stroke-width="6"><use href="#via-1"/><use href="#via-2"/><use href="#via-3"/><use href="#via-4"/><use href="#via-5"/><use href="#via-6"/><use href="#via-7"/><use href="#via-8"/></g>
+              <g stroke="#ffffff" stroke-width="3.6"><use href="#via-1"/><use href="#via-2"/><use href="#via-3"/><use href="#via-4"/><use href="#via-5"/><use href="#via-6"/><use href="#via-7"/><use href="#via-8"/></g>
+            </g>
+            <g class="escudo" transform="translate(322 180)"><path d="M-9-8h18v9c0 6-9 10-9 10s-9-4-9-10z" fill="#fff" stroke="#8a8a86"/><text y="3">57</text></g>
+            <g class="escudo" transform="translate(320 392)"><path d="M-9-8h18v9c0 6-9 10-9 10s-9-4-9-10z" fill="#fff" stroke="#8a8a86"/><text y="3">57</text></g>
+            <g class="escudo" transform="translate(22 300)"><rect x="-19" y="-7" width="38" height="14" rx="3" fill="#fff" stroke="#8a8a86"/><text y="3">SLP 32</text></g>
+            <g class="escudo" transform="translate(252 478)"><rect x="-19" y="-7" width="38" height="14" rx="3" fill="#fff" stroke="#8a8a86"/><text y="3">SLP 32</text></g>
+            <g id="puntos"></g>
+            <g id="rotulos"></g>
+          </svg>
+          <div class="sobre-mapa">
+            <div class="buscador"><span data-icono="buscar"></span>Buscar un lugar por nombre</div>
+            <div class="fila-chips"><span class="chip" data-icono-chip="pin">San Luis Potosí</span><span class="chip activo">Todos <small>58</small></span><span class="chip">Casa de cultura <small>17</small></span><span class="chip">Museo <small>13</small></span></div>
+          </div>
+          <button type="button" class="localizar" aria-label="Centrar en mi ubicación" data-icono="ubicacion"></button>
+        </div>
+        <div data-sub-vista="lista" hidden>
+          <label class="buscador"><span data-icono="buscar"></span><input type="search" id="q-lugares" placeholder="Buscar un lugar por nombre" autocomplete="off"></label>
+          <div class="fila-chips" id="chips-lugares"></div>
+          <div id="tira-lugares"></div>
+          <p class="conteo" id="conteo-lugares">58 lugares</p>
+          <ul class="lista" id="lista-lugares"></ul>
+        </div>
+      </div>
+
+      <!-- Artistas -->
+      <div data-vista="artistas" hidden>
+        <div class="cabecera">
+          <div class="barra"><span class="logotipo" role="img" aria-label="Somos Nosotros"></span><span class="avatar-barra" aria-hidden="true">O</span></div>
+          <label class="buscador"><span data-icono="buscar"></span><input type="search" id="q-artistas" placeholder="Buscar por nombre" autocomplete="off"></label>
+          <div class="fila-chips" id="chips-artistas"></div>
+        </div>
+        <div id="tira-artistas"></div>
+        <p class="conteo" id="conteo-artistas">524 artistas</p>
+        <ul class="lista" id="lista-artistas"></ul>
+      </div>
+
+      <!-- Ficha -->
+      <div data-vista="ficha" hidden>
+        <div class="barra-interior">
+          <button type="button" class="atras" data-atras><span data-icono="atras"></span>Atrás</button>
+          <span class="logotipo" role="img" aria-label="Somos Nosotros"></span>
+          <button type="button" class="puntos" id="puntos-ficha" aria-label="Más acciones" data-icono="puntos"></button>
+        </div>
+        <article class="ficha" id="ficha"></article>
+      </div>
+
+      <!-- Panel de administración: Lugares -->
+      <div data-vista="panel" hidden>
+        <div class="barra-interior">
+          <button type="button" class="atras" data-atras><span data-icono="atras"></span>Atrás</button>
+          <b class="titulo-barra">Lugares</b>
+          <span></span>
+        </div>
+        <div class="panel-lista">
+          <div class="buscador"><span data-icono="buscar"></span>Buscar un lugar</div>
+          <div class="fila-chips" id="chips-panel"></div>
+          <ul class="renglones" id="lista-panel"></ul>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="flotante" id="flotante"></button>
+    <div class="tarjeta-mapa" id="tarjeta-mapa" hidden>
+      <span class="foto" id="tm-foto"></span>
+      <span class="marca-destacado" id="tm-marca">Destacado</span>
+      <b id="tm-nombre"></b>
+      <small id="tm-tipo"></small>
+      <span class="cuando" id="tm-cuando"></span>
+      <button type="button" class="ver" id="tm-ver">Ver</button>
+    </div>
+    <div class="accion-ficha" id="accion-ficha" hidden></div>
+    <div class="aviso" id="aviso" role="status" hidden><span id="aviso-texto"></span><button type="button" id="aviso-deshacer">Deshacer</button></div>
+    <nav class="nav" aria-label="Secciones">
+      <button type="button" data-ir="agenda" aria-current="page"><span class="pildora" data-icono-nav="calendario"></span>Agenda</button>
+      <button type="button" data-ir="lugares"><span class="pildora" data-icono-nav="pin"></span>Lugares</button>
+      <button type="button" data-ir="artistas"><span class="pildora" data-icono-nav="estrella"></span>Artistas</button>
+    </nav>
+
+    <div class="velo" id="velo" hidden></div>
+    <section class="hoja" id="hoja" role="dialog" aria-label="Más acciones" hidden>
+      <span class="asa"></span>
+      <button type="button" class="cerrar-hoja" id="cerrar-hoja" aria-label="Cerrar" data-icono="cerrar"></button>
+      <h3 id="hoja-titulo" hidden></h3>
+      <ul class="menu" id="menu"></ul>
+    </section>
+  </section>
+
+  <div class="velo-notas" id="velo-notas" hidden></div>
+  <aside class="panel" id="panel" aria-label="Notas del prototipo">
+    <div>
+      <h1>Destacados</h1>
+      <p class="fecha">Prototipo v1 para el iPhone · 16 de septiembre de 2026</p>
+    </div>
+    <div>
+      <h2>Lo que decidiste</h2>
+      <ul>
+        <li>Entran los que elige el admin y los que tienen más asistentes.</li>
+        <li>En el mapa, con color propio. Propongo <span class="muestra-color" aria-hidden="true"></span><b>naranja cempasúchil</b>: se distingue del azul de los demás lugares, también con daltonismo.</li>
+        <li>Un lugar o un artista queda destacado dos semanas; un evento, hasta su día.</li>
+        <li>Si no hay destacados, la sección no aparece.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Qué probar</h2>
+      <ul>
+        <li>Desliza la tira con el dedo y toca una tarjeta. Con Atrás vuelves al mismo punto.</li>
+        <li>Toca Cercanos, la fecha, la lupa o un filtro: la tira se va, porque ya buscas algo.</li>
+        <li>En Lugares › Mapa, los destacados van en naranja. Toca uno.</li>
+        <li>Cambia a <b>Admin</b> y abre los tres puntos de una ficha: Destacar o Quitar de destacados.</li>
+      </ul>
+    </div>
+    <div class="solo-escritorio">
+      <h2>Quién mira</h2>
+      <div class="segmentos" role="group" aria-label="Quién mira">
+        <button type="button" data-rol="persona" aria-pressed="true">Persona</button>
+        <button type="button" data-rol="admin" aria-pressed="false">Admin</button>
+      </div>
+    </div>
+    <div>
+      <h2>Cuántos destacados hay</h2>
+      <div class="segmentos" role="group" aria-label="Cuántos destacados">
+        <button type="button" data-estado="varios" aria-pressed="true">Varios</button>
+        <button type="button" data-estado="uno" aria-pressed="false">Uno solo</button>
+        <button type="button" data-estado="ninguno" aria-pressed="false">Ninguno</button>
+      </div>
+    </div>
+    <div>
+      <h2>Qué mirar</h2>
+      <ul>
+        <li>¿La tira ayuda a empezar sin estorbar a la lista?</li>
+        <li>¿El naranja se distingue en el mapa sin leer?</li>
+        <li>¿Destacar está donde lo buscarías?</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Fuera del prototipo</h2>
+      <ul>
+        <li>Agenda, lugares y artistas reales del 16 de septiembre. Quién está destacado y cuántos van son ejemplos: hoy los 12 «voy» son de la administración.</li>
+        <li>Las fotos son tonos de muestra y el mapa es un dibujo, no Mapbox.</li>
+        <li>Las pestañas y los filtros solo esconden la tira; la lista no cambia.</li>
+      </ul>
+    </div>
+    <div class="pie-panel">
+      <button type="button" class="boton-estudio" id="abrir-panel">Lista del panel: Lugares</button>
+      <button type="button" class="boton-estudio" id="reiniciar">Reiniciar</button>
+    </div>
+    <button type="button" class="cerrar-notas" id="cerrar-notas">Volver al prototipo</button>
+  </aside>
+</main>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const TRAZOS = {
+    reloj: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    pin: '<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
+    personas: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.3"/>',
+    boleto: '<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z"/><path d="M13 8v8" stroke-dasharray="2 2"/>',
+    calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    estrella: '<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/>',
+    ruta: '<path d="M12 3l9 9-9 9-9-9z"/><path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8"/>',
+    ok: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    mas: '<path d="M12 5v14M5 12h14"/>',
+    nota: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+    pincel: '<path d="M20 4l-9 9M11 13l-1.5 1.5a3 3 0 1 1-4-4L7 9"/><path d="M4 20c2 0 3-1 3-3"/>',
+    caret: '<path d="M6 9l6 6 6-6"/>',
+    buscar: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+    cerrar: '<path d="M6 6l12 12M18 6L6 18"/>',
+    lista: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+    mapa: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    ubicacion: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+    destello: '<path d="M12 3.5c.7 4.6 3.4 7.3 8 8-4.6.7-7.3 3.4-8 8-.7-4.6-3.4-7.3-8-8 4.6-.7 7.3-3.4 8-8z"/>',
+    destelloNo: '<path d="M12 3.5c.7 4.6 3.4 7.3 8 8-4.6.7-7.3 3.4-8 8-.7-4.6-3.4-7.3-8-8 4.6-.7 7.3-3.4 8-8z"/><path d="M4 4l16 16"/>',
+    lapiz: '<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 7.5l3 3"/>',
+    ojo: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    ojoNo: '<path d="M3 3l18 18"/><path d="M10.6 5.1c.5-.1.9-.1 1.4-.1 6.4 0 10 7 10 7a17 17 0 0 1-2.6 3.5M6.2 6.3C3.6 8 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.5 4.5-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+    bandera: '<path d="M5 21V4"/><path d="M5 4h12l-2.5 4.5L17 13H5"/>',
+    bote: '<path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l1 13h9l1-13"/>',
+    puntos: '<circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/>',
+    atras: '<path d="M14.5 6l-6 6 6 6"/>',
+    compartir: '<path d="M12 15V3.5"/><path d="M8 7.5l4-4 4 4"/><path d="M5 12v8h14v-8"/>',
+  };
+  const svg = (nombre, tam = 20) => `<svg viewBox="0 0 24 24" width="${tam}" height="${tam}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TRAZOS[nombre]}</svg>`;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+  // ---------- Datos reales de somosnosotros.org (16 de septiembre de 2026) ----------
+  // Quién está destacado y cuántos van son ejemplos. Las fotos son tonos de muestra ("" = sin foto).
+  const DOS_SEMANAS = "mié 30 de sep";
+  const UMBRAL = 3; // quienes van, sin contar a la administración
+  const MAXIMO = 8;
+  const CEART = "Centro de las Artes de San Luis Potosí Centenario (CEART)";
+  const DIAS = { jue: { orden: 1, titulo: "Mañana", corto: "mañana", largo: "jue 17 de sep" }, vie: { orden: 2, titulo: "vie 18 de sep", corto: "vie 18", largo: "vie 18 de sep" } };
+  const EVENTOS = [
+    ["e1", "jue", "ΚΟΣΜΟΣ: Camerata de San Luis, cierre del ciclo Sonidos de San Luis Potosí", "19:00", "Museo Leonora Carrington", 14, "Gratis", "t6"],
+    ["e2", "jue", "Demostración folclórica: 32 años de la Casa de Cultura de San Sebastián", "19:00", "Teatro de la Paz", 0, "Gratis", "t2"],
+    ["e3", "jue", "Lectura del Taller de Creación Literaria: literatura experimental", "19:00", "Casa del Poeta Ramón López Velarde", 0, "Gratis", "t3"],
+    ["e4", "jue", "Mariachi Universitario y Ballet Folclórico Universitario", "19:00", "Patio del Edificio Central de la UASLP", 0, "Gratis", ""],
+    ["e5", "jue", "La Orquesta Sinfónica de San Luis Potosí en el templo de San Sebastián", "20:00", "Parroquia de San Sebastián", 1, "Gratis", ""],
+    ["e6", "jue", "Recorrido especial: Mitos, historias y leyendas de la antigua Penitenciaría", "20:00", CEART, 0, "$300", "t1"],
+    ["e7", "vie", "Presentación editorial: 70 poemas en pétalos de orquídeas", "17:30", CEART, 1, "Gratis", "t4"],
+    ["e8", "vie", "Gala de arias de las óperas de Julián Carrillo", "19:00", "Centro Cultural Julián Carrillo", 0, "Costo por confirmar", "t5"],
+    ["e9", "vie", "Noche Mexicana sobre rieles: mariachi y kermés", "19:00", "Museo del Ferrocarril Jesús García Corona", 9, "Gratis", "t1"],
+    ["e10", "vie", "Noche de Museo: Noche Mexicana con Baila Más", "19:30", "Museo Leonora Carrington", 0, "$100 cuota de recuperación, $130 día del evento", "t6"],
+    ["e11", "vie", "Presentación del libro Ensalada western, de Fernando Jiménez", "19:30", "Biblioteca Central del Estado", 0, "Gratis", ""],
+    ["e12", "vie", "23 años del Museo Federico Silva: serenata e inauguración de Ricardo Rendón", "20:00", "Museo Federico Silva Escultura Contemporánea", 5, "Gratis", "t2"],
+    ["e13", "vie", "La Camerata del Estado en el templo de San Sebastián", "20:00", "Parroquia de San Sebastián Mártir", 0, "Gratis", ""],
+    ["e14", "vie", "Mexicanísimo: Ensamble y Cuarteto Potosino de Guitarras", "20:00", "Instituto Potosino de Bellas Artes (IPBA)", 0, "Gratis", "t3"],
+  ].map(([id, dia, nombre, hora, lugar, van, precio, tono]) => ({ tipo: "eventos", id, dia, nombre, hora, lugar, van, precio, tono }));
+  // [id, nombre, tipo, dirección, próximo, tono, x, y, con rótulo en el mapa]
+  const LUGARES = [
+    ["l1", "Casa del Poeta Ramón López Velarde", "Casa de cultura", "Profr. Pedro Vallejo 300-B", "mañana · 19:00", "t3", 190, 316, false],
+    ["l2", "Museo Leonora Carrington", "Museo", "Calzada de Guadalupe 705", "mañana · 19:00", "t6", 166, 388, false],
+    ["l3", "Teatro de la Paz", "Foro", "Villerías 205", "mañana · 19:00", "t2", 202, 330, false],
+    ["l4", CEART, "Casa de cultura", "Calzada de Guadalupe 705", "mañana · 20:00", "t1", 152, 378, true],
+    ["l5", "Centro Cultural Julián Carrillo", "Casa de cultura", "Jardín Guerrero 10", "vie 18 de sep · 19:00", "t5", 176, 322, false],
+    ["l6", "Museo del Ferrocarril Jesús García Corona", "Museo", "Manuel José Othón s/n esq. Chico Sein", "vie 18 de sep · 19:00", "t4", 272, 352, false],
+    ["l7", "Biblioteca Central del Estado", "Biblioteca", "Manuel José Othón s/n esq. Chicosein", "vie 18 de sep · 19:30", "", 216, 344, true],
+    ["l8", "Instituto Potosino de Bellas Artes (IPBA)", "Escuela", "Av. Universidad esq. Constitución s/n", "vie 18 de sep · 20:00", "t3", 226, 302, false],
+    ["l9", "Museo Federico Silva Escultura Contemporánea", "Museo", "Álvaro Obregón 80", "vie 18 de sep · 20:00", "t2", 178, 290, false],
+    ["l10", "Museo Laberinto de las Ciencias y las Artes", "Museo", "Blvd. Antonio Rocha Cordero s/n", "sáb 19 de sep · 09:00", "t5", 122, 432, true],
+    ["l11", "Museo Francisco Cossío", "Museo", "Av. Venustiano Carranza 1815", "sáb 19 de sep · 12:00", "", 128, 322, false],
+    ["l12", "Casa de Cultura del Barrio de San Miguelito", "Casa de cultura", "Calzada de Guadalupe 489", "mar 22 de sep · 19:30", "t4", 184, 354, false],
+    ["l13", "Casa de la Cultura de Soledad", "Casa de cultura", "Blas Escontría 604, Soledad de Graciano Sánchez", "", "t1", 274, 235, true],
+  ].map(([id, nombre, tipoLugar, direccion, proximo, tono, x, y, rotulo]) => ({ tipo: "lugares", id, nombre, tipoLugar, direccion, proximo, tono, x, y, rotulo }));
+  const SABADO = "sáb 19 de sep · 21:00 · Primero de Mayo #335";
+  // [id, nombre, detalle, icono, próximo, tono, van a sus eventos]
+  const ARTISTAS = [
+    ["a0", "Camerata de San Luis", "Música académica y clásica · Grupo", "nota", "mañana · 19:00 · Museo Leonora Carrington", "t6", 14],
+    ["a1", "Cumbia Fantasma", "Ficha por completar", "estrella", SABADO, "", 6],
+    ["a2", "Disonauta", "Ficha por completar", "estrella", SABADO, "", 6],
+    ["a3", "Ricardo Za", "Tradicional, folclore y canto nuevo · Solista", "nota", SABADO, "t1", 6],
+    ["a4", "0Backside0", "Rock, metal y alternativo · Grupo", "nota", "", "t6", 0],
+    ["a5", "A83", "Rock, metal y alternativo · Grupo", "nota", "", "t5", 0],
+    ["a6", "Abdiel El Andromeda", "Pop, urbano y electrónica · Solista", "nota", "", "t1", 0],
+    ["a7", "Abraham Delgadillo", "Pintura · Solista", "pincel", "", "", 0],
+    ["a8", "Abysmal Void", "Rock, metal y alternativo · Grupo", "nota", "", "", 0],
+    ["a9", "Actor Red", "Rock, metal y alternativo · Grupo", "nota", "", "t2", 0],
+  ].map(([id, nombre, detalle, icono, proximo, tono, van]) => ({ tipo: "artistas", id, nombre, detalle, icono, proximo, tono, van }));
+  const DATOS = { eventos: EVENTOS, lugares: LUGARES, artistas: ARTISTAS };
+  // Lo que van a los eventos de cada lugar se suma de su agenda.
+  for (const l of LUGARES) l.van = EVENTOS.filter((e) => e.lugar === l.nombre).reduce((s, e) => s + e.van, 0);
+  const DECORATIVOS = [[49, 332], [98, 341], [111, 352], [147, 352], [201, 370], [186, 284], [191, 284], [213, 294], [176, 362], [196, 346], [168, 340], [199, 314], [158, 346], [230, 354], [150, 318], [204, 300], [343, 273], [98, 347], [122, 416], [240, 332], [210, 366], [236, 318]];
+  const ROTULOS_FIJOS = [
+    { x: 98, y: 347, lineas: ["ACHE Galería"] },
+    { x: 343, y: 273, lineas: ["Teatro y Centro Cultural", "Doroteo Arango"] },
+    { x: 186, y: 284, lineas: ["Casa de Cultura del", "Barrio de Tlaxcala"] },
+  ];
+
+  // ---------- Estado ----------
+  const INICIO = () => ({
+    rol: "persona",
+    estado: "varios",
+    // Lo que eligió el admin: hasta cuándo y en qué orden (el más reciente, primero).
+    elegidos: new Map([
+      ["eventos:e2", { hasta: "jue 17 de sep", orden: 1 }],
+      ["eventos:e8", { hasta: "vie 18 de sep", orden: 2 }],
+      ["lugares:l3", { hasta: "vie 25 de sep", orden: 1 }],
+      ["lugares:l13", { hasta: DOS_SEMANAS, orden: 2 }],
+      ["artistas:a4", { hasta: "vie 25 de sep", orden: 1 }],
+      ["artistas:a6", { hasta: DOS_SEMANAS, orden: 2 }],
+    ]),
+    excluidos: new Set(), // los que el admin quitó aunque tengan asistentes
+    agenda: { filtro: "todos", fecha: null, buscando: false, q: "" },
+    lugares: { sub: "mapa", tipo: null, q: "", elegido: null },
+    artistas: { disciplina: null, q: "" },
+    panel: { filtro: "destacados" },
+  });
+  let s = INICIO();
+  let vista = "agenda";
+  let historial = [];
+  let menuDe = null;
+  let orden = 10;
+  const scrolls = {};
+
+  const telefono = $("#telefono");
+  const pantalla = $("#pantalla");
+  const clave = (x) => `${x.tipo}:${x.id}`;
+  const buscar = (k) => { const [tipo, id] = k.split(":"); return DATOS[tipo].find((x) => x.id === id); };
+  const van = (n) => (n === 1 ? "1 va" : `${n} van`);
+
+  // ---------- Qué entra en la tira ----------
+  function destacados(tipo) {
+    if (s.estado === "ninguno") return [];
+    const todos = DATOS[tipo];
+    const elegidas = todos.filter((x) => s.elegidos.has(clave(x)) && x.tono).sort((a, b) => s.elegidos.get(clave(b)).orden - s.elegidos.get(clave(a)).orden);
+    const porAsistentes = todos.filter((x) => !s.elegidos.has(clave(x)) && !s.excluidos.has(clave(x)) && x.tono && x.van >= UMBRAL).sort((a, b) => b.van - a.van);
+    let lista = [...elegidas, ...porAsistentes];
+    if (tipo === "eventos") lista.sort((a, b) => DIAS[a.dia].orden - DIAS[b.dia].orden || a.hora.localeCompare(b.hora) || EVENTOS.indexOf(a) - EVENTOS.indexOf(b));
+    lista = lista.slice(0, MAXIMO);
+    return s.estado === "uno" ? lista.slice(0, 1) : lista;
+  }
+  function razon(x) {
+    if (!destacados(x.tipo).some((d) => d === x)) return null;
+    const e = s.elegidos.get(clave(x));
+    if (e) return `Destacado hasta el ${e.hasta}`;
+    return x.tipo === "eventos" ? `Destacado: ${van(x.van)}` : `Destacado: ${van(x.van)} a sus eventos`;
+  }
+  function tiraPermitida(tipo) {
+    if (tipo === "eventos") return s.agenda.filtro === "todos" && !s.agenda.fecha && !s.agenda.buscando;
+    if (tipo === "lugares") return !s.lugares.tipo && !s.lugares.q.trim();
+    return !s.artistas.disciplina && !s.artistas.q.trim();
+  }
+
+  // ---------- Pintar ----------
+  function tarjeta(x) {
+    let meta;
+    if (x.tipo === "eventos") meta = `${DIAS[x.dia].corto} · ${x.hora} · ${x.lugar}`;
+    else if (x.tipo === "lugares") meta = x.proximo ? `Próximo: ${x.proximo}` : x.tipoLugar;
+    else meta = x.proximo ? `Próximo: ${x.proximo.split(" · ").slice(0, 2).join(" · ")}` : x.detalle;
+    const pastilla = x.tipo === "eventos" && x.van > 0 ? `<span class="van">${svg("personas", 16)}${van(x.van)}</span>` : "";
+    return `<a class="tarjeta" href="#" data-abrir="${clave(x)}"><span class="imagen ${x.tono}${x.tipo === "artistas" ? " retrato" : ""}">${pastilla}</span><b>${esc(x.nombre)}</b><small>${esc(meta)}</small></a>`;
+  }
+  function pintarTira(tipo) {
+    const caja = $(`#tira-${tipo}`);
+    const lista = tiraPermitida(tipo) ? destacados(tipo) : [];
+    const antes = $(".carril", caja)?.scrollLeft ?? 0;
+    // Sin destacados, la sección no existe: ni título ni hueco (decisión del founder).
+    if (!lista.length) { caja.innerHTML = ""; caja.hidden = true; return; }
+    caja.hidden = false;
+    caja.innerHTML = `<section class="destacados" aria-labelledby="h-${tipo}"><h2 id="h-${tipo}">Destacados</h2><ul class="carril${lista.length === 1 ? " uno" : ""}">${lista.map((x) => `<li>${tarjeta(x)}</li>`).join("")}</ul></section>`;
+    $(".carril", caja).scrollLeft = antes;
+  }
+  function renglonEvento(e) {
+    const foto = e.tono ? `<span class="foto ${e.tono}"></span>` : `<span class="foto">${svg("calendario", 26)}</span>`;
+    const partes = [`<span>${svg("reloj", 16)}<b>${e.hora}</b></span>`, `<span>${svg("pin", 16)}${esc(e.lugar)}</span>`];
+    if (e.van) partes.push(`<span>${svg("personas", 16)}${van(e.van)}</span>`);
+    partes.push(`<span>${svg("boleto", 16)}${esc(e.precio)}</span>`);
+    return `<li><a class="renglon" href="#" data-abrir="${clave(e)}">${foto}<span class="titulo">${esc(e.nombre)}</span><span class="meta">${partes.join("")}</span></a></li>`;
+  }
+  function pintarAgenda() {
+    const a = s.agenda;
+    $("#chip-fecha").className = `chip${a.fecha ? " activo" : ""}`;
+    $("#chip-fecha").innerHTML = a.fecha ? `${svg("calendario", 18)}vie 18 ${svg("cerrar", 16)}` : `${svg("calendario", 18)}Hoy ${svg("caret", 16)}`;
+    $("#chip-fecha").setAttribute("aria-label", a.fecha ? "Quitar la fecha" : "Elegir una fecha");
+    $$("[data-filtro]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.filtro === a.filtro)));
+    $("#fila-agenda").hidden = a.buscando;
+    $("#buscar-agenda").hidden = !a.buscando;
+    const q = a.q.trim().toLowerCase();
+    const grupos = Object.entries(DIAS).filter(([k]) => !a.fecha || k === "vie").map(([k, d]) => [d, EVENTOS.filter((e) => e.dia === k && (!q || e.nombre.toLowerCase().includes(q) || e.lugar.toLowerCase().includes(q)))]).filter(([, l]) => l.length);
+    $("#lista-agenda").innerHTML = grupos.length
+      ? grupos.map(([d, l]) => `<h3 class="grupo">${d.titulo}<span>· ${l.length}</span></h3><ul class="lista">${l.map(renglonEvento).join("")}</ul>`).join("")
+      : `<p class="vacio">Nada con «${esc(a.q.trim())}» en la agenda.</p>`;
+    pintarTira("eventos");
+  }
+  const TIPOS_LUGAR = [["Casa de cultura", 17], ["Museo", 13], ["Foro", 9], ["Escuela", 9], ["Biblioteca", 4]];
+  function pintarLugares() {
+    const l = s.lugares;
+    $$("[data-sub]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.sub === l.sub)));
+    $$("[data-sub-vista]").forEach((v) => (v.hidden = v.dataset.subVista !== l.sub));
+    $('[data-vista="lugares"]').classList.toggle("en-mapa", l.sub === "mapa");
+    $("#chips-lugares").innerHTML = `<span class="chip">${svg("pin", 18)}San Luis Potosí</span><span class="chip">${svg("ubicacion", 18)}Cerca de mí</span><button type="button" class="chip${l.tipo ? "" : " activo"}" data-tipo-lugar="">Todos <small>58</small></button>${TIPOS_LUGAR.map(([t, n]) => `<button type="button" class="chip${l.tipo === t ? " activo" : ""}" data-tipo-lugar="${t}">${t} <small>${n}</small></button>`).join("")}`;
+    const q = l.q.trim().toLowerCase();
+    const lista = LUGARES.filter((x) => (!l.tipo || x.tipoLugar === l.tipo) && (!q || x.nombre.toLowerCase().includes(q)));
+    $("#conteo-lugares").textContent = l.tipo || q ? `${lista.length} de muestra` : "58 lugares";
+    $("#lista-lugares").innerHTML = lista.length
+      ? lista.map((x) => `<li><a class="renglon" href="#" data-abrir="${clave(x)}">${x.tono ? `<span class="foto ${x.tono}"></span>` : `<span class="foto">${svg("pin", 26)}</span>`}<span class="titulo">${esc(x.nombre)}</span><span class="meta columna"><span>${svg("pin", 16)}${esc(x.direccion)}</span><span>${svg("calendario", 16)}${x.proximo ? `<b>Próximo: ${esc(x.proximo)}</b>` : "Sin eventos próximos"}</span></span></a></li>`).join("")
+      : `<li class="vacio">Nada con ese nombre en esta muestra.</li>`;
+    pintarTira("lugares");
+    pintarMapa();
+  }
+  const DISCIPLINAS = [["Música", 306, "nota"], ["Teatro", 52, null], ["Danza", 28, null], ["Artes visuales", 85, "pincel"]];
+  function pintarArtistas() {
+    const a = s.artistas;
+    $("#chips-artistas").innerHTML = `<span class="chip">${svg("pin", 18)}San Luis Potosí</span><button type="button" class="chip${a.disciplina ? "" : " activo"}" data-disciplina="">Todos <small>524</small></button>${DISCIPLINAS.map(([d, n]) => `<button type="button" class="chip${a.disciplina === d ? " activo" : ""}" data-disciplina="${d}">${d} <small>${n}</small></button>`).join("")}`;
+    const icono = a.disciplina ? DISCIPLINAS.find(([d]) => d === a.disciplina)[2] : null;
+    const q = a.q.trim().toLowerCase();
+    const lista = ARTISTAS.filter((x) => (!a.disciplina || x.icono === icono) && (!q || x.nombre.toLowerCase().includes(q)));
+    $("#conteo-artistas").textContent = a.disciplina || q ? `${lista.length} de muestra` : "524 artistas";
+    $("#lista-artistas").innerHTML = lista.length
+      ? lista.map((x) => `<li><a class="renglon" href="#" data-abrir="${clave(x)}">${x.tono ? `<span class="foto redonda ${x.tono}"></span>` : `<span class="foto redonda">${svg("estrella", 26)}</span>`}<span class="titulo">${esc(x.nombre)}</span><span class="meta columna"><span>${svg(x.icono, 16)}${esc(x.detalle)}</span>${x.proximo ? `<span>${svg("calendario", 16)}<b>Próximo: ${esc(x.proximo)}</b></span>` : ""}</span></a></li>`).join("")
+      : `<li class="vacio">En esta muestra no hay artistas de esa disciplina.</li>`;
+    pintarTira("artistas");
+  }
+
+  // Mapa: los destacados van encima, más grandes y en naranja; su nombre gana el espacio (como las colisiones de Mapbox).
+  const NS = "http://www.w3.org/2000/svg";
+  function envolver(nombre, max = 22) {
+    const lineas = [];
+    for (const palabra of nombre.split(" ")) {
+      const ultima = lineas[lineas.length - 1];
+      if (ultima && (ultima + " " + palabra).length <= max) lineas[lineas.length - 1] = `${ultima} ${palabra}`;
+      else lineas.push(palabra);
+    }
+    return lineas.slice(0, 3);
+  }
+  function pintarMapa() {
+    const dest = new Set(destacados("lugares").map(clave));
+    const elegido = s.lugares.elegido;
+    const punto = (x, y, clase, r, k) => `<g class="punto ${clase}"${k ? ` data-punto="${k}" role="button" tabindex="0" aria-label="${esc(buscar(k).nombre)}"` : ""}><circle cx="${x}" cy="${y}" r="16" fill="transparent"/><circle class="marca" cx="${x}" cy="${y}" r="${r}"/></g>`;
+    const normales = LUGARES.filter((x) => !dest.has(clave(x)));
+    const destacadosMapa = LUGARES.filter((x) => dest.has(clave(x)));
+    $("#puntos").innerHTML = DECORATIVOS.map(([x, y]) => punto(x, y, "decorativo", 5)).join("")
+      + normales.map((x) => punto(x.x, x.y, "", elegido === clave(x) ? 8 : 5, clave(x))).join("")
+      + destacadosMapa.map((x) => punto(x.x, x.y, "destacado", elegido === clave(x) ? 10 : 7, clave(x))).join("");
+    const puestos = [];
+    const cabe = (x, y, lineas) => {
+      const ancho = Math.max(...lineas.map((t) => t.length)) * 6.4 + 6;
+      const caja = { x0: x - ancho / 2, x1: x + ancho / 2, y0: y + 7, y1: y + 9 + lineas.length * 14 };
+      if (puestos.some((p) => caja.x0 < p.x1 && caja.x1 > p.x0 && caja.y0 < p.y1 && caja.y1 > p.y0)) return false;
+      puestos.push(caja);
+      return true;
+    };
+    const texto = (x, y, lineas, clase) => `<text class="rotulo ${clase}" x="${x}" y="${y + 20}">${lineas.map((t, i) => `<tspan x="${x}" dy="${i ? 14 : 0}">${esc(t)}</tspan>`).join("")}</text>`;
+    let rotulos = "";
+    for (const x of destacadosMapa) { const l = envolver(x.nombre); if (cabe(x.x, x.y, l)) rotulos += texto(x.x, x.y, l, "destacado"); }
+    const candidatos = [...normales.filter((x) => x.rotulo).map((x) => ({ x: x.x, y: x.y, lineas: envolver(x.nombre) })), ...ROTULOS_FIJOS];
+    for (const c of candidatos) if (cabe(c.x, c.y, c.lineas)) rotulos += texto(c.x, c.y, c.lineas, "");
+    $("#rotulos").innerHTML = rotulos;
+    // Tarjeta del lugar tocado, como en la app; la de un destacado lo dice.
+    const tm = $("#tarjeta-mapa");
+    const verTarjeta = vista === "lugares" && s.lugares.sub === "mapa" && elegido;
+    tm.hidden = !verTarjeta;
+    if (verTarjeta) {
+      const x = buscar(elegido);
+      $("#tm-foto").className = `foto ${x.tono}`;
+      $("#tm-foto").innerHTML = x.tono ? "" : svg("pin", 24);
+      $("#tm-marca").hidden = !dest.has(elegido);
+      $("#tm-nombre").textContent = x.nombre;
+      $("#tm-tipo").textContent = x.tipoLugar;
+      $("#tm-cuando").innerHTML = `${svg("calendario", 16)}${x.proximo ? `Próximo: ${esc(x.proximo)}` : "Sin eventos próximos"}`;
+    }
+    actualizarFlotante();
+  }
+  function pintarPanel() {
+    const dest = destacados("lugares");
+    const f = s.panel.filtro;
+    $("#chips-panel").innerHTML = [["todos", "Todos", 58], ["destacados", "Destacados", dest.length], ["ocultos", "Ocultos", 0], ["sin_foto", "Sin foto", 11], ["catalogo", "Del catálogo", 13]]
+      .map(([v, t, n]) => `<button type="button" class="chip${f === v ? " activo" : ""}" data-filtro-panel="${v}">${t} <small>${n}</small></button>`).join("");
+    const lista = f === "destacados" ? dest : f === "todos" ? LUGARES : f === "sin_foto" ? LUGARES.filter((x) => !x.tono) : [];
+    $("#lista-panel").innerHTML = lista.length
+      ? lista.map((x) => {
+          const r = razon(x);
+          const etiqueta = r ? `<span class="etiqueta">${esc(r.replace("Destacado: ", "Destacado · "))}</span>` : "";
+          return `<li class="ficha-fila"><a href="#" data-abrir="${clave(x)}">${x.tono ? `<span class="foto ${x.tono}"></span>` : `<span class="foto">${svg("pin", 22)}</span>`}<b>${esc(x.nombre)}${etiqueta}</b><small>${esc(x.tipoLugar)} · ${x.proximo ? esc(x.proximo) : "sin fecha próxima"}</small></a><button type="button" class="puntos" data-menu="${clave(x)}" aria-label="Más acciones de ${esc(x.nombre)}">${svg("puntos", 22)}</button></li>`;
+        }).join("")
+      : `<li class="vacio">${f === "destacados" ? "Ningún lugar destacado ahora." : "Ninguno en esta muestra."}</li>`;
+  }
+  function pintarFicha(k) {
+    const x = buscar(k);
+    const foto = x.tono ? `<div class="ficha-foto ${x.tono}"></div>` : `<div class="ficha-foto vacia">${svg(x.tipo === "eventos" ? "calendario" : x.tipo === "lugares" ? "pin" : "estrella", 40)}</div>`;
+    let sub, datos, botones = "", accion;
+    if (x.tipo === "eventos") {
+      sub = x.lugar;
+      datos = [["calendario", `${DIAS[x.dia].largo} · ${x.hora}`], ["pin", x.lugar], ["boleto", x.precio]];
+      if (x.van) datos.push(["personas", van(x.van)]);
+      accion = `<span>${svg("ok", 20)}Voy</span><span class="secundaria">${svg("estrella", 20)}Me interesa</span>`;
+    } else if (x.tipo === "lugares") {
+      sub = x.tipoLugar;
+      datos = [["pin", x.direccion], ["calendario", x.proximo ? `Próximo: ${x.proximo}` : "Sin eventos próximos"]];
+      botones = `<div class="ficha-botones"><span>${svg("ruta", 22)}Cómo llegar</span><span>${svg("compartir", 22)}Compartir</span></div>`;
+      accion = `<span>${svg("mas", 20)}Seguir</span>`;
+    } else {
+      sub = x.detalle;
+      datos = [["calendario", x.proximo ? `Próximo: ${x.proximo}` : "Sin fechas próximas"]];
+      botones = `<div class="ficha-botones"><span>${svg("compartir", 22)}Compartir</span></div>`;
+      accion = `<span>${svg("mas", 20)}Seguir</span>`;
+    }
+    $("#ficha").innerHTML = `${foto}<h1>${esc(x.nombre)}</h1><p class="sub">${esc(sub)}</p><ul class="ficha-datos">${datos.map(([i, t]) => `<li>${svg(i, 20)}<span>${esc(t)}</span></li>`).join("")}</ul>${botones}`;
+    $("#accion-ficha").innerHTML = accion;
+    $("#puntos-ficha").dataset.menu = k;
+  }
+  function pintarTodo() {
+    pintarAgenda();
+    pintarLugares();
+    pintarArtistas();
+    pintarPanel();
+  }
+
+  // ---------- Navegación ----------
+  const claveVista = () => (vista === "lugares" ? `lugares-${s.lugares.sub}` : vista);
+  function mostrar(nueva, scroll = 0) {
+    vista = nueva;
+    telefono.dataset.vista = nueva;
+    $$("[data-vista]", pantalla).forEach((v) => (v.hidden = v.dataset.vista !== nueva));
+    $$(".nav [data-ir]").forEach((b) => (b.dataset.ir === nueva ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
+    pantalla.classList.toggle("con-mapa", nueva === "lugares" && s.lugares.sub === "mapa");
+    $("#accion-ficha").hidden = nueva !== "ficha";
+    pintarMapa();
+    requestAnimationFrame(() => (pantalla.scrollTop = scroll));
+  }
+  function ir(nueva) {
+    historial = [];
+    scrolls[claveVista()] = pantalla.scrollTop;
+    mostrar(nueva, scrolls[nueva === "lugares" ? `lugares-${s.lugares.sub}` : nueva] ?? 0);
+  }
+  function abrir(k) {
+    historial.push({ vista, scroll: pantalla.scrollTop });
+    pintarFicha(k);
+    mostrar("ficha", 0);
+  }
+  function atras() {
+    const antes = historial.pop();
+    if (antes) mostrar(antes.vista, antes.scroll);
+    else mostrar("agenda", scrolls.agenda ?? 0);
+  }
+  function actualizarFlotante() {
+    const f = $("#flotante");
+    const textos = { agenda: ["calendario", "Publicar evento"], lugares: ["pin", "Registrar lugar"], artistas: ["estrella", "Registrar artista"] };
+    const t = textos[vista];
+    f.hidden = !t || !$("#tarjeta-mapa").hidden;
+    if (t) f.innerHTML = `${svg(t[0], 22)}${t[1]}`;
+  }
+
+  // ---------- Menú de los tres puntos ----------
+  function abrirMenu(k, desdePanel) {
+    const x = buscar(k);
+    menuDe = k;
+    const items = [];
+    const item = (icono, texto, opciones = {}) => items.push({ icono, texto, ...opciones });
+    if (s.rol === "admin") {
+      if (desdePanel) item("ojo", "Ver la ficha", { accion: "ver" });
+      item("lapiz", "Editar");
+      const r = razon(x);
+      if (!x.tono) item("destello", "Destacar", { detalle: "Necesita foto", deshabilitado: true, clase: "destacar" });
+      else if (r) item("destelloNo", "Quitar de destacados", { detalle: r, accion: "quitar", clase: "destacar" });
+      else item("destello", "Destacar", { detalle: x.tipo === "eventos" ? `Hasta el ${DIAS[x.dia].largo}` : `Dos semanas: hasta el ${DOS_SEMANAS}`, accion: "destacar", clase: "destacar" });
+      item("ojoNo", x.tipo === "lugares" ? "Ocultar del mapa" : x.tipo === "eventos" ? "Ocultar de la agenda" : "Ocultar de Artistas", { aparte: desdePanel });
+    }
+    if (!desdePanel) {
+      item("bandera", "Reportar", { aparte: s.rol === "admin" });
+      if (s.rol === "admin") item("bote", "Borrar", { clase: "peligro" });
+    }
+    $("#hoja-titulo").hidden = !desdePanel;
+    $("#hoja-titulo").textContent = x.nombre;
+    $("#menu").innerHTML = items.map((i) => `<li${i.aparte ? ' class="aparte"' : ""}><button type="button" class="${i.clase ?? ""}" ${i.accion ? `data-accion="${i.accion}"` : ""}${i.deshabilitado ? " disabled" : ""}>${svg(i.icono, 22)}<span>${i.texto}</span>${i.detalle ? `<small>${esc(i.detalle)}</small>` : ""}</button></li>`).join("");
+    $("#velo").hidden = false;
+    $("#hoja").hidden = false;
+    $("#menu button:not(:disabled)")?.focus();
+  }
+  function cerrarMenu() {
+    $("#velo").hidden = true;
+    $("#hoja").hidden = true;
+    menuDe = null;
+  }
+  let temporizador;
+  function avisar(texto, deshacer) {
+    clearTimeout(temporizador);
+    $("#aviso-texto").textContent = texto;
+    $("#aviso").hidden = false;
+    $("#aviso-deshacer").onclick = () => { deshacer(); $("#aviso").hidden = true; };
+    temporizador = setTimeout(() => ($("#aviso").hidden = true), 6000);
+  }
+  function foto() { return { elegidos: new Map(s.elegidos), excluidos: new Set(s.excluidos), estado: s.estado }; }
+  function reponer(f) { s.elegidos = f.elegidos; s.excluidos = f.excluidos; s.estado = f.estado; marcarEstado(); pintarTodo(); }
+  function destacar(k) {
+    const x = buscar(k);
+    const antes = foto();
+    const hasta = x.tipo === "eventos" ? DIAS[x.dia].largo : DOS_SEMANAS;
+    s.excluidos.delete(k);
+    s.elegidos.set(k, { hasta, orden: ++orden });
+    s.estado = "varios";
+    marcarEstado();
+    pintarTodo();
+    avisar(`Destacado hasta el ${hasta}`, () => reponer(antes));
+  }
+  function quitar(k) {
+    const antes = foto();
+    if (s.elegidos.has(k)) s.elegidos.delete(k);
+    else s.excluidos.add(k);
+    pintarTodo();
+    avisar("Ya no es destacado", () => reponer(antes));
+  }
+
+  // ---------- Controles del prototipo ----------
+  function marcarRol() { $$("[data-rol]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.rol === s.rol))); }
+  function marcarEstado() { $$("[data-estado]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.estado === s.estado))); }
+
+  // Iconos fijos del marcado
+  $$("[data-icono]").forEach((el) => el.insertAdjacentHTML("afterbegin", svg(el.dataset.icono, el.classList.contains("puntos") ? 24 : 20)));
+  $$("[data-icono-chip]").forEach((el) => el.insertAdjacentHTML("afterbegin", svg(el.dataset.iconoChip, 18)));
+  $$("[data-icono-pestana]").forEach((el) => el.insertAdjacentHTML("afterbegin", svg(el.dataset.iconoPestana, 18)));
+  $$("[data-icono-nav]").forEach((el) => (el.innerHTML = svg(el.dataset.iconoNav, 22)));
+  $$("[data-icono-caret]").forEach((el) => el.replaceWith(document.createRange().createContextualFragment(svg("caret", 16))));
+
+  document.addEventListener("click", (ev) => {
+    const t = ev.target;
+    const abrirEl = t.closest("[data-abrir]");
+    if (abrirEl) { ev.preventDefault(); cerrarMenu(); abrir(abrirEl.dataset.abrir); return; }
+    const menuEl = t.closest("[data-menu]");
+    if (menuEl) { abrirMenu(menuEl.dataset.menu, vista === "panel"); return; }
+    const accionEl = t.closest("[data-accion]");
+    if (accionEl && menuDe) {
+      const k = menuDe;
+      const accion = accionEl.dataset.accion;
+      cerrarMenu();
+      if (accion === "destacar") destacar(k);
+      else if (accion === "quitar") quitar(k);
+      else if (accion === "ver") abrir(k);
+      return;
+    }
+    if (t.closest("#velo, #cerrar-hoja")) { cerrarMenu(); return; }
+    if (t.closest("[data-atras]")) { atras(); return; }
+    const irEl = t.closest("[data-ir]");
+    if (irEl) { ir(irEl.dataset.ir); return; }
+    const filtroEl = t.closest("[data-filtro]");
+    if (filtroEl) { s.agenda.filtro = filtroEl.dataset.filtro; pintarAgenda(); return; }
+    if (t.closest("#chip-fecha")) { s.agenda.fecha = s.agenda.fecha ? null : "vie"; pintarAgenda(); return; }
+    if (t.closest("#lupa-agenda")) { s.agenda.buscando = true; pintarAgenda(); $("#q-agenda").focus(); return; }
+    if (t.closest("#cancelar-agenda")) { s.agenda.buscando = false; s.agenda.q = ""; $("#q-agenda").value = ""; pintarAgenda(); return; }
+    const subEl = t.closest("[data-sub]");
+    if (subEl) { scrolls[claveVista()] = pantalla.scrollTop; s.lugares.sub = subEl.dataset.sub; s.lugares.elegido = null; pintarLugares(); mostrar("lugares", scrolls[claveVista()] ?? 0); return; }
+    const tipoEl = t.closest("[data-tipo-lugar]");
+    if (tipoEl) { s.lugares.tipo = tipoEl.dataset.tipoLugar || null; pintarLugares(); return; }
+    const discEl = t.closest("[data-disciplina]");
+    if (discEl) { s.artistas.disciplina = discEl.dataset.disciplina || null; pintarArtistas(); return; }
+    const puntoEl = t.closest("[data-punto]");
+    if (puntoEl) { s.lugares.elegido = puntoEl.dataset.punto; pintarMapa(); return; }
+    if (t.closest("#tm-ver")) { abrir(s.lugares.elegido); return; }
+    if (t.closest("#mapa")) { if (s.lugares.elegido) { s.lugares.elegido = null; pintarMapa(); } return; }
+    const panelEl = t.closest("[data-filtro-panel]");
+    if (panelEl) { s.panel.filtro = panelEl.dataset.filtroPanel; pintarPanel(); return; }
+    const rolEl = t.closest("[data-rol]");
+    if (rolEl) { s.rol = rolEl.dataset.rol; marcarRol(); cerrarMenu(); return; }
+    const estadoEl = t.closest("[data-estado]");
+    if (estadoEl) { s.estado = estadoEl.dataset.estado; marcarEstado(); pintarTodo(); pintarMapa(); return; }
+    if (t.closest("#abrir-panel")) {
+      s.rol = "admin"; marcarRol(); s.panel.filtro = "destacados"; pintarPanel();
+      cerrarNotas(); historial.push({ vista, scroll: pantalla.scrollTop }); mostrar("panel", 0); return;
+    }
+    if (t.closest("#reiniciar")) { s = INICIO(); historial = []; marcarRol(); marcarEstado(); ["q-agenda", "q-lugares", "q-artistas"].forEach((id) => ($(`#${id}`).value = "")); pintarTodo(); cerrarNotas(); mostrar("agenda", 0); return; }
+    if (t.closest("#abrir-notas")) { $("#estudio").classList.add("notas"); $("#velo-notas").hidden = false; return; }
+    if (t.closest("#cerrar-notas, #velo-notas")) { cerrarNotas(); return; }
+  });
+  function cerrarNotas() { $("#estudio").classList.remove("notas"); $("#velo-notas").hidden = true; }
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && menuDe) cerrarMenu();
+    if ((ev.key === "Enter" || ev.key === " ") && ev.target.closest?.("[data-punto]")) { ev.preventDefault(); s.lugares.elegido = ev.target.closest("[data-punto]").dataset.punto; pintarMapa(); }
+  });
+  $("#q-agenda").addEventListener("input", (ev) => { s.agenda.q = ev.target.value; pintarAgenda(); });
+  $("#q-lugares").addEventListener("input", (ev) => { s.lugares.q = ev.target.value; pintarLugares(); });
+  $("#q-artistas").addEventListener("input", (ev) => { s.artistas.q = ev.target.value; pintarArtistas(); });
+
+  pintarTodo();
+  mostrar("agenda", 0);
+})();
+</script>
