@@ -18,7 +18,7 @@ export default function Privacidad() {
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Aviso de privacidad</h1>
-        <p className="subtitulo">Última actualización: 14 de septiembre de 2026.</p>
+        <p className="subtitulo">Última actualización: 16 de septiembre de 2026.</p>
 
         <h2>Quién responde por tus datos</h2>
         <p>
@@ -31,6 +31,7 @@ export default function Privacidad() {
           <li>Tu perfil, si lo llenas: nombre, foto, colonia y una línea sobre ti. El nombre y la foto son públicos: aparecen en «quién va» a un evento.</li>
           <li>Lo que haces en la app: a qué eventos dices «Voy» o «Me interesa», y qué lugares y artistas sigues. Quien abre tu perfil puede ver los eventos próximos a los que vas.</li>
           <li>Si activas avisos en el teléfono: la suscripción que nos da tu navegador para mandarte notificaciones. No es tu número.</li>
+          <li>El último día que abriste la app: solo el día, no la hora ni qué miraste. Lo ve solo la administración, para saber si la gente vuelve.</li>
           <li>Tu ubicación, solo cuando tocas «Cerca de mí» o «Mi ubicación»: sirve para ordenar la lista o centrar el mapa y no se guarda.</li>
           <li>Lo que publicas: lugares, eventos, artistas, fotos y enlaces. Es público por definición.</li>
         </ul>
@@ -39,7 +40,7 @@ export default function Privacidad() {
         <ul>
           <li>Para que entres sin contraseña y para que lo que publicas lleve tu nombre.</li>
           <li>Para avisarte, si lo pediste, de eventos nuevos en los lugares que sigues y para recordarte el día de un evento al que vas. Cada aviso trae un enlace para dejar de recibirlos, sin entrar.</li>
-          <li>Para que el administrador pueda revisar reportes y contactarte si reclamas una ficha.</li>
+          <li>Para que la administración pueda revisar reportes, contactarte si reclamas una ficha y escribirte si hace falta por tu cuenta o por lo que publicaste. Tu correo solo lo ve la administración.</li>
         </ul>
 
         <h2>Fichas tomadas de catálogos públicos</h2>
