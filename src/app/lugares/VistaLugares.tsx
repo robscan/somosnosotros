@@ -11,6 +11,7 @@ import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
 import {
   IconoCalendario,
+  IconoCerrar,
   IconoLista,
   IconoMapa,
   IconoPin,
@@ -244,11 +245,7 @@ export default function VistaLugares({
               <Chip activo={!!punto} onClick={punto ? () => setPunto(null) : pedirUbicacion} disabled={geo === "pidiendo"}>
                 <IconoUbicacion width={16} height={16} />
                 {geo === "pidiendo" ? "Un momento…" : "Cerca de mí"}
-                {punto && (
-                  <span className={styles.quitar} aria-hidden="true">
-                    ✕
-                  </span>
-                )}
+                {punto && <IconoCerrar width={18} height={18} className={styles.quitar} />}
               </Chip>
               {chipsTipo}
             </>

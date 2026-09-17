@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Árboles de trabajo de otros chats (cada uno con su node_modules y .next).
+    ".claude/**",
   ]),
 ]);
 

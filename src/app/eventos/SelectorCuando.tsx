@@ -2,6 +2,7 @@
 
 import { combinarFechaHora, localAIso, sumarHoras, yaPaso, ZONA } from "@/lib/fechas";
 import { ChipNativo } from "@/components/ui/Chip";
+import { IconoCerrar } from "@/components/ui/Iconos";
 import styles from "./SelectorCuando.module.css";
 
 type Props = {
@@ -70,7 +71,7 @@ export default function SelectorCuando({ inicio, fin, onCambio, errorInicio, err
         <ChipNativo tipo="time" valor={finP.hora} activo={false} etiqueta={fin ? etiquetaHora(finP.hora) : "Sin hora de fin"} onCambio={(v) => fijarFin(finP.fecha, v)} ariaLabel="Hora en que termina" />
         {fin && (
           <button type="button" className={styles.quitar} onClick={() => onCambio(inicio, "")} aria-label="Quitar la hora de fin">
-            ✕
+            <IconoCerrar width={20} height={20} />
           </button>
         )}
       </div>

@@ -135,11 +135,12 @@
   font-weight: 700;
 }
 
-/* 3. Lista: el chip "Cerca de mí" va en la fila de chips de la lista (ui/Chip); aquí solo su ✕ y el aviso */
-.quitar {
-  margin: 0 -4px 0 8px;
+/* 3. Lista: el chip "Cerca de mí" va en la fila de chips de la lista (ui/Chip); aquí solo su ✕ y el aviso.
+   La ✕ es IconoCerrar: los márgenes descuentan su aire interno para que quede donde quedaba la letra.
+   La clase va dos veces para pesar más que el margen que ui/Chip da a sus iconos. */
+.quitar.quitar {
+  margin: 0 -7px 0 5px;
   opacity: 0.8; /* hereda el blanco del chip activo */
-  font-weight: 400;
 }
 /* Aviso de ubicación en la lista: bajo la fila de chips, en la columna */
 .avisoLista {

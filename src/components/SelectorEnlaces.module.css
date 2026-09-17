@@ -42,12 +42,13 @@
   white-space: nowrap;
 }
 .quitar {
+  display: grid;
+  place-items: center;
   width: var(--toque);
   height: var(--toque);
   border: none;
   background: none;
   color: var(--texto-suave);
-  font-size: var(--letra-sm);
   cursor: pointer;
 }
 
