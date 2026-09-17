@@ -13,7 +13,7 @@ import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
-import { IconoCalendario, IconoCompartir, IconoPersonas } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -207,6 +207,11 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       <p className={ficha.etiqueta}>{etiquetaArtista(a)}</p>
 
       <ul className={ficha.datos}>
+        {/* De dónde es, como la dirección en la ficha de un lugar. */}
+        <li className={ficha.dato}>
+          <IconoPin width={20} height={20} />
+          <b>{a.ciudad}</b>
+        </li>
         {/* Sin fechas ni seguidores: una sola línea en gris; las dos negaciones no merecen dos renglones. */}
         {seguidores === 0 && !proxima ? (
           <li className={ficha.dato}>

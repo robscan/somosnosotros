@@ -5,7 +5,7 @@ import ChipCiudad from "@/components/Ciudad";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaArtista, etiquetaDisciplina, hrefArtistas, textoProximaFecha, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type Disciplina, type FiltroLeido } from "@/lib/artistas";
-import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoPincel, IconoPluma } from "./ui/Iconos";
 import Boton from "@/components/ui/Boton";
 import comun from "./Lista.module.css";
@@ -24,7 +24,7 @@ type Props = {
   pagina: number;
   conSesion: boolean;
   ciudad: Ciudad;
-  ciudades: CiudadConDatos[];
+  ciudades: CiudadConArtistas[];
 };
 
 /** Icono de lo que hace: nota (música), máscara (teatro, danza, circo), pincel (artes visuales, cine), pluma (letras). */

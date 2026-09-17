@@ -7,6 +7,8 @@
 export type Ciudad = { slug: string; nombre: string; centro: { lng: number; lat: number }; zoom: number };
 /** Una ciudad con lo que tiene: cuántos lugares y cuántos eventos próximos. */
 export type CiudadConDatos = Ciudad & { lugares: number; eventos: number };
+/** Una ciudad de Artistas con cuántos artistas tiene. */
+export type CiudadConArtistas = Ciudad & { artistas: number };
 
 /** Centro histórico (Plaza de Armas). Mapbox usa [longitud, latitud]. */
 export const CIUDAD_INICIAL: Ciudad = { slug: "san-luis-potosi", nombre: "San Luis Potosí", centro: { lng: -100.9764, lat: 22.1497 }, zoom: 13 };
@@ -72,6 +74,23 @@ export function armarCiudades(lugares: { ciudad: string; lat: number; lng: numbe
       eventos: a.eventos,
     }))
     .sort((a, b) => (a.nombre === inicial ? -1 : b.nombre === inicial ? 1 : b.lugares - a.lugares || a.nombre.localeCompare(b.nombre, "es")));
+}
+
+/**
+ * Las ciudades de Artistas salen de los artistas que hay, como las de Lugares salen de los lugares (pedido del founder,
+ * 2026-09-16, noche): cada artista suma a su ciudad. La inicial va primero y siempre está; las demás, por número de artistas.
+ * Sin mapa en Artistas, el centro de las demás es el de la inicial (solo acerca la búsqueda de ciudades del alta).
+ */
+export function armarCiudadesDeArtistas(artistas: { ciudad: string }[]): CiudadConArtistas[] {
+  const inicial = CIUDAD_INICIAL.nombre;
+  const cuenta = new Map<string, number>([[inicial, 0]]);
+  for (const a of artistas) {
+    const nombre = ciudadCanonica(a.ciudad) || inicial;
+    cuenta.set(nombre, (cuenta.get(nombre) ?? 0) + 1);
+  }
+  return [...cuenta]
+    .map(([nombre, n]) => ({ ...CIUDAD_INICIAL, slug: slugDeCiudad(nombre), nombre, zoom: nombre === inicial ? CIUDAD_INICIAL.zoom : 13, artistas: n }))
+    .sort((a, b) => (a.nombre === inicial ? -1 : b.nombre === inicial ? 1 : b.artistas - a.artistas || a.nombre.localeCompare(b.nombre, "es")));
 }
 
 export function ciudadPorSlug<T extends Ciudad>(slug: string | null | undefined, ciudades: readonly T[] = CIUDADES as readonly T[]): T {
