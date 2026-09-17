@@ -1,4 +1,6 @@
 import { esUuid } from "@/lib/formulario";
+import { cargarDestacado } from "@/app/admin/consultas";
+import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -20,6 +22,7 @@ import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { etiquetaArtista, textoProximaFecha, type Artista } from "@/lib/artistas";
 import { enmascararCorreo } from "@/lib/comunidad";
+import { puedeDestacarse } from "@/lib/destacados";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
@@ -116,6 +119,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
+  const destacable = esAdmin && puedeDestacarse(a) ? await cargarDestacado("artista", a.id) : null;
   const porConfirmar = !!a.origen && !a.autor;
   const esAutor = !!actual && actual.perfil.id === a.creado_por;
   const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);
@@ -144,6 +148,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
                 </Link>
               </li>
             )}
+            {destacable && <DestacarFicha tipo="artista" id={a.id} {...destacable} />}
             {esAdmin && (
               <li>
                 <form action={cambiarVisibleArtista.bind(null, a.id, !a.visible)}>

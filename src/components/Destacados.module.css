@@ -1,0 +1,123 @@
+/* La tira de destacados (docs/rediseno/20): título y un carril que se desliza de lado, con la siguiente tarjeta asomando.
+   Cada tarjeta es un grid de hijos directos: foto, cuántos van (encima de la foto), título y detalle. */
+.destacados {
+  display: grid;
+  gap: var(--espacio-1);
+  padding-top: var(--espacio-4);
+}
+.destacados h2 {
+  padding-inline: var(--gutter);
+  font-size: var(--letra-xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.1;
+}
+.carril {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 220px;
+  gap: var(--espacio-3);
+  overflow-x: auto;
+  padding: var(--espacio-1) var(--gutter) var(--espacio-2); /* arriba, sitio para el anillo de foco: el desplazamiento recorta */
+  list-style: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.carril::-webkit-scrollbar {
+  display: none;
+}
+.carril > li {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.tarjeta {
+  display: grid;
+  grid-template-rows: 132px auto auto;
+  grid-template-areas: "foto" "titulo" "detalle";
+  row-gap: var(--espacio-1);
+  color: var(--texto);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tarjeta:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+  border-radius: var(--radio);
+}
+.foto {
+  grid-area: foto;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radio);
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.van {
+  grid-area: foto;
+  align-self: end;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  margin: 0 0 var(--espacio-2) var(--espacio-2);
+  padding: 2px var(--espacio-2) 2px 6px;
+  border-radius: 999px;
+  background: var(--vidrio);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+}
+.tarjeta b {
+  grid-area: titulo;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--letra-md);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+}
+.tarjeta small {
+  grid-area: detalle;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Artistas: redondos como su avatar, angostos y al centro. */
+.redondas {
+  grid-auto-columns: 104px;
+}
+.redondas .tarjeta {
+  grid-template-rows: 104px auto auto;
+  text-align: center;
+}
+.redondas .foto {
+  border-radius: 50%;
+}
+
+/* Una sola tarjeta: a lo ancho, con la foto a la izquierda; nada queda solo en un carril. */
+.uno {
+  grid-auto-columns: 100%;
+}
+.uno .tarjeta {
+  grid-template-columns: 124px 1fr;
+  grid-template-rows: auto auto;
+  grid-template-areas: "foto titulo" "foto detalle";
+  align-items: start;
+  column-gap: var(--espacio-3);
+  text-align: left;
+}
+.uno .foto {
+  height: 93px;
+}
+.uno small {
+  white-space: normal;
+}
+.uno.redondas .tarjeta {
+  grid-template-columns: 93px 1fr;
+}

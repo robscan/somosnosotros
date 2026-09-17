@@ -1,4 +1,6 @@
 import { esUuid } from "@/lib/formulario";
+import { cargarDestacado } from "@/app/admin/consultas";
+import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -17,6 +19,7 @@ import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
+import { puedeDestacarse } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { etiquetaLugar, etiquetaTipo, textoProximo, type Lugar } from "@/lib/lugares";
@@ -101,6 +104,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
+  const destacable = esAdmin && puedeDestacarse(lugar) ? await cargarDestacado("lugar", lugar.id) : null;
   // Edita el autor, la cuenta ligada ("¿Es tu espacio?", atendido por el administrador) o el administrador.
   const esAutor = !!actual && actual.perfil.id === lugar.creado_por;
   const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);
@@ -127,6 +131,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
                 </Link>
               </li>
             )}
+            {destacable && <DestacarFicha tipo="lugar" id={lugar.id} {...destacable} />}
             {esAdmin && (
               <li>
                 <form action={cambiarVisible.bind(null, lugar.id, !lugar.visible)}>

@@ -1,0 +1,27 @@
+/* «Destacar» en los tres puntos de una ficha: el renglón del menú con una línea chica debajo (hasta cuándo o por qué). */
+.destacar {
+  display: grid;
+  align-content: center;
+  row-gap: 2px;
+}
+.destacar small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* Lo hecho: el texto y Deshacer en la misma línea, como un aviso que se queda en su sitio. */
+.hecho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+}
+.hecho button {
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-2);
+  border: none;
+  background: none;
+  color: var(--primario);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -1,4 +1,6 @@
 import { esUuid } from "@/lib/formulario";
+import { cargarDestacado } from "@/app/admin/consultas";
+import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -14,6 +16,7 @@ import MenuAcciones from "@/components/ui/MenuAcciones";
 import ficha from "@/components/ui/Ficha.module.css";
 import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
+import { puedeDestacarse } from "@/lib/destacados";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { nombreSitio, textoCompartir } from "@/lib/eventos";
 import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
@@ -24,7 +27,7 @@ import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
-type EventoConLugar = Evento & { lugar: { id: string; nombre: string; direccion: string | null; lat: number; lng: number; portada: string | null } | null; autor: { id: string; nombre: string } | null };
+type EventoConLugar = Evento & { lugar: { id: string; nombre: string; direccion: string | null; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
 
@@ -33,7 +36,7 @@ async function cargarEvento(id: string): Promise<EventoConLugar | null> {
   if (!supabase || !esUuid(id)) return null;
   const { data } = await supabase
     .from("eventos")
-    .select("*, lugar:lugares(id, nombre, direccion, lat, lng, portada), autor:perfiles!eventos_creado_por_fkey(id, nombre)")
+    .select("*, lugar:lugares(id, nombre, direccion, lat, lng, portada, visible, privado), autor:perfiles!eventos_creado_por_fkey(id, nombre)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
@@ -118,6 +121,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
+  const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
   const url = `${ORIGEN}/eventos/${e.id}`;
   const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "");
   const puntoLlegar = e.lugar ? { lat: e.lugar.lat, lng: e.lugar.lng } : privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : e.sitio_lat != null && e.sitio_lng != null ? { lat: e.sitio_lat, lng: e.sitio_lng } : null;
@@ -146,6 +150,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 </li>
               </>
             )}
+            {destacable && <DestacarFicha tipo="evento" id={e.id} {...destacable} />}
             {esAdmin && (
               <li>
                 <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>

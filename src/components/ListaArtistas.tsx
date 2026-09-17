@@ -5,7 +5,9 @@ import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaArtista, etiquetaDisciplina, hrefArtistas, textoProximaFecha, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type Disciplina, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
+import { tarjetaArtista } from "@/lib/destacados";
 import { SIN_FOTO } from "@/lib/imagen";
+import Destacados from "./Destacados";
 import Deslizable from "./ui/Deslizable";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoOk, IconoPincel, IconoPluma } from "./ui/Iconos";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
@@ -17,6 +19,8 @@ import styles from "./ListaArtistas.module.css";
 type Opcion = { valor: string; etiqueta: string; n?: number };
 type Props = {
   artistas: ArtistaLista[];
+  /** La tira de destacados (docs/rediseno/20); llega vacía con filtro o búsqueda. */
+  destacados?: ArtistaLista[];
   total: number;
   totalCiudad: number;
   disciplinas: Opcion[];
@@ -59,7 +63,7 @@ export function IconoDisciplina({ disciplina }: { disciplina: Disciplina }) {
  * dentro de una disciplina con muchos artistas, un segundo nivel de chips por detalle (género, técnica).
  * Todo el filtro vive en la URL y lo aplica el servidor: la página trae `pagina` artistas y "Ver más" pide otros tantos.
  */
-export default function ListaArtistas({ artistas, total, totalCiudad, disciplinas, detalles, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
+export default function ListaArtistas({ artistas, destacados = [], total, totalCiudad, disciplinas, detalles, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
   // Al deslizar un artista: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   const seguir = useSeguirEnLista("artista", seguidos, avisos);
   // La ciudad viaja en la URL como en la agenda y Lugares (ausente = la inicial, para que el enlace sea limpio).
@@ -141,6 +145,7 @@ export default function ListaArtistas({ artistas, total, totalCiudad, disciplina
         </div>
       ) : (
         <>
+          <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} redondas />
           <p className={comun.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
           <ul className={styles.lista}>
             {artistas.map((a) => (

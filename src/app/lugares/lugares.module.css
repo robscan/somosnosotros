@@ -122,6 +122,23 @@
 .tarjeta > span:nth-child(2) {
   font-size: var(--letra-lg);
 }
+/* Un destacado lo dice en su tarjeta, con el punto naranja del mapa (docs/rediseno/20, M2) */
+.destacado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--destacado-texto);
+  font-weight: 700;
+}
+.destacado::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--fondo);
+  border-radius: 50%;
+  background: var(--destacado);
+  box-shadow: 0 0 0 1px var(--destacado);
+}
 .ver {
   grid-area: ver;
   display: inline-flex;

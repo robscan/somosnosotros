@@ -8,6 +8,7 @@ import { conProximaFecha, DISCIPLINAS, filtroDesdeUrl, ordenarArtistas, PAGINA_A
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
+import { enOrden, leerTira } from "@/lib/destacados";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
@@ -26,6 +27,8 @@ export type Cargado = {
   totalCiudad: number;
   disciplinas: Opcion[];
   detalles: Opcion[];
+  /** La tira de destacados (docs/rediseno/20): solo sin filtro ni búsqueda. */
+  destacados: ArtistaLista[];
 };
 
 /**
@@ -34,17 +37,19 @@ export type Cargado = {
  * primero (todos los que cumplen el filtro); el resto, en orden alfabético real (`nombre_orden`), de `n` en `n`.
  */
 async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
-  const vacio: Cargado = { artistas: [], total: 0, totalCiudad: 0, disciplinas: [], detalles: [] };
+  const vacio: Cargado = { artistas: [], total: 0, totalCiudad: 0, disciplinas: [], detalles: [], destacados: [] };
   const supabase = await clienteServidor();
   if (!supabase) return vacio;
   const ciudad = ciudadNombre;
 
-  const [f1, d1, d2] = await Promise.all([
+  const sinFiltro = !f.hace && !f.que && !f.q;
+  const [f1, d1, d2, tira] = await Promise.all([
     // Las filas van por la hora de su evento (`evento(inicio)` ordena las filas; `order` con `referencedTable` solo ordenaba
     // dentro del evento ligado), así el corte de 500 se queda con lo más próximo. Lo que se ordena debe ir en el select.
     supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, titulo, inicio, zona, sitio_texto, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("evento(inicio)").order("evento(titulo)").order("evento(id)").order("artista_id").limit(500),
     supabase.rpc("disciplinas_con_artistas", { p_ciudad: ciudad }),
     f.hace ? supabase.rpc("detalles_de_disciplina", { p_ciudad: ciudad, p_disciplina: f.hace }) : Promise.resolve({ data: [] as { clave: string; etiqueta: string; n: number }[] }),
+    sinFiltro ? leerTira(supabase, "artistas", ciudad) : Promise.resolve([]),
   ]);
   // Todas las fechas con su sitio; la próxima de cada artista la elige `conProximaFecha`, no el orden de llegada.
   const fechas: FechaDeArtista[] = [];
@@ -68,13 +73,16 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
     if (q) c = c.or(`nombre_orden.ilike.%${q}%,detalle.ilike.%${q}%`);
     return c;
   };
-  const [a, b] = await Promise.all([
+  const [a, b, t] = await Promise.all([
     conFecha.length ? base().in("id", conFecha) : Promise.resolve({ data: [] as ArtistaResumen[], count: 0 }),
     (conFecha.length ? base().not("id", "in", `(${conFecha.join(",")})`) : base()).order("nombre_orden").range(0, f.n - 1),
+    // Los destacados pueden no estar en la primera página: se leen aparte, con su próxima fecha.
+    tira.length ? supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto").eq("visible", true).in("id", tira.map((d) => d.id)) : Promise.resolve({ data: [] as ArtistaResumen[] }),
   ]);
   const primero = ordenarArtistas(conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas));
   const resto = ((b.data ?? []) as ArtistaResumen[]).map((x) => ({ ...x, proxima: null }));
-  return { artistas: [...primero, ...resto], total: primero.length + (b.count ?? 0), totalCiudad, disciplinas, detalles };
+  const destacados = enOrden(tira, conProximaFecha((t.data ?? []) as ArtistaResumen[], fechas));
+  return { artistas: [...primero, ...resto], total: primero.length + (b.count ?? 0), totalCiudad, disciplinas, detalles, destacados };
 }
 
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */

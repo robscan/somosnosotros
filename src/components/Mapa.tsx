@@ -32,6 +32,8 @@ type Props = {
   ciudad?: Ciudad;
   /** "pantalla": fijo a toda la pantalla (con panel encima). "caja": llena el contenedor donde se pone. */
   presentacion?: "pantalla" | "caja";
+  /** Solo en "ver": los lugares destacados (docs/rediseno/20), en naranja, más grandes y encima. */
+  destacados?: string[];
 };
 
 const COLOR_PIN = "#1a1a1a"; // tinta; Mapbox pide el color literal (pin que se arrastra del alta)
@@ -43,6 +45,8 @@ const CAPA_NOMBRES = "lugares-nombres";
 const FUENTE_NOMBRES = ["DIN Pro Bold", "Arial Unicode MS Bold"];
 /** Radio del toque alrededor de un punto (el punto mide 10 px; el dedo necesita más). */
 const RADIO_TOQUE = 18;
+/** Una sola lista vacía para el valor por defecto: una nueva en cada render volvería a pintar las capas. */
+const SIN_DESTACADOS: string[] = [];
 
 /** Color de una variable de diseño, porque Mapbox pide el valor literal. */
 function colorDiseno(nombre: string, reserva: string) {
@@ -50,33 +54,39 @@ function colorDiseno(nombre: string, reserva: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || reserva;
 }
 
-function aGeoJSON(lugares: LugarLista[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
+function aGeoJSON(lugares: LugarLista[], destacados: string[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
   return {
     type: "FeatureCollection",
     features: lugares.map((l) => ({
       type: "Feature",
       id: l.id,
       geometry: { type: "Point", coordinates: [l.lng, l.lat] },
-      properties: { id: l.id, nombre: l.nombre, proximo: !!l.proximo, privado: !!l.privado },
+      properties: { id: l.id, nombre: l.nombre, proximo: !!l.proximo, privado: !!l.privado, destacado: destacados.includes(l.id) },
     })),
   };
 }
 
-/** Punto chico del color de acción con borde blanco; el elegido crece. El nombre va debajo y cede sitio si choca con otro. */
+/**
+ * Punto chico del color de acción con borde blanco; el elegido crece. El nombre va debajo y cede sitio si choca con otro.
+ * Un destacado va en naranja cempasúchil, más grande y encima, y su nombre gana el sitio: el color nunca va solo.
+ */
 function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
   const primario = colorDiseno("--primario", "#0f6b7c");
   const fondo = colorDiseno("--fondo", "#ffffff");
   const suave = colorDiseno("--texto-suave", "#5c5c5c"); // los privados (solo los ve el admin) van en gris
+  const destacado = colorDiseno("--destacado", "#d35400");
+  const destacadoTexto = colorDiseno("--destacado-texto", "#a94400");
   mapa.addSource(FUENTE_LUGARES, { type: "geojson", data: datos, promoteId: "id" });
   mapa.addLayer({
     id: CAPA_PUNTOS,
     type: "circle",
     source: FUENTE_LUGARES,
+    layout: { "circle-sort-key": ["case", ["get", "destacado"], 1, 0] },
     paint: {
-      "circle-radius": ["case", ["boolean", ["feature-state", "elegido"], false], 8, 5],
-      "circle-color": ["case", ["get", "privado"], suave, primario],
+      "circle-radius": ["+", ["case", ["boolean", ["feature-state", "elegido"], false], 8, 5], ["case", ["get", "destacado"], 2, 0]],
+      "circle-color": ["case", ["get", "privado"], suave, ["get", "destacado"], destacado, primario],
       "circle-stroke-color": fondo,
-      "circle-stroke-width": 1.5,
+      "circle-stroke-width": ["case", ["get", "destacado"], 2, 1.5],
     },
   });
   mapa.addLayer({
@@ -92,11 +102,11 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
       "text-max-width": 9,
       "text-line-height": 1.1,
       "text-letter-spacing": 0.01,
-      "symbol-sort-key": ["case", ["get", "proximo"], 0, 1], // con eventos gana el sitio si dos nombres chocan
+      "symbol-sort-key": ["case", ["get", "destacado"], -1, ["get", "proximo"], 0, 1], // un destacado, y luego uno con eventos, gana el sitio si dos nombres chocan
     },
     // Del color de acción, en negrita y con halo ancho: se distinguen de las colonias y calles (gris, mayúsculas).
     paint: {
-      "text-color": ["case", ["get", "privado"], suave, primario],
+      "text-color": ["case", ["get", "privado"], suave, ["get", "destacado"], destacadoTexto, primario],
       "text-halo-color": fondo,
       "text-halo-width": 2,
     },
@@ -130,7 +140,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, encuadre = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla" }: Props) {
+export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, encuadre = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla", destacados = SIN_DESTACADOS }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
@@ -215,7 +225,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     const mapa = mapaRef.current;
     if (estado !== "listo" || !mapa || modo !== "ver") return;
     lugaresRef.current = new Map(lugares.map((l) => [l.id, l]));
-    const datos = aGeoJSON(lugares);
+    const datos = aGeoJSON(lugares, destacados);
     const fuente = mapa.getSource(FUENTE_LUGARES) as GeoJSONSource | undefined;
     if (fuente) fuente.setData(datos);
     else agregarCapas(mapa, datos);
@@ -235,7 +245,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
         cancelado = true;
       };
     }
-  }, [estado, modo, lugares, centrarEn, presentacion]);
+  }, [estado, modo, lugares, destacados, centrarEn, presentacion]);
 
   // Lo que encontró la búsqueda: uno solo, el mapa se acerca (dejando sitio a la tarjeta); varios, se encuadran bajo la búsqueda.
   useEffect(() => {

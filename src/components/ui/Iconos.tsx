@@ -391,3 +391,9 @@ export const IconoOjoTachado = (p: P) => (
     <path d="M4 4l16 16" />
   </svg>
 );
+/** Destello de cuatro puntas: destacar una ficha (docs/rediseno/20); la estrella ya es «Me interesa» y Artistas. */
+export const IconoDestello = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 3.5c.7 4.6 3.4 7.3 8 8-4.6.7-7.3 3.4-8 8-.7-4.6-3.4-7.3-8-8 4.6-.7 7.3-3.4 8-8z" />
+  </svg>
+);
