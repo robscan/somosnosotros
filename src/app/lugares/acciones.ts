@@ -7,6 +7,7 @@ import { rutaSegura } from "@/lib/rutas";
 import { validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
+import { zonaDePunto } from "@/lib/zona";
 
 export type ResultadoLugar =
   | { ok: true; id: string }
@@ -40,7 +41,7 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
 
   const { data, error } = await supabase
     .from("lugares")
-    .insert({ ...datos, privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null, creado_por: user.id })
+    .insert({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null, creado_por: user.id })
     .select("id")
     .single();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
@@ -58,7 +59,7 @@ export async function actualizarLugar(id: string, _previo: ResultadoLugar | null
 
   const { data, error } = await supabase
     .from("lugares")
-    .update({ ...datos, privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null })
+    .update({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null })
     .eq("id", id)
     .select("id")
     .maybeSingle();

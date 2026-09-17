@@ -18,7 +18,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
   const volverA = `/eventos/nuevo${lugar ? `?lugar=${lugar}` : artista ? `?artista=${artista}` : ""}`;
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(volverA)}`);
   const supabase = await clienteServidor();
-  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada").eq("visible", true).order("nombre")) ?? { data: [] };
+  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona").eq("visible", true).order("nombre")) ?? { data: [] };
   let base: Partial<Evento> | undefined;
   let quien: QuienItem[] | undefined;
   if (desde && esUuid(desde)) {

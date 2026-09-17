@@ -11,7 +11,7 @@ import { IconoBoleto, IconoBuscar, IconoCamara, IconoMas, IconoPersonas, IconoPi
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
-import { formatearCuando, isoALocal, localAIso, sugerirInicio } from "@/lib/fechas";
+import { formatearCuando, isoALocal, localAIso, sugerirInicio, zonaSegura } from "@/lib/fechas";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
 import { configPublica } from "@/lib/config";
@@ -102,8 +102,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     ciudad: (evento as { ciudad?: string } | undefined)?.ciudad ?? null,
   }));
   const [titulo, setTitulo] = useState(evento?.titulo ?? "");
-  const [inicio, setInicio] = useState(modo === "editar" ? isoALocal(evento?.inicio) : sugerirInicio());
-  const [fin, setFin] = useState(modo === "editar" ? isoALocal(evento?.fin) : "");
+  // Las horas del selector son las del sitio del evento: se leen en su zona (la del lugar elegido; al editar, la guardada).
+  const zonaInicial = zonaSegura(lugares.find((l) => l.id === (evento?.lugar_id ?? lugarInicial))?.zona ?? evento?.zona);
+  const [inicio, setInicio] = useState(modo === "editar" ? isoALocal(evento?.inicio, zonaInicial) : sugerirInicio(new Date(), zonaInicial));
+  const [fin, setFin] = useState(modo === "editar" ? isoALocal(evento?.fin, zonaInicial) : "");
   const [gratis, setGratis] = useState(!evento?.precio);
   const [precio, setPrecio] = useState(evento?.precio ?? "");
   const [descripcion, setDescripcion] = useState(evento?.descripcion ?? "");
@@ -184,8 +186,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const listo = !faltaNombre && dondeResuelto;
 
   const valorDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "") : `${otro.sitioTexto.trim()} · ${modoSitio === "reservado" ? "reservado" : "otro sitio"}`;
-  const inicioIso = localAIso(inicio);
-  const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin) : null) : "Falta";
+  // En otro sitio la zona del punto la calcula el servidor al guardar; aquí basta la guardada o la de la ciudad inicial.
+  const zona = zonaSegura(modoSitio === "lugar" ? (lugar?.zona ?? evento?.zona) : evento?.zona);
+  const inicioIso = localAIso(inicio, zona);
+  const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin, zona) : null, new Date(), zona) : "Falta";
   const valorCuanto = gratis ? "Gratis" : precio.trim() || "Con costo";
   const valorQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : "Sin artista";
 
@@ -311,6 +315,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 <SelectorCuando
                   inicio={inicio}
                   fin={fin}
+                  zona={zona}
                   onCambio={(i, f) => {
                     setInicio(i);
                     setFin(f);

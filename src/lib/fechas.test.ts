@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, inicioDelDia, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, tramo } from "./fechas";
+import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, sugerirInicio, sumarHoras, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -61,7 +61,72 @@ describe("fechas", () => {
     expect(eventoPaso("2026-09-19T11:00:00Z", "2026-09-19T15:59:00Z", AHORA)).toBe(true); // terminó a las 9:59
     expect(inicioDelDia(AHORA)).toBe("2026-09-19T06:00:00.000Z");
   });
-  it("las listas usan la misma regla como filtro de la base", () => {
-    expect(filtroSinPasar(AHORA)).toBe(`fin.gte."2026-09-19T16:00:00.000Z",and(fin.is.null,inicio.gte."2026-09-19T06:00:00.000Z")`);
+  it("las listas filtran con termina, que la base calcula en la zona de cada evento", () => {
+    expect(filtroSinPasar(AHORA)).toBe(`termina.gte."2026-09-19T16:00:00.000Z"`);
+  });
+});
+
+// Lugares y eventos de cualquier país (migración 0029): cada evento con la hora de su zona.
+describe("fechas en la zona del evento", () => {
+  // AHORA es sábado 19 sep a las 10:00 en San Luis y a las 18:00 en Madrid.
+  const MADRID = "Europe/Madrid";
+  it("lee y escribe la hora del selector en la zona del evento", () => {
+    expect(localAIso("2026-09-20T19:00", MADRID)).toBe("2026-09-20T17:00:00.000Z");
+    expect(isoALocal("2026-09-20T17:00:00.000Z", MADRID)).toBe("2026-09-20T19:00");
+    // Costa Rica va igual que San Luis todo el año.
+    expect(localAIso("2026-09-20T19:00", "America/Costa_Rica")).toBe("2026-09-21T01:00:00.000Z");
+    expect(localAIso("2026-09-20T19:00", "America/Argentina/Cordoba")).toBe("2026-09-20T22:00:00.000Z");
+  });
+  it("respeta los cambios de horario", () => {
+    // Madrid adelanta el reloj el 29 mar 2026 (02:00 → 03:00) y lo atrasa el 25 oct (03:00 → 02:00).
+    expect(localAIso("2026-03-29T01:30", MADRID)).toBe("2026-03-29T00:30:00.000Z");
+    expect(localAIso("2026-03-29T03:30", MADRID)).toBe("2026-03-29T01:30:00.000Z");
+    expect(localAIso("2026-10-25T12:00", MADRID)).toBe("2026-10-25T11:00:00.000Z");
+    expect(sumarHoras("2026-03-28T23:00", 4, MADRID)).toBe("2026-03-29T04:00");
+    // El 25 oct dura 25 horas: a las 00:30, "mañana" sigue siendo el 26.
+    const madrugada = new Date("2026-10-24T22:30:00Z");
+    expect(formatearCuando("2026-10-25T22:30:00Z", null, madrugada, MADRID)).toBe("Hoy · 23:30");
+    expect(formatearCuando("2026-10-26T12:00:00Z", null, madrugada, MADRID)).toBe("Mañana · 13:00");
+  });
+  it("Hoy y Mañana son los de la zona del evento", () => {
+    expect(formatearCuando("2026-09-19T20:00:00Z", null, AHORA, MADRID)).toBe("Hoy · 22:00");
+    // El mismo instante: en Madrid es la 1:30 del domingo; en San Luis, las 17:30 del sábado.
+    expect(formatearCuando("2026-09-19T23:30:00Z", null, AHORA, MADRID)).toBe("Mañana · 01:30");
+    expect(formatearCuando("2026-09-19T23:30:00Z", null, AHORA)).toBe("Hoy · 17:30");
+    expect(formatearLargo("2026-09-20T17:00:00Z", AHORA, "2026-09-20T19:00:00Z", MADRID)).toBe("domingo 20 de septiembre · 19:00 a 21:00");
+    expect(horaCorta("2026-09-20T17:00:00Z", MADRID)).toBe("19:00");
+    expect(diaCorto("2026-09-19T23:30:00Z", AHORA, MADRID)).toBe("Mañana");
+    expect(diaLargo("2026-09-20", AHORA, MADRID)).toBe("domingo 20 de septiembre");
+  });
+  it("un evento sin hora de fin se va al acabar el día de su zona", () => {
+    // A las 00:30 del domingo en Madrid (16:30 del sábado en San Luis), un evento del sábado a las 19:00 de Madrid ya pasó.
+    const medianoche = new Date("2026-09-19T22:30:00Z");
+    expect(eventoPaso("2026-09-19T17:00:00Z", null, medianoche, MADRID)).toBe(true);
+    expect(eventoPaso("2026-09-19T17:00:00Z", null, medianoche)).toBe(false);
+    expect(tramo("2026-09-19T17:00:00Z", medianoche, MADRID)).toBe("pasado");
+    expect(inicioDelDia(AHORA, MADRID)).toBe("2026-09-18T22:00:00.000Z");
+  });
+  it("sugiere, ofrece días y avisa si ya pasó con el reloj de la zona", () => {
+    // A las 18:00 de Madrid ya no se sugiere hoy; a las 10:00 de San Luis, sí.
+    expect(sugerirInicio(AHORA, MADRID)).toBe("2026-09-20T19:00");
+    expect(sugerirInicio(AHORA)).toBe("2026-09-19T19:00");
+    const medianoche = new Date("2026-09-19T22:30:00Z");
+    expect(proximosDias(medianoche, 3, MADRID)).toEqual([
+      { valor: "2026-09-20", etiqueta: "Hoy" },
+      { valor: "2026-09-21", etiqueta: "Mañana" },
+      { valor: "2026-09-22", etiqueta: "mar 22" },
+    ]);
+    expect(proximosDias(medianoche, 1)[0].valor).toBe("2026-09-19");
+    expect(yaPaso("2026-09-19T17:30", AHORA, MADRID)).toBe(true);
+    expect(yaPaso("2026-09-19T17:30", AHORA)).toBe(false);
+    expect(fraseCuando("2026-09-20T19:00", "2026-09-20T21:00", AHORA, MADRID)).toBe("domingo 20 de septiembre · 19:00 a 21:00");
+  });
+  it("una zona que no es cae en la de la ciudad inicial, y una fecha que no existe no se lee", () => {
+    expect(zonaSegura("Europe/Madrid")).toBe("Europe/Madrid");
+    expect(zonaSegura("America/Argentina/Cordoba")).toBe("America/Argentina/Cordoba");
+    for (const mala of ["Marte/Olimpo", "CST", "UTC", "posix/America/Mexico_City", "", null, undefined]) expect(zonaSegura(mala)).toBe(ZONA_INICIAL);
+    expect(formatearCuando("2026-09-20T01:00:00Z", null, AHORA, "Marte/Olimpo")).toBe("Hoy · 19:00");
+    expect(localAIso("2026-02-31T19:00")).toBeNull();
+    expect(localAIso("2026-09-20T24:00")).toBeNull();
   });
 });

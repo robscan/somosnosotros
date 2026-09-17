@@ -29,6 +29,8 @@ export type LugarResumen = {
   portada: string | null;
   /** Mapeo personal del administrador: solo lo ve él. La base ya lo esconde a los demás; aquí solo se señala. */
   privado?: boolean;
+  /** Zona horaria del lugar (migración 0029): la de sus eventos. Solo llega donde se pide. */
+  zona?: string;
 };
 
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */

@@ -5,7 +5,7 @@ import { agruparPorDia, buscarEventos, distanciaKm, esNuevo, filtrarAgenda, text
 const AHORA = new Date("2026-09-14T18:00:00Z");
 
 function evento(p: Partial<EventoAgenda> & { id: string; inicio: string }): EventoAgenda {
-  return { titulo: p.id, fin: null, imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, lugar: null, creado_en: "2026-09-01T00:00:00Z", lat: null, lng: null, van: 0, ...p };
+  return { titulo: p.id, fin: null, imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, lugar: null, creado_en: "2026-09-01T00:00:00Z", lat: null, lng: null, van: 0, zona: "America/Mexico_City", ...p };
 }
 
 describe("agenda", () => {
@@ -16,6 +16,18 @@ describe("agenda", () => {
     );
     expect(grupos.map((g) => g.titulo)).toEqual(["Hoy", "Mañana", "mié 16 de sep"]);
     expect(grupos[0].eventos.map((e) => e.id)).toEqual(["a2", "a"]); // 17:00 y 19:00 de hoy
+  });
+  it("cada evento cae en el día de su zona, y el chip de fecha también", () => {
+    // Lunes 14 a las 23:30 UTC: en San Luis son las 17:30 del lunes; en Madrid, la 1:30 del martes.
+    const slp = evento({ id: "slp", inicio: "2026-09-14T23:30:00Z" });
+    const madrid = evento({ id: "madrid", inicio: "2026-09-14T23:30:00Z", zona: "Europe/Madrid" });
+    const grupos = agruparPorDia([slp, madrid], AHORA);
+    expect(grupos.map((g) => [g.clave, g.titulo, g.eventos.map((e) => e.id)])).toEqual([
+      ["2026-09-14", "Hoy", ["slp"]],
+      ["2026-09-15", "Mañana", ["madrid"]],
+    ]);
+    const ctx = { filtro: "todos" as const, punto: null, seguidos: null, fecha: "2026-09-15", ahora: AHORA };
+    expect(filtrarAgenda([slp, madrid], ctx).lista.map((e) => e.id)).toEqual(["madrid"]);
   });
   it("con orden dado, respeta el orden dentro del día (Cercanos: por distancia) y los días siguen en orden", () => {
     const grupos = agruparPorDia(
