@@ -1,4 +1,4 @@
-# 068 · Las hojas ya no se aprietan en escritorio
+# 068 · Las hojas: ya no se aprietan en escritorio ni se recortan con el teclado del iPhone
 
 **Fecha:** 2026-09-16 (noche) · **Rama:** `hojas-en-escritorio` (commit local, sin push) · **Pieza:** OL-042.
 
@@ -31,7 +31,7 @@ Una captura en escritorio de la hoja "Dónde" de Artistas: la hoja medía lo que
   - agenda, Lugares en lista y en mapa, ficha de lugar, Entrar y Aviso de privacidad: nada apretado.
 
 ## Evidencia
-- lint (un aviso viejo, ajeno), typecheck, 206 pruebas y build en verde.
+- lint (un aviso viejo, ajeno), typecheck, 206 pruebas y build en verde (también después del segundo arreglo).
 - **Antes y después a 1280×800**, con el build de la rama servido en local y datos de producción, solo lectura:
   - la hoja Dónde de Artistas pasa de 680 px, con 340 px de relleno y el texto en 44 px, a 600 px centrada, alineada con la columna de la lista, con 20 px de relleno y el texto en 560 px en un renglón;
   - el menú "···" de la ficha de Casa del Poeta pasa de "Reportar" en una tira al centro a "Reportar" a todo lo ancho;
@@ -39,10 +39,35 @@ Una captura en escritorio de la hoja "Dónde" de Artistas: la hoja medía lo que
 - **A 390×844 queda igual que en producción:** hoja de 390 px, 20 px de relleno, texto en 350 px.
 - **Sin mirar en escritorio:** las hojas que piden sesión (Voy, Seguir, Borrar, las de las altas). Son la misma pieza, pero conviene pasarlas en la firma.
 
+## Segundo arreglo: la hoja con el teclado del iPhone
+El founder preguntó si la hoja de ciudad (rama `ciudad-de-artistas`, bitácora 067) se recalcula con el teclado del celular. Probado en el simulador (iPhone 15 Pro, iOS 26.3, Safari, teclado en pantalla, tecleando con toques).
+
+**El fallo.**
+- La hoja sí se acomoda sobre el teclado al abrir y al llegar los resultados.
+- Pero al arrastrar la lista con el teclado arriba, se movía la página de atrás y la hoja quedaba recortada, con un hueco blanco debajo. Se reprodujo dos veces.
+- Solo pasa cuando la hoja se vuelve desplazable después de que el teclado ya está arriba, como en la hoja Ciudad: su lista crece al llegar los resultados.
+- En "Dónde es" no pasa (su lista ya desborda al abrir, aunque se filtre), ni sin teclado.
+
+**Qué se hizo en `ui/Hoja`:**
+- **Mientras hay una hoja abierta, la página de atrás no se desplaza** (`overflow: hidden` en `<html>`). Con varias hojas abiertas, se suelta al cerrar la última. Solo en `<html>`: con `<body>` también, la página volvía arriba al abrir (medido: de 300 a 0).
+- **Arrastrar la hoja con el teclado arriba lo guarda**, como en las búsquedas del iPhone. No pasa sobre el mismo campo, para poder mover el cursor. Sin teclado, la hoja crece a toda la altura y la lista se recorre.
+
+**Cambio de comportamiento a firmar:** en "Dónde es" y "Dónde está", antes la lista se recorría con el teclado arriba. Ahora el primer arrastre guarda el teclado y los siguientes recorren.
+
+**Evidencia en el simulador:**
+- *Hoja Ciudad*, con el cambio puesto de forma temporal en su rama y quitado después: con "San" y el teclado arriba, el primer arrastre guarda el teclado y la hoja queda a toda la altura, sin recorte ni hueco; el segundo recorre la lista con el campo pegado arriba.
+- *"Dónde es"*, con el build de esta rama: el arrastre guarda el teclado y la lista se recorre con el campo arriba.
+- *Menú "···"* de una ficha desplazada 300 px, a 390×844 en el navegador: al abrir la hoja la página sigue en 300 con `<html>` bloqueado; al cerrar, sigue en 300 y se suelta.
+
 ## Firma pendiente
 En el escritorio del founder:
 - la hoja Dónde;
 - el menú "···" de una ficha;
 - una hoja de un alta.
 
-En el iPhone no cambia nada. Push y PR cuando el founder lo pida.
+En el iPhone real:
+- abrir la hoja Ciudad o "Dónde es";
+- escribir y arrastrar los resultados con el teclado arriba;
+- abrir y cerrar el menú "···" con la ficha desplazada.
+
+Push y PR cuando el founder lo pida. **La rama `ciudad-de-artistas` conviene mezclarla junto con esta o después.**
