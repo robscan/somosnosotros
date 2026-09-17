@@ -8,11 +8,4 @@
   object-fit: cover;
   border-radius: var(--radio);
 }
-/* Lo que dijo el cartel al leerlo, bajo el campo. */
-.aviso {
-  margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-3);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-
 /* Hoja "¿Salir sin publicar?": la pregunta, la consecuencia y dos salidas, seguir editando primero. */

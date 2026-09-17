@@ -40,7 +40,9 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
     <main className="pagina">
       <Barra cerrar={{ href: volver, texto: "Volver" }} />
       <h1 className="titulo">{base ? "Duplicar evento" : "Publicar un evento"}</h1>
-      <p className="subtitulo">{base ? "Mismo evento, nueva fecha. Cambia lo que haga falta." : "Con el nombre y dónde basta. Lo demás ya está resuelto."}</p>
+      {/* En el alta no hay frase: la tarjeta del cartel hace ese trabajo, y no se invita a publicar con lo mínimo
+          (founder, 2026-09-17: «no digas que basta con nombre y lugar… no promovemos la creación de eventos incompletos»). */}
+      {base && <p className="subtitulo">Mismo evento, nueva fecha. Cambia lo que haga falta.</p>}
       <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} zonaSitio={zonaDelSitio(base)} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} />
     </main>
   );

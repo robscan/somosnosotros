@@ -34,39 +34,126 @@
   border-color: var(--error);
 }
 
-/* Sin icono a la izquierda y con una acción a la derecha (la cámara que lee el cartel). */
+/* Sin icono a la izquierda. */
 .sinIcono > input {
   padding-left: 14px;
 }
-.conAccion > input {
-  padding-right: 52px;
-}
-.accionCampo {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: var(--primario);
+
+/* 1 bis. El cartel, antes del formulario (firmado por el founder, 2026-09-17). Es lo único que explica la
+   pantalla: no hay frase debajo del título. Todo el recuadro es el control, y el campo de archivo lo cubre
+   entero para que el toque caiga en él (la cámara metida en el campo del nombre no lo recibía, bitácora 093). */
+.cartel {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  column-gap: 14px;
+  align-items: center;
+  min-height: 76px;
+  margin-bottom: var(--espacio-6);
+  padding: 12px 16px;
+  border: 1px solid var(--primario);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
   cursor: pointer;
 }
-/* El campo de archivo cubre el icono entero: el toque cae en él, no en un punto de 1 px. */
-.accionCampo > input {
+.cartel > input {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   opacity: 0;
+  cursor: pointer;
 }
-.accionCampo:disabled,
-.accionCampo[aria-disabled="true"] {
-  opacity: 0.5;
+.cartel:focus-within {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}
+.textoCartel {
+  display: grid;
+  gap: 2px;
+}
+.marcoCartel {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.miniaturaCartel {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.cartel b {
+  font-size: var(--letra-md);
+  font-weight: 700;
+}
+.cartel small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+/* Ya hizo su trabajo: baja de tono y deja de pedir el primer toque. */
+.cartelLeido {
+  margin-bottom: var(--espacio-3);
+  border-color: var(--borde);
+  background: var(--fondo);
+}
+.cartelFallo {
+  border-color: var(--error);
+  /* Rojo muy lavado: no hay token para el fondo de error porque solo se usa aquí. */
+  background: #fdf3f2;
+}
+.cartelFallo small {
+  color: var(--error);
+}
+/* "Probar con otra foto": lo dice, pero el control es el recuadro entero (nada interactivo dentro de un label). */
+.rehacerCartel {
+  display: block;
+  width: fit-content;
+  margin-top: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  line-height: 34px;
+}
+.barritaCartel {
+  display: block;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--fondo-miniatura);
+  overflow: hidden;
+}
+.barritaCartel > span {
+  display: block;
+  width: 55%;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--primario);
+  animation: cartelEnCamino 1.4s ease-in-out infinite;
+}
+@keyframes cartelEnCamino {
+  0% {
+    transform: translateX(-60%);
+  }
+  100% {
+    transform: translateX(160%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barritaCartel > span {
+    animation: none;
+  }
 }
 
 /* 2. Estado ("Buscando…"), error y lo que ya está registrado. */

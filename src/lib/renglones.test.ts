@@ -32,6 +32,28 @@ export function cuerposQueSeEsconden(fuente: string): { estado: string; conAviso
   });
 }
 
+/** Los avisos que el propio formulario levanta (no los del servidor) y que abren un renglón al llegar. */
+export function avisosPropios(fuente: string): string[] {
+  const llamada = fuente.match(/useAbrirConError\(([^)]*)\)/);
+  if (!llamada) return [];
+  return llamada[1]
+    .split(",")
+    .map((a) => a.trim())
+    .filter((a) => /^error[A-Z]\w*$/.test(a));
+}
+
+/**
+ * Lo que corre en cada reintento antes de subir: de la cabecera de la función que sube hasta la llamada misma.
+ * Mirar el archivo entero no ata nada (una copia muerta en cualquier sitio lo daría por bueno); esto sí.
+ */
+export function antesDeSubir(fuente: string): string[] {
+  return [...fuente.matchAll(/\bsubirFoto\(/g)].map((llamada) => {
+    const hasta = llamada.index ?? 0;
+    const cabecera = fuente.lastIndexOf("async function", hasta);
+    return fuente.slice(cabecera === -1 ? 0 : cabecera, hasta);
+  });
+}
+
 describe("renglones", () => {
   it("todo cuerpo escondido con avisos se abre solo al llegar un error", () => {
     const culpables = pantallas(RAIZ).flatMap((ruta) => {
@@ -39,12 +61,35 @@ describe("renglones", () => {
       return cuerposQueSeEsconden(fuente)
         .filter(({ estado, conAviso }) => {
           if (!conAviso) return false;
-          const abridor = `useAbrirConError(set${estado[0].toUpperCase()}${estado.slice(1)}`;
-          return !fuente.includes(abridor);
+          // El que abre ese cuerpo, esté donde esté entre los argumentos.
+          const abridor = new RegExp(`useAbrirConError\\([^)]*\\bset${estado[0].toUpperCase()}${estado.slice(1)}\\b`);
+          return !abridor.test(fuente);
         })
         .map(({ estado }) => `${ruta.slice(RAIZ.length)}: el cuerpo de "${estado}" esconde avisos y no usa useAbrirConError`);
     });
     expect(culpables).toEqual([]);
+  });
+
+  it("el aviso que abre un renglón se limpia en el propio reintento, antes de subir", () => {
+    // Si un aviso viejo se queda pegado, el renglón ya no vuelve a abrirse solo con el siguiente error: el
+    // formulario deja de avisar y volvemos al bug de OL-063. Salió en la revisión de la bitácora 095, y la
+    // primera versión de esta prueba miraba el archivo entero, así que una copia muerta la engañaba.
+    const culpables = pantallas(RAIZ).flatMap((ruta) => {
+      const fuente = readFileSync(ruta, "utf8");
+      const reintentos = antesDeSubir(fuente);
+      if (!reintentos.length) return [];
+      return avisosPropios(fuente)
+        .filter((aviso) => !reintentos.every((trozo) => trozo.includes(`set${aviso[0].toUpperCase()}${aviso.slice(1)}(null)`)))
+        .map((aviso) => `${ruta.slice(RAIZ.length)}: "${aviso}" abre un renglón y no se limpia al reintentar`);
+    });
+    expect(culpables).toEqual([]);
+  });
+
+  it("solo mira lo que corre antes de subir, no el archivo entero", () => {
+    const bueno = `async function subir(a: File) {\n  setErrorImagen(null);\n  const r = await subirFoto(x);\n}`;
+    const tarde = `async function subir(a: File) {\n  const r = await subirFoto(x);\n  setErrorImagen(null);\n}`;
+    expect(antesDeSubir(bueno)[0]).toContain("setErrorImagen(null)");
+    expect(antesDeSubir(tarde)[0]).not.toContain("setErrorImagen(null)");
   });
 
   it("sabe encontrar los cuerpos que se esconden y sus avisos", () => {
