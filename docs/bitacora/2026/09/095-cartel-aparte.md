@@ -107,7 +107,20 @@ Al repartir los errores por donde mira la persona, se me cayó el `setErrorImage
 
 ## Pruebas nuevas
 
-`src/lib/estadoCartel.test.ts`: las transiciones de la tarjeta salieron del componente a `src/app/eventos/estadoCartel.ts` para poder probarlas. Cubren el corte a mitad, que el fallo de subida no repita el titular, y que la foto anterior sobreviva. **352 pruebas en 39 archivos**, con lint, tipos y build en verde.
+`src/app/eventos/estadoCartel.test.ts`: las transiciones de la tarjeta salieron del componente a `estadoCartel.ts` para poder probarlas. Cubren el corte a mitad, que el fallo de subida diga la causa y no repita nada, y que lo que se conserva sea la imagen real del evento.
+
+# Segunda vuelta: cuatro detalles
+
+La revisión volvió con cuatro cosas menores, y la primera era una crítica a mi propia prueba.
+
+1. **La guarda de OL-063 no ataba nada.** Miraba si el texto `setErrorImagen(null)` aparecía en el archivo, así que una copia muerta en cualquier sitio —o moverlo detrás del `await`— la engañaba. Se demostró con dos copias mutadas. Ahora mira **solo lo que corre en el reintento antes de subir** (de la cabecera de la función hasta la llamada a `subirFoto`), y tiene su propia prueba de que mira ahí y no en el archivo entero. **Control negativo con la mutación que engañaba a la versión vieja:** mover la línea detrás del `await` ahora falla.
+2. **El fallo genérico se decía dos veces**, una en el detalle («Intenta con otra foto.») y otra en el chip de debajo («Probar con otra foto»). Ahora el detalle dice **la causa** y el chip la acción: «No pude subir el cartel» · «Puede ser tu conexión.» · «Probar con otra foto». Tres renglones, tres trabajos distintos.
+3. **«El cartel de antes se queda» podía ser mentira.** Si por «Más» se había cambiado la imagen, lo que se publica es otra. La miniatura y el aviso se arman ahora desde **la imagen real del evento**, que es la que se va a publicar, y el texto dice «La imagen que ya tenías se queda».
+4. **El mensaje de la conexión no llegaba a la tarjeta** aunque por «Más» sí se viera. Ahora los dos caminos hablan de lo mismo ante el mismo fallo.
+
+Y la prueba se mudó junto a lo que prueba (`src/app/eventos/`), que estaba en `src/lib/` sin motivo.
+
+**353 pruebas en 39 archivos**, con lint, tipos y build en verde, y captura del estado de corte con el texto nuevo.
 
 ## Lo que sigue
 

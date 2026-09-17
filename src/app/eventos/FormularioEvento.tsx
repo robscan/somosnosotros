@@ -310,13 +310,12 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   async function leerCartel(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
-    const anterior = cartel?.foto;
     setCartel({ estado: "leyendo" });
     setLeyendo(true);
     try {
       const subida = await subir(archivo);
       if ("error" in subida) {
-        setCartel(falloAlSubir(anterior, subida.error, subida.motivo));
+        setCartel(falloAlSubir(imagen, subida.error, subida.motivo));
         return;
       }
       const url = subida.url;
@@ -345,7 +344,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       const faltan = [!v.titulo && "el nombre", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "dónde"].filter(Boolean) as string[];
       setCartel(leido(url, faltan));
     } catch {
-      setCartel((actual) => falloDeCorte(actual, anterior));
+      setCartel((actual) => falloDeCorte(actual, imagen));
     } finally {
       setLeyendo(false);
     }
