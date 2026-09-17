@@ -2,11 +2,12 @@
 
 /* 0. Elegir: Apple y Google primero, el correo detrás de su botón. Los tres del mismo alto, con el logo junto al título.
    Colores fijados por Apple (negro con logo y título blancos) y por Google (blanco, borde #747775, texto #1f1f1f); el
-   título a ~43 % del alto del botón, la proporción que pide Apple. */
+   título a ~43 % del alto del botón, la proporción que pide Apple. El subtítulo global ("Entras sin contraseña…") va
+   justo encima, con su propio margen (OL-061); aquí el margen es el que separa los botones entre sí de la fila anterior. */
 .opciones {
   display: grid;
   gap: var(--espacio-3);
-  margin-top: var(--espacio-4); /* se funde con el margen del título: 16 px, más que los 12 entre botones, y el título encabeza los tres */
+  margin-top: var(--espacio-4);
 }
 .opcion {
   display: flex;

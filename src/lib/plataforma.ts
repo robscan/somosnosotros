@@ -83,6 +83,16 @@ export function pasosInstalar(versionSafari: number | null): Paso[] {
   ];
 }
 
+/**
+ * El título de cada página termina en " · Somos Nosotros" (bueno para una pestaña o un resultado de Google: dice de
+ * qué sitio es). Abierta desde el icono, esa marca ya la pone la ventana misma (el nombre con el que se instaló) y
+ * el sistema operativo vuelve a sumarla en las suyas (Exposé, la lista de ventanas del Dock): se ve repetida
+ * ("Somos Nosotros" al inicio y al final). Dentro de la app instalada alcanza con el nombre de la pantalla (OL-059).
+ */
+export function tituloInstalada(titulo: string): string {
+  return titulo.replace(/ · Somos Nosotros$/, "") || "Somos Nosotros";
+}
+
 /** "en este teléfono" o "en esta computadora": el sistema sabe dónde está (decisión 9). */
 export function enEste(p: Plataforma | null): string {
   return p?.computadora ? "en esta computadora" : "en este teléfono";

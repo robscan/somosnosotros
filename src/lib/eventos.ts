@@ -34,6 +34,8 @@ export type Evento = {
   sitio_revelar_desde: string | null;
   /** Zona horaria (IANA) del evento: sus horas se leen y se muestran en ella (migración 0029). */
   zona: string;
+  /** La ciudad del evento (migración 0029: cualquier país); la del lugar, o la del pin en "otro sitio". */
+  ciudad: string;
 };
 
 /** Lo que la agenda necesita: el evento con el nombre de su lugar o su sitio. */
@@ -91,6 +93,57 @@ export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "si
   if (e.lugar?.nombre) return e.lugar.nombre;
   if (e.sitio_texto) return e.sitio_reservado ? `${e.sitio_texto} · sitio reservado` : e.sitio_texto;
   return "Sitio por confirmar";
+}
+
+export type DatosJsonLdEvento = {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  inicio: string;
+  fin: string | null;
+  imagen: string | null;
+  /** precio === null, para no inventar un número a partir de un texto libre ("$150", "taquilla"...). */
+  gratis: boolean;
+  sitioNombre: string;
+  /**
+   * La dirección pública del sitio: la del lugar (visible y no privado) o el texto de "otro sitio" cuando no es
+   * reservado. Sin ella no hay JSON-LD que mandar — Google exige `location.address` para mostrar el evento en el
+   * buscador (revisión de gestión de cambios, OL-059), y un sitio reservado o un lugar que un anónimo no ve no
+   * tiene ninguna dirección que sea correcto publicar.
+   */
+  direccionPublica: string;
+  /** La ciudad de esa misma dirección pública (la del lugar, o la del evento en "otro sitio") — sin ella, el
+   *  `streetAddress` repetía el nombre del sitio y no había ninguna localidad que decir (gestión de cambios). */
+  ciudadPublica: string;
+  /** Solo si es público (el lugar o el pin de "otro sitio"); un sitio reservado nunca manda su coordenada real aquí. */
+  sitioLat: number | null;
+  sitioLng: number | null;
+};
+
+/**
+ * JSON-LD tipo Event para la ficha (OL-059, bitácora 088): para que Google pueda mostrar fecha y lugar en el
+ * buscador. Solo campos públicos — nunca quién va, nunca la dirección de un sitio reservado (por eso recibe ya
+ * resueltos el nombre del sitio, su dirección pública y su coordenada, no el registro privado). Sin precio si no
+ * se pudo escribir como número: mejor omitirlo que inventarlo a partir de un texto libre.
+ */
+export function jsonLdEvento(e: DatosJsonLdEvento): Record<string, unknown> {
+  const location: Record<string, unknown> = { "@type": "Place", name: e.sitioNombre, address: { "@type": "PostalAddress", streetAddress: e.direccionPublica, addressLocality: e.ciudadPublica } };
+  if (e.sitioLat != null && e.sitioLng != null) location.geo = { "@type": "GeoCoordinates", latitude: e.sitioLat, longitude: e.sitioLng };
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: e.titulo,
+    startDate: e.inicio,
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    location,
+    url: `https://somosnosotros.org/eventos/${e.id}`,
+  };
+  if (e.fin) data.endDate = e.fin;
+  if (e.descripcion) data.description = e.descripcion;
+  if (e.imagen) data.image = [e.imagen];
+  if (e.gratis) data.isAccessibleForFree = true;
+  return data;
 }
 
 /** Lee el formulario del evento. Las horas del selector se leen en `zona`, la del sitio del evento. */

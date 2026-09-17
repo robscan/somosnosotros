@@ -14,13 +14,16 @@ const ORIGEN = "https://somosnosotros.org";
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const d = await cargarPersona(id);
-  if (!d) return { title: "Persona · Somos Nosotros" };
+  // Fuera del índice de Google (OL-059): la ficha se comparte por enlace directo, pero no es lo que alguien busca
+  // en Google, y así no hay que decidir a mano qué tanto de cada persona sale en un resultado de búsqueda.
+  if (!d) return { title: "Persona · Somos Nosotros", robots: { index: false, follow: false } };
   const n = d.eventos.length;
   const descripcion = `${n === 0 ? "Está en Somos Nosotros" : n === 1 ? "Va a 1 evento próximo" : `Va a ${n} eventos próximos`} · San Luis Potosí`;
   const imagen = d.perfil.foto ?? undefined;
   return {
     title: `${d.perfil.nombre} · Somos Nosotros`,
     description: descripcion,
+    robots: { index: false, follow: false },
     openGraph: { title: d.perfil.nombre, description: descripcion, url: `${ORIGEN}/personas/${d.perfil.id}`, type: "profile", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
     twitter: { card: "summary", title: d.perfil.nombre, description: descripcion, images: imagen ? [imagen] : undefined },
   };

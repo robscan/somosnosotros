@@ -29,7 +29,11 @@ Con la firma del founder, dio rama, bitácora, mismo OL-060 y el nombre de la mi
 - `npm run lint && npm run typecheck && npm test`: verdes (sin cambios en `src/` todavía; 319 pruebas, el mismo total que trae la rama desde `panel-mas-datos`).
 - Prototipo mirado en el navegador integrado a 390 px, ambos estados, con `front-visual`.
 
+## Firma
+
+El founder contestó **«firmo, adelante en coordinación con el gestor»** en el chat (2026-09-17). Sin cambios pedidos a las dos preguntas abiertas del prototipo (el proxy de "siguen volviendo" y la ventana de 30 días quedan como están).
+
 ## Pendiente
 
-- **Founder:** firmar el prototipo (o pedir cambios) — las dos preguntas abiertas al final del documento.
-- Con la firma, escribir la pantalla en `src/app/admin/page.tsx` (o donde corresponda) llamando a `panel_comunidad()`, y mandar el hash final a gestión de cambios para que revise y aplique la migración.
+- Avisar a gestión de cambios de la firma y esperar su revisión de la migración `20260917150000_panel_como_va.sql` y de `supabase/tests/panel_como_va.mjs` antes de escribir la pantalla — así lo pidió («cuando el founder firme, avísame y reviso la migración y sus pruebas antes de que escribas la pantalla»).
+- Con su visto bueno: escribir la pantalla en `src/app/admin/page.tsx` (o donde corresponda) llamando a `panel_comunidad()`, y mandar el hash final a gestión de cambios para que aplique la migración.

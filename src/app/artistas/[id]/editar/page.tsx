@@ -16,7 +16,7 @@ export default async function EditarArtista({ params }: { params: Promise<{ id: 
   const [{ data }, { data: liga }, ciudades] = await Promise.all([
     supabase?.from("artistas").select("*").eq("id", id).maybeSingle() ?? Promise.resolve({ data: null }),
     supabase?.from("artistas_cuentas").select("perfil_id").eq("artista_id", id).eq("perfil_id", actual.perfil.id).maybeSingle() ?? Promise.resolve({ data: null }),
-    cargarCiudadesDeArtistas(supabase),
+    cargarCiudadesDeArtistas(),
   ]);
   if (!data) notFound();
   const artista = data as Artista;

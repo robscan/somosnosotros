@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import Navegacion from "@/components/Navegacion";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
+import TituloInstalada from "@/components/TituloInstalada";
 import { GUION_AVISO_INSTALAR } from "@/lib/avisoInstalar";
 import "./globals.css";
 
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <MemoriaScroll />
         </Suspense>
+        <TituloInstalada />
       </body>
     </html>
   );

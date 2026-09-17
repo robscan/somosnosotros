@@ -4,7 +4,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import FormularioPerfil from "./FormularioPerfil";
 
-export const metadata = { title: "Editar perfil · Somos Nosotros" };
+export const metadata = { title: "Editar perfil · Somos Nosotros", robots: { index: false, follow: false } };
 
 /**
  * Editar perfil en pantalla completa (docs/rediseno/15, decisión 6, con la corrección del founder: con el teclado
