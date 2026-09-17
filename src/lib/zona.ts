@@ -15,3 +15,12 @@ export function zonaDePunto(lat: number | null | undefined, lng: number | null |
     return ZONA_INICIAL;
   }
 }
+
+/**
+ * La zona de un evento en otro sitio, como la calcula el servidor al guardarlo: la del punto del sitio, o la de la
+ * dirección reservada si lo es. Con ella se rellena el formulario al editar, para leer y escribir en la misma zona.
+ */
+export function zonaDelSitio(evento: { sitio_reservado?: boolean; sitio_lat?: number | null; sitio_lng?: number | null } | undefined, privado?: { lat: number | null; lng: number | null } | null): string {
+  if (!evento) return ZONA_INICIAL;
+  return evento.sitio_reservado ? zonaDePunto(privado?.lat, privado?.lng) : zonaDePunto(evento.sitio_lat, evento.sitio_lng);
+}

@@ -25,7 +25,7 @@ Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.
 ## Qué se hizo
 - **Migración 0029:**
   - `lugares.zona` y `eventos.zona`, con el nombre de la zona ("Europe/Madrid"). Lo que ya existe queda en la de la Ciudad de México, que es la de San Luis Potosí. Una zona que no es ("CST", "Marte/Olimpo") no entra.
-  - Un evento en un lugar tiene siempre la zona del lugar, la mande quien la mande. Si el lugar cambia de zona, sus eventos cambian con él, sean de quien sean.
+  - Un evento en un lugar tiene siempre la zona del lugar, la mande quien la mande. Si el lugar cambia de zona, sus eventos cambian con él, sean de quien sean, y **conservan la hora a la vista**: "19:00" sigue siendo las 19:00 en la zona nueva (inicio, fin y cuándo se revela el sitio). Sin eso, un evento de un lugar que pasaba de San Luis a Madrid se veía el «lun 03:00». También se habría movido 1 o 2 horas el de un lugar de Cancún, al volver a guardarse con su zona (lo encontró la revisión del PR #78).
   - `eventos.termina`: la hora de fin o, sin ella, las 00:00 del día siguiente en la zona del evento. La calcula la base y las listas filtran con ella. Así cada evento se oculta con su reloj.
   - **El panel, con la misma regla:** la 0028 había copiado la regla de las listas como `sin_pasar(inicio, fin)`, con el día de México, en 17 lugares de 8 funciones. Esas funciones vuelven a crearse tal cual, salvo `public.sin_pasar(e.inicio, e.fin)`, que pasa a ser `e.termina >= now()`. Un script copió cada función y otro comprobó que solo cambian esos renglones.
   - **Compatible con el código de hoy:**
@@ -96,7 +96,7 @@ Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.
   - el iPhone.
 
 ## Queda
-- **Del founder, en este orden:**
+- **Del gestor, con permiso del founder, en este orden:**
   1. aplicar la migración `20260917100000_zona_horaria.sql`;
   2. mezclar.
 
@@ -106,12 +106,37 @@ Toda la app leía y mostraba las horas con un solo reloj (`ZONA` en `lib/fechas.
   - hasta 24 tareas diarias en `vercel.json` (el plan gratuito deja 100), una por hora, cada una para las zonas donde son las 9:00. Pide separar la foto diaria de indicadores del panel, que va en la misma tarea.
 
   Mientras todo esté en México, no hace falta.
-- **Panel de administración:** ya cuenta y oculta con la zona de cada evento, pero sus listas todavía escriben la hora con el reloj de México (`formatearCuando` sin zona en `lib/panel.ts`). Para escribirla bien, `panel_eventos` tendría que devolver la zona: eso cambia lo que devuelve y pide borrar y volver a crear la función, así que no cabe en una migración que llega antes del código.
 - **Por qué no se partió en dos**, como sugirió el gestor si crecía (alta sin filtro de México y columna, por un lado; cálculos por zona, por otro): abrir el alta a otros países sin los cálculos mostraría mal las horas de esos lugares mientras llega la segunda parte. Es justo lo que la 067 decidió evitar. Son 48 archivos, la mayoría pruebas y llamadas que ahora pasan la zona.
 - **El lector de carteles** sigue diciendo "carteles de eventos culturales de San Luis Potosí, México" y calcula "hoy" con el reloj de México.
-- **En el formulario, un evento nuevo en otro sitio** avisa "Esa hora ya pasó" con el reloj de la ciudad inicial hasta que se guarda. Lo que se guarda sí va en la zona del pin.
+- **Pendiente para después, de la revisión del PR #78:**
+  - en zonas al oeste de Greenwich con cambio de horario a medianoche (Santiago, La Habana), `terminaDe` y `termina` difieren una hora el día del cambio;
+  - en Novedades, el "Hoy vas" de un evento al este de México sale bajo "Ayer" (`lib/novedades.ts`, que agrupa con el día de México);
+  - agrupar por día eventos de varias zonas puede dar dos títulos "Hoy";
+  - sin pin, el alta de lugar busca y abre el mapa en San Luis;
+  - si se revierte el PR con la migración aplicada, lo que se cree en un lugar de otra zona queda corrido.
 - **Lugares que ya existen:** todos quedan en la zona de la Ciudad de México. Uno en Cancún o Tijuana tomaría su zona al volver a guardarse.
 - **De la 067, siguen siendo decisiones del founder:**
   - ciudades con el mismo nombre en el mismo país;
   - abrir en la ciudad aproximada de quien llega de fuera.
 - **Hallado al probar la migración, fuera de esta pieza:** el administrador no puede dar de alta un lugar privado. La política de lectura de la 0024 no ve la fila recién creada cuando la app pide su id. Quedó como tarea aparte.
+
+## Arreglos de la revisión del PR #78
+El gestor hizo una revisión a fondo: cuatro lentes y cada hallazgo comprobado por un revisor escéptico. Pidió:
+- **Importante: la cascada de zona conserva la hora a la vista.** `lugares_zona_a_sus_eventos` ya no mueve solo la zona. Convierte `inicio`, `fin` y `sitio_revelar_desde` con `timezone(nueva, timezone(vieja, hora))`, usando la zona que tenía cada evento. El disparador de eventos vuelve a poner la zona del lugar, que es la misma, así que no deshace nada.
+- **Una sola zona en el formulario y en el servidor.** En otro sitio, el formulario leía las horas con la zona guardada, y el servidor, con la del pin. Editar un evento guardado antes de la migración con el pin en Madrid lo corría de hora y mandaba un aviso de cambio falso.
+  - `lib/zona.ts` tiene ahora `zonaDelSitio`: la zona del punto, o de la dirección reservada, con la misma cuenta del servidor. Las páginas de editar y duplicar se la pasan al formulario.
+  - El formulario pide la zona al servidor (`zonaDelPunto`) cada vez que cambia el pin: hoja o borrador.
+  - La hora sugerida sigue a la zona del sitio mientras nadie la toque, al elegir un lugar o un pin. "Hoy/Mañana" y "Esa hora ya pasó" usan esa misma zona.
+- **El panel escribe la hora de cada evento en su zona.** `panel_eventos` no devuelve la zona. `admin/consultas` la lee aparte, en tandas de 100, sin tocar SQL, y `detalleEvento` la pasa a `formatearCuando`.
+- **El banco de la base, en el repo:** `supabase/tests/zona_horaria.mjs`, con la sesión en UTC (PGlite 0.5 toma la zona del sistema) y el caso de la cascada.
+
+**Evidencia de los arreglos:**
+- **Banco:** 42 comprobaciones en verde.
+  - La cascada pasa por San Luis → Madrid → Bogotá → Monterrey: se conservan las 19:00, el fin a las 21:00 y la revelación a las 16:00, y `termina` se recalcula a la medianoche de cada zona.
+  - Volver a guardar el lugar sin cambiar de zona no mueve nada.
+  - **Con la migración de antes**, en una copia temporal, fallan justo las 4 comprobaciones de Madrid y Bogotá: «03:00» y `termina` corrido casi un día. Monterrey pasa por coincidencia (mismo desfase que México). Con `FORZAR_FALLO=1` el banco falla.
+  - El banco del panel sigue en 95.
+- **Pantallas a 390×844**, con el respaldo local y una sesión de administrador inventada, sin producción:
+  - **"Editar evento"** de un picnic en el Retiro guardado con la zona de México: Cuándo dice "dom 20 de sep · 03:00", la hora de Madrid. Al pulsar "Guardar cambios", el servidor intentó guardar el mismo instante (`2026-09-20T01:00Z`) con la zona `Europe/Madrid`. El respaldo rechazó la escritura.
+  - **"Publicar un evento"** en un lugar de Madrid, a las 22:38 del 16 en San Luis (6:38 del 17 en Madrid): sugiere "Hoy · 19:00" (el 17). Con el reloj de México habría dicho "Mañana".
+- **Verificación:** lint (el aviso viejo), tipos, 278 pruebas y build en verde. Pruebas nuevas: la zona del sitio, y una hora del panel en Madrid.

@@ -52,6 +52,11 @@ function zonaDelEvento(entrada: Entrada, lugar: LugarDelEvento): string {
   return zonaDePunto(numero(entrada[reservado ? "privado_lat" : "sitio_lat"]), numero(entrada[reservado ? "privado_lng" : "sitio_lng"]));
 }
 
+/** La zona de un punto, para que el formulario lea las horas en la misma zona en la que las leerá el servidor al guardar. */
+export async function zonaDelPunto(lat: number, lng: number): Promise<string> {
+  return zonaDePunto(lat, lng);
+}
+
 /** La ciudad del evento: la de su lugar; en otro sitio, la del pin (Mapbox); si no se supo, la inicial. */
 function ciudadDe(datos: DatosEvento, lugar: LugarDelEvento): string {
   if (!datos.lugar_id) return datos.ciudad || CIUDAD_INICIAL.nombre;

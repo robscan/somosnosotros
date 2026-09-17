@@ -7,6 +7,7 @@ import type { QuienItem } from "@/lib/artistas";
 import type { Evento } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { zonaDelSitio } from "@/lib/zona";
 import FormularioEvento from "../FormularioEvento";
 import { crearEvento } from "../acciones";
 
@@ -40,7 +41,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
       <Barra cerrar={{ href: volver, texto: "Volver" }} />
       <h1 className="titulo">{base ? "Duplicar evento" : "Publicar un evento"}</h1>
       <p className="subtitulo">{base ? "Mismo evento, nueva fecha. Cambia lo que haga falta." : "Con el nombre y dónde basta. Lo demás ya está resuelto."}</p>
-      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} />
+      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} zonaSitio={zonaDelSitio(base)} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} />
     </main>
   );
 }

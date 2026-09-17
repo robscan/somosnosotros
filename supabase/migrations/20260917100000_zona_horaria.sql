@@ -44,11 +44,19 @@ $$;
 create trigger eventos_zona_del_lugar before insert or update of lugar_id, zona on public.eventos
   for each row execute function public.eventos_zona_del_lugar();
 
--- Si el lugar cambia de zona (se corrigió su punto), sus eventos cambian con él, sean de quien sean.
+-- Si el lugar cambia de zona (se corrigió su punto, o un lugar de Cancún deja la de México por defecto al volver a
+-- guardarse), sus eventos cambian con él, sean de quien sean, y conservan la hora a la vista: sus horas se escribieron en
+-- la zona vieja, así que "19:00" sigue siendo las 19:00 en la nueva (cambia el instante, no la hora de pared). En un SET,
+-- `zona` y las horas son las de antes del cambio. El disparador de eventos vuelve a poner la zona del lugar: la misma.
 create function public.lugares_zona_a_sus_eventos() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
-  update public.eventos set zona = new.zona where lugar_id = new.id and zona <> new.zona;
+  update public.eventos e set
+    inicio = pg_catalog.timezone(new.zona, pg_catalog.timezone(e.zona, e.inicio)),
+    fin = pg_catalog.timezone(new.zona, pg_catalog.timezone(e.zona, e.fin)),
+    sitio_revelar_desde = pg_catalog.timezone(new.zona, pg_catalog.timezone(e.zona, e.sitio_revelar_desde)),
+    zona = new.zona
+  where e.lugar_id = new.id and e.zona <> new.zona;
   return null;
 end;
 $$;
