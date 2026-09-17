@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import ChipCiudad from "./Ciudad";
@@ -24,6 +24,8 @@ type Props = {
   ciudades: CiudadConDatos[];
   /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan). */
   hoy: string;
+  /** Lo que va entre la cabecera y la lista: la tarjeta "Activa los avisos" de la app instalada (docs/rediseno/17, decisión 4). */
+  antes?: ReactNode;
 };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 /** Lo que la agenda recuerda al salir a una ficha y volver: pestaña, día elegido y búsqueda (decisión 17 de 02). */
@@ -33,7 +35,7 @@ type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: bo
  * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
-export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy }: Props) {
+export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, antes }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
   // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
@@ -179,6 +181,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
           ))}
         </Pestanas>
       </div>
+      {antes}
       {cuerpo}
     </>
   );

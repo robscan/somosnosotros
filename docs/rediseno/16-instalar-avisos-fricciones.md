@@ -1,4 +1,4 @@
-# Instalar la app y activar los avisos · lista de fricciones (v1.1: propuestas aceptadas por el founder; V1 y T1 decididas; calendario para firma)
+# Instalar la app y activar los avisos · lista de fricciones (v1.2: firmada por el founder el 2026-09-16; construida en la rama instalar-y-avisos, bitácora 064)
 
 **Fecha:** 2026-09-16 (noche) · **Pedido:** el founder vio el icono de instalar de Chrome y propuso "un objeto arriba cuando se pueda instalar la app" y "un flujo para que activen las notificaciones". Al revisar la v1 añadió que los avisos también pueden venir del calendario, para quien no quiere alertas de ningún tipo, y que el botón de calendario de la ficha debe decir que agrega al calendario ("hoy pareciera que mostrará un calendario") · **Pantallas:** la pregunta de avisos tras "Voy" o "Seguir", la hoja "Instala Somos Nosotros", la app instalada al abrirla, Ajustes › Avisos, la barra de Seguir, Novedades y el botón de calendario de la ficha de evento · **Mirada:** simulador de iPhone 15 Pro con iOS 26.3 (393×852) contra producción, con un usuario desechable (borrado al terminar: el evento volvió a 0 asistentes), el archivo de calendario de un evento real y lectura del código · **Base:** la fricción F4 firmada en [01](01-inicio-fricciones.md) (el aviso de instalar, nunca antes del contenido) y la decisión 10 de [02](02-inicio-flujo-y-estados.md) (avisos con consentimiento por canal) · **Decisiones:** [17-instalar-avisos-flujo-y-estados.md](17-instalar-avisos-flujo-y-estados.md) · **Prototipo:** [prototipos/instalar-avisos.html](prototipos/instalar-avisos.html) (publicado para el iPhone en https://claude.ai/artifact/LHH9XsGDzf6V5CFk5CwfV4) · **Quién decide:** el founder corrige, tacha y firma.
 
@@ -6,7 +6,7 @@
 - "Ok, tomo tus propuestas": de acuerdo con I1 a C3.
 - **V1 = A:** nada arriba para quien visita sin cuenta.
 - **La app de la tienda se detiene** (T1): el iPhone se queda con la app instalada desde Safari.
-- Añadió el calendario (K1 a K3, abajo), que queda para firma en el prototipo.
+- Añadió el calendario (K1 a K3, abajo) y lo firmó en el prototipo v1.1: «Me quedo con tu propuesta».
 
 ## Diagnóstico
 
@@ -26,7 +26,7 @@ Para quien no quiere alertas, el recordatorio es su propio calendario. El botón
 | # | Dónde | Fricción | Ley | Severidad | Propuesta en una línea |
 |---|---|---|---|---|---|
 | I1 | iPhone · Safari | "En el teléfono" termina en "Sin avisos… Este navegador no puede recibir avisos"; la hoja de instalar nunca sale y se guarda un "no" | Peak-End · Evidencia | Alta | Primero se mira si es un iPhone sin la app y sale la hoja; un "sí" nunca se guarda como "no" |
-| I2 | iPhone · hoja de instalar | "Dos toques: toca Compartir, abajo al centro". En iOS 26 son cinco: ··· › Compartir › Ver más › Agregar a pantalla de inicio › Agregar | Evidencia · Jakob | Alta | Los pasos del Safari de la persona, con sus iconos |
+| I2 | iPhone · hoja de instalar | "Dos toques: toca Compartir, abajo al centro". En iOS 26 son cinco: ··· › Compartir › Ver más › Agregar a Inicio › Agregar | Evidencia · Jakob | Alta | Los pasos del Safari de la persona, con sus iconos |
 | I3 | iPhone · al cerrar la hoja | Dice "✓ Te avisamos en este teléfono ese día" antes de instalar (hoy no se ve por I1; saldría al arreglarlo) | Evidencia | Alta | "Falta un paso", sin palomita, con lo que falta |
 | A1 | App instalada | Al abrirla nada pide los avisos: "Después: al abrirla, acepta los avisos" no tiene nada detrás | Peak-End · Zeigarnik | Alta | Una tarjeta arriba de la agenda, una vez: "Activa los avisos en este teléfono · Activar" |
 | E1 | Ajustes, Seguir, Novedades | Leen la cuenta, no el teléfono: "Activados en este teléfono" sin estar dado de alta; el primer toque lo apaga; apagar en un teléfono apaga todos | Evidencia | Alta | Cada teléfono dice su estado real; la cuenta guarda el consentimiento |
@@ -52,7 +52,7 @@ Para quien no quiere alertas, el recordatorio es su propio calendario. El botón
 **Decisión:** ☑ de acuerdo (founder, 2026-09-16)
 
 ### I2 · Los pasos de un Safari que ya no existe
-**Qué se ve.** La hoja dice "Dos toques": "Toca Compartir · Abajo, al centro" y "Elige Agregar a pantalla de inicio", con una barra de Safari dibujada con Compartir al centro. En Safari de iOS 26 (medido en el simulador) la barra de abajo trae Atrás, la dirección y ···. Compartir está dentro de ···. "Agregar a pantalla de inicio" está escondido tras "Ver más", y al final hay que tocar "Agregar". Son cinco toques: ··· › Compartir › Ver más › Agregar a pantalla de inicio › Agregar.
+**Qué se ve.** La hoja dice "Dos toques": "Toca Compartir · Abajo, al centro" y "Elige Agregar a pantalla de inicio", con una barra de Safari dibujada con Compartir al centro. En Safari de iOS 26 (medido en el simulador) la barra de abajo trae Atrás, la dirección y ···. Compartir está dentro de ···. La opción está escondida tras "Ver más" y, en el iPhone en español, se llama "Agregar a Inicio" (medido al construir); al final hay que tocar "Agregar". Son cinco toques: ··· › Compartir › Ver más › Agregar a Inicio › Agregar.
 **Por qué duele.** La persona busca un botón que no está y abandona en el primer paso. Evidencia: la hoja afirma algo que la pantalla contradice.
 **Propuesta.** Los pasos del Safari que la persona tiene: el sistema lo sabe por la versión del navegador. En iOS 26, los cinco toques con los iconos reales (···, Compartir, Ver más, el cuadro con +, Agregar en azul), uno por renglón y sin frases de ayuda. En versiones anteriores, Compartir abajo al centro › Agregar a pantalla de inicio › Agregar. Al final, "Después: ábrela y toca Activar".
 **Decisión:** ☑ de acuerdo (founder, 2026-09-16)
@@ -66,7 +66,7 @@ Para quien no quiere alertas, el recordatorio es su propio calendario. El botón
 ### A1 · Al abrir la app instalada, nada pide los avisos
 **Qué se ve.** Tras instalar, la app abre la agenda con la sesión puesta y nada más. La hoja había prometido "Después: al abrirla, acepta los avisos". El único camino es ir a Mi perfil › Ajustes › En el teléfono.
 **Por qué duele.** Peak-End: el final del flujo que la persona empezó (quiero que me recuerden) no existe. Zeigarnik: lo que quedó a medias debe recordarse con el paso exacto que falta.
-**Propuesta.** El objeto arriba que propusiste, en el momento en que tiene motivo. Una tarjeta en lo alto de la agenda, con el dibujo de "Completar" de Mi perfil (icono, frase, botón): "Activa los avisos en este teléfono · Para recordarte lo que vas" con [Activar] y ✕.
+**Propuesta.** El objeto arriba que propusiste, en el momento en que tiene motivo. Una tarjeta en lo alto de la agenda, con el dibujo de "Completar" de Mi perfil (icono, frase, botón): "Activa los avisos en este teléfono · Para recordarte lo que vas y lo que sigues" con [Activar] y ✕.
 - **Cuándo sale:** solo si la persona pidió avisos en el teléfono y este teléfono aún no tiene permiso.
 - **Activar:** el iPhone exige un toque para mostrar su permiso, y es este (medido: dentro de la app instalada, el permiso sale al tocar).
 - **Con Permitir:** una línea "Listo: te avisamos en este teléfono" y la tarjeta se va.
@@ -105,19 +105,19 @@ Para quien no quiere alertas, el recordatorio es su propio calendario. El botón
 - **Icono:** el de agregar al calendario, un calendario con un + en la esquina (la convención de Apple y de Google). Se distingue del calendario con + al centro de "Publicar evento".
 - Al tocarlo pasa lo mismo que hoy: la hoja del calendario del teléfono, ya con la alerta de K2.
 
-**Tu decisión:** ☐ de acuerdo ☐ cambia: ______
+**Decisión:** ☑ de acuerdo (founder, 2026-09-16)
 
 ### K2 · El evento entra al calendario sin alerta
 **Qué se ve (medido).** Tocar "Calendario" abre la hoja del calendario del iPhone, en Safari y en la app instalada: título, lugar, "jueves 17 de septiembre, 19:00 a 21:00", la liga y **"Alerta: Ninguna"**. El archivo que entregamos ([calendario/route.ts](../../src/app/eventos/[id]/calendario/route.ts)) no trae recordatorio.
 **Por qué duele.** Quien agrega el evento siente "ya no se me olvida", y el calendario no le va a avisar. Es la promesa del botón y hoy no se cumple.
 **Propuesta.** El evento lleva **una alerta 1 hora antes**. La persona la ve en la fila Alerta y la puede cambiar ahí mismo antes de agregar. En Android, **por comprobar en un teléfono**: Chrome descarga el archivo y no siempre lo abre el calendario. Si pasa, en Android el botón abre el evento en Google Calendar.
-**Tu decisión:** ☐ de acuerdo (1 hora antes) ☐ otra alerta: ______
+**Decisión:** ☑ de acuerdo, 1 hora antes (founder, 2026-09-16)
 
 ### K3 · "No, gracias" termina sin la alternativa
 **Qué se ve.** Tras "No, gracias", la tarjeta dice "Sin avisos. Si cambias de idea, está en Mi perfil." y nada más.
 **Por qué duele.** Peak-End: el final negativo también se diseña. Quien no quiere alertas es justo quien más gana con su propio calendario, y en ese momento no se lo ofrecemos.
 **Propuesta.** "Sin avisos." y, debajo, la misma línea de C1 con otro contenido: "A mi calendario · Con una alerta 1 hora antes" y [Agregar], que abre la hoja del calendario. Un toque, sin insistir: si no lo toca, la tarjeta se cierra como hoy.
-**Tu decisión:** ☐ de acuerdo ☐ cambia: ______
+**Decisión:** ☑ de acuerdo (founder, 2026-09-16)
 
 ### V1 · Quien visita sin cuenta
 **Qué se ve.** La agenda sin nada que ofrezca instalar. Chrome de escritorio pone su propio icono en la barra de direcciones (el que viste) y Chrome de Android lo ofrece en su menú. En Safari del iPhone no hay nada.

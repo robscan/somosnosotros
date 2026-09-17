@@ -1,4 +1,4 @@
-/* Hoja "Instala Somos Nosotros": sobre ui/Hoja; aquí solo lo propio */
+/* Hoja "Instala Somos Nosotros": sobre ui/Hoja; aquí solo lo propio. Cada paso es un grid con áreas (número, icono, qué, dónde). */
 .titulo {
   font-size: var(--letra-2xl);
   margin-bottom: var(--espacio-1);
@@ -7,166 +7,102 @@
   color: var(--texto-suave);
   margin-bottom: var(--espacio-3);
 }
+.pasos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  overflow: hidden;
+}
 .paso {
   display: grid;
-  grid-template-columns: 44px 1fr;
+  grid-template-columns: 20px 60px 1fr;
   grid-template-areas:
-    "glifo num"
-    "glifo que"
-    "glifo donde"
-    "glifo muestra";
+    "num glifo que"
+    "num glifo donde";
   column-gap: var(--espacio-3);
-  align-items: start;
+  align-items: center;
+  min-height: 56px;
+  padding: 6px 14px;
 }
 .paso + .paso {
-  margin-top: var(--espacio-4);
-}
-.glifo {
-  grid-area: glifo;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-  background: var(--fondo);
-}
-.glifo svg {
-  width: 26px;
-  height: 26px;
-  color: #0a7aff; /* azul de iOS: el glifo se reconoce tal como aparece en Safari */
+  border-top: 1px solid var(--borde);
 }
 .num {
   grid-area: num;
-  margin-bottom: 2px;
   color: var(--texto-suave);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: var(--letra-sm);
+  font-weight: 700;
 }
-.que {
+.glifo,
+.glifoSolo {
+  grid-area: glifo;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+}
+.glifo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--fondo-suave);
+  color: var(--texto);
+}
+.glifo svg {
+  width: 22px;
+  height: 22px;
+}
+.paso > b {
   grid-area: que;
   font-size: var(--letra-lg);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
   line-height: 1.15;
 }
-.donde {
+.paso > small {
   grid-area: donde;
-  margin-top: 2px;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-.safari {
-  grid-area: muestra;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  align-items: center;
-  margin-top: var(--espacio-2);
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: var(--fondo-suave);
+/* Los tres puntos y el botón Agregar en la letra del sistema: así se reconocen tal como salen en Safari. */
+.puntos,
+.puntosTexto {
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
 }
-.safari svg {
-  display: block;
-  width: 20px;
-  height: 20px;
-  margin: 0 auto;
-  color: #0a7aff;
+.puntos {
+  font-size: 20px;
 }
-.aqui {
-  position: relative;
-  display: block;
-}
-.aqui::before {
-  content: "";
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  border: 2px solid var(--primario);
-}
-.filaIos {
-  grid-area: muestra;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: var(--espacio-2);
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--fondo-suave);
-  font-size: var(--letra-sm);
-}
-.filaIos span {
-  flex: 1;
-}
-.filaIos svg {
-  width: 22px;
-  height: 22px;
-  flex: none;
-  color: var(--texto);
-}
-.resultado {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-3);
-  margin-top: var(--espacio-4);
-  padding-top: var(--espacio-3);
-  border-top: 1px solid var(--borde);
-}
-.resultado p {
-  margin: 0;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.35;
-}
-.resultado b {
-  color: var(--texto);
-}
-.iconoApp {
-  width: 52px;
-  height: 52px;
-  flex: none;
+.agregar {
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: var(--texto);
-  color: var(--fondo);
-  font-size: 0.6875rem;
-  font-weight: 800;
-  font-variation-settings: var(--ancho-titulo);
-  letter-spacing: -0.01em;
-  line-height: 1;
-  text-align: center;
+  width: 60px;
+  height: 30px;
+  border-radius: 999px;
+  background: #0a84ff; /* azul de iOS */
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
 }
 .despues {
   display: grid;
   grid-template-columns: 44px 1fr;
-  grid-template-areas:
-    "glifo titulo"
-    "glifo texto";
   column-gap: var(--espacio-3);
   align-items: center;
   margin-top: var(--espacio-3);
-  padding-top: var(--espacio-3);
-  border-top: 1px solid var(--borde);
+  color: var(--texto-suave);
   font-size: var(--letra-sm);
-}
-.despues .glifo svg {
-  width: 24px;
-  height: 24px;
-  color: var(--texto);
+  line-height: 1.35;
 }
 .despues b {
-  grid-area: titulo;
-  align-self: end;
-  color: var(--texto-suave);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: var(--texto);
 }
-.despues > span:last-child {
-  grid-area: texto;
-  align-self: start;
+.icono {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--borde);
 }

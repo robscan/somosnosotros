@@ -11,7 +11,8 @@ self.addEventListener("push", (e) => {
     self.registration.showNotification(datos.titulo, {
       body: datos.cuerpo,
       icon: "/icono-192.png",
-      badge: "/icono-192.png",
+      // Android pinta el icono chico solo con su silueta: va el SN transparente (docs/diseno/logotipo/insignia.py), no el cuadro.
+      badge: "/icono-aviso.png",
       data: { url: datos.url },
       tag: datos.url,
     }),

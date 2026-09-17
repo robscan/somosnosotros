@@ -1,3 +1,4 @@
+import ActivarAvisos from "@/components/ActivarAvisos";
 import AgendaInicio from "@/components/AgendaInicio";
 import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
@@ -62,7 +63,15 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
           {aviso}
         </p>
       )}
-      <AgendaInicio eventos={eventos} seguidos={seguidos} eventosSeguidos={eventosSeguidos} ciudad={ciudad} ciudades={ciudades} hoy={diaLocal(new Date())} />
+      <AgendaInicio
+        eventos={eventos}
+        seguidos={seguidos}
+        eventosSeguidos={eventosSeguidos}
+        ciudad={ciudad}
+        ciudades={ciudades}
+        hoy={diaLocal(new Date())}
+        antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
+      />
       <Publicar hayLugares={hayLugares} />
       <NavInferior />
     </main>

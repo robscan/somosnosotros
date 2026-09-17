@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendarioMas, IconoCampana, IconoPersonas, IconoReloj, IconoTelefono } from "@/components/ui/Iconos";
+import { IconoCalendarioMas, IconoCampana, IconoPersonas, IconoReloj } from "@/components/ui/Iconos";
 import { agruparNovedades } from "@/lib/novedades";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import ficha from "@/components/ui/Ficha.module.css";
 import { cargarNovedades } from "./consultas";
 import MarcarVistas from "./MarcarVistas";
+import TelefonoAun from "./TelefonoAun";
 import styles from "./novedades.module.css";
 
 export const metadata = { title: "Novedades · Somos Nosotros" };
@@ -59,13 +60,7 @@ export default async function Novedades() {
           </section>
         ))
       )}
-      {!actual.perfil.avisos_push && (
-        <p className={styles.telefono}>
-          <IconoTelefono width={22} height={22} />
-          <span>Esto te llega por correo. En el teléfono aún no.</span>
-          <Link href="/ajustes">Activar</Link>
-        </p>
-      )}
+      <TelefonoAun correo={actual.perfil.avisos_correo === true} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
     </main>
   );
 }

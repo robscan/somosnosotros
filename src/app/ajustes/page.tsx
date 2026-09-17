@@ -11,6 +11,7 @@ import ficha from "@/components/ui/Ficha.module.css";
 import AvisosPerfil from "@/app/perfil/AvisosPerfil";
 import ReservaPerfil from "@/app/perfil/ReservaPerfil";
 import { borrarMiCuenta, cerrarSesion } from "@/app/perfil/acciones";
+import InstalarApp from "./InstalarApp";
 import styles from "./ajustes.module.css";
 
 export const metadata = { title: "Ajustes · Somos Nosotros" };
@@ -53,7 +54,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
 
         <h2>Avisos</h2>
         <ul className={styles.tarjeta}>
-          <AvisosPerfil correo={perfil.avisos_correo === true} telefono={perfil.avisos_push === true} correoTexto={correo} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
+          <AvisosPerfil correo={perfil.avisos_correo === true} correoTexto={correo} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
         </ul>
 
         <h2>Cuenta</h2>
@@ -78,6 +79,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
 
         <h2>Somos Nosotros</h2>
         <ul className={styles.tarjeta}>
+          <InstalarApp />
           <li>
             <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={ORIGEN} className={styles.fila}>
               <IconoCompartir width={20} height={20} />

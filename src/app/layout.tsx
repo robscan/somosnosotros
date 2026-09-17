@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
+import Script from "next/script";
 import Navegacion from "@/components/Navegacion";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
+import { GUION_AVISO_INSTALAR } from "@/lib/avisoInstalar";
 import "./globals.css";
 
 /**
@@ -43,6 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={bricolage.variable}>
       <body>
+        {/* Guarda el aviso de instalar de Chrome, Edge o Android antes de que cargue React: llega una sola vez. */}
+        <Script id="aviso-instalar" strategy="beforeInteractive">
+          {GUION_AVISO_INSTALAR}
+        </Script>
         {children}
         <RegistroSW />
         <Navegacion />

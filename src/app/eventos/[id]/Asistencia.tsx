@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
 import { IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
+import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
 import styles from "./ficha.module.css";
 
@@ -26,13 +27,19 @@ const OK = <IconoOk width={20} height={20} />;
 /**
  * Barra inferior pegajosa: la única acción primaria de la ficha. Sin decisión: "Me interesa" en texto y "Voy" lleno.
  * Con decisión, la barra pasa a estado: "✓ Voy · Ya estás en la lista" + Cancelar, o "✓ Me interesa" + Voy.
- * Sin sesión, los botones llevan a entrar y la decisión se aplica al volver. Tras el primer Voy emerge la hoja de avisos.
+ * Sin sesión, los botones llevan a entrar y la decisión se aplica al volver. La hoja de avisos sale tras el toque de
+ * "Voy" (o al volver de entrar tras tocarlo), nunca sola al abrir la ficha (decisión 6 de docs/rediseno/17).
  */
 export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avisosPreguntado, correo, llavePush }: Props) {
   const [pendiente, iniciar] = useTransition();
   const [estado, fijarOptimista] = useOptimistic<EstadoAsistencia, EstadoAsistencia>(miEstado, (_a, nuevo) => nuevo);
-  // La hoja de avisos aparece una sola vez, tras el primer "Voy" (también si venía de entrar con ?accion=voy).
-  const [hoja, setHoja] = useState(!avisosPreguntado && miEstado === "voy" && conSesion);
+  const [hoja, setHoja] = useState(false);
+  const ruta = `/eventos/${eventoId}`;
+
+  // Volvió de entrar tras tocar "Voy": la pregunta continúa ese toque, una sola vez.
+  useEffect(() => {
+    if (conSesion && miEstado === "voy" && !avisosPreguntado && tomarIntencion(ruta)) queueMicrotask(() => setHoja(true));
+  }, [conSesion, miEstado, avisosPreguntado, ruta]);
 
   function cambiar(nuevo: EstadoAsistencia) {
     iniciar(async () => {
@@ -41,7 +48,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
       if (nuevo === "voy" && !avisosPreguntado) setHoja(true);
     });
   }
-  const entrar = (accion: string) => `/entrar?siguiente=${encodeURIComponent(`/eventos/${eventoId}?accion=${accion}`)}`;
+  const entrar = (accion: string) => `/entrar?siguiente=${encodeURIComponent(`${ruta}?accion=${accion}`)}`;
 
   let contenido: React.ReactNode;
   if (!conSesion) {
@@ -50,7 +57,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
         <Link href={entrar("me_interesa")} className={styles.interesa}>
           Me interesa
         </Link>
-        <Link href={entrar("voy")} className={ficha.primaria}>
+        <Link href={entrar("voy")} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
           Voy
         </Link>
       </>
@@ -99,7 +106,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, avis
       <div className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ""}`}>{contenido}</div>
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(false)}>
-          <ConsentimientoAvisos contexto="voy" titulo={titulo} correo={correo} llavePush={llavePush} onListo={() => setHoja(false)} />
+          <ConsentimientoAvisos contexto="voy" titulo={titulo} correo={correo} llavePush={llavePush} onListo={() => setHoja(false)} calendarioUrl={`${ruta}/calendario`} />
         </Hoja>
       )}
     </>
