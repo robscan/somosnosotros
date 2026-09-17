@@ -1,8 +1,8 @@
-# Administración · flujo, estados y decisiones (v1: para la firma del founder)
+# Administración · flujo, estados y decisiones (v1: firmadas por el founder el 2026-09-16)
 
 **Fecha:** 2026-09-16 (noche) · **Base:** [18-administracion-fricciones.md](18-administracion-fricciones.md) · **Carta:** [PRINCIPIOS_UX.md](../PRINCIPIOS_UX.md) · **Canon:** filas de Ajustes ([13](13-novedades-perfil-alta-flujo-y-estados.md), decisión 6), formularios ([15](15-formularios-canon-flujo-y-estados.md)), memoria de pantalla (bitácora [043](../bitacora/2026/09/043-memoria-de-pantalla-y-buscador.md)) · **Prototipo navegable:** [prototipos/administracion.html](prototipos/administracion.html) (publicado para el iPhone en https://claude.ai/artifact/PcgGzqamg82XpZ5yDFkTUn) · **Quién firma:** el founder.
 
-Las decisiones de abajo dan por hechas las opciones recomendadas de D1 (solo las cuentas de origen cambian el rol), D2 (correo oculto en la lista, completo al tocar "Ver") y D3 (se guarda el último día que alguien abrió la app). Si el founder elige otra, cambian las decisiones 9, 13 y 14 y nada más.
+**Firma del founder (2026-09-16, noche):** «Firmo», con D1 = B (solo las cuentas de origen cambian el rol), D2 = A (correo oculto en la lista, completo al tocar "Ver") y D3 = A (se guarda solo el último día que alguien abrió la app).
 
 **Cuentas de origen:** las que nacen administradoras porque su correo está en `admin_correos`. Hoy, las del founder. En pantalla se dice "desde el inicio" y "quien fundó Somos Nosotros".
 
