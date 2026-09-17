@@ -2,19 +2,15 @@
 
 import type { ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
-import { textoDistancia } from "@/lib/agenda";
 import { enOrden, tarjetaLugar, type Destacado } from "@/lib/destacados";
-import { SIN_FOTO } from "@/lib/imagen";
-import { calleCorta, etiquetaTipo, filtrarLugares, ordenarLugares, textoProximo, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
+import { etiquetaTipo, filtrarLugares, ordenarLugares, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
 import { Chips } from "./ui/Chip";
 import Destacados from "./Destacados";
-import Deslizable from "./ui/Deslizable";
-import { IconoCalendario, IconoOk, IconoPin } from "./ui/Iconos";
+import RenglonLugar from "./RenglonLugar";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
 import { CampoBuscar } from "@/components/ui/Buscador";
 import comun from "./Lista.module.css";
-import renglon from "./Renglon.module.css";
 import styles from "./ListaLugares.module.css";
 
 type Props = {
@@ -80,31 +76,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       </p>
       <ul>
         {lista.map((l) => (
-          <Deslizable key={l.id} href={`/lugares/${l.id}`} className={renglon.renglon} acciones={seguir.acciones(l.id, l.nombre)}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-            <img src={l.portada ?? SIN_FOTO} alt="" className={renglon.foto} />
-            <span className={renglon.titulo}>{l.nombre}</span>
-            <span className={`${renglon.meta} ${renglon.metaColumna}`}>
-              {seguir.sigo(l.id) && (
-                <span className={renglon.estado}>
-                  <IconoOk width={14} height={14} />
-                  Sigues
-                </span>
-              )}
-              {l.privado && <span className={renglon.sello}>Solo tú lo ves</span>}
-              <span className={renglon.lugar}>
-                <IconoPin width={15} height={15} />
-                {calleCorta(l.direccion) || "Sin dirección"}
-                {km.has(l.id) ? ` · ${textoDistancia(km.get(l.id)!)}` : ""}
-              </span>
-              {l.proximo && (
-                <span>
-                  <IconoCalendario width={15} height={15} />
-                  <b>{textoProximo(l.proximo)}</b>
-                </span>
-              )}
-            </span>
-          </Deslizable>
+          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} sigo={seguir.sigo(l.id)} acciones={seguir.acciones(l.id, l.nombre)} />
         ))}
       </ul>
       {seguir.extras}

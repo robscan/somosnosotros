@@ -6,7 +6,7 @@ import { etiquetaArtista } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
 import { calleCorta, etiquetaTipo } from "@/lib/lugares";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
-import { IconoDisciplina } from "./ListaArtistas";
+import { IconoDisciplina } from "./RenglonArtista";
 import { Chip, Chips, Cuenta } from "./ui/Chip";
 import { IconoPin } from "./ui/Iconos";
 import renglon from "./Renglon.module.css";
