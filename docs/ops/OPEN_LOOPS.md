@@ -5,7 +5,7 @@
 **Fuente única de estado: este archivo.** Definición: [`docs/DEFINICION.md`](../DEFINICION.md). Plan: [`docs/PLAN.md`](../PLAN.md).
 
 ## Ahora
-- **OL-043 · Entrar con Apple y Google.** Pedido del founder (2026-09-16, noche): «Mi principal barrera para registro de usuarios sigue siendo envío de código a mail, se ha vuelto muy importante habilitar log in con apple y google».
+- **OL-043 · Entrar con Apple y Google.** Pedido del founder (2026-09-16, noche): «Mi principal barrera para registro de usuarios sigue siendo envío de código a mail, se ha vuelto muy importante habilitar log in con apple y google». **En producción ([PR #75](https://github.com/robscan/somosnosotros/pull/75), mezclado el 2026-09-17 por orden del founder): Apple y Google ya salen en Entrar; falta la prueba en el iPhone real (Safari y app instalada) y decidir la foto de Google.**
   - **Construido en la rama `entrar-apple-google`, con commit local y sin push** (bitácora [069](../bitacora/2026/09/069-entrar-con-apple-y-google.md)):
     - Entrar con "Continuar con Apple", "Continuar con Google" y "Continuar con tu correo"; el correo se abre en su lugar al tocarlo;
     - primero el de la casa (Apple en iPhone y Mac, Google en lo demás);
