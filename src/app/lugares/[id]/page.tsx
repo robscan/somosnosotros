@@ -189,7 +189,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         )
       )}
 
-      {lugar.portada && <Cartel src={lugar.portada} alt={`Portada de ${lugar.nombre}`} />}
+      <Cartel src={lugar.portada} alt={`Portada de ${lugar.nombre}`} />
       <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{lugar.nombre}</h1>
       <p className={ficha.etiqueta}>{etiquetaLugar(lugar)}</p>
 

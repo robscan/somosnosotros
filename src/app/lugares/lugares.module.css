@@ -115,8 +115,7 @@
   text-decoration: none;
   box-shadow: var(--sombra-flotante);
 }
-.tarjeta img,
-.tarjeta > span:first-child {
+.tarjeta img {
   width: 56px;
   height: 56px;
 }

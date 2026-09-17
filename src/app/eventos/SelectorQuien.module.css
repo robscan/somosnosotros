@@ -56,12 +56,7 @@
   outline: none;
 }
 
-/* 3. Sugerencias: renglones de ui/Sugerencia con miniatura redonda; aquí las dos miniaturas especiales */
-.miniVacia {
-  display: block;
-  background: var(--fondo);
-  border: 1px dashed var(--borde);
-}
+/* 3. Sugerencias: renglones de ui/Sugerencia con miniatura redonda; aquí la de crear */
 .miniCrear {
   display: grid;
   place-items: center;

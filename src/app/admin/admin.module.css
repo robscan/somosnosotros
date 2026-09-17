@@ -577,11 +577,6 @@ a.ficha::after,
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
-.fotoVacia {
-  display: grid;
-  place-items: center;
-  color: var(--texto-suave);
-}
 .redonda {
   border-radius: 50%;
 }

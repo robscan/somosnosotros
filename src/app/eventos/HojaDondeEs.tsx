@@ -10,6 +10,7 @@ import limpiar from "@/components/ui/Limpiar.module.css";
 import { IconoBuscar, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type ModoSitio } from "@/lib/eventos";
 import type { Punto } from "@/lib/geo";
+import { SIN_FOTO } from "@/lib/imagen";
 import { etiquetaLugar, normalizarNombre, type LugarResumen } from "@/lib/lugares";
 import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -127,14 +128,8 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           {filtrados.map((l) => (
             <li key={l.id}>
               <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => onLugar(l.id)}>
-                {l.portada ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-                  <img src={l.portada} alt="" className={sug.foto} />
-                ) : (
-                  <span className={`${sug.foto} ${sug.fotoVacia}`} aria-hidden="true">
-                    <IconoPin width={18} height={18} />
-                  </span>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+                <img src={l.portada ?? SIN_FOTO} alt="" className={sug.foto} />
                 <b>{l.nombre}</b>
                 <small>{[etiquetaLugar(l), l.direccion].filter(Boolean).join(" · ")}</small>
               </button>

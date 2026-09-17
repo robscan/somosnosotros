@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SIN_FOTO, SIN_FOTO_ANCHA } from "@/lib/imagen";
 import { IconoCerrar } from "./ui/Iconos";
 import styles from "./Cartel.module.css";
 
 /**
  * El cartel (o la portada) llena una banda baja (cover); un toque lo enseña entero a pantalla completa.
  * Con forma "avatar" (ficha de artista) es un círculo, como en la lista: la gente es redonda, los lugares cuadrados.
+ * Sin `src`, la imagen con el símbolo SN ocupa la misma caja, sin lupa ni visor.
  */
 export default function Cartel({
   src,
   alt,
   forma = "banda",
 }: {
-  src: string;
+  src: string | null;
   alt: string;
   forma?: "banda" | "avatar";
 }) {
@@ -25,6 +27,10 @@ export default function Cartel({
     document.addEventListener("keydown", alTeclear);
     return () => document.removeEventListener("keydown", alTeclear);
   }, [abierto]);
+  if (!src) {
+    // eslint-disable-next-line @next/next/no-img-element -- imagen fija de public
+    return <img src={forma === "avatar" ? SIN_FOTO : SIN_FOTO_ANCHA} alt="" className={`${forma === "avatar" ? styles.avatar : styles.banda} ${styles.sinFoto}`} />;
+  }
   return (
     <>
       <button

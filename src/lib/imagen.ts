@@ -32,3 +32,8 @@ export async function reducirImagen(archivo: File, ladoMaximo = LADO_MAXIMO): Pr
     return archivo;
   }
 }
+
+/** Lo que no tiene portada (evento, lugar o artista) muestra estas imágenes con el símbolo SN al centro (founder, 2026-09-16).
+ *  Se generan una vez con docs/diseno/logotipo/sin-foto-sn.mjs: la cuadrada para miniaturas y avatares, la ancha para la banda de las fichas. */
+export const SIN_FOTO = "/sin-foto.png";
+export const SIN_FOTO_ANCHA = "/sin-foto-ancha.png";
