@@ -23,7 +23,12 @@ Se avisó al chat de gestión de cambios antes de empezar y al terminar.
   - agenda: las transiciones del fondo van de `rgb(246, 245, 241)` a `rgb(255, 255, 255)` y de vuelta, en los dos renglones y en los dos sentidos. Nunca pasan por transparente;
   - con la transición alargada a 4 s, a la mitad de la salida no asoma nada, y el hover se ve igual (blanco, marca y título azules);
   - Lugares: lo mismo, sin que asome "Seguir".
+  - **con teclado** (lo pidió el gestor): Tab pasa por los renglones con su contorno de foco, sin ninguna transición de fondo, también con la transición alargada. La acción no asoma, y sus botones quedan fuera del Tab mientras el renglón está cerrado (`tabIndex=-1`, `aria-hidden`).
 - **390×844:** la agenda igual que antes (sin hover en el teléfono).
+- **Con el dedo en el simulador** (iPhone SE, iOS 26.3, Safari, la misma build local; estaba apagado y se apagó al final):
+  - deslizar "Son huasteco" a la izquierda abre "Me interesa" pegado al borde, como antes;
+  - tocar el renglón abierto lo cierra y se queda en la lista;
+  - no queda ningún resaltado pegado tras el toque.
 
 ## Queda
 - **Firma del founder** en la web: pasar el ratón por la agenda, Lugares y Artistas.
