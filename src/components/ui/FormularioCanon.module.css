@@ -56,10 +56,12 @@
   color: var(--primario);
   cursor: pointer;
 }
+/* El campo de archivo cubre el icono entero: el toque cae en él, no en un punto de 1 px. */
 .accionCampo > input {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
 }
 .accionCampo:disabled,
