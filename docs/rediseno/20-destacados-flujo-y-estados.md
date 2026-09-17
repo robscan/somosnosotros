@@ -104,7 +104,7 @@ Mide 220 × 200 px y la siguiente asoma 138 px. Tocarla abre la ficha; al volver
 
 ## Para construir (después de la firma)
 
-- **Migración `20260917120000_destacados.sql`**, con el nombre que reservó gestión de cambios y solo para añadir:
+- **Migración**, con el nombre que asigne gestión de cambios al construirla y solo para añadir:
   - una tabla `destacados` con la ficha, hasta cuándo, quién y cuándo, y si se eligió o se quitó;
   - lectura pública de lo vigente y escritura solo de la administración;
   - una función de lectura que junta lo elegido con lo que tiene asistentes, con las reglas de arriba, en un viaje por sección.

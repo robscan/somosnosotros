@@ -19,7 +19,7 @@ A mitad de la respuesta pidió consultar las reglas de operación y avisar al ch
 - **Gestión de cambios**, avisado por `send_message` a la sesión "Gestión de cambios en producción". Respondió:
   - quién toca qué (`cualquier-pais`, `filtrar-no-es-navegar`, `crear-lugar-privado`);
   - primero el prototipo, solo documentos, en su rama y PR;
-  - la migración, si la hay, se llamará `20260917120000_destacados.sql` y solo puede añadir;
+  - la migración, si la hay, recibirá su nombre de gestión de cambios al construirla, en el orden en que se aplique, y solo puede añadir (el 120000 que se apartó al principio se liberó);
   - contar visitas toca privacidad;
   - reservó esta bitácora y OL-052 (la 078 y OL-051 las tomó otro chat).
 - **Decisión del founder:** «Son los destacados que elige adin + los que tienen mas asistentes, en el mapa color destacado (propón uno), Acepto tu propuesta de duración para destacados. Si no hay destacados la sección se oculta».
@@ -62,5 +62,5 @@ A mitad de la respuesta pidió consultar las reglas de operación y avisar al ch
   - D2: desde 3 personas, sin contar a la administración;
   - D3: quitar también lo que entra por asistentes;
   - el color y las correcciones.
-- **Con la firma:** construir en otra rama desde `main`, en una pieza, con la migración `20260917120000_destacados.sql`.
+- **Con la firma:** construir en otra rama desde `main`, en una pieza, con su migración (nombre asignado por gestión de cambios al construirla).
 - **Sin push ni PR:** commit local y aviso al encargado de gestión de cambios, que la sube.
