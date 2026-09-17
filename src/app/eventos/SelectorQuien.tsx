@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { IconoMas } from "@/components/ui/Iconos";
+import { IconoCerrar, IconoMas } from "@/components/ui/Iconos";
 import { artistaIgual, etiquetaArtista, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
@@ -83,7 +83,7 @@ export default function SelectorQuien({ valor, onCambio, mios }: Props) {
               {item.nombre}
               {esMio(item.id) && <small> · tú</small>}
               {!item.id && <small> · nuevo</small>}
-              <span aria-hidden="true">✕</span>
+              <IconoCerrar width={18} height={18} />
             </button>
           ))}
         </div>

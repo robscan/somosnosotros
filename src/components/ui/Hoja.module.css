@@ -47,11 +47,12 @@
   position: absolute;
   top: var(--espacio-2);
   right: var(--espacio-2);
+  display: grid;
+  place-items: center;
   min-width: var(--toque-min);
   min-height: var(--toque-min);
   border: none;
   background: none;
   color: var(--texto-suave);
-  font-size: var(--letra-xl);
   cursor: pointer;
 }

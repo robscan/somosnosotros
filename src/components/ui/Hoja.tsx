@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { IconoCerrar } from "./Iconos";
 import styles from "./Hoja.module.css";
 
 type Props = { etiqueta: string; onCerrar: () => void; children: ReactNode };
@@ -44,7 +45,7 @@ export default function Hoja({ etiqueta, onCerrar, children }: Props) {
     <div className={styles.fondo} style={marco ? { top: marco.top, height: marco.height, bottom: "auto" } : undefined} onClick={onCerrar}>
       <div className={styles.hoja} role="dialog" aria-label={etiqueta} onClick={(e) => e.stopPropagation()}>
         <button type="button" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar">
-          ✕
+          <IconoCerrar width={22} height={22} />
         </button>
         {children}
       </div>

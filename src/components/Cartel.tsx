@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IconoCerrar } from "./ui/Iconos";
 import styles from "./Cartel.module.css";
 
 /**
@@ -71,7 +72,7 @@ export default function Cartel({
             onClick={() => setAbierto(false)}
             aria-label="Cerrar"
           >
-            ✕
+            <IconoCerrar width={22} height={22} />
           </button>
         </div>
       )}

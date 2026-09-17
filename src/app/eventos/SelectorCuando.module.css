@@ -17,12 +17,13 @@
   font-size: var(--letra-md);
 }
 .quitar {
+  display: grid;
+  place-items: center;
   min-width: var(--toque-min);
   min-height: var(--toque-min);
   border: none;
   background: none;
   color: var(--texto-suave);
-  font-size: var(--letra-md);
   cursor: pointer;
 }
 .error {

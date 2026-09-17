@@ -13,12 +13,13 @@
   box-shadow: var(--sombra-flotante);
 }
 .cerrar {
+  display: grid;
+  place-items: center;
   width: var(--toque-min);
   height: var(--toque-min);
   margin: calc(-1 * var(--espacio-2)) 0;
   border: none;
   background: none;
   color: var(--fondo);
-  font-size: var(--letra-sm);
   cursor: pointer;
 }
