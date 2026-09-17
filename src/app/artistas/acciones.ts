@@ -25,10 +25,10 @@ function revalidar(id: string) {
 
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 
-/** El artista registrado que se llama igual, si lo hay (para "¿Es este?"). */
-async function existenteIgual(supabase: Cliente, nombre: string): Promise<ArtistaResumen | undefined> {
+/** El artista registrado que se llama igual en la misma ciudad, si lo hay (para "¿Es este?"). */
+async function existenteIgual(supabase: Cliente, nombre: string, ciudad: string): Promise<ArtistaResumen | undefined> {
   const { data } = await supabase.rpc("artistas_con_nombre", { p_nombre: nombre });
-  return artistaIgual((data ?? []) as ArtistaResumen[], nombre) ?? undefined;
+  return artistaIgual(((data ?? []) as (ArtistaResumen & { ciudad: string })[]).filter((a) => a.ciudad === ciudad), nombre) ?? undefined;
 }
 
 /** Alta de artista. Si ya hay uno con el mismo nombre, devuelve el existente para preguntar "¿es este?" (decisión 5). */
@@ -42,7 +42,7 @@ export async function crearArtista(_previo: ResultadoArtista | null, formData: F
     .insert({ ...datos, creado_por: user.id })
     .select("id")
     .single();
-  if (error?.code === "23505") return { ok: false, errores: {}, existente: await existenteIgual(supabase, datos.nombre), general: "Ya hay un artista con ese nombre." };
+  if (error?.code === "23505") return { ok: false, errores: {}, existente: await existenteIgual(supabase, datos.nombre, datos.ciudad), general: "Ya hay un artista con ese nombre." };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. Intenta de nuevo." };
 
   // "Soy yo / es mi grupo": la cuenta queda ligada; podrá editar y publicar sus fechas sin teclear el nombre.
@@ -57,11 +57,11 @@ export async function actualizarArtista(id: string, _previo: ResultadoArtista | 
   const { datos, errores } = validarArtista(leer(formData));
   if (Object.keys(errores).length) return { ok: false, errores };
 
-  // Editar no cambia la ciudad (decisión del founder, 2026-09-16): el formulario de edición no manda ese campo.
-  const { nombre, disciplina, detalle, tipo, descripcion, foto, redes } = datos;
-  const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, redes };
+  // La ciudad también se edita: es un renglón del formulario (pedido del founder, 2026-09-16, noche).
+  const { nombre, disciplina, detalle, tipo, descripcion, foto, redes, ciudad } = datos;
+  const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, redes, ciudad };
   const { data, error } = await supabase.from("artistas").update(cambios).eq("id", id).select("id").maybeSingle();
-  if (error?.code === "23505") return { ok: false, errores: { nombre: "Ya hay otro artista con ese nombre." } };
+  if (error?.code === "23505") return { ok: false, errores: { nombre: `Ya hay otro artista con ese nombre en ${ciudad}.` } };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu ficha?" };
 
   revalidar(id);

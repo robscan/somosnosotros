@@ -6,7 +6,7 @@ import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import { conProximaFecha, DISCIPLINAS, filtroDesdeUrl, ordenarArtistas, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FechaDeArtista, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
-import { cargarCiudades } from "@/lib/ciudades";
+import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
@@ -80,8 +80,8 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
 export default async function Artistas({ searchParams }: { searchParams: Promise<{ ciudad?: string; hace?: string; que?: string; q?: string; n?: string }> }) {
   const { ciudad: slug, ...resto } = await searchParams;
   const filtro = filtroDesdeUrl(resto);
-  // Un artista no tiene punto del que deducir ciudad: se registra en la que la persona tiene elegida (bitácora 051).
-  const [ciudades, actual] = await Promise.all([cargarCiudades(await clienteServidor()), usuarioActual()]);
+  // Las ciudades de Artistas salen de los artistas que hay; la del alta es la elegida aquí y se cambia en el formulario.
+  const [ciudades, actual] = await Promise.all([cargarCiudadesDeArtistas(await clienteServidor()), usuarioActual()]);
   const ciudad: Ciudad = ciudadPorSlug(slug, ciudades);
   const cargado = await cargar(filtro, ciudad.nombre);
   return (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarCiudades, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadPorNombre, ciudadPorSlug, slugDeCiudad } from "./ciudad";
+import { armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadPorNombre, ciudadPorSlug, slugDeCiudad } from "./ciudad";
 
 describe("ciudad", () => {
   it("empieza en San Luis Potosí, centrada en el centro histórico", () => {
@@ -41,5 +41,25 @@ describe("ciudad", () => {
     expect(ciudadPorSlug("queretaro", c).nombre).toBe("Querétaro");
     expect(ciudadPorSlug("nada", c).nombre).toBe("San Luis Potosí");
     expect(armarCiudades([], []).map((x) => x.nombre)).toEqual(["San Luis Potosí"]);
+  });
+  it("arma las ciudades de Artistas a partir de los artistas: la inicial siempre y primero, las demás por cuántos tienen", () => {
+    const c = armarCiudadesDeArtistas([
+      { ciudad: "Guadalajara" },
+      { ciudad: "Querétaro" },
+      { ciudad: "Querétaro" },
+      { ciudad: "San Luis Potosí" },
+      { ciudad: "Soledad de Graciano Sánchez" },
+      { ciudad: "" },
+      { ciudad: "Aguascalientes" },
+    ]);
+    expect(c.map((x) => [x.nombre, x.artistas])).toEqual([
+      ["San Luis Potosí", 3],
+      ["Querétaro", 2],
+      ["Aguascalientes", 1],
+      ["Guadalajara", 1],
+    ]);
+    expect(c[1]).toMatchObject({ slug: "queretaro", zoom: 13 });
+    expect(ciudadPorSlug("guadalajara", c).artistas).toBe(1);
+    expect(armarCiudadesDeArtistas([])).toEqual([{ ...CIUDAD_INICIAL, artistas: 0 }]);
   });
 });
