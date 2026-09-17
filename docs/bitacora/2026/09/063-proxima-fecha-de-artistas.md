@@ -55,4 +55,4 @@ Nada, mientras no haya fechas ligadas. Cuando las haya, cada artista muestra su 
 
 ## Queda
 - **Orden de mezcla:** esta rama sale encima del PR #66, porque usa `compararEventos`. Se mezcla después del #66; hasta entonces, su PR muestra también los cambios del #66.
-- **`main` local:** la rama sale de lo publicado del #66 (`origin/orden-estable-agenda`), sin los commits de `main` local que aún no se suben (bitácoras 057 a 059 y 061). Cuando se publique `main`, se trae a la rama y se juntan las entradas de OPEN_LOOPS.
+- **`main` local:** la rama sale de lo publicado del #66 (`origin/orden-estable-agenda`). A pedido del encargado de gestión de cambios, `main` local (bitácoras 057 a 059 y 061) ya está traído a la rama. OPEN_LOOPS quedó con OL-038, OL-037 y OL-036, resuelto como en la rama del #66, y lint, typecheck, 181 pruebas y build siguieron en verde. Está solo en commits locales: subirlos publicaría los tres commits de `main` que el founder aún no publica. Se suben cuando `main` esté en GitHub.
