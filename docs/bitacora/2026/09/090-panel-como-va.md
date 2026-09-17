@@ -33,7 +33,17 @@ Con la firma del founder, dio rama, bitácora, mismo OL-060 y el nombre de la mi
 
 El founder contestó **«firmo, adelante en coordinación con el gestor»** en el chat (2026-09-17). Sin cambios pedidos a las dos preguntas abiertas del prototipo (el proxy de "siguen volviendo" y la ventana de 30 días quedan como están).
 
+## Revisión de la migración por gestión de cambios
+
+Aprobada la lógica (solo lectura, sin tablas ni columnas; `security definer` con `set search_path`; `es_admin()`; `revoke`/`grant`; administradores fuera de los conteos; `auth.users` solo para `last_sign_in_at`; las pruebas cubren anónimo, cuenta sin permiso y el embudo con cuentas de distintas edades). Dos ajustes menores, aplicados:
+- `create function` → `create or replace function` (como el resto de las funciones del repo, para que reaplicar la migración no falle).
+- Comentario nuevo junto a `volvio`: `cuentas_vistas.dia` guarda el día en la zona de la ciudad (`marcar_visto`), y aquí se compara convirtiéndola a la zona del servidor (UTC) — en el borde del día puede contar unas horas de más o de menos. No se cambió la lógica, solo se dijo el matiz; no vale la pena resolverlo para un proxy.
+
+**Control negativo pedido por gestión de cambios** (a mano, sin comitear): se quitó el `if not public.es_admin() then raise exception …` de una copia de la función, se corrió `supabase/tests/panel_como_va.mjs` y falló donde debía — "una cuenta que no es administradora no ejecuta panel_comunidad", 1 de 7 comprobaciones, código de salida 1 —, confirmando que la prueba sí detecta la guarda ausente. Restaurada la versión buena desde un respaldo y confirmado idéntica (`diff` limpio); las dos pruebas PGlite vuelven a pasar completas (7/7 y 95/95).
+
+También se corrigió una pérdida propia en `OPEN_LOOPS.md`: la resolución anterior había sustituido la entrada OL-060 completa de `origin/main` (1333 caracteres, con la tabla de 7 preguntas y las tres opciones) por un resumen más corto. Gestión de cambios lo notó por el tamaño. Rehecho partiendo del párrafo de `origin/main` tal cual (verificado byte a byte) y cambiando solo el sub-renglón final, que sí estaba desactualizado.
+
 ## Pendiente
 
-- Avisar a gestión de cambios de la firma y esperar su revisión de la migración `20260917150000_panel_como_va.sql` y de `supabase/tests/panel_como_va.mjs` antes de escribir la pantalla — así lo pidió («cuando el founder firme, avísame y reviso la migración y sus pruebas antes de que escribas la pantalla»).
-- Con su visto bueno: escribir la pantalla en `src/app/admin/page.tsx` (o donde corresponda) llamando a `panel_comunidad()`, y mandar el hash final a gestión de cambios para que aplique la migración.
+- Escribir la pantalla en `src/app/admin/page.tsx` (o donde corresponda) llamando a `panel_comunidad()`: solo `/admin`, con `front-visual`, capturas a 390×844, sin tocar `/api/recordatorios` ni `guardar_indicadores()`.
+- Mandar el hash final a gestión de cambios para que aplique la migración.

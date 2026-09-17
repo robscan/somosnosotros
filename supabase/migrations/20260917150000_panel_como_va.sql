@@ -11,8 +11,10 @@
 --   3. de las que ya llevan más de 7 días de vida (`vuelven_base`), cuántas volvieron después de esa primera
 --      semana: con una fila en `cuentas_vistas` posterior, o un inicio de sesión real (`last_sign_in_at`)
 --      posterior. Es un proxy, no una curva de retención completa (doc 21 explica el porqué): `cuentas_vistas`
---      solo guarda el último día, no un historial.
-create function public.panel_comunidad() returns json
+--      solo guarda el último día, no un historial. Además, `cuentas_vistas.dia` es una fecha en la zona de la
+--      ciudad (la guarda `marcar_visto`) y aquí se compara convirtiéndola con la zona del servidor (UTC): en el
+--      borde del día puede contar unas horas de más o de menos. No vale la pena resolverlo para un proxy.
+create or replace function public.panel_comunidad() returns json
 language plpgsql security definer set search_path = public as $$
 declare
   ventana constant interval := interval '30 days';
