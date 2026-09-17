@@ -131,26 +131,29 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
     return (
       <>
         {conProveedores && (
-          <div className={styles.opciones}>
-            {proveedores.map((p, i) => (
-              // Enlace normal, no <Link>: la ida pasa por el servidor (/auth/apple) y sale del sitio.
-              // Apple negro solo cuando va primero (en sus dispositivos); detrás de Google, su variante blanca, para que el primero siga siendo el que más pesa.
-              <a key={p} href={`/auth/${p}?siguiente=${encodeURIComponent(siguiente)}`} className={`${styles.opcion} ${p === "apple" && i > 0 ? styles.appleBlanco : styles[p]}`}>
-                {p === "apple" ? <LogoApple className={styles.logo} /> : <LogoGoogle className={styles.logo} />}
-                Continuar con {NOMBRE_PROVEEDOR[p]}
-              </a>
-            ))}
-            {fase === "elegir" && (
-              <button type="button" className={`${styles.opcion} ${styles.correo}`} onClick={abrirCorreo}>
-                <IconoCorreo className={styles.logo} />
-                Continuar con tu correo
-              </button>
-            )}
-          </div>
+          <>
+            <p className="subtitulo">Entras sin contraseña y sin rastreo ni publicidad — por eso estas opciones.</p>
+            <div className={styles.opciones}>
+              {proveedores.map((p, i) => (
+                // Enlace normal, no <Link>: la ida pasa por el servidor (/auth/apple) y sale del sitio.
+                // Apple negro solo cuando va primero (en sus dispositivos); detrás de Google, su variante blanca, para que el primero siga siendo el que más pesa.
+                <a key={p} href={`/auth/${p}?siguiente=${encodeURIComponent(siguiente)}`} className={`${styles.opcion} ${p === "apple" && i > 0 ? styles.appleBlanco : styles[p]}`}>
+                  {p === "apple" ? <LogoApple className={styles.logo} /> : <LogoGoogle className={styles.logo} />}
+                  Continuar con {NOMBRE_PROVEEDOR[p]}
+                </a>
+              ))}
+              {fase === "elegir" && (
+                <button type="button" className={`${styles.opcion} ${styles.correo}`} onClick={abrirCorreo}>
+                  <IconoCorreo className={styles.logo} />
+                  Continuar con tu correo
+                </button>
+              )}
+            </div>
+          </>
         )}
         {fase === "correo" && (
           <form onSubmit={enviarCorreo} noValidate className={conProveedores ? styles.conProveedores : undefined}>
-            {!conProveedores && <p className="subtitulo">Sin contraseñas: te mandamos un código a tu correo.</p>}
+            {!conProveedores && <p className="subtitulo">Sin contraseña ni rastreo: te mandamos un código a tu correo.</p>}
             <Campo etiqueta="Tu correo" name="correo" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" placeholder="nombre@correo.com" value={correo} onChange={(e) => setCorreo(e.target.value)} error={error ?? undefined} autoFocus={!conProveedores} required />
             <Boton type="submit" disabled={ocupado}>
               {ocupado ? "Mandando…" : "Mandarme el código"}
