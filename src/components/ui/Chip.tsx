@@ -20,13 +20,14 @@ function EnCamino() {
 }
 
 /**
- * Chip que es un enlace: el filtro vive en la URL (se comparte, se vuelve atrás, lo filtra el servidor). Como la lista
- * no cambia hasta que el servidor responde, el chip tocado se pone en camino al instante (founder, 2026-09-16:
- * "a veces no pasa nada").
+ * Chip que es un enlace: el filtro vive en la URL (se comparte, sobrevive al volver de una ficha, lo filtra el servidor).
+ * Filtrar no es navegar (founder, 2026-09-17): el chip reemplaza la entrada del historial en vez de apilar una nueva, así
+ * Atrás vuelve a la pantalla anterior y no al filtro anterior. Como la lista no cambia hasta que el servidor responde, el
+ * chip tocado se pone en camino al instante (founder, 2026-09-16: "a veces no pasa nada").
  */
 export function ChipEnlace({ activo = false, href, children }: { activo?: boolean; href: string; children: ReactNode }) {
   return (
-    <Link href={href} scroll={false} className={`${styles.chip} ${activo ? styles.activo : ""}`} aria-current={activo ? "true" : undefined}>
+    <Link href={href} scroll={false} replace className={`${styles.chip} ${activo ? styles.activo : ""}`} aria-current={activo ? "true" : undefined}>
       {children}
       <EnCamino />
     </Link>
