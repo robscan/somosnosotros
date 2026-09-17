@@ -4,9 +4,11 @@
  * cualquiera puede registrar fuera de San Luis Potosí. La plataforma crece de forma orgánica.
  * San Luis Potosí es la inicial: existe aunque no tenga nada, y es a la que cae todo lo que no dice ciudad.
  */
+import { ZONA_INICIAL } from "./fechas";
+
 export type Ciudad = { slug: string; nombre: string; centro: { lng: number; lat: number }; zoom: number };
-/** Una ciudad con lo que tiene: cuántos lugares y cuántos eventos próximos. */
-export type CiudadConDatos = Ciudad & { lugares: number; eventos: number };
+/** Una ciudad con lo que tiene: cuántos lugares y cuántos eventos próximos, y su zona horaria (la de "hoy" en su agenda). */
+export type CiudadConDatos = Ciudad & { lugares: number; eventos: number; zona: string };
 /** Una ciudad de Artistas con cuántos artistas tiene. */
 export type CiudadConArtistas = Ciudad & { artistas: number };
 
@@ -43,27 +45,36 @@ export function ciudadCanonica(nombre: string | null | undefined): string {
 /**
  * Arma la lista de ciudades a partir de lo que hay: cada lugar suma a su ciudad (el centro es el promedio de sus
  * lugares) y cada evento próximo también. La inicial va primero y siempre está; las demás, por número de lugares.
+ * La zona de la ciudad es la que más se repite entre sus lugares y eventos (la inicial, si no hay ninguno).
  */
-export function armarCiudades(lugares: { ciudad: string; lat: number; lng: number }[], eventos: { ciudad: string }[]): CiudadConDatos[] {
-  type Acum = { nombre: string; lugares: number; lat: number; lng: number; eventos: number };
+export function armarCiudades(lugares: { ciudad: string; lat: number; lng: number; zona?: string }[], eventos: { ciudad: string; zona?: string }[]): CiudadConDatos[] {
+  type Acum = { nombre: string; lugares: number; lat: number; lng: number; eventos: number; zonas: Map<string, number> };
   const inicial = CIUDAD_INICIAL.nombre;
-  const acum = new Map<string, Acum>([[inicial, { nombre: inicial, lugares: 0, lat: 0, lng: 0, eventos: 0 }]]);
+  const acum = new Map<string, Acum>([[inicial, { nombre: inicial, lugares: 0, lat: 0, lng: 0, eventos: 0, zonas: new Map() }]]);
   const de = (ciudad: string) => {
     const nombre = ciudadCanonica(ciudad) || inicial;
     let a = acum.get(nombre);
     if (!a) {
-      a = { nombre, lugares: 0, lat: 0, lng: 0, eventos: 0 };
+      a = { nombre, lugares: 0, lat: 0, lng: 0, eventos: 0, zonas: new Map() };
       acum.set(nombre, a);
     }
     return a;
+  };
+  const contarZona = (a: Acum, zona: string | undefined) => {
+    if (zona) a.zonas.set(zona, (a.zonas.get(zona) ?? 0) + 1);
   };
   for (const l of lugares) {
     const a = de(l.ciudad);
     a.lugares++;
     a.lat += l.lat;
     a.lng += l.lng;
+    contarZona(a, l.zona);
   }
-  for (const e of eventos) de(e.ciudad).eventos++;
+  for (const e of eventos) {
+    const a = de(e.ciudad);
+    a.eventos++;
+    contarZona(a, e.zona);
+  }
   return [...acum.values()]
     .map((a) => ({
       slug: slugDeCiudad(a.nombre),
@@ -72,6 +83,7 @@ export function armarCiudades(lugares: { ciudad: string; lat: number; lng: numbe
       zoom: a.nombre === inicial ? CIUDAD_INICIAL.zoom : 13,
       lugares: a.lugares,
       eventos: a.eventos,
+      zona: [...a.zonas].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]))[0]?.[0] ?? ZONA_INICIAL,
     }))
     .sort((a, b) => (a.nombre === inicial ? -1 : b.nombre === inicial ? 1 : b.lugares - a.lugares || a.nombre.localeCompare(b.nombre, "es")));
 }

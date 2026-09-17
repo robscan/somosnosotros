@@ -53,7 +53,7 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("eventos")
-    .select("id, titulo, inicio, fin, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en, lugar:lugares(nombre, portada, lat, lng), eventos_artistas!inner(artista_id)")
+    .select("id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en, lugar:lugares(nombre, portada, lat, lng), eventos_artistas!inner(artista_id)")
     .eq("eventos_artistas.artista_id", artistaId)
     .eq("visible", true)
     .or(filtroSinPasar())
@@ -127,7 +127,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
   const hrefPublicarFecha = actual ? `/eventos/nuevo?artista=${a.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?artista=${a.id}`)}`;
   const grupos = agruparPorDia(fechas);
-  const proxima = fechas[0] ? { id: fechas[0].id, inicio: fechas[0].inicio, sitio: nombreSitio(fechas[0]) } : null;
+  const proxima = fechas[0] ? { id: fechas[0].id, inicio: fechas[0].inicio, sitio: nombreSitio(fechas[0]), zona: fechas[0].zona } : null;
   const avisoBorrar = fechas.length > 0 ? `Se borra la ficha; sus ${fechas.length === 1 ? "1 fecha próxima se queda" : `${fechas.length} fechas próximas se quedan`} sin artista.` : "Se borra la ficha.";
   const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
 

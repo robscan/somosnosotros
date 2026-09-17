@@ -2,6 +2,7 @@
  * Búsqueda de lugares por nombre con Mapbox Search Box (conoce los lugares, no solo las calles).
  * Dos pasos, como pide Mapbox: sugerir (nombre + dirección) y recuperar (coordenadas) con un
  * mismo session_token. Se usa solo al dar de alta; la ficha nunca vuelve a consultar.
+ * De cualquier país: el contexto ordena, no limita (founder, 2026-09-16). Lo cercano va primero.
  */
 import { ciudadDelContexto, type Contexto } from "./geocodificar";
 import type { Tipo } from "./lugares";
@@ -28,8 +29,8 @@ export function urlSugerir(q: string, token: string, cerca: Punto, sesion: strin
     access_token: token,
     session_token: sesion,
     language: "es",
-    country: "mx", // pendiente: el contexto ordena, no limita (founder, 2026-09-16); se quita junto con la zona horaria de los eventos (bitácora 067)
-    limit: "5",
+    // Sin país. Se piden 10 (el máximo de Mapbox) y se muestran las MAX_SUGERENCIAS más cercanas (sugerirLugares).
+    limit: "10",
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "poi,address",
   });
@@ -41,15 +42,23 @@ export function urlRecuperar(mapboxId: string, token: string, sesion: string): s
   return `${BASE}/retrieve/${encodeURIComponent(mapboxId)}?${p.toString()}`;
 }
 
+/** Cuántas sugerencias se muestran, ya ordenadas por cercanía. */
+const MAX_SUGERENCIAS = 5;
+
 type RespuestaSugerir = {
-  suggestions?: Array<{ mapbox_id?: string; name?: string; full_address?: string; place_formatted?: string; address?: string; poi_category?: string[]; feature_type?: string }>;
+  suggestions?: Array<{ mapbox_id?: string; name?: string; full_address?: string; place_formatted?: string; address?: string; poi_category?: string[]; feature_type?: string; distance?: number }>;
 };
 type RespuestaRecuperar = {
   features?: Array<{ geometry?: { coordinates?: [number, number] }; properties?: { name?: string; full_address?: string; place_formatted?: string; poi_category?: string[]; context?: Contexto } }>;
 };
 
+/**
+ * Sin país, Mapbox antepone a veces lugares famosos de lejos: se ordenan por la distancia que da Mapbox al punto de
+ * cercanía (lo que no la trae va al final, en el orden en que llegó), como las direcciones (buscarDirecciones).
+ */
 export function interpretarSugerencias(json: RespuestaSugerir): LugarSugerido[] {
-  return (json.suggestions ?? [])
+  return [...(json.suggestions ?? [])]
+    .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
     .map((s) => ({
       mapboxId: s.mapbox_id ?? "",
       nombre: s.name ?? "",
@@ -80,7 +89,7 @@ export async function sugerirLugares(q: string, token: string, cerca: Punto, ses
   if (texto.length < 3) return [];
   const res = await fetchFn(urlSugerir(texto, token, cerca, sesion));
   if (!res.ok) return [];
-  return interpretarSugerencias((await res.json()) as RespuestaSugerir);
+  return interpretarSugerencias((await res.json()) as RespuestaSugerir).slice(0, MAX_SUGERENCIAS);
 }
 
 export async function recuperarLugar(mapboxId: string, token: string, sesion: string, fetchFn: FetchFn = fetch): Promise<LugarRecuperado | null> {

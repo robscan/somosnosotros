@@ -100,7 +100,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
               {l.proximo && (
                 <span>
                   <IconoCalendario width={15} height={15} />
-                  <b>{textoProximo(l.proximo.inicio)}</b>
+                  <b>{textoProximo(l.proximo)}</b>
                 </span>
               )}
             </span>

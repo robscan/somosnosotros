@@ -34,7 +34,7 @@ export type LugarResumen = {
 };
 
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
-export type ProximoEvento = { id: string; inicio: string };
+export type ProximoEvento = { id: string; inicio: string; zona: string };
 
 /** Lo que la lista, el mapa y la tarjeta del pin enseñan de cada lugar. */
 export type LugarLista = LugarResumen & { proximo: ProximoEvento | null };
@@ -82,16 +82,16 @@ export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distan
   return { lista, km };
 }
 
-/** "Próximo: hoy · 19:30" · "Próximo: mié 16 de sep · 19:00". */
-export function textoProximo(inicio: string, ahora: Date = new Date()): string {
-  const cuando = formatearCuando(inicio, null, ahora);
+/** "Próximo: hoy · 19:30" · "Próximo: mié 16 de sep · 19:00", con la hora de la zona del evento. */
+export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona">, ahora: Date = new Date()): string {
+  const cuando = formatearCuando(p.inicio, null, ahora, p.zona);
   return `Próximo: ${cuando.charAt(0).toLowerCase()}${cuando.slice(1)}`;
 }
 
 /** Une lugares con su evento más próximo (los eventos vienen ordenados por inicio). */
-export function conProximo<T extends { id: string }>(lugares: T[], eventos: { id: string; inicio: string; lugar_id: string | null }[]): (T & { proximo: ProximoEvento | null })[] {
+export function conProximo<T extends { id: string }>(lugares: T[], eventos: (ProximoEvento & { lugar_id: string | null })[]): (T & { proximo: ProximoEvento | null })[] {
   const proximo = new Map<string, ProximoEvento>();
-  for (const e of eventos) if (e.lugar_id && !proximo.has(e.lugar_id)) proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio });
+  for (const e of eventos) if (e.lugar_id && !proximo.has(e.lugar_id)) proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio, zona: e.zona });
   return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null }));
 }
 
