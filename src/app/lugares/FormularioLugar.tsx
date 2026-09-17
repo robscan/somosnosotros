@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Fragment, useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { recordarLugarNuevo } from "@/app/eventos/borrador";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
+import { useAbrirConError } from "@/components/ui/abrirConError";
 import { useTerminar } from "@/components/ui/Atras";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import Boton from "@/components/ui/Boton";
@@ -87,6 +88,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const [portada, setPortada] = useState<string | null>(lugar?.portada ?? null);
   const [subiendo, setSubiendo] = useState(false);
   const [errorPortada, setErrorPortada] = useState<string | null>(null);
+  // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
+  useAbrirConError(setMasAbierto, errores.descripcion, errores.enlaces, errores.portada, errorPortada);
   const [confirmado, setConfirmado] = useState(false);
   const [privado, setPrivado] = useState(!!lugar?.privado);
   const sesionRef = useRef<string>("");
