@@ -1,0 +1,10 @@
+.cifras { margin: 0; display: grid; gap: var(--espacio-2); }
+.cifras > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--espacio-2); align-items: baseline; }
+.cifras dt { font-size: var(--letra-sm); font-weight: 600; }
+.cifras dd { margin: 0; font-size: var(--letra-xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); white-space: nowrap; }
+.cifras small { margin-left: 6px; font-size: var(--letra-xs); color: var(--texto-suave); }
+.base { border-top: 1px solid var(--borde); padding-top: var(--espacio-2); font-size: var(--letra-sm); }
+.detalle { font-size: var(--letra-xs); color: var(--texto-suave); line-height: 1.4; }
+.detalle summary { cursor: pointer; color: var(--primario); font-size: var(--letra-sm); font-weight: 600; padding-block: var(--espacio-2); }
+.detalle summary:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; border-radius: 4px; }
+.detalle p + p { margin-top: var(--espacio-2); }

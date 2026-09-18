@@ -8,6 +8,8 @@ import { cuandoPaso, indicadores, notaSemana, renglonesGestionar } from "@/lib/p
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarComunidad, cargarResumen } from "./consultas";
 import ComunidadComoVa from "./ComunidadComoVa";
+import CapoComoVa from "./CapoComoVa";
+import { cargarCapo } from "./capo-consultas";
 import Indicadores from "./Indicadores";
 import Pendientes from "./Pendientes";
 import Reintentar from "./Reintentar";
@@ -32,7 +34,7 @@ export default async function Admin() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin");
   if (actual.perfil.rol !== "admin") redirect("/");
-  const [{ resumen, pendientes, errorPendientes }, comunidad] = await Promise.all([cargarResumen(), cargarComunidad()]);
+  const [{ resumen, pendientes, errorPendientes }, comunidad, capo] = await Promise.all([cargarResumen(), cargarComunidad(), cargarCapo()]);
   const ahora = new Date();
   const lista = resumen ? indicadores(resumen, diaLocal(ahora)) : [];
   const renglones = resumen ? renglonesGestionar(resumen.gestionar) : SECCIONES.map((s) => ({ ...s, total: null, detalle: null }));
@@ -48,6 +50,9 @@ export default async function Admin() {
 
       <h2 className={styles.grupo}>Cómo va la comunidad</h2>
       {comunidad ? <ComunidadComoVa comunidad={comunidad} /> : <Reintentar texto="No pudimos leer el embudo de la comunidad." />}
+
+      <h2 className={styles.grupo}>Invitaciones CAPO</h2>
+      {capo ? <CapoComoVa metricas={capo} /> : <Reintentar texto="No pudimos leer los resultados de las invitaciones CAPO." />}
 
       <h2 className={styles.grupo}>Gestionar</h2>
       <ul className={styles.tarjeta}>
