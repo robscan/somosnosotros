@@ -7,7 +7,7 @@ export const TAMANO_MAX_FOTO = 5 * 1024 * 1024;
 export type Carpeta = "perfiles" | "lugares" | "artistas";
 
 /**
- * Sube una foto al bucket público `fotos`, en la carpeta del usuario (`<carpeta>/<usuarioId>/<prefijo>-<fecha>.<ext>`),
+ * Sube una foto al bucket público `fotos`, en la carpeta del usuario (`<carpeta>/<usuarioId>/<prefijo>-<uuid>.<ext>`),
  * reducida antes en el teléfono. Una sola vez para perfil, lugar, artista y cartel de evento (antes, cuatro copias).
  * Devuelve la URL pública o un mensaje de error para mostrar tal cual.
  */
@@ -20,8 +20,8 @@ export async function subirFoto(carpeta: Carpeta, usuarioId: string, prefijo: st
   if (archivo.size > TAMANO_MAX_FOTO) return { error: `La ${que} pesa más de 5 MB. Elige otra.`, motivo: "pesa" };
   const listo = await reducirImagen(archivo); // menos peso y menos espera
   const extension = (listo.name.split(".").pop() || "jpg").toLowerCase();
-  const ruta = `${carpeta}/${usuarioId}/${prefijo}-${Date.now()}.${extension}`;
-  const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: true, contentType: listo.type || undefined });
+  const ruta = `${carpeta}/${usuarioId}/${prefijo}-${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("fotos").upload(ruta, listo, { upsert: false, contentType: listo.type || undefined });
   if (error) return { error: `No se pudo subir la ${que}. Intenta con otra.`, motivo: "subida" };
   return { url: supabase.storage.from("fotos").getPublicUrl(ruta).data.publicUrl };
 }

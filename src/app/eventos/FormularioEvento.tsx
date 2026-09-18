@@ -27,6 +27,7 @@ import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
 import TarjetaCartel from "./TarjetaCartel";
+import { operacionEvento } from "./operacionEvento";
 import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
 import { crearGestosFlyer, type CampoFlyer } from "./gestosFlyer";
 import { textoDelSitio } from "./direccionEvento";
@@ -94,6 +95,7 @@ type Props = {
   volverA?: string;
   /** Lecturas de cartel que le quedan este mes (docs/rediseno/23). Null si no hay sesión o no aplica. */
   cupo?: Cupo | null;
+  revision?: string;
 };
 
 /**
@@ -102,7 +104,9 @@ type Props = {
  * resueltos con el mismo dibujo: Cuándo (hoy · 19:00), Dónde (una sola salida: la lupa abre la hoja "Dónde es"),
  * Quién, Cuánto (gratis) y Más. El botón dice qué falta. Sin frases de ayuda.
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo", cupo = null }: Props) {
+export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo", cupo = null, revision }: Props) {
+  const [revisionInicial] = useState(revision);
+  const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const esAlta = modo === "alta";
@@ -493,6 +497,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       <form
         ref={formRef}
         action={(fd) => {
+          operacion.current = operacionEvento(fd, operacion.current);
+          fd.set("operacion", operacion.current.id);
           // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
           if (esAlta) olvidarBorrador();
           quitarGuardia();
@@ -500,6 +506,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         }}
         noValidate
       >
+        {modo === "editar" && <input type="hidden" name="revision" value={revisionInicial ?? ""} />}
         {/* 1. El cartel, antes del formulario: subirlo lo llena todo. Es lo único que explica la pantalla
             (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
         {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
@@ -683,6 +690,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         {resultado && !resultado.ok && resultado.general && (
           <p className="aviso-error" role="alert">
             {resultado.general}
+            {resultado.conflicto && evento?.id && <> <a href={`/eventos/${evento.id}`} target="_blank" rel="noopener noreferrer">Ver versión actual en otra pestaña</a></>}
           </p>
         )}
         {/* El botón dice qué falta (decisión 3). */}
