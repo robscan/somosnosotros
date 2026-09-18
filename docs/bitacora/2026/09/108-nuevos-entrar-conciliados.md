@@ -132,3 +132,29 @@ privada del telefono: abrir Nuevos, comprobar maximo 20, ficha/Atras y Ver todos
 En una visita posterior puede mostrar Ya estas al dia si no hay publicaciones
 nuevas. Entrar debe conservar los proveedores actuales. Este cierre publica
 solo el primer lote, no mapa, avisos, seguridad, CAPO, carriles semanales ni Pincel.
+
+## Ajuste de texto posterior, 2026-09-18
+
+El founder solicita quitar el remate "por eso estas opciones" de Entrar.
+Rama aislada `codex/entrar-texto-breve`, desde origin/main `8a53338`.
+Se conserva la frase inicial con punto final, sin cambios de proveedores,
+autenticacion, estilos ni estructura. Una sola linea de codigo modificada.
+
+Verificacion local: 468 pruebas en 44 archivos, typecheck y ESLint del componente
+correctos. No se ejecuto build ni QA visual para este ajuste local; ambos quedan
+pendientes antes del PR, conforme a las reglas del proyecto. Sin push, merge,
+migraciones ni despliegue. La autorizacion del lote anterior no se extiende a
+otras piezas: este ajuste queda pendiente de publicacion.
+
+## Autorizacion y verificacion del texto breve
+
+El founder responde "si" a publicar carriles semanales y texto breve de Entrar
+tras pruebas y revision visual. Dos piezas separadas, sin migraciones ni cambios
+de Auth; esta rama contiene solo el texto de Entrar.
+
+Antes del PR: 468 unitarias/44 archivos, typecheck y build correctos; lint sin
+errores (warning heredado del logotipo). Build local y navegador a 390x844:
+frase breve, enlaces Apple/Google conservados, correo despliega su campo;
+sin overflow ni superposiciones. Captura inspeccionada `entrar-texto-breve-390.png`
+en la carpeta de evidencias del gestor. No se enviaron correos ni completo OAuth.
+Produccion aun pendiente de merge y comprobacion del dominio real.
