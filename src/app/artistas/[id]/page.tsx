@@ -70,7 +70,7 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("eventos")
-    .select("id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en, lugar:lugares(nombre, portada, lat, lng), eventos_artistas!inner(artista_id)")
+    .select("id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, lugar:lugares(nombre, portada, lat, lng), eventos_artistas!inner(artista_id)")
     .eq("eventos_artistas.artista_id", artistaId)
     .eq("visible", true)
     .or(filtroSinPasar())

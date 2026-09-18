@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
@@ -11,7 +11,12 @@ import { IconoBuscar, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type ModoSitio } from "@/lib/eventos";
 import type { Punto } from "@/lib/geo";
 import { SIN_FOTO } from "@/lib/imagen";
-import { etiquetaLugar, normalizarNombre, type LugarResumen } from "@/lib/lugares";
+import { etiquetaLugar, type LugarResumen } from "@/lib/lugares";
+import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import { configPublica } from "@/lib/config";
+import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
+import { sugerirLugares, recuperarLugar, type LugarSugerido } from "@/lib/buscarLugares";
+import { cambiarReserva, consultarMapa, lugaresPorTexto, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import mapa from "@/components/Mapa.module.css";
@@ -22,6 +27,11 @@ import styles from "./HojaDondeEs.module.css";
 export type OtroSitio = {
   reservado: boolean;
   sitioTexto: string;
+  /** Direccion publica estructurada, nunca parte del alias persistido. */
+  direccion?: string;
+  nombreLegacy?: boolean;
+  referenciaLegacy?: string;
+  pinPendiente?: boolean;
   sitioPunto: Punto | null;
   direccionPrivada: string;
   privadoPunto: Punto | null;
@@ -43,7 +53,8 @@ type Props = {
   /** Adónde vuelve "Registrar un lugar nuevo" con el lugar elegido. */
   volverA: string;
   onLugar: (id: string) => void;
-  onOtro: (o: OtroSitio) => void;
+  onOtro: (o: OtroSitio, desdePin?: boolean) => void;
+  onGesto: () => void;
   onEstoyAqui: (poner: (p: Punto) => void) => void;
   onCerrar: () => void;
 };
@@ -53,28 +64,127 @@ type Props = {
  * campo con la lupa y los lugares registrados (foto, tipo, calle) que se filtran al escribir; debajo, "Es en otro
  * sitio" (nombre, pin y el interruptor de reservado con la dirección exacta) y "Registrar un lugar nuevo".
  */
-export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubicando, avisoUbicacion, volverA, onLugar, onOtro, onEstoyAqui, onCerrar }: Props) {
+export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubicando, avisoUbicacion, volverA, onLugar, onOtro, onGesto, onEstoyAqui, onCerrar }: Props) {
   const [q, setQ] = useState("");
-  const [vista, setVista] = useState<"lista" | "otro">(modoSitio !== "lugar" && otro.sitioTexto ? "otro" : "lista");
-  const clave = normalizarNombre(q);
-  const filtrados = clave ? lugares.filter((l) => normalizarNombre(l.nombre).includes(clave)) : lugares;
-  const cambiar = (parte: Partial<OtroSitio>) => onOtro({ ...otro, ...parte });
-  const otroListo = otro.sitioTexto.trim().length > 0 && (!otro.reservado || otro.direccionPrivada.trim().length > 0);
+  const [vista, setVista] = useState<"lista" | "otro">(modoSitio !== "lugar" && (textoDelSitio(otro) || otro.reservado) ? "otro" : "lista");
+  const [consulta, setConsulta] = useState<{ texto: string; tipo: "direccion" | "lugar" } | null>(() => {
+    const texto = otro.reservado ? otro.direccionPrivada : otro.direccion;
+    return modoSitio !== "lugar" && texto && !(otro.reservado ? otro.privadoPunto : otro.sitioPunto) ? { texto, tipo: "direccion" } : null;
+  });
+  const [direcciones, setDirecciones] = useState<Sugerencia[]>([]);
+  const [sugeridos, setSugeridos] = useState<LugarSugerido[]>([]);
+  const [buscando, setBuscando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const version = useRef(0);
+  const sesion = useRef("");
+  useEffect(() => {
+    sesion.current = crypto.randomUUID();
+    const invalidar = () => { ++version.current; };
+    return invalidar;
+  }, []);
+  const punto = otro.reservado ? otro.privadoPunto : otro.sitioPunto;
+  const cerca = punto ?? yo ?? CIUDAD_INICIAL.centro;
+  useEffect(() => {
+    if (!consulta || consulta.texto.trim().length < 3) return;
+    const { mapboxToken } = configPublica();
+    const revision = version.current;
+    let vigente = true;
+    const timer = setTimeout(async () => {
+      setBuscando(true);
+      try {
+        if (!mapboxToken) throw new Error("Sin servicio de direcciones");
+        if (consulta.tipo === "direccion") {
+          const opciones = (await buscarDirecciones(consulta.texto, mapboxToken, cerca, consultarMapa)).filter(puntoValido);
+          if (vigente && revision === version.current) {
+            setDirecciones(opciones);
+            if (!opciones.length) setError("No encontré esa dirección. Prueba con calle, número y ciudad, o toca el mapa.");
+          }
+        } else {
+          const opciones = await sugerirLugares(consulta.texto, mapboxToken, cerca, sesion.current, consultarMapa);
+          if (vigente && revision === version.current) setSugeridos(opciones);
+        }
+      } catch {
+        if (vigente && revision === version.current) setError("No pude buscar la dirección. Intenta de nuevo o toca el mapa.");
+      } finally {
+        if (vigente && revision === version.current) setBuscando(false);
+      }
+    }, 350);
+    return () => { vigente = false; clearTimeout(timer); };
+  }, [consulta, cerca]);
+  function invalidar() {
+    const revision = ++version.current;
+    onGesto();
+    setConsulta(null);
+    setDirecciones([]);
+    setSugeridos([]);
+    setBuscando(false);
+    setError(null);
+    return revision;
+  }
+  function cambiar(parte: Partial<OtroSitio>, desdePin = false) {
+    invalidar();
+    onOtro({ ...otro, ...parte }, desdePin);
+  }
+  function escribirDireccion(texto: string) {
+    cambiar({ ...revisarNombreLegacy(otro), pinPendiente: !!texto.trim(), ...(otro.reservado ? { direccionPrivada: texto, privadoPunto: null, ciudad: null } : { direccion: texto, sitioPunto: null, ciudad: null }) });
+    setConsulta({ texto, tipo: "direccion" });
+  }
+  function elegirDireccion(s: Sugerencia) {
+    if (!puntoValido(s)) return;
+    const p = { lat: s.lat, lng: s.lng };
+    cambiar({ ...revisarNombreLegacy(otro), pinPendiente: false, ...(otro.reservado ? { direccionPrivada: s.direccion, privadoPunto: p, ciudad: s.ciudad } : { direccion: s.direccion, sitioPunto: p, ciudad: s.ciudad }) });
+  }
+  async function elegirSugerido(s: LugarSugerido) {
+    const revision = invalidar();
+    const { mapboxToken } = configPublica();
+    if (!mapboxToken) return;
+    setBuscando(true);
+    try {
+      const r = await recuperarLugar(s.mapboxId, mapboxToken, sesion.current, consultarMapa);
+      if (revision !== version.current) return;
+      if (!r || !puntoValido(r)) throw new Error("Sin coordenadas");
+      const p = { lat: r.lat, lng: r.lng };
+      const revisado = revisarNombreLegacy(otro);
+      onOtro({ ...revisado, pinPendiente: false, sitioTexto: otro.reservado || s.esDireccion ? revisado.sitioTexto : s.nombre, ciudad: r.ciudad,
+        ...(otro.reservado ? { direccionPrivada: r.direccion || s.direccion, privadoPunto: p } : { direccion: r.direccion || s.direccion, sitioPunto: p }) });
+      setVista("otro");
+    } catch {
+      if (revision === version.current) setError("No pude ubicar esa opción. Busca de nuevo o toca el mapa.");
+    } finally {
+      if (revision === version.current) setBuscando(false);
+    }
+  }
+  const cerrar = () => { invalidar(); onCerrar(); };
+  const filtrados = lugaresPorTexto(lugares, q);
+  const otroListo = sitioListo(otro);
+  const resultados = direcciones.length > 0 && (
+    <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Direcciones encontradas">
+      {direcciones.map(s => <li key={`${s.lat},${s.lng}`}><button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}><IconoPin width={20} height={20}/><b>{s.nombre || s.direccion}</b>{s.nombre && <small>{s.direccion}</small>}</button></li>)}
+    </ul>
+  );
 
   if (vista === "otro") {
-    const punto = otro.reservado ? otro.privadoPunto : otro.sitioPunto;
-    const ponerPunto = (p: Punto) => cambiar(otro.reservado ? { privadoPunto: p } : { sitioPunto: p });
+    const ponerPunto = (p: Punto) => cambiar({ ...revisarNombreLegacy(otro), pinPendiente: false, ...(otro.reservado ? { privadoPunto: p, ciudad: null } : { sitioPunto: p, ciudad: null }) }, true);
     return (
-      <Hoja etiqueta="Es en otro sitio" onCerrar={onCerrar}>
+      <Hoja etiqueta="Es en otro sitio" onCerrar={cerrar}>
         <h3>Es en otro sitio</h3>
         <div className={styles.otro}>
           <label className={`${canon.campo} ${canon.sinIcono}`}>
-            <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
+            <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value, nombreLegacy: false })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
             <Limpiar visible={!!otro.sitioTexto} />
           </label>
+          {otro.referenciaLegacy && !otro.sitioTexto.trim() && <p className={styles.nota}>Nombre público por confirmar. Texto anterior: {otro.referenciaLegacy}</p>}
+          {!otro.reservado && <label className={canon.campo}>
+            <IconoBuscar width={20} height={20}/>
+            <input type="text" value={otro.direccion ?? ""} onChange={e => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off"/>
+            <Limpiar visible={!!otro.direccion}/>
+          </label>}
+          {!otro.reservado && resultados}
+          {!otro.reservado && buscando && <p className={styles.nota} role="status">Buscando…</p>}
+          {!otro.reservado && error && <p className={styles.nota} role="alert">{error}</p>}
           <div className={styles.mapa}>
             <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} />
-            <button type="button" className={mapa.ubicame} onClick={() => onEstoyAqui(ponerPunto)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+            <button type="button" className={mapa.ubicame} onClick={() => { invalidar(); onEstoyAqui(ponerPunto); }} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
               <IconoUbicacion width={22} height={22} />
             </button>
           </div>
@@ -82,14 +192,17 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           <div className={styles.reservado}>
             <b>Reservado</b>
             <small>{otro.reservado ? "La dirección exacta solo la ven quienes van, cuando toque" : "La dirección solo la ven quienes van"}</small>
-            <button type="button" role="switch" aria-checked={otro.reservado} aria-label="Sitio reservado" className={canon.palanca} onClick={() => cambiar({ reservado: !otro.reservado })} />
+            <button type="button" role="switch" aria-checked={otro.reservado} aria-label="Sitio reservado" className={canon.palanca} onClick={() => cambiar(cambiarReserva(otro))} />
           </div>
           {otro.reservado && (
             <>
               <span className={limpiar.caja}>
-                <input type="text" value={otro.direccionPrivada} onChange={(e) => cambiar({ direccionPrivada: e.target.value })} maxLength={LIMITES_EVENTO.direccion} placeholder="Dirección exacta: calle y número, colonia" aria-label="Dirección exacta" className={canon.entrada} autoComplete="off" />
+                <input type="text" value={otro.direccionPrivada} onChange={(e) => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Dirección exacta: calle y número, colonia" aria-label="Dirección exacta" className={canon.entrada} autoComplete="off" />
                 <Limpiar visible={!!otro.direccionPrivada} />
               </span>
+              {resultados}
+              {buscando && <p className={styles.nota} role="status">Buscando…</p>}
+              {error && <p className={styles.nota} role="alert">{error}</p>}
               <select value={otro.revelarHoras} onChange={(e) => cambiar({ revelarHoras: Number(e.target.value) })} aria-label="Cuándo se revela" className={styles.select}>
                 {REVELAR_OPCIONES.map((o) => (
                   <option key={o.horas} value={o.horas}>
@@ -103,31 +216,31 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               </span>
             </>
           )}
-          <button type="button" className={styles.volver} onClick={() => setVista("lista")}>
+          <button type="button" className={styles.volver} onClick={() => { invalidar(); setVista("lista"); }}>
             Mejor un lugar registrado
           </button>
         </div>
-        <Boton type="button" onClick={onCerrar} disabled={!otroListo}>
+        <Boton type="button" onClick={cerrar} disabled={!otroListo}>
           Listo
-          {!otroListo && <small className={canon.faltaBoton}>{otro.sitioTexto.trim() ? "falta la dirección" : "falta el nombre del sitio"}</small>}
+          {!otroListo && <small className={canon.faltaBoton}>{!otro.sitioTexto.trim() ? "falta el nombre del sitio" : otro.pinPendiente ? "falta confirmar el pin" : "falta la dirección"}</small>}
         </Boton>
       </Hoja>
     );
   }
 
   return (
-    <Hoja etiqueta="Dónde es" onCerrar={onCerrar}>
+    <Hoja etiqueta="Dónde es" onCerrar={cerrar}>
       <h3>Dónde es</h3>
       <label className={`${canon.campo} ${styles.pegajoso}`}>
         <IconoBuscar width={20} height={20} />
-        <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nombre del lugar" aria-label="Buscar el lugar" autoComplete="off" autoFocus />
+        <input type="text" value={q} onChange={(e) => { invalidar(); setQ(e.target.value); setConsulta({ texto: e.target.value, tipo: "lugar" }); }} placeholder="Nombre o dirección" aria-label="Buscar el lugar" autoComplete="off" autoFocus />
         <Limpiar visible={!!q} />
       </label>
       {filtrados.length > 0 ? (
         <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">
           {filtrados.map((l) => (
             <li key={l.id}>
-              <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => onLugar(l.id)}>
+              <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => { invalidar(); onLugar(l.id); }}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
                 <img src={l.portada ?? SIN_FOTO} alt="" className={sug.foto} />
                 <b>{l.nombre}</b>
@@ -137,11 +250,16 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           ))}
         </ul>
       ) : (
-        <p className={styles.nadie}>{lugares.length ? `Ningún lugar registrado se llama «${q.trim()}».` : "Todavía no hay lugares registrados."}</p>
+        <p className={styles.nadie}>{lugares.length ? `Ningún lugar registrado coincide con «${q.trim()}».` : "Todavía no hay lugares registrados."}</p>
       )}
+      {buscando && <p className={styles.nota} role="status">Buscando…</p>}
+      {error && <p className={styles.nota} role="alert">{error}</p>}
+      {sugeridos.length > 0 && <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares y direcciones encontrados">
+        {sugeridos.map(s => <li key={s.mapboxId}><button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}><IconoPin width={20} height={20}/><b>{s.nombre}</b><small>{s.direccion}</small></button></li>)}
+      </ul>}
       <ul className={`${sug.lista} ${styles.lista}`}>
         <li>
-          <button type="button" className={sug.renglon} onClick={() => setVista("otro")}>
+          <button type="button" className={sug.renglon} onClick={() => { invalidar(); setVista("otro"); }}>
             <IconoPin width={20} height={20} />
             <b>Es en otro sitio</b>
             <small>Una plaza, un parque, una casa: lo escribes y pones el pin</small>
