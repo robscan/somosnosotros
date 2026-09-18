@@ -243,3 +243,67 @@ se deja un checkpoint y se continua con Terra. El modelo efectivo posterior
 queda pendiente de verificar en metadata; no se afirman porcentajes de ahorro.
 Esta anotacion no ejecuta trabajo operativo adicional ni declara entregas
 terminadas o nueva autorizacion de produccion.
+
+## Checkpoint de candidato integrado y ensayo local (2026-09-18)
+
+Interrupcion del gestor para continuar con Terra, conservando lo ejecutado.
+Metadata confirmada por el gestor: este turno de integracion uso Astra high,
+no Terra; no se infiere el modelo por el prompt. Las sesiones de direccion y
+avisos si fueron confirmadas en gpt-5.6-terra/high a las 22:18:01.200Z y
+22:17:47.409Z, desde checkpoints 0f2bd3d y c33e955 respectivamente.
+
+Codigo integrado en `ff017cb`: direccion `0f2bd3d` + `4d032113` y avisos
+`c33e955` + `22e996d`, sobre `086153e` que ya contiene el copy de Entrar.
+Se incorpora ademas el merge de main `e6905e8`: solo agrega a 108 su apendice
+de autorizacion y QA, sin diferencia adicional de codigo. Se conservan
+CLAUDE.md ajeno, bit056 e historial completo de OPEN_LOOPS. No se incorporan
+carriles ni los commits documentales `623058d`, `61e632d`, `60e1d09`.
+
+Decision vigente comunicada por el gestor: founder autoriza publicar todo el
+trabajo de fase 1 y revoca la suspension anterior de carriles. Carriles mantiene
+PR separado; este encargo sigue siendo local, sin PR, SQL remoto, push ni deploy.
+La activacion de avisos requiere una respuesta separada todavia pendiente.
+Sartre emitio dictamen favorable segun el gestor: tres P2 cerrados y sin nuevos
+bloqueantes; evidencia propia del revisor 65 unitarias, 14 Chrome y 163 checks PG.
+No se repitieron esas reproducciones ni se atribuyen al integrador.
+
+Suite integrada ejecutada una vez: 662 unitarias en 61 archivos, 42 migraciones
+y 658 checks PG correctos mediante el runner con lock local 55439; typecheck
+y build correctos. Lint sin errores, warning previo en iconos-sn.mjs:57.
+62 recorridos de componentes correctos: 41 flyer/direccion, 13 cupo, 2 guardado
+y 6 Nuevos. Capturas propias en `/tmp/sn-cierre-candidato-086153e`; inspeccionadas
+pin publico a 390/1280 y reservado a 390. Mapbox con estilo local, geocoding y
+transporte simulados; no certifica servicios reales ni Safari. Build con variables
+de proveedores vacias. Sin nuevas funcionalidades ni repeticion de suites.
+
+Ensayo del dump exacto comunicado por el gestor:
+`/Users/apple-1/Backups/somosnosotros/2026-09-18T22-37-38.411Z-pre-fase1-final/supabase.dump`,
+817611 bytes, SHA256 `4974565da8ca1b708b1cd2011871d425da1f258dd6f3992c515a2535048fa1c4`
+comprobado antes de restaurar. PostgreSQL 17.11 independiente en socket privado
+`/tmp/sn-fase1-restore.Lwu7ar`, listen_addresses vacio, sin TCP ni uso de roles
+del servidor compartido. Roles locales anon/authenticated/service_role.
+pg_restore con no-owner/no-privileges, exit-on-error y single-transaction.
+
+Limitacion concreta: PG17 local no dispone de supabase_vault. Se excluyeron solo
+su entrada de extension, comentario y TABLE DATA vault.secrets mediante una lista
+TOC temporal; el dump original no se edito ni se leyeron valores secretos.
+La restauracion restante termino correctamente y las nueve migraciones pendientes
+17160000, 17170000, 18100000, 18110000, 18120000, 18130000, 18140000, 18150000
+y 18160000 se aplicaron sin error, cada una en transaccion. El ledger restaurado
+se dejo en 33 filas: no se simulo un registro de despliegue remoto.
+
+Conteos antes/despues: cuentas 10/10, perfiles 10/10, eventos 88/88, artistas
+526/526, lugares 58/58, asistencias 22/22, sitio privado 1/1, suscripciones push
+6/6, avisos enviados 7/7, novedades 2/2, objetos Storage 385/385. Las restantes
+tablas preexistentes conservaron conteo salvo indicadores_diarios, 3/2. Esa
+diferencia disparo el control estricto del script (exit 1) despues de aplicar las
+nueve migraciones; 17170000 contiene expresamente el DELETE de la foto de hoy
+para regenerarla. No se afirma igualdad total de conteos ni aprobacion del ensayo.
+
+Limpieza terminada aun tras ese control: PG privado detenido y directorio temporal
+eliminado, incluido el TOC derivado. No se paro ni altero 55439. No se expusieron
+filas personales. No se probaron owners/grants originales, Vault, Auth/Storage/CDN
+ni bytes de imagen. Pendientes para el gestor: aceptar o completar la limitacion
+de Vault y el control de conteos, aprobar el ensayo SQL, autorizar PR del candidato,
+preview, publicacion y comprobacion en telefono; activar avisos se decide aparte.
+Este checkpoint no declara restauracion integral aprobada ni despliegue realizado.
