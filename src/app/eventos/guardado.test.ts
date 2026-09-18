@@ -7,7 +7,7 @@ vi.mock("next/server", () => ({ after: m.after }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect, RedirectType: { replace: "replace" } }));
 vi.mock("@/lib/supabase/sesion", () => ({ sesionOEntrar: m.sesion }));
 vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: vi.fn() }));
-vi.mock("@/lib/avisos", () => ({ avisarCambioEvento: vi.fn(), avisarNuevoEvento: vi.fn() }));
+vi.mock("@/lib/avisosWorker", () => ({ intentarDrenarAvisos: vi.fn() }));
 vi.mock("@/lib/cartel", () => ({ leerCartel: vi.fn() }));
 
 const ID = "00000000-0000-4000-8000-000000000001";
@@ -31,7 +31,7 @@ describe("guardado completo del evento", () => {
   it("publica con una sola RPC, sin escrituras parciales separadas", async () => {
     await expect(crearEvento(null, formulario())).rejects.toThrow("REDIRECT");
     expect(m.rpc).toHaveBeenCalledTimes(1);
-    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_completo", expect.objectContaining({
+    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_con_avisos", expect.objectContaining({
       p_evento: null, p_privado: null, p_datos: expect.objectContaining({ titulo: "Evento" }),
       p_quien: [expect.objectContaining({ nombre: "Trio de prueba" })],
     }));
@@ -75,7 +75,7 @@ describe("guardado completo del evento", () => {
     expect(await actualizarEvento(ID, null, formulario())).toEqual(expect.objectContaining({ ok: false, general: expect.stringContaining("cambió mientras") }));
     expect(m.after).not.toHaveBeenCalled();
     expect(m.invalidar).not.toHaveBeenCalled();
-    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_completo", expect.objectContaining({ p_revision: "2030-09-01T12:00:00Z" }));
+    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_con_avisos", expect.objectContaining({ p_revision: "2030-09-01T12:00:00Z" }));
   });
 
   it("una pantalla antigua sin revision no sobreescribe el evento", async () => {
@@ -85,10 +85,10 @@ describe("guardado completo del evento", () => {
     expect(m.rpc).not.toHaveBeenCalled();
   });
 
-  it("recuperar un alta confirmada no programa otro aviso", async () => {
+  it("recuperar un alta confirmada drena la misma cola sin crear otro aviso", async () => {
     m.rpc.mockResolvedValue({ data: { id: ID, artistas: [], repetido: true }, error: null });
     await expect(crearEvento(null, formulario())).rejects.toThrow("REDIRECT");
-    expect(m.after).not.toHaveBeenCalled();
+    expect(m.after).toHaveBeenCalledTimes(1);
     expect(m.redirect).toHaveBeenCalledWith(`/eventos/${ID}?nuevo=1`, "replace");
   });
 

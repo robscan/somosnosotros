@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
-import { avisarCambioEvento, avisarNuevoEvento } from "@/lib/avisos";
+import { intentarDrenarAvisos } from "@/lib/avisosWorker";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
@@ -78,7 +78,7 @@ type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: s
 
 async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[], operacion: FormDataEntryValue | null, revision: string | null = null): Promise<{ data: GuardadoCompleto | null; conflicto: boolean }> {
   if (typeof operacion !== "string" || !esUuid(operacion)) return { data: null, conflicto: false };
-  const { data, error } = await supabase.rpc("guardar_evento_completo", {
+  const { data, error } = await supabase.rpc("guardar_evento_con_avisos", {
     p_evento: id,
     p_datos: filaEvento(datos, ciudad),
     p_privado: datos.privado,
@@ -91,7 +91,7 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
 
 
 export async function crearEvento(_previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
-  const { supabase, user } = await sesionOEntrar("/eventos/nuevo");
+  const { supabase } = await sesionOEntrar("/eventos/nuevo");
   const entrada = leer(formData);
   const lugar = await lugarDelEvento(supabase, entrada);
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
@@ -100,13 +100,13 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"));
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
   revalidar(data.id, datos.lugar_id, data.artistas);
-  // Avisar a quienes siguen el lugar, después de responder (no retrasa la publicación).
-  if (!data.repetido) after(() => avisarNuevoEvento(data.id, user.id));
+  // La transaccion ya encolo: tambien un reintento puede acelerar su drenaje.
+  after(intentarDrenarAvisos);
   redirect(`/eventos/${data.id}?nuevo=1`, RedirectType.replace);
 }
 
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
-  const { supabase, user } = await sesionOEntrar(`/eventos/${id}/editar`);
+  const { supabase } = await sesionOEntrar(`/eventos/${id}/editar`);
   const entrada = leer(formData);
   const lugar = await lugarDelEvento(supabase, entrada);
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
@@ -121,8 +121,7 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   if (!data) return { ok: false, errores: {}, general: "No se pudo guardar el evento completo. ¿Sigues con sesión y es tu evento?" };
   revalidar(id, datos.lugar_id, [...data.artistas, ...data.artistas_anteriores]);
   if (data.lugar_anterior && data.lugar_anterior !== datos.lugar_id) revalidatePath(`/lugares/${data.lugar_anterior}`);
-  const cambio = data.cambio;
-  if (cambio) after(() => avisarCambioEvento(id, user.id, cambio));
+  after(intentarDrenarAvisos);
   return { ok: true, id, volver: `/eventos/${id}` };
 }
 

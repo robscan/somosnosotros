@@ -1,27 +1,30 @@
 import "server-only";
 
-/** Los avisos por correo se activan con RESEND_API_KEY en el servidor. */
-export function correoActivo(): boolean {
-  return !!process.env.RESEND_API_KEY;
+export type ResultadoEnvio = { estado: "enviada" | "reintentar" | "fallida" | "descartada"; codigo: string };
+export function correoActivo(): boolean { return !!process.env.RESEND_API_KEY; }
+
+export function cuerpoCorreo(p: { para: string; asunto: string; texto: string; html: string; bajaUrl: string }): string {
+  return JSON.stringify({ from: process.env.CORREO_REMITENTE || "Somos Nosotros <avisos@somosnosotros.org>",
+    to: [p.para], subject: p.asunto, text: p.texto, html: p.html,
+    headers: { "List-Unsubscribe": `<${p.bajaUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } });
 }
 
-const REMITENTE = process.env.CORREO_REMITENTE || "Somos Nosotros <avisos@somosnosotros.org>";
-
-/** Manda un correo con Resend. Devuelve false si no hay llave o falla; nunca lanza. */
-export async function enviarCorreo(p: { para: string; asunto: string; texto: string; html: string; bajaUrl?: string }): Promise<boolean> {
-  if (!correoActivo()) return false;
+/** El cuerpo persistido se manda sin volver a serializarlo ni renovar su clave. */
+export async function enviarCorreoIdempotente(cuerpo: string, clave: string, signal: AbortSignal): Promise<ResultadoEnvio> {
+  if (!correoActivo()) return { estado: "reintentar", codigo: "correo_config" };
   try {
-    // Baja de un toque: Gmail y Yahoo la exigen desde 2024 y muestran su propio botón "Cancelar suscripción".
-    const headers = p.bajaUrl ? { "List-Unsubscribe": `<${p.bajaUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : undefined;
     const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: REMITENTE, to: [p.para], subject: p.asunto, text: p.texto, html: p.html, headers }),
+      method: "POST", signal, redirect: "error",
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": clave },
+      body: cuerpo,
     });
-    if (!res.ok) console.error("enviarCorreo:", res.status, await res.text());
-    return res.ok;
-  } catch (e) {
-    console.error("enviarCorreo:", e instanceof Error ? e.message : e);
-    return false;
-  }
+    if (res.ok) return { estado: "enviada", codigo: "aceptado" };
+    if (res.status === 409) {
+      const detalle = await res.json().catch(() => null);
+      return detalle?.name === "concurrent_idempotent_requests"
+        ? { estado: "reintentar", codigo: "correo_concurrente" }
+        : { estado: "fallida", codigo: "correo_conflicto" };
+    }
+    return { estado: res.status === 429 || res.status >= 500 || res.status === 408 ? "reintentar" : "fallida", codigo: `correo_${res.status}` };
+  } catch { return { estado: "reintentar", codigo: "correo_red" }; }
 }

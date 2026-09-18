@@ -5,7 +5,7 @@ const m = vi.hoisted(() => ({ cliente: vi.fn(), sesion: vi.fn(), rpc: vi.fn(), c
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn(), RedirectType: {} }));
 vi.mock("next/server", () => ({ after: vi.fn() }));
-vi.mock("@/lib/avisos", () => ({ avisarCambioEvento: vi.fn(), avisarNuevoEvento: vi.fn() }));
+vi.mock("@/lib/avisosWorker", () => ({ intentarDrenarAvisos: vi.fn() }));
 vi.mock("@/lib/config", () => ({ configPublica: () => ({ supabaseUrl: "https://storage.invalid" }) }));
 vi.mock("@/lib/cartel", () => ({ leerCartel: m.modelo }));
 vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: m.cliente }));
