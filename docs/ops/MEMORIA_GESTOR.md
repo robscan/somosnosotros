@@ -112,3 +112,8 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   la frase como permiso para borrar uno de ellos. Operador y revisor notificados.
   Texto de Entrar sigue autorizado por separado, PR102, aun no publicado al
   registrar esta actualizacion. No autoriza migraciones ni otros lotes.
+- 2026-09-18, cierre posterior: PR102/e6905e8 publicado y comprobado en
+  somosnosotros.org/entrar a390x844. Carriles confirmados detenidos en15e3109,
+  sin push ni PR. Direccion entrega4d032113 y avisos22e996d, ambos locales,
+  pendientes de revision, sin autorizacion de produccion. Cupo global consultado
+  despues:90% usado/10% restante semanal; no atribuir la diferencia a una pieza.
