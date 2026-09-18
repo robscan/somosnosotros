@@ -248,3 +248,13 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   correccion y nueva entrega hasta integrar/publicar lo autorizado. Atender otras
   entregas independientes mientras hay correcciones; no vigilar pasos ni esperar
   que founder reactive cada chat. Protocolo detallado en GESTION_DE_CAMBIOS.
+- 2026-09-18, autorizacion operativa verificada en tarea de avisos
+  01a0b694-ed57-7700-b717-a4e56dbd1c31: founder responde "autorizo, coordina con
+  gestor de cambios para que te entregue reglas de operacion y que no interfieras
+  con otra entrega" a activar entregar=true, cron y primer envio/transicion.
+  Sustituye pendiente de permiso anterior, NO significa activacion ya ejecutada.
+  Operador Terra high recibe propiedad exclusiva de configuracion avisos/cron/Vault
+  y transicion conforme113, con rollback y evidencia final. No merge/deploy de
+  PR105 durante esa ventana; Pincel sigue local. Mantener corte/captura existentes,
+  no reenvio historico ni cambios Auth/Storage/planes. Gestor revisa entrega final;
+  bloqueo real de frontera legado requiere entrega especifica, no activacion ciega.
