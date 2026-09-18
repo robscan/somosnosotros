@@ -148,3 +148,12 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   Cada encargo debe indicar pruebas focalizadas, evidencia reutilizable y
   motivo para ampliar cobertura. Esta regla sustituye repetir toda la suite
   por cada cambio o revision; no elimina controles de seguridad ni CI requerido.
+- 2026-09-18, reserva de prototipo Pincel autorizado por el founder en tarea
+  01a0b601-b973-7983-95eb-fe66f43e1988: OL-084, bitacora118,
+  rama codex/pincel-prototipo desde d1b5bdc417a495c2ff5e40594b2df636feff26e0,
+  worktree /Users/apple-1/somosnosotros-pincel-prototipo. Operador Terra medium.
+  Solo experiments/pincel-prototipo y documentacion propia; sin cambios a app,
+  backend, dependencias, migraciones o produccion. Reutilizar evidencia del spike;
+  pruebas focalizadas de estados/pinceles y recorrido visual movil/escritorio,
+  sin suite global. Prototipo de sesion y colaboracion simuladas, no integracion
+  real. Esta pieza no bloquea el cierre de fase1.
