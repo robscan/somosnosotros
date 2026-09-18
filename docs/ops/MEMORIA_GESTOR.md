@@ -125,3 +125,12 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   experimento separado, sin convertirlo silenciosamente en producto.
   Activacion de envios reales y cron de cinco minutos consultada explicitamente,
   pendiente de respuesta; no inferir permiso para avisos historicos ni cambios Auth.
+- 2026-09-18, nueva regla del founder al agregar creditos: cada encargo a un
+  operador debe indicar modelo para resolver con ahorro. Terra para cambios
+  acotados; Luna para tareas mecanicas; Astra para decisiones/revision de riesgo.
+  Indicar tambien alcance, pruebas y condicion de escalamiento. Configurar el
+  modelo mediante la herramienta y comprobar el turno efectivo: escribirlo en
+  el prompt no basta. No despertar tareas terminadas solo para recordar reglas.
+  Escalar solo ante un bloqueo concreto que no resuelva el modelo asignado;
+  preservar contexto y trabajo. Creditos adicionales no autorizan mas agentes,
+  investigacion repetida ni consumo sin limite. Mantener reportes compactos.
