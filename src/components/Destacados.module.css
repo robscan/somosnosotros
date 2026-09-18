@@ -88,26 +88,23 @@
   white-space: nowrap;
 }
 
-/* Una sola tarjeta: a lo ancho, con la foto a la izquierda; nada queda solo en un carril. */
+/* Una sola tarjeta conserva el rectángulo ancho y el tamaño de imagen del carril. */
 .uno {
   grid-auto-columns: 100%;
 }
 .uno .tarjeta {
-  grid-template-columns: 124px 1fr;
-  grid-template-rows: auto auto;
-  grid-template-areas: "foto titulo" "foto detalle";
-  align-items: start;
-  column-gap: var(--espacio-3);
+  grid-template-rows: 264px auto auto;
+  grid-template-areas: "foto" "titulo" "detalle";
   text-align: left;
 }
 .uno .foto {
-  height: 186px;
+  height: 100%;
 }
 .uno small {
   white-space: normal;
 }
 
-/* En el carril semanal, fecha y hora completas incluso en las tarjetas redondas. */
+/* En el carril semanal, fecha y hora completas. */
 .detalleCompleto .tarjeta small {
   white-space: normal;
 }
