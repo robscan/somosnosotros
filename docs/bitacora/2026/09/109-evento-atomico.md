@@ -40,3 +40,25 @@ NO listo para publicar todavia: falta cola transaccional de avisos, para que
 perder la respuesta despues del commit no pierda el envio. El codigo after actual
 no garantiza esa recuperacion; el reintento por si solo no la resuelve. Falta
 revision independiente de estas correcciones y prueba visual del conflicto.
+
+## Verificacion posterior del formulario
+
+El gestor agrega `guardado.componentes.test.mjs`: dos recorridos en Chrome real,
+390x844 y 1280x844, con FormularioEvento real y accion simulada, sin escrituras
+remotas. Un error conserva titulo y operacion; reintentar sin cambios repite UUID;
+cambiar un campo crea otro. Un refresh de props no reemplaza la revision inicial.
+Un conflicto mantiene la edicion y ofrece enlace con target blank/noopener a la
+ficha actual, sin ejecutar la salida de guardado correcto.
+
+Ambas pruebas pasan. Capturas completas examinadas en
+`/tmp/sn-guardado-109/conflicto-390.png` y `conflicto-1280.png`: texto y enlace
+legibles, sin desborde horizontal ni superposicion con Guardar cambios. CSS real,
+fuente local Arial en el harness; otros selectores simulados, no se afirma prueba
+de esos recorridos ni de Safari. Primera ejecucion corregida por usar un doble
+con general dentro de errores en vez del contrato real (general separado).
+
+Reproduccion: variables PLAYWRIGHT_MODULE y CHROME_EXECUTABLE del banco de cupo,
+GUARDADO_SCREENSHOTS=/tmp/sn-guardado-109 y
+`node --test src/app/eventos/guardado.componentes.test.mjs`.
+Lint del archivo correcto. Esto cubre la prueba visual pendiente, no cierra
+la cola de avisos ni la revision independiente del conjunto final.
