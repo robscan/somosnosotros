@@ -215,3 +215,14 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   Recorrido de edicion y busqueda de direccion aceptado por el founder tras
   publicacion de PR104. No extender esta firma a otros recorridos ni a activar
   correo/push/cron; esa autorizacion sigue pendiente.
+- 2026-09-18, Pincel: founder precisa zona tactil superior visible, sin enlace
+  alternativo de dedo; color y tipo como dropdowns a extremos del control central.
+  Boton de pintar mas alto, con espacio inferior para sostener el telefono sin
+  cambiar agarre. Terra high informado; validar pantallas cortas/altas, comodidad
+  fisica pendiente del founder. Misma rama/OL084/bit118, solo prototipo local.
+- 2026-09-18, directorios31a2236: gestor inspecciono capturas390/1280 y delta
+  b0abc31. Solapamiento del indice sobre fotos corregido al convertirlo en fila
+  horizontal sticky. Sigue candidato local, no aprobado por founder ni publicado:
+  cambia la referencia de indice tipo Contactos y requiere revisar tamano tactil.
+  No repetir suite global por este ajuste. Operador de avisos informado de que su
+  codigo ya esta integrado en PR104/prod; entrega externa sigue sin autorizar.
