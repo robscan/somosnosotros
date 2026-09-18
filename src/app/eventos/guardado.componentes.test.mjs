@@ -11,6 +11,7 @@ import { build } from "esbuild";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const captures = process.env.GUARDADO_SCREENSHOTS;
 const revision = "2026-09-18T10:00:00.123456+00:00";
+const conflicto = "El evento cambió mientras lo editabas. Tus cambios siguen aquí, pero no se guardaron. Revisa la versión actual antes de volver a editar.";
 const id = "00000000-0000-4000-8000-0000000000f1";
 let dir, server, browser, origin;
 const mocks = {
@@ -75,8 +76,8 @@ for(const width of [390,1280]) test(`Reintento y conflicto conservan la edicion,
   assert.equal(await p.evaluate(()=>window.qa.envios[1].operacion),primero.operacion);
   await p.evaluate(()=>window.qa.revision("2026-09-18T11:00:00Z"));
   await titulo.fill("Mi correccion posterior");
-  await p.evaluate(()=>{window.qa.resultado={ok:false,conflicto:true,errores:{},general:"El evento cambio en otra pantalla. Tus datos siguen aqui."};});
-  await guardar.click();await p.getByRole("alert").filter({hasText:"El evento cambio en otra pantalla. Tus datos siguen aqui."}).waitFor();
+  await p.evaluate(general=>{window.qa.resultado={ok:false,conflicto:true,errores:{},general};},conflicto);
+  await guardar.click();await p.getByRole("alert").filter({hasText:conflicto}).waitFor();
   const tercero=await p.evaluate(()=>window.qa.envios[2]);
   assert.notEqual(tercero.operacion,primero.operacion);
   assert.equal(tercero.revision,revision);
