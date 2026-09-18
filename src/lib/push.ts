@@ -1,6 +1,7 @@
 import "server-only";
 import webpush from "web-push";
 import { clienteAdmin } from "./supabase/admin";
+import { CONCURRENCIA_PUSH, ESPERA_PUSH_MS, validarSuscripcionPush } from "./suscripcionPush";
 
 /** Los avisos push se activan con las llaves VAPID en el servidor. */
 export function pushActivo(): boolean {
@@ -21,22 +22,27 @@ export async function enviarPush(usuarios: string[], aviso: AvisoPush): Promise<
   const admin = clienteAdmin();
   if (!admin || !pushActivo() || usuarios.length === 0) return 0;
   configurar();
-  // Necesita venir completa: a quien no se manda aquí no le llega el push. Tope de sobra contra el corte
-  // silencioso de PostgREST (hoy se llama con una persona a la vez).
-  const { data } = await admin.from("suscripciones_push").select("endpoint, p256dh, auth, usuario_id").in("usuario_id", usuarios).limit(5000);
-  // Todos los teléfonos a la vez: cada envío es una petición HTTP independiente.
-  const resultados = await Promise.all(
-    (data ?? []).map(async (s) => {
+  const { data, error } = await admin.from("suscripciones_push").select("endpoint, p256dh, auth, usuario_id").in("usuario_id", usuarios).limit(5000);
+  if (error) return 0;
+  const suscripciones = (data ?? []).flatMap((s) => {
+    const valida = validarSuscripcionPush({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } });
+    return valida ? [valida] : [];
+  });
+  let siguiente = 0;
+  let enviados = 0;
+  // El mismo limite cubre filas antiguas; ninguna entra a la red sin validarse.
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCIA_PUSH, suscripciones.length) }, async () => {
+    while (siguiente < suscripciones.length) {
+      const s = suscripciones[siguiente++];
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(aviso), { TTL: 6 * 3600 });
-        return true;
+        await webpush.sendNotification(s, JSON.stringify(aviso), { TTL: 6 * 3600, timeout: ESPERA_PUSH_MS });
+        enviados++;
       } catch (e) {
         const status = (e as { statusCode?: number }).statusCode;
         if (status === 404 || status === 410) await admin.from("suscripciones_push").delete().eq("endpoint", s.endpoint);
-        else console.error("enviarPush:", status, e instanceof Error ? e.message : e);
-        return false;
+        else console.error("enviarPush: fallo del proveedor", status ?? "red");
       }
-    }),
-  );
-  return resultados.filter(Boolean).length;
+    }
+  }));
+  return enviados;
 }
