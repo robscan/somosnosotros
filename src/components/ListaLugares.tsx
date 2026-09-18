@@ -75,7 +75,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       {aviso}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
-      {!punto && <IndiceAlfabetico letra={letra} onSeleccionar={setLetra} onQuitar={() => setLetra(null)} />}
+      {!busqueda.trim() && !punto && <IndiceAlfabetico letra={letra} onSeleccionar={setLetra} onQuitar={() => setLetra(null)} />}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()

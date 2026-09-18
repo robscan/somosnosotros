@@ -28,6 +28,11 @@ export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: n
 /** Una tarjeta de la tira, lista para pintarse. */
 export type Tarjeta = { id: string; href: string; foto: string; titulo: string; detalle: string; van: number };
 
+/** Foto real primero; el orden de la selección o de las fechas se conserva dentro de cada grupo. */
+export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
+  return tarjetas.toSorted((a, b) => Number(a.foto.includes("/sin-foto")) - Number(b.foto.includes("/sin-foto")));
+}
+
 /** Lo que elige la administración en lugares y artistas dura dos semanas; un evento, hasta que pasa. */
 export const DIAS_DESTACADO = 14;
 const DOS_SEMANAS_MS = DIAS_DESTACADO * 86400000;
@@ -55,7 +60,7 @@ export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
   return { id: l.id, href: `/lugares/${l.id}`, foto: l.portada ?? SIN_FOTO_ANCHA, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0 };
 }
 
-/** La tarjeta de artista es redonda y angosta: la fecha va sin el sitio. */
+/** La tarjeta de artista usa el mismo rectángulo que eventos; la fecha va sin el sitio. */
 export function tarjetaArtista(a: ArtistaLista, ahora = new Date()): Tarjeta {
   return { id: a.id, href: `/artistas/${a.id}`, foto: a.foto ?? SIN_FOTO, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0 };
 }

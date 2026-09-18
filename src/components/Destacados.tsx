@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useId, useRef, type UIEvent } from "react";
-import type { Tarjeta } from "@/lib/destacados";
+import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import { IconoPersonas } from "./ui/Iconos";
 import styles from "./Destacados.module.css";
@@ -43,7 +43,7 @@ export default function Destacados({ tarjetas, encabezado = "Destacados", memori
   }
   if (tarjetas.length === 0) return null;
   // La curaduría (o la fecha semanal) conserva su orden dentro de cada grupo; una foto real va antes del placeholder.
-  const ordenadas = tarjetas.toSorted((a, b) => Number(a.foto.includes("/sin-foto")) - Number(b.foto.includes("/sin-foto")));
+  const ordenadas = ordenarTarjetasPorFoto(tarjetas);
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <h2 id={titulo}>{encabezado}</h2>
