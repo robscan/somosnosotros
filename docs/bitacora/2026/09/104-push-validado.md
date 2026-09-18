@@ -2,7 +2,8 @@
 
 Fecha: 2026-09-18. OL-073. Rama: `codex/push-seguro`.
 Depende de `codex/base-verificacion` (95e5ba2), integrada solo en esta rama.
-Main y los worktrees originales de Claude permanecen intactos.
+Esta tarea no edito main ni los worktrees originales de Claude. Ver la
+comprobacion de estado al cierre abajo.
 
 ## Alcance
 
@@ -67,3 +68,15 @@ tope-de-lecturas e indicadores-rol-de-entonces sin perder sus cambios sin commit
 Despues: nuevos-por-publicacion, entrar-texto-con-icono, guardado atomico,
 cola de avisos y recorrido flyer-direccion-mapa-como llegar. Este ultimo aun no
 se ha implementado. No declarar terminado el plan completo ni publicado este lote.
+
+## Comprobacion al cierre
+
+La comparacion contra el respaldo original encontro 31 worktrees con el mismo
+HEAD, estado Git y entradas unmerged, incluidos main y los pendientes prioritarios.
+Dos carpetas antiguas ya no estaban: festive-hofstadter-50977b y
+priceless-mestorf-6d9887. Otras tres estaban detached conservando su mismo HEAD:
+competent-herschel-3f3091, practical-hamilton-833e20 y reverent-germain-8bb38f.
+No hubo orden de eliminacion, checkout o detach sobre ellas en esta tarea; la
+causa no esta confirmada. No se restauraron ni eliminaron mas archivos.
+El respaldo original sigue disponible. El servidor PostgreSQL temporal se apago
+tras comprobar que no quedaban bases sn_test_ ni roles del banco.
