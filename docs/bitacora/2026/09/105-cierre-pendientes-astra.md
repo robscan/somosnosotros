@@ -117,3 +117,27 @@ Este corte actualiza las referencias de avance anteriores, conservadas como
 historia; no se infiere un estado posterior ni se modifica el deployment desde
 esta integracion. **No es produccion ni cierre de OL-074.** El manager actualizara
 108 y el cierre final cuando exista despliegue comprobado.
+
+## Revision del siguiente candidato: carriles semanales (2026-09-18)
+
+Revision independiente de `85c5423`, OL-083/bitacora 117: retenido por un P2
+nuevo. `cargarEventosSemana` acumula lotes de 500 hasta agotar las relaciones,
+sin presupuesto global ni cancelacion; Artistas y Lugares esperan el resultado,
+incluso en Mapa. Reproduccion con loader real y transporte simulado: 2.000
+relaciones del mismo artista requieren cinco consultas para una tarjeta; retener
+la quinta mantiene pendiente el directorio. No es una medicion de carga real.
+
+El gestor solicito al operador original una correccion local en su misma rama:
+presupuesto global y deadline con aborto efectivo; al excederlos, omitir el
+carril completo y entregar el directorio, sin ofrecer un ranking parcial por ID.
+Debe cubrir presupuesto agotado, transporte suspendido, aborto y fronteras.
+Sin SQL nuevo, migraciones, push ni despliegue. Un limite arbitrario sobre las
+relaciones no garantiza las primeras entidades por fecha. No se encontraron
+otros P1/P2 fundamentados en el diff; las 13 pruebas focalizadas pasaron.
+
+La publicacion autorizada sigue limitada a Nuevos20 y su base de verificacion,
+con Entrar intacto. Mapa, avisos, seguridad y Pincel siguen separados. El founder
+recibio una pregunta opcional sobre vigilancia automatica de Vercel: no crearla
+ni prometer notificaciones hasta recibir su autorizacion. Revalidar el estado
+de la incidencia y del despliegue antes de retomar; no duplicar solicitudes
+mientras el preview exacto siga pendiente.
