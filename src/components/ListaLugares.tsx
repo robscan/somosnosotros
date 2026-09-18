@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
-import { enOrden, tarjetaLugar, type Destacado } from "@/lib/destacados";
+import { enOrden, tarjetaLugar, type Destacado, type Tarjeta } from "@/lib/destacados";
 import { etiquetaTipo, filtrarLugares, ordenarLugares, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
 import { Chips } from "./ui/Chip";
 import Destacados from "./Destacados";
@@ -36,6 +36,7 @@ type Props = {
   avisos?: AvisosLista | null;
   /** La tira de destacados (docs/rediseno/20); se va con un tipo o una búsqueda. */
   destacados?: Destacado[];
+  eventosSemana?: Tarjeta[];
 };
 
 /**
@@ -43,7 +44,7 @@ type Props = {
  * con eventos primero, o por distancia con la ubicación; búsqueda por nombre y chips de tipo solo cuando hay muchos.
  * Una sola fila de chips: Cerca de mí · Todos · tipos (la pinta VistaLugares, que comparte el tipo con el mapa).
  */
-export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso, seguidos = null, avisos = null, destacados = [] }: Props) {
+export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
   const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
   // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   // Si la pantalla puso su canal (Lugares, con Mapa y Lista), el aviso y la pregunta son de ella: cambiar de vista no
@@ -70,6 +71,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       {chips && <Chips ariaLabel="Cerca de mí y tipo de lugar">{chips}</Chips>}
       {aviso}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} />}
+      {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()
