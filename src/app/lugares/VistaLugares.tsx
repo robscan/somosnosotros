@@ -19,7 +19,7 @@ import {
   IconoUbicacion,
 } from "@/components/ui/Iconos";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
-import type { Destacado } from "@/lib/destacados";
+import type { Destacado, Tarjeta } from "@/lib/destacados";
 import { SIN_FOTO } from "@/lib/imagen";
 import ChipCiudad from "@/components/Ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
@@ -48,6 +48,7 @@ type Props = {
   avisos: AvisosLista | null;
   /** La tira de destacados de la ciudad (docs/rediseno/20): arriba de la lista y, en naranja, en el mapa. */
   destacados: Destacado[];
+  eventosSemana: Tarjeta[];
 };
 
 /**
@@ -66,6 +67,7 @@ export default function VistaLugares({
   seguidos,
   avisos,
   destacados,
+  eventosSemana,
 }: Props) {
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [elegido, setElegido] = useState<LugarLista | null>(null);
@@ -253,6 +255,7 @@ export default function VistaLugares({
             seguidos={seguidos}
             avisos={avisos}
             destacados={destacados}
+            eventosSemana={eventosSemana}
             chips={
               <>
                 {chipCiudad}

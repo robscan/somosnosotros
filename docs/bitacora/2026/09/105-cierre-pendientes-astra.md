@@ -307,3 +307,42 @@ ni bytes de imagen. Pendientes para el gestor: aceptar o completar la limitacion
 de Vault y el control de conteos, aprobar el ensayo SQL, autorizar PR del candidato,
 preview, publicacion y comprobacion en telefono; activar avisos se decide aparte.
 Este checkpoint no declara restauracion integral aprobada ni despliegue realizado.
+
+## Ensayo canónico terminado y candidato con carriles (2026-09-18)
+
+El gestor confirmó este turno de continuidad en Terra high a las 22:44:21. No se
+abrieron agentes ni se repitieron las baterías previas: se corrigió solamente el
+criterio de comparación del ensayo de restauración. La primera comparación usaba
+la representación JSON de `guardado_en`; las migraciones cambian la zona de la
+sesión y un `timestamptz` se serializa distinto sin que la fila cambie. El
+agregado final usa época UTC canónica, sin mostrar filas ni datos personales.
+
+El dump verificado se restauró de nuevo en PostgreSQL 17.11 temporal, solo por
+socket Unix privado y sin TCP; roles locales anon/authenticated/service_role,
+`no-owner`, `no-privileges`, `exit-on-error` y `single-transaction`. Se
+excluyeron exactamente tres entradas TOC de Vault: extensión `supabase_vault`,
+su comentario y `TABLE DATA vault.secrets`. No existe esa extensión local; no se
+instaló, no se leyó ningún secreto y el dump mantuvo su SHA256 antes y después.
+Por ello es un ensayo de esquema y datos no-Vault, no una restauración integral
+de Vault, Auth/Storage/CDN ni bytes de imágenes.
+
+Resultado: las nueve migraciones pendientes se aplicaron sin error sobre las
+33 del dump. De 60 tablas originales, 59 mantuvieron su conteo. La única
+variación es `public.indicadores_diarios`, de 3 a 2: había exactamente una fila
+del día de México y 17170000 la borra explícitamente para recalcularla. Las dos
+filas históricas conservaron el mismo agregado canónico. El ledger restaurado
+permanece en 33 filas porque el ensayo no simula el registro remoto de un
+despliegue. La instancia y su TOC temporal se detuvieron y eliminaron; 55439 no
+se tocó. Esto resuelve la discrepancia de conteo, pero no convierte la limitación
+de Vault en aprobada: el gestor debe decidirla antes de autorizar SQL remoto.
+
+Se actualizó la base del candidato con `origin/main` `0a305989381c5a4eb47cd32e040c3174cf63114b`
+(PR #103, carriles semanales). El merge fue limpio: conserva la selección y
+presentación de `sitio_direccion`, no revive el texto antiguo de Entrar y suma
+los carriles en Artistas y Lugares. La bitácora 117 y OPEN_LOOPS de main quedan
+incluidos sin borrar su historia. SQL no cambió al sumar carriles, así que no se
+repitieron PG ni restauración. Pruebas de la combinación: 679 unitarias en 63
+archivos, typecheck y build correctos con variables de proveedor vacías. Siguen
+pendientes la aprobación del gestor para abrir PR, preview y revisión visual del
+candidato; nada se publica ni se activa. La pregunta separada para activar
+entregas reales de avisos/cron continúa pendiente.
