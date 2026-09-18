@@ -104,3 +104,11 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
 - 2026-09-18: consulta de uso informa86% del cupo semanal consumido,14% restante;
   dato de toda la cuenta, no mensual ni atribuible a esta tarea. Reconsultar si
   se necesita estado vigente. No comprar creditos ni consumir resets sin permiso.
+- 2026-09-18, actualizacion posterior: el founder autorizo publicar carriles
+  semanales y texto breve de Entrar tras pruebas/revision visual. Despues ordeno
+  detener "la logica de destacar en lugares y artistas" por el orden de eventos
+  proximos. Publicacion y trabajo adicional de carriles DETENIDOS hasta aclarar
+  si se retiran Destacados manuales o se cancela el nuevo carril; no interpretar
+  la frase como permiso para borrar uno de ellos. Operador y revisor notificados.
+  Texto de Entrar sigue autorizado por separado, PR102, aun no publicado al
+  registrar esta actualizacion. No autoriza migraciones ni otros lotes.
