@@ -92,3 +92,43 @@ Entrar se conserva igual a produccion, sin cambios de Auth ni proveedores.
 Pendiente en este registro: CI/preview del commit final, integracion autorizada
 y comprobacion del despliegue. No considerar publicado hasta registrar esas
 evidencias; la aprobacion funcional en el telefono sigue correspondiendo al founder.
+
+## Publicado y comprobado en el dominio real (2026-09-18)
+
+Este cierre sustituye el estado pendiente anterior, conservado como historia.
+PR #100 integrado en `75469d7`; PR #101 en
+`3a45399f14701803fe3035e02878a7a5935c0601` a las 21:23:21Z.
+El arbol del merge coincide con el candidato probado `7cedf1b`. CI del merge
+aprobada: run 35396513626. El founder reitero "ok dime que debo revisar,
+vamos a prod". Sin cambios de Auth, CSS de Entrar, variables ni migraciones.
+
+Vercel sufrio una incidencia al crear despliegues. La preview manual exacta
+AzGFuSnWXksA2cMxe5kPjLDpvQzK termino correctamente, pero el alias de rama
+quedo temporalmente en un commit anterior por entregas retrasadas. Se uso el
+SHA exacto, no ese alias, para verificar y publicar.
+
+Despliegue Production `6iCc9mbpMXiBv3BMWZgpqiSik39s`, build de 25 s,
+URL inmutable https://somosnosotros-cnw3wnlvx-robscans-projects.vercel.app/ .
+Quedo primero Staged y se solicito Promote. El panel mantuvo un estado atrasado;
+un reintento del mismo ID respondio que ya era el despliegue actual de produccion.
+La confirmacion decisiva fue comprobar https://somosnosotros.org/ directamente,
+no interpretar Ready como publicacion. Otro despliegue F1KjVj9HRGQ96CrdojjAFEpGmngv
+del mismo merge aparecio durante el proceso; no se infiere su origen ni resultado.
+
+Comprobado en el dominio real: 20 enlaces a eventos (2 publicados ayer y 18 esta
+semana), misma lista y orden de IDs al abrir una ficha y volver con Atras,
+Ver todos selecciona Todos y repone la agenda, Entrar ofrece Apple, Google y
+correo. No se completaron OAuth ni escrituras de asistencia en una cuenta real.
+
+Evidencia: captura de produccion a 1280 y captura del mismo build Production
+preparado a 390x844, sin overflow, inspeccionadas. En el build preparado tambien
+se verificaron los 20 IDs y su regreso. No se etiqueta la captura de escritorio
+como movil. Archivos en la carpeta de evidencias del gestor:
+`nuevos20-produccion-1280.png`, `nuevos20-vercel-production-staged-390.png`.
+La prueba fisica de Safari/iPhone corresponde al founder y sigue pendiente.
+
+Para probar la primera visita sin borrar el estado habitual, usar una pestana
+privada del telefono: abrir Nuevos, comprobar maximo 20, ficha/Atras y Ver todos.
+En una visita posterior puede mostrar Ya estas al dia si no hay publicaciones
+nuevas. Entrar debe conservar los proveedores actuales. Este cierre publica
+solo el primer lote, no mapa, avisos, seguridad, CAPO, carriles semanales ni Pincel.
