@@ -258,3 +258,12 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   PR105 durante esa ventana; Pincel sigue local. Mantener corte/captura existentes,
   no reenvio historico ni cambios Auth/Storage/planes. Gestor revisa entrega final;
   bloqueo real de frontera legado requiere entrega especifica, no activacion ciega.
+- 2026-09-18, founder solicita revision puntual de operadores y nuevo flujo de
+  VoBo: propuestas se muestran y notifican en la tarea del operador, se iteran
+  alli hasta aceptacion y despues se entregan al gestor. Comprobacion puntual:
+  avisos activo; Pincel inactivo con correcciones pendientes, reactivado para
+  terminar antes de presentar; directorios inactivo con propuesta sin VoBo,
+  informado de CI/preview ya listos y encargado de solicitar aprobacion alli.
+  No reactivar tareas cerradas ni vigilar progreso; esperar entrega/bloqueo.
+  Avisos libera ventana operativa con evidencia aunque firma de recepcion siga
+  pendiente. No prometer avisos del sistema operativo: usar solicitudes en tarea.

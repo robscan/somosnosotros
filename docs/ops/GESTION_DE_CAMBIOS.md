@@ -73,6 +73,18 @@ para el mismo alcance. Solo dejar espera por una dependencia, decision o bloqueo
 concreto, con responsable y accion de salida. No requiere vigilancia periodica
 ni automatizaciones de pago adicionales: se coordina mediante avisos de entrega.
 
+El founder precisa despues el punto de revision de propuestas: el operador
+presenta en su propia tarea una propuesta comprobada, con captura/enlace y una
+solicitud accionable de VoBo (request_user_input_async cuando este lista). Itera
+directamente con el founder y remite al gestor la entrega consolidada junto con
+su aprobacion. No obligar al founder a pedir "donde lo veo" ni a copiar mensajes
+entre chats. El VoBo visual no sustituye revision tecnica ni autoriza publicar
+un prototipo local. En operaciones remotas ya autorizadas, no pedir otra vez el
+permiso: comunicar resultado y solicitar firma de validacion si falta; notificar
+al gestor la liberacion de la ventana operativa sin esperar esa firma. No afirmar
+"sigo trabajando" cuando la tarea esta inactiva. Estas solicitudes son avisos en
+la tarea; no garantizan notificaciones del sistema operativo ni crean vigilancia.
+
 - Toda entrega incluye commit, alcance, evidencia reutilizable y limites. Al
   recibirla, el gestor decide: aceptada, devuelta con hallazgos concretos o
   pendiente de una decision expresa del founder. "Pendiente del gestor" por si
