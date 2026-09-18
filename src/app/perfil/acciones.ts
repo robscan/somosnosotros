@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { validarPerfil, type ErroresPerfil } from "@/lib/perfil";
 import { clienteServidor } from "@/lib/supabase/servidor";
-import { validarSuscripcionPush } from "@/lib/suscripcionPush";
+import { endpointPushPermitido, validarSuscripcionPush } from "@/lib/suscripcionPush";
 
 export type ResultadoGuardar = { ok: true; volver: string } | { ok: false; errores: ErroresPerfil; general?: string };
 
@@ -66,23 +66,47 @@ export async function borrarMiCuenta() {
   redirect("/?cuenta=borrada");
 }
 
+/** La suscripcion del navegador solo esta activa si esta cuenta la tiene registrada y consentida. */
+export async function suscripcionPushActiva(endpoint: string): Promise<boolean> {
+  if (typeof endpoint !== "string" || !endpointPushPermitido(endpoint)) return false;
+  try {
+    const supabase = await clienteServidor();
+    if (!supabase) return false;
+    const { data: { user }, error: errorSesion } = await supabase.auth.getUser();
+    if (errorSesion || !user) return false;
+    // Un solo snapshot para el registro y el consentimiento, con RLS y sin llave de servicio.
+    const { data, error } = await supabase.from("suscripciones_push")
+      .select("endpoint, perfiles!inner(avisos_push)")
+      .eq("endpoint", endpoint).eq("usuario_id", user.id).eq("perfiles.avisos_push", true)
+      .maybeSingle();
+    return !error && data?.endpoint === endpoint;
+  } catch {
+    return false;
+  }
+}
+
 /** Guarda la suscripción push de este teléfono (una fila por endpoint). */
 export async function guardarSuscripcionPush(sub: { endpoint: string; keys: { p256dh: string; auth: string } }): Promise<boolean> {
   const valida = validarSuscripcionPush(sub);
   if (!valida) return false;
-  const supabase = await clienteServidor();
-  const {
-    data: { user },
-  } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
-  if (!supabase || !user) return false;
-  const { error } = await supabase.from("suscripciones_push").upsert({ endpoint: valida.endpoint, usuario_id: user.id, p256dh: valida.keys.p256dh, auth: valida.keys.auth });
-  if (error) return false;
-  const { error: errorPerfil } = await supabase.from("perfiles").update({ avisos_push: true, avisos_push_desde: new Date().toISOString(), avisos_preguntado: true }).eq("id", user.id);
-  if (errorPerfil) return false;
-  // Como elegirAvisos: Ajustes y la agenda al día; la pregunta ya no depende de esto (lib/avisosPreguntados).
-  revalidatePath("/perfil");
-  revalidatePath("/");
-  return true;
+  try {
+    const supabase = await clienteServidor();
+    if (!supabase) return false;
+    const { data: { user }, error: errorSesion } = await supabase.auth.getUser();
+    if (errorSesion || !user) return false;
+    const { error } = await supabase.from("suscripciones_push").upsert({ endpoint: valida.endpoint, usuario_id: user.id, p256dh: valida.keys.p256dh, auth: valida.keys.auth });
+    if (error) return false;
+    const { data: perfil, error: errorPerfil } = await supabase.from("perfiles")
+      .update({ avisos_push: true, avisos_push_desde: new Date().toISOString(), avisos_preguntado: true })
+      .eq("id", user.id).select("id, avisos_push").maybeSingle();
+    if (errorPerfil || perfil?.id !== user.id || perfil.avisos_push !== true) return false;
+    // Como elegirAvisos: Ajustes y la agenda al día; la pregunta ya no depende de esto (lib/avisosPreguntados).
+    revalidatePath("/perfil");
+    revalidatePath("/");
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function borrarSuscripcionPush(endpoint: string): Promise<void> {

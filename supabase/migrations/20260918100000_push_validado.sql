@@ -22,6 +22,11 @@ begin
     raise exception 'La suscripcion debe ser de la cuenta autenticada' using errcode = '42501';
   end if;
   if tg_op = 'UPDATE' then
+    -- Una renovacion conserva la identidad; moverla permite eludir el cupo
+    -- mientras un INSERT concurrente todavia ve el endpoint anterior.
+    if new.endpoint is distinct from old.endpoint then
+      raise exception 'El endpoint no se cambia; da de baja y registra el dispositivo' using errcode = '42501';
+    end if;
     if new.usuario_id <> old.usuario_id then
       raise exception 'La suscripcion no se transfiere a otra cuenta' using errcode = '42501';
     end if;

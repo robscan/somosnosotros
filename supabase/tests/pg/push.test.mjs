@@ -76,12 +76,51 @@ export async function run({ as, check, expectError, query, connection }) {
     `${INSERT} on conflict (endpoint) do update set auth = excluded.auth returning endpoint`, [existente.endpoint, PERSONA, p256dh, auth],
   ));
   check(renovada.rowCount === 1, "se puede renovar una suscripcion existente con el cupo lleno");
+  const moverYRenovar = await Promise.all([
+    connection(async (client) => {
+      await client.query("select set_config('request.jwt.claim.sub', $1, false)", [PERSONA]);
+      await client.query("set role authenticated");
+      try {
+        await client.query("update public.suscripciones_push set endpoint = $2 where endpoint = $1", [existente.endpoint, validos[1]]);
+        return "movida";
+      } catch (error) {
+        return error.code;
+      }
+    }),
+    connection(async (client) => {
+      await client.query("select set_config('request.jwt.claim.sub', $1, false)", [PERSONA]);
+      await client.query("set role authenticated");
+      try {
+        await client.query(`${INSERT} on conflict (endpoint) do update set auth = excluded.auth`, [existente.endpoint, PERSONA, p256dh, auth]);
+        return "renovada";
+      } catch (error) {
+        return error.code;
+      }
+    }),
+  ]);
+  check(moverYRenovar[0] === "42501", "el endpoint es inmutable incluso al renovar en otra conexion", moverYRenovar);
+  check(moverYRenovar[1] === "renovada", "renovar el mismo endpoint sigue permitido durante un intento de moverlo", moverYRenovar);
+  const trasRenovar = await query("select count(*)::int as n from public.suscripciones_push where usuario_id = $1", [PERSONA]);
+  check(trasRenovar.rows[0].n === 10, "mover y renovar no crea un telefono once");
   await as("authenticated", PERSONA, () => expectError(
     () => query("update public.suscripciones_push set usuario_id = $2 where endpoint = $1", [existente.endpoint, OTRA]),
     "42501", "una suscripcion no se transfiere de cuenta",
   ));
   const otraLectura = await as("authenticated", OTRA, () => query("select endpoint from public.suscripciones_push where usuario_id = $1", [PERSONA]));
   check(otraLectura.rowCount === 0, "otra cuenta no lee endpoints ajenos");
+  const estadoSql = `select s.endpoint from public.suscripciones_push s
+    join public.perfiles p on p.id = s.usuario_id
+    where s.endpoint = $1 and s.usuario_id = auth.uid() and p.avisos_push = true`;
+  const sinConsentir = await as("authenticated", PERSONA, () => query(estadoSql, [existente.endpoint]));
+  check(sinConsentir.rowCount === 0, "un endpoint registrado sin consentimiento no esta activo");
+  await as("authenticated", PERSONA, () => query("update public.perfiles set avisos_push = true where id = auth.uid()"));
+  const activo = await as("authenticated", PERSONA, () => query(estadoSql, [existente.endpoint]));
+  check(activo.rowCount === 1, "endpoint propio y consentimiento habilitan el estado activo bajo RLS");
+  const enOtraCuenta = await as("authenticated", OTRA, () => query(estadoSql, [existente.endpoint]));
+  check(enOtraCuenta.rowCount === 0, "el mismo navegador no hereda el estado activo de otra cuenta");
+  await as("authenticated", PERSONA, () => query("update public.perfiles set avisos_push = false where id = auth.uid()"));
+  const revocado = await as("authenticated", PERSONA, () => query(estadoSql, [existente.endpoint]));
+  check(revocado.rowCount === 0, "revocar consentimiento apaga el estado aunque se conserve el endpoint");
   await as("authenticated", PERSONA, () => query("delete from public.suscripciones_push where endpoint = $1", [existente.endpoint]));
   const reemplazo = await as("authenticated", PERSONA, () => query(`${INSERT} returning endpoint`, [validos[0], PERSONA, p256dh, auth]));
   check(reemplazo.rowCount === 1, "al dar de baja un dispositivo queda sitio para otro");

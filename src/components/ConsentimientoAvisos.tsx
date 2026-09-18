@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import HojaInstalar from "./HojaInstalar";
 import { dondeSeActivan, enEste } from "@/lib/plataforma";
-import { estadoPush, suscribirPush } from "@/lib/pushCliente";
+import { disponibilidadPush, suscribirPush } from "@/lib/pushCliente";
 import { useInstalarApp, usePlataforma } from "@/lib/useAvisosTelefono";
 import { elegirAvisos } from "@/app/avisos/acciones";
 import { marcarAvisosContestados } from "@/lib/avisosPreguntados";
@@ -98,7 +98,7 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
   async function enTelefono() {
     setTrabajando(true);
     try {
-      const estado = await estadoPush(llavePush);
+      const estado = disponibilidadPush(llavePush);
       if (estado === "instalar-primero") return setHoja(true);
       if (estado === "otra-app" || estado === "no-soportado" || estado === "bloqueado") return setProblema(estado);
       const alta = await suscribirPush(llavePush);

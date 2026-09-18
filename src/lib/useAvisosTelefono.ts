@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { EVENTO_INSTALAR } from "./avisoInstalar";
 import type { Plataforma } from "./plataforma";
-import { estadoPush, plataformaActual, type EstadoPush } from "./pushCliente";
+import { observarEstadoPush, plataformaActual, type EstadoPush } from "./pushCliente";
 
 function sinSuscripcion() {
   return () => {};
@@ -20,17 +20,18 @@ export function usePlataforma(): Plataforma | null {
  */
 export function useEstadoPush(llavePublica: string, activo = true): [EstadoPush | null, (e: EstadoPush) => void] {
   const [estado, setEstado] = useState<EstadoPush | null>(null);
+  const observador = useRef<ReturnType<typeof observarEstadoPush> | null>(null);
   useEffect(() => {
     if (!activo) return;
-    let vivo = true;
-    estadoPush(llavePublica)
-      .then((e) => vivo && setEstado(e))
-      .catch(() => vivo && setEstado("no-soportado"));
+    const actual = observarEstadoPush(llavePublica, setEstado);
+    observador.current = actual;
     return () => {
-      vivo = false;
+      actual.cerrar();
+      observador.current = null;
     };
   }, [llavePublica, activo]);
-  return [estado, setEstado];
+  const fijar = useCallback((e: EstadoPush) => observador.current?.fijar(e), []);
+  return [activo ? estado : null, fijar];
 }
 
 /** El aviso de Chrome, Edge o Android de que la página se puede instalar (lo guarda el guion de src/lib/avisoInstalar.ts). */
