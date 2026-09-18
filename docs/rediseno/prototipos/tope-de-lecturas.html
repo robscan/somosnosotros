@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El tope de lecturas de cartel</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens: los de globals.css de somosnosotros (línea gráfica firmada). */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px; --alto-estado: 48px; --alto-barra: 56px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  button, input { font: inherit; color: inherit; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; padding: 24px 16px; min-height: 100vh; }
+  svg { width: 20px; height: 20px; flex: none; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 1360px; margin: 0 auto; }
+  .rotulo { flex: 0 0 100%; margin-bottom: 8px; color: var(--estudio-suave); font-size: 14px; line-height: 1.5; }
+  .rotulo > span { display: block; max-width: 860px; margin-inline: auto; }
+  .rotulo strong { display: block; color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 22px; margin-bottom: 4px; }
+  .par { display: grid; gap: 10px; justify-items: center; }
+  .par > figcaption { max-width: 390px; color: var(--estudio-suave); font-size: 13px; line-height: 1.45; text-align: left; }
+  .par > figcaption b { display: block; color: var(--estudio-texto); font-size: 15px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 2px; }
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; padding: 0 var(--gutter) 40px; }
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .logotipo { grid-column: 2; font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1; }
+  .cerrar-barra { grid-column: 3; justify-self: end; display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); }
+  h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; margin: 14px 0 14px; }
+
+  /* El canon */
+  .campo { position: relative; display: grid; margin-bottom: 12px; }
+  .campo > input { min-height: var(--toque); padding: 0 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 17px; }
+  .renglones { list-style: none; display: grid; gap: 8px; margin-bottom: 16px; }
+  .resuelto { display: grid; grid-template-columns: 24px 1fr auto; grid-template-areas: "icono clave accion" "icono valor accion"; column-gap: 12px; align-items: center; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+  .resuelto.pendiente { border-style: dashed; }
+  .resuelto > svg { grid-area: icono; color: var(--texto-suave); }
+  .resuelto > .clave { grid-area: clave; font-size: 13px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); }
+  .resuelto > .valor { grid-area: valor; font-size: 17px; font-weight: 600; line-height: 1.2; }
+  .resuelto > .valor.falta { color: var(--texto-suave); font-weight: 500; }
+  .resuelto > .cambiar { grid-area: accion; min-height: var(--toque-min); padding: 0 8px; border: none; background: none; color: var(--primario); font-size: 15px; font-weight: 700; }
+  .accion { grid-area: accion; display: inline-grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); }
+  .accion svg { width: 22px; height: 22px; }
+  .primario { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: var(--toque); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; }
+  .primario[aria-disabled="true"] { background: #a8c5cb; color: #fff; }
+  .primario small { font-size: 13px; font-weight: 500; }
+
+  /* La tarjeta del cartel (doc 22) y sus estados nuevos */
+  .cartel { position: relative; display: grid; grid-template-columns: 44px 1fr; grid-template-areas: "icono titulo" "icono detalle"; column-gap: 14px; align-items: center; width: 100%; min-height: 76px; margin-bottom: 24px; padding: 12px 16px; border: 1px solid var(--primario); border-radius: var(--radio); background: var(--primario-suave); text-align: left; }
+  .cartel > .marco { grid-area: icono; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); }
+  .cartel > .marco svg { width: 24px; height: 24px; }
+  .cartel > b { grid-area: titulo; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .cartel > small { grid-area: detalle; color: var(--texto-suave); font-size: 14px; line-height: 1.35; }
+  /* Sin cupo: baja de tono, deja de ser la cámara y tiene una sola salida. */
+  .cartel.sincupo { border-color: var(--borde); background: var(--fondo); }
+  .cartel.sincupo > .marco { background: var(--fondo-miniatura); color: var(--texto-suave); }
+  .cartel.pedida { border-style: dashed; border-color: var(--borde); background: var(--fondo); }
+  .cartel.pedida > .marco { background: var(--fondo-miniatura); color: var(--primario); }
+  .pedirmas { display: block; width: fit-content; margin-top: 8px; min-height: 36px; line-height: 34px; padding: 0 14px; border: 1px solid var(--primario); border-radius: 999px; background: var(--fondo); color: var(--primario); font-size: 14px; font-weight: 700; }
+
+  /* El panel: grupo "Pendiente" con una tarjeta y una decisión (doc 19) */
+  .grupo { display: flex; align-items: center; gap: 8px; margin: 18px 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); }
+  .grupo b { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--primario); color: var(--primario-texto); font-size: 13px; }
+  .pendientes { list-style: none; display: grid; gap: 10px; }
+  .tarjetaP { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+  .pide { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .pide svg { color: var(--primario); }
+  .quien { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+  .quien a { color: var(--primario); font-weight: 700; text-decoration: none; }
+  .dato { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: var(--fondo-suave); font-size: 15px; }
+  .dato svg { color: var(--texto-suave); }
+  .dato b { font-weight: 700; }
+  .cuando { color: var(--texto-suave); font-size: 14px; }
+  .decisiones { display: flex; gap: 8px; margin-top: 2px; }
+  .darmas { flex: 1; min-height: var(--toque-min); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 15px; font-weight: 700; }
+  .dejar { flex: 1; min-height: var(--toque-min); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; }
+  @media (max-width: 860px) { .telefono { height: auto; min-height: 700px; } .pantalla { height: auto; max-height: 680px; } }
+</style>
+</head>
+<body>
+
+<div class="estudio">
+  <p class="rotulo">
+    <span>
+      <strong>El tope de lecturas de cartel</strong>
+      Leer un cartel cuesta 2-3 centavos de dólar; el tope no ahorra dinero, es un fusible contra un accidente. 20 lecturas al mes, renovadas el día 1, ilimitadas para el admin. Al acabarse, una sola salida: pedir más, que llega al panel. Datos de ejemplo, no reales. Documento 23.
+    </span>
+  </p>
+
+  <!-- QUEDAN POCAS -->
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="cartel">
+          <span class="marco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span>
+          <b>Sube el cartel</b>
+          <small>Te quedan 3 lecturas este mes.</small>
+        </div>
+        <div class="campo"><input type="text" placeholder="Nombre del evento" aria-label="Nombre del evento"></div>
+        <ul class="renglones">
+          <li class="resuelto"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Cuándo</span><span class="valor">Hoy · 19:00</span><button type="button" class="cambiar">Cambiar</button></li>
+          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span class="clave">Dónde</span><span class="valor falta">Falta</span><button type="button" class="accion"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></li>
+          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 19a6 6 0 0 1 12 0M15 5.5a3.2 3.2 0 0 1 0 6.3M21 19a6 6 0 0 0-4.5-5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Quién</span><span class="valor falta">Sin artista</span><button type="button" class="cambiar">Agregar</button></li>
+          <li class="resuelto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 6v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2 2"/></svg><span class="clave">Cuánto</span><span class="valor">Gratis</span><button type="button" class="cambiar">Cambiar</button></li>
+        </ul>
+        <button type="button" class="primario" aria-disabled="true">Publicar evento <small>falta el nombre</small></button>
+      </main>
+    </div>
+    <figcaption><b>1 · Quedan pocas</b>A partir de 3 restantes, la línea de detalle lo dice. Antes no se menciona: quien tiene 17 no necesita saberlo. Así nadie se topa con el final de sorpresa.</figcaption>
+  </figure>
+
+  <!-- SE ACABARON -->
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="cartel sincupo">
+          <span class="marco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span>
+          <b>Se acabaron tus lecturas del mes</b>
+          <small>Se renuevan el 1 de octubre.<span class="pedirmas">Pedir más</span></small>
+        </div>
+        <div class="campo"><input type="text" placeholder="Nombre del evento" aria-label="Nombre del evento"></div>
+        <ul class="renglones">
+          <li class="resuelto"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Cuándo</span><span class="valor">Hoy · 19:00</span><button type="button" class="cambiar">Cambiar</button></li>
+          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span class="clave">Dónde</span><span class="valor falta">Falta</span><button type="button" class="accion"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></li>
+          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 19a6 6 0 0 1 12 0M15 5.5a3.2 3.2 0 0 1 0 6.3M21 19a6 6 0 0 0-4.5-5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Quién</span><span class="valor falta">Sin artista</span><button type="button" class="cambiar">Agregar</button></li>
+          <li class="resuelto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 6v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2 2"/></svg><span class="clave">Cuánto</span><span class="valor">Gratis</span><button type="button" class="cambiar">Cambiar</button></li>
+        </ul>
+        <button type="button" class="primario" aria-disabled="true">Publicar evento <small>falta el nombre</small></button>
+      </main>
+    </div>
+    <figcaption><b>2 · Se acabaron</b>La tarjeta baja de tono y <b style="display:inline">deja de abrir la cámara</b>: aquí es un botón, no la etiqueta con el campo de archivo dentro. Una sola salida. El formulario sigue debajo, así que llenar a mano nunca se bloquea.</figcaption>
+  </figure>
+
+  <!-- YA PEDIDA -->
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="cartel pedida">
+          <span class="marco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <b>Ya pedimos más para ti</b>
+          <small>Te escribimos en cuanto lo revisemos.</small>
+        </div>
+        <div class="campo"><input type="text" placeholder="Nombre del evento" aria-label="Nombre del evento"></div>
+        <ul class="renglones">
+          <li class="resuelto"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Cuándo</span><span class="valor">Hoy · 19:00</span><button type="button" class="cambiar">Cambiar</button></li>
+          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span class="clave">Dónde</span><span class="valor falta">Falta</span><button type="button" class="accion"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></li>
+          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 19a6 6 0 0 1 12 0M15 5.5a3.2 3.2 0 0 1 0 6.3M21 19a6 6 0 0 0-4.5-5.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="clave">Quién</span><span class="valor falta">Sin artista</span><button type="button" class="cambiar">Agregar</button></li>
+          <li class="resuelto"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 6v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2 2"/></svg><span class="clave">Cuánto</span><span class="valor">Gratis</span><button type="button" class="cambiar">Cambiar</button></li>
+        </ul>
+        <button type="button" class="primario" aria-disabled="true">Publicar evento <small>falta el nombre</small></button>
+      </main>
+    </div>
+    <figcaption><b>3 · Ya pedida</b>Sin acción: no se puede pedir cuarenta veces. En la base hay una sola petición sin atender por cuenta, así que el panel no se puede llenar.</figcaption>
+  </figure>
+
+  <!-- EL PANEL -->
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Administración</h1>
+        <p class="grupo">Pendiente <b>2</b></p>
+        <ul class="pendientes">
+          <li class="tarjetaP">
+            <span class="pide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg> Pide más lecturas de cartel</span>
+            <span class="quien"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> <a href="#">Casa de la Cultura</a></span>
+            <span class="dato"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Leyó <b>20</b> y publicó <b>18</b> este mes</span>
+            <span class="cuando">hace 2 h</span>
+            <span class="decisiones"><button type="button" class="darmas">Dar más</button><button type="button" class="dejar">Dejarlo así</button></span>
+          </li>
+          <li class="tarjetaP">
+            <span class="pide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg> Pide más lecturas de cartel</span>
+            <span class="quien"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> <a href="#">Rodrigo N.</a></span>
+            <span class="dato"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Leyó <b>20</b> y publicó <b>0</b> este mes</span>
+            <span class="cuando">ayer</span>
+            <span class="decisiones"><button type="button" class="darmas">Dar más</button><button type="button" class="dejar">Dejarlo así</button></span>
+          </li>
+        </ul>
+      </main>
+    </div>
+    <figcaption><b>4 · En el panel</b>Entra en «Pendiente», con el dibujo del doc 19: una tarjeta, una decisión. Las dos tarjetas enseñan por qué se guarda una fila por lectura: «leyó 20 y publicó 18» y «leyó 20 y publicó 0» piden decisiones distintas, y sin ese dato la petición llega sin con qué decidir.</figcaption>
+  </figure>
+</div>
+</body>
+</html>

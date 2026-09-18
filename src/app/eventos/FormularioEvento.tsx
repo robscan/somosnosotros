@@ -22,12 +22,12 @@ import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
-import { leerCartelAccion, zonaDelPunto, type ResultadoEvento } from "./acciones";
+import { leerCartelAccion, pedirMasLecturas, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
 import TarjetaCartel from "./TarjetaCartel";
-import { falloAlLeer, falloAlSubir, falloDeCorte, leido, type EstadoCartel } from "./estadoCartel";
+import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, type EstadoCartel } from "./estadoCartel";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./FormularioEvento.module.css";
@@ -90,6 +90,8 @@ type Props = {
   esAdmin?: boolean;
   /** Adónde vuelve "Registrar un lugar nuevo" con el lugar elegido. */
   volverA?: string;
+  /** Lecturas de cartel que le quedan este mes (docs/rediseno/23). Null si no hay sesión o no aplica. */
+  cupo?: Cupo | null;
 };
 
 /**
@@ -98,7 +100,7 @@ type Props = {
  * resueltos con el mismo dibujo: Cuándo (hoy · 19:00), Dónde (una sola salida: la lupa abre la hoja "Dónde es"),
  * Quién, Cuánto (gratis) y Más. El botón dice qué falta. Sin frases de ayuda.
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo" }: Props) {
+export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo", cupo = null }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const esAlta = modo === "alta";
@@ -170,7 +172,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [subiendo, setSubiendo] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
   // Lo que cuenta la tarjeta del cartel: en qué va, qué decir y la foto que se subió. Sin tarjeta, está en reposo.
-  const [cartel, setCartel] = useState<EstadoCartel>(null);
+  const [cartel, setCartel] = useState<EstadoCartel>(() => alLlegar(cupo));
+  const [pidiendo, setPidiendo] = useState(false);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
   const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (esAlta && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
   const [abierta, setAbierta] = useState<Abierta>(null);
@@ -303,6 +306,26 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   }
 
   /**
+   * "Pedir más": una sola por cuenta. Solo se da por pedida si el servidor lo confirma; si falla o se cae la señal,
+   * la tarjeta se queda donde estaba y lo dice ahí mismo, que es donde la persona está mirando.
+   */
+  async function pedirMas() {
+    setPidiendo(true);
+    try {
+      const r = await pedirMasLecturas();
+      if (!r.ok) {
+        setCartel((a) => ({ ...(a ?? { estado: "sin_cupo" }), estado: "sin_cupo", mensaje: "No pude mandar la petición. Puede ser tu conexión." }));
+        return;
+      }
+      setCartel((a) => ({ estado: "pedida", foto: a?.foto }));
+    } catch {
+      setCartel((a) => ({ ...(a ?? { estado: "sin_cupo" }), estado: "sin_cupo", mensaje: "No pude mandar la petición. Puede ser tu conexión." }));
+    } finally {
+      setPidiendo(false);
+    }
+  }
+
+  /**
    * Cartel → se sube, se lee y los renglones se llenan. La persona revisa y publica.
    * Todo va dentro de un try: si la promesa se rompe (se cae la señal, el servidor tarda de más, la función se
    * agota), la tarjeta no puede quedarse en "Leyendo el cartel…" para siempre (revisión de la bitácora 095).
@@ -322,7 +345,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       setCartel({ estado: "leyendo", foto: url });
       const r = await leerCartelAccion(url);
       if (!r.ok) {
-        setCartel(falloAlLeer(url, r.mensaje));
+        // Se acabó el cupo entre que se abrió la pantalla y ahora: la tarjeta pasa a su única salida.
+        setCartel("sinCupo" in r ? { estado: "sin_cupo", foto: url } : falloAlLeer(url, r.mensaje));
         return;
       }
       const v = r.valores;
@@ -364,7 +388,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       >
         {/* 1. El cartel, antes del formulario: subirlo lo llena todo. Es lo único que explica la pantalla
             (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
-        {ofrecerCartel && <TarjetaCartel cartel={cartel} ocupado={subiendo || leyendo} onElegir={leerCartel} />}
+        {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupo} ocupado={subiendo || leyendo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
 
         {/* 2. El nombre, solo con su ✕. */}
         <div className={`${canon.campo} ${canon.sinIcono}`}>

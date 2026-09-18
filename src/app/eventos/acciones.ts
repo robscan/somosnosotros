@@ -175,13 +175,19 @@ export async function cambiarVisibleEvento(id: string, lugarId: string | null, v
 
 export type ResultadoCartel =
   | { ok: true; valores: ReturnType<typeof cartelAFormulario>; lugarId: string | null; quien: QuienItem[] }
-  | { ok: false; mensaje: string };
+  | { ok: false; mensaje: string }
+  | { ok: false; sinCupo: true };
 
 /** Lee el cartel ya subido a Storage y devuelve los valores para llenar el formulario. */
 export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCartel> {
   const { supabase } = await sesionOEntrar("/eventos/nuevo");
   const { supabaseUrl } = configPublica();
   if (!supabaseUrl || !urlImagen.startsWith(`${supabaseUrl}/storage/v1/object/public/fotos/`)) return { ok: false, mensaje: "La imagen no es de aquí." };
+  // El cupo se aparta aquí, antes de llamar al modelo, y en un solo paso: en el cliente se saltaría en diez
+  // segundos, y en dos pasos dos toques seguidos pasarían los dos (docs/rediseno/23).
+  const { data: apartada, error: eCupo } = await supabase.rpc("apartar_lectura_de_cartel");
+  if (eCupo) return { ok: false, mensaje: "No pude apartar la lectura. Intenta de nuevo." };
+  if (!apartada) return { ok: false, sinCupo: true };
   const lectura = await leerCartel(urlImagen);
   // El titular ("No pude leer el cartel") lo pone la tarjeta; aquí solo va lo que toca hacer.
   if (!lectura) return { ok: false, mensaje: "Llena los datos a mano; la imagen se queda puesta." };
@@ -230,4 +236,26 @@ export async function borrarEvento(id: string, lugarId: string | null) {
   revalidatePath("/");
   if (lugarId) revalidatePath(`/lugares/${lugarId}`);
   redirect("/borrado?que=evento");
+}
+
+export type Cupo = { usadas: number; tope: number; sinTope: boolean; pedida: boolean };
+
+/** Lo que le queda a quien mira, para que la tarjeta avise antes de que se acabe (docs/rediseno/23). */
+export async function cupoDeCartel(): Promise<Cupo | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  // Todo sale de la misma función definer: nadie puede leer sus propias filas de `reportes`, y abrirlas sería peor.
+  const { data } = await supabase.rpc("mi_cupo_de_cartel").maybeSingle();
+  const d = data as { usadas: number; tope: number; sin_tope: boolean; pedida: boolean } | null;
+  if (!d) return null;
+  return { usadas: d.usadas, tope: d.tope, sinTope: d.sin_tope, pedida: d.pedida };
+}
+
+/** "Pedir más": una petición sin atender por cuenta, que llega a lo pendiente del panel. Sin correos. */
+export async function pedirMasLecturas(): Promise<{ ok: boolean }> {
+  const { supabase, user } = await sesionOEntrar("/eventos/nuevo");
+  const { error } = await supabase.from("reportes").insert({ tipo: "perfil", objeto_id: user.id, motivo: "mas_lecturas", creado_por: user.id });
+  // Si ya había una sin atender, el índice único la rechaza: para quien pide, es lo mismo que si se hubiera mandado.
+  if (error && error.code !== "23505") return { ok: false };
+  return { ok: true };
 }

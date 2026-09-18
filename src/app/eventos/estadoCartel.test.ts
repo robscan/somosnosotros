@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { falloAlLeer, falloAlSubir, falloDeCorte, leido } from "./estadoCartel";
+import { alLlegar, cuandoSeRenueva, falloAlLeer, falloAlSubir, falloDeCorte, leido } from "./estadoCartel";
 
 /**
  * Los estados de la tarjeta del cartel. Las tres primeras pruebas salen de la revisión de la bitácora 095:
@@ -43,5 +43,32 @@ describe("estado del cartel", () => {
     expect(falloAlLeer("https://x/nueva.jpg", "Llena los datos a mano.").foto).toBe("https://x/nueva.jpg");
     expect(leido("https://x/nueva.jpg", []).mensaje).toBe("Revisa que todo esté bien y publica.");
     expect(leido("https://x/nueva.jpg", ["la fecha", "dónde"]).mensaje).toBe("Revisa la fecha, dónde y publica.");
+  });
+});
+
+/** El cupo de lecturas del mes (docs/rediseno/23): con cuánto llega la tarjeta y cuándo vuelve a haber. */
+describe("cupo de lecturas", () => {
+  const cupo = (cambios = {}) => ({ usadas: 0, tope: 20, sinTope: false, pedida: false, ...cambios });
+
+  it("con cupo, la tarjeta llega en reposo", () => {
+    expect(alLlegar(cupo())).toBeNull();
+    expect(alLlegar(cupo({ usadas: 19 }))).toBeNull();
+    expect(alLlegar(null)).toBeNull();
+  });
+
+  it("sin cupo pasa a su única salida, y si ya pidió no la vuelve a ofrecer", () => {
+    expect(alLlegar(cupo({ usadas: 20 }))).toEqual({ estado: "sin_cupo" });
+    expect(alLlegar(cupo({ usadas: 25 }))).toEqual({ estado: "sin_cupo" });
+    expect(alLlegar(cupo({ usadas: 20, pedida: true }))).toEqual({ estado: "pedida" });
+  });
+
+  it("la administración no se topa aunque haya leído de más", () => {
+    expect(alLlegar(cupo({ usadas: 200, sinTope: true }))).toBeNull();
+  });
+
+  it("dice cuándo se renueva, y en diciembre pasa a enero", () => {
+    expect(cuandoSeRenueva(new Date("2026-09-17T21:00:00Z"))).toBe("el 1 de octubre");
+    expect(cuandoSeRenueva(new Date("2026-12-31T23:00:00Z"))).toBe("el 1 de enero");
+    expect(cuandoSeRenueva(new Date("2026-01-05T12:00:00Z"))).toBe("el 1 de febrero");
   });
 });

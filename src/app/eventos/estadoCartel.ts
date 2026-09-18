@@ -4,7 +4,7 @@ import type { FalloAlSubir } from "@/lib/subirFoto";
  * En qué va la tarjeta del cartel (docs/rediseno/22). Sin esto, está en reposo pidiendo el primero.
  * Las transiciones viven aquí, sueltas del componente, para poder probarlas.
  */
-export type EstadoCartel = { estado: "leyendo" | "leido" | "fallo"; titulo?: string; mensaje?: string; foto?: string } | null;
+export type EstadoCartel = { estado: "leyendo" | "leido" | "fallo" | "sin_cupo" | "pedida"; titulo?: string; mensaje?: string; foto?: string } | null;
 
 /**
  * La foto nueva no llegó a subirse.
@@ -37,4 +37,21 @@ export function falloDeCorte(actual: EstadoCartel, imagenDelEvento: string | nul
 /** Leído: el titular ya dice "Leí el cartel", así que el mensaje solo dice qué revisar. */
 export function leido(foto: string, faltan: string[]): NonNullable<EstadoCartel> {
   return { estado: "leido", foto, mensaje: faltan.length ? `Revisa ${faltan.join(", ")} y publica.` : "Revisa que todo esté bien y publica." };
+}
+
+/** "el 1 de octubre": cuándo vuelve a haber cupo, en la hora de la ciudad, como lo dice la base. */
+export function cuandoSeRenueva(ahora: Date = new Date()): string {
+  const zona = "America/Mexico_City";
+  const enLaCiudad = new Date(ahora.toLocaleString("en-US", { timeZone: zona }));
+  const primero = new Date(enLaCiudad.getFullYear(), enLaCiudad.getMonth() + 1, 1, 12);
+  return `el 1 de ${new Intl.DateTimeFormat("es-MX", { month: "long", timeZone: zona }).format(primero)}`;
+}
+
+/** Cuántas quedan; solo se dice cuando ya son pocas, porque quien tiene 17 no necesita saberlo. */
+export const AVISAR_DESDE = 3;
+
+/** El estado con el que llega la tarjeta: sin cupo pesa más que el reposo, y la petición ya hecha más todavía. */
+export function alLlegar(cupo: { usadas: number; tope: number; sinTope: boolean; pedida: boolean } | null): EstadoCartel {
+  if (!cupo || cupo.sinTope || cupo.usadas < cupo.tope) return null;
+  return cupo.pedida ? { estado: "pedida" } : { estado: "sin_cupo" };
 }
