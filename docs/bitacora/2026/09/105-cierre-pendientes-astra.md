@@ -228,3 +228,18 @@ Verificacion de esta integracion del copy: `npm test`, 657 pruebas en 61 archivo
 correctas; `npm run typecheck` correcto. No se ejecutan PostgreSQL, build ni QA
 visual en este paso acotado; no sustituye las revisiones y pruebas pendientes
 de cada entrega. Diff comprobado y fetch antes del commit local por nombres.
+
+## Politica de modelos y estado comprobado (2026-09-18)
+
+El founder pide operadores asequibles. Politica para estas dos piezas:
+gestor y revision independiente con Astra; operadores de direccion y avisos
+con Terra high. Luna queda reservada para tareas simples futuras.
+
+Segun la verificacion del gestor mediante `turn_context`, ambos chats nuevos
+arrancaron con Astra high por defecto. El gestor ya envio a ambos la
+configuracion Terra high mediante `send_message_to_thread` con override de
+modelo. El envio no demuestra que el turno actual haya cambiado: si no cambia,
+se deja un checkpoint y se continua con Terra. El modelo efectivo posterior
+queda pendiente de verificar en metadata; no se afirman porcentajes de ahorro.
+Esta anotacion no ejecuta trabajo operativo adicional ni declara entregas
+terminadas o nueva autorizacion de produccion.
