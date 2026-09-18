@@ -57,6 +57,22 @@ Si hay hallazgos, devolverlos juntos y esperar la nueva entrega completa, sin
 dirigir cada arreglo. Solo interrumpir por bloqueo real, riesgo urgente o nueva
 decision del founder. Las aprobaciones y limites de publicacion se conservan.
 
+Aclaracion posterior del founder: autonomia no significa dejar detenidas las
+tareas. La colaboracion debe ser dinamica y orientada al cierre, sin obligarlo a
+reactivar chats. Cada operador notifica la entrega completa al gestor mediante
+send_message_to_thread, con SHA, alcance, resultados de pruebas y limites. Ese
+aviso inicia la revision; no es un estado final de espera indefinida. El gestor
+atiende entregas independientes en paralelo cuando las herramientas lo permitan,
+reutiliza evidencia y ejecuta solo pruebas faltantes justificadas por riesgo.
+Devuelve hallazgos consolidados al operador, que corrige y vuelve a notificar;
+mientras tanto atiende otras entregas listas, sin sondear pasos intermedios.
+Tras aceptar: PR, CI, preview, aprobacion de produccion si falta, integracion,
+verificacion del dominio y cierre comunicado al operador. No confundir entrega
+de codigo con activacion operativa ni pedir nuevamente permisos ya concedidos
+para el mismo alcance. Solo dejar espera por una dependencia, decision o bloqueo
+concreto, con responsable y accion de salida. No requiere vigilancia periodica
+ni automatizaciones de pago adicionales: se coordina mediante avisos de entrega.
+
 - Toda entrega incluye commit, alcance, evidencia reutilizable y limites. Al
   recibirla, el gestor decide: aceptada, devuelta con hallazgos concretos o
   pendiente de una decision expresa del founder. "Pendiente del gestor" por si

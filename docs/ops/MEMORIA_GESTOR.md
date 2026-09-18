@@ -242,3 +242,9 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   por gestor; pendiente aprobacion del founder de presentacion/publicacion.
   Pincel sigue local: operador debe consolidar correccion responsive/superficie
   y QA antes de avisar listo. No aprobado para integrar ni publicar.
+- 2026-09-18, founder aclara que la referencia Claude busca colaboracion y
+  eficiencia, no competencia. Autonomia con continuidad por entregas: aviso del
+  operador dispara revision del gestor; pruebas pertinentes, hallazgos en lote,
+  correccion y nueva entrega hasta integrar/publicar lo autorizado. Atender otras
+  entregas independientes mientras hay correcciones; no vigilar pasos ni esperar
+  que founder reactive cada chat. Protocolo detallado en GESTION_DE_CAMBIOS.
