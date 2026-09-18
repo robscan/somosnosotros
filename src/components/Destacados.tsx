@@ -12,7 +12,7 @@ import styles from "./Destacados.module.css";
  * siguiente tarjeta asoma (decisiones 1 y 2). Sin tarjetas no existe (decisión 4); con una sola, ocupa el ancho.
  * Lo de artistas va en redondo, como su avatar. Al volver de una ficha queda donde estaba (decisión 12).
  */
-export default function Destacados({ tarjetas, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false }: { tarjetas: Tarjeta[]; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean }) {
+export default function Destacados({ tarjetas, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false }: { tarjetas: Tarjeta[]; encabezado?: string; memoria?: string; detalleCompleto?: boolean }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -42,11 +42,13 @@ export default function Destacados({ tarjetas, redondas = false, encabezado = "D
     pendiente.current = { clave, temporizador };
   }
   if (tarjetas.length === 0) return null;
+  // La curaduría (o la fecha semanal) conserva su orden dentro de cada grupo; una foto real va antes del placeholder.
+  const ordenadas = tarjetas.toSorted((a, b) => Number(b.foto.includes("/sin-foto")) - Number(a.foto.includes("/sin-foto")));
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <h2 id={titulo}>{encabezado}</h2>
-      <ul ref={recordar} className={`${styles.carril} ${tarjetas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar}>
-        {tarjetas.map((t) => (
+      <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar}>
+        {ordenadas.map((t) => (
           <li key={t.id}>
             <Link href={t.href} className={styles.tarjeta}>
               {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}

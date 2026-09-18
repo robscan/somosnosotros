@@ -4,7 +4,7 @@ import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
-import { conProximaFecha, DISCIPLINAS, filtroDesdeUrl, ordenarArtistas, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FechaDeArtista, type FiltroLeido } from "@/lib/artistas";
+import { conProximaFecha, DISCIPLINAS, filtroDesdeUrl, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FechaDeArtista, type FiltroLeido } from "@/lib/artistas";
 import type { Metadata } from "next";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
@@ -16,7 +16,7 @@ import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
-type SearchParams = { ciudad?: string; hace?: string; que?: string; q?: string; n?: string };
+type SearchParams = { ciudad?: string; hace?: string; que?: string; q?: string; letra?: string; n?: string };
 
 /**
  * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
@@ -71,7 +71,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   if (!supabase) return vacio;
   const ciudad = ciudadNombre;
 
-  const sinFiltro = !f.hace && !f.que && !f.q;
+  const sinFiltro = !f.hace && !f.que && !f.q && !f.letra;
   const [f1, d1, d2, tira, eventosSemana] = await Promise.all([
     // Las filas van por la hora de su evento (`evento(inicio)` ordena las filas; `order` con `referencedTable` solo ordenaba
     // dentro del evento ligado), así el corte de 500 se queda con lo más próximo. Lo que se ordena debe ir en el select.
@@ -89,7 +89,6 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
     const lugar = Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar;
     fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
   }
-  const conFecha = [...new Set(fechas.map((x) => x.artista_id))];
   const porDisciplina = ((d1.data ?? []) as { disciplina: string; n: number }[]).filter((x) => x.n > 0);
   const totalCiudad = porDisciplina.reduce((s, x) => s + Number(x.n), 0);
   const disciplinas = DISCIPLINAS.filter((d) => porDisciplina.some((x) => x.disciplina === d.valor)).map((d) => ({ ...d, n: Number(porDisciplina.find((x) => x.disciplina === d.valor)?.n ?? 0) }));
@@ -101,18 +100,17 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
     if (f.hace) c = c.eq("disciplina", f.hace);
     if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
     if (q) c = c.or(`nombre_orden.ilike.%${q}%,detalle.ilike.%${q}%`);
+    if (f.letra) c = c.ilike("nombre_orden", `${f.letra.toLowerCase()}%`);
     return c;
   };
-  const [a, b, t] = await Promise.all([
-    conFecha.length ? base().in("id", conFecha) : Promise.resolve({ data: [] as ArtistaResumen[], count: 0 }),
-    (conFecha.length ? base().not("id", "in", `(${conFecha.join(",")})`) : base()).order("nombre_orden").range(0, f.n - 1),
+  const [a, t] = await Promise.all([
+    base().order("nombre_orden").range(0, f.n - 1),
     // Los destacados pueden no estar en la primera página: se leen aparte, con su próxima fecha.
     tira.length ? supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto").eq("visible", true).in("id", tira.map((d) => d.id)) : Promise.resolve({ data: [] as ArtistaResumen[] }),
   ]);
-  const primero = ordenarArtistas(conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas));
-  const resto = ((b.data ?? []) as ArtistaResumen[]).map((x) => ({ ...x, proxima: null }));
+  const artistas = conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas);
   const destacados = enOrden(tira, conProximaFecha((t.data ?? []) as ArtistaResumen[], fechas));
-  return { artistas: [...primero, ...resto], total: primero.length + (b.count ?? 0), totalCiudad, disciplinas, detalles, destacados, eventosSemana };
+  return { artistas, total: a.count ?? 0, totalCiudad, disciplinas, detalles, destacados, eventosSemana };
 }
 
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */

@@ -12,6 +12,8 @@
 
 ## Ahora
 
+- **OL-085 · Directorios alfabéticos.** Pedido del founder (2026-09-18): Artistas y Lugares se ordenan por nombre y tienen índice por letra; Lugares cambia a cercanía con «Cerca de mí» y recupera el alfabético al quitarlo. Destacados usa imágenes rectangulares al doble y prioriza foto real sobre placeholder, conservando orden editorial o semanal dentro de cada grupo. Rama `codex/directorios-alfabeticos`, sin migraciones ni variables; bitácora [119](../bitacora/2026/09/119-directorios-alfabeticos.md).
+
 - **OL-078 · Flyer, direccion y pin con persistencia coherente.** Integrados localmente c9c0574/08e8dde y transporte de acciones: OCR respeta gestos manuales, sitio_direccion separada del alias, sugerencias y pin confirmado, recarga/edicion/reserva sin concatenar direccion anterior. Legacy se revisa explicitamente sin parsear texto humano. 562 unitarias, 41 migraciones/525 checks PG y 42 recorridos Chrome correctos antes del outbox final. Pendiente revision independiente, prueba de cartografia/Safari, integracion outbox, aprobacion de migracion y produccion. Privacidad de la imagen reservada requiere decision del founder (bitacora 114). Bitacora [112](../bitacora/2026/09/112-flyer-direccion.md).
 
 - **OL-080 · Storage: listado minimo sin prometer privacidad de flyers.** Preparado en `codex/storage-minimo`: metadatos propios o administracion, nuevas subidas UUID sin upsert; bucket y URL publicas conservados. 40 migraciones/495 checks PG y 532 unitarias correctas. Pendiente revision, prueba HTTP/Storage en entorno autorizado y aprobacion de migracion/produccion. El acceso por URL a flyers reservados/no publicados sigue siendo un riesgo aparte. Bitacora [114](../bitacora/2026/09/114-storage-minimo.md).

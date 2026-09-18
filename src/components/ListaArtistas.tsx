@@ -7,6 +7,7 @@ import { etiquetaDisciplina, hrefArtistas, UMBRAL_BUSCAR_ARTISTAS, type ArtistaL
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
 import { tarjetaArtista, type Tarjeta } from "@/lib/destacados";
 import Destacados from "./Destacados";
+import IndiceAlfabetico from "./IndiceAlfabetico";
 import RenglonArtista from "./RenglonArtista";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
@@ -123,8 +124,9 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
         </div>
       ) : (
         <>
-          <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} redondas />
-          {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} redondas encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
+          <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} />
+          {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
+          {!filtro.q && <IndiceAlfabetico letra={filtro.letra} href={(letra) => hrefArtistas({ ...filtro, ciudad: cSlug, letra, n: null })} />}
           <p className={comun.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
           <ul className={styles.lista}>
             {artistas.map((a) => (

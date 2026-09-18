@@ -66,7 +66,7 @@ type Distancia = Punto;
 
 /**
  * Orden de la lista: con ubicación, por distancia (y la distancia de cada uno); sin ella, primero los que
- * tienen eventos próximos (por fecha del próximo) y luego el resto en alfabético.
+ * está ordenada alfabéticamente; con ubicación, por distancia.
  */
 export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distancia | null): { lista: T[]; km: Map<string, number> } {
   const km = new Map<string, number>();
@@ -74,11 +74,7 @@ export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distan
     for (const l of lugares) km.set(l.id, distanciaKm(punto, l));
     return { lista: [...lugares].sort((a, b) => km.get(a.id)! - km.get(b.id)!), km };
   }
-  const lista = [...lugares].sort((a, b) => {
-    if (a.proximo && b.proximo) return a.proximo.inicio.localeCompare(b.proximo.inicio) || compararNombres(a.nombre, b.nombre);
-    if (a.proximo || b.proximo) return a.proximo ? -1 : 1;
-    return compararNombres(a.nombre, b.nombre);
-  });
+  const lista = [...lugares].sort((a, b) => compararNombres(a.nombre, b.nombre));
   return { lista, km };
 }
 

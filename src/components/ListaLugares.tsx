@@ -1,11 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
 import { enOrden, tarjetaLugar, type Destacado, type Tarjeta } from "@/lib/destacados";
-import { etiquetaTipo, filtrarLugares, ordenarLugares, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
+import { etiquetaTipo, filtrarLugares, normalizarNombre, ordenarLugares, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
 import { Chips } from "./ui/Chip";
 import Destacados from "./Destacados";
+import IndiceAlfabetico from "./IndiceAlfabetico";
 import RenglonLugar from "./RenglonLugar";
 import { useCanalDePantalla } from "./useCanalDeListas";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
@@ -45,7 +46,9 @@ type Props = {
  * Una sola fila de chips: Cerca de mí · Todos · tipos (la pinta VistaLugares, que comparte el tipo con el mapa).
  */
 export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
-  const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
+  const [letra, setLetra] = useState<string | null>(null);
+  const filtrados = filtrarLugares(lugares, busqueda).filter((l) => punto || !letra || normalizarNombre(l.nombre).startsWith(letra.toLowerCase()));
+  const { lista, km } = ordenarLugares(filtrados, punto);
   // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   // Si la pantalla puso su canal (Lugares, con Mapa y Lista), el aviso y la pregunta son de ella: cambiar de vista no
   // empieza de cero. Sin canal de pantalla, la lista sigue con el suyo.
@@ -72,6 +75,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       {aviso}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
+      {!busqueda.trim() && !punto && <IndiceAlfabetico letra={letra} onSeleccionar={setLetra} />}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()
