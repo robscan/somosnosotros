@@ -189,3 +189,10 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   proyeccion se conserva y admin simula entrypoints de panel/evento. Misma rama,
   OL084/bit118 y ownership, sin backend ni produccion. No publicar ninguno de
   estos checkpoints como entrega final ni mezclar con PR104 ya desplegado.
+- 2026-09-18, entrega posterior Pincel:4619757 corrige la pulsacion larga y
+  9f82a08 incorpora controlador limpio, colores, boton circular y panel tactil,
+  con entrypoints admin/evento simulados. Delta revisado por gestor y aceptado
+  para validacion visual local del founder, NO para integracion o produccion.
+  Evidencia del operador:6 tests focalizados y capturas390; limitacion declarada
+  de pulsacion larga sin automatizacion DOM. Cierre documental pedido, sin repetir
+  pruebas. Accesibilidad de nombres/seleccion de colores pendiente antes de integrar.
