@@ -77,6 +77,7 @@ export function puntoDe(e: Pick<EventoAgenda, "lat" | "lng" | "lugar">): Punto |
 
 /** Lo más atrás que Nuevos mira, aunque la última visita sea más vieja (founder, 2026-09-17: «un tope máximo de 7 días»). */
 export const DIAS_NUEVOS = 7;
+export const LIMITE_NUEVOS = 20;
 
 /**
  * Desde cuándo cuenta como nuevo: lo publicado desde la última vez que se miró la pestaña, con el tope de `dias`

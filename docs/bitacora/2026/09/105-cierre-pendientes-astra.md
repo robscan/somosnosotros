@@ -88,3 +88,32 @@ Reservas vigentes: 112/OL078 direccion, 113/OL079 avisos, 114/OL080 Storage,
 
 Los cambios generados de CLAUDE.md en este worktree y la bitacora 056 ajena en
 main se mantienen fuera de los commits del gestor.
+
+## Integracion local de Nuevos20 y estado Vercel (2026-09-18)
+
+Integrado por cherry-pick `7cedf1b12d1e451e789b9d7cf40f71e11869d882`
+sobre `7a556bc` en `codex/cierre-pendientes`. Entrar conserva el estado de
+produccion ya repuesto; `page.tsx` conserva `sitio_direccion` de la integracion
+pendiente y retira `selloLista`, como la feature. No hay nuevas migraciones.
+Conflicto de OPEN_LOOPS resuelto uniendo la actualizacion de Nuevos y el historial
+de OL-074, sin perder entradas ni duplicar segmentos de Last updated. Verificado
+contra ambas ramas y origin/main. CLAUDE.md ajeno intacto y fuera del commit.
+No se modifica el worktree feature ni su bitacora 108; no hay push ni deploy.
+
+Validacion local de la integracion: 657 unitarias en 61 archivos; typecheck y build
+correctos; lint sin errores y un warning heredado del logotipo. Banco compartido
+local 55439: 42 migraciones y 627 checks correctos, con aislamiento y limpieza
+del runner, sin arrancar ni apagar servicios. Seis recorridos Chrome correctos
+a 390/1280 con transporte simulado y hook real de asistencia. Build sin claves
+de Supabase/Resend/VAPID/Mapbox; sin entregas reales ni red de produccion.
+
+Estado comunicado por el gestor, corte **21:04Z**: PR #100 integrado en `75469d7`;
+PR #101 sigue abierto. [Incidencia oficial de Vercel](https://www.vercel-status.com/incidents/bwkmw4hmrgmk)
+desde 20:32Z. El intento manual por SHA `7cedf1b` creo el preview
+`AzGFuSnWXksA2cMxe5kPjLDpvQzK`, pero seguia en **Initializing**:
+[preview pendiente](https://somosnosotros-il4llxveq-robscans-projects.vercel.app).
+El gestor dejo [comentario durable en GitHub](https://github.com/robscan/somosnosotros/pull/101#issuecomment-5736135099).
+Este corte actualiza las referencias de avance anteriores, conservadas como
+historia; no se infiere un estado posterior ni se modifica el deployment desde
+esta integracion. **No es produccion ni cierre de OL-074.** El manager actualizara
+108 y el cierre final cuando exista despliegue comprobado.
