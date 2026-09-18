@@ -18,7 +18,9 @@ El founder pidió un slider similar a Destacados en Artistas y Lugares, adiciona
 
 ## Datos y alcance técnico
 
-`cargarEventosSemana.ts` consulta Supabase con el cliente existente y joins, por lotes de 500 en orden total. No hay consultas por cada ficha ni corte global de 500: las tarjetas son independientes de la paginación del directorio y de sus consultas antiguas. La ventana SQL de nueve días es solo un margen UTC; la selección exacta por zona se hace en `eventosSemana.ts`. Si falla cualquier lote, se descarta el carril parcial y el resto del directorio sigue funcionando.
+La revisión independiente del Gestor encontró que los lotes sin un tope global podían recorrer miles de relaciones repetidas antes de deduplicar y retrasar el directorio. Se corrigió en el mismo commit de entrega: `cargarEventosSemana.ts` consulta con joins y orden total, pero tiene un presupuesto global de **dos consultas, 1 000 relaciones y 750 ms**. El plazo usa `AbortController` y `abortSignal()` en la consulta real; un `Promise.race` devuelve el control aunque un transporte defectuoso ignore la cancelación. Si se agota una de esas tres fronteras, o falla un lote, se descarta el carril completo: no se publica un ranking parcial. Una ciudad con más de 1 000 relaciones semanales oculta este atajo hasta que exista una consulta agregada en la base; el directorio no se corta ni se ordena con datos incompletos.
+
+La ventana SQL de nueve días es solo un margen UTC; la selección exacta por zona se hace en `eventosSemana.ts`. No hay consultas por cada ficha y las tarjetas siguen independientes de la paginación normal del directorio.
 
 Sin migraciones, dependencias ni variables nuevas. No se modifican las cargas de detalle ni el select de próxima fecha que está trabajando otra tarea (`sitio_direccion`). Los datos se actualizan al volver a cargar la ruta, sujetos al caché de navegación existente; no se añade un temporizador en una página que permanece abierta. La lectura por lotes crece con el número de relaciones de eventos de la ciudad; no requiere un RPC nuevo en esta pieza.
 
@@ -26,13 +28,14 @@ Sin migraciones, dependencias ni variables nuevas. No se modifican las cargas de
 
 - `npm run lint`: sin errores; warning preexistente de `k` sin usar en `docs/diseno/logotipo/iconos-sn.mjs`.
 - `npm run typecheck`: correcto.
-- `npm test`: **392 pruebas en 43 archivos**, incluidas 13 nuevas: vacío, hoy y límite de siete días, octavo día excluido, zona de Tokio, evento en curso y terminado, oculto/cancelado, privado y lugar no legible, múltiples eventos y desempates, enlaces/imágenes, fechas inválidas, segundo lote y error de lectura.
-- `npm run build`: correcto. El último build incluye el desempate por evento.
+- `npm test`: **396 pruebas en 43 archivos**. A las pruebas anteriores se suman presupuesto agotado, consulta global agotada, transporte suspendido con `abortSignal` llamado, ausencia de resultados parciales y frontera exacta.
+- `npm run build`: correcto tras la corrección de presupuesto.
 - Playwright/Chromium sobre **build de producción local** (`next start`, puerto 3018), lectura pública de datos reales: 5 artistas y 16 lugares en la consulta de esta sesión, sin duplicados; enlaces a fichas; desplazamiento separado; regreso del historial; cambio Mapa/Lista; búsqueda, vacío de búsqueda y filtros sin carril. No se realizaron escrituras a producción.
 - Capturas antes/después en 390×844 (3x) y 1280×800, inspeccionadas completas. Antes: producción existente. Después: build local. Presentes: barra, búsqueda/chips, Destacados y nuevo título; fotos, nombres y fechas semanales legibles; siguiente tarjeta asoma; navegación y botón de registro conservados. El carril horizontal se extiende a la derecha en escritorio como el original. La prueba real de Safari del iPhone del founder no se ha realizado.
 - El primer harness de escritorio conservó una búsqueda previa en sessionStorage y no encontró el carril: se aisló el estado de captura, se repitió el recorrido y pasó. No fue un fallo del producto: conservar la búsqueda es el comportamiento existente.
+- Control de fallo real: un proxy local dejó suspendidas únicamente las dos consultas del nuevo carril durante 2 s, por encima del plazo. En el build de producción local, Artistas y Lugares siguieron mostrando sus directorios (526 y 58 filas); el carril semanal no se pintó. A 390×844 y 1280×800, las páginas llegaron utilizables entre 919 y 1 148 ms, sin esperar los 2 s del transporte suspendido. No hubo llamadas de escritura.
 
-Evidencia y harness en `/Users/apple-1/.codex/visualizations/2026/09/18/01a0b61e-abcd-7483-a141-116715ad40d4/eventos-semana/`: ocho PNG `sn-semana-{artistas,lugares}-{antes,despues}[-1280].png` y `sn-semana-qa.cjs`. El harness se ejecutó con `SN_QA_URL=http://localhost:3018 node /tmp/sn-semana-qa.cjs`.
+Evidencia y harness en `/Users/apple-1/.codex/visualizations/2026/09/18/01a0b61e-abcd-7483-a141-116715ad40d4/eventos-semana/`: ocho PNG `sn-semana-{artistas,lugares}-{antes,despues}[-1280].png`, cuatro `sn-semana-fallo-{artistas,lugares}-{390,1280}.png` y `sn-semana-qa.cjs`. El harness normal se ejecutó con `SN_QA_URL=http://localhost:3018 node /tmp/sn-semana-qa.cjs`; el de fallo usó un proxy local de solo lectura que retuvo el selector que contiene `termina`.
 
 ## Entrega
 
