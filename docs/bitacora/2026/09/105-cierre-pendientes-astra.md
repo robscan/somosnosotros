@@ -189,3 +189,42 @@ sin ampliar autorizaciones. Falta la firma del founder en Safari y su telefono.
 Esta integracion es documental y local: sin cambios de codigo, push ni deploy,
 y sin alterar el CLAUDE.md ajeno. No se repiten pruebas de aplicacion ni se
 interactua con produccion; se comprueban el diff y la preservacion documental.
+
+## Reanudacion autorizada y reparto operativo (2026-09-18)
+
+El founder autoriza reanudar la gestion, con tareas operativas separadas y
+revision propia. Se integra solo `dd1c8e6` de `codex/entrar-texto-breve`:
+una linea de FormularioEntrar y el apendice de 108. No cambia accesos ni Auth;
+este ajuste de texto queda local, pendiente de revision y publicacion.
+
+- Direccion: tarea `01a0b694-7b57-7b23-9ee6-4fa07c2f2ddf`, rama
+  `codex/direccion-correcciones`, desde `4eee240`.
+- Avisos: tarea `01a0b694-ed57-7700-b717-a4e56dbd1c31`, rama
+  `codex/avisos-correcciones`, desde `4eee240`.
+- Sartre reproduce y revisa independientemente. El gestor aprueba los
+  cherry-picks tras revision y suite integrada; ninguna asignacion equivale
+  a una entrega terminada ni a autorizacion de produccion.
+- La continuacion automatica se mantiene dentro del trabajo activo. Un estado
+  idle no acredita ejecucion ni avance; comprobar entrega y evidencia antes
+  de pasar de etapa. No se crea una automatizacion programada en esta integracion.
+
+Checklist durable para cada pieza pendiente:
+
+- [ ] Entrega identificada por commit y pruebas del operador.
+- [ ] Revision independiente y reproduccion de hallazgos.
+- [ ] Correcciones verificadas por el revisor.
+- [ ] Integracion local candidata bajo gestion, sin publicacion.
+- [ ] Unitarias y PostgreSQL del arbol integrado; aprobacion del cherry-pick
+  por el gestor tras revision y suite integrada.
+- [ ] Preview y recorridos verificados.
+- [ ] Aprobacion explicita de produccion y publicacion comprobada.
+- [ ] Firma del founder en Safari y su telefono.
+
+El primer lote Nuevos20 conserva su cierre publicado; los restantes lotes no
+heredan esa autorizacion. Esta rama queda disponible para continuar la gestion,
+sin sincronizar otros commits, tocar el CLAUDE.md ajeno, push ni deploy.
+
+Verificacion de esta integracion del copy: `npm test`, 657 pruebas en 61 archivos
+correctas; `npm run typecheck` correcto. No se ejecutan PostgreSQL, build ni QA
+visual en este paso acotado; no sustituye las revisiones y pruebas pendientes
+de cada entrega. Diff comprobado y fetch antes del commit local por nombres.
