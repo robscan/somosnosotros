@@ -117,3 +117,11 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   sin push ni PR. Direccion entrega4d032113 y avisos22e996d, ambos locales,
   pendientes de revision, sin autorizacion de produccion. Cupo global consultado
   despues:90% usado/10% restante semanal; no atribuir la diferencia a una pieza.
+- 2026-09-18, decision MAS RECIENTE del founder: "Me retracto, sin cancelar
+  nada publica todo lo trabajado". Sustituye la suspension de carriles:
+  conservar Destacados y carriles, retomar publicacion de fase1 por lotes
+  verificados. Incluye preparacion de las nueve migraciones pendientes; no
+  omitir revision, respaldo/restauracion y prueba de produccion. Pincel sigue
+  experimento separado, sin convertirlo silenciosamente en producto.
+  Activacion de envios reales y cron de cinco minutos consultada explicitamente,
+  pendiente de respuesta; no inferir permiso para avisos historicos ni cambios Auth.
