@@ -45,6 +45,25 @@ Dice qué hay sin commit, qué árboles y ramas tienen commits que `main` no tie
 
 ## Cómo cierra el encargado un día
 
+### Entregas sin espera indefinida (founder, 2026-09-18)
+
+- Toda entrega incluye commit, alcance, evidencia reutilizable y limites. Al
+  recibirla, el gestor decide: aceptada, devuelta con hallazgos concretos o
+  pendiente de una decision expresa del founder. "Pendiente del gestor" por si
+  solo no es un estado suficiente: registrar accion siguiente y responsable.
+- La revision tecnica es responsabilidad del gestor; no pedir al founder que
+  la sustituya. Si falta una decision de producto o autorizacion, formular la
+  pregunta concreta y continuar las piezas independientes ya autorizadas.
+- Tras integrar/publicar o recibir la firma del founder, comunicar el cierre
+  al operador correspondiente con commit/PR y pendientes operativos separados.
+  No dejar que una rama antigua siga informando el estado previo a integracion.
+- Antes de terminar un turno de coordinacion, conciliar las entregas recibidas
+  y el tablero: estado, responsable, siguiente accion y bloqueo real. No dejar
+  una entrega recibida sin respuesta ni prometer continuidad en segundo plano
+  sin un mecanismo activo. Usar espera acotada de operadores mientras corresponda.
+- No despertar operadores solo para pedir estatus ni repetir pruebas aprobadas.
+  Una comunicacion de cierre no requiere nuevo commit en su rama ni otra suite.
+
 1. Correr el tablero.
 2. Guardar en commit lo que quedó sin commit en `main` (por nombre).
 3. Por cada PR abierto: traer `main`, resolver OPEN_LOOPS, CI en verde.

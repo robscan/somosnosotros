@@ -226,3 +226,10 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   cambia la referencia de indice tipo Contactos y requiere revisar tamano tactil.
   No repetir suite global por este ajuste. Operador de avisos informado de que su
   codigo ya esta integrado en PR104/prod; entrega externa sigue sin autorizar.
+- 2026-09-18, founder detecta operadores detenidos esperando al gestor. Se adopta
+  protocolo de entregas sin espera indefinida en GESTION_DE_CAMBIOS: cada entrega
+  recibe decision, responsable y siguiente accion; revision tecnica del gestor
+  separada de aprobacion de producto/envios. Sincronizar cierres con operadores
+  y conciliar entregas antes de terminar turno, sin promesas de fondo no activas.
+  Operador de direccion debe conocer PR104/prod y firma del founder de edicion
+  y busqueda; no repetir pruebas ni extender la firma a otros recorridos.
