@@ -254,3 +254,27 @@ Referencia tecnica adicional: PostgreSQL documenta los cuidados de
 [SECURITY DEFINER y search_path](https://www.postgresql.org/docs/16/sql-createfunction.html)
 y el requisito EXECUTE al
 [crear un trigger](https://www.postgresql.org/docs/17/sql-createtrigger.html).
+
+## Verificacion en produccion (2026-09-18, PR104)
+
+Aplicadas las migraciones autorizadas; app publicada en eb2f80e. Rerun linter
+del panel autenticado: **0 errores,25 warnings,9 info**, frente a0/49/4.
+Ya no aparecen search_path mutable ni listado publico de Storage. No se usaron
+exclusiones del Advisor ni se abrieron permisos para reducir el contador.
+
+Los25 warnings son5 EXECUTE definer anon,19 authenticated y1 proteccion contra
+contrasenas filtradas. Los conteos de EXECUTE se contrastaron con el catalogo
+remoto. Son contratos auditados en la matriz de esta bitacora, no25 vulnerabilidades
+nuevas ni certificacion de ausencia de riesgos. Cero definers publicos carecen de
+search_path fijado. Cola/config/worker no accesibles a anon/authenticated; la
+envolvente de guardado invoker solo ejecutable por authenticated.
+
+Las9 sugerencias son RLS sin politica en admin_correos,avisos_enviados,
+contactos_importados,invitaciones_enviadas y las5 nuevas tablas internas
+avisos_config,avisos_jobs,avisos_entregas,avisos_origen,avisos_slots. Se mantiene
+denegacion al cliente. No crear politicas permisivas para silenciarlas.
+
+Pendientes de decision: Auth/plan para proteccion de contrasenas y privacidad de
+flyers con URL conocida. El bucket sigue publico; restringir listado no hace
+privado su contenido. No se ejecuto QA real de subida/borrado de Storage ni login
+OAuth completo desde el gestor. Ver111/114 y prueba del founder en dispositivo.

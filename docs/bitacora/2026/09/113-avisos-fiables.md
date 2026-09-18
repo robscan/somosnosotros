@@ -187,3 +187,20 @@ no hubo push, deploy, SQL remoto, secretos ni envios reales. La garantia continu
 siendo entrega al proveedor como maximo una vez cuando hay ACK; despues de un ACK
 perdido o una pausa en el limite externo solo se evita reabrir ese canal, sin
 prometer exactly-once externo.
+
+## Esquema y codigo publicados, entregas retenidas (2026-09-18)
+
+PR104/eb2f80e desplegado en somosnosotros.org despues de aplicar181400 y181600.
+El gestor habilito capturar=true y corte2026-09-18T23:04:19.708Z antes del nuevo
+build. Entregar=false, recordatorios_desde=NULL; sin pg_cron/pg_net nuevos, sin
+Vault nuevo, sin envios de prueba ni reenvio historico. Se comprobo ACL de cola,
+config y worker contra anon/authenticated y POST no autenticado responde401.
+
+La activacion de proveedores y recuperacion cada cinco minutos sigue pendiente
+de respuesta expresa del founder. Se reitero la pregunta al quedar produccion
+lista; no interpretar su aprobacion del despliegue como esta respuesta. Al corte
+posterior se observo1 job/0 entregas. No mantener esta retencion como promesa de
+recuperar anuncios caducados: al activar se respeta caducidad y la frontera de
+recordatorios del procedimiento anterior. Pendientes el corte del cron legado,
+prueba real autorizada y verificacion de capacidad. Codigo publicado no equivale
+a avisos operativos ni a exactly-once externo.

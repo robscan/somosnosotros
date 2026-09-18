@@ -157,3 +157,24 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   pruebas focalizadas de estados/pinceles y recorrido visual movil/escritorio,
   sin suite global. Prototipo de sesion y colaboracion simuladas, no integracion
   real. Esta pieza no bloquea el cierre de fase1.
+- 2026-09-18, tras publicar PR104: se libera la pieza autorizada por el founder
+  en tarea 01a0b61e-abcd-7483-a141-116715ad40d4. Reserva OL-085/bitacora119,
+  rama codex/directorios-alfabeticos desde eb2f80efa07b6efefeee1db7ea295ea1dcb997ba,
+  worktree /Users/apple-1/somosnosotros-directorios-alfabeticos. Terra high.
+  Directorios alfabeticos con salto por letra, cercania opcional en Lugares,
+  destacados 2x e imagen rectangular de artistas en carriles. Solo UI/consultas
+  de directorios y documentacion propia, sin SQL/Auth/avisos/eventos/formularios.
+  Pruebas focalizadas de orden, acentos, filtros y paginacion; capturas movil y
+  escritorio. Entrega local para revision, sin publicar automaticamente.
+- 2026-09-18, estado posterior verificado: PR103/0a30598 y PR104/eb2f80e ya en
+  produccion. Ultimo deployment3bmn3soofYhiEsajoKpGzQAVEpJF con dominio real,
+  CI PR/main verdes,42 migraciones remotas. Captura de avisos activa desde
+  23:04:19.708Z; entregar=false,recordatorios_desde=NULL, cron nuevo no instalado.
+  Activacion consultada otra vez al quedar prod lista; respuesta pendiente.
+  Advisor0ERROR/25WARN/9INFO, sin silenciar sugerencias. Detalle y limites en105,
+  111 y113. Pendiente validacion del founder de guardado/flyer en dispositivo,
+  decisiones de privacidad/Auth y activacion real. No geocodificacion retroactiva.
+  Pincel entrego65c6d1b; gestor pidio corregir solo el boton central sin efecto,
+  con prueba focalizada, sin suite global. Directorios se ejecuta separado.
+  Metadata Pincel confirmaTerra (effort high observado aunque medium solicitado);
+  no deducir modelo efectivo del texto generico GPT-5 del prompt.

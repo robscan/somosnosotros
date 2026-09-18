@@ -346,3 +346,45 @@ archivos, typecheck y build correctos con variables de proveedor vacías. Siguen
 pendientes la aprobación del gestor para abrir PR, preview y revisión visual del
 candidato; nada se publica ni se activa. La pregunta separada para activar
 entregas reales de avisos/cron continúa pendiente.
+
+## Publicacion del lote final de codigo (2026-09-18)
+
+El estado anterior queda conservado como historia. El gestor acepto f59cab7,
+abrió PR104 y lo integro en eb2f80efa07b6efefeee1db7ea295ea1dcb997ba a las
+23:04:55Z. CI del PR35403964061 y de main35404262302 correctos. Vercel Production
+3bmn3soofYhiEsajoKpGzQAVEpJF Ready, con somosnosotros.org en Current Domains;
+inmutable somosnosotros-254l28mic-robscans-projects.vercel.app.
+
+Se reutilizaron las unitarias/componentes/PG y revision independientes ya
+documentadas; el merge final no cambio SQL ni tuvo conflictos de codigo.
+No se repitieron suites locales. Los checks obligatorios de CI se conservaron.
+
+Las nueve migraciones se aplicaron con CLI2.117.0 y TLS verify-full despues de
+dry-run exacto y comprobacion SHA256 del respaldo22:37. Ledger remoto:42,
+ultima20260918160000. Comprobacion readonly posterior: mismos conteos de usuarios10,
+perfiles10, eventos88, artistas526, lugares58, asistencias22, sitios privados1,
+push6, avisos legados7, novedades2 y objetos Storage385. El ensayo de restauracion
+se acepta como compatibilidad SQL/datos sin Vault, no como recuperacion integral
+de la plataforma ni de bytes de imagenes. No se alteraron secretos ni planes.
+
+En produccion se verificaron Entrar con Apple/Google/correo y texto breve, ficha
+publica con enlace a coordenadas en Como llegar, agenda, ficha reservada sin
+enlace de mapa para visitante y carriles con5 artistas/16 lugares. Entrar/ficha
+inspeccionados a390x844, sin desbordamiento y con imagenes cargadas. Evidencia en
+la carpeta de visualizaciones del gestor: fase1-entrar-produccion-390.png y
+fase1-ficha-produccion-390.png. La preview oculta OAuth por la restriccion de
+dominios registrada en entrarCon.ts; no es otra version del login.
+
+Captura de avisos habilitada con corte23:04:19.708Z antes de publicar la app;
+entregar=false y recordatorios_desde=NULL. Endpoint POST sin credenciales responde
+401. No cron nuevo ni envios reales habilitados. Se observo un job y cero entregas
+despues del despliegue; no se crearon eventos de prueba desde el gestor.
+
+Security Advisor recalculado:0 errores,25 warnings,9 info; detalle en111.
+Pendientes para cerrar fase1: validacion de guardar/editar/subir flyer con sesion
+en dispositivo del founder, decision y transicion de avisos reales, privacidad
+de flyers y proteccion de contrasenas. No se afirma que todo el cierre este
+terminado. Las direcciones antiguas no tuvieron geocodificacion masiva: requieren
+confirmacion al editar. Directorios OL085 y prototipo Pincel OL084 van separados.
+
+PR y evidencia: https://github.com/robscan/somosnosotros/pull/104

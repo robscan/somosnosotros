@@ -39,4 +39,21 @@ Evidencia y harness en `/Users/apple-1/.codex/visualizations/2026/09/18/01a0b61e
 
 ## Entrega
 
+### Publicacion confirmada por el gestor (2026-09-18)
+
+PR103 integrado en0a305989381c5a4eb47cd32e040c3174cf63114b a22:44:43Z.
+Vercel Production7Jxg73FfhjtYbqaCxpgg26kNaCH9 y dominio real verificados:
+5 artistas y16 lugares en la tira semanal, busqueda/limpieza y Mapa/Lista
+correctos, capturas reales390x844 sin desbordamiento. Destacados manuales se
+conservan en codigo; no se afirma que esa tira fuese visible en el catalogo real
+de Artistas/Lugares al comprobarlo. PR104/eb2f80e conserva ambas tiras y se
+recomprobaron5/16 despues de su publicacion. Evidencia durable:
+https://github.com/robscan/somosnosotros/pull/103#issuecomment-5737100281
+
+La orden temporal de detener carriles fue retractada por el founder. La nueva
+peticion de directorios alfabeticos y aspecto de tarjetas se asigno por separado
+aOL085/bit119; no forma parte del cierre tecnico de PR103.
+
+### Entrega original conservada
+
 Lista para revisión del gestor e integración en su cola separada del primer lote 100/101. Sin despliegue en esta tarea. `CLAUDE.md`, `DEFINICION.md`, `PLAN.md` y secretos sin cambios; se retiró únicamente el bloque que Next dev generó automáticamente en el worktree. Reservas 117/OL-083 contrastadas con `scripts/ops/siguiente-bitacora.sh`: 117 disponible, OL-082 reservado a otra tarea por el gestor.
