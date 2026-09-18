@@ -178,3 +178,14 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   con prueba focalizada, sin suite global. Directorios se ejecuta separado.
   Metadata Pincel confirmaTerra (effort high observado aunque medium solicitado);
   no deducir modelo efectivo del texto generico GPT-5 del prompt.
+- 2026-09-18, seguimiento de piezas separadas: directorios9c04ecf/6c80849
+  retenidos sin PR por revision del orden foto/placeholder, recuperacion del
+  indice con busqueda/vacios y tarjeta unica2x. Correcciones focalizadas con
+  Terra high, no otra suite global. Founder agrego foto real antes de placeholder
+  en sliders, con fecha dentro de cada grupo semanal (decision en su tarea).
+  Pincel65c6d1b/ea06274: revision detecto reinicio por click tras pulsacion larga;
+  correccion en curso. Founder aprobo iterar participante como controlador sin
+  header/titulo, salir+personas, colores, boton circular y panel tactil desplegable;
+  proyeccion se conserva y admin simula entrypoints de panel/evento. Misma rama,
+  OL084/bit118 y ownership, sin backend ni produccion. No publicar ninguno de
+  estos checkpoints como entrega final ni mezclar con PR104 ya desplegado.
