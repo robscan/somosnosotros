@@ -1,6 +1,8 @@
 -- Guardar el evento, sus artistas y su sitio reservado en una sola transaccion.
 -- SECURITY INVOKER conserva RLS y los triggers de propiedad/visibilidad existentes.
-create function public.guardar_evento_completo(p_evento uuid, p_datos jsonb, p_privado jsonb, p_quien jsonb)
+alter table public.eventos add column operacion_guardado uuid;
+
+create function public.guardar_evento_completo(p_evento uuid, p_datos jsonb, p_privado jsonb, p_quien jsonb, p_revision timestamptz default null, p_operacion uuid default null)
 returns jsonb language plpgsql security invoker set search_path = '' as $$
 declare
   v public.eventos;
@@ -16,6 +18,9 @@ declare
 begin
   if auth.uid() is null then
     raise exception 'sin_permiso' using errcode = '42501';
+  end if;
+  if p_operacion is null then
+    raise exception 'operacion_requerida' using errcode = '22023';
   end if;
   if jsonb_typeof(p_datos) is distinct from 'object'
     or jsonb_typeof(p_quien) is distinct from 'array' or jsonb_array_length(p_quien) > 6 then
@@ -38,15 +43,34 @@ begin
   end if;
 
   if p_evento is null then
-    insert into public.eventos (titulo, inicio, fin, lugar_id, descripcion, imagen, precio, enlace,
+    -- La misma alta conserva su UUID al reintentar, incluso si la primera respuesta se perdio.
+    perform pg_advisory_xact_lock(7304, hashtext(p_operacion::text));
+    select * into anterior from public.eventos where id = p_operacion;
+    if found then
+      if anterior.creado_por is distinct from auth.uid() then
+        raise exception 'sin_permiso' using errcode = '42501';
+      end if;
+      return jsonb_build_object('id', anterior.id, 'artistas',
+        (select coalesce(jsonb_agg(artista_id), '[]') from public.eventos_artistas where evento_id = anterior.id),
+        'artistas_anteriores', '[]'::jsonb, 'lugar_anterior', null, 'cambio', null, 'repetido', true);
+    end if;
+    insert into public.eventos (id, operacion_guardado, titulo, inicio, fin, lugar_id, descripcion, imagen, precio, enlace,
       sitio_texto, sitio_lat, sitio_lng, sitio_reservado, sitio_revelar_desde, ciudad, zona, creado_por)
-    values (v.titulo, v.inicio, v.fin, v.lugar_id, v.descripcion, v.imagen, v.precio, v.enlace,
+    values (p_operacion, p_operacion, v.titulo, v.inicio, v.fin, v.lugar_id, v.descripcion, v.imagen, v.precio, v.enlace,
       v.sitio_texto, v.sitio_lat, v.sitio_lng, v.sitio_reservado, v.sitio_revelar_desde, v.ciudad, v.zona, auth.uid())
     returning * into v;
   else
     select * into anterior from public.eventos where id = p_evento for update;
     if not found or not public.gestiona_evento(p_evento) then
       raise exception 'sin_permiso' using errcode = '42501';
+    end if;
+    if anterior.operacion_guardado = p_operacion then
+      return jsonb_build_object('id', anterior.id, 'artistas',
+        (select coalesce(jsonb_agg(artista_id), '[]') from public.eventos_artistas where evento_id = anterior.id),
+        'artistas_anteriores', '[]'::jsonb, 'lugar_anterior', null, 'cambio', null, 'repetido', true);
+    end if;
+    if p_revision is null or anterior.actualizado_en is distinct from p_revision then
+      raise exception 'evento_actualizado' using errcode = '40001';
     end if;
     select coalesce(array_agg(artista_id), '{}') into previos
       from public.eventos_artistas where evento_id = p_evento;
@@ -55,10 +79,11 @@ begin
       or anterior.sitio_lat is distinct from v.sitio_lat or anterior.sitio_lng is distinct from v.sitio_lng
       or anterior.sitio_reservado is distinct from v.sitio_reservado;
     if v.sitio_reservado and anterior.sitio_reservado then
-      donde := donde or exists (select 1 from public.eventos_sitio_privado p where p.evento_id = p_evento
+      donde := donde or not exists (select 1 from public.eventos_sitio_privado p where p.evento_id = p_evento)
+        or exists (select 1 from public.eventos_sitio_privado p where p.evento_id = p_evento
         and (p.direccion is distinct from privado.direccion or p.lat is distinct from privado.lat or p.lng is distinct from privado.lng));
     end if;
-    update public.eventos set titulo = v.titulo, inicio = v.inicio, fin = v.fin, lugar_id = v.lugar_id,
+    update public.eventos set operacion_guardado = p_operacion, titulo = v.titulo, inicio = v.inicio, fin = v.fin, lugar_id = v.lugar_id,
       descripcion = v.descripcion, imagen = v.imagen, precio = v.precio, enlace = v.enlace,
       sitio_texto = v.sitio_texto, sitio_lat = v.sitio_lat, sitio_lng = v.sitio_lng,
       sitio_reservado = v.sitio_reservado, sitio_revelar_desde = v.sitio_revelar_desde, ciudad = v.ciudad, zona = v.zona
@@ -110,5 +135,5 @@ begin
     'cambio', case when cuando and donde then 'ambos' when cuando then 'cuando' when donde then 'donde' else null end);
 end;
 $$;
-revoke all on function public.guardar_evento_completo(uuid, jsonb, jsonb, jsonb) from public, anon;
-grant execute on function public.guardar_evento_completo(uuid, jsonb, jsonb, jsonb) to authenticated;
+revoke all on function public.guardar_evento_completo(uuid, jsonb, jsonb, jsonb, timestamptz, uuid) from public, anon;
+grant execute on function public.guardar_evento_completo(uuid, jsonb, jsonb, jsonb, timestamptz, uuid) to authenticated;

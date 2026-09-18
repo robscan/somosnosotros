@@ -17,7 +17,7 @@ import { clienteServidor } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
 
 /** Publicar lleva a la ficha nueva reemplazando el alta; guardar devuelve a dónde volver (el formulario termina la tarea). */
-export type ResultadoEvento = { ok: true; id: string; volver: string } | { ok: false; errores: ErroresEvento; general?: string };
+export type ResultadoEvento = { ok: true; id: string; volver: string } | { ok: false; errores: ErroresEvento; general?: string; conflicto?: boolean };
 
 
 function leer(formData: FormData) {
@@ -74,16 +74,19 @@ function revalidar(id: string, lugarId: string | null, artistas: string[] = []) 
 
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 
-type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: string[]; lugar_anterior: string | null; cambio: CambioEvento };
+type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: string[]; lugar_anterior: string | null; cambio: CambioEvento; repetido?: boolean };
 
-async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[]): Promise<GuardadoCompleto | null> {
+async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[], operacion: FormDataEntryValue | null, revision: string | null = null): Promise<{ data: GuardadoCompleto | null; conflicto: boolean }> {
+  if (typeof operacion !== "string" || !esUuid(operacion)) return { data: null, conflicto: false };
   const { data, error } = await supabase.rpc("guardar_evento_completo", {
     p_evento: id,
     p_datos: filaEvento(datos, ciudad),
     p_privado: datos.privado,
     p_quien: quien.map((item) => ({ ...item, tipo: deducirTipoArtista(item.nombre) ?? "solista" })),
+    p_revision: revision,
+    p_operacion: operacion,
   });
-  return error || !data ? null : data as GuardadoCompleto;
+  return { data: error || !data ? null : data as GuardadoCompleto, conflicto: error?.code === "40001" };
 }
 
 
@@ -94,11 +97,11 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
-  const data = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")));
+  const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"));
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
   revalidar(data.id, datos.lugar_id, data.artistas);
   // Avisar a quienes siguen el lugar, después de responder (no retrasa la publicación).
-  after(() => avisarNuevoEvento(data.id, user.id));
+  if (!data.repetido) after(() => avisarNuevoEvento(data.id, user.id));
   redirect(`/eventos/${data.id}?nuevo=1`, RedirectType.replace);
 }
 
@@ -109,7 +112,12 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
-  const data = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")));
+  const revision = formData.get("revision");
+  if (typeof revision !== "string" || !revision.trim() || !Number.isFinite(Date.parse(revision))) {
+    return { ok: false, errores: {}, general: "Vuelve a abrir el evento para cargar su versión actual. Tus cambios no se guardaron." };
+  }
+  const { data, conflicto } = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"), revision);
+  if (conflicto) return { ok: false, errores: {}, conflicto: true, general: "El evento cambió mientras lo editabas. Tus cambios siguen aquí, pero no se guardaron. Revisa la versión actual antes de volver a editar." };
   if (!data) return { ok: false, errores: {}, general: "No se pudo guardar el evento completo. ¿Sigues con sesión y es tu evento?" };
   revalidar(id, datos.lugar_id, [...data.artistas, ...data.artistas_anteriores]);
   if (data.lugar_anterior && data.lugar_anterior !== datos.lugar_id) revalidatePath(`/lugares/${data.lugar_anterior}`);

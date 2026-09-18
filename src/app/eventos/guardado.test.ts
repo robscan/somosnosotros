@@ -14,6 +14,8 @@ const ID = "00000000-0000-4000-8000-000000000001";
 const ANTERIOR = "00000000-0000-4000-8000-000000000002";
 function formulario() {
   const fd = new FormData();
+  fd.set("operacion", ID);
+  fd.set("revision", "2030-09-01T12:00:00Z");
   for (const [k, v] of Object.entries({ modo_sitio: "otro", sitio_texto: "Plaza de prueba", titulo: "Evento", inicio: "2030-10-01T19:00", gratis: "si", quien: JSON.stringify([{ nombre: "Trio de prueba" }]) })) fd.set(k, v);
   return fd;
 }
@@ -64,6 +66,35 @@ describe("guardado completo del evento", () => {
   it("la validacion impide llamar a la base con un formulario incompleto", async () => {
     const fd = formulario();
     fd.set("titulo", "");
+    expect((await crearEvento(null, fd)).ok).toBe(false);
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+
+  it("un conflicto no avisa ni confirma el guardado", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { code: "40001" } });
+    expect(await actualizarEvento(ID, null, formulario())).toEqual(expect.objectContaining({ ok: false, general: expect.stringContaining("cambió mientras") }));
+    expect(m.after).not.toHaveBeenCalled();
+    expect(m.invalidar).not.toHaveBeenCalled();
+    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_completo", expect.objectContaining({ p_revision: "2030-09-01T12:00:00Z" }));
+  });
+
+  it("una pantalla antigua sin revision no sobreescribe el evento", async () => {
+    const fd = formulario();
+    fd.delete("revision");
+    expect((await actualizarEvento(ID, null, fd)).ok).toBe(false);
+    expect(m.rpc).not.toHaveBeenCalled();
+  });
+
+  it("recuperar un alta confirmada no programa otro aviso", async () => {
+    m.rpc.mockResolvedValue({ data: { id: ID, artistas: [], repetido: true }, error: null });
+    await expect(crearEvento(null, formulario())).rejects.toThrow("REDIRECT");
+    expect(m.after).not.toHaveBeenCalled();
+    expect(m.redirect).toHaveBeenCalledWith(`/eventos/${ID}?nuevo=1`, "replace");
+  });
+
+  it("no guarda sin una clave valida de operacion", async () => {
+    const fd = formulario();
+    fd.delete("operacion");
     expect((await crearEvento(null, fd)).ok).toBe(false);
     expect(m.rpc).not.toHaveBeenCalled();
   });
