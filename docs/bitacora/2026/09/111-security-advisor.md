@@ -59,6 +59,16 @@ internas al cliente. Ninguna migracion CAPO reservada hasta revisar contrato.
 
 ## Referencias oficiales
 
+Actualizacion posterior del gestor: el hardening de funciones de esta bitacora
+se integro en el cierre local junto con CAPO y Storage. El catalogo de las 43
+funciones desplegadas se contrasto contra main y contra el dump restaurado,
+coincidiendo cuerpo, modo y path. Auth y listado de Storage se detallan en la
+bitacora [114](114-storage-minimo.md); existen seis cuentas con contrasena y la
+proteccion filtrada requiere Pro. No se ha cambiado produccion ni vuelto a
+calcular su Advisor despues de un despliegue; los conteos originales no son
+resultados de las correcciones locales. Las reservas CAPO se resolvieron con
+18120000 y su integracion, conservando arriba la historia inicial.
+
 - [Funciones y permisos](https://supabase.com/docs/guides/database/functions).
 - [Aviso de EXECUTE para authenticated](https://github.com/supabase/splinter/blob/main/docs/0029_authenticated_security_definer_function_executable.md).
 - [RLS y denegacion por defecto](https://supabase.com/docs/guides/database/postgres/row-level-security).

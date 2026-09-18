@@ -81,3 +81,29 @@ Respaldo previo: `Backups/somosnosotros/2026-09-18-pre-publicacion/supabase.dump
 (ruta bajo /Users/apple-1). Archivo custom comprobado con pg_restore --list;
 sin ensayo de restauracion y sin los bytes de los objetos de Storage. No se
 describe como recuperacion integral validada.
+
+## Ensayo posterior del gestor: restauracion local
+
+La limitacion anterior refleja el estado al crear la pieza. Despues, en esta
+misma fecha, se restauro el dump completo en una instancia PostgreSQL 17 nueva,
+accesible solo por socket Unix dentro de una carpeta temporal privada, sin TCP.
+Se prepararon roles anon/authenticated/service_role y extensiones unaccent,
+pgcrypto y uuid-ossp. `pg_restore --no-owner --no-privileges --exit-on-error`
+termino correctamente. El primer intento detecto el esquema public vacio que
+crea PostgreSQL; se retiraron solo esos esquemas vacios de la instancia temporal
+y se repitio la restauracion. El respaldo original no se modifico.
+
+Conteos restaurados: 10 cuentas y perfiles, 88 eventos, 526 artistas, 385
+metadatos de Storage y 33 migraciones. Las 43 funciones de aplicacion coinciden
+en hash del cuerpo, modo y search_path con el catalogo remoto de solo lectura.
+Se aplicaron sobre esa copia, sin errores, las siete migraciones pendientes
+17160000, 17170000, 18100000, 18110000, 18120000, 18130000 y 18150000; los cinco
+conteos de datos anteriores se conservaron. Outbox 18140000 y direccion 18160000
+todavia no estaban integrados, por lo que no se atribuye ese ensayo a ellos.
+
+La instancia se detuvo y su carpeta temporal se elimino al acabar. No se
+exportaron filas personales a documentos ni se hicieron escrituras remotas.
+Este ensayo valida restauracion de esquemas/datos y compatibilidad de esas
+migraciones con la copia. No valida owners/grants originales, omitidos de forma
+explicita, los servicios Auth/Storage/CDN ni los bytes de imagen. La recuperacion
+integral del servicio aun necesita esas piezas y su procedimiento aprobado.
