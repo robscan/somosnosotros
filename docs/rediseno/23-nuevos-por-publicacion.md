@@ -1,5 +1,26 @@
 # 23 · "Nuevos": lo recién publicado, arriba
 
+## Decision vigente: resumen de 20 (2026-09-18)
+
+El founder acepta un maximo de **20 eventos** y autoriza publicar ese ajuste:
+"acepto limite propuesto. Vamos a prod con eso". Se conserva el acceso actual
+de produccion, incluidos Apple y Google. Lo siguiente conserva el historial de
+la propuesta anterior; el nuevo limite sustituye cualquier lista sin tope.
+
+- Se consulta al abrir Nuevos: visible, vigente, ciudad actual, publicado desde
+  la ultima visita y dentro de siete dias. El servidor fija el limite y el reloj.
+- La lista no crece con scroll. **Ver todos** vuelve a la agenda general; los
+  eventos fuera de este resumen no se eliminan ni se ocultan de Todos.
+- La fecha del evento sigue en el renglon. Buscar y elegir fecha filtran el
+  resumen recibido; para buscar fuera de el se usa Todos.
+- Cargando no se presenta como vacio. Un fallo ofrece Reintentar y no avanza
+  la visita. Al volver de una ficha se conserva el corte de publicacion.
+- La estructura visual existente se mantiene. No se aprueba un rediseño.
+- La autorizacion de despliegue no sustituye la comprobacion en Safari del
+  dispositivo del founder. Evidencia tecnica y despliegue en bitacora 108.
+
+## Historial de la propuesta
+
 **Estado:** **pendiente de firma del founder.** **Prototipo:** [`prototipos/nuevos-por-publicacion.html`](prototipos/nuevos-por-publicacion.html) (publicado para el iPhone en https://claude.ai/artifact/9uSskNENJyzdyxQRHwzUsM) · **OL:** OL-068 · **Bitácora:** [099](../bitacora/2026/09/099-nuevos-por-publicacion.md) · **Pantalla:** `/` (Agenda › pestaña Nuevos) · **Mirada:** producción en el navegador a 390×844 el 2026-09-17, más una prueba que reproduce el caso · **Base:** decisión 15 de [02-inicio-flujo-y-estados.md](02-inicio-flujo-y-estados.md)
 
 ## Lo que pidió el founder

@@ -51,3 +51,44 @@ No se incluye con estos cambios de producto ni se elimina a la fuerza.
   origin/main vacio; 411 unitarias aprobadas, typecheck y build aprobados,
   lint sin errores (solo el warning previo de iconos-sn.mjs). No equivale a
   validacion visual del nuevo limite ni a prueba de OAuth en dispositivo.
+
+## Nuevos: limite aceptado y autorizacion de produccion (2026-09-18)
+
+El founder respondio: "acepto limite propuesto. Vamos a prod con eso, que mas tienes?".
+La autorizacion cubre este lote y su base de verificacion (#100/#101), no los
+pendientes de mapa, guardado atomico, cuotas, avisos, seguridad, CAPO ni Pincel.
+Entrar se conserva igual a produccion, sin cambios de Auth ni proveedores.
+
+- Maximo 20 eventos consultados en la base al abrir Nuevos, no un recorte de
+  los 300 que ya usa Todos. Publicados desde la ultima visita, con ventana
+  maxima de siete dias, vigentes y visibles en la ciudad elegida.
+- Orden estable por creado_en descendente, inicio, titulo e id. Sello del
+  servidor anterior a la consulta, conservado al volver de una ficha.
+- El limite es un resumen: los eventos fuera de los 20 siguen en Todos. No
+  hay scroll infinito; Ver todos devuelve a la agenda sin filtro ni busqueda.
+- Cambiar de pestana durante la carga reutiliza la peticion; buscar filtra
+  esos 20 localmente. Error o tiempo agotado no avanza la marca de visita.
+- No se consultan catalogos de miles de ciudades/eventos para resolver un
+  nombre: la igualdad de ciudad va parametrizada y la RLS sigue vigente.
+- La revision independiente encontro un P2 al mezclar asistencias parciales:
+  una ausencia en Todos podia resucitar un Voy viejo de Nuevos. Se mantienen
+  las fuentes independientes con el hook existente y un solo canal de avisos.
+  Una revalidacion obliga a refrescar Nuevos antes de mostrarlo; las respuestas
+  anteriores se ignoran. No se modifica el hook comun de asistencias.
+- Verificacion: 468 unitarias, 33 migraciones existentes/19 comprobaciones PG,
+  6 recorridos de componentes en Chrome a 390 y 1280 (hook de asistencia real,
+  transporte simulado). Tipos y build aprobados. No se escriben datos remotos.
+- Build Next real con datos publicos: 20 enlaces (2 ayer, 18 esta semana),
+  mismo orden de IDs tras ficha/Atras, Ver todos funcional, sin overflow en
+  390 y 1280. Capturas antes/despues inspeccionadas; no prueba de Safari fisico.
+- EXPLAIN en transaccion READ ONLY y rol anon: usa el indice existente
+  eventos_ciudad_termina_idx y ordena candidatos (29 filas estimadas, coste
+  total 16.51 en este catalogo). No es benchmark de carga ni garantia de leer
+  solo 20 filas. No se agrega/aplica migracion. El indice por publicacion y la
+  consulta general de ciudades quedan para evaluar antes de cargas grandes.
+- Rollback: revertir el commit de merge del PR #101 conserva el esquema y el
+  acceso vigente. La base de verificacion #100 no cambia el producto.
+
+Pendiente en este registro: CI/preview del commit final, integracion autorizada
+y comprobacion del despliegue. No considerar publicado hasta registrar esas
+evidencias; la aprobacion funcional en el telefono sigue correspondiendo al founder.
