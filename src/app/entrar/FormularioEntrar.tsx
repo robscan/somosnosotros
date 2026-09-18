@@ -162,7 +162,7 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
       <>
         {conProveedores && (
           <>
-            <p className="subtitulo">Entras sin contraseña y sin rastreo ni publicidad — por eso estas opciones.</p>
+            <p className="subtitulo">Entras sin contraseña y sin rastreo ni publicidad.</p>
             <div className={styles.opciones}>
               {proveedores.map((p, i) => (
                 // Enlace normal, no <Link>: la ida pasa por el servidor (/auth/apple) y sale del sitio.
