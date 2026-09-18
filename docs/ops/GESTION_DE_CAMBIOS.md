@@ -25,6 +25,19 @@ Hay varios chats trabajando a la vez sobre la misma carpeta. Este documento dice
 
 ## Tablero
 
+### Ajuste de pruebas por costo (founder, 2026-09-18)
+
+Esta regla actualiza el punto 6: durante el trabajo se ejecutan pruebas
+focalizadas por comportamiento y riesgo, no una suite completa por cada objeto.
+No hay una cuota de pruebas por archivo. La suite completa se reserva para el
+candidato integrado de publicacion o cambios transversales. Reutilizar resultados
+del mismo codigo/base y entorno entre operador, gestor y CI, sin duplicarlos por
+rutina ni omitir checks obligatorios. Una revision independiente no exige volver
+a ejecutar toda la suite: comprueba evidencia y prueba los riesgos identificados.
+Documentacion sola requiere revisar el diff, no build ni unitarias; cambios de
+UI requieren comprobar el recorrido visual afectado. Cada encargo especifica
+pruebas focalizadas y condicion para ampliar la verificacion.
+
 ```
 scripts/ops/estado-cambios.sh
 ```

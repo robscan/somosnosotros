@@ -30,8 +30,16 @@ es el registro versionado que se debe leer y actualizar al retomar el trabajo.
 - Unitarias forman parte obligatoria del trabajo de codigo. Para cada fallo:
   reproduccion, correccion y regresion; PostgreSQL real para contratos SQL,
   permisos y concurrencia; componentes/recorridos para comportamiento de UI.
-- Antes del PR: base actual conciliada, lint, typecheck, unitarias, build y
-  captura movil 390x844. Antes de aceptar: revision independiente proporcional
+- Pruebas proporcionales por objeto: cubrir comportamiento cambiado, fallos y
+  contratos afectados, sin cuotas de cantidad. Durante la iteracion ejecutar
+  pruebas focalizadas; reservar la suite completa para integracion final o
+  cambios transversales. Reutilizar evidencia del mismo codigo/base y entorno;
+  no repetir suites entre operador, gestor y CI sin una razon concreta.
+  SQL/permisos requieren pruebas de contratos; UI requiere revision visual del
+  recorrido afectado. Solo documentacion: verificar diff, sin suite ni build.
+- Antes del PR: base actual conciliada y verificaciones pertinentes al cambio;
+  el candidato de publicacion requiere lint, typecheck, unitarias y build,
+  con captura movil 390x844 si cambia UI. Antes de aceptar: revision proporcional
   al riesgo y pruebas propias de integracion; no repetir solo el informe ajeno.
 - Distinguir simulacion de servicios reales, pruebas locales de produccion,
   captura desktop de movil y navegador automatizado de prueba fisica del founder.
@@ -134,3 +142,9 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   Escalar solo ante un bloqueo concreto que no resuelva el modelo asignado;
   preservar contexto y trabajo. Creditos adicionales no autorizan mas agentes,
   investigacion repetida ni consumo sin limite. Mantener reportes compactos.
+- 2026-09-18, ajuste del founder tras el reporte de 679 unitarias: seleccionar
+  pruebas por riesgo e impacto de cada objeto, evitar derroche. El numero es
+  la suite acumulada del candidato, no pruebas nuevas del lote ni una meta.
+  Cada encargo debe indicar pruebas focalizadas, evidencia reutilizable y
+  motivo para ampliar cobertura. Esta regla sustituye repetir toda la suite
+  por cada cambio o revision; no elimina controles de seguridad ni CI requerido.
