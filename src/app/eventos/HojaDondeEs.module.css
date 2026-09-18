@@ -34,6 +34,9 @@
 .mapa {
   position: relative;
 }
+.mapa .ubicame {
+  bottom: 40px;
+}
 .reservado {
   display: grid;
   grid-template-columns: 1fr auto;

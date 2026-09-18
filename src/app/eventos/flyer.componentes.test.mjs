@@ -131,6 +131,9 @@ for (const width of [390,1280]) test(`OCR y direccion, ${width}`, async t => {
     const lienzo=await p.locator('canvas.mapboxgl-canvas').boundingBox();
     assert.ok(entrada.y+entrada.height<=lista.y && lista.y+lista.height<=lienzo.y);
     assert.ok(lista.x>=0 && lista.x+lista.width<=width);
+    const ubicame=await p.getByRole('button',{name:'Estoy aquí',exact:true}).boundingBox();
+    const logo=await p.locator('.mapboxgl-ctrl-logo').boundingBox();
+    assert.ok(ubicame.y+ubicame.height<=logo.y, 'Estoy aqui no tapa la atribucion del mapa');
   }
   await foto(p,`${baseline?'antes':'despues'}-direccion-${width}`);
   if (!baseline) {

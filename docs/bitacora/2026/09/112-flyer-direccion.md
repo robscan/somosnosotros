@@ -224,3 +224,21 @@ Los campos privados nunca alimentan nombreSitio, calendario ni JSON-LD.
 No hay publicacion ni escritura en produccion. Antes de desplegar se requiere
 la integracion de acciones, wrapper/outbox y prueba parental de guardado, aplicar
 la migracion por el responsable autorizado y repetir el recorrido real.
+
+## Integracion parental posterior
+
+El gestor integra 08e8dde junto con revision/idempotencia, cuotas, seguridad y
+Storage. Agrega sitio_direccion y sitio_pin_pendiente a leer(formData), y cuatro
+tests de acciones que prueban transporte real hasta la RPC simulada: alta, cambio
+de direccion, estado pendiente y campos privados fuera de p_datos. Se mantienen
+las mismas claves de operacion/revision. El wrapper outbox aun debe integrarse.
+
+Resultado integrado: 562 unitarias, 41 migraciones/525 comprobaciones PG y
+42 recorridos Chrome (27 flyer, 13 cupo y 2 de conflicto/reintento) correctos.
+Capturas propias en /tmp/sn-flyer-integrado y /tmp/sn-guardado-integrado.
+El gestor inspecciona edicion tras recarga a 390, reservado a 1280 y error legacy
+a 390. Corrige ademas un solapamiento heredado en esta hoja: Estoy aqui quedaba
+sobre el logo Mapbox. Una clase local lo eleva a 40px del borde inferior sin
+cambiar otros mapas; el harness comprueba la separacion de ambos rectangulos.
+No se afirma prueba de cartografia real ni de Safari; el estilo local tiene solo
+fondo y pin, geocoding sigue simulado. Produccion permanece intacta.

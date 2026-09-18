@@ -21,7 +21,7 @@ export type ResultadoEvento = { ok: true; id: string; volver: string } | { ok: f
 
 
 function leer(formData: FormData) {
-  const claves = ["modo_sitio", "lugar_id", "sitio_texto", "sitio_lat", "sitio_lng", "direccion_privada", "privado_lat", "privado_lng", "indicaciones", "revelar_horas", "titulo", "inicio", "fin", "descripcion", "imagen", "gratis", "precio", "enlace", "ciudad"];
+  const claves = ["modo_sitio", "lugar_id", "sitio_texto", "sitio_direccion", "sitio_pin_pendiente", "sitio_lat", "sitio_lng", "direccion_privada", "privado_lat", "privado_lng", "indicaciones", "revelar_horas", "titulo", "inicio", "fin", "descripcion", "imagen", "gratis", "precio", "enlace", "ciudad"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 

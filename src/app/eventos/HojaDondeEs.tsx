@@ -184,7 +184,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           {!otro.reservado && error && <p className={styles.nota} role="alert">{error}</p>}
           <div className={styles.mapa}>
             <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} />
-            <button type="button" className={mapa.ubicame} onClick={() => { invalidar(); onEstoyAqui(ponerPunto); }} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+            <button type="button" className={`${mapa.ubicame} ${styles.ubicame}`} onClick={() => { invalidar(); onEstoyAqui(ponerPunto); }} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
               <IconoUbicacion width={22} height={22} />
             </button>
           </div>
