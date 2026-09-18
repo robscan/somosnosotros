@@ -47,6 +47,16 @@ Dice qué hay sin commit, qué árboles y ramas tienen commits que `main` no tie
 
 ### Entregas sin espera indefinida (founder, 2026-09-18)
 
+Actualizacion posterior del founder: "revisa solo cuando el chat te avise que
+termino y esta listo para integrar, no vigiles cada paso". Esta regla sustituye
+el seguimiento intermedio: no sondear tareas, commits, diffs o capturas mientras
+el operador trabaja. El operador completa implementacion, pruebas focalizadas y
+QA visual autonomamente y envia una entrega consolidada. El gestor revisa al
+recibir "listo para integrar" (o "listo para revision final" en prototipos locales).
+Si hay hallazgos, devolverlos juntos y esperar la nueva entrega completa, sin
+dirigir cada arreglo. Solo interrumpir por bloqueo real, riesgo urgente o nueva
+decision del founder. Las aprobaciones y limites de publicacion se conservan.
+
 - Toda entrega incluye commit, alcance, evidencia reutilizable y limites. Al
   recibirla, el gestor decide: aceptada, devuelta con hallazgos concretos o
   pendiente de una decision expresa del founder. "Pendiente del gestor" por si

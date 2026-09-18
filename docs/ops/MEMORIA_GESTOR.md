@@ -64,8 +64,9 @@ es el registro versionado que se debe leer y actualizar al retomar el trabajo.
    activas y autorizaciones. No asumir que abierto significa trabajando.
 2. Asignar al operador objetivo, base, archivos exclusivos, modelo, pruebas,
    limites y canal de entrega al gestor. Reservar OL/bitacora/migracion.
-3. Seguir tareas con esperas acotadas; ante entrega, revisar SHA y evidencia,
-   devolver hallazgos al operador y recibir correccion antes de integrar.
+3. No vigilar avances intermedios: esperar aviso del operador de entrega completa
+   lista para integrar/revision final. Entonces revisar SHA y evidencia, devolver
+   hallazgos consolidados si existen y esperar otra entrega completa.
 4. Integrar selectivamente, preservar todas las entradas de OPEN_LOOPS y correr
    las pruebas pertinentes sobre el resultado combinado.
 5. Preparar preview verificando SHA exacto. Pedir aprobacion del lote de prod;
@@ -233,3 +234,11 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   y conciliar entregas antes de terminar turno, sin promesas de fondo no activas.
   Operador de direccion debe conocer PR104/prod y firma del founder de edicion
   y busqueda; no repetir pruebas ni extender la firma a otros recorridos.
+- 2026-09-18, ajuste expreso de costo y coordinacion: founder rechaza
+  micromanagement. No sondear cada paso ni revisar diffs/capturas en progreso;
+  operador ejecuta y verifica autonomamente, gestor revisa solo cuando entregue
+  terminado. Hallazgos en un lote, no instrucciones continuas. Pincel informado.
+  Directorios26acb39 tiene PR105/CI35407104372 verde y preview Ready, revisada
+  por gestor; pendiente aprobacion del founder de presentacion/publicacion.
+  Pincel sigue local: operador debe consolidar correccion responsive/superficie
+  y QA antes de avisar listo. No aprobado para integrar ni publicar.
