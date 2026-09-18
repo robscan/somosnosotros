@@ -103,7 +103,7 @@ type Props = {
  * Quién, Cuánto (gratis) y Más. El botón dice qué falta. Sin frases de ayuda.
  */
 export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo", cupo = null, revision }: Props) {
-  const revisionInicial = useRef(revision);
+  const [revisionInicial] = useState(revision);
   const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
@@ -467,7 +467,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         }}
         noValidate
       >
-        {modo === "editar" && <input type="hidden" name="revision" value={revisionInicial.current ?? ""} />}
+        {modo === "editar" && <input type="hidden" name="revision" value={revisionInicial ?? ""} />}
         {/* 1. El cartel, antes del formulario: subirlo lo llena todo. Es lo único que explica la pantalla
             (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
         {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
