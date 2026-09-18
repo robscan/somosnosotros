@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nuevos por publicación</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens de globals.css (línea gráfica firmada). El "estudio" es el fondo alrededor del teléfono. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --acento: #b3261e;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px;
+    --alto-estado: 48px; --alto-barra: 56px; --alto-cabecera: 101px; --alto-nav: 83px; --area-segura: 34px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; padding: 24px 16px 48px; }
+  svg { flex: none; }
+
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 1760px; margin: 0 auto; }
+  .rotulo { flex: 0 0 100%; margin-bottom: 8px; color: var(--estudio-suave); font-size: 14px; line-height: 1.5; }
+  .rotulo > span { display: block; max-width: 880px; margin-inline: auto; }
+  .rotulo strong { display: block; color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 24px; margin-bottom: 6px; }
+  .rotulo em { font-style: normal; color: var(--estudio-texto); font-weight: 700; }
+  .rotulo .marca { color: var(--acento); font-weight: 700; }
+
+  .par { display: grid; gap: 10px; justify-items: center; }
+  .par > figcaption { width: 390px; max-width: 100%; color: var(--estudio-suave); font-size: 13px; line-height: 1.45; }
+  .par > figcaption b { display: block; color: var(--estudio-texto); font-size: 16px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 2px; }
+  .par > figcaption .donde { display: block; margin-top: 4px; color: var(--acento); font-weight: 700; }
+  .par.recomendada > figcaption b::after { content: " · recomendada"; color: var(--estudio-suave); font-weight: 500; font-size: 13px; }
+
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; padding: 0 var(--gutter) calc(var(--alto-nav) + 12px); }
+
+  .barra { display: flex; align-items: center; justify-content: space-between; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding: 4px var(--gutter); background: var(--fondo); }
+  .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -.01em; line-height: 1; }
+  .sesion { min-height: 40px; padding: 0 18px; border-radius: 999px; background: var(--acento); color: #fff; font-weight: 700; font-size: 16px; display: inline-flex; align-items: center; }
+
+  .fija { position: sticky; top: 0; z-index: 2; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .contexto { display: flex; gap: 8px; padding: 4px 0 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .chip svg { width: 16px; height: 16px; color: var(--texto-suave); }
+  .chip.lupa { margin-left: auto; padding: 0; width: 40px; justify-content: center; }
+  .filtros { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0 calc(-1 * var(--gutter)); margin-bottom: -1px; }
+  .filtro { min-height: var(--toque-min); border: none; border-bottom: 2px solid transparent; background: none; color: var(--texto-suave); font-size: 15px; font-weight: 600; font-family: inherit; }
+  .filtro[aria-selected="true"] { color: var(--texto); border-bottom-color: var(--texto); font-weight: 700; }
+
+  .grupo { margin-bottom: 24px; }
+  .grupo h2 { position: sticky; top: var(--alto-cabecera); z-index: 1; padding: 14px 0 6px; background: var(--fondo-contenido); border-bottom: 1px solid var(--texto); font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .grupo h2 span { color: var(--texto-suave); font-weight: 500; }
+  .lista { list-style: none; }
+
+  .evento { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--borde); }
+  .evento .titulo { display: block; font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; text-wrap: balance; }
+  .evento .detalle { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 4px; color: var(--texto-suave); font-size: 15px; }
+  .evento .detalle span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .evento .detalle .lugar { white-space: normal; }
+  .evento .detalle svg { width: 15px; height: 15px; }
+  .evento .detalle b { color: var(--texto); font-weight: 500; }
+  /* El día del evento dentro del renglón: hace falta cuando el encabezado ya no lo dice. */
+  .evento .detalle .cuando b { font-weight: 700; }
+  .foto { width: 64px; height: 64px; align-self: start; border-radius: 10px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .foto.b { background: linear-gradient(135deg, #9fb3a6, #4d6a5c); }
+  .foto.c { background: linear-gradient(135deg, #d9c27a, #8a6d2b); }
+  .foto.d { background: linear-gradient(135deg, #a9b7cc, #4a5d7a); }
+  .foto.e { background: linear-gradient(135deg, #d4a5a5, #7a3f3f); }
+  .foto.sn { display: grid; place-items: center; background: var(--fondo-miniatura); color: #9b9a95; font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+
+  /* Solo del prototipo: marca el evento que el founder publicó hoy. No existe en la app. */
+  .evento.senalado { position: relative; }
+  .evento.senalado::before { content: ""; position: absolute; inset: 4px calc(-1 * var(--gutter) + 6px); border: 2px solid var(--acento); border-radius: 12px; pointer-events: none; }
+
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; height: var(--alto-nav); display: grid; grid-template-columns: repeat(3, 1fr); padding-bottom: var(--area-segura); background: var(--fondo); border-top: 1px solid var(--borde); }
+  .nav-item { display: grid; place-items: center; gap: 2px; color: var(--texto-suave); font-size: 11px; font-weight: 600; }
+  .nav-item svg { width: 24px; height: 24px; }
+  .nav-item.activo { color: var(--texto); }
+  .nav-item.activo svg { color: var(--acento); }
+</style>
+</head>
+<body>
+<div class="estudio">
+  <p class="rotulo"><span>
+    <strong>23 · "Nuevos": lo recién publicado, arriba</strong>
+    El founder publicó un evento y no lo vio en la cima. Los cuatro teléfonos traen <em>los mismos seis eventos</em>: dos publicados hoy, uno ayer, tres esta semana. El <span class="marca">anillo rojo</span> marca el que publicó hoy (un taller que sucede el 8 de octubre); ese anillo es del prototipo, no de la app. Debajo de cada teléfono, en qué posición cae. En producción, hoy, esa pestaña trae <em>88 de los 96 eventos</em> de Todos, repartidos en 29 encabezados que llegan a diciembre.
+  </span></p>
+</div>
+<div class="estudio" id="estudio"></div>
+
+<script>
+  const ICONOS = {
+    reloj: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+    boleto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9V7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a3 3 0 0 0 0 6v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a3 3 0 0 0 0-6Z"/></svg>',
+    personas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3.2 3.2 0 0 1 0 4.8M17.5 14a5.5 5.5 0 0 1 3 5"/></svg>',
+    calendario: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"/></svg>',
+    lupa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>',
+    estrella: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m12 4 2.4 5.2 5.6.7-4.1 3.9 1 5.6-4.9-2.8-4.9 2.8 1-5.6L4 9.9l5.6-.7Z"/></svg>',
+  };
+
+  /* Los mismos seis eventos para las cuatro variantes. `pub` = cuándo se publicó; `dia`/`hora` = cuándo es.
+     Hoy es jueves 17 de septiembre de 2026. */
+  const EVENTOS = [
+    { id: "ceramica", titulo: "Taller de cerámica: piezas de barro bruñido", lugar: "Centro de las Artes (CEART)", dia: "jue 8 de oct", hora: "18:00", precio: "$300", van: 0, foto: "sn", pub: "hoy", pubOrden: 6, pubTexto: "hoy, 14:30", suyo: true },
+    { id: "rieles", titulo: "Noche Mexicana sobre rieles: mariachi y kermés", lugar: "Museo del Ferrocarril", dia: "Mañana", hora: "19:00", precio: "Gratis", van: 2, foto: "b", pub: "hoy", pubOrden: 5, pubTexto: "hoy, 09:10" },
+    { id: "arias", titulo: "Gala de arias de las óperas de Julián Carrillo", lugar: "Centro Cultural Julián Carrillo", dia: "Mañana", hora: "19:00", precio: "Costo por confirmar", van: 0, foto: "c", pub: "ayer", pubOrden: 4, pubTexto: "ayer" },
+    { id: "family", titulo: "Family Weekend Experience", lugar: "Museo Laberinto", dia: "sáb 19 de sep", hora: "09:00", precio: "Gratis", van: 1, foto: "d", pub: "semana", pubOrden: 3, pubTexto: "hace 3 días" },
+    { id: "serenata", titulo: "23 años del Museo Federico Silva: serenata", lugar: "Museo Federico Silva", dia: "vie 27 de nov", hora: "20:00", precio: "Gratis", van: 4, foto: "e", pub: "semana", pubOrden: 2, pubTexto: "hace 5 días" },
+    { id: "circulo", titulo: "Círculo de lectura: Del inconsciente al surrealismo", lugar: "Museo Leonora Carrington", dia: "sáb 19 de sep", hora: "10:00", precio: "Gratis", van: 1, foto: "a", pub: "semana", pubOrden: 1, pubTexto: "hace 6 días" },
+  ];
+
+  const ORDEN_DIAS = ["Mañana", "sáb 19 de sep", "jue 8 de oct", "vie 27 de nov"];
+
+  /* Un renglón. `conDia` mete el día del evento en los datos: hace falta cuando el encabezado ya no lo dice. */
+  function renglon(e, conDia) {
+    const cuando = conDia
+      ? `<span class="cuando">${ICONOS.calendario}<b>${e.dia} · ${e.hora}</b></span>`
+      : `<span>${ICONOS.reloj}<b>${e.hora}</b></span>`;
+    return `<li class="evento${e.suyo ? " senalado" : ""}">
+      <div class="foto ${e.foto}" aria-hidden="true">${e.foto === "sn" ? "SN" : ""}</div>
+      <div>
+        <span class="titulo">${e.titulo}</span>
+        <span class="detalle">
+          ${cuando}
+          <span class="lugar">${ICONOS.pin}${e.lugar}</span>
+          ${e.van ? `<span>${ICONOS.personas}${e.van} van</span>` : ""}
+          <span>${ICONOS.boleto}${e.precio}</span>
+        </span>
+      </div>
+    </li>`;
+  }
+
+  function grupo(titulo, eventos, conDia) {
+    return `<section class="grupo">
+      <h2>${titulo}${eventos.length > 1 ? ` <span>· ${eventos.length}</span>` : ""}</h2>
+      <ul class="lista">${eventos.map((e) => renglon(e, conDia)).join("")}</ul>
+    </section>`;
+  }
+
+  /* Por día del evento, de hoy hacia adelante. `dentroPorPub` ordena dentro de cada día por publicación (variante C). */
+  function porDiaDelEvento(dentroPorPub) {
+    return ORDEN_DIAS.map((dia) => {
+      let del = EVENTOS.filter((e) => e.dia === dia);
+      del = dentroPorPub ? [...del].sort((a, b) => b.pubOrden - a.pubOrden) : [...del].sort((a, b) => a.hora.localeCompare(b.hora));
+      return del.length ? grupo(dia, del, false) : "";
+    }).join("");
+  }
+
+  const recientes = [...EVENTOS].sort((a, b) => b.pubOrden - a.pubOrden);
+
+  const VARIANTES = [
+    {
+      clave: "hoy", titulo: "Hoy, en producción",
+      nota: "Grupos por día del evento y, dentro, por hora. El orden por publicación existe en el código pero la pantalla lo descarta.",
+      cuerpo: porDiaDelEvento(false),
+    },
+    {
+      clave: "a", titulo: "A · Una sola lista",
+      nota: "Lo último publicado arriba, hacia atrás. Sin encabezados: el día del evento pasa al renglón. Con seis eventos se lee bien; con los 88 de producción son 88 renglones seguidos sin un solo asidero, y nada dice dónde acaba lo de hoy.",
+      cuerpo: `<section class="grupo"><ul class="lista">${recientes.map((e) => renglon(e, true)).join("")}</ul></section>`,
+    },
+    {
+      clave: "b", titulo: "B · Por día de publicación", recomendada: true,
+      nota: "Grupos por cuándo se publicó, el patrón que ya usa Novedades. El día del evento va en el renglón, solo en esta pestaña: el mismo renglón se usa en las fichas de lugar y de artista y en el perfil, y ahí no cambia nada. Lo que cuesta: la misma lista ordena por un eje distinto que Todos.",
+      cuerpo: [
+        grupo("Publicado hoy", recientes.filter((e) => e.pub === "hoy"), true),
+        grupo("Publicado ayer", recientes.filter((e) => e.pub === "ayer"), true),
+        grupo("Esta semana", recientes.filter((e) => e.pub === "semana"), true),
+      ].join(""),
+    },
+    {
+      clave: "c", titulo: "C · El arreglo mínimo",
+      nota: "Los grupos siguen siendo el día del evento; solo cambia el orden dentro de cada día. Una línea de código, y no resuelve lo que pidió: mírelo abajo.",
+      cuerpo: porDiaDelEvento(true),
+    },
+  ];
+
+  /* En qué posición cae el evento que publicó hoy, contando renglones de arriba abajo. */
+  function posicionDelSuyo(cuerpo) {
+    const renglones = cuerpo.match(/<li class="evento/g) || [];
+    const antes = cuerpo.slice(0, cuerpo.indexOf('class="evento senalado"')).match(/<li class="evento/g) || [];
+    return { pos: antes.length + 1, total: renglones.length };
+  }
+
+  document.getElementById("estudio").innerHTML = VARIANTES.map((v) => {
+    const { pos, total } = posicionDelSuyo(v.cuerpo);
+    return `<figure class="par${v.recomendada ? " recomendada" : ""}">
+      <div class="telefono">
+        <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+        <div class="pantalla">
+          <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="sesion">Entrar</span></div>
+          <div class="fija">
+            <div class="contexto">
+              <span class="chip">${ICONOS.calendario}Hoy</span>
+              <span class="chip">${ICONOS.pin}San Luis Potosí</span>
+              <span class="chip lupa">${ICONOS.lupa}</span>
+            </div>
+            <div class="filtros" role="tablist">
+              ${["Todos", "Cercanos", "Siguiendo", "Nuevos"].map((f) => `<button class="filtro" role="tab" aria-selected="${f === "Nuevos"}">${f}</button>`).join("")}
+            </div>
+          </div>
+          ${v.cuerpo}
+        </div>
+        <nav class="nav">
+          <span class="nav-item activo">${ICONOS.calendario}<span>Agenda</span></span>
+          <span class="nav-item">${ICONOS.pin}<span>Lugares</span></span>
+          <span class="nav-item">${ICONOS.estrella}<span>Artistas</span></span>
+        </nav>
+      </div>
+      <figcaption>
+        <b>${v.titulo}</b>
+        ${v.nota}
+        <span class="donde">El que publicó hoy: posición ${pos} de ${total}${pos === 1 ? " — en la cima" : ""}</span>
+      </figcaption>
+    </figure>`;
+  }).join("");
+</script>
+</body>
+</html>
