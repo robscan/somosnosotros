@@ -388,3 +388,12 @@ terminado. Las direcciones antiguas no tuvieron geocodificacion masiva: requiere
 confirmacion al editar. Directorios OL085 y prototipo Pincel OL084 van separados.
 
 PR y evidencia: https://github.com/robscan/somosnosotros/pull/104
+
+## Firma del founder: edicion y busqueda de direccion
+
+2026-09-18, en Gestor de cambios, tras la publicacion de PR104:
+"Te firmo y acepto Editar un evento tuyo y buscar una dirección. Funciona bien".
+
+Queda validado por el founder ese recorrido. Esta aceptacion no se presenta como
+prueba de todos los pasos restantes de guardado/Como llegar/flyer ni como permiso
+para activar envios reales o cron. Se conserva el resto del checklist pendiente.

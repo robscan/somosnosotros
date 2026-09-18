@@ -210,3 +210,8 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   ni usar esta configuracion para escrituras/envios en prod durante el smoke.
   En futuras asignaciones comprobar configuracion local antes de gastar pruebas
   visuales contra pantallas vacias; una ausencia de datos no equivale a QA pasado.
+- 2026-09-18, validacion expresa del founder en Gestor de cambios:
+  "Te firmo y acepto Editar un evento tuyo y buscar una direccion. Funciona bien".
+  Recorrido de edicion y busqueda de direccion aceptado por el founder tras
+  publicacion de PR104. No extender esta firma a otros recorridos ni a activar
+  correo/push/cron; esa autorizacion sigue pendiente.
