@@ -203,3 +203,10 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   ni infraestructura. Defaults sin onboarding extra, gesto central con feedback,
   modo dedo explicito y seleccion de color accesible; critica concreta desde
   captura actual y verificacion focalizada, sin suite global ni nuevos agentes.
+- 2026-09-18, directoriosffff3ad: delta de codigo revisado, hallazgos anteriores
+  cerrados; QA visual aun pendiente. Gestor comprobo que worktree carece de .env
+  y .env.local: se autoriza enlace privado ignorado .env.local a .env del proyecto
+  principal y reinicio solo del servidor propio. Nunca imprimir/subir secretos,
+  ni usar esta configuracion para escrituras/envios en prod durante el smoke.
+  En futuras asignaciones comprobar configuracion local antes de gastar pruebas
+  visuales contra pantallas vacias; una ausencia de datos no equivale a QA pasado.
