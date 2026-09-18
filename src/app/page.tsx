@@ -107,6 +107,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
         </p>
       )}
       <AgendaInicio
+        key={ciudad.slug}
         eventos={eventos}
         seguidos={seguidos}
         eventosSeguidos={eventosSeguidos}
