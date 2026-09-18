@@ -141,3 +141,34 @@ recibio una pregunta opcional sobre vigilancia automatica de Vercel: no crearla
 ni prometer notificaciones hasta recibir su autorizacion. Revalidar el estado
 de la incidencia y del despliegue antes de retomar; no duplicar solicitudes
 mientras el preview exacto siga pendiente.
+
+## Merge autorizado y segunda revision semanal (2026-09-18)
+
+- PR #101 integrado a main como `3a45399f14701803fe3035e02878a7a5935c0601`
+  a las 21:23:21Z. Su arbol coincide con `7cedf1b`; CI posterior al merge
+  aprobada (run 35396513626). El founder reitero: "ok dime que debo revisar,
+  vamos a prod". Solo Nuevos20 y su base, Entrar sin cambios.
+- Preview manual `AzGFuSnWXksA2cMxe5kPjLDpvQzK` del SHA 7cedf1b en Ready,
+  build de 27 s. Su URL inmutable es
+  https://somosnosotros-il4llxveq-robscans-projects.vercel.app/ . El alias de
+  rama apuntaba al commit anterior 8b71171; un duplicado automatico J6kZmW7BA
+  seguia Queued/Stale. No se atribuye el alias anterior a la version nueva.
+- En la sesion de la preview exacta, Nuevos mostro el vacio de una visita
+  previamente registrada; Ver todos regreso al directorio. El conteo de 20
+  y ficha/Atras quedaron verificados en el build local real del mismo codigo,
+  no en esa sesion vacia. No confundir ambos tipos de evidencia.
+- Solicitado Deploy to Production por SHA exacto 3a45399 desde el panel
+  conectado. Al corte 21:31Z seguia pendiente de aceptacion, sin un ID nuevo;
+  no repetir la solicitud a ciegas. Incidencia oficial Vercel aun abierta.
+  Falta comprobar dominio, version y recorridos; este registro NO declara
+  produccion ni cierra OL-074. Comentario durable en PR #101:
+  https://github.com/robscan/somosnosotros/pull/101#issuecomment-5736383699 .
+- Carril semanal: P2 cerrado en `8ff7ce0`; precision documental en `8380657`.
+  Dos consultas, hasta 1000 filas leidas y 750 ms de espera. Con 1000 o mas
+  filas candidatas se omite completo: dos lotes llenos no confirman el fin.
+  Revision independiente: 17 pruebas focalizadas y SDK real con fetch simulado
+  verifican fronteras, plazo compartido y senal de aborto. 396 pruebas/build
+  y QA Next con transporte suspendido son evidencia del operador, no una
+  segunda ejecucion del revisor. No certifica cancelacion inmediata en PG ni
+  tiempo total de pagina. Rama aislada, apta para preparar PR y revision visual;
+  sin push, integracion ni autorizacion de produccion de esta pieza.
