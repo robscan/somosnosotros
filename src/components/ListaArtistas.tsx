@@ -112,6 +112,7 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
           <p>Todavía no hay artistas de {queHacen?.toLowerCase()} registrados.</p>
+          <IndiceAlfabetico letra={filtro.letra} href={(letra) => hrefArtistas({ ...filtro, ciudad: cSlug, letra, n: null })} hrefTodos={hrefArtistas({ ...filtro, ciudad: cSlug, letra: null, n: null })} />
         </div>
       ) : artistas.length === 0 ? (
         <div className={comun.vacio}>
@@ -121,12 +122,13 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
           <Boton href={hrefNuevo(filtro.q!)} variante="secundario">
             Registrar a «{filtro.q}»
           </Boton>
+          <IndiceAlfabetico letra={filtro.letra} href={(letra) => hrefArtistas({ ...filtro, ciudad: cSlug, letra, n: null })} hrefTodos={hrefArtistas({ ...filtro, ciudad: cSlug, letra: null, n: null })} />
         </div>
       ) : (
         <>
           <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} />
           {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
-          {!filtro.q && <IndiceAlfabetico letra={filtro.letra} href={(letra) => hrefArtistas({ ...filtro, ciudad: cSlug, letra, n: null })} />}
+          <IndiceAlfabetico letra={filtro.letra} href={(letra) => hrefArtistas({ ...filtro, ciudad: cSlug, letra, n: null })} hrefTodos={hrefArtistas({ ...filtro, ciudad: cSlug, letra: null, n: null })} />
           <p className={comun.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
           <ul className={styles.lista}>
             {artistas.map((a) => (

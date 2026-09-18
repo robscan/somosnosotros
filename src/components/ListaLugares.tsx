@@ -47,7 +47,7 @@ type Props = {
  */
 export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
   const [letra, setLetra] = useState<string | null>(null);
-  const filtrados = filtrarLugares(lugares, busqueda).filter((l) => punto || !letra || normalizarNombre(l.nombre).startsWith(letra.toLowerCase()));
+  const filtrados = filtrarLugares(lugares, busqueda).filter((l) => punto || busqueda.trim() || !letra || normalizarNombre(l.nombre).startsWith(letra.toLowerCase()));
   const { lista, km } = ordenarLugares(filtrados, punto);
   // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   // Si la pantalla puso su canal (Lugares, con Mapa y Lista), el aviso y la pregunta son de ella: cambiar de vista no
@@ -75,7 +75,7 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       {aviso}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
-      {!busqueda.trim() && !punto && <IndiceAlfabetico letra={letra} onSeleccionar={setLetra} />}
+      {!punto && <IndiceAlfabetico letra={letra} onSeleccionar={setLetra} onQuitar={() => setLetra(null)} />}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()

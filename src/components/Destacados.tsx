@@ -43,7 +43,7 @@ export default function Destacados({ tarjetas, encabezado = "Destacados", memori
   }
   if (tarjetas.length === 0) return null;
   // La curaduría (o la fecha semanal) conserva su orden dentro de cada grupo; una foto real va antes del placeholder.
-  const ordenadas = tarjetas.toSorted((a, b) => Number(b.foto.includes("/sin-foto")) - Number(a.foto.includes("/sin-foto")));
+  const ordenadas = tarjetas.toSorted((a, b) => Number(a.foto.includes("/sin-foto")) - Number(b.foto.includes("/sin-foto")));
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <h2 id={titulo}>{encabezado}</h2>

@@ -100,7 +100,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
     if (f.hace) c = c.eq("disciplina", f.hace);
     if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
     if (q) c = c.or(`nombre_orden.ilike.%${q}%,detalle.ilike.%${q}%`);
-    if (f.letra) c = c.ilike("nombre_orden", `${f.letra.toLowerCase()}%`);
+    if (f.letra && !q) c = c.ilike("nombre_orden", `${f.letra.toLowerCase()}%`);
     return c;
   };
   const [a, t] = await Promise.all([
