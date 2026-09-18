@@ -376,3 +376,95 @@ test('reservado legacy sin pin sigue editable pero cambiar direccion queda pendi
   assert.equal(await p.locator('form button[type="submit"]').isDisabled(),true);
   const v=await valores(p); assert.equal(v.sitio_texto,'Casa amiga'); assert.equal(v.direccion_privada,'Privada nueva'); assert.equal(v.sitio_direccion,'');
 });
+
+const eventoDireccion = {titulo:'Evento de prueba',sitio_texto:'Foro manual',sitio_direccion:'Dirección A',sitio_lat:22.15,sitio_lng:-100.98,inicio:'2030-12-12T18:00:00Z'};
+async function pinManual(t,reservado,width=390,resultado='ok') {
+  const {p,red}=await pantalla(t,width,{modo:'editar',evento:{...eventoDireccion,sitio_reservado:reservado,
+    ...(reservado?{sitio_direccion:null,sitio_lat:null,sitio_lng:null}:{})},
+    privado:reservado?{direccion:'Dirección A',lat:22.15,lng:-100.98}:undefined});
+  await donde(p); await p.getByText('Arrastra el pin o toca el mapa para ajustar.',{exact:true}).waitFor();
+  const llegada=espera(), respuesta=espera(); t.after(()=>respuesta.resolver());
+  red.features=resultado==='vacio'?[]:[direccion('Dirección B',22.16,-100.97)];
+  if(resultado==='HTTP')red.status=503;
+  red.esperar=u=>{if(u.pathname.endsWith('/reverse')){llegada.resolver();return respuesta.promesa;}};
+  const canvas=p.locator('canvas.mapboxgl-canvas'), bounds=await canvas.boundingBox();
+  await canvas.click({position:{x:bounds.width*.7,y:bounds.height*.5}}); await llegada.promesa;
+  const v=await valores(p), lat=reservado?'privado_lat':'sitio_lat', lng=reservado?'privado_lng':'sitio_lng';
+  assert.notEqual(v[lng],'-100.98');
+  return {p,red,respuesta,punto:{lat:v[lat],lng:v[lng]},lat,lng};
+}
+async function liberarReverse(p,respuesta) {
+  const recibida=p.waitForResponse(r=>new URL(r.url()).pathname.endsWith('/reverse'));
+  respuesta.resolver(); await recibida;
+  // Vuelve al event loop tras procesar el JSON y los updates de React.
+  await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+}
+for(const reservado of [false,true]) for(const cierre of ['X','Escape','fondo']) test(`pin manual ${reservado?'reservado':'publico'} conserva pendiente al cerrar ${cierre} y descarta reverse tardio`,actual,async t=>{
+  const width=cierre==='fondo'?1280:390;
+  const {p,respuesta,punto,lat,lng}=await pinManual(t,reservado,width);
+  await foto(p,`pin-pendiente-${reservado?'reservado':'publico'}-${width}`);
+  assert.equal((await valores(p)).sitio_pin_pendiente,'si');
+  assert.equal(await p.getByRole('dialog').getByRole('button',{name:/^Listo/}).isDisabled(),true);
+  if(cierre==='X')await p.getByRole('button',{name:'Cerrar',exact:true}).click();
+  else if(cierre==='Escape')await p.keyboard.press('Escape');
+  else await p.getByRole('dialog').locator('..').click({position:{x:5,y:5}});
+  await liberarReverse(p,respuesta);
+  const v=await valores(p);
+  assert.equal(v[lat],punto.lat);assert.equal(v[lng],punto.lng);assert.equal(v.ciudad,'');
+  assert.equal(v[reservado?'direccion_privada':'sitio_direccion'],'Dirección A');
+  assert.equal(v.sitio_pin_pendiente,'si');
+  assert.equal(await p.locator('form button[type="submit"]').isDisabled(),true);
+  await p.locator('form').evaluate(f=>f.requestSubmit());await p.getByRole('dialog').waitFor();
+  assert.equal(await p.evaluate(()=>window.qa.intentos??0),0);
+  await p.getByRole('button',{name:'Usar esta dirección con el pin',exact:true}).click();
+  assert.equal((await valores(p)).sitio_pin_pendiente,'no');
+  await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();
+  await guardarYEditar(p);
+  const persistido=await valores(p);
+  assert.equal(persistido[lat],punto.lat);assert.equal(persistido[lng],punto.lng);
+  assert.equal(persistido[reservado?'direccion_privada':'sitio_direccion'],'Dirección A');
+  if(reservado){assert.equal(persistido.sitio_lat,'');assert.equal(persistido.sitio_direccion,'');}
+});
+for(const reservado of [false,true]) for(const resultado of ['ok','HTTP','vacio']) test(`pin manual ${reservado?'reservado':'publico'} reverse ${resultado}`,actual,async t=>{
+  const {p,respuesta,punto,lat,lng}=await pinManual(t,reservado,390,resultado);
+  await liberarReverse(p,respuesta);
+  if(resultado==='ok') {
+    await p.waitForFunction(()=>document.querySelector('input[name="sitio_pin_pendiente"]').value==='no');
+    assert.equal((await valores(p))[reservado?'direccion_privada':'sitio_direccion'],'Dirección B, Ciudad de prueba');
+    assert.equal((await valores(p)).ciudad,'Ciudad de prueba');
+    assert.equal(await p.getByRole('button',{name:'Usar esta dirección con el pin',exact:true}).count(),0);
+  } else {
+    assert.equal((await valores(p)).sitio_pin_pendiente,'si');
+    assert.equal(await p.getByRole('dialog').getByRole('button',{name:/^Listo/}).isDisabled(),true);
+    await p.getByRole('button',{name:'Usar esta dirección con el pin',exact:true}).click();
+  }
+  await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();
+  await guardarYEditar(p);
+  assert.equal((await valores(p))[lat],punto.lat);assert.equal((await valores(p))[lng],punto.lng);
+});
+
+test('pin manual sin dirección sigue siendo intencional y se puede guardar',actual,async t=>{
+  const {p,red}=await pantalla(t,390,{modo:'editar',evento:{...eventoDireccion,sitio_direccion:null,sitio_lat:null,sitio_lng:null},revision:'2026-09-18T12:00:00Z'});
+  red.features=[]; await donde(p); await p.getByLabel('Nombre del sitio',{exact:true}).fill('Foro manual nuevo');
+  await p.getByText('Toca el mapa donde está el lugar.',{exact:true}).waitFor();
+  const canvas=p.locator('canvas.mapboxgl-canvas'), bounds=await canvas.boundingBox();
+  await canvas.click({position:{x:bounds.width*.7,y:bounds.height*.5}});
+  await p.waitForFunction(()=>document.querySelector('input[name="sitio_lat"]').value!=='');
+  assert.equal((await valores(p)).sitio_texto,'Foro manual nuevo');
+  assert.equal((await valores(p)).sitio_direccion,'');
+  assert.equal((await valores(p)).sitio_pin_pendiente,'no');
+  assert.equal(await p.getByRole('dialog').getByRole('button',{name:/^Listo/}).isDisabled(),false);
+  await p.getByRole('dialog').getByRole('button',{name:/^Listo/}).click(); await guardarYEditar(p);
+  assert.notEqual((await valores(p)).sitio_lat,'');
+});
+
+test('reservar mientras reverse espera conserva el pin privado pendiente y descarta la respuesta pública',actual,async t=>{
+  const {p,respuesta,punto}=await pinManual(t,false);
+  await p.getByRole('switch',{name:'Sitio reservado'}).click();
+  const antes=await valores(p); assert.equal(antes.privado_lat,punto.lat);assert.equal(antes.sitio_lat,'');assert.equal(antes.sitio_pin_pendiente,'si');
+  await liberarReverse(p,respuesta);
+  const despues=await valores(p);
+  assert.equal(despues.direccion_privada,'Dirección A');assert.equal(despues.privado_lat,punto.lat);assert.equal(despues.sitio_direccion,'');assert.equal(despues.sitio_pin_pendiente,'si');
+  await p.getByRole('button',{name:'Usar esta dirección con el pin',exact:true}).click();await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();await guardarYEditar(p);
+  const guardado=await valores(p);assert.equal(guardado.privado_lat,punto.lat);assert.equal(guardado.sitio_lat,'');assert.equal(guardado.sitio_direccion,'');
+});

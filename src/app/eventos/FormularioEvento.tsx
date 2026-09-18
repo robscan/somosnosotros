@@ -365,8 +365,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     const { mapboxToken } = configPublica();
     if (!desdePin || !p || !mapboxToken) return;
     lugarDesdePunto(p, mapboxToken).then((r) => {
-      if (!r || !gestos.current.vigente("donde", version)) return;
-      setOtro((actual) => ({ ...actual, ciudad: r.ciudad, ...(o.reservado ? { direccionPrivada: r.direccion } : { direccion: r.direccion }) }));
+      if (!r?.direccion.trim() || !gestos.current.vigente("donde", version)) return;
+      setOtro((actual) => ({ ...actual, pinPendiente: false, ciudad: r.ciudad, ...(o.reservado ? { direccionPrivada: r.direccion } : { direccion: r.direccion }) }));
     }).catch(() => {});
   }
 

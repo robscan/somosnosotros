@@ -32,6 +32,17 @@ export async function run({as,query,check,expectError}) {
   const clienteViejo={...actualizado}; delete clienteViejo.sitio_direccion;
   await as('authenticated',AUTORA,()=>guardar(creada.id,clienteViejo,null,segundo.revision));
   check((await fila(creada.id)).sitio_direccion===actualizado.sitio_direccion,'omision en cliente anterior no borra direccion estructurada');
+  // Contrato de un cliente anterior: JSON completo excepto el campo nuevo.
+  for (const delta of [{sitio_texto:'Sitio B'}, {sitio_lat:23.5}, {sitio_lng:-101.5},
+    {sitio_texto:'Sitio B',sitio_lat:23.5,sitio_lng:-101.5}, {sitio_lat:null,sitio_lng:null}]) {
+    const alta = await as('authenticated',AUTORA,()=>guardar(null,base));
+    const antes = await fila(alta.id);
+    const viejo = {...base,...delta}; delete viejo.sitio_direccion;
+    const respuesta = await as('authenticated',AUTORA,()=>guardar(alta.id,viejo,null,antes.revision));
+    const despues = await fila(alta.id);
+    check(despues.sitio_direccion===null,'cliente anterior que cambia texto/pin no conserva direccion A');
+    check(respuesta.cambio==='donde','cambio de ubicacion legacy se detecta');
+  }
   const privada={direccion:actualizado.sitio_direccion,lat:22.4,lng:-100.4,indicaciones:null,revelar_desde:'2030-09-30T20:00:00Z'};
   const reservada={...actualizado,sitio_reservado:true,sitio_direccion:null,sitio_lat:null,sitio_lng:null,sitio_revelar_desde:privada.revelar_desde};
   const antesReserva=await fila(creada.id);

@@ -16,7 +16,7 @@ import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
 import { sugerirLugares, recuperarLugar, type LugarSugerido } from "@/lib/buscarLugares";
-import { cambiarReserva, consultarMapa, lugaresPorTexto, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
+import { cambiarReserva, consultarMapa, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import mapa from "@/components/Mapa.module.css";
@@ -164,7 +164,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   );
 
   if (vista === "otro") {
-    const ponerPunto = (p: Punto) => cambiar({ ...revisarNombreLegacy(otro), pinPendiente: false, ...(otro.reservado ? { privadoPunto: p, ciudad: null } : { sitioPunto: p, ciudad: null }) }, true);
+    const ponerPunto = (p: Punto) => cambiar(ponerPinManual(otro, p), true);
     return (
       <Hoja etiqueta="Es en otro sitio" onCerrar={cerrar}>
         <h3>Es en otro sitio</h3>
@@ -215,6 +215,14 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
                 <Limpiar visible={!!otro.indicaciones} />
               </span>
             </>
+          )}
+          {otro.pinPendiente && punto && puntoValido(punto) && (
+            <div>
+              <p className={styles.nota}>Moviste el pin. Revisa que la dirección corresponda.</p>
+              <button type="button" className={styles.volver} onClick={() => cambiar({ pinPendiente: false })}>
+                Usar esta dirección con el pin
+              </button>
+            </div>
           )}
           <button type="button" className={styles.volver} onClick={() => { invalidar(); setVista("lista"); }}>
             Mejor un lugar registrado

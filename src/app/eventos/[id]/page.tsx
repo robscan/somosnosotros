@@ -19,7 +19,7 @@ import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { direccionPublicaSitio, jsonLdEvento, nombreSitio, textoCompartir } from "@/lib/eventos";
+import { direccionPublicaSitio, enlaceComoLlegar, jsonLdEvento, nombreSitio, textoCompartir } from "@/lib/eventos";
 import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
@@ -125,8 +125,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
   const url = `${ORIGEN}/eventos/${e.id}`;
   const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "");
-  const puntoLlegar = e.lugar ? { lat: e.lugar.lat, lng: e.lugar.lng } : privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : e.sitio_lat != null && e.sitio_lng != null ? { lat: e.sitio_lat, lng: e.sitio_lng } : null;
-  const comoLlegar = puntoLlegar && !(e.sitio_reservado && !privado) ? `https://www.google.com/maps/dir/?api=1&destination=${puntoLlegar.lat},${puntoLlegar.lng}` : null;
+  const comoLlegar = enlaceComoLlegar({ lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado });
   const n = totalVan;
   const avisoBorrar = n > 0 ? `Se borra el evento y los ${n === 1 ? '1 "Voy"' : `${n} "Voy"`} que tiene.` : "Se borra el evento.";
   const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde, new Date(), null, e.zona) : "el día del evento";

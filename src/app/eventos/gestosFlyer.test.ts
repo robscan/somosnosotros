@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { crearGestosFlyer } from "./gestosFlyer";
-import { cambiarReserva, lugaresPorTexto, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
+import { cambiarReserva, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import type { OtroSitio } from "./HojaDondeEs";
 import type { LugarResumen } from "@/lib/lugares";
 
@@ -64,6 +64,11 @@ describe("direccion y privacidad", () => {
     const privado = cambiarReserva({ ...otro, direccionPrivada: "Privada previa", privadoPunto: { lat: 1, lng: 2 } });
     expect(privado.direccionPrivada).toBe("Privada previa");
     expect(privado.privadoPunto).toEqual({ lat: 1, lng: 2 });
+  });
+  it("el pin manual sin dirección queda listo sin inventar un nombre geocodificado", () => {
+    const conPin = ponerPinManual({ ...otro, direccion: "", sitioPunto: null, ciudad: "Ciudad anterior" }, { lat: 22.3, lng: -100.3 });
+    expect(conPin).toMatchObject({ sitioPunto: { lat: 22.3, lng: -100.3 }, ciudad: null, pinPendiente: false, direccion: "" });
+    expect(sitioListo(conPin)).toBe(true);
   });
   it("busca palabras por nombre y direccion, sin distinguir acentos", () => {
     const lugares = [{ id: "uno", nombre: "Foro Ficticio", direccion: "Álvaro Obregón 123" }, { id: "dos", nombre: "Otro", direccion: "Norte 8" }] as LugarResumen[];

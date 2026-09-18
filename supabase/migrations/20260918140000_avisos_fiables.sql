@@ -96,6 +96,7 @@ declare
   permitido boolean := true;
   optin boolean := coalesce(current_setting('app.avisos_outbox',true),'')='on';
   cfg public.avisos_config;
+  alta public.avisos_jobs;
 begin
   select * into cfg from public.avisos_config where id;
   if optin and (not cfg.capturar or cfg.corte is null or cfg.corte>clock_timestamp()) then
@@ -103,12 +104,32 @@ begin
   end if;
   select * into e from public.eventos where id=p_evento;
   if not found then return; end if;
+  -- Solo conserva el alta que ya estaba autorizada por cuota y aun es vigente.
+  -- El mismo lock cerca preparar: o su primer intento precede a la correccion,
+  -- o el job viejo queda obsoleto antes de que pueda persistir cuerpo/iniciar HTTP.
+  if optin and auth.uid() is not null and not p_nuevo then
+    select * into alta from public.avisos_jobs
+      where evento_id=e.id and tipo='nuevo_evento' and clave<>k
+        and estado in ('pendiente','activo') and vence>clock_timestamp()
+      order by creado_en,id for update limit 1;
+  end if;
   -- Incluso una correccion interna invalida avisos viejos; nunca crea envios historicos.
   update public.avisos_jobs set estado='obsoleto'
     where evento_id=e.id and clave<>k and estado in ('pendiente','activo')
       -- Un alta aun sin materializar puede avisar la version final, no perder sus seguidores.
       and not (optin and tipo='nuevo_evento' and contenido is null);
   if auth.uid() is null or not optin then return; end if;
+  if alta.id is not null then
+    if alta.contenido is null then
+      update public.avisos_jobs set revision=e.actualizado_en,vence=least(vence,e.inicio) where id=alta.id;
+    else
+      -- Identidad nueva solo para canales sin intento previo. No se renuevan la
+      -- cuota, la caducidad, el actor original ni los cuerpos/claves anteriores.
+      insert into public.avisos_jobs(evento_id,clave,tipo,actor,revision,vence)
+        values(e.id,'alta:'||k,'nuevo_evento',alta.actor,e.actualizado_en,least(alta.vence,e.inicio))
+        on conflict(evento_id,clave) do nothing;
+    end if;
+  end if;
   if p_nuevo then
     if current_setting('transaction_isolation') not in ('read committed','read uncommitted') then
       raise exception 'avisos requieren READ COMMITTED' using errcode='25001';
@@ -195,7 +216,12 @@ grant execute on function public.guardar_evento_con_avisos(uuid,jsonb,jsonb,json
 -- Solo campos publicos; nunca direccion reservada, indicaciones ni coordenadas privadas.
 create function public.avisos_evento_publico(p_evento uuid) returns jsonb
 language sql stable security definer set search_path='' as $$
-  select jsonb_build_object('id',e.id,'titulo',e.titulo,'inicio',e.inicio,'fin',e.fin,'zona',e.zona,
+  -- Timestamptz a JSON depende de TimeZone de cada conexion. El snapshot debe
+  -- comparar los mismos bytes en el after y en cualquier worker/lease.
+  select jsonb_build_object('id',e.id,'titulo',e.titulo,
+    'inicio',to_char(e.inicio at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+    'fin',case when e.fin is null then null else to_char(e.fin at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+    'zona',e.zona,
     'sitio_texto',e.sitio_texto,'sitio_reservado',e.sitio_reservado,
     'sitio_direccion',case when e.sitio_reservado then null else to_jsonb(e)->>'sitio_direccion' end,
     'lugar',case when l.id is null then null else jsonb_build_object('nombre',l.nombre,'portada',null) end)
@@ -279,9 +305,10 @@ begin
     -- Registros previos a esta migracion: no repetir recordatorios ya entregados.
     if j.tipo='recordatorio' and exists(select 1 from public.avisos_enviados a
       where a.usuario_id=u and a.evento_id=j.evento_id and a.tipo='recordatorio') then continue; end if;
-    if p.avisos_correo and not (j.tipo='recordatorio' and exists (
+    if p.avisos_correo and not (j.tipo in ('recordatorio','nuevo_evento') and exists (
       select 1 from public.avisos_entregas anterior join public.avisos_jobs origen on origen.id=anterior.job_id
-      where origen.evento_id=j.evento_id and origen.recordatorio_inicio=j.recordatorio_inicio
+      where origen.evento_id=j.evento_id and origen.tipo=j.tipo
+        and (j.tipo='nuevo_evento' or origen.recordatorio_inicio=j.recordatorio_inicio)
         and origen.id<>j.id and anterior.usuario_id=u and anterior.canal='correo'
         and (anterior.primer_intento is not null or anterior.estado='enviada'))) then
       insert into public.avisos_entregas(job_id,usuario_id,canal) values(j.id,u,'correo') on conflict do nothing;
@@ -289,9 +316,10 @@ begin
     if p.avisos_push then
       insert into public.avisos_entregas(job_id,usuario_id,canal,endpoint)
         select j.id,u,'push',s.endpoint from public.suscripciones_push s where s.usuario_id=u
-          and not (j.tipo='recordatorio' and exists (
+          and not (j.tipo in ('recordatorio','nuevo_evento') and exists (
             select 1 from public.avisos_entregas anterior join public.avisos_jobs origen on origen.id=anterior.job_id
-            where origen.evento_id=j.evento_id and origen.recordatorio_inicio=j.recordatorio_inicio
+            where origen.evento_id=j.evento_id and origen.tipo=j.tipo
+              and (j.tipo='nuevo_evento' or origen.recordatorio_inicio=j.recordatorio_inicio)
               and origen.id<>j.id and anterior.usuario_id=u and anterior.canal='push' and anterior.endpoint=s.endpoint
               and (anterior.primer_intento is not null or anterior.estado='enviada'))) on conflict do nothing;
     end if;
@@ -362,9 +390,14 @@ end $$;
 
 create function public.avisos_preparar(p_id uuid,p_token uuid,p_cuerpo text) returns text
 language plpgsql security definer set search_path='' as $$
-declare b text;
+declare b text; j public.avisos_jobs;
 begin
   if p_cuerpo is null or octet_length(p_cuerpo)>65536 then raise exception 'cuerpo invalido'; end if;
+  select jobs.* into j from public.avisos_jobs jobs
+    join public.avisos_entregas d on d.job_id=jobs.id where d.id=p_id
+    for share of jobs;
+  if not found or j.estado not in ('pendiente','activo') or j.vence<=clock_timestamp()
+    or public.avisos_evento_publico(j.evento_id) is distinct from j.contenido then return null; end if;
   update public.avisos_entregas set cuerpo=coalesce(cuerpo,p_cuerpo),primer_intento=coalesce(primer_intento,clock_timestamp())
     where id=p_id and token=p_token and estado='tomada' and lease_hasta>clock_timestamp()+interval '15 seconds'
     returning cuerpo into b;

@@ -107,3 +107,83 @@ Revisar tanto `cron.job_run_details` como estado HTTP en `net._http_response`: c
 - Deadline: reloj que avanza, Auth lento sin HTTP, limites decrecientes por RPC, cancelacion de proveedor por presupuesto, fanout al segundo 39 sin claims, after de 5 s capaz de entregar. SW: mismo tag por retry, distinto por job, compatible con payload legado.
 - QA adicional con catalogo y tests de `08e8dde` mas outbox local, incluyendo la migracion 181600 REAL: **42 migraciones / 627 checks PASS**, todo en memoria con el mismo runner/lock/cleanup. Guardado/cupo tras agregar ambas claves: 22 unitarias PASS. El fixture de direccion publica incluye pin para cumplir sus constraints.
 - El gestor integra las ramas y el frontend de Terra; se le entregan ambas claves de formulario. Pendiente aprobacion explicita de produccion/captura/entrega/cron y prueba real autorizada de proveedor/iPhone. Nada publicado ni activado en esta sesion.
+
+## Checkpoint de correccion de anuncio inicial (2026-09-18)
+
+Continuacion OL-079 autorizada por gestion, en `codex/avisos-correcciones`,
+worktree propio desde `4eee240`. Las migraciones pendientes no estan en prod;
+se modifica solo 181400, sin numero nuevo ni cambios en 181100/181600.
+
+Reproduccion propia con el runner y PostgreSQL compartido 127.0.0.1:55439:
+alta con seguidor sin Voy, expansion y correccion de sitio_direccion dejan cero
+anuncios iniciales vigentes. El control antes de expansion conserva su anuncio.
+Antes de corregir: 42 migraciones / 631 checks, un fallo esperado en el caso
+posterior a expansion. Despues del cambio preliminar: 42 migraciones / 633 checks,
+cero fallos. Cada ejecucion usa los locks, base efimera y cleanup del runner;
+no se arranca ni se apaga el servicio y no se contactan proveedores.
+
+Implementacion preliminar: reemplazar solo alta vigente materializada, conservar
+actor y limite de caducidad original, excluir correo/endpoint con primer intento
+o entrega aceptada en anuncios anteriores. `avisos_preparar` toma un lock del job
+y rechaza snapshots/estados obsoletos antes de persistir el cuerpo. La alta aun
+sin materializar conserva su job y refresca revision/caducidad.
+
+**Checkpoint, NO entrega final:** faltan pruebas especificas de expansion parcial,
+leases y carreras de preparar/editar en ambas direcciones, cambios repetidos,
+reservado/borrado, cuota suprimida y recordatorios independientes; comprobar
+idempotencia correo/push y ejecutar unitarias focalizadas/suite/typecheck/lint/build.
+Revisar corte/rollback y limites con esos resultados antes de entrega al gestor.
+Los limites externos anteriores siguen vigentes: no se promete exactly-once.
+El gestor solicita continuar con Terra; no se reinicia investigacion ni se publica.
+
+## Correccion final del anuncio inicial tras editar direccion (OL-079)
+
+El caso confirmado era una alta ya expandida sin entrega iniciada: al corregir la
+direccion, el job de alta quedaba obsoleto y el aviso de cambio solo consultaba
+`Voy`. Los seguidores elegibles perdian el anuncio inicial aunque la nueva
+direccion fuera la version que debian recibir.
+
+181400 conserva una alta pendiente sin contenido y actualiza su revision. Si la
+alta ya se materializo, crea un reemplazo de tipo `nuevo_evento`, con la audiencia
+inicial actual, el actor y la caducidad ya autorizados; no consume cuota ni extiende
+la ventana. Los reemplazos excluyen por correo y endpoint solo entregas de otra
+alta del mismo evento cuyo primer intento ya quedo registrado o fue aceptado. Las
+entregas que no comenzaron vuelven a la cola con el snapshot actual. Cambios
+repetidos antes de materializar coalescen en el mismo reemplazo; despues vuelven a
+reemplazar solo lo que siga vigente.
+
+`avisos_preparar` toma un cerrojo compartido del job y vuelve a comprobar estado,
+caducidad y snapshot antes de guardar el cuerpo. La correccion toma el cerrojo de
+la alta: si preparar llega primero, queda un intento incierto y no se duplica; si
+la correccion llega primero, el claim viejo no se autoriza antes de HTTP. Ese
+cerrojo no hace atomico a un proveedor externo: una pausa entre la ultima
+autorizacion y HTTP sigue siendo incierta y se trata conservadoramente.
+
+Se hallo ademas que `timestamptz` se convertia a JSON segun `TimeZone` de cada
+sesion, por lo que un worker en otra conexion podia descartar un snapshot identico.
+`avisos_evento_publico` fija inicio/fin como UTC canonico antes de comparar o
+persistir el contenido. No modifica la zona local del evento, que se conserva para
+el texto de aviso.
+
+Cobertura PostgreSQL nueva: correccion antes y despues de expansion, bloque parcial
+de 100 de 101 seguidores, correcciones repetidas, correo aceptado, claim/preparar
+con dos conexiones y lock real, sitio reservado sin direccion privada, alta
+suprimida por cuota, recordatorio reemplazado independiente y evento borrado. La
+suite tambien conserva leases, concurrencia de cuatro slots, cambios de
+consentimiento, cuotas, recordatorios e idempotencia originales. Resultado:
+42 migraciones y 648 comprobaciones correctas en PostgreSQL local con lock,
+base efimera y limpieza. No se arranco/paro el servicio compartido ni hubo red
+de proveedores.
+
+Worker: 18 pruebas focalizadas correctas, incluida perdida de ACK para correo y
+push; cada reintento conserva los mismos bytes y la clave/tag del job. Suite:
+658 pruebas en 61 archivos correctas. Typecheck y build correctos. Lint sin errores
+con el warning heredado de `docs/diseno/logotipo/iconos-sn.mjs:57`.
+
+Se revisaron corte y rollback: no cambian. La captura/entrega sigue apagada por
+defecto, no se instala cron ni HTTP, y un rollback no debe regenerar cuerpos ni
+reabrir canales con intento previo. La migracion aun no esta aplicada en produccion;
+no hubo push, deploy, SQL remoto, secretos ni envios reales. La garantia continua
+siendo entrega al proveedor como maximo una vez cuando hay ACK; despues de un ACK
+perdido o una pausa en el limite externo solo se evita reabrir ese canal, sin
+prometer exactly-once externo.

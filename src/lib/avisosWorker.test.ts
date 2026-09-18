@@ -72,6 +72,21 @@ describe("worker durable sin red real", () => {
     expect(b.correo).toHaveBeenCalledTimes(2);
     expect(b.correo.mock.calls[0].slice(0, 2)).toEqual(b.correo.mock.calls[1].slice(0, 2));
   });
+  it("ACK perdido de push conserva el mismo cuerpo y tag del job", async () => {
+    const f = entrega("push-1", "push"); const b = banco([f]); const original = b.d.rpc; let fallo = true;
+    const cuerpos: string[] = [];
+    b.d.push = vi.fn(async (_suscripcion: unknown, cuerpo: string) => {
+      cuerpos.push(cuerpo);
+      return { estado: "enviada" as const, codigo: "aceptado" };
+    });
+    b.d.rpc = async (n, a) => { if (n === "avisos_terminar" && fallo) { fallo = false; throw new Error("ack perdido"); } return original(n, a); };
+    await procesarEntrega(claim("push-1"), b.d);
+    f.evento.titulo = "Plantilla posterior";
+    await procesarEntrega(claim("push-1"), b.d);
+    expect(cuerpos).toHaveLength(2);
+    expect(cuerpos[0]).toBe(cuerpos[1]);
+    expect(JSON.parse(cuerpos[0]).tag).toBe("aviso-job");
+  });
   it("correo y cada endpoint tienen resultados independientes", async () => {
     const b = banco([entrega("1"), entrega("2", "push"), entrega("3", "push")]);
     b.push.mockResolvedValueOnce({ estado: "enviada", codigo: "aceptado" });

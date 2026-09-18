@@ -81,8 +81,14 @@ begin
     if p_revision is null or anterior.actualizado_en is distinct from p_revision then
       raise exception 'evento_actualizado' using errcode = '40001';
     end if;
-    -- Clientes anteriores no pueden borrar la direccion estructurada por omision.
-    if not (p_datos ? 'sitio_direccion') and not v.sitio_reservado and v.lugar_id is null then
+    -- La omision legacy conserva la direccion solo si la ubicacion sigue intacta.
+    -- Un texto/pin nuevo no puede heredar la direccion estructurada del sitio anterior.
+    if not (p_datos ? 'sitio_direccion') and not v.sitio_reservado and v.lugar_id is null
+      and anterior.sitio_reservado is not distinct from v.sitio_reservado
+      and anterior.lugar_id is not distinct from v.lugar_id
+      and anterior.sitio_texto is not distinct from v.sitio_texto
+      and anterior.sitio_lat is not distinct from v.sitio_lat
+      and anterior.sitio_lng is not distinct from v.sitio_lng then
       v.sitio_direccion := anterior.sitio_direccion;
     end if;
     select coalesce(array_agg(artista_id), '{}') into previos

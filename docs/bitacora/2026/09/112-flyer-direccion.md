@@ -242,3 +242,69 @@ sobre el logo Mapbox. Una clase local lo eleva a 40px del borde inferior sin
 cambiar otros mapas; el harness comprueba la separacion de ambos rectangulos.
 No se afirma prueba de cartografia real ni de Safari; el estilo local tiene solo
 fondo y pin, geocoding sigue simulado. Produccion permanece intacta.
+
+## Checkpoint de correcciones pendientes (2026-09-18)
+
+Continuacion autorizada por gestion en `codex/direccion-correcciones`, worktree
+`/Users/apple-1/somosnosotros-direccion-correcciones`, base `4eee240`.
+Propiedad exclusiva confirmada de 181600 y su test; 181400 sigue con avisos.
+Sin nueva migracion, push, despliegue ni cambios a otros worktrees.
+
+Reproducciones antes del cambio:
+- Componente real: mover pin conservaba direccion A y `sitio_pin_pendiente=no`.
+  La prueba nueva fallo esperando `si`; captura inspeccionada en
+  `/tmp/sn-direccion-antes/pin-pendiente-publico-390.png`: Listo activo sin aviso.
+- PostgreSQL real, runner del proyecto en 127.0.0.1:55439: cuatro variantes de
+  cambio de texto/coordenadas del cliente anterior conservaban direccion A;
+  retirar ambos puntos ademas fallaba por eventos_direccion_con_punto.
+
+Cambio provisional: pin manual conserva punto/texto pero deja pendiente su
+relacion; reverse vigente valido la resuelve. Cerrar/fallar no confirma. Se
+ofrece "Usar esta direccion con el pin" para confirmacion manual explicita;
+reverse acertado no exige esa accion. Reservar conserva el pendiente. SQL solo
+hereda la direccion omitida si texto, coordenadas, reserva y lugar no cambian.
+
+Resultado parcial: 12 pruebas nuevas de componentes correctas (publico/reservado,
+X/Escape/fondo, respuesta tardia, HTTP fallido, resultado vacio, respuesta valida,
+confirmacion manual, guardar/remontar). PG: 42 migraciones / 637 checks correctos.
+Runner con locks/cleanup, sin parar el servicio. Transporte de geocoding y accion
+simulados; mapa real con estilo local. No prueba servicios remotos.
+
+Pendiente antes de entregar: revisar las capturas nuevas en
+`/tmp/sn-direccion-despues`, unitarias adicionales, Como llegar con ficha real,
+cobertura de reserva mientras espera y pin sin direccion, suite completa de
+componentes/unitarias, lint/typecheck/build, revision del diff y del gestor.
+No se declara correccion terminada. Checkpoint solicitado para continuar con
+Terra high; respaldos previos en `/tmp/sn-direccion-correcciones-backup`.
+Se conserva todo el historial de esta bitacora y OL-078 sin marcarlo cerrado.
+
+### Validacion de la reanudacion Terra
+
+- Se mantuvo el pin manual y se elimina la afirmacion falsa de que describe la
+  direccion anterior. Si reverse devuelve una direccion valida durante el mismo
+  gesto, completa direccion y ciudad; si falla, no devuelve resultado, llega
+  tarde o se cierra la hoja, conserva el pin pero bloquea guardar hasta una
+  confirmacion explicita de la persona. El pin sin direccion sigue siendo valido
+  y no inventa un nombre geocodificado. Cambiar a reservado durante reverse
+  conserva el punto solo privado y descarta la respuesta publica tardia.
+- La ficha usa el mismo punto confirmado para `Cómo llegar`: público para otro
+  sitio, privado solo cuando RLS ya lo entrego, y ninguno para una reserva no
+  revelada. El helper tiene pruebas para los tres casos y para un registro
+  inconsistente reservado con lugar, que permanece oculto.
+- `node --test src/app/eventos/flyer.componentes.test.mjs`: 41 recorridos
+  correctos, con mapa Mapbox real y geocoding/accion simulados. Cubre
+  público/reservado, X/Escape/fondo, reverse válido/tardío/HTTP/vacío,
+  confirmación manual, guardar/remontar, pin sin dirección y reserva durante
+  reverse. Capturas completas inspeccionadas: 390×844 y 1280×844 en
+  `/tmp/sn-direccion-despues/pin-pendiente-{publico,reservado}-{390,1280}.png`.
+  La hoja conserva mapa, aviso, acción y botón sin superposición u overflow;
+  en reservado el contenido continúa mediante el desplazamiento propio de la
+  hoja. Estilo local sin calles, no cartografía ni servicios reales.
+- `npm test`: 61 archivos, 661 pruebas correctas. Banco PostgreSQL compartido:
+  42 migraciones, 637 checks correctos con runner, locks y cleanup; sin parar
+  127.0.0.1:55439. `npm run typecheck` y `npm run build` correctos. `npm run
+  lint`: cero errores y el warning preexistente de `iconos-sn.mjs:57`.
+
+Lista para revisión independiente del gestor, sin push, merge, migración nueva
+ni despliegue. Sigue pendiente la prueba autorizada de Mapbox real/Safari/iPhone
+y la integración del responsable de outbox.

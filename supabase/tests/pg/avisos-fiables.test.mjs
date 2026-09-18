@@ -260,5 +260,176 @@ export async function run({ as, query, check, expectError, connection }) {
     'borrar cuenta nulifica autor/actor conservando tombstone y job');
   const meta=(await query("select prosecdef,proconfig from pg_proc where pronamespace='public'::regnamespace and proname like 'avisos_%'")).rows;
   check(meta.every(m=>m.proconfig?.includes('search_path=""')),"todas las funciones de cola tienen path fijo");
+  await correcciones({ as, query, check, connection });
   console.log('Outbox: contratos SQL, paginacion, cuota y leases probados sin proveedores');
+}
+
+// Cada escenario usa audiencia propia; no modifica cuotas ni datos de otros bancos.
+async function correcciones({ as, query, check, connection }) {
+  await query("update public.avisos_jobs set estado='obsoleto',expandido=true");
+  await query("update public.avisos_entregas set estado='descartada',lease_hasta=null");
+  await query("update public.avisos_slots set token=null,vence='-infinity'");
+  const rpc = "select public.guardar_evento_con_avisos($1,$2::jsonb,$3::jsonb,$4::jsonb,$5,$6) as r";
+  const servicio = (sql, args) => as('service_role', null, () => query(sql, args));
+  const expandir = async () => {
+    for (let i=0; i<100; i++) if (!(await servicio('select public.avisos_expandir() as r')).rows[0].r) return;
+    throw new Error('correcciones: expansion no termina');
+  };
+  const tomar = async () => (await servicio('select public.avisos_tomar() as r')).rows[0].r;
+  const autorizar = async c => (await servicio('select public.avisos_autorizar($1,$2) as r',[c.id,c.token])).rows[0].r;
+  const preparar = async c => (await servicio("select public.avisos_preparar($1,$2,'cuerpo de prueba') as r",[c.id,c.token])).rows[0].r;
+  const terminar = async (c, resultado='enviada') => (await servicio("select public.avisos_terminar($1,$2,$3,'prueba') as r",[c.id,c.token,resultado])).rows[0].r;
+  const altas = async id => (await query("select * from public.avisos_jobs where evento_id=$1 and tipo='nuevo_evento' order by creado_en,id",[id])).rows;
+  const vigentes = async id => (await altas(id)).filter(j=>['pendiente','activo'].includes(j.estado));
+  const entregas = async id => (await query('select * from public.avisos_entregas where job_id=$1',[id])).rows;
+  async function fixture(n=1) {
+    const author=randomUUID(), id=randomUUID(), users=Array.from({length:n},()=>randomUUID());
+    await query("insert into auth.users(id,email) select u,u::text||'@local.test' from unnest($1::uuid[]) u",[[author,...users]]);
+    await query('update public.perfiles set avisos_correo=true,avisos_push=true where id=any($1::uuid[])',[users]);
+    const artist=(await as('authenticated',author,()=>query("insert into public.artistas(nombre,disciplina,creado_por) values($1,'musica',auth.uid()) returning id",['Correccion '+author]))).rows[0].id;
+    await query('insert into public.seguimientos(usuario_id,artista_id) select u,$2 from unnest($1::uuid[]) u',[users,artist]);
+    const data={titulo:'Anuncio pendiente',ciudad:'Outbox',inicio:new Date(Date.now()+7200000).toISOString(),zona:'America/Mexico_City',
+      sitio_texto:'Sede',sitio_direccion:'Direccion inicial',sitio_lat:22.15,sitio_lng:-100.98,sitio_reservado:false};
+    const who=JSON.stringify([{id:artist,nombre:'Correccion'}]);
+    await as('authenticated',author,()=>query(rpc,[null,JSON.stringify(data),null,who,null,id]));
+    const editArgs = async (patch={}, privado=null) => [id,JSON.stringify({...data,...patch}),privado && JSON.stringify(privado),who,
+      (await query('select actualizado_en::text as r from public.eventos where id=$1',[id])).rows[0].r,randomUUID()];
+    const edit = async (patch={}, privado=null) => { const args=await editArgs(patch,privado); return as('authenticated',author,()=>query(rpc,args)); };
+    return {author,id,users,data,who,edit,editArgs};
+  }
+  for (const materializado of [false,true]) {
+    const f=await fixture();
+    if(materializado) await expandir();
+    await f.edit({sitio_direccion:'Direccion corregida'});
+    await expandir();
+    const live=await vigentes(f.id);
+    check(live.length===1,`corregir ${materializado?'despues':'antes'} de expandir conserva un anuncio inicial vigente`);
+    if(live.length) {
+      const ds=await entregas(live[0].id);
+      check(ds.length===1 && ds[0].usuario_id===f.users[0] && live[0].contenido.sitio_direccion==='Direccion corregida',
+        'seguidor sin Voy recibe anuncio con direccion vigente');
+      const c=await tomar();
+      check(c && (await autorizar(c))?.evento.sitio_direccion==='Direccion corregida','anuncio corregido autorizable antes de HTTP');
+      if(c) await servicio("select public.avisos_terminar($1,$2,'enviada','prueba')",[c.id,c.token]);
+    }
+  }
+
+  // El primer bloque puede haberse expandido antes de la correccion; el cursor
+  // anterior no es una frontera de audiencia para el anuncio de reemplazo.
+  const parcial=await fixture(101);
+  await servicio('select public.avisos_expandir() as r');
+  const viejaParcial=(await altas(parcial.id))[0];
+  check((await entregas(viejaParcial.id)).length===100 && !viejaParcial.expandido,
+    'la prueba deja una alta parcialmente expandida');
+  await parcial.edit({sitio_direccion:'Direccion tras primer bloque'});
+  await expandir();
+  const altaParcial=(await vigentes(parcial.id))[0];
+  check(altaParcial && (await entregas(altaParcial.id)).length===101 && altaParcial.expandido,
+    'correccion despues de expansion parcial conserva toda la audiencia sin cursor truncado');
+  await query("update public.avisos_jobs set estado='obsoleto',expandido=true where evento_id=$1",[parcial.id]);
+  await query("update public.avisos_entregas set estado='descartada',lease_hasta=null where job_id in (select id from public.avisos_jobs where evento_id=$1)",[parcial.id]);
+
+  // Un canal cuya confirmacion ya pudo perderse no se vuelve a abrir, pero los
+  // demas destinatarios y canales pendientes reciben el anuncio vigente.
+  const repetida=await fixture(2);
+  await expandir();
+  const altaOriginal=(await altas(repetida.id))[0];
+  const originalCorreo=(await query("select id from public.avisos_entregas where job_id=$1 and usuario_id=$2 and canal='correo'",[altaOriginal.id,repetida.users[0]])).rows[0].id;
+  await query("update public.avisos_entregas set disponible=clock_timestamp()+interval '1 hour' where job_id=$1 and id<>$2",[altaOriginal.id,originalCorreo]);
+  const reclamado=await tomar();
+  check(reclamado?.id===originalCorreo && (await autorizar(reclamado)) !== null && (await preparar(reclamado)) !== null,
+    'lease prepara el primer cuerpo antes de una correccion');
+  await terminar(reclamado);
+  await repetida.edit({sitio_direccion:'Direccion dos'});
+  await repetida.edit({sitio_direccion:'Direccion tres'});
+  await expandir();
+  const altaFinal=(await vigentes(repetida.id))[0];
+  const finales=await entregas(altaFinal.id);
+  check((await altas(repetida.id)).filter(j=>j.estado==='obsoleto').length===1 && altaFinal.contenido.sitio_direccion==='Direccion tres',
+    'cambios repetidos dejan una sola alta vigente con el ultimo snapshot');
+  check(finales.length===1 && finales[0].usuario_id===repetida.users[1],
+    'alta de reemplazo no duplica correo aceptado y conserva el otro seguidor');
+  await expandir();
+  check((await entregas(altaFinal.id)).length===1,'reexpandir una correccion idempotente no duplica entregas');
+  await query("update public.avisos_jobs set estado='obsoleto',expandido=true where evento_id=$1",[repetida.id]);
+  await query("update public.avisos_entregas set estado='descartada',lease_hasta=null where job_id in (select id from public.avisos_jobs where evento_id=$1)",[repetida.id]);
+
+  // Preparar sostiene un lock compartido. La correccion espera ese punto de
+  // incertidumbre y, al completar, el claim viejo ya no puede volver a enviar.
+  const carrera=await fixture();
+  await expandir();
+  const carreraJob=(await altas(carrera.id))[0];
+  const carreraEntrega=(await entregas(carreraJob.id))[0];
+  await query("update public.avisos_entregas set disponible=clock_timestamp()+interval '1 hour' where estado='pendiente' and id<>$1",[carreraEntrega.id]);
+  const carreraClaim=await tomar();
+  check(carreraClaim?.id===carreraEntrega.id,'la carrera reclama la entrega que mantiene el lock');
+  let correccionTerminada=false;
+  let carreraPreparada=null;
+  let carreraAntes;
+  await connection(async client => {
+    await client.query('begin');
+    try {
+      await client.query('set role service_role');
+      carreraAntes=(await client.query("select d.estado,d.lease_hasta>clock_timestamp()+interval '15 seconds' as lease, j.estado as job_estado, j.vence>clock_timestamp() as vigente, public.avisos_evento_publico(j.evento_id) is not distinct from j.contenido as snapshot from public.avisos_entregas d join public.avisos_jobs j on j.id=d.job_id where d.id=$1",[carreraClaim.id])).rows[0];
+      carreraPreparada=(await client.query("select public.avisos_preparar($1,$2,'cuerpo concurrente') as r",[carreraClaim.id,carreraClaim.token])).rows[0].r;
+      const editar=carrera.edit({sitio_direccion:'Direccion concurrente'}).then(() => { correccionTerminada=true; });
+      await new Promise(resolve => setTimeout(resolve, 20));
+      check(!correccionTerminada,'correccion espera el lock que cerca preparar');
+      await client.query('commit');
+      await editar;
+    } catch (error) {
+      await client.query('rollback');
+      throw error;
+    }
+  });
+  check(carreraPreparada==='cuerpo concurrente','preparar persiste el cuerpo antes de liberar el lock',carreraAntes);
+  check((await autorizar(carreraClaim))===null,'claim preparado antes de correccion queda invalidado antes de HTTP');
+  await expandir();
+  const carreraNueva=(await vigentes(carrera.id))[0];
+  const carreraEntregas=await entregas(carreraNueva.id);
+  const carreraIncierta=(await query('select primer_intento is not null as r from public.avisos_entregas where id=$1',[carreraEntrega.id])).rows[0].r;
+  check(carreraEntregas.length===0 && carreraIncierta,
+    'reemplazo no duplica un canal ya incierto por carrera de lease',{entregas:carreraEntregas.length,incierta:carreraIncierta});
+
+  const reservado=await fixture();
+  await expandir();
+  const privado={direccion:'Direccion solo privada',lat:22.16,lng:-100.99,indicaciones:'No divulgar',revelar_desde:new Date(Date.now()+3600000).toISOString()};
+  await reservado.edit({sitio_reservado:true,sitio_direccion:null,sitio_lat:null,sitio_lng:null,sitio_revelar_desde:privado.revelar_desde},privado);
+  await expandir();
+  const altaReservada=(await vigentes(reservado.id))[0];
+  check(altaReservada && altaReservada.contenido.sitio_reservado && altaReservada.contenido.sitio_direccion===null
+    && !JSON.stringify(altaReservada.contenido).includes(privado.direccion) && (await entregas(altaReservada.id)).length===1,
+    'correccion a sitio reservado conserva anuncio inicial sin filtrar direccion privada');
+
+  const cuota=await fixture();
+  const nuevos=Array.from({length:3},()=>randomUUID());
+  for(const id of nuevos) await as('authenticated',cuota.author,()=>query(rpc,[null,JSON.stringify(cuota.data),null,cuota.who,null,id]));
+  const suprimido=nuevos.at(-1);
+  const revisionSuprimida=(await query('select actualizado_en::text as r from public.eventos where id=$1',[suprimido])).rows[0].r;
+  await as('authenticated',cuota.author,()=>query(rpc,[suprimido,JSON.stringify({...cuota.data,sitio_direccion:'Direccion de alta suprimida'}),null,cuota.who,revisionSuprimida,randomUUID()]));
+  check((await altas(suprimido)).length===1 && (await altas(suprimido))[0].estado==='suprimido',
+    'corregir una alta suprimida por cuota no revive ni reemplaza el anuncio');
+
+  const recordatorio=await fixture();
+  await expandir();
+  await query("insert into public.asistencias(usuario_id,evento_id,estado) values($1,$2,'voy')",[recordatorio.users[0],recordatorio.id]);
+  await servicio('select public.avisos_recordatorios()');
+  await expandir();
+  const recordatorioOriginal=(await query("select * from public.avisos_jobs where evento_id=$1 and tipo='recordatorio'",[recordatorio.id])).rows[0];
+  await query("update public.avisos_entregas set estado='enviada',primer_intento=clock_timestamp() where job_id=$1",[recordatorioOriginal.id]);
+  await recordatorio.edit({sitio_direccion:'Direccion con recordatorio'});
+  await servicio('select public.avisos_recordatorios()');
+  await expandir();
+  const recordatorios=(await query("select * from public.avisos_jobs where evento_id=$1 and tipo='recordatorio' order by creado_en,id",[recordatorio.id])).rows;
+  const recordatorioNuevo=recordatorios.at(-1);
+  const altaConRecordatorio=(await vigentes(recordatorio.id))[0];
+  check(recordatorios.length===2 && recordatorios[0].estado==='obsoleto' && (await entregas(recordatorioNuevo.id)).length===0
+    && (await entregas(altaConRecordatorio.id)).length===1,
+    'recordatorio reemplazado no bloquea ni duplica el anuncio inicial corregido');
+
+  const borrado=await fixture();
+  await expandir();
+  await as('authenticated',borrado.author,()=>query('delete from public.eventos where id=$1',[borrado.id]));
+  await expandir();
+  check((await altas(borrado.id)).length===0,'evento borrado no revive anuncios iniciales ni reemplazos');
 }

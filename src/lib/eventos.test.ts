@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, direccionPublicaSitio, enlaceDesdeCartel, jsonLdEvento, nombreSitio, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, jsonLdEvento, nombreSitio, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -111,6 +111,22 @@ describe("direccion estructurada", () => {
     expect(datos).toMatchObject({sitio_direccion: null, sitio_lat: null, sitio_lng: null});
     expect(datos.privado?.direccion).toBe("Secreta 3");
     expect(validarEvento({...publico, modo_sitio: "lugar"}).datos.sitio_direccion).toBeNull();
+  });
+});
+
+describe("Cómo llegar", () => {
+  const publico = { lugar: null, sitioReservado: false, sitioLat: 22.16, sitioLng: -100.97, privado: null };
+  it("usa el pin público confirmado, incluido el que se eligió manualmente", () => {
+    expect(enlaceComoLlegar(publico)).toBe("https://www.google.com/maps/dir/?api=1&destination=22.16,-100.97");
+  });
+  it("no expone una ruta reservada hasta que la ficha recibe el punto privado autorizado", () => {
+    expect(enlaceComoLlegar({ ...publico, sitioReservado: true, privado: null })).toBeNull();
+    expect(enlaceComoLlegar({ ...publico, sitioReservado: true, lugar: { lat: 22.18, lng: -100.95 }, privado: null })).toBeNull();
+    expect(enlaceComoLlegar({ ...publico, sitioReservado: true, privado: { lat: 22.17, lng: -100.96 } })).toBe("https://www.google.com/maps/dir/?api=1&destination=22.17,-100.96");
+  });
+  it("prefiere el punto del lugar y no fabrica una ruta sin coordenadas", () => {
+    expect(enlaceComoLlegar({ ...publico, lugar: { lat: 22.18, lng: -100.95 } })).toBe("https://www.google.com/maps/dir/?api=1&destination=22.18,-100.95");
+    expect(enlaceComoLlegar({ ...publico, sitioLat: null, sitioLng: null })).toBeNull();
   });
 });
 

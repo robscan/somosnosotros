@@ -18,11 +18,19 @@ export function sitioListo(otro: OtroSitio): boolean {
   return !!otro.sitioTexto.trim() && !otro.pinPendiente && (otro.reservado ? !!otro.direccionPrivada.trim() : publicoUbicado);
 }
 
+/** El pin es intencional; su relacion con un texto previo aun necesita resolverse. */
+export function ponerPinManual(otro: OtroSitio, punto: Punto): OtroSitio {
+  if (!puntoValido(punto)) return otro;
+  const direccion = otro.reservado ? otro.direccionPrivada : otro.direccion;
+  return { ...revisarNombreLegacy(otro), pinPendiente: !!direccion?.trim(), ciudad: null,
+    ...(otro.reservado ? { privadoPunto: punto } : { sitioPunto: punto }) };
+}
+
 /** Reservar nunca deja la direccion o el pin exacto en los campos publicos. */
 export function cambiarReserva(otro: OtroSitio): OtroSitio {
   if (otro.reservado) return { ...otro, reservado: false, pinPendiente: false };
   const privadoPunto = otro.privadoPunto ?? otro.sitioPunto;
-  return { ...revisarNombreLegacy(otro), reservado: true, direccionPrivada: otro.direccionPrivada || otro.direccion || "", privadoPunto, direccion: "", sitioPunto: null, pinPendiente: !privadoPunto };
+  return { ...revisarNombreLegacy(otro), reservado: true, direccionPrivada: otro.direccionPrivada || otro.direccion || "", privadoPunto, direccion: "", sitioPunto: null, pinPendiente: !!otro.pinPendiente || !privadoPunto };
 }
 
 export function lugaresPorTexto(lugares: LugarResumen[], texto: string): LugarResumen[] {
