@@ -41,10 +41,15 @@ export function leido(foto: string, faltan: string[]): NonNullable<EstadoCartel>
 
 /** "el 1 de octubre": cuándo vuelve a haber cupo, en la hora de la ciudad, como lo dice la base. */
 export function cuandoSeRenueva(ahora: Date = new Date()): string {
-  const zona = "America/Mexico_City";
-  const enLaCiudad = new Date(ahora.toLocaleString("en-US", { timeZone: zona }));
-  const primero = new Date(enLaCiudad.getFullYear(), enLaCiudad.getMonth() + 1, 1, 12);
-  return `el 1 de ${new Intl.DateTimeFormat("es-MX", { month: "long", timeZone: zona }).format(primero)}`;
+  const [anio, mes] = mesDelCupo(ahora).split("-").map(Number);
+  const primero = new Date(Date.UTC(anio, mes, 1));
+  return `el 1 de ${new Intl.DateTimeFormat("es-MX", { month: "long", timeZone: "UTC" }).format(primero)}`;
+}
+
+/** El periodo del servidor, independiente de la zona del dispositivo. */
+export function mesDelCupo(ahora: Date = new Date()): string {
+  const partes = new Intl.DateTimeFormat("en-US", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit" }).formatToParts(ahora);
+  return `${partes.find((p) => p.type === "year")!.value}-${partes.find((p) => p.type === "month")!.value}`;
 }
 
 /** Cuántas quedan; solo se dice cuando ya son pocas, porque quien tiene 17 no necesita saberlo. */

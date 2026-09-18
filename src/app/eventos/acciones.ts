@@ -245,9 +245,9 @@ export async function cupoDeCartel(): Promise<Cupo | null> {
   const supabase = await clienteServidor();
   if (!supabase) return null;
   // Todo sale de la misma función definer: nadie puede leer sus propias filas de `reportes`, y abrirlas sería peor.
-  const { data } = await supabase.rpc("mi_cupo_de_cartel").maybeSingle();
+  const { data, error } = await supabase.rpc("mi_cupo_de_cartel").maybeSingle();
   const d = data as { usadas: number; tope: number; sin_tope: boolean; pedida: boolean } | null;
-  if (!d) return null;
+  if (error || !d) return null;
   return { usadas: d.usadas, tope: d.tope, sinTope: d.sin_tope, pedida: d.pedida };
 }
 

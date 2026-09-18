@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
@@ -22,12 +22,12 @@ import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
-import { leerCartelAccion, pedirMasLecturas, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
+import { cupoDeCartel, leerCartelAccion, pedirMasLecturas, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
 import TarjetaCartel from "./TarjetaCartel";
-import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, type EstadoCartel } from "./estadoCartel";
+import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./FormularioEvento.module.css";
@@ -172,7 +172,67 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [subiendo, setSubiendo] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
   // Lo que cuenta la tarjeta del cartel: en qué va, qué decir y la foto que se subió. Sin tarjeta, está en reposo.
-  const [cartel, setCartel] = useState<EstadoCartel>(() => alLlegar(cupo));
+  const [cartel, setCartel] = useState<EstadoCartel>(null);
+  const [cupoActual, setCupoActual] = useState(cupo);
+  const [errorCupo, setErrorCupo] = useState(false);
+  const [consultandoCupo, setConsultandoCupo] = useState(false);
+  const consultaCupo = useRef(0);
+  const cupoPropAnterior = useRef(cupo);
+  const operandoCartel = useRef(false);
+  const periodoCupo = useRef(mesDelCupo());
+  const actualizarCupo = useCallback(async () => {
+    const consulta = ++consultaCupo.current;
+    setConsultandoCupo(true);
+    // Una respuesta de otro mes nunca confirma el periodo nuevo.
+    const periodo = mesDelCupo();
+    try {
+      const actual = await cupoDeCartel();
+      if (consulta !== consultaCupo.current) return null;
+      if (!actual) throw new Error("Cupo no disponible");
+      periodoCupo.current = periodo;
+      setCupoActual(actual);
+      setErrorCupo(false);
+      return actual;
+    } catch {
+      if (consulta === consultaCupo.current) setErrorCupo(true);
+      return null;
+    } finally {
+      if (consulta === consultaCupo.current) setConsultandoCupo(false);
+    }
+  }, []);
+  useEffect(() => {
+    if (cupoPropAnterior.current === cupo) return;
+    cupoPropAnterior.current = cupo;
+    const consulta = ++consultaCupo.current;
+    const id = requestAnimationFrame(() => {
+      if (consulta !== consultaCupo.current) return;
+      setCupoActual(cupo);
+      setErrorCupo(false);
+      setConsultandoCupo(false);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [cupo]);
+  useEffect(() => {
+    if (!cartelActivo || !esAlta) return;
+    const volver = () => {
+      if (document.visibilityState === "visible" && !operandoCartel.current) void actualizarCupo();
+    };
+    volver();
+    window.addEventListener("focus", volver);
+    window.addEventListener("pageshow", volver);
+    document.addEventListener("visibilitychange", volver);
+    const reloj = window.setInterval(() => {
+      if (mesDelCupo() !== periodoCupo.current) volver();
+    }, 30_000);
+    const invalidar = () => { ++consultaCupo.current; };
+    return () => {
+      invalidar();
+      window.removeEventListener("focus", volver);
+      window.removeEventListener("pageshow", volver);
+      document.removeEventListener("visibilitychange", volver);
+      window.clearInterval(reloj);
+    };
+  }, [actualizarCupo, cartelActivo, esAlta]);
   const [pidiendo, setPidiendo] = useState(false);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
   const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (esAlta && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
@@ -310,6 +370,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
    * la tarjeta se queda donde estaba y lo dice ahí mismo, que es donde la persona está mirando.
    */
   async function pedirMas() {
+    if (operandoCartel.current) return;
+    operandoCartel.current = true;
     setPidiendo(true);
     try {
       const r = await pedirMasLecturas();
@@ -318,10 +380,12 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         return;
       }
       setCartel((a) => ({ estado: "pedida", foto: a?.foto }));
+      setCupoActual((a) => a ? { ...a, pedida: true } : a);
     } catch {
       setCartel((a) => ({ ...(a ?? { estado: "sin_cupo" }), estado: "sin_cupo", mensaje: "No pude mandar la petición. Puede ser tu conexión." }));
     } finally {
       setPidiendo(false);
+      operandoCartel.current = false;
     }
   }
 
@@ -332,10 +396,18 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
    */
   async function leerCartel(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
-    if (!archivo) return;
+    e.target.value = "";
+    if (!archivo || operandoCartel.current || consultandoCupo || errorCupo || !cupoActual || alLlegar(cupoActual)) return;
+    operandoCartel.current = true;
     setCartel({ estado: "leyendo" });
     setLeyendo(true);
     try {
+      // El selector pudo estar abierto mientras se consumía el cupo en otra pantalla.
+      const confirmado = await actualizarCupo();
+      if (!confirmado || alLlegar(confirmado)) {
+        setCartel({ estado: "fallo", titulo: "No se leyó otro cartel", foto: imagen ?? undefined, mensaje: imagen ? "La imagen que tenías se queda." : "Puedes seguir a mano." });
+        return;
+      }
       const subida = await subir(archivo);
       if ("error" in subida) {
         setCartel(falloAlSubir(imagen, subida.error, subida.motivo));
@@ -370,7 +442,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     } catch {
       setCartel((actual) => falloDeCorte(actual, imagen));
     } finally {
+      // También una lectura fallida puede haber consumido: nunca restar en el cliente.
+      await actualizarCupo();
       setLeyendo(false);
+      operandoCartel.current = false;
     }
   }
 
@@ -388,7 +463,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       >
         {/* 1. El cartel, antes del formulario: subirlo lo llena todo. Es lo único que explica la pantalla
             (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
-        {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupo} ocupado={subiendo || leyendo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
+        {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
 
         {/* 2. El nombre, solo con su ✕. */}
         <div className={`${canon.campo} ${canon.sinIcono}`}>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alLlegar, cuandoSeRenueva, falloAlLeer, falloAlSubir, falloDeCorte, leido } from "./estadoCartel";
+import { alLlegar, cuandoSeRenueva, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo } from "./estadoCartel";
 
 /**
  * Los estados de la tarjeta del cartel. Las tres primeras pruebas salen de la revisión de la bitácora 095:
@@ -70,5 +70,20 @@ describe("cupo de lecturas", () => {
     expect(cuandoSeRenueva(new Date("2026-09-17T21:00:00Z"))).toBe("el 1 de octubre");
     expect(cuandoSeRenueva(new Date("2026-12-31T23:00:00Z"))).toBe("el 1 de enero");
     expect(cuandoSeRenueva(new Date("2026-01-05T12:00:00Z"))).toBe("el 1 de febrero");
+  });
+
+  it.each(["Asia/Tokyo", "UTC", "America/Mexico_City"])("renueva segun Mexico aunque el dispositivo este en %s", (tz) => {
+    const previa = process.env.TZ;
+    try {
+      process.env.TZ = tz;
+      expect(mesDelCupo(new Date("2026-10-01T05:59:59Z"))).toBe("2026-09");
+      expect(cuandoSeRenueva(new Date("2026-10-01T05:59:59Z"))).toBe("el 1 de octubre");
+      expect(mesDelCupo(new Date("2026-10-01T06:00:00Z"))).toBe("2026-10");
+      expect(cuandoSeRenueva(new Date("2026-10-01T06:00:00Z"))).toBe("el 1 de noviembre");
+      expect(cuandoSeRenueva(new Date("2027-01-01T05:59:59Z"))).toBe("el 1 de enero");
+    } finally {
+      if (previa === undefined) delete process.env.TZ;
+      else process.env.TZ = previa;
+    }
   });
 });
