@@ -145,3 +145,16 @@ correctos. No se ejecuto build ni QA visual para este ajuste local; ambos quedan
 pendientes antes del PR, conforme a las reglas del proyecto. Sin push, merge,
 migraciones ni despliegue. La autorizacion del lote anterior no se extiende a
 otras piezas: este ajuste queda pendiente de publicacion.
+
+## Autorizacion y verificacion del texto breve
+
+El founder responde "si" a publicar carriles semanales y texto breve de Entrar
+tras pruebas y revision visual. Dos piezas separadas, sin migraciones ni cambios
+de Auth; esta rama contiene solo el texto de Entrar.
+
+Antes del PR: 468 unitarias/44 archivos, typecheck y build correctos; lint sin
+errores (warning heredado del logotipo). Build local y navegador a 390x844:
+frase breve, enlaces Apple/Google conservados, correo despliega su campo;
+sin overflow ni superposiciones. Captura inspeccionada `entrar-texto-breve-390.png`
+en la carpeta de evidencias del gestor. No se enviaron correos ni completo OAuth.
+Produccion aun pendiente de merge y comprobacion del dominio real.
