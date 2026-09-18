@@ -172,3 +172,20 @@ mientras el preview exacto siga pendiente.
   segunda ejecucion del revisor. No certifica cancelacion inmediata en PG ni
   tiempo total de pagina. Rama aislada, apta para preparar PR y revision visual;
   sin push, integracion ni autorizacion de produccion de esta pieza.
+
+## Primer lote publicado: cierre documental (2026-09-18)
+
+Integrado solo el commit documental `8a53338` sobre `13485ef`, con 108 y
+OPEN_LOOPS completos y su historial conservado. Segun la comprobacion comunicada
+por el gestor, Nuevos20 ya esta publicado en https://somosnosotros.org/:
+20 eventos, mismos IDs al abrir ficha y volver con Atras, Ver todos funcional
+y Entrar con Apple, Google y correo. PR #101 integrado en `3a45399`;
+Production `6iCc9mbpMXiBv3BMWZgpqiSik39s` confirmado Current por la respuesta
+de Promote. Este estado sustituye los cortes pendientes anteriores, conservados
+como historia; la evidencia de publicacion se detalla en bitacora 108.
+
+Publicado solo el primer lote. El resto del cierre de pendientes sigue pendiente,
+sin ampliar autorizaciones. Falta la firma del founder en Safari y su telefono.
+Esta integracion es documental y local: sin cambios de codigo, push ni deploy,
+y sin alterar el CLAUDE.md ajeno. No se repiten pruebas de aplicacion ni se
+interactua con produccion; se comprueban el diff y la preservacion documental.
