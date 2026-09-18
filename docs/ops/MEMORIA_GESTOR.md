@@ -196,3 +196,10 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   Evidencia del operador:6 tests focalizados y capturas390; limitacion declarada
   de pulsacion larga sin automatizacion DOM. Cierre documental pedido, sin repetir
   pruebas. Accesibilidad de nombres/seleccion de colores pendiente antes de integrar.
+- 2026-09-18, decision posterior en tarea Pincel: founder rechaza el controlador
+  9f82a08 y pide "Cuestiona tu y mejora". Sustituye su aceptacion como candidato
+  visual: sigue local, NO aprobado por founder. Gestor autoriza otra iteracion
+  solo participante en la misma rama/OL084/bit118, Terra high, sin proyeccion/admin
+  ni infraestructura. Defaults sin onboarding extra, gesto central con feedback,
+  modo dedo explicito y seleccion de color accesible; critica concreta desde
+  captura actual y verificacion focalizada, sin suite global ni nuevos agentes.
