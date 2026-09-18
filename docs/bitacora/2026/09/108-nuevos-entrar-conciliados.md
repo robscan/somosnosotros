@@ -30,3 +30,24 @@ ni equivale a una restauracion ensayada de todo Supabase.
 
 `next dev` agrego automaticamente un bloque de instrucciones a CLAUDE.md.
 No se incluye con estos cambios de producto ni se elimina a la fuerza.
+
+## Revision del founder: conservar Entrar de produccion (2026-09-18)
+
+- Decision vigente: "Deja el entrar de prod." Se retira del lote el escudo y
+  la region explicativa; FormularioEntrar.tsx y su CSS vuelven a coincidir con
+  origin/main. No se cambian proveedores, rutas OAuth ni configuracion remota.
+- La preview sin Apple/Google no era evidencia equivalente a produccion:
+  botonesProveedor los oculta en dominios Vercel no registrados. Esta regla
+  ya existia y se conserva. No se afirma que se haya probado OAuth completo.
+- Las entradas anteriores y las bitacoras 092/099 quedan como historia, no
+  como autorizacion para publicar el ajuste de Entrar. Produccion no cambia.
+- Peticion nueva: limitar Nuevos ante cargas masivas. Propuesta pendiente:
+  maximo 20 eventos, ventana de siete dias y corte por ultima visita; sin
+  scroll infinito. Actualmente comparte la consulta de hasta 300 eventos con
+  Todos: recortar en cliente no reduce esa consulta. La propuesta de servidor
+  requiere consulta acotada al abrir Nuevos, orden estable e indice evaluado,
+  sin duplicar la carga general. No implementada en esta revision.
+- Verificacion de la retirada: diff de los dos archivos de Entrar contra
+  origin/main vacio; 411 unitarias aprobadas, typecheck y build aprobados,
+  lint sin errores (solo el warning previo de iconos-sn.mjs). No equivale a
+  validacion visual del nuevo limite ni a prueba de OAuth en dispositivo.
