@@ -161,7 +161,7 @@ test("exito toma el saldo del servidor, no resta uno localmente", { skip: !!base
   await subir(p);
   await texto(p, "Te queda 1 lectura");
   await texto(p, "Leí el cartel");
-  assert.equal(await p.getByLabel("Nombre del evento").inputValue(), "Leido");
+  assert.equal(await p.getByLabel("Nombre del evento").inputValue(), "Mi evento manual");
   await captura(p, "despues-leido");
 });
 
@@ -193,7 +193,7 @@ test("corte tras consumo reconcilia; fallo de consulta permite reintentar sin in
   await subir(p);
   await texto(p, "No pude confirmar tus lecturas");
   await sinCamara(p);
-  await conserva(p, "/nueva.png");
+  await conserva(p);
   await captura(p, "despues-error-cupo");
   await p.evaluate(() => { window.qa.errorCupo = false; });
   await p.getByRole("button", { name: /Reintentar/ }).click();
@@ -308,6 +308,6 @@ test("rechazo del servidor tras subir no produce lectura exitosa", { skip: !!bas
   await subir(p);
   await texto(p, "Se acabaron tus lecturas");
   await sinCamara(p);
-  await conserva(p, "/nueva.png");
+  await conserva(p);
   assert.equal(await p.getByText("Leí el cartel").count(), 0);
 });
