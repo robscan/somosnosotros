@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { crearGestosFlyer } from "./gestosFlyer";
-import { cambiarReserva, lugaresPorTexto, puntoValido, textoDelSitio } from "./direccionEvento";
+import { cambiarReserva, lugaresPorTexto, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import type { OtroSitio } from "./HojaDondeEs";
 import type { LugarResumen } from "@/lib/lugares";
 
@@ -31,6 +31,17 @@ describe("gestos frente a OCR y geocodificacion", () => {
 
 const otro: OtroSitio = { reservado: false, sitioTexto: "Foro", direccion: "Calle Prueba 123", sitioPunto: { lat: 22, lng: -100 }, direccionPrivada: "", privadoPunto: null, revelarHoras: 24, indicaciones: "", ciudad: "Ciudad" };
 describe("direccion y privacidad", () => {
+  it("direccion estructurada sin pin no esta lista aun sin flag, legacy intacto si", () => {
+    expect(sitioListo({...otro,sitioPunto:null})).toBe(false);
+    expect(sitioListo({...otro,direccion:"",sitioPunto:null,nombreLegacy:true})).toBe(true);
+    expect(sitioListo({...otro,pinPendiente:true})).toBe(false);
+  });
+  it("no separa texto legacy ni lo vuelve a usar como alias al revisar", () => {
+    const legado={...otro,sitioTexto:"Foro · Patio · Calle 8",direccion:"",nombreLegacy:true};
+    expect(revisarNombreLegacy(legado)).toMatchObject({sitioTexto:"",referenciaLegacy:legado.sitioTexto,nombreLegacy:false});
+    expect(cambiarReserva(legado).sitioTexto).toBe("");
+    expect(revisarNombreLegacy(otro)).toBe(otro);
+  });
   it("une nombre y direccion solo en el texto publico", () => {
     expect(textoDelSitio(otro)).toBe("Foro · Calle Prueba 123");
     expect(textoDelSitio({ ...otro, sitioTexto: "" })).toBe("Calle Prueba 123");

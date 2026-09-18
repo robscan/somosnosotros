@@ -19,7 +19,7 @@ import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { jsonLdEvento, nombreSitio, textoCompartir } from "@/lib/eventos";
+import { direccionPublicaSitio, jsonLdEvento, nombreSitio, textoCompartir } from "@/lib/eventos";
 import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
@@ -84,7 +84,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Un evento que ya pasó no se anuncia al compartir (decisión del founder, 2026-09-14).
   if (!e || eventoPaso(e.inicio, e.fin, new Date(), e.zona)) return { title: "Evento · Somos Nosotros" };
   const cuando = formatearLargo(e.inicio, new Date(), null, e.zona);
-  const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
+  const descripcion = `${cuando} · ${nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado })}${e.precio ? ` · ${e.precio}` : " · Gratis"}`;
   const imagen = e.imagen ?? e.lugar?.portada ?? undefined;
   return {
     title: `${e.titulo} · Somos Nosotros`,
@@ -120,7 +120,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // Cuántos van en total, también los de perfil reservado, que la política de la base no deja ver por nombre.
   const totalVan = Math.max(Number(((conteo.data ?? []) as { evento_id: string; n: number }[])[0]?.n ?? 0), asistencias.van.length);
   const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
-  const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado });
+  const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
   const url = `${ORIGEN}/eventos/${e.id}`;
@@ -146,9 +146,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const direccionYCiudad =
     e.lugar && e.lugar.visible && !e.lugar.privado && e.lugar.direccion
       ? { direccion: e.lugar.direccion, ciudad: e.lugar.ciudad }
-      : !e.sitio_reservado && e.sitio_texto
-        ? { direccion: e.sitio_texto, ciudad: e.ciudad }
-        : null;
+      : direccionPublicaSitio(e);
   const jsonLd =
     e.visible && !paso && direccionYCiudad
       ? jsonLdEvento({
@@ -253,6 +251,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <li className={ficha.dato}>
             <IconoPin width={20} height={20} />
             <b>{e.sitio_texto}</b>
+            {e.sitio_direccion && <small>{e.sitio_direccion}</small>}
           </li>
         )}
         {e.sitio_reservado && (

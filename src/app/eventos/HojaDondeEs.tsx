@@ -16,7 +16,7 @@ import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
 import { sugerirLugares, recuperarLugar, type LugarSugerido } from "@/lib/buscarLugares";
-import { cambiarReserva, consultarMapa, lugaresPorTexto, puntoValido, textoDelSitio } from "./direccionEvento";
+import { cambiarReserva, consultarMapa, lugaresPorTexto, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import mapa from "@/components/Mapa.module.css";
@@ -27,8 +27,11 @@ import styles from "./HojaDondeEs.module.css";
 export type OtroSitio = {
   reservado: boolean;
   sitioTexto: string;
-  /** Separada del nombre en el formulario; solo se une al guardar un sitio publico. */
+  /** Direccion publica estructurada, nunca parte del alias persistido. */
   direccion?: string;
+  nombreLegacy?: boolean;
+  referenciaLegacy?: string;
+  pinPendiente?: boolean;
   sitioPunto: Punto | null;
   direccionPrivada: string;
   privadoPunto: Punto | null;
@@ -123,13 +126,13 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     onOtro({ ...otro, ...parte }, desdePin);
   }
   function escribirDireccion(texto: string) {
-    cambiar(otro.reservado ? { direccionPrivada: texto, privadoPunto: null, ciudad: null } : { direccion: texto, sitioPunto: null, ciudad: null });
+    cambiar({ ...revisarNombreLegacy(otro), pinPendiente: !!texto.trim(), ...(otro.reservado ? { direccionPrivada: texto, privadoPunto: null, ciudad: null } : { direccion: texto, sitioPunto: null, ciudad: null }) });
     setConsulta({ texto, tipo: "direccion" });
   }
   function elegirDireccion(s: Sugerencia) {
     if (!puntoValido(s)) return;
     const p = { lat: s.lat, lng: s.lng };
-    cambiar(otro.reservado ? { direccionPrivada: s.direccion, privadoPunto: p, ciudad: s.ciudad } : { direccion: s.direccion, sitioPunto: p, ciudad: s.ciudad });
+    cambiar({ ...revisarNombreLegacy(otro), pinPendiente: false, ...(otro.reservado ? { direccionPrivada: s.direccion, privadoPunto: p, ciudad: s.ciudad } : { direccion: s.direccion, sitioPunto: p, ciudad: s.ciudad }) });
   }
   async function elegirSugerido(s: LugarSugerido) {
     const revision = invalidar();
@@ -141,7 +144,8 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       if (revision !== version.current) return;
       if (!r || !puntoValido(r)) throw new Error("Sin coordenadas");
       const p = { lat: r.lat, lng: r.lng };
-      onOtro({ ...otro, sitioTexto: otro.reservado || s.esDireccion ? otro.sitioTexto : s.nombre, ciudad: r.ciudad,
+      const revisado = revisarNombreLegacy(otro);
+      onOtro({ ...revisado, pinPendiente: false, sitioTexto: otro.reservado || s.esDireccion ? revisado.sitioTexto : s.nombre, ciudad: r.ciudad,
         ...(otro.reservado ? { direccionPrivada: r.direccion || s.direccion, privadoPunto: p } : { direccion: r.direccion || s.direccion, sitioPunto: p }) });
       setVista("otro");
     } catch {
@@ -152,7 +156,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   }
   const cerrar = () => { invalidar(); onCerrar(); };
   const filtrados = lugaresPorTexto(lugares, q);
-  const otroListo = !!textoDelSitio(otro) && (!otro.reservado || !!otro.direccionPrivada.trim());
+  const otroListo = sitioListo(otro);
   const resultados = direcciones.length > 0 && (
     <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Direcciones encontradas">
       {direcciones.map(s => <li key={`${s.lat},${s.lng}`}><button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}><IconoPin width={20} height={20}/><b>{s.nombre || s.direccion}</b>{s.nombre && <small>{s.direccion}</small>}</button></li>)}
@@ -160,15 +164,16 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   );
 
   if (vista === "otro") {
-    const ponerPunto = (p: Punto) => cambiar(otro.reservado ? { privadoPunto: p, ciudad: null } : { sitioPunto: p, ciudad: null }, true);
+    const ponerPunto = (p: Punto) => cambiar({ ...revisarNombreLegacy(otro), pinPendiente: false, ...(otro.reservado ? { privadoPunto: p, ciudad: null } : { sitioPunto: p, ciudad: null }) }, true);
     return (
       <Hoja etiqueta="Es en otro sitio" onCerrar={cerrar}>
         <h3>Es en otro sitio</h3>
         <div className={styles.otro}>
           <label className={`${canon.campo} ${canon.sinIcono}`}>
-            <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
+            <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value, nombreLegacy: false })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
             <Limpiar visible={!!otro.sitioTexto} />
           </label>
+          {otro.referenciaLegacy && !otro.sitioTexto.trim() && <p className={styles.nota}>Nombre público por confirmar. Texto anterior: {otro.referenciaLegacy}</p>}
           {!otro.reservado && <label className={canon.campo}>
             <IconoBuscar width={20} height={20}/>
             <input type="text" value={otro.direccion ?? ""} onChange={e => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off"/>
@@ -217,7 +222,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
         </div>
         <Boton type="button" onClick={cerrar} disabled={!otroListo}>
           Listo
-          {!otroListo && <small className={canon.faltaBoton}>{otro.sitioTexto.trim() ? "falta la dirección" : "falta el nombre del sitio"}</small>}
+          {!otroListo && <small className={canon.faltaBoton}>{!otro.sitioTexto.trim() ? "falta el nombre del sitio" : otro.pinPendiente ? "falta confirmar el pin" : "falta la dirección"}</small>}
         </Boton>
       </Hoja>
     );

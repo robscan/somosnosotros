@@ -54,7 +54,7 @@ async function cargarLugar(id: string): Promise<LugarConAutor | null> {
 async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
-  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(30);
+  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(30);
   const filas = (data ?? []) as Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng">[];
   if (filas.length === 0) return [];
   // Solo se cuenta, no se muestra quién; tope de sobra contra el corte silencioso de PostgREST.

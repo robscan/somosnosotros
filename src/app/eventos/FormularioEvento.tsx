@@ -30,7 +30,7 @@ import TarjetaCartel from "./TarjetaCartel";
 import { operacionEvento } from "./operacionEvento";
 import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
 import { crearGestosFlyer, type CampoFlyer } from "./gestosFlyer";
-import { textoDelSitio } from "./direccionEvento";
+import { sitioListo, textoDelSitio } from "./direccionEvento";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./FormularioEvento.module.css";
@@ -123,7 +123,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [otro, setOtro] = useState<OtroSitio>(() => ({
     reservado: modoInicial === "reservado",
     sitioTexto: evento?.sitio_texto ?? "",
-    direccion: "",
+    direccion: evento?.sitio_direccion ?? "",
+    nombreLegacy: !!evento?.sitio_texto && !evento.sitio_direccion && !evento.sitio_reservado,
     sitioPunto: evento?.sitio_lat != null && evento?.sitio_lng != null ? { lat: evento.sitio_lat, lng: evento.sitio_lng } : null,
     direccionPrivada: privado?.direccion ?? "",
     privadoPunto: privado?.lat != null && privado?.lng != null ? { lat: privado.lat, lng: privado.lng } : null,
@@ -304,7 +305,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         ponerImagen(b.imagen);
         setModoSitio(lugarInicial ? "lugar" : b.modoSitio);
         setLugarId(lugarInicial ?? b.lugarId);
-        if (b.otro) setOtro(b.otro);
+        if (b.otro) setOtro({ ...b.otro, nombreLegacy: b.otro.nombreLegacy ?? (!b.otro.reservado && !!b.otro.sitioTexto && !b.otro.direccion) });
         if (!quienInicial?.length) setQuien(b.quien);
         if (b.descripcion || b.enlace || b.imagen) setMasAbierto(true);
       }
@@ -335,8 +336,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
 
   const lugar = lugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && esAlta;
-  const dondeResuelto = modoSitio === "lugar" ? !!lugar : !!textoDelSitio(otro) && (modoSitio !== "reservado" || !!otro.direccionPrivada.trim());
-  const errorDonde = errores.lugar_id ?? errores.sitio_texto ?? errores.direccion_privada;
+  const dondeResuelto = modoSitio === "lugar" ? !!lugar : sitioListo(otro);
+  const errorDonde = errores.lugar_id ?? errores.sitio_texto ?? errores.sitio_direccion ?? errores.direccion_privada;
   const faltaNombre = titulo.trim().length === 0;
   const listo = !faltaNombre && dondeResuelto;
 
@@ -478,7 +479,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         setLugarId(r.lugarId);
       } else if (gestos.current.puedeCompletar("donde") && (v.lugar || v.direccion)) {
         setModoSitio("otro");
-        setOtro((o) => ({ ...o, sitioTexto: v.lugar.slice(0, LIMITES_EVENTO.sitio), direccion: v.direccion.slice(0, LIMITES_EVENTO.direccion), sitioPunto: null, ciudad: null }));
+        setOtro((o) => ({ ...o, sitioTexto: v.lugar.slice(0, LIMITES_EVENTO.sitio), direccion: v.direccion.slice(0, LIMITES_EVENTO.direccion), sitioPunto: null, ciudad: null, pinPendiente: !!v.direccion }));
       }
       const faltan = [!v.titulo && "el nombre", !v.inicio && "la fecha", !r.lugarId && !v.lugar && "dónde"].filter(Boolean) as string[];
       setCartel({ ...leido(url, faltan), foto });
@@ -497,6 +498,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       <form
         ref={formRef}
         action={(fd) => {
+          if (!dondeResuelto) { setHoja(true); return; }
           operacion.current = operacionEvento(fd, operacion.current);
           fd.set("operacion", operacion.current.id);
           // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
@@ -667,7 +669,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         {/* Todo viaja escondido: la hoja vive fuera del formulario y los renglones cerrados no tienen campos. */}
         <input type="hidden" name="modo_sitio" value={modoSitio} />
         <input type="hidden" name="lugar_id" value={modoSitio === "lugar" ? lugarId : ""} />
-        <input type="hidden" name="sitio_texto" value={modoSitio === "lugar" ? "" : textoDelSitio(otro)} />
+        <input type="hidden" name="sitio_texto" value={modoSitio === "lugar" ? "" : otro.sitioTexto} />
+        <input type="hidden" name="sitio_direccion" value={modoSitio === "otro" ? otro.direccion ?? "" : ""} />
+        <input type="hidden" name="sitio_pin_pendiente" value={modoSitio !== "lugar" && otro.pinPendiente ? "si" : "no"} />
         <input type="hidden" name="sitio_lat" value={modoSitio === "otro" && otro.sitioPunto ? otro.sitioPunto.lat : ""} />
         <input type="hidden" name="sitio_lng" value={modoSitio === "otro" && otro.sitioPunto ? otro.sitioPunto.lng : ""} />
         <input type="hidden" name="direccion_privada" value={modoSitio === "reservado" ? otro.direccionPrivada : ""} />

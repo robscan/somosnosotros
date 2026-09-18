@@ -37,8 +37,20 @@ before(async () => {
     stdin: { loader: "tsx", resolveDir: root, contents: `
       import React from 'react';import {createRoot} from 'react-dom/client';
       import Form from './src/app/eventos/FormularioEvento';import './src/app/globals.css';
+      import {validarEvento} from './src/lib/eventos';
       window.qa={ocr:{titulo:'Titulo OCR',inicio:'2026-11-01T20:00',fin:'2026-11-01T22:00',gratis:false,precio:'200',descripcion:'Descripcion OCR',enlace:'https://ocr.invalid',lugar:'Foro ficticio',direccion:'Calle Prueba 123, Ciudad de prueba'},...window.qaInicial};
-      createRoot(document.getElementById('root')).render(<Form accion={async()=>{throw Error('No guardar')}} lugares={window.qa.lugares??[]} modo="alta" usuarioId="test" cartelActivo esAdmin cupo={{usadas:0,tope:20,sinTope:false,pedida:false}} evento={window.qa.evento} privado={window.qa.privado}/>);
+      const root=createRoot(document.getElementById('root'));let montaje=0;
+      async function guardar(_,fd){
+        window.qa.intentos=(window.qa.intentos??0)+1;
+        const entrada=Object.fromEntries(fd);
+        // La imagen local del harness no es una URL Storage: no se prueba ese transporte aqui.
+        const {datos,errores}=validarEvento({...entrada,imagen:''});
+        if(Object.keys(errores).length)return {ok:false,errores};
+        const {privado,...evento}=datos;window.qa.guardado={evento,privado};
+        return {ok:true,id:'fixture',volver:'/fixture'};
+      }
+      function montar(){const q=window.qa;document.querySelector('h1').textContent=q.modo==='editar'?'Editar evento':'Nuevo evento';root.render(<Form key={montaje} accion={guardar} lugares={q.lugares??[]} modo={q.modo??'alta'} revision={q.revision} usuarioId="test" cartelActivo esAdmin cupo={{usadas:0,tope:20,sinTope:false,pedida:false}} evento={q.evento} privado={q.privado}/>)}
+      window.qa.editar=()=>{Object.assign(window.qa,window.qa.guardado,{modo:'editar',revision:'2026-09-18T12:00:00Z'});montaje++;montar()};montar();
     ` },
     plugins: [{ name: "dobles", setup(b) {
       b.onResolve({ filter: /.*/ }, a => a.path in mocks ? { path: a.path, namespace: "mock" } : undefined);
@@ -90,8 +102,8 @@ async function pantalla(t, width = 390, inicial = {}) {
     }
     return r.abort();
   });
-  await p.goto(origin); await p.getByLabel("Sube el cartel").waitFor();
-  await p.waitForFunction(() => !document.querySelector('input[aria-label="Sube el cartel"]').disabled);
+  await p.goto(origin); await p.getByLabel("Nombre del evento").waitFor();
+  if(inicial.modo!=='editar') await p.waitForFunction(() => !document.querySelector('input[aria-label="Sube el cartel"]').disabled);
   return { p, red };
 }
 async function subir(p) {
@@ -101,7 +113,7 @@ async function subir(p) {
 async function terminar(p) { await p.evaluate(() => window.qa.terminarLectura()); await p.waitForFunction(() => !document.querySelector('[role="status"]')?.textContent.includes("Leyendo el cartel")); }
 async function donde(p) { await p.locator("form > ul > li").filter({ has: p.locator("span",{hasText:/^Dónde$/}) }).getByRole("button").click(); }
 async function foto(p, nombre) {
-  if(captures) await p.screenshot({path:join(captures,nombre+".png"),fullPage:true});
+  if(captures) await p.screenshot({path:join(captures,nombre+".png"),fullPage:false});
   assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
 }
 
@@ -132,9 +144,10 @@ for (const width of [390,1280]) test(`OCR y direccion, ${width}`, async t => {
     assert.equal(await p.locator('input[name="sitio_lat"]').inputValue(),"22.15");
     assert.equal(await p.locator('input[name="sitio_lng"]').inputValue(),"-100.98");
     await foto(p,`despues-pin-${width}`);
-    await p.getByRole('button',{name:'Listo',exact:true}).click();
+    await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();
     const datos=await valores(p);
-    assert.equal(datos.sitio_texto,'Foro ficticio · Calle Prueba 123, Ciudad de prueba');
+    assert.equal(datos.sitio_texto,'Foro ficticio');
+    assert.equal(datos.sitio_direccion,'Calle Prueba 123, Ciudad de prueba');
     assert.equal(datos.ciudad,'Ciudad de prueba');
   }
 });
@@ -277,4 +290,86 @@ test('empezar una URL manual incompleta ya impide reemplazar la imagen',actual,a
   const {p}=await pantalla(t,390,{evento:{imagen:'/anterior.png'}}); await subir(p); await abrir(p,'Más');
   await p.getByLabel('O pega la dirección de una imagen').fill('https:'); await terminar(p);
   assert.equal((await valores(p)).imagen,'/anterior.png');
+});
+
+async function guardarYEditar(p) {
+  await p.locator('form button[type="submit"]').click();
+  await p.waitForFunction(()=>!!window.qa.guardado);
+  await p.evaluate(()=>{window.qa.editar();window.qa.guardado=null;});
+  await p.locator('input[name="revision"]').waitFor({state:'attached'});
+  await p.waitForFunction(()=>document.querySelector('form button[type="submit"]').textContent.includes('Guardar cambios'));
+}
+
+test('alta, guardar y remontar edicion conserva nombre y reemplaza solo direccion',actual,async t=>{
+  const {p,red}=await pantalla(t); await subir(p); await terminar(p); await donde(p);
+  await p.getByRole('option',{name:/Calle Prueba 123/}).click(); await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();
+  await guardarYEditar(p); await donde(p);
+  assert.equal(await p.getByLabel('Nombre del sitio',{exact:true}).inputValue(),'Foro ficticio');
+  assert.equal(await p.getByLabel('Buscar la dirección').inputValue(),'Calle Prueba 123, Ciudad de prueba');
+  red.features=[direccion('Nueva calle 456',22.4,-100.4)];
+  await p.getByLabel('Buscar la dirección').fill('Nueva calle'); await p.getByRole('option',{name:/Nueva calle/}).click();
+  await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click(); await guardarYEditar(p);
+  const v=await valores(p); assert.equal(v.sitio_texto,'Foro ficticio'); assert.equal(v.sitio_direccion,'Nueva calle 456, Ciudad de prueba');
+  assert.equal(v.sitio_lat,'22.4'); assert.equal(v.sitio_direccion.includes('Prueba 123'),false);
+  await donde(p); await foto(p,'roundtrip-edicion-390');
+});
+
+test('publico guardado se reserva tras remontar sin filtrar direccion en alias',actual,async t=>{
+  const {p}=await pantalla(t,1280); await subir(p); await terminar(p); await donde(p);
+  await p.getByRole('option',{name:/Calle Prueba 123/}).click(); await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();
+  await guardarYEditar(p); await donde(p); await p.getByRole('switch',{name:'Sitio reservado'}).click();
+  await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click(); await guardarYEditar(p);
+  const v=await valores(p); assert.equal(v.sitio_texto,'Foro ficticio'); assert.equal(v.sitio_direccion,''); assert.equal(v.sitio_lat,''); assert.equal(v.sitio_lng,'');
+  assert.equal(v.direccion_privada,'Calle Prueba 123, Ciudad de prueba'); assert.equal(v.privado_lat,'22.15');
+  await donde(p); await foto(p,'roundtrip-reservado-1280');
+});
+
+const legacy={titulo:'Evento anterior',sitio_texto:'Foro · Patio · Calle vieja 8',sitio_direccion:null,inicio:'2026-12-12T18:00:00Z'};
+for(const estado of ['HTTP','vacio']) test(`legacy con direccion editada y ${estado} no conserva pin ni confirma al cerrar`,actual,async t=>{
+  const {p,red}=await pantalla(t,390,{modo:'editar',evento:{...legacy,sitio_lat:22,sitio_lng:-100},revision:'2026-09-18T12:00:00Z'});
+  await donde(p); if(estado==='HTTP')red.status=503;else red.features=[];
+  await p.getByLabel('Buscar la dirección').fill('Calle nueva desconocida'); await p.getByRole('alert').waitFor();
+  assert.equal(await p.getByLabel('Nombre del sitio',{exact:true}).inputValue(),'');
+  assert.equal((await valores(p)).sitio_lat,''); assert.equal((await valores(p)).sitio_direccion,'Calle nueva desconocida');
+  if(estado==='HTTP') await foto(p,'legacy-error-390');
+  await p.getByLabel('Nombre del sitio',{exact:true}).fill('Foro · Patio');
+  assert.equal(await p.getByRole('dialog').getByRole('button',{name:/^Listo/}).isDisabled(),true);
+  await p.getByRole('button',{name:'Cerrar',exact:true}).click();
+  assert.equal(await p.locator('form button[type="submit"]').isDisabled(),true);
+  await p.locator('form').evaluate(f=>f.requestSubmit()); await p.getByRole('dialog').waitFor();
+  assert.equal(await p.evaluate(()=>window.qa.intentos??0),0);
+  red.status=200;red.features=[direccion('Calle resuelta')]; await p.getByLabel('Buscar la dirección').fill('Calle resuelta');
+  await p.getByRole('option',{name:/Calle resuelta/}).click(); await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();
+  assert.equal(await p.locator('form button[type="submit"]').isDisabled(),false);
+  assert.equal((await valores(p)).sitio_texto,'Foro · Patio');
+});
+
+test('legacy intacto sin pin se edita; reservar exige alias nuevo sin parsear',actual,async t=>{
+  const {p}=await pantalla(t,390,{modo:'editar',evento:legacy,revision:'2026-09-18T12:00:00Z'});
+  assert.equal(await p.locator('form button[type="submit"]').isDisabled(),false);
+  await donde(p); assert.equal(await p.getByLabel('Nombre del sitio',{exact:true}).inputValue(),legacy.sitio_texto);
+  await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();
+  assert.equal((await valores(p)).sitio_texto,legacy.sitio_texto);
+  await donde(p); await p.getByRole('switch',{name:'Sitio reservado'}).click();
+  assert.equal(await p.getByLabel('Cómo se anuncia').inputValue(),''); assert.equal((await valores(p)).sitio_texto,'');
+  await p.getByLabel('Cómo se anuncia').fill('Casa amiga'); await p.getByLabel('Dirección exacta').fill('Secreta 42');
+  await p.getByRole('listbox',{name:'Direcciones encontradas'}).getByRole('option').first().click(); await p.getByRole('dialog').getByRole('button',{name:'Listo',exact:true}).click();
+  assert.equal((await valores(p)).sitio_texto,'Casa amiga'); assert.equal((await valores(p)).sitio_direccion,'');
+});
+
+for(const cerrar of ['Escape','fondo']) test(`cerrar por ${cerrar} no confirma direccion pendiente`,actual,async t=>{
+  const {p,red}=await pantalla(t,1280,{modo:'editar',evento:{...legacy,sitio_texto:'Foro',sitio_direccion:'Calle anterior',sitio_lat:22,sitio_lng:-100}});
+  red.features=[]; await donde(p); await p.getByText('Arrastra el pin o toca el mapa para ajustar.',{exact:true}).waitFor(); await p.getByLabel('Buscar la dirección').fill('Otra');
+  if(cerrar==='Escape')await p.keyboard.press('Escape');else await p.getByRole('dialog').locator('..').click({position:{x:5,y:5}});
+  assert.equal(await p.locator('form button[type="submit"]').isDisabled(),true);
+  await donde(p); assert.equal(await p.getByRole('dialog').getByRole('button',{name:/^Listo/}).isDisabled(),true);
+});
+
+test('reservado legacy sin pin sigue editable pero cambiar direccion queda pendiente',actual,async t=>{
+  const {p,red}=await pantalla(t,390,{modo:'editar',evento:{...legacy,sitio_texto:'Casa amiga',sitio_reservado:true},privado:{direccion:'Privada anterior',lat:null,lng:null}});
+  assert.equal(await p.locator('form button[type="submit"]').isDisabled(),false);
+  await donde(p); red.features=[]; await p.getByLabel('Dirección exacta').fill('Privada nueva');
+  await p.getByRole('alert').waitFor(); await p.getByRole('button',{name:'Cerrar',exact:true}).click();
+  assert.equal(await p.locator('form button[type="submit"]').isDisabled(),true);
+  const v=await valores(p); assert.equal(v.sitio_texto,'Casa amiga'); assert.equal(v.direccion_privada,'Privada nueva'); assert.equal(v.sitio_direccion,'');
 });

@@ -187,7 +187,7 @@ export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: Context
  * Buscador de la agenda (pedido del founder, 2026-09-15): por título, sitio o artista, escrito a medias,
  * sin importar acentos ni mayúsculas; cada palabra escrita tiene que estar ("jazz museo" halla el jazz del museo).
  */
-export function buscarEventos<T extends Pick<EventoAgenda, "titulo" | "lugar" | "sitio_texto" | "sitio_reservado" | "artistas">>(eventos: T[], busqueda: string): T[] {
+export function buscarEventos<T extends Pick<EventoAgenda, "titulo" | "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado" | "artistas">>(eventos: T[], busqueda: string): T[] {
   const palabras = normalizarNombre(busqueda).split(" ").filter(Boolean);
   if (palabras.length === 0) return eventos;
   return eventos.filter((e) => {

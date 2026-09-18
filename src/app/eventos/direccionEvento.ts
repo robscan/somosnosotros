@@ -1,4 +1,3 @@
-import { LIMITES_EVENTO } from "@/lib/eventos";
 import { normalizarNombre, type LugarResumen } from "@/lib/lugares";
 import type { Punto } from "@/lib/geo";
 import type { OtroSitio } from "./HojaDondeEs";
@@ -6,13 +5,24 @@ import type { OtroSitio } from "./HojaDondeEs";
 export function textoDelSitio(otro: OtroSitio): string {
   const nombre = otro.sitioTexto.trim();
   const direccion = otro.reservado ? "" : (otro.direccion ?? "").trim();
-  return [nombre, direccion === nombre ? "" : direccion].filter(Boolean).join(" · ").slice(0, LIMITES_EVENTO.sitio);
+  return [nombre, direccion === nombre ? "" : direccion].filter(Boolean).join(" · ");
+}
+
+/** No se interpreta texto legacy: al cambiar su direccion se pide un nombre publico nuevo. */
+export function revisarNombreLegacy(otro: OtroSitio): OtroSitio {
+  return otro.nombreLegacy ? { ...otro, nombreLegacy: false, referenciaLegacy: otro.sitioTexto, sitioTexto: "" } : otro;
+}
+
+export function sitioListo(otro: OtroSitio): boolean {
+  const publicoUbicado = !otro.direccion?.trim() || !!otro.sitioPunto && puntoValido(otro.sitioPunto);
+  return !!otro.sitioTexto.trim() && !otro.pinPendiente && (otro.reservado ? !!otro.direccionPrivada.trim() : publicoUbicado);
 }
 
 /** Reservar nunca deja la direccion o el pin exacto en los campos publicos. */
 export function cambiarReserva(otro: OtroSitio): OtroSitio {
-  if (otro.reservado) return { ...otro, reservado: false };
-  return { ...otro, reservado: true, direccionPrivada: otro.direccionPrivada || otro.direccion || "", privadoPunto: otro.privadoPunto ?? otro.sitioPunto, direccion: "", sitioPunto: null };
+  if (otro.reservado) return { ...otro, reservado: false, pinPendiente: false };
+  const privadoPunto = otro.privadoPunto ?? otro.sitioPunto;
+  return { ...revisarNombreLegacy(otro), reservado: true, direccionPrivada: otro.direccionPrivada || otro.direccion || "", privadoPunto, direccion: "", sitioPunto: null, pinPendiente: !privadoPunto };
 }
 
 export function lugaresPorTexto(lugares: LugarResumen[], texto: string): LugarResumen[] {
