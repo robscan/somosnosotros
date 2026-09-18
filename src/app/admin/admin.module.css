@@ -97,6 +97,7 @@ p.hecho {
     "icono que que"
     "icono ficha ficha"
     ". mensaje mensaje"
+    ". numeros numeros"
     ". quien quien"
     ". error error"
     "dejar dejar actuar"
@@ -402,6 +403,19 @@ a.ficha::after,
 .tarjeta > li + li {
   border-top: 1px solid var(--borde);
 }
+/* "Leyó 20 y publicó 18 este mes": con esto se decide una petición de más lecturas (docs/rediseno/23). */
+.numeros {
+  grid-area: numeros;
+  margin: 2px 0;
+  padding: var(--espacio-2) 10px;
+  border-radius: 8px;
+  background: var(--fondo-suave);
+  font-size: var(--letra-sm);
+}
+.numeros b {
+  font-weight: 700;
+}
+
 .fila,
 .dato {
   display: grid;

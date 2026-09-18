@@ -12,10 +12,10 @@ export type LugarSeguido = { id: string; nombre: string; tipo: string; direccion
 export type ArtistaSeguido = { id: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
 export type Persona = { perfil: Perfil; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
-type FilaEvento = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; sitio_lat: number | null; sitio_lng: number | null; creado_en: string; lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
+type FilaEvento = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; sitio_lat: number | null; sitio_lng: number | null; creado_en: string; lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 type FilaFecha = { artista_id: string; evento: FechaEvento | FechaEvento[] | null };
-type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
+type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
 
 const uno = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
 
@@ -31,7 +31,7 @@ async function conProximasFechas(supabase: Cliente, artistas: ArtistaSeguido[]):
   if (artistas.length === 0) return artistas;
   const { data } = await supabase
     .from("eventos_artistas")
-    .select("artista_id, evento:eventos!inner(id, titulo, inicio, zona, sitio_texto, sitio_reservado, lugar:lugares(nombre))")
+    .select("artista_id, evento:eventos!inner(id, titulo, inicio, zona, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre))")
     .in("artista_id", artistas.map((a) => a.id))
     .eq("evento.visible", true)
     .or(filtroSinPasar(), { referencedTable: "evento" })
@@ -42,7 +42,7 @@ async function conProximasFechas(supabase: Cliente, artistas: ArtistaSeguido[]):
     const e = uno(fila.evento);
     if (!e) continue;
     const lugar = uno(e.lugar);
-    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado }) } });
+    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
   }
   return conProximaFecha(artistas, fechas);
 }
@@ -76,7 +76,7 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
     supabase.from("seguimientos").select("lugar:lugares(id, nombre, tipo, direccion, portada), artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
     supabase
       .from("asistencias")
-      .select("estado, evento:eventos!inner(id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, lugar:lugares(nombre, portada, lat, lng))")
+      .select("estado, evento:eventos!inner(id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, sitio_lat, sitio_lng, creado_en, lugar:lugares(nombre, portada, lat, lng))")
       .eq("usuario_id", id)
       .or(filtroSinPasar(), { referencedTable: "evento" })
       .limit(1000),

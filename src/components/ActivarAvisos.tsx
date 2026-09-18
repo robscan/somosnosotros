@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { guardarSuscripcionPush } from "@/app/perfil/acciones";
 import { dondeSeActivan } from "@/lib/plataforma";
-import { estadoPush, suscribirPush } from "@/lib/pushCliente";
+import { observarEstadoPush, suscribirPush } from "@/lib/pushCliente";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
 import { IconoCampana, IconoCerrar, IconoOk, IconoPendiente } from "./ui/Iconos";
 import styles from "./ActivarAvisos.module.css";
@@ -32,13 +32,14 @@ export default function ActivarAvisos({ llavePush }: { llavePush: string }) {
 
   useEffect(() => {
     if (!instalada || cerradaEnEsteTelefono()) return;
-    let vivo = true;
-    estadoPush(llavePush)
-      .then((e) => vivo && e === "apagado" && setEstado("lista"))
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
+    const observador = observarEstadoPush(llavePush, (e) => {
+      setEstado((anterior) => {
+        if (cerradaEnEsteTelefono()) return "oculta";
+        if (anterior === "trabajando" || anterior === "fallo" || anterior === "bloqueado") return anterior;
+        return e === "apagado" ? "lista" : "oculta";
+      });
+    });
+    return () => observador.cerrar();
   }, [instalada, llavePush]);
 
   useEffect(() => {
@@ -49,9 +50,13 @@ export default function ActivarAvisos({ llavePush }: { llavePush: string }) {
 
   async function activar() {
     setEstado("trabajando");
-    const alta = await suscribirPush(llavePush);
-    if (!alta.ok) return setEstado(alta.motivo === "bloqueado" ? "bloqueado" : "fallo");
-    setEstado((await guardarSuscripcionPush(alta.sub)) ? "listo" : "fallo");
+    try {
+      const alta = await suscribirPush(llavePush);
+      if (!alta.ok) return setEstado(alta.motivo === "bloqueado" ? "bloqueado" : "fallo");
+      setEstado((await guardarSuscripcionPush(alta.sub)) ? "listo" : "fallo");
+    } catch {
+      setEstado("fallo");
+    }
   }
   function ahoraNo() {
     try {

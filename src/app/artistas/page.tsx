@@ -45,7 +45,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 }
 
 type FilaFecha = { artista_id: string; evento: Evento | Evento[] | null };
-type Evento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
+type Evento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
 type Opcion = { valor: string; etiqueta: string };
 export type Cargado = {
   artistas: ArtistaLista[];
@@ -75,7 +75,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const [f1, d1, d2, tira, eventosSemana] = await Promise.all([
     // Las filas van por la hora de su evento (`evento(inicio)` ordena las filas; `order` con `referencedTable` solo ordenaba
     // dentro del evento ligado), así el corte de 500 se queda con lo más próximo. Lo que se ordena debe ir en el select.
-    supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, titulo, inicio, zona, sitio_texto, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("evento(inicio)").order("evento(titulo)").order("evento(id)").order("artista_id").limit(500),
+    supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, titulo, inicio, zona, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("evento(inicio)").order("evento(titulo)").order("evento(id)").order("artista_id").limit(500),
     supabase.rpc("disciplinas_con_artistas", { p_ciudad: ciudad }),
     f.hace ? supabase.rpc("detalles_de_disciplina", { p_ciudad: ciudad, p_disciplina: f.hace }) : Promise.resolve({ data: [] as { clave: string; etiqueta: string; n: number }[] }),
     sinFiltro ? leerTira(supabase, "artistas", ciudad) : Promise.resolve([]),
@@ -87,7 +87,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
     const e = Array.isArray(fila.evento) ? fila.evento[0] : fila.evento;
     if (!e) continue;
     const lugar = Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar;
-    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado }) } });
+    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
   }
   const conFecha = [...new Set(fechas.map((x) => x.artista_id))];
   const porDisciplina = ((d1.data ?? []) as { disciplina: string; n: number }[]).filter((x) => x.n > 0);

@@ -103,6 +103,30 @@
   border-color: var(--borde);
   background: var(--fondo);
 }
+/* Sin cupo: baja de tono y deja de ser la cámara; ya pedida, se queda quieta. */
+.cartelSinCupo {
+  border-color: var(--borde);
+  background: var(--fondo);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.cartelSinCupo > .marcoCartel {
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+}
+.cartelPedida {
+  /* No hace nada: ni mano ni recuadro de botón. */
+  cursor: default;
+  border-style: dashed;
+  border-color: var(--borde);
+  background: var(--fondo);
+  text-align: left;
+}
+.cartelPedida > .marcoCartel {
+  background: var(--fondo-miniatura);
+  color: var(--primario);
+}
 .cartelFallo {
   border-color: var(--error);
   /* Rojo muy lavado: no hay token para el fondo de error porque solo se usa aquí. */

@@ -14,7 +14,8 @@ self.addEventListener("push", (e) => {
       // Android pinta el icono chico solo con su silueta: va el SN transparente (docs/diseno/logotipo/insignia.py), no el cuadro.
       badge: "/icono-aviso.png",
       data: { url: datos.url },
-      tag: datos.url,
+      tag: datos.tag || datos.url,
+      renotify: false,
     }),
   );
 });

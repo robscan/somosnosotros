@@ -1,5 +1,7 @@
 /** Avisos push desde el navegador: qué se puede en este teléfono y cómo darlo de alta. Solo en el cliente. */
 import { decidirEstadoPush, leerPlataforma, type EstadoPush, type Plataforma } from "./plataforma";
+import { suscripcionPushActiva } from "@/app/perfil/acciones";
+import { clienteNavegador } from "./supabase/navegador";
 
 export type { EstadoPush } from "./plataforma";
 
@@ -29,17 +31,73 @@ async function registroListo(ms = 4000): Promise<ServiceWorkerRegistration | nul
   return Promise.race([navigator.serviceWorker.ready, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
 }
 
-/** Qué se puede hacer con los avisos en este teléfono (el orden está en decidirEstadoPush). */
-export async function estadoPush(llavePublica: string): Promise<EstadoPush> {
+/** Compatibilidad local: permite pedir el permiso desde el toque, sin esperar una consulta de red. */
+export function disponibilidadPush(llavePublica: string): EstadoPush {
   const p = plataformaActual();
   const soporte = hayAvisosEnElNavegador();
   const permiso = "Notification" in window ? Notification.permission : null;
-  let suscrito = false;
-  if (!p.deOtraApp && !(p.ios && !p.instalada) && soporte && llavePublica && permiso !== "denied") {
+  return decidirEstadoPush(p, { llave: !!llavePublica, soporte, permiso, suscrito: false });
+}
+
+/** El estado encendido requiere registro y consentimiento de la cuenta actual en el servidor. */
+export async function estadoPush(llavePublica: string): Promise<EstadoPush> {
+  const disponible = disponibilidadPush(llavePublica);
+  if (disponible !== "apagado") return disponible;
+  if (Notification.permission !== "granted" || navigator.onLine === false) return "apagado";
+  try {
     const reg = await registroListo();
-    suscrito = !!(reg && (await reg.pushManager.getSubscription()));
+    const sub = reg && (await reg.pushManager.getSubscription());
+    return sub && await suscripcionPushActiva(sub.endpoint) ? "encendido" : "apagado";
+  } catch {
+    // Un fallo de lectura o de red no prueba el alta; queda disponible el reintento.
+    return "apagado";
   }
-  return decidirEstadoPush(p, { llave: !!llavePublica, soporte, permiso, suscrito });
+}
+
+/** Relee al cambiar la sesion o volver a la app; una respuesta vieja no puede restaurar otra cuenta. */
+export function observarEstadoPush(llavePublica: string, recibir: (estado: EstadoPush | null) => void) {
+  let version = 0;
+  let cerrado = false;
+  async function leer() {
+    if (cerrado) return;
+    const actual = ++version;
+    recibir(null);
+    const estado = await estadoPush(llavePublica).catch(() => "apagado" as const);
+    if (!cerrado && actual === version) recibir(estado);
+  }
+  function visible() {
+    if (document.visibilityState === "visible") void leer();
+  }
+  const auth = clienteNavegador()?.auth.onAuthStateChange((evento) => {
+    if (cerrado || evento === "INITIAL_SESSION") return;
+    ++version;
+    recibir(null);
+    // La callback de Auth no debe esperar otra operacion de autenticacion.
+    queueMicrotask(() => void leer());
+  });
+  window.addEventListener("focus", leer);
+  window.addEventListener("online", leer);
+  window.addEventListener("offline", leer);
+  document.addEventListener("visibilitychange", visible);
+  void leer();
+  return {
+    fijar(estado: EstadoPush) {
+      if (cerrado) return;
+      ++version;
+      if (estado === "encendido") void leer();
+      else recibir(estado);
+    },
+    cerrar() {
+      if (cerrado) return;
+      cerrado = true;
+      ++version;
+      auth?.data.subscription.unsubscribe();
+      window.removeEventListener("focus", leer);
+      window.removeEventListener("online", leer);
+      window.removeEventListener("offline", leer);
+      document.removeEventListener("visibilitychange", visible);
+    },
+  };
 }
 
 export type Suscripcion = { endpoint: string; keys: { p256dh: string; auth: string } };

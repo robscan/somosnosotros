@@ -83,6 +83,8 @@ export default function AvisosPerfil({ correo: correoInicial, correoTexto, llave
         setEstado("encendido");
         router.refresh();
       } else setNota("No se pudo guardar. Intenta de nuevo.");
+    } catch {
+      setNota("No se pudo guardar. Intenta de nuevo.");
     } finally {
       setTrabajando(false);
     }

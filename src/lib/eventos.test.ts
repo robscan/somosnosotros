@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, enlaceDesdeCartel, jsonLdEvento, nombreSitio, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, jsonLdEvento, nombreSitio, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -61,10 +61,72 @@ describe("validarEvento", () => {
 });
 
 describe("nombreSitio", () => {
+  it("compone solo al mostrar y nunca muestra direccion estructurada reservada", () => {
+    const e = { lugar: null, sitio_texto: "Foro · Patio", sitio_direccion: "Calle 2", sitio_reservado: false };
+    expect(nombreSitio(e)).toBe("Foro · Patio · Calle 2");
+    expect(nombreSitio({ ...e, sitio_reservado: true })).toBe("Foro · Patio · sitio reservado");
+    expect(nombreSitio({ ...e, sitio_direccion: null })).toBe("Foro · Patio");
+  });
   it("prefiere el lugar; marca el sitio reservado", () => {
     expect(nombreSitio({ lugar: { nombre: "Teatro", portada: null }, sitio_texto: null, sitio_reservado: false })).toBe("Teatro");
     expect(nombreSitio({ lugar: null, sitio_texto: "Casa en Tequis", sitio_reservado: true })).toBe("Casa en Tequis · sitio reservado");
     expect(nombreSitio({ lugar: null, sitio_texto: null, sitio_reservado: false })).toBe("Sitio por confirmar");
+  });
+});
+
+describe("direccion estructurada", () => {
+  it("JSON-LD recibe direccion estructurada publica, nunca alias legacy ni reserva", () => {
+    const e = {sitio_direccion: "Calle nueva", sitio_reservado: false, ciudad: "Ciudad"};
+    expect(direccionPublicaSitio(e)).toEqual({direccion: "Calle nueva", ciudad: "Ciudad"});
+    expect(direccionPublicaSitio({...e,sitio_reservado:true})).toBeNull();
+    expect(direccionPublicaSitio({...e,sitio_direccion:null})).toBeNull();
+  });
+  const publico = { ...base, modo_sitio: "otro", sitio_texto: "Foro · Patio", sitio_direccion: "Calle 1", sitio_lat: "22", sitio_lng: "-100" };
+  it("persiste alias y direccion por separado sin interpretar el texto humano", () => {
+    const {datos, errores} = validarEvento(publico);
+    expect(errores).toEqual({});
+    expect(datos).toMatchObject({sitio_texto: "Foro · Patio", sitio_direccion: "Calle 1"});
+    const cambiado = validarEvento({...publico, sitio_direccion: "Calle 2"}).datos;
+    expect(cambiado.sitio_texto).toBe(datos.sitio_texto);
+    expect(queCambio(datos, cambiado)).toBe("donde");
+  });
+  it("vacio es NULL, legacy intacto no exige pin, pendiente editado si bloquea", () => {
+    expect(validarEvento({...publico, sitio_direccion: "  ", sitio_lat: "", sitio_lng: ""}).datos.sitio_direccion).toBeNull();
+    expect(validarEvento({...publico, sitio_direccion: "", sitio_lat: "", sitio_lng: ""}).errores).toEqual({});
+    expect(validarEvento({...publico, sitio_pin_pendiente: "si"}).errores.sitio_direccion).toBeTruthy();
+    expect(validarEvento({...publico, sitio_direccion: "x".repeat(201)}).errores.sitio_direccion).toBeTruthy();
+  });
+  it.each([
+    {sitio_lat:"",sitio_lng:""}, {sitio_lat:"22",sitio_lng:""},
+    {sitio_lat:"91",sitio_lng:"-100"}, {sitio_lat:"NaN",sitio_lng:"-100"},
+  ])("direccion publica estructurada requiere par valido: %j", punto => {
+    expect(validarEvento({...publico,...punto,sitio_pin_pendiente:"no"}).errores.sitio_direccion).toBeTruthy();
+  });
+  it("DTO rechaza punto privado parcial aun sin flag de pendiente", () => {
+    expect(validarEvento({...publico,modo_sitio:"reservado",direccion_privada:"Calle privada",privado_lat:"22",privado_lng:""}).errores.direccion_privada).toBeTruthy();
+  });
+  it("no entrega direccion/punto publicos al reservar o seleccionar lugar", () => {
+    const {datos,errores} = validarEvento({...publico, modo_sitio: "reservado", direccion_privada: "Secreta 3"});
+    expect(errores).toEqual({});
+    expect(datos).toMatchObject({sitio_direccion: null, sitio_lat: null, sitio_lng: null});
+    expect(datos.privado?.direccion).toBe("Secreta 3");
+    expect(validarEvento({...publico, modo_sitio: "lugar"}).datos.sitio_direccion).toBeNull();
+  });
+});
+
+describe("Cómo llegar", () => {
+  const publico = { lugar: null, sitioReservado: false, sitioLat: 22.16, sitioLng: -100.97, privado: null };
+  it("usa el pin público confirmado, incluido el que se eligió manualmente", () => {
+    expect(enlaceComoLlegar(publico)).toBe("https://www.google.com/maps/dir/?api=1&destination=22.16,-100.97");
+  });
+  it("no expone una ruta reservada hasta que la ficha recibe el punto privado autorizado", () => {
+    expect(enlaceComoLlegar({ ...publico, sitioReservado: true, privado: null })).toBeNull();
+    expect(enlaceComoLlegar({ ...publico, sitioReservado: true, lugar: { lat: 22.18, lng: -100.95 }, privado: null })).toBeNull();
+    expect(enlaceComoLlegar({ ...publico, sitioReservado: true, privado: { lat: 22.17, lng: -100.96 } })).toBe("https://www.google.com/maps/dir/?api=1&destination=22.17,-100.96");
+  });
+  it("prefiere el punto del lugar y no fabrica una ruta sin coordenadas", () => {
+    expect(enlaceComoLlegar({ ...publico, lugar: { lat: 22.18, lng: -100.95 } })).toBe("https://www.google.com/maps/dir/?api=1&destination=22.18,-100.95");
+    expect(enlaceComoLlegar({ ...publico, sitioLat: null, sitioLng: null })).toBeNull();
   });
 });
 
