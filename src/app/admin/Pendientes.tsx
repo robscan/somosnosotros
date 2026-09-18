@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { IconoBandera, IconoOk, IconoPersona } from "@/components/ui/Iconos";
+import { IconoBandera, IconoCamara, IconoOk, IconoPersona } from "@/components/ui/Iconos";
 import { accionDe, esReclamo, etiquetaFicha, quePide, rutaFicha, textoDejar, textoHecho, type Decision, type Pendiente } from "@/lib/panel";
 import { cambiarVisibilidad, decidirPendiente } from "./acciones";
 import Reintentar from "./Reintentar";
@@ -52,6 +52,8 @@ function TarjetaPendiente({ p, alDecidir }: { p: PendienteConCuando; alDecidir: 
   const [enCamino, iniciar] = useTransition();
   const accion = accionDe(p);
   const reclamo = esReclamo(p);
+  // Pedir cupo no es un reporte (bandera) ni un reclamo de ficha (persona): va con el icono de lo que pide.
+  const pideLecturas = p.motivo === "mas_lecturas";
 
   function decidir(decision: Decision) {
     setError(null);
@@ -92,9 +94,9 @@ function TarjetaPendiente({ p, alDecidir }: { p: PendienteConCuando; alDecidir: 
   }
   return (
     <li className={`${styles.pendiente} ${reclamo ? styles.reclamo : ""}`}>
-      {reclamo ? <IconoPersona width={20} height={20} /> : <IconoBandera width={20} height={20} />}
+      {pideLecturas ? <IconoCamara width={20} height={20} /> : reclamo ? <IconoPersona width={20} height={20} /> : <IconoBandera width={20} height={20} />}
       <b>{quePide(p)}</b>
-      {p.objeto ? (
+      {pideLecturas ? null : p.objeto ? (
         <Link href={rutaFicha(p.tipo, p.objeto_id)} className={styles.ficha}>
           {p.objeto} <span>· {etiquetaFicha(p.tipo)}</span>
         </Link>
@@ -104,6 +106,11 @@ function TarjetaPendiente({ p, alDecidir }: { p: PendienteConCuando; alDecidir: 
         </span>
       )}
       {p.detalle && <q>{p.detalle}</q>}
+      {p.lecturas !== null && (
+        <span className={styles.numeros}>
+          Leyó <b>{p.lecturas}</b> y publicó <b>{p.publicados ?? 0}</b> este mes
+        </span>
+      )}
       <small>
         {p.creado_por ? <Link href={`/admin/personas/${p.creado_por}`}>{p.autor || "Sin nombre"}</Link> : "Una cuenta borrada"} · {p.cuando}
       </small>
@@ -112,8 +119,8 @@ function TarjetaPendiente({ p, alDecidir }: { p: PendienteConCuando; alDecidir: 
         {enCamino && camino === "dejar" ? "Cerrando…" : textoDejar(p)}
       </button>
       {accion && (
-        <button type="button" className={`${styles.actuar} ${accion.decision === "pasar" ? styles.principal : styles.peligro}`} disabled={enCamino || !!accion.apagada} onClick={() => decidir(accion.decision)}>
-          {enCamino && camino === accion.decision ? (accion.decision === "pasar" ? "Pasando…" : "Ocultando…") : accion.texto}
+        <button type="button" className={`${styles.actuar} ${accion.decision === "ocultar" ? styles.peligro : styles.principal}`} disabled={enCamino || !!accion.apagada} onClick={() => decidir(accion.decision)}>
+          {enCamino && camino === accion.decision ? (accion.decision === "ocultar" ? "Ocultando…" : accion.decision === "pasar" ? "Pasando…" : "Dando…") : accion.texto}
         </button>
       )}
       {accion?.apagada && <small className={styles.apagada}>{accion.apagada}</small>}

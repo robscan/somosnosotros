@@ -58,6 +58,12 @@ export async function decidirPendiente(reporteId: string, decision: Decision): P
     const { error: e } = await supabase.from(TABLA[r.tipo]).update({ visible: false }).eq("id", r.objeto_id);
     if (e) return { ok: false, error: "No se pudo ocultar. Intenta de nuevo." };
   }
+  if (decision === "dar_mas") {
+    if (r.motivo !== "mas_lecturas") return { ok: false, error: "Esto no pide más lecturas." };
+    if (!r.creado_por) return { ok: false, error: "La cuenta que las pidió ya no existe." };
+    const { error: e } = await supabase.rpc("dar_mas_lecturas", { p_perfil: r.creado_por });
+    if (e) return { ok: false, error: "No se pudo dar más. Intenta de nuevo." };
+  }
   if (decision === "pasar") {
     if (r.tipo !== "artista" && r.tipo !== "lugar") return { ok: false, error: "Esta ficha no se pasa a otra cuenta." };
     if (r.motivo !== "es_mio") return { ok: false, error: "Solo se pasa la ficha a quien pidió llevarla." };

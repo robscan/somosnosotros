@@ -87,6 +87,9 @@ export type Pendiente = {
   /** Nombre de la ficha; null si ya no existe. */
   objeto: string | null;
   objeto_visible: boolean | null;
+  /** Solo en "pide más lecturas": cuántas leyó y cuántas publicó este mes, que es con lo que se decide. */
+  lecturas: number | null;
+  publicados: number | null;
 };
 
 export type PersonaFila = {
@@ -321,6 +324,7 @@ export function esReclamo(p: Pick<Pendiente, "motivo">): boolean {
 export function quePide(p: Pick<Pendiente, "motivo">): string {
   if (p.motivo === "es_mio") return "Pide llevar la ficha";
   if (p.motivo === "retirar") return "Pide que se quite la ficha";
+  if (p.motivo === "mas_lecturas") return "Pide más lecturas de cartel";
   return `Reporte: ${MOTIVO_CORTO[p.motivo] ?? "otra cosa"}`;
 }
 
@@ -332,11 +336,13 @@ export function rutaFicha(tipo: TipoFicha, id: string): string {
   return tipo === "lugar" ? `/lugares/${id}` : tipo === "evento" ? `/eventos/${id}` : tipo === "artista" ? `/artistas/${id}` : `/admin/personas/${id}`;
 }
 
-export type Decision = "dejar" | "ocultar" | "pasar";
-export type AccionPendiente = { decision: "ocultar" | "pasar"; texto: string; apagada: string | null };
+export type Decision = "dejar" | "ocultar" | "pasar" | "dar_mas";
+export type AccionPendiente = { decision: "ocultar" | "pasar" | "dar_mas"; texto: string; apagada: string | null };
 
 /** La acción de la derecha, si la hay. Sin ficha (se borró) o una persona reportada: solo cerrar (A7). */
 export function accionDe(p: Pendiente): AccionPendiente | null {
+  // Antes de la salida por "perfil": una petición de lecturas es de tipo perfil y sí tiene qué hacer.
+  if (p.motivo === "mas_lecturas") return { decision: "dar_mas", texto: "Dar más", apagada: p.creado_por ? null : "La cuenta que las pidió ya no existe" };
   if (p.objeto === null || p.tipo === "perfil") return null;
   if (p.motivo === "es_mio") return p.tipo === "evento" ? null : { decision: "pasar", texto: "Pasarle la ficha", apagada: p.creado_por ? null : "La cuenta que la pidió ya no existe" };
   if (p.objeto_visible === false) return null;
@@ -344,13 +350,16 @@ export function accionDe(p: Pendiente): AccionPendiente | null {
 }
 
 export function textoDejar(p: Pendiente): string {
+  if (p.motivo === "mas_lecturas") return "Dejarlo así";
   return p.objeto === null ? "Cerrar el reporte" : "Dejarla como está";
 }
 
 /** La línea que queda al decidir (decisión 3). Sin género: sirve para cualquier nombre de ficha. */
 export function textoHecho(p: Pendiente, decision: Decision): string {
+  if (decision === "dar_mas") return `${p.autor ?? "La cuenta"} ya tiene 100 lecturas al mes`;
   if (decision === "ocultar") return `${p.objeto} ya no se ve`;
   if (decision === "pasar") return `${p.autor ?? "La cuenta"} ya lleva ${p.objeto}`;
+  if (p.motivo === "mas_lecturas") return "Petición cerrada; su cupo sigue igual";
   if (p.objeto === null) return "Reporte cerrado";
   return esReclamo(p) ? "Reclamo cerrado; la ficha sigue igual" : "Reporte cerrado; la ficha sigue igual";
 }

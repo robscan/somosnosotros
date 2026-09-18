@@ -9,7 +9,7 @@ import type { LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDelSitio } from "@/lib/zona";
 import FormularioEvento from "../FormularioEvento";
-import { crearEvento } from "../acciones";
+import { crearEvento, cupoDeCartel } from "../acciones";
 
 export const metadata = { title: "Publicar un evento · Somos Nosotros" };
 
@@ -35,6 +35,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
     if (data) quien = [{ id: data.id as string, nombre: data.nombre as string }];
   }
   const mios = await cargarMisArtistas(actual.perfil.id);
+  const cupo = lecturaDeCartelActiva() ? await cupoDeCartel() : null;
   const volver = base?.lugar_id ? `/lugares/${base.lugar_id}` : lugar ? `/lugares/${lugar}` : artista ? `/artistas/${artista}` : "/";
   return (
     <main className="pagina">
@@ -43,7 +44,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
       {/* En el alta no hay frase: la tarjeta del cartel hace ese trabajo, y no se invita a publicar con lo mínimo
           (founder, 2026-09-17: «no digas que basta con nombre y lugar… no promovemos la creación de eventos incompletos»). */}
       {base && <p className="subtitulo">Mismo evento, nueva fecha. Cambia lo que haga falta.</p>}
-      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} zonaSitio={zonaDelSitio(base)} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} />
+      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} zonaSitio={zonaDelSitio(base)} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} cupo={cupo} />
     </main>
   );
 }

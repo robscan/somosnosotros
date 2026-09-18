@@ -1,42 +1,31 @@
 import "server-only";
 import webpush from "web-push";
-import { clienteAdmin } from "./supabase/admin";
+import { validarSuscripcionPush } from "./suscripcionPush";
+import type { ResultadoEnvio } from "./correo";
 
-/** Los avisos push se activan con las llaves VAPID en el servidor. */
-export function pushActivo(): boolean {
-  return !!(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
-}
+export function pushActivo(): boolean { return !!(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY); }
+export type AvisoPush = { titulo: string; cuerpo: string; url: string; tag?: string };
 
-let configurado = false;
-function configurar() {
-  if (configurado || !pushActivo()) return;
-  webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:hola@somosnosotros.org", process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
-  configurado = true;
-}
-
-export type AvisoPush = { titulo: string; cuerpo: string; url: string };
-
-/** Manda un aviso a todos los teléfonos de esas personas. Borra las suscripciones muertas. Devuelve cuántos llegaron. */
-export async function enviarPush(usuarios: string[], aviso: AvisoPush): Promise<number> {
-  const admin = clienteAdmin();
-  if (!admin || !pushActivo() || usuarios.length === 0) return 0;
-  configurar();
-  // Necesita venir completa: a quien no se manda aquí no le llega el push. Tope de sobra contra el corte
-  // silencioso de PostgREST (hoy se llama con una persona a la vez).
-  const { data } = await admin.from("suscripciones_push").select("endpoint, p256dh, auth, usuario_id").in("usuario_id", usuarios).limit(5000);
-  // Todos los teléfonos a la vez: cada envío es una petición HTTP independiente.
-  const resultados = await Promise.all(
-    (data ?? []).map(async (s) => {
-      try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(aviso), { TTL: 6 * 3600 });
-        return true;
-      } catch (e) {
-        const status = (e as { statusCode?: number }).statusCode;
-        if (status === 404 || status === 410) await admin.from("suscripciones_push").delete().eq("endpoint", s.endpoint);
-        else console.error("enviarPush:", status, e instanceof Error ? e.message : e);
-        return false;
-      }
-    }),
-  );
-  return resultados.filter(Boolean).length;
+/** Una entrega por endpoint. El worker, no esta funcion, limita la concurrencia global. */
+export async function enviarPushEndpoint(suscripcion: unknown, cuerpo: string, ttl: number, deadline?: AbortSignal): Promise<ResultadoEnvio> {
+  const s = validarSuscripcionPush(suscripcion);
+  if (!s || !Number.isFinite(ttl)) return { estado: "fallida", codigo: "push_invalido" };
+  if (ttl <= 0) return { estado: "descartada", codigo: "push_caducado" };
+  if (!pushActivo()) return { estado: "reintentar", codigo: "push_config" };
+  try {
+    const peticion = webpush.generateRequestDetails(s, cuerpo, {
+      TTL: Math.max(0, Math.min(3600, Math.floor(ttl))),
+      vapidDetails: { subject: process.env.VAPID_SUBJECT || "mailto:hola@somosnosotros.org",
+        publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!, privateKey: process.env.VAPID_PRIVATE_KEY! },
+    });
+    // La libreria cifra/firma; fetch limita todo HTTP, no solo inactividad del socket.
+    const res = await fetch(s.endpoint, { method: "POST", headers: peticion.headers,
+      body: new Uint8Array(peticion.body), redirect: "error",
+      signal: AbortSignal.any([...(deadline ? [deadline] : []), AbortSignal.timeout(Math.max(1, Math.floor(Math.min(8_000, ttl * 1000))))]) });
+    const status = res.status;
+    await res.body?.cancel();
+    if (res.ok) return { estado: "enviada", codigo: "aceptado" };
+    // No se borra una suscripcion que pudo renovarse mientras respondia el proveedor.
+    return { estado: status >= 400 && status < 500 && status !== 429 && status !== 408 ? "fallida" : "reintentar", codigo: `push_${status}` };
+  } catch { return { estado: "reintentar", codigo: "push_red" }; }
 }

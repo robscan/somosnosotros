@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accionDe,
+  textoDejar,
   cuandoPaso,
   datosPersona,
   embudoComunidad,
@@ -57,7 +58,7 @@ const ahora = (cambios: Partial<Ahora> = {}): Ahora => ({
 const gestionar: Gestionar = { personas: 5, personas_nuevas: 4, nunca_entraron: 1, correo_con_problema: 0, lugares: 58, lugares_sin_fecha: 41, lugares_ocultos: 1, lugares_privados: 0, eventos: 85, eventos_sin_imagen: 70, artistas: 522, artistas_ocultos: 0, artistas_llevados: 1, invitaciones: 15 };
 const foto = (dia: string, activas: number): Foto => ({ dia, activas, coincidencias: 0, eventos_semana: 30, comunidad: 0 });
 
-const pendiente = (cambios: Partial<Pendiente> = {}): Pendiente => ({ id: "r", tipo: "lugar", objeto_id: "l", motivo: "no_cultural", detalle: "Es un bar", creado_en: "2026-09-15T22:36:00Z", creado_por: "ana", autor: "Ana Pérez", objeto: "Foro Escénico La Lonja", objeto_visible: true, ...cambios });
+const pendiente = (cambios: Partial<Pendiente> = {}): Pendiente => ({ id: "r", tipo: "lugar", objeto_id: "l", motivo: "no_cultural", detalle: "Es un bar", creado_en: "2026-09-15T22:36:00Z", creado_por: "ana", autor: "Ana Pérez", objeto: "Foro Escénico La Lonja", objeto_visible: true, lecturas: null, publicados: null, ...cambios });
 
 const fila = (cambios: Partial<PersonaFila> = {}): PersonaFila => ({ id: "p", nombre: "Luis Rangel", foto: null, rol: "usuario", reservado: false, creado_en: "2026-09-13T20:00:00Z", confirmado: true, ultima_entrada: "2026-09-14T18:00:00Z", visto: HOY, correo_oculto: "lu…@gmail.com", va_a: 3, sigue: 4, publico: 0, lleva: "Colectivo Barro", lleva_n: 1, total: 1, ...cambios });
 
@@ -167,6 +168,7 @@ describe("pendientes", () => {
     expect(quePide({ motivo: "retirar" })).toBe("Pide que se quite la ficha");
     expect(quePide({ motivo: "no_cultural" })).toBe("Reporte: no es cultural");
     expect(quePide({ motivo: "raro" })).toBe("Reporte: otra cosa");
+    expect(quePide({ motivo: "mas_lecturas" })).toBe("Pide más lecturas de cartel");
   });
   it("cada tarjeta ofrece solo su acción", () => {
     expect(accionDe(pendiente())).toEqual({ decision: "ocultar", texto: "Ocultar la ficha", apagada: null });
@@ -176,10 +178,16 @@ describe("pendientes", () => {
     expect(accionDe(pendiente({ objeto: null }))).toBeNull(); // la ficha ya no existe: solo cerrar
     expect(accionDe(pendiente({ objeto_visible: false }))).toBeNull(); // ya está oculta
     expect(accionDe(pendiente({ tipo: "perfil", objeto: "Ana" }))).toBeNull();
+    // Una petición de lecturas es de tipo perfil y sí tiene qué hacer: su caso va antes de esa salida.
+    const peticion = pendiente({ tipo: "perfil", motivo: "mas_lecturas", objeto: "Ana", lecturas: 20, publicados: 18 });
+    expect(accionDe(peticion)).toEqual({ decision: "dar_mas", texto: "Dar más", apagada: null });
+    expect(accionDe({ ...peticion, creado_por: null })?.apagada).toBe("La cuenta que las pidió ya no existe");
+    expect(textoDejar(peticion)).toBe("Dejarlo así");
   });
   it("lo hecho queda escrito, sin género", () => {
     expect(textoHecho(pendiente(), "ocultar")).toBe("Foro Escénico La Lonja ya no se ve");
     expect(textoHecho(pendiente({ tipo: "artista", motivo: "es_mio", objeto: "Colectivo Barro", autor: "Luis Rangel" }), "pasar")).toBe("Luis Rangel ya lleva Colectivo Barro");
+    expect(textoHecho(pendiente({ tipo: "perfil", motivo: "mas_lecturas", autor: "Casa de la Cultura" }), "dar_mas")).toBe("Casa de la Cultura ya tiene 100 lecturas al mes");
     expect(textoHecho(pendiente(), "dejar")).toBe("Reporte cerrado; la ficha sigue igual");
     expect(textoHecho(pendiente({ motivo: "es_mio" }), "dejar")).toBe("Reclamo cerrado; la ficha sigue igual");
     expect(textoHecho(pendiente({ objeto: null }), "dejar")).toBe("Reporte cerrado");

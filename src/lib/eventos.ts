@@ -28,6 +28,7 @@ export type Evento = {
   creado_por: string | null;
   visible: boolean;
   sitio_texto: string | null;
+  sitio_direccion: string | null;
   sitio_lat: number | null;
   sitio_lng: number | null;
   sitio_reservado: boolean;
@@ -40,6 +41,7 @@ export type Evento = {
 
 /** Lo que la agenda necesita: el evento con el nombre de su lugar o su sitio. */
 export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado" | "zona"> & {
+  sitio_direccion?: string | null;
   lugar: { nombre: string; portada: string | null } | null;
 };
 
@@ -56,6 +58,7 @@ export type DatosEvento = {
   precio: string | null;
   enlace: string | null;
   sitio_texto: string | null;
+  sitio_direccion: string | null;
   sitio_lat: number | null;
   sitio_lng: number | null;
   sitio_reservado: boolean;
@@ -68,7 +71,7 @@ export type DatosEvento = {
   zona: string;
 };
 export type ErroresEvento = Partial<
-  Record<"lugar_id" | "sitio_texto" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
+  Record<"lugar_id" | "sitio_texto" | "sitio_direccion" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
 >;
 
 function numeroONull(v: FormDataEntryValue | null | undefined): number | null {
@@ -80,19 +83,46 @@ function numeroONull(v: FormDataEntryValue | null | undefined): number | null {
 
 /** Lo que importa a quien ya dijo "Voy": cuándo y dónde. Al editar, si cambia alguno se avisa. */
 export type CambioEvento = "cuando" | "donde" | "ambos" | null;
-type Comparable = { inicio: string; fin: string | null; lugar_id: string | null; sitio_texto: string | null };
+type Comparable = { inicio: string; fin: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion?: string | null };
 export function queCambio(antes: Comparable, despues: Comparable): CambioEvento {
   const ms = (v: string | null) => (v ? new Date(v).getTime() : null);
   const cuando = ms(antes.inicio) !== ms(despues.inicio) || ms(antes.fin) !== ms(despues.fin);
-  const donde = (antes.lugar_id ?? null) !== (despues.lugar_id ?? null) || (antes.sitio_texto ?? null) !== (despues.sitio_texto ?? null);
+  const donde = (antes.lugar_id ?? null) !== (despues.lugar_id ?? null) || (antes.sitio_texto ?? null) !== (despues.sitio_texto ?? null) || (antes.sitio_direccion ?? null) !== (despues.sitio_direccion ?? null);
   return cuando && donde ? "ambos" : cuando ? "cuando" : donde ? "donde" : null;
 }
 
 /** Nombre público del sitio para la agenda y la ficha. */
-export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_reservado">): string {
+export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado">): string {
   if (e.lugar?.nombre) return e.lugar.nombre;
-  if (e.sitio_texto) return e.sitio_reservado ? `${e.sitio_texto} · sitio reservado` : e.sitio_texto;
+  if (e.sitio_reservado) return e.sitio_texto ? `${e.sitio_texto} · sitio reservado` : "Sitio reservado";
+  const texto = [e.sitio_texto, e.sitio_direccion].filter(Boolean).join(" · ");
+  if (texto) return texto;
   return "Sitio por confirmar";
+}
+
+/** JSON-LD no convierte un alias legacy en direccion ni publica la direccion reservada. */
+export function direccionPublicaSitio(e: Pick<Evento, "sitio_direccion" | "sitio_reservado" | "ciudad">): { direccion: string; ciudad: string } | null {
+  return !e.sitio_reservado && e.sitio_direccion ? { direccion: e.sitio_direccion, ciudad: e.ciudad } : null;
+}
+
+/** Enlace de ruta solo a un punto público o a uno reservado que la ficha ya autorizó revelar. */
+export function enlaceComoLlegar({
+  lugar,
+  sitioReservado,
+  sitioLat,
+  sitioLng,
+  privado,
+}: {
+  lugar: { lat: number; lng: number } | null;
+  sitioReservado: boolean;
+  sitioLat: number | null;
+  sitioLng: number | null;
+  privado: Pick<SitioPrivado, "lat" | "lng"> | null;
+}): string | null {
+  const punto = sitioReservado
+    ? privado?.lat != null && privado.lng != null ? { lat: privado.lat, lng: privado.lng } : null
+    : lugar ?? (sitioLat != null && sitioLng != null ? { lat: sitioLat, lng: sitioLng } : null);
+  return punto ? `https://www.google.com/maps/dir/?api=1&destination=${punto.lat},${punto.lng}` : null;
 }
 
 export type DatosJsonLdEvento = {
@@ -106,7 +136,7 @@ export type DatosJsonLdEvento = {
   gratis: boolean;
   sitioNombre: string;
   /**
-   * La dirección pública del sitio: la del lugar (visible y no privado) o el texto de "otro sitio" cuando no es
+   * La dirección pública del sitio: la del lugar (visible y no privado) o sitio_direccion de "otro sitio" cuando no es
    * reservado. Sin ella no hay JSON-LD que mandar — Google exige `location.address` para mostrar el evento en el
    * buscador (revisión de gestión de cambios, OL-059), y un sitio reservado o un lugar que un anónimo no ve no
    * tiene ninguna dirección que sea correcto publicar.
@@ -159,6 +189,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
   const revelarDesde = inicio ? new Date(new Date(inicio).getTime() - revelarHoras * 3600000).toISOString() : null;
   const lugarId = limpiar(entrada.lugar_id);
   const sitioTexto = limpiar(entrada.sitio_texto);
+  const sitioDireccion = limpiar(entrada.sitio_direccion);
   const direccionPrivada = limpiar(entrada.direccion_privada);
   const esReservado = modo === "reservado";
 
@@ -172,6 +203,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
     precio: gratis ? null : limpiar(entrada.precio) || null,
     enlace: enlaceTexto ? (/^https?:\/\//i.test(enlaceTexto) ? enlaceTexto : `https://${enlaceTexto}`) : null,
     sitio_texto: modo === "lugar" ? null : sitioTexto || null,
+    sitio_direccion: modo === "otro" ? sitioDireccion || null : null,
     sitio_lat: modo === "otro" ? numeroONull(entrada.sitio_lat) : null,
     sitio_lng: modo === "otro" ? numeroONull(entrada.sitio_lng) : null,
     sitio_reservado: esReservado,
@@ -193,6 +225,18 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
   if (modo === "lugar" && !esUuid(lugarId)) errores.lugar_id = "Elige el lugar donde es.";
   if (modo !== "lugar" && !sitioTexto) errores.sitio_texto = esReservado ? "Di cómo se anuncia el sitio (ej. \"Casa en Tequis\")." : "Di dónde es (ej. \"Plaza de Armas\").";
   if (sitioTexto.length > LIMITES_EVENTO.sitio) errores.sitio_texto = `Máximo ${LIMITES_EVENTO.sitio} caracteres.`;
+  if (modo === "otro" && sitioDireccion.length > LIMITES_EVENTO.direccion) errores.sitio_direccion = `Máximo ${LIMITES_EVENTO.direccion} caracteres.`;
+  const puntoValido = (lat: number | null, lng: number | null) => lat !== null && lng !== null && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  if (modo === "otro" && (sitioDireccion || limpiar(entrada.sitio_lat) || limpiar(entrada.sitio_lng)) && !puntoValido(datos.sitio_lat, datos.sitio_lng)) {
+    errores.sitio_direccion = "Confirma la ubicación eligiendo una dirección o poniendo el pin.";
+  }
+  // Sin punto privado, la RPC compara con lo persistido: solo admite legacy intacto.
+  if (datos.privado && (limpiar(entrada.privado_lat) || limpiar(entrada.privado_lng)) && !puntoValido(datos.privado.lat, datos.privado.lng)) {
+    errores.direccion_privada = "Confirma la ubicación eligiendo una dirección o poniendo el pin.";
+  }
+  if (modo !== "lugar" && limpiar(entrada.sitio_pin_pendiente) === "si") {
+    errores[esReservado ? "direccion_privada" : "sitio_direccion"] = "Confirma la ubicación eligiendo una dirección o poniendo el pin.";
+  }
   if (esReservado && !direccionPrivada) errores.direccion_privada = "Pon la dirección exacta: solo se revela cuando toca.";
   if (direccionPrivada.length > LIMITES_EVENTO.direccion) errores.direccion_privada = `Máximo ${LIMITES_EVENTO.direccion} caracteres.`;
   if (!datos.titulo) errores.titulo = "Ponle título al evento.";

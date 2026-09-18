@@ -5,9 +5,9 @@ import { diaLocal, eventoPaso, formatearCuando, inicioDelDia } from "@/lib/fecha
 import { DIAS_NOVEDADES, esNueva, hayNuevas, queCambio, queJuntos, type Novedad } from "@/lib/novedades";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
-type EventoBase = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; lugar_id: string | null; sitio_texto: string | null; sitio_reservado: boolean; creado_en: string; creado_por: string | null; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
+type EventoBase = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; creado_por: string | null; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
 const uno = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
-const CAMPOS = "id, titulo, inicio, fin, zona, lugar_id, sitio_texto, sitio_reservado, creado_en, creado_por, lugar:lugares(nombre, portada)";
+const CAMPOS = "id, titulo, inicio, fin, zona, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, creado_por, lugar:lugares(nombre, portada)";
 
 /**
  * Las novedades de una persona, calculadas (decisión 1 de docs/rediseno/13): nuevo en lo que sigue, cambios en
@@ -34,7 +34,7 @@ export async function cargarNovedades(usuarioId: string, vistasEn: string | null
   }
   const misEventos = ((van ?? []) as { evento: EventoBase | EventoBase[] }[]).map((v) => uno(v.evento)).filter((e): e is EventoBase => !!e && !eventoPaso(e.inicio, e.fin, ahora, e.zona));
   const lista: Novedad[] = [];
-  const cuandoDe = (e: EventoBase) => `${formatearCuando(e.inicio, e.fin, ahora, e.zona)} · ${nombreSitio({ lugar: uno(e.lugar), sitio_texto: e.sitio_texto, sitio_reservado: e.sitio_reservado })}`;
+  const cuandoDe = (e: EventoBase) => `${formatearCuando(e.inicio, e.fin, ahora, e.zona)} · ${nombreSitio({ lugar: uno(e.lugar), sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado })}`;
 
   // 1. Nuevo en lo que sigo (lugares) y nueva fecha de quien sigo (artistas), últimos 14 días, no publicados por mí.
   // Acotado a los últimos DIAS_NOVEDADES días; el tope es cinturón y tirantes contra el corte silencioso de PostgREST.
