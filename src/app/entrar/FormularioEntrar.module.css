@@ -1,13 +1,31 @@
 /* Entrar (docs/rediseno/11-restantes-flujo-y-estados.md; bitácora 069): 0. Elegir · 1. Correo · 2. Código */
 
+/* Por qué se entra así (OL-061, bitácora 091 y 092): región común (icono arriba, texto debajo, un solo contenedor,
+   sin envoltorios anidados), más cerca de lo que explica (los botones o el campo de correo) que del título — por eso
+   su margen inferior es menor que el superior. Sin sombra ni borde: no debe parecer tocable. Misma composición en los
+   dos casos (con Apple/Google o solo correo), para que la idea no tenga dos estilos. */
+.explicacion {
+  display: grid;
+  justify-items: center;
+  gap: var(--espacio-2);
+  margin: var(--espacio-5) 0 var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  text-align: center;
+}
+.explicacion p {
+  margin: 0;
+}
+
 /* 0. Elegir: Apple y Google primero, el correo detrás de su botón. Los tres del mismo alto, con el logo junto al título.
    Colores fijados por Apple (negro con logo y título blancos) y por Google (blanco, borde #747775, texto #1f1f1f); el
-   título a ~43 % del alto del botón, la proporción que pide Apple. El subtítulo global ("Entras sin contraseña…") va
-   justo encima, con su propio margen (OL-061); aquí el margen es el que separa los botones entre sí de la fila anterior. */
+   título a ~43 % del alto del botón, la proporción que pide Apple. */
 .opciones {
   display: grid;
   gap: var(--espacio-3);
-  margin-top: var(--espacio-4);
+  margin-top: var(--espacio-3);
 }
 .opcion {
   display: flex;

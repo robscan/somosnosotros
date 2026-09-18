@@ -3,10 +3,10 @@ import type { EventoAgenda } from "@/lib/agenda";
 import { textoDistancia } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
 import { nombreSitio } from "@/lib/eventos";
-import { horaCorta } from "@/lib/fechas";
+import { diaCorto, horaCorta } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
 import Deslizable, { type AccionDeslizable } from "./ui/Deslizable";
-import { IconoBoleto, IconoEstrella, IconoOk, IconoPersonas, IconoPin, IconoReloj } from "./ui/Iconos";
+import { IconoBoleto, IconoCalendario, IconoEstrella, IconoOk, IconoPersonas, IconoPin, IconoReloj } from "./ui/Iconos";
 import styles from "./Renglon.module.css";
 
 type Props = {
@@ -18,10 +18,16 @@ type Props = {
   estado?: Asistencia;
   /** Con acciones, el renglón se desliza para mostrarlas (la agenda). */
   acciones?: AccionDeslizable[];
+  /**
+   * Muestra el día además de la hora ("jue 8 de oct · 19:00"). Solo lo pide la pestaña Nuevos, donde el encabezado dice
+   * cuándo se publicó y no cuándo es el evento. En las listas por día (la agenda y las fichas de lugar y de artista) el
+   * día ya lo dice su encabezado, así que ahí se queda como estaba.
+   */
+  conDia?: boolean;
 };
 
 /** Renglón de evento: foto a la izquierda (la del evento o la del lugar), título y datos con icono. */
-export default function RenglonEvento({ evento: e, km, sinSitio = false, estado = null, acciones }: Props) {
+export default function RenglonEvento({ evento: e, km, sinSitio = false, estado = null, acciones, conDia = false }: Props) {
   const foto = e.imagen ?? e.lugar?.portada ?? SIN_FOTO;
   const contenido = (
     <>
@@ -42,8 +48,11 @@ export default function RenglonEvento({ evento: e, km, sinSitio = false, estado 
           </span>
         )}
         <span>
-          <IconoReloj width={15} height={15} />
-          <b>{horaCorta(e.inicio, e.zona)}</b>
+          {conDia ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}
+          <b>
+            {conDia && `${diaCorto(e.inicio, new Date(), e.zona)} · `}
+            {horaCorta(e.inicio, e.zona)}
+          </b>
         </span>
         {!sinSitio && (
           <span className={styles.lugar}>
