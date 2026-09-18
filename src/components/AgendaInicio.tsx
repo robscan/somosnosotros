@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
-import { useState, type ReactNode } from "react";
-import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
+import { useRef, useState, type ReactNode } from "react";
+import { agruparPorDia, agruparPorPublicacion, buscarEventos, FILTROS, filtrarAgenda, zonaDelEntorno, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
+import { huboVisitaANuevos, leerCorteNuevos, marcarNuevosVisto } from "@/lib/nuevosVisto";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { enOrden, tarjetaEvento, type Destacado } from "@/lib/destacados";
 import ChipCiudad from "./Ciudad";
@@ -19,6 +20,8 @@ import type { AvisosLista } from "./useSeguirEnLista";
 import styles from "./AgendaInicio.module.css";
 
 type Props = {
+  /** Instante anterior a la consulta; null si no se pudo cargar la lista. */
+  selloLista: string | null;
   eventos: EventoAgenda[];
   /** Lugares que la persona sigue; null = sin sesión. */
   seguidos: string[] | null;
@@ -40,14 +43,19 @@ type Props = {
   destacados?: Destacado[];
 };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
-/** Lo que la agenda recuerda al salir a una ficha y volver: pestaña, día elegido y búsqueda (decisión 17 de 02). */
-type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: boolean };
+/**
+ * Lo que la agenda recuerda al salir a una ficha y volver: pestaña, día elegido, búsqueda y, en Nuevos, el corte
+ * (decisión 17 de 02). El corte va aquí a propósito: al mirar Nuevos la marca del teléfono avanza, así que releerla al
+ * volver daría una lista vacía. Reponiéndolo se ve otra vez lo mismo que se acababa de ver, y con él va si ya
+ * había visita, porque de eso depende cuál de los dos textos del vacío toca.
+ */
+type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: boolean; corte: number | null; huboVisita: boolean };
 
 /**
  * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
-export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, avisos = null, destacados = [] }: Props) {
+export default function AgendaInicio({ selloLista, eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, avisos = null, destacados = [] }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
   // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
@@ -55,8 +63,38 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const [buscando, setBuscando] = useState(false);
   // El foco (y el teclado) solo cuando la lupa acaba de abrir el campo; al volver de una ficha no se roba el foco.
   const [enfocar, setEnfocar] = useState(false);
-  useMemoriaPantalla<Recordado>("agenda", { filtro, fecha, busqueda, buscando }, (r) => {
-    if (FILTROS.some((f) => f.clave === r.filtro)) setFiltro(r.filtro);
+  // Desde cuándo cuenta como nuevo en este teléfono. El ref lo fija al instante (el estado llega en el render siguiente,
+  // y entre los dos cabría un segundo toque que releería la marca ya avanzada y vaciaría la lista).
+  const corteRef = useRef<number | null>(null);
+  const [corte, setCorte] = useState<number | null>(null);
+  const [huboVisita, setHuboVisita] = useState(false);
+
+  /**
+   * Al mirar Nuevos: primero se lee la marca anterior y se congela como corte, y solo después se guarda la visita.
+   * En ese orden, y una sola vez: al revés, el corte sería "ahora mismo" y la pestaña saldría vacía siempre.
+   *
+   * La visita se guarda con el sello de **la lista que se está enseñando**, anterior a la consulta en el
+   * servidor, no con el del toque ni la hidratación. Si se marcara el toque, lo que
+   * se publicara entre que llegó la lista y el toque quedaría dado por visto sin haberse enseñado nunca, y no saldría
+   * en Nuevos ninguna vez (revisión de gestión de cambios, 2026-09-17).
+   */
+  function verNuevos() {
+    if (corteRef.current !== null) return;
+    corteRef.current = leerCorteNuevos(new Date(), ciudad.slug);
+    setCorte(corteRef.current);
+    setHuboVisita(huboVisitaANuevos(ciudad.slug));
+    if (selloLista) marcarNuevosVisto(new Date(selloLista), ciudad.slug);
+  }
+
+  useMemoriaPantalla<Recordado>("agenda", { filtro, fecha, busqueda, buscando, corte, huboVisita }, (r) => {
+    if (FILTROS.some((f) => f.clave === r.filtro)) {
+      setFiltro(r.filtro);
+      if (typeof r.corte === "number") {
+        corteRef.current = r.corte;
+        setCorte(r.corte);
+        setHuboVisita(!!r.huboVisita);
+      } else if (r.filtro === "nuevos") verNuevos();
+    }
     if (typeof r.fecha === "string") setFecha(r.fecha);
     if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
     setBuscando(!!r.buscando || !!r.busqueda);
@@ -85,7 +123,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     );
   }
 
-  const { lista: filtrada, km } = filtrarAgenda(eventos, { filtro, punto, seguidos, eventosSeguidos, fecha, ahora });
+  const { lista: filtrada, km } = filtrarAgenda(eventos, { filtro, punto, seguidos, eventosSeguidos, fecha, ahora, corte: corte ?? undefined });
   const lista = buscarEventos(filtrada, busqueda);
   const hayBusqueda = busqueda.trim().length > 0;
   const hoyIso = localAIso(`${hoy}T12:00`, zona) ?? new Date().toISOString();
@@ -111,6 +149,17 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     );
   } else if (filtro === "siguiendo" && seguidos !== null && seguidos.length === 0 && eventosSeguidos.length === 0) {
     cuerpo = <VacioConAccion titulo="Siguiendo" texto="Todavía no sigues ningún lugar ni artista. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
+  } else if (filtro === "nuevos" && !hayBusqueda && !fecha && lista.length === 0) {
+    // Con el corte por última visita esto es lo que más se ve, no la excepción: por eso invita a publicar en vez de
+    // dejar a la persona sin nada que hacer (textos elegidos por el founder, 2026-09-17). Sin cuenta, publicar exige
+    // entrar, así que la salida lleva a Entrar y vuelve al alta, como en Lugares.
+    cuerpo = (
+      <VacioConAccion titulo={huboVisita ? "Ya estás al día." : "Nada nuevo esta semana."} texto="¿Sabes de un evento? Publícalo.">
+        <Link href={seguidos !== null ? "/eventos/nuevo" : "/entrar?siguiente=/eventos/nuevo"} className={styles.accion}>
+          Publicar evento
+        </Link>
+      </VacioConAccion>
+    );
   } else {
     let grupos: Grupo<EventoAgenda>[];
     let vacio: string;
@@ -127,7 +176,9 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       grupos = agruparPorDia(lista, ahora, true);
       vacio = "Nada cerca por ahora.";
     } else if (filtro === "nuevos") {
-      grupos = agruparPorDia(lista, ahora);
+      // Por cuándo se publicó, no por cuándo es el evento: `agruparPorDia` reordenaba por la hora del evento y tiraba
+      // el orden que trae `filtrarAgenda` (el defecto que el founder vio el 2026-09-17).
+      grupos = agruparPorPublicacion(lista, ahora, zonaDelEntorno());
       vacio = "Nada nuevo esta semana.";
     } else {
       grupos = agruparPorDia(lista, ahora);
@@ -147,7 +198,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
           </h2>
           <ul className={styles.lista}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} estado={asistencia.estado(e.id)} acciones={asistencia.acciones(e)} />
+              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} estado={asistencia.estado(e.id)} acciones={asistencia.acciones(e)} conDia={filtro === "nuevos" && !fecha && !hayBusqueda} />
             ))}
           </ul>
         </section>
@@ -191,7 +242,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
         </div>
         <Pestanas ariaLabel="Filtrar la agenda" repartidas className={styles.filtros}>
           {FILTROS.map((f) => (
-            <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => setFiltro(f.clave)}>
+            <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => { if (f.clave === "nuevos") verNuevos(); setFiltro(f.clave); }}>
               {f.etiqueta}
             </Pestana>
           ))}

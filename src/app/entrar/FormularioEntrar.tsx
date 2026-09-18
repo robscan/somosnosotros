@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
-import { IconoCorreo } from "@/components/ui/Iconos";
+import { IconoCorreo, IconoEscudo } from "@/components/ui/Iconos";
 import { LogoApple, LogoGoogle } from "@/components/ui/LogosEntrar";
 import { enmascararCorreo, limpiarCodigo } from "@/lib/entrar";
 import { NOMBRE_PROVEEDOR, type Proveedor } from "@/lib/entrarCon";
@@ -162,7 +162,10 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
       <>
         {conProveedores && (
           <>
-            <p className="subtitulo">Entras sin contraseña y sin rastreo ni publicidad — por eso estas opciones.</p>
+            <div className={styles.explicacion}>
+              <IconoEscudo width={28} height={28} />
+              <p>Entras sin contraseña y sin rastreo ni publicidad — por eso estas opciones.</p>
+            </div>
             <div className={styles.opciones}>
               {proveedores.map((p, i) => (
                 // Enlace normal, no <Link>: la ida pasa por el servidor (/auth/apple) y sale del sitio.
@@ -183,7 +186,12 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
         )}
         {fase === "correo" && (
           <form onSubmit={enviarCorreo} noValidate className={conProveedores ? styles.conProveedores : undefined}>
-            {!conProveedores && <p className="subtitulo">Sin contraseña ni rastreo: te mandamos un código a tu correo.</p>}
+            {!conProveedores && (
+              <div className={styles.explicacion}>
+                <IconoEscudo width={28} height={28} />
+                <p>Sin contraseña ni rastreo: te mandamos un código a tu correo.</p>
+              </div>
+            )}
             <Campo etiqueta="Tu correo" name="correo" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" placeholder="nombre@correo.com" value={correo} onChange={(e) => setCorreo(e.target.value)} error={error ?? undefined} autoFocus={!conProveedores} required />
             <Boton type="submit" disabled={ocupado}>
               {ocupado ? "Mandando…" : "Mandarme el código"}

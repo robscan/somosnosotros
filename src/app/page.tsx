@@ -47,8 +47,9 @@ type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & {
 
 /** La agenda de la ciudad: eventos próximos con su lugar, cuántos van, lo que la persona sigue y lo que decidió en cada evento. */
 async function cargar(ciudad: Ciudad, usuarioId: string | null) {
+  const selloLista = new Date().toISOString();
   const supabase = await clienteServidor();
-  if (!supabase) return { eventos: [] as EventoAgenda[], seguidos: usuarioId ? [] : null, eventosSeguidos: [] as string[], hayLugares: false, asistencias: usuarioId ? {} : null, destacados: [] };
+  if (!supabase) return { eventos: [] as EventoAgenda[], seguidos: usuarioId ? [] : null, eventosSeguidos: [] as string[], hayLugares: false, asistencias: usuarioId ? {} : null, destacados: [], selloLista: null };
   // Solo la ciudad (decisión "sin segunda ciudad"); cuántos van se cuenta en la base para los eventos cargados,
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   // Los empates de hora se desempatan también en la base (título, id) para que el corte de 300 no cambie entre cargas.
@@ -85,7 +86,7 @@ async function cargar(ciudad: Ciudad, usuarioId: string | null) {
     eventos.push({ ...fila, lugar, artistas, lat: fila.sitio_lat, lng: fila.sitio_lng, van: van.get(fila.id) ?? 0 });
   }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
-  return { eventos, seguidos, eventosSeguidos, hayLugares: (l.count ?? 0) > 0, asistencias, destacados };
+  return { eventos, seguidos, eventosSeguidos, hayLugares: (l.count ?? 0) > 0, asistencias, destacados, selloLista: e.error ? null : selloLista };
 }
 
 export default async function Inicio({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }) {
@@ -93,7 +94,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
   // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16).
   const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
-  const { eventos, seguidos, eventosSeguidos, hayLugares, asistencias, destacados } = await cargar(ciudad, actual?.perfil.id ?? null);
+  const { eventos, seguidos, eventosSeguidos, hayLugares, asistencias, destacados, selloLista } = await cargar(ciudad, actual?.perfil.id ?? null);
   const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
   // La pregunta de avisos tras el primer Voy al deslizar, como en la ficha.
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
@@ -107,6 +108,8 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
         </p>
       )}
       <AgendaInicio
+        key={ciudad.slug}
+        selloLista={selloLista}
         eventos={eventos}
         seguidos={seguidos}
         eventosSeguidos={eventosSeguidos}
