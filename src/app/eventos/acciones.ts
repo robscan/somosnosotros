@@ -8,7 +8,7 @@ import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
-import { cartelAFormulario, queCambio, validarEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
+import { cartelAFormulario, validarEvento, type CambioEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import { zonaSegura } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
@@ -74,54 +74,18 @@ function revalidar(id: string, lugarId: string | null, artistas: string[] = []) 
 
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 
-type ConCiudad = ArtistaResumen & { ciudad: string };
+type GuardadoCompleto = { id: string; artistas: string[]; artistas_anteriores: string[]; lugar_anterior: string | null; cambio: CambioEvento };
 
-/**
- * Un nombre escrito en Quién: el artista registrado que se llama igual, o uno nuevo con solo el nombre (decisión 12).
- * Con dos del mismo nombre, el de la ciudad del evento; el nuevo se registra en la ciudad del evento (antes caía
- * siempre en la inicial).
- */
-async function resolverArtista(supabase: Cliente, usuarioId: string, item: QuienItem, ciudad: string): Promise<string | null> {
-  if (item.id) return item.id;
-  const { data } = await supabase.rpc("artistas_con_nombre", { p_nombre: item.nombre });
-  const encontrados = (data ?? []) as ConCiudad[];
-  const igual = artistaIgual(encontrados.filter((a) => a.ciudad === ciudad), item.nombre) ?? artistaIgual(encontrados, item.nombre);
-  if (igual) return igual.id;
-  const { data: nuevo, error } = await supabase
-    .from("artistas")
-    .insert({ nombre: item.nombre, disciplina: "por_completar", tipo: deducirTipoArtista(item.nombre) ?? "solista", ciudad, creado_por: usuarioId })
-    .select("id")
-    .single();
-  if (error?.code === "23505") {
-    // Alguien lo registró mientras tanto en esa ciudad: se liga al que ya está.
-    const { data: otra } = await supabase.rpc("artistas_con_nombre", { p_nombre: item.nombre });
-    return artistaIgual(((otra ?? []) as ConCiudad[]).filter((a) => a.ciudad === ciudad), item.nombre)?.id ?? null;
-  }
-  return nuevo?.id ?? null;
+async function guardarCompleto(supabase: Cliente, id: string | null, datos: DatosEvento, ciudad: string, quien: QuienItem[]): Promise<GuardadoCompleto | null> {
+  const { data, error } = await supabase.rpc("guardar_evento_completo", {
+    p_evento: id,
+    p_datos: filaEvento(datos, ciudad),
+    p_privado: datos.privado,
+    p_quien: quien.map((item) => ({ ...item, tipo: deducirTipoArtista(item.nombre) ?? "solista" })),
+  });
+  return error || !data ? null : data as GuardadoCompleto;
 }
 
-/** Guarda quién se presenta: crea los artistas que falten y reescribe la liga del evento. Devuelve los ids. */
-async function guardarQuien(supabase: Cliente, usuarioId: string, eventoId: string, quien: QuienItem[], ciudad: string): Promise<string[]> {
-  const ids: string[] = [];
-  for (const item of quien) {
-    const id = await resolverArtista(supabase, usuarioId, item, ciudad);
-    if (id && !ids.includes(id)) ids.push(id);
-  }
-  await supabase.from("eventos_artistas").delete().eq("evento_id", eventoId);
-  if (ids.length) await supabase.from("eventos_artistas").insert(ids.map((artista_id, orden) => ({ evento_id: eventoId, artista_id, orden })));
-  return ids;
-}
-
-/** Guarda (o quita) la dirección exacta de un sitio reservado. La política de la base decide quién puede. */
-async function guardarPrivado(supabase: Awaited<ReturnType<typeof clienteServidor>>, id: string, datos: DatosEvento) {
-  if (!supabase) return false;
-  if (datos.privado) {
-    const { error } = await supabase.from("eventos_sitio_privado").upsert({ evento_id: id, ...datos.privado });
-    return !error;
-  }
-  await supabase.from("eventos_sitio_privado").delete().eq("evento_id", id);
-  return true;
-}
 
 export async function crearEvento(_previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
   const { supabase, user } = await sesionOEntrar("/eventos/nuevo");
@@ -130,18 +94,9 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
-  const { data, error } = await supabase
-    .from("eventos")
-    .insert({ ...filaEvento(datos, ciudad), creado_por: user.id })
-    .select("id")
-    .single();
-  if (error || !data) return { ok: false, errores: {}, general: "No se pudo publicar el evento. Intenta de nuevo." };
-  if (!(await guardarPrivado(supabase, data.id, datos))) {
-    await supabase.from("eventos").delete().eq("id", data.id);
-    return { ok: false, errores: {}, general: "No se pudo guardar la dirección reservada. Intenta de nuevo." };
-  }
-  const artistas = await guardarQuien(supabase, user.id, data.id, quienDesdeJson(formData.get("quien")), ciudad);
-  revalidar(data.id, datos.lugar_id, artistas);
+  const data = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")));
+  if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
+  revalidar(data.id, datos.lugar_id, data.artistas);
   // Avisar a quienes siguen el lugar, después de responder (no retrasa la publicación).
   after(() => avisarNuevoEvento(data.id, user.id));
   redirect(`/eventos/${data.id}?nuevo=1`, RedirectType.replace);
@@ -153,15 +108,12 @@ export async function actualizarEvento(id: string, _previo: ResultadoEvento | nu
   const lugar = await lugarDelEvento(supabase, entrada);
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
   if (Object.keys(errores).length) return { ok: false, errores };
-  // Cómo estaba antes, para avisar a quienes van si cambia cuándo o dónde.
-  const { data: antes } = await supabase.from("eventos").select("inicio, fin, lugar_id, sitio_texto").eq("id", id).maybeSingle();
   const ciudad = ciudadDe(datos, lugar);
-  const { data, error } = await supabase.from("eventos").update(filaEvento(datos, ciudad)).eq("id", id).select("id").maybeSingle();
-  if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu evento?" };
-  await guardarPrivado(supabase, id, datos);
-  const artistas = await guardarQuien(supabase, user.id, id, quienDesdeJson(formData.get("quien")), ciudad);
-  revalidar(id, datos.lugar_id, artistas);
-  const cambio = antes ? queCambio(antes, datos) : null;
+  const data = await guardarCompleto(supabase, id, datos, ciudad, quienDesdeJson(formData.get("quien")));
+  if (!data) return { ok: false, errores: {}, general: "No se pudo guardar el evento completo. ¿Sigues con sesión y es tu evento?" };
+  revalidar(id, datos.lugar_id, [...data.artistas, ...data.artistas_anteriores]);
+  if (data.lugar_anterior && data.lugar_anterior !== datos.lugar_id) revalidatePath(`/lugares/${data.lugar_anterior}`);
+  const cambio = data.cambio;
   if (cambio) after(() => avisarCambioEvento(id, user.id, cambio));
   return { ok: true, id, volver: `/eventos/${id}` };
 }
