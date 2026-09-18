@@ -73,9 +73,9 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       )}
       {chips && <Chips ariaLabel="Cerca de mí y tipo de lugar">{chips}</Chips>}
       {aviso}
+      {!busqueda.trim() && !punto && <IndiceAlfabetico letra={letra} onSeleccionar={setLetra} onQuitar={() => setLetra(null)} />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
-      {!busqueda.trim() && !punto && <IndiceAlfabetico letra={letra} onSeleccionar={setLetra} onQuitar={() => setLetra(null)} />}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()

@@ -110,6 +110,7 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
           )}
         </div>
       )}
+      {indice}
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
           <p>{filtro.letra ? `No hay artistas con ${filtro.letra}.` : queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>
@@ -141,7 +142,6 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
           )}
         </>
       )}
-      {indice}
     </section>
   );
 }
