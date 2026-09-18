@@ -12,7 +12,7 @@ import styles from "./Destacados.module.css";
  * siguiente tarjeta asoma (decisiones 1 y 2). Sin tarjetas no existe (decisión 4); con una sola, ocupa el ancho.
  * Lo de artistas va en redondo, como su avatar. Al volver de una ficha queda donde estaba (decisión 12).
  */
-export default function Destacados({ tarjetas, redondas = false }: { tarjetas: Tarjeta[]; redondas?: boolean }) {
+export default function Destacados({ tarjetas, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false }: { tarjetas: Tarjeta[]; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -20,7 +20,7 @@ export default function Destacados({ tarjetas, redondas = false }: { tarjetas: T
   // de 100 ms no pierde la posición. Al irse el carril sigue en la página, pero la URL ya puede ser la de la ficha: por eso
   // se guarda con la URL del desplazamiento.
   const recordar = useCallback((carril: HTMLUListElement) => {
-    const x = leerScroll(claveTira());
+    const x = leerScroll(claveTira(memoria));
     if (x) carril.scrollLeft = x;
     return () => {
       const espera = pendiente.current;
@@ -29,12 +29,12 @@ export default function Destacados({ tarjetas, redondas = false }: { tarjetas: T
       pendiente.current = null;
       guardarScroll(espera.clave, carril.scrollLeft);
     };
-  }, []);
+  }, [memoria]);
   // Como MemoriaScroll: se guarda al vuelo, como mucho cada 100 ms.
   function alDesplazar(e: UIEvent<HTMLUListElement>) {
     if (pendiente.current) return;
     const carril = e.currentTarget;
-    const clave = claveTira();
+    const clave = claveTira(memoria);
     const temporizador = window.setTimeout(() => {
       pendiente.current = null;
       guardarScroll(clave, carril.scrollLeft);
@@ -44,8 +44,8 @@ export default function Destacados({ tarjetas, redondas = false }: { tarjetas: T
   if (tarjetas.length === 0) return null;
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
-      <h2 id={titulo}>Destacados</h2>
-      <ul ref={recordar} className={`${styles.carril} ${tarjetas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""}`} onScroll={alDesplazar}>
+      <h2 id={titulo}>{encabezado}</h2>
+      <ul ref={recordar} className={`${styles.carril} ${tarjetas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar}>
         {tarjetas.map((t) => (
           <li key={t.id}>
             <Link href={t.href} className={styles.tarjeta}>
@@ -69,6 +69,6 @@ export default function Destacados({ tarjetas, redondas = false }: { tarjetas: T
 }
 
 /** El desplazamiento de la tira se guarda por URL, aparte del de la página. */
-function claveTira() {
-  return `${claveDeUrl(window.location)}#destacados`;
+function claveTira(memoria: string) {
+  return `${claveDeUrl(window.location)}#${memoria}`;
 }

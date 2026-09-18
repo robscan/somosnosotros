@@ -9,7 +9,8 @@ import type { Metadata } from "next";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
-import { enOrden, leerTira } from "@/lib/destacados";
+import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
+import { enOrden, leerTira, type Tarjeta } from "@/lib/destacados";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { normalizarNombre } from "@/lib/lugares";
@@ -56,6 +57,7 @@ export type Cargado = {
   detalles: Opcion[];
   /** La tira de destacados (docs/rediseno/20): solo sin filtro ni búsqueda. */
   destacados: ArtistaLista[];
+  eventosSemana: Tarjeta[];
 };
 
 /**
@@ -64,19 +66,20 @@ export type Cargado = {
  * primero (todos los que cumplen el filtro); el resto, en orden alfabético real (`nombre_orden`), de `n` en `n`.
  */
 async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
-  const vacio: Cargado = { artistas: [], total: 0, totalCiudad: 0, disciplinas: [], detalles: [], destacados: [] };
+  const vacio: Cargado = { artistas: [], total: 0, totalCiudad: 0, disciplinas: [], detalles: [], destacados: [], eventosSemana: [] };
   const supabase = await clienteServidor();
   if (!supabase) return vacio;
   const ciudad = ciudadNombre;
 
   const sinFiltro = !f.hace && !f.que && !f.q;
-  const [f1, d1, d2, tira] = await Promise.all([
+  const [f1, d1, d2, tira, eventosSemana] = await Promise.all([
     // Las filas van por la hora de su evento (`evento(inicio)` ordena las filas; `order` con `referencedTable` solo ordenaba
     // dentro del evento ligado), así el corte de 500 se queda con lo más próximo. Lo que se ordena debe ir en el select.
     supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, titulo, inicio, zona, sitio_texto, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("evento(inicio)").order("evento(titulo)").order("evento(id)").order("artista_id").limit(500),
     supabase.rpc("disciplinas_con_artistas", { p_ciudad: ciudad }),
     f.hace ? supabase.rpc("detalles_de_disciplina", { p_ciudad: ciudad, p_disciplina: f.hace }) : Promise.resolve({ data: [] as { clave: string; etiqueta: string; n: number }[] }),
     sinFiltro ? leerTira(supabase, "artistas", ciudad) : Promise.resolve([]),
+    sinFiltro ? cargarEventosSemana(supabase, "artistas", ciudad) : Promise.resolve([]),
   ]);
   // Todas las fechas con su sitio; la próxima de cada artista la elige `conProximaFecha`, no el orden de llegada.
   const fechas: FechaDeArtista[] = [];
@@ -109,7 +112,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const primero = ordenarArtistas(conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas));
   const resto = ((b.data ?? []) as ArtistaResumen[]).map((x) => ({ ...x, proxima: null }));
   const destacados = enOrden(tira, conProximaFecha((t.data ?? []) as ArtistaResumen[], fechas));
-  return { artistas: [...primero, ...resto], total: primero.length + (b.count ?? 0), totalCiudad, disciplinas, detalles, destacados };
+  return { artistas: [...primero, ...resto], total: primero.length + (b.count ?? 0), totalCiudad, disciplinas, detalles, destacados, eventosSemana };
 }
 
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */

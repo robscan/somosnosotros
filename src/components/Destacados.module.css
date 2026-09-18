@@ -121,3 +121,8 @@
 .uno.redondas .tarjeta {
   grid-template-columns: 93px 1fr;
 }
+
+/* En el carril semanal, fecha y hora completas incluso en las tarjetas redondas. */
+.detalleCompleto .tarjeta small {
+  white-space: normal;
+}

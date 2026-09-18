@@ -4,6 +4,7 @@ import Barra from "@/components/ui/Barra";
 import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
+import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
 import { leerTira } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { conProximo, TIPOS, type LugarLista, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
@@ -55,7 +56,7 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
   const { vista, ciudad: slug, tipo } = await searchParams;
   const ciudades = await cargarCiudades();
   const ciudad = ciudadPorSlug(slug, ciudades);
-  const [lugares, actual, destacados] = await Promise.all([cargar(ciudad.nombre), usuarioActual(), clienteServidor().then((s) => leerTira(s, "lugares", ciudad.nombre))]);
+  const [lugares, actual, destacados, eventosSemana] = await Promise.all([cargar(ciudad.nombre), usuarioActual(), clienteServidor().then((s) => leerTira(s, "lugares", ciudad.nombre)), clienteServidor().then((s) => cargarEventosSemana(s, "lugares", ciudad.nombre))]);
   // Con sesión, los lugares que sigue: la lista los marca y deja seguir al deslizar (bitácora 071).
   const supabase = actual ? await clienteServidor() : null;
   const s = supabase && actual ? await supabase.from("seguimientos").select("lugar_id").eq("usuario_id", actual.perfil.id).not("lugar_id", "is", null).limit(1000) : null;
@@ -63,5 +64,5 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
   // El tipo elegido vive en la URL (se comparte y sobrevive al volver atrás); solo vale si existe.
   const tipoElegido = tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
-  return <VistaLugares lugares={lugares} ciudad={ciudad} ciudades={ciudades} conSesion={!!actual} vistaInicial={vista === "lista" ? "lista" : "mapa"} tipo={tipoElegido} barra={<Barra derecha={<Sesion />} />} seguidos={seguidos} avisos={avisos} destacados={destacados} />;
+  return <VistaLugares lugares={lugares} ciudad={ciudad} ciudades={ciudades} conSesion={!!actual} vistaInicial={vista === "lista" ? "lista" : "mapa"} tipo={tipoElegido} barra={<Barra derecha={<Sesion />} />} seguidos={seguidos} avisos={avisos} destacados={destacados} eventosSemana={eventosSemana} />;
 }
