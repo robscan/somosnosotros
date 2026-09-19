@@ -267,3 +267,10 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   No reactivar tareas cerradas ni vigilar progreso; esperar entrega/bloqueo.
   Avisos libera ventana operativa con evidencia aunque firma de recepcion siga
   pendiente. No prometer avisos del sistema operativo: usar solicitudes en tarea.
+- 2026-09-18, correccion de producto recibida desde tarea de directorios:
+  referencia Contactos exige indice VERTICAL lateral sin boton Todos. Artistas
+  semanal conserva tarjetas CIRCULARES; solo Destacados usa2xrectangular. PR105
+  convertido a draft y retenido; horizontal26acb39 no tiene VoBo y no se publica.
+  Operador muestra propuesta visual al founder antes de cambios funcionales y
+  remite a gestor solo despues de su aprobacion. Sustituye criterio anterior;
+  CIverde previo no valida una nueva propuesta. No cambios en produccion.
