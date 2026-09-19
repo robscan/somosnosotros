@@ -1,8 +1,9 @@
 import { ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
 import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { LIMITES_EVENTO } from "./limites";
 
-export const LIMITES_EVENTO = { titulo: 120, descripcion: 1000, precio: 60, sitio: 120, direccion: 200, indicaciones: 300 } as const;
+export { LIMITES_EVENTO } from "./limites";
 
 /** Dónde es el evento: en un lugar registrado, en otro sitio (público) o en un sitio reservado (dirección con condiciones). */
 export type ModoSitio = "lugar" | "otro" | "reservado";

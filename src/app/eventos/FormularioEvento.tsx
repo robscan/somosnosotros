@@ -517,6 +517,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         <div className={`${canon.campo} ${canon.sinIcono}`}>
           <input name="titulo" type="text" value={titulo} onChange={(e) => { gestos.current.tocar("titulo"); setTitulo(e.target.value); }} maxLength={LIMITES_EVENTO.titulo} placeholder="Nombre del evento" aria-label="Nombre del evento" aria-invalid={!!errores.titulo} autoComplete="off" autoFocus={esAlta} required />
           <Limpiar visible={!!titulo} />
+          {titulo.length >= LIMITES_EVENTO.titulo * 0.75 && <span className={canon.contador}>{titulo.length}/{LIMITES_EVENTO.titulo}</span>}
         </div>
         {subiendo && !cartel && !masAbierto && <p className={canon.estado}>Subiendo…</p>}
         {errores.titulo && (
@@ -621,6 +622,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 <span className={limpiar.caja}>
                   <input type="text" name="precio" value={precio} onChange={(e) => { gestos.current.tocar("cuanto"); setPrecio(e.target.value); }} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" aria-label="Precio" className={canon.entrada} autoComplete="off" autoFocus />
                   <Limpiar visible={!!precio} />
+                  {precio.length >= LIMITES_EVENTO.precio * 0.75 && <span className={canon.contador}>{precio.length}/{LIMITES_EVENTO.precio}</span>}
                 </span>
               )}
                 {errores.precio && (
@@ -646,7 +648,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               {masAbierto ? "Listo" : "Agregar"}
             </button>
             <div className={canon.cuerpo} hidden={!masAbierto}>
-              <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => { gestos.current.tocar("descripcion"); setDescripcion(e.target.value); }} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} />
+              <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => { gestos.current.tocar("descripcion"); setDescripcion(e.target.value); }} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} mostrarContador />
               <Campo etiqueta="Enlace" name="enlace" value={enlace} onChange={(e) => { gestos.current.tocar("enlace"); setEnlace(e.target.value); }} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />
               {imagen && (
                 // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage

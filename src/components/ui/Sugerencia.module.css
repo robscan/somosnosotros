@@ -87,3 +87,11 @@
   color: var(--primario);
   font-weight: 600;
 }
+
+.contador {
+  display: inline-block;
+  font-size: var(--letra-sm);
+  color: var(--texto-suave);
+  margin-left: var(--espacio-2);
+  font-variant-numeric: tabular-nums;
+}

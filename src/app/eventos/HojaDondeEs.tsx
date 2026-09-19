@@ -172,12 +172,14 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           <label className={`${canon.campo} ${canon.sinIcono}`}>
             <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value, nombreLegacy: false })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
             <Limpiar visible={!!otro.sitioTexto} />
+            {otro.sitioTexto.length >= LIMITES_EVENTO.sitio * 0.75 && <span className={canon.contador}>{otro.sitioTexto.length}/{LIMITES_EVENTO.sitio}</span>}
           </label>
           {otro.referenciaLegacy && !otro.sitioTexto.trim() && <p className={styles.nota}>Nombre público por confirmar. Texto anterior: {otro.referenciaLegacy}</p>}
           {!otro.reservado && <label className={canon.campo}>
             <IconoBuscar width={20} height={20}/>
             <input type="text" value={otro.direccion ?? ""} onChange={e => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off"/>
             <Limpiar visible={!!otro.direccion}/>
+            {(otro.direccion?.length ?? 0) >= LIMITES_EVENTO.direccion * 0.75 && <span className={canon.contador}>{(otro.direccion ?? "").length}/{LIMITES_EVENTO.direccion}</span>}
           </label>}
           {!otro.reservado && resultados}
           {!otro.reservado && buscando && <p className={styles.nota} role="status">Buscando…</p>}
@@ -199,6 +201,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               <span className={limpiar.caja}>
                 <input type="text" value={otro.direccionPrivada} onChange={(e) => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Dirección exacta: calle y número, colonia" aria-label="Dirección exacta" className={canon.entrada} autoComplete="off" />
                 <Limpiar visible={!!otro.direccionPrivada} />
+                {otro.direccionPrivada.length >= LIMITES_EVENTO.direccion * 0.75 && <span className={canon.contador}>{otro.direccionPrivada.length}/{LIMITES_EVENTO.direccion}</span>}
               </span>
               {resultados}
               {buscando && <p className={styles.nota} role="status">Buscando…</p>}
@@ -213,6 +216,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               <span className={limpiar.caja}>
                 <input type="text" value={otro.indicaciones} onChange={(e) => cambiar({ indicaciones: e.target.value })} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Indicaciones, ej. portón verde (opcional)" aria-label="Indicaciones" className={canon.entrada} autoComplete="off" />
                 <Limpiar visible={!!otro.indicaciones} />
+                {otro.indicaciones.length >= LIMITES_EVENTO.indicaciones * 0.75 && <span className={canon.contador}>{otro.indicaciones.length}/{LIMITES_EVENTO.indicaciones}</span>}
               </span>
             </>
           )}
