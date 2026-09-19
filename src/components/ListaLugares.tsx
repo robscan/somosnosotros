@@ -1,14 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
 import { enOrden, tarjetaLugar, type Destacado, type Tarjeta } from "@/lib/destacados";
-import { conGrupos, idGrupo, letraDestino } from "@/lib/indice";
+import { conGrupos, idGrupo, letrasPresentes } from "@/lib/indice";
 import { etiquetaTipo, filtrarLugares, ordenarLugares, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
 import { Chips } from "./ui/Chip";
 import Destacados from "./Destacados";
-import IndiceAlfabetico, { irAlGrupo } from "./IndiceAlfabetico";
 import RenglonLugar from "./RenglonLugar";
+import TiraLetras, { irAlGrupo, useLetraActiva, usePegajosos } from "./TiraLetras";
 import { useCanalDePantalla } from "./useCanalDeListas";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
@@ -42,17 +42,23 @@ type Props = {
 };
 
 /**
- * Lista de lugares: renglones como los de la agenda (foto, nombre, calle, próximo evento);
- * con eventos primero, o por distancia con la ubicación; búsqueda por nombre y chips de tipo solo cuando hay muchos.
- * Una sola fila de chips: Cerca de mí · Todos · tipos (la pinta VistaLugares, que comparte el tipo con el mapa).
+ * Lista de lugares: renglones como los de la agenda (foto, nombre, calle, próximo evento); alfabético por defecto,
+ * con encabezados de letra y una tira de acceso directo (corrección del founder, 2026-09-19: no filtra, lleva al
+ * grupo), o por distancia con la ubicación; búsqueda por nombre y chips de tipo solo cuando hay muchos. Con «Cerca
+ * de mí» o búsqueda, los encabezados y la tira se van, y se ordena por cercanía o se busca en todo. Una sola fila de
+ * chips: Cerca de mí · Todos · tipos (la pinta VistaLugares, que comparte el tipo con el mapa).
  */
 export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
   const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
-  // En orden alfabético (sin «Cerca de mí» ni búsqueda) la lista va por letras con su índice lateral; todo está
-  // cargado, así que tocar una letra solo lleva a su grupo (o al siguiente que haya).
+  // Sin «Cerca de mí» ni búsqueda, la lista se agrupa por letra y la tira lleva a cada grupo; con cualquiera de
+  // las dos, no tiene sentido (el orden ya no es alfabético) y se van las dos cosas.
   const alfabetico = !punto && !busqueda.trim();
   const filas = alfabetico ? conGrupos(lista, (l) => l.nombre) : lista.map((x) => ({ x, grupo: null }));
-  const presentes = filas.flatMap((f) => (f.grupo ? [f.grupo] : []));
+  const letras = alfabetico ? letrasPresentes(lista, (l) => l.nombre) : [];
+  const tiraRef = useRef<HTMLDivElement>(null);
+  const conTira = alfabetico && letras.length > 0;
+  usePegajosos(tiraRef, conTira);
+  const letraActiva = useLetraActiva(letras, tiraRef, conTira);
   // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   // Si la pantalla puso su canal (Lugares, con Mapa y Lista), el aviso y la pregunta son de ella: cambiar de vista no
   // empieza de cero. Sin canal de pantalla, la lista sigue con el suyo.
@@ -77,8 +83,13 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       )}
       {chips && <Chips ariaLabel="Cerca de mí y tipo de lugar">{chips}</Chips>}
       {aviso}
-      {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} />}
+      {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} grande />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
+      {alfabetico && (
+        <div ref={tiraRef} className={comun.tira}>
+          <TiraLetras letras={letras} activa={letraActiva} alTocar={irAlGrupo} />
+        </div>
+      )}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()
@@ -86,19 +97,16 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
             : `Todavía no hay lugares de tipo ${etiquetaTipo(tipo ?? "").toLowerCase()}.`
           : `${lista.length === 1 ? "1 lugar" : `${lista.length} lugares`}${punto ? " · ordenados por cercanía" : ""}`}
       </p>
-      <div className={comun.directorio} data-directorio>
-        <ul>
-          {filas.map(({ x: l, grupo }) => [
-            grupo && (
-              <li key={grupo} id={idGrupo(grupo)} className={comun.grupo} aria-hidden>
-                {grupo}
-              </li>
-            ),
-            <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} sigo={seguir.sigo(l.id)} acciones={seguir.acciones(l.id, l.nombre)} />,
-          ])}
-        </ul>
-        {alfabetico && lista.length > 0 && <IndiceAlfabetico alTocar={(letra) => { const d = letraDestino(letra, presentes); if (d) irAlGrupo(d); }} />}
-      </div>
+      <ul>
+        {filas.map(({ x: l, grupo }) => [
+          grupo && (
+            <li key={grupo} id={idGrupo(grupo)} className={comun.grupo} aria-hidden>
+              {grupo}
+            </li>
+          ),
+          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} sigo={seguir.sigo(l.id)} acciones={seguir.acciones(l.id, l.nombre)} />,
+        ])}
+      </ul>
       {seguir.extras}
     </section>
   );

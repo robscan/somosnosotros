@@ -15,8 +15,7 @@
 .carril {
   display: grid;
   grid-auto-flow: column;
-  /* El doble de la tarjeta de antes (220×132 → 440×264); en el teléfono cede lo justo para que la siguiente asome. */
-  grid-auto-columns: min(440px, calc(100vw - var(--gutter) * 2 - 56px));
+  grid-auto-columns: 220px;
   gap: var(--espacio-3);
   overflow-x: auto;
   padding: var(--espacio-1) var(--gutter) var(--espacio-2); /* arriba, sitio para el anillo de foco: el desplazamiento recorta */
@@ -35,7 +34,7 @@
 }
 .tarjeta {
   display: grid;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: 132px auto auto;
   grid-template-areas: "foto" "titulo" "detalle";
   row-gap: var(--espacio-1);
   color: var(--texto);
@@ -50,7 +49,7 @@
 .foto {
   grid-area: foto;
   width: 100%;
-  aspect-ratio: 5 / 3;
+  height: 100%;
   border-radius: var(--radio);
   object-fit: cover;
   background: var(--fondo-miniatura);
@@ -89,15 +88,17 @@
   white-space: nowrap;
 }
 
-/* Una sola tarjeta: a lo ancho, nada queda solo en un carril; la foto no pasa del alto de las demás. */
-.uno {
-  grid-auto-columns: 100%;
+/*
+ * Solo «Destacados» (lo que elige la administración) va al doble y rectangular (founder, 2026-09-18); «Con eventos
+ * esta semana» conserva el tamaño de antes, en las dos secciones (corrección del founder, 2026-09-19: había crecido
+ * de más con el PR de los directorios alfabéticos). El carril conserva el desplazamiento real y la siguiente
+ * tarjeta asoma, sin recorte artificial (precisión del founder, 2026-09-18).
+ */
+.grande {
+  grid-auto-columns: min(440px, calc(100vw - var(--gutter) * 2 - 56px));
 }
-.uno .foto {
-  max-height: 264px;
-}
-.uno small {
-  white-space: normal;
+.grande .tarjeta {
+  grid-template-rows: 264px auto auto;
 }
 
 /* Artistas, en «Con eventos esta semana»: redondos como su avatar, angostos y al centro. */
@@ -105,17 +106,47 @@
   grid-auto-columns: 104px;
 }
 .redondas .tarjeta {
+  grid-template-rows: 104px auto auto;
   text-align: center;
 }
 .redondas .foto {
-  aspect-ratio: 1;
   border-radius: 50%;
 }
-.uno.redondas {
-  grid-auto-columns: 104px;
+
+/* Una sola tarjeta: a lo ancho, con la foto a la izquierda; nada queda solo en un carril. */
+.uno {
+  grid-auto-columns: 100%;
+}
+.uno .tarjeta {
+  grid-template-columns: 124px 1fr;
+  grid-template-rows: auto auto;
+  grid-template-areas: "foto titulo" "foto detalle";
+  align-items: start;
+  column-gap: var(--espacio-3);
+  text-align: left;
+}
+.uno .foto {
+  height: 93px;
+}
+.uno small {
+  white-space: normal;
+}
+.uno.redondas .tarjeta {
+  grid-template-columns: 93px 1fr;
+}
+/* Uno solo y grande: conserva el rectángulo apilado (la foto no vuelve al lado del texto). */
+.uno.grande .tarjeta {
+  grid-template-columns: none;
+  grid-template-rows: 264px auto auto;
+  grid-template-areas: "foto" "titulo" "detalle";
+}
+.uno.grande .foto {
+  height: auto;
+  max-height: 264px;
+  aspect-ratio: 5 / 3;
 }
 
-/* En el carril semanal, fecha y hora completas, también en los redondos. */
+/* En el carril semanal, fecha y hora completas incluso en las tarjetas redondas. */
 .detalleCompleto .tarjeta small {
   white-space: normal;
 }

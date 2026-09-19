@@ -83,7 +83,8 @@ export default function VistaLugares({
   const lugaresDelTipo = useMemo(() => (tipo ? lugares.filter((l) => l.tipo === tipo) : lugares), [lugares, tipo]);
   // Una sola búsqueda para las dos vistas. En el mapa, lo encontrado se encuadra; si es uno solo, se abre su tarjeta.
   const [busqueda, setBusqueda] = useState("");
-  // Al volver de una ficha, la misma vista, lo escrito y el scroll de la lista (el tipo ya viene en la URL).
+  // Al volver de una ficha, la misma vista, lo escrito y el scroll de la lista (el tipo ya viene en la URL; la tira
+  // de letras no selecciona nada que recordar: es un acceso directo, no un filtro, corrección del founder, 2026-09-19).
   useMemoriaPantalla<{ vista: Vista; busqueda: string }>("lugares", { vista, busqueda }, (r) => {
     if (r.vista === "mapa" || r.vista === "lista") setVista(r.vista);
     if (typeof r.busqueda === "string") setBusqueda(r.busqueda);

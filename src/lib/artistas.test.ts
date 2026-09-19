@@ -84,8 +84,8 @@ describe("hrefArtistas y filtroDesdeUrl", () => {
   it("arma la URL sin parámetros vacíos y la lee de vuelta con valores seguros", () => {
     expect(hrefArtistas({})).toBe("/artistas");
     expect(hrefArtistas({ hace: "musica", que: "jazz, blues y soul", q: " Pedro ", n: 200 })).toBe("/artistas?hace=musica&que=jazz%2C+blues+y+soul&q=Pedro&n=200");
-    expect(filtroDesdeUrl({ hace: "musica", que: "jazz", q: "x", letra: "á", n: "200" })).toEqual({ hace: "musica", que: "jazz", q: "x", letra: null, n: 200 });
-    expect(filtroDesdeUrl({ hace: "no-existe", que: "jazz", letra: "b", n: "abc" })).toEqual({ hace: null, que: null, q: null, letra: "B", n: 100 });
+    expect(filtroDesdeUrl({ hace: "musica", que: "jazz", q: "x", n: "200" })).toEqual({ hace: "musica", que: "jazz", q: "x", n: 200 });
+    expect(filtroDesdeUrl({ hace: "no-existe", que: "jazz", n: "abc" })).toEqual({ hace: null, que: null, q: null, n: 100 });
   });
   it("la ciudad va en la URL, salvo que sea la inicial (crecimiento orgánico, bitácora 051)", () => {
     expect(hrefArtistas({ ciudad: "san-luis-potosi" })).toBe("/artistas");

@@ -18,24 +18,20 @@
   line-height: 1.4;
 }
 
-/* Directorio alfabético (Lugares y Artistas): la lista y el índice lateral lado a lado, en un grid con áreas. El
-   índice va en el borde derecho de la columna (en el teléfono, al borde de la pantalla) y la lista le deja su sitio. */
-.directorio {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "lista indice";
-  padding-right: calc(var(--gutter) - var(--espacio-5));
+/*
+ * La tira de letras (Lugares y Artistas) se pega justo debajo de lo que ya se pega en la pantalla (founder,
+ * 2026-09-19: «dejar sticky letras y tabs»); `usePegajosos` deja `--tapa` (sin eso, aún sin medir, se comporta como
+ * si no hubiera nada pegado arriba). El separador de cada letra NO se pega (corrección del founder): baja con la
+ * lista como cualquier renglón; la tira ilumina sola en qué letra vas.
+ */
+.tira {
+  position: sticky;
+  top: var(--tapa, 0px);
+  z-index: 9;
+  padding: var(--espacio-2) var(--gutter) 0;
+  background: var(--fondo);
 }
-.directorio > ul {
-  grid-area: lista;
-  list-style: none;
-  padding: 0 var(--espacio-2) 0 var(--gutter);
-}
-/* Sin índice (Cerca de mí, búsqueda) la lista recupera su gutter derecho. */
-.directorio > ul:only-child {
-  padding-right: var(--espacio-5);
-}
-/* El encabezado de cada letra, entre los renglones, como en Contactos. */
+/* El `<ul>` que lo contiene ya pone el gutter horizontal: aquí solo va el espaciado vertical. */
 .grupo {
   padding: var(--espacio-4) 0 var(--espacio-1);
   color: var(--texto-suave);
