@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
 import { enOrden, tarjetaLugar, type Destacado, type Tarjeta } from "@/lib/destacados";
-import { etiquetaTipo, filtrarLugares, normalizarNombre, ordenarLugares, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
+import { conGrupos, idGrupo, letraDestino } from "@/lib/indice";
+import { etiquetaTipo, filtrarLugares, ordenarLugares, UMBRAL_BUSCAR_LUGARES, type LugarLista } from "@/lib/lugares";
 import { Chips } from "./ui/Chip";
 import Destacados from "./Destacados";
-import IndiceAlfabetico from "./IndiceAlfabetico";
+import IndiceAlfabetico, { irAlGrupo } from "./IndiceAlfabetico";
 import RenglonLugar from "./RenglonLugar";
 import { useCanalDePantalla } from "./useCanalDeListas";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
@@ -46,9 +47,12 @@ type Props = {
  * Una sola fila de chips: Cerca de mí · Todos · tipos (la pinta VistaLugares, que comparte el tipo con el mapa).
  */
 export default function ListaLugares({ lugares, tipo = null, total = lugares.length, busqueda, onBusqueda, punto, ciudad, conSesion, chips, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
-  const [letra, setLetra] = useState<string | null>(null);
-  const filtrados = filtrarLugares(lugares, busqueda).filter((l) => punto || busqueda.trim() || !letra || normalizarNombre(l.nombre).startsWith(letra.toLowerCase()));
-  const { lista, km } = ordenarLugares(filtrados, punto);
+  const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
+  // En orden alfabético (sin «Cerca de mí» ni búsqueda) la lista va por letras con su índice lateral; todo está
+  // cargado, así que tocar una letra solo lleva a su grupo (o al siguiente que haya).
+  const alfabetico = !punto && !busqueda.trim();
+  const filas = alfabetico ? conGrupos(lista, (l) => l.nombre) : lista.map((x) => ({ x, grupo: null }));
+  const presentes = filas.flatMap((f) => (f.grupo ? [f.grupo] : []));
   // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   // Si la pantalla puso su canal (Lugares, con Mapa y Lista), el aviso y la pregunta son de ella: cambiar de vista no
   // empieza de cero. Sin canal de pantalla, la lista sigue con el suyo.
@@ -73,7 +77,6 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
       )}
       {chips && <Chips ariaLabel="Cerca de mí y tipo de lugar">{chips}</Chips>}
       {aviso}
-      {!busqueda.trim() && !punto && <IndiceAlfabetico letra={letra} onSeleccionar={setLetra} onQuitar={() => setLetra(null)} />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
       <p className={comun.conteo}>
@@ -83,11 +86,19 @@ export default function ListaLugares({ lugares, tipo = null, total = lugares.len
             : `Todavía no hay lugares de tipo ${etiquetaTipo(tipo ?? "").toLowerCase()}.`
           : `${lista.length === 1 ? "1 lugar" : `${lista.length} lugares`}${punto ? " · ordenados por cercanía" : ""}`}
       </p>
-      <ul>
-        {lista.map((l) => (
-          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} sigo={seguir.sigo(l.id)} acciones={seguir.acciones(l.id, l.nombre)} />
-        ))}
-      </ul>
+      <div className={comun.directorio} data-directorio>
+        <ul>
+          {filas.map(({ x: l, grupo }) => [
+            grupo && (
+              <li key={grupo} id={idGrupo(grupo)} className={comun.grupo} aria-hidden>
+                {grupo}
+              </li>
+            ),
+            <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} sigo={seguir.sigo(l.id)} acciones={seguir.acciones(l.id, l.nombre)} />,
+          ])}
+        </ul>
+        {alfabetico && lista.length > 0 && <IndiceAlfabetico alTocar={(letra) => { const d = letraDestino(letra, presentes); if (d) irAlGrupo(d); }} />}
+      </div>
       {seguir.extras}
     </section>
   );

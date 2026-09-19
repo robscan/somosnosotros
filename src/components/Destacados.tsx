@@ -10,9 +10,10 @@ import styles from "./Destacados.module.css";
 /**
  * La tira de destacados arriba de un listado (docs/rediseno/20). Se desliza con el dedo, sin avance automático, y la
  * siguiente tarjeta asoma (decisiones 1 y 2). Sin tarjetas no existe (decisión 4); con una sola, ocupa el ancho.
- * Lo de artistas va en redondo, como su avatar. Al volver de una ficha queda donde estaba (decisión 12).
+ * Rectangulares y al doble en Agenda, Lugares y Artistas (founder, 2026-09-18); solo «Con eventos esta semana» de
+ * Artistas va en redondo, como su avatar. Al volver de una ficha queda donde estaba (decisión 12).
  */
-export default function Destacados({ tarjetas, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false }: { tarjetas: Tarjeta[]; encabezado?: string; memoria?: string; detalleCompleto?: boolean }) {
+export default function Destacados({ tarjetas, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false }: { tarjetas: Tarjeta[]; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -47,7 +48,7 @@ export default function Destacados({ tarjetas, encabezado = "Destacados", memori
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <h2 id={titulo}>{encabezado}</h2>
-      <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar}>
+      <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar}>
         {ordenadas.map((t) => (
           <li key={t.id}>
             <Link href={t.href} className={styles.tarjeta}>

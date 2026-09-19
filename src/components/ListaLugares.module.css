@@ -1,10 +1,6 @@
 /* Lista de lugares: cada hijo pone su gutter, y la fila de chips corre a todo lo ancho (en escritorio no se
    recorta en el borde de la columna); los renglones vienen de Renglon.module.css; el conteo y el vacío, de Lista.module.css */
-.lista > ul {
-  list-style: none;
-  padding: 0 var(--gutter);
-}
-.lista > div {
+.lista > div:not([data-directorio]) {
   padding-inline: var(--gutter); /* fila de chips: el primero alineado con la columna */
 }
 /* El buscador (ui/Buscador, con su ✕) en la columna */

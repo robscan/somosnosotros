@@ -1,13 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 import ChipCiudad from "@/components/Ciudad";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaDisciplina, hrefArtistas, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
 import { tarjetaArtista, type Tarjeta } from "@/lib/destacados";
+import { accionDeLetra, conGrupos, idGrupo, letraDestino } from "@/lib/indice";
 import Destacados from "./Destacados";
-import IndiceAlfabetico from "./IndiceAlfabetico";
+import IndiceAlfabetico, { irAlGrupo } from "./IndiceAlfabetico";
 import RenglonArtista from "./RenglonArtista";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
@@ -21,6 +24,8 @@ type Props = {
   destacados?: ArtistaLista[];
   eventosSemana?: Tarjeta[];
   total: number;
+  /** Cuántos faltan por ver tras los que trae la página. */
+  quedan: number;
   totalCiudad: number;
   disciplinas: Opcion[];
   detalles: Opcion[];
@@ -42,7 +47,7 @@ type Props = {
  * dentro de una disciplina con muchos artistas, un segundo nivel de chips por detalle (género, técnica).
  * Todo el filtro vive en la URL y lo aplica el servidor: la página trae `pagina` artistas y "Ver más" pide otros tantos.
  */
-export default function ListaArtistas({ artistas, destacados = [], eventosSemana = [], total, totalCiudad, disciplinas, detalles, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
+export default function ListaArtistas({ artistas, destacados = [], eventosSemana = [], total, quedan, totalCiudad, disciplinas, detalles, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
   // Al deslizar un artista: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   const seguir = useSeguirEnLista("artista", seguidos, avisos);
   // La ciudad viaja en la URL como en la agenda y Lugares (ausente = la inicial, para que el enlace sea limpio).
@@ -58,7 +63,29 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
   // Cambiar de ciudad suelta el filtro (disciplina y detalle son de la ciudad que se deja); como en Lugares.
   const chipCiudad = <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => hrefArtistas({ ciudad: c.slug === CIUDAD_INICIAL.slug ? null : c.slug })} />;
   const queHacen = filtro.que ? (detalles.find((x) => x.valor === filtro.que)?.etiqueta ?? filtro.que) : filtro.hace ? etiquetaDisciplina(filtro.hace) : null;
-  const indice = !filtro.q && <IndiceAlfabetico letra={filtro.letra} href={(letra) => hrefArtistas({ ...filtro, ciudad: cSlug, letra, q: null, n: null })} hrefTodos={hrefArtistas({ ...filtro, ciudad: cSlug, letra: null, q: null, n: null })} />;
+  // Índice lateral (bitácora 119): la lista va por letras. Lo cargado se recorre saltando al grupo, también al
+  // arrastrar el dedo; una letra fuera de lo cargado se pide al servidor al soltar (la página empieza en ella) y,
+  // cuando llega, se salta a su grupo. Así no se trae el catálogo entero.
+  const router = useRouter();
+  const pendiente = useRef<string | null>(null);
+  const filas = filtro.q ? artistas.map((x) => ({ x, grupo: null })) : conGrupos(artistas, (a) => a.nombre);
+  const presentes = filas.flatMap((f) => (f.grupo ? [f.grupo] : []));
+  const tramo = { presentes, desde: filtro.letra, completa: quedan === 0 };
+  useEffect(() => {
+    const letra = pendiente.current;
+    const destino = letra && letraDestino(letra, presentes);
+    if (destino && irAlGrupo(destino)) pendiente.current = null;
+  });
+  function alTocar(letra: string) {
+    const accion = accionDeLetra(letra, tramo);
+    if (accion.tipo === "saltar") irAlGrupo(accion.letra);
+  }
+  function alSoltar(letra: string) {
+    const accion = accionDeLetra(letra, tramo);
+    if (accion.tipo !== "cargar") return;
+    pendiente.current = letra;
+    router.replace(hrefArtistas({ ...filtro, ciudad: cSlug, letra: accion.letra, q: null, n: null }), { scroll: false });
+  }
 
   if (totalCiudad === 0) {
     return (
@@ -110,10 +137,9 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
           )}
         </div>
       )}
-      {indice}
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
-          <p>{filtro.letra ? `No hay artistas con ${filtro.letra}.` : queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>
+          <p>{filtro.letra ? `No hay artistas desde la ${filtro.letra}.` : queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>
         </div>
       ) : artistas.length === 0 ? (
         <div className={comun.vacio}>
@@ -127,17 +153,25 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
       ) : (
         <>
           <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} />
-          {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
+          {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} redondas encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
           <p className={comun.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
-          <ul className={styles.lista}>
-            {artistas.map((a) => (
-              <RenglonArtista key={a.id} artista={a} sigo={seguir.sigo(a.id)} acciones={seguir.acciones(a.id, a.nombre)} />
-            ))}
-          </ul>
+          <div className={comun.directorio}>
+            <ul>
+              {filas.map(({ x: a, grupo }) => [
+                grupo && (
+                  <li key={grupo} id={idGrupo(grupo)} className={comun.grupo} aria-hidden>
+                    {grupo}
+                  </li>
+                ),
+                <RenglonArtista key={a.id} artista={a} sigo={seguir.sigo(a.id)} acciones={seguir.acciones(a.id, a.nombre)} />,
+              ])}
+            </ul>
+            {!filtro.q && <IndiceAlfabetico alTocar={alTocar} alSoltar={alSoltar} />}
+          </div>
           {seguir.extras}
-          {total > artistas.length && (
+          {quedan > 0 && (
             <Boton href={hrefArtistas({ ...filtro, ciudad: cSlug, n: filtro.n + pagina })} variante="secundario" className={styles.verMas} scroll={false} replace>
-              Ver más ({total - artistas.length} más)
+              Ver más ({quedan} más)
             </Boton>
           )}
         </>

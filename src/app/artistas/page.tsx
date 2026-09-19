@@ -51,6 +51,8 @@ export type Cargado = {
   artistas: ArtistaLista[];
   /** Cuántos cumplen el filtro, se vean o no (la página trae `n`). */
   total: number;
+  /** Cuántos faltan por ver después de los que trae la página (desde la letra, si la hay). */
+  quedan: number;
   /** Cuántos hay en la ciudad sin ningún filtro: decide si aparecen la búsqueda y los chips. */
   totalCiudad: number;
   disciplinas: Opcion[];
@@ -62,11 +64,11 @@ export type Cargado = {
 
 /**
  * Los artistas de la ciudad con su fecha más próxima y dónde (decisión 1), filtrados y paginados en el servidor:
- * la disciplina, el detalle y lo escrito vienen de la URL (revisión 2026-09-14, A2). Los que tienen fecha próxima van
- * primero (todos los que cumplen el filtro); el resto, en orden alfabético real (`nombre_orden`), de `n` en `n`.
+ * la disciplina, el detalle y lo escrito vienen de la URL (revisión 2026-09-14, A2). Todos van
+ * en orden alfabético real (`nombre_orden`), de `n` en `n`, desde la letra del índice si la hay.
  */
 async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
-  const vacio: Cargado = { artistas: [], total: 0, totalCiudad: 0, disciplinas: [], detalles: [], destacados: [], eventosSemana: [] };
+  const vacio: Cargado = { artistas: [], total: 0, quedan: 0, totalCiudad: 0, disciplinas: [], detalles: [], destacados: [], eventosSemana: [] };
   const supabase = await clienteServidor();
   if (!supabase) return vacio;
   const ciudad = ciudadNombre;
@@ -95,22 +97,25 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const detalles = ((d2.data ?? []) as { clave: string; etiqueta: string; n: number }[]).length >= 2 ? (d2.data as { clave: string; etiqueta: string; n: number }[]).map((x) => ({ valor: x.clave, etiqueta: x.etiqueta.charAt(0).toUpperCase() + x.etiqueta.slice(1), n: Number(x.n) })) : [];
 
   const q = f.q ? normalizarNombre(f.q).replace(/[,()]/g, "") : "";
-  const base = () => {
-    let c = supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto", { count: "exact" }).eq("visible", true).eq("ciudad", ciudad);
+  const base = (head = false) => {
+    let c = supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto", { count: "exact", head }).eq("visible", true).eq("ciudad", ciudad);
     if (f.hace) c = c.eq("disciplina", f.hace);
     if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
     if (q) c = c.or(`nombre_orden.ilike.%${q}%,detalle.ilike.%${q}%`);
-    if (f.letra && !q) c = c.ilike("nombre_orden", `${f.letra.toLowerCase()}%`);
     return c;
   };
-  const [a, t] = await Promise.all([
-    base().order("nombre_orden").range(0, f.n - 1),
+  // La letra del índice lateral: la página empieza en esa letra y sigue de corrido (Ver más), como en Contactos;
+  // el conteo sigue siendo el de todo el filtro.
+  const desde = f.letra && !q ? f.letra.toLowerCase() : null;
+  const [a, t, todos] = await Promise.all([
+    (desde ? base().gte("nombre_orden", desde) : base()).order("nombre_orden").range(0, f.n - 1),
     // Los destacados pueden no estar en la primera página: se leen aparte, con su próxima fecha.
     tira.length ? supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto").eq("visible", true).in("id", tira.map((d) => d.id)) : Promise.resolve({ data: [] as ArtistaResumen[] }),
+    desde ? base(true) : Promise.resolve(null),
   ]);
   const artistas = conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas);
   const destacados = enOrden(tira, conProximaFecha((t.data ?? []) as ArtistaResumen[], fechas));
-  return { artistas, total: a.count ?? 0, totalCiudad, disciplinas, detalles, destacados, eventosSemana };
+  return { artistas, total: (todos ? todos.count : a.count) ?? 0, quedan: Math.max(0, (a.count ?? 0) - artistas.length), totalCiudad, disciplinas, detalles, destacados, eventosSemana };
 }
 
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */
