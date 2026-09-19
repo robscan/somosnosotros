@@ -187,3 +187,58 @@ no hubo push, deploy, SQL remoto, secretos ni envios reales. La garantia continu
 siendo entrega al proveedor como maximo una vez cuando hay ACK; despues de un ACK
 perdido o una pausa en el limite externo solo se evita reabrir ese canal, sin
 prometer exactly-once externo.
+
+## Esquema y codigo publicados, entregas retenidas (2026-09-18)
+
+PR104/eb2f80e desplegado en somosnosotros.org despues de aplicar181400 y181600.
+El gestor habilito capturar=true y corte2026-09-18T23:04:19.708Z antes del nuevo
+build. Entregar=false, recordatorios_desde=NULL; sin pg_cron/pg_net nuevos, sin
+Vault nuevo, sin envios de prueba ni reenvio historico. Se comprobo ACL de cola,
+config y worker contra anon/authenticated y POST no autenticado responde401.
+
+La activacion de proveedores y recuperacion cada cinco minutos sigue pendiente
+de respuesta expresa del founder. Se reitero la pregunta al quedar produccion
+lista; no interpretar su aprobacion del despliegue como esta respuesta. Al corte
+posterior se observo1 job/0 entregas. No mantener esta retencion como promesa de
+recuperar anuncios caducados: al activar se respeta caducidad y la frontera de
+recordatorios del procedimiento anterior. Pendientes el corte del cron legado,
+prueba real autorizada y verificacion de capacidad. Codigo publicado no equivale
+a avisos operativos ni a exactly-once externo.
+
+## Activacion operativa autorizada (2026-09-19)
+
+El founder autorizo activar entrega, instalar el cron y comprobar el primer
+drenaje. Se trabajo desde `eb2f80e`, sin modificar codigo de aplicacion ni otras
+entregas. El cron diario existente de Vercel ya apunta a `/api/recordatorios` del
+build nuevo y al mismo worker outbox, por lo que no habia un emisor legado paralelo
+que apagar. Antes de la frontera no habia leases ni entregas pendientes; los
+marcadores historicos se conservan y el nuevo recordatorio los sigue respetando.
+
+Snapshot previo redactado: `capturar=true`, `entregar=false`, corte
+`2026-09-18T23:04:19.708187Z`, `recordatorios_desde=NULL`, dos jobs de cambio
+activos y cero entregas/leases. Se guardo respaldo privado de `avisos_config` en
+`/Users/apple-1/Backups/somosnosotros/avisos-operacion-2026-09-18/antes-entrega-config.dump`.
+El respaldo pre-fase1 permanece como antecedente; ninguno contiene bytes de
+Storage ni se usa para borrar/recrear la cola.
+
+Se instalaron `pg_cron` y `pg_net`; Vault contiene solo los nombres
+`avisos_url` y `avisos_cron_secret`, sin valores en repositorio, salida ni
+bitacora. Se creo/actualizo el unico job `avisos-pendientes` (`id=1`, cada cinco
+minutos), que hace POST al endpoint estable con la credencial desde Vault. Se
+conservo el corte de captura original y se activo `entregar=true` con frontera de
+recordatorios `2026-09-19T00:02:24.439213Z`.
+
+La primera ejecucion manual autorizada de `/api/avisos-pendientes` devolvio 200:
+0 envios, 0 fallos, 0 pendientes y 0 jobs por expandir. La primera ejecucion
+programada termino correctamente a las `00:05:00Z`; `net._http_response` registro
+HTTP 200 sin timeout. El estado posterior conserva dos jobs de cambio y dos de
+recordatorio activos, pero cero entregas, leases o fallos: no habia una persona
+elegible y por tanto no se invento un evento, destinatario ni prueba de proveedor.
+No hay confirmacion de recepcion en correo/telefono hasta que exista un aviso
+natural elegible.
+
+Rollback si aparece 401/503 persistente o riesgo de duplicacion: pausar el job
+`avisos-pendientes`, poner `entregar=false` y `recordatorios_desde=NULL`, esperar
+90 segundos y comprobar leases/proveedores en vuelo. Mantener `capturar=true`, el
+corte, esquema y cola; no regenerar cuerpos/claves, vaciar datos ni reactivar el
+emisor legado. Un proveedor que ya acepto un HTTP no puede retirarse.

@@ -158,3 +158,19 @@ frase breve, enlaces Apple/Google conservados, correo despliega su campo;
 sin overflow ni superposiciones. Captura inspeccionada `entrar-texto-breve-390.png`
 en la carpeta de evidencias del gestor. No se enviaron correos ni completo OAuth.
 Produccion aun pendiente de merge y comprobacion del dominio real.
+
+## Texto breve publicado
+
+PR102 integrado en e6905e86166b4140e005038e74e853890c9a3522 el 2026-09-18,
+22:31:14Z, tras revision independiente favorable y CI completo aprobado.
+Vercel Production 36rUsngqgiPJYQJcQA2S3Gi7VJfz Ready, build25s y status success.
+Dominio real somosnosotros.org/entrar comprobado a390x844: frase breve y
+Apple/Google/correo intactos, sin overflow. Captura inspeccionada
+`entrar-texto-breve-produccion-390.png` en evidencias del gestor.
+No se completo OAuth ni se enviaron correos. Sin migraciones ni cambios Auth.
+
+La orden posterior del founder detuvo la logica de destacar Artistas/Lugares.
+Operador confirmado detenido en15e3109, limpio, sin push ni PR. Falta aclarar
+si se refiere a Destacados manuales o al nuevo carril semanal; no se publica
+ninguno de esos cambios. Memoria y OL074 actualizados. Comentario de cierre:
+https://github.com/robscan/somosnosotros/pull/102#issuecomment-5736985214
