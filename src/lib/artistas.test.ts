@@ -84,8 +84,15 @@ describe("hrefArtistas y filtroDesdeUrl", () => {
   it("arma la URL sin parámetros vacíos y la lee de vuelta con valores seguros", () => {
     expect(hrefArtistas({})).toBe("/artistas");
     expect(hrefArtistas({ hace: "musica", que: "jazz, blues y soul", q: " Pedro ", n: 200 })).toBe("/artistas?hace=musica&que=jazz%2C+blues+y+soul&q=Pedro&n=200");
-    expect(filtroDesdeUrl({ hace: "musica", que: "jazz", q: "x", letra: "á", n: "200" })).toEqual({ hace: "musica", que: "jazz", q: "x", letra: null, n: 200 });
+    // Sin letra en la URL, o con una que no es A–Z ni «#», vale la A (founder, 2026-09-19: por defecto, sin «Todos»).
+    expect(filtroDesdeUrl({ hace: "musica", que: "jazz", q: "x", letra: "á", n: "200" })).toEqual({ hace: "musica", que: "jazz", q: "x", letra: "A", n: 200 });
     expect(filtroDesdeUrl({ hace: "no-existe", que: "jazz", letra: "b", n: "abc" })).toEqual({ hace: null, que: null, q: null, letra: "B", n: 100 });
+    expect(filtroDesdeUrl({})).toEqual({ hace: null, que: null, q: null, letra: "A", n: 100 });
+    expect(filtroDesdeUrl({ letra: "#" })).toEqual({ hace: null, que: null, q: null, letra: "#", n: 100 });
+    // La A no se escribe en la URL (es el valor por defecto); las demás letras y «#» sí.
+    expect(hrefArtistas({ letra: "A" })).toBe("/artistas");
+    expect(hrefArtistas({ letra: "M" })).toBe("/artistas?letra=M");
+    expect(hrefArtistas({ letra: "#" })).toBe("/artistas?letra=%23");
   });
   it("la ciudad va en la URL, salvo que sea la inicial (crecimiento orgánico, bitácora 051)", () => {
     expect(hrefArtistas({ ciudad: "san-luis-potosi" })).toBe("/artistas");

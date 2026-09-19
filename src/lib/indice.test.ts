@@ -1,53 +1,39 @@
 import { describe, expect, it } from "vitest";
-import { accionDeLetra, conGrupos, idGrupo, LETRAS, letraDe, letraDestino, letraEnPunto } from "./indice";
+import { letraDe, letraDesdeUrl, LETRAS, ORDEN_LETRAS, rangoDeLetra } from "./indice";
 
-describe("letraDe y conGrupos", () => {
-  it("agrupa sin acentos ni signos; lo que empieza con número va en #", () => {
-    expect(["Ángel", "ñandú", "¡Arte!", "3 Tiempos", "zoco"].map(letraDe)).toEqual(["A", "N", "A", "#", "Z"]);
-    expect(idGrupo("#")).toBe("grupo-num");
-  });
-  it("marca solo el primero de cada letra, en el orden que ya trae la lista", () => {
-    const g = conGrupos(["1 Uno", "Álamo", "Arte", "Beta", "Ébano"], (x) => x).map((f) => f.grupo);
-    expect(g).toEqual(["#", "A", null, "B", "E"]);
+describe("letraDe", () => {
+  it("sin acentos ni signos; lo que no empieza con una letra va en «#»", () => {
+    expect(["Ángel", "ñandú", "¡Arte!", "3 Tiempos", "zoco", ""].map(letraDe)).toEqual(["A", "N", "A", "#", "Z", "#"]);
   });
 });
 
-describe("letraEnPunto", () => {
-  it("reparte la columna entre las 26 letras y no se sale por los extremos", () => {
+describe("ORDEN_LETRAS", () => {
+  it("las 26 letras y, al final, «#»; sin «Todos»", () => {
     expect(LETRAS).toHaveLength(26);
-    expect(letraEnPunto(0, 520)).toBe("A");
-    expect(letraEnPunto(25, 520)).toBe("B");
-    expect(letraEnPunto(519, 520)).toBe("Z");
-    expect(letraEnPunto(-40, 520)).toBe("A");
-    expect(letraEnPunto(900, 520)).toBe("Z");
+    expect(ORDEN_LETRAS).toEqual([...LETRAS, "#"]);
   });
 });
 
-describe("letraDestino", () => {
-  it("sin grupo, la siguiente letra que lo tiene; al final, la última", () => {
-    expect(letraDestino("C", ["#", "A", "C", "M"])).toBe("C");
-    expect(letraDestino("F", ["A", "C", "M"])).toBe("M");
-    expect(letraDestino("Z", ["A", "C", "M"])).toBe("M");
-    expect(letraDestino("A", ["#"])).toBeNull();
+describe("letraDesdeUrl", () => {
+  it("una letra válida (A–Z o #) se conserva en mayúscula; lo demás, o su ausencia, vale la A", () => {
+    expect(letraDesdeUrl("m")).toBe("M");
+    expect(letraDesdeUrl("#")).toBe("#");
+    expect(letraDesdeUrl(undefined)).toBe("A");
+    expect(letraDesdeUrl("á")).toBe("A");
+    expect(letraDesdeUrl("AB")).toBe("A");
   });
 });
 
-describe("accionDeLetra (Artistas, paginado)", () => {
-  const primera = { presentes: ["#", "A", "B", "C"], desde: null, completa: false };
-  it("dentro de lo cargado salta; fuera lo pide al servidor", () => {
-    expect(accionDeLetra("B", primera)).toEqual({ tipo: "saltar", letra: "B" });
-    expect(accionDeLetra("M", primera)).toEqual({ tipo: "cargar", letra: "M" });
+describe("rangoDeLetra", () => {
+  it("cada letra cubre su propio rango de `nombre_orden`", () => {
+    expect(rangoDeLetra("M")).toEqual({ desde: "m", hasta: "n" });
+    expect(rangoDeLetra("Z")).toEqual({ desde: "z", hasta: "{" });
   });
-  it("desde una letra, lo anterior se pide y la A vuelve al principio", () => {
-    const desdeM = { presentes: ["M", "N", "O", "P", "R"], desde: "M", completa: false };
-    expect(accionDeLetra("Q", desdeM)).toEqual({ tipo: "saltar", letra: "R" });
-    expect(accionDeLetra("C", desdeM)).toEqual({ tipo: "cargar", letra: "C" });
-    expect(accionDeLetra("A", desdeM)).toEqual({ tipo: "cargar", letra: null });
-    expect(accionDeLetra("T", desdeM)).toEqual({ tipo: "cargar", letra: "T" });
-  });
-  it("con la lista completa, todo es salto, aunque la letra no tenga grupo", () => {
-    const todo = { presentes: ["A", "C", "M"], desde: null, completa: true };
-    expect(accionDeLetra("Z", todo)).toEqual({ tipo: "saltar", letra: "M" });
-    expect(accionDeLetra("B", todo)).toEqual({ tipo: "saltar", letra: "C" });
+  it("«#» cubre lo que no empieza con una letra (dígitos o vacío, siempre antes de «a»)", () => {
+    const { desde, hasta } = rangoDeLetra("#");
+    expect(hasta).toBe("a");
+    expect("3 tiempos" >= desde && "3 tiempos" < hasta).toBe(true);
+    expect("" >= desde && "" < hasta).toBe(true);
+    expect("abigail" >= hasta).toBe(true);
   });
 });

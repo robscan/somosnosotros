@@ -17,30 +17,3 @@
   font-size: var(--letra-sm);
   line-height: 1.4;
 }
-
-/* Directorio alfabético (Lugares y Artistas): la lista y el índice lateral lado a lado, en un grid con áreas. El
-   índice va en el borde derecho de la columna (en el teléfono, al borde de la pantalla) y la lista le deja su sitio. */
-.directorio {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "lista indice";
-  padding-right: calc(var(--gutter) - var(--espacio-5));
-}
-.directorio > ul {
-  grid-area: lista;
-  list-style: none;
-  padding: 0 var(--espacio-2) 0 var(--gutter);
-}
-/* Sin índice (Cerca de mí, búsqueda) la lista recupera su gutter derecho. */
-.directorio > ul:only-child {
-  padding-right: var(--espacio-5);
-}
-/* El encabezado de cada letra, entre los renglones, como en Contactos. */
-.grupo {
-  padding: var(--espacio-4) 0 var(--espacio-1);
-  color: var(--texto-suave);
-  font-size: var(--letra-md);
-  font-weight: 700;
-  font-variation-settings: var(--ancho-titulo);
-  line-height: 1;
-}

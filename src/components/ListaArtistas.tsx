@@ -1,17 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
 import ChipCiudad from "@/components/Ciudad";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaDisciplina, hrefArtistas, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
 import { tarjetaArtista, type Tarjeta } from "@/lib/destacados";
-import { accionDeLetra, conGrupos, idGrupo, letraDestino } from "@/lib/indice";
 import Destacados from "./Destacados";
-import IndiceAlfabetico, { irAlGrupo } from "./IndiceAlfabetico";
 import RenglonArtista from "./RenglonArtista";
+import TiraLetras from "./TiraLetras";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
 import comun from "./Lista.module.css";
@@ -23,12 +21,15 @@ type Props = {
   /** La tira de destacados (docs/rediseno/20); llega vacía con filtro o búsqueda. */
   destacados?: ArtistaLista[];
   eventosSemana?: Tarjeta[];
+  /** Cuántos hay con la letra (o la búsqueda) activa, se vean o no (la página trae `n`). */
   total: number;
   /** Cuántos faltan por ver tras los que trae la página. */
   quedan: number;
   totalCiudad: number;
   disciplinas: Opcion[];
   detalles: Opcion[];
+  /** Letras con al menos un artista dentro de lo que hace/qué ya filtra: apagan las demás en la tira. */
+  letrasPresentes: string[];
   filtro: FiltroLeido;
   conChips: boolean;
   pagina: number;
@@ -43,11 +44,12 @@ type Props = {
 
 /**
  * Lista de artistas: renglones como los de Lugares (foto redonda, nombre, qué hace, próxima fecha y dónde);
- * con fechas primero; búsqueda por nombre a partir de 8 y chips de disciplina a partir de 12 (decisiones 1 y 2);
- * dentro de una disciplina con muchos artistas, un segundo nivel de chips por detalle (género, técnica).
- * Todo el filtro vive en la URL y lo aplica el servidor: la página trae `pagina` artistas y "Ver más" pide otros tantos.
+ * búsqueda por nombre a partir de 8 y chips de disciplina a partir de 12 (decisiones 1 y 2); dentro de una
+ * disciplina con muchos artistas, un segundo nivel de chips por detalle (género, técnica); una tira de letras
+ * filtra por inicial, con la A por defecto (corrección del founder, 2026-09-19). Todo el filtro vive en la URL
+ * y lo aplica el servidor: la página trae `pagina` artistas de esa letra y "Ver más" pide otros tantos.
  */
-export default function ListaArtistas({ artistas, destacados = [], eventosSemana = [], total, quedan, totalCiudad, disciplinas, detalles, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
+export default function ListaArtistas({ artistas, destacados = [], eventosSemana = [], total, quedan, totalCiudad, disciplinas, detalles, letrasPresentes, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
   // Al deslizar un artista: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   const seguir = useSeguirEnLista("artista", seguidos, avisos);
   // La ciudad viaja en la URL como en la agenda y Lugares (ausente = la inicial, para que el enlace sea limpio).
@@ -63,28 +65,12 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
   // Cambiar de ciudad suelta el filtro (disciplina y detalle son de la ciudad que se deja); como en Lugares.
   const chipCiudad = <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => hrefArtistas({ ciudad: c.slug === CIUDAD_INICIAL.slug ? null : c.slug })} />;
   const queHacen = filtro.que ? (detalles.find((x) => x.valor === filtro.que)?.etiqueta ?? filtro.que) : filtro.hace ? etiquetaDisciplina(filtro.hace) : null;
-  // Índice lateral (bitácora 119): la lista va por letras. Lo cargado se recorre saltando al grupo, también al
-  // arrastrar el dedo; una letra fuera de lo cargado se pide al servidor al soltar (la página empieza en ella) y,
-  // cuando llega, se salta a su grupo. Así no se trae el catálogo entero.
+  const letraTxt = filtro.letra === "#" ? "un número o símbolo" : `la letra ${filtro.letra}`;
+  // La letra filtra, no navega (memoria feedback-filtrar-no-es-navegar): reemplaza la entrada en vez de apilarla.
   const router = useRouter();
-  const pendiente = useRef<string | null>(null);
-  const filas = filtro.q ? artistas.map((x) => ({ x, grupo: null })) : conGrupos(artistas, (a) => a.nombre);
-  const presentes = filas.flatMap((f) => (f.grupo ? [f.grupo] : []));
-  const tramo = { presentes, desde: filtro.letra, completa: quedan === 0 };
-  useEffect(() => {
-    const letra = pendiente.current;
-    const destino = letra && letraDestino(letra, presentes);
-    if (destino && irAlGrupo(destino)) pendiente.current = null;
-  });
-  function alTocar(letra: string) {
-    const accion = accionDeLetra(letra, tramo);
-    if (accion.tipo === "saltar") irAlGrupo(accion.letra);
-  }
-  function alSoltar(letra: string) {
-    const accion = accionDeLetra(letra, tramo);
-    if (accion.tipo !== "cargar") return;
-    pendiente.current = letra;
-    router.replace(hrefArtistas({ ...filtro, ciudad: cSlug, letra: accion.letra, q: null, n: null }), { scroll: false });
+  const presentes = new Set(letrasPresentes);
+  function cambiarLetra(letra: string) {
+    router.replace(hrefArtistas({ ...filtro, ciudad: cSlug, letra, q: null, n: null }), { scroll: false });
   }
 
   if (totalCiudad === 0) {
@@ -137,9 +123,14 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
           )}
         </div>
       )}
+      {!filtro.q && (
+        <div className={styles.tira}>
+          <TiraLetras letra={filtro.letra} presentes={presentes} onSeleccionar={cambiarLetra} />
+        </div>
+      )}
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
-          <p>{filtro.letra ? `No hay artistas desde la ${filtro.letra}.` : queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>
+          <p>{queHacen ? `No hay artistas de ${queHacen.toLowerCase()} con ${letraTxt}.` : `No hay artistas con ${letraTxt}.`}</p>
         </div>
       ) : artistas.length === 0 ? (
         <div className={comun.vacio}>
@@ -152,22 +143,14 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
         </div>
       ) : (
         <>
-          <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} />
-          {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} redondas encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
+          <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} grande />
+          {!filtro.hace && !filtro.que && !filtro.q && filtro.letra === "A" && <Destacados tarjetas={eventosSemana} redondas encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
           <p className={comun.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
-          <div className={comun.directorio}>
-            <ul>
-              {filas.map(({ x: a, grupo }) => [
-                grupo && (
-                  <li key={grupo} id={idGrupo(grupo)} className={comun.grupo} aria-hidden>
-                    {grupo}
-                  </li>
-                ),
-                <RenglonArtista key={a.id} artista={a} sigo={seguir.sigo(a.id)} acciones={seguir.acciones(a.id, a.nombre)} />,
-              ])}
-            </ul>
-            {!filtro.q && <IndiceAlfabetico alTocar={alTocar} alSoltar={alSoltar} />}
-          </div>
+          <ul className={styles.lista}>
+            {artistas.map((a) => (
+              <RenglonArtista key={a.id} artista={a} sigo={seguir.sigo(a.id)} acciones={seguir.acciones(a.id, a.nombre)} />
+            ))}
+          </ul>
           {seguir.extras}
           {quedan > 0 && (
             <Boton href={hrefArtistas({ ...filtro, ciudad: cSlug, n: filtro.n + pagina })} variante="secundario" className={styles.verMas} scroll={false} replace>

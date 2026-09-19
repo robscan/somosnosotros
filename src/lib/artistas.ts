@@ -3,6 +3,7 @@ import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
+import { letraDesdeUrl } from "./indice";
 import { compararNombres, normalizarNombre } from "./lugares";
 import type { Origen } from "./origen";
 
@@ -113,7 +114,7 @@ export const PAGINA_ARTISTAS = 100;
 
 /**
  * Lo que va en la URL de /artistas: la ciudad (slug; ausente = la inicial), qué hacen (`hace`), qué en concreto
- * (`que`), lo escrito (`q`) y cuántos se ven (`n`).
+ * (`que`), lo escrito (`q`), la letra activa (`letra`; ausente = la A) y cuántos se ven (`n`).
  */
 export type FiltroUrlArtistas = { ciudad?: string | null; hace?: string | null; que?: string | null; q?: string | null; letra?: string | null; n?: number | null };
 
@@ -124,19 +125,18 @@ export function hrefArtistas(f: FiltroUrlArtistas): string {
   if (f.hace) p.set("hace", f.hace);
   if (f.que) p.set("que", f.que);
   if (f.q?.trim()) p.set("q", f.q.trim());
-  if (f.letra && /^[A-Z]$/.test(f.letra)) p.set("letra", f.letra);
+  if (f.letra && f.letra !== "A") p.set("letra", f.letra);
   if (f.n && f.n > PAGINA_ARTISTAS) p.set("n", String(f.n));
   const s = p.toString();
   return s ? `/artistas?${s}` : "/artistas";
 }
 
 /** Lee el filtro de la URL con valores seguros: la disciplina debe existir; `n` es un múltiplo de la página. */
-export type FiltroLeido = { hace: string | null; que: string | null; q: string | null; letra: string | null; n: number };
+export type FiltroLeido = { hace: string | null; que: string | null; q: string | null; letra: string; n: number };
 export function filtroDesdeUrl(p: { hace?: string; que?: string; q?: string; letra?: string; n?: string }): FiltroLeido {
   const hace = p.hace && DISCIPLINAS.some((d) => d.valor === p.hace) ? p.hace : null;
   const n = Number(p.n);
-  const letra = p.letra?.toUpperCase();
-  return { hace, que: hace && p.que?.trim() ? p.que.trim().slice(0, 60) : null, q: p.q?.trim().slice(0, 80) || null, letra: letra && /^[A-Z]$/.test(letra) ? letra : null, n: Number.isInteger(n) && n > PAGINA_ARTISTAS ? Math.min(n, 5000) : PAGINA_ARTISTAS };
+  return { hace, que: hace && p.que?.trim() ? p.que.trim().slice(0, 60) : null, q: p.q?.trim().slice(0, 80) || null, letra: letraDesdeUrl(p.letra), n: Number.isInteger(n) && n > PAGINA_ARTISTAS ? Math.min(n, 5000) : PAGINA_ARTISTAS };
 }
 
 /** Por nombre o detalle escrito, y por los chips: disciplina y, dentro de ella, detalle (género, técnica). */
