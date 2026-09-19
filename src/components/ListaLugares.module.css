@@ -1,5 +1,5 @@
-/* Lista de lugares: cada hijo pone su gutter; los renglones vienen de Renglon.module.css; el conteo, el vacío y la
-   tira de letras, de Lista.module.css */
+/* Lista de lugares: cada hijo pone su gutter; los renglones vienen de Renglon.module.css; el conteo y el vacío, de
+   Lista.module.css; la tira de letras, de TiraLetras.module.css */
 .lista > ul {
   list-style: none;
   padding: 0 var(--gutter);
