@@ -4,6 +4,8 @@ Pedido del founder, 2026-09-18: Artistas y Lugares se ordenan alfabéticamente y
 
 **Corrección del founder, 2026-09-18:** la referencia aprobable para el índice es vertical y lateral, como Contactos de Apple; no lleva «Todos». Antes de remitir una propuesta UX/UI al gestor, el founder la revisa y da VoBo explícito. En Artistas, «Con eventos esta semana» conserva tarjetas circulares; solo el carril editorial de Destacados usa tarjetas rectangulares con imagen ampliada.
 
+**Precisión del founder, 2026-09-18:** la propuesta no debe enmascarar ni recortar artificialmente la segunda tarjeta. Los sliders conservan el desplazamiento horizontal real de producción y la siguiente tarjeta se ve como hoy.
+
 La letra de Artistas vive en la URL y se filtra en el servidor, sin cargar el catálogo completo. No hay migraciones, variables de entorno ni cambios de permisos.
 
 Checkpoint final local: `2c6087f`. Verificado con 44 pruebas focalizadas (orden, acentos, cercanía, carril semanal y foto/placeholder), typecheck, lint sin errores (queda un warning previo en el logotipo) y build. Smoke de solo lectura con datos públicos: índice, letra, borrar búsqueda y reset en Artistas a 390×844; letra y reset en Lugares a 1280×800. El índice queda antes de los carriles y no cubre sus tarjetas, confirmado de nuevo a 390 y 1280. Cada letra y «Todos» tiene objetivo táctil de 44×44 px, y Z recibe foco tras desplazarse horizontalmente. Capturas privadas: `directorios-alfabeticos/artistas-390-tactil.png` y `directorios-alfabeticos/lugares-1280-tactil.png`. La cercanía no pidió ubicación real y se sostiene en las pruebas focalizadas; la tarjeta única no ocurrió con los datos públicos, pero conserva el rectángulo responsivo por CSS.
