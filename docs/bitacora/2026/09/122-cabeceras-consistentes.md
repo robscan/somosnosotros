@@ -34,3 +34,17 @@ La tira y la letra iluminada vienen hechas de directorios; no se reescribieron. 
 - Capturas de 390×844 entregadas a gestión de cambios, fuera del repo.
 - Sin migración.
 - No se probó en el iPhone del founder, con lector de pantalla ni con el mapa real (sin token de Mapbox en local).
+
+## Ajuste de la tira de letras, mismo OL (2026-09-19, chat de gestión de cambios)
+
+Corrección del founder tras ver la tira publicada, con fondo blanco y botones circulares: «pusiste tira de letras con fondo blanco, de entrada que no se muestre si no hasta que el usuario ya llegó a la primera letra que aparezca sticky, si quieres mantener el mismo fondo está bien, pero quita el borde circular, con las letras basta, puedes disminuir el gap pues la zona de circulo es bastante grande». Rama `tira-letras-ajuste`, desde `origin/main` tras el PR #108.
+
+`TiraLetras.tsx` deja de reutilizar `ui/Chip` (círculos con borde) y pasa a tener su propio módulo, `TiraLetras.module.css`:
+
+- **Sin círculo ni borde**: solo la letra, en el color del texto; la iluminada, en el color primario, más gruesa y con un subrayado corto (`aria-current`, sigue sin ser un filtro).
+- **Menos separación**: el botón mide 44 px de alto (el mínimo de toque) y entre 34 y 36 px de ancho, sin espacio entre ellos (antes, chips redondos con espacio); `touch-action: manipulation` se hereda del selector global de `globals.css`, no de `ui/Chip`.
+- **No se ve arriba del todo**: la tira ya no depende de si la lista es alfabética, sino de si `useLetraActiva` ilumina algo. Con ninguna letra activa (antes de llegar a la zona de la primera), `.tira` queda en `opacity: 0; visibility: hidden`, pero sigue en el documento y mide lo mismo: la línea de corte de `useLetraActiva` y el punto donde salta `irAlGrupo` no cambian según se vea o no. Al bajar hasta la zona de la primera letra se ilumina y aparece; al volver a subir por encima, se apaga y desaparece.
+- **Sin salto de layout**: la tira vive al principio de la lista (antes del primer carril), con `margin-bottom` negativo igual a su alto, así que aparecer o esconderse (opacidad y visibilidad, no `display`) no mueve nada por debajo.
+- Se retiró `comun.tira` de `Lista.module.css` (vivía ahí desde antes de OL-087, ahora sin uso) y las dos listas pasan `ref` directo al nuevo componente en vez de envolverlo en un `<div>` propio.
+
+Verificado a ojo en el navegador integrado, con `next dev` de la rama contra el mismo respaldo local sin producción: Lugares y Artistas sin tira al abrir; aparece al bajar hasta la A, con la A iluminada, sin mover la lista; toque real sobre una letra (C en Lugares) cae justo bajo la tira y la ilumina, sin desplazamiento sobrante. Typecheck, lint (mismo warning previo), 686 pruebas y `npm run build` en verde. Capturas de 390×844 (arriba sin tira, bajando con la A iluminada, tras tocar la M) entregadas a gestión de cambios. Commit local, sin push; sin migración.

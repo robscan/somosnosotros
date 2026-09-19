@@ -70,14 +70,10 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
   }
   return (
     <section className={styles.lista} aria-label="Lugares">
+      {alfabetico && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={(letra) => { antesDeSaltar(); irAlGrupo(letra); }} />}
       {aviso}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} grande />}
       {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
-      {alfabetico && (
-        <div ref={tiraRef} className={comun.tira}>
-          <TiraLetras letras={letras} activa={letraActiva} alTocar={(letra) => { antesDeSaltar(); irAlGrupo(letra); }} />
-        </div>
-      )}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()
