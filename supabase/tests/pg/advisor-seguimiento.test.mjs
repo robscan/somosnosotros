@@ -1,7 +1,7 @@
-// Lo que queda del Security Advisor (OL-077, bitácora 121), migración 20260918170000. Dos cambios, ninguno
-// visible para la app: se le quita a anon/authenticated el EXECUTE por defecto sobre las funciones de la
-// extensión pg_net (si está instalada — en este banco local no lo está, y el bloque de la migración es una
-// no-operación ahí, comprobado abajo sin fallar), y se añaden diez índices que faltaban en claves foráneas.
+// Lo que queda del Security Advisor (OL-077, bitácora 121), migración 20260918170000: diez índices que faltaban
+// en claves foráneas, sin cambiar ninguna consulta de resultado. (pg_net se investigó y se descartó como
+// arreglable — ver la bitácora 121: es de supabase_admin, con ACL nula, y una migración que corre como postgres
+// no puede revocar nada ahí; el esquema net tampoco lo expone la API. No hay nada de pg_net que probar aquí.)
 
 const FK_INDEXES = [
   ["artistas", "creado_por", "artistas_creado_por_idx"],
@@ -32,39 +32,4 @@ export async function run({ query, check }) {
   }
   const total = await query(`select count(*)::int as n from pg_indexes where schemaname = 'public' and indexname = any($1::text[])`, [FK_INDEXES.map((f) => f[2])]);
   check(total.rows[0].n === FK_INDEXES.length, "los diez índices están, ninguno de más ni de menos", total.rows[0]);
-
-  // ---------- pg_net: si está instalada, ni anon ni authenticated ejecutan sus funciones; si no, no hay nada que revisar ----------
-  const { rows: netFns } = await query(`
-    select p.oid::regprocedure as firma
-    from pg_depend d
-    join pg_proc p on p.oid = d.objid and d.classid = 'pg_proc'::regclass
-    join pg_extension e on e.oid = d.refobjid
-    where e.extname = 'pg_net' and d.deptype = 'e'
-  `);
-  if (netFns.length === 0) {
-    check(true, "pg_net no está instalada en este banco local: el bloque de la migración fue una no-operación, sin error (ver 'ok N migraciones aplicadas')");
-  } else {
-    for (const { firma } of netFns) {
-      const { rows: [p] } = await query(
-        `select has_function_privilege('anon', $1::regprocedure, 'execute') as anon,
-                has_function_privilege('authenticated', $1::regprocedure, 'execute') as authenticated,
-                has_function_privilege('service_role', $1::regprocedure, 'execute') as service_role`,
-        [firma],
-      );
-      check(!p.anon && !p.authenticated && p.service_role, `pg_net ${firma}: sin EXECUTE para anon/authenticated, service_role conservado`, p);
-    }
-  }
-
-  // ---------- control: ninguna función propia del proyecto llama net.* desde una ruta de anon/authenticated ----------
-  // (si alguna lo hiciera, quitarle el permiso a pg_net rompería esa ruta; esto confirma que no es el caso)
-  const { rows: llaman } = await query(`
-    select p.oid::regprocedure as firma
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public'
-      and not exists (select 1 from pg_depend d where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e')
-      and p.prosrc ilike '%net.http%'
-      and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('authenticated', p.oid, 'execute'))
-  `);
-  check(llaman.length === 0, "ninguna función propia con EXECUTE de cliente llama a net.http*: revocar pg_net no cambia comportamiento visible", llaman);
 }

@@ -2,26 +2,14 @@
 -- Codex ya cerró la mayor parte (bitácora 111, PR #104): los 49 warnings y 4 suggestions originales bajaron a
 -- 0 errores, 25 warnings y 9 info en producción (rerun del panel del Advisor, verificado ahí mismo). Esta pieza
 -- revisa qué queda, con una lectura de solo lectura (transacción `begin read only`) directa a producción hoy
--- (2026-09-18), y solo añade dos arreglos nuevos, ninguno de los dos cambia nada visible para la app:
+-- (2026-09-18). Solo añade un arreglo, que no cambia nada visible para la app:
 --
---   1. Las funciones de `pg_net` (la extensión que hace peticiones HTTP desde Postgres, usada por las tareas de
---      avisos) tenían EXECUTE para `anon` y `authenticated` — el permiso por defecto que deja la instalación de la
---      extensión en Supabase, no algo que este proyecto haya concedido a propósito. Con eso, cualquier visita sin
---      sesión podía pedirle al servidor que hiciera una petición HTTP a la URL que quisiera (net.http_post/get/
---      delete), un riesgo de "server-side request forgery" que el Advisor no cubrió en su lista original pero que
---      sí es una de las comprobaciones que se le pidió repetir a esta pieza. Ninguna función propia del proyecto
---      llama a `net.*` desde una ruta de `anon`/`authenticated` (todas las tareas de avisos son `security definer`,
---      internas, sin EXECUTE para el cliente — ver la matriz de la bitácora 111): quitarles el permiso a `anon` y
---      `authenticated` no cambia nada de lo que la app hace hoy. `service_role` y el dueño de la base lo conservan.
---      La extensión en sí no se puede mover de schema (`pg_net` no es relocatable — comprobado en producción,
---      `extrelocatable = false`): el aviso "extensión en public" del Advisor, si aparece, no tiene arreglo posible
---      de este lado; sus funciones sí viven en su propio schema `net`, correctamente.
---   2. Diez claves foráneas sin un índice que empiece por su columna (`artistas.creado_por`,
---      `avisos_entregas.usuario_id`, `avisos_enviados.evento_id`, `avisos_jobs.actor`, `cambios_de_rol.por`,
---      `eventos.creado_por`, `lugares.creado_por`, `novedades.aviso_job_id`, `novedades.evento_id`,
---      `topes_de_lectura.cambiado_por`): el Advisor de rendimiento las señala porque un `on delete`/`on update`
---      o un filtro por esa columna hace un recorrido completo de la tabla. Solo añade índices; ninguna consulta
---      cambia de resultado.
+--   Diez claves foráneas sin un índice que empiece por su columna (`artistas.creado_por`,
+--   `avisos_entregas.usuario_id`, `avisos_enviados.evento_id`, `avisos_jobs.actor`, `cambios_de_rol.por`,
+--   `eventos.creado_por`, `lugares.creado_por`, `novedades.aviso_job_id`, `novedades.evento_id`,
+--   `topes_de_lectura.cambiado_por`): el Advisor de rendimiento las señala porque un `on delete`/`on update`
+--   o un filtro por esa columna hace un recorrido completo de la tabla. Solo añade índices; ninguna consulta
+--   cambia de resultado.
 --
 -- Lo que queda del Advisor y NO se toca aquí, todo ya clasificado (bitácora 111, confirmado de nuevo hoy):
 --   · Las 24 EXECUTE de SECURITY DEFINER restantes (5 `anon` + 19 `authenticated`, sobre funciones propias) son
@@ -41,28 +29,18 @@
 --     pidió; queda pendiente de esa pieza aparte, no de esta.
 --   · Cero vistas con `security_invoker` desactivado (no hay vistas en `public`) y cero políticas permisivas
 --     duplicadas: nada que arreglar en esas dos categorías.
+--   · `pg_net` (la extensión que hace peticiones HTTP desde Postgres) aparece en `public`, pero no es de este
+--     proyecto ni tiene arreglo posible de este lado: sus 12 funciones son de `supabase_admin` (superusuario),
+--     con ACL nula — es decir, EXECUTE por defecto a PUBLIC, no algo que este proyecto haya concedido; una
+--     migración que corre como `postgres` (ni dueño ni superusuario ni con opción de conceder sobre esas firmas)
+--     no puede revocarlo, ni a `anon`/`authenticated` ni a PUBLIC — se intentó y no hizo nada. Tampoco hay riesgo
+--     real desde fuera: la API de PostgREST no expone el esquema `net` (comprobado en producción: un POST a
+--     `rpc/http_post` con `Content-Profile: net` y la llave anónima responde 406), ninguna función propia de
+--     `public` llama a `net.*` (0 filas) y las tareas de avisos corren como `postgres`. `pg_net` tampoco se puede
+--     reubicar de schema (`extrelocatable = false`, comprobado). Aceptado con evidencia, no arreglado.
 --
 -- Sin datos nuevos, sin tocar Auth ni Storage, sin cambiar ninguna función existente. Banco nuevo en
--- supabase/tests/advisor_seguimiento.mjs.
-
--- ---------- pg_net: quitar el permiso por defecto de anon/authenticated ----------
--- Por nombre de función, no por lista fija de firmas: recorre lo que pg_depend diga que pertenece hoy a la
--- extensión pg_net (sus 12 funciones en producción al escribir esto) y no hace nada si la extensión no está
--- instalada — en el banco local de pruebas no lo está, y este bloque queda como no-operación ahí, sin error.
-do $$
-declare
-  r record;
-begin
-  for r in
-    select p.oid
-    from pg_depend d
-    join pg_proc p on p.oid = d.objid and d.classid = 'pg_proc'::regclass
-    join pg_extension e on e.oid = d.refobjid
-    where e.extname = 'pg_net' and d.deptype = 'e'
-  loop
-    execute format('revoke execute on function %s from anon, authenticated', r.oid::regprocedure);
-  end loop;
-end $$;
+-- supabase/tests/pg/advisor-seguimiento.test.mjs.
 
 -- ---------- índices que faltan en claves foráneas ----------
 create index if not exists artistas_creado_por_idx on public.artistas (creado_por);
