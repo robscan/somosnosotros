@@ -14,20 +14,19 @@ type Props = {
   ciudades: CiudadConDatos[] | CiudadConArtistas[];
   /** A dónde lleva cada ciudad (la agenda, Lugares…). */
   hrefDe: (c: Ciudad) => string;
-  className?: string;
 };
 
 /**
- * El chip de ciudad y su hoja (decisión del founder, 2026-09-16): siempre se abre, aunque haya una sola ciudad, y lista
- * las ciudades que hay con lo que tienen. No hay alta de ciudad: una ciudad aparece en cuanto alguien registra un lugar
- * en ella (agenda y Lugares) o un artista (Artistas).
+ * El chip de ciudad, chip de contexto de ui/Cabecera, y su hoja (decisión del founder, 2026-09-16): siempre se abre,
+ * aunque haya una sola ciudad, y lista las ciudades que hay con lo que tienen. No hay alta de ciudad: una ciudad
+ * aparece en cuanto alguien registra un lugar en ella (agenda y Lugares) o un artista (Artistas).
  */
-export default function ChipCiudad({ ciudad, ciudades, hrefDe, className = "" }: Props) {
+export default function ChipCiudad({ ciudad, ciudades, hrefDe }: Props) {
   const [abierta, setAbierta] = useState(false);
   const deArtistas = ciudades.some((c) => "artistas" in c);
   return (
     <>
-      <button type="button" className={`${chip.chip} ${className}`} onClick={() => setAbierta(true)} aria-haspopup="dialog">
+      <button type="button" className={`${chip.chip} ${chip.deContexto}`} onClick={() => setAbierta(true)} aria-haspopup="dialog">
         <IconoPin width={16} height={16} />
         <span>{ciudad.nombre}</span>
         <IconoCaret width={12} height={12} />

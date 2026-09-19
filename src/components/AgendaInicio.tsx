@@ -16,7 +16,8 @@ import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
-import { IconoBuscar, IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
+import Cabecera from "./ui/Cabecera";
+import { IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
 import { useAsistenciaEnLista, type Decididas } from "./useAsistenciaEnLista";
 import { AvisoAbajo, useCanalDeListas } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
@@ -53,13 +54,13 @@ type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: boolean; corte: number | null; huboVisita: boolean; selloNuevos: string | null };
 
 /**
- * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
+ * La agenda de la ciudad: ui/Cabecera (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
 export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, avisos = null, destacados = [] }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
-  // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
+  // La lupa abre el campo en el renglón de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
   const [busqueda, setBusqueda] = useState("");
   const [buscando, setBuscando] = useState(false);
   // El foco (y el teclado) solo cuando la lupa acaba de abrir el campo; al volver de una ficha no se roba el foco.
@@ -253,46 +254,45 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
 
   return (
     <>
-      <div className={styles.fija}>
-        <div className={styles.contexto}>
-          {buscando ? (
-            // La lupa abrió el campo en el sitio de los chips: la cabecera no cambia de alto y la ✕ lo cierra.
-            <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, sitio o artista" ariaLabel="Buscar un evento" autoFocus={enfocar} className={styles.campoBusqueda} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />
-          ) : (
-            <>
-              {fecha ? (
-                // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
-                <span className={`${chip.chip} ${styles.chipContexto} ${styles.marcado}`}>
-                  <IconoCalendario width={16} height={16} />
-                  <span>{diaCorto(localAIso(`${fecha}T12:00`, zona) ?? hoyIso, ahora, zona)}</span>
-                  <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
-                    <IconoCerrar width={18} height={18} />
-                  </button>
-                </span>
-              ) : (
-                // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
-                <label className={`${chip.chip} ${chip.chipNativo} ${styles.chipContexto}`} htmlFor="agenda-fecha">
-                  <IconoCalendario width={16} height={16} />
-                  <span>{diaCorto(hoyIso, ahora, zona)}</span>
-                  <IconoCaret width={12} height={12} />
-                  <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
-                </label>
-              )}
-              <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${c.slug}`)} className={styles.chipContexto} />
-              <button type="button" className={`${chip.chip} ${styles.chipContexto} ${styles.lupa}`} onClick={() => { setBuscando(true); setEnfocar(true); }} aria-label="Buscar un evento">
-                <IconoBuscar width={18} height={18} />
-              </button>
-            </>
-          )}
-        </div>
-        <Pestanas ariaLabel="Filtrar la agenda" repartidas className={styles.filtros}>
-          {FILTROS.map((f) => (
-            <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => { if (f.clave === "nuevos") verNuevos(); setFiltro(f.clave); }}>
-              {f.etiqueta}
-            </Pestana>
-          ))}
-        </Pestanas>
-      </div>
+      <Cabecera
+        contexto={
+          <>
+            {fecha ? (
+              // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
+              <span className={`${chip.chip} ${chip.deContexto} ${styles.marcado}`}>
+                <IconoCalendario width={16} height={16} />
+                <span>{diaCorto(localAIso(`${fecha}T12:00`, zona) ?? hoyIso, ahora, zona)}</span>
+                <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
+                  <IconoCerrar width={18} height={18} />
+                </button>
+              </span>
+            ) : (
+              // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
+              <label className={`${chip.chip} ${chip.deContexto} ${chip.chipNativo}`} htmlFor="agenda-fecha">
+                <IconoCalendario width={16} height={16} />
+                <span>{diaCorto(hoyIso, ahora, zona)}</span>
+                <IconoCaret width={12} height={12} />
+                <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
+              </label>
+            )}
+            <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${c.slug}`)} />
+          </>
+        }
+        onBuscar={() => {
+          setBuscando(true);
+          setEnfocar(true);
+        }}
+        campo={buscando && <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, sitio o artista" ariaLabel="Buscar un evento" autoFocus={enfocar} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />}
+        filtros={
+          <Pestanas ariaLabel="Filtrar la agenda" repartidas>
+            {FILTROS.map((f) => (
+              <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => { if (f.clave === "nuevos") verNuevos(); setFiltro(f.clave); }}>
+                {f.etiqueta}
+              </Pestana>
+            ))}
+          </Pestanas>
+        }
+      />
       {antes}
       {/* La tira se va cuando la persona ya busca algo: otra pestaña, una fecha o la búsqueda (decisión 3). */}
       {filtro === "todos" && !fecha && !buscando && <Destacados tarjetas={enOrden(destacados, eventos).map((e) => tarjetaEvento(e, ahora))} grande />}

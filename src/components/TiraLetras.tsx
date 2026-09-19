@@ -31,32 +31,6 @@ export function irAlGrupo(letra: string): boolean {
 }
 
 /**
- * Mide lo que ya se pega arriba (pestañas, buscador y chips) y dónde debe quedar la tira: lo deja en `--tapa`, en la
- * raíz del documento (solo hay una lista con tira a la vez), así el CSS de la tira no necesita saber nada de layout.
- * Se remide con el tamaño de la ventana y cualquier cambio de tamaño en la página (un chip que aparece o desaparece
- * cambia el alto de lo que se pega).
- */
-export function usePegajosos(tira: RefObject<HTMLElement | null>, activo: boolean) {
-  useEffect(() => {
-    if (!activo) return;
-    const raiz = document.documentElement;
-    const medir = () => {
-      const t = tira.current;
-      if (t) raiz.style.setProperty("--tapa", `${tapaAntesDe(t)}px`);
-    };
-    medir();
-    const ro = new ResizeObserver(medir);
-    ro.observe(document.body);
-    window.addEventListener("resize", medir);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", medir);
-      raiz.style.removeProperty("--tapa");
-    };
-  }, [tira, activo]);
-}
-
-/**
  * En qué letra vas: la del último separador que ya cruzó el borde de abajo de lo pegado arriba (la tira incluida),
  * o ninguna antes de llegar a la zona de la primera (founder, 2026-09-19: «A deja de ser un filtro y se tiene que
  * iluminar en cuanto entremos a su zona»). Un listener de scroll pasivo, calculado como mucho una vez por cuadro y
@@ -74,7 +48,9 @@ export function useLetraActiva(letras: string[], tira: RefObject<HTMLElement | n
         setActiva((anterior) => (anterior === null ? anterior : null));
         return;
       }
-      const linea = tira.current?.getBoundingClientRect().bottom ?? 0;
+      // Un píxel de margen: el salto deja el separador en la línea, pero con fracciones de píxel (100.09 contra 100)
+      // la comparación exacta lo dejaba fuera e iluminaba la letra anterior.
+      const linea = (tira.current?.getBoundingClientRect().bottom ?? 0) + 1;
       let actual: string | null = null;
       for (const l of letras) {
         const el = document.getElementById(idGrupo(l));
@@ -104,7 +80,7 @@ export function useLetraActiva(letras: string[], tira: RefObject<HTMLElement | n
  * point»). Solo lista las letras que tienen elementos, en el orden real de la lista; tocar una lleva a su separador,
  * sin apagar ni encender nada más (no es un filtro: `aria-current`, no `aria-pressed`). Se ilumina sola en la letra
  * en que vas (`useLetraActiva`) y, si no cabe entera, se desliza de lado para que esa letra quede a la vista, sin
- * mover la página en vertical. Se pega justo debajo de lo que ya se pega en la pantalla (founder: «dejar sticky
+ * mover la página en vertical. Se pega justo debajo de lo que ui/Cabecera deja a la vista (founder: «dejar sticky
  * letras y tabs»), con los carriles arriba, sin quedarse fijos; se va con la búsqueda o con «Cerca de mí». El CSS
  * es el mismo de ui/Chip (ya cumple el mínimo de 44×44 px y no da doble toque ni zoom), sin su botón (que siempre
  * lleva `aria-pressed`, un estado de filtro que aquí no aplica).

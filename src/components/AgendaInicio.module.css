@@ -1,29 +1,6 @@
-/* Cabecera pegajosa: chips de contexto y pestañas de filtro; blanca sobre el tono del contenido.
-   Va a todo el ancho; el gutter lo ponen sus hijos, sin márgenes negativos. */
-.fija {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--fondo);
-}
-.contexto {
-  display: flex;
-  gap: var(--espacio-2);
-  padding: var(--espacio-1) var(--gutter) var(--espacio-3);
-}
-/* Chips de contexto: el dibujo es el de ui/Chip; aquí solo lo propio (más bajos y en negrita, con el icono suave).
-   Van dentro de .fija para pesar más que la clase base sin depender del orden de los módulos. */
-.fija .chipContexto {
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 var(--espacio-3) 0 10px;
-  font-weight: 600;
-}
-.fija .chipContexto > svg {
-  margin-right: 0;
-  color: var(--texto-suave);
-}
-.fija .marcado {
+/* El chip de fecha elegida (ui/Chip de contexto en ui/Cabecera): borde de acción y su ✕ para volver a hoy.
+   La clase va dos veces para pesar más que el borde de ui/Chip sin depender del orden de los módulos. */
+.marcado.marcado {
   border-color: var(--primario);
 }
 .quitar {
@@ -39,37 +16,17 @@
   color: var(--texto-suave);
   cursor: pointer;
 }
-/* La lupa: un chip redondo con solo el icono, pegado a la derecha de los chips de contexto. */
-.lupa {
-  width: 40px;
-  margin-left: auto;
-  padding: 0;
-  justify-content: center;
-}
-.fija .lupa > svg {
-  color: var(--texto);
-}
-/* El campo de búsqueda ocupa la fila de los chips con su mismo alto: la cabecera pegajosa no se mueve. */
-.campoBusqueda {
-  flex: 1;
-  min-height: 40px;
-}
-.campoBusqueda input {
-  font-size: var(--letra-md);
-}
-/* Las pestañas de filtro (ui/Pestanas, repartidas): solo el gutter */
-.filtros {
-  padding: 0 var(--gutter);
-}
 
-/* Grupos por día con título pegajoso debajo de la cabecera. Cada grupo pone su propio gutter. */
+/* Grupos por día con título pegajoso debajo de lo que la cabecera deja a la vista (`--alto-cabecera`, de ui/Cabecera).
+   Cada grupo pone su propio gutter. */
 .grupo {
   margin: 0 var(--gutter) var(--espacio-6);
 }
 .grupo h2 {
   position: sticky;
-  top: var(--alto-cabecera-agenda);
+  top: var(--alto-cabecera);
   z-index: 5;
+  transition: top var(--cabecera-animacion, 0.2s) ease;
   padding: 14px 0 6px;
   background: var(--fondo-contenido);
   border-bottom: 1px solid var(--texto);
