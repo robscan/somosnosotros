@@ -165,3 +165,11 @@ generaria un envio real, para que decida si lo quiere ver salir o prefiere
 dejarlo caducar. No se propone regenerar cuerpos ni inventar una purga nueva:
 esa lectura de confirmacion la debe hacer quien tenga sesion contra produccion
 (el gestor), no este operador.
+
+## Reactivación (2026-09-18, 19:02 hora local, gestión de cambios)
+
+- **Autorización del founder:** confirmó que la protección de Vercel es la estándar (Standard Protection, que cubre también los despliegues antiguos de producción) y aceptó las dos horas, 09:05 y 21:05.
+- **Cola leída antes de encender (solo lectura):** 4 avisos activos. El recordatorio del evento de las 20:00 de hoy caduca a las 02:00 UTC y no sale. Podían salir tres: dos «cambió el lugar» («Nos vamos con estilo» y «México, Mágico, Musical», editados desde la cuenta del founder) y el recordatorio de «Círculo de lectura» de mañana a las 10:00. A esos eventos solo van cuentas de administración; ninguna persona sin rol admin tiene canal activo. Se dejaron salir: sirven de prueba real de recepción.
+- **Ejecutado en una transacción:** `cron.alter_job(1, schedule := '5 3,15 * * *')`, `update avisos_config set entregar = true, recordatorios_desde = clock_timestamp()` y `cron.alter_job(1, active := true)`. Resultado: `capturar = true`, `entregar = true`, `recordatorios_desde = 2026-09-19 01:02:15 UTC`, job activo con dos horas en un solo job.
+- **Siguiente:** revisión de solo lectura de la primera ronda a las 21:15 (tarea programada). La prueba de recepción es que llegue a un teléfono o correo, no el HTTP 200.
+
