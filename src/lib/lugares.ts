@@ -65,8 +65,8 @@ export function calleCorta(direccion: string | null | undefined): string {
 type Distancia = Punto;
 
 /**
- * Orden de la lista: con ubicación, por distancia (y la distancia de cada uno); sin ella, primero los que
- * está ordenada alfabéticamente; con ubicación, por distancia.
+ * Orden de la lista: con ubicación, por distancia (y la distancia de cada uno); sin ella, alfabético (directorio con
+ * índice lateral, bitácora 119).
  */
 export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distancia | null): { lista: T[]; km: Map<string, number> } {
   const km = new Map<string, number>();
