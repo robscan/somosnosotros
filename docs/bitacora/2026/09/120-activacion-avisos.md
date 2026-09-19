@@ -173,3 +173,9 @@ esa lectura de confirmacion la debe hacer quien tenga sesion contra produccion
 - **Ejecutado en una transacción:** `cron.alter_job(1, schedule := '5 3,15 * * *')`, `update avisos_config set entregar = true, recordatorios_desde = clock_timestamp()` y `cron.alter_job(1, active := true)`. Resultado: `capturar = true`, `entregar = true`, `recordatorios_desde = 2026-09-19 01:02:15 UTC`, job activo con dos horas en un solo job.
 - **Siguiente:** revisión de solo lectura de la primera ronda a las 21:15 (tarea programada). La prueba de recepción es que llegue a un teléfono o correo, no el HTTP 200.
 
+## Cambio de cadencia (2026-09-18, 19:08 hora local)
+
+- **Decisión del founder:** «cada 5». La tomó después de que el operador le explicara el techo de 40 entregas por invocación (hasta unas 480 por hora) y lo cortas que son las invocaciones. Sustituye a las dos rondas diarias (09:05 y 21:05) que había confirmado a las 19:00.
+- **Ejecutado:** `cron.alter_job(1, schedule := '*/5 * * * *')`. El job sigue activo; `entregar` y `recordatorios_desde` no cambian.
+- **Revisión:** tarea programada de solo lectura a las 19:22, sobre las rondas de las 19:10, 19:15 y 19:20.
+
