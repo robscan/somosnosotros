@@ -29,9 +29,5 @@
   margin: var(--espacio-4) var(--gutter) 0;
 }
 
-/* 2. Renglones (el conteo y el vacío vienen de Lista.module.css) */
-.lista {
-  list-style: none;
-  padding: 0 var(--gutter);
-}
+/* 2. Renglones y el índice lateral: el directorio de Lista.module.css (con el conteo y el vacío) */
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useId, useRef, type UIEvent } from "react";
-import type { Tarjeta } from "@/lib/destacados";
+import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import { IconoPersonas } from "./ui/Iconos";
 import styles from "./Destacados.module.css";
@@ -10,7 +10,8 @@ import styles from "./Destacados.module.css";
 /**
  * La tira de destacados arriba de un listado (docs/rediseno/20). Se desliza con el dedo, sin avance automático, y la
  * siguiente tarjeta asoma (decisiones 1 y 2). Sin tarjetas no existe (decisión 4); con una sola, ocupa el ancho.
- * Lo de artistas va en redondo, como su avatar. Al volver de una ficha queda donde estaba (decisión 12).
+ * Rectangulares y al doble en Agenda, Lugares y Artistas (founder, 2026-09-18); solo «Con eventos esta semana» de
+ * Artistas va en redondo, como su avatar. Al volver de una ficha queda donde estaba (decisión 12).
  */
 export default function Destacados({ tarjetas, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false }: { tarjetas: Tarjeta[]; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean }) {
   const titulo = useId();
@@ -42,11 +43,13 @@ export default function Destacados({ tarjetas, redondas = false, encabezado = "D
     pendiente.current = { clave, temporizador };
   }
   if (tarjetas.length === 0) return null;
+  // La curaduría (o la fecha semanal) conserva su orden dentro de cada grupo; una foto real va antes del placeholder.
+  const ordenadas = ordenarTarjetasPorFoto(tarjetas);
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <h2 id={titulo}>{encabezado}</h2>
-      <ul ref={recordar} className={`${styles.carril} ${tarjetas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar}>
-        {tarjetas.map((t) => (
+      <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar}>
+        {ordenadas.map((t) => (
           <li key={t.id}>
             <Link href={t.href} className={styles.tarjeta}>
               {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}

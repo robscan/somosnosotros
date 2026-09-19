@@ -82,8 +82,8 @@ describe("ordenarLugares", () => {
   const a = { ...base, id: "a", nombre: "Zeta", lat: 22.15, lng: -100.98, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City" } };
   const b = { ...base, id: "b", nombre: "Alfa", lat: 22.16, lng: -100.98, proximo: null };
   const c = { ...base, id: "c", nombre: "Beta", lat: 22.2, lng: -100.9, proximo: { id: "e2", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City" } };
-  it("sin ubicación: con eventos primero por fecha, luego alfabético", () => {
-    expect(ordenarLugares([a, b, c], null).lista.map((l) => l.id)).toEqual(["c", "a", "b"]);
+  it("sin ubicación: alfabético", () => {
+    expect(ordenarLugares([a, b, c], null).lista.map((l) => l.id)).toEqual(["b", "c", "a"]);
   });
   it("con ubicación: por distancia, con los km", () => {
     const { lista, km } = ordenarLugares([a, b, c], { lat: 22.16, lng: -100.98 });

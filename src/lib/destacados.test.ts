@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EventoAgenda } from "./agenda";
 import type { ArtistaLista } from "./artistas";
-import { decididoVigente, enOrden, fechasValidas, opcionDestacar, puedeDestacarse, SIN_DECIDIR, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
+import { decididoVigente, enOrden, fechasValidas, opcionDestacar, ordenarTarjetasPorFoto, puedeDestacarse, SIN_DECIDIR, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
 import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 import type { LugarLista } from "./lugares";
 
@@ -21,6 +21,13 @@ describe("enOrden", () => {
   it("deja las fichas en el orden de la tira y salta las que no llegaron", () => {
     const tira: Destacado[] = ["b", "x", "a"].map((id) => ({ id, motivo: "elegido", hasta: null, van: 0 }));
     expect(enOrden(tira, [{ id: "a" }, { id: "b" }, { id: "c" }]).map((f) => f.id)).toEqual(["b", "a"]);
+  });
+});
+
+describe("ordenarTarjetasPorFoto", () => {
+  it("pone foto real antes del placeholder y conserva el orden dentro de cada grupo", () => {
+    const tarjetas = ["sin-primero", "foto-primera", "sin-segundo", "foto-segunda"].map((id) => ({ id, href: `/${id}`, foto: id.startsWith("sin") ? SIN_FOTO_ANCHA : `/${id}.jpg`, titulo: id, detalle: "", van: 0 }));
+    expect(ordenarTarjetasPorFoto(tarjetas).map((t) => t.id)).toEqual(["foto-primera", "foto-segunda", "sin-primero", "sin-segundo"]);
   });
 });
 

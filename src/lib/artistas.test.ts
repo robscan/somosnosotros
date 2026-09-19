@@ -39,8 +39,8 @@ describe("ordenarArtistas y filtrarArtistas", () => {
     { ...base, id: "3", nombre: "Alfa", proxima: null },
     { ...base, id: "4", nombre: "Gamma", proxima: { id: "e4", inicio: "2026-09-15T01:00:00Z", sitio: "Casa", zona: "America/Mexico_City" } },
   ];
-  it("con fechas primero (por fecha), luego alfabético", () => {
-    expect(ordenarArtistas(lista).map((a) => a.nombre)).toEqual(["Gamma", "Beta", "Alfa", "Zeta"]);
+  it("ordena alfabéticamente aunque tengan próxima fecha", () => {
+    expect(ordenarArtistas(lista).map((a) => a.nombre)).toEqual(["Alfa", "Beta", "Gamma", "Zeta"]);
   });
   it("busca por nombre o detalle, sin acentos", () => {
     const l = [{ nombre: "Trío Xóchitl", detalle: "son huasteco" }, { nombre: "Pedro Ibarra", detalle: "jazz" }];
@@ -84,8 +84,8 @@ describe("hrefArtistas y filtroDesdeUrl", () => {
   it("arma la URL sin parámetros vacíos y la lee de vuelta con valores seguros", () => {
     expect(hrefArtistas({})).toBe("/artistas");
     expect(hrefArtistas({ hace: "musica", que: "jazz, blues y soul", q: " Pedro ", n: 200 })).toBe("/artistas?hace=musica&que=jazz%2C+blues+y+soul&q=Pedro&n=200");
-    expect(filtroDesdeUrl({ hace: "musica", que: "jazz", q: "x", n: "200" })).toEqual({ hace: "musica", que: "jazz", q: "x", n: 200 });
-    expect(filtroDesdeUrl({ hace: "no-existe", que: "jazz", n: "abc" })).toEqual({ hace: null, que: null, q: null, n: 100 });
+    expect(filtroDesdeUrl({ hace: "musica", que: "jazz", q: "x", letra: "á", n: "200" })).toEqual({ hace: "musica", que: "jazz", q: "x", letra: null, n: 200 });
+    expect(filtroDesdeUrl({ hace: "no-existe", que: "jazz", letra: "b", n: "abc" })).toEqual({ hace: null, que: null, q: null, letra: "B", n: 100 });
   });
   it("la ciudad va en la URL, salvo que sea la inicial (crecimiento orgánico, bitácora 051)", () => {
     expect(hrefArtistas({ ciudad: "san-luis-potosi" })).toBe("/artistas");
@@ -116,8 +116,7 @@ describe("conProximaFecha y textoProximaFecha", () => {
       const r = conProximaFecha(artistas, fechas);
       expect(r.map((a) => [a.id, a.proxima?.id ?? null])).toEqual([["coro", "e-poemas"], ["orquesta", "e-sinfonica"], ["mariachi", "e-demostracion"], ["sin-fechas", null]]);
       expect(r[1].proxima).toEqual({ id: "e-sinfonica", inicio: "2026-09-18T02:00:00Z", sitio: "Parroquia de San Sebastián", zona: SLP });
-      // La lista va por la fecha elegida: la Orquesta (jueves, 20:00) antes que el Coro (viernes).
-      expect(ordenarArtistas(r).map((a) => a.id)).toEqual(["mariachi", "orquesta", "coro", "sin-fechas"]);
+      expect(ordenarArtistas(r).map((a) => a.id)).toEqual(["sin-fechas", "coro", "mariachi", "orquesta"]);
     }
   });
   it("escribe la próxima fecha con el sitio", () => {

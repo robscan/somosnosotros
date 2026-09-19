@@ -1,0 +1,40 @@
+/* Índice lateral (Contactos de Apple): una columna angosta en el área "indice" de la lista, pegada al centro de la
+   pantalla mientras la lista pasa. Las 26 letras se reparten el alto; el dedo se sigue por la posición en la columna,
+   así que todo el ancho y el alto responden al toque aunque cada letra se vea pequeña. */
+.indice {
+  grid-area: indice;
+  position: sticky;
+  top: calc((100dvh - var(--alto-indice)) / 2);
+  align-self: start;
+  display: grid;
+  grid-template-rows: repeat(26, 1fr);
+  width: 28px;
+  height: var(--alto-indice);
+  --alto-indice: min(520px, calc(100dvh - 260px));
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.indice button {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 0;
+  color: var(--primario);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--letra-xs);
+  font-weight: 700;
+  line-height: 1;
+}
+.indice button:focus-visible {
+  outline: 2px solid var(--primario);
+  border-radius: 4px;
+}
+.indice .activa {
+  color: var(--fondo);
+  background: var(--primario);
+  border-radius: 999px;
+}

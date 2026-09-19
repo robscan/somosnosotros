@@ -100,13 +100,9 @@ export function deducirDisciplina(nombre: string): Disciplina {
   return "musica";
 }
 
-/** Orden de la lista: con fechas próximas primero (por la fecha), luego alfabético (decisión 2). */
+/** Orden del directorio: alfabético, sin distinguir acentos, mayúsculas ni signos. */
 export function ordenarArtistas<T extends ArtistaLista>(artistas: T[]): T[] {
-  return [...artistas].sort((a, b) => {
-    if (a.proxima && b.proxima) return a.proxima.inicio.localeCompare(b.proxima.inicio) || compararNombres(a.nombre, b.nombre);
-    if (a.proxima || b.proxima) return a.proxima ? -1 : 1;
-    return compararNombres(a.nombre, b.nombre);
-  });
+  return [...artistas].sort((a, b) => compararNombres(a.nombre, b.nombre));
 }
 
 /** Filtra por nombre escrito a medias, sin acentos ni mayúsculas. */
@@ -119,7 +115,7 @@ export const PAGINA_ARTISTAS = 100;
  * Lo que va en la URL de /artistas: la ciudad (slug; ausente = la inicial), qué hacen (`hace`), qué en concreto
  * (`que`), lo escrito (`q`) y cuántos se ven (`n`).
  */
-export type FiltroUrlArtistas = { ciudad?: string | null; hace?: string | null; que?: string | null; q?: string | null; n?: number | null };
+export type FiltroUrlArtistas = { ciudad?: string | null; hace?: string | null; que?: string | null; q?: string | null; letra?: string | null; n?: number | null };
 
 /** La URL de la lista con un filtro; sin parámetros vacíos, para que el enlace sea limpio y compartible. */
 export function hrefArtistas(f: FiltroUrlArtistas): string {
@@ -128,17 +124,19 @@ export function hrefArtistas(f: FiltroUrlArtistas): string {
   if (f.hace) p.set("hace", f.hace);
   if (f.que) p.set("que", f.que);
   if (f.q?.trim()) p.set("q", f.q.trim());
+  if (f.letra && /^[A-Z]$/.test(f.letra)) p.set("letra", f.letra);
   if (f.n && f.n > PAGINA_ARTISTAS) p.set("n", String(f.n));
   const s = p.toString();
   return s ? `/artistas?${s}` : "/artistas";
 }
 
 /** Lee el filtro de la URL con valores seguros: la disciplina debe existir; `n` es un múltiplo de la página. */
-export type FiltroLeido = { hace: string | null; que: string | null; q: string | null; n: number };
-export function filtroDesdeUrl(p: { hace?: string; que?: string; q?: string; n?: string }): FiltroLeido {
+export type FiltroLeido = { hace: string | null; que: string | null; q: string | null; letra: string | null; n: number };
+export function filtroDesdeUrl(p: { hace?: string; que?: string; q?: string; letra?: string; n?: string }): FiltroLeido {
   const hace = p.hace && DISCIPLINAS.some((d) => d.valor === p.hace) ? p.hace : null;
   const n = Number(p.n);
-  return { hace, que: hace && p.que?.trim() ? p.que.trim().slice(0, 60) : null, q: p.q?.trim().slice(0, 80) || null, n: Number.isInteger(n) && n > PAGINA_ARTISTAS ? Math.min(n, 5000) : PAGINA_ARTISTAS };
+  const letra = p.letra?.toUpperCase();
+  return { hace, que: hace && p.que?.trim() ? p.que.trim().slice(0, 60) : null, q: p.q?.trim().slice(0, 80) || null, letra: letra && /^[A-Z]$/.test(letra) ? letra : null, n: Number.isInteger(n) && n > PAGINA_ARTISTAS ? Math.min(n, 5000) : PAGINA_ARTISTAS };
 }
 
 /** Por nombre o detalle escrito, y por los chips: disciplina y, dentro de ella, detalle (género, técnica). */
