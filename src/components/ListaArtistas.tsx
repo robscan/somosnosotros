@@ -154,15 +154,11 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
   return (
     <section aria-label="Artistas">
       {cabecera}
+      {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
       {/* Los carriles no dependen de la tira (corrección del founder, 2026-09-19): solo se van con disciplina,
           detalle o búsqueda. Destacados no pinta nada si no le llegan tarjetas (con ese filtro, o con búsqueda). */}
       <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} grande />
       {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} redondas encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
-      {!filtro.q && (
-        <div ref={tiraRef} className={comun.tira}>
-          <TiraLetras letras={letras} activa={letraActiva} alTocar={alTocarLetra} />
-        </div>
-      )}
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
           <p>{queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>

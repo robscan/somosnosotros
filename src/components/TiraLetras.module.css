@@ -1,0 +1,50 @@
+/* La tira de letras (Lugares y Artistas): una fila pegada bajo lo que ui/Cabecera deja a la vista, sobre el tono
+   de la lista. Va al principio de la lista, así ya está pegada cuando se enciende. No ocupa sitio: su margen negativo
+   sube lo que sigue por debajo de ella, y aparecer o esconderse no mueve nada. Arriba del todo no se ve (founder,
+   2026-09-19); `.visible` la muestra al entrar en la zona de la primera letra. Escondida mide lo mismo: el salto a una
+   letra y la letra iluminada cuentan con ella. */
+.tira {
+  position: sticky;
+  top: var(--alto-cabecera);
+  z-index: 9;
+  display: flex;
+  height: var(--toque-min);
+  margin-bottom: calc(-1 * var(--toque-min));
+  padding-inline: var(--gutter);
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--fondo-contenido);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    top var(--cabecera-animacion, 0.2s) ease,
+    opacity 0.15s ease,
+    visibility 0.15s;
+}
+.tira::-webkit-scrollbar {
+  display: none;
+}
+.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Solo la letra: 44 px de alto para el dedo, lo justo de ancho, sin separación */
+.letra {
+  flex: none;
+  min-width: 34px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--texto);
+  font-size: var(--letra-md);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.letra[aria-current="true"] {
+  color: var(--primario);
+  font-weight: 800;
+  text-decoration: underline 2px;
+  text-underline-offset: 6px;
+}
