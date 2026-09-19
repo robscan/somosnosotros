@@ -6,6 +6,10 @@ es el registro versionado que se debe leer y actualizar al retomar el trabajo.
 
 ## Acuerdos vigentes
 
+- Asignaciones activas y reservas centralizadas en `docs/ops/ASIGNACIONES.md`.
+  Solo el gestor asigna rama/base, OL, bitacora y propiedad. Autonomia dentro del
+  encargo; no autoasignacion ni cambios paralelos sobre una rama en revision.
+
 - Objetivo de fase 1: cerrar pendientes y hacer confiables los recorridos
   existentes, publicados y probados por el founder en su telefono/Safari.
   Un commit, una preview o un build verde no cierran ese objetivo.
@@ -274,3 +278,10 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   Operador muestra propuesta visual al founder antes de cambios funcionales y
   remite a gestor solo despues de su aprobacion. Sustituye criterio anterior;
   CIverde previo no valida una nueva propuesta. No cambios en produccion.
+- 2026-09-18, relectura solicitada por founder de chats rescatados: contrastados
+  transcriptClaude c45c6c9f y memoria project-gestion-de-cambios. Se recupera
+  asignacion previa obligatoria, propuesta aislada antes de implementar, base
+  explicita y candidato congelado al revisar. Registro ASIGNACIONES creado.
+  Pincel conserva OL084/118; directorios OL085/119; activacion avisos se asigna
+  formalmente a rama existente codex/avisos-operacion desdeeb2f80e, OL086/120
+  (comprobador arrojo siguiente086/120). No se renombra ni mueve trabajo actual.

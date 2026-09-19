@@ -4,6 +4,12 @@ Hay varios chats trabajando a la vez sobre la misma carpeta. Este documento dice
 
 ## Las reglas (para cada chat)
 
+Las reservas vivas de rama/base, OL, bitacora y propiedad se consultan en
+[ASIGNACIONES.md](ASIGNACIONES.md). Solo las emite el gestor. Trabajar con
+autonomia dentro del encargo no autoriza elegir otra rama, reutilizar un OL
+cerrado ni ampliar archivos compartidos. Una entrega queda congelada durante
+su revision; no hay dos escritores sobre el mismo candidato.
+
 0. **Informar y esperar instrucciones** (regla del founder, 2026-09-17: «informa siempre de lo que haces al chat de gestión de cambios y espera instrucciones»). Antes de crear una rama, tocar archivos o aplicar algo, cada chat le cuenta al encargado qué va a hacer y espera su respuesta; al terminar, avisa con "listo". El encargado responde con rama, números, nombre de migración y choques con otras piezas.
 1. **Cada pieza en su rama.** Código nunca se escribe sobre `main`. Se abre un árbol de trabajo (worktree) o una rama con nombre de la pieza. Un PR por pieza.
 2. **Lo que se escribe se guarda.** Antes de cerrar el chat, todo queda en un commit local (código en su rama; documentos de cierre pueden ir en `main` si son solo documentos). Un commit local no publica nada: el push y el merge siguen siendo del founder.
