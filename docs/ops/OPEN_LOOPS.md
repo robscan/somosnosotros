@@ -242,6 +242,9 @@ El plan de 6 fases está construido. Lo que sigue lo marca el uso real: pruebas 
 - **OL-001 · Fase 0 (base)** — 2026-09-13. Prueba pasada: el mapa de San Luis Potosí abre en Safari del iPhone en somosnosotros.org. Bitácora [002](../bitacora/2026/09/002-fase-0-base.md).
 
 ## Decidido
+- **2026-09-18 · Las fotos siguen públicas.** «No entiendo por qué quieres fotos privadas, a menos que sea brecha de seguridad lo mantenemos así.» No es una brecha: lo que hay en el almacén (carteles, portadas, fotos de artistas y de perfil) es contenido que la app ya muestra en abierto; los nombres de archivo son códigos al azar y el listado del almacén está restringido (OL-080), así que nadie puede recorrerlo. Solo ve una foto quien ya tiene su enlace exacto. Único matiz: la foto de un perfil reservado sigue alcanzable para quien ya tuviera su enlace. Se cierra la idea de volver privado el almacén.
+- **2026-09-18 · Se posponen el panel de administración y el atrás de Safari.** «panel de admin y atras en safari se posponen por ahora.» Quedan sin tocar: explicar en la tarjeta de Coincidencias la diferencia con la lista, el rol de entonces en la tira de destacados (OL-070) y abrir Apple o Google en otra pestaña para el gesto de Safari (OL-071b).
+- **2026-09-18 · Directorios alfabéticos con índice vertical y destacados grandes.** «ok adelante con directorios alfabéticos», al ver el prototipo vertical, y confirma los destacados «en 2x tamaño y rectangular para todas las secciones» (OL-085).
 
 - **2026-09-18 · Nuevos y acceso (OL-074):** "Deja el entrar de prod"; luego "acepto limite propuesto. Vamos a prod con eso". Maximo 20, desde ultima visita y dentro de siete dias, salida a Todos. Se retira el escudo/region explicativa de Entrar; se conservan Apple, Google y correo. Esta decision sustituye para el primer lote el ajuste visual previo de OL-061. No autoriza los otros lotes ni migraciones.
 
