@@ -13,11 +13,11 @@ import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
 import { enOrden, leerTira, type Tarjeta } from "@/lib/destacados";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
-import { letraDe, rangoDeLetra } from "@/lib/indice";
+import { gruposConPosicion } from "@/lib/indice";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
-type SearchParams = { ciudad?: string; hace?: string; que?: string; q?: string; letra?: string; n?: string };
+type SearchParams = { ciudad?: string; hace?: string; que?: string; q?: string; n?: string };
 
 /**
  * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
@@ -50,7 +50,7 @@ type Evento = { id: string; titulo: string; inicio: string; zona: string; sitio_
 type Opcion = { valor: string; etiqueta: string };
 export type Cargado = {
   artistas: ArtistaLista[];
-  /** Cuántos hay con esta letra (o esta búsqueda), se vean o no (la página trae `n`). */
+  /** Cuántos cumplen el filtro (disciplina, detalle o búsqueda), se vean o no (la página trae `n`). */
   total: number;
   /** Cuántos faltan por ver tras los que trae la página. */
   quedan: number;
@@ -58,8 +58,13 @@ export type Cargado = {
   totalCiudad: number;
   disciplinas: Opcion[];
   detalles: Opcion[];
-  /** Letras con al menos un artista (dentro de lo que hace/qué ya filtra): apaga las demás en la tira. */
-  letrasPresentes: string[];
+  /**
+   * Las letras de la tira, en el orden real de la lista (dentro de lo que hace/qué ya filtra), y en qué posición
+   * (0-based) empieza cada una. La tira es un acceso directo, no un filtro (corrección del founder, 2026-09-19):
+   * tocar una letra fuera de lo cargado pide con `n` lo justo para que su posición quede dentro de la página.
+   */
+  letras: string[];
+  posiciones: Record<string, number>;
   /** La tira de destacados (docs/rediseno/20): solo sin filtro ni búsqueda. */
   destacados: ArtistaLista[];
   eventosSemana: Tarjeta[];
@@ -67,18 +72,19 @@ export type Cargado = {
 
 /**
  * Los artistas de la ciudad con su fecha más próxima y dónde (decisión 1), filtrados y paginados en el servidor:
- * la disciplina, el detalle, la letra y lo escrito vienen de la URL (revisión 2026-09-14, A2; letra: corrección del
- * founder, 2026-09-19). Todos van en orden alfabético real (`nombre_orden`), de `n` en `n`, dentro de la letra activa
- * (por defecto la A): el rango `gte`/`lt` aprovecha el índice `(ciudad, nombre_orden)` sin traer el resto del catálogo.
- * Con texto escrito, la letra no aplica (rige la búsqueda, en toda la ciudad).
+ * la disciplina, el detalle y lo escrito vienen de la URL (revisión 2026-09-14, A2), de `n` en `n`, en orden
+ * alfabético real (`nombre_orden`). La tira de letras no filtra (corrección del founder, 2026-09-19: es un acceso
+ * directo): sus posiciones salen de una consulta aparte, de una sola columna y sin límite de página, para saber
+ * cuánto pedir sin traer fotos ni el catálogo completo de golpe. Los carriles (Destacados y Con eventos esta
+ * semana) tampoco dependen de ella: se van solo con disciplina, detalle o búsqueda.
  */
 async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
-  const vacio: Cargado = { artistas: [], total: 0, quedan: 0, totalCiudad: 0, disciplinas: [], detalles: [], letrasPresentes: [], destacados: [], eventosSemana: [] };
+  const vacio: Cargado = { artistas: [], total: 0, quedan: 0, totalCiudad: 0, disciplinas: [], detalles: [], letras: [], posiciones: {}, destacados: [], eventosSemana: [] };
   const supabase = await clienteServidor();
   if (!supabase) return vacio;
   const ciudad = ciudadNombre;
 
-  const sinFiltro = !f.hace && !f.que && !f.q && f.letra === "A";
+  const sinFiltro = !f.hace && !f.que && !f.q;
   const q = f.q ? normalizarNombre(f.q).replace(/[,()]/g, "") : "";
   const [f1, d1, d2, tira, eventosSemana, presencia] = await Promise.all([
     // Las filas van por la hora de su evento (`evento(inicio)` ordena las filas; `order` con `referencedTable` solo ordenaba
@@ -88,14 +94,14 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
     f.hace ? supabase.rpc("detalles_de_disciplina", { p_ciudad: ciudad, p_disciplina: f.hace }) : Promise.resolve({ data: [] as { clave: string; etiqueta: string; n: number }[] }),
     sinFiltro ? leerTira(supabase, "artistas", ciudad) : Promise.resolve([]),
     sinFiltro ? cargarEventosSemana(supabase, "artistas", ciudad) : Promise.resolve([]),
-    // Solo el nombre, para saber qué letras tienen artistas y apagar las demás en la tira; no aplica con búsqueda,
-    // que la esconde. Una sola columna, sin recortar por letra: no es el catálogo completo (sin foto ni disciplina).
+    // Solo el nombre, ya ordenado, para la tira: dónde empieza cada letra. No aplica con búsqueda, que la esconde.
+    // Una sola columna, sin foto ni disciplina: no es el catálogo completo, aunque no esté recortada por página.
     !q
       ? (() => {
           let c = supabase.from("artistas").select("nombre_orden").eq("visible", true).eq("ciudad", ciudad);
           if (f.hace) c = c.eq("disciplina", f.hace);
           if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
-          return c;
+          return c.order("nombre_orden").limit(5000);
         })()
       : Promise.resolve({ data: [] as { nombre_orden: string }[] }),
   ]);
@@ -111,17 +117,15 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const totalCiudad = porDisciplina.reduce((s, x) => s + Number(x.n), 0);
   const disciplinas = DISCIPLINAS.filter((d) => porDisciplina.some((x) => x.disciplina === d.valor)).map((d) => ({ ...d, n: Number(porDisciplina.find((x) => x.disciplina === d.valor)?.n ?? 0) }));
   const detalles = ((d2.data ?? []) as { clave: string; etiqueta: string; n: number }[]).length >= 2 ? (d2.data as { clave: string; etiqueta: string; n: number }[]).map((x) => ({ valor: x.clave, etiqueta: x.etiqueta.charAt(0).toUpperCase() + x.etiqueta.slice(1), n: Number(x.n) })) : [];
-  const letrasPresentes = [...new Set(((presencia.data ?? []) as { nombre_orden: string }[]).map((x) => letraDe(x.nombre_orden)))];
+  const grupos = gruposConPosicion(((presencia.data ?? []) as { nombre_orden: string }[]), (x) => x.nombre_orden);
+  const letras = grupos.map((g) => g.letra);
+  const posiciones = Object.fromEntries(grupos.map((g) => [g.letra, g.desde]));
 
-  const base = (head = false) => {
-    let c = supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto", { count: "exact", head }).eq("visible", true).eq("ciudad", ciudad);
+  const base = () => {
+    let c = supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto", { count: "exact" }).eq("visible", true).eq("ciudad", ciudad);
     if (f.hace) c = c.eq("disciplina", f.hace);
     if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
     if (q) c = c.or(`nombre_orden.ilike.%${q}%,detalle.ilike.%${q}%`);
-    else {
-      const { desde, hasta } = rangoDeLetra(f.letra);
-      c = c.gte("nombre_orden", desde).lt("nombre_orden", hasta);
-    }
     return c;
   };
   const [a, t] = await Promise.all([
@@ -131,7 +135,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   ]);
   const artistas = conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas);
   const destacados = enOrden(tira, conProximaFecha((t.data ?? []) as ArtistaResumen[], fechas));
-  return { artistas, total: a.count ?? 0, quedan: Math.max(0, (a.count ?? 0) - artistas.length), totalCiudad, disciplinas, detalles, letrasPresentes, destacados, eventosSemana };
+  return { artistas, total: a.count ?? 0, quedan: Math.max(0, (a.count ?? 0) - artistas.length), totalCiudad, disciplinas, detalles, letras, posiciones, destacados, eventosSemana };
 }
 
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */

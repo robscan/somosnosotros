@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { letraDe, letraDesdeUrl, LETRAS, ORDEN_LETRAS, rangoDeLetra } from "./indice";
+import { conGrupos, gruposConPosicion, idGrupo, letraDe, letrasPresentes } from "./indice";
 
 describe("letraDe", () => {
   it("sin acentos ni signos; lo que no empieza con una letra va en «#»", () => {
@@ -7,33 +7,36 @@ describe("letraDe", () => {
   });
 });
 
-describe("ORDEN_LETRAS", () => {
-  it("las 26 letras y, al final, «#»; sin «Todos»", () => {
-    expect(LETRAS).toHaveLength(26);
-    expect(ORDEN_LETRAS).toEqual([...LETRAS, "#"]);
+describe("idGrupo", () => {
+  it("el id del encabezado; «#» no lleva el símbolo", () => {
+    expect(idGrupo("M")).toBe("grupo-M");
+    expect(idGrupo("#")).toBe("grupo-num");
   });
 });
 
-describe("letraDesdeUrl", () => {
-  it("una letra válida (A–Z o #) se conserva en mayúscula; lo demás, o su ausencia, vale la A", () => {
-    expect(letraDesdeUrl("m")).toBe("M");
-    expect(letraDesdeUrl("#")).toBe("#");
-    expect(letraDesdeUrl(undefined)).toBe("A");
-    expect(letraDesdeUrl("á")).toBe("A");
-    expect(letraDesdeUrl("AB")).toBe("A");
+describe("conGrupos", () => {
+  it("marca solo el primero de cada letra, en el orden real de la lista (no fuerza A–Z)", () => {
+    const g = conGrupos(["Zoco", "1 Uno", "Álamo", "Arte", "Beta"], (x) => x).map((f) => f.grupo);
+    expect(g).toEqual(["Z", "#", "A", null, "B"]);
   });
 });
 
-describe("rangoDeLetra", () => {
-  it("cada letra cubre su propio rango de `nombre_orden`", () => {
-    expect(rangoDeLetra("M")).toEqual({ desde: "m", hasta: "n" });
-    expect(rangoDeLetra("Z")).toEqual({ desde: "z", hasta: "{" });
+describe("letrasPresentes", () => {
+  it("solo las letras con algo, en el orden en que aparecen", () => {
+    expect(letrasPresentes(["Beta", "Banana", "Ébano", "3 Tiempos"], (x) => x)).toEqual(["B", "E", "#"]);
+    expect(letrasPresentes([], (x: string) => x)).toEqual([]);
   });
-  it("«#» cubre lo que no empieza con una letra (dígitos o vacío, siempre antes de «a»)", () => {
-    const { desde, hasta } = rangoDeLetra("#");
-    expect(hasta).toBe("a");
-    expect("3 tiempos" >= desde && "3 tiempos" < hasta).toBe(true);
-    expect("" >= desde && "" < hasta).toBe(true);
-    expect("abigail" >= hasta).toBe(true);
+});
+
+describe("gruposConPosicion", () => {
+  it("en qué índice (0-based) empieza cada letra, en una lista ya ordenada", () => {
+    expect(gruposConPosicion(["ana", "andres", "beto", "carla", "carlos"], (x) => x)).toEqual([
+      { letra: "A", desde: 0 },
+      { letra: "B", desde: 2 },
+      { letra: "C", desde: 3 },
+    ]);
+  });
+  it("vacía, sin grupos", () => {
+    expect(gruposConPosicion([], (x: string) => x)).toEqual([]);
   });
 });
