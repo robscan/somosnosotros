@@ -73,6 +73,24 @@
   color: var(--texto-suave);
   cursor: default;
 }
+/* Chip de contexto de la cabecera (fecha, ciudad): más bajo y en negrita, con el icono suave; el texto se corta
+   antes que empujar la lupa fuera de la fila (una ciudad de nombre largo). */
+.deContexto {
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 var(--espacio-3) 0 10px;
+  font-weight: 600;
+}
+.deContexto > svg {
+  margin-right: 0;
+  color: var(--texto-suave);
+}
+.deContexto > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .chipNativo {
   position: relative;
 }

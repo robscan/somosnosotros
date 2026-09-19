@@ -1,57 +1,27 @@
 /* ==========================================================================
-   Lugares (docs/rediseno/06-lugares-flujo-y-estados.md)
-   1. Pestañas pegajosas · 2. Mapa: caja, botón de ubicación, tarjeta del pin · 3. Lista: ✕ de Cerca de mí y aviso
+   Lugares (docs/rediseno/06-lugares-flujo-y-estados.md). La cabecera es ui/Cabecera.
+   1. Mapa: caja, lo encontrado, tarjeta del pin · 2. Lista: aviso de ubicación
    ========================================================================== */
 
-/* 1. Pestañas Mapa · Lista (ui/Pestanas, repartidas): la propia tira es la cabecera pegajosa */
-.pestanas {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  padding: 0 var(--gutter);
-  background: var(--fondo);
-}
-
-/* 2. Mapa: llena lo que queda entre las pestañas y la navegación; la página no se desplaza */
+/* 1. Mapa: llena lo que queda entre la cabecera y la navegación; la página no se desplaza */
 .sinRelleno {
   min-height: 0;
   padding-bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px));
 }
 .cajaMapa {
   position: relative;
-  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--alto-barra) - var(--toque-min) - var(--alto-nav) - env(safe-area-inset-bottom, 0px)); /* la tira de pestañas mide --toque-min con su raya */
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--alto-barra) - var(--alto-cabecera) - var(--alto-nav) - env(safe-area-inset-bottom, 0px));
   min-height: 320px;
 }
-.ubicame {
-  position: absolute;
-  left: var(--gutter);
-  bottom: calc(var(--espacio-4) + 32px); /* encima del logotipo y la atribución de Mapbox */
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  width: var(--toque);
-  height: var(--toque);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  box-shadow: var(--sombra);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.ubicameActivo {
-  border-color: #1a73e8;
-  color: #1a73e8;
-}
-/* Aviso de ubicación sobre el mapa: flota arriba, a lo ancho, encima de los controles */
+/* Aviso de ubicación sobre el mapa: flota arriba, a lo ancho */
 .avisoMapa {
   position: absolute;
-  top: 128px; /* debajo de la búsqueda y los chips de tipo */
+  top: var(--espacio-3);
   left: var(--gutter);
   right: var(--gutter);
   z-index: 4;
 }
-/* Búsqueda y chips de tipo sobre el mapa: flotan arriba; la búsqueda en la columna y los chips a todo lo ancho */
+/* Lo encontrado por la lupa de la cabecera, flotando arriba del mapa, en la columna */
 .sobreMapa {
   position: absolute;
   top: var(--espacio-3);
@@ -64,18 +34,7 @@
 .sobreMapa > * {
   margin-inline: var(--gutter);
 }
-.sobreMapa > div {
-  margin-inline: 0;
-  margin-bottom: 0;
-  padding: 0 var(--gutter) 0;
-}
-.sobreMapa > div button {
-  box-shadow: var(--sombra); /* los chips de tipo; la ✕ del buscador no */
-}
-.buscarMapa {
-  box-shadow: var(--sombra); /* el buscador es ui/Buscador (con su ✕); aquí solo flota */
-}
-/* Lo que encontró la búsqueda, bajo el buscador: renglones de ui/Sugerencia; la caja flota con sombra */
+/* Renglones de ui/Sugerencia; la caja flota con sombra */
 .resultadosMapa {
   margin-block: 0; /* a los lados manda el gutter de .sobreMapa */
   box-shadow: var(--sombra);
@@ -151,14 +110,7 @@
   font-weight: 700;
 }
 
-/* 3. Lista: el chip "Cerca de mí" va en la fila de chips de la lista (ui/Chip); aquí solo su ✕ y el aviso.
-   La ✕ es IconoCerrar: los márgenes descuentan su aire interno para que quede donde quedaba la letra.
-   La clase va dos veces para pesar más que el margen que ui/Chip da a sus iconos. */
-.quitar.quitar {
-  margin: 0 -7px 0 5px;
-  opacity: 0.8; /* hereda el blanco del chip activo */
-}
-/* Aviso de ubicación en la lista: bajo la fila de chips, en la columna */
+/* 2. Lista: el aviso de ubicación, arriba de la lista, en la columna */
 .avisoLista {
-  margin: 0 var(--gutter) var(--espacio-2);
+  margin: var(--espacio-3) var(--gutter) var(--espacio-2);
 }
