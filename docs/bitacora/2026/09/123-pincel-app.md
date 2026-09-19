@@ -126,7 +126,62 @@ Cada fase se publica y se prueba por separado, como pide el gestor; ninguna migr
 2. **¿Puede haber más de una obra abierta a la vez en la ciudad** (dos centros culturales con su propio Pincel la misma noche), o es una a la vez como asume hoy el prototipo? Cambia si la migración debe impedir dos obras abiertas o no.
 3. **Librería de QR:** ¿la elijo yo (una chica, sin red ni terceros) o prefieres verla antes de sumarla?
 
+## Firma del founder (2026-09-19)
+
+El founder respondió las tres preguntas abiertas:
+
+1. **Solo la imagen final.** Repasar el proceso (guardar cada trazo o un video) queda fuera por ahora.
+2. **Varias obras a la vez son posibles, pero una sola abierta por evento o por lugar**, y eso lo debe cumplir la base de datos con un índice único parcial sobre `estado = 'abierta'` — no basta con impedirlo solo en pantalla. Esto cambia el diseño de §1: `obras_colectivas` suma `lugar_id` (siempre presente: el del evento si viene de uno, o el elegido directamente si es "aquí"), y dos índices únicos parciales (`evento_id` y `lugar_id`, ambos `where estado = 'abierta'`).
+3. **La librería de QR la elige gestión de cambios:** `qrcode` (npm, MIT, sin servicios externos), generando el SVG en el servidor. Se usa hasta la Fase 4, no en esta Fase 1.
+
+Gestión de cambios autorizó empezar la Fase 1 (datos y admin, sin dibujar) en esta misma rama, con estas condiciones: migración que solo añade y no se aplica sola (la aplica el gestor), sin avisos nuevos del Security Advisor (search_path fijo, sin políticas permisivas de más), «obra colectiva» como nombre en todo el texto visible, maquetación plana con los componentes de `ui/`.
+
+## Fase 1, en pausa por orden del founder (2026-09-19: "le quedan pocos créditos y Pincel va al final")
+
+Hecho y comiteado, verificado, sin push:
+
+- **Migración** `supabase/migrations/20260919030000_obras_colectivas.sql`: tabla `obras_colectivas` (con `lugar_id`
+  siempre presente — se agregó respecto al plan original, ver la firma del founder arriba —, `evento_id` opcional,
+  `zona` puesta sola por un disparador desde el lugar, igual que `eventos_zona_del_lugar`), sus tres índices de
+  claves foráneas, y los dos índices únicos parciales (`estado = 'abierta'` por `lugar_id` y por `evento_id`). RLS:
+  lectura pública, alta y cambios de estado solo `es_admin()`. Sin función nueva más que el disparador de zona
+  (`search_path = ''`, mismo patrón que las funciones ya endurecidas) — nada que debería sumar avisos al Security
+  Advisor.
+- **Pruebas** `supabase/tests/pg/obras-colectivas.test.mjs`: índices de FK, RLS de alta (anon y no-admin rechazados,
+  admin crea), los dos índices únicos parciales (dos obras en el mismo lugar chocan; en lugares distintos no; mismo
+  evento_id con distinto lugar_id también choca), terminar/reabrir (no-admin no puede, admin sí, reabrir puede
+  chocar con el índice si mientras tanto se abrió otra), lectura pública sin sesión. **Corrido contra un Postgres
+  local real** (`npm run test:db` con `TEST_DATABASE_URL` a `127.0.0.1`, Postgres 17 de Homebrew levantado para
+  esto): **687 pruebas, 0 fallaron** (las 686 que ya traía el repo más las nuevas de Pincel).
+- **`src/lib/pincel.ts`** (+ `pincel.test.ts`, 4 pruebas en verde): `cierreSugeridoIso`, `cierreDesdeEvento`,
+  `nombreSugerido` — lo puro de sugerir nombre y hora, sin base de datos.
+- **`src/app/admin/obras-colectivas/`**: `consultas.ts` (listar obras, lugares para el formulario, cargar una),
+  `acciones.ts` (`crearDesdeEvento`, `crearPorUbicacion`, `terminarObra`, `reabrirObra`, todas con su guarda de
+  admin), `obras.module.css` (maquetación plana), `CrearObraAqui.tsx` (cliente: sugiere el lugar más cercano con
+  `leerUbicacion()` + `distanciaKm()` — no `ordenarLugares()`, cuyo tipo exige campos de lugar que Pincel no
+  necesita —, nombre y hora editables), `page.tsx` (lista + el formulario de arriba) y `[id]/page.tsx` +
+  `AccionesObra.tsx` (detalle: lugar, cuándo cierra, estado, Terminar/Reabrir). **Sin Proyectar todavía** — la
+  pantalla lo dice explícitamente ("La proyección y el mando en vivo llegan en la siguiente fase"), tal como pidió
+  el gestor ("sin dibujar").
+- Verificado hasta aquí: `npm run typecheck` en verde; `npx eslint` sobre los archivos nuevos, sin hallazgos;
+  `npx vitest run src/lib/pincel.test.ts`, 4/4.
+
+**Falta para cerrar la Fase 1** (nada de esto se tocó todavía):
+
+1. «Activar Pincel» en `src/app/eventos/[id]/page.tsx`: un renglón en el menú `···` (mismo patrón que
+   `cambiarVisibleEvento`, junto a `esAdmin`) que llama a `crearDesdeEvento(e.id)`.
+2. Un enlace a Obras colectivas desde `src/app/admin/page.tsx` (no encaja en el `SECCIONES`/`renglonesGestionar()`
+   genérico de moderación — es alta, no moderación —, así que va como bloque propio, con `IconoPincel`).
+3. Entrada de OL-088 en `docs/ops/OPEN_LOOPS.md`.
+4. Verificación completa y de cierre: `npm run lint && npm run typecheck && npm test` (el `npm test` completo, no
+   solo `pincel.test.ts`) y `npm run build`, todos en verde; capturas a 390×844 de la lista, el formulario "Crear
+   obra aquí" y el detalle con `front-visual`.
+5. **No aplicar la migración** — la revisa y la aplica el gestor, como ya se acordó.
+
+Nada de lo pendiente toca lo ya comiteado: son piezas nuevas (dos archivos a editar y un documento), no correcciones.
+
 ## Verificación de este documento
+
 
 Sin código: no aplica build/lint/tests. Se verificó que:
 - `docs/ops/ASIGNACIONES.md:17` da la rama, OL y bitácora exactos usados aquí.
