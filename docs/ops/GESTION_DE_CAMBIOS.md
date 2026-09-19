@@ -4,6 +4,12 @@ Hay varios chats trabajando a la vez sobre la misma carpeta. Este documento dice
 
 ## Las reglas (para cada chat)
 
+Las reservas vivas de rama/base, OL, bitacora y propiedad se consultan en
+[ASIGNACIONES.md](ASIGNACIONES.md). Solo las emite el gestor. Trabajar con
+autonomia dentro del encargo no autoriza elegir otra rama, reutilizar un OL
+cerrado ni ampliar archivos compartidos. Una entrega queda congelada durante
+su revision; no hay dos escritores sobre el mismo candidato.
+
 0. **Informar y esperar instrucciones** (regla del founder, 2026-09-17: «informa siempre de lo que haces al chat de gestión de cambios y espera instrucciones»). Antes de crear una rama, tocar archivos o aplicar algo, cada chat le cuenta al encargado qué va a hacer y espera su respuesta; al terminar, avisa con "listo". El encargado responde con rama, números, nombre de migración y choques con otras piezas.
 1. **Cada pieza en su rama.** Código nunca se escribe sobre `main`. Se abre un árbol de trabajo (worktree) o una rama con nombre de la pieza. Un PR por pieza.
 2. **Lo que se escribe se guarda.** Antes de cerrar el chat, todo queda en un commit local (código en su rama; documentos de cierre pueden ir en `main` si son solo documentos). Un commit local no publica nada: el push y el merge siguen siendo del founder.
@@ -25,12 +31,82 @@ Hay varios chats trabajando a la vez sobre la misma carpeta. Este documento dice
 
 ## Tablero
 
+### Ajuste de pruebas por costo (founder, 2026-09-18)
+
+Esta regla actualiza el punto 6: durante el trabajo se ejecutan pruebas
+focalizadas por comportamiento y riesgo, no una suite completa por cada objeto.
+No hay una cuota de pruebas por archivo. La suite completa se reserva para el
+candidato integrado de publicacion o cambios transversales. Reutilizar resultados
+del mismo codigo/base y entorno entre operador, gestor y CI, sin duplicarlos por
+rutina ni omitir checks obligatorios. Una revision independiente no exige volver
+a ejecutar toda la suite: comprueba evidencia y prueba los riesgos identificados.
+Documentacion sola requiere revisar el diff, no build ni unitarias; cambios de
+UI requieren comprobar el recorrido visual afectado. Cada encargo especifica
+pruebas focalizadas y condicion para ampliar la verificacion.
+
 ```
 scripts/ops/estado-cambios.sh
 ```
 Dice qué hay sin commit, qué árboles y ramas tienen commits que `main` no tiene, qué PR están abiertos y con qué CI, las últimas migraciones y los números que siguen. Solo lee.
 
 ## Cómo cierra el encargado un día
+
+### Entregas sin espera indefinida (founder, 2026-09-18)
+
+Actualizacion posterior del founder: "revisa solo cuando el chat te avise que
+termino y esta listo para integrar, no vigiles cada paso". Esta regla sustituye
+el seguimiento intermedio: no sondear tareas, commits, diffs o capturas mientras
+el operador trabaja. El operador completa implementacion, pruebas focalizadas y
+QA visual autonomamente y envia una entrega consolidada. El gestor revisa al
+recibir "listo para integrar" (o "listo para revision final" en prototipos locales).
+Si hay hallazgos, devolverlos juntos y esperar la nueva entrega completa, sin
+dirigir cada arreglo. Solo interrumpir por bloqueo real, riesgo urgente o nueva
+decision del founder. Las aprobaciones y limites de publicacion se conservan.
+
+Aclaracion posterior del founder: autonomia no significa dejar detenidas las
+tareas. La colaboracion debe ser dinamica y orientada al cierre, sin obligarlo a
+reactivar chats. Cada operador notifica la entrega completa al gestor mediante
+send_message_to_thread, con SHA, alcance, resultados de pruebas y limites. Ese
+aviso inicia la revision; no es un estado final de espera indefinida. El gestor
+atiende entregas independientes en paralelo cuando las herramientas lo permitan,
+reutiliza evidencia y ejecuta solo pruebas faltantes justificadas por riesgo.
+Devuelve hallazgos consolidados al operador, que corrige y vuelve a notificar;
+mientras tanto atiende otras entregas listas, sin sondear pasos intermedios.
+Tras aceptar: PR, CI, preview, aprobacion de produccion si falta, integracion,
+verificacion del dominio y cierre comunicado al operador. No confundir entrega
+de codigo con activacion operativa ni pedir nuevamente permisos ya concedidos
+para el mismo alcance. Solo dejar espera por una dependencia, decision o bloqueo
+concreto, con responsable y accion de salida. No requiere vigilancia periodica
+ni automatizaciones de pago adicionales: se coordina mediante avisos de entrega.
+
+El founder precisa despues el punto de revision de propuestas: el operador
+presenta en su propia tarea una propuesta comprobada, con captura/enlace y una
+solicitud accionable de VoBo (request_user_input_async cuando este lista). Itera
+directamente con el founder y remite al gestor la entrega consolidada junto con
+su aprobacion. No obligar al founder a pedir "donde lo veo" ni a copiar mensajes
+entre chats. El VoBo visual no sustituye revision tecnica ni autoriza publicar
+un prototipo local. En operaciones remotas ya autorizadas, no pedir otra vez el
+permiso: comunicar resultado y solicitar firma de validacion si falta; notificar
+al gestor la liberacion de la ventana operativa sin esperar esa firma. No afirmar
+"sigo trabajando" cuando la tarea esta inactiva. Estas solicitudes son avisos en
+la tarea; no garantizan notificaciones del sistema operativo ni crean vigilancia.
+
+- Toda entrega incluye commit, alcance, evidencia reutilizable y limites. Al
+  recibirla, el gestor decide: aceptada, devuelta con hallazgos concretos o
+  pendiente de una decision expresa del founder. "Pendiente del gestor" por si
+  solo no es un estado suficiente: registrar accion siguiente y responsable.
+- La revision tecnica es responsabilidad del gestor; no pedir al founder que
+  la sustituya. Si falta una decision de producto o autorizacion, formular la
+  pregunta concreta y continuar las piezas independientes ya autorizadas.
+- Tras integrar/publicar o recibir la firma del founder, comunicar el cierre
+  al operador correspondiente con commit/PR y pendientes operativos separados.
+  No dejar que una rama antigua siga informando el estado previo a integracion.
+- Antes de terminar un turno de coordinacion, conciliar las entregas recibidas
+  y el tablero: estado, responsable, siguiente accion y bloqueo real. No dejar
+  una entrega recibida sin respuesta ni prometer continuidad en segundo plano
+  sin un mecanismo activo. Usar espera acotada de operadores mientras corresponda.
+- No despertar operadores solo para pedir estatus ni repetir pruebas aprobadas.
+  Una comunicacion de cierre no requiere nuevo commit en su rama ni otra suite.
 
 1. Correr el tablero.
 2. Guardar en commit lo que quedó sin commit en `main` (por nombre).
