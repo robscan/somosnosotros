@@ -62,7 +62,13 @@ El título largo hace salto de línea (`text-wrap: balance`, `min-width: 0`) y n
 - Maquetación medida (arriba): 320/375/390 px, sin scroll horizontal, sin cortes, sin envoltorios nuevos.
 - Con el dedo: no se pudo probar en el simulador en esta ronda (banco con Vite en el navegador del entorno, no en el simulador de iPhone); el founder la prueba de verdad en su iPhone en la fase de firma final, como en el resto de piezas de esta cola.
 - Memoria de pantalla y scroll: no se tocó `useMemoriaPantalla` ni `MemoriaScroll`; el botón no navega ni cambia la URL (su `onClick` hace `stopPropagation` antes de nada), así que no hay nada que reponer distinto a como estaba.
-- Accesibilidad: cada botón lleva `aria-pressed` (decidido o no) y `aria-label` con el verbo y el nombre del evento, lugar o artista («Voy — Son huasteco de prueba», «Ya no seguir — Casa de Prueba del Centro»); vive fuera del `<Link>` (hermano, no anidado), por lo que un lector de pantalla nunca encuentra un botón dentro de otro control interactivo.
+- Accesibilidad: cada botón lleva `aria-pressed` (decidido o no) y `aria-label` con el nombre del evento, lugar o artista; vive fuera del `<Link>` (hermano, no anidado), por lo que un lector de pantalla nunca encuentra un botón dentro de otro control interactivo.
+
+### Corrección de la revisión del gestor (commit local, sin push)
+
+**Nombre accesible contradictorio.** `nombreAccesible` cambiaba con el estado («Voy — …» / «Ya no vas — …»), y con `aria-pressed={true}` un lector de pantalla decía «Ya no vas, …, botón conmutador, presionado» — suena a que ya no vas, cuando sí vas. En un botón conmutador (`aria-pressed`) el nombre no debe cambiar con el estado: el estado ya lo dice `aria-pressed`, y el texto **visible** sí cambia ("Voy"/"Vas", "Seguir"/"Sigues"). Arreglo: `nombreAccesible` fijo por acción, sin condicionar al estado — `` `Voy — ${e.titulo}` `` en `useAsistenciaEnLista` y `` `Seguir — ${nombre}` `` en `useSeguirEnLista`, siempre, decidido o no. No había prueba que fijara el texto anterior (las pruebas nuevas son de `claveVoy`/`claveSeguir`, funciones puras sin `nombreAccesible`), así que no hizo falta tocarlas.
+
+**Verificado de nuevo:** lint, typecheck, 707 pruebas y build en verde, igual que antes de la corrección.
 
 ## Qué se borró
 

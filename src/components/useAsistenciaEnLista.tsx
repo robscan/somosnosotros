@@ -123,7 +123,9 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     return {
       etiqueta: decidido ? "Vas" : "Voy",
       decidido,
-      nombreAccesible: `${decidido ? "Ya no vas" : "Voy"} — ${e.titulo}`,
+      // El nombre no cambia con el estado (sería contradictorio con `aria-pressed`, que ya lo dice): "conmutador presionado"
+      // con un nombre que dice "ya no vas" suena al revés. El texto visible sí cambia ("Voy"/"Vas"); el accesible, no.
+      nombreAccesible: `Voy — ${e.titulo}`,
       alTocar: () => {
         if (decididas === null) {
           // Sin sesión: la ficha aplica la acción al volver de entrar (y, tras Voy, hace la pregunta de avisos una vez).
