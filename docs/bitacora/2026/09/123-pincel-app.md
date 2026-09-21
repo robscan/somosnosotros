@@ -369,6 +369,44 @@ El gestor aceptó el plan y el código; falta el sí del founder para la corrida
 
 Sin código nuevo: esto es lectura del resultado, no cambia el script. Sigo sin correr contra producción.
 
+## Decisión del founder: sin segunda corrida, cupo por obra y fila de espera (2026-09-21)
+
+El founder decidió, con el gestor: **no hay segunda corrida** — se sigue con lo medido en la tanda 1 (190/190, 0 % de pérdida, p95 279 ms, 10 mandos × 2 Hz = 20 mensajes/s). Sus palabras: «Continua pincel con la información de esta corrida […] podríamos limitar usuarios por actividad, agregando un campo en admin, tener fila de espera hace que los usuarios se interesen y se enganchen […] que los que no alcanzan cupo si se puedan conectar pero su control aparezca en espera para que alguien salga.» Dos piezas nuevas para el bloque 3, con **prototipo antes que código** (lo firma el founder en el chat del gestor). Nada de esto es código todavía — es el plan corto que pidió el gestor antes de tocar nada.
+
+### 1. Cupo de mandos por obra
+
+Un campo en Administración (crear/editar obra), con valor por defecto prudente y un tope duro:
+
+- **Por defecto: 10 mandos pintando a la vez.** Es exactamente lo medido y limpio (tanda 1: 190/190, 0 % de pérdida) — no una extrapolación.
+- **Tope duro propuesto: 20 mandos.** Con el envío agrupado (`MENSAJES_POR_SEGUNDO = 3`), 20 mandos son 60 mensajes/s de trazos — el 60 % del cupo citado (100 mensajes/s, plan gratuito). El 40 % que sobra es colchón para Presence (la fila de espera también manda mensajes, ver abajo) y para lo que la corrida 1 no llegó a medir: cómo se comporta la red real a más carga. El techo teórico sin colchón sería ~33 mandos (100 ÷ 3); no lo propongo como tope porque nunca se corrió una tanda con carga real por encima de 20 mensajes/s — el founder decidió no correrla, así que el tope duro se queda del lado conservador en vez de apostar a un número sin medir.
+- **Migración, solo añade:** una columna en `obras_colectivas` (nombre lo da el gestor), `integer not null default 10 check (cupo_mandos between 1 and 20)`. Se manda el SQL al gestor antes de escribir nada más.
+
+### 2. Fila de espera
+
+**Cómo se sabe quién pinta y quién espera:** Realtime **Presence** en el mismo canal de la obra (`abrirCanalObra`, ya común): cada mando hace `track()` al conectar con su hora de llegada. El orden es por esa hora, con una segunda clave para desempatar (Presence da un `presence_ref` único por conexión) si dos llegan en el mismo milisegundo — sin eso, el orden podría no ser estable entre quien mira la pared y quien mira su mando. Los primeros `cupo_mandos` de esa lista pintan; el resto espera, con su posición = su lugar en la lista menos el cupo.
+
+**El freno va también del lado de la pared, no solo en el botón del mando** (el gestor lo pidió explícito): un mando en espera podría, con un cliente modificado, seguir mandando `trazo` igual. Para que eso no pinte nada, cada mensaje de trazo necesita decir quién lo manda (un campo `remitente` con la clave de su propia Presence — no un nombre, ver más abajo), y **la pared descarta cualquier trazo cuyo remitente no esté hoy entre los primeros `cupo_mandos` de la lista de Presence que ella misma calcula** — no le basta con recibir el mensaje, tiene que cruzarlo contra su propia cuenta de quién pinta ahora mismo. Esto es un ajuste a `MensajeTrazo` (`src/lib/pincel.ts`) para el bloque 3, no del bloque 2 ya entregado.
+
+**Qué pasa si alguien que pinta se queda quieto** (propuesta, decide el founder): mientras la fila esté vacía, sin límite — nadie pierde su turno por una pausa si nadie más lo necesita. En cuanto hay al menos una persona esperando, un mando pintando que lleve **60 segundos sin mandar ningún trazo** pasa solo al final de la fila y entra quien seguía. No es un cronómetro visible de "tu turno se acaba": es una regla de cortesía silenciosa que solo se activa cuando de verdad hay a quién cederle el lugar.
+
+**Qué pasa si se cae la conexión de quien pinta:** Presence lo resuelve solo — al perder el WebSocket, su `track()` desaparece de la lista de todos los demás sin que nadie tenga que detectarlo a mano, y el siguiente en la fila sube un lugar automáticamente.
+
+**Qué pasa si dos llegan a la vez:** cubierto arriba (hora de llegada + `presence_ref` como desempate estable).
+
+**Cupo de conexiones, no solo de mandos pintando:** quien espera sigue conectado (ve la pared, ve su lugar en la fila) aunque no mande trazos — **cuenta para el tope de 200 conexiones simultáneas** igual que quien pinta. Presence también manda mensajes propios (al entrar, al salir, y sus sincronizaciones) — no medidos todavía con el simulador (el simulador de la Fase 2 bloque 2 no abrió canales con Presence, solo Broadcast puro); antes de fijar un número de producción definitivo habría que estimarlo o medirlo aparte, y lo anoto como pendiente, no lo invento aquí.
+
+### 3. Privacidad en la fila
+
+Sin nombres. Solo número de lugar («vas el 3») para quien espera, y un conteo total («4 esperando») visible para todos — la misma regla que ya sigue el resto de la app (personas solo se cuentan, doc rediseno/24, grafo cultural).
+
+### 4. Antes de tocar código
+
+Prototipo (documento + HTML, sin lógica real) de las tres pantallas del mando — **pintando**, **en espera con su lugar**, **te toca** — y del campo de cupo en Administración, a 390×844, maquetación medida (rejillas con `minmax(0, 1fr)` desde el principio, no como corrección después; estilos del canon `ui/` antes que propios). Lo firma el founder en el chat del gestor antes de escribir una sola línea de la fila de espera.
+
+**Mientras se firma:** puedo seguir con lo del bloque 3 que no depende de la fila — la pared y el mando pintando de verdad entre dos teléfonos (la prueba que ya definió la Fase 0 para esta fase), sin el cupo ni la fila todavía. Eso no toca producción ni pide una migración nueva de inmediato.
+
+Sin código en este documento: es la anotación de la decisión y el plan corto que pidió el gestor. Se le manda por separado.
+
 ## Verificación de este documento
 
 
