@@ -306,10 +306,10 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
                 </button>
               </span>
             ) : (
-              // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
+              // Sin fecha elegida: estado vacío "Seleccionar". El chip es el selector nativo: el toque cae en él.
               <label className={`${chip.chip} ${chip.deContexto} ${chip.chipNativo}`} htmlFor="agenda-fecha">
                 <IconoCalendario width={16} height={16} />
-                <span>{diaCorto(hoyIso, ahora, zona)}</span>
+                <span>Seleccionar</span>
                 <IconoCaret width={12} height={12} />
                 <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
               </label>
