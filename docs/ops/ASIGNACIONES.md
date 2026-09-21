@@ -70,6 +70,8 @@ Contrastado con el transcript local del gestor Claude
 
 El chat gestor `c45c6c9f` (Claude) cierra por tamaño de contexto y entrega a un chat nuevo, «Gestor de cambios II», con las mismas reglas de este registro, de `docs/ops/GESTION_DE_CAMBIOS.md` y de `docs/ops/MEMORIA_GESTOR.md`. El nuevo gestor anota aquí su id de sesión al arrancar.
 
+**Gestor desde el 2026-09-21: sesión Claude `local_ffd34d86-6c74-4f3a-b5f5-8879b4c446ed`, título «Gestor de cambios II»** (modelo efectivo al arrancar: `claude-fable-5-1`, esfuerzo xhigh). Los operadores le escriben con SendMessage por ese título. Al arrancar comprobó que OL-065 ya estaba cerrado: PR #111 unido (`c78d68a`), CI de main en verde, despliegue de producción de `c76b58f` correcto y la rama `topes-de-campos` sin nada fuera de main.
+
 Estado al relevo (main `144d17c` o posterior; producción al día con main; 43 migraciones aplicadas, ninguna pendiente):
 
 - **Publicado esta ronda:** PR #105 y #107 (directorios, OL-085), #108 y #109 (cabecera única y tira de letras, OL-087), #110 (mapa en fichas, OL-089). Todo sin migración. Falta la prueba del founder en su iPhone de los cuatro: tira de letras (aparece al bajar, letra iluminada), cabecera (renglón que se esconde, botón ↑, mapa con «Cercanos»), mapa en fichas de lugar y evento.
