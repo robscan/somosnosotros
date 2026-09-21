@@ -1,6 +1,7 @@
 import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
+import { crearDesdeEvento } from "@/app/admin/obras-colectivas/acciones";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -197,6 +198,16 @@ export default async function FichaEvento({ params, searchParams }: Params) {
                 <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>
                   <button type="submit" className={ficha.menuItem}>
                     {e.visible ? "Ocultar de la agenda" : "Volver a mostrar"}
+                  </button>
+                </form>
+              </li>
+            )}
+            {esAdmin && (
+              <li>
+                {/* crearDesdeEvento (OL-088) entra a la obra ya abierta de este evento o su lugar en vez de duplicarla. */}
+                <form action={crearDesdeEvento.bind(null, e.id)}>
+                  <button type="submit" className={ficha.menuItem}>
+                    Activar obra colectiva
                   </button>
                 </form>
               </li>

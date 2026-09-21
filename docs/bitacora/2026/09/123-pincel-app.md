@@ -166,19 +166,28 @@ Hecho y comiteado, verificado, sin push:
 - Verificado hasta aquí: `npm run typecheck` en verde; `npx eslint` sobre los archivos nuevos, sin hallazgos;
   `npx vitest run src/lib/pincel.test.ts`, 4/4.
 
-**Falta para cerrar la Fase 1** (nada de esto se tocó todavía):
+**Cierre de la Fase 1 (2026-09-21):**
 
-1. «Activar Pincel» en `src/app/eventos/[id]/page.tsx`: un renglón en el menú `···` (mismo patrón que
-   `cambiarVisibleEvento`, junto a `esAdmin`) que llama a `crearDesdeEvento(e.id)`.
-2. Un enlace a Obras colectivas desde `src/app/admin/page.tsx` (no encaja en el `SECCIONES`/`renglonesGestionar()`
-   genérico de moderación — es alta, no moderación —, así que va como bloque propio, con `IconoPincel`).
-3. Entrada de OL-088 en `docs/ops/OPEN_LOOPS.md`.
-4. Verificación completa y de cierre: `npm run lint && npm run typecheck && npm test` (el `npm test` completo, no
-   solo `pincel.test.ts`) y `npm run build`, todos en verde; capturas a 390×844 de la lista, el formulario "Crear
-   obra aquí" y el detalle con `front-visual`.
-5. **No aplicar la migración** — la revisa y la aplica el gestor, como ya se acordó.
+1. **Hecho.** «Activar obra colectiva» en `src/app/eventos/[id]/page.tsx`: un renglón en el menú `···`, junto al de
+   `esAdmin` que ya existía (mismo patrón que `cambiarVisibleEvento`), con un `form action={crearDesdeEvento.bind(null, e.id)}`.
+   Texto «obra colectiva», no «Pincel» (condición del gestor al autorizar la Fase 1).
+2. **Hecho.** Bloque propio «Obras colectivas» en `src/app/admin/page.tsx`, después de «Gestionar» (no encaja en
+   `SECCIONES`/`renglonesGestionar()`, que es moderación, no alta), con `IconoPincel` (ya existía en `ui/Iconos.tsx`).
+3. **Hecho.** Entrada de OL-088 en `docs/ops/OPEN_LOOPS.md` («Ahora» y «Last updated»).
+4. **Hecho, con una salvedad.** `npm run lint && npm run typecheck && npm test` (716/716, el completo) y `npm run build`
+   en verde. Capturas a 390×844 de las cuatro pantallas (lista, formulario «Crear obra aquí», detalle, y las dos
+   piezas nuevas de este cierre: el renglón del evento y el bloque de `/admin`) verificadas con `front-visual`
+   contra un respaldo 100 % local sin red (servidor de datos inventados en el scratchpad de la sesión, sesión admin
+   con cookie fabricada, sin `.env` ni producción — patrón de la memoria del proyecto, bitácoras 075/076). **Las
+   cuatro se ven bien**, pero **no quedaron guardadas como PNG en el scratchpad**: el navegador integrado de esta
+   sesión solo muestra la captura en la conversación, no la escribe a disco; no había una herramienta disponible
+   para hacerlo sin sumar una dependencia nueva (Playwright/Puppeteer, no instalados). Evidencia queda en el
+   historial de esta sesión, no como archivo.
+5. **Sin aplicar la migración** — la revisa a fondo el gestor (permisos con pruebas negativas) y la aplica con el
+   founder.
 
-Nada de lo pendiente toca lo ya comiteado: son piezas nuevas (dos archivos a editar y un documento), no correcciones.
+Nada de lo pendiente tocó lo ya comiteado: son piezas nuevas (dos archivos editados y dos documentos), no
+correcciones. Fase 1 cerrada; no se empieza la Fase 2 sin la revisión del gestor.
 
 ## Reanudación (2026-09-21): criterio de obras colectivas, doc 25
 
