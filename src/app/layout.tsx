@@ -3,6 +3,7 @@ import { Bricolage_Grotesque } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 import Navegacion from "@/components/Navegacion";
+import AnalyticsVercel from "@/components/AnalyticsVercel";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
 import TituloInstalada from "@/components/TituloInstalada";
@@ -59,6 +60,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MemoriaScroll />
         </Suspense>
         <TituloInstalada />
+        {/* Vercel Analytics: vistas de página solo, sin cookies ni identificación de personas (OL-111, 2026-09-21). */}
+        <AnalyticsVercel />
       </body>
     </html>
   );
