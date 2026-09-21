@@ -88,7 +88,7 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
               {grupo}
             </li>
           ),
-          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} sigo={seguir.sigo(l.id)} acciones={seguir.acciones(l.id, l.nombre)} />,
+          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={seguir.boton(l.id, l.nombre)} />,
         ])}
       </ul>
       {seguir.extras}

@@ -283,7 +283,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
           </h2>
           <ul className={styles.lista}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} estado={asistencia.estado(e.id)} acciones={asistencia.acciones(e)} conDia={filtro === "nuevos" && !fecha && !hayBusqueda} />
+              <RenglonEvento key={e.id} evento={e} km={km.get(e.id)} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} conDia={filtro === "nuevos" && !fecha && !hayBusqueda} />
             ))}
           </ul>
         </section>

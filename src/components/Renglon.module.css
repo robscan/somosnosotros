@@ -1,44 +1,55 @@
-/* Renglón de lista (evento en la agenda, lugar en Lugares): foto a la izquierda en dos filas, título y
-   datos con icono a la derecha; sin envoltorios. Lo importan RenglonEvento y ListaLugares. */
+/* Renglón de lista (evento en la agenda, lugar en Lugares): foto a la izquierda en dos filas, título y datos con icono
+   a la derecha, y el botón de acción (OL-104, bitácora 139) a la derecha del todo; sin envoltorios. La fila entera
+   (`.renglon`, el `<li>`) es un grid de dos columnas: el enlace (`.frente`) y el botón, hermanos — nunca un botón
+   anidado dentro de un enlace, que confunde a quien usa lector de pantalla. Sin botón, el enlace ocupa toda la fila
+   igual que antes. Lo importan RenglonEvento, RenglonLugar y RenglonArtista. */
 .renglon {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.frente {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
     "foto titulo"
     "foto meta";
   column-gap: var(--espacio-3);
   align-content: center;
   min-height: 64px;
-  padding: var(--espacio-3) 0;
-  border-bottom: 1px solid var(--borde);
+  min-width: 0;
   color: var(--texto);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
-/* Estados del renglón (pedido del founder, 2026-09-14): pulsado y, con ratón, al pasar por encima, el renglón se
+/* Estados del renglón (pedido del founder, 2026-09-14): pulsado y, con ratón, al pasar por encima, el enlace se
    levanta en blanco con una marca del color de acción a la izquierda; el elegido (aria-current) va en el tono suave
-   del color de acción. El resaltado llega a los bordes del gutter sin mover nada (sombra extendida). */
-.renglon:active {
+   del color de acción. El resaltado llega a los bordes del gutter sin mover nada (sombra extendida); con botón, se
+   detiene antes de su columna, para no sugerir que el botón también navega. */
+.frente:active {
   background: var(--fondo);
   box-shadow: 0 0 0 var(--espacio-5) var(--fondo);
 }
 @media (hover: hover) {
-  .renglon {
+  .frente {
     transition: background-color 120ms, box-shadow 120ms;
   }
-  .renglon:hover {
+  .frente:hover {
     background: var(--fondo);
     box-shadow: 0 0 0 var(--espacio-5) var(--fondo), inset 3px 0 0 var(--primario);
   }
-  .renglon:hover .titulo {
+  .frente:hover .titulo {
     color: var(--primario);
   }
 }
-.renglon[aria-current="true"] {
+.frente[aria-current="true"] {
   background: var(--primario-suave);
   box-shadow: 0 0 0 var(--espacio-5) var(--primario-suave), inset 3px 0 0 var(--primario);
 }
-.renglon:focus-visible {
+.frente:focus-visible {
   outline: 2px solid var(--primario);
   outline-offset: -2px;
   border-radius: 4px;
@@ -59,6 +70,7 @@
 .titulo {
   grid-area: titulo;
   min-width: 0;
+  overflow-wrap: break-word;
   font-size: var(--letra-xl);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
@@ -69,6 +81,7 @@
   grid-area: meta;
   display: flex;
   flex-wrap: wrap;
+  min-width: 0;
   gap: 2px var(--espacio-3);
   margin-top: 4px;
   color: var(--texto-suave);

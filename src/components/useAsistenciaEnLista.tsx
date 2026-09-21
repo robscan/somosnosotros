@@ -4,13 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarAsistencia } from "@/app/eventos/acciones";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
-import { accionesEvento, asistenciaTras, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
+import { asistenciaTras, claveVoy, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
 import { anotarIntencion } from "@/lib/intencionAvisos";
 import { alRecibir, elegir, esElUltimo, siSigueSiendoElUltimo, tocar, trasGuardar, type Elegidas, type Toques } from "@/lib/toques";
 import ConsentimientoAvisos from "./ConsentimientoAvisos";
-import type { AccionDeslizable } from "./ui/Deslizable";
+import type { EstadoBotonRenglon } from "./ui/BotonRenglon";
 import Hoja from "./ui/Hoja";
-import { IconoEstrella, IconoOk } from "./ui/Iconos";
 import { AvisoAbajo, HojaAbierta, useCanalDeListas, type CanalDeListas } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
 
@@ -19,10 +18,11 @@ export type Decididas = Record<string, Exclude<Asistencia, null>> | null;
 type EventoLista = { id: string; titulo: string };
 
 /**
- * Voy y Me interesa al deslizar un evento (decisión del founder, 2026-09-17; bitácora 085): lo que la persona decidió, las
- * dos acciones del renglón, el aviso con Deshacer y, tras el primer Voy guardado, la misma pregunta de avisos que la
- * ficha. Guarda con la misma acción de la ficha, así el estado es uno solo; sin sesión, lleva a entrar y la ficha lo
- * aplica al volver. Si no se pudo guardar, deshace lo mostrado y ofrece Reintentar, sin tumbar la pantalla.
+ * El botón "Voy"/"Vas" del renglón (OL-104, bitácora 139; antes, deslizar: OL-056, bitácora 085): lo que la persona
+ * decidió, el botón único del renglón, el aviso con Deshacer y, tras el primer Voy guardado, la misma pregunta de
+ * avisos que la ficha. "Me interesa" ya no tiene botón en la lista, se cambia en la ficha. Guarda con la misma acción
+ * de la ficha, así el estado es uno solo; sin sesión, lleva a entrar y la ficha lo aplica al volver. Si no se pudo
+ * guardar, deshace lo mostrado y ofrece Reintentar, sin tumbar la pantalla.
  *
  * Lo que llega del servidor manda (al volver de la ficha, en la respuesta de la acción): lo elegido aquí se superpone
  * solo mientras se guarda. Cada toque lleva su número por renglón (lib/toques): lo que trae un guardado viejo se ignora.
@@ -30,7 +30,7 @@ type EventoLista = { id: string; titulo: string };
  * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
  * la lista tiene los suyos y pinta su aviso en `extras`.
  */
-export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null, canal?: CanalDeListas): { estado: (id: string) => Asistencia; guardado: (id: string) => Asistencia; fallos: number; acciones: (e: EventoLista) => AccionDeslizable[]; extras: ReactNode } {
+export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista | null, canal?: CanalDeListas): { estado: (id: string) => Asistencia; guardado: (id: string) => Asistencia; fallos: number; boton: (e: EventoLista) => EstadoBotonRenglon; extras: ReactNode } {
   const router = useRouter();
   const [, iniciar] = useTransition();
   const [elegidas, setElegidas] = useState<Elegidas<Asistencia>>({});
@@ -111,23 +111,30 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     guardar(e, previo, () => deshacer(e, previo));
   }
 
-  function acciones(e: EventoLista): AccionDeslizable[] {
+  /**
+   * El botón único del renglón (OL-104): "Voy" invita —también desde "Me interesa", que ya no tiene botón propio en
+   * la lista—; con Voy, dice "Vas" y tocarlo lo quita (como antes "No voy" al deslizar).
+   */
+  function boton(e: EventoLista): EstadoBotonRenglon {
     const previo = estado(e.id);
+    const clave = claveVoy(previo);
+    const decidido = previo === "voy";
     const ruta = `/eventos/${e.id}`;
-    return accionesEvento(previo).map((accion) => ({
-      ...accion,
-      icono: accion.clave === "voy" || accion.clave === "no_voy" ? <IconoOk width={22} height={22} /> : <IconoEstrella width={22} height={22} />,
+    return {
+      etiqueta: decidido ? "Vas" : "Voy",
+      decidido,
+      nombreAccesible: `${decidido ? "Ya no vas" : "Voy"} — ${e.titulo}`,
       alTocar: () => {
         if (decididas === null) {
           // Sin sesión: la ficha aplica la acción al volver de entrar (y, tras Voy, hace la pregunta de avisos una vez).
-          const nuevo = asistenciaTras(accion.clave);
+          const nuevo = asistenciaTras(clave);
           if (nuevo === "voy") anotarIntencion(ruta);
           router.push(`/entrar?siguiente=${encodeURIComponent(`${ruta}?accion=${nuevo ?? ""}`)}`);
           return;
         }
-        hacer(e, accion.clave, previo);
+        hacer(e, clave, previo);
       },
-    }));
+    };
   }
 
   const extras = (
@@ -142,5 +149,5 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     </>
   );
 
-  return { estado, guardado, fallos, acciones, extras };
+  return { estado, guardado, fallos, boton, extras };
 }
