@@ -71,8 +71,10 @@ describe("debeAvisar", () => {
     expect(debeAvisar({ ...base, shift: true })).toBe(false);
     expect(debeAvisar({ ...base, alt: true })).toBe(false);
   });
-  it("un esquema que no sea http/https deja pasar el enlace", () => {
+  it("un esquema que no sea http/https deja pasar el enlace, sin hoja ni error: nunca se guardó como red o sitio, pero alguien pudo forzarlo", () => {
     expect(debeAvisar({ ...base, href: "javascript:alert(1)" })).toBe(false);
+    expect(debeAvisar({ ...base, href: "mailto:hola@somosnosotros.org" })).toBe(false);
+    expect(debeAvisar({ ...base, href: "tel:+524441234567" })).toBe(false);
   });
   it("con la preferencia guardada, no avisa", () => {
     expect(debeAvisar({ ...base, sinAviso: true })).toBe(false);

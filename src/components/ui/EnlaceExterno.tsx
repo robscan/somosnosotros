@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Boton from "./Boton";
 import Hoja from "./Hoja";
 import { IconoEnlace } from "./Iconos";
 import { debeAvisar, guardarSinAvisoSalida, sinAvisoSalida } from "@/lib/avisoSalida";
@@ -47,22 +48,27 @@ export default function EnlaceExterno({ href, className, children, ariaLabel }: 
       </a>
       {abierta && (
         <Hoja etiqueta="Vas a salir de Somos Nosotros" onCerrar={quedarme}>
-          <h3>Vas a salir de Somos Nosotros</h3>
-          <div className={styles.dominio}>
-            <IconoEnlace width={20} height={20} />
-            <span className={styles.texto}>Vas a {dominioDe(href)}</span>
+          {/* Todo dentro de un mismo contenedor (como ui/SalirSinPublicar), no directo hijo de la hoja: así el
+              título no hereda el margen que ui/Hoja.module.css da a "h3 seguido de p" (aquí sigue una tarjeta,
+              no un párrafo) y el espaciado se resuelve con una sola regla de grid, no botón por botón. */}
+          <div className={styles.contenido}>
+            <h3>Vas a salir de Somos Nosotros</h3>
+            <div className={styles.dominio}>
+              <IconoEnlace width={20} height={20} />
+              <span className={styles.texto}>{dominioDe(href)}</span>
+            </div>
+            <p className={styles.porque}>Ahí puede que te pidan un pago o tus datos.</p>
+            <Boton type="button" onClick={continuar}>
+              Continuar
+            </Boton>
+            <Boton type="button" variante="secundario" onClick={quedarme}>
+              Quedarme aquí
+            </Boton>
+            <label className={styles.marcar}>
+              <input type="checkbox" checked={marcar} onChange={(e) => setMarcar(e.target.checked)} />
+              No volver a avisarme
+            </label>
           </div>
-          <p className={styles.porque}>Ahí puede que te pidan un pago o tus datos.</p>
-          <button type="button" className={styles.continuar} onClick={continuar}>
-            Continuar
-          </button>
-          <button type="button" className={styles.quedarme} onClick={quedarme}>
-            Quedarme aquí
-          </button>
-          <label className={styles.marcar}>
-            <input type="checkbox" checked={marcar} onChange={(e) => setMarcar(e.target.checked)} />
-            No volver a avisarme
-          </label>
         </Hoja>
       )}
     </>

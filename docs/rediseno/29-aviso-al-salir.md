@@ -35,10 +35,10 @@
 Mínimo texto, sin tono de alarma:
 
 - Título: **"Vas a salir de Somos Nosotros"**
-- Dominio real, legible: **"Vas a `boletia.com`"** (o el dominio que sea) — se calcula de la URL real, nunca del texto del botón.
+- Dominio real, legible, en tarjeta aparte: **"`boletia.com`"** (o el dominio que sea) — se calcula de la URL real, nunca del texto del botón. *(Corrección del gestor, 2026-09-21: el prototipo firmado decía "Vas a boletia.com" debajo del título "Vas a salir de Somos Nosotros" — dos "Vas a" seguidos. Se quitó el segundo; el título ya lo dice.)*
 - Una línea: **"Ahí puede que te pidan un pago o tus datos."**
-- Botón primario: **"Continuar"** (abre el enlace).
-- Salida clara para quedarse: **"Quedarme aquí"** (cierra la hoja).
+- Botón primario (`ui/Boton`, variante principal): **"Continuar"** (abre el enlace).
+- Salida clara para quedarse (`ui/Boton`, variante secundario): **"Quedarme aquí"** (cierra la hoja).
 - Casilla: **"No volver a avisarme"**.
 
 ### c) "No volver a avisar"

@@ -1,8 +1,15 @@
+.contenido {
+  display: grid;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-2);
+}
+.contenido h3 {
+  font-size: var(--letra-xl);
+}
 .dominio {
   display: flex;
   align-items: center;
   gap: var(--espacio-2);
-  margin: var(--espacio-3) 0 var(--espacio-2);
   padding: var(--espacio-3);
   border-radius: var(--radio);
   background: var(--fondo-suave);
@@ -21,37 +28,10 @@
   overflow-wrap: anywhere;
 }
 .porque {
-  margin-bottom: var(--espacio-4);
+  margin-top: calc(-1 * var(--espacio-2));
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   line-height: 1.4;
-}
-.continuar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: var(--toque);
-  margin-bottom: var(--espacio-2);
-  border: none;
-  border-radius: var(--radio);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  cursor: pointer;
-}
-.quedarme {
-  display: block;
-  width: 100%;
-  min-height: var(--toque-min);
-  margin-bottom: var(--espacio-3);
-  border: none;
-  background: none;
-  color: var(--texto);
-  font-size: var(--letra-md);
-  font-weight: 600;
-  cursor: pointer;
 }
 .marcar {
   display: flex;
