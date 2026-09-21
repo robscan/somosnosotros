@@ -67,8 +67,12 @@ Los tres, probados con el mismo mecanismo real de `huboArrastre` (arrastrar desd
 
 Preguntado al founder cuál es el tamaño mínimo accionable de la app: **44 px** (`--toque-min`, el piso de Apple/WCAG); 48 px (`--toque`) es el cómodo, el que ya se estaba usando.
 
+## Firma del founder
+
+«firmo, adelante» — confirma el diseño final tal como quedó tras las cuatro rondas de ajuste: "Sobre la foto", botón redondo ~48 px solo icono, `--primario` sólido al decidir (sin verde nuevo), sin borde por defecto, y el mismo diseño también en los renglones de las listas (sustituye el aspecto de `ui/BotonRenglon` desde OL-104). Línea en «Decidido» de `OPEN_LOOPS.md` con sus palabras.
+
 ## Qué falta
 
-Confirmación del founder de que el rediseño también aplica al componente ya en producción (`ui/BotonRenglon`), no solo a las tarjetas nuevas — y si `--primario` reusado (en vez del verde) le parece bien para el estado decidido, o prefiere dar el tono de un "Success" propio. Código solo después, con la comprobación medida a 320/375/390 px que pide el gestor — y, si toca `ui/BotonRenglon`, avisar también al gestor antes de tocar ese archivo compartido.
+Código. Toca `ui/BotonRenglon` (compartido, ya en producción desde OL-104/PR #126): avisado al gestor antes de tocar ese archivo, como pide la regla de piezas que comparten archivos. Comprobación medida a 320/375/390 px en la entrega.
 
 Sin migración. Sin subagentes.
