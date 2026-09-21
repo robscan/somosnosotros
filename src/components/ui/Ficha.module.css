@@ -101,12 +101,16 @@
 }
 
 /* 3. Acciones secundarias: botones de icono iguales, sin color de acción. Tres por fila; con más, la fila se desplaza.
-   Si hay más de tres elementos, asoman los siguientes (flex-basis de 2.5). */
+   Si hay más de tres elementos, asoman los siguientes (flex-basis de 2.5).
+   Sangra hasta el borde de la pantalla como el carril de Destacados (founder, 2026-09-21). */
 .acciones {
   display: flex;
   gap: var(--espacio-2);
+  margin-inline: calc(-1 * var(--gutter));
   margin-bottom: var(--espacio-5);
+  padding-inline: var(--gutter);
   overflow-x: auto;
+  scroll-padding-inline: var(--gutter);
   scrollbar-width: none;
 }
 .acciones::-webkit-scrollbar {

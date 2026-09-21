@@ -40,8 +40,8 @@ describe("textoAvisos", () => {
 
 describe("textoCompartirPersona", () => {
   it("cuenta los eventos próximos y distingue mi ficha de la ajena", () => {
-    expect(textoCompartirPersona("Rosa", 2, false)).toBe("Rosa va a 2 eventos próximos en San Luis Potosí. Mira cuáles:");
-    expect(textoCompartirPersona("Rosa", 1, true)).toBe("Voy a 1 evento próximo en San Luis Potosí. Mira cuál:");
+    expect(textoCompartirPersona("Rosa", 2, false)).toBe("Rosa va a 2 eventos próximos. Mira cuáles:");
+    expect(textoCompartirPersona("Rosa", 1, true)).toBe("Voy a 1 evento próximo. Mira cuál:");
     expect(textoCompartirPersona("Rosa", 0, false)).toContain("Rosa está en Somos Nosotros");
   });
 });
