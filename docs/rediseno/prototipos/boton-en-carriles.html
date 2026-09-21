@@ -9,7 +9,6 @@
     --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --fondo-miniatura: #e6e6e2;
     --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
     --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
-    --ok: #1f6f43; /* verde: "Voy" confirmado — ya existe en globals.css con ese mismo comentario */
     --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
     --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --fuente-sistema: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -101,6 +100,13 @@
   /* ---------- Diseño C: sobre la foto, arriba a la derecha (pedido del founder, 2026-09-21) ---------- */
   .diseno-foto .carril > li { position: relative; }
   .diseno-foto .fila-boton { position: absolute; top: var(--espacio-2); right: var(--espacio-2); padding-top: 0; }
+  /* Redonda (104 px, radio 52): el botón (48 px, radio 24) flota sobre el perímetro del círculo, no adentro — su
+     centro cae en el punto del círculo a 45° arriba a la derecha (52 + 52·cos45° ≈ 88.8, 52 − 52·sin45° ≈ 15.2), así
+     que su esquina superior derecha queda fuera del círculo por ~9 px (pedido del founder, 2026-09-21). Con
+     `overflow-x: auto` en `.carril`, el desborde vertical también se recorta ("hay máscara en el contenedor", medido
+     tras el aviso del founder): el carril necesita ese espacio de sobra arriba, no basta con la posición negativa. */
+  .diseno-foto .redondas.carril { padding-top: calc(9px + var(--espacio-1)); }
+  .diseno-foto .redondas .fila-boton { top: -9px; right: -9px; }
   /* La foto de "una sola tarjeta" mide 124 px y el texto va a su lado: el botón se ancla a la esquina de la FOTO
      (right: 100% menos 124 px, más el margen), no a una posición fija, o invade el texto. */
   .diseno-foto .uno .fila-boton { left: auto; right: calc(100% - 124px + var(--espacio-2)); width: max-content; padding-left: 0; }
@@ -108,12 +114,13 @@
   /* Botón redondo, solo icono (corrección del founder, 2026-09-21: "quita textos, solo deja botón de acción + o -");
      ~48 px (el token --toque, "cómodo para el pulgar"), igual en renglones y en tarjetas. El nombre completo sigue en
      el aria-label (no cambia con el estado) y el toast dice qué pasó — el icono ya no necesita decirlo con texto.
-     Estados intercambiados: por defecto (invita) queda callado; decidido ("Voy") se ve con el verde intenso de
-     siempre en la app (`--ok`, "verde: Voy confirmado"). */
+     Estados intercambiados: por defecto (invita) queda callado; decidido ("Voy") se ve con `--primario` sólido — el
+     mismo color de los accionables principales de la app (Publicar, la nav activa), no un verde nuevo inventado
+     (el founder corrigió un primer intento con `--ok`, un verde casi sin uso hoy, solo como texto). */
   .boton-fila { display: grid; place-items: center; width: var(--toque); height: var(--toque); border: none; border-radius: 50%; cursor: pointer; }
   .boton-fila svg { width: 22px; height: 22px; }
-  .boton-fila.invitar { background: var(--fondo); color: var(--primario); box-shadow: inset 0 0 0 1.5px var(--borde); }
-  .boton-fila.decidido { background: var(--ok); color: #fff; }
+  .boton-fila.invitar { background: var(--fondo); color: var(--primario); }
+  .boton-fila.decidido { background: var(--primario); color: var(--primario-texto); }
 
   /* ---------- Aviso con Deshacer ---------- */
   .aviso { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(8px); z-index: 20; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-height: 52px; width: calc(100% - 48px); max-width: 342px; padding: 6px 6px 6px 16px; border-radius: 14px; background: #1f2326; color: #f2f2f2; font-size: 15px; line-height: 1.3; box-shadow: var(--sombra-flotante); opacity: 0; transition: opacity 160ms, transform 160ms; pointer-events: none; }
@@ -186,7 +193,8 @@
       <ul>
         <li><b>Sobre la foto (confirmado):</b> el botón flota en la esquina superior derecha de la imagen, en las tarjetas y en las listas.</li>
         <li><b>Sin texto:</b> solo el icono — "+" invita, "−" ya está decidido y lo quita al tocarlo. El toast de abajo dice qué pasó ("Vas a «…»", "Ya no sigues …").</li>
-        <li><b>Colores intercambiados:</b> por defecto, callado (blanco con borde); decidido, verde intenso (`--ok`, el mismo verde que ya usa la app para "Voy confirmado").</li>
+        <li><b>Colores intercambiados:</b> por defecto, callado (blanco, sin borde); decidido, con `--primario` sólido — el mismo color de los accionables principales de la app.</li>
+        <li><b>Icono decidido:</b> check (✓), no un guion — vuelto a corregir tras un primer intento.</li>
         <li><b>Redondo, ~48 px</b> en todos los casos — tarjetas grandes, normales, redondas y también en el renglón de la lista (sección "Listado" al final de cada pantalla).</li>
         <li><b>Abajo</b> y <b>Lateral</b> se quedan en el selector solo de referencia, por si quieres volver a compararlos.</li>
         <li><b>Arrastra el carril empezando justo sobre un botón</b> (con el dedo, de derecha a izquierda): el carril se mueve y el botón <b>no</b> se dispara. Suelta sin moverte: sí se dispara.</li>
@@ -203,7 +211,7 @@
   "use strict";
   const svg = (paths) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
   const iconoMas = svg('<path d="M12 5v14M5 12h14"/>');
-  const iconoMenos = svg('<path d="M5 12h14"/>');
+  const iconoOk = svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
   const iconoPersonas = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15 13.3c2 .3 4 1.8 4 4.7"/></svg>';
 
   const FOTO = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#cfc2b2"/></svg>');
@@ -237,7 +245,7 @@
     const decidido = estado[key];
     const esVoy = tipo === "voy";
     const accesible = esVoy ? `Voy — ${nombre}` : `Seguir — ${nombre}`;
-    return `<button type="button" class="boton-fila ${decidido ? "decidido" : "invitar"}" aria-pressed="${decidido}" aria-label="${accesible}" data-key="${key}" data-tipo="${tipo}" data-nombre="${nombre}">${decidido ? iconoMenos : iconoMas}</button>`;
+    return `<button type="button" class="boton-fila ${decidido ? "decidido" : "invitar"}" aria-pressed="${decidido}" aria-label="${accesible}" data-key="${key}" data-tipo="${tipo}" data-nombre="${nombre}">${decidido ? iconoOk : iconoMas}</button>`;
   }
 
   function tarjeta({ key, href, foto, titulo, detalle, van, tipo }) {
