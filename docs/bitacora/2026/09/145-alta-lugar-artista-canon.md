@@ -105,6 +105,16 @@ Medido, no a ojo (`comparar-iconos-nombre` en el scratchpad): el centro vertical
 | `artista-linea-ayuda-y-que-hace--390x844.png` | Lo mismo con Qué hace. |
 | `lugar-linea-ayuda--320x568.png`, `artista-linea-ayuda--320x568.png` | La línea de ayuda a 320 px: `right ≤ anchoVentana` en los dos, "Ver" siempre visible (`medir-linea-320.mjs`, `scrollWidth === clientWidth` en ambos). |
 
+## Segunda revisión del gestor (2026-09-21): acepta el toque doble, pide ajustar el espaciado
+
+El gestor aceptó el reporte del punto 1 tal cual («bien reportado lo del toque, sin maquillar») y confirmó: **acepta "un toque cierra, el segundo actúa"**, no autoriza el reenvío de clics a mano; lo de la estrella queda anotado como ilusión óptica de `main`, no se toca aquí. Un ajuste antes de subir: en `lugar-linea-ayuda-y-donde`, la línea "Ya hay uno con este nombre…" quedaba pegada al renglón Dónde (0 px debajo) y con más separación de la que se ve de campo a campo hacia el nombre. Pidió que fuera al revés: pegada al campo (misma separación que la ayuda bajo campo del canon, "Falta el nombre.") y, debajo, la separación normal entre renglones.
+
+**Medido antes de tocar nada** (`medir-espacios.mjs`): el espacio hacia el campo YA era idéntico al de "Falta el nombre." (12 px del `margin-bottom` de `canon.campo` + 8 px del `padding-top` de la nota = 20 px en los dos casos, medido con `getBoundingClientRect`). El defecto real estaba abajo: 0 px entre la nota y el primer renglón (`canon.renglones` no lleva margen propio arriba, y la nota tampoco llevaba margen abajo), contra los 8 px (`var(--espacio-2)`) que separan a los renglones entre sí — con la nota y el renglón "Dónde" tocándose, el ojo agrupa la nota con la caja de abajo aunque la distancia hacia el campo sea la correcta.
+
+**Arreglo:** `margin-bottom: var(--espacio-2)` en `.notaExiste` (`FormularioLugar.module.css` y `FormularioArtista.module.css`), sin tocar el `padding-top` de arriba. Medido después: `gapNotaARenglones` pasó de 0 a 8 px (igual que el gap normal entre renglones), `gapCampoANota` se mantuvo en 12 px (sin cambio, ya correcto). `npm run lint && npm run typecheck && npm test`: verdes, 789/789; `npm run build`: verde.
+
+Las dos capturas pedidas, retomadas con el ajuste: [`lugar-linea-ayuda-y-donde--390x844.png`](../../../rediseno/capturas-110-v2/lugar-linea-ayuda-y-donde--390x844.png) y [`artista-linea-ayuda-y-que-hace--390x844.png`](../../../rediseno/capturas-110-v2/artista-linea-ayuda-y-que-hace--390x844.png) (mismo archivo, reemplazan a las del primer commit de esta corrección) — 0 desbordes en las dos.
+
 ## Estado
 
-Segundo commit local, encima del primero, en `alta-lugar-artista-canon`, sin push (Vercel en su tope diario de despliegues). Sin migración. `.env.local` y el respaldo/scripts de captura quedan fuera del repo (ignorados por `.gitignore`, y los scripts en el scratchpad de esta sesión, no en el árbol de trabajo). Aviso "listo" al gestor, con la limitación del punto 1 explicada para que decida.
+Tercer commit local, encima de los dos anteriores, en `alta-lugar-artista-canon`, sin push (Vercel en su tope diario de despliegues). Sin migración. `.env.local` y el respaldo/scripts de captura quedan fuera del repo (ignorados por `.gitignore`, y los scripts en el scratchpad de esta sesión, no en el árbol de trabajo). Aviso "listo" al gestor.

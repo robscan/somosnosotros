@@ -31,6 +31,10 @@
   align-items: baseline;
   gap: 4px;
   padding-top: var(--espacio-2);
+  /* Pegada al campo (mismo padding-top que canon.cuerpoNota, "Falta el nombre."); abajo, la separación normal
+     entre renglones (canon.renglones usa var(--espacio-2) de gap) — antes tocaba el renglón de abajo sin espacio
+     (revisión del gestor, 2026-09-21). */
+  margin-bottom: var(--espacio-2);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
