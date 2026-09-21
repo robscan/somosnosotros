@@ -4,7 +4,7 @@
  * mismo session_token. Se usa solo al dar de alta; la ficha nunca vuelve a consultar.
  * De cualquier país: el contexto ordena, no limita (founder, 2026-09-16). Lo cercano va primero.
  */
-import { ciudadDelContexto, type Contexto } from "./geocodificar";
+import { ciudadDelContexto, type Bbox, type Contexto } from "./geocodificar";
 import type { Tipo } from "./lugares";
 
 export type LugarSugerido = {
@@ -14,6 +14,14 @@ export type LugarSugerido = {
   categorias: string[];
   /** Es una dirección (calle y número), no un lugar con nombre: sirve para ubicar, nunca para nombrar. */
   esDireccion: boolean;
+  /** Colonia o municipio del resultado, para distinguir dos aciertos con el mismo nombre (OL-100, L37). */
+  ciudad: string | null;
+  /**
+   * Distancia en metros al punto de cercanía, tal como la da Mapbox en el paso "sugerir" (antes de "recuperar" sus
+   * coordenadas exactas): sirve para decidir si hace falta una segunda búsqueda (OL-100), sin gastar una llamada de
+   * más solo para medir distancia.
+   */
+  distanciaM: number | null;
 };
 
 export type LugarRecuperado = { nombre: string; direccion: string; lat: number; lng: number; categorias: string[]; ciudad: string | null };
@@ -23,7 +31,7 @@ type Punto = { lat: number; lng: number };
 
 const BASE = "https://api.mapbox.com/search/searchbox/v1";
 
-export function urlSugerir(q: string, token: string, cerca: Punto, sesion: string): string {
+export function urlSugerir(q: string, token: string, cerca: Punto, sesion: string, bbox?: Bbox): string {
   const p = new URLSearchParams({
     q,
     access_token: token,
@@ -34,6 +42,8 @@ export function urlSugerir(q: string, token: string, cerca: Punto, sesion: strin
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "poi,address",
   });
+  // Acota a la ciudad de contexto cuando se conoce (OL-100, caso "Galeana #423, S.L.P."); nunca un país entero.
+  if (bbox) p.set("bbox", bbox.join(","));
   return `${BASE}/suggest?${p.toString()}`;
 }
 
@@ -46,7 +56,7 @@ export function urlRecuperar(mapboxId: string, token: string, sesion: string): s
 const MAX_SUGERENCIAS = 5;
 
 type RespuestaSugerir = {
-  suggestions?: Array<{ mapbox_id?: string; name?: string; full_address?: string; place_formatted?: string; address?: string; poi_category?: string[]; feature_type?: string; distance?: number }>;
+  suggestions?: Array<{ mapbox_id?: string; name?: string; full_address?: string; place_formatted?: string; address?: string; poi_category?: string[]; feature_type?: string; distance?: number; context?: Contexto }>;
 };
 type RespuestaRecuperar = {
   features?: Array<{ geometry?: { coordinates?: [number, number] }; properties?: { name?: string; full_address?: string; place_formatted?: string; poi_category?: string[]; context?: Contexto } }>;
@@ -65,6 +75,8 @@ export function interpretarSugerencias(json: RespuestaSugerir): LugarSugerido[] 
       direccion: s.full_address ?? [s.address, s.place_formatted].filter(Boolean).join(", "),
       categorias: s.poi_category ?? [],
       esDireccion: s.feature_type === "address" || (!s.poi_category?.length && s.feature_type !== "poi" && !!s.address),
+      ciudad: ciudadDelContexto(s.context),
+      distanciaM: s.distance ?? null,
     }))
     .filter((s) => s.mapboxId && s.nombre);
 }
@@ -84,10 +96,10 @@ export function interpretarRecuperado(json: RespuestaRecuperar): LugarRecuperado
   };
 }
 
-export async function sugerirLugares(q: string, token: string, cerca: Punto, sesion: string, fetchFn: FetchFn = fetch): Promise<LugarSugerido[]> {
+export async function sugerirLugares(q: string, token: string, cerca: Punto, sesion: string, fetchFn: FetchFn = fetch, bbox?: Bbox): Promise<LugarSugerido[]> {
   const texto = q.trim();
   if (texto.length < 3) return [];
-  const res = await fetchFn(urlSugerir(texto, token, cerca, sesion));
+  const res = await fetchFn(urlSugerir(texto, token, cerca, sesion, bbox));
   if (!res.ok) return [];
   return interpretarSugerencias((await res.json()) as RespuestaSugerir).slice(0, MAX_SUGERENCIAS);
 }

@@ -20,6 +20,29 @@
   font-size: var(--letra-sm);
 }
 
+/* Botón con un toque para acercar la búsqueda a la posición de la persona (OL-100, founder 2026-09-21: la
+   ubicación se pide con un toque, en el momento en que ayuda; nunca automático al abrir la hoja). */
+.usarUbicacion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  width: 100%;
+  min-height: var(--toque-min);
+  margin-bottom: var(--espacio-3);
+  padding: 0 var(--espacio-3);
+  border: 1px dashed var(--primario);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.usarUbicacion:disabled {
+  opacity: 0.6;
+}
+
 .atajo > svg {
   grid-area: foto;
   color: var(--texto-suave);

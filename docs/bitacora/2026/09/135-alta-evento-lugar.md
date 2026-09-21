@@ -44,9 +44,21 @@ Sus palabras a las cinco preguntas (completas en el documento 26):
 4. «Si apruebo.» — cascada de contexto y segunda búsqueda automática del caso "Galeana #423, S.L.P.".
 5. «Apruebo.» — texto nuevo del aviso de privacidad.
 
+## Código, primera parte (2026-09-21, antes de que A6 entre a `main`)
+
+Por indicación del gestor: empezar por lo que no comparte archivo con A6 (OL-099, que solo toca el campo de precio en `FormularioEvento.tsx` y `src/lib/eventos.ts`), dejando `FormularioEvento.tsx` para el final.
+
+- **`src/app/eventos/direccionContexto.ts` (nuevo).** Lógica pura del punto 6 del documento: `limpiarDireccion` (quita `#`/`No.`, expande `esq.`/`col.` y alias de ciudad como "S.L.P."/"SLP"), `ciudadDelTexto`, `ciudadDeContexto` (la cascada firmada: texto → lugar leído → chip → posición del teléfono → San Luis Potosí), `bboxDesdeCentro`, `necesitaReintento`/`necesitaReintentoLugares` (¿hace falta la segunda búsqueda?) y `textoParaReintento`. 21 pruebas, incluido el caso con nombre "Galeana #423, S.L.P." → "Galeana 423, San Luis Potosí", y que Rioverde/Aguascalientes/Guadalajara piden reintento por estar lejos.
+- **`src/lib/geocodificar.ts` y `src/lib/buscarLugares.ts`.** `urlGeocodificar`/`buscarDirecciones` y `urlSugerir`/`sugerirLugares` aceptan un `bbox` opcional (acota a la ciudad de contexto, nunca a un país: sigue sin `country`). `LugarSugerido` suma `ciudad` (colonia/municipio, para distinguir aciertos con el mismo nombre) y `distanciaM` (la que da Mapbox en el paso "sugerir", para decidir el reintento sin gastar una llamada de más). Pruebas existentes actualizadas, más una por cada bbox nuevo.
+- **`src/app/eventos/HojaDondeEs.tsx`.** La ciudad de contexto (con `useMemo`) manda la `proximity` y el `bbox` de ambas búsquedas; una segunda búsqueda automática, una sola vez, si la primera no trae nada dentro de 20 km de esa ciudad (texto limpio + ciudad pegada). Las sugerencias (direcciones y lugares) muestran su colonia/municipio. Botón nuevo "Usar mi ubicación para buscar cerca" (con un toque, `leerUbicacionCercana()`), solo cuando no hay ninguna otra pista de ciudad — nunca automático. La ayuda de qué falta baja del botón "Listo" al campo o renglón correspondiente ("Falta el nombre del sitio.", "Falta confirmar el pin.", "Falta la dirección exacta."), aplicando ya el canon ampliado por el founder.
+- **`src/app/privacidad/page.tsx`.** Línea de ubicación actualizada con el texto que firmó el founder.
+- **Sin tocar:** `FormularioEvento.tsx` (autofocus, estado "Confirmar" del renglón Dónde, ayuda del botón principal, y el hilado de la ciudad del chip hasta el alta) — para cuando el gestor confirme A6 en `main`.
+
+**Verificación:** `npm run lint && npm run typecheck && npm test`: lint y typecheck en verde; 728 pruebas en verde (23 nuevas), 7 en rojo preexistentes y ajenas (sin `pg` en este árbol). Build en verde. Sin capturas móviles todavía: no hay pantalla nueva que mostrar mientras `FormularioEvento.tsx` sigue como estaba (las capturas van con la segunda parte). Las pruebas de componentes con navegador real (`*.componentes.test.mjs`, que ejercitan `HojaDondeEs` con Mapbox simulado) no corrieron: este árbol de trabajo no tiene Playwright instalado (mismo tipo de hueco que `pg`, ya anotado en OPEN_LOOPS por otra pieza); la cobertura de esta entrega es con pruebas unitarias puras, sin gastar ninguna llamada real a Mapbox (piden respuestas grabadas).
+
 ## Estado
 
-Firmado. Espera solo la confirmación del gestor de que A6 (OL-099, precio numérico) esté en `main` — comparten `FormularioEvento.tsx` — para empezar el código.
+Firmado y con la primera mitad del código lista. Espera la confirmación del gestor de que A6 (OL-099) esté en `main` para tocar `FormularioEvento.tsx` y cerrar la pieza con capturas 390×844.
 
 ## Pasos
 
@@ -57,6 +69,8 @@ Firmado. Espera solo la confirmación del gestor de que A6 (OL-099, precio numé
 - [x] Prototipo publicado como Artifact y entregado en este chat para firma.
 - [x] Commit local de los documentos.
 - [x] Firma del founder (documento + prototipo), con ampliación del canon a todos los formularios.
+- [x] Código: contexto y búsqueda (`direccionContexto.ts`), `HojaDondeEs.tsx`, aviso de privacidad.
 - [ ] Confirmación del gestor: A6 (OL-099) en `main`.
-- [ ] Código, pruebas focalizadas, build y capturas 390×844.
+- [ ] `FormularioEvento.tsx`: autofocus, "Confirmar", ayuda bajo el botón, ciudad del chip.
+- [ ] Build y capturas 390×844.
 - [ ] Entrega consolidada al gestor.

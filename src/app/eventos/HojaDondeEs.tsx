@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
@@ -13,10 +13,12 @@ import { LIMITES_EVENTO, REVELAR_OPCIONES, type ModoSitio } from "@/lib/eventos"
 import type { Punto } from "@/lib/geo";
 import { SIN_FOTO } from "@/lib/imagen";
 import { etiquetaLugar, type LugarResumen } from "@/lib/lugares";
-import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
 import { sugerirLugares, recuperarLugar, type LugarSugerido } from "@/lib/buscarLugares";
+import { ubicacionCercanaFresca, leerUbicacionCercana } from "@/lib/ubicacion";
+import { bboxDesdeCentro, ciudadDeContexto, necesitaReintento, necesitaReintentoLugares, textoParaReintento } from "./direccionContexto";
 import { cambiarReserva, consultarMapa, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -58,14 +60,26 @@ type Props = {
   onGesto: () => void;
   onEstoyAqui: (poner: (p: Punto) => void) => void;
   onCerrar: () => void;
+  /**
+   * Ciudad del chip de la Agenda desde la que se entró a publicar (OL-100, punto 6 de docs/rediseno/26): una pista
+   * más de la cascada de contexto, por debajo del propio texto y del lugar leído del cartel. Null si no llega
+   * ninguna (hoy `/eventos/nuevo` no la recibe todavía).
+   */
+  ciudadContexto?: Ciudad | null;
 };
 
 /**
  * Hoja "Dónde es" del alta de evento (docs/rediseno/15, decisión 2): un solo camino para resolver Dónde. Arriba el
  * campo con la lupa y los lugares registrados (foto, tipo, calle) que se filtran al escribir; debajo, "Es en otro
  * sitio" (nombre, pin y el interruptor de reservado con la dirección exacta) y "Registrar un lugar nuevo".
+ *
+ * La búsqueda de direcciones y lugares (OL-100, docs/rediseno/26) acota a una "ciudad de contexto" en cascada: el
+ * propio texto (si dice "S.L.P.", "SLP"…), el chip de la Agenda, o la posición aproximada del teléfono (cacheada, o
+ * pedida con un toque aquí mismo — regla de ubicación firmada por el founder, 2026-09-21); San Luis Potosí de
+ * respaldo. Si la primera búsqueda no trae nada cerca de esa ciudad, una segunda automática con el texto limpio y
+ * la ciudad pegada (caso con nombre: "Galeana #423, S.L.P." → "Galeana 423, San Luis Potosí"), una sola vez.
  */
-export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubicando, avisoUbicacion, volverA, onLugar, onOtro, onGesto, onEstoyAqui, onCerrar }: Props) {
+export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubicando, avisoUbicacion, volverA, onLugar, onOtro, onGesto, onEstoyAqui, onCerrar, ciudadContexto = null }: Props) {
   const [q, setQ] = useState("");
   const [vista, setVista] = useState<"lista" | "otro">(modoSitio !== "lugar" && (textoDelSitio(otro) || otro.reservado) ? "otro" : "lista");
   const [consulta, setConsulta] = useState<{ texto: string; tipo: "direccion" | "lugar" } | null>(() => {
@@ -84,24 +98,63 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     return invalidar;
   }, []);
   const punto = otro.reservado ? otro.privadoPunto : otro.sitioPunto;
-  const cerca = punto ?? yo ?? CIUDAD_INICIAL.centro;
+  // Posición aproximada del teléfono: la que ya quedó cacheada de otra pantalla, o la que se pida aquí con el botón.
+  const [posicionPedida, setPosicionPedida] = useState<Punto | null>(null);
+  const [pidiendoUbicacionCerca, setPidiendoUbicacionCerca] = useState(false);
+  const posicionTelefono = posicionPedida ?? ubicacionCercanaFresca();
+  // Ciudad de contexto en cascada (OL-100, founder 2026-09-21): el punto ya elegido manda; si no hay, el texto de la
+  // búsqueda, la ciudad del chip o la posición del teléfono, y San Luis Potosí de respaldo.
+  const contexto = useMemo(
+    () => (punto ? { ciudad: CIUDAD_INICIAL, centro: punto, origen: "posicion" as const } : ciudadDeContexto({ texto: consulta?.texto, ciudadChip: ciudadContexto, posicion: yo ?? posicionTelefono })),
+    [punto, consulta?.texto, ciudadContexto, yo, posicionTelefono],
+  );
+  const cerca = contexto.centro;
+  // Sin ninguna pista real (ni texto, ni chip, ni posición): se ofrece pedirla con un toque, nunca automático.
+  const sinPistaDeCiudad = !punto && !yo && !posicionTelefono && contexto.origen === "inicial";
+  async function usarMiUbicacionCerca() {
+    setPidiendoUbicacionCerca(true);
+    try {
+      setPosicionPedida(await leerUbicacionCercana());
+    } catch {
+      // Silencioso, como "Estoy aquí": sin ella, la búsqueda sigue con el centro de la ciudad de respaldo.
+    } finally {
+      setPidiendoUbicacionCerca(false);
+    }
+  }
   useEffect(() => {
     if (!consulta || consulta.texto.trim().length < 3) return;
     const { mapboxToken } = configPublica();
     const revision = version.current;
+    const bbox = bboxDesdeCentro(cerca);
     let vigente = true;
     const timer = setTimeout(async () => {
       setBuscando(true);
       try {
         if (!mapboxToken) throw new Error("Sin servicio de direcciones");
         if (consulta.tipo === "direccion") {
-          const opciones = (await buscarDirecciones(consulta.texto, mapboxToken, cerca, consultarMapa)).filter(puntoValido);
+          let opciones = (await buscarDirecciones(consulta.texto, mapboxToken, cerca, consultarMapa, bbox)).filter(puntoValido);
+          // Segunda búsqueda, una sola vez y solo si la primera no trajo nada cerca (cuida el gasto de Mapbox):
+          // limpia el texto y le pega la ciudad de contexto (caso "Galeana #423, S.L.P." → "Galeana 423, San Luis Potosí").
+          if (necesitaReintento(opciones, cerca)) {
+            const reintento = textoParaReintento(consulta.texto, contexto.ciudad);
+            if (reintento !== consulta.texto) {
+              const segunda = (await buscarDirecciones(reintento, mapboxToken, cerca, consultarMapa, bbox)).filter(puntoValido);
+              if (segunda.length) opciones = segunda;
+            }
+          }
           if (vigente && revision === version.current) {
             setDirecciones(opciones);
             if (!opciones.length) setError("No encontré esa dirección. Prueba con calle, número y ciudad, o toca el mapa.");
           }
         } else {
-          const opciones = await sugerirLugares(consulta.texto, mapboxToken, cerca, sesion.current, consultarMapa);
+          let opciones = await sugerirLugares(consulta.texto, mapboxToken, cerca, sesion.current, consultarMapa, bbox);
+          if (necesitaReintentoLugares(opciones.map((o) => o.distanciaM))) {
+            const reintento = textoParaReintento(consulta.texto, contexto.ciudad);
+            if (reintento !== consulta.texto) {
+              const segunda = await sugerirLugares(reintento, mapboxToken, cerca, sesion.current, consultarMapa, bbox);
+              if (segunda.length) opciones = segunda;
+            }
+          }
           if (vigente && revision === version.current) setSugeridos(opciones);
         }
       } catch {
@@ -111,7 +164,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       }
     }, 350);
     return () => { vigente = false; clearTimeout(timer); };
-  }, [consulta, cerca]);
+  }, [consulta, cerca, contexto.ciudad]);
   function invalidar() {
     const revision = ++version.current;
     onGesto();
@@ -160,7 +213,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const otroListo = sitioListo(otro);
   const resultados = direcciones.length > 0 && (
     <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Direcciones encontradas">
-      {direcciones.map(s => <li key={`${s.lat},${s.lng}`}><button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}><IconoPin width={20} height={20}/><b>{s.nombre || s.direccion}</b>{s.nombre && <small>{s.direccion}</small>}</button></li>)}
+      {direcciones.map(s => <li key={`${s.lat},${s.lng}`}><button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}><IconoPin width={20} height={20}/><b>{s.nombre || s.direccion}</b><small>{[s.nombre ? s.direccion : null, s.ciudad].filter(Boolean).join(" · ")}</small></button></li>)}
     </ul>
   );
 
@@ -175,6 +228,8 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             <Limpiar visible={!!otro.sitioTexto} />
             <ContadorCaracteres valor={otro.sitioTexto} tope={LIMITES_EVENTO.sitio} />
           </label>
+          {/* La ayuda de qué falta va bajo el campo, no dentro del botón (founder, 2026-09-21: canon para todos los formularios). */}
+          {!otro.sitioTexto.trim() && <p className={canon.cuerpoNota}>Falta el nombre del sitio.</p>}
           {otro.referenciaLegacy && !otro.sitioTexto.trim() && <p className={styles.nota}>Nombre público por confirmar. Texto anterior: {otro.referenciaLegacy}</p>}
           {!otro.reservado && <label className={canon.campo}>
             <IconoBuscar width={20} height={20}/>
@@ -192,6 +247,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             </button>
           </div>
           {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
+          {otro.sitioTexto.trim() && otro.pinPendiente && <p className={canon.cuerpoNota}>Falta confirmar el pin.</p>}
           <div className={styles.reservado}>
             <b>Reservado</b>
             <small>{otro.reservado ? "La dirección exacta solo la ven quienes van, cuando toque" : "La dirección solo la ven quienes van"}</small>
@@ -204,6 +260,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
                 <Limpiar visible={!!otro.direccionPrivada} />
                 <ContadorCaracteres valor={otro.direccionPrivada} tope={LIMITES_EVENTO.direccion} />
               </span>
+              {otro.sitioTexto.trim() && !otro.pinPendiente && !otro.direccionPrivada.trim() && <p className={canon.cuerpoNota}>Falta la dirección exacta.</p>}
               {resultados}
               {buscando && <p className={styles.nota} role="status">Buscando…</p>}
               {error && <p className={styles.nota} role="alert">{error}</p>}
@@ -235,7 +292,6 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
         </div>
         <Boton type="button" onClick={cerrar} disabled={!otroListo}>
           Listo
-          {!otroListo && <small className={canon.faltaBoton}>{!otro.sitioTexto.trim() ? "falta el nombre del sitio" : otro.pinPendiente ? "falta confirmar el pin" : "falta la dirección"}</small>}
         </Boton>
       </Hoja>
     );
@@ -249,6 +305,13 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
         <input type="text" value={q} onChange={(e) => { invalidar(); setQ(e.target.value); setConsulta({ texto: e.target.value, tipo: "lugar" }); }} placeholder="Nombre o dirección" aria-label="Buscar el lugar" autoComplete="off" autoFocus />
         <Limpiar visible={!!q} />
       </label>
+      {/* Sin ninguna pista de en qué ciudad buscar: se pide con un toque, nunca automático (founder, 2026-09-21). */}
+      {sinPistaDeCiudad && q.trim().length >= 3 && (
+        <button type="button" className={styles.usarUbicacion} onClick={usarMiUbicacionCerca} disabled={pidiendoUbicacionCerca}>
+          <IconoUbicacion width={20} height={20} />
+          {pidiendoUbicacionCerca ? "Ubicando…" : "Usar mi ubicación para buscar cerca"}
+        </button>
+      )}
       {filtrados.length > 0 ? (
         <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">
           {filtrados.map((l) => (
@@ -268,7 +331,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       {buscando && <p className={styles.nota} role="status">Buscando…</p>}
       {error && <p className={styles.nota} role="alert">{error}</p>}
       {sugeridos.length > 0 && <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares y direcciones encontrados">
-        {sugeridos.map(s => <li key={s.mapboxId}><button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}><IconoPin width={20} height={20}/><b>{s.nombre}</b><small>{s.direccion}</small></button></li>)}
+        {sugeridos.map(s => <li key={s.mapboxId}><button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}><IconoPin width={20} height={20}/><b>{s.nombre}</b><small>{[s.direccion, s.ciudad].filter(Boolean).join(" · ")}</small></button></li>)}
       </ul>}
       <ul className={`${sug.lista} ${styles.lista}`}>
         <li>
