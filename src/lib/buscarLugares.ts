@@ -37,7 +37,7 @@ export function urlSugerir(q: string, token: string, cerca: Punto, sesion: strin
     access_token: token,
     session_token: sesion,
     language: "es",
-    // Sin país. Se piden 10 (el máximo de Mapbox) y se muestran las MAX_SUGERENCIAS más cercanas (sugerirLugares).
+    // Sin país. Se piden 10 (el máximo de Mapbox); quien llama filtra por relevancia y recorta después (OL-100).
     limit: "10",
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "poi,address",
@@ -51,9 +51,6 @@ export function urlRecuperar(mapboxId: string, token: string, sesion: string): s
   const p = new URLSearchParams({ access_token: token, session_token: sesion, language: "es" });
   return `${BASE}/retrieve/${encodeURIComponent(mapboxId)}?${p.toString()}`;
 }
-
-/** Cuántas sugerencias se muestran, ya ordenadas por cercanía. */
-const MAX_SUGERENCIAS = 5;
 
 type RespuestaSugerir = {
   suggestions?: Array<{ mapbox_id?: string; name?: string; full_address?: string; place_formatted?: string; address?: string; poi_category?: string[]; feature_type?: string; distance?: number; context?: Contexto }>;
@@ -96,12 +93,17 @@ export function interpretarRecuperado(json: RespuestaRecuperar): LugarRecuperado
   };
 }
 
+/**
+ * Todas las que trajo Mapbox (hasta 10), ya ordenadas por distancia — sin recortar todavía (OL-100, revisión del
+ * gestor): quien llama filtra por relevancia (`descartarSinCalle`) y recorta después, para no perder la buena
+ * antes de mirarla.
+ */
 export async function sugerirLugares(q: string, token: string, cerca: Punto, sesion: string, fetchFn: FetchFn = fetch, bbox?: Bbox): Promise<LugarSugerido[]> {
   const texto = q.trim();
   if (texto.length < 3) return [];
   const res = await fetchFn(urlSugerir(texto, token, cerca, sesion, bbox));
   if (!res.ok) return [];
-  return interpretarSugerencias((await res.json()) as RespuestaSugerir).slice(0, MAX_SUGERENCIAS);
+  return interpretarSugerencias((await res.json()) as RespuestaSugerir);
 }
 
 export async function recuperarLugar(mapboxId: string, token: string, sesion: string, fetchFn: FetchFn = fetch): Promise<LugarRecuperado | null> {

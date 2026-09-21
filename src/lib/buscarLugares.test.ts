@@ -16,7 +16,7 @@ describe("buscarLugares", () => {
     const u = new URL(urlSugerir("Galeana", "pk.x", { lat: 22.15, lng: -100.97 }, "s1", [-101.1, 22.05, -100.85, 22.25]));
     expect(u.searchParams.get("bbox")).toBe("-101.1,22.05,-100.85,22.25");
   });
-  it("pone lo más cercano primero y muestra cinco", async () => {
+  it("pone lo más cercano primero, todas — sin recortar (quien llama filtra y recorta después, OL-100)", async () => {
     // "Teatro de la Paz" desde San Luis: Mapbox puede anteponer el de otra ciudad.
     const llegan = [
       { mapbox_id: "gdl", name: "Teatro de la Paz", full_address: "Guadalajara", distance: 440000 },
@@ -26,7 +26,7 @@ describe("buscarLugares", () => {
     ];
     expect(interpretarSugerencias({ suggestions: llegan }).map((s) => s.mapboxId)).toEqual(["slp", "a", "b", "c", "d", "e", "gdl", "sin"]);
     const f = vi.fn(async () => Response.json({ suggestions: llegan }));
-    expect((await sugerirLugares("teatro", "pk.x", { lat: 22.15, lng: -100.97 }, "s", f)).map((s) => s.mapboxId)).toEqual(["slp", "a", "b", "c", "d"]);
+    expect((await sugerirLugares("teatro", "pk.x", { lat: 22.15, lng: -100.97 }, "s", f)).map((s) => s.mapboxId)).toEqual(["slp", "a", "b", "c", "d", "e", "gdl", "sin"]);
   });
   it("interpreta sugerencias y descarta las que no tienen id o nombre", () => {
     const s = interpretarSugerencias({
