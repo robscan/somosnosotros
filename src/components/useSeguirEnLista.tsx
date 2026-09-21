@@ -111,14 +111,13 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     guardar(id, nombre, antes, () => deshacer(id, nombre, antes));
   }
 
-  /** El botón único del renglón (OL-104): "Seguir" invita; ya siguiendo, dice "Sigues" y tocarlo lo quita. */
+  /** El botón único del renglón (OL-104; solo icono desde OL-106): invita a Seguir o, ya siguiendo, lo quita. */
   function boton(id: string, nombre: string): EstadoBotonRenglon {
     const antes = sigo(id);
     const clave = claveSeguir(antes);
     return {
-      etiqueta: antes ? "Sigues" : "Seguir",
       decidido: antes,
-      // El nombre no cambia con el estado (`aria-pressed` ya lo dice); el texto visible sí ("Seguir"/"Sigues").
+      // El nombre no cambia con el estado (`aria-pressed` ya lo dice).
       nombreAccesible: `Seguir — ${nombre}`,
       alTocar: () => {
         if (iniciales === null) {

@@ -337,7 +337,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       />
       {antes}
       {/* La tira se va cuando la persona ya busca algo: otra pestaña, una fecha o la búsqueda (decisión 3). */}
-      {filtro === "todos" && !fecha && !buscando && <Destacados tarjetas={enOrden(destacados, eventos).map((e) => tarjetaEvento(e, ahora))} grande />}
+      {filtro === "todos" && !fecha && !buscando && <Destacados tarjetas={enOrden(destacados, eventos).map((e) => tarjetaEvento(e, ahora))} grande boton={(t) => asistenciaTodos.boton(t)} />}
       {cuerpo}
       {filtro === "nuevos" && nuevos?.ok && !cargandoNuevos && (
         <div className={styles.grupo}>
