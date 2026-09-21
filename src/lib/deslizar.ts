@@ -7,8 +7,11 @@
 
 /** Los primeros píxeles del borde izquierdo son del navegador (atrás): un gesto que empieza ahí no es nuestro. */
 export const BORDE_NAVEGADOR = 24;
-/** Movimiento mínimo antes de decidir si el gesto es horizontal o es scroll. */
-export const UMBRAL_DECISION = 8;
+/** Zona muerta inicial: por debajo de esto, el gesto todavía no dice nada (founder, 2026-09-21, L10). */
+export const UMBRAL_DECISION = 10;
+/** Cruzada la zona muerta, dx tiene que doblar a dy para contar como «claramente horizontal»; si no, es scroll. Con
+ * esto un arrastre diagonal (el dedo casi nunca baja en línea recta) cae del lado del scroll, no del renglón. */
+export const FACTOR_HORIZONTAL = 2;
 /** Abre si al soltar se ve al menos esta fracción de las acciones. */
 export const FRACCION_ABRIR = 0.4;
 /** Un tirón (px/ms) abre o cierra aunque no se haya llegado a la fracción. */
@@ -39,12 +42,27 @@ export function accionSeguir(sigo: boolean): AccionRenglon {
   return sigo ? { clave: "dejar_de_seguir", etiqueta: "Dejar de seguir", tono: "tinta" } : { clave: "seguir", etiqueta: "Seguir", tono: "primario" };
 }
 
-/** ¿Qué es el gesto? Se espera hasta moverse lo suficiente; es nuestro si es horizontal y hacia la izquierda (o, abierto, de vuelta). */
+/**
+ * ¿Qué es el gesto? Bloqueo de dirección (founder, 2026-09-21, L10): se espera a salir de la zona muerta y, ahí, el
+ * eje que domina decide **todo el toque** (no se puede volver a preguntar después); es nuestro si es claramente
+ * horizontal y hacia la izquierda (o, abierto, de vuelta) — cualquier otra cosa, incluida una diagonal ambigua, es
+ * del scroll y las acciones no asoman en ese toque.
+ */
 export function decidirGesto(dx: number, dy: number, abierto: boolean): "esperar" | "deslizar" | "soltar" {
   if (Math.abs(dx) < UMBRAL_DECISION && Math.abs(dy) < UMBRAL_DECISION) return "esperar";
-  if (Math.abs(dx) <= Math.abs(dy)) return "soltar";
+  if (Math.abs(dx) < Math.abs(dy) * FACTOR_HORIZONTAL) return "soltar";
   if (dx > 0 && !abierto) return "soltar";
   return "deslizar";
+}
+
+/**
+ * ¿Hubo arrastre? Para un carril de scroll nativo con enlaces dentro (Destacados, founder 2026-09-21, L45): ahí no
+ * hay gesto propio que decidir (el navegador ya hace el scroll), pero un TAP con un poco de arrastre encima puede
+ * llegar a "click" en el enlace igual. Con esto se cancela la navegación cuando el dedo se movió más que la zona
+ * muerta entre bajar y soltar, en cualquier dirección.
+ */
+export function huboArrastre(dx: number, dy: number, umbral: number = UMBRAL_DECISION): boolean {
+  return Math.hypot(dx, dy) > umbral;
 }
 
 /** Dónde va el renglón mientras se arrastra: nunca a la derecha; más allá de las acciones, con resistencia. */
