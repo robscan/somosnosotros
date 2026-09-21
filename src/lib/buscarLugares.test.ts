@@ -10,6 +10,11 @@ describe("buscarLugares", () => {
     expect(u.searchParams.get("proximity")).toBe("-100.97,22.15");
     expect(u.searchParams.has("country")).toBe(false);
     expect(u.searchParams.get("limit")).toBe("10");
+    expect(u.searchParams.has("bbox")).toBe(false);
+  });
+  it("con bbox, acota la búsqueda a la ciudad de contexto (OL-100, caso 'Galeana #423, S.L.P.')", () => {
+    const u = new URL(urlSugerir("Galeana", "pk.x", { lat: 22.15, lng: -100.97 }, "s1", [-101.1, 22.05, -100.85, 22.25]));
+    expect(u.searchParams.get("bbox")).toBe("-101.1,22.05,-100.85,22.25");
   });
   it("pone lo más cercano primero y muestra cinco", async () => {
     // "Teatro de la Paz" desde San Luis: Mapbox puede anteponer el de otra ciudad.
@@ -26,11 +31,11 @@ describe("buscarLugares", () => {
   it("interpreta sugerencias y descarta las que no tienen id o nombre", () => {
     const s = interpretarSugerencias({
       suggestions: [
-        { mapbox_id: "a", name: "Teatro de la Paz", full_address: "Villerías 2, Centro", poi_category: ["theatre"] },
+        { mapbox_id: "a", name: "Teatro de la Paz", full_address: "Villerías 2, Centro", poi_category: ["theatre"], context: { place: { name: "San Luis Potosí" } } },
         { name: "sin id" },
       ],
     });
-    expect(s).toEqual([{ mapboxId: "a", nombre: "Teatro de la Paz", direccion: "Villerías 2, Centro", categorias: ["theatre"], esDireccion: false }]);
+    expect(s).toEqual([{ mapboxId: "a", nombre: "Teatro de la Paz", direccion: "Villerías 2, Centro", categorias: ["theatre"], esDireccion: false, ciudad: "San Luis Potosí", distanciaM: null }]);
   });
   it("recupera coordenadas del primer resultado", () => {
     const r = interpretarRecuperado({ features: [{ geometry: { coordinates: [-100.97, 22.15] }, properties: { name: "X", full_address: "Y" } }] });

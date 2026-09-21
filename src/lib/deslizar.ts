@@ -1,36 +1,17 @@
 /**
- * Acciones al deslizar un renglón de las listas (Agenda, Lugares, Artistas). Decisiones del founder: solo se desliza de
- * derecha a izquierda, porque desde el borde izquierdo manda Safari (atrás) (2026-09-16); en un evento, Voy y Me interesa,
- * las dos con Deshacer (2026-09-17, bitácora 085); Seguir en Lugares y Artistas. Se confirma con un toque; deslizar hasta
- * el fondo no dispara nada. Prototipo en docs/rediseno/prototipos/deslizar.html, versión 1.1 (bitácoras 071 y 073).
+ * El botón del renglón de las listas (Agenda, Lugares, Artistas) — OL-104, bitácora 139: reemplaza el gesto de
+ * deslizar (decisión del founder, 2026-09-21: «eliminar swipe options e ir directamente a colocar botón de "Voy/Vas"
+ * en eventos, "Seguir/Sigues" en lugares y artistas»). Un solo botón, siempre a la vista: "Voy" invita (también desde
+ * "Me interesa", que ya no tiene botón propio en la lista — se cambia en la ficha); "Vas" ya está decidido y tocarlo
+ * lo quita, con el mismo Deshacer de siempre. "Seguir"/"Sigues" en lugares y artistas, igual mecánica.
  */
-
-/** Los primeros píxeles del borde izquierdo son del navegador (atrás): un gesto que empieza ahí no es nuestro. */
-export const BORDE_NAVEGADOR = 24;
-/** Zona muerta inicial: por debajo de esto, el gesto todavía no dice nada (founder, 2026-09-21, L10). */
-export const UMBRAL_DECISION = 10;
-/** Cruzada la zona muerta, dx tiene que doblar a dy para contar como «claramente horizontal»; si no, es scroll. Con
- * esto un arrastre diagonal (el dedo casi nunca baja en línea recta) cae del lado del scroll, no del renglón. */
-export const FACTOR_HORIZONTAL = 2;
-/** Abre si al soltar se ve al menos esta fracción de las acciones. */
-export const FRACCION_ABRIR = 0.4;
-/** Un tirón (px/ms) abre o cierra aunque no se haya llegado a la fracción. */
-export const VELOCIDAD_TIRON = 0.35;
 
 export type Asistencia = "voy" | "me_interesa" | null;
 export type ClaveAccion = "voy" | "no_voy" | "me_interesa" | "quitar_interes" | "seguir" | "dejar_de_seguir";
-export type Tono = "primario" | "tinta";
-export type AccionRenglon = { clave: ClaveAccion; etiqueta: string; tono: Tono };
 
-/**
- * Las dos acciones de un evento según lo que la persona ya decidió, como en la ficha: sin decisión, Voy y Me interesa;
- * con Voy, No voy y Me interesa; con interés, Voy y Ya no. Cada una se deshace con el aviso o volviendo a deslizar.
- */
-export function accionesEvento(estado: Asistencia): AccionRenglon[] {
-  return [
-    estado === "voy" ? { clave: "no_voy", etiqueta: "No voy", tono: "primario" } : { clave: "voy", etiqueta: "Voy", tono: "primario" },
-    estado === "me_interesa" ? { clave: "quitar_interes", etiqueta: "Ya no", tono: "tinta" } : { clave: "me_interesa", etiqueta: "Me interesa", tono: "tinta" },
-  ];
+/** La clave del botón único de un evento: decidido (con Voy) lo quita; si no —también desde "Me interesa"— invita a Voy. */
+export function claveVoy(estado: Asistencia): ClaveAccion {
+  return estado === "voy" ? "no_voy" : "voy";
 }
 
 /** En qué queda el evento tras la acción: Voy y Me interesa se reemplazan entre sí, como en la ficha. */
@@ -38,45 +19,20 @@ export function asistenciaTras(clave: ClaveAccion): Asistencia {
   return clave === "voy" ? "voy" : clave === "me_interesa" ? "me_interesa" : null;
 }
 
-export function accionSeguir(sigo: boolean): AccionRenglon {
-  return sigo ? { clave: "dejar_de_seguir", etiqueta: "Dejar de seguir", tono: "tinta" } : { clave: "seguir", etiqueta: "Seguir", tono: "primario" };
-}
-
-/**
- * ¿Qué es el gesto? Bloqueo de dirección (founder, 2026-09-21, L10): se espera a salir de la zona muerta y, ahí, el
- * eje que domina decide **todo el toque** (no se puede volver a preguntar después); es nuestro si es claramente
- * horizontal y hacia la izquierda (o, abierto, de vuelta) — cualquier otra cosa, incluida una diagonal ambigua, es
- * del scroll y las acciones no asoman en ese toque.
- */
-export function decidirGesto(dx: number, dy: number, abierto: boolean): "esperar" | "deslizar" | "soltar" {
-  if (Math.abs(dx) < UMBRAL_DECISION && Math.abs(dy) < UMBRAL_DECISION) return "esperar";
-  if (Math.abs(dx) < Math.abs(dy) * FACTOR_HORIZONTAL) return "soltar";
-  if (dx > 0 && !abierto) return "soltar";
-  return "deslizar";
+/** La clave del botón único de un lugar o artista: sigue → lo quita; si no, invita a Seguir. */
+export function claveSeguir(sigo: boolean): ClaveAccion {
+  return sigo ? "dejar_de_seguir" : "seguir";
 }
 
 /**
  * ¿Hubo arrastre? Para un carril de scroll nativo con enlaces dentro (Destacados, founder 2026-09-21, L45): ahí no
  * hay gesto propio que decidir (el navegador ya hace el scroll), pero un TAP con un poco de arrastre encima puede
  * llegar a "click" en el enlace igual. Con esto se cancela la navegación cuando el dedo se movió más que la zona
- * muerta entre bajar y soltar, en cualquier dirección.
+ * muerta entre bajar y soltar, en cualquier dirección. Ajena al botón del renglón: OL-094, no se toca aquí.
  */
+export const UMBRAL_DECISION = 10;
 export function huboArrastre(dx: number, dy: number, umbral: number = UMBRAL_DECISION): boolean {
   return Math.hypot(dx, dy) > umbral;
-}
-
-/** Dónde va el renglón mientras se arrastra: nunca a la derecha; más allá de las acciones, con resistencia. */
-export function desplazamiento(base: number, dx: number, ancho: number): number {
-  const x = Math.min(0, base + dx);
-  if (x >= -ancho) return x;
-  return -ancho - Math.pow(-x - ancho, 0.85) * 0.45;
-}
-
-/** Al soltar: abre si se ve lo suficiente o fue un tirón a la izquierda; un tirón a la derecha cierra. */
-export function alSoltar(x: number, ancho: number, velocidad: number): "abrir" | "cerrar" {
-  if (velocidad <= -VELOCIDAD_TIRON) return "abrir";
-  if (velocidad >= VELOCIDAD_TIRON) return "cerrar";
-  return x <= -ancho * FRACCION_ABRIR ? "abrir" : "cerrar";
 }
 
 /** "«Concierto de…»": el nombre recortado para que el aviso quepa en una línea o dos. */

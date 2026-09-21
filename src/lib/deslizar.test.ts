@@ -1,61 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { accionesEvento, accionSeguir, alSoltar, asistenciaTras, decidirGesto, desplazamiento, huboArrastre, recortar, textoHecho } from "./deslizar";
+import { asistenciaTras, claveSeguir, claveVoy, huboArrastre, recortar, textoHecho } from "./deslizar";
 
 describe("deslizar", () => {
-  it("un evento ofrece Voy y Me interesa, y cada una se deshace volviendo a deslizar", () => {
-    const etiquetas = (estado: Parameters<typeof accionesEvento>[0]) => accionesEvento(estado).map((a) => a.etiqueta);
-    expect(etiquetas(null)).toEqual(["Voy", "Me interesa"]);
-    expect(etiquetas("voy")).toEqual(["No voy", "Me interesa"]);
-    expect(etiquetas("me_interesa")).toEqual(["Voy", "Ya no"]);
-    // Las dos se tocan siempre (ya no hay «Vas» gris): Voy en azul, Me interesa en tinta.
-    expect(accionesEvento("voy").map((a) => a.tono)).toEqual(["primario", "tinta"]);
-    // Voy y Me interesa se reemplazan entre sí; No voy y Ya no dejan el evento sin decisión.
-    expect(accionesEvento("me_interesa").map((a) => asistenciaTras(a.clave))).toEqual(["voy", null]);
-    expect(accionesEvento("voy").map((a) => asistenciaTras(a.clave))).toEqual([null, "me_interesa"]);
+  it("el botón único del evento: 'Voy' invita (también desde Me interesa), decidido lo quita", () => {
+    expect(claveVoy(null)).toBe("voy");
+    expect(claveVoy("me_interesa")).toBe("voy"); // Me interesa ya no tiene botón propio: el de la fila siempre invita a Voy.
+    expect(claveVoy("voy")).toBe("no_voy");
+    // Voy deja el evento en "voy"; No voy lo deja sin decisión.
+    expect(asistenciaTras(claveVoy(null))).toBe("voy");
+    expect(asistenciaTras(claveVoy("voy"))).toBe(null);
   });
-  it("Seguir y Dejar de seguir", () => {
-    expect(accionSeguir(false).clave).toBe("seguir");
-    expect(accionSeguir(true)).toMatchObject({ clave: "dejar_de_seguir", etiqueta: "Dejar de seguir" });
+  it("el botón único de lugar o artista: 'Seguir' invita, decidido lo quita", () => {
+    expect(claveSeguir(false)).toBe("seguir");
+    expect(claveSeguir(true)).toBe("dejar_de_seguir");
   });
-  it("solo de derecha a izquierda: espera un poco, suelta el scroll y lo que va a la derecha con el renglón cerrado", () => {
-    expect(decidirGesto(3, 2, false)).toBe("esperar");
-    expect(decidirGesto(-20, 4, false)).toBe("deslizar");
-    expect(decidirGesto(4, 30, false)).toBe("soltar"); // scroll
-    expect(decidirGesto(25, 3, false)).toBe("soltar"); // hacia la derecha, cerrado: no hay nada de ese lado
-    expect(decidirGesto(25, 3, true)).toBe("deslizar"); // abierto: se cierra deslizando de vuelta
-  });
-  it("bloqueo de dirección: dentro de la zona muerta no pasa nada, y una diagonal ambigua es del scroll (founder, 2026-09-21, L10)", () => {
-    // Bajar por la lista: aunque haya algo de deriva horizontal, sigue "esperar" hasta cruzar los 10 px.
-    expect(decidirGesto(2, 9, false)).toBe("esperar");
-    expect(decidirGesto(9, 2, false)).toBe("esperar");
-    // Cruzado el umbral con una diagonal (dx y dy parecidos): gana el scroll, no el renglón.
-    expect(decidirGesto(-12, 10, false)).toBe("soltar");
-    expect(decidirGesto(-11, -11, false)).toBe("soltar");
-    // Claramente horizontal (dx al menos el doble de dy) sí abre.
-    expect(decidirGesto(-22, 8, false)).toBe("deslizar");
-    // Con el renglón ya abierto, la misma diagonal ambigua tampoco lo cierra (queda del lado del scroll).
-    expect(decidirGesto(11, 10, true)).toBe("soltar");
-  });
-  it("huboArrastre: cancela un toque que se movió más que la zona muerta, en cualquier dirección (carril de Destacados, L45)", () => {
+  it("huboArrastre: cancela un toque que se movió más que la zona muerta, en cualquier dirección (carril de Destacados, L45, OL-094)", () => {
     expect(huboArrastre(0, 0)).toBe(false);
     expect(huboArrastre(4, 3)).toBe(false); // hypot 5, dentro de la zona muerta
     expect(huboArrastre(-15, 0)).toBe(true); // recorrer el carril
     expect(huboArrastre(0, 12)).toBe(true);
     expect(huboArrastre(3, 3, 2)).toBe(true); // umbral propio, para quien lo necesite
-  });
-  it("mientras se arrastra no pasa a la derecha y más allá de las acciones cuesta más", () => {
-    expect(desplazamiento(0, 30, 100)).toBe(0);
-    expect(desplazamiento(0, -60, 100)).toBe(-60);
-    expect(desplazamiento(-100, 40, 100)).toBe(-60);
-    const pasado = desplazamiento(0, -160, 100);
-    expect(pasado).toBeLessThan(-100);
-    expect(pasado).toBeGreaterThan(-160);
-  });
-  it("al soltar abre con el 40 % visible o con un tirón a la izquierda; un tirón a la derecha cierra", () => {
-    expect(alSoltar(-45, 100, 0)).toBe("abrir");
-    expect(alSoltar(-30, 100, 0)).toBe("cerrar");
-    expect(alSoltar(-10, 100, -0.5)).toBe("abrir");
-    expect(alSoltar(-90, 100, 0.5)).toBe("cerrar");
   });
   it("el aviso nombra lo que se hizo, con el nombre recortado", () => {
     expect(textoHecho("voy", "Huapangueada sobre rieles")).toBe("Vas a «Huapangueada sobre rieles»");

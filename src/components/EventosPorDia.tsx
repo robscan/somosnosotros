@@ -31,7 +31,7 @@ export default function EventosPorDia({ eventos, sinSitio = false, decididas, av
           <h3>{g.titulo}</h3>
           <ul aria-label={g.titulo}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} sinSitio={sinSitio} estado={asistencia.estado(e.id)} acciones={asistencia.acciones(e)} />
+              <RenglonEvento key={e.id} evento={e} sinSitio={sinSitio} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
             ))}
           </ul>
         </Fragment>

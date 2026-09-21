@@ -6,16 +6,22 @@ import { lecturaDeCartelActiva } from "@/lib/cartel";
 import type { QuienItem } from "@/lib/artistas";
 import type { Evento } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
+import { cargarCiudades } from "@/lib/ciudades";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDelSitio } from "@/lib/zona";
+import { ciudadDesdeSlug } from "../direccionContexto";
 import FormularioEvento from "../FormularioEvento";
 import { crearEvento, cupoDeCartel } from "../acciones";
 
 export const metadata = { title: "Publicar un evento · Somos Nosotros" };
 
-export default async function NuevoEvento({ searchParams }: { searchParams: Promise<{ lugar?: string; desde?: string; artista?: string }> }) {
-  const { lugar, desde, artista } = await searchParams;
+export default async function NuevoEvento({ searchParams }: { searchParams: Promise<{ lugar?: string; desde?: string; artista?: string; ciudad?: string }> }) {
+  const { lugar, desde, artista, ciudad: ciudadSlug } = await searchParams;
   const actual = await usuarioActual();
+  // De dónde se entró a "Publicar evento" (chip de la Agenda): una pista más para acercar la búsqueda de dirección
+  // (OL-100, docs/rediseno/26); no se pide con ella ningún dato nuevo a la persona. Un slug inventado o vacío cae
+  // en null (ciudadDesdeSlug), nunca en San Luis Potosí por respaldo silencioso (revisión del gestor, 2026-09-21).
+  const ciudadContexto = ciudadDesdeSlug(ciudadSlug, await cargarCiudades());
   const volverA = `/eventos/nuevo${lugar ? `?lugar=${lugar}` : artista ? `?artista=${artista}` : ""}`;
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(volverA)}`);
   const supabase = await clienteServidor();
@@ -44,7 +50,7 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
       {/* En el alta no hay frase: la tarjeta del cartel hace ese trabajo, y no se invita a publicar con lo mínimo
           (founder, 2026-09-17: «no digas que basta con nombre y lugar… no promovemos la creación de eventos incompletos»). */}
       {base && <p className="subtitulo">Mismo evento, nueva fecha. Cambia lo que haga falta.</p>}
-      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} zonaSitio={zonaDelSitio(base)} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} cupo={cupo} />
+      <FormularioEvento accion={crearEvento} lugares={(lugares ?? []) as LugarResumen[]} lugarInicial={lugar} evento={base} zonaSitio={zonaDelSitio(base)} modo={base ? "duplicar" : "alta"} usuarioId={actual.perfil.id} cartelActivo={lecturaDeCartelActiva()} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} volverA={volverA} cupo={cupo} ciudadContexto={ciudadContexto} />
     </main>
   );
 }
