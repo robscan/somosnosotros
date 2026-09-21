@@ -1,16 +1,59 @@
 /* ==========================================================================
    Alta de lugar: lo propio, fuera del canon (ui/FormularioCanon.module.css):
-   1. Sugerencias de Mapbox (renglón de ui/Sugerencia) · 2. Más: portada e interruptor del administrador · 3. Parecidos
+   1. Sugerencias de Mapbox y "ya existe" (ui/ListaFlotante) · 2. Más: portada e interruptor del administrador · 3. Parecidos
    ========================================================================== */
 
 .formulario {
   display: block;
 }
 
-/* 1. Sugerencias (ui/Sugerencia): flotan pegadas al campo, con sombra. */
-.flotante {
-  margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-3);
-  box-shadow: var(--sombra);
+/* 1. "Buscando…" o "Trayendo la ubicación…", dentro de la lista flotante (ui/ListaFlotante): no es una opción,
+   solo texto (mismo patrón que HojaDondeEs.module.css). Las sugerencias y "ya existe" flotan sobre el layout, sin
+   empujar Dónde, Tipo, Más ni el botón, mientras el campo del nombre tiene el foco (founder, producción,
+   2026-09-21; revisión del gestor, 2026-09-21: el panel solo vive con el foco puesto). */
+.avisoFlotante {
+  padding: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* `canon.existe` trae un margen inferior pensado para vivir en el flujo normal (con algo después); dentro de la
+   lista flotante es el único contenido y ese margen dejaba una franja blanca vacía debajo del aviso (revisión del
+   gestor, 2026-09-21). El panel mide lo que mide su contenido. */
+.existeFlotante {
+  margin-bottom: 0;
+}
+
+/* Al salir del campo del nombre, si sigue habiendo una coincidencia, esta línea toma el relevo del panel: un
+   renglón que no se sale de una línea, con el nombre recortado con puntos si hace falta y "Ver" siempre visible
+   (revisión del gestor, 2026-09-21: el panel tapaba Dónde sin poder cerrarse). */
+.notaExiste {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding-top: var(--espacio-2);
+  /* Pegada al campo (mismo padding-top que canon.cuerpoNota, "Falta el nombre."); abajo, la separación normal
+     entre renglones (canon.renglones usa var(--espacio-2) de gap) — antes tocaba el renglón de abajo sin espacio
+     (revisión del gestor, 2026-09-21). */
+  margin-bottom: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.notaExiste > span {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.notaExiste a {
+  flex-shrink: 0;
+  color: var(--primario);
+  font-weight: 700;
+}
+.nombreRecortado {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--texto);
 }
 
 /* 2. Más: foto de portada e interruptor del administrador. */

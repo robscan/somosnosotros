@@ -17,7 +17,9 @@ type Renglon = "nombre" | "colonia" | "bio";
 
 /**
  * Los renglones del perfil con el canon: Foto (la cámara como acción), Nombre, Colonia y Sobre ti se abren de uno
- * en uno con el campo dentro; "Entras con" es un renglón con candado y sin acción. Guardar se enciende cuando hay un cambio.
+ * en uno con el campo dentro; "Entras con" es un renglón con candado y sin acción. Guardar se enciende cuando hay un
+ * cambio; el botón dice solo su acción, y si falta el nombre la ayuda va bajo el renglón Nombre (founder,
+ * 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26).
  */
 export default function FormularioPerfil({ perfil, correo }: Props) {
   const [resultado, guardar, guardando] = useActionState<ResultadoGuardar | null, FormData>(guardarPerfil, null);
@@ -52,7 +54,7 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
   const alternar = (r: Renglon) => setAbierto((a) => (a === r ? null : r));
 
   /** Un renglón de texto: cerrado muestra el valor; abierto, el campo dentro con foco. El valor viaja siempre (campo escondido si está cerrado). */
-  function renglon(clave: Renglon, etiqueta: string, icono: React.ReactNode, valor: string, setValor: (v: string) => void, placeholder: string, maxLength: number, multilinea = false) {
+  function renglon(clave: Renglon, etiqueta: string, icono: React.ReactNode, valor: string, setValor: (v: string) => void, placeholder: string, maxLength: number, multilinea = false, notaFalta?: string) {
     const estaAbierto = abierto === clave;
     const error = errores[clave];
     return (
@@ -82,10 +84,13 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
         ) : (
           <>
             <input type="hidden" name={clave} value={valor} />
-            {error && (
+            {error ? (
               <p className={canon.cuerpoNota} role="alert">
                 {error}
               </p>
+            ) : (
+              // La ayuda va bajo el renglón, no dentro del botón de guardar (founder, 2026-09-21: canon para todos los formularios).
+              notaFalta && <p className={canon.cuerpoNota}>{notaFalta}</p>
             )}
           </>
         )}
@@ -116,7 +121,7 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
             </p>
           )}
         </li>
-        {renglon("nombre", "Nombre", <IconoPersona width={20} height={20} />, nombre, setNombre, "Tu nombre", LIMITES.nombre)}
+        {renglon("nombre", "Nombre", <IconoPersona width={20} height={20} />, nombre, setNombre, "Tu nombre", LIMITES.nombre, false, faltaNombre ? "Falta el nombre." : undefined)}
         {renglon("colonia", "Colonia", <IconoCasa width={20} height={20} />, colonia, setColonia, "Para ordenar lo que te queda cerca", LIMITES.colonia)}
         {renglon("bio", "Sobre ti", <IconoTexto width={20} height={20} />, bio, setBio, `Una línea, hasta ${LIMITES.bio} caracteres`, LIMITES.bio, true)}
         {/* El correo se dice aquí y solo aquí; no se cambia desde la app. */}
@@ -132,10 +137,9 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
           {resultado.general}
         </p>
       )}
-      {/* Guardar se enciende cuando hay un cambio; dice qué falta si el nombre quedó vacío. */}
+      {/* Guardar se enciende cuando hay un cambio; el botón dice solo su acción, la ayuda va bajo el renglón Nombre. */}
       <Boton type="submit" disabled={guardando || terminado || subiendo || !hayCambio || faltaNombre}>
         {guardando || terminado ? "Guardando…" : "Guardar"}
-        {!guardando && !terminado && faltaNombre &&<small className={canon.faltaBoton}>falta el nombre</small>}
       </Boton>
     </form>
   );
