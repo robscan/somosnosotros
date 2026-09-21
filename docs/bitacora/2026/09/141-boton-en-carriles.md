@@ -97,4 +97,17 @@ Preguntado al founder cuál es el tamaño mínimo accionable de la app: **44 px*
 
 Commit local, rama `boton-en-carriles`, sin push. Nueve commits en total (propuesta, prototipo, ajustes de diseño, firma, código de `Destacados`, arreglo de hover, botón compartido). Entregado al gestor con hash, archivos y evidencia.
 
+## Corrección de evidencia: fuente y gutter del banco
+
+El gestor abrió las capturas y devolvió la evidencia (no el código, ya aceptado) por dos causas medidas en el propio banco:
+
+1. **Tipografía:** las capturas salían en serif del sistema. Causa: `--fuente` (`globals.css`) es `var(--fuente-bricolage), -apple-system, …` — un solo `var()` sin argumento de reserva seguido de otras fuentes en la MISMA lista separada por comas, no como reserva de ese `var()`. `--fuente-bricolage` la pone `next/font/google` en `<html>` en la app real; el banco (Vite, sin *pipeline* de Next) nunca la define, así que `var(--fuente-bricolage)` es inválido y, por regla de CSS, invalida la declaración `font-family` **entera** — no salta a las demás fuentes de la lista, cae al valor heredado/inicial del navegador (serif). Arreglo: `<html style="--fuente-bricolage: 'Bricolage Grotesque'">` en el banco, con la misma hoja de Google Fonts y los mismos ejes (`opsz`, `wdth`) que usan los prototipos.
+2. **Márgenes:** los renglones del banco iban en un `<ul>` propio, sin la clase real de gutter de cada pantalla. Medido en el código real antes de tocar el banco: en Lugares y Artistas el propio `<ul>`/su contenedor ya trae `padding: 0 var(--gutter)` (`ListaLugares.module.css` `.lista > ul`, `ListaArtistas.module.css` `.lista`); en Agenda lo pone `.grupo` (`margin: 0 var(--gutter) …`); en Mi perfil no lo pone la lista sino el `<main className={ficha.pagina}>` de más arriba (`ui/Ficha.module.css`, `padding: 0 var(--gutter) …`). Arreglo: el banco importa esas cuatro clases reales (`AgendaInicio.module.css`, `ListaLugares.module.css`, `ListaArtistas.module.css`, `FichaPersona.module.css` y `ui/Ficha.module.css`) y envuelve cada lista exactamente como la pantalla real, en vez de un `<ul>` propio.
+
+**Medido con `getBoundingClientRect` en Chrome (390×844), las cuatro pantallas, los dos estados:** distancia del botón al borde derecho y de la foto al borde izquierdo, siempre **20 px** (`--gutter`), igual decidido o no — ninguna columna salta ni se pega al borde. `document.documentElement.scrollWidth > vw` es `false` en las cuatro: sin desborde horizontal. En Artistas, los dos badges de la tarjeta redonda quedan con `left ≥ 0` y `right ≤ 390`: dentro del viewport, sin recortarse.
+
+**Capturas reales** (`simctl io … screenshot`, mismo simulador FLOWYA iPhone SE, banco corregido): `01-agenda-arriba.png`, `02-agenda-renglones.png`, `03-lugares.png`, `04-artistas.png` (carril redondo y renglones en el mismo encuadre), `05-perfil.png` — ya con la tipografía Bricolage Grotesque correcta y el gutter real de 20 px visible en los dos bordes. Enviadas al founder y referenciadas al gestor.
+
+No se tocó código de producto en esta ronda, solo el banco de verificación.
+
 Sin migración.
