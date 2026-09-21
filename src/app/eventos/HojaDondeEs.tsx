@@ -9,6 +9,7 @@ import Hoja from "@/components/ui/Hoja";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import { IconoBuscar, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
+import ListaFlotante from "@/components/ui/ListaFlotante";
 import { LIMITES_EVENTO, REVELAR_OPCIONES, type ModoSitio } from "@/lib/eventos";
 import type { Punto } from "@/lib/geo";
 import { SIN_FOTO } from "@/lib/imagen";
@@ -18,7 +19,7 @@ import { configPublica } from "@/lib/config";
 import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
 import { sugerirLugares, recuperarLugar, type LugarSugerido } from "@/lib/buscarLugares";
 import { ubicacionCercanaFresca, leerUbicacionCercana } from "@/lib/ubicacion";
-import { buscarConContexto, ciudadDeContexto, necesitaReintento, necesitaReintentoLugares, redondearParaMapbox } from "./direccionContexto";
+import { buscarConContexto, ciudadDeContexto, descartarSinCalle, filtrarYOrdenarDirecciones, necesitaReintento, necesitaReintentoLugares, redondearParaMapbox } from "./direccionContexto";
 import { cambiarReserva, consultarMapa, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -138,7 +139,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           const opciones = await buscarConContexto(
             consulta.texto,
             contexto,
-            (texto, bbox) => buscarDirecciones(texto, mapboxToken, cerca, consultarMapa, bbox).then((r) => r.filter(puntoValido)),
+            (texto, bbox) => buscarDirecciones(texto, mapboxToken, cerca, consultarMapa, bbox).then((r) => filtrarYOrdenarDirecciones(r.filter(puntoValido), consulta.texto, cerca, contexto.ciudad.nombre)),
             (r) => necesitaReintento(r, cerca),
           );
           if (vigente && revision === version.current) {
@@ -149,7 +150,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           const opciones = await buscarConContexto(
             consulta.texto,
             contexto,
-            (texto, bbox) => sugerirLugares(texto, mapboxToken, cerca, sesion.current, consultarMapa, bbox),
+            (texto, bbox) => sugerirLugares(texto, mapboxToken, cerca, sesion.current, consultarMapa, bbox).then((r) => descartarSinCalle(r, consulta.texto)),
             (r) => necesitaReintentoLugares(r.map((o) => o.distanciaM)),
           );
           if (vigente && revision === version.current) setSugeridos(opciones);
@@ -208,10 +209,45 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const cerrar = () => { invalidar(); onCerrar(); };
   const filtrados = lugaresPorTexto(lugares, q);
   const otroListo = sitioListo(otro);
-  const resultados = direcciones.length > 0 && (
-    <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Direcciones encontradas">
-      {direcciones.map(s => <li key={`${s.lat},${s.lng}`}><button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}><IconoPin width={20} height={20}/><b>{s.nombre || s.direccion}</b><small>{[s.nombre ? s.direccion : null, s.ciudad].filter(Boolean).join(" · ")}</small></button></li>)}
-    </ul>
+  // Las dos búsquedas remotas (direcciones y lugares) flotan sobre el layout, ancladas a su campo: nunca empujan el
+  // mapa ni los campos de abajo (founder, producción, 2026-09-21). ui/ListaFlotante hace el trabajo; aquí solo el
+  // contenido: "Buscando…", el error, o las opciones.
+  const campoDireccionRef = useRef<HTMLElement>(null);
+  const campoListaRef = useRef<HTMLElement>(null);
+  const panelDireccion = !!consulta && consulta.tipo === "direccion";
+  const panelLista = !!consulta && consulta.tipo === "lugar";
+  // Ninguna búsqueda de Mapbox es infalible (revisión del gestor: "Galeana 423" existe en dos municipios distintos
+  // y ninguno es el del cartel; afinar el texto quita la basura pero no garantiza encontrar la calle exacta). La
+  // salida siempre visible, del mismo peso que una sugerencia: cierra la lista, conserva lo escrito y deja el
+  // mapa listo para poner el pin a mano.
+  const salidaManual = (
+    <li className={styles.salidaManual}>
+      <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={invalidar}>
+        <IconoPin width={20} height={20} />
+        <b>No es ninguna</b>
+        <small>Pon el pin en el mapa</small>
+      </button>
+    </li>
+  );
+  const contenidoDirecciones = (
+    <>
+      {buscando ? (
+        <li className={styles.avisoFlotante} role="status">Buscando…</li>
+      ) : error ? (
+        <li className={styles.avisoFlotante} role="alert">{error}</li>
+      ) : (
+        direcciones.map((s) => (
+          <li key={`${s.lat},${s.lng}`}>
+            <button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}>
+              <IconoPin width={20} height={20} />
+              <b>{s.nombre || s.direccion}</b>
+              <small>{[s.nombre ? s.direccion : null, s.ciudad].filter(Boolean).join(" · ")}</small>
+            </button>
+          </li>
+        ))
+      )}
+      {!buscando && salidaManual}
+    </>
   );
 
   if (vista === "otro") {
@@ -231,17 +267,31 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               2026-09-21). Clase llana, como el resto de los avisos de esta hoja. */}
           {!otro.sitioTexto.trim() && <p className={styles.nota}>Falta el nombre del sitio.</p>}
           {otro.referenciaLegacy && !otro.sitioTexto.trim() && <p className={styles.nota}>Nombre público por confirmar. Texto anterior: {otro.referenciaLegacy}</p>}
-          {!otro.reservado && <label className={canon.campo}>
-            <IconoBuscar width={20} height={20}/>
-            <input type="text" value={otro.direccion ?? ""} onChange={e => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off"/>
-            <Limpiar visible={!!otro.direccion}/>
-            <ContadorCaracteres valor={otro.direccion} tope={LIMITES_EVENTO.direccion} />
-          </label>}
-          {!otro.reservado && resultados}
-          {!otro.reservado && buscando && <p className={styles.nota} role="status">Buscando…</p>}
-          {!otro.reservado && error && <p className={styles.nota} role="alert">{error}</p>}
+          {!otro.reservado && (
+            <label className={canon.campo} ref={campoDireccionRef as React.RefObject<HTMLLabelElement>}>
+              <IconoBuscar width={20} height={20} />
+              <input
+                type="text"
+                value={otro.direccion ?? ""}
+                onChange={(e) => escribirDireccion(e.target.value)}
+                maxLength={LIMITES_EVENTO.direccion}
+                placeholder="Calle y número, o colonia"
+                aria-label="Buscar la dirección"
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={panelDireccion}
+                aria-controls="lista-direcciones"
+                aria-autocomplete="list"
+              />
+              <Limpiar visible={!!otro.direccion} />
+              <ContadorCaracteres valor={otro.direccion} tope={LIMITES_EVENTO.direccion} />
+            </label>
+          )}
           <div className={styles.mapa}>
-            <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} />
+            {/* Sin pin todavía, el mapa arranca centrado en la ciudad de contexto (no siempre San Luis Potosí por
+                defecto): quien no encontró su dirección en la lista puede poner el pin a mano, ya en su zona
+                (revisión del gestor, salida "No es ninguna: pon el pin en el mapa"). */}
+            <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} centrarEn={punto ? null : contexto.centro} ciudad={contexto.ciudad} />
             <button type="button" className={`${mapa.ubicame} ${styles.ubicame}`} onClick={() => { invalidar(); onEstoyAqui(ponerPunto); }} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
               <IconoUbicacion width={22} height={22} />
             </button>
@@ -255,15 +305,25 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           </div>
           {otro.reservado && (
             <>
-              <span className={limpiar.caja}>
-                <input type="text" value={otro.direccionPrivada} onChange={(e) => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Dirección exacta: calle y número, colonia" aria-label="Dirección exacta" className={canon.entrada} autoComplete="off" />
+              <span className={limpiar.caja} ref={campoDireccionRef as React.RefObject<HTMLSpanElement>}>
+                <input
+                  type="text"
+                  value={otro.direccionPrivada}
+                  onChange={(e) => escribirDireccion(e.target.value)}
+                  maxLength={LIMITES_EVENTO.direccion}
+                  placeholder="Dirección exacta: calle y número, colonia"
+                  aria-label="Dirección exacta"
+                  className={canon.entrada}
+                  autoComplete="off"
+                  role="combobox"
+                  aria-expanded={panelDireccion}
+                  aria-controls="lista-direcciones"
+                  aria-autocomplete="list"
+                />
                 <Limpiar visible={!!otro.direccionPrivada} />
                 <ContadorCaracteres valor={otro.direccionPrivada} tope={LIMITES_EVENTO.direccion} />
               </span>
               {otro.sitioTexto.trim() && !otro.pinPendiente && !otro.direccionPrivada.trim() && <p className={styles.nota}>Falta la dirección exacta.</p>}
-              {resultados}
-              {buscando && <p className={styles.nota} role="status">Buscando…</p>}
-              {error && <p className={styles.nota} role="alert">{error}</p>}
               <select value={otro.revelarHoras} onChange={(e) => cambiar({ revelarHoras: Number(e.target.value) })} aria-label="Cuándo se revela" className={styles.select}>
                 {REVELAR_OPCIONES.map((o) => (
                   <option key={o.horas} value={o.horas}>
@@ -290,6 +350,9 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             Mejor un lugar registrado
           </button>
         </div>
+        <ListaFlotante abierta={panelDireccion} onCerrar={invalidar} ancla={campoDireccionRef} id="lista-direcciones" etiqueta="Direcciones encontradas">
+          {contenidoDirecciones}
+        </ListaFlotante>
         <Boton type="button" onClick={cerrar} disabled={!otroListo}>
           Listo
         </Boton>
@@ -300,9 +363,21 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   return (
     <Hoja etiqueta="Dónde es" onCerrar={cerrar}>
       <h3>Dónde es</h3>
-      <label className={`${canon.campo} ${styles.pegajoso}`}>
+      <label className={`${canon.campo} ${styles.pegajoso}`} ref={campoListaRef as React.RefObject<HTMLLabelElement>}>
         <IconoBuscar width={20} height={20} />
-        <input type="text" value={q} onChange={(e) => { invalidar(); setQ(e.target.value); setConsulta({ texto: e.target.value, tipo: "lugar" }); }} placeholder="Nombre o dirección" aria-label="Buscar el lugar" autoComplete="off" autoFocus />
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => { invalidar(); setQ(e.target.value); setConsulta({ texto: e.target.value, tipo: "lugar" }); }}
+          placeholder="Nombre o dirección"
+          aria-label="Buscar el lugar"
+          autoComplete="off"
+          autoFocus
+          role="combobox"
+          aria-expanded={panelLista}
+          aria-controls="lista-sugeridos"
+          aria-autocomplete="list"
+        />
         <Limpiar visible={!!q} />
       </label>
       {/* Sin ninguna pista de en qué ciudad buscar: se pide con un toque, nunca automático (founder, 2026-09-21). */}
@@ -328,11 +403,23 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       ) : (
         <p className={styles.nadie}>{lugares.length ? `Ningún lugar registrado coincide con «${q.trim()}».` : "Todavía no hay lugares registrados."}</p>
       )}
-      {buscando && <p className={styles.nota} role="status">Buscando…</p>}
-      {error && <p className={styles.nota} role="alert">{error}</p>}
-      {sugeridos.length > 0 && <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares y direcciones encontrados">
-        {sugeridos.map(s => <li key={s.mapboxId}><button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}><IconoPin width={20} height={20}/><b>{s.nombre}</b><small>{[s.direccion, s.ciudad].filter(Boolean).join(" · ")}</small></button></li>)}
-      </ul>}
+      <ListaFlotante abierta={panelLista} onCerrar={invalidar} ancla={campoListaRef} id="lista-sugeridos" etiqueta="Lugares y direcciones encontrados">
+        {buscando ? (
+          <li className={styles.avisoFlotante} role="status">Buscando…</li>
+        ) : error ? (
+          <li className={styles.avisoFlotante} role="alert">{error}</li>
+        ) : (
+          sugeridos.map((s) => (
+            <li key={s.mapboxId}>
+              <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}>
+                <IconoPin width={20} height={20} />
+                <b>{s.nombre}</b>
+                <small>{[s.direccion, s.ciudad].filter(Boolean).join(" · ")}</small>
+              </button>
+            </li>
+          ))
+        )}
+      </ListaFlotante>
       <ul className={`${sug.lista} ${styles.lista}`}>
         <li>
           <button type="button" className={sug.renglon} onClick={() => { invalidar(); setVista("otro"); }}>
