@@ -78,9 +78,13 @@ El gestor confirmó que OL-099 solo toca, en `FormularioEvento.tsx`, el estado i
 
 No se generaron PNG (el navegador de esta sesión no expone guardar la captura a archivo sin Playwright); el arnés (`build.mjs`, en el scratchpad de la sesión) queda disponible por si el gestor quiere reabrirlo. Los estados que dependen de una búsqueda real a Mapbox (sugerencias con contexto y cercanía, botón "Usar mi ubicación") no se pudieron mirar en vivo sin red simulada; ya están cubiertos por las 21 pruebas de `direccionContexto.test.ts` y por el prototipo estático que firmó el founder.
 
+## Traer `main` otra vez (OL-099 en producción)
+
+El gestor confirmó que OL-099 (PR #123, `d0512dc`) ya estaba en `main` y pidió traerla para cerrar. `git merge origin/main`: un solo conflicto real, otra vez en `docs/ops/OPEN_LOOPS.md` (cabecera y sección "Ahora"); `FormularioEvento.tsx` se fusionó **solo**, sin conflicto — confirma que las líneas que evitó cada pieza (las de precio, las mías) no se tocaron entre sí. Al resolver OPEN_LOOPS se encontró y corrigió una errata de mi propio merge anterior (se había perdido la palabra "antes," al empalmar dos trozos de la cabecera "Last updated"); corregida sin tocar nada más de ese archivo. Verificado línea por línea que nada de `main` desapareció y sin duplicados. `npm run lint && npm run typecheck && npm test` (742 pruebas) y build en verde.
+
 ## Estado
 
-Firmado y con el código completo. `npm run lint && npm run typecheck && npm test` y build en verde. Verificación visual de los tres estados que no dependen de Mapbox, hecha con un arnés local sin Supabase ni Playwright. Falta: que el gestor lo revise entero y lo entregue.
+Firmado y con el código completo, con `main` al día (incluidas OL-103 y OL-099). `npm run lint && npm run typecheck && npm test` y build en verde. Verificación visual de los tres estados que no dependen de Mapbox, hecha con un arnés local sin Supabase ni Playwright. Falta: que el gestor lo revise entero y lo entregue.
 
 ## Pasos
 
