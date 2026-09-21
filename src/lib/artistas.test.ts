@@ -154,7 +154,7 @@ describe("validarArtista", () => {
   it("acepta lo mínimo y limpia", () => {
     const { datos, errores } = validarArtista({ nombre: "  Los Vecinos ", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", enlaces: JSON.stringify(["@losvecinos"]), foto: "" });
     expect(errores).toEqual({});
-    expect(datos).toMatchObject({ nombre: "Los Vecinos", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", foto: null, redes: [{ red: "instagram", url: "https://instagram.com/losvecinos" }] });
+    expect(datos).toMatchObject({ nombre: "Los Vecinos", disciplina: "musica", detalle: "son huasteco", tipo: "grupo", foto: null, redes: [{ red: "instagram", url: "https://www.instagram.com/losvecinos/" }] });
   });
   it("avisa del nombre vacío y la disciplina desconocida; un enlace que no es nada se descarta sin error", () => {
     const { datos, errores } = validarArtista({ nombre: "", disciplina: "pintura", tipo: "grupo", enlaces: JSON.stringify(["hola"]) });
