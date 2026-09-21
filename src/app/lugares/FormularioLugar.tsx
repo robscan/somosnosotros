@@ -9,6 +9,7 @@ import { useTerminar } from "@/components/ui/Atras";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import { Chip } from "@/components/ui/Chip";
@@ -231,7 +232,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           <IconoBuscar width={20} height={20} />
           <input name="nombre" type="text" value={nombre} onChange={(e) => alEscribirNombre(e.target.value)} maxLength={LIMITES_LUGAR.nombre} placeholder="Nombre del lugar" aria-label="Nombre del lugar" aria-invalid={!!errores.nombre} autoComplete="off" autoFocus={esAlta} required />
           <Limpiar visible={!!nombre} />
-          {nombre.length >= LIMITES_LUGAR.nombre * 0.75 && <span className={canon.contador}>{nombre.length}/{LIMITES_LUGAR.nombre}</span>}
+          <ContadorCaracteres valor={nombre} tope={LIMITES_LUGAR.nombre} error={errores.nombre} />
         </label>
         {(buscando || recuperando) && <p className={canon.estado}>{recuperando ? "Trayendo la ubicación…" : "Buscando…"}</p>}
         {errores.nombre && (
@@ -329,7 +330,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
                   <span className={limpiar.caja}>
                     <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_LUGAR.detalle} placeholder="¿Qué es? Ej. taller de cerámica (opcional)" aria-label="Qué es" className={canon.entrada} autoComplete="off" />
                     <Limpiar visible={!!detalle} />
-                    {detalle.length >= LIMITES_LUGAR.detalle * 0.75 && <span className={canon.contador}>{detalle.length}/{LIMITES_LUGAR.detalle}</span>}
+                    <ContadorCaracteres valor={detalle} tope={LIMITES_LUGAR.detalle} error={errores.detalle} />
                   </span>
                 )}
                 {errores.detalle && (

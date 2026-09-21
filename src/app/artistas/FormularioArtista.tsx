@@ -6,6 +6,7 @@ import { useAbrirConError } from "@/components/ui/abrirConError";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
 import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
@@ -132,7 +133,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         <IconoEstrella width={20} height={20} />
         <input name="nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={LIMITES_ARTISTA.nombre} placeholder="Nombre del artista o grupo" aria-label="Nombre del artista o grupo" aria-invalid={!!errores.nombre} autoComplete="off" autoCapitalize="words" autoFocus={esAlta} required />
         <Limpiar visible={!!nombre} />
-        {nombre.length >= LIMITES_ARTISTA.nombre * 0.75 && <span className={canon.contador}>{nombre.length}/{LIMITES_ARTISTA.nombre}</span>}
+        <ContadorCaracteres valor={nombre} tope={LIMITES_ARTISTA.nombre} error={errores.nombre} />
       </label>
       {errores.nombre && (
         <p className={canon.error} role="alert">
@@ -170,7 +171,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
               <span className={limpiar.caja}>
                 <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_ARTISTA.detalle} placeholder="Ej. son huasteco, jazz (opcional)" aria-label="En una palabra" className={canon.entrada} autoComplete="off" />
                 <Limpiar visible={!!detalle} />
-                {detalle.length >= LIMITES_ARTISTA.detalle * 0.75 && <span className={canon.contador}>{detalle.length}/{LIMITES_ARTISTA.detalle}</span>}
+                <ContadorCaracteres valor={detalle} tope={LIMITES_ARTISTA.detalle} error={errores.detalle} />
               </span>
               {(errores.disciplina || errores.detalle) && (
                 <p className={canon.error} role="alert">

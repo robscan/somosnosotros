@@ -8,6 +8,7 @@ import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import { useAbrirConError } from "@/components/ui/abrirConError";
+import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBoleto, IconoBuscar, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
@@ -517,7 +518,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         <div className={`${canon.campo} ${canon.sinIcono}`}>
           <input name="titulo" type="text" value={titulo} onChange={(e) => { gestos.current.tocar("titulo"); setTitulo(e.target.value); }} maxLength={LIMITES_EVENTO.titulo} placeholder="Nombre del evento" aria-label="Nombre del evento" aria-invalid={!!errores.titulo} autoComplete="off" autoFocus={esAlta} required />
           <Limpiar visible={!!titulo} />
-          {titulo.length >= LIMITES_EVENTO.titulo * 0.75 && <span className={canon.contador}>{titulo.length}/{LIMITES_EVENTO.titulo}</span>}
+          <ContadorCaracteres valor={titulo} tope={LIMITES_EVENTO.titulo} error={errores.titulo} />
         </div>
         {subiendo && !cartel && !masAbierto && <p className={canon.estado}>Subiendo…</p>}
         {errores.titulo && (
@@ -622,7 +623,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 <span className={limpiar.caja}>
                   <input type="text" name="precio" value={precio} onChange={(e) => { gestos.current.tocar("cuanto"); setPrecio(e.target.value); }} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" aria-label="Precio" className={canon.entrada} autoComplete="off" autoFocus />
                   <Limpiar visible={!!precio} />
-                  {precio.length >= LIMITES_EVENTO.precio * 0.75 && <span className={canon.contador}>{precio.length}/{LIMITES_EVENTO.precio}</span>}
+                  <ContadorCaracteres valor={precio} tope={LIMITES_EVENTO.precio} error={errores.precio} />
                 </span>
               )}
                 {errores.precio && (

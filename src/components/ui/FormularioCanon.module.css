@@ -211,14 +211,6 @@
   font-weight: 700;
 }
 
-.contador {
-  display: inline-block;
-  font-size: var(--letra-sm);
-  color: var(--texto-suave);
-  margin-left: var(--espacio-2);
-  font-variant-numeric: tabular-nums;
-}
-
 /* 3. Renglones resueltos: icono | clave / valor | acción; el cuerpo, al abrir, debajo a lo ancho. */
 .renglones {
   list-style: none;

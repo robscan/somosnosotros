@@ -7,6 +7,7 @@ import { SIN_FOTO } from "@/lib/imagen";
 import { normalizarNombre } from "@/lib/lugares";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { LIMITES_ARTISTA } from "@/lib/limites";
+import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
@@ -114,7 +115,7 @@ export default function SelectorQuien({ valor, onCambio, mios }: Props) {
           aria-autocomplete="list"
         />
         <Limpiar visible={!!texto} />
-        {texto.length >= LIMITES_ARTISTA.nombre * 0.75 && <span className={sug.contador}>{texto.length}/{LIMITES_ARTISTA.nombre}</span>}
+        <ContadorCaracteres valor={texto} tope={LIMITES_ARTISTA.nombre} />
       </span>
       {(sugerencias.length > 0 || ofrecerCrear) && (
         <ul className={sug.lista} role="listbox" aria-label="Artistas encontrados">
