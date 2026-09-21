@@ -347,6 +347,28 @@ Si las tres corrieran completas: **2 400 mensajes**, pico de **61 conexiones**, 
 
 **Verificado:** `npm run lint` (0 errores, 1 warning ajeno), `npm run typecheck`, `npm test` (756/756, con las 11 pruebas nuevas de `conectarCanal`/`percentil`), `npm run build`, todo en verde. Sin migración, sin correr contra producción — el plan va al gestor para su aprobación (y la segunda autorización del founder, que decide él, no yo). Commit local, sin push.
 
+## Fase 2, bloque 2: cómo se lee el resultado, antes de la segunda corrida (2026-09-21)
+
+El gestor aceptó el plan y el código; falta el sí del founder para la corrida. Mientras tanto, adelanto por escrito cómo se lee el resultado, para no improvisarlo en caliente cuando lleguen los números.
+
+**Los tres umbrales que ya existen en el script, y por qué no bastan solos para decir "caben con holgura":**
+- El freno automático (`UMBRAL_PERDIDA = 0.05`, cualquier error) es la línea de "esto ya se rompió, para la corrida" — no la línea de "esto va bien". Una tanda puede pasar ese freno (0 errores, 4 % de pérdida) y aun así no ser un número prudente para producción: 4 % de trazos perdidos sí se nota en una pared pintada por 30 personas.
+- La latencia no tiene freno propio hoy (el script no para por latencia alta, solo la reporta). Hace falta un criterio aparte para leerla.
+
+**Criterio propuesto para "caben N mandos con holgura"** (a confirmar o ajustar por el gestor/founder antes de leer los números reales):
+
+| Lectura | Pérdida | Latencia p95 | Qué significa |
+|---|---|---|---|
+| **Con holgura** | ≤ 1 % | ≤ 800 ms | Recomendable como tope de producción; deja margen para una noche real (picos de red, teléfonos viejos) sin degradarse |
+| **Al límite** | > 1 % y ≤ 5 % | > 800 ms y ≤ 2 000 ms | Funciona, pero sin margen — no es el número que se fija como tope, es la frontera |
+| **Pasado el cupo** | > 5 % o cualquier error | > 2 000 ms | Ya no sirve para pintar junto; es donde el script ya se detiene solo (salvo el caso nuevo de solo latencia alta sin pérdida, que el script no frena todavía) |
+
+**De dónde salen los números:** 800 ms de p95 es aproximadamente 3× la p95 real medida en la tanda 1 (279 ms, con muy poca carga) — un margen generoso antes de que el trazo se sienta "atrasado" en la pared, sin ser tan laxo como para aceptar un segundo entero de retraso. 2 000 ms es donde cualquier interacción deja de sentirse en vivo (referencia general de UX para "tiempo de respuesta", no un número propio de Supabase). 1 % de pérdida es más estricto que el 5 % del freno automático porque "sigue corriendo" y "es un buen número para producción" son preguntas distintas: el freno protege la prueba, este criterio protege la experiencia real de quien pinta.
+
+**Cómo se aplica a la corrida 2:** la tanda más alta (de la 2, 3 o 4) que caiga en la fila **"Con holgura"** es el número que se propone para `MENSAJES_POR_SEGUNDO` y el límite de participantes de producción; si ninguna tanda pasada la 1 cae ahí, el número que ofrece la Fase 2 es el de la tanda 1 (20 mensajes/s agregados, con `MENSAJES_POR_SEGUNDO = 3` eso son ~6-7 mandos) hasta correr una prueba más fina entre esa y la siguiente. El número teórico de ~33 mandos (§ del bloque 2 de arriba) es una referencia, no la respuesta — la respuesta la da la corrida.
+
+Sin código nuevo: esto es lectura del resultado, no cambia el script. Sigo sin correr contra producción.
+
 ## Verificación de este documento
 
 
