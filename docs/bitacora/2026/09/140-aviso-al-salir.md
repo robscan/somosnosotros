@@ -1,0 +1,45 @@
+# 140 · Aviso al salir de la plataforma
+
+**Fecha:** 2026-09-21 · **Rama:** `aviso-al-salir`, desde `origin/main` · **OL:** OL-105 · **Modelo:** Sonnet 5, esfuerzo medio
+
+## De dónde sale
+
+Pedido del founder (2026-09-21): «Cuando el usuario salga de la plataforma por medio de link, notificar que sale de la plataforma con un elemento emergente (puede ser bottom sheet con accionables de confirmación y checkbox de no volver a notificar) le alertamos que sale del sitio para los casos en donde se compren boletos o se pidan otros datos, que lo sepa explícitamente.»
+
+Arranqué avisando al gestor («Gestor de cambios II») y esperando su visto bueno antes de tocar nada, como pide la regla de la casa.
+
+## Inventario (medido con grep directo, sin agentes)
+
+Todos los enlaces que sacan del sitio, con dónde viven y a dónde llevan:
+
+| Enlace | Dónde | Destino | ¿Aviso? |
+|---|---|---|---|
+| Enlace del evento (boletos/más información) | `src/app/eventos/[id]/page.tsx` | URL libre del publicador | Sí |
+| Redes y sitio web de artistas | `src/app/artistas/[id]/page.tsx`, `src/lib/enlaces.ts` | Instagram, Facebook, TikTok, YouTube, Vimeo, Spotify, SoundCloud, Bandcamp, Apple Music, WhatsApp, X, Threads, Linktree o "Sitio" | Sí |
+| Redes y sitio web de lugares | `src/app/lugares/[id]/page.tsx`, `src/lib/enlaces.ts` | Igual que artistas | Sí |
+| "Cómo llegar" (texto y mapa pequeño) | `eventos/[id]/page.tsx`, `lugares/[id]/page.tsx`, `MapaFicha.tsx` | `google.com/maps/dir` | No |
+| Compartir | `BotonCompartir.tsx` | Hoja nativa, o `wa.me/?text=` como respaldo | No |
+| "A mi calendario" | `eventos/[id]/calendario/route.ts` | Descarga `.ics` del propio dominio | No |
+| WhatsApp/teléfono directos | — | No existe `tel:` en el código; el único `wa.me` fuera de una red registrada es el de Compartir | — |
+| Enlaces en descripciones | `Desplegable.tsx` | Texto plano, sin auto-linking | No aplica (no existen) |
+| Aviso de privacidad | `privacidad/page.tsx` | Solo enlaza a `/reglas` (interno) | No aplica |
+
+## Propuesta y prototipo
+
+Documento con las 5 decisiones resueltas (a qué enlaces aplica, texto de la hoja, "no volver a avisar" en `localStorage` con renglón nuevo en Ajustes, seguridad, accesibilidad): [`docs/rediseno/29-aviso-al-salir.md`](../../../rediseno/29-aviso-al-salir.md).
+
+Prototipo interactivo 390×844: [`docs/rediseno/prototipos/aviso-al-salir.html`](../../../rediseno/prototipos/aviso-al-salir.html), publicado como Artifact para el founder.
+
+**Corrección tras el aviso del gestor (llamado de atención del founder ese mismo día, tras ver en su iPhone un formulario cuyos campos se salían de su tarjeta):** el texto del dominio dentro de `.dominio` (`display: flex`) no encogía por debajo de su `min-content`, así que un dominio largo podía ensanchar la hoja. Se envolvió en un `<span>` con `min-width: 0; overflow-wrap: anywhere`. Medido con un dominio de 60 caracteres (`boletos.un-dominio-muy-largo-de-ejemplo-para-medir-anchos.mx`) contra el borde derecho de la hoja, sin hijos que se salgan y sin scroll horizontal:
+
+- 320 px → borde de la hoja en 304 · 0 hijos fuera · sin scroll horizontal
+- 375 px → borde de la hoja en 359 · 0 hijos fuera · sin scroll horizontal
+- 390 px → borde de la hoja en 374 · 0 hijos fuera · sin scroll horizontal
+
+## Firma del founder
+
+«firmo porotipo» (2026-09-21, en el chat del operador). Aprueba las 5 decisiones tal como quedaron en la propuesta.
+
+## Sigue
+
+Código: componente `ui/EnlaceExterno` reutilizable + la hoja (sobre `ui/Hoja`), sustituyendo los enlaces de evento y de redes de artistas/lugares, y el renglón nuevo en Ajustes. Lógica en funciones puras (qué enlaces avisan, dominio legible, preferencia guardada) con pruebas.
