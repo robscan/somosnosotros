@@ -254,7 +254,7 @@ export function indicadores(r: Resumen, hoy: string): Indicador[] {
       partes: d.mayor
         ? ([contar(d.con_2, "con 2 personas", "con 2 personas"), contar(d.con_3_a_5, "con 3 a 5", "con 3 a 5"), contar(d.con_6_o_mas, "con 6 o más", "con 6 o más"), `La más grande: ${d.mayor.titulo}, ${d.mayor.n} van`].filter(Boolean) as string[])
         : ["Aún en ningún evento de la semana van 2 o más"],
-      enlace: { texto: "Ver los eventos de la semana", href: hrefLista("eventos", { filtro: "semana" }) },
+      enlace: { texto: "Ver esos eventos", href: hrefLista("eventos", { filtro: "coincidencias" }) },
     },
     {
       clave: "agenda",
@@ -513,6 +513,7 @@ export const FILTROS = {
     { valor: "proximos", etiqueta: "Próximos", vacio: "No hay eventos próximos." },
     { valor: "destacados", etiqueta: "Destacados", vacio: "Ningún evento destacado ahora." },
     { valor: "semana", etiqueta: "Esta semana", vacio: "No hay eventos en los próximos 7 días." },
+    { valor: "coincidencias", etiqueta: "Coincidencias", vacio: "Aún no hay eventos donde coincidan dos personas." },
     { valor: "sin_imagen", etiqueta: "Sin imagen", vacio: "Todos los eventos próximos tienen imagen." },
     { valor: "comunidad", etiqueta: "De la comunidad", vacio: "Aún no hay eventos próximos de la comunidad." },
     { valor: "ocultos", etiqueta: "Ocultos", vacio: "Ningún evento próximo oculto." },

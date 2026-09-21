@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accionesEvento, accionSeguir, alSoltar, asistenciaTras, decidirGesto, desplazamiento, recortar, textoHecho } from "./deslizar";
+import { accionesEvento, accionSeguir, alSoltar, asistenciaTras, decidirGesto, desplazamiento, huboArrastre, recortar, textoHecho } from "./deslizar";
 
 describe("deslizar", () => {
   it("un evento ofrece Voy y Me interesa, y cada una se deshace volviendo a deslizar", () => {
@@ -23,6 +23,25 @@ describe("deslizar", () => {
     expect(decidirGesto(4, 30, false)).toBe("soltar"); // scroll
     expect(decidirGesto(25, 3, false)).toBe("soltar"); // hacia la derecha, cerrado: no hay nada de ese lado
     expect(decidirGesto(25, 3, true)).toBe("deslizar"); // abierto: se cierra deslizando de vuelta
+  });
+  it("bloqueo de dirección: dentro de la zona muerta no pasa nada, y una diagonal ambigua es del scroll (founder, 2026-09-21, L10)", () => {
+    // Bajar por la lista: aunque haya algo de deriva horizontal, sigue "esperar" hasta cruzar los 10 px.
+    expect(decidirGesto(2, 9, false)).toBe("esperar");
+    expect(decidirGesto(9, 2, false)).toBe("esperar");
+    // Cruzado el umbral con una diagonal (dx y dy parecidos): gana el scroll, no el renglón.
+    expect(decidirGesto(-12, 10, false)).toBe("soltar");
+    expect(decidirGesto(-11, -11, false)).toBe("soltar");
+    // Claramente horizontal (dx al menos el doble de dy) sí abre.
+    expect(decidirGesto(-22, 8, false)).toBe("deslizar");
+    // Con el renglón ya abierto, la misma diagonal ambigua tampoco lo cierra (queda del lado del scroll).
+    expect(decidirGesto(11, 10, true)).toBe("soltar");
+  });
+  it("huboArrastre: cancela un toque que se movió más que la zona muerta, en cualquier dirección (carril de Destacados, L45)", () => {
+    expect(huboArrastre(0, 0)).toBe(false);
+    expect(huboArrastre(4, 3)).toBe(false); // hypot 5, dentro de la zona muerta
+    expect(huboArrastre(-15, 0)).toBe(true); // recorrer el carril
+    expect(huboArrastre(0, 12)).toBe(true);
+    expect(huboArrastre(3, 3, 2)).toBe(true); // umbral propio, para quien lo necesite
   });
   it("mientras se arrastra no pasa a la derecha y más allá de las acciones cuesta más", () => {
     expect(desplazamiento(0, 30, 100)).toBe(0);
