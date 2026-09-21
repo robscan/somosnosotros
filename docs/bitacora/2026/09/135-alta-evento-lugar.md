@@ -56,9 +56,31 @@ Por indicación del gestor: empezar por lo que no comparte archivo con A6 (OL-09
 
 **Verificación:** `npm run lint && npm run typecheck && npm test`: lint y typecheck en verde; 728 pruebas en verde (23 nuevas), 7 en rojo preexistentes y ajenas (sin `pg` en este árbol). Build en verde. Sin capturas móviles todavía: no hay pantalla nueva que mostrar mientras `FormularioEvento.tsx` sigue como estaba (las capturas van con la segunda parte). Las pruebas de componentes con navegador real (`*.componentes.test.mjs`, que ejercitan `HojaDondeEs` con Mapbox simulado) no corrieron: este árbol de trabajo no tiene Playwright instalado (mismo tipo de hueco que `pg`, ya anotado en OPEN_LOOPS por otra pieza); la cobertura de esta entrega es con pruebas unitarias puras, sin gastar ninguna llamada real a Mapbox (piden respuestas grabadas).
 
+## Traer `main` (OL-103 en producción)
+
+El gestor pidió traer `main` a la rama cuando conviniera, porque OL-103 (botón "Publicar evento" en ciudades sin lugares) ya estaba en producción y toca `src/components/Publicar.tsx` y `src/app/page.tsx`, los mismos archivos que necesitaba para hilar la ciudad del chip. `git merge origin/main`: un solo conflicto, en `docs/ops/OPEN_LOOPS.md` (cabecera "Last updated", "Ahora" y "Decidido" — los tres, ambos lados habían añadido al mismo sitio); resuelto combinando los dos lados, verificado línea por línea que ninguna de `main` desapareció y sin duplicados. El resto (Pincel Fase 1, obras colectivas, OL-102, etc.) se fusionó solo. `npm run lint && npm run typecheck && npm test` y build en verde tras el merge (734 pruebas).
+
+## Código, segunda parte: `FormularioEvento.tsx` y ciudad del chip (2026-09-21)
+
+El gestor confirmó que OL-099 solo toca, en `FormularioEvento.tsx`, el estado inicial de `precio` y el `<input name="precio">`, y en `src/lib/eventos.ts`, `extraerNumero`, la validación del precio y una línea de `cartelAFormulario` — ninguna de esas líneas se tocó aquí.
+
+- **`FormularioEvento.tsx`.** Sin `autoFocus` en el campo del nombre (L2). Renglón Dónde con tres estados: vacío (`dondeVacio`, "Falta"), leído-pendiente (`dondeConfirmar`, valor = el texto leído, letrero "Confirmar", ayuda "Confirma la ubicación en el mapa." debajo) y resuelto (como hoy). El botón "Publicar evento" ya no lleva el `<small>` interno; "Falta el nombre." y "Falta ubicación." bajaron a debajo de sus propios campos. Nueva prop `ciudadContexto` (la ciudad del chip), reenviada a `HojaDondeEs`.
+- **`src/app/eventos/nuevo/page.tsx`.** Lee `?ciudad=` de la URL, la resuelve con `ciudadPorSlug`/`cargarCiudades()` y se la pasa a `FormularioEvento` como `ciudadContexto` — sin pedir ningún dato nuevo a la persona.
+- **`src/components/Publicar.tsx`.** El botón "Publicar evento" ahora también lleva `?ciudad=` (como ya hacía "Registrar artista").
+- **`src/app/page.tsx`.** Pasa `ciudad` (el slug de la Agenda, o `null` si es la ciudad inicial) al `<Publicar>`.
+
+**Verificación:** `npm run lint && npm run typecheck && npm test`: en verde, 734 pruebas (sin cambios de número: esta parte no agregó pruebas propias, ya cubierta por `direccionContexto.test.ts` y las de `HojaDondeEs`/`geocodificar`/`buscarLugares` de la primera mitad); 7 rojas preexistentes y ajenas. Build en verde.
+
+**Verificación visual (front-visual), sin Supabase ni Mapbox reales.** Sin backend local de PGlite a mano en esta sesión, se montó un arnés ligero en el scratchpad (mismo patrón de dobles que `flyer.componentes.test.mjs`, con `esbuild`, ya instalado — **sin instalar Playwright**, como pidió el gestor): sirve `FormularioEvento` real, con módulos simulados (acciones, ubicación, config, Supabase) y sin llamar nunca a Mapbox, en un servidor `http` llano abierto con el navegador de la sesión (390×?? — se emuló 375×812, la resolución móvil de la pane; los estados no dependen del ancho exacto). Tres estados mirados y confirmados contra la pantalla real (no solo el prototipo estático):
+1. **Recién abierto, vacío:** sin autofocus, tarjeta del cartel visible, "Falta el nombre." bajo el campo, "Falta ubicación." bajo el renglón Dónde, botón sin texto pequeño adentro.
+2. **Confirmar:** con `sitio_texto`/`sitio_direccion` puestos y sin punto, el renglón Dónde muestra el texto leído, el letrero dice "Confirmar" y debajo "Confirma la ubicación en el mapa." — nunca "Falta".
+3. **Resuelto:** con un lugar del directorio elegido, Dónde muestra su nombre y "Cambiar", sin ninguna ayuda debajo.
+
+No se generaron PNG (el navegador de esta sesión no expone guardar la captura a archivo sin Playwright); el arnés (`build.mjs`, en el scratchpad de la sesión) queda disponible por si el gestor quiere reabrirlo. Los estados que dependen de una búsqueda real a Mapbox (sugerencias con contexto y cercanía, botón "Usar mi ubicación") no se pudieron mirar en vivo sin red simulada; ya están cubiertos por las 21 pruebas de `direccionContexto.test.ts` y por el prototipo estático que firmó el founder.
+
 ## Estado
 
-Firmado y con la primera mitad del código lista. Espera la confirmación del gestor de que A6 (OL-099) esté en `main` para tocar `FormularioEvento.tsx` y cerrar la pieza con capturas 390×844.
+Firmado y con el código completo. `npm run lint && npm run typecheck && npm test` y build en verde. Verificación visual de los tres estados que no dependen de Mapbox, hecha con un arnés local sin Supabase ni Playwright. Falta: que el gestor lo revise entero y lo entregue.
 
 ## Pasos
 
@@ -70,7 +92,7 @@ Firmado y con la primera mitad del código lista. Espera la confirmación del ge
 - [x] Commit local de los documentos.
 - [x] Firma del founder (documento + prototipo), con ampliación del canon a todos los formularios.
 - [x] Código: contexto y búsqueda (`direccionContexto.ts`), `HojaDondeEs.tsx`, aviso de privacidad.
-- [ ] Confirmación del gestor: A6 (OL-099) en `main`.
-- [ ] `FormularioEvento.tsx`: autofocus, "Confirmar", ayuda bajo el botón, ciudad del chip.
-- [ ] Build y capturas 390×844.
+- [x] Traer `main` (OL-103 en producción), conflicto resuelto en OPEN_LOOPS.
+- [x] `FormularioEvento.tsx`: autofocus, "Confirmar", ayuda bajo el campo, ciudad del chip.
+- [x] Build y verificación visual (tres estados, sin Mapbox real).
 - [ ] Entrega consolidada al gestor.
