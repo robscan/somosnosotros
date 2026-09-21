@@ -1,6 +1,6 @@
 # 135 · Lugar y dirección en el alta de evento
 
-**Fecha:** 2026-09-21 · **Rama:** `alta-evento-lugar` · **OL:** OL-100 · **PR:** pendiente (espera firma)
+**Fecha:** 2026-09-21 · **Rama:** `alta-evento-lugar` · **OL:** OL-100 · **PR:** pendiente (espera A6 en `main`)
 
 Pieza A7 de la cola. Sobre L2, L3 y L37 (segunda mitad) de la lista del founder (2026-09-21).
 
@@ -34,19 +34,29 @@ Documento completo con los seis puntos y las cinco preguntas para el founder: [`
 
 [`docs/rediseno/prototipos/alta-evento-lugar.html`](../../../rediseno/prototipos/alta-evento-lugar.html), siete estados a 390×844 con los tokens del canon: recién abierto (hoy con autofocus contra la propuesta sin él), lugar encontrado en el directorio, dirección leída sin punto confirmado ("Confirmar"), sugerencias con contexto y cercanía, el aviso "Falta ubicación." bajo el renglón al intentar publicar sin resolver Dónde, el caso con nombre "Galeana #423, S.L.P." con las sugerencias ya acotadas a San Luis Potosí, y el caso sin ninguna pista con el botón "Usar mi ubicación para buscar cerca". Verificado con el navegador de la sesión antes de mostrarlo (disciplina front-visual). Publicado como Artifact privado para que el founder lo vea en su teléfono: https://claude.ai/artifact/XwFiwzkiZvgrmLZwvfgGWk (versión 3)
 
+## Firmado por el founder (2026-09-21)
+
+Sus palabras a las cinco preguntas (completas en el documento 26):
+
+1. «Ya no sé da en auto focus de input text en app de iOS, la solución funciona bien aquí, una vez que el usuario selecciona el input text es aceptable cualquier reacomodo natural en composición.»
+2. «Confirmar.»
+3. «Si en el campo, es ayuda para recuperarse del error en el contexto, aplica como canon para todos los formularios.» — aprueba y **amplía**: no queda acotado a esta pantalla. Anotado como corrección a la decisión 3 en [15-formularios-canon-flujo-y-estados.md](../../../rediseno/15-formularios-canon-flujo-y-estados.md); esta pieza sigue construyendo solo en el alta de evento (lo asignado), y se avisa al gestor para que agregue a la cola una pieza que lo aplique en `FormularioLugar.tsx`, `FormularioArtista.tsx` y `FormularioPerfil.tsx`.
+4. «Si apruebo.» — cascada de contexto y segunda búsqueda automática del caso "Galeana #423, S.L.P.".
+5. «Apruebo.» — texto nuevo del aviso de privacidad.
+
 ## Estado
 
-Sin código. Espera la firma del founder sobre el documento y el prototipo, y que A6 (OL-099, precio numérico) esté en `main` — comparten `FormularioEvento.tsx`, lo confirma el gestor.
+Firmado. Espera solo la confirmación del gestor de que A6 (OL-099, precio numérico) esté en `main` — comparten `FormularioEvento.tsx` — para empezar el código.
 
 ## Pasos
 
 - [x] Aviso de arranque al gestor y su visto bueno.
 - [x] Rama `alta-evento-lugar` desde `origin/main`.
 - [x] Medir el estado actual leyendo el código, sin tocar nada.
-- [x] Documento de propuesta y prototipo de cinco estados.
+- [x] Documento de propuesta y prototipo (siete estados).
 - [x] Prototipo publicado como Artifact y entregado en este chat para firma.
 - [x] Commit local de los documentos.
-- [ ] Firma del founder (documento + prototipo).
+- [x] Firma del founder (documento + prototipo), con ampliación del canon a todos los formularios.
 - [ ] Confirmación del gestor: A6 (OL-099) en `main`.
 - [ ] Código, pruebas focalizadas, build y capturas 390×844.
 - [ ] Entrega consolidada al gestor.

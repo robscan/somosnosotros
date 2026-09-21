@@ -25,7 +25,7 @@ flowchart TD
 
 1. **Un campo arriba, el nombre, con la cámara dentro** (tooltip "Leer el cartel"); sin etiqueta ni frase. *Von Restorff, UX invisible.* (V0, C)
 2. **Dónde con una sola salida**: la lupa abre la hoja "Dónde es" (lugares registrados, otro sitio con reservado dentro, registrar uno nuevo). Sustituye al desplegable, al enlace y a las dos píldoras; cierra la decisión 11 de [11](11-restantes-flujo-y-estados.md). *Hick, Similitud, Fitts.* (V2 a V4)
-3. **Todos los renglones con el mismo dibujo** (Cuándo, Dónde, Quién, Cuánto, Más) y el botón dice qué falta. *Conectividad uniforme, Evidencia.* (V0, V1)
+3. **Todos los renglones con el mismo dibujo** (Cuándo, Dónde, Quién, Cuánto, Más) y el botón dice qué falta. *Conectividad uniforme, Evidencia.* (V0, V1) **Corrección del founder (2026-09-21, OL-100):** «el estándar es colocarla debajo del botón principal de creación... o mejor aún debajo del campo faltante como help text»; y al firmar el punto: «si en el campo, es ayuda para recuperarse del error en el contexto, aplica como canon para todos los formularios». La ayuda de qué falta se mueve del interior del botón al renglón o campo que falta, en **todos** los formularios del canon (evento, lugar, artista, perfil), no solo en el alta de evento. Construido primero en el alta de evento (OL-100, `FormularioEvento.tsx`, `HojaDondeEs.tsx`); `FormularioLugar.tsx`, `FormularioArtista.tsx` y `FormularioPerfil.tsx` quedan pendientes de una pieza propia que aplique el mismo cambio ahí.
 
 ## Alta de artista
 

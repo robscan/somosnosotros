@@ -1,6 +1,6 @@
 # 26 · Lugar y dirección en el alta de evento
 
-**Estado:** propuesta, esperando firma. **Prototipo:** [`prototipos/alta-evento-lugar.html`](prototipos/alta-evento-lugar.html) · **OL:** OL-100 · **Bitácora:** [135](../bitacora/2026/09/135-alta-evento-lugar.md)
+**Estado:** **firmado por el founder el 2026-09-21.** **Prototipo:** [`prototipos/alta-evento-lugar.html`](prototipos/alta-evento-lugar.html) · **OL:** OL-100 · **Bitácora:** [135](../bitacora/2026/09/135-alta-evento-lugar.md)
 
 ## Lo que pidió el founder (2026-09-21), con sus palabras
 
@@ -55,7 +55,7 @@ Esto **cambia una decisión firmada** del canon de formularios (docs/rediseno/15
 - El botón "Publicar evento" deja de llevar el `<small>` con "falta el nombre" / "falta dónde".
 - Cada campo que falta muestra su propia ayuda debajo, en el renglón: "Falta el nombre" bajo el campo del nombre si está vacío, "Falta ubicación" bajo el renglón Dónde si no se confirmó.
 - Mismo cambio en el botón "Listo" de la hoja "Es en otro sitio" (`HojaDondeEs.tsx`): la ayuda baja al renglón que falta, no al botón.
-- **Alcance:** solo el alta de evento (`FormularioEvento.tsx`, `HojaDondeEs.tsx`), que es lo asignado en esta pieza. `FormularioLugar.tsx`, `FormularioArtista.tsx` y `FormularioPerfil.tsx` siguen con el patrón de hoy hasta que el founder pida extenderlo — se anota como pendiente, no se toca aquí.
+- **Alcance:** solo el alta de evento (`FormularioEvento.tsx`, `HojaDondeEs.tsx`), que es lo asignado en esta pieza. El founder firmó esto como canon para **todos** los formularios ("Firmado por el founder", abajo), pero `FormularioLugar.tsx`, `FormularioArtista.tsx` y `FormularioPerfil.tsx` quedan con el patrón de hoy hasta la pieza aparte que lo aplique ahí — señalado al gestor para la cola, no se toca en OL-100.
 
 ### 6 — Direcciones a medias: usar el contexto para acercar la búsqueda ("Galeana #423, S.L.P.")
 Esto ataca la causa medida arriba: que la calle correcta ni siquiera entra en los 10 candidatos que Mapbox propone. Cuatro cambios, del más barato al más caro:
@@ -88,7 +88,7 @@ Propuesta de texto nuevo (para que el founder lo revise junto con el prototipo):
 
 | Canon | Cambio |
 | --- | --- |
-| Formularios (canon del alta) | Decisión 3 ("el botón dice qué falta") se acota: en el alta de evento, la ayuda va debajo del campo que falta, no dentro del botón. Las demás altas no cambian todavía. |
+| Formularios (canon del alta) | Decisión 3 ("el botón dice qué falta") cambia para **todos** los formularios (firmado 2026-09-21): la ayuda va debajo del campo que falta, no dentro del botón. Esta pieza lo construye en el alta de evento; las demás altas quedan para una pieza aparte. |
 | DEFINICION — ubicación | Ya cambiada en `main` por el founder (2026-09-21, `0d397f1`): la ubicación aproximada ayuda a buscar direcciones y puede viajar a Mapbox. Esta pieza aplica esa regla nueva en el alta de evento y propone la línea del aviso de privacidad que la refleja (punto 7). |
 | Maquetación plana, filtrar no es navegar, memoria de pantalla | No cambian. |
 
@@ -111,6 +111,16 @@ Propuesta de texto nuevo (para que el founder lo revise junto con el prototipo):
 5. ¿Apruebas el texto nuevo del aviso de privacidad (punto 7), que refleja la regla de ubicación que ya firmaste?
 
 (La pregunta sobre reutilizar la posición cacheada de la versión anterior de este documento quedó resuelta por la nueva regla de ubicación en `DEFINICION.md`: ya no es una decisión abierta de esta pieza.)
+
+## Firmado por el founder (2026-09-21)
+
+Respuesta, con sus palabras, a las cinco preguntas:
+
+1. «Ya no sé da en auto focus de input text en app de iOS, la solución funciona bien aquí, una vez que el usuario selecciona el input text es aceptable cualquier reacomodo natural en composición.» — confirma que quitar el `autoFocus` resuelve L2.
+2. «Confirmar.» — aprobado tal cual el estado 3.
+3. «Si en el campo, es ayuda para recuperarse del error en el contexto, aplica como canon para todos los formularios.» — **aprueba y amplía**: no queda acotado a esta pantalla. Anotado en [15-formularios-canon-flujo-y-estados.md](15-formularios-canon-flujo-y-estados.md) (decisión 3, corrección 2026-09-21). Esta pieza (OL-100) sigue construyendo **solo** en el alta de evento (`FormularioEvento.tsx`, `HojaDondeEs.tsx`), que es lo asignado; `FormularioLugar.tsx`, `FormularioArtista.tsx` y `FormularioPerfil.tsx` quedan para una pieza aparte que aplique el mismo canon ahí — señalado al gestor para que la agregue a la cola.
+4. «Si apruebo.» — aprueba la cascada de contexto y la segunda búsqueda automática del caso "Galeana #423, S.L.P.".
+5. «Apruebo.» — aprueba el texto nuevo del aviso de privacidad.
 
 ## Cuándo empieza el código
 
