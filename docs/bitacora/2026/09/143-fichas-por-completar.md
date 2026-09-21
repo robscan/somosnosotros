@@ -39,7 +39,35 @@ La foto es, con mucho, el único hueco grande: el resto de los campos ya está c
 - Sin build/lint/tests: es documentación, no toca código (regla de pruebas focalizadas de `GESTION_DE_CAMBIOS.md` — documentación sola requiere revisar el diff, no build ni unitarias).
 - Entrada propia en `docs/ops/OPEN_LOOPS.md` (OL-108) completada; trozo propio añadido al frente de «Last updated», sin tocar lo que ya había.
 
-## Pendiente
+## Pendiente (de la primera entrega, resuelto abajo)
 
 - Visto bueno del founder sobre el tono de la muestra de 10 fichas y sobre el proceso propuesto (qué propone el sistema, qué confirma la persona) antes de construir nada.
 - Si se aprueba, decidir dónde vive la propuesta (¿tabla nueva de "propuestas por ficha", o reutilizar el flujo de reportes/`es_mio`?) — no se diseñó a propósito: es la siguiente pieza, no esta.
+
+## Ronda 2 — PR #132 unido, retoques de privacidad y grupos (2026-09-21)
+
+**Rama:** `fichas-por-completar-2` (base `origin/main` tras unir #132, `4ed0133`). Misma pieza, mismo OL-108.
+
+1. El gestor leyó la primera entrega entera y pidió dos retoques antes de aceptar (repo público): quitar de las listas con nombre la frase "tiene cuenta que lo/la gestiona" (dato de cuentas, no de la ficha) y quitar el nombre civil de Neto Medellín de la propuesta de texto. Hechos con `git commit --amend` (el commit no estaba subido, así que el dato no quedó en ningún historial público). El gestor comprobó `023f9dc`, subió la rama y abrió el [PR #132](https://github.com/robscan/somosnosotros/pull/132).
+2. **El founder aprobó la regla y el tono** («me gusta propuesta de B… cuida no modificar fichas reclamadas») y el PR #132 se unió a `main` (`61679d7`).
+3. **Regla nueva y dura, del founder:** una ficha reclamada o con cuenta que la gestiona (fila en `artistas_cuentas`/`lugares_cuentas`) no se toca nunca desde fuera — ni texto, ni disciplina, ni foto. Solo se le avisa a quien la gestiona. Escrita en la sección 5 del doc 32, sin nombrar qué fichas están en ese caso (siguen siendo dato de cuentas).
+4. Con esa regla, se separaron las 14 + 8 fichas activas e incompletas en tres grupos (sección 7 del doc 32), cruzando `tiene_gestor` (ya medido en la primera ronda, no reutilizado para agrupar entonces) con la fuente pública encontrada:
+   - **(a) Reclamada/gestionada** (3 artistas, 0 lugares): solo aviso, nunca se toca.
+   - **(b) Sin gestionar, con fuente pública** (2 artistas, 5 lugares): de esos, solo 2 fichas (Canto Quetzal y Laboratorio Centro Histórico) tienen un hueco de *texto* real con fuente que lo sostiene — el resto del grupo (Neto Medellín y cuatro lugares) solo le falta la foto, con fuente de dónde pedirla.
+   - **(c) Sin gestionar, sin rastro público** (9 artistas, 3 lugares): aviso a quien organizó el evento, o al administrador si no hay ese dato.
+   - **Sin nueva lectura de producción**: el reparto sale de cruzar datos ya medidos. Se completó la investigación en internet de los 8 artistas y el lugar que faltaban por buscar en la primera ronda (Acorde On, Canto Quetzal, Dais Qrohc, Fly Marina, Gordo Ang, Katana Lírica, Gerardo Canela, Laboratorio Centro Histórico); una mención (Katana Lírica) fue demasiado vaga para sostener un texto y se descartó, igual que La Lupita Fullband en la primera ronda.
+5. **Texto exacto, campo por campo, con fuente**, para las dos fichas del grupo (b) con hueco de texto (sección 7.1 del doc): descripción, disciplina/tipo, detalle y redes, dentro de los topes (600/40 caracteres, contados). Listo para copiar y pegar (sección 7.3).
+6. **Revisión del código de avisos** (solo lectura, sin tocar nada) antes de proponer un canal: hoy no existe ningún aviso dentro de la app ni para quien gestiona una ficha ni para el autor de un evento sobre su propia ficha o evento — el motor de avisos ya construido (`avisos_fiables.sql`) los excluye a propósito (`avisos_destinatarios`: `where p.id is distinct from j.actor and p.id is distinct from e.creado_por`); son las piezas **B3**/**B4** de la cola, pendientes. Se propuso el texto del aviso y, aparte, la pieza mínima para cuando le toque su turno — sin construirla aquí.
+
+## Evidencia (ronda 2)
+
+- Sin lectura de producción nueva: cero conexiones a la base en esta ronda.
+- Código de avisos revisado por lectura (`supabase/migrations/20260918140000_avisos_fiables.sql`, `src/app/api/avisos-pendientes/route.ts`, `src/lib/avisosWorker.ts`) para no proponer un canal que no existe.
+- Investigación en internet: 8 búsquedas más (Acorde On, Canto Quetzal, Dais Qrohc, Fly Marina, Gordo Ang, Katana Lírica, Gerardo Canela, Laboratorio Centro Histórico).
+- `docs/rediseno/32-fichas-por-completar.md`: sección 5 con la regla de fichas reclamadas, sección 7 con los tres grupos, el texto campo por campo y cómo se aplicaría a mano.
+- Sin build/lint/tests: documentación, no toca código.
+
+## Pendiente
+
+- Visto bueno del founder sobre el texto exacto del grupo (b) antes de que alguien lo copie a Administración.
+- Las piezas B3/B4 (avisos al gestor de una ficha y al autor de un evento) siguen sin construir; esta pieza solo dejó el texto propuesto para cuando les toque.
