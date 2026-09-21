@@ -82,6 +82,30 @@ function numeroONull(v: FormDataEntryValue | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Extrae número de un texto, reconociendo separadores de miles y descartando decimales.
+ * "$1,500" → "1500", "1.500" → "1500", "150.00" → "150", "$1,500.50" → "1500".
+ * Regla: 1-3 dígitos + (coma/punto/espacio + 3 dígitos)+ = miles; 1-2 dígitos al final tras sep = decimales.
+ * Tope 6 dígitos. Vacío si no hay número. */
+export function extraerNumero(texto: string | null | undefined): string {
+  if (!texto) return "";
+  // Buscar número con posibles separadores de miles y decimales
+  // Priorizar patrón con separadores, luego números simples
+  const match = texto.match(/\d+(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?|\d+/);
+  if (!match) return "";
+
+  let numero = match[0];
+
+  // Quitar separadores de miles: coma/punto/espacio seguido de exactamente 3 dígitos
+  numero = numero.replace(/[.,\s](\d{3})/g, '$1');
+
+  // Quitar decimales: punto o coma seguido de 1-2 dígitos al final
+  numero = numero.replace(/[.,]\d{1,2}$/, '');
+
+  // Limitar a 6 dígitos máximo
+  if (numero.length > 6) return "";
+  return numero;
+}
+
 /** Lo que importa a quien ya dijo "Voy": cuándo y dónde. Al editar, si cambia alguno se avisa. */
 export type CambioEvento = "cuando" | "donde" | "ambos" | null;
 type Comparable = { inicio: string; fin: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion?: string | null };
@@ -195,6 +219,11 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
   const direccionPrivada = limpiar(entrada.direccion_privada);
   const esReservado = modo === "reservado";
 
+  // El precio viene como número del formulario (ej. "150"), pero también puede venir con "$" del cartel o de datos viejos.
+  // Se extrae el número, se valida, y se guarda con "$" para que la ficha muestre "$150".
+  const precioRaw = gratis ? "" : extraerNumero(limpiar(entrada.precio));
+  const precioValido = precioRaw && /^\d{1,6}$/.test(precioRaw);
+
   const datos: DatosEvento = {
     lugar_id: modo === "lugar" ? lugarId || null : null,
     titulo: limpiar(entrada.titulo),
@@ -202,7 +231,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
     fin,
     descripcion: limpiar(entrada.descripcion),
     imagen: limpiar(entrada.imagen) || null,
-    precio: gratis ? null : limpiar(entrada.precio) || null,
+    precio: gratis ? null : (precioValido ? "$" + precioRaw : precioRaw || null),
     enlace: enlaceTexto ? (/^https?:\/\//i.test(enlaceTexto) ? enlaceTexto : `https://${enlaceTexto}`) : null,
     sitio_texto: modo === "lugar" ? null : sitioTexto || null,
     sitio_direccion: modo === "otro" ? sitioDireccion || null : null,
@@ -248,8 +277,8 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
   if (inicio && fin && new Date(fin) <= new Date(inicio)) errores.fin = "El fin tiene que ser después del inicio.";
   if (datos.descripcion.length > LIMITES_EVENTO.descripcion) errores.descripcion = `Máximo ${LIMITES_EVENTO.descripcion} caracteres.`;
   if (datos.imagen && !/^https:\/\/[^\s]+$/.test(datos.imagen)) errores.imagen = "La imagen no se subió bien. Intenta de nuevo.";
-  if (!gratis && !datos.precio) errores.precio = "Pon el precio, o marca que es gratis.";
-  if (datos.precio && datos.precio.length > LIMITES_EVENTO.precio) errores.precio = `Máximo ${LIMITES_EVENTO.precio} caracteres.`;
+  if (!gratis && !precioRaw) errores.precio = "Pon el precio, o marca que es gratis.";
+  if (precioRaw && !precioValido) errores.precio = "El precio debe ser solo números (máximo 6 dígitos, ej. 150).";
   if (datos.enlace && datos.enlace.length > 500) errores.enlace = "Demasiado largo.";
   return { datos, errores };
 }
@@ -294,7 +323,7 @@ export function cartelAFormulario(l: LecturaCartel): { titulo: string; inicio: s
     inicio: fechaOk && horaOk ? `${fechaOk}T${horaOk}` : fechaOk ? `${fechaOk}T19:00` : "",
     fin: fechaOk && horaFinOk ? `${fechaOk}T${horaFinOk}` : "",
     gratis: l.gratis !== false && !l.precio,
-    precio: (l.precio ?? "").trim().slice(0, LIMITES_EVENTO.precio),
+    precio: extraerNumero(l.precio),
     descripcion: (l.descripcion ?? "").trim().slice(0, LIMITES_EVENTO.descripcion),
     enlace: enlaceDesdeCartel(l.enlace),
     lugar: (l.lugar ?? "").trim(),
