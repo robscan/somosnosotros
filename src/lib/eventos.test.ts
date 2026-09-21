@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, jsonLdEvento, nombreSitio, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, jsonLdEvento, nombreSitio, puntoComoLlegar, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -127,6 +127,11 @@ describe("Cómo llegar", () => {
   it("prefiere el punto del lugar y no fabrica una ruta sin coordenadas", () => {
     expect(enlaceComoLlegar({ ...publico, lugar: { lat: 22.18, lng: -100.95 } })).toBe("https://www.google.com/maps/dir/?api=1&destination=22.18,-100.95");
     expect(enlaceComoLlegar({ ...publico, sitioLat: null, sitioLng: null })).toBeNull();
+  });
+  it("el mapa de la ficha usa el mismo punto: un sitio reservado sin revelar no entrega coordenadas", () => {
+    expect(puntoComoLlegar({ ...publico, sitioReservado: true, privado: null })).toBeNull();
+    expect(puntoComoLlegar({ ...publico, sitioReservado: true, lugar: { lat: 22.18, lng: -100.95 }, privado: null })).toBeNull();
+    expect(puntoComoLlegar({ ...publico, sitioReservado: true, privado: { lat: 22.17, lng: -100.96 } })).toEqual({ lat: 22.17, lng: -100.96 });
   });
 });
 
