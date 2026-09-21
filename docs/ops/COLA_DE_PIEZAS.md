@@ -30,6 +30,7 @@ Reglas de la cola: primero los bugs (la fase 1 es hacer confiable lo que ya exis
 | B4 · Avisos y correos a artistas y a nuevos usuarios | L42 (bienvenida), L43 (confirmación al artista que recibe su ficha) y L44 (te siguen, te etiquetaron, alguien va a tu evento) | Sonnet 5, medio | Después de B3. Textos para firma del founder antes de encender nada. |
 | B5 · Transiciones y cargador | L46 | Sonnet 5, medio | Prototipo antes. |
 | B6 · Texto largo a pantalla completa | L19 | Sonnet 5, medio | Prueba en prototipo; si convence, entra al canon de formularios. |
+| B7 · La ayuda del error va bajo el campo, en todos los formularios | Decisión del founder al firmar OL-100 (2026-09-21): «Si en el campo, es ayuda para recuperarse del error en el contexto, aplica como canon para todos los formularios.» Aplicarlo en `FormularioLugar`, `FormularioArtista` y `FormularioPerfil` (en el alta de evento lo hace OL-100) | Sonnet 5, medio | Cambia el punto del canon «botón que dice qué falta». Después de OL-100 y OL-101, que tocan esos formularios. |
 
 ## Tanda C · Producto: primero propuesta o prototipo para firmar, sin código
 
