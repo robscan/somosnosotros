@@ -36,4 +36,46 @@ Solo documentos: no aplica build ni pruebas. Revisar el diff (regla del founder,
 
 ## Firma
 
+Aceptada por el gestor («OL-107 aceptada»); PR [#131](https://github.com/robscan/somosnosotros/pull/131) abierto y unido a `main` con el visto bueno del founder.
+
+## Segunda pasada (2026-09-21, rama `agendas-por-correo-2` desde `origin/main` con el PR #131 ya unido)
+
+Decisiones del founder tras revisar la primera entrega (relevadas por el gestor):
+
+1. Los buzones compartidos se mandan como un correo por organismo (SECULT, UASLP, municipios), no uno por sede.
+2. Segunda pasada de investigación, sede por sede, para las que en la primera quedaron con un buzón compartido asumido.
+3. Texto aprobado con dos cambios: enlace a la ficha de la institución en la plataforma, y firma con persona — «Oscar Muñiz Blanco · Coordinación de agenda · Somos Nosotros · somosnosotros.org · {teléfono}» (el teléfono real no entra al repo).
+4. Dos variantes de mensaje: institución (correo propio) y organismo (varias sedes, pide reenvío o contacto).
+5. Ritmo: todo el mismo día, con 3 correos de comprobación técnica primero; revisar cómo mandó el CAPO y decir qué haría falta para reutilizarlo, sin construirlo.
+
+**Segunda pasada de investigación:** de las 30 sedes que en la primera entrega quedaron con un correo de hub asumido (Secretaría de Cultura del Estado, UASLP, Ayuntamiento, Soledad), **25 tienen correo propio con fuente propia** (su ficha exacta en el Sistema de Información Cultural, su sitio o su Facebook) — el "buzón compartido" casi no existía, solo faltaba mirar la ficha de cada sede en vez de asumir el correo general de quien la administra. Quedaron **5 con un correo de una persona con nombre, no institucional** (Museo de Sitio UASLP, Casa de Cultura del Barrio de Tlaxcala, Teatro Carlos Amador — que parece administrado por el DIF Estatal, no por SECULT —, Auditorio Rafael Nieto y Centro Cultural Palacio Municipal): anotadas aparte, sin usar, con el buzón general del organismo que sí las cubre como alternativa (el de Difusión Cultural de la UASLP para las dos de la UASLP, el de contacto de la Secretaría de Cultura del Estado para Tlaxcala) — ambos correos viven solo en la lista fuera del repo.
+
+Resultado final: **42 de 47 con correo propio verificado, 5 a decisión del founder.** Con eso, el correo "por organismo" de la decisión 1 aplica a un grupo chico (2–3 correos, no un lote grande): la estimación de "23–25 correos" que se hizo antes de esta pasada ya no aplica — son unos 44–45 (42 individuales + 2–3 por organismo).
+
+**Enlace a la ficha:** revisado el código (`src/app/lugares/[id]/page.tsx`), la ruta es `https://somosnosotros.org/lugares/<id>` con un UUID, no un slug con nombre. Hace falta el `id` de producción de las 47 filas — pedido al gestor en el doc 31 (consulta de solo lectura, `begin…rollback`, solo `id` y `nombre` de lugares, sin datos de personas).
+
+**Puesto de la firma:** el founder eligió «Coordinación de agenda», relevado por el gestor; ya está en el doc 31 y en los dos borradores de mensaje.
+
+**Reutilizar el envío del CAPO:** revisado `scripts/capo/invitar.ts` — `cargarEnv()`, `mandarCorreo()` (Resend), `enmascarar()` y el patrón `--ensayo`/`--enviar` se pueden reutilizar tal cual. Falta (no construido en esta pieza): un archivo de datos con las 47 filas y sus 2–3 agrupaciones por organismo (en vez de una consulta a Supabase, porque la lista es fija y corta), una función que arme el cuerpo según la variante, y una tabla nueva tipo `invitaciones_enviadas` para no repetir un envío — con su migración, sin aplicar.
+
+**Entregado:** `docs/rediseno/31-agendas-por-correo.md` actualizado con las 5 decisiones, la tabla de organismos, el enlace a la ficha (pendiente de los `id`), las dos variantes de mensaje con firma y enlace, el plan de envío de un solo día con prueba técnica, y la revisión de reutilizar el script del CAPO. Lista de correos actualizada en el scratchpad del operador (misma ruta que antes, contenido reemplazado con la segunda pasada).
+
+Reglas seguidas: ningún correo enviado, ningún dato de producción leído directamente (el pedido de `id` de lugares queda para que el gestor lo resuelva), `git add` por nombre, sin subagentes.
+
+## Firma (segunda pasada)
+
+Recibida por el gestor: «buen hallazgo lo de las fichas SIC por sede», con tres pedidos.
+
+## Tercera revisión (2026-09-21, mismo día)
+
+1. **Ids de producción:** el gestor leyó producción (solo lectura) y entregó `id`, `nombre` y `visible` de las 47 instituciones del catálogo. Salieron **46**, todas visibles; **la Alianza Francesa de San Luis Potosí no tiene ficha en producción hoy** (ni con nombre parecido) — se saca del envío y se anota aparte para que el founder decida si se da de alta. Los `id` (UUID) no entran al repo: se añadieron como columna nueva en la lista del scratchpad, con el enlace `https://somosnosotros.org/lugares/{id}` ya armado por institución.
+2. **Dos correos de instituciones que se habían colado en el commit 827f4ab** (uno de la UASLP, uno de la Secretaría de Cultura, en la tabla de organismos del doc 31): aunque son públicos, la regla de la pieza es que ninguno entra al repo. Corregido con `git commit --amend` (el commit no estaba subido) y la tabla ahora dice "el buzón general de Difusión Cultural" / "el buzón de contacto de la Secretaría", con el correo exacto solo en la lista fuera del repo.
+3. **Lista fuera del repo:** cada uno de los 41 correos individuales queda con su URL exacta y su fecha de consulta (ya lo traía la segunda pasada); se agregó una tabla final de **orden de envío** — primero los 3 correos de comprobación técnica (elegidos entre instituciones donde un fallo no cuesta nada, no las que ya tenían agenda pendiente de capturar), luego el resto en el orden de la lista.
+
+**Conteos corregidos** (46 fichas en producción, no 47): 41 correos individuales verificados, 5 a decisión del founder (sin cambio, ninguno era la Alianza Francesa), unos 43–44 correos en total con los de organismo. Doc 31 y esta bitácora actualizados; commit local con `--amend` sobre el mismo commit de la segunda pasada (sin duplicar historia, porque no estaba subido).
+
+Reglas seguidas: ningún correo institucional en el repo (corregido), ningún dato de producción leído por este operador (lo leyó el gestor), sin subagentes.
+
+## Firma (tercera revisión)
+
 Pendiente del gestor y del founder.
