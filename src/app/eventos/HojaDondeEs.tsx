@@ -139,7 +139,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           const opciones = await buscarConContexto(
             consulta.texto,
             contexto,
-            (texto, bbox) => buscarDirecciones(texto, mapboxToken, cerca, consultarMapa, bbox).then((r) => filtrarYOrdenarDirecciones(r.filter(puntoValido), consulta.texto, cerca)),
+            (texto, bbox) => buscarDirecciones(texto, mapboxToken, cerca, consultarMapa, bbox).then((r) => filtrarYOrdenarDirecciones(r.filter(puntoValido), consulta.texto, cerca, contexto.ciudad.nombre)),
             (r) => necesitaReintento(r, cerca),
           );
           if (vigente && revision === version.current) {
@@ -216,20 +216,38 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const campoListaRef = useRef<HTMLElement>(null);
   const panelDireccion = !!consulta && consulta.tipo === "direccion";
   const panelLista = !!consulta && consulta.tipo === "lugar";
-  const contenidoDirecciones = buscando ? (
-    <li className={styles.avisoFlotante} role="status">Buscando…</li>
-  ) : error ? (
-    <li className={styles.avisoFlotante} role="alert">{error}</li>
-  ) : (
-    direcciones.map((s) => (
-      <li key={`${s.lat},${s.lng}`}>
-        <button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}>
-          <IconoPin width={20} height={20} />
-          <b>{s.nombre || s.direccion}</b>
-          <small>{[s.nombre ? s.direccion : null, s.ciudad].filter(Boolean).join(" · ")}</small>
-        </button>
-      </li>
-    ))
+  // Ninguna búsqueda de Mapbox es infalible (revisión del gestor: "Galeana 423" existe en dos municipios distintos
+  // y ninguno es el del cartel; afinar el texto quita la basura pero no garantiza encontrar la calle exacta). La
+  // salida siempre visible, del mismo peso que una sugerencia: cierra la lista, conserva lo escrito y deja el
+  // mapa listo para poner el pin a mano.
+  const salidaManual = (
+    <li className={styles.salidaManual}>
+      <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={invalidar}>
+        <IconoPin width={20} height={20} />
+        <b>No es ninguna</b>
+        <small>Pon el pin en el mapa</small>
+      </button>
+    </li>
+  );
+  const contenidoDirecciones = (
+    <>
+      {buscando ? (
+        <li className={styles.avisoFlotante} role="status">Buscando…</li>
+      ) : error ? (
+        <li className={styles.avisoFlotante} role="alert">{error}</li>
+      ) : (
+        direcciones.map((s) => (
+          <li key={`${s.lat},${s.lng}`}>
+            <button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}>
+              <IconoPin width={20} height={20} />
+              <b>{s.nombre || s.direccion}</b>
+              <small>{[s.nombre ? s.direccion : null, s.ciudad].filter(Boolean).join(" · ")}</small>
+            </button>
+          </li>
+        ))
+      )}
+      {!buscando && salidaManual}
+    </>
   );
 
   if (vista === "otro") {
@@ -270,7 +288,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             </label>
           )}
           <div className={styles.mapa}>
-            <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} />
+            {/* Sin pin todavía, el mapa arranca centrado en la ciudad de contexto (no siempre San Luis Potosí por
+                defecto): quien no encontró su dirección en la lista puede poner el pin a mano, ya en su zona
+                (revisión del gestor, salida "No es ninguna: pon el pin en el mapa"). */}
+            <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} centrarEn={punto ? null : contexto.centro} ciudad={contexto.ciudad} />
             <button type="button" className={`${mapa.ubicame} ${styles.ubicame}`} onClick={() => { invalidar(); onEstoyAqui(ponerPunto); }} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
               <IconoUbicacion width={22} height={22} />
             </button>

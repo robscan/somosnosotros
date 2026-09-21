@@ -156,20 +156,34 @@ export function textoDeBusqueda(texto: string, contexto: ContextoDireccion): str
   return sinCiudad || limpio;
 }
 
-/** Palabras que no dicen nada de la calle: artículos, la ciudad de contexto y el número no cuentan. */
+/** Palabras que no dicen nada de la calle ni de la colonia: artículos y la ciudad de contexto no cuentan. */
 const PALABRAS_VACIAS = new Set(["de", "del", "la", "el", "los", "las", "y", "san", "santa", "no"]);
 
-/**
- * Las palabras de la propia calle escrita (sin la ciudad de contexto, sin el número, sin artículos): "Galeana" de
- * "Galeana 423, Centro, S.L.P.", más "centro" (la colonia también cuenta — pedido del gestor, sirve para ordenar).
- */
-export function tokensDeCalle(texto: string, ciudades: readonly Ciudad[] = CIUDADES): string[] {
+function palabras(texto: string, ciudades: readonly Ciudad[]): string[] {
   const ciudad = ciudadDelTexto(texto, ciudades);
   const palabrasCiudad = ciudad ? normalizar(ciudad.nombre).split(/\s+/) : [];
-  return normalizar(limpiarDireccion(texto))
-    .replace(/,/g, " ")
+  return normalizar(texto)
     .split(/\s+/)
     .filter((t) => t.length > 2 && !/^\d+$/.test(t) && !PALABRAS_VACIAS.has(t) && !palabrasCiudad.includes(t));
+}
+
+/**
+ * Las palabras de la propia calle escrita, sin la colonia: en "Galeana 423, Centro, S.L.P." es solo "galeana" —
+ * lo que va antes de la primera coma (revisión del gestor: "Centro" por sí sola no debe bastar para que un
+ * resultado sobreviva el filtro; una colonia genérica existe en casi cualquier municipio).
+ */
+export function tokensDeCalle(texto: string, ciudades: readonly Ciudad[] = CIUDADES): string[] {
+  const [calle] = limpiarDireccion(texto).split(",");
+  return palabras(calle ?? "", ciudades);
+}
+
+/**
+ * Las palabras de la colonia (lo que va después de la primera coma, sin la ciudad): "centro" en "Galeana 423,
+ * Centro, S.L.P.". Sirven para ordenar (pedido del gestor), nunca para descartar por sí solas.
+ */
+export function tokensDeColonia(texto: string, ciudades: readonly Ciudad[] = CIUDADES): string[] {
+  const [, ...resto] = limpiarDireccion(texto).split(",");
+  return palabras(resto.join(" "), ciudades);
 }
 
 /** El número de la calle escrita, si trae uno ("Galeana 423" → "423"). */
@@ -178,39 +192,61 @@ export function numeroDeCalle(texto: string): string | null {
   return m ? m[0] : null;
 }
 
+/** Cuántas sugerencias se muestran cuando ya se filtró por relevancia (antes se recortaba dentro de Mapbox). */
+const LIMITE_SUGERENCIAS = 5;
+
 /**
  * Descarta lo que no tiene ninguna palabra de la calle escrita (caso con nombre: los "Slp 32" para "Galeana 423"
- * se descartan enteros). Sin ninguna palabra de calle reconocible en el texto (solo un número, o una colonia
- * sola), no descarta nada — todo se queda. Sirve para direcciones y para lugares (Search Box), que no siempre
- * traen coordenadas en este paso.
+ * se descartan enteros) y recorta a `limite` — DESPUÉS de filtrar, no antes (revisión del gestor: con 10
+ * resultados donde 5 son basura cercana, recortar antes de filtrar podía tirar la buena dirección sin que este
+ * filtro llegara a verla). Sin ninguna palabra de calle reconocible en el texto (solo un número, o una colonia
+ * sola), no descarta nada — solo recorta. Sirve para lugares (Search Box), que no siempre traen coordenadas.
  */
-export function descartarSinCalle<T extends { nombre: string; direccion: string }>(resultados: readonly T[], texto: string, ciudades?: readonly Ciudad[]): T[] {
+export function descartarSinCalle<T extends { nombre: string; direccion: string }>(resultados: readonly T[], texto: string, ciudades?: readonly Ciudad[], limite = LIMITE_SUGERENCIAS): T[] {
   const tokens = tokensDeCalle(texto, ciudades);
-  if (!tokens.length) return [...resultados];
-  return resultados.filter((r) => tokens.some((t) => normalizar(`${r.nombre} ${r.direccion}`).includes(t)));
+  const filtrados = tokens.length ? resultados.filter((r) => tokens.some((t) => normalizar(`${r.nombre} ${r.direccion}`).includes(t))) : [...resultados];
+  return filtrados.slice(0, limite);
 }
 
 /**
- * Para direcciones (con coordenadas): además de `descartarSinCalle`, ordena lo que queda — primero lo que trae
- * también el número escrito, y dentro de eso, lo más cerca del centro de contexto. Sin ninguna palabra de calle
- * reconocible, ordena solo por cercanía, como antes.
+ * Para direcciones (con coordenadas): descarta lo que no trae ninguna palabra de la CALLE (nunca por la colonia
+ * sola: "Centro" existe en casi cualquier municipio) y ordena lo que queda, en este orden — primero lo que cae en
+ * el mismo municipio que la ciudad de contexto (revisión del gestor: "Galeana 423" existe también en Soledad de
+ * Graciano Sánchez, un municipio distinto que Mapbox sí distingue en su `context.place`, aunque la app los trate
+ * como la misma ciudad para todo lo demás); dentro de eso, lo que además coincide con la colonia escrita; luego
+ * lo que trae también el número; y por último lo más cerca del centro de contexto. Sin ninguna palabra de calle
+ * reconocible, ordena solo por cercanía, como antes — sin descartar ni depender del municipio ni la colonia.
  */
-export function filtrarYOrdenarDirecciones<T extends Punto & { nombre: string; direccion: string }>(
+export function filtrarYOrdenarDirecciones<T extends Punto & { nombre: string; direccion: string; ciudad?: string | null }>(
   resultados: readonly T[],
   texto: string,
   centro: Punto,
+  ciudadContexto?: string | null,
   ciudades?: readonly Ciudad[],
+  limite = LIMITE_SUGERENCIAS,
 ): T[] {
   const tokens = tokensDeCalle(texto, ciudades);
-  if (!tokens.length) return [...resultados].sort((a, b) => distanciaKm(centro, a) - distanciaKm(centro, b));
+  if (!tokens.length) return [...resultados].sort((a, b) => distanciaKm(centro, a) - distanciaKm(centro, b)).slice(0, limite);
   const numero = numeroDeCalle(texto);
-  const puntuados = descartarSinCalle(resultados, texto, ciudades).map((r) => ({
-    r,
-    conNumero: !!numero && normalizar(`${r.nombre} ${r.direccion}`).includes(numero),
-    distancia: distanciaKm(centro, r),
-  }));
-  puntuados.sort((a, b) => Number(b.conNumero) - Number(a.conNumero) || a.distancia - b.distancia);
-  return puntuados.map((p) => p.r);
+  const tokensColonia = tokensDeColonia(texto, ciudades);
+  const ciudadNormalizada = ciudadContexto ? normalizar(ciudadContexto) : null;
+  const puntuados = resultados
+    .map((r) => {
+      const bolsa = normalizar(`${r.nombre} ${r.direccion}`);
+      if (!tokens.some((t) => bolsa.includes(t))) return null;
+      return {
+        r,
+        mismoMunicipio: !!ciudadNormalizada && !!r.ciudad && normalizar(r.ciudad) === ciudadNormalizada,
+        conColonia: tokensColonia.length > 0 && tokensColonia.some((t) => bolsa.includes(t)),
+        conNumero: !!numero && bolsa.includes(numero),
+        distancia: distanciaKm(centro, r),
+      };
+    })
+    .filter((p): p is { r: T; mismoMunicipio: boolean; conColonia: boolean; conNumero: boolean; distancia: number } => p !== null);
+  puntuados.sort(
+    (a, b) => Number(b.mismoMunicipio) - Number(a.mismoMunicipio) || Number(b.conColonia) - Number(a.conColonia) || Number(b.conNumero) - Number(a.conNumero) || a.distancia - b.distancia,
+  );
+  return puntuados.slice(0, limite).map((p) => p.r);
 }
 
 /**
