@@ -1,0 +1,74 @@
+/* Obras colectivas (Pincel, OL-088): maquetación plana, cada bloque hijo directo de main. */
+
+.form {
+  display: grid;
+  gap: var(--espacio-3);
+  margin-bottom: var(--espacio-4);
+  padding: var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.campo {
+  display: grid;
+  gap: 6px;
+}
+.campo > span {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+}
+.campo > select {
+  min-height: var(--toque-min);
+  padding: 0 12px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+}
+.hora {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+}
+.error {
+  margin: 0;
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
+
+.datos {
+  display: grid;
+  gap: var(--espacio-2);
+  margin: var(--espacio-3) 0;
+}
+.dato {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  padding: var(--espacio-2) 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.dato > span {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.dato > b {
+  font-weight: 600;
+}
+.acciones {
+  display: flex;
+  gap: var(--espacio-2);
+  margin-top: var(--espacio-3);
+}
+.despues {
+  margin-top: var(--espacio-4);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}

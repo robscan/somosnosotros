@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useId, useRef, type UIEvent } from "react";
+import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UIEvent } from "react";
 import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
+import { huboArrastre } from "@/lib/deslizar";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import { IconoPersonas } from "./ui/Iconos";
 import styles from "./Destacados.module.css";
@@ -18,6 +19,22 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
+  /** Dónde bajó el dedo la última vez, para no confundir recorrer el carril con tocar una tarjeta (founder,
+   * 2026-09-21, L45). El carril es scroll nativo: no hay gesto propio que decidir, solo cancelar el toque si hubo
+   * arrastre entre bajar y soltar. */
+  const bajada = useRef<{ x: number; y: number } | null>(null);
+  function alBajarCarril(e: PointerEvent<HTMLUListElement>) {
+    bajada.current = { x: e.clientX, y: e.clientY };
+  }
+  function alTocarCarril(e: MouseEvent<HTMLUListElement>) {
+    const inicio = bajada.current;
+    // Un click sin puntero real (Enter con teclado, VoiceOver, `click()` por código) llega con detail 0 y sin
+    // coordenadas: no hubo arrastre que cancelar, y comparar contra la última bajada (de otro toque) lo cerraría
+    // sin querer (gestión de cambios, revisión de 6153f9a). La bajada se limpia siempre, para no arrastrarla al
+    // siguiente click que no traiga la suya.
+    if (inicio && e.detail !== 0 && huboArrastre(e.clientX - inicio.x, e.clientY - inicio.y)) e.preventDefault();
+    bajada.current = null;
+  }
   // Al aparecer, el carril vuelve a donde estaba; al irse, guarda lo que esperaba, y quien desliza y toca una tarjeta antes
   // de 100 ms no pierde la posición. Al irse el carril sigue en la página, pero la URL ya puede ser la de la ficha: por eso
   // se guarda con la URL del desplazamiento.
@@ -49,7 +66,7 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <h2 id={titulo}>{encabezado}</h2>
-      <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${grande ? styles.grande : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar}>
+      <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${grande ? styles.grande : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
         {ordenadas.map((t) => (
           <li key={t.id}>
             <Link href={t.href} className={styles.tarjeta}>
