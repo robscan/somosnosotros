@@ -71,8 +71,30 @@ Preguntado al founder cuál es el tamaño mínimo accionable de la app: **44 px*
 
 «firmo, adelante» — confirma el diseño final tal como quedó tras las cuatro rondas de ajuste: "Sobre la foto", botón redondo ~48 px solo icono, `--primario` sólido al decidir (sin verde nuevo), sin borde por defecto, y el mismo diseño también en los renglones de las listas (sustituye el aspecto de `ui/BotonRenglon` desde OL-104). Línea en «Decidido» de `OPEN_LOOPS.md` con sus palabras.
 
-## Qué falta
+## El gestor confirma sin choque y da seis condiciones
 
-Código. Toca `ui/BotonRenglon` (compartido, ya en producción desde OL-104/PR #126): avisado al gestor antes de tocar ese archivo, como pide la regla de piezas que comparten archivos. Comprobación medida a 320/375/390 px en la entrega.
+«sin choque. Ninguna pieza en curso toca `ui/BotonRenglon`, `BotonRenglon.module.css` ni `Renglon.module.css`... Adelante con OL-106» — con seis condiciones: (1) el cambio al botón compartido en su propio commit; (2) `aria-label` fijo sin contradecir `aria-pressed`, zona de toque 44 px mínima; (3) medir que la columna `auto` del renglón no salte de ancho entre estados; (4) contraste sobre fotos claras/oscuras, botón que no abre la ficha ni dispara `huboArrastre` al revés; (5) capturas PNG reales a 390×844 de los cinco carriles y los renglones de las cuatro listas, en los dos estados, título al tope; (6) lint/typecheck/test/build, sin subagentes.
 
-Sin migración. Sin subagentes.
+## Código
+
+**`Destacados.tsx`/`Destacados.module.css`** (commit `cef8b3e`): prop `boton?: (t: Tarjeta) => EstadoBotonRenglon`; el botón es hermano del `<Link>`, colocado por estructura (`.carril > li > button`) — no hace falta tocar `ui/BotonRenglon` para posicionarlo. `alTocarCarril` suma `stopPropagation()` al `preventDefault()` que ya tenía (condición 4: un arrastre que empieza sobre el botón no lo dispara, porque `preventDefault()` solo cancela la navegación del `<Link>`, no detiene la propagación al botón). `AgendaInicio`/`ListaLugares`/`ListaArtistas` pasan `boton={}` reutilizando `asistenciaTodos.boton`/`seguir.boton`, los mismos hooks que ya usan sus renglones — ninguna consulta nueva.
+
+**Hallazgo aparte, corregido en el mismo commit:** el resaltado de hover/active en escritorio se veía "completamente sin sentido" (founder) — vivía en `.frente` (solo la columna del enlace) y se cortaba justo antes de la columna del botón. Movido a `.renglon` (la fila completa) con `:has()`.
+
+**`ui/BotonRenglon`** (commit `7cdac7b`, aparte, condición 1): redondo, ~48 px, solo icono ("+"/check), `--primario` sólido al decidir, sin borde por defecto (con `--sombra` para el contraste sobre fotos, condición 4). `aria-label` ya venía fijo desde la corrección anterior del gestor (condición 2); zona de toque `min-width`/`min-height: --toque-min` (44 px) aunque el círculo mida 48. Se quita el campo `etiqueta`, sin uso.
+
+**Condición 3 (ancho de la columna), verificada:** con el componente real, `getComputedStyle(li).gridTemplateColumns` midió `330px 48px` en los dos estados (decidido y no) — la columna del botón no cambia de ancho porque ahora es un círculo de tamaño fijo, no texto variable.
+
+**Condición 5 (capturas reales):** simulador FLOWYA iPhone SE (926414EF, iOS 26.3, Safari), con un banco Vite aparte (componentes reales `Destacados`, `RenglonEvento`, `RenglonLugar`, `RenglonArtista`, `BotonRenglon`, datos inventados, sin Supabase ni `.env`) y capturas con `simctl io … screenshot` — PNG reales, no simuladas. El iPhone 15 Pro (390×844 exacto) falló varias veces con errores intermitentes de `simctl` (device IO) tras arrancar; se usó el SE (375×667 puntos, no 390×844 — misma salvedad que la bitácora 129) en su lugar. Seis capturas en el scratchpad de la sesión:
+- `01-agenda-destacados-arriba.png`, `02-agenda-renglones-y-detalle.png`: Agenda, carril grande y renglones (Voy sin decidir y decidido), título al tope de 120+ caracteres.
+- `03-lugares-destacados-y-renglones.png`: Lugares, Destacados + "Con eventos esta semana" + renglones, Seguir en los dos estados.
+- `05-artistas-redondas-y-renglones.png`: Artistas, tarjeta redonda con el botón flotando sobre el perímetro sin recortarse, y renglones.
+- `06-perfil-arriba.png`, `07-perfil-renglones.png`: Mi perfil, pestañas Voy a/Sigo con el botón que quita al tocar.
+
+**Condición 6:** `npm run lint && npm run typecheck && npm test`: lint sin errores (el warning de siempre, ajeno); typecheck en verde; 763 pruebas en verde, 7 en rojo (`scripts/test-db.test.ts`, preexistentes, falta `pg` en este árbol); `npm run build` en verde. Sin subagentes en toda la pieza.
+
+## Entrega
+
+Commit local, rama `boton-en-carriles`, sin push. Nueve commits en total (propuesta, prototipo, ajustes de diseño, firma, código de `Destacados`, arreglo de hover, botón compartido). Entregado al gestor con hash, archivos y evidencia.
+
+Sin migración.
