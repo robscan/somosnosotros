@@ -17,7 +17,10 @@
   background: var(--fondo);
   color: var(--primario);
 }
+/* Verde (--ok), no --primario: el founder pidió un color distinto del de los botones de acción principal, porque el
+   mismo azul petróleo en el estado ya decidido invitaba a tocarlo otra vez en vez de leerse como "esto ya quedó"
+   (corrección del founder, 2026-09-21, sobre OL-106 ya en producción). */
 .decidido {
-  background: var(--primario);
+  background: var(--ok);
   color: var(--primario-texto);
 }
