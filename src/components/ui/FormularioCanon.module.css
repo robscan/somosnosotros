@@ -374,6 +374,7 @@
    2026-09-21, tras el bug de "Es en otro sitio"). */
 .notaCampo {
   padding-top: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }

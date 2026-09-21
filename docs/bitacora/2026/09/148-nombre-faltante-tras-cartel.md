@@ -56,6 +56,15 @@ Sobre la segunda sospecha del encargo (una clase con `grid-area` fuera de su rej
   - `evento-nombre-faltante-despues--390x844.png`: mismo caso, después — borde discontinuo, placeholder «Falta el nombre», nota bajo el campo, consistente con la tarjeta.
   - `evento-nombre-al-tope-despues--390x844.png`: con el nombre lleno (109/120 caracteres), sin marca de faltante — confirma que no queda ninguna regresión visual para el caso normal.
 
+## Devuelta por el gestor y corregida (2026-09-21)
+
+Dos hallazgos sobre las capturas de la primera entrega, ambos en el arnés de medición, no en el código de la app:
+
+1. **Tipografía.** El arnés fijaba `--fuente-bricolage: Arial` a mano en vez de cargar la letra real; las capturas salían con la fuente del sistema. Corregido: la página del arnés ahora carga la misma hoja de Google Fonts y los mismos ejes variables que usan los prototipos (`docs/rediseno/prototipos/*.html`) — `Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800` — y `--fuente-bricolage` apunta a `"Bricolage Grotesque"`. Comprobado con `getComputedStyle(campo).fontFamily` antes de volver a capturar: la familia real ya está primero en la lista.
+2. **Espaciado.** Medido con `getBoundingClientRect()` (no a ojo): con la fuente ya correcta, el hueco visual entre el campo y el texto «Falta el nombre.» ya era de 20 px (`margin-bottom` del campo, 12 px, más el `padding-top` de la nota, 8 px) — el mismo valor que el canon ya usaba en `FormularioLugar`/`FormularioArtista` (bitácora 145: "el gap hacia el campo ya era igual al del canon, 20px"), así que ese lado no necesitaba ajuste. El hueco hacia el siguiente renglón («Cuándo») sí medía 0 px, pegados: a `canon.notaCampo` le faltaba el mismo `margin-bottom: var(--espacio-2)` que le faltó a la nota de "Ya hay uno con este nombre…" en OL-110 (bitácora 145) antes de su tercer ajuste — mismo patrón, mismo arreglo. Añadido en `FormularioCanon.module.css`; medido de nuevo tras el cambio: **20 px hacia el campo, 8 px hacia "Cuándo"** — igual que el `gap` que usa `canon.renglones` entre renglones.
+
+Repetidas las tres capturas con la fuente real y el espaciado corregido (mismos nombres de archivo, `docs/rediseno/capturas-113/`). `npm run lint && npm run typecheck && npm test && npm run build`: mismos números que la primera entrega (789 pruebas, 782 en verde, 7 en rojo preexistentes y ajenas; build verde). Segundo commit local, sin push.
+
 ## Pasos
 
 - [x] Aviso de arranque al gestor y su visto bueno.
