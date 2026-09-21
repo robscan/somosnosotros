@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoPersonas, IconoPin, IconoPincel } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
 import { diaLocal } from "@/lib/fechas";
 import { cuandoPaso, indicadores, notaSemana, renglonesGestionar } from "@/lib/panel";
@@ -72,6 +72,21 @@ export default async function Admin() {
             </li>
           );
         })}
+      </ul>
+
+      {/* Obras colectivas (OL-088) es alta, no moderación: no encaja en SECCIONES/renglonesGestionar(), así que va
+          en su propio bloque, no dentro de "Gestionar". */}
+      <h2 className={styles.grupo}>Obras colectivas</h2>
+      <ul className={styles.tarjeta}>
+        <li>
+          <Link href="/admin/obras-colectivas" className={styles.fila}>
+            <IconoPincel width={20} height={20} />
+            <b>Obras colectivas</b>
+            <span className={styles.total}>
+              <IconoChevronDerecha />
+            </span>
+          </Link>
+        </li>
       </ul>
     </main>
   );

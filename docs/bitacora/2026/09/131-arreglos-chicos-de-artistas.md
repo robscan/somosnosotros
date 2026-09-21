@@ -47,6 +47,28 @@ Cuatro arreglos pequeños en la zona de artistas, uno por commit:
 - `src/components/ui/Ficha.module.css` — ajuste de flex-basis, overflow, text-overflow
 - Tests: enlaces.test.ts
 
+#### Corrección posterior del founder (2026-09-21)
+
+**Nuevas palabras del founder:** "El botón que se asoma no se debe cortar con la máscara del padding interno. Que se extienda como lo hemos hecho con slider antes."
+
+**Problema:** Carril de acciones recortado en el margen interno de la página; debe sangrar hasta el borde como el carril de Destacados.
+
+**Solución:** Aplicar patrón de Destacados.module.css al carril:
+- `margin-inline: calc(-1 * var(--gutter))` — salirse del margen de la página
+- `padding-inline: var(--gutter)` — repone el margen interno
+- `scroll-padding-inline: var(--gutter)` — para scroll correcto
+
+**Archivos:**
+- `src/components/ui/Ficha.module.css` — `.acciones` con nuevas propiedades margin/padding
+- No requiere cambios en flex-basis (100% sigue siendo el ancho del padding-box)
+- No requiere cambios en JavaScript
+
+**Verificación:**
+- Con 3 o menos acciones: visualmente igual (mismo ancho y alineación)
+- Con 4+: primero alineado al margen, último alineado al margen derecho
+- Sin scroll horizontal en página
+- Funciona en fichas de lugar, evento, persona y borrado
+
 ### 3. L30: Quitar la foto (Commit a8ca2b5)
 
 **Problema:** No hay opción de quitar una foto equivocada de un artista.
