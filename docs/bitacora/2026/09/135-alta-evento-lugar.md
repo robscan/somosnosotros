@@ -20,17 +20,18 @@ Ya resuelto en otra pieza (OL-092, PR #113, en producción): el cartel no agrega
 
 ## Qué se propone
 
-Documento completo con los cinco puntos y las cuatro preguntas para el founder: [`docs/rediseno/26-alta-evento-lugar.md`](../../../rediseno/26-alta-evento-lugar.md).
+Documento completo con los seis puntos y las cinco preguntas para el founder: [`docs/rediseno/26-alta-evento-lugar.md`](../../../rediseno/26-alta-evento-lugar.md).
 
 1. Quitar el `autoFocus` del nombre.
 2. "Confirmar" en vez de "Falta" cuando ya hay nombre o dirección leídos, con la ayuda ("Confirma la ubicación en el mapa") bajo el renglón.
 3. Contexto (colonia/municipio) en cada sugerencia, con lo que ya trae Mapbox.
 4. Pregunta abierta: ¿reutilizar la posición ya cacheada del teléfono (`ubicacionCercanaFresca()`, sin pedir permiso de nuevo) para ordenar las sugerencias de esta pantalla, o seguir solo con el centro de la ciudad salvo "Estoy aquí"?
 5. La ayuda baja del botón al campo — cambia la decisión 3 del canon de formularios, solo en esta pantalla (alta de evento); las otras altas quedan para una pieza aparte si el founder lo pide.
+6. **Añadido a pedido del gestor, caso con nombre "Galeana #423, S.L.P."** (founder, 2026-09-21): medido qué se manda hoy a Mapbox (ninguna de las dos búsquedas manda `country` ni `bbox`, ni limpia el texto, ni reintenta) y por qué falla — Mapbox elige primero 10 candidatos por coincidencia de texto y solo después reordenamos por distancia; si la calle correcta no entra en esos 10 (por ser "Galeana" suelto, sin el "Hermenegildo"), ningún reordenamiento la rescata. Propuesta: ciudad de contexto en cascada (texto → lugar leído del cartel → ciudad del chip de la Agenda, hoy sin hilar hasta el alta → posición cacheada → San Luis Potosí), `bbox` de esa ciudad, texto limpiado, segunda búsqueda automática solo si la primera no trae nada cercano (cuidando el gasto de Mapbox), y pin a mano centrado en el contexto si nada funciona.
 
 ## Prototipo
 
-[`docs/rediseno/prototipos/alta-evento-lugar.html`](../../../rediseno/prototipos/alta-evento-lugar.html), cinco estados a 390×844 con los tokens del canon: recién abierto (hoy con autofocus contra la propuesta sin él), lugar encontrado en el directorio, dirección leída sin punto confirmado ("Confirmar"), sugerencias con contexto y cercanía, y el aviso "Falta ubicación." bajo el renglón al intentar publicar sin resolver Dónde. Verificado con el navegador de la sesión antes de mostrarlo (disciplina front-visual). Publicado como Artifact privado para que el founder lo vea en su teléfono: https://claude.ai/artifact/XwFiwzkiZvgrmLZwvfgGWk
+[`docs/rediseno/prototipos/alta-evento-lugar.html`](../../../rediseno/prototipos/alta-evento-lugar.html), seis estados a 390×844 con los tokens del canon: recién abierto (hoy con autofocus contra la propuesta sin él), lugar encontrado en el directorio, dirección leída sin punto confirmado ("Confirmar"), sugerencias con contexto y cercanía, el aviso "Falta ubicación." bajo el renglón al intentar publicar sin resolver Dónde, y el caso con nombre "Galeana #423, S.L.P." con las sugerencias ya acotadas a San Luis Potosí. Verificado con el navegador de la sesión antes de mostrarlo (disciplina front-visual). Publicado como Artifact privado para que el founder lo vea en su teléfono: https://claude.ai/artifact/XwFiwzkiZvgrmLZwvfgGWk (versión 2, con el estado 6 añadido)
 
 ## Estado
 

@@ -253,6 +253,44 @@
     </div>
     <figcaption><b>5 · Intento de publicar sin ubicación</b>El botón "Publicar evento" ya no lleva el texto pequeño adentro. La ayuda vive debajo del renglón que falta ("Falta ubicación."), como pidió el founder: "el estándar es... debajo del campo faltante como help text".</figcaption>
   </figure>
+
+  <!-- ESTADO 6: dirección a medias, caso con nombre "Galeana #423, S.L.P." -->
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="cartel leido">
+          <img class="miniatura" alt="" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+          <b>Leí el cartel</b>
+          <small>Revisa que todo esté bien y publica.</small>
+        </div>
+        <ul class="renglones">
+          <li class="resuelto confirmar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            <span class="clave">Dónde</span>
+            <span class="valor">Galeana #423, S.L.P.</span>
+            <button type="button" class="cambiar">Confirmar</button>
+          </li>
+        </ul>
+        <div class="hoja">
+          <div class="asa"></div>
+          <h3>Dónde es</h3>
+          <label class="campo-buscar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="text" value="Galeana #423, S.L.P." aria-label="Buscar la dirección">
+          </label>
+          <p style="font-size:13px;color:var(--texto-suave);margin:-4px 0 10px">Buscando cerca de San Luis Potosí (por el cartel) · texto limpiado a "Galeana 423, San Luis Potosí"</p>
+          <ul class="lista" role="listbox" aria-label="Direcciones encontradas">
+            <li><button type="button" role="option" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Hermenegildo Galeana 423</b><small><em>a 450 m</em> · San Luis Potosí, colonia Moderna</small></button></li>
+            <li><button type="button" role="option" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Hermenegildo Galeana</b><small><em>a 1.2 km</em> · San Luis Potosí, colonia Tequisquiapan</small></button></li>
+          </ul>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>6 · Dirección a medias, caso "Galeana #423, S.L.P."</b>El cartel trajo el texto tal cual. Antes de buscar, se limpia ("#" y "S.L.P." → "San Luis Potosí") y se acota a la ciudad de contexto (aquí, del propio texto). Las sugerencias salen todas cercanas — nunca Rioverde, Aguascalientes o Guadalajara.</figcaption>
+  </figure>
 </div>
 </body>
 </html>
