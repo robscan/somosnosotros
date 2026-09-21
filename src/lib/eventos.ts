@@ -82,11 +82,28 @@ function numeroONull(v: FormDataEntryValue | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Extrae el primer número entero de un texto (ej. "$150" → "150", "$100 estudiantes" → "100", "150.00" → "150"). Vacío si no hay número. */
+/** Extrae número de un texto, reconociendo separadores de miles y descartando decimales.
+ * "$1,500" → "1500", "1.500" → "1500", "150.00" → "150", "$1,500.50" → "1500".
+ * Regla: 1-3 dígitos + (coma/punto/espacio + 3 dígitos)+ = miles; 1-2 dígitos al final tras sep = decimales.
+ * Tope 6 dígitos. Vacío si no hay número. */
 export function extraerNumero(texto: string | null | undefined): string {
   if (!texto) return "";
-  const match = texto.match(/\d+/);
-  return match ? match[0] : "";
+  // Buscar número con posibles separadores de miles y decimales
+  // Priorizar patrón con separadores, luego números simples
+  const match = texto.match(/\d+(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?|\d+/);
+  if (!match) return "";
+
+  let numero = match[0];
+
+  // Quitar separadores de miles: coma/punto/espacio seguido de exactamente 3 dígitos
+  numero = numero.replace(/[.,\s](\d{3})/g, '$1');
+
+  // Quitar decimales: punto o coma seguido de 1-2 dígitos al final
+  numero = numero.replace(/[.,]\d{1,2}$/, '');
+
+  // Limitar a 6 dígitos máximo
+  if (numero.length > 6) return "";
+  return numero;
 }
 
 /** Lo que importa a quien ya dijo "Voy": cuándo y dónde. Al editar, si cambia alguno se avisa. */
