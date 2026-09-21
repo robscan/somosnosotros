@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aviso al salir de la plataforma · OL-105</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens: los de globals.css de somosnosotros (línea gráfica firmada). */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #1a1a1a; --primario-texto: #ffffff; --primario-suave: #ededeb;
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px; --alto-estado: 48px; --alto-barra: 56px; --area-segura: 34px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
+  button, input, a { font: inherit; color: inherit; }
+  svg { width: 20px; height: 20px; flex: none; }
+
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto 28px; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px var(--gutter) 40px; }
+
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .volver { display: inline-flex; align-items: center; min-height: var(--toque-min); color: var(--texto-suave); text-decoration: none; font-size: 17px; justify-self: start; }
+  .logotipo { font-size: 20px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; text-align: center; }
+
+  h1 { font-size: 24px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; text-wrap: balance; margin: 12px 0 12px; }
+  h2 { font-size: 15px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); margin: 22px 0 8px; }
+
+  .datos { list-style: none; display: grid; gap: 2px; margin-bottom: 14px; }
+  .dato { display: grid; grid-template-columns: 22px 1fr; column-gap: 10px; align-items: center; min-height: 40px; font-size: 17px; }
+  .dato svg { color: var(--texto-suave); }
+  .dato b { font-weight: 500; }
+  .dato small { grid-column: 2; display: block; color: var(--texto-suave); font-size: 15px; }
+
+  /* Acciones secundarias: mismo dibujo que la ficha real */
+  .acciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+  .accion { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 60px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); color: var(--texto); font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .accion:active { background: var(--fondo-suave); }
+  .marca { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .marca.si { background: #fdece9; color: #a13a2c; }
+  .marca.no { background: var(--fondo-miniatura); color: var(--texto-suave); }
+
+  .enlace-externo { display: flex; align-items: center; gap: 8px; min-height: var(--toque-min); margin-bottom: 20px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--radio); color: var(--texto); font-size: 15px; font-weight: 600; text-decoration: none; }
+  .enlace-externo svg { color: var(--texto-suave); }
+
+  .descripcion { color: var(--texto-suave); font-size: 15px; line-height: 1.4; margin-bottom: 18px; }
+
+  /* Ajustes: renglón nuevo, con palanca */
+  .renglon { display: grid; grid-template-columns: 24px 1fr auto; column-gap: 12px; align-items: center; min-height: 56px; padding: 4px 0; border-bottom: 1px solid var(--borde); }
+  .renglon:last-child { border-bottom: none; }
+  .renglon svg { color: var(--texto-suave); }
+  .renglon .txt { font-size: 16px; font-weight: 500; }
+  .renglon .txt small { display: block; color: var(--texto-suave); font-size: 13px; font-weight: 400; margin-top: 1px; }
+  .palanca { position: relative; width: 51px; height: 31px; border: none; border-radius: 16px; background: var(--borde); cursor: pointer; flex: none; }
+  .palanca::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left 150ms; }
+  .palanca[aria-checked="true"] { background: var(--primario); }
+  .palanca[aria-checked="true"]::after { left: 22px; }
+  .nuevo { position: relative; }
+  .nuevo::before { content: "nuevo"; position: absolute; right: 0; top: -14px; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--primario); }
+
+  /* Hoja emergente (mismo dibujo que ui/Hoja.tsx) */
+  .hoja-fondo { position: absolute; inset: 0; z-index: 30; display: none; background: rgba(0,0,0,.32); }
+  .hoja-fondo.abierta { display: block; }
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; max-height: calc(100% - 60px); overflow-y: auto; padding: 12px var(--gutter) calc(20px + var(--area-segura)); border-radius: 16px 16px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .asa { width: 36px; height: 4px; margin: 0 auto 14px; border-radius: 2px; background: var(--borde); }
+  .hoja h3 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 4px; }
+  .hoja .dominio { display: flex; align-items: center; gap: 8px; margin: 10px 0 8px; padding: 10px 12px; border-radius: var(--radio); background: var(--fondo-suave); font-size: 16px; font-weight: 700; }
+  .hoja .dominio svg { color: var(--texto-suave); flex: none; }
+  /* min-width: 0 es lo que evita que el texto empuje el ancho de la hoja: sin él, un flex item no encoge
+     bajo su min-content aunque el texto pueda partirse. overflow-wrap: anywhere parte solo donde hace falta
+     (no letra por letra como break-all), así un dominio de 60+ caracteres cae a la línea siguiente en vez
+     de ensanchar la tarjeta o la hoja. */
+  .hoja .dominio .texto { min-width: 0; overflow-wrap: anywhere; }
+  .hoja .porque { color: var(--texto-suave); font-size: 15px; line-height: 1.4; margin-bottom: 16px; }
+  .hoja .continuar { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: var(--toque); margin-bottom: 8px; border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 17px; font-weight: 700; cursor: pointer; }
+  .hoja .quedarme { display: block; width: 100%; min-height: var(--toque-min); border: none; background: none; color: var(--texto); font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px; }
+  .hoja label.marcar { display: flex; align-items: center; gap: 10px; min-height: var(--toque-min); font-size: 15px; color: var(--texto-suave); }
+  .hoja label.marcar input { width: 20px; height: 20px; accent-color: var(--texto); }
+
+  .banco { width: 390px; max-width: 100%; padding: 16px; border-radius: 16px; background: var(--fondo); font-size: 14px; line-height: 1.5; }
+  .banco h3 { font-size: 15px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 8px; }
+  .banco ul { padding-left: 18px; margin-bottom: 10px; }
+  .banco code { background: var(--fondo-suave); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  .aviso-prueba { display: none; margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #eefaf0; color: #1f6f43; font-size: 13px; font-weight: 600; }
+  .aviso-prueba.mostrar { display: block; }
+</style>
+</head>
+<body>
+<div class="estudio">
+  <p class="rotulo"><strong>1 · Ficha de evento</strong> — «Cómo llegar», el mapa y Compartir (izquierda) no llevan aviso: el propio icono ya dice qué app se abre. «Más información» (el enlace del evento) sí lo lleva: puede ser una boletera.</p>
+  <div class="telefono" id="tel-evento">
+    <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
+    <div class="pantalla">
+      <div class="barra"><a class="volver" href="#" onclick="return false">‹ Agenda</a><span class="logotipo">SMSNSTRS</span><span></span></div>
+      <h1>Huapango en el foro</h1>
+      <ul class="datos">
+        <li class="dato">🕗<b>vie 25 de sep · 21:00</b></li>
+        <li class="dato">📍<b>Foro Luz de Agua</b><small>Av. Venustiano Carranza 1815</small></li>
+        <li class="dato">🎟️<b>$120</b></li>
+      </ul>
+      <div class="acciones">
+        <button type="button" class="accion" disabled>↗ Compartir<span class="marca no">sin aviso</span></button>
+        <a class="accion" href="#" onclick="return false">📅 A mi calendario<span class="marca no">sin aviso</span></a>
+        <a class="accion" href="https://www.google.com/maps/dir/?api=1&destination=22.15,-100.97" target="_blank" rel="noopener noreferrer" onclick="return interceptar(event, this, 'Vas a Mapas para llegar al lugar.')">🧭 Cómo llegar<span class="marca no">sin aviso</span></a>
+      </div>
+      <p class="descripcion">Trío de son huasteco de la colonia Tequis; tocan versos propios y repertorio tradicional de la Huasteca potosina.</p>
+      <a class="enlace-externo" href="https://www.boletia.com/foro-luz-de-agua/huapango" target="_blank" rel="noopener noreferrer" onclick="return interceptar(event, this, 'Ahí puede que te pidan un pago o tus datos.')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5"/></svg>
+        Más información en la página del evento →
+      </a>
+    </div>
+    <div class="hoja-fondo" id="hoja-fondo-evento"><div class="hoja" role="dialog" aria-label="Vas a salir de Somos Nosotros" id="hoja-evento"></div></div>
+  </div>
+</div>
+
+<div class="estudio">
+  <p class="rotulo"><strong>2 · Ficha de artista</strong> — las redes y el sitio web (incluido WhatsApp cuando el artista lo registró como contacto) sí llevan aviso: son el mismo tipo de destino que la boletera.</p>
+  <div class="telefono" id="tel-artista">
+    <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
+    <div class="pantalla">
+      <div class="barra"><a class="volver" href="#" onclick="return false">‹ Artistas</a><span class="logotipo">SMSNSTRS</span><span></span></div>
+      <h1>Los Vecinos</h1>
+      <ul class="datos"><li class="dato">🎵<b>Son huasteco · Grupo</b></li></ul>
+      <div class="acciones">
+        <button type="button" class="accion" disabled>↗ Compartir<span class="marca no">sin aviso</span></button>
+        <a class="accion" href="https://www.instagram.com/losvecinosslp/" target="_blank" rel="noopener noreferrer" onclick="return interceptar(event, this, 'Ahí puede que te pidan un pago o tus datos.')">📷 Instagram<span class="marca si">con aviso</span></a>
+        <a class="accion" href="https://wa.me/524441234567" target="_blank" rel="noopener noreferrer" onclick="return interceptar(event, this, 'Ahí puede que te pidan un pago o tus datos.')">💬 WhatsApp<span class="marca si">con aviso</span></a>
+      </div>
+      <h2>Ajustes · nuevo renglón</h2>
+      <div class="renglon nuevo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5"/></svg>
+        <span class="txt">Avisar al salir del sitio<small>Boletos, redes y sitios de artistas y lugares</small></span>
+        <button type="button" class="palanca" id="palanca-avisar" aria-checked="true" onclick="alternarAjuste()"></button>
+      </div>
+      <p class="aviso-prueba" id="aviso-prueba-ajustes">Se reactivó: la próxima vez que toques un enlace así, vuelve a salir la hoja.</p>
+    </div>
+    <div class="hoja-fondo" id="hoja-fondo-artista"><div class="hoja" role="dialog" aria-label="Vas a salir de Somos Nosotros" id="hoja-artista"></div></div>
+  </div>
+</div>
+
+<div class="estudio">
+  <div class="banco">
+    <h3>Cómo probar este prototipo</h3>
+    <ul>
+      <li>Toca <b>«Más información»</b> (ficha 1) o <b>Instagram / WhatsApp</b> (ficha 2): sale la hoja con el dominio real.</li>
+      <li><b>Ctrl/Cmd + clic</b> o clic central en cualquiera de esos enlaces: el navegador lo abre en pestaña nueva directo, sin la hoja — son <code>&lt;a href&gt;</code> de verdad, no botones de JavaScript.</li>
+      <li>Marca <b>«No volver a avisarme»</b> y toca <b>Continuar</b>: los siguientes enlaces de esta página ya no muestran la hoja (se guarda en <code>localStorage</code>, como en el teléfono).</li>
+      <li>La palanca de <b>Ajustes</b> (ficha 2) reactiva el aviso.</li>
+      <li>«Cómo llegar» y «Compartir» (ambas fichas) no llevan aviso: son el gesto que ya dice "otra app".</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const CLAVE = "sn-sin-aviso-salida-prototipo";
+  function sinAviso() { try { return localStorage.getItem(CLAVE) === "1"; } catch { return false; } }
+  function guardarSinAviso(v) { try { v ? localStorage.setItem(CLAVE, "1") : localStorage.removeItem(CLAVE); } catch {} }
+
+  function dominioDe(href) { try { return new URL(href).hostname.replace(/^www\./, ""); } catch { return href; } }
+
+  let hojaActivaFondo = null;
+
+  function interceptar(evento, enlace, porque) {
+    // Los modificadores y el clic central los deja pasar el navegador: no interceptamos.
+    if (evento.button !== 0 || evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return true;
+    if (sinAviso()) return true; // ya pidió no volver a avisar: navega directo
+    evento.preventDefault();
+    abrirHoja(enlace, porque);
+    return false;
+  }
+
+  function abrirHoja(enlace, porque) {
+    const telefono = enlace.closest(".telefono");
+    const fondo = telefono.querySelector(".hoja-fondo");
+    const hoja = fondo.querySelector(".hoja");
+    const dominio = dominioDe(enlace.href);
+    hoja.innerHTML = `
+      <div class="asa" aria-hidden="true"></div>
+      <h3>Vas a salir de Somos Nosotros</h3>
+      <div class="dominio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5"/></svg><span class="texto">${dominio}</span></div>
+      <p class="porque">${porque}</p>
+      <button type="button" class="continuar" id="btn-continuar">Continuar</button>
+      <button type="button" class="quedarme" id="btn-quedarme">Quedarme aquí</button>
+      <label class="marcar"><input type="checkbox" id="chk-sin-aviso"> No volver a avisarme</label>
+    `;
+    hoja.querySelector("#btn-continuar").onclick = () => {
+      if (hoja.querySelector("#chk-sin-aviso").checked) { guardarSinAviso(true); sincronizarPalanca(); }
+      cerrarHoja();
+      window.open(enlace.href, "_blank", "noopener,noreferrer");
+    };
+    hoja.querySelector("#btn-quedarme").onclick = () => {
+      if (hoja.querySelector("#chk-sin-aviso").checked) { guardarSinAviso(true); sincronizarPalanca(); }
+      cerrarHoja();
+    };
+    fondo.classList.add("abierta");
+    fondo.onclick = (e) => { if (e.target === fondo) cerrarHoja(); };
+    hojaActivaFondo = fondo;
+  }
+  function cerrarHoja() { if (hojaActivaFondo) hojaActivaFondo.classList.remove("abierta"); hojaActivaFondo = null; }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarHoja(); });
+
+  function sincronizarPalanca() {
+    const palanca = document.getElementById("palanca-avisar");
+    palanca.setAttribute("aria-checked", sinAviso() ? "false" : "true");
+  }
+  function alternarAjuste() {
+    const activar = sinAviso(); // si hoy está sin aviso, la palanca lo reactiva
+    guardarSinAviso(!activar);
+    sincronizarPalanca();
+    if (activar) {
+      const nota = document.getElementById("aviso-prueba-ajustes");
+      nota.classList.add("mostrar");
+      setTimeout(() => nota.classList.remove("mostrar"), 2600);
+    }
+  }
+  sincronizarPalanca();
+</script>
+</body>
+</html>
