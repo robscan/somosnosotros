@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "ignoreCommand": "bash scripts/ops/vercel-ignorar.sh",
   "crons": [
     {
       "path": "/api/recordatorios",

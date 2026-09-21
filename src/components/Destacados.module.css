@@ -29,8 +29,17 @@
   display: none;
 }
 .carril > li {
+  position: relative;
   min-width: 0;
   scroll-snap-align: start;
+}
+/* El botón (OL-106, bitácora 141): hermano de `.tarjeta` (el <a>), nunca su hijo — flota sobre la esquina superior
+   derecha de la foto. Se selecciona por estructura (`> button`), no por una clase de `ui/BotonRenglon`: esa pieza
+   no sabe que vive en un carril, y así no hace falta tocar su CSS para colocarlo aquí. */
+.carril > li > button {
+  position: absolute;
+  top: var(--espacio-2);
+  right: var(--espacio-2);
 }
 .tarjeta {
   display: grid;
@@ -104,6 +113,9 @@
 /* Artistas, en «Con eventos esta semana»: redondos como su avatar, angostos y al centro. */
 .redondas {
   grid-auto-columns: 104px;
+  /* El botón flota sobre el perímetro del círculo (abajo) y sobresale por arriba: sin este espacio de sobra,
+     `overflow-x: auto` recorta también el desborde vertical (medido: overflow-y computa a "auto" igual). */
+  padding-top: calc(9px + var(--espacio-1));
 }
 .redondas .tarjeta {
   grid-template-rows: 104px auto auto;
@@ -111,6 +123,14 @@
 }
 .redondas .foto {
   border-radius: 50%;
+}
+/* Círculo de 104 px (radio 52) y botón de 48 px (radio 24): su centro cae en el punto del círculo a 45° arriba a la
+   derecha (52 + 52·cos45° ≈ 88.8, 52 − 52·sin45° ≈ 15.2), es decir, ~9 px fuera de la esquina (founder, 2026-09-21:
+   "que el icono de check salga del contenedor de círculo, que flote sobre el perímetro"). Verificado con
+   getBoundingClientRect: la distancia real entre los centros midió 52.3 px, el mismo radio de la foto. */
+.redondas > li > button {
+  top: -9px;
+  right: -9px;
 }
 
 /* Una sola tarjeta: a lo ancho, con la foto a la izquierda; nada queda solo en un carril. */
@@ -134,6 +154,14 @@
 .uno.redondas .tarjeta {
   grid-template-columns: 93px 1fr;
 }
+/* La foto va al lado del texto, no arriba: el botón se ancla a la esquina de la FOTO (124 px de ancho), no a una
+   posición fija — si no, un título de dos líneas lo deja a la altura del texto en vez de la imagen. */
+.uno > li > button {
+  right: calc(100% - 124px + var(--espacio-2));
+}
+.uno.redondas > li > button {
+  right: calc(100% - 93px + var(--espacio-2));
+}
 /* Uno solo y grande: conserva el rectángulo apilado (la foto no vuelve al lado del texto). */
 .uno.grande .tarjeta {
   grid-template-columns: none;
@@ -144,6 +172,9 @@
   height: auto;
   max-height: 264px;
   aspect-ratio: 5 / 3;
+}
+.uno.grande > li > button {
+  right: var(--espacio-2);
 }
 
 /* En el carril semanal, fecha y hora completas incluso en las tarjetas redondas. */

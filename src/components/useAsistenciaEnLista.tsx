@@ -112,8 +112,8 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
   }
 
   /**
-   * El botón único del renglón (OL-104): "Voy" invita —también desde "Me interesa", que ya no tiene botón propio en
-   * la lista—; con Voy, dice "Vas" y tocarlo lo quita (como antes "No voy" al deslizar).
+   * El botón único del renglón (OL-104; solo icono desde OL-106): invita a Voy —también desde "Me interesa", que ya
+   * no tiene botón propio en la lista— o, decidido, lo quita (como antes "No voy" al deslizar).
    */
   function boton(e: EventoLista): EstadoBotonRenglon {
     const previo = estado(e.id);
@@ -121,10 +121,9 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     const decidido = previo === "voy";
     const ruta = `/eventos/${e.id}`;
     return {
-      etiqueta: decidido ? "Vas" : "Voy",
       decidido,
       // El nombre no cambia con el estado (sería contradictorio con `aria-pressed`, que ya lo dice): "conmutador presionado"
-      // con un nombre que dice "ya no vas" suena al revés. El texto visible sí cambia ("Voy"/"Vas"); el accesible, no.
+      // con un nombre que dice "ya no vas" suena al revés.
       nombreAccesible: `Voy — ${e.titulo}`,
       alTocar: () => {
         if (decididas === null) {
