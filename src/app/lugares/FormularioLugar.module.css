@@ -1,16 +1,19 @@
 /* ==========================================================================
    Alta de lugar: lo propio, fuera del canon (ui/FormularioCanon.module.css):
-   1. Sugerencias de Mapbox (renglón de ui/Sugerencia) · 2. Más: portada e interruptor del administrador · 3. Parecidos
+   1. Sugerencias de Mapbox y "ya existe" (ui/ListaFlotante) · 2. Más: portada e interruptor del administrador · 3. Parecidos
    ========================================================================== */
 
 .formulario {
   display: block;
 }
 
-/* 1. Sugerencias (ui/Sugerencia): flotan pegadas al campo, con sombra. */
-.flotante {
-  margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-3);
-  box-shadow: var(--sombra);
+/* 1. "Buscando…" o "Trayendo la ubicación…", dentro de la lista flotante (ui/ListaFlotante): no es una opción,
+   solo texto (mismo patrón que HojaDondeEs.module.css). Las sugerencias y "ya existe" flotan sobre el layout, sin
+   empujar Dónde, Tipo, Más ni el botón (founder, producción, 2026-09-21). */
+.avisoFlotante {
+  padding: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
 }
 
 /* 2. Más: foto de portada e interruptor del administrador. */

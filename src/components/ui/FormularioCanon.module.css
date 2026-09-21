@@ -1,7 +1,9 @@
 /* ==========================================================================
-   El canon de formulario (docs/rediseno/13 y 15; bitácora 039): lo comparten el alta de lugar, el alta de artista
-   y Editar perfil. 1. Campo con icono · 2. Estado, error y "ya está registrado" · 3. Renglones resueltos
-   (icono | clave / valor | acción; cuerpo debajo al abrir) · 4. Cuerpo: chips, entrada, subir foto · 5. El botón dice qué falta
+   El canon de formulario (docs/rediseno/13, 15 y 26; bitácora 039): lo comparten el alta de lugar, el alta de
+   artista, Editar perfil y el alta de evento. 1. Campo con icono · 2. Estado, error y "ya está registrado" ·
+   3. Renglones resueltos (icono | clave / valor / acción; cuerpo debajo al abrir) · 4. Cuerpo: chips, entrada,
+   subir foto · 5. El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón (founder,
+   2026-09-21, canon ampliado)
    ========================================================================== */
 
 /* 1. El campo de arriba: el icono dentro, sin etiqueta ni frase de ayuda. */
@@ -401,12 +403,6 @@ textarea.entrada {
   opacity: 0;
 }
 
-/* 5. El botón dice qué falta. */
-.faltaBoton {
-  margin-left: var(--espacio-2);
-  font-size: var(--letra-xs);
-  font-weight: 500;
-}
 @media (prefers-reduced-motion: reduce) {
   .palanca,
   .palanca::after {

@@ -14,6 +14,7 @@ import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBuscar, IconoEtiqueta, IconoMas, IconoOk, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
+import ListaFlotante from "@/components/ui/ListaFlotante";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
@@ -47,7 +48,8 @@ type Props = {
  * Alta de lugar, el canon de formulario (docs/rediseno/13, decisiones 8 a 12): un campo arriba (el nombre, que
  * resuelve lo demás con Mapbox) y debajo tres renglones resueltos: Dónde (con dos salidas cuando falta: Estoy aquí
  * y Buscar, que abre la hoja del mapa), Tipo (deducido; chips al abrir; con Otro, qué es) y Más (descripción,
- * redes, foto). El botón dice qué falta. Sin frases de ayuda.
+ * redes, foto). El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón que falta
+ * (founder, 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26).
  */
 export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false }: Props) {
   const esAlta = !lugar;
@@ -94,6 +96,11 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const sesionRef = useRef<string>("");
   const ultimaBusqueda = useRef("");
   const nombreElegido = useRef("");
+  // La lista de sugerencias y el aviso "Ya está registrado" flotan sobre el layout, anclados al campo del nombre
+  // (ui/ListaFlotante): nunca empujan Dónde, Tipo, Más ni el botón (founder, producción, 2026-09-21). Tocar fuera o
+  // Escape los cierra hasta que se vuelva a escribir.
+  const campoNombreRef = useRef<HTMLElement>(null);
+  const [sugerenciasCerradas, setSugerenciasCerradas] = useState(false);
   // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
@@ -132,6 +139,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   /** Al escribir el nombre: limpia listas si es corto y deduce el tipo si nadie lo eligió a mano (Otro si no hay pista). */
   function alEscribirNombre(valor: string) {
     setNombre(valor);
+    setSugerenciasCerradas(false);
     if (valor.trim().length < 3) {
       setSugeridos([]);
       setExistentes([]);
@@ -215,6 +223,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const faltaNombre = nombre.trim().length === 0;
   const faltaDonde = !punto;
   const listo = !faltaNombre && !faltaDonde && !!tipo;
+  const sugerenciasAbiertas = !sugerenciasCerradas && (buscando || recuperando || sugeridos.length > 0 || existentes.length > 0);
 
   return (
     <>
@@ -228,46 +237,73 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         className={styles.formulario}
       >
         {/* 1. El nombre: el sistema encuentra el lugar. */}
-        <label className={canon.campo}>
+        <label className={canon.campo} ref={campoNombreRef as React.RefObject<HTMLLabelElement>}>
           <IconoBuscar width={20} height={20} />
-          <input name="nombre" type="text" value={nombre} onChange={(e) => alEscribirNombre(e.target.value)} maxLength={LIMITES_LUGAR.nombre} placeholder="Nombre del lugar" aria-label="Nombre del lugar" aria-invalid={!!errores.nombre} autoComplete="off" autoFocus={esAlta} required />
+          <input
+            name="nombre"
+            type="text"
+            value={nombre}
+            onChange={(e) => alEscribirNombre(e.target.value)}
+            maxLength={LIMITES_LUGAR.nombre}
+            placeholder="Nombre del lugar"
+            aria-label="Nombre del lugar"
+            aria-invalid={!!errores.nombre}
+            autoComplete="off"
+            autoFocus={esAlta}
+            required
+            role="combobox"
+            aria-expanded={sugerenciasAbiertas}
+            aria-controls="lista-sugerencias-lugar"
+            aria-autocomplete="list"
+          />
           <Limpiar visible={!!nombre} />
           <ContadorCaracteres valor={nombre} tope={LIMITES_LUGAR.nombre} error={errores.nombre} />
         </label>
-        {(buscando || recuperando) && <p className={canon.estado}>{recuperando ? "Trayendo la ubicación…" : "Buscando…"}</p>}
-        {errores.nombre && (
+        {errores.nombre ? (
           <p className={canon.error} role="alert">
             {errores.nombre}
           </p>
+        ) : (
+          // La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios).
+          faltaNombre && <p className={canon.cuerpoNota}>Falta el nombre.</p>
         )}
-        {sugeridos.length > 0 && (
-          <ul className={`${sug.lista} ${styles.flotante}`} role="listbox" aria-label="Lugares encontrados">
-            {sugeridos.map((s) => (
-              <li key={s.mapboxId}>
-                <button type="button" className={`${sug.renglon} ${s.esDireccion ? sug.direccion : ""}`} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
-                  <IconoPin width={20} height={20} />
-                  <b>{s.esDireccion ? nombre.trim() : s.nombre}</b>
-                  <small>{s.esDireccion ? `Usar la dirección ${s.direccion || s.nombre}` : s.direccion}</small>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {existentes.length > 0 && (
-          <p className={canon.existe} role="status">
-            <IconoOk width={20} height={20} />
-            <span>
-              <b>Ya está registrado:</b>{" "}
-              {existentes.map((e, i) => (
-                <Fragment key={e.id}>
-                  {i > 0 ? " · " : ""}
-                  <Link href={`/lugares/${e.id}`}>{e.nombre}</Link>
-                </Fragment>
+        {/* La lista de sugerencias y "Ya está registrado" flotan sobre el layout, sin empujar Dónde, Tipo, Más ni el
+            botón (founder, producción, 2026-09-21). Mismo patrón que HojaDondeEs: el estado ("Buscando…"), el aviso
+            y las opciones viven dentro de la misma lista flotante. */}
+        <ListaFlotante abierta={sugerenciasAbiertas} onCerrar={() => setSugerenciasCerradas(true)} ancla={campoNombreRef} id="lista-sugerencias-lugar" etiqueta="Lugares encontrados">
+          {buscando || recuperando ? (
+            <li className={styles.avisoFlotante} role="status">
+              {recuperando ? "Trayendo la ubicación…" : "Buscando…"}
+            </li>
+          ) : (
+            <>
+              {existentes.length > 0 && (
+                <li className={canon.existe} role="status">
+                  <IconoOk width={20} height={20} />
+                  <span>
+                    <b>Ya está registrado:</b>{" "}
+                    {existentes.map((e, i) => (
+                      <Fragment key={e.id}>
+                        {i > 0 ? " · " : ""}
+                        <Link href={`/lugares/${e.id}`}>{e.nombre}</Link>
+                      </Fragment>
+                    ))}
+                    . Si es otro con el mismo nombre, sigue.
+                  </span>
+                </li>
+              )}
+              {sugeridos.map((s) => (
+                <li key={s.mapboxId}>
+                  <button type="button" className={`${sug.renglon} ${s.esDireccion ? sug.direccion : ""}`} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
+                    <IconoPin width={20} height={20} />
+                    <b>{s.esDireccion ? nombre.trim() : s.nombre}</b>
+                    <small>{s.esDireccion ? `Usar la dirección ${s.direccion || s.nombre}` : s.direccion}</small>
+                  </button>
+                </li>
               ))}
-              . Si es otro con el mismo nombre, sigue.
-            </span>
-          </p>
-        )}
+            </>
+          )}
+        </ListaFlotante>
 
         <ul className={canon.renglones}>
           {/* 2. Dónde: resuelto en cuanto algo lo resuelve; si falta, dos salidas por intención. */}
@@ -294,10 +330,15 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
                 </span>
               </>
             )}
-            {(avisoUbicacion || errores.ubicacion || errores.direccion) && (
-              <p className={canon.cuerpoNota} role={errores.ubicacion ? "alert" : undefined}>
-                {errores.ubicacion ?? errores.direccion ?? avisoUbicacion}
+            {/* La ayuda va bajo el renglón, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios). */}
+            {errores.ubicacion || errores.direccion ? (
+              <p className={canon.cuerpoNota} role="alert">
+                {errores.ubicacion ?? errores.direccion}
               </p>
+            ) : avisoUbicacion ? (
+              <p className={canon.cuerpoNota}>{avisoUbicacion}</p>
+            ) : (
+              faltaDonde && <p className={canon.cuerpoNota}>Falta dónde está.</p>
             )}
           </li>
 
@@ -416,10 +457,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             {resultado.general}
           </p>
         )}
-        {/* El botón dice qué falta (decisión 11). */}
+        {/* El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón (founder, 2026-09-21). */}
         <Boton type="submit" disabled={enviando || terminado || subiendo || recuperando || !listo}>
           {enviando || terminado ? "Guardando…" : lugar ? "Guardar cambios" : "Publicar lugar"}
-          {!enviando && !terminado && !listo &&<small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde está"}</small>}
         </Boton>
       </form>
       {hoja && (
