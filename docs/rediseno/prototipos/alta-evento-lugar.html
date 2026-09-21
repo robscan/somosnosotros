@@ -291,6 +291,34 @@
     </div>
     <figcaption><b>6 · Dirección a medias, caso "Galeana #423, S.L.P."</b>El cartel trajo el texto tal cual. Antes de buscar, se limpia ("#" y "S.L.P." → "San Luis Potosí") y se acota a la ciudad de contexto (aquí, del propio texto). Las sugerencias salen todas cercanas — nunca Rioverde, Aguascalientes o Guadalajara.</figcaption>
   </figure>
+
+  <!-- ESTADO 7: sin pista en el texto ni en el cartel — botón para pedir la ubicación con un toque -->
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <ul class="renglones">
+          <li class="resuelto pendiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span class="clave">Dónde</span><span class="valor falta">Falta</span><button type="button" class="accion"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></li>
+        </ul>
+        <div class="hoja">
+          <div class="asa"></div>
+          <h3>Dónde es</h3>
+          <label class="campo-buscar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="text" value="El teatrito" aria-label="Buscar el lugar">
+          </label>
+          <button type="button" style="display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin-bottom:10px;padding:0 14px;border:1px dashed var(--primario);border-radius:var(--radio);background:var(--primario-suave);color:var(--primario);font-size:15px;font-weight:700;text-align:left">
+            <svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Usar mi ubicación para buscar cerca
+          </button>
+          <p class="nadie" style="color:var(--texto-suave);font-size:14px">Ningún lugar registrado coincide con «El teatrito».</p>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>7 · Sin pista en el texto ni en el cartel</b>Nada en lo escrito ni en la caché dice en qué ciudad buscar. En vez de acotar solo a San Luis Potosí por defecto, se ofrece el botón con un toque (regla nueva de DEFINICION: la ubicación se pide cuando ayuda, con un toque y una frase corta de para qué). Si no se toca, sigue con el centro de la ciudad de contexto.</figcaption>
+  </figure>
 </div>
 </body>
 </html>

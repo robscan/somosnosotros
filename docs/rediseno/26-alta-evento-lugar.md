@@ -9,6 +9,8 @@
 - **L37 (segunda mitad).** «El lugar pide confirmación aunque sí se escribe un lugar y lo que hace es pedir confirmación de ese lugar sin tomar en cuenta contexto, por ejemplo me sugiere lugares en Soledad de Graciano Sánchez aunque de hecho cerca de donde estoy hay una calle con ese nombre. Incluso podría estar dentro del lugar. Sigue siendo complicado y confuso el momento de asignación de lugar en eventos. Además el hecho de que la retroalimentación de sistema aparezca dentro del botón hace difícil leerla, el estándar es colocarla debajo del botón principal de creación, ejemplo: Falta ubicación. O mejor aún debajo del campo faltante como help text.»
 - **Caso nuevo, vía el gestor (2026-09-21).** «Al leer cartel, especifica que falta dirección, al entrar a configurar pone dirección en campo (ejemplo Galeana #423, S.L.P., así viene en cartel) Pero muestra listado de sugerencias en Rioverde, Aguascalientes o guadalajara, es probable que la calle sea hermenegildo galeana en san luis por eso no la muestra como sugerencia, pero eso pasa mucho, la gente escribe parte de la calle solamente, necesito que el sistema pueda ayudar considerando contexto a ubicar dirección cerca.» Es el corazón de esta pieza: se usa como caso con nombre propio, «Galeana #423, S.L.P.», en el prototipo y en el código.
 
+**Regla de ubicación cambiada, ya en `main` (2026-09-21, `0d397f1`).** El founder sustituyó la regla vieja («sirve para ordenar por cercanía, nada más») por una nueva en `docs/DEFINICION.md`: *«Ubicación: se pide con un toque de la persona, en el momento en que le sirve, y se usa para ayudarle (ordenar por cercanía, encontrar direcciones, centrar el mapa). Vive en su teléfono, aproximada y por poco tiempo: nunca se guarda en nuestra base ni se asocia a su cuenta. Puede viajar a Mapbox, aproximada, para buscar direcciones.»* Con sus palabras: *«si es necesario cambiar reglas de privacidad entonces lo hacemos pero el usuario agradecerá la ayuda»*. Esto **resuelve la pregunta 3 de la versión anterior de este documento** (ya no hace falta elegir entre A y B: la ubicación aproximada sí se usa para ayudar a buscar, con un toque cuando hace falta pedirla) y ajusta el punto 6 de abajo.
+
 ## Lo que confirmé leyendo el código (sin tocar nada)
 
 **L2, confirmado.** En [`FormularioEvento.tsx:525`](../../src/app/eventos/FormularioEvento.tsx) el campo del nombre tiene `autoFocus={esAlta}`. Al abrir el alta, el teclado sale solo. La tarjeta del cartel (`TarjetaCartel`, línea 521) va *antes* que el campo del nombre en el documento, así que el teclado no la tapa por estar debajo: la empuja fuera de la vista al reducir el alto útil de la pantalla y desplazar el scroll hacia el campo enfocado. No fue un toque del usuario: es el `autoFocus`.
@@ -40,12 +42,13 @@ Esto separa `dondeResuelto` (listo para publicar) de un nuevo `dondeIniciado` (h
 ### 3 — Contexto en las sugerencias, para acertar a la primera (L3 y L37)
 Cada sugerencia de la hoja "Dónde es" (lugares y direcciones) agrega una segunda línea con el municipio o colonia que ya trae Mapbox en el contexto (`ciudadDelContexto`, ya usado en otras búsquedas), para distinguir "Calle Soledad de Graciano Sánchez, San Luis Potosí" del municipio de Soledad de Graciano Sánchez. No pide un dato nuevo: ya viene en la respuesta de Mapbox y hoy se descarta.
 
-### 4 — Cercanía de las sugerencias: una decisión para el founder
-Hoy la búsqueda ya ordena por cercanía real y solo usa la ubicación si la persona toca "Estoy aquí" en el mapa (cumple "ubicación solo con botón"). Falta decidir **una cosa nueva**: si además de eso, la hoja usa de entrada la última posición aproximada que ya quedó guardada en el teléfono por otra pantalla (`ubicacionCercanaFresca()`, `src/lib/ubicacion.ts` — no pide permiso de nuevo, ya se pidió antes en Cercanos), para que la lista de sugerencias salga ordenada por dónde está la persona *sin que lo pida en esta pantalla*. Dos caminos:
-- **A. Reutilizar la posición cacheada** (si existe y sigue fresca): más precisa que el centro de la ciudad, sin pedir permiso nuevo — pero la persona no lo pidió *en esta pantalla*, aunque sí lo pidió antes en otra.
-- **B. Sin ubicación aquí:** seguir con el centro de la ciudad (San Luis Potosí) como hoy, y que "Estoy aquí" sea la única forma de acercar la búsqueda a la persona en esta pantalla.
+### 4 — Cercanía de las sugerencias: ya resuelto por la nueva regla de ubicación
+Con la regla nueva de `DEFINICION.md` (arriba), esto ya no es una decisión abierta: la ubicación aproximada sí ayuda a buscar direcciones, con un toque cuando hace falta pedirla. La hoja "Dónde es" usa, en este orden:
+1. La última posición aproximada ya guardada en el teléfono (`ubicacionCercanaFresca()`, `src/lib/ubicacion.ts`), si sigue fresca — sin pedir permiso de nuevo, porque ya se pidió antes (Cercanos u otra pantalla).
+2. Si no hay ninguna guardada, un botón para pedirla con un toque, dentro de la propia hoja "Dónde es" (no automático al abrir), con una frase corta de para qué: *"Usar mi ubicación para buscar cerca"*. Al tocarlo, se pide una vez (aproximada, la misma `leerUbicacionCercana()` de Cercanos) y se guarda para las próximas veces.
+3. Si la persona no toca ese botón, se sigue con el centro de la ciudad de contexto (punto 6) o "Estoy aquí" sobre el mapa, como hoy.
 
-**Recomiendo A**, porque no widens el permiso (ya se pidió, ya se usa para lo mismo: ordenar por cercanía) y responde directo a la queja del founder. Lo dejo como pregunta explícita porque toca la regla de DEFINICION ("ubicación del usuario solo si la pide con un botón") y es su decisión, no la mía.
+Redondeada (~100 m, ya es lo que hace `ubicacion.ts`) al viajar a Mapbox como `proximity`; nunca a nuestro servidor.
 
 ### 5 — La ayuda va debajo del campo, no dentro del botón (L37, cambia el canon)
 Esto **cambia una decisión firmada** del canon de formularios (docs/rediseno/15, decisión 3: "el botón dice qué falta"). El founder lo pide explícito: *"el estándar es colocarla debajo del botón principal de creación... o mejor aún debajo del campo faltante como help text"*. Se implementa la segunda opción, la que él mismo prefiere:
@@ -57,18 +60,27 @@ Esto **cambia una decisión firmada** del canon de formularios (docs/rediseno/15
 ### 6 — Direcciones a medias: usar el contexto para acercar la búsqueda ("Galeana #423, S.L.P.")
 Esto ataca la causa medida arriba: que la calle correcta ni siquiera entra en los 10 candidatos que Mapbox propone. Cuatro cambios, del más barato al más caro:
 
-1. **Leer el contexto que ya tenemos, sin pedir nada nuevo a la persona**, en este orden de fuerza (el que propone el gestor):
+1. **Leer el contexto que ya tenemos, sin pedir nada nuevo a la persona**, en el orden que fijó el founder (vía el gestor, 2026-09-21):
    - **(a) El propio texto.** Si trae "S.L.P.", "SLP", "San Luis" o el nombre completo de una ciudad conocida, una colonia o un código postal, se reconoce y se usa para acotar — antes de mandar nada a Mapbox.
    - **(b) El lugar que ya leyó el cartel**, si coincide con uno del directorio: su punto es la mejor pista, mejor que cualquier ciudad (ya se usa cuando hay `lugarId`; se propone usarlo también como `proximity` cuando el cartel trae *nombre y dirección* sin `lugarId` exacto).
    - **(c) La ciudad elegida en el chip de la Agenda**, desde la que se entró a "Publicar evento". **Hoy este dato no llega al alta de evento** (`/eventos/nuevo` no recibe `?ciudad=`; es un hueco que esta pieza tendría que cerrar, hilando el slug de la ciudad desde `Publicar.tsx` hasta `nuevo/page.tsx`).
-   - **(d) La última posición aproximada cacheada** (`ubicacionCercanaFresca()`, punto 4 de arriba), sin pedir permiso de nuevo.
+   - **(d) La posición aproximada del teléfono** (punto 4: la ya cacheada, o pedida con un toque dentro de "Dónde es" si no hay ninguna) — con la nueva regla de `DEFINICION.md`, ya no hace falta guardar esto para "después"; se puede pedir aquí mismo si hace falta.
    - Si nada de eso resuelve, el centro de San Luis Potosí, como hoy.
 2. **Con esa ciudad de contexto, mandar `proximity` a su centro (ya se hace, con el respaldo de hoy) y agregar `bbox`** del área metropolitana cuando el contexto sea una ciudad conocida, para que Mapbox no proponga ni considere nada fuera de esa área en el primer intento.
 3. **Limpiar el texto antes de buscar:** quitar `#`, `No.`, expandir `S.L.P.`/`SLP` → `San Luis Potosí`, `esq.`, `col.` — para que "Galeana #423, S.L.P." llegue a Mapbox como algo más cercano a "Galeana 423, San Luis Potosí".
 4. **Una segunda búsqueda automática, solo si la primera no dio nada cercano:** repetir con el texto limpio *más* el nombre de la ciudad de contexto pegado ("Galeana 423, San Luis Potosí"). Nunca en cada tecla — cuidando el gasto (punto 5 del gestor): la segunda búsqueda solo dispara cuando la primera ya llegó y no trajo nada dentro de un radio razonable de la ciudad de contexto.
 5. **Si aun así no hay nada bueno, la salida no es una lista de ciudades lejanas.** Se ofrece poner el pin a mano en el mapa, centrado en la ciudad de contexto, con el texto escrito conservado tal cual (no se pierde lo que la persona ya tecleó).
 
-**Qué sale del teléfono hacia Mapbox, para que el founder lo decida con el punto 4:** en todos los casos de arriba, lo que viaja es `proximity`/`bbox` — coordenadas de un centro de ciudad o de un punto — directo del teléfono a Mapbox, nunca a nuestro servidor (regla de DEFINICION intacta). El único caso que sí es una ampliación real es el (d): usar la posición cacheada de otra pantalla *en esta pantalla*, sin que la persona la haya pedido aquí — ya está como pregunta 3 más arriba.
+**Qué sale del teléfono hacia Mapbox:** en todos los casos de arriba, lo que viaja es `proximity`/`bbox` — coordenadas de un centro de ciudad o de la posición aproximada de la persona, redondeada (~100 m) — directo del teléfono a Mapbox, nunca a nuestro servidor. Con la regla nueva de `DEFINICION.md` esto ya está aprobado en general; lo único que decide esta pieza es *cuándo* se pide esa posición (punto 4: cacheada primero, botón explícito si no hay ninguna).
+
+### 7 — Una línea en el aviso de privacidad (pedido del gestor)
+La regla de ubicación cambió en `DEFINICION.md`; el aviso de privacidad (`src/app/privacidad/page.tsx`) tiene una línea vieja que hay que actualizar en la fase de código, para que diga en llano lo mismo que la regla nueva. Hoy dice:
+
+> «Tu ubicación, solo cuando tocas «Cerca de mí» o «Mi ubicación»: sirve para ordenar la lista o centrar el mapa y no se guarda.»
+
+Propuesta de texto nuevo (para que el founder lo revise junto con el prototipo):
+
+> «Tu ubicación, solo cuando la pides con un toque (por ejemplo «Cerca de mí» o al buscar una dirección al publicar un lugar o evento): sirve para ordenar la lista, centrar el mapa o acercar la búsqueda de direcciones. Vive en tu teléfono, aproximada y por poco tiempo; puede viajar a Mapbox para esa búsqueda, pero nunca se guarda en nuestra base ni queda asociada a tu cuenta.»
 
 **Prototipo:** estado nuevo, "dirección leída del cartel, a medias → sugerencias cercanas primero → Confirmar", con el caso con nombre "Galeana #423, S.L.P." (ver estado 6, abajo).
 
@@ -77,10 +89,10 @@ Esto ataca la causa medida arriba: que la calle correcta ni siquiera entra en lo
 | Canon | Cambio |
 | --- | --- |
 | Formularios (canon del alta) | Decisión 3 ("el botón dice qué falta") se acota: en el alta de evento, la ayuda va debajo del campo que falta, no dentro del botón. Las demás altas no cambian todavía. |
-| DEFINICION — ubicación con botón | Sin cambio de regla; se pregunta si se reutiliza la posición ya cacheada de otra pantalla (punto 4) — no es una llamada nueva al navegador ni un permiso nuevo. |
+| DEFINICION — ubicación | Ya cambiada en `main` por el founder (2026-09-21, `0d397f1`): la ubicación aproximada ayuda a buscar direcciones y puede viajar a Mapbox. Esta pieza aplica esa regla nueva en el alta de evento y propone la línea del aviso de privacidad que la refleja (punto 7). |
 | Maquetación plana, filtrar no es navegar, memoria de pantalla | No cambian. |
 
-## Los seis estados del prototipo
+## Los siete estados del prototipo
 
 1. **Recién abierto:** hoy (con `autoFocus`, teclado tapando la tarjeta) contra la propuesta (sin autofocus, tarjeta y campo visibles).
 2. **Tras leer el cartel, lugar encontrado en el directorio:** Dónde resuelto con el nombre del lugar.
@@ -88,14 +100,17 @@ Esto ataca la causa medida arriba: que la calle correcta ni siquiera entra en lo
 4. **Sugerencias con contexto y cercanía:** la hoja "Dónde es" con resultados que dicen su municipio/colonia.
 5. **Intento de publicar sin ubicación:** el botón "Publicar evento" sin texto pequeño adentro; debajo del renglón Dónde, "Falta ubicación".
 6. **Dirección a medias, caso "Galeana #423, S.L.P.":** el cartel leyó ese texto tal cual; la búsqueda lo limpia y lo acota a la ciudad de contexto (San Luis Potosí) antes de mostrar nada; las sugerencias salen todas cercanas ("Hermenegildo Galeana" primero, con su colonia), nunca Rioverde, Aguascalientes o Guadalajara; al elegir una, pasa al estado "Confirmar".
+7. **Sin pista en el texto ni en el cartel:** un botón con un toque, "Usar mi ubicación para buscar cerca", con su frase de para qué (regla nueva de ubicación); si no se toca, sigue con el centro de la ciudad de contexto.
 
 ## Pregunta para el founder
 
 1. ¿Confirmas que el `autoFocus` es la causa de L2 y que quitarlo resuelve lo que viste en Android?
 2. ¿"Confirmar" en vez de "Falta" cuando ya hay nombre o dirección leídos, tal como se ve en el estado 3?
-3. Cercanía de las sugerencias (punto 4): ¿A (reutilizar la posición ya cacheada, sin pedir permiso) o B (solo el centro de la ciudad, como hoy, salvo que toques "Estoy aquí")?
-4. ¿Firmas que la ayuda baje del botón al campo, solo en esta pantalla (alta de evento), dejando las otras altas para una pieza aparte si la quieres extender?
-5. Sobre el caso "Galeana #423, S.L.P." (punto 6): ¿apruebas usar como ciudad de contexto, en este orden, el texto mismo → el lugar leído del cartel → la ciudad del chip de la Agenda (hay que hilar ese dato hasta el alta, hoy no llega) → la posición cacheada → San Luis Potosí de respaldo? ¿Y la segunda búsqueda automática solo cuando la primera no trae nada cercano (para cuidar el gasto de Mapbox)?
+3. ¿Firmas que la ayuda baje del botón al campo, solo en esta pantalla (alta de evento), dejando las otras altas para una pieza aparte si la quieres extender?
+4. Sobre el caso "Galeana #423, S.L.P." (punto 6): ¿apruebas usar como ciudad de contexto, en este orden, el texto mismo → el lugar leído del cartel → la ciudad del chip de la Agenda (hay que hilar ese dato hasta el alta, hoy no llega) → la posición del teléfono (cacheada, o pedida con un toque dentro de "Dónde es") → San Luis Potosí de respaldo? ¿Y la segunda búsqueda automática solo cuando la primera no trae nada cercano (para cuidar el gasto de Mapbox)?
+5. ¿Apruebas el texto nuevo del aviso de privacidad (punto 7), que refleja la regla de ubicación que ya firmaste?
+
+(La pregunta sobre reutilizar la posición cacheada de la versión anterior de este documento quedó resuelta por la nueva regla de ubicación en `DEFINICION.md`: ya no es una decisión abierta de esta pieza.)
 
 ## Cuándo empieza el código
 
