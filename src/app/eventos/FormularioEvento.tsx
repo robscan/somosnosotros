@@ -529,21 +529,46 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
         {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
 
-        {/* 2. El nombre, solo con su ✕. */}
-        <div className={`${canon.campo} ${canon.sinIcono}`}>
-          {/* Sin autoFocus (founder, 2026-09-21, L2): el teclado ya no sale solo al abrir y tapa la tarjeta del cartel. */}
-          <input name="titulo" type="text" value={titulo} onChange={(e) => { gestos.current.tocar("titulo"); setTitulo(e.target.value); }} maxLength={LIMITES_EVENTO.titulo} placeholder="Nombre del evento" aria-label="Nombre del evento" aria-invalid={!!errores.titulo} autoComplete="off" required />
+        {/* 2. El nombre, solo con su ✕. Vacío se marca como faltante (mismo peso que Cuándo/Dónde cuando
+            dicen "Falta"): borde discontinuo, placeholder propio y nota bajo el campo — antes solo se pintaba
+            una nota chica y gris, fácil de perder, sobre todo tras leer un cartel sin título (founder,
+            2026-09-21: "el campo no se marca como faltante", OL-113). */}
+        <div className={`${canon.campo} ${canon.sinIcono} ${faltaNombre && !errores.titulo ? canon.campoFalta : ""}`}>
+          {/* Sin autoFocus (founder, 2026-09-21, L2): el teclado ya no sale solo al abrir y tapa la tarjeta del
+              cartel. Por la misma razón, leer un cartel sin título tampoco fuerza el foco aquí: el aviso es
+              visual (borde, placeholder, nota), no una interrupción con teclado que la persona no pidió. */}
+          <input
+            name="titulo"
+            type="text"
+            value={titulo}
+            onChange={(e) => { gestos.current.tocar("titulo"); setTitulo(e.target.value); }}
+            maxLength={LIMITES_EVENTO.titulo}
+            placeholder={faltaNombre ? "Falta el nombre" : "Nombre del evento"}
+            aria-label="Nombre del evento"
+            aria-invalid={!!errores.titulo}
+            aria-describedby={errores.titulo ? "error-nombre-evento" : faltaNombre ? "nota-nombre-evento" : undefined}
+            autoComplete="off"
+            required
+          />
           <Limpiar visible={!!titulo} />
           <ContadorCaracteres valor={titulo} tope={LIMITES_EVENTO.titulo} error={errores.titulo} />
         </div>
         {subiendo && !cartel && !masAbierto && <p className={canon.estado}>Subiendo…</p>}
         {errores.titulo ? (
-          <p className={canon.error} role="alert">
+          <p id="error-nombre-evento" className={canon.error} role="alert">
             {errores.titulo}
           </p>
         ) : (
-          // La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios).
-          faltaNombre && <p className={canon.cuerpoNota}>Falta el nombre.</p>
+          // La ayuda va bajo el campo, con su propia clase: canon.cuerpoNota lleva grid-area: cuerpo, pensada
+          // para el cuerpo de un renglón de canon.resuelto. Aquí, sin una rejilla alrededor, ese grid-area no
+          // rompía nada (no era la causa de que se viera "fácil de perder": eso era el borde sin marcar y el
+          // placeholder genérico, ver más abajo) pero es la clase equivocada — la del gestor: una clase del
+          // canon solo se reutiliza dentro de la rejilla para la que fue escrita.
+          faltaNombre && (
+            <p id="nota-nombre-evento" className={canon.notaCampo}>
+              Falta el nombre.
+            </p>
+          )
         )}
 
         <ul className={canon.renglones}>
