@@ -20,10 +20,10 @@ describe("reconocerEnlace", () => {
     expect(reconocerEnlace("444 123 4567")).toEqual({ red: "whatsapp", url: "https://wa.me/524441234567" });
     expect(reconocerEnlace("+52 444 123 4567")?.url).toBe("https://wa.me/524441234567");
   });
-  it("lo demás queda como sitio con su dominio; lo que no es nada, null", () => {
+  it("lo demás queda como sitio con etiqueta 'Sitio web'; lo que no es nada, null", () => {
     const e = reconocerEnlace("www.casa1100.mx/agenda");
     expect(e?.red).toBe("sitio");
-    expect(etiquetaEnlace(e!)).toBe("casa1100.mx");
+    expect(etiquetaEnlace(e!)).toBe("Sitio web");
     expect(reconocerEnlace("")).toBeNull();
     expect(reconocerEnlace("hola")).toBeNull();
     expect(reconocerEnlace("123")).toBeNull();

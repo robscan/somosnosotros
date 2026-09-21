@@ -100,7 +100,8 @@
   font-weight: 400;
 }
 
-/* 3. Acciones secundarias: botones de icono iguales, sin color de acción. Tres por fila; con más, la fila se desplaza. */
+/* 3. Acciones secundarias: botones de icono iguales, sin color de acción. Tres por fila; con más, la fila se desplaza.
+   Cuando hay más de tres, asoman los siguientes (flex-basis de 2.5 en lugar de 3 permite ver un poco del siguiente). */
 .acciones {
   display: flex;
   gap: var(--espacio-2);
@@ -112,7 +113,7 @@
   display: none;
 }
 .accion {
-  flex: 1 0 calc((100% - 2 * var(--espacio-2)) / 3);
+  flex: 1 0 calc((100% - 2 * var(--espacio-2)) / 2.5);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -128,6 +129,8 @@
   text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .accion:active {
   background: var(--fondo-suave);

@@ -36,9 +36,9 @@ export function dominioDe(url: string): string {
   }
 }
 
-/** Etiqueta del botón en la ficha: el nombre de la red, o el dominio si es un sitio. */
+/** Etiqueta del botón en la ficha: el nombre de la red, o "Sitio web" si es un sitio. */
 export function etiquetaEnlace(e: Enlace): string {
-  return e.red === "sitio" ? dominioDe(e.url) : etiquetaDe(e.red);
+  return e.red === "sitio" ? "Sitio web" : etiquetaDe(e.red);
 }
 
 function redPorDominio(host: string): Red {
