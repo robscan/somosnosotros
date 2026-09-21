@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import ficha from "@/components/ui/Ficha.module.css";
+import Borrar from "@/components/Borrar";
 import { formatearLargo } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { usuarioActual } from "@/lib/supabase/servidor";
@@ -8,6 +9,7 @@ import admin from "../../admin.module.css";
 import styles from "../obras.module.css";
 import { cargarObra } from "../consultas";
 import AccionesObra from "./AccionesObra";
+import { borrarObra } from "../acciones";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,10 +17,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: `${obra?.nombre ?? "Obra colectiva"} · Administración · Somos Nosotros`, robots: { index: false, follow: false } };
 }
 
-/** Detalle de una obra colectiva (OL-088, Fase 1): estado, cuándo cierra, y Terminar/Reabrir. Sin proyección ni
- * mando en vivo todavía — llegan en la Fase 2. */
-export default async function DetalleObra({ params }: { params: Promise<{ id: string }> }) {
+type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ error?: string }> };
+
+/** Detalle de una obra colectiva (OL-088, Fase 1 y Fase 2 bloque 1): estado, cuándo cierra, Terminar/Reabrir y
+ * Borrar (solo cerrada). Sin proyección ni mando en vivo todavía — llegan en el resto de la Fase 2. */
+export default async function DetalleObra({ params, searchParams }: Params) {
   const { id } = await params;
+  const { error } = (await searchParams) ?? {};
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=/admin/obras-colectivas/${id}`);
   if (actual.perfil.rol !== "admin") redirect("/");
@@ -36,15 +41,39 @@ export default async function DetalleObra({ params }: { params: Promise<{ id: st
           <b>{obra.lugarNombre}</b>
         </div>
         <div className={styles.dato}>
-          <span>Cierra</span>
-          <b>{formatearLargo(obra.cierraEn, new Date(), null, obra.zona)}</b>
+          <span>Creada</span>
+          <b>{formatearLargo(obra.creadoEn, new Date(), null, obra.zona)}</b>
         </div>
+        {obra.estado === "cerrada" && obra.cerradoEn ? (
+          <div className={styles.dato}>
+            <span>Cerrada</span>
+            <b>{formatearLargo(obra.cerradoEn, new Date(), null, obra.zona)}</b>
+          </div>
+        ) : (
+          <div className={styles.dato}>
+            <span>Cierra</span>
+            <b>{formatearLargo(obra.cierraEn, new Date(), null, obra.zona)}</b>
+          </div>
+        )}
         <div className={styles.dato}>
           <span>Estado</span>
           <b>{obra.estado === "abierta" ? "Abierta" : "Cerrada"}</b>
         </div>
       </div>
       <AccionesObra id={obra.id} estado={obra.estado} />
+      {error === "borrar" && (
+        <p className={styles.error} role="alert">
+          No se pudo borrar. ¿Sigue cerrada y sigues con sesión de administración?
+        </p>
+      )}
+      {obra.estado === "cerrada" && (
+        <Borrar
+          que="la obra"
+          icono="obra"
+          aviso="Se borra la obra y su imagen final, si la tiene."
+          accion={borrarObra.bind(null, obra.id)}
+        />
+      )}
       <p className={styles.despues}>La proyección y el mando en vivo llegan en la siguiente fase.</p>
     </main>
   );

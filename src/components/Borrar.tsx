@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import Hoja from "./ui/Hoja";
-import { IconoCalendario, IconoEstrella, IconoPersona, IconoPin } from "./ui/Iconos";
+import { IconoCalendario, IconoEstrella, IconoPersona, IconoPin, IconoPincel } from "./ui/Iconos";
 import styles from "./Borrar.module.css";
 
-const ICONOS = { evento: IconoCalendario, lugar: IconoPin, artista: IconoEstrella, persona: IconoPersona };
+const ICONOS = { evento: IconoCalendario, lugar: IconoPin, artista: IconoEstrella, persona: IconoPersona, obra: IconoPincel };
 
 type Props = { que: string; aviso: string; accion: () => Promise<void>; icono: keyof typeof ICONOS };
 
