@@ -8,7 +8,7 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
-import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
+import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin, IconoCerrar } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
@@ -248,7 +248,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
                 title="Quitar la foto"
                 aria-label="Quitar la foto"
               >
-                ✕
+                <IconoCerrar width={22} height={22} />
               </button>
             )}
           </div>

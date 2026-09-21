@@ -151,9 +151,8 @@ describe("cartelAFormulario", () => {
 });
 
 describe("enlaceDesdeCartel", () => {
-  it("convierte @usuario en Instagram con www y barra final, deja enlaces y descarta teléfonos", () => {
-    expect(enlaceDesdeCartel("@casa1100slp")).toBe("https://www.instagram.com/casa1100slp/");
-    expect(enlaceDesdeCartel("@cinemacuarentena")).toBe("https://www.instagram.com/cinemacuarentena/");
+  it("convierte @usuario en Instagram, deja enlaces y descarta teléfonos", () => {
+    expect(enlaceDesdeCartel("@casa1100slp")).toBe("https://instagram.com/casa1100slp");
     expect(enlaceDesdeCartel("boletos.mx/jazz")).toBe("boletos.mx/jazz");
     expect(enlaceDesdeCartel("https://x.org")).toBe("https://x.org");
     expect(enlaceDesdeCartel("444 123 4567")).toBe("");

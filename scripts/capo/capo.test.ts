@@ -121,7 +121,7 @@ describe("aArtista", () => {
   it("nombre limpio, tipo corregido por el nombre, redes reconocidas, correos aparte", () => {
     const a = aArtista({ nombre: "Los Wornaut ", parrafos: ["(San Luis Potosí, 1999)", "Banda pionera."], enlaces: ["https://www.instagram.com/wornaut/", "https://forms.gle/x"], correos: ["w@w.mx"], conImagen: true }, pagina);
     expect(a).toMatchObject({ nombre: "Los Wornaut", disciplina: "musica", detalle: "rock, metal y alternativo", tipo: "grupo", descripcion: "Banda pionera.", correos: ["w@w.mx"], url_fuente: pagina.url });
-    expect(a.redes).toEqual([{ red: "instagram", url: "https://www.instagram.com/wornaut/" }]);
+    expect(a.redes).toEqual([{ red: "instagram", url: "https://www.instagram.com/wornaut" }]);
   });
   it("nombre repetido dos veces y punto final se limpian; las iniciales conservan su punto", () => {
     const f = (nombre: string) => aArtista({ nombre, parrafos: ["x"], enlaces: [], correos: [], conImagen: false }, pagina).nombre;

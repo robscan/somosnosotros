@@ -279,7 +279,7 @@ export type LecturaCartel = {
 export function enlaceDesdeCartel(v: string | null): string {
   const t = (v ?? "").trim();
   if (!t) return "";
-  if (/^@[\w.]+$/.test(t)) return `https://www.instagram.com/${t.slice(1)}/`;
+  if (/^@[\w.]+$/.test(t)) return `https://instagram.com/${t.slice(1)}`;
   if (/^https?:\/\//i.test(t) || /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t)) return t;
   return "";
 }
