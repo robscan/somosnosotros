@@ -30,7 +30,7 @@
 - Un lugar es un lugar: mismo nombre a menos de 150 m es el mismo (no se duplica).
 - Un lugar es un espacio cultural, no un negocio: bares, cafés y foros de conciertos comerciales no entran, aunque tengan programa cultural.
 - Un evento tiene fecha y hora. Sin fecha no se publica.
-- Ubicación del usuario solo si la pide con un botón; sirve para ordenar por cercanía, nada más.
+- Ubicación: se pide con un toque de la persona, en el momento en que le sirve, y se usa para ayudarle (ordenar por cercanía, encontrar direcciones, centrar el mapa). Vive en su teléfono, aproximada y por poco tiempo: nunca se guarda en nuestra base ni se asocia a su cuenta. Puede viajar a Mapbox, aproximada, para buscar direcciones. (Founder, 2026-09-21: «si es necesario cambiar reglas de privacidad entonces lo hacemos pero el usuario agradecerá la ayuda»; sustituye a «sirve para ordenar por cercanía, nada más».)
 - Capacidades del teléfono: hoy, las del navegador (cámara, micrófono, movimiento y orientación, con permiso y solo cuando ahorran trabajo a la persona) y las que suma la app instalada en el inicio (avisos push, globo en el icono). Lo que la web del iPhone no ofrece (NFC, vibración) espera a la app nativa (founder, 2026-09-21: se aprueba «cámara, nfc, micrófono, acelerómetro, haptics»).
 - Lo vacío se dice ("aún no hay eventos"), no se rellena.
 
