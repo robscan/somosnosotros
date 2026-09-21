@@ -66,8 +66,12 @@
   /* ---------- La pieza nueva: el botón bajo el texto (OL-106) ---------- */
   /* El botón es hermano de `.tarjeta` (el <a>), no su hijo: nunca un control interactivo anidado dentro de otro.
      Por eso vive en su propia fila del <li> (el grid de una sola columna de arriba), no en el grid de la tarjeta. */
-  .fila-boton { display: flex; justify-content: center; padding-top: 2px; }
-  .uno .fila-boton { justify-content: flex-start; padding-left: 136px; } /* alineado con el texto, no con la foto (124 px + gap) */
+  /* Alineado con el texto (izquierda), como el título y el detalle de arriba — centrarlo bajo toda la tarjeta lo
+     desconectaba del resto del contenido (corrección del founder, 2026-09-21: "botón Voy aparece debajo de texto mal
+     integrado"). Solo la tarjeta redonda centra (su texto también está centrado ahí). */
+  .fila-boton { display: flex; justify-content: flex-start; padding-top: var(--espacio-1); }
+  .redondas .fila-boton { justify-content: center; }
+  .uno .fila-boton { padding-left: 136px; } /* alineado con el texto, no con la foto (124 px + gap) */
 
   .boton-fila { display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque-min); min-width: var(--toque-min); padding: 0 14px; border: none; border-radius: 999px; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
   .boton-fila svg { width: 18px; height: 18px; }

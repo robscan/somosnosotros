@@ -23,6 +23,12 @@ Prototipo interactivo en [`prototipos/boton-en-carriles.html`](../../rediseno/pr
 
 **Hallazgo de maquetación al revisar con `front-visual` (corregido en el prototipo antes de mostrarlo):** el `<li>` del carril, con `display: grid` y sin `grid-template-columns` propio, pone sus hijos (la tarjeta y la fila del botón) uno al lado del otro en la misma fila en vez de apilarlos — el auto-flow de fila por defecto necesita una columna explícita para envolver. Medido con `getComputedStyle` (mostraba dos columnas en vez de una) antes de enseñárselo al founder. Queda anotado para el código real: `Destacados.module.css` necesita `grid-template-columns: minmax(0, 1fr)` en `.carril > li` al sumar la fila del botón.
 
+## Corrección del founder al ver el prototipo
+
+> «Te vuelvo a llamar la atención por calidad en maquetación. el botón Voy aparece debajo de texto mal integrado.» (2026-09-21)
+
+Medido: `.fila-boton` centraba el botón bajo todo el ancho de la tarjeta, mientras el título y el detalle van alineados a la izquierda — el botón quedaba flotando, sin relación visual con el texto de arriba. Corregido: alineado a la izquierda, como el resto del contenido; solo la tarjeta redonda de artista sigue centrando (su texto también está centrado ahí, `text-align: center`). Artifact republicado en el mismo enlace (versión 2).
+
 ## Qué falta
 
 Firma del founder sobre el prototipo (pregunta concreta: si el botón bajo el texto se ve bien en los tres tamaños, y si el icono solo en la tarjeta redonda se entiende sin la palabra "Seguir"). Código solo después, con la comprobación medida a 320/375/390 px que pide el gestor.
