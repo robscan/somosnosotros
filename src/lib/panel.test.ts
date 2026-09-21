@@ -142,7 +142,7 @@ describe("indicadores", () => {
     expect(lista[1].partes).toEqual(["5 con 2 personas", "3 con 3 a 5", "1 con 6 o más", "La más grande: Jam de jazz, 7 van"]);
     expect(lista[3].cambio).toBe("▲ 7 esta semana");
     expect(lista[3].partes).toEqual(["23 de 97 eventos próximos", "11 personas los publican", "7 publicados esta semana"]);
-    expect(lista[1].enlace.href).toBe("/admin/eventos?filtro=semana");
+    expect(lista[1].enlace.href).toBe("/admin/eventos?filtro=coincidencias");
   });
 });
 
