@@ -32,7 +32,7 @@ export default function Privacidad() {
           <li>Lo que haces en la app: a qué eventos dices «Voy» o «Me interesa», y qué lugares y artistas sigues. Quien abre tu perfil puede ver los eventos próximos a los que vas.</li>
           <li>Si activas avisos en el teléfono: la suscripción que nos da tu navegador para mandarte notificaciones. No es tu número.</li>
           <li>El último día que abriste la app: solo el día, no la hora ni qué miraste. Lo ve solo la administración, para saber si la gente vuelve.</li>
-          <li>Tu ubicación, solo cuando tocas «Cerca de mí» o «Mi ubicación»: sirve para ordenar la lista o centrar el mapa y no se guarda.</li>
+          <li>Tu ubicación, solo cuando la pides con un toque (por ejemplo «Cerca de mí» o al buscar una dirección al publicar un lugar o evento): sirve para ordenar la lista, centrar el mapa o acercar la búsqueda de direcciones. Vive en tu teléfono, aproximada y por poco tiempo; puede viajar a Mapbox para esa búsqueda, pero nunca se guarda en nuestra base ni queda asociada a tu cuenta.</li>
           <li>Lo que publicas: lugares, eventos, artistas, fotos y enlaces. Es público por definición.</li>
         </ul>
 

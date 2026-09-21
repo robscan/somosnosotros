@@ -14,7 +14,10 @@ type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 /** Cuántas sugerencias se muestran, ya ordenadas por cercanía (ver buscarDirecciones). */
 const MAX_SUGERENCIAS = 5;
 
-export function urlGeocodificar(q: string, token: string, cerca: { lat: number; lng: number }): string {
+/** `[oeste, sur, este, norte]`, para acotar la búsqueda a una ciudad de contexto (OL-100, caso "Galeana #423, S.L.P."). */
+export type Bbox = [number, number, number, number];
+
+export function urlGeocodificar(q: string, token: string, cerca: { lat: number; lng: number }, bbox?: Bbox): string {
   const p = new URLSearchParams({
     q,
     access_token: token,
@@ -27,6 +30,8 @@ export function urlGeocodificar(q: string, token: string, cerca: { lat: number; 
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "address,street,place,locality,neighborhood",
   });
+  // Acota a la ciudad de contexto cuando se conoce (nunca un país entero: el contexto ordena, no limita).
+  if (bbox) p.set("bbox", bbox.join(","));
   return `https://api.mapbox.com/search/geocode/v6/forward?${p.toString()}`;
 }
 
@@ -65,10 +70,10 @@ export function interpretarRespuesta(json: RespuestaV6): Sugerencia[] {
     .filter((s): s is Sugerencia => !!s && !!s.direccion);
 }
 
-export async function buscarDirecciones(q: string, token: string, cerca: { lat: number; lng: number }, fetchFn: FetchFn = fetch): Promise<Sugerencia[]> {
+export async function buscarDirecciones(q: string, token: string, cerca: { lat: number; lng: number }, fetchFn: FetchFn = fetch, bbox?: Bbox): Promise<Sugerencia[]> {
   const texto = q.trim();
   if (texto.length < 3) return [];
-  const res = await fetchFn(urlGeocodificar(texto, token, cerca));
+  const res = await fetchFn(urlGeocodificar(texto, token, cerca, bbox));
   if (!res.ok) return [];
   const sugerencias = interpretarRespuesta((await res.json()) as RespuestaV6);
   // Se reordena por distancia real al punto de cercanía (Mapbox no siempre lo hace bien) y se muestran las más cercanas.

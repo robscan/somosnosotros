@@ -9,6 +9,11 @@ describe("geocodificar", () => {
     expect(u.searchParams.has("country")).toBe(false);
     expect(u.searchParams.get("language")).toBe("es");
     expect(u.searchParams.get("proximity")).toBe("-100.97,22.15");
+    expect(u.searchParams.has("bbox")).toBe(false);
+  });
+  it("con bbox, acota a la ciudad de contexto (OL-100, caso 'Galeana #423, S.L.P.')", () => {
+    const u = new URL(urlGeocodificar("Galeana 423, San Luis Potosí", "pk.x", { lat: 22.15, lng: -100.97 }, [-101.1, 22.05, -100.85, 22.25]));
+    expect(u.searchParams.get("bbox")).toBe("-101.1,22.05,-100.85,22.25");
   });
   it("interpreta la respuesta v6 y descarta lo que no tiene coordenadas", () => {
     const s = interpretarRespuesta({
