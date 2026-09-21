@@ -35,7 +35,7 @@ export async function leerCartel(urlImagen: string, ahora: Date = new Date()): P
   const hoy = new Intl.DateTimeFormat("es-MX", { timeZone: ZONA_INICIAL, weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(ahora);
   try {
     const respuesta = await client.messages.parse({
-      model: "claude-opus-5",
+      model: "claude-sonnet-5",
       max_tokens: 4096,
       output_config: { effort: "low", format: zodOutputFormat(Lectura) },
       system: `Lees carteles de eventos culturales de ${CIUDAD_INICIAL.nombre}, México, y sacas los datos para publicarlos en una agenda. Hoy es ${hoy}. Si el cartel da el día sin año, usa la próxima fecha que caiga en ese día a partir de hoy. Si no aparece un dato, devuelve null: no lo inventes. Las horas van en formato de 24 horas.`,

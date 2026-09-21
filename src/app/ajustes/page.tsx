@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Barra from "@/components/ui/Barra";
-import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoLapiz, IconoLibro, IconoPersona, IconoSalir, IconoTablero } from "@/components/ui/Iconos";
+import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoLapiz, IconoLibro, IconoPersona, IconoTablero } from "@/components/ui/Iconos";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { textoPendientes } from "@/lib/panel";
 import { TEXTO_INVITAR } from "@/lib/perfil";
@@ -11,8 +11,9 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import ficha from "@/components/ui/Ficha.module.css";
 import AvisosPerfil from "@/app/perfil/AvisosPerfil";
 import ReservaPerfil from "@/app/perfil/ReservaPerfil";
-import { borrarMiCuenta, cerrarSesion } from "@/app/perfil/acciones";
+import { borrarMiCuenta } from "@/app/perfil/acciones";
 import { contarPendientes } from "@/app/admin/consultas";
+import BotonSalir from "./BotonSalir";
 import InstalarApp from "./InstalarApp";
 import styles from "./ajustes.module.css";
 
@@ -69,15 +70,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
             <small>Sin contraseña: cada vez te mandamos un código</small>
           </li>
           <li>
-            <form action={cerrarSesion}>
-              <button type="submit" className={styles.fila}>
-                <IconoSalir width={20} height={20} />
-                <b>Cerrar sesión</b>
-                <span className={styles.valor}>
-                  <IconoChevronDerecha />
-                </span>
-              </button>
-            </form>
+            <BotonSalir />
           </li>
         </ul>
 
