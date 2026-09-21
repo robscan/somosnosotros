@@ -65,3 +65,20 @@ Contrastado con el transcript local del gestor Claude
   asignados centralmente, rama quieta durante revision, una decision consolidada
   por chat cuando hay mensajes en cola. No reproducir los volumenes antiguos
   de pruebas: se mantiene la regla actual de verificacion proporcional.
+
+## Relevo del gestor (2026-09-21)
+
+El chat gestor `c45c6c9f` (Claude) cierra por tamaño de contexto y entrega a un chat nuevo, «Gestor de cambios II», con las mismas reglas de este registro, de `docs/ops/GESTION_DE_CAMBIOS.md` y de `docs/ops/MEMORIA_GESTOR.md`. El nuevo gestor anota aquí su id de sesión al arrancar.
+
+Estado al relevo (main `144d17c` o posterior; producción al día con main; 43 migraciones aplicadas, ninguna pendiente):
+
+- **Publicado esta ronda:** PR #105 y #107 (directorios, OL-085), #108 y #109 (cabecera única y tira de letras, OL-087), #110 (mapa en fichas, OL-089). Todo sin migración. Falta la prueba del founder en su iPhone de los cuatro: tira de letras (aparece al bajar, letra iluminada), cabecera (renglón que se esconde, botón ↑, mapa con «Cercanos»), mapa en fichas de lugar y evento.
+- **Topes de campos (OL-065, bitácora 096):** rama `topes-de-campos` en `/Users/apple-1/somosnosotros-topes`, commit `b032ff5` (main unido). El operador Haiku (sesión `local_90c5e65c-4549-476b-b1a9-d5e1c24732b2`) unifica el contador en `ui/ContadorCaracteres` y reporta el hash. Luego: revisar, push, PR, CI, merge (autorizado por el founder). Sin migración.
+- **Pincel en la app (OL-088, bitácora 123):** EN PAUSA por orden del founder (créditos): rama `pincel-app` en `/Users/apple-1/somosnosotros-pincel-app`, commit `5c42f64`, fase 1 a medias (la bitácora dice dónde quedó). Operador: sesión `local_8b73c722-bf8c-45e1-99e7-518120579a7a`. No retomar hasta que el founder lo pida. El prototipo firmado vive en `codex/pincel-prototipo` (`6063e16`, sin remoto).
+- **Avisos (OL-086):** entrega encendida, job `avisos-pendientes` cada 5 minutos desde el 2026-09-18. La revisión de las primeras rondas (sesión `local_20c49d6d`) nunca reportó. Preguntar al founder si le llegó algún aviso; si no, comprobar en solo lectura (`cron.job_run_details`, `avisos_enviados`) con node pg desde el scratchpad.
+- **Limpieza pendiente, con permiso del founder:** ~25 ramas y árboles `codex/*` con commits fuera de main pero ya integrados por contenido (ver `git worktree list`); conservar solo `codex/pincel-prototipo` y `codex/pincel-spike`. También los worktrees de `.claude/worktrees/*` de piezas ya publicadas.
+- **Pospuesto por el founder:** panel de admin (explicaciones), rol-de-entonces en destacados, gesto atrás de Safari (OL-071b).
+- **Pendientes del founder:** contraseñas filtradas (toggle en Supabase Auth, plan Pro), tope de gasto en Anthropic, restricción del token de Mapbox por URL más alertas de facturación, foto de perfil.
+- **Reglas añadidas en esta ronda:** nada de council, workflows ni subagentes sin permiso explícito del founder (costo); operadores en Sonnet 5 o Haiku 4.5, y confirmar el modelo efectivo al arrancar (los chips arrancan en el modelo por defecto); Pincel al final de la cola.
+
+Lo siguiente, en orden: cerrar topes; recibir la lista de bugs y mejoras del founder, convertirla en piezas con OL y bitácora, y repartirla a operadores baratos.
