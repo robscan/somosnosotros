@@ -97,10 +97,12 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const ultimaBusqueda = useRef("");
   const nombreElegido = useRef("");
   // La lista de sugerencias y el aviso "Ya está registrado" flotan sobre el layout, anclados al campo del nombre
-  // (ui/ListaFlotante): nunca empujan Dónde, Tipo, Más ni el botón (founder, producción, 2026-09-21). Tocar fuera o
-  // Escape los cierra hasta que se vuelva a escribir.
+  // (ui/ListaFlotante), y solo viven mientras el campo tiene el foco: es un autocompletado, tapar lo de abajo con
+  // el teclado abierto es natural, pero un panel que se queda tapando el siguiente paso (Dónde) sin poder cerrarlo
+  // es peor que empujarlo (revisión del gestor, 2026-09-21). Al salir del campo se cierra solo; si sigue habiendo
+  // coincidencia, queda una sola línea de ayuda bajo el campo (ver más abajo), que sí ocupa su sitio.
   const campoNombreRef = useRef<HTMLElement>(null);
-  const [sugerenciasCerradas, setSugerenciasCerradas] = useState(false);
+  const [enfocadoNombre, setEnfocadoNombre] = useState(false);
   // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
@@ -139,7 +141,6 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   /** Al escribir el nombre: limpia listas si es corto y deduce el tipo si nadie lo eligió a mano (Otro si no hay pista). */
   function alEscribirNombre(valor: string) {
     setNombre(valor);
-    setSugerenciasCerradas(false);
     if (valor.trim().length < 3) {
       setSugeridos([]);
       setExistentes([]);
@@ -223,7 +224,10 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const faltaNombre = nombre.trim().length === 0;
   const faltaDonde = !punto;
   const listo = !faltaNombre && !faltaDonde && !!tipo;
-  const sugerenciasAbiertas = !sugerenciasCerradas && (buscando || recuperando || sugeridos.length > 0 || existentes.length > 0);
+  const sugerenciasAbiertas = enfocadoNombre && (buscando || recuperando || sugeridos.length > 0 || existentes.length > 0);
+  // Al salir del campo, si sigue habiendo coincidencia, una sola línea de ayuda (no el panel) — recortada a una
+  // línea, con el nombre completo disponible al abrir el lugar (revisión del gestor, 2026-09-21).
+  const primerExistente = existentes[0];
 
   return (
     <>
@@ -244,6 +248,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             type="text"
             value={nombre}
             onChange={(e) => alEscribirNombre(e.target.value)}
+            onFocus={() => setEnfocadoNombre(true)}
+            onBlur={() => setEnfocadoNombre(false)}
             maxLength={LIMITES_LUGAR.nombre}
             placeholder="Nombre del lugar"
             aria-label="Nombre del lugar"
@@ -263,14 +269,27 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           <p className={canon.error} role="alert">
             {errores.nombre}
           </p>
-        ) : (
+        ) : faltaNombre ? (
           // La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios).
-          faltaNombre && <p className={canon.cuerpoNota}>Falta el nombre.</p>
+          <p className={canon.cuerpoNota}>Falta el nombre.</p>
+        ) : (
+          // Con el campo sin foco, si sigue habiendo coincidencia queda esta línea (recortada a una) en vez del
+          // panel flotante: el panel tapaba Dónde sin poder cerrarse (revisión del gestor, 2026-09-21).
+          !enfocadoNombre &&
+          primerExistente && (
+            <p className={styles.notaExiste}>
+              <span>Ya hay {existentes.length > 1 ? "varios" : "uno"} con este nombre: </span>
+              <b className={styles.nombreRecortado}>{primerExistente.nombre}</b>
+              <Link href={`/lugares/${primerExistente.id}`}>Ver</Link>
+            </p>
+          )
         )}
         {/* La lista de sugerencias y "Ya está registrado" flotan sobre el layout, sin empujar Dónde, Tipo, Más ni el
-            botón (founder, producción, 2026-09-21). Mismo patrón que HojaDondeEs: el estado ("Buscando…"), el aviso
-            y las opciones viven dentro de la misma lista flotante. */}
-        <ListaFlotante abierta={sugerenciasAbiertas} onCerrar={() => setSugerenciasCerradas(true)} ancla={campoNombreRef} id="lista-sugerencias-lugar" etiqueta="Lugares encontrados">
+            botón, y solo viven mientras el campo del nombre tiene el foco (revisión del gestor, 2026-09-21: un
+            autocompletado tapa lo de abajo con el teclado abierto, pero se cierra solo al salir del campo — la línea
+            de arriba toma el relevo). Mismo patrón que HojaDondeEs: el estado ("Buscando…"), el aviso y las
+            opciones viven dentro de la misma lista flotante. */}
+        <ListaFlotante abierta={sugerenciasAbiertas} onCerrar={() => setEnfocadoNombre(false)} ancla={campoNombreRef} id="lista-sugerencias-lugar" etiqueta="Lugares encontrados">
           {buscando || recuperando ? (
             <li className={styles.avisoFlotante} role="status">
               {recuperando ? "Trayendo la ubicación…" : "Buscando…"}
@@ -278,7 +297,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           ) : (
             <>
               {existentes.length > 0 && (
-                <li className={canon.existe} role="status">
+                <li className={`${canon.existe} ${styles.existeFlotante}`} role="status">
                   <IconoOk width={20} height={20} />
                   <span>
                     <b>Ya está registrado:</b>{" "}
@@ -294,7 +313,10 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
               )}
               {sugeridos.map((s) => (
                 <li key={s.mapboxId}>
-                  <button type="button" className={`${sug.renglon} ${s.esDireccion ? sug.direccion : ""}`} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
+                  {/* onMouseDown con preventDefault: el toque no le quita el foco al campo antes de que el clic
+                      se procese, si no React quita el panel del DOM a medio gesto y el toque no llega a elegir
+                      (revisión del gestor, 2026-09-21, sobre el mismo mecanismo de "cerrar al salir del foco"). */}
+                  <button type="button" className={`${sug.renglon} ${s.esDireccion ? sug.direccion : ""}`} onMouseDown={(e) => e.preventDefault()} onClick={() => elegirSugerido(s)} role="option" aria-selected={false}>
                     <IconoPin width={20} height={20} />
                     <b>{s.esDireccion ? nombre.trim() : s.nombre}</b>
                     <small>{s.esDireccion ? `Usar la dirección ${s.direccion || s.nombre}` : s.direccion}</small>

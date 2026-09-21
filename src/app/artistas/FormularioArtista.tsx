@@ -25,6 +25,7 @@ import CampoImagenUrl from "@/components/CampoImagenUrl";
 import type { ResultadoArtista } from "./acciones";
 import HojaCiudad from "./HojaCiudad";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import estilos from "./FormularioArtista.module.css";
 
 type Props = {
   accion: (previo: ResultadoArtista | null, formData: FormData) => Promise<ResultadoArtista>;
@@ -87,11 +88,12 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
   useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces);
   const hojaSalir = useSalirSinPublicar(formRef, esAlta);
-  // "Ya está registrado" flota sobre el layout, anclado al campo del nombre (ui/ListaFlotante): nunca empuja Qué
-  // hace, Es, Ciudad ni el resto (founder, producción, 2026-09-21). Tocar fuera o Escape lo cierra hasta que se
-  // vuelva a escribir.
+  // "Ya está registrado" flota sobre el layout, anclado al campo del nombre (ui/ListaFlotante), y solo vive
+  // mientras el campo tiene el foco: al salir se cierra solo y, si sigue habiendo coincidencia, queda una línea de
+  // ayuda bajo el campo — un panel que tapa el siguiente renglón sin poder cerrarlo es peor que uno que empuja
+  // (revisión del gestor, 2026-09-21).
   const campoNombreRef = useRef<HTMLElement>(null);
-  const [avisoRepetidoCerrado, setAvisoRepetidoCerrado] = useState(false);
+  const [enfocadoNombre, setEnfocadoNombre] = useState(false);
 
   // Lo deducido del nombre manda hasta que la persona lo cambie a mano (decisión 4).
   const hayNombre = nombre.trim().length > 0;
@@ -148,12 +150,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const faltaNombre = !hayNombre;
   const listo = !faltaNombre && !repetido;
   const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre";
-  const avisoRepetidoAbierto = !!repetido && !avisoRepetidoCerrado;
-
-  function alEscribirNombre(valor: string) {
-    setNombre(valor);
-    setAvisoRepetidoCerrado(false);
-  }
+  const avisoRepetidoAbierto = enfocadoNombre && !!repetido;
 
   return (
     <>
@@ -172,7 +169,9 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           name="nombre"
           type="text"
           value={nombre}
-          onChange={(e) => alEscribirNombre(e.target.value)}
+          onChange={(e) => setNombre(e.target.value)}
+          onFocus={() => setEnfocadoNombre(true)}
+          onBlur={() => setEnfocadoNombre(false)}
           maxLength={LIMITES_ARTISTA.nombre}
           placeholder="Nombre del artista o grupo"
           aria-label="Nombre del artista o grupo"
@@ -193,16 +192,27 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         <p className={canon.error} role="alert">
           {errores.nombre}
         </p>
-      ) : (
+      ) : faltaNombre ? (
         // La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios).
-        faltaNombre && <p className={canon.cuerpoNota}>Falta el nombre.</p>
+        <p className={canon.cuerpoNota}>Falta el nombre.</p>
+      ) : (
+        // Con el campo sin foco, si sigue habiendo un repetido queda esta línea en vez del panel flotante: el
+        // panel tapaba Qué hace sin poder cerrarse (revisión del gestor, 2026-09-21).
+        !enfocadoNombre &&
+        repetido && (
+          <p className={estilos.notaExiste}>
+            <span>Ya hay uno con este nombre: </span>
+            <b className={estilos.nombreRecortado}>{repetido.nombre}</b>
+            <Link href={`/artistas/${repetido.id}`}>Ver</Link>
+          </p>
+        )
       )}
       {/* Un artista es un artista (decisión 5 de 08): el mismo nombre no se registra dos veces; se abre el que ya
-          está. Flota sobre el layout, anclado al campo del nombre: nunca empuja Qué hace, Es ni Ciudad (founder,
-          producción, 2026-09-21). */}
-      <ListaFlotante abierta={avisoRepetidoAbierto} onCerrar={() => setAvisoRepetidoCerrado(true)} ancla={campoNombreRef} id="aviso-nombre-repetido" etiqueta="Nombre ya registrado">
+          está. Flota sobre el layout, anclado al campo del nombre, y solo vive mientras el campo tiene el foco
+          (founder, producción, 2026-09-21; revisión del gestor, 2026-09-21). */}
+      <ListaFlotante abierta={avisoRepetidoAbierto} onCerrar={() => setEnfocadoNombre(false)} ancla={campoNombreRef} id="aviso-nombre-repetido" etiqueta="Nombre ya registrado">
         {repetido && (
-          <li className={canon.existe} role="status">
+          <li className={`${canon.existe} ${estilos.existeFlotante}`} role="status">
             <IconoOk width={20} height={20} />
             <span>
               <b>Ya está registrado:</b> <Link href={`/artistas/${repetido.id}`}>{repetido.nombre}</Link> · {etiquetaArtista(repetido)}. Ábrelo y, si es tuyo, dilo ahí.

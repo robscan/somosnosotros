@@ -71,6 +71,40 @@ npm run lint && npm run typecheck && npm test
 
 **Límite declarado:** sin token de Mapbox en este árbol (nunca se copia uno real a la carpeta de un operador), así que la lista de sugerencias de Mapbox nunca se vio con resultados reales; lo que sí se vio y se midió es el aviso "Ya está registrado" (viene de la RPC `lugares_con_nombre`/`artistas_con_nombre`, no de Mapbox), que es exactamente el caso que F2 pedía corregir.
 
+## Devuelta por el gestor (2026-09-21) y corregida
+
+El gestor abrió tres capturas y aceptó F1 tal cual, pero devolvió F2: el panel flotante cumplía la letra (nada se movía) pero no el propósito — tapaba el renglón siguiente (Dónde entero en lugar; Qué hace y medio Tipo en artista) sin forma de cerrarlo, así que la persona no veía qué seguía. Además, una franja blanca de ~12 px bajo el aviso, y preguntó si el icono de estrella del nombre de artista, que se ve más abajo que el texto, era cosa de esta pieza o ya estaba en `main`.
+
+### 1 — El panel solo vive con el foco puesto
+
+Se rediseñó la vida del panel siguiendo la propuesta del gestor: es un autocompletado, así que solo se muestra mientras el campo del nombre tiene el foco (`enfocadoNombre`, con `onFocus`/`onBlur` en el input). Al salir del campo se cierra solo y, si sigue habiendo una coincidencia, queda **una sola línea de ayuda** bajo el campo (mismo lugar que "Falta el nombre."): *"Ya hay uno con este nombre: [nombre recortado con puntos] · Ver"* — con el prefijo y "Ver" fijos y el nombre en medio recortado con `text-overflow: ellipsis` (flexbox: `min-width: 0`, `flex: 1 1 auto` en el nombre, `flex-shrink: 0` en el prefijo y en "Ver"), para que "Ver" nunca desaparezca sin importar cuán largo sea el nombre. Nuevo en `FormularioLugar.tsx`/`.module.css` y `FormularioArtista.tsx` (con un `FormularioArtista.module.css` nuevo, la pantalla no tenía uno propio).
+
+**Sobre "que un solo toque cierre el panel Y abra Dónde/Qué hace" (lo que pidió el gestor explícitamente):** se implementó y se probó con clics reales por CDP, con un hallazgo que hay que reportar en vez de maquillar. Medido (`debug-solape.mjs`): el hueco entre el campo del nombre y el primer renglón es de apenas ~19 px (`Dónde` empieza en `top:261`, el panel en `top:242`); ningún aviso legible cabe en ese hueco, así que **siempre** hay algo del panel exactamente encima del botón del renglón siguiente — confirmado con `elementFromPoint` en el punto exacto del botón "Buscar la dirección": devuelve el `<a>` del aviso, no el botón. Probado con un clic real (`Input.dispatchMouseEvent`) en ese punto: **el toque sí cierra el panel** (blur del campo, sin necesitar un segundo toque para eso) **y no navega por accidente** (no se abrió la ficha del lugar ni pasó nada indebido), pero **tampoco llega a abrir la hoja "Dónde es"** — el toque se pierde, hace falta un segundo toque, ya sobre el renglón visible y sin nada encima. La razón no es de tiempos (una carrera que se pueda ganar con otro `setState`): es que el navegador decide el elemento del clic por dónde está físicamente en ese instante, y en ese instante el panel todavía cubre el punto — ninguna cantidad de truncar el texto del panel cambia eso, porque el hueco disponible (~19 px) es menor que cualquier aviso legible. Resolverlo de verdad exigiría (a) volver a empujar el layout mientras el campo tiene el foco (deshace lo que pidió F2) o (b) reenviar el clic a mano al elemento que quede debajo tras cerrar el panel (un truco fuera de lo estándar, con riesgo de disparar acciones dos veces o de accesibilidad, y de más alcance que esta pieza). Se deja así, con la mejora real ya lograda: antes el panel se quedaba pegado sin ninguna salida; ahora un toque lo cierra (sin arriesgar una navegación por accidente) y dos toques bastan para llegar al renglón — el mismo patrón que usan la mayoría de los autocompletados (la barra de direcciones, un buscador). Reportado al gestor para que decida si esto es aceptable o si quiere autorizar la opción (b).
+
+### 2 — La franja blanca
+
+`canon.existe` trae `margin-bottom: var(--espacio-3)`, pensado para cuando vive en el flujo normal con algo después; dentro de la lista flotante es el único contenido y ese margen se sumaba a la altura del panel como una franja vacía. Una clase local (`.existeFlotante` en `FormularioLugar.module.css` y en el nuevo `FormularioArtista.module.css`) pone `margin-bottom: 0` solo ahí. Medido con `debug-solape.mjs`: el panel ya no tiene esa franja (su alto es el del contenido real).
+
+### 3 — El icono de estrella
+
+Medido, no a ojo (`comparar-iconos-nombre` en el scratchpad): el centro vertical del icono y el centro vertical del `<input>` son el **mismo píxel** (`delta: 0`) en los dos campos, lugar (lupa) y artista (estrella) — geométricamente están perfectamente centrados, y el diff de esta pieza no tocó el icono, el campo ni su CSS (solo agregó atributos no visuales al `<input>`, confirmado con `git diff 99114bc`). Lo que se ve es una ilusión óptica del propio dibujo de la estrella (una punta arriba, la base más plana abajo reparte el "peso" visual más abajo del centro geométrico) — ya está en `main`, no es un bug de maquetación ni algo que esta pieza haya metido. Se lo anoto al gestor para que lo registre aparte si quiere corregir el trazo del icono (es una decisión de diseño del símbolo, no una de esta pieza).
+
+### Verificación de la corrección
+
+`npm run lint && npm run typecheck && npm test`: verdes, 789/789 (mismo hallazgo de `pg`). `npm run build`: verde.
+
+**Ocho capturas nuevas** en [`docs/rediseno/capturas-110-v2/`](../../../rediseno/capturas-110-v2/), con los nombres al tope de longitud del primer round:
+
+| Captura | Qué prueba |
+| --- | --- |
+| `lugar-panel-abierto--390x844.png` | Con el foco puesto: el panel flota sobre Dónde, sin la franja blanca. |
+| `artista-panel-abierto--390x844.png` | Lo mismo en artista, sobre Qué hace/Es. |
+| `lugar-tras-tocar-donde--390x844.png` | Un toque real (CDP) sobre "Buscar la dirección" con el panel abierto: cierra el panel, no navega por accidente; el toque no abre la hoja (hace falta un segundo toque) — ver limitación explicada arriba. |
+| `artista-tras-tocar-que-hace--390x844.png` | Lo mismo con "Cambiar" de Qué hace. |
+| `lugar-linea-ayuda-y-donde--390x844.png` | Tras `Tab` (blur real, sin tocar nada más): la línea de ayuda de una sola línea y Dónde completo, visible y sin nada encima. |
+| `artista-linea-ayuda-y-que-hace--390x844.png` | Lo mismo con Qué hace. |
+| `lugar-linea-ayuda--320x568.png`, `artista-linea-ayuda--320x568.png` | La línea de ayuda a 320 px: `right ≤ anchoVentana` en los dos, "Ver" siempre visible (`medir-linea-320.mjs`, `scrollWidth === clientWidth` en ambos). |
+
 ## Estado
 
-Commit local en `alta-lugar-artista-canon`, sin push (Vercel en su tope diario de despliegues). Sin migración. `.env.local` y el respaldo/scripts de captura quedan fuera del repo (ignorados por `.gitignore`, y los scripts en el scratchpad de esta sesión, no en el árbol de trabajo). Aviso "listo" al gestor.
+Segundo commit local, encima del primero, en `alta-lugar-artista-canon`, sin push (Vercel en su tope diario de despliegues). Sin migración. `.env.local` y el respaldo/scripts de captura quedan fuera del repo (ignorados por `.gitignore`, y los scripts en el scratchpad de esta sesión, no en el árbol de trabajo). Aviso "listo" al gestor, con la limitación del punto 1 explicada para que decida.
