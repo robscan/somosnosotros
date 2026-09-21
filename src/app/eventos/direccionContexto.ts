@@ -9,9 +9,10 @@
  * evita que Mapbox proponga algo lejano en el primer intento.
  */
 import type { Ciudad } from "@/lib/ciudad";
-import { CIUDAD_INICIAL, CIUDADES } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, CIUDADES, ciudadPorSlug } from "@/lib/ciudad";
 import { distanciaKm } from "@/lib/geo";
 import type { Punto } from "@/lib/geo";
+import type { Bbox } from "@/lib/geocodificar";
 
 function normalizar(s: string): string {
   return s
@@ -105,7 +106,7 @@ export function ciudadDeContexto(opciones: {
 const RADIO_BBOX_KM = 15;
 
 /** bbox `[oeste, sur, este, norte]` para Mapbox, alrededor de un centro. */
-export function bboxDesdeCentro(centro: Punto, radioKm = RADIO_BBOX_KM): [number, number, number, number] {
+export function bboxDesdeCentro(centro: Punto, radioKm = RADIO_BBOX_KM): Bbox {
   const dLat = radioKm / 111; // 1° de latitud ~ 111 km
   const dLng = radioKm / (111 * Math.cos((centro.lat * Math.PI) / 180));
   return [centro.lng - dLng, centro.lat - dLat, centro.lng + dLng, centro.lat + dLat];
@@ -138,4 +139,69 @@ export function textoParaReintento(texto: string, ciudad: Ciudad): string {
   const limpio = limpiarDireccion(texto);
   if (normalizar(limpio).includes(normalizar(ciudad.nombre))) return limpio;
   return `${limpio}, ${ciudad.nombre}`;
+}
+
+/**
+ * El `bbox` que le toca a una búsqueda, según su ciudad de contexto (revisión del gestor, 2026-09-21): un `bbox`
+ * no ordena, EXCLUYE todo lo de fuera — al contrario que `proximity`, que solo sesga. Con el respaldo (`origen:
+ * "inicial"`, sin ninguna pista real) acotar sería silencioso y falso: alguien sin chip ni posición que publica en
+ * Querétaro no encontraría jamás su propia calle, recortada a la zona de San Luis sin que lo sepa. Contradice "el
+ * contexto ordena, no limita". Por eso solo hay `bbox` cuando la ciudad viene de una pista real (texto, lugar leído,
+ * chip o posición); con el respaldo, ninguno — `proximity` solo.
+ */
+export function bboxParaContexto(contexto: ContextoDireccion, radioKm = RADIO_BBOX_KM): Bbox | undefined {
+  return contexto.origen === "inicial" ? undefined : bboxDesdeCentro(contexto.centro, radioKm);
+}
+
+/**
+ * Busca con hasta tres intentos, nunca más (cuida el gasto de Mapbox): (1) el texto tal cual, con `bbox` si hay una
+ * ciudad de contexto real; (2) si nada quedó cerca, el texto limpio con la ciudad pegada, mismo `bbox`; (3) si aun
+ * así nada quedó cerca, una última vez SIN `bbox` (solo `proximity`) — un `bbox` equivocado (contexto en San Luis,
+ * la dirección real en otra ciudad que el texto no nombra) no puede dejar a la persona sin encontrar lo suyo.
+ * `buscar` es quien de verdad llama a Mapbox (inyectado, para poder probar esto sin red). `haceFalta` decide si el
+ * resultado de un intento cuenta como "cerca" (distinto para direcciones —con coordenadas— y lugares —con la
+ * distancia en metros que da el paso "sugerir"—).
+ */
+export async function buscarConContexto<T>(
+  texto: string,
+  contexto: ContextoDireccion,
+  buscar: (texto: string, bbox: Bbox | undefined) => Promise<T[]>,
+  haceFalta: (resultados: T[]) => boolean,
+): Promise<T[]> {
+  const bbox = bboxParaContexto(contexto);
+  let resultados = await buscar(texto, bbox);
+  if (bbox && haceFalta(resultados)) {
+    const reintento = textoParaReintento(texto, contexto.ciudad);
+    if (reintento !== texto) {
+      const segunda = await buscar(reintento, bbox);
+      if (segunda.length) resultados = segunda;
+    }
+  }
+  if (bbox && haceFalta(resultados)) {
+    const tercera = await buscar(texto, undefined);
+    if (tercera.length) resultados = tercera;
+  }
+  return resultados;
+}
+
+/**
+ * Resuelve `?ciudad=` de la URL con la que se entró a "Publicar evento" (chip de la Agenda), pero sin el respaldo
+ * silencioso de `ciudadPorSlug` — que ante un slug inventado o vacío cae en San Luis Potosí como si la persona lo
+ * hubiera elegido (revisión del gestor, 2026-09-21). Aquí, cualquier valor que no coincida con una ciudad real
+ * (inventado, vacío, o de una ciudad que ya no existe) cae en `null`: sin ciudad de contexto, como si no hubiera
+ * venido nada en la URL.
+ */
+export function ciudadDesdeSlug(slug: string | null | undefined, ciudades: readonly Ciudad[] = CIUDADES): Ciudad | null {
+  if (!slug) return null;
+  const resuelta = ciudadPorSlug(slug, ciudades);
+  return resuelta.slug === slug ? resuelta : null;
+}
+
+/**
+ * A 3 decimales (~100 m): lo que la posición del teléfono aporta a Mapbox (`proximity`, centro del `bbox`) nunca
+ * viaja más precisa que esto (regla de ubicación, DEFINICION 2026-09-21: "puede viajar a Mapbox, aproximada"). El
+ * pin que la persona confirma a mano no pasa por aquí — ese es el dato del evento, no su ubicación.
+ */
+export function redondearParaMapbox(p: Punto): Punto {
+  return { lat: Math.round(p.lat * 1000) / 1000, lng: Math.round(p.lng * 1000) / 1000 };
 }

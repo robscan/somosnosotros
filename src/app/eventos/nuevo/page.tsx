@@ -6,10 +6,10 @@ import { lecturaDeCartelActiva } from "@/lib/cartel";
 import type { QuienItem } from "@/lib/artistas";
 import type { Evento } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
-import { ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDelSitio } from "@/lib/zona";
+import { ciudadDesdeSlug } from "../direccionContexto";
 import FormularioEvento from "../FormularioEvento";
 import { crearEvento, cupoDeCartel } from "../acciones";
 
@@ -19,8 +19,9 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
   const { lugar, desde, artista, ciudad: ciudadSlug } = await searchParams;
   const actual = await usuarioActual();
   // De dónde se entró a "Publicar evento" (chip de la Agenda): una pista más para acercar la búsqueda de dirección
-  // (OL-100, docs/rediseno/26); no se pide con ella ningún dato nuevo a la persona.
-  const ciudadContexto = ciudadSlug ? ciudadPorSlug(ciudadSlug, await cargarCiudades()) : null;
+  // (OL-100, docs/rediseno/26); no se pide con ella ningún dato nuevo a la persona. Un slug inventado o vacío cae
+  // en null (ciudadDesdeSlug), nunca en San Luis Potosí por respaldo silencioso (revisión del gestor, 2026-09-21).
+  const ciudadContexto = ciudadDesdeSlug(ciudadSlug, await cargarCiudades());
   const volverA = `/eventos/nuevo${lugar ? `?lugar=${lugar}` : artista ? `?artista=${artista}` : ""}`;
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(volverA)}`);
   const supabase = await clienteServidor();

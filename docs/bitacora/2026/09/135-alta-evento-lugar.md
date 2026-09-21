@@ -1,6 +1,6 @@
 # 135 · Lugar y dirección en el alta de evento
 
-**Fecha:** 2026-09-21 · **Rama:** `alta-evento-lugar` · **OL:** OL-100 · **PR:** pendiente (espera A6 en `main`)
+**Fecha:** 2026-09-21 · **Rama:** `alta-evento-lugar` · **OL:** OL-100 · **PR:** pendiente (reentrega tras revisión del gestor)
 
 Pieza A7 de la cola. Sobre L2, L3 y L37 (segunda mitad) de la lista del founder (2026-09-21).
 
@@ -82,9 +82,34 @@ No se generaron PNG (el navegador de esta sesión no expone guardar la captura a
 
 El gestor confirmó que OL-099 (PR #123, `d0512dc`) ya estaba en `main` y pidió traerla para cerrar. `git merge origin/main`: un solo conflicto real, otra vez en `docs/ops/OPEN_LOOPS.md` (cabecera y sección "Ahora"); `FormularioEvento.tsx` se fusionó **solo**, sin conflicto — confirma que las líneas que evitó cada pieza (las de precio, las mías) no se tocaron entre sí. Al resolver OPEN_LOOPS se encontró y corrigió una errata de mi propio merge anterior (se había perdido la palabra "antes," al empalmar dos trozos de la cabecera "Last updated"); corregida sin tocar nada más de ese archivo. Verificado línea por línea que nada de `main` desapareció y sin duplicados. `npm run lint && npm run typecheck && npm test` (742 pruebas) y build en verde.
 
+## Revisión del gestor y reentrega (2026-09-21)
+
+El gestor revisó `c82efd7` y devolvió tres puntos sobre la búsqueda (dos bloqueantes) y, por separado, un aviso del founder sobre formularios que se salían de la tarjeta en su iPhone, con instrucción de comprobar `HojaDondeEs` con datos que rompan.
+
+### 1 — El `bbox` excluía en vez de sesgar (bloqueante)
+Un `bbox` no ordena como `proximity`: recorta. Con el respaldo (`origen: "inicial"`, sin ninguna pista real) acotar a 15 km de San Luis Potosí dejaba a cualquiera publicando en otra ciudad sin encontrar jamás su propia dirección — contradice "el contexto ordena, no limita". Arreglo en `direccionContexto.ts`:
+- `bboxParaContexto(contexto)`: `undefined` cuando `origen === "inicial"`; el `bbox` de la ciudad en cualquier otro caso (texto, lugar, chip o posición — una pista real).
+- `buscarConContexto(texto, contexto, buscar, haceFalta)`: hasta tres intentos, nunca más — (1) el texto con `bbox` si hay pista real; (2) si no hubo nada cerca, el texto limpio con la ciudad pegada, mismo `bbox`; (3) si aun así nada, una vez sin `bbox` (solo `proximity`). `HojaDondeEs.tsx` ya no arma la búsqueda a mano: llama a esta función, inyectando el `buscar` real (Mapbox) y el criterio de "cerca" (por coordenadas para direcciones, por `distanciaM` para lugares).
+- 5 pruebas nuevas, con los tres casos que pidió el gestor: origen "inicial" → primera llamada sin `bbox`; chip en San Luis + dirección real en Matehuala (~190 km, que el texto no nombra) → el `bbox` de San Luis no la encuentra, la tercera búsqueda sin `bbox` sí; el caso "Galeana #423, S.L.P." sigue pasando (el reintento con el texto limpio la encuentra, sin necesitar una tercera llamada).
+
+### 2 — Redondear lo que sale hacia Mapbox como pista de ubicación (bloqueante)
+`redondearParaMapbox(p)`, a 3 decimales (~100 m), como pide la regla de ubicación de DEFINICION ("aproximada"). Se aplica a la posición del teléfono (cacheada o pedida con el botón) antes de entrar a la cascada de contexto — nunca al pin que la persona confirma a mano (`punto`), que es el dato del propio evento, no su ubicación. Una prueba fija el redondeo exacto.
+
+### 3 — `?ciudad=` inventado o vacío no debe caer en San Luis Potosí por respaldo
+`ciudadPorSlug` (la función general) cae en San Luis Potosí ante cualquier slug que no reconoce — correcto para otros usos, pero aquí un valor inventado en la URL terminaría sesgando la búsqueda como si la persona hubiera elegido esa ciudad. `ciudadDesdeSlug(slug, ciudades)`, nueva en `direccionContexto.ts`: solo resuelve si el slug coincide de verdad con una ciudad; cualquier otra cosa (inventado, vacío, `null`) cae en `null` — sin ciudad de contexto. Usada en `nuevo/page.tsx` en vez de `ciudadPorSlug` directo. 4 pruebas.
+
+### Formularios que se salen de la tarjeta (aviso del founder a todos los operadores)
+Medido con datos que rompen (dirección de 120+ caracteres, nombre de lugar largo, dos lugares para poder abrir la hoja) a 320, 375 y 390 px, con `getBoundingClientRect()` sobre cada elemento (no solo a ojo): **cero elementos con el borde derecho más allá del viewport y `scrollWidth === clientWidth` (sin scroll horizontal) en los nueve casos** (3 anchos × 3 pantallas: el renglón Dónde en "Confirmar", el renglón Dónde resuelto con un lugar de nombre largo, y la hoja "Dónde es" con ese mismo lugar en la lista) y también en "Es en otro sitio" con el nombre y la dirección largos precargados, a 320 y 390 px.
+
+Un hallazgo real al mirarlo: la rama "Confirmar" mostraba `textoDelSitio(otro)` — nombre **y** dirección juntos — que con datos largos duplicaba el texto y volvía el renglón desproporcionadamente alto (sin desbordar horizontalmente, pero mal). Corregido para mostrar una sola línea leída (`otro.direccion || otro.sitioTexto`), como ya mostraba el prototipo firmado.
+
+Revisión del CSS nuevo (`HojaDondeEs.module.css`): la única regla propia que agregó esta pieza es `.usarUbicacion` (un botón `flex`, no una rejilla). Se le agregó `min-width: 0` y `overflow-wrap: anywhere` al texto (envuelto en su propio `<span>`, antes iba suelto) y `flex-shrink: 0` al icono, para que un texto largo no empuje el botón fuera de su tarjeta. El resto de esta pieza reutiliza el canon (`ui/FormularioCanon`, `ui/Sugerencia`) sin estilos propios, tal como pide el founder; `FormularioCanon.module.css` (compartido por todos los formularios, no tocado aquí) ya trae `overflow-wrap: anywhere` en `.valor`, y la medición no encontró desbordes ahí tampoco.
+
+**Verificación:** `npm run lint && npm run typecheck && npm test`: en verde, 751 pruebas (35 nuevas en total en `direccionContexto.test.ts`), 7 rojas preexistentes y ajenas (sin `pg`). Build en verde.
+
 ## Estado
 
-Firmado y con el código completo, con `main` al día (incluidas OL-103 y OL-099). `npm run lint && npm run typecheck && npm test` y build en verde. Verificación visual de los tres estados que no dependen de Mapbox, hecha con un arnés local sin Supabase ni Playwright. Falta: que el gestor lo revise entero y lo entregue.
+Firmado, con el código completo (incluidas las tres correcciones del gestor y la comprobación de desbordes), y con `main` al día (OL-103 y OL-099). `npm run lint && npm run typecheck && npm test` y build en verde. Reentrega al gestor.
 
 ## Pasos
 

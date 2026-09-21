@@ -592,8 +592,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               </>
             ) : dondeConfirmar ? (
               // Leído del cartel o de una sugerencia, pero el pin no está confirmado: "Confirmar", no "Falta" (L3).
+              // Una sola línea leída, no el nombre y la dirección juntos (textoDelSitio): revisión del gestor tras
+              // el aviso del founder sobre formularios que se salen de la tarjeta con datos largos.
               <>
-                <span className={canon.valor}>{textoDelSitio(otro)}</span>
+                <span className={canon.valor}>{otro.direccion?.trim() || otro.sitioTexto}</span>
                 <button type="button" className={canon.cambiar} onClick={() => setHoja(true)}>
                   Confirmar
                 </button>

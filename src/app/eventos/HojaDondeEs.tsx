@@ -18,7 +18,7 @@ import { configPublica } from "@/lib/config";
 import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
 import { sugerirLugares, recuperarLugar, type LugarSugerido } from "@/lib/buscarLugares";
 import { ubicacionCercanaFresca, leerUbicacionCercana } from "@/lib/ubicacion";
-import { bboxDesdeCentro, ciudadDeContexto, necesitaReintento, necesitaReintentoLugares, textoParaReintento } from "./direccionContexto";
+import { buscarConContexto, ciudadDeContexto, necesitaReintento, necesitaReintentoLugares, redondearParaMapbox } from "./direccionContexto";
 import { cambiarReserva, consultarMapa, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import { avisarQueVuelvo } from "./borrador";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -103,11 +103,15 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const [pidiendoUbicacionCerca, setPidiendoUbicacionCerca] = useState(false);
   const posicionTelefono = posicionPedida ?? ubicacionCercanaFresca();
   // Ciudad de contexto en cascada (OL-100, founder 2026-09-21): el punto ya elegido manda; si no hay, el texto de la
-  // búsqueda, la ciudad del chip o la posición del teléfono, y San Luis Potosí de respaldo.
-  const contexto = useMemo(
-    () => (punto ? { ciudad: CIUDAD_INICIAL, centro: punto, origen: "posicion" as const } : ciudadDeContexto({ texto: consulta?.texto, ciudadChip: ciudadContexto, posicion: yo ?? posicionTelefono })),
-    [punto, consulta?.texto, ciudadContexto, yo, posicionTelefono],
-  );
+  // búsqueda, la ciudad del chip o la posición del teléfono, y San Luis Potosí de respaldo. La posición del teléfono
+  // va redondeada a 3 decimales antes de entrar a la cascada: es lo único de esto que sale hacia Mapbox como pista
+  // de ubicación (regla de DEFINICION, "aproximada"); el pin que la persona confirma a mano (`punto`) no se toca,
+  // es el dato del evento.
+  const contexto = useMemo(() => {
+    if (punto) return { ciudad: CIUDAD_INICIAL, centro: punto, origen: "posicion" as const };
+    const posicion = yo ?? posicionTelefono;
+    return ciudadDeContexto({ texto: consulta?.texto, ciudadChip: ciudadContexto, posicion: posicion ? redondearParaMapbox(posicion) : null });
+  }, [punto, consulta?.texto, ciudadContexto, yo, posicionTelefono]);
   const cerca = contexto.centro;
   // Sin ninguna pista real (ni texto, ni chip, ni posición): se ofrece pedirla con un toque, nunca automático.
   const sinPistaDeCiudad = !punto && !yo && !posicionTelefono && contexto.origen === "inicial";
@@ -125,36 +129,29 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     if (!consulta || consulta.texto.trim().length < 3) return;
     const { mapboxToken } = configPublica();
     const revision = version.current;
-    const bbox = bboxDesdeCentro(cerca);
     let vigente = true;
     const timer = setTimeout(async () => {
       setBuscando(true);
       try {
         if (!mapboxToken) throw new Error("Sin servicio de direcciones");
         if (consulta.tipo === "direccion") {
-          let opciones = (await buscarDirecciones(consulta.texto, mapboxToken, cerca, consultarMapa, bbox)).filter(puntoValido);
-          // Segunda búsqueda, una sola vez y solo si la primera no trajo nada cerca (cuida el gasto de Mapbox):
-          // limpia el texto y le pega la ciudad de contexto (caso "Galeana #423, S.L.P." → "Galeana 423, San Luis Potosí").
-          if (necesitaReintento(opciones, cerca)) {
-            const reintento = textoParaReintento(consulta.texto, contexto.ciudad);
-            if (reintento !== consulta.texto) {
-              const segunda = (await buscarDirecciones(reintento, mapboxToken, cerca, consultarMapa, bbox)).filter(puntoValido);
-              if (segunda.length) opciones = segunda;
-            }
-          }
+          const opciones = await buscarConContexto(
+            consulta.texto,
+            contexto,
+            (texto, bbox) => buscarDirecciones(texto, mapboxToken, cerca, consultarMapa, bbox).then((r) => r.filter(puntoValido)),
+            (r) => necesitaReintento(r, cerca),
+          );
           if (vigente && revision === version.current) {
             setDirecciones(opciones);
             if (!opciones.length) setError("No encontré esa dirección. Prueba con calle, número y ciudad, o toca el mapa.");
           }
         } else {
-          let opciones = await sugerirLugares(consulta.texto, mapboxToken, cerca, sesion.current, consultarMapa, bbox);
-          if (necesitaReintentoLugares(opciones.map((o) => o.distanciaM))) {
-            const reintento = textoParaReintento(consulta.texto, contexto.ciudad);
-            if (reintento !== consulta.texto) {
-              const segunda = await sugerirLugares(reintento, mapboxToken, cerca, sesion.current, consultarMapa, bbox);
-              if (segunda.length) opciones = segunda;
-            }
-          }
+          const opciones = await buscarConContexto(
+            consulta.texto,
+            contexto,
+            (texto, bbox) => sugerirLugares(texto, mapboxToken, cerca, sesion.current, consultarMapa, bbox),
+            (r) => necesitaReintentoLugares(r.map((o) => o.distanciaM)),
+          );
           if (vigente && revision === version.current) setSugeridos(opciones);
         }
       } catch {
@@ -164,7 +161,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       }
     }, 350);
     return () => { vigente = false; clearTimeout(timer); };
-  }, [consulta, cerca, contexto.ciudad]);
+  }, [consulta, cerca, contexto]);
   function invalidar() {
     const revision = ++version.current;
     onGesto();
@@ -309,7 +306,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       {sinPistaDeCiudad && q.trim().length >= 3 && (
         <button type="button" className={styles.usarUbicacion} onClick={usarMiUbicacionCerca} disabled={pidiendoUbicacionCerca}>
           <IconoUbicacion width={20} height={20} />
-          {pidiendoUbicacionCerca ? "Ubicando…" : "Usar mi ubicación para buscar cerca"}
+          <span>{pidiendoUbicacionCerca ? "Ubicando…" : "Usar mi ubicación para buscar cerca"}</span>
         </button>
       )}
       {filtrados.length > 0 ? (
