@@ -226,7 +226,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             <ContadorCaracteres valor={otro.sitioTexto} tope={LIMITES_EVENTO.sitio} />
           </label>
           {/* La ayuda de qué falta va bajo el campo, no dentro del botón (founder, 2026-09-21: canon para todos los formularios). */}
-          {!otro.sitioTexto.trim() && <p className={canon.cuerpoNota}>Falta el nombre del sitio.</p>}
+          {/* Nunca canon.cuerpoNota aquí: lleva grid-area: cuerpo, y .otro es una rejilla sin esa área — el
+              navegador crea una columna implícita para ubicarlo y toda la hoja se rompe (founder, producción,
+              2026-09-21). Clase llana, como el resto de los avisos de esta hoja. */}
+          {!otro.sitioTexto.trim() && <p className={styles.nota}>Falta el nombre del sitio.</p>}
           {otro.referenciaLegacy && !otro.sitioTexto.trim() && <p className={styles.nota}>Nombre público por confirmar. Texto anterior: {otro.referenciaLegacy}</p>}
           {!otro.reservado && <label className={canon.campo}>
             <IconoBuscar width={20} height={20}/>
@@ -244,7 +247,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             </button>
           </div>
           {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
-          {otro.sitioTexto.trim() && otro.pinPendiente && <p className={canon.cuerpoNota}>Falta confirmar el pin.</p>}
+          {otro.sitioTexto.trim() && otro.pinPendiente && <p className={styles.nota}>Falta confirmar el pin.</p>}
           <div className={styles.reservado}>
             <b>Reservado</b>
             <small>{otro.reservado ? "La dirección exacta solo la ven quienes van, cuando toque" : "La dirección solo la ven quienes van"}</small>
@@ -257,7 +260,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
                 <Limpiar visible={!!otro.direccionPrivada} />
                 <ContadorCaracteres valor={otro.direccionPrivada} tope={LIMITES_EVENTO.direccion} />
               </span>
-              {otro.sitioTexto.trim() && !otro.pinPendiente && !otro.direccionPrivada.trim() && <p className={canon.cuerpoNota}>Falta la dirección exacta.</p>}
+              {otro.sitioTexto.trim() && !otro.pinPendiente && !otro.direccionPrivada.trim() && <p className={styles.nota}>Falta la dirección exacta.</p>}
               {resultados}
               {buscando && <p className={styles.nota} role="status">Buscando…</p>}
               {error && <p className={styles.nota} role="alert">{error}</p>}

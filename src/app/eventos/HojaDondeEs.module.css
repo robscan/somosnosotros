@@ -60,6 +60,7 @@
 /* 4. Otro sitio: el mapa con su botón de ubicación, el interruptor de reservado y sus campos */
 .otro {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--espacio-3);
   margin-bottom: var(--espacio-4);
 }
