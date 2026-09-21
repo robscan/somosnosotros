@@ -261,6 +261,22 @@ El founder aprobó la Fase 1 y pidió dos cosas más («si apruebo fase 1 de pin
 
 **Verificado:** `npm run lint` (0 errores, 1 warning preexistente y ajeno), `npm run typecheck`, `npm test` (732/732), `npm run build`, todo en verde; `npm run test:db` contra Postgres 17 local, 705/705. Migración `20260922120000_obras_colectivas_borrado.sql` **sin aplicar** — la aplica el gestor. Rama `pincel-fase-2`, commit local, sin push.
 
+## Fase 2, bloque 2: el canal en vivo y su mensaje, más el simulador de mandos (2026-09-21, en curso)
+
+Rama `pincel-fase-2-canal` (desde `pincel-fase-2`). El gestor pidió partir el bloque 2 así: primero medir el cupo real de Realtime antes de construir pared y mando, para no arriesgar retrabajo.
+
+**Hecho — el canal y el mensaje, sin tocar producción:**
+- `src/lib/canal-obra.ts` (**común**, doc [25](../../rediseno/25-obras-colectivas-criterio.md) ajuste 3): `nombreCanalObra(obraId)` → `"obra:<id>"`, y `abrirCanalObra(supabase, obraId)` que abre ese canal con `private: true` (RLS sobre `realtime.messages`, exige sesión — cumple "solo cuentas registradas" del doc de Fase 0 §2).
+- `src/lib/pincel.ts` (**propio**): `MensajeTrazo` (`{ trazo, color, dx, dy }`, delta del sensor, no coordenada absoluta), los cuatro trazos y las cinco tintas **del prototipo firmado** (OL-084, bitácora 118, `experiments/pincel-prototipo/core.mjs` en la rama local `codex/pincel-prototipo`) — no se inventan de nuevo —, `EVENTO_TRAZO` (el nombre del evento de Broadcast) y `esMensajeTrazoValido()` (la pared no confía en el payload de otro cliente sin mirarlo: trazo y color de la lista cerrada, `dx`/`dy` numéricos y dentro de -1..1). 9 pruebas nuevas (`pincel.test.ts`, `canal-obra.test.ts`).
+
+**Hecho — el simulador, listo pero sin correr:** `scripts/pincel/simulador-mandos.mjs` (doc [25](../../rediseno/25-obras-colectivas-criterio.md) ajuste 4). Abre N canales "mando" (conexiones independientes, una por `createClient()`) que mandan mensajes al azar a una tasa fija, y un canal "pared" que solo escucha y cuenta lo que llega, con su latencia. Tandas 20/50/100 por defecto, configurables. No escribe en ninguna tabla — Broadcast no toca la base — y el nombre del canal por defecto lleva "prueba" para que sea obvio en cualquier panel de Supabase que lo vea mientras corre.
+
+**Por qué no corrió todavía contra el proyecto real.** El simulador necesita `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` del proyecto real (la llave anónima es pública por diseño de Supabase — va en el navegador de cualquier visitante —, no es un secreto como la de servicio). No los tengo en este árbol (regla del proyecto: el `.env` real nunca entra a la carpeta del operador) y no los pedí todavía: **el gestor debe decir cuánto tráfico va a generar la corrida y dar su visto bueno antes**, así que ese cálculo y la petición van en la entrega al gestor, no aquí. Con los valores por defecto del script (9 Hz, 20 s por tanda, pausa de 5 s entre tandas): ~30 600 mensajes de Broadcast en total, pico de 101 conexiones simultáneas (100 mandos + la pared) durante la tanda de 100, poco más de 1 minuto y medio de reloj en total. Ninguna tabla se toca.
+
+**Aparte, por `private: true`:** el canal de verdad exige sesión, y no hay manera de fabricar aquí N sesiones reales de cuentas distintas sin la llave de servicio (que este árbol tampoco tiene). El simulador por defecto corre **sin** `private: true` (mide el cupo bruto del servicio — conexiones y mensajes por segundo —, que es el dato que decide la tasa y el límite de participantes) y admite `--privado --token <jwt>` para medir también el costo de RLS en `realtime.messages` con una sola sesión real repetida en las N conexiones, si el gestor prefiere esa medida también.
+
+**Verificado (código, sin la corrida real):** `npm run lint` (0 errores, 1 warning preexistente ajeno), `npm run typecheck`, `npm test` (740/740), `npm run build`, todo en verde. Sin migración, sin tocar pantallas (este bloque no construye la pared ni el mando, llegan en el bloque 3). Commit local, sin push. **Bloqueado en la corrida real hasta la respuesta del gestor** con el visto bueno y cómo prefiere darme acceso a la URL/llave anónima del proyecto.
+
 ## Verificación de este documento
 
 
