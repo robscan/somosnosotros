@@ -277,6 +277,42 @@ Rama `pincel-fase-2-canal` (desde `pincel-fase-2`). El gestor pidió partir el b
 
 **Verificado (código, sin la corrida real):** `npm run lint` (0 errores, 1 warning preexistente ajeno), `npm run typecheck`, `npm test` (740/740), `npm run build`, todo en verde. Sin migración, sin tocar pantallas (este bloque no construye la pared ni el mando, llegan en el bloque 3). Commit local, sin push. **Bloqueado en la corrida real hasta la respuesta del gestor** con el visto bueno y cómo prefiere darme acceso a la URL/llave anónima del proyecto.
 
+## Fase 2, bloque 2: cupo real citado, envío agrupado y plan de corrida ajustado (2026-09-21)
+
+El gestor devolvió el bloque 2: mis valores por defecto (9 Hz por mando) ya rebasaban el cupo desde la primera tanda, así que no habrían medido nada útil. Tres correcciones, antes de pedir la corrida real otra vez.
+
+**1. El cupo real, citado con su fuente** (no se daba por hecho): [Realtime Limits](https://supabase.com/docs/guides/realtime/limits) y [Realtime Pricing](https://supabase.com/docs/guides/realtime/pricing), documentación oficial de Supabase, leída el 2026-09-21. **Plan gratuito** (el que usa este proyecto, sin verificarlo yo mismo en el panel — el gestor lo asumía y la cifra de conexiones coincide con lo que citó):
+
+| Límite | Plan gratuito |
+|---|---|
+| Conexiones simultáneas | 200 |
+| Mensajes por segundo | **100** (promedio móvil sobre el minuto anterior) |
+| Tamaño máximo de un mensaje | 256 KB |
+| Mensajes incluidos al mes | 2 000 000, sin cobro por pasarse |
+
+Con esto, 20 mandos a 9 Hz (mi plan original) ya eran 180 mensajes/s — casi el doble del cupo, desde la primera tanda. Confirmado el cálculo del gestor.
+
+**2. Envío agrupado, no un mensaje por muestra.** `MensajeTrazo` cambia de `{ trazo, color, dx, dy }` a `{ trazo, color, deltas: Delta[] }` (`src/lib/pincel.ts`): el teléfono sigue muestreando el sensor a su ritmo mientras el botón está presionado, pero solo *manda* `MENSAJES_POR_SEGUNDO = 3` veces por segundo, cada uno con los deltas juntados desde el mensaje anterior (tope `DELTAS_MAX_POR_MENSAJE = 20`, y es también lo que exige `esMensajeTrazoValido` contra un mensaje fabricado a mano con miles de deltas). La pared dibuja todos los deltas de un mismo mensaje seguidos: se ve igual de fluido, cuesta una fracción de los mensajes. 6 pruebas nuevas/ajustadas (12 en total en `pincel.test.ts`).
+
+**Participantes que caben, con el cupo citado:** `100 mensajes/s ÷ 3 mensajes/s por mando ≈ 33 mandos` a la vez en el plan gratuito, antes de tocar el límite documentado — número teórico, a confirmar (o ajustar) con la corrida real, que es justo lo que mide.
+
+**3. Plan de corrida escalonado y corto**, reescrito en `scripts/pincel/simulador-mandos.mjs` con los números exactos que dio el gestor: tandas de 10 s con pausa de 10 s entre cada una, **subiendo** hasta encontrar el límite en vez de empezar encima de él:
+
+| Tanda | Mandos × Hz | Mensajes/s objetivo | Mensajes en 10 s |
+|---|---|---|---|
+| 1 | 10 × 2 | 20 | 200 |
+| 2 | 20 × 2 | 40 | 400 |
+| 3 | 40 × 2 | 80 | 800 |
+| 4 | 60 × 2 | 120 (ya sobre el cupo de 100/s) | 1 200 |
+
+**Tráfico total si las cuatro tandas corrieran completas: 2 600 mensajes de Broadcast** (200+400+800+1200), pico de 61 conexiones simultáneas (60 mandos + la pared), 3×10 s de pausas + 4×10 s de tandas ≈ 70 s de reloj — muy por debajo de los 200/100 del cupo citado, así que no debería llegar a esa cifra completa: se espera que se **detenga sola antes**, en la tanda 3 o 4, que es el punto de la prueba. El script comprueba, al final de cada tanda, errores de conexión, fallos al mandar (el `ack` de Broadcast no confirma) y el porcentaje de mensajes que la pared no recibió; si pasa el 5 % de pérdida o hay cualquier error, **no corre la siguiente tanda**.
+
+**Llaves:** el script ya no pide `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` por variable de entorno — las lee directo de `/Users/apple-1/somosnosotros/.env` (la ruta del proyecto principal) dentro del propio proceso, con una función que solo copia esas dos líneas a variables locales (comprobado en aislado con un archivo de prueba: nunca toca `SUPABASE_SERVICE_ROLE_KEY` ni ninguna otra variable de ese archivo). Nunca se imprimen, nunca se guardan, nunca se piden por el chat.
+
+**Canal:** `prueba-cupo-<fecha>-<sufijo>`, sin `private`. Comprobado con `grep -rn "\.channel(\|realtime\." src` (fuera de `canal-obra.ts` y sus pruebas): **la app en producción no usa Realtime en ningún otro sitio hoy** — ninguna suscripción a canales ni a cambios de tablas — así que una corrida que llegue al cupo no compite con nadie usando la app en ese momento.
+
+**Verificado:** `npm run lint` (0 errores, 1 warning ajeno), `npm run typecheck`, `npm test` (745/745), todo en verde. Sigue **sin correr** contra el proyecto real — el plan ajustado y los números van al gestor, que se los lleva al founder (la corrida la autoriza el founder, no yo). Commit local, sin push.
+
 ## Verificación de este documento
 
 
