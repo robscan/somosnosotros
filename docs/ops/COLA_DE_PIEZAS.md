@@ -1,6 +1,6 @@
 # Cola de piezas del gestor
 
-**Estado: PROPUESTA del 2026-09-21, a la espera del OK del founder. Nada de esta cola está encargado**, salvo OL-090 (barra inferior despegada), que ya corre. La escribe solo el gestor. Los números de OL y bitácora se reservan en [ASIGNACIONES.md](ASIGNACIONES.md) al encargar cada pieza, no antes.
+**Estado: APROBADA por el founder el 2026-09-21** («acepto todas tus propuestas y plan de implementación. Adelante!»), con una anotación sobre las subcategorías (pieza A8). Primera tanda encargada ese día: A1 (OL-092 / 127), A2 (OL-093 / 128), A3 (OL-094 / 129), A4 (OL-095 / 130) y A5 (OL-096 / 131); A0 es OL-090 / 125. La escribe solo el gestor. Los números de OL y bitácora se reservan en [ASIGNACIONES.md](ASIGNACIONES.md) al encargar cada pieza, no antes.
 
 Origen: la lista de comentarios que el founder pegó el 2026-09-21 en el chat «Gestor de cambios II» (copiada entera al final; los números L1…L54 son el orden en que él la escribió).
 
@@ -15,9 +15,10 @@ Reglas de la cola: primero los bugs (la fase 1 es hacer confiable lo que ya exis
 | A2 · Números de la agenda que no cuadran | L1 («Coincidencias» y «Publica la comunidad» dicen 1 y 2 y al tocar no hay nada; posible regresión al volver admins a usuarios; revisar bitácora) y L27 (evento de hoy, destacado y con tres asistentes, no salía en el carril) | Sonnet 5, medio | Misma zona: consultas de la agenda. Causa medida antes de tocar. |
 | A3 · Gestos que se disparan solos | L10 (las acciones al deslizar aparecen cuando uno solo quería bajar) y L45 (en el carril de destacados un deslizamiento acaba abriendo la ficha) | Sonnet 5, medio | Es web: no hay componentes nativos que usar. La pieza redefine el canon del gesto (umbral, bloqueo de dirección, cancelar el toque si hubo arrastre) y lo prueba en el simulador. |
 | A4 · Cercanos y ubicación | L25 (vuelve a pedir la ubicación), L36 (con el chip en Ciudad de México muestra lo cercano de allá en vez de lo cercano a mí) y L50 (cuántas veces se consulta la ubicación y si es eficiente) | Sonnet 5, medio | L36 contradice la regla «el contexto ordena, no limita». L50 se entrega como medición, no como opinión. |
-| A5 · Arreglos chicos de artistas | L17 (@usuario de Instagram no lleva a Instagram), L24 (carril de enlaces: asomar el siguiente; una URL se rotula «Sitio web»), L30 (poder quitar la foto y volver al símbolo SN; corregir la foto equivocada de la artista reportada), L35 (varios toques crean varios reclamos), L47 (falta la subcategoría Fotografía en el alta de artista) | Haiku 4.5, bajo | Cinco cambios pequeños en la misma zona. Si L47 resulta ser de datos (catálogo), lo dice y lo eleva. |
+| A5 · Arreglos chicos de artistas | L17 (@usuario de Instagram no lleva a Instagram), L24 (carril de enlaces: asomar el siguiente; una URL se rotula «Sitio web»), L30 (poder quitar la foto y volver al símbolo SN; corregir la foto equivocada de la artista reportada), L35 (varios toques crean varios reclamos) | Haiku 4.5, bajo | Cuatro cambios pequeños en la misma zona. L47 sale de aquí: es la pieza A8. |
 | A6 · Arreglos chicos de agenda y evento | L6 (el chip dice «Hoy» pero muestra todo: estado vacío «Seleccionar») y L33 (precio solo numérico) | Haiku 4.5, bajo | L33 toca el alta de evento: va antes o después de A7, nunca a la vez. |
 | A7 · Lugar y dirección en el alta de evento | L2 (el teclado sale solo y tapa el botón del cartel; confirmar en Android), L3 y L37 (segunda mitad): «Confirmar» en vez de «Falta», ayuda bajo el campo y no dentro del botón, sugerencias de dirección según dónde está la persona | Sonnet 5, medio | **Prototipo antes que código.** Empieza cuando A1 entregue, porque comparten pantalla. |
+| A8 · Subcategorías de disciplina | L47, con la anotación del founder del 2026-09-21: «el ejemplo lo di con fotografía pero la solución debe solventar casos en los que existen sub categorías o es necesario crear una que no existe». El alta y la edición de artista dejan elegir cualquier subcategoría que ya existe en el catálogo y proponer una nueva cuando no existe | Sonnet 5, medio | Prototipo antes que código. Después de A5 (misma pantalla). Puede llevar migración que solo añade. |
 
 ## Tanda B · Mejoras ya definidas
 
@@ -54,7 +55,7 @@ Reglas de la cola: primero los bugs (la fase 1 es hacer confiable lo que ya exis
 ## Orden propuesto
 
 1. **Ahora (con el OK):** A1, A2, A3, A4 en Sonnet 5 y A5 en Haiku 4.5. Cinco chats, zonas de código distintas. A0 ya corre.
-2. **Al entregar A1:** A7 (prototipo) y A6.
+2. **Al entregar A1:** A7 (prototipo) y A6. **Al entregar A5:** A8.
 3. **Después de los bugs:** B1 y B2; luego B3 y B4; B5 y B6 cuando haya hueco.
 4. **En paralelo, porque no tocan código:** C1 (propuesta), C5 (propuesta) y D1 (investigación), cuando el founder lo diga.
 5. El resto de C y D, en el orden que el founder prefiera.

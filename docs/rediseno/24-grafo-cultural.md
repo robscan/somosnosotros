@@ -1,6 +1,12 @@
 # 24 · Grafo cultural: qué es, qué cambia y qué no
 
-**Estado:** PROPUESTA del gestor de cambios, **pendiente de firma del founder**. Nada de esto está construido ni decidido. · **OL:** OL-091 · **Bitácora:** [126](../bitacora/2026/09/126-gestor-ii-relevo-lista-y-grafo.md)
+**Estado:** **firmado por el founder el 2026-09-21** («Fuera de esos comentarios acepto todas tus propuestas y plan de implementación. Adelante!»), con las tres anotaciones de abajo. El texto ya está en `docs/DEFINICION.md`. Nada está construido todavía: se construye por los pasos chicos del final. · **OL:** OL-091 · **Bitácora:** [126](../bitacora/2026/09/126-gestor-ii-relevo-lista-y-grafo.md)
+
+## Anotaciones del founder al firmar (2026-09-21)
+
+1. **Capacidades.** «mi duda es si se agrega al inicio la app desde navegador se pueden tener más capacidades, además considera que eventualmente desarrollaremos nativo (una vez que la versión esté cerrada y suficiente testeada)». Respuesta: en iPhone, la app instalada en el inicio suma avisos push, el globo en el icono y pantalla completa; **no** suma NFC ni vibración, y los sensores son los mismos que en Safari. En Android, Chrome ya ofrece NFC y vibración sin instalar. Queda escrito: navegador hoy, nativo después.
+2. **Personas.** «respecto a que las personas solo se cuentan está bien, pero si quiero saber si una persona va a muchos eventos, podemos asignar ID para esto para no usar su nombre». Queda escrito: identificador sin nombre, solo en Administración y solo con lo que la persona declaró (Voy, Me interesa, Seguir). Pendiente menor: una línea en el aviso de privacidad cuando se construya esa vista.
+3. **Destacar.** «Los lugares se destacan según si tienen eventos esa semana o si los eventos en los que participan, los contenidos que publican se ven mucho y por que admin destaca, no por conexiones aunque si se relaciona». Sustituye a «sin contar visitas» del 2026-09-16. Las vistas se cuentan por ficha y por día, nunca por persona; hoy no hay ninguna pieza encargada que cuente vistas.
 
 ## De dónde sale
 
@@ -49,7 +55,7 @@ ChatGPT empuja la idea más lejos de lo que el proyecto admite hoy. Cuatro freno
 
 Una contradicción que hay que resolver por escrito: CLAUDE.md dice «sin capacidades nativas de iOS» y la lista del founder del 2026-09-21 aprueba «cámara, nfc, micrófono, acelerómetro, haptics». En la web del iPhone: cámara sí, micrófono sí, movimiento y orientación sí (pidiendo permiso con un toque), **NFC no** (Safari no lo ofrece; Chrome en Android sí) y **vibración no**. Texto propuesto: «capacidades del navegador sí, con permiso y solo cuando ahorran trabajo a la persona; capacidades nativas (app de tienda) no».
 
-## Texto propuesto para `docs/DEFINICION.md` (para firma; no está aplicado)
+## Texto propuesto para `docs/DEFINICION.md` (firmado y aplicado el 2026-09-21, con las anotaciones de arriba)
 
 Añadir al final de **Qué es**:
 

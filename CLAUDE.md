@@ -8,7 +8,7 @@ Plataforma sin fines de lucro: directorio de centros culturales y agenda de even
 3. `docs/PLAN.md` — fases 0→5 con su prueba; modelo de datos de 5 tablas.
 
 ## Stack (decidido, no re-litigar)
-Next.js (App Router, TypeScript) · Supabase (Postgres + Auth + Storage, proyecto nuevo) · Mapbox GL JS (estilo claro de la cuenta del founder, token restringido al dominio) · Vercel. Sin app de tienda: la app es la web instalada en el inicio del teléfono. El founder decidió la app de iPhone en la tienda y la detuvo la misma noche (2026-09-16): no suma valor todavía y, en fase de pruebas, cada actualización costaría el doble. Sin capacidades nativas de iOS, sin fotos del carrete, sin Apple Health, sin "pasaporte".
+Next.js (App Router, TypeScript) · Supabase (Postgres + Auth + Storage, proyecto nuevo) · Mapbox GL JS (estilo claro de la cuenta del founder, token restringido al dominio) · Vercel. Sin app de tienda: la app es la web instalada en el inicio del teléfono. El founder decidió la app de iPhone en la tienda y la detuvo la misma noche (2026-09-16): no suma valor todavía y, en fase de pruebas, cada actualización costaría el doble. Sin capacidades nativas de iOS, sin fotos del carrete, sin Apple Health, sin "pasaporte". Precisión del founder (2026-09-21): las capacidades del navegador sí se usan (cámara, micrófono, movimiento y orientación, con permiso; en la app instalada, avisos push), y la app nativa llegará «una vez que la versión esté cerrada y suficiente testeada», no antes; lo que la web del iPhone no ofrece (NFC, vibración) espera a esa etapa.
 
 ## Cómo se trabaja
 - Una fase a la vez; la siguiente no empieza hasta que la anterior pase su prueba en el iPhone del founder (Safari).
