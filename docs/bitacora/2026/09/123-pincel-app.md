@@ -313,6 +313,20 @@ Con esto, 20 mandos a 9 Hz (mi plan original) ya eran 180 mensajes/s — casi el
 
 **Verificado:** `npm run lint` (0 errores, 1 warning ajeno), `npm run typecheck`, `npm test` (745/745), todo en verde. Sigue **sin correr** contra el proyecto real — el plan ajustado y los números van al gestor, que se los lleva al founder (la corrida la autoriza el founder, no yo). Commit local, sin push.
 
+## Fase 2, bloque 2: corrida de cupo contra producción (2026-09-21)
+
+El founder autorizó la corrida («corre la prueba de pincel», al gestor). Corrida al pie de la letra: `node scripts/pincel/simulador-mandos.mjs`, canal `prueba-cupo-2026-09-21-zv4z`, sin `private`, llaves leídas de `/Users/apple-1/somosnosotros/.env` dentro del proceso (nunca impresas). Una sola vez.
+
+**Lo que pasó:** la tanda 1 (10 mandos × 2 Hz, 20 mensajes/s objetivo) corrió limpia — 190 mandados, 190 recibidos por la pared, **0 % de pérdida**, latencia mediana 65 ms, p95 279 ms, 10/10 conexiones logradas. Pero el script se detuvo solo después de esa tanda, reportando "10 errores de conexión" que no eran reales.
+
+**Causa medida del falso freno** (no a ojo): el candado de conexión de cada mando (`canal.subscribe((estado) => …)`) seguía escuchando después de resolver la promesa de "ya conectado". Al terminar la tanda, `unsubscribe()` dispara el estado `CLOSED` en cada canal — un cierre ordenado, no un fallo —, y como el candado no lo ignoraba, cada cierre normal se contaba otra vez como error de conexión. Con eso, la condición de frenado (`erroresDeConexion > 0`) se disparó sola aunque la tanda había sido perfecta. Corregido en `scripts/pincel/simulador-mandos.mjs`: un candado (`resuelto`) que ignora cualquier cambio de estado después del primero — así el cierre al final de una tanda ya no cuenta como error. **No volví a correr la prueba** (la instrucción fue "si algo se sale del plan… no la repitas: me reportas"): el arreglo queda listo para la siguiente corrida autorizada, que ahora sí debería subir hasta encontrar el límite real en vez de frenar en el primer escalón.
+
+**Entrega al gestor** (mensajes enviados/recibidos, conexiones máximas, latencia mediana/p95, pérdidas, errores y mi lectura): ver el mensaje de esta sesión con esos números; la tabla completa y el resumen agregado quedaron en la salida de la terminal, no se guardó un archivo aparte.
+
+**Mi lectura, con los datos de esta única tanda limpia:** a 20 mensajes/s (20 % del cupo citado de 100/s) la entrega fue perfecta y la latencia baja — hay holgura de sobra ahí. No alcanza para decir "cuántos mandos caben con holgura" de verdad: esa respuesta necesita ver dónde empieza a degradarse de verdad (tandas 2, 3 y 4, hasta 120 mensajes/s), que es justo lo que el bug cortó. El número teórico de ~33 mandos (§ del bloque 2 de arriba, con el envío agrupado a 3 mensajes/s) sigue sin confirmarse ni descartarse.
+
+**Verificado:** `node --check` y `npx eslint` sobre el script corregido, limpio. No se corrió `npm test`/`typecheck`/`build` para este cambio puntual del script (no toca código de la app, solo el simulador) — se corre la batería completa al cerrar el bloque. Commit local del arreglo, sin push. Espero instrucción del gestor: ¿autoriza una segunda corrida corta con el arreglo, o esta primera tanda limpia basta por ahora?
+
 ## Verificación de este documento
 
 

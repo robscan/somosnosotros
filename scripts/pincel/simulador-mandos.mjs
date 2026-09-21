@@ -75,6 +75,12 @@ function clienteMando() {
   return supabase.channel(CANAL, { config: { private: false, broadcast: { self: false, ack: true } } });
 }
 
+function percentil(valoresOrdenados, p) {
+  if (valoresOrdenados.length === 0) return null;
+  const i = Math.min(valoresOrdenados.length - 1, Math.ceil((p / 100) * valoresOrdenados.length) - 1);
+  return valoresOrdenados[Math.max(0, i)];
+}
+
 async function correrTanda({ mandos: n, hz }) {
   const resultado = {
     tanda: `${n} mandos × ${hz} Hz`,
@@ -84,7 +90,8 @@ async function correrTanda({ mandos: n, hz }) {
     mandados: 0,
     fallosAlMandar: 0,
     recibidosPorLaPared: 0,
-    latenciaMsPromedio: null,
+    latenciaMedianaMs: null,
+    latenciaP95Ms: null,
   };
   const latencias = [];
 
@@ -110,12 +117,20 @@ async function correrTanda({ mandos: n, hz }) {
     Array.from({ length: n }, () => clienteMando()).map(
       (canal) =>
         new Promise((resuelve) => {
+          // El estado sigue cambiando después de conectar (p. ej. a "CLOSED" cuando la tanda termina y se llama
+          // unsubscribe()): solo cuenta como error de conexión lo que pasa ANTES del primer estado resuelto, no
+          // el cierre normal al final de la tanda (bug medido en la corrida del 2026-09-21: sin este candado,
+          // cada cierre ordenado se contaba como error y frenaba la corrida sin motivo real).
+          let resuelto = false;
           canal.subscribe((estado) => {
+            if (resuelto) return;
             if (estado === "SUBSCRIBED") {
+              resuelto = true;
               resultado.conexionesLogradas++;
               mandos.push(canal);
               resuelve();
             } else if (estado === "CHANNEL_ERROR" || estado === "TIMED_OUT" || estado === "CLOSED") {
+              resuelto = true;
               resultado.erroresDeConexion++;
               resuelve();
             }
@@ -140,13 +155,15 @@ async function correrTanda({ mandos: n, hz }) {
   await new Promise((resuelve) => setTimeout(resuelve, SEGUNDOS_POR_TANDA * 1000 + 1000));
   intervalos.forEach(clearInterval);
 
-  if (latencias.length > 0) resultado.latenciaMsPromedio = Math.round(latencias.reduce((a, b) => a + b, 0) / latencias.length);
+  latencias.sort((a, b) => a - b);
+  resultado.latenciaMedianaMs = percentil(latencias, 50);
+  resultado.latenciaP95Ms = percentil(latencias, 95);
 
   await Promise.all([...mandos, pared].map((canal) => canal.unsubscribe()));
 
   const tasaDePerdida = resultado.mandados > 0 ? 1 - resultado.recibidosPorLaPared / resultado.mandados : 1;
   const pasoElLimite = resultado.erroresDeConexion > 0 || resultado.fallosAlMandar > 0 || tasaDePerdida > UMBRAL_PERDIDA;
-  return { resultado, pasoElLimite, tasaDePerdida };
+  return { resultado, pasoElLimite, tasaDePerdida, conexionesTotales: resultado.conexionesLogradas + (paredLista ? 1 : 0) };
 }
 
 async function main() {
@@ -155,14 +172,16 @@ async function main() {
   console.log(`${TANDAS.length} tandas de ${SEGUNDOS_POR_TANDA} s, pausa de ${PAUSA_ENTRE_TANDAS_MS / 1000} s entre cada una; se detiene sola al pasar el ${UMBRAL_PERDIDA * 100}% de pérdida o al primer error.\n`);
 
   const resultados = [];
+  let conexionesMaximas = 0;
   for (const tanda of TANDAS) {
     console.log(`Tanda: ${tanda.mandos} mandos × ${tanda.hz} Hz (objetivo ${tanda.mandos * tanda.hz} mensajes/s)…`);
-    const { resultado, pasoElLimite, tasaDePerdida } = await correrTanda(tanda);
+    const { resultado, pasoElLimite, tasaDePerdida, conexionesTotales } = await correrTanda(tanda);
     resultados.push(resultado);
+    conexionesMaximas = Math.max(conexionesMaximas, conexionesTotales);
     console.log(`  conexiones: ${resultado.conexionesLogradas}/${tanda.mandos} (errores: ${resultado.erroresDeConexion})`);
     console.log(`  mandados: ${resultado.mandados}, fallos al mandar: ${resultado.fallosAlMandar}`);
     console.log(`  recibidos por la pared: ${resultado.recibidosPorLaPared} (pérdida ${(tasaDePerdida * 100).toFixed(1)}%)`);
-    console.log(`  latencia promedio: ${resultado.latenciaMsPromedio ?? "sin datos"} ms\n`);
+    console.log(`  latencia mediana: ${resultado.latenciaMedianaMs ?? "sin datos"} ms · p95: ${resultado.latenciaP95Ms ?? "sin datos"} ms\n`);
     if (pasoElLimite) {
       console.log(`⚠ Esta tanda pasó el límite (errores de conexión/envío o más del ${UMBRAL_PERDIDA * 100}% de pérdida). Deteniendo la corrida aquí, sin seguir a la siguiente tanda.\n`);
       break;
@@ -170,8 +189,13 @@ async function main() {
     if (tanda !== TANDAS[TANDAS.length - 1]) await new Promise((resuelve) => setTimeout(resuelve, PAUSA_ENTRE_TANDAS_MS));
   }
 
-  console.log("Resumen:");
+  const totalMandados = resultados.reduce((a, r) => a + r.mandados, 0);
+  const totalRecibidos = resultados.reduce((a, r) => a + r.recibidosPorLaPared, 0);
+  const totalErrores = resultados.reduce((a, r) => a + r.erroresDeConexion + r.fallosAlMandar, 0);
+
+  console.log("Resumen por tanda:");
   console.table(resultados);
+  console.log(`\nTotales: ${totalMandados} mensajes mandados, ${totalRecibidos} recibidos por la pared, conexiones máximas simultáneas: ${conexionesMaximas}, errores/fallos totales: ${totalErrores}.`);
   process.exit(0);
 }
 
