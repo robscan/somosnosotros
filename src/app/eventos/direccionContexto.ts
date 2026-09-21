@@ -142,6 +142,78 @@ export function textoParaReintento(texto: string, ciudad: Ciudad): string {
 }
 
 /**
+ * El texto que de verdad se manda a Mapbox en el primer intento (revisión del gestor, caso real "Cenaria Foro
+ * Expandido" / "Galeana #423, Centro, S.L.P."): limpio, y sin la ciudad de contexto si esta salió del propio
+ * texto — mandarla ahí y en `proximity`/`bbox` a la vez no ayuda al buscador de texto de Mapbox, y una abreviatura
+ * como "S.L.P." puede casar con nombres de carretera ("SLP-32") antes que con la calle real. Con otras ciudades
+ * de contexto (chip, lugar, posición) el texto no la trae puesta: no hay nada que quitar.
+ */
+export function textoDeBusqueda(texto: string, contexto: ContextoDireccion): string {
+  const limpio = limpiarDireccion(texto);
+  if (contexto.origen !== "texto") return limpio;
+  const patron = new RegExp(`,?\\s*${contexto.ciudad.nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*,?`, "i");
+  const sinCiudad = limpio.replace(patron, ", ").replace(/\s*,\s*/g, ", ").replace(/^[,\s]+|[,\s]+$/g, "").trim();
+  return sinCiudad || limpio;
+}
+
+/** Palabras que no dicen nada de la calle: artículos, la ciudad de contexto y el número no cuentan. */
+const PALABRAS_VACIAS = new Set(["de", "del", "la", "el", "los", "las", "y", "san", "santa", "no"]);
+
+/**
+ * Las palabras de la propia calle escrita (sin la ciudad de contexto, sin el número, sin artículos): "Galeana" de
+ * "Galeana 423, Centro, S.L.P.", más "centro" (la colonia también cuenta — pedido del gestor, sirve para ordenar).
+ */
+export function tokensDeCalle(texto: string, ciudades: readonly Ciudad[] = CIUDADES): string[] {
+  const ciudad = ciudadDelTexto(texto, ciudades);
+  const palabrasCiudad = ciudad ? normalizar(ciudad.nombre).split(/\s+/) : [];
+  return normalizar(limpiarDireccion(texto))
+    .replace(/,/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 2 && !/^\d+$/.test(t) && !PALABRAS_VACIAS.has(t) && !palabrasCiudad.includes(t));
+}
+
+/** El número de la calle escrita, si trae uno ("Galeana 423" → "423"). */
+export function numeroDeCalle(texto: string): string | null {
+  const m = texto.match(/\b\d{1,6}\b/);
+  return m ? m[0] : null;
+}
+
+/**
+ * Descarta lo que no tiene ninguna palabra de la calle escrita (caso con nombre: los "Slp 32" para "Galeana 423"
+ * se descartan enteros). Sin ninguna palabra de calle reconocible en el texto (solo un número, o una colonia
+ * sola), no descarta nada — todo se queda. Sirve para direcciones y para lugares (Search Box), que no siempre
+ * traen coordenadas en este paso.
+ */
+export function descartarSinCalle<T extends { nombre: string; direccion: string }>(resultados: readonly T[], texto: string, ciudades?: readonly Ciudad[]): T[] {
+  const tokens = tokensDeCalle(texto, ciudades);
+  if (!tokens.length) return [...resultados];
+  return resultados.filter((r) => tokens.some((t) => normalizar(`${r.nombre} ${r.direccion}`).includes(t)));
+}
+
+/**
+ * Para direcciones (con coordenadas): además de `descartarSinCalle`, ordena lo que queda — primero lo que trae
+ * también el número escrito, y dentro de eso, lo más cerca del centro de contexto. Sin ninguna palabra de calle
+ * reconocible, ordena solo por cercanía, como antes.
+ */
+export function filtrarYOrdenarDirecciones<T extends Punto & { nombre: string; direccion: string }>(
+  resultados: readonly T[],
+  texto: string,
+  centro: Punto,
+  ciudades?: readonly Ciudad[],
+): T[] {
+  const tokens = tokensDeCalle(texto, ciudades);
+  if (!tokens.length) return [...resultados].sort((a, b) => distanciaKm(centro, a) - distanciaKm(centro, b));
+  const numero = numeroDeCalle(texto);
+  const puntuados = descartarSinCalle(resultados, texto, ciudades).map((r) => ({
+    r,
+    conNumero: !!numero && normalizar(`${r.nombre} ${r.direccion}`).includes(numero),
+    distancia: distanciaKm(centro, r),
+  }));
+  puntuados.sort((a, b) => Number(b.conNumero) - Number(a.conNumero) || a.distancia - b.distancia);
+  return puntuados.map((p) => p.r);
+}
+
+/**
  * El `bbox` que le toca a una búsqueda, según su ciudad de contexto (revisión del gestor, 2026-09-21): un `bbox`
  * no ordena, EXCLUYE todo lo de fuera — al contrario que `proximity`, que solo sesga. Con el respaldo (`origen:
  * "inicial"`, sin ninguna pista real) acotar sería silencioso y falso: alguien sin chip ni posición que publica en
@@ -154,10 +226,13 @@ export function bboxParaContexto(contexto: ContextoDireccion, radioKm = RADIO_BB
 }
 
 /**
- * Busca con hasta tres intentos, nunca más (cuida el gasto de Mapbox): (1) el texto tal cual, con `bbox` si hay una
- * ciudad de contexto real; (2) si nada quedó cerca, el texto limpio con la ciudad pegada, mismo `bbox`; (3) si aun
- * así nada quedó cerca, una última vez SIN `bbox` (solo `proximity`) — un `bbox` equivocado (contexto en San Luis,
- * la dirección real en otra ciudad que el texto no nombra) no puede dejar a la persona sin encontrar lo suyo.
+ * Busca con hasta tres intentos, nunca más (cuida el gasto de Mapbox): (1) el texto limpio y SIN la ciudad de
+ * contexto si venía en él (`textoDeBusqueda` — revisión del gestor: mandarla dos veces, en el texto y en
+ * `proximity`/`bbox`, confundía el buscador de texto de Mapbox: "S.L.P." casaba con "SLP-32" antes que con la
+ * calle real), con `bbox` si hay una ciudad de contexto real; (2) si nada quedó cerca, el texto limpio CON la
+ * ciudad pegada, mismo `bbox` (una frase más explícita, distinta de la (1)); (3) si aun así nada quedó cerca, una
+ * última vez SIN `bbox` (solo `proximity`) — un `bbox` equivocado (contexto en San Luis, la dirección real en otra
+ * ciudad que el texto no nombra) no puede dejar a la persona sin encontrar lo suyo.
  * `buscar` es quien de verdad llama a Mapbox (inyectado, para poder probar esto sin red). `haceFalta` decide si el
  * resultado de un intento cuenta como "cerca" (distinto para direcciones —con coordenadas— y lugares —con la
  * distancia en metros que da el paso "sugerir"—).
@@ -169,16 +244,17 @@ export async function buscarConContexto<T>(
   haceFalta: (resultados: T[]) => boolean,
 ): Promise<T[]> {
   const bbox = bboxParaContexto(contexto);
-  let resultados = await buscar(texto, bbox);
+  const primero = textoDeBusqueda(texto, contexto);
+  let resultados = await buscar(primero, bbox);
   if (bbox && haceFalta(resultados)) {
     const reintento = textoParaReintento(texto, contexto.ciudad);
-    if (reintento !== texto) {
+    if (reintento !== primero) {
       const segunda = await buscar(reintento, bbox);
       if (segunda.length) resultados = segunda;
     }
   }
   if (bbox && haceFalta(resultados)) {
-    const tercera = await buscar(texto, undefined);
+    const tercera = await buscar(primero, undefined);
     if (tercera.length) resultados = tercera;
   }
   return resultados;

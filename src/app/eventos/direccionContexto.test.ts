@@ -8,11 +8,15 @@ import {
   ciudadDeContexto,
   ciudadDelTexto,
   ciudadDesdeSlug,
+  filtrarYOrdenarDirecciones,
   limpiarDireccion,
   necesitaReintento,
   necesitaReintentoLugares,
+  numeroDeCalle,
   redondearParaMapbox,
+  textoDeBusqueda,
   textoParaReintento,
+  tokensDeCalle,
 } from "./direccionContexto";
 
 // Coordenadas reales, para las pruebas de cercanía: San Luis Potosí, y un resultado lejano (Rioverde, S.L.P., a ~120 km).
@@ -153,6 +157,52 @@ describe("ciudadDesdeSlug (revisión del gestor: sin el respaldo silencioso de c
   });
 });
 
+describe("textoDeBusqueda (revisión del gestor: no mandar la ciudad dos veces)", () => {
+  it("caso real del founder: quita la ciudad de contexto del texto, deja calle, número y colonia", () => {
+    const contexto = ciudadDeContexto({ texto: "Galeana #423, Centro, S.L.P." });
+    expect(textoDeBusqueda("Galeana #423, Centro, S.L.P.", contexto)).toBe("Galeana 423, Centro");
+  });
+  it("con la ciudad de otro origen (chip, lugar, posición), no hay nada que quitar del texto", () => {
+    const chip = CIUDADES.find((c) => c.slug === "san-luis-potosi")!;
+    const contexto = ciudadDeContexto({ texto: "Av. Juárez 50", ciudadChip: chip });
+    expect(contexto.origen).toBe("chip");
+    expect(textoDeBusqueda("Av. Juárez 50", contexto)).toBe(limpiarDireccion("Av. Juárez 50"));
+  });
+});
+
+describe("tokensDeCalle y numeroDeCalle", () => {
+  it("caso con nombre: 'Galeana #423, Centro, S.L.P.' → calle, colonia y número, sin la ciudad", () => {
+    expect(tokensDeCalle("Galeana #423, Centro, S.L.P.")).toEqual(["galeana", "centro"]);
+    expect(numeroDeCalle("Galeana #423, Centro, S.L.P.")).toBe("423");
+  });
+  it("sin ninguna palabra de calle reconocible, lista vacía", () => {
+    expect(tokensDeCalle("423")).toEqual([]);
+  });
+});
+
+describe("filtrarYOrdenarDirecciones (revisión del gestor: sugerencias útiles)", () => {
+  const centro = CIUDAD_INICIAL.centro;
+  it("caso real de producción: descarta los 'Slp 32' (ninguno trae 'galeana') y se queda con 'Galeana 423'", () => {
+    const slp32 = { lat: 22.3, lng: -101.1, nombre: "Slp 32", direccion: "Anillo Periférico, Slp 32" };
+    const galeanaCentro = { lat: 22.152, lng: -100.978, nombre: "Hermenegildo Galeana", direccion: "Hermenegildo Galeana 423, Centro, San Luis Potosí" };
+    const r = filtrarYOrdenarDirecciones([slp32, slp32, slp32, slp32, galeanaCentro], "Galeana #423, Centro, S.L.P.", centro);
+    expect(r).toEqual([galeanaCentro]);
+  });
+  it("descarta un 'Galeana 423' que en realidad está en Soledad de Graciano Sánchez si no trae ninguna palabra de la calle... y lo prioriza si sí la trae, por cercanía", () => {
+    const galeanaSoledad = { lat: 22.18, lng: -100.94, nombre: "Galeana", direccion: "Galeana 423, Soledad de Graciano Sánchez" }; // ~9 km, con "galeana": no se descarta
+    const galeanaCentro = { lat: 22.152, lng: -100.978, nombre: "Hermenegildo Galeana", direccion: "Hermenegildo Galeana 423, Centro, San Luis Potosí" }; // más cerca
+    const r = filtrarYOrdenarDirecciones([galeanaSoledad, galeanaCentro], "Galeana #423, Centro, S.L.P.", centro);
+    // Las dos traen "galeana" y "423": ninguna se descarta, pero la más cercana va primero.
+    expect(r[0]).toBe(galeanaCentro);
+    expect(r).toHaveLength(2);
+  });
+  it("sin ninguna palabra de calle en el texto (por ejemplo, solo se escribió un número), no descarta nada: ordena por cercanía", () => {
+    const lejos = { lat: 21.93, lng: -99.99, nombre: "Rioverde", direccion: "Centro, Rioverde" };
+    const cerca = { lat: 22.151, lng: -100.977, nombre: "Villerías", direccion: "Villerías 2, Centro" };
+    expect(filtrarYOrdenarDirecciones([lejos, cerca], "423", centro)).toEqual([cerca, lejos]);
+  });
+});
+
 describe("buscarConContexto (revisión del gestor, hasta tres intentos)", () => {
   it("origen 'inicial': la primera búsqueda va sin bbox", async () => {
     const contexto = ciudadDeContexto({ texto: "Calle sin ciudad reconocible 45" });
@@ -166,21 +216,22 @@ describe("buscarConContexto (revisión del gestor, hasta tres intentos)", () => 
     expect(r).toHaveLength(1);
   });
 
-  it("caso con nombre 'Galeana #423, S.L.P.': si el primer intento (con bbox) no trae nada cerca, el reintento con el texto limpio sí lo encuentra, sin necesitar una tercera llamada", async () => {
-    const contexto = ciudadDeContexto({ texto: "Galeana #423, S.L.P." });
+  it("caso real del founder 'Galeana #423, Centro, S.L.P.': el primer intento va sin la ciudad (ya la lleva el bbox); si no trae nada cerca, el reintento con la ciudad pegada sí la encuentra", async () => {
+    const contexto = ciudadDeContexto({ texto: "Galeana #423, Centro, S.L.P." });
     expect(contexto.origen).toBe("texto");
-    const cercaDeVerdad = { lat: 22.152, lng: -100.978 }; // "Hermenegildo Galeana", ~400 m del centro
+    const cercaDeVerdad = { lat: 22.152, lng: -100.978, nombre: "Hermenegildo Galeana", direccion: "Hermenegildo Galeana 423, Centro" };
     const llamadas: { texto: string; bbox: Bbox | undefined }[] = [];
     const buscar = vi.fn(async (texto: string, bbox: Bbox | undefined) => {
       llamadas.push({ texto, bbox });
-      // Mapbox no encuentra nada bueno con "Galeana" suelto, ni siquiera acotado a la ciudad; con el texto ya
-      // limpio y expandido sí (la causa medida: elige candidatos por texto antes de que nosotros reordenemos).
-      return texto === "Galeana #423, S.L.P." ? [] : [cercaDeVerdad];
+      // Mapbox no encuentra nada bueno con "Galeana 423, Centro" a secas (caso real medido por el gestor); con la
+      // ciudad explícita pegada sí.
+      return texto === "Galeana 423, Centro" ? [] : [cercaDeVerdad];
     });
-    const r = await buscarConContexto("Galeana #423, S.L.P.", contexto, buscar, (rs) => necesitaReintento(rs, contexto.centro));
+    const r = await buscarConContexto("Galeana #423, Centro, S.L.P.", contexto, buscar, (rs) => necesitaReintento(rs, contexto.centro));
     expect(llamadas).toHaveLength(2);
+    expect(llamadas[0].texto).toBe("Galeana 423, Centro");
     expect(llamadas[0].bbox).toBeDefined();
-    expect(llamadas[1].texto).toBe("Galeana 423, San Luis Potosí");
+    expect(llamadas[1].texto).toBe("Galeana 423, Centro, San Luis Potosí");
     expect(r).toEqual([cercaDeVerdad]);
   });
 

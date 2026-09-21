@@ -1,0 +1,19 @@
+/* Flota sobre el layout, en un portal (ui/ListaFlotante): `position: fixed` desde el borde de la pantalla, nunca
+   desde un ancestro con `overflow`, así ninguna hoja la recorta. Mismo aspecto que ui/Sugerencia (.lista), con su
+   propio scroll cuando hay más opciones de las que caben. */
+.flotante {
+  position: fixed;
+  z-index: 60;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  box-shadow: var(--sombra-flotante);
+}
+.flotante > li + li {
+  border-top: 1px solid var(--borde);
+}

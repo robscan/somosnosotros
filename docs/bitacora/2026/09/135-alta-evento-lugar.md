@@ -130,19 +130,33 @@ El founder probó en su iPhone y reportó, con foto: el campo del nombre y el de
 
 `npm run lint && npm run typecheck && npm test`: en verde (763 pruebas, mismas 7 rojas preexistentes y ajenas sin `pg`); build en verde.
 
-## Pasos
+## Segunda corrección: lista de sugerencias flotante y sugerencias útiles (2026-09-21, rama `sugerencias-flotantes`)
 
-- [x] Aviso de arranque al gestor y su visto bueno.
-- [x] Rama `alta-evento-lugar` desde `origin/main`.
-- [x] Medir el estado actual leyendo el código, sin tocar nada.
-- [x] Documento de propuesta y prototipo (siete estados).
-- [x] Prototipo publicado como Artifact y entregado en este chat para firma.
-- [x] Commit local de los documentos.
-- [x] Firma del founder (documento + prototipo), con ampliación del canon a todos los formularios.
-- [x] Código: contexto y búsqueda (`direccionContexto.ts`), `HojaDondeEs.tsx`, aviso de privacidad.
-- [x] Traer `main` (OL-103 en producción), conflicto resuelto en OPEN_LOOPS.
-- [x] `FormularioEvento.tsx`: autofocus, "Confirmar", ayuda bajo el campo, ciudad del chip.
-- [x] Build y verificación visual (tres estados, sin Mapbox real).
-- [x] Entrega consolidada al gestor; OL-100 aceptada (PR #124) y publicada en producción.
-- [x] **Corrección urgente:** rama `alta-evento-lugar-correccion`, arreglo de la rejilla rota en "Es en otro sitio", con capturas PNG reales por CDP.
-- [ ] Aparte, en `sugerencias-flotantes`: lista de sugerencias flotante y mejores resultados de búsqueda.
+Sigue en esta misma bitácora (135) — no reservé un número aparte; si el gestor prefiere uno propio para esta rama (tiene su propio PR), que me lo diga y lo muevo. Arreglos 2 y 3 del mismo aviso del founder, aparte de la corrección urgente (arreglo 1, ya en producción).
+
+### 2 — La lista de sugerencias flota (componente reutilizable)
+`src/components/ui/ListaFlotante.tsx` (+ `.module.css`) nuevo: un listbox en un portal a `document.body`, con `position: fixed` calculada desde el campo (`getBoundingClientRect`), nunca desde un ancestro con `overflow` — así ninguna hoja con su propio scroll la recorta. Se abre hacia arriba sola si no cabe hacia abajo (mide contra `visualViewport`, para el teclado); tiene su propio alto máximo con scroll interno; Escape y tocar fuera cierran (`onCerrar` reutiliza `invalidar()`, que ya limpiaba la búsqueda); flecha arriba/abajo mueve el foco real entre las opciones (son botones de verdad, ya alcanzables con Tab — más simple que `aria-activedescendant` para el mismo resultado). El campo que la abre lleva `role="combobox"`, `aria-expanded` y `aria-controls`. Usada en las dos búsquedas de `HojaDondeEs.tsx` (direcciones y lugares): "Buscando…" y el error también van dentro del panel, no en el flujo — nada empuja el mapa ni los campos de abajo.
+
+### 3 — Sugerencias útiles (caso real: "Cenaria Foro Expandido" / "Galeana #423, Centro, S.L.P.")
+En `direccionContexto.ts`:
+- `textoDeBusqueda(texto, contexto)`: el primer intento ya no manda la ciudad de contexto si esta salió del propio texto (antes se mandaba dos veces, en el texto y en `proximity`/`bbox`; el gestor midió que "S.L.P." casaba con "Slp 32" antes que con la calle real). `buscarConContexto` la usa en el primer intento; el reintento (segundo intento) sigue usando `textoParaReintento` (limpio, con la ciudad SÍ pegada) — dos frases distintas, no la misma repetida.
+- `tokensDeCalle`/`numeroDeCalle`: las palabras de la calle escrita (sin la ciudad, sin artículos, sin el número) y el número, si trae uno.
+- `descartarSinCalle` (para lugares) y `filtrarYOrdenarDirecciones` (para direcciones, que además ordena: primero lo que trae el número, luego lo más cerca): descartan cualquier resultado que no traiga ninguna palabra de la calle escrita — el caso con nombre, los "Slp 32", se descartan enteros porque ninguno trae "galeana".
+- Conectados en `HojaDondeEs.tsx`: los `buscar` que se le pasan a `buscarConContexto` ya filtran antes de que `necesitaReintento`/`necesitaReintentoLugares` decidan si hace falta un intento más.
+
+**Límite real, para que el gestor decida cómo seguir:** este árbol de trabajo NO tiene el token real de Mapbox (`.env` no existe aquí — regla del proyecto: nunca se copia a la carpeta de un operador) y el gestor autorizó hasta 15 llamadas reales "desde tu máquina", que no tengo cómo hacer sin ese token. No pude grabar respuestas reales de Mapbox para el caso "Galeana 423, Centro, San Luis Potosí"; lo que hay son fixtures escritas a mano, representativas del Centro de San Luis Potosí (con "Hermenegildo Galeana" como calle real, ya usada como ejemplo en piezas anteriores), para poder mirar la lista flotante — **no certifican qué devuelve Mapbox de verdad hoy.** La lógica de descarte/orden (`descartarSinCalle`, `filtrarYOrdenarDirecciones`) sí está probada exhaustivamente con datos sintéticos que reproducen el caso real reportado (los "Slp 32" y el "Galeana" de Soledad de Graciano Sánchez). Pido al gestor: o me da el token para esta verificación puntual, o corre él las llamadas reales y me pasa las respuestas para convertirlas en fixtures, o acepta esta pieza con la verificación sintética que sí puedo dar.
+
+### Verificación
+`npm run lint && npm run typecheck && npm test`: en verde, 770 pruebas (37 en `direccionContexto.test.ts`, con los casos "Galeana", "Slp 32" y "Soledad de Graciano Sánchez" nombrados); build en verde.
+
+**Capturas PNG reales, Chrome headless por CDP, 390×844 (tipografía Bricolage Grotesque cargada, no la del sistema):**
+- `verificacion-ol100/03-lista-flotante-caso-real.png` — "Cenaria Foro Expandido" / "Galeana #423, Centro, S.L.P.", con la lista desplegada sobre el mapa (no lo empuja) y un resultado de texto muy largo (~200 caracteres) que envuelve sin desbordar.
+- `verificacion-ol100/04-falta-confirmar-pin.png` — mismo caso, con "Falta confirmar el pin." visible bajo el mapa y la lista flotante abierta a la vez.
+- `verificacion-ol100/05-teclado-ventana-420.png` — ventana reducida a 420 px (teclado virtual simulado): la lista se acota sola (`getBoundingClientRect` medido: `bottom: 416` dentro de la ventana, `scrollHeight: 204 > clientHeight: 180` — tiene su propio scroll interno, no queda cortada por la hoja).
+
+### Pasos de esta parte
+- [x] `ui/ListaFlotante` (componente + CSS), reutilizado en las dos búsquedas.
+- [x] `textoDeBusqueda`, `tokensDeCalle`, `numeroDeCalle`, `descartarSinCalle`, `filtrarYOrdenarDirecciones`, con pruebas.
+- [x] Verificación visual con capturas PNG reales (CDP) y medición precisa del caso "teclado reducido".
+- [ ] **Bloqueado para la verificación con Mapbox real:** sin el token en este árbol; pendiente de instrucción del gestor.
+- [ ] Entrega al gestor.
