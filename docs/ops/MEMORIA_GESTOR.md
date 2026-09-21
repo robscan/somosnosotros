@@ -297,3 +297,17 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   al tope de longitud, listas largas) a 320, 375 y 390 px, ningún hijo con el borde derecho más
   allá de su contenedor y la página sin scroll horizontal, con los números en la entrega; (3) cada
   encargo con pantalla lo dice explícito. Una captura con datos cortos no prueba la maquetación.
+- 2026-09-21, SEGUNDO llamado de atención del founder por maquetación, el mismo día: la hoja «Es en
+  otro sitio» de OL-100 llegó rota a producción (campos en dos columnas, uno fuera de pantalla)
+  aunque el operador había reportado «medido a 320/375/390, cero desbordes» y el gestor lo aceptó
+  sin ver la pantalla. Causa: una clase del canon con `grid-area: cuerpo` usada dentro de otra
+  rejilla que no define esa área; el navegador crea una columna implícita. Regla dura desde hoy,
+  que sustituye a «las capturas las saca el gestor después»: NINGUNA pieza con pantalla se acepta
+  sin capturas PNG reales a 390×844 de la app corriendo (respaldo local + Chrome headless por CDP,
+  como hizo OL-095; no hace falta instalar nada), con los datos reales del caso y con datos al
+  tope, que el gestor ABRE y mira antes de aceptar. Una medición reportada en texto no sustituye a
+  la imagen. Además: una clase del canon solo se reutiliza dentro de la rejilla para la que fue
+  escrita (mirar si lleva `grid-area`); las listas de sugerencias flotan sobre el layout, no lo
+  empujan (founder: «deben de "flotar" siempre sobre el layout no recorrer los campos debajo»).
+
+**Ver la app en local para capturas (OL-109, 2026-09-21).** Dos tropiezos medidos por el operador de OL-109, para decírselos a quien monte un respaldo local: (1) con `next dev` (Turbopack) la app puede no hidratarse nunca en estas carpetas (ningún clic ni tecla responde, aunque el campo acepte texto y la captura «parezca» buena): usar `next build && next start`, y comprobar que un clic real cambia algo antes de dar por buena una captura; (2) el respaldo local no debe decidir «una sola fila» por la cabecera `Accept: application/vnd.pgrst.object+json`: en el servidor de Next llega `Accept: */*`; devolver siempre un arreglo. Y una regla de producto que salió de la misma pieza: `capture` en un `<input type="file">` fuerza la cámara y quita el carrete en el teléfono; nunca se añade «para ofrecer la cámara».

@@ -31,7 +31,7 @@ import SelectorCuando from "./SelectorCuando";
 import TarjetaCartel from "./TarjetaCartel";
 import { operacionEvento } from "./operacionEvento";
 import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
-import { camposIniciales, crearGestosFlyer, type CampoFlyer } from "./gestosFlyer";
+import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel, type CampoFlyer } from "./gestosFlyer";
 import { sitioListo, textoDelSitio } from "./direccionEvento";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -489,7 +489,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       }
       if (v.descripcion && gestos.current.puedeCompletar("descripcion")) setDescripcion(v.descripcion);
       if (v.enlace && gestos.current.puedeCompletar("enlace")) setEnlace(v.enlace);
-      if (r.quien.length && gestos.current.puedeCompletar("quien")) setQuien(r.quien);
+      setQuien((actual) => quienTrasLeerCartel(r.quien, actual, gestos.current.puedeCompletar("quien")));
       if (gestos.current.puedeCompletar("donde") && r.lugarId) {
         setModoSitio("lugar");
         setLugarId(r.lugarId);

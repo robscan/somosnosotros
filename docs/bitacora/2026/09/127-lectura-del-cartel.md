@@ -52,3 +52,26 @@ Nota aparte: `claude-haiku-4-5-20251001` no acepta el parámetro `effort` (es de
 ## Límites de esta pieza
 
 No se tocó la maquetación ni los letreros del alta de evento (eso es A7, que empieza cuando esta pieza se entregue). No se cambió el modelo de producción en `src/lib/cartel.ts`: la tabla de arriba es la propuesta; el cambio lo aplica quien decida el gestor/founder.
+
+## Corrección tras la prueba en producción (2026-09-21): "Quién" seguía trayendo a quien publica
+
+OL-092 se publicó con `claude-sonnet-5` en producción ([PR #113](https://github.com/robscan/somosnosotros/pull/113), `e737aa8`). Al probarlo en su iPhone, el founder reportó: «En quién pide confirmar también, me puso a mi y no se dice explicitamente en el cartel.»
+
+**Causa medida:** el primer arreglo (arriba, Bug 1) solo resolvía la mitad del problema. `camposIniciales` dejó de contar el prellenado automático de la decisión 12 como un dato real, así que el cartel **sí podía sobrescribir** "Quién" — pero solo lo hacía cuando el cartel traía artistas reconocidos (`if (r.quien.length && gestos.current.puedeCompletar("quien")) setQuien(r.quien);`, en `leerCartel`, `FormularioEvento.tsx`). Cuando el cartel **no nombraba a nadie** (`r.quien` vacío), esa condición nunca se cumplía y el prellenado de "soy yo" se quedaba tal cual — exactamente lo que vio el founder: un cartel sin nombres de artistas, y "Quién" puesto con él mismo de todos modos.
+
+**Arreglo mínimo:** nueva función pura `quienTrasLeerCartel(quienDelCartel, quienActual, puedeCompletarQuien)` en `gestosFlyer.ts`. La regla ya no depende de si el cartel trae artistas o no: si "Quién" se puede completar (nadie lo tocó a mano y no vino explícito), el cartel manda del todo — artistas si los nombra, **vacío si no nombra a nadie**. Si ya se tocó a mano o vino explícito (`quienInicial`), nunca se pisa, tenga o no tenga artistas el cartel. En `FormularioEvento.tsx`:
+
+```ts
+setQuien((actual) => quienTrasLeerCartel(r.quien, actual, gestos.current.puedeCompletar("quien")));
+```
+
+- **Pruebas de regresión** (`gestosFlyer.test.ts`, 4 casos nuevos, cubren exactamente lo que pidió el gestor): cartel con artistas reconocidos → los del cartel; cartel sin artistas + prellenado automático → vacío; cartel sin artistas + "Quién" ya tocado a mano → se respeta; `quienInicial` explícito → se respeta aunque el cartel traiga artistas distintos.
+- **Límite respetado:** solo se tocó la parte de "Quién" en `leerCartel`; no se tocó `HojaDondeEs.tsx` ni el resto del formulario (otra pieza está corrigiendo ahí).
+
+### Medición pedida: ¿qué pasa hoy con un artista que el cartel sí nombra pero que no está en el directorio?
+
+**No se pierde.** `leerCartelAccion` (`src/app/eventos/acciones.ts`) ya busca cada nombre del cartel con `artistas_con_nombre`; si no hay coincidencia exacta, lo agrega a `quien` igual, como `{ nombre }` **sin `id`**. `SelectorQuien.tsx` ya pinta esas fichas con una etiqueta discreta "· nuevo" junto al nombre, visibles y con su ✕ para quitarlas antes de publicar (`{!item.id && <small> · nuevo</small>}`). El artista de verdad **se crea solo al publicar** (el comentario del propio componente lo dice: «El artista nuevo no se crea aquí: viaja con el nombre y se crea al publicar, sin huérfanos si se abandona»), nunca antes — así que ya cumple lo que pide DEFINICION («lo que propone la IA se confirma antes de publicarse como hecho»): la persona ve la ficha, puede quitarla, y solo se vuelve un dato real si publica con ella puesta.
+
+**Propuesta de mejora (no construida, para cuando toque esa pieza):** hoy "· nuevo" es una etiqueta chica, fácil de pasar por alto si el cartel trajo varios nombres. Se podría destacar ese estado en la propia tarjeta del cartel — por ejemplo, que el resumen de "Leí el cartel" diga algo como "2 artistas nuevos por confirmar" cuando alguno de los de `quien` no tiene `id` — para que la persona sepa que debe mirarlos antes de publicar, en vez de depender de que note la etiqueta en cada ficha suelta.
+
+**Verificación:** `npm run lint` (0 errores, mismo warning ajeno de siempre), `npm run typecheck` (limpio), `npm test` (767/774 en verde; los 7 rojos son de `scripts/test-db.test.ts` por falta del paquete `pg` en `node_modules` de este worktree, preexistente y ajeno a esta pieza), `npm run build` (verde, 39 rutas). Pruebas focalizadas de la zona (`gestosFlyer.test.ts`, `estadoCartel.test.ts`): 35/35. Rama `cartel-quien-solo-del-cartel`, base `origin/main` (`44e4e63`), commit local, sin push.

@@ -20,6 +20,28 @@
   font-size: var(--letra-sm);
 }
 
+/* "Buscando…" o el error, dentro de la lista flotante (ui/ListaFlotante): no son una opción, solo texto. */
+.avisoFlotante {
+  padding: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.avisoFlotante[role="alert"] {
+  color: var(--error);
+}
+
+/* La salida "No es ninguna: pon el pin en el mapa" se queda pegada al fondo de la lista flotante (revisión del
+   gestor): ninguna búsqueda de Mapbox es infalible, y esta salida tiene que verse siempre, sin desplazar la lista
+   para encontrarla. */
+.salidaManual {
+  position: sticky;
+  bottom: 0;
+  background: var(--fondo);
+}
+.salidaManual > button {
+  color: var(--texto);
+}
+
 /* Botón con un toque para acercar la búsqueda a la posición de la persona (OL-100, founder 2026-09-21: la
    ubicación se pide con un toque, en el momento en que ayuda; nunca automático al abrir la hoja). */
 .usarUbicacion {
@@ -60,6 +82,7 @@
 /* 4. Otro sitio: el mapa con su botón de ubicación, el interruptor de reservado y sus campos */
 .otro {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--espacio-3);
   margin-bottom: var(--espacio-4);
 }
