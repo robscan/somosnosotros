@@ -28,7 +28,12 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
   }
   function alTocarCarril(e: MouseEvent<HTMLUListElement>) {
     const inicio = bajada.current;
-    if (inicio && huboArrastre(e.clientX - inicio.x, e.clientY - inicio.y)) e.preventDefault();
+    // Un click sin puntero real (Enter con teclado, VoiceOver, `click()` por código) llega con detail 0 y sin
+    // coordenadas: no hubo arrastre que cancelar, y comparar contra la última bajada (de otro toque) lo cerraría
+    // sin querer (gestión de cambios, revisión de 6153f9a). La bajada se limpia siempre, para no arrastrarla al
+    // siguiente click que no traiga la suya.
+    if (inicio && e.detail !== 0 && huboArrastre(e.clientX - inicio.x, e.clientY - inicio.y)) e.preventDefault();
+    bajada.current = null;
   }
   // Al aparecer, el carril vuelve a donde estaba; al irse, guarda lo que esperaba, y quien desliza y toca una tarjeta antes
   // de 100 ms no pierde la posición. Al irse el carril sigue en la página, pero la URL ya puede ser la de la ficha: por eso

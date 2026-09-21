@@ -82,6 +82,14 @@ En el scratchpad de la sesión, carpeta aparte (no en el repo): `package.json` m
   - `caso4-carril-destacados-arrastrado-sin-navegar.png`
   - `caso5-tap-tarjeta-navega.png`
 
+## Revisión de gestión de cambios, arreglada (commit 6153f9a)
+
+Un hallazgo chico, reproducido antes de tocar nada: en `Destacados.tsx`, `bajada` se guardaba en `pointerdown` y nunca se limpiaba. Un `click` sin puntero real (Enter con teclado, VoiceOver, `click()` por código) llega con `detail === 0` y sin relación con la última posición guardada; comparado contra la `bajada` de un toque anterior, `huboArrastre` podía dar `true` y cancelaba la navegación — tras tocar una vez el carril con el dedo, abrir una tarjeta con teclado o lector de pantalla dejaba de funcionar.
+
+**Arreglo:** `alTocarCarril` solo cancela cuando `e.detail !== 0` (hubo un puntero real de por medio), y limpia `bajada.current` al final de cada click, para no arrastrarla a uno que no traiga la suya. No cabe en la función pura `huboArrastre` (depende de `event.detail`, no de coordenadas), así que quedó comentado en el propio `alTocarCarril`.
+
+**Comprobado** con eventos sintéticos en el navegador: un `click` con `pointerdown` lejano y `detail: 1` (arrastre real) se cancela igual que antes; un `click` con `detail: 0` justo después, sin `pointerdown` propio, navega (`→ NAVEGÓ a #ficha-0`). Lint, typecheck, 692 pruebas y build en verde otra vez.
+
 ## Límites respetados
 
 Solo se tocó `ui/Deslizable` (vía `lib/deslizar.ts`, sin tocar el propio `Deslizable.tsx`: la decisión del gesto ya vivía en la función pura) y `Destacados.tsx`. No se cambiaron acciones, textos, colores ni tamaños. No se tocó `src/lib/destacados.ts` (OL-093). Sin migración. Sin council, workflows ni subagentes.
