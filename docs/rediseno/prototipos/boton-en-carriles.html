@@ -73,6 +73,28 @@
   .redondas .fila-boton { justify-content: center; }
   .uno .fila-boton { padding-left: 136px; } /* alineado con el texto, no con la foto (124 px + gap) */
 
+  /* ---------- Diseño B: junto al texto, del lado derecho (pedido del founder, 2026-09-21) ---------- */
+  /* El botón sigue siendo hermano de `.tarjeta`, no su hijo; se coloca encima con position:absolute, anclado a la
+     esquina inferior derecha del `<li>` — que coincide con la esquina inferior derecha de `.tarjeta`, porque es su
+     único vecino visible. La tarjeta redonda y la de "una sola" no tienen sitio lateral: se quedan como en el
+     diseño A (abajo), es la comparación que pide el founder. */
+  .diseno-lateral .carril > li { position: relative; }
+  /* El botón (44 px) es más alto que la línea de `small` (≈21 px, line-height 1.4 heredado): centrado con flex sobre
+     una caja del alto de esa línea, para que quede a su altura y no tape el título de arriba. */
+  .diseno-lateral .fila-boton { position: absolute; right: 0; bottom: 0; height: 1.4em; align-items: center; padding-top: 0; }
+  .diseno-lateral .tarjeta small { padding-right: 54px; }
+  .diseno-lateral .redondas .fila-boton, .diseno-lateral .uno .fila-boton { position: static; }
+  .diseno-lateral .redondas .tarjeta small, .diseno-lateral .uno .tarjeta small { padding-right: 0; }
+  .diseno-lateral .redondas .fila-boton { justify-content: center; padding-top: var(--espacio-1); }
+  .diseno-lateral .uno .fila-boton { justify-content: flex-start; padding-top: var(--espacio-1); padding-left: 136px; }
+
+  /* ---------- Diseño C: sobre la foto, arriba a la derecha (pedido del founder, 2026-09-21) ---------- */
+  .diseno-foto .carril > li { position: relative; }
+  .diseno-foto .fila-boton { position: absolute; top: var(--espacio-2); right: var(--espacio-2); padding-top: 0; }
+  /* La foto de "una sola tarjeta" mide 124 px y el texto va a su lado: el botón se ancla a la esquina de la FOTO
+     (right: 100% menos 124 px, más el margen), no a una posición fija, o invade el texto. */
+  .diseno-foto .uno .fila-boton { left: auto; right: calc(100% - 124px + var(--espacio-2)); width: max-content; padding-left: 0; }
+
   .boton-fila { display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque-min); min-width: var(--toque-min); padding: 0 14px; border: none; border-radius: 999px; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
   .boton-fila svg { width: 18px; height: 18px; }
   .boton-fila.invitar { background: var(--primario); color: var(--primario-texto); }
@@ -89,6 +111,8 @@
   .estados { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; border-radius: 12px; background: var(--estudio); }
   .estados button { min-height: 40px; border: none; border-radius: 8px; background: none; color: var(--estudio-texto); font-weight: 700; font-size: 13px; cursor: pointer; }
   .estados button[aria-pressed="true"] { background: var(--primario); color: #fff; }
+  .estados.disenos { grid-template-columns: repeat(3, 1fr); background: var(--fondo-suave); }
+  .telefono .estados.disenos { margin: 8px var(--gutter) 0; }
   .panel { display: grid; gap: 16px; width: 340px; max-width: 100%; padding: 22px 22px 24px; border: 1px solid var(--estudio-borde); border-radius: 18px; background: var(--estudio-panel); font-size: 15px; line-height: 1.45; }
   .panel h1 { font-size: 24px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.08; text-wrap: balance; }
   .panel .fecha { margin-top: 4px; color: var(--estudio-suave); font-size: 14px; }
@@ -124,6 +148,7 @@
       <div class="estados" role="group" aria-label="Pantalla a ver" id="estados-movil"></div>
       <button type="button" class="ayuda" id="abrir-notas" aria-label="Qué probar">?</button>
     </div>
+    <div class="estados disenos" role="group" aria-label="Diseño del botón" id="disenos-movil"></div>
     <div class="pantalla" id="pantalla"></div>
     <div class="aviso" id="aviso" role="status">
       <span id="aviso-texto"></span>
@@ -140,17 +165,21 @@
     </div>
     <div class="estados" role="group" aria-label="Pantalla a ver" id="estados-escritorio"></div>
     <div>
+      <h2>Diseño del botón</h2>
+      <div class="estados disenos" role="group" aria-label="Diseño del botón" id="disenos-escritorio"></div>
+    </div>
+    <div>
       <h2>Qué mirar</h2>
       <ul>
-        <li><b>Agenda:</b> tarjetas grandes de evento, botón "Voy" bajo el texto.</li>
-        <li><b>Lugares, con eventos esta semana:</b> tarjeta normal, botón "Seguir" — es del lugar, no del evento.</li>
-        <li><b>Artistas, con eventos esta semana:</b> tarjeta redonda de 104 px — el botón es <b>solo icono</b> (compacto), sin la palabra: ¿se entiende igual?</li>
-        <li><b>Una sola tarjeta:</b> foto a un lado, el botón ocupa toda la fila de abajo.</li>
+        <li><b>Abajo:</b> el botón en su propia fila, bajo el título y el detalle (alineado con el texto, no centrado).</li>
+        <li><b>Lateral:</b> el botón entra en la esquina inferior derecha de la tarjeta, a la altura del detalle — en la redonda y en "una sola tarjeta" no hay sitio lateral y se queda como en "Abajo".</li>
+        <li><b>Sobre la foto:</b> el botón flota en la esquina superior derecha de la imagen.</li>
+        <li><b>Artistas, con eventos esta semana:</b> tarjeta redonda de 104 px — el botón es <b>solo icono</b> (compacto), sin la palabra.</li>
         <li><b>Arrastra el carril empezando justo sobre un botón</b> (con el dedo, de derecha a izquierda): el carril se mueve y el botón <b>no</b> se dispara. Suelta sin moverte: sí se dispara.</li>
       </ul>
     </div>
     <div class="pregunta">
-      Falta tu firma: ¿el botón bajo el texto se ve bien en los tres tamaños? ¿El icono solo en la tarjeta redonda se entiende sin la palabra "Seguir"?
+      Falta tu firma: de los tres diseños, ¿cuál prefieres? ¿O sigue sin verse bien en alguno?
     </div>
   </aside>
 </main>
@@ -261,9 +290,17 @@
     { clave: "artistas", etiqueta: "Artistas" },
   ];
   let pantallaActual = "agenda";
+  const DISENOS = [
+    { clave: "abajo", etiqueta: "Abajo" },
+    { clave: "lateral", etiqueta: "Lateral" },
+    { clave: "foto", etiqueta: "Sobre la foto" },
+  ];
+  let disenoActual = "abajo";
   function pintar() {
     const fn = { agenda: pantallaAgenda, lugares: pantallaLugares, artistas: pantallaArtistas }[pantallaActual];
-    document.getElementById("pantalla").innerHTML = fn();
+    const pantalla = document.getElementById("pantalla");
+    pantalla.className = `pantalla diseno-${disenoActual}`;
+    pantalla.innerHTML = fn();
     cablearCarriles();
   }
 
@@ -311,12 +348,22 @@
     contenedor.innerHTML = ESTADOS.map((s) => `<button type="button" data-estado="${s.clave}" aria-pressed="${s.clave === pantallaActual}">${s.etiqueta}</button>`).join("");
     contenedor.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
       pantallaActual = b.dataset.estado;
-      document.querySelectorAll(".estados").forEach(pintarSelectorEstado);
+      document.querySelectorAll(".estados:not(.disenos)").forEach(pintarSelectorEstado);
+      pintar();
+    }));
+  }
+  function pintarSelectorDiseno(contenedor) {
+    contenedor.innerHTML = DISENOS.map((d) => `<button type="button" data-diseno="${d.clave}" aria-pressed="${d.clave === disenoActual}">${d.etiqueta}</button>`).join("");
+    contenedor.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      disenoActual = b.dataset.diseno;
+      document.querySelectorAll(".disenos").forEach(pintarSelectorDiseno);
       pintar();
     }));
   }
   pintarSelectorEstado(document.getElementById("estados-movil"));
   pintarSelectorEstado(document.getElementById("estados-escritorio"));
+  pintarSelectorDiseno(document.getElementById("disenos-movil"));
+  pintarSelectorDiseno(document.getElementById("disenos-escritorio"));
   pintar();
 
   const estudio = document.getElementById("estudio");

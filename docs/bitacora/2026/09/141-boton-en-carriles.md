@@ -29,8 +29,25 @@ Prototipo interactivo en [`prototipos/boton-en-carriles.html`](../../rediseno/pr
 
 Medido: `.fila-boton` centraba el botón bajo todo el ancho de la tarjeta, mientras el título y el detalle van alineados a la izquierda — el botón quedaba flotando, sin relación visual con el texto de arriba. Corregido: alineado a la izquierda, como el resto del contenido; solo la tarjeta redonda de artista sigue centrando (su texto también está centrado ahí, `text-align: center`). Artifact republicado en el mismo enlace (versión 2).
 
+## Dos diseños más, pedidos por el founder
+
+> «integra el botón a el row con texto del lado derecho y haz otra prueba con el botón en el extremo superior derecho de la imagen»
+
+Añadidos al mismo prototipo (versión 3), con un segundo selector ("Abajo" / "Lateral" / "Sobre la foto") para comparar los tres sin salir de la pantalla:
+
+- **Lateral:** el botón entra en la esquina inferior derecha de la tarjeta, a la altura del renglón de fecha/hora (`detalle`). El botón (44 px) es más alto que esa línea de texto (≈21 px): se centra con flex sobre una caja del alto de la línea, para no invadir el título de arriba.
+- **Sobre la foto:** el botón flota en la esquina superior derecha de la imagen.
+- En la tarjeta redonda y en "una sola tarjeta" (foto al lado del texto), "Lateral" no tiene sitio real y cae de vuelta al diseño "Abajo", sin forzarlo.
+
+**Dos bugs de posicionamiento, medidos y corregidos antes de mostrarlo:**
+1. En "una sola tarjeta" con "Sobre la foto", el botón (`position:absolute; left:84px; right:auto`) medía 224 px de ancho en vez de encogerse a su contenido (~90 px) — `right:auto` no basta para que un elemento absoluto con `left` fijo se encoja: hacía falta `width: max-content` explícito.
+2. Con eso puesto, seguía midiendo 224 px: el `padding-left: 136px` de la regla del diseño "Abajo" (para alinear con el texto en esa otra variante) se seguía aplicando y se sumaba al ancho (`box-sizing: border-box` cuenta el padding dentro del `width`). Reseteado a `0` para esta variante.
+3. Con el ancho ya correcto, el botón invadía el título porque estaba anclado a una posición fija (`left: 84px`) en vez de a la propia foto (124 px de ancho): con un título de dos líneas el botón quedaba a la altura de la segunda línea de texto, no de la foto. Corregido: anclado a la esquina de la foto con `right: calc(100% - 124px + espacio)`, no a un valor fijo — así funciona sea cual sea el ancho real de la tarjeta.
+
+Los tres, probados con el mismo mecanismo real de `huboArrastre` (arrastrar desde el botón no lo dispara, en los tres diseños).
+
 ## Qué falta
 
-Firma del founder sobre el prototipo (pregunta concreta: si el botón bajo el texto se ve bien en los tres tamaños, y si el icono solo en la tarjeta redonda se entiende sin la palabra "Seguir"). Código solo después, con la comprobación medida a 320/375/390 px que pide el gestor.
+Firma del founder sobre cuál de los tres diseños prefiere. Código solo después, con la comprobación medida a 320/375/390 px que pide el gestor.
 
 Sin migración. Sin subagentes.
