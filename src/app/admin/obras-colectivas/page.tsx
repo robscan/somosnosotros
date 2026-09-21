@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import ficha from "@/components/ui/Ficha.module.css";
 import { IconoChevronDerecha, IconoPincel } from "@/components/ui/Iconos";
+import { formatearCuando } from "@/lib/fechas";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import styles from "../admin.module.css";
 import CrearObraAqui from "./CrearObraAqui";
@@ -42,8 +43,10 @@ export default async function ObrasColectivas() {
               <Link href={`/admin/obras-colectivas/${o.id}`} className={styles.fila}>
                 <IconoPincel width={20} height={20} />
                 <b>{o.nombre}</b>
+                {/* Un lugar puede tener varias obras con el tiempo (founder, 2026-09-21): la fecha y hora en que se
+                    creó cada una es lo que las distingue en la lista, no solo el nombre. */}
                 <small>
-                  {o.lugarNombre} · {o.estado === "abierta" ? "Abierta" : "Cerrada"}
+                  {o.lugarNombre} · {o.estado === "abierta" ? "Abierta" : "Cerrada"} · {formatearCuando(o.creadoEn, null, new Date(), o.zona)}
                 </small>
                 <span className={styles.total}>
                   <IconoChevronDerecha />

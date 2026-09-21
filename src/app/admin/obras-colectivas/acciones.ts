@@ -87,3 +87,23 @@ export async function reabrirObra(id: string): Promise<Resultado> {
   revalidar(id);
   return { ok: true };
 }
+
+/**
+ * Borra una obra ya cerrada (founder, 2026-09-21: "permite borrado de obras colectivas"; cambia lo firmado el
+ * 2026-09-19). La base lo exige con su propia política (solo admin, solo `estado = 'cerrada'`, migración
+ * 20260922120000); aquí solo se lee `imagen_final` antes de borrar la fila para, si existe, borrarla también del
+ * bucket — mismo patrón de redirect con `?error=` que `borrarEvento` (`Borrar` no tiene su propio estado de error).
+ */
+export async function borrarObra(id: string) {
+  if (!esUuid(id)) redirect("/admin/obras-colectivas");
+  const { supabase } = await soloAdmin();
+  const { data: obra } = await supabase.from("obras_colectivas").select("imagen_final").eq("id", id).maybeSingle();
+  const { data } = await supabase.from("obras_colectivas").delete().eq("id", id).select("id").maybeSingle();
+  if (!data) redirect(`/admin/obras-colectivas/${id}?error=borrar`);
+  // Mejor esfuerzo: la fila ya se borró (es lo que importa); si esto falla, queda un archivo huérfano en el
+  // bucket, no un dato roto en la base. Nadie sube a fotos/obras/ todavía (llega con la pared, Fase 2), así que
+  // hoy `imagen_final` siempre es null y esta rama no se ejercita — queda lista para cuando exista.
+  if (obra?.imagen_final) await supabase.storage.from("fotos").remove([obra.imagen_final]);
+  revalidatePath("/admin/obras-colectivas");
+  redirect("/admin/obras-colectivas");
+}

@@ -142,11 +142,12 @@ export async function run({ as, check, expectError, query }) {
   const reabierta = await as("authenticated", ADMIN, () => query("update public.obras_colectivas set estado = 'abierta', cerrado_en = null where id = $1 returning estado", [obraDosId]));
   check(reabierta.rows[0]?.estado === "abierta", "administración reabre la obra");
 
-  // ---------- nadie borra, tampoco un admin (sin policy for delete) ----------
-  const borraAdmin = await as("authenticated", ADMIN, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraDosId]));
-  check(borraAdmin.rowCount === 0, "ni un admin borra una obra: cerrarla basta, sin policy for delete");
-  const borraAnon = await as("anon", null, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraDosId]));
-  check(borraAnon.rowCount === 0, "anon tampoco borra una obra");
+  // ---------- borrar solo admin y solo una obra CERRADA (Fase 2, bloque 1; cambia lo firmado el 2026-09-19) ----------
+  // obraDosId está 'abierta' en este punto (se reabrió arriba): ni un admin la borra, hay que cerrarla primero.
+  const borraAbierta = await as("authenticated", ADMIN, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraDosId]));
+  check(borraAbierta.rowCount === 0, "ni un admin borra una obra abierta: hay que cerrarla primero");
+  const borraAnonAbierta = await as("anon", null, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraDosId]));
+  check(borraAnonAbierta.rowCount === 0, "anon tampoco borra una obra abierta");
 
   // Reabrir cuando ya hay otra obra abierta en el mismo lugar debe chocar con el mismo índice único: obraUno está
   // cerrada y su lugar (lugarUno) ya tiene una obra abierta (obraEvento); reabrirla debe fallar.
@@ -182,4 +183,30 @@ export async function run({ as, check, expectError, query }) {
   check(anonNoVeEventoOculto.rowCount === 0, "anon no ve la obra de un evento oculto, aunque su lugar sea visible");
   const adminSiVeEventoOculto = await as("authenticated", ADMIN, () => query("select id from public.obras_colectivas where id = $1", [obraEvento.rows[0].id]));
   check(adminSiVeEventoOculto.rowCount === 1, "administración sí ve la obra de un evento oculto");
+
+  // ---------- borrar una obra CERRADA: solo admin (Fase 2, bloque 1) ----------
+  const lugarBorrado = await crearLugar(as, query, OTRA);
+  const obraParaBorrar = await as("authenticated", ADMIN, () =>
+    query("insert into public.obras_colectivas (nombre, lugar_id, cierra_en, creado_por) values ('Obra para borrar', $1, now() + interval '2 hours', auth.uid()) returning id", [lugarBorrado]),
+  );
+  const obraParaBorrarId = obraParaBorrar.rows[0].id;
+  await as("authenticated", ADMIN, () => query("update public.obras_colectivas set estado = 'cerrada', cerrado_en = now() where id = $1", [obraParaBorrarId]));
+
+  const borraAnonCerrada = await as("anon", null, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraParaBorrarId]));
+  check(borraAnonCerrada.rowCount === 0, "anon no borra una obra cerrada");
+  const borraAjenaCerrada = await as("authenticated", OTRA, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraParaBorrarId]));
+  check(borraAjenaCerrada.rowCount === 0, "una cuenta que no es admin no borra una obra cerrada");
+  const borraAdminCerrada = await as("authenticated", ADMIN, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraParaBorrarId]));
+  check(borraAdminCerrada.rowCount === 1, "administración borra una obra cerrada");
+  const yaNoExiste = await as("authenticated", ADMIN, () => query("select id from public.obras_colectivas where id = $1", [obraParaBorrarId]));
+  check(yaNoExiste.rowCount === 0, "la obra borrada ya no está");
+
+  // ---------- storage: solo admin borra en fotos/obras/… (imagen_final, cuando exista) ----------
+  await query("insert into storage.objects (bucket_id, name, owner) values ('fotos', 'obras/prueba-pincel.png', null)");
+  const borraFotoAnon = await as("anon", null, () => query("delete from storage.objects where bucket_id = 'fotos' and name = 'obras/prueba-pincel.png' returning name"));
+  check(borraFotoAnon.rowCount === 0, "anon no borra la imagen final de una obra");
+  const borraFotoAjena = await as("authenticated", OTRA, () => query("delete from storage.objects where bucket_id = 'fotos' and name = 'obras/prueba-pincel.png' returning name"));
+  check(borraFotoAjena.rowCount === 0, "una cuenta que no es admin no borra la imagen final de una obra");
+  const borraFotoAdmin = await as("authenticated", ADMIN, () => query("delete from storage.objects where bucket_id = 'fotos' and name = 'obras/prueba-pincel.png' returning name"));
+  check(borraFotoAdmin.rowCount === 1, "administración borra la imagen final de una obra");
 }
