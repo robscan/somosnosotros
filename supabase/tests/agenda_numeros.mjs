@@ -140,5 +140,39 @@ ok(listaComunidadDespues.some((r) => r.id === E_COMUNIDAD), "la lista sigue most
 ok(conteosDespues.comunidad === ahoraDespues.comunidad, "panel_fichas_conteos('eventos').comunidad coincide con indicadores_ahora().comunidad", { badge: conteosDespues.comunidad, indicador: ahoraDespues.comunidad });
 ok(listaComunidadDespues.length === ahoraDespues.comunidad, "la lista trae exactamente tantas filas como dice el número", { filas: listaComunidadDespues.length, numero: ahoraDespues.comunidad });
 
+// ---------- panel_personas(), filtro 'nuevas', y su badge panel_personas_conteos() (tercer sitio, OL-093) ----------
+// U3 sigue siendo usuaria normal aquí (recién sembrada, dentro de los 7 días); se mira el badge y la lista como
+// administrador (F), que es quien de verdad ve la pantalla Personas.
+await como("authenticated", F);
+const nuevasAntes = (await filas(`select public.panel_personas_conteos() as j`))[0].j.nuevas;
+ok(nuevasAntes >= 1, "antes de ascender a U3: el badge 'nuevas' ya la cuenta (recién sembrada, hace <7 días)", nuevasAntes);
+let listaNuevasAntes = await filas(`select id from public.panel_personas(null, 'nuevas', 30, 0)`);
+ok(listaNuevasAntes.some((r) => r.id === U3), "antes de ascender: U3 está en la lista de 'nuevas'", listaNuevasAntes);
+
+await como("authenticated", F);
+const cambio3 = (await filas(`select public.cambiar_rol($1, 'admin') as r`, [U3]))[0];
+ok(cambio3.r === "ok", "se pudo ascender a U3 a administradora", cambio3);
+const nuevasDespues = (await filas(`select public.panel_personas_conteos() as j`))[0].j.nuevas;
+const listaNuevasDespues = await filas(`select id from public.panel_personas(null, 'nuevas', 30, 0)`);
+ok(nuevasDespues === nuevasAntes, "el badge 'nuevas' no cambia al ascender a U3 (rol de entonces)", { antes: nuevasAntes, despues: nuevasDespues });
+ok(listaNuevasDespues.some((r) => r.id === U3), "la lista de 'nuevas' sigue mostrando a U3 tras ascenderla: badge y lista, mismo criterio", listaNuevasDespues);
+
+// ---------- negativo: rol_en_para_admin() y rol_en() no se abren a una cuenta normal ----------
+// U1, U2 y U3 ya son admin a esta altura (las ascendimos arriba): se prueba con una cuenta nueva, sin ascender.
+const U4 = uuid(14);
+await db.exec("reset role"); // como al sembrar los datos iniciales: sin rol de sesión, auth.users no es de authenticated
+await db.query(`insert into auth.users (id, email, email_confirmed_at) values ($1, 'u4@ejemplo.org', now())`, [U4]); // el trigger al_crear_usuario siembra su perfil
+
+await como("authenticated", U4); // U4: cuenta normal, nunca administradora
+const negativo = (await filas(`select public.rol_en_para_admin($1, now()) as r`, [F]))[0];
+ok(negativo.r === null, "rol_en_para_admin() devuelve null para quien no es administrador (nunca 'admin' ni 'usuario' filtrado)", negativo);
+let negativoRolEn = null;
+try {
+  await db.query(`select public.rol_en($1, now())`, [F]);
+} catch (e) {
+  negativoRolEn = e.message;
+}
+ok(negativoRolEn !== null && /permission denied/i.test(negativoRolEn), "rol_en() sigue dando 'permission denied' a una cuenta normal: el EXECUTE no se amplió", negativoRolEn);
+
 console.log(`${fallos === 0 ? "✓" : "✗"} ${pasan} comprobaciones en verde${fallos ? `, ${fallos} en rojo` : ""}`);
 process.exit(fallos === 0 ? 0 : 1);
