@@ -7,7 +7,8 @@
 // sigue a la siguiente tanda. No escribe en ninguna tabla: Broadcast no las toca. Canal sin `private` y con
 // nombre inequívoco de prueba, para que sea obvio en cualquier panel de Supabase que lo vea mientras corre.
 //
-// Uso: node scripts/pincel/simulador-mandos.mjs
+// Uso: node scripts/pincel/simulador-mandos.mjs [--tandas-desde N]
+// --tandas-desde 2 empieza en la tanda 2 (útil para reaprovechar una tanda anterior ya limpia sin repetirla).
 // Lee NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY directamente de /Users/apple-1/somosnosotros/.env
 // (la ruta del proyecto principal, NUNCA copiado a esta carpeta), solo esas dos variables, solo en este proceso,
 // sin imprimirlas ni guardarlas en ningún archivo. Nunca lee ni usa SUPABASE_SERVICE_ROLE_KEY ni ninguna otra
@@ -17,9 +18,9 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
-const RUTA_ENV_REAL = "/Users/apple-1/somosnosotros/.env";
+export const RUTA_ENV_REAL = "/Users/apple-1/somosnosotros/.env";
 
-function leerDosVariables(ruta, nombres) {
+export function leerDosVariables(ruta, nombres) {
   const texto = readFileSync(ruta, "utf8"); // nunca se guarda ni se loguea; vive solo en esta variable local
   const valores = {};
   for (const linea of texto.split("\n")) {
@@ -29,23 +30,7 @@ function leerDosVariables(ruta, nombres) {
   return valores;
 }
 
-let url, anon;
-try {
-  const vars = leerDosVariables(RUTA_ENV_REAL, ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]);
-  url = vars.NEXT_PUBLIC_SUPABASE_URL;
-  anon = vars.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-} catch (error) {
-  console.error(`No se pudo leer ${RUTA_ENV_REAL}: ${error.message}`);
-  process.exit(1);
-}
-if (!url || !anon) {
-  console.error(`Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY en ${RUTA_ENV_REAL}.`);
-  process.exit(1);
-}
-
 // ---------- el plan escalonado (gestión de cambios, 2026-09-21): sube hasta encontrar el límite ----------
-const HOY = new Date().toISOString().slice(0, 10);
-const CANAL = `prueba-cupo-${HOY}-${Date.now().toString(36).slice(-4)}`;
 const SEGUNDOS_POR_TANDA = 10;
 const PAUSA_ENTRE_TANDAS_MS = 10_000;
 const UMBRAL_PERDIDA = 0.05; // 5 %: por encima de esto, o con errores de conexión/envío, se detiene sola
@@ -70,18 +55,48 @@ function mensajeAlAzar() {
   };
 }
 
-function clienteMando() {
-  const supabase = createClient(url, anon, { realtime: { params: { eventsPerSecond: 10 } } });
-  return supabase.channel(CANAL, { config: { private: false, broadcast: { self: false, ack: true } } });
-}
-
-function percentil(valoresOrdenados, p) {
+export function percentil(valoresOrdenados, p) {
   if (valoresOrdenados.length === 0) return null;
   const i = Math.min(valoresOrdenados.length - 1, Math.ceil((p / 100) * valoresOrdenados.length) - 1);
   return valoresOrdenados[Math.max(0, i)];
 }
 
-async function correrTanda({ mandos: n, hz }) {
+/**
+ * Conecta un canal y resuelve UNA sola vez con el primer estado que importa (`SUBSCRIBED`, o un fallo real antes
+ * de llegar a abrir). Cualquier cambio de estado DESPUÉS de ese primero se ignora — en particular el `CLOSED`
+ * que dispara `unsubscribe()` al terminar una tanda, que es un cierre ordenado, no un fallo (bug medido en la
+ * corrida del 2026-09-21: sin este candado, cada cierre normal se contaba otra vez como error de conexión y
+ * frenaba la corrida sin motivo real). `timeoutMs` es una red de seguridad: si el canal nunca manda ningún
+ * estado, no se cuelga la corrida para siempre.
+ */
+export function conectarCanal(canal, { timeoutMs = 8000 } = {}) {
+  return new Promise((resuelve) => {
+    let resuelto = false;
+    const marcar = (ok, estado) => {
+      if (resuelto) return;
+      resuelto = true;
+      clearTimeout(temporizador);
+      resuelve({ ok, estado });
+    };
+    const temporizador = setTimeout(() => marcar(false, "TIMEOUT_LOCAL"), timeoutMs);
+    canal.subscribe((estado) => {
+      if (estado === "SUBSCRIBED") marcar(true, estado);
+      else if (estado === "CHANNEL_ERROR" || estado === "TIMED_OUT" || estado === "CLOSED") marcar(false, estado);
+    });
+  });
+}
+
+// Margen tras el último mensaje antes de medir pérdida y desconectar (gestión de cambios, revisión 2026-09-21,
+// punto 2): un mensaje mandado justo antes de que termine la tanda puede seguir "en vuelo" cuando se cuenta lo
+// recibido. La p95 de la tanda 1 fue 279 ms; 2 s de margen deja de sobra hasta para tandas más cargadas, sin
+// alargar mucho la corrida (10 s de tanda + 2 s de margen, no 1 s).
+const MARGEN_TRAS_ULTIMO_ENVIO_MS = 2000;
+
+async function correrTanda({ mandos: n, hz, url, anon, canal: CANAL }) {
+  function clienteMando() {
+    const supabase = createClient(url, anon, { realtime: { params: { eventsPerSecond: 10 } } });
+    return supabase.channel(CANAL, { config: { private: false, broadcast: { self: false, ack: true } } });
+  }
   const resultado = {
     tanda: `${n} mandos × ${hz} Hz`,
     mensajesPorSegundoObjetivo: n * hz,
@@ -96,48 +111,27 @@ async function correrTanda({ mandos: n, hz }) {
   const latencias = [];
 
   const pared = clienteMando();
-  let paredLista = false;
   pared.on("broadcast", { event: "trazo" }, ({ payload }) => {
     resultado.recibidosPorLaPared++;
     if (typeof payload?.ts === "number") latencias.push(Date.now() - payload.ts);
   });
-  await new Promise((resuelve) => {
-    pared.subscribe((estado) => {
-      if (estado === "SUBSCRIBED") {
-        paredLista = true;
-        resuelve();
-      }
-      if (estado === "CHANNEL_ERROR" || estado === "TIMED_OUT") resuelve();
-    });
-  });
-  if (!paredLista) resultado.erroresDeConexion++;
+  const paredConectada = await conectarCanal(pared);
+  if (!paredConectada.ok) resultado.erroresDeConexion++;
 
   const mandos = [];
-  await Promise.all(
-    Array.from({ length: n }, () => clienteMando()).map(
-      (canal) =>
-        new Promise((resuelve) => {
-          // El estado sigue cambiando después de conectar (p. ej. a "CLOSED" cuando la tanda termina y se llama
-          // unsubscribe()): solo cuenta como error de conexión lo que pasa ANTES del primer estado resuelto, no
-          // el cierre normal al final de la tanda (bug medido en la corrida del 2026-09-21: sin este candado,
-          // cada cierre ordenado se contaba como error y frenaba la corrida sin motivo real).
-          let resuelto = false;
-          canal.subscribe((estado) => {
-            if (resuelto) return;
-            if (estado === "SUBSCRIBED") {
-              resuelto = true;
-              resultado.conexionesLogradas++;
-              mandos.push(canal);
-              resuelve();
-            } else if (estado === "CHANNEL_ERROR" || estado === "TIMED_OUT" || estado === "CLOSED") {
-              resuelto = true;
-              resultado.erroresDeConexion++;
-              resuelve();
-            }
-          });
-        }),
-    ),
+  const conexiones = await Promise.all(
+    Array.from({ length: n }, () => clienteMando()).map(async (canal) => {
+      const r = await conectarCanal(canal);
+      if (r.ok) {
+        resultado.conexionesLogradas++;
+        mandos.push(canal);
+      } else {
+        resultado.erroresDeConexion++;
+      }
+      return r;
+    }),
   );
+  void conexiones;
 
   const finEn = Date.now() + SEGUNDOS_POR_TANDA * 1000;
   const intervalos = mandos.map((canal) =>
@@ -152,7 +146,7 @@ async function correrTanda({ mandos: n, hz }) {
       }
     }, Math.round(1000 / hz)),
   );
-  await new Promise((resuelve) => setTimeout(resuelve, SEGUNDOS_POR_TANDA * 1000 + 1000));
+  await new Promise((resuelve) => setTimeout(resuelve, SEGUNDOS_POR_TANDA * 1000 + MARGEN_TRAS_ULTIMO_ENVIO_MS));
   intervalos.forEach(clearInterval);
 
   latencias.sort((a, b) => a - b);
@@ -163,19 +157,47 @@ async function correrTanda({ mandos: n, hz }) {
 
   const tasaDePerdida = resultado.mandados > 0 ? 1 - resultado.recibidosPorLaPared / resultado.mandados : 1;
   const pasoElLimite = resultado.erroresDeConexion > 0 || resultado.fallosAlMandar > 0 || tasaDePerdida > UMBRAL_PERDIDA;
-  return { resultado, pasoElLimite, tasaDePerdida, conexionesTotales: resultado.conexionesLogradas + (paredLista ? 1 : 0) };
+  return { resultado, pasoElLimite, tasaDePerdida, conexionesTotales: resultado.conexionesLogradas + (paredConectada.ok ? 1 : 0) };
 }
 
 async function main() {
+  const args = process.argv.slice(2);
+  const i = args.indexOf("--tandas-desde");
+  // "empieza en la 2" (gestión de cambios, revisión 2026-09-21): reaprovecha la tanda 1 (ya limpia, 190/190,
+  // 0 % de pérdida) sin volver a correrla; por defecto sigue empezando en la 1.
+  const desde = i === -1 ? 1 : Number(args[i + 1]);
+  const tandas = TANDAS.slice(Math.max(0, desde - 1));
+  if (tandas.length === 0) {
+    console.error(`--tandas-desde ${desde} no deja ninguna tanda por correr (hay ${TANDAS.length}).`);
+    process.exit(1);
+  }
+
+  let url, anon;
+  try {
+    const vars = leerDosVariables(RUTA_ENV_REAL, ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]);
+    url = vars.NEXT_PUBLIC_SUPABASE_URL;
+    anon = vars.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  } catch (error) {
+    console.error(`No se pudo leer ${RUTA_ENV_REAL}: ${error.message}`);
+    process.exit(1);
+  }
+  if (!url || !anon) {
+    console.error(`Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY en ${RUTA_ENV_REAL}.`);
+    process.exit(1);
+  }
+
+  const HOY = new Date().toISOString().slice(0, 10);
+  const CANAL = `prueba-cupo-${HOY}-${Date.now().toString(36).slice(-4)}`;
+
   console.log(`Simulador de mandos — canal "${CANAL}" (sin private, sin tocar tablas)`);
   console.log(`Cupo citado (plan gratuito): 200 conexiones, 100 mensajes/s, 256 KB/mensaje, 2 000 000 mensajes/mes.`);
-  console.log(`${TANDAS.length} tandas de ${SEGUNDOS_POR_TANDA} s, pausa de ${PAUSA_ENTRE_TANDAS_MS / 1000} s entre cada una; se detiene sola al pasar el ${UMBRAL_PERDIDA * 100}% de pérdida o al primer error.\n`);
+  console.log(`Empieza en la tanda ${desde} de ${TANDAS.length}. ${tandas.length} tanda(s) de ${SEGUNDOS_POR_TANDA} s, pausa de ${PAUSA_ENTRE_TANDAS_MS / 1000} s entre cada una; se detiene sola al pasar el ${UMBRAL_PERDIDA * 100}% de pérdida o al primer error.\n`);
 
   const resultados = [];
   let conexionesMaximas = 0;
-  for (const tanda of TANDAS) {
+  for (const tanda of tandas) {
     console.log(`Tanda: ${tanda.mandos} mandos × ${tanda.hz} Hz (objetivo ${tanda.mandos * tanda.hz} mensajes/s)…`);
-    const { resultado, pasoElLimite, tasaDePerdida, conexionesTotales } = await correrTanda(tanda);
+    const { resultado, pasoElLimite, tasaDePerdida, conexionesTotales } = await correrTanda({ ...tanda, url, anon, canal: CANAL });
     resultados.push(resultado);
     conexionesMaximas = Math.max(conexionesMaximas, conexionesTotales);
     console.log(`  conexiones: ${resultado.conexionesLogradas}/${tanda.mandos} (errores: ${resultado.erroresDeConexion})`);
@@ -186,7 +208,7 @@ async function main() {
       console.log(`⚠ Esta tanda pasó el límite (errores de conexión/envío o más del ${UMBRAL_PERDIDA * 100}% de pérdida). Deteniendo la corrida aquí, sin seguir a la siguiente tanda.\n`);
       break;
     }
-    if (tanda !== TANDAS[TANDAS.length - 1]) await new Promise((resuelve) => setTimeout(resuelve, PAUSA_ENTRE_TANDAS_MS));
+    if (tanda !== tandas[tandas.length - 1]) await new Promise((resuelve) => setTimeout(resuelve, PAUSA_ENTRE_TANDAS_MS));
   }
 
   const totalMandados = resultados.reduce((a, r) => a + r.mandados, 0);
@@ -199,7 +221,11 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((error) => {
-  console.error("El simulador falló:", error.message);
-  process.exit(1);
-});
+// Correr solo cuando se invoca directamente (`node scripts/pincel/simulador-mandos.mjs`), nunca al importar sus
+// funciones puras (`conectarCanal`, `percentil`, `leerDosVariables`) desde el banco de pruebas.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error("El simulador falló:", error.message);
+    process.exit(1);
+  });
+}

@@ -327,6 +327,26 @@ El founder autorizó la corrida («corre la prueba de pincel», al gestor). Corr
 
 **Verificado:** `node --check` y `npx eslint` sobre el script corregido, limpio. No se corrió `npm test`/`typecheck`/`build` para este cambio puntual del script (no toca código de la app, solo el simulador) — se corre la batería completa al cerrar el bloque. Commit local del arreglo, sin push. Espero instrucción del gestor: ¿autoriza una segunda corrida corta con el arreglo, o esta primera tanda limpia basta por ahora?
 
+## Fase 2, bloque 2: prueba del candado, segundo freno revisado, plan de la segunda corrida (2026-09-21)
+
+El gestor pidió tres cosas antes de la segunda corrida, sin tocar producción.
+
+**1. Prueba del arreglo del candado, en local, sin producción.** `conectarCanal()` (la conexión de un mando o de la pared) se sacó a su propia función exportada, con un canal simulado (`subscribe(cb)` que dispara una secuencia de estados a mano) en `scripts/pincel/simulador-mandos.test.ts`, nuevo banco. Confirmado: `SUBSCRIBED` seguido de `CLOSED` (el caso real del bug) resuelve `{ ok: true }` y el `CLOSED` tardío se ignora; un `CLOSED`/`CHANNEL_ERROR`/`TIMED_OUT` que llega ANTES de `SUBSCRIBED` sí cuenta como fallo real (nunca llegó a abrir); la promesa solo resuelve una vez aunque lleguen varios estados seguidos. 11 pruebas en verde.
+
+**2. Otro freno revisado: mensajes en vuelo al cortar.** El gestor tenía razón en sospecharlo: la tanda esperaba solo 1 s extra después del último envío antes de medir la pérdida y desconectar — con una p95 medida de 279 ms en la tanda 1, ese segundo bastaba de sobra ahí, pero a tandas más cargadas (o con más latencia real) un mensaje mandado justo antes de cortar podía llegar después de medir, contando como "perdido" sin haberlo estado. Subido a 2 s (`MARGEN_TRAS_ULTIMO_ENVIO_MS`). Además, `conectarCanal()` suma una red de seguridad que no existía: un `timeoutMs` (8 s) para que la corrida no se cuelgue para siempre si algún canal nunca manda ningún estado — antes no había ningún tope y una conexión muda habría bloqueado la tanda sin fin.
+
+**3. Plan exacto de la segunda corrida**, con `node scripts/pincel/simulador-mandos.mjs --tandas-desde 2` (opción nueva, para no repetir la tanda 1, ya limpia y medida): empieza en la tanda 2, sube hasta la 4 o hasta que se detenga sola.
+
+| Tanda | Mandos × Hz | Mensajes/s objetivo | Mensajes en 10 s | Conexiones |
+|---|---|---|---|---|
+| 2 | 20 × 2 | 40 | 400 | 21 |
+| 3 | 40 × 2 | 80 | 800 | 41 |
+| 4 | 60 × 2 | 120 (sobre el cupo de 100/s) | 1 200 | 61 |
+
+Si las tres corrieran completas: **2 400 mensajes**, pico de **61 conexiones**, duración ≈ 3×10 s de tandas + 3×2 s de margen + 2×10 s de pausas entre ellas ≈ 56 s. Sumado a los 190 mensajes de la tanda 1 (ya corrida): **2 590 mensajes en total entre las dos corridas**, dentro del tope de 2 600 que fijó el gestor. Se espera, otra vez, que se detenga sola antes de llegar a la tanda 4 (120 mensajes/s ya pasa el cupo citado de 100/s) — ese es el punto de la prueba.
+
+**Verificado:** `npm run lint` (0 errores, 1 warning ajeno), `npm run typecheck`, `npm test` (756/756, con las 11 pruebas nuevas de `conectarCanal`/`percentil`), `npm run build`, todo en verde. Sin migración, sin correr contra producción — el plan va al gestor para su aprobación (y la segunda autorización del founder, que decide él, no yo). Commit local, sin push.
+
 ## Verificación de este documento
 
 
