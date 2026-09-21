@@ -2,11 +2,15 @@
 -- Admin activa una obra colectiva desde un evento o, sin evento, desde su ubicación actual (founder, 2026-09-19).
 -- Una sola obra abierta por lugar, y una sola por evento: lo exigen dos índices únicos parciales, no solo la pantalla.
 -- Sin tabla de trazos (firmado por el founder): solo se guarda la imagen final, en una fase posterior.
+-- Columna "tipo" (doc rediseno/25, ajuste 1, firmado 2026-09-21): Pincel es la primera obra colectiva; el motor no
+-- se construye todavía, pero la columna que distingue un tipo de obra de otro es gratis hoy y costaría otra
+-- migración después. "obras_colectivas" ya es el nombre neutro; solo faltaba poder distinguir el tipo en la fila.
 begin;
 
 create table public.obras_colectivas (
   id uuid primary key default gen_random_uuid(),
   nombre text not null check (char_length(nombre) between 1 and 120),
+  tipo text not null default 'pincel' check (char_length(tipo) between 1 and 40),
   lugar_id uuid not null references public.lugares (id) on delete cascade,
   evento_id uuid references public.eventos (id) on delete cascade,
   -- La pone sola el disparador de abajo, a partir del lugar (mismo patrón que eventos_zona_del_lugar).
@@ -19,7 +23,7 @@ create table public.obras_colectivas (
   -- Ruta en el bucket "fotos" de la imagen final, una vez cerrada (Fase 2). Null mientras esté abierta.
   imagen_final text
 );
-comment on table public.obras_colectivas is 'Pincel (OL-088): activaciones de pintura colectiva, ligadas a un lugar y, si vino de uno, a un evento.';
+comment on table public.obras_colectivas is 'Obras colectivas (OL-088): activaciones ligadas a un lugar y, si vino de uno, a un evento. "tipo" distingue Pincel de una obra futura (doc rediseno/25); hoy solo existe "pincel".';
 
 create index obras_colectivas_lugar_id_idx on public.obras_colectivas (lugar_id);
 create index obras_colectivas_evento_id_idx on public.obras_colectivas (evento_id);

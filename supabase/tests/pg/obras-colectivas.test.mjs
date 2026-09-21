@@ -60,11 +60,14 @@ export async function run({ as, check, expectError, query }) {
   );
 
   const obraUno = await as("authenticated", ADMIN, () =>
-    query("insert into public.obras_colectivas (nombre, lugar_id, cierra_en, creado_por) values ('Pincel en el lugar uno', $1, now() + interval '2 hours', auth.uid()) returning id, zona", [lugarUno]),
+    query("insert into public.obras_colectivas (nombre, lugar_id, cierra_en, creado_por) values ('Pincel en el lugar uno', $1, now() + interval '2 hours', auth.uid()) returning id, zona, tipo", [lugarUno]),
   );
   const obraUnoId = obraUno.rows[0]?.id;
   check(Boolean(obraUnoId), "administración crea una obra colectiva");
   check(obraUno.rows[0]?.zona === "America/Mexico_City", "la zona la puso sola el disparador, desde el lugar", obraUno.rows[0]);
+  // "tipo" (doc rediseno/25, ajuste 1): Pincel es la primera obra colectiva; sin especificarlo, la fila queda
+  // marcada "pincel" sola, para que el día que exista una segunda obra la columna ya distinga entre ambas.
+  check(obraUno.rows[0]?.tipo === "pincel", "sin indicarlo, el tipo por defecto es 'pincel'", obraUno.rows[0]);
 
   // ---------- una sola obra abierta por lugar ----------
   await as("authenticated", ADMIN, () =>

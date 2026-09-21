@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { esUuid, limpiar } from "@/lib/formulario";
 import { localAIso, zonaSegura } from "@/lib/fechas";
-import { cierreDesdeEvento } from "@/lib/pincel";
+import { cierreDesdeEvento } from "@/lib/obras-colectivas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
 export type Resultado = { ok: true } | { ok: false; error: string };

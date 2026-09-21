@@ -81,8 +81,8 @@ Todo detrás de `usuarioActual()` salvo la proyección:
 
 - **Ficha de evento** (`src/app/eventos/[id]/page.tsx`): acción «Activar Pincel», visible solo si `esAdmin` (misma variable que ya calcula la página), que crea la obra con `evento_id`, `lat`/`lng`/`zona` del lugar del evento, y navega al detalle de la obra.
 - **Admin → Obras colectivas** (`src/app/admin/obras-colectivas/`, sumada a `SECCIONES` en `src/app/admin/page.tsx:20-25` igual que Personas/Lugares/Eventos/Artistas): lista (hoy probablemente una sola obra a la vez, ver riesgos), «Crear obra aquí» con `leerUbicacion()` en vez de un evento, y el detalle de cada obra con Proyectar / Terminar / Reabrir — mismo ciclo que el prototipo, ahora escribiendo `estado`/`cerrado_en` de verdad.
-- **Proyección** (`/pincel/[obraId]/proyeccion` o similar, **sin** exigir sesión, solo lectura pública de `obras_colectivas`): la pared, el `<canvas>` que recibe el Broadcast, y el QR hacia el mando (ver más abajo). Pantalla completa, pensada para una laptop o TV conectada a un cañón, no para el teléfono de un admin logueado.
-- **Mando** (`/pincel/[obraId]/mando`): exige `usuarioActual()` (si no hay sesión, `redirect("/entrar?siguiente=…")`, patrón ya usado); primero la comprobación de cercanía (§3), después el controlador ya firmado (botón, Trazo, Tinta), ahora leyendo sensores reales y mandando al canal en vez de simular.
+- **Pared** (`/obra/[id]/pared`, dirección neutra — no `/pincel/...`, doc [25](../../rediseno/25-obras-colectivas-criterio.md) ajuste 2 —, **sin** exigir sesión, solo lectura pública de `obras_colectivas`): el `<canvas>` que recibe el Broadcast y dibuja (lo de Pincel), y el QR hacia el mando (ver más abajo; lo demás —pantalla completa, QR que se esconde al cerrar— es común a cualquier obra). Pensada para una laptop o TV conectada a un cañón, no para el teléfono de un admin logueado.
+- **Mando** (`/obra/[id]/mando`, dirección neutra — no `/pincel/...`, mismo ajuste 2): exige `usuarioActual()` (si no hay sesión, `redirect("/entrar?siguiente=…")`, patrón ya usado); primero la comprobación de cercanía (§3, común), después el controlador propio de Pincel ya firmado (botón, Trazo, Tinta), ahora leyendo sensores reales y mandando al canal en vez de simular.
 - **QR:** apunta a la URL del mando con el id de la obra. **Hoy no hay ninguna librería de generación de QR instalada** (`package.json` revisado, ninguna). Se necesita sumar una dependencia chica (o un generador propio) — no lo decido en este plan, lo marco como pregunta para el founder/gestor antes de la Fase 2, ya que es una dependencia nueva y el repo las mantiene mínimas.
 
 ## 5. Fases, cada una publicable y con su prueba
@@ -91,9 +91,9 @@ Todo detrás de `usuarioActual()` salvo la proyección:
 Migración de `obras_colectivas` con su RLS; «Activar Pincel» en la ficha de evento; Admin → Obras colectivas con los tres caminos de creación (evento, panel, ubicación), Proyectar (pantalla estática con el nombre/estado, sin canvas en vivo todavía), Terminar y Reabrir.
 *Prueba:* el founder, desde su iPhone en Safari, activa Pincel desde un evento real y por separado crea una obra desde su ubicación actual, ve ambas en el panel, cierra una y la reabre — sin que nada se dibuje todavía.
 
-**Fase 2 — Proyección y mando en vivo.**
-Realtime Broadcast entre mando y proyección (verificando antes los cupos reales del proyecto, §2), sensores de movimiento reales con su permiso de iOS Safari, Presence para el contador de personas, snapshot de la obra a Storage.
-*Prueba:* dos teléfonos con cuentas distintas, en la misma obra abierta, pintan a la vez y ambos trazos aparecen en la proyección abierta en una laptop, con el founder viéndolo en vivo junto a otra persona.
+**Fase 2 — Pared y mando en vivo.**
+Realtime Broadcast entre mando y pared (verificando antes los cupos reales del proyecto, §2), sensores de movimiento reales con su permiso de iOS Safari, Presence para el contador de personas, snapshot de la obra a Storage. Suma también un simulador chico (doc [25](../../rediseno/25-obras-colectivas-criterio.md) ajuste 4): un script que finge 20, 50 o 100 mandos mandando al canal, para medir el cupo real de Realtime antes de fijar la tasa de mensajes (§2) — sirve para cualquier obra futura, no solo Pincel.
+*Prueba:* dos teléfonos con cuentas distintas, en la misma obra abierta, pintan a la vez y ambos trazos aparecen en la pared abierta en una laptop, con el founder viéndolo en vivo junto a otra persona; además, el simulador corrido con 50 mandos fingidos no tira el canal.
 
 **Fase 3 — Cercanía real.**
 `leerUbicacion()` + `distanciaKm()` antes de dejar entrar al mando; manejo explícito de "sin soporte"/"negado".
@@ -179,6 +179,18 @@ Hecho y comiteado, verificado, sin push:
 5. **No aplicar la migración** — la revisa y la aplica el gestor, como ya se acordó.
 
 Nada de lo pendiente toca lo ya comiteado: son piezas nuevas (dos archivos a editar y un documento), no correcciones.
+
+## Reanudación (2026-09-21): criterio de obras colectivas, doc 25
+
+El founder firmó el 2026-09-21 (docs/rediseno/[25](../../rediseno/25-obras-colectivas-criterio.md)-obras-colectivas-criterio.md): Pincel es la primera obra colectiva, el motor no se construye todavía, se saca con la segunda obra. Cinco ajustes al plan de esta bitácora, aplicados antes de seguir con la Fase 1:
+
+1. Columna `tipo` (text, default `'pincel'`) en `obras_colectivas`, sumada a la migración antes de aplicarla (`supabase/migrations/20260922090000_obras_colectivas.sql`).
+2. Direcciones neutras `/obra/[id]/pared` y `/obra/[id]/mando` en vez de `/pincel/...` (§4 arriba, ya corregido; todavía sin código — son Fase 2).
+3. Separación de archivos entre lo común y lo de Pincel, aplicada ya a lo que existe: `src/lib/obras-colectivas.ts` (cierre sugerido, común a cualquier obra) y `src/lib/pincel.ts` (nombre sugerido, propio de Pincel). La misma separación aplica cuando la Fase 2 sume canal en vivo/presencia/cercanía/sensores/imagen (común) frente a mando/mensaje/dibujo (Pincel) — sin SDK ni configuración abstracta.
+4. Simulador chico de 20/50/100 mandos, anotado en la Fase 2 (§5 arriba) para medir el cupo real de Realtime antes de fijar la tasa de mensajes.
+5. Migración renombrada de `20260919030000_obras_colectivas.sql` a `20260922090000_obras_colectivas.sql` (nombre dado por el gestor, posterior a `20260921100000_rol_de_entonces_en_listas.sql`, la última reservada). Esta línea es el apunte pedido por el doc 25 hacia este documento.
+
+Este es el primer paso de la reanudación, entregado solo antes de seguir con lo pendiente de la Fase 1 (ver arriba). La migración sigue sin aplicarse — la aplica el gestor.
 
 ## Verificación de este documento
 
