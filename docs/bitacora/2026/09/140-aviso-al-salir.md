@@ -40,6 +40,15 @@ Prototipo interactivo 390×844: [`docs/rediseno/prototipos/aviso-al-salir.html`]
 
 «firmo porotipo» (2026-09-21, en el chat del operador). Aprueba las 5 decisiones tal como quedaron en la propuesta.
 
-## Sigue
+## Código
 
-Código: componente `ui/EnlaceExterno` reutilizable + la hoja (sobre `ui/Hoja`), sustituyendo los enlaces de evento y de redes de artistas/lugares, y el renglón nuevo en Ajustes. Lógica en funciones puras (qué enlaces avisan, dominio legible, preferencia guardada) con pruebas.
+- **`src/lib/avisoSalida.ts`** (funciones puras): `esquemaSeguro` (solo http/https), `sinAvisoSalida`/`guardarSinAvisoSalida` (preferencia en `localStorage`, con `try/catch` para modo privado — sin almacén o si truena, siempre avisa), `debeAvisar` (decide si el clic se intercepta: deja pasar clic central, Ctrl/Cmd/Shift/Alt+clic, esquemas raros y cuando ya se pidió no avisar), y un pub-sub mínimo (`suscribirseAvisoSalida`) para que el renglón de Ajustes se entere del cambio sin `useEffect`+`setState`. 10 pruebas en `avisoSalida.test.ts`, con un almacén falso y uno que truena.
+- **`src/components/ui/EnlaceExterno.tsx`**: envuelve un `<a href>` real (`target="_blank" rel="noopener noreferrer"`) y, si `debeAvisar` lo dice, abre una hoja (sobre `ui/Hoja`) con el dominio real (`dominioDe` de `lib/enlaces.ts`), el texto de riesgo, Continuar, Quedarme aquí y la casilla. `EnlaceExterno.module.css` reutiliza los tokens del proyecto y trae la corrección de ancho que pediste (`min-width: 0` + `overflow-wrap: anywhere` en el texto del dominio).
+- **Sustituido:** el enlace del evento (`eventos/[id]/page.tsx`) y las redes/sitio de artistas y lugares (`artistas/[id]/page.tsx`, `lugares/[id]/page.tsx`). Sin tocar «Cómo llegar», Compartir ni «A mi calendario».
+- **Renglón nuevo en Ajustes** (`AvisoSalidaAjuste.tsx`, grupo «Somos Nosotros», antes de «Aviso de privacidad»): palanca con `useSyncExternalStore` (mismo patrón que `ui/Hoja.tsx` para evitar el parpadeo de hidratación, sin violar la regla de React de no llamar `setState` dentro de un efecto).
+
+**Pruebas:** `npm run lint && npm run typecheck && npm test` → lint y typecheck en verde; 721/728 pruebas en verde, 7 en rojo preexistentes y ajenas (falta `pg` en este árbol para `scripts/test-db.test.ts`, mismo hallazgo de bitácoras anteriores). `npm run build` en verde, 24 rutas generadas.
+
+**Evidencia visual:** el prototipo firmado (`docs/rediseno/prototipos/aviso-al-salir.html`) usa exactamente los mismos tokens y el mismo componente `ui/Hoja`; ahí está la captura 390×844 con la hoja abierta y el dominio partido sin desbordar. No se levantó un respaldo local con datos falsos para una captura de las páginas reales con la integración completa (habría requerido montar un backend PostgREST falso, fuera de proporción para un cambio ya cubierto por 10 pruebas unitarias, build/typecheck/lint verdes y una visual idéntica en tokens y componente compartido); si el gestor lo pide, se hace.
+
+Commit local `ecc0335` en `aviso-al-salir`, sin push. Rama sin migración.
