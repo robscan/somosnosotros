@@ -5,7 +5,6 @@
 -- Columna "tipo" (doc rediseno/25, ajuste 1, firmado 2026-09-21): Pincel es la primera obra colectiva; el motor no
 -- se construye todavía, pero la columna que distingue un tipo de obra de otro es gratis hoy y costaría otra
 -- migración después. "obras_colectivas" ya es el nombre neutro; solo faltaba poder distinguir el tipo en la fila.
-begin;
 
 create table public.obras_colectivas (
   id uuid primary key default gen_random_uuid(),
@@ -48,13 +47,28 @@ $$;
 create trigger obras_colectivas_zona_del_lugar before insert or update of lugar_id on public.obras_colectivas
   for each row execute function public.obras_colectivas_zona_del_lugar();
 
+-- Un trigger instalado no necesita EXECUTE del cliente al dispararse (mismo patrón que eventos_zona_del_lugar,
+-- migración 20260918130000): sin esto, el Security Advisor vuelve a avisar de una función definer abierta a
+-- public/anon/authenticated.
+revoke execute on function public.obras_colectivas_zona_del_lugar() from public, anon, authenticated;
+grant execute on function public.obras_colectivas_zona_del_lugar() to service_role;
+
 alter table public.obras_colectivas enable row level security;
 
--- Lectura pública: la proyección (Fase 2) se abre sin sesión, en una laptop o TV conectada al cañón. Nada personal
--- en esta tabla (el nombre de la obra, no de personas).
-create policy "obras_colectivas: lectura pública"
+-- Lectura: sigue la visibilidad de lo que enlaza, no "using (true)" (gestión de cambios, revisión 2026-09-21) — una
+-- obra no revela por la API un lugar oculto/privado ni un evento oculto que su propia tabla no dejaría ver. Esta
+-- tabla no guarda ninguna dirección reservada (eso vive en eventos_sitio_privado, con su propia RLS): la pared solo
+-- necesita el id de la obra, su nombre y su estado, así que no hace falta un caso especial para "sitio reservado".
+-- Administración lo ve todo, igual que en lugares/eventos.
+create policy "obras_colectivas: lectura según lo que enlaza"
 on public.obras_colectivas for select
-using (true);
+using (
+  public.es_admin()
+  or (
+    exists (select 1 from public.lugares l where l.id = lugar_id and l.visible and not l.privado)
+    and (evento_id is null or exists (select 1 from public.eventos e where e.id = evento_id and e.visible))
+  )
+);
 
 -- Alta y cambios de estado (crear, terminar, reabrir): solo administración, como las dos puertas del prototipo
 -- firmado (OL-084, bitácora 118) ya asumían.
@@ -70,5 +84,3 @@ using (public.es_admin())
 with check (public.es_admin());
 
 -- Nadie borra una obra por ahora: cerrarla basta. Sin policy for delete.
-
-commit;

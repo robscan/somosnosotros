@@ -59,6 +59,14 @@ export async function run({ as, check, expectError, query }) {
     ),
   );
 
+  await as("authenticated", ADMIN, () =>
+    expectError(
+      () => query("insert into public.obras_colectivas (nombre, lugar_id, cierra_en, creado_por) values ('Con creado_por ajeno', $1, now() + interval '2 hours', $2)", [lugarUno, OTRA]),
+      "42501",
+      "un admin no puede insertar una obra con creado_por de otra persona",
+    ),
+  );
+
   const obraUno = await as("authenticated", ADMIN, () =>
     query("insert into public.obras_colectivas (nombre, lugar_id, cierra_en, creado_por) values ('Pincel en el lugar uno', $1, now() + interval '2 hours', auth.uid()) returning id, zona, tipo", [lugarUno]),
   );
@@ -68,6 +76,20 @@ export async function run({ as, check, expectError, query }) {
   // "tipo" (doc rediseno/25, ajuste 1): Pincel es la primera obra colectiva; sin especificarlo, la fila queda
   // marcada "pincel" sola, para que el día que exista una segunda obra la columna ya distinga entre ambas.
   check(obraUno.rows[0]?.tipo === "pincel", "sin indicarlo, el tipo por defecto es 'pincel'", obraUno.rows[0]);
+
+  // La zona la pone el disparador desde el lugar, aunque se mande otra explícita (mismo patrón que
+  // eventos_zona_del_lugar): un lugar con su propia zona distinta de la de prueba por defecto lo prueba de verdad.
+  const lugarMadrid = await as("authenticated", ADMIN, () =>
+    query("insert into public.lugares (nombre, tipo, lat, lng, zona, creado_por) values ('Lugar en Madrid', 'foro', 40.4, -3.7, 'Europe/Madrid', auth.uid()) returning id"),
+  );
+  const lugarMadridId = lugarMadrid.rows[0].id;
+  const obraConZonaDistinta = await as("authenticated", ADMIN, () =>
+    query(
+      "insert into public.obras_colectivas (nombre, lugar_id, zona, cierra_en, creado_por) values ('Pincel en Madrid', $1, 'America/Mexico_City', now() + interval '2 hours', auth.uid()) returning zona",
+      [lugarMadridId],
+    ),
+  );
+  check(obraConZonaDistinta.rows[0]?.zona === "Europe/Madrid", "el disparador sobrescribe la zona mandada con la del lugar", obraConZonaDistinta.rows[0]);
 
   // ---------- una sola obra abierta por lugar ----------
   await as("authenticated", ADMIN, () =>
@@ -111,10 +133,20 @@ export async function run({ as, check, expectError, query }) {
   // que actualizar (0 filas, sin error), igual que "otra cuenta no edita el lugar ajeno" en rls.test.mjs.
   const intentoAjeno = await as("authenticated", OTRA, () => query("update public.obras_colectivas set estado = 'cerrada' where id = $1 returning id", [obraDosId]));
   check(intentoAjeno.rowCount === 0, "una cuenta que no es admin no termina una obra ajena");
+  const intentoAnon = await as("anon", null, () => query("update public.obras_colectivas set estado = 'cerrada' where id = $1 returning id", [obraDosId]));
+  check(intentoAnon.rowCount === 0, "anon no termina una obra");
   const terminada = await as("authenticated", ADMIN, () => query("update public.obras_colectivas set estado = 'cerrada', cerrado_en = now() where id = $1 returning estado", [obraDosId]));
   check(terminada.rows[0]?.estado === "cerrada", "administración termina la obra");
+  const reabreAjeno = await as("authenticated", OTRA, () => query("update public.obras_colectivas set estado = 'abierta', cerrado_en = null where id = $1 returning id", [obraDosId]));
+  check(reabreAjeno.rowCount === 0, "una cuenta que no es admin no reabre una obra ajena");
   const reabierta = await as("authenticated", ADMIN, () => query("update public.obras_colectivas set estado = 'abierta', cerrado_en = null where id = $1 returning estado", [obraDosId]));
   check(reabierta.rows[0]?.estado === "abierta", "administración reabre la obra");
+
+  // ---------- nadie borra, tampoco un admin (sin policy for delete) ----------
+  const borraAdmin = await as("authenticated", ADMIN, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraDosId]));
+  check(borraAdmin.rowCount === 0, "ni un admin borra una obra: cerrarla basta, sin policy for delete");
+  const borraAnon = await as("anon", null, () => query("delete from public.obras_colectivas where id = $1 returning id", [obraDosId]));
+  check(borraAnon.rowCount === 0, "anon tampoco borra una obra");
 
   // Reabrir cuando ya hay otra obra abierta en el mismo lugar debe chocar con el mismo índice único: obraUno está
   // cerrada y su lugar (lugarUno) ya tiene una obra abierta (obraEvento); reabrirla debe fallar.
@@ -126,7 +158,28 @@ export async function run({ as, check, expectError, query }) {
     ),
   );
 
-  // ---------- lectura pública ----------
+  // ---------- lectura: sigue la visibilidad de lo que enlaza (gestión de cambios, revisión 2026-09-21) ----------
   const anonLee = await as("anon", null, () => query("select id, estado from public.obras_colectivas where id = $1", [obraDosId]));
-  check(anonLee.rowCount === 1 && anonLee.rows[0].estado === "abierta", "anon lee una obra colectiva sin sesión");
+  check(anonLee.rowCount === 1 && anonLee.rows[0].estado === "abierta", "anon lee una obra colectiva de un lugar visible, sin sesión");
+
+  // Lugar oculto: su obra no debe verse desde fuera, aunque esté abierta.
+  const lugarOculto = await as("authenticated", ADMIN, () =>
+    query("insert into public.lugares (nombre, tipo, lat, lng, visible, creado_por) values ('Lugar oculto de prueba', 'foro', 22.16, -100.97, false, auth.uid()) returning id"),
+  );
+  const lugarOcultoId = lugarOculto.rows[0].id;
+  const obraLugarOculto = await as("authenticated", ADMIN, () =>
+    query("insert into public.obras_colectivas (nombre, lugar_id, cierra_en, creado_por) values ('Pincel en lugar oculto', $1, now() + interval '2 hours', auth.uid()) returning id", [lugarOcultoId]),
+  );
+  const obraLugarOcultoId = obraLugarOculto.rows[0].id;
+  const anonNoVeLugarOculto = await as("anon", null, () => query("select id from public.obras_colectivas where id = $1", [obraLugarOcultoId]));
+  check(anonNoVeLugarOculto.rowCount === 0, "anon no ve la obra de un lugar oculto");
+  const adminSiVeLugarOculto = await as("authenticated", ADMIN, () => query("select id from public.obras_colectivas where id = $1", [obraLugarOcultoId]));
+  check(adminSiVeLugarOculto.rowCount === 1, "administración sí ve la obra de un lugar oculto");
+
+  // Evento oculto (lugar visible): tampoco debe verse desde fuera.
+  await as("authenticated", ADMIN, () => query("update public.eventos set visible = false where id = $1", [eventoId]));
+  const anonNoVeEventoOculto = await as("anon", null, () => query("select id from public.obras_colectivas where id = $1", [obraEvento.rows[0].id]));
+  check(anonNoVeEventoOculto.rowCount === 0, "anon no ve la obra de un evento oculto, aunque su lugar sea visible");
+  const adminSiVeEventoOculto = await as("authenticated", ADMIN, () => query("select id from public.obras_colectivas where id = $1", [obraEvento.rows[0].id]));
+  check(adminSiVeEventoOculto.rowCount === 1, "administración sí ve la obra de un evento oculto");
 }

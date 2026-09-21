@@ -174,20 +174,34 @@ Hecho y comiteado, verificado, sin push:
 2. **Hecho.** Bloque propio «Obras colectivas» en `src/app/admin/page.tsx`, después de «Gestionar» (no encaja en
    `SECCIONES`/`renglonesGestionar()`, que es moderación, no alta), con `IconoPincel` (ya existía en `ui/Iconos.tsx`).
 3. **Hecho.** Entrada de OL-088 en `docs/ops/OPEN_LOOPS.md` («Ahora» y «Last updated»).
-4. **Hecho, con una salvedad.** `npm run lint && npm run typecheck && npm test` (716/716, el completo) y `npm run build`
-   en verde. Capturas a 390×844 de las cuatro pantallas (lista, formulario «Crear obra aquí», detalle, y las dos
-   piezas nuevas de este cierre: el renglón del evento y el bloque de `/admin`) verificadas con `front-visual`
-   contra un respaldo 100 % local sin red (servidor de datos inventados en el scratchpad de la sesión, sesión admin
-   con cookie fabricada, sin `.env` ni producción — patrón de la memoria del proyecto, bitácoras 075/076). **Las
-   cuatro se ven bien**, pero **no quedaron guardadas como PNG en el scratchpad**: el navegador integrado de esta
-   sesión solo muestra la captura en la conversación, no la escribe a disco; no había una herramienta disponible
-   para hacerlo sin sumar una dependencia nueva (Playwright/Puppeteer, no instalados). Evidencia queda en el
-   historial de esta sesión, no como archivo.
-5. **Sin aplicar la migración** — la revisa a fondo el gestor (permisos con pruebas negativas) y la aplica con el
-   founder.
+4. **Hecho.** `npm run lint && npm run typecheck && npm test` (716/716, el completo) y `npm run build` en verde.
+   Capturas a 390×844 de las cuatro pantallas (lista, formulario «Crear obra aquí», detalle, y las dos piezas nuevas
+   de este cierre: el renglón del evento y el bloque de `/admin`) verificadas con `front-visual` contra un respaldo
+   100 % local sin red (servidor de datos inventados en el scratchpad de la sesión, sesión admin con cookie
+   fabricada, sin `.env` ni producción — patrón de la memoria del proyecto, bitácoras 075/076): **las cuatro se ven
+   bien.** El navegador integrado no escribe la captura a disco, solo la muestra en la conversación; el gestor
+   decidió (2026-09-21) que basta como verificación del operador y que él saca las capturas para el founder cuando
+   haya vista previa del PR — **sin sumar Playwright/Puppeteer ni otra dependencia nueva** para guardarlas como PNG.
+5. **Migración revisada por el gestor (2026-09-21), tres hallazgos corregidos** (todavía sin aplicar):
+   - La función del disparador (`obras_colectivas_zona_del_lugar()`, `security definer`) se quedaba con el `EXECUTE`
+     por defecto abierto a `public`/`anon`/`authenticated`; ahora `revoke`/`grant a service_role`, mismo patrón que
+     `eventos_zona_del_lugar()` (migración `20260918130000_security_advisor.sql`).
+   - La lectura pública (`using (true)`) dejaba ver por la API cualquier obra, también la de un lugar oculto/privado
+     o un evento oculto. Nueva política `obras_colectivas: lectura según lo que enlaza`: pública solo si el lugar es
+     visible y no privado y, si hay evento, el evento también es visible; administración lo ve todo. Esta tabla no
+     guarda ninguna dirección reservada (eso vive en `eventos_sitio_privado`, con su propia RLS) — la pared solo
+     necesita el id de la obra, su nombre y su estado, así que no hizo falta un caso especial para "sitio reservado".
+   - Banco `supabase/tests/pg/obras-colectivas.test.mjs` ampliado con 10 comprobaciones negativas que faltaban: anon
+     no inserta ni actualiza; una cuenta normal no termina ni reabre una obra ajena; nadie borra, tampoco un admin
+     (sin policy for delete); un admin no puede insertar con `creado_por` de otra persona; la zona la sobrescribe el
+     disparador aunque se mande otra explícita; anon no ve la obra de un lugar oculto ni de un evento oculto, y la
+     administración sí. **698 pruebas en verde** contra Postgres 17 local (antes 688).
+   - Menor: se quitó el `begin;`/`commit;` propio de la migración (solo 3 de 46 lo llevaban; `supabase db push` ya
+     envuelve cada archivo).
+   Sigue **sin aplicarse** — la revisa a fondo el gestor y la aplica con el founder.
 
-Nada de lo pendiente tocó lo ya comiteado: son piezas nuevas (dos archivos editados y dos documentos), no
-correcciones. Fase 1 cerrada; no se empieza la Fase 2 sin la revisión del gestor.
+Nada de lo pendiente tocó lo ya comiteado antes de esta ronda: son piezas nuevas o correcciones puntuales a la
+migración y su banco, pedidas por el gestor. Fase 1 cerrada; no se empieza la Fase 2 sin su respuesta.
 
 ## Reanudación (2026-09-21): criterio de obras colectivas, doc 25
 
