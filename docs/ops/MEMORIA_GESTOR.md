@@ -285,3 +285,15 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   Pincel conserva OL084/118; directorios OL085/119; activacion avisos se asigna
   formalmente a rama existente codex/avisos-operacion desdeeb2f80e, OL086/120
   (comprobador arrojo siguiente086/120). No se renombra ni mueve trabajo actual.
+- 2026-09-21, llamado de atención del founder tras probar la Fase 1 de Pincel en su iPhone (los
+  campos de «Crear obra aquí» se salían de su tarjeta): «llama la atención de los operadores y tu
+  mismo en tus revisiónes establece que se debe de poner especial atención en maquetar sin sobre
+  anidación, maquetas limpias y código optimizado». Regla para toda revisión del gestor de una
+  pieza con pantalla, además de lo ya vigente: (1) leer el CSS y el marcado nuevos, no solo la
+  lógica: rejillas con columnas acotadas (`minmax(0, 1fr)`), `min-width: 0` en hijos de rejilla o
+  flex que llevan texto o controles, sin contenedores que solo envuelven; preferir los componentes
+  y estilos del canon (`ui/Campo`, `ui/FormularioCanon`, `ui/Ficha`, `ui/Hoja`) a estilos propios;
+  (2) exigir al operador una comprobación medida, no «se ve bien»: con datos que rompan (nombres
+  al tope de longitud, listas largas) a 320, 375 y 390 px, ningún hijo con el borde derecho más
+  allá de su contenedor y la página sin scroll horizontal, con los números en la entrega; (3) cada
+  encargo con pantalla lo dice explícito. Una captura con datos cortos no prueba la maquetación.

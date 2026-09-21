@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, jsonLdEvento, nombreSitio, puntoComoLlegar, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, jsonLdEvento, nombreSitio, puntoComoLlegar, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -215,5 +215,51 @@ describe("jsonLdEvento", () => {
   it("la ciudad de la dirección es la del sitio, no siempre San Luis Potosí ('otro sitio' de otro país)", () => {
     const otraCiudad = jsonLdEvento({ ...base, sitioNombre: "Plaza Mayor", direccionPublica: "Plaza Mayor", ciudadPublica: "Córdoba, España" });
     expect(otraCiudad.location).toMatchObject({ address: { streetAddress: "Plaza Mayor", addressLocality: "Córdoba, España" } });
+  });
+});
+
+describe("extraerNumero", () => {
+  it("extrae números simples con y sin signo de peso", () => {
+    expect(extraerNumero("150")).toBe("150");
+    expect(extraerNumero("$150")).toBe("150");
+    expect(extraerNumero("$100")).toBe("100");
+  });
+
+  it("elimina separadores de miles (coma, punto, espacio) y devuelve el número joined", () => {
+    expect(extraerNumero("$1,500")).toBe("1500");
+    expect(extraerNumero("1,500")).toBe("1500");
+    expect(extraerNumero("$1.500")).toBe("1500");
+    expect(extraerNumero("$ 1 500")).toBe("1500");
+  });
+
+  it("descarta decimales (grupos de 1-2 dígitos después del separador final)", () => {
+    expect(extraerNumero("$1,500.50")).toBe("1500");
+    expect(extraerNumero("150.00")).toBe("150");
+    expect(extraerNumero("1.500,99")).toBe("1500");
+  });
+
+  it("extrae número de texto con palabras", () => {
+    expect(extraerNumero("$100 estudiantes")).toBe("100");
+    expect(extraerNumero("Entrada: $250")).toBe("250");
+  });
+
+  it("devuelve vacío si no hay número", () => {
+    expect(extraerNumero("")).toBe("");
+    expect(extraerNumero("abc")).toBe("");
+    expect(extraerNumero("www.ticketmaster.com.mx")).toBe("");
+  });
+
+  it("limita a 6 dígitos máximo (después de eliminar separadores)", () => {
+    expect(extraerNumero("999999")).toBe("999999");
+    expect(extraerNumero("1000000")).toBe("");
+    expect(extraerNumero("$1,000,000")).toBe("");
+  });
+
+  it("reconoce formato con decimales y coma como separador de miles", () => {
+    expect(extraerNumero("1,234.56")).toBe("1234");
+  });
+
+  it("maneja múltiples instancias de números y devuelve el primero", () => {
+    expect(extraerNumero("2x1 $150")).toBe("2");
   });
 });

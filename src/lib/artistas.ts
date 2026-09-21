@@ -173,6 +173,36 @@ export function detallesDe<T extends { disciplina?: string; detalle?: string | n
   return lista.length >= 2 ? lista.map(([valor, v]) => ({ valor, etiqueta: v.etiqueta })) : [];
 }
 
+/** Una subcategoría (detalle) ya usada en una disciplina, tal como la trae `subcategorias_de` (migración OL-101). */
+export type Subcategoria = { detalle: string; artistas: number };
+
+/**
+ * Al escribir una subcategoría nueva, ¿ya existe una parecida? (OL-101, docs/rediseno/27): evita "foto",
+ * "Fotografia" y "fotografía" como tres subcategorías distintas. Compara formas normalizadas (sin acentos
+ * ni mayúsculas, el mismo criterio que evita artistas duplicados): igual, o una es el principio de la otra
+ * (mínimo 3 letras, para no confundir "cine" con "circo"). Con exactamente lo mismo ya escrito, no hay nada
+ * que sugerir.
+ */
+export function subcategoriaParecida<T extends Subcategoria>(existentes: T[], escrito: string): T | null {
+  const norm = normalizarNombre(escrito);
+  if (norm.length < 2) return null;
+  let mejor: T | null = null;
+  let mejorPeso = -1;
+  for (const e of existentes) {
+    const en = normalizarNombre(e.detalle);
+    if (!en) continue;
+    let peso = -1;
+    if (en === norm) peso = 100;
+    else if (norm.length >= 3 && (en.startsWith(norm) || norm.startsWith(en))) peso = 50 - Math.abs(en.length - norm.length);
+    if (peso > mejorPeso) {
+      mejorPeso = peso;
+      mejor = e;
+    }
+  }
+  if (mejor && normalizarNombre(mejor.detalle) === norm && mejor.detalle === escrito.trim()) return null;
+  return mejor;
+}
+
 /** El registrado cuyo nombre es igual al escrito (sin acentos ni mayúsculas), si lo hay. */
 export function artistaIgual<T extends { nombre: string }>(artistas: T[], nombre: string): T | null {
   const q = normalizarNombre(nombre);
