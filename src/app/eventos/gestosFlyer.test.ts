@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { crearGestosFlyer } from "./gestosFlyer";
+import { camposIniciales, crearGestosFlyer } from "./gestosFlyer";
 import { cambiarReserva, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import type { OtroSitio } from "./HojaDondeEs";
 import type { LugarResumen } from "@/lib/lugares";
@@ -26,6 +26,25 @@ describe("gestos frente a OCR y geocodificacion", () => {
     const ultimo = g.tocar("donde");
     expect(g.vigente("donde", mapa)).toBe(false);
     expect(g.vigente("donde", ultimo)).toBe(true);
+  });
+});
+
+describe("camposIniciales frente al relleno de la decisión 12 (bug del founder, 2026-09-21)", () => {
+  it("el relleno automático de 'quien soy mi único artista' NO cuenta como dato real: el cartel puede llenarlo", () => {
+    // Alta normal: sin quienInicial, aunque el formulario ya haya prellenado "quien" con el único artista propio
+    // (mios.length === 1, decisión 12). Antes del arreglo esto se leía como "quien.length" y bloqueaba el cartel.
+    const iniciales = camposIniciales({ quienInicial: undefined });
+    expect(iniciales).not.toContain("quien");
+  });
+  it("un quien explícito (duplicar, o venir de la ficha de un artista) sí bloquea que el cartel lo pise", () => {
+    expect(camposIniciales({ quienInicial: [{ id: "a1", nombre: "Alguien" }] })).toContain("quien");
+  });
+  it("un quienInicial vacío tampoco bloquea (evento duplicado sin artistas todavía)", () => {
+    expect(camposIniciales({ quienInicial: [] })).not.toContain("quien");
+  });
+  it("los demás campos siguen leyendo lo que ya trae el evento (editar/duplicar)", () => {
+    const iniciales = camposIniciales({ titulo: "Ya tiene nombre", inicio: "2026-01-01T19:00", precioDefinido: true, descripcion: "algo", enlace: "algo", donde: true, imagen: "url" });
+    expect(iniciales.sort()).toEqual(["cuando", "cuanto", "descripcion", "donde", "enlace", "imagen", "titulo"]);
   });
 });
 

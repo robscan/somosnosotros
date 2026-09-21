@@ -30,7 +30,7 @@ import SelectorCuando from "./SelectorCuando";
 import TarjetaCartel from "./TarjetaCartel";
 import { operacionEvento } from "./operacionEvento";
 import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
-import { crearGestosFlyer, type CampoFlyer } from "./gestosFlyer";
+import { camposIniciales, crearGestosFlyer, type CampoFlyer } from "./gestosFlyer";
 import { sitioListo, textoDelSitio } from "./direccionEvento";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -245,16 +245,16 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const [pidiendo, setPidiendo] = useState(false);
   const [errorImagen, setErrorImagen] = useState<string | null>(null);
   const [quien, setQuien] = useState<QuienItem[]>(quienInicial ?? (esAlta && mios.length === 1 ? [{ id: mios[0].id, nombre: mios[0].nombre }] : []));
-  const gestos = useRef(crearGestosFlyer(([
-    evento?.titulo ? "titulo" : null,
-    evento?.inicio ? "cuando" : null,
-    evento?.precio !== undefined ? "cuanto" : null,
-    evento?.descripcion ? "descripcion" : null,
-    evento?.enlace ? "enlace" : null,
-    quien.length ? "quien" : null,
-    lugarId || otro.sitioTexto || otro.reservado || otro.sitioPunto ? "donde" : null,
-    evento?.imagen ? "imagen" : null,
-  ] as (CampoFlyer | null)[]).filter((c): c is CampoFlyer => c !== null)));
+  const gestos = useRef(crearGestosFlyer(camposIniciales({
+    titulo: evento?.titulo,
+    inicio: evento?.inicio,
+    precioDefinido: evento?.precio !== undefined,
+    descripcion: evento?.descripcion,
+    enlace: evento?.enlace,
+    quienInicial,
+    donde: !!(lugarId || otro.sitioTexto || otro.reservado || otro.sitioPunto),
+    imagen: evento?.imagen,
+  })));
   const imagenActual = useRef(imagen);
   function ponerImagen(valor: string | null) {
     imagenActual.current = valor;
@@ -431,7 +431,13 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   async function leerCartel(e: React.ChangeEvent<HTMLInputElement>) {
     const archivo = e.target.files?.[0];
     e.target.value = "";
-    if (!archivo || operandoCartel.current || consultandoCupo || errorCupo || !cupoActual || alLlegar(cupoActual)) return;
+    // Solo "sin archivo" o "ya hay una lectura en curso" cancelan en silencio: son toques que no pasaron nada nuevo.
+    // "consultandoCupo", "errorCupo" y "cupoActual" viejo NO deben abortar aquí (bug del founder 2026-09-21: la
+    // segunda lectura seguida no respondía ni avisaba). Elegir la foto abre el selector del teléfono, que dispara
+    // un foco/visibilitychange al volver; eso puede dejar una consulta de cupo en vuelo justo cuando llega este
+    // evento. El propio try de abajo vuelve a confirmar el cupo con el servidor y siempre deja un estado visible
+    // (leído, sin cupo o fallo), así que no hace falta -ni conviene- adivinarlo aquí primero.
+    if (!archivo || operandoCartel.current) return;
     operandoCartel.current = true;
     const versionImagen = gestos.current.tocar("imagen");
     setCartel({ estado: "leyendo" });
