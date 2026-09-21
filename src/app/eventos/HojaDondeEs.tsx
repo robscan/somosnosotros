@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import Mapa from "@/components/Mapa";
 import Boton from "@/components/ui/Boton";
+import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import Hoja from "@/components/ui/Hoja";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
@@ -172,12 +173,14 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           <label className={`${canon.campo} ${canon.sinIcono}`}>
             <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value, nombreLegacy: false })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
             <Limpiar visible={!!otro.sitioTexto} />
+            <ContadorCaracteres valor={otro.sitioTexto} tope={LIMITES_EVENTO.sitio} />
           </label>
           {otro.referenciaLegacy && !otro.sitioTexto.trim() && <p className={styles.nota}>Nombre público por confirmar. Texto anterior: {otro.referenciaLegacy}</p>}
           {!otro.reservado && <label className={canon.campo}>
             <IconoBuscar width={20} height={20}/>
             <input type="text" value={otro.direccion ?? ""} onChange={e => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off"/>
             <Limpiar visible={!!otro.direccion}/>
+            <ContadorCaracteres valor={otro.direccion} tope={LIMITES_EVENTO.direccion} />
           </label>}
           {!otro.reservado && resultados}
           {!otro.reservado && buscando && <p className={styles.nota} role="status">Buscando…</p>}
@@ -199,6 +202,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               <span className={limpiar.caja}>
                 <input type="text" value={otro.direccionPrivada} onChange={(e) => escribirDireccion(e.target.value)} maxLength={LIMITES_EVENTO.direccion} placeholder="Dirección exacta: calle y número, colonia" aria-label="Dirección exacta" className={canon.entrada} autoComplete="off" />
                 <Limpiar visible={!!otro.direccionPrivada} />
+                <ContadorCaracteres valor={otro.direccionPrivada} tope={LIMITES_EVENTO.direccion} />
               </span>
               {resultados}
               {buscando && <p className={styles.nota} role="status">Buscando…</p>}
@@ -213,6 +217,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               <span className={limpiar.caja}>
                 <input type="text" value={otro.indicaciones} onChange={(e) => cambiar({ indicaciones: e.target.value })} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Indicaciones, ej. portón verde (opcional)" aria-label="Indicaciones" className={canon.entrada} autoComplete="off" />
                 <Limpiar visible={!!otro.indicaciones} />
+                <ContadorCaracteres valor={otro.indicaciones} tope={LIMITES_EVENTO.indicaciones} />
               </span>
             </>
           )}
