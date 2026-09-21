@@ -20,6 +20,20 @@ describe("reconocerEnlace", () => {
     expect(reconocerEnlace("444 123 4567")).toEqual({ red: "whatsapp", url: "https://wa.me/524441234567" });
     expect(reconocerEnlace("+52 444 123 4567")?.url).toBe("https://wa.me/524441234567");
   });
+  it("L17: @cinemacuarentena en todos los casos (con/sin espacio, mayúsculas, URL directa)", () => {
+    // Caso base
+    expect(reconocerEnlace("@cinemacuarentena")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
+    // Con espacio o salto de línea al final (simula pegar desde móvil)
+    expect(reconocerEnlace("@cinemacuarentena ")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
+    expect(reconocerEnlace("@cinemacuarentena\n")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
+    expect(reconocerEnlace("@cinemacuarentena\t")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
+    // Con mayúsculas (la regex lo permite)
+    expect(reconocerEnlace("@CinemaCuarentena")).toEqual({ red: "instagram", url: "https://www.instagram.com/CinemaCuarentena/" });
+    // Como URL directa sin @
+    expect(reconocerEnlace("instagram.com/cinemacuarentena")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
+    expect(reconocerEnlace("https://instagram.com/cinemacuarentena")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
+    expect(reconocerEnlace("https://www.instagram.com/cinemacuarentena/")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
+  });
   it("lo demás queda como sitio con etiqueta 'Sitio web'; lo que no es nada, null", () => {
     const e = reconocerEnlace("www.casa1100.mx/agenda");
     expect(e?.red).toBe("sitio");
@@ -39,6 +53,14 @@ describe("normalizarRedes", () => {
     ]);
     expect(normalizarRedes([{ red: "vimeo", url: "https://vimeo.com/a" }, { url: "https://vimeo.com/a" }])).toHaveLength(1);
     expect(normalizarRedes(null)).toEqual([]);
+  });
+  it("L17: formato viejo con @cinemacuarentena normaliza correctamente", () => {
+    // Formato viejo de fichas: { instagram: "@usuario" }
+    expect(normalizarRedes({ instagram: "@cinemacuarentena" })).toEqual([{ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" }]);
+    // Formato viejo con espacios
+    expect(normalizarRedes({ instagram: "@cinemacuarentena " })).toEqual([{ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" }]);
+    // Formato viejo como URL
+    expect(normalizarRedes({ instagram: "https://instagram.com/cinemacuarentena" })).toEqual([{ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" }]);
   });
 });
 
