@@ -288,6 +288,11 @@ export const IconoChevronIzquierda = (p: P) => (
     <path d="M14.5 6l-6 6 6 6" />
   </svg>
 );
+export const IconoArriba = (p: P) => (
+  <svg {...base({ strokeWidth: 2, ...p })}>
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </svg>
+);
 export const IconoCerrar = (p: P) => (
   <svg {...base({ strokeWidth: 2, ...p })}>
     <path d="M6 6l12 12M18 6L6 18" />

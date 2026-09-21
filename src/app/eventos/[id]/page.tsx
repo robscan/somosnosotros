@@ -9,6 +9,7 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
+import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
 import { IconoBoleto, IconoCalendarioAgregar, IconoCompartir, IconoEstrella, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
@@ -19,7 +20,7 @@ import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { direccionPublicaSitio, enlaceComoLlegar, jsonLdEvento, nombreSitio, textoCompartir } from "@/lib/eventos";
+import { direccionPublicaSitio, enlaceComoLlegar, jsonLdEvento, nombreSitio, puntoComoLlegar, textoCompartir } from "@/lib/eventos";
 import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
@@ -125,7 +126,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
   const url = `${ORIGEN}/eventos/${e.id}`;
   const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "");
-  const comoLlegar = enlaceComoLlegar({ lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado });
+  const argsSitio = { lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado };
+  const comoLlegar = enlaceComoLlegar(argsSitio);
+  const puntoMapa = puntoComoLlegar(argsSitio);
   const n = totalVan;
   const avisoBorrar = n > 0 ? `Se borra el evento y los ${n === 1 ? '1 "Voy"' : `${n} "Voy"`} que tiene.` : "Se borra el evento.";
   const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde, new Date(), null, e.zona) : "el día del evento";
@@ -299,6 +302,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <b>{e.precio ?? "Gratis"}</b>
         </li>
       </ul>
+
+      <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
 
       <div className={ficha.acciones}>
         <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>

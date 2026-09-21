@@ -31,10 +31,24 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+  text-decoration: none; /* la que es enlace (PestanaEnlace) */
   -webkit-tap-highlight-color: transparent;
 }
 .pestana[aria-selected="true"] {
   color: var(--primario);
   border-bottom-color: var(--primario);
   font-weight: 700;
+}
+/* En camino: el toque ya se mandó y el servidor no ha respondido; la pestaña late con el color de acción */
+.pestana:has(> .enCamino) {
+  color: var(--primario);
+  animation: latido 0.9s ease-in-out infinite;
+}
+.enCamino {
+  display: none;
+}
+@keyframes latido {
+  50% {
+    opacity: 0.55;
+  }
 }

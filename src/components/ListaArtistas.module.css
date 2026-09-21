@@ -1,27 +1,6 @@
-/* Lista de artistas (docs/rediseno/08-artistas-flujo-y-estados.md, decisiones 1 y 2):
-   1. Búsqueda pegajosa (a partir de 8) · 2. Renglones (Renglon.module.css); conteo y vacío en Lista.module.css */
-
-/* 1. Búsqueda y chips: la propia caja es la cabecera pegajosa. La caja no pone gutter: la búsqueda va en la
-   columna y las filas de chips corren a todo lo ancho (en escritorio no se recortan en el borde de la columna). */
-.fija {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: grid;
-  gap: var(--espacio-2);
-  padding: var(--espacio-3) 0;
-  background: var(--fondo);
-  border-bottom: 1px solid var(--borde);
-}
-.fija > * {
-  margin-bottom: 0; /* las filas de chips traen margen propio; aquí manda el gap */
-}
-.fija > label {
-  margin-inline: var(--gutter); /* el ui/Buscador */
-}
-.fija > div {
-  padding-inline: var(--gutter); /* el primer chip queda alineado con la columna */
-}
+/* Lista de artistas (docs/rediseno/08-artistas-flujo-y-estados.md, decisiones 1 y 2). La cabecera es ui/Cabecera;
+   los renglones, Renglon.module.css; el conteo y el vacío, Lista.module.css; la tira de letras,
+   TiraLetras.module.css. */
 
 /* Ver más: el Botón secundario, con el gutter de la columna, tras la última página */
 .verMas {
@@ -29,7 +8,7 @@
   margin: var(--espacio-4) var(--gutter) 0;
 }
 
-/* 2. Renglones (el conteo, el vacío y la tira de letras vienen de Lista.module.css) */
+/* Renglones */
 .lista {
   list-style: none;
   padding: 0 var(--gutter);

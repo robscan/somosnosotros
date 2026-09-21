@@ -18,19 +18,6 @@
   line-height: 1.4;
 }
 
-/*
- * La tira de letras (Lugares y Artistas) se pega justo debajo de lo que ya se pega en la pantalla (founder,
- * 2026-09-19: «dejar sticky letras y tabs»); `usePegajosos` deja `--tapa` (sin eso, aún sin medir, se comporta como
- * si no hubiera nada pegado arriba). El separador de cada letra NO se pega (corrección del founder): baja con la
- * lista como cualquier renglón; la tira ilumina sola en qué letra vas.
- */
-.tira {
-  position: sticky;
-  top: var(--tapa, 0px);
-  z-index: 9;
-  padding: var(--espacio-2) var(--gutter) 0;
-  background: var(--fondo);
-}
 /* El `<ul>` que lo contiene ya pone el gutter horizontal: aquí solo va el espaciado vertical. */
 .grupo {
   padding: var(--espacio-4) 0 var(--espacio-1);
