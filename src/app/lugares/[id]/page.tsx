@@ -13,6 +13,7 @@ import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
+import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
@@ -245,10 +246,10 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           Compartir
         </BotonCompartir>
         {redes.map((r) => (
-          <a key={r.url} href={r.url} className={ficha.accion} target="_blank" rel="noopener noreferrer">
+          <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
             <IconoRed red={r.red} />
             {etiquetaEnlace(r)}
-          </a>
+          </EnlaceExterno>
         ))}
       </div>
 

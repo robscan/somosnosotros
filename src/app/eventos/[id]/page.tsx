@@ -10,6 +10,7 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
+import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
@@ -342,9 +343,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
       {e.descripcion && <Desplegable texto={e.descripcion} />}
       {e.enlace && (
-        <a href={e.enlace} className={styles.enlaceExterno} target="_blank" rel="noopener noreferrer">
+        <EnlaceExterno href={e.enlace} className={styles.enlaceExterno}>
           Más información en la página del evento →
-        </a>
+        </EnlaceExterno>
       )}
 
       <QuienVa van={asistencias.van} total={totalVan} interesados={asistencias.interesados} conSesion={!!actual} />
