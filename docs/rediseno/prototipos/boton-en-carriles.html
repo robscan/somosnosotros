@@ -9,11 +9,12 @@
     --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --fondo-miniatura: #e6e6e2;
     --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
     --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --ok: #1f6f43; /* verde: "Voy" confirmado — ya existe en globals.css con ese mismo comentario */
     --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
     --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --fuente-sistema: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
-    --gutter: 20px; --toque-min: 44px; --radio: 12px; --alto-nav: 60px; --area-segura: 0px;
+    --gutter: 20px; --toque: 48px; --toque-min: 44px; --radio: 12px; --alto-nav: 60px; --area-segura: 0px;
     --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px;
     --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1rem; --letra-xl: 1.1875rem;
   }
@@ -37,6 +38,15 @@
   .pantalla { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 40px; }
   .titulo-seccion { padding: 16px 20px 4px; font-size: 20px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
   .nota-seccion { padding: 0 20px 8px; color: var(--texto-suave); font-size: 13px; line-height: 1.4; }
+
+  /* ---------- Listado (renglón, canon de OL-104): el mismo botón redondo, para comparar en el mismo prototipo ---------- */
+  .lista-renglones { list-style: none; padding-bottom: 12px; }
+  .renglon { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--borde); }
+  .frente { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; min-width: 0; color: var(--texto); text-decoration: none; }
+  .foto-renglon { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
+  .foto-renglon.redonda { border-radius: 50%; }
+  .frente b { font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .frente small { display: block; margin-top: 2px; color: var(--texto-suave); font-size: 14px; }
 
   /* ---------- Carril y tarjeta: copiado de Destacados.module.css ---------- */
   .destacados { display: grid; gap: var(--espacio-1); padding-top: var(--espacio-4); }
@@ -95,12 +105,15 @@
      (right: 100% menos 124 px, más el margen), no a una posición fija, o invade el texto. */
   .diseno-foto .uno .fila-boton { left: auto; right: calc(100% - 124px + var(--espacio-2)); width: max-content; padding-left: 0; }
 
-  .boton-fila { display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque-min); min-width: var(--toque-min); padding: 0 14px; border: none; border-radius: 999px; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
-  .boton-fila svg { width: 18px; height: 18px; }
-  .boton-fila.invitar { background: var(--primario); color: var(--primario-texto); }
-  .boton-fila.decidido { padding: 0 12px 0 10px; background: var(--primario-suave); color: var(--primario); }
-  .boton-fila.compacto { padding: 0; width: 44px; }
-  .boton-fila.compacto.decidido { padding: 0; }
+  /* Botón redondo, solo icono (corrección del founder, 2026-09-21: "quita textos, solo deja botón de acción + o -");
+     ~48 px (el token --toque, "cómodo para el pulgar"), igual en renglones y en tarjetas. El nombre completo sigue en
+     el aria-label (no cambia con el estado) y el toast dice qué pasó — el icono ya no necesita decirlo con texto.
+     Estados intercambiados: por defecto (invita) queda callado; decidido ("Voy") se ve con el verde intenso de
+     siempre en la app (`--ok`, "verde: Voy confirmado"). */
+  .boton-fila { display: grid; place-items: center; width: var(--toque); height: var(--toque); border: none; border-radius: 50%; cursor: pointer; }
+  .boton-fila svg { width: 22px; height: 22px; }
+  .boton-fila.invitar { background: var(--fondo); color: var(--primario); box-shadow: inset 0 0 0 1.5px var(--borde); }
+  .boton-fila.decidido { background: var(--ok); color: #fff; }
 
   /* ---------- Aviso con Deshacer ---------- */
   .aviso { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(8px); z-index: 20; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-height: 52px; width: calc(100% - 48px); max-width: 342px; padding: 6px 6px 6px 16px; border-radius: 14px; background: #1f2326; color: #f2f2f2; font-size: 15px; line-height: 1.3; box-shadow: var(--sombra-flotante); opacity: 0; transition: opacity 160ms, transform 160ms; pointer-events: none; }
@@ -171,15 +184,16 @@
     <div>
       <h2>Qué mirar</h2>
       <ul>
-        <li><b>Abajo:</b> el botón en su propia fila, bajo el título y el detalle (alineado con el texto, no centrado).</li>
-        <li><b>Lateral:</b> el botón entra en la esquina inferior derecha de la tarjeta, a la altura del detalle — en la redonda y en "una sola tarjeta" no hay sitio lateral y se queda como en "Abajo".</li>
-        <li><b>Sobre la foto:</b> el botón flota en la esquina superior derecha de la imagen.</li>
-        <li><b>Artistas, con eventos esta semana:</b> tarjeta redonda de 104 px — el botón es <b>solo icono</b> (compacto), sin la palabra.</li>
+        <li><b>Sobre la foto (confirmado):</b> el botón flota en la esquina superior derecha de la imagen, en las tarjetas y en las listas.</li>
+        <li><b>Sin texto:</b> solo el icono — "+" invita, "−" ya está decidido y lo quita al tocarlo. El toast de abajo dice qué pasó ("Vas a «…»", "Ya no sigues …").</li>
+        <li><b>Colores intercambiados:</b> por defecto, callado (blanco con borde); decidido, verde intenso (`--ok`, el mismo verde que ya usa la app para "Voy confirmado").</li>
+        <li><b>Redondo, ~48 px</b> en todos los casos — tarjetas grandes, normales, redondas y también en el renglón de la lista (sección "Listado" al final de cada pantalla).</li>
+        <li><b>Abajo</b> y <b>Lateral</b> se quedan en el selector solo de referencia, por si quieres volver a compararlos.</li>
         <li><b>Arrastra el carril empezando justo sobre un botón</b> (con el dedo, de derecha a izquierda): el carril se mueve y el botón <b>no</b> se dispara. Suelta sin moverte: sí se dispara.</li>
       </ul>
     </div>
     <div class="pregunta">
-      Falta tu firma: de los tres diseños, ¿cuál prefieres? ¿O sigue sin verse bien en alguno?
+      Falta tu firma: ¿así queda el botón — redondo, sin texto, verde al decidir? ¿Igual en tarjetas y en listados?
     </div>
   </aside>
 </main>
@@ -188,8 +202,8 @@
 (function () {
   "use strict";
   const svg = (paths) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-  const iconoOk = svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
   const iconoMas = svg('<path d="M12 5v14M5 12h14"/>');
+  const iconoMenos = svg('<path d="M5 12h14"/>');
   const iconoPersonas = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15 13.3c2 .3 4 1.8 4 4.7"/></svg>';
 
   const FOTO = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#cfc2b2"/></svg>');
@@ -217,15 +231,16 @@
     document.getElementById("aviso").classList.remove("visible");
   });
 
-  function boton({ key, tipo, nombre, compacto }) {
+  // Sin texto (corrección del founder): el nombre completo va fijo en el aria-label (no cambia con el estado, ya
+  // corregido antes) y el toast dice qué pasó. El icono es la única señal visible: "+" invita, "−" ya está decidido.
+  function boton({ key, tipo, nombre }) {
     const decidido = estado[key];
     const esVoy = tipo === "voy";
-    const etiqueta = decidido ? (esVoy ? "Vas" : "Sigues") : (esVoy ? "Voy" : "Seguir");
     const accesible = esVoy ? `Voy — ${nombre}` : `Seguir — ${nombre}`;
-    return `<button type="button" class="boton-fila ${decidido ? "decidido" : "invitar"} ${compacto ? "compacto" : ""}" aria-pressed="${decidido}" aria-label="${accesible}" data-key="${key}" data-tipo="${tipo}" data-nombre="${nombre}">${decidido ? iconoOk : iconoMas}${compacto ? "" : etiqueta}</button>`;
+    return `<button type="button" class="boton-fila ${decidido ? "decidido" : "invitar"}" aria-pressed="${decidido}" aria-label="${accesible}" data-key="${key}" data-tipo="${tipo}" data-nombre="${nombre}">${decidido ? iconoMenos : iconoMas}</button>`;
   }
 
-  function tarjeta({ key, href, foto, titulo, detalle, van, tipo, compacto }) {
+  function tarjeta({ key, href, foto, titulo, detalle, van, tipo }) {
     return `
       <li>
         <a href="${href}" class="tarjeta" data-nav="${titulo}">
@@ -234,7 +249,20 @@
           <b>${titulo}</b>
           <small>${detalle}</small>
         </a>
-        <div class="fila-boton">${boton({ key, tipo, nombre: titulo, compacto })}</div>
+        <div class="fila-boton">${boton({ key, tipo, nombre: titulo })}</div>
+      </li>
+    `;
+  }
+
+  function renglon({ key, href, foto, redonda, titulo, meta, tipo }) {
+    return `
+      <li class="renglon">
+        <a href="${href}" class="frente">
+          <img src="${foto}" alt="" class="foto-renglon ${redonda ? "redonda" : ""}">
+          <b>${titulo}</b>
+          <small>${meta}</small>
+        </a>
+        ${boton({ key, tipo, nombre: titulo })}
       </li>
     `;
   }
@@ -249,7 +277,12 @@
           ${tarjeta({ key: "ev2", href: "#", foto: FOTO2, titulo: "Noche de jazz de prueba", detalle: "mañana · 20:30 · Casa de Prueba del Centro", van: 0, tipo: "voy" })}
         </ul>
       </section>
-      <p class="arrastre-nota">Prueba arrastrar el carril empezando justo sobre el botón "Voy" de la primera tarjeta: el carril se mueve y el botón no se dispara.</p>
+      <p class="arrastre-nota">Prueba arrastrar el carril empezando justo sobre el botón de la primera tarjeta: el carril se mueve y el botón no se dispara.</p>
+      <h2 class="titulo-seccion" style="font-size:17px;padding-top:8px">Listado (renglón, mismo botón)</h2>
+      <ul class="lista-renglones">
+        ${renglon({ key: "ren-ev1", href: "#", foto: FOTO, titulo: "Son huasteco de prueba", meta: "19:00 · Foro de prueba", tipo: "voy" })}
+        ${renglon({ key: "ren-ev2", href: "#", foto: FOTO2, titulo: "Guitarra de prueba", meta: "20:30 · Casa de Prueba del Centro", tipo: "voy" })}
+      </ul>
     `;
   }
   function pantallaLugares() {
@@ -268,6 +301,10 @@
           ${tarjeta({ key: "uno", href: "#", foto: FOTO, titulo: "Foro de Prueba, el único destacado ahora mismo", detalle: "Próximo: hoy · 20:00", tipo: "seguir" })}
         </ul>
       </section>
+      <h2 class="titulo-seccion" style="font-size:17px;padding-top:8px">Listado (renglón, mismo botón)</h2>
+      <ul class="lista-renglones">
+        ${renglon({ key: "ren-lug1", href: "#", foto: FOTO, titulo: "Casa de Prueba del Centro", meta: "Av. de Prueba 123", tipo: "seguir" })}
+      </ul>
     `;
   }
   function pantallaArtistas() {
@@ -276,11 +313,14 @@
       <section class="destacados">
         <h2>Con eventos esta semana</h2>
         <ul class="carril redondas detalleCompleto" data-carril="artistas">
-          ${tarjeta({ key: "art1", href: "#", foto: FOTO, titulo: "La Orquesta Filarmónica Comunitaria de San Luis Potosí", detalle: "sáb 27 · 19:00", tipo: "seguir", compacto: true })}
-          ${tarjeta({ key: "art2", href: "#", foto: FOTO2, titulo: "Ana de Prueba", detalle: "hoy · 21:00", tipo: "seguir", compacto: true })}
+          ${tarjeta({ key: "art1", href: "#", foto: FOTO, titulo: "La Orquesta Filarmónica Comunitaria de San Luis Potosí", detalle: "sáb 27 · 19:00", tipo: "seguir" })}
+          ${tarjeta({ key: "art2", href: "#", foto: FOTO2, titulo: "Ana de Prueba", detalle: "hoy · 21:00", tipo: "seguir" })}
         </ul>
       </section>
-      <p class="arrastre-nota">El botón compacto (solo icono) mide 44×44 px igual que los demás; el nombre completo va en el aria-label para quien usa lector de pantalla.</p>
+      <h2 class="titulo-seccion" style="font-size:17px;padding-top:8px">Listado (renglón, mismo botón)</h2>
+      <ul class="lista-renglones">
+        ${renglon({ key: "ren-art1", href: "#", foto: FOTO, redonda: true, titulo: "Ana de Prueba", meta: "Música · próximo hoy 21:00", tipo: "seguir" })}
+      </ul>
     `;
   }
 
@@ -295,7 +335,7 @@
     { clave: "lateral", etiqueta: "Lateral" },
     { clave: "foto", etiqueta: "Sobre la foto" },
   ];
-  let disenoActual = "abajo";
+  let disenoActual = "foto"; // confirmado por el founder, 2026-09-21: "Sobre foto funciona"
   function pintar() {
     const fn = { agenda: pantallaAgenda, lugares: pantallaLugares, artistas: pantallaArtistas }[pantallaActual];
     const pantalla = document.getElementById("pantalla");

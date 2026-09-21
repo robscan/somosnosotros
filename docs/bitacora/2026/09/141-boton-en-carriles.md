@@ -46,8 +46,19 @@ Añadidos al mismo prototipo (versión 3), con un segundo selector ("Abajo" / "L
 
 Los tres, probados con el mismo mecanismo real de `huboArrastre` (arrastrar desde el botón no lo dispara, en los tres diseños).
 
+## El founder elige "Sobre la foto" y pide un rediseño del botón, universal
+
+> «Sobre foto funciona. Solo quiero corregir algo, intercambia estado de botón activo por el estado default, cuando voy quiero que se vea con el verde intenso. En todos los casos incluidos listados. Quita textos, solo deja botón de acción + o - El toast explica lo que pasa. Que sea un botón redondo con la acción cuida que sea de al rededor de 48 px»
+
+"Sobre la foto" queda como el diseño único (`disenoActual` por defecto en el prototipo); "Abajo" y "Lateral" se quedan en el selector solo de referencia. Rediseño del botón, aplicado en el mismo `.boton-fila` que usan tarjetas y renglón (añadida una sección "Listado" a cada pantalla del prototipo para verlo también ahí, no solo en las tarjetas):
+
+- **Sin texto:** solo el icono. "+" invita; "−" (no ya un check) dice que está decidido y lo quita al tocarlo. El nombre completo sigue en el `aria-label` (ya corregido para no cambiar con el estado) y el toast dice qué pasó.
+- **Estados intercambiados:** antes, invitar era el tono fuerte (`--primario` sólido) y decidido el callado (`--primario-suave`); ahora es al revés — por defecto, callado (blanco con borde); decidido, con el **verde intenso** `--ok` (`#1f6f43`, que ya existe en `globals.css` con el comentario literal «verde: "Voy" confirmado» — no hace falta inventar un color nuevo).
+- **Redondo, ~48 px** (el token `--toque`), en vez de la pastilla con esquinas redondeadas.
+- **"En todos los casos incluidos listados"**: no es solo para las tarjetas de los carriles (OL-106) — cambia el aspecto del botón que **ya está en producción** en los renglones de Agenda, Lugares, Artistas y Mi perfil (OL-104, `ui/BotonRenglon`, integrado en el PR #126). Avisado al founder en el chat que esto afecta a ese componente compartido, y quedo esperando su confirmación explícita antes de tocar código de producción — el prototipo ya lo muestra en ambos contextos para que lo vea junto.
+
 ## Qué falta
 
-Firma del founder sobre cuál de los tres diseños prefiere. Código solo después, con la comprobación medida a 320/375/390 px que pide el gestor.
+Confirmación del founder de que el rediseño también aplica al componente ya en producción (`ui/BotonRenglon`), no solo a las tarjetas nuevas. Código solo después, con la comprobación medida a 320/375/390 px que pide el gestor — y, si toca `ui/BotonRenglon`, avisar también al gestor antes de tocar ese archivo compartido.
 
 Sin migración. Sin subagentes.
