@@ -25,27 +25,29 @@
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
-/* Estados del renglón (pedido del founder, 2026-09-14): pulsado y, con ratón, al pasar por encima, el enlace se
+/* Estados del renglón (pedido del founder, 2026-09-14): pulsado y, con ratón, al pasar por encima, la fila entera se
    levanta en blanco con una marca del color de acción a la izquierda; el elegido (aria-current) va en el tono suave
-   del color de acción. El resaltado llega a los bordes del gutter sin mover nada (sombra extendida); con botón, se
-   detiene antes de su columna, para no sugerir que el botón también navega. */
-.frente:active {
+   del color de acción. El resaltado llega a los bordes del gutter sin mover nada (sombra extendida).
+   Va en `.renglon` (la fila completa, con `:has()`), no en `.frente`: parado ahí se cortaba justo antes de la
+   columna del botón y la fila se veía resaltada solo a medias — "sin sentido" (corrección del founder, 2026-09-21).
+   Tocar o pasar por encima del botón no cuenta: tiene su propio estado, no el de la fila. */
+.renglon:has(.frente:active) {
   background: var(--fondo);
   box-shadow: 0 0 0 var(--espacio-5) var(--fondo);
 }
 @media (hover: hover) {
-  .frente {
+  .renglon {
     transition: background-color 120ms, box-shadow 120ms;
   }
-  .frente:hover {
+  .renglon:has(.frente:hover) {
     background: var(--fondo);
     box-shadow: 0 0 0 var(--espacio-5) var(--fondo), inset 3px 0 0 var(--primario);
   }
-  .frente:hover .titulo {
+  .renglon:has(.frente:hover) .titulo {
     color: var(--primario);
   }
 }
-.frente[aria-current="true"] {
+.renglon:has(.frente[aria-current="true"]) {
   background: var(--primario-suave);
   box-shadow: 0 0 0 var(--espacio-5) var(--primario-suave), inset 3px 0 0 var(--primario);
 }

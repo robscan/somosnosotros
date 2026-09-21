@@ -130,19 +130,69 @@ El founder probó en su iPhone y reportó, con foto: el campo del nombre y el de
 
 `npm run lint && npm run typecheck && npm test`: en verde (763 pruebas, mismas 7 rojas preexistentes y ajenas sin `pg`); build en verde.
 
-## Pasos
+## Segunda corrección: lista de sugerencias flotante y sugerencias útiles (2026-09-21, rama `sugerencias-flotantes`)
 
-- [x] Aviso de arranque al gestor y su visto bueno.
-- [x] Rama `alta-evento-lugar` desde `origin/main`.
-- [x] Medir el estado actual leyendo el código, sin tocar nada.
-- [x] Documento de propuesta y prototipo (siete estados).
-- [x] Prototipo publicado como Artifact y entregado en este chat para firma.
-- [x] Commit local de los documentos.
-- [x] Firma del founder (documento + prototipo), con ampliación del canon a todos los formularios.
-- [x] Código: contexto y búsqueda (`direccionContexto.ts`), `HojaDondeEs.tsx`, aviso de privacidad.
-- [x] Traer `main` (OL-103 en producción), conflicto resuelto en OPEN_LOOPS.
-- [x] `FormularioEvento.tsx`: autofocus, "Confirmar", ayuda bajo el campo, ciudad del chip.
-- [x] Build y verificación visual (tres estados, sin Mapbox real).
-- [x] Entrega consolidada al gestor; OL-100 aceptada (PR #124) y publicada en producción.
-- [x] **Corrección urgente:** rama `alta-evento-lugar-correccion`, arreglo de la rejilla rota en "Es en otro sitio", con capturas PNG reales por CDP.
-- [ ] Aparte, en `sugerencias-flotantes`: lista de sugerencias flotante y mejores resultados de búsqueda.
+Sigue en esta misma bitácora (135) — no reservé un número aparte; si el gestor prefiere uno propio para esta rama (tiene su propio PR), que me lo diga y lo muevo. Arreglos 2 y 3 del mismo aviso del founder, aparte de la corrección urgente (arreglo 1, ya en producción).
+
+### 2 — La lista de sugerencias flota (componente reutilizable)
+`src/components/ui/ListaFlotante.tsx` (+ `.module.css`) nuevo: un listbox en un portal a `document.body`, con `position: fixed` calculada desde el campo (`getBoundingClientRect`), nunca desde un ancestro con `overflow` — así ninguna hoja con su propio scroll la recorta. Se abre hacia arriba sola si no cabe hacia abajo (mide contra `visualViewport`, para el teclado); tiene su propio alto máximo con scroll interno; Escape y tocar fuera cierran (`onCerrar` reutiliza `invalidar()`, que ya limpiaba la búsqueda); flecha arriba/abajo mueve el foco real entre las opciones (son botones de verdad, ya alcanzables con Tab — más simple que `aria-activedescendant` para el mismo resultado). El campo que la abre lleva `role="combobox"`, `aria-expanded` y `aria-controls`. Usada en las dos búsquedas de `HojaDondeEs.tsx` (direcciones y lugares): "Buscando…" y el error también van dentro del panel, no en el flujo — nada empuja el mapa ni los campos de abajo.
+
+### 3 — Sugerencias útiles (caso real: "Cenaria Foro Expandido" / "Galeana #423, Centro, S.L.P.")
+En `direccionContexto.ts`:
+- `textoDeBusqueda(texto, contexto)`: el primer intento ya no manda la ciudad de contexto si esta salió del propio texto (antes se mandaba dos veces, en el texto y en `proximity`/`bbox`; el gestor midió que "S.L.P." casaba con "Slp 32" antes que con la calle real). `buscarConContexto` la usa en el primer intento; el reintento (segundo intento) sigue usando `textoParaReintento` (limpio, con la ciudad SÍ pegada) — dos frases distintas, no la misma repetida.
+- `tokensDeCalle`/`numeroDeCalle`: las palabras de la calle escrita (sin la ciudad, sin artículos, sin el número) y el número, si trae uno.
+- `descartarSinCalle` (para lugares) y `filtrarYOrdenarDirecciones` (para direcciones, que además ordena: primero lo que trae el número, luego lo más cerca): descartan cualquier resultado que no traiga ninguna palabra de la calle escrita — el caso con nombre, los "Slp 32", se descartan enteros porque ninguno trae "galeana".
+- Conectados en `HojaDondeEs.tsx`: los `buscar` que se le pasan a `buscarConContexto` ya filtran antes de que `necesitaReintento`/`necesitaReintentoLugares` decidan si hace falta un intento más.
+
+**Límite real, para que el gestor decida cómo seguir:** este árbol de trabajo NO tiene el token real de Mapbox (`.env` no existe aquí — regla del proyecto: nunca se copia a la carpeta de un operador) y el gestor autorizó hasta 15 llamadas reales "desde tu máquina", que no tengo cómo hacer sin ese token. No pude grabar respuestas reales de Mapbox para el caso "Galeana 423, Centro, San Luis Potosí"; lo que hay son fixtures escritas a mano, representativas del Centro de San Luis Potosí (con "Hermenegildo Galeana" como calle real, ya usada como ejemplo en piezas anteriores), para poder mirar la lista flotante — **no certifican qué devuelve Mapbox de verdad hoy.** La lógica de descarte/orden (`descartarSinCalle`, `filtrarYOrdenarDirecciones`) sí está probada exhaustivamente con datos sintéticos que reproducen el caso real reportado (los "Slp 32" y el "Galeana" de Soledad de Graciano Sánchez). Pido al gestor: o me da el token para esta verificación puntual, o corre él las llamadas reales y me pasa las respuestas para convertirlas en fixtures, o acepta esta pieza con la verificación sintética que sí puedo dar.
+
+### Verificación
+`npm run lint && npm run typecheck && npm test`: en verde, 770 pruebas (37 en `direccionContexto.test.ts`, con los casos "Galeana", "Slp 32" y "Soledad de Graciano Sánchez" nombrados); build en verde.
+
+**Capturas PNG reales, Chrome headless por CDP, 390×844 (tipografía Bricolage Grotesque cargada, no la del sistema):**
+- `verificacion-ol100/03-lista-flotante-caso-real.png` — "Cenaria Foro Expandido" / "Galeana #423, Centro, S.L.P.", con la lista desplegada sobre el mapa (no lo empuja) y un resultado de texto muy largo (~200 caracteres) que envuelve sin desbordar.
+- `verificacion-ol100/04-falta-confirmar-pin.png` — mismo caso, con "Falta confirmar el pin." visible bajo el mapa y la lista flotante abierta a la vez.
+- `verificacion-ol100/05-teclado-ventana-420.png` — ventana reducida a 420 px (teclado virtual simulado): la lista se acota sola (`getBoundingClientRect` medido: `bottom: 416` dentro de la ventana, `scrollHeight: 204 > clientHeight: 180` — tiene su propio scroll interno, no queda cortada por la hoja).
+
+### Pasos de esta parte
+- [x] `ui/ListaFlotante` (componente + CSS), reutilizado en las dos búsquedas.
+- [x] `textoDeBusqueda`, `tokensDeCalle`, `numeroDeCalle`, `descartarSinCalle`, `filtrarYOrdenarDirecciones`, con pruebas.
+- [x] Verificación visual con capturas PNG reales (CDP) y medición precisa del caso "teclado reducido".
+- [x] Segunda revisión del gestor: arreglo de posición, respuestas reales de Mapbox, pruebas de necesitaReintento y el hallazgo de las 7 rojas.
+
+## Tercera revisión del gestor: reposición, respuestas reales y las 7 rojas (2026-09-21)
+
+El gestor grabó él mismo 10 de las 15 llamadas reales autorizadas (con el token real, desde su máquina) y devolvió dos fallos más un encargo de investigar las 7 pruebas rojas.
+
+### 1 — La lista se despegaba del campo (bloqueaba)
+Confirmado con su propia captura: al aparecer "Falta confirmar el pin." el campo baja (crece la hoja) pero `ListaFlotante` no se enteraba — solo escuchaba `resize`/`scroll` de la ventana, y un aviso que aparece debajo no dispara ninguno de los dos.
+
+**Arreglo:** en vez de una lista de eventos puntuales (que siempre deja huecos — el gestor sugería `ResizeObserver`, pero ni ese se entera de que el campo se *movió* si su tamaño no cambió), `ListaFlotante` ahora se recoloca en cada cuadro (`requestAnimationFrame`) mientras está abierta: cubre cualquier causa (avisos que aparecen, animaciones, lo que sea) sin tener que adivinar cuál fue. La cuenta de dónde poner la lista se sacó a una función pura, `calcularPosicion` (sin DOM, para poder probarla): 4 pruebas, incluido el caso exacto que reportó el gestor (el campo baja 66 px, la lista lo sigue exactamente esos 66 px). Repetida la captura 04: medido con `getBoundingClientRect` que el campo y la lista quedan a 4 px de separación (antes, 66 px de hueco con el mapa asomando).
+
+### 2 — Respuestas reales de Mapbox: la ficha escrita a mano pintaba un mundo que no existe
+El gestor tenía razón: con datos reales, "Galeana 423, Centro" (mi primer intento de hoy) nunca trae "Hermenegildo Galeana 423" — la calle real solo aparece en el índice de Mapbox con su nombre completo, algo que nadie escribe en el uso diario. Reemplacé la ficha escrita a mano por las respuestas grabadas (JSON reales, con sus coordenadas y su `context.place` tal cual) en las pruebas y en el arnés de capturas. Con eso:
+- **(a) Salida "No es ninguna: pon el pin en el mapa"**, nueva, siempre visible (pegada al fondo de la lista con `position: sticky`, no hay que desplazar para encontrarla): cierra la lista (reutiliza `invalidar()`), conserva el texto escrito, dispara solo `elegirDireccion`-como-no-elección. El mapa (`<Mapa>`) ahora recibe `centrarEn={contexto.centro}` y `ciudad={contexto.ciudad}` cuando no hay pin todavía — antes centraba siempre en San Luis Potosí sin importar el contexto real.
+- **(b) Municipio y colonia como criterio de orden, nunca de filtro.** Corregido un error real que encontré al escribir las pruebas con datos reales: mi propio `tokensDeCalle` metía la colonia ("centro") en la misma bolsa que la calle, así que un resultado que solo traía "Centro" (sin "galeana") sobrevivía el filtro — exactamente el tipo de basura que se quería sacar. Separado en `tokensDeCalle` (solo lo que va antes de la primera coma: la calle) y `tokensDeColonia` (lo que sigue: la colonia, solo para ordenar). `filtrarYOrdenarDirecciones` ahora ordena: mismo municipio de contexto → coincide la colonia → trae el número → más cerca.
+- **(c) Filtra antes de recortar.** `buscarDirecciones` y `sugerirLugares` ya no recortan a 5 dentro de `geocodificar.ts`/`buscarLugares.ts`: devuelven todo lo que trajo Mapbox (hasta 10), ordenado por distancia; `descartarSinCalle`/`filtrarYOrdenarDirecciones` filtran por relevancia y recortan a 5 al final, en ese orden.
+- **(d) Sin llamadas de más:** siguen siendo tres como máximo (sin cambios en `buscarConContexto`).
+
+**Hallazgo propio, con las respuestas reales:** ni el municipio ni la colonia bastan para encontrar la dirección correcta cuando el índice de Mapbox no la tiene con el nombre parcial — confirmado con pruebas que usan las respuestas grabadas tal cual (ver `direccionContexto.test.ts`, casos con `RESPUESTA_REAL_*`). Con datos reales, el primer intento de hoy ("Galeana 423, Centro") ya trae ALGO dentro del radio de 20 km (aunque incorrecto — "Calle Galeana 423" a 11.7 km, en realidad "Prolongación Galeana"), así que `necesitaReintento` no dispara ni el segundo ni el tercer intento: solo se hace UNA llamada real por búsqueda en este caso concreto, no las tres previstas. Esto no es un error de la función (decide bien con lo que tiene: algo cerca, aunque equivocado) — es el mismo límite que describe el gestor, y por eso la salida "No es ninguna" no es opcional. No toqué el radio de 20 km de `necesitaReintento`: el gestor no lo pidió y estrecharlo a ciegas podría generar reintentos de más en casos donde sí acierta a la primera; lo dejo anotado para que decida si vale la pena revisarlo aparte.
+
+### Las "7 rojas preexistentes": investigado, no es cosa de mi carpeta ni del código
+Son siempre las mismas 7, todas dentro de un solo archivo (`scripts/test-db.test.ts`, la prueba parametrizada "rechaza una configuracion insegura antes de conectar"). Causa exacta: `scripts/test-db.mjs` hace `import 'pg'`, y el paquete `pg` — declarado en `package.json` (`^8.16.3`) y en `package-lock.json` — no estaba instalado en `node_modules` de este árbol de trabajo (`npm ls pg` lo confirma: vacío). Probé instalándolo solo (`npm install pg --no-save`, sin tocar ningún archivo del repo ni `package.json`): **las 7 pasan** y la suite completa queda en 785/785, cero rojas. No es un fallo de CI ni del código: es que este árbol de trabajo (como ya se anotó para otras piezas) no tiene `node_modules` completo — el CI de `main` corre `npm ci` desde cero y sí lo instala. Dejo `pg` instalado localmente (no afecta nada versionado) para que las próximas corridas en este árbol salgan limpias.
+
+### Verificación de esta ronda
+`npm run lint && npm run typecheck && npm test`: en verde, **785/785 pruebas** (con `pg` instalado localmente; 41 en `direccionContexto.test.ts`, con datos reales grabados por el gestor); build en verde.
+
+**Capturas nuevas, Chrome headless por CDP, 390×844:**
+- `verificacion-ol100/04-falta-confirmar-pin.png` (repetida) — la lista queda pegada al campo (4 px de separación, medido) tras aparecer "Falta confirmar el pin.".
+- `verificacion-ol100/06-lista-real-no-es-ninguna.png` — con las respuestas reales de Mapbox (ninguna es la dirección correcta) y la salida "No es ninguna: pon el pin en el mapa" siempre visible al fondo de la lista.
+
+### Pasos de esta ronda
+- [x] `ListaFlotante` se recoloca en cada cuadro mientras está abierta; `calcularPosicion` extraída y probada (4 pruebas, caso real del gestor).
+- [x] Ficha escrita a mano reemplazada por las respuestas reales grabadas, en pruebas y en el arnés de capturas.
+- [x] Salida "No es ninguna: pon el pin en el mapa", siempre visible; el mapa centra en la ciudad de contexto.
+- [x] `tokensDeCalle`/`tokensDeColonia` separados; municipio y colonia como orden, nunca como filtro.
+- [x] Filtra antes de recortar en `geocodificar.ts`/`buscarLugares.ts`.
+- [x] Investigadas las 7 rojas: falta de `pg` en este árbol, confirmado y resuelto localmente (785/785 en verde).
+- [ ] Entrega al gestor.
