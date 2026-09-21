@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artistaIgual, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, ordenarArtistas, quienDesdeJson, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
+import { artistaIgual, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, ordenarArtistas, quienDesdeJson, subcategoriaParecida, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
 
 describe("deducirDisciplina", () => {
   it("lee la disciplina del nombre y, sin pista, propone música", () => {
@@ -28,6 +28,37 @@ describe("etiquetaArtista", () => {
     expect(etiquetaArtista({ disciplina: "musica", detalle: "son huasteco", tipo: "grupo" })).toBe("Son huasteco · Grupo");
     expect(etiquetaArtista({ disciplina: "teatro", detalle: null, tipo: "colectivo" })).toBe("Teatro · Colectivo");
     expect(etiquetaArtista({ disciplina: "por_completar", detalle: null, tipo: "solista" })).toBe("Ficha por completar");
+  });
+});
+
+describe("subcategoriaParecida", () => {
+  const existentes = [
+    { detalle: "Fotografía", artistas: 12 },
+    { detalle: "Pintura", artistas: 51 },
+    { detalle: "compañía de danza", artistas: 13 },
+  ];
+  it("sugiere la existente cuando solo cambian acentos o mayúsculas", () => {
+    expect(subcategoriaParecida(existentes, "fotografia")?.detalle).toBe("Fotografía");
+    expect(subcategoriaParecida(existentes, "FOTOGRAFÍA")?.detalle).toBe("Fotografía");
+  });
+  it("sugiere la existente cuando lo escrito es el principio (o al revés)", () => {
+    expect(subcategoriaParecida(existentes, "Foto")?.detalle).toBe("Fotografía");
+    expect(subcategoriaParecida(existentes, "Fotografía y video")?.detalle).toBe("Fotografía");
+  });
+  it("no sugiere nada si ya es exactamente lo mismo que ya existe (nada que ganar)", () => {
+    expect(subcategoriaParecida(existentes, "Fotografía")).toBeNull();
+  });
+  it("no confunde palabras cortas sin relación ni entre disciplinas distintas", () => {
+    expect(subcategoriaParecida(existentes, "cine")).toBeNull();
+    expect(subcategoriaParecida(existentes, "grabado")).toBeNull();
+  });
+  it("sin nada escrito, o con una sola letra, no sugiere", () => {
+    expect(subcategoriaParecida(existentes, "")).toBeNull();
+    expect(subcategoriaParecida(existentes, "f")).toBeNull();
+  });
+  it("elige la más parecida cuando hay más de una candidata", () => {
+    const varias = [{ detalle: "danza", artistas: 5 }, { detalle: "compañía de danza", artistas: 13 }];
+    expect(subcategoriaParecida(varias, "danz")?.detalle).toBe("danza");
   });
 });
 

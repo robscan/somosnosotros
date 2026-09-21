@@ -13,7 +13,7 @@ import { Chip } from "@/components/ui/Chip";
 import { IconoBoleto, IconoBuscar, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
-import { LIMITES_EVENTO, REVELAR_OPCIONES, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
+import { LIMITES_EVENTO, REVELAR_OPCIONES, extraerNumero, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
 import { formatearCuando, isoALocal, localAIso, resugerirCuando, sugerirInicio, ZONA_INICIAL, zonaSegura } from "@/lib/fechas";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
@@ -174,7 +174,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     };
   }, [clavePunto]);
   const [gratis, setGratis] = useState(!evento?.precio);
-  const [precio, setPrecio] = useState(evento?.precio ?? "");
+  // Al editar, si el precio guardado es "$150", mostrar solo "150" en el campo.
+  const [precio, setPrecio] = useState(evento?.precio ? extraerNumero(evento.precio) : "");
   const [descripcion, setDescripcion] = useState(evento?.descripcion ?? "");
   const [enlace, setEnlace] = useState(evento?.enlace ?? "");
   const [imagen, setImagen] = useState<string | null>(evento?.imagen ?? null);
@@ -627,7 +628,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 </div>
                 {!gratis && (
                 <span className={limpiar.caja}>
-                  <input type="text" name="precio" value={precio} onChange={(e) => { gestos.current.tocar("cuanto"); setPrecio(e.target.value); }} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. $150, o $100 estudiantes" aria-label="Precio" className={canon.entrada} autoComplete="off" autoFocus />
+                  <input type="text" inputMode="numeric" pattern="[0-9]*" name="precio" value={precio} onChange={(e) => { gestos.current.tocar("cuanto"); setPrecio(e.target.value.replace(/\D/g, '')); }} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. 150" aria-label="Precio (solo números)" className={canon.entrada} autoComplete="off" autoFocus />
                   <Limpiar visible={!!precio} />
                   <ContadorCaracteres valor={precio} tope={LIMITES_EVENTO.precio} error={errores.precio} />
                 </span>
