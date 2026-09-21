@@ -12,7 +12,7 @@ import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona,
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
-import { artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, LIMITES_ARTISTA, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type TipoArtista } from "@/lib/artistas";
+import { artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, LIMITES_ARTISTA, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
 import type { CiudadConArtistas } from "@/lib/ciudad";
 import { normalizarRedes } from "@/lib/enlaces";
 import { normalizarNombre } from "@/lib/lugares";
@@ -74,6 +74,11 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const [abierta, setAbierta] = useState<Abierta>(null);
   const [masAbierto, setMasAbierto] = useState(!esAlta);
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  // Subcategorías ya usadas por disciplina (OL-101): una caché por disciplina, para no repetir la consulta.
+  const [subcategoriasPorDisciplina, setSubcategoriasPorDisciplina] = useState<Record<string, Subcategoria[]>>({});
+  // "Otra…" abre el texto libre aunque ya haya chips de subcategoría; sin subcategorías conocidas, va directo al texto.
+  // Al editar una ficha que ya trae detalle, empieza abierto: es lo que ya se ve al llegar, se elija o no un chip después.
+  const [otraAbierta, setOtraAbierta] = useState(!esAlta && !!artista?.detalle);
   // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
@@ -84,6 +89,24 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const hayNombre = nombre.trim().length > 0;
   const disciplina: Disciplina | "" = disciplinaElegida || (hayNombre ? deducirDisciplina(nombre) : "");
   const tipo: TipoArtista = tipoElegido || deducirTipoArtista(nombre) || "solista";
+  const subcategorias = disciplina ? (subcategoriasPorDisciplina[disciplina] ?? []) : [];
+
+  // Subcategorías ya usadas en la disciplina elegida (OL-101): para sugerir en vez de duplicar
+  // ("foto", "Fotografia", "fotografía"). Es de solo lectura y global (no por ciudad, doc 27).
+  useEffect(() => {
+    if (!disciplina || disciplina === "por_completar" || subcategoriasPorDisciplina[disciplina]) return;
+    let cancelado = false;
+    (async () => {
+      const supabase = clienteNavegador();
+      if (!supabase) return;
+      const { data } = await supabase.rpc("subcategorias_de", { p_disciplina: disciplina });
+      if (!cancelado) setSubcategoriasPorDisciplina((prev) => (prev[disciplina] ? prev : { ...prev, [disciplina]: (data ?? []) as Subcategoria[] }));
+    })();
+    return () => {
+      cancelado = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- la caché se consulta, no se declara como dependencia: evitar refetch en bucle.
+  }, [disciplina]);
 
   // Un artista es un artista: mientras se escribe, ¿ya hay uno que se llama igual?
   useEffect(() => {
@@ -163,16 +186,73 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
             <div className={canon.cuerpo}>
               <div className={canon.chips}>
                 {DISCIPLINAS.map((d) => (
-                  <Chip key={d.valor} activo={disciplina === d.valor} onClick={() => setDisciplinaElegida(d.valor)}>
+                  <Chip
+                    key={d.valor}
+                    activo={disciplina === d.valor}
+                    onClick={() => {
+                      if (d.valor === disciplina) return;
+                      setDisciplinaElegida(d.valor);
+                      // Una subcategoría es de su disciplina: al cambiarla, se suelta la anterior.
+                      setDetalle("");
+                      setOtraAbierta(false);
+                    }}
+                  >
                     {d.etiqueta}
                   </Chip>
                 ))}
               </div>
-              <span className={limpiar.caja}>
-                <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_ARTISTA.detalle} placeholder="Ej. son huasteco, jazz (opcional)" aria-label="En una palabra" className={canon.entrada} autoComplete="off" />
-                <Limpiar visible={!!detalle} />
-                <ContadorCaracteres valor={detalle} tope={LIMITES_ARTISTA.detalle} error={errores.detalle} />
-              </span>
+              {/* Subcategorías ya usadas en esta disciplina (OL-101): elegir una, o "Otra…" para escribir. */}
+              {subcategorias.length > 0 && (
+                <div className={canon.chips}>
+                  {subcategorias.map((s) => (
+                    <Chip
+                      key={s.detalle}
+                      activo={!otraAbierta && normalizarNombre(detalle) === normalizarNombre(s.detalle)}
+                      onClick={() => {
+                        setDetalle(s.detalle);
+                        setOtraAbierta(false);
+                      }}
+                    >
+                      {s.detalle}
+                    </Chip>
+                  ))}
+                  <Chip activo={otraAbierta} onClick={() => setOtraAbierta(true)}>
+                    Otra…
+                  </Chip>
+                </div>
+              )}
+              {(subcategorias.length === 0 || otraAbierta) && (
+                <>
+                  <span className={limpiar.caja}>
+                    <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_ARTISTA.detalle} placeholder="Ej. son huasteco, jazz (opcional)" aria-label="En una palabra" className={canon.entrada} autoComplete="off" />
+                    <Limpiar visible={!!detalle} />
+                    <ContadorCaracteres valor={detalle} tope={LIMITES_ARTISTA.detalle} error={errores.detalle} />
+                  </span>
+                  {/* Antes de crear una subcategoría nueva, ¿ya existe una parecida? (docs/rediseno/27). */}
+                  {(() => {
+                    const parecida = subcategoriaParecida(subcategorias, detalle);
+                    if (!parecida) return null;
+                    return (
+                      <p className={canon.existe} role="status">
+                        <IconoOk width={20} height={20} />
+                        <span>
+                          Ya hay <b>{parecida.artistas}</b> {parecida.artistas === 1 ? "artista" : "artistas"} con &ldquo;<b>{parecida.detalle}</b>&rdquo;.{" "}
+                          <button
+                            type="button"
+                            className={canon.cambiar}
+                            onClick={() => {
+                              setDetalle(parecida.detalle);
+                              setOtraAbierta(false);
+                            }}
+                          >
+                            Usar esa
+                          </button>
+                        </span>
+                      </p>
+                    );
+                  })()}
+                </>
+              )}
               {(errores.disciplina || errores.detalle) && (
                 <p className={canon.error} role="alert">
                   {errores.disciplina ?? errores.detalle}
@@ -289,7 +369,9 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       <input type="hidden" name="tipo" value={tipo} />
       <input type="hidden" name="foto" value={foto ?? ""} />
       <input type="hidden" name="soy" value={soy ? "1" : ""} />
-      {abierta !== "hace" && <input type="hidden" name="detalle" value={detalle} />}
+      {/* El campo de texto de detalle solo está en el DOM cuando se ve (renglón abierto, sin subcategorías
+          conocidas o en "Otra…"); en cualquier otro momento, este oculto lleva el valor al enviar. */}
+      {!(abierta === "hace" && (subcategorias.length === 0 || otraAbierta)) && <input type="hidden" name="detalle" value={detalle} />}
       <input type="hidden" name="ciudad" value={ciudad} />
 
       {resultado && !resultado.ok && resultado.general && !repetido && (
