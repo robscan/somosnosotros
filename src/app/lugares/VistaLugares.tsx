@@ -19,6 +19,7 @@ import type { Destacado, Tarjeta } from "@/lib/destacados";
 import { SIN_FOTO } from "@/lib/imagen";
 import ChipCiudad from "@/components/Ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
+import { leerUbicacionCercana } from "@/lib/ubicacion";
 import renglon from "@/components/Renglon.module.css";
 import { Pestana, PestanaEnlace, Pestanas } from "@/components/ui/Pestanas";
 import { CampoBuscar } from "@/components/ui/Buscador";
@@ -116,19 +117,17 @@ export default function VistaLugares({
     setEncuadre((e) => ({ puntos: [{ lat: l.lat, lng: l.lng }], vez: (e?.vez ?? 0) + 1 }));
   }
   function pedirUbicacion() {
-    if (!("geolocation" in navigator)) {
-      setGeo("error");
-      return;
-    }
     setGeo("pidiendo");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setPunto({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+    // Con una posición fresca guardada en el teléfono (de aquí o de la agenda) esto resuelve al momento, sin
+    // volver a llamar al navegador (OL-095, L25 y L50): el botón sigue pidiéndose con un toque, pero no repite
+    // la llamada si ya la tenemos.
+    leerUbicacionCercana().then(
+      (p) => {
+        setPunto(p);
         setVez((v) => v + 1);
         setGeo("sin-pedir");
       },
-      (err) => setGeo(err.code === err.PERMISSION_DENIED ? "negado" : "error"),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+      (error: unknown) => setGeo(error === "negado" ? "negado" : "error"),
     );
   }
   function cambiarVista(v: Vista) {
