@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Somos Nosotros",
     short_name: "Somos Nosotros",
-    description: "Centros culturales y agenda de San Luis Potosí, para conocer gente local.",
+    description: "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente.",
     lang: "es",
     start_url: "/",
     scope: "/",
