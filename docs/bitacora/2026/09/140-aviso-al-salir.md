@@ -52,3 +52,19 @@ Prototipo interactivo 390×844: [`docs/rediseno/prototipos/aviso-al-salir.html`]
 **Evidencia visual:** el prototipo firmado (`docs/rediseno/prototipos/aviso-al-salir.html`) usa exactamente los mismos tokens y el mismo componente `ui/Hoja`; ahí está la captura 390×844 con la hoja abierta y el dominio partido sin desbordar. No se levantó un respaldo local con datos falsos para una captura de las páginas reales con la integración completa (habría requerido montar un backend PostgREST falso, fuera de proporción para un cambio ya cubierto por 10 pruebas unitarias, build/typecheck/lint verdes y una visual idéntica en tokens y componente compartido); si el gestor lo pide, se hace.
 
 Commit local `ecc0335` en `aviso-al-salir`, sin push. Rama sin migración.
+
+## Devuelta por el gestor (8e0dcb7) y corregida
+
+El gestor devolvió la entrega por maquetación/código limpio (lo que el founder pidió hoy a todos) con 4 puntos:
+
+1. **Reutilizar el canon:** `EnlaceExterno.tsx` usaba estilos propios `.continuar`/`.quedarme` para dos botones que el proyecto ya resuelve con `ui/Boton` (ver `SalirSinPublicar.tsx`, el mismo caso: una hoja con un botón principal y uno secundario). Corregido: `<Boton>` (variante principal) y `<Boton variante="secundario">`; todo el contenido de la hoja en un `<div className={styles.contenido}>` (grid con una sola regla de `gap`, patrón de `SalirSinPublicar.module.css`), sin clases por botón.
+2. **"Vas a" repetido:** el título ("Vas a salir de Somos Nosotros") y la tarjeta del dominio ("Vas a boletia.com") decían "Vas a" dos veces seguidas — venía así desde el prototipo firmado. Se quitó de la tarjeta (queda solo el dominio); corregido también en el prototipo y en la propuesta, con nota de qué cambió y por qué respecto a lo firmado.
+3. **Medición del componente real:** banco temporal `src/app/banco-ol105` (sin backend, sin commit) que importa `ui/Boton`, `ui/Hoja.module.css` y `EnlaceExterno.module.css` tal cual — no valores copiados a mano como en el prototipo HTML. La hidratación de React no completó en el navegador integrado de esta sesión (se reprodujo también en `/reglas`, una ruta existente sin tocar, así que no es un defecto de esta pieza); se midió el árbol servido directamente (layout del navegador, no depende de hidratación) en vez de abrir la hoja con un clic real. Con un dominio de 60 caracteres (`boletos.un-dominio-muy-largo-de-ejemplo-para-medir-anchos.mx`):
+   - 320 px → borde derecho de la hoja en 320, 0 hijos fuera, sin scroll horizontal
+   - 375 px → borde derecho de la hoja en 375, 0 hijos fuera, sin scroll horizontal
+   - 390 px → borde derecho de la hoja en 390, 0 hijos fuera, sin scroll horizontal
+4. **`mailto:`/`tel:` guardados como sitio:** dos pruebas nuevas en `debeAvisar` (no avisa, no rompe).
+
+`npm run lint && npm run typecheck && npm test`: lint y typecheck en verde; 721/728 pruebas en verde (mismas 7 rojas preexistentes por falta de `pg`). `npm run build`: verde, 24 rutas (sin rastro del banco temporal).
+
+Commit local `ebe3ea3` en `aviso-al-salir`, sin push.
