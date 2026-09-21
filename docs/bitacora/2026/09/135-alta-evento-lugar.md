@@ -111,6 +111,25 @@ Revisión del CSS nuevo (`HojaDondeEs.module.css`): la única regla propia que a
 
 Firmado, con el código completo (incluidas las tres correcciones del gestor y la comprobación de desbordes), y con `main` al día (OL-103 y OL-099). `npm run lint && npm run typecheck && npm test` y build en verde. Reentrega al gestor.
 
+## Corrección urgente en producción (2026-09-21): la hoja "Es en otro sitio" rota
+
+El founder probó en su iPhone y reportó, con foto: el campo del nombre y el de dirección quedaban en **dos columnas**, la segunda saliéndose de la pantalla; "Falta confirmar el pin." también en esa segunda columna; y las sugerencias de dirección no servían (cuatro "Slp 32" y un "Galeana 423" de Soledad de Graciano Sánchez, ninguna útil para "Cenaria Foro Expandido" / "Galeana #423, Centro, S.L.P."). El gestor pidió partir la corrección en dos piezas y dar la de maquetación **primero, ya**, en esta rama nueva; las sugerencias y la lista flotante van en `sugerencias-flotantes`, aparte.
+
+**Causa exacta (confirmada leyendo el código, tal como la había medido el gestor):** en `HojaDondeEs.tsx`, tres avisos ("Falta el nombre del sitio.", "Falta confirmar el pin.", "Falta la dirección exacta.") usaban `canon.cuerpoNota` — una clase de `FormularioCanon.module.css` con `grid-area: cuerpo`. Esa clase solo tiene sentido dentro de la rejilla `canon.resuelto`, que sí define un área llamada "cuerpo" en su `grid-template-areas`. Pero estos tres avisos viven dentro de `.otro` (la vista "Es en otro sitio"), que es `display: grid` **sin** `grid-template-areas` ni `grid-template-columns`. Al pedirle a un hijo un área que la rejilla no define, el navegador crea líneas de rejilla implícitas para ese nombre y añade una columna extra para poder colocarlo ahí — de ahí la segunda columna que se salía de la pantalla y recorría todo lo de abajo.
+
+**Arreglo:**
+- Los tres avisos cambian a `styles.nota` (clase llana del propio archivo, ya usada ahí mismo para "Buscando…" y el aviso de ubicación: sin `grid-area`, sin efecto en ninguna rejilla ajena).
+- `.otro` suma `grid-template-columns: minmax(0, 1fr)` explícito, como defensa: aunque algo vuelva a pedir un área que no existe, no puede fabricar una columna nueva de más.
+- **Auditoría pedida por el gestor:** grep de toda clase del canon con `grid-area` (`cuerpoNota`, `clave`, `valor`, `cambiar`, `accionIcono`, `opciones`, `palanca`, `miniatura`) en `HojaDondeEs.tsx` y `FormularioEvento.tsx`. Un solo caso más de `canon.cuerpoNota` en `FormularioEvento.tsx` (línea 546, "Falta el nombre."), pero su padre inmediato (`<form>`) no es `display: grid` (ni `.pagina` ni ningún ancestro lo es): el atributo no tiene efecto ahí, confirmado revisando `FormularioEvento.module.css` y `globals.css`. `canon.palanca` en `HojaDondeEs.tsx` (interruptor de "Reservado") vive dentro de `.reservado`, que sí define su propia área "palanca" — coincide a propósito (patrón previo a esta pieza, no tocado). El resto de usos de clases del canon en `FormularioEvento.tsx` están todos dentro de `canon.resuelto`, que sí define esas áreas. **No se encontró ningún otro caso roto.**
+
+**Verificación con capturas PNG reales (pedido del gestor: "sin PNG no hay aceptación").** Arnés local (mismo de antes: `FormularioEvento`/`HojaDondeEs` reales, red de Mapbox simulada — sin tocar Supabase para esta corrección urgente y acotada, solo maquetación) servido en `http://127.0.0.1:4173`, capturado con **Chrome headless real por CDP** (protocolo puro con `fetch`/`WebSocket`, ya en Node 22 — sin instalar nada, mismo espíritu que OL-095), a 390×844, `deviceScaleFactor: 2`. Script en el scratchpad (`verificacion-ol100/capturar.mjs`), reutilizable. Dos capturas, con el caso real del founder:
+- `verificacion-ol100/01-otro-sitio-caso-real.png` — "Cenaria Foro Expandido" / "Galeana #423, Centro, S.L.P.": una sola columna, campo de nombre, campo de dirección, mapa, "Reservado", "Mejor un lugar registrado" y "Listo", todo apilado. `getBoundingClientRect()` sobre cada elemento: 0 con el borde derecho fuera del viewport, `scrollWidth === clientWidth` (390 = 390).
+- `verificacion-ol100/02-otro-sitio-nombre-120.png` — mismo caso con un nombre de 113 caracteres (pedido del gestor, "de 120 caracteres"): mismo resultado, 0 desbordes.
+
+(El aviso "Falta el token de Mapbox" y "No pude buscar la dirección" que se ven en las capturas son del arnés, que no tiene un token real — no son parte de lo que se está verificando aquí, que es la maquetación.)
+
+`npm run lint && npm run typecheck && npm test`: en verde (763 pruebas, mismas 7 rojas preexistentes y ajenas sin `pg`); build en verde.
+
 ## Pasos
 
 - [x] Aviso de arranque al gestor y su visto bueno.
@@ -124,4 +143,6 @@ Firmado, con el código completo (incluidas las tres correcciones del gestor y l
 - [x] Traer `main` (OL-103 en producción), conflicto resuelto en OPEN_LOOPS.
 - [x] `FormularioEvento.tsx`: autofocus, "Confirmar", ayuda bajo el campo, ciudad del chip.
 - [x] Build y verificación visual (tres estados, sin Mapbox real).
-- [ ] Entrega consolidada al gestor.
+- [x] Entrega consolidada al gestor; OL-100 aceptada (PR #124) y publicada en producción.
+- [x] **Corrección urgente:** rama `alta-evento-lugar-correccion`, arreglo de la rejilla rota en "Es en otro sitio", con capturas PNG reales por CDP.
+- [ ] Aparte, en `sugerencias-flotantes`: lista de sugerencias flotante y mejores resultados de búsqueda.
