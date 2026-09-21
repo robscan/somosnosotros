@@ -215,6 +215,29 @@ El founder firmó el 2026-09-21 (docs/rediseno/[25](../../rediseno/25-obras-cole
 
 Este es el primer paso de la reanudación, entregado solo antes de seguir con lo pendiente de la Fase 1 (ver arriba). La migración sigue sin aplicarse — la aplica el gestor.
 
+## Corrección de maquetación de «Crear obra aquí» (2026-09-21)
+
+Publicada la Fase 1 (PR #119, `06f9d14`), el founder la probó en su iPhone y encontró un fallo, en sus palabras: «Solo vi que elementos de dentro de ficha "Crear obra aquí" como dropdown, input text y botón rebasan el margen de contenedor revisa maquetación otra vez». Rama nueva `pincel-crear-obra-maquetacion` desde `origin/main` (la rama `pincel-app` ya está unida y congelada).
+
+**Causa medida** (no a ojo): `.form` en `src/app/admin/obras-colectivas/obras.module.css` es `display: grid` de una sola columna sin `grid-template-columns`. Sin esa propiedad, el navegador dimensiona la pista implícita al contenido más ancho de sus hijos; un hijo de rejilla tiene `min-width: auto` por defecto (no `0`), así que no se encoge para caber. El `<select>` de "Lugar" no envuelve su texto (a diferencia de un párrafo, que sí rompe línea en los espacios), así que con un nombre de lugar largo su ancho mínimo es el de todo el texto en una sola línea — eso ensancha la pista, y como el input, el select y el botón usan `width: 100%` (de esa misma pista ensanchada), los tres se salen del contenedor por igual. `.hora` (flex) tenía el mismo riesgo en teoría, sin confirmarse con datos reales porque sus hijos ("Cierra a las" + el chip de hora) son cortos.
+
+**Cómo se midió:** un repro HTML aparte (`repro.html`, scratchpad de la sesión, no entra al repo) con las clases reales de `obras.module.css`, `Campo.module.css`, `Limpiar.module.css`, `Chip.module.css` y `Boton.module.css` (mismas reglas, sin el hash de CSS Modules) dentro de contenedores de ancho fijo 320/375/390 px — más confiable que emular el viewport del navegador de la sesión (que no reflejaba el ancho pedido en `window.innerWidth` en este entorno). Datos al tope: nombre de lugar de 78 caracteres (el caso real que vio el founder) y nombre de obra a 120 (el `maxLength` real). Medido con `getBoundingClientRect()` de cada hijo contra el contenedor y `scrollWidth` del contenedor:
+
+| | 320 px | 375 px | 390 px |
+|---|---|---|---|
+| **Antes** — `select`/`input`/`botón`, borde derecho | 635 px (rebasa 315) | 635 px (rebasa 260) | 635 px (rebasa 245) |
+| **Antes** — ¿hay desborde horizontal? | Sí | Sí | Sí |
+| **Después** — borde derecho de todos los hijos | 287–320 px (dentro) | 342–375 px (dentro) | 357–390 px (dentro) |
+| **Después** — ¿hay desborde horizontal? | No | No | No |
+
+El número "635" no cambia con el ancho de prueba porque la causa no depende del viewport: depende del contenido más ancho del formulario, que es constante.
+
+**Arreglo** (`obras.module.css`, el único archivo que cambia): `grid-template-columns: minmax(0, 1fr)` y `min-width: 0` en `.form`; `min-width: 0` en `.campo`; `width: 100%; min-width: 0; text-overflow: ellipsis` en `.campo > select` (antes no tenía ancho propio, solo heredaba el de la pista); `flex-wrap: wrap; min-width: 0` en `.hora`, defensivo aunque no se midió un caso real que lo rompa. `Campo.module.css`, `Limpiar.module.css`, `Chip.module.css` y `Boton.module.css` no se tocaron: sus controles ya tenían `width: 100%`, y el problema estaba en la pista que los contenía, no en ellos. No se adoptó el canon de formulario (`ui/FormularioCanon.module.css`) para este campo: ese canon no tiene un patrón de `<select>` con lista larga (usa chips para listas cortas); adoptarlo aquí habría significado rediseñar el selector de lugar, fuera del alcance de una corrección de maquetación.
+
+**Las otras tres pantallas de la Fase 1**, con el mismo criterio y datos al tope (lugar de 60 caracteres, el tope real de `lugares.nombre`; nombre de obra a 120): la lista (`admin.module.css` `.tarjeta`/`.fila`) y el detalle (`obras.module.css` `.datos`/`.dato`) **no rebasan a 320/375/390** — sus textos van en `<b>`/`<small>` normales, que sí envuelven en los espacios (a diferencia del `<select>`, que no envuelve su valor), así que el mismo defecto arquitectónico no les aplica. No se tocaron. El renglón «Activar obra colectiva» en la ficha de evento reutiliza `ficha.menuItem` (ya en producción en otros renglones del mismo menú) y el bloque «Obras colectivas» en `/admin` reutiliza `admin.module.css` `.fila` (la misma clase que Personas/Lugares/Eventos/Artistas): ningún elemento nuevo, ningún riesgo nuevo.
+
+**Verificado:** `npm run lint` (0 errores, 1 warning preexistente y ajeno), `npm run typecheck`, `npm test` (732/732), `npm run build`, todo en verde. Sin migración. Commit local, sin push. Entregado al gestor con los números de arriba.
+
 ## Verificación de este documento
 
 
