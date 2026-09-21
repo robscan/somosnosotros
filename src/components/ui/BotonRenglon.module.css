@@ -1,0 +1,23 @@
+/* El botón de acción del renglón (OL-104): grid-area "accion" en Renglon.module.css lo coloca a la derecha, centrado. */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  min-height: var(--toque-min);
+  min-width: var(--toque-min);
+  padding: 0 var(--espacio-3);
+  border: none;
+  border-radius: 999px;
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.invitar {
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.decidido {
+  padding: 0 var(--espacio-2) 0 10px;
+  background: var(--primario-suave);
+  color: var(--primario);
+}

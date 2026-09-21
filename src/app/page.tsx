@@ -119,7 +119,7 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
         destacados={destacados}
         antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
       />
-      <Publicar />
+      <Publicar ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
       <NavInferior />
     </main>
   );

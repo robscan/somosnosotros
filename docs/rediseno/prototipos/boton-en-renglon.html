@@ -1,0 +1,381 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Botón en el renglón, en vez de deslizar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens de la app (globals.css, línea gráfica firmada). El teléfono va siempre en tema claro, como la app. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #34332f; --estudio-suave: #6f6d67; --estudio-panel: #f7f6f2; --estudio-borde: #d5d3cc;
+    --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2; --ok: #1f6f43; --ok-suave: #e3f1e8;
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --fuente-sistema: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --gutter: 20px; --toque: 48px; --toque-min: 44px; --radio: 12px; --alto-nav: 60px; --area-segura: 0px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --estudio: #242422; --estudio-texto: #e2e0da; --estudio-suave: #a09e97; --estudio-panel: #2d2d2a; --estudio-borde: #42413d; }
+  }
+  :root[data-theme="dark"] { --estudio: #242422; --estudio-texto: #e2e0da; --estudio-suave: #a09e97; --estudio-panel: #2d2d2a; --estudio-borde: #42413d; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; line-height: 1.4; padding-block: 24px; padding-inline: 16px; }
+  button { font: inherit; color: inherit; }
+  svg { flex: none; }
+  :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+
+  /* ---------- Estudio: el teléfono y, a su lado, las notas ---------- */
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 860px; margin: 0 auto; }
+  .telefono { position: relative; display: flex; flex-direction: column; width: 390px; max-width: 100%; height: 844px; overflow: hidden; border-radius: 44px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08); --area-segura: 28px; -webkit-user-select: none; user-select: none; }
+  .estado-ios { flex: none; display: flex; align-items: flex-end; justify-content: space-between; height: 50px; padding: 0 30px 6px 36px; background: var(--fondo); font-family: var(--fuente-sistema); font-size: 15px; font-weight: 600; }
+  .estado-ios span:last-child { letter-spacing: 1px; font-size: 12px; }
+  .tira { display: none; }
+  .pantalla { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: calc(var(--alto-nav) + var(--area-segura) + 96px); }
+
+  /* ---------- Cabeceras y pestañas ---------- */
+  .cabecera { position: sticky; top: 0; z-index: 3; background: var(--fondo); }
+  .barra { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px; min-height: 56px; padding-inline: var(--gutter); }
+  .titulo-pantalla { font-size: 20px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+  .avatar-barra { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #cdb7a0, #7c6450); color: #fff; font-weight: 700; font-size: 15px; }
+  .pestanas { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding-inline: var(--gutter); border-bottom: 1px solid var(--borde); font-size: 15px; font-weight: 600; color: var(--texto-suave); }
+  .pestanas span { display: flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .pestanas span.activa { color: var(--primario); border-color: var(--primario); }
+  .grupo { margin: 14px var(--gutter) 2px; padding-bottom: 6px; border-bottom: 1px solid var(--texto); font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .lista { list-style: none; }
+  .vacio { margin: 18px var(--gutter); color: var(--texto-suave); font-size: 15px; line-height: 1.4; }
+  .nota { margin: 6px var(--gutter) 0; padding: 8px 10px; border-radius: 10px; background: var(--primario-suave); color: var(--texto); font-size: 13px; line-height: 1.35; }
+
+  /* ---------- Renglón: foto | título+datos | botón — grid con áreas, sin envoltorios ---------- */
+  .renglon { position: relative; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "foto titulo accion" "foto meta accion"; column-gap: 12px; align-items: center; min-height: 88px; padding: 12px var(--gutter); text-decoration: none; color: var(--texto); }
+  .renglon::after { content: ""; position: absolute; left: var(--gutter); right: var(--gutter); bottom: 0; height: 1px; background: var(--borde); }
+  .foto { grid-area: foto; width: 64px; height: 64px; align-self: start; border-radius: 10px; background: var(--fondo-miniatura); }
+  .foto.redonda { border-radius: 50%; }
+  .t1 { background: linear-gradient(140deg, #c9b39b, #6f5a47); } .t2 { background: linear-gradient(140deg, #a9bfb0, #45685a); }
+  .t3 { background: linear-gradient(140deg, #d8b1a4, #8b4f43); } .t4 { background: linear-gradient(140deg, #d6c48a, #86712e); }
+  .t5 { background: linear-gradient(140deg, #aab7c9, #4b5d78); } .t6 { background: linear-gradient(140deg, #3b3b3b, #121212); }
+  .titulo { grid-area: titulo; font-size: 18px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 3px 10px; margin-top: 5px; color: var(--texto-suave); font-size: 14px; }
+  .meta > span { display: inline-flex; align-items: center; gap: 4px; }
+  .meta b { color: var(--texto); font-weight: 600; }
+
+  /* ---------- El botón de la acción: la pieza nueva de esta propuesta ---------- */
+  .boton-fila { grid-area: accion; justify-self: end; display: inline-flex; align-items: center; gap: 6px; min-height: var(--toque-min); min-width: var(--toque-min); padding: 0 14px; border: none; border-radius: 999px; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+  .boton-fila svg { width: 18px; height: 18px; }
+  .boton-fila.invitar { background: var(--primario); color: var(--primario-texto); }
+  .boton-fila.invitar:active { filter: brightness(0.9); }
+  .boton-fila.decidido { padding: 0 12px 0 10px; background: var(--primario-suave); color: var(--primario); }
+  .boton-fila.decidido:active { filter: brightness(0.96); }
+  .boton-fila:focus-visible { outline-offset: 2px; }
+
+  /* ---------- Lo que flota: aviso con Deshacer ---------- */
+  .aviso { position: absolute; left: 12px; right: 12px; bottom: calc(var(--alto-nav) + var(--area-segura) + 12px); z-index: 6; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-height: 52px; padding: 6px 6px 6px 16px; border-radius: 14px; background: #1f2326; color: #f2f2f2; font-size: 15px; line-height: 1.3; box-shadow: var(--sombra-flotante); opacity: 0; transform: translateY(8px); transition: opacity 160ms, transform 160ms; pointer-events: none; }
+  .aviso.visible { opacity: 1; transform: none; pointer-events: auto; }
+  .aviso button { min-height: 40px; padding: 0 12px; border: none; border-radius: 10px; background: none; color: #8fd3df; font-weight: 700; }
+
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); height: calc(var(--alto-nav) + var(--area-segura)); padding-bottom: var(--area-segura); background: var(--fondo); box-shadow: 0 -1px 0 var(--borde); }
+  .nav button { display: grid; place-items: center; align-content: center; gap: 2px; border: none; background: none; color: var(--texto-suave); font-size: 12px; font-weight: 600; }
+  .nav .pildora { display: grid; place-items: center; width: 56px; height: 32px; border-radius: 16px; }
+  .nav button[aria-current="page"] { color: var(--primario); }
+  .nav button[aria-current="page"] .pildora { background: var(--primario); color: #fff; }
+
+  /* ---------- Tira de estados del prototipo (arriba del teléfono, no es la app) ---------- */
+  .estados { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; border-radius: 12px; background: var(--estudio); }
+  .estados button { min-height: 40px; border: none; border-radius: 8px; background: none; color: var(--estudio-texto); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .estados button[aria-pressed="true"] { background: var(--primario); color: #fff; }
+
+  /* ---------- Notas del prototipo ---------- */
+  .panel { display: grid; gap: 16px; width: 340px; max-width: 100%; padding: 22px 22px 24px; border: 1px solid var(--estudio-borde); border-radius: 18px; background: var(--estudio-panel); font-size: 15px; line-height: 1.45; }
+  .panel h1 { font-size: 24px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.08; text-wrap: balance; }
+  .panel .fecha { margin-top: 4px; color: var(--estudio-suave); font-size: 14px; }
+  .panel h2 { margin-bottom: 6px; color: var(--estudio-suave); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .panel ul { display: grid; gap: 6px; padding-left: 18px; }
+  .panel b { font-weight: 700; }
+  .pregunta { padding: 14px; border-radius: 12px; background: var(--primario-suave); color: var(--texto); font-weight: 600; }
+
+  /* ---------- En el teléfono real: pantalla completa y las notas en una hoja aparte ---------- */
+  @media (max-width: 759px) {
+    body { padding: 0; }
+    .estudio { display: block; height: 100%; max-width: none; }
+    .telefono { width: 100%; height: 100%; border-radius: 0; box-shadow: none; --area-segura: 0px; }
+    .estado-ios { display: none; }
+    .tira { flex: none; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-height: 48px; padding: 4px 8px 4px 14px; background: #1f2326; }
+    .tira .estados { background: #30363a; }
+    .tira .estados button { color: #e9ecef; }
+    .tira .estados button[aria-pressed="true"] { background: var(--primario); }
+    .tira .ayuda { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #4a5258; border-radius: 50%; background: none; color: #e9ecef; font-weight: 700; }
+    .panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; width: auto; max-height: 82%; overflow-y: auto; border-radius: 18px 18px 0 0; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3); transform: translateY(105%); transition: transform 240ms ease; }
+    .estudio.notas .panel { transform: none; }
+    .cerrar-notas { display: block; justify-self: stretch; min-height: 44px; border: none; border-radius: 12px; background: var(--estudio); font-weight: 700; }
+    .velo-notas { position: fixed; inset: 0; z-index: 19; background: rgba(0, 0, 0, 0.4); }
+  }
+  .cerrar-notas { display: none; }
+  @media (prefers-reduced-motion: reduce) { .panel, .aviso { transition: none; } }
+</style>
+
+<main class="estudio" id="estudio">
+  <section class="telefono" id="telefono" aria-label="Somos Nosotros en el teléfono">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+    <div class="tira">
+      <div class="estados" role="group" aria-label="Estado a ver" id="estados-movil"></div>
+      <button type="button" class="ayuda" id="abrir-notas" aria-label="Qué probar">?</button>
+    </div>
+
+    <div class="pantalla" id="pantalla">
+      <!-- Las pantallas se pintan con JS: el marcado real vive abajo, en las plantillas -->
+    </div>
+
+    <div class="aviso" id="aviso" role="status">
+      <span id="aviso-texto"></span>
+      <button type="button" id="aviso-boton">Deshacer</button>
+    </div>
+
+    <nav class="nav" aria-label="Navegación">
+      <button type="button" aria-current="page"><span class="pildora">●</span>Agenda</button>
+      <button type="button">Lugares</button>
+      <button type="button">Artistas</button>
+      <button type="button">Perfil</button>
+    </nav>
+  </section>
+
+  <div class="velo-notas" id="velo-notas" hidden></div>
+  <aside class="panel" id="panel">
+    <button type="button" class="cerrar-notas" id="cerrar-notas">Cerrar</button>
+    <div>
+      <h1>Botón en el renglón, en vez de deslizar</h1>
+      <p class="fecha">OL-104 · propuesta del founder, 2026-09-21</p>
+    </div>
+    <div class="estados" role="group" aria-label="Estado a ver" id="estados-escritorio"></div>
+    <div>
+      <h2>Qué mirar</h2>
+      <ul>
+        <li><b>Agenda:</b> el evento sin decidir tiene "Voy"; el que ya dijiste que vas, "Vas"; toca "Vas" y sale el aviso con Deshacer.</li>
+        <li><b>Me interesa:</b> ya no tiene botón propio en la lista — solo en la ficha. Ver la nota junto a ese renglón.</li>
+        <li><b>Lugares / Artistas:</b> "Seguir" → "Sigues", igual mecánica.</li>
+        <li><b>Mi perfil:</b> el mismo botón, pero tocar "Vas"/"Sigues" aquí <b>hace desaparecer la fila al instante</b>, con Deshacer que la regresa. Ver la pestaña "Me interesa" con su botón "Voy".</li>
+        <li><b>Sin sesión:</b> el botón lleva a Entrar (aquí solo lo anuncia; en la app real navega).</li>
+      </ul>
+    </div>
+    <div class="pregunta">
+      Falta tu firma: ¿el botón "Voy" y el toggle de Mi perfil funcionan así? ¿Algo se ve, se siente o se lee raro?
+    </div>
+  </aside>
+</main>
+
+<template id="tpl-renglon-evento">
+  <!-- foto class, titulo, meta html, estado (null|voy|me_interesa), href -->
+</template>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Iconos (los mismos trazos de src/components/ui/Iconos.tsx) ----------
+  const svg = (paths, extra) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  const iconoOk = svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
+  const iconoMas = svg('<path d="M12 5v14M5 12h14"/>');
+  const iconoReloj = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>';
+  const iconoPin = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>';
+  const iconoBoleto = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9a2 2 0 0 1 0-4h16a2 2 0 0 1 0 4 2 2 0 0 0 0 4 2 2 0 0 1 0 4H4a2 2 0 0 1 0-4 2 2 0 0 0 0-4z"/></svg>';
+  const iconoCalendario = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 10h16"/></svg>';
+
+  // ---------- Datos inventados: nada de producción ----------
+  const eventos = {
+    huasteco: { id: "huasteco", titulo: "Son huasteco de prueba", hora: "19:00", lugar: "Casa de Prueba del Centro", precio: "Gratis", foto: "t1" },
+    jazz: { id: "jazz", titulo: "Noche de jazz de prueba", hora: "20:30", lugar: "Foro de Prueba", precio: "$120", foto: "t2" },
+    guitarra: { id: "guitarra", titulo: "Guitarra de prueba", hora: "18:00", lugar: "Biblioteca de Prueba", precio: "Gratis", foto: "t3" },
+  };
+  const lugares = { casa: { id: "casa", nombre: "Casa de Prueba del Centro", calle: "Av. Venustiano Carranza 1200", foto: "t4" } };
+  const artistas = { ana: { id: "ana", nombre: "Ana de Prueba", que: "Música", foto: "t5" } };
+
+  function filaEvento({ ev, estado, boton, conAviso, key }) {
+    const decidido = estado === "voy";
+    const meInteresaNota = estado === "me_interesa" ? `<li class="nota">"Me interesa" ya no tiene botón aquí: se cambia en la ficha del evento. El botón de la fila es "Voy", igual que en las demás.</li>` : "";
+    return `
+      <li class="renglon" data-key="${key}">
+        <div class="foto ${ev.foto}" aria-hidden="true"></div>
+        <span class="titulo">${ev.titulo}</span>
+        <span class="meta">
+          <span>${iconoReloj}<b>${ev.hora}</b></span><span>${iconoPin}${ev.lugar}</span><span>${iconoBoleto}${ev.precio}</span>
+        </span>
+        ${boton !== false ? `<button type="button" class="boton-fila ${decidido ? "decidido" : "invitar"}" aria-pressed="${decidido}" aria-label="${decidido ? "Ya no vas — " : "Voy — "}${ev.titulo}" data-accion="evento" data-key="${key}">${decidido ? iconoOk : iconoMas}${decidido ? "Vas" : "Voy"}</button>` : ""}
+      </li>
+      ${meInteresaNota}
+    `;
+  }
+
+  function filaLugar({ l, sigo, key, redonda }) {
+    return `
+      <li class="renglon" data-key="${key}">
+        <div class="foto ${redonda ? "redonda" : ""} ${l.foto}" aria-hidden="true"></div>
+        <span class="titulo">${l.nombre}</span>
+        <span class="meta"><span>${iconoPin}${l.calle || l.que}</span></span>
+        <button type="button" class="boton-fila ${sigo ? "decidido" : "invitar"}" aria-pressed="${sigo}" aria-label="${sigo ? "Ya no seguir — " : "Seguir — "}${l.nombre}" data-accion="lugar" data-key="${key}">${sigo ? iconoOk : iconoMas}${sigo ? "Sigues" : "Seguir"}</button>
+      </li>
+    `;
+  }
+
+  // ---------- Estado del prototipo (memoria en JS, no hay servidor) ----------
+  const estado = {
+    huasteco: null, jazz: "voy", guitarra: "me_interesa",
+    casa: false, ana: true,
+  };
+  let deshacer = null; // { texto, aplicar }
+
+  function avisar(texto, aplicar) {
+    deshacer = aplicar ? { texto, aplicar } : null;
+    const aviso = document.getElementById("aviso");
+    document.getElementById("aviso-texto").textContent = texto;
+    document.getElementById("aviso-boton").hidden = !aplicar;
+    aviso.classList.add("visible");
+    clearTimeout(avisar._t);
+    avisar._t = setTimeout(() => aviso.classList.remove("visible"), 7000);
+  }
+  document.getElementById("aviso-boton").addEventListener("click", () => {
+    if (deshacer) deshacer.aplicar();
+    document.getElementById("aviso").classList.remove("visible");
+  });
+
+  function tocarEvento(key, enPerfil) {
+    if (pantallaActual === "sin-sesion") {
+      avisar("Sin sesión: llevaría a Entrar y, al volver, aplicaría «Voy» — no se guarda nada aquí.", null);
+      return;
+    }
+    const titulo = eventos[key].titulo;
+    const previo = estado[key];
+    if (previo === "voy") {
+      estado[key] = null;
+      avisar(`Ya no vas a «${titulo}»`, () => { estado[key] = "voy"; pintar(); });
+    } else {
+      estado[key] = "voy";
+      avisar(`Vas a «${titulo}»`, () => { estado[key] = previo; pintar(); });
+    }
+    pintar();
+  }
+  function tocarSeguir(key, tipo) {
+    if (pantallaActual === "sin-sesion") {
+      avisar("Sin sesión: llevaría a Entrar y, al volver, aplicaría «Seguir» — no se guarda nada aquí.", null);
+      return;
+    }
+    const nombre = (tipo === "lugar" ? lugares : artistas)[key].nombre;
+    const previo = estado[key];
+    estado[key] = !previo;
+    avisar(estado[key] ? `Sigues ${nombre}` : `Ya no sigues ${nombre}`, () => { estado[key] = previo; pintar(); });
+    pintar();
+  }
+
+  // ---------- Las cinco pantallas ----------
+  const ESTADOS = [
+    { clave: "agenda", etiqueta: "Agenda" },
+    { clave: "lugares", etiqueta: "Lugares" },
+    { clave: "perfil", etiqueta: "Mi perfil" },
+    { clave: "sin-sesion", etiqueta: "Sin sesión" },
+  ];
+  let pantallaActual = "agenda";
+
+  function pantallaAgenda() {
+    return `
+      <div class="cabecera">
+        <div class="barra"><span class="titulo-pantalla">Agenda</span><div class="avatar-barra">A</div></div>
+        <div class="pestanas"><span class="activa">Todos</span><span>Nuevos</span><span>Cercanos</span></div>
+      </div>
+      <h3 class="grupo">Hoy, jueves 24</h3>
+      <ul class="lista">
+        ${filaEvento({ ev: eventos.huasteco, estado: estado.huasteco, key: "huasteco" })}
+        ${filaEvento({ ev: eventos.jazz, estado: estado.jazz, key: "jazz" })}
+        ${filaEvento({ ev: eventos.guitarra, estado: estado.guitarra, key: "guitarra" })}
+      </ul>
+    `;
+  }
+  function pantallaLugares() {
+    return `
+      <div class="cabecera"><div class="barra"><span class="titulo-pantalla">Lugares</span><div class="avatar-barra">A</div></div></div>
+      <h3 class="grupo">Cerca de ti</h3>
+      <ul class="lista">${filaLugar({ l: lugares.casa, sigo: estado.casa, key: "casa" })}</ul>
+      <h3 class="grupo">Artistas</h3>
+      <ul class="lista">${filaLugar({ l: artistas.ana, sigo: estado.ana, key: "ana", redonda: true })}</ul>
+    `;
+  }
+  function pantallaPerfil() {
+    const va = estado.huasteco === "voy" ? [eventos.huasteco] : [];
+    if (estado.jazz === "voy") va.push(eventos.jazz);
+    const interesa = estado.guitarra === "me_interesa" ? [eventos.guitarra] : [];
+    return `
+      <div class="cabecera">
+        <div class="barra"><span class="titulo-pantalla">Mi perfil</span><div class="avatar-barra">A</div></div>
+        <div class="pestanas"><span class="activa">Voy a · ${va.length}</span><span>Sigo · 2</span><span>Me interesa · ${interesa.length}</span></div>
+      </div>
+      <p style="margin:14px 20px 0;color:var(--texto-suave);font-size:13px;line-height:1.4">En Mi perfil el mismo botón hace de "quitar": tocar "Vas" o "Sigues" saca la fila de aquí al instante, con Deshacer.</p>
+      <h3 class="grupo">Voy a</h3>
+      <ul class="lista">
+        ${va.length ? va.map((e) => filaEvento({ ev: e, estado: "voy", key: e.id })).join("") : '<li class="vacio">Todavía no vas a nada.</li>'}
+      </ul>
+      <h3 class="grupo">Me interesa</h3>
+      <ul class="lista">
+        ${interesa.length ? interesa.map((e) => filaEvento({ ev: e, estado: "me_interesa", key: e.id })).join("") : '<li class="vacio">Ya no te interesa ningún evento.</li>'}
+      </ul>
+      <h3 class="grupo">Sigo</h3>
+      <ul class="lista">
+        ${estado.casa ? filaLugar({ l: lugares.casa, sigo: true, key: "casa" }) : ""}
+        ${estado.ana ? filaLugar({ l: artistas.ana, sigo: true, key: "ana", redonda: true }) : ""}
+        ${!estado.casa && !estado.ana ? '<li class="vacio">Todavía no sigues nada.</li>' : ""}
+      </ul>
+    `;
+  }
+  function pantallaSinSesion() {
+    return `
+      <div class="cabecera"><div class="barra"><span class="titulo-pantalla">Agenda</span></div></div>
+      <p style="margin:14px 20px 0;color:var(--texto-suave);font-size:13px;line-height:1.4">Sin sesión, el botón se ve igual: tocarlo llevaría a Entrar y, al volver, aplicaría la acción (como hoy al deslizar).</p>
+      <h3 class="grupo">Hoy, jueves 24</h3>
+      <ul class="lista">${filaEvento({ ev: eventos.huasteco, estado: null, key: "huasteco" })}</ul>
+    `;
+  }
+
+  function pintar() {
+    const fn = { agenda: pantallaAgenda, lugares: pantallaLugares, perfil: pantallaPerfil, "sin-sesion": pantallaSinSesion }[pantallaActual];
+    document.getElementById("pantalla").innerHTML = fn();
+    document.getElementById("pantalla").scrollTop = document.getElementById("pantalla").dataset.scroll || 0;
+  }
+
+  document.getElementById("pantalla").addEventListener("click", (e) => {
+    const boton = e.target.closest(".boton-fila");
+    if (!boton) return;
+    e.preventDefault();
+    const key = boton.dataset.key;
+    if (boton.dataset.accion === "evento") tocarEvento(key, pantallaActual === "perfil");
+    else tocarSeguir(key, key === "casa" ? "lugar" : "artista");
+  });
+  // Tocar el resto del renglón (no el botón) no navega en el prototipo: aquí solo lo anuncia.
+  document.getElementById("pantalla").addEventListener("click", (e) => {
+    const renglon = e.target.closest(".renglon");
+    if (!renglon || e.target.closest(".boton-fila")) return;
+  });
+
+  function pintarSelectorEstado(contenedor) {
+    contenedor.innerHTML = ESTADOS.map((s) => `<button type="button" data-estado="${s.clave}" aria-pressed="${s.clave === pantallaActual}">${s.etiqueta}</button>`).join("");
+    contenedor.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      pantallaActual = b.dataset.estado;
+      document.querySelectorAll(".estados").forEach(pintarSelectorEstado);
+      pintar();
+    }));
+  }
+  pintarSelectorEstado(document.getElementById("estados-movil"));
+  pintarSelectorEstado(document.getElementById("estados-escritorio"));
+  pintar();
+
+  // ---------- Hoja de notas, en el teléfono ----------
+  const estudio = document.getElementById("estudio");
+  const abrir = document.getElementById("abrir-notas");
+  const cerrar = document.getElementById("cerrar-notas");
+  const velo = document.getElementById("velo-notas");
+  function abrirNotas() { estudio.classList.add("notas"); velo.hidden = false; }
+  function cerrarNotas() { estudio.classList.remove("notas"); velo.hidden = true; }
+  if (abrir) abrir.addEventListener("click", abrirNotas);
+  if (cerrar) cerrar.addEventListener("click", cerrarNotas);
+  if (velo) velo.addEventListener("click", cerrarNotas);
+})();
+</script>

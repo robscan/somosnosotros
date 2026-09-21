@@ -5,7 +5,11 @@ import styles from "./Publicar.module.css";
 type Props = {
   /** Agenda: "Publicar evento". Lugares: "Registrar lugar". Artistas: "Registrar artista". */
   que?: "evento" | "lugar" | "artista";
-  /** Solo para "artista": la ciudad en la que se está (slug), para que el alta empiece ahí (bitácora 051 y 053). */
+  /**
+   * La ciudad en la que se está (slug). En "artista", para que el alta empiece ahí (bitácora 051 y 053). En
+   * "evento", una pista más de la cascada de contexto de la búsqueda de dirección (OL-100): de dónde se entró a
+   * publicar, no necesariamente dónde está la persona.
+   */
   ciudad?: string | null;
 };
 
@@ -32,7 +36,7 @@ export default function Publicar({ que = "evento", ciudad }: Props) {
     );
   }
   return (
-    <Link href="/eventos/nuevo" className={styles.publicar} aria-label="Publicar un evento">
+    <Link href={`/eventos/nuevo${ciudad ? `?ciudad=${ciudad}` : ""}`} className={styles.publicar} aria-label="Publicar un evento">
       <IconoCalendarioMas width={22} height={22} />
       Publicar evento
     </Link>

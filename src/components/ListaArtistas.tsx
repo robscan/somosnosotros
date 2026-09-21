@@ -182,7 +182,7 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
                   {grupo}
                 </li>
               ),
-              <RenglonArtista key={a.id} artista={a} sigo={seguir.sigo(a.id)} acciones={seguir.acciones(a.id, a.nombre)} />,
+              <RenglonArtista key={a.id} artista={a} boton={seguir.boton(a.id, a.nombre)} />,
             ])}
           </ul>
           {seguir.extras}

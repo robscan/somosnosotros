@@ -1,17 +1,27 @@
 /* Obras colectivas (Pincel, OL-088): maquetación plana, cada bloque hijo directo de main. */
 
+/* El founder vio en su iPhone que el desplegable, el campo de texto y el botón se salían de la tarjeta
+   (2026-09-21). Causa medida: una rejilla de una sola columna sin `grid-template-columns` se dimensiona al
+   contenido más ancho (el nombre largo de un lugar dentro del `<select>`), porque el hijo de una rejilla
+   tiene `min-width: auto` por defecto y no se encoge solo. `minmax(0, 1fr)` acota la pista al contenedor;
+   `min-width: 0` en cada hijo deja que `width: 100%` (que ya traían el select, el control del canon y el
+   botón) mande de verdad. Medido en `repro.html` (scratchpad de la sesión) a 320/375/390 px: antes,
+   el select/input/botón llegaban a 635px sin importar el ancho de prueba; después, ninguno rebasa. */
 .form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--espacio-3);
   margin-bottom: var(--espacio-4);
   padding: var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
+  min-width: 0;
 }
 .campo {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 .campo > span {
   color: var(--texto-suave);
@@ -19,6 +29,8 @@
   font-weight: 600;
 }
 .campo > select {
+  width: 100%;
+  min-width: 0;
   min-height: var(--toque-min);
   padding: 0 12px;
   border: 1px solid var(--borde);
@@ -26,11 +38,14 @@
   background: var(--fondo);
   color: var(--texto);
   font: inherit;
+  text-overflow: ellipsis;
 }
 .hora {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--espacio-2);
+  min-width: 0;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   font-weight: 600;
