@@ -4,19 +4,22 @@ import Link from "next/link";
 import { Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { cargarNuevos } from "@/app/accionesAgenda";
+import { cargarCercanos, cargarNuevos } from "@/app/accionesAgenda";
+import type { RespuestaCercanos } from "@/lib/cargarCercanos";
 import type { RespuestaNuevos } from "@/lib/cargarNuevos";
 import { agruparPorDia, agruparPorPublicacion, buscarEventos, FILTROS, filtrarAgenda, LIMITE_NUEVOS, zonaDelEntorno, type EventoAgenda, type Filtro, type Grupo, type Punto } from "@/lib/agenda";
 import { huboVisitaANuevos, leerCorteNuevos, marcarNuevosVisto } from "@/lib/nuevosVisto";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { enOrden, tarjetaEvento, type Destacado } from "@/lib/destacados";
+import { leerUbicacionCercana, ubicacionCercanaFresca } from "@/lib/ubicacion";
 import ChipCiudad from "./Ciudad";
 import Destacados from "./Destacados";
 import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
-import { IconoBuscar, IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
+import Cabecera from "./ui/Cabecera";
+import { IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
 import { useAsistenciaEnLista, type Decididas } from "./useAsistenciaEnLista";
 import { AvisoAbajo, useCanalDeListas } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
@@ -53,13 +56,13 @@ type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: boolean; corte: number | null; huboVisita: boolean; selloNuevos: string | null };
 
 /**
- * La agenda de la ciudad: cabecera pegajosa (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
+ * La agenda de la ciudad: ui/Cabecera (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
 export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, avisos = null, destacados = [] }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [fecha, setFecha] = useState("");
-  // La lupa abre el campo en el sitio de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
+  // La lupa abre el campo en el renglón de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
   const [busqueda, setBusqueda] = useState("");
   const [buscando, setBuscando] = useState(false);
   // El foco (y el teclado) solo cuando la lupa acaba de abrir el campo; al volver de una ficha no se roba el foco.
@@ -132,6 +135,38 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   const ahora = new Date();
 
+  // Si ya hay una ubicación fresca guardada en el teléfono (de aquí o de Lugares), se reutiliza sin pedirla de
+  // nuevo: al volver a Cercanos no hay que tocar "Usar mi ubicación" otra vez (OL-095, L25). Efecto y no estado
+  // inicial: el servidor siempre pinta sin ubicación, y así los dos primeros pintados coinciden (sin parpadeo de
+  // hidratación). El `.then` (y no leer y llamar a setPunto de un tirón) es a propósito: evita el estado puesto
+  // en seco dentro de un efecto que marca react-hooks/set-state-in-effect.
+  useEffect(() => {
+    Promise.resolve(ubicacionCercanaFresca()).then((fresca) => {
+      if (fresca) setPunto(fresca);
+    });
+  }, []);
+
+  // Cercanos ordena por la ubicación de la persona, no por la ciudad del chip (OL-095, L36: "el contexto ordena, no
+  // limita"): la lista viene de todas las ciudades, aparte de la de `eventos` (que sí trae solo la del chip). Se
+  // pide una vez, al entrar a la pestaña con la ubicación ya en mano; sus coordenadas nunca viajan al servidor.
+  const [cercanos, setCercanos] = useState<RespuestaCercanos | null>(null);
+  const [intentoCercanos, setIntentoCercanos] = useState(0);
+  const peticionCercanos = useRef<{ intento: number; resultado: Promise<RespuestaCercanos> } | null>(null);
+  useEffect(() => {
+    if (filtro !== "cercanos" || !punto || (cercanos !== null && peticionCercanos.current?.intento === intentoCercanos)) return;
+    let vigente = true;
+    if (peticionCercanos.current?.intento !== intentoCercanos) {
+      peticionCercanos.current = {
+        intento: intentoCercanos,
+        resultado: cargarCercanos().catch(() => ({ ok: false as const, error: "No pudimos cargar los eventos cercanos." })),
+      };
+    }
+    void peticionCercanos.current.resultado.then((respuesta) => {
+      if (vigente) setCercanos(respuesta);
+    });
+    return () => { vigente = false; };
+  }, [filtro, punto, cercanos, intentoCercanos]);
+
   // Al deslizar un evento: Voy y Me interesa, las dos con Deshacer (decisión del founder, 2026-09-17; bitácora 085). Se
   // ven al momento y se guardan con la misma acción de la ficha. Sin sesión, llevan a entrar y se aplican al volver.
   // Cada consulta cubre su propia lista. No se mezcla una ausencia en los 300
@@ -139,25 +174,22 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const canal = useCanalDeListas();
   const asistenciaTodos = useAsistenciaEnLista(asistencias, avisos, canal);
   const asistenciaNuevos = useAsistenciaEnLista(nuevos?.ok ? nuevos.asistencias : null, avisos, canal);
-  const asistencia = filtro === "nuevos" ? asistenciaNuevos : asistenciaTodos;
+  const asistenciaCercanos = useAsistenciaEnLista(cercanos?.ok ? cercanos.asistencias : null, avisos, canal);
+  const asistencia = filtro === "nuevos" ? asistenciaNuevos : filtro === "cercanos" ? asistenciaCercanos : asistenciaTodos;
 
   function pedirUbicacion() {
-    if (!("geolocation" in navigator)) {
-      setGeo("error");
-      return;
-    }
     setGeo("pidiendo");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setPunto({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+    leerUbicacionCercana().then(
+      (p) => {
+        setPunto(p);
         setGeo("sin-pedir");
       },
-      (err) => setGeo(err.code === err.PERMISSION_DENIED ? "negado" : "error"),
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+      (error: unknown) => setGeo(error === "negado" ? "negado" : "error"),
     );
   }
 
-  const fuente = filtro === "nuevos" ? (nuevos?.ok ? nuevos.eventos : []) : eventos;
+  // Cercanos no usa `eventos` (solo trae la ciudad del chip): usa `cercanos`, de todas las ciudades.
+  const fuente = filtro === "nuevos" ? (nuevos?.ok ? nuevos.eventos : []) : filtro === "cercanos" ? (cercanos?.ok ? cercanos.eventos : []) : eventos;
   const { lista: filtrada, km } = filtrarAgenda(fuente, { filtro, punto, seguidos, eventosSeguidos, fecha, ahora, corte: corte ?? undefined });
   const encontrada = buscarEventos(filtrada, busqueda);
   const lista = filtro === "nuevos" ? encontrada.slice(0, LIMITE_NUEVOS) : encontrada;
@@ -176,12 +208,20 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     );
   } else if (filtro === "cercanos" && !punto) {
     cuerpo = (
-      <VacioConAccion titulo="Cercanos" texto={geo === "negado" ? "No pudimos leer tu ubicación. Actívala para este sitio en los ajustes del teléfono." : "Para ordenar por cercanía necesitamos tu ubicación, solo mientras miras la agenda. No se guarda."}>
+      <VacioConAccion titulo="Cercanos" texto={geo === "negado" ? "No pudimos leer tu ubicación. Actívala para este sitio en los ajustes del teléfono." : "Para ordenar por cercanía necesitamos tu ubicación. Solo sirve para eso: no sale de tu teléfono."}>
         {geo !== "negado" && (
           <button type="button" className={styles.accion} onClick={pedirUbicacion} disabled={geo === "pidiendo"}>
             {geo === "pidiendo" ? "Un momento…" : "Usar mi ubicación"}
           </button>
         )}
+      </VacioConAccion>
+    );
+  } else if (filtro === "cercanos" && punto && cercanos === null) {
+    cuerpo = <section className={styles.grupo} aria-busy="true"><p className={styles.vacio} role="status">Cargando…</p></section>;
+  } else if (filtro === "cercanos" && punto && cercanos && !cercanos.ok) {
+    cuerpo = (
+      <VacioConAccion titulo="Cercanos" texto="No pudimos cargar los eventos cercanos. Intenta otra vez.">
+        <button type="button" className={styles.accion} onClick={() => { setCercanos(null); setIntentoCercanos((n) => n + 1); }}>Reintentar</button>
       </VacioConAccion>
     );
   } else if (filtro === "siguiendo" && seguidos === null) {
@@ -253,46 +293,48 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
 
   return (
     <>
-      <div className={styles.fija}>
-        <div className={styles.contexto}>
-          {buscando ? (
-            // La lupa abrió el campo en el sitio de los chips: la cabecera no cambia de alto y la ✕ lo cierra.
-            <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, sitio o artista" ariaLabel="Buscar un evento" autoFocus={enfocar} className={styles.campoBusqueda} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />
-          ) : (
-            <>
-              {fecha ? (
-                // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
-                <span className={`${chip.chip} ${styles.chipContexto} ${styles.marcado}`}>
-                  <IconoCalendario width={16} height={16} />
-                  <span>{diaCorto(localAIso(`${fecha}T12:00`, zona) ?? hoyIso, ahora, zona)}</span>
-                  <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
-                    <IconoCerrar width={18} height={18} />
-                  </button>
-                </span>
-              ) : (
-                // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
-                <label className={`${chip.chip} ${chip.chipNativo} ${styles.chipContexto}`} htmlFor="agenda-fecha">
-                  <IconoCalendario width={16} height={16} />
-                  <span>{diaCorto(hoyIso, ahora, zona)}</span>
-                  <IconoCaret width={12} height={12} />
-                  <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
-                </label>
-              )}
-              <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${c.slug}`)} className={styles.chipContexto} />
-              <button type="button" className={`${chip.chip} ${styles.chipContexto} ${styles.lupa}`} onClick={() => { setBuscando(true); setEnfocar(true); }} aria-label="Buscar un evento">
-                <IconoBuscar width={18} height={18} />
-              </button>
-            </>
-          )}
-        </div>
-        <Pestanas ariaLabel="Filtrar la agenda" repartidas className={styles.filtros}>
-          {FILTROS.map((f) => (
-            <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => { if (f.clave === "nuevos") verNuevos(); setFiltro(f.clave); }}>
-              {f.etiqueta}
-            </Pestana>
-          ))}
-        </Pestanas>
-      </div>
+      <Cabecera
+        contexto={
+          <>
+            {fecha ? (
+              // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
+              <span className={`${chip.chip} ${chip.deContexto} ${styles.marcado}`}>
+                <IconoCalendario width={16} height={16} />
+                <span>{diaCorto(localAIso(`${fecha}T12:00`, zona) ?? hoyIso, ahora, zona)}</span>
+                <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
+                  <IconoCerrar width={18} height={18} />
+                </button>
+              </span>
+            ) : (
+              // Sin fecha (hoy), el chip es el selector nativo: el toque cae en él.
+              <label className={`${chip.chip} ${chip.deContexto} ${chip.chipNativo}`} htmlFor="agenda-fecha">
+                <IconoCalendario width={16} height={16} />
+                <span>{diaCorto(hoyIso, ahora, zona)}</span>
+                <IconoCaret width={12} height={12} />
+                <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
+              </label>
+            )}
+            {/* Cercanos ya no filtra por la ciudad del chip (L36): mientras está activo, el chip dice "Cerca de ti" para no
+                contradecir una lista que ahora es de todas las ciudades. Sigue siendo el mismo selector; elegir otra
+                ciudad ahí vuelve a Todos de esa ciudad, como ya pasaba. */}
+            <ChipCiudad ciudad={filtro === "cercanos" ? { ...ciudad, nombre: "Cerca de ti" } : ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${c.slug}`)} />
+          </>
+        }
+        onBuscar={() => {
+          setBuscando(true);
+          setEnfocar(true);
+        }}
+        campo={buscando && <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, sitio o artista" ariaLabel="Buscar un evento" autoFocus={enfocar} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />}
+        filtros={
+          <Pestanas ariaLabel="Filtrar la agenda" repartidas>
+            {FILTROS.map((f) => (
+              <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => { if (f.clave === "nuevos") verNuevos(); setFiltro(f.clave); }}>
+                {f.etiqueta}
+              </Pestana>
+            ))}
+          </Pestanas>
+        }
+      />
       {antes}
       {/* La tira se va cuando la persona ya busca algo: otra pestaña, una fecha o la búsqueda (decisión 3). */}
       {filtro === "todos" && !fecha && !buscando && <Destacados tarjetas={enOrden(destacados, eventos).map((e) => tarjetaEvento(e, ahora))} grande />}
@@ -304,6 +346,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       )}
       {asistenciaTodos.extras}
       {asistenciaNuevos.extras}
+      {asistenciaCercanos.extras}
       <AvisoAbajo canal={canal} />
     </>
   );

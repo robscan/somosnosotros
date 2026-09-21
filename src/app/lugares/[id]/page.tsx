@@ -9,6 +9,7 @@ import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
 import EventosPorDia from "@/components/EventosPorDia";
+import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
@@ -115,6 +116,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const redes = normalizarRedes(lugar.redes);
   const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
   const url = `${ORIGEN}/lugares/${lugar.id}`;
+  const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
   // Voy y Me interesa al deslizar sus eventos, para quien mira (OL-057).
   const decididas = await decididasDe(actual?.perfil.id ?? null, eventos.map((e) => e.id));
@@ -231,8 +233,10 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         )}
       </ul>
 
+      <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
+
       <div className={ficha.acciones}>
-        <a href={`https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`} className={ficha.accion} target="_blank" rel="noopener noreferrer">
+        <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
           <IconoRuta />
           Cómo llegar
         </a>

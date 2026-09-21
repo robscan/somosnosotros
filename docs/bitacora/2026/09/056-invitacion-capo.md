@@ -50,3 +50,5 @@ El founder aprobó el texto mandando la primera tanda él mismo: `npx tsx script
 
 - 2026-09-17 · mandados 15 · fallidos 0 · quedan 446
 - 2026-09-18 · mandados 15 · fallidos 0 · quedan 431. Ejecutado desde Codex a petición del founder tras fallar la rutina de Claude por falta de créditos; se verificó que no hubiera envíos registrados hoy antes de ejecutar.
+- 2026-09-21 · mandados 15 · fallidos 0 · quedan 416
+- 2026-09-21 · mandados 15 · fallidos 0 · quedan 401. Segunda tanda del día, pedida por el founder.

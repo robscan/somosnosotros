@@ -1,0 +1,120 @@
+# Cola de piezas del gestor
+
+**Estado: APROBADA por el founder el 2026-09-21** («acepto todas tus propuestas y plan de implementación. Adelante!»), con una anotación sobre las subcategorías (pieza A8). Primera tanda encargada ese día: A1 (OL-092 / 127), A2 (OL-093 / 128), A3 (OL-094 / 129), A4 (OL-095 / 130) y A5 (OL-096 / 131); A0 es OL-090 / 125. La escribe solo el gestor. Los números de OL y bitácora se reservan en [ASIGNACIONES.md](ASIGNACIONES.md) al encargar cada pieza, no antes.
+
+Origen: la lista de comentarios que el founder pegó el 2026-09-21 en el chat «Gestor de cambios II» (copiada entera al final; los números L1…L54 son el orden en que él la escribió).
+
+Reglas de la cola: primero los bugs (la fase 1 es hacer confiable lo que ya existe); una pieza por chat, con su modelo; lo que toca pantalla lleva prototipo antes que código; lo que es decisión de producto lleva primero una propuesta para firmar; nada de council, workflows ni subagentes sin permiso del founder. Máximo cuatro o cinco chats a la vez para que las revisiones no se amontonen ni las piezas se pisen archivos.
+
+## Tanda A · Bugs (arreglo mínimo, sin rediseño)
+
+| Pieza | Qué arregla (L = renglón de la lista) | Modelo | Notas |
+| --- | --- | --- | --- |
+| A0 · Barra inferior despegada | Reporte aparte del mismo día | Sonnet 5, medio | **En curso: OL-090 / 125.** |
+| A1 · Lectura del cartel | L16, L34, L37 (primera mitad): no agrega a los artistas del cartel y pone como artista a quien publica; la segunda lectura seguida no responde ni avisa; qué modelo de IA se usa y cuánto cuesta | Sonnet 5, medio | Dato del gestor: `src/lib/cartel.ts` usa hoy `claude-opus-5`, el modelo caro; la pieza mide si Sonnet 5 o Haiku 4.5 leen igual de bien y propone el cambio. Los admins no tienen tope de lecturas (doc 23), así que el silencio no es el tope. |
+| A2 · Números de la agenda que no cuadran | L1 («Coincidencias» y «Publica la comunidad» dicen 1 y 2 y al tocar no hay nada; posible regresión al volver admins a usuarios; revisar bitácora) y L27 (evento de hoy, destacado y con tres asistentes, no salía en el carril) | Sonnet 5, medio | Misma zona: consultas de la agenda. Causa medida antes de tocar. |
+| A3 · Gestos que se disparan solos | L10 (las acciones al deslizar aparecen cuando uno solo quería bajar) y L45 (en el carril de destacados un deslizamiento acaba abriendo la ficha) | Sonnet 5, medio | Es web: no hay componentes nativos que usar. La pieza redefine el canon del gesto (umbral, bloqueo de dirección, cancelar el toque si hubo arrastre) y lo prueba en el simulador. |
+| A4 · Cercanos y ubicación | L25 (vuelve a pedir la ubicación), L36 (con el chip en Ciudad de México muestra lo cercano de allá en vez de lo cercano a mí) y L50 (cuántas veces se consulta la ubicación y si es eficiente) | Sonnet 5, medio | L36 contradice la regla «el contexto ordena, no limita». L50 se entrega como medición, no como opinión. |
+| A5 · Arreglos chicos de artistas | L17 (@usuario de Instagram no lleva a Instagram), L24 (carril de enlaces: asomar el siguiente; una URL se rotula «Sitio web»), L30 (poder quitar la foto y volver al símbolo SN; corregir la foto equivocada de la artista reportada), L35 (varios toques crean varios reclamos) | Haiku 4.5, bajo | Cuatro cambios pequeños en la misma zona. L47 sale de aquí: es la pieza A8. |
+| A6 · Arreglos chicos de agenda y evento | L6 (el chip dice «Hoy» pero muestra todo: estado vacío «Seleccionar») y L33 (precio solo numérico) | Haiku 4.5, bajo | L33 toca el alta de evento: va antes o después de A7, nunca a la vez. |
+| A7 · Lugar y dirección en el alta de evento | L2 (el teclado sale solo y tapa el botón del cartel; confirmar en Android), L3 y L37 (segunda mitad): «Confirmar» en vez de «Falta», ayuda bajo el campo y no dentro del botón, sugerencias de dirección según dónde está la persona | Sonnet 5, medio | **Prototipo antes que código.** Empieza cuando A1 entregue, porque comparten pantalla. |
+| A8 · Subcategorías de disciplina | L47, con la anotación del founder del 2026-09-21: «el ejemplo lo di con fotografía pero la solución debe solventar casos en los que existen sub categorías o es necesario crear una que no existe». El alta y la edición de artista dejan elegir cualquier subcategoría que ya existe en el catálogo y proponer una nueva cuando no existe | Sonnet 5, medio | Prototipo antes que código. Después de A5 (misma pantalla). Puede llevar migración que solo añade. |
+
+## Tanda B · Mejoras ya definidas
+
+| Pieza | Qué hace | Modelo | Notas |
+| --- | --- | --- | --- |
+| B1 · Mapa de lugares | L7, L11, L31: botón de ubicación actual abajo a la izquierda (como el ↑ de los listados), encuadre, pin con «Hoy» o el día, resaltar destacados y lugares con eventos esta semana | Sonnet 5, medio | Prototipo antes. L8 (llamar «Mapa» a Lugares) es decisión del founder; se decide al ver el prototipo. |
+| B2 · Identidad del artista | L22 (ciudad en artistas), L49 (dirección legible por artista) y L53 (reclamo que aterriza en esa dirección, botón de confirmar tras entrar, aprobación automática si el correo coincide y aviso al admin) | Sonnet 5, medio | Con migración que solo añade; la aplica el gestor. Recomendación: `somosnosotros.org/…/nombre` y no subdominios (complican la app instalada, la sesión y el token de Mapbox). Primer paso del grafo cultural (doc 24). |
+| B3 · Avisos al administrador | L39 (push al admin cuando alguien pide una ficha, reclama, publica o se registra; analizar panel) y L40 (acceso a Administración en el encabezado, con punto cuando hay algo que revisar) | Sonnet 5, medio | Toca avisos: revisión del gestor con más cuidado; ningún envío real en pruebas. |
+| B4 · Avisos y correos a artistas y a nuevos usuarios | L42 (bienvenida), L43 (confirmación al artista que recibe su ficha) y L44 (te siguen, te etiquetaron, alguien va a tu evento) | Sonnet 5, medio | Después de B3. Textos para firma del founder antes de encender nada. |
+| B5 · Transiciones y cargador | L46 | Sonnet 5, medio | Prototipo antes. |
+| B6 · Texto largo a pantalla completa | L19 | Sonnet 5, medio | Prueba en prototipo; si convence, entra al canon de formularios. |
+
+## Tanda C · Producto: primero propuesta o prototipo para firmar, sin código
+
+| Pieza | Qué decide | Notas |
+| --- | --- | --- |
+| C1 · El perfil del artista como su enlace único | L9, L12, L13, L20, L21, L23, L54: acceso desde Mi perfil, varios artistas por persona, compartir rápido (QR seguro; NFC y tarjeta de Wallet hay que medir si se puede desde la web), qué campos harían que lo prefieran a un «link en bio», vídeo de YouTube/Vimeo, fotos de Instagram, publicar obra nueva | La más grande de la lista. Propuesta escrita primero; luego prototipo. |
+| C2 · Inicio por intereses | L4 | Prototipo. Ver doc 24: intereses = disciplinas, elegidas por la persona. |
+| C3 · Cercanos sin mapa | L5: composición concéntrica con la persona al centro y flecha de orientación | Experimento en prototipo; en iPhone la brújula pide permiso con un toque. |
+| C4 · Un solo buscador | L28 | Evaluación y prototipo. Ver doc 24. |
+| C5 · Festivales y eventos con varios actos | L51 | Análisis y propuesta de modelo. Paso 3 del doc 24. |
+| C6 · Noticias, convocatorias y revista | L26 y L52 | Propuesta. La tipografía de títulos «como creacionurbana.org» choca con la línea gráfica decidida (Bricolage Grotesque): lo decide el founder con las dos a la vista. |
+| C7 · Barra de navegación, barra de acciones y tamaño de botones | L14, L15, L32 y L29 | Prototipo, después de A0. L29 (barra con librerías nativas): en una web no se puede; solo con app de tienda, que está detenida. L32 dice «shield»: el gestor entiende «sheet» (la hoja); confirmar. |
+| C8 · Modo oscuro automático | L41 | Evaluación corta (¿están todos los colores en variables?). Cambia la regla «tema claro» de la definición: decisión del founder. |
+
+## Tanda D · Investigación y operación (sin código de la app)
+
+| Pieza | Qué hace | Notas |
+| --- | --- | --- |
+| D1 · Agendas de las instituciones por correo | L38: reunir los correos públicos de las instituciones del catálogo, redactar el mensaje y enviarlo por tandas como con el CAPO | El envío es hacia fuera: texto y lista los firma el founder antes de mandar nada. Alimenta la captura de agendas del doc 24. |
+| D2 · Fichas por completar | L48: qué artistas y lugares están sin ficha completa y siguen activos; proponer ficha y foto antes de publicar | Nada se publica sin el visto bueno del founder. |
+| D3 · Fricción en los tres formularios | L18: recorrer alta y edición de evento, artista y lugar en varios tamaños de teléfono, con teclado dentro y fuera, y listar fricciones | Después de A7. Sobre cámara, NFC, micrófono, acelerómetro y vibración: ver la nota del doc 24 (en iPhone web no hay NFC ni vibración). |
+
+## Orden propuesto
+
+1. **Ahora (con el OK):** A1, A2, A3, A4 en Sonnet 5 y A5 en Haiku 4.5. Cinco chats, zonas de código distintas. A0 ya corre.
+2. **Al entregar A1:** A7 (prototipo) y A6. **Al entregar A5:** A8.
+3. **Después de los bugs:** B1 y B2; luego B3 y B4; B5 y B6 cuando haya hueco.
+4. **En paralelo, porque no tocan código:** C1 (propuesta), C5 (propuesta) y D1 (investigación), cuando el founder lo diga.
+5. El resto de C y D, en el orden que el founder prefiera.
+
+## Anexo · La lista del founder, tal cual (2026-09-21)
+
+Copiada como la escribió; solo se corrigió una errata evidente en L40 («cuando») y se quitó el formato roto del enlace de L33.
+
+- **L1.** Error en los números de coincidencias y publica la comunidad. Dice 1 y 2 respectivamente pero no muestra resultados al dar TAP. Me huele a una regresión, pues antes esos números eran correctos y luego al convertir a admins usuarios se fueron a 0. En todo caso, si se hubieran mantenido por estadística, deberían mostrar los eventos a los que se refieren. Revisa bitácora.
+- **L2.** Cuando usuario quiere publicar evento, el primer campo se pone en focus y sale teclado. Eso hace que botón de subir cartel se recorra y oculte eso lo vi en android, confirma que esto suceda y no haya sido que el usuario seleccionó sin que lo notara. No me gusta que se recorra la opción de subir cartel porque no es visible.
+- **L3.** Cuando se sube cartel se lee la dirección y nombre de lugar, pero dice “Falta” no es correcto ese letrero, debe de decir confirmar porque al entrar dirección aparece escrita pero sin seleccionar en el mapa, hay que pulir eso para que sea claro lo que el usuario debe hacer, de entrada tratar de que si se identifique una dirección con mapbox.
+- **L4.** Se me ocurre que la sección de todos los eventos sea configurable (opciónal) es decir el usuario selecciona sus intereses al abrir su cuenta (diseñar estos criterios también) pasa de ser donde ve todos los eventos a su sección personalizada de inicio y podría incluir artistas o lugares.
+- **L5.** Cercanos cambia formato y presenta una composición con los elementos ubicados por cercanía y orientación, se podría usar el motor de mapbox para ubicar los elementos, sin mostrar mapa (ósea el trazo del mapa, solo estructura concéntrica donde el centro es el usuario y se muestran objetos posicionados en el espacio, si se puede mostrar la orientación del usuario con una flecha o algo mejor! Los objetos en mapa son la imagen del evento el nombre y la fecha.
+- **L6.** El filtro de fecha (chip) en estado inicial en eventos dice “Hoy” pero muestra todos los eventos, puede ser confuso, recomiendo estado “Seleccionar ” como estado vacío.
+- **L7.** Agregar botón de ubicación actual y encuadre en mapa de lugares
+- **L8.** Considerar cambio de nombre de lugares a mapa.
+- **L9.** Si un usuario reclama artista. Que aparezca en su perfil personal un acceso directo para que acceda rápido a verlo siempre manteniendo claridad de que su perfil de usuario es uno y el de artista otro. De modo que un usuario puede controlar varios perfiles
+- **L10.** Swipe actions se activa y muestra desde que se hace selección de fils con intención de scroll down. Debemos esperar al hold y swipe. Revisa librerías o manuales para redefinir canon de ese comportamiento. USA componentes nativos si es necesario. Ahora se ve como un error en el sistema.
+- **L11.** Distinguir lugares con eventos pronto, considerar poner Hoy o “22” (fecha con formato calendario) del evento en el pin
+- **L12.** Mejorar ficha de artistas: Agregar forma rápida para compartir (QR, NFC, tarjeta tipo Apple wallet, etc)
+- **L13.** Cuestionar que campos se necesitan para que artistas consideren compartir nuestra ficha sobre otras?
+- **L14.** Experiencia. Necesita mejorar el diseño de tab nav bar
+- **L15.** Necesita mejorar diseño de contenedor de acciones en el footer (seguir, voy, etc)
+- **L16.** Al subir cartel señala a quien publica el evento como artista y la dirección sigue sin quedar claro que falta. Debemos señalar que esos campos se deben confirmar. Evitar señalar al autor de evento como artista participante y mejorar la manera como se lee el flyer porque ahí vienen los artistas
+- **L17.** Al pegar @cinemacuarentena en redes sociales de un artista se supone que identifica al usuario pero falla al dirigir al sitio Instagram
+- **L18.** En general necesitamos iterar y perfeccionar el alta/edición de eventos, artistas y lugares. Con el objetivo de identificar fricciones y resolver. Probar con diferentes tamaños de celular y considerar teclado fuera y dentro. Todas las ayudas que podamos proveer para completar las tareas son útiles, se aprueba el uso de cámara, nfc, micrófono, acelerómetro, haptics.
+- **L19.** Al escribir textos largos mejor mostrar el campo de texto mas grande a pantalla completa, para evitar que se corte el texto. Es decir cuando se seleccione campo de texto largo entonces se expande el campo o solo se muestra ese campo (probemos)
+- **L20.** Integrar YouTube o Vimeo para que se puedan visualizar vídeos de artistas (cuidar riesgo de hackeo)
+- **L21.** Se puede integrar Instagram (fotos) a artistas y lugares?
+- **L22.** Necesitamos especificar ciudad en los artistas
+- **L23.** A los artistas se les debe permitir decir cuando publiquen una nueva obra (canción, pintura, libro, etc) publicar como una novedad tal vez. La IA también puede investigar por novedades de artistas activos
+- **L24.** Los links del usuario no dejan claro cuándo hay más de tres en el carrusel dentro de perfil de artista debemos hacer que si hay slider activo se vea un poco del elemento que sigue para generar continuidad. Además cuando es una URL de sitio, se escribe elemento texto deformando el ancho del botón en lugar de decir algo genérico (sitio web)
+- **L25.** Por qué eventos cercanos pide ubicación de nuevo? No se supone que pedimos ubicación una vez y se mantienen permisos?
+- **L26.** Incluir una sección de noticias, donde se publiquen convocatorias y además artículos o vídeos de interés.
+- **L27.** Evento de hoy con tres asistentes y destacado no salía en el slider
+- **L28.** El buscador debería encontrar todos los elementos y presentarlos por tipo de resultado e intención (evento, lugar, artista) pueden mantenerse 3 buscadores por separado pero lo que quiero es que el usuario sienta que usa el mismo buscador para encontrar todo. Ayúdame a evaluar cómo resolver esto.
+- **L29.** Explorar si la nav bar puede presentarse usando librerías nativas de android y iOS respectivamente.
+- **L30.** He detectado un error en la fotografía de una artista (Tristana Landeros). Debemos tener una opción para quitar la foto (y activar place holder)
+- **L31.** En el mapa se resaltarán lugares destacados y con eventos esta semana, recordar volver a poner el botón de ubicación actual. Se puede usar el extremo inferior izquierdo similar a posición de back to top de listados para mantener consistencia
+- **L32.** Cuestionar tamaño de accionables del shield. Todos los botones podrían percibirse pequeños
+- **L33.** Alguien al crear un evento colocó “www.ticketmaster.com.mx” en donde dice precio. Debemos hacer que ese campo sea solo numérico
+- **L34.** Hace poco traté de subir dos flyers seguidos usando IA y para el segundo la lectura no se dió, tampoco se reportó error, no hubo ninguna respuesta de sistema. Revisar qué pasa. Revisa también que modelo de IA se usa y asegurarse de usar el modelo apropiado para la tardes para no gastar de mas.
+- **L35.** Cuando un artista reclama una ficha y presiona varias veces el botón, se registran varios reclamos juntos. No es necesario
+- **L36.** Al seleccionar tab de cercanos pero con chip en Ciudad de México, me muestra el evento más cercano de Ciudad de México, aunque usuario este en San Luis, el comportamiento esperado es ver los más cercanos a mi ubicación.
+- **L37.** Se repite bug, al leer un cartel, los artistas no se agregan y al contrario me agrega a mi el que publica como artista. El lugar pide confirmación aunque si se escribe un lugar y lo que hace es pedir confirmación de ese lugar sin tomar en cuenta contexto, por ejemplo me sugiere lugares en soledad de Graciano Sánchez aunque de hecho cerca de donde estoy hay una calle con ese nombre. Incluso podría estar dentro del lugar. Sigue siendo complicado y confuso el momento de asignación de lugar en eventos. Además el hecho de que la retroalimentación de sistema aparezca dentro del botón hace difícil leerla, el estándar es colocarla debajo del botón principal de creación ejemplo: Falta ubicación. O mejor aún debajo del campo faltante como help text
+- **L38.** Investiga los correos de todas las instituciones artísticas que tenemos en el catálogo. Prepara mensaje de correo presentando proyecto y solicitando que se envíe la agenda mensual, los flyes son suficientes, para poderlos dar de alta en la plataforma. Crea y envía correo masivo pero como con artistas, por lotes.
+- **L39.** Quiero recibir una alerta push como admin cuando alguien solicite una ficha, haga un reclamo, suba un evento, lugar o artista o se registre en la página. (Revisa que se estén monitoreando estas acciones en específico y analiza la posibilidad de crear un panel en administrador)
+- **L40.** Agrega en header acceso directo a administración para usuarios administradores puede ser un icono de acción entre notificaciones y foto de perfil, cuando haya actividad que revisar coloca un punto en ese entry point como lo haces cuando hay notificaciones
+- **L41.** Es viable crear dark mode de app? Que se active automáticamente
+- **L42.** Crea un correo de bienvenida por los usuarios recientes registrados
+- **L43.** Crea un correo de confirmación y notificación push para artistas que recibieron el control de su ficha
+- **L44.** Crea notificaciones para los artistas cuando son seguidos, cuando son etiquetados en un evento y cuando alguien asistirá a su evento
+- **L45.** Bug: al navegar el slider de destacados, puede confundirse intención de TAP con intención de swipe y el usuario termina dentro de la ficha cuando deseaba recorrer el slider
+- **L46.** Necesitamos agregar animaciones de transicion para mejorar la experiencia de consulta entre páginas/dominios principales y entre contenidos de dominio (tabs). También mejorar el cargador de contenido, actualmente es un letrero de cargando del lado izquierdo del sitio, mejor poner favicon centrado y parpadeando o algo así
+- **L47.** El catálogo de artistas tiene por ejemplo: artes visuales / fotografía. Pero en el creador de artistas no viene esa sub categoría. Los artistas que se registren y sean fotógrafos no podrán especificarlo, solo podrán decir que son artes visuales. Corrige y agrega la sub categoría para que se pueda seleccionar
+- **L48.** Crear tarea de investigación, para identificar cuáles artistas o lugares fueron creados y no tienen ficha y cuáles han estado activos recientemente. La investigación será para completar esa ficha buscando datos en internet. Presentar las propuestas de ficha y foto antes de publicar
+- **L49.** Se necesita crear un slug o subdominio para cada artista ejemplo: somosnosotros.org/artista o artista.somosnosotros.org actualmente se crean urls raras
+- **L50.** Cuestiona como se está usando la ubicación actual del usuario, cuantas veces se consulta y si esto se hace de manera eficiente
+- **L51.** Aveces existen festivales culturales de varios días que tienen varios eventos o como en el caso de museo de arte contemporáneo el mismo día se inauguran varias salas y asisten músicos y otros artistas al evento de inauguración. Otro caso de Ceart san luis que inaugura eimim, un evento de varios días con talleres y conciertos además de otros eventos. Analiza y propon una manera de gestionar estos registros, sabiendo que son casos especiales y que seguirán existiendo los eventos de un solos día.
+- **L52.** Crear un blog donde los usuarios puedan publicar diferentes tipos de contenidos, letras, imagen, vídeo (incrustar YouTube o Vimeo), sonido (incrustar SoundCloud o MixCloud, bandcamp etc) Cualquier usuario puede publicar, los admin pueden destacar contenido como selección editorial revisar estilo visual y tipográfico de este sitio, https://www.creacionurbana.org quiero el mismo tipo de letra para títulos del sitio y contenidos. Dime que opinas
+- **L53.** Revisa que el flujo de reclamación de artistas lo lleve directo a su subdominio personalizado a reclamar ver la manera de mostrar un cta de confirmación después de log in para reclamar ficha. Si el correo de cuenta coincide con el del artista aprobar automáticamente y notificar a admin
+- **L54.** Ya había comentado antes la necesidad de facilitar que los artistas compartan sus perfiles y que podría ser que un usuario tuviera varios artistas. Cuestiona esto, necesito una solución en donde al artista le quede claro cómo entrar a su perfil de artista y compartir rápido, también quiero que prefiera usar mi sitio que los que se usan para poner todos los links con su arte. El cuestionamiento debe ir en ese sentido. En generar una experiencia que le ayude a solventar su necesidad. También hable de activar un blog. Bueno los artistas deberían poder publicar su arte en su perfil y de ahí alimentar la sección de blog/revista.

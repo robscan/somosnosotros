@@ -5,6 +5,7 @@ import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
 import { compararNombres, normalizarNombre } from "./lugares";
 import type { Origen } from "./origen";
+import { LIMITES_ARTISTA } from "./limites";
 
 /** Qué hace: lista cerrada; "por_completar" es el artista creado con solo el nombre desde el alta de un evento. */
 export const DISCIPLINAS = [
@@ -26,7 +27,7 @@ export const TIPOS_ARTISTA = [
 ] as const;
 export type TipoArtista = (typeof TIPOS_ARTISTA)[number]["valor"];
 
-export const LIMITES_ARTISTA = { nombre: 80, detalle: 40, descripcion: 600 } as const;
+export { LIMITES_ARTISTA } from "./limites";
 
 /** Umbral a partir del cual aparece la búsqueda por nombre (decisión 2). */
 export const UMBRAL_BUSCAR_ARTISTAS = 8;

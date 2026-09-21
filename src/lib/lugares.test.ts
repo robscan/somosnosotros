@@ -46,7 +46,7 @@ describe("validarLugar", () => {
     expect(errores).toEqual({});
     expect(datos.lat).toBeCloseTo(22.15);
     expect(datos.redes).toEqual([
-      { red: "instagram", url: "https://instagram.com/forox" },
+      { red: "instagram", url: "https://www.instagram.com/forox/" },
       { red: "vimeo", url: "https://vimeo.com/forox" },
     ]);
     expect(datos.portada).toBeNull();

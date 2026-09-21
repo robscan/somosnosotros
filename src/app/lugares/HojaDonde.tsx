@@ -10,6 +10,8 @@ import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
+import { LIMITES_LUGAR } from "@/lib/limites";
+import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import mapa from "@/components/Mapa.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
@@ -63,8 +65,9 @@ export default function HojaDonde({ conFoco, punto, direccion, yo, ubicando, onP
       <h3>Dónde está</h3>
       <label className={canon.campo}>
         <IconoBuscar width={20} height={20} />
-        <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off" autoFocus={conFoco} />
+        <input type="text" value={q} onChange={(e) => setQ(e.target.value)} maxLength={LIMITES_LUGAR.direccion} placeholder="Calle y número, o colonia" aria-label="Buscar la dirección" autoComplete="off" autoFocus={conFoco} />
         <Limpiar visible={!!q} />
+        <ContadorCaracteres valor={q} tope={LIMITES_LUGAR.direccion} />
       </label>
       {sugerencias.length > 0 && (
         <ul className={`${sug.lista} ${styles.sugerencias}`} role="listbox" aria-label="Direcciones encontradas">

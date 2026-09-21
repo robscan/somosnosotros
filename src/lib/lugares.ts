@@ -4,6 +4,7 @@ import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
 import type { Origen } from "./origen";
+import { LIMITES_LUGAR } from "./limites";
 
 export const TIPOS = [
   { valor: "casa_de_cultura", etiqueta: "Casa de cultura" },
@@ -91,7 +92,7 @@ export function conProximo<T extends { id: string }>(lugares: T[], eventos: (Pro
   return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null }));
 }
 
-export const LIMITES_LUGAR = { nombre: 120, descripcion: 600, direccion: 200, detalle: 60 } as const;
+export { LIMITES_LUGAR } from "./limites";
 
 /** "Museo" · "Otro · Taller de cerámica": el tipo con el detalle cuando es Otro. */
 export function etiquetaLugar(l: { tipo: string; detalle?: string | null }): string {

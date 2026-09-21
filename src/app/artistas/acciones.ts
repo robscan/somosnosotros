@@ -106,10 +106,27 @@ export type ResultadoReclamo = { ok: true } | { ok: false; error: string };
 /**
  * "Soy yo / es mi grupo" (decisión 11): la persona pide la ficha para llevarla ella o pide que se quite.
  * Queda como reporte con su cuenta; el administrador lo atiende desde su panel.
+ * Si ya hay un reclamo pendiente igual, devuelve el que existe sin duplicar.
  */
 export async function reclamarArtista(artistaId: string, motivo: MotivoReclamo): Promise<ResultadoReclamo> {
   const { supabase, user } = await sesionOEntrar(`/artistas/${artistaId}?accion=mio`);
   if (!esUuid(artistaId) || !["es_mio", "retirar"].includes(motivo)) return { ok: false, error: "No sé qué ficha es." };
+
+  // Verificar si ya existe un reclamo pendiente igual (mismo usuario, artista y motivo).
+  const { data: existente } = await supabase
+    .from("reportes")
+    .select("id")
+    .eq("tipo", "artista")
+    .eq("objeto_id", artistaId)
+    .eq("creado_por", user.id)
+    .eq("motivo", motivo)
+    .eq("atendido", false)
+    .limit(1)
+    .maybeSingle();
+
+  // Si ya existe un reclamo pendiente igual, devolver ok sin duplicar.
+  if (existente) return { ok: true };
+
   const { error } = await supabase.from("reportes").insert({ tipo: "artista", objeto_id: artistaId, motivo, creado_por: user.id });
   if (error) return { ok: false, error: "No se pudo enviar. Intenta de nuevo." };
   return { ok: true };

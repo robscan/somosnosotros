@@ -36,9 +36,9 @@ export function dominioDe(url: string): string {
   }
 }
 
-/** Etiqueta del botón en la ficha: el nombre de la red, o el dominio si es un sitio. */
+/** Etiqueta del botón en la ficha: el nombre de la red, o "Sitio web" si es un sitio. */
 export function etiquetaEnlace(e: Enlace): string {
-  return e.red === "sitio" ? dominioDe(e.url) : etiquetaDe(e.red);
+  return e.red === "sitio" ? "Sitio web" : etiquetaDe(e.red);
 }
 
 function redPorDominio(host: string): Red {
@@ -60,7 +60,7 @@ export function reconocerEnlace(texto: string): Enlace | null {
     if (digitos.length < 10) return null;
     return { red: "whatsapp", url: `https://wa.me/${digitos.length === 10 ? "52" + digitos : digitos}` };
   }
-  if (/^@[\w.]+$/.test(t)) return { red: "instagram", url: `https://instagram.com/${t.slice(1)}` };
+  if (/^@[\w.]+$/.test(t)) return { red: "instagram", url: `https://www.instagram.com/${t.slice(1)}/` };
   const conEsquema = /^https?:\/\//i.test(t) ? t : `https://${t}`;
   let url: URL;
   try {
@@ -70,7 +70,14 @@ export function reconocerEnlace(texto: string): Enlace | null {
   }
   // Un dominio de verdad: letras, al menos un punto y una terminación de letras ("123" no es un sitio).
   if (!/^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(url.hostname)) return null;
-  return { red: redPorDominio(url.hostname), url: url.toString().replace(/\/$/, "") };
+  const red = redPorDominio(url.hostname);
+  let urlFinal = url.toString().replace(/\/$/, "");
+  // Instagram: normalizar a www y con barra final
+  if (red === "instagram") {
+    const pathname = url.pathname.replace(/\/$/, "").replace(/^\//, "");
+    urlFinal = `https://www.instagram.com/${pathname}/`;
+  }
+  return { red, url: urlFinal };
 }
 
 /** Las fichas de antes guardaban { instagram: "@x", whatsapp: "444…", sitio: "casa.mx" }: se convierten al leer. */

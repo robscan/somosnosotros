@@ -1,8 +1,9 @@
 import { ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
 import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { LIMITES_EVENTO } from "./limites";
 
-export const LIMITES_EVENTO = { titulo: 120, descripcion: 1000, precio: 60, sitio: 120, direccion: 200, indicaciones: 300 } as const;
+export { LIMITES_EVENTO } from "./limites";
 
 /** Dónde es el evento: en un lugar registrado, en otro sitio (público) o en un sitio reservado (dirección con condiciones). */
 export type ModoSitio = "lugar" | "otro" | "reservado";
@@ -105,23 +106,24 @@ export function direccionPublicaSitio(e: Pick<Evento, "sitio_direccion" | "sitio
   return !e.sitio_reservado && e.sitio_direccion ? { direccion: e.sitio_direccion, ciudad: e.ciudad } : null;
 }
 
-/** Enlace de ruta solo a un punto público o a uno reservado que la ficha ya autorizó revelar. */
-export function enlaceComoLlegar({
-  lugar,
-  sitioReservado,
-  sitioLat,
-  sitioLng,
-  privado,
-}: {
+type PuntoComoLlegar = {
   lugar: { lat: number; lng: number } | null;
   sitioReservado: boolean;
   sitioLat: number | null;
   sitioLng: number | null;
   privado: Pick<SitioPrivado, "lat" | "lng"> | null;
-}): string | null {
-  const punto = sitioReservado
+};
+
+/** El punto de ruta: solo uno público, o uno reservado que la ficha ya autorizó revelar (nunca uno privado sin revelar). */
+export function puntoComoLlegar({ lugar, sitioReservado, sitioLat, sitioLng, privado }: PuntoComoLlegar): { lat: number; lng: number } | null {
+  return sitioReservado
     ? privado?.lat != null && privado.lng != null ? { lat: privado.lat, lng: privado.lng } : null
     : lugar ?? (sitioLat != null && sitioLng != null ? { lat: sitioLat, lng: sitioLng } : null);
+}
+
+/** Enlace de ruta solo a un punto público o a uno reservado que la ficha ya autorizó revelar. */
+export function enlaceComoLlegar(args: PuntoComoLlegar): string | null {
+  const punto = puntoComoLlegar(args);
   return punto ? `https://www.google.com/maps/dir/?api=1&destination=${punto.lat},${punto.lng}` : null;
 }
 

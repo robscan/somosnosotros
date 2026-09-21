@@ -6,8 +6,9 @@ import { useAbrirConError } from "@/components/ui/abrirConError";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
-import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
+import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin, IconoCerrar } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
@@ -132,6 +133,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         <IconoEstrella width={20} height={20} />
         <input name="nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={LIMITES_ARTISTA.nombre} placeholder="Nombre del artista o grupo" aria-label="Nombre del artista o grupo" aria-invalid={!!errores.nombre} autoComplete="off" autoCapitalize="words" autoFocus={esAlta} required />
         <Limpiar visible={!!nombre} />
+        <ContadorCaracteres valor={nombre} tope={LIMITES_ARTISTA.nombre} error={errores.nombre} />
       </label>
       {errores.nombre && (
         <p className={canon.error} role="alert">
@@ -169,6 +171,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
               <span className={limpiar.caja}>
                 <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_ARTISTA.detalle} placeholder="Ej. son huasteco, jazz (opcional)" aria-label="En una palabra" className={canon.entrada} autoComplete="off" />
                 <Limpiar visible={!!detalle} />
+                <ContadorCaracteres valor={detalle} tope={LIMITES_ARTISTA.detalle} error={errores.detalle} />
               </span>
               {(errores.disciplina || errores.detalle) && (
                 <p className={canon.error} role="alert">
@@ -232,10 +235,23 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           )}
           <span className={canon.clave}>Foto</span>
           <span className={`${canon.valor} ${foto ? "" : canon.falta}`}>{subiendo ? "Subiendo…" : foto ? "Lista" : "Sin foto"}</span>
-          <label className={canon.accionIcono} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
-            <IconoCamara width={22} height={22} />
-            <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
-          </label>
+          <div className={canon.opciones}>
+            <label className={canon.accionIcono} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
+              <IconoCamara width={22} height={22} />
+              <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
+            </label>
+            {foto && (
+              <button
+                type="button"
+                className={canon.accionIcono}
+                onClick={() => setFoto(null)}
+                title="Quitar la foto"
+                aria-label="Quitar la foto"
+              >
+                <IconoCerrar width={22} height={22} />
+              </button>
+            )}
+          </div>
           {(errorFoto || errores.foto) && (
             <p className={canon.cuerpoNota} role="alert">
               {errorFoto ?? errores.foto}
@@ -263,7 +279,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           </button>
           <div className={canon.cuerpo} hidden={!masAbierto}>
             <SelectorEnlaces inicial={normalizarRedes(artista?.redes)} error={errores.enlaces} />
-            <Campo etiqueta="Descripción" name="descripcion" multilinea defaultValue={artista?.descripcion ?? ""} maxLength={LIMITES_ARTISTA.descripcion} placeholder="Qué hace y dónde suele estar" error={errores.descripcion} />
+            <Campo etiqueta="Descripción" name="descripcion" multilinea defaultValue={artista?.descripcion ?? ""} maxLength={LIMITES_ARTISTA.descripcion} placeholder="Qué hace y dónde suele estar" error={errores.descripcion} mostrarContador />
             {esAdmin && <CampoImagenUrl valor={foto} onCambio={setFoto} />}
           </div>
         </li>

@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cabeceras consistentes</title>
+<!-- Prototipo de OL-087 (bitácora 122), firmado por el founder el 2026-09-19. Solo documentación: no se publica. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens de globals.css. El "estudio" es el fondo alrededor de los teléfonos. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #7d7b76;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2; --fondo-mapa: #eef0ec;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+    --primario: #0f6b7c; --primario-texto: #fff; --primario-suave: #e3f0f2; --marca: #d35400;
+    --sombra: 0 2px 12px rgba(0,0,0,.08); --sombra-flotante: 0 6px 20px rgba(0,0,0,.22);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --gutter: 20px; --toque-min: 44px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #e2e0da; --estudio-suave: #9c9a93; } }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #e2e0da; --estudio-suave: #9c9a93; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); padding: 24px 16px 56px; }
+  button { font: inherit; font-variation-settings: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  svg { flex: none; }
+
+  /* ---------- Estudio: título, interruptor Hoy / Propuesta, teléfonos ---------- */
+  .intro { max-width: 900px; margin: 0 auto 20px; font-size: 15px; line-height: 1.5; color: var(--estudio-suave); }
+  .intro h1 { color: var(--estudio-texto); font-size: 28px; font-weight: 800; font-variation-settings: var(--ancho-titulo); margin-bottom: 6px; }
+  .intro b { color: var(--estudio-texto); }
+  .modo { display: inline-grid; grid-auto-flow: column; margin: 14px 0 4px; padding: 4px; border-radius: 999px; background: rgba(127,127,127,.18); }
+  .modo button { min-height: 40px; padding: 0 22px; border: none; border-radius: 999px; background: none; font-size: 16px; font-weight: 700; color: var(--estudio-texto); }
+  .modo button[aria-pressed="true"] { background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); }
+  .marcar { display: inline-flex; align-items: center; gap: 8px; margin-left: 14px; font-size: 14px; color: var(--estudio-texto); }
+  .marcar input { width: 18px; height: 18px; accent-color: var(--marca); }
+
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; }
+  figure { display: grid; gap: 12px; justify-items: center; }
+  figcaption { width: 390px; max-width: 100%; font-size: 14px; line-height: 1.45; color: var(--estudio-suave); }
+  figcaption b { display: block; color: var(--estudio-texto); font-size: 18px; font-weight: 800; font-variation-settings: var(--ancho-titulo); margin-bottom: 4px; }
+  figcaption ul { padding-left: 18px; }
+  figcaption li + li { margin-top: 3px; }
+  figcaption em { font-style: normal; color: var(--marca); font-weight: 700; }
+
+  /* ---------- Teléfono ---------- */
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); }
+  .estado { height: 48px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 30px 6px; background: var(--fondo); font-size: 15px; font-weight: 700; }
+  .pantalla { height: 796px; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 110px; scrollbar-width: none; }
+  .pantalla::-webkit-scrollbar { display: none; }
+  .pantalla.quieta { overflow: hidden; padding-bottom: 0; }
+  .barra { display: flex; align-items: center; justify-content: space-between; height: 56px; padding: 0 var(--gutter); background: var(--fondo); }
+  .barra img { height: 28px; width: auto; display: block; }
+  .entrar { min-height: 40px; padding: 0 18px; border: none; border-radius: 999px; background: var(--primario); color: var(--primario-texto); font-weight: 700; font-size: 16px; }
+
+  /* Cabecera pegajosa: blanca, raya abajo */
+  .fija { position: sticky; top: 0; z-index: 5; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
+  .fija.sinRaya { box-shadow: none; }
+
+  /* Renglón 1: contexto a la izquierda, acciones redondas a la derecha */
+  .contexto { display: flex; align-items: center; gap: 8px; padding: 4px var(--gutter) 12px; }
+  .chip { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px 0 10px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .chip > svg { width: 16px; height: 16px; color: var(--texto-suave); }
+  .chip > svg.caret { width: 12px; height: 12px; }
+  .acciones { margin-left: auto; display: flex; gap: 8px; }
+  .redondo { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); }
+  .redondo svg { width: 18px; height: 18px; }
+  .campo { flex: 1; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; min-height: 40px; padding: 0 4px 0 12px; border: 1px solid var(--texto); border-radius: 999px; background: var(--fondo); }
+  .campo > svg { width: 18px; height: 18px; color: var(--texto-suave); }
+  .campo input { min-width: 0; border: none; outline: none; background: none; font: inherit; font-size: 17px; color: var(--texto); }
+  .campo input::placeholder { color: var(--texto-suave); }
+  .campo button { display: grid; place-items: center; width: 34px; height: 34px; border: none; background: none; color: var(--texto-suave); }
+  .campo button svg { width: 16px; height: 16px; }
+
+  /* Renglón 2: pestañas de texto (repartidas en la agenda; se deslizan cuando no caben) */
+  .tira { display: flex; gap: 22px; padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; }
+  .tira::-webkit-scrollbar { display: none; }
+  .tira.repartidas { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; }
+  .pestana { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 2px; border: none; border-bottom: 2px solid transparent; background: none; color: var(--texto-suave); font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .pestana[aria-selected="true"] { color: var(--primario); border-bottom-color: var(--primario); font-weight: 700; }
+  .pestana svg { width: 18px; height: 18px; }
+  .cuenta { font-size: 13px; font-weight: 500; opacity: .75; }
+
+  /* Segundo nivel (Artistas): chips bajo las pestañas */
+  .chips { display: flex; gap: 8px; padding: 10px var(--gutter) 12px; overflow-x: auto; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips .chip { font-weight: 500; }
+  .chips .chip.activo, .chipViejo.activo { border-color: var(--primario); background: var(--primario); color: var(--primario-texto); font-weight: 600; }
+  .chips .chip.activo .cuenta, .chipViejo.activo .cuenta { color: inherit; }
+
+  /* Lo de hoy (para comparar): campo abierto y chips de 44 */
+  .buscarViejo { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; min-height: 44px; margin: 12px var(--gutter) 8px; padding: 0 12px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto-suave); font-size: 16px; }
+  .buscarViejo svg { width: 18px; height: 18px; }
+  .chipsViejos { display: flex; gap: 8px; padding: 0 var(--gutter) 12px; overflow-x: auto; scrollbar-width: none; }
+  .chipsViejos::-webkit-scrollbar { display: none; }
+  .chipViejo { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; white-space: nowrap; }
+  .chipViejo svg { width: 16px; height: 16px; }
+  .chipViejo .caret { width: 12px; height: 12px; }
+  .chipViejo .cuenta { margin-left: 2px; color: var(--texto-suave); }
+  .bloqueViejo { background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
+
+  /* Tira de letras (pieza de directorios, OL-085): sobre la lista, no se queda fija */
+  .letras { display: flex; gap: 4px; padding: 14px var(--gutter) 2px; overflow-x: auto; scrollbar-width: none; }
+  .letras::-webkit-scrollbar { display: none; }
+  .letra { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: none; border-radius: 50%; background: none; font-size: 16px; font-weight: 700; color: var(--texto); }
+  .letra:active { background: var(--primario-suave); color: var(--primario); }
+  .grupoLetra { padding: 18px 0 2px; font-size: 15px; font-weight: 800; color: var(--texto-suave); border-bottom: 1px solid var(--borde); }
+  .deOtro { outline: 2px dashed var(--primario); outline-offset: -2px; border-radius: 12px; }
+
+  /* Al bajar se esconde el renglón de contexto; al subir un poco, vuelve. Lo demás de la cabecera se queda. */
+  .fija { transition: top .2s ease; }
+  .fija.encogida { top: calc(-1 * var(--alto-contexto, 56px)); }
+  .fija .letras { padding: 6px var(--gutter) 6px; box-shadow: inset 0 1px 0 var(--borde); }
+  /* Títulos de día pegados bajo la cabecera (Agenda). Las letras no se pegan: la letra en la que vas se ilumina en la tira. */
+  .letra.actual { background: var(--primario); color: var(--primario-texto); }
+  .seccion h2 { position: sticky; top: var(--alto-fija, 100px); z-index: 3; background: var(--fondo-contenido); transition: top .2s ease; }
+  .seccion h2 { padding: 10px 0 6px; margin: 0 calc(-1 * var(--gutter)) 4px; padding-inline: var(--gutter); }
+  .grupoLetra { margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
+  /* Volver arriba: aparece tras bajar un buen tramo, a la izquierda, a la altura del botón flotante */
+  .arriba { position: absolute; left: var(--gutter); bottom: 100px; z-index: 6; display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity .2s, transform .2s; }
+  .arriba.visible { opacity: 1; transform: none; pointer-events: auto; }
+  .arriba svg { width: 22px; height: 22px; }
+
+  /* Marcar lo que cambia */
+  .marcado .cambia { outline: 2px dashed var(--marca); outline-offset: 2px; border-radius: 12px; }
+
+  /* ---------- Contenido de ejemplo ---------- */
+  .seccion { padding: 18px var(--gutter) 0; }
+  .seccion h2 { font-size: 19px; font-weight: 800; font-variation-settings: var(--ancho-titulo); margin-bottom: 10px; }
+  .seccion h2 span { color: var(--texto-suave); font-weight: 600; }
+  .renglon { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--borde); }
+  .foto { width: 64px; height: 64px; border-radius: 8px; background: var(--fondo-miniatura); display: grid; place-items: center; color: #b9b9b3; font-weight: 800; font-size: 20px; font-variation-settings: var(--ancho-titulo); }
+  .redonda .foto { border-radius: 50%; }
+  .renglon b { display: block; font-size: 18px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
+  .renglon small { display: block; margin-top: 4px; font-size: 14px; color: var(--texto-suave); }
+  .conteo { padding: 16px var(--gutter) 0; font-size: 14px; color: var(--texto-suave); }
+  .vacio { padding: 28px var(--gutter); color: var(--texto-suave); font-size: 15px; }
+
+  /* Mapa de ejemplo */
+  .mapa { position: relative; height: 100%; background: var(--fondo-mapa); overflow: hidden; }
+  .mapa > svg.calles { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pin { position: absolute; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--texto); box-shadow: 0 1px 4px rgba(0,0,0,.3); transform: translate(-50%,-50%); }
+  .pin.dest { background: var(--marca); }
+  .yo { position: absolute; left: 52%; top: 58%; width: 18px; height: 18px; border: 3px solid #fff; border-radius: 50%; background: #1a73e8; box-shadow: 0 0 0 10px rgba(26,115,232,.18); transform: translate(-50%,-50%); }
+  .sobreMapa { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
+  .sobreMapa .buscarViejo { box-shadow: var(--sombra); }
+  .sobreMapa .chipViejo { box-shadow: var(--sombra); }
+  .ubicame { position: absolute; left: var(--gutter); bottom: 150px; z-index: 2; display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); box-shadow: var(--sombra); }
+  .ubicame svg { width: 22px; height: 22px; }
+  .conMapa { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr; height: 796px; }
+
+  /* Navegación inferior y botón flotante */
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; display: grid; grid-template-columns: repeat(3, 1fr); height: 83px; padding-top: 6px; background: var(--fondo); box-shadow: inset 0 1px 0 var(--borde); }
+  .nav span { display: grid; justify-items: center; align-content: start; gap: 3px; font-size: 12px; font-weight: 600; color: var(--texto-suave); }
+  .nav i { display: grid; place-items: center; width: 60px; height: 32px; border-radius: 999px; }
+  .nav i svg { width: 22px; height: 22px; }
+  .nav .activa { color: var(--primario); }
+  .nav .activa i { background: var(--primario); color: #fff; }
+  .flotante { position: absolute; right: var(--gutter); bottom: 100px; z-index: 6; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px; border: none; border-radius: 999px; background: var(--primario); color: #fff; font-size: 17px; font-weight: 700; box-shadow: var(--sombra-flotante); }
+  .flotante svg { width: 20px; height: 20px; }
+
+  /* Regla escrita al final */
+  .regla { max-width: 900px; margin: 36px auto 0; font-size: 15px; line-height: 1.55; }
+  .regla h2 { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); margin-bottom: 8px; }
+  .regla ol { padding-left: 20px; }
+  .regla li + li { margin-top: 6px; }
+  .regla .abierto { margin-top: 16px; color: var(--estudio-suave); }
+  .regla .abierto b { color: var(--estudio-texto); }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Una sola cabecera para Agenda, Lugares y Artistas</h1>
+  Cambia entre <b>Hoy</b> y <b>Propuesta</b> para comparar. Todo se toca: lupa, pestañas, Mapa/Lista, ciudad (no abre hoja aquí). Desplaza cada teléfono para ver qué se queda arriba. Las cifras y los nombres son de ejemplo.
+  <div>
+    <span class="modo" role="group" aria-label="Qué mostrar">
+      <button type="button" data-modo="hoy" aria-pressed="false">Hoy</button>
+      <button type="button" data-modo="propuesta" aria-pressed="true">Propuesta</button>
+    </span>
+    <label class="marcar"><input type="checkbox" id="marcar"> Marcar lo que cambia</label>
+  </div>
+</div>
+
+<div class="estudio" id="estudio"></div>
+
+<div class="regla">
+  <h2>La regla</h2>
+  <ol>
+    <li><b>Renglón 1, dónde y cuándo:</b> chips de contexto a la izquierda (fecha solo en la Agenda; ciudad en las tres). A la derecha, botones redondos de solo icono; la lupa siempre al final.</li>
+    <li><b>La lupa abre el campo en ese mismo renglón</b> y la ✕ lo cierra: la cabecera no cambia de alto. Igual en las tres y también sobre el mapa.</li>
+    <li><b>Renglón 2, qué ver:</b> pestañas de texto. Repartidas si caben (Agenda); se deslizan de lado si no (tipos, disciplinas), con su número en pequeño.</li>
+    <li><b>Segundo nivel</b> (género o técnica en Artistas): chips bajo las pestañas, solo cuando hay una disciplina elegida.</li>
+    <li><b>La cabecera se queda arriba</b> al bajar; la barra con el logotipo se va. Al bajar se esconde el renglón 1 (ciudad, fecha, lupa, Mapa/Lista) y quedan las pestañas y, en Lugares y Artistas, la tira de letras. Al subir un poco, el renglón 1 vuelve.</li>
+    <li><b>La letra en la que vas se ilumina en la tira</b> (Lugares y Artistas). Arriba del todo no hay ninguna; la A se ilumina en cuanto entras a su zona. Tocar una letra baja lo justo para que su separador quede bajo la cabecera. En la Agenda, el título del día sigue pegado.</li>
+    <li><b>Volver arriba:</b> tras bajar un buen tramo aparece un botón redondo ↑ abajo a la izquierda, frente al botón de publicar.</li>
+    <li><b>"Cerca" se llama igual en todas partes:</b> la pestaña <i>Cercanos</i>. En el mapa, la misma pestaña te centra en tu ubicación.</li>
+  </ol>
+  <p class="abierto"><b>Viene de otra pieza (directorios, OL-085):</b> la tira de letras de Lugares y Artistas (recuadro azul al marcar lo que cambia), con las correcciones del founder. Va dentro de la cabecera fija y muestra solo las letras que tienen algo (con un tipo o una disciplina elegidos, se acorta). No filtra: tocar una letra lleva la lista hasta ella. Se ilumina la letra en la que vas (arriba del todo, ninguna). Se va con la búsqueda o con Cercanos. El índice lateral de letras desaparece.</p>
+  <p class="abierto"><b>Firmado por el founder (2026-09-19, OL-087):</b> (1) Mapa · Lista pasa de pestañas a un botón redondo que enseña la otra vista (el mapa sigue siendo la vista de entrada). (2) En Lugares, "Cerca de mí" pasa a ser la pestaña <i>Cercanos</i>: ya no se combina con un tipo (museos cerca de mí). (3) En el mapa, <i>Cercanos</i> sustituye al botón redondo de ubicación.</p>
+</div>
+
+<script>
+const LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii01OSAtNzcwIDM5MDMgNzkwIiB3aWR0aD0iMzkwMyIgaGVpZ2h0PSI3OTAiPjxwYXRoIHRyYW5zZm9ybT0ic2NhbGUoMSwtMSkiIGZpbGw9IiMxYTFhMWEiIGQ9Ik0yMjA4IC0xMlEyMjc4IC0xMiAyMzIwIDEyUTIzNjMgMzUgMjM4MiA3NlEyNDAyIDExOCAyNDAyIDE3MFEyNDAyIDIxNiAyMzkwIDI1MVEyMzc3IDI4NiAyMzU2IDMxM1EyMzM0IDM0MCAyMzA3IDM2MlEyMjkyIDM3NCAyMjc2IDM4NUMyMjc4IDM4NCAyMjgxIDM4NCAyMjgzIDM4NUMyMjkxIDM4NyAyMjk2IDM5NSAyMjk0IDQwMkMyMjkzIDQwNCAyMjkzIDQwNiAyMjkzIDQwOEMyMjkxIDQxNSAyMjkxIDQyMCAyMjkxIDQyOEMyMjkwIDQyOSAyMjkxIDQzMiAyMjkxIDQzMkMyMjkxIDQzMiAyMjkzIDQyNiAyMjkzIDQyMkMyMjk1IDQxMiAyMjk3IDQwNiAyMzAwIDM5NkMyMzAxIDM5MiAyMzAyIDM5MCAyMzAzIDM4NkMyMzA1IDM3OCAyMzE0IDM3MyAyMzIzIDM3NUMyMzI5IDM3NyAyMzMzIDM4MiAyMzM0IDM4OEMyMzM2IDM4MCAyMzQ1IDM3NCAyMzU0IDM3NkMyMzYzIDM3NyAyMzY5IDM4NyAyMzY3IDM5NkMyMzY3IDM5NiAyMzY3IDM5NyAyMzY3IDM5OEMyMzY5IDM5MCAyMzc3IDM4NSAyMzg1IDM4NkMyMzk0IDM4NyAyNDAxIDM5NiAyMzk5IDQwNUMyMzk5IDQwOCAyMzk5IDQxMCAyMzk5IDQxM0MyMzk4IDQyMSAyMzk4IDQyNyAyMzk3IDQzNUMyNDAyIDQzMiAyNDA4IDQzMSAyNDEzIDQzNUMyNDE5IDQzOSAyNDIwIDQ0NSAyNDE5IDQ1MkMyNDE5IDQ1MiAyNDIwIDQ1MSAyNDIxIDQ1MUMyNDI3IDQ0OCAyNDM0IDQ1MCAyNDM3IDQ1NkMyNDM5IDQ1OSAyNDQxIDQ2MSAyNDQyIDQ2NUMyNDQzIDQ2OCAyNDQ0IDQ3MCAyNDQ1IDQ3MkMyNDQ1IDQ2OSAyNDQ0IDQ2NiAyNDQzIDQ2M0MyNDQyIDQ1OSAyNDQxIDQ1NiAyNDQwIDQ1MkMyNDM4IDQ0NiAyNDQyIDQzOCAyNDQ4IDQzNkMyNDU1IDQzNCAyNDYyIDQzOCAyNDY1IDQ0NUMyNDY2IDQ0OSAyNDY3IDQ1MSAyNDY4IDQ1NUMyNDcwIDQ2MiAyNDcyIDQ2NyAyNDc1IDQ3M0MyNDc0IDQ2OSAyNDczIDQ2NSAyNDcyIDQ2MEMyNDcwIDQ1NiAyNDcwIDQ1NCAyNDY5IDQ1MEMyNDY2IDQ0NCAyNDY5IDQzNyAyNDc2IDQzNUMyNDgyIDQzMiAyNDg5IDQzNSAyNDkxIDQ0MkMyNDkzIDQ0NiAyNDk0IDQ0OCAyNDk1IDQ1MkMyNDk4IDQ2MSAyNTAwIDQ2NyAyNTAyIDQ3NkMyNTAyIDQ3OCAyNTA0IDQ4MCAyNTA0IDQ4MEMyNTA0IDQ4MCAyNTA0IDQ3OCAyNTA0IDQ3N0MyNTAzIDQ3MSAyNTAzIDQ2NyAyNTAxIDQ2MEMyNTAwIDQ1OCAyNTAwIDQ1NiAyNDk5IDQ1NEMyNDk3IDQ0OCAyNTAwIDQ0MiAyNTA2IDQ0MEMyNTExIDQzOCAyNTE3IDQ0MSAyNTE5IDQ0N0MyNTIwIDQ1MCAyNTIxIDQ1MSAyNTIyIDQ1NEMyNTI0IDQ2MiAyNTI2IDQ2NiAyNTI3IDQ3NEMyNTI4IDQ4MCAyNTMwIDQ4MyAyNTMyIDQ4OUMyNTMzIDQ5MyAyNTM0IDQ5NiAyNTM1IDQ5OUMyNTM2IDUwMyAyNTM2IDUwNiAyNTM3IDUxMEMyNTM4IDUxNSAyNTM4IDUxOCAyNTM4IDUyMkMyNTM5IDUyNyAyNTM5IDUzMCAyNTM5IDUzNUgyNTcwVjE3MkMyNTcwIDEzNyAyNTY1IDExNiAyNTY1IDgwQzI1NjUgNzAgMjU1OCA2NSAyNTU1IDU1QzI1NTEgNDcgMjU0OSA0MiAyNTQ4IDM0QzI1NDcgMzIgMjU0NyAzMSAyNTQ3IDI5TDI1NDcgMjlDMjU0NSAyMiAyNTQ0IDE3IDI1NDUgOUMyNTQ2IDQgMjU1MCAwIDI1NTUgMEgyODA2QzI4MTIgMCAyODE4IDMgMjgxOSA5QzI4MjAgMTEgMjgyMCAxMiAyODIwIDEzTDI4MjAgMTNMMjgyMCAxM0MyODIxIDE4IDI4MjIgMjIgMjgyMSAyOEMyODE5IDM3IDI4MTggNDMgMjgxMiA1MUMyODA2IDU5IDI4MDEgNjIgMjc5MiA2NkMyNzgxIDcxIDI3NzMgNjkgMjc2MiA3NEMyNzU3IDc2IDI3NTMgNzcgMjc0OSA3OEMyNzQ5IDc4IDI3NDkgNzcgMjc0OSA3N0MyNzQ4IDc1IDI3NDcgNzMgMjc0NSA3MUMyNzQ0IDY5IDI3NDQgNjcgMjc0MiA2NUMyNzQxIDY0IDI3MzkgNjQgMjczOCA2NEMyNzM3IDY1IDI3MzcgNjcgMjczNyA2OEMyNzM4IDcxIDI3MzkgNzIgMjc0MCA3NEMyNzQyIDc2IDI3NDIgNzggMjc0NCA4MEwyNzQ0IDgwQzI3NDAgODIgMjczNyA4NSAyNzM1IDg5QzI3MjQgMTEzIDI3MjQgMTMwIDI3MjQgMTU2VjUzNUgyNzU0QzI3NTQgNTMwIDI3NTQgNTI3IDI3NTUgNTIyQzI3NTUgNTE4IDI3NTUgNTE1IDI3NTYgNTEwQzI3NTcgNTA2IDI3NTcgNTAzIDI3NTggNDk5QzI3NTkgNDk2IDI3NjAgNDkzIDI3NjEgNDg5QzI3NjMgNDgzIDI3NjUgNDgwIDI3NjYgNDc0QzI3NjcgNDY2IDI3NjkgNDYyIDI3NzIgNDU0QzI3NzMgNDUxIDI3NzQgNDQ5IDI3NzYgNDQ1QzI3NzggNDQwIDI3ODQgNDM4IDI3OTAgNDQwQzI3OTUgNDQyIDI3OTcgNDQ5IDI3OTUgNDU0QzI3OTQgNDU3IDI3OTQgNDU4IDI3OTMgNDYxQzI3OTEgNDY3IDI3OTAgNDcxIDI3ODkgNDc4QzI3ODkgNDc5IDI3ODkgNDgxIDI3ODkgNDgxQzI3ODkgNDgxIDI3OTEgNDc3IDI3OTIgNDc0QzI3OTQgNDY1IDI3OTcgNDU5IDI4MDAgNDUwQzI4MDEgNDQ2IDI4MDIgNDQzIDI4MDQgNDM5QzI4MDYgNDMyIDI4MTMgNDI5IDI4MTkgNDMxQzI4MjYgNDM0IDI4MjkgNDQxIDI4MjcgNDQ3QzI4MjUgNDUxIDI4MjQgNDU0IDI4MjMgNDU4QzI4MjIgNDYxIDI4MjEgNDY0IDI4MjEgNDY3QzI4MjIgNDYyIDI4MjQgNDU4IDI4MjYgNDUyQzI4MjggNDQ3IDI4MzAgNDQ1IDI4MzIgNDQwQzI4MzUgNDM0IDI4NDIgNDMxIDI4NDkgNDM0QzI4NTUgNDM2IDI4NTggNDQ0IDI4NTUgNDUwQzI4NTUgNDUxIDI4NTUgNDUxIDI4NTUgNDUxQzI4NTggNDQ4IDI4NjMgNDQ3IDI4NjcgNDQ4QzI4NzQgNDUwIDI4NzcgNDU3IDI4NzYgNDYzQzI4NzUgNDY3IDI4NzQgNDY5IDI4NzMgNDczQzI4NzEgNDgwIDI4NzAgNDg1IDI4NjggNDkyQzI4NzQgNDg5IDI4NzkgNDg4IDI4ODQgNDkyQzI4ODQgNDkyIDI4ODQgNDkyIDI4ODQgNDkyVjEzNkMyODg0IDExNCAyODc5IDEwMSAyODc5IDgwQzI4NzkgNzAgMjg3MiA2NSAyODY5IDU1QzI4NjUgNDcgMjg2MyA0MiAyODYyIDM0QzI4NjEgMzIgMjg2MSAzMSAyODYxIDI5TDI4NjEgMjlMMjg2MSAyOUMyODU5IDIyIDI4NTggMTcgMjg1OSA5QzI4NjAgNCAyODY0IDAgMjg2OSAwSDMwODlDMzA5NSAwIDMxMDAgMiAzMTAyIDdDMzEwMyAzIDMxMDYgMCAzMTExIDBIMzM0M0MzMzUwIDAgMzM1NiAzIDMzNTcgOUMzMzU3IDExIDMzNTggMTIgMzM1OCAxM0wzMzU4IDEzTDMzNTggMTNDMzM1OSAxOCAzMzYwIDIyIDMzNTkgMjdDMzM1NyAzNyAzMzU1IDQzIDMzNDkgNTBDMzM0NCA1OCAzMzM4IDYxIDMzMzAgNjVDMzMyNSA2OCAzMzIyIDY5IDMzMTggNzBDMzMxOCA2OSAzMzE4IDY4IDMzMTggNjdDMzMxNyA2NCAzMzE2IDYzIDMzMTQgNjFDMzMxMyA1OSAzMzEzIDU3IDMzMTEgNTZDMzMxMCA1NCAzMzA4IDU0IDMzMDcgNTVDMzMwNiA1NSAzMzA2IDU3IDMzMDYgNThDMzMwNyA2MSAzMzA4IDYyIDMzMDkgNjRDMzMxMSA2NiAzMzExIDY4IDMzMTMgNzBDMzMxMyA3MCAzMzEzIDcwIDMzMTQgNzFDMzMxMiA3MSAzMzEwIDcyIDMzMDkgNzNDMzMwNiA3NCAzMzA0IDc2IDMzMDMgNzdDMzMwMyA3NyAzMzAzIDc2IDMzMDMgNzZDMzMwMiA3NCAzMzAwIDczIDMyOTkgNzBDMzI5OCA2OCAzMjk4IDY2IDMyOTYgNjVDMzI5NSA2NCAzMjkzIDYzIDMyOTIgNjRDMzI5MCA2NCAzMjkwIDY2IDMyOTEgNjhDMzI5MSA3MCAzMjkzIDcxIDMyOTQgNzNDMzI5NSA3NSAzMjk2IDc3IDMyOTggNzlDMzI5OCA3OSAzMjk5IDgwIDMyOTkgODBDMzI5NiA4MyAzMjkzIDg2IDMyODkgODhDMzI4NiA5MCAzMjgzIDkwIDMyODAgOTBDMzI3NiA5MCAzMjcyIDkwIDMyNzIgOTRMMzI3MSAxMDFMMzI2NyAxMjlRMzI2MiAxNzMgMzI1MSAyMDZRMzI0MCAyNDAgMzIxMyAyNjBRMzE4NiAyODAgMzEzMyAyODJWMjkxUTMxNjkgMjk3IDMxOTUgMzEyUTMyMjEgMzI4IDMyMzggMzUwUTMyNTYgMzczIDMyNjQgNDAyUTMyNzIgNDMxIDMyNzIgNDY0UTMyNzIgNTA0IDMyNjIgNTM2UTMyNTEgNTY3IDMyMzIgNTkwUTMyMTMgNjEzIDMxODggNjI5UTMxNjIgNjQ1IDMxMzEgNjUyUTMxMDAgNjYwIDMwNjYgNjYwSDI4ODRWNTEwQzI4ODIgNTE0IDI4NzkgNTE4IDI4NzYgNTIyQzI4NzQgNTI0IDI4NzAgNTIzIDI4NjcgNTIzQzI4NjQgNTIyIDI4NjEgNTIyIDI4NjAgNTI1QzI4NjAgNTI2IDI4NjAgNTI3IDI4NjAgNTI4QzI4NTkgNTI5IDI4NTkgNTMwIDI4NTkgNTMxQzI4NTkgNTMzIDI4NTkgNTM0IDI4NTkgNTM1VjY2MEgyNDM0VjUzNUMyNDM0IDUzNCAyNDM0IDUzMyAyNDM0IDUzMUMyNDM0IDUzMCAyNDM0IDUyOSAyNDMzIDUyOEMyNDMzIDUyNyAyNDMzIDUyNiAyNDMzIDUyNUMyNDMyIDUyMiAyNDI5IDUyMiAyNDI1IDUyMkMyNDIyIDUyMiAyNDE5IDUyMyAyNDE3IDUyMEMyNDEwIDUxMiAyNDAyIDQ5OSAyNDExIDQ5MkMyNDE1IDQ4OSAyNDIwIDQ4OSAyNDI0IDQ5MkMyNDIzIDQ4NiAyNDIyIDQ4MiAyNDE5IDQ3NkMyNDE4IDQ3MyAyNDE3IDQ3MSAyNDE1IDQ2OEMyNDE1IDQ2NyAyNDE0IDQ2NSAyNDE0IDQ2NEMyNDEzIDQ2NiAyNDEyIDQ2OCAyNDExIDQ2OUMyNDA5IDQ3MiAyNDA1IDQ3MiAyNDAxIDQ3MUMyMzk2IDQ3MSAyMzkyIDQ3MCAyMzkyIDQ3NEMyMzkxIDQ3NiAyMzkxIDQ3NyAyMzkxIDQ3OEMyMzkxIDQ4MCAyMzkxIDQ4MSAyMzkxIDQ4M0MyMzkxIDQ4NiAyMzkwIDQ4NyAyMzkwIDQ4OVEyMzkwIDUzMyAyMzc4IDU2OFEyMzU5IDYxOCAyMzE2IDY0NVEyMjcyIDY3MiAyMjA0IDY3MlEyMTQ0IDY3MiAyMTAyIDY1MFEyMDU5IDYyOSAyMDM3IDU5MFEyMDE1IDU1MiAyMDE1IDUwMVEyMDE1IDQ2MiAyMDI2IDQzMlEyMDM4IDQwMiAyMDU3IDM3OFEyMDc2IDM1NSAyMDk5IDMzNlEyMTIyIDMxOCAyMTQ0IDMwMlEyMTY5IDI4NSAyMTkzIDI2NVEyMjE3IDI0NSAyMjMyIDIxOFEyMjQ4IDE5MiAyMjQ4IDE1NVEyMjQ4IDEzNiAyMjQ0IDEyNFEyMjM5IDExMiAyMjMwIDEwNlEyMjIyIDEwMCAyMjEwIDEwMFEyMTg1IDEwMCAyMTc0IDEyMlEyMTYzIDE0NSAyMTYyIDE4MFEyMTYyIDE4NSAyMTYyIDE4OVYxODlMMjE2MiAxODlDMjE2MiAxOTMgMjE2MCAxOTQgMjE2MCAxOTdDMjE2MCAyMDIgMjE1OCAyMDUgMjE1OCAyMDlDMjE1NyAyMTMgMjE1NSAyMTUgMjE1NSAyMTlDMjE1NCAyMjQgMjE1NCAyMjcgMjE1MyAyMzJDMjE1MyAyMzggMjE1MCAyNDEgMjE1MCAyNDZDMjE1MCAyNDkgMjE1MCAyNTIgMjE1MCAyNTVDMjE0OSAyNTkgMjE0OSAyNjMgMjE0OSAyNjhDMjE0OSAyNjkgMjE0OSAyNzAgMjE0OSAyNzJWMjcyQzIxNDkgMjczIDIxNDkgMjc0IDIxNDkgMjc2QzIxNTAgMjgzIDIxNDQgMjkwIDIxMzYgMjkwQzIxMjkgMjkxIDIxMjIgMjg1IDIxMjIgMjc3QzIxMjIgMjc0IDIxMjEgMjcyIDIxMjEgMjY5QzIxMjEgMjY1IDIxMjEgMjYyIDIxMjEgMjU5TDIxMjEgMjU5TDIxMjEgMjU5QzIxMjAgMjU1IDIxMjAgMjUxIDIxMjAgMjQ2QzIxMjAgMjQ0IDIxMjAgMjQyIDIxMjAgMjQyQzIxMjAgMjQyIDIxMTggMjQ3IDIxMTggMjUwQzIxMTcgMjYxIDIxMTUgMjY3IDIxMTUgMjc3QzIxMTUgMjgyIDIxMTQgMjg1IDIxMTQgMjg5QzIxMTMgMjk3IDIxMDYgMzA0IDIwOTggMzA0QzIwODkgMzAzIDIwODMgMjk2IDIwODMgMjg3QzIwODMgMjg1IDIwODMgMjgzIDIwODMgMjgyVjI4MkMyMDgzIDI4MCAyMDgzIDI3OCAyMDgzIDI3NkMyMDg0IDI2OSAyMDg0IDI2MyAyMDg0IDI1OEMyMDgzIDI2NCAyMDgxIDI2OSAyMDgwIDI3NkMyMDgwIDI4MSAyMDc5IDI4MyAyMDc5IDI4OEMyMDc4IDI5NyAyMDY5IDMwMyAyMDYxIDMwMkMyMDUyIDMwMSAyMDQ1IDI5MyAyMDQ2IDI4NEMyMDQ2IDI4MCAyMDQ2IDI3NyAyMDQ3IDI3MkMyMDQ4IDI2NiAyMDQ4IDI2MiAyMDQ4IDI1N0MyMDQ3IDI2MCAyMDQ2IDI2NCAyMDQ1IDI2OEMyMDQ0IDI3MSAyMDQzIDI3MyAyMDQyIDI3NkMyMDM5IDI4NCAyMDMwIDI4OSAyMDIyIDI4N0MyMDE0IDI4NCAyMDA5IDI3NSAyMDExIDI2N0MyMDEyIDI2NCAyMDEzIDI2MiAyMDEzIDI1OUMyMDE1IDI1MiAyMDE2IDI0NyAyMDE3IDI0MUMyMDA4IDI0NyAxOTk4IDI0OSAxOTkyIDI0MkMxOTgyIDIzMSAxOTk1IDIxNiAyMDA2IDIwNkMyMDA4IDIwNCAyMDExIDIwNSAyMDE1IDIwNkMyMDE4IDIwNiAyMDIxIDIwNyAyMDIyIDIwNEMyMDIyIDIwMyAyMDIxIDIwMyAyMDIxIDIwMkMyMDIxIDIwMiAyMDIwIDIwMSAyMDIwIDIwMUMyMDIwIDIwMCAyMDIwIDIwMCAyMDE5IDE5OUMyMDE5IDE5OSAyMDE4IDE5OCAyMDE4IDE5N0MyMDE4IDE5NiAyMDE4IDE5NSAyMDE3IDE5M0MyMDE3IDE5MyAyMDE2IDE5MiAyMDE2IDE5MUwyMDE2IDE5MVEyMDE2IDE5MCAyMDE2IDE5MFEyMDEyIDE1OSAyMDE2IDEzMlEyMDIxIDg3IDIwNDUgNTRRMjA2OSAyMiAyMTEwIDVRMjE1MSAtMTIgMjIwOCAtMTJaTTU5NyAxMTNWNTIwSDYwMEw2NzIgMEg4MjRMODk2IDUyMEg4OTlWMTI4Qzg5OSAxMDggODk1IDk1IDg5NSA3NUM4OTUgNjYgODg4IDYxIDg4NCA1MkM4ODIgNDUgODgwIDQwIDg3OCAzMkM4NzggMzAgODc3IDI5IDg3NyAyOEM4NzYgMjEgODc1IDE2IDg3NiA5Qzg3NyA0IDg4MCAwIDg4NCAwSDExMTJDMTExOCAwIDExMjQgMyAxMTI1IDlDMTEyNSAxMCAxMTI2IDExIDExMjYgMTJDMTEyNyAxNyAxMTI4IDIxIDExMjcgMjZDMTEyNSAzNSAxMTIzIDQxIDExMTggNDhDMTExMiA1NSAxMTA3IDU4IDEwOTkgNjJDMTA5MyA2NiAxMDg3IDY2IDEwODEgNjhDMTA4MiA2NyAxMDgyIDY1IDEwODIgNjRDMTA4MSA2MSAxMDgwIDYwIDEwNzkgNThDMTA3NyA1NiAxMDc3IDU1IDEwNzUgNTNDMTA3NCA1MiAxMDczIDUxIDEwNzIgNTJDMTA3MCA1MyAxMDcwIDU0IDEwNzEgNTZDMTA3MSA1OCAxMDczIDU5IDEwNzQgNjFDMTA3NSA2MyAxMDc1IDY1IDEwNzcgNjdDMTA3OCA2NyAxMDc5IDY4IDEwODAgNjhDMTA3OCA2OCAxMDc3IDY5IDEwNzYgNzBDMTA3MyA3MSAxMDcwIDcyIDEwNjggNzNDMTA2OCA3MyAxMDY3IDczIDEwNjcgNzNDMTA2NyA3MCAxMDY1IDY5IDEwNjQgNjdDMTA2MyA2NSAxMDYzIDYzIDEwNjEgNjJDMTA2MCA2MSAxMDU4IDYwIDEwNTcgNjFDMTA1NiA2MSAxMDU2IDYzIDEwNTYgNjRDMTA1NyA2NyAxMDU4IDY4IDEwNTkgNzBDMTA2MSA3MiAxMDYxIDc0IDEwNjMgNzVDMTA2MyA3NiAxMDYzIDc2IDEwNjMgNzZDMTA2MCA3OCAxMDU3IDgwIDEwNTQgODRDMTA0NyA5NCAxMDQ0IDEwMSAxMDQ0IDExM1Y2NjBIODAwTDc1NyAxNDBINzU0TDcwNSA2NjBINDUyVjEyOEM0NTIgMTA4IDQ0OCA5NSA0NDggNzVDNDQ4IDY2IDQ0MSA2MSA0MzggNTJDNDM1IDQ1IDQzMyA0MCA0MzEgMzJDNDMxIDMwIDQzMCAyOSA0MzAgMjhDNDI5IDIxIDQyOCAxNiA0MjkgOUM0MzAgNCA0MzMgMCA0MzggMEg2MzNDNjM5IDAgNjQ1IDMgNjQ2IDlDNjQ3IDEwIDY0NyAxMSA2NDcgMTJDNjQ4IDE3IDY0OSAyMSA2NDggMjZDNjQ2IDM1IDY0NCA0MSA2MzkgNDhDNjM0IDU1IDYyNyA1NiA2MjAgNjJDNjE4IDY1IDYxNyA2NyA2MTUgNzBDNjEyIDc1IDYxMCA3OCA2MDcgODRDNjAzIDk1IDU5NyAxMDEgNTk3IDExM1pNMTY2NiAxMDhWMzk1SDE2NjlMMTc5MSAwSDIwMjJDMjAyNiAwIDIwMjkgMiAyMDMxIDZDMjAzMiA3IDIwMzMgOCAyMDM0IDEwTDIwMzQgMTBDMjAzNiAxMyAyMDM4IDE2IDIwMzcgMjBDMjAzNCAyOSAyMDI4IDMzIDIwMjEgMzlDMjAxMiA0NiAyMDA1IDQ3IDE5OTYgNTRDMTk4NyA2MSAxOTgxIDY2IDE5NzQgNzVDMTk2NyA4NyAxOTYwIDk0IDE5NjAgMTA3VjU5MEMxOTYwIDU5NSAxOTYwIDU5OCAxOTYwIDYwM0MxOTYwIDYwOCAxOTU5IDYxMSAxOTU5IDYxNkMxOTU5IDYyMCAxOTU5IDYyMiAxOTU4IDYyN0MxOTU4IDYyOSAxOTU4IDYzMiAxOTU5IDYzNEMxOTU5IDYzNiAxOTYwIDYzOSAxOTU5IDY0MUMxOTU5IDY1MiAxOTU2IDY1OCAxOTU2IDY2OEMxOTU1IDY3OCAxOTQ3IDY4NiAxOTM3IDY4NkMxOTMxIDY4NiAxOTI2IDY4MiAxOTIzIDY3N0MxOTIwIDY4NiAxOTExIDY5MiAxOTAyIDY5MkMxODk4IDY5MSAxODk0IDY4OSAxODkxIDY4N0MxODkwIDY5MCAxODkwIDY5NCAxODkwIDY5N0MxODkwIDcwMyAxODg5IDcxMCAxODg5IDcxN0MxODg5IDcyOCAxODg4IDczNSAxODg4IDc0NkMxODg4IDc1NSAxODgwIDc2MyAxODcwIDc2MkMxODYxIDc2MiAxODUzIDc1NCAxODUzIDc0NUMxODU0IDczOSAxODU0IDczNCAxODUzIDczMFY3MzBDMTg1MyA3MjYgMTg1MyA3MjIgMTg1MyA3MTdDMTg1NCA3MDcgMTg1MyA2OTkgMTg1MyA2OTFDMTg1MyA2ODcgMTg1MyA2ODIgMTg1MyA2NzdDMTg0NyA2OTAgMTg0MiA2OTggMTgzNiA3MTJDMTgzMiA3MjIgMTgyOSA3MjcgMTgyNSA3MzZDMTgyMSA3NDUgMTgxMSA3NDkgMTgwMyA3NDVDMTc5NCA3NDEgMTc5MCA3MzEgMTc5NCA3MjJDMTc5OCA3MTMgMTgwMCA3MDggMTgwNCA2OThDMTgxMSA2ODMgMTgxNCA2NzMgMTgyMCA2NThDMTgyMiA2NTQgMTgyMiA2NDggMTgyMiA2NDRDMTgyMiA2NDQgMTgyMiA2NDQgMTgyMiA2NDRDMTgxMyA2NTUgMTc5NyA2NjUgMTc4NyA2NTVDMTc3NiA2NDYgMTc4MyA2MjkgMTc5MyA2MTlDMTc5NSA2MTYgMTgwMCA2MTYgMTgwNCA2MTZDMTgwOSA2MTYgMTgxMyA2MTYgMTgxNCA2MTFDMTgxNCA2MDkgMTgxNCA2MDcgMTgxNCA2MDVDMTgxNSA2MDIgMTgxNSA2MDAgMTgxNSA1OTdDMTgxNSA1OTUgMTgxNSA1OTMgMTgxNSA1OTBWMjY1SDE4MTJMMTY4OCA2NjBIMTUyMFYxMjNDMTUyMCAxMDUgMTUxNiA5NCAxNTE2IDc2QzE1MTYgNjcgMTUxMiA2MSAxNTEwIDUzQzE1MDYgMzkgMTUwMSAzMSAxNTAwIDE4QzE1MDAgMTcgMTUwMCAxNyAxNTAwIDE2QzE1MDAgOSAxNDk5IDAgMTUwNSAwSDE3MzZDMTc0MCAwIDE3NDMgMiAxNzQ1IDZDMTc0NiA3IDE3NDYgOCAxNzQ3IDEwQzE3NTAgMTMgMTc1MiAxNiAxNzUxIDIwQzE3NDggMzAgMTc0MiAzNCAxNzM1IDM5QzE3MjUgNDcgMTcxNiA0NyAxNzA2IDU0QzE2OTUgNjEgMTY4OCA2NiAxNjgxIDc2QzE2NzMgODcgMTY2NiA5NSAxNjY2IDEwOFpNMjA4IC0xMlEyNzggLTEyIDMyMCAxMlEzNjMgMzUgMzgyIDc2UTQwMiAxMTggNDAyIDE3MFE0MDIgMjE2IDM5MCAyNTFRMzc3IDI4NiAzNTYgMzEzUTMzNCAzNDAgMzA3IDM2MlEyOTIgMzczIDI3NyAzODRDMjc5IDM4NCAyODEgMzg0IDI4MyAzODRDMjkwIDM4NiAyOTYgMzk0IDI5NCA0MDFDMjkzIDQwNCAyOTMgNDA1IDI5MyA0MDdDMjkxIDQxNSAyOTIgNDIwIDI5MSA0MjdDMjkwIDQyOSAyOTEgNDMyIDI5MSA0MzJDMjkxIDQzMiAyOTMgNDI3IDI5MyA0MjRDMjk0IDQxMyAyOTYgNDA2IDI5OSAzOTVDMzAwIDM5MSAzMDEgMzg5IDMwMyAzODRDMzA1IDM3NiAzMTQgMzcxIDMyMyAzNzRDMzI4IDM3NiAzMzMgMzgxIDMzNCAzODZDMzM3IDM3OSAzNDQgMzc0IDM1MyAzNzVDMzYyIDM3NyAzNjggMzg2IDM2NyAzOTVDMzY2IDM5OSAzNjYgNDAxIDM2NiA0MDRDMzY1IDQwOCAzNjUgNDExIDM2NSA0MTRDMzY1IDQxMiAzNjYgNDEwIDM2NiA0MDhDMzY3IDQwNCAzNjggNDAyIDM2OCAzOTlDMzcxIDM5MCAzODAgMzg1IDM4OCAzODdDMzk3IDM4OSA0MDMgMzk4IDQwMSA0MDdDNDAwIDQxMCA0MDAgNDEyIDM5OSA0MTVDMzk3IDQyMyAzOTcgNDI5IDM5NyA0MzdDNDAzIDQzMyA0MTAgNDMzIDQxNiA0MzdDNDI2IDQ0NiA0MTkgNDYxIDQxMCA0NzFDNDA4IDQ3NCA0MDQgNDczIDQwMCA0NzJDMzk2IDQ3MSAzOTIgNDcxIDM5MiA0NzRDMzkxIDQ3NiAzOTEgNDc3IDM5MSA0NzhDMzkxIDQ4MCAzOTEgNDgxIDM5MSA0ODNDMzkxIDQ4NiAzOTAgNDg3IDM5MCA0ODlRMzkwIDUzMyAzNzggNTY4UTM1OSA2MTggMzE2IDY0NVEyNzIgNjcyIDIwNCA2NzJRMTQ0IDY3MiAxMDIgNjUwUTU5IDYyOSAzNyA1OTBRMTUgNTUyIDE1IDUwMVExNSA0NjIgMjYgNDMyUTM4IDQwMiA1NyAzNzhRNzYgMzU1IDk5IDMzNlExMjIgMzE4IDE0NCAzMDJRMTY5IDI4NSAxOTMgMjY1UTIxNyAyNDUgMjMyIDIxOFEyNDggMTkyIDI0OCAxNTVRMjQ4IDEzNiAyNDQgMTI0UTIzOSAxMTIgMjMwIDEwNlEyMjIgMTAwIDIxMCAxMDBRMTg1IDEwMCAxNzQgMTIyUTE2MyAxNDUgMTYyIDE4MFExNjIgMTgyIDE2MiAxODNMMTYyIDE4NEMxNjIgMjAwIDE1OCAyMDkgMTU0IDIyNUMxNTAgMjQyIDE0NCAyNTEgMTM1IDI2NUMxMjggMjc4IDEyMSAyODQgMTExIDI5NUMxMDcgMjk4IDEwNiAzMDEgMTAxIDMwNEM5NyAzMDcgOTEgMzA1IDkwIDMxMEM4NyAzMTkgODQgMzI0IDgxIDMzM0M4MCAzMzcgNzkgMzM5IDc3IDM0NEM3NSAzNTAgNjggMzU0IDYxIDM1MkM1NCAzNDkgNTEgMzQyIDUzIDMzNUM1NCAzMzEgNTUgMzI5IDU2IDMyNUM1OSAzMTYgNjAgMzEwIDYzIDMwMUM2NCAyOTkgNjYgMjk1IDY2IDI5NUM2NiAyOTUgNjMgMjk2IDYyIDI5N0M1NSAzMDggNTAgMzE0IDQzIDMyNEM0MCAzMzAgMzcgMzMzIDMzIDMzOEMyOSAzNDUgMTkgMzQ2IDEzIDM0MkM2IDMzNyA1IDMyOCA5IDMyMkMxMyAzMTYgMTUgMzEzIDE4IDMwN0MyNCAyOTkgMjggMjkyIDMzIDI4NEMyNCAyOTIgMTggMjk3IDkgMzA1QzQgMzEwIDAgMzEyIC00IDMxN0MtMTEgMzIzIC0yMSAzMjIgLTI2IDMxNkMtMzIgMzEwIC0zMiAzMDAgLTI2IDI5NEMtMjEgMjg5IC0xOCAyODYgLTEzIDI4MkMtNSAyNzQgMCAyNjggNyAyNjFDLTEgMjY1IC03IDI2OCAtMTYgMjczQy0yMSAyNzYgLTI0IDI3NyAtMjkgMjgwQy0zNiAyODQgLTQ1IDI4MSAtNDkgMjc0Qy01MyAyNjcgLTUxIDI1OCAtNDQgMjU0Qy0zOSAyNTEgLTM2IDI0OSAtMzEgMjQ2Qy0yMSAyNDAgLTE2IDIzNiAtNiAyMzFDLTIyIDIyOCAtNDAgMjIzIC0zOCAyMDdDLTM2IDE5MCAtMTIgMTkyIDUgMTk0QzcgMTk0IDkgMTk3IDExIDIwMEMxMiAyMDMgMTMgMjA1IDE1IDIwM0MxNiAyMDIgMTYgMjAxIDE2IDIwMEMxNiAxOTkgMTYgMTk4IDE3IDE5N0MxOCAxOTYgMTcgMTk1IDE3IDE5NEMxNyAxOTIgMTcgMTkxIDE3IDE5MEMxOCAxODggMTcgMTg3IDE2IDE4NUMxNiAxODQgMTUgMTgzIDE1IDE4MkwxNSAxODJRMTUgMTgxIDE1IDE4MVExMyAxNTUgMTYgMTMyUTIxIDg3IDQ1IDU0UTY5IDIyIDExMCA1UTE1MSAtMTIgMjA4IC0xMlpNMzUzMSAtMTJRMzYwMSAtMTIgMzY0NCAxMlEzNjg2IDM1IDM3MDYgNzZRMzcyNSAxMTggMzcyNSAxNzBRMzcyNSAyMTYgMzcxMiAyNTFRMzcwMCAyODYgMzY3OCAzMTNRMzY1NyAzNDAgMzYzMCAzNjJRMzYwMyAzODMgMzU3NCA0MDJRMzU1MyA0MTYgMzUzNCA0MzBRMzUxNCA0NDUgMzUwMiA0NjRRMzQ5MCA0ODIgMzQ5MCA1MDdRMzQ5MCA1MjIgMzQ5NCA1MzJRMzQ5OSA1NDMgMzUwOCA1NDlRMzUxNiA1NTUgMzUyNyA1NTVRMzU0MyA1NTUgMzU1NCA1NDRRMzU2NCA1MzQgMzU2OSA1MTZRMzU3MSA1MTAgMzU3MiA1MDRMMzU3MiA1MDRDMzU3NiA0ODMgMzU4MSA0NzEgMzU5MSA0NTJDMzYwMCA0MzMgMzYwOSA0MjMgMzYyNCA0MDhDMzYzNiAzOTUgMzY0NiAzODkgMzY2MSAzODBDMzY2NiAzNzcgMzY2NyAzNzQgMzY3MiAzNzFDMzY4MCAzNjYgMzY4NiAzNjQgMzY5NCAzNTlDMzcwMiAzNTQgMzcxMiAzNTYgMzcxNyAzNjNDMzcyMCAzNjcgMzcyMSAzNzMgMzcxOSAzNzhDMzcyNyAzNzYgMzczNiAzNzkgMzc0MCAzODZDMzc0MyAzOTEgMzc0NCAzOTYgMzc0MiA0MDFDMzc0OSA0MDEgMzc1NiA0MDQgMzc2MCA0MTFDMzc2MyA0MTYgMzc2MyA0MjEgMzc2MiA0MjZDMzc3MCA0MjIgMzc3OCA0MTggMzc4OCA0MTNDMzc5NyA0MDggMzgwMyA0MDUgMzgxMiA0MDBDMzgyMCAzOTYgMzgzMCAzOTkgMzgzNCA0MDdDMzgzOSA0MTUgMzgzNiA0MjUgMzgyOCA0MjlDMzgxOSA0MzQgMzgxNCA0MzggMzgwNSA0NDNDMzc5MCA0NTEgMzc4MSA0NTcgMzc2NyA0NjVDMzc2MyA0NjcgMzc1NyA0NzAgMzc1MiA0NzJDMzc2NCA0NzQgMzc3NiA0ODAgMzc3NiA0OTFDMzc3NSA1MDQgMzc1OSA1MDggMzc0NiA1MDdDMzc0MiA1MDcgMzc0MCA1MDQgMzczNyA1MDBDMzczNSA0OTcgMzczMyA0OTMgMzcyOSA0OTVDMzcyNSA0OTggMzcyNCA1MDAgMzcyMSA1MDNDMzcxNyA1MDcgMzcxNiA1MTEgMzcxMyA1MTVDMzcxMSA1MjAgMzcxMSA1MjMgMzcxMSA1MjhMMzcxMCA1MjhMMzcxMCA1MjhRMzcwNyA1NDkgMzcwMCA1NjhRMzY4MiA2MTggMzYzOCA2NDVRMzU5NSA2NzIgMzUyNyA2NzJRMzQ2NyA2NzIgMzQyNCA2NTBRMzM4MiA2MjkgMzM2MCA1OTBRMzMzOCA1NTIgMzMzOCA1MDFRMzMzOCA0NjIgMzM1MCA0MzJRMzM2MSA0MDIgMzM4MCAzNzhRMzM5OSAzNTUgMzQyMiAzMzZRMzQ0NSAzMTggMzQ2NyAzMDJRMzQ5MiAyODUgMzUxNiAyNjVRMzU0MCAyNDUgMzU1NiAyMThRMzU3MSAxOTIgMzU3MSAxNTVRMzU3MSAxMzYgMzU2NiAxMjRRMzU2MiAxMTIgMzU1NCAxMDZRMzU0NSAxMDAgMzUzMyAxMDBRMzUwOCAxMDAgMzQ5NyAxMjJRMzQ4NiAxNDUgMzQ4NSAxODBRMzQ4NSAxODUgMzQ4NSAxODlWMTg5TDM0ODUgMTg5QzM0ODUgMTkzIDM0ODMgMTk0IDM0ODMgMTk3QzM0ODMgMjAyIDM0ODEgMjA1IDM0ODEgMjA5QzM0ODAgMjEzIDM0NzggMjE1IDM0NzggMjE5QzM0NzcgMjI0IDM0NzcgMjI3IDM0NzYgMjMyQzM0NzYgMjM1IDM0NzUgMjM3IDM0NzUgMjM5QzM0NzQgMjQyIDM0NzMgMjQ1IDM0NzMgMjQ5QzM0NzMgMjUzIDM0NzMgMjU2IDM0NzMgMjU5TDM0NzMgMjU5QzM0NzMgMjYzIDM0NzIgMjY3IDM0NzMgMjcxQzM0NzMgMjczIDM0NzMgMjc0IDM0NzMgMjc2QzM0NzMgMjc3IDM0NzMgMjc5IDM0NzMgMjgwQzM0NzMgMjg4IDM0NjcgMjk0IDM0NjAgMjk0QzM0NTMgMjk1IDM0NDYgMjg5IDM0NDYgMjgyQzM0NDYgMjc4IDM0NDUgMjc2IDM0NDUgMjczQzM0NDUgMjY0IDM0NDQgMjU5IDM0NDQgMjUwQzM0NDQgMjUyIDM0NDQgMjUzIDM0NDMgMjU1QzM0NDMgMjY0IDM0MzQgMjcyIDM0MjUgMjcxQzM0MTkgMjcxIDM0MTQgMjY4IDM0MTEgMjY0QzM0MDcgMjY4IDM0MDAgMjcwIDMzOTQgMjcwQzMzODggMjY5IDMzODIgMjY2IDMzNzkgMjYxQzMzNzcgMjY3IDMzNzUgMjczIDMzNzMgMjgxQzMzNzIgMjg3IDMzNzAgMjkwIDMzNjkgMjk2QzMzNjcgMzA1IDMzNTggMzEwIDMzNTAgMzA4QzMzNDEgMzA2IDMzMzYgMjk3IDMzMzggMjg5QzMzNDAgMjgzIDMzNDAgMjc5IDMzNDEgMjczQzMzNDUgMjYxIDMzNDYgMjUzIDMzNDkgMjQxQzMzNTAgMjM4IDMzNDkgMjMyIDMzNDkgMjMyQzMzNDkgMjMyIDMzNDkgMjM2IDMzNDggMjM2QzMzMzIgMjQzIDMzMTAgMjQ5IDMzMDMgMjMzQzMyOTcgMjE4IDMzMTcgMjA3IDMzMzMgMjAxQzMzMzUgMjAwIDMzMzggMjAyIDMzNDAgMjAzQzMzNDMgMjA1IDMzNDUgMjA2IDMzNDUgMjA0QzMzNDUgMjAzIDMzNDQgMjAzIDMzNDQgMjAyQzMzNDQgMjAyIDMzNDMgMjAxIDMzNDMgMjAxQzMzNDMgMjAwIDMzNDMgMjAwIDMzNDIgMTk5QzMzNDIgMTk5IDMzNDEgMTk4IDMzNDEgMTk3QzMzNDEgMTk2IDMzNDEgMTk1IDMzNDAgMTkzQzMzNDAgMTkzIDMzMzkgMTkyIDMzMzkgMTkxTDMzMzkgMTkxUTMzMzkgMTkwIDMzMzkgMTkwUTMzMzUgMTU5IDMzMzggMTMyUTMzNDQgODcgMzM2OCA1NFEzMzkyIDIyIDM0MzMgNVEzNDc0IC0xMiAzNTMxIC0xMlpNMTI5OCAtMTJRMTM2OCAtMTIgMTQxMCAxMlExNDUzIDM1IDE0NzIgNzZRMTQ5MiAxMTggMTQ5MiAxNzBRMTQ5MiAyMTYgMTQ4MCAyNTFRMTQ2NyAyODYgMTQ0NiAzMTNRMTQyNCAzNDAgMTM5NyAzNjJRMTM3MCAzODMgMTM0MSA0MDJRMTMyMCA0MTYgMTMwMCA0MzBRMTI4MSA0NDUgMTI2OSA0NjRRMTI1NyA0ODIgMTI1NyA1MDdRMTI1NyA1MjIgMTI2MiA1MzJRMTI2NiA1NDMgMTI3NCA1NDlRMTI4MyA1NTUgMTI5NCA1NTVRMTMxMCA1NTUgMTMyMCA1NDRRMTMzMSA1MzQgMTMzNiA1MTZRMTM0MCA1MDEgMTM0MSA0ODJMMTM0MSA0ODJDMTM0MSA0ODAgMTM0MSA0NzkgMTM0MiA0NzZDMTM0MiA0NzMgMTM0MiA0NzIgMTM0MiA0NjlDMTM0MiA0NjYgMTM0MiA0NjUgMTM0MyA0NjJDMTM0MyA0NTcgMTM0MyA0NTQgMTM0NCA0NDhDMTM0NSA0NDEgMTM0NyA0MzcgMTM0OCA0MzBDMTM0OCA0MjIgMTM1MCA0MTcgMTM1MSA0MDhDMTM1MSA0MDUgMTM1MiA0MDMgMTM1MiA0MDFDMTM1MyAzOTMgMTM2MCAzODcgMTM2OCAzODhDMTM3NiAzODkgMTM4MSAzOTcgMTM4MCA0MDRDMTM4MCA0MDcgMTM4MCA0MDkgMTM4MCA0MTFDMTM3OSA0MTkgMTM3OSA0MjQgMTM3OSA0MzNDMTM3OSA0MzQgMTM3OSA0MzcgMTM3OSA0MzdDMTM3OSA0MzcgMTM4MSA0MzMgMTM4MSA0MzFDMTM4MSA0MjAgMTM4MyA0MTQgMTM4NiA0MDNDMTM4NiAzOTkgMTM4NyAzOTcgMTM4OCAzOTRDMTM5MCAzODUgMTM5OSAzODAgMTQwOCAzODJDMTQxNiAzODQgMTQyMSAzOTMgMTQxOSA0MDJDMTQxOCA0MDUgMTQxOCA0MDcgMTQxOCA0MTBDMTQxNyA0MTQgMTQxNiA0MTcgMTQxNiA0MjBDMTQxOCA0MTQgMTQxOSA0MDggMTQyMSA0MDBDMTQyMiAzOTYgMTQyMyAzOTMgMTQyNSAzODlDMTQyNyAzODAgMTQzNyAzNzQgMTQ0NiAzNzdDMTQ1NSAzNzkgMTQ2MCAzODkgMTQ1OCAzOThDMTQ1NyA0MDIgMTQ1NiA0MDQgMTQ1NSA0MDhDMTQ1NSA0MTIgMTQ1NCA0MTUgMTQ1NCA0MThDMTQ1NCA0MTYgMTQ1NSA0MTQgMTQ1NSA0MTJDMTQ1NiA0MDkgMTQ1NyA0MDggMTQ1OCA0MDVDMTQ2MCAzOTcgMTQ3MCAzOTIgMTQ3OCAzOTRDMTQ4NyAzOTcgMTQ5MiA0MDYgMTQ4OSA0MTVDMTQ4OSA0MTcgMTQ4OSA0MTkgMTQ4OCA0MjFDMTQ4NiA0MjkgMTQ4NiA0MzQgMTQ4NSA0NDFDMTQ5MSA0MzggMTQ5NyA0MzcgMTUwMyA0NDFDMTUxMyA0NDkgMTUwNyA0NjUgMTQ5OSA0NzVDMTQ5NyA0NzggMTQ5MyA0NzYgMTQ4OSA0NzVDMTQ4NSA0NzQgMTQ4MiA0NzMgMTQ4MSA0NzZDMTQ4MSA0NzggMTQ4MSA0NzggMTQ4MSA0ODBDMTQ4MSA0ODEgMTQ4MSA0ODIgMTQ4MSA0ODRDMTQ4MSA0ODYgMTQ4MCA0ODcgMTQ4MCA0ODlRMTQ4MCA1MzMgMTQ2OCA1NjhRMTQ0OSA2MTggMTQwNiA2NDVRMTM2MiA2NzIgMTI5NCA2NzJRMTIzNCA2NzIgMTE5MiA2NTBRMTE0OSA2MjkgMTEyNyA1OTBRMTEwNSA1NTIgMTEwNSA1MDFRMTEwNSA0NjIgMTExNiA0MzJRMTEyOCA0MDIgMTE0NyAzNzhRMTE2NiAzNTUgMTE4OSAzMzZRMTIxMiAzMTggMTIzNCAzMDJRMTI1OSAyODUgMTI4MyAyNjVRMTMwNyAyNDUgMTMyMiAyMThRMTMzOCAxOTIgMTMzOCAxNTVRMTMzOCAxMzYgMTMzNCAxMjRRMTMyOSAxMTIgMTMyMCAxMDZRMTMxMiAxMDAgMTMwMCAxMDBRMTI3NSAxMDAgMTI2NCAxMjJRMTI1MyAxNDUgMTI1MiAxODBRMTI1MiAxODUgMTI1MiAxODlWMTg5TDEyNTIgMTg5QzEyNTIgMTkxIDEyNTEgMTkyIDEyNTEgMTkzQzEyNTAgMTk0IDEyNTAgMTk1IDEyNTAgMTk3QzEyNTAgMTk5IDEyNDkgMjAwIDEyNDggMjAyQzEyNDggMjA0IDEyNDcgMjA1IDEyNDcgMjA4QzEyNDcgMjExIDEyNDQgMjEzIDEyNDQgMjE3TDEyNDQgMjIxQzEyNDQgMjIzIDEyNDUgMjIzIDEyNDcgMjI0QzEyNDggMjI1IDEyNTAgMjI2IDEyNTEgMjI3QzEyNTIgMjMwIDEyNTIgMjMyIDEyNTEgMjM1QzEyNDkgMjM4IDEyNDQgMjM5IDEyNDQgMjM5QzEyNDQgMjM5IDEyNDkgMjQyIDEyNTAgMjQ1QzEyNTIgMjQ4IDEyNTEgMjUwIDEyNTAgMjUzQzEyNDggMjU2IDEyNDQgMjU3IDEyNDQgMjU3QzEyNDQgMjU3IDEyNDggMjYwIDEyNDkgMjYzQzEyNTAgMjY2IDEyNDkgMjY5IDEyNDggMjcyQzEyNDYgMjc0IDEyNDEgMjc2IDEyNDEgMjc2QzEyNDEgMjc2IDEyNDcgMjc5IDEyNDYgMjgxQzEyNDIgMjg3IDEyMzcgMjg5IDEyMzAgMjkwQzEyMjAgMjkyIDEyMTMgMjkxIDEyMDMgMjkwQzEyMDEgMjkwIDExOTkgMjkwIDExOTYgMjkwQzExODcgMjg5IDExNzMgMjg2IDExNzMgMjg2QzExNzMgMjg2IDExNjggMjk4IDExNjcgMzA1QzExNjcgMzEzIDExNjYgMzE4IDExNjEgMzIzQzExNTcgMzI4IDExNTIgMzMxIDExNDYgMzMxQzExMzkgMzMwIDExMzUgMzI3IDExMzIgMzIxQzExMjggMzE1IDExMjkgMzEwIDExMzAgMzAyQzExMzAgMzAxIDExMzAgMjk5IDExMzAgMjk4QzExMzEgMjk0IDExMzIgMjkxIDExMjkgMjg3QzExMjUgMjc5IDExMTYgMjgwIDExMTIgMjcyQzExMDcgMjYzIDExMDYgMjU2IDExMDYgMjQ1QzExMDggMjMwIDExMTIgMjIxIDExMTMgMjA2QzExMTMgMjA2IDExMTMgMjA1IDExMTIgMjA0QzExMTIgMjA0IDExMTEgMjAzIDExMTEgMjAyQzExMTEgMjAyIDExMTEgMjAxIDExMTAgMjAwQzExMTAgMjAwIDExMDkgMTk5IDExMDkgMTk4QzExMDkgMTk1IDExMDcgMTk0IDExMDYgMTkxTDExMDYgMTkxUTExMDYgMTkwIDExMDYgMTkwUTExMDIgMTU5IDExMDYgMTMyUTExMTEgODcgMTEzNSA1NFExMTU5IDIyIDEyMDAgNVExMjQxIC0xMiAxMjk4IC0xMlpNMzAzOCAzMzBWNTM3SDMwNThRMzA4OSA1MzcgMzEwMyA1MTVRMzExNyA0OTMgMzExNyA0NDBRMzExNyAzODIgMzEwMCAzNTZRMzA4NCAzMzAgMzA1MCAzMzBaTTMwMzggMTIwVjIyOEgzMDQ1UTMwNzUgMjI3IDMwODggMjExUTMxMDIgMTk1IDMxMDcgMTY4UTMxMDkgMTU1IDMxMTEgMTQwQzMxMDMgMTMyIDMxMDggMTExIDMxMTIgOTBDMzExNSA4MSAzMTE3IDcyIDMxMTcgNjRDMzExOCA2MSAzMTE2IDYwIDMxMTQgNTlDMzExMyA1OCAzMTEyIDU2IDMxMTEgNTVDMzEwNyA0NyAzMTA2IDQyIDMxMDQgMzNDMzEwNCAzMyAzMTA0IDMyIDMxMDQgMzFDMzEwMiAzOSAzMTAwIDQ0IDMwOTUgNTFDMzA4OSA1OSAzMDgzIDYxIDMwNzUgNjZDMzA3MCA2OSAzMDY3IDcwIDMwNjMgNzRDMzA1NyA3OSAzMDUzIDgyIDMwNDkgODlDMzA0MyAxMDAgMzAzOCAxMDggMzAzOCAxMjBaTTIyNjkgMzkwUTIyNjAgMzk2IDIyNTEgNDAyUTIyMzAgNDE2IDIyMTAgNDMwUTIxOTEgNDQ1IDIxNzkgNDY0UTIxNjcgNDgyIDIxNjcgNTA3UTIxNjcgNTIyIDIxNzIgNTMyUTIxNzYgNTQzIDIxODQgNTQ5UTIxOTMgNTU1IDIyMDQgNTU1UTIyMjAgNTU1IDIyMzAgNTQ0UTIyNDEgNTM0IDIyNDYgNTE2UTIyNTAgNTAxIDIyNTEgNDgyTDIyNTEgNDgyQzIyNTEgNDc5IDIyNTEgNDc3IDIyNTIgNDc0QzIyNTIgNDcwIDIyNTIgNDY4IDIyNTMgNDY0QzIyNTMgNDYxIDIyNTMgNDU5IDIyNTQgNDU2QzIyNTQgNDUwIDIyNTQgNDQ3IDIyNTUgNDQyQzIyNTcgNDM1IDIyNTkgNDMxIDIyNjAgNDI0QzIyNjEgNDE2IDIyNjIgNDEwIDIyNjQgNDAyQzIyNjUgMzk5IDIyNjUgMzk4IDIyNjYgMzk1QzIyNjcgMzkzIDIyNjcgMzkyIDIyNjkgMzkwWk0yNjggMzkxUTI2MCAzOTYgMjUxIDQwMlEyMzAgNDE2IDIxMCA0MzBRMTkxIDQ0NSAxNzkgNDY0UTE2NyA0ODIgMTY3IDUwN1ExNjcgNTIyIDE3MiA1MzJRMTc2IDU0MyAxODQgNTQ5UTE5MyA1NTUgMjA0IDU1NVEyMjAgNTU1IDIzMCA1NDRRMjQxIDUzNCAyNDYgNTE2UTI1MCA1MDEgMjUxIDQ4MkwyNTEgNDgyQzI1MSA0NzkgMjUxIDQ3NyAyNTIgNDc0QzI1MiA0NzAgMjUyIDQ2OCAyNTMgNDY0QzI1MyA0NjEgMjUzIDQ1OSAyNTQgNDU2QzI1NCA0NTAgMjU0IDQ0NyAyNTUgNDQyQzI1NyA0MzUgMjU5IDQzMSAyNjAgNDIzQzI2MSA0MTUgMjYzIDQxMCAyNjQgNDAyQzI2NSAzOTkgMjY1IDM5OCAyNjYgMzk1QzI2NiAzOTQgMjY3IDM5MiAyNjggMzkxWk0yNzUyIDU5QzI3NTMgNjIgMjc1NCA2MyAyNzU2IDY1QzI3NTcgNjcgMjc1NyA2OSAyNzU5IDcxQzI3NjAgNzIgMjc2MiA3MyAyNzYzIDcyQzI3NjUgNzEgMjc2NSA2OSAyNzY0IDY4QzI3NjQgNjUgMjc2MiA2NCAyNzYxIDYyQzI3NTkgNjAgMjc1OSA1OCAyNzU3IDU2QzI3NTYgNTUgMjc1NSA1NCAyNzUzIDU1QzI3NTIgNTYgMjc1MiA1OCAyNzUyIDU5WiIvPjwvc3ZnPgo=";
+const s = (d, extra = "") => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
+const I = {
+  buscar: s('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>', 'stroke-width="2"'),
+  cerrar: s('<path d="M6 6l12 12M18 6L6 18"/>', 'stroke-width="2"'),
+  caret: s('<path d="M6 9l6 6 6-6"/>', 'stroke-width="2" class="caret"'),
+  cal: s('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+  calMas: s('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/>'),
+  pin: s('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>'),
+  pinMas: s('<path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><path d="M12 8.5v5M9.5 11h5"/>'),
+  estrella: s('<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/>'),
+  mapa: s('<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>'),
+  lista: s('<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'),
+  subir: s('<path d="M12 19V5M6 11l6-6 6 6"/>', 'stroke-width="2"'),
+  ubic: s('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/>'),
+};
+
+const TIPOS = [["Todos", 58], ["Casa de cultura", 14], ["Museo", 11], ["Galería", 9], ["Foro", 8], ["Colectivo", 6], ["Otro", 10]];
+const DISCIPLINAS = [["Todos", 526], ["Música", 306], ["Artes visuales", 88], ["Teatro", 54], ["Danza", 41], ["Letras", 25], ["Artes circenses", 12]];
+const DETALLE = { "Música": [["Todo", 306], ["Rock", 64], ["Folclor", 48], ["Jazz", 22], ["Cumbia", 19], ["Clásica", 17]], "Artes visuales": [["Todo", 88], ["Pintura", 31], ["Fotografía", 20], ["Grabado", 9]] };
+const FILTROS_AGENDA = ["Todos", "Cercanos", "Siguiendo", "Nuevos"];
+const EVENTOS = [["Presentación editorial: 70 poemas en pétalos de orquídeas", "17:30 · CEART"], ["Gala de arias de las óperas de Julián Carrillo", "19:00 · Teatro de la Paz"], ["La Lupita Fullband", "21:00 · Agustín de Iturbide"], ["Taller de grabado en linóleo", "10:00 · Casa de la Cultura"], ["Cumbia Fantasma en vivo", "21:00 · Foro Rosa Blanca"], ["Cine club: ciclo de cine mexicano", "18:00 · Cineteca Alameda"], ["Lectura en voz alta para niñas y niños", "11:00 · Biblioteca Central"]];
+const LUGARES = [["Alianza Francesa de San Luis Potosí", "Av. SCOP 535"], ["Archivo Histórico del Estado", "Mariano Arista 400"], ["ARTERIA Casa Cultural", "Av. Santos Degollado 754 A"], ["Auditorio Rafael Nieto", "Álvaro Obregón 64"], ["Aurora Co-Lab", "Xicoténcatl 410"], ["Biblioteca Central del Estado", "Manuel José Othón s/n"], ["Casa de la Cultura", "Av. Venustiano Carranza 1815"], ["Centro de las Artes (CEART)", "Calz. de Guadalupe 705"], ["Casa del Poeta Ramón López Velarde", "Álvaro Obregón 177"], ["Foro Rosa Blanca", "Zaragoza 410"], ["Galería Germán Gedovius", "Plaza de los Fundadores"], ["Museo del Ferrocarril", "Av. Othón s/n"], ["Museo Federico Silva", "Álvaro Obregón 80"], ["Museo Leonora Carrington", "Calz. de Guadalupe 705"], ["Teatro de la Paz", "Villerías 2"], ["Universidad Autónoma, Centro Cultural", "Madero 300"]];
+const ARTISTAS = [["0Backside0", "Música · Rock"], ["Aída Cuevas Trío", "Música · Folclor"], ["Ana Paula Ríos", "Artes visuales · Pintura"], ["Cumbia Fantasma", "Música · Cumbia"], ["La Lupita Fullband", "Música · Folclor"], ["Los Vecinos", "Teatro"], ["Ricardo Za", "Música · Cantautor"], ["Sol de Barro", "Danza · Contemporánea"], ["Colectivo Tinta Roja", "Artes visuales · Grabado"], ["Dúo Tangamanga", "Música · Jazz"], ["Mariana Olvera", "Letras · Poesía"], ["Orquesta Juvenil Potosina", "Música · Clásica"], ["Circo Pájaro", "Artes circenses"], ["Teatro del Desierto", "Teatro"]];
+
+const estado = {
+  modo: "propuesta",
+  agenda: { buscando: false, filtro: "Todos" },
+  lugares: { buscando: false, vista: "mapa", filtro: "Todos", cerca: false, letra: null },
+  artistas: { buscando: false, filtro: "Todos", detalle: "Todo", letra: null },
+};
+
+/* ---------- Piezas ---------- */
+const chipCiudad = (clase = "chip") => `<button type="button" class="${clase}${clase === "chipViejo" ? "" : ""}">${I.pin}<span>San Luis Potosí</span>${I.caret}</button>`;
+const lupa = (id) => `<button type="button" class="redondo" data-accion="buscar" data-p="${id}" aria-label="Buscar">${I.buscar}</button>`;
+const campo = (id, ayuda) => `<label class="campo">${I.buscar}<input type="search" placeholder="${ayuda}" autofocus><button type="button" data-accion="cerrar" data-p="${id}" aria-label="Cerrar la búsqueda">${I.cerrar}</button></label>`;
+const pestanas = (id, lista, activa, repartidas = false) => `<div class="tira${repartidas ? " repartidas" : ""}" role="tablist">${lista.map(([t, n]) => `<button type="button" class="pestana" role="tab" aria-selected="${t === activa}" data-accion="filtro" data-p="${id}" data-v="${t}">${t}${n != null ? `<span class="cuenta">${n}</span>` : ""}</button>`).join("")}</div>`;
+const barra = () => `<div class="barra"><img src="${LOGO}" alt="SMSNSTRS"><button type="button" class="entrar">Entrar</button></div>`;
+const nav = (activa) => `<div class="nav">${[["Agenda", I.cal], ["Lugares", I.pin], ["Artistas", I.estrella]].map(([t, ic]) => `<span class="${t === activa ? "activa" : ""}"><i>${ic}</i>${t}</span>`).join("")}</div>`;
+const flotante = (t, ic) => `<button type="button" class="flotante">${ic}${t}</button><button type="button" class="arriba cambia" data-accion="arriba" aria-label="Volver arriba">${I.subir}</button>`;
+
+function renglones(lista, redonda) {
+  return `<div class="${redonda ? "redonda" : ""}">${lista.map(([a, b]) => `<div class="renglon"><div class="foto">SN</div><div><b>${a}</b><small>${b}</small></div></div>`).join("")}</div>`;
+}
+function mapa(conYo) {
+  const pines = [[18, 30], [30, 52, 1], [44, 40], [58, 28], [66, 62], [40, 70], [74, 44, 1], [26, 78], [82, 72], [50, 50], [60, 80], [36, 22]];
+  return `<div class="mapa"><svg class="calles" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <g stroke="#fff" stroke-width="1.6" fill="none"><path d="M0 35 L100 42"/><path d="M0 64 L100 58"/><path d="M28 0 L34 100"/><path d="M64 0 L58 100"/><path d="M0 12 L100 88"/></g>
+      <g stroke="#fff" stroke-width=".7" fill="none"><path d="M0 22 L100 26"/><path d="M0 50 L100 50"/><path d="M0 80 L100 76"/><path d="M14 0 L18 100"/><path d="M46 0 L46 100"/><path d="M80 0 L76 100"/></g>
+      <path d="M70 8 h16 v12 h-16z" fill="#dfe8d8"/><path d="M8 86 h20 v10 h-20z" fill="#dfe8d8"/></svg>
+    ${pines.map(([x, y, d]) => `<span class="pin${d ? " dest" : ""}" style="left:${x}%;top:${y}%"></span>`).join("")}
+    ${conYo ? `<span class="yo"></span>` : ""}</div>`;
+}
+
+/* Tira de letras: solo las letras que tienen algo, ninguna elegida. Tocar una lleva la lista a su grupo (no filtra). */
+const inicial = (n) => { const c = n.normalize("NFD")[0].toUpperCase(); return /[A-Z]/.test(c) ? c : "#"; };
+function conLetras(id, lista) {
+  const orden = [...lista].sort(([a], [b]) => (inicial(a) === "#" ? -1 : inicial(b) === "#" ? 1 : a.localeCompare(b, "es")));
+  const hay = [...new Set(orden.map(([n]) => inicial(n)))];
+  const html = `<div class="letras ${document.getElementById("marcar")?.checked ? "deOtro" : ""}" role="group" aria-label="Ir a la letra">${hay.map((l) => `<button type="button" class="letra" data-accion="letra" data-p="${id}" data-v="${l}" aria-label="Ir a la ${l}">${l}</button>`).join("")}</div>`;
+  return { html, lista: orden, agrupar: true };
+}
+function agrupados(id, lista, redonda) {
+  const grupos = new Map();
+  for (const fila of lista) { const l = inicial(fila[0]); if (!grupos.has(l)) grupos.set(l, []); grupos.get(l).push(fila); }
+  // Cada letra en su bloque: su título pegado se va con ella y no se amontona con el de la anterior.
+  return [...grupos].map(([l, filas]) => `<div id="g-${id}-${l === "#" ? "num" : l}"><div class="grupoLetra">${l}</div>${renglones(filas, redonda)}</div>`).join("");
+}
+const cuerpoLista = (id, L, redonda = false) => (L.agrupar ? agrupados(id, L.lista, redonda) : renglones(L.lista, redonda));
+
+/* ---------- Pantallas ---------- */
+function agenda() {
+  const e = estado.agenda;
+  // La agenda ya es el canon: Hoy y Propuesta son iguales.
+  const fila1 = e.buscando ? campo("agenda", "Buscar un evento, sitio o artista")
+    : `<button type="button" class="chip">${I.cal}<span>Hoy</span>${I.caret}</button>${chipCiudad()}<span class="acciones">${lupa("agenda")}</span>`;
+  const cabecera = `<div class="fija"><div class="contexto">${fila1}</div>${pestanas("agenda", FILTROS_AGENDA.map((t) => [t]), e.filtro, true)}</div>`;
+  const cuerpo = e.filtro === "Cercanos"
+    ? `<div class="seccion"><h2>Hoy <span>· cerca de ti</span></h2>${renglones(EVENTOS.slice(0, 4).map(([a, b], i) => [a, `${b} · a ${[0.4, 0.9, 1.3, 2.1][i]} km`]))}</div>`
+    : `<div class="seccion"><h2>Hoy <span>· 3</span></h2>${renglones(EVENTOS.slice(0, 3))}</div><div class="seccion"><h2>Mañana <span>· 4</span></h2>${renglones(EVENTOS.slice(3))}</div><div class="seccion"><h2>Esta semana</h2>${renglones(EVENTOS.slice(0, 4))}</div>`;
+  return { html: `<div class="pantalla">${barra()}${cabecera}${cuerpo}</div>${flotante("Publicar evento", I.calMas)}${nav("Agenda")}`, notas: estado.modo === "hoy"
+    ? ["Contexto arriba (fecha, ciudad), lupa a la derecha, filtros como pestañas.", "Toda la cabecera se queda arriba al bajar.", "Es la única cabecera con decisiones firmadas: se toma como modelo."]
+    : ["Igual que hoy, salvo lo común a las tres:", "Al bajar se esconde el renglón de fecha, ciudad y lupa; al subir un poco vuelve. Las pestañas y el título del día se quedan.", "Tras bajar un tramo aparece el botón <em>↑</em> para volver arriba."] };
+}
+
+function lugares() {
+  const e = estado.lugares;
+  const lista = e.filtro === "Todos" || e.filtro === "Cercanos" ? LUGARES : LUGARES.filter((_, i) => i % 2 === 0);
+
+  if (estado.modo === "hoy") {
+    const vistas = `<div class="fija sinRaya"><div class="tira repartidas" style="box-shadow: inset 0 -1px 0 var(--borde)">${[["Mapa", I.mapa], ["Lista", I.lista]].map(([t, ic]) => `<button type="button" class="pestana" aria-selected="${e.vista === t.toLowerCase()}" data-accion="vista" data-p="lugares" data-v="${t.toLowerCase()}">${ic} ${t}</button>`).join("")}</div></div>`;
+    const buscar = `<div class="buscarViejo">${I.buscar}Buscar un lugar por nombre</div>`;
+    const tipos = TIPOS.map(([t, n]) => `<button type="button" class="chipViejo${e.filtro === t ? " activo" : ""}" data-accion="filtro" data-p="lugares" data-v="${t}">${t}<span class="cuenta">${n}</span></button>`).join("");
+    const cerca = `<button type="button" class="chipViejo${e.cerca ? " activo" : ""}" data-accion="cerca">${I.ubic}Cerca de mí</button>`;
+    if (e.vista === "mapa") {
+      return { html: `<div class="pantalla quieta conMapa">${barra()}${vistas}<div style="position:relative">${mapa(e.cerca)}<div class="sobreMapa">${buscar}<div class="chipsViejos">${chipCiudad("chipViejo")}${tipos}</div></div><button type="button" class="ubicame" data-accion="cerca" aria-label="Mostrar mi ubicación">${I.ubic}</button></div></div>${flotante("Registrar lugar", I.pinMas)}${nav("Lugares")}`, notas: notasLugaresHoy() };
+    }
+    const L = e.cerca ? { html: "", lista } : conLetras("lugares", lista);
+    return { html: `<div class="pantalla">${barra()}${vistas}<div class="bloqueViejo">${buscar}<div class="chipsViejos">${chipCiudad("chipViejo")}${cerca}${tipos}</div></div>${L.html}<p class="conteo">${L.lista.length} lugares${e.cerca ? " · ordenados por cercanía" : ""}</p><div class="seccion">${cuerpoLista("lugares", L)}</div></div>${flotante("Registrar lugar", I.pinMas)}${nav("Lugares")}`, notas: notasLugaresHoy() };
+  }
+
+  const otra = e.vista === "mapa" ? ["lista", I.lista, "Ver la lista"] : ["mapa", I.mapa, "Ver el mapa"];
+  const fila1 = e.buscando ? campo("lugares", "Buscar un lugar")
+    : `${chipCiudad()}<span class="acciones"><button type="button" class="redondo cambia" data-accion="vista" data-p="lugares" data-v="${otra[0]}" aria-label="${otra[2]}">${otra[1]}</button><span class="cambia" style="border-radius:50%">${lupa("lugares")}</span></span>`;
+  const tira = [["Todos", 58], ["Cercanos"], ...TIPOS.slice(1)];
+  const L = e.vista === "lista" && e.filtro !== "Cercanos" && !e.buscando ? conLetras("lugares", lista) : { html: "", lista };
+  const cabecera = `<div class="fija"><div class="contexto">${fila1}</div><div class="cambia">${pestanas("lugares", tira, e.filtro)}</div>${L.html}</div>`;
+  const notas = ["La ciudad sube al renglón de contexto, con el mismo chip que la Agenda.", "Mapa · Lista pasa a un botón redondo que enseña la otra vista, junto a la lupa.", "La lupa sustituye al campo abierto: +45 px de lista.", "Tipos como pestañas de texto; <em>Cercanos</em> es una pestaña más, como en la Agenda.", "Toda la cabecera se queda arriba (hoy solo Mapa · Lista).", "La tira de letras (pieza de directorios) entra en la cabecera fija: solo lleva la lista a una letra, sin filtrar; se va con la búsqueda o con <em>Cercanos</em>.", "Al bajar se esconde el renglón de la ciudad y la lupa; al subir un poco vuelve. Tras bajar un tramo aparece el botón <em>↑</em> para volver arriba."];
+  if (e.vista === "mapa") {
+    return { html: `<div class="pantalla quieta conMapa">${barra()}${cabecera}<div style="position:relative">${mapa(e.filtro === "Cercanos")}</div></div>${flotante("Registrar lugar", I.pinMas)}${nav("Lugares")}`, notas: [...notas.slice(0, 4), "En el mapa, la pestaña <em>Cercanos</em> te centra en tu ubicación: el mapa queda libre de controles flotantes."] };
+  }
+  const titulo = e.filtro === "Cercanos" ? `${L.lista.length} lugares · ordenados por cercanía` : `${L.lista.length} lugares`;
+  return { html: `<div class="pantalla">${barra()}${cabecera}<p class="conteo">${titulo}</p><div class="seccion">${cuerpoLista("lugares", L)}</div></div>${flotante("Registrar lugar", I.pinMas)}${nav("Lugares")}`, notas };
+}
+function notasLugaresHoy() {
+  return ["Arriba, pestañas Mapa · Lista; debajo, el buscador siempre abierto.", "La ciudad va mezclada con los filtros (chip de 44 px, sin negrita) y se pierde al deslizar la fila.", "\"Cerca de mí\" es un chip en la lista y un botón redondo en el mapa.", "Al bajar por la lista solo se quedan Mapa · Lista: buscador y filtros se van."];
+}
+
+function artistas() {
+  const e = estado.artistas;
+  const det = DETALLE[e.filtro];
+  const lista = e.filtro === "Todos" ? ARTISTAS : ARTISTAS.filter(([, b]) => b.startsWith(e.filtro));
+  const L = e.buscando ? { html: "", lista } : conLetras("artistas", lista);
+  const cuerpo = `${estado.modo === "hoy" ? L.html : ""}<p class="conteo">${L.lista.length ? `${L.lista.length} artistas` : "Todavía no hay artistas de esto."}</p><div class="seccion">${cuerpoLista("artistas", L, true)}</div>`;
+
+  if (estado.modo === "hoy") {
+    const chips = DISCIPLINAS.map(([t, n]) => `<button type="button" class="chipViejo${e.filtro === t ? " activo" : ""}" data-accion="filtro" data-p="artistas" data-v="${t}">${t}<span class="cuenta">${n}</span></button>`).join("");
+    const segundo = det ? `<div class="chipsViejos">${det.map(([t, n]) => `<button type="button" class="chipViejo${e.detalle === t ? " activo" : ""}" data-accion="detalle" data-v="${t}">${t}<span class="cuenta">${n}</span></button>`).join("")}</div>` : "";
+    return { html: `<div class="pantalla">${barra()}<div class="fija"><div class="buscarViejo">${I.buscar}Buscar por nombre</div><div class="chipsViejos">${chipCiudad("chipViejo")}${chips}</div>${segundo}</div>${cuerpo}</div>${flotante("Registrar artista", I.estrella)}${nav("Artistas")}`,
+      notas: ["Arriba, el buscador siempre abierto; su texto de ayuda no se parece al de Lugares.", "La ciudad va mezclada con las disciplinas y se pierde al deslizar la fila.", "Disciplinas como chips rellenos, no como las pestañas de la Agenda."] };
+  }
+
+  const fila1 = e.buscando ? campo("artistas", "Buscar un artista")
+    : `${chipCiudad()}<span class="acciones"><span class="cambia" style="border-radius:50%">${lupa("artistas")}</span></span>`;
+  const segundo = det ? `<div class="chips">${det.map(([t, n]) => `<button type="button" class="chip${e.detalle === t ? " activo" : ""}" data-accion="detalle" data-v="${t}">${t}<span class="cuenta">${n}</span></button>`).join("")}</div>` : "";
+  return { html: `<div class="pantalla">${barra()}<div class="fija"><div class="contexto">${fila1}</div><div class="cambia">${pestanas("artistas", DISCIPLINAS, e.filtro)}</div>${segundo}${L.html}</div>${cuerpo}</div>${flotante("Registrar artista", I.estrella)}${nav("Artistas")}`,
+    notas: ["La ciudad sube al renglón de contexto.", "La lupa sustituye al campo abierto.", "Disciplinas como pestañas de texto; elige <em>Música</em> para ver el segundo nivel en chips.", "Sin <em>Cercanos</em>: los artistas no tienen dirección.", "La tira de letras (pieza de directorios) entra en la cabecera fija: solo las letras que tienen algo; tocar una lleva la lista hasta ella. Elige <em>Música</em> y verás que se acorta.", "Al bajar se esconde el renglón de la ciudad y la lupa; al subir un poco vuelve. Botón <em>↑</em> para volver arriba."] };
+}
+
+/* ---------- Pintar ---------- */
+const PANTALLAS = [["agenda", "Agenda", agenda], ["lugares", "Lugares", lugares], ["artistas", "Artistas", artistas]];
+const scroll = {};
+function pintar() {
+  const cont = document.getElementById("estudio");
+  cont.querySelectorAll(".pantalla").forEach((p) => { scroll[p.dataset.id] = p.scrollTop; });
+  cont.innerHTML = PANTALLAS.map(([id, titulo, f]) => {
+    const { html, notas } = f();
+    return `<figure><div class="telefono" data-id="${id}"><div class="estado"><span>9:41</span><span>●●● ▮</span></div>${html}</div>
+      <figcaption><b>${titulo} · ${estado.modo === "hoy" ? "hoy" : "propuesta"}</b><ul>${notas.map((n) => `<li>${n}</li>`).join("")}</ul></figcaption></figure>`;
+  }).join("");
+  cont.querySelectorAll(".telefono").forEach((t) => {
+    const p = t.querySelector(".pantalla");
+    p.dataset.id = t.dataset.id;
+    if (scroll[t.dataset.id]) p.scrollTop = scroll[t.dataset.id];
+  });
+  cont.querySelectorAll(".pantalla").forEach(ajustar);
+  document.body.classList.toggle("marcado", document.getElementById("marcar").checked && estado.modo === "propuesta");
+  document.querySelectorAll(".modo button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.modo === estado.modo)));
+  const abierta = document.querySelector(".campo input");
+  if (abierta && enfocar) { abierta.focus({ preventScroll: true }); enfocar = false; }
+}
+let enfocar = false;
+
+/* Alto visible de la cabecera (para los títulos pegados) y el botón de volver arriba. */
+function ajustar(p) {
+  const fija = p.querySelector(".fija"), ctx = fija?.querySelector(".contexto");
+  if (ctx) fija.style.setProperty("--alto-contexto", ctx.offsetHeight + "px");
+  const alto = fija ? fija.offsetHeight - (fija.classList.contains("encogida") && ctx ? ctx.offsetHeight : 0) : 0;
+  p.style.setProperty("--alto-fija", alto + "px");
+  // La letra en la que vas: el último grupo cuyo separador ya llegó al borde de la cabecera. Arriba del todo, ninguna.
+  const tira = fija?.querySelector(".letras");
+  if (tira) {
+    const borde = p.getBoundingClientRect().top + alto + 2;
+    let actual = null;
+    for (const g of p.querySelectorAll('[id^="g-"]')) { if (g.getBoundingClientRect().top <= borde) actual = g.id.split("-").pop(); else break; }
+    if (actual === "num") actual = "#";
+    for (const b of tira.children) b.classList.toggle("actual", b.dataset.v === actual);
+    const marcada = tira.querySelector(".actual");
+    if (marcada && (marcada.offsetLeft < tira.scrollLeft || marcada.offsetLeft + marcada.offsetWidth > tira.scrollLeft + tira.clientWidth)) {
+      tira.scrollTo({ left: marcada.offsetLeft - tira.clientWidth / 2 + marcada.offsetWidth / 2, behavior: "smooth" });
+    }
+  }
+  p.parentElement.querySelector(".arriba")?.classList.toggle("visible", estado.modo === "propuesta" && p.scrollTop > 700);
+}
+document.addEventListener("scroll", (ev) => {
+  const p = ev.target;
+  if (!(p instanceof Element) || !p.classList.contains("pantalla")) return;
+  const fija = p.querySelector(".fija"), st = p.scrollTop, antes = Number(p.dataset.antes || 0);
+  if (estado.modo === "propuesta" && fija?.querySelector(".contexto") && !p.querySelector(".campo")) {
+    if (st < 80 || st - antes < -6) fija.classList.remove("encogida");
+    else if (st - antes > 6) fija.classList.add("encogida");
+  }
+  p.dataset.antes = st;
+  ajustar(p);
+}, true);
+
+document.addEventListener("click", (ev) => {
+  const m = ev.target.closest("[data-modo]");
+  if (m) { estado.modo = m.dataset.modo; ["agenda", "lugares", "artistas"].forEach((k) => (estado[k].buscando = false)); return pintar(); }
+  const b = ev.target.closest("[data-accion]");
+  if (!b) return;
+  const p = b.dataset.p, v = b.dataset.v;
+  if (b.dataset.accion === "letra") {
+    const pantalla = b.closest(".pantalla");
+    const destino = pantalla.querySelector(`#g-${p}-${v === "#" ? "num" : v}`);
+    const fija = pantalla.querySelector(".fija"), ctx = fija.querySelector(".contexto");
+    const hacia = destino.getBoundingClientRect().top - pantalla.getBoundingClientRect().top;
+    const baja = hacia > fija.offsetHeight;
+    const alto = fija.offsetHeight - (baja && ctx && estado.modo === "propuesta" ? ctx.offsetHeight : 0);
+    // Saltar hacia abajo ya es bajar: la cabecera se encoge desde el toque, así la letra cae justo debajo.
+    if (baja && estado.modo === "propuesta") fija.classList.add("encogida");
+    const top = pantalla.scrollTop + hacia - alto;
+    pantalla.scrollTo({ top: top < 80 ? 0 : top, behavior: "smooth" });
+    return;
+  }
+  if (b.dataset.accion === "arriba") { b.parentElement.querySelector(".pantalla").scrollTo({ top: 0, behavior: "smooth" }); return; }
+  switch (b.dataset.accion) {
+    case "buscar": estado[p].buscando = true; enfocar = true; break;
+    case "cerrar": estado[p].buscando = false; break;
+    case "vista": estado.lugares.vista = v; break;
+    case "filtro": estado[p].filtro = v; if (p === "artistas") estado.artistas.detalle = "Todo"; break;
+    case "detalle": estado.artistas.detalle = v; break;
+    case "cerca": estado.lugares.cerca = !estado.lugares.cerca; break;
+  }
+  pintar();
+});
+document.getElementById("marcar").addEventListener("change", pintar);
+pintar();
+</script>
+</body>
+</html>

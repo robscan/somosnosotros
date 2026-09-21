@@ -1,0 +1,16 @@
+/* Mapa de referencia de una ficha: ancho de columna, esquinas como las tarjetas (Cartel.module.css) */
+.mapa {
+  display: block;
+  width: 100%;
+  height: 170px;
+  margin-bottom: var(--espacio-4);
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: var(--fondo-miniatura);
+}
+.mapa img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

@@ -1,0 +1,102 @@
+/* La cabecera única (ui/Cabecera): una rejilla plana. Renglón 1 = contexto | acciones (o el campo de búsqueda a
+   todo lo ancho); debajo, a todo lo ancho, las pestañas y el segundo nivel. Blanca sobre el tono del contenido, con
+   la raya común abajo. Compacta: sube lo que mide el renglón 1 (`--fila1`, lo mide ui/Cabecera). */
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--fondo);
+  box-shadow: inset 0 -1px 0 var(--borde);
+  transition: top var(--cabecera-animacion, 0.2s) ease;
+}
+.cabecera > * {
+  grid-column: 1 / -1;
+}
+.cabecera[data-compacta] {
+  top: calc(-1 * var(--fila1, 56px));
+}
+
+/* Renglón 1 */
+.contexto,
+.acciones,
+.campo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding-block: var(--espacio-1) var(--espacio-3);
+}
+.contexto {
+  grid-column: 1;
+  padding-left: var(--gutter);
+}
+.acciones {
+  grid-column: 2;
+  padding: var(--espacio-1) var(--gutter) var(--espacio-3) var(--espacio-2);
+}
+.acciones:empty {
+  padding: 0;
+}
+.campo {
+  padding-inline: var(--gutter);
+}
+/* El campo (ui/Buscador) con el alto de los chips de contexto; su ✕ también, o el renglón crecería al abrirlo */
+.campo > label {
+  flex: 1;
+  height: 40px;
+  min-height: 0;
+}
+.campo button {
+  min-height: 40px;
+}
+.campo input {
+  font-size: var(--letra-md);
+}
+.redondo {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.redondo > svg {
+  width: 18px;
+  height: 18px;
+}
+.redondo:active {
+  background: var(--fondo-suave);
+}
+
+/* Renglón 2 y segundo nivel: el gutter de la columna */
+.cabecera > [role="tablist"] {
+  padding-inline: var(--gutter);
+}
+.cabecera > [role="group"] {
+  margin: 0;
+  padding: var(--espacio-3) var(--gutter);
+}
+
+/* Volver arriba: a la izquierda, a la altura del botón flotante de publicar (Publicar.module.css) */
+.volver {
+  position: fixed;
+  left: var(--gutter);
+  bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + var(--espacio-4));
+  z-index: 21;
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  box-shadow: var(--sombra-flotante);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}

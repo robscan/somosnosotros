@@ -18,7 +18,7 @@ type PropsCampo = {
   className?: string;
 };
 
-/** El campo de búsqueda a secas (icono, texto, ✕): lo usan el Buscador de la URL y la agenda, que filtra en el teléfono. */
+/** El campo de búsqueda a secas (icono, texto, ✕): lo usan el Buscador de la URL, la agenda y Lugares, que filtran en el teléfono. */
 export function CampoBuscar({ valor, onCambiar, placeholder, ariaLabel, autoFocus = false, onCerrar, onFocus, className = "" }: PropsCampo) {
   return (
     <label className={`${styles.buscar} ${className}`}>
@@ -33,14 +33,15 @@ export function CampoBuscar({ valor, onCambiar, placeholder, ariaLabel, autoFocu
   );
 }
 
-type Props = { valor: string; placeholder: string; ariaLabel: string; clave?: string };
+type Props = { valor: string; placeholder: string; ariaLabel: string; clave?: string; autoFocus?: boolean; onCerrar?: () => void };
 
 /**
  * Búsqueda que vive en la URL (`?q=`): lo escrito se manda al servidor 300 ms después de dejar de teclear,
  * la página vuelve filtrada y el enlace se puede compartir o volver atrás sin perder nada.
- * Al cambiar la búsqueda se vuelve a la primera página (`n` fuera).
+ * Al cambiar la búsqueda se vuelve a la primera página (`n` fuera). Con `onCerrar` (la lupa de ui/Cabecera), la ✕
+ * borra lo buscado de la URL y cierra el campo.
  */
-export default function Buscador({ valor, placeholder, ariaLabel, clave = "q" }: Props) {
+export default function Buscador({ valor, placeholder, ariaLabel, clave = "q", autoFocus = false, onCerrar }: Props) {
   const router = useRouter();
   const ruta = usePathname();
   const params = useSearchParams();
@@ -60,5 +61,10 @@ export default function Buscador({ valor, placeholder, ariaLabel, clave = "q" }:
     window.clearTimeout(espera.current);
     espera.current = window.setTimeout(() => ir(v), 300);
   }
-  return <CampoBuscar valor={texto} onCambiar={cambiar} placeholder={placeholder} ariaLabel={ariaLabel} />;
+  function cerrar() {
+    window.clearTimeout(espera.current);
+    if (valor) ir("");
+    onCerrar?.();
+  }
+  return <CampoBuscar valor={texto} onCambiar={cambiar} placeholder={placeholder} ariaLabel={ariaLabel} autoFocus={autoFocus} onCerrar={onCerrar && cerrar} />;
 }

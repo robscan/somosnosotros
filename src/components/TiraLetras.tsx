@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { idGrupo } from "@/lib/indice";
-import { Chips } from "./ui/Chip";
-import chip from "./ui/Chip.module.css";
+import styles from "./TiraLetras.module.css";
 
 /**
  * Cuánto miden, ya pegados, los `position: sticky` que hay ANTES de un elemento en el documento — sin importar el
@@ -31,32 +30,6 @@ export function irAlGrupo(letra: string): boolean {
 }
 
 /**
- * Mide lo que ya se pega arriba (pestañas, buscador y chips) y dónde debe quedar la tira: lo deja en `--tapa`, en la
- * raíz del documento (solo hay una lista con tira a la vez), así el CSS de la tira no necesita saber nada de layout.
- * Se remide con el tamaño de la ventana y cualquier cambio de tamaño en la página (un chip que aparece o desaparece
- * cambia el alto de lo que se pega).
- */
-export function usePegajosos(tira: RefObject<HTMLElement | null>, activo: boolean) {
-  useEffect(() => {
-    if (!activo) return;
-    const raiz = document.documentElement;
-    const medir = () => {
-      const t = tira.current;
-      if (t) raiz.style.setProperty("--tapa", `${tapaAntesDe(t)}px`);
-    };
-    medir();
-    const ro = new ResizeObserver(medir);
-    ro.observe(document.body);
-    window.addEventListener("resize", medir);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", medir);
-      raiz.style.removeProperty("--tapa");
-    };
-  }, [tira, activo]);
-}
-
-/**
  * En qué letra vas: la del último separador que ya cruzó el borde de abajo de lo pegado arriba (la tira incluida),
  * o ninguna antes de llegar a la zona de la primera (founder, 2026-09-19: «A deja de ser un filtro y se tiene que
  * iluminar en cuanto entremos a su zona»). Un listener de scroll pasivo, calculado como mucho una vez por cuadro y
@@ -74,7 +47,9 @@ export function useLetraActiva(letras: string[], tira: RefObject<HTMLElement | n
         setActiva((anterior) => (anterior === null ? anterior : null));
         return;
       }
-      const linea = tira.current?.getBoundingClientRect().bottom ?? 0;
+      // Un píxel de margen: el salto deja el separador en la línea, pero con fracciones de píxel (100.09 contra 100)
+      // la comparación exacta lo dejaba fuera e iluminaba la letra anterior.
+      const linea = (tira.current?.getBoundingClientRect().bottom ?? 0) + 1;
       let actual: string | null = null;
       for (const l of letras) {
         const el = document.getElementById(idGrupo(l));
@@ -102,25 +77,24 @@ export function useLetraActiva(letras: string[], tira: RefObject<HTMLElement | n
 /**
  * Tira horizontal de acceso directo por letra (corrección del founder, 2026-09-19: «no es un filtro, es un anchor
  * point»). Solo lista las letras que tienen elementos, en el orden real de la lista; tocar una lleva a su separador,
- * sin apagar ni encender nada más (no es un filtro: `aria-current`, no `aria-pressed`). Se ilumina sola en la letra
- * en que vas (`useLetraActiva`) y, si no cabe entera, se desliza de lado para que esa letra quede a la vista, sin
- * mover la página en vertical. Se pega justo debajo de lo que ya se pega en la pantalla (founder: «dejar sticky
- * letras y tabs»), con los carriles arriba, sin quedarse fijos; se va con la búsqueda o con «Cerca de mí». El CSS
- * es el mismo de ui/Chip (ya cumple el mínimo de 44×44 px y no da doble toque ni zoom), sin su botón (que siempre
- * lleva `aria-pressed`, un estado de filtro que aquí no aplica).
+ * sin apagar ni encender nada más (no es un filtro: `aria-current`, no `aria-pressed`). Se pega bajo lo que
+ * ui/Cabecera deja a la vista, pero arriba del todo no se ve: aparece cuando se entra en la zona de la primera letra,
+ * es decir, cuando `useLetraActiva` ya ilumina una, y se va al volver a subir (founder: «que no se muestre si no hasta
+ * que el usuario ya llegó a la primera letra»). Solo las letras, sin círculo ni borde; la iluminada, en el color de
+ * acción. Si no cabe entera, se desliza de lado para que esa letra quede a la vista, sin mover la página en vertical.
+ * Se va con la búsqueda o con Cercanos.
  */
-export default function TiraLetras({ letras, activa, alTocar }: { letras: string[]; activa: string | null; alTocar: (letra: string) => void }) {
+export default function TiraLetras({ ref, letras, activa, alTocar }: { ref: RefObject<HTMLDivElement | null>; letras: string[]; activa: string | null; alTocar: (letra: string) => void }) {
   if (letras.length === 0) return null;
   return (
-    <Chips ariaLabel="Ir a una letra">
+    <div ref={ref} role="group" aria-label="Ir a una letra" className={`${styles.tira} ${activa ? styles.visible : ""}`}>
       {letras.map((l) => (
         <BotonLetra key={l} letra={l} activa={l === activa} onClick={() => alTocar(l)} />
       ))}
-    </Chips>
+    </div>
   );
 }
 
-/** El botón de una letra: el mismo dibujo que ui/Chip, pero sin `aria-pressed` (no hay un filtro que activar). */
 function BotonLetra({ letra, activa, onClick }: { letra: string; activa: boolean; onClick: () => void }) {
   const ref = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -128,7 +102,7 @@ function BotonLetra({ letra, activa, onClick }: { letra: string; activa: boolean
     if (activa) ref.current?.scrollIntoView({ inline: "nearest", block: "nearest" });
   }, [activa]);
   return (
-    <button ref={ref} type="button" className={`${chip.chip} ${activa ? chip.activo : ""}`} onClick={onClick} aria-current={activa ? "true" : undefined} aria-label={letra === "#" ? "Ir a números y símbolos" : `Ir a la letra ${letra}`}>
+    <button ref={ref} type="button" className={styles.letra} onClick={onClick} aria-current={activa ? "true" : undefined} aria-label={letra === "#" ? "Ir a números y símbolos" : `Ir a la letra ${letra}`}>
       {letra}
     </button>
   );
