@@ -537,3 +537,27 @@ El founder vio `mando-390x844.png` y dijo, literal: «ya se había acordado que 
 **El grosor** (rama `pincel-grosor`, commit `a6da93d`) se rehace encima de este mando cuando el gestor acepte el bloque 3, como pidió.
 
 `npm run typecheck && npm run lint` (0 errores) `&& npm test` (782/782) `&& npm run build`: verde. Sin migración. Rama `pincel-fase-2-canal`, commit local, sin push.
+
+## Grosor del trazo por arrastre, rehecho sobre el mando firmado (2026-09-21, rama `pincel-grosor`)
+
+El bloque 3 quedó aceptado con `8e8cc20` (PR #145, lo sube el gestor). El grosor que había empezado en `a6da93d` sobre el mando viejo se rehizo encima del mando nuevo — rama `pincel-grosor` recreada desde `8e8cc20` (el commit viejo queda como `pincel-grosor-viejo` por si hace falta mirarlo), la lógica pura y sus pruebas se trajeron tal cual (no chocaban) y el mando se editó a mano.
+
+**El pedido del founder**, literal en el chat: «que para controlar el grosor de línea, aprovechando que el usuario debe presionar el punto en celular, si hace drag para arriba se hace más grueso y si lo hace abajo es más delgado, el punto siempre regresa a donde estaba originalmente cuando lo suelta.» Y aviso suyo por el gestor: «está rompiendo la interfaz en sus pruebas».
+
+**Las cuatro reglas del gestor y cómo quedó cada una:**
+1. *Arrastre vertical sobre el botón, con tope arriba y abajo; al soltar vuelve a su sitio con `transform: translateY`, sin mover la rejilla.* El botón solo se traslada (`translateY(-desplazamiento)`, acotado a ±`ARRASTRE_GROSOR_MAX_PX` = 60 px); mientras está presionado no hay transición (sigue al dedo al instante) y al soltar la transición del CSS lo regresa al centro. El botón nunca cambia de tamaño.
+2. *Mientras se ajusta no se manda ningún trazo.* Más allá de `UMBRAL_AJUSTE_PX` (8 px, el temblor normal del dedo no cuenta) `estaAjustandoGrosor` es verdadero: el intervalo que manda mensajes no manda y tira los deltas de ese rato (al volver a pintar no sale un salto acumulado). El texto de ayuda queda vacío en ese rato — no se está pintando, así que «Pintando en la pared» sería mentira, y además en el tope de abajo el botón lo taparía (visto en una captura).
+3. *Escala visible mientras se arrastra, y el grosor persiste hasta que se cambie.* Lo que crece y encoge es el **punto blanco** dentro del botón (`escalaDelPunto`: 1 en el grosor base, 1.25 en el tope, 0.8 en el mínimo), no el botón. `grosorDesdeArrastre` es relativo al grosor con que se empezó a presionar — por eso "se queda": la siguiente pulsación pinta con él y, si se arrastra otra vez, ajusta desde ahí, acotado a `GROSOR_MIN`..`GROSOR_MAX` (0.4..2.2). `MensajeTrazo` lleva `grosor` (validado en `esMensajeTrazoValido`) y la pared escala cada pincel por él.
+4. *El mando no cambia de posición ni de alto en ningún estado.* Medido, abajo.
+
+**Dos errores míos que las capturas con Chrome real destaparon antes que el founder:** (a) en el primer intento escalé el botón entero — con el grosor en 2.2 medía 160 px y se montaba sobre las tarjetas de Trazo y Tinta; la regla decía «el punto blanco», no el botón. (b) En el tope de abajo el botón quedaba encima de «Pintando en la pared»; se resolvió vaciando el texto mientras se ajusta (ver regla 2), no moviendo nada.
+
+**De paso (pedido del gestor):** en la tarjeta de Tinta, «Cempasúchil» quedaba pegado al caret. El nombre y el caret van ahora en un `inline-flex` con `gap: 7px` y `white-space: nowrap`; medido: un renglón de 19.6 px, `gap` 7 px, `margin-left` del caret 0.
+
+**Medido con Chrome real** (playwright-core, puntero real por CDP, `capturar-mando-grosor.mjs` en el scratchpad), 390×844: reposo `translateY(0px)`, centro del botón en y = 610.9; arrastrando arriba al tope `scale(0.94) translateY(-60px)`, punto blanco `scale(1.25)`; tras soltar `translateY(0px)`, **centro igual al de reposo** (610.9) y el punto blanco **sigue en `scale(1.25)`** (el grosor se quedó); arrastrando abajo desde ahí `translateY(60px)` y, al soltar, punto en `scale(1.125)` (2.2 → 1.6, la regla relativa); en los cuatro estados las tarjetas, el texto de ayuda y el renglón de presentes **no cambian de posición ni de alto**; `scrollWidth`/`clientWidth` 390/390 en todos.
+
+**Capturas** (`…/scratchpad/evidencia-ol088/`): `mando-grosor-390x844-reposo.png`, `mando-grosor-390x844-arriba.png` (grueso), `mando-grosor-390x844-abajo.png` (delgado), `mando-grosor-390x844-tras-soltar.png` (el punto de vuelta al centro, el punto blanco grande: el grosor se quedó), `mando-grosor-390x844-cempasuchil.png` (el caret ya separado).
+
+**Pruebas puras** (`pincel.test.ts`, 12 del grosor, 794 en total): `grosorDesdeArrastre` base/arriba/abajo/acotado y relativo al grosor inicial (desde 1.6 bajar el arrastre completo deja 1.0; desde 2.0 subir se acota en 2.2); `estaAjustandoGrosor` bajo y sobre el umbral; `escalaDelPunto` en base, tope, mínimo y medio; `esMensajeTrazoValido` con y sin `grosor`, cero, negativo, descomunal y los dos extremos.
+
+`npm run typecheck && npm run lint` (0 errores) `&& npm test` (794/794) `&& npm run build`: verde. Sin migración (no toca la base). Rama `pincel-grosor` sobre `8e8cc20`, commits locales `2322e71` (código) y el de esta bitácora, sin push.
