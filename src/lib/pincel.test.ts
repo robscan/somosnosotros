@@ -19,6 +19,9 @@ import {
   quienesPintan,
   siguientesSegmentos,
   UMBRAL_AJUSTE_PX,
+  decidirSensor,
+  personasAqui,
+  textoDelSensor,
   type EntradaPresencia,
 } from "./pincel";
 
@@ -295,5 +298,53 @@ describe("estadoDeFila", () => {
   });
   it("un remitente sin trackear todavía (antes del primer sync)", () => {
     expect(estadoDeFila(entradas, 2, "nadie")).toEqual({ tipo: "fuera" });
+  });
+});
+
+describe("personasAqui", () => {
+  it("singular con una, plural con el resto (OL-117: salía «1 personas aquí»)", () => {
+    expect(personasAqui(1)).toBe("1 persona aquí");
+    expect(personasAqui(2)).toBe("2 personas aquí");
+    expect(personasAqui(0)).toBe("0 personas aquí");
+  });
+});
+
+describe("decidirSensor (OL-117)", () => {
+  it("sin el constructor, de verdad no hay sensor", () => {
+    expect(decidirSensor({ caso: "sin-constructor" })).toEqual({ tipo: "sin-soporte", detalle: "sin DeviceOrientationEvent" });
+  });
+  it("sin requestPermission (Android, Chrome) se lee directo: concedido", () => {
+    expect(decidirSensor({ caso: "sin-request-permission" })).toEqual({ tipo: "concedido" });
+  });
+  it("respuesta granted concede; denied (explícito) niega y lo anota", () => {
+    expect(decidirSensor({ caso: "respuesta", valor: "granted" })).toEqual({ tipo: "concedido" });
+    expect(decidirSensor({ caso: "respuesta", valor: "denied" })).toEqual({ tipo: "negado", detalle: "respuesta denied" });
+  });
+  it("un rechazo (NotAllowedError: gesto no válido o permiso negado antes) es NEGADO, no «sin soporte» — el error del iPhone del founder", () => {
+    const s = decidirSensor({ caso: "error", nombre: "NotAllowedError", mensaje: "Requesting device orientation access requires a user gesture to prompt" });
+    expect(s.tipo).toBe("negado");
+    expect(s.tipo === "negado" && s.detalle).toContain("NotAllowedError");
+    expect(decidirSensor({ caso: "error", nombre: "TypeError", mensaje: "" })).toEqual({ tipo: "negado", detalle: "TypeError" });
+  });
+});
+
+describe("textoDelSensor (OL-117)", () => {
+  it("concedido: sin texto propio, manda el de pintar", () => {
+    expect(textoDelSensor({ tipo: "concedido" }, false)).toBeNull();
+  });
+  it("antes de pedirlo, invita a tocar el punto; mientras se pide, lo dice", () => {
+    expect(textoDelSensor({ tipo: "sin-pedir" }, false)).toEqual({ texto: "Toca el punto para activar el sensor", esAviso: false, abrirEnSafari: false });
+    expect(textoDelSensor({ tipo: "pidiendo" }, true)?.texto).toBe("Activando el sensor…");
+  });
+  it("negado en Safari: la ruta de Ajustes; negado en la app instalada: abrir en Safari, con botón", () => {
+    const safari = textoDelSensor({ tipo: "negado", detalle: "x" }, false);
+    expect(safari?.esAviso).toBe(true);
+    expect(safari?.abrirEnSafari).toBe(false);
+    expect(safari?.texto).toContain("Ajustes → Apps → Safari → Movimiento y orientación");
+    const instalada = textoDelSensor({ tipo: "negado", detalle: "x" }, true);
+    expect(instalada).toEqual({ texto: "En la app instalada el iPhone no deja usar el sensor. Abre este enlace en Safari.", esAviso: true, abrirEnSafari: true });
+  });
+  it("sin soporte: el único caso en que se dice que no hay sensor", () => {
+    expect(textoDelSensor({ tipo: "sin-soporte", detalle: "x" }, false)).toEqual({ texto: "Este navegador no tiene sensor de movimiento.", esAviso: true, abrirEnSafari: false });
   });
 });
