@@ -155,3 +155,39 @@ Lo que pide L39 entre paréntesis. Si se hiciera, lo mínimo útil sería:
   `20260922130000` (Pincel) y `20260922140000` (OL-114, identidad del artista), que van antes en el orden.
 - Commit local en `avisos-al-admin`: `451258c` (migración + prueba SQL) y el commit de este cierre (código
   TypeScript + bitácora + capturas). Sin push; el gestor sube cuando corresponda.
+
+## Corrección tras la revisión del gestor (2026-09-22): el icono nuevo rompía la fila
+
+El gestor devolvió la pieza por una cosa: al agregar el icono de Administración, la foto de perfil saltaba a un
+segundo renglón, debajo del logotipo (visible en `cabecera-admin-con-punto--390x844.png` de la entrega anterior).
+
+**Causa medida.** `ui/Barra.module.css`, clase `.raiz`: `grid-template-columns: 1fr auto auto` (3 columnas
+explícitas) para una fila que ahora recibe **4** hijos directos sin envoltorio (`Sesion.tsx` es un fragmento:
+logotipo + campana + Administración + foto; `VistoHoy` no cuenta, devuelve `null`). Con más hijos que columnas
+explícitas y sin `grid-auto-flow` propio, CSS Grid manda el sobrante (la foto) a un renglón implícito nuevo. Antes
+de esta pieza siempre habían sido 3 hijos (logotipo + campana + foto), que sí cabían justo en las 3 columnas.
+
+**Arreglo.** Una sola columna explícita (`1fr`, el logotipo, que crece y empuja el resto) más
+`grid-auto-flow: column; grid-auto-columns: auto;`, para que cualquier número de controles a la derecha fluya en
+columnas implícitas dentro de la MISMA fila, sin depender de contar hijos a mano y sin envoltorio nuevo (regla de
+maquetación plana). Sin `position: absolute`.
+
+**Medido con `getBoundingClientRect()` en el navegador real** (mismo respaldo local, Chrome headless por CDP),
+reproduciendo la regla vieja con estilo en línea sobre el mismo DOM/contenido para tener un "antes" exacto, a
+390×844 y 320×568:
+
+| | Antes (regla vieja) | Después (corregido) |
+| --- | --- | --- |
+| Alto de la cabecera | **96px**, dos renglones (`dosRenglones: true`, el 4º hijo con `top` distinto a los otros tres) | **56px**, un renglón (`dosRenglones: false`, los 4 hijos con el mismo `top`) |
+| A 390px | Igual que arriba | Igual que arriba |
+| A 320px | Igual que arriba (el bug no depende del ancho) | Igual que arriba; sin desbordar el viewport |
+
+El alto de después (56px) es el mismo que ya tenía la cabecera en producción sin el icono nuevo (una fila,
+`min-height: var(--alto-barra)`): la corrección no cambia el alto habitual, solo evita que un caso con más
+controles caiga en un renglón extra.
+
+**Capturas repetidas** (`docs/rediseno/capturas-150/`): `cabecera-admin-sin-punto--390x844.png` y
+`cabecera-admin-con-punto--390x844.png` (reemplazadas) más `cabecera-admin-con-punto--320x568.png` (nueva),
+las tres con logotipo · campana · Administración · foto en una sola fila.
+
+Verde otra vez: lint, typecheck, 803 unitarias, build.
