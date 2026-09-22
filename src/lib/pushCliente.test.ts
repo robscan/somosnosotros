@@ -65,6 +65,12 @@ describe("estado push reconciliado", () => {
     expect(await estadoPush("AA")).toBe("apagado");
     expect(mocks.activa).toHaveBeenCalledTimes(2);
   });
+  it("si el navegador silencia el permiso (Chrome deja un icono y no resuelve), no se queda esperando para siempre", async () => {
+    notification.requestPermission.mockImplementation(() => new Promise(() => {})); // nunca resuelve, como el icono sin tocar
+    const alta = suscribirPush("AA");
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(await alta).toEqual({ ok: false, motivo: "silenciado" });
+  });
   it("un fallo de red conserva la opcion de reintentar", async () => {
     mocks.activa.mockRejectedValueOnce(new Error("sin red"));
     expect(await estadoPush("AA")).toBe("apagado");

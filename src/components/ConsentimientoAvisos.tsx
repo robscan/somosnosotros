@@ -102,7 +102,9 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
       if (estado === "instalar-primero") return setHoja(true);
       if (estado === "otra-app" || estado === "no-soportado" || estado === "bloqueado") return setProblema(estado);
       const alta = await suscribirPush(llavePush);
-      if (!alta.ok) return setProblema(alta.motivo);
+      // "silenciado" (bitácora 147, ActivarAvisos/AvisosPerfil) no cambia esta pregunta: se trata como cualquier alta
+      // que no terminó, con el mismo "Intentar de nuevo".
+      if (!alta.ok) return setProblema(alta.motivo === "silenciado" ? "fallo" : alta.motivo);
       if (await guardarSuscripcionPush(alta.sub)) {
         marcarAvisosContestados(cuenta);
         setProblema(null);
