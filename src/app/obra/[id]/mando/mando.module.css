@@ -67,12 +67,21 @@
   opacity: 0.5;
   cursor: default;
 }
+/* Nombre + caret en un renglón que no se parte: con «Cempasúchil» el caret quedaba pegado al nombre (gestor). */
+.tarjeta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  white-space: nowrap;
+}
 .tarjeta > span::after {
   content: "";
   display: inline-block;
+  flex: none;
   width: 6px;
   height: 6px;
-  margin: 0 0 3px 7px;
+  margin: 0 0 3px;
   border: solid var(--texto-suave);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
@@ -150,11 +159,22 @@
   cursor: pointer;
   touch-action: none;
   user-select: none;
-  transition: transform 0.12s, box-shadow 0.12s;
+  /* El grosor por arrastre pone su propio `transform` en línea (escala del grosor + translateY del dedo); esta
+     transición es la que regresa el punto al centro al soltar, sin brinco. Mientras está presionado no hay
+     transición (la quita el propio elemento): sigue al dedo al instante. */
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
 }
 .orb[aria-pressed="true"] {
-  transform: scale(0.94);
   box-shadow: 0 0 0 10px rgba(15, 107, 124, 0.22);
+}
+/* El punto blanco dentro del botón: es lo que crece/encoge con el grosor (solo `transform`, el botón no cambia de
+   tamaño ni se monta sobre las tarjetas). Con transición corta también al soltar, para que el cambio se lea. */
+.punto {
+  display: block;
+  border-radius: 50%;
+  background: currentColor;
+  /* width/height los pone el mando (diametroDelPunto: 8 a 56 px). Sin transición: sigue al dedo al instante y, al
+     soltar, no cambia — el grosor se queda. */
 }
 .hold {
   grid-area: hold;

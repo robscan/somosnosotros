@@ -61,7 +61,7 @@ export type Delta = { dx: number; dy: number };
  * mandar el remitente de otra persona): el canal ya exige sesión (`private: true`); esto es solo para que dos
  * pinceles no se confundan, no una medida de seguridad aparte — aceptado así a propósito, sin generalizar.
  */
-export type MensajeTrazo = { trazo: Trazo; color: string; deltas: Delta[]; remitente: string };
+export type MensajeTrazo = { trazo: Trazo; color: string; deltas: Delta[]; remitente: string; grosor: number };
 
 function numeroFinito(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v);
@@ -71,6 +71,56 @@ function esDeltaValido(v: unknown): v is Delta {
   if (!v || typeof v !== "object") return false;
   const d = v as Record<string, unknown>;
   return numeroFinito(d.dx) && numeroFinito(d.dy) && Math.abs(d.dx) <= 1 && Math.abs(d.dy) <= 1;
+}
+
+/**
+ * Grosor del trazo (founder, 2026-09-21): mientras mantiene presionado el punto del mando, arrastrar el dedo hacia
+ * arriba engruesa, hacia abajo adelgaza; el punto siempre vuelve a su lugar al soltar (no queda un ajuste guardado
+ * entre pulsaciones, es del gesto, no de una preferencia). `deltaY` es cuánto se movió el dedo desde que empezó a
+ * presionar, positivo hacia arriba (al revés de la coordenada Y de la pantalla, que crece hacia abajo).
+ */
+export const GROSOR_BASE = 1;
+/** Rango del grosor: 0.5 a 3.5 veces el trazo de siempre. En la pared, el trazo fino va de 1.5 a 10.5 px y el
+ * aire de 4.5 a 31.5 px — un pincel gordo de verdad en una pared de 1280 px, no una diferencia de matiz. El rango es
+ * 7:1 para que el punto del mando (16 px por unidad) vaya de 8 a 56 px, lo que pidió el gestor (2026-09-21). */
+export const GROSOR_MIN = 0.5;
+export const GROSOR_MAX = 3.5;
+export const ARRASTRE_GROSOR_MAX_PX = 60;
+/** Menos que esto es el temblor normal del dedo al mantener presionado, no un ajuste de grosor. */
+export const UMBRAL_AJUSTE_PX = 8;
+
+/**
+ * Relativo a `grosorInicial` (el grosor que tenía el punto al empezar a presionar), no al grosor base: el gestor
+ * pidió que el grosor SE QUEDE al soltar (solo el punto vuelve al centro), así que la siguiente pulsación tiene que
+ * seguir desde donde quedó, no volver a 1 al primer movimiento. Un arrastre completo (`maxArrastre` px) desde el
+ * grosor base llega justo al tope; desde otro grosor, se acota al tope sin pasarse.
+ */
+export function grosorDesdeArrastre(deltaY: number, grosorInicial = GROSOR_BASE, maxArrastre = ARRASTRE_GROSOR_MAX_PX): number {
+  if (maxArrastre <= 0) return grosorInicial;
+  const porPxArriba = (GROSOR_MAX - GROSOR_BASE) / maxArrastre;
+  const porPxAbajo = (GROSOR_BASE - GROSOR_MIN) / maxArrastre;
+  const grosor = grosorInicial + deltaY * (deltaY >= 0 ? porPxArriba : porPxAbajo);
+  return Math.max(GROSOR_MIN, Math.min(GROSOR_MAX, grosor));
+}
+
+/** Mientras el dedo está más allá del umbral, se está ajustando el grosor: el mando NO manda trazo (gestor,
+ * 2026-09-21), para que el arrastre vertical no se confunda con el movimiento del celular que pinta. */
+export function estaAjustandoGrosor(desplazamiento: number, umbral = UMBRAL_AJUSTE_PX): boolean {
+  return Math.abs(desplazamiento) > umbral;
+}
+
+/** El punto blanco del mando mide el grosor a escala del mando: 16 px por unidad de grosor (gestor, 2026-09-21:
+ * «que el punto blanco mida el grosor real del trazo tal como se pintará en la pared a escala del mando, mínimo
+ * ~8 px y máximo ~56 px»). Un primer intento con una escala de 0.8 a 1.25 sobre un glifo de ~10 px no se veía:
+ * el punto pasaba de 10 a 12 px y, tras soltar, nadie sabía qué grosor llevaba. */
+export const PX_POR_GROSOR_EN_MANDO = 16;
+
+/** Diámetro del punto blanco, en px, para un grosor dado: 8 en el mínimo, 16 en el base, 56 en el tope. Cambia
+ * de forma continua mientras se arrastra y se queda al soltar. Es el tamaño del punto, no del botón (128 px fijos)
+ * ni de la rejilla. */
+export function diametroDelPunto(grosor: number): number {
+  const acotado = Math.max(GROSOR_MIN, Math.min(GROSOR_MAX, grosor));
+  return acotado * PX_POR_GROSOR_EN_MANDO;
 }
 
 /** Antes de dibujar con lo que llegó del canal: la pared no confía en el payload de otro cliente sin mirarlo. */
@@ -85,7 +135,10 @@ export function esMensajeTrazoValido(v: unknown): v is MensajeTrazo {
     m.deltas.length <= DELTAS_MAX_POR_MENSAJE &&
     m.deltas.every(esDeltaValido) &&
     typeof m.remitente === "string" &&
-    m.remitente.length > 0
+    m.remitente.length > 0 &&
+    numeroFinito(m.grosor) &&
+    m.grosor > 0 &&
+    m.grosor <= GROSOR_MAX + 0.001
   );
 }
 
