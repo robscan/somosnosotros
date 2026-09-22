@@ -83,7 +83,7 @@ function requestPermissionDeOrientacion(): (() => Promise<"granted" | "denied">)
  * botón arranca apagado y el primer toque lo enciende (permiso del sensor); encendido y con cupo, el mando manda su
  * posición aunque no pinte (la pared enseña un punto tenue) y «Centrar» recalibra el cero.
  */
-export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perfilId: string; cupo: number }) {
+export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraId: string; perfilId: string; cupo: number; sonda?: boolean }) {
   const [trazo, setTrazo] = useState<Trazo>(TRAZOS[0].id);
   const [color, setColor] = useState(TINTAS[0].valor);
   const [presionado, setPresionado] = useState(false);
@@ -98,6 +98,21 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   // `transform`, el grosor se queda hasta que se cambie, y mientras se ajusta no se manda trazo.
   const [desplazamiento, setDesplazamiento] = useState(0); // px del punto mientras se arrastra (positivo = arriba)
   const [grosor, setGrosor] = useState(GROSOR_BASE);
+  // Sonda (OL-126, founder: «grosor se sigue bloqueando» en el iPhone real, donde no hay consola): solo con
+  // `?sonda=1`, un recuadro con los últimos eventos de puntero/toque que llegaron y el estado del mando. Sin el
+  // parámetro `anotar` no hace nada y no se pinta nada.
+  const [lineasSonda, setLineasSonda] = useState<string[]>([]);
+  const [muestrasPorSegundo, setMuestrasPorSegundo] = useState(0);
+  const [posicionSonda, setPosicionSonda] = useState<PosicionNormalizada>(CENTRO); // copia por segundo, para no leer refs al pintar
+  const [capturado, setCapturado] = useState(false);
+  const muestrasRef = useRef(0);
+  const anotar = useCallback(
+    (texto: string) => {
+      if (!sonda) return;
+      setLineasSonda((l) => [...l.slice(-7), `${new Date().toISOString().slice(14, 23)} ${texto}`]);
+    },
+    [sonda],
+  );
 
   const canalRef = useRef<ReturnType<typeof abrirCanalObra> | null>(null);
   // Hacia dónde apunta el pincel (OL-120): el cero es la postura del teléfono al encender o al centrar; cada lectura
@@ -181,6 +196,7 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   useEffect(() => {
     if (!estaEncendido(sensor) || estado.tipo !== "pintando") return;
     function alMoverse(e: DeviceOrientationEvent) {
+      muestrasRef.current += 1;
       const actual: Orientacion = { beta: e.beta, gamma: e.gamma };
       if (!ceroRef.current && actual.beta !== null && actual.gamma !== null) ceroRef.current = actual;
       const posicion = posicionDesdeOrientacion(ceroRef.current, actual);
@@ -189,11 +205,34 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
       bufferRef.current.push(posicion);
     }
     window.addEventListener("deviceorientation", alMoverse);
+    // Con sonda: cuántas lecturas por segundo da el sensor de verdad (en Safari de iOS, ~60).
+    const contador = sonda
+      ? setInterval(() => {
+          setMuestrasPorSegundo(muestrasRef.current);
+          setPosicionSonda(posicionRef.current);
+          muestrasRef.current = 0;
+        }, 1000)
+      : null;
     return () => {
       window.removeEventListener("deviceorientation", alMoverse);
+      if (contador) clearInterval(contador);
       bufferRef.current = [];
     };
-  }, [sensor, estado.tipo]);
+  }, [sensor, estado.tipo, sonda]);
+
+  // (a) Safari de iOS: mientras el mando está en pantalla, sin «tirar para refrescar» ni rebote de la página
+  // (`overscroll-behavior` tiene que ir en html/body, no basta en el botón); se repone al salir.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const antes = [html.style.overscrollBehavior, body.style.overscrollBehavior];
+    html.style.overscrollBehavior = "none";
+    body.style.overscrollBehavior = "none";
+    return () => {
+      html.style.overscrollBehavior = antes[0];
+      body.style.overscrollBehavior = antes[1];
+    };
+  }, []);
 
   // Presionado y con cupo para pintar: manda MENSAJES_POR_SEGUNDO veces por segundo las posiciones juntadas desde
   // el mensaje anterior. Si el cupo baja a media pulsación (o el sync de Presence llega tarde), este efecto se
@@ -233,34 +272,82 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
     return () => clearInterval(intervalo);
   }, [presionado, estado.tipo, mandarPosicion]);
 
+  /** Al soltar (o si el sistema cancela el toque): el punto vuelve al centro (transición de CSS sobre `transform`,
+   * la rejilla no se toca) y el grosor SE QUEDA — la siguiente pulsación pinta con él y, si se arrastra otra vez,
+   * ajusta desde ahí. Antes del efecto del arrastre porque este lo lista como dependencia. */
+  const soltar = useCallback(
+    (e?: { type: string; pointerType?: string; clientY?: number }) => {
+      if (e) anotar(`${e.type} ${e.pointerType ?? ""} y=${e.clientY === undefined ? "-" : Math.round(e.clientY)}`);
+      setPresionado(false);
+      setDesplazamiento(0);
+      setCapturado(false);
+      arrastreInicioYRef.current = null;
+      ajustandoRef.current = false;
+    },
+    [anotar],
+  );
+
   // Grosor por arrastre: con el punto presionado, mover el dedo hacia arriba engruesa, hacia abajo adelgaza — el
   // gesto ya usado para pintar (mantener presionado), no uno nuevo. `arrastreInicioYRef` se marca en el propio
   // evento de presionar (llega antes que este efecto). Relativo al grosor con que se empezó: así "se queda".
   useEffect(() => {
     if (!presionado) return;
-    function alArrastrar(e: PointerEvent) {
+    function ajustarDesde(clientY: number) {
       if (arrastreInicioYRef.current === null) return;
-      const deltaY = arrastreInicioYRef.current - e.clientY; // positivo = dedo subió
+      const deltaY = arrastreInicioYRef.current - clientY; // positivo = dedo subió
       const acotado = Math.max(-ARRASTRE_GROSOR_MAX_PX, Math.min(ARRASTRE_GROSOR_MAX_PX, deltaY));
       setDesplazamiento(acotado);
       ajustandoRef.current = estaAjustandoGrosor(acotado);
       setGrosor(grosorDesdeArrastre(deltaY, grosorAlEmpezarRef.current));
     }
+    function alArrastrar(e: PointerEvent) {
+      anotar(`${e.type} ${e.pointerType} y=${Math.round(e.clientY)}`);
+      ajustarDesde(e.clientY);
+    }
     // Soltar también desde window: si el navegador no captura el puntero, el `pointerup` fuera del botón llega aquí.
     // (El botón NO usa `pointerleave` para soltar: en Safari de iOS llega un `pointerleave` en el primer
     // `pointermove` del dedo, aunque el toque siga —medido en el simulador, OL-120— y soltaba el arrastre.)
-    function alSoltarFuera() {
+    function alSoltarFuera(e: PointerEvent) {
+      anotar(`${e.type} ${e.pointerType} window y=${Math.round(e.clientY)}`);
+      soltar();
+    }
+    // (c) Respaldo por toques (OL-126): si Safari no entrega `pointermove` (captura fallida), el arrastre se lee
+    // del `touchmove`, y `touchend`/`touchcancel` sueltan. Los mismos valores por las dos vías: no se pisan.
+    function alMoverToque(e: TouchEvent) {
+      const t = e.touches[0];
+      if (!t) return;
+      anotar(`touchmove y=${Math.round(t.clientY)}${e.cancelable ? "" : " (no cancelable)"}`);
+      if (e.cancelable) e.preventDefault(); // (a) el documento no se desplaza mientras hay un dedo pintando
+      ajustarDesde(t.clientY);
+    }
+    function alTerminarToque(e: TouchEvent) {
+      anotar(e.type);
+      soltar();
+    }
+    // Si la app pierde el foco a media pulsación (llamada, cambio de app), el botón no se queda trabado.
+    function alPerderFoco() {
+      anotar(document.visibilityState === "hidden" ? "visibilidad oculta" : "blur");
       soltar();
     }
     window.addEventListener("pointermove", alArrastrar);
     window.addEventListener("pointerup", alSoltarFuera);
     window.addEventListener("pointercancel", alSoltarFuera);
+    document.addEventListener("touchmove", alMoverToque, { passive: false });
+    document.addEventListener("touchend", alTerminarToque);
+    document.addEventListener("touchcancel", alTerminarToque);
+    window.addEventListener("blur", alPerderFoco);
+    document.addEventListener("visibilitychange", alPerderFoco);
     return () => {
       window.removeEventListener("pointermove", alArrastrar);
       window.removeEventListener("pointerup", alSoltarFuera);
       window.removeEventListener("pointercancel", alSoltarFuera);
+      document.removeEventListener("touchmove", alMoverToque);
+      document.removeEventListener("touchend", alTerminarToque);
+      document.removeEventListener("touchcancel", alTerminarToque);
+      window.removeEventListener("blur", alPerderFoco);
+      document.removeEventListener("visibilitychange", alPerderFoco);
     };
-  }, [presionado]);
+  }, [presionado, anotar, soltar]);
 
   // OL-120, punto 7 (founder en el iPhone: «arrastro el punto arriba y abajo y no funciona»): en Safari de iOS un
   // dedo que se mantiene y se mueve en vertical es, por defecto, desplazar la página o seleccionar, y el toque se
@@ -274,16 +361,6 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
     orb.addEventListener("touchmove", frenarDesplazamiento, { passive: false });
     return () => orb.removeEventListener("touchmove", frenarDesplazamiento);
   }, []);
-
-  /** Al soltar (o si el sistema cancela el toque): el punto vuelve al centro (transición de CSS sobre `transform`,
-   * la rejilla no se toca) y el grosor SE QUEDA — la siguiente pulsación pinta con él y, si se arrastra otra vez,
-   * ajusta desde ahí. */
-  function soltar() {
-    setPresionado(false);
-    setDesplazamiento(0);
-    arrastreInicioYRef.current = null;
-    ajustandoRef.current = false;
-  }
 
   /**
    * Encender el control (OL-120, punto 5 del founder; antes OL-117): el primer toque del botón grande pide el
@@ -319,15 +396,20 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   /** Presionar: solo pinta con el control encendido. Apagado, el botón no pinta; se enciende al soltar (`onClick`),
    * que es el gesto que iOS acepta. */
   function empezarAPintar(e: React.PointerEvent<HTMLButtonElement>) {
+    anotar(`${e.type} ${e.pointerType} y=${Math.round(e.clientY)} ${estaEncendido(sensor) ? "encendido" : "apagado"}`);
     setAbierto(null); // como en el prototipo firmado: pintar cierra cualquier menú abierto
     if (!estaEncendido(sensor)) return;
     // El botón se queda con el puntero aunque el dedo (o el propio botón, que lo sigue) salga de su área: el
-    // arrastre del grosor y el soltar llegan siempre a él.
+    // arrastre del grosor y el soltar llegan siempre a él. Si Safari no lo captura (OL-126, sospecha c), la sonda
+    // lo enseña («cap=no») y el arrastre sigue por `touchmove`.
+    let cap = false;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
+      cap = e.currentTarget.hasPointerCapture(e.pointerId);
     } catch {
-      // un navegador sin captura de puntero sigue funcionando con los eventos de window
+      // un navegador sin captura de puntero sigue funcionando con los eventos de window/touch
     }
+    setCapturado(cap);
     arrastreInicioYRef.current = e.clientY;
     grosorAlEmpezarRef.current = grosorRef.current;
     setPresionado(true);
@@ -509,6 +591,14 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
             {presionado ? (estaAjustandoGrosor(desplazamiento) ? " " : "Pintando en la pared") : "Mantén presionado y mueve tu celular"}
           </p>
         ))}
+
+      {sonda && (
+        <pre className={styles.sonda} aria-hidden="true">
+          {`sonda · fila=${estado.tipo} (${entradas.length}) · sensor=${sensor.tipo} · ${muestrasPorSegundo} lecturas/s\n` +
+            `pres=${presionado ? "sí" : "no"} cap=${capturado ? "sí" : "no"} desp=${desplazamiento} grosor=${grosor.toFixed(2)} pos=${posicionSonda.x.toFixed(2)},${posicionSonda.y.toFixed(2)}\n` +
+            lineasSonda.join("\n")}
+        </pre>
+      )}
     </div>
   );
 }
