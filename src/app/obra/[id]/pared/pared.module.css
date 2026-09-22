@@ -33,6 +33,33 @@
   line-height: 1.05;
   color: var(--texto);
 }
+/* QR hacia el mando (OL-118): abajo a la derecha, lejos del título; el código mide 224 px a 1280 de ancho y
+   336 a 1920 (17.5 % del ancho, entre 220 y 340). La tarjeta no recibe toques: la pared no tiene controles. */
+.qr {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 14px 12px;
+  border-radius: var(--radio-grande);
+  background: var(--vidrio);
+  box-shadow: var(--sombra);
+  pointer-events: none;
+}
+.qr > img {
+  width: clamp(220px, 17.5vw, 340px);
+}
+.qr > figcaption {
+  font-size: clamp(18px, 1.6vw, 28px);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--texto);
+}
 .cerrada {
   min-height: 100dvh;
   display: grid;
