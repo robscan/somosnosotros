@@ -235,3 +235,31 @@
   font-size: var(--letra-sm);
   line-height: 1.4;
 }
+
+/* Interruptor «Pincel apagado» (OL-121): mismo dibujo de fila que .campoCupo, con la palanca de ui/Ajustes a la
+   derecha (import cruzado, como ya hace ReservaPerfil). */
+.interruptorPincel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: 14px;
+  margin-top: var(--espacio-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.interruptorPincel > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.interruptorPincel b {
+  font-weight: 600;
+  font-size: 16px;
+}
+.interruptorPincel small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}

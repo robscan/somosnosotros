@@ -22,6 +22,13 @@ function esUnicidad(error: { code?: string } | null | undefined): boolean {
   return error?.code === "23505";
 }
 
+/** 23514 = check_violation: el freno global de Pincel (OL-121, migración 20260922180000) — ya hay dos obras
+ * abiertas, o el cupo pedido rebasa lo que queda entre todas. El disparador manda un mensaje llano en
+ * `error.message` (p. ej. «Quedan 12 mandos entre todas las obras abiertas»): se muestra tal cual, no uno genérico. */
+function esFrenoGlobal(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "23514";
+}
+
 /**
  * «Activar Pincel» en la ficha de un evento. Si ese evento o su lugar ya tienen una obra abierta, entra a esa en vez
  * de duplicarla — la base lo garantiza con sus índices únicos, esto solo evita el viaje de ida y vuelta con error.
@@ -58,7 +65,11 @@ export async function crearPorUbicacion(_anterior: Resultado, formData: FormData
   const cierra = localAIso(hora, zonaSegura(lugar.zona));
   if (!cierra) return { ok: false, error: "La hora de cierre no es válida." };
   const { data: creada, error } = await supabase.from("obras_colectivas").insert({ nombre, lugar_id: lugarId, cierra_en: cierra, creado_por: yo }).select("id").single();
-  if (error) return { ok: false, error: esUnicidad(error) ? "Ya hay una obra abierta en ese lugar." : "No se pudo crear. Intenta de nuevo." };
+  if (error) {
+    if (esUnicidad(error)) return { ok: false, error: "Ya hay una obra abierta en ese lugar." };
+    if (esFrenoGlobal(error)) return { ok: false, error: error.message };
+    return { ok: false, error: "No se pudo crear. Intenta de nuevo." };
+  }
   redirect(`/admin/obras-colectivas/${creada.id}`);
 }
 
@@ -85,8 +96,19 @@ export async function cambiarCupo(id: string, cupo: number): Promise<Resultado> 
   if (!Number.isInteger(cupo) || cupo < 1 || cupo > 20) return { ok: false, error: "El cupo va de 1 a 20." };
   const { supabase } = await soloAdmin();
   const { error } = await supabase.from("obras_colectivas").update({ cupo_mandos: cupo }).eq("id", id);
-  if (error) return { ok: false, error: "No se pudo cambiar el cupo. Intenta de nuevo." };
+  if (error) return { ok: false, error: esFrenoGlobal(error) ? error.message : "No se pudo cambiar el cupo. Intenta de nuevo." };
   revalidar(id);
+  return { ok: true };
+}
+
+/** Interruptor «Pincel apagado» (OL-121, doc del founder 2026-09-22): apagado, la pared y el mando no dejan pintar
+ * y el canal en vivo deja de responder (migración 20260922180000, política restrictiva sobre `realtime.messages`).
+ * Quién lo cambió y cuándo lo pone solo el disparador de la base (`ajustes_sitio_quien`), no lo que mande aquí. */
+export async function cambiarPincelActivo(activo: boolean): Promise<Resultado> {
+  const { supabase } = await soloAdmin();
+  const { error } = await supabase.from("ajustes_sitio").update({ valor: activo }).eq("clave", "pincel_activo");
+  if (error) return { ok: false, error: "No se pudo cambiar. Intenta de nuevo." };
+  revalidatePath("/admin/obras-colectivas");
   return { ok: true };
 }
 

@@ -10,14 +10,17 @@ const MAX = 20;
 /**
  * Cupo de mandos por obra (doc rediseno/34, prototipo firmado OL-088): un contador +/- de 1 a 20, igual al
  * prototipo. Guarda al soltar el botón (sin un "Guardar" aparte, como el resto de las acciones del panel).
+ * `tope` (OL-121, founder 2026-09-22): lo que le queda a esta obra por el freno global (40 mandos entre todas las
+ * obras abiertas) — nunca más alto que 20, a veces menos.
  */
-export default function CampoCupo({ id, cupo }: { id: string; cupo: number }) {
+export default function CampoCupo({ id, cupo, tope }: { id: string; cupo: number; tope: number }) {
   const [valor, setValor] = useState(cupo);
   const [pendiente, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const maximo = Math.min(MAX, tope);
 
   function cambiar(siguiente: number) {
-    if (siguiente < MIN || siguiente > MAX) return;
+    if (siguiente < MIN || siguiente > maximo) return;
     setValor(siguiente);
     setError(null);
     iniciar(async () => {
@@ -42,12 +45,12 @@ export default function CampoCupo({ id, cupo }: { id: string; cupo: number }) {
             −
           </button>
           <input id="cupo" type="text" inputMode="numeric" value={valor} readOnly />
-          <button type="button" aria-label="Subir" disabled={pendiente || valor >= MAX} onClick={() => cambiar(valor + 1)}>
+          <button type="button" aria-label="Subir" disabled={pendiente || valor >= maximo} onClick={() => cambiar(valor + 1)}>
             +
           </button>
         </div>
       </div>
-      <p className={styles.notaTope}>Hasta 20, para que la pared responda al instante.</p>
+      <p className={styles.notaTope}>Quedan {Math.max(maximo - valor, 0)} mandos entre todas las obras abiertas.</p>
       {error && (
         <p className={styles.error} role="alert">
           {error}

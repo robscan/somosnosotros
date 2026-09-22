@@ -2,8 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import { esUuid } from "@/lib/formulario";
 import { qrDelMando } from "@/lib/qr";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import { cargarObraParaPintar } from "../../consultas";
+import { cargarObraParaPintar, cargarPincelActivo } from "../../consultas";
 import Pared from "./Pared";
+import styles from "./pared.module.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,6 +24,15 @@ export default async function ParedDeObra({ params }: { params: Promise<{ id: st
   if (!esUuid(id)) notFound();
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=/obra/${id}/pared`);
+  // Interruptor «Pincel apagado» (OL-121): se comprueba antes de leer la obra, para no abrir el canal si está
+  // apagado. Sin controles, sin QR: solo el aviso.
+  if (!(await cargarPincelActivo())) {
+    return (
+      <main className={styles.cerrada}>
+        <p>Pincel está apagado por ahora.</p>
+      </main>
+    );
+  }
   const obra = await cargarObraParaPintar(id);
   if (!obra) notFound();
   const abierta = obra.estado === "abierta";

@@ -16,3 +16,16 @@ export async function cargarObraParaPintar(id: string): Promise<ObraParaPintar |
   const fila = data as { id: string; nombre: string; estado: "abierta" | "cerrada"; zona: string; cupo_mandos: number };
   return { id: fila.id, nombre: fila.nombre, estado: fila.estado, zona: fila.zona, cupoMandos: fila.cupo_mandos };
 }
+
+/**
+ * Interruptor «Pincel apagado» (OL-121, founder 2026-09-22): la pared y el mando lo comprueban antes de nada,
+ * para no abrir el canal si está apagado. `pincel_activo()` (migración 20260922180000) falla cerrado: sin sesión
+ * o ante cualquier error se lee como apagado, nunca como encendido por accidente.
+ */
+export async function cargarPincelActivo(): Promise<boolean> {
+  const supabase = await clienteServidor();
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc("pincel_activo");
+  if (error) return false;
+  return data === true;
+}

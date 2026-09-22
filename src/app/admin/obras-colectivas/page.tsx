@@ -7,7 +7,8 @@ import { formatearCuando } from "@/lib/fechas";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import styles from "../admin.module.css";
 import CrearObraAqui from "./CrearObraAqui";
-import { cargarLugaresParaObra, cargarObras } from "./consultas";
+import InterruptorPincel from "./InterruptorPincel";
+import { cargarAjustePincel, cargarEstadoGlobalPincel, cargarLugaresParaObra, cargarObras, TOPE_OBRAS_ABIERTAS } from "./consultas";
 import Reintentar from "../Reintentar";
 
 export const metadata = { title: "Obras colectivas · Administración · Somos Nosotros", robots: { index: false, follow: false } };
@@ -21,15 +22,30 @@ export default async function ObrasColectivas() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/admin/obras-colectivas");
   if (actual.perfil.rol !== "admin") redirect("/");
-  const [{ obras, error }, lugares] = await Promise.all([cargarObras(), cargarLugaresParaObra()]);
+  const [{ obras, error }, lugares, estadoGlobal, ajustePincel] = await Promise.all([
+    cargarObras(),
+    cargarLugaresParaObra(),
+    cargarEstadoGlobalPincel(),
+    cargarAjustePincel(),
+  ]);
+  // Tope global (OL-121): si no se pudo leer el estado, no se bloquea aquí — la base lo exige igual, esta
+  // pantalla solo explica el freno antes de que llegue el error crudo.
+  const puedeCrear = estadoGlobal ? estadoGlobal.abiertas < TOPE_OBRAS_ABIERTAS : true;
 
   return (
     <main className={ficha.pagina}>
       <Barra volver={{ href: "/admin", texto: "Administración" }} />
       <h1 className={styles.titulo}>Obras colectivas</h1>
 
+      <h2 className={styles.grupo}>Pincel</h2>
+      {ajustePincel ? (
+        <InterruptorPincel activo={ajustePincel.activo} cambiadoPorNombre={ajustePincel.cambiadoPorNombre} cambiadoEn={ajustePincel.cambiadoEn} />
+      ) : (
+        <Reintentar texto="No pudimos leer el interruptor de Pincel." />
+      )}
+
       <h2 className={styles.grupo}>Crear obra aquí</h2>
-      <CrearObraAqui lugares={lugares} />
+      <CrearObraAqui lugares={lugares} puedeCrear={puedeCrear} />
 
       <h2 className={styles.grupo}>Todas</h2>
       {error ? (

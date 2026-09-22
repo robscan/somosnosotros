@@ -85,11 +85,14 @@ export async function run({ as, check, expectError, query }) {
   const lugarMadridId = lugarMadrid.rows[0].id;
   const obraConZonaDistinta = await as("authenticated", ADMIN, () =>
     query(
-      "insert into public.obras_colectivas (nombre, lugar_id, zona, cierra_en, creado_por) values ('Pincel en Madrid', $1, 'America/Mexico_City', now() + interval '2 hours', auth.uid()) returning zona",
+      "insert into public.obras_colectivas (nombre, lugar_id, zona, cierra_en, creado_por) values ('Pincel en Madrid', $1, 'America/Mexico_City', now() + interval '2 hours', auth.uid()) returning id, zona",
       [lugarMadridId],
     ),
   );
   check(obraConZonaDistinta.rows[0]?.zona === "Europe/Madrid", "el disparador sobrescribe la zona mandada con la del lugar", obraConZonaDistinta.rows[0]);
+  // Se cierra ya probada (OL-121, freno de tope global: como mucho 2 obras abiertas a la vez; sin cerrar esta,
+  // obraUno + esta ya suman 2 y la siguiente sección no podría abrir obraDos).
+  await as("authenticated", ADMIN, () => query("update public.obras_colectivas set estado = 'cerrada', cerrado_en = now() where id = $1", [obraConZonaDistinta.rows[0].id]));
 
   // ---------- una sola obra abierta por lugar ----------
   await as("authenticated", ADMIN, () =>
@@ -163,6 +166,10 @@ export async function run({ as, check, expectError, query }) {
   const anonLee = await as("anon", null, () => query("select id, estado from public.obras_colectivas where id = $1", [obraDosId]));
   check(anonLee.rowCount === 1 && anonLee.rows[0].estado === "abierta", "anon lee una obra colectiva de un lugar visible, sin sesión");
 
+  // Se cierra ya (OL-121, freno de tope global): obraDos y obraEvento suman las 2 abiertas permitidas; la
+  // visibilidad de obraEvento que se prueba abajo no depende de que siga abierta.
+  await as("authenticated", ADMIN, () => query("update public.obras_colectivas set estado = 'cerrada', cerrado_en = now() where id = $1", [obraEvento.rows[0].id]));
+
   // Lugar oculto: su obra no debe verse desde fuera, aunque esté abierta.
   const lugarOculto = await as("authenticated", ADMIN, () =>
     query("insert into public.lugares (nombre, tipo, lat, lng, visible, creado_por) values ('Lugar oculto de prueba', 'foro', 22.16, -100.97, false, auth.uid()) returning id"),
@@ -183,6 +190,9 @@ export async function run({ as, check, expectError, query }) {
   check(anonNoVeEventoOculto.rowCount === 0, "anon no ve la obra de un evento oculto, aunque su lugar sea visible");
   const adminSiVeEventoOculto = await as("authenticated", ADMIN, () => query("select id from public.obras_colectivas where id = $1", [obraEvento.rows[0].id]));
   check(adminSiVeEventoOculto.rowCount === 1, "administración sí ve la obra de un evento oculto");
+
+  // Se cierra ya (OL-121, freno de tope global): obraDos y obraLugarOculto suman las 2 abiertas permitidas.
+  await as("authenticated", ADMIN, () => query("update public.obras_colectivas set estado = 'cerrada', cerrado_en = now() where id = $1", [obraLugarOcultoId]));
 
   // ---------- borrar una obra CERRADA: solo admin (Fase 2, bloque 1) ----------
   const lugarBorrado = await crearLugar(as, query, OTRA);
@@ -209,4 +219,9 @@ export async function run({ as, check, expectError, query }) {
   check(borraFotoAjena.rowCount === 0, "una cuenta que no es admin no borra la imagen final de una obra");
   const borraFotoAdmin = await as("authenticated", ADMIN, () => query("delete from storage.objects where bucket_id = 'fotos' and name = 'obras/prueba-pincel.png' returning name"));
   check(borraFotoAdmin.rowCount === 1, "administración borra la imagen final de una obra");
+
+  // obraDos queda abierta desde la reapertura de arriba: los bancos comparten una sola base (test-db.mjs corre
+  // todos los archivos *.test.mjs sobre la misma conexión), así que dejarla abierta le restaría cupo al tope
+  // global (OL-121) que prueba realtime-canal-obra.test.mjs. Se cierra aquí, al terminar este archivo.
+  await as("authenticated", ADMIN, () => query("update public.obras_colectivas set estado = 'cerrada', cerrado_en = now() where id = $1", [obraDosId]));
 }

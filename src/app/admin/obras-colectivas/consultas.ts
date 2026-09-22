@@ -1,5 +1,17 @@
 import { clienteServidor } from "@/lib/supabase/servidor";
 
+/** Tope global de Pincel (OL-121, founder 2026-09-22): como mucho 2 obras abiertas a la vez y 40 mandos en total
+ * entre todas — lo mismo que hace cumplir el disparador `obras_colectivas_freno` de la migración
+ * 20260922180000_pincel_freno.sql. Están repetidos aquí (no hay una vista de la base que los devuelva) solo para
+ * que la pantalla explique el freno antes de que la base lo rechace, no para relajarlo: la base manda siempre.
+ */
+export const TOPE_OBRAS_ABIERTAS = 2;
+export const TOPE_MANDOS_GLOBAL = 40;
+
+function unPerfil<T>(p: T | T[] | null): T | null {
+  return Array.isArray(p) ? (p[0] ?? null) : p;
+}
+
 /** Lo que la lista de Obras colectivas necesita de cada una. Un lugar puede abrir varias con el tiempo (founder,
  * 2026-09-21: "un lugar puede abrir nuevas obras colectivas... que pueden distinguirse por la fecha/hora") —
  * `creadoEn` es lo que las distingue en la lista. */
@@ -42,6 +54,37 @@ export async function cargarLugaresParaObra(): Promise<LugarParaObra[]> {
   if (!supabase) return [];
   const { data } = await supabase.from("lugares").select("id, nombre, lat, lng, zona").eq("visible", true).order("nombre");
   return (data ?? []) as LugarParaObra[];
+}
+
+/** Cuántas obras están abiertas ahora y cuántos mandos suman entre todas (OL-121): lo que "Crear obra aquí" y el
+ * campo de cupo necesitan para explicar el freno antes de que la base lo rechace. `null` si no se pudo leer — la
+ * pantalla, en ese caso, no bloquea nada (la base sigue exigiéndolo igual). */
+export type EstadoGlobalPincel = { abiertas: number; mandosAbiertos: number };
+
+export async function cargarEstadoGlobalPincel(): Promise<EstadoGlobalPincel | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("obras_colectivas").select("cupo_mandos").eq("estado", "abierta");
+  if (error) return null;
+  const filas = (data ?? []) as { cupo_mandos: number }[];
+  return { abiertas: filas.length, mandosAbiertos: filas.reduce((total, f) => total + f.cupo_mandos, 0) };
+}
+
+/** El interruptor «Pincel apagado» (OL-121): quién lo cambió por última vez y cuándo, para el renglón de
+ * Administración. `cambiadoPorNombre` es null si lo puso la propia migración (nunca lo tocó una cuenta). */
+export type AjustePincel = { activo: boolean; cambiadoPorNombre: string | null; cambiadoEn: string };
+
+export async function cargarAjustePincel(): Promise<AjustePincel | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("ajustes_sitio")
+    .select("valor, cambiado_en, cambiado_por:perfiles(nombre)")
+    .eq("clave", "pincel_activo")
+    .maybeSingle();
+  if (error || !data) return null;
+  const fila = data as unknown as { valor: boolean; cambiado_en: string; cambiado_por: { nombre: string } | { nombre: string }[] | null };
+  return { activo: fila.valor === true, cambiadoPorNombre: unPerfil(fila.cambiado_por)?.nombre ?? null, cambiadoEn: fila.cambiado_en };
 }
 
 export type ObraDetalle = {

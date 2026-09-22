@@ -10,7 +10,7 @@ import { qrDelMando } from "@/lib/qr";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import admin from "../../admin.module.css";
 import styles from "../obras.module.css";
-import { cargarObra } from "../consultas";
+import { cargarEstadoGlobalPincel, cargarObra, TOPE_MANDOS_GLOBAL } from "../consultas";
 import AccionesObra from "./AccionesObra";
 import BotonImprimir from "./BotonImprimir";
 import CampoCupo from "./CampoCupo";
@@ -37,6 +37,10 @@ export default async function DetalleObra({ params, searchParams }: Params) {
   const obra = await cargarObra(id);
   if (!obra) notFound();
   const qr = obra.estado === "abierta" ? await qrDelMando(obra.id) : null;
+  // Tope de cupo (OL-121): lo que le queda a ESTA obra es el tope global menos lo que usan las DEMÁS abiertas —
+  // su propio cupo actual no cuenta contra sí misma. Si no se pudo leer, no se acota aquí (la base lo exige igual).
+  const estadoGlobal = obra.estado === "abierta" ? await cargarEstadoGlobalPincel() : null;
+  const tope = estadoGlobal ? Math.max(TOPE_MANDOS_GLOBAL - (estadoGlobal.mandosAbiertos - obra.cupoMandos), obra.cupoMandos) : 20;
 
   return (
     <main className={`${ficha.pagina} ${styles.fichaObra}`}>
@@ -67,7 +71,7 @@ export default async function DetalleObra({ params, searchParams }: Params) {
           <b>{obra.estado === "abierta" ? "Abierta" : "Cerrada"}</b>
         </div>
       </div>
-      {obra.estado === "abierta" && <CampoCupo id={obra.id} cupo={obra.cupoMandos} />}
+      {obra.estado === "abierta" && <CampoCupo id={obra.id} cupo={obra.cupoMandos} tope={tope} />}
       {obra.estado === "abierta" && (
         <div className={styles.acciones}>
           <Boton href={`/obra/${obra.id}/pared`} variante="secundario">
