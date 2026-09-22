@@ -261,6 +261,175 @@ El founder aprobó la Fase 1 y pidió dos cosas más («si apruebo fase 1 de pin
 
 **Verificado:** `npm run lint` (0 errores, 1 warning preexistente y ajeno), `npm run typecheck`, `npm test` (732/732), `npm run build`, todo en verde; `npm run test:db` contra Postgres 17 local, 705/705. Migración `20260922120000_obras_colectivas_borrado.sql` **sin aplicar** — la aplica el gestor. Rama `pincel-fase-2`, commit local, sin push.
 
+## Fase 2, bloque 2: el canal en vivo y su mensaje, más el simulador de mandos (2026-09-21, en curso)
+
+Rama `pincel-fase-2-canal` (desde `pincel-fase-2`). El gestor pidió partir el bloque 2 así: primero medir el cupo real de Realtime antes de construir pared y mando, para no arriesgar retrabajo.
+
+**Hecho — el canal y el mensaje, sin tocar producción:**
+- `src/lib/canal-obra.ts` (**común**, doc [25](../../rediseno/25-obras-colectivas-criterio.md) ajuste 3): `nombreCanalObra(obraId)` → `"obra:<id>"`, y `abrirCanalObra(supabase, obraId)` que abre ese canal con `private: true` (RLS sobre `realtime.messages`, exige sesión — cumple "solo cuentas registradas" del doc de Fase 0 §2).
+- `src/lib/pincel.ts` (**propio**): `MensajeTrazo` (`{ trazo, color, dx, dy }`, delta del sensor, no coordenada absoluta), los cuatro trazos y las cinco tintas **del prototipo firmado** (OL-084, bitácora 118, `experiments/pincel-prototipo/core.mjs` en la rama local `codex/pincel-prototipo`) — no se inventan de nuevo —, `EVENTO_TRAZO` (el nombre del evento de Broadcast) y `esMensajeTrazoValido()` (la pared no confía en el payload de otro cliente sin mirarlo: trazo y color de la lista cerrada, `dx`/`dy` numéricos y dentro de -1..1). 9 pruebas nuevas (`pincel.test.ts`, `canal-obra.test.ts`).
+
+**Hecho — el simulador, listo pero sin correr:** `scripts/pincel/simulador-mandos.mjs` (doc [25](../../rediseno/25-obras-colectivas-criterio.md) ajuste 4). Abre N canales "mando" (conexiones independientes, una por `createClient()`) que mandan mensajes al azar a una tasa fija, y un canal "pared" que solo escucha y cuenta lo que llega, con su latencia. Tandas 20/50/100 por defecto, configurables. No escribe en ninguna tabla — Broadcast no toca la base — y el nombre del canal por defecto lleva "prueba" para que sea obvio en cualquier panel de Supabase que lo vea mientras corre.
+
+**Por qué no corrió todavía contra el proyecto real.** El simulador necesita `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` del proyecto real (la llave anónima es pública por diseño de Supabase — va en el navegador de cualquier visitante —, no es un secreto como la de servicio). No los tengo en este árbol (regla del proyecto: el `.env` real nunca entra a la carpeta del operador) y no los pedí todavía: **el gestor debe decir cuánto tráfico va a generar la corrida y dar su visto bueno antes**, así que ese cálculo y la petición van en la entrega al gestor, no aquí. Con los valores por defecto del script (9 Hz, 20 s por tanda, pausa de 5 s entre tandas): ~30 600 mensajes de Broadcast en total, pico de 101 conexiones simultáneas (100 mandos + la pared) durante la tanda de 100, poco más de 1 minuto y medio de reloj en total. Ninguna tabla se toca.
+
+**Aparte, por `private: true`:** el canal de verdad exige sesión, y no hay manera de fabricar aquí N sesiones reales de cuentas distintas sin la llave de servicio (que este árbol tampoco tiene). El simulador por defecto corre **sin** `private: true` (mide el cupo bruto del servicio — conexiones y mensajes por segundo —, que es el dato que decide la tasa y el límite de participantes) y admite `--privado --token <jwt>` para medir también el costo de RLS en `realtime.messages` con una sola sesión real repetida en las N conexiones, si el gestor prefiere esa medida también.
+
+**Verificado (código, sin la corrida real):** `npm run lint` (0 errores, 1 warning preexistente ajeno), `npm run typecheck`, `npm test` (740/740), `npm run build`, todo en verde. Sin migración, sin tocar pantallas (este bloque no construye la pared ni el mando, llegan en el bloque 3). Commit local, sin push. **Bloqueado en la corrida real hasta la respuesta del gestor** con el visto bueno y cómo prefiere darme acceso a la URL/llave anónima del proyecto.
+
+## Fase 2, bloque 2: cupo real citado, envío agrupado y plan de corrida ajustado (2026-09-21)
+
+El gestor devolvió el bloque 2: mis valores por defecto (9 Hz por mando) ya rebasaban el cupo desde la primera tanda, así que no habrían medido nada útil. Tres correcciones, antes de pedir la corrida real otra vez.
+
+**1. El cupo real, citado con su fuente** (no se daba por hecho): [Realtime Limits](https://supabase.com/docs/guides/realtime/limits) y [Realtime Pricing](https://supabase.com/docs/guides/realtime/pricing), documentación oficial de Supabase, leída el 2026-09-21. **Plan gratuito** (el que usa este proyecto, sin verificarlo yo mismo en el panel — el gestor lo asumía y la cifra de conexiones coincide con lo que citó):
+
+| Límite | Plan gratuito |
+|---|---|
+| Conexiones simultáneas | 200 |
+| Mensajes por segundo | **100** (promedio móvil sobre el minuto anterior) |
+| Tamaño máximo de un mensaje | 256 KB |
+| Mensajes incluidos al mes | 2 000 000, sin cobro por pasarse |
+
+Con esto, 20 mandos a 9 Hz (mi plan original) ya eran 180 mensajes/s — casi el doble del cupo, desde la primera tanda. Confirmado el cálculo del gestor.
+
+**2. Envío agrupado, no un mensaje por muestra.** `MensajeTrazo` cambia de `{ trazo, color, dx, dy }` a `{ trazo, color, deltas: Delta[] }` (`src/lib/pincel.ts`): el teléfono sigue muestreando el sensor a su ritmo mientras el botón está presionado, pero solo *manda* `MENSAJES_POR_SEGUNDO = 3` veces por segundo, cada uno con los deltas juntados desde el mensaje anterior (tope `DELTAS_MAX_POR_MENSAJE = 20`, y es también lo que exige `esMensajeTrazoValido` contra un mensaje fabricado a mano con miles de deltas). La pared dibuja todos los deltas de un mismo mensaje seguidos: se ve igual de fluido, cuesta una fracción de los mensajes. 6 pruebas nuevas/ajustadas (12 en total en `pincel.test.ts`).
+
+**Participantes que caben, con el cupo citado:** `100 mensajes/s ÷ 3 mensajes/s por mando ≈ 33 mandos` a la vez en el plan gratuito, antes de tocar el límite documentado — número teórico, a confirmar (o ajustar) con la corrida real, que es justo lo que mide.
+
+**3. Plan de corrida escalonado y corto**, reescrito en `scripts/pincel/simulador-mandos.mjs` con los números exactos que dio el gestor: tandas de 10 s con pausa de 10 s entre cada una, **subiendo** hasta encontrar el límite en vez de empezar encima de él:
+
+| Tanda | Mandos × Hz | Mensajes/s objetivo | Mensajes en 10 s |
+|---|---|---|---|
+| 1 | 10 × 2 | 20 | 200 |
+| 2 | 20 × 2 | 40 | 400 |
+| 3 | 40 × 2 | 80 | 800 |
+| 4 | 60 × 2 | 120 (ya sobre el cupo de 100/s) | 1 200 |
+
+**Tráfico total si las cuatro tandas corrieran completas: 2 600 mensajes de Broadcast** (200+400+800+1200), pico de 61 conexiones simultáneas (60 mandos + la pared), 3×10 s de pausas + 4×10 s de tandas ≈ 70 s de reloj — muy por debajo de los 200/100 del cupo citado, así que no debería llegar a esa cifra completa: se espera que se **detenga sola antes**, en la tanda 3 o 4, que es el punto de la prueba. El script comprueba, al final de cada tanda, errores de conexión, fallos al mandar (el `ack` de Broadcast no confirma) y el porcentaje de mensajes que la pared no recibió; si pasa el 5 % de pérdida o hay cualquier error, **no corre la siguiente tanda**.
+
+**Llaves:** el script ya no pide `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` por variable de entorno — las lee directo de `/Users/apple-1/somosnosotros/.env` (la ruta del proyecto principal) dentro del propio proceso, con una función que solo copia esas dos líneas a variables locales (comprobado en aislado con un archivo de prueba: nunca toca `SUPABASE_SERVICE_ROLE_KEY` ni ninguna otra variable de ese archivo). Nunca se imprimen, nunca se guardan, nunca se piden por el chat.
+
+**Canal:** `prueba-cupo-<fecha>-<sufijo>`, sin `private`. Comprobado con `grep -rn "\.channel(\|realtime\." src` (fuera de `canal-obra.ts` y sus pruebas): **la app en producción no usa Realtime en ningún otro sitio hoy** — ninguna suscripción a canales ni a cambios de tablas — así que una corrida que llegue al cupo no compite con nadie usando la app en ese momento.
+
+**Verificado:** `npm run lint` (0 errores, 1 warning ajeno), `npm run typecheck`, `npm test` (745/745), todo en verde. Sigue **sin correr** contra el proyecto real — el plan ajustado y los números van al gestor, que se los lleva al founder (la corrida la autoriza el founder, no yo). Commit local, sin push.
+
+## Fase 2, bloque 2: corrida de cupo contra producción (2026-09-21)
+
+El founder autorizó la corrida («corre la prueba de pincel», al gestor). Corrida al pie de la letra: `node scripts/pincel/simulador-mandos.mjs`, canal `prueba-cupo-2026-09-21-zv4z`, sin `private`, llaves leídas de `/Users/apple-1/somosnosotros/.env` dentro del proceso (nunca impresas). Una sola vez.
+
+**Lo que pasó:** la tanda 1 (10 mandos × 2 Hz, 20 mensajes/s objetivo) corrió limpia — 190 mandados, 190 recibidos por la pared, **0 % de pérdida**, latencia mediana 65 ms, p95 279 ms, 10/10 conexiones logradas. Pero el script se detuvo solo después de esa tanda, reportando "10 errores de conexión" que no eran reales.
+
+**Causa medida del falso freno** (no a ojo): el candado de conexión de cada mando (`canal.subscribe((estado) => …)`) seguía escuchando después de resolver la promesa de "ya conectado". Al terminar la tanda, `unsubscribe()` dispara el estado `CLOSED` en cada canal — un cierre ordenado, no un fallo —, y como el candado no lo ignoraba, cada cierre normal se contaba otra vez como error de conexión. Con eso, la condición de frenado (`erroresDeConexion > 0`) se disparó sola aunque la tanda había sido perfecta. Corregido en `scripts/pincel/simulador-mandos.mjs`: un candado (`resuelto`) que ignora cualquier cambio de estado después del primero — así el cierre al final de una tanda ya no cuenta como error. **No volví a correr la prueba** (la instrucción fue "si algo se sale del plan… no la repitas: me reportas"): el arreglo queda listo para la siguiente corrida autorizada, que ahora sí debería subir hasta encontrar el límite real en vez de frenar en el primer escalón.
+
+**Entrega al gestor** (mensajes enviados/recibidos, conexiones máximas, latencia mediana/p95, pérdidas, errores y mi lectura): ver el mensaje de esta sesión con esos números; la tabla completa y el resumen agregado quedaron en la salida de la terminal, no se guardó un archivo aparte.
+
+**Mi lectura, con los datos de esta única tanda limpia:** a 20 mensajes/s (20 % del cupo citado de 100/s) la entrega fue perfecta y la latencia baja — hay holgura de sobra ahí. No alcanza para decir "cuántos mandos caben con holgura" de verdad: esa respuesta necesita ver dónde empieza a degradarse de verdad (tandas 2, 3 y 4, hasta 120 mensajes/s), que es justo lo que el bug cortó. El número teórico de ~33 mandos (§ del bloque 2 de arriba, con el envío agrupado a 3 mensajes/s) sigue sin confirmarse ni descartarse.
+
+**Verificado:** `node --check` y `npx eslint` sobre el script corregido, limpio. No se corrió `npm test`/`typecheck`/`build` para este cambio puntual del script (no toca código de la app, solo el simulador) — se corre la batería completa al cerrar el bloque. Commit local del arreglo, sin push. Espero instrucción del gestor: ¿autoriza una segunda corrida corta con el arreglo, o esta primera tanda limpia basta por ahora?
+
+## Fase 2, bloque 2: prueba del candado, segundo freno revisado, plan de la segunda corrida (2026-09-21)
+
+El gestor pidió tres cosas antes de la segunda corrida, sin tocar producción.
+
+**1. Prueba del arreglo del candado, en local, sin producción.** `conectarCanal()` (la conexión de un mando o de la pared) se sacó a su propia función exportada, con un canal simulado (`subscribe(cb)` que dispara una secuencia de estados a mano) en `scripts/pincel/simulador-mandos.test.ts`, nuevo banco. Confirmado: `SUBSCRIBED` seguido de `CLOSED` (el caso real del bug) resuelve `{ ok: true }` y el `CLOSED` tardío se ignora; un `CLOSED`/`CHANNEL_ERROR`/`TIMED_OUT` que llega ANTES de `SUBSCRIBED` sí cuenta como fallo real (nunca llegó a abrir); la promesa solo resuelve una vez aunque lleguen varios estados seguidos. 11 pruebas en verde.
+
+**2. Otro freno revisado: mensajes en vuelo al cortar.** El gestor tenía razón en sospecharlo: la tanda esperaba solo 1 s extra después del último envío antes de medir la pérdida y desconectar — con una p95 medida de 279 ms en la tanda 1, ese segundo bastaba de sobra ahí, pero a tandas más cargadas (o con más latencia real) un mensaje mandado justo antes de cortar podía llegar después de medir, contando como "perdido" sin haberlo estado. Subido a 2 s (`MARGEN_TRAS_ULTIMO_ENVIO_MS`). Además, `conectarCanal()` suma una red de seguridad que no existía: un `timeoutMs` (8 s) para que la corrida no se cuelgue para siempre si algún canal nunca manda ningún estado — antes no había ningún tope y una conexión muda habría bloqueado la tanda sin fin.
+
+**3. Plan exacto de la segunda corrida**, con `node scripts/pincel/simulador-mandos.mjs --tandas-desde 2` (opción nueva, para no repetir la tanda 1, ya limpia y medida): empieza en la tanda 2, sube hasta la 4 o hasta que se detenga sola.
+
+| Tanda | Mandos × Hz | Mensajes/s objetivo | Mensajes en 10 s | Conexiones |
+|---|---|---|---|---|
+| 2 | 20 × 2 | 40 | 400 | 21 |
+| 3 | 40 × 2 | 80 | 800 | 41 |
+| 4 | 60 × 2 | 120 (sobre el cupo de 100/s) | 1 200 | 61 |
+
+Si las tres corrieran completas: **2 400 mensajes**, pico de **61 conexiones**, duración ≈ 3×10 s de tandas + 3×2 s de margen + 2×10 s de pausas entre ellas ≈ 56 s. Sumado a los 190 mensajes de la tanda 1 (ya corrida): **2 590 mensajes en total entre las dos corridas**, dentro del tope de 2 600 que fijó el gestor. Se espera, otra vez, que se detenga sola antes de llegar a la tanda 4 (120 mensajes/s ya pasa el cupo citado de 100/s) — ese es el punto de la prueba.
+
+**Verificado:** `npm run lint` (0 errores, 1 warning ajeno), `npm run typecheck`, `npm test` (756/756, con las 11 pruebas nuevas de `conectarCanal`/`percentil`), `npm run build`, todo en verde. Sin migración, sin correr contra producción — el plan va al gestor para su aprobación (y la segunda autorización del founder, que decide él, no yo). Commit local, sin push.
+
+## Fase 2, bloque 2: cómo se lee el resultado, antes de la segunda corrida (2026-09-21)
+
+El gestor aceptó el plan y el código; falta el sí del founder para la corrida. Mientras tanto, adelanto por escrito cómo se lee el resultado, para no improvisarlo en caliente cuando lleguen los números.
+
+**Los tres umbrales que ya existen en el script, y por qué no bastan solos para decir "caben con holgura":**
+- El freno automático (`UMBRAL_PERDIDA = 0.05`, cualquier error) es la línea de "esto ya se rompió, para la corrida" — no la línea de "esto va bien". Una tanda puede pasar ese freno (0 errores, 4 % de pérdida) y aun así no ser un número prudente para producción: 4 % de trazos perdidos sí se nota en una pared pintada por 30 personas.
+- La latencia no tiene freno propio hoy (el script no para por latencia alta, solo la reporta). Hace falta un criterio aparte para leerla.
+
+**Criterio propuesto para "caben N mandos con holgura"** (a confirmar o ajustar por el gestor/founder antes de leer los números reales):
+
+| Lectura | Pérdida | Latencia p95 | Qué significa |
+|---|---|---|---|
+| **Con holgura** | ≤ 1 % | ≤ 800 ms | Recomendable como tope de producción; deja margen para una noche real (picos de red, teléfonos viejos) sin degradarse |
+| **Al límite** | > 1 % y ≤ 5 % | > 800 ms y ≤ 2 000 ms | Funciona, pero sin margen — no es el número que se fija como tope, es la frontera |
+| **Pasado el cupo** | > 5 % o cualquier error | > 2 000 ms | Ya no sirve para pintar junto; es donde el script ya se detiene solo (salvo el caso nuevo de solo latencia alta sin pérdida, que el script no frena todavía) |
+
+**De dónde salen los números:** 800 ms de p95 es aproximadamente 3× la p95 real medida en la tanda 1 (279 ms, con muy poca carga) — un margen generoso antes de que el trazo se sienta "atrasado" en la pared, sin ser tan laxo como para aceptar un segundo entero de retraso. 2 000 ms es donde cualquier interacción deja de sentirse en vivo (referencia general de UX para "tiempo de respuesta", no un número propio de Supabase). 1 % de pérdida es más estricto que el 5 % del freno automático porque "sigue corriendo" y "es un buen número para producción" son preguntas distintas: el freno protege la prueba, este criterio protege la experiencia real de quien pinta.
+
+**Cómo se aplica a la corrida 2:** la tanda más alta (de la 2, 3 o 4) que caiga en la fila **"Con holgura"** es el número que se propone para `MENSAJES_POR_SEGUNDO` y el límite de participantes de producción; si ninguna tanda pasada la 1 cae ahí, el número que ofrece la Fase 2 es el de la tanda 1 (20 mensajes/s agregados, con `MENSAJES_POR_SEGUNDO = 3` eso son ~6-7 mandos) hasta correr una prueba más fina entre esa y la siguiente. El número teórico de ~33 mandos (§ del bloque 2 de arriba) es una referencia, no la respuesta — la respuesta la da la corrida.
+
+Sin código nuevo: esto es lectura del resultado, no cambia el script. Sigo sin correr contra producción.
+
+## Decisión del founder: sin segunda corrida, cupo por obra y fila de espera (2026-09-21)
+
+El founder decidió, con el gestor: **no hay segunda corrida** — se sigue con lo medido en la tanda 1 (190/190, 0 % de pérdida, p95 279 ms, 10 mandos × 2 Hz = 20 mensajes/s). Sus palabras: «Continua pincel con la información de esta corrida […] podríamos limitar usuarios por actividad, agregando un campo en admin, tener fila de espera hace que los usuarios se interesen y se enganchen […] que los que no alcanzan cupo si se puedan conectar pero su control aparezca en espera para que alguien salga.» Dos piezas nuevas para el bloque 3, con **prototipo antes que código** (lo firma el founder en el chat del gestor). Nada de esto es código todavía — es el plan corto que pidió el gestor antes de tocar nada.
+
+### 1. Cupo de mandos por obra
+
+Un campo en Administración (crear/editar obra), con valor por defecto prudente y un tope duro:
+
+- **Por defecto: 10 mandos pintando a la vez.** Es exactamente lo medido y limpio (tanda 1: 190/190, 0 % de pérdida) — no una extrapolación.
+- **Tope duro propuesto: 20 mandos.** Con el envío agrupado (`MENSAJES_POR_SEGUNDO = 3`), 20 mandos son 60 mensajes/s de trazos — el 60 % del cupo citado (100 mensajes/s, plan gratuito). El 40 % que sobra es colchón para Presence (la fila de espera también manda mensajes, ver abajo) y para lo que la corrida 1 no llegó a medir: cómo se comporta la red real a más carga. El techo teórico sin colchón sería ~33 mandos (100 ÷ 3); no lo propongo como tope porque nunca se corrió una tanda con carga real por encima de 20 mensajes/s — el founder decidió no correrla, así que el tope duro se queda del lado conservador en vez de apostar a un número sin medir.
+- **Migración, solo añade:** una columna en `obras_colectivas` (nombre lo da el gestor), `integer not null default 10 check (cupo_mandos between 1 and 20)`. Se manda el SQL al gestor antes de escribir nada más.
+
+### 2. Fila de espera
+
+**Cómo se sabe quién pinta y quién espera:** Realtime **Presence** en el mismo canal de la obra (`abrirCanalObra`, ya común): cada mando hace `track()` al conectar con su hora de llegada. El orden es por esa hora, con una segunda clave para desempatar (Presence da un `presence_ref` único por conexión) si dos llegan en el mismo milisegundo — sin eso, el orden podría no ser estable entre quien mira la pared y quien mira su mando. Los primeros `cupo_mandos` de esa lista pintan; el resto espera, con su posición = su lugar en la lista menos el cupo.
+
+**El freno va también del lado de la pared, no solo en el botón del mando** (el gestor lo pidió explícito): un mando en espera podría, con un cliente modificado, seguir mandando `trazo` igual. Para que eso no pinte nada, cada mensaje de trazo necesita decir quién lo manda (un campo `remitente` con la clave de su propia Presence — no un nombre, ver más abajo), y **la pared descarta cualquier trazo cuyo remitente no esté hoy entre los primeros `cupo_mandos` de la lista de Presence que ella misma calcula** — no le basta con recibir el mensaje, tiene que cruzarlo contra su propia cuenta de quién pinta ahora mismo. Esto es un ajuste a `MensajeTrazo` (`src/lib/pincel.ts`) para el bloque 3, no del bloque 2 ya entregado.
+
+**Recorte del founder (2026-09-21): fila SIMPLE, sin turno con tiempo máximo.** «Ok no traigamos complegidad por ahora, sin limite de turnos, sin tiempo máximo, que venga despúes.» Quien pinta sigue hasta que sale por su cuenta (cierra el mando o se va) o se le cae la conexión — nada lo mueve al final de la fila por quedarse quieto, aunque haya gente esperando. No se pregunta en el prototipo. **En «Después»:** un turno con tiempo máximo o una salida por inactividad, si con uso real hace falta.
+
+**Qué pasa si se cae la conexión de quien pinta** (lo único que sí hay que resolver ahora, pedido explícito del gestor): Presence lo resuelve solo — al perder el WebSocket, su `track()` desaparece de la lista de todos los demás sin que nadie tenga que detectarlo a mano, y el siguiente en la fila sube un lugar automáticamente. **Cuánto tarda en la práctica:** el intervalo de latido (`heartbeat`) del cliente que ya trae instalado el proyecto es de **25 segundos** (`HEARTBEAT_INTERVAL` en `node_modules/@supabase/realtime-js`, revisado en el código real de esta rama, no en la documentación — la documentación de Presence no da un número). Si alguien cierra el mando o pierde la app con normalidad, Presence lo nota casi de inmediato (el cierre manda su propio aviso). Si la conexión se corta de golpe (se le acaba la batería, pierde señal sin avisar), el servidor no tiene forma de saberlo hasta que le falten uno o dos latidos — en la práctica, entre 25 y unos 50 segundos antes de que el lugar se libere solo. Esto no se mide con el simulador de la Fase 2 bloque 2 (ahí no hay Presence, solo Broadcast); es un número de la librería, no una medición propia — dejarlo dicho así en el prototipo, sin prometer un tiempo exacto.
+
+**Qué pasa si dos llegan a la vez:** cubierto arriba (hora de llegada + `presence_ref` como desempate estable).
+
+**Cupo de conexiones, no solo de mandos pintando:** quien espera sigue conectado (ve la pared, ve su lugar en la fila) aunque no mande trazos — **cuenta para el tope de 200 conexiones simultáneas** igual que quien pinta. Presence también manda mensajes propios (al entrar, al salir, y sus sincronizaciones) — no medidos todavía con el simulador (el simulador de la Fase 2 bloque 2 no abrió canales con Presence, solo Broadcast puro); antes de fijar un número de producción definitivo habría que estimarlo o medirlo aparte, y lo anoto como pendiente, no lo invento aquí.
+
+### 3. Privacidad en la fila
+
+Sin nombres. Solo número de lugar («vas el 3») para quien espera, y un conteo total («4 esperando») visible para todos — la misma regla que ya sigue el resto de la app (personas solo se cuentan, doc rediseno/24, grafo cultural).
+
+### 4. Antes de tocar código
+
+Prototipo (documento + HTML, sin lógica real) de las tres pantallas del mando — **pintando**, **en espera con su lugar**, **te toca** — y del campo de cupo en Administración, a 390×844, maquetación medida (rejillas con `minmax(0, 1fr)` desde el principio, no como corrección después; estilos del canon `ui/` antes que propios). Lo firma el founder en el chat del gestor antes de escribir una sola línea de la fila de espera.
+
+**Mientras se firma:** puedo seguir con lo del bloque 3 que no depende de la fila — la pared y el mando pintando de verdad entre dos teléfonos (la prueba que ya definió la Fase 0 para esta fase), sin el cupo ni la fila todavía. Eso no toca producción ni pide una migración nueva de inmediato.
+
+Sin código en este documento: es la anotación de la decisión y el plan corto que pidió el gestor. Se le manda por separado.
+
+## Fase 2, bloque 3 (en paralelo): la pared y el mando pintando de verdad (2026-09-21)
+
+Autorizado por el gestor a avanzar en paralelo mientras se firma el prototipo del cupo/fila (doc 34): lo que no depende de ella. Rutas neutras `/obra/[id]/pared` y `/obra/[id]/mando` (doc rediseno/25 ajuste 2), sin cupo ni fila todavía — cualquier cuenta con sesión pinta en una obra abierta.
+
+**Lo nuevo en `src/lib/pincel.ts` (propio, puro, sin `<canvas>` ni React):**
+- `MensajeTrazo` suma `remitente` (el id de perfil de quien pinta). Hace falta ya, antes de la fila: sin saber de quién es cada delta, la pared no puede seguir el trazo de cada persona por separado y los mezclaría en un pincel fantasma. No es una prueba de identidad — el canal ya exige sesión (`private: true`); esto solo distingue un trazo de otro, aceptado así a propósito.
+- `puntoInicial(remitente, ancho, alto)`: un punto de arranque estable por remitente (mismo remitente, mismo inicio), para que el segundo mensaje de una persona siga desde donde se quedó el primero.
+- `siguientesSegmentos(desde, deltas, ancho, alto)`: convierte los deltas de un mensaje en los segmentos a trazar, rebotando en los bordes del lienzo en vez de perderse fuera de la vista. `ESCALA_DELTA_PX = 24` (a ojo; ajustable si en la prueba con el founder se ve muy corto o muy largo).
+- `deltaDesdeOrientacion(anterior, actual, sensibilidad)`: dos lecturas de `DeviceOrientationEvent` (beta/gamma) convertidas en un delta normalizado -1..1, no en la lectura absoluta.
+- 18 pruebas nuevas (27 en total en `pincel.test.ts`).
+
+**Lo común (`src/app/obra/consultas.ts`, nuevo, aparte de `admin/obras-colectivas/consultas.ts`):** `cargarObraParaPintar(id)` — lo que la pared y el mando necesitan de una obra, sin ser del panel de administración.
+
+**La pared** (`src/app/obra/[id]/pared/`): pantalla completa, sin sesión — la RLS pública ya decide qué puede ver. Se suscribe al canal de la obra, valida cada mensaje con `esMensajeTrazoValido` antes de dibujar (no confía en el payload sin mirarlo), y dibuja con un estilo distinto por pincel: `trazo` una línea, `aire` gruesa y translúcida, `spray` gotas dispersas, `orgánico` manchas ovaladas. Si la obra ya cerró, un aviso fijo en vez del lienzo (sin intentar conectar).
+
+**El mando** (`src/app/obra/[id]/mando/`): exige sesión (mismo patrón `redirect("/entrar?siguiente=…")` de siempre). El botón central pide permiso del sensor al primer toque (`DeviceOrientationEvent.requestPermission()`, exigido por Safari de iOS; Android no lo pide) y, mientras está presionado, junta los deltas del sensor y manda `MENSAJES_POR_SEGUNDO` mensajes por segundo (no uno por muestra). Trazo y tinta se eligen con los mismos cuatro/cinco del prototipo firmado. Sin permiso o sin sensor, un aviso en vez de fallar en silencio. Si la obra ya cerró, no se ofrece pintar.
+
+**Maquetación medida, un bug real encontrado y corregido:** al verificar con el respaldo local a 390×844, el mando tenía **desborde horizontal real** (390 → 410 px, medido con `scrollWidth`/`clientWidth`, no a ojo). Causa: usé el componente canon `Barra` fuera de su contenedor `ficha.pagina` (que da el `--gutter` y compensa la sangría negativa que usa `Barra` para sangrar hasta el borde) — sin ese contenedor, la sangría se sale del viewport en vez de compensarse. Corregido envolviendo la página en `<main className={ficha.pagina}>`, como hace el resto de la app, y quitando el `padding` horizontal duplicado de `mando.module.css` (`ficha.pagina` ya lo pone). Verificado de nuevo: sin desborde horizontal, cabe justo en 844 px sin scroll. Las otras pantallas (pared abierta, pared/mando cerrados) verificadas igual, limpias.
+
+**Qué queda pendiente, fuera de esta pieza:** el dibujo real solo se puede probar de verdad contra el proyecto real (Realtime no corre en local); esta sesión verificó que las pantallas cargan, se ven bien y no truenan con el respaldo local (que no tiene WebSocket, así que el lienzo queda en blanco ahí — esperado). La prueba de verdad («dos teléfonos, dos cuentas, pintan a la vez, el founder lo ve en vivo») la define la Fase 0 y la corre el founder cuando lo autorice. Sin QR todavía (Fase 4). Sin cupo ni fila (doc 34, espera firma).
+
+**Verificado:** `npm run lint` (0 errores, 1 warning ajeno), `npm run typecheck`, `npm test` (771/771), `npm run build`, todo en verde. Sin migración. Rama `pincel-fase-2-canal`, commit local, sin push.
+
 ## Verificación de este documento
 
 
@@ -268,3 +437,103 @@ Sin código: no aplica build/lint/tests. Se verificó que:
 - `docs/ops/ASIGNACIONES.md:17` da la rama, OL y bitácora exactos usados aquí.
 - Cada afirmación sobre lo que el repo ya tiene (§"Lo que el repo ya tiene") se comprobó leyendo el archivo citado en esta misma rama `pincel-app` (commit `5d10368`), no de memoria.
 - `git status --short` en el worktree solo muestra este archivo nuevo.
+
+## Fase 2, bloque 3: revisión del gestor — RLS del canal, la pared exige sesión, evidencia real (2026-09-21)
+
+El gestor revisó el commit `8c50952` y encontró dos huecos de fondo antes de aceptarlo, más pidió evidencia con PNG reales (no capturas a ojo).
+
+**1. El canal privado no tenía política en `realtime.messages`.** `abrirCanalObra` usa `private: true` (`src/lib/canal-obra.ts`), y sin política en esa tabla Supabase rechaza la suscripción a todos, con sesión o sin ella — la corrida de cupo (bloque 2) se hizo con `private: false`, así que el canal privado real nunca se había probado. Propuse el SQL (dos políticas, select e insert, a `authenticated`, restringidas a `extension = 'broadcast'` y a que `realtime.topic()` sea el canal de una obra `abierta` y visible — mismo criterio que ya usa la política de lectura de `obras_colectivas`) y se lo mandé al gestor para que él lo escriba en el archivo de migración con el nombre que decida; no lo agregué yo a `supabase/migrations/`.
+
+Lo probé en un banco Postgres local aparte (no el de `scripts/test-db.mjs`, para no tocar la infraestructura compartida con otros chats): migraciones reales aplicadas + un stub mínimo de `realtime.messages`/`realtime.topic()` + las dos políticas propuestas. Seis pruebas, todas con el resultado esperado:
+- sin sesión (`anon`), obra abierta: **rechazado**.
+- con sesión, obra abierta y visible: **permitido** (insert entra, se puede leer).
+- con sesión, obra **cerrada**: **rechazado**.
+- con sesión, obra en un **lugar oculto**: **rechazado**.
+- una fila colada por `service_role` directo en un canal cerrado: `authenticated` **no la ve** (el bloqueo es real, no solo del insert).
+- SQL propuesto: `/private/tmp/.../scratchpad/propuesta-canal-rls.sql` (ruta de esta sesión; el gestor tiene el texto en el mensaje que le mandé).
+
+**2. La pared sin sesión no podría entrar a un canal privado.** `/obra/[id]/pared` se abría sin sesión, pero con la política de arriba la pared no recibiría nada (el `select` es solo para `authenticated`). El gestor dio dos caminos — (a) la pared también exige sesión (la abre el admin en la laptop o el cañón, con su cuenta), o (b) una política de `select` para `anon` sobre canales de obras abiertas (cualquiera con el enlace ve pintar en vivo) — y recomendó (a) por hoy, dejando (b) como decisión del founder para el doc 34 ("después"). Seguí esa recomendación: `src/app/obra/[id]/pared/page.tsx` ahora exige sesión igual que el mando (`redirect("/entrar?siguiente=/obra/[id]/pared")` si no hay cuenta), documentado en el propio archivo.
+
+**3. Evidencia real, no a ojo.** Monté un respaldo local (`/private/tmp/.../scratchpad/respaldo-ol088.mjs`, fuera del repo) que además de Auth/REST de mentira habla un Realtime mínimo de verdad: acepta el `WebSocket` real de `realtime-js` en `/realtime/v1/websocket`, contesta el protocolo Phoenix (v2, marcos JSON crudos, sin librería) y tiene un endpoint de control (`/__inyectar`) para mandar trazos de mentira por el mismo canal que usa la app — así se ejercitó el código real (`esMensajeTrazoValido`, `puntoInicial`, `siguientesSegmentos`, `trazarSegmento`), no un dibujo simulado por fuera. Al depurar por qué no dibujaba encontré que era el propio validador rechazando en silencio colores que no eran un hex exacto de `TINTAS` (funcionando como debía; el error era mío, de la prueba).
+
+PNG reales guardados (el respaldo los escribe a disco desde un `dataUrl` que manda el navegador, para no depender de copiar texto largo a mano):
+- `pared-1280x800.png` — cuatro remitentes pintando a la vez, cada uno con su pincel y color, sin mezclarse (prueba `puntoInicial` por remitente).
+- `pared-1920x1080.png` — mismo caso a la otra resolución que pidió el gestor.
+- `mando-390x844.png` — capturado con un truco de DOM a SVG (fuente de reserva del navegador en vez de Bricolage Grotesque, y en el estado "sin permiso del sensor" de una interacción anterior en la misma sesión de prueba — ninguno de los dos es un defecto de la app). Confirma otra vez, con archivo real, lo ya medido con `scrollWidth`/`clientWidth`: sin desborde horizontal a 390 px.
+
+Las tres rutas quedan en el scratchpad de esta sesión (`/private/tmp/claude-501/.../scratchpad/evidencia-ol088/`); se las mandé al gestor para que las abra. **Esto corrige lo que dije en la sección anterior** ("el respaldo local... no tiene WebSocket, así que el lienzo queda en blanco ahí — esperado"): con este respaldo ampliado sí se pudo probar el canal de verdad, incluida la RLS privada.
+
+**Limpieza:** los parches de depuración que puse en `node_modules/@supabase/phoenix` (para rastrear por qué no dibujaba) se revirtieron reinstalando el paquete; `.env.local` borrado; `AGENTS.md` restaurado; el `next dev`/respaldo de esta prueba, apagados. Verificación completa otra vez: `npm run lint` (0 errores), `npm run typecheck`, `npm test` (771/771), todo en verde. Cambio de código de esta sección: solo `src/app/obra/[id]/pared/page.tsx`. Sin migración (el SQL de `realtime.messages` lo aplica el gestor). Rama `pincel-fase-2-canal`, commit local, sin push.
+
+## El founder firma el doc 34: cupo y fila (2026-09-21)
+
+El gestor avisa: el founder firmó el prototipo de cupo y fila («firmo Pincel», en su chat) — doc [34](../rediseno/34-pincel-cupo-y-fila.md) actualizado a **Estado: firmado**. Dos ajustes del propio gestor al construir, que no tocan el prototipo firmado (anotados también en el doc 34): en «te toca» el aviso se va solo a los pocos segundos y el mando queda activo de inmediato, sin un toque extra para empezar; el texto bajo el campo de cupo en Administración va sin jerga («Hasta 20, para que la pared responda al instante», nada de "plan de Supabase" ni cifras de mensajes por segundo de cara a quien administra).
+
+**Orden de trabajo del gestor:** primero cerrar lo del bloque 3 que devolvió (ya hecho arriba: RLS propuesta, pared con sesión, PNG reales) sumando en el mismo SQL la columna de cupo (`cupo_mandos`) y la política de `presence` para la fila — una sola migración que solo añade, SQL completo mandado al gestor antes de escribirlo, él le pone nombre y la aplica. Después: el código de la fila (Presence, orden por llegada con desempate por `presence_ref`, la pared descarta trazos de quien no está pintando) y el campo de cupo en Administración — eso todavía no arranca en esta sesión.
+
+**SQL completo mandado al gestor**, extendiendo el ya propuesto: agrega `presence` (mismas condiciones de obra abierta/visible que `broadcast`, ya que quien espera también necesita ver la fila) más `alter table obras_colectivas add column cupo_mandos smallint not null default 10 check (cupo_mandos between 1 and 20)` (tal cual lo pidió el gestor). Probado en el mismo banco Postgres local aparte: la columna nueva con su default y su tope; las políticas de `presence` con los mismos seis casos que ya pasaron `broadcast` (sin sesión rechaza, sesión+obra abierta/visible permite, obra cerrada rechaza, lugar oculto rechaza). Detalle del SQL y de las pruebas en el mensaje al gestor, no se repite aquí completo para no duplicarlo con lo que él va a aplicar.
+
+Sin código de la fila ni del campo de Administración todavía — es la siguiente pieza, después de que el gestor aplique esta migración.
+
+## Cupo y fila: el código, sin esperar a que se aplique la migración (2026-09-21)
+
+El SQL ya se probó a fondo en un banco aparte (arriba); el código que lo usa se puede escribir ya, aunque la migración esté pendiente de que el gestor la aplique — mismo patrón que otras piezas de esta bitácora.
+
+**Lógica pura, nueva en `src/lib/pincel.ts`** (20 pruebas nuevas, 38 en total en `pincel.test.ts`):
+- `entradasDesdePresencia(estado)`: saca `{remitente, llegada, presenceRef}` de lo que da `RealtimeChannel.presenceState()`, por duck-typing (sin depender del tipo exacto de `@supabase/realtime-js`), descartando cualquier entrada que no traiga la forma esperada.
+- `ordenDeFila(entradas)`: por hora de llegada; empate, por `presenceRef` (el que ya da Presence a cada conexión) — así la pared y cada mando ven el mismo orden.
+- `quienesPintan(entradas, cupo)`: los remitentes de los primeros `cupo` de la fila. La usa también la pared.
+- `estadoDeFila(entradas, cupo, remitente)`: `"pintando"`, `"esperando"` (con `lugar` y `esperando` = cuántos en total) o `"fuera"` (antes del primer sync de Presence).
+
+**El mando** (`Mando.tsx`): además de suscribirse al canal, ahora hace `track({remitente, llegada: Date.now()})` en cuanto se confirma la suscripción, y escucha `presence sync` para recalcular su estado. Si `esperando`: el botón central y los selectores de trazo/tinta se reemplazan por la pantalla de espera del prototipo firmado (icono, «vas el N», cuántos esperan en total) — los selectores no desaparecen, se apagan (`aria-disabled`, sin puntero) para quien mire de reojo el cupo mientras espera. Al pasar de esperando a pintando, un aviso «Te toca pintar» se muestra 4 segundos y se va solo — el mando queda listo para pintar de inmediato, sin pedir un toque extra (ajuste del gestor). Antes del primer sync (`"fuera"`), se muestra la pantalla de pintar por defecto — mismo comportamiento que tenía el mando antes de esta pieza, así que nadie ve una pantalla nueva mientras Presence no ha dicho nada todavía.
+
+**La pared** (`Pared.tsx`): también se suscribe a Presence del mismo canal (sin trackear su propia presencia, solo para leer quién pinta) y descarta cualquier trazo cuyo remitente no esté en `quienesPintan(...)` en ese momento — el freno del lado de la pared que pide el doc 34, para que un cliente modificado en la fila no pueda seguir mandando trazo de todos modos.
+
+**Administración** (`CampoCupo.tsx`, nuevo): el contador +/- del prototipo firmado, de 1 a 20, en la ficha de la obra (solo si está abierta) — guarda al tocar +/-, sin un botón de "Guardar" aparte (`cambiarCupo(id, cupo)`, nueva acción de servidor, valida el mismo rango que exige la base). El texto bajo el campo ya sin jerga, como pidió el gestor: «Hasta 20, para que la pared responda al instante.» La ficha de la obra también enlaza ahora a «Abrir la pared» y «Abrir el mando» (antes decía «la proyección y el mando en vivo llegan en la siguiente fase», ya no es cierto) — sin QR todavía (Fase 4).
+
+**Verificado con el respaldo local** (extendido para aceptar el PATCH del cupo y devolver `cupo_mandos`, `lugar` y las fechas que pide la ficha): el campo de cupo a 390×844 se ve igual al prototipo firmado, sin desborde (`scrollWidth`/`clientWidth` 390/390), y el botón "+" guarda de verdad (11 tras un toque, releído del propio respaldo). El mando, sin cambios visibles de regresión, también 390/390. **Lo que no se pudo verificar en este entorno:** las pantallas de "esperando" y "te toca" del mando, y que la pared de verdad descarte un trazo de fuera de cupo — Presence es un sub-protocolo de Phoenix aparte del broadcast que ya se probó (estado con CRDT calculado por el servidor), y el respaldo mínimo de esta sesión no lo implementa. La lógica que decide todo eso (`estadoDeFila`, `quienesPintan`) tiene sus 20 pruebas y el marcado JSX es una copia fiel del prototipo ya firmado y verificado visualmente en su entrega — pero la prueba visual de esas dos pantallas en concreto, con Presence de verdad, queda para cuando esto corra contra el proyecto real.
+
+`npm run lint` (0 errores), `npm run typecheck`, `npm test` (782/782, 20 más que antes), `npm run build`: todo en verde. Sin migración nueva de código (la que ya se mandó sigue pendiente de que el gestor la aplique). Rama `pincel-fase-2-canal`, commit local, sin push.
+
+## Migración escrita, causa real de las capturas malas encontrada y evidencia definitiva (2026-09-21)
+
+El gestor aceptó el SQL tal cual (cuatro políticas, sin fusionar por `extension in (...)`) pero rechazó dos veces las capturas: primero por una fuente de reserva del navegador en vez de Bricolage Grotesque, después porque el intento de arreglo (cargar las hojas de estilo reales) tampoco sirvió — logotipo vacío, selectores con la altura mal, todavía sin la fuente real.
+
+**La migración**, escrita tal cual el SQL ya probado: `supabase/migrations/20260922130000_pincel_canal_y_cupo.sql`. Sigue sin aplicar — la lee y la aplica el gestor.
+
+**La causa real de las capturas malas** (no era el CSS, era la fuente): el truco de "DOM a SVG" (clonar `<html>`, inyectar el CSS real como texto y rasterizarlo con `<img src="data:image/svg+xml,...">`) tiene un límite real de los navegadores que no se documenta bien: cargar una imagen SVG por `<img>` **no espera a que terminen de cargar sus propios recursos externos** (como los archivos de fuente que carga un `@font-face`), así que rasteriza con lo que ya estaba listo en ese instante — casi siempre, sin la fuente. Encima, el CSS real de Next.js declara sus `@font-face` con rutas **relativas** (`url(../media/xxxx.woff2)`), que dentro de un documento `data:` no tienen de dónde resolverse — intenté arreglar eso reescribiendo las rutas a absolutas y el resultado fue idéntico byte a byte al anterior, confirmando que el problema no era la ruta: es que la técnica entera no espera fuentes externas, tenga la URL que tenga.
+
+**La solución: dejar de rasterizar a mano y usar un navegador de verdad.** `playwright-core` (instalado solo en el scratchpad de esta sesión, `npm install --no-save`, nunca en el repo) apuntando al Google Chrome real de la Mac (`executablePath`, sin descargar un Chromium aparte) — abre la página, espera `document.fonts.ready` y la red en reposo, y `page.screenshot({ path })` escribe el PNG a disco directo, con la fuente, el CSS y el layout reales: cero trucos. Con sesión (la misma cookie falsa de siempre) y contra el mismo respaldo local de este árbol.
+
+**Con esta técnica se encontró un bug real**, no del navegador: la pared, tras la pieza de cupo y fila, correctamente **descarta cualquier trazo de un remitente que no esté en su cuenta de `quienesPintan(...)`**; mi respaldo nunca simulaba Presence, así que para la pared *nadie* estaba pintando y descartaba los cuatro remitentes de prueba en silencio — el lienzo salía en blanco no por un error, sino porque el freno de cupo estaba haciendo exactamente lo que debe hacer. Arreglado sumando un endpoint de control al respaldo, `/__presencia`, que manda un `presence_state` de mentira con el protocolo real de Phoenix Presence (`phx_ref` en cada `meta`; `realtime-js` lo traduce solo a `presence_ref` al exponerlo) — así se ejercita el código real de la pared (`quienesPintan`, no un atajo).
+
+**Evidencia definitiva, las seis capturas que pidió el gestor**, todas con Chrome real, sesión real, fuente y CSS reales, en `/private/tmp/claude-501/.../scratchpad/evidencia-ol088/`:
+- `pared-1280x800.png` y `pared-1920x1080.png`: cuatro remitentes pintando a la vez sin mezclarse (con presencia de mentira vía `/__presencia` para que la pared los reconozca como "pintando").
+- `mando-390x844.png`: pintando (estado por defecto).
+- `mando-390x844-esperando.png`: cupo bajado a 3 (PATCH al respaldo) y presencia con 7 entradas, la propia en el 6º lugar — "vas el 3", "4 esperando", exactamente como calcula `estadoDeFila`.
+- `mando-390x844-te-toca.png`: la misma sesión, tras un segundo `presence_state` que deja la cuenta propia dentro del cupo — el aviso «Te toca pintar» capturado mientras está visible (se va solo a los 4 s).
+- `admin-cupo-390x844.png`: el campo de cupo en la ficha de la obra, con Chrome real.
+
+`npm run lint && npm run typecheck && npm test` (782/782) `&& npm run build`: verde (sin cambios de código en esta sección, solo la migración y las herramientas de prueba fuera del repo). Rama `pincel-fase-2-canal`, commit local, sin push.
+
+**Respuestas a las dos preguntas del gestor:**
+1. El encargo nuevo del founder (directo en el chat, no por el gestor): grosor del trazo por arrastre en el mando — mantener presionado el punto y arrastrar el dedo arriba/abajo engruesa/adelgaza, el punto vuelve a su lugar al soltar. Como pidió el gestor, quedó en un commit aparte, en la rama `pincel-grosor` (desde este mismo HEAD), sin tocar `pincel-fase-2-canal`.
+2. `AGENTS.md` no es mío: Next.js lo reescribe solo cada vez que corre `next dev`/`next build` (bloque "Generated AGENTS.md for AI agents"), igual que ya pasaba con `CLAUDE.md` en sesiones anteriores (ver memoria del proyecto). Nunca lo comiteo — `git checkout -- AGENTS.md` después de cada prueba, antes de cualquier commit. Si apareció modificado sin comitear fue un descuido de limpieza a media prueba, ya corregido; no tiene contenido propio que conservar.
+
+## El mando, rechazado por el founder y rehecho calcando el prototipo firmado (2026-09-21)
+
+El founder vio `mando-390x844.png` y dijo, literal: «ya se había acordado que eran selectores drop up que además iban a mostrar las formas de la punta del pincel.. aquí se ve destruida la interfaz». Tiene razón, y el error es mío: escribí los selectores de Trazo y Tinta como dos grupos planos de botones (`flex-wrap`), con `min-height: var(--toque-min)` cada uno, dentro de una fila de la rejilla que se estira (`minmax(0, 1fr)`) — todas las opciones visibles a la vez, estiradas a lo alto (unas 280 px), en dos columnas que se pisaban, sin control central. Lo vi en cada captura de esta sesión y no lo reconocí como error: lo tomé por "el selector". Nunca comparé contra lo firmado.
+
+**Lo firmado, y lo que se calcó** (OL-084, commit `de48c0c` en `codex/pincel-prototipo`, `experiments/pincel-prototipo/public/app.js` + `style.css` + `core.mjs`, bitácora 118, ajuste del 2026-09-18 por pedido del founder): Trazo y Tinta son dos tarjetas cerradas de 105×84 px, una a cada lado del botón. Cerradas muestran lo elegido: la punta del pincel dibujada (curva, curva ancha y suave, puntos, manchas — los mismos trazos SVG de `brushSample`) en el color de la tinta, y el círculo del color con su nombre. Al tocar una se abre hacia arriba, sin tocar el botón, con cada opción de 52 px y su muestra; la elegida lleva borde; nunca las dos abiertas; al elegir se cierra y el foco vuelve a la tarjeta (se anuncia «Trazo: Spray», «Tinta: Violeta»). Pintar cierra el menú abierto. El botón conserva su zona inferior-media con espacio abajo para afianzar el pulgar (nota del founder, bitácora 118).
+
+**Maquetación** (MEMORIA_GESTOR): una sola rejilla con áreas — `minmax(0,1fr) 128px minmax(0,1fr)`, filas `presente / espera / trazo·orb·tinta / hold`, `min-width: 0` en los hijos, sin envoltorios (`.centro` y `.herramientas` desaparecieron). El menú flota (`position: absolute; bottom: calc(100% + 30px)` sobre su tarjeta, que es `position: relative`), no empuja la rejilla. En «esperando» el bloque de espera ocupa su propia área y las dos tarjetas quedan deshabilitadas y cerradas; el botón no se dibuja.
+
+**Medido con Chrome real** (playwright-core, `capturar-mando-selectores.mjs` en el scratchpad, cinco estados a 390×844): tarjetas 105×84 exactas; botón 128×128 con centro en y = 611 (el firmado del prototipo, ~603: 8 px más abajo por la Barra de la app en vez del «Salir» del prototipo); al abrir Trazo o Tinta, **ni el botón ni las tarjetas ni el texto cambian de posición ni de alto** (rects comparados antes/durante); el menú termina arriba del borde del botón; el de Tinta queda dentro del viewport (alineado a la derecha); nunca hay más de un menú en el DOM; tras elegir Spray el menú se cierra, la tarjeta anuncia «Trazo: Spray» y tiene el foco; en esperando las dos tarjetas están `disabled`; `scrollWidth`/`clientWidth` 390/390 en los cinco estados.
+
+**Las capturas** (Chrome real, sesión real, fuente y CSS reales), en `…/scratchpad/evidencia-ol088/`: `mando-390x844.png` (reposo, pintando), `mando-390x844-trazo-abierto.png`, `mando-390x844-tinta-abierto.png`, `mando-390x844-esperando.png` (cupo 3, «vas el 3», «4 esperando»), `mando-390x844-te-toca.png`. Las de la pared (1280×800, 1920×1080) y la de Administración con el cupo son las ya aceptadas.
+
+**Una línea para quien venga después:** rasterizar el DOM a SVG (`<img src="data:image/svg+xml…">`) NO espera a que carguen las fuentes externas del CSS — la captura sale con una fuente de reserva aunque `document.fonts.ready` diga que sí; para un PNG real usar `playwright-core` con el Chrome de la Mac (detalle en la memoria del proyecto, `reference-captura-png-real`).
+
+**El grosor** (rama `pincel-grosor`, commit `a6da93d`) se rehace encima de este mando cuando el gestor acepte el bloque 3, como pidió.
+
+`npm run typecheck && npm run lint` (0 errores) `&& npm test` (782/782) `&& npm run build`: verde. Sin migración. Rama `pincel-fase-2-canal`, commit local, sin push.

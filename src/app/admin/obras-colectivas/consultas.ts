@@ -54,12 +54,17 @@ export type ObraDetalle = {
   creadoEn: string;
   cerradoEn: string | null;
   imagenFinal: string | null;
+  cupoMandos: number;
 };
 
 export async function cargarObra(id: string): Promise<ObraDetalle | null> {
   const supabase = await clienteServidor();
   if (!supabase) return null;
-  const { data } = await supabase.from("obras_colectivas").select("id, nombre, estado, cierra_en, zona, creado_en, cerrado_en, imagen_final, lugar:lugares(nombre)").eq("id", id).maybeSingle();
+  const { data } = await supabase
+    .from("obras_colectivas")
+    .select("id, nombre, estado, cierra_en, zona, creado_en, cerrado_en, imagen_final, cupo_mandos, lugar:lugares(nombre)")
+    .eq("id", id)
+    .maybeSingle();
   if (!data) return null;
   const fila = data as unknown as {
     id: string;
@@ -70,6 +75,7 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
     creado_en: string;
     cerrado_en: string | null;
     imagen_final: string | null;
+    cupo_mandos: number;
     lugar: { nombre: string } | { nombre: string }[] | null;
   };
   return {
@@ -81,6 +87,7 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
     creadoEn: fila.creado_en,
     cerradoEn: fila.cerrado_en,
     imagenFinal: fila.imagen_final,
+    cupoMandos: fila.cupo_mandos,
     lugarNombre: unLugar(fila.lugar)?.nombre ?? "",
   };
 }

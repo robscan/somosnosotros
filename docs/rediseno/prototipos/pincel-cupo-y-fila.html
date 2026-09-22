@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pincel: cupo y fila de espera (OL-088)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens: los de globals.css de somosnosotros (línea gráfica firmada). Igual que subcategorias-disciplina.html. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --panel: #1f2933; --panel-texto: #e6e9ee; --panel-suave: #9aa5b1; --panel-borde: #34424f;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px; --alto-estado: 48px; --alto-barra: 56px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  svg { width: 20px; height: 20px; flex: none; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 1200px; margin: 0 auto; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+  .marco { display: grid; gap: 10px; justify-items: center; }
+  .etiqueta-marco { font-size: 14px; font-weight: 700; color: var(--estudio-texto); text-align: center; max-width: 390px; }
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 var(--gutter) 40px; }
+
+  .barra { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); column-gap: 10px; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; line-height: 1; color: var(--texto); text-decoration: none; text-align: center; }
+  .volver, .salir { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px 0 8px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; text-decoration: none; justify-self: start; white-space: nowrap; }
+  .salir { border: none; padding: 0; background: none; color: var(--texto-suave); text-decoration: underline; justify-self: end; }
+  h1 { font-size: 24px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; text-wrap: balance; margin: 14px 0 14px; }
+  h2 { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--texto-suave); margin: 20px 0 8px; }
+
+  /* ---- Administración: el canon de "renglón resuelto" con el campo de cupo nuevo ---- */
+  .datos { display: grid; gap: 8px; margin: 12px 0; }
+  .dato { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+  .dato > span { color: var(--texto-suave); font-size: 15px; }
+  .dato > b { font-weight: 600; }
+  .campo-cupo { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+  .campo-cupo > div { display: grid; gap: 2px; min-width: 0; }
+  .campo-cupo label { font-weight: 600; font-size: 16px; }
+  .campo-cupo small { color: var(--texto-suave); font-size: 13px; line-height: 1.35; }
+  .contador { display: flex; align-items: center; gap: 4px; flex: none; }
+  .contador button { width: 36px; height: 36px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); font-size: 20px; font-weight: 700; color: var(--primario); cursor: pointer; }
+  .contador input { width: 44px; min-height: 36px; border: none; text-align: center; font-size: 18px; font-weight: 700; background: none; }
+  .nota-tope { margin-top: 10px; padding: 10px 14px; border-radius: var(--radio); background: var(--primario-suave); color: var(--texto); font-size: 13px; line-height: 1.4; }
+  .primario { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: var(--toque); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 18px; font-weight: 700; cursor: pointer; margin-top: 18px; }
+
+  /* ---- Mando: mismo lienzo del prototipo firmado (OL-084, bitácora 118), colores del proyecto ---- */
+  .mando { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: calc(844px - var(--alto-estado) - var(--alto-barra)); padding: 10px 0 24px; }
+  .presente { justify-self: end; margin: 4px 0 0; font-size: 13px; color: var(--texto-suave); }
+  .centro { display: grid; justify-items: center; align-content: center; gap: 18px; text-align: center; }
+  .orb { display: grid; place-items: center; width: 128px; height: 128px; border: 0; border-radius: 50%; background: var(--primario); color: var(--primario-texto); font-size: 15px; font-weight: 700; box-shadow: 0 12px 28px rgba(15, 107, 124, 0.35); cursor: pointer; }
+  .hold-label { font-size: 14px; color: var(--texto-suave); max-width: 260px; }
+  .herramientas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  .picker { display: grid; justify-items: center; gap: 6px; min-height: 76px; padding: 10px 4px; border: 1px solid var(--borde); border-radius: 18px; background: var(--fondo); font-size: 13px; font-weight: 700; }
+  .picker.apagado { opacity: 0.5; }
+  .muestra { width: 40px; height: 24px; }
+  .tinta { width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); }
+
+  /* ---- En espera / te toca ---- */
+  .espera-icono { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; background: var(--fondo-miniatura); color: var(--texto-suave); }
+  .lugar { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--texto-suave); }
+  .lugar b { display: block; margin-top: 6px; font-size: 56px; font-weight: 800; font-variation-settings: var(--ancho-titulo); color: var(--texto); letter-spacing: -0.02em; }
+  .explica-espera { max-width: 280px; color: var(--texto-suave); font-size: 15px; line-height: 1.4; }
+  .conteo-esperando { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; background: var(--fondo-miniatura); color: var(--texto-suave); font-size: 13px; font-weight: 600; }
+
+  .banner-turno { position: absolute; top: calc(var(--alto-estado) + 10px); left: var(--gutter); right: var(--gutter); z-index: 2; display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; column-gap: 12px; padding: 14px; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); box-shadow: 0 10px 24px rgba(15, 107, 124, 0.4); }
+  .banner-turno svg { color: var(--primario-texto); }
+  .banner-turno b { display: block; font-size: 16px; font-weight: 700; }
+  .banner-turno span { font-size: 13px; opacity: 0.9; }
+  .desenfocado { opacity: 0.35; filter: blur(1px); pointer-events: none; }
+
+  .utileria { width: 100%; max-width: 640px; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; line-height: 1.5; }
+  .utileria h3 { margin-bottom: 8px; color: var(--panel-suave); font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .utileria ol { padding-left: 20px; display: grid; gap: 6px; margin-bottom: 12px; }
+  .utileria a { color: var(--panel-texto); }
+</style>
+</head>
+<body>
+<div class="estudio">
+  <p class="rotulo"><strong>Pincel: cupo y fila de espera — OL-088</strong> <span>Fase 2, bloque 3</span> <span>Datos de ejemplo, sin nombres</span></p>
+
+  <div class="marco">
+    <p class="etiqueta-marco">1 · Administración: campo de cupo al crear o editar la obra</p>
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a href="#" class="volver">‹ Atrás</a><a href="#" class="logotipo">SMSNSTRS</a><span></span></header>
+        <h1>Pincel en el Centro de las Artes</h1>
+        <div class="datos">
+          <div class="dato"><span>Lugar</span><b>Centro de las Artes</b></div>
+          <div class="dato"><span>Cierra</span><b>lunes 21 de septiembre · 23:00</b></div>
+          <div class="dato"><span>Estado</span><b>Abierta</b></div>
+        </div>
+        <h2>Cupo</h2>
+        <div class="campo-cupo">
+          <div>
+            <label for="cupo">Mandos pintando a la vez</label>
+            <small>Quien llega después se conecta y ve la pared, pero espera su turno.</small>
+          </div>
+          <div class="contador">
+            <button type="button" aria-label="Bajar">−</button>
+            <input id="cupo" type="text" inputmode="numeric" value="10" readonly>
+            <button type="button" aria-label="Subir">+</button>
+          </div>
+        </div>
+        <p class="nota-tope">Hasta 20. Es lo más alto que aguanta el plan de Supabase con holgura, dejando lugar para quienes esperan.</p>
+      </main>
+    </div>
+  </div>
+
+  <div class="marco">
+    <p class="etiqueta-marco">2 · Mando: pintando (cupo sin llenar)</p>
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a href="#" class="salir">Salir</a><a href="#" class="logotipo">SMSNSTRS</a><span></span></header>
+        <div class="mando">
+          <p class="presente">7 personas aquí</p>
+          <div class="centro">
+            <button type="button" class="orb" aria-pressed="false">●</button>
+            <p class="hold-label">Mantén presionado y mueve tu celular</p>
+          </div>
+          <div class="herramientas">
+            <div class="picker">
+              <svg viewBox="0 0 48 28" class="muestra" aria-hidden="true"><path d="M5 19C14 5 24 25 43 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+              <span>Trazo</span>
+            </div>
+            <div class="picker">
+              <span class="tinta" style="background:#e4552f"></span>
+              <span>Cempasúchil</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="marco">
+    <p class="etiqueta-marco">3 · Mando: en espera, cupo lleno</p>
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <header class="barra"><a href="#" class="salir">Salir</a><a href="#" class="logotipo">SMSNSTRS</a><span></span></header>
+        <div class="mando">
+          <p class="presente">10 pintando</p>
+          <div class="centro">
+            <span class="espera-icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="36" height="36"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </span>
+            <p class="lugar">Vas el<b>3</b></p>
+            <p class="explica-espera">Pintas en cuanto alguien salga. No pierdes tu lugar por esperar.</p>
+            <span class="conteo-esperando">4 esperando</span>
+          </div>
+          <div class="herramientas">
+            <div class="picker apagado">
+              <svg viewBox="0 0 48 28" class="muestra" aria-hidden="true"><path d="M5 19C14 5 24 25 43 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+              <span>Trazo</span>
+            </div>
+            <div class="picker apagado">
+              <span class="tinta" style="background:#e4552f"></span>
+              <span>Cempasúchil</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="marco">
+    <p class="etiqueta-marco">4 · Mando: «te toca» — el momento en que sale quien pintaba</p>
+    <div class="telefono" style="position: relative;">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <div class="banner-turno" role="status">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><b>Te toca pintar</b><span>Tu turno empezó</span></div>
+      </div>
+      <main class="pantalla desenfocado">
+        <header class="barra"><a href="#" class="salir">Salir</a><a href="#" class="logotipo">SMSNSTRS</a><span></span></header>
+        <div class="mando">
+          <p class="presente">8 personas aquí</p>
+          <div class="centro">
+            <button type="button" class="orb" aria-pressed="false">●</button>
+            <p class="hold-label">Mantén presionado y mueve tu celular</p>
+          </div>
+          <div class="herramientas">
+            <div class="picker">
+              <svg viewBox="0 0 48 28" class="muestra" aria-hidden="true"><path d="M5 19C14 5 24 25 43 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+              <span>Trazo</span>
+            </div>
+            <div class="picker">
+              <span class="tinta" style="background:#e4552f"></span>
+              <span>Cempasúchil</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <aside class="utileria">
+    <h3>Qué cambia</h3>
+    <ol>
+      <li>Pantalla 1: cupo nuevo en Administración, por defecto 10, tope 20 (§ propuesta 34). El resto de la ficha de obra no cambia.</li>
+      <li>Pantalla 2: el mando de siempre (prototipo firmado OL-084) — trazo, tinta y el botón central, sin cambios.</li>
+      <li>Pantalla 3: con el cupo lleno, el mando se conecta igual (ve el conteo, guarda su lugar) pero el botón de pintar se reemplaza por su posición en la fila. Sin nombres, sin tiempo estimado, sin turno con límite (el founder pidió no traer esa complejidad todavía).</li>
+      <li>Pantalla 4: al liberarse un lugar (alguien sale o se le cae la conexión — Presence lo nota en 25 a 50 segundos), quien seguía en la fila ve este aviso y su mando pasa solo al estado de pintar.</li>
+      <li>Nada de esto pinta todavía en la pared: es la maqueta de las pantallas del mando y del campo de Administración, no la lógica real (Presence, el freno del lado de la pared, la migración del cupo).</li>
+    </ol>
+    <p style="margin-top:10px">Propuesta completa: <a href="../34-pincel-cupo-y-fila.md">34-pincel-cupo-y-fila.md</a></p>
+  </aside>
+</div>
+</body>
+</html>

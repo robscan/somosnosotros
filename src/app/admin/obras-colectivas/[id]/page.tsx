@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
+import Boton from "@/components/ui/Boton";
 import ficha from "@/components/ui/Ficha.module.css";
 import Borrar from "@/components/Borrar";
 import { formatearLargo } from "@/lib/fechas";
@@ -9,6 +10,7 @@ import admin from "../../admin.module.css";
 import styles from "../obras.module.css";
 import { cargarObra } from "../consultas";
 import AccionesObra from "./AccionesObra";
+import CampoCupo from "./CampoCupo";
 import { borrarObra } from "../acciones";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -19,8 +21,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ error?: string }> };
 
-/** Detalle de una obra colectiva (OL-088, Fase 1 y Fase 2 bloque 1): estado, cuándo cierra, Terminar/Reabrir y
- * Borrar (solo cerrada). Sin proyección ni mando en vivo todavía — llegan en el resto de la Fase 2. */
+/** Detalle de una obra colectiva (OL-088): estado, cuándo cierra, cupo de mandos (doc rediseno/34, solo si está
+ * abierta), enlaces a la pared y al mando, Terminar/Reabrir y Borrar (solo cerrada). */
 export default async function DetalleObra({ params, searchParams }: Params) {
   const { id } = await params;
   const { error } = (await searchParams) ?? {};
@@ -60,6 +62,17 @@ export default async function DetalleObra({ params, searchParams }: Params) {
           <b>{obra.estado === "abierta" ? "Abierta" : "Cerrada"}</b>
         </div>
       </div>
+      {obra.estado === "abierta" && <CampoCupo id={obra.id} cupo={obra.cupoMandos} />}
+      {obra.estado === "abierta" && (
+        <div className={styles.acciones}>
+          <Boton href={`/obra/${obra.id}/pared`} variante="secundario">
+            Abrir la pared
+          </Boton>
+          <Boton href={`/obra/${obra.id}/mando`} variante="secundario">
+            Abrir el mando
+          </Boton>
+        </div>
+      )}
       <AccionesObra id={obra.id} estado={obra.estado} />
       {error === "borrar" && (
         <p className={styles.error} role="alert">
@@ -74,7 +87,7 @@ export default async function DetalleObra({ params, searchParams }: Params) {
           accion={borrarObra.bind(null, obra.id)}
         />
       )}
-      <p className={styles.despues}>La proyección y el mando en vivo llegan en la siguiente fase.</p>
+      {obra.estado === "abierta" && <p className={styles.despues}>Sin QR todavía: entra a la pared y al mando desde aquí.</p>}
     </main>
   );
 }

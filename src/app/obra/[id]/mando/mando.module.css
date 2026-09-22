@@ -1,0 +1,267 @@
+/* El mando (Fase 2 bloque 3), calcado del prototipo FIRMADO (OL-084, commit de48c0c, bitácora 118, ajuste del
+   2026-09-18): Trazo y Tinta son dos tarjetas cerradas a cada lado del botón, que muestran la punta elegida
+   (dibujada, en el color de la tinta) y el color con su nombre; al tocar una se abre hacia arriba, sin tocar el
+   botón, con cada opción de 52 px y su muestra; nunca las dos abiertas, nunca todas las opciones visibles en
+   reposo. Una sola rejilla con áreas, sin envoltorios (MEMORIA_GESTOR). El gutter horizontal ya lo pone
+   ficha.pagina (el padre); "Salir" es la Barra de la página. */
+.mando {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    ". . presente"
+    "espera espera espera"
+    "trazo orb tinta"
+    "hold hold hold";
+  column-gap: 10px;
+  align-items: center;
+  /* El botón conserva la altura firmada: zona inferior-media, con espacio abajo para afianzar el pulgar sin
+     cambiar el agarre (founder, bitácora 118). */
+  min-height: calc(100dvh - var(--alto-barra, 56px));
+  padding: 10px 0 clamp(96px, 17vh, 160px);
+  position: relative;
+}
+.mando > * {
+  min-width: 0;
+}
+.presente {
+  grid-area: presente;
+  justify-self: end;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 13px;
+}
+
+/* --- Tarjetas de Trazo y Tinta (105×84 firmadas) y su menú hacia arriba --- */
+.selector {
+  position: relative; /* el menú flota sobre la tarjeta, no empuja la rejilla */
+  justify-self: center;
+  width: 105px;
+}
+.selectorTrazo {
+  grid-area: trazo;
+}
+.selectorTinta {
+  grid-area: tinta;
+}
+.tarjeta {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 4px;
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tarjeta[aria-expanded="true"] {
+  border-color: var(--texto);
+}
+.tarjeta:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.tarjeta > span::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 0 3px 7px;
+  border: solid var(--texto-suave);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.tarjeta[aria-expanded="true"] > span::after {
+  transform: rotate(-135deg);
+  margin-bottom: -1px;
+}
+/* La punta dibujada, en el color de la tinta elegida (prototipo: `--ink`). */
+.muestra {
+  width: 48px;
+  height: 28px;
+}
+.tinta {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.menu {
+  position: absolute;
+  z-index: 3;
+  bottom: calc(100% + 30px); /* hacia arriba, sin tocar el botón */
+  left: 0;
+  display: grid;
+  width: 196px;
+  padding: 6px;
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  background: var(--fondo);
+  box-shadow: var(--sombra-panel);
+}
+.selectorTinta .menu {
+  left: auto;
+  right: 0;
+}
+.opcion {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 12px 0 6px;
+  border: 2px solid transparent;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--texto);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.opcion > span {
+  justify-self: start;
+}
+.opcion[aria-pressed="true"] {
+  border-color: var(--texto);
+  font-weight: 800;
+}
+
+/* --- El botón de pintar --- */
+.orb {
+  grid-area: orb;
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: 23px;
+  box-shadow: 0 12px 28px rgba(15, 107, 124, 0.35);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.orb[aria-pressed="true"] {
+  transform: scale(0.94);
+  box-shadow: 0 0 0 10px rgba(15, 107, 124, 0.22);
+}
+.hold {
+  grid-area: hold;
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--texto-suave);
+}
+.hold.aviso {
+  color: var(--error);
+}
+
+/* --- En espera / te toca (doc rediseno/34, prototipo firmado pincel-cupo-y-fila.html) --- */
+.espera {
+  grid-area: espera;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 18px;
+  text-align: center;
+}
+.esperaIcono {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+}
+.lugar {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+.lugar > b {
+  display: block;
+  margin-top: 6px;
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--texto);
+  letter-spacing: -0.02em;
+}
+.explicaEspera {
+  max-width: 280px;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.conteoEsperando {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  font-size: 13px;
+  font-weight: 600;
+}
+.bannerTurno {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  padding: 14px;
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  box-shadow: 0 10px 24px rgba(15, 107, 124, 0.4);
+}
+.bannerTurno svg {
+  color: var(--primario-texto);
+}
+.bannerTurno b {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+}
+.bannerTurno span {
+  font-size: 13px;
+  opacity: 0.9;
+}
+.cerrada {
+  margin-top: var(--espacio-5, 20px);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm, 0.9375rem);
+}
+
+@media (max-width: 350px) {
+  .mando {
+    grid-template-columns: minmax(0, 1fr) 104px minmax(0, 1fr);
+    column-gap: 6px;
+  }
+  .orb {
+    width: 104px;
+    height: 104px;
+  }
+  .tarjeta {
+    font-size: 12px;
+  }
+}
