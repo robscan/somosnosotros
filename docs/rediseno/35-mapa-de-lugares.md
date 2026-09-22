@@ -152,6 +152,13 @@ Capturas reales (Chrome de la Mac por `playwright-core`, `document.fonts.check('
 - `prototipo-pin-tocado--390x844.png` — Teatro de la Paz tocado: el pin «Hoy» compacto crece, abajo la hoja con el símbolo SN, «Teatro de la Paz», «Teatro», «Hoy · 20:00 · Orquesta Sinfónica de SLP» y el botón «Ver ficha» a lo ancho; «Registrar lugar» se retiró y el botón de ubicación quedó visible, justo encima del borde superior de la hoja.
 - `prototipo-seguidos--390x844.png` — con sesión inventada: el Museo Federico Silva (destacado y seguido) y el MUNI (solo seguido, con «Vie») llevan el verde de «Sigues» y el aro, con el pin compacto; el Centro de las Artes, destacado pero no seguido, se ve como cualquier lugar con evento (círculo del color de acción con «Hoy»), sin aro ni verde.
 
+**Capturas de la app real con Mapbox de verdad (OL-128, corrección de pines):** `next build && next start` contra un respaldo local de datos inventados y el token público de Mapbox (nunca en git), con sesión y seguidos como en el prototipo. Chrome vía `playwright-core`, 390×844 a doble densidad, en `capturas-35/`:
+
+- `app-mapa-zoom-barrio--390x844.png` — encuadre inicial: los mismos doce lugares del prototipo, ya con Mapbox de verdad; el Museo Federico Silva y el MUNI en verde con aro, el resto en tinta, con «Hoy»/día en los pines medianos y compactos.
+- `app-mapa-zoom-ciudad--390x844.png` — alejado (varias colonias a la vez): el día sigue legible en todos los pines, ninguno se esconde por el cambio de zoom.
+- `app-mapa-zoom-calle--390x844.png` — acercado (calles con nombre): el pin compacto y el aro de los seguidos se distinguen con nitidez, sin verse apretados ni con espacio de sobra.
+- `app-mapa-sin-sesion--390x844.png` — mismo encuadre, sin sesión: el Museo Federico Silva y el MUNI vuelven a la tinta normal, sin verde ni aro (confirma que el resalte depende de `seguidos`, no está fijo en el estilo).
+
 ## Qué toca en el código cuando se firme (para el operador)
 
 - `src/components/Mapa.tsx`: el encuadre inicial (lugares de la semana y los cercanos; con ubicación, los cinco cercanos); en la capa de puntos, dos tamaños según `dia` (pequeño sin él, mediano con él, 24 px, compacto); una capa de texto para «Hoy»/día dentro del círculo, con `text-allow-overlap` para que nunca se esconda; el aro y el verde de «Sigues» (`--ok`) para los **seguidos** (no los destacados ni el naranja: cambio del founder tras firmar y corrección OL-128, ver arriba) — con sesión, viene del arreglo de `seguidos` que ya carga `page.tsx`; la ⓘ junto a la marca. La etiqueta del día se calcula en el servidor con la zona del evento (`ProximoEvento.zona`) y llega en las propiedades del punto.
