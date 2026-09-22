@@ -281,12 +281,17 @@ export function paraRecordatorio(destinos: Destino[], previos: EnvioPrevio[], sa
 
 export type Firma = { telefono: string };
 
+/** El icono de la app en la firma HTML del correo (pedido del founder, 2026-09-22, tras la comprobación
+ * técnica): 40×40, esquinas redondeadas, con alt. Solo en el HTML; el texto plano no lleva nada. */
+export const ICONO_URL = `${SITIO}/icono-192.png`;
+const ICONO_HTML = `<p><img src="${ICONO_URL}" alt="Somos Nosotros" width="40" height="40" style="border-radius:8px;display:block" /></p>`;
+
 function firmaTexto(f: Firma): string {
   return `Gracias,\nOscar Muñiz Blanco\nCoordinación de agenda · Somos Nosotros\nsomosnosotros.org · ${f.telefono}`;
 }
 
 function firmaHtml(f: Firma): string {
-  return `<p>Gracias,<br>Oscar Muñiz Blanco<br>Coordinación de agenda · Somos Nosotros<br><a href="${SITIO}">somosnosotros.org</a> · ${escapar(f.telefono)}</p>`;
+  return `${ICONO_HTML}\n<p>Gracias,<br>Oscar Muñiz Blanco<br>Coordinación de agenda · Somos Nosotros<br><a href="${SITIO}">somosnosotros.org</a> · ${escapar(f.telefono)}</p>`;
 }
 
 function escapar(s: string): string {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  armarCorreo, armarDestinos, asuntoDe, type Destino, type EnvioPrevio, type Fila, hashCorreo, leerArgumentos, leerCsv, leerFilas, listaCorta,
+  armarCorreo, armarDestinos, asuntoDe, type Destino, type EnvioPrevio, type Fila, hashCorreo, ICONO_URL, leerArgumentos, leerCsv, leerFilas, listaCorta,
   nombreBuzonCompartido, paraRecordatorio, quitarYaEnviados, repartir, tipoDe, urlFicha,
 } from "./invitar-agendas";
 
@@ -122,6 +122,20 @@ describe("armarCorreo", () => {
     expect(c.texto).toContain('"no me escriban más"');
     expect(c.html).toContain('<li>Museo Cuatro: <a href="https://somosnosotros.org/lugares/museo-cuatro">');
     expect(c.html).toContain('<li>Centro Cinco: <a href="https://somosnosotros.org/lugares/centro-cinco">');
+  });
+  it("icono en la firma HTML (pedido del founder tras la comprobación técnica): 40×40, alt, esquinas redondeadas; el texto plano no lleva nada", () => {
+    expect(ICONO_URL).toBe("https://somosnosotros.org/icono-192.png");
+    for (const d of [inst, org, buzon]) {
+      for (const recordatorio of [false, true]) {
+        const c = armarCorreo(d, FIRMA, { recordatorio });
+        expect(c.html).toContain(`<img src="${ICONO_URL}" alt="Somos Nosotros" width="40" height="40"`);
+        expect(c.html).toContain("border-radius");
+        expect(c.texto).not.toContain("icono-192");
+        expect(c.texto).not.toContain("<img");
+      }
+    }
+    // El texto plano de la variante institución termina exactamente igual que antes del icono (solo el HTML cambió).
+    expect(armarCorreo(inst, FIRMA).texto.endsWith("Gracias,\nOscar Muñiz Blanco\nCoordinación de agenda · Somos Nosotros\nsomosnosotros.org · 444 000 0000")).toBe(true);
   });
   it("recordatorio: corto, nombra la institución o las sedes, misma salida y firma", () => {
     const r = armarCorreo(inst, FIRMA, { recordatorio: true });
