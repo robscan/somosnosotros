@@ -658,7 +658,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             </button>
             {abierta === "quien" && (
               <div className={canon.cuerpo}>
-                <SelectorQuien valor={quien} onCambio={(q) => { gestos.current.tocar("quien"); setQuien(q); }} mios={mios} />
+                <SelectorQuien valor={quien} onCambio={(q) => { gestos.current.tocar("quien"); setQuien(q); }} mios={mios} ciudadContexto={ciudadContexto?.nombre} />
               </div>
             )}
           </li>

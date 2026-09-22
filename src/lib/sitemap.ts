@@ -16,7 +16,7 @@ export type EntradaSitemap = { url: string; lastModified?: string };
 
 export type FilaLugarSitemap = { id: string; visible: boolean; privado: boolean; actualizado_en: string };
 export type FilaEventoSitemap = { id: string; visible: boolean; termina: string; actualizado_en: string };
-export type FilaArtistaSitemap = { id: string; visible: boolean; origen: string | null; actualizado_en: string };
+export type FilaArtistaSitemap = { id: string; slug: string; visible: boolean; origen: string | null; actualizado_en: string };
 
 /**
  * Los artistas traídos del CAPO que no han reclamado su ficha SÍ entran al mapa del sitio y al índice de Google.
@@ -47,5 +47,5 @@ export function eventosParaSitemap(filas: FilaEventoSitemap[], ahora: Date = new
 export function artistasParaSitemap(filas: (FilaArtistaSitemap & { reclamado: boolean })[]): EntradaSitemap[] {
   return filas
     .filter((a) => a.visible && (a.origen !== "capo" || a.reclamado || CAPO_SIN_RECLAMAR_EN_SITEMAP))
-    .map((a) => ({ url: `${ORIGEN}/artistas/${a.id}`, lastModified: a.actualizado_en }));
+    .map((a) => ({ url: `${ORIGEN}/artistas/${a.slug}`, lastModified: a.actualizado_en }));
 }

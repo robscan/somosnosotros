@@ -3,7 +3,7 @@ import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
@@ -23,7 +23,7 @@ import MenuAcciones from "@/components/ui/MenuAcciones";
 import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
 import type { EventoAgenda } from "@/lib/agenda";
-import { etiquetaArtista, textoProximaFecha, type Artista } from "@/lib/artistas";
+import { etiquetaArtista, hrefArtista, textoProximaFecha, type Artista } from "@/lib/artistas";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { nombreSitio } from "@/lib/eventos";
@@ -52,14 +52,16 @@ const cargarLigadas = cache(async (id: string): Promise<{ perfil_id: string }[]>
   return (data ?? []) as { perfil_id: string }[];
 });
 
-async function cargarArtista(id: string): Promise<ArtistaConAutor | null> {
+/**
+ * Se busca por slug (la dirección de hoy) y, si no aparece nada, por UUID (la dirección vieja, para que siga
+ * resolviendo). Un slug nunca es un UUID válido, así que no hace falta adivinar cuál es cuál antes de preguntar.
+ */
+async function cargarArtista(idOSlug: string): Promise<ArtistaConAutor | null> {
   const supabase = await clienteServidor();
-  if (!supabase || !esUuid(id)) return null;
-  const { data } = await supabase
-    .from("artistas")
-    .select("id, nombre, disciplina, detalle, tipo, foto, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)")
-    .eq("id", id)
-    .maybeSingle();
+  if (!supabase) return null;
+  const columnas = "id, slug, nombre, disciplina, detalle, tipo, foto, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)";
+  const porSlug = await supabase.from("artistas").select(columnas).eq("slug", idOSlug).maybeSingle();
+  const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("artistas").select(columnas).eq("id", idOSlug).maybeSingle()).data : null);
   if (!data) return null;
   const autor = Array.isArray(data.autor) ? (data.autor[0] ?? null) : data.autor;
   return { ...(data as unknown as Artista), autor: autor as ArtistaConAutor["autor"] };
@@ -111,7 +113,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${a.nombre} · Somos Nosotros`,
     description: descripcion,
     ...(sinIndexar ? { robots: { index: false } } : {}),
-    openGraph: { title: a.nombre, description: descripcion, url: `${ORIGEN}/artistas/${a.id}`, type: "profile", images: a.foto ? [{ url: a.foto }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: a.nombre, description: descripcion, url: `${ORIGEN}${hrefArtista(a)}`, type: "profile", images: a.foto ? [{ url: a.foto }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
   };
 }
 
@@ -121,11 +123,21 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const { nuevo, accion, error } = (await searchParams) ?? {};
   const [a, actual] = await Promise.all([cargarArtista(id), usuarioActual()]);
   if (!a) notFound();
+  // La dirección vieja (/artistas/<uuid>) sigue resolviendo, pero se redirige a la de hoy (el slug); permanente
+  // porque es la misma ficha para siempre (OL-114, doc 24). Se preservan los parámetros con los que haya llegado.
+  if (id !== a.slug) {
+    const p = new URLSearchParams();
+    if (nuevo) p.set("nuevo", nuevo);
+    if (accion) p.set("accion", accion);
+    if (error) p.set("error", error);
+    const q = p.toString();
+    permanentRedirect(`${hrefArtista(a)}${q ? `?${q}` : ""}`);
+  }
   const supabase = await clienteServidor();
   // Venía de entrar con la intención de seguir: se aplica sola.
   if (actual && accion === "seguir") {
     await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, artista_id: a.id }, { onConflict: "usuario_id,artista_id", ignoreDuplicates: true });
-    redirect(`/artistas/${a.id}`);
+    redirect(hrefArtista(a));
   }
   // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
   const [fechas, cuenta, mio, ligados] = await Promise.all([
@@ -145,7 +157,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const puedeBorrar = esAdmin || esAutor;
   const redes = normalizarRedes(a.redes);
   const faltanDetalles = a.disciplina === "por_completar" || (!a.descripcion && !a.foto && redes.length === 0);
-  const url = `${ORIGEN}/artistas/${a.id}`;
+  const url = `${ORIGEN}${hrefArtista(a)}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
   const hrefPublicarFecha = actual ? `/eventos/nuevo?artista=${a.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?artista=${a.id}`)}`;
   // Voy y Me interesa al deslizar sus fechas, para quien mira (OL-057).
@@ -162,7 +174,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           <MenuAcciones>
             {puedeEditar && (
               <li>
-                <Link href={`/artistas/${a.id}/editar`} className={ficha.menuItem}>
+                <Link href={`${hrefArtista(a)}/editar`} className={ficha.menuItem}>
                   Editar
                 </Link>
               </li>
@@ -178,11 +190,11 @@ export default async function FichaArtista({ params, searchParams }: Params) {
               </li>
             )}
             <li className={ficha.menuItem}>
-              <Reportar tipo="artista" objetoId={a.id} volver={`/artistas/${a.id}`} conSesion={!!actual} />
+              <Reportar tipo="artista" objetoId={a.id} volver={hrefArtista(a)} conSesion={!!actual} />
             </li>
             {!puedeEditar && !porConfirmar && (
               <li className={ficha.menuItem}>
-                <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion={!!actual} correo={correo} />
+                <EsMiNombre artistaId={a.id} slug={a.slug} nombre={a.nombre} conSesion={!!actual} correo={correo} />
               </li>
             )}
             {puedeBorrar && (
@@ -194,13 +206,13 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         }
       />
       {/* Volvió de entrar con "Soy yo / es mi grupo" en la mano: la hoja se abre sola. */}
-      {actual && accion === "mio" && !puedeEditar && <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion correo={correo} soloHoja />}
+      {actual && accion === "mio" && !puedeEditar && <EsMiNombre artistaId={a.id} slug={a.slug} nombre={a.nombre} conSesion correo={correo} soloHoja />}
       {nuevo === "1" && (
         <div className={ficha.publicado} role="status">
           <b>Publicado.</b>
           Ya está en Artistas.
           {puedeEditar && faltanDetalles ? (
-            <Link href={`/artistas/${a.id}/editar`} className={ficha.publicadoBoton}>
+            <Link href={`${hrefArtista(a)}/editar`} className={ficha.publicadoBoton}>
               Completar
             </Link>
           ) : (
@@ -212,7 +224,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       )}
       {nuevo !== "1" && puedeEditar && faltanDetalles && (
         <p className={styles.nota}>
-          {a.disciplina === "por_completar" ? "Esta ficha se creó con solo el nombre." : "Aún sin descripción, redes ni foto."} <Link href={`/artistas/${a.id}/editar`}>Completar</Link>
+          {a.disciplina === "por_completar" ? "Esta ficha se creó con solo el nombre." : "Aún sin descripción, redes ni foto."} <Link href={`${hrefArtista(a)}/editar`}>Completar</Link>
         </p>
       )}
       {error === "borrar" && (
@@ -291,7 +303,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       {/* Ficha traída de un catálogo y sin dueño: al final, discreto y solo con sesión (sin sesión no se ofrece, para no
           invitar a reclamos ajenos), un letrero que abre la hoja con el origen y las dos salidas. Sin pie de origen aparte. */}
       {porConfirmar ? (
-        actual && !puedeEditar && <EsMiNombre artistaId={a.id} nombre={a.nombre} conSesion correo={correo} origen={ORIGENES[a.origen!].nombre} discreto />
+        actual && !puedeEditar && <EsMiNombre artistaId={a.id} slug={a.slug} nombre={a.nombre} conSesion correo={correo} origen={ORIGENES[a.origen!].nombre} discreto />
       ) : (
         <p className={ficha.autor}>Registrado por {a.autor ? <Link href={`/personas/${a.autor.id}`}>{a.autor.nombre}</Link> : "una cuenta borrada"}.</p>
       )}
@@ -303,7 +315,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         conSesion={!!actual}
         cuenta={actual?.perfil.id ?? ""}
         accion={cambiarSeguimientoArtista.bind(null, a.id)}
-        hrefEntrar={`/artistas/${a.id}?accion=seguir`}
+        hrefEntrar={`${hrefArtista(a)}?accion=seguir`}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
         avisosCorreo={actual?.perfil.avisos_correo ?? false}
         correo={correo}
