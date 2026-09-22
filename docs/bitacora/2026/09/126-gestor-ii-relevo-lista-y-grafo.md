@@ -30,3 +30,22 @@
 
 - Founder: OK a la cola (o cambios), firma o corrección del texto del doc 24, y confirmar si «shield» en L32 es la hoja («sheet»).
 - Gestor: al recibir el OK, reservar números y abrir los chats de la primera tanda (A1 a A5), cada uno con su modelo; revisar la entrega de OL-090 cuando llegue.
+
+## Jornada 2026-09-21 (noche) → 2026-09-22 (madrugada)
+
+Todo con permiso explícito del founder por PR y despliegue de Vercel comprobado. Migraciones aplicadas por el gestor tras revisarlas (43 → **54**).
+
+- Publicado: PR #129 (OL-092), #130 y #133 (OL-100), #131/#132/#134/#135/#136 (docs), #137 (Vercel ignora docs), #138 (OL-106), #139 (OL-110), #140 (botón decidido en verde), #141 (OL-113), #142 (OL-112), #143 (OL-114, migración `artistas_slug`), #144 (OL-115, `avisos_admin`), #145 (Pincel bloque 3: canal privado `20260922130000`, cupo y fila, mando calcado del prototipo firmado), #146 (grosor por arrastre), #147 (OL-117, permiso del sensor en iPhone), #148 (OL-118, QR con `qrcode`), #149 (OL-119, slugs de lugares y eventos, dos migraciones), #150 (OL-120, siete ajustes de Pincel tras la prueba del founder).
+- Abierto a la espera de permiso: [PR #151](https://github.com/robscan/somosnosotros/pull/151) (OL-121, tope global e interruptor «Pincel apagado»; migración `20260922180000_pincel_freno.sql` ya aplicada).
+- Cortafuegos de Vercel: reglas «Freno a publicar y leer carteles» (`/eventos`, POST) y «Freno a Pincel» (`/obra`, 30/min por IP), rellenadas por el gestor en el Chrome del founder y publicadas por él.
+- Decisiones del founder anotadas en OPEN_LOOPS «Decidido»: Pincel cupo/fila sin turnos, grosor arrastrando el punto, `qrcode`, slugs en todo, frenos de Pincel, siete ajustes del mando (eje, alcance ±30°/±20°, punto tenue, Centrar, encender en verde, QR chico, grosor en iOS), escudo como icono de Administración.
+- Evidencia rechazada y rehecha: OL-106, OL-110, OL-113, OL-109, OL-115 (capturas sin la fuente o con la rejilla rota); Pincel mando (dos veces; la buena salió al calcar el prototipo firmado y capturar con Chrome real por `playwright-core`); OL-116 (dos veces: quitó `align-items` en vez de añadir `align-content`; luego «capturas» que eran la pantalla «Algo falló»); OL-118 (impresión fuera de la hoja).
+- Hallazgos para los siguientes: el respaldo local devuelve arreglos siempre; `next dev` no hidrata para capturas (`next build && next start`); el clon SVG del DOM no espera las fuentes (usar Chrome real); realtime-js manda los broadcast como marcos binarios; Safari táctil manda `pointerleave` al primer movimiento; la redirección `permanentRedirect` tras `loading.tsx` sale como `<meta refresh>` con 200, no 308 (pieza chica); `db push` exige tener en local todas las migraciones aplicadas.
+- Lentitud reportada por el founder (~03:20): base sin bloqueos y consultas en milisegundos, servidor en 0.3–0.8 s, app cargando en 1 s; lo único lento eran fotos del almacén de Supabase (1.7–2 s cada una) y la mitigación automática de Vercel desafió 1.6 mil peticiones en el día. Se resolvió sola.
+- Guiones del gestor (scratchpad, fuera del repo): `resolver_ol.py` ahora acepta cabeceras reordenadas por uniones anteriores y entradas que la rama alarga.
+
+### Pendiente al cierre del 2026-09-22
+
+- Founder: permiso para el PR #151; probar en el iPhone los ajustes de Pincel (sentido, alcance, latencia, grosor) y el interruptor; el correo a instituciones (pieza «envío» sin abrir); fichas por completar (pegar textos de Canto Quetzal y Laboratorio Centro Histórico); OL-111 (analítica) sin entrega, con la línea del aviso de privacidad para su firma.
+- Gestor: OL-116 (renglón de dato + escudo) a la espera de capturas válidas; piezas chicas anotadas: cierre por `pg_advisory_xact_lock` en `artistas_generar_slug`, redirección 308 real desde UUID, fotos por el CDN de Vercel, y las de la lista anterior (subcategorías admin, «N artistas nuevos por confirmar», etc.).
+- Cola sin empezar: B1, B4, B5, B6; C1–C8; pasos 2–5 del grafo. Limpieza con permiso: ramas y carpetas `codex/*` de piezas publicadas.

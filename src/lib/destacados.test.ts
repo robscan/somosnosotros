@@ -15,7 +15,7 @@ const evento = (cambios: Partial<EventoAgenda> = {}): EventoAgenda => ({
   lugar: { nombre: "Teatro de la Paz", portada: null }, creado_en: "2026-09-14T00:00:00Z", lat: null, lng: null, van: 0, ...cambios,
 });
 const lugar = (cambios: Partial<LugarLista> = {}): LugarLista => ({ id: "l1", nombre: "Casa de la Cultura", tipo: "casa_de_cultura", direccion: null, lat: 22.15, lng: -100.98, portada: null, proximo: null, ...cambios }) as LugarLista;
-const artista = (cambios: Partial<ArtistaLista> = {}): ArtistaLista => ({ id: "a1", nombre: "Trío Potosino", disciplina: "musica", detalle: null, tipo: "grupo", foto: null, proxima: null, ...cambios });
+const artista = (cambios: Partial<ArtistaLista> = {}): ArtistaLista => ({ id: "a1", slug: "trio-potosino", nombre: "Trío Potosino", disciplina: "musica", detalle: null, tipo: "grupo", foto: null, proxima: null, ...cambios });
 
 describe("enOrden", () => {
   it("deja las fichas en el orden de la tira y salta las que no llegaron", () => {
@@ -42,7 +42,7 @@ describe("tarjetas", () => {
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA)).toMatchObject({ foto: "/casa.jpg", detalle: "Casa de cultura" });
   });
   it("artista: la fecha sin el sitio, o lo que hace", () => {
-    expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/a1", foto: SIN_FOTO, detalle: "mañana · 19:00" });
+    expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/trio-potosino", foto: SIN_FOTO, detalle: "mañana · 19:00" });
     expect(tarjetaArtista(artista({ foto: "/trio.jpg" }), AHORA)).toMatchObject({ foto: "/trio.jpg", detalle: "Música · Grupo" });
   });
 });

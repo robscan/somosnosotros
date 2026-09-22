@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { etiquetaArtista, textoProximaFecha, type ArtistaResumen, type Disciplina, type ProximaFecha } from "@/lib/artistas";
+import { etiquetaArtista, hrefArtista, textoProximaFecha, type ArtistaResumen, type Disciplina, type ProximaFecha } from "@/lib/artistas";
 import { SIN_FOTO } from "@/lib/imagen";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoPincel, IconoPluma } from "./ui/Iconos";
@@ -26,7 +26,7 @@ export function IconoDisciplina({ disciplina }: { disciplina: Disciplina }) {
 }
 
 type Props = {
-  artista: Pick<ArtistaResumen, "id" | "nombre" | "foto" | "disciplina" | "detalle" | "tipo"> & { proxima?: ProximaFecha | null };
+  artista: Pick<ArtistaResumen, "id" | "slug" | "nombre" | "foto" | "disciplina" | "detalle" | "tipo"> & { proxima?: ProximaFecha | null };
   /** Con botón, "Seguir" o "Sigues" (OL-104, bitácora 139); sin él, el renglón es un enlace simple. */
   boton?: EstadoBotonRenglon;
 };
@@ -38,7 +38,7 @@ type Props = {
 export default function RenglonArtista({ artista: a, boton }: Props) {
   return (
     <li className={styles.renglon}>
-      <Link href={`/artistas/${a.id}`} className={styles.frente}>
+      <Link href={hrefArtista(a)} className={styles.frente}>
         {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
         <img src={a.foto ?? SIN_FOTO} alt="" className={`${styles.foto} ${styles.fotoRedonda}`} loading="lazy" decoding="async" />
         <span className={styles.titulo}>{a.nombre}</span>

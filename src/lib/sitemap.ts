@@ -14,9 +14,9 @@ export const RUTAS_ESTATICAS = ["/", "/lugares", "/artistas", "/reglas", "/priva
  *  decir, y poner "ahora" en cada visita mentiría (cambiaría en cada rastreo aunque la página no haya cambiado). */
 export type EntradaSitemap = { url: string; lastModified?: string };
 
-export type FilaLugarSitemap = { id: string; visible: boolean; privado: boolean; actualizado_en: string };
-export type FilaEventoSitemap = { id: string; visible: boolean; termina: string; actualizado_en: string };
-export type FilaArtistaSitemap = { id: string; visible: boolean; origen: string | null; actualizado_en: string };
+export type FilaLugarSitemap = { id: string; slug: string; visible: boolean; privado: boolean; actualizado_en: string };
+export type FilaEventoSitemap = { id: string; slug: string; visible: boolean; termina: string; actualizado_en: string };
+export type FilaArtistaSitemap = { id: string; slug: string; visible: boolean; origen: string | null; actualizado_en: string };
 
 /**
  * Los artistas traídos del CAPO que no han reclamado su ficha SÍ entran al mapa del sitio y al índice de Google.
@@ -32,12 +32,12 @@ export function rutasEstaticas(): EntradaSitemap[] {
 
 /** Lugares visibles y públicos: uno "Solo tú lo ves" (privado) no es un lugar que Google deba ofrecer. */
 export function lugaresParaSitemap(filas: FilaLugarSitemap[]): EntradaSitemap[] {
-  return filas.filter((l) => l.visible && !l.privado).map((l) => ({ url: `${ORIGEN}/lugares/${l.id}`, lastModified: l.actualizado_en }));
+  return filas.filter((l) => l.visible && !l.privado).map((l) => ({ url: `${ORIGEN}/lugares/${l.slug}`, lastModified: l.actualizado_en }));
 }
 
 /** Eventos visibles que no hayan terminado ya (misma regla que la agenda: `termina`, columna de la base). */
 export function eventosParaSitemap(filas: FilaEventoSitemap[], ahora: Date = new Date()): EntradaSitemap[] {
-  return filas.filter((e) => e.visible && new Date(e.termina).getTime() >= ahora.getTime()).map((e) => ({ url: `${ORIGEN}/eventos/${e.id}`, lastModified: e.actualizado_en }));
+  return filas.filter((e) => e.visible && new Date(e.termina).getTime() >= ahora.getTime()).map((e) => ({ url: `${ORIGEN}/eventos/${e.slug}`, lastModified: e.actualizado_en }));
 }
 
 /**
@@ -47,5 +47,5 @@ export function eventosParaSitemap(filas: FilaEventoSitemap[], ahora: Date = new
 export function artistasParaSitemap(filas: (FilaArtistaSitemap & { reclamado: boolean })[]): EntradaSitemap[] {
   return filas
     .filter((a) => a.visible && (a.origen !== "capo" || a.reclamado || CAPO_SIN_RECLAMAR_EN_SITEMAP))
-    .map((a) => ({ url: `${ORIGEN}/artistas/${a.id}`, lastModified: a.actualizado_en }));
+    .map((a) => ({ url: `${ORIGEN}/artistas/${a.slug}`, lastModified: a.actualizado_en }));
 }

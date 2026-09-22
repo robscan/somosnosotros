@@ -1,23 +1,26 @@
-/* El botón de acción del renglón (OL-104): grid-area "accion" en Renglon.module.css lo coloca a la derecha, centrado. */
+/* El botón de acción del renglón (OL-104) y de la tarjeta de carril (OL-106): redondo, ~48 px, solo icono. En el
+   renglón, `grid-area: accion` en Renglon.module.css lo coloca a la derecha, centrado; en la tarjeta de carril,
+   `Destacados.module.css` lo posiciona (estructural, `> button`) sobre la esquina de la foto — este módulo solo
+   decide su forma y sus dos colores, nunca dónde vive. */
 .boton {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espacio-1);
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  min-width: var(--toque-min); /* el mínimo accionable, aunque el círculo se vea de 48 */
   min-height: var(--toque-min);
-  min-width: var(--toque-min);
-  padding: 0 var(--espacio-3);
   border: none;
-  border-radius: 999px;
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  white-space: nowrap;
+  border-radius: 50%;
+  box-shadow: var(--sombra); /* se lee igual sobre fotos claras y oscuras, sin el borde gris que tenía antes */
 }
 .invitar {
-  background: var(--primario);
-  color: var(--primario-texto);
-}
-.decidido {
-  padding: 0 var(--espacio-2) 0 10px;
-  background: var(--primario-suave);
+  background: var(--fondo);
   color: var(--primario);
+}
+/* Verde (--ok), no --primario: el founder pidió un color distinto del de los botones de acción principal, porque el
+   mismo azul petróleo en el estado ya decidido invitaba a tocarlo otra vez en vez de leerse como "esto ya quedó"
+   (corrección del founder, 2026-09-21, sobre OL-106 ya en producción). */
+.decidido {
+  background: var(--ok);
+  color: var(--primario-texto);
 }

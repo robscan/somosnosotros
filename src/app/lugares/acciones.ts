@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { esUuid } from "@/lib/formulario";
 import { rutaSegura } from "@/lib/rutas";
-import { validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
+import { hrefLugar, validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { zonaDePunto } from "@/lib/zona";
@@ -18,6 +18,13 @@ export type ResultadoLugar =
 function leer(formData: FormData) {
   const claves = ["nombre", "tipo", "direccion", "lat", "lng", "descripcion", "portada", "enlaces", "privado", "detalle", "ciudad"];
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
+}
+
+/** Se revalida por id (la dirección vieja, que sigue resolviendo) y por slug (la de hoy): las dos pueden estar cacheadas. */
+function revalidar(id: string, slug?: string | null) {
+  revalidatePath("/lugares");
+  revalidatePath(`/lugares/${id}`);
+  if (slug) revalidatePath(`/lugares/${slug}`);
 }
 
 type Cliente = Awaited<ReturnType<typeof sesionOEntrar>>["supabase"];
@@ -43,7 +50,7 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
   const { data, error } = await supabase
     .from("lugares")
     .insert({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null, creado_por: user.id })
-    .select("id")
+    .select("id, slug")
     .single();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
 
@@ -51,7 +58,7 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
   // Si se vino del alta de evento, el formulario vuelve a ella con el lugar ya elegido; si no, a la ficha recién publicada.
   const siguiente = rutaSegura(formData.get("siguiente") as string | null, "");
   if (siguiente) return { ok: true, id: data.id, volver: siguiente };
-  redirect(`/lugares/${data.id}?nuevo=1`, RedirectType.replace);
+  redirect(`${hrefLugar(data)}?nuevo=1`, RedirectType.replace);
 }
 
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
@@ -63,13 +70,13 @@ export async function actualizarLugar(id: string, _previo: ResultadoLugar | null
     .from("lugares")
     .update({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null })
     .eq("id", id)
-    .select("id")
+    .select("id, slug")
     .maybeSingle();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu lugar?" };
 
+  revalidar(id, data.slug);
   revalidatePath("/");
-  revalidatePath(`/lugares/${id}`);
-  return { ok: true, id, volver: `/lugares/${id}` };
+  return { ok: true, id, volver: hrefLugar(data) };
 }
 
 /** Ocultar o volver a mostrar: solo la administración (la base lo exige con el trigger proteger_autor_y_visible). */

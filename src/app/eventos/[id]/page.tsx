@@ -3,7 +3,7 @@ import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
 import { crearDesdeEvento } from "@/app/admin/obras-colectivas/acciones";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
@@ -22,7 +22,9 @@ import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
-import { direccionPublicaSitio, enlaceComoLlegar, jsonLdEvento, nombreSitio, puntoComoLlegar, textoCompartir } from "@/lib/eventos";
+import { direccionPublicaSitio, enlaceComoLlegar, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, textoCompartir } from "@/lib/eventos";
+import { hrefLugar } from "@/lib/lugares";
+import { hrefArtista } from "@/lib/artistas";
 import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
@@ -31,18 +33,20 @@ import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
-type EventoConLugar = Evento & { lugar: { id: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null };
+type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
 
-async function cargarEvento(id: string): Promise<EventoConLugar | null> {
+/**
+ * Se busca por slug (la dirección de hoy) y, si no aparece nada, por UUID (la dirección vieja, para que siga
+ * resolviendo). Mismo criterio que artistas y lugares (OL-114, OL-119).
+ */
+async function cargarEvento(idOSlug: string): Promise<EventoConLugar | null> {
   const supabase = await clienteServidor();
-  if (!supabase || !esUuid(id)) return null;
-  const { data } = await supabase
-    .from("eventos")
-    .select("*, lugar:lugares(id, nombre, direccion, ciudad, lat, lng, portada, visible, privado), autor:perfiles!eventos_creado_por_fkey(id, nombre)")
-    .eq("id", id)
-    .maybeSingle();
+  if (!supabase) return null;
+  const columnas = "*, lugar:lugares(id, slug, nombre, direccion, ciudad, lat, lng, portada, visible, privado), autor:perfiles!eventos_creado_por_fkey(id, nombre)";
+  const porSlug = await supabase.from("eventos").select(columnas).eq("slug", idOSlug).maybeSingle();
+  const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("eventos").select(columnas).eq("id", idOSlug).maybeSingle()).data : null);
   if (!data) return null;
   const fila = data as unknown as EventoConLugar & { lugar: unknown; autor: unknown };
   const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
@@ -92,7 +96,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${e.titulo} · Somos Nosotros`,
     description: descripcion,
-    openGraph: { title: e.titulo, description: descripcion, url: `${ORIGEN}/eventos/${e.id}`, type: "article", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: e.titulo, description: descripcion, url: `${ORIGEN}${hrefEvento(e)}`, type: "article", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
     twitter: { card: imagen ? "summary_large_image" : "summary", title: e.titulo, description: descripcion, images: imagen ? [imagen] : undefined },
   };
 }
@@ -109,6 +113,17 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const { nuevo, accion, error } = (await searchParams) ?? {};
   const [e, actual] = await Promise.all([cargarEvento(id), usuarioActual()]);
   if (!e) notFound();
+  // La dirección vieja (/eventos/<uuid>) sigue resolviendo, pero se redirige a la de hoy (el slug); permanente
+  // porque es el mismo evento para siempre (OL-119, mismo criterio que artistas y lugares). Se preservan los
+  // parámetros con los que haya llegado.
+  if (id !== e.slug) {
+    const p = new URLSearchParams();
+    if (nuevo) p.set("nuevo", nuevo);
+    if (accion) p.set("accion", accion);
+    if (error) p.set("error", error);
+    const q = p.toString();
+    permanentRedirect(`${hrefEvento(e)}${q ? `?${q}` : ""}`);
+  }
   const puedeEditar = !!actual && (actual.perfil.rol === "admin" || actual.perfil.id === e.creado_por);
   // Un evento que ya pasó se oculta como uno oculto: solo lo ven su autor y el administrador (decisión del founder, 2026-09-14).
   const paso = eventoPaso(e.inicio, e.fin, new Date(), e.zona);
@@ -117,16 +132,16 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   if (actual && (accion === "voy" || accion === "me_interesa")) {
     const supabase = await clienteServidor();
     await supabase?.from("asistencias").upsert({ usuario_id: actual.perfil.id, evento_id: e.id, estado: accion });
-    redirect(`/eventos/${e.id}`);
+    redirect(hrefEvento(e));
   }
-  const [asistencias, quien, conteo] = await Promise.all([cargarAsistencias(id, actual?.perfil.id ?? null), cargarQuien(id), (await clienteServidor())?.rpc("van_por_evento", { ids: [id] }) ?? Promise.resolve({ data: [] as { evento_id: string; n: number }[] })]);
+  const [asistencias, quien, conteo] = await Promise.all([cargarAsistencias(e.id, actual?.perfil.id ?? null), cargarQuien(e.id), (await clienteServidor())?.rpc("van_por_evento", { ids: [e.id] }) ?? Promise.resolve({ data: [] as { evento_id: string; n: number }[] })]);
   // Cuántos van en total, también los de perfil reservado, que la política de la base no deja ver por nombre.
   const totalVan = Math.max(Number(((conteo.data ?? []) as { evento_id: string; n: number }[])[0]?.n ?? 0), asistencias.van.length);
-  const privado = e.sitio_reservado ? await cargarPrivado(id) : null;
+  const privado = e.sitio_reservado ? await cargarPrivado(e.id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
-  const url = `${ORIGEN}/eventos/${e.id}`;
+  const url = `${ORIGEN}${hrefEvento(e)}`;
   const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "");
   const argsSitio = { lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado };
   const comoLlegar = enlaceComoLlegar(argsSitio);
@@ -182,7 +197,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             {puedeEditar && (
               <>
                 <li>
-                  <Link href={`/eventos/${e.id}/editar`} className={ficha.menuItem}>
+                  <Link href={`${hrefEvento(e)}/editar`} className={ficha.menuItem}>
                     Editar
                   </Link>
                 </li>
@@ -214,7 +229,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               </li>
             )}
             <li className={ficha.menuItem}>
-              <Reportar tipo="evento" objetoId={e.id} volver={`/eventos/${e.id}`} conSesion={!!actual} />
+              <Reportar tipo="evento" objetoId={e.id} volver={hrefEvento(e)} conSesion={!!actual} />
             </li>
             {puedeEditar && (
               <li className={ficha.menuItem}>
@@ -256,7 +271,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           <li className={ficha.dato}>
             <IconoPin width={20} height={20} />
             <b>
-              <Link href={`/lugares/${e.lugar.id}`}>{e.lugar.nombre}</Link>
+              <Link href={hrefLugar(e.lugar)}>{e.lugar.nombre}</Link>
             </b>
             {e.lugar.direccion && <small>{e.lugar.direccion}</small>}
           </li>
@@ -280,7 +295,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               <small>Entra para ver la dirección cuando toque.</small>
             )}
             {!privado && !actual && (
-              <Link href={`/entrar?siguiente=${encodeURIComponent(`/eventos/${e.id}`)}`} className={ficha.datoEnlace}>
+              <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEvento(e))}`} className={ficha.datoEnlace}>
                 Entrar
               </Link>
             )}
@@ -294,7 +309,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               {quien.map((q, i) => (
                 <Fragment key={q.id}>
                   {i > 0 && (i === quien.length - 1 ? " y " : ", ")}
-                  <Link href={`/artistas/${q.id}`}>{q.nombre}</Link>
+                  <Link href={hrefArtista(q)}>{q.nombre}</Link>
                 </Fragment>
               ))}
             </b>
@@ -323,7 +338,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           Compartir
         </BotonCompartir>
         {/* Dice lo que hace: agrega el evento, con su alerta, al calendario del teléfono (decisión 12 de docs/rediseno/17). */}
-        <a href={`/eventos/${e.id}/calendario`} className={ficha.accion}>
+        <a href={`${hrefEvento(e)}/calendario`} className={ficha.accion}>
           <IconoCalendarioAgregar width={24} height={24} />
           A mi calendario
         </a>
@@ -354,6 +369,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
       <Asistencia
         eventoId={e.id}
+        eventoSlug={e.slug}
         titulo={e.titulo}
         miEstado={asistencias.miEstado}
         conSesion={!!actual}

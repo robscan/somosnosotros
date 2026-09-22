@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventoAgenda } from "./agenda";
-import { etiquetaArtista, type ArtistaLista } from "./artistas";
-import { nombreSitio } from "./eventos";
+import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
+import { hrefEvento, nombreSitio } from "./eventos";
 import { diaCorto, formatearCuando, ZONA_INICIAL } from "./fechas";
 import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
-import { etiquetaTipo, textoProximo, type LugarLista } from "./lugares";
+import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugares";
 
 /**
  * Destacados (docs/rediseno/20, firmado por el founder el 2026-09-16): arriba de la Agenda, de Lugares y de Artistas, lo
@@ -53,16 +53,16 @@ export function enOrden<T extends { id: string }>(tira: Destacado[], fichas: T[]
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): Tarjeta {
-  return { id: e.id, href: `/eventos/${e.id}`, foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van };
+  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van };
 }
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
-  return { id: l.id, href: `/lugares/${l.id}`, foto: l.portada ?? SIN_FOTO_ANCHA, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0 };
+  return { id: l.id, href: hrefLugar(l), foto: l.portada ?? SIN_FOTO_ANCHA, titulo: l.nombre, detalle: l.proximo ? textoProximo(l.proximo, ahora) : etiquetaTipo(l.tipo), van: 0 };
 }
 
 /** La tarjeta de artista usa el mismo rectángulo que eventos; la fecha va sin el sitio. */
 export function tarjetaArtista(a: ArtistaLista, ahora = new Date()): Tarjeta {
-  return { id: a.id, href: `/artistas/${a.id}`, foto: a.foto ?? SIN_FOTO, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0 };
+  return { id: a.id, href: hrefArtista(a), foto: a.foto ?? SIN_FOTO, titulo: a.nombre, detalle: a.proxima ? minuscula(formatearCuando(a.proxima.inicio, null, ahora, a.proxima.zona)) : etiquetaArtista(a), van: 0 };
 }
 
 /** "hasta mañana" o "hasta el mié 30 de sep", en la zona de la ficha. */

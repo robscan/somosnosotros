@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import type { GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker } from "mapbox-gl";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
-import type { LugarLista } from "@/lib/lugares";
+import { hrefLugar, type LugarLista } from "@/lib/lugares";
 import styles from "./Mapa.module.css";
 
 type EstadoMapa = "cargando" | "listo" | "sin-token" | "error";
@@ -201,7 +201,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
         mapa.on("click", (e) => {
           const id = mapa ? lugarTocado(mapa, e) : null;
           const lugar = id ? (lugaresRef.current.get(id) ?? null) : null;
-          if (lugar && !onPinRef.current) routerRef.current.push(`/lugares/${lugar.id}`);
+          if (lugar && !onPinRef.current) routerRef.current.push(hrefLugar(lugar));
           else onPinRef.current?.(lugar);
         });
         // Con ratón, la mano sobre un lugar.

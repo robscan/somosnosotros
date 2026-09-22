@@ -24,13 +24,13 @@ export function rangoNuevos(ciudadNombre: unknown, desde: unknown, hasta: unknow
 }
 
 // Mismo contrato publico que page.tsx, sin campos de direccion ni migraciones nuevas.
-export const CAMPOS_NUEVOS = "id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))";
+export const CAMPOS_NUEVOS = "id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))";
 const fecha = z.string().datetime({ offset: true });
 const punto = z.number().nullable();
 const lugar = z.object({ nombre: z.string(), portada: z.string().nullable(), lat: punto, lng: punto });
 const artista = z.object({ nombre: z.string() });
 export const filasNuevos = z.array(z.object({
-  id: z.uuid(), titulo: z.string(), inicio: fecha, fin: fecha.nullable(), zona: z.string(),
+  id: z.uuid(), slug: z.string(), titulo: z.string(), inicio: fecha, fin: fecha.nullable(), zona: z.string(),
   imagen: z.string().nullable(), precio: z.string().nullable(), lugar_id: z.uuid().nullable(),
   sitio_texto: z.string().nullable(), sitio_reservado: z.boolean(), sitio_lat: punto, sitio_lng: punto,
   creado_en: fecha, ciudad: z.string(), lugar: z.union([lugar, z.array(lugar).max(1)]).nullable(),

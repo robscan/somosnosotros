@@ -12,7 +12,7 @@ const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")
 const USER = id(9001);
 const fecha = (ms: number) => new Date(ms).toISOString();
 function evento(n = 1) {
-  return { id: id(n), titulo: `Evento ${n}`, inicio: fecha(NOW + n * 3600000), fin: null as string | null,
+  return { id: id(n), slug: `evento-${n}`, titulo: `Evento ${n}`, inicio: fecha(NOW + n * 3600000), fin: null as string | null,
     zona: "America/Mexico_City", imagen: null, precio: "$120" as string | null, lugar_id: null,
     sitio_texto: "Plaza", sitio_reservado: false, sitio_lat: null, sitio_lng: null,
     creado_en: fecha(NOW - DAY), ciudad: CIUDAD, visible: true,

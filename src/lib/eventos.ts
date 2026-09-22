@@ -18,6 +18,9 @@ export const REVELAR_OPCIONES = [
 
 export type Evento = {
   id: string;
+  /** La dirección legible (/eventos/<slug>): se pone sola al crear el evento y no cambia si cambia el título o la
+   *  fecha (migración `20260922170000_eventos_slug`, OL-119). */
+  slug: string;
   lugar_id: string | null;
   titulo: string;
   inicio: string;
@@ -42,9 +45,21 @@ export type Evento = {
 
 /** Lo que la agenda necesita: el evento con el nombre de su lugar o su sitio. */
 export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado" | "zona"> & {
+  /** Opcional porque no todas las consultas lo piden todavía (bitácora 154); `hrefEvento` cae al UUID cuando falta. */
+  slug?: string | null;
   sitio_direccion?: string | null;
   lugar: { nombre: string; portada: string | null } | null;
 };
+
+/**
+ * La dirección de la ficha: el slug si ya lo trae (todas las filas desde la migración `20260922170000_eventos_slug`),
+ * y el UUID solo como respaldo (una fila leída sin ese campo, o una consulta que aún no lo pide). Las rutas
+ * `/eventos/[id]` y `.../editar` resuelven por slug o UUID y redirigen de forma permanente (mismo criterio que
+ * `hrefArtista`/`hrefLugar`).
+ */
+export function hrefEvento(e: { id: string; slug?: string | null }): string {
+  return `/eventos/${e.slug || e.id}`;
+}
 
 /** Dirección exacta de un sitio reservado (solo llega cuando la política de la base lo permite). */
 export type SitioPrivado = { direccion: string; lat: number | null; lng: number | null; indicaciones: string | null; revelar_desde: string };
@@ -153,6 +168,7 @@ export function enlaceComoLlegar(args: PuntoComoLlegar): string | null {
 
 export type DatosJsonLdEvento = {
   id: string;
+  slug?: string | null;
   titulo: string;
   descripcion: string | null;
   inicio: string;
@@ -193,7 +209,7 @@ export function jsonLdEvento(e: DatosJsonLdEvento): Record<string, unknown> {
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
     location,
-    url: `https://somosnosotros.org/eventos/${e.id}`,
+    url: `https://somosnosotros.org${hrefEvento(e)}`,
   };
   if (e.fin) data.endDate = e.fin;
   if (e.descripcion) data.description = e.descripcion;

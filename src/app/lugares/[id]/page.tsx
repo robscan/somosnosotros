@@ -2,7 +2,7 @@ import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
@@ -24,7 +24,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
-import { etiquetaLugar, etiquetaTipo, textoProximo, type Lugar } from "@/lib/lugares";
+import { etiquetaLugar, etiquetaTipo, hrefLugar, textoProximo, type Lugar } from "@/lib/lugares";
 import { ORIGENES } from "@/lib/origen";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import Seguir from "@/components/Seguir";
@@ -39,14 +39,16 @@ type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
 
-async function cargarLugar(id: string): Promise<LugarConAutor | null> {
+/**
+ * Se busca por slug (la dirección de hoy) y, si no aparece nada, por UUID (la dirección vieja, para que siga
+ * resolviendo). Mismo criterio que artistas (OL-114).
+ */
+async function cargarLugar(idOSlug: string): Promise<LugarConAutor | null> {
   const supabase = await clienteServidor();
-  if (!supabase || !esUuid(id)) return null;
-  const { data } = await supabase
-    .from("lugares")
-    .select("id, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, privado, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)")
-    .eq("id", id)
-    .maybeSingle();
+  if (!supabase) return null;
+  const columnas = "id, slug, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, privado, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)";
+  const porSlug = await supabase.from("lugares").select(columnas).eq("slug", idOSlug).maybeSingle();
+  const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("lugares").select(columnas).eq("id", idOSlug).maybeSingle()).data : null);
   if (!data) return null;
   const autor = Array.isArray(data.autor) ? (data.autor[0] ?? null) : data.autor;
   return { ...(data as unknown as Lugar), autor: autor as LugarConAutor["autor"] };
@@ -56,7 +58,7 @@ async function cargarLugar(id: string): Promise<LugarConAutor | null> {
 async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
-  const { data } = await supabase.from("eventos").select("id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(30);
+  const { data } = await supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(30);
   const filas = (data ?? []) as Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng">[];
   if (filas.length === 0) return [];
   // Solo se cuenta, no se muestra quién; tope de sobra contra el corte silencioso de PostgREST.
@@ -82,7 +84,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${lugar.nombre} · Somos Nosotros`,
     description: descripcion,
-    openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}/lugares/${lugar.id}`, type: "website", images: lugar.portada ? [{ url: lugar.portada }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}${hrefLugar(lugar)}`, type: "website", images: lugar.portada ? [{ url: lugar.portada }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
   };
 }
 
@@ -91,18 +93,28 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const { nuevo, accion, error } = (await searchParams) ?? {};
   const [lugar, actual] = await Promise.all([cargarLugar(id), usuarioActual()]);
   if (!lugar) notFound();
+  // La dirección vieja (/lugares/<uuid>) sigue resolviendo, pero se redirige a la de hoy (el slug); permanente
+  // porque es el mismo lugar para siempre (OL-119, mismo criterio que artistas). Se preservan los parámetros.
+  if (id !== lugar.slug) {
+    const p = new URLSearchParams();
+    if (nuevo) p.set("nuevo", nuevo);
+    if (accion) p.set("accion", accion);
+    if (error) p.set("error", error);
+    const q = p.toString();
+    permanentRedirect(`${hrefLugar(lugar)}${q ? `?${q}` : ""}`);
+  }
   const supabase = await clienteServidor();
   // Venía de entrar con la intención de seguir: se aplica sola.
   if (actual && accion === "seguir") {
     await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true });
-    redirect(`/lugares/${lugar.id}`);
+    redirect(hrefLugar(lugar));
   }
   // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
   const [eventos, cuenta, mio, lig] = await Promise.all([
     cargarEventos(lugar),
-    supabase?.rpc("cuenta_seguidores", { p_lugar: id }) ?? Promise.resolve({ data: 0 }),
-    actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("lugar_id", id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
-    supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", id) ?? Promise.resolve({ data: [] as { perfil_id: string }[] }),
+    supabase?.rpc("cuenta_seguidores", { p_lugar: lugar.id }) ?? Promise.resolve({ data: 0 }),
+    actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("lugar_id", lugar.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
+    supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", lugar.id) ?? Promise.resolve({ data: [] as { perfil_id: string }[] }),
   ]);
   const ligados = (lig.data ?? []) as { perfil_id: string }[];
   const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
@@ -116,7 +128,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const puedeBorrar = esAdmin || esAutor; // borrar es del autor y del administrador (la política de la base lo exige)
   const redes = normalizarRedes(lugar.redes);
   const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
-  const url = `${ORIGEN}/lugares/${lugar.id}`;
+  const url = `${ORIGEN}${hrefLugar(lugar)}`;
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
   // Voy y Me interesa al deslizar sus eventos, para quien mira (OL-057).
@@ -132,7 +144,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           <MenuAcciones>
             {puedeEditar && (
               <li>
-                <Link href={`/lugares/${lugar.id}/editar`} className={ficha.menuItem}>
+                <Link href={`${hrefLugar(lugar)}/editar`} className={ficha.menuItem}>
                   Editar
                 </Link>
               </li>
@@ -148,7 +160,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
               </li>
             )}
             <li className={ficha.menuItem}>
-              <Reportar tipo="lugar" objetoId={lugar.id} volver={`/lugares/${lugar.id}`} conSesion={!!actual} />
+              <Reportar tipo="lugar" objetoId={lugar.id} volver={hrefLugar(lugar)} conSesion={!!actual} />
             </li>
             {puedeBorrar && (
               <li className={ficha.menuItem}>
@@ -163,7 +175,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           <b>Publicado.</b>
           Ya está en Lugares.
           {puedeEditar && faltanDetalles ? (
-            <Link href={`/lugares/${lugar.id}/editar`} className={ficha.publicadoBoton}>
+            <Link href={`${hrefLugar(lugar)}/editar`} className={ficha.publicadoBoton}>
               Completar
             </Link>
           ) : (
@@ -175,7 +187,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       )}
       {nuevo !== "1" && puedeEditar && faltanDetalles && (
         <p className={styles.nota}>
-          Aún sin descripción, redes ni foto. <Link href={`/lugares/${lugar.id}/editar`}>Completar</Link>
+          Aún sin descripción, redes ni foto. <Link href={`${hrefLugar(lugar)}/editar`}>Completar</Link>
         </p>
       )}
       {error === "tiene-eventos" && (
@@ -282,7 +294,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         conSesion={!!actual}
         cuenta={actual?.perfil.id ?? ""}
         accion={cambiarSeguimiento.bind(null, lugar.id)}
-        hrefEntrar={`/lugares/${lugar.id}?accion=seguir`}
+        hrefEntrar={`${hrefLugar(lugar)}?accion=seguir`}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
         avisosCorreo={actual?.perfil.avisos_correo ?? false}
         correo={correo}

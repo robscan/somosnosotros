@@ -1,0 +1,427 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Botón en las tarjetas de los carriles</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #34332f; --estudio-suave: #6f6d67; --estudio-panel: #f7f6f2; --estudio-borde: #d5d3cc;
+    --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --fuente-sistema: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --gutter: 20px; --toque: 48px; --toque-min: 44px; --radio: 12px; --alto-nav: 60px; --area-segura: 0px;
+    --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px;
+    --letra-xs: 0.875rem; --letra-sm: 0.9375rem; --letra-md: 1rem; --letra-xl: 1.1875rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --estudio: #242422; --estudio-texto: #e2e0da; --estudio-suave: #a09e97; --estudio-panel: #2d2d2a; --estudio-borde: #42413d; }
+  }
+  :root[data-theme="dark"] { --estudio: #242422; --estudio-texto: #e2e0da; --estudio-suave: #a09e97; --estudio-panel: #2d2d2a; --estudio-borde: #42413d; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; line-height: 1.4; padding-block: 24px; padding-inline: 16px; }
+  button { font: inherit; color: inherit; }
+  svg { flex: none; }
+  :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .telefono { position: relative; display: flex; flex-direction: column; width: 390px; max-width: 100%; height: 844px; overflow: hidden; border-radius: 44px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08); --area-segura: 28px; -webkit-user-select: none; user-select: none; }
+  .estado-ios { flex: none; display: flex; align-items: flex-end; justify-content: space-between; height: 50px; padding: 0 30px 6px 36px; background: var(--fondo); font-family: var(--fuente-sistema); font-size: 15px; font-weight: 600; }
+  .estado-ios span:last-child { letter-spacing: 1px; font-size: 12px; }
+  .tira { display: none; }
+  .pantalla { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 40px; }
+  .titulo-seccion { padding: 16px 20px 4px; font-size: 20px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+  .nota-seccion { padding: 0 20px 8px; color: var(--texto-suave); font-size: 13px; line-height: 1.4; }
+
+  /* ---------- Listado (renglón, canon de OL-104): el mismo botón redondo, para comparar en el mismo prototipo ---------- */
+  .lista-renglones { list-style: none; padding-bottom: 12px; }
+  .renglon { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--borde); }
+  .frente { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; min-width: 0; color: var(--texto); text-decoration: none; }
+  .foto-renglon { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
+  .foto-renglon.redonda { border-radius: 50%; }
+  .frente b { font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .frente small { display: block; margin-top: 2px; color: var(--texto-suave); font-size: 14px; }
+
+  /* ---------- Carril y tarjeta: copiado de Destacados.module.css ---------- */
+  .destacados { display: grid; gap: var(--espacio-1); padding-top: var(--espacio-4); }
+  .destacados h2 { padding-inline: var(--gutter); font-size: var(--letra-xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+  .carril { display: grid; grid-auto-flow: column; grid-auto-columns: 220px; gap: var(--espacio-3); overflow-x: auto; padding: var(--espacio-1) var(--gutter) var(--espacio-2); list-style: none; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
+  .carril::-webkit-scrollbar { display: none; }
+  /* Sin `grid-template-columns` explícito, `display: grid` con auto-flow:row (el valor de siempre) pone los hijos uno al
+     lado del otro en la misma fila en vez de apilarlos: hace falta una sola columna explícita para que la fila del
+     botón caiga debajo de la tarjeta. */
+  .carril > li { min-width: 0; scroll-snap-align: start; display: grid; grid-template-columns: minmax(0, 1fr); }
+  .tarjeta { display: grid; grid-template-rows: 132px auto auto; grid-template-areas: "foto" "titulo" "detalle"; row-gap: var(--espacio-1); color: var(--texto); text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  .foto { grid-area: foto; width: 100%; height: 100%; border-radius: var(--radio); object-fit: cover; background: var(--fondo-miniatura); }
+  .van { grid-area: foto; align-self: end; justify-self: start; display: inline-flex; align-items: center; gap: var(--espacio-1); margin: 0 0 var(--espacio-2) var(--espacio-2); padding: 2px var(--espacio-2) 2px 6px; border-radius: 999px; background: rgba(255,255,255,0.75); font-size: var(--letra-xs); font-weight: 700; }
+  .tarjeta b { grid-area: titulo; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .tarjeta small { grid-area: detalle; overflow: hidden; color: var(--texto-suave); font-size: var(--letra-sm); text-overflow: ellipsis; white-space: nowrap; }
+  .grande { grid-auto-columns: min(330px, calc(100vw - var(--gutter) * 2 - 56px)); }
+  .grande .tarjeta { grid-template-rows: 198px auto auto; }
+  .redondas { grid-auto-columns: 104px; }
+  .redondas .tarjeta { grid-template-rows: 104px auto auto; text-align: center; }
+  .redondas .foto { border-radius: 50%; }
+  .uno { grid-auto-columns: 100%; }
+  .uno .tarjeta { grid-template-columns: 124px 1fr; grid-template-rows: auto auto; grid-template-areas: "foto titulo" "foto detalle"; align-items: start; column-gap: var(--espacio-3); text-align: left; }
+  .uno .foto { height: 93px; }
+  .uno small { white-space: normal; }
+  .detalleCompleto .tarjeta small { white-space: normal; }
+
+  /* ---------- La pieza nueva: el botón bajo el texto (OL-106) ---------- */
+  /* El botón es hermano de `.tarjeta` (el <a>), no su hijo: nunca un control interactivo anidado dentro de otro.
+     Por eso vive en su propia fila del <li> (el grid de una sola columna de arriba), no en el grid de la tarjeta. */
+  /* Alineado con el texto (izquierda), como el título y el detalle de arriba — centrarlo bajo toda la tarjeta lo
+     desconectaba del resto del contenido (corrección del founder, 2026-09-21: "botón Voy aparece debajo de texto mal
+     integrado"). Solo la tarjeta redonda centra (su texto también está centrado ahí). */
+  .fila-boton { display: flex; justify-content: flex-start; padding-top: var(--espacio-1); }
+  .redondas .fila-boton { justify-content: center; }
+  .uno .fila-boton { padding-left: 136px; } /* alineado con el texto, no con la foto (124 px + gap) */
+
+  /* ---------- Diseño B: junto al texto, del lado derecho (pedido del founder, 2026-09-21) ---------- */
+  /* El botón sigue siendo hermano de `.tarjeta`, no su hijo; se coloca encima con position:absolute, anclado a la
+     esquina inferior derecha del `<li>` — que coincide con la esquina inferior derecha de `.tarjeta`, porque es su
+     único vecino visible. La tarjeta redonda y la de "una sola" no tienen sitio lateral: se quedan como en el
+     diseño A (abajo), es la comparación que pide el founder. */
+  .diseno-lateral .carril > li { position: relative; }
+  /* El botón (44 px) es más alto que la línea de `small` (≈21 px, line-height 1.4 heredado): centrado con flex sobre
+     una caja del alto de esa línea, para que quede a su altura y no tape el título de arriba. */
+  .diseno-lateral .fila-boton { position: absolute; right: 0; bottom: 0; height: 1.4em; align-items: center; padding-top: 0; }
+  .diseno-lateral .tarjeta small { padding-right: 54px; }
+  .diseno-lateral .redondas .fila-boton, .diseno-lateral .uno .fila-boton { position: static; }
+  .diseno-lateral .redondas .tarjeta small, .diseno-lateral .uno .tarjeta small { padding-right: 0; }
+  .diseno-lateral .redondas .fila-boton { justify-content: center; padding-top: var(--espacio-1); }
+  .diseno-lateral .uno .fila-boton { justify-content: flex-start; padding-top: var(--espacio-1); padding-left: 136px; }
+
+  /* ---------- Diseño C: sobre la foto, arriba a la derecha (pedido del founder, 2026-09-21) ---------- */
+  .diseno-foto .carril > li { position: relative; }
+  .diseno-foto .fila-boton { position: absolute; top: var(--espacio-2); right: var(--espacio-2); padding-top: 0; }
+  /* Redonda (104 px, radio 52): el botón (48 px, radio 24) flota sobre el perímetro del círculo, no adentro — su
+     centro cae en el punto del círculo a 45° arriba a la derecha (52 + 52·cos45° ≈ 88.8, 52 − 52·sin45° ≈ 15.2), así
+     que su esquina superior derecha queda fuera del círculo por ~9 px (pedido del founder, 2026-09-21). Con
+     `overflow-x: auto` en `.carril`, el desborde vertical también se recorta ("hay máscara en el contenedor", medido
+     tras el aviso del founder): el carril necesita ese espacio de sobra arriba, no basta con la posición negativa. */
+  .diseno-foto .redondas.carril { padding-top: calc(9px + var(--espacio-1)); }
+  .diseno-foto .redondas .fila-boton { top: -9px; right: -9px; }
+  /* La foto de "una sola tarjeta" mide 124 px y el texto va a su lado: el botón se ancla a la esquina de la FOTO
+     (right: 100% menos 124 px, más el margen), no a una posición fija, o invade el texto. */
+  .diseno-foto .uno .fila-boton { left: auto; right: calc(100% - 124px + var(--espacio-2)); width: max-content; padding-left: 0; }
+
+  /* Botón redondo, solo icono (corrección del founder, 2026-09-21: "quita textos, solo deja botón de acción + o -");
+     ~48 px (el token --toque, "cómodo para el pulgar"), igual en renglones y en tarjetas. El nombre completo sigue en
+     el aria-label (no cambia con el estado) y el toast dice qué pasó — el icono ya no necesita decirlo con texto.
+     Estados intercambiados: por defecto (invita) queda callado; decidido ("Voy") se ve con `--primario` sólido — el
+     mismo color de los accionables principales de la app (Publicar, la nav activa), no un verde nuevo inventado
+     (el founder corrigió un primer intento con `--ok`, un verde casi sin uso hoy, solo como texto). */
+  .boton-fila { display: grid; place-items: center; width: var(--toque); height: var(--toque); border: none; border-radius: 50%; cursor: pointer; }
+  .boton-fila svg { width: 22px; height: 22px; }
+  .boton-fila.invitar { background: var(--fondo); color: var(--primario); }
+  .boton-fila.decidido { background: var(--primario); color: var(--primario-texto); }
+
+  /* ---------- Aviso con Deshacer ---------- */
+  .aviso { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(8px); z-index: 20; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-height: 52px; width: calc(100% - 48px); max-width: 342px; padding: 6px 6px 6px 16px; border-radius: 14px; background: #1f2326; color: #f2f2f2; font-size: 15px; line-height: 1.3; box-shadow: var(--sombra-flotante); opacity: 0; transition: opacity 160ms, transform 160ms; pointer-events: none; }
+  .telefono .aviso { position: absolute; bottom: 24px; }
+  .aviso.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .aviso button { min-height: 40px; padding: 0 12px; border: none; border-radius: 10px; background: none; color: #8fd3df; font-weight: 700; }
+
+  .estados { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; border-radius: 12px; background: var(--estudio); }
+  .estados button { min-height: 40px; border: none; border-radius: 8px; background: none; color: var(--estudio-texto); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .estados button[aria-pressed="true"] { background: var(--primario); color: #fff; }
+  .estados.disenos { grid-template-columns: repeat(3, 1fr); background: var(--fondo-suave); }
+  .telefono .estados.disenos { margin: 8px var(--gutter) 0; }
+  .panel { display: grid; gap: 16px; width: 340px; max-width: 100%; padding: 22px 22px 24px; border: 1px solid var(--estudio-borde); border-radius: 18px; background: var(--estudio-panel); font-size: 15px; line-height: 1.45; }
+  .panel h1 { font-size: 24px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.08; text-wrap: balance; }
+  .panel .fecha { margin-top: 4px; color: var(--estudio-suave); font-size: 14px; }
+  .panel h2 { margin-bottom: 6px; color: var(--estudio-suave); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .panel ul { display: grid; gap: 6px; padding-left: 18px; }
+  .panel b { font-weight: 700; }
+  .pregunta { padding: 14px; border-radius: 12px; background: var(--primario-suave); color: var(--texto); font-weight: 600; }
+  .arrastre-nota { margin: 4px 20px 12px; padding: 8px 10px; border-radius: 10px; background: #fff3cd; color: #664d03; font-size: 12px; line-height: 1.4; }
+
+  @media (max-width: 759px) {
+    body { padding: 0; }
+    .estudio { display: block; height: 100%; max-width: none; }
+    .telefono { width: 100%; height: 100%; border-radius: 0; box-shadow: none; --area-segura: 0px; }
+    .estado-ios { display: none; }
+    .tira { flex: none; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; min-height: 48px; padding: 4px 8px 4px 14px; background: #1f2326; }
+    .tira .estados { background: #30363a; }
+    .tira .estados button { color: #e9ecef; }
+    .tira .estados button[aria-pressed="true"] { background: var(--primario); }
+    .tira .ayuda { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid #4a5258; border-radius: 50%; background: none; color: #e9ecef; font-weight: 700; }
+    .panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; width: auto; max-height: 82%; overflow-y: auto; border-radius: 18px 18px 0 0; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.3); transform: translateY(105%); transition: transform 240ms ease; }
+    .estudio.notas .panel { transform: none; }
+    .cerrar-notas { display: block; justify-self: stretch; min-height: 44px; border: none; border-radius: 12px; background: var(--estudio); font-weight: 700; }
+    .velo-notas { position: fixed; inset: 0; z-index: 19; background: rgba(0, 0, 0, 0.4); }
+  }
+  .cerrar-notas { display: none; }
+  @media (prefers-reduced-motion: reduce) { .panel, .aviso { transition: none; } }
+</style>
+
+<main class="estudio" id="estudio">
+  <section class="telefono" id="telefono" aria-label="Somos Nosotros en el teléfono">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+    <div class="tira">
+      <div class="estados" role="group" aria-label="Pantalla a ver" id="estados-movil"></div>
+      <button type="button" class="ayuda" id="abrir-notas" aria-label="Qué probar">?</button>
+    </div>
+    <div class="estados disenos" role="group" aria-label="Diseño del botón" id="disenos-movil"></div>
+    <div class="pantalla" id="pantalla"></div>
+    <div class="aviso" id="aviso" role="status">
+      <span id="aviso-texto"></span>
+      <button type="button" id="aviso-boton">Deshacer</button>
+    </div>
+  </section>
+
+  <div class="velo-notas" id="velo-notas" hidden></div>
+  <aside class="panel" id="panel">
+    <button type="button" class="cerrar-notas" id="cerrar-notas">Cerrar</button>
+    <div>
+      <h1>Botón en las tarjetas de los carriles</h1>
+      <p class="fecha">OL-106 · propuesta del founder, 2026-09-21</p>
+    </div>
+    <div class="estados" role="group" aria-label="Pantalla a ver" id="estados-escritorio"></div>
+    <div>
+      <h2>Diseño del botón</h2>
+      <div class="estados disenos" role="group" aria-label="Diseño del botón" id="disenos-escritorio"></div>
+    </div>
+    <div>
+      <h2>Qué mirar</h2>
+      <ul>
+        <li><b>Sobre la foto (confirmado):</b> el botón flota en la esquina superior derecha de la imagen, en las tarjetas y en las listas.</li>
+        <li><b>Sin texto:</b> solo el icono — "+" invita, "−" ya está decidido y lo quita al tocarlo. El toast de abajo dice qué pasó ("Vas a «…»", "Ya no sigues …").</li>
+        <li><b>Colores intercambiados:</b> por defecto, callado (blanco, sin borde); decidido, con `--primario` sólido — el mismo color de los accionables principales de la app.</li>
+        <li><b>Icono decidido:</b> check (✓), no un guion — vuelto a corregir tras un primer intento.</li>
+        <li><b>Redondo, ~48 px</b> en todos los casos — tarjetas grandes, normales, redondas y también en el renglón de la lista (sección "Listado" al final de cada pantalla).</li>
+        <li><b>Abajo</b> y <b>Lateral</b> se quedan en el selector solo de referencia, por si quieres volver a compararlos.</li>
+        <li><b>Arrastra el carril empezando justo sobre un botón</b> (con el dedo, de derecha a izquierda): el carril se mueve y el botón <b>no</b> se dispara. Suelta sin moverte: sí se dispara.</li>
+      </ul>
+    </div>
+    <div class="pregunta">
+      Falta tu firma: ¿así queda el botón — redondo, sin texto, verde al decidir? ¿Igual en tarjetas y en listados?
+    </div>
+  </aside>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  const svg = (paths) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  const iconoMas = svg('<path d="M12 5v14M5 12h14"/>');
+  const iconoOk = svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
+  const iconoPersonas = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15 13.3c2 .3 4 1.8 4 4.7"/></svg>';
+
+  const FOTO = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#cfc2b2"/></svg>');
+  const FOTO2 = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#a9bfb0"/></svg>');
+
+  const estado = {
+    ev1: false, ev2: true,
+    lug1: false, lug2: true,
+    art1: false, art2: true,
+    uno: false,
+  };
+  let deshacer = null;
+
+  function avisar(texto, aplicar) {
+    deshacer = aplicar ? { aplicar } : null;
+    const aviso = document.getElementById("aviso");
+    document.getElementById("aviso-texto").textContent = texto;
+    document.getElementById("aviso-boton").hidden = !aplicar;
+    aviso.classList.add("visible");
+    clearTimeout(avisar._t);
+    avisar._t = setTimeout(() => aviso.classList.remove("visible"), 7000);
+  }
+  document.getElementById("aviso-boton").addEventListener("click", () => {
+    if (deshacer) deshacer.aplicar();
+    document.getElementById("aviso").classList.remove("visible");
+  });
+
+  // Sin texto (corrección del founder): el nombre completo va fijo en el aria-label (no cambia con el estado, ya
+  // corregido antes) y el toast dice qué pasó. El icono es la única señal visible: "+" invita, "−" ya está decidido.
+  function boton({ key, tipo, nombre }) {
+    const decidido = estado[key];
+    const esVoy = tipo === "voy";
+    const accesible = esVoy ? `Voy — ${nombre}` : `Seguir — ${nombre}`;
+    return `<button type="button" class="boton-fila ${decidido ? "decidido" : "invitar"}" aria-pressed="${decidido}" aria-label="${accesible}" data-key="${key}" data-tipo="${tipo}" data-nombre="${nombre}">${decidido ? iconoOk : iconoMas}</button>`;
+  }
+
+  function tarjeta({ key, href, foto, titulo, detalle, van, tipo }) {
+    return `
+      <li>
+        <a href="${href}" class="tarjeta" data-nav="${titulo}">
+          <img src="${foto}" alt="" class="foto">
+          ${van ? `<span class="van">${iconoPersonas}${van} van</span>` : ""}
+          <b>${titulo}</b>
+          <small>${detalle}</small>
+        </a>
+        <div class="fila-boton">${boton({ key, tipo, nombre: titulo })}</div>
+      </li>
+    `;
+  }
+
+  function renglon({ key, href, foto, redonda, titulo, meta, tipo }) {
+    return `
+      <li class="renglon">
+        <a href="${href}" class="frente">
+          <img src="${foto}" alt="" class="foto-renglon ${redonda ? "redonda" : ""}">
+          <b>${titulo}</b>
+          <small>${meta}</small>
+        </a>
+        ${boton({ key, tipo, nombre: titulo })}
+      </li>
+    `;
+  }
+
+  function pantallaAgenda() {
+    return `
+      <h1 class="titulo-seccion">Agenda</h1>
+      <section class="destacados">
+        <h2>Destacados</h2>
+        <ul class="carril grande" data-carril="agenda">
+          ${tarjeta({ key: "ev1", href: "#", foto: FOTO, titulo: "Un título de evento deliberadamente largo, de más de cien caracteres, para ver cómo se acomoda con el botón", detalle: "hoy · 19:00 · Foro de prueba", van: 3, tipo: "voy" })}
+          ${tarjeta({ key: "ev2", href: "#", foto: FOTO2, titulo: "Noche de jazz de prueba", detalle: "mañana · 20:30 · Casa de Prueba del Centro", van: 0, tipo: "voy" })}
+        </ul>
+      </section>
+      <p class="arrastre-nota">Prueba arrastrar el carril empezando justo sobre el botón de la primera tarjeta: el carril se mueve y el botón no se dispara.</p>
+      <h2 class="titulo-seccion" style="font-size:17px;padding-top:8px">Listado (renglón, mismo botón)</h2>
+      <ul class="lista-renglones">
+        ${renglon({ key: "ren-ev1", href: "#", foto: FOTO, titulo: "Son huasteco de prueba", meta: "19:00 · Foro de prueba", tipo: "voy" })}
+        ${renglon({ key: "ren-ev2", href: "#", foto: FOTO2, titulo: "Guitarra de prueba", meta: "20:30 · Casa de Prueba del Centro", tipo: "voy" })}
+      </ul>
+    `;
+  }
+  function pantallaLugares() {
+    return `
+      <h1 class="titulo-seccion">Lugares</h1>
+      <section class="destacados">
+        <h2>Con eventos esta semana</h2>
+        <ul class="carril detalleCompleto" data-carril="lugares">
+          ${tarjeta({ key: "lug1", href: "#", foto: FOTO, titulo: "Centro Cultural y Educativo Popular del Barrio de Tequisquiapan Norte, A. C.", detalle: "viernes 26 de sep · 19:00", tipo: "seguir" })}
+          ${tarjeta({ key: "lug2", href: "#", foto: FOTO2, titulo: "Casa de Prueba del Centro", detalle: "hoy · 18:00", tipo: "seguir" })}
+        </ul>
+      </section>
+      <section class="destacados">
+        <h2>Una sola tarjeta</h2>
+        <ul class="carril uno" data-carril="uno">
+          ${tarjeta({ key: "uno", href: "#", foto: FOTO, titulo: "Foro de Prueba, el único destacado ahora mismo", detalle: "Próximo: hoy · 20:00", tipo: "seguir" })}
+        </ul>
+      </section>
+      <h2 class="titulo-seccion" style="font-size:17px;padding-top:8px">Listado (renglón, mismo botón)</h2>
+      <ul class="lista-renglones">
+        ${renglon({ key: "ren-lug1", href: "#", foto: FOTO, titulo: "Casa de Prueba del Centro", meta: "Av. de Prueba 123", tipo: "seguir" })}
+      </ul>
+    `;
+  }
+  function pantallaArtistas() {
+    return `
+      <h1 class="titulo-seccion">Artistas</h1>
+      <section class="destacados">
+        <h2>Con eventos esta semana</h2>
+        <ul class="carril redondas detalleCompleto" data-carril="artistas">
+          ${tarjeta({ key: "art1", href: "#", foto: FOTO, titulo: "La Orquesta Filarmónica Comunitaria de San Luis Potosí", detalle: "sáb 27 · 19:00", tipo: "seguir" })}
+          ${tarjeta({ key: "art2", href: "#", foto: FOTO2, titulo: "Ana de Prueba", detalle: "hoy · 21:00", tipo: "seguir" })}
+        </ul>
+      </section>
+      <h2 class="titulo-seccion" style="font-size:17px;padding-top:8px">Listado (renglón, mismo botón)</h2>
+      <ul class="lista-renglones">
+        ${renglon({ key: "ren-art1", href: "#", foto: FOTO, redonda: true, titulo: "Ana de Prueba", meta: "Música · próximo hoy 21:00", tipo: "seguir" })}
+      </ul>
+    `;
+  }
+
+  const ESTADOS = [
+    { clave: "agenda", etiqueta: "Agenda" },
+    { clave: "lugares", etiqueta: "Lugares" },
+    { clave: "artistas", etiqueta: "Artistas" },
+  ];
+  let pantallaActual = "agenda";
+  const DISENOS = [
+    { clave: "abajo", etiqueta: "Abajo" },
+    { clave: "lateral", etiqueta: "Lateral" },
+    { clave: "foto", etiqueta: "Sobre la foto" },
+  ];
+  let disenoActual = "foto"; // confirmado por el founder, 2026-09-21: "Sobre foto funciona"
+  function pintar() {
+    const fn = { agenda: pantallaAgenda, lugares: pantallaLugares, artistas: pantallaArtistas }[pantallaActual];
+    const pantalla = document.getElementById("pantalla");
+    pantalla.className = `pantalla diseno-${disenoActual}`;
+    pantalla.innerHTML = fn();
+    cablearCarriles();
+  }
+
+  // ---------- huboArrastre: el mismo mecanismo real de Destacados.tsx ----------
+  const UMBRAL_DECISION = 10;
+  function huboArrastre(dx, dy, umbral = UMBRAL_DECISION) { return Math.hypot(dx, dy) > umbral; }
+
+  function cablearCarriles() {
+    document.querySelectorAll(".carril").forEach((carril) => {
+      let bajada = null;
+      carril.addEventListener("pointerdown", (e) => { bajada = { x: e.clientX, y: e.clientY }; });
+      carril.addEventListener(
+        "click",
+        (e) => {
+          if (bajada && e.detail !== 0 && huboArrastre(e.clientX - bajada.x, e.clientY - bajada.y)) {
+            e.preventDefault();
+            e.stopPropagation(); // OL-106: también detiene el botón, no solo el <a>.
+          }
+          bajada = null;
+        },
+        { capture: true },
+      );
+    });
+    document.querySelectorAll(".boton-fila").forEach((b) => {
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const key = b.dataset.key;
+        const nombre = b.dataset.nombre;
+        const esVoy = b.dataset.tipo === "voy";
+        const decidido = estado[key];
+        estado[key] = !decidido;
+        avisar(
+          decidido ? `${esVoy ? "Ya no vas a" : "Ya no sigues"} «${nombre.slice(0, 40)}»` : `${esVoy ? "Vas a" : "Sigues"} «${nombre.slice(0, 40)}»`,
+          () => { estado[key] = decidido; pintar(); },
+        );
+        pintar();
+      });
+    });
+    document.querySelectorAll(".tarjeta").forEach((a) => {
+      a.addEventListener("click", (e) => { e.preventDefault(); });
+    });
+  }
+
+  function pintarSelectorEstado(contenedor) {
+    contenedor.innerHTML = ESTADOS.map((s) => `<button type="button" data-estado="${s.clave}" aria-pressed="${s.clave === pantallaActual}">${s.etiqueta}</button>`).join("");
+    contenedor.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      pantallaActual = b.dataset.estado;
+      document.querySelectorAll(".estados:not(.disenos)").forEach(pintarSelectorEstado);
+      pintar();
+    }));
+  }
+  function pintarSelectorDiseno(contenedor) {
+    contenedor.innerHTML = DISENOS.map((d) => `<button type="button" data-diseno="${d.clave}" aria-pressed="${d.clave === disenoActual}">${d.etiqueta}</button>`).join("");
+    contenedor.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      disenoActual = b.dataset.diseno;
+      document.querySelectorAll(".disenos").forEach(pintarSelectorDiseno);
+      pintar();
+    }));
+  }
+  pintarSelectorEstado(document.getElementById("estados-movil"));
+  pintarSelectorEstado(document.getElementById("estados-escritorio"));
+  pintarSelectorDiseno(document.getElementById("disenos-movil"));
+  pintarSelectorDiseno(document.getElementById("disenos-escritorio"));
+  pintar();
+
+  const estudio = document.getElementById("estudio");
+  const abrir = document.getElementById("abrir-notas");
+  const cerrar = document.getElementById("cerrar-notas");
+  const velo = document.getElementById("velo-notas");
+  function abrirNotas() { estudio.classList.add("notas"); velo.hidden = false; }
+  function cerrarNotas() { estudio.classList.remove("notas"); velo.hidden = true; }
+  if (abrir) abrir.addEventListener("click", abrirNotas);
+  if (cerrar) cerrar.addEventListener("click", cerrarNotas);
+  if (velo) velo.addEventListener("click", cerrarNotas);
+})();
+</script>

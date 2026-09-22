@@ -13,16 +13,16 @@ describe("sitemap", () => {
 
   it("una ficha de lugar oculta no sale", () => {
     const filas = [
-      { id: "visible", visible: true, privado: false, actualizado_en: "2026-09-10T00:00:00Z" },
-      { id: "oculto", visible: false, privado: false, actualizado_en: "2026-09-10T00:00:00Z" },
+      { id: "visible", slug: "visible", visible: true, privado: false, actualizado_en: "2026-09-10T00:00:00Z" },
+      { id: "oculto", slug: "oculto", visible: false, privado: false, actualizado_en: "2026-09-10T00:00:00Z" },
     ];
     expect(lugaresParaSitemap(filas).map((e) => e.url)).toEqual([`${ORIGEN}/lugares/visible`]);
   });
 
   it("un lugar privado ('solo tú lo ves') no sale, aunque esté visible", () => {
     const filas = [
-      { id: "publico", visible: true, privado: false, actualizado_en: "2026-09-10T00:00:00Z" },
-      { id: "reservado", visible: true, privado: true, actualizado_en: "2026-09-10T00:00:00Z" },
+      { id: "publico", slug: "publico", visible: true, privado: false, actualizado_en: "2026-09-10T00:00:00Z" },
+      { id: "reservado", slug: "reservado", visible: true, privado: true, actualizado_en: "2026-09-10T00:00:00Z" },
     ];
     expect(lugaresParaSitemap(filas).map((e) => e.url)).toEqual([`${ORIGEN}/lugares/publico`]);
   });
@@ -30,8 +30,8 @@ describe("sitemap", () => {
   it("un evento oculto no sale", () => {
     const ahora = new Date("2026-09-17T12:00:00Z");
     const filas = [
-      { id: "visible", visible: true, termina: "2026-09-20T00:00:00Z", actualizado_en: "2026-09-10T00:00:00Z" },
-      { id: "oculto", visible: false, termina: "2026-09-20T00:00:00Z", actualizado_en: "2026-09-10T00:00:00Z" },
+      { id: "visible", slug: "visible", visible: true, termina: "2026-09-20T00:00:00Z", actualizado_en: "2026-09-10T00:00:00Z" },
+      { id: "oculto", slug: "oculto", visible: false, termina: "2026-09-20T00:00:00Z", actualizado_en: "2026-09-10T00:00:00Z" },
     ];
     expect(eventosParaSitemap(filas, ahora).map((e) => e.url)).toEqual([`${ORIGEN}/eventos/visible`]);
   });
@@ -39,26 +39,26 @@ describe("sitemap", () => {
   it("un evento que ya terminó no sale", () => {
     const ahora = new Date("2026-09-17T12:00:00Z");
     const filas = [
-      { id: "futuro", visible: true, termina: "2026-09-20T00:00:00Z", actualizado_en: "2026-09-10T00:00:00Z" },
-      { id: "pasado", visible: true, termina: "2026-09-16T00:00:00Z", actualizado_en: "2026-09-10T00:00:00Z" },
+      { id: "futuro", slug: "futuro", visible: true, termina: "2026-09-20T00:00:00Z", actualizado_en: "2026-09-10T00:00:00Z" },
+      { id: "pasado", slug: "pasado", visible: true, termina: "2026-09-16T00:00:00Z", actualizado_en: "2026-09-10T00:00:00Z" },
     ];
     expect(eventosParaSitemap(filas, ahora).map((e) => e.url)).toEqual([`${ORIGEN}/eventos/futuro`]);
   });
 
   it("un artista oculto no sale", () => {
-    const filas = [{ id: "oculto", visible: false, origen: null, actualizado_en: "2026-09-10T00:00:00Z", reclamado: false }];
+    const filas = [{ id: "oculto", slug: "oculto", visible: false, origen: null, actualizado_en: "2026-09-10T00:00:00Z", reclamado: false }];
     expect(artistasParaSitemap(filas)).toEqual([]);
   });
 
   it("un artista propio (no CAPO) sale aunque nadie lo haya reclamado", () => {
-    const filas = [{ id: "propio", visible: true, origen: null, actualizado_en: "2026-09-10T00:00:00Z", reclamado: false }];
+    const filas = [{ id: "propio", slug: "propio", visible: true, origen: null, actualizado_en: "2026-09-10T00:00:00Z", reclamado: false }];
     expect(artistasParaSitemap(filas).map((e) => e.url)).toEqual([`${ORIGEN}/artistas/propio`]);
   });
 
   it("con la decisión del founder («si entran todos los contenidos del sitio»), un artista del CAPO sale aunque nadie lo haya reclamado", () => {
     const filas = [
-      { id: "sin-reclamar", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: false },
-      { id: "reclamado", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: true },
+      { id: "sin-reclamar", slug: "sin-reclamar", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: false },
+      { id: "reclamado", slug: "reclamado", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: true },
     ];
     expect(artistasParaSitemap(filas).map((e) => e.url).sort()).toEqual([`${ORIGEN}/artistas/reclamado`, `${ORIGEN}/artistas/sin-reclamar`]);
   });
@@ -70,7 +70,7 @@ describe("sitemap", () => {
     // esta causa — igual que aquí, donde el mismo artista sin reclamar entra al sitemap. Si alguna vez se apaga el
     // interruptor sin querer, esta prueba avisa antes que un cambio silencioso en las dos caras.
     expect(CAPO_SIN_RECLAMAR_EN_SITEMAP).toBe(true);
-    const filas = [{ id: "sin-reclamar", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: false }];
+    const filas = [{ id: "sin-reclamar", slug: "sin-reclamar", visible: true, origen: "capo", actualizado_en: "2026-09-10T00:00:00Z", reclamado: false }];
     expect(artistasParaSitemap(filas).map((e) => e.url)).toEqual([`${ORIGEN}/artistas/sin-reclamar`]);
   });
 });

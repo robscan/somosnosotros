@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { contenidoCorreo, contenidoPush, type Cambio, type EventoParaAviso, type TipoAviso } from "./avisos";
+import { contenidoCorreo, contenidoPush, contenidoPushAdmin, type Cambio, type EventoParaAviso, type TipoAviso } from "./avisos";
 import { urlBaja } from "./baja";
 import { cuerpoCorreo, enviarCorreoIdempotente, type ResultadoEnvio } from "./correo";
 import { enviarPushEndpoint } from "./push";
@@ -129,4 +129,51 @@ export async function drenarAvisos(opciones: { ms?: number; recordatorios?: bool
 export async function intentarDrenarAvisos(): Promise<void> {
   try { await drenarAvisos({ ms: 5_000 }); }
   catch { console.error("avisos: drenaje aplazado; cola persistente"); }
+}
+
+// ---------- OL-115: aviso al administrador. Mismo cron/endpoint/worker; tablas propias
+// (avisos_admin_jobs/entregas, migración 20260922150000), sin tocar avisos_jobs/avisos_entregas. ----------
+export type ClaimAdmin = { id: string; token: string };
+export type EntregaAdmin = { id: string; job_id: string; usuario_id: string; cuerpo: string | null;
+  motivos: Record<string, number>; creado_en: string; suscripcion: unknown };
+
+export async function procesarEntregaAdmin(c: ClaimAdmin, d: DependenciasAvisos, fin = d.ahora() + 15_000): Promise<boolean> {
+  const args = { p_id: c.id, p_token: c.token };
+  const rpc = <T>(nombre: string, a: Record<string, unknown>) => d.rpc<T>(nombre, a, plazo(d, fin, 500));
+  const terminar = (r: ResultadoEnvio) => d.rpc<boolean>("avisos_admin_terminar", { ...args, p_resultado: r.estado, p_codigo: r.codigo }, plazo(d, fin));
+  try {
+    const entrega = await rpc<EntregaAdmin | null>("avisos_admin_autorizar", args);
+    if (!entrega) return false;
+    let cuerpo = entrega.cuerpo;
+    // Sin datos personales: el cuerpo sale solo de los conteos por motivo, nunca de un nombre o id.
+    if (!cuerpo) cuerpo = JSON.stringify({ ...contenidoPushAdmin(entrega.motivos), tag: `aviso-admin-${entrega.job_id}` });
+    cuerpo = await rpc<string | null>("avisos_admin_preparar", { ...args, p_cuerpo: cuerpo });
+    if (!cuerpo) return false;
+    const vigente = await rpc<EntregaAdmin | null>("avisos_admin_autorizar", args);
+    if (!vigente) return false;
+    const signal = AbortSignal.timeout(plazo(d, fin, 500, 8_000));
+    const resultado = await d.push(vigente.suscripcion, cuerpo, 3_600, signal);
+    const confirmado = await terminar(resultado);
+    return confirmado && resultado.estado === "enviada";
+  } catch {
+    try { await terminar({ estado: "reintentar", codigo: "worker_dependencia" }); } catch { /* El lease conserva la recuperacion. */ }
+    return false;
+  }
+}
+
+/** Volumen chico (solo administradores): sin los cuatro slots SQL del motor principal, un claim a la vez basta. */
+export async function drenarAvisosAdmin(opciones: { ms?: number } = {}, inyectadas?: DependenciasAvisos) {
+  const d = inyectadas ?? dependencias();
+  const fin = d.ahora() + Math.max(2_000, Math.min(15_000, opciones.ms ?? 8_000));
+  const trabajoHasta = fin - 500;
+  for (let i = 0; i < 5 && d.ahora() < trabajoHasta - 500; i++) if (!await d.rpc<boolean>("avisos_admin_expandir", undefined, plazo(d, trabajoHasta))) break;
+  let enviados = 0;
+  for (let tomados = 0; tomados < 10 && d.ahora() < trabajoHasta - 500; tomados++) {
+    let c: ClaimAdmin | null;
+    try { c = await d.rpc<ClaimAdmin | null>("avisos_admin_tomar", undefined, plazo(d, trabajoHasta, 500)); }
+    catch { break; }
+    if (!c) break;
+    if (await procesarEntregaAdmin(c, d, trabajoHasta)) enviados++;
+  }
+  return { enviados };
 }

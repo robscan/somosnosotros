@@ -21,7 +21,7 @@ const SIN_RESULTADO: Resultado = { ok: true };
  * hora de cierre — los tres editables, sin formulario largo. La ubicación se lee una sola vez, aquí, y no se guarda
  * (mismo leerUbicacion() que ya usan Lugares y la Agenda); si no hay permiso o soporte, se elige el lugar a mano.
  */
-export default function CrearObraAqui({ lugares }: { lugares: Lugar[] }) {
+export default function CrearObraAqui({ lugares, puedeCrear }: { lugares: Lugar[]; puedeCrear: boolean }) {
   const primero = lugares[0];
   const [lugarId, setLugarId] = useState(primero?.id ?? "");
   const [nombre, setNombre] = useState(primero ? nombreSugerido(primero.nombre) : "");
@@ -88,12 +88,17 @@ export default function CrearObraAqui({ lugares }: { lugares: Lugar[] }) {
         <span>Cierra a las</span>
         <ChipNativo tipo="time" valor={hora} activo={false} etiqueta={hora} onCambio={setHora} ariaLabel="Hora de cierre" />
       </div>
+      {!puedeCrear && (
+        <p className={styles.error} role="alert">
+          Ya hay dos obras abiertas; termina una para abrir otra.
+        </p>
+      )}
       {resultado && !resultado.ok && (
         <p className={styles.error} role="alert">
           {resultado.error}
         </p>
       )}
-      <Boton type="submit" disabled={pendiente}>
+      <Boton type="submit" disabled={pendiente || !puedeCrear}>
         Crear obra aquí
       </Boton>
     </form>
