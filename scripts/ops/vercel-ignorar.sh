@@ -8,6 +8,19 @@
 # Se compara contra el último commit que Vercel desplegó en esa rama; si no lo conoce, contra el commit anterior
 # (en un merge, el primer padre: abarca todo lo que trajo el PR). Ante cualquier duda o error de git, se despliega.
 set -u
+rama="${VERCEL_GIT_COMMIT_REF:-}"
+# En una rama que no es main (vista previa de un PR) se compara contra main: si la rama trae código, se despliega
+# siempre, aunque el último commit sea solo de documentos (si no, un redespliegue o una bitácora al final
+# cancelaban la vista previa y el gestor no podía revisar la pantalla; 2026-09-22). Vercel clona con poca
+# historia, así que main se trae a propósito.
+if [ -n "$rama" ] && [ "$rama" != "main" ]; then
+  if git fetch --depth=50 origin main >/dev/null 2>&1 && git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
+    git diff --quiet FETCH_HEAD HEAD -- . ':(exclude)docs' ':(exclude,glob)*.md'
+    if [ "$?" -eq 0 ]; then echo "La rama $rama solo cambia documentos respecto a main: no se despliega."; exit 0; fi
+    echo "La rama $rama trae cambios fuera de los documentos: se despliega."; exit 1
+  fi
+  echo "No se pudo comparar la rama $rama con main: se despliega."; exit 1
+fi
 base="${VERCEL_GIT_PREVIOUS_SHA:-}"
 if [ -z "$base" ]; then
   base="HEAD^"
