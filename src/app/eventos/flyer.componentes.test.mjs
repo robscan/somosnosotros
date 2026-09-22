@@ -169,6 +169,27 @@ test('OCR preserva todos los datos preexistentes y sitio reservado',actual,async
   assert.equal(despues.sitio_texto.includes('Secreta'),false);
 });
 
+test('cartel sin titulo marca el campo del nombre como faltante, sin forzar el foco',actual,async t=>{
+  const {p}=await pantalla(t,390,{ocr:{titulo:'',inicio:'2026-11-01T20:00',fin:'2026-11-01T22:00',gratis:false,precio:'200',descripcion:'Descripcion OCR',enlace:'https://ocr.invalid',lugar:'Foro ficticio',direccion:'Calle Prueba 123, Ciudad de prueba'}});
+  await subir(p); await terminar(p);
+  const campo=p.getByLabel('Nombre del evento');
+  assert.equal(await campo.inputValue(),'');
+  assert.equal(await campo.getAttribute('placeholder'),'Falta el nombre');
+  assert.equal(await campo.getAttribute('aria-describedby'),'nota-nombre-evento');
+  assert.equal(await campo.evaluate(el=>getComputedStyle(el).borderStyle),'dashed');
+  assert.equal(await campo.evaluate(el=>el===document.activeElement),false);
+  const nota=p.locator('#nota-nombre-evento');
+  assert.equal(await nota.textContent(),'Falta el nombre.');
+  assert.equal(await nota.getAttribute('role'),null);
+  await p.getByText('Revisa el nombre y publica.',{exact:true}).waitFor();
+  await foto(p,'cartel-sin-titulo-390');
+  await campo.fill('Ya tiene nombre');
+  assert.equal(await campo.getAttribute('placeholder'),'Nombre del evento');
+  assert.equal(await campo.getAttribute('aria-describedby'),null);
+  assert.equal(await campo.evaluate(el=>getComputedStyle(el).borderStyle),'solid');
+  assert.equal(await p.locator('#nota-nombre-evento').count(),0);
+});
+
 test('gestos tardios, borrar y elegir gratis ganan al OCR',actual,async t=>{
   const {p}=await pantalla(t); await subir(p);
   await p.getByLabel('Nombre del evento').fill('Nombre manual'); await p.getByLabel('Nombre del evento').fill('');

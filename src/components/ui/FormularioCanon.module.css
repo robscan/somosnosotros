@@ -40,6 +40,12 @@
 .sinIcono > input {
   padding-left: 14px;
 }
+/* El campo vacío se marca como faltante, mismo peso que ".pendiente" en los renglones: borde discontinuo, sin
+   rojo de error (ese color se reserva para un error de verdad, tras intentar publicar). Founder, 2026-09-21:
+   con un cartel sin título el campo del nombre no se veía faltante (OL-113). */
+.campoFalta > input {
+  border-style: dashed;
+}
 
 /* 1 bis. El cartel, antes del formulario (firmado por el founder, 2026-09-17). Es lo único que explica la
    pantalla: no hay frase debajo del título. Todo el recuadro es el control, y el campo de archivo lo cubre
@@ -362,6 +368,15 @@
 }
 .cuerpoNota[role="alert"] {
   color: var(--error);
+}
+/* La ayuda bajo un campo suelto (no un renglón de canon.resuelto): mismo aspecto que .cuerpoNota, sin
+   grid-area — esa clase solo se reutiliza dentro de la rejilla para la que fue escrita (regla del gestor,
+   2026-09-21, tras el bug de "Es en otro sitio"). */
+.notaCampo {
+  padding-top: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
 }
 .chips {
   display: flex;
