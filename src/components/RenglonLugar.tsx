@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { textoDistancia } from "@/lib/agenda";
 import { SIN_FOTO } from "@/lib/imagen";
-import { calleCorta, textoProximo, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
+import { calleCorta, hrefLugar, textoProximo, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { IconoCalendario, IconoPin } from "./ui/Iconos";
 import styles from "./Renglon.module.css";
 
 type Props = {
-  lugar: Pick<LugarResumen, "id" | "nombre" | "direccion" | "portada" | "privado"> & { proximo?: ProximoEvento | null };
+  lugar: Pick<LugarResumen, "id" | "slug" | "nombre" | "direccion" | "portada" | "privado"> & { proximo?: ProximoEvento | null };
   /** Distancia desde el punto de quien mira, cuando la lista se ordena por cercanía. */
   km?: number;
   /** Con botón, "Seguir" o "Sigues" (OL-104, bitácora 139); sin él, el renglón es un enlace simple. */
@@ -21,7 +21,7 @@ type Props = {
 export default function RenglonLugar({ lugar: l, km, boton }: Props) {
   return (
     <li className={styles.renglon}>
-      <Link href={`/lugares/${l.id}`} className={styles.frente}>
+      <Link href={hrefLugar(l)} className={styles.frente}>
         {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
         <img src={l.portada ?? SIN_FOTO} alt="" className={styles.foto} />
         <span className={styles.titulo}>{l.nombre}</span>

@@ -1,10 +1,11 @@
 import type { Tarjeta } from "./destacados";
+import { hrefArtista } from "./artistas";
 import { diaLocal, formatearCuando } from "./fechas";
 import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
-import { compararNombres } from "./lugares";
+import { compararNombres, hrefLugar } from "./lugares";
 
 export type AparicionSemana = {
-  ficha: { id: string; nombre: string; foto: string | null; visible: boolean; privado?: boolean };
+  ficha: { id: string; slug: string; nombre: string; foto: string | null; visible: boolean; privado?: boolean };
   evento: {
     id: string; inicio: string; termina: string; zona: string; visible: boolean;
     lugar_id: string | null;
@@ -37,7 +38,7 @@ export function tarjetasDeSemana(apariciones: AparicionSemana[], tipo: "artistas
     .sort((a, b) => Date.parse(a.evento.inicio) - Date.parse(b.evento.inicio) || compararNombres(a.ficha.nombre, b.ficha.nombre) || a.ficha.id.localeCompare(b.ficha.id))
     .map(({ ficha, evento }) => ({
       id: ficha.id,
-      href: `/${tipo}/${ficha.id}`,
+      href: tipo === "artistas" ? hrefArtista(ficha) : hrefLugar(ficha),
       foto: ficha.foto ?? (tipo === "artistas" ? SIN_FOTO : SIN_FOTO_ANCHA),
       titulo: ficha.nombre,
       detalle: Date.parse(evento.inicio) < ahora.getTime() ? "En curso" : formatearCuando(evento.inicio, null, ahora, evento.zona),

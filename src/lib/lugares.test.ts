@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, filtrarLugares, normalizarNombre, ordenarLugares, tiposPresentes, validarLugar } from "./lugares";
+import { calleCorta, conProximo, filtrarLugares, hrefLugar, normalizarNombre, ordenarLugares, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -102,5 +102,14 @@ describe("conProximo", () => {
     ]);
     expect(r[0].proximo).toEqual({ id: "e1", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City" });
     expect(r[1].proximo).toBeNull();
+  });
+});
+
+describe("hrefLugar", () => {
+  it("usa el slug cuando lo trae; el UUID solo como respaldo (OL-119, mismo criterio que artistas)", () => {
+    expect(hrefLugar({ id: "a1", slug: "casa-de-la-cultura" })).toBe("/lugares/casa-de-la-cultura");
+    expect(hrefLugar({ id: "a1", slug: null })).toBe("/lugares/a1");
+    expect(hrefLugar({ id: "a1" })).toBe("/lugares/a1");
+    expect(hrefLugar({ id: "a1", slug: "" })).toBe("/lugares/a1");
   });
 });
