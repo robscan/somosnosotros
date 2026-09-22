@@ -15,6 +15,7 @@ import {
   estaAjustandoGrosor,
   estadoDeFila,
   estaEncendido,
+  INSTANTANEA_CADA_MS,
   GROSOR_BASE,
   GROSOR_MAX,
   GROSOR_MIN,
@@ -36,7 +37,9 @@ import {
   PUNTOS_MAX_POR_MENSAJE,
   quienesPintan,
   RANGO_GRADOS,
+  rutaInstantanea,
   siguientesSegmentos,
+  tocaSubirInstantanea,
   textoDelSensor,
   TINTAS,
   UMBRAL_AJUSTE_PX,
@@ -528,5 +531,30 @@ describe("esMensajeBorrarValido", () => {
     expect(esMensajeBorrarValido({ remitente: "" })).toBe(false);
     expect(esMensajeBorrarValido({ remitente: REMITENTE, enviado: "ahora" })).toBe(false);
     expect(esMensajeBorrarValido(null)).toBe(false);
+  });
+});
+
+// OL-126 (4): la instantánea de la pared.
+describe("tocaSubirInstantanea", () => {
+  const ahora = 1_700_000_000_000;
+  it("periódica: solo con trazos nuevos y pasados 20 s desde la última subida (o si nunca se subió)", () => {
+    expect(INSTANTANEA_CADA_MS).toBe(20_000);
+    expect(tocaSubirInstantanea({ motivo: "periodica", hayTrazosNuevos: true, ultimaSubidaMs: null, ahoraMs: ahora })).toBe(true);
+    expect(tocaSubirInstantanea({ motivo: "periodica", hayTrazosNuevos: true, ultimaSubidaMs: ahora - 20_000, ahoraMs: ahora })).toBe(true);
+    expect(tocaSubirInstantanea({ motivo: "periodica", hayTrazosNuevos: true, ultimaSubidaMs: ahora - 19_999, ahoraMs: ahora })).toBe(false);
+    expect(tocaSubirInstantanea({ motivo: "periodica", hayTrazosNuevos: false, ultimaSubidaMs: null, ahoraMs: ahora })).toBe(false);
+  });
+  it("cierre (pestaña oculta o cerrándose): si hubo trazos nuevos, aunque no hayan pasado 20 s", () => {
+    expect(tocaSubirInstantanea({ motivo: "cierre", hayTrazosNuevos: true, ultimaSubidaMs: ahora - 1000, ahoraMs: ahora })).toBe(true);
+    expect(tocaSubirInstantanea({ motivo: "cierre", hayTrazosNuevos: false, ultimaSubidaMs: ahora - 1000, ahoraMs: ahora })).toBe(false);
+  });
+  it("borrado: siempre (sube el lienzo vacío)", () => {
+    expect(tocaSubirInstantanea({ motivo: "borrado", hayTrazosNuevos: false, ultimaSubidaMs: ahora - 1000, ahoraMs: ahora })).toBe(true);
+  });
+  it("a lo sumo 3 subidas periódicas por minuto por obra", () => {
+    expect(Math.floor(60_000 / INSTANTANEA_CADA_MS)).toBeLessThanOrEqual(3);
+  });
+  it("la ruta es obras/<id>/pared.png (el bucket va aparte)", () => {
+    expect(rutaInstantanea("44444444-4444-4444-4444-444444444444")).toBe("44444444-4444-4444-4444-444444444444/pared.png");
   });
 });

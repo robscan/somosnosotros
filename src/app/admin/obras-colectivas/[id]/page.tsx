@@ -10,7 +10,7 @@ import { qrDelMando } from "@/lib/qr";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import admin from "../../admin.module.css";
 import styles from "../obras.module.css";
-import { cargarEstadoGlobalPincel, cargarObra, TOPE_MANDOS_GLOBAL } from "../consultas";
+import { cargarEstadoGlobalPincel, cargarInstantanea, cargarObra, TOPE_MANDOS_GLOBAL } from "../consultas";
 import AccionesObra from "./AccionesObra";
 import BorrarPared from "./BorrarPared";
 import BotonImprimir from "./BotonImprimir";
@@ -38,6 +38,8 @@ export default async function DetalleObra({ params, searchParams }: Params) {
   const obra = await cargarObra(id);
   if (!obra) notFound();
   const qr = obra.estado === "abierta" ? await qrDelMando(obra.id) : null;
+  // La instantánea de la pared (OL-126): mientras está abierta, lo pintado hasta ahora; cerrada, el resultado.
+  const instantanea = await cargarInstantanea(obra.id);
   // Tope de cupo (OL-121): lo que le queda a ESTA obra es el tope global menos lo que usan las DEMÁS abiertas —
   // su propio cupo actual no cuenta contra sí misma. Si no se pudo leer, no se acota aquí (la base lo exige igual).
   const estadoGlobal = obra.estado === "abierta" ? await cargarEstadoGlobalPincel() : null;
@@ -98,6 +100,13 @@ export default async function DetalleObra({ params, searchParams }: Params) {
           aviso="Se borra la obra y su imagen final, si la tiene."
           accion={borrarObra.bind(null, obra.id)}
         />
+      )}
+      {instantanea && (
+        <figure className={styles.instantanea}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada del bucket privado, no hay nada que optimizar */}
+          <img src={instantanea.url} alt="Instantánea de la pared" />
+          <figcaption>{obra.estado === "abierta" ? "La pared, hasta ahora" : "La pared, al terminar"} · {formatearLargo(instantanea.actualizadoEn, new Date(), null, obra.zona)}</figcaption>
+        </figure>
       )}
       {qr && (
         <figure className={styles.qr}>

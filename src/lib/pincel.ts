@@ -109,6 +109,35 @@ export function latenciasDe(mensaje: { enviado?: number; muestra?: number }, rec
   const totalMs = mensaje.muestra !== undefined ? dibujadoMs - mensaje.muestra : mensaje.enviado !== undefined ? dibujadoMs - mensaje.enviado : null;
   return { agrupacionMs, redMs, dibujoMs, totalMs };
 }
+/**
+ * Instantánea de la pared (OL-126, parte 4; founder: «si pongo regresar a admin y entro de nuevo a pared se borra
+ * lo que estaba hecho»). La pared conserva lo pintado mientras la obra esté abierta, sin guardar trazos: sube al
+ * Storage (bucket privado «obras», solo administración) un PNG del lienzo en `obras/<id>/pared.png` cada
+ * INSTANTANEA_CADA_MS solo si hubo trazos nuevos, también al ocultarse/cerrarse la pestaña y al recibir «borrar»
+ * (sube el lienzo vacío). Al abrirse, si hay instantánea la pinta de fondo antes de conectar el canal; con dos
+ * paredes abiertas las dos reciben los trazos en vivo y la instantánea solo es el punto de partida. Al terminar
+ * la obra, se queda como resultado y se ve chica en la ficha de la obra en Administración. Presupuesto: un PNG
+ * de 1280×800 pesa ~100–300 KB; a lo sumo 3 subidas por minuto por obra abierta.
+ */
+export const INSTANTANEA_CADA_MS = 20_000;
+export const BUCKET_INSTANTANEAS = "obras";
+
+export function rutaInstantanea(obraId: string): string {
+  return `${obraId}/pared.png`;
+}
+
+export type MotivoInstantanea = "periodica" | "cierre" | "borrado";
+
+/** ¿Toca subir ahora? Borrado: siempre (el lienzo vacío también cuenta). Cierre (pestaña oculta o cerrándose):
+ * solo si hubo trazos desde la última subida. Periódica: trazos nuevos y, además, ≥ INSTANTANEA_CADA_MS desde la
+ * última subida (o nunca se ha subido). */
+export function tocaSubirInstantanea(a: { motivo: MotivoInstantanea; hayTrazosNuevos: boolean; ultimaSubidaMs: number | null; ahoraMs: number }): boolean {
+  if (a.motivo === "borrado") return true;
+  if (!a.hayTrazosNuevos) return false;
+  if (a.motivo === "cierre") return true;
+  return a.ultimaSubidaMs === null || a.ahoraMs - a.ultimaSubidaMs >= INSTANTANEA_CADA_MS;
+}
+
 /** Tope de puntos por mensaje: a 6 mensajes/s y un sensor muestreado hasta a 60 Hz, un mensaje junta ~10 (a 5/s,
  * ~12); si el sensor da más, el mando los rebaja con `muestrear`. Es también el límite que exige
  * `esMensajeTrazoValido` (contra un mensaje fabricado a mano con miles de puntos). */

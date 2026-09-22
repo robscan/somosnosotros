@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { BUCKET_INSTANTANEAS, rutaInstantanea } from "@/lib/pincel";
 import { esUuid, limpiar } from "@/lib/formulario";
 import { localAIso, zonaSegura } from "@/lib/fechas";
 import { cierreDesdeEvento } from "@/lib/obras-colectivas";
@@ -138,6 +139,8 @@ export async function borrarObra(id: string) {
   // bucket, no un dato roto en la base. Nadie sube a fotos/obras/ todavía (llega con la pared, Fase 2), así que
   // hoy `imagen_final` siempre es null y esta rama no se ejercita — queda lista para cuando exista.
   if (obra?.imagen_final) await supabase.storage.from("fotos").remove([obra.imagen_final]);
+  // OL-126: la instantánea de la pared (bucket privado «obras», obras/<id>/pared.png), si la hubo; mismo mejor esfuerzo.
+  await supabase.storage.from(BUCKET_INSTANTANEAS).remove([rutaInstantanea(id)]);
   revalidatePath("/admin/obras-colectivas");
   redirect("/admin/obras-colectivas");
 }
