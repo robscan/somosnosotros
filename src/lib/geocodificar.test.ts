@@ -9,6 +9,11 @@ describe("geocodificar", () => {
     expect(u.searchParams.has("country")).toBe(false);
     expect(u.searchParams.get("language")).toBe("es");
     expect(u.searchParams.get("proximity")).toBe("-100.97,22.15");
+    expect(u.searchParams.has("bbox")).toBe(false);
+  });
+  it("con bbox, acota a la ciudad de contexto (OL-100, caso 'Galeana #423, S.L.P.')", () => {
+    const u = new URL(urlGeocodificar("Galeana 423, San Luis Potosí", "pk.x", { lat: 22.15, lng: -100.97 }, [-101.1, 22.05, -100.85, 22.25]));
+    expect(u.searchParams.get("bbox")).toBe("-101.1,22.05,-100.85,22.25");
   });
   it("interpreta la respuesta v6 y descarta lo que no tiene coordenadas", () => {
     const s = interpretarRespuesta({
@@ -25,7 +30,7 @@ describe("geocodificar", () => {
     expect(f).not.toHaveBeenCalled();
   });
 
-  it("pide 10 a Mapbox pero ordena por cercanía real y devuelve las 5 más cercanas", async () => {
+  it("pide 10 a Mapbox y ordena por cercanía real, todas — sin recortar (quien llama filtra por relevancia y recorta después, OL-100)", async () => {
     // Buscando "Plaza de Armas" desde San Luis, Mapbox trae primero las de otras ciudades (founder, 2026-09-16).
     const cerca = { lat: 22.1497, lng: -100.9764 };
     const ciudades = [
@@ -36,13 +41,14 @@ describe("geocodificar", () => {
       { nombre: "Plaza de Armas, San Luis Potosí", lat: 22.1512, lng: -100.976 },
       { nombre: "Plaza de Armas, Guadalajara", lat: 20.6767, lng: -103.3475 },
     ]; // a propósito, desordenadas: así llegan de Mapbox
-    const masCercanas = [...ciudades].sort((a, b) => distanciaKm(cerca, a) - distanciaKm(cerca, b)).slice(0, 5).map((c) => c.nombre);
+    const masCercanas = [...ciudades].sort((a, b) => distanciaKm(cerca, a) - distanciaKm(cerca, b)).map((c) => c.nombre);
     const f = vi.fn(async (url: string) => {
       expect(new URL(url).searchParams.get("limit")).toBe("10");
       const features = ciudades.map((c) => ({ properties: { name: c.nombre, full_address: c.nombre, coordinates: { latitude: c.lat, longitude: c.lng } } }));
       return new Response(JSON.stringify({ features }), { status: 200 });
     });
     const r = await buscarDirecciones("Plaza de Armas", "pk.x", cerca, f);
+    expect(r).toHaveLength(6);
     expect(r.map((s) => s.nombre)).toEqual(masCercanas);
     expect(r[0].nombre).toBe("Plaza de Armas, San Luis Potosí");
   });

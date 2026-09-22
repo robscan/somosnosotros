@@ -101,16 +101,29 @@ export function observarEstadoPush(llavePublica: string, recibir: (estado: Estad
 }
 
 export type Suscripcion = { endpoint: string; keys: { p256dh: string; auth: string } };
-export type ResultadoAlta = { ok: true; sub: Suscripcion } | { ok: false; motivo: "bloqueado" | "fallo" };
+export type ResultadoAlta = { ok: true; sub: Suscripcion } | { ok: false; motivo: "bloqueado" | "silenciado" | "fallo" };
+
+const TARDANDO = Symbol("tardando");
+
+/**
+ * Chrome de escritorio puede volver el permiso silencioso: en vez de su aviso, deja un icono junto a la dirección y la
+ * promesa de `Notification.requestPermission()` se queda pendiente hasta que la persona lo note y lo toque (a veces
+ * nunca). Sin este tope, el botón se quedaba "trabajando" para siempre y el toque parecía no haber hecho nada.
+ */
+async function pedirPermiso(ms = 8000): Promise<NotificationPermission | typeof TARDANDO> {
+  return Promise.race([Notification.requestPermission(), new Promise<typeof TARDANDO>((r) => setTimeout(() => r(TARDANDO), ms))]);
+}
 
 /**
  * Pide el permiso y da de alta este teléfono. Se llama desde un toque: el iPhone solo muestra su permiso así.
- * "bloqueado": dijo que no (o ya estaba bloqueado); "fallo": no se pudo terminar el alta.
+ * "bloqueado": dijo que no (o ya estaba bloqueado); "silenciado": el navegador no mostró su aviso a tiempo (queda un
+ * icono por tocar en la propia barra); "fallo": no se pudo terminar el alta.
  */
 export async function suscribirPush(llavePublica: string): Promise<ResultadoAlta> {
   try {
     if (!llavePublica || !hayAvisosEnElNavegador()) return { ok: false, motivo: "fallo" };
-    const permiso = await Notification.requestPermission();
+    const permiso = await pedirPermiso();
+    if (permiso === TARDANDO) return { ok: false, motivo: "silenciado" };
     if (permiso === "denied") return { ok: false, motivo: "bloqueado" };
     if (permiso !== "granted") return { ok: false, motivo: "fallo" };
     const reg = await registroListo();

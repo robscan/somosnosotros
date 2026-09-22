@@ -79,7 +79,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
           <h3 className={styles.dia}>{g.titulo}</h3>
           <ul className={styles.lista} aria-label={g.titulo}>
             {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} estado={conSello ? estado(e.id) : null} acciones={gestos ? asistencia.acciones(e) : undefined} />
+              <RenglonEvento key={e.id} evento={e} estado={conSello ? estado(e.id) : null} boton={gestos ? asistencia.boton(e) : undefined} />
             ))}
           </ul>
         </Fragment>
@@ -116,7 +116,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
             )}
           </p>
         ) : (
-          <ListaSeguidos lugares={p.lugares} artistas={p.artistas} conChips={conChips} lugar={gestos ? seguirLugar : undefined} artista={gestos ? seguirArtista : undefined} conSello={!mia && !!gestos} />
+          <ListaSeguidos lugares={p.lugares} artistas={p.artistas} conChips={conChips} lugar={gestos ? seguirLugar : undefined} artista={gestos ? seguirArtista : undefined} />
         )
       ) : p.clave === "va" ? (
         listaEventos(

@@ -18,7 +18,14 @@ type Props = {
   onCambio: (v: QuienItem[]) => void;
   /** Artistas ligados a mi cuenta: salen primero en las sugerencias y se marcan "· tú". */
   mios: ArtistaResumen[];
+  /** La ciudad del evento (el contexto): si un artista sugerido es de otra, se dice al lado del nombre
+   *  ("el contexto ordena, no limita" — la búsqueda no filtra por ciudad, pero sin decirlo dos "Trío Xochitl"
+   *  de ciudades distintas se ven iguales). */
+  ciudadContexto?: string | null;
 };
+
+/** Lo que trae `artistas_con_nombre`: el resumen con su ciudad (la búsqueda no filtra por ciudad, decisión del founder). */
+type Encontrado = ArtistaResumen & { ciudad: string };
 
 const MIN_LETRAS = 2;
 
@@ -27,9 +34,9 @@ const MIN_LETRAS = 2;
  * a partir de dos letras (los míos primero, luego por nombre) y, si no coincide exacto, "Crear a «…»".
  * El artista nuevo no se crea aquí: viaja con el nombre y se crea al publicar (sin huérfanos si se abandona).
  */
-export default function SelectorQuien({ valor, onCambio, mios }: Props) {
+export default function SelectorQuien({ valor, onCambio, mios, ciudadContexto = null }: Props) {
   const [texto, setTexto] = useState("");
-  const [encontrados, setEncontrados] = useState<ArtistaResumen[]>([]);
+  const [encontrados, setEncontrados] = useState<Encontrado[]>([]);
   const [buscando, setBuscando] = useState(false);
   const ultima = useRef("");
 
@@ -43,7 +50,7 @@ export default function SelectorQuien({ valor, onCambio, mios }: Props) {
       setBuscando(true);
       try {
         const { data } = await supabase.rpc("artistas_con_nombre", { p_nombre: q });
-        if (ultima.current === q) setEncontrados((data ?? []) as ArtistaResumen[]);
+        if (ultima.current === q) setEncontrados((data ?? []) as Encontrado[]);
       } finally {
         setBuscando(false);
       }
@@ -128,6 +135,7 @@ export default function SelectorQuien({ valor, onCambio, mios }: Props) {
                 <small>
                   {etiquetaArtista(a)}
                   {esMio(a.id) ? " · tú" : ""}
+                  {"ciudad" in a && ciudadContexto && a.ciudad !== ciudadContexto ? ` · ${a.ciudad}` : ""}
                 </small>
               </button>
             </li>

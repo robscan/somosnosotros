@@ -13,6 +13,7 @@ import AvisosPerfil from "@/app/perfil/AvisosPerfil";
 import ReservaPerfil from "@/app/perfil/ReservaPerfil";
 import { borrarMiCuenta } from "@/app/perfil/acciones";
 import { contarPendientes } from "@/app/admin/consultas";
+import AvisoSalidaAjuste from "./AvisoSalidaAjuste";
 import BotonSalir from "./BotonSalir";
 import InstalarApp from "./InstalarApp";
 import styles from "./ajustes.module.css";
@@ -99,6 +100,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
               </Link>
             </li>
           )}
+          <AvisoSalidaAjuste />
           <li>
             <Link href="/privacidad" className={styles.fila}>
               <IconoEscudo width={20} height={20} />

@@ -1,7 +1,9 @@
 /* ==========================================================================
-   El canon de formulario (docs/rediseno/13 y 15; bitácora 039): lo comparten el alta de lugar, el alta de artista
-   y Editar perfil. 1. Campo con icono · 2. Estado, error y "ya está registrado" · 3. Renglones resueltos
-   (icono | clave / valor | acción; cuerpo debajo al abrir) · 4. Cuerpo: chips, entrada, subir foto · 5. El botón dice qué falta
+   El canon de formulario (docs/rediseno/13, 15 y 26; bitácora 039): lo comparten el alta de lugar, el alta de
+   artista, Editar perfil y el alta de evento. 1. Campo con icono · 2. Estado, error y "ya está registrado" ·
+   3. Renglones resueltos (icono | clave / valor / acción; cuerpo debajo al abrir) · 4. Cuerpo: chips, entrada,
+   subir foto · 5. El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón (founder,
+   2026-09-21, canon ampliado)
    ========================================================================== */
 
 /* 1. El campo de arriba: el icono dentro, sin etiqueta ni frase de ayuda. */
@@ -37,6 +39,12 @@
 /* Sin icono a la izquierda. */
 .sinIcono > input {
   padding-left: 14px;
+}
+/* El campo vacío se marca como faltante, mismo peso que ".pendiente" en los renglones: borde discontinuo, sin
+   rojo de error (ese color se reserva para un error de verdad, tras intentar publicar). Founder, 2026-09-21:
+   con un cartel sin título el campo del nombre no se veía faltante (OL-113). */
+.campoFalta > input {
+  border-style: dashed;
 }
 
 /* 1 bis. El cartel, antes del formulario (firmado por el founder, 2026-09-17). Es lo único que explica la
@@ -361,6 +369,15 @@
 .cuerpoNota[role="alert"] {
   color: var(--error);
 }
+/* La ayuda bajo un campo suelto (no un renglón de canon.resuelto): mismo aspecto que .cuerpoNota, sin
+   grid-area — esa clase solo se reutiliza dentro de la rejilla para la que fue escrita (regla del gestor,
+   2026-09-21, tras el bug de "Es en otro sitio"). */
+.notaCampo {
+  padding-top: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -401,12 +418,6 @@ textarea.entrada {
   opacity: 0;
 }
 
-/* 5. El botón dice qué falta. */
-.faltaBoton {
-  margin-left: var(--espacio-2);
-  font-size: var(--letra-xs);
-  font-weight: 500;
-}
 @media (prefers-reduced-motion: reduce) {
   .palanca,
   .palanca::after {

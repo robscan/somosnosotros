@@ -122,7 +122,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const posiciones = Object.fromEntries(grupos.map((g) => [g.letra, g.desde]));
 
   const base = () => {
-    let c = supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto", { count: "exact" }).eq("visible", true).eq("ciudad", ciudad);
+    let c = supabase.from("artistas").select("id, slug, nombre, disciplina, detalle, tipo, foto", { count: "exact" }).eq("visible", true).eq("ciudad", ciudad);
     if (f.hace) c = c.eq("disciplina", f.hace);
     if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
     if (q) c = c.or(`nombre_orden.ilike.%${q}%,detalle.ilike.%${q}%`);
@@ -131,7 +131,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const [a, t] = await Promise.all([
     base().order("nombre_orden").range(0, f.n - 1),
     // Los destacados pueden no estar en la primera página: se leen aparte, con su próxima fecha.
-    tira.length ? supabase.from("artistas").select("id, nombre, disciplina, detalle, tipo, foto").eq("visible", true).in("id", tira.map((d) => d.id)) : Promise.resolve({ data: [] as ArtistaResumen[] }),
+    tira.length ? supabase.from("artistas").select("id, slug, nombre, disciplina, detalle, tipo, foto").eq("visible", true).in("id", tira.map((d) => d.id)) : Promise.resolve({ data: [] as ArtistaResumen[] }),
   ]);
   const artistas = conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas);
   const destacados = enOrden(tira, conProximaFecha((t.data ?? []) as ArtistaResumen[], fechas));

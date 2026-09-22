@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decidirEstadoPush, decidirInstalar, enEste, leerPlataforma, pasosInstalar, tituloInstalada } from "./plataforma";
+import { decidirEstadoPush, decidirInstalar, dondeSeActivan, enEste, esteAparato, esteAparatoInicial, leerPlataforma, pasosInstalar, tituloInstalada } from "./plataforma";
 
 const IPHONE_SAFARI_26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
 const IPHONE_SAFARI_18 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
@@ -9,6 +9,8 @@ const IPHONE_INSTAGRAM = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X)
 const IPAD_COMO_MAC = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15";
 const ANDROID_CHROME = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36";
 const MAC_CHROME = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36";
+const MAC_SAFARI = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15";
+const MAC_EDGE = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0";
 
 const sinSoporte = { llave: true, soporte: false, permiso: null, suscrito: false } as const;
 const conSoporte = { llave: true, soporte: true, permiso: "default", suscrito: false } as const;
@@ -30,6 +32,12 @@ describe("leerPlataforma", () => {
   });
   it("Android no es computadora", () => {
     expect(leerPlataforma(ANDROID_CHROME, 5, false)).toMatchObject({ ios: false, computadora: false });
+  });
+  it("Chrome de escritorio se distingue de Safari, Edge y del Chrome del iPhone", () => {
+    expect(leerPlataforma(MAC_CHROME, 0, false)).toMatchObject({ computadora: true, chrome: true });
+    expect(leerPlataforma(MAC_SAFARI, 0, false)).toMatchObject({ computadora: true, chrome: false });
+    expect(leerPlataforma(MAC_EDGE, 0, false)).toMatchObject({ computadora: true, chrome: false });
+    expect(leerPlataforma(IPHONE_CHROME, 5, false)).toMatchObject({ computadora: false, chrome: false });
   });
 });
 
@@ -83,11 +91,26 @@ describe("pasosInstalar", () => {
   });
 });
 
-describe("enEste", () => {
-  it("dice computadora o teléfono", () => {
+describe("enEste y esteAparato", () => {
+  it("dice computadora o teléfono, en minúscula y a mitad de frase", () => {
     expect(enEste(leerPlataforma(MAC_CHROME, 0, false))).toBe("en esta computadora");
     expect(enEste(leerPlataforma(IPHONE_SAFARI_18, 5, false))).toBe("en este teléfono");
     expect(enEste(null)).toBe("en este teléfono");
+    expect(esteAparato(leerPlataforma(MAC_CHROME, 0, false))).toBe("esta computadora");
+  });
+  it("esteAparatoInicial empieza la frase con mayúscula, para los avisos de ubicación", () => {
+    expect(esteAparatoInicial(leerPlataforma(MAC_CHROME, 0, false))).toBe("Esta computadora");
+    expect(esteAparatoInicial(leerPlataforma(IPHONE_SAFARI_18, 5, false))).toBe("Este teléfono");
+    expect(esteAparatoInicial(null)).toBe("Este teléfono");
+  });
+});
+
+describe("dondeSeActivan", () => {
+  it("en el iPhone manda a Ajustes; en Chrome de escritorio, a Permisos del sitio; en otro navegador, algo genérico", () => {
+    expect(dondeSeActivan(leerPlataforma(IPHONE_SAFARI_18, 5, false))).toBe("en Ajustes del iPhone › Notificaciones › Somos Nosotros");
+    expect(dondeSeActivan(leerPlataforma(MAC_CHROME, 0, false))).toBe("en Chrome: el candado junto a la dirección › Permisos del sitio › Notificaciones");
+    expect(dondeSeActivan(leerPlataforma(MAC_SAFARI, 0, false))).toBe("en la configuración del sitio de tu navegador");
+    expect(dondeSeActivan(null)).toBe("en la configuración del sitio de tu navegador");
   });
 });
 

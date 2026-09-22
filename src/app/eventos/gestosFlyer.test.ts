@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { camposIniciales, crearGestosFlyer } from "./gestosFlyer";
+import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel } from "./gestosFlyer";
 import { cambiarReserva, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import type { OtroSitio } from "./HojaDondeEs";
 import type { LugarResumen } from "@/lib/lugares";
@@ -45,6 +45,24 @@ describe("camposIniciales frente al relleno de la decisión 12 (bug del founder,
   it("los demás campos siguen leyendo lo que ya trae el evento (editar/duplicar)", () => {
     const iniciales = camposIniciales({ titulo: "Ya tiene nombre", inicio: "2026-01-01T19:00", precioDefinido: true, descripcion: "algo", enlace: "algo", donde: true, imagen: "url" });
     expect(iniciales.sort()).toEqual(["cuando", "cuanto", "descripcion", "donde", "enlace", "imagen", "titulo"]);
+  });
+});
+
+describe("quienTrasLeerCartel: 'Quién' refleja solo el cartel (founder, 2026-09-21: «me puso a mí y no se dice explícitamente en el cartel»)", () => {
+  const yo = [{ id: "yo", nombre: "Quien publica" }];
+  const delCartel = [{ id: "a1", nombre: "Artista del cartel" }];
+  it("cartel con artistas reconocidos → los del cartel, aunque 'Quién' tuviera el prellenado automático", () => {
+    expect(quienTrasLeerCartel(delCartel, yo, true)).toEqual(delCartel);
+  });
+  it("cartel sin artistas + prellenado automático → 'Quién' queda vacío, no se queda con quien publica", () => {
+    expect(quienTrasLeerCartel([], yo, true)).toEqual([]);
+  });
+  it("cartel sin artistas pero 'Quién' ya tocado a mano → se respeta lo que la persona puso", () => {
+    // puedeCompletarQuien en false es justo lo que devuelve gestos.puedeCompletar("quien") tras un gestos.tocar("quien").
+    expect(quienTrasLeerCartel([], yo, false)).toEqual(yo);
+  });
+  it("quienInicial explícito (editar, duplicar, ficha de artista) → se respeta aunque el cartel traiga artistas distintos", () => {
+    expect(quienTrasLeerCartel(delCartel, yo, false)).toEqual(yo);
   });
 });
 

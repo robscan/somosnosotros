@@ -12,7 +12,7 @@
   --primario-texto: #ffffff;
   --primario-suave: #e3f0f2; /* fondo del estado seleccionado ("✓ Voy") */
   --error: #b3261e; /* rojo solo para errores y borrar */
-  --ok: #1f6f43; /* verde: "Voy" confirmado */
+  --ok: #1f6f43; /* verde: algo ya decidido (Vas, Sigues) — distinto de --primario a propósito, para no invitar a tocarlo otra vez (OL-106) */
   --destacado: #d35400; /* naranja cempasúchil: los destacados en el mapa (founder, 2026-09-16); 3.8:1 con el fondo del mapa */
   --destacado-texto: #a94400; /* el mismo naranja para letra: 5.5:1 sobre el fondo de contenido */
   --destacado-suave: #fbebdd; /* fondo de la etiqueta "Destacado" en el panel */

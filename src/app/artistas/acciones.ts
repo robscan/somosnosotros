@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
-import { artistaIgual, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
+import { artistaIgual, hrefArtista, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
 import { esUuid } from "@/lib/formulario";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
@@ -19,9 +19,11 @@ function leer(formData: FormData) {
   return Object.fromEntries(claves.map((k) => [k, formData.get(k)]));
 }
 
-function revalidar(id: string) {
+/** Se revalida por id (la dirección vieja, que sigue resolviendo) y por slug (la de hoy): las dos pueden estar cacheadas. */
+function revalidar(id: string, slug?: string | null) {
   revalidatePath("/artistas");
   revalidatePath(`/artistas/${id}`);
+  if (slug) revalidatePath(`/artistas/${slug}`);
 }
 
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
@@ -41,7 +43,7 @@ export async function crearArtista(_previo: ResultadoArtista | null, formData: F
   const { data, error } = await supabase
     .from("artistas")
     .insert({ ...datos, creado_por: user.id })
-    .select("id")
+    .select("id, slug")
     .single();
   if (error?.code === "23505") return { ok: false, errores: {}, existente: await existenteIgual(supabase, datos.nombre, datos.ciudad), general: "Ya hay un artista con ese nombre." };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. Intenta de nuevo." };
@@ -50,7 +52,7 @@ export async function crearArtista(_previo: ResultadoArtista | null, formData: F
   if (formData.get("soy") === "1") await supabase.from("artistas_cuentas").insert({ artista_id: data.id, perfil_id: user.id });
 
   revalidatePath("/artistas");
-  redirect(`/artistas/${data.id}?nuevo=1`, RedirectType.replace);
+  redirect(`${hrefArtista(data)}?nuevo=1`, RedirectType.replace);
 }
 
 export async function actualizarArtista(id: string, _previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
@@ -61,13 +63,13 @@ export async function actualizarArtista(id: string, _previo: ResultadoArtista | 
   // La ciudad también se edita: es un renglón del formulario (pedido del founder, 2026-09-16, noche).
   const { nombre, disciplina, detalle, tipo, descripcion, foto, redes, ciudad } = datos;
   const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, redes, ciudad };
-  const { data, error } = await supabase.from("artistas").update(cambios).eq("id", id).select("id").maybeSingle();
+  const { data, error } = await supabase.from("artistas").update(cambios).eq("id", id).select("id, slug").maybeSingle();
   if (error?.code === "23505") return { ok: false, errores: { nombre: `Ya hay otro artista con ese nombre en ${ciudad}.` } };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu ficha?" };
 
-  revalidar(id);
+  revalidar(id, data.slug);
   revalidatePath("/");
-  return { ok: true, id, volver: `/artistas/${id}` };
+  return { ok: true, id, volver: hrefArtista(data) };
 }
 
 /** Ocultar o volver a mostrar: solo la administración (la base lo exige con el trigger proteger_autor_y_visible). */
@@ -101,16 +103,35 @@ export async function borrarArtista(id: string) {
   redirect("/borrado?que=artista");
 }
 
-export type ResultadoReclamo = { ok: true } | { ok: false; error: string };
+/** `aprobado`: se ligó la cuenta al instante (correo coincidente, L53); sin él, el administrador lo revisa. */
+export type ResultadoReclamo = { ok: true; aprobado: boolean } | { ok: false; error: string };
+
+/**
+ * Gancho para OL-115 (avisos al administrador): hoy no manda nada. Se llama solo cuando el reclamo se aprobó
+ * solo (sin pasar por el panel del administrador), que es el único caso en que hace falta avisarle algo nuevo.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- la firma es el contrato que OL-115 conecta; hoy no hace nada.
+async function avisarAdminReclamoAutomatico(_artistaId: string, _perfilId: string): Promise<void> {}
 
 /**
  * "Soy yo / es mi grupo" (decisión 11): la persona pide la ficha para llevarla ella o pide que se quite.
- * Queda como reporte con su cuenta; el administrador lo atiende desde su panel.
+ * Si pide llevarla y el correo de su cuenta es uno que el CAPO capturó para esa ficha, se aprueba sola (L53):
+ * la cuenta queda ligada al instante, sin reporte ni espera del administrador (al que solo se avisa). Si no
+ * coincide, o pide que se quite, sigue el camino de hoy: un reporte que el administrador atiende.
  * Si ya hay un reclamo pendiente igual, devuelve el que existe sin duplicar.
  */
 export async function reclamarArtista(artistaId: string, motivo: MotivoReclamo): Promise<ResultadoReclamo> {
   const { supabase, user } = await sesionOEntrar(`/artistas/${artistaId}?accion=mio`);
   if (!esUuid(artistaId) || !["es_mio", "retirar"].includes(motivo)) return { ok: false, error: "No sé qué ficha es." };
+
+  if (motivo === "es_mio") {
+    const { data: aprobado, error: errorRpc } = await supabase.rpc("reclamar_si_correo_coincide", { p_artista: artistaId });
+    if (!errorRpc && aprobado) {
+      await avisarAdminReclamoAutomatico(artistaId, user.id);
+      revalidatePath(`/artistas/${artistaId}`);
+      return { ok: true, aprobado: true };
+    }
+  }
 
   // Verificar si ya existe un reclamo pendiente igual (mismo usuario, artista y motivo).
   const { data: existente } = await supabase
@@ -125,9 +146,9 @@ export async function reclamarArtista(artistaId: string, motivo: MotivoReclamo):
     .maybeSingle();
 
   // Si ya existe un reclamo pendiente igual, devolver ok sin duplicar.
-  if (existente) return { ok: true };
+  if (existente) return { ok: true, aprobado: false };
 
   const { error } = await supabase.from("reportes").insert({ tipo: "artista", objeto_id: artistaId, motivo, creado_por: user.id });
   if (error) return { ok: false, error: "No se pudo enviar. Intenta de nuevo." };
-  return { ok: true };
+  return { ok: true, aprobado: false };
 }

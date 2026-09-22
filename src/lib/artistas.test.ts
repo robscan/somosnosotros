@@ -63,7 +63,7 @@ describe("subcategoriaParecida", () => {
 });
 
 describe("ordenarArtistas y filtrarArtistas", () => {
-  const base = { disciplina: "musica" as const, detalle: null, tipo: "grupo" as const, foto: null };
+  const base = { disciplina: "musica" as const, detalle: null, tipo: "grupo" as const, foto: null, slug: "x" };
   const lista = [
     { ...base, id: "1", nombre: "Zeta", proxima: null },
     { ...base, id: "2", nombre: "Beta", proxima: { id: "e2", inicio: "2026-09-20T01:00:00Z", sitio: "Foro", zona: "America/Mexico_City" } },
@@ -135,7 +135,7 @@ describe("conProximaFecha y textoProximaFecha", () => {
     { artista_id: "orquesta", evento: { id: "e-sinfonica", titulo: "Sinfónica en San Sebastián", inicio: "2026-09-18T02:00:00Z", sitio: "Parroquia de San Sebastián", zona: SLP } },
     { artista_id: "mariachi", evento: { id: "e-demostracion", titulo: "Demostración folclórica", inicio: "2026-09-18T01:00:00Z", sitio: "Teatro de la Paz", zona: SLP } },
   ];
-  const base = { disciplina: "musica" as const, detalle: null, tipo: "grupo" as const, foto: null };
+  const base = { disciplina: "musica" as const, detalle: null, tipo: "grupo" as const, foto: null, slug: "x" };
   const artistas = [
     { ...base, id: "coro", nombre: "Coro Vuela Alto" },
     { ...base, id: "orquesta", nombre: "Orquesta de Cámara" },

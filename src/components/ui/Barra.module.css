@@ -6,10 +6,16 @@
   background: var(--fondo);
 }
 
-/* Raíz: logotipo a la izquierda y sesión a la derecha, con su gutter; la cabecera pegajosa (chips, filtros) va debajo. */
+/* Raíz: logotipo a la izquierda y sesión a la derecha, con su gutter; la cabecera pegajosa (chips, filtros) va debajo.
+   Hijos directos sin envoltorio (Sesion es un fragmento: campana, Administración solo si aplica, foto). Una sola
+   columna explícita (el logotipo, que crece y empuja al resto) y el resto fluye en columnas implícitas del mismo
+   ancho automático, en la misma fila: no depende de contar cuántos hijos trae Sesion (OL-115, corrección del
+   gestor: con tres o más controles a la derecha, "1fr auto auto" mandaba el sobrante a un renglón nuevo). */
 .raiz {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr;
+  grid-auto-flow: column;
+  grid-auto-columns: auto;
   gap: var(--espacio-2);
   padding: 0 var(--gutter);
 }

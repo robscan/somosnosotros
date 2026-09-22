@@ -20,6 +20,60 @@
   font-size: var(--letra-sm);
 }
 
+/* "Buscando…" o el error, dentro de la lista flotante (ui/ListaFlotante): no son una opción, solo texto. */
+.avisoFlotante {
+  padding: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.avisoFlotante[role="alert"] {
+  color: var(--error);
+}
+
+/* La salida "No es ninguna: pon el pin en el mapa" se queda pegada al fondo de la lista flotante (revisión del
+   gestor): ninguna búsqueda de Mapbox es infalible, y esta salida tiene que verse siempre, sin desplazar la lista
+   para encontrarla. */
+.salidaManual {
+  position: sticky;
+  bottom: 0;
+  background: var(--fondo);
+}
+.salidaManual > button {
+  color: var(--texto);
+}
+
+/* Botón con un toque para acercar la búsqueda a la posición de la persona (OL-100, founder 2026-09-21: la
+   ubicación se pide con un toque, en el momento en que ayuda; nunca automático al abrir la hoja). */
+.usarUbicacion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  width: 100%;
+  min-height: var(--toque-min);
+  margin-bottom: var(--espacio-3);
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 1px dashed var(--primario);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.usarUbicacion > svg {
+  flex-shrink: 0;
+}
+/* El texto es el único hijo que puede necesitar dos líneas: sin min-width:0 un flex item no se encoge por debajo
+   de su contenido y puede salirse del botón (aviso del founder sobre formularios que se salen de la tarjeta). */
+.usarUbicacion > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.usarUbicacion:disabled {
+  opacity: 0.6;
+}
+
 .atajo > svg {
   grid-area: foto;
   color: var(--texto-suave);
@@ -28,6 +82,7 @@
 /* 4. Otro sitio: el mapa con su botón de ubicación, el interruptor de reservado y sus campos */
 .otro {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--espacio-3);
   margin-bottom: var(--espacio-4);
 }

@@ -5,6 +5,7 @@ import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UI
 import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre } from "@/lib/deslizar";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
+import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { IconoPersonas } from "./ui/Iconos";
 import styles from "./Destacados.module.css";
 
@@ -14,8 +15,13 @@ import styles from "./Destacados.module.css";
  * Solo «Destacados» (lo que elige la administración) va al doble y rectangular (`grande`, founder, 2026-09-18);
  * «Con eventos esta semana» conserva su tamaño de siempre (corrección del founder, 2026-09-19), y en Artistas sigue
  * en redondo, como su avatar. Al volver de una ficha queda donde estaba (decisión 12).
+ *
+ * `boton` (OL-106, bitácora 141): con él, cada tarjeta lleva el mismo botón de los renglones, flotando sobre la
+ * esquina superior derecha de la foto (hermano del `<Link>`, nunca anidado dentro). Reutiliza el hook que la pantalla
+ * ya tiene para sus renglones (`useAsistenciaEnLista`/`useSeguirEnLista`): `Tarjeta` ya trae `id`/`titulo` de la
+ * propia entidad, así que no hace falta ninguna consulta nueva.
  */
-export default function Destacados({ tarjetas, grande = false, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false }: { tarjetas: Tarjeta[]; grande?: boolean; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean }) {
+export default function Destacados({ tarjetas, grande = false, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false, boton }: { tarjetas: Tarjeta[]; grande?: boolean; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean; boton?: (t: Tarjeta) => EstadoBotonRenglon }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -32,7 +38,13 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
     // coordenadas: no hubo arrastre que cancelar, y comparar contra la última bajada (de otro toque) lo cerraría
     // sin querer (gestión de cambios, revisión de 6153f9a). La bajada se limpia siempre, para no arrastrarla al
     // siguiente click que no traiga la suya.
-    if (inicio && e.detail !== 0 && huboArrastre(e.clientX - inicio.x, e.clientY - inicio.y)) e.preventDefault();
+    if (inicio && e.detail !== 0 && huboArrastre(e.clientX - inicio.x, e.clientY - inicio.y)) {
+      e.preventDefault();
+      // OL-106: el botón de la tarjeta es hermano del <Link>, no su hijo — preventDefault() solo cancela la
+      // navegación del enlace, no llega a detener el propio onClick del botón. stopPropagation() en la fase de
+      // captura (antes de llegar al objetivo) sí lo hace: recorrer el carril empezando sobre el botón no lo dispara.
+      e.stopPropagation();
+    }
     bajada.current = null;
   }
   // Al aparecer, el carril vuelve a donde estaba; al irse, guarda lo que esperaba, y quien desliza y toca una tarjeta antes
@@ -82,6 +94,7 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
                 </span>
               )}
             </Link>
+            {boton && <BotonRenglon {...boton(t)} />}
           </li>
         ))}
       </ul>
