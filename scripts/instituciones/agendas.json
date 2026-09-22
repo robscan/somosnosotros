@@ -1,0 +1,291 @@
+[
+  {
+    "lugarId": "0091889c-9a5d-4ce0-9058-c6c372d0c13c",
+    "slug": "museo-laberinto-de-las-ciencias-y-las-artes",
+    "nombre": "Museo Laberinto de las Ciencias y las Artes",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "a2176e0d-2ac1-42e2-b3a6-40e1fe9b2b4d",
+    "slug": "museo-nacional-de-la-mascara",
+    "nombre": "Museo Nacional de la Máscara",
+    "variante": "institucion",
+    "comprobacion": 1
+  },
+  {
+    "lugarId": "7b54354d-f35c-4cf8-93be-71957e15f7e6",
+    "slug": "museo-regional-potosino",
+    "nombre": "Museo Regional Potosino (INAH)",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "e8fc820b-fab6-49f0-a028-c487c5c8698a",
+    "slug": "museo-federico-silva-escultura-contemporanea",
+    "nombre": "Museo Federico Silva Escultura Contemporánea",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "bc443f31-a12f-49fb-b1b2-98a45879ef14",
+    "slug": "museo-leonora-carrington",
+    "nombre": "Museo Leonora Carrington",
+    "variante": "institucion",
+    "comprobacion": 3
+  },
+  {
+    "lugarId": "98fee205-29c1-4fa5-b292-599da200d759",
+    "slug": "museo-francisco-cossio",
+    "nombre": "Museo Francisco Cossío",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "20910a54-5622-41b8-b7d5-4fbc5bb34103",
+    "slug": "museo-del-virreinato",
+    "nombre": "Museo del Virreinato",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "58f54ac7-365a-4151-9373-41ec33833296",
+    "slug": "casa-museo-manuel-jose-othon",
+    "nombre": "Casa Museo Manuel José Othón",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "c82e2714-8cc5-417d-ae16-bcd12d7f5998",
+    "slug": "museo-de-arte-contemporaneo-mac",
+    "nombre": "Museo de Arte Contemporáneo (MAC)",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "372bc316-1257-4a51-8fbd-0b6bf800f70e",
+    "slug": "museo-del-ferrocarril-jesus-garcia-corona",
+    "nombre": "Museo del Ferrocarril Jesús García Corona",
+    "variante": "institucion",
+    "grupoCorreo": "secult-buzon-compartido"
+  },
+  {
+    "lugarId": "e0d5fdb7-5aee-45f4-8a63-eccc875f62b2",
+    "slug": "casa-museo-mariano-jimenez",
+    "nombre": "Casa Museo Mariano Jiménez",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "abe396c0-c377-4d7c-bfe1-99f84a8cba71",
+    "slug": "centro-cultural-universitario-caja-real",
+    "nombre": "Centro Cultural Universitario Caja Real",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "abe11da5-5395-4cfd-80e8-a780cdd9e430",
+    "slug": "muni-museo-universitario-uaslp",
+    "nombre": "MUNI Museo Universitario UASLP",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "bf606617-6ba4-4eba-92f9-36c53587a53b",
+    "slug": "museo-de-sitio-uaslp",
+    "nombre": "Museo de Sitio UASLP",
+    "variante": "organismo",
+    "organismo": "Difusión Cultural UASLP"
+  },
+  {
+    "lugarId": "4aff4bf1-46d8-415c-bb27-6677d1d51f6e",
+    "slug": "casa-dona-maria-pons",
+    "nombre": "Casa Doña María Pons",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "4c7f8afb-c87c-4893-99f0-6728ba352935",
+    "slug": "instituto-potosino-de-bellas-artes-ipba",
+    "nombre": "Instituto Potosino de Bellas Artes (IPBA)",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "ff040533-1698-4956-8072-bb01149bde7e",
+    "slug": "escuela-estatal-de-danza",
+    "nombre": "Escuela Estatal de Danza",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "91b36835-1bdd-476d-a395-119d42a84535",
+    "slug": "escuela-estatal-de-musica",
+    "nombre": "Escuela Estatal de Música",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "1e8c1bd6-5c04-42fd-8d0e-041e7c6185f1",
+    "slug": "escuela-estatal-de-teatro",
+    "nombre": "Escuela Estatal de Teatro",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "c9363e17-12e0-4438-83f8-23d9d72ab35c",
+    "slug": "escuela-estatal-de-artes-plasticas",
+    "nombre": "Escuela Estatal de Artes Plásticas",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "103f203d-a2d7-4d21-ac7d-183b5d3b5690",
+    "slug": "escuela-estatal-de-iniciacion-musical-julian-carrillo",
+    "nombre": "Escuela Estatal de Iniciación Musical Julián Carrillo",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "7681a7c9-61e9-46d0-aa94-45211f0d36fb",
+    "slug": "departamento-de-arte-y-cultura-de-la-uaslp",
+    "nombre": "Departamento de Arte y Cultura UASLP",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "1826c551-cf0f-43de-99c7-a49fb3d96be9",
+    "slug": "teatro-de-la-paz",
+    "nombre": "Teatro de la Paz",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "678b8bd3-2916-492b-a186-7472720741aa",
+    "slug": "centro-de-las-artes-de-san-luis-potosi-centenario-ceart",
+    "nombre": "Centro de las Artes (CEART)",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "f51d8d27-4066-4c60-a0af-a39188a3680e",
+    "slug": "cineteca-alameda",
+    "nombre": "Cineteca Alameda",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "5435a90b-ea9a-4082-aada-4dbd4f175545",
+    "slug": "casa-de-cultura-del-barrio-de-tlaxcala",
+    "nombre": "Casa de Cultura del Barrio de Tlaxcala",
+    "variante": "organismo",
+    "organismo": "Secretaría de Cultura del Estado"
+  },
+  {
+    "lugarId": "a986974b-02b7-45ce-bbbe-023295e5dce8",
+    "slug": "casa-de-cultura-del-barrio-de-san-sebastian",
+    "nombre": "Casa de Cultura del Barrio de San Sebastián",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "9ec7044c-a5a4-44fe-ab42-d5c2fd05b7bc",
+    "slug": "casa-de-cultura-del-barrio-de-san-miguelito",
+    "nombre": "Casa de Cultura del Barrio de San Miguelito",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "9baaed54-9818-4919-8964-ab40afc22c54",
+    "slug": "centro-cultural-julian-carrillo",
+    "nombre": "Centro Cultural Julián Carrillo",
+    "variante": "institucion",
+    "grupoCorreo": "secult-buzon-compartido"
+  },
+  {
+    "lugarId": "054f8973-688e-455c-a9ae-b46c8c934393",
+    "slug": "centro-de-difusion-cultural-raul-gamboa",
+    "nombre": "Centro de Difusión Cultural Raúl Gamboa",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "6daeb4a6-b536-4528-8d29-b72b60590c92",
+    "slug": "teatro-carlos-amador",
+    "nombre": "Teatro Carlos Amador",
+    "variante": "organismo",
+    "organismo": "DIF Estatal",
+    "sinCorreo": true
+  },
+  {
+    "lugarId": "e83c27aa-53f2-4a4c-8b55-c7d313656df9",
+    "slug": "centro-cultural-universitario-bicentenario-cc200",
+    "nombre": "Centro Cultural Universitario Bicentenario (CC200)",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "4e7746b2-5f95-4772-9d23-1891e14548ea",
+    "slug": "auditorio-rafael-nieto",
+    "nombre": "Auditorio Rafael Nieto",
+    "variante": "organismo",
+    "organismo": "Difusión Cultural UASLP"
+  },
+  {
+    "lugarId": "dbcfef1f-2f82-4aed-8196-77651a0ceb73",
+    "slug": "centro-cultural-palacio-municipal",
+    "nombre": "Centro Cultural Palacio Municipal",
+    "variante": "organismo",
+    "organismo": "Dirección de Cultura Municipal (Ayuntamiento de San Luis Potosí)",
+    "sinCorreo": true
+  },
+  {
+    "lugarId": "b86ff58d-cda0-40d9-9a48-1007f71ae627",
+    "slug": "teatro-del-imss-san-luis-potosi",
+    "nombre": "Teatro del IMSS San Luis Potosí",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "423fa22f-fcff-4f82-b781-06ad5adcea73",
+    "slug": "teatro-el-rinoceronte-enamorado",
+    "nombre": "Teatro El Rinoceronte Enamorado",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "30c8a676-9aea-4525-9611-85b999cf39c3",
+    "slug": "casa-del-poeta-ramon-lopez-velarde",
+    "nombre": "Casa del Poeta Ramón López Velarde",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "3c0a0c50-a9c8-40c0-9a34-dbeb713bb010",
+    "slug": "teatro-y-centro-cultural-doroteo-arango",
+    "nombre": "Teatro y Centro Cultural Doroteo Arango",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "f331b7af-55cf-499f-851b-85603150bcd7",
+    "slug": "casa-de-la-cultura-de-soledad",
+    "nombre": "Casa de la Cultura de Soledad",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "35342693-dd31-4fb9-a3a5-e65924496512",
+    "slug": "centro-cultural-aleman-de-san-luis-potosi",
+    "nombre": "Centro Cultural Alemán de San Luis Potosí",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "3bf779e9-70e6-4ecb-8946-7e1feb639eac",
+    "slug": "biblioteca-central-del-estado",
+    "nombre": "Biblioteca Central del Estado",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "afbb2979-334f-4781-8833-96c1baf15c2a",
+    "slug": "biblioteca-publica-prof-jose-nereo-rodriguez-barragan",
+    "nombre": "Biblioteca Pública Prof. José Nereo Rodríguez Barragán",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "67a1c6ee-d93c-4694-8aee-c752f4340990",
+    "slug": "biblioteca-publica-universitaria",
+    "nombre": "Biblioteca Pública Universitaria",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "b2bffe30-2664-4db9-aea8-0b50927a396b",
+    "slug": "archivo-historico-del-estado-de-san-luis-potosi",
+    "nombre": "Archivo Histórico del Estado de San Luis Potosí",
+    "variante": "institucion"
+  },
+  {
+    "lugarId": "8d61183a-05b8-4006-9cfd-1632a979a5d0",
+    "slug": "galeria-jose-jayme",
+    "nombre": "Galería José Jayme",
+    "variante": "institucion",
+    "grupoCorreo": "secult-buzon-compartido"
+  },
+  {
+    "lugarId": "b4ca27ba-38cd-4f63-b41e-6ef99e062d7b",
+    "slug": "ache-galeria",
+    "nombre": "ACHE Galería",
+    "variante": "institucion",
+    "comprobacion": 2
+  }
+]
