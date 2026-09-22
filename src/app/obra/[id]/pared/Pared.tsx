@@ -21,9 +21,10 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
   ctx.fillStyle = mensaje.color;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  const grosor = mensaje.grosor; // arrastre en el mando (founder, 2026-09-21): 1 es el trazo de siempre
   if (mensaje.trazo === "aire") {
     ctx.globalAlpha = 0.45;
-    ctx.lineWidth = 9;
+    ctx.lineWidth = 9 * grosor;
     ctx.beginPath();
     ctx.moveTo(desde.x, desde.y);
     ctx.lineTo(hasta.x, hasta.y);
@@ -38,7 +39,7 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
       const x = desde.x + (hasta.x - desde.x) * t + (Math.random() - 0.5) * 14;
       const y = desde.y + (hasta.y - desde.y) * t + (Math.random() - 0.5) * 14;
       ctx.beginPath();
-      ctx.arc(x, y, 1.6, 0, Math.PI * 2);
+      ctx.arc(x, y, 1.6 * grosor, 0, Math.PI * 2);
       ctx.fill();
     }
     return;
@@ -46,13 +47,13 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
   if (mensaje.trazo === "organico") {
     ctx.globalAlpha = 0.6;
     ctx.beginPath();
-    ctx.ellipse(hasta.x, hasta.y, 9, 5, Math.random() * Math.PI, 0, Math.PI * 2);
+    ctx.ellipse(hasta.x, hasta.y, 9 * grosor, 5 * grosor, Math.random() * Math.PI, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
     return;
   }
   // "trazo": una línea limpia, el pincel por defecto.
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 3 * grosor;
   ctx.beginPath();
   ctx.moveTo(desde.x, desde.y);
   ctx.lineTo(hasta.x, hasta.y);

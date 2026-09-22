@@ -3,10 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import {
+  ARRASTRE_GROSOR_MAX_PX,
   deltaDesdeOrientacion,
   entradasDesdePresencia,
+  escalaDelPunto,
+  estaAjustandoGrosor,
   estadoDeFila,
   EVENTO_TRAZO,
+  GROSOR_BASE,
+  grosorDesdeArrastre,
   MENSAJES_POR_SEGUNDO,
   TINTAS,
   TRAZOS,
@@ -67,18 +72,29 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   const [abierto, setAbierto] = useState<Selector | null>(null); // nunca los dos menús abiertos (prototipo firmado)
   const tarjetaTrazoRef = useRef<HTMLButtonElement | null>(null);
   const tarjetaTintaRef = useRef<HTMLButtonElement | null>(null);
+  // Grosor por arrastre (founder, 2026-09-21; reglas del gestor): el punto sigue al dedo en vertical solo con
+  // `transform`, el grosor se queda hasta que se cambie, y mientras se ajusta no se manda trazo.
+  const [desplazamiento, setDesplazamiento] = useState(0); // px del punto mientras se arrastra (positivo = arriba)
+  const [grosor, setGrosor] = useState(GROSOR_BASE);
 
   const canalRef = useRef<ReturnType<typeof abrirCanalObra> | null>(null);
   const bufferRef = useRef<Delta[]>([]);
   const ultimaLecturaRef = useRef<Orientacion | null>(null);
   const trazoRef = useRef(trazo);
   const colorRef = useRef(color);
+  const grosorRef = useRef(grosor);
+  const arrastreInicioYRef = useRef<number | null>(null);
+  const grosorAlEmpezarRef = useRef(GROSOR_BASE); // desde dónde se ajusta en ESTA pulsación
+  const ajustandoRef = useRef(false); // más allá del umbral: se ajusta grosor, no se pinta
   useEffect(() => {
     trazoRef.current = trazo;
   }, [trazo]);
   useEffect(() => {
     colorRef.current = color;
   }, [color]);
+  useEffect(() => {
+    grosorRef.current = grosor;
+  }, [grosor]);
 
   const estado = useMemo(() => estadoDeFila(entradas, cupo, perfilId), [entradas, cupo, perfilId]);
 
@@ -134,8 +150,11 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
 
     const intervalo = setInterval(() => {
       const deltas = bufferRef.current.splice(0, 20); // DELTAS_MAX_POR_MENSAJE
+      // Mientras se ajusta el grosor no se manda trazo (gestor, 2026-09-21): el arrastre del dedo no es pintar.
+      // Los deltas de ese rato se tiran, no se guardan: al volver a pintar no debe salir un salto acumulado.
+      if (ajustandoRef.current) return;
       if (deltas.length === 0 || !canalRef.current) return;
-      const mensaje: MensajeTrazo = { trazo: trazoRef.current, color: colorRef.current, deltas, remitente: perfilId };
+      const mensaje: MensajeTrazo = { trazo: trazoRef.current, color: colorRef.current, deltas, remitente: perfilId, grosor: grosorRef.current };
       canalRef.current.send({ type: "broadcast", event: EVENTO_TRAZO, payload: mensaje });
     }, Math.round(1000 / MENSAJES_POR_SEGUNDO));
 
@@ -147,7 +166,35 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
     };
   }, [presionado, perfilId, estado.tipo]);
 
-  async function empezarAPintar() {
+  // Grosor por arrastre: con el punto presionado, mover el dedo hacia arriba engruesa, hacia abajo adelgaza — el
+  // gesto ya usado para pintar (mantener presionado), no uno nuevo. `arrastreInicioYRef` se marca en el propio
+  // evento de presionar (llega antes que este efecto). Relativo al grosor con que se empezó: así "se queda".
+  useEffect(() => {
+    if (!presionado) return;
+    function alArrastrar(e: PointerEvent) {
+      if (arrastreInicioYRef.current === null) return;
+      const deltaY = arrastreInicioYRef.current - e.clientY; // positivo = dedo subió
+      const acotado = Math.max(-ARRASTRE_GROSOR_MAX_PX, Math.min(ARRASTRE_GROSOR_MAX_PX, deltaY));
+      setDesplazamiento(acotado);
+      ajustandoRef.current = estaAjustandoGrosor(acotado);
+      setGrosor(grosorDesdeArrastre(deltaY, grosorAlEmpezarRef.current));
+    }
+    window.addEventListener("pointermove", alArrastrar);
+    return () => window.removeEventListener("pointermove", alArrastrar);
+  }, [presionado]);
+
+  /** Al soltar: el punto vuelve al centro (transición de CSS sobre `transform`, la rejilla no se toca) y el grosor
+   * SE QUEDA — la siguiente pulsación pinta con él y, si se arrastra otra vez, ajusta desde ahí. */
+  function soltar() {
+    setPresionado(false);
+    setDesplazamiento(0);
+    arrastreInicioYRef.current = null;
+    ajustandoRef.current = false;
+  }
+
+  async function empezarAPintar(e: React.PointerEvent<HTMLButtonElement>) {
+    arrastreInicioYRef.current = e.clientY;
+    grosorAlEmpezarRef.current = grosorRef.current;
     setAbierto(null); // como en el prototipo firmado: pintar cierra cualquier menú abierto
     if (permiso === "sin-pedir") {
       const pedir = requestPermissionDeOrientacion();
@@ -251,11 +298,22 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
           className={styles.orb}
           aria-pressed={presionado}
           aria-label="Mantén presionado y mueve tu celular"
+          style={{
+            // Solo `transform` y solo traslación: el botón sigue al dedo en vertical sin cambiar de tamaño (si creciera,
+            // se montaría sobre las tarjetas). Sin transición mientras está presionado: sigue al dedo al instante; al
+            // soltar, la transición del CSS lo regresa al centro.
+            transform: `${presionado ? "scale(0.94) " : ""}translateY(${-desplazamiento}px)`,
+            transition: presionado ? "none" : undefined,
+          }}
           onPointerDown={empezarAPintar}
-          onPointerUp={() => setPresionado(false)}
-          onPointerLeave={() => setPresionado(false)}
+          onPointerUp={soltar}
+          onPointerLeave={soltar}
         >
-          ●
+          {/* Lo que crece y encoge con el grosor es el punto blanco (gestor: "el punto blanco crece/encoge basta"),
+              y se queda así: es cómo se ve el grosor que quedó sin abrir nada. */}
+          <span className={styles.punto} style={{ transform: `scale(${escalaDelPunto(grosor).toFixed(3)})` }} aria-hidden="true">
+            ●
+          </span>
         </button>
       )}
 
@@ -293,7 +351,9 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
           </p>
         ) : (
           <p className={styles.hold} aria-live="polite">
-            {presionado ? "Pintando en la pared" : "Mantén presionado y mueve tu celular"}
+            {/* Mientras el dedo ajusta el grosor no se pinta (no se manda trazo), así que el texto no debe decir
+                «Pintando»; además, en el tope de abajo el punto quedaría encima del texto. El <p> conserva su renglón. */}
+            {presionado ? (estaAjustandoGrosor(desplazamiento) ? " " : "Pintando en la pared") : "Mantén presionado y mueve tu celular"}
           </p>
         ))}
     </div>

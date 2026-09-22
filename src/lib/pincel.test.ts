@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
+  ARRASTRE_GROSOR_MAX_PX,
   DELTAS_MAX_POR_MENSAJE,
   deltaDesdeOrientacion,
   entradasDesdePresencia,
+  escalaDelPunto,
   esMensajeTrazoValido,
   ESCALA_DELTA_PX,
+  estaAjustandoGrosor,
   estadoDeFila,
+  GROSOR_BASE,
+  GROSOR_MAX,
+  GROSOR_MIN,
+  grosorDesdeArrastre,
   nombreSugerido,
   ordenDeFila,
   puntoInicial,
   quienesPintan,
   siguientesSegmentos,
+  UMBRAL_AJUSTE_PX,
   type EntradaPresencia,
 } from "./pincel";
 
@@ -24,7 +32,7 @@ const REMITENTE = "00000000-0000-4000-8000-000000000001";
 
 describe("esMensajeTrazoValido", () => {
   it("acepta un mensaje bien formado con un delta", () => {
-    expect(esMensajeTrazoValido({ trazo: "spray", color: "#e4552f", deltas: [{ dx: 0.4, dy: -0.2 }], remitente: REMITENTE })).toBe(true);
+    expect(esMensajeTrazoValido({ trazo: "spray", color: "#e4552f", deltas: [{ dx: 0.4, dy: -0.2 }], remitente: REMITENTE, grosor: 1 })).toBe(true);
   });
   it("acepta varios deltas juntados en un mismo mensaje (envío agrupado)", () => {
     const deltas = [
@@ -32,44 +40,108 @@ describe("esMensajeTrazoValido", () => {
       { dx: -0.2, dy: 0.05 },
       { dx: 0.05, dy: -0.3 },
     ];
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE })).toBe(true);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE, grosor: 1 })).toBe(true);
   });
   it("rechaza un trazo que no existe", () => {
-    expect(esMensajeTrazoValido({ trazo: "acuarela", color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "acuarela", color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza un color que no es una de las cinco tintas", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#ffffff", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#ffffff", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza un mensaje sin deltas", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [], remitente: REMITENTE })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it(`rechaza más de ${DELTAS_MAX_POR_MENSAJE} deltas en un mismo mensaje`, () => {
     const deltas = Array.from({ length: DELTAS_MAX_POR_MENSAJE + 1 }, () => ({ dx: 0, dy: 0 }));
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it(`acepta justo ${DELTAS_MAX_POR_MENSAJE} deltas`, () => {
     const deltas = Array.from({ length: DELTAS_MAX_POR_MENSAJE }, () => ({ dx: 0, dy: 0 }));
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE })).toBe(true);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE, grosor: 1 })).toBe(true);
   });
   it("rechaza un delta fuera de -1..1 (no es una coordenada absoluta)", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 42, dy: 0 }], remitente: REMITENTE })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 42, dy: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza un delta no numérico", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: "0.5", dy: 0 }], remitente: REMITENTE })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: "0.5", dy: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza deltas que no es un arreglo", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: { dx: 0, dy: 0 }, remitente: REMITENTE })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: { dx: 0, dy: 0 }, remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza sin remitente", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 0, dy: 0 }] })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 0, dy: 0 }], grosor: 1 })).toBe(false);
   });
   it("rechaza un remitente vacío", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: "" })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: "", grosor: 1 })).toBe(false);
   });
   it("rechaza cualquier cosa que no sea un objeto", () => {
     expect(esMensajeTrazoValido(null)).toBe(false);
     expect(esMensajeTrazoValido("trazo")).toBe(false);
     expect(esMensajeTrazoValido(undefined)).toBe(false);
+  });
+  it("rechaza sin grosor, o con un grosor no numérico, cero, negativo o descomunal", () => {
+    const base = { trazo: "trazo" as const, color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE };
+    expect(esMensajeTrazoValido(base)).toBe(false);
+    expect(esMensajeTrazoValido({ ...base, grosor: "1" })).toBe(false);
+    expect(esMensajeTrazoValido({ ...base, grosor: 0 })).toBe(false);
+    expect(esMensajeTrazoValido({ ...base, grosor: -1 })).toBe(false);
+    expect(esMensajeTrazoValido({ ...base, grosor: 999 })).toBe(false);
+  });
+  it("acepta el grosor mínimo y máximo que puede dar el arrastre", () => {
+    const base = { trazo: "trazo" as const, color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE };
+    expect(esMensajeTrazoValido({ ...base, grosor: GROSOR_MIN })).toBe(true);
+    expect(esMensajeTrazoValido({ ...base, grosor: GROSOR_MAX })).toBe(true);
+  });
+});
+
+describe("grosorDesdeArrastre", () => {
+  it("sin arrastre, el grosor base", () => {
+    expect(grosorDesdeArrastre(0)).toBe(GROSOR_BASE);
+  });
+  it("arrastrar hacia arriba (delta positivo) engruesa, hasta el máximo", () => {
+    expect(grosorDesdeArrastre(ARRASTRE_GROSOR_MAX_PX / 2)).toBeCloseTo(GROSOR_BASE + (GROSOR_MAX - GROSOR_BASE) / 2);
+    expect(grosorDesdeArrastre(ARRASTRE_GROSOR_MAX_PX)).toBeCloseTo(GROSOR_MAX);
+  });
+  it("arrastrar hacia abajo (delta negativo) adelgaza, hasta el mínimo", () => {
+    expect(grosorDesdeArrastre(-ARRASTRE_GROSOR_MAX_PX / 2)).toBeCloseTo(GROSOR_BASE - (GROSOR_BASE - GROSOR_MIN) / 2);
+    expect(grosorDesdeArrastre(-ARRASTRE_GROSOR_MAX_PX)).toBeCloseTo(GROSOR_MIN);
+  });
+  it("un arrastre más allá del máximo se acota, no sigue creciendo", () => {
+    expect(grosorDesdeArrastre(ARRASTRE_GROSOR_MAX_PX * 5)).toBeCloseTo(GROSOR_MAX);
+    expect(grosorDesdeArrastre(-ARRASTRE_GROSOR_MAX_PX * 5)).toBeCloseTo(GROSOR_MIN);
+  });
+  it("el grosor se queda al soltar: la siguiente pulsación sigue desde el grosor que tenía, no desde el base", () => {
+    expect(grosorDesdeArrastre(0, 1.6)).toBe(1.6);
+    // desde 1.6, bajar el arrastre completo resta lo que va del base al mínimo (0.6): queda en 1.0
+    expect(grosorDesdeArrastre(-ARRASTRE_GROSOR_MAX_PX, 1.6)).toBeCloseTo(1.0);
+  });
+  it("desde un grosor alto, subir se acota en el tope en vez de pasarse", () => {
+    expect(grosorDesdeArrastre(ARRASTRE_GROSOR_MAX_PX, 2.0)).toBeCloseTo(GROSOR_MAX);
+  });
+});
+
+describe("estaAjustandoGrosor", () => {
+  it("el temblor del dedo bajo el umbral no cuenta como ajuste: se sigue pintando", () => {
+    expect(estaAjustandoGrosor(0)).toBe(false);
+    expect(estaAjustandoGrosor(UMBRAL_AJUSTE_PX)).toBe(false);
+    expect(estaAjustandoGrosor(-UMBRAL_AJUSTE_PX)).toBe(false);
+  });
+  it("pasado el umbral, en cualquier sentido, se está ajustando (y no se manda trazo)", () => {
+    expect(estaAjustandoGrosor(UMBRAL_AJUSTE_PX + 1)).toBe(true);
+    expect(estaAjustandoGrosor(-(UMBRAL_AJUSTE_PX + 1))).toBe(true);
+  });
+});
+
+describe("escalaDelPunto", () => {
+  it("en el grosor base el punto mide lo de siempre", () => {
+    expect(escalaDelPunto(GROSOR_BASE)).toBe(1);
+  });
+  it("crece hasta 1.25 en el tope y encoge hasta 0.8 en el mínimo, continuo en medio", () => {
+    expect(escalaDelPunto(GROSOR_MAX)).toBeCloseTo(1.25);
+    expect(escalaDelPunto(GROSOR_MIN)).toBeCloseTo(0.8);
+    const medioArriba = escalaDelPunto((GROSOR_BASE + GROSOR_MAX) / 2);
+    expect(medioArriba).toBeGreaterThan(1);
+    expect(medioArriba).toBeLessThan(1.25);
   });
 });
 
