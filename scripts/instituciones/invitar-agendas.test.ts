@@ -23,8 +23,8 @@ id-1,uno@ejemplo.mx,
 id-2,dos@hotmail.com,agenda
 id-3,tres@gmail.com,
 Organismo X,contacto@organismo.mx,
-id-8,compartido@secult.mx,
-id-9,compartido@secult.mx,
+id-8,compartido@buzon-compartido.test,
+id-9,compartido@buzon-compartido.test,
 `;
 
 describe("leerCsv", () => {
@@ -50,7 +50,7 @@ describe("armarDestinos y repartir", () => {
     expect(destinos[3]).toMatchObject({ variante: "organismo", lugarId: null, organismo: "Organismo X", correo: "contacto@organismo.mx", sedes: ["Sede A", "Sede B"] });
   });
   it("dos instituciones con el mismo grupoCorreo se funden en un solo destino, cada una con su propia ficha", () => {
-    expect(buzon).toMatchObject({ variante: "buzon_compartido", lugarId: null, correo: "compartido@secult.mx", organismo: nombreBuzonCompartido("Secretaría de Cultura") });
+    expect(buzon).toMatchObject({ variante: "buzon_compartido", lugarId: null, correo: "compartido@buzon-compartido.test", organismo: nombreBuzonCompartido("Secretaría de Cultura") });
     expect(buzon.sedesConEnlace).toEqual([
       { nombre: "Museo Cuatro", url: "https://somosnosotros.org/lugares/museo-cuatro" },
       { nombre: "Centro Cinco", url: "https://somosnosotros.org/lugares/centro-cinco" },
@@ -58,7 +58,7 @@ describe("armarDestinos y repartir", () => {
     expect(buzon.organismoRegistro).toBe(`${nombreBuzonCompartido("Secretaría de Cultura")}: museo-cuatro, centro-cinco`);
   });
   it("si el CSV ya no da el mismo correo para el grupo, no se adivina: cada una por su lado y se avisa", () => {
-    const csvDistinto = `${csv.replace("id-9,compartido@secult.mx,", "id-9,otro@x.mx,")}`;
+    const csvDistinto = `${csv.replace("id-9,compartido@buzon-compartido.test,", "id-9,otro@x.mx,")}`;
     const { destinos: d2, sinCorreo: s2 } = armarDestinos(filas, leerCsv(csvDistinto));
     expect(d2.some((d) => d.variante === "buzon_compartido")).toBe(false);
     expect(d2.filter((d) => d.nombre === "Museo Cuatro" || d.nombre === "Centro Cinco").map((d) => d.variante)).toEqual(["institucion", "institucion"]);

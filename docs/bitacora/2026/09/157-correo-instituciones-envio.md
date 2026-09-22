@@ -97,25 +97,25 @@ Sin FIRMA_TELEFONO: la firma sale con el marcador {teléfono}.
   (sin correo) Centro Cultural Palacio Municipal — Dirección de Cultura Municipal (Ayuntamiento de San Luis Potosí): sin correo de área confirmado
 
 --comprobacion: 3 correos
-- Museo Nacional de la Máscara · mu…@hotmail.com
-- ACHE Galería · ga…@gmail.com
-- Museo Leonora Carrington · di…@leonoracarringtonmuseo.org
+- Museo Nacional de la Máscara · mu…@…
+- ACHE Galería · ga…@…
+- Museo Leonora Carrington · di…@…
 
 --resto: 36 correos
-- Museo Laberinto de las Ciencias y las Artes · in…@museolaberinto.com
-- Museo Regional Potosino (INAH) · di…@inah.gob.mx
-- Museo Federico Silva Escultura Contemporánea · co…@gmail.com
+- Museo Laberinto de las Ciencias y las Artes · in…@…
+- Museo Regional Potosino (INAH) · di…@…
+- Museo Federico Silva Escultura Contemporánea · co…@…
   …
-  (omitido) Centro Cultural Julián Carrillo · co…@gmail.com — mismo buzón que Museo del Ferrocarril Jesús García Corona en esta tanda
-  (omitido) Galería José Jayme · co…@gmail.com — mismo buzón que Museo del Ferrocarril Jesús García Corona en esta tanda
+  (omitido) Centro Cultural Julián Carrillo · co…@… — mismo buzón que Museo del Ferrocarril Jesús García Corona en esta tanda
+  (omitido) Galería José Jayme · co…@… — mismo buzón que Museo del Ferrocarril Jesús García Corona en esta tanda
 
 --organismos: 2 correos
-- Difusión Cultural UASLP · di…@uaslp.mx · sedes: Museo de Sitio UASLP y Auditorio Rafael Nieto
-- Secretaría de Cultura del Estado · of…@hotmail.com · sedes: Casa de Cultura del Barrio de Tlaxcala
+- Difusión Cultural UASLP · di…@… · sedes: Museo de Sitio UASLP y Auditorio Rafael Nieto
+- Secretaría de Cultura del Estado · of…@… · sedes: Casa de Cultura del Barrio de Tlaxcala
 
 --recordatorio: 0 correos
 
---- Ejemplo variante institución: Museo Nacional de la Máscara · mu…@hotmail.com ---
+--- Ejemplo variante institución: Museo Nacional de la Máscara · mu…@… ---
 Asunto: Museo Nacional de la Máscara, súmate a la agenda de Somos Nosotros
 Hola,
 
@@ -203,12 +203,12 @@ El gestor aceptó la primera entrega (`7640142`) y la subió como PR [#154](http
 --comprobacion: 3 correos
 --resto: 36 correos (34 individuales + el buzón compartido, sin ningún omitido por buzón repetido)
   …
-  - Secretaría de Cultura (buzón compartido) · co…@gmail.com · sedes: Museo del Ferrocarril Jesús García
+  - Secretaría de Cultura (buzón compartido) · co…@… · sedes: Museo del Ferrocarril Jesús García
     Corona, Centro Cultural Julián Carrillo y Galería José Jayme
 --organismos: 2 correos
 --recordatorio: 0 correos
 
---- Ejemplo variante buzón compartido: Secretaría de Cultura (buzón compartido) · co…@gmail.com ---
+--- Ejemplo variante buzón compartido: Secretaría de Cultura (buzón compartido) · co…@… ---
 Asunto: Somos Nosotros — agendas de Museo del Ferrocarril Jesús García Corona, Centro Cultural Julián Carrillo
 y Galería José Jayme en San Luis Potosí
 Hola,
