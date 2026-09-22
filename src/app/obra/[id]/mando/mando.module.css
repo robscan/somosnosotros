@@ -147,6 +147,29 @@
   font-weight: 800;
 }
 
+/* OL-120: «Centrar» devuelve el pincel al centro de la pared (founder: «agrega un botón de poner en el centro el
+   pincel en el control»). Vive en la zona libre sobre el botón —el área `espera`, vacía mientras se pinta—, pegado
+   abajo: no añade fila ni mueve el botón ni las tarjetas (medido en reposo y pintando). Pastilla secundaria del
+   canon (fondo, borde, texto), 44 px de alto, icono de mira. */
+.centrar {
+  grid-area: espera;
+  align-self: end;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--toque-min);
+  margin: 0 0 22px;
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* --- El botón de pintar --- */
 .orb {
   grid-area: orb;
@@ -161,8 +184,13 @@
   font-size: 23px;
   box-shadow: 0 12px 28px rgba(15, 107, 124, 0.35);
   cursor: pointer;
+  /* Mantener presionado y arrastrar en vertical es del botón, no de la página (OL-120, punto 7: en el iPhone el
+     arrastre del grosor no hacía nada). Safari necesita las versiones -webkit-: sin ellas, el dedo mantenido
+     selecciona o saca el globo de copiar y el toque se cancela. */
   touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   /* El grosor por arrastre pone su propio `transform` en línea (escala del grosor + translateY del dedo); esta
      transición es la que regresa el punto al centro al soltar, sin brinco. Mientras está presionado no hay
      transición (la quita el propio elemento): sigue al dedo al instante. */
@@ -170,6 +198,23 @@
 }
 .orb[aria-pressed="true"] {
   box-shadow: 0 0 0 10px rgba(15, 107, 124, 0.22);
+}
+/* OL-120, punto 5 (founder: «debería ser más como un encender»): el botón arranca APAGADO —círculo claro con
+   borde y el punto en gris, a la vista— y el primer toque lo enciende (pide el permiso del sensor; en Android
+   enciende directo). ENCENDIDO se pinta de verde (`--ok`, el verde de lo ya decidido) y desde ahí mantener
+   presionado pinta. Mismo tamaño (128 px, borde incluido), misma rejilla: nada se mueve entre estados. */
+.orb[data-encendido="false"] {
+  border: 1px solid var(--borde);
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  box-shadow: none;
+}
+.orb[data-encendido="true"] {
+  background: var(--ok);
+  box-shadow: 0 12px 28px rgba(31, 111, 67, 0.35);
+}
+.orb[data-encendido="true"][aria-pressed="true"] {
+  box-shadow: 0 0 0 10px rgba(31, 111, 67, 0.22);
 }
 /* El punto blanco dentro del botón: es lo que crece/encoge con el grosor (solo `transform`, el botón no cambia de
    tamaño ni se monta sobre las tarjetas). Con transición corta también al soltar, para que el cambio se lea. */
