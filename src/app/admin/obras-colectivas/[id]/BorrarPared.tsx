@@ -17,6 +17,9 @@ import { borrarPared } from "../acciones";
  * comprobación del lado del servidor, porque un mando también podría mandar «borrar» por el canal) y después este
  * navegador manda `borrar` por el canal de la obra con su sesión; toda pared abierta lee esa hora y, si es reciente,
  * limpia su lienzo. Los mandos siguen conectados; la obra sigue abierta; nada se guarda salvo esa hora.
+ * OL-134: el aviso solo llega a las paredes abiertas en ese momento; la acción de servidor borra además la
+ * instantánea del bucket y la pared consulta la hora registrada al abrirse, al volver a ser visible y cada 5 s,
+ * así que una pared cerrada, congelada o en otro dispositivo también queda limpia.
  */
 export default function BorrarPared({ obraId, perfilId }: { obraId: string; perfilId: string }) {
   const [confirmar, setConfirmar] = useState(false);

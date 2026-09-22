@@ -1,4 +1,4 @@
-import { BUCKET_INSTANTANEAS, rutaInstantanea } from "@/lib/pincel";
+import { BUCKET_INSTANTANEAS, instantaneaVigente, rutaInstantanea } from "@/lib/pincel";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /** Tope global de Pincel (OL-121, founder 2026-09-22): como mucho 2 obras abiertas a la vez y 40 mandos en total
@@ -150,9 +150,16 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
 export async function cargarInstantanea(obraId: string): Promise<{ url: string; actualizadoEn: string } | null> {
   const supabase = await clienteServidor();
   if (!supabase) return null;
-  const { data: lista } = await supabase.storage.from(BUCKET_INSTANTANEAS).list(obraId, { search: "pared.png" });
+  // OL-134: la miniatura sigue la misma regla que la pared — una instantánea anterior al último «Borrar la pared»
+  // es la composición vieja y no se enseña (la acción de servidor ya borra el archivo; esto cubre una subida tardía).
+  const [{ data: lista }, { data: fila }] = await Promise.all([
+    supabase.storage.from(BUCKET_INSTANTANEAS).list(obraId, { search: "pared.png" }),
+    supabase.from("obras_colectivas").select("borrado_pared_en").eq("id", obraId).maybeSingle(),
+  ]);
   const archivo = lista?.find((a) => a.name === "pared.png");
   if (!archivo) return null;
+  const registrado = (fila as { borrado_pared_en?: string | null } | null)?.borrado_pared_en ?? null;
+  if (!instantaneaVigente(archivo.updated_at ?? archivo.created_at ?? null, registrado)) return null;
   const { data } = await supabase.storage.from(BUCKET_INSTANTANEAS).createSignedUrl(rutaInstantanea(obraId), 600);
   if (!data?.signedUrl) return null;
   return { url: data.signedUrl, actualizadoEn: archivo.updated_at ?? archivo.created_at ?? new Date().toISOString() };

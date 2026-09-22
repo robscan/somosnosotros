@@ -134,8 +134,13 @@ export async function cambiarCupo(id: string, cupo: number): Promise<Resultado> 
 /**
  * «Borrar la pared» (OL-126): registra la hora del borrado en la obra abierta. Es la comprobación del lado del
  * servidor: solo administración llega aquí (`soloAdmin`) y solo administración puede actualizar la obra (RLS); la
- * pared, al recibir «borrar» por el canal, lee esta hora y solo limpia si es reciente — un mando que mande «borrar»
- * por su cuenta no la tiene. El aviso por el canal lo manda el navegador de administración después de esto.
+ * pared lee esta hora (al recibir «borrar» por el canal, al volver a ser visible y cada 5 s) y limpia si es más
+ * reciente que la última que aplicó — un mando que mande «borrar» por su cuenta no la tiene. El aviso por el canal
+ * lo manda el navegador de administración después de esto.
+ * OL-134 (founder: «al seleccionar borrar pared no se borra»: borró con la pared cerrada y al reabrirla volvió la
+ * pintura): aquí también se borra la instantánea del bucket `obras`, con la sesión de administración (política
+ * «obras: administración borra», como en `borrarObra`), para que ninguna pared que se abra después — ni la miniatura
+ * de la ficha — reponga la composición vieja. Mejor esfuerzo: la hora registrada ya manda por sí sola.
  */
 export async function borrarPared(id: string): Promise<Resultado> {
   if (!esUuid(id)) return { ok: false, error: "No encontramos esa obra." };
@@ -143,6 +148,8 @@ export async function borrarPared(id: string): Promise<Resultado> {
   const { error, data } = await supabase.from("obras_colectivas").update({ borrado_pared_en: new Date().toISOString() }).eq("id", id).eq("estado", "abierta").select("id");
   if (error) return { ok: false, error: "No se pudo borrar la pared. Intenta de nuevo." };
   if (!data || data.length === 0) return { ok: false, error: "La obra ya no está abierta. Recarga la página." };
+  await supabase.storage.from(BUCKET_INSTANTANEAS).remove([rutaInstantanea(id)]);
+  revalidar(id); // la miniatura «La pared, hasta ahora» de la ficha desaparece con el archivo
   return { ok: true };
 }
 

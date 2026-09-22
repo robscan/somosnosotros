@@ -160,22 +160,40 @@ export function esMensajeBorrarValido(v: unknown): v is MensajeBorrar {
   return typeof m.remitente === "string" && m.remitente.length > 0 && (m.enviado === undefined || (typeof m.enviado === "number" && Number.isFinite(m.enviado)));
 }
 
-/** Ventana en la que la pared acepta un «borrar» del canal: si Administración registró el borrado hace menos de
- * esto (con la misma tolerancia hacia adelante, por si el reloj de la pared va atrasado). */
-export const VENTANA_BORRADO_MS = 60_000;
-
 /**
- * ¿El «borrar» que llegó por el canal viene de Administración? Solo si la obra registra un borrado reciente
- * (`obras_colectivas.borrado_pared_en`, que escribe la acción de servidor `borrarPared`, solo admin) y no es el
- * mismo que esta pared ya aplicó. Las políticas de realtime.messages se evalúan al unirse al canal, no por mensaje,
- * así que el servidor no distingue un «borrar» de un trazo: esta hora es la comprobación barata del lado del servidor.
+ * ¿Hay un borrado registrado por Administración que esta pared todavía no aplicó? (OL-134, founder: «al seleccionar
+ * borrar pared no se borra»: borró con la pared cerrada, el «borrar» del canal no tuvo receptor y al reabrirla
+ * volvió la composición vieja.) La hora la escribe solo la acción de servidor `borrarPared` (solo admin) en
+ * `obras_colectivas.borrado_pared_en`; la pared la consulta al recibir «borrar» por el canal, al volver a ser visible
+ * y cada pocos segundos, y aplica el borrado si es más reciente que el último que aplicó. Ya no hay ventana de un
+ * minuto: la hora registrada manda, llegue el aviso o no. Un «borrar» que mande un mando por su cuenta sigue sin
+ * borrar nada (no hay hora nueva registrada). Sin hora, o ilegible, no hay nada que aplicar.
  */
-export function borradoReciente(borradoParedEn: string | null | undefined, ahoraMs: number, ultimoAplicadoMs: number | null, ventanaMs = VENTANA_BORRADO_MS): boolean {
+export function hayBorradoPendiente(borradoParedEn: string | null | undefined, ultimoAplicadoMs: number | null): boolean {
   if (!borradoParedEn) return false;
   const t = Date.parse(borradoParedEn);
   if (!Number.isFinite(t)) return false;
-  if (ultimoAplicadoMs !== null && t <= ultimoAplicadoMs) return false;
-  return Math.abs(ahoraMs - t) < ventanaMs;
+  return ultimoAplicadoMs === null || t > ultimoAplicadoMs;
+}
+
+/** Cada cuánto la pared consulta `borrado_pared_en` (una fila, barato) además de al recibir «borrar» y al volver a
+ * ser visible: es lo que tarda en limpiarse una pared que no recibió el aviso. */
+export const REVISAR_BORRADO_MS = 5000;
+
+/**
+ * ¿La instantánea guardada sigue valiendo como fondo? (OL-134) Solo si se subió DESPUÉS del último borrado
+ * registrado: una anterior es la composición vieja y no se repone. Sin borrado registrado, vale; con borrado y sin
+ * hora de subida legible, no (mejor una pared limpia que una pintura que Administración ya borró). La acción de
+ * servidor además borra el archivo del bucket al registrar el borrado; esta regla cubre el hueco entre las dos
+ * cosas y una subida tardía de otra pared abierta.
+ */
+export function instantaneaVigente(subidaEn: string | null | undefined, borradoParedEn: string | null | undefined): boolean {
+  if (!borradoParedEn) return true;
+  const borrado = Date.parse(borradoParedEn);
+  if (!Number.isFinite(borrado)) return true;
+  if (!subidaEn) return false;
+  const subida = Date.parse(subidaEn);
+  return Number.isFinite(subida) && subida > borrado;
 }
 
 /**
