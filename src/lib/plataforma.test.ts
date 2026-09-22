@@ -30,6 +30,14 @@ describe("leerPlataforma", () => {
     expect(leerPlataforma(IPAD_COMO_MAC, 5, false)).toMatchObject({ ios: true, computadora: false });
     expect(leerPlataforma(MAC_CHROME, 0, false)).toMatchObject({ ios: false, computadora: true });
   });
+  it("una Mac de verdad con puntos táctiles no confunde con un iPad (bitácora 166, OL-131)", () => {
+    // Sidecar/Universal Control con un iPad, una pantalla táctil externa o un trackpad Force Touch pueden dar un
+    // navigator.maxTouchPoints mayor que cero en una Mac real, sin ser un iPad; solo el valor exacto que reporta
+    // un iPad (5, medido arriba) cuenta. Antes, cualquier valor mayor que 1 ya la trataba como iPad.
+    expect(leerPlataforma(MAC_CHROME, 1, false)).toMatchObject({ ios: false, computadora: true });
+    expect(leerPlataforma(MAC_CHROME, 2, false)).toMatchObject({ ios: false, computadora: true });
+    expect(leerPlataforma(MAC_CHROME, 4, false)).toMatchObject({ ios: false, computadora: true });
+  });
   it("Android no es computadora", () => {
     expect(leerPlataforma(ANDROID_CHROME, 5, false)).toMatchObject({ ios: false, computadora: false });
   });
