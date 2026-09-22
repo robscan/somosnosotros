@@ -74,6 +74,32 @@ Rutas absolutas de las capturas (scratchpad de esta sesión, no forman parte del
 (`pared-1280x800.png`, `pared-1920x1080.png`, `admin-obra-390x844.png`, `admin-obra-impresion.png`,
 `admin-obra-cerrada-390x844.png`).
 
+## Corrección tras revisión del gestor (`cb98404`)
+
+El gestor abrió las tres primeras capturas: aceptó la pared y la ficha de Administración a 390 px, pero rechazó
+`admin-obra-impresion.png` — el QR se salía de la hoja por los dos lados y el nombre quedaba pegado arriba. Causa:
+la primera captura de impresión se tomó con `emulateMedia({ media: "print" })` pero con un viewport de teléfono
+(390×844); el QR medía `120mm` en unidades de papel, que a la resolución del viewport de pantalla (96 dpi) se
+traduce a ~453 px — más ancho que los 390 px del viewport, así que se cortaba.
+
+Arreglo: `@page { size: auto; margin: 2cm }` y el QR con tamaño fijo en centímetros (`12cm × 12cm`, `max-width:
+100%` por si acaso), centrado. De paso, dos ajustes propios detectados al volver a medir con un viewport de hoja
+A4 (794×1123 px ≈ A4 a 96 dpi, como pidió el gestor): la tarjeta del QR pasa de rejilla a flexbox — con
+`aspect-ratio` más ancho/alto fijos, la pista de una rejilla se medía más alta que la imagen y dejaba un hueco en
+blanco antes del enlace (Chromium calcula el tamaño de la pista en un paso previo al de la imagen ya con su
+`aspect-ratio` resuelto); y `.fichaObra` fija `align-items`/`align-content: start` para que la rejilla no estire
+el nombre y la tarjeta hasta llenar el `min-height: 100dvh` que hereda de `ui/Ficha.module.css`, que dejaba un
+blanco de sobra bajo el enlace.
+
+Verificado de nuevo con `next build && next start`, el mismo respaldo local y Chrome real por `playwright-core`,
+esta vez con viewport 794×1123 y `emulateMedia({ media: "print" })`: el QR mide 453.5×453.5 px (12 cm exactos),
+queda entre 170 px y 624 px de un ancho de 794 px (dentro de la hoja, sin tocar los bordes), y la tarjeta ya no
+rebasa su contenido — nombre, QR y enlace, sin hueco de sobra. Recapturada también la ficha a 390×844 en pantalla
+normal (no impresión): sin cambios visibles. `npm test`: 869/869. `npm run build` en verde.
+
+Captura corregida en la misma ruta:
+`.../scratchpad/evidencia-ol118/admin-obra-impresion.png` (sobrescrita).
+
 ## Cierre
 
 `next start` y el respaldo local, apagados. `.env.local` borrado. `CLAUDE.md` no cambió durante el `build`
