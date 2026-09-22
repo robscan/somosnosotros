@@ -94,3 +94,19 @@
 .ubicame:disabled {
   opacity: 0.6;
 }
+
+/* La ⓘ y la marca de Mapbox (la licencia pide que las dos se vean), por encima del botón de ubicación, alineadas
+   a su mismo borde izquierdo (docs/rediseno/35, "El botón de ubicación"). Primero se probó centrada entre el
+   botón y "Registrar lugar", pero a ese ancho "mapbox" quedaba detrás del borde de "Registrar lugar" (segunda
+   corrección del gestor, 2026-09-22, sobre las capturas de OL-128): con "Registrar lugar" a la derecha, no hay un
+   hueco central de sobra en 390 px. Arriba del botón sí queda libre siempre: el mismo cálculo de `--alto-hoja` que
+   sube el botón sobre la hoja del pin (`--sube` en lugares.module.css `.ubicacion`) sube esto con él, con el alto
+   del botón (`--toque`) y 8 px de aire de por medio — nunca coincide con el botón, con "Registrar lugar" (a la
+   derecha, no debajo de esto) ni con la hoja abierta. Solo en el mapa de "ver": el mapa embebido de las hojas
+   Dónde está/Dónde es (modo "elegir") conserva su esquina de siempre. */
+.mapaCaja :global(.mapboxgl-ctrl-bottom-left),
+.mapa :global(.mapboxgl-ctrl-bottom-left) {
+  left: var(--gutter);
+  right: auto;
+  bottom: calc(16px + var(--toque) + 8px + max(0px, var(--alto-hoja, 0px) - var(--alto-nav) - env(safe-area-inset-bottom, 0px)));
+}
