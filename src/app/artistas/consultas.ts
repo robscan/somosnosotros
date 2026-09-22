@@ -18,7 +18,7 @@ export async function cargarMisArtistas(perfilId: string): Promise<ArtistaResume
   const supabase = await clienteServidor();
   if (!supabase) return [];
   // Nadie liga decenas de fichas a su cuenta; tope explícito contra el corte silencioso de PostgREST.
-  const { data } = await supabase.from("artistas_cuentas").select("artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("perfil_id", perfilId).limit(50);
+  const { data } = await supabase.from("artistas_cuentas").select("artista:artistas(id, slug, nombre, disciplina, detalle, tipo, foto)").eq("perfil_id", perfilId).limit(50);
   return (data ?? [])
     .map((f) => (Array.isArray(f.artista) ? f.artista[0] : f.artista))
     .filter((a): a is ArtistaResumen => !!a);

@@ -13,7 +13,7 @@ import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import ListaFlotante from "@/components/ui/ListaFlotante";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
-import { artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, LIMITES_ARTISTA, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
+import { artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, LIMITES_ARTISTA, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
 import type { CiudadConArtistas } from "@/lib/ciudad";
 import { normalizarRedes } from "@/lib/enlaces";
 import { normalizarNombre } from "@/lib/lugares";
@@ -203,7 +203,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           <p className={estilos.notaExiste}>
             <span>Ya hay uno con este nombre: </span>
             <b className={estilos.nombreRecortado}>{repetido.nombre}</b>
-            <Link href={`/artistas/${repetido.id}`}>Ver</Link>
+            <Link href={hrefArtista(repetido)}>Ver</Link>
           </p>
         )
       )}
@@ -215,7 +215,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           <li className={`${canon.existe} ${estilos.existeFlotante}`} role="status">
             <IconoOk width={20} height={20} />
             <span>
-              <b>Ya está registrado:</b> <Link href={`/artistas/${repetido.id}`}>{repetido.nombre}</Link> · {etiquetaArtista(repetido)}. Ábrelo y, si es tuyo, dilo ahí.
+              <b>Ya está registrado:</b> <Link href={hrefArtista(repetido)}>{repetido.nombre}</Link> · {etiquetaArtista(repetido)}. Ábrelo y, si es tuyo, dilo ahí.
             </span>
           </li>
         )}
