@@ -483,6 +483,16 @@ export function encajar(ancho: number, alto: number, anchoMarco: number, altoMar
   return { left: (anchoMarco - width) / 2, top: (altoMarco - height) / 2, width, height };
 }
 
+/** Ancho mínimo de un trazo EN PANTALLA (gestor, OL-135): con el lienzo de 1920 unidades, en un teléfono el trazo
+ * fino a grosor 1 quedaría en 0,6 px. Igual que el mínimo del punto de mando, pero este se aplica al ancho en
+ * unidades del lienzo según la escala con que se está mostrando, así que queda en el bitmap: una pared que se ve
+ * en un teléfono guarda sus trazos con ese ancho mínimo. */
+export const ANCHO_TRAZO_MIN_PX = 1;
+export function anchoEnLienzo(anchoUnidades: number, escala: number, minimoPx = ANCHO_TRAZO_MIN_PX): number {
+  if (!(escala > 0)) return anchoUnidades;
+  return Math.max(anchoUnidades, minimoPx / escala);
+}
+
 /** Dónde va el lienzo en una ventana de `anchoVentana × altoVentana` px: `encajar` con la proporción de LIENZO. */
 export function rectanguloDelLienzo(anchoVentana: number, altoVentana: number): Rectangulo {
   return encajar(LIENZO.ancho, LIENZO.alto, anchoVentana, altoVentana);

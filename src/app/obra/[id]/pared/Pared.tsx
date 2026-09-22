@@ -7,6 +7,7 @@ import { configPublica } from "@/lib/config";
 import {
   acreditaCercania,
   ANCHO_POR_GROSOR_PX,
+  anchoEnLienzo,
   BUCKET_INSTANTANEAS,
   diametroDelPuntoDePosicion,
   DIAMETRO_PUNTO_MIN_PX,
@@ -53,16 +54,19 @@ type LecturaSonda = { evento: string; remitente: string; puntos: number; latenci
 const horaCorta = (iso: string | null | undefined) => (iso && Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleTimeString() : "—");
 
 /** Un punto de un trazo, coloreado y grosor según el pincel — para no repetir el `switch` en cada segmento. Los
- * anchos por unidad de grosor viven en `ANCHO_POR_GROSOR_PX` (el punto de referencia mide con los mismos). */
-function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, Punto], mensaje: MensajeTrazo) {
+ * anchos por unidad de grosor viven en `ANCHO_POR_GROSOR_PX` (el punto de referencia mide con los mismos), en
+ * unidades del lienzo (OL-135); `escala` es con cuántos px de pantalla se muestra cada unidad, para que ningún
+ * trazo baje de 1 px en pantalla (`anchoEnLienzo`). */
+function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, Punto], mensaje: MensajeTrazo, escala: number) {
   ctx.strokeStyle = mensaje.color;
   ctx.fillStyle = mensaje.color;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   const grosor = mensaje.grosor; // arrastre en el mando (founder, 2026-09-21): 1 es el trazo de siempre
+  const ancho = (porGrosor: number) => anchoEnLienzo(porGrosor * grosor, escala);
   if (mensaje.trazo === "aire") {
     ctx.globalAlpha = 0.45;
-    ctx.lineWidth = ANCHO_POR_GROSOR_PX.aire * grosor;
+    ctx.lineWidth = ancho(ANCHO_POR_GROSOR_PX.aire);
     ctx.beginPath();
     ctx.moveTo(desde.x, desde.y);
     ctx.lineTo(hasta.x, hasta.y);
@@ -77,7 +81,7 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
       const x = desde.x + (hasta.x - desde.x) * t + (Math.random() - 0.5) * 14;
       const y = desde.y + (hasta.y - desde.y) * t + (Math.random() - 0.5) * 14;
       ctx.beginPath();
-      ctx.arc(x, y, (ANCHO_POR_GROSOR_PX.spray / 2) * grosor, 0, Math.PI * 2);
+      ctx.arc(x, y, ancho(ANCHO_POR_GROSOR_PX.spray) / 2, 0, Math.PI * 2);
       ctx.fill();
     }
     return;
@@ -85,13 +89,13 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
   if (mensaje.trazo === "organico") {
     ctx.globalAlpha = 0.6;
     ctx.beginPath();
-    ctx.ellipse(hasta.x, hasta.y, (ANCHO_POR_GROSOR_PX.organico / 2) * grosor, 5 * grosor, Math.random() * Math.PI, 0, Math.PI * 2);
+    ctx.ellipse(hasta.x, hasta.y, ancho(ANCHO_POR_GROSOR_PX.organico) / 2, ancho(10) / 2, Math.random() * Math.PI, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
     return;
   }
   // "trazo": una línea limpia, el pincel por defecto.
-  ctx.lineWidth = ANCHO_POR_GROSOR_PX.trazo * grosor;
+  ctx.lineWidth = ancho(ANCHO_POR_GROSOR_PX.trazo);
   ctx.beginPath();
   ctx.moveTo(desde.x, desde.y);
   ctx.lineTo(hasta.x, hasta.y);
@@ -146,9 +150,14 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
   const [instantanea, setInstantanea] = useState<string>("sin instantánea todavía");
   // OL-135: dónde va el lienzo en la ventana (16:9, centrado); hasta la primera medida, la ventana entera.
   const [marco, setMarco] = useState<Rectangulo | null>(null);
+  const escalaRef = useRef(1); // la misma escala, para el ancho mínimo del trazo al dibujar (fuera del render)
 
   useEffect(() => {
-    const medir = () => setMarco(rectanguloDelLienzo(window.innerWidth, window.innerHeight));
+    const medir = () => {
+      const r = rectanguloDelLienzo(window.innerWidth, window.innerHeight);
+      escalaRef.current = r.width > 0 ? r.width / LIENZO.ancho : 1;
+      setMarco(r);
+    };
     medir();
     window.addEventListener("resize", medir);
     return () => window.removeEventListener("resize", medir);
@@ -319,7 +328,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         if (!acreditaCercania(mensaje)) return; // sin `cerca: true` (OL-127) no pinta: fricción, no seguridad
         // El trazo se dibuja en cuanto llega (OL-126): sin esperar a ninguna transición ni cuadro.
         const { segmentos, hasta } = siguientesSegmentos(puntos.current.get(mensaje.remitente) ?? null, mensaje.puntos, LIENZO.ancho, LIENZO.alto);
-        for (const segmento of segmentos) trazarSegmento(ctx!, segmento, mensaje);
+        for (const segmento of segmentos) trazarSegmento(ctx!, segmento, mensaje, escalaRef.current);
         hayTrazosNuevosRef.current = true;
         anotar("trazo", mensaje, recibido, mensaje.puntos.length);
         if (!hasta) return;

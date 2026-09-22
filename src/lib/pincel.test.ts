@@ -3,6 +3,8 @@ import {
   acreditaCercania,
   alEscribirTitulo,
   ANCHO_POR_GROSOR_PX,
+  ANCHO_TRAZO_MIN_PX,
+  anchoEnLienzo,
   ARRASTRE_GROSOR_MAX_PX,
   decidirCercania,
   decidirSensor,
@@ -680,6 +682,24 @@ describe("encajar y rectanguloDelLienzo (OL-135: la pared no se deforma, solo se
     expect(encajar(0, 9, 1600, 900)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
     expect(encajar(16, 9, 0, 0)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
     expect(encajar(16, 9, Number.NaN, 900)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
+  });
+});
+
+describe("anchoEnLienzo (OL-135, gestor: ningún trazo baja de 1 px en pantalla)", () => {
+  it("a escala 1 (pantalla 1920 de ancho) el ancho no cambia", () => {
+    expect(ANCHO_TRAZO_MIN_PX).toBe(1);
+    expect(anchoEnLienzo(3, 1)).toBe(3);
+    expect(anchoEnLienzo(0.5, 1)).toBe(1);
+  });
+  it("en un teléfono (390/1920 = 0,203) el trazo fino sube hasta valer 1 px en pantalla; uno ancho no cambia", () => {
+    const escala = 390 / 1920;
+    expect(anchoEnLienzo(3, escala) * escala).toBeCloseTo(1);
+    expect(anchoEnLienzo(27, escala)).toBe(27);
+  });
+  it("sin escala válida (0, negativa, NaN), el ancho tal cual", () => {
+    expect(anchoEnLienzo(3, 0)).toBe(3);
+    expect(anchoEnLienzo(3, -1)).toBe(3);
+    expect(anchoEnLienzo(3, Number.NaN)).toBe(3);
   });
 });
 
