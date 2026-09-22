@@ -22,7 +22,7 @@ const uno = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ?
 /** El próximo evento de cada lugar seguido, como en la lista de Lugares. */
 async function conProximos(supabase: Cliente, lugares: LugarSeguido[]): Promise<LugarSeguido[]> {
   if (lugares.length === 0) return lugares;
-  const { data } = await supabase.from("eventos").select("id, inicio, lugar_id, zona").in("lugar_id", lugares.map((l) => l.id)).eq("visible", true).or(filtroSinPasar()).order("inicio").limit(500);
+  const { data } = await supabase.from("eventos").select("id, inicio, lugar_id, zona, titulo").in("lugar_id", lugares.map((l) => l.id)).eq("visible", true).or(filtroSinPasar()).order("inicio").limit(500);
   return conProximo(lugares, (data ?? []) as (ProximoEvento & { lugar_id: string | null })[]);
 }
 

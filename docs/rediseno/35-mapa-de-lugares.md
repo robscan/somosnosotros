@@ -1,6 +1,6 @@
 # 35 · Mapa de lugares: ubicación, encuadre y pines con el día
 
-**Estado:** prototipo para firmar (sin código). · **OL:** OL-124 · **Bitácora:** [159](../bitacora/2026/09/159-mapa-lugares-prototipo.md) · **Pieza:** B1 de la [cola](../ops/COLA_DE_PIEZAS.md). · **Prototipo:** [`prototipos/mapa-lugares.html`](prototipos/mapa-lugares.html) (se abre en el navegador, sin servidor ni llaves).
+**Estado:** firmado; código en curso (OL-125). · **OL:** OL-124 (prototipo) y OL-125 (código) · **Bitácora:** [159](../bitacora/2026/09/159-mapa-lugares-prototipo.md) (prototipo) y [160](../bitacora/2026/09/160-mapa-lugares-app.md) (código) · **Pieza:** B1 de la [cola](../ops/COLA_DE_PIEZAS.md). · **Prototipo:** [`prototipos/mapa-lugares.html`](prototipos/mapa-lugares.html) (se abre en el navegador, sin servidor ni llaves).
 
 ## Decisiones del founder al ver el prototipo (2026-09-22)
 
@@ -10,6 +10,7 @@ Tras ver la primera entrega, el founder dijo, en el chat del gestor:
 2. Los días del pin van con **tres letras y acento, como «Hoy»**: «Jue», «Vie», «Sáb» — no «Ju»/«Vi»/«Sá». Aplicado en todo este documento y en el prototipo.
 3. De acuerdo con las dos recomendaciones de la primera entrega: **L8 decidido — la sección sigue llamándose «Lugares»**; y **«Cercanos» sale de las pestañas del mapa** (se queda en Lista).
 4. «No has agregado botón de ubicación en mapa»: el botón ya estaba en los tres estados, pero en «pin tocado» la hoja lo tapaba. Corregido: ver «El botón de ubicación» más abajo.
+5. **Tras firmar el documento, el founder cambió quién lleva el resalte del mapa**, literal: «ahora los lugares en rojo son los destacados. Pero creo que de cara al usuario es más útil que se resalten los seguidos.» **El resalte (el color y el aro que este documento daba a los destacados) lo llevan los lugares que la persona sigue, no los destacados.** Sin sesión no hay resalte y no se pide entrar por esto; un destacado que además se sigue se ve como seguido. Aplicado en todo este documento (tabla de pines, capturas) y en el prototipo.
 
 ## De dónde sale
 
@@ -36,7 +37,7 @@ Captura real de somosnosotros.org/lugares tomada con Chrome a 390×844 el 2026-0
 
 1. **El encuadre al abrir** muestra lo que importa esta semana, no toda la ciudad.
 2. **Cada pin dice cuándo:** «Hoy» o el día en tres letras con acento («Jue», «Vie»…) si el lugar tiene evento en los próximos siete días.
-3. **Los destacados llevan un aro** además del naranja que ya tienen.
+3. **Los lugares que la persona sigue llevan un aro y su color**, con sesión (decisión del founder tras firmar, ver arriba).
 4. **Botón de ubicación abajo a la izquierda**, el mismo botón que el ↑ de los listados, visible en todo momento (también con la hoja de un lugar abierta).
 5. **La tarjeta del pin es una hoja corta** con el nombre, el próximo evento y «Ver ficha».
 
@@ -62,12 +63,20 @@ Los lugares siguen siendo capas del propio mapa (círculo y nombre), no elemento
 | Sin evento en siete días | Punto de 10 px del color de acción con línea blanca (como hoy) | Del color de acción |
 | Con evento en los próximos seis días | Círculo de 32 px con el día en tres letras con acento, en blanco y negrita: Lun, Mar, Mié, Jue, Vie, Sáb, Dom (decisión del founder, 2026-09-22) | Igual; gana el sitio a los puntos si chocan |
 | Con evento hoy | El mismo círculo con «Hoy» | Igual |
-| Destacado | Naranja cempasúchil (decidido el 2026-09-16), 14 px, línea blanca de 2 px y un aro naranja alrededor (el «borde» de L31); encima de todos | Naranja oscuro; gana el sitio a todos |
-| Destacado con evento | El círculo naranja con «Hoy» o el día, con su aro | Igual |
+| **Seguido** (con sesión) | Naranja cempasúchil (decidido el 2026-09-16), 14 px, línea blanca de 2 px y un aro naranja alrededor (el «borde» de L31, movido de destacado a seguido: decisión del founder tras firmar, ver arriba); encima de todos | Naranja oscuro; gana el sitio a todos |
+| Seguido con evento | El círculo naranja con «Hoy» o el día, con su aro | Igual |
+| Destacado (sin seguirlo, o sin sesión) | Como cualquier lugar: el resalte ya no es suyo | Del color de acción |
 | El que tiene la tarjeta abierta | Crece un 30 % | Igual |
 | Privado (solo lo ve el administrador) | Gris, como hoy | Gris |
+| Sin sesión | Nunca hay resalte naranja: ningún lugar se distingue por seguido, y no se pide entrar por esto | — |
 
 Por qué el día en letras y no el número que proponía L11 («22»): con una ventana de siete días, «Jue» dice más que «24» (la persona piensa «el jueves», no «el 24»), y «Hoy» queda como la única palabra distinta, la que más importa. Mañana no lleva palabra propia: muestra su día, para que la regla sea una sola.
+
+**Por qué seguidos y no destacados** (founder, tras firmar el documento, 2026-09-22): «de cara al usuario es más útil». Un destacado es una decisión del administrador sobre la ciudad entera; un seguido es la propia elección de la persona sobre lo que le importa a ella. En un mapa que ella toca para orientarse, resaltar lo suyo pesa más que resaltar lo que otro decidió destacar. El naranja y el aro se quedan (el vocabulario visual no cambia, solo a quién se aplica); sin sesión, sin seguidos que resaltar, el mapa se ve igual que antes de esta decisión.
+
+![Seguidos resaltados](capturas-35/prototipo-seguidos--390x844.png)
+
+Captura del prototipo actualizado: el Centro de las Artes (destacado, con evento hoy) se pinta como cualquier lugar con evento, en tinta; el Museo Federico Silva (destacado y seguido) y el MUNI Museo Universitario UASLP (solo seguido) llevan el naranja y el aro.
 
 **Por qué tres letras y no dos** (decisión del founder, 2026-09-22, sobre la primera entrega que proponía «Ju»/«Vi»/«Sá»): con dos letras, «Ma» y «Mi» quedan a una letra de distancia y piden mirar dos veces; con tres, «Mar» y «Mié» no se confunden y el acento hace el trabajo que antes hacía la memoria. El círculo crece de 28 a 32 px para que quepan sin achicar la letra (11 px → 10 px, el mínimo que sigue legible a esa escala); es el mismo tamaño para «Hoy» y para cualquier día, así que no hay dos reglas de ancho.
 
@@ -133,12 +142,13 @@ El estilo claro y plano del mapa, los colores (acción y naranja), que la ubicac
 Capturas reales (Chrome de la Mac por `playwright-core`, `document.fonts.check('16px "Bricolage Grotesque"')` = true, 390×844 a doble densidad), en [`capturas-35/`](capturas-35/):
 
 - `produccion-mapa-hoy--390x844.png` — producción hoy: toda la ciudad de golpe, los puntos del centro apelotonados y encimados, un destacado naranja, la ⓘ de Mapbox abajo a la izquierda y ningún botón de ubicación.
-- `prototipo-sin-ubicacion--390x844.png` — al abrir: seis lugares con evento (dos «Hoy», uno naranja con aro; «Mié», «Jue», «Vie», «Sáb»), dos destacados con aro, puntos chicos para el resto, el botón de ubicación en tinta abajo a la izquierda y «mapbox ⓘ» entre los dos botones.
-- `prototipo-con-ubicacion--390x844.png` — tras tocar el botón: el punto azul con halo al centro del mapa, los lugares cercanos alrededor (Teatro de la Paz «Hoy», Museo Laberinto «Sáb», Museo Federico Silva naranja) y el botón en el color de acción con el centro relleno.
+- `prototipo-sin-ubicacion--390x844.png` — al abrir: seis lugares con evento (dos «Hoy», uno naranja con aro; «Mié», «Jue», «Vie», «Sáb»), dos seguidos con aro, puntos chicos para el resto, el botón de ubicación en tinta abajo a la izquierda y «mapbox ⓘ» entre los dos botones.
+- `prototipo-con-ubicacion--390x844.png` — tras tocar el botón: el punto azul con halo al centro del mapa, los lugares cercanos alrededor (Teatro de la Paz «Hoy», Museo Laberinto «Sáb», Museo Federico Silva seguido y naranja) y el botón en el color de acción con el centro relleno.
 - `prototipo-pin-tocado--390x844.png` — Teatro de la Paz tocado: el pin «Hoy» crece, abajo la hoja con el símbolo SN, «Teatro de la Paz», «Teatro», «Hoy · 20:00 · Orquesta Sinfónica de SLP» y el botón «Ver ficha» a lo ancho; «Registrar lugar» se retiró y el botón de ubicación quedó visible, justo encima del borde superior de la hoja.
+- `prototipo-seguidos--390x844.png` — con sesión inventada: el Museo Federico Silva (destacado y seguido) y el MUNI (solo seguido, sin evento) llevan el naranja y el aro; el Centro de las Artes, destacado pero no seguido, se ve como cualquier lugar con evento (círculo del color de acción con «Hoy»), sin aro ni naranja.
 
 ## Qué toca en el código cuando se firme (para el operador)
 
-- `src/components/Mapa.tsx`: el encuadre inicial (lugares de la semana y destacados; con ubicación, los cinco cercanos); en la capa de puntos, radio según `dia`; una capa de texto para «Hoy»/día (tres letras con acento) dentro del círculo; el aro de los destacados; la ⓘ junto a la marca. La etiqueta del día se calcula en el servidor con la zona del evento (`ProximoEvento.zona`) y llega en las propiedades del punto.
+- `src/components/Mapa.tsx`: el encuadre inicial (lugares de la semana y los cercanos; con ubicación, los cinco cercanos); en la capa de puntos, radio según `dia`; una capa de texto para «Hoy»/día (tres letras con acento) dentro del círculo; el aro y el naranja para los **seguidos** (no los destacados: cambio del founder tras firmar, ver arriba) — con sesión, viene del arreglo de `seguidos` que ya carga `page.tsx`; la ⓘ junto a la marca. La etiqueta del día se calcula en el servidor con la zona del evento (`ProximoEvento.zona`) y llega en las propiedades del punto.
 - `src/app/lugares/VistaLugares.tsx` y `lugares.module.css`: el botón de ubicación (reutiliza `pedirUbicacion`), que debe medir la hoja abierta y subir por encima (el prototipo lo hace con `getBoundingClientRect`; en React puede ir por `ResizeObserver` o CSS con `anchor-name`, lo que dé el resultado más simple); la tarjeta como hoja; «Cercanos» solo en la vista Lista.
-- Sin migraciones ni variables nuevas. Pruebas focalizadas: la función que da «Hoy», «Jue» o nada según la fecha y la zona; la selección de lugares del encuadre; que el botón de ubicación no quede tapado por la hoja en ningún alto de contenido; captura 390×844 de los tres estados en el iPhone del founder.
+- Sin migraciones ni variables nuevas si el encuadre y el resalte se resuelven con lo que ya carga `page.tsx` (`eventosSemana`/`conProximo` y `seguidos`, ya presentes); solo si hiciera falta una consulta agregada nueva en el servidor, usar la migración reservada (solo añade, banco de contrato). Pruebas focalizadas: la función que da «Hoy», «Jue» o nada según la fecha y la zona; la selección de lugares del encuadre; que el botón de ubicación no quede tapado por la hoja en ningún alto de contenido; captura 390×844 de los tres estados en el iPhone del founder, y de sin sesión / con sesión y seguidos.

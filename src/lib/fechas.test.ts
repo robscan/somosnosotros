@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, diaPin, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -30,6 +30,13 @@ describe("fechas", () => {
     expect(tramo("2026-09-19T03:00:00Z", AHORA)).toBe("pasado"); // ayer a las 21:00
     expect(tramo("2026-09-24T01:00:00Z", AHORA)).toBe("semana");
     expect(tramo("2026-10-05T01:00:00Z", AHORA)).toBe("proximos");
+  });
+  it("el pin del mapa dice Hoy, el día en tres letras con acento, o nada (docs/rediseno/35)", () => {
+    expect(diaPin("2026-09-20T01:00:00Z", AHORA)).toBe("Hoy"); // 19:00 de hoy
+    expect(diaPin("2026-09-24T01:00:00Z", AHORA)).toBe("Mié"); // miércoles de esta semana
+    expect(diaPin("2026-09-26T01:00:00Z", AHORA)).toBe("Vie"); // viernes de esta semana
+    expect(diaPin("2026-09-19T03:00:00Z", AHORA)).toBeNull(); // pasado
+    expect(diaPin("2026-10-05T01:00:00Z", AHORA)).toBeNull(); // fuera de la semana
   });
   it("sugiere hoy 19:00 antes de las 18 y mañana después", () => {
     expect(sugerirInicio(AHORA)).toBe("2026-09-19T19:00");
