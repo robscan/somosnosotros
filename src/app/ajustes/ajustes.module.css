@@ -36,6 +36,7 @@
     "icono etiqueta accion"
     "icono detalle accion";
   column-gap: 12px;
+  align-items: center;
   align-content: center;
   width: 100%;
   min-height: 52px;
