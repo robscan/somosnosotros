@@ -7,7 +7,11 @@
 .mando {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  /* La fila del texto de ayuda mide siempre lo de un renglón (18 px de margen + 20 de línea): si el aviso del
+     sensor crece (OL-117: texto rojo + botón «Abrir en Safari» + detalle en gris), se acomoda hacia abajo sobre el
+     espacio libre del pie, con desplazamiento si no cabe — pero el botón y las tarjetas no se mueven en ningún
+     estado (medido: centro del botón en y=611 en los seis casos). */
+  grid-template-rows: auto minmax(0, 1fr) auto 38px;
   grid-template-areas:
     ". . presente"
     "espera espera espera"
@@ -178,9 +182,12 @@
 }
 .hold {
   grid-area: hold;
+  /* Arranca arriba de su fila de 38 px y, si crece, desborda hacia abajo sobre el pie: la fila no se estira. */
+  align-self: start;
   margin: 18px 0 0;
   text-align: center;
   font-size: 14px;
+  line-height: 20px;
   color: var(--texto-suave);
 }
 .hold.aviso {

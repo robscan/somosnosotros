@@ -1,6 +1,6 @@
 # 152 · Pincel: el permiso del sensor en el iPhone (OL-117)
 
-**Fecha:** 2026-09-22 · **OL:** OL-117 · **Rama:** `pincel-sensor-ios` desde `origin/main` (`4bc9520`) · **Commit:** `c240d75` (código), este documento aparte · **Sin push** (lo sube el gestor).
+**Fecha:** 2026-09-22 · **OL:** OL-117 · **Rama:** `pincel-sensor-ios` desde `origin/main` (`4bc9520`) · **Commits:** `c240d75` (código), `494164b` (este documento y OPEN_LOOPS), y uno más con la corrección del gestor (abajo) · **Sin push** (lo sube el gestor).
 
 ## El síntoma
 
@@ -26,3 +26,11 @@ Con Chrome real (`playwright-core`, scratchpad de la sesión; ver memoria `refer
 `npm run typecheck && npm run lint` (0 errores) `&& npm test` (875/875, 10 nuevas) `&& npm run build`: verde.
 
 **Lo que solo puede verificar el founder en su iPhone:** que en iOS 26 el `click` al soltar baste para que Safari muestre el diálogo del permiso. Si aun así rechaza, el gris bajo el rojo dice exactamente qué devolvió, y en la app instalada queda el camino de abrir en Safari.
+
+## Corrección del gestor: en los estados negados se movía el mando entero
+
+El gestor midió las seis capturas y devolvió una cosa: en `negado-safari` el centro del botón estaba en y≈548 y en `negado-instalada` en y≈494, contra 611 en reposo. La regla del mando es que nada se mueve en ningún estado. La causa: la fila del texto de ayuda (`hold`) era `auto`; con dos o tres renglones rojos más el botón «Abrir en Safari» más el detalle gris crecía, y como `.mando` tiene `min-height` fijo, la fila `minmax(0, 1fr)` de arriba se encogía y subía la fila del botón y las tarjetas.
+
+**El arreglo** (`mando.module.css`, solo CSS): la fila `hold` mide siempre **38 px** (18 de margen + 20 de línea, `line-height: 20px` explícito; antes 18 + 19.6 con el 1.4 del body, así que el botón queda 0.4 px más arriba que en `c240d75`, igual en todos los estados) y `.hold` lleva `align-self: start`: si el aviso crece, desborda **hacia abajo** sobre el espacio libre del pie (`padding-bottom` de 143 px a 844 de alto), con desplazamiento de la página si no cabe; el padre `ficha.pagina` no recorta.
+
+**Medido** con el mismo guion de Chrome real, seis estados a 390×844 (`mando-sensor-390x844-*.png`, regeneradas): centro del botón **610.5 en los seis**; tarjetas Trazo y Tinta en `top 568.5`, 105×84, en los seis; el texto de ayuda empieza en `top 692.5` en los seis y solo cambia su fondo: 20 px (sin-pedir, concedido), 44 (sin-soporte), 64 (denied), 84 (negado-safari), 138 (negado-instalada: acaba en 830.5, dentro de la pantalla). `scrollWidth`/`clientWidth` 390/390 en todos. `npm run typecheck && npm run lint && npm test` (875/875) `&& npm run build`: verde.
