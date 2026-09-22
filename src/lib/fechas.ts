@@ -149,6 +149,22 @@ export function formatearLargo(iso: string, ahora: Date = new Date(), fin?: stri
 
 export type Tramo = "hoy" | "semana" | "proximos" | "pasado";
 
+/** "Hoy" → "Lun"/"Mar"/"Mié"/"Jue"/"Vie"/"Sáb"/"Dom", con acento (docs/rediseno/35, decisión del founder 2026-09-22). */
+const DIAS_PIN: Record<string, string> = { Sun: "Dom", Mon: "Lun", Tue: "Mar", Wed: "Mié", Thu: "Jue", Fri: "Vie", Sat: "Sáb" };
+
+/**
+ * El texto del pin del mapa de lugares: "Hoy" si el evento es hoy, el día en tres letras con acento si cae en los
+ * seis días que siguen (misma ventana que `tramo`, "esta semana"), o null fuera de esa ventana (el pin no lleva
+ * día: el lugar se pinta como un punto). Mañana no lleva palabra propia: muestra su día, una sola regla.
+ */
+export function diaPin(inicio: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string | null {
+  const t = tramo(inicio, ahora, zona);
+  if (t === "pasado" || t === "proximos") return null;
+  if (t === "hoy") return "Hoy";
+  const abrev = new Intl.DateTimeFormat("en-US", { timeZone: zonaSegura(zona), weekday: "short" }).format(new Date(inicio));
+  return DIAS_PIN[abrev] ?? null;
+}
+
 /** Hoy · Esta semana (7 días) · Próximos. Un evento de hoy sigue siendo de hoy hasta que acabe el día (la misma regla que `eventoPaso`). */
 export function tramo(inicio: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): Tramo {
   if (eventoPaso(inicio, null, ahora, zona)) return "pasado";
