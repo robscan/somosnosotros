@@ -110,4 +110,24 @@ El gestor abrió las capturas y devolvió la evidencia (no el código, ya acepta
 
 No se tocó código de producto en esta ronda, solo el banco de verificación.
 
-Sin migración.
+## Color del estado decidido (OL-106 ya en producción; rama nueva `boton-decidido-color`)
+
+Con la pieza ya publicada (PR #138), el founder probó la app y pidió un ajuste:
+
+> «Me gustó tu integración, El color del botón es lo unico que debe mejorar, me mantengo en la decisión de que se vea relleno en seleccionado, pero debe ser otro color, pues se confunde con el verde de botones primarios y hace que el usuario quiera hacer tap.»
+
+Es decir: `--primario` (el "azul petróleo" que el founder percibe como el verde de los accionables) invita a tocar precisamente porque es el color de "hazlo"; usarlo también para "ya está hecho" confunde las dos cosas. El founder confirmó («sí al verde») usar `--ok` en su lugar — recomendación propia: no es un tono nuevo inventado, es el token que ya existía en `globals.css` con el comentario literal «verde: "Voy" confirmado», solo que nunca se había usado como fondo de un botón.
+
+El gestor confirmó sin choque, pidió rama nueva (`boton-decidido-color`, desde `origin/main`, porque toca el componente compartido) en vez de pieza nueva, y dos comprobaciones antes de escribir código: contraste del icono blanco sobre `--ok` (≥ 4.5:1) y que se distinga de `--primario` sobre fotos claras y oscuras.
+
+**Contraste, calculado antes de tocar código:** blanco (#fff) sobre `--ok` (#1f6f43) da **6.15:1** — pasa holgado el 4.5:1.
+
+**Código:** `ui/BotonRenglon.module.css`, `.decidido` pasa de `background: var(--primario)` a `background: var(--ok)`, sin tocar `.invitar`. Comentario de `--ok` en `globals.css` aclarado (ya no es solo "Voy confirmado": es "algo ya decidido" en general, Voy y Seguir).
+
+**Verificado con el componente real** (mismo tipo de banco que la corrección de evidencia: fuente y márgenes reales), el verde se distingue de `--primario` sobre foto clara y sobre foto oscura, en tarjeta grande, normal y redonda, y en los renglones de las cuatro listas. Capturas reales con `simctl` (mismo simulador): `01-agenda-decidido.png`, `02-lugares-artistas-decidido.png` (carril sobre foto clara y oscura, redonda incluida), `03-perfil-decidido.png`.
+
+`npm run lint && npm run typecheck && npm test`: lint sin errores (warning ajeno de siempre); typecheck en verde; **782 pruebas en verde**, 7 en rojo preexistentes (falta `pg`); `npm run build` en verde.
+
+No va en «Decidido» de `OPEN_LOOPS.md` (indicación del gestor): es un ajuste del diseño ya firmado, no una decisión nueva. Commit local (`b4148dc`), sin push.
+
+Sin migración. Sin subagentes.
