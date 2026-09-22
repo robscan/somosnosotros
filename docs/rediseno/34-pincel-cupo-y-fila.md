@@ -1,6 +1,6 @@
 # 34 · Pincel: cupo de mandos por obra y fila de espera
 
-**Estado:** propuesta, prototipo para firma del founder. · **OL:** OL-088 · **Bitácora:** [123](../bitacora/2026/09/123-pincel-app.md)
+**Estado:** firmado por el founder («firmo Pincel», 2026-09-21, en el chat del gestor). · **OL:** OL-088 · **Bitácora:** [123](../bitacora/2026/09/123-pincel-app.md)
 
 ## De dónde sale
 
@@ -44,6 +44,11 @@ Solo número de lugar («vas el 3») para quien espera, y un conteo total («4 e
 - Turno con tiempo máximo o salida por inactividad (recorte del founder; queda para «Después»).
 - Medir el costo de Presence en mensajes/segundo con el simulador — el de la Fase 2 bloque 2 solo abrió canales de Broadcast puro, sin Presence.
 - Un tope aparte al total de conexiones (pintando + esperando) más allá del que ya impone el plan de Supabase.
+
+## Dos ajustes del gestor al construir (2026-09-21, no cambian el prototipo firmado)
+
+- **«Te toca»:** el aviso se va solo a los pocos segundos y el mando queda activo de inmediato — sin pedir un toque extra para empezar a pintar.
+- **Texto bajo el campo de cupo, sin jerga técnica de cara a quien administra:** «Hasta 20, para que la pared responda al instante» (nada de «plan de Supabase» ni cifras de mensajes por segundo, que son razón interna, no explicación para el admin).
 
 ## Ver también
 
