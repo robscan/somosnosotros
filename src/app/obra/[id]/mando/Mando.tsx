@@ -14,11 +14,13 @@ import {
   EVENTO_TRAZO,
   GROSOR_BASE,
   grosorDesdeArrastre,
-  INTERVALO_MENSAJE_MS,
+  intervaloMs,
   muestrear,
   personasAqui,
   posicionDesdeOrientacion,
+  POSICIONES_POR_SEGUNDO,
   PUNTOS_MAX_POR_MENSAJE,
+  ritmoDeTrazo,
   textoDelSensor,
   TINTAS,
   TRAZOS,
@@ -121,6 +123,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
   const ceroRef = useRef<Orientacion | null>(null);
   const posicionRef = useRef<PosicionNormalizada>(CENTRO);
   const ultimaEnviadaRef = useRef<PosicionNormalizada | null>(null);
+  const ultimaMuestraRef = useRef<number | undefined>(undefined); // ms de época de la última lectura (OL-126: latencia)
   const bufferRef = useRef<PosicionNormalizada[]>([]);
   const trazoRef = useRef(trazo);
   const colorRef = useRef(color);
@@ -183,7 +186,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
   const mandarPosicion = useCallback(
     (posicion: PosicionNormalizada) => {
       if (!canalRef.current || !puedePintarRef.current) return;
-      const mensaje: MensajePosicion = { remitente: perfilId, trazo: trazoRef.current, color: colorRef.current, grosor: grosorRef.current, posicion };
+      const mensaje: MensajePosicion = { remitente: perfilId, trazo: trazoRef.current, color: colorRef.current, grosor: grosorRef.current, posicion, enviado: Date.now(), muestra: ultimaMuestraRef.current };
       canalRef.current.send({ type: "broadcast", event: EVENTO_POSICION, payload: mensaje });
       ultimaEnviadaRef.current = posicion;
     },
@@ -202,6 +205,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
       const posicion = posicionDesdeOrientacion(ceroRef.current, actual);
       if (!posicion) return;
       posicionRef.current = posicion;
+      ultimaMuestraRef.current = Date.now();
       bufferRef.current.push(posicion);
     }
     window.addEventListener("deviceorientation", alMoverse);
@@ -234,31 +238,44 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
     };
   }, []);
 
-  // Presionado y con cupo para pintar: manda MENSAJES_POR_SEGUNDO veces por segundo las posiciones juntadas desde
-  // el mensaje anterior. Si el cupo baja a media pulsación (o el sync de Presence llega tarde), este efecto se
-  // desmonta solo — la pared, de todos modos, ya descarta el trazo de quien no pinta.
+  // Presionado y con cupo para pintar (OL-126): el primer punto del trazo sale AL INSTANTE al presionar (donde está
+  // el punto tenue) y, después, `ritmoDeTrazo(cupo)` mensajes por segundo (6 con el cupo de 10; 5 con 20) con las
+  // posiciones juntadas desde el anterior. Si el cupo baja a media pulsación (o el sync de Presence llega tarde),
+  // este efecto se desmonta solo — la pared, de todos modos, ya descarta el trazo de quien no pinta.
   useEffect(() => {
     if (!presionado || estado.tipo !== "pintando") return;
-    bufferRef.current = [posicionRef.current]; // el trazo arranca donde está el punto tenue
+    function mandarTrazo(muestras: PosicionNormalizada[]) {
+      if (muestras.length === 0 || !canalRef.current) return;
+      const mensaje: MensajeTrazo = {
+        trazo: trazoRef.current,
+        color: colorRef.current,
+        puntos: muestrear(muestras, PUNTOS_MAX_POR_MENSAJE),
+        remitente: perfilId,
+        grosor: grosorRef.current,
+        enviado: Date.now(),
+        muestra: ultimaMuestraRef.current,
+      };
+      canalRef.current.send({ type: "broadcast", event: EVENTO_TRAZO, payload: mensaje });
+    }
+    bufferRef.current = [];
+    mandarTrazo([posicionRef.current]); // el trazo arranca donde está el punto tenue, sin esperar al primer tic
     const intervalo = setInterval(() => {
       const muestras = bufferRef.current;
       bufferRef.current = [];
       // Mientras se ajusta el grosor no se manda trazo (gestor, 2026-09-21): el arrastre del dedo no es pintar.
       // Las muestras de ese rato se tiran, no se guardan: al volver a pintar no debe salir un salto acumulado.
       if (ajustandoRef.current) return;
-      if (muestras.length === 0 || !canalRef.current) return;
-      const mensaje: MensajeTrazo = { trazo: trazoRef.current, color: colorRef.current, puntos: muestrear(muestras, PUNTOS_MAX_POR_MENSAJE), remitente: perfilId, grosor: grosorRef.current };
-      canalRef.current.send({ type: "broadcast", event: EVENTO_TRAZO, payload: mensaje });
-    }, INTERVALO_MENSAJE_MS);
+      mandarTrazo(muestras);
+    }, intervaloMs(ritmoDeTrazo(cupo)));
     return () => {
       clearInterval(intervalo);
       bufferRef.current = [];
     };
-  }, [presionado, perfilId, estado.tipo]);
+  }, [presionado, perfilId, estado.tipo, cupo]);
 
   // Sin pintar y con cupo: «aquí estoy» al conectarse (y al soltar, ya con el grosor que quedó) y, después, la
-  // posición con el mismo reloj que el trazo (INTERVALO_MENSAJE_MS: 3 por segundo, el presupuesto de Realtime),
-  // solo si cambió y siempre la última (sin cola). Nada se guarda.
+  // posición a POSICIONES_POR_SEGUNDO (2/s, OL-126: es referencia, no trazo), solo si cambió y siempre la última
+  // (sin cola). Nada se guarda.
   useEffect(() => {
     if (presionado || estado.tipo !== "pintando") return;
     mandarPosicion(posicionRef.current);
@@ -268,7 +285,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
       const ultima = ultimaEnviadaRef.current;
       if (ultima && ultima.x === posicion.x && ultima.y === posicion.y) return;
       mandarPosicion(posicion);
-    }, INTERVALO_MENSAJE_MS);
+    }, intervaloMs(POSICIONES_POR_SEGUNDO));
     return () => clearInterval(intervalo);
   }, [presionado, estado.tipo, mandarPosicion]);
 
@@ -594,7 +611,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
 
       {sonda && (
         <pre className={styles.sonda} aria-hidden="true">
-          {`sonda · fila=${estado.tipo} (${entradas.length}) · sensor=${sensor.tipo} · ${muestrasPorSegundo} lecturas/s\n` +
+          {`sonda · fila=${estado.tipo} (${entradas.length}) · sensor=${sensor.tipo} · ${muestrasPorSegundo} lecturas/s · trazo ${ritmoDeTrazo(cupo)}/s, posición ${POSICIONES_POR_SEGUNDO}/s\n` +
             `pres=${presionado ? "sí" : "no"} cap=${capturado ? "sí" : "no"} desp=${desplazamiento} grosor=${grosor.toFixed(2)} pos=${posicionSonda.x.toFixed(2)},${posicionSonda.y.toFixed(2)}\n` +
             lineasSonda.join("\n")}
         </pre>

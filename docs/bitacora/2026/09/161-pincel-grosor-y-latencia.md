@@ -29,4 +29,22 @@ El sentido ya está bien (OL-120). Quedan dos cosas, y esta vez el simulador no 
 
 ## Parte 2 · La latencia
 
-(Se anota al cerrar el segundo commit.)
+**Qué sumaba antes (medido en el código, no supuesto):** el mando agrupaba las lecturas y mandaba un `trazo` cada 333 ms (3/s, y el primero salía en el primer tic, no al presionar), la posición sin pintar iba al mismo ritmo, y la pared deslizaba el punto tenue otros 333 ms. En el peor caso, del movimiento del teléfono a verlo en la pared: hasta 333 (agrupación) + red/Realtime + 333 (transición del punto) — y el trazo se dibujaba al llegar, pero el punto que lo acompaña llegaba tarde.
+
+**Qué cambia:**
+
+- **Ritmo según el cupo** (`ritmoDeTrazo(cupo)` en `src/lib/pincel.ts`): pintando, `MENSAJES_POR_SEGUNDO_PINTANDO = 6` por mando mientras `cupo × 6 ≤ PRESUPUESTO_MENSAJES_POR_SEGUNDO = 100` — con el cupo de 10 por defecto, **10 × 6 = 60/s**; con 17–20 mandos baja solo a 5/s (**20 × 5 = 100/s**). Sin pintar, la posición va a `POSICIONES_POR_SEGUNDO = 2`. Pruebas puras: 10 → 6, 1 → 6, 16 → 6, 17 → 5, 20 → 5, y `cupo × ritmo ≤ 100` para todo cupo de 1 a 20; `intervaloMs` (6 → 167, 5 → 200, 2 → 500, 0 → 1000, sin división por cero). Las constantes viejas `MENSAJES_POR_SEGUNDO` e `INTERVALO_MENSAJE_MS` desaparecen: nadie más las usaba.
+- **El primer punto sale al instante** al presionar (donde está el punto tenue), sin esperar al primer tic; después, las lecturas agrupadas cada 167 ms (con el cupo de 10).
+- **La pared dibuja el trazo en cuanto llega** (ya era así) y **solo el punto tenue se suaviza, en `SUAVIZADO_PUNTO_MS = 120`** (antes 333); prueba: `≤ 120`.
+- **Marcas de tiempo de punta a punta:** cada mensaje lleva `muestra` (ms de época de la última lectura del sensor incluida) y `enviado` (ms de época al mandarlo), opcionales y validadas si vienen (un cliente viejo sin marcas sigue entrando; una marca que no es número finito invalida el mensaje); la pared anota cuándo lo recibió y cuándo terminó de dibujar, y `latenciasDe` (pura, 4 pruebas) da agrupación (muestra→envío), red (envío→recepción), dibujo y total (muestra→dibujo). La parte «red» cruza los relojes de dos aparatos (en un iPhone y una Mac con hora automática, decenas de ms de desfase como mucho); agrupación y dibujo son de un solo reloj y exactas.
+- **Sonda de la pared (`/obra/<id>/pared?sonda=1`)**, abajo a la izquierda: mensajes en el último segundo, el último mensaje (de quién, cuántos puntos, sus cuatro latencias), la media de las últimas 12 y la advertencia del reloj. Sin `?sonda=1` no cambia nada (medido: `sonda: null`, mismos puntos y mismo lienzo). `page.tsx` lee `searchParams` y pasa `sonda`.
+- La sonda del mando dice también el ritmo vigente: «trazo 6/s, posición 2/s».
+
+**Verificación (Chrome real, respaldo local con marcas de tiempo en su log):**
+
+- Ritmo real del mando (`medir-ritmo-ol126.mjs`, lecturas del sensor despachadas a 30/s): sin pintar, 60 lecturas en 2 s → **5 posiciones a 498, 498, 504, 497 ms** (2/s); al presionar, **el primer trazo llega al respaldo −1 ms después del `mousedown`** (mismo instante, con 1 punto) y después **15 trazos en 2.2 s a 163–170 ms** (6/s) con 4–5 puntos cada uno; el último trazo trae `enviado`/`muestra` (agrupación 131 ms porque las lecturas ya habían parado; llegada al respaldo 2 ms después del envío); al soltar, la posición con las marcas.
+- Pared 1280×800 (`evidencia-ol126/pared-ol126-1280x800-sin-sonda.png`, `-con-sonda.png`): transición del punto **0.12 s**; un trazo de 4 puntos inyectado con marcas: **a los 40 ms ya hay 2 436 px pintados** (antes 0) mientras el punto aún va a medio camino (opacidad 0.39, en (973, 208) rumbo a (1056, 260)) — el trazo no espera al punto; la sonda dice «último trazo de persona- (4 puntos): sensor→envío 20 ms · envío→recepción 6 ms · dibujo 1 ms · total 27 ms · media (3): envío→recepción 6 ms · total 34 ms»; un mensaje sin marcas entra y sale como «sensor→envío — · envío→recepción — · dibujo 0 ms · total —».
+
+`npm run typecheck && npm run lint` (0 errores; 1 aviso previo) `&& npm test && npm run build`: verde.
+
+**Lo que solo puede verificar el founder:** la latencia sentida en su iPhone con la pared en la Mac: con `?sonda=1` en la pared, «total» es lo que tarda su movimiento en dibujarse (con el desfase de relojes en «envío→recepción»); si «sensor→envío» ronda los 170 ms es la agrupación de 6/s (el presupuesto); si «envío→recepción» es grande, es Realtime/red, no la app.

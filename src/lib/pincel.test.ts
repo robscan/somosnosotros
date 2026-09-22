@@ -17,8 +17,13 @@ import {
   GROSOR_MAX,
   GROSOR_MIN,
   grosorDesdeArrastre,
-  INTERVALO_MENSAJE_MS,
-  MENSAJES_POR_SEGUNDO,
+  intervaloMs,
+  latenciasDe,
+  MENSAJES_POR_SEGUNDO_PINTANDO,
+  POSICIONES_POR_SEGUNDO,
+  PRESUPUESTO_MENSAJES_POR_SEGUNDO,
+  ritmoDeTrazo,
+  SUAVIZADO_PUNTO_MS,
   muestrear,
   nombreSugerido,
   ordenDeFila,
@@ -270,11 +275,61 @@ describe("muestrear", () => {
   });
 });
 
-describe("presupuesto de mensajes (OL-120, gestor)", () => {
-  it("trazo y posición comparten reloj: 3 por segundo por mando; 20 mandos caben en 60 mensajes/s", () => {
-    expect(MENSAJES_POR_SEGUNDO).toBe(3);
-    expect(INTERVALO_MENSAJE_MS).toBe(333);
-    expect(MENSAJES_POR_SEGUNDO * 20).toBeLessThanOrEqual(60);
+describe("presupuesto de mensajes (OL-126, gestor)", () => {
+  it("pintando, 6 por segundo con el cupo de 10 (10 × 6 = 60/s); con 20 mandos baja solo a 5/s (100/s)", () => {
+    expect(MENSAJES_POR_SEGUNDO_PINTANDO).toBe(6);
+    expect(ritmoDeTrazo(10)).toBe(6);
+    expect(ritmoDeTrazo(1)).toBe(6);
+    expect(ritmoDeTrazo(16)).toBe(6);
+    expect(ritmoDeTrazo(17)).toBe(5);
+    expect(ritmoDeTrazo(20)).toBe(5);
+    expect(10 * ritmoDeTrazo(10)).toBeLessThanOrEqual(60);
+    for (let cupo = 1; cupo <= 20; cupo++) expect(cupo * ritmoDeTrazo(cupo)).toBeLessThanOrEqual(PRESUPUESTO_MENSAJES_POR_SEGUNDO);
+  });
+  it("sin pintar, la posición va a 2 por segundo; el punto tenue se suaviza en 120 ms como mucho", () => {
+    expect(POSICIONES_POR_SEGUNDO).toBe(2);
+    expect(SUAVIZADO_PUNTO_MS).toBeLessThanOrEqual(120);
+  });
+  it("intervalo en ms a partir del ritmo, nunca división por cero", () => {
+    expect(intervaloMs(6)).toBe(167);
+    expect(intervaloMs(5)).toBe(200);
+    expect(intervaloMs(2)).toBe(500);
+    expect(intervaloMs(0)).toBe(1000);
+  });
+});
+
+describe("latenciasDe (OL-126)", () => {
+  it("con marcas del mando: agrupación (muestra→envío), red (envío→recepción), dibujo y total (muestra→dibujo)", () => {
+    const l = latenciasDe({ muestra: 1000, enviado: 1040 }, 1075, 1077);
+    expect(l).toEqual({ agrupacionMs: 40, redMs: 35, dibujoMs: 2, totalMs: 77 });
+  });
+  it("sin marcas (un cliente viejo): solo el dibujo se puede medir", () => {
+    expect(latenciasDe({}, 1075, 1076)).toEqual({ agrupacionMs: null, redMs: null, dibujoMs: 1, totalMs: null });
+  });
+  it("solo con envío: red y total desde el envío; la agrupación no se sabe", () => {
+    expect(latenciasDe({ enviado: 1040 }, 1075, 1075)).toEqual({ agrupacionMs: null, redMs: 35, dibujoMs: 0, totalMs: 35 });
+  });
+  it("un reloj adelantado en el mando puede dar red negativa (se enseña tal cual); agrupación y dibujo nunca bajan de 0", () => {
+    const l = latenciasDe({ muestra: 1050, enviado: 1040 }, 1030, 1029);
+    expect(l.redMs).toBe(-10);
+    expect(l.agrupacionMs).toBe(0);
+    expect(l.dibujoMs).toBe(0);
+  });
+});
+
+describe("marcas de tiempo opcionales en los mensajes (OL-126)", () => {
+  const trazo = { trazo: "trazo", color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 };
+  const posicion = { remitente: REMITENTE, trazo: "trazo", color: "#141414", grosor: 1, posicion: { x: 0, y: 0 } };
+  it("sin marcas siguen siendo válidos; con marcas numéricas también", () => {
+    expect(esMensajeTrazoValido(trazo)).toBe(true);
+    expect(esMensajeTrazoValido({ ...trazo, enviado: 1700000000000, muestra: 1699999999990 })).toBe(true);
+    expect(esMensajePosicionValido(posicion)).toBe(true);
+    expect(esMensajePosicionValido({ ...posicion, enviado: 1700000000000 })).toBe(true);
+  });
+  it("una marca que no es un número finito invalida el mensaje", () => {
+    expect(esMensajeTrazoValido({ ...trazo, enviado: "ahora" })).toBe(false);
+    expect(esMensajeTrazoValido({ ...trazo, muestra: NaN })).toBe(false);
+    expect(esMensajePosicionValido({ ...posicion, muestra: null })).toBe(false);
   });
 });
 

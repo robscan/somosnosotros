@@ -38,15 +38,52 @@ export const EVENTO_TRAZO = "trazo";
 /**
  * Un mando NO manda un mensaje por cada muestra del sensor (gestión de cambios, revisión 2026-09-21, con el cupo
  * real de Supabase Realtime citado más abajo): el teléfono sigue muestreando el sensor a su ritmo mientras el
- * botón está presionado, pero solo MANDA `MENSAJES_POR_SEGUNDO` veces por segundo, cada uno con las posiciones
- * juntadas desde el mensaje anterior. La pared dibuja todos los puntos de un mismo mensaje seguidos: se ve igual
- * de fluido, cuesta una fracción de los mensajes.
+ * botón está presionado, pero solo MANDA `ritmoDeTrazo(cupo)` veces por segundo (6 con el cupo de 10), cada uno
+ * con las posiciones juntadas desde el mensaje anterior — y el primer punto de cada trazo sale al instante al
+ * presionar (OL-126). La pared dibuja todos los puntos de un mismo mensaje seguidos: se ve igual de fluido,
+ * cuesta una fracción de los mensajes.
  */
-export const MENSAJES_POR_SEGUNDO = 3;
-/** El mismo reloj para el trazo y para la posición (OL-120, gestor): un mando manda como mucho un mensaje cada
- * tanto, esté pintando (`trazo`) o no (`posicion`), nunca los dos a la vez. Presupuesto: 20 mandos × 3 = 60
- * mensajes por segundo, dentro del cupo de Realtime que fijó el cupo de mandos. */
-export const INTERVALO_MENSAJE_MS = Math.round(1000 / MENSAJES_POR_SEGUNDO);
+export const MENSAJES_POR_SEGUNDO_PINTANDO = 6;
+/** Sin pintar, la posición del punto tenue va a 2 por segundo (OL-126, gestor): es referencia, no trazo. */
+export const POSICIONES_POR_SEGUNDO = 2;
+/** Tope de mensajes por segundo de toda una obra hacia Realtime (OL-126): con el cupo de 10 por defecto, 10 × 6
+ * = 60/s; con 20 mandos el ritmo de trazo baja solo a 5/s para no pasar de 100/s. */
+export const PRESUPUESTO_MENSAJES_POR_SEGUNDO = 100;
+
+/**
+ * Cuántos mensajes de trazo por segundo manda un mando pintando, según el cupo de la obra (OL-126, founder:
+ * «demasiada latencia»; antes eran 3/s para trazo y posición por igual, o sea hasta 333 ms de agrupación). El
+ * presupuesto se reparte entre los mandos que pueden pintar a la vez: 6/s hasta 16 mandos, 5/s con 17–20.
+ */
+export function ritmoDeTrazo(cupo: number): number {
+  const porMando = Math.floor(PRESUPUESTO_MENSAJES_POR_SEGUNDO / Math.max(1, cupo));
+  return Math.max(1, Math.min(MENSAJES_POR_SEGUNDO_PINTANDO, porMando));
+}
+
+export function intervaloMs(porSegundo: number): number {
+  return Math.round(1000 / Math.max(1, porSegundo));
+}
+
+/** La pared desliza el punto tenue de una posición recibida a la siguiente en este tiempo (≤120 ms, gestor); el
+ * trazo se dibuja en cuanto llega, sin esperar a nada. */
+export const SUAVIZADO_PUNTO_MS = 120;
+
+/**
+ * Marcas de tiempo para medir la cadena de punta a punta (OL-126): el mando pone en cada mensaje `muestra` (ms
+ * de época de la última lectura del sensor que va en él) y `enviado` (ms de época al mandarlo); la pared anota
+ * cuándo lo recibió y cuándo terminó de dibujarlo. Los relojes son los de cada aparato (en un iPhone y una Mac
+ * con la hora automática van a tiros de decenas de ms): la parte «red» puede salir con ese sesgo; «agrupación» y
+ * «dibujo» se miden en un solo aparato y son exactas. Son opcionales en el mensaje: un cliente viejo no los manda.
+ */
+export type Latencias = { agrupacionMs: number | null; redMs: number | null; dibujoMs: number; totalMs: number | null };
+
+export function latenciasDe(mensaje: { enviado?: number; muestra?: number }, recibidoMs: number, dibujadoMs: number): Latencias {
+  const agrupacionMs = mensaje.enviado !== undefined && mensaje.muestra !== undefined ? Math.max(0, mensaje.enviado - mensaje.muestra) : null;
+  const redMs = mensaje.enviado !== undefined ? recibidoMs - mensaje.enviado : null;
+  const dibujoMs = Math.max(0, dibujadoMs - recibidoMs);
+  const totalMs = mensaje.muestra !== undefined ? dibujadoMs - mensaje.muestra : mensaje.enviado !== undefined ? dibujadoMs - mensaje.enviado : null;
+  return { agrupacionMs, redMs, dibujoMs, totalMs };
+}
 /** Tope de puntos por mensaje: a `MENSAJES_POR_SEGUNDO = 3` y un sensor muestreado hasta a 60 Hz, un mensaje junta
  * ~20; si el sensor da más, el mando los rebaja con `muestrear`. Es también el límite que exige
  * `esMensajeTrazoValido` (contra un mensaje fabricado a mano con miles de puntos). */
@@ -118,7 +155,12 @@ export function muestrear<T>(puntos: T[], max: number): T[] {
  * persona): el canal ya exige sesión (`private: true`); esto es solo para que dos pinceles no se confundan, no una
  * medida de seguridad aparte — aceptado así a propósito, sin generalizar.
  */
-export type MensajeTrazo = { trazo: Trazo; color: string; puntos: PosicionNormalizada[]; remitente: string; grosor: number };
+export type MensajeTrazo = { trazo: Trazo; color: string; puntos: PosicionNormalizada[]; remitente: string; grosor: number; enviado?: number; muestra?: number };
+
+/** `enviado` y `muestra` (marcas de tiempo, OL-126) pueden faltar; si vienen, tienen que ser números finitos. */
+function marcaOpcionalValida(v: unknown): boolean {
+  return v === undefined || numeroFinito(v);
+}
 
 /**
  * Grosor del trazo (founder, 2026-09-21): mientras mantiene presionado el punto del mando, arrastrar el dedo hacia
@@ -185,7 +227,9 @@ export function esMensajeTrazoValido(v: unknown): v is MensajeTrazo {
     m.remitente.length > 0 &&
     numeroFinito(m.grosor) &&
     m.grosor > 0 &&
-    m.grosor <= GROSOR_MAX + 0.001
+    m.grosor <= GROSOR_MAX + 0.001 &&
+    marcaOpcionalValida(m.enviado) &&
+    marcaOpcionalValida(m.muestra)
   );
 }
 
@@ -223,11 +267,11 @@ export function siguientesSegmentos(desde: Punto | null, puntos: PosicionNormali
 /**
  * Punto de referencia en la pared (OL-120, founder 2026-09-22: «cuando se conecta debe mostrar un punto tenue como
  * referencia de posición»). Un mando encendido y con cupo manda su posición por el canal aunque no esté pintando:
- * evento `posicion` (no `trazo`), al mismo ritmo que el trazo (`MENSAJES_POR_SEGUNDO`, gestor: el presupuesto de
- * Realtime manda también aquí), solo cuando cambia y sin guardar nada; pintando, no manda posición aparte (la
- * pared coloca el punto con el último punto del trazo). La pared mueve el punto de ese remitente sin dibujar y
- * enseña ahí un círculo tenue del color de su tinta, deslizándolo de una posición recibida a la siguiente durante
- * `INTERVALO_MENSAJE_MS` para que no salte; al pintar, el punto acompaña al trazo con opacidad normal; al salir el
+ * evento `posicion` (no `trazo`), a `POSICIONES_POR_SEGUNDO` (2/s, OL-126; el presupuesto de Realtime manda
+ * también aquí), solo cuando cambia y sin guardar nada; pintando, no manda posición aparte (la pared coloca el
+ * punto con el último punto del trazo). La pared mueve el punto de ese remitente sin dibujar y enseña ahí un
+ * círculo tenue del color de su tinta, deslizándolo de una posición recibida a la siguiente en
+ * `SUAVIZADO_PUNTO_MS` para que no salte; al pintar, el punto acompaña al trazo con opacidad normal; al salir el
  * mando (Presence), desaparece. «Centrar» (botón del mando) recalibra el cero con la postura actual y manda la
  * posición (0,0): el centro.
  */
@@ -237,7 +281,7 @@ export const OPACIDAD_PUNTO_TENUE = 0.35;
 /** El punto nunca es más chico que esto, aunque el trazo sea fino (gestor: «mínimo 8 px»). */
 export const DIAMETRO_PUNTO_MIN_PX = 8;
 
-export type MensajePosicion = { remitente: string; trazo: Trazo; color: string; grosor: number; posicion: PosicionNormalizada };
+export type MensajePosicion = { remitente: string; trazo: Trazo; color: string; grosor: number; posicion: PosicionNormalizada; enviado?: number; muestra?: number };
 
 /** Igual de desconfiada que `esMensajeTrazoValido`. */
 export function esMensajePosicionValido(v: unknown): v is MensajePosicion {
@@ -251,7 +295,9 @@ export function esMensajePosicionValido(v: unknown): v is MensajePosicion {
     numeroFinito(m.grosor) &&
     m.grosor > 0 &&
     m.grosor <= GROSOR_MAX + 0.001 &&
-    esPosicionValida(m.posicion)
+    esPosicionValida(m.posicion) &&
+    marcaOpcionalValida(m.enviado) &&
+    marcaOpcionalValida(m.muestra)
   );
 }
 
