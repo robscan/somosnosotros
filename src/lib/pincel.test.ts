@@ -1,27 +1,37 @@
 import { describe, expect, it } from "vitest";
 import {
+  ANCHO_POR_GROSOR_PX,
   ARRASTRE_GROSOR_MAX_PX,
-  DELTAS_MAX_POR_MENSAJE,
-  deltaDesdeOrientacion,
+  decidirSensor,
+  DIAMETRO_PUNTO_MIN_PX,
   diametroDelPunto,
+  diametroDelPuntoDePosicion,
   entradasDesdePresencia,
+  esMensajePosicionValido,
   esMensajeTrazoValido,
-  ESCALA_DELTA_PX,
+  esPosicionValida,
   estaAjustandoGrosor,
   estadoDeFila,
+  estaEncendido,
   GROSOR_BASE,
   GROSOR_MAX,
   GROSOR_MIN,
   grosorDesdeArrastre,
+  INTERVALO_MENSAJE_MS,
+  MENSAJES_POR_SEGUNDO,
+  muestrear,
   nombreSugerido,
   ordenDeFila,
-  puntoInicial,
-  quienesPintan,
-  siguientesSegmentos,
-  UMBRAL_AJUSTE_PX,
-  decidirSensor,
   personasAqui,
+  posicionDesdeOrientacion,
+  puntoCentral,
+  puntoEnPared,
+  PUNTOS_MAX_POR_MENSAJE,
+  quienesPintan,
+  RANGO_GRADOS,
+  siguientesSegmentos,
   textoDelSensor,
+  UMBRAL_AJUSTE_PX,
   type EntradaPresencia,
 } from "./pincel";
 
@@ -34,48 +44,48 @@ describe("pincel", () => {
 const REMITENTE = "00000000-0000-4000-8000-000000000001";
 
 describe("esMensajeTrazoValido", () => {
-  it("acepta un mensaje bien formado con un delta", () => {
-    expect(esMensajeTrazoValido({ trazo: "spray", color: "#e4552f", deltas: [{ dx: 0.4, dy: -0.2 }], remitente: REMITENTE, grosor: 1 })).toBe(true);
+  it("acepta un mensaje bien formado con una posición", () => {
+    expect(esMensajeTrazoValido({ trazo: "spray", color: "#e4552f", puntos: [{ x: 0.4, y: -0.2 }], remitente: REMITENTE, grosor: 1 })).toBe(true);
   });
-  it("acepta varios deltas juntados en un mismo mensaje (envío agrupado)", () => {
-    const deltas = [
-      { dx: 0.1, dy: 0.1 },
-      { dx: -0.2, dy: 0.05 },
-      { dx: 0.05, dy: -0.3 },
+  it("acepta varias posiciones juntadas en un mismo mensaje (envío agrupado)", () => {
+    const puntos = [
+      { x: 0.1, y: 0.1 },
+      { x: -0.2, y: 0.05 },
+      { x: 0.05, y: -0.3 },
     ];
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE, grosor: 1 })).toBe(true);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos, remitente: REMITENTE, grosor: 1 })).toBe(true);
   });
   it("rechaza un trazo que no existe", () => {
-    expect(esMensajeTrazoValido({ trazo: "acuarela", color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "acuarela", color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza un color que no es una de las cinco tintas", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#ffffff", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#ffffff", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
-  it("rechaza un mensaje sin deltas", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [], remitente: REMITENTE, grosor: 1 })).toBe(false);
+  it("rechaza un mensaje sin posiciones", () => {
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos: [], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
-  it(`rechaza más de ${DELTAS_MAX_POR_MENSAJE} deltas en un mismo mensaje`, () => {
-    const deltas = Array.from({ length: DELTAS_MAX_POR_MENSAJE + 1 }, () => ({ dx: 0, dy: 0 }));
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE, grosor: 1 })).toBe(false);
+  it(`rechaza más de ${PUNTOS_MAX_POR_MENSAJE} posiciones en un mismo mensaje`, () => {
+    const puntos = Array.from({ length: PUNTOS_MAX_POR_MENSAJE + 1 }, () => ({ x: 0, y: 0 }));
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos, remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
-  it(`acepta justo ${DELTAS_MAX_POR_MENSAJE} deltas`, () => {
-    const deltas = Array.from({ length: DELTAS_MAX_POR_MENSAJE }, () => ({ dx: 0, dy: 0 }));
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas, remitente: REMITENTE, grosor: 1 })).toBe(true);
+  it(`acepta justo ${PUNTOS_MAX_POR_MENSAJE} posiciones`, () => {
+    const puntos = Array.from({ length: PUNTOS_MAX_POR_MENSAJE }, () => ({ x: 0, y: 0 }));
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos, remitente: REMITENTE, grosor: 1 })).toBe(true);
   });
-  it("rechaza un delta fuera de -1..1 (no es una coordenada absoluta)", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 42, dy: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
+  it("rechaza una posición fuera de -1..1 (no es una coordenada en píxeles)", () => {
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos: [{ x: 42, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
-  it("rechaza un delta no numérico", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: "0.5", dy: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
+  it("rechaza una posición no numérica", () => {
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos: [{ x: "0.5", y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
-  it("rechaza deltas que no es un arreglo", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: { dx: 0, dy: 0 }, remitente: REMITENTE, grosor: 1 })).toBe(false);
+  it("rechaza puntos que no es un arreglo", () => {
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos: { x: 0, y: 0 }, remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza sin remitente", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 0, dy: 0 }], grosor: 1 })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos: [{ x: 0, y: 0 }], grosor: 1 })).toBe(false);
   });
   it("rechaza un remitente vacío", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: "", grosor: 1 })).toBe(false);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: "", grosor: 1 })).toBe(false);
   });
   it("rechaza cualquier cosa que no sea un objeto", () => {
     expect(esMensajeTrazoValido(null)).toBe(false);
@@ -83,7 +93,7 @@ describe("esMensajeTrazoValido", () => {
     expect(esMensajeTrazoValido(undefined)).toBe(false);
   });
   it("rechaza sin grosor, o con un grosor no numérico, cero, negativo o descomunal", () => {
-    const base = { trazo: "trazo" as const, color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE };
+    const base = { trazo: "trazo" as const, color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE };
     expect(esMensajeTrazoValido(base)).toBe(false);
     expect(esMensajeTrazoValido({ ...base, grosor: "1" })).toBe(false);
     expect(esMensajeTrazoValido({ ...base, grosor: 0 })).toBe(false);
@@ -91,7 +101,7 @@ describe("esMensajeTrazoValido", () => {
     expect(esMensajeTrazoValido({ ...base, grosor: 999 })).toBe(false);
   });
   it("acepta el grosor mínimo y máximo que puede dar el arrastre", () => {
-    const base = { trazo: "trazo" as const, color: "#141414", deltas: [{ dx: 0, dy: 0 }], remitente: REMITENTE };
+    const base = { trazo: "trazo" as const, color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE };
     expect(esMensajeTrazoValido({ ...base, grosor: GROSOR_MIN })).toBe(true);
     expect(esMensajeTrazoValido({ ...base, grosor: GROSOR_MAX })).toBe(true);
   });
@@ -150,77 +160,131 @@ describe("diametroDelPunto", () => {
   });
 });
 
-describe("puntoInicial", () => {
-  it("da siempre el mismo punto para el mismo remitente", () => {
-    const a = puntoInicial(REMITENTE, 800, 600);
-    const b = puntoInicial(REMITENTE, 800, 600);
-    expect(a).toEqual(b);
+// OL-120 (founder en producción, 2026-09-22): «Solo estoy pintando en un sector de la pantalla» y «al subir
+// teléfono pinta para abajo». El mando manda la posición normalizada respecto a un cero; un rango cómodo de
+// muñeca (RANGO_GRADOS: ±30° horizontal, ±20° vertical) recorre la pared entera, con tope en los bordes.
+describe("posicionDesdeOrientacion", () => {
+  const cero = { beta: 45, gamma: 0 }; // el teléfono como un control remoto, al encender
+  it("sin cero, o con una lectura incompleta, no hay posición", () => {
+    expect(posicionDesdeOrientacion(null, { beta: 10, gamma: 5 })).toBeNull();
+    expect(posicionDesdeOrientacion({ beta: null, gamma: 5 }, { beta: 10, gamma: 5 })).toBeNull();
+    expect(posicionDesdeOrientacion(cero, { beta: 10, gamma: null })).toBeNull();
   });
-  it("da puntos distintos para remitentes distintos (normalmente)", () => {
-    const a = puntoInicial("00000000-0000-4000-8000-000000000001", 800, 600);
-    const b = puntoInicial("00000000-0000-4000-8000-000000000002", 800, 600);
-    expect(a).not.toEqual(b);
+  it("0° respecto al cero → el centro de la pared, sin -0", () => {
+    expect(posicionDesdeOrientacion(cero, cero)).toEqual({ x: 0, y: 0 });
   });
-  it("nunca da un punto fuera del lienzo", () => {
-    const p = puntoInicial(REMITENTE, 390, 844);
-    expect(p.x).toBeGreaterThanOrEqual(0);
-    expect(p.x).toBeLessThanOrEqual(390);
-    expect(p.y).toBeGreaterThanOrEqual(0);
-    expect(p.y).toBeLessThanOrEqual(844);
+  it("el rango es una constante con nombre: ±30° horizontal, ±20° vertical", () => {
+    expect(RANGO_GRADOS).toEqual({ horizontal: 30, vertical: 20 });
+  });
+  it("+20° hacia arriba (beta sube) → borde SUPERIOR (y = -1): subir el teléfono sube el pincel", () => {
+    expect(posicionDesdeOrientacion(cero, { beta: 65, gamma: 0 })).toEqual({ x: 0, y: -1 });
+  });
+  it("-20° hacia abajo (beta baja) → borde inferior (y = +1)", () => {
+    expect(posicionDesdeOrientacion(cero, { beta: 25, gamma: 0 })).toEqual({ x: 0, y: 1 });
+  });
+  it("-30° a la izquierda (gamma baja) → borde izquierdo (x = -1); +30° → derecho: el horizontal no va invertido", () => {
+    expect(posicionDesdeOrientacion(cero, { beta: 45, gamma: -30 })).toEqual({ x: -1, y: 0 });
+    expect(posicionDesdeOrientacion(cero, { beta: 45, gamma: 30 })).toEqual({ x: 1, y: 0 });
+  });
+  it("a medio camino, medio recorrido, cada eje por su lado y sin zona muerta", () => {
+    expect(posicionDesdeOrientacion(cero, { beta: 55, gamma: 15 })).toEqual({ x: 0.5, y: -0.5 });
+    expect(posicionDesdeOrientacion(cero, { beta: 44, gamma: 0.3 })).toEqual({ x: 0.01, y: 0.05 });
+  });
+  it("más allá del rango se queda en el borde (tope), no se sale ni da la vuelta", () => {
+    expect(posicionDesdeOrientacion(cero, { beta: 120, gamma: 80 })).toEqual({ x: 1, y: -1 });
+    expect(posicionDesdeOrientacion(cero, { beta: -40, gamma: -80 })).toEqual({ x: -1, y: 1 });
+  });
+  it("el cero puede ser cualquier postura: lo que cuenta es la diferencia", () => {
+    expect(posicionDesdeOrientacion({ beta: 80, gamma: -20 }, { beta: 70, gamma: -5 })).toEqual({ x: 0.5, y: 0.5 });
+  });
+  it("con otro rango, otra escala", () => {
+    expect(posicionDesdeOrientacion(cero, { beta: 55, gamma: 10 }, { horizontal: 10, vertical: 10 })).toEqual({ x: 1, y: -1 });
+  });
+});
+
+describe("esPosicionValida", () => {
+  it("dos números finitos en -1..1; nada más", () => {
+    expect(esPosicionValida({ x: 0, y: 0 })).toBe(true);
+    expect(esPosicionValida({ x: -1, y: 1 })).toBe(true);
+    expect(esPosicionValida({ x: 1.01, y: 0 })).toBe(false);
+    expect(esPosicionValida({ x: "0", y: 0 })).toBe(false);
+    expect(esPosicionValida({ x: NaN, y: 0 })).toBe(false);
+    expect(esPosicionValida(null)).toBe(false);
+  });
+});
+
+describe("puntoEnPared", () => {
+  it("(-1,-1) es la esquina superior izquierda, (0,0) el centro, (1,1) la inferior derecha", () => {
+    expect(puntoEnPared({ x: -1, y: -1 }, 1280, 800)).toEqual({ x: 0, y: 0 });
+    expect(puntoEnPared({ x: 0, y: 0 }, 1280, 800)).toEqual({ x: 640, y: 400 });
+    expect(puntoCentral(1280, 800)).toEqual({ x: 640, y: 400 });
+    expect(puntoEnPared({ x: 1, y: 1 }, 1280, 800)).toEqual({ x: 1280, y: 800 });
+  });
+  it("el horizontal recorre el ancho y el vertical el alto, cada uno por su lado (relación de aspecto)", () => {
+    expect(puntoEnPared({ x: 0.5, y: -0.5 }, 1280, 800)).toEqual({ x: 960, y: 200 });
+    expect(puntoEnPared({ x: 0.5, y: -0.5 }, 1920, 1080)).toEqual({ x: 1440, y: 270 });
   });
 });
 
 describe("siguientesSegmentos", () => {
-  it("un delta da un segmento, moviéndose ESCALA_DELTA_PX por unidad de delta", () => {
-    const { segmentos, hasta } = siguientesSegmentos({ x: 100, y: 100 }, [{ dx: 1, dy: 0 }], 800, 600);
-    expect(segmentos).toHaveLength(1);
-    expect(segmentos[0][0]).toEqual({ x: 100, y: 100 });
-    expect(hasta).toEqual({ x: 100 + ESCALA_DELTA_PX, y: 100 });
+  it("una posición da un segmento desde donde estaba hasta ahí, en píxeles de la pared", () => {
+    const { segmentos, hasta } = siguientesSegmentos({ x: 100, y: 100 }, [{ x: 0, y: 0 }], 800, 600);
+    expect(segmentos).toEqual([[{ x: 100, y: 100 }, { x: 400, y: 300 }]]);
+    expect(hasta).toEqual({ x: 400, y: 300 });
   });
-  it("varios deltas encadenan los segmentos, cada uno desde donde terminó el anterior", () => {
-    const { segmentos, hasta } = siguientesSegmentos({ x: 0, y: 0 }, [{ dx: 1, dy: 0 }, { dx: 0, dy: 1 }], 800, 600);
+  it("varias posiciones encadenan los segmentos, cada uno desde donde terminó el anterior", () => {
+    const { segmentos, hasta } = siguientesSegmentos({ x: 0, y: 0 }, [{ x: 0, y: 0 }, { x: 1, y: 1 }], 800, 600);
     expect(segmentos).toHaveLength(2);
     expect(segmentos[1][0]).toEqual(segmentos[0][1]);
-    expect(hasta).toEqual(segmentos[1][1]);
+    expect(hasta).toEqual({ x: 800, y: 600 });
   });
-  it("rebota en el borde derecho en vez de salirse del lienzo", () => {
-    const { hasta } = siguientesSegmentos({ x: 790, y: 0 }, [{ dx: 1, dy: 0 }], 800, 600);
-    // 790 + 24 = 814, 14 de más -> rebota: 800 - 14 = 786
-    expect(hasta.x).toBe(786);
-    expect(hasta.x).toBeLessThanOrEqual(800);
+  it("el primer mensaje de alguien (sin punto anterior) arranca en su primera posición: un segmento de largo cero", () => {
+    const { segmentos, hasta } = siguientesSegmentos(null, [{ x: -1, y: 0 }, { x: -0.5, y: 0 }], 800, 600);
+    expect(segmentos[0]).toEqual([{ x: 0, y: 300 }, { x: 0, y: 300 }]);
+    expect(segmentos[1]).toEqual([{ x: 0, y: 300 }, { x: 200, y: 300 }]);
+    expect(hasta).toEqual({ x: 200, y: 300 });
   });
-  it("rebota en el borde izquierdo/superior (cero) igual que en el derecho/inferior", () => {
-    const { hasta } = siguientesSegmentos({ x: 5, y: 5 }, [{ dx: -1, dy: -1 }], 800, 600);
-    expect(hasta.x).toBeGreaterThanOrEqual(0);
-    expect(hasta.y).toBeGreaterThanOrEqual(0);
-  });
-  it("sin deltas no da segmentos y el punto no se mueve", () => {
-    const { segmentos, hasta } = siguientesSegmentos({ x: 50, y: 50 }, [], 800, 600);
-    expect(segmentos).toEqual([]);
-    expect(hasta).toEqual({ x: 50, y: 50 });
+  it("sin posiciones no da segmentos y el punto no se mueve", () => {
+    expect(siguientesSegmentos({ x: 50, y: 50 }, [], 800, 600)).toEqual({ segmentos: [], hasta: { x: 50, y: 50 } });
+    expect(siguientesSegmentos(null, [], 800, 600)).toEqual({ segmentos: [], hasta: null });
   });
 });
 
-describe("deltaDesdeOrientacion", () => {
-  it("sin lectura anterior, no hay delta que mandar", () => {
-    expect(deltaDesdeOrientacion(null, { beta: 10, gamma: 5 })).toEqual({ dx: 0, dy: 0 });
+describe("muestrear", () => {
+  const muchas = Array.from({ length: 40 }, (_, i) => i);
+  it("con el tope o menos, van todas tal cual", () => {
+    expect(muestrear([1, 2, 3], 20)).toEqual([1, 2, 3]);
+    expect(muestrear(muchas.slice(0, 20), 20)).toHaveLength(20);
   });
-  it("si a cualquiera de las dos le falta un valor, tampoco hay delta", () => {
-    expect(deltaDesdeOrientacion({ beta: null, gamma: 5 }, { beta: 10, gamma: 5 })).toEqual({ dx: 0, dy: 0 });
-    expect(deltaDesdeOrientacion({ beta: 5, gamma: 5 }, { beta: 10, gamma: null })).toEqual({ dx: 0, dy: 0 });
+  it("con más, se quedan `max` repartidas por igual, en orden, con la primera y siempre la última", () => {
+    const pocas = muestrear(muchas, PUNTOS_MAX_POR_MENSAJE);
+    expect(pocas).toHaveLength(PUNTOS_MAX_POR_MENSAJE);
+    expect(pocas[0]).toBe(0);
+    expect(pocas[pocas.length - 1]).toBe(39);
+    expect([...pocas].sort((a, b) => a - b)).toEqual(pocas);
+    expect(new Set(pocas).size).toBe(pocas.length);
   });
-  it("un cambio de gamma mueve dx, un cambio de beta mueve dy", () => {
-    const d = deltaDesdeOrientacion({ beta: 0, gamma: 0 }, { beta: 3, gamma: 6 }, 6);
-    expect(d.dx).toBeCloseTo(1); // 6 grados de gamma con sensibilidad 6 -> delta 1
-    expect(d.dy).toBeCloseTo(0.5); // 3 grados de beta con sensibilidad 6 -> delta 0.5
+  it("con tope 1 se queda la última (donde está el pincel); con tope 0, nada", () => {
+    expect(muestrear(muchas, 1)).toEqual([39]);
+    expect(muestrear(muchas, 0)).toEqual([]);
   });
-  it("un cambio grande se acota a -1..1, no se manda como si fuera una coordenada absoluta", () => {
-    const d = deltaDesdeOrientacion({ beta: 0, gamma: 0 }, { beta: 90, gamma: -90 }, 6);
-    expect(d.dx).toBe(-1);
-    expect(d.dy).toBe(1);
+});
+
+describe("presupuesto de mensajes (OL-120, gestor)", () => {
+  it("trazo y posición comparten reloj: 3 por segundo por mando; 20 mandos caben en 60 mensajes/s", () => {
+    expect(MENSAJES_POR_SEGUNDO).toBe(3);
+    expect(INTERVALO_MENSAJE_MS).toBe(333);
+    expect(MENSAJES_POR_SEGUNDO * 20).toBeLessThanOrEqual(60);
   });
-  it("sin cambio, delta cero", () => {
-    expect(deltaDesdeOrientacion({ beta: 12, gamma: -8 }, { beta: 12, gamma: -8 })).toEqual({ dx: 0, dy: 0 });
+});
+
+describe("estaEncendido", () => {
+  it("encendido = sensor concedido; cualquier otro estado, apagado", () => {
+    expect(estaEncendido({ tipo: "concedido" })).toBe(true);
+    expect(estaEncendido({ tipo: "sin-pedir" })).toBe(false);
+    expect(estaEncendido({ tipo: "pidiendo" })).toBe(false);
+    expect(estaEncendido({ tipo: "negado", detalle: "x" })).toBe(false);
+    expect(estaEncendido({ tipo: "sin-soporte", detalle: "x" })).toBe(false);
   });
 });
 
@@ -332,9 +396,9 @@ describe("textoDelSensor (OL-117)", () => {
   it("concedido: sin texto propio, manda el de pintar", () => {
     expect(textoDelSensor({ tipo: "concedido" }, false)).toBeNull();
   });
-  it("antes de pedirlo, invita a tocar el punto; mientras se pide, lo dice", () => {
-    expect(textoDelSensor({ tipo: "sin-pedir" }, false)).toEqual({ texto: "Toca el punto para activar el sensor", esAviso: false, abrirEnSafari: false });
-    expect(textoDelSensor({ tipo: "pidiendo" }, true)?.texto).toBe("Activando el sensor…");
+  it("apagado (antes de pedirlo y mientras se pide): «Enciende el control para comenzar» — dos textos, uno por estado (OL-120)", () => {
+    expect(textoDelSensor({ tipo: "sin-pedir" }, false)).toEqual({ texto: "Enciende el control para comenzar", esAviso: false, abrirEnSafari: false });
+    expect(textoDelSensor({ tipo: "pidiendo" }, true)?.texto).toBe("Enciende el control para comenzar");
   });
   it("negado en Safari: la ruta de Ajustes; negado en la app instalada: abrir en Safari, con botón", () => {
     const safari = textoDelSensor({ tipo: "negado", detalle: "x" }, false);
@@ -346,5 +410,41 @@ describe("textoDelSensor (OL-117)", () => {
   });
   it("sin soporte: el único caso en que se dice que no hay sensor", () => {
     expect(textoDelSensor({ tipo: "sin-soporte", detalle: "x" }, false)).toEqual({ texto: "Este navegador no tiene sensor de movimiento.", esAviso: true, abrirEnSafari: false });
+  });
+});
+
+// OL-120: el punto de referencia en la pared (evento `posicion`, distinto de `trazo`).
+describe("esMensajePosicionValido", () => {
+  const base = { remitente: "persona-1", trazo: "trazo", color: "#141414", grosor: 1, posicion: { x: 0, y: 0 } };
+  it("acepta un «aquí estoy» (el centro) y cualquier posición en -1..1", () => {
+    expect(esMensajePosicionValido(base)).toBe(true);
+    expect(esMensajePosicionValido({ ...base, posicion: { x: -1, y: 0.4 } })).toBe(true);
+  });
+  it("rechaza lo que no trae la forma exacta: sin posición, posición fuera, trazo o tinta desconocidos, grosor fuera", () => {
+    const { posicion: _p, ...sinPosicion } = base;
+    void _p;
+    expect(esMensajePosicionValido(sinPosicion)).toBe(false);
+    expect(esMensajePosicionValido({ ...base, posicion: { x: 2, y: 0 } })).toBe(false);
+    expect(esMensajePosicionValido({ ...base, posicion: [0, 0] })).toBe(false);
+    expect(esMensajePosicionValido({ ...base, trazo: "brocha" })).toBe(false);
+    expect(esMensajePosicionValido({ ...base, color: "#ffffff" })).toBe(false);
+    expect(esMensajePosicionValido({ ...base, grosor: GROSOR_MAX + 1 })).toBe(false);
+    expect(esMensajePosicionValido({ ...base, remitente: "" })).toBe(false);
+    expect(esMensajePosicionValido(null)).toBe(false);
+  });
+});
+
+describe("diametroDelPuntoDePosicion", () => {
+  it("mide el ancho real del trazo en la pared, nunca menos de 8 px", () => {
+    expect(DIAMETRO_PUNTO_MIN_PX).toBe(8);
+    expect(diametroDelPuntoDePosicion("trazo", 1)).toBe(8); // 3 px de trazo: se ve de 8
+    expect(diametroDelPuntoDePosicion("trazo", GROSOR_MAX)).toBeCloseTo(3 * GROSOR_MAX); // 10.5
+    expect(diametroDelPuntoDePosicion("aire", 1)).toBe(9);
+    expect(diametroDelPuntoDePosicion("organico", GROSOR_MIN)).toBe(9);
+    expect(diametroDelPuntoDePosicion("spray", 1)).toBe(8);
+  });
+  it("acota el grosor al rango del pincel", () => {
+    expect(diametroDelPuntoDePosicion("aire", 100)).toBe(ANCHO_POR_GROSOR_PX.aire * GROSOR_MAX);
+    expect(diametroDelPuntoDePosicion("aire", 0)).toBe(8); // 9 × 0.5 = 4.5 → mínimo
   });
 });

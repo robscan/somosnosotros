@@ -1,27 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import {
   ARRASTRE_GROSOR_MAX_PX,
   decidirSensor,
-  deltaDesdeOrientacion,
   diametroDelPunto,
   entradasDesdePresencia,
   estaAjustandoGrosor,
   estadoDeFila,
+  estaEncendido,
+  EVENTO_POSICION,
   EVENTO_TRAZO,
   GROSOR_BASE,
   grosorDesdeArrastre,
-  MENSAJES_POR_SEGUNDO,
+  INTERVALO_MENSAJE_MS,
+  muestrear,
   personasAqui,
+  posicionDesdeOrientacion,
+  PUNTOS_MAX_POR_MENSAJE,
   textoDelSensor,
   TINTAS,
   TRAZOS,
-  type Delta,
   type EntradaPresencia,
+  type MensajePosicion,
   type MensajeTrazo,
   type Orientacion,
+  type PosicionNormalizada,
   type Sensor,
   type Trazo,
 } from "@/lib/pincel";
@@ -29,6 +34,9 @@ import { clienteNavegador } from "@/lib/supabase/navegador";
 import styles from "./mando.module.css";
 
 type Selector = "trazo" | "tinta";
+
+/** El centro de la pared: donde arranca el pincel al encender y adonde vuelve con «Centrar». */
+const CENTRO: PosicionNormalizada = { x: 0, y: 0 };
 
 /** ¿Es la app añadida al inicio (standalone), no Safari? Solo se consulta al pintar el texto tras un rechazo, en el
  * cliente — nunca en el render del servidor. */
@@ -69,9 +77,11 @@ function requestPermissionDeOrientacion(): (() => Promise<"granted" | "denied">)
 
 /**
  * El mando (Fase 2 bloque 3, OL-088): ruta neutra `/obra/[id]/mando` (doc rediseno/25 ajuste 2). El celular es
- * solo mando (prototipo firmado OL-084): no dibuja nada, manda deltas del sensor mientras el botón está
+ * solo mando (prototipo firmado OL-084): no dibuja nada, manda hacia dónde apunta mientras el botón está
  * presionado. Cupo y fila (doc rediseno/34, firmado 2026-09-21): quien llega después de que se llenó el cupo se
- * conecta igual (ve cuántos esperan, guarda su lugar por Presence) pero no pinta hasta que le toque.
+ * conecta igual (ve cuántos esperan, guarda su lugar por Presence) pero no pinta hasta que le toque. OL-120: el
+ * botón arranca apagado y el primer toque lo enciende (permiso del sensor); encendido y con cupo, el mando manda su
+ * posición aunque no pinte (la pared enseña un punto tenue) y «Centrar» recalibra el cero.
  */
 export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perfilId: string; cupo: number }) {
   const [trazo, setTrazo] = useState<Trazo>(TRAZOS[0].id);
@@ -83,17 +93,24 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   const [abierto, setAbierto] = useState<Selector | null>(null); // nunca los dos menús abiertos (prototipo firmado)
   const tarjetaTrazoRef = useRef<HTMLButtonElement | null>(null);
   const tarjetaTintaRef = useRef<HTMLButtonElement | null>(null);
+  const orbRef = useRef<HTMLButtonElement | null>(null);
   // Grosor por arrastre (founder, 2026-09-21; reglas del gestor): el punto sigue al dedo en vertical solo con
   // `transform`, el grosor se queda hasta que se cambie, y mientras se ajusta no se manda trazo.
   const [desplazamiento, setDesplazamiento] = useState(0); // px del punto mientras se arrastra (positivo = arriba)
   const [grosor, setGrosor] = useState(GROSOR_BASE);
 
   const canalRef = useRef<ReturnType<typeof abrirCanalObra> | null>(null);
-  const bufferRef = useRef<Delta[]>([]);
-  const ultimaLecturaRef = useRef<Orientacion | null>(null);
+  // Hacia dónde apunta el pincel (OL-120): el cero es la postura del teléfono al encender o al centrar; cada lectura
+  // del sensor da una posición normalizada respecto a él. `bufferRef` junta las muestras entre mensaje y mensaje
+  // mientras se pinta; `posicionRef` es la última, la que se manda como posición cuando no se pinta.
+  const ceroRef = useRef<Orientacion | null>(null);
+  const posicionRef = useRef<PosicionNormalizada>(CENTRO);
+  const ultimaEnviadaRef = useRef<PosicionNormalizada | null>(null);
+  const bufferRef = useRef<PosicionNormalizada[]>([]);
   const trazoRef = useRef(trazo);
   const colorRef = useRef(color);
   const grosorRef = useRef(grosor);
+  const puedePintarRef = useRef(false);
   const arrastreInicioYRef = useRef<number | null>(null);
   const grosorAlEmpezarRef = useRef(GROSOR_BASE); // desde dónde se ajusta en ESTA pulsación
   const ajustandoRef = useRef(false); // más allá del umbral: se ajusta grosor, no se pinta
@@ -108,6 +125,9 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   }, [grosor]);
 
   const estado = useMemo(() => estadoDeFila(entradas, cupo, perfilId), [entradas, cupo, perfilId]);
+  useEffect(() => {
+    puedePintarRef.current = estado.tipo === "pintando";
+  }, [estado.tipo]);
 
   // El canal se abre una vez, al montar — mandar no depende de tener el botón presionado en ese instante.
   // `track()` solo al confirmarse la suscripción (con "llegada" = ahora, la fila la ordena Presence).
@@ -144,38 +164,74 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
     }
   }, [estado.tipo]);
 
-  // Mientras está presionado y con cupo para pintar: escucha el sensor (juntando deltas) y manda
-  // MENSAJES_POR_SEGUNDO veces por segundo. Si el cupo baja a media pulsación (o el sync de Presence llega
-  // tarde), este efecto se desmonta solo — la pared, de todos modos, ya descarta el trazo de quien no pinta.
-  useEffect(() => {
-    if (!presionado || estado.tipo !== "pintando") return;
+  /** La posición sin trazo (OL-120): solo con cupo — quien espera no manda posición. */
+  const mandarPosicion = useCallback(
+    (posicion: PosicionNormalizada) => {
+      if (!canalRef.current || !puedePintarRef.current) return;
+      const mensaje: MensajePosicion = { remitente: perfilId, trazo: trazoRef.current, color: colorRef.current, grosor: grosorRef.current, posicion };
+      canalRef.current.send({ type: "broadcast", event: EVENTO_POSICION, payload: mensaje });
+      ultimaEnviadaRef.current = posicion;
+    },
+    [perfilId],
+  );
 
+  // El sensor se escucha siempre que el control está encendido y con cupo (no solo presionado): sin pintar, la
+  // lectura mueve el punto tenue de la pared. La primera lectura completa fija el cero (la postura con que se
+  // encendió, o la de después de «Centrar», que lo borra).
+  useEffect(() => {
+    if (!estaEncendido(sensor) || estado.tipo !== "pintando") return;
     function alMoverse(e: DeviceOrientationEvent) {
       const actual: Orientacion = { beta: e.beta, gamma: e.gamma };
-      const delta = deltaDesdeOrientacion(ultimaLecturaRef.current, actual);
-      ultimaLecturaRef.current = actual;
-      if (delta.dx === 0 && delta.dy === 0) return;
-      bufferRef.current.push(delta);
+      if (!ceroRef.current && actual.beta !== null && actual.gamma !== null) ceroRef.current = actual;
+      const posicion = posicionDesdeOrientacion(ceroRef.current, actual);
+      if (!posicion) return;
+      posicionRef.current = posicion;
+      bufferRef.current.push(posicion);
     }
     window.addEventListener("deviceorientation", alMoverse);
-
-    const intervalo = setInterval(() => {
-      const deltas = bufferRef.current.splice(0, 20); // DELTAS_MAX_POR_MENSAJE
-      // Mientras se ajusta el grosor no se manda trazo (gestor, 2026-09-21): el arrastre del dedo no es pintar.
-      // Los deltas de ese rato se tiran, no se guardan: al volver a pintar no debe salir un salto acumulado.
-      if (ajustandoRef.current) return;
-      if (deltas.length === 0 || !canalRef.current) return;
-      const mensaje: MensajeTrazo = { trazo: trazoRef.current, color: colorRef.current, deltas, remitente: perfilId, grosor: grosorRef.current };
-      canalRef.current.send({ type: "broadcast", event: EVENTO_TRAZO, payload: mensaje });
-    }, Math.round(1000 / MENSAJES_POR_SEGUNDO));
-
     return () => {
       window.removeEventListener("deviceorientation", alMoverse);
+      bufferRef.current = [];
+    };
+  }, [sensor, estado.tipo]);
+
+  // Presionado y con cupo para pintar: manda MENSAJES_POR_SEGUNDO veces por segundo las posiciones juntadas desde
+  // el mensaje anterior. Si el cupo baja a media pulsación (o el sync de Presence llega tarde), este efecto se
+  // desmonta solo — la pared, de todos modos, ya descarta el trazo de quien no pinta.
+  useEffect(() => {
+    if (!presionado || estado.tipo !== "pintando") return;
+    bufferRef.current = [posicionRef.current]; // el trazo arranca donde está el punto tenue
+    const intervalo = setInterval(() => {
+      const muestras = bufferRef.current;
+      bufferRef.current = [];
+      // Mientras se ajusta el grosor no se manda trazo (gestor, 2026-09-21): el arrastre del dedo no es pintar.
+      // Las muestras de ese rato se tiran, no se guardan: al volver a pintar no debe salir un salto acumulado.
+      if (ajustandoRef.current) return;
+      if (muestras.length === 0 || !canalRef.current) return;
+      const mensaje: MensajeTrazo = { trazo: trazoRef.current, color: colorRef.current, puntos: muestrear(muestras, PUNTOS_MAX_POR_MENSAJE), remitente: perfilId, grosor: grosorRef.current };
+      canalRef.current.send({ type: "broadcast", event: EVENTO_TRAZO, payload: mensaje });
+    }, INTERVALO_MENSAJE_MS);
+    return () => {
       clearInterval(intervalo);
       bufferRef.current = [];
-      ultimaLecturaRef.current = null;
     };
   }, [presionado, perfilId, estado.tipo]);
+
+  // Sin pintar y con cupo: «aquí estoy» al conectarse (y al soltar, ya con el grosor que quedó) y, después, la
+  // posición con el mismo reloj que el trazo (INTERVALO_MENSAJE_MS: 3 por segundo, el presupuesto de Realtime),
+  // solo si cambió y siempre la última (sin cola). Nada se guarda.
+  useEffect(() => {
+    if (presionado || estado.tipo !== "pintando") return;
+    mandarPosicion(posicionRef.current);
+    const intervalo = setInterval(() => {
+      bufferRef.current = []; // sin pintar, las muestras no se acumulan
+      const posicion = posicionRef.current;
+      const ultima = ultimaEnviadaRef.current;
+      if (ultima && ultima.x === posicion.x && ultima.y === posicion.y) return;
+      mandarPosicion(posicion);
+    }, INTERVALO_MENSAJE_MS);
+    return () => clearInterval(intervalo);
+  }, [presionado, estado.tipo, mandarPosicion]);
 
   // Grosor por arrastre: con el punto presionado, mover el dedo hacia arriba engruesa, hacia abajo adelgaza — el
   // gesto ya usado para pintar (mantener presionado), no uno nuevo. `arrastreInicioYRef` se marca en el propio
@@ -190,12 +246,38 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
       ajustandoRef.current = estaAjustandoGrosor(acotado);
       setGrosor(grosorDesdeArrastre(deltaY, grosorAlEmpezarRef.current));
     }
+    // Soltar también desde window: si el navegador no captura el puntero, el `pointerup` fuera del botón llega aquí.
+    // (El botón NO usa `pointerleave` para soltar: en Safari de iOS llega un `pointerleave` en el primer
+    // `pointermove` del dedo, aunque el toque siga —medido en el simulador, OL-120— y soltaba el arrastre.)
+    function alSoltarFuera() {
+      soltar();
+    }
     window.addEventListener("pointermove", alArrastrar);
-    return () => window.removeEventListener("pointermove", alArrastrar);
+    window.addEventListener("pointerup", alSoltarFuera);
+    window.addEventListener("pointercancel", alSoltarFuera);
+    return () => {
+      window.removeEventListener("pointermove", alArrastrar);
+      window.removeEventListener("pointerup", alSoltarFuera);
+      window.removeEventListener("pointercancel", alSoltarFuera);
+    };
   }, [presionado]);
 
-  /** Al soltar: el punto vuelve al centro (transición de CSS sobre `transform`, la rejilla no se toca) y el grosor
-   * SE QUEDA — la siguiente pulsación pinta con él y, si se arrastra otra vez, ajusta desde ahí. */
+  // OL-120, punto 7 (founder en el iPhone: «arrastro el punto arriba y abajo y no funciona»): en Safari de iOS un
+  // dedo que se mantiene y se mueve en vertical es, por defecto, desplazar la página o seleccionar, y el toque se
+  // cancela (`pointercancel`) — el `pointermove` no llega. `touch-action: none` (CSS) se lo dice a Safari; este
+  // `touchmove` NO pasivo con `preventDefault` es la segunda cerradura (React registra `touchmove` como pasivo, así
+  // que va a mano), junto con `-webkit-user-select`/`-webkit-touch-callout` en el CSS y `pointercancel` como soltar.
+  useEffect(() => {
+    const orb = orbRef.current;
+    if (!orb) return;
+    const frenarDesplazamiento = (e: TouchEvent) => e.preventDefault();
+    orb.addEventListener("touchmove", frenarDesplazamiento, { passive: false });
+    return () => orb.removeEventListener("touchmove", frenarDesplazamiento);
+  }, []);
+
+  /** Al soltar (o si el sistema cancela el toque): el punto vuelve al centro (transición de CSS sobre `transform`,
+   * la rejilla no se toca) y el grosor SE QUEDA — la siguiente pulsación pinta con él y, si se arrastra otra vez,
+   * ajusta desde ahí. */
   function soltar() {
     setPresionado(false);
     setDesplazamiento(0);
@@ -204,14 +286,16 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   }
 
   /**
-   * OL-117: pedir el permiso del sensor SOLO desde un gesto que Safari de iOS cuente como activación del usuario —
-   * el `click` del botón grande al soltarlo (antes se pedía en `pointerdown`, que no siempre cuenta, y la promesa
-   * rechazaba con NotAllowedError; ese rechazo caía en el `catch` y salía «Este navegador no tiene sensor de
-   * movimiento», falso). El nombre y el mensaje del error se guardan en el estado (se muestran discretos en la
-   * ayuda mientras el founder prueba) y van a `console.warn`.
+   * Encender el control (OL-120, punto 5 del founder; antes OL-117): el primer toque del botón grande pide el
+   * permiso del sensor — SOLO desde un gesto que Safari de iOS cuente como activación del usuario, el `click` al
+   * soltar (en `pointerdown` la promesa rechazaba con NotAllowedError y salía «Este navegador no tiene sensor de
+   * movimiento», falso). Concedido, el botón queda encendido (verde) y desde ahí mantener presionado pinta; en
+   * Android, sin permiso que pedir, el mismo toque enciende. El nombre y el mensaje de un error se guardan en el
+   * estado (se muestran discretos en la ayuda mientras el founder prueba) y van a `console.warn`.
    */
-  async function pedirPermisoDelSensor() {
+  async function encender() {
     if (sensor.tipo === "pidiendo" || sensor.tipo === "concedido") return;
+    ceroRef.current = null; // el cero será la postura del teléfono con que se encienda
     if (typeof window.DeviceOrientationEvent === "undefined") {
       setSensor(decidirSensor({ caso: "sin-constructor" }));
       return;
@@ -232,32 +316,55 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
     }
   }
 
-  /** Presionar: solo pinta con el sensor ya concedido. Sin permiso todavía, el botón no pinta; el permiso se pide
-   * al soltar (`onClick`), que es el gesto que iOS acepta. */
+  /** Presionar: solo pinta con el control encendido. Apagado, el botón no pinta; se enciende al soltar (`onClick`),
+   * que es el gesto que iOS acepta. */
   function empezarAPintar(e: React.PointerEvent<HTMLButtonElement>) {
     setAbierto(null); // como en el prototipo firmado: pintar cierra cualquier menú abierto
-    if (sensor.tipo !== "concedido") return;
+    if (!estaEncendido(sensor)) return;
+    // El botón se queda con el puntero aunque el dedo (o el propio botón, que lo sigue) salga de su área: el
+    // arrastre del grosor y el soltar llegan siempre a él.
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // un navegador sin captura de puntero sigue funcionando con los eventos de window
+    }
     arrastreInicioYRef.current = e.clientY;
     grosorAlEmpezarRef.current = grosorRef.current;
     setPresionado(true);
   }
 
+  /** «Centrar» (OL-120): recalibra el cero con la postura actual del teléfono (la siguiente lectura del sensor es
+   * el nuevo cero, sin salto) y manda el pincel al centro de la pared. */
+  function centrar() {
+    setAbierto(null);
+    ceroRef.current = null;
+    posicionRef.current = CENTRO;
+    bufferRef.current = [];
+    mandarPosicion(CENTRO);
+  }
+
   const esperando = estado.tipo === "esperando";
+  const encendido = estaEncendido(sensor);
   // Solo tras un rechazo importa si es la app instalada; y solo entonces se consulta window (nunca en el servidor).
   const ayudaSensor = textoDelSensor(sensor, sensor.tipo === "negado" ? estaInstalada() : false);
   const trazoElegido = TRAZOS.find((t) => t.id === trazo) ?? TRAZOS[0];
   const tintaElegida = TINTAS.find((t) => t.valor === color) ?? TINTAS[0];
 
   // Al elegir: se cierra el menú y el foco vuelve a la tarjeta (bitácora 118: "al elegir el foco vuelve al selector").
+  // Y la pared se entera al instante (el punto tenue cambia de punta o de color) sin esperar a que el pincel se mueva.
   function elegirTrazo(id: Trazo) {
     setTrazo(id);
+    trazoRef.current = id;
     setAbierto(null);
     tarjetaTrazoRef.current?.focus();
+    if (!presionado) mandarPosicion(posicionRef.current);
   }
   function elegirTinta(valor: string) {
     setColor(valor);
+    colorRef.current = valor;
     setAbierto(null);
     tarjetaTintaRef.current?.focus();
+    if (!presionado) mandarPosicion(posicionRef.current);
   }
 
   return (
@@ -290,6 +397,18 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
         </div>
       )}
 
+      {/* Centrar (OL-120): en la zona libre sobre el botón; no añade fila ni mueve nada (mando.module.css). */}
+      {!esperando && (
+        <button type="button" className={styles.centrar} onClick={centrar} aria-label="Centrar el pincel en la pared">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+            <circle cx="12" cy="12" r="1.8" fill="currentColor" />
+            <path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          Centrar
+        </button>
+      )}
+
       {/* Trazo: tarjeta cerrada con la punta elegida (dibujada, en el color de la tinta); su menú abre hacia arriba. */}
       <div className={`${styles.selector} ${styles.selectorTrazo}`}>
         <button
@@ -319,11 +438,13 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
 
       {!esperando && (
         <button
+          ref={orbRef}
           type="button"
           className={styles.orb}
+          data-encendido={encendido ? "true" : "false"}
           aria-pressed={presionado}
-          aria-label={sensor.tipo === "concedido" ? "Mantén presionado y mueve tu celular" : "Toca el punto para activar el sensor"}
-          onClick={pedirPermisoDelSensor}
+          aria-label={encendido ? "Mantén presionado y mueve tu celular" : "Encender el control"}
+          onClick={encender}
           style={{
             // Solo `transform` y solo traslación: el botón sigue al dedo en vertical sin cambiar de tamaño (si creciera,
             // se montaría sobre las tarjetas). Sin transición mientras está presionado: sigue al dedo al instante; al
@@ -333,9 +454,9 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
           }}
           onPointerDown={empezarAPintar}
           onPointerUp={soltar}
-          onPointerLeave={soltar}
+          onPointerCancel={soltar}
         >
-          {/* El punto blanco MIDE el grosor a escala del mando (16 px por unidad: 8 a 56 px) y se queda así al soltar:
+          {/* El punto MIDE el grosor a escala del mando (16 px por unidad: 8 a 56 px) y se queda así al soltar:
               es cómo se ve el grosor que lleva sin abrir nada. Cambia el tamaño del punto, no el del botón (128 px
               fijos, lo centra su rejilla) ni el de la rejilla del mando. */}
           <span className={styles.punto} style={{ width: `${diametroDelPunto(grosor)}px`, height: `${diametroDelPunto(grosor)}px` }} aria-hidden="true" />

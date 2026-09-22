@@ -38,40 +38,87 @@ export const EVENTO_TRAZO = "trazo";
 /**
  * Un mando NO manda un mensaje por cada muestra del sensor (gestión de cambios, revisión 2026-09-21, con el cupo
  * real de Supabase Realtime citado más abajo): el teléfono sigue muestreando el sensor a su ritmo mientras el
- * botón está presionado, pero solo MANDA `MENSAJES_POR_SEGUNDO` veces por segundo, cada uno con el arreglo de
- * deltas juntados desde el mensaje anterior. La pared dibuja todos los deltas de un mismo mensaje seguidos: se ve
- * igual de fluido, cuesta una fracción de los mensajes.
+ * botón está presionado, pero solo MANDA `MENSAJES_POR_SEGUNDO` veces por segundo, cada uno con las posiciones
+ * juntadas desde el mensaje anterior. La pared dibuja todos los puntos de un mismo mensaje seguidos: se ve igual
+ * de fluido, cuesta una fracción de los mensajes.
  */
 export const MENSAJES_POR_SEGUNDO = 3;
-/** Tope de deltas por mensaje: a `MENSAJES_POR_SEGUNDO = 3` y un sensor muestreado hasta a 60 Hz, un mensaje no
- * debería juntar más de ~20; es también el límite que exige `esMensajeTrazoValido` (contra un mensaje fabricado
- * a mano con miles de deltas). */
-export const DELTAS_MAX_POR_MENSAJE = 20;
+/** El mismo reloj para el trazo y para la posición (OL-120, gestor): un mando manda como mucho un mensaje cada
+ * tanto, esté pintando (`trazo`) o no (`posicion`), nunca los dos a la vez. Presupuesto: 20 mandos × 3 = 60
+ * mensajes por segundo, dentro del cupo de Realtime que fijó el cupo de mandos. */
+export const INTERVALO_MENSAJE_MS = Math.round(1000 / MENSAJES_POR_SEGUNDO);
+/** Tope de puntos por mensaje: a `MENSAJES_POR_SEGUNDO = 3` y un sensor muestreado hasta a 60 Hz, un mensaje junta
+ * ~20; si el sensor da más, el mando los rebaja con `muestrear`. Es también el límite que exige
+ * `esMensajeTrazoValido` (contra un mensaje fabricado a mano con miles de puntos). */
+export const PUNTOS_MAX_POR_MENSAJE = 20;
 
-/** Delta de movimiento del sensor desde la muestra anterior, no una coordenada absoluta (doc de Fase 0 §2: la
- * pared no necesita saber dónde "está" el teléfono, solo hacia dónde se movió). */
-export type Delta = { dx: number; dy: number };
+/** Lo que da `DeviceOrientationEvent`: solo lo que se usa aquí, del sensor real o de una muestra guardada. */
+export type Orientacion = { beta: number | null; gamma: number | null };
 
 /**
- * Lo que viaja por el canal: un trazo, una tinta, los deltas juntados desde el último mensaje, y quién lo manda.
- * `remitente` (el id de perfil de quien pinta) es necesario ya en la Fase 2 bloque 3, antes de la fila de espera:
- * sin saber de quién es cada delta, la pared no puede seguir el trazo de cada persona por separado y los mezclaría
- * en un solo pincel fantasma. Cuando llegue la fila (doc rediseno/34), la pared lo cruza además contra su cupo —
- * hoy solo distingue un trazo de otro. No es una prueba criptográfica de identidad (un cliente modificado podría
- * mandar el remitente de otra persona): el canal ya exige sesión (`private: true`); esto es solo para que dos
- * pinceles no se confundan, no una medida de seguridad aparte — aceptado así a propósito, sin generalizar.
+ * Dónde apunta el pincel (OL-120, founder en producción 2026-09-22: «Solo estoy pintando en un sector de la
+ * pantalla, de todo el campo visual» y «al subir teléfono pinta para abajo»). Causa medida: hasta el bloque 3 cada
+ * muestra del sensor viajaba como un DELTA (grados de cambio ÷ 6, acotado a ±1, × 24 px en la pared): 4 px por
+ * grado, así que un giro cómodo de muñeca de ±20° recorría 160 px de una pared de 800 — un sector; y el delta
+ * vertical iba con el signo de `beta`, que crece al inclinar el teléfono hacia arriba, mientras la Y del lienzo
+ * crece hacia abajo: por eso subir pintaba hacia abajo. Ahora el mando manda la POSICIÓN normalizada (-1..1 en
+ * cada eje, (0,0) el centro de la pared) respecto a un CERO: la postura del teléfono al encender el control, o la
+ * que fija «Centrar». `RANGO_GRADOS.horizontal` grados a cada lado del cero recorren el ancho entero de la pared y
+ * `RANGO_GRADOS.vertical` el alto, cada eje por su lado (la relación de aspecto de la pared la aplica la pared al
+ * convertir a píxeles, `puntoEnPared`), con tope en los bordes y sin zona muerta.
  */
-export type MensajeTrazo = { trazo: Trazo; color: string; deltas: Delta[]; remitente: string; grosor: number };
+export type PosicionNormalizada = { x: number; y: number };
+
+/** Grados de inclinación, a cada lado del cero, que llevan el pincel de borde a borde: ±30° recorren el ancho,
+ * ±20° el alto (propuesta del gestor; el founder lo ajusta en la prueba si le sabe a poco o a mucho). */
+export const RANGO_GRADOS = { horizontal: 30, vertical: 20 };
+
+/**
+ * La posición a partir de la lectura actual y del cero. Sentido de los ejes: `gamma` crece al inclinar el
+ * teléfono hacia la derecha (regla de la mano derecha sobre el eje Y del aparato) y la X de la pared también crece
+ * hacia la derecha; `beta` crece al inclinarlo hacia arriba y la Y de la pared crece hacia ABAJO, así que ese eje
+ * se resta al revés (no `-(...)`, para no producir un -0 cuando no hay cambio). Sin cero o sin lectura completa
+ * (el sensor todavía no dio su primer dato), no hay posición.
+ */
+export function posicionDesdeOrientacion(cero: Orientacion | null, actual: Orientacion, rango: { horizontal: number; vertical: number } = RANGO_GRADOS): PosicionNormalizada | null {
+  if (!cero || cero.beta === null || cero.gamma === null || actual.beta === null || actual.gamma === null) return null;
+  const acotar = (v: number) => Math.max(-1, Math.min(1, v));
+  return { x: acotar((actual.gamma - cero.gamma) / rango.horizontal), y: acotar((cero.beta - actual.beta) / rango.vertical) };
+}
 
 function numeroFinito(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v);
 }
 
-function esDeltaValido(v: unknown): v is Delta {
+/** Una posición normalizada bien formada: dos números finitos en -1..1 (nunca una coordenada en píxeles). */
+export function esPosicionValida(v: unknown): v is PosicionNormalizada {
   if (!v || typeof v !== "object") return false;
-  const d = v as Record<string, unknown>;
-  return numeroFinito(d.dx) && numeroFinito(d.dy) && Math.abs(d.dx) <= 1 && Math.abs(d.dy) <= 1;
+  const p = v as Record<string, unknown>;
+  return numeroFinito(p.x) && numeroFinito(p.y) && Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1;
 }
+
+/** Si el sensor dio más muestras de las que caben en un mensaje, se quedan `max` repartidas por igual, siempre con
+ * la última (donde está el pincel ahora); con `max` o menos, van todas tal cual. */
+export function muestrear<T>(puntos: T[], max: number): T[] {
+  if (max <= 0) return [];
+  if (puntos.length <= max) return puntos;
+  if (max === 1) return [puntos[puntos.length - 1]];
+  const paso = (puntos.length - 1) / (max - 1);
+  const salida: T[] = [];
+  for (let i = 0; i < max; i++) salida.push(puntos[Math.round(i * paso)]);
+  return salida;
+}
+
+/**
+ * Lo que viaja por el canal: un trazo, una tinta, el grosor, las posiciones juntadas desde el último mensaje, y
+ * quién lo manda. `remitente` (el id de perfil de quien pinta) es necesario ya en la Fase 2 bloque 3, antes de la
+ * fila de espera: sin saber de quién es cada punto, la pared no puede seguir el trazo de cada persona por separado
+ * y los mezclaría en un solo pincel fantasma. Con la fila (doc rediseno/34), la pared lo cruza además contra su
+ * cupo. No es una prueba criptográfica de identidad (un cliente modificado podría mandar el remitente de otra
+ * persona): el canal ya exige sesión (`private: true`); esto es solo para que dos pinceles no se confundan, no una
+ * medida de seguridad aparte — aceptado así a propósito, sin generalizar.
+ */
+export type MensajeTrazo = { trazo: Trazo; color: string; puntos: PosicionNormalizada[]; remitente: string; grosor: number };
 
 /**
  * Grosor del trazo (founder, 2026-09-21): mientras mantiene presionado el punto del mando, arrastrar el dedo hacia
@@ -130,10 +177,10 @@ export function esMensajeTrazoValido(v: unknown): v is MensajeTrazo {
   return (
     TRAZOS.some((t) => t.id === m.trazo) &&
     TINTAS.some((t) => t.valor === m.color) &&
-    Array.isArray(m.deltas) &&
-    m.deltas.length > 0 &&
-    m.deltas.length <= DELTAS_MAX_POR_MENSAJE &&
-    m.deltas.every(esDeltaValido) &&
+    Array.isArray(m.puntos) &&
+    m.puntos.length > 0 &&
+    m.puntos.length <= PUNTOS_MAX_POR_MENSAJE &&
+    m.puntos.every(esPosicionValida) &&
     typeof m.remitente === "string" &&
     m.remitente.length > 0 &&
     numeroFinito(m.grosor) &&
@@ -144,61 +191,80 @@ export function esMensajeTrazoValido(v: unknown): v is MensajeTrazo {
 
 /**
  * Cómo se dibuja un trazo en la pared (Fase 2 bloque 3): puro, sin `<canvas>`, para poder probarlo. La pared
- * guarda un punto por remitente (dónde va su pincel ahora) y, con cada mensaje, calcula los segmentos a trazar
- * desde ahí — el delta normalizado (-1..1) del sensor se convierte en píxeles con `ESCALA_DELTA_PX`, y si el
- * trazo se saldría del lienzo, rebota en vez de perderse fuera de la vista.
+ * guarda un punto por remitente (dónde está su pincel ahora, en píxeles) y, con cada mensaje, calcula los
+ * segmentos a trazar desde ahí hasta cada posición que llegó, en orden.
  */
 export type Punto = { x: number; y: number };
 
-/** Cuánto mueve el pincel en el lienzo un delta de sensor de magnitud 1 (a ojo, ajustable si en la prueba con el
- * founder se ve muy corto o muy largo). */
-export const ESCALA_DELTA_PX = 24;
-
-function rebotar(v: number, max: number): number {
-  if (max <= 0) return 0;
-  const ciclo = 2 * max;
-  let m = v % ciclo;
-  if (m < 0) m += ciclo;
-  return m <= max ? m : ciclo - m;
+/** De la posición normalizada a píxeles de la pared: (-1,-1) es la esquina superior izquierda, (0,0) el centro y
+ * (1,1) la inferior derecha. El horizontal recorre el ancho y el vertical el alto, cada uno por su lado. */
+export function puntoEnPared(p: PosicionNormalizada, ancho: number, alto: number): Punto {
+  return { x: ((p.x + 1) / 2) * ancho, y: ((p.y + 1) / 2) * alto };
 }
 
-/** Un punto de arranque estable por remitente (mismo remitente, mismo inicio): no es al azar en cada mensaje, para
- * que un segundo mensaje de la misma persona siga desde donde se quedó el primero, no desde otro lado. */
-export function puntoInicial(remitente: string, ancho: number, alto: number): Punto {
-  let hash = 0;
-  for (let i = 0; i < remitente.length; i++) hash = (Math.imul(hash, 31) + remitente.charCodeAt(i)) >>> 0;
-  return { x: rebotar(hash % 10007, ancho), y: rebotar(Math.floor(hash / 10007) % 10007, alto) };
+export function puntoCentral(ancho: number, alto: number): Punto {
+  return puntoEnPared({ x: 0, y: 0 }, ancho, alto);
 }
 
-/** A partir de dónde estaba el pincel de una persona y los deltas de su mensaje, da los segmentos a trazar (uno
- * por delta, para dibujarlos en orden) y el punto donde queda, listo para el siguiente mensaje de esa persona. */
-export function siguientesSegmentos(desde: Punto, deltas: Delta[], ancho: number, alto: number): { segmentos: [Punto, Punto][]; hasta: Punto } {
+/** A partir de dónde estaba el pincel de una persona (`null` si es su primer mensaje: entonces arranca en su primer
+ * punto, un segmento de largo cero que con puntas redondas se ve como un punto) y las posiciones de su mensaje, da
+ * los segmentos a trazar (uno por posición, para dibujarlos en orden) y el punto donde queda. */
+export function siguientesSegmentos(desde: Punto | null, puntos: PosicionNormalizada[], ancho: number, alto: number): { segmentos: [Punto, Punto][]; hasta: Punto | null } {
   const segmentos: [Punto, Punto][] = [];
   let actual = desde;
-  for (const d of deltas) {
-    const siguiente = { x: rebotar(actual.x + d.dx * ESCALA_DELTA_PX, ancho), y: rebotar(actual.y + d.dy * ESCALA_DELTA_PX, alto) };
-    segmentos.push([actual, siguiente]);
+  for (const p of puntos) {
+    const siguiente = puntoEnPared(p, ancho, alto);
+    segmentos.push([actual ?? siguiente, siguiente]);
     actual = siguiente;
   }
   return { segmentos, hasta: actual };
 }
 
-/** Lo que da `DeviceOrientationEvent`: solo lo que se usa aquí, del sensor real o de una muestra guardada. */
-export type Orientacion = { beta: number | null; gamma: number | null };
-
 /**
- * El mando (Fase 2 bloque 3): convierte dos lecturas seguidas del sensor de orientación en un delta normalizado
- * (-1..1), no en la lectura absoluta — la pared no necesita saber "hacia dónde apunta" el teléfono, solo cuánto
- * cambió desde la última muestra. `sensibilidadGrados` es cuántos grados de cambio valen un delta de magnitud 1;
- * más chico, más sensible. Si falta cualquiera de las dos lecturas (el sensor todavía no dio su primer dato),
- * no hay delta que mandar.
+ * Punto de referencia en la pared (OL-120, founder 2026-09-22: «cuando se conecta debe mostrar un punto tenue como
+ * referencia de posición»). Un mando encendido y con cupo manda su posición por el canal aunque no esté pintando:
+ * evento `posicion` (no `trazo`), al mismo ritmo que el trazo (`MENSAJES_POR_SEGUNDO`, gestor: el presupuesto de
+ * Realtime manda también aquí), solo cuando cambia y sin guardar nada; pintando, no manda posición aparte (la
+ * pared coloca el punto con el último punto del trazo). La pared mueve el punto de ese remitente sin dibujar y
+ * enseña ahí un círculo tenue del color de su tinta, deslizándolo de una posición recibida a la siguiente durante
+ * `INTERVALO_MENSAJE_MS` para que no salte; al pintar, el punto acompaña al trazo con opacidad normal; al salir el
+ * mando (Presence), desaparece. «Centrar» (botón del mando) recalibra el cero con la postura actual y manda la
+ * posición (0,0): el centro.
  */
-export function deltaDesdeOrientacion(anterior: Orientacion | null, actual: Orientacion, sensibilidadGrados = 6): Delta {
-  if (!anterior || anterior.beta === null || anterior.gamma === null || actual.beta === null || actual.gamma === null) {
-    return { dx: 0, dy: 0 };
-  }
-  const acotar = (v: number) => Math.max(-1, Math.min(1, v / sensibilidadGrados));
-  return { dx: acotar(actual.gamma - anterior.gamma), dy: acotar(actual.beta - anterior.beta) };
+export const EVENTO_POSICION = "posicion";
+/** Opacidad del punto cuando el mando no está pintando (~0.35, gestor); pintando, 1. */
+export const OPACIDAD_PUNTO_TENUE = 0.35;
+/** El punto nunca es más chico que esto, aunque el trazo sea fino (gestor: «mínimo 8 px»). */
+export const DIAMETRO_PUNTO_MIN_PX = 8;
+
+export type MensajePosicion = { remitente: string; trazo: Trazo; color: string; grosor: number; posicion: PosicionNormalizada };
+
+/** Igual de desconfiada que `esMensajeTrazoValido`. */
+export function esMensajePosicionValido(v: unknown): v is MensajePosicion {
+  if (!v || typeof v !== "object") return false;
+  const m = v as Record<string, unknown>;
+  return (
+    typeof m.remitente === "string" &&
+    m.remitente.length > 0 &&
+    TRAZOS.some((t) => t.id === m.trazo) &&
+    TINTAS.some((t) => t.valor === m.color) &&
+    numeroFinito(m.grosor) &&
+    m.grosor > 0 &&
+    m.grosor <= GROSOR_MAX + 0.001 &&
+    esPosicionValida(m.posicion)
+  );
+}
+
+/** Ancho del trazo en la pared, en px por unidad de grosor — los factores con que dibuja `trazarSegmento`
+ * (Pared.tsx), en un solo sitio para que el punto de referencia mida lo mismo que el trazo que va a salir. Spray
+ * es el diámetro de cada gota (radio 1.6 por unidad); orgánico, el eje mayor de la elipse (radio 9). */
+export const ANCHO_POR_GROSOR_PX: Record<Trazo, number> = { trazo: 3, aire: 9, spray: 3.2, organico: 18 };
+
+/** Diámetro del punto de referencia en la pared: el ancho real del trazo elegido a ese grosor, nunca menos de
+ * `DIAMETRO_PUNTO_MIN_PX`. Un trazo fino a grosor 1 mide 3 px: el punto se ve de 8. */
+export function diametroDelPuntoDePosicion(trazo: Trazo, grosor: number): number {
+  const acotado = Math.max(GROSOR_MIN, Math.min(GROSOR_MAX, grosor));
+  return Math.max(DIAMETRO_PUNTO_MIN_PX, ANCHO_POR_GROSOR_PX[trazo] * acotado);
 }
 
 /**
@@ -263,6 +329,10 @@ export function personasAqui(n: number): string {
  * sin constructor (de verdad no hay sensor), rechazo con error (gesto no válido o permiso negado antes) y
  * respuesta «denied» explícita. El `detalle` (nombre y mensaje del error) se guarda para poder mostrarlo
  * discretamente mientras el founder prueba en el teléfono.
+ *
+ * OL-120 (founder, 2026-09-22: «debería ser más como un encender»): el mismo estado es el ENCENDIDO del control.
+ * El botón grande arranca apagado; el primer toque lo enciende (pide el permiso; en Android, donde no hay permiso
+ * que pedir, enciende directo) y, concedido, se pinta de verde; negado, se queda apagado con el aviso de su caso.
  */
 export type Sensor =
   | { tipo: "sin-pedir" }
@@ -290,22 +360,29 @@ export function decidirSensor(r: ResultadoDelPermiso): Sensor {
   }
 }
 
+/** Encendido = sensor concedido: solo entonces mantener presionado pinta. */
+export function estaEncendido(sensor: Sensor): boolean {
+  return sensor.tipo === "concedido";
+}
+
 /**
- * Qué dice el texto de ayuda mientras NO se puede pintar por el sensor; `null` si ya está concedido (entonces
- * manda el texto de pintar de siempre). `abrirEnSafari`: en la app instalada en iOS (la que se añade al inicio
- * desde Safari) WebKit ha rechazado `requestPermission()` con `NotAllowedError` aunque el gesto sea válido, porque
- * el permiso vive en Safari y no en la app del inicio (dato del founder, iOS 26, 2026-09-22) — la salida es abrir
- * el mismo enlace en Safari, con un botón (un enlace con `target="_blank"` desde la app instalada abre Safari).
- * La ruta de Ajustes es la de iOS 18 (Ajustes → Apps → Safari); en iOS 26 la verifica el founder en su teléfono.
+ * Qué dice el texto de ayuda mientras el control NO está encendido; `null` si ya lo está (entonces manda el texto
+ * de pintar de siempre, «Mantén presionado y mueve tu celular»). Dos instrucciones, una por estado (founder,
+ * 2026-09-22): apagado, «Enciende el control para comenzar» (también mientras el permiso se está pidiendo: el
+ * diálogo del sistema ya está a la vista); encendido, la de pintar. `abrirEnSafari`: en la app instalada en iOS
+ * (la que se añade al inicio desde Safari) WebKit ha rechazado `requestPermission()` con `NotAllowedError` aunque
+ * el gesto sea válido, porque el permiso vive en Safari y no en la app del inicio (dato del founder, iOS 26,
+ * 2026-09-22) — la salida es abrir el mismo enlace en Safari, con un botón (un enlace con `target="_blank"` desde
+ * la app instalada abre Safari). La ruta de Ajustes es la de iOS 18 (Ajustes → Apps → Safari); en iOS 26 la
+ * verifica el founder en su teléfono.
  */
 export function textoDelSensor(sensor: Sensor, instalada: boolean): { texto: string; esAviso: boolean; abrirEnSafari: boolean } | null {
   switch (sensor.tipo) {
     case "concedido":
       return null;
     case "sin-pedir":
-      return { texto: "Toca el punto para activar el sensor", esAviso: false, abrirEnSafari: false };
     case "pidiendo":
-      return { texto: "Activando el sensor…", esAviso: false, abrirEnSafari: false };
+      return { texto: "Enciende el control para comenzar", esAviso: false, abrirEnSafari: false };
     case "negado":
       return instalada
         ? { texto: "En la app instalada el iPhone no deja usar el sensor. Abre este enlace en Safari.", esAviso: true, abrirEnSafari: true }
