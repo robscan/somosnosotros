@@ -103,6 +103,24 @@
   background: var(--fondo);
   min-width: 0;
 }
+/* OL-127: «Crear pared aquí» (un toque, con la ubicación) encima del formulario de elegir lugar. */
+.aqui {
+  display: grid;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
+}
+.ayudaAqui {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.oBien {
+  margin: 0 0 var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+}
 /* OL-126: la instantánea de la pared, chica, con el mismo fondo casi blanco de la pared (el PNG es transparente). */
 .instantanea {
   display: grid;

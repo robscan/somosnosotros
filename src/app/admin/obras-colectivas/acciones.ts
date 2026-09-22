@@ -2,10 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { BUCKET_INSTANTANEAS, rutaInstantanea } from "@/lib/pincel";
+import { BUCKET_INSTANTANEAS, lugarMasCercano, nombreParedSinLugar, nombreSugerido, rutaInstantanea } from "@/lib/pincel";
 import { esUuid, limpiar } from "@/lib/formulario";
 import { localAIso, zonaSegura } from "@/lib/fechas";
-import { cierreDesdeEvento } from "@/lib/obras-colectivas";
+import { cierreDesdeEvento, cierreSugeridoIso } from "@/lib/obras-colectivas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
 export type Resultado = { ok: true } | { ok: false; error: string };
@@ -72,6 +72,32 @@ export async function crearPorUbicacion(_anterior: Resultado, formData: FormData
     return { ok: false, error: "No se pudo crear. Intenta de nuevo." };
   }
   redirect(`/admin/obras-colectivas/${creada.id}`);
+}
+
+/**
+ * «Crear pared aquí» (OL-127, founder: «También debe permitir crear pared en ubicación actual sin más»): con la
+ * ubicación actual del teléfono, sin más pasos. Si hay un lugar del directorio a menos de 200 m se usa ese (y se
+ * dice); si no, la obra queda sin lugar y guarda sus coordenadas propias (migración 20260922230000). Nombre por
+ * defecto «Pincel en <lugar>» o «Pincel · <fecha corta>», cierre en dos horas; los dos editables después.
+ */
+export async function crearParedAqui(donde: { lat: number; lng: number; precisionM: number }): Promise<{ ok: true; id: string; lugarNombre: string | null } | { ok: false; error: string }> {
+  const { supabase, yo } = await soloAdmin();
+  if (!Number.isFinite(donde.lat) || !Number.isFinite(donde.lng) || Math.abs(donde.lat) > 90 || Math.abs(donde.lng) > 180) return { ok: false, error: "No se pudo leer la ubicación." };
+  const { data: lugares } = await supabase.from("lugares").select("id, nombre, lat, lng, zona").eq("visible", true);
+  const conCoordenadas = ((lugares ?? []) as Array<{ id: string; nombre: string; lat: number | null; lng: number | null; zona: string }>).filter((l): l is { id: string; nombre: string; lat: number; lng: number; zona: string } => typeof l.lat === "number" && typeof l.lng === "number");
+  const cercano = lugarMasCercano({ lat: donde.lat, lng: donde.lng }, conCoordenadas);
+  const zona = zonaSegura(cercano?.lugar.zona ?? "America/Mexico_City");
+  const nombre = (cercano ? nombreSugerido(cercano.lugar.nombre) : nombreParedSinLugar(new Date(), zona)).slice(0, 120);
+  // Un solo objeto (no dos formas distintas): con lugar, o con coordenadas propias y su zona.
+  const fila: Record<string, string | number> = { nombre, cierra_en: cierreSugeridoIso(), creado_por: yo, ...(cercano ? { lugar_id: cercano.lugar.id } : { lat: donde.lat, lng: donde.lng, zona }) };
+  const { data: creada, error } = await supabase.from("obras_colectivas").insert(fila).select("id").single();
+  if (error || !creada) {
+    if (esUnicidad(error)) return { ok: false, error: `Ya hay una pared abierta en ${cercano?.lugar.nombre ?? "ese lugar"}.` };
+    if (esFrenoGlobal(error)) return { ok: false, error: error?.message ?? "No se pudo crear." };
+    return { ok: false, error: "No se pudo crear. Intenta de nuevo." };
+  }
+  revalidatePath("/admin/obras-colectivas");
+  return { ok: true, id: creada.id, lugarNombre: cercano?.lugar.nombre ?? null };
 }
 
 function revalidar(id: string) {

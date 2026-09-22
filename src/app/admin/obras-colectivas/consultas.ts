@@ -42,7 +42,7 @@ export async function cargarObras(): Promise<{ obras: ObraFila[]; error: boolean
     lugar: { nombre: string } | { nombre: string }[] | null;
   }>;
   return {
-    obras: filas.map((f) => ({ id: f.id, nombre: f.nombre, estado: f.estado, zona: f.zona, creadoEn: f.creado_en, lugarNombre: unLugar(f.lugar)?.nombre ?? "" })),
+    obras: filas.map((f) => ({ id: f.id, nombre: f.nombre, estado: f.estado, zona: f.zona, creadoEn: f.creado_en, lugarNombre: unLugar(f.lugar)?.nombre ?? "Ubicación propia" })),
     error: false,
   };
 }
@@ -95,6 +95,8 @@ export type ObraDetalle = {
   cierraEn: string;
   zona: string;
   lugarNombre: string;
+  /** Coordenadas propias (OL-127) cuando la obra no tiene lugar del directorio; null si tiene lugar. */
+  coordenadas: { lat: number; lng: number } | null;
   creadoEn: string;
   cerradoEn: string | null;
   imagenFinal: string | null;
@@ -106,7 +108,7 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
   if (!supabase) return null;
   const { data } = await supabase
     .from("obras_colectivas")
-    .select("id, nombre, estado, cierra_en, zona, creado_en, cerrado_en, imagen_final, cupo_mandos, lugar:lugares(nombre)")
+    .select("id, nombre, estado, cierra_en, zona, creado_en, cerrado_en, imagen_final, cupo_mandos, lat, lng, lugar:lugares(nombre)")
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
@@ -120,6 +122,8 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
     cerrado_en: string | null;
     imagen_final: string | null;
     cupo_mandos: number;
+    lat: number | null;
+    lng: number | null;
     lugar: { nombre: string } | { nombre: string }[] | null;
   };
   return {
@@ -132,7 +136,8 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
     cerradoEn: fila.cerrado_en,
     imagenFinal: fila.imagen_final,
     cupoMandos: fila.cupo_mandos,
-    lugarNombre: unLugar(fila.lugar)?.nombre ?? "",
+    lugarNombre: unLugar(fila.lugar)?.nombre ?? "Ubicación propia",
+    coordenadas: !unLugar(fila.lugar) && typeof fila.lat === "number" && typeof fila.lng === "number" ? { lat: fila.lat, lng: fila.lng } : null,
   };
 }
 
