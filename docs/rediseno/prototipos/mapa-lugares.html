@@ -89,7 +89,7 @@
   /* El lugar: punto, o círculo con el día; el nombre debajo con halo blanco (así lo pinta Mapbox) */
   .lugar { cursor: pointer; }
   .lugar circle { fill: var(--primario); stroke: var(--fondo); stroke-width: 1.5; transition: r 150ms; }
-  .lugar .dia { fill: var(--primario-texto); font-size: 11px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; dominant-baseline: central; pointer-events: none; letter-spacing: 0.01em; }
+  .lugar .dia { fill: var(--primario-texto); font-size: 10px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; dominant-baseline: central; pointer-events: none; letter-spacing: 0; }
   .lugar .nombre { fill: var(--primario); font-size: 13px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; paint-order: stroke; stroke: var(--fondo); stroke-width: 3; stroke-linejoin: round; pointer-events: none; }
   .lugar.destacado circle { fill: var(--destacado); stroke-width: 2; }
   .lugar.destacado .borde { fill: none; stroke: var(--destacado); stroke-width: 1.5; }
@@ -100,8 +100,10 @@
   .yo { fill: #1a73e8; stroke: #fff; stroke-width: 2.5; }
   .telefono:not([data-ubicacion]) .persona { display: none; }
 
-  /* Botón de ubicación: abajo a la izquierda, el mismo botón que el ↑ de los listados */
-  .ubicacion { position: absolute; left: var(--gutter); bottom: 16px; z-index: 3; display: grid; place-items: center; width: var(--toque); height: var(--toque); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  /* Botón de ubicación: abajo a la izquierda, el mismo botón que el ↑ de los listados. Con la hoja del pin abierta
+     sube por encima de ella (nunca se tapa: el founder lo pidió explícitamente el 2026-09-22); `--sube` lo mide el
+     script con la altura real de la hoja. */
+  .ubicacion { position: absolute; left: var(--gutter); bottom: calc(16px + var(--sube, 0px)); z-index: 5; display: grid; place-items: center; width: var(--toque); height: var(--toque); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: bottom 200ms ease; }
   .telefono[data-ubicacion] .ubicacion { color: var(--primario); }
   .telefono[data-ubicacion] .ubicacion .centro { fill: currentColor; }
   /* Publicar: abajo a la derecha, como hoy */
@@ -113,7 +115,8 @@
   /* La tarjeta del lugar tocado: una hoja corta pegada abajo; con ella abierta, los botones se retiran */
   .tarjeta { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "foto titulo" "foto meta" "ver ver"; column-gap: 12px; row-gap: 4px; padding: 16px var(--gutter) 16px; border-radius: var(--radio-grande) var(--radio-grande) 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); }
   .telefono:not([data-elegido]) .tarjeta { display: none; }
-  .telefono[data-elegido] .ubicacion, .telefono[data-elegido] .publicar { display: none; }
+  /* Solo Registrar se retira; el botón de ubicación se queda, corrido arriba de la hoja (ver .ubicacion) */
+  .telefono[data-elegido] .publicar { display: none; }
   .tarjeta img { grid-area: foto; width: 64px; height: 64px; border-radius: 10px; background: var(--fondo-miniatura); align-self: start; }
   .tarjeta .titulo { grid-area: titulo; font-size: var(--letra-xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; min-width: 0; text-wrap: balance; }
   .tarjeta .meta { grid-area: meta; display: grid; gap: 2px; color: var(--texto-suave); font-size: var(--letra-sm); min-width: 0; }
@@ -222,26 +225,27 @@
 <div class="estudio">
   <div class="rotulo">
     <strong>Mapa de lugares · OL-124</strong>
-    Tres estados de la misma pantalla. El mapa está dibujado a mano (sin Mapbox ni token); los pines, el botón de ubicación y la tarjeta son los que se proponen. Tocar un pin abre su tarjeta, tocar el mapa la cierra, el botón de abajo a la izquierda pone o quita la ubicación. Las pestañas van sin «Cercanos»: en el mapa, esa decisión es del botón.
+    Tres estados de la misma pantalla, con las decisiones del founder del 2026-09-22 ya aplicadas: días de tres letras con acento y el botón de ubicación visible en los tres estados (nunca tapado). El mapa está dibujado a mano (sin Mapbox ni token); los pines, el botón de ubicación y la tarjeta son los que se proponen. Tocar un pin abre su tarjeta, tocar el mapa la cierra, el botón de abajo a la izquierda pone o quita la ubicación. Las pestañas van sin «Cercanos»: en el mapa, esa decisión es del botón (decidido).
   </div>
 </div>
 
 <script>
   // Lugares de ejemplo (nombres reales del catálogo; posiciones inventadas sobre el mapa dibujado).
-  // dia: "Hoy" o el día en dos letras cuando tiene evento en los próximos 7 días; null si no.
+  // dia: "Hoy" o el día en tres letras con acento (Lun, Mar, Mié, Jue, Vie, Sáb, Dom, decisión del founder
+  // 2026-09-22) cuando el lugar tiene evento en los próximos 7 días; null si no.
   const LUGARES = [
     { id: "artes", x: 250, y: 240, nombre: ["Centro de las Artes", "de San Luis Potosí"], tipo: "Centro cultural", destacado: true, dia: "Hoy", evento: "Muestra de danza contemporánea", cuando: "Hoy · 19:00" },
     { id: "paz", x: 350, y: 470, nombre: ["Teatro de la Paz"], tipo: "Teatro", destacado: false, dia: "Hoy", evento: "Orquesta Sinfónica de SLP", cuando: "Hoy · 20:00" },
-    { id: "tlaxcala", x: 410, y: 300, nombre: ["Casa de Cultura del", "Barrio de Tlaxcala"], tipo: "Casa de cultura", destacado: false, dia: "Ju", evento: "Taller de grabado", cuando: "jue 24 sep · 17:00" },
+    { id: "tlaxcala", x: 410, y: 300, nombre: ["Casa de Cultura del", "Barrio de Tlaxcala"], tipo: "Casa de cultura", destacado: false, dia: "Jue", evento: "Taller de grabado", cuando: "jue 24 sep · 17:00" },
     { id: "silva", x: 330, y: 520, nombre: ["Museo Federico Silva"], tipo: "Museo", destacado: true, dia: null, evento: null, cuando: null },
-    { id: "muni", x: 190, y: 560, nombre: ["MUNI Museo", "Universitario UASLP"], tipo: "Museo", destacado: false, dia: "Vi", evento: "Inauguración: Materia y luz", cuando: "vie 25 sep · 18:30" },
-    { id: "laberinto", x: 430, y: 565, nombre: ["Museo Laberinto"], tipo: "Museo", destacado: false, dia: "Sá", evento: "Noche de estrellas", cuando: "sáb 26 sep · 19:00" },
+    { id: "muni", x: 190, y: 560, nombre: ["MUNI Museo", "Universitario UASLP"], tipo: "Museo", destacado: false, dia: "Vie", evento: "Inauguración: Materia y luz", cuando: "vie 25 sep · 18:30" },
+    { id: "laberinto", x: 430, y: 565, nombre: ["Museo Laberinto"], tipo: "Museo", destacado: false, dia: "Sáb", evento: "Noche de estrellas", cuando: "sáb 26 sep · 19:00" },
     { id: "cineteca", x: 365, y: 395, nombre: ["Cineteca Alameda"], tipo: "Cine", destacado: false, dia: null, evento: null, cuando: null },
     { id: "poeta", x: 290, y: 495, nombre: ["Casa del Poeta"], tipo: "Casa de cultura", destacado: false, dia: null, evento: null, cuando: null },
     { id: "ferrocarril", x: 420, y: 430, nombre: ["Museo del Ferrocarril"], tipo: "Museo", destacado: false, dia: null, evento: null, cuando: null },
     { id: "soledad", x: 600, y: 180, nombre: ["Casa de la Cultura", "de Soledad"], tipo: "Casa de cultura", destacado: false, dia: null, evento: null, cuando: null },
     { id: "ipba", x: 230, y: 450, nombre: ["IPBA"], tipo: "Escuela", destacado: false, dia: null, evento: null, cuando: null },
-    { id: "ccub", x: 230, y: 165, nombre: ["Centro Cultural", "Universitario Bicentenario"], tipo: "Centro cultural", destacado: false, dia: "Mi", evento: "Concierto de cámara", cuando: "mié 23 sep · 19:00" },
+    { id: "ccub", x: 230, y: 165, nombre: ["Centro Cultural", "Universitario Bicentenario"], tipo: "Centro cultural", destacado: false, dia: "Mié", evento: "Concierto de cámara", cuando: "mié 23 sep · 19:00" },
   ];
   // Dónde está la persona en el estado «con ubicación» (coordenadas del mapa dibujado).
   const PERSONA = { x: 430, y: 520 };
@@ -261,7 +265,7 @@
     const orden = [...LUGARES].sort((a, b) => (a.destacado - b.destacado) || ((a.dia ? 1 : 0) - (b.dia ? 1 : 0)));
     for (const l of orden) {
       const g = svg("g", { class: `lugar${l.destacado ? " destacado" : ""}`, "data-id": l.id, transform: `translate(${l.x} ${l.y})` });
-      const r = l.dia ? 14 : l.destacado ? 7 : 5;
+      const r = l.dia ? 16 : l.destacado ? 7 : 5; // 16: los tres caracteres de "Sáb"/"Hoy" caben sin achicar la letra
       if (l.destacado) g.appendChild(svg("circle", { class: "borde", r: r + 3.5 }));
       g.appendChild(svg("circle", { class: "punto", r }));
       if (l.dia) g.appendChild(svg("text", { class: "dia" }, l.dia));
@@ -279,9 +283,22 @@
     persona.setAttribute("transform", `translate(${PERSONA.x} ${PERSONA.y})`);
     pintarLugares(tel.querySelector(".lugares"));
 
+    // El botón de ubicación nunca se tapa (el founder, 2026-09-22): con la hoja abierta, sube justo encima de
+    // ella. `--sube` se mide de verdad (getBoundingClientRect), no se supone un alto fijo: la hoja cambia de
+    // tamaño según el lugar (con o sin evento, destacado o no).
+    function subirBoton() {
+      const hoja = tel.querySelector(".tarjeta");
+      const alto = "elegido" in tel.dataset ? hoja.getBoundingClientRect().height : 0;
+      tel.style.setProperty("--sube", `${alto}px`);
+    }
+
     function elegir(id) {
       tel.querySelectorAll(".lugar").forEach((g) => g.classList.toggle("elegido", g.dataset.id === id));
-      if (!id) { delete tel.dataset.elegido; return; }
+      if (!id) {
+        delete tel.dataset.elegido;
+        subirBoton();
+        return;
+      }
       const l = LUGARES.find((x) => x.id === id);
       tel.dataset.elegido = id;
       tel.querySelector(".titulo").textContent = l.nombre.join(" ");
@@ -293,6 +310,7 @@
       cuando.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
       cuando.appendChild(l.evento ? Object.assign(document.createElement("b"), { textContent: `${l.cuando} · ${l.evento}` }) : document.createTextNode("Sin eventos próximos"));
       meta.appendChild(cuando);
+      requestAnimationFrame(subirBoton);
     }
     function ubicar(si) {
       if (si) tel.dataset.ubicacion = ""; else delete tel.dataset.ubicacion;
@@ -309,17 +327,17 @@
     ubicar(estado === "con-ubicacion" || estado === "pin-tocado");
     if (elegido) elegir(elegido);
     tel.dataset.estado = estado;
-    return tel;
+    return { tel, subirBoton };
   }
 
   const estudio = document.querySelector(".estudio");
   const ESTADOS = [
-    ["sin-ubicacion", null, "Sin ubicación", "Al abrir: el encuadre muestra los lugares con evento esta semana y los destacados. Hoy en rojo-naranja (destacado) o azul; el día en dos letras; los demás, un punto."],
+    ["sin-ubicacion", null, "Sin ubicación", "Al abrir: el encuadre muestra los lugares con evento esta semana y los destacados. Hoy y los días en tres letras con acento (Jue, Vie…); los demás, un punto."],
     ["con-ubicacion", null, "Con ubicación", "Tras tocar el botón: el mapa se centra en la persona (punto azul) y el botón toma el color de acción. Volver a tocarlo recentra."],
-    ["pin-tocado", "paz", "Pin tocado", "Una hoja corta con el nombre, el próximo evento y «Ver ficha». Los botones se retiran mientras está abierta; tocar el mapa la cierra."],
+    ["pin-tocado", "paz", "Pin tocado", "Una hoja corta con el nombre, el próximo evento y «Ver ficha». Registrar se retira; el botón de ubicación sube y se queda visible encima de la hoja."],
   ];
   for (const [estado, elegido, titulo, texto] of ESTADOS) {
-    const tel = montar(estado, elegido);
+    const { tel, subirBoton } = montar(estado, elegido);
     const pie = document.createElement("p");
     pie.className = "pie";
     pie.innerHTML = `<b>${titulo}</b> · ${texto}`;
@@ -327,6 +345,9 @@
     caja.appendChild(tel);
     caja.appendChild(pie);
     estudio.appendChild(caja);
+    // Recién insertado en el documento: ahora sí hay layout que medir (antes, con `elegir` llamado en `montar`,
+    // el nodo no estaba en el DOM y la hoja medía 0).
+    subirBoton();
   }
 </script>
 </body>

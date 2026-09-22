@@ -41,3 +41,26 @@ La pieza B1 de `docs/ops/COLA_DE_PIEZAS.md`: L7 (botón de ubicación actual y e
 
 - Firma del founder sobre el doc 35 y el prototipo; sus tres decisiones: «Cercanos» en el mapa, la ⓘ de Mapbox y L8.
 - Con la firma, la pieza de código (lo que toca está al final del doc 35).
+
+## Segunda entrega: correcciones del founder (2026-09-22)
+
+El gestor aceptó la primera entrega (`27e69c4`) y abrió el PR #155. El founder vio el prototipo y pidió cuatro cambios, en el chat del gestor:
+
+1. «Me gusta el prototipo de mapa.»
+2. Los días van con **tres letras y acento** («Jue», «Vie», «Sáb»), no dos («Ju», «Vi», «Sá»).
+3. De acuerdo con las dos recomendaciones: **L8 decidido** (sigue «Lugares») y **«Cercanos» fuera de las pestañas del mapa**.
+4. «No has agregado botón de ubicación en mapa»: el botón sí estaba en las tres capturas, pero en «pin tocado» la hoja lo tapaba por completo.
+
+### Qué se cambió
+
+- **`docs/rediseno/prototipos/mapa-lugares.html`:** los doce lugares de ejemplo pasan a `Jue`/`Vie`/`Sáb`/`Mié`; el círculo del pin con día crece de 28 a 32 px (10 px de letra) para que quepan las tres letras sin achicarla. El botón de ubicación deja de retirarse con la hoja abierta: ahora se mide la altura real de la hoja (`getBoundingClientRect`, no un número fijo) y el botón sube justo por encima con una transición corta; solo «Registrar lugar» sigue retirándose. Se subió también el `z-index` del botón para que quede siempre por encima.
+- **`docs/rediseno/35-mapa-de-lugares.md`:** sección nueva «Decisiones del founder al ver el prototipo» al principio; L7/L8/L31 marcadas con lo decidido; la tabla de pines, el párrafo de «por qué el día en letras» y las cuatro capturas actualizados a tres letras; la sección «El botón de ubicación» reescrita (nunca se tapa, con la explicación de por qué se eligió el icono de mira/diana — es el mismo `IconoUbicacion` que ya usan «Estoy aquí» en `HojaDonde` y `HojaDondeEs`, y se descartó la flecha de rumbo de Apple Maps porque esta app no muestra hacia dónde mira la persona); la sección L8 pasa de recomendación a decisión, con las mismas cuatro razones y la nota de lo dicho a favor de «Mapa»; «Qué toca en el código» anota cómo medir la hoja en React.
+- **Cuatro capturas re-tomadas** en `docs/rediseno/capturas-35/` con el mismo método (Chrome real vía `playwright-core`, `document.fonts.check` = true): confirmé en la de «pin tocado» que el botón de ubicación se ve completo, con su sombra, justo arriba del borde de la hoja; en las otras dos, los pines dicen «Jue», «Vie», «Mié», «Sáb» completos y legibles.
+
+### Evidencia
+
+Abrí las cuatro capturas nuevas antes de entregar. En `prototipo-pin-tocado--390x844.png` el botón de ubicación (tinta, sin ubicación activa en ese estado) queda visible completo sobre el borde blanco de la hoja, sin recorte ni superposición. En `prototipo-sin-ubicacion--390x844.png` y `prototipo-con-ubicacion--390x844.png` los seis pines con día muestran «Mié», «Jue», «Vie», «Sáb» sin abreviar más allá de las tres letras acordadas; en «con ubicación» el icono del botón está en el color de acción con el centro relleno.
+
+### Pendiente
+
+Firma del founder sobre esta segunda entrega. Con ella, la pieza de código.
