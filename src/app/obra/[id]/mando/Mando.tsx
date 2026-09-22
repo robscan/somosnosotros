@@ -20,6 +20,30 @@ import { clienteNavegador } from "@/lib/supabase/navegador";
 import styles from "./mando.module.css";
 
 type PermisoOrientacion = "sin-pedir" | "concedido" | "negado" | "sin-soporte";
+type Selector = "trazo" | "tinta";
+
+/**
+ * La punta de cada pincel, dibujada (no solo el nombre): calcada de `brushSample` del prototipo firmado
+ * (`experiments/pincel-prototipo/core.mjs`, commit de48c0c). Se pinta en el color de la tinta elegida.
+ */
+function MuestraTrazo({ trazo, color }: { trazo: Trazo; color: string }) {
+  const curva = "M5 19C14 5 24 25 43 9";
+  const gotas: [number, number][] = [[6, 18], [9, 14], [12, 11], [15, 13], [17, 9], [20, 14], [23, 17], [26, 19], [28, 15], [31, 17], [34, 13], [37, 10], [40, 12], [42, 8], [13, 17], [24, 12], [35, 16]];
+  return (
+    <svg className={styles.muestra} viewBox="0 0 48 28" aria-hidden="true" style={{ color }}>
+      {trazo === "aire" && <path d={curva} fill="none" stroke="currentColor" strokeWidth="9" strokeLinecap="round" opacity="0.45" />}
+      {trazo === "spray" && gotas.map(([x, y]) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.6" fill="currentColor" />)}
+      {trazo === "organico" && (
+        <g fill="currentColor" opacity="0.6">
+          <ellipse cx="13" cy="15" rx="9" ry="5" transform="rotate(-20 13 15)" />
+          <ellipse cx="24" cy="14" rx="9" ry="4.5" transform="rotate(15 24 14)" />
+          <ellipse cx="35" cy="12" rx="8" ry="5" transform="rotate(-10 35 12)" />
+        </g>
+      )}
+      {trazo === "trazo" && <path d={curva} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />}
+    </svg>
+  );
+}
 
 /** ¿Este navegador exige pedir permiso para leer el sensor (Safari de iOS 13+)? Chrome/Android no lo pide. */
 function requestPermissionDeOrientacion(): (() => Promise<"granted" | "denied">) | null {
@@ -40,6 +64,9 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   const [permiso, setPermiso] = useState<PermisoOrientacion>("sin-pedir");
   const [entradas, setEntradas] = useState<EntradaPresencia[]>([]);
   const [banner, setBanner] = useState(false);
+  const [abierto, setAbierto] = useState<Selector | null>(null); // nunca los dos menús abiertos (prototipo firmado)
+  const tarjetaTrazoRef = useRef<HTMLButtonElement | null>(null);
+  const tarjetaTintaRef = useRef<HTMLButtonElement | null>(null);
 
   const canalRef = useRef<ReturnType<typeof abrirCanalObra> | null>(null);
   const bufferRef = useRef<Delta[]>([]);
@@ -121,6 +148,7 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   }, [presionado, perfilId, estado.tipo]);
 
   async function empezarAPintar() {
+    setAbierto(null); // como en el prototipo firmado: pintar cierra cualquier menú abierto
     if (permiso === "sin-pedir") {
       const pedir = requestPermissionDeOrientacion();
       if (pedir) {
@@ -145,6 +173,20 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   }
 
   const esperando = estado.tipo === "esperando";
+  const trazoElegido = TRAZOS.find((t) => t.id === trazo) ?? TRAZOS[0];
+  const tintaElegida = TINTAS.find((t) => t.valor === color) ?? TINTAS[0];
+
+  // Al elegir: se cierra el menú y el foco vuelve a la tarjeta (bitácora 118: "al elegir el foco vuelve al selector").
+  function elegirTrazo(id: Trazo) {
+    setTrazo(id);
+    setAbierto(null);
+    tarjetaTrazoRef.current?.focus();
+  }
+  function elegirTinta(valor: string) {
+    setColor(valor);
+    setAbierto(null);
+    tarjetaTintaRef.current?.focus();
+  }
 
   return (
     <div className={styles.mando}>
@@ -160,8 +202,8 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
         </div>
       )}
       {estado.tipo !== "fuera" && <p className={styles.presente}>{esperando ? `${cupo} pintando` : `${entradas.length} personas aquí`}</p>}
-      {esperando ? (
-        <div className={styles.centro}>
+      {esperando && (
+        <div className={styles.espera}>
           <span className={styles.esperaIcono} aria-hidden="true">
             <svg viewBox="0 0 24 24" width="36" height="36">
               <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -174,44 +216,86 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
           <p className={styles.explicaEspera}>Pintas en cuanto alguien salga. No pierdes tu lugar por esperar.</p>
           <span className={styles.conteoEsperando}>{estado.esperando} esperando</span>
         </div>
-      ) : (
-        <div className={styles.centro}>
-          <button
-            type="button"
-            className={styles.orb}
-            aria-pressed={presionado}
-            onPointerDown={empezarAPintar}
-            onPointerUp={() => setPresionado(false)}
-            onPointerLeave={() => setPresionado(false)}
-          >
-            ●
-          </button>
-          {permiso === "negado" || permiso === "sin-soporte" ? (
-            <p className={styles.aviso} role="alert">
-              {permiso === "negado" ? "Sin permiso del sensor, no se puede pintar. Actívalo en Ajustes y vuelve a intentar." : "Este navegador no tiene sensor de movimiento."}
-            </p>
-          ) : (
-            <p className={styles.ayuda}>{presionado ? "Pintando en la pared" : "Mantén presionado y mueve tu celular"}</p>
-          )}
-        </div>
       )}
-      <div className={styles.herramientas}>
-        <div className={`${styles.picker} ${esperando ? styles.apagado : ""}`} role="group" aria-label="Trazo">
-          {TRAZOS.map((t) => (
-            <button key={t.id} type="button" aria-pressed={t.id === trazo} disabled={esperando} onClick={() => setTrazo(t.id)}>
-              {t.etiqueta}
-            </button>
-          ))}
-        </div>
-        <div className={`${styles.picker} ${esperando ? styles.apagado : ""}`} role="group" aria-label="Tinta">
-          {TINTAS.map((t) => (
-            <button key={t.valor} type="button" aria-pressed={t.valor === color} disabled={esperando} onClick={() => setColor(t.valor)}>
-              <span className={styles.muestraTinta} style={{ background: t.valor }} aria-hidden="true" />
-              {t.etiqueta}
-            </button>
-          ))}
-        </div>
+
+      {/* Trazo: tarjeta cerrada con la punta elegida (dibujada, en el color de la tinta); su menú abre hacia arriba. */}
+      <div className={`${styles.selector} ${styles.selectorTrazo}`}>
+        <button
+          ref={tarjetaTrazoRef}
+          type="button"
+          className={styles.tarjeta}
+          aria-label={`Trazo: ${trazoElegido.etiqueta}`}
+          aria-expanded={abierto === "trazo"}
+          aria-controls="menu-trazo"
+          disabled={esperando}
+          onClick={() => setAbierto(abierto === "trazo" ? null : "trazo")}
+        >
+          <MuestraTrazo trazo={trazo} color={color} />
+          <span>{trazoElegido.etiqueta}</span>
+        </button>
+        {abierto === "trazo" && (
+          <div id="menu-trazo" className={styles.menu} role="group" aria-label="Trazo">
+            {TRAZOS.map((t) => (
+              <button key={t.id} type="button" className={styles.opcion} aria-pressed={t.id === trazo} onClick={() => elegirTrazo(t.id)}>
+                <MuestraTrazo trazo={t.id} color={color} />
+                <span>{t.etiqueta}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {!esperando && (
+        <button
+          type="button"
+          className={styles.orb}
+          aria-pressed={presionado}
+          aria-label="Mantén presionado y mueve tu celular"
+          onPointerDown={empezarAPintar}
+          onPointerUp={() => setPresionado(false)}
+          onPointerLeave={() => setPresionado(false)}
+        >
+          ●
+        </button>
+      )}
+
+      {/* Tinta: tarjeta cerrada con el círculo del color y su nombre; su menú abre hacia arriba, alineado a la derecha. */}
+      <div className={`${styles.selector} ${styles.selectorTinta}`}>
+        <button
+          ref={tarjetaTintaRef}
+          type="button"
+          className={styles.tarjeta}
+          aria-label={`Tinta: ${tintaElegida.etiqueta}`}
+          aria-expanded={abierto === "tinta"}
+          aria-controls="menu-tinta"
+          disabled={esperando}
+          onClick={() => setAbierto(abierto === "tinta" ? null : "tinta")}
+        >
+          <i className={styles.tinta} style={{ background: color }} aria-hidden="true" />
+          <span>{tintaElegida.etiqueta}</span>
+        </button>
+        {abierto === "tinta" && (
+          <div id="menu-tinta" className={styles.menu} role="group" aria-label="Tinta">
+            {TINTAS.map((t) => (
+              <button key={t.valor} type="button" className={styles.opcion} aria-pressed={t.valor === color} onClick={() => elegirTinta(t.valor)}>
+                <i className={styles.tinta} style={{ background: t.valor }} aria-hidden="true" />
+                <span>{t.etiqueta}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {!esperando &&
+        (permiso === "negado" || permiso === "sin-soporte" ? (
+          <p className={`${styles.hold} ${styles.aviso}`} role="alert">
+            {permiso === "negado" ? "Sin permiso del sensor, no se puede pintar. Actívalo en Ajustes y vuelve a intentar." : "Este navegador no tiene sensor de movimiento."}
+          </p>
+        ) : (
+          <p className={styles.hold} aria-live="polite">
+            {presionado ? "Pintando en la pared" : "Mantén presionado y mueve tu celular"}
+          </p>
+        ))}
     </div>
   );
 }
