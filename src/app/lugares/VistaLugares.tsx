@@ -18,7 +18,7 @@ import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado, Tarjeta } from "@/lib/destacados";
 import { SIN_FOTO } from "@/lib/imagen";
 import ChipCiudad from "@/components/Ciudad";
-import { calleCorta, etiquetaTipo, filtrarLugares, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
+import { calleCorta, etiquetaTipo, filtrarLugares, hrefLugar, textoProximo, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import renglon from "@/components/Renglon.module.css";
 import { Pestana, PestanaEnlace, Pestanas } from "@/components/ui/Pestanas";
@@ -222,7 +222,7 @@ export default function VistaLugares({
             {notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoMapa} />}
             {elegido && (
               <Link
-                href={`/lugares/${elegido.id}`}
+                href={hrefLugar(elegido)}
                 className={styles.tarjeta}
                 aria-label={`Ver ${elegido.nombre}`}
               >

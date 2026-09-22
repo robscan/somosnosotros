@@ -1,12 +1,12 @@
 import "server-only";
 import { correoCambioEvento, correoNuevoEvento, correoRecordatorio, textoCambio } from "./comunidad";
-import { nombreSitio, type CambioEvento } from "./eventos";
+import { hrefEvento, nombreSitio, type CambioEvento } from "./eventos";
 import { diaCorto, formatearCuando } from "./fechas";
 import type { AvisoPush } from "./push";
 
 export type TipoAviso = "nuevo_evento" | "recordatorio" | "cambio";
 export type Cambio = Exclude<CambioEvento, null>;
-export type EventoParaAviso = { id: string; titulo: string; inicio: string; fin: string | null; zona: string;
+export type EventoParaAviso = { id: string; slug?: string | null; titulo: string; inicio: string; fin: string | null; zona: string;
   sitio_texto: string | null; sitio_direccion?: string | null; sitio_reservado: boolean; lugar: { nombre: string; portada: string | null } | null };
 
 export function diaDelRecordatorio(evento: Pick<EventoParaAviso, "inicio" | "zona">, ahora = new Date()): "Hoy" | "Mañana" {
@@ -16,7 +16,7 @@ export function diaDelRecordatorio(evento: Pick<EventoParaAviso, "inicio" | "zon
 export function contenidoPush(tipo: TipoAviso, evento: EventoParaAviso, cambio: Cambio = "ambos", ahora = new Date()): AvisoPush {
   const cuando = formatearCuando(evento.inicio, evento.fin, ahora, evento.zona);
   const lugar = nombreSitio(evento);
-  const url = `https://somosnosotros.org/eventos/${evento.id}`;
+  const url = `https://somosnosotros.org${hrefEvento(evento)}`;
   if (tipo === "nuevo_evento") return { titulo: `Nuevo en ${lugar}`, cuerpo: `${evento.titulo} · ${cuando}`, url };
   if (tipo === "cambio") return { titulo: `Cambió ${textoCambio(cambio)}: ${evento.titulo}`, cuerpo: `Ahora es ${cuando} · ${lugar}`, url };
   return { titulo: `${diaDelRecordatorio(evento, ahora)}: ${evento.titulo}`, cuerpo: `${cuando} · ${lugar}`, url };
@@ -24,7 +24,7 @@ export function contenidoPush(tipo: TipoAviso, evento: EventoParaAviso, cambio: 
 
 export function contenidoCorreo(tipo: TipoAviso, evento: EventoParaAviso, cambio: Cambio, ahora: Date, bajaUrl: string) {
   const p = { titulo: evento.titulo, cuando: formatearCuando(evento.inicio, evento.fin, ahora, evento.zona),
-    dia: diaDelRecordatorio(evento, ahora), lugar: nombreSitio(evento), eventoId: evento.id, bajaUrl };
+    dia: diaDelRecordatorio(evento, ahora), lugar: nombreSitio(evento), eventoId: evento.id, eventoSlug: evento.slug, bajaUrl };
   return tipo === "nuevo_evento" ? correoNuevoEvento(p) : tipo === "cambio" ? correoCambioEvento({ ...p, cambio }) : correoRecordatorio(p);
 }
 

@@ -8,11 +8,11 @@ import { conProximo, type ProximoEvento } from "@/lib/lugares";
 import { clienteServidor, type Perfil } from "@/lib/supabase/servidor";
 
 /** Con `proximo` y `proxima` cuando la ficha los pide: el mismo renglón que en Lugares y Artistas (OL-057). */
-export type LugarSeguido = { id: string; nombre: string; tipo: string; direccion: string | null; portada: string | null; proximo?: ProximoEvento | null };
-export type ArtistaSeguido = { id: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
+export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: string; direccion: string | null; portada: string | null; proximo?: ProximoEvento | null };
+export type ArtistaSeguido = { id: string; slug: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
 export type Persona = { perfil: Perfil; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
-type FilaEvento = { id: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; sitio_lat: number | null; sitio_lng: number | null; creado_en: string; lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
+type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; sitio_lat: number | null; sitio_lng: number | null; creado_en: string; lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 type FilaFecha = { artista_id: string; evento: FechaEvento | FechaEvento[] | null };
 type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
@@ -73,10 +73,10 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
   // Topes explícitos (una sola persona): de sobra para lo que sigue y a lo que va; guardan del corte silencioso
   // de PostgREST en 1 000 filas sin tocar lo que hoy se ve (revisión 2026-09-14, A1).
   const [{ data: sigue }, { data: va }] = await Promise.all([
-    supabase.from("seguimientos").select("lugar:lugares(id, nombre, tipo, direccion, portada), artista:artistas(id, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
+    supabase.from("seguimientos").select("lugar:lugares(id, slug, nombre, tipo, direccion, portada), artista:artistas(id, slug, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
     supabase
       .from("asistencias")
-      .select("estado, evento:eventos!inner(id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, sitio_lat, sitio_lng, creado_en, lugar:lugares(nombre, portada, lat, lng))")
+      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, sitio_lat, sitio_lng, creado_en, lugar:lugares(nombre, portada, lat, lng))")
       .eq("usuario_id", id)
       .or(filtroSinPasar(), { referencedTable: "evento" })
       .limit(1000),

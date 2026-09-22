@@ -5,7 +5,7 @@ import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 const ahora = new Date("2026-09-18T18:00:00Z"); // Viernes, mediodía en México.
 function aparicion(id: string, inicio = "2026-09-19T01:00:00Z", cambios: Partial<AparicionSemana["evento"]> = {}): AparicionSemana {
   return {
-    ficha: { id, nombre: id, foto: null, visible: true },
+    ficha: { id, slug: id, nombre: id, foto: null, visible: true },
     evento: { id: `evento-${id}`, inicio, termina: "2026-09-26T05:59:59Z", zona: "America/Mexico_City", visible: true, lugar_id: null, lugar: null, ...cambios },
   };
 }

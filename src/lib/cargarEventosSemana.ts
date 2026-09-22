@@ -52,7 +52,7 @@ export async function cargarEventosSemana(supabase: SupabaseClient | null, tipo:
     if (consultas >= presupuesto.consultas || filas >= presupuesto.filas) return [];
     if (tipo === "artistas") {
       const consulta = supabase.from("eventos_artistas")
-        .select("artista_id, evento_id, artista:artistas!inner(id, nombre, foto, visible), evento:eventos!inner(id, inicio, termina, zona, visible, lugar_id, lugar:lugares(visible, privado))")
+        .select("artista_id, evento_id, artista:artistas!inner(id, slug, nombre, foto, visible), evento:eventos!inner(id, inicio, termina, zona, visible, lugar_id, lugar:lugares(visible, privado))")
         .eq("artista.visible", true).eq("artista.ciudad", ciudad)
         .eq("evento.visible", true).eq("evento.ciudad", ciudad)
         .gte("evento.termina", ahora.toISOString()).lt("evento.inicio", limite)
@@ -68,7 +68,7 @@ export async function cargarEventosSemana(supabase: SupabaseClient | null, tipo:
       if (data.length < LOTE) break;
     } else {
       const consulta = supabase.from("eventos")
-        .select("id, inicio, termina, zona, visible, lugar_id, lugar:lugares!inner(id, nombre, portada, visible, privado)")
+        .select("id, inicio, termina, zona, visible, lugar_id, lugar:lugares!inner(id, slug, nombre, portada, visible, privado)")
         .eq("visible", true).eq("ciudad", ciudad)
         .eq("lugar.visible", true).eq("lugar.privado", false).eq("lugar.ciudad", ciudad)
         .gte("termina", ahora.toISOString()).lt("inicio", limite)

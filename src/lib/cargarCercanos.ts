@@ -20,14 +20,14 @@ export type RespuestaCercanos = { ok: true; eventos: EventoAgenda[]; asistencias
 // Mismo contrato que la agenda principal y que Nuevos: sin campos de dirección exacta ni migraciones nuevas
 // (deliberadamente un archivo propio, no una función compartida con cargarNuevos.ts: los limites y filtros de
 // cada pestaña son distintos y así ninguna de las dos piezas que tocan esa zona choca con la otra).
-export const CAMPOS_CERCANOS = "id, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))";
+export const CAMPOS_CERCANOS = "id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))";
 
 const fecha = z.string().datetime({ offset: true });
 const punto = z.number().nullable();
 const lugar = z.object({ nombre: z.string(), portada: z.string().nullable(), lat: punto, lng: punto });
 const artista = z.object({ nombre: z.string() });
 export const filasCercanos = z.array(z.object({
-  id: z.uuid(), titulo: z.string(), inicio: fecha, fin: fecha.nullable(), zona: z.string(),
+  id: z.uuid(), slug: z.string(), titulo: z.string(), inicio: fecha, fin: fecha.nullable(), zona: z.string(),
   imagen: z.string().nullable(), precio: z.string().nullable(), lugar_id: z.uuid().nullable(),
   sitio_texto: z.string().nullable(), sitio_reservado: z.boolean(), sitio_lat: punto, sitio_lng: punto,
   creado_en: fecha, ciudad: z.string(), lugar: z.union([lugar, z.array(lugar).max(1)]).nullable(),
