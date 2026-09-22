@@ -5,6 +5,17 @@
   background: #fbfaf8;
   overflow: hidden;
 }
+/* OL-135 (founder: «se deformó el dibujo… que mantenga aspect ratio y solo se escale»): el marco es el área 16:9
+   donde vive el lienzo (1920×1080 unidades), escalado entero y centrado en la ventana — Pared.tsx le pone left/top/
+   width/height con `rectanguloDelLienzo`; hasta la primera medida ocupa la ventana. Lo que sobra alrededor es el
+   fondo de .pared. Los puntos de los mandos van dentro, en las mismas unidades escaladas. */
+.marco {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
 .lienzo {
   display: block;
   width: 100%;

@@ -445,6 +445,31 @@ export type Punto = { x: number; y: number };
 
 /** De la posición normalizada a píxeles de la pared: (-1,-1) es la esquina superior izquierda, (0,0) el centro y
  * (1,1) la inferior derecha. El horizontal recorre el ancho y el vertical el alto, cada uno por su lado. */
+/**
+ * La pared tiene proporción fija 16:9 (OL-135, founder: «como lo abrí en un formato de pantalla vertical, se deformó
+ * el dibujo, eso no debe pasar, que mantenga aspect ratio y solo se escale»; decisión del gestor: una proyección).
+ * El lienzo mide siempre LIENZO.ancho × LIENZO.alto unidades — ahí viven las posiciones del mando, los trazos, el
+ * grosor y la instantánea — y se escala entero, centrado, para caber en la ventana; lo que sobra es margen del
+ * color de fondo. Antes el lienzo era la ventana entera y, en vertical, el dibujo se estiraba.
+ */
+export const LIENZO = { ancho: 1920, alto: 1080 } as const;
+export type Rectangulo = { left: number; top: number; width: number; height: number };
+
+/** El rectángulo más grande con la proporción `ancho:alto` que cabe en un marco de `anchoMarco × altoMarco`,
+ * centrado en él. Sin área (algún lado ≤ 0 o no numérico), un rectángulo vacío en el origen. */
+export function encajar(ancho: number, alto: number, anchoMarco: number, altoMarco: number): Rectangulo {
+  if (!(ancho > 0) || !(alto > 0) || !(anchoMarco > 0) || !(altoMarco > 0)) return { left: 0, top: 0, width: 0, height: 0 };
+  const escala = Math.min(anchoMarco / ancho, altoMarco / alto);
+  const width = ancho * escala;
+  const height = alto * escala;
+  return { left: (anchoMarco - width) / 2, top: (altoMarco - height) / 2, width, height };
+}
+
+/** Dónde va el lienzo en una ventana de `anchoVentana × altoVentana` px: `encajar` con la proporción de LIENZO. */
+export function rectanguloDelLienzo(anchoVentana: number, altoVentana: number): Rectangulo {
+  return encajar(LIENZO.ancho, LIENZO.alto, anchoVentana, altoVentana);
+}
+
 export function puntoEnPared(p: PosicionNormalizada, ancho: number, alto: number): Punto {
   return { x: ((p.x + 1) / 2) * ancho, y: ((p.y + 1) / 2) * alto };
 }

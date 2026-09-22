@@ -14,6 +14,7 @@ import {
   entradasDesdePresencia,
   esMensajeBorrarValido,
   esMensajePosicionValido,
+  encajar,
   esMensajeTrazoValido,
   esTintaClara,
   esPosicionValida,
@@ -29,6 +30,7 @@ import {
   grosorDesdeArrastre,
   intervaloMs,
   latenciasDe,
+  LIENZO,
   lugarMasCercano,
   MENSAJES_POR_SEGUNDO_PINTANDO,
   POSICIONES_POR_SEGUNDO,
@@ -45,6 +47,7 @@ import {
   puntoEnPared,
   PUNTOS_MAX_POR_MENSAJE,
   quienesPintan,
+  rectanguloDelLienzo,
   RADIO_CERCANIA_M,
   RANGO_GRADOS,
   rutaInstantanea,
@@ -620,6 +623,40 @@ describe("borradoReciente (OL-126: «borrar» solo si Administración lo registr
     expect(borradoReciente(null, ahora, null)).toBe(false);
     expect(borradoReciente(undefined, ahora, null)).toBe(false);
     expect(borradoReciente("ayer", ahora, null)).toBe(false);
+  });
+});
+
+// OL-135: la pared en proporción fija 16:9, escalada entera y centrada.
+describe("encajar y rectanguloDelLienzo (OL-135: la pared no se deforma, solo se escala)", () => {
+  it("el lienzo mide 1920×1080 unidades (16:9)", () => {
+    expect(LIENZO).toEqual({ ancho: 1920, alto: 1080 });
+    expect(LIENZO.ancho / LIENZO.alto).toBeCloseTo(16 / 9);
+  });
+  it("en una laptop 1280×800 ocupa todo el ancho y deja 40 px arriba y abajo", () => {
+    expect(rectanguloDelLienzo(1280, 800)).toEqual({ left: 0, top: 40, width: 1280, height: 720 });
+  });
+  it("en un iPhone vertical 390×844 ocupa todo el ancho, 219,375 px de alto, centrado", () => {
+    const r = rectanguloDelLienzo(390, 844);
+    expect(r.left).toBe(0);
+    expect(r.width).toBe(390);
+    expect(r.height).toBeCloseTo(219.375);
+    expect(r.top).toBeCloseTo((844 - 219.375) / 2);
+    expect(r.width / r.height).toBeCloseTo(16 / 9);
+  });
+  it("en una pantalla 1920×1080 lo llena exacto; en una más ancha (2000×1080) deja margen a los lados", () => {
+    expect(rectanguloDelLienzo(1920, 1080)).toEqual({ left: 0, top: 0, width: 1920, height: 1080 });
+    expect(rectanguloDelLienzo(2000, 1080)).toEqual({ left: 40, top: 0, width: 1920, height: 1080 });
+  });
+  it("una instantánea vieja con otra proporción (1280×800) se encaja en el lienzo centrada, sin estirarse", () => {
+    const r = encajar(1280, 800, LIENZO.ancho, LIENZO.alto);
+    expect(r).toEqual({ left: 96, top: 0, width: 1728, height: 1080 });
+    expect(r.width / r.height).toBeCloseTo(1280 / 800);
+  });
+  it("la misma proporción cabe entera; sin área, rectángulo vacío", () => {
+    expect(encajar(16, 9, 1600, 900)).toEqual({ left: 0, top: 0, width: 1600, height: 900 });
+    expect(encajar(0, 9, 1600, 900)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
+    expect(encajar(16, 9, 0, 0)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
+    expect(encajar(16, 9, Number.NaN, 900)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
   });
 });
 
