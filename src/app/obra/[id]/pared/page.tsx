@@ -24,5 +24,5 @@ export default async function ParedDeObra({ params }: { params: Promise<{ id: st
   if (!actual) redirect(`/entrar?siguiente=/obra/${id}/pared`);
   const obra = await cargarObraParaPintar(id);
   if (!obra) notFound();
-  return <Pared obraId={obra.id} nombre={obra.nombre} abierta={obra.estado === "abierta"} />;
+  return <Pared obraId={obra.id} nombre={obra.nombre} abierta={obra.estado === "abierta"} cupo={obra.cupoMandos} />;
 }

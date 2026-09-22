@@ -87,3 +87,71 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+
+/* Cupo de mandos (doc rediseno/34, prototipo firmado): mismas clases que `pincel-cupo-y-fila.html`, con los
+   tokens reales del proyecto en vez de los del prototipo estático. */
+.campoCupo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: 14px;
+  margin-top: var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.campoCupo > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.campoCupo label {
+  font-weight: 600;
+  font-size: 16px;
+}
+.campoCupo small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.contador {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.contador button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  background: var(--fondo);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primario);
+  cursor: pointer;
+}
+.contador button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.contador input {
+  width: 44px;
+  min-height: 36px;
+  border: none;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  background: none;
+  color: var(--texto);
+}
+.notaTope {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}

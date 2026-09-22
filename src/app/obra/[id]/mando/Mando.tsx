@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { abrirCanalObra } from "@/lib/canal-obra";
-import { deltaDesdeOrientacion, EVENTO_TRAZO, MENSAJES_POR_SEGUNDO, TINTAS, TRAZOS, type Delta, type MensajeTrazo, type Orientacion, type Trazo } from "@/lib/pincel";
+import {
+  deltaDesdeOrientacion,
+  entradasDesdePresencia,
+  estadoDeFila,
+  EVENTO_TRAZO,
+  MENSAJES_POR_SEGUNDO,
+  TINTAS,
+  TRAZOS,
+  type Delta,
+  type EntradaPresencia,
+  type MensajeTrazo,
+  type Orientacion,
+  type Trazo,
+} from "@/lib/pincel";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import styles from "./mando.module.css";
 
@@ -17,13 +30,16 @@ function requestPermissionDeOrientacion(): (() => Promise<"granted" | "denied">)
 /**
  * El mando (Fase 2 bloque 3, OL-088): ruta neutra `/obra/[id]/mando` (doc rediseno/25 ajuste 2). El celular es
  * solo mando (prototipo firmado OL-084): no dibuja nada, manda deltas del sensor mientras el botón está
- * presionado. Sin cupo ni fila todavía (doc rediseno/34, espera firma) — cualquiera con sesión pinta.
+ * presionado. Cupo y fila (doc rediseno/34, firmado 2026-09-21): quien llega después de que se llenó el cupo se
+ * conecta igual (ve cuántos esperan, guarda su lugar por Presence) pero no pinta hasta que le toque.
  */
-export default function Mando({ obraId, perfilId }: { obraId: string; perfilId: string }) {
+export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perfilId: string; cupo: number }) {
   const [trazo, setTrazo] = useState<Trazo>(TRAZOS[0].id);
   const [color, setColor] = useState(TINTAS[0].valor);
   const [presionado, setPresionado] = useState(false);
   const [permiso, setPermiso] = useState<PermisoOrientacion>("sin-pedir");
+  const [entradas, setEntradas] = useState<EntradaPresencia[]>([]);
+  const [banner, setBanner] = useState(false);
 
   const canalRef = useRef<ReturnType<typeof abrirCanalObra> | null>(null);
   const bufferRef = useRef<Delta[]>([]);
@@ -37,22 +53,48 @@ export default function Mando({ obraId, perfilId }: { obraId: string; perfilId: 
     colorRef.current = color;
   }, [color]);
 
+  const estado = useMemo(() => estadoDeFila(entradas, cupo, perfilId), [entradas, cupo, perfilId]);
+
   // El canal se abre una vez, al montar — mandar no depende de tener el botón presionado en ese instante.
+  // `track()` solo al confirmarse la suscripción (con "llegada" = ahora, la fila la ordena Presence).
   useEffect(() => {
     const supabase = clienteNavegador();
     if (!supabase) return;
     const canal = abrirCanalObra(supabase, obraId);
-    canal.subscribe();
+    canal.on("presence", { event: "sync" }, () => {
+      setEntradas(entradasDesdePresencia(canal.presenceState()));
+    });
+    canal.subscribe((estadoCanal) => {
+      if (estadoCanal === "SUBSCRIBED") canal.track({ remitente: perfilId, llegada: Date.now() });
+    });
     canalRef.current = canal;
     return () => {
       canal.unsubscribe();
       canalRef.current = null;
     };
-  }, [obraId]);
+  }, [obraId, perfilId]);
 
-  // Mientras está presionado: escucha el sensor (juntando deltas) y manda MENSAJES_POR_SEGUNDO veces por segundo.
+  // «Te toca» (recorte del founder, doc rediseno/34: sin turno con tiempo máximo): un aviso que se va solo a los
+  // pocos segundos, y el mando queda activo de inmediato — no hace falta un toque extra para empezar a pintar.
+  const yaEsperabaRef = useRef(false);
   useEffect(() => {
-    if (!presionado) return;
+    if (estado.tipo === "esperando") {
+      yaEsperabaRef.current = true;
+      return;
+    }
+    if (estado.tipo === "pintando" && yaEsperabaRef.current) {
+      yaEsperabaRef.current = false;
+      setBanner(true);
+      const id = setTimeout(() => setBanner(false), 4000);
+      return () => clearTimeout(id);
+    }
+  }, [estado.tipo]);
+
+  // Mientras está presionado y con cupo para pintar: escucha el sensor (juntando deltas) y manda
+  // MENSAJES_POR_SEGUNDO veces por segundo. Si el cupo baja a media pulsación (o el sync de Presence llega
+  // tarde), este efecto se desmonta solo — la pared, de todos modos, ya descarta el trazo de quien no pinta.
+  useEffect(() => {
+    if (!presionado || estado.tipo !== "pintando") return;
 
     function alMoverse(e: DeviceOrientationEvent) {
       const actual: Orientacion = { beta: e.beta, gamma: e.gamma };
@@ -76,7 +118,7 @@ export default function Mando({ obraId, perfilId }: { obraId: string; perfilId: 
       bufferRef.current = [];
       ultimaLecturaRef.current = null;
     };
-  }, [presionado, perfilId]);
+  }, [presionado, perfilId, estado.tipo]);
 
   async function empezarAPintar() {
     if (permiso === "sin-pedir") {
@@ -102,38 +144,68 @@ export default function Mando({ obraId, perfilId }: { obraId: string; perfilId: 
     setPresionado(true);
   }
 
+  const esperando = estado.tipo === "esperando";
+
   return (
     <div className={styles.mando}>
-      <div className={styles.centro}>
-        <button
-          type="button"
-          className={styles.orb}
-          aria-pressed={presionado}
-          onPointerDown={empezarAPintar}
-          onPointerUp={() => setPresionado(false)}
-          onPointerLeave={() => setPresionado(false)}
-        >
-          ●
-        </button>
-        {permiso === "negado" || permiso === "sin-soporte" ? (
-          <p className={styles.aviso} role="alert">
-            {permiso === "negado" ? "Sin permiso del sensor, no se puede pintar. Actívalo en Ajustes y vuelve a intentar." : "Este navegador no tiene sensor de movimiento."}
+      {banner && (
+        <div className={styles.bannerTurno} role="status">
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24">
+            <path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div>
+            <b>Te toca pintar</b>
+            <span>Tu turno empezó</span>
+          </div>
+        </div>
+      )}
+      {estado.tipo !== "fuera" && <p className={styles.presente}>{esperando ? `${cupo} pintando` : `${entradas.length} personas aquí`}</p>}
+      {esperando ? (
+        <div className={styles.centro}>
+          <span className={styles.esperaIcono} aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M12 7v5l3.5 2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          <p className={styles.lugar}>
+            Vas el<b>{estado.lugar}</b>
           </p>
-        ) : (
-          <p className={styles.ayuda}>{presionado ? "Pintando en la pared" : "Mantén presionado y mueve tu celular"}</p>
-        )}
-      </div>
+          <p className={styles.explicaEspera}>Pintas en cuanto alguien salga. No pierdes tu lugar por esperar.</p>
+          <span className={styles.conteoEsperando}>{estado.esperando} esperando</span>
+        </div>
+      ) : (
+        <div className={styles.centro}>
+          <button
+            type="button"
+            className={styles.orb}
+            aria-pressed={presionado}
+            onPointerDown={empezarAPintar}
+            onPointerUp={() => setPresionado(false)}
+            onPointerLeave={() => setPresionado(false)}
+          >
+            ●
+          </button>
+          {permiso === "negado" || permiso === "sin-soporte" ? (
+            <p className={styles.aviso} role="alert">
+              {permiso === "negado" ? "Sin permiso del sensor, no se puede pintar. Actívalo en Ajustes y vuelve a intentar." : "Este navegador no tiene sensor de movimiento."}
+            </p>
+          ) : (
+            <p className={styles.ayuda}>{presionado ? "Pintando en la pared" : "Mantén presionado y mueve tu celular"}</p>
+          )}
+        </div>
+      )}
       <div className={styles.herramientas}>
-        <div className={styles.picker} role="group" aria-label="Trazo">
+        <div className={`${styles.picker} ${esperando ? styles.apagado : ""}`} role="group" aria-label="Trazo">
           {TRAZOS.map((t) => (
-            <button key={t.id} type="button" aria-pressed={t.id === trazo} onClick={() => setTrazo(t.id)}>
+            <button key={t.id} type="button" aria-pressed={t.id === trazo} disabled={esperando} onClick={() => setTrazo(t.id)}>
               {t.etiqueta}
             </button>
           ))}
         </div>
-        <div className={styles.picker} role="group" aria-label="Tinta">
+        <div className={`${styles.picker} ${esperando ? styles.apagado : ""}`} role="group" aria-label="Tinta">
           {TINTAS.map((t) => (
-            <button key={t.valor} type="button" aria-pressed={t.valor === color} onClick={() => setColor(t.valor)}>
+            <button key={t.valor} type="button" aria-pressed={t.valor === color} disabled={esperando} onClick={() => setColor(t.valor)}>
               <span className={styles.muestraTinta} style={{ background: t.valor }} aria-hidden="true" />
               {t.etiqueta}
             </button>

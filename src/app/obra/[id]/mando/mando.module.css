@@ -2,9 +2,16 @@
 /* El gutter horizontal ya lo pone ficha.pagina (el padre): aquí solo el espacio vertical propio. */
 .mando {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: calc(100dvh - var(--alto-barra, 56px));
   padding: 10px 0 24px;
+  position: relative;
+}
+.presente {
+  justify-self: end;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 13px;
 }
 .centro {
   display: grid;
@@ -75,6 +82,10 @@
   background: var(--primario);
   color: var(--primario-texto);
 }
+.picker.apagado > button {
+  opacity: 0.5;
+  pointer-events: none;
+}
 .muestraTinta {
   width: 14px;
   height: 14px;
@@ -85,4 +96,76 @@
   margin-top: var(--espacio-5, 20px);
   color: var(--texto-suave);
   font-size: var(--letra-sm, 0.9375rem);
+}
+
+/* En espera / te toca (doc rediseno/34, prototipo firmado): mismo dibujo que pincel-cupo-y-fila.html. */
+.esperaIcono {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+}
+.lugar {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+.lugar > b {
+  display: block;
+  margin-top: 6px;
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--texto);
+  letter-spacing: -0.02em;
+}
+.explicaEspera {
+  max-width: 280px;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.conteoEsperando {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  font-size: 13px;
+  font-weight: 600;
+}
+.bannerTurno {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  padding: 14px;
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  box-shadow: 0 10px 24px rgba(15, 107, 124, 0.4);
+}
+.bannerTurno svg {
+  color: var(--primario-texto);
+}
+.bannerTurno b {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+}
+.bannerTurno span {
+  font-size: 13px;
+  opacity: 0.9;
 }

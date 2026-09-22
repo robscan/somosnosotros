@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { DELTAS_MAX_POR_MENSAJE, deltaDesdeOrientacion, esMensajeTrazoValido, ESCALA_DELTA_PX, nombreSugerido, puntoInicial, siguientesSegmentos } from "./pincel";
+import {
+  DELTAS_MAX_POR_MENSAJE,
+  deltaDesdeOrientacion,
+  entradasDesdePresencia,
+  esMensajeTrazoValido,
+  ESCALA_DELTA_PX,
+  estadoDeFila,
+  nombreSugerido,
+  ordenDeFila,
+  puntoInicial,
+  quienesPintan,
+  siguientesSegmentos,
+  type EntradaPresencia,
+} from "./pincel";
 
 describe("pincel", () => {
   it("sugiere el nombre a partir del lugar", () => {
@@ -131,5 +144,82 @@ describe("deltaDesdeOrientacion", () => {
   });
   it("sin cambio, delta cero", () => {
     expect(deltaDesdeOrientacion({ beta: 12, gamma: -8 }, { beta: 12, gamma: -8 })).toEqual({ dx: 0, dy: 0 });
+  });
+});
+
+describe("entradasDesdePresencia", () => {
+  it("saca remitente/llegada/presenceRef de cada clave de presencia, ignorando lo que no trae la forma esperada", () => {
+    const estado = {
+      "clave-1": [{ remitente: "persona-1", llegada: 10, presence_ref: "ref-1" }],
+      "clave-2": [{ remitente: "persona-2", llegada: 5, presence_ref: "ref-2" }, { presence_ref: "ref-3" }],
+      "clave-3": [{ remitente: "", llegada: 1, presence_ref: "ref-4" }],
+    };
+    expect(entradasDesdePresencia(estado)).toEqual([
+      { remitente: "persona-1", llegada: 10, presenceRef: "ref-1" },
+      { remitente: "persona-2", llegada: 5, presenceRef: "ref-2" },
+    ]);
+  });
+  it("sin ninguna clave, ninguna entrada", () => {
+    expect(entradasDesdePresencia({})).toEqual([]);
+  });
+});
+
+describe("ordenDeFila", () => {
+  it("ordena por hora de llegada", () => {
+    const entradas: EntradaPresencia[] = [
+      { remitente: "b", llegada: 20, presenceRef: "1" },
+      { remitente: "a", llegada: 10, presenceRef: "2" },
+    ];
+    expect(ordenDeFila(entradas).map((e) => e.remitente)).toEqual(["a", "b"]);
+  });
+  it("con la misma hora, desempata por presenceRef", () => {
+    const entradas: EntradaPresencia[] = [
+      { remitente: "b", llegada: 10, presenceRef: "zzz" },
+      { remitente: "a", llegada: 10, presenceRef: "aaa" },
+    ];
+    expect(ordenDeFila(entradas).map((e) => e.remitente)).toEqual(["a", "b"]);
+  });
+  it("no muta el arreglo original", () => {
+    const entradas: EntradaPresencia[] = [{ remitente: "b", llegada: 2, presenceRef: "1" }, { remitente: "a", llegada: 1, presenceRef: "2" }];
+    const copia = [...entradas];
+    ordenDeFila(entradas);
+    expect(entradas).toEqual(copia);
+  });
+});
+
+describe("quienesPintan", () => {
+  const entradas: EntradaPresencia[] = [
+    { remitente: "a", llegada: 1, presenceRef: "1" },
+    { remitente: "b", llegada: 2, presenceRef: "2" },
+    { remitente: "c", llegada: 3, presenceRef: "3" },
+  ];
+  it("con cupo para todos, todos pintan", () => {
+    expect(quienesPintan(entradas, 10)).toEqual(new Set(["a", "b", "c"]));
+  });
+  it("con cupo justo para los primeros que llegaron", () => {
+    expect(quienesPintan(entradas, 2)).toEqual(new Set(["a", "b"]));
+  });
+  it("cupo cero, nadie pinta", () => {
+    expect(quienesPintan(entradas, 0)).toEqual(new Set());
+  });
+});
+
+describe("estadoDeFila", () => {
+  const entradas: EntradaPresencia[] = [
+    { remitente: "a", llegada: 1, presenceRef: "1" },
+    { remitente: "b", llegada: 2, presenceRef: "2" },
+    { remitente: "c", llegada: 3, presenceRef: "3" },
+    { remitente: "d", llegada: 4, presenceRef: "4" },
+  ];
+  it("dentro del cupo, pintando", () => {
+    expect(estadoDeFila(entradas, 2, "a")).toEqual({ tipo: "pintando" });
+    expect(estadoDeFila(entradas, 2, "b")).toEqual({ tipo: "pintando" });
+  });
+  it("fuera del cupo, su lugar en la fila y cuántos esperan en total", () => {
+    expect(estadoDeFila(entradas, 2, "c")).toEqual({ tipo: "esperando", lugar: 1, esperando: 2 });
+    expect(estadoDeFila(entradas, 2, "d")).toEqual({ tipo: "esperando", lugar: 2, esperando: 2 });
+  });
+  it("un remitente sin trackear todavía (antes del primer sync)", () => {
+    expect(estadoDeFila(entradas, 2, "nadie")).toEqual({ tipo: "fuera" });
   });
 });

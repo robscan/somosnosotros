@@ -38,7 +38,7 @@ export default async function MandoDeObra({ params }: { params: Promise<{ id: st
   return (
     <main className={ficha.pagina}>
       <Barra volver={{ href: "/", texto: "Salir" }} />
-      <Mando obraId={obra.id} perfilId={actual.perfil.id} />
+      <Mando obraId={obra.id} perfilId={actual.perfil.id} cupo={obra.cupoMandos} />
     </main>
   );
 }

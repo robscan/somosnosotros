@@ -147,3 +147,51 @@ export function deltaDesdeOrientacion(anterior: Orientacion | null, actual: Orie
   const acotar = (v: number) => Math.max(-1, Math.min(1, v / sensibilidadGrados));
   return { dx: acotar(actual.gamma - anterior.gamma), dy: acotar(actual.beta - anterior.beta) };
 }
+
+/**
+ * Cupo y fila (doc rediseno/34, firmado 2026-09-21): quién pinta y quién espera, sin turno con tiempo máximo. Cada
+ * mando hace `track()` en el Presence del canal de la obra con su remitente y su hora de llegada; el orden es por
+ * esa hora y, si dos llegan en el mismo instante, se desempata con el `presence_ref` que Presence ya da a cada
+ * conexión (para que la pared y cada mando vean el mismo orden). Puro, sin depender del tipo exacto que da
+ * `@supabase/realtime-js` — `entradasDesdePresencia` es lo único que lo toca, y por duck-typing.
+ */
+export type EntradaPresencia = { remitente: string; llegada: number; presenceRef: string };
+
+/** El estado que da `RealtimeChannel.presenceState()`: por clave de presencia, un arreglo de lo que cada quien
+ * trackeó (siempre trae `presence_ref`; lo demás es lo que mandó `track()`, sin garantía de forma). */
+export function entradasDesdePresencia(estado: Record<string, Array<Record<string, unknown>>>): EntradaPresencia[] {
+  const entradas: EntradaPresencia[] = [];
+  for (const clave of Object.keys(estado)) {
+    for (const p of estado[clave]) {
+      if (typeof p.remitente === "string" && p.remitente.length > 0 && typeof p.llegada === "number" && typeof p.presence_ref === "string") {
+        entradas.push({ remitente: p.remitente, llegada: p.llegada, presenceRef: p.presence_ref });
+      }
+    }
+  }
+  return entradas;
+}
+
+/** Por hora de llegada; empate, por `presenceRef` (orden estable, igual para todos). */
+export function ordenDeFila(entradas: EntradaPresencia[]): EntradaPresencia[] {
+  return [...entradas].sort((a, b) => a.llegada - b.llegada || a.presenceRef.localeCompare(b.presenceRef));
+}
+
+/** Los remitentes de los primeros `cupo` de la fila — quienes pueden pintar ahora mismo. Lo usa también la pared,
+ * para descartar el trazo de quien no está en este conjunto (el freno no puede depender solo del propio mando). */
+export function quienesPintan(entradas: EntradaPresencia[], cupo: number): Set<string> {
+  return new Set(ordenDeFila(entradas).slice(0, Math.max(0, cupo)).map((e) => e.remitente));
+}
+
+export type EstadoDeFila =
+  | { tipo: "pintando" }
+  | { tipo: "esperando"; lugar: number; esperando: number }
+  | { tipo: "fuera" }; // remitente sin trackear todavía (antes del primer sync)
+
+/** El estado de un remitente en concreto: si pinta, o su lugar («vas el N») y cuántos esperan en total. */
+export function estadoDeFila(entradas: EntradaPresencia[], cupo: number, remitente: string): EstadoDeFila {
+  const orden = ordenDeFila(entradas);
+  const i = orden.findIndex((e) => e.remitente === remitente);
+  if (i === -1) return { tipo: "fuera" };
+  if (i < cupo) return { tipo: "pintando" };
+  return { tipo: "esperando", lugar: i - cupo + 1, esperando: orden.length - cupo };
+}

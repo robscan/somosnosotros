@@ -2,7 +2,16 @@
 
 import { useEffect, useRef } from "react";
 import { abrirCanalObra } from "@/lib/canal-obra";
-import { EVENTO_TRAZO, esMensajeTrazoValido, puntoInicial, siguientesSegmentos, type MensajeTrazo, type Punto } from "@/lib/pincel";
+import {
+  entradasDesdePresencia,
+  esMensajeTrazoValido,
+  EVENTO_TRAZO,
+  puntoInicial,
+  quienesPintan,
+  siguientesSegmentos,
+  type MensajeTrazo,
+  type Punto,
+} from "@/lib/pincel";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import styles from "./pared.module.css";
 
@@ -51,13 +60,17 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
 }
 
 /**
- * La pared (Fase 2 bloque 3, OL-088): pantalla completa, sin sesión, solo dibuja lo que llega del canal. Cada
- * remitente tiene su propio punto en el lienzo (`puntoInicial`, estable, para que su segundo mensaje siga desde
- * donde se quedó su primero, no desde otro lado) — así varios pinceles pintan a la vez sin mezclarse.
+ * La pared (Fase 2 bloque 3, OL-088): pantalla completa, con sesión (revisión del gestor, 2026-09-21), solo dibuja
+ * lo que llega del canal. Cada remitente tiene su propio punto en el lienzo (`puntoInicial`, estable, para que su
+ * segundo mensaje siga desde donde se quedó su primero, no desde otro lado) — así varios pinceles pintan a la vez
+ * sin mezclarse. Cupo y fila (doc rediseno/34): la pared también trae su propia cuenta de Presence y descarta
+ * cualquier trazo cuyo remitente no esté, en ese momento, entre los primeros `cupo` — el freno no puede depender
+ * solo de que el mando se autolimite (un cliente modificado podría seguir mandando trazo estando en la fila).
  */
-export default function Pared({ obraId, nombre, abierta }: { obraId: string; nombre: string; abierta: boolean }) {
+export default function Pared({ obraId, nombre, abierta, cupo }: { obraId: string; nombre: string; abierta: boolean; cupo: number }) {
   const lienzoRef = useRef<HTMLCanvasElement | null>(null);
   const puntos = useRef<Map<string, Punto>>(new Map());
+  const pintanRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!abierta) return;
@@ -79,9 +92,13 @@ export default function Pared({ obraId, nombre, abierta }: { obraId: string; nom
     window.addEventListener("resize", ajustarTamano);
 
     const canal = abrirCanalObra(supabase, obraId);
+    canal.on("presence", { event: "sync" }, () => {
+      pintanRef.current = quienesPintan(entradasDesdePresencia(canal.presenceState()), cupo);
+    });
     canal.on("broadcast", { event: EVENTO_TRAZO }, ({ payload }) => {
       if (!esMensajeTrazoValido(payload)) return; // la pared no confía en un payload sin mirarlo
       const mensaje = payload;
+      if (!pintanRef.current.has(mensaje.remitente)) return; // en la fila, no pinta — aunque su cliente mande trazo
       const ancho = lienzo.clientWidth;
       const alto = lienzo.clientHeight;
       const desde = puntos.current.get(mensaje.remitente) ?? puntoInicial(mensaje.remitente, ancho, alto);
@@ -95,7 +112,7 @@ export default function Pared({ obraId, nombre, abierta }: { obraId: string; nom
       window.removeEventListener("resize", ajustarTamano);
       canal.unsubscribe();
     };
-  }, [obraId, abierta]);
+  }, [obraId, abierta, cupo]);
 
   if (!abierta) {
     return (

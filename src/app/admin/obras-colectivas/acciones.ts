@@ -78,6 +78,18 @@ export async function terminarObra(id: string): Promise<Resultado> {
 }
 
 /** Puede chocar con el índice único de su lugar o su evento si, mientras tanto, se abrió otra obra ahí. */
+/** Cupo de mandos por obra (doc rediseno/34): entre 1 y 20, el mismo tope que exige la base con su `check`. Se
+ * valida aquí también para dar un mensaje claro en vez del error crudo de Postgres si algo manda un número fuera. */
+export async function cambiarCupo(id: string, cupo: number): Promise<Resultado> {
+  if (!esUuid(id)) return { ok: false, error: "No encontramos esa obra." };
+  if (!Number.isInteger(cupo) || cupo < 1 || cupo > 20) return { ok: false, error: "El cupo va de 1 a 20." };
+  const { supabase } = await soloAdmin();
+  const { error } = await supabase.from("obras_colectivas").update({ cupo_mandos: cupo }).eq("id", id);
+  if (error) return { ok: false, error: "No se pudo cambiar el cupo. Intenta de nuevo." };
+  revalidar(id);
+  return { ok: true };
+}
+
 export async function reabrirObra(id: string): Promise<Resultado> {
   if (!esUuid(id)) return { ok: false, error: "No encontramos esa obra." };
   const { supabase } = await soloAdmin();
