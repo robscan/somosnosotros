@@ -103,6 +103,28 @@
   background: var(--fondo);
   min-width: 0;
 }
+/* OL-126: la instantánea de la pared, chica, con el mismo fondo casi blanco de la pared (el PNG es transparente). */
+.instantanea {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
+  margin: var(--espacio-4) 0 0;
+  min-width: 0;
+}
+.instantanea > img {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: #fbfaf8;
+}
+.instantanea > figcaption {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 .qr > img {
   width: min(240px, 100%);
 }

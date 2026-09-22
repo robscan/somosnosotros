@@ -11,9 +11,9 @@ export function nombreSugerido(lugarNombre: string): string {
 
 /**
  * Fase 2 bloque 2: el mensaje que viaja por el canal en vivo (doc rediseno/25: "el mensaje... pincel, color,
- * movimiento" es propio de Pincel; el canal en sí es común, ver `src/lib/canal-obra.ts`). Cuatro trazos y cinco
- * tintas, los mismos del prototipo firmado (OL-084, bitácora 118, `experiments/pincel-prototipo/core.mjs`) — no
- * se inventan de nuevo.
+ * movimiento" es propio de Pincel; el canal en sí es común, ver `src/lib/canal-obra.ts`). Cuatro trazos y las cinco
+ * tintas del prototipo firmado (OL-084, bitácora 118, `experiments/pincel-prototipo/core.mjs`) más Blanco (founder,
+ * OL-126) — no se inventan de nuevo.
  */
 export type Trazo = "trazo" | "aire" | "spray" | "organico";
 
@@ -30,25 +30,134 @@ export const TINTAS: { valor: string; etiqueta: string }[] = [
   { valor: "#286b57", etiqueta: "Verde" },
   { valor: "#6d4fc2", etiqueta: "Violeta" },
   { valor: "#dfb32f", etiqueta: "Sol" },
+  { valor: "#ffffff", etiqueta: "Blanco" }, // OL-126 (founder): pinta encima como si borrara; la pared es casi blanca
 ];
+
+/** Una tinta tan clara que sobre el fondo casi blanco de la pared (o de una tarjeta) no se vería sin un borde o un
+ * fondo detrás (hoy, Blanco). Luminancia relativa aproximada > 0.85. */
+export function esTintaClara(valor: string): boolean {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(valor);
+  if (!m) return false;
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.85;
+}
 
 /** Nombre del evento de Broadcast en el canal de la obra (`abrirCanalObra`). */
 export const EVENTO_TRAZO = "trazo";
 
 /**
+ * «Borrar la pared» (OL-126, founder: «agregar botón de borrado o reinicio de pared en admin»): un mensaje por el
+ * canal y toda pared abierta de la obra limpia su lienzo; no borra nada guardado y la obra sigue abierta. El botón
+ * vive solo en Administración; el canal exige sesión y la pared no puede distinguir quién lo manda — el mismo nivel
+ * de confianza que el remitente del trazo, aceptado así en OL-088, no una medida de seguridad aparte.
+ */
+export const EVENTO_BORRAR = "borrar";
+export type MensajeBorrar = { remitente: string; enviado?: number };
+
+export function esMensajeBorrarValido(v: unknown): v is MensajeBorrar {
+  if (!v || typeof v !== "object") return false;
+  const m = v as Record<string, unknown>;
+  return typeof m.remitente === "string" && m.remitente.length > 0 && (m.enviado === undefined || (typeof m.enviado === "number" && Number.isFinite(m.enviado)));
+}
+
+/** Ventana en la que la pared acepta un «borrar» del canal: si Administración registró el borrado hace menos de
+ * esto (con la misma tolerancia hacia adelante, por si el reloj de la pared va atrasado). */
+export const VENTANA_BORRADO_MS = 60_000;
+
+/**
+ * ¿El «borrar» que llegó por el canal viene de Administración? Solo si la obra registra un borrado reciente
+ * (`obras_colectivas.borrado_pared_en`, que escribe la acción de servidor `borrarPared`, solo admin) y no es el
+ * mismo que esta pared ya aplicó. Las políticas de realtime.messages se evalúan al unirse al canal, no por mensaje,
+ * así que el servidor no distingue un «borrar» de un trazo: esta hora es la comprobación barata del lado del servidor.
+ */
+export function borradoReciente(borradoParedEn: string | null | undefined, ahoraMs: number, ultimoAplicadoMs: number | null, ventanaMs = VENTANA_BORRADO_MS): boolean {
+  if (!borradoParedEn) return false;
+  const t = Date.parse(borradoParedEn);
+  if (!Number.isFinite(t)) return false;
+  if (ultimoAplicadoMs !== null && t <= ultimoAplicadoMs) return false;
+  return Math.abs(ahoraMs - t) < ventanaMs;
+}
+
+/**
  * Un mando NO manda un mensaje por cada muestra del sensor (gestión de cambios, revisión 2026-09-21, con el cupo
  * real de Supabase Realtime citado más abajo): el teléfono sigue muestreando el sensor a su ritmo mientras el
- * botón está presionado, pero solo MANDA `MENSAJES_POR_SEGUNDO` veces por segundo, cada uno con las posiciones
- * juntadas desde el mensaje anterior. La pared dibuja todos los puntos de un mismo mensaje seguidos: se ve igual
- * de fluido, cuesta una fracción de los mensajes.
+ * botón está presionado, pero solo MANDA `ritmoDeTrazo(cupo)` veces por segundo (6 con el cupo de 10), cada uno
+ * con las posiciones juntadas desde el mensaje anterior — y el primer punto de cada trazo sale al instante al
+ * presionar (OL-126). La pared dibuja todos los puntos de un mismo mensaje seguidos: se ve igual de fluido,
+ * cuesta una fracción de los mensajes.
  */
-export const MENSAJES_POR_SEGUNDO = 3;
-/** El mismo reloj para el trazo y para la posición (OL-120, gestor): un mando manda como mucho un mensaje cada
- * tanto, esté pintando (`trazo`) o no (`posicion`), nunca los dos a la vez. Presupuesto: 20 mandos × 3 = 60
- * mensajes por segundo, dentro del cupo de Realtime que fijó el cupo de mandos. */
-export const INTERVALO_MENSAJE_MS = Math.round(1000 / MENSAJES_POR_SEGUNDO);
-/** Tope de puntos por mensaje: a `MENSAJES_POR_SEGUNDO = 3` y un sensor muestreado hasta a 60 Hz, un mensaje junta
- * ~20; si el sensor da más, el mando los rebaja con `muestrear`. Es también el límite que exige
+export const MENSAJES_POR_SEGUNDO_PINTANDO = 6;
+/** Sin pintar, la posición del punto tenue va a 2 por segundo (OL-126, gestor): es referencia, no trazo. */
+export const POSICIONES_POR_SEGUNDO = 2;
+/** Tope de mensajes por segundo de toda una obra hacia Realtime (OL-126): con el cupo de 10 por defecto, 10 × 6
+ * = 60/s; con 20 mandos el ritmo de trazo baja solo a 5/s para no pasar de 100/s. */
+export const PRESUPUESTO_MENSAJES_POR_SEGUNDO = 100;
+
+/**
+ * Cuántos mensajes de trazo por segundo manda un mando pintando, según el cupo de la obra (OL-126, founder:
+ * «demasiada latencia»; antes eran 3/s para trazo y posición por igual, o sea hasta 333 ms de agrupación). El
+ * presupuesto se reparte entre los mandos que pueden pintar a la vez: 6/s hasta 16 mandos, 5/s con 17–20.
+ */
+export function ritmoDeTrazo(cupo: number): number {
+  const porMando = Math.floor(PRESUPUESTO_MENSAJES_POR_SEGUNDO / Math.max(1, cupo));
+  return Math.max(1, Math.min(MENSAJES_POR_SEGUNDO_PINTANDO, porMando));
+}
+
+export function intervaloMs(porSegundo: number): number {
+  return Math.round(1000 / Math.max(1, porSegundo));
+}
+
+/** La pared desliza el punto tenue de una posición recibida a la siguiente en este tiempo (≤120 ms, gestor); el
+ * trazo se dibuja en cuanto llega, sin esperar a nada. */
+export const SUAVIZADO_PUNTO_MS = 120;
+
+/**
+ * Marcas de tiempo para medir la cadena de punta a punta (OL-126): el mando pone en cada mensaje `muestra` (ms
+ * de época de la última lectura del sensor que va en él) y `enviado` (ms de época al mandarlo); la pared anota
+ * cuándo lo recibió y cuándo terminó de dibujarlo. Los relojes son los de cada aparato (en un iPhone y una Mac
+ * con la hora automática van a tiros de decenas de ms): la parte «red» puede salir con ese sesgo; «agrupación» y
+ * «dibujo» se miden en un solo aparato y son exactas. Son opcionales en el mensaje: un cliente viejo no los manda.
+ */
+export type Latencias = { agrupacionMs: number | null; redMs: number | null; dibujoMs: number; totalMs: number | null };
+
+export function latenciasDe(mensaje: { enviado?: number; muestra?: number }, recibidoMs: number, dibujadoMs: number): Latencias {
+  const agrupacionMs = mensaje.enviado !== undefined && mensaje.muestra !== undefined ? Math.max(0, mensaje.enviado - mensaje.muestra) : null;
+  const redMs = mensaje.enviado !== undefined ? recibidoMs - mensaje.enviado : null;
+  const dibujoMs = Math.max(0, dibujadoMs - recibidoMs);
+  const totalMs = mensaje.muestra !== undefined ? dibujadoMs - mensaje.muestra : mensaje.enviado !== undefined ? dibujadoMs - mensaje.enviado : null;
+  return { agrupacionMs, redMs, dibujoMs, totalMs };
+}
+/**
+ * Instantánea de la pared (OL-126, parte 4; founder: «si pongo regresar a admin y entro de nuevo a pared se borra
+ * lo que estaba hecho»). La pared conserva lo pintado mientras la obra esté abierta, sin guardar trazos: sube al
+ * Storage (bucket privado «obras», solo administración) un PNG del lienzo en `obras/<id>/pared.png` cada
+ * INSTANTANEA_CADA_MS solo si hubo trazos nuevos, también al ocultarse/cerrarse la pestaña y al recibir «borrar»
+ * (sube el lienzo vacío). Al abrirse, si hay instantánea la pinta de fondo antes de conectar el canal; con dos
+ * paredes abiertas las dos reciben los trazos en vivo y la instantánea solo es el punto de partida. Al terminar
+ * la obra, se queda como resultado y se ve chica en la ficha de la obra en Administración. Presupuesto: un PNG
+ * de 1280×800 pesa ~100–300 KB; a lo sumo 3 subidas por minuto por obra abierta.
+ */
+export const INSTANTANEA_CADA_MS = 20_000;
+export const BUCKET_INSTANTANEAS = "obras";
+
+export function rutaInstantanea(obraId: string): string {
+  return `${obraId}/pared.png`;
+}
+
+export type MotivoInstantanea = "periodica" | "cierre" | "borrado";
+
+/** ¿Toca subir ahora? Borrado: siempre (el lienzo vacío también cuenta). Cierre (pestaña oculta o cerrándose):
+ * solo si hubo trazos desde la última subida. Periódica: trazos nuevos y, además, ≥ INSTANTANEA_CADA_MS desde la
+ * última subida (o nunca se ha subido). */
+export function tocaSubirInstantanea(a: { motivo: MotivoInstantanea; hayTrazosNuevos: boolean; ultimaSubidaMs: number | null; ahoraMs: number }): boolean {
+  if (a.motivo === "borrado") return true;
+  if (!a.hayTrazosNuevos) return false;
+  if (a.motivo === "cierre") return true;
+  return a.ultimaSubidaMs === null || a.ahoraMs - a.ultimaSubidaMs >= INSTANTANEA_CADA_MS;
+}
+
+/** Tope de puntos por mensaje: a 6 mensajes/s y un sensor muestreado hasta a 60 Hz, un mensaje junta ~10 (a 5/s,
+ * ~12); si el sensor da más, el mando los rebaja con `muestrear`. Es también el límite que exige
  * `esMensajeTrazoValido` (contra un mensaje fabricado a mano con miles de puntos). */
 export const PUNTOS_MAX_POR_MENSAJE = 20;
 
@@ -118,7 +227,12 @@ export function muestrear<T>(puntos: T[], max: number): T[] {
  * persona): el canal ya exige sesión (`private: true`); esto es solo para que dos pinceles no se confundan, no una
  * medida de seguridad aparte — aceptado así a propósito, sin generalizar.
  */
-export type MensajeTrazo = { trazo: Trazo; color: string; puntos: PosicionNormalizada[]; remitente: string; grosor: number };
+export type MensajeTrazo = { trazo: Trazo; color: string; puntos: PosicionNormalizada[]; remitente: string; grosor: number; enviado?: number; muestra?: number };
+
+/** `enviado` y `muestra` (marcas de tiempo, OL-126) pueden faltar; si vienen, tienen que ser números finitos. */
+function marcaOpcionalValida(v: unknown): boolean {
+  return v === undefined || numeroFinito(v);
+}
 
 /**
  * Grosor del trazo (founder, 2026-09-21): mientras mantiene presionado el punto del mando, arrastrar el dedo hacia
@@ -185,7 +299,9 @@ export function esMensajeTrazoValido(v: unknown): v is MensajeTrazo {
     m.remitente.length > 0 &&
     numeroFinito(m.grosor) &&
     m.grosor > 0 &&
-    m.grosor <= GROSOR_MAX + 0.001
+    m.grosor <= GROSOR_MAX + 0.001 &&
+    marcaOpcionalValida(m.enviado) &&
+    marcaOpcionalValida(m.muestra)
   );
 }
 
@@ -223,11 +339,11 @@ export function siguientesSegmentos(desde: Punto | null, puntos: PosicionNormali
 /**
  * Punto de referencia en la pared (OL-120, founder 2026-09-22: «cuando se conecta debe mostrar un punto tenue como
  * referencia de posición»). Un mando encendido y con cupo manda su posición por el canal aunque no esté pintando:
- * evento `posicion` (no `trazo`), al mismo ritmo que el trazo (`MENSAJES_POR_SEGUNDO`, gestor: el presupuesto de
- * Realtime manda también aquí), solo cuando cambia y sin guardar nada; pintando, no manda posición aparte (la
- * pared coloca el punto con el último punto del trazo). La pared mueve el punto de ese remitente sin dibujar y
- * enseña ahí un círculo tenue del color de su tinta, deslizándolo de una posición recibida a la siguiente durante
- * `INTERVALO_MENSAJE_MS` para que no salte; al pintar, el punto acompaña al trazo con opacidad normal; al salir el
+ * evento `posicion` (no `trazo`), a `POSICIONES_POR_SEGUNDO` (2/s, OL-126; el presupuesto de Realtime manda
+ * también aquí), solo cuando cambia y sin guardar nada; pintando, no manda posición aparte (la pared coloca el
+ * punto con el último punto del trazo). La pared mueve el punto de ese remitente sin dibujar y enseña ahí un
+ * círculo tenue del color de su tinta, deslizándolo de una posición recibida a la siguiente en
+ * `SUAVIZADO_PUNTO_MS` para que no salte; al pintar, el punto acompaña al trazo con opacidad normal; al salir el
  * mando (Presence), desaparece. «Centrar» (botón del mando) recalibra el cero con la postura actual y manda la
  * posición (0,0): el centro.
  */
@@ -237,7 +353,7 @@ export const OPACIDAD_PUNTO_TENUE = 0.35;
 /** El punto nunca es más chico que esto, aunque el trazo sea fino (gestor: «mínimo 8 px»). */
 export const DIAMETRO_PUNTO_MIN_PX = 8;
 
-export type MensajePosicion = { remitente: string; trazo: Trazo; color: string; grosor: number; posicion: PosicionNormalizada };
+export type MensajePosicion = { remitente: string; trazo: Trazo; color: string; grosor: number; posicion: PosicionNormalizada; enviado?: number; muestra?: number };
 
 /** Igual de desconfiada que `esMensajeTrazoValido`. */
 export function esMensajePosicionValido(v: unknown): v is MensajePosicion {
@@ -251,7 +367,9 @@ export function esMensajePosicionValido(v: unknown): v is MensajePosicion {
     numeroFinito(m.grosor) &&
     m.grosor > 0 &&
     m.grosor <= GROSOR_MAX + 0.001 &&
-    esPosicionValida(m.posicion)
+    esPosicionValida(m.posicion) &&
+    marcaOpcionalValida(m.enviado) &&
+    marcaOpcionalValida(m.muestra)
   );
 }
 

@@ -1,3 +1,4 @@
+import { BUCKET_INSTANTANEAS, rutaInstantanea } from "@/lib/pincel";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 /** Tope global de Pincel (OL-121, founder 2026-09-22): como mucho 2 obras abiertas a la vez y 40 mandos en total
@@ -133,4 +134,21 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
     cupoMandos: fila.cupo_mandos,
     lugarNombre: unLugar(fila.lugar)?.nombre ?? "",
   };
+}
+
+/**
+ * La instantánea de la pared (OL-126, parte 4): el PNG que la pared sube al bucket privado «obras» mientras la obra
+ * está abierta y que se queda como resultado al terminarla. Con la sesión de administración (la política del bucket
+ * solo deja leer a administración): si existe, una URL firmada de 10 minutos para enseñarla chica en la ficha, y
+ * cuándo se subió por última vez. Sin instantánea (o sin sesión), null.
+ */
+export async function cargarInstantanea(obraId: string): Promise<{ url: string; actualizadoEn: string } | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const { data: lista } = await supabase.storage.from(BUCKET_INSTANTANEAS).list(obraId, { search: "pared.png" });
+  const archivo = lista?.find((a) => a.name === "pared.png");
+  if (!archivo) return null;
+  const { data } = await supabase.storage.from(BUCKET_INSTANTANEAS).createSignedUrl(rutaInstantanea(obraId), 600);
+  if (!data?.signedUrl) return null;
+  return { url: data.signedUrl, actualizadoEn: archivo.updated_at ?? archivo.created_at ?? new Date().toISOString() };
 }

@@ -66,14 +66,30 @@
 }
 /* OL-120: el punto de referencia de cada mando conectado (uno por mando): círculo del color de su tinta, del
    diámetro con que pintaría, tenue mientras no pinta y pleno mientras pinta. Se mueve con `transform` (el lienzo
-   no se toca); la transición que lo desliza entre una posición recibida y la siguiente la pone Pared.tsx con la
-   misma constante del ritmo de mensajes (INTERVALO_MENSAJE_MS). */
+   no se toca); la transición corta que lo desliza entre una posición y la siguiente la pone Pared.tsx
+   (SUAVIZADO_PUNTO_MS, OL-126: solo el punto se suaviza; el trazo se dibuja al llegar). */
 .puntoDeMando {
   position: absolute;
   top: 0;
   left: 0;
   z-index: 1;
   border-radius: 50%;
+  pointer-events: none;
+}
+/* OL-126: la sonda de latencia, solo con `?sonda=1`: abajo a la izquierda, sin toques. */
+.sonda {
+  position: absolute;
+  left: 24px;
+  bottom: 88px;
+  z-index: 2;
+  max-width: min(720px, calc(100vw - 48px));
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--error);
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
   pointer-events: none;
 }
 .cerrada {

@@ -19,9 +19,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * del cañón, con su propia cuenta; un enlace público sin sesión (cualquiera ve pintar en vivo) queda para
  * después, como decisión del founder (doc rediseno/34).
  */
-export default async function ParedDeObra({ params }: { params: Promise<{ id: string }> }) {
+export default async function ParedDeObra({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ sonda?: string }> }) {
   const { id } = await params;
   if (!esUuid(id)) notFound();
+  // OL-126: `?sonda=1` enseña la latencia de cada mensaje (sensor → envío → recepción → dibujo). Sin el parámetro
+  // no cambia nada visible.
+  const sonda = (await searchParams).sonda === "1";
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=/obra/${id}/pared`);
   // Interruptor «Pincel apagado» (OL-121): se comprueba antes de leer la obra, para no abrir el canal si está
@@ -38,5 +41,5 @@ export default async function ParedDeObra({ params }: { params: Promise<{ id: st
   const abierta = obra.estado === "abierta";
   // El QR hacia el mando (OL-118) se dibuja aquí, en el servidor; cerrada la obra, la pared ya no invita a entrar.
   const qr = abierta ? (await qrDelMando(obra.id)).svg : null;
-  return <Pared obraId={obra.id} nombre={obra.nombre} abierta={abierta} cupo={obra.cupoMandos} qr={qr} />;
+  return <Pared obraId={obra.id} nombre={obra.nombre} abierta={abierta} cupo={obra.cupoMandos} qr={qr} sonda={sonda} />;
 }
