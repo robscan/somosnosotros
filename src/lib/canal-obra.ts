@@ -14,6 +14,8 @@ export function nombreCanalObra(obraId: string): string {
   return `obra:${obraId}`;
 }
 
-export function abrirCanalObra(supabase: SupabaseClient, obraId: string) {
-  return supabase.channel(nombreCanalObra(obraId), { config: { private: true } });
+/** `ack` (OL-132): solo el mando con la sonda lo pide, para medir la ida y vuelta al servidor de Realtime (cada
+ * `send` resuelve al llegar la confirmación); por defecto no, como siempre (ningún viaje extra). */
+export function abrirCanalObra(supabase: SupabaseClient, obraId: string, opciones?: { ack?: boolean }) {
+  return supabase.channel(nombreCanalObra(obraId), { config: opciones?.ack ? { private: true, broadcast: { ack: true } } : { private: true } });
 }

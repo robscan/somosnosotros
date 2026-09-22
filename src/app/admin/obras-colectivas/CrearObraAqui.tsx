@@ -8,7 +8,7 @@ import { ChipNativo } from "@/components/ui/Chip";
 import { isoALocal, ZONA_INICIAL } from "@/lib/fechas";
 import { distanciaKm } from "@/lib/geo";
 import { cierreSugeridoIso } from "@/lib/obras-colectivas";
-import { nombreSugerido, RADIO_CERCANIA_M } from "@/lib/pincel";
+import { alEscribirTitulo, RADIO_CERCANIA_M, tituloDeObra, type TituloObra } from "@/lib/pincel";
 import { leerUbicacion, leerUbicacionConPrecision } from "@/lib/ubicacion";
 import { crearParedAqui, crearPorUbicacion, type Resultado } from "./acciones";
 import styles from "./obras.module.css";
@@ -25,26 +25,31 @@ const SIN_RESULTADO: Resultado = { ok: true };
  * «Crear pared aquí» (OL-127, founder: «también debe permitir crear pared en ubicación actual sin más»): un toque:
  * lee la ubicación (precisa) y crea la pared sin más pasos — con el lugar del directorio si hay uno a menos de
  * 200 m, o con sus propias coordenadas si no; nombre y cierre por defecto, editables después en su ficha.
+ *
+ * El nombre (OL-130, founder: «si cambio el lugar el título no se actualiza»): mientras no se escriba a mano, sigue
+ * al lugar elegido («Pincel en <lugar>») y cambia con él; en cuanto se edita, se respeta lo escrito aunque cambie el
+ * lugar; el «×» del campo vuelve al automático (`tituloDeObra` / `alEscribirTitulo`, puras).
  */
 export default function CrearObraAqui({ lugares, puedeCrear }: { lugares: Lugar[]; puedeCrear: boolean }) {
   const router = useRouter();
   const primero = lugares[0];
   const [lugarId, setLugarId] = useState(primero?.id ?? "");
-  const [nombre, setNombre] = useState(primero ? nombreSugerido(primero.nombre) : "");
+  const [titulo, setTitulo] = useState<TituloObra>({ modo: "automatico" });
   const [hora, setHora] = useState(() => isoALocal(cierreSugeridoIso(), ZONA_INICIAL).slice(11, 16));
   const [buscando, setBuscando] = useState(true);
-  const tocado = useRef(false);
+  const lugarTocado = useRef(false); // si la persona ya eligió un lugar, la ubicación no se lo cambia
   const [resultado, accion, pendiente] = useActionState(crearPorUbicacion, SIN_RESULTADO);
   const [aqui, setAqui] = useState<{ estado: "quieto" | "ubicando" | "creando"; error: string | null }>({ estado: "quieto", error: null });
+  const lugarElegido = lugares.find((l) => l.id === lugarId) ?? null;
+  const nombre = tituloDeObra(titulo, lugarElegido?.nombre ?? null);
 
   useEffect(() => {
     let vivo = true;
     leerUbicacion()
       .then((punto) => {
-        if (!vivo || tocado.current || lugares.length === 0) return;
+        if (!vivo || lugarTocado.current || lugares.length === 0) return;
         const cercano = [...lugares].sort((a, b) => distanciaKm(punto, a) - distanciaKm(punto, b))[0];
-        setLugarId(cercano.id);
-        setNombre(nombreSugerido(cercano.nombre));
+        setLugarId(cercano.id); // el título automático lo sigue solo
       })
       .catch(() => {})
       .finally(() => vivo && setBuscando(false));
@@ -103,7 +108,7 @@ export default function CrearObraAqui({ lugares, puedeCrear }: { lugares: Lugar[
               name="lugar_id"
               value={lugarId}
               onChange={(e) => {
-                tocado.current = true;
+                lugarTocado.current = true;
                 setLugarId(e.target.value);
               }}
               required
@@ -120,10 +125,7 @@ export default function CrearObraAqui({ lugares, puedeCrear }: { lugares: Lugar[
             name="nombre"
             value={nombre}
             maxLength={120}
-            onChange={(e) => {
-              tocado.current = true;
-              setNombre(e.target.value);
-            }}
+            onChange={(e) => setTitulo(alEscribirTitulo(e.target.value, lugarElegido?.nombre ?? null))}
             required
           />
           <div className={styles.hora}>
