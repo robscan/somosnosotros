@@ -11,6 +11,25 @@ export function nombreSugerido(lugarNombre: string): string {
   return `Pincel en ${lugarNombre}`;
 }
 
+/**
+ * El título de una obra al crearla (OL-130, founder: «al crear una pared el título se toma del lugar seleccionado,
+ * pero si lo cambio el título no se actualiza»). Dos modos: AUTOMÁTICO, el título sigue al lugar elegido («Pincel
+ * en <lugar>») y cambia con él; MANUAL, en cuanto la persona escribe algo propio se respeta lo escrito aunque
+ * cambie el lugar. Borrar el campo (el «×») o volver a escribir justo la sugerencia regresa al automático.
+ */
+export type TituloObra = { modo: "automatico" } | { modo: "manual"; texto: string };
+
+export function tituloDeObra(titulo: TituloObra, lugarNombre: string | null): string {
+  if (titulo.modo === "manual") return titulo.texto;
+  return lugarNombre ? nombreSugerido(lugarNombre) : "";
+}
+
+/** Lo que queda al escribir en el campo: vacío o igual a la sugerencia → automático; cualquier otra cosa → manual. */
+export function alEscribirTitulo(texto: string, lugarNombre: string | null): TituloObra {
+  if (texto === "" || (lugarNombre !== null && texto === nombreSugerido(lugarNombre))) return { modo: "automatico" };
+  return { modo: "manual", texto };
+}
+
 /** Nombre por defecto de una pared creada «aquí» sin lugar del directorio (OL-127): «Pincel · 22 sep, 13:05», en
  * la zona de la obra, editable después. */
 export function nombreParedSinLugar(fecha: Date, zona: string): string {
