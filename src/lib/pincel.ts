@@ -248,3 +248,69 @@ export function estadoDeFila(entradas: EntradaPresencia[], cupo: number, remiten
   if (i < cupo) return { tipo: "pintando" };
   return { tipo: "esperando", lugar: i - cupo + 1, esperando: orden.length - cupo };
 }
+
+/** «1 persona aquí», «7 personas aquí» (OL-117: salía «1 personas aquí»). */
+export function personasAqui(n: number): string {
+  return `${n} ${n === 1 ? "persona" : "personas"} aquí`;
+}
+
+/**
+ * Permiso del sensor de orientación en el mando (OL-117, bitácora 152). En el iPhone del founder salía «Este
+ * navegador no tiene sensor de movimiento», que es falso: ese texto salía del `catch` de
+ * `DeviceOrientationEvent.requestPermission()`, y en Safari de iOS esa promesa RECHAZA (`NotAllowedError`) cuando
+ * no la llama un gesto que Safari cuente como activación del usuario — `pointerdown` no siempre cuenta; `click`,
+ * `touchend` y `pointerup` sí — o cuando el permiso ya se negó antes. Tres casos, cada uno con su texto:
+ * sin constructor (de verdad no hay sensor), rechazo con error (gesto no válido o permiso negado antes) y
+ * respuesta «denied» explícita. El `detalle` (nombre y mensaje del error) se guarda para poder mostrarlo
+ * discretamente mientras el founder prueba en el teléfono.
+ */
+export type Sensor =
+  | { tipo: "sin-pedir" }
+  | { tipo: "pidiendo" }
+  | { tipo: "concedido" }
+  | { tipo: "negado"; detalle: string }
+  | { tipo: "sin-soporte"; detalle: string };
+
+export type ResultadoDelPermiso =
+  | { caso: "sin-constructor" }
+  | { caso: "sin-request-permission" } // Android y navegadores que no exigen pedirlo: se lee directo
+  | { caso: "respuesta"; valor: string } // lo que devolvió requestPermission(): "granted" | "denied" | otro
+  | { caso: "error"; nombre: string; mensaje: string }; // requestPermission() rechazó
+
+export function decidirSensor(r: ResultadoDelPermiso): Sensor {
+  switch (r.caso) {
+    case "sin-constructor":
+      return { tipo: "sin-soporte", detalle: "sin DeviceOrientationEvent" };
+    case "sin-request-permission":
+      return { tipo: "concedido" };
+    case "respuesta":
+      return r.valor === "granted" ? { tipo: "concedido" } : { tipo: "negado", detalle: `respuesta ${r.valor}` };
+    case "error":
+      return { tipo: "negado", detalle: r.mensaje ? `${r.nombre}: ${r.mensaje}` : r.nombre };
+  }
+}
+
+/**
+ * Qué dice el texto de ayuda mientras NO se puede pintar por el sensor; `null` si ya está concedido (entonces
+ * manda el texto de pintar de siempre). `abrirEnSafari`: en la app instalada en iOS (la que se añade al inicio
+ * desde Safari) WebKit ha rechazado `requestPermission()` con `NotAllowedError` aunque el gesto sea válido, porque
+ * el permiso vive en Safari y no en la app del inicio (dato del founder, iOS 26, 2026-09-22) — la salida es abrir
+ * el mismo enlace en Safari, con un botón (un enlace con `target="_blank"` desde la app instalada abre Safari).
+ * La ruta de Ajustes es la de iOS 18 (Ajustes → Apps → Safari); en iOS 26 la verifica el founder en su teléfono.
+ */
+export function textoDelSensor(sensor: Sensor, instalada: boolean): { texto: string; esAviso: boolean; abrirEnSafari: boolean } | null {
+  switch (sensor.tipo) {
+    case "concedido":
+      return null;
+    case "sin-pedir":
+      return { texto: "Toca el punto para activar el sensor", esAviso: false, abrirEnSafari: false };
+    case "pidiendo":
+      return { texto: "Activando el sensor…", esAviso: false, abrirEnSafari: false };
+    case "negado":
+      return instalada
+        ? { texto: "En la app instalada el iPhone no deja usar el sensor. Abre este enlace en Safari.", esAviso: true, abrirEnSafari: true }
+        : { texto: "Sin permiso del sensor. Actívalo en Ajustes → Apps → Safari → Movimiento y orientación, y toca el punto otra vez.", esAviso: true, abrirEnSafari: false };
+    case "sin-soporte":
+      return { texto: "Este navegador no tiene sensor de movimiento.", esAviso: true, abrirEnSafari: false };
+  }
+}

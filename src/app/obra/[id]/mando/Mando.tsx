@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import {
   ARRASTRE_GROSOR_MAX_PX,
+  decidirSensor,
   deltaDesdeOrientacion,
   diametroDelPunto,
   entradasDesdePresencia,
@@ -13,19 +14,29 @@ import {
   GROSOR_BASE,
   grosorDesdeArrastre,
   MENSAJES_POR_SEGUNDO,
+  personasAqui,
+  textoDelSensor,
   TINTAS,
   TRAZOS,
   type Delta,
   type EntradaPresencia,
   type MensajeTrazo,
   type Orientacion,
+  type Sensor,
   type Trazo,
 } from "@/lib/pincel";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import styles from "./mando.module.css";
 
-type PermisoOrientacion = "sin-pedir" | "concedido" | "negado" | "sin-soporte";
 type Selector = "trazo" | "tinta";
+
+/** ¿Es la app añadida al inicio (standalone), no Safari? Solo se consulta al pintar el texto tras un rechazo, en el
+ * cliente — nunca en el render del servidor. */
+function estaInstalada(): boolean {
+  if (typeof window === "undefined") return false;
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  return nav.standalone === true || (typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches);
+}
 
 /**
  * La punta de cada pincel, dibujada (no solo el nombre): calcada de `brushSample` del prototipo firmado
@@ -66,7 +77,7 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
   const [trazo, setTrazo] = useState<Trazo>(TRAZOS[0].id);
   const [color, setColor] = useState(TINTAS[0].valor);
   const [presionado, setPresionado] = useState(false);
-  const [permiso, setPermiso] = useState<PermisoOrientacion>("sin-pedir");
+  const [sensor, setSensor] = useState<Sensor>({ tipo: "sin-pedir" });
   const [entradas, setEntradas] = useState<EntradaPresencia[]>([]);
   const [banner, setBanner] = useState(false);
   const [abierto, setAbierto] = useState<Selector | null>(null); // nunca los dos menús abiertos (prototipo firmado)
@@ -192,34 +203,48 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
     ajustandoRef.current = false;
   }
 
-  async function empezarAPintar(e: React.PointerEvent<HTMLButtonElement>) {
-    arrastreInicioYRef.current = e.clientY;
-    grosorAlEmpezarRef.current = grosorRef.current;
-    setAbierto(null); // como en el prototipo firmado: pintar cierra cualquier menú abierto
-    if (permiso === "sin-pedir") {
-      const pedir = requestPermissionDeOrientacion();
-      if (pedir) {
-        try {
-          const resultado = await pedir();
-          setPermiso(resultado === "granted" ? "concedido" : "negado");
-          if (resultado !== "granted") return;
-        } catch {
-          setPermiso("sin-soporte");
-          return;
-        }
-      } else if (typeof window.DeviceOrientationEvent === "undefined") {
-        setPermiso("sin-soporte");
-        return;
-      } else {
-        setPermiso("concedido"); // Android y navegadores que no exigen el permiso explícito
-      }
-    } else if (permiso !== "concedido") {
+  /**
+   * OL-117: pedir el permiso del sensor SOLO desde un gesto que Safari de iOS cuente como activación del usuario —
+   * el `click` del botón grande al soltarlo (antes se pedía en `pointerdown`, que no siempre cuenta, y la promesa
+   * rechazaba con NotAllowedError; ese rechazo caía en el `catch` y salía «Este navegador no tiene sensor de
+   * movimiento», falso). El nombre y el mensaje del error se guardan en el estado (se muestran discretos en la
+   * ayuda mientras el founder prueba) y van a `console.warn`.
+   */
+  async function pedirPermisoDelSensor() {
+    if (sensor.tipo === "pidiendo" || sensor.tipo === "concedido") return;
+    if (typeof window.DeviceOrientationEvent === "undefined") {
+      setSensor(decidirSensor({ caso: "sin-constructor" }));
       return;
     }
+    const pedir = requestPermissionDeOrientacion();
+    if (!pedir) {
+      setSensor(decidirSensor({ caso: "sin-request-permission" })); // Android y navegadores que no lo exigen
+      return;
+    }
+    setSensor({ tipo: "pidiendo" });
+    try {
+      const respuesta = await pedir();
+      setSensor(decidirSensor({ caso: "respuesta", valor: String(respuesta) }));
+    } catch (e) {
+      const err = e as { name?: string; message?: string };
+      console.warn("Pincel: requestPermission() del sensor rechazó", err?.name, err?.message);
+      setSensor(decidirSensor({ caso: "error", nombre: err?.name ?? "Error", mensaje: err?.message ?? "" }));
+    }
+  }
+
+  /** Presionar: solo pinta con el sensor ya concedido. Sin permiso todavía, el botón no pinta; el permiso se pide
+   * al soltar (`onClick`), que es el gesto que iOS acepta. */
+  function empezarAPintar(e: React.PointerEvent<HTMLButtonElement>) {
+    setAbierto(null); // como en el prototipo firmado: pintar cierra cualquier menú abierto
+    if (sensor.tipo !== "concedido") return;
+    arrastreInicioYRef.current = e.clientY;
+    grosorAlEmpezarRef.current = grosorRef.current;
     setPresionado(true);
   }
 
   const esperando = estado.tipo === "esperando";
+  // Solo tras un rechazo importa si es la app instalada; y solo entonces se consulta window (nunca en el servidor).
+  const ayudaSensor = textoDelSensor(sensor, sensor.tipo === "negado" ? estaInstalada() : false);
   const trazoElegido = TRAZOS.find((t) => t.id === trazo) ?? TRAZOS[0];
   const tintaElegida = TINTAS.find((t) => t.valor === color) ?? TINTAS[0];
 
@@ -248,7 +273,7 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
           </div>
         </div>
       )}
-      {estado.tipo !== "fuera" && <p className={styles.presente}>{esperando ? `${cupo} pintando` : `${entradas.length} personas aquí`}</p>}
+      {estado.tipo !== "fuera" && <p className={styles.presente}>{esperando ? `${cupo} pintando` : personasAqui(entradas.length)}</p>}
       {esperando && (
         <div className={styles.espera}>
           <span className={styles.esperaIcono} aria-hidden="true">
@@ -297,7 +322,8 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
           type="button"
           className={styles.orb}
           aria-pressed={presionado}
-          aria-label="Mantén presionado y mueve tu celular"
+          aria-label={sensor.tipo === "concedido" ? "Mantén presionado y mueve tu celular" : "Toca el punto para activar el sensor"}
+          onClick={pedirPermisoDelSensor}
           style={{
             // Solo `transform` y solo traslación: el botón sigue al dedo en vertical sin cambiar de tamaño (si creciera,
             // se montaría sobre las tarjetas). Sin transición mientras está presionado: sigue al dedo al instante; al
@@ -344,9 +370,16 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
       </div>
 
       {!esperando &&
-        (permiso === "negado" || permiso === "sin-soporte" ? (
-          <p className={`${styles.hold} ${styles.aviso}`} role="alert">
-            {permiso === "negado" ? "Sin permiso del sensor, no se puede pintar. Actívalo en Ajustes y vuelve a intentar." : "Este navegador no tiene sensor de movimiento."}
+        (ayudaSensor ? (
+          <p className={`${styles.hold} ${ayudaSensor.esAviso ? styles.aviso : ""}`} role={ayudaSensor.esAviso ? "alert" : undefined} aria-live="polite">
+            {ayudaSensor.texto}
+            {ayudaSensor.abrirEnSafari && (
+              // Desde la app instalada, un enlace con target=_blank abre Safari — donde el permiso sí se puede dar.
+              <a className={styles.abrirSafari} href={typeof window === "undefined" ? "#" : window.location.href} target="_blank" rel="noopener">
+                Abrir en Safari
+              </a>
+            )}
+            {(sensor.tipo === "negado" || sensor.tipo === "sin-soporte") && <small className={styles.detalle}>({sensor.detalle})</small>}
           </p>
         ) : (
           <p className={styles.hold} aria-live="polite">
