@@ -5,6 +5,7 @@ import CodigoQr from "@/components/ui/CodigoQr";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import { configPublica } from "@/lib/config";
 import {
+  acreditaCercania,
   ANCHO_POR_GROSOR_PX,
   borradoReciente,
   BUCKET_INSTANTANEAS,
@@ -263,6 +264,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         if (!esMensajeTrazoValido(payload)) return; // la pared no confía en un payload sin mirarlo
         const mensaje = payload;
         if (!pintanRef.current.has(mensaje.remitente)) return; // en la fila, no pinta — aunque su cliente mande trazo
+        if (!acreditaCercania(mensaje)) return; // sin `cerca: true` (OL-127) no pinta: fricción, no seguridad
         // El trazo se dibuja en cuanto llega (OL-126): sin esperar a ninguna transición ni cuadro.
         const { segmentos, hasta } = siguientesSegmentos(puntos.current.get(mensaje.remitente) ?? null, mensaje.puntos, lienzo.clientWidth, lienzo.clientHeight);
         for (const segmento of segmentos) trazarSegmento(ctx!, segmento, mensaje);
@@ -278,6 +280,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         const mensaje = payload;
         ultimaPosicionRef.current.set(mensaje.remitente, mensaje);
         if (!pintanRef.current.has(mensaje.remitente)) return; // quien espera no mueve ningún punto
+        if (!acreditaCercania(mensaje)) return; // OL-127
         const hasta = puntoEnPared(mensaje.posicion, lienzo.clientWidth, lienzo.clientHeight);
         puntos.current.set(mensaje.remitente, hasta); // el trazo que venga arranca donde está el punto tenue
         setPuntosDeMando((actuales) => ({ ...actuales, [mensaje.remitente]: puntoDe(mensaje, hasta, false) }));

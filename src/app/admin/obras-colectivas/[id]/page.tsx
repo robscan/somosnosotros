@@ -54,6 +54,12 @@ export default async function DetalleObra({ params, searchParams }: Params) {
           <span>Lugar</span>
           <b>{obra.lugarNombre}</b>
         </div>
+        {obra.coordenadas && (
+          <div className={styles.dato}>
+            <span>Coordenadas</span>
+            <b>{obra.coordenadas.lat.toFixed(5)}, {obra.coordenadas.lng.toFixed(5)}</b>
+          </div>
+        )}
         <div className={styles.dato}>
           <span>Creada</span>
           <b>{formatearLargo(obra.creadoEn, new Date(), null, obra.zona)}</b>

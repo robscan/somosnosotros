@@ -4,9 +4,83 @@
  * El resto (consultas, acciones de servidor) vive en src/app/admin/obras-colectivas.
  */
 
+import { distanciaKm, type Punto as PuntoGeo } from "./geo";
+
 /** "Pincel en {lugar}": nombre sugerido al crear una obra por ubicación, sin partir de un evento. */
 export function nombreSugerido(lugarNombre: string): string {
   return `Pincel en ${lugarNombre}`;
+}
+
+/** Nombre por defecto de una pared creada «aquí» sin lugar del directorio (OL-127): «Pincel · 22 sep, 13:05», en
+ * la zona de la obra, editable después. */
+export function nombreParedSinLugar(fecha: Date, zona: string): string {
+  const dia = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", timeZone: zona }).format(fecha).replace(/\.$/, "");
+  const hora = new Intl.DateTimeFormat("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: zona }).format(fecha);
+  return `Pincel · ${dia}, ${hora}`;
+}
+
+/**
+ * Cercanía (OL-127, Fase 3 del plan; founder: «No hay validación de ubicación… me deja pintar»): el mando pide la
+ * ubicación al encender y solo pinta si está a menos de RADIO_CERCANIA_M del lugar de la obra (o de las
+ * coordenadas propias de la obra), sumando la precisión que reporta el aparato; administración queda exenta para
+ * probar desde donde sea. Es FRICCIÓN, no seguridad: la comprobación la hace el mando y la pared solo ve un
+ * `cerca: true` que no puede verificar (no hay firma); un cliente modificado podría mandarlo. La política real es
+ * que quien no está ahí no ve el botón encendido.
+ */
+export const RADIO_CERCANIA_M = 200;
+
+export type Cercania =
+  | { tipo: "sin-pedir" }
+  | { tipo: "pidiendo" }
+  | { tipo: "cerca"; distanciaM: number | null } // null: administración exenta o la obra no tiene referencia
+  | { tipo: "lejos"; distanciaM: number; precisionM: number }
+  | { tipo: "negada" }
+  | { tipo: "sin-soporte" }
+  | { tipo: "error" };
+
+export function distanciaM(a: PuntoGeo, b: PuntoGeo): number {
+  return distanciaKm(a, b) * 1000;
+}
+
+/** Dentro del radio si la distancia no pasa del radio más la precisión reportada (un aparato con 80 m de
+ * precisión a 250 m del lugar cuenta como cerca: no se castiga la imprecisión del GPS). */
+export function estaCerca(distancia: number, precisionM: number, radioM = RADIO_CERCANIA_M): boolean {
+  return distancia <= radioM + Math.max(0, Number.isFinite(precisionM) ? precisionM : 0);
+}
+
+export function decidirCercania(a: { esAdmin: boolean; punto: PuntoGeo; precisionM: number; referencia: PuntoGeo | null }): Cercania {
+  if (!a.referencia) return { tipo: "cerca", distanciaM: null }; // sin referencia no hay qué comprobar
+  const d = distanciaM(a.punto, a.referencia);
+  if (a.esAdmin) return { tipo: "cerca", distanciaM: d }; // exenta, pero se enseña la distancia en la sonda
+  return estaCerca(d, a.precisionM) ? { tipo: "cerca", distanciaM: d } : { tipo: "lejos", distanciaM: d, precisionM: a.precisionM };
+}
+
+/** El lugar del directorio más cercano a un punto, si está a menos del radio; si no, null («Crear pared aquí»). */
+export function lugarMasCercano<T extends PuntoGeo>(punto: PuntoGeo, lugares: T[], radioM = RADIO_CERCANIA_M): { lugar: T; distanciaM: number } | null {
+  let mejor: { lugar: T; distanciaM: number } | null = null;
+  for (const lugar of lugares) {
+    const d = distanciaM(punto, lugar);
+    if (d <= radioM && (!mejor || d < mejor.distanciaM)) mejor = { lugar, distanciaM: d };
+  }
+  return mejor;
+}
+
+/** Qué dice la ayuda del mando por la ubicación; null si está cerca o todavía no se pidió (manda el texto del sensor). */
+export function textoDeCercania(c: Cercania, lugarNombre: string | null): { texto: string; esAviso: boolean; verFicha: boolean } | null {
+  switch (c.tipo) {
+    case "sin-pedir":
+    case "cerca":
+      return null;
+    case "pidiendo":
+      return { texto: "Buscando tu ubicación…", esAviso: false, verFicha: false };
+    case "lejos":
+      return { texto: `Este pincel es para quien está en ${lugarNombre ?? "el lugar de la pared"}`, esAviso: true, verFicha: lugarNombre !== null };
+    case "negada":
+      return { texto: "Activa la ubicación para pintar", esAviso: true, verFicha: false };
+    case "sin-soporte":
+    case "error":
+      return { texto: "No se pudo leer tu ubicación. Inténtalo otra vez.", esAviso: true, verFicha: false };
+  }
 }
 
 /**
@@ -227,11 +301,16 @@ export function muestrear<T>(puntos: T[], max: number): T[] {
  * persona): el canal ya exige sesión (`private: true`); esto es solo para que dos pinceles no se confundan, no una
  * medida de seguridad aparte — aceptado así a propósito, sin generalizar.
  */
-export type MensajeTrazo = { trazo: Trazo; color: string; puntos: PosicionNormalizada[]; remitente: string; grosor: number; enviado?: number; muestra?: number };
+export type MensajeTrazo = { trazo: Trazo; color: string; puntos: PosicionNormalizada[]; remitente: string; grosor: number; enviado?: number; muestra?: number; cerca?: boolean };
 
 /** `enviado` y `muestra` (marcas de tiempo, OL-126) pueden faltar; si vienen, tienen que ser números finitos. */
 function marcaOpcionalValida(v: unknown): boolean {
   return v === undefined || numeroFinito(v);
+}
+/** `cerca` (OL-127): el mando acredita que está a menos del radio; opcional en la forma, pero la pared solo pinta
+ * lo que viene con `cerca: true` (un mando viejo o uno que no acreditó, no). */
+function cercaOpcionalValida(v: unknown): boolean {
+  return v === undefined || typeof v === "boolean";
 }
 
 /**
@@ -301,8 +380,14 @@ export function esMensajeTrazoValido(v: unknown): v is MensajeTrazo {
     m.grosor > 0 &&
     m.grosor <= GROSOR_MAX + 0.001 &&
     marcaOpcionalValida(m.enviado) &&
-    marcaOpcionalValida(m.muestra)
+    marcaOpcionalValida(m.muestra) &&
+    cercaOpcionalValida(m.cerca)
   );
+}
+
+/** La pared solo pinta (y mueve el punto) de un mando que acreditó cercanía (OL-127): fricción, no seguridad. */
+export function acreditaCercania(m: { cerca?: boolean }): boolean {
+  return m.cerca === true;
 }
 
 /**
@@ -353,7 +438,7 @@ export const OPACIDAD_PUNTO_TENUE = 0.35;
 /** El punto nunca es más chico que esto, aunque el trazo sea fino (gestor: «mínimo 8 px»). */
 export const DIAMETRO_PUNTO_MIN_PX = 8;
 
-export type MensajePosicion = { remitente: string; trazo: Trazo; color: string; grosor: number; posicion: PosicionNormalizada; enviado?: number; muestra?: number };
+export type MensajePosicion = { remitente: string; trazo: Trazo; color: string; grosor: number; posicion: PosicionNormalizada; enviado?: number; muestra?: number; cerca?: boolean };
 
 /** Igual de desconfiada que `esMensajeTrazoValido`. */
 export function esMensajePosicionValido(v: unknown): v is MensajePosicion {
@@ -369,7 +454,8 @@ export function esMensajePosicionValido(v: unknown): v is MensajePosicion {
     m.grosor <= GROSOR_MAX + 0.001 &&
     esPosicionValida(m.posicion) &&
     marcaOpcionalValida(m.enviado) &&
-    marcaOpcionalValida(m.muestra)
+    marcaOpcionalValida(m.muestra) &&
+    cercaOpcionalValida(m.cerca)
   );
 }
 

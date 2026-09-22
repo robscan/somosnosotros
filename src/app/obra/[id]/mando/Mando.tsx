@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import {
   ARRASTRE_GROSOR_MAX_PX,
+  decidirCercania,
   decidirSensor,
   diametroDelPunto,
   entradasDesdePresencia,
@@ -22,9 +23,11 @@ import {
   POSICIONES_POR_SEGUNDO,
   PUNTOS_MAX_POR_MENSAJE,
   ritmoDeTrazo,
+  textoDeCercania,
   textoDelSensor,
   TINTAS,
   TRAZOS,
+  type Cercania,
   type EntradaPresencia,
   type MensajePosicion,
   type MensajeTrazo,
@@ -34,6 +37,7 @@ import {
   type Trazo,
 } from "@/lib/pincel";
 import { clienteNavegador } from "@/lib/supabase/navegador";
+import { leerUbicacionConPrecision } from "@/lib/ubicacion";
 import styles from "./mando.module.css";
 
 type Selector = "trazo" | "tinta";
@@ -87,8 +91,33 @@ function requestPermissionDeOrientacion(): (() => Promise<"granted" | "denied">)
  * botón arranca apagado y el primer toque lo enciende (permiso del sensor); encendido y con cupo, el mando manda su
  * posición aunque no pinte (la pared enseña un punto tenue) y «Centrar» recalibra el cero.
  */
-export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraId: string; perfilId: string; cupo: number; sonda?: boolean }) {
+export default function Mando({
+  obraId,
+  perfilId,
+  cupo,
+  sonda = false,
+  esAdmin = false,
+  referencia = null,
+  lugarNombre = null,
+  lugarHref = null,
+}: {
+  obraId: string;
+  perfilId: string;
+  cupo: number;
+  sonda?: boolean;
+  /** Cercanía (OL-127): administración queda exenta; `referencia` es el lugar de la obra (o sus coordenadas propias). */
+  esAdmin?: boolean;
+  referencia?: { lat: number; lng: number } | null;
+  lugarNombre?: string | null;
+  lugarHref?: string | null;
+}) {
   const [trazo, setTrazo] = useState<Trazo>(TRAZOS[0].id);
+  // Cercanía (OL-127): se pide la ubicación al encender; solo con «cerca» el control queda encendido y manda.
+  const [cercania, setCercania] = useState<Cercania>({ tipo: "sin-pedir" });
+  const cercaRef = useRef(false);
+  useEffect(() => {
+    cercaRef.current = cercania.tipo === "cerca";
+  }, [cercania]);
   const [color, setColor] = useState(TINTAS[0].valor);
   const [presionado, setPresionado] = useState(false);
   const [sensor, setSensor] = useState<Sensor>({ tipo: "sin-pedir" });
@@ -187,8 +216,8 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
   /** La posición sin trazo (OL-120): solo con cupo — quien espera no manda posición. */
   const mandarPosicion = useCallback(
     (posicion: PosicionNormalizada) => {
-      if (!canalRef.current || !puedePintarRef.current) return;
-      const mensaje: MensajePosicion = { remitente: perfilId, trazo: trazoRef.current, color: colorRef.current, grosor: grosorRef.current, posicion, enviado: Date.now(), muestra: ultimaMuestraRef.current };
+      if (!canalRef.current || !puedePintarRef.current || !cercaRef.current) return;
+      const mensaje: MensajePosicion = { remitente: perfilId, trazo: trazoRef.current, color: colorRef.current, grosor: grosorRef.current, posicion, enviado: Date.now(), muestra: ultimaMuestraRef.current, cerca: true };
       canalRef.current.send({ type: "broadcast", event: EVENTO_POSICION, payload: mensaje });
       ultimaEnviadaRef.current = posicion;
     },
@@ -256,6 +285,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
         grosor: grosorRef.current,
         enviado: Date.now(),
         muestra: ultimaMuestraRef.current,
+        cerca: true, // OL-127: solo se presiona con el control encendido, y encendido implica cerca
       };
       canalRef.current.send({ type: "broadcast", event: EVENTO_TRAZO, payload: mensaje });
     }
@@ -279,7 +309,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
   // posición a POSICIONES_POR_SEGUNDO (2/s, OL-126: es referencia, no trazo), solo si cambió y siempre la última
   // (sin cola). Nada se guarda.
   useEffect(() => {
-    if (presionado || estado.tipo !== "pintando") return;
+    if (presionado || estado.tipo !== "pintando" || cercania.tipo !== "cerca") return;
     mandarPosicion(posicionRef.current);
     const intervalo = setInterval(() => {
       bufferRef.current = []; // sin pintar, las muestras no se acumulan
@@ -289,7 +319,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
       mandarPosicion(posicion);
     }, intervaloMs(POSICIONES_POR_SEGUNDO));
     return () => clearInterval(intervalo);
-  }, [presionado, estado.tipo, mandarPosicion]);
+  }, [presionado, estado.tipo, cercania.tipo, mandarPosicion]);
 
   /** Al soltar (o si el sistema cancela el toque): el punto vuelve al centro (transición de CSS sobre `transform`,
    * la rejilla no se toca) y el grosor SE QUEDA — la siguiente pulsación pinta con él y, si se arrastra otra vez,
@@ -390,6 +420,37 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
    * estado (se muestran discretos en la ayuda mientras el founder prueba) y van a `console.warn`.
    */
   async function encender() {
+    // Las dos comprobaciones arrancan en el mismo toque (el gesto que iOS exige para el sensor): sensor y ubicación.
+    void comprobarCercania();
+    await encenderSensor();
+  }
+
+  /**
+   * Cercanía (OL-127): la ubicación se lee al encender, una vez, y no se guarda. Cerca = a menos de 200 m del lugar
+   * de la obra más la precisión del aparato; administración queda exenta (prueba desde donde sea) aunque la
+   * ubicación falle. Si está lejos, negada o falló, el control no enciende y la ayuda lo dice; otro toque vuelve a
+   * pedirla. Es fricción, no seguridad: la pared confía en el `cerca: true` del mando.
+   */
+  async function comprobarCercania() {
+    if (cercania.tipo === "cerca" || cercania.tipo === "pidiendo") return;
+    if (!referencia) {
+      setCercania({ tipo: "cerca", distanciaM: null }); // sin referencia no hay qué comprobar
+      return;
+    }
+    setCercania({ tipo: "pidiendo" });
+    try {
+      const { punto, precisionM } = await leerUbicacionConPrecision();
+      setCercania(decidirCercania({ esAdmin, punto, precisionM, referencia }));
+    } catch (e) {
+      if (esAdmin) {
+        setCercania({ tipo: "cerca", distanciaM: null });
+        return;
+      }
+      setCercania({ tipo: e === "negado" ? "negada" : e === "sin-soporte" ? "sin-soporte" : "error" });
+    }
+  }
+
+  async function encenderSensor() {
     if (sensor.tipo === "pidiendo" || sensor.tipo === "concedido") return;
     ceroRef.current = null; // el cero será la postura del teléfono con que se encienda
     if (typeof window.DeviceOrientationEvent === "undefined") {
@@ -417,7 +478,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
   function empezarAPintar(e: React.PointerEvent<HTMLButtonElement>) {
     anotar(`${e.type} ${e.pointerType} y=${Math.round(e.clientY)} ${estaEncendido(sensor) ? "encendido" : "apagado"}`);
     setAbierto(null); // como en el prototipo firmado: pintar cierra cualquier menú abierto
-    if (!estaEncendido(sensor)) return;
+    if (!estaEncendido(sensor) || cercania.tipo !== "cerca") return;
     // El botón se queda con el puntero aunque el dedo (o el propio botón, que lo sigue) salga de su área: el
     // arrastre del grosor y el soltar llegan siempre a él. Si Safari no lo captura (OL-126, sospecha c), la sonda
     // lo enseña («cap=no») y el arrastre sigue por `touchmove`.
@@ -445,9 +506,14 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
   }
 
   const esperando = estado.tipo === "esperando";
-  const encendido = estaEncendido(sensor);
+  // Encendido = sensor concedido Y cerca (OL-127): sin cercanía el botón sigue apagado, con su aviso.
+  const encendido = estaEncendido(sensor) && cercania.tipo === "cerca";
   // Solo tras un rechazo importa si es la app instalada; y solo entonces se consulta window (nunca en el servidor).
   const ayudaSensor = textoDelSensor(sensor, sensor.tipo === "negado" ? estaInstalada() : false);
+  // La ubicación manda sobre el sensor en la ayuda cuando es un aviso (lejos, negada, error); «pidiendo» no tapa un
+  // aviso del sensor.
+  const ayudaCercania = textoDeCercania(cercania, lugarNombre);
+  const ayuda = ayudaCercania && (ayudaCercania.esAviso || !ayudaSensor?.esAviso) ? { ...ayudaCercania, abrirEnSafari: false, detalle: null } : ayudaSensor ? { ...ayudaSensor, verFicha: false, detalle: sensor.tipo === "negado" || sensor.tipo === "sin-soporte" ? sensor.detalle : null } : null;
   const trazoElegido = TRAZOS.find((t) => t.id === trazo) ?? TRAZOS[0];
   const tintaElegida = TINTAS.find((t) => t.valor === color) ?? TINTAS[0];
 
@@ -592,16 +658,22 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
       </div>
 
       {!esperando &&
-        (ayudaSensor ? (
-          <p className={`${styles.hold} ${ayudaSensor.esAviso ? styles.aviso : ""}`} role={ayudaSensor.esAviso ? "alert" : undefined} aria-live="polite">
-            {ayudaSensor.texto}
-            {ayudaSensor.abrirEnSafari && (
+        (ayuda ? (
+          <p className={`${styles.hold} ${ayuda.esAviso ? styles.aviso : ""}`} role={ayuda.esAviso ? "alert" : undefined} aria-live="polite">
+            {ayuda.texto}
+            {ayuda.abrirEnSafari && (
               // Desde la app instalada, un enlace con target=_blank abre Safari — donde el permiso sí se puede dar.
               <a className={styles.abrirSafari} href={typeof window === "undefined" ? "#" : window.location.href} target="_blank" rel="noopener">
                 Abrir en Safari
               </a>
             )}
-            {(sensor.tipo === "negado" || sensor.tipo === "sin-soporte") && <small className={styles.detalle}>({sensor.detalle})</small>}
+            {ayuda.verFicha && lugarHref && (
+              // Lejos (OL-127): a la ficha del lugar, sin pedir entrar otra vez.
+              <a className={styles.abrirSafari} href={lugarHref}>
+                Ver ficha
+              </a>
+            )}
+            {ayuda.detalle && <small className={styles.detalle}>({ayuda.detalle})</small>}
           </p>
         ) : (
           <p className={styles.hold} aria-live="polite">
@@ -614,6 +686,7 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
       {sonda && (
         <pre className={styles.sonda} aria-hidden="true">
           {`sonda · fila=${estado.tipo} (${entradas.length}) · sensor=${sensor.tipo} · ${muestrasPorSegundo} lecturas/s · trazo ${ritmoDeTrazo(cupo)}/s, posición ${POSICIONES_POR_SEGUNDO}/s\n` +
+            `cercanía=${cercania.tipo}${"distanciaM" in cercania && cercania.distanciaM !== null ? ` ${Math.round(cercania.distanciaM)} m` : ""}${cercania.tipo === "lejos" ? ` (±${Math.round(cercania.precisionM)} m)` : ""}${esAdmin ? " · admin exenta" : ""}${referencia ? "" : " · sin referencia"}\n` +
             `pres=${presionado ? "sí" : "no"} cap=${capturado ? "sí" : "no"} desp=${desplazamiento} grosor=${grosor.toFixed(2)} pos=${posicionSonda.x.toFixed(2)},${posicionSonda.y.toFixed(2)}\n` +
             lineasSonda.join("\n")}
         </pre>
