@@ -186,6 +186,31 @@
 .hold.aviso {
   color: var(--error);
 }
+/* OL-117: el nombre/mensaje del error del permiso, discreto, para leerlo en el teléfono durante la prueba. */
+.detalle {
+  display: block;
+  margin-top: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 400;
+  word-break: break-word;
+}
+/* OL-117: desde la app instalada, un enlace con target=_blank abre Safari, donde el permiso sí se puede dar. */
+.abrirSafari {
+  display: flex; /* en su propio renglón, centrado bajo el texto, no pegado a la última palabra */
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--toque-min);
+  margin: 10px auto 0;
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--primario);
+  border-radius: 999px;
+  color: var(--primario);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
 
 /* --- En espera / te toca (doc rediseno/34, prototipo firmado pincel-cupo-y-fila.html) --- */
 .espera {
