@@ -1,4 +1,5 @@
 /** Textos y resúmenes de la parte social: quién va, avisos por correo. */
+import { hrefEvento } from "./eventos";
 
 export type Asistente = { id: string; nombre: string; foto: string | null };
 
@@ -23,7 +24,7 @@ export function primerNombre(nombre: string): string {
 
 const ORIGEN = "https://somosnosotros.org";
 
-type Plantilla = { titulo: string; cuando: string; lugar: string; eventoId: string; bajaUrl?: string; /** Recordatorio: el día en la zona del evento. */ dia?: "Hoy" | "Mañana" };
+type Plantilla = { titulo: string; cuando: string; lugar: string; eventoId: string; eventoSlug?: string | null; bajaUrl?: string; /** Recordatorio: el día en la zona del evento. */ dia?: "Hoy" | "Mañana" };
 
 /** Pie de todo aviso: por qué llega y cómo dejar de recibirlo con un toque, sin entrar. */
 function pie(porque: string, bajaUrl: string | undefined): { texto: string; html: string } {
@@ -35,7 +36,7 @@ function pie(porque: string, bajaUrl: string | undefined): { texto: string; html
 }
 
 export function correoNuevoEvento(p: Plantilla): { asunto: string; texto: string; html: string } {
-  const url = `${ORIGEN}/eventos/${p.eventoId}`;
+  const url = `${ORIGEN}${hrefEvento({ id: p.eventoId, slug: p.eventoSlug })}`;
   const asunto = `Nuevo en ${p.lugar}: ${p.titulo}`;
   const f = pie(`Recibes esto porque sigues ${p.lugar} y pediste avisos por correo.`, p.bajaUrl);
   const texto = `${p.titulo}\n${p.cuando} · ${p.lugar}\n\nVer el evento: ${url}\n\n${f.texto}`;
@@ -49,7 +50,7 @@ export function textoCambio(cambio: "cuando" | "donde" | "ambos"): string {
 }
 
 export function correoCambioEvento(p: Plantilla & { cambio: "cuando" | "donde" | "ambos" }): { asunto: string; texto: string; html: string } {
-  const url = `${ORIGEN}/eventos/${p.eventoId}`;
+  const url = `${ORIGEN}${hrefEvento({ id: p.eventoId, slug: p.eventoSlug })}`;
   const que = textoCambio(p.cambio);
   const asunto = `Cambió ${que}: ${p.titulo}`;
   const f = pie(`Recibes esto porque dijiste "Voy" a este evento y pediste avisos por correo.`, p.bajaUrl);
@@ -64,7 +65,7 @@ ${f.texto}`;
 }
 
 export function correoRecordatorio(p: Plantilla): { asunto: string; texto: string; html: string } {
-  const url = `${ORIGEN}/eventos/${p.eventoId}`;
+  const url = `${ORIGEN}${hrefEvento({ id: p.eventoId, slug: p.eventoSlug })}`;
   const dia = p.dia ?? "Hoy";
   const asunto = `${dia}: ${p.titulo}`;
   const f = pie(`Recibes esto porque dijiste "Voy" y pediste el recordatorio por correo.`, p.bajaUrl);

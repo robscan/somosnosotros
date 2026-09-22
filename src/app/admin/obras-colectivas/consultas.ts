@@ -1,4 +1,17 @@
+import { BUCKET_INSTANTANEAS, rutaInstantanea } from "@/lib/pincel";
 import { clienteServidor } from "@/lib/supabase/servidor";
+
+/** Tope global de Pincel (OL-121, founder 2026-09-22): como mucho 2 obras abiertas a la vez y 40 mandos en total
+ * entre todas — lo mismo que hace cumplir el disparador `obras_colectivas_freno` de la migración
+ * 20260922180000_pincel_freno.sql. Están repetidos aquí (no hay una vista de la base que los devuelva) solo para
+ * que la pantalla explique el freno antes de que la base lo rechace, no para relajarlo: la base manda siempre.
+ */
+export const TOPE_OBRAS_ABIERTAS = 2;
+export const TOPE_MANDOS_GLOBAL = 40;
+
+function unPerfil<T>(p: T | T[] | null): T | null {
+  return Array.isArray(p) ? (p[0] ?? null) : p;
+}
 
 /** Lo que la lista de Obras colectivas necesita de cada una. Un lugar puede abrir varias con el tiempo (founder,
  * 2026-09-21: "un lugar puede abrir nuevas obras colectivas... que pueden distinguirse por la fecha/hora") —
@@ -29,7 +42,7 @@ export async function cargarObras(): Promise<{ obras: ObraFila[]; error: boolean
     lugar: { nombre: string } | { nombre: string }[] | null;
   }>;
   return {
-    obras: filas.map((f) => ({ id: f.id, nombre: f.nombre, estado: f.estado, zona: f.zona, creadoEn: f.creado_en, lugarNombre: unLugar(f.lugar)?.nombre ?? "" })),
+    obras: filas.map((f) => ({ id: f.id, nombre: f.nombre, estado: f.estado, zona: f.zona, creadoEn: f.creado_en, lugarNombre: unLugar(f.lugar)?.nombre ?? "Ubicación propia" })),
     error: false,
   };
 }
@@ -44,6 +57,37 @@ export async function cargarLugaresParaObra(): Promise<LugarParaObra[]> {
   return (data ?? []) as LugarParaObra[];
 }
 
+/** Cuántas obras están abiertas ahora y cuántos mandos suman entre todas (OL-121): lo que "Crear obra aquí" y el
+ * campo de cupo necesitan para explicar el freno antes de que la base lo rechace. `null` si no se pudo leer — la
+ * pantalla, en ese caso, no bloquea nada (la base sigue exigiéndolo igual). */
+export type EstadoGlobalPincel = { abiertas: number; mandosAbiertos: number };
+
+export async function cargarEstadoGlobalPincel(): Promise<EstadoGlobalPincel | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("obras_colectivas").select("cupo_mandos").eq("estado", "abierta");
+  if (error) return null;
+  const filas = (data ?? []) as { cupo_mandos: number }[];
+  return { abiertas: filas.length, mandosAbiertos: filas.reduce((total, f) => total + f.cupo_mandos, 0) };
+}
+
+/** El interruptor «Pincel apagado» (OL-121): quién lo cambió por última vez y cuándo, para el renglón de
+ * Administración. `cambiadoPorNombre` es null si lo puso la propia migración (nunca lo tocó una cuenta). */
+export type AjustePincel = { activo: boolean; cambiadoPorNombre: string | null; cambiadoEn: string };
+
+export async function cargarAjustePincel(): Promise<AjustePincel | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("ajustes_sitio")
+    .select("valor, cambiado_en, cambiado_por:perfiles(nombre)")
+    .eq("clave", "pincel_activo")
+    .maybeSingle();
+  if (error || !data) return null;
+  const fila = data as unknown as { valor: boolean; cambiado_en: string; cambiado_por: { nombre: string } | { nombre: string }[] | null };
+  return { activo: fila.valor === true, cambiadoPorNombre: unPerfil(fila.cambiado_por)?.nombre ?? null, cambiadoEn: fila.cambiado_en };
+}
+
 export type ObraDetalle = {
   id: string;
   nombre: string;
@@ -51,15 +95,22 @@ export type ObraDetalle = {
   cierraEn: string;
   zona: string;
   lugarNombre: string;
+  /** Coordenadas propias (OL-127) cuando la obra no tiene lugar del directorio; null si tiene lugar. */
+  coordenadas: { lat: number; lng: number } | null;
   creadoEn: string;
   cerradoEn: string | null;
   imagenFinal: string | null;
+  cupoMandos: number;
 };
 
 export async function cargarObra(id: string): Promise<ObraDetalle | null> {
   const supabase = await clienteServidor();
   if (!supabase) return null;
-  const { data } = await supabase.from("obras_colectivas").select("id, nombre, estado, cierra_en, zona, creado_en, cerrado_en, imagen_final, lugar:lugares(nombre)").eq("id", id).maybeSingle();
+  const { data } = await supabase
+    .from("obras_colectivas")
+    .select("id, nombre, estado, cierra_en, zona, creado_en, cerrado_en, imagen_final, cupo_mandos, lat, lng, lugar:lugares(nombre)")
+    .eq("id", id)
+    .maybeSingle();
   if (!data) return null;
   const fila = data as unknown as {
     id: string;
@@ -70,6 +121,9 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
     creado_en: string;
     cerrado_en: string | null;
     imagen_final: string | null;
+    cupo_mandos: number;
+    lat: number | null;
+    lng: number | null;
     lugar: { nombre: string } | { nombre: string }[] | null;
   };
   return {
@@ -81,6 +135,25 @@ export async function cargarObra(id: string): Promise<ObraDetalle | null> {
     creadoEn: fila.creado_en,
     cerradoEn: fila.cerrado_en,
     imagenFinal: fila.imagen_final,
-    lugarNombre: unLugar(fila.lugar)?.nombre ?? "",
+    cupoMandos: fila.cupo_mandos,
+    lugarNombre: unLugar(fila.lugar)?.nombre ?? "Ubicación propia",
+    coordenadas: !unLugar(fila.lugar) && typeof fila.lat === "number" && typeof fila.lng === "number" ? { lat: fila.lat, lng: fila.lng } : null,
   };
+}
+
+/**
+ * La instantánea de la pared (OL-126, parte 4): el PNG que la pared sube al bucket privado «obras» mientras la obra
+ * está abierta y que se queda como resultado al terminarla. Con la sesión de administración (la política del bucket
+ * solo deja leer a administración): si existe, una URL firmada de 10 minutos para enseñarla chica en la ficha, y
+ * cuándo se subió por última vez. Sin instantánea (o sin sesión), null.
+ */
+export async function cargarInstantanea(obraId: string): Promise<{ url: string; actualizadoEn: string } | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const { data: lista } = await supabase.storage.from(BUCKET_INSTANTANEAS).list(obraId, { search: "pared.png" });
+  const archivo = lista?.find((a) => a.name === "pared.png");
+  if (!archivo) return null;
+  const { data } = await supabase.storage.from(BUCKET_INSTANTANEAS).createSignedUrl(rutaInstantanea(obraId), 600);
+  if (!data?.signedUrl) return null;
+  return { url: data.signedUrl, actualizadoEn: archivo.updated_at ?? archivo.created_at ?? new Date().toISOString() };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, filtrarLugares, normalizarNombre, ordenarLugares, tiposPresentes, validarLugar } from "./lugares";
+import { calleCorta, conProximo, filtrarLugares, hrefLugar, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -79,9 +79,9 @@ describe("calleCorta", () => {
 
 describe("ordenarLugares", () => {
   const base = { tipo: "foro" as const, direccion: null, portada: null };
-  const a = { ...base, id: "a", nombre: "Zeta", lat: 22.15, lng: -100.98, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City" } };
+  const a = { ...base, id: "a", nombre: "Zeta", lat: 22.15, lng: -100.98, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City", titulo: "Evento" } };
   const b = { ...base, id: "b", nombre: "Alfa", lat: 22.16, lng: -100.98, proximo: null };
-  const c = { ...base, id: "c", nombre: "Beta", lat: 22.2, lng: -100.9, proximo: { id: "e2", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City" } };
+  const c = { ...base, id: "c", nombre: "Beta", lat: 22.2, lng: -100.9, proximo: { id: "e2", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City", titulo: "Evento" } };
   it("sin ubicación: alfabético", () => {
     expect(ordenarLugares([a, b, c], null).lista.map((l) => l.id)).toEqual(["b", "c", "a"]);
   });
@@ -93,14 +93,50 @@ describe("ordenarLugares", () => {
   });
 });
 
+describe("lugaresEncuadreInicial", () => {
+  const AHORA = new Date("2026-09-19T16:00:00Z"); // sábado 19 sep, 10:00 local
+  const centro = { lat: 22.1497, lng: -100.9764 };
+  const base = { tipo: "foro" as const, direccion: null, portada: null, proximo: null };
+  it("con tres o más lugares de esta semana o destacados, no completa con cercanos", () => {
+    const conEvento = { ...base, id: "a", nombre: "A", lat: 22.15, lng: -100.97, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City", titulo: "Evento" } };
+    const destacado1 = { ...base, id: "b", nombre: "B", lat: 22.3, lng: -101.1 };
+    const destacado2 = { ...base, id: "c", nombre: "C", lat: 22.4, lng: -101.2 };
+    const lejano = { ...base, id: "d", nombre: "D", lat: 25, lng: -105 };
+    const r = lugaresEncuadreInicial([conEvento, destacado1, destacado2, lejano], ["b", "c"], centro, AHORA);
+    expect(r.map((l) => l.id)).toEqual(["a", "b", "c"]); // el lejano, sin evento ni destacado, se queda fuera
+  });
+  it("con menos de tres, completa con los más cercanos al centro hasta llegar a seis", () => {
+    const conEvento = { ...base, id: "a", nombre: "A", lat: 22.15, lng: -100.97, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City", titulo: "Evento" } };
+    const cerca = { ...base, id: "b", nombre: "B", lat: 22.15, lng: -100.98 }; // el más cercano al centro
+    const lejos = { ...base, id: "c", nombre: "C", lat: 25, lng: -105 };
+    const r = lugaresEncuadreInicial([conEvento, cerca, lejos], [], centro, AHORA);
+    expect(r.map((l) => l.id)).toEqual(["a", "b", "c"]); // se completan los dos restantes (solo hay dos, tope 6)
+  });
+  it("un evento fuera de la ventana de siete días no cuenta como candidato", () => {
+    const lejano = { ...base, id: "a", nombre: "A", lat: 22.15, lng: -100.97, proximo: { id: "e1", inicio: "2026-10-05T01:00:00Z", zona: "America/Mexico_City", titulo: "Evento" } };
+    const cerca = { ...base, id: "b", nombre: "B", lat: 22.15, lng: -100.98 };
+    const r = lugaresEncuadreInicial([lejano, cerca], [], centro, AHORA);
+    expect(r.map((l) => l.id)).toEqual(["b", "a"]); // ninguno es candidato: se completa por cercanía, "a" queda al final
+  });
+});
+
 describe("conProximo", () => {
   it("toma el primer evento de cada lugar y deja null a los demás", () => {
     const r = conProximo([{ id: "a" }, { id: "b" }], [
-      { id: "e1", inicio: "2026-09-15T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" },
-      { id: "e2", inicio: "2026-09-16T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" },
-      { id: "e3", inicio: "2026-09-17T01:00:00Z", lugar_id: null, zona: "America/Mexico_City" },
+      { id: "e1", inicio: "2026-09-15T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City", titulo: "Uno" },
+      { id: "e2", inicio: "2026-09-16T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City", titulo: "Dos" },
+      { id: "e3", inicio: "2026-09-17T01:00:00Z", lugar_id: null, zona: "America/Mexico_City", titulo: "Tres" },
     ]);
-    expect(r[0].proximo).toEqual({ id: "e1", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City" });
+    expect(r[0].proximo).toEqual({ id: "e1", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City", titulo: "Uno" });
     expect(r[1].proximo).toBeNull();
+  });
+});
+
+describe("hrefLugar", () => {
+  it("usa el slug cuando lo trae; el UUID solo como respaldo (OL-119, mismo criterio que artistas)", () => {
+    expect(hrefLugar({ id: "a1", slug: "casa-de-la-cultura" })).toBe("/lugares/casa-de-la-cultura");
+    expect(hrefLugar({ id: "a1", slug: null })).toBe("/lugares/a1");
+    expect(hrefLugar({ id: "a1" })).toBe("/lugares/a1");
+    expect(hrefLugar({ id: "a1", slug: "" })).toBe("/lugares/a1");
   });
 });

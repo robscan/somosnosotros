@@ -8,7 +8,7 @@ import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
 import { configPublica } from "@/lib/config";
 import { artistaIgual, deducirTipoArtista, quienDesdeJson, type ArtistaResumen, type QuienItem } from "@/lib/artistas";
-import { cartelAFormulario, validarEvento, type CambioEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
+import { cartelAFormulario, hrefEvento, validarEvento, type CambioEvento, type DatosEvento, type ErroresEvento } from "@/lib/eventos";
 import { zonaSegura } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
@@ -64,10 +64,12 @@ function ciudadDe(datos: DatosEvento, lugar: LugarDelEvento): string {
   return lugar?.ciudad ?? CIUDAD_INICIAL.nombre;
 }
 
-function revalidar(id: string, lugarId: string | null, artistas: string[] = []) {
+/** Se revalida por id (la dirección vieja, que sigue resolviendo) y por slug (la de hoy) si ya se conoce: las dos pueden estar cacheadas. */
+function revalidar(id: string, lugarId: string | null, artistas: string[] = [], slug?: string | null) {
   revalidatePath("/");
   revalidatePath("/artistas");
   revalidatePath(`/eventos/${id}`);
+  if (slug) revalidatePath(`/eventos/${slug}`);
   if (lugarId) revalidatePath(`/lugares/${lugarId}`);
   for (const a of artistas) revalidatePath(`/artistas/${a}`);
 }
@@ -99,10 +101,13 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
   const ciudad = ciudadDe(datos, lugar);
   const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"));
   if (!data) return { ok: false, errores: {}, general: "No se pudo publicar el evento completo. Intenta de nuevo." };
-  revalidar(data.id, datos.lugar_id, data.artistas);
+  // La función guarda_evento_con_avisos no devuelve el slug (lo pone el disparador); una lectura de sobra para
+  // no publicar con la dirección vieja desde el primer instante.
+  const { data: creado } = await supabase.from("eventos").select("slug").eq("id", data.id).maybeSingle();
+  revalidar(data.id, datos.lugar_id, data.artistas, creado?.slug);
   // La transaccion ya encolo: tambien un reintento puede acelerar su drenaje.
   after(intentarDrenarAvisos);
-  redirect(`/eventos/${data.id}?nuevo=1`, RedirectType.replace);
+  redirect(`${hrefEvento({ id: data.id, slug: creado?.slug })}?nuevo=1`, RedirectType.replace);
 }
 
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {

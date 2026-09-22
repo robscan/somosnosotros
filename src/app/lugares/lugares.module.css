@@ -53,35 +53,91 @@
   font-size: var(--letra-sm);
   box-shadow: var(--sombra);
 }
-/* Tarjeta del pin tocado: el mismo renglón de la lista, flotando sobre el mapa, con "Ver" */
-.tarjeta {
+/* El botón de ubicación (docs/rediseno/35): abajo a la izquierda, el mismo botón que el ↑ de los listados
+   (ui/Cabecera .volver). Con la hoja del pin abierta sube justo por encima de ella (nunca se tapa): `--alto-hoja`
+   lo publica ui/useAltoHoja con el alto real de la hoja, y aquí se resta lo que la caja del mapa ya deja libre
+   sobre la navegación, para no subir de más. */
+.ubicacion {
   position: absolute;
   left: var(--gutter);
-  right: var(--gutter);
-  bottom: var(--espacio-4);
-  z-index: 3;
+  bottom: calc(16px + max(0px, var(--alto-hoja, 0px) - var(--alto-nav) - env(safe-area-inset-bottom, 0px)));
+  z-index: 5;
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  grid-template-areas:
-    "foto titulo ver"
-    "foto meta ver";
-  column-gap: var(--espacio-3);
-  align-items: center;
-  padding: var(--espacio-3);
-  border-radius: 14px;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  border: 1px solid var(--borde);
+  border-radius: 50%;
   background: var(--fondo);
   color: var(--texto);
-  text-decoration: none;
   box-shadow: var(--sombra-flotante);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: bottom 200ms ease;
 }
-.tarjeta img {
-  width: 56px;
-  height: 56px;
+.ubicacionActiva {
+  color: var(--primario);
 }
-.tarjeta > span:nth-child(2) {
-  font-size: var(--letra-lg);
+/* Mientras llega, el icono late (como los chips "en camino"); sin texto. */
+.ubicacionPidiendo svg {
+  animation: latir 1.1s ease-in-out infinite;
 }
-/* Un destacado lo dice en su tarjeta, con el punto naranja del mapa (docs/rediseno/20, M2) */
+@keyframes latir {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* La hoja del pin (ui/Hoja): foto, título y datos en rejilla plana; "Ver ficha" es un hijo directo de la hoja. */
+.hojaLugar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "foto titulo"
+    "foto meta";
+  column-gap: var(--espacio-3);
+  row-gap: 2px;
+  margin-bottom: var(--espacio-4);
+}
+.hojaFoto {
+  grid-area: foto;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background: var(--fondo-miniatura);
+  align-self: start;
+}
+.hojaTitulo {
+  grid-area: titulo;
+  min-width: 0;
+  font-size: var(--letra-xl);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.hojaMeta {
+  grid-area: meta;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.hojaMeta > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hojaMeta b {
+  color: var(--texto);
+}
+.verFicha {
+  width: 100%;
+}
+/* Un destacado lo dice en la hoja, con el punto naranja del mapa (docs/rediseno/20, M2) */
 .destacado {
   display: inline-flex;
   align-items: center;
@@ -97,17 +153,6 @@
   border-radius: 50%;
   background: var(--destacado);
   box-shadow: 0 0 0 1px var(--destacado);
-}
-.ver {
-  grid-area: ver;
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-4);
-  border-radius: 10px;
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-weight: 700;
 }
 
 /* 2. Lista: el aviso de ubicación, arriba de la lista, en la columna */

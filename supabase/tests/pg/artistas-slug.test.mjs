@@ -4,8 +4,10 @@ import { randomUUID } from "node:crypto";
  * Slug de artista (OL-114, migración 20260922140000): se pone solo al crear, no cambia al renombrar, resuelve
  * choques con un sufijo corto y determinista; y el reclamo con aprobación automática cuando el correo de la
  * cuenta coincide con el que el CAPO capturó para esa ficha (contactos_importados), sin exponer esa tabla.
+ * Desde la migración 20260922200000 (OL-123), además: dos altas concurrentes con el mismo nombre terminan con slugs
+ * distintos gracias al bloqueo consultivo, como ya lo hacían lugares y eventos (OL-119).
  */
-export async function run({ as, check, expectError, query }) {
+export async function run({ as, check, connection, expectError, query }) {
   const user = randomUUID();
   const otro = randomUUID();
   const artists = [];
@@ -42,6 +44,47 @@ export async function run({ as, check, expectError, query }) {
     const raro = await as("authenticated", user, () => artist("¡¡¡···!!!"));
     fila = (await query("select slug from public.artistas where id = $1", [raro])).rows[0];
     check(fila.slug === `artista-${raro.replaceAll("-", "").slice(0, 8)}`, "slug: respaldo con el id cuando el nombre no aporta letras", { slug: fila.slug, id: raro });
+
+    // Dos altas a la vez con el mismo nombre (migración 20260922200000). Sin el bloqueo consultivo, las dos
+    // transacciones calculan "dueto-simultaneo" (cada una solo ve sus filas sin comitear) y la segunda rompe el
+    // índice único (23505) en cuanto la primera comitea; con él, la segunda espera a que termine la primera y elige
+    // "-2". Se fuerza el orden con transacciones abiertas en dos conexiones reales: A inserta y no comitea; B intenta
+    // insertar y queda esperando; A comitea; B sigue. Ciudades distintas para no chocar con artista_sin_duplicado.
+    const idA = randomUUID();
+    const idB = randomUUID();
+    artists.push(idA, idB);
+    const insertar = (cliente, id) => cliente.query("insert into public.artistas(id, nombre, ciudad, creado_por) values ($1, 'Dueto Simultáneo', $2, $3)", [id, `Ciudad de prueba ${id}`, user]);
+    const comoUsuario = async (cliente) => {
+      await cliente.query("set role authenticated");
+      await cliente.query("select set_config('request.jwt.claim.sub', $1, false)", [user]);
+      await cliente.query("begin");
+    };
+    const carrera = await connection(async (a) => {
+      await comoUsuario(a);
+      await insertar(a, idA);
+      const resultadoB = connection(async (b) => {
+        await comoUsuario(b);
+        try {
+          await insertar(b, idB);
+          await b.query("commit");
+          return { ok: true };
+        } catch (error) {
+          await b.query("rollback");
+          return { ok: false, code: error.code };
+        }
+      });
+      // B ya debe estar bloqueada esperando a A (y no haber terminado ni fallado por su cuenta).
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const esperando = await query("select count(*)::int as n from pg_stat_activity where wait_event_type = 'Lock' and query like '%Dueto Simult%'");
+      await a.query("commit");
+      return { esperando: esperando.rows[0].n, b: await resultadoB };
+    });
+    check(carrera.esperando >= 1, "concurrencia: la segunda alta espera a que termine la primera", carrera);
+    check(carrera.b.ok === true, "concurrencia: la segunda alta no rompe el índice único al comitear la primera", carrera.b);
+    const slugs = (await query("select id, slug from public.artistas where id = any($1::uuid[]) order by slug", [[idA, idB]])).rows;
+    check(slugs.length === 2 && slugs[0].slug === "dueto-simultaneo" && slugs[1].slug === "dueto-simultaneo-2", "concurrencia: las dos altas terminan con slugs distintos (base y -2)", slugs);
+    const definicion = (await query("select prosrc from pg_proc where oid = 'public.artistas_generar_slug()'::regprocedure")).rows[0];
+    check(definicion.prosrc.includes("pg_advisory_xact_lock(hashtext('artistas_slug:' || base))"), "contrato: artistas_generar_slug lleva el bloqueo consultivo por nombre base, igual que lugares y eventos");
 
     // Reclamo con aprobación automática: el CAPO capturó un correo para esta ficha.
     const capo = await artist("Ficha Del Catálogo", { creadoPor: null, origen: "capo" });

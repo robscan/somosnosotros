@@ -50,7 +50,7 @@ export default function Privacidad() {
 
         <h2>Con quién se comparten</h2>
         <p>
-          Con las empresas que hacen funcionar el sitio, y solo para eso: Supabase (base de datos y acceso), Vercel (servidor), Resend (correos), Mapbox (mapa y direcciones) y Anthropic (lectura automática del cartel de un evento, solo la imagen que subes). Si eliges entrar con Apple o con Google, ellos confirman quién eres y saben que entraste a Somos Nosotros; no les mandamos nada más. No vendemos ni cedemos tus datos a nadie más.
+          Con las empresas que hacen funcionar el sitio, y solo para eso: Supabase (base de datos y acceso), Vercel (servidor) y Vercel Analytics (vistas de página, sin cookies ni identificación de personas), Resend (correos), Mapbox (mapa y direcciones) y Anthropic (lectura automática del cartel de un evento, solo la imagen que subes). Si eliges entrar con Apple o con Google, ellos confirman quién eres y saben que entraste a Somos Nosotros; no les mandamos nada más. No vendemos ni cedemos tus datos a nadie más.
         </p>
 
         <h2>Tus derechos</h2>

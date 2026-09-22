@@ -1,14 +1,20 @@
 import { notFound, redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
+import Boton from "@/components/ui/Boton";
+import CodigoQr from "@/components/ui/CodigoQr";
 import ficha from "@/components/ui/Ficha.module.css";
 import Borrar from "@/components/Borrar";
 import { formatearLargo } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
+import { qrDelMando } from "@/lib/qr";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import admin from "../../admin.module.css";
 import styles from "../obras.module.css";
-import { cargarObra } from "../consultas";
+import { cargarEstadoGlobalPincel, cargarInstantanea, cargarObra, TOPE_MANDOS_GLOBAL } from "../consultas";
 import AccionesObra from "./AccionesObra";
+import BorrarPared from "./BorrarPared";
+import BotonImprimir from "./BotonImprimir";
+import CampoCupo from "./CampoCupo";
 import { borrarObra } from "../acciones";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -19,8 +25,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ error?: string }> };
 
-/** Detalle de una obra colectiva (OL-088, Fase 1 y Fase 2 bloque 1): estado, cuándo cierra, Terminar/Reabrir y
- * Borrar (solo cerrada). Sin proyección ni mando en vivo todavía — llegan en el resto de la Fase 2. */
+/** Detalle de una obra colectiva (OL-088): estado, cuándo cierra, cupo de mandos (doc rediseno/34, solo si está
+ * abierta), enlaces a la pared y al mando, el QR hacia el mando para imprimir (OL-118, solo abierta), Terminar/Reabrir
+ * y Borrar (solo cerrada). */
 export default async function DetalleObra({ params, searchParams }: Params) {
   const { id } = await params;
   const { error } = (await searchParams) ?? {};
@@ -30,16 +37,29 @@ export default async function DetalleObra({ params, searchParams }: Params) {
   if (!esUuid(id)) notFound();
   const obra = await cargarObra(id);
   if (!obra) notFound();
+  const qr = obra.estado === "abierta" ? await qrDelMando(obra.id) : null;
+  // La instantánea de la pared (OL-126): mientras está abierta, lo pintado hasta ahora; cerrada, el resultado.
+  const instantanea = await cargarInstantanea(obra.id);
+  // Tope de cupo (OL-121): lo que le queda a ESTA obra es el tope global menos lo que usan las DEMÁS abiertas —
+  // su propio cupo actual no cuenta contra sí misma. Si no se pudo leer, no se acota aquí (la base lo exige igual).
+  const estadoGlobal = obra.estado === "abierta" ? await cargarEstadoGlobalPincel() : null;
+  const tope = estadoGlobal ? Math.max(TOPE_MANDOS_GLOBAL - (estadoGlobal.mandosAbiertos - obra.cupoMandos), obra.cupoMandos) : 20;
 
   return (
-    <main className={ficha.pagina}>
+    <main className={`${ficha.pagina} ${styles.fichaObra}`}>
       <Barra volver={{ href: "/admin/obras-colectivas", texto: "Obras colectivas" }} />
-      <h1 className={admin.titulo}>{obra.nombre}</h1>
+      <h1 className={`${admin.titulo} ${styles.nombre}`}>{obra.nombre}</h1>
       <div className={styles.datos}>
         <div className={styles.dato}>
           <span>Lugar</span>
           <b>{obra.lugarNombre}</b>
         </div>
+        {obra.coordenadas && (
+          <div className={styles.dato}>
+            <span>Coordenadas</span>
+            <b>{obra.coordenadas.lat.toFixed(5)}, {obra.coordenadas.lng.toFixed(5)}</b>
+          </div>
+        )}
         <div className={styles.dato}>
           <span>Creada</span>
           <b>{formatearLargo(obra.creadoEn, new Date(), null, obra.zona)}</b>
@@ -60,7 +80,20 @@ export default async function DetalleObra({ params, searchParams }: Params) {
           <b>{obra.estado === "abierta" ? "Abierta" : "Cerrada"}</b>
         </div>
       </div>
+      {obra.estado === "abierta" && <CampoCupo id={obra.id} cupo={obra.cupoMandos} tope={tope} />}
+      {obra.estado === "abierta" && (
+        <div className={styles.acciones}>
+          <Boton href={`/obra/${obra.id}/pared`} variante="secundario">
+            Abrir la pared
+          </Boton>
+          <Boton href={`/obra/${obra.id}/mando`} variante="secundario">
+            Abrir el mando
+          </Boton>
+        </div>
+      )}
       <AccionesObra id={obra.id} estado={obra.estado} />
+      {/* OL-126: limpiar la pared sin cerrar la obra (mensaje `borrar` por el canal; solo aquí). */}
+      {obra.estado === "abierta" && <BorrarPared obraId={obra.id} perfilId={actual.perfil.id} />}
       {error === "borrar" && (
         <p className={styles.error} role="alert">
           No se pudo borrar. ¿Sigue cerrada y sigues con sesión de administración?
@@ -74,7 +107,22 @@ export default async function DetalleObra({ params, searchParams }: Params) {
           accion={borrarObra.bind(null, obra.id)}
         />
       )}
-      <p className={styles.despues}>La proyección y el mando en vivo llegan en la siguiente fase.</p>
+      {instantanea && (
+        <figure className={styles.instantanea}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL firmada del bucket privado, no hay nada que optimizar */}
+          <img src={instantanea.url} alt="Instantánea de la pared" />
+          <figcaption>{obra.estado === "abierta" ? "La pared, hasta ahora" : "La pared, al terminar"} · {formatearLargo(instantanea.actualizadoEn, new Date(), null, obra.zona)}</figcaption>
+        </figure>
+      )}
+      {qr && (
+        <figure className={styles.qr}>
+          <CodigoQr svg={qr.svg} alt="Código QR: abre el mando de esta obra" />
+          <figcaption>
+            <a href={qr.url}>{qr.url}</a>
+          </figcaption>
+          <BotonImprimir className={styles.imprimir} />
+        </figure>
+      )}
     </main>
   );
 }

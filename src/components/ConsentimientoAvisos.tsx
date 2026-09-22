@@ -102,9 +102,10 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
       if (estado === "instalar-primero") return setHoja(true);
       if (estado === "otra-app" || estado === "no-soportado" || estado === "bloqueado") return setProblema(estado);
       const alta = await suscribirPush(llavePush);
-      // "silenciado" (bitácora 147, ActivarAvisos/AvisosPerfil) no cambia esta pregunta: se trata como cualquier alta
-      // que no terminó, con el mismo "Intentar de nuevo".
-      if (!alta.ok) return setProblema(alta.motivo === "silenciado" ? "fallo" : alta.motivo);
+      // "silenciado" (bitácora 147) y "rechazado" (bitácora 164, el permiso ya "concedido" pero el navegador se
+      // niega a registrar el aviso) no cambian esta pregunta: se tratan como cualquier alta que no terminó, con
+      // el mismo "Intentar de nuevo" — ActivarAvisos y AvisosPerfil sí distinguen el motivo, aquí no hay sitio.
+      if (!alta.ok) return setProblema(alta.motivo === "silenciado" || alta.motivo === "rechazado" ? "fallo" : alta.motivo);
       if (await guardarSuscripcionPush(alta.sub)) {
         marcarAvisosContestados(cuenta);
         setProblema(null);

@@ -1,0 +1,394 @@
+/* El mando (Fase 2 bloque 3), calcado del prototipo FIRMADO (OL-084, commit de48c0c, bitácora 118, ajuste del
+   2026-09-18): Trazo y Tinta son dos tarjetas cerradas a cada lado del botón, que muestran la punta elegida
+   (dibujada, en el color de la tinta) y el color con su nombre; al tocar una se abre hacia arriba, sin tocar el
+   botón, con cada opción de 52 px y su muestra; nunca las dos abiertas, nunca todas las opciones visibles en
+   reposo. Una sola rejilla con áreas, sin envoltorios (MEMORIA_GESTOR). El gutter horizontal ya lo pone
+   ficha.pagina (el padre); "Salir" es la Barra de la página. */
+.mando {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr);
+  /* La fila del texto de ayuda mide siempre lo de un renglón (18 px de margen + 20 de línea): si el aviso del
+     sensor crece (OL-117: texto rojo + botón «Abrir en Safari» + detalle en gris), se acomoda hacia abajo sobre el
+     espacio libre del pie, con desplazamiento si no cabe — pero el botón y las tarjetas no se mueven en ningún
+     estado (medido: centro del botón en y=611 en los seis casos). */
+  grid-template-rows: auto minmax(0, 1fr) auto 38px;
+  grid-template-areas:
+    ". . presente"
+    "espera espera espera"
+    "trazo orb tinta"
+    "hold hold hold";
+  column-gap: 10px;
+  align-items: center;
+  /* El botón conserva la altura firmada: zona inferior-media, con espacio abajo para afianzar el pulgar sin
+     cambiar el agarre (founder, bitácora 118). */
+  min-height: calc(100dvh - var(--alto-barra, 56px));
+  padding: 10px 0 clamp(96px, 17vh, 160px);
+  position: relative;
+  /* OL-126 (a): en el área del mando, un dedo que se mantiene y se mueve es del mando, nunca desplazar la página
+     ni «tirar para refrescar» (Safari de iOS se llevaba el gesto del grosor). El html/body llevan además
+     overscroll-behavior: none mientras el mando está montado (Mando.tsx). */
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+/* OL-126: la sonda de eventos, solo con `?sonda=1`: fija, fuera de la rejilla, sin toques. */
+.sonda {
+  position: fixed;
+  top: calc(var(--alto-barra, 56px) + 8px); /* en la zona vacía de arriba: no tapa el botón, las tarjetas ni la ayuda */
+  left: 8px;
+  z-index: 30;
+  max-width: 64vw;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--error);
+  font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+.mando > * {
+  min-width: 0;
+}
+.presente {
+  grid-area: presente;
+  justify-self: end;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 13px;
+}
+
+/* --- Tarjetas de Trazo y Tinta (105×84 firmadas) y su menú hacia arriba --- */
+.selector {
+  position: relative; /* el menú flota sobre la tarjeta, no empuja la rejilla */
+  justify-self: center;
+  width: 105px;
+}
+.selectorTrazo {
+  grid-area: trazo;
+}
+.selectorTinta {
+  grid-area: tinta;
+}
+.tarjeta {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 4px;
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tarjeta[aria-expanded="true"] {
+  border-color: var(--texto);
+}
+.tarjeta:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* Nombre + caret en un renglón que no se parte: con «Cempasúchil» el caret quedaba pegado al nombre (gestor). */
+.tarjeta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  white-space: nowrap;
+}
+.tarjeta > span::after {
+  content: "";
+  display: inline-block;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin: 0 0 3px;
+  border: solid var(--texto-suave);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.tarjeta[aria-expanded="true"] > span::after {
+  transform: rotate(-135deg);
+  margin-bottom: -1px;
+}
+/* La punta dibujada, en el color de la tinta elegida (prototipo: `--ink`). */
+.muestra {
+  width: 48px;
+  height: 28px;
+}
+/* Tinta Blanco (OL-126): la punta blanca sobre la tarjeta blanca no se ve; un fondo gris suave detrás, solo entonces. */
+.muestra[data-clara="true"] {
+  border-radius: 8px;
+  background: var(--fondo-miniatura);
+}
+.tinta {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+/* Blanco (OL-126): borde gris más presente, en la tarjeta y en el menú, para verse sobre el fondo claro. */
+.tinta[data-clara="true"] {
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.32);
+}
+.menu {
+  position: absolute;
+  z-index: 3;
+  bottom: calc(100% + 30px); /* hacia arriba, sin tocar el botón */
+  left: 0;
+  display: grid;
+  width: 196px;
+  padding: 6px;
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  background: var(--fondo);
+  box-shadow: var(--sombra-panel);
+}
+.selectorTinta .menu {
+  left: auto;
+  right: 0;
+}
+.opcion {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  justify-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 12px 0 6px;
+  border: 2px solid transparent;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--texto);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.opcion > span {
+  justify-self: start;
+}
+.opcion[aria-pressed="true"] {
+  border-color: var(--texto);
+  font-weight: 800;
+}
+
+/* OL-120: «Centrar» devuelve el pincel al centro de la pared (founder: «agrega un botón de poner en el centro el
+   pincel en el control»). Vive en la zona libre sobre el botón —el área `espera`, vacía mientras se pinta—, pegado
+   abajo: no añade fila ni mueve el botón ni las tarjetas (medido en reposo y pintando). Pastilla secundaria del
+   canon (fondo, borde, texto), 44 px de alto, icono de mira. */
+.centrar {
+  grid-area: espera;
+  align-self: end;
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--toque-min);
+  margin: 0 0 22px;
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* --- El botón de pintar --- */
+.orb {
+  grid-area: orb;
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: 23px;
+  box-shadow: 0 12px 28px rgba(15, 107, 124, 0.35);
+  cursor: pointer;
+  /* Mantener presionado y arrastrar en vertical es del botón, no de la página (OL-120, punto 7: en el iPhone el
+     arrastre del grosor no hacía nada). Safari necesita las versiones -webkit-: sin ellas, el dedo mantenido
+     selecciona o saca el globo de copiar y el toque se cancela. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  /* El grosor por arrastre pone su propio `transform` en línea (escala del grosor + translateY del dedo); esta
+     transición es la que regresa el punto al centro al soltar, sin brinco. Mientras está presionado no hay
+     transición (la quita el propio elemento): sigue al dedo al instante. */
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+}
+.orb[aria-pressed="true"] {
+  box-shadow: 0 0 0 10px rgba(15, 107, 124, 0.22);
+}
+/* OL-120, punto 5 (founder: «debería ser más como un encender»): el botón arranca APAGADO —círculo claro con
+   borde y el punto en gris, a la vista— y el primer toque lo enciende (pide el permiso del sensor; en Android
+   enciende directo). ENCENDIDO se pinta de verde (`--ok`, el verde de lo ya decidido) y desde ahí mantener
+   presionado pinta. Mismo tamaño (128 px, borde incluido), misma rejilla: nada se mueve entre estados. */
+.orb[data-encendido="false"] {
+  border: 1px solid var(--borde);
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  box-shadow: none;
+}
+.orb[data-encendido="true"] {
+  background: var(--ok);
+  box-shadow: 0 12px 28px rgba(31, 111, 67, 0.35);
+}
+.orb[data-encendido="true"][aria-pressed="true"] {
+  box-shadow: 0 0 0 10px rgba(31, 111, 67, 0.22);
+}
+/* El punto blanco dentro del botón: es lo que crece/encoge con el grosor (solo `transform`, el botón no cambia de
+   tamaño ni se monta sobre las tarjetas). Con transición corta también al soltar, para que el cambio se lea. */
+.punto {
+  display: block;
+  border-radius: 50%;
+  background: currentColor;
+  /* width/height los pone el mando (diametroDelPunto: 8 a 56 px). Sin transición: sigue al dedo al instante y, al
+     soltar, no cambia — el grosor se queda. */
+}
+.hold {
+  grid-area: hold;
+  /* Arranca arriba de su fila de 38 px y, si crece, desborda hacia abajo sobre el pie: la fila no se estira. */
+  align-self: start;
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--texto-suave);
+}
+.hold.aviso {
+  color: var(--error);
+}
+/* OL-117: el nombre/mensaje del error del permiso, discreto, para leerlo en el teléfono durante la prueba. */
+.detalle {
+  display: block;
+  margin-top: 4px;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 400;
+  word-break: break-word;
+}
+/* OL-117: desde la app instalada, un enlace con target=_blank abre Safari, donde el permiso sí se puede dar. */
+.abrirSafari {
+  display: flex; /* en su propio renglón, centrado bajo el texto, no pegado a la última palabra */
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--toque-min);
+  margin: 10px auto 0;
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--primario);
+  border-radius: 999px;
+  color: var(--primario);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* --- En espera / te toca (doc rediseno/34, prototipo firmado pincel-cupo-y-fila.html) --- */
+.espera {
+  grid-area: espera;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 18px;
+  text-align: center;
+}
+.esperaIcono {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+}
+.lugar {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+.lugar > b {
+  display: block;
+  margin-top: 6px;
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--texto);
+  letter-spacing: -0.02em;
+}
+.explicaEspera {
+  max-width: 280px;
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.conteoEsperando {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  font-size: 13px;
+  font-weight: 600;
+}
+.bannerTurno {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  padding: 14px;
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  box-shadow: 0 10px 24px rgba(15, 107, 124, 0.4);
+}
+.bannerTurno svg {
+  color: var(--primario-texto);
+}
+.bannerTurno b {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+}
+.bannerTurno span {
+  font-size: 13px;
+  opacity: 0.9;
+}
+.cerrada {
+  margin-top: var(--espacio-5, 20px);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm, 0.9375rem);
+}
+
+@media (max-width: 350px) {
+  .mando {
+    grid-template-columns: minmax(0, 1fr) 104px minmax(0, 1fr);
+    column-gap: 6px;
+  }
+  .orb {
+    width: 104px;
+    height: 104px;
+  }
+  .tarjeta {
+    font-size: 12px;
+  }
+}

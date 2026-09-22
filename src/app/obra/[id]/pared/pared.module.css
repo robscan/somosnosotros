@@ -1,0 +1,104 @@
+/* La pared (Fase 2 bloque 3): pantalla completa para una laptop o TV conectada a un cañón. Maquetación plana. */
+.pared {
+  position: fixed;
+  inset: 0;
+  background: #fbfaf8;
+  overflow: hidden;
+}
+.lienzo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.titulo {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  /* OL-120: el QR vive arriba a la derecha; el título cede ancho (se parte) antes que chocar con él. */
+  right: clamp(190px, 12vw, 250px);
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  pointer-events: none;
+}
+.titulo > p {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+.titulo > h1 {
+  font-size: clamp(28px, 5vw, 56px);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--texto);
+}
+/* QR hacia el mando (OL-118; OL-120, founder en producción: «QR muy grande, que sea de la mitad del tamaño actual y
+   ponlo arriba a la derecha»): el código mide 110 px a 1280 de ancho y 170 a 1920 (la mitad de los 224/336 de
+   antes: 9.375 % del ancho menos 10 px, entre 110 y 170). La tarjeta no recibe toques: la pared no tiene
+   controles. El de Administración no cambia. */
+.qr {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 10px 8px;
+  border-radius: var(--radio-grande);
+  background: var(--vidrio);
+  box-shadow: var(--sombra);
+  pointer-events: none;
+}
+.qr > img {
+  width: clamp(110px, calc(9.375vw - 10px), 170px);
+}
+.qr > figcaption {
+  font-size: clamp(13px, 1.1vw, 20px);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--texto);
+}
+/* OL-120: el punto de referencia de cada mando conectado (uno por mando): círculo del color de su tinta, del
+   diámetro con que pintaría, tenue mientras no pinta y pleno mientras pinta. Se mueve con `transform` (el lienzo
+   no se toca); la transición corta que lo desliza entre una posición y la siguiente la pone Pared.tsx
+   (SUAVIZADO_PUNTO_MS, OL-126: solo el punto se suaviza; el trazo se dibuja al llegar). */
+.puntoDeMando {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  border-radius: 50%;
+  pointer-events: none;
+}
+/* OL-126: la sonda de latencia, solo con `?sonda=1`: abajo a la izquierda, sin toques. */
+.sonda {
+  position: absolute;
+  left: 24px;
+  bottom: 88px;
+  z-index: 2;
+  max-width: min(720px, calc(100vw - 48px));
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--error);
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  pointer-events: none;
+}
+.cerrada {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--gutter);
+  background: var(--fondo-contenido);
+  color: var(--texto-suave);
+  font-size: var(--letra-lg);
+  text-align: center;
+}

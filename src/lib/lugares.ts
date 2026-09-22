@@ -2,7 +2,7 @@ import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
-import { formatearCuando } from "./fechas";
+import { diaPin, formatearCuando } from "./fechas";
 import type { Origen } from "./origen";
 import { LIMITES_LUGAR } from "./limites";
 
@@ -32,10 +32,22 @@ export type LugarResumen = {
   privado?: boolean;
   /** Zona horaria del lugar (migración 0029): la de sus eventos. Solo llega donde se pide. */
   zona?: string;
+  /** La dirección legible (/lugares/<slug>): se pone sola al crear el lugar y no cambia si cambia el nombre. Opcional
+   *  porque no todas las consultas lo piden todavía; `hrefLugar` cae al UUID cuando falta. */
+  slug?: string | null;
 };
 
+/**
+ * La dirección de la ficha: el slug si ya lo trae (todas las filas desde la migración `20260922160000_lugares_slug`),
+ * y el UUID solo como respaldo (una fila leída sin ese campo). Las rutas `/lugares/[id]` y `.../editar` resuelven
+ * por slug o UUID y redirigen de forma permanente desde la dirección vieja (mismo criterio que `hrefArtista`).
+ */
+export function hrefLugar(l: { id: string; slug?: string | null }): string {
+  return `/lugares/${l.slug || l.id}`;
+}
+
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
-export type ProximoEvento = { id: string; inicio: string; zona: string };
+export type ProximoEvento = { id: string; inicio: string; zona: string; titulo: string };
 
 /** Lo que la lista, el mapa y la tarjeta del pin enseñan de cada lugar. */
 export type LugarLista = LugarResumen & { proximo: ProximoEvento | null };
@@ -79,16 +91,41 @@ export function ordenarLugares<T extends LugarLista>(lugares: T[], punto: Distan
   return { lista, km };
 }
 
+/** Cuántos lugares como mínimo (si no, se completa con los cercanos) y como tope al completar, en el encuadre inicial del mapa. */
+export const MIN_ENCUADRE_INICIAL = 3;
+export const TOPE_ENCUADRE_INICIAL = 6;
+
+/**
+ * El encuadre del mapa al abrir, sin ubicación (docs/rediseno/35): los lugares con evento en los próximos siete
+ * días ("esta semana": lo dice `diaPin`, no null) y los destacados. Si con eso quedan menos de tres, se completa
+ * con los lugares más cercanos al centro de la ciudad hasta llegar a seis. El mapa no filtra nada con esto: solo
+ * decide qué encuadrar al abrir (el contexto ordena, no limita).
+ */
+export function lugaresEncuadreInicial<T extends LugarLista>(lugares: T[], destacados: string[], centro: Punto, ahora: Date = new Date()): T[] {
+  const idsDestacados = new Set(destacados);
+  const candidatos = lugares.filter((l) => idsDestacados.has(l.id) || (l.proximo && diaPin(l.proximo.inicio, ahora, l.proximo.zona) !== null));
+  if (candidatos.length >= MIN_ENCUADRE_INICIAL) return candidatos;
+  const idsCandidatos = new Set(candidatos.map((l) => l.id));
+  const { lista: cercanos } = ordenarLugares(lugares.filter((l) => !idsCandidatos.has(l.id)), centro);
+  return [...candidatos, ...cercanos.slice(0, TOPE_ENCUADRE_INICIAL - candidatos.length)];
+}
+
 /** "Próximo: hoy · 19:30" · "Próximo: mié 16 de sep · 19:00", con la hora de la zona del evento. */
 export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona">, ahora: Date = new Date()): string {
   const cuando = formatearCuando(p.inicio, null, ahora, p.zona);
   return `Próximo: ${cuando.charAt(0).toLowerCase()}${cuando.slice(1)}`;
 }
 
+/** "Hoy · 20:00 · Orquesta Sinfónica de SLP": el próximo evento en la hoja del pin del mapa (docs/rediseno/35), con
+ *  el nombre del evento y sin el prefijo "Próximo:" de la lista. */
+export function textoProximoPin(p: Pick<ProximoEvento, "inicio" | "zona" | "titulo">, ahora: Date = new Date()): string {
+  return `${formatearCuando(p.inicio, null, ahora, p.zona)} · ${p.titulo}`;
+}
+
 /** Une lugares con su evento más próximo (los eventos vienen ordenados por inicio). */
 export function conProximo<T extends { id: string }>(lugares: T[], eventos: (ProximoEvento & { lugar_id: string | null })[]): (T & { proximo: ProximoEvento | null })[] {
   const proximo = new Map<string, ProximoEvento>();
-  for (const e of eventos) if (e.lugar_id && !proximo.has(e.lugar_id)) proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio, zona: e.zona });
+  for (const e of eventos) if (e.lugar_id && !proximo.has(e.lugar_id)) proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio, zona: e.zona, titulo: e.titulo });
   return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null }));
 }
 

@@ -5,7 +5,7 @@ import { useState } from "react";
 import HojaInstalar from "@/components/HojaInstalar";
 import { IconoComputadora, IconoCorreo, IconoTelefono } from "@/components/ui/Iconos";
 import { elegirAvisos } from "@/app/avisos/acciones";
-import { dondeSeActivan, enEste, type EstadoPush, type Plataforma } from "@/lib/plataforma";
+import { dondeSeActivan, dondeSeRegistra, enEste, type EstadoPush, type Plataforma } from "@/lib/plataforma";
 import { desuscribirPush, suscribirPush } from "@/lib/pushCliente";
 import { useEstadoPush, usePlataforma } from "@/lib/useAvisosTelefono";
 import ajustes from "@/app/ajustes/ajustes.module.css";
@@ -75,9 +75,11 @@ export default function AvisosPerfil({ correo: correoInicial, correoTexto, llave
       }
       const alta = await suscribirPush(llavePush);
       if (!alta.ok) {
+        const detalle = alta.detalle ? ` (${alta.detalle})` : "";
         if (alta.motivo === "bloqueado") setEstado("bloqueado");
         else if (alta.motivo === "silenciado") setNota(`Tu navegador no mostró el permiso. Se activa ${dondeSeActivan(plataforma)}.`);
-        else setNota(`No pudimos darte de alta ${enEste(plataforma)}. Intenta de nuevo.`);
+        else if (alta.motivo === "rechazado") setNota(`Tu sistema no dejó registrar el aviso. ${dondeSeRegistra(plataforma)}.${detalle}`);
+        else setNota(`No pudimos darte de alta ${enEste(plataforma)}. Intenta de nuevo.${detalle}`);
         return;
       }
       if (await guardarSuscripcionPush(alta.sub)) {

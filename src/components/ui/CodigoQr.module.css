@@ -1,0 +1,9 @@
+/* Código QR (OL-118): cuadrado, ocupa el ancho que le dé quien lo usa; los bordes nítidos vienen del SVG. */
+.qr {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: #fff;
+}

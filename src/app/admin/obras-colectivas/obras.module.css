@@ -82,8 +82,224 @@
   gap: var(--espacio-2);
   margin-top: var(--espacio-3);
 }
-.despues {
-  margin-top: var(--espacio-4);
+.fichaObra {
+  min-width: 0;
+}
+.nombre {
+  overflow-wrap: anywhere;
+}
+
+/* QR hacia el mando (OL-118): el mismo código que proyecta la pared, con el enlace escrito y un botón para
+   imprimirlo. Una columna acotada; el enlace se parte donde haga falta (es largo) en vez de ensanchar la ficha. */
+.qr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: var(--espacio-3);
+  margin: var(--espacio-4) 0 0;
+  padding: var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  min-width: 0;
+}
+/* OL-127: «Crear pared aquí» (un toque, con la ubicación) encima del formulario de elegir lugar. */
+.aqui {
+  display: grid;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
+}
+.ayudaAqui {
+  margin: 0;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.oBien {
+  margin: 0 0 var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+}
+/* OL-126: la instantánea de la pared, chica, con el mismo fondo casi blanco de la pared (el PNG es transparente). */
+.instantanea {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
+  margin: var(--espacio-4) 0 0;
+  min-width: 0;
+}
+.instantanea > img {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: #fbfaf8;
+}
+.instantanea > figcaption {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.qr > img {
+  width: min(240px, 100%);
+}
+.qr > figcaption {
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  font-size: var(--letra-sm);
+  overflow-wrap: anywhere;
+}
+.qr > figcaption > a {
+  color: var(--primario);
+  text-decoration: underline;
+}
+
+/* Al imprimir queda solo el nombre de la obra, el código y el enlace: una hoja para pegar en la pared. */
+/* Hoja para pegar en la pared: carta/A4 vertical, con margen de página (`@page`) — sin esto el QR se mide contra
+   el viewport de la pantalla, no contra el papel, y se corta por los lados (hallazgo del gestor, 2026-09-22). */
+@page {
+  size: auto;
+  margin: 2cm;
+}
+@media print {
+  .fichaObra {
+    display: grid;
+    justify-items: center;
+    /* `align-items`/`align-content: start`: sin esto la rejilla estira el nombre y la tarjeta del QR para llenar
+       el `min-height: 100dvh` heredado de `ui/Ficha.module.css`, y deja un hueco en blanco bajo el enlace. */
+    align-items: start;
+    align-content: start;
+    min-height: 0;
+    padding: 0;
+    background: #fff;
+  }
+  .fichaObra > :not(.nombre):not(.qr) {
+    display: none;
+  }
+  .nombre {
+    margin: 0 0 1cm;
+    text-align: center;
+  }
+  .qr {
+    /* flex, no grid: con un hijo de ancho/alto fijos y aspect-ratio, la pista de una rejilla se calculaba más
+       alta que la imagen (pase de medida intrínseca del navegador) y dejaba un hueco antes del enlace. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    gap: 0.6cm;
+  }
+  .qr > img {
+    width: 12cm;
+    height: 12cm;
+    max-width: 100%;
+  }
+  .qr > figcaption {
+    font-size: 12pt;
+  }
+  .imprimir {
+    display: none;
+  }
+}
+
+/* Cupo de mandos (doc rediseno/34, prototipo firmado): mismas clases que `pincel-cupo-y-fila.html`, con los
+   tokens reales del proyecto en vez de los del prototipo estático. */
+.campoCupo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: 14px;
+  margin-top: var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.campoCupo > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.campoCupo label {
+  font-weight: 600;
+  font-size: 16px;
+}
+.campoCupo small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.contador {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.contador button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--borde);
+  border-radius: 50%;
+  background: var(--fondo);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primario);
+  cursor: pointer;
+}
+.contador button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.contador input {
+  width: 44px;
+  min-height: 36px;
+  border: none;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  background: none;
+  color: var(--texto);
+}
+.notaTope {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+
+/* Interruptor «Pincel apagado» (OL-121): mismo dibujo de fila que .campoCupo, con la palanca de ui/Ajustes a la
+   derecha (import cruzado, como ya hace ReservaPerfil). */
+.interruptorPincel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espacio-3);
+  padding: 14px;
+  margin-top: var(--espacio-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.interruptorPincel > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.interruptorPincel b {
+  font-weight: 600;
+  font-size: 16px;
+}
+.interruptorPincel small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.35;
 }

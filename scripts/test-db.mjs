@@ -89,9 +89,28 @@ function fixtureSql() {
     create function storage.foldername(name text) returns text[] language sql immutable as $$
       select string_to_array(name, '/')
     $$;
-    grant usage on schema public, auth, storage, extensions to anon, authenticated, service_role;
+    -- Supabase Realtime (OL-088): la migración 20260922130000 pone políticas en realtime.messages y usa
+    -- realtime.topic(). En Supabase los crea el propio servicio; en un Postgres liso hay que imitarlos, con las
+    -- columnas que las políticas leen (extension) y la función que consulta el tema del canal.
+    create schema realtime;
+    create table realtime.messages (
+      id uuid primary key default gen_random_uuid(),
+      topic text not null,
+      extension text not null,
+      payload jsonb,
+      event text,
+      private boolean default false,
+      inserted_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    );
+    alter table realtime.messages enable row level security;
+    create function realtime.topic() returns text language sql stable as $$
+      select nullif(current_setting('realtime.topic', true), '')
+    $$;
+    grant usage on schema public, auth, storage, extensions, realtime to anon, authenticated, service_role;
     grant all on all tables in schema storage to anon, authenticated, service_role;
     grant all on all sequences in schema storage to anon, authenticated, service_role;
+    grant all on realtime.messages to anon, authenticated, service_role;
     alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
     alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
     alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;

@@ -1,7 +1,8 @@
 import { aFechaIcs } from "./fechas";
+import { hrefEvento } from "./eventos";
 
 /** Lo que va en el archivo de calendario de un evento. */
-export type EventoCalendario = { id: string; titulo: string; inicio: string; fin: string | null; descripcion: string | null; lugar: string | null };
+export type EventoCalendario = { id: string; slug?: string | null; titulo: string; inicio: string; fin: string | null; descripcion: string | null; lugar: string | null };
 
 const ORIGEN = "https://somosnosotros.org";
 
@@ -16,7 +17,7 @@ export function escaparIcs(texto: string): string {
  */
 export function archivoIcs(e: EventoCalendario, ahora: Date = new Date()): string {
   const fin = e.fin ?? new Date(new Date(e.inicio).getTime() + 2 * 3600000).toISOString();
-  const url = `${ORIGEN}/eventos/${e.id}`;
+  const url = `${ORIGEN}${hrefEvento(e)}`;
   const lineas = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
