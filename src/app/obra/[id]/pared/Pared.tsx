@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import CodigoQr from "@/components/ui/CodigoQr";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import {
   entradasDesdePresencia,
@@ -67,8 +68,10 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
  * sin mezclarse. Cupo y fila (doc rediseno/34): la pared también trae su propia cuenta de Presence y descarta
  * cualquier trazo cuyo remitente no esté, en ese momento, entre los primeros `cupo` — el freno no puede depender
  * solo de que el mando se autolimite (un cliente modificado podría seguir mandando trazo estando en la fila).
+ * `qr` (OL-118): el SVG hacia el mando, ya dibujado en el servidor; abajo a la derecha, lo único que la pared
+ * enseña además del título — la pared no lleva controles.
  */
-export default function Pared({ obraId, nombre, abierta, cupo }: { obraId: string; nombre: string; abierta: boolean; cupo: number }) {
+export default function Pared({ obraId, nombre, abierta, cupo, qr }: { obraId: string; nombre: string; abierta: boolean; cupo: number; qr: string | null }) {
   const lienzoRef = useRef<HTMLCanvasElement | null>(null);
   const puntos = useRef<Map<string, Punto>>(new Map());
   const pintanRef = useRef<Set<string>>(new Set());
@@ -130,6 +133,12 @@ export default function Pared({ obraId, nombre, abierta, cupo }: { obraId: strin
         <h1>{nombre}</h1>
       </div>
       <canvas ref={lienzoRef} className={styles.lienzo} aria-label="Lienzo colectivo, se pinta en vivo" />
+      {qr && (
+        <figure className={styles.qr}>
+          <CodigoQr svg={qr} alt="Código QR: abre el mando de esta obra" />
+          <figcaption>Escanea para pintar</figcaption>
+        </figure>
+      )}
     </main>
   );
 }

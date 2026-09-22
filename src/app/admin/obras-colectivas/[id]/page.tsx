@@ -1,15 +1,18 @@
 import { notFound, redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
+import CodigoQr from "@/components/ui/CodigoQr";
 import ficha from "@/components/ui/Ficha.module.css";
 import Borrar from "@/components/Borrar";
 import { formatearLargo } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
+import { qrDelMando } from "@/lib/qr";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import admin from "../../admin.module.css";
 import styles from "../obras.module.css";
 import { cargarObra } from "../consultas";
 import AccionesObra from "./AccionesObra";
+import BotonImprimir from "./BotonImprimir";
 import CampoCupo from "./CampoCupo";
 import { borrarObra } from "../acciones";
 
@@ -22,7 +25,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ error?: string }> };
 
 /** Detalle de una obra colectiva (OL-088): estado, cuándo cierra, cupo de mandos (doc rediseno/34, solo si está
- * abierta), enlaces a la pared y al mando, Terminar/Reabrir y Borrar (solo cerrada). */
+ * abierta), enlaces a la pared y al mando, el QR hacia el mando para imprimir (OL-118, solo abierta), Terminar/Reabrir
+ * y Borrar (solo cerrada). */
 export default async function DetalleObra({ params, searchParams }: Params) {
   const { id } = await params;
   const { error } = (await searchParams) ?? {};
@@ -32,11 +36,12 @@ export default async function DetalleObra({ params, searchParams }: Params) {
   if (!esUuid(id)) notFound();
   const obra = await cargarObra(id);
   if (!obra) notFound();
+  const qr = obra.estado === "abierta" ? await qrDelMando(obra.id) : null;
 
   return (
-    <main className={ficha.pagina}>
+    <main className={`${ficha.pagina} ${styles.fichaObra}`}>
       <Barra volver={{ href: "/admin/obras-colectivas", texto: "Obras colectivas" }} />
-      <h1 className={admin.titulo}>{obra.nombre}</h1>
+      <h1 className={`${admin.titulo} ${styles.nombre}`}>{obra.nombre}</h1>
       <div className={styles.datos}>
         <div className={styles.dato}>
           <span>Lugar</span>
@@ -87,7 +92,15 @@ export default async function DetalleObra({ params, searchParams }: Params) {
           accion={borrarObra.bind(null, obra.id)}
         />
       )}
-      {obra.estado === "abierta" && <p className={styles.despues}>Sin QR todavía: entra a la pared y al mando desde aquí.</p>}
+      {qr && (
+        <figure className={styles.qr}>
+          <CodigoQr svg={qr.svg} alt="Código QR: abre el mando de esta obra" />
+          <figcaption>
+            <a href={qr.url}>{qr.url}</a>
+          </figcaption>
+          <BotonImprimir className={styles.imprimir} />
+        </figure>
+      )}
     </main>
   );
 }
