@@ -7,8 +7,11 @@ import { configPublica } from "@/lib/config";
 import {
   acreditaCercania,
   ANCHO_POR_GROSOR_PX,
+  anchoEnLienzo,
   BUCKET_INSTANTANEAS,
   diametroDelPuntoDePosicion,
+  DIAMETRO_PUNTO_MIN_PX,
+  encajar,
   entradasDesdePresencia,
   esMensajeBorrarValido,
   esMensajePosicionValido,
@@ -20,9 +23,11 @@ import {
   hayBorradoPendiente,
   instantaneaVigente,
   latenciasDe,
+  LIENZO,
   OPACIDAD_PUNTO_TENUE,
   puntoEnPared,
   quienesPintan,
+  rectanguloDelLienzo,
   REVISAR_BORRADO_MS,
   rutaInstantanea,
   siguientesSegmentos,
@@ -34,6 +39,7 @@ import {
   type MensajeTrazo,
   type MotivoInstantanea,
   type Punto,
+  type Rectangulo,
 } from "@/lib/pincel";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import styles from "./pared.module.css";
@@ -48,16 +54,19 @@ type LecturaSonda = { evento: string; remitente: string; puntos: number; latenci
 const horaCorta = (iso: string | null | undefined) => (iso && Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleTimeString() : "—");
 
 /** Un punto de un trazo, coloreado y grosor según el pincel — para no repetir el `switch` en cada segmento. Los
- * anchos por unidad de grosor viven en `ANCHO_POR_GROSOR_PX` (el punto de referencia mide con los mismos). */
-function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, Punto], mensaje: MensajeTrazo) {
+ * anchos por unidad de grosor viven en `ANCHO_POR_GROSOR_PX` (el punto de referencia mide con los mismos), en
+ * unidades del lienzo (OL-135); `escala` es con cuántos px de pantalla se muestra cada unidad, para que ningún
+ * trazo baje de 1 px en pantalla (`anchoEnLienzo`). */
+function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, Punto], mensaje: MensajeTrazo, escala: number) {
   ctx.strokeStyle = mensaje.color;
   ctx.fillStyle = mensaje.color;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   const grosor = mensaje.grosor; // arrastre en el mando (founder, 2026-09-21): 1 es el trazo de siempre
+  const ancho = (porGrosor: number) => anchoEnLienzo(porGrosor * grosor, escala);
   if (mensaje.trazo === "aire") {
     ctx.globalAlpha = 0.45;
-    ctx.lineWidth = ANCHO_POR_GROSOR_PX.aire * grosor;
+    ctx.lineWidth = ancho(ANCHO_POR_GROSOR_PX.aire);
     ctx.beginPath();
     ctx.moveTo(desde.x, desde.y);
     ctx.lineTo(hasta.x, hasta.y);
@@ -72,7 +81,7 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
       const x = desde.x + (hasta.x - desde.x) * t + (Math.random() - 0.5) * 14;
       const y = desde.y + (hasta.y - desde.y) * t + (Math.random() - 0.5) * 14;
       ctx.beginPath();
-      ctx.arc(x, y, (ANCHO_POR_GROSOR_PX.spray / 2) * grosor, 0, Math.PI * 2);
+      ctx.arc(x, y, ancho(ANCHO_POR_GROSOR_PX.spray) / 2, 0, Math.PI * 2);
       ctx.fill();
     }
     return;
@@ -80,27 +89,23 @@ function trazarSegmento(ctx: CanvasRenderingContext2D, [desde, hasta]: [Punto, P
   if (mensaje.trazo === "organico") {
     ctx.globalAlpha = 0.6;
     ctx.beginPath();
-    ctx.ellipse(hasta.x, hasta.y, (ANCHO_POR_GROSOR_PX.organico / 2) * grosor, 5 * grosor, Math.random() * Math.PI, 0, Math.PI * 2);
+    ctx.ellipse(hasta.x, hasta.y, ancho(ANCHO_POR_GROSOR_PX.organico) / 2, ancho(10) / 2, Math.random() * Math.PI, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
     return;
   }
   // "trazo": una línea limpia, el pincel por defecto.
-  ctx.lineWidth = ANCHO_POR_GROSOR_PX.trazo * grosor;
+  ctx.lineWidth = ancho(ANCHO_POR_GROSOR_PX.trazo);
   ctx.beginPath();
   ctx.moveTo(desde.x, desde.y);
   ctx.lineTo(hasta.x, hasta.y);
   ctx.stroke();
 }
 
-/** El PNG de la pared a tamaño CSS (no a píxeles de pantalla: en una Mac retina pesaría el cuádruple), con fondo
- * transparente — solo lo pintado. */
+/** El PNG de la pared a su tamaño fijo (LIENZO, 1920×1080 — no a píxeles de pantalla), con fondo transparente:
+ * solo lo pintado. OL-135: el bitmap del lienzo ya mide eso, así que no se vuelve a muestrear. */
 function pngDeLaPared(lienzo: HTMLCanvasElement): Promise<Blob | null> {
-  const salida = document.createElement("canvas");
-  salida.width = lienzo.clientWidth;
-  salida.height = lienzo.clientHeight;
-  salida.getContext("2d")?.drawImage(lienzo, 0, 0, salida.width, salida.height);
-  return new Promise((resolver) => salida.toBlob(resolver, "image/png"));
+  return new Promise((resolver) => lienzo.toBlob(resolver, "image/png"));
 }
 
 const ms = (v: number | null) => (v === null ? "—" : `${Math.round(v)} ms`);
@@ -121,6 +126,10 @@ const ms = (v: number | null) => (v === null ? "—" : `${Math.round(v)} ms`);
  * pared no se borra»): el borrado registrado por Administración (`borrado_pared_en`) manda, llegue o no el aviso
  * por el canal — se consulta al arrancar, al recibir «borrar», al volver a ser visible y cada 5 s — y una
  * instantánea anterior al borrado no se repone como fondo.
+ * OL-135 (founder: «se deformó el dibujo… que
+ * mantenga aspect ratio y solo se escale»): el lienzo mide siempre LIENZO (1920×1080, 16:9) y se muestra escalado
+ * entero y centrado en la ventana (`rectanguloDelLienzo`); posiciones, trazos, grosor, puntos de mando e instantánea
+ * viven en esas unidades, y una instantánea con otra proporción se encaja centrada sin estirarse.
  */
 export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false }: { obraId: string; nombre: string; abierta: boolean; cupo: number; qr: string | null; sonda?: boolean }) {
   const lienzoRef = useRef<HTMLCanvasElement | null>(null);
@@ -139,6 +148,20 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
   const [puntosDeMando, setPuntosDeMando] = useState<Record<string, PuntoDeMando>>({});
   const [lecturas, setLecturas] = useState<LecturaSonda[]>([]);
   const [instantanea, setInstantanea] = useState<string>("sin instantánea todavía");
+  // OL-135: dónde va el lienzo en la ventana (16:9, centrado); hasta la primera medida, la ventana entera.
+  const [marco, setMarco] = useState<Rectangulo | null>(null);
+  const escalaRef = useRef(1); // la misma escala, para el ancho mínimo del trazo al dibujar (fuera del render)
+
+  useEffect(() => {
+    const medir = () => {
+      const r = rectanguloDelLienzo(window.innerWidth, window.innerHeight);
+      escalaRef.current = r.width > 0 ? r.width / LIENZO.ancho : 1;
+      setMarco(r);
+    };
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+  }, []);
 
   useEffect(() => {
     if (!abierta) return;
@@ -152,15 +175,10 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
     let cancelado = false;
     let canal: ReturnType<typeof abrirCanalObra> | null = null;
 
-    function ajustarTamano() {
-      if (!lienzo) return;
-      const proporcion = window.devicePixelRatio || 1;
-      lienzo.width = lienzo.clientWidth * proporcion;
-      lienzo.height = lienzo.clientHeight * proporcion;
-      ctx?.scale(proporcion, proporcion);
-    }
-    ajustarTamano();
-    window.addEventListener("resize", ajustarTamano);
+    // OL-135: el bitmap mide siempre LIENZO (16:9); la ventana solo cambia la escala con que se muestra (.marco),
+    // así que cambiar de tamaño ni borra ni deforma lo pintado.
+    lienzo.width = LIENZO.ancho;
+    lienzo.height = LIENZO.alto;
 
     function puntoDe(mensaje: MensajePosicion | MensajeTrazo, hasta: Punto, pintando: boolean): PuntoDeMando {
       return { x: hasta.x, y: hasta.y, color: mensaje.color, diametro: diametroDelPuntoDePosicion(mensaje.trazo, mensaje.grosor), pintando };
@@ -201,11 +219,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
       if (!tocaSubirInstantanea({ motivo: "cierre", hayTrazosNuevos: hayTrazosNuevosRef.current, ultimaSubidaMs: ultimaSubidaRef.current, ahoraMs: Date.now() })) return;
       const { supabaseUrl, supabaseAnonKey } = configPublica();
       if (!supabaseUrl || !supabaseAnonKey) return;
-      const salida = document.createElement("canvas");
-      salida.width = lienzo.clientWidth;
-      salida.height = lienzo.clientHeight;
-      salida.getContext("2d")?.drawImage(lienzo, 0, 0, salida.width, salida.height);
-      const b64 = salida.toDataURL("image/png").split(",")[1] ?? "";
+      const b64 = lienzo.toDataURL("image/png").split(",")[1] ?? "";
       const bytes = atob(b64);
       const cuerpo = new Uint8Array(bytes.length);
       for (let i = 0; i < bytes.length; i++) cuerpo[i] = bytes.charCodeAt(i);
@@ -229,7 +243,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         return;
       }
       ultimoBorradoRef.current = Date.parse(registrado!);
-      ctx!.clearRect(0, 0, lienzo.clientWidth, lienzo.clientHeight);
+      ctx!.clearRect(0, 0, LIENZO.ancho, LIENZO.alto);
       anotar(`borrar (${origen})`, aviso ?? { remitente: "admin" }, recibido, 0);
       void subir("borrado"); // el lienzo vacío también se guarda: es el fondo que vale desde ahora
     }
@@ -271,7 +285,9 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
           try {
             const imagen = await createImageBitmap(png);
             if (cancelado) return;
-            ctx!.drawImage(imagen, 0, 0, lienzo.clientWidth, lienzo.clientHeight);
+            // OL-135: en el lienzo 16:9; una instantánea vieja con otra proporción va centrada y sin estirarse.
+            const r = encajar(imagen.width, imagen.height, LIENZO.ancho, LIENZO.alto);
+            ctx!.drawImage(imagen, r.left, r.top, r.width, r.height);
             ultimaSubidaRef.current = Date.now();
             if (sonda) setInstantanea(`instantánea de fondo: ${Math.round(png.size / 1024)} KB (subida ${horaCorta(subidaEn)})`);
           } catch {
@@ -296,7 +312,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
             const ultima = ultimaPosicionRef.current.get(remitente);
             if (conocido) siguientes[remitente] = conocido;
             else if (ultima) {
-              const hasta = puntoEnPared(ultima.posicion, lienzo.clientWidth, lienzo.clientHeight);
+              const hasta = puntoEnPared(ultima.posicion, LIENZO.ancho, LIENZO.alto);
               puntos.current.set(remitente, hasta);
               siguientes[remitente] = puntoDe(ultima, hasta, false);
             }
@@ -311,8 +327,8 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         if (!pintanRef.current.has(mensaje.remitente)) return; // en la fila, no pinta — aunque su cliente mande trazo
         if (!acreditaCercania(mensaje)) return; // sin `cerca: true` (OL-127) no pinta: fricción, no seguridad
         // El trazo se dibuja en cuanto llega (OL-126): sin esperar a ninguna transición ni cuadro.
-        const { segmentos, hasta } = siguientesSegmentos(puntos.current.get(mensaje.remitente) ?? null, mensaje.puntos, lienzo.clientWidth, lienzo.clientHeight);
-        for (const segmento of segmentos) trazarSegmento(ctx!, segmento, mensaje);
+        const { segmentos, hasta } = siguientesSegmentos(puntos.current.get(mensaje.remitente) ?? null, mensaje.puntos, LIENZO.ancho, LIENZO.alto);
+        for (const segmento of segmentos) trazarSegmento(ctx!, segmento, mensaje, escalaRef.current);
         hayTrazosNuevosRef.current = true;
         anotar("trazo", mensaje, recibido, mensaje.puntos.length);
         if (!hasta) return;
@@ -326,7 +342,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         ultimaPosicionRef.current.set(mensaje.remitente, mensaje);
         if (!pintanRef.current.has(mensaje.remitente)) return; // quien espera no mueve ningún punto
         if (!acreditaCercania(mensaje)) return; // OL-127
-        const hasta = puntoEnPared(mensaje.posicion, lienzo.clientWidth, lienzo.clientHeight);
+        const hasta = puntoEnPared(mensaje.posicion, LIENZO.ancho, LIENZO.alto);
         puntos.current.set(mensaje.remitente, hasta); // el trazo que venga arranca donde está el punto tenue
         setPuntosDeMando((actuales) => ({ ...actuales, [mensaje.remitente]: puntoDe(mensaje, hasta, false) }));
         anotar("posicion", mensaje, recibido, 1);
@@ -345,7 +361,6 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
 
     return () => {
       cancelado = true;
-      window.removeEventListener("resize", ajustarTamano);
       document.removeEventListener("visibilitychange", alCambiarVisibilidad);
       window.removeEventListener("pagehide", subirAlCerrar);
       clearInterval(revision);
@@ -370,6 +385,8 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
   // «En el último segundo» contado desde la última lectura (no desde el reloj al pintar: el render es puro).
   const ultima = lecturas[lecturas.length - 1];
   const porSegundo = ultima ? lecturas.filter((l) => l.recibido >= ultima.recibido - 1000).length : 0;
+  // OL-135: cuántos px de pantalla mide una unidad del lienzo (1 hasta la primera medida).
+  const escala = marco ? marco.width / LIENZO.ancho : 1;
 
   return (
     <main className={styles.pared}>
@@ -377,27 +394,34 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         <p>Obra colectiva</p>
         <h1>{nombre}</h1>
       </div>
-      <canvas ref={lienzoRef} className={styles.lienzo} aria-label="Lienzo colectivo, se pinta en vivo" />
-      {/* Un punto por mando (OL-120): se mueve solo con `transform`; el lienzo no se toca. Solo el punto tenue se
-          suaviza, y poco (SUAVIZADO_PUNTO_MS): el trazo ya está dibujado cuando el punto se desliza (OL-126). */}
-      {Object.entries(puntosDeMando).map(([remitente, p]) => (
-        <span
-          key={remitente}
-          className={styles.puntoDeMando}
-          data-pintando={p.pintando ? "true" : "false"}
-          aria-hidden="true"
-          style={{
-            width: `${p.diametro}px`,
-            height: `${p.diametro}px`,
-            background: p.color,
-            // Blanco (OL-126) no se vería sobre la pared casi blanca: lleva un borde fino.
-            boxShadow: esTintaClara(p.color) ? "0 0 0 1px rgba(0, 0, 0, 0.35)" : undefined,
-            opacity: p.pintando ? 1 : OPACIDAD_PUNTO_TENUE,
-            transform: `translate(${p.x - p.diametro / 2}px, ${p.y - p.diametro / 2}px)`,
-            transition: `transform ${SUAVIZADO_PUNTO_MS}ms linear, opacity 0.2s`,
-          }}
-        />
-      ))}
+      <div className={styles.marco} style={marco ? { left: marco.left, top: marco.top, width: marco.width, height: marco.height } : undefined}>
+        <canvas ref={lienzoRef} className={styles.lienzo} aria-label="Lienzo colectivo, se pinta en vivo" />
+        {/* Un punto por mando (OL-120): se mueve solo con `transform`; el lienzo no se toca. Solo el punto tenue se
+            suaviza, y poco (SUAVIZADO_PUNTO_MS): el trazo ya está dibujado cuando el punto se desliza (OL-126).
+            OL-135: posición y diámetro están en unidades del lienzo y se escalan con él; el diámetro no baja de
+            DIAMETRO_PUNTO_MIN_PX en pantalla, para que el punto siga viéndose en un teléfono. */}
+        {Object.entries(puntosDeMando).map(([remitente, p]) => {
+          const d = Math.max(DIAMETRO_PUNTO_MIN_PX, p.diametro * escala);
+          return (
+            <span
+              key={remitente}
+              className={styles.puntoDeMando}
+              data-pintando={p.pintando ? "true" : "false"}
+              aria-hidden="true"
+              style={{
+                width: `${d}px`,
+                height: `${d}px`,
+                background: p.color,
+                // Blanco (OL-126) no se vería sobre la pared casi blanca: lleva un borde fino.
+                boxShadow: esTintaClara(p.color) ? "0 0 0 1px rgba(0, 0, 0, 0.35)" : undefined,
+                opacity: p.pintando ? 1 : OPACIDAD_PUNTO_TENUE,
+                transform: `translate(${p.x * escala - d / 2}px, ${p.y * escala - d / 2}px)`,
+                transition: `transform ${SUAVIZADO_PUNTO_MS}ms linear, opacity 0.2s`,
+              }}
+            />
+          );
+        })}
+      </div>
       {qr && (
         <figure className={styles.qr}>
           <CodigoQr svg={qr} alt="Código QR: abre el mando de esta obra" />

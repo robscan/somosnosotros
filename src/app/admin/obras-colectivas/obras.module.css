@@ -133,7 +133,8 @@
   display: block;
   width: 100%;
   max-width: 360px;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9; /* OL-135: la pared es 16:9 */
+  object-fit: contain; /* una instantánea vieja con otra proporción no se estira */
   object-fit: contain;
   border: 1px solid var(--borde);
   border-radius: var(--radio);

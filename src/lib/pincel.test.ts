@@ -3,6 +3,8 @@ import {
   acreditaCercania,
   alEscribirTitulo,
   ANCHO_POR_GROSOR_PX,
+  ANCHO_TRAZO_MIN_PX,
+  anchoEnLienzo,
   ARRASTRE_GROSOR_MAX_PX,
   decidirCercania,
   decidirSensor,
@@ -13,6 +15,7 @@ import {
   entradasDesdePresencia,
   esMensajeBorrarValido,
   esMensajePosicionValido,
+  encajar,
   esMensajeTrazoValido,
   esTintaClara,
   esPosicionValida,
@@ -30,6 +33,7 @@ import {
   hayBorradoPendiente,
   intervaloMs,
   latenciasDe,
+  LIENZO,
   lugarMasCercano,
   MENSAJES_POR_SEGUNDO_PINTANDO,
   POSICIONES_POR_SEGUNDO,
@@ -46,6 +50,7 @@ import {
   puntoEnPared,
   PUNTOS_MAX_POR_MENSAJE,
   quienesPintan,
+  rectanguloDelLienzo,
   RADIO_CERCANIA_M,
   RANGO_GRADOS,
   REVISAR_BORRADO_MS,
@@ -643,6 +648,58 @@ describe("instantaneaVigente (OL-134: una instantánea anterior al borrado no se
   });
   it("un borrado con hora ilegible no bloquea el fondo", () => {
     expect(instantaneaVigente("2026-09-22T17:00:00.000Z", "ayer")).toBe(true);
+  });
+});
+
+// OL-135: la pared en proporción fija 16:9, escalada entera y centrada.
+describe("encajar y rectanguloDelLienzo (OL-135: la pared no se deforma, solo se escala)", () => {
+  it("el lienzo mide 1920×1080 unidades (16:9)", () => {
+    expect(LIENZO).toEqual({ ancho: 1920, alto: 1080 });
+    expect(LIENZO.ancho / LIENZO.alto).toBeCloseTo(16 / 9);
+  });
+  it("en una laptop 1280×800 ocupa todo el ancho y deja 40 px arriba y abajo", () => {
+    expect(rectanguloDelLienzo(1280, 800)).toEqual({ left: 0, top: 40, width: 1280, height: 720 });
+  });
+  it("en un iPhone vertical 390×844 ocupa todo el ancho, 219,375 px de alto, centrado", () => {
+    const r = rectanguloDelLienzo(390, 844);
+    expect(r.left).toBe(0);
+    expect(r.width).toBe(390);
+    expect(r.height).toBeCloseTo(219.375);
+    expect(r.top).toBeCloseTo((844 - 219.375) / 2);
+    expect(r.width / r.height).toBeCloseTo(16 / 9);
+  });
+  it("en una pantalla 1920×1080 lo llena exacto; en una más ancha (2000×1080) deja margen a los lados", () => {
+    expect(rectanguloDelLienzo(1920, 1080)).toEqual({ left: 0, top: 0, width: 1920, height: 1080 });
+    expect(rectanguloDelLienzo(2000, 1080)).toEqual({ left: 40, top: 0, width: 1920, height: 1080 });
+  });
+  it("una instantánea vieja con otra proporción (1280×800) se encaja en el lienzo centrada, sin estirarse", () => {
+    const r = encajar(1280, 800, LIENZO.ancho, LIENZO.alto);
+    expect(r).toEqual({ left: 96, top: 0, width: 1728, height: 1080 });
+    expect(r.width / r.height).toBeCloseTo(1280 / 800);
+  });
+  it("la misma proporción cabe entera; sin área, rectángulo vacío", () => {
+    expect(encajar(16, 9, 1600, 900)).toEqual({ left: 0, top: 0, width: 1600, height: 900 });
+    expect(encajar(0, 9, 1600, 900)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
+    expect(encajar(16, 9, 0, 0)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
+    expect(encajar(16, 9, Number.NaN, 900)).toEqual({ left: 0, top: 0, width: 0, height: 0 });
+  });
+});
+
+describe("anchoEnLienzo (OL-135, gestor: ningún trazo baja de 1 px en pantalla)", () => {
+  it("a escala 1 (pantalla 1920 de ancho) el ancho no cambia", () => {
+    expect(ANCHO_TRAZO_MIN_PX).toBe(1);
+    expect(anchoEnLienzo(3, 1)).toBe(3);
+    expect(anchoEnLienzo(0.5, 1)).toBe(1);
+  });
+  it("en un teléfono (390/1920 = 0,203) el trazo fino sube hasta valer 1 px en pantalla; uno ancho no cambia", () => {
+    const escala = 390 / 1920;
+    expect(anchoEnLienzo(3, escala) * escala).toBeCloseTo(1);
+    expect(anchoEnLienzo(27, escala)).toBe(27);
+  });
+  it("sin escala válida (0, negativa, NaN), el ancho tal cual", () => {
+    expect(anchoEnLienzo(3, 0)).toBe(3);
+    expect(anchoEnLienzo(3, -1)).toBe(3);
+    expect(anchoEnLienzo(3, Number.NaN)).toBe(3);
   });
 });
 
