@@ -407,6 +407,29 @@ Prototipo (documento + HTML, sin lógica real) de las tres pantallas del mando �
 
 Sin código en este documento: es la anotación de la decisión y el plan corto que pidió el gestor. Se le manda por separado.
 
+## Fase 2, bloque 3 (en paralelo): la pared y el mando pintando de verdad (2026-09-21)
+
+Autorizado por el gestor a avanzar en paralelo mientras se firma el prototipo del cupo/fila (doc 34): lo que no depende de ella. Rutas neutras `/obra/[id]/pared` y `/obra/[id]/mando` (doc rediseno/25 ajuste 2), sin cupo ni fila todavía — cualquier cuenta con sesión pinta en una obra abierta.
+
+**Lo nuevo en `src/lib/pincel.ts` (propio, puro, sin `<canvas>` ni React):**
+- `MensajeTrazo` suma `remitente` (el id de perfil de quien pinta). Hace falta ya, antes de la fila: sin saber de quién es cada delta, la pared no puede seguir el trazo de cada persona por separado y los mezclaría en un pincel fantasma. No es una prueba de identidad — el canal ya exige sesión (`private: true`); esto solo distingue un trazo de otro, aceptado así a propósito.
+- `puntoInicial(remitente, ancho, alto)`: un punto de arranque estable por remitente (mismo remitente, mismo inicio), para que el segundo mensaje de una persona siga desde donde se quedó el primero.
+- `siguientesSegmentos(desde, deltas, ancho, alto)`: convierte los deltas de un mensaje en los segmentos a trazar, rebotando en los bordes del lienzo en vez de perderse fuera de la vista. `ESCALA_DELTA_PX = 24` (a ojo; ajustable si en la prueba con el founder se ve muy corto o muy largo).
+- `deltaDesdeOrientacion(anterior, actual, sensibilidad)`: dos lecturas de `DeviceOrientationEvent` (beta/gamma) convertidas en un delta normalizado -1..1, no en la lectura absoluta.
+- 18 pruebas nuevas (27 en total en `pincel.test.ts`).
+
+**Lo común (`src/app/obra/consultas.ts`, nuevo, aparte de `admin/obras-colectivas/consultas.ts`):** `cargarObraParaPintar(id)` — lo que la pared y el mando necesitan de una obra, sin ser del panel de administración.
+
+**La pared** (`src/app/obra/[id]/pared/`): pantalla completa, sin sesión — la RLS pública ya decide qué puede ver. Se suscribe al canal de la obra, valida cada mensaje con `esMensajeTrazoValido` antes de dibujar (no confía en el payload sin mirarlo), y dibuja con un estilo distinto por pincel: `trazo` una línea, `aire` gruesa y translúcida, `spray` gotas dispersas, `orgánico` manchas ovaladas. Si la obra ya cerró, un aviso fijo en vez del lienzo (sin intentar conectar).
+
+**El mando** (`src/app/obra/[id]/mando/`): exige sesión (mismo patrón `redirect("/entrar?siguiente=…")` de siempre). El botón central pide permiso del sensor al primer toque (`DeviceOrientationEvent.requestPermission()`, exigido por Safari de iOS; Android no lo pide) y, mientras está presionado, junta los deltas del sensor y manda `MENSAJES_POR_SEGUNDO` mensajes por segundo (no uno por muestra). Trazo y tinta se eligen con los mismos cuatro/cinco del prototipo firmado. Sin permiso o sin sensor, un aviso en vez de fallar en silencio. Si la obra ya cerró, no se ofrece pintar.
+
+**Maquetación medida, un bug real encontrado y corregido:** al verificar con el respaldo local a 390×844, el mando tenía **desborde horizontal real** (390 → 410 px, medido con `scrollWidth`/`clientWidth`, no a ojo). Causa: usé el componente canon `Barra` fuera de su contenedor `ficha.pagina` (que da el `--gutter` y compensa la sangría negativa que usa `Barra` para sangrar hasta el borde) — sin ese contenedor, la sangría se sale del viewport en vez de compensarse. Corregido envolviendo la página en `<main className={ficha.pagina}>`, como hace el resto de la app, y quitando el `padding` horizontal duplicado de `mando.module.css` (`ficha.pagina` ya lo pone). Verificado de nuevo: sin desborde horizontal, cabe justo en 844 px sin scroll. Las otras pantallas (pared abierta, pared/mando cerrados) verificadas igual, limpias.
+
+**Qué queda pendiente, fuera de esta pieza:** el dibujo real solo se puede probar de verdad contra el proyecto real (Realtime no corre en local); esta sesión verificó que las pantallas cargan, se ven bien y no truenan con el respaldo local (que no tiene WebSocket, así que el lienzo queda en blanco ahí — esperado). La prueba de verdad («dos teléfonos, dos cuentas, pintan a la vez, el founder lo ve en vivo») la define la Fase 0 y la corre el founder cuando lo autorice. Sin QR todavía (Fase 4). Sin cupo ni fila (doc 34, espera firma).
+
+**Verificado:** `npm run lint` (0 errores, 1 warning ajeno), `npm run typecheck`, `npm test` (771/771), `npm run build`, todo en verde. Sin migración. Rama `pincel-fase-2-canal`, commit local, sin push.
+
 ## Verificación de este documento
 
 

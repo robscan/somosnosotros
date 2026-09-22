@@ -52,8 +52,16 @@ export const DELTAS_MAX_POR_MENSAJE = 20;
  * pared no necesita saber dónde "está" el teléfono, solo hacia dónde se movió). */
 export type Delta = { dx: number; dy: number };
 
-/** Lo que viaja por el canal: un trazo, una tinta, y los deltas juntados desde el último mensaje. */
-export type MensajeTrazo = { trazo: Trazo; color: string; deltas: Delta[] };
+/**
+ * Lo que viaja por el canal: un trazo, una tinta, los deltas juntados desde el último mensaje, y quién lo manda.
+ * `remitente` (el id de perfil de quien pinta) es necesario ya en la Fase 2 bloque 3, antes de la fila de espera:
+ * sin saber de quién es cada delta, la pared no puede seguir el trazo de cada persona por separado y los mezclaría
+ * en un solo pincel fantasma. Cuando llegue la fila (doc rediseno/34), la pared lo cruza además contra su cupo —
+ * hoy solo distingue un trazo de otro. No es una prueba criptográfica de identidad (un cliente modificado podría
+ * mandar el remitente de otra persona): el canal ya exige sesión (`private: true`); esto es solo para que dos
+ * pinceles no se confundan, no una medida de seguridad aparte — aceptado así a propósito, sin generalizar.
+ */
+export type MensajeTrazo = { trazo: Trazo; color: string; deltas: Delta[]; remitente: string };
 
 function numeroFinito(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v);
@@ -75,6 +83,67 @@ export function esMensajeTrazoValido(v: unknown): v is MensajeTrazo {
     Array.isArray(m.deltas) &&
     m.deltas.length > 0 &&
     m.deltas.length <= DELTAS_MAX_POR_MENSAJE &&
-    m.deltas.every(esDeltaValido)
+    m.deltas.every(esDeltaValido) &&
+    typeof m.remitente === "string" &&
+    m.remitente.length > 0
   );
+}
+
+/**
+ * Cómo se dibuja un trazo en la pared (Fase 2 bloque 3): puro, sin `<canvas>`, para poder probarlo. La pared
+ * guarda un punto por remitente (dónde va su pincel ahora) y, con cada mensaje, calcula los segmentos a trazar
+ * desde ahí — el delta normalizado (-1..1) del sensor se convierte en píxeles con `ESCALA_DELTA_PX`, y si el
+ * trazo se saldría del lienzo, rebota en vez de perderse fuera de la vista.
+ */
+export type Punto = { x: number; y: number };
+
+/** Cuánto mueve el pincel en el lienzo un delta de sensor de magnitud 1 (a ojo, ajustable si en la prueba con el
+ * founder se ve muy corto o muy largo). */
+export const ESCALA_DELTA_PX = 24;
+
+function rebotar(v: number, max: number): number {
+  if (max <= 0) return 0;
+  const ciclo = 2 * max;
+  let m = v % ciclo;
+  if (m < 0) m += ciclo;
+  return m <= max ? m : ciclo - m;
+}
+
+/** Un punto de arranque estable por remitente (mismo remitente, mismo inicio): no es al azar en cada mensaje, para
+ * que un segundo mensaje de la misma persona siga desde donde se quedó el primero, no desde otro lado. */
+export function puntoInicial(remitente: string, ancho: number, alto: number): Punto {
+  let hash = 0;
+  for (let i = 0; i < remitente.length; i++) hash = (Math.imul(hash, 31) + remitente.charCodeAt(i)) >>> 0;
+  return { x: rebotar(hash % 10007, ancho), y: rebotar(Math.floor(hash / 10007) % 10007, alto) };
+}
+
+/** A partir de dónde estaba el pincel de una persona y los deltas de su mensaje, da los segmentos a trazar (uno
+ * por delta, para dibujarlos en orden) y el punto donde queda, listo para el siguiente mensaje de esa persona. */
+export function siguientesSegmentos(desde: Punto, deltas: Delta[], ancho: number, alto: number): { segmentos: [Punto, Punto][]; hasta: Punto } {
+  const segmentos: [Punto, Punto][] = [];
+  let actual = desde;
+  for (const d of deltas) {
+    const siguiente = { x: rebotar(actual.x + d.dx * ESCALA_DELTA_PX, ancho), y: rebotar(actual.y + d.dy * ESCALA_DELTA_PX, alto) };
+    segmentos.push([actual, siguiente]);
+    actual = siguiente;
+  }
+  return { segmentos, hasta: actual };
+}
+
+/** Lo que da `DeviceOrientationEvent`: solo lo que se usa aquí, del sensor real o de una muestra guardada. */
+export type Orientacion = { beta: number | null; gamma: number | null };
+
+/**
+ * El mando (Fase 2 bloque 3): convierte dos lecturas seguidas del sensor de orientación en un delta normalizado
+ * (-1..1), no en la lectura absoluta — la pared no necesita saber "hacia dónde apunta" el teléfono, solo cuánto
+ * cambió desde la última muestra. `sensibilidadGrados` es cuántos grados de cambio valen un delta de magnitud 1;
+ * más chico, más sensible. Si falta cualquiera de las dos lecturas (el sensor todavía no dio su primer dato),
+ * no hay delta que mandar.
+ */
+export function deltaDesdeOrientacion(anterior: Orientacion | null, actual: Orientacion, sensibilidadGrados = 6): Delta {
+  if (!anterior || anterior.beta === null || anterior.gamma === null || actual.beta === null || actual.gamma === null) {
+    return { dx: 0, dy: 0 };
+  }
+  const acotar = (v: number) => Math.max(-1, Math.min(1, v / sensibilidadGrados));
+  return { dx: acotar(actual.gamma - anterior.gamma), dy: acotar(actual.beta - anterior.beta) };
 }

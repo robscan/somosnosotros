@@ -1,0 +1,45 @@
+/* La pared (Fase 2 bloque 3): pantalla completa para una laptop o TV conectada a un cañón. Maquetación plana. */
+.pared {
+  position: fixed;
+  inset: 0;
+  background: #fbfaf8;
+  overflow: hidden;
+}
+.lienzo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.titulo {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  pointer-events: none;
+}
+.titulo > p {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+.titulo > h1 {
+  font-size: clamp(28px, 5vw, 56px);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--texto);
+}
+.cerrada {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--gutter);
+  background: var(--fondo-contenido);
+  color: var(--texto-suave);
+  font-size: var(--letra-lg);
+  text-align: center;
+}
