@@ -71,6 +71,19 @@ describe("estado push reconciliado", () => {
     await vi.advanceTimersByTimeAsync(8000);
     expect(await alta).toEqual({ ok: false, motivo: "silenciado" });
   });
+  it("con el permiso concedido, si el navegador se niega a registrar el aviso, se distingue de un fallo cualquiera (bitácora 164)", async () => {
+    // Medido en Chrome real con un perfil efímero: AbortError "Registration failed - permission denied" aunque
+    // Notification.permission diga "granted" — el mismo error que documenta Chromium cuando el sistema tiene
+    // apagados los avisos del navegador. El código no debe tragárselo como un "fallo" genérico.
+    mocks.suscripcion.mockResolvedValueOnce(null);
+    mocks.alta.mockRejectedValueOnce(Object.assign(new Error("Registration failed - permission denied"), { name: "AbortError" }));
+    expect(await suscribirPush("AA")).toEqual({ ok: false, motivo: "rechazado", detalle: "AbortError: Registration failed - permission denied" });
+  });
+  it("un rechazo sin mensaje solo lleva el nombre del error", async () => {
+    mocks.suscripcion.mockResolvedValueOnce(null);
+    mocks.alta.mockRejectedValueOnce(Object.assign(new Error(), { name: "AbortError" }));
+    expect(await suscribirPush("AA")).toEqual({ ok: false, motivo: "rechazado", detalle: "AbortError" });
+  });
   it("un fallo de red conserva la opcion de reintentar", async () => {
     mocks.activa.mockRejectedValueOnce(new Error("sin red"));
     expect(await estadoPush("AA")).toBe("apagado");

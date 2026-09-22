@@ -128,3 +128,13 @@ export function dondeSeActivan(p: Plataforma | null): string {
   if (p?.chrome) return "en Chrome: el candado junto a la dirección › Permisos del sitio › Notificaciones";
   return "en la configuración del sitio de tu navegador";
 }
+
+/**
+ * Cuando el navegador dice "concedido" pero se niega a registrar el aviso (bitácora 164, OL-129): el permiso del
+ * SITIO no es el único candado. Un perfil efímero (incógnito, invitado) o las notificaciones del sistema apagadas
+ * para el navegador dan el mismo error genérico sin avisar por qué.
+ */
+export function dondeSeRegistra(p: Plataforma | null): string {
+  const navegador = p?.chrome ? "Chrome" : "tu navegador";
+  return `Revisa que las notificaciones de ${navegador} estén permitidas en el sistema, y que esta no sea una ventana de incógnito o invitado`;
+}

@@ -27,6 +27,13 @@
   grid-area: detalle;
   color: var(--texto-suave);
 }
+/* Bitácora 164 (como el mando de Pincel, OL-117): el nombre/mensaje del error real, discreto, debajo del motivo. */
+.detalleTecnico {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--letra-xs);
+  word-break: break-word;
+}
 .boton {
   grid-area: boton;
   min-height: 36px;
