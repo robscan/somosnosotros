@@ -64,3 +64,20 @@ El gestor aceptó OL-128 y, al abrir las tres capturas de zoom, notó que la ⓘ
 **Corrección:** `src/components/Mapa.module.css`, una regla que centra el contenedor `mapboxgl-ctrl-bottom-left` (donde Mapbox agrupa el logo y la ⓘ cuando los dos apuntan a la misma esquina) con `left: 50%; transform: translateX(-50%)`, solo dentro de `.mapaCaja`/`.mapa` (el mapa de "ver"): el mapa embebido de las hojas Dónde está/Dónde es (modo "elegir") no se toca. Sin cambios en `Mapa.tsx`.
 
 **Evidencia:** `npm run typecheck` en verde (cambio solo de CSS, sin lógica); captura real `atribucion-mapbox--390x844.png` (Mapbox de verdad, mismo respaldo y token que las demás de esta bitácora), abierta antes de entregar: la ⓘ y «mapbox» quedan centradas abajo, sin tocar el botón de ubicación ni «Registrar lugar».
+
+### Segunda corrección: centrada, «mapbox» seguía tapada por «Registrar lugar»
+
+El gestor abrió `atribucion-mapbox--390x844.png` y vio que, aunque ya no tocaba el botón de ubicación, la palabra «mapbox» quedaba detrás del borde izquierdo de «Registrar lugar» y la ⓘ pegada a ese botón: a 390 px de ancho, el hueco entre los dos botones no alcanza para centrar un bloque de 94 px (el ancho real del logo + la ⓘ, medido con `getBoundingClientRect`).
+
+**Corrección:** en vez de centrar, `mapboxgl-ctrl-bottom-left` se alinea al mismo `left` que el botón de ubicación y se coloca **por encima** de él: `bottom: calc(16px + var(--toque) + 8px + max(0px, var(--alto-hoja, 0px) - var(--alto-nav) - env(safe-area-inset-bottom, 0px)))` — el mismo término de `--alto-hoja` que ya usa `.ubicacion` en `lugares.module.css` para subir sobre la hoja del pin, más el alto del botón (`--toque`) y 8 px de aire. Así la separación con el botón es siempre de 8 px, se mida cuando se mida (con o sin hoja abierta), y nunca puede coincidir con «Registrar lugar» (que vive a la derecha, no debajo de esto).
+
+**Comprobación pedida por el gestor, con `getBoundingClientRect()` real (Playwright + Chrome, mismo respaldo y token):**
+
+| Estado | Atribución vs. botón | Atribución vs. «Registrar lugar» | Atribución vs. hoja |
+| --- | --- | --- | --- |
+| Sin hoja | sin solape (`y` 639–712 vs. botón 720–768) | sin solape (`x` 20–114 vs. «Registrar lugar» 192–370) | — |
+| Con hoja (Teatro de la Paz, por búsqueda) | sin solape (botón y atribución suben juntos, misma separación de 8 px) | «Registrar lugar» se retira con la hoja abierta (ya lo hacía) | sin solape (atribución en `y` 515–588; hoja empieza en `y` ≈ 692) |
+
+Capturas reales: `atribucion-mapbox--390x844.png` (sin hoja) y `atribucion-mapbox-con-hoja--390x844.png` (con la hoja de Teatro de la Paz, abierta por la búsqueda para no depender de acertar el píxel exacto del pin). Las dos abiertas antes de entregar.
+
+**Límite honesto:** en el encuadre de esta captura, la ⓘ queda encima del pin y el nombre de «Centro Cultural Universitario Bicentenario» (un lugar del respaldo, no un control de la pantalla): es el mismo comportamiento que ya tenía la esquina inferior izquierda en producción antes de esta pieza (un control de Mapbox flotando sobre el contenido del mapa, no sobre otro control de la app) — el gestor pidió comprobar contra el botón, «Registrar lugar» y la hoja, no contra los pines, y con datos reales de producción (58 lugares, no 12) la posición de cada pin es otra.
