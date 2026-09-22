@@ -3,8 +3,8 @@ import {
   ARRASTRE_GROSOR_MAX_PX,
   DELTAS_MAX_POR_MENSAJE,
   deltaDesdeOrientacion,
+  diametroDelPunto,
   entradasDesdePresencia,
-  escalaDelPunto,
   esMensajeTrazoValido,
   ESCALA_DELTA_PX,
   estaAjustandoGrosor,
@@ -112,8 +112,8 @@ describe("grosorDesdeArrastre", () => {
   });
   it("el grosor se queda al soltar: la siguiente pulsación sigue desde el grosor que tenía, no desde el base", () => {
     expect(grosorDesdeArrastre(0, 1.6)).toBe(1.6);
-    // desde 1.6, bajar el arrastre completo resta lo que va del base al mínimo (0.6): queda en 1.0
-    expect(grosorDesdeArrastre(-ARRASTRE_GROSOR_MAX_PX, 1.6)).toBeCloseTo(1.0);
+    // desde 1.6, bajar el arrastre completo resta lo que va del base al mínimo (GROSOR_BASE - GROSOR_MIN)
+    expect(grosorDesdeArrastre(-ARRASTRE_GROSOR_MAX_PX, 1.6)).toBeCloseTo(1.6 - (GROSOR_BASE - GROSOR_MIN));
   });
   it("desde un grosor alto, subir se acota en el tope en vez de pasarse", () => {
     expect(grosorDesdeArrastre(ARRASTRE_GROSOR_MAX_PX, 2.0)).toBeCloseTo(GROSOR_MAX);
@@ -132,16 +132,18 @@ describe("estaAjustandoGrosor", () => {
   });
 });
 
-describe("escalaDelPunto", () => {
-  it("en el grosor base el punto mide lo de siempre", () => {
-    expect(escalaDelPunto(GROSOR_BASE)).toBe(1);
+describe("diametroDelPunto", () => {
+  it("mide el grosor a escala del mando: 16 px en el base, 8 en el mínimo, 56 en el tope (lo que pidió el gestor)", () => {
+    expect(diametroDelPunto(GROSOR_BASE)).toBe(16);
+    expect(diametroDelPunto(GROSOR_MIN)).toBe(8);
+    expect(diametroDelPunto(GROSOR_MAX)).toBe(56);
   });
-  it("crece hasta 1.25 en el tope y encoge hasta 0.8 en el mínimo, continuo en medio", () => {
-    expect(escalaDelPunto(GROSOR_MAX)).toBeCloseTo(1.25);
-    expect(escalaDelPunto(GROSOR_MIN)).toBeCloseTo(0.8);
-    const medioArriba = escalaDelPunto((GROSOR_BASE + GROSOR_MAX) / 2);
-    expect(medioArriba).toBeGreaterThan(1);
-    expect(medioArriba).toBeLessThan(1.25);
+  it("cambia de forma continua: a medio camino del base al tope, a medio camino de 16 a 56", () => {
+    expect(diametroDelPunto((GROSOR_BASE + GROSOR_MAX) / 2)).toBeCloseTo(36);
+  });
+  it("un grosor fuera del rango (un mensaje raro) se acota al mínimo o al tope, no rompe el punto", () => {
+    expect(diametroDelPunto(0)).toBe(8);
+    expect(diametroDelPunto(99)).toBe(56);
   });
 });
 

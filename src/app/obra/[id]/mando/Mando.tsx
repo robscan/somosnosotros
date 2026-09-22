@@ -5,8 +5,8 @@ import { abrirCanalObra } from "@/lib/canal-obra";
 import {
   ARRASTRE_GROSOR_MAX_PX,
   deltaDesdeOrientacion,
+  diametroDelPunto,
   entradasDesdePresencia,
-  escalaDelPunto,
   estaAjustandoGrosor,
   estadoDeFila,
   EVENTO_TRAZO,
@@ -309,11 +309,10 @@ export default function Mando({ obraId, perfilId, cupo }: { obraId: string; perf
           onPointerUp={soltar}
           onPointerLeave={soltar}
         >
-          {/* Lo que crece y encoge con el grosor es el punto blanco (gestor: "el punto blanco crece/encoge basta"),
-              y se queda así: es cómo se ve el grosor que quedó sin abrir nada. */}
-          <span className={styles.punto} style={{ transform: `scale(${escalaDelPunto(grosor).toFixed(3)})` }} aria-hidden="true">
-            ●
-          </span>
+          {/* El punto blanco MIDE el grosor a escala del mando (16 px por unidad: 8 a 56 px) y se queda así al soltar:
+              es cómo se ve el grosor que lleva sin abrir nada. Cambia el tamaño del punto, no el del botón (128 px
+              fijos, lo centra su rejilla) ni el de la rejilla del mando. */}
+          <span className={styles.punto} style={{ width: `${diametroDelPunto(grosor)}px`, height: `${diametroDelPunto(grosor)}px` }} aria-hidden="true" />
         </button>
       )}
 

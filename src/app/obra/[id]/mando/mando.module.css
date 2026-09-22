@@ -171,8 +171,10 @@
    tamaño ni se monta sobre las tarjetas). Con transición corta también al soltar, para que el cambio se lea. */
 .punto {
   display: block;
-  line-height: 1;
-  transition: transform 0.12s;
+  border-radius: 50%;
+  background: currentColor;
+  /* width/height los pone el mando (diametroDelPunto: 8 a 56 px). Sin transición: sigue al dedo al instante y, al
+     soltar, no cambia — el grosor se queda. */
 }
 .hold {
   grid-area: hold;
