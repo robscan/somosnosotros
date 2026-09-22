@@ -2,7 +2,7 @@ import Link from "next/link";
 import { contarPendientes } from "@/app/admin/consultas";
 import { cargarNovedades } from "@/app/novedades/consultas";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import { IconoCampana, IconoTablero } from "./ui/Iconos";
+import { IconoCampana, IconoEscudo } from "./ui/Iconos";
 import VistoHoy from "./VistoHoy";
 import styles from "./Sesion.module.css";
 
@@ -36,7 +36,7 @@ export default async function Sesion() {
       </Link>
       {esAdmin && (
         <Link href="/admin" className={styles.admin} aria-label={pendientes ? "Administración, hay algo por revisar" : "Administración"}>
-          <IconoTablero />
+          <IconoEscudo />
           {!!pendientes && <span className={styles.punto} aria-hidden="true" />}
         </Link>
       )}
