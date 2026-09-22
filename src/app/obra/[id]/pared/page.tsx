@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { esUuid } from "@/lib/formulario";
+import { qrDelMando } from "@/lib/qr";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarObraParaPintar } from "../../consultas";
 import Pared from "./Pared";
@@ -24,5 +25,8 @@ export default async function ParedDeObra({ params }: { params: Promise<{ id: st
   if (!actual) redirect(`/entrar?siguiente=/obra/${id}/pared`);
   const obra = await cargarObraParaPintar(id);
   if (!obra) notFound();
-  return <Pared obraId={obra.id} nombre={obra.nombre} abierta={obra.estado === "abierta"} cupo={obra.cupoMandos} />;
+  const abierta = obra.estado === "abierta";
+  // El QR hacia el mando (OL-118) se dibuja aquí, en el servidor; cerrada la obra, la pared ya no invita a entrar.
+  const qr = abierta ? (await qrDelMando(obra.id)).svg : null;
+  return <Pared obraId={obra.id} nombre={obra.nombre} abierta={abierta} cupo={obra.cupoMandos} qr={qr} />;
 }
