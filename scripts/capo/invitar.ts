@@ -16,32 +16,14 @@
  * Las llaves salen de /Users/apple-1/somosnosotros/.env (no se imprimen). Si trabajas en otra copia
  * del repo, pon esas mismas variables en el entorno antes de correr el script.
  */
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { cargarEnv, enmascarar, mandarCorreo, RUTA_ENV } from "../lib/correo-envio";
 
-const RUTA_ENV = "/Users/apple-1/somosnosotros/.env";
+// cargarEnv, mandarCorreo y enmascarar viven ahora en scripts/lib/correo-envio.ts (OL-122: el envío a
+// instituciones usa exactamente las mismas); se reexportan para que nada que importe de aquí cambie.
+export { cargarEnv, enmascarar, mandarCorreo };
 export const SITIO = "https://somosnosotros.org";
-
-/** Carga las variables de `ruta` sin pisar las que ya estén puestas en el entorno; nunca las imprime. */
-export function cargarEnv(ruta: string = RUTA_ENV): void {
-  let texto: string;
-  try {
-    texto = readFileSync(ruta, "utf8");
-  } catch {
-    return;
-  }
-  for (const linea of texto.split("\n")) {
-    const l = linea.trim();
-    if (!l || l.startsWith("#")) continue;
-    const i = l.indexOf("=");
-    if (i < 0) continue;
-    const clave = l.slice(0, i).trim();
-    let valor = l.slice(i + 1).trim();
-    if ((valor.startsWith('"') && valor.endsWith('"')) || (valor.startsWith("'") && valor.endsWith("'"))) valor = valor.slice(1, -1);
-    if (!(clave in process.env)) process.env[clave] = valor;
-  }
-}
 cargarEnv();
 
 // ---------- puro: armar el correo ----------
@@ -87,15 +69,6 @@ export function cuerpoHtml(_nombre: string, url: string): string {
 export function armarCorreo(nombre: string, artistaId: string, variante: Variante = "A"): { asunto: string; texto: string; html: string; url: string } {
   const url = urlFicha(artistaId);
   return { asunto: asuntoDe(nombre, variante), texto: cuerpoTexto(nombre, url), html: cuerpoHtml(nombre, url), url };
-}
-
-/** "prisca@x.mx" → "pr…@x.mx": para un informe (bitácora, consola) sin exponer el correo completo. */
-export function enmascarar(correo: string): string {
-  const arroba = correo.indexOf("@");
-  if (arroba < 0) return "…";
-  const local = correo.slice(0, arroba);
-  const dominio = correo.slice(arroba + 1);
-  return `${local.slice(0, 2)}…@${dominio}`;
 }
 
 // ---------- puro: elegir la tanda ----------
@@ -156,28 +129,6 @@ export async function candidatosPendientes(db: SupabaseClient): Promise<Candidat
     candidatos.push({ artistaId: f.artista_id, nombre: artista.nombre, correo: f.correo });
   }
   return candidatos;
-}
-
-type ResultadoEnvio = { ok: boolean; id: string | null; error?: string };
-
-/** Manda un correo con Resend, igual que src/lib/correo.ts (aquí reescrito: ese módulo trae
- * "server-only" y no corre fuera de un componente de servidor de Next.js). */
-export async function mandarCorreo(p: { para: string; asunto: string; texto: string; html: string }): Promise<ResultadoEnvio> {
-  const llave = process.env.RESEND_API_KEY;
-  if (!llave) return { ok: false, id: null, error: "Sin RESEND_API_KEY" };
-  const remitente = process.env.CORREO_REMITENTE || "Somos Nosotros <avisos@somosnosotros.org>";
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${llave}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: remitente, to: [p.para], subject: p.asunto, text: p.texto, html: p.html }),
-    });
-    const cuerpo: { id?: string; message?: string } = await res.json().catch(() => ({}));
-    if (!res.ok) return { ok: false, id: null, error: `${res.status} ${cuerpo.message ?? ""}`.trim() };
-    return { ok: true, id: cuerpo.id ?? null };
-  } catch (e) {
-    return { ok: false, id: null, error: e instanceof Error ? e.message : String(e) };
-  }
 }
 
 function leerArgumentos(argv: string[]): { n: number; enviar: boolean } {
