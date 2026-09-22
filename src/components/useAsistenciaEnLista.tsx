@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarAsistencia } from "@/app/eventos/acciones";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
+import { hrefEvento } from "@/lib/eventos";
 import { asistenciaTras, claveVoy, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
 import { anotarIntencion } from "@/lib/intencionAvisos";
 import { alRecibir, elegir, esElUltimo, siSigueSiendoElUltimo, tocar, trasGuardar, type Elegidas, type Toques } from "@/lib/toques";
@@ -15,7 +16,7 @@ import type { AvisosLista } from "./useSeguirEnLista";
 
 /** Lo que la persona decidió en cada evento cargado; null = sin sesión. */
 export type Decididas = Record<string, Exclude<Asistencia, null>> | null;
-type EventoLista = { id: string; titulo: string };
+type EventoLista = { id: string; slug?: string | null; titulo: string };
 
 /**
  * El botón "Voy"/"Vas" del renglón (OL-104, bitácora 139; antes, deslizar: OL-056, bitácora 085): lo que la persona
@@ -119,7 +120,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     const previo = estado(e.id);
     const clave = claveVoy(previo);
     const decidido = previo === "voy";
-    const ruta = `/eventos/${e.id}`;
+    const ruta = hrefEvento(e);
     return {
       decidido,
       // El nombre no cambia con el estado (sería contradictorio con `aria-pressed`, que ya lo dice): "conmutador presionado"
@@ -144,7 +145,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
       {hoja && avisos && <HojaAbierta canal={canal ?? propio} />}
       {hoja && avisos && (
         <Hoja etiqueta="Avisos" onCerrar={() => setHoja(null)}>
-          <ConsentimientoAvisos contexto="voy" titulo={hoja.titulo} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} calendarioUrl={`/eventos/${hoja.id}/calendario`} />
+          <ConsentimientoAvisos contexto="voy" titulo={hoja.titulo} cuenta={avisos.cuenta} correo={avisos.correo} llavePush={avisos.llavePush} onListo={() => setHoja(null)} calendarioUrl={`${hrefEvento(hoja)}/calendario`} />
         </Hoja>
       )}
     </>

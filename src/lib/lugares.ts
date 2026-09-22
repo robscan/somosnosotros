@@ -32,7 +32,19 @@ export type LugarResumen = {
   privado?: boolean;
   /** Zona horaria del lugar (migración 0029): la de sus eventos. Solo llega donde se pide. */
   zona?: string;
+  /** La dirección legible (/lugares/<slug>): se pone sola al crear el lugar y no cambia si cambia el nombre. Opcional
+   *  porque no todas las consultas lo piden todavía; `hrefLugar` cae al UUID cuando falta. */
+  slug?: string | null;
 };
+
+/**
+ * La dirección de la ficha: el slug si ya lo trae (todas las filas desde la migración `20260922160000_lugares_slug`),
+ * y el UUID solo como respaldo (una fila leída sin ese campo). Las rutas `/lugares/[id]` y `.../editar` resuelven
+ * por slug o UUID y redirigen de forma permanente desde la dirección vieja (mismo criterio que `hrefArtista`).
+ */
+export function hrefLugar(l: { id: string; slug?: string | null }): string {
+  return `/lugares/${l.slug || l.id}`;
+}
 
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
 export type ProximoEvento = { id: string; inicio: string; zona: string };

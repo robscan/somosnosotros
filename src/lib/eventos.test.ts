@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, jsonLdEvento, nombreSitio, puntoComoLlegar, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -261,5 +261,14 @@ describe("extraerNumero", () => {
 
   it("maneja múltiples instancias de números y devuelve el primero", () => {
     expect(extraerNumero("2x1 $150")).toBe("2");
+  });
+});
+
+describe("hrefEvento", () => {
+  it("usa el slug cuando lo trae; el UUID solo como respaldo (OL-119, mismo criterio que artistas y lugares)", () => {
+    expect(hrefEvento({ id: "e1", slug: "concierto-de-otono-2026-10-03" })).toBe("/eventos/concierto-de-otono-2026-10-03");
+    expect(hrefEvento({ id: "e1", slug: null })).toBe("/eventos/e1");
+    expect(hrefEvento({ id: "e1" })).toBe("/eventos/e1");
+    expect(hrefEvento({ id: "e1", slug: "" })).toBe("/eventos/e1");
   });
 });

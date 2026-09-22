@@ -8,6 +8,8 @@ export type Novedad = {
   tipo: TipoNovedad;
   que: string;
   eventoId: string;
+  /** La dirección legible del evento; opcional porque no todas las consultas lo piden todavía (bitácora 154). */
+  eventoSlug?: string | null;
   titulo: string;
   cuando: string;
   /** Cuándo empieza el evento (ISO): desempata lo que pasó a la vez, como los "Hoy vas" del día. */
