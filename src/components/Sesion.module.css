@@ -40,6 +40,15 @@
   height: var(--toque-min);
   color: var(--texto);
 }
+/* Acceso a Administración (L40, OL-115): mismo tamaño y punto que la campana, entre ella y la foto. */
+.admin {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  color: var(--texto);
+}
 .punto {
   position: absolute;
   top: 9px;

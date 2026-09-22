@@ -11,22 +11,24 @@ export type Sugerencia = { nombre: string; direccion: string; lat: number; lng: 
 
 type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 
-/** Cuántas sugerencias se muestran, ya ordenadas por cercanía (ver buscarDirecciones). */
-const MAX_SUGERENCIAS = 5;
+/** `[oeste, sur, este, norte]`, para acotar la búsqueda a una ciudad de contexto (OL-100, caso "Galeana #423, S.L.P."). */
+export type Bbox = [number, number, number, number];
 
-export function urlGeocodificar(q: string, token: string, cerca: { lat: number; lng: number }): string {
+export function urlGeocodificar(q: string, token: string, cerca: { lat: number; lng: number }, bbox?: Bbox): string {
   const p = new URLSearchParams({
     q,
     access_token: token,
     autocomplete: "true",
     language: "es",
-    // Sin país. Se piden más de las que se muestran porque Mapbox no siempre ordena por cercanía real (buscando
+    // Sin país. Se piden 10 (el máximo de Mapbox) porque Mapbox no siempre ordena por cercanía real (buscando
     // "Plaza de Armas" desde San Luis, antepone las de Querétaro, Zacatecas o Saltillo); se reordenan aquí
-    // (buscarDirecciones) y se recorta a MAX_SUGERENCIAS.
+    // (buscarDirecciones), sin recortar todavía — quien llama filtra por relevancia y recorta después.
     limit: "10",
     proximity: `${cerca.lng},${cerca.lat}`,
     types: "address,street,place,locality,neighborhood",
   });
+  // Acota a la ciudad de contexto cuando se conoce (nunca un país entero: el contexto ordena, no limita).
+  if (bbox) p.set("bbox", bbox.join(","));
   return `https://api.mapbox.com/search/geocode/v6/forward?${p.toString()}`;
 }
 
@@ -65,14 +67,19 @@ export function interpretarRespuesta(json: RespuestaV6): Sugerencia[] {
     .filter((s): s is Sugerencia => !!s && !!s.direccion);
 }
 
-export async function buscarDirecciones(q: string, token: string, cerca: { lat: number; lng: number }, fetchFn: FetchFn = fetch): Promise<Sugerencia[]> {
+/**
+ * Todas las que trajo Mapbox (hasta 10), ordenadas por distancia real (Mapbox no siempre lo hace bien) — sin
+ * recortar a `MAX_SUGERENCIAS` todavía: quien llama filtra primero por relevancia (OL-100, revisión del gestor:
+ * con 10 resultados donde 5 son basura cercana tipo "Slp 32", recortar aquí antes de filtrar podía tirar la buena
+ * dirección antes de que `direccionContexto.ts` la viera) y recorta después.
+ */
+export async function buscarDirecciones(q: string, token: string, cerca: { lat: number; lng: number }, fetchFn: FetchFn = fetch, bbox?: Bbox): Promise<Sugerencia[]> {
   const texto = q.trim();
   if (texto.length < 3) return [];
-  const res = await fetchFn(urlGeocodificar(texto, token, cerca));
+  const res = await fetchFn(urlGeocodificar(texto, token, cerca, bbox));
   if (!res.ok) return [];
   const sugerencias = interpretarRespuesta((await res.json()) as RespuestaV6);
-  // Se reordena por distancia real al punto de cercanía (Mapbox no siempre lo hace bien) y se muestran las más cercanas.
-  return sugerencias.sort((a, b) => distanciaKm(cerca, a) - distanciaKm(cerca, b)).slice(0, MAX_SUGERENCIAS);
+  return sugerencias.sort((a, b) => distanciaKm(cerca, a) - distanciaKm(cerca, b));
 }
 
 /** Dirección aproximada y ciudad de un punto (para cuando el pin se pone con el dedo o con "Estoy aquí"). */

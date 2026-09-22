@@ -157,8 +157,8 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
       {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
       {/* Los carriles no dependen de la tira (corrección del founder, 2026-09-19): solo se van con disciplina,
           detalle o búsqueda. Destacados no pinta nada si no le llegan tarjetas (con ese filtro, o con búsqueda). */}
-      <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} grande />
-      {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} redondas encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
+      <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} grande boton={(t) => seguir.boton(t.id, t.titulo)} />
+      {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} redondas encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto boton={(t) => seguir.boton(t.id, t.titulo)} />}
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
           <p>{queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>
@@ -182,7 +182,7 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
                   {grupo}
                 </li>
               ),
-              <RenglonArtista key={a.id} artista={a} sigo={seguir.sigo(a.id)} acciones={seguir.acciones(a.id, a.nombre)} />,
+              <RenglonArtista key={a.id} artista={a} boton={seguir.boton(a.id, a.nombre)} />,
             ])}
           </ul>
           {seguir.extras}

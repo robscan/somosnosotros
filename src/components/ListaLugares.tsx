@@ -72,8 +72,8 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
     <section className={styles.lista} aria-label="Lugares">
       {alfabetico && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={(letra) => { antesDeSaltar(); irAlGrupo(letra); }} />}
       {aviso}
-      {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} grande />}
-      {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto />}
+      {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} grande boton={(t) => seguir.boton(t.id, t.titulo)} />}
+      {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto boton={(t) => seguir.boton(t.id, t.titulo)} />}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()
@@ -88,7 +88,7 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
               {grupo}
             </li>
           ),
-          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} sigo={seguir.sigo(l.id)} acciones={seguir.acciones(l.id, l.nombre)} />,
+          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={seguir.boton(l.id, l.nombre)} />,
         ])}
       </ul>
       {seguir.extras}

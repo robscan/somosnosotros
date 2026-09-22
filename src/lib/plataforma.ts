@@ -14,6 +14,8 @@ export type Plataforma = {
   deOtraApp: "Instagram" | "Facebook" | null;
   /** Computadora: ni iPhone, ni iPad, ni Android. */
   computadora: boolean;
+  /** Chrome de escritorio de verdad (no Edge, Opera ni Brave). Para decir dónde se activa un permiso ahí. */
+  chrome: boolean;
   /** Abierta desde el icono del inicio. */
   instalada: boolean;
 };
@@ -25,12 +27,16 @@ export function leerPlataforma(agente: string, puntosTactiles: number, instalada
   const otroNavegador = /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(agente);
   const safari = ios && /Safari\//.test(agente) && !otroNavegador && !deOtraApp;
   const version = agente.match(/Version\/(\d+)/);
+  const computadora = !ios && !/Android|Mobile/i.test(agente);
+  // Chrome de escritorio de verdad: no Edge, Opera ni Brave, que también dicen "Chrome/" en su UA.
+  const chrome = computadora && /Chrome\//.test(agente) && !/Edg\/|OPR\/|Brave\//.test(agente);
   return {
     ios,
     safari,
     versionSafari: safari && version ? Number(version[1]) : null,
     deOtraApp,
-    computadora: !ios && !/Android|Mobile/i.test(agente),
+    computadora,
+    chrome,
     instalada,
   };
 }
@@ -93,12 +99,32 @@ export function tituloInstalada(titulo: string): string {
   return titulo.replace(/ · Somos Nosotros$/, "") || "Somos Nosotros";
 }
 
-/** "en este teléfono" o "en esta computadora": el sistema sabe dónde está (decisión 9). */
-export function enEste(p: Plataforma | null): string {
-  return p?.computadora ? "en esta computadora" : "en este teléfono";
+/**
+ * "Este teléfono" o "esta computadora", para empezar una frase (decisión 9). Única función que sabe cómo se nombra el
+ * aparato: `enEste` y los textos de ubicación se construyen sobre ella, para no repetir el ternario en cada pantalla.
+ */
+export function esteAparato(p: Plataforma | null): string {
+  return p?.computadora ? "esta computadora" : "este teléfono";
 }
 
-/** Dónde se deshace un permiso bloqueado. */
+/** "en este teléfono" o "en esta computadora": el sistema sabe dónde está (decisión 9). */
+export function enEste(p: Plataforma | null): string {
+  return `en ${esteAparato(p)}`;
+}
+
+/** "Este teléfono" o "Esta computadora", con mayúscula, para empezar una frase (los avisos de ubicación de los formularios). */
+export function esteAparatoInicial(p: Plataforma | null): string {
+  const s = esteAparato(p);
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Dónde se deshace un permiso bloqueado o silenciado, en ESE navegador (decisión 9 y bitácora 147). En Chrome de
+ * escritorio el permiso no siempre queda "denied": Chrome puede volverlo silencioso (un icono junto a la dirección
+ * en vez del aviso) sin que el sitio se entere de si la persona ya decidió o no lo ha visto.
+ */
 export function dondeSeActivan(p: Plataforma | null): string {
-  return p?.ios ? "en Ajustes del iPhone › Notificaciones › Somos Nosotros" : "en la configuración del sitio de tu navegador";
+  if (p?.ios) return "en Ajustes del iPhone › Notificaciones › Somos Nosotros";
+  if (p?.chrome) return "en Chrome: el candado junto a la dirección › Permisos del sitio › Notificaciones";
+  return "en la configuración del sitio de tu navegador";
 }

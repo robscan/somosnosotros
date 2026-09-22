@@ -17,12 +17,15 @@ import { LIMITES_EVENTO, REVELAR_OPCIONES, extraerNumero, type Evento, type Modo
 import { formatearCuando, isoALocal, localAIso, resugerirCuando, sugerirInicio, ZONA_INICIAL, zonaSegura } from "@/lib/fechas";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
+import type { Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
+import { esteAparatoInicial } from "@/lib/plataforma";
+import { usePlataforma } from "@/lib/useAvisosTelefono";
 import { cupoDeCartel, leerCartelAccion, pedirMasLecturas, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
@@ -30,7 +33,7 @@ import SelectorCuando from "./SelectorCuando";
 import TarjetaCartel from "./TarjetaCartel";
 import { operacionEvento } from "./operacionEvento";
 import { alLlegar, falloAlLeer, falloAlSubir, falloDeCorte, leido, mesDelCupo, type EstadoCartel } from "./estadoCartel";
-import { camposIniciales, crearGestosFlyer, type CampoFlyer } from "./gestosFlyer";
+import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel, type CampoFlyer } from "./gestosFlyer";
 import { sitioListo, textoDelSitio } from "./direccionEvento";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -97,15 +100,19 @@ type Props = {
   /** Lecturas de cartel que le quedan este mes (docs/rediseno/23). Null si no hay sesión o no aplica. */
   cupo?: Cupo | null;
   revision?: string;
+  /** Ciudad del chip de la Agenda desde la que se entró a publicar: una pista más para la búsqueda de dirección (OL-100). */
+  ciudadContexto?: Ciudad | null;
 };
 
 /**
  * Alta de evento con el canon (docs/rediseno/15, decisiones 1 a 3; docs/rediseno/22): arriba la tarjeta del cartel,
  * que al subirlo llena el formulario y es lo único que explica la pantalla; luego el nombre, y debajo los renglones
  * resueltos con el mismo dibujo: Cuándo (hoy · 19:00), Dónde (una sola salida: la lupa abre la hoja "Dónde es"),
- * Quién, Cuánto (gratis) y Más. El botón dice qué falta. Sin frases de ayuda.
+ * Quién, Cuánto (gratis) y Más. La ayuda de qué falta va bajo el campo o renglón, no dentro del botón (decisión 3
+ * ampliada por el founder, 2026-09-21, OL-100: "aplica como canon para todos los formularios").
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo", cupo = null, revision }: Props) {
+export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo", cupo = null, revision, ciudadContexto = null }: Props) {
+  const plataforma = usePlataforma();
   const [revisionInicial] = useState(revision);
   const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
@@ -279,7 +286,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       poner(p);
     } catch (e) {
       if (!gestos.current.vigente("donde", version)) return;
-      setAvisoUbicacion(e === "sin-soporte" ? "Este teléfono no da su ubicación. Toca el mapa donde es." : "No se pudo leer tu ubicación. Toca el mapa donde es.");
+      setAvisoUbicacion(e === "sin-soporte" ? `${esteAparatoInicial(plataforma)} no da su ubicación. Toca el mapa donde es.` : "No se pudo leer tu ubicación. Toca el mapa donde es.");
     } finally {
       setUbicando(false);
     }
@@ -339,6 +346,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const lugar = lugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && esAlta;
   const dondeResuelto = modoSitio === "lugar" ? !!lugar : sitioListo(otro);
+  // Vacío de verdad (nada escrito) contra leído-pendiente-de-confirmar (hay nombre/dirección, pero el pin no está
+  // puesto o falta la dirección exacta reservada): "Falta" solo es el primero; el segundo dice "Confirmar" (L3).
+  const dondeVacio = modoSitio === "lugar" ? !lugar : !otro.sitioTexto.trim();
+  const dondeConfirmar = !dondeResuelto && !dondeVacio;
   const errorDonde = errores.lugar_id ?? errores.sitio_texto ?? errores.sitio_direccion ?? errores.direccion_privada;
   const faltaNombre = titulo.trim().length === 0;
   const listo = !faltaNombre && dondeResuelto;
@@ -481,7 +492,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       }
       if (v.descripcion && gestos.current.puedeCompletar("descripcion")) setDescripcion(v.descripcion);
       if (v.enlace && gestos.current.puedeCompletar("enlace")) setEnlace(v.enlace);
-      if (r.quien.length && gestos.current.puedeCompletar("quien")) setQuien(r.quien);
+      setQuien((actual) => quienTrasLeerCartel(r.quien, actual, gestos.current.puedeCompletar("quien")));
       if (gestos.current.puedeCompletar("donde") && r.lugarId) {
         setModoSitio("lugar");
         setLugarId(r.lugarId);
@@ -521,17 +532,46 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
         {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
 
-        {/* 2. El nombre, solo con su ✕. */}
-        <div className={`${canon.campo} ${canon.sinIcono}`}>
-          <input name="titulo" type="text" value={titulo} onChange={(e) => { gestos.current.tocar("titulo"); setTitulo(e.target.value); }} maxLength={LIMITES_EVENTO.titulo} placeholder="Nombre del evento" aria-label="Nombre del evento" aria-invalid={!!errores.titulo} autoComplete="off" autoFocus={esAlta} required />
+        {/* 2. El nombre, solo con su ✕. Vacío se marca como faltante (mismo peso que Cuándo/Dónde cuando
+            dicen "Falta"): borde discontinuo, placeholder propio y nota bajo el campo — antes solo se pintaba
+            una nota chica y gris, fácil de perder, sobre todo tras leer un cartel sin título (founder,
+            2026-09-21: "el campo no se marca como faltante", OL-113). */}
+        <div className={`${canon.campo} ${canon.sinIcono} ${faltaNombre && !errores.titulo ? canon.campoFalta : ""}`}>
+          {/* Sin autoFocus (founder, 2026-09-21, L2): el teclado ya no sale solo al abrir y tapa la tarjeta del
+              cartel. Por la misma razón, leer un cartel sin título tampoco fuerza el foco aquí: el aviso es
+              visual (borde, placeholder, nota), no una interrupción con teclado que la persona no pidió. */}
+          <input
+            name="titulo"
+            type="text"
+            value={titulo}
+            onChange={(e) => { gestos.current.tocar("titulo"); setTitulo(e.target.value); }}
+            maxLength={LIMITES_EVENTO.titulo}
+            placeholder={faltaNombre ? "Falta el nombre" : "Nombre del evento"}
+            aria-label="Nombre del evento"
+            aria-invalid={!!errores.titulo}
+            aria-describedby={errores.titulo ? "error-nombre-evento" : faltaNombre ? "nota-nombre-evento" : undefined}
+            autoComplete="off"
+            required
+          />
           <Limpiar visible={!!titulo} />
           <ContadorCaracteres valor={titulo} tope={LIMITES_EVENTO.titulo} error={errores.titulo} />
         </div>
         {subiendo && !cartel && !masAbierto && <p className={canon.estado}>Subiendo…</p>}
-        {errores.titulo && (
-          <p className={canon.error} role="alert">
+        {errores.titulo ? (
+          <p id="error-nombre-evento" className={canon.error} role="alert">
             {errores.titulo}
           </p>
+        ) : (
+          // La ayuda va bajo el campo, con su propia clase: canon.cuerpoNota lleva grid-area: cuerpo, pensada
+          // para el cuerpo de un renglón de canon.resuelto. Aquí, sin una rejilla alrededor, ese grid-area no
+          // rompía nada (no era la causa de que se viera "fácil de perder": eso era el borde sin marcar y el
+          // placeholder genérico, ver más abajo) pero es la clase equivocada — la del gestor: una clase del
+          // canon solo se reutiliza dentro de la rejilla para la que fue escrita.
+          faltaNombre && (
+            <p id="nota-nombre-evento" className={canon.notaCampo}>
+              Falta el nombre.
+            </p>
+          )
         )}
 
         <ul className={canon.renglones}>
@@ -578,6 +618,16 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                   Cambiar
                 </button>
               </>
+            ) : dondeConfirmar ? (
+              // Leído del cartel o de una sugerencia, pero el pin no está confirmado: "Confirmar", no "Falta" (L3).
+              // Una sola línea leída, no el nombre y la dirección juntos (textoDelSitio): revisión del gestor tras
+              // el aviso del founder sobre formularios que se salen de la tarjeta con datos largos.
+              <>
+                <span className={canon.valor}>{otro.direccion?.trim() || otro.sitioTexto}</span>
+                <button type="button" className={canon.cambiar} onClick={() => setHoja(true)}>
+                  Confirmar
+                </button>
+              </>
             ) : (
               <>
                 <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
@@ -586,11 +636,16 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                 </button>
               </>
             )}
-            {errorDonde && (
+            {/* La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios). */}
+            {errorDonde ? (
               <p className={canon.cuerpoNota} role="alert">
                 {errorDonde}
               </p>
-            )}
+            ) : dondeConfirmar ? (
+              <p className={canon.cuerpoNota}>Confirma la ubicación en el mapa.</p>
+            ) : dondeVacio ? (
+              <p className={canon.cuerpoNota}>Falta ubicación.</p>
+            ) : null}
           </li>
 
           {/* 4. Quién: opcional, no detiene la publicación (Artistas, decisión 12). */}
@@ -603,7 +658,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             </button>
             {abierta === "quien" && (
               <div className={canon.cuerpo}>
-                <SelectorQuien valor={quien} onCambio={(q) => { gestos.current.tocar("quien"); setQuien(q); }} mios={mios} />
+                <SelectorQuien valor={quien} onCambio={(q) => { gestos.current.tocar("quien"); setQuien(q); }} mios={mios} ciudadContexto={ciudadContexto?.nombre} />
               </div>
             )}
           </li>
@@ -707,10 +762,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             {resultado.conflicto && evento?.id && <> <a href={`/eventos/${evento.id}`} target="_blank" rel="noopener noreferrer">Ver versión actual en otra pestaña</a></>}
           </p>
         )}
-        {/* El botón dice qué falta (decisión 3). */}
+        {/* La ayuda de qué falta va bajo cada campo, no dentro del botón (decisión 3 ampliada por el founder, 2026-09-21). */}
         <Boton type="submit" disabled={enviando || terminado || subiendo || leyendo || !listo}>
           {enviando || terminado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Publicar evento"}
-          {!enviando && !terminado && !listo && <small className={canon.faltaBoton}>{faltaNombre ? "falta el nombre" : "falta dónde"}</small>}
         </Boton>
       </form>
       {hoja && (
@@ -728,6 +782,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           onGesto={() => gestos.current.tocar("donde")}
           onEstoyAqui={estoyAqui}
           onCerrar={() => setHoja(false)}
+          ciudadContexto={ciudadContexto}
         />
       )}
       {hojaSalir}

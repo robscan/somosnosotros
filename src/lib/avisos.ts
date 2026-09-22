@@ -28,6 +28,30 @@ export function contenidoCorreo(tipo: TipoAviso, evento: EventoParaAviso, cambio
   return tipo === "nuevo_evento" ? correoNuevoEvento(p) : tipo === "cambio" ? correoCambioEvento({ ...p, cambio }) : correoRecordatorio(p);
 }
 
+// ---------- OL-115: aviso al administrador (avisos_admin_jobs/entregas, migración 20260922150000) ----------
+/** Los seis motivos que hoy encolan un aviso al administrador (L39): pedir/reclamar una ficha, publicar
+ *  evento/lugar/artista y registrarse. Sin datos personales: el cuerpo nunca lleva nombres ni ids. */
+export type MotivoAdmin = "reclamo_ficha" | "reporte" | "nuevo_evento" | "nuevo_lugar" | "nuevo_artista" | "registro";
+const TEXTO_MOTIVO_ADMIN: Record<MotivoAdmin, string> = {
+  reclamo_ficha: "Alguien reclamó una ficha",
+  reporte: "Alguien envió un reporte",
+  nuevo_evento: "Se publicó un evento nuevo",
+  nuevo_lugar: "Se publicó un lugar nuevo",
+  nuevo_artista: "Se publicó un artista nuevo",
+  registro: "Alguien se registró",
+};
+
+/** El texto corto del push al administrador. Con un solo motivo, dice cuál; agrupado (bucket de 10 min, tope de
+ *  60 min en `avisos_admin_encolar`), dice cuántas cosas hay, nunca una lista con nombres. Abre `/admin`. */
+export function contenidoPushAdmin(motivos: Record<string, number>): AvisoPush {
+  const total = Object.values(motivos).reduce((suma, n) => suma + n, 0);
+  const claves = Object.keys(motivos);
+  const cuerpo = total === 1 && claves.length === 1 && claves[0] in TEXTO_MOTIVO_ADMIN
+    ? TEXTO_MOTIVO_ADMIN[claves[0] as MotivoAdmin]
+    : `${total} ${total === 1 ? "cosa" : "cosas"} por revisar`;
+  return { titulo: "Administración", cuerpo, url: "/admin" };
+}
+
 // Utilidades puras conservadas para consumidores y pruebas de presentacion.
 export type Canales = { id: string; avisos_correo: boolean; avisos_push: boolean };
 export function pendientesDeAviso<T extends Canales>(perfiles: T[], yaEnviados: Set<string>): T[] {
