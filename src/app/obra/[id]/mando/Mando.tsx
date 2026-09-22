@@ -8,10 +8,11 @@ import {
   decidirSensor,
   diametroDelPunto,
   entradasDesdePresencia,
-  estaAjustandoGrosor,
+  esSalto,
   estadoDeFila,
   estaEncendido,
   esTintaClara,
+  EVENTO_PING,
   EVENTO_POSICION,
   EVENTO_TRAZO,
   GROSOR_BASE,
@@ -19,6 +20,7 @@ import {
   intervaloMs,
   muestrear,
   personasAqui,
+  PING_CADA_MS,
   posicionDesdeOrientacion,
   POSICIONES_POR_SEGUNDO,
   PUNTOS_MAX_POR_MENSAJE,
@@ -29,6 +31,7 @@ import {
   TRAZOS,
   type Cercania,
   type EntradaPresencia,
+  type MensajePing,
   type MensajePosicion,
   type MensajeTrazo,
   type Orientacion,
@@ -128,7 +131,8 @@ export default function Mando({
   const tarjetaTintaRef = useRef<HTMLButtonElement | null>(null);
   const orbRef = useRef<HTMLButtonElement | null>(null);
   // Grosor por arrastre (founder, 2026-09-21; reglas del gestor): el punto sigue al dedo en vertical solo con
-  // `transform`, el grosor se queda hasta que se cambie, y mientras se ajusta no se manda trazo.
+  // `transform` y el grosor se queda hasta que se cambie. OL-132: el arrastre cambia el grosor EN VIVO mientras
+  // se pinta (cada mensaje lleva el grosor del momento); ya no hay un estado «ajustando sin pintar».
   const [desplazamiento, setDesplazamiento] = useState(0); // px del punto mientras se arrastra (positivo = arriba)
   const [grosor, setGrosor] = useState(GROSOR_BASE);
   // Sonda (OL-126, founder: «grosor se sigue bloqueando» en el iPhone real, donde no hay consola): solo con
@@ -162,7 +166,8 @@ export default function Mando({
   const puedePintarRef = useRef(false);
   const arrastreInicioYRef = useRef<number | null>(null);
   const grosorAlEmpezarRef = useRef(GROSOR_BASE); // desde dónde se ajusta en ESTA pulsación
-  const ajustandoRef = useRef(false); // más allá del umbral: se ajusta grosor, no se pinta
+  const ultimaPosicionRef = useRef<{ p: PosicionNormalizada; t: number } | null>(null); // para el filtro de saltos (OL-132)
+  const [pingMs, setPingMs] = useState<number | null>(null); // ida y vuelta al servidor de Realtime, solo con la sonda
   useEffect(() => {
     trazoRef.current = trazo;
   }, [trazo]);
@@ -183,7 +188,7 @@ export default function Mando({
   useEffect(() => {
     const supabase = clienteNavegador();
     if (!supabase) return;
-    const canal = abrirCanalObra(supabase, obraId);
+    const canal = abrirCanalObra(supabase, obraId, { ack: sonda }); // ack solo con la sonda: mide la ida y vuelta
     canal.on("presence", { event: "sync" }, () => {
       setEntradas(entradasDesdePresencia(canal.presenceState()));
     });
@@ -191,11 +196,22 @@ export default function Mando({
       if (estadoCanal === "SUBSCRIBED") canal.track({ remitente: perfilId, llegada: Date.now() });
     });
     canalRef.current = canal;
+    // Ping de latencia (OL-132), solo con la sonda: un broadcast a sí mismo cada 5 s; con `ack`, `send` resuelve
+    // cuando el servidor de Realtime lo confirma — eso es la ida y vuelta a Supabase, sin la pared ni el dibujo.
+    const ping = sonda
+      ? setInterval(async () => {
+          const enviado = Date.now();
+          const mensaje: MensajePing = { remitente: perfilId, enviado };
+          const r = await canal.send({ type: "broadcast", event: EVENTO_PING, payload: mensaje });
+          if (r === "ok") setPingMs(Date.now() - enviado);
+        }, PING_CADA_MS)
+      : null;
     return () => {
+      if (ping) clearInterval(ping);
       canal.unsubscribe();
       canalRef.current = null;
     };
-  }, [obraId, perfilId]);
+  }, [obraId, perfilId, sonda]);
 
   // «Te toca» (recorte del founder, doc rediseno/34: sin turno con tiempo máximo): un aviso que se va solo a los
   // pocos segundos, y el mando queda activo de inmediato — no hace falta un toque extra para empezar a pintar.
@@ -231,12 +247,21 @@ export default function Mando({
     if (!estaEncendido(sensor) || estado.tipo !== "pintando") return;
     function alMoverse(e: DeviceOrientationEvent) {
       muestrasRef.current += 1;
-      const actual: Orientacion = { beta: e.beta, gamma: e.gamma };
-      if (!ceroRef.current && actual.beta !== null && actual.gamma !== null) ceroRef.current = actual;
+      const actual: Orientacion = { alpha: e.alpha, beta: e.beta, gamma: e.gamma };
+      if (!ceroRef.current && actual.beta !== null && (typeof actual.alpha === "number" || actual.gamma !== null)) ceroRef.current = actual;
       const posicion = posicionDesdeOrientacion(ceroRef.current, actual);
       if (!posicion) return;
+      const ahora = Date.now();
+      const anterior = ultimaPosicionRef.current;
+      // Filtro de saltos (OL-132): una lectura que manda el cursor al otro lado en un cuadro es una lectura rota.
+      if (esSalto(anterior?.p ?? null, posicion, ahora - (anterior?.t ?? 0))) {
+        const g = (v: number | null | undefined) => (typeof v === "number" ? Math.round(v) : "—");
+        anotar(`salto ignorado: α ${g(actual.alpha)} β ${g(actual.beta)} γ ${g(actual.gamma)} → (${posicion.x.toFixed(2)}, ${posicion.y.toFixed(2)}) desde (${anterior!.p.x.toFixed(2)}, ${anterior!.p.y.toFixed(2)})`);
+        return;
+      }
+      ultimaPosicionRef.current = { p: posicion, t: ahora };
       posicionRef.current = posicion;
-      ultimaMuestraRef.current = Date.now();
+      ultimaMuestraRef.current = ahora;
       bufferRef.current.push(posicion);
     }
     window.addEventListener("deviceorientation", alMoverse);
@@ -253,19 +278,31 @@ export default function Mando({
       if (contador) clearInterval(contador);
       bufferRef.current = [];
     };
-  }, [sensor, estado.tipo, sonda]);
+  }, [sensor, estado.tipo, sonda, anotar]);
 
   // (a) Safari de iOS: mientras el mando está en pantalla, sin «tirar para refrescar» ni rebote de la página
   // (`overscroll-behavior` tiene que ir en html/body, no basta en el botón); se repone al salir.
+  // OL-132 (founder: «que se bloquee desplazamiento completamente»): mientras el mando está en pantalla, la página
+  // no se mueve nunca — html/body sin desplazamiento, sin rebote, sin zoom con dos dedos (`touch-action: none`
+  // cubre el pellizco) y `touchmove` no pasivo con `preventDefault` en el documento SIEMPRE, no solo pintando.
+  // Se repone todo al salir.
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
-    const antes = [html.style.overscrollBehavior, body.style.overscrollBehavior];
+    const antes = [html.style.overscrollBehavior, body.style.overscrollBehavior, html.style.touchAction, body.style.touchAction, html.style.overflow, body.style.overflow];
     html.style.overscrollBehavior = "none";
     body.style.overscrollBehavior = "none";
+    html.style.touchAction = "none";
+    body.style.touchAction = "none";
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    const frenar = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault();
+    };
+    document.addEventListener("touchmove", frenar, { passive: false });
     return () => {
-      html.style.overscrollBehavior = antes[0];
-      body.style.overscrollBehavior = antes[1];
+      document.removeEventListener("touchmove", frenar);
+      [html.style.overscrollBehavior, body.style.overscrollBehavior, html.style.touchAction, body.style.touchAction, html.style.overflow, body.style.overflow] = antes;
     };
   }, []);
 
@@ -294,9 +331,7 @@ export default function Mando({
     const intervalo = setInterval(() => {
       const muestras = bufferRef.current;
       bufferRef.current = [];
-      // Mientras se ajusta el grosor no se manda trazo (gestor, 2026-09-21): el arrastre del dedo no es pintar.
-      // Las muestras de ese rato se tiran, no se guardan: al volver a pintar no debe salir un salto acumulado.
-      if (ajustandoRef.current) return;
+      // El arrastre del grosor ya no corta el trazo (OL-132): cada mensaje lleva el grosor del momento.
       mandarTrazo(muestras);
     }, intervaloMs(ritmoDeTrazo(cupo)));
     return () => {
@@ -331,7 +366,6 @@ export default function Mando({
       setDesplazamiento(0);
       setCapturado(false);
       arrastreInicioYRef.current = null;
-      ajustandoRef.current = false;
     },
     [anotar],
   );
@@ -346,8 +380,7 @@ export default function Mando({
       const deltaY = arrastreInicioYRef.current - clientY; // positivo = dedo subió
       const acotado = Math.max(-ARRASTRE_GROSOR_MAX_PX, Math.min(ARRASTRE_GROSOR_MAX_PX, deltaY));
       setDesplazamiento(acotado);
-      ajustandoRef.current = estaAjustandoGrosor(acotado);
-      setGrosor(grosorDesdeArrastre(deltaY, grosorAlEmpezarRef.current));
+      setGrosor(grosorDesdeArrastre(deltaY, grosorAlEmpezarRef.current)); // en vivo: el trazo sigue con este grosor
     }
     function alArrastrar(e: PointerEvent) {
       anotar(`${e.type} ${e.pointerType} y=${Math.round(e.clientY)}`);
@@ -501,6 +534,7 @@ export default function Mando({
     setAbierto(null);
     ceroRef.current = null;
     posicionRef.current = CENTRO;
+    ultimaPosicionRef.current = null; // el filtro de saltos arranca de cero con el nuevo cero
     bufferRef.current = [];
     mandarPosicion(CENTRO);
   }
@@ -677,15 +711,16 @@ export default function Mando({
           </p>
         ) : (
           <p className={styles.hold} aria-live="polite">
-            {/* Mientras el dedo ajusta el grosor no se pinta (no se manda trazo), así que el texto no debe decir
-                «Pintando»; además, en el tope de abajo el punto quedaría encima del texto. El <p> conserva su renglón. */}
-            {presionado ? (estaAjustandoGrosor(desplazamiento) ? " " : "Pintando en la pared") : "Mantén presionado y mueve tu celular"}
+            {/* Si el dedo baja mucho, el botón queda encima de este texto: se deja en blanco ese rato (el <p> conserva
+                su renglón). Con el grosor en vivo (OL-132) el trazo sigue saliendo, así que no hay otro texto. */}
+            {presionado ? (desplazamiento < -20 ? "\u00a0" : "Pintando en la pared") : "Mantén presionado y mueve tu celular"}
           </p>
         ))}
 
       {sonda && (
         <pre className={styles.sonda} aria-hidden="true">
           {`sonda · fila=${estado.tipo} (${entradas.length}) · sensor=${sensor.tipo} · ${muestrasPorSegundo} lecturas/s · trazo ${ritmoDeTrazo(cupo)}/s, posición ${POSICIONES_POR_SEGUNDO}/s\n` +
+            `ida y vuelta al servidor: ${pingMs === null ? "—" : `${pingMs} ms`} (ping cada ${PING_CADA_MS / 1000} s)\n` +
             `cercanía=${cercania.tipo}${"distanciaM" in cercania && cercania.distanciaM !== null ? ` ${Math.round(cercania.distanciaM)} m` : ""}${cercania.tipo === "lejos" ? ` (±${Math.round(cercania.precisionM)} m)` : ""}${esAdmin ? " · admin exenta" : ""}${referencia ? "" : " · sin referencia"}\n` +
             `pres=${presionado ? "sí" : "no"} cap=${capturado ? "sí" : "no"} desp=${desplazamiento} grosor=${grosor.toFixed(2)} pos=${posicionSonda.x.toFixed(2)},${posicionSonda.y.toFixed(2)}\n` +
             lineasSonda.join("\n")}

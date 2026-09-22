@@ -119,6 +119,13 @@ export function esTintaClara(valor: string): boolean {
 /** Nombre del evento de Broadcast en el canal de la obra (`abrirCanalObra`). */
 export const EVENTO_TRAZO = "trazo";
 
+/** Ping de latencia (OL-132), solo con la sonda del mando: un broadcast a sí mismo cada PING_CADA_MS con el canal en
+ * modo `ack`; lo que tarda en confirmarse es la ida y vuelta al servidor de Realtime, para separar red de cálculo.
+ * La pared no lo escucha. */
+export const EVENTO_PING = "ping";
+export const PING_CADA_MS = 5000;
+export type MensajePing = { remitente: string; enviado: number };
+
 /**
  * «Borrar la pared» (OL-126, founder: «agregar botón de borrado o reinicio de pared en admin»): un mensaje por el
  * canal y toda pared abierta de la obra limpia su lienzo; no borra nada guardado y la obra sigue abierta. El botón
@@ -236,7 +243,14 @@ export function tocaSubirInstantanea(a: { motivo: MotivoInstantanea; hayTrazosNu
 export const PUNTOS_MAX_POR_MENSAJE = 20;
 
 /** Lo que da `DeviceOrientationEvent`: solo lo que se usa aquí, del sensor real o de una muestra guardada. */
-export type Orientacion = { beta: number | null; gamma: number | null };
+export type Orientacion = { alpha?: number | null; beta: number | null; gamma: number | null };
+
+/** El giro más corto de `desde` a `hasta`, en grados, normalizado a (-180, 180]: así un ángulo que da la vuelta
+ * (alpha 0↔360, beta ±180) no manda el cursor al otro lado de la pared (OL-132: «cambia drásticamente de posición»). */
+export function diferenciaAngular(desde: number, hasta: number): number {
+  const d = (((hasta - desde + 540) % 360) + 360) % 360 - 180;
+  return d === -180 ? 180 : d;
+}
 
 /**
  * Dónde apunta el pincel (OL-120, founder en producción 2026-09-22: «Solo estoy pintando en un sector de la
@@ -257,16 +271,33 @@ export type PosicionNormalizada = { x: number; y: number };
 export const RANGO_GRADOS = { horizontal: 30, vertical: 20 };
 
 /**
- * La posición a partir de la lectura actual y del cero. Sentido de los ejes: `gamma` crece al inclinar el
- * teléfono hacia la derecha (regla de la mano derecha sobre el eje Y del aparato) y la X de la pared también crece
- * hacia la derecha; `beta` crece al inclinarlo hacia arriba y la Y de la pared crece hacia ABAJO, así que ese eje
- * se resta al revés (no `-(...)`, para no producir un -0 cuando no hay cambio). Sin cero o sin lectura completa
- * (el sensor todavía no dio su primer dato), no hay posición.
+ * La posición a partir de la lectura actual y del cero, con las diferencias desenrolladas (`diferenciaAngular`).
+ * Horizontal (OL-132, founder: «en ocasiones cambia drásticamente de posición el cursor»): va por `alpha` (girar el
+ * teléfono a la derecha o a la izquierda, como un apuntador), no por `gamma`: `gamma` cambia de signo al pasar
+ * por la vertical (±90°) y con el teléfono casi de pie se vuelve inestable (cardán) — un salto de 180° en la
+ * lectura mandaba el cursor al otro lado. `alpha` crece al girar en sentido contrario a las manecillas (visto
+ * desde arriba), así que girar a la derecha lo baja y la X sube: x = cero − actual. Si el aparato no da `alpha`,
+ * se usa `gamma` como antes (actual − cero). Vertical: `beta` crece al inclinar hacia arriba y la Y de la pared
+ * crece hacia ABAJO: y = cero − actual. Sin cero o sin lectura completa, no hay posición.
  */
 export function posicionDesdeOrientacion(cero: Orientacion | null, actual: Orientacion, rango: { horizontal: number; vertical: number } = RANGO_GRADOS): PosicionNormalizada | null {
-  if (!cero || cero.beta === null || cero.gamma === null || actual.beta === null || actual.gamma === null) return null;
+  if (!cero || cero.beta === null || actual.beta === null) return null;
   const acotar = (v: number) => Math.max(-1, Math.min(1, v));
-  return { x: acotar((actual.gamma - cero.gamma) / rango.horizontal), y: acotar((cero.beta - actual.beta) / rango.vertical) };
+  let horizontal: number;
+  if (typeof cero.alpha === "number" && typeof actual.alpha === "number") horizontal = diferenciaAngular(actual.alpha, cero.alpha);
+  else if (cero.gamma !== null && actual.gamma !== null) horizontal = diferenciaAngular(cero.gamma, actual.gamma);
+  else return null;
+  return { x: acotar(horizontal / rango.horizontal), y: acotar(diferenciaAngular(actual.beta, cero.beta) / rango.vertical) };
+}
+
+/** Filtro de saltos (OL-132): si entre dos lecturas seguidas la posición cambia más de `SALTO_UMBRAL` (la mitad del
+ * recorrido, o sea un cuarto de la pared) en menos de `SALTO_VENTANA_MS`, no es un movimiento de muñeca: es una
+ * lectura rota (cardán, envoltura) y se ignora; la sonda lo anota para leerlo en el teléfono. */
+export const SALTO_UMBRAL = 0.5;
+export const SALTO_VENTANA_MS = 100;
+export function esSalto(anterior: PosicionNormalizada | null, actual: PosicionNormalizada, dtMs: number, umbral = SALTO_UMBRAL, ventanaMs = SALTO_VENTANA_MS): boolean {
+  if (!anterior || !(dtMs < ventanaMs)) return false;
+  return Math.abs(actual.x - anterior.x) > umbral || Math.abs(actual.y - anterior.y) > umbral;
 }
 
 function numeroFinito(v: unknown): v is number {
@@ -326,8 +357,6 @@ export const GROSOR_BASE = 1;
 export const GROSOR_MIN = 0.5;
 export const GROSOR_MAX = 3.5;
 export const ARRASTRE_GROSOR_MAX_PX = 60;
-/** Menos que esto es el temblor normal del dedo al mantener presionado, no un ajuste de grosor. */
-export const UMBRAL_AJUSTE_PX = 8;
 
 /**
  * Relativo a `grosorInicial` (el grosor que tenía el punto al empezar a presionar), no al grosor base: el gestor
@@ -343,11 +372,9 @@ export function grosorDesdeArrastre(deltaY: number, grosorInicial = GROSOR_BASE,
   return Math.max(GROSOR_MIN, Math.min(GROSOR_MAX, grosor));
 }
 
-/** Mientras el dedo está más allá del umbral, se está ajustando el grosor: el mando NO manda trazo (gestor,
- * 2026-09-21), para que el arrastre vertical no se confunda con el movimiento del celular que pinta. */
-export function estaAjustandoGrosor(desplazamiento: number, umbral = UMBRAL_AJUSTE_PX): boolean {
-  return Math.abs(desplazamiento) > umbral;
-}
+/* OL-132 (founder: «modificar grosor mientras se pinta es imposible, se traba»): ya no existe el estado «ajustando
+   sin pintar» (antes, pasado un umbral de 8 px el trazo se cortaba). El arrastre cambia el grosor EN VIVO y el trazo
+   sigue saliendo: cada mensaje lleva el grosor del momento y la pared lo usa para los puntos nuevos y para el cursor. */
 
 /** El punto blanco del mando mide el grosor a escala del mando: 16 px por unidad de grosor (gestor, 2026-09-21:
  * «que el punto blanco mida el grosor real del trazo tal como se pintará en la pared a escala del mando, mínimo

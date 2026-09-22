@@ -15,4 +15,12 @@ describe("abrirCanalObra", () => {
     expect(channel).toHaveBeenCalledWith("obra:abc", { config: { private: true } });
     expect(resultado).toBe("el-canal");
   });
+  it("con ack (OL-132, solo la sonda del mando) pide confirmación de cada broadcast; sin ack, nada cambia", () => {
+    const channel = vi.fn().mockReturnValue("el-canal");
+    const supabase = { channel } as unknown as Parameters<typeof abrirCanalObra>[0];
+    abrirCanalObra(supabase, "abc", { ack: true });
+    expect(channel).toHaveBeenCalledWith("obra:abc", { config: { private: true, broadcast: { ack: true } } });
+    abrirCanalObra(supabase, "abc", { ack: false });
+    expect(channel).toHaveBeenLastCalledWith("obra:abc", { config: { private: true } });
+  });
 });
