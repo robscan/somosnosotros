@@ -91,9 +91,12 @@
   .lugar circle { fill: var(--primario); stroke: var(--fondo); stroke-width: 1.5; transition: r 150ms; }
   .lugar .dia { fill: var(--primario-texto); font-size: 10px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; dominant-baseline: central; pointer-events: none; letter-spacing: 0; }
   .lugar .nombre { fill: var(--primario); font-size: 13px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; paint-order: stroke; stroke: var(--fondo); stroke-width: 3; stroke-linejoin: round; pointer-events: none; }
-  .lugar.destacado circle { fill: var(--destacado); stroke-width: 2; }
-  .lugar.destacado .borde { fill: none; stroke: var(--destacado); stroke-width: 1.5; }
-  .lugar.destacado .nombre { fill: var(--destacado-texto); }
+  /* El resalte (naranja + aro) lo lleva el SEGUIDO, no el destacado: cambio del founder tras firmar el
+     documento (2026-09-22, "de cara al usuario es más útil que se resalten los seguidos"). Sin sesión, o con
+     un lugar destacado que la persona no sigue, el pin se pinta como cualquier otro (ver estado "seguidos"). */
+  .lugar.seguido circle { fill: var(--destacado); stroke-width: 2; }
+  .lugar.seguido .borde { fill: none; stroke: var(--destacado); stroke-width: 1.5; }
+  .lugar.seguido .nombre { fill: var(--destacado-texto); }
   .lugar.elegido circle { stroke-width: 2.5; transform: scale(1.3); transform-box: fill-box; transform-origin: center; }
   /* La persona: punto azul con halo (el estándar de los mapas) */
   .yo-halo { fill: rgba(26, 115, 232, 0.18); }
@@ -225,7 +228,7 @@
 <div class="estudio">
   <div class="rotulo">
     <strong>Mapa de lugares · OL-124</strong>
-    Tres estados de la misma pantalla, con las decisiones del founder del 2026-09-22 ya aplicadas: días de tres letras con acento y el botón de ubicación visible en los tres estados (nunca tapado). El mapa está dibujado a mano (sin Mapbox ni token); los pines, el botón de ubicación y la tarjeta son los que se proponen. Tocar un pin abre su tarjeta, tocar el mapa la cierra, el botón de abajo a la izquierda pone o quita la ubicación. Las pestañas van sin «Cercanos»: en el mapa, esa decisión es del botón (decidido).
+    Cuatro estados de la misma pantalla, con las decisiones del founder del 2026-09-22 ya aplicadas: días de tres letras con acento, el botón de ubicación visible en todos (nunca tapado) y el resalte naranja con aro para los lugares que la persona SIGUE, no los destacados (decisión posterior a la firma). El mapa está dibujado a mano (sin Mapbox ni token); los pines, el botón de ubicación y la tarjeta son los que se proponen. Tocar un pin abre su tarjeta, tocar el mapa la cierra, el botón de abajo a la izquierda pone o quita la ubicación. Las pestañas van sin «Cercanos»: en el mapa, esa decisión es del botón (decidido).
   </div>
 </div>
 
@@ -233,19 +236,24 @@
   // Lugares de ejemplo (nombres reales del catálogo; posiciones inventadas sobre el mapa dibujado).
   // dia: "Hoy" o el día en tres letras con acento (Lun, Mar, Mié, Jue, Vie, Sáb, Dom, decisión del founder
   // 2026-09-22) cuando el lugar tiene evento en los próximos 7 días; null si no.
+  // "destacado": lo decide el administrador (solo se usa hoy para la etiqueta "Destacado" de la hoja).
+  // "seguido": lo decide la propia persona (con sesión); es quien lleva el naranja y el aro en el mapa
+  // (cambio del founder tras firmar, 2026-09-22). Un lugar puede ser las dos cosas, una sola o ninguna:
+  // el Centro de las Artes es destacado pero NO seguido (se pinta como cualquier otro); el Museo Federico
+  // Silva es las dos cosas; el MUNI es solo seguido (nunca fue destacado).
   const LUGARES = [
-    { id: "artes", x: 250, y: 240, nombre: ["Centro de las Artes", "de San Luis Potosí"], tipo: "Centro cultural", destacado: true, dia: "Hoy", evento: "Muestra de danza contemporánea", cuando: "Hoy · 19:00" },
-    { id: "paz", x: 350, y: 470, nombre: ["Teatro de la Paz"], tipo: "Teatro", destacado: false, dia: "Hoy", evento: "Orquesta Sinfónica de SLP", cuando: "Hoy · 20:00" },
-    { id: "tlaxcala", x: 410, y: 300, nombre: ["Casa de Cultura del", "Barrio de Tlaxcala"], tipo: "Casa de cultura", destacado: false, dia: "Jue", evento: "Taller de grabado", cuando: "jue 24 sep · 17:00" },
-    { id: "silva", x: 330, y: 520, nombre: ["Museo Federico Silva"], tipo: "Museo", destacado: true, dia: null, evento: null, cuando: null },
-    { id: "muni", x: 190, y: 560, nombre: ["MUNI Museo", "Universitario UASLP"], tipo: "Museo", destacado: false, dia: "Vie", evento: "Inauguración: Materia y luz", cuando: "vie 25 sep · 18:30" },
-    { id: "laberinto", x: 430, y: 565, nombre: ["Museo Laberinto"], tipo: "Museo", destacado: false, dia: "Sáb", evento: "Noche de estrellas", cuando: "sáb 26 sep · 19:00" },
-    { id: "cineteca", x: 365, y: 395, nombre: ["Cineteca Alameda"], tipo: "Cine", destacado: false, dia: null, evento: null, cuando: null },
-    { id: "poeta", x: 290, y: 495, nombre: ["Casa del Poeta"], tipo: "Casa de cultura", destacado: false, dia: null, evento: null, cuando: null },
-    { id: "ferrocarril", x: 420, y: 430, nombre: ["Museo del Ferrocarril"], tipo: "Museo", destacado: false, dia: null, evento: null, cuando: null },
-    { id: "soledad", x: 600, y: 180, nombre: ["Casa de la Cultura", "de Soledad"], tipo: "Casa de cultura", destacado: false, dia: null, evento: null, cuando: null },
-    { id: "ipba", x: 230, y: 450, nombre: ["IPBA"], tipo: "Escuela", destacado: false, dia: null, evento: null, cuando: null },
-    { id: "ccub", x: 230, y: 165, nombre: ["Centro Cultural", "Universitario Bicentenario"], tipo: "Centro cultural", destacado: false, dia: "Mié", evento: "Concierto de cámara", cuando: "mié 23 sep · 19:00" },
+    { id: "artes", x: 250, y: 240, nombre: ["Centro de las Artes", "de San Luis Potosí"], tipo: "Centro cultural", destacado: true, seguido: false, dia: "Hoy", evento: "Muestra de danza contemporánea", cuando: "Hoy · 19:00" },
+    { id: "paz", x: 350, y: 470, nombre: ["Teatro de la Paz"], tipo: "Teatro", destacado: false, seguido: false, dia: "Hoy", evento: "Orquesta Sinfónica de SLP", cuando: "Hoy · 20:00" },
+    { id: "tlaxcala", x: 410, y: 300, nombre: ["Casa de Cultura del", "Barrio de Tlaxcala"], tipo: "Casa de cultura", destacado: false, seguido: false, dia: "Jue", evento: "Taller de grabado", cuando: "jue 24 sep · 17:00" },
+    { id: "silva", x: 330, y: 520, nombre: ["Museo Federico Silva"], tipo: "Museo", destacado: true, seguido: true, dia: null, evento: null, cuando: null },
+    { id: "muni", x: 190, y: 560, nombre: ["MUNI Museo", "Universitario UASLP"], tipo: "Museo", destacado: false, seguido: true, dia: "Vie", evento: "Inauguración: Materia y luz", cuando: "vie 25 sep · 18:30" },
+    { id: "laberinto", x: 430, y: 565, nombre: ["Museo Laberinto"], tipo: "Museo", destacado: false, seguido: false, dia: "Sáb", evento: "Noche de estrellas", cuando: "sáb 26 sep · 19:00" },
+    { id: "cineteca", x: 365, y: 395, nombre: ["Cineteca Alameda"], tipo: "Cine", destacado: false, seguido: false, dia: null, evento: null, cuando: null },
+    { id: "poeta", x: 290, y: 495, nombre: ["Casa del Poeta"], tipo: "Casa de cultura", destacado: false, seguido: false, dia: null, evento: null, cuando: null },
+    { id: "ferrocarril", x: 420, y: 430, nombre: ["Museo del Ferrocarril"], tipo: "Museo", destacado: false, seguido: false, dia: null, evento: null, cuando: null },
+    { id: "soledad", x: 600, y: 180, nombre: ["Casa de la Cultura", "de Soledad"], tipo: "Casa de cultura", destacado: false, seguido: false, dia: null, evento: null, cuando: null },
+    { id: "ipba", x: 230, y: 450, nombre: ["IPBA"], tipo: "Escuela", destacado: false, seguido: false, dia: null, evento: null, cuando: null },
+    { id: "ccub", x: 230, y: 165, nombre: ["Centro Cultural", "Universitario Bicentenario"], tipo: "Centro cultural", destacado: false, seguido: false, dia: "Mié", evento: "Concierto de cámara", cuando: "mié 23 sep · 19:00" },
   ];
   // Dónde está la persona en el estado «con ubicación» (coordenadas del mapa dibujado).
   const PERSONA = { x: 430, y: 520 };
@@ -261,12 +269,13 @@
   }
 
   function pintarLugares(capa) {
-    // Los que tienen evento van encima; los destacados, encima de todo (como en las capas del mapa real).
-    const orden = [...LUGARES].sort((a, b) => (a.destacado - b.destacado) || ((a.dia ? 1 : 0) - (b.dia ? 1 : 0)));
+    // Los que tienen evento van encima; los seguidos, encima de todo (como en las capas del mapa real). El
+    // resalte lo lleva "seguido", no "destacado" (cambio del founder tras firmar, 2026-09-22).
+    const orden = [...LUGARES].sort((a, b) => (a.seguido - b.seguido) || ((a.dia ? 1 : 0) - (b.dia ? 1 : 0)));
     for (const l of orden) {
-      const g = svg("g", { class: `lugar${l.destacado ? " destacado" : ""}`, "data-id": l.id, transform: `translate(${l.x} ${l.y})` });
-      const r = l.dia ? 16 : l.destacado ? 7 : 5; // 16: los tres caracteres de "Sáb"/"Hoy" caben sin achicar la letra
-      if (l.destacado) g.appendChild(svg("circle", { class: "borde", r: r + 3.5 }));
+      const g = svg("g", { class: `lugar${l.seguido ? " seguido" : ""}`, "data-id": l.id, transform: `translate(${l.x} ${l.y})` });
+      const r = l.dia ? 16 : l.seguido ? 7 : 5; // 16: los tres caracteres de "Sáb"/"Hoy" caben sin achicar la letra
+      if (l.seguido) g.appendChild(svg("circle", { class: "borde", r: r + 3.5 }));
       g.appendChild(svg("circle", { class: "punto", r }));
       if (l.dia) g.appendChild(svg("text", { class: "dia" }, l.dia));
       const nombre = svg("text", { class: "nombre", y: r + 12 });
@@ -335,6 +344,7 @@
     ["sin-ubicacion", null, "Sin ubicación", "Al abrir: el encuadre muestra los lugares con evento esta semana y los destacados. Hoy y los días en tres letras con acento (Jue, Vie…); los demás, un punto."],
     ["con-ubicacion", null, "Con ubicación", "Tras tocar el botón: el mapa se centra en la persona (punto azul) y el botón toma el color de acción. Volver a tocarlo recentra."],
     ["pin-tocado", "paz", "Pin tocado", "Una hoja corta con el nombre, el próximo evento y «Ver ficha». Registrar se retira; el botón de ubicación sube y se queda visible encima de la hoja."],
+    ["seguidos", null, "Seguidos resaltados", "Cambio del founder tras firmar el documento (2026-09-22): el naranja y el aro los llevan los lugares que la persona sigue, no los destacados. El Centro de las Artes es destacado pero no lo sigue: se pinta como cualquier lugar con evento. El Museo Federico Silva (destacado y seguido) y el MUNI (solo seguido) sí llevan el resalte."],
   ];
   for (const [estado, elegido, titulo, texto] of ESTADOS) {
     const { tel, subirBoton } = montar(estado, elegido);
