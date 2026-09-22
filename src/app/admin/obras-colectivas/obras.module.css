@@ -119,8 +119,20 @@
 }
 
 /* Al imprimir queda solo el nombre de la obra, el código y el enlace: una hoja para pegar en la pared. */
+/* Hoja para pegar en la pared: carta/A4 vertical, con margen de página (`@page`) — sin esto el QR se mide contra
+   el viewport de la pantalla, no contra el papel, y se corta por los lados (hallazgo del gestor, 2026-09-22). */
+@page {
+  size: auto;
+  margin: 2cm;
+}
 @media print {
   .fichaObra {
+    display: grid;
+    justify-items: center;
+    /* `align-items`/`align-content: start`: sin esto la rejilla estira el nombre y la tarjeta del QR para llenar
+       el `min-height: 100dvh` heredado de `ui/Ficha.module.css`, y deja un hueco en blanco bajo el enlace. */
+    align-items: start;
+    align-content: start;
     min-height: 0;
     padding: 0;
     background: #fff;
@@ -129,17 +141,24 @@
     display: none;
   }
   .nombre {
-    margin: 0 0 8mm;
+    margin: 0 0 1cm;
     text-align: center;
   }
   .qr {
+    /* flex, no grid: con un hijo de ancho/alto fijos y aspect-ratio, la pista de una rejilla se calculaba más
+       alta que la imagen (pase de medida intrínseca del navegador) y dejaba un hueco antes del enlace. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     margin: 0;
     padding: 0;
     border: 0;
-    gap: 6mm;
+    gap: 0.6cm;
   }
   .qr > img {
-    width: 120mm;
+    width: 12cm;
+    height: 12cm;
+    max-width: 100%;
   }
   .qr > figcaption {
     font-size: 12pt;
