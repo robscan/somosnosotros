@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Barra from "@/components/ui/Barra";
-import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoLapiz, IconoLibro, IconoPersona, IconoTablero } from "@/components/ui/Iconos";
+import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoHerramientas, IconoLapiz, IconoLibro, IconoPersona } from "@/components/ui/Iconos";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { textoPendientes } from "@/lib/panel";
 import { TEXTO_INVITAR } from "@/lib/perfil";
@@ -91,7 +91,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
           {perfil.rol === "admin" && (
             <li>
               <Link href="/admin" className={styles.fila}>
-                <IconoTablero width={20} height={20} />
+                <IconoHerramientas width={20} height={20} />
                 <b>Administración</b>
                 <small>{pendientes === null ? "Pendientes, indicadores, personas y fichas" : textoPendientes(pendientes)}</small>
                 <span className={styles.valor}>

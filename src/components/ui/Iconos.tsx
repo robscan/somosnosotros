@@ -76,6 +76,12 @@ export const IconoEscudo = (p: P) => (
     <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
   </svg>
 );
+/** Llave inglesa: entrada a Administración desde la cabecera y desde Ajustes (OL-133, decisión del founder). */
+export const IconoHerramientas = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z" />
+  </svg>
+);
 export const IconoLibro = (p: P) => (
   <svg {...base(p)}>
     <path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" />
@@ -370,15 +376,6 @@ export const IconoCasa = (p: P) => (
 export const IconoTexto = (p: P) => (
   <svg {...base(p)}>
     <path d="M5 7h14M5 12h14M5 17h9" />
-  </svg>
-);
-/** Tablero de indicadores: la entrada a Administración en Ajustes (docs/rediseno/19, decisión 12). */
-export const IconoTablero = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M3.5 16.5a8.5 8.5 0 0 1 17 0" />
-    <path d="M12 16.5l4.2-4.7" />
-    <circle cx="12" cy="16.5" r="1.3" fill="currentColor" />
-    <path d="M3.5 20h17" />
   </svg>
 );
 /** Bandera: un reporte (a diferencia de un reclamo, que lleva la persona). */
