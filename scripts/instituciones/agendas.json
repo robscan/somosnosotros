@@ -59,7 +59,8 @@
     "lugarId": "372bc316-1257-4a51-8fbd-0b6bf800f70e",
     "slug": "museo-del-ferrocarril-jesus-garcia-corona",
     "nombre": "Museo del Ferrocarril Jesús García Corona",
-    "variante": "institucion"
+    "variante": "institucion",
+    "grupoCorreo": "secult-buzon-compartido"
   },
   {
     "lugarId": "e0d5fdb7-5aee-45f4-8a63-eccc875f62b2",
@@ -175,7 +176,8 @@
     "lugarId": "9baaed54-9818-4919-8964-ab40afc22c54",
     "slug": "centro-cultural-julian-carrillo",
     "nombre": "Centro Cultural Julián Carrillo",
-    "variante": "institucion"
+    "variante": "institucion",
+    "grupoCorreo": "secult-buzon-compartido"
   },
   {
     "lugarId": "054f8973-688e-455c-a9ae-b46c8c934393",
@@ -276,7 +278,8 @@
     "lugarId": "8d61183a-05b8-4006-9cfd-1632a979a5d0",
     "slug": "galeria-jose-jayme",
     "nombre": "Galería José Jayme",
-    "variante": "institucion"
+    "variante": "institucion",
+    "grupoCorreo": "secult-buzon-compartido"
   },
   {
     "lugarId": "b4ca27ba-38cd-4f63-b41e-6ef99e062d7b",

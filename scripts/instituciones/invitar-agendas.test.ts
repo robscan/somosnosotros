@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   armarCorreo, armarDestinos, asuntoDe, type Destino, type EnvioPrevio, type Fila, hashCorreo, leerArgumentos, leerCsv, leerFilas, listaCorta,
-  paraRecordatorio, quitarYaEnviados, repartir, tipoDe, urlFicha,
+  nombreBuzonCompartido, paraRecordatorio, quitarYaEnviados, repartir, tipoDe, urlFicha,
 } from "./invitar-agendas";
 
 const SAL = "sal-de-prueba";
@@ -15,18 +15,22 @@ const filas: Fila[] = [
   { lugarId: "id-5", slug: "sede-b", nombre: "Sede B", variante: "organismo", organismo: "Organismo X" },
   { lugarId: "id-6", slug: "sede-c", nombre: "Sede C", variante: "organismo", organismo: "Organismo Y", sinCorreo: true },
   { lugarId: "id-7", slug: "sin-csv", nombre: "Sin CSV", variante: "institucion" },
+  { lugarId: "id-8", slug: "museo-cuatro", nombre: "Museo Cuatro", variante: "institucion", grupoCorreo: "grupo-secult" },
+  { lugarId: "id-9", slug: "centro-cinco", nombre: "Centro Cinco", variante: "institucion", grupoCorreo: "grupo-secult" },
 ];
 const csv = `clave,correo,contesto
 id-1,uno@ejemplo.mx,
 id-2,dos@hotmail.com,agenda
 id-3,tres@gmail.com,
 Organismo X,contacto@organismo.mx,
+id-8,compartido@secult.mx,
+id-9,compartido@secult.mx,
 `;
 
 describe("leerCsv", () => {
   it("clave, correo y contesto; salta la cabecera, comentarios y líneas sin correo", () => {
     const c = leerCsv(`# privado\n${csv}\nbasura sin arroba\n`);
-    expect(c).toHaveLength(4);
+    expect(c).toHaveLength(6);
     expect(c[0]).toEqual({ clave: "id-1", correo: "uno@ejemplo.mx", contesto: "" });
     expect(c[1].contesto).toBe("agenda");
     expect(c[3]).toEqual({ clave: "Organismo X", correo: "contacto@organismo.mx", contesto: "" });
@@ -38,11 +42,27 @@ describe("leerCsv", () => {
 
 describe("armarDestinos y repartir", () => {
   const { destinos, sinCorreo } = armarDestinos(filas, leerCsv(csv));
+  const buzon = destinos.find((d) => d.variante === "buzon_compartido")!;
   it("una institución por correo, con su ficha por slug; un organismo con sus sedes", () => {
-    expect(destinos.map((d) => d.nombre)).toEqual(["Museo Uno", "Museo Dos", "Galería Tres", "Organismo X"]);
+    expect(destinos.map((d) => d.nombre)).toEqual(["Museo Uno", "Museo Dos", "Galería Tres", "Organismo X", nombreBuzonCompartido("Secretaría de Cultura")]);
     expect(destinos[0].url).toBe("https://somosnosotros.org/lugares/museo-uno");
     expect(destinos[0].lugarId).toBe("id-1");
     expect(destinos[3]).toMatchObject({ variante: "organismo", lugarId: null, organismo: "Organismo X", correo: "contacto@organismo.mx", sedes: ["Sede A", "Sede B"] });
+  });
+  it("dos instituciones con el mismo grupoCorreo se funden en un solo destino, cada una con su propia ficha", () => {
+    expect(buzon).toMatchObject({ variante: "buzon_compartido", lugarId: null, correo: "compartido@secult.mx", organismo: nombreBuzonCompartido("Secretaría de Cultura") });
+    expect(buzon.sedesConEnlace).toEqual([
+      { nombre: "Museo Cuatro", url: "https://somosnosotros.org/lugares/museo-cuatro" },
+      { nombre: "Centro Cinco", url: "https://somosnosotros.org/lugares/centro-cinco" },
+    ]);
+    expect(buzon.organismoRegistro).toBe(`${nombreBuzonCompartido("Secretaría de Cultura")}: museo-cuatro, centro-cinco`);
+  });
+  it("si el CSV ya no da el mismo correo para el grupo, no se adivina: cada una por su lado y se avisa", () => {
+    const csvDistinto = `${csv.replace("id-9,compartido@secult.mx,", "id-9,otro@x.mx,")}`;
+    const { destinos: d2, sinCorreo: s2 } = armarDestinos(filas, leerCsv(csvDistinto));
+    expect(d2.some((d) => d.variante === "buzon_compartido")).toBe(false);
+    expect(d2.filter((d) => d.nombre === "Museo Cuatro" || d.nombre === "Centro Cinco").map((d) => d.variante)).toEqual(["institucion", "institucion"]);
+    expect(s2.some((s) => s.motivo.includes("ya no coinciden"))).toBe(true);
   });
   it("lo que se queda sin correo se reporta con motivo", () => {
     expect(sinCorreo).toEqual([
@@ -50,10 +70,10 @@ describe("armarDestinos y repartir", () => {
       { nombre: "Sin CSV", motivo: "sin correo en el CSV" },
     ]);
   });
-  it("comprobación en su orden, resto en el orden de la lista, organismos aparte", () => {
+  it("comprobación en su orden, resto en el orden de la lista (el buzón compartido cuenta como uno más), organismos aparte", () => {
     const r = repartir(destinos);
     expect(r.comprobacion.map((d) => d.nombre)).toEqual(["Galería Tres", "Museo Dos"]);
-    expect(r.resto.map((d) => d.nombre)).toEqual(["Museo Uno"]);
+    expect(r.resto.map((d) => d.nombre)).toEqual(["Museo Uno", nombreBuzonCompartido("Secretaría de Cultura")]);
     expect(r.organismos.map((d) => d.nombre)).toEqual(["Organismo X"]);
   });
 });
@@ -62,6 +82,7 @@ describe("armarCorreo", () => {
   const { destinos } = armarDestinos(filas, leerCsv(csv));
   const inst = destinos[0];
   const org = destinos[3];
+  const buzon = destinos.find((d) => d.variante === "buzon_compartido")!;
   it("variante institución: enlace a su ficha por slug, un solo llamado, salida y firma con el teléfono", () => {
     const c = armarCorreo(inst, FIRMA);
     expect(c.asunto).toBe("Museo Uno, súmate a la agenda de Somos Nosotros");
@@ -89,6 +110,19 @@ describe("armarCorreo", () => {
     expect(c.html).toContain("Sede A y Sede B");
     expect(c.texto).toContain("somosnosotros.org · 444 000 0000");
   });
+  it("variante buzón compartido: un solo correo, cada institución con su propia ficha, sin pedir reenvío ni contacto", () => {
+    const c = armarCorreo(buzon, FIRMA);
+    expect(c.asunto).toBe("Somos Nosotros — agendas de Museo Cuatro y Centro Cinco en San Luis Potosí");
+    expect(c.texto).toContain("Museo Cuatro y Centro Cinco ya tienen su ficha en la plataforma");
+    expect(c.texto).toContain("- Museo Cuatro: https://somosnosotros.org/lugares/museo-cuatro");
+    expect(c.texto).toContain("- Centro Cinco: https://somosnosotros.org/lugares/centro-cinco");
+    expect(c.texto).toContain("agenda o cartelera de este mes de cada una");
+    expect(c.texto).not.toContain("reenviar esto a quien corresponda");
+    expect(c.texto).not.toContain("contacto de cada sede");
+    expect(c.texto).toContain('"no me escriban más"');
+    expect(c.html).toContain('<li>Museo Cuatro: <a href="https://somosnosotros.org/lugares/museo-cuatro">');
+    expect(c.html).toContain('<li>Centro Cinco: <a href="https://somosnosotros.org/lugares/centro-cinco">');
+  });
   it("recordatorio: corto, nombra la institución o las sedes, misma salida y firma", () => {
     const r = armarCorreo(inst, FIRMA, { recordatorio: true });
     expect(r.asunto).toBe("Recordatorio: la agenda de Museo Uno en Somos Nosotros");
@@ -98,6 +132,9 @@ describe("armarCorreo", () => {
     expect(r.texto).toContain('"no me escriban más"');
     const ro = armarCorreo(org, FIRMA, { recordatorio: true });
     expect(ro.texto).toContain("pedirles las agendas de Sede A y Sede B y sumarlas a Somos Nosotros");
+    const rb = armarCorreo(buzon, FIRMA, { recordatorio: true });
+    expect(rb.asunto).toBe("Recordatorio: agendas de Museo Cuatro y Centro Cinco en Somos Nosotros");
+    expect(rb.texto).toContain("pedirles las agendas de Museo Cuatro y Centro Cinco y sumarlas a Somos Nosotros");
   });
   it("el teléfono viene de la firma que se pasa (la variable), no del código", () => {
     expect(armarCorreo(inst, { telefono: "otro" }).texto).toContain("somosnosotros.org · otro");
@@ -141,7 +178,7 @@ describe("quitarYaEnviados", () => {
     const previos: EnvioPrevio[] = [{ correo_hash: hashCorreo("uno@ejemplo.mx", SAL), tipo: "tanda", enviado_en: "2026-09-22T10:00:00Z" }];
     const repetido: Destino = { ...destinos[1], nombre: "Museo Dos bis", clave: "id-2b", lugarId: "id-2b" };
     const { pendientes, omitidos } = quitarYaEnviados([...destinos, repetido], "tanda", previos, SAL);
-    expect(pendientes.map((d) => d.nombre)).toEqual(["Museo Dos", "Galería Tres", "Organismo X"]);
+    expect(pendientes.map((d) => d.nombre)).toEqual(["Museo Dos", "Galería Tres", "Organismo X", nombreBuzonCompartido("Secretaría de Cultura")]);
     expect(omitidos.map((o) => `${o.destino.nombre}: ${o.motivo}`)).toEqual([
       'Museo Uno: ya recibió un correo de tipo "tanda"',
       "Museo Dos bis: mismo buzón que Museo Dos en esta tanda",
@@ -149,7 +186,7 @@ describe("quitarYaEnviados", () => {
   });
   it("otro tipo no bloquea", () => {
     const previos: EnvioPrevio[] = [{ correo_hash: hashCorreo("uno@ejemplo.mx", SAL), tipo: "comprobacion", enviado_en: "2026-09-22T10:00:00Z" }];
-    expect(quitarYaEnviados(destinos, "tanda", previos, SAL).pendientes).toHaveLength(4);
+    expect(quitarYaEnviados(destinos, "tanda", previos, SAL).pendientes).toHaveLength(5);
   });
 });
 
@@ -208,5 +245,11 @@ describe("agendas.json (el archivo real del repo)", () => {
     expect(reales.filter((f) => f.sinCorreo)).toHaveLength(2);
     expect(new Set(reales.map((f) => f.slug)).size).toBe(46);
     expect(new Set(reales.map((f) => f.lugarId)).size).toBe(46);
+  });
+  it("las tres instituciones del buzón compartido de la Secretaría de Cultura llevan la misma grupoCorreo", () => {
+    const grupo = reales.filter((f) => f.grupoCorreo);
+    expect(grupo.map((f) => f.nombre).sort()).toEqual(["Centro Cultural Julián Carrillo", "Galería José Jayme", "Museo del Ferrocarril Jesús García Corona"]);
+    expect(new Set(grupo.map((f) => f.grupoCorreo)).size).toBe(1);
+    for (const f of grupo) expect(f.variante).toBe("institucion");
   });
 });

@@ -156,3 +156,82 @@ sedes sin correo de área).
 ## Firma
 
 Pendiente del founder.
+
+## Ajuste tras la decisión del founder sobre los dos hallazgos (2026-09-22, tarde)
+
+El gestor aceptó la primera entrega (`7640142`) y la subió como PR [#154](https://github.com/robscan/somosnosotros/pull/154). El founder resolvió los dos hallazgos:
+
+1. **Buzón compartido:** las tres instituciones que comparten el correo de contacto de la Secretaría de Cultura
+   (Museo del Ferrocarril Jesús García Corona, Centro Cultural Julián Carrillo, Galería José Jayme) reciben **un
+   solo correo** que cita a las tres, cada una con el enlace a su propia ficha — en vez de mandarlo tres veces o
+   dejar dos omitidas por buzón repetido.
+2. **Asunto del recordatorio** («Recordatorio: la agenda de {nombre} en Somos Nosotros») queda aprobado tal cual.
+
+### Qué cambió
+
+- `scripts/instituciones/agendas.json`: las tres filas llevan ahora `"grupoCorreo": "secult-buzon-compartido"`
+  (sin tocar su `lugarId`, `slug` ni `nombre`: cada una conserva su propia ficha).
+- `scripts/instituciones/invitar-agendas.ts`: nueva variante `"buzon_compartido"` en `Destino`.
+  `armarDestinos()` agrupa las filas que comparten `grupoCorreo` **solo si el CSV les da el mismo correo**
+  (si algún día dejaran de compartir buzón, no se adivina nada: cada una se manda por separado y se avisa en
+  `sinCorreo`, para no perder una institución por un supuesto viejo). El destino agrupado lleva
+  `sedesConEnlace` (nombre + ficha de cada una) y cuenta como **uno más** dentro de `--resto` (antes, con la
+  regla de "no repetir buzón", solo salía la primera y las otras dos quedaban omitidas). Se registra en la base
+  con `lugar_id` nulo y `organismo` = `"Secretaría de Cultura (buzón compartido): <slug1>, <slug2>, <slug3>"`
+  (la tabla solo admite un `lugar_id`; no hizo falta otra migración).
+- `armarCorreo()`: nuevo cuerpo `cuerpoBuzonCompartido()`, calcado del de la variante institución (mismo
+  llamado, misma salida, sin inventar la promesa de "reenviar a quien corresponda" que sí lleva la variante
+  organismo) pero listando cada institución con su propio enlace. Asunto: «Somos Nosotros — agendas de {lista de
+  instituciones} en San Luis Potosí» (mismo patrón que la variante organismo). Recordatorio: «Recordatorio:
+  agendas de {lista} en Somos Nosotros».
+- 4 pruebas nuevas (agrupación, desagrupación si el correo ya no coincide, cuerpo de la variante, recordatorio;
+  total 27 en este archivo) y ajustes a las que cambiaban de conteo por el destino nuevo.
+
+### Evidencia (repetida sobre el cambio)
+
+- `npm run lint`: 0 errores (misma advertencia previa y ajena). `npm run typecheck`: verde.
+- `npm test`: 77 archivos, **920 pruebas** en verde (908 + los 4 nuevos, netos de un ajuste de conteo).
+- `npm run build`: verde.
+- `TEST_DATABASE_URL=postgresql://apple-1@127.0.0.1:5432/sn_control npm run test:db`: 55 migraciones, 816
+  comprobaciones, 0 fallaron (la migración de esta pieza no cambió).
+
+### Ensayo con la variante nueva (llaves en blanco)
+
+```
+46 filas en agendas.json · 43 contactos en el CSV · 41 destinos con correo · 2 sin correo
+
+--comprobacion: 3 correos
+--resto: 36 correos (34 individuales + el buzón compartido, sin ningún omitido por buzón repetido)
+  …
+  - Secretaría de Cultura (buzón compartido) · co…@gmail.com · sedes: Museo del Ferrocarril Jesús García
+    Corona, Centro Cultural Julián Carrillo y Galería José Jayme
+--organismos: 2 correos
+--recordatorio: 0 correos
+
+--- Ejemplo variante buzón compartido: Secretaría de Cultura (buzón compartido) · co…@gmail.com ---
+Asunto: Somos Nosotros — agendas de Museo del Ferrocarril Jesús García Corona, Centro Cultural Julián Carrillo
+y Galería José Jayme en San Luis Potosí
+Hola,
+
+Somos Nosotros es un directorio sin fines de lucro … Museo del Ferrocarril Jesús García Corona, Centro
+Cultural Julián Carrillo y Galería José Jayme ya tienen su ficha en la plataforma …:
+
+- Museo del Ferrocarril Jesús García Corona: https://somosnosotros.org/lugares/museo-del-ferrocarril-jesus-garcia-corona
+- Centro Cultural Julián Carrillo: https://somosnosotros.org/lugares/centro-cultural-julian-carrillo
+- Galería José Jayme: https://somosnosotros.org/lugares/galeria-jose-jayme
+
+Nos ayudaría muchísimo que nos manden la agenda o cartelera de este mes de cada una …
+…
+Gracias,
+Oscar Muñiz Blanco
+Coordinación de agenda · Somos Nosotros
+somosnosotros.org · {teléfono}
+```
+
+**No se mandó ningún correo.** 41 destinos con correo en total (comprobación 3 + resto 36 + organismos 2), sin
+ningún omitido por buzón repetido.
+
+## Firma (actualización)
+
+Pendiente del founder sobre el texto final de las variantes y del envío en sí; los dos hallazgos de la primera
+entrega ya quedaron resueltos con su decisión de esta tarde.

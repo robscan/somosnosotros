@@ -11,7 +11,11 @@
  *
  * Reparto (plan de envío del doc 31, decisión del founder: todo el mismo día):
  *   --comprobacion  los 3 correos de comprobación técnica (Hotmail/Outlook, Gmail, dominio propio)
- *   --resto         el resto de las instituciones con correo propio, en el orden de la lista
+ *   --resto         el resto de las instituciones con correo propio, en el orden de la lista (incluye el
+ *                   correo al buzón compartido de la Secretaría de Cultura, que cuenta como uno más: tres
+ *                   instituciones con el mismo correo de contacto reciben un solo correo que cita a las tres,
+ *                   cada una con su ficha — decisión del founder, 2026-09-22, en vez de mandarlo tres veces
+ *                   o quedar dos omitidas por buzón repetido)
  *   --organismos    un correo por organismo, con la lista de sus sedes sin correo propio (al final, doc 31 §3)
  *   --recordatorio  a los 12 días, un solo recordatorio a quien no contestó (columna `contesto` vacía)
  *
@@ -42,6 +46,7 @@ const RUTA_JSON = fileURLToPath(new URL("./agendas.json", import.meta.url));
 // ---------- tipos ----------
 
 export type VarianteFila = "institucion" | "organismo";
+export type VarianteDestino = VarianteFila | "buzon_compartido";
 export type Tipo = "comprobacion" | "tanda" | "recordatorio";
 export type VarianteAsunto = "A" | "B";
 
@@ -57,24 +62,34 @@ export type Fila = {
   sinCorreo?: boolean;
   /** 1, 2 o 3: orden dentro de los correos de comprobación técnica. */
   comprobacion?: number;
+  /** Institución cuyo correo de contacto es el mismo que el de otra(s) fila(s) con esta misma clave: en vez de
+   * mandar un correo repetido (o quedar omitida, doc 31 §"tres instituciones..."), se manda un solo correo que
+   * cita a todas — decisión del founder, 2026-09-22. */
+  grupoCorreo?: string;
 };
 
 /** Una fila del CSV privado: `clave,correo,contesto` (clave = lugarId o nombre del organismo). */
 export type Contacto = { clave: string; correo: string; contesto: string };
 
-/** A quién se manda un correo: una institución (con su ficha) o un organismo (con sus sedes). */
+/** A quién se manda un correo: una institución (con su ficha), un buzón que comparten varias instituciones
+ * (con la ficha de cada una), o un organismo (con la lista de sus sedes). */
 export type Destino = {
   clave: string;
   nombre: string;
-  variante: VarianteFila;
+  variante: VarianteDestino;
   correo: string;
   contesto: string;
   lugarId: string | null;
   organismo: string | null;
+  /** Lo que se anota en la columna `organismo` de la base; para buzón compartido incluye los slugs de las
+   * fichas (la tabla solo admite un lugar_id, así que aquí no cabe más que uno). */
+  organismoRegistro?: string;
   /** Variante institución: la ficha. */
   url?: string;
   /** Variante organismo: los nombres de sus sedes. */
   sedes?: string[];
+  /** Variante buzón compartido: cada institución con su propia ficha. */
+  sedesConEnlace?: { nombre: string; url: string }[];
   comprobacion?: number;
 };
 
@@ -108,18 +123,34 @@ export function listaCorta(nombres: string[]): string {
   return `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
 }
 
-/** Casa las filas con los correos: una institución → un destino con su ficha; las sedes de un mismo organismo →
- * un solo destino con la lista de sedes. Devuelve aparte lo que se queda sin correo (y por qué). */
+/** "Secretaría de Cultura (buzón compartido)": el nombre que llevan en el asunto y en la base los grupos de
+ * instituciones que comparten un mismo buzón (decisión del founder, 2026-09-22). Un solo lugar en el código
+ * para no repetir el texto entre armarDestinos y las pruebas. */
+export function nombreBuzonCompartido(area: string): string {
+  return `${area} (buzón compartido)`;
+}
+
+/** Casa las filas con los correos: una institución → un destino con su ficha; varias instituciones con la misma
+ * `grupoCorreo` (mismo buzón real) → un solo destino de tipo "buzón compartido" que cita a cada una con su
+ * ficha; las sedes de un mismo organismo → un solo destino con la lista de sedes. Devuelve aparte lo que se
+ * queda sin correo (y por qué). */
 export function armarDestinos(filas: Fila[], contactos: Contacto[]): { destinos: Destino[]; sinCorreo: { nombre: string; motivo: string }[] } {
   const porClave = new Map(contactos.map((c) => [c.clave, c]));
   const destinos: Destino[] = [];
   const sinCorreo: { nombre: string; motivo: string }[] = [];
   const organismos = new Map<string, Destino>();
+  const grupos = new Map<string, { fila: Fila; correo: string; contesto: string; comprobacion?: number }[]>();
   for (const f of filas) {
     if (f.variante === "institucion") {
       const c = porClave.get(f.lugarId);
       if (!c) {
         sinCorreo.push({ nombre: f.nombre, motivo: "sin correo en el CSV" });
+        continue;
+      }
+      if (f.grupoCorreo) {
+        const lista = grupos.get(f.grupoCorreo) ?? [];
+        lista.push({ fila: f, correo: c.correo, contesto: c.contesto, comprobacion: f.comprobacion });
+        grupos.set(f.grupoCorreo, lista);
         continue;
       }
       destinos.push({ clave: f.lugarId, nombre: f.nombre, variante: "institucion", correo: c.correo, contesto: c.contesto, lugarId: f.lugarId, organismo: null, url: urlFicha(f.slug), comprobacion: f.comprobacion });
@@ -140,11 +171,36 @@ export function armarDestinos(filas: Fila[], contactos: Contacto[]): { destinos:
     }
     let d = organismos.get(f.organismo);
     if (!d) {
-      d = { clave: f.organismo, nombre: f.organismo, variante: "organismo", correo: c.correo, contesto: c.contesto, lugarId: null, organismo: f.organismo, sedes: [] };
+      d = { clave: f.organismo, nombre: f.organismo, variante: "organismo", correo: c.correo, contesto: c.contesto, lugarId: null, organismo: f.organismo, organismoRegistro: f.organismo, sedes: [] };
       organismos.set(f.organismo, d);
       destinos.push(d);
     }
     d.sedes!.push(f.nombre);
+  }
+  for (const [clave, miembros] of grupos) {
+    const correos = new Set(miembros.map((m) => m.correo));
+    if (correos.size > 1) {
+      // Se suponía el mismo buzón para todas; si el CSV ya no coincide, no se adivina: cada una por su lado.
+      for (const m of miembros) {
+        destinos.push({ clave: m.fila.lugarId, nombre: m.fila.nombre, variante: "institucion", correo: m.correo, contesto: m.contesto, lugarId: m.fila.lugarId, organismo: null, url: urlFicha(m.fila.slug), comprobacion: m.comprobacion });
+      }
+      sinCorreo.push({ nombre: miembros.map((m) => m.fila.nombre).join(", "), motivo: `grupoCorreo "${clave}": los correos del CSV ya no coinciden; se mandó un correo a cada una por separado, sin agrupar` });
+      continue;
+    }
+    const area = "Secretaría de Cultura";
+    const nombreGrupo = nombreBuzonCompartido(area);
+    destinos.push({
+      clave,
+      nombre: nombreGrupo,
+      variante: "buzon_compartido",
+      correo: miembros[0].correo,
+      contesto: miembros[0].contesto,
+      lugarId: null,
+      organismo: nombreGrupo,
+      organismoRegistro: `${nombreGrupo}: ${miembros.map((m) => m.fila.slug).join(", ")}`,
+      sedesConEnlace: miembros.map((m) => ({ nombre: m.fila.nombre, url: urlFicha(m.fila.slug) })),
+      comprobacion: miembros.find((m) => m.comprobacion)?.comprobacion,
+    });
   }
   return { destinos, sinCorreo };
 }
@@ -153,11 +209,12 @@ export function armarDestinos(filas: Fila[], contactos: Contacto[]): { destinos:
 
 export type Reparto = { comprobacion: Destino[]; resto: Destino[]; organismos: Destino[] };
 
-/** Comprobación técnica (en su orden 1, 2, 3), luego el resto de instituciones en el orden de la lista, y los
- * organismos aparte (van al final, cuando el founder ya vio cómo respondió el resto; doc 31 §3). */
+/** Comprobación técnica (en su orden 1, 2, 3), luego el resto de instituciones en el orden de la lista —el
+ * buzón compartido cuenta como uno más ahí, decisión del founder— y los organismos aparte (van al final,
+ * cuando el founder ya vio cómo respondió el resto; doc 31 §3). */
 export function repartir(destinos: Destino[]): Reparto {
-  const comprobacion = destinos.filter((d) => d.variante === "institucion" && d.comprobacion).sort((a, b) => a.comprobacion! - b.comprobacion!);
-  const resto = destinos.filter((d) => d.variante === "institucion" && !d.comprobacion);
+  const comprobacion = destinos.filter((d) => (d.variante === "institucion" || d.variante === "buzon_compartido") && d.comprobacion).sort((a, b) => a.comprobacion! - b.comprobacion!);
+  const resto = destinos.filter((d) => (d.variante === "institucion" || d.variante === "buzon_compartido") && !d.comprobacion);
   const organismos = destinos.filter((d) => d.variante === "organismo");
   return { comprobacion, resto, organismos };
 }
@@ -240,8 +297,12 @@ const INTRO = "Somos Nosotros es un directorio sin fines de lucro de centros cul
 const SALIDA = 'Si prefieren que no les volvamos a escribir, contesten con "no me escriban más"';
 
 export function asuntoDe(d: Destino, variante: VarianteAsunto = "A", recordatorio = false): string {
-  if (recordatorio) return d.variante === "organismo" ? `Recordatorio: agendas de ${d.nombre} en Somos Nosotros` : `Recordatorio: la agenda de ${d.nombre} en Somos Nosotros`;
+  if (recordatorio) {
+    if (d.variante === "buzon_compartido") return `Recordatorio: agendas de ${listaCorta((d.sedesConEnlace ?? []).map((s) => s.nombre))} en Somos Nosotros`;
+    return d.variante === "organismo" ? `Recordatorio: agendas de ${d.nombre} en Somos Nosotros` : `Recordatorio: la agenda de ${d.nombre} en Somos Nosotros`;
+  }
   if (d.variante === "organismo") return `Somos Nosotros — agendas de ${d.nombre} en San Luis Potosí`;
+  if (d.variante === "buzon_compartido") return `Somos Nosotros — agendas de ${listaCorta((d.sedesConEnlace ?? []).map((s) => s.nombre))} en San Luis Potosí`;
   return variante === "A" ? `${d.nombre}, súmate a la agenda de Somos Nosotros` : "¿Nos mandas tu agenda de este mes?";
 }
 
@@ -293,8 +354,43 @@ ${firmaTexto(f)}`;
   return { texto, html };
 }
 
+/** Buzón compartido: mismo llamado que la variante institución (un solo correo, sin pedir reenvío ni contacto
+ * de nadie —esa promesa es solo de la variante organismo—), pero listando cada institución con su propia
+ * ficha, para las que de verdad comparten el mismo correo de contacto (decisión del founder, 2026-09-22). */
+function cuerpoBuzonCompartido(d: Destino, f: Firma): { texto: string; html: string } {
+  const sedes = d.sedesConEnlace ?? [];
+  const nombres = listaCorta(sedes.map((s) => s.nombre));
+  const enlaces = sedes.map((s) => `- ${s.nombre}: ${s.url}`).join("\n");
+  const texto = `Hola,
+
+${INTRO} ${nombres} ya tienen su ficha en la plataforma, tomada de la investigación de instituciones culturales que hicimos en septiembre:
+
+${enlaces}
+
+Nos ayudaría muchísimo que nos manden la agenda o cartelera de este mes de cada una — no hace falta que la preparen: con los mismos carteles, el PDF o el enlace que ya tengan nos basta. Nosotros nos encargamos de subir los eventos a la plataforma.
+
+Pueden contestar este correo con lo que tengan, cuando puedan.
+
+${SALIDA} y no les mandamos nada más.
+
+${firmaTexto(f)}`;
+  const html = [
+    "<p>Hola,</p>",
+    `<p>${INTRO} ${escapar(nombres)} ya tienen su ficha en la plataforma, tomada de la investigación de instituciones culturales que hicimos en septiembre:</p>`,
+    `<ul>${sedes.map((s) => `<li>${escapar(s.nombre)}: <a href="${s.url}">${s.url}</a></li>`).join("")}</ul>`,
+    "<p>Nos ayudaría muchísimo que nos manden la <strong>agenda o cartelera de este mes</strong> de cada una — no hace falta que la preparen: con los mismos carteles, el PDF o el enlace que ya tengan nos basta. Nosotros nos encargamos de subir los eventos a la plataforma.</p>",
+    "<p>Pueden contestar este correo con lo que tengan, cuando puedan.</p>",
+    `<p>${SALIDA.replace('"no me escriban más"', "“no me escriban más”")} y no les mandamos nada más.</p>`,
+    firmaHtml(f),
+  ].join("\n");
+  return { texto, html };
+}
+
 function cuerpoRecordatorio(d: Destino, f: Firma): { texto: string; html: string } {
-  const que = d.variante === "organismo" ? `las agendas de ${listaCorta(d.sedes ?? [])} y sumarlas` : `la agenda de ${d.nombre} y sumarla`;
+  const que =
+    d.variante === "organismo" ? `las agendas de ${listaCorta(d.sedes ?? [])} y sumarlas`
+    : d.variante === "buzon_compartido" ? `las agendas de ${listaCorta((d.sedesConEnlace ?? []).map((s) => s.nombre))} y sumarlas`
+    : `la agenda de ${d.nombre} y sumarla`;
   const texto = `Hola de nuevo,
 
 Les escribimos hace unos días para pedirles ${que} a Somos Nosotros. Si ya nos la mandaron por otro medio, ignoren este correo. Si no, nos sirve lo que tengan a la mano — cartel, PDF o un enlace.
@@ -314,7 +410,11 @@ ${firmaTexto(f)}`;
 export function armarCorreo(d: Destino, firma: Firma, opciones: { asunto?: VarianteAsunto; recordatorio?: boolean } = {}): { asunto: string; texto: string; html: string; url?: string } {
   const recordatorio = opciones.recordatorio === true;
   const asunto = asuntoDe(d, opciones.asunto ?? "A", recordatorio);
-  const cuerpo = recordatorio ? cuerpoRecordatorio(d, firma) : d.variante === "organismo" ? cuerpoOrganismo(d, firma) : cuerpoInstitucion(d, firma);
+  const cuerpo =
+    recordatorio ? cuerpoRecordatorio(d, firma)
+    : d.variante === "organismo" ? cuerpoOrganismo(d, firma)
+    : d.variante === "buzon_compartido" ? cuerpoBuzonCompartido(d, firma)
+    : cuerpoInstitucion(d, firma);
   return { asunto, ...cuerpo, url: d.url };
 }
 
@@ -412,12 +512,18 @@ async function main() {
       const { pendientes, omitidos } = sal ? quitarYaEnviados(base, tipoDe(modo), previos, sal) : { pendientes: base, omitidos: [] };
       const nota = modo === "recordatorio" && !sal ? " (sin sal ni base: quienes no han contestado, sin mirar fechas)" : "";
       console.log(`--${modo}: ${pendientes.length} correos${nota}`);
-      for (const d of pendientes) console.log(`- ${d.nombre} · ${enmascarar(d.correo)}${d.variante === "organismo" ? ` · sedes: ${listaCorta(d.sedes ?? [])}` : ""}`);
+      for (const d of pendientes) {
+        const sedes = d.variante === "organismo" ? listaCorta(d.sedes ?? []) : d.variante === "buzon_compartido" ? listaCorta((d.sedesConEnlace ?? []).map((s) => s.nombre)) : null;
+        console.log(`- ${d.nombre} · ${enmascarar(d.correo)}${sedes ? ` · sedes: ${sedes}` : ""}`);
+      }
       for (const o of omitidos) console.log(`  (omitido) ${o.destino.nombre} · ${enmascarar(o.destino.correo)} — ${o.motivo}`);
       console.log("");
     }
-    const inst = reparto.comprobacion[0] ?? reparto.resto[0];
-    if (inst) imprimirEjemplo("Ejemplo variante institución", inst, firma, args.asunto);
+    const soloInst = reparto.comprobacion.find((d) => d.variante === "institucion") ?? reparto.resto.find((d) => d.variante === "institucion");
+    const buzon = [...reparto.comprobacion, ...reparto.resto].find((d) => d.variante === "buzon_compartido");
+    const inst = soloInst ?? reparto.comprobacion[0] ?? reparto.resto[0];
+    if (soloInst) imprimirEjemplo("Ejemplo variante institución", soloInst, firma, args.asunto);
+    if (buzon) imprimirEjemplo("Ejemplo variante buzón compartido", buzon, firma, args.asunto);
     if (reparto.organismos[0]) imprimirEjemplo("Ejemplo variante organismo", reparto.organismos[0], firma, args.asunto);
     if (inst) imprimirEjemplo("Ejemplo recordatorio", inst, firma, args.asunto, true);
     return;
@@ -470,7 +576,7 @@ async function main() {
       continue;
     }
     // Se anota ANTES de pasar al siguiente: si el guion se corta, lo ya mandado no se repite.
-    const { error } = await db.from("agendas_invitaciones_enviadas").insert({ lugar_id: d.lugarId, organismo: d.organismo, correo_hash: hashCorreo(d.correo, sal), tipo, resend_id: r.id });
+    const { error } = await db.from("agendas_invitaciones_enviadas").insert({ lugar_id: d.lugarId, organismo: d.organismoRegistro ?? d.organismo, correo_hash: hashCorreo(d.correo, sal), tipo, resend_id: r.id });
     if (error) {
       console.error(`Mandado a ${d.nombre} pero NO se pudo anotar (${error.message}). Se detiene aquí para no repetir envíos.`);
       process.exit(1);
