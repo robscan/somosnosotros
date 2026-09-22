@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { guardarSuscripcionPush } from "@/app/perfil/acciones";
-import { dondeSeActivan, enEste } from "@/lib/plataforma";
+import { dondeSeActivan, dondeSeRegistra, enEste } from "@/lib/plataforma";
 import { observarEstadoPush, suscribirPush } from "@/lib/pushCliente";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
 import { IconoCampana, IconoCerrar, IconoOk, IconoPendiente } from "./ui/Iconos";
 import styles from "./ActivarAvisos.module.css";
 
 const CERRADA = "somosnosotros:activar-avisos-cerrada";
-type Estado = "oculta" | "lista" | "trabajando" | "listo" | "bloqueado" | "silenciado" | "fallo";
+type Estado = "oculta" | "lista" | "trabajando" | "listo" | "bloqueado" | "silenciado" | "rechazado" | "fallo";
 
 function cerradaEnEsteTelefono(): boolean {
   try {
@@ -33,13 +33,17 @@ export default function ActivarAvisos({ llavePush }: { llavePush: string }) {
   const plataforma = usePlataforma();
   const instalada = !!plataforma?.instalada;
   const [estado, setEstado] = useState<Estado>("oculta");
+  // El nombre y mensaje del error real (p. ej. "AbortError: Registration failed - permission denied"), para
+  // enseñarlo discreto debajo del motivo (patrón del mando de Pincel, OL-117): el estado por sí solo no basta
+  // para distinguir un "rechazado" de otro con la misma etiqueta pero causa distinta.
+  const [detalle, setDetalle] = useState<string | null>(null);
 
   useEffect(() => {
     if (!instalada || cerradaEnEsteTelefono()) return;
     const observador = observarEstadoPush(llavePush, (e) => {
       setEstado((anterior) => {
         if (cerradaEnEsteTelefono()) return "oculta";
-        if (anterior === "trabajando" || anterior === "fallo" || anterior === "bloqueado" || anterior === "silenciado") return anterior;
+        if (anterior === "trabajando" || anterior === "fallo" || anterior === "bloqueado" || anterior === "silenciado" || anterior === "rechazado") return anterior;
         return e === "apagado" ? "lista" : "oculta";
       });
     });
@@ -54,9 +58,13 @@ export default function ActivarAvisos({ llavePush }: { llavePush: string }) {
 
   async function activar() {
     setEstado("trabajando");
+    setDetalle(null);
     try {
       const alta = await suscribirPush(llavePush);
-      if (!alta.ok) return setEstado(alta.motivo === "bloqueado" ? "bloqueado" : alta.motivo === "silenciado" ? "silenciado" : "fallo");
+      if (!alta.ok) {
+        setDetalle(alta.detalle ?? null);
+        return setEstado(alta.motivo === "bloqueado" || alta.motivo === "silenciado" || alta.motivo === "rechazado" ? alta.motivo : "fallo");
+      }
       setEstado((await guardarSuscripcionPush(alta.sub)) ? "listo" : "fallo");
     } catch {
       setEstado("fallo");
@@ -83,12 +91,15 @@ export default function ActivarAvisos({ llavePush }: { llavePush: string }) {
       <IconoCerrar width={18} height={18} />
     </button>
   );
-  if (estado === "bloqueado" || estado === "silenciado") {
+  if (estado === "bloqueado" || estado === "silenciado" || estado === "rechazado") {
     return (
       <p className={`${styles.tarjeta} ${styles.neutra}`} role="status">
         <IconoPendiente width={20} height={20} />
-        <b>{estado === "bloqueado" ? "Quedaron bloqueados" : "Tu navegador no mostró el permiso"}</b>
-        <small>Se activan {dondeSeActivan(plataforma)}</small>
+        <b>{estado === "bloqueado" ? "Quedaron bloqueados" : estado === "silenciado" ? "Tu navegador no mostró el permiso" : "Tu sistema no dejó registrar el aviso"}</b>
+        <small>
+          {estado === "rechazado" ? dondeSeRegistra(plataforma) : `Se activan ${dondeSeActivan(plataforma)}`}
+          {detalle && <span className={styles.detalleTecnico}>{detalle}</span>}
+        </small>
         {cerrar}
       </p>
     );
@@ -99,7 +110,10 @@ export default function ActivarAvisos({ llavePush }: { llavePush: string }) {
     <p className={styles.tarjeta} role={fallo || trabajando ? "status" : undefined}>
       {fallo ? <IconoPendiente width={20} height={20} /> : <IconoCampana width={20} height={20} />}
       <b>{fallo ? `No pudimos darte de alta ${enEste(plataforma)}` : trabajando ? "Activando…" : `Activa los avisos ${enEste(plataforma)}`}</b>
-      <small>{fallo ? "Vuelve a intentarlo" : trabajando ? "Un momento" : "Para recordarte lo que vas y lo que sigues"}</small>
+      <small>
+        {fallo ? "Vuelve a intentarlo" : trabajando ? "Un momento" : "Para recordarte lo que vas y lo que sigues"}
+        {fallo && detalle && <span className={styles.detalleTecnico}>{detalle}</span>}
+      </small>
       <button type="button" className={styles.boton} onClick={activar} disabled={trabajando}>
         {trabajando ? "Activando…" : fallo ? "Intentar de nuevo" : "Activar"}
       </button>

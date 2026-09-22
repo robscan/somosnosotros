@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decidirEstadoPush, decidirInstalar, dondeSeActivan, enEste, esteAparato, esteAparatoInicial, leerPlataforma, pasosInstalar, tituloInstalada } from "./plataforma";
+import { decidirEstadoPush, decidirInstalar, dondeSeActivan, dondeSeRegistra, enEste, esteAparato, esteAparatoInicial, leerPlataforma, pasosInstalar, tituloInstalada } from "./plataforma";
 
 const IPHONE_SAFARI_26 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
 const IPHONE_SAFARI_18 = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1";
@@ -111,6 +111,20 @@ describe("dondeSeActivan", () => {
     expect(dondeSeActivan(leerPlataforma(MAC_CHROME, 0, false))).toBe("en Chrome: el candado junto a la dirección › Permisos del sitio › Notificaciones");
     expect(dondeSeActivan(leerPlataforma(MAC_SAFARI, 0, false))).toBe("en la configuración del sitio de tu navegador");
     expect(dondeSeActivan(null)).toBe("en la configuración del sitio de tu navegador");
+  });
+});
+
+describe("dondeSeRegistra", () => {
+  it("nombra Chrome cuando lo es; genérico si no, y sin plataforma", () => {
+    expect(dondeSeRegistra(leerPlataforma(MAC_CHROME, 0, false))).toBe(
+      "Revisa que las notificaciones de Chrome estén permitidas en el sistema, y que esta no sea una ventana de incógnito o invitado",
+    );
+    expect(dondeSeRegistra(leerPlataforma(MAC_SAFARI, 0, false))).toBe(
+      "Revisa que las notificaciones de tu navegador estén permitidas en el sistema, y que esta no sea una ventana de incógnito o invitado",
+    );
+    expect(dondeSeRegistra(null)).toBe(
+      "Revisa que las notificaciones de tu navegador estén permitidas en el sistema, y que esta no sea una ventana de incógnito o invitado",
+    );
   });
 });
 

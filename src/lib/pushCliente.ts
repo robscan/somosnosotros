@@ -101,7 +101,9 @@ export function observarEstadoPush(llavePublica: string, recibir: (estado: Estad
 }
 
 export type Suscripcion = { endpoint: string; keys: { p256dh: string; auth: string } };
-export type ResultadoAlta = { ok: true; sub: Suscripcion } | { ok: false; motivo: "bloqueado" | "silenciado" | "fallo" };
+export type ResultadoAlta =
+  | { ok: true; sub: Suscripcion }
+  | { ok: false; motivo: "bloqueado" | "silenciado" | "rechazado" | "fallo"; detalle?: string };
 
 const TARDANDO = Symbol("tardando");
 
@@ -114,10 +116,21 @@ async function pedirPermiso(ms = 8000): Promise<NotificationPermission | typeof 
   return Promise.race([Notification.requestPermission(), new Promise<typeof TARDANDO>((r) => setTimeout(() => r(TARDANDO), ms))]);
 }
 
+/** Nombre y mensaje de un error de navegador, listos para el "(AbortError: …)" en gris chico (patrón de Pincel, OL-117). */
+function detalleDe(e: unknown): string | undefined {
+  const err = e as { name?: string; message?: string };
+  if (!err?.name) return undefined;
+  return err.message ? `${err.name}: ${err.message}` : err.name;
+}
+
 /**
  * Pide el permiso y da de alta este teléfono. Se llama desde un toque: el iPhone solo muestra su permiso así.
  * "bloqueado": dijo que no (o ya estaba bloqueado); "silenciado": el navegador no mostró su aviso a tiempo (queda un
- * icono por tocar en la propia barra); "fallo": no se pudo terminar el alta.
+ * icono por tocar en la propia barra); "rechazado": el permiso quedó "granted" pero el navegador se negó a
+ * registrar el aviso (medido, bitácora 164: `pushManager.subscribe()` lanza `AbortError: "Registration failed -
+ * permission denied"` con un perfil efímero de Chrome — el mismo error que documenta Chromium cuando macOS tiene
+ * apagados los avisos del navegador a nivel de sistema, o en una ventana de incógnito/invitado: el permiso del
+ * SITIO no es el único candado); "fallo": no se pudo terminar el alta por otra razón.
  */
 export async function suscribirPush(llavePublica: string): Promise<ResultadoAlta> {
   try {
@@ -128,11 +141,16 @@ export async function suscribirPush(llavePublica: string): Promise<ResultadoAlta
     if (permiso !== "granted") return { ok: false, motivo: "fallo" };
     const reg = await registroListo();
     if (!reg) return { ok: false, motivo: "fallo" };
-    const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64AUint8(llavePublica) as BufferSource }));
+    let sub: PushSubscription;
+    try {
+      sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64AUint8(llavePublica) as BufferSource }));
+    } catch (e) {
+      return { ok: false, motivo: "rechazado", detalle: detalleDe(e) };
+    }
     const json = sub.toJSON();
     return { ok: true, sub: { endpoint: sub.endpoint, keys: { p256dh: json.keys?.p256dh ?? "", auth: json.keys?.auth ?? "" } } };
-  } catch {
-    return { ok: false, motivo: "fallo" };
+  } catch (e) {
+    return { ok: false, motivo: "fallo", detalle: detalleDe(e) };
   }
 }
 
