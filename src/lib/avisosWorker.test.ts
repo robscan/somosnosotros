@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { drenarAvisos, procesarEntrega, type Claim, type DependenciasAvisos, type Entrega } from "./avisosWorker";
+import { drenarAvisos, drenarAvisosAdmin, procesarEntrega, procesarEntregaAdmin, type Claim, type ClaimAdmin,
+  type DependenciasAvisos, type Entrega, type EntregaAdmin } from "./avisosWorker";
 
 const NOW = Date.parse("2030-10-01T12:00:00Z");
 const claim = (id = "1"): Claim => ({ id, token: `token-${id}`, lease_hasta: new Date(NOW + 90_000).toISOString() });
@@ -161,5 +162,76 @@ describe("worker durable sin red real", () => {
     await drenarAvisos({ ms: 40_000 }, b.d);
     expect(b.correo).not.toHaveBeenCalled();
     expect(b.rpc).not.toHaveBeenCalledWith("avisos_tomar", expect.anything(), expect.anything());
+  });
+});
+
+// ---------- OL-115: aviso al administrador (mismo worker, cola propia sin correo) ----------
+const claimAdmin = (id = "1"): ClaimAdmin => ({ id, token: `token-admin-${id}` });
+const entregaAdmin = (id = "1", motivos: Record<string, number> = { registro: 1 }): EntregaAdmin => ({
+  id, job_id: "job-admin", usuario_id: "admin-1", cuerpo: null, motivos, creado_en: new Date(NOW).toISOString(),
+  suscripcion: { endpoint: `https://fcm.googleapis.com/fcm/send/admin-${id}`, keys: {} },
+});
+
+function bancoAdmin(filas = [entregaAdmin()]) {
+  const estados = new Map(filas.map((f) => [f.id, "pendiente"]));
+  const orden: string[] = [];
+  const rpc = vi.fn(async (nombre: string, args?: Record<string, unknown>) => {
+    orden.push(nombre);
+    const fila = filas.find((f) => f.id === args?.p_id);
+    if (nombre === "avisos_admin_expandir") return false;
+    if (nombre === "avisos_admin_tomar") {
+      const f = filas.find((f) => estados.get(f.id) === "pendiente");
+      if (!f) return null;
+      estados.set(f.id, "tomada"); return claimAdmin(f.id);
+    }
+    if (nombre === "avisos_admin_autorizar") return fila;
+    if (nombre === "avisos_admin_preparar" && fila) { fila.cuerpo ??= args?.p_cuerpo as string; return fila.cuerpo; }
+    if (nombre === "avisos_admin_terminar") { estados.set(args?.p_id as string, args?.p_resultado as string); return true; }
+    return null;
+  });
+  const push = vi.fn((async () => ({ estado: "enviada" as const, codigo: "aceptado" })) as DependenciasAvisos["push"]);
+  const correo = vi.fn(async () => ({ estado: "enviada" as const, codigo: "aceptado" }));
+  const correoDe = vi.fn(async () => "persona@example.invalid");
+  const d: DependenciasAvisos = { rpc: rpc as DependenciasAvisos["rpc"], correo, push, correoDe, ahora: () => NOW, baja: () => "https://example.invalid/baja" };
+  return { d, rpc, push, estados, orden };
+}
+
+describe("procesarEntregaAdmin: sin correo, sin datos personales en el cuerpo compuesto", () => {
+  it("compone el cuerpo desde los conteos, lo persiste antes de mandar y termina como enviada", async () => {
+    const b = bancoAdmin();
+    expect(await procesarEntregaAdmin(claimAdmin(), b.d)).toBe(true);
+    expect(b.orden).toEqual(["avisos_admin_autorizar", "avisos_admin_preparar", "avisos_admin_autorizar", "avisos_admin_terminar"]);
+    const cuerpo = JSON.parse(b.push.mock.calls[0][1] as string);
+    expect(cuerpo).toMatchObject({ titulo: "Administración", cuerpo: "Alguien se registró", url: "/admin" });
+    expect(b.estados.get("1")).toBe("enviada");
+  });
+  it("agrupado: el cuerpo dice cuántas cosas, no la lista de motivos", async () => {
+    const b = bancoAdmin([entregaAdmin("1", { registro: 2, reclamo_ficha: 1 })]);
+    await procesarEntregaAdmin(claimAdmin(), b.d);
+    const cuerpo = JSON.parse(b.push.mock.calls[0][1] as string);
+    expect(cuerpo.cuerpo).toBe("3 cosas por revisar");
+  });
+  it("un fallo de persistencia no sale a push", async () => {
+    const b = bancoAdmin(); const original = b.d.rpc;
+    b.d.rpc = async (n, a) => { if (n === "avisos_admin_preparar") throw new Error("base"); return original(n, a); };
+    expect(await procesarEntregaAdmin(claimAdmin(), b.d)).toBe(false);
+    expect(b.push).not.toHaveBeenCalled();
+  });
+  it("sin entrega disponible, no hace nada", async () => {
+    const b = bancoAdmin([]);
+    expect(await procesarEntregaAdmin(claimAdmin(), b.d)).toBe(false);
+    expect(b.push).not.toHaveBeenCalled();
+  });
+});
+
+describe("drenarAvisosAdmin: expande, toma y entrega sin los cuatro slots del motor principal", () => {
+  it("un claim basta para el volumen chico de administradores", async () => {
+    const b = bancoAdmin();
+    expect((await drenarAvisosAdmin({ ms: 5000 }, b.d)).enviados).toBe(1);
+  });
+  it("sin nada pendiente, no llama tomar", async () => {
+    const b = bancoAdmin([]);
+    await drenarAvisosAdmin({ ms: 5000 }, b.d);
+    expect(b.rpc).not.toHaveBeenCalledWith("avisos_admin_tomar", expect.anything(), expect.anything());
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contenidoPush, lotes, pendientesDeAviso, superoTopeAvisos, TOPE_AVISOS_POR_AUTOR_DIA, ventanaRecordatorio, type Canales, type EventoParaAviso } from "./avisos";
+import { contenidoPush, contenidoPushAdmin, lotes, pendientesDeAviso, superoTopeAvisos, TOPE_AVISOS_POR_AUTOR_DIA, ventanaRecordatorio, type Canales, type EventoParaAviso } from "./avisos";
 
 // "ahora" fijo para que los textos con fecha no dependan del día en que corre la prueba.
 const AHORA = new Date("2026-09-19T16:00:00Z"); // sábado 19 sep 2026, 10:00 hora de la ciudad
@@ -101,5 +101,25 @@ describe("contenidoPush", () => {
     expect(c.titulo).toBe("Nuevo en Plaza de armas");
     const reservado = contenidoPush("nuevo_evento", evento({ lugar: null, sitio_texto: "Plaza de armas", sitio_reservado: true }), "ambos", AHORA);
     expect(reservado.titulo).toBe("Nuevo en Plaza de armas · sitio reservado");
+  });
+});
+
+describe("contenidoPushAdmin (OL-115)", () => {
+  it("un solo motivo: dice cuál, sin numero", () => {
+    expect(contenidoPushAdmin({ reclamo_ficha: 1 })).toEqual({ titulo: "Administración", cuerpo: "Alguien reclamó una ficha", url: "/admin" });
+    expect(contenidoPushAdmin({ registro: 1 })).toEqual({ titulo: "Administración", cuerpo: "Alguien se registró", url: "/admin" });
+    expect(contenidoPushAdmin({ nuevo_evento: 1 }).cuerpo).toBe("Se publicó un evento nuevo");
+    expect(contenidoPushAdmin({ nuevo_lugar: 1 }).cuerpo).toBe("Se publicó un lugar nuevo");
+    expect(contenidoPushAdmin({ nuevo_artista: 1 }).cuerpo).toBe("Se publicó un artista nuevo");
+    expect(contenidoPushAdmin({ reporte: 1 }).cuerpo).toBe("Alguien envió un reporte");
+  });
+  it("agrupado: dice cuántas cosas, nunca un nombre ni un motivo suelto", () => {
+    expect(contenidoPushAdmin({ registro: 3, reclamo_ficha: 2 }).cuerpo).toBe("5 cosas por revisar");
+    expect(contenidoPushAdmin({ nuevo_evento: 2 }).cuerpo).toBe("2 cosas por revisar");
+  });
+  it("siempre abre /admin, sin ids ni datos personales en el cuerpo", () => {
+    const c = contenidoPushAdmin({ registro: 1 });
+    expect(c.url).toBe("/admin");
+    expect(c.cuerpo).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}/); // sin uuid colado
   });
 });
