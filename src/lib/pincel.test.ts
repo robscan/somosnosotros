@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   acreditaCercania,
+  alEscribirTitulo,
   ANCHO_POR_GROSOR_PX,
   ARRASTRE_GROSOR_MAX_PX,
   borradoReciente,
@@ -51,6 +52,7 @@ import {
   textoDeCercania,
   textoDelSensor,
   TINTAS,
+  tituloDeObra,
   UMBRAL_AJUSTE_PX,
   VENTANA_BORRADO_MS,
   type EntradaPresencia,
@@ -652,5 +654,29 @@ describe("cercanía (OL-127)", () => {
   });
   it("nombre por defecto de una pared sin lugar: «Pincel · 22 sep, 13:05» en la zona de la obra", () => {
     expect(nombreParedSinLugar(new Date("2026-09-22T19:05:00.000Z"), "America/Mexico_City")).toBe("Pincel · 22 sep, 13:05");
+  });
+});
+
+// OL-130: el título de la obra sigue al lugar hasta que se escribe a mano.
+describe("título de la obra (OL-130)", () => {
+  it("automático: sigue al lugar elegido y cambia con él", () => {
+    const auto = { modo: "automatico" } as const;
+    expect(tituloDeObra(auto, "Cineteca Alameda")).toBe("Pincel en Cineteca Alameda");
+    expect(tituloDeObra(auto, "Laboratorio de Centro Histórico")).toBe("Pincel en Laboratorio de Centro Histórico");
+    expect(tituloDeObra(auto, null)).toBe("");
+  });
+  it("manual: en cuanto se escribe algo propio, se respeta aunque cambie el lugar", () => {
+    const manual = alEscribirTitulo("Mural de la tarde", "Cineteca Alameda");
+    expect(manual).toEqual({ modo: "manual", texto: "Mural de la tarde" });
+    expect(tituloDeObra(manual, "Cineteca Alameda")).toBe("Mural de la tarde");
+    expect(tituloDeObra(manual, "Laboratorio de Centro Histórico")).toBe("Mural de la tarde");
+  });
+  it("borrar el campo (el «×») vuelve al automático; escribir justo la sugerencia también", () => {
+    expect(alEscribirTitulo("", "Cineteca Alameda")).toEqual({ modo: "automatico" });
+    expect(alEscribirTitulo("Pincel en Cineteca Alameda", "Cineteca Alameda")).toEqual({ modo: "automatico" });
+    expect(alEscribirTitulo("Pincel en Cineteca Alameda", "Otro lugar")).toEqual({ modo: "manual", texto: "Pincel en Cineteca Alameda" });
+  });
+  it("editar la sugerencia a medias es manual (p. ej. quitarle una letra)", () => {
+    expect(alEscribirTitulo("Pincel en Cineteca Alamed", "Cineteca Alameda").modo).toBe("manual");
   });
 });
