@@ -3,7 +3,7 @@ import Barra from "@/components/ui/Barra";
 import ficha from "@/components/ui/Ficha.module.css";
 import { esUuid } from "@/lib/formulario";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import { cargarObraParaPintar } from "../../consultas";
+import { cargarObraParaPintar, cargarPincelActivo } from "../../consultas";
 import Mando from "./Mando";
 import styles from "./mando.module.css";
 
@@ -23,6 +23,16 @@ export default async function MandoDeObra({ params }: { params: Promise<{ id: st
   if (!esUuid(id)) notFound();
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=/obra/${id}/mando`);
+  // Interruptor «Pincel apagado» (OL-121): igual que la pared, se comprueba antes de leer la obra — sin
+  // controles, sin abrir el canal.
+  if (!(await cargarPincelActivo())) {
+    return (
+      <main className={ficha.pagina}>
+        <Barra volver={{ href: "/", texto: "Salir" }} />
+        <p className={styles.cerrada}>Pincel está apagado por ahora.</p>
+      </main>
+    );
+  }
   const obra = await cargarObraParaPintar(id);
   if (!obra) notFound();
 
