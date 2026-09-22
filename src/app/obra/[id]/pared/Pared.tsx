@@ -7,7 +7,6 @@ import { configPublica } from "@/lib/config";
 import {
   acreditaCercania,
   ANCHO_POR_GROSOR_PX,
-  borradoReciente,
   BUCKET_INSTANTANEAS,
   diametroDelPuntoDePosicion,
   entradasDesdePresencia,
@@ -18,15 +17,19 @@ import {
   EVENTO_BORRAR,
   EVENTO_POSICION,
   EVENTO_TRAZO,
+  hayBorradoPendiente,
+  instantaneaVigente,
   latenciasDe,
   OPACIDAD_PUNTO_TENUE,
   puntoEnPared,
   quienesPintan,
+  REVISAR_BORRADO_MS,
   rutaInstantanea,
   siguientesSegmentos,
   SUAVIZADO_PUNTO_MS,
   tocaSubirInstantanea,
   type Latencias,
+  type MensajeBorrar,
   type MensajePosicion,
   type MensajeTrazo,
   type MotivoInstantanea,
@@ -41,8 +44,8 @@ type PuntoDeMando = { x: number; y: number; color: string; diametro: number; pin
 /** Una línea de la sonda (OL-126): qué mensaje, de quién, y sus latencias. */
 type LecturaSonda = { evento: string; remitente: string; puntos: number; latencias: Latencias; recibido: number };
 
-/** Cada cuánto la pared revisa si toca subir la instantánea (la regla de los 20 s vive en `tocaSubirInstantanea`). */
-const REVISAR_INSTANTANEA_MS = 5000;
+/** Hora corta para la sonda (horas del servidor: PostgREST y Storage). */
+const horaCorta = (iso: string | null | undefined) => (iso && Number.isFinite(Date.parse(iso)) ? new Date(iso).toLocaleTimeString() : "—");
 
 /** Un punto de un trazo, coloreado y grosor según el pincel — para no repetir el `switch` en cada segmento. Los
  * anchos por unidad de grosor viven en `ANCHO_POR_GROSOR_PX` (el punto de referencia mide con los mismos). */
@@ -114,7 +117,10 @@ const ms = (v: number | null) => (v === null ? "—" : `${Math.round(v)} ms`);
  * además del título — la pared no lleva controles. `sonda` (OL-126): con `?sonda=1`, la latencia de cada mensaje.
  * Instantánea (OL-126, parte 4): al abrirse pinta de fondo el PNG guardado en Storage, si lo hay, y sube uno
  * nuevo cada 20 s si hubo trazos, al ocultarse/cerrarse y al recibir «borrar» — así lo pintado sobrevive a cerrar
- * y reabrir la pared mientras la obra esté abierta, sin guardar trazos.
+ * y reabrir la pared mientras la obra esté abierta, sin guardar trazos. OL-134 (founder: «al seleccionar borrar
+ * pared no se borra»): el borrado registrado por Administración (`borrado_pared_en`) manda, llegue o no el aviso
+ * por el canal — se consulta al arrancar, al recibir «borrar», al volver a ser visible y cada 5 s — y una
+ * instantánea anterior al borrado no se repone como fondo.
  */
 export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false }: { obraId: string; nombre: string; abierta: boolean; cupo: number; qr: string | null; sonda?: boolean }) {
   const lienzoRef = useRef<HTMLCanvasElement | null>(null);
@@ -211,32 +217,71 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         body: cuerpo,
       }).catch(() => {});
     }
-    function alOcultarse() {
-      if (document.visibilityState === "hidden") void subir("cierre");
+    // --- Borrado (OL-134): la hora registrada por Administración manda, llegue el aviso del canal o no ---
+    let fondoListo = false; // hasta que el arranque leyó el borrado y el fondo, ninguna revisión toca el lienzo
+    async function revisarBorrado(origen: "canal" | "visible" | "revisión", aviso?: MensajeBorrar, recibido = Date.now()) {
+      if (!fondoListo || cancelado || !lienzo) return;
+      const { data } = await supabase!.from("obras_colectivas").select("borrado_pared_en").eq("id", obraId).maybeSingle();
+      if (cancelado || !lienzo) return;
+      const registrado = (data as { borrado_pared_en?: string | null } | null)?.borrado_pared_en ?? null;
+      if (!hayBorradoPendiente(registrado, ultimoBorradoRef.current)) {
+        if (origen === "canal") anotar("borrar ignorado (sin borrado nuevo registrado por Administración)", aviso ?? { remitente: "—" }, recibido, 0);
+        return;
+      }
+      ultimoBorradoRef.current = Date.parse(registrado!);
+      ctx!.clearRect(0, 0, lienzo.clientWidth, lienzo.clientHeight);
+      anotar(`borrar (${origen})`, aviso ?? { remitente: "admin" }, recibido, 0);
+      void subir("borrado"); // el lienzo vacío también se guarda: es el fondo que vale desde ahora
     }
-    document.addEventListener("visibilitychange", alOcultarse);
+    function alCambiarVisibilidad() {
+      if (document.visibilityState === "hidden") void subir("cierre");
+      else void revisarBorrado("visible"); // al volver (pestaña congelada en iOS, cañón apagado), lo primero es el borrado
+    }
+    document.addEventListener("visibilitychange", alCambiarVisibilidad);
     window.addEventListener("pagehide", subirAlCerrar);
+    // Cada revisión: primero el borrado registrado (una fila) y después, si toca, la instantánea — así una pared que
+    // se perdió el «borrar» se limpia sola en unos segundos y no sube la pintura vieja como fondo.
     const revision = setInterval(async () => {
       const { data } = await supabase.auth.getSession();
       tokenRef.current = data.session?.access_token ?? null;
+      await revisarBorrado("revisión");
       void subir("periodica");
-    }, REVISAR_INSTANTANEA_MS);
+    }, REVISAR_BORRADO_MS);
 
     // --- Arranque: la instantánea de fondo (si la hay) y, después, el canal ---
     async function iniciar() {
-      const { data: png } = await supabase!.storage.from(BUCKET_INSTANTANEAS).download(ruta);
+      // OL-134: el último borrado registrado y la hora de subida de la instantánea, a la vez; el fondo solo se pinta
+      // si la instantánea es posterior al borrado (una anterior es la composición que Administración ya borró).
+      const [{ data: fila }, { data: lista }] = await Promise.all([
+        supabase!.from("obras_colectivas").select("borrado_pared_en").eq("id", obraId).maybeSingle(),
+        supabase!.storage.from(BUCKET_INSTANTANEAS).list(obraId, { search: "pared.png" }),
+      ]);
       if (cancelado || !lienzo) return;
-      if (png && png.size > 0) {
-        try {
-          const imagen = await createImageBitmap(png);
-          if (cancelado) return;
-          ctx!.drawImage(imagen, 0, 0, lienzo.clientWidth, lienzo.clientHeight);
-          ultimaSubidaRef.current = Date.now();
-          if (sonda) setInstantanea(`instantánea de fondo: ${Math.round(png.size / 1024)} KB`);
-        } catch {
-          // un PNG ilegible no detiene la pared: se pinta desde cero y la siguiente subida lo reemplaza
+      const registrado = (fila as { borrado_pared_en?: string | null } | null)?.borrado_pared_en ?? null;
+      const borradoMs = registrado ? Date.parse(registrado) : NaN;
+      if (Number.isFinite(borradoMs)) ultimoBorradoRef.current = borradoMs; // ya aplicado: el lienzo arranca limpio
+      const archivo = lista?.find((a) => a.name === "pared.png") ?? null;
+      const subidaEn = archivo?.updated_at ?? archivo?.created_at ?? null;
+      if (archivo && !instantaneaVigente(subidaEn, registrado)) {
+        if (sonda) setInstantanea(`instantánea anterior al borrado (subida ${horaCorta(subidaEn)}, borrado ${horaCorta(registrado)}): no se repone`);
+      } else if (archivo) {
+        const { data: png } = await supabase!.storage.from(BUCKET_INSTANTANEAS).download(ruta);
+        if (cancelado || !lienzo) return;
+        if (png && png.size > 0) {
+          try {
+            const imagen = await createImageBitmap(png);
+            if (cancelado) return;
+            ctx!.drawImage(imagen, 0, 0, lienzo.clientWidth, lienzo.clientHeight);
+            ultimaSubidaRef.current = Date.now();
+            if (sonda) setInstantanea(`instantánea de fondo: ${Math.round(png.size / 1024)} KB (subida ${horaCorta(subidaEn)})`);
+          } catch {
+            // un PNG ilegible no detiene la pared: se pinta desde cero y la siguiente subida lo reemplaza
+          }
         }
+      } else if (sonda) {
+        setInstantanea(registrado ? `sin instantánea (Administración borró la pared ${horaCorta(registrado)})` : "sin instantánea todavía");
       }
+      fondoListo = true;
       if (cancelado) return;
       canal = abrirCanalObra(supabase!, obraId);
       canal.on("presence", { event: "sync" }, () => {
@@ -286,23 +331,13 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         setPuntosDeMando((actuales) => ({ ...actuales, [mensaje.remitente]: puntoDe(mensaje, hasta, false) }));
         anotar("posicion", mensaje, recibido, 1);
       });
-      // «Borrar la pared» (OL-126, desde Administración): solo si la obra registra un borrado reciente — lo escribe
-      // la acción de servidor, que exige administración; un mando que mande «borrar» por su cuenta no pasa de aquí.
-      // Entonces se limpia el lienzo y se sube el lienzo vacío como instantánea; los puntos y la obra siguen.
-      canal.on("broadcast", { event: EVENTO_BORRAR }, async ({ payload }) => {
+      // «Borrar la pared» (OL-126, desde Administración): el aviso solo adelanta la revisión; lo que manda es la hora
+      // que registró la acción de servidor (solo admin) — un mando que mande «borrar» por su cuenta no pasa de ahí.
+      // Se limpia el lienzo y se sube el lienzo vacío como instantánea; los puntos y la obra siguen (OL-134).
+      canal.on("broadcast", { event: EVENTO_BORRAR }, ({ payload }) => {
         const recibido = Date.now();
         if (!esMensajeBorrarValido(payload)) return;
-        const { data } = await supabase!.from("obras_colectivas").select("borrado_pared_en").eq("id", obraId).maybeSingle();
-        if (cancelado || !lienzo) return;
-        const registrado = (data as { borrado_pared_en?: string | null } | null)?.borrado_pared_en ?? null;
-        if (!borradoReciente(registrado, Date.now(), ultimoBorradoRef.current)) {
-          anotar("borrar ignorado (sin borrado registrado por Administración)", payload, recibido, 0);
-          return;
-        }
-        ultimoBorradoRef.current = Date.parse(registrado!);
-        ctx!.clearRect(0, 0, lienzo.clientWidth, lienzo.clientHeight);
-        anotar("borrar", payload, recibido, 0);
-        void subir("borrado");
+        void revisarBorrado("canal", payload, recibido);
       });
       canal.subscribe();
     }
@@ -311,7 +346,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
     return () => {
       cancelado = true;
       window.removeEventListener("resize", ajustarTamano);
-      document.removeEventListener("visibilitychange", alOcultarse);
+      document.removeEventListener("visibilitychange", alCambiarVisibilidad);
       window.removeEventListener("pagehide", subirAlCerrar);
       clearInterval(revision);
       canal?.unsubscribe();
