@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  acreditaCercania,
   ANCHO_POR_GROSOR_PX,
   ARRASTRE_GROSOR_MAX_PX,
   borradoReciente,
+  decidirCercania,
   decidirSensor,
   DIAMETRO_PUNTO_MIN_PX,
+  distanciaM,
   diametroDelPunto,
   diametroDelPuntoDePosicion,
   entradasDesdePresencia,
@@ -14,6 +17,7 @@ import {
   esTintaClara,
   esPosicionValida,
   estaAjustandoGrosor,
+  estaCerca,
   estadoDeFila,
   estaEncendido,
   INSTANTANEA_CADA_MS,
@@ -23,12 +27,14 @@ import {
   grosorDesdeArrastre,
   intervaloMs,
   latenciasDe,
+  lugarMasCercano,
   MENSAJES_POR_SEGUNDO_PINTANDO,
   POSICIONES_POR_SEGUNDO,
   PRESUPUESTO_MENSAJES_POR_SEGUNDO,
   ritmoDeTrazo,
   SUAVIZADO_PUNTO_MS,
   muestrear,
+  nombreParedSinLugar,
   nombreSugerido,
   ordenDeFila,
   personasAqui,
@@ -37,10 +43,12 @@ import {
   puntoEnPared,
   PUNTOS_MAX_POR_MENSAJE,
   quienesPintan,
+  RADIO_CERCANIA_M,
   RANGO_GRADOS,
   rutaInstantanea,
   siguientesSegmentos,
   tocaSubirInstantanea,
+  textoDeCercania,
   textoDelSensor,
   TINTAS,
   UMBRAL_AJUSTE_PX,
@@ -583,5 +591,66 @@ describe("borradoReciente (OL-126: «borrar» solo si Administración lo registr
     expect(borradoReciente(null, ahora, null)).toBe(false);
     expect(borradoReciente(undefined, ahora, null)).toBe(false);
     expect(borradoReciente("ayer", ahora, null)).toBe(false);
+  });
+});
+
+// OL-127: cercanía (fricción, no seguridad) y «Crear pared aquí».
+describe("cercanía (OL-127)", () => {
+  const cineteca = { lat: 22.1497, lng: -100.9794 }; // referencia
+  const aMetrosAlNorte = (m: number) => ({ lat: cineteca.lat + m / 111_320, lng: cineteca.lng });
+  it("el radio es una constante con nombre: 200 m", () => {
+    expect(RADIO_CERCANIA_M).toBe(200);
+  });
+  it("distanciaM reusa el haversine de geo.ts: 100 m al norte son ~100 m", () => {
+    expect(distanciaM(cineteca, aMetrosAlNorte(100))).toBeCloseTo(100, 0);
+  });
+  it("dentro del radio; fuera; y la precisión del aparato se suma al radio (no se castiga el GPS impreciso)", () => {
+    expect(estaCerca(150, 0)).toBe(true);
+    expect(estaCerca(200, 0)).toBe(true);
+    expect(estaCerca(201, 0)).toBe(false);
+    expect(estaCerca(250, 80)).toBe(true); // 250 ≤ 200 + 80
+    expect(estaCerca(300, 80)).toBe(false);
+    expect(estaCerca(250, NaN)).toBe(false); // sin precisión válida, solo el radio
+    expect(estaCerca(250, -50)).toBe(false); // una precisión negativa no resta
+  });
+  it("decidirCercania: cerca a 100 m, lejos a 500 m (con su distancia y precisión), admin exenta aunque esté lejos", () => {
+    expect(decidirCercania({ esAdmin: false, punto: aMetrosAlNorte(100), precisionM: 20, referencia: cineteca })).toMatchObject({ tipo: "cerca" });
+    const lejos = decidirCercania({ esAdmin: false, punto: aMetrosAlNorte(500), precisionM: 20, referencia: cineteca });
+    expect(lejos.tipo).toBe("lejos");
+    if (lejos.tipo === "lejos") {
+      expect(lejos.distanciaM).toBeCloseTo(500, -1);
+      expect(lejos.precisionM).toBe(20);
+    }
+    const admin = decidirCercania({ esAdmin: true, punto: aMetrosAlNorte(5000), precisionM: 20, referencia: cineteca });
+    expect(admin.tipo).toBe("cerca");
+    if (admin.tipo === "cerca") expect(admin.distanciaM).toBeCloseTo(5000, -2);
+  });
+  it("sin referencia (la obra no tiene lugar ni coordenadas) no hay qué comprobar: cerca", () => {
+    expect(decidirCercania({ esAdmin: false, punto: aMetrosAlNorte(9000), precisionM: 0, referencia: null })).toEqual({ tipo: "cerca", distanciaM: null });
+  });
+  it("lugarMasCercano: el más cercano a menos de 200 m, o null si ninguno está tan cerca", () => {
+    const lugares = [{ id: "a", ...aMetrosAlNorte(150) }, { id: "b", ...aMetrosAlNorte(50) }, { id: "c", ...aMetrosAlNorte(1000) }];
+    expect(lugarMasCercano(cineteca, lugares)?.lugar.id).toBe("b");
+    expect(lugarMasCercano(aMetrosAlNorte(2000), lugares)).toBeNull();
+    expect(lugarMasCercano(cineteca, [])).toBeNull();
+  });
+  it("textos: lejos con el lugar y «Ver ficha»; lejos sin lugar; ubicación negada; sin-pedir y cerca no dicen nada", () => {
+    expect(textoDeCercania({ tipo: "lejos", distanciaM: 900, precisionM: 10 }, "Cineteca Alameda")).toEqual({ texto: "Este pincel es para quien está en Cineteca Alameda", esAviso: true, verFicha: true });
+    expect(textoDeCercania({ tipo: "lejos", distanciaM: 900, precisionM: 10 }, null)?.verFicha).toBe(false);
+    expect(textoDeCercania({ tipo: "negada" }, "X")).toEqual({ texto: "Activa la ubicación para pintar", esAviso: true, verFicha: false });
+    expect(textoDeCercania({ tipo: "sin-pedir" }, "X")).toBeNull();
+    expect(textoDeCercania({ tipo: "cerca", distanciaM: 10 }, "X")).toBeNull();
+    expect(textoDeCercania({ tipo: "pidiendo" }, "X")?.esAviso).toBe(false);
+  });
+  it("la pared solo pinta lo que trae cerca: true; sin el campo o en false, no (y el campo, si viene, es booleano)", () => {
+    expect(acreditaCercania({ cerca: true })).toBe(true);
+    expect(acreditaCercania({ cerca: false })).toBe(false);
+    expect(acreditaCercania({})).toBe(false);
+    const trazo = { trazo: "trazo", color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 };
+    expect(esMensajeTrazoValido({ ...trazo, cerca: true })).toBe(true);
+    expect(esMensajeTrazoValido({ ...trazo, cerca: "sí" })).toBe(false);
+  });
+  it("nombre por defecto de una pared sin lugar: «Pincel · 22 sep, 13:05» en la zona de la obra", () => {
+    expect(nombreParedSinLugar(new Date("2026-09-22T19:05:00.000Z"), "America/Mexico_City")).toBe("Pincel · 22 sep, 13:05");
   });
 });

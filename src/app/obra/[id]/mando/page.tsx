@@ -51,7 +51,17 @@ export default async function MandoDeObra({ params, searchParams }: { params: Pr
   return (
     <main className={ficha.pagina}>
       <Barra volver={{ href: "/", texto: "Salir" }} />
-      <Mando obraId={obra.id} perfilId={actual.perfil.id} cupo={obra.cupoMandos} sonda={sonda} />
+      <Mando
+        obraId={obra.id}
+        perfilId={actual.perfil.id}
+        cupo={obra.cupoMandos}
+        sonda={sonda}
+        // Cercanía (OL-127): administración queda exenta (prueba desde donde sea); el resto, a menos de 200 m del lugar.
+        esAdmin={actual.perfil.rol === "admin"}
+        referencia={obra.referencia}
+        lugarNombre={obra.lugar?.nombre ?? null}
+        lugarHref={obra.lugar ? `/lugares/${obra.lugar.id}` : null}
+      />
     </main>
   );
 }

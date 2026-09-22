@@ -34,8 +34,9 @@ type Props = {
   ciudad?: Ciudad;
   /** "pantalla": fijo a toda la pantalla (con panel encima). "caja": llena el contenedor donde se pone. */
   presentacion?: "pantalla" | "caja";
-  /** Solo en "ver": los lugares que la persona sigue (con sesión), en naranja con aro, más grandes y encima. El
-   *  resalte lo lleva el seguido, no el destacado (docs/rediseno/35, decisión del founder tras firmar, 2026-09-22). */
+  /** Solo en "ver": los lugares que la persona sigue (con sesión), con el color de "seguidos" (`--ok`) y un aro,
+   *  encima de los demás. El resalte lo lleva el seguido, no el destacado (docs/rediseno/35, decisión del founder
+   *  tras firmar, 2026-09-22; el color, corrección del founder, 2026-09-22, OL-128: "el mismo color de seguidos"). */
   seguidos?: string[];
 };
 
@@ -50,6 +51,13 @@ const CAPA_NOMBRES = "lugares-nombres";
 const FUENTE_NOMBRES = ["DIN Pro Bold", "Arial Unicode MS Bold"];
 /** Radio del toque alrededor de un punto (el punto mide 10 px; el dedo necesita más). */
 const RADIO_TOQUE = 18;
+/** Dos tamaños de pin, iguales para normales y seguidos (solo el color y el aro cambian con "seguido", OL-128,
+ *  corrección del founder 2026-09-22: "en general los tamaños... normal sin fecha (pin pequeño), con fecha (pin
+ *  mediano)... los resaltados, con fecha y sin fecha", es decir, comparten los mismos dos tamaños). */
+const RADIO_PEQUENO = 5; // sin evento en los próximos siete días: el punto de siempre
+/** Con "Hoy" o el día en tres letras ("Sáb"): el círculo abraza el texto (10 px, DIN Pro Bold) con 2–3 px de aire
+ *  a cada lado, no el margen amplio de antes (corrección del founder, OL-128: "se puede compactar más el pin"). */
+const RADIO_MEDIANO = 12;
 /** Una sola lista vacía para el valor por defecto: una nueva en cada render volvería a pintar las capas. */
 const SIN_SEGUIDOS: string[] = [];
 
@@ -77,20 +85,27 @@ function aGeoJSON(lugares: LugarLista[], seguidos: string[]): GeoJSON.FeatureCol
 
 /**
  * Punto chico del color de acción con borde blanco; el elegido crece un 30 %. El nombre va debajo y cede sitio si
- * choca con otro. Con evento en los próximos siete días, un círculo más grande lleva "Hoy" o el día en tres letras.
- * El resalte (naranja cempasúchil y un aro) lo lleva el SEGUIDO, no el destacado (decisión del founder tras firmar
- * el doc 35, 2026-09-22: "de cara al usuario es más útil que se resalten los seguidos"); sin sesión, `seguidos`
- * llega vacío y ningún pin lo lleva.
+ * choca con otro. Con evento en los próximos siete días, un círculo mediano lleva "Hoy" o el día en tres letras,
+ * compacto (RADIO_MEDIANO abraza el texto). El resalte (el verde de "seguidos", `--ok`, y un aro) lo lleva el
+ * SEGUIDO, no el destacado (decisión del founder tras firmar el doc 35, 2026-09-22); sin sesión, `seguidos` llega
+ * vacío y ningún pin lo lleva. Un seguido usa el mismo tamaño que le tocaría sin serlo (pequeño o mediano según
+ * tenga día): solo cambian el color y el aro (corrección del founder, 2026-09-22, OL-128).
+ * El texto del día usa `text-allow-overlap`/`text-ignore-placement`: Mapbox esconde los símbolos que chocan al
+ * cambiar el zoom, y un "Hoy" que desaparece es peor que uno apretado (mismo founder, mismo encargo). El
+ * `symbol-sort-key` prioriza seguido > con día > normal, así que si dos días chocan de verdad, el más importante
+ * queda encima en vez de decidirlo el azar.
  */
 function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
   const primario = colorDiseno("--primario", "#0f6b7c");
   const fondo = colorDiseno("--fondo", "#ffffff");
   const suave = colorDiseno("--texto-suave", "#5c5c5c"); // los privados (solo los ve el admin) van en gris
-  const seguidoColor = colorDiseno("--destacado", "#d35400");
-  const seguidoTexto = colorDiseno("--destacado-texto", "#a94400");
+  // El mismo verde de "Sigues" (BotonRenglon .decidido, docs/rediseno): un seguido es la elección de la persona,
+  // no la del administrador, y merece su propio color, no el naranja de los destacados (OL-128).
+  const seguidoColor = colorDiseno("--ok", "#1f6f43");
   mapa.addSource(FUENTE_LUGARES, { type: "geojson", data: datos, promoteId: "id" });
-  const radioBase: ExpressionSpecification = ["case", ["!=", ["get", "dia"], null], 16, ["get", "seguido"], 7, 5];
+  const radioBase: ExpressionSpecification = ["case", ["!=", ["get", "dia"], null], RADIO_MEDIANO, RADIO_PEQUENO];
   const radio: ExpressionSpecification = ["*", radioBase, ["case", ["boolean", ["feature-state", "elegido"], false], 1.3, 1]];
+  const prioridad: ExpressionSpecification = ["case", ["get", "seguido"], -2, ["!=", ["get", "dia"], null], -1, 0];
   // El aro: un círculo sin relleno, un poco más grande, solo en los seguidos (el "borde" de L31, movido al seguido).
   mapa.addLayer({
     id: CAPA_ARO,
@@ -111,13 +126,21 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
       "circle-stroke-width": ["case", ["get", "seguido"], 2, 1.5],
     },
   });
-  // "Hoy" o el día en tres letras, en blanco y negrita, al centro del círculo.
+  // "Hoy" o el día en tres letras, en blanco y negrita, al centro del círculo; nunca se esconde por choque de zoom.
   mapa.addLayer({
     id: CAPA_DIA,
     type: "symbol",
     source: FUENTE_LUGARES,
     filter: ["!=", ["get", "dia"], null],
-    layout: { "text-field": ["get", "dia"], "text-font": FUENTE_NOMBRES, "text-size": 10, "text-anchor": "center", "symbol-sort-key": ["case", ["get", "seguido"], -1, 0] },
+    layout: {
+      "text-field": ["get", "dia"],
+      "text-font": FUENTE_NOMBRES,
+      "text-size": 10,
+      "text-anchor": "center",
+      "symbol-sort-key": prioridad,
+      "text-allow-overlap": true,
+      "text-ignore-placement": true,
+    },
     paint: { "text-color": fondo },
   });
   mapa.addLayer({
@@ -133,11 +156,11 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
       "text-max-width": 9,
       "text-line-height": 1.1,
       "text-letter-spacing": 0.01,
-      "symbol-sort-key": ["case", ["get", "seguido"], -1, ["!=", ["get", "dia"], null], 0, 1], // un seguido, y luego uno con eventos, gana el sitio si dos nombres chocan
+      "symbol-sort-key": prioridad, // un seguido, y luego uno con día, gana el sitio si dos nombres chocan
     },
     // Del color de acción, en negrita y con halo ancho: se distinguen de las colonias y calles (gris, mayúsculas).
     paint: {
-      "text-color": ["case", ["get", "privado"], suave, ["get", "seguido"], seguidoTexto, primario],
+      "text-color": ["case", ["get", "privado"], suave, ["get", "seguido"], seguidoColor, primario],
       "text-halo-color": fondo,
       "text-halo-width": 2,
     },
