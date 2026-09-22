@@ -4,7 +4,6 @@ import {
   alEscribirTitulo,
   ANCHO_POR_GROSOR_PX,
   ARRASTRE_GROSOR_MAX_PX,
-  borradoReciente,
   decidirCercania,
   decidirSensor,
   DIAMETRO_PUNTO_MIN_PX,
@@ -24,10 +23,12 @@ import {
   estadoDeFila,
   estaEncendido,
   INSTANTANEA_CADA_MS,
+  instantaneaVigente,
   GROSOR_BASE,
   GROSOR_MAX,
   GROSOR_MIN,
   grosorDesdeArrastre,
+  hayBorradoPendiente,
   intervaloMs,
   latenciasDe,
   LIENZO,
@@ -50,6 +51,7 @@ import {
   rectanguloDelLienzo,
   RADIO_CERCANIA_M,
   RANGO_GRADOS,
+  REVISAR_BORRADO_MS,
   rutaInstantanea,
   siguientesSegmentos,
   tocaSubirInstantanea,
@@ -57,7 +59,6 @@ import {
   textoDelSensor,
   TINTAS,
   tituloDeObra,
-  VENTANA_BORRADO_MS,
   type EntradaPresencia,
 } from "./pincel";
 
@@ -601,28 +602,50 @@ describe("tocaSubirInstantanea", () => {
   });
 });
 
-describe("borradoReciente (OL-126: «borrar» solo si Administración lo registró)", () => {
-  const ahora = Date.parse("2026-09-22T18:00:00.000Z");
-  const iso = (deltaMs: number) => new Date(ahora + deltaMs).toISOString();
-  it("un borrado registrado hace un momento se aplica; uno de hace más de un minuto, no", () => {
-    expect(VENTANA_BORRADO_MS).toBe(60_000);
-    expect(borradoReciente(iso(-2000), ahora, null)).toBe(true);
-    expect(borradoReciente(iso(-59_000), ahora, null)).toBe(true);
-    expect(borradoReciente(iso(-61_000), ahora, null)).toBe(false);
-  });
-  it("con el reloj de la pared atrasado (hora del borrado «en el futuro»), la misma tolerancia", () => {
-    expect(borradoReciente(iso(30_000), ahora, null)).toBe(true);
-    expect(borradoReciente(iso(90_000), ahora, null)).toBe(false);
+describe("hayBorradoPendiente (OL-134: la hora registrada por Administración manda, llegue el aviso o no)", () => {
+  const t = Date.parse("2026-09-22T18:00:00.000Z");
+  const iso = (deltaMs: number) => new Date(t + deltaMs).toISOString();
+  it("con un borrado registrado y ninguno aplicado todavía, se aplica — sea de hace un momento o de hace horas", () => {
+    expect(hayBorradoPendiente(iso(0), null)).toBe(true);
+    expect(hayBorradoPendiente(iso(-3 * 3600_000), null)).toBe(true);
   });
   it("el mismo borrado no se aplica dos veces; uno nuevo después del aplicado, sí", () => {
-    const t = ahora - 1000;
-    expect(borradoReciente(new Date(t).toISOString(), ahora, t)).toBe(false);
-    expect(borradoReciente(new Date(t + 500).toISOString(), ahora, t)).toBe(true);
+    expect(hayBorradoPendiente(iso(0), t)).toBe(false);
+    expect(hayBorradoPendiente(iso(-500), t)).toBe(false);
+    expect(hayBorradoPendiente(iso(500), t)).toBe(true);
   });
-  it("sin hora registrada (un mando mandó «borrar» por su cuenta) o con una hora ilegible, no se borra", () => {
-    expect(borradoReciente(null, ahora, null)).toBe(false);
-    expect(borradoReciente(undefined, ahora, null)).toBe(false);
-    expect(borradoReciente("ayer", ahora, null)).toBe(false);
+  it("sin hora registrada (un mando mandó «borrar» por su cuenta) o con una hora ilegible, no hay nada que aplicar", () => {
+    expect(hayBorradoPendiente(null, null)).toBe(false);
+    expect(hayBorradoPendiente(undefined, null)).toBe(false);
+    expect(hayBorradoPendiente("ayer", null)).toBe(false);
+  });
+  it("la pared revisa cada 5 s (una fila): lo que tarda en limpiarse si se perdió el aviso", () => {
+    expect(REVISAR_BORRADO_MS).toBe(5000);
+  });
+});
+
+describe("instantaneaVigente (OL-134: una instantánea anterior al borrado no se repone)", () => {
+  const borrado = "2026-09-22T18:00:00.000Z";
+  it("sin borrado registrado, la instantánea vale (con o sin hora de subida)", () => {
+    expect(instantaneaVigente("2026-09-22T17:00:00.000Z", null)).toBe(true);
+    expect(instantaneaVigente(null, undefined)).toBe(true);
+  });
+  it("subida después del borrado vale; subida antes (la composición vieja) o en el mismo instante, no", () => {
+    expect(instantaneaVigente("2026-09-22T18:00:00.001Z", borrado)).toBe(true);
+    expect(instantaneaVigente("2026-09-22T18:05:00.000Z", borrado)).toBe(true);
+    expect(instantaneaVigente("2026-09-22T17:59:59.000Z", borrado)).toBe(false);
+    expect(instantaneaVigente(borrado, borrado)).toBe(false);
+  });
+  it("con borrado registrado y sin hora de subida legible, no se repone (mejor limpia que la pintura borrada)", () => {
+    expect(instantaneaVigente(null, borrado)).toBe(false);
+    expect(instantaneaVigente("ayer", borrado)).toBe(false);
+  });
+  it("las horas vienen del servidor con su zona (PostgREST / Storage): se comparan como instantes", () => {
+    expect(instantaneaVigente("2026-09-22T12:00:01-06:00", borrado)).toBe(true); // 18:00:01Z
+    expect(instantaneaVigente("2026-09-22T11:59:59-06:00", borrado)).toBe(false); // 17:59:59Z
+  });
+  it("un borrado con hora ilegible no bloquea el fondo", () => {
+    expect(instantaneaVigente("2026-09-22T17:00:00.000Z", "ayer")).toBe(true);
   });
 });
 
