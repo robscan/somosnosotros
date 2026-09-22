@@ -235,3 +235,40 @@ ningún omitido por buzón repetido.
 
 Pendiente del founder sobre el texto final de las variantes y del envío en sí; los dos hallazgos de la primera
 entrega ya quedaron resueltos con su decisión de esta tarde.
+
+## Icono de la app en la firma del correo (2026-09-22, tras la comprobación técnica)
+
+El founder recibió la comprobación y pidió el icono en la firma. Solo cambia la firma HTML
+(`firmaHtml()`): antes de la línea del nombre, `<img src="https://somosnosotros.org/icono-192.png"
+alt="Somos Nosotros" width="40" height="40" style="border-radius:8px;display:block" />` (el archivo ya existe
+en `public/icono-192.png`). La firma en texto plano (`firmaTexto()`) no cambia: nada de imágenes ahí.
+
+Nueva constante exportada `ICONO_URL` y una prueba dedicada que comprueba, para las tres variantes (institución,
+organismo, buzón compartido) y con y sin recordatorio, que el HTML lleve la etiqueta con esa URL exacta, el
+`alt`, el tamaño 40×40 y `border-radius`, y que el texto plano no contenga ninguna mención al icono ni a `<img`.
+Total 28 pruebas en el archivo (antes 27).
+
+### Evidencia
+
+- `npm run lint`: 0 errores (misma advertencia previa y ajena). `npm run typecheck`: verde (tras `npm install`,
+  que añadió `@vercel/analytics` — dependencia de `main` ajena a esta pieza, no instalada en el worktree hasta
+  ahora).
+- `npm test`: 80 archivos, **965 pruebas** en verde. `npm run build`: verde.
+- Esta pieza no toca la migración ni la base: no se repitió el banco SQL.
+
+### Ejemplo (datos inventados, no de la lista real, para no repetir el error de la entrega anterior)
+
+```html
+<p>Hola,</p>
+<p>… Institución de ejemplo ya tiene su ficha en la plataforma …</p>
+…
+<p>Si prefieren que no les volvamos a escribir, contesten con “no me escriban más” y no les mandamos nada más.</p>
+<p><img src="https://somosnosotros.org/icono-192.png" alt="Somos Nosotros" width="40" height="40" style="border-radius:8px;display:block" /></p>
+<p>Gracias,<br>Oscar Muñiz Blanco<br>Coordinación de agenda · Somos Nosotros<br><a href="https://somosnosotros.org">somosnosotros.org</a> · 444 000 0000</p>
+```
+
+**Sin correos reales en este ejemplo:** se generó con un destino ficticio (`no-real@ejemplo.mx`, nombre
+"Institución de ejemplo"), no con la lista de instituciones. Comprobado antes de comitear:
+`git diff origin/main..HEAD | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+'` — todo lo que sale es de fixture
+(`ejemplo.mx`, `x.mx`, `hotmail.com`/`gmail.com` genéricos sin nombre de institución al lado, en pruebas
+unitarias) o el propio `postgresql://apple-1@127.0.0.1` de los comandos de prueba local.
