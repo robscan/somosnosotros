@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ANCHO_POR_GROSOR_PX,
   ARRASTRE_GROSOR_MAX_PX,
+  borradoReciente,
   decidirSensor,
   DIAMETRO_PUNTO_MIN_PX,
   diametroDelPunto,
@@ -43,6 +44,7 @@ import {
   textoDelSensor,
   TINTAS,
   UMBRAL_AJUSTE_PX,
+  VENTANA_BORRADO_MS,
   type EntradaPresencia,
 } from "./pincel";
 
@@ -556,5 +558,30 @@ describe("tocaSubirInstantanea", () => {
   });
   it("la ruta es obras/<id>/pared.png (el bucket va aparte)", () => {
     expect(rutaInstantanea("44444444-4444-4444-4444-444444444444")).toBe("44444444-4444-4444-4444-444444444444/pared.png");
+  });
+});
+
+describe("borradoReciente (OL-126: «borrar» solo si Administración lo registró)", () => {
+  const ahora = Date.parse("2026-09-22T18:00:00.000Z");
+  const iso = (deltaMs: number) => new Date(ahora + deltaMs).toISOString();
+  it("un borrado registrado hace un momento se aplica; uno de hace más de un minuto, no", () => {
+    expect(VENTANA_BORRADO_MS).toBe(60_000);
+    expect(borradoReciente(iso(-2000), ahora, null)).toBe(true);
+    expect(borradoReciente(iso(-59_000), ahora, null)).toBe(true);
+    expect(borradoReciente(iso(-61_000), ahora, null)).toBe(false);
+  });
+  it("con el reloj de la pared atrasado (hora del borrado «en el futuro»), la misma tolerancia", () => {
+    expect(borradoReciente(iso(30_000), ahora, null)).toBe(true);
+    expect(borradoReciente(iso(90_000), ahora, null)).toBe(false);
+  });
+  it("el mismo borrado no se aplica dos veces; uno nuevo después del aplicado, sí", () => {
+    const t = ahora - 1000;
+    expect(borradoReciente(new Date(t).toISOString(), ahora, t)).toBe(false);
+    expect(borradoReciente(new Date(t + 500).toISOString(), ahora, t)).toBe(true);
+  });
+  it("sin hora registrada (un mando mandó «borrar» por su cuenta) o con una hora ilegible, no se borra", () => {
+    expect(borradoReciente(null, ahora, null)).toBe(false);
+    expect(borradoReciente(undefined, ahora, null)).toBe(false);
+    expect(borradoReciente("ayer", ahora, null)).toBe(false);
   });
 });

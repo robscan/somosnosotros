@@ -132,6 +132,10 @@
   border-radius: 50%;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
+/* Blanco (OL-126): borde gris más presente, en la tarjeta y en el menú, para verse sobre el fondo claro. */
+.tinta[data-clara="true"] {
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.32);
+}
 .menu {
   position: absolute;
   z-index: 3;

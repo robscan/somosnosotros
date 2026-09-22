@@ -576,14 +576,14 @@ export default function Mando({ obraId, perfilId, cupo, sonda = false }: { obraI
           disabled={esperando}
           onClick={() => setAbierto(abierto === "tinta" ? null : "tinta")}
         >
-          <i className={styles.tinta} style={{ background: color }} aria-hidden="true" />
+          <i className={styles.tinta} style={{ background: color }} data-clara={esTintaClara(color) ? "true" : undefined} aria-hidden="true" />
           <span>{tintaElegida.etiqueta}</span>
         </button>
         {abierto === "tinta" && (
           <div id="menu-tinta" className={styles.menu} role="group" aria-label="Tinta">
             {TINTAS.map((t) => (
               <button key={t.valor} type="button" className={styles.opcion} aria-pressed={t.valor === color} onClick={() => elegirTinta(t.valor)}>
-                <i className={styles.tinta} style={{ background: t.valor }} aria-hidden="true" />
+                <i className={styles.tinta} style={{ background: t.valor }} data-clara={esTintaClara(t.valor) ? "true" : undefined} aria-hidden="true" />
                 <span>{t.etiqueta}</span>
               </button>
             ))}

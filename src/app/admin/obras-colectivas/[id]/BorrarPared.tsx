@@ -1,29 +1,41 @@
 "use client";
 
 import { useState } from "react";
+import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import { IconoPincel } from "@/components/ui/Iconos";
 import estilosBorrar from "@/components/Borrar.module.css";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import { EVENTO_BORRAR, type MensajeBorrar } from "@/lib/pincel";
 import { clienteNavegador } from "@/lib/supabase/navegador";
+import { borrarPared } from "../acciones";
 
 /**
- * «Borrar la pared» (OL-126, founder: «agregar botón de borrado o reinicio de pared en admin»), en dos pasos como
- * `Borrar` (enlace discreto + hoja de confirmación con la misma composición): manda `borrar` por el canal de la
- * obra y toda pared abierta limpia su lienzo. No borra nada guardado y la obra sigue abierta, así que no pasa por
- * el servidor: el mensaje sale desde este navegador con la sesión de administración (el canal exige sesión). Solo
- * vive aquí, en Administración.
+ * «Borrar la pared» (OL-126, founder: «agregar botón de borrado o reinicio de pared en admin»): botón del canon
+ * con confirmación de un toque más («¿Borrar todo lo pintado? No se puede deshacer» → «Sí, borrar»). Al confirmar,
+ * primero la acción de servidor `borrarPared` registra la hora del borrado en la obra (exige administración: es la
+ * comprobación del lado del servidor, porque un mando también podría mandar «borrar» por el canal) y después este
+ * navegador manda `borrar` por el canal de la obra con su sesión; toda pared abierta lee esa hora y, si es reciente,
+ * limpia su lienzo. Los mandos siguen conectados; la obra sigue abierta; nada se guarda salvo esa hora.
  */
 export default function BorrarPared({ obraId, perfilId }: { obraId: string; perfilId: string }) {
   const [confirmar, setConfirmar] = useState(false);
   const [estado, setEstado] = useState<"quieto" | "borrando" | "hecho" | "error">("quieto");
+  const [error, setError] = useState<string | null>(null);
 
   async function borrar() {
     setEstado("borrando");
+    setError(null);
+    const registrado = await borrarPared(obraId);
+    if (!registrado.ok) {
+      setEstado("error");
+      setError(registrado.error);
+      return;
+    }
     const supabase = clienteNavegador();
     if (!supabase) {
       setEstado("error");
+      setError("Sin conexión.");
       return;
     }
     const canal = abrirCanalObra(supabase, obraId);
@@ -46,6 +58,7 @@ export default function BorrarPared({ obraId, perfilId }: { obraId: string; perf
       setEstado("hecho");
     } catch {
       setEstado("error");
+      setError("El borrado quedó registrado, pero no se pudo avisar a la pared. Recárgala.");
     } finally {
       await canal.unsubscribe();
     }
@@ -54,13 +67,14 @@ export default function BorrarPared({ obraId, perfilId }: { obraId: string; perf
   function cerrar() {
     setConfirmar(false);
     setEstado("quieto");
+    setError(null);
   }
 
   return (
     <>
-      <button type="button" className={estilosBorrar.enlace} onClick={() => setConfirmar(true)}>
+      <Boton type="button" variante="peligro" onClick={() => setConfirmar(true)}>
         Borrar la pared
-      </button>
+      </Boton>
       {confirmar && (
         <Hoja etiqueta="Borrar la pared" onCerrar={cerrar}>
           <div className={estilosBorrar.confirmar}>
@@ -77,13 +91,11 @@ export default function BorrarPared({ obraId, perfilId }: { obraId: string; perf
               </>
             ) : (
               <>
-                <h3>¿Borrar la pared?</h3>
-                <p>Se limpia lo pintado hasta ahora en la pared de esta obra. La obra sigue abierta. No se puede deshacer.</p>
-                {estado === "error" && (
-                  <p role="alert">No se pudo mandar el borrado. ¿Sigues con sesión de administración y con conexión?</p>
-                )}
+                <h3>¿Borrar todo lo pintado?</h3>
+                <p>No se puede deshacer. La obra sigue abierta.</p>
+                {error && <p role="alert">{error}</p>}
                 <button type="button" className={estilosBorrar.peligro} disabled={estado === "borrando"} onClick={borrar}>
-                  {estado === "borrando" ? "Borrando…" : "Sí, borrar la pared"}
+                  {estado === "borrando" ? "Borrando…" : "Sí, borrar"}
                 </button>
                 <button type="button" className={estilosBorrar.enlace} onClick={cerrar}>
                   Cancelar

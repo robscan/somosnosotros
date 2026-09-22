@@ -60,6 +60,24 @@ export function esMensajeBorrarValido(v: unknown): v is MensajeBorrar {
   return typeof m.remitente === "string" && m.remitente.length > 0 && (m.enviado === undefined || (typeof m.enviado === "number" && Number.isFinite(m.enviado)));
 }
 
+/** Ventana en la que la pared acepta un «borrar» del canal: si Administración registró el borrado hace menos de
+ * esto (con la misma tolerancia hacia adelante, por si el reloj de la pared va atrasado). */
+export const VENTANA_BORRADO_MS = 60_000;
+
+/**
+ * ¿El «borrar» que llegó por el canal viene de Administración? Solo si la obra registra un borrado reciente
+ * (`obras_colectivas.borrado_pared_en`, que escribe la acción de servidor `borrarPared`, solo admin) y no es el
+ * mismo que esta pared ya aplicó. Las políticas de realtime.messages se evalúan al unirse al canal, no por mensaje,
+ * así que el servidor no distingue un «borrar» de un trazo: esta hora es la comprobación barata del lado del servidor.
+ */
+export function borradoReciente(borradoParedEn: string | null | undefined, ahoraMs: number, ultimoAplicadoMs: number | null, ventanaMs = VENTANA_BORRADO_MS): boolean {
+  if (!borradoParedEn) return false;
+  const t = Date.parse(borradoParedEn);
+  if (!Number.isFinite(t)) return false;
+  if (ultimoAplicadoMs !== null && t <= ultimoAplicadoMs) return false;
+  return Math.abs(ahoraMs - t) < ventanaMs;
+}
+
 /**
  * Un mando NO manda un mensaje por cada muestra del sensor (gestión de cambios, revisión 2026-09-21, con el cupo
  * real de Supabase Realtime citado más abajo): el teléfono sigue muestreando el sensor a su ritmo mientras el

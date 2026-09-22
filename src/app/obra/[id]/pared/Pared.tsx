@@ -6,6 +6,7 @@ import { abrirCanalObra } from "@/lib/canal-obra";
 import { configPublica } from "@/lib/config";
 import {
   ANCHO_POR_GROSOR_PX,
+  borradoReciente,
   BUCKET_INSTANTANEAS,
   diametroDelPuntoDePosicion,
   entradasDesdePresencia,
@@ -127,6 +128,7 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
   const ultimaSubidaRef = useRef<number | null>(null);
   const subiendoRef = useRef(false);
   const tokenRef = useRef<string | null>(null);
+  const ultimoBorradoRef = useRef<number | null>(null); // el último «borrar» aplicado (hora registrada por Administración)
   const [puntosDeMando, setPuntosDeMando] = useState<Record<string, PuntoDeMando>>({});
   const [lecturas, setLecturas] = useState<LecturaSonda[]>([]);
   const [instantanea, setInstantanea] = useState<string>("sin instantánea todavía");
@@ -281,11 +283,20 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
         setPuntosDeMando((actuales) => ({ ...actuales, [mensaje.remitente]: puntoDe(mensaje, hasta, false) }));
         anotar("posicion", mensaje, recibido, 1);
       });
-      // «Borrar la pared» (OL-126, desde Administración): se limpia el lienzo y se sube el lienzo vacío como
-      // instantánea; los puntos de referencia y la obra siguen.
-      canal.on("broadcast", { event: EVENTO_BORRAR }, ({ payload }) => {
+      // «Borrar la pared» (OL-126, desde Administración): solo si la obra registra un borrado reciente — lo escribe
+      // la acción de servidor, que exige administración; un mando que mande «borrar» por su cuenta no pasa de aquí.
+      // Entonces se limpia el lienzo y se sube el lienzo vacío como instantánea; los puntos y la obra siguen.
+      canal.on("broadcast", { event: EVENTO_BORRAR }, async ({ payload }) => {
         const recibido = Date.now();
         if (!esMensajeBorrarValido(payload)) return;
+        const { data } = await supabase!.from("obras_colectivas").select("borrado_pared_en").eq("id", obraId).maybeSingle();
+        if (cancelado || !lienzo) return;
+        const registrado = (data as { borrado_pared_en?: string | null } | null)?.borrado_pared_en ?? null;
+        if (!borradoReciente(registrado, Date.now(), ultimoBorradoRef.current)) {
+          anotar("borrar ignorado (sin borrado registrado por Administración)", payload, recibido, 0);
+          return;
+        }
+        ultimoBorradoRef.current = Date.parse(registrado!);
         ctx!.clearRect(0, 0, lienzo.clientWidth, lienzo.clientHeight);
         anotar("borrar", payload, recibido, 0);
         void subir("borrado");
