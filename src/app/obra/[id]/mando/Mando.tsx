@@ -10,6 +10,7 @@ import {
   estaAjustandoGrosor,
   estadoDeFila,
   estaEncendido,
+  esTintaClara,
   EVENTO_POSICION,
   EVENTO_TRAZO,
   GROSOR_BASE,
@@ -56,7 +57,8 @@ function MuestraTrazo({ trazo, color }: { trazo: Trazo; color: string }) {
   const curva = "M5 19C14 5 24 25 43 9";
   const gotas: [number, number][] = [[6, 18], [9, 14], [12, 11], [15, 13], [17, 9], [20, 14], [23, 17], [26, 19], [28, 15], [31, 17], [34, 13], [37, 10], [40, 12], [42, 8], [13, 17], [24, 12], [35, 16]];
   return (
-    <svg className={styles.muestra} viewBox="0 0 48 28" aria-hidden="true" style={{ color }}>
+    // Con Blanco (OL-126) la punta no se vería sobre la tarjeta blanca: `data-clara` le pone un fondo gris detrás.
+    <svg className={styles.muestra} viewBox="0 0 48 28" aria-hidden="true" style={{ color }} data-clara={esTintaClara(color) ? "true" : undefined}>
       {trazo === "aire" && <path d={curva} fill="none" stroke="currentColor" strokeWidth="9" strokeLinecap="round" opacity="0.45" />}
       {trazo === "spray" && gotas.map(([x, y]) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.6" fill="currentColor" />)}
       {trazo === "organico" && (

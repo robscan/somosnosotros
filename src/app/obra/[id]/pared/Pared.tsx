@@ -7,8 +7,11 @@ import {
   ANCHO_POR_GROSOR_PX,
   diametroDelPuntoDePosicion,
   entradasDesdePresencia,
+  esMensajeBorrarValido,
   esMensajePosicionValido,
   esMensajeTrazoValido,
+  esTintaClara,
+  EVENTO_BORRAR,
   EVENTO_POSICION,
   EVENTO_TRAZO,
   latenciasDe,
@@ -173,6 +176,14 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
       setPuntosDeMando((actuales) => ({ ...actuales, [mensaje.remitente]: puntoDe(mensaje, hasta, false) }));
       anotar("posicion", mensaje, recibido, 1);
     });
+    // «Borrar la pared» (OL-126, desde Administración): se limpia el lienzo; los puntos de referencia y la obra
+    // siguen. No se guarda nada, así que una pared que se abra después no se entera — la pared no persiste.
+    canal.on("broadcast", { event: EVENTO_BORRAR }, ({ payload }) => {
+      const recibido = Date.now();
+      if (!esMensajeBorrarValido(payload)) return;
+      ctx.clearRect(0, 0, lienzo.clientWidth, lienzo.clientHeight);
+      if (sonda) setLecturas((l) => [...l.slice(-11), { evento: "borrar", remitente: payload.remitente.slice(0, 8), puntos: 0, latencias: latenciasDe(payload, recibido, Date.now()), recibido }]);
+    });
     canal.subscribe();
 
     return () => {
@@ -218,6 +229,8 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
             width: `${p.diametro}px`,
             height: `${p.diametro}px`,
             background: p.color,
+            // Blanco (OL-126) no se vería sobre la pared casi blanca: lleva un borde fino.
+            boxShadow: esTintaClara(p.color) ? "0 0 0 1px rgba(0, 0, 0, 0.35)" : undefined,
             opacity: p.pintando ? 1 : OPACIDAD_PUNTO_TENUE,
             transform: `translate(${p.x - p.diametro / 2}px, ${p.y - p.diametro / 2}px)`,
             transition: `transform ${SUAVIZADO_PUNTO_MS}ms linear, opacity 0.2s`,

@@ -1,6 +1,6 @@
 # 161 · Pincel: el grosor en el iPhone real y la latencia (OL-126)
 
-**Fecha:** 2026-09-22 · **OL:** OL-126 · **Rama:** `pincel-grosor-y-latencia` desde `origin/main` (`4469c01`, con #145–#151) · **Commits:** dos, uno por parte (los hashes van en los avisos al gestor y en OPEN_LOOPS) · **Sin push** (lo sube el gestor) · Sin migración.
+**Fecha:** 2026-09-22 · **OL:** OL-126 · **Rama:** `pincel-grosor-y-latencia` desde `origin/main` (`4469c01`, con #145–#151) · **Commits:** uno por parte (cuatro partes: sonda y gesto, latencia, borrar + Blanco, instantánea; los hashes van en los avisos al gestor y en OPEN_LOOPS) · **Sin push** (lo sube el gestor).
 
 ## Lo que dijo el founder (literal, desde su iPhone real, tras probar lo publicado)
 
@@ -48,3 +48,14 @@ El sentido ya está bien (OL-120). Quedan dos cosas, y esta vez el simulador no 
 `npm run typecheck && npm run lint` (0 errores; 1 aviso previo) `&& npm test && npm run build`: verde.
 
 **Lo que solo puede verificar el founder:** la latencia sentida en su iPhone con la pared en la Mac: con `?sonda=1` en la pared, «total» es lo que tarda su movimiento en dibujarse (con el desfase de relojes en «envío→recepción»); si «sensor→envío» ronda los 170 ms es la agrupación de 6/s (el presupuesto); si «envío→recepción» es grande, es Realtime/red, no la app.
+
+## Parte 3 · «Borrar la pared» y la tinta Blanco
+
+Añadido del founder (Decidido, 2026-09-22): «Agregar botón de borrado o reinicio de pared en admin, Agregar color blanco».
+
+- **Borrar la pared** (`src/app/admin/obras-colectivas/[id]/BorrarPared.tsx`): en la ficha de la obra en Administración, solo con la obra abierta, un enlace discreto «Borrar la pared» y la hoja de confirmación con la misma composición que `Borrar` (icono, «¿Borrar la pared?», «Se limpia lo pintado hasta ahora en la pared de esta obra. La obra sigue abierta. No se puede deshacer.», «Sí, borrar la pared» en rojo y «Cancelar»). Al confirmar, el navegador de administración abre el canal de la obra con su sesión, espera a estar suscrito (tope de 6 s), manda `borrar` (`EVENTO_BORRAR`, `{ remitente, enviado }`, validado por `esMensajeBorrarValido`) y cierra el canal; la hoja dice «La pared quedó limpia». No pasa por el servidor ni guarda nada: la obra sigue abierta. Toda pared abierta de la obra limpia su lienzo (`clearRect`) y conserva los puntos de referencia. **Solo Administración tiene el botón**; el canal exige sesión y la pared no puede distinguir quién manda un `borrar` — el mismo nivel de confianza que el remitente del trazo (aceptado en OL-088), anotado como tal, no una medida de seguridad aparte.
+- **Tinta Blanco** (`TINTAS`, sexta): pinta encima como si borrara (la pared es casi blanca, `#fbfaf8`). Lo que no se vería: la punta blanca sobre la tarjeta blanca del mando (`esTintaClara` → `data-clara` → fondo gris suave detrás de la muestra, solo entonces) y el punto tenue blanco sobre la pared (borde fino de 1 px). Pruebas: Blanco es la sexta tinta y válida en los mensajes; `esTintaClara` solo para Blanco (luminancia > 0.85), no para las otras cinco ni para un texto que no es color; `esMensajeBorrarValido`. Los ejemplos de «color que no es tinta» de las pruebas pasan de `#ffffff` a `#123456`.
+
+**Verificación (Chrome real, `capturar-borrar-blanco-ol126.mjs`):** pared con un trazo negro (3 198 px pintados) → en Administración (390×844) «Borrar la pared» → hoja de confirmación (`admin-ol126-390x844-borrar-pared-confirmar.png`) → «Sí, borrar la pared» → «La pared quedó limpia» (`-hecho.png`); el respaldo recibió un solo `borrar` del perfil de administración y la pared quedó en **0 px pintados** (`pared-ol126-1280x800-tras-borrar.png`) con sus dos puntos de referencia en su sitio. Blanco en la pared: un trazo de aire blanco encima de uno negro deja 13 451 px blancos puros y el punto de ese mando lleva el borde (`pared-ol126-1280x800-blanco.png`). Mando: el menú de tinta enseña Negro, Cempasúchil, Verde, Violeta, Sol, Blanco (`mando-ol126-390x844-tinta-menu.png`); elegido Blanco, la tarjeta dice «Tinta: Blanco» con el círculo blanco (con su borde de siempre) y la muestra del trazo lleva el fondo gris (`data-clara`, `rgb(230,230,226)`); tarjetas y botón en su sitio (568.5 / 546.5) (`mando-ol126-390x844-blanco.png`).
+
+`npm run typecheck && npm run lint` (0 errores; 1 aviso previo) `&& npm test && npm run build`: verde.

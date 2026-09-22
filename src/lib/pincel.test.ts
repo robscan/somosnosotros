@@ -7,8 +7,10 @@ import {
   diametroDelPunto,
   diametroDelPuntoDePosicion,
   entradasDesdePresencia,
+  esMensajeBorrarValido,
   esMensajePosicionValido,
   esMensajeTrazoValido,
+  esTintaClara,
   esPosicionValida,
   estaAjustandoGrosor,
   estadoDeFila,
@@ -36,6 +38,7 @@ import {
   RANGO_GRADOS,
   siguientesSegmentos,
   textoDelSensor,
+  TINTAS,
   UMBRAL_AJUSTE_PX,
   type EntradaPresencia,
 } from "./pincel";
@@ -63,8 +66,8 @@ describe("esMensajeTrazoValido", () => {
   it("rechaza un trazo que no existe", () => {
     expect(esMensajeTrazoValido({ trazo: "acuarela", color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
-  it("rechaza un color que no es una de las cinco tintas", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#ffffff", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
+  it("rechaza un color que no es una de las seis tintas", () => {
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#123456", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza un mensaje sin posiciones", () => {
     expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos: [], remitente: REMITENTE, grosor: 1 })).toBe(false);
@@ -482,7 +485,7 @@ describe("esMensajePosicionValido", () => {
     expect(esMensajePosicionValido({ ...base, posicion: { x: 2, y: 0 } })).toBe(false);
     expect(esMensajePosicionValido({ ...base, posicion: [0, 0] })).toBe(false);
     expect(esMensajePosicionValido({ ...base, trazo: "brocha" })).toBe(false);
-    expect(esMensajePosicionValido({ ...base, color: "#ffffff" })).toBe(false);
+    expect(esMensajePosicionValido({ ...base, color: "#123456" })).toBe(false);
     expect(esMensajePosicionValido({ ...base, grosor: GROSOR_MAX + 1 })).toBe(false);
     expect(esMensajePosicionValido({ ...base, remitente: "" })).toBe(false);
     expect(esMensajePosicionValido(null)).toBe(false);
@@ -501,5 +504,29 @@ describe("diametroDelPuntoDePosicion", () => {
   it("acota el grosor al rango del pincel", () => {
     expect(diametroDelPuntoDePosicion("aire", 100)).toBe(ANCHO_POR_GROSOR_PX.aire * GROSOR_MAX);
     expect(diametroDelPuntoDePosicion("aire", 0)).toBe(8); // 9 × 0.5 = 4.5 → mínimo
+  });
+});
+
+// OL-126 (founder): tinta Blanco y «Borrar la pared».
+describe("tinta Blanco y esTintaClara", () => {
+  it("Blanco es la sexta tinta, válida en los mensajes", () => {
+    expect(TINTAS.map((t) => t.etiqueta)).toEqual(["Negro", "Cempasúchil", "Verde", "Violeta", "Sol", "Blanco"]);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#ffffff", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(true);
+  });
+  it("solo Blanco es «clara»: necesita borde o fondo para verse sobre casi blanco", () => {
+    expect(esTintaClara("#ffffff")).toBe(true);
+    expect(esTintaClara("#FFFFFF")).toBe(true);
+    for (const t of TINTAS.filter((t) => t.etiqueta !== "Blanco")) expect(esTintaClara(t.valor)).toBe(false);
+    expect(esTintaClara("blanco")).toBe(false);
+  });
+});
+
+describe("esMensajeBorrarValido", () => {
+  it("remitente no vacío, marca de envío opcional", () => {
+    expect(esMensajeBorrarValido({ remitente: REMITENTE })).toBe(true);
+    expect(esMensajeBorrarValido({ remitente: REMITENTE, enviado: 1700000000000 })).toBe(true);
+    expect(esMensajeBorrarValido({ remitente: "" })).toBe(false);
+    expect(esMensajeBorrarValido({ remitente: REMITENTE, enviado: "ahora" })).toBe(false);
+    expect(esMensajeBorrarValido(null)).toBe(false);
   });
 });

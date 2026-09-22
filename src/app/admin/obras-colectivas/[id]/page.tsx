@@ -12,6 +12,7 @@ import admin from "../../admin.module.css";
 import styles from "../obras.module.css";
 import { cargarEstadoGlobalPincel, cargarObra, TOPE_MANDOS_GLOBAL } from "../consultas";
 import AccionesObra from "./AccionesObra";
+import BorrarPared from "./BorrarPared";
 import BotonImprimir from "./BotonImprimir";
 import CampoCupo from "./CampoCupo";
 import { borrarObra } from "../acciones";
@@ -83,6 +84,8 @@ export default async function DetalleObra({ params, searchParams }: Params) {
         </div>
       )}
       <AccionesObra id={obra.id} estado={obra.estado} />
+      {/* OL-126: limpiar la pared sin cerrar la obra (mensaje `borrar` por el canal; solo aquí). */}
+      {obra.estado === "abierta" && <BorrarPared obraId={obra.id} perfilId={actual.perfil.id} />}
       {error === "borrar" && (
         <p className={styles.error} role="alert">
           No se pudo borrar. ¿Sigue cerrada y sigues con sesión de administración?

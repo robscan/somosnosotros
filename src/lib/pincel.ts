@@ -11,9 +11,9 @@ export function nombreSugerido(lugarNombre: string): string {
 
 /**
  * Fase 2 bloque 2: el mensaje que viaja por el canal en vivo (doc rediseno/25: "el mensaje... pincel, color,
- * movimiento" es propio de Pincel; el canal en sí es común, ver `src/lib/canal-obra.ts`). Cuatro trazos y cinco
- * tintas, los mismos del prototipo firmado (OL-084, bitácora 118, `experiments/pincel-prototipo/core.mjs`) — no
- * se inventan de nuevo.
+ * movimiento" es propio de Pincel; el canal en sí es común, ver `src/lib/canal-obra.ts`). Cuatro trazos y las cinco
+ * tintas del prototipo firmado (OL-084, bitácora 118, `experiments/pincel-prototipo/core.mjs`) más Blanco (founder,
+ * OL-126) — no se inventan de nuevo.
  */
 export type Trazo = "trazo" | "aire" | "spray" | "organico";
 
@@ -30,10 +30,35 @@ export const TINTAS: { valor: string; etiqueta: string }[] = [
   { valor: "#286b57", etiqueta: "Verde" },
   { valor: "#6d4fc2", etiqueta: "Violeta" },
   { valor: "#dfb32f", etiqueta: "Sol" },
+  { valor: "#ffffff", etiqueta: "Blanco" }, // OL-126 (founder): pinta encima como si borrara; la pared es casi blanca
 ];
+
+/** Una tinta tan clara que sobre el fondo casi blanco de la pared (o de una tarjeta) no se vería sin un borde o un
+ * fondo detrás (hoy, Blanco). Luminancia relativa aproximada > 0.85. */
+export function esTintaClara(valor: string): boolean {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(valor);
+  if (!m) return false;
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.85;
+}
 
 /** Nombre del evento de Broadcast en el canal de la obra (`abrirCanalObra`). */
 export const EVENTO_TRAZO = "trazo";
+
+/**
+ * «Borrar la pared» (OL-126, founder: «agregar botón de borrado o reinicio de pared en admin»): un mensaje por el
+ * canal y toda pared abierta de la obra limpia su lienzo; no borra nada guardado y la obra sigue abierta. El botón
+ * vive solo en Administración; el canal exige sesión y la pared no puede distinguir quién lo manda — el mismo nivel
+ * de confianza que el remitente del trazo, aceptado así en OL-088, no una medida de seguridad aparte.
+ */
+export const EVENTO_BORRAR = "borrar";
+export type MensajeBorrar = { remitente: string; enviado?: number };
+
+export function esMensajeBorrarValido(v: unknown): v is MensajeBorrar {
+  if (!v || typeof v !== "object") return false;
+  const m = v as Record<string, unknown>;
+  return typeof m.remitente === "string" && m.remitente.length > 0 && (m.enviado === undefined || (typeof m.enviado === "number" && Number.isFinite(m.enviado)));
+}
 
 /**
  * Un mando NO manda un mensaje por cada muestra del sensor (gestión de cambios, revisión 2026-09-21, con el cupo
@@ -84,8 +109,8 @@ export function latenciasDe(mensaje: { enviado?: number; muestra?: number }, rec
   const totalMs = mensaje.muestra !== undefined ? dibujadoMs - mensaje.muestra : mensaje.enviado !== undefined ? dibujadoMs - mensaje.enviado : null;
   return { agrupacionMs, redMs, dibujoMs, totalMs };
 }
-/** Tope de puntos por mensaje: a `MENSAJES_POR_SEGUNDO = 3` y un sensor muestreado hasta a 60 Hz, un mensaje junta
- * ~20; si el sensor da más, el mando los rebaja con `muestrear`. Es también el límite que exige
+/** Tope de puntos por mensaje: a 6 mensajes/s y un sensor muestreado hasta a 60 Hz, un mensaje junta ~10 (a 5/s,
+ * ~12); si el sensor da más, el mando los rebaja con `muestrear`. Es también el límite que exige
  * `esMensajeTrazoValido` (contra un mensaje fabricado a mano con miles de puntos). */
 export const PUNTOS_MAX_POR_MENSAJE = 20;
 
