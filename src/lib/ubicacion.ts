@@ -96,3 +96,21 @@ export async function leerUbicacionCercana(): Promise<Punto> {
   guardarCache(punto);
   return punto;
 }
+
+/**
+ * La ubicación precisa con la precisión que reporta el aparato, en metros (OL-127: la cercanía del mando suma esa
+ * precisión al radio). Mismos rechazos que `leerUbicacion`. Siempre tras un toque de la persona (el de encender).
+ */
+export function leerUbicacionConPrecision(): Promise<{ punto: Punto; precisionM: number }> {
+  return new Promise((resolver, rechazar) => {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      rechazar("sin-soporte" satisfies ErrorUbicacion);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolver({ punto: { lat: pos.coords.latitude, lng: pos.coords.longitude }, precisionM: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : 0 }),
+      (err) => rechazar((err.code === err.PERMISSION_DENIED ? "negado" : "error") satisfies ErrorUbicacion),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
+    );
+  });
+}
