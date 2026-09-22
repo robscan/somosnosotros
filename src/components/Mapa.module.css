@@ -94,3 +94,15 @@
 .ubicame:disabled {
   opacity: 0.6;
 }
+
+/* La ⓘ y la marca de Mapbox (la licencia pide que las dos se vean), centradas abajo, entre el botón de ubicación
+   y "Registrar lugar" (docs/rediseno/35, "El botón de ubicación"): antes las dos compartían la esquina inferior
+   izquierda con el botón de ubicación y quedaban tapadas (corrección del gestor, 2026-09-22, sobre las capturas
+   de OL-128). Solo en el mapa de "ver" (caja o pantalla completa): el mapa embebido de las hojas Dónde está/Dónde
+   es (modo "elegir") conserva su esquina de siempre. */
+.mapaCaja :global(.mapboxgl-ctrl-bottom-left),
+.mapa :global(.mapboxgl-ctrl-bottom-left) {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}

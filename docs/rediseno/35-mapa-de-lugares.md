@@ -116,7 +116,7 @@ Lo que cambia respecto a la tarjeta de hoy: ocupa el borde inferior en vez de fl
 Dos consecuencias, decididas por el founder el 2026-09-22:
 
 1. **«Cercanos» sale de las pestañas del mapa** (recomendación aceptada): con el botón, la pestaña sería un segundo mando para la misma decisión, y eso lo prohíbe la casa (progressive disclosure: «jamás dos accionables para la misma decisión»). En la **Lista**, «Cercanos» se queda, porque ahí ordena los renglones por distancia. Las pestañas de Mapa y Lista quedan distintas por un chip; el tipo elegido sigue compartido por la URL, como hoy.
-2. **La ⓘ y la marca de Mapbox** (la licencia pide que las dos se vean) se ponen juntas, abajo, entre el botón de ubicación y «Registrar lugar». Mapbox deja elegir su posición; hoy están en la esquina izquierda.
+2. **La ⓘ y la marca de Mapbox** (la licencia pide que las dos se vean) se ponen juntas, abajo, entre el botón de ubicación y «Registrar lugar». Mapbox deja elegir su posición; hoy están en la esquina izquierda. **Corrección del gestor (2026-09-22, OL-128):** esto quedó escrito en el doc pero no se codificó en OL-125; las capturas reales del mapa de pines mostraban la ⓘ tapada por el botón de ubicación, las dos en la esquina inferior izquierda. Corregido: `src/components/Mapa.module.css` centra el contenedor `mapboxgl-ctrl-bottom-left` (donde viven juntos el logo y la ⓘ) solo en el mapa de "ver", con `left: 50%; transform: translateX(-50%)`, para que quede entre los dos botones. Captura `atribucion-mapbox--390x844.png`.
 
 ## Estados
 
@@ -158,6 +158,7 @@ Capturas reales (Chrome de la Mac por `playwright-core`, `document.fonts.check('
 - `app-mapa-zoom-ciudad--390x844.png` — alejado (varias colonias a la vez): el día sigue legible en todos los pines, ninguno se esconde por el cambio de zoom.
 - `app-mapa-zoom-calle--390x844.png` — acercado (calles con nombre): el pin compacto y el aro de los seguidos se distinguen con nitidez, sin verse apretados ni con espacio de sobra.
 - `app-mapa-sin-sesion--390x844.png` — mismo encuadre, sin sesión: el Museo Federico Silva y el MUNI vuelven a la tinta normal, sin verde ni aro (confirma que el resalte depende de `seguidos`, no está fijo en el estilo).
+- `atribucion-mapbox--390x844.png` — la ⓘ y la marca «mapbox» centradas abajo, entre el botón de ubicación y «Registrar lugar», sin tapar ni ser tapadas por ninguno de los dos (corrección del gestor, 2026-09-22: antes compartían la esquina inferior izquierda con el botón de ubicación).
 
 ## Qué toca en el código cuando se firme (para el operador)
 

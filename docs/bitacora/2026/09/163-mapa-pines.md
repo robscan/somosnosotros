@@ -55,5 +55,12 @@ Busqué cómo se pinta hoy el estado "ya decidido" en la app: `src/app/globals.c
 
 ## Pendiente
 
-- Revisión del gestor.
 - Prueba del founder en su iPhone (Safari): que el día no se esconda al hacer pellizco, que el pin se sienta compacto y no apretado, y que el verde de los seguidos se lea bien sobre el mapa.
+
+## Corrección tras la aceptación del gestor: la ⓘ de Mapbox tapada
+
+El gestor aceptó OL-128 y, al abrir las tres capturas de zoom, notó que la ⓘ de atribución de Mapbox quedaba tapada por el botón de ubicación: las dos viven en la esquina inferior izquierda del mapa (`logoPosition: "bottom-left"` y, en "ver", `AttributionControl` también en `"bottom-left"`). Esto ya estaba escrito en el doc 35 desde OL-124/125 («la ⓘ y la marca de Mapbox se ponen juntas, abajo, entre el botón de ubicación y "Registrar lugar"») pero nunca se codificó en OL-125: quedó pendiente sin que nadie lo notara hasta ver el mapa con Mapbox real.
+
+**Corrección:** `src/components/Mapa.module.css`, una regla que centra el contenedor `mapboxgl-ctrl-bottom-left` (donde Mapbox agrupa el logo y la ⓘ cuando los dos apuntan a la misma esquina) con `left: 50%; transform: translateX(-50%)`, solo dentro de `.mapaCaja`/`.mapa` (el mapa de "ver"): el mapa embebido de las hojas Dónde está/Dónde es (modo "elegir") no se toca. Sin cambios en `Mapa.tsx`.
+
+**Evidencia:** `npm run typecheck` en verde (cambio solo de CSS, sin lógica); captura real `atribucion-mapbox--390x844.png` (Mapbox de verdad, mismo respaldo y token que las demás de esta bitácora), abierta antes de entregar: la ⓘ y «mapbox» quedan centradas abajo, sin tocar el botón de ubicación ni «Registrar lugar».
