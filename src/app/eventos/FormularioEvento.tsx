@@ -24,6 +24,8 @@ import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
+import { esteAparatoInicial } from "@/lib/plataforma";
+import { usePlataforma } from "@/lib/useAvisosTelefono";
 import { cupoDeCartel, leerCartelAccion, pedirMasLecturas, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
 import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
@@ -110,6 +112,7 @@ type Props = {
  * ampliada por el founder, 2026-09-21, OL-100: "aplica como canon para todos los formularios").
  */
 export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo", cupo = null, revision, ciudadContexto = null }: Props) {
+  const plataforma = usePlataforma();
   const [revisionInicial] = useState(revision);
   const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
   const [resultado, enviar, enviando] = useActionState<ResultadoEvento | null, FormData>(accion, null);
@@ -283,7 +286,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       poner(p);
     } catch (e) {
       if (!gestos.current.vigente("donde", version)) return;
-      setAvisoUbicacion(e === "sin-soporte" ? "Este teléfono no da su ubicación. Toca el mapa donde es." : "No se pudo leer tu ubicación. Toca el mapa donde es.");
+      setAvisoUbicacion(e === "sin-soporte" ? `${esteAparatoInicial(plataforma)} no da su ubicación. Toca el mapa donde es.` : "No se pudo leer tu ubicación. Toca el mapa donde es.");
     } finally {
       setUbicando(false);
     }

@@ -27,6 +27,8 @@ import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
+import { esteAparatoInicial } from "@/lib/plataforma";
+import { usePlataforma } from "@/lib/useAvisosTelefono";
 import type { ResultadoLugar } from "./acciones";
 import HojaDonde from "./HojaDonde";
 import canon from "@/components/ui/FormularioCanon.module.css";
@@ -52,6 +54,7 @@ type Props = {
  * (founder, 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26).
  */
 export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false }: Props) {
+  const plataforma = usePlataforma();
   const esAlta = !lugar;
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(accion, null);
   // Guardado, o publicado desde el alta de evento («Regístralo»): la tarea termina sin quedarse en el historial.
@@ -204,7 +207,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
       setYo((y) => ({ ...p, vez: (y?.vez ?? 0) + 1 }));
       alMoverPin(p);
     } catch (e) {
-      setAvisoUbicacion(e === "sin-soporte" ? "Este teléfono no da su ubicación. Busca la dirección o toca el mapa." : "No se pudo leer tu ubicación. Busca la dirección o toca el mapa.");
+      setAvisoUbicacion(e === "sin-soporte" ? `${esteAparatoInicial(plataforma)} no da su ubicación. Busca la dirección o toca el mapa.` : "No se pudo leer tu ubicación. Busca la dirección o toca el mapa.");
     } finally {
       setUbicando(false);
     }
