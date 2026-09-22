@@ -21,7 +21,12 @@ export type Plataforma = {
 };
 
 export function leerPlataforma(agente: string, puntosTactiles: number, instalada: boolean): Plataforma {
-  const ipadComoMac = /Macintosh/.test(agente) && puntosTactiles > 1;
+  // El iPad con Safari reporta 5 puntos táctiles (medido; ver la prueba de IPAD_COMO_MAC). Un Mac de verdad puede
+  // dar un número mayor que cero sin ser un iPad — Sidecar/Universal Control con un iPad o una pantalla táctil
+  // externa conectada, o un trackpad Force Touch en ciertas combinaciones (bitácora 166, OL-131): cualquier umbral
+  // bajo (antes ">1") confunde esa Mac con un iPad y la manda por el camino equivocado (etiqueta "el teléfono",
+  // instalar antes de poder activar avisos). Solo el valor exacto que da un iPad cuenta.
+  const ipadComoMac = /Macintosh/.test(agente) && puntosTactiles >= 5;
   const ios = /iPhone|iPad|iPod/.test(agente) || ipadComoMac;
   const deOtraApp = /Instagram/.test(agente) ? "Instagram" : /FBAN|FBAV|FB_IAB/.test(agente) ? "Facebook" : null;
   const otroNavegador = /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(agente);

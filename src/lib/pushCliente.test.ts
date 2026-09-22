@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { disponibilidadPush, estadoPush, observarEstadoPush, suscribirPush } from "./pushCliente";
+import { detalleNoSoportado, disponibilidadPush, estadoPush, observarEstadoPush, suscribirPush } from "./pushCliente";
 
-const mocks = vi.hoisted(() => ({ activa: vi.fn(), suscripcion: vi.fn(), alta: vi.fn(), sesion: vi.fn(), desobservar: vi.fn() }));
+const mocks = vi.hoisted(() => ({ activa: vi.fn(), suscripcion: vi.fn(), alta: vi.fn(), sesion: vi.fn(), desobservar: vi.fn(), unsuscribir: vi.fn() }));
 vi.mock("@/app/perfil/acciones", () => ({ suscripcionPushActiva: mocks.activa }));
 vi.mock("./supabase/navegador", () => ({ clienteNavegador: () => ({ auth: { onAuthStateChange: mocks.sesion } }) }));
 
-const sub = { endpoint: "https://fcm.googleapis.com/fcm/send/prueba", toJSON: () => ({ keys: { p256dh: "p", auth: "a" } }) };
+const sub = { endpoint: "https://fcm.googleapis.com/fcm/send/prueba", toJSON: () => ({ keys: { p256dh: "p", auth: "a" } }), unsubscribe: mocks.unsuscribir };
+const otraSub = { endpoint: "https://fcm.googleapis.com/fcm/send/nueva-propia", toJSON: () => ({ keys: { p256dh: "p2", auth: "a2" } }) };
 let notification: { permission: NotificationPermission; requestPermission: ReturnType<typeof vi.fn> };
 let avisarSesion: (evento: string) => void;
 const observadores: ReturnType<typeof observarEstadoPush>[] = [];
@@ -16,6 +17,7 @@ beforeEach(() => {
   mocks.activa.mockResolvedValue(true);
   mocks.suscripcion.mockResolvedValue(sub);
   mocks.alta.mockResolvedValue(sub);
+  mocks.unsuscribir.mockResolvedValue(undefined);
   mocks.sesion.mockImplementation((callback) => {
     avisarSesion = callback;
     return { data: { subscription: { unsubscribe: mocks.desobservar } } };
@@ -54,10 +56,36 @@ describe("estado push reconciliado", () => {
     expect((await suscribirPush("AA")).ok).toBe(true);
     mocks.activa.mockResolvedValue(false);
     expect(await estadoPush("AA")).toBe("apagado");
+    // El servidor no confirma esa suscripción como propia de esta cuenta (aquí, por el cupo): el reintento no la
+    // reutiliza a ciegas, la da de baja y pide una nueva (bitácora 166, OL-131) — por eso `alta` se llama otra vez.
     expect((await suscribirPush("AA")).ok).toBe(true);
-    expect(mocks.alta).toHaveBeenCalledTimes(1);
+    expect(mocks.alta).toHaveBeenCalledTimes(2);
+    expect(mocks.unsuscribir).toHaveBeenCalledTimes(1);
     mocks.activa.mockResolvedValue(true);
     expect(await estadoPush("AA")).toBe("encendido");
+  });
+  it("reutiliza la suscripción del navegador si el servidor confirma que ya es de esta cuenta", async () => {
+    // mocks.activa (beforeEach) ya resuelve true: la suscripción existente se queda tal cual, sin dar de baja ni pedir otra.
+    const alta = await suscribirPush("AA");
+    expect(alta).toEqual({ ok: true, sub: { endpoint: sub.endpoint, keys: { p256dh: "p", auth: "a" } } });
+    expect(mocks.unsuscribir).not.toHaveBeenCalled();
+    expect(mocks.alta).not.toHaveBeenCalled();
+  });
+  it("una suscripción del navegador que es de OTRA cuenta se da de baja y se pide una propia (bitácora 166, OL-131)", async () => {
+    // Medido: hay un solo PushSubscription por origen; si otra cuenta ya la registró en esta computadora,
+    // guardarla para la cuenta de ahora la base la rechaza (el endpoint no se transfiere de una cuenta a otra).
+    mocks.activa.mockResolvedValue(false); // el servidor no la reconoce como de esta cuenta
+    mocks.alta.mockResolvedValueOnce(otraSub);
+    const alta = await suscribirPush("AA");
+    expect(mocks.unsuscribir).toHaveBeenCalledTimes(1);
+    expect(mocks.alta).toHaveBeenCalledTimes(1);
+    expect(alta).toEqual({ ok: true, sub: { endpoint: otraSub.endpoint, keys: { p256dh: "p2", auth: "a2" } } });
+  });
+  it("sin suscripción previa, no consulta al servidor antes de pedir una (nada que confirmar)", async () => {
+    mocks.suscripcion.mockResolvedValueOnce(null);
+    await suscribirPush("AA");
+    expect(mocks.activa).not.toHaveBeenCalled();
+    expect(mocks.alta).toHaveBeenCalledTimes(1);
   });
   it("no conserva encendido cuando cambia la cuenta o se revoca el consentimiento", async () => {
     expect(await estadoPush("AA")).toBe("encendido");
@@ -83,6 +111,18 @@ describe("estado push reconciliado", () => {
     mocks.suscripcion.mockResolvedValueOnce(null);
     mocks.alta.mockRejectedValueOnce(Object.assign(new Error(), { name: "AbortError" }));
     expect(await suscribirPush("AA")).toEqual({ ok: false, motivo: "rechazado", detalle: "AbortError" });
+  });
+  it("si la confirmación del servidor se cuelga, no deja el interruptor deshabilitado para siempre (bitácora 166, OL-131)", async () => {
+    // Antes de esto: `estado` se quedaría en null y el interruptor deshabilitado sin ningún aviso — el caso
+    // medido en Ajustes con la cuenta de Gmail. Se resuelve tarde (no nunca) para no dejar nada pendiente al
+    // terminar la prueba; lo que importa es que `estadoPush` no espera esa resolución tardía.
+    let terminar!: (activa: boolean) => void;
+    mocks.activa.mockImplementation(() => new Promise<boolean>((resolve) => { terminar = resolve; }));
+    const resultado = estadoPush("AA");
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(await resultado).toBe("apagado");
+    terminar(true);
+    await vi.advanceTimersByTimeAsync(0);
   });
   it("un fallo de red conserva la opcion de reintentar", async () => {
     mocks.activa.mockRejectedValueOnce(new Error("sin red"));
@@ -200,5 +240,16 @@ describe("observacion del estado push", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(recibir).not.toHaveBeenCalled();
     expect(mocks.desobservar).toHaveBeenCalled();
+  });
+});
+
+describe("detalleNoSoportado", () => {
+  it("distingue la llave que falta (nuestra) de un navegador sin las APIs (suya)", () => {
+    expect(detalleNoSoportado("")).toBe("Falta la llave pública de avisos en este despliegue");
+    expect(detalleNoSoportado("AA")).toBeNull(); // navigator/window del beforeEach sí tienen las tres APIs
+  });
+  it("nombra lo que falta cuando el navegador no las tiene", () => {
+    vi.stubGlobal("window", Object.assign(new EventTarget(), { matchMedia: () => ({ matches: true }) })); // sin PushManager
+    expect(detalleNoSoportado("AA")).toBe("Este navegador no tiene Service Worker, Push o Notification");
   });
 });

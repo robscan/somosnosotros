@@ -31,12 +31,42 @@ async function registroListo(ms = 4000): Promise<ServiceWorkerRegistration | nul
   return Promise.race([navigator.serviceWorker.ready, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
 }
 
+/**
+ * Con tope: si `promesa` no resuelve a tiempo, se rechaza en vez de quedarse esperando para siempre (mismo motivo
+ * que `pedirPermiso` en `suscribirPush`, bitácora 164/166, OL-131). Sin esto, un `suscripcionPushActiva` que se
+ * cuelga deja el interruptor de Ajustes deshabilitado sin ningún aviso, para siempre: el `catch` de `estadoPush`
+ * ya sabe qué hacer con un fallo, pero solo si la promesa de verdad llega a fallar.
+ */
+function conTope<T>(promesa: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolver, rechazar) => {
+    const id = setTimeout(() => rechazar(new Error("tardó demasiado")), ms);
+    promesa.then((v) => {
+      clearTimeout(id);
+      resolver(v);
+    }, (e) => {
+      clearTimeout(id);
+      rechazar(e);
+    });
+  });
+}
+
 /** Compatibilidad local: permite pedir el permiso desde el toque, sin esperar una consulta de red. */
 export function disponibilidadPush(llavePublica: string): EstadoPush {
   const p = plataformaActual();
   const soporte = hayAvisosEnElNavegador();
   const permiso = "Notification" in window ? Notification.permission : null;
   return decidirEstadoPush(p, { llave: !!llavePublica, soporte, permiso, suscrito: false });
+}
+
+/**
+ * Por qué "no-soportado", en llano (OL-131, punto 3 del encargo): sin la llave pública o sin las tres APIs del
+ * navegador son cosas distintas de arreglar (una es nuestra, la otra es del navegador de la persona), y el
+ * subtítulo no lo distinguía. null si el estado no es "no-soportado".
+ */
+export function detalleNoSoportado(llavePublica: string): string | null {
+  if (!llavePublica) return "Falta la llave pública de avisos en este despliegue";
+  if (!hayAvisosEnElNavegador()) return "Este navegador no tiene Service Worker, Push o Notification";
+  return null;
 }
 
 /** El estado encendido requiere registro y consentimiento de la cuenta actual en el servidor. */
@@ -47,9 +77,9 @@ export async function estadoPush(llavePublica: string): Promise<EstadoPush> {
   try {
     const reg = await registroListo();
     const sub = reg && (await reg.pushManager.getSubscription());
-    return sub && await suscripcionPushActiva(sub.endpoint) ? "encendido" : "apagado";
+    return sub && (await conTope(suscripcionPushActiva(sub.endpoint), 8000)) ? "encendido" : "apagado";
   } catch {
-    // Un fallo de lectura o de red no prueba el alta; queda disponible el reintento.
+    // Un fallo de lectura, de red, o que se tardó de más (conTope) no prueba el alta; queda disponible el reintento.
     return "apagado";
   }
 }
@@ -131,6 +161,12 @@ function detalleDe(e: unknown): string | undefined {
  * permission denied"` con un perfil efímero de Chrome — el mismo error que documenta Chromium cuando macOS tiene
  * apagados los avisos del navegador a nivel de sistema, o en una ventana de incógnito/invitado: el permiso del
  * SITIO no es el único candado); "fallo": no se pudo terminar el alta por otra razón.
+ *
+ * Hay un solo `PushSubscription` por origen en todo el navegador, sin importar la cuenta (medido, bitácora 166,
+ * OL-131): si otra cuenta ya la dio de alta en esta misma computadora, `getSubscription()` la devuelve tal cual, y
+ * guardarla para la cuenta de ahora la base la rechaza (el endpoint no se transfiere de una cuenta a otra). Por
+ * eso una suscripción que ya existe solo se reutiliza si el servidor confirma que es de la cuenta que pidió
+ * "Activar"; si no, se da de baja y se pide una nueva, propia de esta cuenta.
  */
 export async function suscribirPush(llavePublica: string): Promise<ResultadoAlta> {
   try {
@@ -143,7 +179,10 @@ export async function suscribirPush(llavePublica: string): Promise<ResultadoAlta
     if (!reg) return { ok: false, motivo: "fallo" };
     let sub: PushSubscription;
     try {
-      sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64AUint8(llavePublica) as BufferSource }));
+      const existente = await reg.pushManager.getSubscription();
+      const esMia = existente && (await suscripcionPushActiva(existente.endpoint).catch(() => false));
+      if (existente && !esMia) await existente.unsubscribe().catch(() => {});
+      sub = existente && esMia ? existente : await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64AUint8(llavePublica) as BufferSource });
     } catch (e) {
       return { ok: false, motivo: "rechazado", detalle: detalleDe(e) };
     }
