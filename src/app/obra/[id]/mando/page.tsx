@@ -18,9 +18,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
  * `redirect("/entrar?siguiente=…")`). Sin la comprobación de cercanía todavía (Fase 3) ni el cupo/fila (doc
  * rediseno/34, espera firma): hoy cualquier cuenta con sesión puede pintar en una obra abierta.
  */
-export default async function MandoDeObra({ params }: { params: Promise<{ id: string }> }) {
+export default async function MandoDeObra({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ sonda?: string }> }) {
   const { id } = await params;
   if (!esUuid(id)) notFound();
+  // OL-126: `?sonda=1` enseña un recuadro con los eventos que llegan, para leerlo en el iPhone del founder.
+  // Sin el parámetro no cambia nada visible.
+  const sonda = (await searchParams).sonda === "1";
   const actual = await usuarioActual();
   if (!actual) redirect(`/entrar?siguiente=/obra/${id}/mando`);
   // Interruptor «Pincel apagado» (OL-121): igual que la pared, se comprueba antes de leer la obra — sin
@@ -48,7 +51,7 @@ export default async function MandoDeObra({ params }: { params: Promise<{ id: st
   return (
     <main className={ficha.pagina}>
       <Barra volver={{ href: "/", texto: "Salir" }} />
-      <Mando obraId={obra.id} perfilId={actual.perfil.id} cupo={obra.cupoMandos} />
+      <Mando obraId={obra.id} perfilId={actual.perfil.id} cupo={obra.cupoMandos} sonda={sonda} />
     </main>
   );
 }

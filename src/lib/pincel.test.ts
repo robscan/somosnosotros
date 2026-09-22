@@ -2,23 +2,32 @@ import { describe, expect, it } from "vitest";
 import {
   ANCHO_POR_GROSOR_PX,
   ARRASTRE_GROSOR_MAX_PX,
+  borradoReciente,
   decidirSensor,
   DIAMETRO_PUNTO_MIN_PX,
   diametroDelPunto,
   diametroDelPuntoDePosicion,
   entradasDesdePresencia,
+  esMensajeBorrarValido,
   esMensajePosicionValido,
   esMensajeTrazoValido,
+  esTintaClara,
   esPosicionValida,
   estaAjustandoGrosor,
   estadoDeFila,
   estaEncendido,
+  INSTANTANEA_CADA_MS,
   GROSOR_BASE,
   GROSOR_MAX,
   GROSOR_MIN,
   grosorDesdeArrastre,
-  INTERVALO_MENSAJE_MS,
-  MENSAJES_POR_SEGUNDO,
+  intervaloMs,
+  latenciasDe,
+  MENSAJES_POR_SEGUNDO_PINTANDO,
+  POSICIONES_POR_SEGUNDO,
+  PRESUPUESTO_MENSAJES_POR_SEGUNDO,
+  ritmoDeTrazo,
+  SUAVIZADO_PUNTO_MS,
   muestrear,
   nombreSugerido,
   ordenDeFila,
@@ -29,9 +38,13 @@ import {
   PUNTOS_MAX_POR_MENSAJE,
   quienesPintan,
   RANGO_GRADOS,
+  rutaInstantanea,
   siguientesSegmentos,
+  tocaSubirInstantanea,
   textoDelSensor,
+  TINTAS,
   UMBRAL_AJUSTE_PX,
+  VENTANA_BORRADO_MS,
   type EntradaPresencia,
 } from "./pincel";
 
@@ -58,8 +71,8 @@ describe("esMensajeTrazoValido", () => {
   it("rechaza un trazo que no existe", () => {
     expect(esMensajeTrazoValido({ trazo: "acuarela", color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
-  it("rechaza un color que no es una de las cinco tintas", () => {
-    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#ffffff", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
+  it("rechaza un color que no es una de las seis tintas", () => {
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#123456", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(false);
   });
   it("rechaza un mensaje sin posiciones", () => {
     expect(esMensajeTrazoValido({ trazo: "trazo", color: "#141414", puntos: [], remitente: REMITENTE, grosor: 1 })).toBe(false);
@@ -270,11 +283,61 @@ describe("muestrear", () => {
   });
 });
 
-describe("presupuesto de mensajes (OL-120, gestor)", () => {
-  it("trazo y posición comparten reloj: 3 por segundo por mando; 20 mandos caben en 60 mensajes/s", () => {
-    expect(MENSAJES_POR_SEGUNDO).toBe(3);
-    expect(INTERVALO_MENSAJE_MS).toBe(333);
-    expect(MENSAJES_POR_SEGUNDO * 20).toBeLessThanOrEqual(60);
+describe("presupuesto de mensajes (OL-126, gestor)", () => {
+  it("pintando, 6 por segundo con el cupo de 10 (10 × 6 = 60/s); con 20 mandos baja solo a 5/s (100/s)", () => {
+    expect(MENSAJES_POR_SEGUNDO_PINTANDO).toBe(6);
+    expect(ritmoDeTrazo(10)).toBe(6);
+    expect(ritmoDeTrazo(1)).toBe(6);
+    expect(ritmoDeTrazo(16)).toBe(6);
+    expect(ritmoDeTrazo(17)).toBe(5);
+    expect(ritmoDeTrazo(20)).toBe(5);
+    expect(10 * ritmoDeTrazo(10)).toBeLessThanOrEqual(60);
+    for (let cupo = 1; cupo <= 20; cupo++) expect(cupo * ritmoDeTrazo(cupo)).toBeLessThanOrEqual(PRESUPUESTO_MENSAJES_POR_SEGUNDO);
+  });
+  it("sin pintar, la posición va a 2 por segundo; el punto tenue se suaviza en 120 ms como mucho", () => {
+    expect(POSICIONES_POR_SEGUNDO).toBe(2);
+    expect(SUAVIZADO_PUNTO_MS).toBeLessThanOrEqual(120);
+  });
+  it("intervalo en ms a partir del ritmo, nunca división por cero", () => {
+    expect(intervaloMs(6)).toBe(167);
+    expect(intervaloMs(5)).toBe(200);
+    expect(intervaloMs(2)).toBe(500);
+    expect(intervaloMs(0)).toBe(1000);
+  });
+});
+
+describe("latenciasDe (OL-126)", () => {
+  it("con marcas del mando: agrupación (muestra→envío), red (envío→recepción), dibujo y total (muestra→dibujo)", () => {
+    const l = latenciasDe({ muestra: 1000, enviado: 1040 }, 1075, 1077);
+    expect(l).toEqual({ agrupacionMs: 40, redMs: 35, dibujoMs: 2, totalMs: 77 });
+  });
+  it("sin marcas (un cliente viejo): solo el dibujo se puede medir", () => {
+    expect(latenciasDe({}, 1075, 1076)).toEqual({ agrupacionMs: null, redMs: null, dibujoMs: 1, totalMs: null });
+  });
+  it("solo con envío: red y total desde el envío; la agrupación no se sabe", () => {
+    expect(latenciasDe({ enviado: 1040 }, 1075, 1075)).toEqual({ agrupacionMs: null, redMs: 35, dibujoMs: 0, totalMs: 35 });
+  });
+  it("un reloj adelantado en el mando puede dar red negativa (se enseña tal cual); agrupación y dibujo nunca bajan de 0", () => {
+    const l = latenciasDe({ muestra: 1050, enviado: 1040 }, 1030, 1029);
+    expect(l.redMs).toBe(-10);
+    expect(l.agrupacionMs).toBe(0);
+    expect(l.dibujoMs).toBe(0);
+  });
+});
+
+describe("marcas de tiempo opcionales en los mensajes (OL-126)", () => {
+  const trazo = { trazo: "trazo", color: "#141414", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 };
+  const posicion = { remitente: REMITENTE, trazo: "trazo", color: "#141414", grosor: 1, posicion: { x: 0, y: 0 } };
+  it("sin marcas siguen siendo válidos; con marcas numéricas también", () => {
+    expect(esMensajeTrazoValido(trazo)).toBe(true);
+    expect(esMensajeTrazoValido({ ...trazo, enviado: 1700000000000, muestra: 1699999999990 })).toBe(true);
+    expect(esMensajePosicionValido(posicion)).toBe(true);
+    expect(esMensajePosicionValido({ ...posicion, enviado: 1700000000000 })).toBe(true);
+  });
+  it("una marca que no es un número finito invalida el mensaje", () => {
+    expect(esMensajeTrazoValido({ ...trazo, enviado: "ahora" })).toBe(false);
+    expect(esMensajeTrazoValido({ ...trazo, muestra: NaN })).toBe(false);
+    expect(esMensajePosicionValido({ ...posicion, muestra: null })).toBe(false);
   });
 });
 
@@ -427,7 +490,7 @@ describe("esMensajePosicionValido", () => {
     expect(esMensajePosicionValido({ ...base, posicion: { x: 2, y: 0 } })).toBe(false);
     expect(esMensajePosicionValido({ ...base, posicion: [0, 0] })).toBe(false);
     expect(esMensajePosicionValido({ ...base, trazo: "brocha" })).toBe(false);
-    expect(esMensajePosicionValido({ ...base, color: "#ffffff" })).toBe(false);
+    expect(esMensajePosicionValido({ ...base, color: "#123456" })).toBe(false);
     expect(esMensajePosicionValido({ ...base, grosor: GROSOR_MAX + 1 })).toBe(false);
     expect(esMensajePosicionValido({ ...base, remitente: "" })).toBe(false);
     expect(esMensajePosicionValido(null)).toBe(false);
@@ -446,5 +509,79 @@ describe("diametroDelPuntoDePosicion", () => {
   it("acota el grosor al rango del pincel", () => {
     expect(diametroDelPuntoDePosicion("aire", 100)).toBe(ANCHO_POR_GROSOR_PX.aire * GROSOR_MAX);
     expect(diametroDelPuntoDePosicion("aire", 0)).toBe(8); // 9 × 0.5 = 4.5 → mínimo
+  });
+});
+
+// OL-126 (founder): tinta Blanco y «Borrar la pared».
+describe("tinta Blanco y esTintaClara", () => {
+  it("Blanco es la sexta tinta, válida en los mensajes", () => {
+    expect(TINTAS.map((t) => t.etiqueta)).toEqual(["Negro", "Cempasúchil", "Verde", "Violeta", "Sol", "Blanco"]);
+    expect(esMensajeTrazoValido({ trazo: "trazo", color: "#ffffff", puntos: [{ x: 0, y: 0 }], remitente: REMITENTE, grosor: 1 })).toBe(true);
+  });
+  it("solo Blanco es «clara»: necesita borde o fondo para verse sobre casi blanco", () => {
+    expect(esTintaClara("#ffffff")).toBe(true);
+    expect(esTintaClara("#FFFFFF")).toBe(true);
+    for (const t of TINTAS.filter((t) => t.etiqueta !== "Blanco")) expect(esTintaClara(t.valor)).toBe(false);
+    expect(esTintaClara("blanco")).toBe(false);
+  });
+});
+
+describe("esMensajeBorrarValido", () => {
+  it("remitente no vacío, marca de envío opcional", () => {
+    expect(esMensajeBorrarValido({ remitente: REMITENTE })).toBe(true);
+    expect(esMensajeBorrarValido({ remitente: REMITENTE, enviado: 1700000000000 })).toBe(true);
+    expect(esMensajeBorrarValido({ remitente: "" })).toBe(false);
+    expect(esMensajeBorrarValido({ remitente: REMITENTE, enviado: "ahora" })).toBe(false);
+    expect(esMensajeBorrarValido(null)).toBe(false);
+  });
+});
+
+// OL-126 (4): la instantánea de la pared.
+describe("tocaSubirInstantanea", () => {
+  const ahora = 1_700_000_000_000;
+  it("periódica: solo con trazos nuevos y pasados 20 s desde la última subida (o si nunca se subió)", () => {
+    expect(INSTANTANEA_CADA_MS).toBe(20_000);
+    expect(tocaSubirInstantanea({ motivo: "periodica", hayTrazosNuevos: true, ultimaSubidaMs: null, ahoraMs: ahora })).toBe(true);
+    expect(tocaSubirInstantanea({ motivo: "periodica", hayTrazosNuevos: true, ultimaSubidaMs: ahora - 20_000, ahoraMs: ahora })).toBe(true);
+    expect(tocaSubirInstantanea({ motivo: "periodica", hayTrazosNuevos: true, ultimaSubidaMs: ahora - 19_999, ahoraMs: ahora })).toBe(false);
+    expect(tocaSubirInstantanea({ motivo: "periodica", hayTrazosNuevos: false, ultimaSubidaMs: null, ahoraMs: ahora })).toBe(false);
+  });
+  it("cierre (pestaña oculta o cerrándose): si hubo trazos nuevos, aunque no hayan pasado 20 s", () => {
+    expect(tocaSubirInstantanea({ motivo: "cierre", hayTrazosNuevos: true, ultimaSubidaMs: ahora - 1000, ahoraMs: ahora })).toBe(true);
+    expect(tocaSubirInstantanea({ motivo: "cierre", hayTrazosNuevos: false, ultimaSubidaMs: ahora - 1000, ahoraMs: ahora })).toBe(false);
+  });
+  it("borrado: siempre (sube el lienzo vacío)", () => {
+    expect(tocaSubirInstantanea({ motivo: "borrado", hayTrazosNuevos: false, ultimaSubidaMs: ahora - 1000, ahoraMs: ahora })).toBe(true);
+  });
+  it("a lo sumo 3 subidas periódicas por minuto por obra", () => {
+    expect(Math.floor(60_000 / INSTANTANEA_CADA_MS)).toBeLessThanOrEqual(3);
+  });
+  it("la ruta es obras/<id>/pared.png (el bucket va aparte)", () => {
+    expect(rutaInstantanea("44444444-4444-4444-4444-444444444444")).toBe("44444444-4444-4444-4444-444444444444/pared.png");
+  });
+});
+
+describe("borradoReciente (OL-126: «borrar» solo si Administración lo registró)", () => {
+  const ahora = Date.parse("2026-09-22T18:00:00.000Z");
+  const iso = (deltaMs: number) => new Date(ahora + deltaMs).toISOString();
+  it("un borrado registrado hace un momento se aplica; uno de hace más de un minuto, no", () => {
+    expect(VENTANA_BORRADO_MS).toBe(60_000);
+    expect(borradoReciente(iso(-2000), ahora, null)).toBe(true);
+    expect(borradoReciente(iso(-59_000), ahora, null)).toBe(true);
+    expect(borradoReciente(iso(-61_000), ahora, null)).toBe(false);
+  });
+  it("con el reloj de la pared atrasado (hora del borrado «en el futuro»), la misma tolerancia", () => {
+    expect(borradoReciente(iso(30_000), ahora, null)).toBe(true);
+    expect(borradoReciente(iso(90_000), ahora, null)).toBe(false);
+  });
+  it("el mismo borrado no se aplica dos veces; uno nuevo después del aplicado, sí", () => {
+    const t = ahora - 1000;
+    expect(borradoReciente(new Date(t).toISOString(), ahora, t)).toBe(false);
+    expect(borradoReciente(new Date(t + 500).toISOString(), ahora, t)).toBe(true);
+  });
+  it("sin hora registrada (un mando mandó «borrar» por su cuenta) o con una hora ilegible, no se borra", () => {
+    expect(borradoReciente(null, ahora, null)).toBe(false);
+    expect(borradoReciente(undefined, ahora, null)).toBe(false);
+    expect(borradoReciente("ayer", ahora, null)).toBe(false);
   });
 });

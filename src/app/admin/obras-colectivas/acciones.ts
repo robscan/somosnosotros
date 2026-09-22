@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { BUCKET_INSTANTANEAS, rutaInstantanea } from "@/lib/pincel";
 import { esUuid, limpiar } from "@/lib/formulario";
 import { localAIso, zonaSegura } from "@/lib/fechas";
 import { cierreDesdeEvento } from "@/lib/obras-colectivas";
@@ -104,6 +105,21 @@ export async function cambiarCupo(id: string, cupo: number): Promise<Resultado> 
 /** Interruptor «Pincel apagado» (OL-121, doc del founder 2026-09-22): apagado, la pared y el mando no dejan pintar
  * y el canal en vivo deja de responder (migración 20260922180000, política restrictiva sobre `realtime.messages`).
  * Quién lo cambió y cuándo lo pone solo el disparador de la base (`ajustes_sitio_quien`), no lo que mande aquí. */
+/**
+ * «Borrar la pared» (OL-126): registra la hora del borrado en la obra abierta. Es la comprobación del lado del
+ * servidor: solo administración llega aquí (`soloAdmin`) y solo administración puede actualizar la obra (RLS); la
+ * pared, al recibir «borrar» por el canal, lee esta hora y solo limpia si es reciente — un mando que mande «borrar»
+ * por su cuenta no la tiene. El aviso por el canal lo manda el navegador de administración después de esto.
+ */
+export async function borrarPared(id: string): Promise<Resultado> {
+  if (!esUuid(id)) return { ok: false, error: "No encontramos esa obra." };
+  const { supabase } = await soloAdmin();
+  const { error, data } = await supabase.from("obras_colectivas").update({ borrado_pared_en: new Date().toISOString() }).eq("id", id).eq("estado", "abierta").select("id");
+  if (error) return { ok: false, error: "No se pudo borrar la pared. Intenta de nuevo." };
+  if (!data || data.length === 0) return { ok: false, error: "La obra ya no está abierta. Recarga la página." };
+  return { ok: true };
+}
+
 export async function cambiarPincelActivo(activo: boolean): Promise<Resultado> {
   const { supabase } = await soloAdmin();
   const { error } = await supabase.from("ajustes_sitio").update({ valor: activo }).eq("clave", "pincel_activo");
@@ -138,6 +154,8 @@ export async function borrarObra(id: string) {
   // bucket, no un dato roto en la base. Nadie sube a fotos/obras/ todavía (llega con la pared, Fase 2), así que
   // hoy `imagen_final` siempre es null y esta rama no se ejercita — queda lista para cuando exista.
   if (obra?.imagen_final) await supabase.storage.from("fotos").remove([obra.imagen_final]);
+  // OL-126: la instantánea de la pared (bucket privado «obras», obras/<id>/pared.png), si la hubo; mismo mejor esfuerzo.
+  await supabase.storage.from(BUCKET_INSTANTANEAS).remove([rutaInstantanea(id)]);
   revalidatePath("/admin/obras-colectivas");
   redirect("/admin/obras-colectivas");
 }
