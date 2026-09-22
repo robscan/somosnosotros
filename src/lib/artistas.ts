@@ -38,6 +38,8 @@ export const MINIMO_POR_DETALLE = 3;
 
 export type ArtistaResumen = {
   id: string;
+  /** La dirección legible (/artistas/<slug>): se pone sola al crear la ficha y no cambia si cambia el nombre. */
+  slug: string;
   nombre: string;
   disciplina: Disciplina;
   detalle: string | null;
@@ -63,6 +65,15 @@ export type Artista = ArtistaResumen & {
 
 /** Un artista elegido en el renglón Quién: ya registrado (con id) o por crear con solo el nombre. */
 export type QuienItem = { id?: string; nombre: string };
+
+/**
+ * La dirección de la ficha: el slug si ya lo trae (todas las fichas nuevas y las 538 existentes lo tienen desde la
+ * migración `20260922140000_artistas_slug`), y el UUID solo como respaldo (una fila leída sin ese campo). Las rutas
+ * viejas `/artistas/<uuid>` siguen resolviendo con un redirect 308 a esta misma dirección (OL-114, doc 24).
+ */
+export function hrefArtista(a: { id: string; slug?: string | null }): string {
+  return `/artistas/${a.slug || a.id}`;
+}
 
 export function etiquetaDisciplina(d: string): string {
   return DISCIPLINAS.find((x) => x.valor === d)?.etiqueta ?? "Por completar";
