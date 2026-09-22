@@ -20,15 +20,26 @@
   column-gap: 10px;
   align-items: center;
   /* El botón conserva la altura firmada: zona inferior-media, con espacio abajo para afianzar el pulgar sin
-     cambiar el agarre (founder, bitácora 118). */
-  min-height: calc(100dvh - var(--alto-barra, 56px));
-  padding: 10px 0 clamp(96px, 17vh, 160px);
-  position: relative;
+     cambiar el agarre (founder, bitácora 118). OL-132 (founder: «que se bloquee desplazamiento completamente»):
+     el mando ocupa la pantalla entera bajo la Barra, fijo, y no se desplaza nunca (html/body también quedan sin
+     desplazamiento mientras está montado, Mando.tsx). El gutter horizontal lo pone él mismo (ya no lo hereda de
+     ficha.pagina). Medido: nada queda fuera de pantalla a 390×844 ni a 320×568. */
+  position: fixed;
+  top: var(--alto-barra, 56px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  /* El botón se ancla al pie (el 1fr de arriba absorbe lo demás): 12 px menos de pie que antes, que son los 12 que
+     la página ponía entre la Barra y el mando, para que el botón siga exactamente donde estaba (centro en
+     y = 610.5 a 390×844, medido en OL-120/126). */
+  padding: 10px var(--gutter) calc(clamp(96px, 17vh, 160px) - 12px);
   /* OL-126 (a): en el área del mando, un dedo que se mantiene y se mueve es del mando, nunca desplazar la página
-     ni «tirar para refrescar» (Safari de iOS se llevaba el gesto del grosor). El html/body llevan además
-     overscroll-behavior: none mientras el mando está montado (Mando.tsx). */
+     ni «tirar para refrescar» (Safari de iOS se llevaba el gesto del grosor). */
   touch-action: none;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* OL-126: la sonda de eventos, solo con `?sonda=1`: fija, fuera de la rejilla, sin toques. */
 .sonda {

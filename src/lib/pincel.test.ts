@@ -17,7 +17,8 @@ import {
   esMensajeTrazoValido,
   esTintaClara,
   esPosicionValida,
-  estaAjustandoGrosor,
+  esSalto,
+  diferenciaAngular,
   estaCerca,
   estadoDeFila,
   estaEncendido,
@@ -53,7 +54,6 @@ import {
   textoDelSensor,
   TINTAS,
   tituloDeObra,
-  UMBRAL_AJUSTE_PX,
   VENTANA_BORRADO_MS,
   type EntradaPresencia,
 } from "./pincel";
@@ -156,18 +156,6 @@ describe("grosorDesdeArrastre", () => {
   });
 });
 
-describe("estaAjustandoGrosor", () => {
-  it("el temblor del dedo bajo el umbral no cuenta como ajuste: se sigue pintando", () => {
-    expect(estaAjustandoGrosor(0)).toBe(false);
-    expect(estaAjustandoGrosor(UMBRAL_AJUSTE_PX)).toBe(false);
-    expect(estaAjustandoGrosor(-UMBRAL_AJUSTE_PX)).toBe(false);
-  });
-  it("pasado el umbral, en cualquier sentido, se está ajustando (y no se manda trazo)", () => {
-    expect(estaAjustandoGrosor(UMBRAL_AJUSTE_PX + 1)).toBe(true);
-    expect(estaAjustandoGrosor(-(UMBRAL_AJUSTE_PX + 1))).toBe(true);
-  });
-});
-
 describe("diametroDelPunto", () => {
   it("mide el grosor a escala del mando: 16 px en el base, 8 en el mínimo, 56 en el tope (lo que pidió el gestor)", () => {
     expect(diametroDelPunto(GROSOR_BASE)).toBe(16);
@@ -187,11 +175,12 @@ describe("diametroDelPunto", () => {
 // teléfono pinta para abajo». El mando manda la posición normalizada respecto a un cero; un rango cómodo de
 // muñeca (RANGO_GRADOS: ±30° horizontal, ±20° vertical) recorre la pared entera, con tope en los bordes.
 describe("posicionDesdeOrientacion", () => {
-  const cero = { beta: 45, gamma: 0 }; // el teléfono como un control remoto, al encender
+  const cero = { alpha: 120, beta: 45, gamma: 0 }; // el teléfono como un control remoto, al encender
   it("sin cero, o con una lectura incompleta, no hay posición", () => {
-    expect(posicionDesdeOrientacion(null, { beta: 10, gamma: 5 })).toBeNull();
-    expect(posicionDesdeOrientacion({ beta: null, gamma: 5 }, { beta: 10, gamma: 5 })).toBeNull();
-    expect(posicionDesdeOrientacion(cero, { beta: 10, gamma: null })).toBeNull();
+    expect(posicionDesdeOrientacion(null, { alpha: 10, beta: 10, gamma: 5 })).toBeNull();
+    expect(posicionDesdeOrientacion({ alpha: 10, beta: null, gamma: 5 }, { alpha: 10, beta: 10, gamma: 5 })).toBeNull();
+    expect(posicionDesdeOrientacion(cero, { alpha: 10, beta: null, gamma: 0 })).toBeNull();
+    expect(posicionDesdeOrientacion({ beta: 45, gamma: null }, { beta: 45, gamma: null })).toBeNull(); // sin alpha ni gamma
   });
   it("0° respecto al cero → el centro de la pared, sin -0", () => {
     expect(posicionDesdeOrientacion(cero, cero)).toEqual({ x: 0, y: 0 });
@@ -200,28 +189,66 @@ describe("posicionDesdeOrientacion", () => {
     expect(RANGO_GRADOS).toEqual({ horizontal: 30, vertical: 20 });
   });
   it("+20° hacia arriba (beta sube) → borde SUPERIOR (y = -1): subir el teléfono sube el pincel", () => {
-    expect(posicionDesdeOrientacion(cero, { beta: 65, gamma: 0 })).toEqual({ x: 0, y: -1 });
+    expect(posicionDesdeOrientacion(cero, { alpha: 120, beta: 65, gamma: 0 })).toEqual({ x: 0, y: -1 });
   });
   it("-20° hacia abajo (beta baja) → borde inferior (y = +1)", () => {
-    expect(posicionDesdeOrientacion(cero, { beta: 25, gamma: 0 })).toEqual({ x: 0, y: 1 });
+    expect(posicionDesdeOrientacion(cero, { alpha: 120, beta: 25, gamma: 0 })).toEqual({ x: 0, y: 1 });
   });
-  it("-30° a la izquierda (gamma baja) → borde izquierdo (x = -1); +30° → derecho: el horizontal no va invertido", () => {
-    expect(posicionDesdeOrientacion(cero, { beta: 45, gamma: -30 })).toEqual({ x: -1, y: 0 });
-    expect(posicionDesdeOrientacion(cero, { beta: 45, gamma: 30 })).toEqual({ x: 1, y: 0 });
+  it("girar 30° a la derecha (alpha baja) → borde derecho (x = 1); a la izquierda (alpha sube) → izquierdo", () => {
+    expect(posicionDesdeOrientacion(cero, { alpha: 90, beta: 45, gamma: 0 })).toEqual({ x: 1, y: 0 });
+    expect(posicionDesdeOrientacion(cero, { alpha: 150, beta: 45, gamma: 0 })).toEqual({ x: -1, y: 0 });
   });
   it("a medio camino, medio recorrido, cada eje por su lado y sin zona muerta", () => {
-    expect(posicionDesdeOrientacion(cero, { beta: 55, gamma: 15 })).toEqual({ x: 0.5, y: -0.5 });
-    expect(posicionDesdeOrientacion(cero, { beta: 44, gamma: 0.3 })).toEqual({ x: 0.01, y: 0.05 });
+    expect(posicionDesdeOrientacion(cero, { alpha: 105, beta: 55, gamma: 0 })).toEqual({ x: 0.5, y: -0.5 });
+    const p = posicionDesdeOrientacion(cero, { alpha: 119.7, beta: 44, gamma: 0 });
+    expect(p?.x).toBeCloseTo(0.01, 6); // 0.3° de 30 (el módulo de la envoltura deja un residuo de coma flotante)
+    expect(p?.y).toBeCloseTo(0.05, 6);
   });
   it("más allá del rango se queda en el borde (tope), no se sale ni da la vuelta", () => {
-    expect(posicionDesdeOrientacion(cero, { beta: 120, gamma: 80 })).toEqual({ x: 1, y: -1 });
-    expect(posicionDesdeOrientacion(cero, { beta: -40, gamma: -80 })).toEqual({ x: -1, y: 1 });
+    expect(posicionDesdeOrientacion(cero, { alpha: 40, beta: 120, gamma: 0 })).toEqual({ x: 1, y: -1 });
+    expect(posicionDesdeOrientacion(cero, { alpha: 200, beta: -40, gamma: 0 })).toEqual({ x: -1, y: 1 });
+  });
+  it("cruzar 0/360 en alpha no salta: de cero 10 a lectura 350 son 20° a la derecha, no 340° a la izquierda", () => {
+    const c = { alpha: 10, beta: 45, gamma: 0 };
+    expect(posicionDesdeOrientacion(c, { alpha: 350, beta: 45, gamma: 0 })).toEqual({ x: 20 / 30, y: 0 });
+    expect(posicionDesdeOrientacion({ alpha: 350, beta: 45, gamma: 0 }, { alpha: 10, beta: 45, gamma: 0 })).toEqual({ x: -20 / 30, y: 0 });
+  });
+  it("gamma ya no manda en el horizontal: su cambio de signo al pasar por la vertical (±90°) no mueve el cursor", () => {
+    expect(posicionDesdeOrientacion(cero, { alpha: 120, beta: 45, gamma: 89 })).toEqual({ x: 0, y: 0 });
+    expect(posicionDesdeOrientacion(cero, { alpha: 120, beta: 45, gamma: -89 })).toEqual({ x: 0, y: 0 });
+  });
+  it("sin alpha (un aparato que no lo da), gamma sigue sirviendo como antes, desenrollado", () => {
+    expect(posicionDesdeOrientacion({ beta: 45, gamma: 0 }, { beta: 45, gamma: 15 })).toEqual({ x: 0.5, y: 0 });
+    expect(posicionDesdeOrientacion({ beta: 45, gamma: 0 }, { beta: 55, gamma: -30 })).toEqual({ x: -1, y: -0.5 });
   });
   it("el cero puede ser cualquier postura: lo que cuenta es la diferencia", () => {
-    expect(posicionDesdeOrientacion({ beta: 80, gamma: -20 }, { beta: 70, gamma: -5 })).toEqual({ x: 0.5, y: 0.5 });
+    expect(posicionDesdeOrientacion({ alpha: 300, beta: 80, gamma: -20 }, { alpha: 285, beta: 70, gamma: -5 })).toEqual({ x: 0.5, y: 0.5 });
   });
   it("con otro rango, otra escala", () => {
-    expect(posicionDesdeOrientacion(cero, { beta: 55, gamma: 10 }, { horizontal: 10, vertical: 10 })).toEqual({ x: 1, y: -1 });
+    expect(posicionDesdeOrientacion(cero, { alpha: 110, beta: 55, gamma: 0 }, { horizontal: 10, vertical: 10 })).toEqual({ x: 1, y: -1 });
+  });
+});
+
+describe("diferenciaAngular (OL-132)", () => {
+  it("el giro más corto, con signo, en (-180, 180]", () => {
+    expect(diferenciaAngular(10, 30)).toBe(20);
+    expect(diferenciaAngular(30, 10)).toBe(-20);
+    expect(diferenciaAngular(350, 10)).toBe(20); // da la vuelta por 360
+    expect(diferenciaAngular(10, 350)).toBe(-20);
+    expect(diferenciaAngular(170, -170)).toBe(20); // beta alrededor de ±180
+    expect(diferenciaAngular(0, 180)).toBe(180);
+    expect(diferenciaAngular(45, 45)).toBe(0);
+    expect(Object.is(diferenciaAngular(45, 45), 0)).toBe(true); // sin -0
+  });
+});
+
+describe("esSalto (OL-132)", () => {
+  it("un cambio de más de la mitad del recorrido en menos de 100 ms es una lectura rota, no muñeca", () => {
+    expect(esSalto({ x: 0, y: 0 }, { x: 0.6, y: 0 }, 33)).toBe(true);
+    expect(esSalto({ x: 0, y: 0 }, { x: 0, y: -0.7 }, 16)).toBe(true);
+    expect(esSalto({ x: 0, y: 0 }, { x: 0.4, y: 0.4 }, 33)).toBe(false); // menos del umbral en cada eje
+    expect(esSalto({ x: 0, y: 0 }, { x: 1, y: 1 }, 500)).toBe(false); // con tiempo de por medio, es movimiento
+    expect(esSalto(null, { x: 1, y: 1 }, 1)).toBe(false); // la primera lectura nunca es salto
   });
 });
 
