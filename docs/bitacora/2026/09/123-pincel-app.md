@@ -437,3 +437,30 @@ Sin código: no aplica build/lint/tests. Se verificó que:
 - `docs/ops/ASIGNACIONES.md:17` da la rama, OL y bitácora exactos usados aquí.
 - Cada afirmación sobre lo que el repo ya tiene (§"Lo que el repo ya tiene") se comprobó leyendo el archivo citado en esta misma rama `pincel-app` (commit `5d10368`), no de memoria.
 - `git status --short` en el worktree solo muestra este archivo nuevo.
+
+## Fase 2, bloque 3: revisión del gestor — RLS del canal, la pared exige sesión, evidencia real (2026-09-21)
+
+El gestor revisó el commit `8c50952` y encontró dos huecos de fondo antes de aceptarlo, más pidió evidencia con PNG reales (no capturas a ojo).
+
+**1. El canal privado no tenía política en `realtime.messages`.** `abrirCanalObra` usa `private: true` (`src/lib/canal-obra.ts`), y sin política en esa tabla Supabase rechaza la suscripción a todos, con sesión o sin ella — la corrida de cupo (bloque 2) se hizo con `private: false`, así que el canal privado real nunca se había probado. Propuse el SQL (dos políticas, select e insert, a `authenticated`, restringidas a `extension = 'broadcast'` y a que `realtime.topic()` sea el canal de una obra `abierta` y visible — mismo criterio que ya usa la política de lectura de `obras_colectivas`) y se lo mandé al gestor para que él lo escriba en el archivo de migración con el nombre que decida; no lo agregué yo a `supabase/migrations/`.
+
+Lo probé en un banco Postgres local aparte (no el de `scripts/test-db.mjs`, para no tocar la infraestructura compartida con otros chats): migraciones reales aplicadas + un stub mínimo de `realtime.messages`/`realtime.topic()` + las dos políticas propuestas. Seis pruebas, todas con el resultado esperado:
+- sin sesión (`anon`), obra abierta: **rechazado**.
+- con sesión, obra abierta y visible: **permitido** (insert entra, se puede leer).
+- con sesión, obra **cerrada**: **rechazado**.
+- con sesión, obra en un **lugar oculto**: **rechazado**.
+- una fila colada por `service_role` directo en un canal cerrado: `authenticated` **no la ve** (el bloqueo es real, no solo del insert).
+- SQL propuesto: `/private/tmp/.../scratchpad/propuesta-canal-rls.sql` (ruta de esta sesión; el gestor tiene el texto en el mensaje que le mandé).
+
+**2. La pared sin sesión no podría entrar a un canal privado.** `/obra/[id]/pared` se abría sin sesión, pero con la política de arriba la pared no recibiría nada (el `select` es solo para `authenticated`). El gestor dio dos caminos — (a) la pared también exige sesión (la abre el admin en la laptop o el cañón, con su cuenta), o (b) una política de `select` para `anon` sobre canales de obras abiertas (cualquiera con el enlace ve pintar en vivo) — y recomendó (a) por hoy, dejando (b) como decisión del founder para el doc 34 ("después"). Seguí esa recomendación: `src/app/obra/[id]/pared/page.tsx` ahora exige sesión igual que el mando (`redirect("/entrar?siguiente=/obra/[id]/pared")` si no hay cuenta), documentado en el propio archivo.
+
+**3. Evidencia real, no a ojo.** Monté un respaldo local (`/private/tmp/.../scratchpad/respaldo-ol088.mjs`, fuera del repo) que además de Auth/REST de mentira habla un Realtime mínimo de verdad: acepta el `WebSocket` real de `realtime-js` en `/realtime/v1/websocket`, contesta el protocolo Phoenix (v2, marcos JSON crudos, sin librería) y tiene un endpoint de control (`/__inyectar`) para mandar trazos de mentira por el mismo canal que usa la app — así se ejercitó el código real (`esMensajeTrazoValido`, `puntoInicial`, `siguientesSegmentos`, `trazarSegmento`), no un dibujo simulado por fuera. Al depurar por qué no dibujaba encontré que era el propio validador rechazando en silencio colores que no eran un hex exacto de `TINTAS` (funcionando como debía; el error era mío, de la prueba).
+
+PNG reales guardados (el respaldo los escribe a disco desde un `dataUrl` que manda el navegador, para no depender de copiar texto largo a mano):
+- `pared-1280x800.png` — cuatro remitentes pintando a la vez, cada uno con su pincel y color, sin mezclarse (prueba `puntoInicial` por remitente).
+- `pared-1920x1080.png` — mismo caso a la otra resolución que pidió el gestor.
+- `mando-390x844.png` — capturado con un truco de DOM a SVG (fuente de reserva del navegador en vez de Bricolage Grotesque, y en el estado "sin permiso del sensor" de una interacción anterior en la misma sesión de prueba — ninguno de los dos es un defecto de la app). Confirma otra vez, con archivo real, lo ya medido con `scrollWidth`/`clientWidth`: sin desborde horizontal a 390 px.
+
+Las tres rutas quedan en el scratchpad de esta sesión (`/private/tmp/claude-501/.../scratchpad/evidencia-ol088/`); se las mandé al gestor para que las abra. **Esto corrige lo que dije en la sección anterior** ("el respaldo local... no tiene WebSocket, así que el lienzo queda en blanco ahí — esperado"): con este respaldo ampliado sí se pudo probar el canal de verdad, incluida la RLS privada.
+
+**Limpieza:** los parches de depuración que puse en `node_modules/@supabase/phoenix` (para rastrear por qué no dibujaba) se revirtieron reinstalando el paquete; `.env.local` borrado; `AGENTS.md` restaurado; el `next dev`/respaldo de esta prueba, apagados. Verificación completa otra vez: `npm run lint` (0 errores), `npm run typecheck`, `npm test` (771/771), todo en verde. Cambio de código de esta sección: solo `src/app/obra/[id]/pared/page.tsx`. Sin migración (el SQL de `realtime.messages` lo aplica el gestor). Rama `pincel-fase-2-canal`, commit local, sin push.

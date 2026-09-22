@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { esUuid } from "@/lib/formulario";
+import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarObraParaPintar } from "../../consultas";
 import Pared from "./Pared";
 
@@ -11,12 +12,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 /**
  * La pared (Fase 2 bloque 3, OL-088): ruta neutra `/obra/[id]/pared` (doc rediseno/25 ajuste 2, no `/pincel/...`).
- * Sin sesión — la RLS de `obras_colectivas` decide qué puede ver quien no tiene cuenta. Pensada para una laptop o
- * TV conectada a un cañón, no para el teléfono de un admin logueado.
+ * Exige sesión (revisión del gestor, 2026-09-21): el canal es privado (`realtime.messages` con RLS a
+ * `authenticated`), así que sin sesión la suscripción se rechaza igual. Hoy la abre el admin en la laptop o TV
+ * del cañón, con su propia cuenta; un enlace público sin sesión (cualquiera ve pintar en vivo) queda para
+ * después, como decisión del founder (doc rediseno/34).
  */
 export default async function ParedDeObra({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!esUuid(id)) notFound();
+  const actual = await usuarioActual();
+  if (!actual) redirect(`/entrar?siguiente=/obra/${id}/pared`);
   const obra = await cargarObraParaPintar(id);
   if (!obra) notFound();
   return <Pared obraId={obra.id} nombre={obra.nombre} abierta={obra.estado === "abierta"} />;
