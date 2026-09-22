@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { EventoAgenda } from "@/lib/agenda";
 import { textoDistancia } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
-import { nombreSitio } from "@/lib/eventos";
+import { hrefEvento, nombreSitio } from "@/lib/eventos";
 import { diaCorto, horaCorta } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
@@ -31,7 +31,7 @@ export default function RenglonEvento({ evento: e, km, sinSitio = false, estado 
   const foto = e.imagen ?? e.lugar?.portada ?? SIN_FOTO;
   return (
     <li className={styles.renglon}>
-      <Link href={`/eventos/${e.id}`} className={styles.frente}>
+      <Link href={hrefEvento(e)} className={styles.frente}>
         {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
         <img src={foto} alt="" className={styles.foto} />
         <span className={styles.titulo}>{e.titulo}</span>

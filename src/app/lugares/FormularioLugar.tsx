@@ -21,7 +21,7 @@ import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from 
 import { normalizarRedes } from "@/lib/enlaces";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
-import { etiquetaTipo, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
+import { etiquetaTipo, hrefLugar, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { clienteNavegador } from "@/lib/supabase/navegador";
@@ -283,7 +283,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             <p className={styles.notaExiste}>
               <span>Ya hay {existentes.length > 1 ? "varios" : "uno"} con este nombre: </span>
               <b className={styles.nombreRecortado}>{primerExistente.nombre}</b>
-              <Link href={`/lugares/${primerExistente.id}`}>Ver</Link>
+              <Link href={hrefLugar(primerExistente)}>Ver</Link>
             </p>
           )
         )}
@@ -307,7 +307,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
                     {existentes.map((e, i) => (
                       <Fragment key={e.id}>
                         {i > 0 ? " · " : ""}
-                        <Link href={`/lugares/${e.id}`}>{e.nombre}</Link>
+                        <Link href={hrefLugar(e)}>{e.nombre}</Link>
                       </Fragment>
                     ))}
                     . Si es otro con el mismo nombre, sigue.
@@ -463,7 +463,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             <ul>
               {parecidos.map((p) => (
                 <li key={p.id}>
-                  <Link href={`/lugares/${p.id}`}>
+                  <Link href={hrefLugar(p)}>
                     {p.nombre} · {etiquetaTipo(p.tipo)}
                     {p.direccion ? ` · ${p.direccion}` : ""}
                   </Link>

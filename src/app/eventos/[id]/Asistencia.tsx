@@ -11,11 +11,13 @@ import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
 import { AvisoAbajo, HojaAbierta, useCanalDeListas, useCanalDePantalla } from "@/components/useCanalDeListas";
+import { hrefEvento } from "@/lib/eventos";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
 import styles from "./ficha.module.css";
 
 type Props = {
   eventoId: string;
+  eventoSlug?: string | null;
   titulo: string;
   miEstado: EstadoAsistencia;
   conSesion: boolean;
@@ -41,7 +43,7 @@ const ESTRELLA = <IconoEstrella width={20} height={20} />;
  * Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de un fallo anterior, y Reintentar solo actúa si su
  * toque sigue siendo el último. El aviso y la pregunta son de toda la pantalla (useCanalDeListas), como en las demás fichas.
  */
-export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuenta, avisosPreguntado, correo, llavePush }: Props) {
+export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, conSesion, cuenta, avisosPreguntado, correo, llavePush }: Props) {
   const [pendiente, iniciar] = useTransition();
   const [estado, fijarOptimista] = useOptimistic<EstadoAsistencia, EstadoAsistencia>(miEstado, (_a, nuevo) => nuevo);
   const [hoja, setHoja] = useState(false);
@@ -53,7 +55,7 @@ export default function Asistencia({ eventoId, titulo, miEstado, conSesion, cuen
   const { avisar, limpiar, tomarPregunta } = canal;
   // El dueño de sus avisos en la pantalla: al tocar quita el suyo, nunca el Reintentar de un renglón.
   const de = useId();
-  const ruta = `/eventos/${eventoId}`;
+  const ruta = hrefEvento({ id: eventoId, slug: eventoSlug });
 
   // Volvió de entrar tras tocar "Voy": la pregunta continúa ese toque, una sola vez.
   useEffect(() => {

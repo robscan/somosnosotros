@@ -20,8 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Topes muy por encima de lo que hay hoy (unas decenas de lugares y eventos, ~520 artistas), para no depender
   // del corte silencioso de PostgREST en 1 000 filas si la ciudad crece (mismo tope que `cargarCiudades`).
   const [l, e, a, ac] = await Promise.all([
-    supabase.from("lugares").select("id, visible, privado, actualizado_en").eq("visible", true).limit(5000),
-    supabase.from("eventos").select("id, visible, termina, actualizado_en").eq("visible", true).limit(5000),
+    supabase.from("lugares").select("id, slug, visible, privado, actualizado_en").eq("visible", true).limit(5000),
+    supabase.from("eventos").select("id, slug, visible, termina, actualizado_en").eq("visible", true).limit(5000),
     supabase.from("artistas").select("id, slug, visible, origen, actualizado_en").eq("visible", true).limit(5000),
     supabase.from("artistas_cuentas").select("artista_id").limit(5000),
   ]);

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { actualizarEvento, crearEvento } from "./acciones";
 
-const m = vi.hoisted(() => ({ rpc: vi.fn(), sesion: vi.fn(), after: vi.fn(), invalidar: vi.fn(), redirect: vi.fn() }));
+const m = vi.hoisted(() => ({ rpc: vi.fn(), sesion: vi.fn(), after: vi.fn(), invalidar: vi.fn(), redirect: vi.fn(), maybeSingle: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: m.invalidar }));
 vi.mock("next/server", () => ({ after: m.after }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect, RedirectType: { replace: "replace" } }));
@@ -22,7 +22,10 @@ function formulario() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  m.sesion.mockResolvedValue({ supabase: { rpc: m.rpc }, user: { id: ID } });
+  // El slug lo pone el disparador de la base; crearEvento lo relee con una consulta de sobra (bitácora 154).
+  m.maybeSingle.mockResolvedValue({ data: null });
+  const from = vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: m.maybeSingle })) })) }));
+  m.sesion.mockResolvedValue({ supabase: { rpc: m.rpc, from }, user: { id: ID } });
   m.rpc.mockResolvedValue({ data: { id: ID, artistas: [ID], artistas_anteriores: [ANTERIOR], lugar_anterior: ANTERIOR, cambio: "donde" }, error: null });
   m.redirect.mockImplementation(() => { throw new Error("REDIRECT"); });
 });
