@@ -49,7 +49,7 @@
     "icono que accion"
     "icono detalle accion";
   column-gap: 10px;
-  align-items: center;
+  align-content: center;
   min-height: 56px;
   padding: var(--espacio-2) 14px;
   border: 1px solid var(--borde);
@@ -425,7 +425,7 @@ a.ficha::after,
     "icono detalle accion"
     "icono error error";
   column-gap: var(--espacio-3);
-  align-items: center;
+  align-content: center;
   width: 100%;
   min-height: 56px;
   padding: var(--espacio-2) 14px;
