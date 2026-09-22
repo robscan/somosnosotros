@@ -54,6 +54,7 @@ export default async function MandoDeObra({ params, searchParams }: { params: Pr
       <Mando
         obraId={obra.id}
         perfilId={actual.perfil.id}
+        nombre={actual.perfil.nombre}
         cupo={obra.cupoMandos}
         sonda={sonda}
         // Cercanía (OL-127): administración queda exenta (prueba desde donde sea); el resto, a menos de 200 m del lugar.

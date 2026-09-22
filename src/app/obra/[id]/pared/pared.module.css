@@ -87,12 +87,96 @@
   border-radius: 50%;
   pointer-events: none;
 }
-/* OL-126: la sonda de latencia, solo con `?sonda=1`: abajo a la izquierda, sin toques. */
-.sonda {
+/* OL-136 (founder: «un letrero en la esquina inferior izquierda (Robscan entró) que aparezca por unos segundos»):
+   la esquina inferior izquierda apila los letreros de llegada hacia arriba (los nuevos empujan a los anteriores) y,
+   debajo, la sonda si está — así el letrero nunca la tapa. Canon: fondo blanco, borde, Bricolage; grande, porque es
+   una proyección. Cada letrero entra con un fundido, dura LETRERO_LLEGADA_MS (3 s, Pared.tsx lo quita) y se va con
+   otro fundido: todo en una animación. */
+.esquina {
   position: absolute;
   left: 24px;
   bottom: 88px;
   z-index: 2;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  pointer-events: none;
+}
+.letreros {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.letrero {
+  margin: 0;
+  padding: 10px 18px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  box-shadow: var(--sombra);
+  color: var(--texto);
+  font-size: clamp(22px, 2.2vw, 34px);
+  font-weight: 800;
+  line-height: 1.15;
+  animation: letrero-llegada 3000ms ease-out forwards;
+}
+.letrero > b {
+  color: var(--ok);
+}
+@keyframes letrero-llegada {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  8% {
+    opacity: 1;
+    transform: none;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* El pulso de llegada del punto (OL-136): crece a --pulso (3×, o más si el punto es chico) y vuelve en 600 ms;
+   `--pos` es su posición, que Pared.tsx pone en línea (la animación de `transform` la conserva). */
+.puntoDeMando.llegada {
+  animation: pulso-llegada 600ms ease-out;
+}
+@keyframes pulso-llegada {
+  0% {
+    transform: var(--pos) scale(1);
+  }
+  40% {
+    transform: var(--pos) scale(var(--pulso, 3));
+  }
+  100% {
+    transform: var(--pos) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .puntoDeMando.llegada {
+    animation: none;
+  }
+  .letrero {
+    animation-name: letrero-llegada-quieto;
+  }
+}
+@keyframes letrero-llegada-quieto {
+  0% {
+    opacity: 0;
+  }
+  8%,
+  86% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* OL-126: la sonda de latencia, solo con `?sonda=1`: abajo a la izquierda (dentro de .esquina), sin toques. */
+.sonda {
   max-width: min(720px, calc(100vw - 48px));
   margin: 0;
   padding: 8px 10px;

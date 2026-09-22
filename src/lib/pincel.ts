@@ -577,7 +577,7 @@ export function diametroDelPuntoDePosicion(trazo: Trazo, grosor: number): number
  * conexión (para que la pared y cada mando vean el mismo orden). Puro, sin depender del tipo exacto que da
  * `@supabase/realtime-js` — `entradasDesdePresencia` es lo único que lo toca, y por duck-typing.
  */
-export type EntradaPresencia = { remitente: string; llegada: number; presenceRef: string };
+export type EntradaPresencia = { remitente: string; llegada: number; presenceRef: string; nombre?: string };
 
 /** El estado que da `RealtimeChannel.presenceState()`: por clave de presencia, un arreglo de lo que cada quien
  * trackeó (siempre trae `presence_ref`; lo demás es lo que mandó `track()`, sin garantía de forma). */
@@ -586,7 +586,8 @@ export function entradasDesdePresencia(estado: Record<string, Array<Record<strin
   for (const clave of Object.keys(estado)) {
     for (const p of estado[clave]) {
       if (typeof p.remitente === "string" && p.remitente.length > 0 && typeof p.llegada === "number" && typeof p.presence_ref === "string") {
-        entradas.push({ remitente: p.remitente, llegada: p.llegada, presenceRef: p.presence_ref });
+        // `nombre` (OL-136): el nombre del perfil, para el letrero «Nombre entró» de la pared; opcional (clientes viejos).
+        entradas.push({ remitente: p.remitente, llegada: p.llegada, presenceRef: p.presence_ref, ...(typeof p.nombre === "string" ? { nombre: p.nombre } : {}) });
       }
     }
   }
@@ -617,6 +618,46 @@ export function estadoDeFila(entradas: EntradaPresencia[], cupo: number, remiten
   if (i < cupo) return { tipo: "pintando" };
   return { tipo: "esperando", lugar: i - cupo + 1, esperando: orden.length - cupo };
 }
+
+/**
+ * Llegada de un mando (OL-136, founder: «una animación de carga para el usuario nuevo… (Entrando) y luego el punto
+ * con una animación de tamaño… un letrero en la esquina inferior izquierda (Robscan entró)»).
+ *
+ * En el mando: está «entrando» desde que se abre hasta que el canal quedó suscrito Y la presencia sincronizó su
+ * propia entrada (`haEntrado`); para que no parpadee cuando tarda poco, el texto solo se enseña si lleva más de
+ * ENTRANDO_TRAS_MS (`mostrarEntrando`).
+ */
+export const ENTRANDO_TRAS_MS = 300;
+export function haEntrado(entradas: EntradaPresencia[], remitente: string, suscrito: boolean): boolean {
+  return suscrito && entradas.some((e) => e.remitente === remitente);
+}
+export function mostrarEntrando(entrado: boolean, transcurridoMs: number, umbralMs = ENTRANDO_TRAS_MS): boolean {
+  return !entrado && transcurridoMs >= umbralMs;
+}
+
+/** En la pared: qué presencias son NUEVAS respecto al último sync. Las que ya estaban al abrir la pared no cuentan:
+ * el primer sync (previos = null) solo fija la base. Un mismo remitente con dos conexiones cuenta una vez. */
+export function remitentesNuevos(previos: ReadonlySet<string> | null, entradas: EntradaPresencia[]): EntradaPresencia[] {
+  if (previos === null) return [];
+  const vistos = new Set<string>();
+  const nuevos: EntradaPresencia[] = [];
+  for (const e of entradas) {
+    if (previos.has(e.remitente) || vistos.has(e.remitente)) continue;
+    vistos.add(e.remitente);
+    nuevos.push(e);
+  }
+  return nuevos;
+}
+
+/** El nombre que se anuncia: el del perfil, si vino en la presencia; si no, «Alguien». Nunca un correo ni un id. */
+export function nombreDeLlegada(entrada: { nombre?: string }): string {
+  const n = entrada.nombre?.trim();
+  return n ? n : "Alguien";
+}
+
+/** Cuánto dura el letrero «Nombre entró» en la pared y cuánto el pulso del punto al llegar (CSS en pared.module.css). */
+export const LETRERO_LLEGADA_MS = 3000;
+export const PULSO_LLEGADA_MS = 600;
 
 /** «1 persona aquí», «7 personas aquí» (OL-117: salía «1 personas aquí»). */
 export function personasAqui(n: number): string {

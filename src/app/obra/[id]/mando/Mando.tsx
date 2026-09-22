@@ -8,11 +8,14 @@ import {
   decidirSensor,
   diametroDelPunto,
   entradasDesdePresencia,
+  ENTRANDO_TRAS_MS,
   esSalto,
   estadoDeFila,
   estaEncendido,
   esTintaClara,
   EVENTO_PING,
+  haEntrado,
+  mostrarEntrando,
   EVENTO_POSICION,
   EVENTO_TRAZO,
   GROSOR_BASE,
@@ -97,6 +100,7 @@ function requestPermissionDeOrientacion(): (() => Promise<"granted" | "denied">)
 export default function Mando({
   obraId,
   perfilId,
+  nombre,
   cupo,
   sonda = false,
   esAdmin = false,
@@ -106,6 +110,8 @@ export default function Mando({
 }: {
   obraId: string;
   perfilId: string;
+  /** El nombre del perfil: va en la presencia para el letrero «Nombre entró» de la pared (OL-136). */
+  nombre: string;
   cupo: number;
   sonda?: boolean;
   /** Cercanía (OL-127): administración queda exenta; `referencia` es el lugar de la obra (o sus coordenadas propias). */
@@ -125,6 +131,8 @@ export default function Mando({
   const [presionado, setPresionado] = useState(false);
   const [sensor, setSensor] = useState<Sensor>({ tipo: "sin-pedir" });
   const [entradas, setEntradas] = useState<EntradaPresencia[]>([]);
+  const [suscrito, setSuscrito] = useState(false); // el canal confirmó la suscripción (OL-136)
+  const [esperaVencida, setEsperaVencida] = useState(false); // ya pasaron ENTRANDO_TRAS_MS sin entrar
   const [banner, setBanner] = useState(false);
   const [abierto, setAbierto] = useState<Selector | null>(null); // nunca los dos menús abiertos (prototipo firmado)
   const tarjetaTrazoRef = useRef<HTMLButtonElement | null>(null);
@@ -179,6 +187,16 @@ export default function Mando({
   }, [grosor]);
 
   const estado = useMemo(() => estadoDeFila(entradas, cupo, perfilId), [entradas, cupo, perfilId]);
+  // «Entrando…» (OL-136, founder: «una animación de carga para el usuario nuevo… (Entrando)»): desde que se abre
+  // hasta que el canal está suscrito y la presencia sincronizó la propia entrada; si tarda menos de 300 ms, no se
+  // enseña (no parpadea). Después, el flujo de siempre.
+  const entrado = haEntrado(entradas, perfilId, suscrito);
+  useEffect(() => {
+    if (entrado) return;
+    const t = setTimeout(() => setEsperaVencida(true), ENTRANDO_TRAS_MS);
+    return () => clearTimeout(t);
+  }, [entrado]);
+  const entrando = mostrarEntrando(entrado, esperaVencida ? ENTRANDO_TRAS_MS : 0);
   useEffect(() => {
     puedePintarRef.current = estado.tipo === "pintando";
   }, [estado.tipo]);
@@ -193,7 +211,10 @@ export default function Mando({
       setEntradas(entradasDesdePresencia(canal.presenceState()));
     });
     canal.subscribe((estadoCanal) => {
-      if (estadoCanal === "SUBSCRIBED") canal.track({ remitente: perfilId, llegada: Date.now() });
+      if (estadoCanal === "SUBSCRIBED") {
+        setSuscrito(true);
+        canal.track({ remitente: perfilId, llegada: Date.now(), nombre }); // `nombre` (OL-136): para el letrero de la pared
+      }
     });
     canalRef.current = canal;
     // Ping de latencia (OL-132), solo con la sonda: un broadcast a sí mismo cada 5 s; con `ack`, `send` resuelve
@@ -210,8 +231,9 @@ export default function Mando({
       if (ping) clearInterval(ping);
       canal.unsubscribe();
       canalRef.current = null;
+      setSuscrito(false);
     };
-  }, [obraId, perfilId, sonda]);
+  }, [obraId, perfilId, nombre, sonda]);
 
   // «Te toca» (recorte del founder, doc rediseno/34: sin turno con tiempo máximo): un aviso que se va solo a los
   // pocos segundos, y el mando queda activo de inmediato — no hace falta un toque extra para empezar a pintar.
@@ -569,7 +591,7 @@ export default function Mando({
   }
 
   return (
-    <div className={styles.mando}>
+    <div className={styles.mando} data-entrando={entrando ? "true" : "false"}>
       {banner && (
         <div className={styles.bannerTurno} role="status">
           <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24">
@@ -657,6 +679,13 @@ export default function Mando({
           onPointerUp={soltar}
           onPointerCancel={soltar}
         >
+          {/* «Entrando…» (OL-136): dos ondas que salen del botón y se desvanecen mientras el canal no está listo. */}
+          {entrando && (
+            <>
+              <span className={styles.onda} aria-hidden="true" />
+              <span className={styles.onda} aria-hidden="true" />
+            </>
+          )}
           {/* El punto MIDE el grosor a escala del mando (16 px por unidad: 8 a 56 px) y se queda así al soltar:
               es cómo se ve el grosor que lleva sin abrir nada. Cambia el tamaño del punto, no el del botón (128 px
               fijos, lo centra su rejilla) ni el de la rejilla del mando. */}
@@ -692,7 +721,11 @@ export default function Mando({
       </div>
 
       {!esperando &&
-        (ayuda ? (
+        (entrando ? (
+          <p className={`${styles.hold} ${styles.entrando}`} aria-live="polite">
+            Entrando…
+          </p>
+        ) : ayuda ? (
           <p className={`${styles.hold} ${ayuda.esAviso ? styles.aviso : ""}`} role={ayuda.esAviso ? "alert" : undefined} aria-live="polite">
             {ayuda.texto}
             {ayuda.abrirEnSafari && (

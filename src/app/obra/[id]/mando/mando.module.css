@@ -214,6 +214,7 @@
 /* --- El botón de pintar --- */
 .orb {
   grid-area: orb;
+  position: relative; /* las ondas de «Entrando…» (OL-136) se colocan sobre él */
   display: grid;
   place-items: center;
   width: 128px;
@@ -278,6 +279,41 @@
 }
 .hold.aviso {
   color: var(--error);
+}
+/* «Entrando…» (OL-136): mientras el canal no está listo, el texto de ayuda en azul petróleo y dos ondas que salen
+   del botón apagado y se desvanecen (1,2 s en bucle, la segunda 400 ms después). Solo `transform` y `opacity`;
+   nada se mueve de sitio. Con `prefers-reduced-motion`, las ondas quedan quietas y tenues. */
+.hold.entrando {
+  color: var(--primario);
+  font-weight: 700;
+}
+.onda {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 2px solid var(--primario);
+  opacity: 0;
+  pointer-events: none;
+  animation: onda 1200ms ease-out infinite;
+}
+.onda + .onda {
+  animation-delay: 400ms;
+}
+@keyframes onda {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onda {
+    animation: none;
+    opacity: 0.35;
+  }
 }
 /* OL-117: el nombre/mensaje del error del permiso, discreto, para leerlo en el teléfono durante la prueba. */
 .detalle {

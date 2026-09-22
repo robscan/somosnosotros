@@ -16,6 +16,7 @@ import {
   esMensajeBorrarValido,
   esMensajePosicionValido,
   encajar,
+  ENTRANDO_TRAS_MS,
   esMensajeTrazoValido,
   esTintaClara,
   esPosicionValida,
@@ -30,10 +31,14 @@ import {
   GROSOR_MAX,
   GROSOR_MIN,
   grosorDesdeArrastre,
+  haEntrado,
   hayBorradoPendiente,
   intervaloMs,
   latenciasDe,
+  LETRERO_LLEGADA_MS,
   LIENZO,
+  mostrarEntrando,
+  nombreDeLlegada,
   lugarMasCercano,
   MENSAJES_POR_SEGUNDO_PINTANDO,
   POSICIONES_POR_SEGUNDO,
@@ -46,11 +51,13 @@ import {
   ordenDeFila,
   personasAqui,
   posicionDesdeOrientacion,
+  PULSO_LLEGADA_MS,
   puntoCentral,
   puntoEnPared,
   PUNTOS_MAX_POR_MENSAJE,
   quienesPintan,
   rectanguloDelLienzo,
+  remitentesNuevos,
   RADIO_CERCANIA_M,
   RANGO_GRADOS,
   REVISAR_BORRADO_MS,
@@ -700,6 +707,56 @@ describe("anchoEnLienzo (OL-135, gestor: ningún trazo baja de 1 px en pantalla)
     expect(anchoEnLienzo(3, 0)).toBe(3);
     expect(anchoEnLienzo(3, -1)).toBe(3);
     expect(anchoEnLienzo(3, Number.NaN)).toBe(3);
+  });
+});
+
+// OL-136: llegada de un mando nuevo.
+describe("haEntrado y mostrarEntrando (OL-136: «Entrando…» en el mando)", () => {
+  const yo = { remitente: "yo", llegada: 10, presenceRef: "r1" };
+  const otro = { remitente: "otro", llegada: 5, presenceRef: "r0" };
+  it("ha entrado solo con el canal suscrito Y su propia entrada ya sincronizada", () => {
+    expect(haEntrado([], "yo", false)).toBe(false);
+    expect(haEntrado([otro], "yo", true)).toBe(false);
+    expect(haEntrado([yo], "yo", false)).toBe(false);
+    expect(haEntrado([otro, yo], "yo", true)).toBe(true);
+  });
+  it("«Entrando…» solo se enseña si lleva 300 ms o más sin entrar (no parpadea si tarda poco)", () => {
+    expect(ENTRANDO_TRAS_MS).toBe(300);
+    expect(mostrarEntrando(false, 0)).toBe(false);
+    expect(mostrarEntrando(false, 299)).toBe(false);
+    expect(mostrarEntrando(false, 300)).toBe(true);
+    expect(mostrarEntrando(false, 5000)).toBe(true);
+    expect(mostrarEntrando(true, 5000)).toBe(false);
+  });
+});
+
+describe("remitentesNuevos y nombreDeLlegada (OL-136: qué presencias son nuevas respecto al último sync)", () => {
+  const a = { remitente: "a", llegada: 1, presenceRef: "r1", nombre: "Robscan" };
+  const b = { remitente: "b", llegada: 2, presenceRef: "r2", nombre: "Mariana" };
+  const b2 = { remitente: "b", llegada: 3, presenceRef: "r3", nombre: "Mariana" };
+  it("el primer sync (sin base) no anuncia a nadie: los que ya estaban al abrir no cuentan", () => {
+    expect(remitentesNuevos(null, [a, b])).toEqual([]);
+  });
+  it("después, solo los remitentes que no estaban en el sync anterior", () => {
+    expect(remitentesNuevos(new Set(["a"]), [a, b])).toEqual([b]);
+    expect(remitentesNuevos(new Set(["a", "b"]), [a, b])).toEqual([]);
+    expect(remitentesNuevos(new Set(), [a])).toEqual([a]);
+  });
+  it("un mismo remitente con dos conexiones (dos pestañas) cuenta una vez", () => {
+    expect(remitentesNuevos(new Set(["a"]), [a, b, b2])).toEqual([b]);
+  });
+  it("el nombre que se anuncia es el del perfil; sin nombre (cliente viejo o vacío), «Alguien»", () => {
+    expect(nombreDeLlegada(a)).toBe("Robscan");
+    expect(nombreDeLlegada({ nombre: "   " })).toBe("Alguien");
+    expect(nombreDeLlegada({})).toBe("Alguien");
+  });
+  it("la presencia trae el nombre si es texto; si no, no", () => {
+    const estado = { k1: [{ presence_ref: "r1", remitente: "a", llegada: 1, nombre: "Robscan" }], k2: [{ presence_ref: "r2", remitente: "b", llegada: 2, nombre: 7 }] };
+    expect(entradasDesdePresencia(estado)).toEqual([{ remitente: "a", llegada: 1, presenceRef: "r1", nombre: "Robscan" }, { remitente: "b", llegada: 2, presenceRef: "r2" }]);
+  });
+  it("el letrero dura 3 s y el pulso 600 ms", () => {
+    expect(LETRERO_LLEGADA_MS).toBe(3000);
+    expect(PULSO_LLEGADA_MS).toBe(600);
   });
 });
 
