@@ -1,0 +1,85 @@
+/* El letrero para imprimir (OL-159, doc 40e). En pantalla (el founder lo abre primero en su iPhone, antes de
+   imprimir) las medidas son relativas al viewport: mm y pt son unidades de papel y, tal cual, desbordaban una
+   pantalla de 390 px (encontrado al revisar la captura de esta misma pieza). Al imprimir, `@media print` cambia
+   a las medidas exactas de la versión de referencia del gestor — márgenes 18 mm (`@page`), logotipo 16 mm de
+   alto, QR de 120 mm, título 44 pt/800, subtítulo 22 pt gris, pie 14 pt — que es lo único que de verdad sale
+   en el papel. Grid con áreas, una sola columna, sin envoltorios. */
+@page {
+  size: A4;
+  margin: 18mm;
+}
+.pagina {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6vw;
+  min-height: 100dvh;
+  padding: 8vw;
+  background: #fff;
+  color: #1a1a1a;
+  text-align: center;
+}
+.logo {
+  height: 10vw;
+  max-height: 64px;
+  width: auto;
+}
+.qrCaja {
+  width: 70vw;
+  height: 70vw;
+  max-width: 420px;
+  max-height: 420px;
+}
+.titulo {
+  margin: 0;
+  font-size: clamp(24px, 8vw, 40px);
+  font-weight: 800;
+  line-height: 1.15;
+}
+.subtitulo {
+  margin: 0;
+  font-size: clamp(14px, 4.5vw, 20px);
+  font-weight: 500;
+  color: #666;
+}
+.pie {
+  margin-top: 4vw;
+  font-size: clamp(11px, 3vw, 14px);
+  color: #666;
+}
+/* Solo en pantalla, para quien no imprime de inmediato; nunca sale en el papel. */
+.ayuda {
+  max-width: 320px;
+  font-size: 13px;
+  color: #999;
+}
+@media print {
+  .pagina {
+    gap: 10mm;
+    padding: 0;
+    min-height: auto;
+  }
+  .logo {
+    height: 16mm;
+    max-height: none;
+  }
+  .qrCaja {
+    width: 120mm;
+    height: 120mm;
+    max-width: none;
+    max-height: none;
+  }
+  .titulo {
+    font-size: 44pt;
+  }
+  .subtitulo {
+    font-size: 22pt;
+  }
+  .pie {
+    margin-top: 10mm;
+    font-size: 14pt;
+  }
+  .ayuda {
+    display: none;
+  }
+}

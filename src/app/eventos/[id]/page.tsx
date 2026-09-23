@@ -339,22 +339,30 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
       <div className={ficha.acciones}>
         <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>
-          <IconoCompartir />
+          <span className={ficha.accionIcono}>
+            <IconoCompartir />
+          </span>
           Compartir
         </BotonCompartir>
         {/* Dice lo que hace: agrega el evento, con su alerta, al calendario del teléfono (decisión 12 de docs/rediseno/17). */}
         <a href={`${hrefEvento(e)}/calendario`} className={ficha.accion}>
-          <IconoCalendarioAgregar width={24} height={24} />
+          <span className={ficha.accionIcono}>
+            <IconoCalendarioAgregar width={24} height={24} />
+          </span>
           A mi calendario
         </a>
         {comoLlegar ? (
           <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
-            <IconoRuta />
+            <span className={ficha.accionIcono}>
+              <IconoRuta />
+            </span>
             Cómo llegar
           </a>
         ) : (
           <span className={ficha.accion} aria-disabled="true">
-            <IconoRuta />
+            <span className={ficha.accionIcono}>
+              <IconoRuta />
+            </span>
             Cómo llegar
             <small>sin dirección</small>
           </span>

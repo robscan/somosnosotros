@@ -399,3 +399,10 @@ export const IconoDestello = (p: P) => (
     <path d="M12 3.5c.7 4.6 3.4 7.3 8 8-4.6.7-7.3 3.4-8 8-.7-4.6-3.4-7.3-8-8 4.6-.7 7.3-3.4 8-8z" />
   </svg>
 );
+/** Descargar: flecha hacia una bandeja (guardar el QR o el letrero, OL-159). */
+export const IconoDescarga = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 3.5v11M7.5 10l4.5 4.5L16.5 10" />
+    <path d="M4.5 17v1.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V17" />
+  </svg>
+);
