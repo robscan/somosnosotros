@@ -53,6 +53,22 @@ Reglas de la cola: primero los bugs (la fase 1 es hacer confiable lo que ya exis
 | D2 · Fichas por completar | L48: qué artistas y lugares están sin ficha completa y siguen activos; proponer ficha y foto antes de publicar | Nada se publica sin el visto bueno del founder. |
 | D3 · Fricción en los tres formularios | L18: recorrer alta y edición de evento, artista y lugar en varios tamaños de teléfono, con teclado dentro y fuera, y listar fricciones | Después de A7. Sobre cámara, NFC, micrófono, acelerómetro y vibración: ver la nota del doc 24 (en iPhone web no hay NFC ni vibración). |
 
+## Tanda E · Comentarios del founder (2026-09-23)
+
+Pegados en el chat del gestor el 2026-09-23 («agrega estos comentarios al plan pendiente según criterio, solo uno es urgente»). Clasificados por el gestor.
+
+| Pieza | Qué pide el founder | Modelo | Notas |
+| --- | --- | --- | --- |
+| E1 · Buscar lugar en el alta de evento (**URGENTE**) | Las sugerencias del mapa tapan la lista de lugares registrados y aparecen y desaparecen. Flujo pedido: solo el campo de búsqueda, sin la lista grande de inicio; escribo una o varias palabras; si el lugar existe lo elijo de los resultados; si no, se avisa que no existe y se propone agregarlo o buscarlo en el mapa sin agregar; las sugerencias del mapa solo salen al buscar en el mapa y nunca tapan la opción de elegir un lugar guardado; la cabecera de la hoja con el cerrar queda pegada; revisar que el buscador de artistas se comporte igual. «Reconstruye con todos estos comentarios.» Si las hojas siguen dando problemas, se pasa a página completa. | Sonnet 5, medio | **OL-137 / 172.** Prototipo primero (sobre `alta-evento-lugar.html`), luego código. |
+| E2 · Boletín quincenal por correo | Un correo cada dos semanas con varios eventos: solo los sobresalientes y los de lugares que la persona sigue; solo a usuarios con actividad reciente. Se quitan los correos por cada evento: ese aviso queda en push y dentro de la app. | Sonnet 5, medio | Se une a B4: textos y criterios para firma del founder antes de encender nada. **OL-138 / 173.** |
+| E3 · Preparar la app nativa | «Comenzar a preparar app nativa.» Cambia lo anotado el 2026-09-21 (la app de tienda esperaba a cerrar y probar la versión web). | — | Falta acotar con el founder qué es «preparar» (cuenta, identificador y ficha ya existen desde el 2026-09-16). Sin código hasta acotar. |
+| E4 · «Cooperación solidaria» en el costo | Nueva opción de costo del evento, junto a gratis y precio. | Haiku 4.5, bajo | Pieza chica: alta de evento y ficha. Después de E1 para no chocar en el formulario. |
+| E5 · Mapa con menos ruido y color primario que invite a la acción | Quitar el doble círculo de los lugares seguidos; la diferencia entre tipos va por tamaño y color; negro para los lugares que no sigo y sin eventos. Replantear el color primario de la plataforma para los botones principales: el actual es «aguado», parecido al de «eventos a donde voy». | Sonnet 5, medio | Prototipo sobre `mapa-lugares.html` y propuesta de color con dos o tres opciones a la vista para que el founder elija. Toca `docs/diseno/LINEA_GRAFICA.md`. |
+| E6 · Indexar el catálogo en Google y buscadores | Que lugares, artistas y eventos aparezcan en buscadores. | Sonnet 5, medio | Evaluación corta primero: sitemap, robots, metadatos y datos estructurados; qué se indexa y qué no (perfiles de usuario, no). |
+| E7 · Texto al salir de la app | El aviso actual dice que puede que le pidan dinero o sus datos; el founder no quiere generalizar. | Haiku 4.5, bajo | Dos o tres textos para elegir; se cambia con su OK. Viene de OL-105. |
+
+Orden: E1 ahora (urgente); E2 unida a B4, ahora; E4 y E7 como piezas chicas después de E1; E5 y E6 después; E3 cuando el founder acote.
+
 ## Orden propuesto
 
 1. **Ahora (con el OK):** A1, A2, A3, A4 en Sonnet 5 y A5 en Haiku 4.5. Cinco chats, zonas de código distintas. A0 ya corre.
