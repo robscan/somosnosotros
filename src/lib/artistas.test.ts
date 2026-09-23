@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artistaIgual, conArtistasLigados, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, etiquetaVerMiFicha, filtrarArtistas, filtroDesdeUrl, hrefArtistas, ordenarArtistas, quienDesdeJson, subcategoriaParecida, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
+import { artistaIgual, conArtistasLigados, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, hrefLetreroArtista, nombreArchivoQr, ordenarArtistas, quienDesdeJson, subcategoriaParecida, textoLetrero, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
 
 describe("deducirDisciplina", () => {
   it("lee la disciplina del nombre y, sin pista, propone música", () => {
@@ -31,7 +31,7 @@ describe("etiquetaArtista", () => {
   });
 });
 
-describe("conArtistasLigados y etiquetaVerMiFicha (OL-154, «Mis artistas» en Mi perfil)", () => {
+describe("conArtistasLigados (OL-154, «Mis artistas» en Mi perfil)", () => {
   it("sin ninguno ligado, null: el bloque no se pinta", () => {
     expect(conArtistasLigados([])).toBeNull();
   });
@@ -39,10 +39,20 @@ describe("conArtistasLigados y etiquetaVerMiFicha (OL-154, «Mis artistas» en M
     expect(conArtistasLigados(["ana"])).toEqual(["ana"]);
     expect(conArtistasLigados(["ana", "marco"])).toEqual(["ana", "marco"]);
   });
-  it("con un solo artista, el botón dice la ficha completa; con varios, el nombre de la tarjeta ya distingue", () => {
-    expect(etiquetaVerMiFicha(1)).toBe("Ver mi ficha de artista");
-    expect(etiquetaVerMiFicha(2)).toBe("Ver ficha");
-    expect(etiquetaVerMiFicha(5)).toBe("Ver ficha");
+});
+
+describe("nombreArchivoQr, textoLetrero y hrefLetreroArtista (OL-159, doc 40e)", () => {
+  it("el PNG del QR siempre se llama <slug>-qr.png", () => {
+    expect(nombreArchivoQr("ana-reyes")).toBe("ana-reyes-qr.png");
+    expect(nombreArchivoQr("trio-cantera")).toBe("trio-cantera-qr.png");
+  });
+  it("los dos textos fijos del letrero llevan el nombre y la invitación a seguir", () => {
+    expect(textoLetrero("Ana Reyes")).toEqual({ titulo: "Soy Ana Reyes", subtitulo: "Sígueme en somosnosotros.org" });
+    expect(textoLetrero("Trío Cantera")).toEqual({ titulo: "Soy Trío Cantera", subtitulo: "Sígueme en somosnosotros.org" });
+  });
+  it("la dirección del letrero cuelga de la ficha, con el slug si lo trae y el UUID si no", () => {
+    expect(hrefLetreroArtista({ id: "1", slug: "ana-reyes" })).toBe("/artistas/ana-reyes/letrero");
+    expect(hrefLetreroArtista({ id: "1", slug: null })).toBe("/artistas/1/letrero");
   });
 });
 

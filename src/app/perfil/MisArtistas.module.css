@@ -1,5 +1,6 @@
-/* «Mis artistas» en Mi perfil (OL-154): mismo rótulo en mayúsculas que Ajustes, tarjetas iguales para uno o
-   varios artistas (región común), grid con áreas y sin sobreanidación. */
+/* «Mis artistas» en Mi perfil (OL-154; renglón simple desde OL-159): mismo rótulo en mayúsculas que Ajustes,
+   la lista reusa el renglón de artista de toda la app (`RenglonArtista`/`Renglon.module.css`), solo con el
+   reset de lista. */
 .seccion {
   margin: var(--espacio-4) 0 var(--espacio-5);
 }
@@ -12,75 +13,6 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.tarjeta {
-  display: grid;
-  grid-template-columns: 52px 1fr auto;
-  grid-template-areas: "foto nombre botones";
-  column-gap: var(--espacio-3);
-  align-items: center;
-  padding: var(--espacio-3);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  margin-bottom: var(--espacio-2);
-}
-.foto {
-  grid-area: foto;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-}
-.fotoVacia {
-  display: grid;
-  place-items: center;
-  color: var(--texto-suave);
-  font-size: var(--letra-xl);
-  font-weight: 700;
-}
-.nombre {
-  grid-area: nombre;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.nombre b {
-  font-size: var(--letra-md);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.nombre small {
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-}
-.botones {
-  grid-area: botones;
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-2);
-}
-.verFicha {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-3);
-  border-radius: 20px;
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  white-space: nowrap;
-}
-.compartir {
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  cursor: pointer;
+.lista {
+  list-style: none;
 }

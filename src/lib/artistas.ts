@@ -75,6 +75,22 @@ export function hrefArtista(a: { id: string; slug?: string | null }): string {
   return `/artistas/${a.slug || a.id}`;
 }
 
+/** La página del letrero para imprimir, junto a la ficha (OL-159, doc 40e). */
+export function hrefLetreroArtista(a: { id: string; slug?: string | null }): string {
+  return `${hrefArtista(a)}/letrero`;
+}
+
+/** El nombre del archivo cuando se descarga el QR de la ficha como PNG (OL-159, doc 40e): siempre `<slug>-qr.png`,
+ * para que quien lo reciba sepa de quién es sin abrirlo. */
+export function nombreArchivoQr(slug: string): string {
+  return `${slug}-qr.png`;
+}
+
+/** Los dos textos fijos del letrero para imprimir (OL-159, doc 40e): "Soy <nombre>" y la invitación a seguir. */
+export function textoLetrero(nombre: string): { titulo: string; subtitulo: string } {
+  return { titulo: `Soy ${nombre}`, subtitulo: "Sígueme en somosnosotros.org" };
+}
+
 export function etiquetaDisciplina(d: string): string {
   return DISCIPLINAS.find((x) => x.valor === d)?.etiqueta ?? "Por completar";
 }
@@ -92,11 +108,6 @@ export function etiquetaArtista(a: Pick<ArtistaResumen, "disciplina" | "detalle"
 /** «Mis artistas» en Mi perfil (OL-154, doc 40b): sin ninguno ligado, el bloque entero no se pinta. */
 export function conArtistasLigados<T>(artistas: T[]): T[] | null {
   return artistas.length > 0 ? artistas : null;
-}
-
-/** El botón de cada tarjeta: con un solo artista lo dice completo; con varios, uno por línea ya lo deja claro. */
-export function etiquetaVerMiFicha(cantidadLigados: number): string {
-  return cantidadLigados > 1 ? "Ver ficha" : "Ver mi ficha de artista";
 }
 
 /** Del nombre se deduce si es grupo o colectivo (decisión 4): "Los Vecinos", "Trío Xochitl", "Colectivo Barro Vivo". */

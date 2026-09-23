@@ -2,6 +2,16 @@ import { esUuid } from "@/lib/formulario";
 import type { ArtistaResumen } from "@/lib/artistas";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
+/** Solo el nombre y el slug (con el id, para `hrefArtista`), lo mínimo para el letrero para imprimir (OL-159,
+ * doc 40e): por slug (la dirección de hoy) y, si no aparece, por UUID (la dirección vieja), como la ficha. */
+export async function cargarArtistaLetrero(idOSlug: string): Promise<{ id: string; nombre: string; slug: string } | null> {
+  const supabase = await clienteServidor();
+  if (!supabase) return null;
+  const porSlug = await supabase.from("artistas").select("id, nombre, slug").eq("slug", idOSlug).maybeSingle();
+  const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("artistas").select("id, nombre, slug").eq("id", idOSlug).maybeSingle()).data : null);
+  return data ?? null;
+}
+
 /** Quién se presenta en un evento, en su orden. Lo usan la ficha de evento y su alta al editar o duplicar. */
 export async function cargarQuien(eventoId: string): Promise<{ id: string; slug: string; nombre: string }[]> {
   const supabase = await clienteServidor();
