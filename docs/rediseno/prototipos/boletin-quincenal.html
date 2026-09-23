@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boletín quincenal (maqueta)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Maqueta del correo (docs/rediseno/28). Datos inventados. Tokens de globals.css (línea gráfica firmada). */
+  :root {
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 85;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo-contenido); color: var(--texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-size: 16px; line-height: 1.4; }
+  .bandeja { padding: 10px 20px; font-size: 13px; color: var(--texto-suave); background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .bandeja b { display: block; color: var(--texto); font-size: 14px; font-variation-settings: var(--ancho-texto); }
+  .correo { background: var(--fondo); padding: 20px; }
+  .marca { font-family: var(--fuente); font-variation-settings: var(--ancho-titulo); font-weight: 800; font-size: 22px; letter-spacing: .02em; margin: 0 0 14px; }
+  h1 { margin: 0 0 6px; font-size: 22px; line-height: 1.15; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+  p { margin: 0 0 14px; }
+  h2 { margin: 22px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--borde); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; color: var(--texto-suave); font-variation-settings: var(--ancho-titulo); }
+  .evento { display: block; padding: 10px 0; border-bottom: 1px solid var(--borde); color: inherit; text-decoration: none; }
+  .evento:last-child { border-bottom: 0; }
+  .evento b { display: block; font-size: 17px; line-height: 1.2; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .evento span { display: block; color: var(--texto-suave); font-size: 14px; }
+  .van { color: var(--primario); font-weight: 700; }
+  .boton { display: block; margin: 20px 0 6px; padding: 14px; border-radius: 999px; background: var(--primario); color: var(--primario-texto); text-align: center; font-weight: 700; text-decoration: none; }
+  .pie { margin: 18px 0 0; font-size: 13px; color: var(--texto-suave); }
+  .pie a { color: var(--texto-suave); }
+</style>
+</head>
+<body>
+  <div class="bandeja"><b>Quincena cultural: 6 eventos para ti (del 24 sep al 7 oct)</b>Somos Nosotros &lt;avisos@somosnosotros.org&gt; · Lo más sobresaliente y lo de los lugares que sigues.</div>
+  <div class="correo">
+    <p class="marca">SMSNSTRS</p>
+    <h1>Hola Ana,</h1>
+    <p>Esto es lo que viene del 24 de septiembre al 7 de octubre.</p>
+
+    <h2>Lo más sobresaliente</h2>
+    <a class="evento" href="#"><b>Noche de danza contemporánea</b><span>Vie 26 sep · 19:00 · Teatro de la Paz</span><span class="van">Van 14</span></a>
+    <a class="evento" href="#"><b>Feria del libro del barrio</b><span>Sáb 27 sep · 11:00 · Casa de Cultura de Tlaxcala</span><span class="van">Van 9</span></a>
+    <a class="evento" href="#"><b>Concierto de cámara</b><span>Mié 1 oct · 19:30 · Centro de las Artes</span><span class="van">Van 5</span></a>
+
+    <h2>En lugares que sigues</h2>
+    <a class="evento" href="#"><b>Visita guiada: materia y luz</b><span>Jue 25 sep · 17:00 · Museo Federico Silva</span></a>
+    <a class="evento" href="#"><b>Taller de grabado en linóleo</b><span>Sáb 4 oct · 10:00 · Casa de Cultura de Tlaxcala</span></a>
+    <a class="evento" href="#"><b>Cine en la Alameda: ciclo de otoño</b><span>Dom 5 oct · 18:00 · Cineteca Alameda</span></a>
+
+    <a class="boton" href="#">Ver toda la agenda</a>
+
+    <p class="pie">Recibes este boletín cada dos semanas porque pediste avisos por correo. <a href="#">Dejar de recibirlo</a> (un toque, sin entrar). <a href="#">Aviso de privacidad</a>.</p>
+  </div>
+</body>
+</html>
