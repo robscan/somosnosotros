@@ -1,0 +1,26 @@
+/* El símbolo SN del cargador: 52 px de ancho, pulso suave de opacidad y escala (docs/rediseno/38). */
+.simbolo {
+  width: 52px;
+  height: auto;
+  color: var(--texto);
+  animation: pulso 1.1s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes pulso {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.42;
+    transform: scale(0.94);
+  }
+}
+/* El gesto de la persona gana: sin latido, una opacidad fija (no la mitad exacta del pulso, a propósito). */
+@media (prefers-reduced-motion: reduce) {
+  .simbolo {
+    animation: none;
+    opacity: 0.75;
+  }
+}

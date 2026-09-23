@@ -1,28 +1,20 @@
 import NavInferior from "@/components/NavInferior";
 import Barra from "./Barra";
+import SimboloCargando from "./SimboloCargando";
 import styles from "./Cargando.module.css";
 
 /**
  * Espera de las pantallas raíz (Agenda, Lugares, Artistas): la barra y la navegación se quedan en su sitio
- * y en medio tres renglones con la forma de la lista. Nada se apaga ni salta al cambiar de sección.
+ * (eso no cambia); en medio, el símbolo SN centrado con un pulso suave, no ya los renglones con forma de lista
+ * (docs/rediseno/38-transiciones-cargador.md: el pedido del founder es reemplazar el letrero, no sumarle esqueleto).
  */
 export default function CargandoRaiz() {
   return (
-    <main className="raiz" aria-busy="true" aria-live="polite">
-      <Barra derecha={<span className={styles.pildora} aria-hidden="true" />} />
-      <div className={styles.cabecera} aria-hidden="true">
-        <div className={`${styles.linea} ${styles.campo}`} />
+    <main className="raiz" aria-busy="true" aria-live="polite" aria-label="Cargando">
+      <Barra />
+      <div className={styles.centro}>
+        <SimboloCargando />
       </div>
-      <ul className={styles.renglones} aria-hidden="true">
-        {[0, 1, 2].map((i) => (
-          <li key={i} className={styles.renglon}>
-            <span className={styles.foto} />
-            <span className={`${styles.linea} ${styles.titulo}`} />
-            <span className={`${styles.linea} ${styles.media}`} />
-          </li>
-        ))}
-      </ul>
-      <p className={styles.texto}>Cargando…</p>
       <NavInferior />
     </main>
   );
