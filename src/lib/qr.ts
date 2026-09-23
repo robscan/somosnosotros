@@ -14,8 +14,14 @@ export function urlDelMando(obraId: string): string {
 
 export type QrDelMando = { url: string; svg: string };
 
+/** El SVG de un QR para cualquier URL absoluta, en el servidor (mismas opciones que el de Pincel). Reusado por
+ * la hoja de compartir del perfil del artista (OL-154, doc 40c): mismo patrón, solo cambia qué URL codifica. */
+export async function qrDeUrl(url: string): Promise<string> {
+  return QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
+}
+
 export async function qrDelMando(obraId: string): Promise<QrDelMando> {
   const url = urlDelMando(obraId);
-  const svg = await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
+  const svg = await qrDeUrl(url);
   return { url, svg };
 }

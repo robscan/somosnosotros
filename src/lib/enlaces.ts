@@ -36,6 +36,12 @@ export function dominioDe(url: string): string {
   }
 }
 
+/** Cómo se ve el enlace en el campo de la hoja de compartir (OL-154, doc 40c): sin "https://" ni "http://" al
+ * frente, que ya se sabe de sobra; lo que no trae esquema se queda igual. */
+export function enlaceVisible(url: string): string {
+  return url.replace(/^https?:\/\//i, "");
+}
+
 /** Etiqueta del botón en la ficha: el nombre de la red, o "Sitio web" si es un sitio. */
 export function etiquetaEnlace(e: Enlace): string {
   return e.red === "sitio" ? "Sitio web" : etiquetaDe(e.red);

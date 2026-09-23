@@ -1,0 +1,17 @@
+/* 16:9, ancho completo, sin fondo suelto: el marco oscuro solo se ve mientras carga el reproductor. */
+.marco {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: #14181c;
+}
+.marco + .marco {
+  margin-top: var(--espacio-3);
+}
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
