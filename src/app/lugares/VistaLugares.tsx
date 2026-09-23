@@ -97,8 +97,9 @@ export default function VistaLugares({
   });
   const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
   const enTira = useMemo(() => destacados.map((d) => d.id), [destacados]);
-  // Con sesión, los seguidos llevan el resalte del mapa (naranja y aro), no los destacados: decisión del founder
-  // tras firmar el doc 35 (2026-09-22). Sin sesión, `seguidos` llega null: ningún pin se resalta.
+  // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos`
+  // llega null y ningún pin se resalta como seguido. Sin aro en ningún caso (OL-146, 2026-09-23): decisión del
+  // founder tras firmar el doc 35 (2026-09-22) y el doc 37 (2026-09-23).
   const idsSeguidos = useMemo(() => seguidos ?? [], [seguidos]);
   // El encuadre al abrir (docs/rediseno/35, "Cómo se decide el encuadre"): los lugares de esta semana y los
   // destacados; con menos de tres, se completa con los cercanos al centro. Se calcula una sola vez, al montar
@@ -230,6 +231,7 @@ export default function VistaLugares({
               elegido={elegido?.id ?? null}
               ubicacion={punto ? { ...punto, vez } : null}
               seguidos={idsSeguidos}
+              destacados={enTira}
             />
             <div className={styles.sobreMapa}>
               {resultados.length > 0 && (
