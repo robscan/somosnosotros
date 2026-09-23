@@ -55,19 +55,21 @@
   .cerrarHoja { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; display: grid; place-items: center; border: none; background: none; color: var(--texto-suave); }
 
   .cabeceraMes { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; }
-  .cabeceraMes strong { font-size: 17px; font-weight: 700; text-transform: capitalize; }
+  .cabeceraMes strong { font-size: 17px; font-weight: 700; } /* sin text-transform: capitalize pone "De" con mayúscula */
   .flecha { width: 36px; height: 36px; border: none; border-radius: 50%; background: none; display: grid; place-items: center; }
   .flecha:hover { background: var(--fondo-suave); }
   .diasSemana { display: grid; grid-template-columns: repeat(7,1fr); color: var(--texto-suave); font-size: 13px; text-align: center; padding: 4px 0; }
   .grid { display: flex; flex-direction: column; gap: 2px; }
   .semana { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
-  .dia { aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; font-size: 15px; }
+  /* Círculo de 44px (toque mínimo), centrado en su columna: sin aspect-ratio, que con columnas de ~80px de ancho
+     estiraba las filas a ~80px de alto (corrección del gestor). */
+  .dia { width: 44px; height: 44px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; font-size: 15px; }
   .fuera { color: var(--texto-suave); opacity: .5; }
   .hoy { font-weight: 700; box-shadow: inset 0 0 0 1px var(--primario); }
   .elegido { background: var(--primario); color: var(--primario-texto); box-shadow: none; }
   .pasado { color: var(--texto-suave); opacity: .35; }
 
-  .horas { height: 220px; margin-top: 12px; border-top: 1px solid var(--borde); overflow-y: auto; }
+  .horas { height: 264px; margin-top: 12px; border-top: 1px solid var(--borde); overflow-y: auto; } /* 6 filas de 44px */
   .hora { display: flex; align-items: center; width: 100%; height: 44px; padding: 0 8px; font-size: 16px; border-bottom: 1px solid var(--borde); }
   .horaElegida { background: var(--primario-suave); color: var(--primario); font-weight: 700; }
   .horaSugerida { font-weight: 700; }
@@ -98,7 +100,7 @@
           <h3>Cuándo empieza</h3>
           <div class="cabeceraMes">
             <button class="flecha">‹</button>
-            <strong>Septiembre 2026</strong>
+            <strong>Septiembre de 2026</strong>
             <button class="flecha">›</button>
           </div>
           <div class="diasSemana"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
@@ -125,7 +127,7 @@
           <h3>Fecha</h3>
           <div class="cabeceraMes">
             <button class="flecha">‹</button>
-            <strong>Septiembre 2026</strong>
+            <strong>Septiembre de 2026</strong>
             <button class="flecha">›</button>
           </div>
           <div class="diasSemana"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>

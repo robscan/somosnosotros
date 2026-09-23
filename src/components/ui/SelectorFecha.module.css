@@ -14,7 +14,8 @@
 .cabeceraMes strong {
   font-size: var(--letra-md);
   font-weight: 700;
-  text-transform: capitalize;
+  /* Sin text-transform: "capitalize" pone mayúscula a cada palabra ("Septiembre De 2026"); la mayúscula inicial
+     ya la pone tituloMes() en SelectorFecha.tsx, una sola vez (corrección del gestor, bitácora 197). */
 }
 .flecha {
   display: grid;
@@ -55,10 +56,13 @@
   gap: 2px;
 }
 .dia {
-  aspect-ratio: 1;
+  /* Círculo de 44px (toque mínimo) centrado en su columna: sin aspect-ratio, que con columnas de ~80px de ancho
+     (600px de columna / 7) estiraba las filas a ~80px de alto y desperdiciaba la hoja (corrección del gestor). */
+  width: var(--toque-min);
+  height: var(--toque-min);
+  margin: 0 auto;
   display: grid;
   place-items: center;
-  min-height: var(--toque-min);
   border: none;
   border-radius: 50%;
   background: none;
@@ -95,8 +99,10 @@
 }
 
 .horas {
-  flex: 1;
-  min-height: 0;
+  /* Alto fijo de 6 filas (6 × 44px, el toque mínimo): con flex:1 dependía del alto de la hoja (que aquí es del
+     contenido, no fijo) y a veces se quedaba en 2-3 filas. Desplazable; la hora elegida se centra al abrir
+     (SelectorFecha.tsx, scrollIntoView). Corrección del gestor, bitácora 197. */
+  height: calc(6 * var(--toque-min));
   margin-top: var(--espacio-3);
   border-top: 1px solid var(--borde);
   overflow-y: auto;
@@ -128,6 +134,22 @@
   font-weight: 700;
 }
 .horaSugerida {
+  font-weight: 700;
+}
+
+.duracion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--toque-min);
+  margin-top: var(--espacio-1);
+  padding-top: var(--espacio-2);
+  border-top: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.duracion b {
+  color: var(--texto);
   font-weight: 700;
 }
 

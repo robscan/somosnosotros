@@ -37,6 +37,9 @@ type Props = {
    *  además no se puede elegir. El alta de evento no restringía la fecha con el selector nativo (solo avisaba
    *  "Esa hora ya pasó" aparte): con false, el mismo día atenuado sigue eligible, para no cambiar esa regla. */
   bloquearPasado?: boolean;
+  /** Texto de la duración ("2 horas", "Sin hora de fin"), tal cual se calcula hoy fuera de esta hoja (no cambia
+   *  aquí); se muestra debajo de las horas, informativo, solo si se manda (la hoja de "Empieza"). */
+  duracion?: string;
   onListo: (fecha: string, hora?: string) => void;
   onCerrar: () => void;
 };
@@ -48,7 +51,7 @@ type Props = {
  * el nativo falla en la app instalada en un monitor externo (bitácora 195) y en táctil/móvil sigue funcionando
  * bien, así que ahí no se toca nada.
  */
-export default function SelectorFecha({ titulo, fecha, hora, min, zona = ZONA_INICIAL, conHora = false, sugerida, bloquearPasado = true, onListo, onCerrar }: Props) {
+export default function SelectorFecha({ titulo, fecha, hora, min, zona = ZONA_INICIAL, conHora = false, sugerida, bloquearPasado = true, duracion, onListo, onCerrar }: Props) {
   const hoy = diaLocal(new Date(), zona);
   const limite = min && min > hoy ? min : hoy;
   const base = fecha || limite;
@@ -184,6 +187,12 @@ export default function SelectorFecha({ titulo, fecha, hora, min, zona = ZONA_IN
                 {etiquetaHora(h)}
               </button>
             ))}
+          </div>
+        )}
+        {conHora && duracion && (
+          <div className={styles.duracion}>
+            <span>Duración</span>
+            <b>{duracion}</b>
           </div>
         )}
         <button type="button" className={styles.listo} disabled={!puedeConfirmar} onClick={() => onListo(elegido, conHora ? horaElegida : undefined)}>

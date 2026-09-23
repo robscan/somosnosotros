@@ -73,3 +73,31 @@ Bricolage Grotesque cargada en las tres pantallas de escritorio (`document.fonts
 - `package.json` y el lock, intactos. `.env.local` y el respaldo local del scratchpad no forman parte del commit.
 
 Sin push ni PR. Rama `fecha-escritorio`; a revisión del gestor.
+
+## Corrección del gestor (2026-09-23)
+
+El gestor abrió `03-alta-evento-hoja-cuando.png` y pidió cuatro ajustes antes de pasarlo al founder:
+
+1. **El título del mes salía «Septiembre De 2026».** No era `tituloMes()` (que ya ponía mayúscula solo a la inicial: "Septiembre de 2026"); era `.cabeceraMes strong { text-transform: capitalize }` en `SelectorFecha.module.css`, que pone mayúscula a cada palabra y convertía la "de" en "De". Se quitó esa regla (queda solo la mayúscula inicial de `tituloMes`). Mismo arreglo en el prototipo, que además tenía el título hardcodeado sin "de" ("Septiembre 2026"): se corrigió a "Septiembre de 2026" en los dos usos del archivo.
+2. **Las filas del calendario medían ~80px de alto.** `.dia` usaba `aspect-ratio: 1`, y con columnas de ~80px de ancho (600px de columna ÷ 7) el aspect-ratio estiraba cada fila a esa misma altura. Cambiado a un círculo fijo de 44px (el toque mínimo, `--toque-min`), centrado en su columna con `margin: 0 auto` en vez de estirarse: el calendario queda compacto (una semana ronda 44px + 2px de separación, no ~80px). Mismo cambio en el prototipo.
+3. **La lista de horas mostraba solo 2-3 filas.** `.horas` tenía `flex: 1; min-height: 0` dentro de `.selector { height: 100% }`, pero la hoja no tiene una altura fija (crece con su contenido, `max-height: calc(100% - 48px)` del canon `ui/Hoja`) — así que ese `100%` no resolvía a nada útil y el flex se quedaba chico. Cambiado a una altura fija de 6 filas (`calc(6 * var(--toque-min))`, 264px), desplazable; la hora elegida se sigue centrando al abrir (`scrollIntoView({ block: "center" })`, sin cambios ahí). Mismo cambio en el prototipo (220px → 264px).
+4. **La duración no se veía en la hoja.** No era un error de recorte: `SelectorFecha` nunca la mostraba (el prototipo sí la dibujaba, pero el componente real no tenía esa fila). Se agregó: `SelectorFecha` recibe un prop `duracion` opcional (texto ya formado, ej. "2 horas" o "Sin hora de fin") y lo pinta debajo de las horas, arriba de "Listo", solo si se manda; `SelectorCuando` lo calcula con una función nueva, `etiquetaDuracion(horas)` (misma variable `duracion` que ya existía, sin tocar cómo se calcula), y se lo pasa solo a la hoja de "Empieza" (como en el prototipo). En la captura re-tomada se ve "Duración · Sin hora de fin" (un evento nuevo no trae hora de fin todavía) — el mismo texto que ya usa hoy el chip de "Termina" cuando no hay fin, así que "como hoy" queda literal. Cabe completo sin desplazar a 1280×800 (medido en la captura: la hoja entera, del asa a "Listo", termina antes del borde inferior de la ventana).
+
+### Verificación tras la corrección
+
+```
+npm run lint       # verde (mismo warning preexistente y ajeno de siempre)
+npm run typecheck  # verde
+npm test           # verde: 90 archivos, 1133 pruebas (sin cambios de lógica que probar aquí: todo es CSS + una fila nueva)
+npm run build      # verde
+```
+
+### Capturas reemplazadas
+
+Mismo método que la entrega original (Chrome real vía `playwright-core`; para las reales, el mismo respaldo local sin red — cookie nueva, mismo patrón — levantado y vuelto a borrar):
+
+- **`01-prototipo-alta-evento.png`** y **`02-prototipo-agenda.png`** (prototipo, 1280×800): título correcto, calendario compacto; `02` no lo pidió el gestor explícitamente, pero comparte el mismo CSS que `01` — dejarlo con el bug viejo habría sido inconsistente dentro del mismo archivo, así que se regeneró también.
+- **`03-alta-evento-hoja-cuando.png`** (app real, 1280×800): los cuatro ajustes juntos — "Septiembre de 2026", calendario compacto, seis filas de hora visibles (7:00 p.m. centrada), y "Duración · Sin hora de fin" debajo, todo dentro de los 800px sin desplazar.
+- **`04-agenda-hoja-fecha.png`** y **`05-agenda-standalone-hoja-fecha.png`** (app real, 1280×800): mismo título y calendario compactos; sin horas ni duración, como antes (Agenda no las lleva).
+
+`06-movil-alta-evento-nativo.png` no cambió (nada de esto toca táctil/móvil); se volvió a generar por completitud del script y salió igual, byte a byte.

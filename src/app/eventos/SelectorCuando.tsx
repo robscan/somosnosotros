@@ -44,6 +44,18 @@ function etiquetaHora(hora: string): string {
   const [h, m] = hora.split(":").map(Number);
   return new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(2000, 0, 1, h, m));
 }
+/** "2 horas", "1 hora y 30 min", "Sin hora de fin": la duración tal cual se calcula hoy, para mostrarla en la
+ *  hoja de "Empieza" (corrección del gestor, bitácora 197: que se vea que sigue funcionando igual). */
+function etiquetaDuracion(horas: number): string {
+  if (horas <= 0) return "Sin hora de fin";
+  const totalMin = Math.round(horas * 60);
+  const partes: string[] = [];
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h) partes.push(`${h} ${h === 1 ? "hora" : "horas"}`);
+  if (m) partes.push(`${m} min`);
+  return partes.join(" y ");
+}
 
 /**
  * Cuándo, como en el calendario del teléfono (referencia del founder, 2026-09-14): dos renglones, Empieza y Termina,
@@ -157,6 +169,7 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
           conHora
           bloquearPasado={false}
           sugerida={sugeridaHoja}
+          duracion={etiquetaDuracion(duracion)}
           onListo={(f, h) => {
             fijarInicio(f, h ?? hora ?? "19:00");
             cerrarHoja();
