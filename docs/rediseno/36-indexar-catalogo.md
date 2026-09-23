@@ -1,4 +1,4 @@
-# 31 · Indexar el catálogo en Google y buscadores
+# 36 · Indexar el catálogo en Google y buscadores
 
 **OL-142 · bitácora 177 · 2026-09-23.** Evaluación corta, solo documento, sin cambios de código. Pedido del founder: «Indexar a Google y buscadores el catálogo». (Ya existe `31-agendas-por-correo.md`; este archivo lleva el mismo número porque así se encargó.)
 
