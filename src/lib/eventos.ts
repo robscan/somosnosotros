@@ -44,6 +44,13 @@ export type Evento = {
 };
 
 /** Lo que la agenda necesita: el evento con el nombre de su lugar o su sitio. */
+/**
+ * «Cooperación solidaria»: el costo sin cifra (OL-140). Se guarda en `precio` (texto libre, hasta 60 caracteres) con
+ * este texto exacto, sin migración: los eventos existentes no cambian y la ficha ya muestra `precio` tal cual.
+ */
+export const COOPERACION_SOLIDARIA = "Cooperación solidaria";
+export const esCooperacion = (precio: string | null | undefined): boolean => precio === COOPERACION_SOLIDARIA;
+
 export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado" | "zona"> & {
   /** Opcional porque no todas las consultas lo piden todavía (bitácora 154); `hrefEvento` cae al UUID cuando falta. */
   slug?: string | null;
@@ -225,7 +232,8 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
   const inicio = localAIso(limpiar(entrada.inicio), zonaSitio);
   const finTexto = limpiar(entrada.fin);
   const fin = finTexto ? localAIso(finTexto, zonaSitio) : null;
-  const gratis = limpiar(entrada.gratis) !== "no";
+  const cooperacion = limpiar(entrada.cooperacion) === "si";
+  const gratis = !cooperacion && limpiar(entrada.gratis) !== "no";
   const enlaceTexto = limpiar(entrada.enlace);
   const revelarHoras = Number(limpiar(entrada.revelar_horas)) || 24;
   const revelarDesde = inicio ? new Date(new Date(inicio).getTime() - revelarHoras * 3600000).toISOString() : null;
@@ -237,7 +245,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
 
   // El precio viene como número del formulario (ej. "150"), pero también puede venir con "$" del cartel o de datos viejos.
   // Se extrae el número, se valida, y se guarda con "$" para que la ficha muestre "$150".
-  const precioRaw = gratis ? "" : extraerNumero(limpiar(entrada.precio));
+  const precioRaw = gratis || cooperacion ? "" : extraerNumero(limpiar(entrada.precio));
   const precioValido = precioRaw && /^\d{1,6}$/.test(precioRaw);
 
   const datos: DatosEvento = {
@@ -247,7 +255,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
     fin,
     descripcion: limpiar(entrada.descripcion),
     imagen: limpiar(entrada.imagen) || null,
-    precio: gratis ? null : (precioValido ? "$" + precioRaw : precioRaw || null),
+    precio: cooperacion ? COOPERACION_SOLIDARIA : gratis ? null : (precioValido ? "$" + precioRaw : precioRaw || null),
     enlace: enlaceTexto ? (/^https?:\/\//i.test(enlaceTexto) ? enlaceTexto : `https://${enlaceTexto}`) : null,
     sitio_texto: modo === "lugar" ? null : sitioTexto || null,
     sitio_direccion: modo === "otro" ? sitioDireccion || null : null,
@@ -293,7 +301,7 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
   if (inicio && fin && new Date(fin) <= new Date(inicio)) errores.fin = "El fin tiene que ser después del inicio.";
   if (datos.descripcion.length > LIMITES_EVENTO.descripcion) errores.descripcion = `Máximo ${LIMITES_EVENTO.descripcion} caracteres.`;
   if (datos.imagen && !/^https:\/\/[^\s]+$/.test(datos.imagen)) errores.imagen = "La imagen no se subió bien. Intenta de nuevo.";
-  if (!gratis && !precioRaw) errores.precio = "Pon el precio, o marca que es gratis.";
+  if (!gratis && !cooperacion && !precioRaw) errores.precio = "Pon el precio, o marca que es gratis.";
   if (precioRaw && !precioValido) errores.precio = "El precio debe ser solo números (máximo 6 dígitos, ej. 150).";
   if (datos.enlace && datos.enlace.length > 500) errores.enlace = "Demasiado largo.";
   return { datos, errores };
