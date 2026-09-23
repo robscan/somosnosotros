@@ -123,7 +123,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
           p.eventos,
           mia ? (
             <>
-              Todavía no vas a nada. <Link href="/">Ver la agenda</Link>
+              Todavía no vas a nada. <Link href="/agenda">Ver la agenda</Link>
             </>
           ) : (
             "Todavía no ha dicho que va a ningún evento."

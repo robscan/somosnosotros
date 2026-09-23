@@ -9,7 +9,7 @@ export default function NoEncontrado() {
     <main className="pagina">
       <h1 className="titulo">Esto ya no está</h1>
       <p className="subtitulo">Puede que ya haya pasado, que lo hayan borrado o que el enlace esté incompleto.</p>
-      <Atras href="/" texto="Ver la agenda" />
+      <Atras href="/agenda" texto="Ver la agenda" />
     </main>
   );
 }

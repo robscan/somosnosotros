@@ -1,17 +1,59 @@
 /* La tira de destacados (docs/rediseno/20): título y un carril que se desliza de lado, con la siguiente tarjeta asomando.
    Cada tarjeta es un grid de hijos directos: foto, cuántos van (encima de la foto), título y detalle. */
+/*
+ * Espaciado (founder, 2026-09-23, tras probar en producción, OL-156): la barra de título con "Ver todos" queda más
+ * lejos del carril, para no tocar la primera tarjeta sin querer al tocar "Ver todos" — 4px (`--espacio-1`) → 16px
+ * (`--espacio-4`), los "unos 12px más" que pidió. El espacio ENTRE carriles (el `padding-top` de este mismo bloque,
+ * de un `.destacados` al siguiente) tiene que notarse claramente más grande que ese: 32px fijos, el doble, siguiendo
+ * el ejemplo del founder ("32px entre grupos frente a 12 dentro") — no hay un token de espaciado de 32px en la
+ * escala (llega a --espacio-6, 24px), así que va literal, con esta nota de dónde sale el número.
+ */
 .destacados {
   display: grid;
-  gap: var(--espacio-1);
-  padding-top: var(--espacio-4);
+  gap: var(--espacio-4);
+  padding-top: 32px;
+  /* El alto reservado por el esqueleto (CarrilEsqueleto) para que el colapso de un carril vacío (`.vacio`, más abajo)
+     empiece del mismo alto en vez de saltar. */
+  --alto-mediana: 246px;
+  --alto-grande: 360px;
+  --alto-chica: 230px;
 }
-/* Cabecera del carril: título y, con `verTodos` (OL-153), su enlace a la derecha — nunca envuelto en algo más. */
 .cabecera {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--espacio-2);
   padding-inline: var(--gutter);
+}
+/* Un carril vacío colapsa desde el alto del esqueleto (arranca ahí con `@starting-style`, la "entrada" de este nodo
+   nuevo) hasta 0, en vez de desaparecer de golpe (founder, tras probar en producción, OL-156). Overflow oculto:
+   durante la transición no se ve nada de un carril que, total, no tiene tarjetas. */
+.vacio {
+  gap: 0;
+  padding-top: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height .2s ease, opacity .2s ease, padding-top .2s ease;
+  transition-behavior: allow-discrete;
+}
+.vacio.grande {
+  @starting-style {
+    max-height: var(--alto-grande);
+    opacity: 1;
+  }
+}
+.vacio.redondas {
+  @starting-style {
+    max-height: var(--alto-chica);
+    opacity: 1;
+  }
+}
+.vacio:not(.grande):not(.redondas) {
+  @starting-style {
+    max-height: var(--alto-mediana);
+    opacity: 1;
+  }
 }
 .destacados h2 {
   font-size: var(--letra-xl);
