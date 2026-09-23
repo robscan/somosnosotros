@@ -26,6 +26,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
+import { cabenRepartidas } from "@/lib/ficha";
 import { etiquetaLugar, etiquetaTipo, hrefLugar, textoProximo, type Lugar } from "@/lib/lugares";
 import { jsonLdLugar, jsonLdMigajas } from "@/lib/estructurados";
 import { ORIGENES } from "@/lib/origen";
@@ -319,7 +320,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
 
       <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
 
-      <div className={ficha.acciones}>
+      <div className={`${ficha.acciones} ${cabenRepartidas(2 + redes.length) ? ficha.accionesRepartidas : ficha.accionesCarril}`}>
         <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
           <span className={ficha.accionIcono}>
             <IconoRuta />
