@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Texto largo a pantalla completa (OL-145)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --gutter: 20px; --radio: 12px; --alto-estado: 48px; --alto-barra: 56px; --alto-teclado: 260px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #ebeae6; color: #3b3a37; font-family: var(--fuente); font-optical-sizing: auto; padding-block: 24px; padding-inline: 16px; min-height: 100vh; }
+  button, input, textarea { font: inherit; color: inherit; }
+
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .columna { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .rotulo { text-align: center; max-width: 390px; }
+  .rotulo strong { display: block; font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 17px; }
+  .rotulo span { display: block; color: #8a8883; font-size: 13px; margin-top: 2px; }
+  .controles { display: flex; gap: 8px; margin: 0 0 4px; }
+  .controles button { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #cfcdc7; background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .controles button[data-activo="1"] { background: var(--texto); color: #fff; border-color: var(--texto); }
+
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+  .pantalla { position: relative; height: calc(844px - var(--alto-estado)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .contenido { padding: 0 var(--gutter) 120px; }
+
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); position: sticky; top: 0; z-index: 5; }
+  .logotipo { font-size: 20px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+  .volver { justify-self: start; font-size: 15px; font-weight: 600; color: var(--texto-suave); }
+  h1 { font-size: 22px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin: 14px 0 16px; }
+
+  .campo { display: grid; gap: 6px; margin-bottom: 14px; }
+  .etiqueta { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; font-weight: 600; color: var(--texto-suave); }
+  .contador { font-size: 12px; font-weight: 500; color: #8a8883; font-variant-numeric: tabular-nums; }
+  .contador.cerca { color: #b8860b; }
+  textarea.campo-texto {
+    width: 100%; padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--radio);
+    background: var(--fondo); font-size: 16px; line-height: 1.4; resize: none; font-family: inherit;
+    transition: min-height .15s ease, height .15s ease;
+  }
+  textarea.campo-texto:focus { border-color: var(--texto); outline: none; }
+
+  /* Variante A: crece en su sitio */
+  .a textarea.campo-texto { min-height: 84px; overflow: hidden; }
+
+  /* Variante B: renglón resuelto que abre pantalla completa */
+  .renglon-b { display: flex; align-items: flex-start; gap: 10px; min-height: var(--toque); padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); cursor: pointer; text-align: left; width: 100%; }
+  .renglon-b svg { flex: none; margin-top: 2px; color: var(--texto-suave); }
+  .renglon-b .txt { flex: 1; min-width: 0; }
+  .renglon-b .txt b { display: block; font-size: 14px; font-weight: 600; color: var(--texto-suave); margin-bottom: 2px; }
+  .renglon-b .txt p { font-size: 15px; line-height: 1.35; color: var(--texto); white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .renglon-b .txt p.vacio { color: #a7a59f; }
+  .renglon-b .chev { color: #a7a59f; margin-top: 4px; }
+
+  .otros-campos { display: grid; gap: 12px; margin-top: 18px; opacity: .55; pointer-events: none; }
+  .simulado { min-height: 48px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+
+  .boton-principal { position: sticky; bottom: 20px; margin-top: 20px; width: 100%; min-height: var(--toque); border: none; border-radius: 999px; background: var(--primario); color: var(--primario-texto); font-size: 16px; font-weight: 700; cursor: pointer; }
+
+  /* Pantalla completa de la variante B */
+  .pantalla-completa { position: absolute; inset: 0; z-index: 20; background: var(--fondo); display: flex; flex-direction: column; transform: translateY(100%); transition: transform .22s ease; }
+  .pantalla-completa.abierta { transform: translateY(0); }
+  .cabecera-pc { flex: none; display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: 10px; min-height: var(--alto-barra); padding: 0 var(--gutter); border-bottom: 1px solid var(--borde); }
+  .cabecera-pc h2 { font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .cabecera-pc .contador { justify-self: end; }
+  .cabecera-pc button { min-height: 40px; padding: 0 4px; border: none; background: none; color: var(--primario); font-size: 16px; font-weight: 700; cursor: pointer; justify-self: end; }
+  .cuerpo-pc { flex: 1; min-height: 0; padding: 16px var(--gutter) 8px; display: flex; flex-direction: column; }
+  .cuerpo-pc textarea { flex: 1; width: 100%; border: none; background: none; font-size: 17px; line-height: 1.5; resize: none; font-family: inherit; }
+  .cuerpo-pc textarea:focus { outline: none; }
+
+  /* Teclado dibujado (mismo patrón que novedades-perfil-alta.html) */
+  .teclado { position: absolute; left: 0; right: 0; bottom: 0; z-index: 21; height: var(--alto-teclado); background: #d1d3d9; display: grid; grid-template-rows: repeat(4, 1fr); gap: 8px; padding: 10px 6px 30px; transform: translateY(100%); transition: transform .22s ease; }
+  .teclado.abierto { transform: translateY(0); }
+  .teclado .fila-teclas { display: flex; gap: 6px; justify-content: center; }
+  .teclado span { flex: 1; max-width: 34px; height: 100%; border-radius: 6px; background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.15); }
+  .teclado .ancha { max-width: 160px; }
+
+  .nota { max-width: 390px; font-size: 13px; color: #8a8883; line-height: 1.4; }
+  svg { width: 20px; height: 20px; }
+</style>
+</head>
+<body>
+<div class="estudio">
+
+  <div class="columna">
+    <div class="rotulo"><strong>Variante A · crece en su sitio</strong><span>Sin tope; el formulario se desplaza para que el cursor quede sobre el teclado.</span></div>
+    <div class="controles">
+      <button data-a-estado="cerrado" data-activo="1">Vacío</button>
+      <button data-a-estado="foco">Foco, sin escribir</button>
+      <button data-a-estado="creciendo">Escribiendo (crece)</button>
+      <button data-a-estado="limite">Cerca del límite</button>
+    </div>
+    <div class="telefono" id="tel-a">
+      <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
+      <div class="pantalla" id="pantalla-a">
+        <div class="contenido a">
+          <div class="barra"><span class="volver">✕</span><span class="logotipo">SMSNSTRS</span><span></span></div>
+          <h1>Publicar evento</h1>
+          <div class="campo">
+            <div class="etiqueta"><span>Descripción</span><span class="contador" id="contador-a">0 / 1000</span></div>
+            <textarea class="campo-texto" id="texto-a" placeholder="Qué va a pasar, quién toca, qué trae"></textarea>
+          </div>
+          <div class="otros-campos">
+            <div class="simulado"></div>
+            <div class="simulado"></div>
+          </div>
+          <button class="boton-principal">Publicar evento</button>
+        </div>
+      </div>
+      <div class="teclado" id="teclado-a" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div class="columna">
+    <div class="rotulo"><strong>Variante B · pantalla completa</strong><span>Al tocar el renglón se abre con cabecera fija, «Listo» y el teclado abajo.</span></div>
+    <div class="controles">
+      <button data-b-estado="cerrado" data-activo="1">Renglón vacío</button>
+      <button data-b-estado="abriendo">Abierta, sin escribir</button>
+      <button data-b-estado="escribiendo">Escribiendo</button>
+      <button data-b-estado="cerrada">Cerrada, texto resumido</button>
+    </div>
+    <div class="telefono" id="tel-b">
+      <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
+      <div class="pantalla" id="pantalla-b">
+        <div class="contenido">
+          <div class="barra"><span class="volver">✕</span><span class="logotipo">SMSNSTRS</span><span></span></div>
+          <h1>Publicar evento</h1>
+          <button class="renglon-b" id="renglon-b" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+            <span class="txt"><b>Descripción</b><p class="vacio" id="preview-b">Qué va a pasar, quién toca, qué trae</p></span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <div class="otros-campos">
+            <div class="simulado"></div>
+            <div class="simulado"></div>
+          </div>
+          <button class="boton-principal">Publicar evento</button>
+        </div>
+
+        <div class="pantalla-completa" id="pc-b">
+          <div class="cabecera-pc">
+            <h2>Descripción</h2>
+            <span class="contador" id="contador-b">0 / 1000</span>
+            <button id="listo-b" type="button">Listo</button>
+          </div>
+          <div class="cuerpo-pc">
+            <textarea id="texto-b" placeholder="Qué va a pasar, quién toca, qué trae"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="teclado" id="teclado-b" aria-hidden="true"></div>
+    </div>
+    <p class="nota">Al tocar «Listo» se cierra y el renglón muestra el texto resumido (3 líneas) con el mismo dibujo de renglón resuelto del canon.</p>
+  </div>
+
+</div>
+
+<script>
+  const TOPE = 1000;
+  const CORTO = "Toca abierta al público, con dos artistas locales y un espacio para intercambiar libros usados. Entrada libre, cupo limitado.";
+  const LARGO = "Toca abierta al público, con dos artistas locales y un espacio para intercambiar libros usados. Entrada libre, cupo limitado. Llega una hora antes si quieres lugar cerca del templete; hay agua y café a la entrada. La cooperación es voluntaria y se usa para pagar el sonido y el transporte de los músicos que vienen de fuera de la ciudad, así que cualquier aportación ayuda a que sigamos trayendo bandas nuevas cada mes sin subir el precio de la entrada para nadie.";
+  const CERCA = LARGO + " Trae tu propia silla plegable si puedes, el espacio es al aire libre y las bancas son pocas; en caso de lluvia nos movemos al salón de junto y avisamos por aquí mismo con tiempo. Si vienes en coche, hay lugar en la calle de atrás y también puedes dejarlo en el estacionamiento de la escuela vecina, que nos prestan solo esa noche sin ningún costo para el público que asiste al evento.";
+
+  const feed = (t) => t.slice(0, TOPE);
+  const teclado = () => { const f = (n) => `<div class="fila-teclas">${"<span></span>".repeat(n)}</div>`; return `${f(10)}${f(9)}${f(7)}<div class="fila-teclas"><span></span><span class="ancha"></span><span></span></div>`; };
+  document.getElementById("teclado-a").innerHTML = teclado();
+  document.getElementById("teclado-b").innerHTML = teclado();
+
+  function autoAlto(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+  function contadorTxt(n) { const cerca = n > TOPE * 0.9; return { texto: `${n} / ${TOPE}`, cerca }; }
+
+  // Variante A
+  const textoA = document.getElementById("texto-a");
+  const tecladoA = document.getElementById("teclado-a");
+  const contadorA = document.getElementById("contador-a");
+  const pantallaA = document.getElementById("pantalla-a");
+  function pintarA(n) { const c = contadorTxt(n); contadorA.textContent = c.texto; contadorA.classList.toggle("cerca", c.cerca); }
+  function estadoA(e) {
+    document.querySelectorAll("[data-a-estado]").forEach(b => b.dataset.activo = b.dataset.aEstado === e ? "1" : "0");
+    tecladoA.classList.toggle("abierto", e !== "cerrado");
+    if (e === "cerrado") { textoA.value = ""; textoA.blur(); }
+    else if (e === "foco") { textoA.value = ""; textoA.focus(); }
+    else if (e === "creciendo") { textoA.value = feed(CORTO); textoA.focus(); }
+    else if (e === "limite") { textoA.value = feed(CERCA); textoA.focus(); }
+    requestAnimationFrame(() => { autoAlto(textoA); pintarA(textoA.value.length); if (e !== "cerrado") pantallaA.scrollTop = pantallaA.scrollHeight; });
+  }
+  document.querySelectorAll("[data-a-estado]").forEach(b => b.addEventListener("click", () => estadoA(b.dataset.aEstado)));
+  textoA.addEventListener("input", () => { autoAlto(textoA); pintarA(textoA.value.length); pantallaA.scrollTop = pantallaA.scrollHeight; });
+  estadoA("cerrado");
+
+  // Variante B
+  const textoB = document.getElementById("texto-b");
+  const tecladoB = document.getElementById("teclado-b");
+  const contadorB = document.getElementById("contador-b");
+  const pcB = document.getElementById("pc-b");
+  const previewB = document.getElementById("preview-b");
+  function pintarB(n) { const c = contadorTxt(n); contadorB.textContent = c.texto; contadorB.classList.toggle("cerca", c.cerca); }
+  function previewDe(v) { previewB.textContent = v || "Qué va a pasar, quién toca, qué trae"; previewB.classList.toggle("vacio", !v); }
+  function estadoB(e) {
+    document.querySelectorAll("[data-b-estado]").forEach(b => b.dataset.activo = b.dataset.bEstado === e ? "1" : "0");
+    if (e === "cerrado") { textoB.value = ""; pcB.classList.remove("abierta"); tecladoB.classList.remove("abierto"); previewDe(""); }
+    else if (e === "abriendo") { textoB.value = ""; pcB.classList.add("abierta"); tecladoB.classList.add("abierto"); textoB.focus(); pintarB(0); }
+    else if (e === "escribiendo") { textoB.value = feed(LARGO); pcB.classList.add("abierta"); tecladoB.classList.add("abierto"); textoB.focus(); pintarB(textoB.value.length); }
+    else if (e === "cerrada") { textoB.value = feed(LARGO); pcB.classList.remove("abierta"); tecladoB.classList.remove("abierto"); previewDe(textoB.value); }
+  }
+  document.querySelectorAll("[data-b-estado]").forEach(b => b.addEventListener("click", () => estadoB(b.dataset.bEstado)));
+  document.getElementById("renglon-b").addEventListener("click", () => estadoB("abriendo"));
+  document.getElementById("listo-b").addEventListener("click", () => estadoB("cerrada"));
+  textoB.addEventListener("input", () => pintarB(textoB.value.length));
+  estadoB("cerrado");
+</script>
+</body>
+</html>
