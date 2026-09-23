@@ -289,7 +289,9 @@ test("al montar consulta datos nuevos sin que la prop inicial los reponga", { sk
 test("la reconciliacion conserva todos los valores manuales, incluso con error y nuevas props", { skip: !!baseline }, async t => {
   const p = await pantalla(t);
   await p.locator("li").filter({ hasText: "Descripción, enlace" }).getByRole("button", { name: "Agregar" }).click();
+  await p.getByRole("button", { name: "Descripción", exact: true }).click();
   await p.getByLabel("Descripción", { exact: true }).fill("Descripcion escrita a mano");
+  await p.getByRole("button", { name: "Listo" }).click();
   await p.getByLabel("Enlace", { exact: true }).fill("https://evento.invalid");
   const valores = () => p.locator("form").evaluate(form => [...new FormData(form)].filter(([,v]) => typeof v === "string"));
   const antes = await valores();
