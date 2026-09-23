@@ -8,6 +8,7 @@ import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
 import TituloInstalada from "@/components/TituloInstalada";
 import { GUION_AVISO_INSTALAR } from "@/lib/avisoInstalar";
+import { jsonLdSitio } from "@/lib/estructurados";
 import "./globals.css";
 
 /**
@@ -48,6 +49,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={bricolage.variable}>
       <body>
+        {/* WebSite (OL-143, bitácora 178): una sola vez, para todo el sitio; sin datos de personas. */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSitio()).replace(/</g, "\\u003c") }} />
         {/* Guarda el aviso de instalar de Chrome, Edge o Android antes de que cargue React: llega una sola vez. */}
         <Script id="aviso-instalar" strategy="beforeInteractive">
           {GUION_AVISO_INSTALAR}

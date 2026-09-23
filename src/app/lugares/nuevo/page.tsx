@@ -5,7 +5,7 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import FormularioLugar from "../FormularioLugar";
 import { crearLugar } from "../acciones";
 
-export const metadata = { title: "Registrar un lugar · Somos Nosotros" };
+export const metadata = { title: "Registrar un lugar · Somos Nosotros", robots: { index: false, follow: false } };
 
 export default async function NuevoLugar({ searchParams }: { searchParams: Promise<{ siguiente?: string }> }) {
   // Desde el alta de evento ("¿No está en la lista? Regístralo"): se vuelve ahí con el lugar ya elegido.

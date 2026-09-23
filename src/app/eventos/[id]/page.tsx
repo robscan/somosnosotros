@@ -21,6 +21,7 @@ import ficha from "@/components/ui/Ficha.module.css";
 import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
+import { jsonLdMigajas } from "@/lib/estructurados";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { direccionPublicaSitio, enlaceComoLlegar, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, textoCompartir } from "@/lib/eventos";
 import { hrefLugar } from "@/lib/lugares";
@@ -96,6 +97,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${e.titulo} · Somos Nosotros`,
     description: descripcion,
+    alternates: { canonical: `${ORIGEN}${hrefEvento(e)}` },
     openGraph: { title: e.titulo, description: descripcion, url: `${ORIGEN}${hrefEvento(e)}`, type: "article", images: imagen ? [{ url: imagen }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
     twitter: { card: imagen ? "summary_large_image" : "summary", title: e.titulo, description: descripcion, images: imagen ? [imagen] : undefined },
   };
@@ -183,6 +185,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           sitioLng: geoPublico?.lng ?? null,
         })
       : null;
+  // BreadcrumbList (OL-143, doc 36): misma condición que el JSON-LD del evento — lo que también vería un visitante sin sesión.
+  const migajas = e.visible && !paso ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Agenda", url: "/" }, { nombre: e.titulo, url: hrefEvento(e) }]) : null;
 
   return (
     <main className={ficha.pagina}>
@@ -190,6 +194,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         // Se escapa "<" para que un título o descripción con "</script>" no rompa la página (gestión de cambios, OL-059).
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       )}
+      {migajas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(migajas).replace(/</g, "\\u003c") }} />}
       <Barra
         volver={{ href: "/", texto: "Agenda" }}
         derecha={

@@ -6,7 +6,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioLugar from "../../FormularioLugar";
 import { actualizarLugar } from "../../acciones";
 
-export const metadata = { title: "Editar lugar · Somos Nosotros" };
+export const metadata = { title: "Editar lugar · Somos Nosotros", robots: { index: false, follow: false } };
 
 /** Igual que la ficha: se busca por slug y, si no aparece, por UUID (la dirección vieja). */
 async function cargarLugar(idOSlug: string) {

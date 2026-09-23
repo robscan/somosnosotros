@@ -9,7 +9,7 @@ import { zonaDelSitio } from "@/lib/zona";
 import FormularioEvento from "../../FormularioEvento";
 import { actualizarEvento } from "../../acciones";
 
-export const metadata = { title: "Editar evento · Somos Nosotros" };
+export const metadata = { title: "Editar evento · Somos Nosotros", robots: { index: false, follow: false } };
 
 /** Igual que la ficha: se busca por slug y, si no aparece, por UUID (la dirección vieja). */
 async function cargarEvento(idOSlug: string) {
