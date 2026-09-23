@@ -1,0 +1,117 @@
+/* Canon de esqueletos (OL-158). El respiro: un tono va y viene despacio (mismo timing que ya usaba CarrilEsqueleto). */
+.respira {
+  background: var(--fondo-miniatura);
+  animation: respirar 1.2s ease-in-out infinite;
+}
+@keyframes respirar {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .respira { animation: none; }
+}
+.linea {
+  display: block;
+  border-radius: var(--radio);
+}
+
+/* Renglón de listado: mismas medidas que Renglon.module.css (.renglon/.frente/.foto/.titulo/.meta), para que la
+   fila real caiga encima sin saltar. */
+.listaRenglones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.renglon {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: var(--espacio-3);
+  align-items: center;
+  min-height: 64px;
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.renglon .foto {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+}
+.fotoRedonda {
+  border-radius: 50%;
+}
+.renglonTextos {
+  display: grid;
+  row-gap: 8px;
+}
+.tituloRenglon {
+  width: 65%;
+  height: 19px;
+}
+.metaRenglon {
+  width: 45%;
+  height: 15px;
+}
+
+/* Tarjeta de carril: mismas medidas que traía CarrilEsqueleto.module.css. */
+.tarjeta {
+  display: grid;
+  row-gap: var(--espacio-1);
+  width: 220px;
+}
+.tarjeta .foto {
+  height: 132px;
+  border-radius: var(--radio);
+}
+.tarjeta .linea {
+  height: 14px;
+}
+.corta {
+  width: 60%;
+}
+.grande {
+  width: 165px;
+}
+.grande .foto {
+  height: 248px;
+}
+.chica {
+  width: 104px;
+}
+.chica .foto {
+  height: 104px;
+  border-radius: 50%;
+}
+.chica .linea {
+  justify-self: center;
+  width: 80%;
+}
+
+/* Cabecera de ficha: foto, nombre, dos líneas de meta (evento/lugar/artista). */
+.cabeceraFicha {
+  display: grid;
+  row-gap: var(--espacio-2);
+  padding: var(--espacio-3) var(--gutter);
+}
+.fotoFicha {
+  height: 220px;
+  border-radius: var(--radio);
+}
+.nombreFicha {
+  width: 70%;
+  height: 24px;
+}
+.metaFicha {
+  width: 50%;
+  height: 16px;
+}
+
+/* Bloque de texto: unas líneas de párrafo. */
+.bloqueTexto {
+  display: grid;
+  row-gap: var(--espacio-2);
+  padding: var(--espacio-2) 0;
+}
+.bloqueTexto .linea {
+  height: 14px;
+  width: 100%;
+}

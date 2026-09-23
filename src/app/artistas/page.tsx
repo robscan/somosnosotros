@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import ListaArtistas from "@/components/ListaArtistas";
+import ListaEsqueleto from "@/components/ListaEsqueleto";
 import MemoriaPantalla from "@/components/MemoriaPantalla";
 import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
@@ -138,8 +140,11 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   return { artistas, total: a.count ?? 0, quedan: Math.max(0, (a.count ?? 0) - artistas.length), totalCiudad, disciplinas, detalles, letras, posiciones, destacados, eventosSemana };
 }
 
-/** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */
-export default async function Artistas({ searchParams }: { searchParams: Promise<SearchParams> }) {
+/**
+ * El listado mismo (OL-158, bitácora 193): en su propio componente de servidor para que su `<Suspense>` sea
+ * independiente de `Barra` y `NavInferior`, que no esperan ninguna consulta.
+ */
+async function ArtistasContenido({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug, ...resto } = await searchParams;
   const filtro = filtroDesdeUrl(resto);
   // Las ciudades de Artistas salen de los artistas que hay; la del alta es la elegida aquí y se cambia en el formulario.
@@ -152,12 +157,23 @@ export default async function Artistas({ searchParams }: { searchParams: Promise
   const seguidos = actual ? ((s?.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id) : null;
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
   return (
-    <main className="raiz">
-      <Barra derecha={<Sesion />} />
+    <>
       <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} ciudad={ciudad} ciudades={ciudades} seguidos={seguidos} avisos={avisos} />
       {/* El filtro y la ciudad viven en la URL; lo que se recuerda al volver de una ficha es el scroll. */}
       <MemoriaPantalla seccion="artistas" />
       <Publicar que="artista" ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
+    </>
+  );
+}
+
+/** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */
+export default function Artistas({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  return (
+    <main className="raiz">
+      <Barra derecha={<Sesion />} />
+      <Suspense fallback={<ListaEsqueleto redonda />}>
+        <ArtistasContenido searchParams={searchParams} />
+      </Suspense>
       <NavInferior />
     </main>
   );

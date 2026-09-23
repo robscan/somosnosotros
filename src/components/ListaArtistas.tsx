@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import ChipCiudad from "@/components/Ciudad";
 import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
@@ -13,7 +13,9 @@ import Destacados from "./Destacados";
 import RenglonArtista from "./RenglonArtista";
 import TiraLetras, { irAlGrupo, useLetraActiva } from "./TiraLetras";
 import Cabecera, { antesDeSaltar } from "./ui/Cabecera";
+import { EsqueletoRenglones } from "./ui/Esqueleto";
 import { PestanaEnlace, Pestanas } from "./ui/Pestanas";
+import { useCentinela } from "./useCentinela";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
 import comun from "./Lista.module.css";
@@ -96,6 +98,16 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
     const nNecesario = Math.ceil((posicion + 1) / pagina) * pagina;
     router.replace(hrefArtistas({ ...filtro, ciudad: cSlug, n: Math.max(nNecesario, filtro.n) }), { scroll: false });
   }
+
+  // Carga progresiva (OL-158): la página siguiente ya se pide al servidor con "Ver más" (`n` en la URL); el
+  // centinela la pide sola al acercarse al final del scroll, con un esqueleto de la tanda que viene mientras
+  // llega. "Ver más" queda siempre en el árbol como respaldo accesible (sin observador, o para quien no dispara
+  // el scroll al final).
+  const hrefSiguiente = quedan > 0 ? hrefArtistas({ ...filtro, ciudad: cSlug, n: filtro.n + pagina }) : null;
+  const [cargandoMas, iniciarCargaMas] = useTransition();
+  const centinelaRef = useCentinela(!!hrefSiguiente && !cargandoMas, () => {
+    if (hrefSiguiente) iniciarCargaMas(() => router.replace(hrefSiguiente, { scroll: false }));
+  });
 
   const cabecera = (
     <Cabecera
@@ -186,10 +198,13 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
             ])}
           </ul>
           {seguir.extras}
-          {quedan > 0 && (
-            <Boton href={hrefArtistas({ ...filtro, ciudad: cSlug, n: filtro.n + pagina })} variante="secundario" className={styles.verMas} scroll={false} replace>
-              Ver más ({quedan} más)
-            </Boton>
+          {hrefSiguiente && (
+            <div ref={centinelaRef}>
+              {cargandoMas && <EsqueletoRenglones cantidad={3} redonda />}
+              <Boton href={hrefSiguiente} variante="secundario" className={styles.verMas} scroll={false} replace>
+                Ver más ({quedan} más)
+              </Boton>
+            </div>
           )}
         </>
       )}
