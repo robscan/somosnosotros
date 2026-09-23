@@ -82,6 +82,12 @@ type Props = {
  */
 export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubicando, avisoUbicacion, volverA, onLugar, onOtro, onGesto, onEstoyAqui, onCerrar, ciudadContexto = null }: Props) {
   const [q, setQ] = useState("");
+  // Las sugerencias del mapa solo existen dentro de "Buscar en el mapa sin agregar" (OL-137): nunca sobre los lugares registrados.
+  const [enMapa, setEnMapa] = useState(false);
+  // El lugar registrado elegido: el mapa lo muestra con su pin y la hoja se cierra sola un momento después.
+  const [elegido, setElegido] = useState<LugarResumen | null>(null);
+  const cierre = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (cierre.current) clearTimeout(cierre.current); }, []);
   const [vista, setVista] = useState<"lista" | "otro">(modoSitio !== "lugar" && (textoDelSitio(otro) || otro.reservado) ? "otro" : "lista");
   const [consulta, setConsulta] = useState<{ texto: string; tipo: "direccion" | "lugar" } | null>(() => {
     const texto = otro.reservado ? otro.direccionPrivada : otro.direccion;
@@ -133,6 +139,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     let vigente = true;
     const timer = setTimeout(async () => {
       setBuscando(true);
+      setError(null);
       try {
         if (!mapboxToken) throw new Error("Sin servicio de direcciones");
         if (consulta.tipo === "direccion") {
@@ -213,9 +220,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   // mapa ni los campos de abajo (founder, producción, 2026-09-21). ui/ListaFlotante hace el trabajo; aquí solo el
   // contenido: "Buscando…", el error, o las opciones.
   const campoDireccionRef = useRef<HTMLElement>(null);
-  const campoListaRef = useRef<HTMLElement>(null);
   const panelDireccion = !!consulta && consulta.tipo === "direccion";
-  const panelLista = !!consulta && consulta.tipo === "lugar";
   // Ninguna búsqueda de Mapbox es infalible (revisión del gestor: "Galeana 423" existe en dos municipios distintos
   // y ninguno es el del cartel; afinar el texto quita la basura pero no garantiza encontrar la calle exacta). La
   // salida siempre visible, del mismo peso que una sugerencia: cierra la lista, conserva lo escrito y deja el
@@ -253,8 +258,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   if (vista === "otro") {
     const ponerPunto = (p: Punto) => cambiar(ponerPinManual(otro, p), true);
     return (
-      <Hoja etiqueta="Es en otro sitio" onCerrar={cerrar}>
-        <h3>Es en otro sitio</h3>
+      <Hoja etiqueta="Es en otro sitio" titulo="Es en otro sitio" onCerrar={cerrar}>
         <div className={styles.otro}>
           <label className={`${canon.campo} ${canon.sinIcono}`}>
             <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value, nombreLegacy: false })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
@@ -346,7 +350,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               </button>
             </div>
           )}
-          <button type="button" className={styles.volver} onClick={() => { invalidar(); setVista("lista"); }}>
+          <button type="button" className={styles.volver} onClick={() => { invalidar(); setEnMapa(false); setVista("lista"); }}>
             Mejor un lugar registrado
           </button>
         </div>
@@ -360,56 +364,84 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     );
   }
 
-  return (
-    <Hoja etiqueta="Dónde es" onCerrar={cerrar}>
-      <h3>Dónde es</h3>
-      <label className={`${canon.campo} ${styles.pegajoso}`} ref={campoListaRef as React.RefObject<HTMLLabelElement>}>
-        <IconoBuscar width={20} height={20} />
-        <input
-          type="text"
-          value={q}
-          onChange={(e) => { invalidar(); setQ(e.target.value); setConsulta({ texto: e.target.value, tipo: "lugar" }); }}
-          placeholder="Nombre o dirección"
-          aria-label="Buscar el lugar"
-          autoComplete="off"
-          autoFocus
-          role="combobox"
-          aria-expanded={panelLista}
-          aria-controls="lista-sugeridos"
-          aria-autocomplete="list"
-        />
-        <Limpiar visible={!!q} />
-      </label>
-      {/* Sin ninguna pista de en qué ciudad buscar: se pide con un toque, nunca automático (founder, 2026-09-21). */}
-      {sinPistaDeCiudad && q.trim().length >= 3 && (
+  const texto = q.trim();
+  function escribirLugar(valor: string) {
+    setQ(valor);
+    // En el mapa, la búsqueda sigue viva y lo anterior se queda hasta que llega lo nuevo (sin parpadeo).
+    if (enMapa) setConsulta({ texto: valor, tipo: "lugar" });
+  }
+  function buscarEnMapa() {
+    invalidar();
+    setEnMapa(true);
+    setConsulta({ texto, tipo: "lugar" });
+  }
+  function salirDelMapa() {
+    invalidar();
+    setEnMapa(false);
+  }
+  function elegirLugar(l: LugarResumen) {
+    if (elegido) return;
+    invalidar();
+    setElegido(l);
+    cierre.current = setTimeout(() => onLugar(l.id), 400);
+  }
+  // Tocar el mapa (solo en «Buscar en el mapa»): pone el pin, con lo escrito como nombre del sitio, y pasa a «Es en otro sitio».
+  function ponerPinDesdeMapa(p: Punto) {
+    invalidar();
+    const nombre = otro.sitioTexto.trim() ? otro.sitioTexto : texto.slice(0, LIMITES_EVENTO.sitio);
+    onOtro(ponerPinManual({ ...otro, sitioTexto: nombre }, p), true);
+    setEnMapa(false);
+    setVista("otro");
+  }
+  const campo = (
+    <label className={`${canon.campo} ${styles.pegajoso}`}>
+      <IconoBuscar width={20} height={20} />
+      <input type="text" value={q} onChange={(e) => escribirLugar(e.target.value)} placeholder="Nombre o dirección" aria-label="Buscar el lugar" autoComplete="off" autoFocus disabled={!!elegido} />
+      <Limpiar visible={!!q && !elegido} />
+    </label>
+  );
+  const salidas = (
+    <ul className={`${sug.lista} ${styles.lista}`}>
+      <li>
+        <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} className={sug.renglon} onClick={avisarQueVuelvo}>
+          <IconoMas width={20} height={20} />
+          <b>Agregar «{texto}» como lugar</b>
+          <small>Lo registras y vuelves aquí con él elegido</small>
+        </Link>
+      </li>
+      <li>
+        <button type="button" className={sug.renglon} onClick={buscarEnMapa}>
+          <IconoPin width={20} height={20} />
+          <b>Buscar en el mapa sin agregar</b>
+          <small>Solo para este evento: pones el pin</small>
+        </button>
+      </li>
+    </ul>
+  );
+  const zona = elegido ? (
+    <ul className={`${sug.lista} ${styles.lista}`}>
+      <li>
+        <div className={`${sug.renglon} ${sug.conFoto} ${styles.elegido}`} role="status">
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+          <img src={elegido.portada ?? SIN_FOTO} alt="" className={sug.foto} />
+          <b>{elegido.nombre}</b>
+          <small>{[etiquetaLugar(elegido), elegido.direccion].filter(Boolean).join(" · ")}</small>
+        </div>
+      </li>
+    </ul>
+  ) : enMapa ? (
+    <>
+      {sinPistaDeCiudad && texto.length >= 3 && (
         <button type="button" className={styles.usarUbicacion} onClick={usarMiUbicacionCerca} disabled={pidiendoUbicacionCerca}>
           <IconoUbicacion width={20} height={20} />
           <span>{pidiendoUbicacionCerca ? "Ubicando…" : "Usar mi ubicación para buscar cerca"}</span>
         </button>
       )}
-      {filtrados.length > 0 ? (
-        <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">
-          {filtrados.map((l) => (
-            <li key={l.id}>
-              <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => { invalidar(); onLugar(l.id); }}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                <img src={l.portada ?? SIN_FOTO} alt="" className={sug.foto} />
-                <b>{l.nombre}</b>
-                <small>{[etiquetaLugar(l), l.direccion].filter(Boolean).join(" · ")}</small>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className={styles.nadie}>{lugares.length ? `Ningún lugar registrado coincide con «${q.trim()}».` : "Todavía no hay lugares registrados."}</p>
-      )}
-      <ListaFlotante abierta={panelLista} onCerrar={invalidar} ancla={campoListaRef} id="lista-sugeridos" etiqueta="Lugares y direcciones encontrados">
-        {buscando ? (
-          <li className={styles.avisoFlotante} role="status">Buscando…</li>
-        ) : error ? (
-          <li className={styles.avisoFlotante} role="alert">{error}</li>
-        ) : (
-          sugeridos.map((s) => (
+      <p className={styles.separador} role="status">{buscando ? "Buscando en el mapa…" : "En el mapa"}</p>
+      {error && <p className={styles.nota} role="alert">{error}</p>}
+      {sugeridos.length > 0 && (
+        <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares y direcciones encontrados">
+          {sugeridos.map((s) => (
             <li key={s.mapboxId}>
               <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}>
                 <IconoPin width={20} height={20} />
@@ -417,25 +449,51 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
                 <small>{[s.direccion, s.ciudad].filter(Boolean).join(" · ")}</small>
               </button>
             </li>
-          ))
-        )}
-      </ListaFlotante>
-      <ul className={`${sug.lista} ${styles.lista}`}>
-        <li>
-          <button type="button" className={sug.renglon} onClick={() => { invalidar(); setVista("otro"); }}>
-            <IconoPin width={20} height={20} />
-            <b>Es en otro sitio</b>
-            <small>Una plaza, un parque, una casa: lo escribes y pones el pin</small>
-          </button>
-        </li>
-        <li>
-          <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} className={sug.renglon} onClick={avisarQueVuelvo}>
-            <IconoMas width={20} height={20} />
-            <b>Registrar un lugar nuevo</b>
-            <small>Vuelves aquí con él elegido</small>
-          </Link>
-        </li>
+          ))}
+        </ul>
+      )}
+    </>
+  ) : !texto ? null : filtrados.length > 0 ? (
+    <>
+      <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">
+        {filtrados.map((l) => (
+          <li key={l.id}>
+            <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => elegirLugar(l)}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+              <img src={l.portada ?? SIN_FOTO} alt="" className={sug.foto} />
+              <b>{l.nombre}</b>
+              <small>{[etiquetaLugar(l), l.direccion].filter(Boolean).join(" · ")}</small>
+            </button>
+          </li>
+        ))}
       </ul>
+      <p className={styles.pie}>
+        ¿No es ninguno?{" "}
+        <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} onClick={avisarQueVuelvo}>Agregar</Link>
+        {" · "}
+        <button type="button" onClick={buscarEnMapa}>Buscar en el mapa</button>
+      </p>
+    </>
+  ) : (
+    <>
+      <div className={styles.noExiste} role="status">
+        <b>«{texto}» no está registrado.</b>
+        Puedes agregarlo como lugar o buscarlo en el mapa sin agregarlo.
+      </div>
+      {salidas}
+    </>
+  );
+  // El mapa está siempre, en el mismo sitio (una sola instancia): solo cambia lo que muestra. Referencia al abrir y con
+  // resultados; con un lugar elegido, su pin; en «Buscar en el mapa», la herramienta que pone el pin al tocar.
+  const pinElegido = elegido ? { lat: elegido.lat, lng: elegido.lng } : null;
+  return (
+    <Hoja etiqueta="Dónde es" titulo="Dónde es" completa plano onCerrar={cerrar}>
+      {enMapa && !elegido && <button type="button" className={styles.volver} onClick={salirDelMapa}>‹ Lugares registrados</button>}
+      {campo}
+      <div className={styles.zona}>{zona}</div>
+      <div className={styles.mapaFijo}>
+        <Mapa modo="elegir" valor={pinElegido} onCambio={enMapa ? ponerPinDesdeMapa : undefined} ubicacion={yo} centrarEn={pinElegido ? null : contexto.centro} ciudad={contexto.ciudad} />
+      </div>
     </Hoja>
   );
 }

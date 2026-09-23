@@ -130,6 +130,7 @@
 }
 .volver {
   justify-self: start;
+  align-self: flex-start;
   min-height: var(--toque-min);
   padding: 0;
   border: none;
@@ -138,4 +139,61 @@
   font-size: var(--letra-sm);
   font-weight: 700;
   cursor: pointer;
+}
+
+/* Buscar lugar (OL-137): aviso de "no existe" y rótulo de sección, del mismo tono que los demás avisos de la hoja. */
+.noExiste {
+  margin: 0 0 var(--espacio-3);
+  padding: var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+  font-size: var(--letra-md);
+  line-height: 1.35;
+}
+.noExiste > b {
+  display: block;
+}
+.separador {
+  margin: var(--espacio-3) 0 var(--espacio-1);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* La hoja de Dónde es (OL-137): campo fijo, zona de lista que se encoge y se desplaza, y el mapa siempre debajo. */
+.zona {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.mapaFijo {
+  flex: 1 1 0;
+  min-height: 120px;
+  display: flex;
+  margin-top: var(--espacio-2);
+}
+.mapaFijo > div {
+  flex: 1;
+  height: auto;
+}
+.pie {
+  margin: 0 0 var(--espacio-2);
+  padding: 0 var(--espacio-1);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.pie a,
+.pie button {
+  border: none;
+  background: none;
+  color: var(--primario);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.elegido {
+  background: var(--primario-suave);
 }

@@ -59,3 +59,25 @@
   color: var(--texto-suave);
   cursor: pointer;
 }
+/* Con cabecera fija (prop titulo): asa, título y ✕ no se mueven; solo el cuerpo se desplaza. */
+.conCabecera {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* A toda la altura, pegada al borde superior seguro (notch / isla): abajo sigue el área segura de siempre. */
+.completa {
+  height: calc(100% - env(safe-area-inset-top, 0px));
+  max-height: none;
+}
+.plano {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

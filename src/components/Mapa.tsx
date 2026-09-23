@@ -391,7 +391,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
           {estado === "error" && "No se pudo cargar el mapa. Revisa el token de Mapbox."}
         </p>
       )}
-      {modo === "elegir" && estado === "listo" && (
+      {modo === "elegir" && onCambio && estado === "listo" && (
         <p className={styles.pista}>{valor ? "Arrastra el pin o toca el mapa para ajustar." : "Toca el mapa donde está el lugar."}</p>
       )}
     </div>

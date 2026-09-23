@@ -90,6 +90,37 @@
   .campo-buscar > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); }
   .campo-buscar > input { min-height: var(--toque); padding: 0 14px 0 44px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 17px; }
 
+
+  /* OL-137 · Buscar lugar reconstruido: cabecera de la hoja pegada (asa, título y cerrar) y solo el cuerpo se desplaza. */
+  .hoja.fija { display: flex; flex-direction: column; overflow: hidden; inset: 0; height: 100%; border-radius: 20px 20px 0 0; } /* a toda la altura, pegada al borde superior seguro */
+  .hoja.fija > .cabecera { position: relative; flex: none; }
+  .hoja.fija > .cabecera h3 { padding-right: 48px; }
+  .hoja.fija .x { position: absolute; top: -6px; right: -12px; display: grid; place-items: center; width: 44px; height: 44px; color: var(--texto-suave); font-size: 20px; }
+  .hoja.fija > .cuerpo-hoja { flex: 1; min-height: 0; overflow-y: auto; }
+  .sticky-campo { position: sticky; top: 0; z-index: 1; background: var(--fondo); box-shadow: 0 0 0 10px var(--fondo); }
+  .aviso-no { margin: 4px 0 12px; padding: 12px 14px; border-radius: var(--radio); background: var(--fondo-suave); font-size: 15px; line-height: 1.35; }
+  .aviso-no b { display: block; font-size: 16px; }
+  .sep { margin: 14px 0 6px; color: var(--texto-suave); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .volver-lista { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 4px; border: none; background: none; color: var(--primario); font-size: 15px; font-weight: 700; }
+  .mapa-ref { position: relative; height: 280px; margin: 4px 0 12px; overflow: hidden; border-radius: var(--radio); border: 1px solid var(--borde); background: #ecebe6; }
+  .mapa-ref::before { content: ""; position: absolute; inset: 0; background:
+    linear-gradient(115deg, transparent 46%, #fff 46%, #fff 49%, transparent 49%),
+    linear-gradient(20deg, transparent 58%, #fff 58%, #fff 60.5%, transparent 60.5%),
+    linear-gradient(90deg, transparent 30%, #f7f6f2 30%, #f7f6f2 33%, transparent 33%),
+    radial-gradient(circle at 72% 30%, #dfe9dc 0 16%, transparent 16.5%), radial-gradient(circle at 20% 80%, #dfe6ea 0 20%, transparent 20.5%); }
+  .mapa-ref > span { position: absolute; left: 10px; bottom: 8px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.9); color: var(--texto-suave); font-size: 12px; }
+  /* OL-137 (v3): el mapa está siempre, en el mismo sitio; la zona de la lista se encoge/desplaza, nunca el mapa. */
+  .hoja.fija > .cuerpo-hoja.plano { display: flex; flex-direction: column; overflow: hidden; }
+  .plano > .zona { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+  .plano > .mapa-ref { flex: 1 1 0; height: auto; min-height: 170px; margin-bottom: 0; }
+  .pin-mapa { font-style: normal; position: absolute; left: 50%; top: 46%; width: 32px; height: 32px; margin: -32px 0 0 -16px; color: var(--primario); filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+  .pin-mapa svg { width: 32px; height: 32px; fill: currentColor; stroke: #fff; stroke-width: 1.4; }
+  .pista-mapa { position: absolute; left: 10px; right: 10px; top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.94); font-size: 14px; text-align: center; color: var(--texto-suave); }
+  .renglon.elegido { background: var(--primario-suave); }
+  .pie-proto { margin: 4px 0 8px; padding: 0 4px; color: var(--texto-suave); font-size: 14px; } .pie-proto a { color: var(--primario); font-weight: 700; text-decoration: underline; }
+  .renglon.foto { grid-template-columns: 44px 1fr; }
+  .renglon.foto > .mini { grid-area: icono; width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(135deg, #7fb3bd, #e8c37a); }
+
   @media (max-width: 860px) { .telefono { height: auto; min-height: 700px; } .pantalla { height: auto; max-height: 680px; } }
 </style>
 </head>
@@ -318,6 +349,106 @@
       </main>
     </div>
     <figcaption><b>7 · Sin pista en el texto ni en el cartel</b>Nada en lo escrito ni en la caché dice en qué ciudad buscar. En vez de acotar solo a San Luis Potosí por defecto, se ofrece el botón con un toque (regla nueva de DEFINICION: la ubicación se pide cuando ayuda, con un toque y una frase corta de para qué). Si no se toca, sigue con el centro de la ciudad de contexto.</figcaption>
+  </figure>
+
+  <!-- OL-137 (v3): el mapa está siempre, en el mismo sitio; solo cambia lo que muestra -->
+  <p class="rotulo"><span><strong>OL-137 · Buscar lugar en el alta de evento (v3)</strong>Regla: el mapa nunca aparece ni desaparece. Datos de ejemplo.</span></p>
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="hoja fija">
+          <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
+          <div class="cuerpo-hoja plano"><label class="campo-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><div class="mapa-ref" aria-label="Mapa"><span>Mapa de referencia · San Luis Potosí</span></div></div>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>N1 · Al abrir</b>Campo arriba («Nombre o dirección» basta, sin línea de ayuda) y el mapa de referencia abajo (ciudad de contexto o la persona), sin pin. Es el mismo mapa en todos los estados: siempre en su sitio; solo cambia lo que muestra.</figcaption>
+  </figure>
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="hoja fija">
+          <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
+          <div class="cuerpo-hoja plano"><label class="campo-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="casa cultura" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><div class="zona"><ul class="lista" role="listbox" aria-label="Lugares registrados"><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa de la Cultura</b><small>Museo · Av. Carranza 1815</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa de Cultura Tequis</b><small>Centro cultural · Calle Tequis 12</small></button></li></ul><p class="pie-proto">¿No es ninguno? <a>Agregar</a> · <a>Buscar en el mapa</a></p></div><div class="mapa-ref" aria-label="Mapa"><span>Mapa de referencia</span></div></div>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>N2 · Hay coincidencias</b>Los lugares registrados salen entre el campo y el mapa. El mapa se encoge para hacerles sitio y no se mueve de lugar. Al pie de la lista, una sola línea discreta: «¿No es ninguno? Agregar · Buscar en el mapa». Los renglones grandes con icono solo salen en «no está registrado».</figcaption>
+  </figure><figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="hoja fija" style="inset:0 0 291px 0;height:auto">
+          <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
+          <div class="cuerpo-hoja plano"><label class="campo-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="casa cultura" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><div class="zona"><ul class="lista" role="listbox" aria-label="Lugares registrados"><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa de la Cultura</b><small>Museo · Av. Carranza 1815</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa de Cultura Tequis</b><small>Centro cultural · Calle Tequis 12</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa del Artesano</b><small>Otro · Jardín de San Juan 3</small></button></li></ul><p class="pie-proto">¿No es ninguno? <a>Agregar</a> · <a>Buscar en el mapa</a></p></div><div class="mapa-ref" aria-label="Mapa"><span>Mapa de referencia</span></div></div>
+        </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:291px;background:#d3d5db;border-top:1px solid #b9bbc2;text-align:center;padding-top:120px;color:#6f7178;font-size:13px">⌨︎ teclado del iPhone</div></main>
+    </div>
+    <figcaption><b>N2 con teclado · Espacio real</b>Con el teclado del iPhone abierto la hoja sigue al área visible: campo, unas dos filas y media de lista (la lista se desplaza; la línea «¿No es ninguno?…» queda al final de ella) y el mapa, que se encoge a lo mínimo pero sigue en su sitio, sobre el teclado.</figcaption>
+  </figure>
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="hoja fija">
+          <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
+          <div class="cuerpo-hoja plano"><label class="campo-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="El teatrito" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><div class="zona"><div class="aviso-no"><b>«El teatrito» no está registrado.</b>Puedes agregarlo como lugar o buscarlo en el mapa sin agregarlo.</div><ul class="lista"><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><b>Agregar «El teatrito» como lugar</b><small>Lo registras y vuelves aquí con él elegido</small></button></li><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Buscar en el mapa sin agregar</b><small>Solo para este evento: pones el pin</small></button></li></ul></div><div class="mapa-ref" aria-label="Mapa"><span>Mapa de referencia</span></div></div>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>N3 · No existe</b>El aviso con las dos salidas y el mapa sigue abajo, igual.</figcaption>
+  </figure>
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="hoja fija">
+          <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
+          <div class="cuerpo-hoja plano"><button type="button" class="volver-lista">‹ Lugares registrados</button><label class="campo-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="El teatrito" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><div class="zona"><p class="sep">En el mapa</p><ul class="lista" role="listbox" aria-label="Lugares y direcciones encontrados"><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Teatrito Cantera</b><small>Calle Cantera 7 · San Luis Potosí</small></button></li><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>El Teatrito del Barrio</b><small>Av. Universidad 210 · San Luis Potosí</small></button></li></ul></div><div class="mapa-ref" aria-label="Mapa"><i class="pin-mapa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2" fill="#fff" stroke="none"/></svg></i><div class="pista-mapa">Toca el mapa para poner el pin</div><span>El mismo mapa, ahora como herramienta</span></div></div>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>N4 · Buscar en el mapa sin agregar</b>El mismo mapa pasa a ser herramienta: las sugerencias van en línea encima de él, tocar el mapa pone el pin, y solo aquí se mueve el pin. «‹ Lugares registrados» regresa a la búsqueda de guardados.</figcaption>
+  </figure>
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="hoja fija">
+          <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
+          <div class="cuerpo-hoja plano"><label class="campo-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="a" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><div class="zona" style="max-height:330px"><ul class="lista" role="listbox" aria-label="Lugares registrados"><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa de la Cultura</b><small>Museo · Av. Carranza 1815</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa de Cultura Tequis</b><small>Centro cultural · Calle Tequis 12</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa del Artesano</b><small>Otro · Jardín de San Juan 3</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Teatro de la Paz</b><small>Teatro · Villerías 2</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Museo del Virreinato</b><small>Museo · Plaza de Armas 5</small></button></li></ul><ul class="lista" role="listbox" aria-label="más"><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa de la Cultura</b><small>Museo · Av. Carranza 1815</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa de Cultura Tequis</b><small>Centro cultural · Calle Tequis 12</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Casa del Artesano</b><small>Otro · Jardín de San Juan 3</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Teatro de la Paz</b><small>Teatro · Villerías 2</small></button></li><li><button type="button" role="option" class="renglon foto"><span class="mini"></span><b>Museo del Virreinato</b><small>Museo · Plaza de Armas 5</small></button></li></ul><p class="pie-proto">¿No es ninguno? <a>Agregar</a> · <a>Buscar en el mapa</a></p></div><div class="mapa-ref" aria-label="Mapa"><span>Mapa de referencia</span></div></div>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>N5 · Lista larga</b>Si la lista es larga se desplaza la lista (la línea «¿No es ninguno?…» queda al final de ella), no el mapa ni la cabecera: el mapa conserva su tamaño y su sitio.</figcaption>
+  </figure>
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="position:relative">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="hoja fija">
+          <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
+          <div class="cuerpo-hoja plano"><label class="campo-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="Casa de la Cultura" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><div class="zona"><ul class="lista"><li><button type="button" role="option" class="renglon foto elegido"><span class="mini"></span><b>Casa de la Cultura</b><small>Museo · Av. Carranza 1815</small></button></li></ul></div><div class="mapa-ref" aria-label="Mapa"><i class="pin-mapa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2" fill="#fff" stroke="none"/></svg></i><span>Casa de la Cultura · Av. Carranza 1815</span></div></div>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>N6 · Lugar elegido</b>Lugar elegido: el mapa se centra en él con su pin (es la confirmación) y la hoja se cierra sola unos 400 ms después, sin toque extra ni botón «Listo».</figcaption>
   </figure>
 </div>
 </body>
