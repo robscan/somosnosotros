@@ -54,6 +54,18 @@ Antes de entregar: `git diff origin/main..HEAD | grep -oE '[A-Za-z0-9._%+-]+@[A-
 
 Nuevos: `src/lib/inicio.ts`, `src/lib/inicio.test.ts`, `src/lib/cargarAgenda.ts`, `src/lib/buscarUnificado.ts`, `src/app/accionesBuscar.ts`, `src/app/inicio/page.tsx`, `src/components/Inicio.tsx`, `src/components/Inicio.module.css`, `src/components/BuscadorUnificado.tsx`, `src/components/BuscadorUnificado.module.css`, `src/components/ResultadosBusqueda.tsx`, `docs/rediseno/capturas-188/` (6 PNG), esta bitácora. Tocados: `src/app/page.tsx` (usa `cargarAgenda`, deep-links `filtro`/`q`), `src/app/lugares/page.tsx` y `VistaLugares.tsx` (deep-link `q`, `BuscadorUnificado` en la vista Lista), `src/components/AgendaInicio.tsx` (props `filtroInicial`/`busquedaInicial`), `src/components/Destacados.tsx`/`.module.css` (prop `verTodos`), `src/components/NavInferior.tsx`/`.module.css` (cuarto destino, Inicio primero), `src/components/MemoriaPantalla.tsx` (tipo `Seccion` con `"inicio"`), `docs/ops/OPEN_LOOPS.md`.
 
+## Corrección del gestor (mismo día, sobre `b051fd4`)
+
+El gestor abrió `01b-inicio-tres-tamanos.png` y señaló que la tarjeta `grande` no era lo firmado: salía casi cuadrada y de casi todo el ancho (440px, una sola tarjeta completa por pantalla). Lo decidido es una tarjeta angosta, proporción de cartel vertical (2:3), para que quepan dos tarjetas completas y el borde de una tercera a 390 px.
+
+Corregido en `src/components/Destacados.module.css`, solo la variante `.grande`: `grid-auto-columns` de `min(440px, calc(100vw - var(--gutter) * 2 - 56px))` a `165px` fijo, y la fila de la foto de `264px` a `248px` (165 × 3/2 ≈ 247.5, redondeado). Con el gutter de 20px y el espacio entre tarjetas de 12px, en un teléfono de 390px de ancho se ven las dos tarjetas completas (20 a 185, 197 a 362) y unos 16px del borde de la tercera antes del filo de la pantalla — el cálculo que pedía el gestor. No se tocó `.uno.grande` (el caso de una sola tarjeta en el carril, que conserva su rectángulo apilado: no es el caso que se veía en la captura, donde había varias tarjetas). El título (dos líneas, `-webkit-line-clamp`) y el detalle (una línea con "…") ya venían así en `.tarjeta`/`.tarjeta small` desde antes; no hizo falta tocarlos.
+
+Verificación repetida: `npm run lint` (misma advertencia preexistente), `npm run typecheck`, `npm test` (1070 pruebas) y `npm run build`, las cuatro en verde. Mismo arnés temporal (`src/app/arnes188-temporal/`, datos inventados, borrado antes de comitear), mismo Chrome real vía `playwright-core` a 390×844, `deviceScaleFactor: 2`, Bricolage confirmada (`document.fonts.check`) en las tres capturas reemplazadas.
+
+**`01-inicio-con-sesion.png` (reemplazada):** ahora se ven dos tarjetas completas de favoritos y el borde de una tercera, en proporción de cartel vertical; el mismo botón de asistencia flotando sobre cada una.
+**`01b-inicio-tres-tamanos.png` (reemplazada):** los tres tamaños ya se distinguen con claridad uno junto al otro: grande angosta y alta (favoritos, destacados), mediana casi cuadrada (populares) y chica redonda (lugares y artistas de la semana).
+**`02-inicio-sin-sesion.png` (reemplazada):** mismo ajuste en el carril de Destacados, sin sesión.
+
 ## Qué falta
 
 Segunda prueba del founder en su iPhone (Safari), como en toda pieza de esta fase. Commit local en `inicio-app`, sin push.
