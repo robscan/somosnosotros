@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Pestana, Pestanas } from "@/components/ui/Pestanas";
+import { PanelPestana, Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cargarCercanos, cargarNuevos } from "@/app/accionesAgenda";
@@ -338,7 +338,9 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       {antes}
       {/* La tira se va cuando la persona ya busca algo: otra pestaña, una fecha o la búsqueda (decisión 3). */}
       {filtro === "todos" && !fecha && !buscando && <Destacados tarjetas={enOrden(destacados, eventos).map((e) => tarjetaEvento(e, ahora))} grande boton={(t) => asistenciaTodos.boton(t)} />}
-      {cuerpo}
+      {/* Deslizamiento de 200 ms en la dirección de la pestaña tocada (docs/rediseno/38-transiciones-cargador.md,
+          OL-148); no se dispara por una búsqueda o una fecha, solo cuando cambia el índice de la pestaña. */}
+      <PanelPestana posicion={FILTROS.findIndex((f) => f.clave === filtro)}>{cuerpo}</PanelPestana>
       {filtro === "nuevos" && nuevos?.ok && !cargandoNuevos && (
         <div className={styles.grupo}>
           <button type="button" className={styles.accion} onClick={() => { setFiltro("todos"); setFecha(""); setBusqueda(""); setBuscando(false); window.scrollTo({ top: 0, behavior: "instant" }); }}>Ver todos</button>

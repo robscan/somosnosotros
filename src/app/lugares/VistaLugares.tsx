@@ -22,7 +22,7 @@ import { SIN_FOTO } from "@/lib/imagen";
 import ChipCiudad from "@/components/Ciudad";
 import { calleCorta, etiquetaTipo, filtrarLugares, hrefLugar, lugaresEncuadreInicial, ordenarLugares, textoProximoPin, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
-import { Pestana, PestanaEnlace, Pestanas } from "@/components/ui/Pestanas";
+import { PanelPestana, Pestana, PestanaEnlace, Pestanas } from "@/components/ui/Pestanas";
 import { CampoBuscar } from "@/components/ui/Buscador";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./lugares.module.css";
@@ -220,6 +220,9 @@ export default function VistaLugares({
           }
         />
 
+        {/* Deslizamiento de 200 ms en la dirección de la pestaña (docs/rediseno/38-transiciones-cargador.md,
+            OL-148): Mapa es la 0, Lista la 1, como en el prototipo firmado. */}
+        <PanelPestana posicion={vista === "mapa" ? 0 : 1}>
         {vista === "mapa" ? (
           <div className={styles.cajaMapa}>
             <Mapa
@@ -297,6 +300,7 @@ export default function VistaLugares({
             aviso={notaGeo && <Aviso texto={notaGeo} onCerrar={() => setGeo("sin-pedir")} className={styles.avisoLista} />}
           />
         )}
+        </PanelPestana>
 
         {!elegido && <Publicar que="lugar" />}
         <NavInferior />

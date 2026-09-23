@@ -12,7 +12,7 @@ Lo leído antes: `docs/rediseno/38-transiciones-cargador.md` (el documento firma
 
 **El fundido entre secciones** (`src/app/template.tsx`, nuevo): 200 ms, solo al cambiar entre `/`, `/lugares` y `/artistas` exactos (no por un filtro, ni por la ciudad, ni la primera carga). Next remonta `template.tsx` en cada navegación a propósito, así que la sección "anterior" no puede vivir en estado de React (se perdería en cada remontaje): vive en una variable de módulo que arranca en `null` (por eso nunca anima la primera carga) y se actualiza en un efecto, no durante el render (la regla `react-hooks` de este repo no deja mutar una variable de módulo en el cuerpo del componente).
 
-**El deslizamiento entre pestañas**: el documento pide que viva en `ui/Pestanas` o donde estén los paneles. El archivo asignado para esta pieza es `ui/Pestanas`, no `AgendaInicio.tsx` ni `VistaLugares.tsx` (esos dos no están en la lista de ASIGNACIONES y ya tienen la lógica real de Todos/Cercanos/Nuevos/Siguiendo y Mapa/Lista). Por eso el deslizamiento queda **listo para usarse pero no cableado todavía**: `PanelPestana` (en `ui/Pestanas.tsx`, con su CSS en `Pestanas.module.css`) recibe una `posicion` (el índice de la pestaña activa) y anima 200 ms en la dirección del cambio la primera vez que `posicion` cambia. Falta una pieza aparte que lo use dentro de `AgendaInicio`/`VistaLugares` — lo digo así de claro para que no se lea como "ya se ve en la app".
+**El deslizamiento entre pestañas**: `PanelPestana` (en `ui/Pestanas.tsx`, con su CSS en `Pestanas.module.css`) recibe una `posicion` (el índice de la pestaña activa) y anima 200 ms en la dirección del cambio, solo cuando `posicion` cambia de verdad (no por una búsqueda, una fecha o una respuesta que llega tarde). Cableado con el cambio mínimo en los dos paneles reales: en `AgendaInicio.tsx`, envuelve `{cuerpo}` con `posicion={FILTROS.findIndex((f) => f.clave === filtro)}` (el orden de la tira: Todos·Cercanos·Siguiendo·Nuevos); en `VistaLugares.tsx`, envuelve el bloque que ya alternaba Mapa/Lista con `posicion={vista === "mapa" ? 0 : 1}` (Mapa a la izquierda de la tira, como en el botón "Ver la lista"/"Ver el mapa"). Ninguno de los dos toca `useMemoriaPantalla` ni el scroll: el `div` que añade `PanelPestana` no es el contenedor que se desplaza, y solo se remonta cuando cambia el índice, no en cada render.
 
 **La ficha entra desde la derecha** (220 ms): nuevo `ui/EntradaFicha.tsx` (+ su CSS), que arranca con `transform: translateX(100%)` y pasa a `translateX(0)` un fotograma después de montarse (mismo truco que el prototipo firmado: sin eso, un `transition` no anima nada si el elemento ya nace en su lugar final). Se sumó dentro de `lugares/[id]/template.tsx` y `artistas/[id]/template.tsx`, sin crear un tercer envoltorio: siguen compartiendo el aviso de `PantallaConAviso` (OL-057), ahora dentro de `EntradaFicha`. "Atrás la devuelve": no se agregó una animación de salida — Next no da un gancho de "me estoy yendo" sin la View Transitions API (fuera de esta pieza, como dice el doc 38), así que Atrás simplemente vuelve al listado ya en memoria (memoria de pantalla), sin cargador, como pide el documento.
 
@@ -20,9 +20,9 @@ Lo leído antes: `docs/rediseno/38-transiciones-cargador.md` (el documento firma
 
 **`prefers-reduced-motion`**: las tres animaciones nuevas (fundido, deslizamiento de `PanelPestana`, entrada de ficha) tienen su propia regla `@media (prefers-reduced-motion: reduce) { animation: none }` / `transition: none`, además de la regla global de `globals.css` que ya pone `animation-duration`/`transition-duration` en 0.01 ms para toda la app. El símbolo del cargador, en cambio, no se queda en 0 sino en una opacidad fija de 0.75 (pedido explícito del doc 38): su propia regla en `SimboloCargando.module.css` gana sobre la global porque apaga el nombre de la animación, no solo su duración.
 
-## Por qué el deslizamiento no quedó cableado
+## Corrección del gestor: el deslizamiento sí entra en esta pieza
 
-`AgendaInicio.tsx` y `VistaLugares.tsx` no están en el archivo asignado a esta pieza (`docs/ops/ASIGNACIONES.md`, línea 68) y son archivos grandes y compartidos (con lógica real de "Nuevos" async, ubicación, mapa) que otros chats pueden estar tocando el mismo día. Meterme ahí sin encargo habría sido "ampliar archivos compartidos" sin autorización (regla del punto 0 de `GESTION_DE_CAMBIOS.md`). `PanelPestana` queda documentado y probado en su propio archivo, listo para que una pieza siguiente lo use en esos dos componentes.
+La primera entrega dejó `PanelPestana` listo pero sin cablear, leyendo la lista de archivos de `ASIGNACIONES.md` (línea 68) como el límite exacto de la pieza. El gestor corrigió: esa lista es orientativa, manda la entrada OL-148 de `OPEN_LOOPS.md`, que sí incluye el deslizamiento entre pestañas «donde viven los paneles». Encargo: cablear `PanelPestana` en `AgendaInicio.tsx` y `VistaLugares.tsx` con el cambio mínimo, sin tocar la memoria de pantalla ni el scroll repuesto. Hecho (ver arriba); commit aparte sobre el mismo `880193c`, misma rama, sin push.
 
 ## Verificación
 
@@ -43,6 +43,8 @@ Con `next build && next start` y Chrome real (`playwright-core` instalado solo e
 - **`07-reducido-sin-deslizamiento.png`** — mismo caso para la ficha del arnés: ya en su lugar final de inmediato.
 - **`08-cargador.png`** — el símbolo SN en tinta, centrado, capturado a mitad del pulso (más chico y algo más tenue que su tamaño de reposo).
 - **`09-cargador-reducido.png`** — con "reducir movimiento", el mismo símbolo en gris parejo (opacidad fija 0.75, sin latido).
+- **`10-deslizamiento-pestanas-medio.png`** — fotograma intermedio (animación alargada a 1.6 s solo para la captura) del deslizamiento Mapa→Lista en Lugares tras tocar «Ver la lista»: el título «Lugares» y el botón «Registrar un lugar» ya en su sitio pero claramente más pálidos (gris tenue) que su estado final.
+- **`11-lista-final.png`** — la Lista de Lugares en su color final: «Lugares», «Aún no hay lugares en San Luis Potosí. Registra el primero.» y el botón en tinta plena.
 
 Medida (no solo visual) de `prefers-reduced-motion`: `getComputedStyle(...).animationDuration` del fundido y `.transitionDuration` de la ficha, ambos en `1e-05s` (0.01 ms, la regla global); el símbolo del cargador, `animationName: "none"` y `opacity: "0.75"` exactos.
 
@@ -50,10 +52,9 @@ Medida (no solo visual) de `prefers-reduced-motion`: `getComputedStyle(...).anim
 
 ## Qué falta
 
-- Cablear `PanelPestana` (ya en `ui/Pestanas.tsx`) dentro de `AgendaInicio.tsx` (Todos·Cercanos·Nuevos·Siguiendo) y `VistaLugares.tsx` (Mapa·Lista): fuera del archivo asignado a esta pieza, pendiente de un encargo aparte.
 - Una animación de salida real para "Atrás" en la ficha (hoy simplemente no hay cargador ni animación de cierre): requeriría la View Transitions API, que el doc 38 deja para una vuelta futura.
 - Prueba del founder en su iPhone (Safari), como toda pieza de UI.
 
 ## Archivos
 
-`src/app/template.tsx`, `src/app/template.module.css`, `src/app/lugares/[id]/template.tsx`, `src/app/artistas/[id]/template.tsx`, `src/components/ui/EntradaFicha.tsx`, `src/components/ui/EntradaFicha.module.css`, `src/components/ui/SimboloCargando.tsx`, `src/components/ui/SimboloCargando.module.css`, `src/components/ui/Cargando.tsx`, `src/components/ui/CargandoRaiz.tsx`, `src/components/ui/Cargando.module.css`, `src/components/ui/Pestanas.tsx`, `src/components/ui/Pestanas.module.css`, `src/components/ui/cargador.componentes.test.mjs`, `docs/rediseno/capturas-183/` (9 PNG), esta bitácora y `docs/ops/OPEN_LOOPS.md`.
+`src/app/template.tsx`, `src/app/template.module.css`, `src/app/lugares/[id]/template.tsx`, `src/app/artistas/[id]/template.tsx`, `src/components/ui/EntradaFicha.tsx`, `src/components/ui/EntradaFicha.module.css`, `src/components/ui/SimboloCargando.tsx`, `src/components/ui/SimboloCargando.module.css`, `src/components/ui/Cargando.tsx`, `src/components/ui/CargandoRaiz.tsx`, `src/components/ui/Cargando.module.css`, `src/components/ui/Pestanas.tsx`, `src/components/ui/Pestanas.module.css`, `src/components/ui/cargador.componentes.test.mjs`, `src/components/AgendaInicio.tsx`, `src/app/lugares/VistaLugares.tsx`, `docs/rediseno/capturas-183/` (11 PNG), esta bitácora y `docs/ops/OPEN_LOOPS.md`.
