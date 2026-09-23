@@ -158,3 +158,13 @@ Consecuencias que el founder debe conocer antes de firmar:
 ## Para firma
 
 Lo que necesito que el founder diga: **(1)** los textos de la §2, uno por uno o en bloque; **(2)** «sobresaliente» como *destacado o 3 o más «Voy»*; **(3)** *o* o *y* entre sobresalientes y lugares seguidos; **(4)** 45 días de actividad reciente; **(5)** jueves a las 9:00 cada dos semanas; **(6)** la excepción del cambio de fecha para quien solo tiene correo; **(7)** si quien ya tenía «Por correo» activo pasa al boletín solo o se le vuelve a preguntar.
+
+## Decidido por el founder (2026-09-23)
+
+«Acepto boletín» y «de acuerdo» con la recomendación del gestor en los tres puntos abiertos:
+
+1. **Sobresalientes *o* de lugares seguidos: dos secciones.** Si una queda vacía, no se muestra.
+2. **El correo de cambio de fecha o lugar se conserva** como única excepción a «sin correos por evento»: la persona dijo «Voy» y el push solo llega a quien instaló la app y activó avisos. Bienvenida, nuevo evento y recordatorio pasan a push y dentro de la app.
+3. **La palanca «Por correo» pasa a significar boletín** para quien ya la tenía encendida, sin preguntar; el primer boletín dice al pie, en una línea, que sustituye a los avisos por evento y cómo apagarlo.
+
+Los criterios de la §3 (destacado o 3 o más «Voy»; 45 días; jueves 9:00 cada dos semanas; hasta 8 eventos, mínimo 3) quedan aceptados con el boletín. Los textos de la §2 se afinan al construir.
