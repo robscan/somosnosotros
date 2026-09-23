@@ -196,7 +196,7 @@ test('gestos tardios, borrar y elegir gratis ganan al OCR',actual,async t=>{
   await abrir(p,'Cuándo'); await p.getByLabel('Fecha en que empieza').fill('2026-12-12'); await p.getByLabel('Hora en que empieza').fill('18:15');
   await abrir(p,'Cuánto'); await p.getByRole('button',{name:'Con costo',exact:true}).click(); await p.getByLabel('Precio',{exact:true}).fill('350'); await p.getByRole('button',{name:'Gratis',exact:true}).click();
   await abrir(p,'Quién'); await p.getByLabel('Nombre del artista o grupo').fill('Artista manual'); await p.getByRole('option',{name:/Crear a/}).click();
-  await abrir(p,'Más'); await p.getByLabel('Descripción',{exact:true}).fill('A mano'); await p.getByLabel('Enlace',{exact:true}).fill('https://manual.invalid');
+  await abrir(p,'Más'); await p.getByRole('button',{name:'Descripción',exact:true}).click(); await p.getByLabel('Descripción',{exact:true}).fill('A mano'); await p.getByRole('button',{name:'Listo'}).click(); await p.getByLabel('Enlace',{exact:true}).fill('https://manual.invalid');
   const antes=await valores(p); await terminar(p); const despues=await valores(p);
   for(const campo of ['titulo','inicio','fin','gratis','precio','descripcion','enlace','quien']) assert.equal(despues[campo],antes[campo],campo);
 });

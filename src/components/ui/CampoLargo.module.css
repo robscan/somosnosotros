@@ -1,0 +1,105 @@
+/* Renglón cerrado: mismo aspecto de caja que Campo.module.css (.control), con la etiqueta arriba y el texto
+   resumido a dos renglones debajo. */
+.renglon {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  padding: var(--espacio-2) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+.renglonError {
+  border-color: var(--error);
+}
+.filaEtiqueta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+  padding-right: var(--espacio-5);
+}
+.etiquetaRenglon {
+  font-weight: 600;
+}
+.resumen {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: var(--espacio-1);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+.resumenVacio {
+  composes: resumen;
+  color: var(--texto-suave);
+}
+.chevron {
+  position: absolute;
+  right: var(--espacio-3);
+  top: var(--espacio-3);
+  color: var(--texto-suave);
+}
+.ayuda {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  margin-top: var(--espacio-1);
+}
+.error {
+  color: var(--error);
+  font-size: var(--letra-sm);
+  margin-top: var(--espacio-1);
+}
+
+/* Pantalla completa: cabecera fija (título, contador, Listo) y el texto ocupa el resto, con el teclado abajo. */
+.capa {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: var(--fondo);
+}
+.cabecera {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  min-height: var(--alto-barra);
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.cabecera h2 {
+  font-size: var(--letra-xl);
+  font-weight: 700;
+}
+.listo {
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-2);
+  border: none;
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+.area {
+  flex: 1;
+  min-height: 0;
+  padding: var(--espacio-4) var(--gutter);
+  border: none;
+  resize: none;
+  background: var(--fondo);
+  font-size: max(16px, var(--letra-md));
+  line-height: 1.4;
+}
+.area:focus {
+  outline: none;
+}
