@@ -45,6 +45,10 @@ type Props = {
   avisos?: AvisosLista | null;
   /** La tira de destacados de la ciudad (docs/rediseno/20). */
   destacados?: Destacado[];
+  /** Con qué pestaña abrir (un "Ver todos" de Inicio, OL-153): "siguiendo" o "cercanos". Sin ella, "todos" de siempre. */
+  filtroInicial?: Filtro;
+  /** Con qué texto abrir la búsqueda ya escrita (el "Ver todos" de un grupo del buscador único, OL-153). */
+  busquedaInicial?: string;
 };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
 /**
@@ -59,12 +63,12 @@ type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: bo
  * La agenda de la ciudad: ui/Cabecera (chip de fecha, chip de ciudad, lupa, filtros como pestañas),
  * lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02-inicio-flujo-y-estados.md.
  */
-export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, avisos = null, destacados = [] }: Props) {
-  const [filtro, setFiltro] = useState<Filtro>("todos");
+export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, avisos = null, destacados = [], filtroInicial, busquedaInicial }: Props) {
+  const [filtro, setFiltro] = useState<Filtro>(filtroInicial ?? "todos");
   const [fecha, setFecha] = useState("");
   // La lupa abre el campo en el renglón de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
-  const [busqueda, setBusqueda] = useState("");
-  const [buscando, setBuscando] = useState(false);
+  const [busqueda, setBusqueda] = useState(busquedaInicial ?? "");
+  const [buscando, setBuscando] = useState(!!busquedaInicial);
   // El foco (y el teclado) solo cuando la lupa acaba de abrir el campo; al volver de una ficha no se roba el foco.
   const [enfocar, setEnfocar] = useState(false);
   // Desde cuándo cuenta como nuevo en este teléfono. El ref lo fija al instante (el estado llega en el render siguiente,

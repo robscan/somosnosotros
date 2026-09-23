@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { Cuenta } from "@/components/ui/Chip";
+import BuscadorUnificado from "@/components/BuscadorUnificado";
 import ListaLugares from "@/components/ListaLugares";
 import PantallaConAviso from "@/components/useCanalDeListas";
 import type { AvisosLista } from "@/components/useSeguirEnLista";
@@ -47,6 +48,8 @@ type Props = {
   /** La tira de destacados de la ciudad (docs/rediseno/20): arriba de la lista y, en naranja, en el mapa. */
   destacados: Destacado[];
   eventosSemana: Tarjeta[];
+  /** Con qué texto abrir la búsqueda ya escrita (el "Ver todos" del grupo Lugares del buscador único, OL-153). */
+  busquedaInicial?: string;
 };
 
 /**
@@ -67,6 +70,7 @@ export default function VistaLugares({
   avisos,
   destacados,
   eventosSemana,
+  busquedaInicial,
 }: Props) {
   const router = useRouter();
   const [vista, setVista] = useState<Vista>(vistaInicial);
@@ -86,8 +90,8 @@ export default function VistaLugares({
   const lugaresDelTipo = useMemo(() => (tipo ? lugares.filter((l) => l.tipo === tipo) : lugares), [lugares, tipo]);
   // Una sola búsqueda para las dos vistas, tras la lupa. En el mapa, lo encontrado se encuadra; si es uno solo, se
   // abre su tarjeta.
-  const [busqueda, setBusqueda] = useState("");
-  const [buscando, setBuscando] = useState(false);
+  const [busqueda, setBusqueda] = useState(busquedaInicial ?? "");
+  const [buscando, setBuscando] = useState(!!busquedaInicial);
   // Al volver de una ficha, la misma vista, lo escrito y el scroll de la lista (el tipo ya viene en la URL; la tira
   // de letras no selecciona nada que recordar: es un acceso directo, no un filtro, corrección del founder, 2026-09-19).
   useMemoriaPantalla<{ vista: Vista; busqueda: string }>("lugares", { vista, busqueda }, (r) => {
@@ -285,6 +289,11 @@ export default function VistaLugares({
               </Hoja>
             )}
           </div>
+        ) : busqueda.trim().length >= 2 ? (
+          // El buscador único (OL-153, bitácora 188): en Lugares, lugares primero y con más resultados (doc 41,
+          // "El buscador único"). Reemplaza aquí la lista de siempre mientras se busca; Todos/Cercanos/tipos siguen
+          // en la cabecera, y borrar la búsqueda vuelve a `ListaLugares` tal cual.
+          <BuscadorUnificado seccion="lugares" q={busqueda} ciudadSlug={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} ciudadNombre={ciudad.nombre} />
         ) : (
           <ListaLugares
             lugares={lugaresDelTipo}

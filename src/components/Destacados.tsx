@@ -20,8 +20,13 @@ import styles from "./Destacados.module.css";
  * esquina superior derecha de la foto (hermano del `<Link>`, nunca anidado dentro). Reutiliza el hook que la pantalla
  * ya tiene para sus renglones (`useAsistenciaEnLista`/`useSeguirEnLista`): `Tarjeta` ya trae `id`/`titulo` de la
  * propia entidad, así que no hace falta ninguna consulta nueva.
+ *
+ * `verTodos` (OL-153, bitácora 188): un enlace junto al título que abre la sección con sus listados y filtros de
+ * siempre. Con esto, `grande`/`redondas`/(ninguno) son el canon de los tres tamaños de tarjeta de un carril —
+ * grande, mediana (el tamaño de siempre) y chica (`redondas`, la más pequeña que ya existía) — y la pantalla de
+ * Inicio no necesita un componente de tarjeta propio.
  */
-export default function Destacados({ tarjetas, grande = false, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false, boton }: { tarjetas: Tarjeta[]; grande?: boolean; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean; boton?: (t: Tarjeta) => EstadoBotonRenglon }) {
+export default function Destacados({ tarjetas, grande = false, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false, boton, verTodos }: { tarjetas: Tarjeta[]; grande?: boolean; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean; boton?: (t: Tarjeta) => EstadoBotonRenglon; verTodos?: { href: string; texto?: string } }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -77,7 +82,14 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
   const ordenadas = ordenarTarjetasPorFoto(tarjetas);
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
-      <h2 id={titulo}>{encabezado}</h2>
+      <div className={styles.cabecera}>
+        <h2 id={titulo}>{encabezado}</h2>
+        {verTodos && (
+          <Link href={verTodos.href} className={styles.verTodos}>
+            {verTodos.texto ?? "Ver todos"} →
+          </Link>
+        )}
+      </div>
       <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${grande ? styles.grande : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
         {ordenadas.map((t) => (
           <li key={t.id}>

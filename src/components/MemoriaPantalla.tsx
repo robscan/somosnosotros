@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { guardarMemoria, guardarUrlSeccion, leerMemoria } from "@/lib/memoriaPantalla";
 
-export type Seccion = "agenda" | "lugares" | "artistas";
+export type Seccion = "inicio" | "agenda" | "lugares" | "artistas";
 
 /**
  * Recuerda el estado de un listado (pestaña, filtro, búsqueda) y lo devuelve al volver a la misma URL

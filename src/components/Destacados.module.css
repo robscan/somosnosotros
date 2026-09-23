@@ -5,12 +5,26 @@
   gap: var(--espacio-1);
   padding-top: var(--espacio-4);
 }
-.destacados h2 {
+/* Cabecera del carril: título y, con `verTodos` (OL-153), su enlace a la derecha — nunca envuelto en algo más. */
+.cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espacio-2);
   padding-inline: var(--gutter);
+}
+.destacados h2 {
   font-size: var(--letra-xl);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
   line-height: 1.1;
+}
+.verTodos {
+  flex: none;
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  white-space: nowrap;
 }
 .carril {
   display: grid;
@@ -98,16 +112,19 @@
 }
 
 /*
- * Solo «Destacados» (lo que elige la administración) va al doble y rectangular (founder, 2026-09-18); «Con eventos
- * esta semana» conserva el tamaño de antes, en las dos secciones (corrección del founder, 2026-09-19: había crecido
- * de más con el PR de los directorios alfabéticos). El carril conserva el desplazamiento real y la siguiente
- * tarjeta asoma, sin recorte artificial (precisión del founder, 2026-09-18).
+ * Solo «Destacados» (lo que elige la administración) va con cartel vertical, angosto (founder, 2026-09-18; corrección
+ * del gestor de cambios, 2026-09-23, bitácora 188: la primera entrega salía casi cuadrada y de casi todo el ancho,
+ * una sola tarjeta por pantalla — lo firmado es angosta, proporción de cartel 2:3, para que quepan dos tarjetas
+ * completas y el borde de una tercera a 390 px de ancho). «Con eventos esta semana» conserva el tamaño de antes, en
+ * las dos secciones (corrección del founder, 2026-09-19: había crecido de más con el PR de los directorios
+ * alfabéticos). El carril conserva el desplazamiento real y la siguiente tarjeta asoma, sin recorte artificial
+ * (precisión del founder, 2026-09-18).
  */
 .grande {
-  grid-auto-columns: min(440px, calc(100vw - var(--gutter) * 2 - 56px));
+  grid-auto-columns: 165px;
 }
 .grande .tarjeta {
-  grid-template-rows: 264px auto auto;
+  grid-template-rows: 248px auto auto;
 }
 
 /* Artistas, en «Con eventos esta semana»: redondos como su avatar, angostos y al centro. */

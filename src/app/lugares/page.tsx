@@ -11,7 +11,7 @@ import { conProximo, TIPOS, type LugarLista, type LugarResumen, type ProximoEven
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import VistaLugares from "./VistaLugares";
 
-type SearchParams = { vista?: string; ciudad?: string; tipo?: string };
+type SearchParams = { vista?: string; ciudad?: string; tipo?: string; q?: string };
 
 /**
  * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
@@ -53,7 +53,7 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
 }
 
 export default async function Lugares({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { vista, ciudad: slug, tipo } = await searchParams;
+  const { vista, ciudad: slug, tipo, q } = await searchParams;
   const ciudades = await cargarCiudades();
   const ciudad = ciudadPorSlug(slug, ciudades);
   const [lugares, actual, destacados, eventosSemana] = await Promise.all([cargar(ciudad.nombre), usuarioActual(), clienteServidor().then((s) => leerTira(s, "lugares", ciudad.nombre)), clienteServidor().then((s) => cargarEventosSemana(s, "lugares", ciudad.nombre))]);
@@ -64,5 +64,5 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
   // El tipo elegido vive en la URL (se comparte y sobrevive al volver atrás); solo vale si existe.
   const tipoElegido = tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
-  return <VistaLugares lugares={lugares} ciudad={ciudad} ciudades={ciudades} conSesion={!!actual} vistaInicial={vista === "lista" ? "lista" : "mapa"} tipo={tipoElegido} barra={<Barra derecha={<Sesion />} />} seguidos={seguidos} avisos={avisos} destacados={destacados} eventosSemana={eventosSemana} />;
+  return <VistaLugares lugares={lugares} ciudad={ciudad} ciudades={ciudades} conSesion={!!actual} vistaInicial={vista === "lista" ? "lista" : "mapa"} tipo={tipoElegido} barra={<Barra derecha={<Sesion />} />} seguidos={seguidos} avisos={avisos} destacados={destacados} eventosSemana={eventosSemana} busquedaInicial={q} />;
 }
