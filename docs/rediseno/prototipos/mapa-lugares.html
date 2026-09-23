@@ -14,7 +14,7 @@
     --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
     --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2; --fondo-mapa: #eef0ec;
     --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
-    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: color-mix(in srgb, var(--primario) 12%, white);
     --destacado: #d35400; --destacado-texto: #a94400; --destacado-suave: #fbebdd;
     --ok: #1f6f43; /* el verde de "Sigues" (ui/BotonRenglon .decidido): el resalte de los seguidos, OL-128 */
     --sombra: 0 2px 12px rgba(0, 0, 0, 0.08); --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
@@ -89,17 +89,36 @@
   .colonia { fill: #a3a39d; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
   /* El lugar: punto, o círculo con el día; el nombre debajo con halo blanco (así lo pinta Mapbox) */
   .lugar { cursor: pointer; }
-  .lugar circle { fill: var(--primario); stroke: var(--fondo); stroke-width: 1.5; transition: r 150ms; }
+  /* OL-141 (founder: «quita doble círculo de lugares que sigo. Demasiado ruido visual; las diferencias entre tipos de
+     lugar se establecen por tamaño y color. Usa negro para lugares que no sigo y sin eventos»): sin aro; el TAMAÑO dice
+     si hay evento esta semana (24 px con el día, 10 px sin él) y el COLOR dice qué es: tinta (nada), color de acción
+     (evento esta semana), naranja (destacado), verde de «Sigues» (seguido; gana a los demás). */
+  .lugar circle { fill: var(--texto); stroke: var(--fondo); stroke-width: 1.5; transition: r 150ms; }
+  .lugar.evento circle { fill: var(--primario); }
+  .lugar.evento .nombre { fill: var(--primario); }
+  .lugar.destacado circle { fill: var(--destacado); }
+  .lugar.destacado .nombre { fill: var(--destacado-texto); }
   .lugar .dia { fill: var(--primario-texto); font-size: 10px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; dominant-baseline: central; pointer-events: none; letter-spacing: 0; }
-  .lugar .nombre { fill: var(--primario); font-size: 13px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; paint-order: stroke; stroke: var(--fondo); stroke-width: 3; stroke-linejoin: round; pointer-events: none; }
+  .lugar .nombre { fill: var(--texto); font-size: 13px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; paint-order: stroke; stroke: var(--fondo); stroke-width: 3; stroke-linejoin: round; pointer-events: none; }
   /* El resalte (el verde de "Sigues", --ok, + aro) lo lleva el SEGUIDO, no el destacado: cambio del founder tras
      firmar el documento (2026-09-22, "de cara al usuario es más útil que se resalten los seguidos"). Sin sesión, o
      con un lugar destacado que la persona no sigue, el pin se pinta como cualquier otro (ver estado "seguidos").
      El color pasó de naranja a verde tras la prueba del founder en producción (OL-128, 2026-09-22: "el mismo color
      de seguidos, revisa consistencia en lenguaje visual"). */
-  .lugar.seguido circle { fill: var(--ok); stroke-width: 2; }
-  .lugar.seguido .borde { fill: none; stroke: var(--ok); stroke-width: 1.5; }
+  .lugar.seguido circle { fill: var(--ok); }
   .lugar.seguido .nombre { fill: var(--ok); }
+  /* Muestrario del color de acción (OL-141, solo con ?color=actual|A|B|C): lo mismo en cada captura — botón primario,
+     píldora de la navegación, chip activo, pin con evento — junto al verde de «Voy»/seguido que hoy se le parece. */
+  .muestrario { position: absolute; top: 10px; left: var(--gutter); right: var(--gutter); z-index: 4; display: grid; gap: 10px; padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra); font-size: 13px; }
+  .muestrario h4 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+  .muestrario .swatch { width: 18px; height: 18px; border-radius: 5px; background: var(--primario); }
+  .muestrario .fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .muestrario .boton { display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 10px; background: var(--primario); color: var(--primario-texto); font-weight: 700; font-size: 15px; }
+  .muestrario .pildora { display: inline-grid; place-items: center; width: 60px; height: 32px; border-radius: 999px; background: var(--primario); color: var(--primario-texto); }
+  .muestrario .chip-activo { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--primario-suave); color: var(--primario); font-weight: 700; border: 1px solid var(--primario); }
+  .muestrario .voy { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--fondo); color: var(--ok); border: 1.5px solid var(--ok); font-weight: 700; }
+  .muestrario svg.pin { width: 40px; height: 40px; overflow: visible; }
+  .muestrario .nota { color: var(--texto-suave); }
   .lugar.elegido circle { stroke-width: 2.5; transform: scale(1.3); transform-box: fill-box; transform-origin: center; }
   /* La persona: punto azul con halo (el estándar de los mapas) */
   .yo-halo { fill: rgba(26, 115, 232, 0.18); }
@@ -230,8 +249,8 @@
 
 <div class="estudio">
   <div class="rotulo">
-    <strong>Mapa de lugares · OL-124</strong>
-    Cuatro estados de la misma pantalla, con las decisiones del founder del 2026-09-22 ya aplicadas: días de tres letras con acento, el botón de ubicación visible en todos (nunca tapado) y el resalte verde («Sigues») con aro para los lugares que la persona SIGUE, no los destacados (decisión posterior a la firma; el color pasó de naranja a verde tras probarlo en producción, OL-128). El pin con día es compacto (24 px). El mapa está dibujado a mano (sin Mapbox ni token); los pines, el botón de ubicación y la tarjeta son los que se proponen. Tocar un pin abre su tarjeta, tocar el mapa la cierra, el botón de abajo a la izquierda pone o quita la ubicación. Las pestañas van sin «Cercanos»: en el mapa, esa decisión es del botón (decidido).
+    <strong>Mapa de lugares · OL-124 → OL-141</strong>
+    Los cuatro estados de siempre, con el pedido del founder del 2026-09-23 (OL-141): pines sin doble círculo; el tamaño dice si hay evento esta semana y el color qué es (tinta si nada, color de acción con evento, naranja destacado, verde seguido). Con <code>?color=actual|A|B|C</code> se prueba un color de acción candidato y aparece el muestrario (doc rediseno/30).
   </div>
 </div>
 
@@ -276,12 +295,11 @@
     // resalte lo lleva "seguido", no "destacado" (cambio del founder tras firmar, 2026-09-22).
     const orden = [...LUGARES].sort((a, b) => (a.seguido - b.seguido) || ((a.dia ? 1 : 0) - (b.dia ? 1 : 0)));
     for (const l of orden) {
-      const g = svg("g", { class: `lugar${l.seguido ? " seguido" : ""}`, "data-id": l.id, transform: `translate(${l.x} ${l.y})` });
-      // Dos tamaños solamente, iguales con o sin seguir (OL-128, corrección del founder sobre lo publicado):
-      // 12 (24 px de diámetro, compactado de 16) con día — abraza "Sáb"/"Hoy" con 2-3 px de aire, no el margen
-      // amplio de antes — o 5 sin él. El color y el aro son los únicos que cambian con "seguido".
+      // OL-141: sin aro. Una clase por lo que ES el lugar (gana seguido > destacado > con evento > nada) y el tamaño
+      // por si tiene evento esta semana: 12 (24 px, compactado en OL-128) con día, o 5 sin él.
+      const clase = l.seguido ? "seguido" : l.destacado ? "destacado" : l.dia ? "evento" : "";
+      const g = svg("g", { class: `lugar${clase ? ` ${clase}` : ""}`, "data-id": l.id, transform: `translate(${l.x} ${l.y})` });
       const r = l.dia ? 12 : 5;
-      if (l.seguido) g.appendChild(svg("circle", { class: "borde", r: r + 3.5 }));
       g.appendChild(svg("circle", { class: "punto", r }));
       if (l.dia) g.appendChild(svg("text", { class: "dia" }, l.dia));
       const nombre = svg("text", { class: "nombre", y: r + 12 });
@@ -345,12 +363,27 @@
     return { tel, subirBoton };
   }
 
+  // OL-141: color de acción candidato por ?color= (doc rediseno/30); el muestrario va en el primer teléfono.
+  const CANDIDATOS = { actual: ["Actual · azul petróleo", "#0f6b7c"], A: ["A · azul cobalto", "#1256d6"], B: ["B · ciruela", "#a3286b"], C: ["C · violeta", "#6d34c8"] };
+  const colorPedido = new URLSearchParams(location.search).get("color");
+  const candidato = colorPedido && CANDIDATOS[colorPedido] ? CANDIDATOS[colorPedido] : null;
+  if (candidato) document.documentElement.style.setProperty("--primario", candidato[1]);
+  function muestrario() {
+    const [nombre, hex] = candidato;
+    const caja = document.createElement("div");
+    caja.className = "muestrario";
+    caja.innerHTML = `<h4><span class="swatch"></span>${nombre} <code>${hex}</code>${hex !== "#0f6b7c" ? ' <span class="nota">(hoy: <code>#0f6b7c</code>)</span>' : ""}</h4>
+      <div class="fila"><span class="boton">Publicar</span><span class="pildora"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.5"/></svg></span><span class="chip-activo">Todos · 58</span>
+      <svg class="pin" viewBox="-20 -20 40 40"><circle r="12" fill="var(--primario)" stroke="var(--fondo)" stroke-width="1.5"/><text fill="var(--primario-texto)" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="central">Hoy</text></svg></div>
+      <div class="fila"><span class="nota">Junto a lo que ya es verde:</span><span class="voy">✓ Voy</span><svg class="pin" viewBox="-20 -20 40 40"><circle r="12" fill="var(--ok)" stroke="var(--fondo)" stroke-width="1.5"/><text fill="#fff" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="central">Vie</text></svg><span class="nota">seguido</span></div>`;
+    return caja;
+  }
   const estudio = document.querySelector(".estudio");
   const ESTADOS = [
     ["sin-ubicacion", null, "Sin ubicación", "Al abrir: el encuadre muestra los lugares con evento esta semana y los destacados. Hoy y los días en tres letras con acento (Jue, Vie…); los demás, un punto."],
     ["con-ubicacion", null, "Con ubicación", "Tras tocar el botón: el mapa se centra en la persona (punto azul) y el botón toma el color de acción. Volver a tocarlo recentra."],
     ["pin-tocado", "paz", "Pin tocado", "Una hoja corta con el nombre, el próximo evento y «Ver ficha». Registrar se retira; el botón de ubicación sube y se queda visible encima de la hoja."],
-    ["seguidos", null, "Seguidos resaltados", "Cambio del founder tras firmar el documento (2026-09-22, y corrección OL-128 tras probarlo en producción): el verde de «Sigues» y el aro los llevan los lugares que la persona sigue, no los destacados, y ya no en naranja. El Centro de las Artes es destacado pero no lo sigue: se pinta como cualquier lugar con evento. El Museo Federico Silva (destacado y seguido) y el MUNI (solo seguido) sí llevan el resalte, con el pin compacto de 24 px."],
+    ["seguidos", null, "Seguidos y demás, por tamaño y color", "OL-141: sin aro. Verde de «Sigues» para los seguidos (Museo Federico Silva, MUNI), naranja para el destacado que no sigo (Centro de las Artes), color de acción para los que tienen evento esta semana, y tinta para los que no sigo y no tienen eventos. El día sigue siempre visible."],
   ];
   for (const [estado, elegido, titulo, texto] of ESTADOS) {
     const { tel, subirBoton } = montar(estado, elegido);
@@ -361,6 +394,7 @@
     caja.appendChild(tel);
     caja.appendChild(pie);
     estudio.appendChild(caja);
+    if (candidato && estado === "sin-ubicacion") tel.querySelector(".mapa").prepend(muestrario());
     // Recién insertado en el documento: ahora sí hay layout que medir (antes, con `elegir` llamado en `montar`,
     // el nodo no estaba en el DOM y la hoja medía 0).
     subirBoton();
