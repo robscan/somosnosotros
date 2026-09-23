@@ -13,7 +13,7 @@ import { Chip } from "@/components/ui/Chip";
 import { IconoBoleto, IconoBuscar, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
-import { LIMITES_EVENTO, REVELAR_OPCIONES, extraerNumero, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
+import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, REVELAR_OPCIONES, esCooperacion, extraerNumero, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
 import { formatearCuando, isoALocal, localAIso, resugerirCuando, sugerirInicio, ZONA_INICIAL, zonaSegura } from "@/lib/fechas";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
@@ -47,6 +47,7 @@ type Borrador = {
   inicio: string;
   fin: string;
   gratis: boolean;
+  cooperacion?: boolean;
   precio: string;
   descripcion: string;
   enlace: string;
@@ -181,6 +182,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     };
   }, [clavePunto]);
   const [gratis, setGratis] = useState(!evento?.precio);
+  const [cooperacion, setCooperacion] = useState(esCooperacion(evento?.precio));
   // Al editar, si el precio guardado es "$150", mostrar solo "150" en el campo.
   const [precio, setPrecio] = useState(evento?.precio ? extraerNumero(evento.precio) : "");
   const [descripcion, setDescripcion] = useState(evento?.descripcion ?? "");
@@ -308,6 +310,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         setInicio(b.inicio);
         setFin(b.fin);
         setGratis(b.gratis);
+        setCooperacion(!!b.cooperacion);
         setPrecio(b.precio);
         setDescripcion(b.descripcion);
         setEnlace(b.enlace);
@@ -333,9 +336,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     try {
       const vacio = !titulo && !lugarId && !textoDelSitio(otro) && !quien.length && !descripcion && !imagen;
       if (vacio) localStorage.removeItem(CLAVE_BORRADOR);
-      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien } satisfies Borrador));
+      else localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ titulo, inicio, fin, gratis, cooperacion, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien } satisfies Borrador));
     } catch {}
-  }, [esAlta, titulo, inicio, fin, gratis, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien]);
+  }, [esAlta, titulo, inicio, fin, gratis, cooperacion, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien]);
 
   // Atrás o la ✕ preguntan solo si el formulario cambió desde que se abrió (guardia estándar de las altas); al confirmar, el borrador se olvida.
   const formRef = useRef<HTMLFormElement>(null);
@@ -358,7 +361,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const zona = zonaSegura(modoSitio === "lugar" ? (lugar?.zona ?? evento?.zona) : clavePunto ? zonaPin : ZONA_INICIAL);
   const inicioIso = localAIso(inicio, zona);
   const valorCuando = inicioIso ? formatearCuando(inicioIso, fin ? localAIso(fin, zona) : null, new Date(), zona) : "Falta";
-  const valorCuanto = gratis ? "Gratis" : precio.trim() || "Con costo";
+  const valorCuanto = gratis ? "Gratis" : cooperacion ? COOPERACION_SOLIDARIA : precio.trim() || "Con costo";
   const valorQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : "Sin artista";
 
   /** Lo que sale de la hoja: un lugar registrado, o un sitio (reservado o no). */
@@ -488,6 +491,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       }
       if (gestos.current.puedeCompletar("cuanto")) {
         setGratis(v.gratis);
+        setCooperacion(false);
         setPrecio(v.precio);
       }
       if (v.descripcion && gestos.current.puedeCompletar("descripcion")) setDescripcion(v.descripcion);
@@ -674,14 +678,17 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             {abierta === "cuanto" && (
               <div className={canon.cuerpo}>
                 <div className={canon.chips}>
-                  <Chip activo={gratis} onClick={() => { gestos.current.tocar("cuanto"); setGratis(true); }}>
+                  <Chip activo={gratis} onClick={() => { gestos.current.tocar("cuanto"); setGratis(true); setCooperacion(false); }}>
                     Gratis
                   </Chip>
-                  <Chip activo={!gratis} onClick={() => { gestos.current.tocar("cuanto"); setGratis(false); }}>
+                  <Chip activo={cooperacion} onClick={() => { gestos.current.tocar("cuanto"); setGratis(false); setCooperacion(true); }}>
+                    {COOPERACION_SOLIDARIA}
+                  </Chip>
+                  <Chip activo={!gratis && !cooperacion} onClick={() => { gestos.current.tocar("cuanto"); setGratis(false); setCooperacion(false); }}>
                     Con costo
                   </Chip>
                 </div>
-                {!gratis && (
+                {!gratis && !cooperacion && (
                 <span className={limpiar.caja}>
                   <input type="text" inputMode="numeric" pattern="[0-9]*" name="precio" value={precio} onChange={(e) => { gestos.current.tocar("cuanto"); setPrecio(e.target.value.replace(/\D/g, '')); }} maxLength={LIMITES_EVENTO.precio} placeholder="Ej. 150" aria-label="Precio (solo números)" className={canon.entrada} autoComplete="off" autoFocus />
                   <Limpiar visible={!!precio} />
@@ -753,7 +760,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         )}
         <input type="hidden" name="quien" value={JSON.stringify(quien)} />
         <input type="hidden" name="gratis" value={gratis ? "si" : "no"} />
-        {(gratis || abierta !== "cuanto") && <input type="hidden" name="precio" value={gratis ? "" : precio} />}
+        <input type="hidden" name="cooperacion" value={cooperacion ? "si" : "no"} />
+        {(gratis || cooperacion || abierta !== "cuanto") && <input type="hidden" name="precio" value={gratis || cooperacion ? "" : precio} />}
         <input type="hidden" name="imagen" value={imagen ?? ""} />
 
         {resultado && !resultado.ok && resultado.general && (

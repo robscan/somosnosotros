@@ -31,6 +31,15 @@ beforeEach(() => {
 });
 
 describe("guardado completo del evento", () => {
+  it("cooperación solidaria llega a la RPC como precio, sin cifra", async () => {
+    const fd = formulario();
+    fd.set("gratis", "no");
+    fd.set("cooperacion", "si");
+    await expect(crearEvento(null, fd)).rejects.toThrow("REDIRECT");
+    expect(m.rpc).toHaveBeenCalledWith("guardar_evento_con_avisos", expect.objectContaining({
+      p_datos: expect.objectContaining({ precio: "Cooperación solidaria" }),
+    }));
+  });
   it("publica con una sola RPC, sin escrituras parciales separadas", async () => {
     await expect(crearEvento(null, formulario())).rejects.toThrow("REDIRECT");
     expect(m.rpc).toHaveBeenCalledTimes(1);
