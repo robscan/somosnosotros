@@ -593,6 +593,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
                   inicio={inicio}
                   fin={fin}
                   zona={zona}
+                  sugeridaActual={() => sugerida.current}
                   onCambio={(i, f) => {
                     gestos.current.tocar("cuando");
                     sugerida.current = "";
