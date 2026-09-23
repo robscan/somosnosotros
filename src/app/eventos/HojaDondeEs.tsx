@@ -84,6 +84,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const [q, setQ] = useState("");
   // Las sugerencias del mapa solo existen dentro de "Buscar en el mapa sin agregar" (OL-137): nunca sobre los lugares registrados.
   const [enMapa, setEnMapa] = useState(false);
+  // El lugar registrado elegido: el mapa lo muestra con su pin y la hoja se cierra sola un momento después.
+  const [elegido, setElegido] = useState<LugarResumen | null>(null);
+  const cierre = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (cierre.current) clearTimeout(cierre.current); }, []);
   const [vista, setVista] = useState<"lista" | "otro">(modoSitio !== "lugar" && (textoDelSitio(otro) || otro.reservado) ? "otro" : "lista");
   const [consulta, setConsulta] = useState<{ texto: string; tipo: "direccion" | "lugar" } | null>(() => {
     const texto = otro.reservado ? otro.direccionPrivada : otro.direccion;
@@ -375,67 +379,27 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     invalidar();
     setEnMapa(false);
   }
-  function ponerPinAMano() {
+  function elegirLugar(l: LugarResumen) {
+    if (elegido) return;
     invalidar();
-    if (texto && !otro.sitioTexto.trim()) onOtro({ ...otro, sitioTexto: texto.slice(0, LIMITES_EVENTO.sitio) });
+    setElegido(l);
+    cierre.current = setTimeout(() => onLugar(l.id), 400);
+  }
+  // Tocar el mapa (solo en «Buscar en el mapa»): pone el pin, con lo escrito como nombre del sitio, y pasa a «Es en otro sitio».
+  function ponerPinDesdeMapa(p: Punto) {
+    invalidar();
+    const nombre = otro.sitioTexto.trim() ? otro.sitioTexto : texto.slice(0, LIMITES_EVENTO.sitio);
+    onOtro(ponerPinManual({ ...otro, sitioTexto: nombre }, p), true);
     setEnMapa(false);
     setVista("otro");
   }
-  // El mapa de referencia: el mismo al abrir y en «Buscar en el mapa»; solo se ve, no elige nada. Cede su sitio a los
-  // lugares registrados cuando hay texto (nunca compiten por el espacio).
-  const mapaReferencia = (
-    <div className={styles.mapaReferencia}>
-      <Mapa modo="elegir" valor={null} ubicacion={yo} centrarEn={contexto.centro} ciudad={contexto.ciudad} />
-    </div>
-  );
   const campo = (
     <label className={`${canon.campo} ${styles.pegajoso}`}>
       <IconoBuscar width={20} height={20} />
-      <input type="text" value={q} onChange={(e) => escribirLugar(e.target.value)} placeholder="Nombre o dirección" aria-label="Buscar el lugar" autoComplete="off" autoFocus />
-      <Limpiar visible={!!q} />
+      <input type="text" value={q} onChange={(e) => escribirLugar(e.target.value)} placeholder="Nombre o dirección" aria-label="Buscar el lugar" autoComplete="off" autoFocus disabled={!!elegido} />
+      <Limpiar visible={!!q && !elegido} />
     </label>
   );
-
-  if (enMapa) {
-    return (
-      <Hoja etiqueta="Dónde es" titulo="Dónde es" completa onCerrar={cerrar}>
-        <button type="button" className={styles.volver} onClick={salirDelMapa}>‹ Lugares registrados</button>
-        {campo}
-        {sinPistaDeCiudad && texto.length >= 3 && (
-          <button type="button" className={styles.usarUbicacion} onClick={usarMiUbicacionCerca} disabled={pidiendoUbicacionCerca}>
-            <IconoUbicacion width={20} height={20} />
-            <span>{pidiendoUbicacionCerca ? "Ubicando…" : "Usar mi ubicación para buscar cerca"}</span>
-          </button>
-        )}
-        <p className={styles.separador} role="status">{buscando ? "Buscando en el mapa…" : "En el mapa"}</p>
-        {error && <p className={styles.nota} role="alert">{error}</p>}
-        {sugeridos.length > 0 && (
-          <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares y direcciones encontrados">
-            {sugeridos.map((s) => (
-              <li key={s.mapboxId}>
-                <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}>
-                  <IconoPin width={20} height={20} />
-                  <b>{s.nombre}</b>
-                  <small>{[s.direccion, s.ciudad].filter(Boolean).join(" · ")}</small>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <ul className={`${sug.lista} ${styles.lista}`}>
-          <li>
-            <button type="button" className={sug.renglon} onClick={ponerPinAMano}>
-              <IconoPin width={20} height={20} />
-              <b>Ninguno: poner el pin a mano</b>
-              <small>Escribes el nombre y tocas el mapa</small>
-            </button>
-          </li>
-        </ul>
-        {mapaReferencia}
-      </Hoja>
-    );
-  }
-
   const salidas = (
     <ul className={`${sug.lista} ${styles.lista}`}>
       <li>
@@ -454,40 +418,82 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       </li>
     </ul>
   );
-  return (
-    <Hoja etiqueta="Dónde es" titulo="Dónde es" completa onCerrar={cerrar}>
-      {campo}
-      {!texto ? (
-        <>
-          <p className={styles.nota}>Escribe una o varias palabras del nombre o la dirección.</p>
-          {mapaReferencia}
-        </>
-      ) : filtrados.length > 0 ? (
-        <>
-          <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">
-            {filtrados.map((l) => (
-              <li key={l.id}>
-                <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => { invalidar(); onLugar(l.id); }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                  <img src={l.portada ?? SIN_FOTO} alt="" className={sug.foto} />
-                  <b>{l.nombre}</b>
-                  <small>{[etiquetaLugar(l), l.direccion].filter(Boolean).join(" · ")}</small>
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className={styles.separador}>¿No es ninguno?</p>
-          {salidas}
-        </>
-      ) : (
-        <>
-          <div className={styles.noExiste} role="status">
-            <b>«{texto}» no está registrado.</b>
-            Puedes agregarlo como lugar o buscarlo en el mapa sin agregarlo.
-          </div>
-          {salidas}
-        </>
+  const zona = elegido ? (
+    <ul className={`${sug.lista} ${styles.lista}`}>
+      <li>
+        <div className={`${sug.renglon} ${sug.conFoto} ${styles.elegido}`} role="status">
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+          <img src={elegido.portada ?? SIN_FOTO} alt="" className={sug.foto} />
+          <b>{elegido.nombre}</b>
+          <small>{[etiquetaLugar(elegido), elegido.direccion].filter(Boolean).join(" · ")}</small>
+        </div>
+      </li>
+    </ul>
+  ) : enMapa ? (
+    <>
+      {sinPistaDeCiudad && texto.length >= 3 && (
+        <button type="button" className={styles.usarUbicacion} onClick={usarMiUbicacionCerca} disabled={pidiendoUbicacionCerca}>
+          <IconoUbicacion width={20} height={20} />
+          <span>{pidiendoUbicacionCerca ? "Ubicando…" : "Usar mi ubicación para buscar cerca"}</span>
+        </button>
       )}
+      <p className={styles.separador} role="status">{buscando ? "Buscando en el mapa…" : "En el mapa"}</p>
+      {error && <p className={styles.nota} role="alert">{error}</p>}
+      {sugeridos.length > 0 && (
+        <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares y direcciones encontrados">
+          {sugeridos.map((s) => (
+            <li key={s.mapboxId}>
+              <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}>
+                <IconoPin width={20} height={20} />
+                <b>{s.nombre}</b>
+                <small>{[s.direccion, s.ciudad].filter(Boolean).join(" · ")}</small>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  ) : !texto ? null : filtrados.length > 0 ? (
+    <>
+      <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">
+        {filtrados.map((l) => (
+          <li key={l.id}>
+            <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => elegirLugar(l)}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+              <img src={l.portada ?? SIN_FOTO} alt="" className={sug.foto} />
+              <b>{l.nombre}</b>
+              <small>{[etiquetaLugar(l), l.direccion].filter(Boolean).join(" · ")}</small>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className={styles.pie}>
+        ¿No es ninguno?{" "}
+        <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} onClick={avisarQueVuelvo}>Agregar</Link>
+        {" · "}
+        <button type="button" onClick={buscarEnMapa}>Buscar en el mapa</button>
+      </p>
+    </>
+  ) : (
+    <>
+      <div className={styles.noExiste} role="status">
+        <b>«{texto}» no está registrado.</b>
+        Puedes agregarlo como lugar o buscarlo en el mapa sin agregarlo.
+      </div>
+      {salidas}
+    </>
+  );
+  // El mapa está siempre, en el mismo sitio (una sola instancia): solo cambia lo que muestra. Referencia al abrir y con
+  // resultados; con un lugar elegido, su pin; en «Buscar en el mapa», la herramienta que pone el pin al tocar.
+  const pinElegido = elegido ? { lat: elegido.lat, lng: elegido.lng } : null;
+  return (
+    <Hoja etiqueta="Dónde es" titulo="Dónde es" completa plano onCerrar={cerrar}>
+      {enMapa && !elegido && <button type="button" className={styles.volver} onClick={salirDelMapa}>‹ Lugares registrados</button>}
+      {campo}
+      <div className={styles.zona}>{zona}</div>
+      <div className={styles.mapaFijo}>
+        <Mapa modo="elegir" valor={pinElegido} onCambio={enMapa ? ponerPinDesdeMapa : undefined} ubicacion={yo} centrarEn={pinElegido ? null : contexto.centro} ciudad={contexto.ciudad} />
+      </div>
     </Hoja>
   );
 }

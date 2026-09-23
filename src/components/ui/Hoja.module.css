@@ -76,3 +76,8 @@
   height: calc(100% - env(safe-area-inset-top, 0px));
   max-height: none;
 }
+.plano {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

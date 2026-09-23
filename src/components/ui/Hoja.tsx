@@ -11,6 +11,8 @@ type Props = {
   titulo?: string;
   /** Abre a toda la altura, pegada al borde superior seguro (OL-137: campo, mapa y lista caben). */
   completa?: boolean;
+  /** El cuerpo no se desplaza: quien lo llena reparte el alto y desplaza solo lo suyo (OL-137: el mapa nunca se mueve). */
+  plano?: boolean;
   onCerrar: () => void;
   children: ReactNode;
 };
@@ -32,7 +34,7 @@ let abiertas = 0;
 const enNavegador = () => true;
 const enServidor = () => false;
 
-export default function Hoja({ etiqueta, titulo, completa = false, onCerrar, children }: Props) {
+export default function Hoja({ etiqueta, titulo, completa = false, plano = false, onCerrar, children }: Props) {
   const montada = useSyncExternalStore(nada, enNavegador, enServidor);
   const [marco, setMarco] = useState<{ top: number; height: number } | null>(null);
   useEffect(() => {
@@ -76,7 +78,7 @@ export default function Hoja({ etiqueta, titulo, completa = false, onCerrar, chi
         {titulo ? (
           <>
             <h3>{titulo}</h3>
-            <div className={styles.cuerpo}>{children}</div>
+            <div className={plano ? `${styles.cuerpo} ${styles.plano}` : styles.cuerpo}>{children}</div>
           </>
         ) : (
           children
