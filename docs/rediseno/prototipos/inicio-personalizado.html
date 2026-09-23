@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Somos Nosotros · Inicio personalizado (C2+C4)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --panel: #1f2933; --panel-texto: #e6e9ee; --panel-suave: #9aa5b1; --panel-borde: #34424f;
+
+    --fondo: #ffffff;
+    --fondo-contenido: #f6f5f1;
+    --fondo-suave: #f4f4f2;
+    --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a;
+    --texto-suave: #5c5c5c;
+    --borde: #dcdcd8;
+    --primario: #6d34c8; /* violeta, línea gráfica vigente 2026-09-23 */
+    --primario-suave: #efe6fb;
+    --acento: #b3261e;
+    --sombra-suave: 0 1px 3px rgba(0,0,0,.08);
+    --sombra-flotante: 0 6px 20px rgba(0,0,0,.22);
+
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75;
+    --ancho-texto: "wdth" 80;
+
+    --toque: 48px; --toque-min: 44px; --gutter: 20px;
+    --alto-estado: 48px; --alto-barra: 56px; --alto-buscador: 56px; --alto-nav: 83px; --area-segura: 34px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+  }
+  :root[data-theme="dark"] { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente);
+    font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; font-variant-numeric: tabular-nums;
+    padding-block: 24px; padding-inline: 16px; min-height: 100vh;
+  }
+  button, input { font: inherit; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; max-width: 1400px; margin: 0 auto; }
+  .rotulo { width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; color: var(--estudio-suave); font-size: 14px; margin-bottom: -4px; }
+  .rotulo strong { color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 18px; }
+
+  .col { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .etiqueta { font-size: 13px; font-weight: 700; color: var(--estudio-texto); text-align: center; max-width: 390px; }
+
+  .telefono {
+    position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden;
+    border-radius: 40px; background: var(--fondo); color: var(--texto);
+    box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08);
+  }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado) - var(--alto-nav)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .contenido { min-height: 100%; padding: 0 0 96px; background: var(--fondo-contenido); }
+
+  .nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; grid-template-columns: repeat(4, 1fr); height: var(--alto-nav); padding-bottom: var(--area-segura); background: var(--fondo); border-top: 1px solid var(--borde); }
+  .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--texto-suave); text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: .01em; }
+  .nav-item svg { width: 24px; height: 24px; }
+  .nav-item.activo { color: var(--primario); }
+  .nav-item.activo span { font-weight: 700; }
+
+  .barra { display: flex; align-items: center; justify-content: space-between; min-height: var(--alto-barra); padding: 4px var(--gutter); background: var(--fondo); }
+  .logotipo { display: inline-flex; align-items: center; min-height: var(--toque-min); font-size: 21px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -.01em; line-height: 1; color: var(--texto); }
+  .sesion { display: inline-flex; align-items: center; min-height: var(--toque-min); }
+  .sesion.entrar { min-height: 40px; padding: 0 16px; border-radius: 999px; background: var(--primario); color: #fff; font-weight: 700; font-size: 15px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#d8c7b5,#8a6f5a); display: inline-grid; place-items: center; font-weight: 700; font-size: 14px; color: #fff; }
+
+  /* Buscador único, cabecera fija */
+  .buscador-fijo { position: sticky; top: 0; z-index: 2; padding: 0 var(--gutter) 10px; background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .campo-buscar { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--fondo-suave); border: 1px solid var(--borde); color: var(--texto-suave); font-size: 15px; }
+  .campo-buscar svg { width: 18px; height: 18px; flex: none; }
+  .campo-buscar input { flex: 1; border: none; background: none; outline: none; color: var(--texto); font-size: 15px; }
+  .campo-buscar input::placeholder { color: var(--texto-suave); }
+
+  .saludo { padding: 14px var(--gutter) 4px; }
+  .saludo h1 { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .saludo p { margin-top: 2px; color: var(--texto-suave); font-size: 14px; }
+
+  .invitacion { margin: 10px var(--gutter) 4px; padding: 14px; border-radius: 14px; background: var(--primario-suave); border: 1px solid #dcc7f5; }
+  .invitacion b { display: block; font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .invitacion p { font-size: 13px; color: var(--texto-suave); margin-bottom: 10px; line-height: 1.35; }
+  .invitacion button { min-height: 40px; padding: 0 18px; border: none; border-radius: 999px; background: var(--primario); color: #fff; font-weight: 700; font-size: 14px; }
+
+  .carril-bloque { margin-top: 22px; }
+  .carril-cabecera { display: flex; align-items: baseline; justify-content: space-between; padding: 0 var(--gutter) 8px; }
+  .carril-cabecera h2 { font-size: 18px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
+  .carril-cabecera a { font-size: 13px; font-weight: 700; color: var(--primario); white-space: nowrap; }
+
+  .carril { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: 150px; gap: 12px; overflow-x: auto; padding: 0 var(--gutter) 6px; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
+  .carril::-webkit-scrollbar { display: none; }
+  .carril.grande { grid-auto-columns: 200px; }
+  .carril > li { scroll-snap-align: start; }
+  .tarjeta { display: block; }
+  .foto { width: 100%; aspect-ratio: 1.1/1; border-radius: 12px; background: linear-gradient(135deg,#c9b8a3,#7d6b58); position: relative; overflow: hidden; }
+  .foto.b { background: linear-gradient(135deg,#9fb3a6,#4d6a5c); }
+  .foto.c { background: linear-gradient(135deg,#d9c27a,#8a6d2b); }
+  .foto.d { background: linear-gradient(135deg,#a9b7cc,#4a5d7a); }
+  .foto.e { background: linear-gradient(135deg,#d4a5a5,#7a3f3f); }
+  .foto.sn { background: var(--fondo-suave); border: 1px dashed var(--borde); display: grid; place-items: center; color: var(--texto-suave); font-weight: 800; font-size: 20px; }
+  .foto.redonda { border-radius: 50%; }
+  .van-chip { position: absolute; left: 6px; top: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; font-weight: 700; }
+  .tarjeta b { display: block; margin-top: 6px; font-size: 14px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
+  .tarjeta small { display: block; margin-top: 1px; color: var(--texto-suave); font-size: 12px; line-height: 1.3; }
+
+  /* Buscador: capa de resultados agrupados */
+  .resultados { position: absolute; inset: 0; z-index: 4; background: var(--fondo); display: flex; flex-direction: column; }
+  .resultados .buscador-fijo { position: static; border-bottom: 1px solid var(--borde); }
+  .resultados-lista { flex: 1; overflow-y: auto; padding-bottom: 40px; }
+  .grupo-resultado { padding: 4px var(--gutter) 6px; }
+  .grupo-resultado h3 { display: flex; align-items: center; gap: 6px; padding: 12px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); border-top: 1px solid var(--borde); }
+  .grupo-resultado:first-child h3 { border-top: none; }
+  .grupo-resultado h3 .n { color: var(--primario); }
+  .grupo-resultado .ver { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 700; color: var(--primario); }
+  .fila-resultado { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 0; border-bottom: 1px solid var(--borde); }
+  .fila-resultado .mini { width: 44px; height: 44px; flex: none; border-radius: 10px; background: linear-gradient(135deg,#c9b8a3,#7d6b58); }
+  .fila-resultado .mini.redonda { border-radius: 50%; }
+  .fila-resultado .mini.b { background: linear-gradient(135deg,#9fb3a6,#4d6a5c); }
+  .fila-resultado .mini.d { background: linear-gradient(135deg,#a9b7cc,#4a5d7a); }
+  .fila-resultado b { display: block; font-size: 15px; font-weight: 700; line-height: 1.2; }
+  .fila-resultado small { display: block; color: var(--texto-suave); font-size: 13px; }
+  .grupo-destacado { background: var(--primario-suave); margin: 0 calc(-1 * var(--gutter)); padding-inline: var(--gutter); border-radius: 0; }
+
+  .utileria { width: 300px; max-width: 100%; flex: none; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
+  .utileria h3 { margin-bottom: 4px; color: var(--panel-suave); font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .utileria p { margin-bottom: 10px; color: var(--panel-suave); font-size: 13px; line-height: 1.4; }
+  .utileria ol, .utileria ul { margin: 0 0 10px 18px; color: var(--panel-suave); font-size: 13px; line-height: 1.5; }
+  .utileria li { margin-bottom: 6px; }
+  .utileria a { color: var(--panel-texto); }
+  .utileria code { color: var(--panel-texto); }
+
+  :focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="estudio">
+  <div class="rotulo"><strong>Inicio personalizado y buscador único</strong> — OL-150 / bitácora 185 · C2 + C4 · prototipo, sin código</div>
+
+  <!-- A. Inicio con sesión y seguidos -->
+  <div class="col">
+    <div class="etiqueta">A · «Para ti» con sesión y con lugares/artistas seguidos</div>
+    <div class="telefono">
+      <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
+      <div class="pantalla">
+        <div class="contenido">
+          <div class="barra">
+            <span class="logotipo">SMSNSTRS</span>
+            <span class="sesion"><span class="avatar">A</span></span>
+          </div>
+          <div class="buscador-fijo">
+            <label class="campo-buscar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input type="search" placeholder="Buscar eventos, lugares, artistas" aria-label="Buscar en toda la app" readonly>
+            </label>
+          </div>
+          <div class="saludo"><h1>Para ti</h1><p>San Luis Potosí · lo que ya sigues, primero</p></div>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>De tus lugares y artistas favoritos</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril grande">
+              <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Noche de jazz en Aurora Co-Lab</b><small>Hoy · 20:00 · sigues este lugar</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Cumbia Fantasma en vivo</b><small>Sáb · 19:00 · sigues a este artista</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Lectura en Casa del Poeta</b><small>Dom · 18:00 · sigues este lugar</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Eventos destacados</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril grande">
+              <li><a class="tarjeta" href="#"><div class="foto"><span class="van-chip">14 van</span></div><b>Materia: arte sonoro</b><small>Vie · 20:00 · Museo Federico Silva</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Feria del libro CEART</b><small>Todo el fin de semana</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto sn">SN</div><b>Taller de grabado</b><small>Mar · 17:00 · Galería Gedovius</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Eventos cercanos esta semana</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril grande">
+              <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Cine club al aire libre</b><small>800 m · hoy 19:30</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Mercado de trueque cultural</b><small>1.2 km · sáb 11:00</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Eventos populares</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril grande">
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="van-chip">32 van</span></div><b>Festival Independencia Cultural</b><small>Sáb · 12:00 · Plaza de los Fundadores</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto"><span class="van-chip">21 van</span></div><b>Obra: Los de abajo</b><small>Vie · 20:30 · Teatro de la Paz</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Artistas con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril">
+              <li><a class="tarjeta" href="#"><div class="foto redonda b"></div><b>Disonauta</b><small>Vie · 21:00</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto redonda d"></div><b>La Lupita</b><small>Sáb · 19:00</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto redonda c"></div><b>Camerata SLP</b><small>Dom · 18:00</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Lugares con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril">
+              <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Teatro de la Paz</b><small>3 eventos</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto"></div><b>CEART</b><small>2 eventos</small></a></li>
+            </ul>
+          </section>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Secciones">
+        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Para ti</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Agenda</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Lugares</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg><span>Artistas</span></a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- B. Inicio sin sesion -->
+  <div class="col">
+    <div class="etiqueta">B · «Para ti» sin sesión (sin carril de seguidos, invitación arriba)</div>
+    <div class="telefono">
+      <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
+      <div class="pantalla">
+        <div class="contenido">
+          <div class="barra">
+            <span class="logotipo">SMSNSTRS</span>
+            <a class="sesion entrar" href="#">Entrar</a>
+          </div>
+          <div class="buscador-fijo">
+            <label class="campo-buscar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input type="search" placeholder="Buscar eventos, lugares, artistas" aria-label="Buscar en toda la app" readonly>
+            </label>
+          </div>
+          <div class="saludo"><h1>Para ti</h1><p>San Luis Potosí</p></div>
+
+          <div class="invitacion">
+            <b>Sigue lugares y artistas</b>
+            <p>Con una cuenta, esta pantalla se llena con lo tuyo: tus lugares, tus artistas y lo que pasa cerca.</p>
+            <button type="button">Crear cuenta</button>
+          </div>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Eventos destacados</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril grande">
+              <li><a class="tarjeta" href="#"><div class="foto"><span class="van-chip">14 van</span></div><b>Materia: arte sonoro</b><small>Vie · 20:00 · Museo Federico Silva</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Feria del libro CEART</b><small>Todo el fin de semana</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Eventos cercanos esta semana</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril grande">
+              <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Cine club al aire libre</b><small>800 m · hoy 19:30</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Mercado de trueque cultural</b><small>1.2 km · sáb 11:00</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Eventos populares</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril grande">
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="van-chip">32 van</span></div><b>Festival Independencia Cultural</b><small>Sáb · 12:00 · Plaza de los Fundadores</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto"><span class="van-chip">21 van</span></div><b>Obra: Los de abajo</b><small>Vie · 20:30 · Teatro de la Paz</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Artistas con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril">
+              <li><a class="tarjeta" href="#"><div class="foto redonda b"></div><b>Disonauta</b><small>Vie · 21:00</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto redonda d"></div><b>La Lupita</b><small>Sáb · 19:00</small></a></li>
+            </ul>
+          </section>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Secciones">
+        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Para ti</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Agenda</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Lugares</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg><span>Artistas</span></a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- C. Buscador desde Inicio -->
+  <div class="col">
+    <div class="etiqueta">C · Buscador único, abierto desde «Para ti» — Eventos primero</div>
+    <div class="telefono">
+      <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
+      <div class="pantalla" style="position:relative">
+        <div class="contenido">
+          <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="sesion"><span class="avatar">A</span></span></div>
+          <div class="buscador-fijo"><label class="campo-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" value="materia" readonly></label></div>
+        </div>
+        <div class="resultados">
+          <div class="buscador-fijo"><label class="campo-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" value="materia" autofocus></label></div>
+          <div class="resultados-lista">
+            <div class="grupo-resultado">
+              <h3>Eventos <span class="n">·&nbsp;2</span><a class="ver" href="#">Ver todos</a></h3>
+              <a class="fila-resultado" href="#"><div class="mini"></div><span><b>Materia: arte sonoro</b><small>Vie · 20:00 · Museo Federico Silva</small></span></a>
+              <a class="fila-resultado" href="#"><div class="mini b"></div><span><b>Materia prima, expo colectiva</b><small>Sáb · 12:00 · Galería Gedovius</small></span></a>
+            </div>
+            <div class="grupo-resultado">
+              <h3>Lugares <span class="n">·&nbsp;1</span><a class="ver" href="#">Ver todos</a></h3>
+              <a class="fila-resultado" href="#"><div class="mini redonda d"></div><span><b>Materia Espacio Cultural</b><small>Colonia Tequisquiapan</small></span></a>
+            </div>
+            <div class="grupo-resultado">
+              <h3>Artistas <span class="n">·&nbsp;1</span><a class="ver" href="#">Ver todos</a></h3>
+              <a class="fila-resultado" href="#"><div class="mini redonda c"></div><span><b>Colectivo Materia Prima</b><small>Artes visuales</small></span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Secciones">
+        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Para ti</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Agenda</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Lugares</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg><span>Artistas</span></a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- D. Buscador desde Lugares -->
+  <div class="col">
+    <div class="etiqueta">D · Mismo buscador, abierto desde Lugares — Lugares primero y con más resultados</div>
+    <div class="telefono">
+      <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
+      <div class="pantalla" style="position:relative">
+        <div class="contenido">
+          <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="sesion"><span class="avatar">A</span></span></div>
+          <div class="buscador-fijo"><label class="campo-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" value="materia" readonly></label></div>
+          <div class="saludo"><h1>Lugares</h1><p>San Luis Potosí</p></div>
+        </div>
+        <div class="resultados">
+          <div class="buscador-fijo"><label class="campo-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" value="materia" autofocus></label></div>
+          <div class="resultados-lista">
+            <div class="grupo-resultado grupo-destacado">
+              <h3>Lugares <span class="n">·&nbsp;3</span><a class="ver" href="#">Ver todos</a></h3>
+              <a class="fila-resultado" href="#"><div class="mini redonda d"></div><span><b>Materia Espacio Cultural</b><small>Colonia Tequisquiapan</small></span></a>
+              <a class="fila-resultado" href="#"><div class="mini redonda b"></div><span><b>Materia Viva, taller</b><small>Centro histórico</small></span></a>
+              <a class="fila-resultado" href="#"><div class="mini redonda"></div><span><b>La Materia Gris</b><small>Zona universitaria</small></span></a>
+            </div>
+            <div class="grupo-resultado">
+              <h3>Eventos <span class="n">·&nbsp;2</span><a class="ver" href="#">Ver todos</a></h3>
+              <a class="fila-resultado" href="#"><div class="mini"></div><span><b>Materia: arte sonoro</b><small>Vie · 20:00 · Museo Federico Silva</small></span></a>
+              <a class="fila-resultado" href="#"><div class="mini b"></div><span><b>Materia prima, expo colectiva</b><small>Sáb · 12:00 · Galería Gedovius</small></span></a>
+            </div>
+            <div class="grupo-resultado">
+              <h3>Artistas <span class="n">·&nbsp;1</span><a class="ver" href="#">Ver todos</a></h3>
+              <a class="fila-resultado" href="#"><div class="mini redonda c"></div><span><b>Colectivo Materia Prima</b><small>Artes visuales</small></span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Secciones">
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Para ti</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Agenda</span></a>
+        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Lugares</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg><span>Artistas</span></a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="utileria">
+    <h3>Qué es esto</h3>
+    <p>Prototipo estático (sin JS de interacción; cada estado es un teléfono aparte, pensado para capturarse tal cual). Doc completo: <code>docs/rediseno/41-inicio-personalizado.md</code>.</p>
+    <h3>Estados</h3>
+    <ol>
+      <li><b>A</b> — «Para ti» con sesión: los 5 carriles del encargo, en el orden propuesto (favoritos → destacados → cercanos → populares → artistas/lugares de la semana).</li>
+      <li><b>B</b> — «Para ti» sin sesión: sin el carril de favoritos, con invitación a crear cuenta arriba, nunca bloqueando.</li>
+      <li><b>C</b> — Buscador único abierto desde «Para ti»: agrupado por tipo, Eventos primero.</li>
+      <li><b>D</b> — El mismo buscador abierto desde Lugares: Lugares primero y con más resultados (L28: mismo buscador, orden según la sección).</li>
+    </ol>
+    <h3>Pendiente del founder</h3>
+    <p>Las 5 preguntas de cierre del doc 41 (posición de «Para ti» en la barra, si el buscador va siempre visible o se abre con lupa, si los carriles se pueden reordenar, qué pasa si Populares queda vacío al principio, y la definición de "esta semana").</p>
+  </div>
+</div>
+</body>
+</html>
