@@ -7,7 +7,7 @@ export default function ErrorGlobal({ reset }: { error: Error & { digest?: strin
       <body style={{ fontFamily: "system-ui, sans-serif", padding: 24, maxWidth: 520, margin: "0 auto" }}>
         <h1 style={{ fontSize: 26, marginBottom: 8 }}>Algo se rompió</h1>
         <p style={{ color: "#5c5c5c", marginBottom: 20 }}>No es tu culpa. Vuelve a intentarlo; si sigue igual, vuelve a la agenda.</p>
-        <button type="button" onClick={reset} style={{ minHeight: 48, padding: "0 20px", borderRadius: 12, border: "none", background: "#0f6b7c", color: "#fff", fontSize: 18, fontWeight: 700, marginRight: 12 }}>
+        <button type="button" onClick={reset} style={{ minHeight: 48, padding: "0 20px", borderRadius: 12, border: "none", background: "#6d34c8", color: "#fff", fontSize: 18, fontWeight: 700, marginRight: 12 }}>
           Intentar de nuevo
         </button>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- aquí el layout raíz falló: un enlace plano es lo único seguro */}

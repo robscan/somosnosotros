@@ -8,9 +8,9 @@
   --texto: #1a1a1a;
   --texto-suave: #5c5c5c;
   --borde: #dcdcd8;
-  --primario: #0f6b7c; /* azul petróleo: acciones primarias y estado activo (decisión del founder, 2026-09-14; la tinta no se distinguía en la nav) */
+  --primario: #6d34c8; /* violeta: acciones primarias y estado activo (decisión del founder, 2026-09-23, OL-146/doc rediseno/37: el azul petróleo "es aguado, parecido a eventos a donde voy" y se confundía con el verde de "Sigues") */
   --primario-texto: #ffffff;
-  --primario-suave: #e3f0f2; /* fondo del estado seleccionado ("✓ Voy") */
+  --primario-suave: color-mix(in srgb, var(--primario) 12%, white); /* fondo del estado seleccionado ("✓ Voy"); derivado del primario (doc 37), antes #e3f0f2 fijo */
   --error: #b3261e; /* rojo solo para errores y borrar */
   --ok: #1f6f43; /* verde: algo ya decidido (Vas, Sigues) — distinto de --primario a propósito, para no invitar a tocarlo otra vez (OL-106) */
   --destacado: #d35400; /* naranja cempasúchil: los destacados en el mapa (founder, 2026-09-16); 3.8:1 con el fondo del mapa */

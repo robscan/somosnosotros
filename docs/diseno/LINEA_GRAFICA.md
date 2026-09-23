@@ -24,7 +24,7 @@ Por qué esta y no otra: condensada, con toques humanos y artísticos a tamaño 
 
 ## El color de acción
 
-**Azul petróleo `#0f6b7c`** (`--primario`) para acciones primarias (Publicar, Voy, Seguir, Entrar, Mandarme el código), el estado activo de la navegación inferior, la pestaña elegida (Todos · Cercanos…, Mapa · Lista) y los chips activos; `--primario-suave` `#e3f0f2` para el fondo del estado seleccionado ("✓ Voy", "✓ Sigues"). Sustituye a la tinta como color de acción (decisión del founder, 2026-09-14): con la tinta, el estado activo de la nav no se distinguía del resto. Por qué este: contrasta 6:1 sobre blanco (texto blanco encima legible), es complementario del fondo cálido de la app, no se confunde con el rojo de error ni con el verde de "Voy confirmado", y no es el morado que ya se descartó. El logotipo y el texto siguen en tinta; el rojo sigue solo para errores y borrar.
+**Violeta `#6d34c8`** (`--primario`) para acciones primarias (Publicar, Voy, Seguir, Entrar, Mandarme el código), el estado activo de la navegación inferior, la pestaña elegida (Todos · Cercanos…, Mapa · Lista), los chips activos y el pin con evento del mapa; `--primario-suave` para el fondo del estado seleccionado ("✓ Voy", "✓ Sigues"), derivado con `color-mix(in srgb, var(--primario) 12%, white)` (ya no es un hex fijo). **Actualización del founder, 2026-09-23 (OL-146, código de OL-141/doc rediseno/37):** "Violeta". Sustituye al azul petróleo `#0f6b7c` decidido el 2026-09-14: el founder lo vio "aguado, parecido a eventos a donde voy" y, medido, se confundía con el verde de "Sigues" (misma luminosidad, 42° de matiz de distancia, contraste entre los dos 1,0:1). El violeta contrasta 7,1:1 con blanco y 6,5:1 con el fondo de contenido `#f6f5f1` (texto blanco encima legible, AAA), y queda a 117° o más del verde, del naranja y del rojo: no se confunde con ninguno. El logotipo y el texto siguen en tinta; el rojo sigue solo para errores y borrar; el verde y el naranja no cambiaron.
 
 ## La navegación inferior y los avisos
 
@@ -50,9 +50,18 @@ La app se diseña para el teléfono y se ve en tablet y escritorio con **la mism
 
 ## El mapa de Lugares
 
-Plano (el estilo de la cuenta lleva `show3dObjects: false`). Cada lugar es un **punto** de 10 px relleno del color de acción con una línea blanca de 1.5 px; el elegido crece a 16 px. (El founder descartó el punto hueco para "sin eventos": el blanco se deja para la línea.) El **nombre va debajo** del punto, en el color de acción, negrita (DIN Pro Bold) a 14 px con halo blanco de 2 px, para distinguirse de las colonias y calles del estilo (gris, mayúsculas): si dos chocan, gana el lugar con eventos y el otro aparece al acercar. Son capas de Mapbox (no elementos encima), así el mapa resuelve las colisiones y el zoom. Decisión del founder, 2026-09-14 (sustituye a los pins y a la perspectiva de ese mismo día).
+Plano (el estilo de la cuenta lleva `show3dObjects: false`). Cada lugar es un **punto**, sin doble círculo ("aro": el founder lo quitó el 2026-09-23 por "demasiado ruido visual", OL-146/doc rediseno/37). El **tamaño** dice si hay evento en los próximos siete días (12 px con el día encima, "Hoy" o el día en tres letras; 5 px sin él) y el **color** dice qué es el lugar:
 
-Un **destacado** (docs/rediseno/20, founder, 2026-09-16) va en **naranja cempasúchil** `--destacado` `#d35400`: 2 px más grande, con línea blanca de 2 px y encima de los demás. Su nombre va en `--destacado-texto` `#a94400` y gana el sitio a los demás. El color nunca va solo: tamaño y orden dicen lo mismo. Contrasta 3.8:1 con el fondo del mapa y se distingue del azul petróleo también con daltonismo.
+| lugar | tamaño | color |
+|---|---|---|
+| sin evento esta semana, no seguido | 5 px | tinta `#1a1a1a` (nombre en tinta) |
+| con evento esta semana | 12 px con el día | color de acción `--primario` |
+| destacado que no se sigue | según tenga día | naranja `--destacado`; nombre en `--destacado-texto` |
+| seguido | según tenga día | verde `--ok`; gana a destacado y a evento |
+
+El **nombre va debajo** del punto, negrita (DIN Pro Bold) a 14 px con halo blanco de 2 px, para distinguirse de las colonias y calles del estilo (gris, mayúsculas): si dos chocan, gana el seguido, luego el destacado, luego el que tiene evento. Son capas de Mapbox (no elementos encima), así el mapa resuelve las colisiones y el zoom. Decisión del founder, 2026-09-14 (sustituye a los pins y a la perspectiva de ese mismo día); tamaño y color por lo que ES el lugar, sin aro, decisión del founder 2026-09-23.
+
+Un **destacado** (docs/rediseno/20, founder, 2026-09-16) va en **naranja cempasúchil** `--destacado` `#d35400`, encima de los demás salvo que también sea seguido (gana el verde). El color nunca va solo: el tamaño también dice si tiene evento. Contrasta con el fondo del mapa y se distingue del violeta también con daltonismo.
 
 ## La tira de destacados
 
