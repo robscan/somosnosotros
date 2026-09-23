@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { EventoAgenda } from "@/lib/agenda";
 import { textoCompartirPersona } from "@/lib/perfil";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
@@ -21,6 +22,8 @@ type Props = {
   gestos: Gestos | null;
   /** Origen público del sitio, para los enlaces que se comparten. */
   origen: string;
+  /** «Mis artistas» en Mi perfil (OL-154, doc 40b), antes de la actividad: lo tuyo primero. Solo en `mia`. */
+  misArtistas?: ReactNode;
 };
 
 /**
@@ -29,7 +32,7 @@ type Props = {
  * (Voy a · Sigo · Van a lo mismo) y la lista de la pestaña, con los renglones y gestos de las listas (ActividadPersona,
  * OL-057). Lo que se configura vive en Ajustes. Un perfil reservado no pinta ni manda sus listas.
  */
-export default function FichaPersona({ perfil, mia, eventos, interesan = [], lugares, artistas, gestos, origen }: Props) {
+export default function FichaPersona({ perfil, mia, eventos, interesan = [], lugares, artistas, gestos, origen, misArtistas }: Props) {
   const reservada = !mia && !!perfil.reservado;
   const incompleto = mia && (!perfil.colonia || !perfil.bio);
 
@@ -87,6 +90,7 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
           <Link href="/ajustes/editar">Completar</Link>
         </p>
       )}
+      {misArtistas}
       {reservada ? (
         <p className={styles.reservada}>
           Perfil reservado: solo se ve el nombre.

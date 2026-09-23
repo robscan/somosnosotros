@@ -8,6 +8,8 @@ import type { Metadata } from "next";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
+import CompartirFicha from "@/components/ui/CompartirFicha";
+import VideoEmbed from "@/components/ui/VideoEmbed";
 import { ORIGENES } from "@/lib/origen";
 import { CAPO_SIN_RECLAMAR_EN_SITEMAP } from "@/lib/sitemap";
 import Desplegable from "@/components/Desplegable";
@@ -30,7 +32,9 @@ import { jsonLdArtista, jsonLdMigajas } from "@/lib/estructurados";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
+import { qrDeUrl } from "@/lib/qr";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { videoEmbedDe } from "@/lib/video";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from "../acciones";
@@ -161,12 +165,16 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const puedeEditar = esAdmin || esAutor || estaLigado;
   const puedeBorrar = esAdmin || esAutor;
   const redes = normalizarRedes(a.redes);
+  // Video embebido (OL-154, doc 40d): el enlace de YouTube/Vimeo ya guardado como red se ve embebido, sin
+  // revisión previa; el resto de las redes (incluido un video con forma irreconocible) sigue como botón de enlace.
+  const videos = redes.map((r) => videoEmbedDe(r)).filter((v): v is NonNullable<typeof v> => v !== null);
+  const redesConEnlace = redes.filter((r) => !videoEmbedDe(r));
   const faltanDetalles = a.disciplina === "por_completar" || (!a.descripcion && !a.foto && redes.length === 0);
   const url = `${ORIGEN}${hrefArtista(a)}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
   const hrefPublicarFecha = actual ? `/eventos/nuevo?artista=${a.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?artista=${a.id}`)}`;
   // Voy y Me interesa al deslizar sus fechas, para quien mira (OL-057).
-  const decididas = await decididasDe(actual?.perfil.id ?? null, fechas.map((e) => e.id));
+  const [decididas, qrSvg] = await Promise.all([decididasDe(actual?.perfil.id ?? null, fechas.map((e) => e.id)), qrDeUrl(url)]);
   const proxima = fechas[0] ? { id: fechas[0].id, inicio: fechas[0].inicio, sitio: nombreSitio(fechas[0]), zona: fechas[0].zona } : null;
   const avisoBorrar = fechas.length > 0 ? `Se borra la ficha; sus ${fechas.length === 1 ? "1 fecha próxima se queda" : `${fechas.length} fechas próximas se quedan`} sin artista.` : "Se borra la ficha.";
   const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
@@ -287,11 +295,12 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       </ul>
 
       <div className={ficha.acciones}>
-        <BotonCompartir titulo={a.nombre} texto={textoCompartir} url={url} className={ficha.accion}>
+        {/* Visible para cualquiera, no solo para el dueño: la hoja de compartir con enlace, QR y compartir nativo (OL-154, doc 40c). */}
+        <CompartirFicha titulo={a.nombre} texto={textoCompartir} url={url} svg={qrSvg} etiqueta={`Compartir la ficha de ${a.nombre}`} className={ficha.accion}>
           <IconoCompartir />
           Compartir
-        </BotonCompartir>
-        {redes.map((r) => (
+        </CompartirFicha>
+        {redesConEnlace.map((r) => (
           <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
             <IconoRed red={r.red} />
             {etiquetaEnlace(r)}
@@ -300,6 +309,15 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       </div>
 
       {a.descripcion && <Desplegable texto={a.descripcion} />}
+
+      {videos.length > 0 && (
+        <section className={styles.lista} aria-label="Video">
+          <h2>Video</h2>
+          {videos.map((v) => (
+            <VideoEmbed key={v.id} video={v} titulo={a.nombre} />
+          ))}
+        </section>
+      )}
 
       <section className={styles.lista} id="fechas" aria-label="Se presenta en">
         <h2>

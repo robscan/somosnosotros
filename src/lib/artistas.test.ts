@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artistaIgual, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, ordenarArtistas, quienDesdeJson, subcategoriaParecida, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
+import { artistaIgual, conArtistasLigados, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, etiquetaVerMiFicha, filtrarArtistas, filtroDesdeUrl, hrefArtistas, ordenarArtistas, quienDesdeJson, subcategoriaParecida, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
 
 describe("deducirDisciplina", () => {
   it("lee la disciplina del nombre y, sin pista, propone música", () => {
@@ -28,6 +28,21 @@ describe("etiquetaArtista", () => {
     expect(etiquetaArtista({ disciplina: "musica", detalle: "son huasteco", tipo: "grupo" })).toBe("Son huasteco · Grupo");
     expect(etiquetaArtista({ disciplina: "teatro", detalle: null, tipo: "colectivo" })).toBe("Teatro · Colectivo");
     expect(etiquetaArtista({ disciplina: "por_completar", detalle: null, tipo: "solista" })).toBe("Ficha por completar");
+  });
+});
+
+describe("conArtistasLigados y etiquetaVerMiFicha (OL-154, «Mis artistas» en Mi perfil)", () => {
+  it("sin ninguno ligado, null: el bloque no se pinta", () => {
+    expect(conArtistasLigados([])).toBeNull();
+  });
+  it("con uno o varios, la misma lista de vuelta", () => {
+    expect(conArtistasLigados(["ana"])).toEqual(["ana"]);
+    expect(conArtistasLigados(["ana", "marco"])).toEqual(["ana", "marco"]);
+  });
+  it("con un solo artista, el botón dice la ficha completa; con varios, el nombre de la tarjeta ya distingue", () => {
+    expect(etiquetaVerMiFicha(1)).toBe("Ver mi ficha de artista");
+    expect(etiquetaVerMiFicha(2)).toBe("Ver ficha");
+    expect(etiquetaVerMiFicha(5)).toBe("Ver ficha");
   });
 });
 

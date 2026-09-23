@@ -89,6 +89,16 @@ export function etiquetaArtista(a: Pick<ArtistaResumen, "disciplina" | "detalle"
   return `${hace} · ${etiquetaTipoArtista(a.tipo)}`;
 }
 
+/** «Mis artistas» en Mi perfil (OL-154, doc 40b): sin ninguno ligado, el bloque entero no se pinta. */
+export function conArtistasLigados<T>(artistas: T[]): T[] | null {
+  return artistas.length > 0 ? artistas : null;
+}
+
+/** El botón de cada tarjeta: con un solo artista lo dice completo; con varios, uno por línea ya lo deja claro. */
+export function etiquetaVerMiFicha(cantidadLigados: number): string {
+  return cantidadLigados > 1 ? "Ver ficha" : "Ver mi ficha de artista";
+}
+
 /** Del nombre se deduce si es grupo o colectivo (decisión 4): "Los Vecinos", "Trío Xochitl", "Colectivo Barro Vivo". */
 export function deducirTipoArtista(nombre: string): TipoArtista | null {
   const n = normalizarNombre(nombre);

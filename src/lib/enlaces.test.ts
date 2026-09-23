@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enlacesDesdeJson, etiquetaEnlace, normalizarRedes, reconocerEnlace } from "./enlaces";
+import { enlaceVisible, enlacesDesdeJson, etiquetaEnlace, normalizarRedes, reconocerEnlace } from "./enlaces";
 
 describe("reconocerEnlace", () => {
   it("reconoce la red por el dominio, con o sin https", () => {
@@ -71,5 +71,16 @@ describe("enlacesDesdeJson", () => {
       { red: "vimeo", url: "https://vimeo.com/x" },
     ]);
     expect(enlacesDesdeJson("no json")).toEqual([]);
+  });
+});
+
+describe("enlaceVisible", () => {
+  it("quita el esquema http(s) para el campo de la hoja de compartir (OL-154)", () => {
+    expect(enlaceVisible("https://somosnosotros.org/artistas/ana-reyes")).toBe("somosnosotros.org/artistas/ana-reyes");
+    expect(enlaceVisible("http://somosnosotros.org/artistas/ana-reyes")).toBe("somosnosotros.org/artistas/ana-reyes");
+    expect(enlaceVisible("HTTPS://somosnosotros.org/artistas/ana-reyes")).toBe("somosnosotros.org/artistas/ana-reyes");
+  });
+  it("sin esquema, se queda igual", () => {
+    expect(enlaceVisible("somosnosotros.org/artistas/ana-reyes")).toBe("somosnosotros.org/artistas/ana-reyes");
   });
 });
