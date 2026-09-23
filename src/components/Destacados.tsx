@@ -77,7 +77,11 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
     }, 100);
     pendiente.current = { clave, temporizador };
   }
-  if (tarjetas.length === 0) return null;
+  // Un carril que resulta vacío no deja hueco (OL-156, segunda vuelta): en vez de desaparecer de golpe, colapsa con
+  // una transición corta desde el alto que ya tenía reservado el esqueleto (`@starting-style`, CSS) — se ve igual de
+  // vacío para quien no vio nunca el esqueleto (sin JavaScript, o entrando ya con la respuesta), y sin salto para
+  // quien sí lo vio mientras cargaba.
+  if (tarjetas.length === 0) return <section className={`${styles.destacados} ${styles.vacio} ${grande ? styles.grande : ""} ${redondas ? styles.redondas : ""}`} aria-hidden="true" />;
   // La curaduría (o la fecha semanal) conserva su orden dentro de cada grupo; una foto real va antes del placeholder.
   const ordenadas = ordenarTarjetasPorFoto(tarjetas);
   return (

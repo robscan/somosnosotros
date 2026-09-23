@@ -1,0 +1,80 @@
+/* Mismas medidas que Destacados.module.css: la cabecera y el carril reales caen encima sin saltar. */
+.esqueleto {
+  display: grid;
+  gap: var(--espacio-4);
+  padding-top: 32px;
+}
+.cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+  padding-inline: var(--gutter);
+}
+.titulo {
+  width: 160px;
+  height: 20px;
+  border-radius: var(--radio);
+}
+.verTodos {
+  width: 56px;
+  height: 14px;
+  border-radius: var(--radio);
+}
+.carril {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 220px;
+  gap: var(--espacio-3);
+  overflow: hidden;
+  padding: var(--espacio-1) var(--gutter) var(--espacio-2);
+}
+.tarjeta {
+  display: grid;
+  row-gap: var(--espacio-1);
+}
+.foto {
+  height: 132px;
+  border-radius: var(--radio);
+}
+.linea {
+  height: 14px;
+  border-radius: var(--radio);
+}
+.corta {
+  width: 60%;
+}
+/* El respiro (founder: "que se note que está cargando, no que está roto"): un tono va y viene despacio. */
+.titulo, .verTodos, .foto, .linea {
+  background: var(--fondo-miniatura);
+  animation: respirar 1.2s ease-in-out infinite;
+}
+@keyframes respirar {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .titulo, .verTodos, .foto, .linea { animation: none; }
+}
+
+/* Tamaño grande (favoritos/destacados): cartel angosto y alto, como `.grande` de Destacados.module.css. */
+.grande .carril {
+  grid-auto-columns: 165px;
+}
+.grande .foto {
+  height: 248px;
+}
+
+/* Tamaño chica (lugares/artistas con eventos, artistas destacados): redonda, angosta y al centro. */
+.chica .carril {
+  grid-auto-columns: 104px;
+  padding-top: calc(9px + var(--espacio-1));
+}
+.chica .foto {
+  height: 104px;
+  border-radius: 50%;
+}
+.chica .linea {
+  justify-self: center;
+  width: 80%;
+}
