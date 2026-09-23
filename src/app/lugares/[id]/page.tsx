@@ -25,6 +25,7 @@ import { puedeDestacarse } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { etiquetaLugar, etiquetaTipo, hrefLugar, textoProximo, type Lugar } from "@/lib/lugares";
+import { jsonLdLugar, jsonLdMigajas } from "@/lib/estructurados";
 import { ORIGENES } from "@/lib/origen";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import Seguir from "@/components/Seguir";
@@ -81,10 +82,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const lugar = await cargarLugar(id);
   if (!lugar) return { title: "Lugar · Somos Nosotros" };
   const descripcion = `${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`;
+  // Sin portada, la imagen por defecto del sitio: el enlace compartido nunca sale sin imagen (OL-143, doc 36).
+  const imagen = lugar.portada ?? "/portada.png";
   return {
     title: `${lugar.nombre} · Somos Nosotros`,
     description: descripcion,
-    openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}${hrefLugar(lugar)}`, type: "website", images: lugar.portada ? [{ url: lugar.portada }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
+    alternates: { canonical: `${ORIGEN}${hrefLugar(lugar)}` },
+    openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}${hrefLugar(lugar)}`, type: "website", images: [{ url: imagen }], locale: "es_MX", siteName: "Somos Nosotros" },
+    twitter: { card: "summary_large_image", title: lugar.nombre, description: descripcion, images: [imagen] },
   };
 }
 
@@ -135,9 +140,15 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const decididas = await decididasDe(actual?.perfil.id ?? null, eventos.map((e) => e.id));
   const avisoBorrar = eventos.length > 0 ? `Se borra el lugar y sus ${eventos.length === 1 ? "1 evento próximo" : `${eventos.length} eventos próximos`} (y los pasados).` : "Se borra el lugar.";
   const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
+  // JSON-LD (OL-143, doc 36): un lugar oculto o privado no lo vería un visitante sin sesión; sin datos de personas.
+  const jsonLdVisible = lugar.visible && !lugar.privado;
+  const jsonLd = jsonLdVisible ? jsonLdLugar({ nombre: lugar.nombre, descripcion: lugar.descripcion, direccion: lugar.direccion, ciudad: lugar.ciudad, lat: lugar.lat, lng: lugar.lng, imagen: lugar.portada, url: hrefLugar(lugar) }) : null;
+  const migajas = jsonLdVisible ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Lugares", url: "/lugares" }, { nombre: lugar.nombre, url: hrefLugar(lugar) }]) : null;
 
   return (
     <main className={ficha.pagina}>
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
+      {migajas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(migajas).replace(/</g, "\\u003c") }} />}
       <Barra
         volver={{ href: "/lugares", texto: "Lugares" }}
         derecha={
