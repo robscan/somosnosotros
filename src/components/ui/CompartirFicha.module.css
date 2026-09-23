@@ -42,6 +42,31 @@
   font-weight: 700;
   cursor: pointer;
 }
+/* Los dos botones de descarga (OL-159, doc 40e): iguales entre sí, del mismo tono que "Copiar" pero de ancho
+   completo y uno junto al otro; el compartir nativo se queda como el botón lleno de siempre, debajo. */
+.descargas {
+  display: flex;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-3);
+}
+.descarga {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-3);
+  border: none;
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
 .nativo {
   display: flex;
   align-items: center;

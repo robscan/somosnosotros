@@ -32,6 +32,33 @@
 }
 
 /* 2. Información: título, etiqueta y renglones con icono, como en la agenda */
+/* Foto con una acción flotante sobre la esquina (por ahora, solo compartir en la ficha de artista, OL-159): el
+   mismo círculo con elevación de las acciones de abajo, sin letrero — se entiende solo, como la lupa de `Cartel`
+   sobre la portada. */
+.fotoConAccion {
+  position: relative;
+  width: fit-content;
+}
+.compartirFoto {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  min-width: var(--toque-min);
+  min-height: var(--toque-min);
+  border: none;
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--primario);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+}
+.compartirFoto:active {
+  background: var(--fondo-suave);
+}
 .titulo {
   font-size: var(--letra-2xl);
   margin-bottom: var(--espacio-3);
@@ -101,12 +128,14 @@
   font-weight: 400;
 }
 
-/* 3. Acciones secundarias: botones de icono iguales, sin color de acción. Tres por fila; con más, la fila se desplaza.
-   Si hay más de tres elementos, asoman los siguientes (flex-basis de 2.5).
-   Sangra hasta el borde de la pantalla como el carril de Destacados (founder, 2026-09-21). */
+/* 3. Acciones secundarias: icono en círculo con elevación y letrero debajo, como la barra inferior de la app y el
+   botón de "Voy"/"Seguir" de los renglones (`ui/BotonRenglon`, mismo token de sombra y tamaño; corrección del
+   founder, OL-159, 2026-09-23: antes eran tarjetas con borde, dos estilos distintos para la misma idea de botón
+   de acción — ahora solo hay uno). Sangra hasta el borde de la pantalla como el carril de Destacados
+   (founder, 2026-09-21). */
 .acciones {
   display: flex;
-  gap: var(--espacio-2);
+  gap: var(--espacio-4);
   margin-inline: calc(-1 * var(--gutter));
   margin-bottom: var(--espacio-5);
   padding-inline: var(--gutter);
@@ -118,33 +147,45 @@
   display: none;
 }
 .accion {
-  flex: 1 0 calc((100% - 2 * var(--espacio-2)) / 3);
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: 60px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
+  gap: 6px;
+  min-width: 64px;
   color: var(--texto);
   font-size: var(--letra-xs);
   font-weight: 600;
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-/* Si hay 4+ elementos, asomar el siguiente */
-.acciones:has(> :nth-child(4)) > .accion {
-  flex-basis: calc((100% - 2 * var(--espacio-2)) / 2.5);
+/* El círculo va en un `<span>` alrededor del icono (nunca todo el botón): mismas medidas y sombra que
+   `ui/BotonRenglon.module.css` (.boton/.invitar), sin su borde de contorno. */
+.accionIcono {
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  min-width: var(--toque-min);
+  min-height: var(--toque-min);
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--primario);
+  box-shadow: var(--sombra);
 }
-.accion:active {
+.accion:active .accionIcono {
   background: var(--fondo-suave);
 }
 .accion[aria-disabled="true"] {
   color: var(--texto-suave);
   pointer-events: none;
+}
+.accion[aria-disabled="true"] .accionIcono {
+  color: var(--texto-suave);
+  background: var(--fondo-suave);
+  box-shadow: none;
 }
 
 /* 4. Autor, al pie */

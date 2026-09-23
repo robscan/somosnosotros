@@ -261,16 +261,22 @@ export default async function FichaLugar({ params, searchParams }: Params) {
 
       <div className={ficha.acciones}>
         <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
-          <IconoRuta />
+          <span className={ficha.accionIcono}>
+            <IconoRuta />
+          </span>
           Cómo llegar
         </a>
         <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`} url={url} className={ficha.accion}>
-          <IconoCompartir />
+          <span className={ficha.accionIcono}>
+            <IconoCompartir />
+          </span>
           Compartir
         </BotonCompartir>
         {redes.map((r) => (
           <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
-            <IconoRed red={r.red} />
+            <span className={ficha.accionIcono}>
+              <IconoRed red={r.red} />
+            </span>
             {etiquetaEnlace(r)}
           </EnlaceExterno>
         ))}

@@ -19,7 +19,7 @@ import Seguir from "@/components/Seguir";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
-import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
+import { IconoCalendario, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import Salto from "@/components/ui/Salto";
@@ -259,7 +259,12 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         </p>
       )}
 
-      <Cartel src={a.foto} alt={`Foto de ${a.nombre}`} forma="avatar" />
+      <div className={ficha.fotoConAccion}>
+        <Cartel src={a.foto} alt={`Foto de ${a.nombre}`} forma="avatar" />
+        {/* Compartir junto al avatar, no en el carril de enlaces (corrección del founder, OL-159): mismo círculo
+            elevado que las acciones de abajo, sin letrero. Visible para cualquiera, no solo para el dueño. */}
+        <CompartirFicha titulo={a.nombre} texto={textoCompartir} url={url} svg={qrSvg} etiqueta={`Compartir la ficha de ${a.nombre}`} className={ficha.compartirFoto} slug={a.slug} />
+      </div>
       <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{a.nombre}</h1>
       <p className={ficha.etiqueta}>{etiquetaArtista(a)}</p>
 
@@ -294,19 +299,23 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         )}
       </ul>
 
-      <div className={ficha.acciones}>
-        {/* Visible para cualquiera, no solo para el dueño: la hoja de compartir con enlace, QR y compartir nativo (OL-154, doc 40c). */}
-        <CompartirFicha titulo={a.nombre} texto={textoCompartir} url={url} svg={qrSvg} etiqueta={`Compartir la ficha de ${a.nombre}`} className={ficha.accion}>
-          <IconoCompartir />
-          Compartir
-        </CompartirFicha>
-        {redesConEnlace.map((r) => (
-          <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
-            <IconoRed red={r.red} />
-            {etiquetaEnlace(r)}
-          </EnlaceExterno>
-        ))}
-      </div>
+      {/* Compartir ya no vive aquí (corrección del founder, OL-159): el carril es solo enlaces externos, con su
+          propio título corto, como los demás bloques de la ficha. Sin enlaces, el bloque entero no aparece. */}
+      {redesConEnlace.length > 0 && (
+        <section className={styles.lista} aria-label="Enlaces">
+          <h2>Enlaces</h2>
+          <div className={ficha.acciones}>
+            {redesConEnlace.map((r) => (
+              <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
+                <span className={ficha.accionIcono}>
+                  <IconoRed red={r.red} />
+                </span>
+                {etiquetaEnlace(r)}
+              </EnlaceExterno>
+            ))}
+          </div>
+        </section>
+      )}
 
       {a.descripcion && <Desplegable texto={a.descripcion} />}
 
