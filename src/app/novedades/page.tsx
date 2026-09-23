@@ -10,7 +10,7 @@ import MarcarVistas from "./MarcarVistas";
 import TelefonoAun from "./TelefonoAun";
 import styles from "./novedades.module.css";
 
-export const metadata = { title: "Novedades · Somos Nosotros" };
+export const metadata = { title: "Novedades · Somos Nosotros", robots: { index: false, follow: false } };
 
 /**
  * Novedades: lo nuevo en lo que sigues, los cambios en lo que vas, hoy vas y quién más va; por día, de hoy hacia atrás.

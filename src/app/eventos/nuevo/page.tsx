@@ -13,7 +13,7 @@ import { ciudadDesdeSlug } from "../direccionContexto";
 import FormularioEvento from "../FormularioEvento";
 import { crearEvento, cupoDeCartel } from "../acciones";
 
-export const metadata = { title: "Publicar un evento · Somos Nosotros" };
+export const metadata = { title: "Publicar un evento · Somos Nosotros", robots: { index: false, follow: false } };
 
 export default async function NuevoEvento({ searchParams }: { searchParams: Promise<{ lugar?: string; desde?: string; artista?: string; ciudad?: string }> }) {
   const { lugar, desde, artista, ciudad: ciudadSlug } = await searchParams;

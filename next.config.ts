@@ -42,6 +42,14 @@ const nextConfig: NextConfig = {
       { source: "/personas/:path*", headers: NOINDEX },
       { source: "/entrar", headers: NOINDEX },
       { source: "/borrado", headers: NOINDEX },
+      // Alta y edición, y Novedades (OL-143, doc 36): piden sesión, pero conviene decirlo explícito (respaldo del `robots` de cada página).
+      { source: "/lugares/nuevo", headers: NOINDEX },
+      { source: "/lugares/:id/editar", headers: NOINDEX },
+      { source: "/artistas/nuevo", headers: NOINDEX },
+      { source: "/artistas/:id/editar", headers: NOINDEX },
+      { source: "/eventos/nuevo", headers: NOINDEX },
+      { source: "/eventos/:id/editar", headers: NOINDEX },
+      { source: "/novedades", headers: NOINDEX },
     ];
   },
 };

@@ -26,6 +26,7 @@ import type { EventoAgenda } from "@/lib/agenda";
 import { etiquetaArtista, hrefArtista, textoProximaFecha, type Artista } from "@/lib/artistas";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
+import { jsonLdArtista, jsonLdMigajas } from "@/lib/estructurados";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
@@ -109,11 +110,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // Del CAPO y sin reclamar (OL-059): mismo interruptor que el sitemap (src/lib/sitemap.ts). Sin esto la ficha seguía
   // indexable por el enlace desde /artistas aunque el interruptor la dejara fuera del mapa del sitio.
   const sinIndexar = a.origen === "capo" && !CAPO_SIN_RECLAMAR_EN_SITEMAP && (await cargarLigadas(a.id)).length === 0;
+  // Sin foto, la imagen por defecto del sitio: el enlace compartido nunca sale sin imagen (OL-143, doc 36).
+  const imagen = a.foto ?? "/portada.png";
   return {
     title: `${a.nombre} · Somos Nosotros`,
     description: descripcion,
+    alternates: { canonical: `${ORIGEN}${hrefArtista(a)}` },
     ...(sinIndexar ? { robots: { index: false } } : {}),
-    openGraph: { title: a.nombre, description: descripcion, url: `${ORIGEN}${hrefArtista(a)}`, type: "profile", images: a.foto ? [{ url: a.foto }] : undefined, locale: "es_MX", siteName: "Somos Nosotros" },
+    openGraph: { title: a.nombre, description: descripcion, url: `${ORIGEN}${hrefArtista(a)}`, type: "profile", images: [{ url: imagen }], locale: "es_MX", siteName: "Somos Nosotros" },
+    twitter: { card: "summary_large_image", title: a.nombre, description: descripcion, images: [imagen] },
   };
 }
 
@@ -165,9 +170,17 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const proxima = fechas[0] ? { id: fechas[0].id, inicio: fechas[0].inicio, sitio: nombreSitio(fechas[0]), zona: fechas[0].zona } : null;
   const avisoBorrar = fechas.length > 0 ? `Se borra la ficha; sus ${fechas.length === 1 ? "1 fecha próxima se queda" : `${fechas.length} fechas próximas se quedan`} sin artista.` : "Se borra la ficha.";
   const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
+  // JSON-LD (OL-143, doc 36): nada en una ficha oculta ni en una del CAPO sin reclamar y sin indexar (mismo
+  // interruptor que `generateMetadata`); solo redes ya públicas y registradas, nunca un dato de contacto.
+  const sinIndexar = a.origen === "capo" && !CAPO_SIN_RECLAMAR_EN_SITEMAP && ligados.length === 0;
+  const jsonLdVisible = a.visible && !sinIndexar;
+  const jsonLd = jsonLdVisible ? jsonLdArtista({ nombre: a.nombre, descripcion: a.descripcion, imagen: a.foto, url: hrefArtista(a), esGrupo: a.tipo !== "solista", redes: redes.map((r) => r.url) }) : null;
+  const migajas = jsonLdVisible ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Artistas", url: "/artistas" }, { nombre: a.nombre, url: hrefArtista(a) }]) : null;
 
   return (
     <main className={ficha.pagina}>
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
+      {migajas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(migajas).replace(/</g, "\\u003c") }} />}
       <Barra
         volver={{ href: "/artistas", texto: "Artistas" }}
         derecha={
