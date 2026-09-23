@@ -67,7 +67,7 @@ Pegados en el chat del gestor el 2026-09-23 («agrega estos comentarios al plan 
 | E6 · Indexar el catálogo en Google y buscadores | Que lugares, artistas y eventos aparezcan en buscadores. | Sonnet 5, medio | Evaluación corta primero: sitemap, robots, metadatos y datos estructurados; qué se indexa y qué no (perfiles de usuario, no). |
 | E7 · Texto al salir de la app | El aviso actual dice que puede que le pidan dinero o sus datos; el founder no quiere generalizar. | Haiku 4.5, bajo | Dos o tres textos para elegir; se cambia con su OK. Viene de OL-105. |
 
-Orden: E1 ahora (urgente); E2 unida a B4, ahora; E4 y E7 como piezas chicas después de E1; E5 y E6 después; E3 cuando el founder acote.
+Orden (founder, 2026-09-23): E1 ahora (urgente); E2 unida a B4, ahora; E7 ahora (es barata); E4 en cuanto E1 esté en producción (mismo formulario); E5 y E6 después; E3 (app nativa) al final.
 
 ## Orden propuesto
 

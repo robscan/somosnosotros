@@ -13,10 +13,12 @@ type Props = { href: string; className?: string; children: ReactNode; ariaLabel?
 const alm = () => (typeof window === "undefined" ? null : window.localStorage);
 
 /**
- * Un enlace de verdad (`<a href>`, `target="_blank" rel="noopener noreferrer"`) a un tercero donde pueden pedir
- * pago o datos (boletos de un evento, redes o sitio de un artista o lugar). Antes de salir, una hoja dice a qué
- * dominio se va (OL-105, docs/rediseno/29-aviso-al-salir.md). Sin JavaScript, con clic central o Ctrl/Cmd+clic
- * sigue funcionando como cualquier enlace — la hoja es una mejora, nunca un paso obligado.
+ * Un enlace de verdad (`<a href>`, `target="_blank" rel="noopener noreferrer"`) a un tercero (boletos de un evento,
+ * redes o sitio de un artista o lugar). Antes de salir, una hoja dice a qué dominio se va (OL-105,
+ * docs/rediseno/29-aviso-al-salir.md). Sin JavaScript, con clic central o Ctrl/Cmd+clic sigue funcionando como
+ * cualquier enlace — la hoja es una mejora, nunca un paso obligado. OL-139 (founder, 2026-09-23: «decimos que puede
+ * que te pidan dinero o tus datos. No podríamos generalizar»): la hoja ya no afirma qué le pedirán; solo dice que
+ * ese sitio es ajeno (las tres opciones de texto, en la bitácora 174).
  */
 export default function EnlaceExterno({ href, className, children, ariaLabel }: Props) {
   const [abierta, setAbierta] = useState(false);
@@ -57,7 +59,7 @@ export default function EnlaceExterno({ href, className, children, ariaLabel }: 
               <IconoEnlace width={20} height={20} />
               <span className={styles.texto}>{dominioDe(href)}</span>
             </div>
-            <p className={styles.porque}>Ahí puede que te pidan un pago o tus datos.</p>
+            <p className={styles.porque}>Ese sitio no es de Somos Nosotros: tiene sus propias reglas.</p>
             <Boton type="button" onClick={continuar}>
               Continuar
             </Boton>
