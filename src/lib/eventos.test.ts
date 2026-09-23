@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartelAFormulario, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { COOPERACION_SOLIDARIA, cartelAFormulario, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -37,6 +37,17 @@ describe("validarEvento", () => {
     const { datos } = validarEvento({ ...base, gratis: "no", precio: "$150", enlace: "boletos.mx/jazz" });
     expect(datos.precio).toBe("$150");
     expect(datos.enlace).toBe("https://boletos.mx/jazz");
+  });
+  it("cooperación solidaria: sin cifra, se guarda como texto en precio y no pide precio", () => {
+    const { datos, errores } = validarEvento({ ...base, gratis: "no", cooperacion: "si", precio: "" });
+    expect(errores.precio).toBeUndefined();
+    expect(datos.precio).toBe(COOPERACION_SOLIDARIA);
+    expect(esCooperacion(datos.precio)).toBe(true);
+    // Gratis sigue siendo null y un precio numérico no se confunde con ella.
+    expect(validarEvento(base).datos.precio).toBeNull();
+    expect(esCooperacion(validarEvento({ ...base, gratis: "no", precio: "150" }).datos.precio)).toBe(false);
+    // Aunque el formulario mande gratis="si", la cooperación manda.
+    expect(validarEvento({ ...base, gratis: "si", cooperacion: "si" }).datos.precio).toBe(COOPERACION_SOLIDARIA);
   });
   it("otro sitio: texto obligatorio, pin opcional, sin lugar", () => {
     expect(validarEvento({ ...base, modo_sitio: "otro", sitio_texto: "" }).errores.sitio_texto).toBeTruthy();
