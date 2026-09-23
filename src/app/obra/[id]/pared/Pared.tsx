@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import CodigoQr from "@/components/ui/CodigoQr";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import { configPublica } from "@/lib/config";
@@ -23,15 +23,20 @@ import {
   hayBorradoPendiente,
   instantaneaVigente,
   latenciasDe,
+  LETRERO_LLEGADA_MS,
   LIENZO,
+  nombreDeLlegada,
   OPACIDAD_PUNTO_TENUE,
+  puntoCentral,
   puntoEnPared,
   quienesPintan,
   rectanguloDelLienzo,
+  remitentesNuevos,
   REVISAR_BORRADO_MS,
   rutaInstantanea,
   siguientesSegmentos,
   SUAVIZADO_PUNTO_MS,
+  TINTAS,
   tocaSubirInstantanea,
   type Latencias,
   type MensajeBorrar,
@@ -45,7 +50,10 @@ import { clienteNavegador } from "@/lib/supabase/navegador";
 import styles from "./pared.module.css";
 
 /** El punto de referencia de un mando (OL-120): dónde está su pincel, de qué color y tamaño, y si está pintando. */
-type PuntoDeMando = { x: number; y: number; color: string; diametro: number; pintando: boolean };
+type PuntoDeMando = { x: number; y: number; color: string; diametro: number; pintando: boolean; llegada?: number };
+
+/** Un letrero «Nombre entró» (OL-136): se quita solo a los LETRERO_LLEGADA_MS. */
+type Letrero = { id: number; nombre: string };
 
 /** Una línea de la sonda (OL-126): qué mensaje, de quién, y sus latencias. */
 type LecturaSonda = { evento: string; remitente: string; puntos: number; latencias: Latencias; recibido: number };
@@ -146,6 +154,10 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
   const tokenRef = useRef<string | null>(null);
   const ultimoBorradoRef = useRef<number | null>(null); // el último «borrar» aplicado (hora registrada por Administración)
   const [puntosDeMando, setPuntosDeMando] = useState<Record<string, PuntoDeMando>>({});
+  // Llegadas (OL-136): quiénes estaban en el último sync (null antes del primero) y los letreros en pantalla.
+  const previosRef = useRef<Set<string> | null>(null);
+  const letreroIdRef = useRef(0);
+  const [letreros, setLetreros] = useState<Letrero[]>([]);
   const [lecturas, setLecturas] = useState<LecturaSonda[]>([]);
   const [instantanea, setInstantanea] = useState<string>("sin instantánea todavía");
   // OL-135: dónde va el lienzo en la ventana (16:9, centrado); hasta la primera medida, la ventana entera.
@@ -302,19 +314,41 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
       canal = abrirCanalObra(supabase!, obraId);
       canal.on("presence", { event: "sync" }, () => {
         if (!canal) return;
-        const pintan = quienesPintan(entradasDesdePresencia(canal.presenceState()), cupo);
+        const entradas = entradasDesdePresencia(canal.presenceState());
+        const pintan = quienesPintan(entradas, cupo);
         pintanRef.current = pintan;
-        // Al salir un mando (o quedar fuera del cupo) su punto desaparece; el que entra y ya dijo dónde está, aparece.
+        // Llegadas (OL-136, founder: «el punto con una animación de tamaño… un letrero (Robscan entró)»): quién es
+        // nuevo respecto al último sync (los que ya estaban al abrir no cuentan). Cada uno: letrero ~3 s y su punto
+        // al centro del lienzo con un pulso; también si va a la fila (entra y se anuncia, pero su punto no pinta).
+        const nuevos = remitentesNuevos(previosRef.current, entradas);
+        previosRef.current = new Set(entradas.map((e) => e.remitente));
+        for (const e of nuevos) {
+          const id = ++letreroIdRef.current;
+          setLetreros((l) => [...l, { id, nombre: nombreDeLlegada(e) }]);
+          setTimeout(() => setLetreros((l) => l.filter((x) => x.id !== id)), LETRERO_LLEGADA_MS);
+        }
+        // Al salir un mando su punto desaparece; el que entra y ya dijo dónde está, aparece ahí; el que acaba de
+        // llegar sin decir dónde está, al centro. En la fila el punto se queda donde llegó (sus posiciones no mueven).
         setPuntosDeMando((actuales) => {
           const siguientes: Record<string, PuntoDeMando> = {};
-          for (const remitente of pintan) {
+          const ahora = Date.now();
+          for (const remitente of new Set(entradas.map((e) => e.remitente))) {
             const conocido = actuales[remitente];
             const ultima = ultimaPosicionRef.current.get(remitente);
             if (conocido) siguientes[remitente] = conocido;
-            else if (ultima) {
+            else if (ultima && pintan.has(remitente)) {
               const hasta = puntoEnPared(ultima.posicion, LIENZO.ancho, LIENZO.alto);
               puntos.current.set(remitente, hasta);
               siguientes[remitente] = puntoDe(ultima, hasta, false);
+            }
+          }
+          for (const e of nuevos) {
+            const conocido = siguientes[e.remitente];
+            if (conocido) siguientes[e.remitente] = { ...conocido, llegada: ahora };
+            else {
+              const centro = puntoCentral(LIENZO.ancho, LIENZO.alto);
+              puntos.current.set(e.remitente, centro);
+              siguientes[e.remitente] = { x: centro.x, y: centro.y, color: TINTAS[0].valor, diametro: diametroDelPuntoDePosicion("trazo", 1), pintando: false, llegada: ahora };
             }
           }
           return siguientes;
@@ -402,10 +436,16 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
             DIAMETRO_PUNTO_MIN_PX en pantalla, para que el punto siga viéndose en un teléfono. */}
         {Object.entries(puntosDeMando).map(([remitente, p]) => {
           const d = Math.max(DIAMETRO_PUNTO_MIN_PX, p.diametro * escala);
+          // La posición va en una variable (`--pos`) para que el pulso de llegada (OL-136), que anima `transform`,
+          // no la pierda; el pulso crece a 3× o hasta 48 px, lo que sea mayor, para que se vea desde lejos.
+          const estilo = {
+            "--pos": `translate(${p.x * escala - d / 2}px, ${p.y * escala - d / 2}px)`,
+            "--pulso": p.llegada ? Math.max(3, 48 / d).toFixed(2) : undefined,
+          } as CSSProperties;
           return (
             <span
               key={remitente}
-              className={styles.puntoDeMando}
+              className={`${styles.puntoDeMando}${p.llegada ? ` ${styles.llegada}` : ""}`}
               data-pintando={p.pintando ? "true" : "false"}
               aria-hidden="true"
               style={{
@@ -415,7 +455,8 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
                 // Blanco (OL-126) no se vería sobre la pared casi blanca: lleva un borde fino.
                 boxShadow: esTintaClara(p.color) ? "0 0 0 1px rgba(0, 0, 0, 0.35)" : undefined,
                 opacity: p.pintando ? 1 : OPACIDAD_PUNTO_TENUE,
-                transform: `translate(${p.x * escala - d / 2}px, ${p.y * escala - d / 2}px)`,
+                ...estilo,
+                transform: "var(--pos)",
                 transition: `transform ${SUAVIZADO_PUNTO_MS}ms linear, opacity 0.2s`,
               }}
             />
@@ -428,16 +469,27 @@ export default function Pared({ obraId, nombre, abierta, cupo, qr, sonda = false
           <figcaption>Escanea para pintar</figcaption>
         </figure>
       )}
-      {sonda && (
-        <pre className={styles.sonda} aria-hidden="true">
+      {/* Esquina inferior izquierda (OL-136): los letreros «Nombre entró» apilados hacia arriba (los nuevos empujan a
+          los anteriores) y, debajo de ellos, la sonda si está: el letrero nunca la tapa. */}
+      <div className={styles.esquina}>
+        <div className={styles.letreros} role="status" aria-live="polite">
+          {letreros.map((l) => (
+            <p key={l.id} className={styles.letrero}>
+              <b>{l.nombre}</b> entró
+            </p>
+          ))}
+        </div>
+        {sonda && (
+          <pre className={styles.sonda} aria-hidden="true">
           {`sonda · ${lecturas.length ? `${porSegundo} mensajes en el último segundo` : "sin mensajes todavía"} · ${instantanea}\n` +
             (ultima
               ? `último ${ultima.evento} de ${ultima.remitente} (${ultima.puntos} punto${ultima.puntos === 1 ? "" : "s"}): sensor→envío ${ms(ultima.latencias.agrupacionMs)} · envío→recepción ${ms(ultima.latencias.redMs)} · dibujo ${ms(ultima.latencias.dibujoMs)} · total ${ms(ultima.latencias.totalMs)}\n` +
                 `media (${conRed.length}): envío→recepción ${ms(media((l) => l.latencias.redMs))} · total ${ms(media((l) => l.latencias.totalMs))}\n`
               : "") +
             `(envío→recepción usa el reloj de cada aparato: puede traer su desfase)`}
-        </pre>
-      )}
+          </pre>
+        )}
+      </div>
     </main>
   );
 }

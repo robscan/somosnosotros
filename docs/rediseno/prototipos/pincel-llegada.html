@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pincel: llegada de un mando nuevo (OL-136)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Prototipo estático (OL-136, bitácora 171), sin dependencias: ?vista=pared (por defecto, 1280×800) o ?vista=mando
+     (390×844). Tokens de globals.css (línea gráfica firmada). Las tres cosas del founder: «Entrando…» en el mando,
+     el punto que llega al centro con un pulso, y el letrero «Nombre entró» abajo a la izquierda. */
+  :root {
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-miniatura: #e6e6e2; --fondo-pared: #fbfaf8;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e; --ok: #1f6f43;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --vidrio: rgba(255, 255, 255, 0.92);
+    --sombra: 0 2px 12px rgba(0, 0, 0, 0.08); --radio: 12px; --radio-grande: 16px;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --alto-barra: 56px; --gutter: 20px;
+    --estudio: #ebeae6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--estudio); color: var(--texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  /* Controles del prototipo (no son de la app): arriba al centro, discretos. */
+  .control { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; gap: 8px; }
+  .telefono .control { position: absolute; top: auto; bottom: 14px; }
+  .control button { min-height: 36px; padding: 0 14px; border: 1px dashed var(--texto-suave); border-radius: 999px; background: var(--vidrio); color: var(--texto-suave); font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  /* ---------- La pared (16:9 centrado, como OL-135) ---------- */
+  .pared { position: fixed; inset: 0; overflow: hidden; background: var(--fondo-pared); }
+  .titulo { position: absolute; top: 24px; left: 24px; right: clamp(190px, 12vw, 250px); z-index: 1; display: grid; gap: 4px; pointer-events: none; }
+  .titulo > p { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texto-suave); }
+  .titulo > h1 { font-size: clamp(28px, 5vw, 56px); font-weight: 800; line-height: 1.05; font-variation-settings: var(--ancho-titulo); }
+  .qr { position: absolute; top: 24px; right: 24px; z-index: 1; display: grid; justify-items: center; gap: 8px; padding: 10px 10px 8px; border-radius: var(--radio-grande); background: var(--vidrio); box-shadow: var(--sombra); }
+  .qr svg { width: clamp(110px, calc(9.375vw - 10px), 170px); height: auto; }
+  .qr figcaption { font-size: clamp(13px, 1.1vw, 20px); font-weight: 800; line-height: 1.1; }
+  .marco { position: absolute; }
+  .marco canvas { display: block; width: 100%; height: 100%; }
+  /* El punto de cada mando (OL-120): círculo del color de su tinta; tenue sin pintar. OL-136: al LLEGAR aparece al
+     centro con un pulso — crece a 3× y vuelve en 600 ms (solo transform) — y se mueve con su primera posición. */
+  .punto { position: absolute; top: 0; left: 0; z-index: 1; border-radius: 50%; opacity: 0.45; pointer-events: none; transition: transform 120ms linear, opacity 0.2s; }
+  .punto.llegada { animation: pulso-llegada 600ms ease-out; }
+  @keyframes pulso-llegada { 0% { transform: var(--pos) scale(1); } 40% { transform: var(--pos) scale(3); } 100% { transform: var(--pos) scale(1); } }
+  /* Esquina inferior izquierda: los letreros de llegada apilados hacia arriba y, debajo de ellos, la sonda si está.
+     Canon: fondo blanco, borde, Bricolage; grande, porque es una proyección. */
+  .esquina { position: absolute; left: 24px; bottom: 88px; z-index: 2; display: grid; gap: 10px; justify-items: start; pointer-events: none; }
+  .letreros { display: grid; gap: 10px; justify-items: start; }
+  .letrero { padding: 10px 18px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra); font-size: clamp(22px, 2.2vw, 34px); font-weight: 800; line-height: 1.15; font-variation-settings: var(--ancho-titulo); opacity: 0; transform: translateY(6px); transition: opacity 250ms ease-out, transform 250ms ease-out; }
+  .letrero.visible { opacity: 1; transform: none; }
+  .letrero.saliendo { opacity: 0; transition: opacity 400ms ease-in; }
+  .letrero b { color: var(--ok); }
+  .sonda { max-width: min(720px, calc(100vw - 48px)); padding: 8px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.9); color: var(--error); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+  @media (prefers-reduced-motion: reduce) {
+    .punto.llegada { animation: none; }
+    .letrero, .letrero.saliendo { transition: none; }
+    .onda { animation: none; }
+  }
+
+  /* ---------- El mando (390×844) ---------- */
+  .telefono { position: relative; width: 390px; height: 844px; margin: auto; overflow: hidden; background: var(--fondo-contenido); display: grid; grid-template-rows: var(--alto-barra) 1fr; }
+  body.vista-mando { display: grid; place-items: center; }
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 var(--gutter); background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .volver { justify-self: start; display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 14px 0 10px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-weight: 700; }
+  .logotipo { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); letter-spacing: -0.01em; }
+  .mando { display: grid; grid-template-columns: minmax(0, 1fr) 128px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto 38px; grid-template-areas: ". . presente" "espera espera espera" "trazo orb tinta" "hold hold hold"; padding: 10px var(--gutter) calc(clamp(96px, 17vh, 160px) - 12px); }
+  .presente { grid-area: presente; justify-self: end; color: var(--texto-suave); font-size: 13px; }
+  .selector { justify-self: center; width: 105px; height: 84px; display: grid; place-items: center; gap: 4px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-weight: 800; font-size: 18px; }
+  .selector.trazo { grid-area: trazo; } .selector.tinta { grid-area: tinta; }
+  .selector .muestra { width: 24px; height: 24px; border-radius: 50%; background: var(--texto); }
+  .selector .linea { width: 44px; height: 3px; border-radius: 2px; background: var(--texto); }
+  .orbe { grid-area: orb; position: relative; display: grid; place-items: center; width: 128px; height: 128px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo-miniatura); color: var(--texto-suave); }
+  .orbe .puntoBoton { width: 16px; height: 16px; border-radius: 50%; background: currentColor; }
+  /* «Entrando…»: una onda que sale del botón y se desvanece, mientras el canal no está listo. */
+  .onda { position: absolute; inset: -1px; border-radius: 50%; border: 2px solid var(--primario); opacity: 0; animation: onda 1200ms ease-out infinite; }
+  .onda:nth-child(2) { animation-delay: 400ms; }
+  @keyframes onda { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.55); opacity: 0; } }
+  .mando[data-entrando="false"] .onda { display: none; }
+  .hold { grid-area: hold; align-self: start; margin: 18px 0 0; text-align: center; font-size: 14px; line-height: 20px; color: var(--texto-suave); }
+  .mando[data-entrando="true"] .hold { color: var(--primario); font-weight: 700; }
+  .mando[data-entrando="true"] .presente { visibility: hidden; }
+</style>
+<body>
+  <!-- ===== Pared ===== -->
+  <main class="pared" id="pared">
+    <div class="control"><button type="button" id="simular">Simular llegada</button><button type="button" id="sondaBoton">Sonda</button></div>
+    <div class="titulo"><p>Obra colectiva</p><h1>Obra abierta de prueba</h1></div>
+    <div class="marco" id="marco"><canvas id="lienzo" width="1920" height="1080"></canvas></div>
+    <figure class="qr" aria-hidden="true">
+      <svg viewBox="0 0 21 21" shape-rendering="crispEdges"><rect width="21" height="21" fill="#fff"/><path fill="#1a1a1a" d="M0 0h7v7H0zM1 1v5h5V1zM2 2h3v3H2zM14 0h7v7h-7zM15 1v5h5V1zM16 2h3v3h-3zM0 14h7v7H0zM1 15v5h5v-5zM2 16h3v3H2zM8 0h1v2H8zM10 0h2v1h-2zM9 2h2v1H9zM8 4h3v1H8zM12 3h1v3h-1zM9 6h1v2H9zM11 7h2v1h-2zM0 8h2v1H0zM3 8h2v2H3zM6 8h1v3H6zM8 9h2v1H8zM11 9h1v2h-1zM13 8h3v1h-3zM17 8h1v2h-1zM19 8h2v1h-2zM1 10h1v2H1zM3 11h2v1H3zM8 11h2v1H8zM12 12h2v1h-2zM15 10h2v2h-2zM18 11h3v1h-3zM0 12h1v1H0zM5 12h2v1H5zM9 13h2v2H9zM12 14h1v2h-1zM14 13h2v1h-2zM17 13h1v2h-1zM19 14h2v2h-2zM8 15h1v3H8zM10 16h2v1h-2zM13 16h3v1h-3zM18 16h1v2h-1zM9 18h1v3H9zM11 18h2v1h-2zM14 18h1v3h-1zM16 19h2v1h-2zM20 18h1v3h-1zM11 20h2v1h-2z"/></svg>
+      <figcaption>Escanea para pintar</figcaption>
+    </figure>
+    <div class="esquina"><div class="letreros" id="letreros"></div><pre class="sonda" id="sonda" hidden>sonda · 2 mensajes en el último segundo · instantánea de fondo: 65 KB (subida 5:27:38 p.m.)
+último trazo de persona− (3 puntos): sensor→envío 20 ms · envío→recepción 6 ms · dibujo 0 ms · total 26 ms</pre></div>
+  </main>
+
+  <!-- ===== Mando ===== -->
+  <div class="telefono" id="telefono" hidden>
+    <div class="control"><button type="button" id="repetir">Repetir entrada</button></div>
+    <header class="barra"><span class="volver">‹ Atrás</span><span class="logotipo">SMSNSTRS</span><span></span></header>
+    <div class="mando" id="mando" data-entrando="true">
+      <p class="presente">1 persona aquí</p>
+      <div class="selector trazo"><span class="linea"></span>Trazo ⌄</div>
+      <button type="button" class="orbe" aria-label="Encender el control"><span class="onda"></span><span class="onda"></span><span class="puntoBoton"></span></button>
+      <div class="selector tinta"><span class="muestra"></span>Negro ⌄</div>
+      <p class="hold" id="hold">Entrando…</p>
+    </div>
+  </div>
+
+<script>
+  const vista = new URLSearchParams(location.search).get("vista") === "mando" ? "mando" : "pared";
+  document.body.classList.add("vista-" + vista);
+  if (vista === "mando") {
+    document.getElementById("pared").hidden = true;
+    document.getElementById("telefono").hidden = false;
+    // El mando: «Entrando…» hasta que el canal está listo y la presencia sincronizó la propia entrada (aquí, 1,8 s);
+    // en la app no se enseña si tarda menos de ~300 ms (no parpadea).
+    const mando = document.getElementById("mando"), hold = document.getElementById("hold");
+    function entrar() {
+      mando.dataset.entrando = "true"; hold.textContent = "Entrando…";
+      setTimeout(() => { mando.dataset.entrando = "false"; hold.textContent = "Enciende el control para comenzar"; }, 1800);
+    }
+    entrar();
+    document.getElementById("repetir").addEventListener("click", entrar);
+  } else {
+    // La pared: lienzo 16:9 centrado (OL-135) con un dibujo de fondo; puntos de mando; letreros.
+    const LIENZO = { ancho: 1920, alto: 1080 };
+    const marco = document.getElementById("marco"), lienzo = document.getElementById("lienzo"), ctx = lienzo.getContext("2d");
+    let rect = { left: 0, top: 0, width: 1920, height: 1080 };
+    function encajar() {
+      const escala = Math.min(innerWidth / LIENZO.ancho, innerHeight / LIENZO.alto);
+      rect = { left: (innerWidth - LIENZO.ancho * escala) / 2, top: (innerHeight - LIENZO.alto * escala) / 2, width: LIENZO.ancho * escala, height: LIENZO.alto * escala };
+      Object.assign(marco.style, { left: rect.left + "px", top: rect.top + "px", width: rect.width + "px", height: rect.height + "px" });
+      for (const p of puntos) colocar(p);
+    }
+    ctx.lineCap = ctx.lineJoin = "round";
+    ctx.strokeStyle = "#141414"; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(420, 300); ctx.lineTo(760, 620); ctx.lineTo(1120, 380); ctx.lineTo(1400, 700); ctx.stroke();
+    ctx.strokeStyle = "#e4552f"; ctx.globalAlpha = 0.45; ctx.lineWidth = 27; ctx.beginPath(); ctx.moveTo(300, 800); ctx.lineTo(900, 860); ctx.lineTo(1500, 760); ctx.stroke(); ctx.globalAlpha = 1;
+    const puntos = [];
+    const escala = () => rect.width / LIENZO.ancho;
+    function colocar(p) {
+      const d = Math.max(8, p.diametro * escala());
+      p.el.style.width = p.el.style.height = d + "px";
+      p.el.style.setProperty("--pos", `translate(${p.x * escala() - d / 2}px, ${p.y * escala() - d / 2}px)`);
+      p.el.style.transform = `var(--pos)`;
+    }
+    function nuevoPunto(x, y, color, diametro, llegada) {
+      const el = document.createElement("span");
+      el.className = "punto" + (llegada ? " llegada" : "");
+      el.style.background = color;
+      marco.appendChild(el);
+      const p = { el, x, y, color, diametro };
+      puntos.push(p); colocar(p);
+      return p;
+    }
+    nuevoPunto(1400, 700, "#141414", 10, false);
+    encajar(); addEventListener("resize", encajar);
+    // Llegada: el punto aparece AL CENTRO con el pulso; el letrero abajo a la izquierda ~3 s; los siguientes se apilan.
+    const nombres = ["Robscan", "Mariana", "Oscar", "Lupita", "Andrés"]; let n = 0;
+    const letreros = document.getElementById("letreros");
+    function llegada() {
+      const nombre = nombres[n++ % nombres.length];
+      const p = nuevoPunto(LIENZO.ancho / 2, LIENZO.alto / 2, "#0f6b7c", 27, true);
+      setTimeout(() => { p.x = 600 + Math.random() * 700; p.y = 300 + Math.random() * 500; colocar(p); }, 1400); // su primera posición
+      const el = document.createElement("div");
+      el.className = "letrero"; el.innerHTML = `<b>${nombre}</b> entró`;
+      letreros.appendChild(el);
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("visible")));
+      setTimeout(() => el.classList.add("saliendo"), 2600);
+      setTimeout(() => el.remove(), 3000);
+    }
+    document.getElementById("simular").addEventListener("click", llegada);
+    const sonda = document.getElementById("sonda");
+    document.getElementById("sondaBoton").addEventListener("click", () => { sonda.hidden = !sonda.hidden; });
+    window.llegada = llegada; // para la captura
+  }
+</script>
+</body>
+</html>
