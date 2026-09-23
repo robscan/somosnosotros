@@ -46,15 +46,20 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  */
 async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { cuenta, ciudad: slug, filtro, q } = await searchParams;
-  // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16).
+  // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16); junto con la
+  // sesión son rápidas y no llevan la consulta pesada de eventos, así que se esperan aquí. `cargarAgenda` (eventos,
+  // quién sigue qué, qué decidió la persona) no se espera: se pasa como promesa y se difiere dentro de `AgendaInicio`
+  // — la cabecera (fecha, ciudad, pestañas, lupa) pinta con la barra, y solo la lista lleva esqueleto (OL-161,
+  // bitácora 196; antes, el gestor observó en la captura 01 de la bitácora 193 que también la cabecera salía como
+  // esqueleto).
   const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
-  const { eventos, seguidos, eventosSeguidos, asistencias } = await cargarAgenda(ciudad, actual?.perfil.id ?? null);
+  const agenda = cargarAgenda(ciudad, actual?.perfil.id ?? null);
   const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
   // "Ver todos" de un carril de Inicio llega con la pestaña ya elegida (?filtro=siguiendo, OL-156): cualquier otro
   // valor (un enlace viejo a "cercanos" o "nuevos") cae a Todos, porque esas pestañas ya no existen aquí.
   const filtroInicial = filtro === "siguiendo" ? "siguiendo" : undefined;
-  // La pregunta de avisos tras el primer Voy al deslizar, como en la ficha.
+  // La pregunta de avisos tras el primer Voy al deslizar, como en la ficha: sale de la sesión, no de `cargarAgenda`.
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
 
   return (
@@ -68,14 +73,11 @@ async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchP
         key={ciudad.slug}
         filtroInicial={filtroInicial}
         busquedaInicial={q}
-        eventos={eventos}
-        seguidos={seguidos}
-        eventosSeguidos={eventosSeguidos}
+        agenda={agenda}
         ciudad={ciudad}
         ciudades={ciudades}
         hoy={diaLocal(new Date(), ciudad.zona)}
         zona={ciudad.zona}
-        asistencias={asistencias}
         avisos={avisos}
         antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
       />
@@ -87,8 +89,8 @@ async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchP
 /**
  * `Barra` y `NavInferior` no esperan ninguna consulta: pintan al momento (OL-158, precisión del founder — "que la
  * persona vea la primera línea de contenido ya cargada y el resto llegue después"). Lo que sí espera (la ciudad,
- * los eventos, quién sigue) vive en `AgendaContenido`, dentro de un `<Suspense>` con `ListaEsqueleto` de
- * `fallback`: la cabecera y la primera tanda de renglones, en gris, del mismo alto que lo real.
+ * la sesión) vive en `AgendaContenido`, dentro de un `<Suspense>` con `ListaEsqueleto` de `fallback` — pero ya no
+ * espera los eventos: esa consulta la difiere `AgendaInicio` en su propio `<Suspense>` interno (OL-161).
  */
 export default function Agenda({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (

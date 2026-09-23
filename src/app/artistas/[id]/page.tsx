@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
@@ -13,6 +13,7 @@ import VideoEmbed from "@/components/ui/VideoEmbed";
 import { ORIGENES } from "@/lib/origen";
 import { CAPO_SIN_RECLAMAR_EN_SITEMAP } from "@/lib/sitemap";
 import Desplegable from "@/components/Desplegable";
+import { EsqueletoBloqueTexto, EsqueletoRenglones } from "@/components/ui/Esqueleto";
 import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
@@ -33,7 +34,7 @@ import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { qrDeUrl } from "@/lib/qr";
-import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
 import { videoEmbedDe } from "@/lib/video";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
@@ -106,6 +107,86 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
   });
 }
 
+// `cargarFechas` y cuántos siguen al artista se piden de nuevo abajo (`MetaArtista` y `SeccionFechasArtista`, en
+// `<Suspense>` separados): `cache()` de React las memoiza por argumento para que sea una sola consulta por
+// petición (OL-161, bitácora 196; mismo patrón que `cargarLigadas`, arriba).
+const cargarFechasCache = cache(cargarFechas);
+const cargarSeguidoresArtistaCache = cache(async (artistaId: string): Promise<number> => {
+  const supabase = await clienteServidor();
+  const { data } = (await supabase?.rpc("cuenta_seguidores", { p_artista: artistaId })) ?? { data: 0 };
+  return Number(data ?? 0);
+});
+
+/**
+ * Cuánta gente sigue al artista y su próxima fecha: los dos renglones de `<ul className={ficha.datos}>` que piden
+ * una consulta aparte de la del artista (OL-161). Se difieren en `<Suspense>`; la cabecera (foto, nombre, etiqueta)
+ * no los espera.
+ */
+async function MetaArtista({ artista }: { artista: ArtistaConAutor }) {
+  const [seguidores, fechas] = await Promise.all([cargarSeguidoresArtistaCache(artista.id), cargarFechasCache(artista.id)]);
+  const proxima = fechas[0] ? { id: fechas[0].id, inicio: fechas[0].inicio, sitio: nombreSitio(fechas[0]), zona: fechas[0].zona } : null;
+  return seguidores === 0 && !proxima ? (
+    <li className={ficha.dato}>
+      <IconoCalendario width={20} height={20} />
+      <span className={ficha.suave}>Sin fechas próximas · Nadie lo sigue todavía</span>
+    </li>
+  ) : (
+    <>
+      <li className={ficha.dato}>
+        <IconoPersonas width={20} height={20} />
+        <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
+      </li>
+      <li className={ficha.dato}>
+        <IconoCalendario width={20} height={20} />
+        <b>{proxima ? textoProximaFecha(proxima) : "Sin fechas próximas"}</b>
+        {proxima && (
+          <Salto destino="fechas" className={ficha.datoEnlace}>
+            ver
+          </Salto>
+        )}
+      </li>
+    </>
+  );
+}
+
+/** Fallback de `MetaArtista`: un renglón del mismo alto (el caso con más texto, "Nadie lo sigue todavía"). */
+function EsqueletoMetaArtista() {
+  return (
+    <li className={ficha.dato} aria-hidden="true">
+      <EsqueletoBloqueTexto lineas={1} />
+    </li>
+  );
+}
+
+/** "Se presenta en" entero: la misma consulta que `MetaArtista`, memoizada por `cache()`, más quién decidió qué. */
+async function SeccionFechasArtista({ artista, actual, hrefPublicarFecha }: { artista: ArtistaConAutor; actual: { correo: string | null; perfil: Perfil } | null; hrefPublicarFecha: string }) {
+  const fechas = await cargarFechasCache(artista.id);
+  const decididas = await decididasDe(actual?.perfil.id ?? null, fechas.map((e) => e.id));
+  return (
+    <section className={styles.lista} id="fechas" aria-label="Se presenta en">
+      <h2>
+        Se presenta en
+        {fechas.length > 0 && <span> · {fechas.length}</span>}
+      </h2>
+      {fechas.length === 0 && <p className={styles.vacio}>Aún no tiene fechas publicadas. ¿Sabes de una? Publícala.</p>}
+      <EventosPorDia eventos={fechas} decididas={decididas} avisos={avisosParaListas(actual)} />
+      <Boton href={hrefPublicarFecha} variante="secundario" className={styles.publicar}>
+        Publicar una fecha
+      </Boton>
+    </section>
+  );
+}
+
+/** Fallback de `SeccionFechasArtista`: el título fijo (sin el conteo, que sí espera la consulta) y renglones grises. */
+function EsqueletoSeccionFechas() {
+  return (
+    <section className={styles.lista} id="fechas" aria-label="Se presenta en" aria-hidden="true">
+      <h2>Se presenta en</h2>
+      <EsqueletoRenglones cantidad={3} redonda />
+    </section>
+  );
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const a = await cargarArtista(id);
@@ -148,14 +229,14 @@ export default async function FichaArtista({ params, searchParams }: Params) {
     await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, artista_id: a.id }, { onConflict: "usuario_id,artista_id", ignoreDuplicates: true });
     redirect(hrefArtista(a));
   }
-  // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
-  const [fechas, cuenta, mio, ligados] = await Promise.all([
-    cargarFechas(a.id),
-    supabase?.rpc("cuenta_seguidores", { p_artista: a.id }) ?? Promise.resolve({ data: 0 }),
+  // Cuántos lo siguen y sus fechas próximas son consultas aparte, diferidas en `<Suspense>` (OL-161, bitácora 196:
+  // `MetaArtista` y `SeccionFechasArtista`, memoizadas con `cache()` para pedirse una sola vez). La cabecera (foto,
+  // nombre, etiqueta), el menú de administración y el compartir junto al avatar no las esperan. Si yo lo sigo se
+  // pregunta aparte, una fila como mucho (nunca la lista entera), para que el botón Seguir salga ya con su estado.
+  const [mio, ligados] = await Promise.all([
     actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("artista_id", a.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
     cargarLigadas(a.id),
   ]);
-  const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse(a) ? await cargarDestacado("artista", a.id) : null;
@@ -173,10 +254,10 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const url = `${ORIGEN}${hrefArtista(a)}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
   const hrefPublicarFecha = actual ? `/eventos/nuevo?artista=${a.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?artista=${a.id}`)}`;
-  // Voy y Me interesa al deslizar sus fechas, para quien mira (OL-057).
-  const [decididas, qrSvg] = await Promise.all([decididasDe(actual?.perfil.id ?? null, fechas.map((e) => e.id)), qrDeUrl(url)]);
-  const proxima = fechas[0] ? { id: fechas[0].id, inicio: fechas[0].inicio, sitio: nombreSitio(fechas[0]), zona: fechas[0].zona } : null;
-  const avisoBorrar = fechas.length > 0 ? `Se borra la ficha; sus ${fechas.length === 1 ? "1 fecha próxima se queda" : `${fechas.length} fechas próximas se quedan`} sin artista.` : "Se borra la ficha.";
+  const qrSvg = await qrDeUrl(url);
+  // Sin las fechas (diferidas) el aviso de borrar ya no dice cuántas tiene: el menú de administración sigue en el
+  // HTML inicial y no puede esperar esa consulta aparte.
+  const avisoBorrar = "Se borra la ficha; sus fechas próximas, si tiene, se quedan sin artista.";
   const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
   // JSON-LD (OL-143, doc 36): nada en una ficha oculta ni en una del CAPO sin reclamar y sin indexar (mismo
   // interruptor que `generateMetadata`); solo redes ya públicas y registradas, nunca un dato de contacto.
@@ -274,29 +355,9 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           <IconoPin width={20} height={20} />
           <b>{a.ciudad}</b>
         </li>
-        {/* Sin fechas ni seguidores: una sola línea en gris; las dos negaciones no merecen dos renglones. */}
-        {seguidores === 0 && !proxima ? (
-          <li className={ficha.dato}>
-            <IconoCalendario width={20} height={20} />
-            <span className={ficha.suave}>Sin fechas próximas · Nadie lo sigue todavía</span>
-          </li>
-        ) : (
-          <>
-            <li className={ficha.dato}>
-              <IconoPersonas width={20} height={20} />
-              <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
-            </li>
-            <li className={ficha.dato}>
-              <IconoCalendario width={20} height={20} />
-              <b>{proxima ? textoProximaFecha(proxima) : "Sin fechas próximas"}</b>
-              {proxima && (
-                <Salto destino="fechas" className={ficha.datoEnlace}>
-                  ver
-                </Salto>
-              )}
-            </li>
-          </>
-        )}
+        <Suspense fallback={<EsqueletoMetaArtista />}>
+          <MetaArtista artista={a} />
+        </Suspense>
       </ul>
 
       {/* Compartir ya no vive aquí (corrección del founder, OL-159): el carril es solo enlaces externos, con su
@@ -328,17 +389,9 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         </section>
       )}
 
-      <section className={styles.lista} id="fechas" aria-label="Se presenta en">
-        <h2>
-          Se presenta en
-          {fechas.length > 0 && <span> · {fechas.length}</span>}
-        </h2>
-        {fechas.length === 0 && <p className={styles.vacio}>Aún no tiene fechas publicadas. ¿Sabes de una? Publícala.</p>}
-        <EventosPorDia eventos={fechas} decididas={decididas} avisos={avisosParaListas(actual)} />
-        <Boton href={hrefPublicarFecha} variante="secundario" className={styles.publicar}>
-          Publicar una fecha
-        </Boton>
-      </section>
+      <Suspense fallback={<EsqueletoSeccionFechas />}>
+        <SeccionFechasArtista artista={a} actual={actual} hrefPublicarFecha={hrefPublicarFecha} />
+      </Suspense>
 
       {/* Ficha traída de un catálogo y sin dueño: al final, discreto y solo con sesión (sin sesión no se ofrece, para no
           invitar a reclamos ajenos), un letrero que abre la hoja con el origen y las dos salidas. Sin pie de origen aparte. */}

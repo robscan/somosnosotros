@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { PanelPestana, Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo } from "@/lib/agenda";
+import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { tandaAcotada, siguienteTanda, TANDA_INICIAL } from "@/lib/tandas";
 import ChipCiudad from "./Ciudad";
@@ -12,21 +13,21 @@ import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import { useCentinela } from "./useCentinela";
 import CargarMas from "./ui/CargarMas";
+import { EsqueletoRenglones } from "./ui/Esqueleto";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
 import Cabecera from "./ui/Cabecera";
 import { IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
-import { useAsistenciaEnLista, type Decididas } from "./useAsistenciaEnLista";
+import { useAsistenciaEnLista } from "./useAsistenciaEnLista";
 import { AvisoAbajo, useCanalDeListas } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
 import styles from "./AgendaInicio.module.css";
 
 type Props = {
-  eventos: EventoAgenda[];
-  /** Lugares que la persona sigue; null = sin sesión. */
-  seguidos: string[] | null;
-  /** Eventos de los artistas que sigue (con sesión). */
-  eventosSeguidos?: string[];
+  /** Eventos, quién sigue qué y qué decidió la persona: una sola consulta pesada, diferida (OL-161, bitácora 196).
+   *  Sin `await` en la página: llega como promesa para que la cabecera (fecha, ciudad, pestañas, lupa) pinte al
+   *  instante y solo la lista espere, en su propio `<Suspense>`. */
+  agenda: Promise<Agenda>;
   ciudad: Ciudad;
   ciudades: CiudadConDatos[];
   /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan). */
@@ -35,9 +36,8 @@ type Props = {
   zona?: string;
   /** Lo que va entre la cabecera y la lista: la tarjeta "Activa los avisos" de la app instalada (docs/rediseno/17, decisión 4). */
   antes?: ReactNode;
-  /** Lo que la persona decidió en los eventos cargados (Voy, Me interesa); null = sin sesión. */
-  asistencias?: Decididas;
-  /** Lo que pide la pregunta de avisos tras el primer Voy al deslizar (como en la ficha). */
+  /** Lo que pide la pregunta de avisos tras el primer Voy al deslizar (como en la ficha): no depende de la consulta
+   *  pesada (sale de la sesión), así que llega ya resuelto. */
   avisos?: AvisosLista | null;
   /** Con qué pestaña abrir (un "Ver todos" de Inicio, OL-156): "siguiendo"; sin ella, "todos" de siempre. Cualquier
    *  otro valor (un enlace viejo a "cercanos" o "nuevos", pestañas que ya no existen) también cae a "todos". */
@@ -55,7 +55,7 @@ type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: bo
  * Cercanos y Nuevos: viven como carriles en Inicio, `/`). `ui/Cabecera` con el chip de fecha, el de ciudad y la
  * lupa; lista agrupada por día con títulos pegajosos, vacíos por causa. Decisiones en docs/rediseno/02.
  */
-export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], ciudad, ciudades, hoy, zona, antes, asistencias = null, avisos = null, filtroInicial, busquedaInicial }: Props) {
+export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona, antes, avisos = null, filtroInicial, busquedaInicial }: Props) {
   const filtroValido = filtroInicial === "siguiendo" ? "siguiendo" : "todos";
   const [filtro, setFiltro] = useState<Filtro>(filtroValido);
   const [fecha, setFecha] = useState("");
@@ -66,7 +66,8 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const [enfocar, setEnfocar] = useState(false);
   // Carga progresiva (OL-158): cuántos renglones van pintados de la lista agrupada por día. La memoria de pantalla
   // repone este número igual que la pestaña o la búsqueda, para que volver de una ficha no colapse la lista a la
-  // primera tanda otra vez.
+  // primera tanda otra vez. Vive aquí (no en `AgendaLista`, diferida) para que una sola `useMemoriaPantalla` guarde
+  // todo junto — dos llamadas con la misma clave se pisarían la una a la otra (OL-161).
   const [mostrados, setMostrados] = useState(TANDA_INICIAL);
 
   useMemoriaPantalla<Recordado>("agenda", { filtro, fecha, busqueda, buscando, mostrados }, (r) => {
@@ -78,17 +79,105 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   });
 
   const ahora = new Date();
+  const hoyIso = localAIso(`${hoy}T12:00`, zona) ?? new Date().toISOString();
 
+  return (
+    <>
+      <Cabecera
+        contexto={
+          <>
+            {fecha ? (
+              // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
+              <span className={`${chip.chip} ${chip.deContexto} ${styles.marcado}`}>
+                <IconoCalendario width={16} height={16} />
+                <span>{diaCorto(localAIso(`${fecha}T12:00`, zona) ?? hoyIso, ahora, zona)}</span>
+                <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
+                  <IconoCerrar width={18} height={18} />
+                </button>
+              </span>
+            ) : (
+              // Sin fecha elegida: estado vacío "Seleccionar". El chip es el selector nativo: el toque cae en él.
+              <label className={`${chip.chip} ${chip.deContexto} ${chip.chipNativo}`} htmlFor="agenda-fecha">
+                <IconoCalendario width={16} height={16} />
+                <span>Seleccionar</span>
+                <IconoCaret width={12} height={12} />
+                <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
+              </label>
+            )}
+            <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/agenda" : `/agenda?ciudad=${c.slug}`)} />
+          </>
+        }
+        onBuscar={() => {
+          setBuscando(true);
+          setEnfocar(true);
+        }}
+        campo={buscando && <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, sitio o artista" ariaLabel="Buscar un evento" autoFocus={enfocar} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />}
+        filtros={
+          <Pestanas ariaLabel="Filtrar la agenda" repartidas>
+            {FILTROS.map((f) => (
+              <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => setFiltro(f.clave)}>
+                {f.etiqueta}
+              </Pestana>
+            ))}
+          </Pestanas>
+        }
+      />
+      {antes}
+      {/* La lista sí espera su propia consulta (eventos, quién sigue qué, qué decidió la persona): va en su
+          `<Suspense>`, con renglones de esqueleto del mismo alto (OL-161, bitácora 196) — antes, la cabecera de
+          arriba esperaba lo mismo (observado por el gestor en la captura 01 de la bitácora 193). */}
+      <Suspense fallback={<EsqueletoListaAgenda />}>
+        <AgendaLista agenda={agenda} filtro={filtro} fecha={fecha} busqueda={busqueda} ciudad={ciudad} zona={zona} avisos={avisos} mostrados={mostrados} onMostrados={setMostrados} />
+      </Suspense>
+    </>
+  );
+}
+
+/** Fallback de `AgendaLista`: el mismo `PanelPestana` (para no saltar de posición) con renglones grises. */
+function EsqueletoListaAgenda() {
+  return (
+    <div className={styles.lista} aria-hidden="true">
+      <EsqueletoRenglones cantidad={6} />
+    </div>
+  );
+}
+
+/**
+ * La lista misma, tras `cargarAgenda` (OL-161, bitácora 196): `use(agenda)` la desenvuelve y, mientras está
+ * pendiente, suspende. El filtro, la fecha, la búsqueda y cuántos van mostrados llegan como prop desde
+ * `AgendaInicio` (que sigue siendo su dueño, para la memoria de pantalla): esta lista los usa, no los guarda.
+ */
+function AgendaLista({
+  agenda,
+  filtro,
+  fecha,
+  busqueda,
+  ciudad,
+  zona,
+  avisos,
+  mostrados,
+  onMostrados,
+}: {
+  agenda: Promise<Agenda>;
+  filtro: Filtro;
+  fecha: string;
+  busqueda: string;
+  ciudad: Ciudad;
+  zona?: string;
+  avisos: AvisosLista | null;
+  mostrados: number;
+  onMostrados: (actualizar: (m: number) => number) => void;
+}) {
+  const { eventos, seguidos, eventosSeguidos, asistencias } = use(agenda);
+  const ahora = new Date();
   const canal = useCanalDeListas();
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
 
   // Sin la pestaña Cercanos (que ya vive en Inicio como carril) `filtrarAgenda` nunca calcula distancias aquí: `km`
   // siempre viene vacío, como ya pasaba en Todos y Siguiendo antes de esta pieza.
   const { lista: filtrada, km } = filtrarAgenda(eventos, { filtro, punto: null, seguidos, eventosSeguidos, fecha, ahora });
-  const encontrada = buscarEventos(filtrada, busqueda);
-  const lista = encontrada;
+  const lista = buscarEventos(filtrada, busqueda);
   const hayBusqueda = busqueda.trim().length > 0;
-  const hoyIso = localAIso(`${hoy}T12:00`, zona) ?? new Date().toISOString();
 
   // Carga progresiva de la lista agrupada por día (OL-158): con un día elegido ya es un solo día, corto, sin
   // tandas. El total cambia con la pestaña, la búsqueda o la ciudad; cuando cambia, la tanda se acota de nuevo
@@ -98,12 +187,12 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   useEffect(() => {
     if (totalAnteriorRef.current !== total) {
       totalAnteriorRef.current = total;
-      setMostrados((m) => tandaAcotada(total, m).mostrados);
+      onMostrados((m) => tandaAcotada(total, m).mostrados);
     }
-  }, [total]);
+  }, [total, onMostrados]);
   const listaVisible = fecha ? lista : lista.slice(0, mostrados);
   const hayMasEventos = !fecha && mostrados < total;
-  const centinelaRef = useCentinela(hayMasEventos, () => setMostrados((m) => siguienteTanda(total, m).mostrados));
+  const centinelaRef = useCentinela(hayMasEventos, () => onMostrados((m) => siguienteTanda(total, m).mostrados));
 
   let cuerpo: React.ReactNode;
   if (filtro === "siguiendo" && seguidos === null) {
@@ -151,53 +240,13 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
           </ul>
         </section>
       ))}
-      <CargarMas hayMas={hayMasEventos} centinelaRef={centinelaRef} onVerMas={() => setMostrados((m) => siguienteTanda(total, m).mostrados)} />
+      <CargarMas hayMas={hayMasEventos} centinelaRef={centinelaRef} onVerMas={() => onMostrados((m) => siguienteTanda(total, m).mostrados)} />
       </>
     );
   }
 
   return (
     <>
-      <Cabecera
-        contexto={
-          <>
-            {fecha ? (
-              // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
-              <span className={`${chip.chip} ${chip.deContexto} ${styles.marcado}`}>
-                <IconoCalendario width={16} height={16} />
-                <span>{diaCorto(localAIso(`${fecha}T12:00`, zona) ?? hoyIso, ahora, zona)}</span>
-                <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
-                  <IconoCerrar width={18} height={18} />
-                </button>
-              </span>
-            ) : (
-              // Sin fecha elegida: estado vacío "Seleccionar". El chip es el selector nativo: el toque cae en él.
-              <label className={`${chip.chip} ${chip.deContexto} ${chip.chipNativo}`} htmlFor="agenda-fecha">
-                <IconoCalendario width={16} height={16} />
-                <span>Seleccionar</span>
-                <IconoCaret width={12} height={12} />
-                <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
-              </label>
-            )}
-            <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/agenda" : `/agenda?ciudad=${c.slug}`)} />
-          </>
-        }
-        onBuscar={() => {
-          setBuscando(true);
-          setEnfocar(true);
-        }}
-        campo={buscando && <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, sitio o artista" ariaLabel="Buscar un evento" autoFocus={enfocar} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />}
-        filtros={
-          <Pestanas ariaLabel="Filtrar la agenda" repartidas>
-            {FILTROS.map((f) => (
-              <Pestana key={f.clave} activa={filtro === f.clave} onClick={() => setFiltro(f.clave)}>
-                {f.etiqueta}
-              </Pestana>
-            ))}
-          </Pestanas>
-        }
-      />
-      {antes}
       {/* Deslizamiento de 200 ms en la dirección de la pestaña tocada (docs/rediseno/38-transiciones-cargador.md,
           OL-148); no se dispara por una búsqueda o una fecha, solo cuando cambia el índice de la pestaña. */}
       <PanelPestana posicion={FILTROS.findIndex((f) => f.clave === filtro)}>{cuerpo}</PanelPestana>

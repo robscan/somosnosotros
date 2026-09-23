@@ -57,6 +57,15 @@ export function EsqueletoCabeceraFicha() {
   );
 }
 
+/**
+ * Una caja rectangular que respira, sin medida propia: el tamaño lo pone quien la usa (una clase con alto/ancho,
+ * como `.cajaMapa` de Lugares). Para lo que no encaja en renglón, tarjeta o cabecera de ficha — el mapa mientras
+ * carga (OL-161, bitácora 196).
+ */
+export function EsqueletoCaja({ className = "" }: { className?: string }) {
+  return <div className={`${styles.caja} ${styles.respira} ${className}`} aria-hidden="true" />;
+}
+
 export function EsqueletoBloqueTexto({ lineas = 3 }: { lineas?: number }) {
   return (
     <div className={styles.bloqueTexto} aria-hidden="true">

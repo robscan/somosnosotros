@@ -1,3 +1,4 @@
+import { cache, Suspense } from "react";
 import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
@@ -10,6 +11,7 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
+import { EsqueletoBloqueTexto } from "@/components/ui/Esqueleto";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
@@ -77,6 +79,91 @@ async function cargarAsistencias(id: string, miId: string | null): Promise<{ van
   return { van, interesados, miEstado };
 }
 
+/**
+ * Solo mi estado (Voy / Me interesa / nada), para la barra de acciones que sí pinta en el HTML inicial (OL-161,
+ * bitácora 196): una fila, no la lista entera de quién va, que sí se difiere.
+ */
+async function cargarMiEstado(id: string, miId: string | null): Promise<EstadoAsistencia> {
+  if (!miId) return null;
+  const supabase = await clienteServidor();
+  const { data } = (await supabase?.from("asistencias").select("estado").eq("evento_id", id).eq("usuario_id", miId).maybeSingle()) ?? { data: null };
+  return (data?.estado as EstadoAsistencia | undefined) ?? null;
+}
+
+// Las tres consultas de "quién va" (nombres, cuántos van, el cartel de artistas) se piden una sola vez por petición
+// aunque se usen desde dos bloques diferidos distintos (`DatosQuienEvento` y `QuienVaDiferido`): `cache()` de React
+// las memoiza por argumento (gestión de cambios, OL-059, mismo patrón que `cargarLigadas` en la ficha de artista).
+const cargarAsistenciasCache = cache(cargarAsistencias);
+const cargarQuienCache = cache(cargarQuien);
+const cargarTotalVanCache = cache(async (id: string): Promise<number> => {
+  const supabase = await clienteServidor();
+  const { data } = (await supabase?.rpc("van_por_evento", { ids: [id] })) ?? { data: [] as { evento_id: string; n: number }[] };
+  return Number(((data ?? []) as { evento_id: string; n: number }[])[0]?.n ?? 0);
+});
+
+/**
+ * Con quién se presenta y cuánta gente va: dos renglones de `<ul className={ficha.datos}>` que piden una consulta
+ * aparte de la del evento (OL-161). Van en `<Suspense>`, con dos renglones de esqueleto del mismo alto mientras
+ * llegan (`EsqueletoBloqueTexto`, canon de `docs/PRINCIPIOS_UX.md`).
+ */
+async function DatosQuienEvento({ eventoId, miId }: { eventoId: string; miId: string | null }) {
+  const [asistencias, quien, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarQuienCache(eventoId), cargarTotalVanCache(eventoId)]);
+  const totalVan = Math.max(totalVanRpc, asistencias.van.length);
+  return (
+    <>
+      {quien.length > 0 && (
+        <li className={ficha.dato}>
+          <IconoEstrella width={20} height={20} />
+          <b>
+            Con{" "}
+            {quien.map((q, i) => (
+              <Fragment key={q.id}>
+                {i > 0 && (i === quien.length - 1 ? " y " : ", ")}
+                <Link href={hrefArtista(q)}>{q.nombre}</Link>
+              </Fragment>
+            ))}
+          </b>
+        </li>
+      )}
+      <li className={ficha.dato}>
+        <IconoPersonas width={20} height={20} />
+        <b>{totalVan === 0 ? "Nadie ha dicho que va todavía" : totalVan === 1 ? "Va 1 persona" : `Van ${totalVan} personas`}</b>
+        {totalVan > 0 && (
+          <Salto destino="quien-va" className={ficha.datoEnlace}>
+            ver
+          </Salto>
+        )}
+      </li>
+    </>
+  );
+}
+
+/** Fallback de `DatosQuienEvento`: un solo renglón del mismo alto (el de "Van N personas", que siempre aparece). */
+function EsqueletoDatosQuien() {
+  return (
+    <li className={ficha.dato} aria-hidden="true">
+      <EsqueletoBloqueTexto lineas={1} />
+    </li>
+  );
+}
+
+/** Fallback de `QuienVaDiferido`: el título fijo de la sección (no depende de ninguna consulta) y dos líneas grises. */
+function EsqueletoQuienVa() {
+  return (
+    <section className={styles.quienVa} id="quien-va" aria-label="Quién va" aria-hidden="true">
+      <h2>Quién va</h2>
+      <EsqueletoBloqueTexto lineas={2} />
+    </section>
+  );
+}
+
+/** La lista de quién va (`QuienVa`), diferida: la misma consulta que `DatosQuienEvento`, memoizada por `cache()`. */
+async function QuienVaDiferido({ eventoId, miId, conSesion }: { eventoId: string; miId: string | null; conSesion: boolean }) {
+  const [asistencias, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarTotalVanCache(eventoId)]);
+  const totalVan = Math.max(totalVanRpc, asistencias.van.length);
+  return <QuienVa van={asistencias.van} total={totalVan} interesados={asistencias.interesados} conSesion={conSesion} />;
+}
+
 /** La dirección reservada: la base decide si esta persona puede verla (autor, admin, o con sesión cuando toca). */
 async function cargarPrivado(id: string): Promise<SitioPrivado | null> {
   const supabase = await clienteServidor();
@@ -136,9 +223,10 @@ export default async function FichaEvento({ params, searchParams }: Params) {
     await supabase?.from("asistencias").upsert({ usuario_id: actual.perfil.id, evento_id: e.id, estado: accion });
     redirect(hrefEvento(e));
   }
-  const [asistencias, quien, conteo] = await Promise.all([cargarAsistencias(e.id, actual?.perfil.id ?? null), cargarQuien(e.id), (await clienteServidor())?.rpc("van_por_evento", { ids: [e.id] }) ?? Promise.resolve({ data: [] as { evento_id: string; n: number }[] })]);
-  // Cuántos van en total, también los de perfil reservado, que la política de la base no deja ver por nombre.
-  const totalVan = Math.max(Number(((conteo.data ?? []) as { evento_id: string; n: number }[])[0]?.n ?? 0), asistencias.van.length);
+  // "Quién va" (nombres, cuántos van, el cartel de artistas) es su propia consulta, aparte de la del evento: se
+  // difiere en `<Suspense>` (OL-161, bitácora 196) — la cabecera (foto, nombre, cuándo, dónde) no la espera. Solo mi
+  // estado, para la barra de acciones que sí pinta al instante, se pide aquí (una fila, no la lista entera).
+  const miEstado = await cargarMiEstado(e.id, actual?.perfil.id ?? null);
   const privado = e.sitio_reservado ? await cargarPrivado(e.id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado });
   const esAdmin = actual?.perfil.rol === "admin";
@@ -148,8 +236,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const argsSitio = { lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado };
   const comoLlegar = enlaceComoLlegar(argsSitio);
   const puntoMapa = puntoComoLlegar(argsSitio);
-  const n = totalVan;
-  const avisoBorrar = n > 0 ? `Se borra el evento y los ${n === 1 ? '1 "Voy"' : `${n} "Voy"`} que tiene.` : "Se borra el evento.";
+  // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos "Voy" hay: el menú de administración sigue en el
+  // HTML inicial (OL-161) y no puede esperar esa consulta aparte.
+  const avisoBorrar = 'Se borra el evento, con los "Voy" que tenga.';
   const revela = e.sitio_revelar_desde ? formatearLargo(e.sitio_revelar_desde, new Date(), null, e.zona) : "el día del evento";
   // JSON-LD (OL-059, bitácora 088): la coordenada y la dirección solo si son públicas — nunca las de un sitio
   // reservado (`privado`), y nunca las de un lugar oculto o marcado "Solo tú lo ves". Sin una dirección pública
@@ -306,29 +395,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
             )}
           </li>
         )}
-        {quien.length > 0 && (
-          <li className={ficha.dato}>
-            <IconoEstrella width={20} height={20} />
-            <b>
-              Con{" "}
-              {quien.map((q, i) => (
-                <Fragment key={q.id}>
-                  {i > 0 && (i === quien.length - 1 ? " y " : ", ")}
-                  <Link href={hrefArtista(q)}>{q.nombre}</Link>
-                </Fragment>
-              ))}
-            </b>
-          </li>
-        )}
-        <li className={ficha.dato}>
-          <IconoPersonas width={20} height={20} />
-          <b>{n === 0 ? "Nadie ha dicho que va todavía" : n === 1 ? "Va 1 persona" : `Van ${n} personas`}</b>
-          {n > 0 && (
-            <Salto destino="quien-va" className={ficha.datoEnlace}>
-              ver
-            </Salto>
-          )}
-        </li>
+        <Suspense fallback={<EsqueletoDatosQuien />}>
+          <DatosQuienEvento eventoId={e.id} miId={actual?.perfil.id ?? null} />
+        </Suspense>
         <li className={ficha.dato}>
           <IconoBoleto width={20} height={20} />
           <b>{e.precio ?? "Gratis"}</b>
@@ -376,7 +445,9 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         </EnlaceExterno>
       )}
 
-      <QuienVa van={asistencias.van} total={totalVan} interesados={asistencias.interesados} conSesion={!!actual} />
+      <Suspense fallback={<EsqueletoQuienVa />}>
+        <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} />
+      </Suspense>
 
       <p className={ficha.autor}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}.</p>
 
@@ -384,7 +455,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         eventoId={e.id}
         eventoSlug={e.slug}
         titulo={e.titulo}
-        miEstado={asistencias.miEstado}
+        miEstado={miEstado}
         conSesion={!!actual}
         cuenta={actual?.perfil.id ?? ""}
         avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
