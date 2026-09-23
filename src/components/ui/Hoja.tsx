@@ -5,7 +5,13 @@ import { createPortal } from "react-dom";
 import { IconoCerrar } from "./Iconos";
 import styles from "./Hoja.module.css";
 
-type Props = { etiqueta: string; onCerrar: () => void; children: ReactNode };
+type Props = {
+  etiqueta: string;
+  /** Con título, la cabecera (asa, título y ✕) queda fija y solo el cuerpo se desplaza (OL-137). */
+  titulo?: string;
+  onCerrar: () => void;
+  children: ReactNode;
+};
 
 /**
  * Hoja que emerge desde abajo tras un gesto de la persona (nunca sola). Se cierra con la ✕,
@@ -24,7 +30,7 @@ let abiertas = 0;
 const enNavegador = () => true;
 const enServidor = () => false;
 
-export default function Hoja({ etiqueta, onCerrar, children }: Props) {
+export default function Hoja({ etiqueta, titulo, onCerrar, children }: Props) {
   const montada = useSyncExternalStore(nada, enNavegador, enServidor);
   const [marco, setMarco] = useState<{ top: number; height: number } | null>(null);
   useEffect(() => {
@@ -61,11 +67,18 @@ export default function Hoja({ etiqueta, onCerrar, children }: Props) {
   if (!montada) return null;
   return createPortal(
     <div className={styles.fondo} style={marco ? { top: marco.top, height: marco.height, bottom: "auto" } : undefined} onClick={onCerrar}>
-      <div className={styles.hoja} role="dialog" aria-label={etiqueta} onClick={(e) => e.stopPropagation()} onTouchMove={alArrastrar}>
+      <div className={titulo ? `${styles.hoja} ${styles.conCabecera}` : styles.hoja} role="dialog" aria-label={etiqueta} onClick={(e) => e.stopPropagation()} onTouchMove={alArrastrar}>
         <button type="button" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar">
           <IconoCerrar width={22} height={22} />
         </button>
-        {children}
+        {titulo ? (
+          <>
+            <h3>{titulo}</h3>
+            <div className={styles.cuerpo}>{children}</div>
+          </>
+        ) : (
+          children
+        )}
       </div>
     </div>,
     document.body,

@@ -59,3 +59,15 @@
   color: var(--texto-suave);
   cursor: pointer;
 }
+/* Con cabecera fija (prop titulo): asa, título y ✕ no se mueven; solo el cuerpo se desplaza. */
+.conCabecera {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
