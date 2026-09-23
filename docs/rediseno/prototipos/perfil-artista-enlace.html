@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El perfil del artista como su enlace único</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px; --alto-estado: 48px; --alto-barra: 56px;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; padding: 24px 16px; min-height: 100vh; }
+  button, input { font: inherit; color: inherit; }
+  svg { width: 20px; height: 20px; flex: none; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 1500px; margin: 0 auto; }
+  .rotulo { flex: 0 0 100%; margin-bottom: 8px; color: var(--estudio-suave); font-size: 14px; line-height: 1.5; }
+  .rotulo > span { display: block; max-width: 860px; margin-inline: auto; }
+  .rotulo strong { display: block; color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 22px; margin-bottom: 4px; }
+  .par { display: grid; gap: 10px; justify-items: center; }
+  .par > figcaption { max-width: 390px; color: var(--estudio-suave); font-size: 13px; line-height: 1.45; text-align: left; }
+  .par > figcaption b { display: block; color: var(--estudio-texto); font-size: 15px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 2px; }
+  .telefono { position: relative; width: 390px; max-width: 100%; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); }
+  .estado-ios { height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+  .pantalla { height: calc(844px - var(--alto-estado)); overflow-y: auto; padding: 0 var(--gutter) 32px; position: relative; }
+
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .logotipo { grid-column: 2; font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1; }
+  .volver { grid-column: 1; justify-self: start; color: var(--primario); font-size: 15px; font-weight: 700; }
+  h1 { font-size: 24px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; margin: 14px 0 4px; }
+  .sub { color: var(--texto-suave); font-size: 14px; margin-bottom: 16px; }
+
+  /* Mi perfil: bloque "Mis artistas" */
+  .seccion { margin: 18px 0 22px; }
+  .seccion > h2 { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 10px; }
+  .tarjeta-artista { display: grid; grid-template-columns: 52px 1fr; grid-template-areas: "foto nombre" "foto botones"; column-gap: 12px; row-gap: 8px; align-items: center; padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); margin-bottom: 10px; }
+  .tarjeta-artista .foto { grid-area: foto; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #c94f7c, #f2a33c); }
+  .tarjeta-artista .nombre { grid-area: nombre; display: flex; flex-direction: column; }
+  .tarjeta-artista .nombre b { font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .tarjeta-artista .nombre small { color: var(--texto-suave); font-size: 13px; }
+  .tarjeta-artista .botones { grid-area: botones; display: flex; gap: 8px; }
+  .btn-mini { min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--primario); border-radius: 20px; background: var(--fondo); color: var(--primario); font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-mini.lleno { background: var(--primario); color: var(--primario-texto); border-color: var(--primario); }
+  .btn-mini.circular { width: var(--toque-min); height: var(--toque-min); padding: 0; justify-content: center; border-radius: 50%; border-color: var(--borde); color: var(--texto); }
+
+  /* Ficha de artista */
+  .cabecera-ficha { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 0 18px; }
+  .cabecera-ficha .foto { width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #c94f7c, #f2a33c); margin-bottom: 12px; }
+  .cabecera-ficha h1 { margin: 0 0 4px; }
+  .cabecera-ficha .disciplina { color: var(--texto-suave); font-size: 14px; margin-bottom: 14px; }
+  .fila-acciones { display: flex; gap: 10px; width: 100%; margin-bottom: 18px; }
+  .fila-acciones .principal { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--toque); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 16px; font-weight: 700; }
+  .fila-acciones .secundaria { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--toque); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); color: var(--texto); font-size: 16px; font-weight: 700; }
+
+  .bloque { margin-bottom: 22px; }
+  .bloque h2 { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 10px; }
+  .novedad { display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); margin-bottom: 8px; }
+  .novedad .marco { width: 40px; height: 40px; border-radius: 8px; background: var(--primario-suave); color: var(--primario); display: inline-grid; place-items: center; }
+  .novedad b { display: block; font-size: 15px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .novedad small { color: var(--texto-suave); font-size: 13px; }
+  .video-embed { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: var(--radio); background: #14181c; display: grid; place-items: center; color: #fff; margin-bottom: 6px; overflow: hidden; }
+  .video-embed .jugar { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.92); color: #14181c; display: grid; place-items: center; }
+  .video-embed span.rotulo-video { position: absolute; left: 10px; bottom: 8px; font-size: 12px; background: rgba(0,0,0,.55); padding: 3px 8px; border-radius: 10px; }
+  .caption-video { color: var(--texto-suave); font-size: 13px; margin-bottom: 16px; }
+
+  /* Hoja compartir */
+  .velo { position: absolute; inset: 0; background: rgba(0,0,0,.32); }
+  .hoja { position: absolute; inset: auto 0 0 0; border-radius: 20px 20px 0 0; background: var(--fondo); box-shadow: 0 -8px 30px rgba(0,0,0,.16); padding: 14px var(--gutter) 28px; }
+  .asa { width: 36px; height: 4px; border-radius: 2px; background: var(--borde); margin: 0 auto 14px; }
+  .hoja h3 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 4px; text-align: center; }
+  .hoja .sub-hoja { text-align: center; color: var(--texto-suave); font-size: 13px; margin-bottom: 18px; }
+  .qr-caja { display: flex; justify-content: center; margin-bottom: 18px; }
+  .qr-caja .qr { width: 168px; height: 168px; border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px; background: #fff; }
+  .campo-enlace { display: flex; align-items: center; gap: 8px; border: 1px solid var(--borde); border-radius: var(--radio); padding: 0 6px 0 14px; min-height: var(--toque); margin-bottom: 14px; }
+  .campo-enlace span { flex: 1; font-size: 14px; color: var(--texto-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .campo-enlace button { min-height: 38px; padding: 0 14px; border: none; border-radius: 10px; background: var(--primario-suave); color: var(--primario); font-size: 14px; font-weight: 700; }
+  .fila-hoja { display: flex; gap: 10px; }
+  .fila-hoja button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--toque); border-radius: var(--radio); font-size: 15px; font-weight: 700; }
+  .fila-hoja .compartir-nativo { border: none; background: var(--primario); color: var(--primario-texto); }
+  .nota-hoja { margin-top: 16px; padding: 10px 12px; border-radius: var(--radio); background: var(--fondo-suave); color: var(--texto-suave); font-size: 12.5px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="estudio">
+  <p class="rotulo"><span><strong>El perfil del artista como su enlace único (OL-149 / C1)</strong>Cuatro estados: acceso desde Mi perfil (uno y varios artistas), la ficha con el botón de compartir, la hoja de compartir (enlace + QR) y la ficha vista por alguien que llega desde el enlace, con una novedad de obra y un video embebido.</span></p>
+
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <div class="barra"><span class="volver">‹ Agenda</span><span class="logotipo">SMSNSTRS</span><span></span></div>
+        <h1>Mi perfil</h1>
+        <p class="sub">Ana Reyes · ana@ejemplo.mx</p>
+        <div class="seccion">
+          <h2>Mis artistas</h2>
+          <div class="tarjeta-artista">
+            <div class="foto"></div>
+            <div class="nombre"><b>Ana Reyes</b><small>Música</small></div>
+            <div class="botones">
+              <a class="btn-mini lleno">Ver mi ficha de artista</a>
+              <a class="btn-mini circular" aria-label="Compartir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </div>
+          </div>
+        </div>
+        <div class="seccion">
+          <h2>Lo que sigues</h2>
+          <p class="sub" style="margin:0">3 lugares · 5 artistas</p>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>E1 · Mi perfil, un artista</b>El bloque «Mis artistas» va antes de «Lo que sigues» (lo tuyo primero) y usa la palabra «ficha», nunca «perfil de artista», para no confundirlo con «Mi perfil». El botón de compartir ya vive en la tarjeta, sin entrar a la ficha primero.</figcaption>
+  </figure>
+
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <div class="barra"><span class="volver">‹ Agenda</span><span class="logotipo">SMSNSTRS</span><span></span></div>
+        <h1>Mi perfil</h1>
+        <p class="sub">Marco Villa · marco@ejemplo.mx</p>
+        <div class="seccion">
+          <h2>Mis artistas</h2>
+          <div class="tarjeta-artista">
+            <div class="foto"></div>
+            <div class="nombre"><b>Marco Villa</b><small>Artes visuales</small></div>
+            <div class="botones">
+              <a class="btn-mini lleno">Ver ficha</a>
+              <a class="btn-mini circular" aria-label="Compartir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </div>
+          </div>
+          <div class="tarjeta-artista">
+            <div class="foto" style="background:linear-gradient(135deg,#4f7cc9,#3ca380)"></div>
+            <div class="nombre"><b>Trío Cantera</b><small>Música</small></div>
+            <div class="botones">
+              <a class="btn-mini lleno">Ver ficha</a>
+              <a class="btn-mini circular" aria-label="Compartir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>E1b · Mi perfil, varios artistas</b>Cada artista es su propia tarjeta, sin acordeón ni selector previo (región común): se ven ambos de una vez, cada uno con su botón de ver y de compartir.</figcaption>
+  </figure>
+
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <div class="barra"><span class="volver">‹ Mi perfil</span><span class="logotipo">SMSNSTRS</span><span></span></div>
+        <div class="cabecera-ficha">
+          <div class="foto"></div>
+          <h1>Ana Reyes</h1>
+          <p class="disciplina">Música · San Luis Potosí</p>
+          <div class="fila-acciones">
+            <button type="button" class="secundaria" disabled>Editar</button>
+            <button type="button" class="principal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Compartir</button>
+          </div>
+        </div>
+        <div class="bloque">
+          <h2>Próximas fechas</h2>
+          <p class="sub" style="margin:0">Aún no hay eventos publicados.</p>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>E2 · La ficha, con el botón de compartir</b>El botón principal ya no es solo el ícono de la barra: en tu propia ficha «Compartir» es una acción de peso, junto a «Editar».</figcaption>
+  </figure>
+
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla" style="overflow:hidden">
+        <div class="barra"><span class="volver">‹ Mi perfil</span><span class="logotipo">SMSNSTRS</span><span></span></div>
+        <div class="cabecera-ficha">
+          <div class="foto"></div>
+          <h1>Ana Reyes</h1>
+          <p class="disciplina">Música · San Luis Potosí</p>
+        </div>
+        <div class="velo"></div>
+        <div class="hoja" style="height:74%">
+          <div class="asa"></div>
+          <h3>Compartir tu ficha</h3>
+          <p class="sub-hoja">Cualquiera con el enlace ve tu ficha de artista</p>
+          <div class="qr-caja"><svg class="qr" viewBox="0 0 100 100" role="img" aria-label="Código QR de tu ficha"><rect width="100" height="100" fill="#fff"/><g fill="#14181c"><rect x="8" y="8" width="24" height="24"/><rect x="14" y="14" width="12" height="12" fill="#fff"/><rect x="68" y="8" width="24" height="24"/><rect x="74" y="14" width="12" height="12" fill="#fff"/><rect x="8" y="68" width="24" height="24"/><rect x="14" y="74" width="12" height="12" fill="#fff"/><rect x="40" y="8" width="6" height="6"/><rect x="52" y="8" width="6" height="6"/><rect x="40" y="20" width="6" height="6"/><rect x="46" y="32" width="6" height="6"/><rect x="58" y="32" width="6" height="6"/><rect x="40" y="44" width="6" height="6"/><rect x="52" y="44" width="6" height="6"/><rect x="64" y="44" width="6" height="6"/><rect x="40" y="56" width="6" height="6"/><rect x="76" y="56" width="6" height="6"/><rect x="40" y="68" width="6" height="6"/><rect x="52" y="68" width="6" height="6"/><rect x="64" y="76" width="6" height="6"/><rect x="76" y="82" width="6" height="6"/><rect x="52" y="82" width="6" height="6"/><rect x="40" y="82" width="6" height="6"/></g></svg></div>
+          <div class="campo-enlace"><span>somosnosotros.org/artistas/ana-reyes</span><button type="button">Copiar</button></div>
+          <div class="fila-hoja">
+            <button type="button" class="compartir-nativo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Compartir</button>
+          </div>
+          <p class="nota-hoja">NFC y tarjeta de Apple Wallet: hoy no desde la web del iPhone (NFC no está en Safari); Wallet sí sería posible sin app nativa, queda a preguntar al founder.</p>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>E3 · La hoja de compartir</b>Mismo patrón de QR que Pincel (SVG del servidor, `CodigoQr`): enlace para copiar, QR y el compartir nativo del teléfono. La nota de NFC/Wallet queda visible solo aquí, para quien busque más.</figcaption>
+  </figure>
+
+  <figure class="par">
+    <div class="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+      <main class="pantalla">
+        <div class="barra"><span></span><span class="logotipo">SMSNSTRS</span><span></span></div>
+        <div class="cabecera-ficha">
+          <div class="foto"></div>
+          <h1>Ana Reyes</h1>
+          <p class="disciplina">Música · San Luis Potosí</p>
+          <div class="fila-acciones">
+            <button type="button" class="secundaria">Seguir</button>
+            <button type="button" class="principal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M6 15v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Compartir</button>
+          </div>
+        </div>
+        <div class="bloque">
+          <h2>Novedad</h2>
+          <div class="novedad">
+            <div class="marco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></div>
+            <div><b>«Río de septiembre» — sencillo nuevo</b><small>Publicado hace 2 días</small></div>
+          </div>
+        </div>
+        <div class="bloque">
+          <h2>Video</h2>
+          <div class="video-embed">
+            <div class="jugar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7l9 5-9 5V7z" fill="#14181c"/></svg></div>
+            <span class="rotulo-video">YouTube</span>
+          </div>
+          <p class="caption-video">«En vivo en Casa de la Cultura» · reproduce sin salir de la ficha</p>
+        </div>
+      </main>
+    </div>
+    <figcaption><b>E4 · La ficha vista desde el enlace</b>Quien llega por el enlace o el QR ve la ficha pública normal (con «Seguir», no «Editar»), más la novedad de obra y el video embebido: lo que hoy solo se ve en un «link en bio».</figcaption>
+  </figure>
+</div>
+</body>
+</html>
