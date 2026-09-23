@@ -1,3 +1,4 @@
+import { cache, Suspense } from "react";
 import { esUuid } from "@/lib/formulario";
 import { cargarDestacado } from "@/app/admin/consultas";
 import DestacarFicha from "@/app/admin/DestacarFicha";
@@ -8,6 +9,7 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
+import { EsqueletoBloqueTexto, EsqueletoRenglones } from "@/components/ui/Esqueleto";
 import EventosPorDia from "@/components/EventosPorDia";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
@@ -27,7 +29,7 @@ import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { etiquetaLugar, etiquetaTipo, hrefLugar, textoProximo, type Lugar } from "@/lib/lugares";
 import { jsonLdLugar, jsonLdMigajas } from "@/lib/estructurados";
 import { ORIGENES } from "@/lib/origen";
-import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
 import Seguir from "@/components/Seguir";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
@@ -77,6 +79,85 @@ async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
   return filas.map((f) => ({ ...f, lugar: { nombre: lugar.nombre, portada: lugar.portada }, lat: lugar.lat, lng: lugar.lng, van: van.get(f.id) ?? 0 }));
 }
 
+// `cargarEventos` y cuántos siguen al lugar se piden de nuevo abajo (`MetaLugar` y `SeccionEventosLugar`, en
+// `<Suspense>` separados): `cache()` de React las memoiza por argumento para que sea una sola consulta por petición
+// (OL-161, bitácora 196; mismo patrón que `cargarLigadas` en la ficha de artista).
+const cargarEventosCache = cache(cargarEventos);
+const cargarSeguidoresLugarCache = cache(async (lugarId: string): Promise<number> => {
+  const supabase = await clienteServidor();
+  const { data } = (await supabase?.rpc("cuenta_seguidores", { p_lugar: lugarId })) ?? { data: 0 };
+  return Number(data ?? 0);
+});
+
+/**
+ * Cuántos siguen al lugar y su próximo evento: los dos renglones de `<ul className={ficha.datos}>` que piden una
+ * consulta aparte de la del lugar (OL-161). Se difieren en `<Suspense>`; la cabecera (foto, nombre, dirección) no
+ * los espera.
+ */
+async function MetaLugar({ lugar }: { lugar: LugarConAutor }) {
+  const [seguidores, eventos] = await Promise.all([cargarSeguidoresLugarCache(lugar.id), cargarEventosCache(lugar)]);
+  return seguidores === 0 && !eventos[0] ? (
+    <li className={ficha.dato}>
+      <IconoCalendario width={20} height={20} />
+      <span className={ficha.suave}>Sin eventos próximos · Nadie lo sigue todavía</span>
+    </li>
+  ) : (
+    <>
+      <li className={ficha.dato}>
+        <IconoPersonas width={20} height={20} />
+        <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
+      </li>
+      <li className={ficha.dato}>
+        <IconoCalendario width={20} height={20} />
+        <b>{eventos[0] ? textoProximo(eventos[0]) : "Sin eventos próximos"}</b>
+        {eventos[0] && (
+          <Salto destino="eventos" className={ficha.datoEnlace}>
+            ver
+          </Salto>
+        )}
+      </li>
+    </>
+  );
+}
+
+/** Fallback de `MetaLugar`: un renglón del mismo alto (el caso con más texto, "Nadie lo sigue todavía"). */
+function EsqueletoMetaLugar() {
+  return (
+    <li className={ficha.dato} aria-hidden="true">
+      <EsqueletoBloqueTexto lineas={1} />
+    </li>
+  );
+}
+
+/** "Próximos eventos" entero: la misma consulta que `MetaLugar`, memoizada por `cache()`, más quién decidió qué. */
+async function SeccionEventosLugar({ lugar, actual, hrefPublicarAqui }: { lugar: LugarConAutor; actual: { correo: string | null; perfil: Perfil } | null; hrefPublicarAqui: string }) {
+  const eventos = await cargarEventosCache(lugar);
+  const decididas = await decididasDe(actual?.perfil.id ?? null, eventos.map((e) => e.id));
+  return (
+    <section className={styles.lista} id="eventos" aria-label="Próximos eventos">
+      <h2>
+        Próximos eventos
+        {eventos.length > 0 && <span> · {eventos.length}</span>}
+      </h2>
+      {eventos.length === 0 && <p className={styles.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
+      <EventosPorDia eventos={eventos} sinSitio decididas={decididas} avisos={avisosParaListas(actual)} />
+      <Boton href={hrefPublicarAqui} variante="secundario" className={styles.publicar}>
+        Publicar un evento aquí
+      </Boton>
+    </section>
+  );
+}
+
+/** Fallback de `SeccionEventosLugar`: el título fijo (sin el conteo, que sí espera la consulta) y renglones grises. */
+function EsqueletoSeccionEventos() {
+  return (
+    <section className={styles.lista} id="eventos" aria-label="Próximos eventos" aria-hidden="true">
+      <h2>Próximos eventos</h2>
+      <EsqueletoRenglones cantidad={3} redonda />
+    </section>
+  );
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const lugar = await cargarLugar(id);
@@ -114,15 +195,14 @@ export default async function FichaLugar({ params, searchParams }: Params) {
     await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true });
     redirect(hrefLugar(lugar));
   }
-  // Cuántos lo siguen se cuenta en la base; si yo lo sigo, una fila como mucho (nunca la lista entera).
-  const [eventos, cuenta, mio, lig] = await Promise.all([
-    cargarEventos(lugar),
-    supabase?.rpc("cuenta_seguidores", { p_lugar: lugar.id }) ?? Promise.resolve({ data: 0 }),
+  // Cuántos lo siguen y sus eventos próximos son consultas aparte, diferidas en `<Suspense>` (OL-161, bitácora
+  // 196: `MetaLugar` y `SeccionEventosLugar`, memoizadas con `cache()` para pedirse una sola vez). La cabecera
+  // (foto, nombre, dirección), el menú de administración y "Cómo llegar/Compartir" no las esperan.
+  const [mio, lig] = await Promise.all([
     actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("lugar_id", lugar.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
     supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", lugar.id) ?? Promise.resolve({ data: [] as { perfil_id: string }[] }),
   ]);
   const ligados = (lig.data ?? []) as { perfil_id: string }[];
-  const seguidores = Number(cuenta.data ?? 0); // cuenta también a quien tiene el perfil reservado
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
   const destacable = esAdmin && puedeDestacarse(lugar) ? await cargarDestacado("lugar", lugar.id) : null;
@@ -136,9 +216,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const url = `${ORIGEN}${hrefLugar(lugar)}`;
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
-  // Voy y Me interesa al deslizar sus eventos, para quien mira (OL-057).
-  const decididas = await decididasDe(actual?.perfil.id ?? null, eventos.map((e) => e.id));
-  const avisoBorrar = eventos.length > 0 ? `Se borra el lugar y sus ${eventos.length === 1 ? "1 evento próximo" : `${eventos.length} eventos próximos`} (y los pasados).` : "Se borra el lugar.";
+  // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos eventos tiene: el menú de administración sigue
+  // en el HTML inicial y no puede esperar esa consulta aparte.
+  const avisoBorrar = "Se borra el lugar, con sus eventos (próximos y pasados).";
   const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
   // JSON-LD (OL-143, doc 36): un lugar oculto o privado no lo vería un visitante sin sesión; sin datos de personas.
   const jsonLdVisible = lugar.visible && !lugar.privado;
@@ -232,29 +312,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           <IconoPin width={20} height={20} />
           <b>{lugar.direccion ?? "Sin dirección"}</b>
         </li>
-        {/* Sin eventos ni seguidores: una sola línea en gris; las dos negaciones no merecen dos renglones. */}
-        {seguidores === 0 && !eventos[0] ? (
-          <li className={ficha.dato}>
-            <IconoCalendario width={20} height={20} />
-            <span className={ficha.suave}>Sin eventos próximos · Nadie lo sigue todavía</span>
-          </li>
-        ) : (
-          <>
-            <li className={ficha.dato}>
-              <IconoPersonas width={20} height={20} />
-              <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
-            </li>
-            <li className={ficha.dato}>
-              <IconoCalendario width={20} height={20} />
-              <b>{eventos[0] ? textoProximo(eventos[0]) : "Sin eventos próximos"}</b>
-              {eventos[0] && (
-                <Salto destino="eventos" className={ficha.datoEnlace}>
-                  ver
-                </Salto>
-              )}
-            </li>
-          </>
-        )}
+        <Suspense fallback={<EsqueletoMetaLugar />}>
+          <MetaLugar lugar={lugar} />
+        </Suspense>
       </ul>
 
       <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
@@ -284,17 +344,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
 
       {lugar.descripcion && <Desplegable texto={lugar.descripcion} />}
 
-      <section className={styles.lista} id="eventos" aria-label="Próximos eventos">
-        <h2>
-          Próximos eventos
-          {eventos.length > 0 && <span> · {eventos.length}</span>}
-        </h2>
-        {eventos.length === 0 && <p className={styles.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
-        <EventosPorDia eventos={eventos} sinSitio decididas={decididas} avisos={avisosParaListas(actual)} />
-        <Boton href={hrefPublicarAqui} variante="secundario" className={styles.publicar}>
-          Publicar un evento aquí
-        </Boton>
-      </section>
+      <Suspense fallback={<EsqueletoSeccionEventos />}>
+        <SeccionEventosLugar lugar={lugar} actual={actual} hrefPublicarAqui={hrefPublicarAqui} />
+      </Suspense>
 
       {/* Sin pie de origen para las fichas del catálogo (decisión del founder, 2026-09-14): solo se dice quién la publicó cuando hay quién. */}
       {!(lugar.origen && !lugar.autor) && (
