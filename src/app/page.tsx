@@ -1,82 +1,97 @@
-import ActivarAvisos from "@/components/ActivarAvisos";
-import AgendaInicio from "@/components/AgendaInicio";
+import type { Metadata } from "next";
+import Inicio from "@/components/Inicio";
+import CarrilAgenda from "@/components/inicio/CarrilAgenda";
+import CarrilEntidad from "@/components/inicio/CarrilEntidad";
 import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import { cargarAgenda } from "@/lib/cargarAgenda";
+import { cargarArtistasDestacados } from "@/lib/cargarArtistasDestacados";
+import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
 import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
-import { diaLocal } from "@/lib/fechas";
-import { usuarioActual } from "@/lib/supabase/servidor";
-import styles from "./inicio.module.css";
-import type { Metadata } from "next";
+import { tarjetaArtista } from "@/lib/destacados";
+import { idsUsadosEnAgenda } from "@/lib/inicio";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+
+type SearchParams = { ciudad?: string };
 
 /**
- * Título propio (OL-059): sin esto, Google mostraba el genérico del layout raíz para la página más buscada del
- * sitio. Título y descripción neutrales, sin nombre de ciudad (a propósito: al cambiar de ciudad desde la hoja, sin
- * recargar, esta página se reutiliza hasta 60 s sin volver a pedirle al servidor — `staleTimes` de next.config.ts —
- * así que un título por ciudad se quedaba con la ciudad anterior hasta que la persona recargaba a mano; gestión de
- * cambios lo reprodujo 3 de 3 veces). El canonical sí conserva la ciudad, igual que en Lugares y Artistas — eso no
- * depende de lo que ya esté pintado en la pestaña.
+ * La app abre siempre en Inicio (OL-156, segunda vuelta): esta pantalla es la raíz del dominio. Título propio y
+ * canonical con la ciudad (mismo criterio que Agenda, Lugares y Artistas: OL-059). Sin `openGraph` ni `twitter`
+ * propios: comparte los del layout raíz, pensados para la portada del sitio.
  */
-export async function generateMetadata({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string }> }): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: { searchParams: Promise<SearchParams> }): Promise<Metadata> {
   const { ciudad: slug } = await searchParams;
   const ciudades = await cargarCiudades();
   const resuelta = ciudadPorSlug(slug, ciudades);
-  const esInicial = resuelta.slug === CIUDAD_INICIAL.slug;
-  const titulo = "Agenda cultural · Somos Nosotros";
-  const descripcion = "Qué hay hoy y esta semana en los centros culturales cerca de ti. Gratis, sin cuenta para mirar.";
-  const canonical = esInicial ? "/" : `/?ciudad=${resuelta.slug}`;
+  const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${resuelta.slug}`;
   return {
-    title: titulo,
-    description: descripcion,
+    title: "Somos Nosotros",
+    description: "Lo tuyo primero: tus lugares y artistas, lo destacado, lo cercano y lo popular de esta semana.",
     alternates: { canonical },
-    // Next reemplaza openGraph y twitter enteros: sin repetirlos aquí, esta página heredaba los del layout raíz
-    // (título/descripción de San Luis Potosí, url la raíz) aunque se mirara con ?ciudad= de otra — la vista previa
-    // al compartir no coincidía con lo que se veía, ni con el canonical (gestión de cambios, OL-059).
-    openGraph: { title: titulo, description: descripcion, url: canonical, type: "website", images: [{ url: "/portada.png", width: 1200, height: 630 }], locale: "es_MX", siteName: "Somos Nosotros" },
-    twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: ["/portada.png"] },
   };
 }
 
-export default async function Agenda({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string; filtro?: string; q?: string }> }) {
-  const { cuenta, ciudad: slug, filtro, q } = await searchParams;
-  // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16).
+/**
+ * Carga progresiva (pedido del founder tras probar en producción, OL-156): esta función solo espera la ciudad y la
+ * sesión —rápidas, un par de consultas chicas— antes de pintar el shell entero (cabecera, barra, invitación). Las
+ * siete consultas de los carriles NUNCA se esperan aquí: se pasan como promesas sin resolver a cada carril (un
+ * componente de servidor propio, dentro de su `<Suspense>` en `Inicio.tsx`), que las espera por su cuenta y
+ * transmite (streaming del App Router) en cuanto responde. Antes de esta pieza, `InicioPagina` esperaba todo con un
+ * solo `Promise.all` y Next mostraba el cargador de página completa (`app/loading.tsx`, el logo SN) hasta que la
+ * consulta más lenta terminaba; con esto, esa pantalla nunca vuelve a aparecer para esta ruta.
+ */
+export default async function InicioPagina({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const { ciudad: slug } = await searchParams;
   const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
-  const { eventos, seguidos, eventosSeguidos, asistencias, destacados } = await cargarAgenda(ciudad, actual?.perfil.id ?? null);
-  const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
-  // "Ver todos" de un carril de Inicio puede llegar con la pestaña ya elegida (?filtro=siguiendo o ?filtro=cercanos,
-  // OL-153, bitácora 188): solo las dos que Inicio ofrece, cualquier otro valor cae al de siempre.
-  const filtroInicial = filtro === "siguiendo" || filtro === "cercanos" ? filtro : undefined;
-  // La pregunta de avisos tras el primer Voy al deslizar, como en la ficha.
+  const usuarioId = actual?.perfil.id ?? null;
+  const supabase = await clienteServidor();
+  const ahora = new Date();
+
+  // Sin await: cada promesa viaja tal cual a su carril, que la espera dentro de su propio <Suspense>.
+  const agendaPromise = cargarAgenda(ciudad, usuarioId, supabase);
+  const semanaLugaresPromise = cargarEventosSemana(supabase, "lugares", ciudad.nombre, ahora);
+  const semanaArtistasPromise = cargarEventosSemana(supabase, "artistas", ciudad.nombre, ahora);
+  const artistasDestacadosPromise = cargarArtistasDestacados(supabase, ciudad.nombre, ahora).then((lista) => lista.map((a) => tarjetaArtista(a, ahora)));
+  const seguidosArtistasPromise: Promise<string[] | null> =
+    usuarioId && supabase
+      ? Promise.resolve(supabase.from("seguimientos").select("artista_id").eq("usuario_id", usuarioId).not("artista_id", "is", null).limit(1000)).then((r) => ((r.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id))
+      : Promise.resolve(usuarioId ? [] : null);
+  const excluirDeCercanosPromise = agendaPromise.then((a) => idsUsadosEnAgenda(a, ahora));
+  const seguidosLugaresPromise = agendaPromise.then((a) => a.seguidos);
+
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
+
+  /** El "Ver todos" de cada carril conserva la ciudad que se está viendo (OL-055). */
+  const conCiudad = (raiz: string, filtro?: string) => {
+    const p = new URLSearchParams();
+    if (filtro) p.set("filtro", filtro);
+    if (ciudad.slug !== CIUDAD_INICIAL.slug) p.set("ciudad", ciudad.slug);
+    const cadena = p.toString();
+    return cadena ? `${raiz}?${cadena}` : raiz;
+  };
 
   return (
     <main className="raiz">
       <Barra derecha={<Sesion />} />
-      {aviso && (
-        <p className={styles.aviso} role="status">
-          {aviso}
-        </p>
-      )}
-      <AgendaInicio
+      <Inicio
         key={ciudad.slug}
-        filtroInicial={filtroInicial}
-        busquedaInicial={q}
-        eventos={eventos}
-        seguidos={seguidos}
-        eventosSeguidos={eventosSeguidos}
         ciudad={ciudad}
         ciudades={ciudades}
-        hoy={diaLocal(new Date(), ciudad.zona)}
-        zona={ciudad.zona}
-        asistencias={asistencias}
+        conSesion={!!actual}
         avisos={avisos}
-        destacados={destacados}
-        antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
+        excluirDeCercanosPromise={excluirDeCercanosPromise}
+        verTodosCercanosHref={conCiudad("/agenda")}
+        slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda", "siguiendo")} />}
+        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos esta semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
+        slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacados" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} />}
+        slotPopulares={<CarrilAgenda parte="populares" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
+        slotNuevos={<CarrilAgenda parte="nuevos" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
+        slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos esta semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
       />
       <Publicar ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
       <NavInferior />

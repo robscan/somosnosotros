@@ -33,6 +33,20 @@ const nextConfig: NextConfig = {
   // se reutiliza en el teléfono sin esperar al servidor; publicar, Voy y Seguir la invalidan (revalidatePath).
   experimental: { staleTimes: { dynamic: 60 } },
   htmlLimitedBots: BOTS_SIN_STREAMING,
+  /**
+   * Segunda vuelta de Inicio (OL-156): la app abre siempre en Inicio y Agenda pasa a `/agenda`. "/inicio" ya no
+   * existe (redirige 308 a "/"). Un enlace viejo que pedía la Agenda en la raíz con un filtro o una búsqueda
+   * (`/?filtro=…`, `/?q=…`) tampoco tiene ya sentido ahí — "/" es Inicio, sin esos parámetros — así que se manda a
+   * `/agenda`; los parámetros que no se nombran en `destination` viajan solos (comportamiento de Next). Sin
+   * parámetros, "/" no redirige a nada: es la pantalla de Inicio de verdad.
+   */
+  async redirects() {
+    return [
+      { source: "/inicio", destination: "/", permanent: true },
+      { source: "/", has: [{ type: "query", key: "filtro" }], destination: "/agenda", permanent: true },
+      { source: "/", has: [{ type: "query", key: "q" }], destination: "/agenda", permanent: true },
+    ];
+  },
   async headers() {
     return [
       { source: "/(.*)", headers: CABECERAS },

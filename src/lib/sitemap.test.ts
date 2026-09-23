@@ -4,7 +4,7 @@ import { artistasParaSitemap, CAPO_SIN_RECLAMAR_EN_SITEMAP, eventosParaSitemap, 
 describe("sitemap", () => {
   it("trae las rutas fijas, sin ninguna privada ni de administración", () => {
     const urls = rutasEstaticas().map((e) => e.url);
-    expect(urls).toEqual([`${ORIGEN}/`, `${ORIGEN}/lugares`, `${ORIGEN}/artistas`, `${ORIGEN}/reglas`, `${ORIGEN}/privacidad`]);
+    expect(urls).toEqual([`${ORIGEN}/`, `${ORIGEN}/agenda`, `${ORIGEN}/lugares`, `${ORIGEN}/artistas`, `${ORIGEN}/reglas`, `${ORIGEN}/privacidad`]);
   });
 
   it("las rutas fijas no llevan lastModified: no tienen una fecha propia y 'ahora' cambiaría en cada rastreo", () => {
