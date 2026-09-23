@@ -17,12 +17,17 @@ export type EventoAgenda = EventoResumen & {
   artistas?: string[];
 };
 
+/**
+ * "cercanos" y "nuevos" siguen siendo valores válidos del tipo (los usan `filtrarAgenda` y los carriles de Inicio,
+ * que calculan sus propias listas de "cercanos esta semana" y "nuevos esta semana" con este mismo filtro) pero ya
+ * no son pestañas de la Agenda (OL-156, segunda vuelta): esos dos carriles viven en Inicio, y Agenda queda como
+ * lista directa con Todos y Siguiendo. Un enlace viejo con `?filtro=cercanos` o `?filtro=nuevos` cae a Todos, porque
+ * `AgendaInicio` solo reconoce "siguiendo" como filtro inicial válido (ver su prop `filtroInicial`).
+ */
 export type Filtro = "todos" | "cercanos" | "siguiendo" | "nuevos";
 export const FILTROS: { clave: Filtro; etiqueta: string }[] = [
   { clave: "todos", etiqueta: "Todos" },
-  { clave: "cercanos", etiqueta: "Cercanos" },
   { clave: "siguiendo", etiqueta: "Siguiendo" },
-  { clave: "nuevos", etiqueta: "Nuevos" },
 ];
 
 export type Punto = { lat: number; lng: number };

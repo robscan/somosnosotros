@@ -20,7 +20,7 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
         Intentar de nuevo
       </Boton>
       <p style={{ marginTop: "var(--espacio-4)" }}>
-        <Atras href="/" texto="Ver la agenda" />
+        <Atras href="/agenda" texto="Ver la agenda" />
       </p>
     </main>
   );

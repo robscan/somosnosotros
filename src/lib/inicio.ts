@@ -1,9 +1,12 @@
-import { compararEventos, type EventoAgenda } from "./agenda";
+import { compararEventos, filtrarAgenda, type EventoAgenda } from "./agenda";
+import type { Agenda } from "./cargarAgenda";
+import { enOrden } from "./destacados";
 
 /**
- * Inicio: seis carriles (docs/rediseno/41, OL-153, bitácora 188). Aquí solo lo que se puede probar sin base de
- * datos ni navegador: la ventana de "esta semana", el orden de Populares, que no se repita un evento entre
- * carriles y en qué orden salen los grupos del buscador único según la sección.
+ * Inicio: siete carriles (docs/rediseno/41, OL-156, segunda vuelta, bitácora 191). Aquí solo lo que se puede probar
+ * sin base de datos ni navegador: la ventana de "esta semana", el peso del carril estelar, el orden de Populares y
+ * de Nuevos, que no se repita un evento entre carriles y en qué orden salen los grupos del buscador único según la
+ * sección.
  */
 
 /** "Esta semana" = próximos 7 días desde ahora, igual que `cargarCercanos()` (decisión del founder, segunda vuelta
@@ -41,6 +44,65 @@ export function carrilPopulares<T extends Pick<EventoAgenda, "id" | "van" | "tit
     vistos,
   );
   return candidatos.toSorted((a, b) => b.van - a.van || compararEventos(a, b));
+}
+
+/** Tope del carril estelar (decisión del founder, segunda vuelta de doc 41): "De tus favoritos" no es la lista
+ *  entera de lo que sigue la persona, es una tira. */
+export const TOPE_ESTELAR = 12;
+
+/**
+ * El carril estelar de Inicio, con sesión y seguimientos: "De tus favoritos", ponderado (destacado, luego «Voy»,
+ * luego fecha) y con tope de 12 — sustituye al carril de destacados de la primera vuelta (bitácora 188).
+ */
+export function carrilEstelar<T extends Pick<EventoAgenda, "id" | "van" | "titulo" | "inicio">>(favoritos: T[], idsDestacados: Set<string>, vistos: Set<string>): T[] {
+  const candidatos = sinRepetidos(favoritos, vistos);
+  return candidatos
+    .toSorted((a, b) => Number(idsDestacados.has(b.id)) - Number(idsDestacados.has(a.id)) || b.van - a.van || compararEventos(a, b))
+    .slice(0, TOPE_ESTELAR);
+}
+
+/**
+ * Sin favoritos (o sin sesión), el carril estelar se llama «Destacados esta semana»: el respaldo es la propia tira
+ * de destacados (la que ya ordena la administración), pero solo lo de esta semana, para que el nombre sea cierto.
+ */
+export function carrilDestacadosEstaSemana<T extends Pick<EventoAgenda, "id" | "inicio" | "fin">>(destacadosEnOrden: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
+  return sinRepetidos(eventosEstaSemana(destacadosEnOrden, ahora), vistos).slice(0, TOPE_ESTELAR);
+}
+
+/** Título del carril estelar: "De tus favoritos" si hay algo que mostrar de lo que la persona sigue; si no, el respaldo. */
+export function tituloEstelar(hayFavoritos: boolean): string {
+  return hayFavoritos ? "De tus favoritos" : "Destacados esta semana";
+}
+
+/** Lo mismo que `eventosEstaSemana`, pero contado sobre cuándo se publicó (`creado_en`), no sobre cuándo es el evento:
+ *  el carril "Eventos nuevos esta semana" (segunda vuelta de doc 41) es simple a propósito, sin la memoria de última
+ *  visita de la pestaña Nuevos que tenía Agenda (esa pestaña se quita; aquí basta con "publicado en los últimos 7 días"). */
+export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "titulo" | "inicio">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
+  const desde = ahora.getTime() - DIAS_ESTA_SEMANA * 86400000;
+  const candidatos = sinRepetidos(eventos.filter((e) => new Date(e.creado_en).getTime() >= desde), vistos);
+  return candidatos.toSorted((a, b) => b.creado_en.localeCompare(a.creado_en) || compararEventos(a, b));
+}
+
+/** Los tres carriles de Inicio que salen de una sola `cargarAgenda` (estelar, populares, nuevos): se calculan juntos y
+ *  puros, a partir del mismo objeto `Agenda`, para poder recalcularlos sin red desde cualquier carril que los pida
+ *  (streaming, OL-156: cada carril puede recalcular esto por su cuenta sin depender del orden de llegada de otro). */
+export type CarrilesDeAgenda = { titulo: string; estelar: EventoAgenda[]; populares: EventoAgenda[]; nuevos: EventoAgenda[]; vistos: Set<string> };
+export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date()): CarrilesDeAgenda {
+  const vistos = new Set<string>();
+  const favoritos = filtrarAgenda(agenda.eventos, { filtro: "siguiendo", punto: null, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, fecha: "", ahora }).lista;
+  const hayFavoritos = favoritos.length > 0;
+  const estelar = hayFavoritos
+    ? carrilEstelar(favoritos, new Set(agenda.destacados.map((d) => d.id)), vistos)
+    : carrilDestacadosEstaSemana(enOrden(agenda.destacados, agenda.eventos), vistos, ahora);
+  const populares = carrilPopulares(agenda.eventos, vistos);
+  const nuevos = carrilNuevos(agenda.eventos, vistos, ahora);
+  return { titulo: tituloEstelar(hayFavoritos), estelar, populares, nuevos, vistos };
+}
+
+/** Los ids que ya usaron los carriles de una `cargarAgenda` (estelar, populares, nuevos): el carril de Cercanos
+ *  (cliente, en `Inicio.tsx`) los recibe para tampoco repetirlos, sin tener que esperar a los otros tres. */
+export function idsUsadosEnAgenda(agenda: Agenda, ahora: Date = new Date()): string[] {
+  return [...calcularCarrilesAgenda(agenda, ahora).vistos];
 }
 
 export type SeccionBuscador = "inicio" | "agenda" | "lugares" | "artistas";
