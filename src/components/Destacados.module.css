@@ -5,12 +5,26 @@
   gap: var(--espacio-1);
   padding-top: var(--espacio-4);
 }
-.destacados h2 {
+/* Cabecera del carril: título y, con `verTodos` (OL-153), su enlace a la derecha — nunca envuelto en algo más. */
+.cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espacio-2);
   padding-inline: var(--gutter);
+}
+.destacados h2 {
   font-size: var(--letra-xl);
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
   line-height: 1.1;
+}
+.verTodos {
+  flex: none;
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  white-space: nowrap;
 }
 .carril {
   display: grid;

@@ -7,17 +7,21 @@ import { raizConCiudad } from "@/lib/ciudad";
 import { leerUrlSeccion } from "@/lib/memoriaPantalla";
 import { pedirVuelta } from "./MemoriaScroll";
 import type { Seccion } from "./MemoriaPantalla";
-import { IconoCalendario, IconoEstrella, IconoPin } from "./ui/Iconos";
+import { IconoCalendario, IconoCasa, IconoEstrella, IconoPin } from "./ui/Iconos";
 import styles from "./NavInferior.module.css";
 
 const DESTINOS = [
+  { seccion: "inicio", href: "/inicio", etiqueta: "Inicio", Icono: IconoCasa },
   { seccion: "agenda", href: "/", etiqueta: "Agenda", Icono: IconoCalendario },
   { seccion: "lugares", href: "/lugares", etiqueta: "Lugares", Icono: IconoPin },
   { seccion: "artistas", href: "/artistas", etiqueta: "Artistas", Icono: IconoEstrella },
 ] as const satisfies readonly { seccion: Seccion; href: string; etiqueta: string; Icono: typeof IconoPin }[];
 
 /**
- * Barra de navegación inferior de las pantallas raíz: Agenda · Lugares · Artistas.
+ * Barra de navegación inferior de las pantallas raíz: Inicio · Agenda · Lugares · Artistas (OL-153, bitácora 188:
+ * Inicio se agrega primera, sin quitar la Agenda — el caso más simple, alguien sin cuenta que solo quiere ver qué
+ * hay hoy, sigue siendo la raíz del dominio, `/`, por lo mismo que ya razona docs/rediseno/41: mejor para ese uso
+ * y mejor para SEO, OL-059).
  * Navega, no actúa (publicar es el botón flotante). El destino activo lleva una píldora de color detrás del icono
  * y la etiqueta en el color de acción (ajuste del founder, 2026-09-14: la nav tiene que notarse).
  * Cada sección vuelve a la última URL que se vio en ella (su filtro), y la pantalla repone su scroll:

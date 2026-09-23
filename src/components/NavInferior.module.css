@@ -6,9 +6,9 @@
   bottom: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* Inicio · Agenda · Lugares · Artistas (OL-153) */
   height: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px));
-  padding: 0 max(var(--espacio-2), var(--al-centro)) env(safe-area-inset-bottom, 0px); /* los tres destinos, en la columna */
+  padding: 0 max(var(--espacio-2), var(--al-centro)) env(safe-area-inset-bottom, 0px);
   background: var(--fondo);
   border-top: 1px solid var(--borde);
   box-shadow: var(--sombra-panel);

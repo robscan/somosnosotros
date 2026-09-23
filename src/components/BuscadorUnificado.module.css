@@ -1,0 +1,65 @@
+/* El buscador único (OL-153, bitácora 188): grupos por tipo, cada uno con su título, cuenta y "Ver todos". */
+.lista {
+  padding-bottom: var(--espacio-6);
+}
+.aviso {
+  padding: var(--espacio-4) var(--gutter);
+  color: var(--texto-suave);
+}
+.grupo + .grupo {
+  border-top: 1px solid var(--borde);
+}
+.grupo h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  padding: var(--espacio-3) var(--gutter) var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.n {
+  color: var(--primario);
+}
+.ver {
+  margin-left: auto;
+  color: var(--primario);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.grupo ul {
+  list-style: none;
+}
+.fila {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--espacio-3);
+  align-items: center;
+  min-height: 60px;
+  padding: var(--espacio-2) var(--gutter);
+  color: var(--texto);
+  text-decoration: none;
+}
+.mini {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radio);
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.mini.redonda {
+  border-radius: 50%;
+}
+.fila b {
+  display: block;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.fila small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
