@@ -1,0 +1,18 @@
+.zona {
+  display: grid;
+  row-gap: var(--espacio-2);
+}
+.boton {
+  justify-self: center;
+  margin-block: var(--espacio-2);
+  padding: var(--espacio-2) var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  font-weight: 600;
+}
+.boton:active {
+  background: var(--fondo);
+}

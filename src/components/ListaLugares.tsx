@@ -1,15 +1,18 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
 import { enOrden, tarjetaLugar, type Destacado, type Tarjeta } from "@/lib/destacados";
 import { conGrupos, idGrupo, letrasPresentes } from "@/lib/indice";
 import { etiquetaTipo, filtrarLugares, ordenarLugares, type LugarLista } from "@/lib/lugares";
+import { siguienteTanda, tandaInicial } from "@/lib/tandas";
+import CargarMas from "./ui/CargarMas";
 import Destacados from "./Destacados";
 import RenglonLugar from "./RenglonLugar";
 import TiraLetras, { irAlGrupo, useLetraActiva } from "./TiraLetras";
 import { antesDeSaltar } from "./ui/Cabecera";
 import { useCanalDePantalla } from "./useCanalDeListas";
+import { useCentinela } from "./useCentinela";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
 import comun from "./Lista.module.css";
@@ -57,6 +60,21 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
   const seguir = useSeguirEnLista("lugar", seguidos, avisos, useCanalDePantalla());
   const hrefNuevo = conSesion ? "/lugares/nuevo" : "/entrar?siguiente=/lugares/nuevo";
 
+  // Carga progresiva (OL-158): la lista ya está completa en el teléfono (como siempre); lo que se reparte en tandas
+  // es cuánto se pinta de una vez, para que la primera línea de contenido se vea antes en una ciudad con muchos
+  // lugares. Se acota de nuevo cada vez que cambia el total (otro tipo, Cercanos, una búsqueda).
+  const [mostrados, setMostrados] = useState(() => tandaInicial(filas.length).mostrados);
+  const totalAnteriorRef = useRef(filas.length);
+  useEffect(() => {
+    if (totalAnteriorRef.current !== filas.length) {
+      totalAnteriorRef.current = filas.length;
+      setMostrados(tandaInicial(filas.length).mostrados);
+    }
+  }, [filas.length]);
+  const filasVisibles = filas.slice(0, mostrados);
+  const hayMasLugares = mostrados < filas.length;
+  const centinelaRef = useCentinela(hayMasLugares, () => setMostrados((m) => siguienteTanda(filas.length, m).mostrados));
+
   if (lugares.length === 0 && !tipo) {
     return (
       <section className={comun.vacio}>
@@ -82,7 +100,7 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
           : `${lista.length === 1 ? "1 lugar" : `${lista.length} lugares`}${punto ? " · ordenados por cercanía" : ""}`}
       </p>
       <ul>
-        {filas.map(({ x: l, grupo }) => [
+        {filasVisibles.map(({ x: l, grupo }) => [
           grupo && (
             <li key={grupo} id={idGrupo(grupo)} className={comun.grupo} aria-hidden>
               {grupo}
@@ -91,6 +109,7 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
           <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={seguir.boton(l.id, l.nombre)} />,
         ])}
       </ul>
+      <CargarMas hayMas={hayMasLugares} centinelaRef={centinelaRef} onVerMas={() => setMostrados((m) => siguienteTanda(filas.length, m).mostrados)} />
       {seguir.extras}
     </section>
   );

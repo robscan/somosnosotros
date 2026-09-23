@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { PanelPestana, Pestana, Pestanas } from "@/components/ui/Pestanas";
 import chip from "@/components/ui/Chip.module.css";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo } from "@/lib/agenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
+import { tandaAcotada, siguienteTanda, TANDA_INICIAL } from "@/lib/tandas";
 import ChipCiudad from "./Ciudad";
 import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
+import { useCentinela } from "./useCentinela";
+import CargarMas from "./ui/CargarMas";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
 import Cabecera from "./ui/Cabecera";
@@ -45,7 +48,7 @@ type Props = {
 /**
  * Lo que la agenda recuerda al salir a una ficha y volver: pestaña, día elegido y búsqueda (decisión 17 de 02).
  */
-type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: boolean };
+type Recordado = { filtro: Filtro; fecha: string; busqueda: string; buscando: boolean; mostrados: number };
 
 /**
  * Agenda: lista directa de eventos, con Todos y Siguiendo (OL-156, segunda vuelta — se quitan la tira de destacados,
@@ -61,12 +64,17 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const [buscando, setBuscando] = useState(!!busquedaInicial);
   // El foco (y el teclado) solo cuando la lupa acaba de abrir el campo; al volver de una ficha no se roba el foco.
   const [enfocar, setEnfocar] = useState(false);
+  // Carga progresiva (OL-158): cuántos renglones van pintados de la lista agrupada por día. La memoria de pantalla
+  // repone este número igual que la pestaña o la búsqueda, para que volver de una ficha no colapse la lista a la
+  // primera tanda otra vez.
+  const [mostrados, setMostrados] = useState(TANDA_INICIAL);
 
-  useMemoriaPantalla<Recordado>("agenda", { filtro, fecha, busqueda, buscando }, (r) => {
+  useMemoriaPantalla<Recordado>("agenda", { filtro, fecha, busqueda, buscando, mostrados }, (r) => {
     if (FILTROS.some((f) => f.clave === r.filtro)) setFiltro(r.filtro);
     if (typeof r.fecha === "string") setFecha(r.fecha);
     if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
     setBuscando(!!r.buscando || !!r.busqueda);
+    if (typeof r.mostrados === "number") setMostrados(r.mostrados);
   });
 
   const ahora = new Date();
@@ -81,6 +89,21 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
   const lista = encontrada;
   const hayBusqueda = busqueda.trim().length > 0;
   const hoyIso = localAIso(`${hoy}T12:00`, zona) ?? new Date().toISOString();
+
+  // Carga progresiva de la lista agrupada por día (OL-158): con un día elegido ya es un solo día, corto, sin
+  // tandas. El total cambia con la pestaña, la búsqueda o la ciudad; cuando cambia, la tanda se acota de nuevo
+  // (nunca menos que la primera, nunca más que lo que hay) en vez de quedarse con un número que ya no aplica.
+  const total = lista.length;
+  const totalAnteriorRef = useRef(total);
+  useEffect(() => {
+    if (totalAnteriorRef.current !== total) {
+      totalAnteriorRef.current = total;
+      setMostrados((m) => tandaAcotada(total, m).mostrados);
+    }
+  }, [total]);
+  const listaVisible = fecha ? lista : lista.slice(0, mostrados);
+  const hayMasEventos = !fecha && mostrados < total;
+  const centinelaRef = useCentinela(hayMasEventos, () => setMostrados((m) => siguienteTanda(total, m).mostrados));
 
   let cuerpo: React.ReactNode;
   if (filtro === "siguiendo" && seguidos === null) {
@@ -97,7 +120,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
     let grupos: Grupo<EventoAgenda>[];
     let vacio: string;
     if (hayBusqueda) {
-      grupos = fecha && lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora, zona), eventos: lista }] : agruparPorDia(lista, ahora);
+      grupos = fecha && lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora, zona), eventos: lista }] : agruparPorDia(listaVisible, ahora);
       // Vacío por causa: dice qué se buscó y dónde, y la salida (Todos, o quitar la fecha).
       const donde = filtro !== "todos" ? ` en ${FILTROS.find((f) => f.clave === filtro)?.etiqueta}` : "";
       vacio = `Nada con «${busqueda.trim()}»${donde}${fecha ? " ese día" : ""}.${filtro !== "todos" ? " Prueba en Todos." : fecha ? " Quita la fecha para buscar en todo." : ""}`;
@@ -105,7 +128,7 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
       grupos = lista.length ? [{ clave: fecha, titulo: diaLargo(fecha, ahora, zona), eventos: lista }] : [];
       vacio = "Ese día no hay nada todavía. Quita la fecha para ver todo.";
     } else {
-      grupos = agruparPorDia(lista, ahora);
+      grupos = agruparPorDia(listaVisible, ahora);
       vacio = filtro === "siguiendo" ? "Lo que sigues no tiene eventos próximos." : `Aún no hay eventos próximos en ${ciudad.nombre}. Si sabes de uno, publícalo.`;
     }
     cuerpo = grupos.length === 0 ? (
@@ -114,7 +137,8 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
         <p className={styles.vacio}>{vacio}</p>
       </section>
     ) : (
-      grupos.map((g) => (
+      <>
+      {grupos.map((g) => (
         <section key={g.clave} className={styles.grupo} aria-label={g.titulo}>
           <h2>
             {g.titulo}
@@ -126,7 +150,9 @@ export default function AgendaInicio({ eventos, seguidos, eventosSeguidos = [], 
             ))}
           </ul>
         </section>
-      ))
+      ))}
+      <CargarMas hayMas={hayMasEventos} centinelaRef={centinelaRef} onVerMas={() => setMostrados((m) => siguienteTanda(total, m).mostrados)} />
+      </>
     );
   }
 

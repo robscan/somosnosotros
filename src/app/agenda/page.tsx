@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import ActivarAvisos from "@/components/ActivarAvisos";
 import AgendaInicio from "@/components/AgendaInicio";
+import ListaEsqueleto from "@/components/ListaEsqueleto";
 import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
@@ -12,6 +14,8 @@ import { diaLocal } from "@/lib/fechas";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./agenda.module.css";
 import type { Metadata } from "next";
+
+type SearchParams = { cuenta?: string; ciudad?: string; filtro?: string; q?: string };
 
 /**
  * Agenda (OL-156, segunda vuelta): pasa de la raíz a `/agenda` — la app abre siempre en Inicio, `/` (docs/rediseno/41).
@@ -36,7 +40,11 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   };
 }
 
-export default async function Agenda({ searchParams }: { searchParams: Promise<{ cuenta?: string; ciudad?: string; filtro?: string; q?: string }> }) {
+/**
+ * La agenda misma (OL-158, bitácora 193): todo lo que necesita la consulta de eventos, en un componente de
+ * servidor aparte para que su `<Suspense>` sea independiente de `Barra` y `NavInferior`, que no esperan nada.
+ */
+async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { cuenta, ciudad: slug, filtro, q } = await searchParams;
   // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16).
   const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
@@ -50,8 +58,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
 
   return (
-    <main className="raiz">
-      <Barra derecha={<Sesion />} />
+    <>
       {aviso && (
         <p className={styles.aviso} role="status">
           {aviso}
@@ -73,6 +80,23 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<{
         antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
       />
       <Publicar ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
+    </>
+  );
+}
+
+/**
+ * `Barra` y `NavInferior` no esperan ninguna consulta: pintan al momento (OL-158, precisión del founder — "que la
+ * persona vea la primera línea de contenido ya cargada y el resto llegue después"). Lo que sí espera (la ciudad,
+ * los eventos, quién sigue) vive en `AgendaContenido`, dentro de un `<Suspense>` con `ListaEsqueleto` de
+ * `fallback`: la cabecera y la primera tanda de renglones, en gris, del mismo alto que lo real.
+ */
+export default function Agenda({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  return (
+    <main className="raiz">
+      <Barra derecha={<Sesion />} />
+      <Suspense fallback={<ListaEsqueleto />}>
+        <AgendaContenido searchParams={searchParams} />
+      </Suspense>
       <NavInferior />
     </main>
   );
