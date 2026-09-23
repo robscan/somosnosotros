@@ -23,7 +23,7 @@ La bitácora 163 (OL-128: dos tamaños, 24 y 10 px; verde de «Sigues» y aro pa
 
 Sin aro en ningún caso (se quita el `.borde` y su regla). El orden de dibujo sigue igual (seguidos encima, luego con día). En la app sería: quitar la capa `lugares-aro`, `circle-color` con tinta por defecto y color de acción solo con día, y el naranja del destacado (hoy no se pinta) — pendiente de la firma.
 
-## 2. El color de acción: tres candidatos (`docs/rediseno/30-color-primario.md`)
+## 2. El color de acción: tres candidatos (`docs/rediseno/37-color-primario.md`)
 
 Por qué se parece al verde: misma luminosidad (27 % y 28 %), 42° de matiz de distancia, misma familia fría; contraste entre los dos 1,0 : 1. Los candidatos, medidos con WCAG 2 (texto blanco encima = sobre blanco; y sobre el fondo de contenido `#f6f5f1`):
 
@@ -59,4 +59,4 @@ En el prototipo, `?color=actual|A|B|C` pone el color y abre un muestrario en el 
 
 ## Archivos
 
-`docs/rediseno/prototipos/mapa-lugares.html`, `docs/rediseno/30-color-primario.md`, `docs/rediseno/capturas-176/` (6 PNG), esta bitácora y `docs/ops/OPEN_LOOPS.md`.
+`docs/rediseno/prototipos/mapa-lugares.html`, `docs/rediseno/37-color-primario.md`, `docs/rediseno/capturas-176/` (6 PNG), esta bitácora y `docs/ops/OPEN_LOOPS.md`.

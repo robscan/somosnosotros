@@ -1,4 +1,4 @@
-# 30 · El color de acción: tres candidatos que inviten a la acción (OL-141)
+# 37 · El color de acción: tres candidatos que inviten a la acción (OL-141)
 
 **Estado:** propuesta, sin código. Espera la firma del founder. · **Fecha:** 2026-09-23 · **Bitácora:** 176 · **Prototipo:** `prototipos/mapa-lugares.html?color=actual|A|B|C` (capturas en `capturas-176/`).
 

@@ -250,7 +250,7 @@
 <div class="estudio">
   <div class="rotulo">
     <strong>Mapa de lugares · OL-124 → OL-141</strong>
-    Los cuatro estados de siempre, con el pedido del founder del 2026-09-23 (OL-141): pines sin doble círculo; el tamaño dice si hay evento esta semana y el color qué es (tinta si nada, color de acción con evento, naranja destacado, verde seguido). Con <code>?color=actual|A|B|C</code> se prueba un color de acción candidato y aparece el muestrario (doc rediseno/30).
+    Los cuatro estados de siempre, con el pedido del founder del 2026-09-23 (OL-141): pines sin doble círculo; el tamaño dice si hay evento esta semana y el color qué es (tinta si nada, color de acción con evento, naranja destacado, verde seguido). Con <code>?color=actual|A|B|C</code> se prueba un color de acción candidato y aparece el muestrario (doc rediseno/37).
   </div>
 </div>
 
@@ -363,7 +363,7 @@
     return { tel, subirBoton };
   }
 
-  // OL-141: color de acción candidato por ?color= (doc rediseno/30); el muestrario va en el primer teléfono.
+  // OL-141: color de acción candidato por ?color= (doc rediseno/37); el muestrario va en el primer teléfono.
   const CANDIDATOS = { actual: ["Actual · azul petróleo", "#0f6b7c"], A: ["A · azul cobalto", "#1256d6"], B: ["B · ciruela", "#a3286b"], C: ["C · violeta", "#6d34c8"] };
   const colorPedido = new URLSearchParams(location.search).get("color");
   const candidato = colorPedido && CANDIDATOS[colorPedido] ? CANDIDATOS[colorPedido] : null;
