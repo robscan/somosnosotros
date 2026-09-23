@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transiciones y cargador — Somos Nosotros</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens de la app: los mismos de globals.css y de la línea gráfica firmada (docs/diseno/LINEA_GRAFICA.md).
+     El teléfono va siempre en tema claro, como la app; el estudio que lo rodea sigue el tema de quien mira. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #34332f; --estudio-suave: #6f6d67; --estudio-panel: #f7f6f2; --estudio-borde: #d5d3cc;
+    --fondo: #ffffff; --fondo-suave: #f4f4f2; --fondo-contenido: #f6f5f1;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8;
+    --primario: #0f6b7c; --primario-texto: #ffffff; --primario-suave: #e3f0f2;
+    --sombra: 0 2px 12px rgba(0, 0, 0, 0.08); --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1); --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --gutter: 20px; --toque: 48px; --toque-min: 44px; --radio: 12px; --radio-grande: 16px;
+    --alto-nav: 60px; --area-segura: 28px;
+    --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px;
+    --letra-sm: 0.9375rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --estudio: #242422; --estudio-texto: #e2e0da; --estudio-suave: #a09e97; --estudio-panel: #2d2d2a; --estudio-borde: #42413d; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; line-height: 1.4; padding-block: 24px; padding-inline: 16px; }
+  button { font: inherit; color: inherit; }
+  svg { flex: none; }
+  :focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+
+  /* ---------- Estudio: el teléfono y, a su lado, las notas ---------- */
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 900px; margin: 0 auto; }
+  .telefono { position: relative; display: flex; flex-direction: column; width: 390px; max-width: 100%; height: 844px; overflow: hidden; border-radius: 44px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08); }
+  .estado-ios { flex: none; display: flex; align-items: flex-end; justify-content: space-between; height: 50px; padding: 0 30px 6px 36px; background: var(--fondo); font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 15px; font-weight: 600; }
+  .estado-ios span:last-child { letter-spacing: 1px; font-size: 12px; }
+
+  /* ---------- Barra raíz (Agenda · Lugares · Artistas) ---------- */
+  .barra-raiz { position: relative; z-index: 2; flex: none; display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding-inline: var(--gutter); background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .logotipo-texto { font-size: 19px; font-weight: 800; font-variation-settings: "wdth" 75; letter-spacing: 0.01em; }
+  .avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--fondo-suave); color: var(--texto-suave); font-size: 14px; font-weight: 700; }
+
+  /* ---------- El área de contenido: aquí pasan el fundido y el deslizamiento ---------- */
+  .pantalla { position: relative; flex: 1; min-height: 0; }
+  .contenido { position: relative; height: 100%; overflow-y: auto; overscroll-behavior: contain; padding-bottom: calc(var(--alto-nav) + 24px); }
+  .cabecera-seccion { padding: var(--espacio-4) var(--gutter) var(--espacio-2); }
+  .cabecera-seccion h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+
+  /* Tira de pestañas (como ui/Pestanas): raya de base + raya de la elegida */
+  .tira { display: flex; gap: var(--espacio-5); padding-inline: var(--gutter); box-shadow: inset 0 -1px 0 var(--borde); overflow-x: auto; scrollbar-width: none; }
+  .tira::-webkit-scrollbar { display: none; }
+  .pestana { display: inline-flex; align-items: center; min-height: var(--toque-min); padding: 0 2px; border: none; border-bottom: 2px solid transparent; background: none; color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .pestana[aria-selected="true"] { color: var(--primario); border-bottom-color: var(--primario); font-weight: 700; }
+
+  /* Renglones de listado */
+  .listado { list-style: none; padding: var(--espacio-2) var(--gutter) 0; }
+  .listado > li + li { border-top: 1px solid var(--borde); }
+  .renglon { display: grid; grid-template-columns: 56px 1fr; grid-template-areas: "foto titulo" "foto meta"; column-gap: var(--espacio-3); align-items: center; width: 100%; min-height: 76px; padding: var(--espacio-3) 0; border: none; background: none; text-align: left; cursor: pointer; }
+  .renglon .foto { grid-area: foto; width: 56px; height: 56px; border-radius: var(--radio); background: linear-gradient(140deg, var(--f1, #cfd6d2), var(--f2, #6f8a7c)); }
+  .renglon .foto.redonda { border-radius: 50%; }
+  .renglon b { grid-area: titulo; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
+  .renglon small { grid-area: meta; margin-top: 3px; color: var(--texto-suave); font-size: 14px; }
+
+  /* Mapa de mentira, solo para la pestaña "Mapa" de Lugares */
+  .mapa-simulado { display: grid; place-items: center; height: 260px; margin: var(--espacio-3) var(--gutter) 0; border-radius: var(--radio); background: #eef0ec; color: var(--texto-suave); font-size: var(--letra-sm); text-align: center; gap: var(--espacio-2); }
+
+  /* Entradas: el fundido entre secciones y el deslizamiento entre pestañas.
+     150–250 ms, curva suave (cubic-bezier de salida rápida y llegada lenta). */
+  @keyframes fundido-entra { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes desliza-derecha { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes desliza-izquierda { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+  .seccion.fundido { animation: fundido-entra 200ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+  .listado.entra-derecha, .mapa-simulado.entra-derecha { animation: desliza-derecha 200ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+  .listado.entra-izquierda, .mapa-simulado.entra-izquierda { animation: desliza-izquierda 200ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
+  /* ---------- El cargador: el símbolo SN al centro, con un pulso suave. Sustituye al letrero "Cargando…". ---------- */
+  .cargador { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background: var(--fondo-contenido); opacity: 0; pointer-events: none; transition: opacity 150ms ease; }
+  .cargador.visible { opacity: 1; pointer-events: auto; }
+  .cargador svg { width: 52px; height: auto; color: var(--texto); animation: pulso-sn 1.1s ease-in-out infinite; }
+  @keyframes pulso-sn { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.42; transform: scale(0.94); } }
+
+  /* ---------- Ficha: entra desde la derecha; Atrás la devuelve ---------- */
+  .ficha-pantalla { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; background: var(--fondo-contenido); transform: translateX(100%); transition: transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1); }
+  .ficha-pantalla.abierta { transform: translateX(0); }
+  .barra-interior { flex: none; position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 52px; padding-inline: var(--espacio-3); background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .barra-interior .logotipo-chico { font-size: 15px; font-weight: 800; font-variation-settings: "wdth" 75; text-align: center; }
+  .atras { justify-self: start; display: inline-flex; align-items: center; gap: 2px; min-height: 40px; padding: 0 14px 0 8px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .puntos { justify-self: end; display: grid; place-items: center; width: var(--toque-min); height: var(--toque-min); border: none; background: none; color: var(--texto); cursor: pointer; }
+  .ficha-cuerpo { flex: 1; overflow-y: auto; padding: var(--espacio-4) var(--gutter) var(--espacio-6); }
+  .ficha-foto { height: 200px; margin-bottom: var(--espacio-4); border-radius: var(--radio); background: linear-gradient(140deg, #d6c48a, #86712e); }
+  .ficha-cuerpo h1 { font-size: 26px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: var(--espacio-1); }
+  .ficha-cuerpo .sub { color: var(--texto-suave); font-size: 15px; margin-bottom: var(--espacio-4); }
+  .ficha-cuerpo p.cuerpo { font-size: 16px; line-height: 1.5; }
+
+  /* ---------- Navegación inferior: fundido, sin desplazamiento lateral ---------- */
+  .nav { flex: none; position: relative; z-index: 4; display: grid; grid-template-columns: repeat(3, 1fr); height: var(--alto-nav); padding-inline: var(--espacio-2); background: var(--fondo); border-top: 1px solid var(--borde); box-shadow: var(--sombra-panel); }
+  .nav button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: none; background: none; color: var(--texto-suave); font-size: 12px; font-weight: 600; cursor: pointer; }
+  .nav .icono { display: grid; place-items: center; width: 60px; height: 32px; border-radius: 16px; }
+  .nav button[aria-current="page"] { color: var(--primario); }
+  .nav button[aria-current="page"] .icono { background: var(--primario); color: #fff; }
+  .nav button[aria-current="page"] span:last-child { font-weight: 700; }
+  .telefono.en-ficha .nav { display: none; }
+
+  /* ---------- El gesto de la persona gana: sin animación con "reducir movimiento" ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    .seccion.fundido, .listado.entra-derecha, .listado.entra-izquierda, .mapa-simulado.entra-derecha, .mapa-simulado.entra-izquierda { animation: none !important; }
+    .ficha-pantalla { transition: none !important; }
+    .cargador { transition: none !important; }
+    .cargador svg { animation: none !important; opacity: 0.75; }
+  }
+  :root[data-reducir="on"] .seccion.fundido,
+  :root[data-reducir="on"] .listado.entra-derecha,
+  :root[data-reducir="on"] .listado.entra-izquierda,
+  :root[data-reducir="on"] .mapa-simulado.entra-derecha,
+  :root[data-reducir="on"] .mapa-simulado.entra-izquierda { animation: none !important; }
+  :root[data-reducir="on"] .ficha-pantalla { transition: none !important; }
+  :root[data-reducir="on"] .cargador { transition: none !important; }
+  :root[data-reducir="on"] .cargador svg { animation: none !important; opacity: 0.75; }
+
+  /* ---------- Notas del prototipo ---------- */
+  .panel { display: grid; gap: 16px; width: 340px; max-width: 100%; padding: 22px 22px 24px; border: 1px solid var(--estudio-borde); border-radius: 18px; background: var(--estudio-panel); font-size: 15px; line-height: 1.45; }
+  .panel h1 { font-size: 24px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+  .panel .fecha { color: var(--estudio-suave); font-size: 14px; }
+  .panel h2 { margin-bottom: 4px; color: var(--estudio-suave); font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  .panel ul { display: grid; gap: 6px; padding-left: 18px; }
+  .panel b { font-weight: 700; }
+  .controles { display: grid; gap: 10px; }
+  .controles label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .fila-botones { display: flex; flex-wrap: wrap; gap: 8px; }
+  .boton-estudio { min-height: 40px; padding: 0 16px; border: 1px solid var(--estudio-borde); border-radius: 999px; background: none; font-weight: 700; cursor: pointer; }
+  .boton-estudio[aria-pressed="true"] { border-color: var(--primario); color: var(--primario); }
+
+  @media (max-width: 759px) {
+    body { padding: 12px; }
+    .estudio { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+<main class="estudio" id="estudio">
+  <section class="telefono" id="telefono" aria-label="Somos Nosotros en el teléfono">
+    <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+    <div class="barra-raiz">
+      <span class="logotipo-texto">SMSNSTRS</span>
+      <span class="avatar" aria-hidden="true">O</span>
+    </div>
+
+    <div class="pantalla">
+      <div class="contenido" id="contenido">
+        <section class="seccion fundido" data-seccion="agenda">
+          <div class="cabecera-seccion"><h1>Agenda</h1></div>
+          <div role="tablist" aria-label="Filtro de Agenda" class="tira">
+            <button type="button" class="pestana" data-tab="todos" aria-selected="true">Todos</button>
+            <button type="button" class="pestana" data-tab="cercanos" aria-selected="false">Cercanos</button>
+          </div>
+          <ul class="listado" data-panel="agenda-todos">
+            <li><button class="renglon" data-titulo="Noche de cortos CEART" data-detalle="Vie 26 sep · CEART San Luis"><span class="foto" style="--f1:#d6c48a;--f2:#86712e"></span><b>Noche de cortos CEART</b><small>Vie 26 sep · CEART San Luis</small></button></li>
+            <li><button class="renglon" data-titulo="Recorrido guiado, Centro Histórico" data-detalle="Dom 28 sep · Punto de reunión: Plaza de Armas"><span class="foto" style="--f1:#aab7c9;--f2:#4b5d78"></span><b>Recorrido guiado, Centro Histórico</b><small>Dom 28 sep · Punto de reunión: Plaza de Armas</small></button></li>
+          </ul>
+          <ul class="listado" data-panel="agenda-cercanos" hidden>
+            <li><button class="renglon" data-titulo="Tianguis cultural del Barrio" data-detalle="Sáb 27 sep · Barrio de San Miguel"><span class="foto" style="--f1:#c9b39b;--f2:#6f5a47"></span><b>Tianguis cultural del Barrio</b><small>Sáb 27 sep · Barrio de San Miguel</small></button></li>
+          </ul>
+        </section>
+
+        <section class="seccion" data-seccion="lugares" hidden>
+          <div class="cabecera-seccion"><h1>Lugares</h1></div>
+          <div role="tablist" aria-label="Vista de Lugares" class="tira">
+            <button type="button" class="pestana" data-tab="lista" aria-selected="true">Lista</button>
+            <button type="button" class="pestana" data-tab="mapa" aria-selected="false">Mapa</button>
+          </div>
+          <ul class="listado" data-panel="lugares-lista">
+            <li><button class="renglon" data-titulo="Museo Federico Silva" data-detalle="Museo · Centro Histórico"><span class="foto" style="--f1:#a9bfb0;--f2:#45685a"></span><b>Museo Federico Silva</b><small>Museo · Centro Histórico</small></button></li>
+            <li><button class="renglon" data-titulo="CEART San Luis" data-detalle="Centro cultural · Zona Centro"><span class="foto" style="--f1:#d8b1a4;--f2:#8b4f43"></span><b>CEART San Luis</b><small>Centro cultural · Zona Centro</small></button></li>
+          </ul>
+          <div class="mapa-simulado" data-panel="lugares-mapa" hidden>Mapa (Mapbox no va en este prototipo)</div>
+        </section>
+
+        <section class="seccion" data-seccion="artistas" hidden>
+          <div class="cabecera-seccion"><h1>Artistas</h1></div>
+          <ul class="listado" data-panel="artistas-todos">
+            <li><button class="renglon" data-titulo="Lucía Ramírez" data-detalle="Artes visuales · Fotografía"><span class="foto redonda" style="--f1:#d8b1a4;--f2:#8b4f43"></span><b>Lucía Ramírez</b><small>Artes visuales · Fotografía</small></button></li>
+            <li><button class="renglon" data-titulo="Colectivo Terracota" data-detalle="Música · Son huasteco"><span class="foto redonda" style="--f1:#3b3b3b;--f2:#121212"></span><b>Colectivo Terracota</b><small>Música · Son huasteco</small></button></li>
+          </ul>
+        </section>
+      </div>
+
+      <div class="cargador" id="cargador" aria-hidden="true" aria-live="polite">
+        <svg viewBox="0 0 1035 795" role="img" aria-label="Cargando">
+          <path fill="currentColor" d="M654.972 664.298V377.338H657.972L802.852 702.408L803.834 772.338H859.113V740.438L895.647 772.338H1011.32C1015.33 772.338 1018.02 770.009 1020.02 766.538C1020.79 765.21 1021.66 763.987 1022.5 762.806C1024.93 759.375 1025.32 744.418 1022.5 732.918C1018.57 716.918 991.664 702.408 971.164 702.408C950.664 702.408 957.9 683.087 949.261 676.338C939.969 669.079 941.761 650.838 941.761 639.838C941.761 639.838 953.737 637.338 953.737 632.338L941.761 181.838C941.761 176.929 948.917 174.439 948.737 169.533C948.557 164.628 948.393 161.643 948.033 156.747C947.725 152.55 947.497 149.998 947.058 145.813C946.75 142.883 947.222 140.55 947.699 138.19C948.141 136.01 948.587 133.807 948.426 131.089C947.804 120.589 944.766 114.438 944.577 103.922C944.403 94.2806 935.975 86.4288 926.333 86.6021C920.238 86.7117 914.742 90.0096 911.568 94.8571C909.409 86.0564 900.44 80.0264 891.126 80.7628C886.766 81.1075 882.712 82.9056 879.558 85.6473C879.424 82.1268 879.258 78.7443 879.09 75.3096C878.783 69.0579 878.468 62.6332 878.323 54.8882C878.121 44.0821 877.261 37.5309 876.921 26.7283C876.626 17.3693 868.472 9.7135 859.113 10.0082C849.754 10.303 842.099 18.4568 842.393 27.8158C842.574 33.5427 842.502 38.0653 842.429 42.6836V42.696C842.366 46.644 842.303 50.6616 842.394 55.5606C842.579 65.4564 842.323 73.1658 842.056 81.1579C841.905 85.6824 841.751 90.2974 841.673 95.451C836.054 82.5561 831.351 73.8527 825.31 59.9263C821.297 50.6773 818.224 45.3332 814.141 36.1148C810.418 27.7068 800.171 23.7502 791.763 27.4736C783.355 31.1971 779.399 41.4436 783.122 49.8516C787.164 58.9784 788.987 64.8041 792.959 73.9611C799.636 89.3508 802.6 99.1727 809.08 114.646C810.698 118.509 811.127 124.296 811.219 128.165C811.161 128.062 811.094 127.966 811.018 127.878C801.685 117.207 786.328 107.716 775.657 117.049C764.986 126.381 772.346 142.866 781.679 153.537C784.318 156.554 788.9 156.516 793.133 156.48C797.982 156.439 802.372 156.402 802.852 160.969C803.109 163.418 803.242 164.911 803.423 167.366C803.633 170.23 803.729 171.977 803.834 174.848C803.94 177.718 811.219 178.966 811.219 181.838C811.219 181.838 817.308 409.357 825.31 459.338C833.311 509.319 786.761 426.838 771.657 393.838C756.554 360.838 694.072 181.02 663.761 131.089C647.16 103.742 593.272 94.4434 561.793 110.838C537.793 123.338 526.673 132.443 521.793 190.338C517.289 243.78 521.131 354.203 521.793 433.838C522.718 544.941 508.972 649.698 508.972 649.698C508.972 667.686 504.592 678.43 504.592 696.418C504.592 705.649 501.095 710.85 498.752 719.778C495.219 733.238 490.417 740.95 489.262 754.818C489.231 755.189 489.198 755.569 489.164 755.958C488.566 762.882 487.748 772.338 494.372 772.338H725.052C729.088 772.338 731.794 769.993 733.812 766.498C734.584 765.161 735.459 763.929 736.303 762.74C738.757 759.286 740.957 756.188 739.652 751.898C736.877 742.78 731.201 738.657 723.592 732.918C713.799 725.534 705.284 725.185 695.122 718.318C684.433 711.096 677.267 706.771 669.572 696.418C661.504 685.563 654.972 677.823 654.972 664.298ZM269.211 784.338C315.878 784.338 353.378 776.505 381.711 760.838C410.044 745.172 430.711 723.505 443.711 695.838C456.711 668.172 463.211 637.005 463.211 602.338C463.211 571.672 459.044 544.672 450.711 521.338C442.378 498.005 431.044 477.338 416.711 459.338C402.378 441.338 386.211 425.172 368.211 410.838C358.277 402.927 348.139 395.271 337.798 387.868C339.827 388.375 341.981 388.445 344.12 387.985C351.697 386.354 356.719 378.578 355.088 371.001C354.595 368.711 354.585 367.263 354.135 364.964C352.648 357.371 352.807 352.587 351.794 344.916C351.579 343.289 352.15 340.649 352.15 340.649C352.15 340.649 353.809 345.402 354.152 348.483C355.395 359.669 357.654 366.257 360.42 377.167C361.49 381.387 362.599 383.823 363.89 387.98C366.467 396.277 375.651 401.108 383.948 398.531C389.672 396.754 393.746 391.831 394.877 386.225C397.789 393.555 405.7 398.303 413.714 396.968C422.908 395.438 429.38 386.38 427.85 377.186C427.277 373.747 427.336 371.598 426.832 368.149C426.282 364.378 426.001 361.148 425.815 358.045C426.283 360.012 426.764 362.09 427.248 364.373C427.986 367.852 428.823 369.874 429.667 373.329C431.801 382.059 440.978 387.631 449.709 385.497C458.44 383.363 464.011 374.186 461.877 365.455C461.126 362.384 461.056 360.433 460.4 357.34C458.652 349.1 458.604 343.599 457.799 335.777C464.362 339.09 471.324 339.788 476.895 334.893C486.745 326.237 479.811 311.02 471.155 301.171C468.884 298.585 464.767 299.373 461.002 300.094C456.949 300.869 453.303 301.567 452.804 297.896C452.593 296.346 452.479 295.4 452.317 293.844C452.128 292.028 452.033 290.92 451.911 289.099C451.751 286.728 451.635 285.284 451.62 282.908C451.437 253.853 447.134 227.83 438.711 204.838C426.378 171.172 405.711 145.338 376.711 127.338C347.711 109.338 310.544 100.338 265.211 100.338C255.658 100.338 325.524 70.8383 291.711 66.3383C257.898 61.8383 215.261 96.3597 205.211 95.2602C181.663 92.6839 158.318 90.8559 138.531 94.8571C101.442 102.357 73.9708 135.338 70.5256 163.838C67.0804 192.338 76.211 237.338 76.211 271.338C76.211 297.338 80.0443 320.338 87.711 340.338C95.3776 360.338 105.544 378.172 118.211 393.838C130.878 409.505 144.878 423.505 160.211 435.838C175.544 448.172 190.544 459.672 205.211 470.338C221.878 481.672 238.211 494.005 254.211 507.338C270.211 520.672 283.378 536.172 293.711 553.838C304.044 571.505 309.211 592.672 309.211 617.338C309.211 630.005 307.711 640.338 304.711 648.338C301.711 656.338 297.378 662.338 291.711 666.338C286.044 670.338 279.211 672.338 271.211 672.338C254.544 672.338 242.544 664.838 235.211 649.838C227.878 634.838 223.878 615.505 223.211 591.838C223.183 590.852 223.159 589.864 223.14 588.876L223.139 588.838C222.813 572.695 219.64 563.025 215.68 547.362C211.478 530.743 205.111 521.795 196.561 506.938C189.221 494.183 182.019 488.19 171.811 477.591C168.297 473.942 166.735 471.06 162.644 468.072C158.662 465.165 152.608 467.137 151.076 462.45C148.132 453.442 145.514 448.249 142.488 439.268C141.118 435.203 139.918 432.86 138.531 428.801C136.267 422.169 128.753 418.481 122.121 420.745C115.49 423.01 111.801 430.524 114.066 437.155C115.439 441.176 115.903 443.742 117.259 447.768C120.254 456.658 121.242 462.332 124.156 471.249C124.916 473.574 127.236 476.838 127.236 476.838C127.236 476.838 124.169 476.528 123.291 475.134C116.59 464.486 111.618 458.598 104.606 448.152C100.887 442.611 98.1805 439.549 94.3751 434.066C89.8877 427.602 80.6373 425.932 74.1727 430.419C67.7081 434.907 66.0382 444.157 70.5256 450.622C74.2302 455.959 76.0354 459.506 79.6562 464.9C85.6393 473.813 88.8728 480.107 93.9792 488.512C85.2532 480.464 78.9731 475.829 69.9866 467.364C65.0393 462.703 61.6682 460.26 56.7272 455.593C50.6023 449.807 40.5428 450.094 34.7576 456.219C28.9723 462.344 29.2592 472.404 35.384 478.189C40.3369 482.867 42.9803 486.097 47.9395 490.768C56.161 498.513 61.0693 504.182 68.4135 511.351C60.1953 507.131 54.0695 504.583 45.3412 499.56C40.534 496.793 37.3853 495.505 32.6195 492.668C25.6294 488.507 16.2108 490.896 12.0498 497.886C7.88873 504.876 10.2782 514.295 17.2683 518.456C22.1822 521.381 24.9383 523.549 29.8949 526.401C39.8115 532.108 45.5618 536.367 55.3709 541.695C39.3376 544.271 21.2994 549.695 23.2703 564.881C25.4879 581.969 49.045 580.639 66.1326 578.422C68.6666 578.093 70.3304 575.101 71.7823 572.49C73.3656 569.643 74.6969 567.249 76.6299 569.256C77.5005 570.16 77.5501 571.208 77.6017 572.297C77.6447 573.204 77.6891 574.14 78.2106 575.046C78.9547 576.339 78.706 577.554 78.4461 578.824C78.2356 579.853 78.0177 580.917 78.3138 582.089C78.8429 584.182 78.1837 585.79 77.4815 587.503C77.06 588.531 76.6231 589.596 76.4184 590.827L76.3956 590.828C76.3755 591.04 76.3556 591.251 76.336 591.463C74.7526 608.547 74.8776 624.672 76.711 639.838C80.3776 670.172 90.211 696.172 106.211 717.838C122.211 739.505 143.878 756.005 171.211 767.338C198.544 778.672 231.211 784.338 269.211 784.338ZM329.141 381.762C323.556 377.882 317.912 374.074 312.211 370.338C298.211 361.005 284.711 351.505 271.711 341.838C258.711 332.172 248.211 321.172 240.211 308.838C232.211 296.505 228.211 282.005 228.211 265.338C228.211 255.338 229.711 246.838 232.711 239.838C235.711 232.838 240.044 227.338 245.711 223.338C251.378 219.338 257.878 217.338 265.211 217.338C275.878 217.338 284.711 220.838 291.711 227.838C298.711 234.838 303.878 244.338 307.211 256.338C310.032 266.492 311.778 277.72 312.451 290.022L312.452 290.053C312.627 293.263 312.657 295.23 312.874 298.445C313.127 302.219 313.324 304.515 313.716 308.277C314.051 311.503 314.287 313.463 314.724 316.677C315.444 321.97 315.576 325.242 316.602 330.485C318.002 337.64 320.092 341.75 321.046 348.978C322.153 357.356 323.9 362.271 325.524 370.565C326.014 373.067 326.6 374.525 327.136 377.017C327.509 378.748 328.203 380.346 329.141 381.762Z"/>
+        </svg>
+      </div>
+
+      <div class="ficha-pantalla" id="ficha">
+        <div class="barra-interior">
+          <button type="button" class="atras" id="atras">‹ Volver</button>
+          <span class="logotipo-chico">SMSNSTRS</span>
+          <button type="button" class="puntos" aria-label="Más opciones">⋯</button>
+        </div>
+        <div class="ficha-cuerpo">
+          <div class="ficha-foto" aria-hidden="true"></div>
+          <h1 id="ficha-titulo">—</h1>
+          <p class="sub" id="ficha-detalle">—</p>
+          <p class="cuerpo">Contenido de ejemplo para ver el desplazamiento completo de la ficha. Al tocar «Volver» la ficha regresa y el listado repone su pestaña y su scroll (memoria de pantalla), sin volver a cargar.</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav" aria-label="Secciones">
+      <button type="button" data-seccion="agenda" aria-current="page">
+        <span class="icono"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+        <span>Agenda</span>
+      </button>
+      <button type="button" data-seccion="lugares">
+        <span class="icono"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg></span>
+        <span>Lugares</span>
+      </button>
+      <button type="button" data-seccion="artistas">
+        <span class="icono"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/></svg></span>
+        <span>Artistas</span>
+      </button>
+    </nav>
+  </section>
+
+  <aside class="panel">
+    <div>
+      <h1>Transiciones y cargador</h1>
+      <p class="fecha">OL-144 · bitácora 179 · pieza B5 (L46)</p>
+    </div>
+    <div>
+      <h2>Qué prueba este prototipo</h2>
+      <ul>
+        <li><b>Secciones</b> (Agenda · Lugares · Artistas): toca la barra inferior — fundido breve, sin desplazamiento lateral.</li>
+        <li><b>Pestañas</b> dentro de una sección (Todos/Cercanos, Lista/Mapa): deslizamiento corto en la dirección de la pestaña.</li>
+        <li><b>Ficha</b>: toca cualquier renglón — la ficha entra desde la derecha; «Volver» la devuelve.</li>
+        <li><b>Cargador</b>: el símbolo SN al centro, con un pulso suave, en vez del letrero «Cargando…».</li>
+      </ul>
+    </div>
+    <div class="controles">
+      <label><input type="checkbox" id="reducir-movimiento"> Simular «Reducir movimiento» del sistema</label>
+      <div class="fila-botones">
+        <button type="button" class="boton-estudio" id="alternar-cargador" aria-pressed="false">Ver cargador</button>
+        <button type="button" class="boton-estudio" id="reiniciar">Reiniciar</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const telefono = $('#telefono');
+  const cargador = $('#cargador');
+  const nav = $('#nav');
+  const ficha = $('#ficha');
+  const botonCargador = $('#alternar-cargador');
+  let seccionActual = 'agenda';
+  let esperandoManual = false;
+
+  function reducido() {
+    return document.documentElement.dataset.reducir === 'on' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  function mostrarCargador(mostrar) {
+    cargador.classList.toggle('visible', mostrar);
+    cargador.setAttribute('aria-hidden', mostrar ? 'false' : 'true');
+  }
+
+  function cambiarSeccion(nueva, boton) {
+    if (nueva === seccionActual) return;
+    seccionActual = nueva;
+    $$('.nav button').forEach((b) => { if (b === boton) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    mostrarCargador(true);
+    const espera = reducido() ? 0 : 420;
+    setTimeout(() => {
+      mostrarCargador(false);
+      $$('.seccion').forEach((s) => { s.hidden = s.dataset.seccion !== nueva; });
+      const activa = $(`.seccion[data-seccion="${nueva}"]`);
+      activa.classList.remove('fundido');
+      void activa.offsetWidth;
+      activa.classList.add('fundido');
+    }, espera);
+  }
+
+  function cambiarTab(tabBtn) {
+    const tira = tabBtn.parentElement;
+    const seccion = tabBtn.closest('.seccion');
+    const botones = $$('.pestana', tira);
+    const anterior = botones.findIndex((b) => b.getAttribute('aria-selected') === 'true');
+    const nuevo = botones.indexOf(tabBtn);
+    if (nuevo === anterior) return;
+    botones.forEach((b) => b.setAttribute('aria-selected', b === tabBtn ? 'true' : 'false'));
+    const nombreSeccion = seccion.dataset.seccion;
+    const paneles = $$('.listado, .mapa-simulado', seccion);
+    const destino = `${nombreSeccion}-${tabBtn.dataset.tab}`;
+    paneles.forEach((p) => { p.hidden = p.dataset.panel !== destino; });
+    const panel = seccion.querySelector(`[data-panel="${destino}"]`);
+    const direccion = nuevo > anterior ? 'entra-derecha' : 'entra-izquierda';
+    panel.classList.remove('entra-derecha', 'entra-izquierda');
+    void panel.offsetWidth;
+    panel.classList.add(direccion);
+  }
+
+  function abrirFicha(titulo, detalle) {
+    $('#ficha-titulo').textContent = titulo;
+    $('#ficha-detalle').textContent = detalle;
+    telefono.classList.add('en-ficha');
+    mostrarCargador(true);
+    const espera = reducido() ? 0 : 320;
+    setTimeout(() => {
+      mostrarCargador(false);
+      ficha.classList.add('abierta');
+    }, espera);
+  }
+  function cerrarFicha() {
+    ficha.classList.remove('abierta');
+    setTimeout(() => telefono.classList.remove('en-ficha'), reducido() ? 0 : 220);
+  }
+
+  document.addEventListener('click', (e) => {
+    const navBtn = e.target.closest('#nav button');
+    if (navBtn) { cambiarSeccion(navBtn.dataset.seccion, navBtn); return; }
+    const tabBtn = e.target.closest('.pestana');
+    if (tabBtn) { cambiarTab(tabBtn); return; }
+    const renglon = e.target.closest('.renglon[data-titulo]');
+    if (renglon) { abrirFicha(renglon.dataset.titulo, renglon.dataset.detalle); return; }
+    if (e.target.closest('#atras')) { cerrarFicha(); return; }
+    if (e.target.closest('#alternar-cargador')) {
+      esperandoManual = !esperandoManual;
+      mostrarCargador(esperandoManual);
+      botonCargador.setAttribute('aria-pressed', String(esperandoManual));
+      botonCargador.textContent = esperandoManual ? 'Ocultar cargador' : 'Ver cargador';
+      return;
+    }
+    if (e.target.closest('#reiniciar')) { location.reload(); return; }
+  });
+
+  $('#reducir-movimiento').addEventListener('change', (e) => {
+    document.documentElement.dataset.reducir = e.target.checked ? 'on' : 'off';
+  });
+</script>
+</body>
+</html>
