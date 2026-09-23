@@ -65,9 +65,10 @@ Pegados en el chat del gestor el 2026-09-23 («agrega estos comentarios al plan 
 | E4 · «Cooperación solidaria» en el costo | Nueva opción de costo del evento, junto a gratis y precio. | Haiku 4.5, bajo | Pieza chica: alta de evento y ficha. Después de E1 para no chocar en el formulario. |
 | E5 · Mapa con menos ruido y color primario que invite a la acción | Quitar el doble círculo de los lugares seguidos; la diferencia entre tipos va por tamaño y color; negro para los lugares que no sigo y sin eventos. Replantear el color primario de la plataforma para los botones principales: el actual es «aguado», parecido al de «eventos a donde voy». | Sonnet 5, medio | Prototipo sobre `mapa-lugares.html` y propuesta de color con dos o tres opciones a la vista para que el founder elija. Toca `docs/diseno/LINEA_GRAFICA.md`. |
 | E6 · Indexar el catálogo en Google y buscadores | Que lugares, artistas y eventos aparezcan en buscadores. | Sonnet 5, medio | Evaluación corta primero: sitemap, robots, metadatos y datos estructurados; qué se indexa y qué no (perfiles de usuario, no). |
+| E8 · Construir el boletín quincenal | Sobre lo decidido el 2026-09-23 en `docs/rediseno/28-avisos-y-boletin.md`: bienvenida, control de ficha, avisos al artista, boletín y apagado de correos por evento (salvo cambio de fecha o lugar). | Sonnet 5, medio | Founder, 2026-09-23: «no urge y no lo vamos a mandar de inmediato». Con migración que solo añade y sin encender el envío hasta su OK. |
 | E7 · Texto al salir de la app | El aviso actual dice que puede que le pidan dinero o sus datos; el founder no quiere generalizar. | Haiku 4.5, bajo | Dos o tres textos para elegir; se cambia con su OK. Viene de OL-105. |
 
-Orden (founder, 2026-09-23): E1 ahora (urgente); E2 unida a B4, ahora; E7 ahora (es barata); E4 en cuanto E1 esté en producción (mismo formulario); E5 y E6 después; E3 (app nativa) al final.
+Orden (founder, 2026-09-23): E1 ahora (urgente); E2 unida a B4, ahora; E7 ahora (es barata); E4 en cuanto E1 esté en producción (mismo formulario); E5 y E6 después; E8 (construir el boletín) sin prisa; E3 (app nativa) al final. **Estado 2026-09-23:** E1 (OL-137), E7 (OL-139) en producción; E2 decidida (OL-138); E4 en curso (OL-140); E5 (OL-141) y E6 (OL-142) encargadas.
 
 ## Orden propuesto
 
