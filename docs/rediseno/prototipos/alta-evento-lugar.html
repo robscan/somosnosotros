@@ -92,7 +92,7 @@
 
 
   /* OL-137 · Buscar lugar reconstruido: cabecera de la hoja pegada (asa, título y cerrar) y solo el cuerpo se desplaza. */
-  .hoja.fija { display: flex; flex-direction: column; overflow: hidden; height: 78%; }
+  .hoja.fija { display: flex; flex-direction: column; overflow: hidden; inset: 0; height: 100%; border-radius: 20px 20px 0 0; } /* a toda la altura, pegada al borde superior seguro */
   .hoja.fija > .cabecera { position: relative; flex: none; }
   .hoja.fija > .cabecera h3 { padding-right: 48px; }
   .hoja.fija .x { position: absolute; top: -6px; right: -12px; display: grid; place-items: center; width: 44px; height: 44px; color: var(--texto-suave); font-size: 20px; }
@@ -102,6 +102,13 @@
   .aviso-no b { display: block; font-size: 16px; }
   .sep { margin: 14px 0 6px; color: var(--texto-suave); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
   .volver-lista { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 4px; border: none; background: none; color: var(--primario); font-size: 15px; font-weight: 700; }
+  .mapa-ref { position: relative; height: 280px; margin: 4px 0 12px; overflow: hidden; border-radius: var(--radio); border: 1px solid var(--borde); background: #ecebe6; }
+  .mapa-ref::before { content: ""; position: absolute; inset: 0; background:
+    linear-gradient(115deg, transparent 46%, #fff 46%, #fff 49%, transparent 49%),
+    linear-gradient(20deg, transparent 58%, #fff 58%, #fff 60.5%, transparent 60.5%),
+    linear-gradient(90deg, transparent 30%, #f7f6f2 30%, #f7f6f2 33%, transparent 33%),
+    radial-gradient(circle at 72% 30%, #dfe9dc 0 16%, transparent 16.5%), radial-gradient(circle at 20% 80%, #dfe6ea 0 20%, transparent 20.5%); }
+  .mapa-ref > span { position: absolute; left: 10px; bottom: 8px; padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.9); color: var(--texto-suave); font-size: 12px; }
   .renglon.foto { grid-template-columns: 44px 1fr; }
   .renglon.foto > .mini { grid-area: icono; width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(135deg, #7fb3bd, #e8c37a); }
 
@@ -345,11 +352,11 @@
         <h1>Publicar un evento</h1>
         <div class="hoja fija">
           <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
-          <div class="cuerpo-hoja"><label class="campo-buscar sticky-campo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><p style="font-size:14px;color:var(--texto-suave);margin:6px 0">Escribe una o varias palabras del nombre o la dirección.</p></div>
+          <div class="cuerpo-hoja"><label class="campo-buscar sticky-campo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><p style="font-size:14px;color:var(--texto-suave);margin:6px 0">Escribe una o varias palabras del nombre o la dirección.</p><div class="mapa-ref" aria-label="Mapa de referencia"><span>Mapa de referencia · San Luis Potosí</span></div></div>
         </div>
       </main>
     </div>
-    <figcaption><b>N1 · Al abrir</b>Solo el campo (con el teclado ya arriba). Nada de lista grande ni de sugerencias del mapa. La cabecera (asa, título y ✕) no se mueve nunca.</figcaption>
+    <figcaption><b>N1 · Al abrir</b>Solo el campo y, debajo, el mapa de referencia (Mapbox claro, centrado en la ciudad o en la persona; solo se mira). La hoja abre a toda la altura, pegada al borde superior seguro. Nada de lista ni de sugerencias. La cabecera (asa, título y ✕) no se mueve nunca.</figcaption>
   </figure>
   <figure class="par">
     <div class="telefono">
@@ -387,11 +394,11 @@
         <h1>Publicar un evento</h1>
         <div class="hoja fija">
           <div class="cabecera"><div class="asa"></div><h3>Dónde es</h3><span class="x" aria-label="Cerrar">✕</span></div>
-          <div class="cuerpo-hoja"><button type="button" class="volver-lista">‹ Lugares registrados</button><label class="campo-buscar sticky-campo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="El teatrito" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><p class="sep">En el mapa</p><ul class="lista" role="listbox" aria-label="Lugares y direcciones encontrados"><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Teatrito Cantera</b><small>Calle Cantera 7 · San Luis Potosí</small></button></li><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>El Teatrito del Barrio</b><small>Av. Universidad 210 · San Luis Potosí</small></button></li></ul><ul class="lista"><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Ninguno: poner el pin a mano</b><small>Escribes el nombre y tocas el mapa</small></button></li></ul></div>
+          <div class="cuerpo-hoja"><button type="button" class="volver-lista">‹ Lugares registrados</button><label class="campo-buscar sticky-campo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><input type="text" value="El teatrito" placeholder="Nombre o dirección" aria-label="Buscar el lugar"></label><p class="sep">En el mapa</p><ul class="lista" role="listbox" aria-label="Lugares y direcciones encontrados"><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Teatrito Cantera</b><small>Calle Cantera 7 · San Luis Potosí</small></button></li><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>El Teatrito del Barrio</b><small>Av. Universidad 210 · San Luis Potosí</small></button></li></ul><ul class="lista"><li><button type="button" class="renglon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><b>Ninguno: poner el pin a mano</b><small>Escribes el nombre y tocas el mapa</small></button></li></ul><div class="mapa-ref" aria-label="Mapa de referencia"><span>Mapa de referencia · San Luis Potosí</span></div></div>
         </div>
       </main>
     </div>
-    <figcaption><b>N4 · Buscar en el mapa sin agregar</b>Solo aquí, y porque la persona lo pidió, aparecen las sugerencias del mapa: en la misma lista, sin flotar sobre nada y sin desaparecer al teclear (lo anterior se queda hasta que llega lo nuevo). «Lugares registrados» regresa a la búsqueda de guardados.</figcaption>
+    <figcaption><b>N4 · Buscar en el mapa sin agregar</b>Solo aquí, y porque la persona lo pidió, aparecen las sugerencias del mapa: en la misma lista, sin flotar sobre nada, con el mismo mapa de referencia debajo y sin desaparecer al teclear (lo anterior se queda hasta que llega lo nuevo). «Lugares registrados» regresa a la búsqueda de guardados.</figcaption>
   </figure>
   <figure class="par">
     <div class="telefono">

@@ -381,6 +381,13 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     setEnMapa(false);
     setVista("otro");
   }
+  // El mapa de referencia: el mismo al abrir y en «Buscar en el mapa»; solo se ve, no elige nada. Cede su sitio a los
+  // lugares registrados cuando hay texto (nunca compiten por el espacio).
+  const mapaReferencia = (
+    <div className={styles.mapaReferencia}>
+      <Mapa modo="elegir" valor={null} ubicacion={yo} centrarEn={contexto.centro} ciudad={contexto.ciudad} />
+    </div>
+  );
   const campo = (
     <label className={`${canon.campo} ${styles.pegajoso}`}>
       <IconoBuscar width={20} height={20} />
@@ -391,7 +398,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
 
   if (enMapa) {
     return (
-      <Hoja etiqueta="Dónde es" titulo="Dónde es" onCerrar={cerrar}>
+      <Hoja etiqueta="Dónde es" titulo="Dónde es" completa onCerrar={cerrar}>
         <button type="button" className={styles.volver} onClick={salirDelMapa}>‹ Lugares registrados</button>
         {campo}
         {sinPistaDeCiudad && texto.length >= 3 && (
@@ -424,6 +431,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             </button>
           </li>
         </ul>
+        {mapaReferencia}
       </Hoja>
     );
   }
@@ -447,10 +455,13 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     </ul>
   );
   return (
-    <Hoja etiqueta="Dónde es" titulo="Dónde es" onCerrar={cerrar}>
+    <Hoja etiqueta="Dónde es" titulo="Dónde es" completa onCerrar={cerrar}>
       {campo}
       {!texto ? (
-        <p className={styles.nota}>Escribe una o varias palabras del nombre o la dirección.</p>
+        <>
+          <p className={styles.nota}>Escribe una o varias palabras del nombre o la dirección.</p>
+          {mapaReferencia}
+        </>
       ) : filtrados.length > 0 ? (
         <>
           <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">

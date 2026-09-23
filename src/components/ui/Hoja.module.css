@@ -71,3 +71,8 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+/* A toda la altura, pegada al borde superior seguro (notch / isla): abajo sigue el área segura de siempre. */
+.completa {
+  height: calc(100% - env(safe-area-inset-top, 0px));
+  max-height: none;
+}

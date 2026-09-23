@@ -19,20 +19,25 @@ Reporte del founder: al buscar un lugar registrado en «Dónde es» del alta de 
 - El selector de artistas ya se comportaba así (en línea, sin flotar); no se tocó.
 - Prototipo: `docs/rediseno/prototipos/alta-evento-lugar.html` con cinco estados nuevos al final.
 
+## Correcciones del founder al prototipo (2026-09-23)
+
+1. «Falta ver estado inicial. Ahí falta mapa de referencia también»: al abrir, bajo el campo se ve el mapa de referencia (el mismo componente `Mapa`, centrado en la ciudad de contexto o en la persona, solo se mira: sin pin, sin pista de «toca el mapa» y sin elegir nada). Con texto, los lugares registrados toman su sitio; en «Buscar en el mapa sin agregar» el mapa es el mismo, debajo de las sugerencias. `Mapa` ya no muestra la pista «Toca el mapa…» cuando no recibe `onCambio`.
+2. «Que se vaya al tope de la safe zone»: la hoja «Dónde es» abre a toda la altura, pegada al borde superior seguro (`Hoja` con la prop `completa`: altura `100% - env(safe-area-inset-top)`). Cabecera fija y cuerpo desplazable.
+
 ## Verificación
 
-`npm run lint` (1 warning preexistente), `npm run typecheck`, `npm test` (1038 pruebas) y `npm run build`: verdes. Capturas con `next build && next start`, respaldo local de datos inventados (cinco lugares) y Mapbox simulado con Playwright; Chrome real, 390×844 a escala 2, `document.fonts.check` de Bricolage en `true`. Prueba de parpadeo: se muestreó cada 60 ms la presencia de la lista mientras se tecleaba en el modo mapa; siempre hubo lista (28 de 28 muestras). Cabecera fija: tras desplazar el cuerpo (scrollTop 141), la posición del título no cambió.
+`npm run lint` (1 warning preexistente), `npm run typecheck`, `npm test` (1038 pruebas) y `npm run build`: verdes. Capturas con `next build && next start`, respaldo local de datos inventados (cinco lugares) y Mapbox simulado con Playwright (las sugerencias y un estilo de fondo liso, así que el mapa de las capturas reales sale sin calles: es solo el recuadro y su posición); Chrome real, 390×844 a escala 2, `document.fonts.check` de Bricolage en `true`. Prueba de parpadeo: se muestreó cada 60 ms la presencia de la lista mientras se tecleaba en el modo mapa; siempre hubo lista (28 de 28 muestras). Cabecera fija: tras desplazar el cuerpo (scrollTop 141), la posición del título no cambió.
 
 ### Capturas (`docs/rediseno/capturas-172/`), todas abiertas
 
-- `proto-n1-al-abrir`, `proto-n2-coincidencias`, `proto-n3-no-existe`, `proto-n4-buscar-en-mapa`, `proto-n5-lista-larga`: los cinco estados del prototipo.
-- `01-al-abrir`: hoja real con solo el campo y la línea de ayuda.
-- `02-coincidencias`: «casa cultura» muestra dos lugares registrados con foto y, debajo, las dos salidas; nada del mapa.
+- `proto-n1-al-abrir`, `proto-n2-coincidencias`, `proto-n3-no-existe`, `proto-n4-buscar-en-mapa`, `proto-n5-lista-larga`: los cinco estados del prototipo, con la hoja a toda la altura y el mapa de referencia en n1 y n4.
+- `01-al-abrir`: hoja real a toda la altura, campo, línea de ayuda y recuadro del mapa de referencia con su marca; sin lista.
+- `02-coincidencias`: «casa cultura» muestra dos lugares registrados y las dos salidas; sin mapa ni sugerencias.
 - `03-no-existe`: «El teatrito» muestra el aviso «no está registrado» y las dos salidas.
-- `04a-mapa-buscando`: tras «Buscar en el mapa sin agregar», «Buscando…» con el pin a mano ya visible.
-- `04b-mapa-sugerencias`: dos sugerencias del mapa en la misma lista, con «‹ Lugares registrados» arriba.
+- `04a-mapa-buscando`: en «Buscar en el mapa sin agregar» mientras llega la búsqueda: «‹ Lugares registrados», el campo, «Ninguno: poner el pin a mano» y el mapa de referencia.
+- `04b-mapa-sugerencias`: dos sugerencias del mapa en la misma lista, la salida del pin a mano y el mapa debajo.
 - `05-de-vuelta-guardados`: de vuelta, «casa» muestra tres lugares registrados y las salidas.
-- `06-desplazada-cabecera-fija`: pantalla de 390×520 (para forzar el desplazamiento) con cuerpo desplazado; asa, «Dónde es», ✕ y campo siguen arriba.
+- `06-desplazada-cabecera-fija`: pantalla de 390×520 con el cuerpo desplazado; asa, título, ✕ y campo siguen arriba.
 
 ## Qué falta
 

@@ -160,3 +160,9 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+/* Mapa de referencia de la hoja (OL-137): solo se mira; ocupa un recuadro alto bajo el campo o la lista. */
+.mapaReferencia {
+  position: relative;
+  margin-bottom: var(--espacio-3);
+}
