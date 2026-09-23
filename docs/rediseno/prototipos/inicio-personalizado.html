@@ -71,12 +71,29 @@
   .sesion.entrar { min-height: 40px; padding: 0 16px; border-radius: 999px; background: var(--primario); color: #fff; font-weight: 700; font-size: 15px; }
   .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#d8c7b5,#8a6f5a); display: inline-grid; place-items: center; font-weight: 700; font-size: 14px; color: #fff; }
 
-  /* Buscador único, cabecera fija */
-  .buscador-fijo { position: sticky; top: 0; z-index: 2; padding: 0 var(--gutter) 10px; background: var(--fondo); border-bottom: 1px solid var(--borde); }
-  .campo-buscar { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--fondo-suave); border: 1px solid var(--borde); color: var(--texto-suave); font-size: 15px; }
-  .campo-buscar svg { width: 18px; height: 18px; flex: none; }
-  .campo-buscar input { flex: 1; border: none; background: none; outline: none; color: var(--texto); font-size: 15px; }
+  /* Cabecera del canon (ui/Cabecera.tsx + ui/Barra.tsx): renglón 1 = contexto | acciones (lupa redonda),
+     o el campo de búsqueda a todo lo ancho cuando la lupa ya se tocó. Nada de una barra de búsqueda
+     siempre visible: así es hoy Agenda y Lugares, y así se queda Inicio (decisión del founder, segunda vuelta). */
+  .cabecera-fija { position: sticky; top: 0; z-index: 2; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
+  .renglon1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px var(--gutter) 10px; }
+  /* Chip de ciudad (ui/Ciudad.tsx + Chip.module.css .deContexto): mismo shell que Agenda, con el chip de fecha
+     oculto (Inicio no filtra por día) y el de ciudad seleccionable igual que en las demás secciones. */
+  .chip-ciudad { display: inline-flex; align-items: center; gap: 6px; min-width: 0; min-height: 40px; padding: 0 12px 0 10px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .chip-ciudad svg { flex: none; width: 16px; height: 16px; color: var(--texto-suave); }
+  .chip-ciudad span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip-ciudad svg.caret { color: var(--texto); width: 12px; height: 12px; }
+  .redondo { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); }
+  .redondo svg { width: 18px; height: 18px; }
+  .campo-buscar { display: flex; align-items: center; gap: 8px; flex: 1; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--fondo); border: 1px solid var(--borde); color: var(--texto-suave); font-size: 15px; }
+  .campo-buscar:focus-within { border-color: var(--texto); }
+  .campo-buscar svg.lupa { width: 18px; height: 18px; flex: none; color: var(--texto-suave); }
+  .campo-buscar input { flex: 1; min-width: 0; border: none; background: none; outline: none; color: var(--texto); font-size: 15px; }
   .campo-buscar input::placeholder { color: var(--texto-suave); }
+  .campo-buscar .limpiar { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: none; background: none; color: var(--texto-suave); }
+  .campo-buscar .limpiar svg { width: 16px; height: 16px; }
+  /* La ✕ es la nuestra (ui/Buscador.module.css): el navegador no dibuja la suya encima en type="search". */
+  .campo-buscar input::-webkit-search-cancel-button,
+  .campo-buscar input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
 
   .saludo { padding: 14px var(--gutter) 4px; }
   .saludo h1 { font-size: 22px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
@@ -87,30 +104,35 @@
   .invitacion p { font-size: 13px; color: var(--texto-suave); margin-bottom: 10px; line-height: 1.35; }
   .invitacion button { min-height: 40px; padding: 0 18px; border: none; border-radius: 999px; background: var(--primario); color: #fff; font-weight: 700; font-size: 14px; }
 
-  .carril-bloque { margin-top: 22px; }
+  .carril-bloque { margin-top: 16px; }
   .carril-cabecera { display: flex; align-items: baseline; justify-content: space-between; padding: 0 var(--gutter) 8px; }
   .carril-cabecera h2 { font-size: 18px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
   .carril-cabecera a { font-size: 13px; font-weight: 700; color: var(--primario); white-space: nowrap; }
 
-  .carril { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: 150px; gap: 12px; overflow-x: auto; padding: 0 var(--gutter) 6px; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
+  .carril { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: 96px; gap: 12px; overflow-x: auto; padding: 0 var(--gutter) 6px; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
   .carril::-webkit-scrollbar { display: none; }
-  .carril.grande { grid-auto-columns: 200px; }
+  /* Tarjetas de evento apaisadas (decisión del founder, segunda vuelta): 3:2, ~150-170 px de alto en vez del
+     220×200 casi cuadrado de la tira de Destacados — así caben 2-3 carriles por pantalla. 230 px de ancho × 3:2
+     da ~153 px de alto. */
+  .carril.grande { grid-auto-columns: 230px; }
   .carril > li { scroll-snap-align: start; }
   .tarjeta { display: block; }
-  .foto { width: 100%; aspect-ratio: 1.1/1; border-radius: 12px; background: linear-gradient(135deg,#c9b8a3,#7d6b58); position: relative; overflow: hidden; }
+  .foto { width: 100%; aspect-ratio: 3/2; border-radius: 12px; background: linear-gradient(135deg,#c9b8a3,#7d6b58); position: relative; overflow: hidden; }
   .foto.b { background: linear-gradient(135deg,#9fb3a6,#4d6a5c); }
   .foto.c { background: linear-gradient(135deg,#d9c27a,#8a6d2b); }
   .foto.d { background: linear-gradient(135deg,#a9b7cc,#4a5d7a); }
   .foto.e { background: linear-gradient(135deg,#d4a5a5,#7a3f3f); }
   .foto.sn { background: var(--fondo-suave); border: 1px dashed var(--borde); display: grid; place-items: center; color: var(--texto-suave); font-weight: 800; font-size: 20px; }
-  .foto.redonda { border-radius: 50%; }
+  /* Los círculos (artistas/lugares de la semana) siguen cuadrados 1:1, no apaisados: la queja del founder era
+     de las tarjetas de evento, no de los avatares. */
+  .foto.redonda { aspect-ratio: 1/1; border-radius: 50%; }
   .van-chip { position: absolute; left: 6px; top: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; font-weight: 700; }
   .tarjeta b { display: block; margin-top: 6px; font-size: 14px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.2; }
   .tarjeta small { display: block; margin-top: 1px; color: var(--texto-suave); font-size: 12px; line-height: 1.3; }
 
   /* Buscador: capa de resultados agrupados */
   .resultados { position: absolute; inset: 0; z-index: 4; background: var(--fondo); display: flex; flex-direction: column; }
-  .resultados .buscador-fijo { position: static; border-bottom: 1px solid var(--borde); }
+  .resultados .cabecera-fija { position: static; box-shadow: inset 0 -1px 0 var(--borde); }
   .resultados-lista { flex: 1; overflow-y: auto; padding-bottom: 40px; }
   .grupo-resultado { padding: 4px var(--gutter) 6px; }
   .grupo-resultado h3 { display: flex; align-items: center; gap: 6px; padding: 12px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); border-top: 1px solid var(--borde); }
@@ -143,7 +165,7 @@
 
   <!-- A. Inicio con sesión y seguidos -->
   <div class="col">
-    <div class="etiqueta">A · «Para ti» con sesión y con lugares/artistas seguidos</div>
+    <div class="etiqueta">A · Inicio con sesión y con lugares/artistas seguidos</div>
     <div class="telefono">
       <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
       <div class="pantalla">
@@ -152,13 +174,19 @@
             <span class="logotipo">SMSNSTRS</span>
             <span class="sesion"><span class="avatar">A</span></span>
           </div>
-          <div class="buscador-fijo">
-            <label class="campo-buscar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-              <input type="search" placeholder="Buscar eventos, lugares, artistas" aria-label="Buscar en toda la app" readonly>
-            </label>
+          <div class="cabecera-fija">
+            <div class="renglon1">
+              <button type="button" class="chip-ciudad">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                <span>San Luis Potosí</span>
+                <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <button type="button" class="redondo" aria-label="Buscar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              </button>
+            </div>
           </div>
-          <div class="saludo"><h1>Para ti</h1><p>San Luis Potosí · lo que ya sigues, primero</p></div>
+          <div class="saludo"><h1>Inicio</h1><p>Lo que ya sigues, primero</p></div>
 
           <section class="carril-bloque">
             <div class="carril-cabecera"><h2>De tus lugares y artistas favoritos</h2><a href="#">Ver todos →</a></div>
@@ -187,6 +215,14 @@
           </section>
 
           <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Lugares con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril">
+              <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Teatro de la Paz</b><small>3 eventos</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto"></div><b>CEART</b><small>2 eventos</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
             <div class="carril-cabecera"><h2>Eventos populares</h2><a href="#">Ver todos →</a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto c"><span class="van-chip">32 van</span></div><b>Festival Independencia Cultural</b><small>Sáb · 12:00 · Plaza de los Fundadores</small></a></li>
@@ -202,18 +238,10 @@
               <li><a class="tarjeta" href="#"><div class="foto redonda c"></div><b>Camerata SLP</b><small>Dom · 18:00</small></a></li>
             </ul>
           </section>
-
-          <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Lugares con eventos esta semana</h2><a href="#">Ver todos →</a></div>
-            <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Teatro de la Paz</b><small>3 eventos</small></a></li>
-              <li><a class="tarjeta" href="#"><div class="foto"></div><b>CEART</b><small>2 eventos</small></a></li>
-            </ul>
-          </section>
         </div>
       </div>
       <nav class="nav" aria-label="Secciones">
-        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Para ti</span></a>
+        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Inicio</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Agenda</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Lugares</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg><span>Artistas</span></a>
@@ -223,7 +251,7 @@
 
   <!-- B. Inicio sin sesion -->
   <div class="col">
-    <div class="etiqueta">B · «Para ti» sin sesión (sin carril de seguidos, invitación arriba)</div>
+    <div class="etiqueta">B · «Inicio» sin sesión (sin carril de seguidos, invitación arriba)</div>
     <div class="telefono">
       <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
       <div class="pantalla">
@@ -232,13 +260,19 @@
             <span class="logotipo">SMSNSTRS</span>
             <a class="sesion entrar" href="#">Entrar</a>
           </div>
-          <div class="buscador-fijo">
-            <label class="campo-buscar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-              <input type="search" placeholder="Buscar eventos, lugares, artistas" aria-label="Buscar en toda la app" readonly>
-            </label>
+          <div class="cabecera-fija">
+            <div class="renglon1">
+              <button type="button" class="chip-ciudad">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                <span>San Luis Potosí</span>
+                <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <button type="button" class="redondo" aria-label="Buscar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              </button>
+            </div>
           </div>
-          <div class="saludo"><h1>Para ti</h1><p>San Luis Potosí</p></div>
+          <div class="saludo"><h1>Inicio</h1></div>
 
           <div class="invitacion">
             <b>Sigue lugares y artistas</b>
@@ -263,6 +297,14 @@
           </section>
 
           <section class="carril-bloque">
+            <div class="carril-cabecera"><h2>Lugares con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <ul class="carril">
+              <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Teatro de la Paz</b><small>3 eventos</small></a></li>
+              <li><a class="tarjeta" href="#"><div class="foto"></div><b>CEART</b><small>2 eventos</small></a></li>
+            </ul>
+          </section>
+
+          <section class="carril-bloque">
             <div class="carril-cabecera"><h2>Eventos populares</h2><a href="#">Ver todos →</a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto c"><span class="van-chip">32 van</span></div><b>Festival Independencia Cultural</b><small>Sáb · 12:00 · Plaza de los Fundadores</small></a></li>
@@ -280,7 +322,7 @@
         </div>
       </div>
       <nav class="nav" aria-label="Secciones">
-        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Para ti</span></a>
+        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Inicio</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Agenda</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Lugares</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg><span>Artistas</span></a>
@@ -290,16 +332,36 @@
 
   <!-- C. Buscador desde Inicio -->
   <div class="col">
-    <div class="etiqueta">C · Buscador único, abierto desde «Para ti» — Eventos primero</div>
+    <div class="etiqueta">C · Buscador único, abierto desde «Inicio» — Eventos primero</div>
     <div class="telefono">
       <div class="estado-ios"><span>9:41</span><span>●●●●●</span></div>
       <div class="pantalla" style="position:relative">
         <div class="contenido">
           <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="sesion"><span class="avatar">A</span></span></div>
-          <div class="buscador-fijo"><label class="campo-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" value="materia" readonly></label></div>
+          <div class="cabecera-fija">
+            <div class="renglon1">
+              <button type="button" class="chip-ciudad">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                <span>San Luis Potosí</span>
+                <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <button type="button" class="redondo" aria-label="Buscar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="saludo"><h1>Inicio</h1></div>
         </div>
         <div class="resultados">
-          <div class="buscador-fijo"><label class="campo-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" value="materia" autofocus></label></div>
+          <div class="cabecera-fija">
+            <div class="renglon1">
+              <label class="campo-buscar">
+                <svg class="lupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input type="search" value="materia" autofocus aria-label="Buscar en toda la app">
+                <button type="button" class="limpiar" aria-label="Cerrar la búsqueda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              </label>
+            </div>
+          </div>
           <div class="resultados-lista">
             <div class="grupo-resultado">
               <h3>Eventos <span class="n">·&nbsp;2</span><a class="ver" href="#">Ver todos</a></h3>
@@ -318,7 +380,7 @@
         </div>
       </div>
       <nav class="nav" aria-label="Secciones">
-        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Para ti</span></a>
+        <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Inicio</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Agenda</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Lugares</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg><span>Artistas</span></a>
@@ -334,11 +396,30 @@
       <div class="pantalla" style="position:relative">
         <div class="contenido">
           <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="sesion"><span class="avatar">A</span></span></div>
-          <div class="buscador-fijo"><label class="campo-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" value="materia" readonly></label></div>
-          <div class="saludo"><h1>Lugares</h1><p>San Luis Potosí</p></div>
+          <div class="cabecera-fija">
+            <div class="renglon1">
+              <button type="button" class="chip-ciudad">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                <span>San Luis Potosí</span>
+                <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <button type="button" class="redondo" aria-label="Buscar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="saludo"><h1>Lugares</h1></div>
         </div>
         <div class="resultados">
-          <div class="buscador-fijo"><label class="campo-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" value="materia" autofocus></label></div>
+          <div class="cabecera-fija">
+            <div class="renglon1">
+              <label class="campo-buscar">
+                <svg class="lupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input type="search" value="materia" autofocus aria-label="Buscar en toda la app">
+                <button type="button" class="limpiar" aria-label="Cerrar la búsqueda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              </label>
+            </div>
+          </div>
           <div class="resultados-lista">
             <div class="grupo-resultado grupo-destacado">
               <h3>Lugares <span class="n">·&nbsp;3</span><a class="ver" href="#">Ver todos</a></h3>
@@ -359,7 +440,7 @@
         </div>
       </div>
       <nav class="nav" aria-label="Secciones">
-        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Para ti</span></a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Inicio</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg><span>Agenda</span></a>
         <a class="nav-item activo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Lugares</span></a>
         <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.8 6 6.6.6-5 4.4 1.5 6.5L12 16l-5.9 3.5L7.6 13l-5-4.4 6.6-.6z"/></svg><span>Artistas</span></a>
@@ -372,13 +453,22 @@
     <p>Prototipo estático (sin JS de interacción; cada estado es un teléfono aparte, pensado para capturarse tal cual). Doc completo: <code>docs/rediseno/41-inicio-personalizado.md</code>.</p>
     <h3>Estados</h3>
     <ol>
-      <li><b>A</b> — «Para ti» con sesión: los 5 carriles del encargo, en el orden propuesto (favoritos → destacados → cercanos → populares → artistas/lugares de la semana).</li>
-      <li><b>B</b> — «Para ti» sin sesión: sin el carril de favoritos, con invitación a crear cuenta arriba, nunca bloqueando.</li>
-      <li><b>C</b> — Buscador único abierto desde «Para ti»: agrupado por tipo, Eventos primero.</li>
+      <li><b>A</b> — «Inicio» con sesión: los 6 carriles del encargo, en el orden final del founder (favoritos → destacados → cercanos → lugares de la semana → populares → artistas de la semana).</li>
+      <li><b>B</b> — «Inicio» sin sesión: sin el carril de favoritos, con invitación a crear cuenta arriba, nunca bloqueando.</li>
+      <li><b>C</b> — Buscador único abierto desde «Inicio»: agrupado por tipo, Eventos primero.</li>
       <li><b>D</b> — El mismo buscador abierto desde Lugares: Lugares primero y con más resultados (L28: mismo buscador, orden según la sección).</li>
     </ol>
-    <h3>Pendiente del founder</h3>
-    <p>Las 5 preguntas de cierre del doc 41 (posición de «Para ti» en la barra, si el buscador va siempre visible o se abre con lupa, si los carriles se pueden reordenar, qué pasa si Populares queda vacío al principio, y la definición de "esta semana").</p>
+    <h3>Segunda vuelta (2026-09-23, decisiones del founder aplicadas)</h3>
+    <ul>
+      <li>Se llama <b>Inicio</b> (no «Para ti»), primera en la barra.</li>
+      <li>El buscador se abre con la lupa redonda del canon de <code>ui/Cabecera.tsx</code> — sin barra de búsqueda siempre visible.</li>
+      <li>La cabecera de Inicio es el mismo shell de Agenda: chip de ciudad seleccionable (pin + caret), con el chip de fecha oculto (Inicio no filtra por día) — no es una cabecera nueva.</li>
+      <li>Los 5 carriles son fijos.</li>
+      <li>Populares puede quedar vacío y no se muestra.</li>
+      <li>«Esta semana» = próximos 7 días.</li>
+      <li>Tarjetas de evento apaisadas, 3:2, ~150-170 px de alto (antes casi cuadradas).</li>
+      <li>Orden final (nueva instrucción): favoritos → destacados → cercanos → <b>lugares de la semana</b> → populares → <b>artistas de la semana</b> — el carril mixto "artistas y lugares" se partió en dos, y lugares va justo después de cercanos, no al final.</li>
+    </ul>
   </div>
 </div>
 </body>

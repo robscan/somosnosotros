@@ -1,6 +1,17 @@
 # 41 · Inicio personalizado y buscador único (C2 + C4)
 
-**Estado:** propuesta y prototipo, sin código. **OL:** OL-150 · **Bitácora:** [185](../bitacora/2026/09/185-inicio-personalizado.md) · **Cola:** [COLA_DE_PIEZAS.md](../ops/COLA_DE_PIEZAS.md), filas C2 y C4, renglones L4 y L28 del anexo. **Prototipo:** [prototipos/inicio-personalizado.html](prototipos/inicio-personalizado.html).
+**Estado:** propuesta y prototipo, sin código; segunda vuelta con las decisiones del founder aplicadas (2026-09-23). **OL:** OL-150 · **Bitácora:** [185](../bitacora/2026/09/185-inicio-personalizado.md) · **Cola:** [COLA_DE_PIEZAS.md](../ops/COLA_DE_PIEZAS.md), filas C2 y C4, renglones L4 y L28 del anexo. **Prototipo:** [prototipos/inicio-personalizado.html](prototipos/inicio-personalizado.html).
+
+## Decisiones del founder (2026-09-23, segunda vuelta, transmitidas por el gestor)
+
+1. La sección se llama **«Inicio»** (no «Para ti») y va **primera** en la barra inferior.
+2. El buscador se abre con la **lupa**, dentro de la cabecera del canon (`ui/Cabecera.tsx` + `ui/Barra.tsx`) tal como ya funciona en Agenda y Lugares: nada de una barra de búsqueda visible de más.
+3. Los 6 carriles son **fijos** (no se reordenan ni se ocultan por ahora).
+4. **Populares** puede quedar vacío al principio: si no hay eventos con el mínimo de asistentes, ese carril simplemente no se muestra (misma regla que los demás).
+5. **«Esta semana»** = próximos 7 días desde hoy (igual que `cargarCercanos`), no semana de calendario.
+6. Las tarjetas de evento eran demasiado altas: pasan a **apaisadas**, proporción 3:2, unos 150-170 px de alto, para que se vean 2-3 carriles por pantalla sin tanto scroll.
+
+Esto resuelve las 5 preguntas de la primera vuelta (quedan más abajo, tachadas, para no perder el razonamiento).
 
 ## De dónde sale
 
@@ -17,33 +28,40 @@ No contradice nada de lo firmado: sigue "el contexto ordena, no limita" (la cerc
 2. Reemplazar Agenda por un muro de carruseles rompe el caso de uso más común y más simple: alguien sin sesión que solo quiere ver qué hay hoy cerca. Un muro de carruseles es peor para eso (más scroll, menos densidad de eventos por pantalla) y peor para SEO (la lista plana de eventos es lo que indexa Google, OL-059).
 3. `NavInferior` ya tiene el patrón de "cada sección vuelve a su última URL" (memoria de pantalla por sección) y el destino activo lleva píldora; añadir una sección más no rompe nada, solo hay que ver si 4 iconos siguen siendo cómodos con el pulgar (hoy son 3: Agenda, Lugares, Artistas).
 
-Propuesta de nombre y posición: **"Para ti"**, primera posición en la barra (antes de Agenda), con el icono de inicio (casa). Alternativa si el founder prefiere no tocar el orden: al final, después de Artistas. Pendiente de su decisión (pregunta 1, abajo).
+**Decidido:** se llama **"Inicio"**, primera posición en la barra (antes de Agenda), con el icono de casa.
 
-Sin sesión, "Para ti" sigue existiendo (no es una pantalla que solo aparece al entrar): con menos carruseles (sin "de tus lugares y artistas favoritos", que no aplica) y con una tarjeta arriba invitando a crear cuenta o entrar, en el mismo tono que ya usa `ActivarAvisos` — nunca un muro que bloquea.
+Sin sesión, "Inicio" sigue existiendo (no es una pantalla que solo aparece al entrar): con menos carruseles (sin "de tus lugares y artistas favoritos", que no aplica) y con una tarjeta arriba invitando a crear cuenta o entrar, en el mismo tono que ya usa `ActivarAvisos` — nunca un muro que bloquea.
 
 ## Carruseles: orden y criterio medible
 
 Reglas comunes a todos:
 - Máximo 200 eventos/fichas por consulta (el mismo tope que `cargarCercanos`/`cargarNuevos`, doc de la regla en bitácora 130), sin traer más solo para armar un carril.
-- Cada tarjeta reutiliza el patrón ya construido en `lib/destacados.ts` (`tarjetaEvento`, `tarjetaLugar`, `tarjetaArtista`): 220×200 px, foto obligatoria (símbolo SN si no hay portada, regla firmada — nunca compuesta en vivo), scroll horizontal con `scroll-snap` (patrón ya usado en `boton-en-carriles.html` y en la tira de Destacados).
+- Cada tarjeta reutiliza el patrón de `lib/destacados.ts` (`tarjetaEvento`, `tarjetaLugar`, `tarjetaArtista`) pero **apaisada** (decisión del founder, segunda vuelta): foto en proporción 3:2, unos 150-170 px de alto en vez de los 220×200 (casi cuadrados) de la tira de Destacados — para que quepan 2-3 carriles por pantalla sin tanto scroll. Foto obligatoria (símbolo SN si no hay portada, regla firmada — nunca compuesta en vivo), scroll horizontal con `scroll-snap` (patrón ya usado en `boton-en-carriles.html` y en la tira de Destacados).
 - **Un carril vacío no se muestra** (ni título ni hueco, la misma regla que ya rige la tira de Destacados en doc 20): se calcula en el servidor y si no hay nada que mostrar, ese `<section>` no se pinta. Nunca "aún no hay nada aquí" dentro de un carril — eso reserva espacio para lo vacío, que la regla de Destacados ya prohíbe.
 - Cada carril lleva su "Ver todos →" que navega a la sección real (Agenda, Lugares o Artistas) **con el filtro ya aplicado** en la URL (mismo patrón que hoy: `?ciudad=`, pestaña de Agenda, chip de tipo en Lugares) — nunca una lista aparte que duplique código de filtrado.
+
+**Orden final (founder, segunda vuelta):** el carril 5 de la primera vuelta ("artistas y lugares con eventos esta semana") se partió en dos, y el de lugares se intercala justo después de Cercanos, no al final. Tabla numerada ya en ese orden:
 
 | # | Carril | Con sesión / sin sesión | Con ubicación / sin ubicación | Criterio medible | "Ver todos" abre |
 |---|---|---|---|---|---|
 | 1 | **De tus lugares y artistas favoritos** | Solo con sesión y con al menos un seguido | No depende de ubicación | Próximos eventos donde `lugar_id` o el artista está en `seguimientos` de la persona, ciudad del chip, no pasados, no ocultos. Ya es la lista `eventosSeguidos` + eventos de lugares seguidos que hoy arma `src/app/page.tsx` (líneas 66-77) para la pestaña "Siguiendo" de Agenda — se reutiliza, no se recalcula. | Agenda, pestaña "Siguiendo" |
-| 2 | **Eventos cercanos esta semana** | Con o sin sesión | Solo con ubicación concedida (si no, no se muestra el carril) | Reutiliza `cargarCercanos()` (`src/lib/cargarCercanos.ts`): próximos 7 días, ordenados por distancia real en el teléfono (coordenadas nunca viajan al servidor), todas las ciudades — la cercanía ordena, no filtra por ciudad (regla de bitácora 130). | Agenda, pestaña "Cercanos" |
-| 3 | **Eventos destacados** | Con o sin sesión | No depende | Los mismos que hoy arma `leerTira(supabase, "eventos", ciudad)` (doc 20: elegidos por el admin + los de más asistentes desde 3, sin contar administración). Un solo criterio, ya firmado; no se reinventa "destacado" para el inicio. | Agenda, con la tira visible arriba (Todos, sin fecha ni búsqueda) |
-| 4 | **Eventos populares** | Con o sin sesión | No depende | Próximos eventos de la ciudad ordenados por `van_por_evento` (RPC que ya existe, cuenta "Voy") de mayor a menor, mínimo 3 asistentes sin contar administración — el mismo umbral que ya usa doc 20 para "más asistentes", para no inventar un segundo criterio de popularidad que compita con Destacados. Si Destacados y Populares comparten evento, no se repite dentro de Populares (se salta al siguiente). | Agenda, Todos, ordenado por popularidad (orden nuevo pequeño en el filtro; hoy Agenda ordena por fecha) |
-| 5 | **Artistas y lugares con eventos esta semana** | Con o sin sesión | No depende | Artistas o lugares con al menos un evento visible en los próximos 7 días en la ciudad del chip. Dos carriles chicos (uno de artistas, uno de lugares) o uno mixto — recomendación: dos carriles separados, porque "Ver todos" necesita una sola sección de destino y un carril mixto no puede abrir dos secciones distintas. | Artistas (chip "Esta semana", nuevo) y Lugares (chip "Esta semana", nuevo) |
+| 2 | **Eventos destacados** | Con o sin sesión | No depende | Los mismos que hoy arma `leerTira(supabase, "eventos", ciudad)` (doc 20: elegidos por el admin + los de más asistentes desde 3, sin contar administración). Un solo criterio, ya firmado; no se reinventa "destacado" para el inicio. | Agenda, con la tira visible arriba (Todos, sin fecha ni búsqueda) |
+| 3 | **Eventos cercanos esta semana** | Con o sin sesión | Solo con ubicación concedida (si no, no se muestra el carril) | Reutiliza `cargarCercanos()` (`src/lib/cargarCercanos.ts`): próximos 7 días, ordenados por distancia real en el teléfono (coordenadas nunca viajan al servidor), todas las ciudades — la cercanía ordena, no filtra por ciudad (regla de bitácora 130). | Agenda, pestaña "Cercanos" |
+| 4 | **Lugares con eventos esta semana** | Con o sin sesión | No depende | Lugares con al menos un evento visible en los próximos 7 días en la ciudad del chip. | Lugares, con chip "Esta semana" (nuevo) |
+| 5 | **Eventos populares** | Con o sin sesión | No depende | Próximos eventos de la ciudad ordenados por `van_por_evento` (RPC que ya existe, cuenta "Voy") de mayor a menor, mínimo 3 asistentes sin contar administración — el mismo umbral que ya usa doc 20 para "más asistentes", para no inventar un segundo criterio de popularidad que compita con Destacados. Si Destacados y Populares comparten evento, no se repite dentro de Populares (se salta al siguiente). | Agenda, Todos, ordenado por popularidad (orden nuevo pequeño en el filtro; hoy Agenda ordena por fecha) |
+| 6 | **Artistas con eventos esta semana** | Con o sin sesión | No depende | Artistas con al menos un evento visible en los próximos 7 días en la ciudad del chip. | Artistas, con chip "Esta semana" (nuevo) |
 
-Orden de arriba hacia abajo en la pantalla: **1 (tus favoritos) → 3 (destacados) → 2 (cercanos) → 4 (populares) → 5 (artistas/lugares esta semana)**. Lo personal primero (si existe), luego lo que ya cura el admin, luego lo geográfico, luego lo social, y al final el descubrimiento de fichas nuevas. Sin sesión, la pantalla empieza directo en 3.
+Los carriles 4 y 6 salen de partir en dos el carril mixto de la primera vuelta ("artistas y lugares con eventos esta semana"): cada uno con su propio destino de "Ver todos" (un carril mixto no puede abrir dos secciones distintas).
 
-**Sin duplicar seguidos):** un evento que ya salió en el carril 1 no se repite en 2, 3 o 4 (se filtra por id ya visto, igual que "no se muestra un lugar seguido si ya salió antes" pide el encargo). Esto evita que la misma tarjeta se vea tres veces en una pantalla que ya es larga.
+Orden de arriba hacia abajo en la pantalla: **1 (tus favoritos) → 2 (destacados) → 3 (cercanos) → 4 (lugares de la semana) → 5 (populares) → 6 (artistas de la semana)**. Sin sesión, la pantalla empieza directo en 2 (destacados) pero conserva los demás en el mismo orden (3, 4, 5, 6).
+
+**Sin duplicar eventos:** un evento que ya salió en el carril 1 (favoritos) no se repite en 2 (destacados), 3 (cercanos) o 5 (populares) — se filtra por id ya visto, igual que "no se muestra un lugar seguido si ya salió antes" pide el encargo. Esto evita que la misma tarjeta se vea varias veces en una pantalla que ya es larga.
 
 ## El buscador único
 
-**Un campo en la cabecera de toda la app** (no solo de Agenda): vive en la barra superior (`components/ui/Barra` hoy solo tiene logotipo + sesión) o en la cabecera fija de cada sección, según lo que el founder prefiera (pregunta 2). Al escribir, los resultados salen **agrupados por tipo** (Eventos / Lugares / Artistas), cada grupo con sus primeras 3-5 coincidencias y su propio "Ver todos" hacia la sección con la búsqueda ya en la URL.
+**Decidido: se abre con la lupa, dentro del canon existente de la cabecera — nada de una barra de búsqueda visible de más.** `ui/Barra.tsx` (logotipo + sesión) no cambia. El campo vive en `ui/Cabecera.tsx`, exactamente como hoy en Lugares (`VistaLugares.tsx`): un botón redondo de 40×40 px (`BotonRedondo`, con `IconoBuscar`) al final del renglón 1; al tocarlo, ese renglón entero se reemplaza por el `campo` (`CampoBuscar`, con foco automático y la ✕ para cerrar) — la cabecera no cambia de alto ni empuja el contenido. Al escribir, los resultados salen **agrupados por tipo** (Eventos / Lugares / Artistas), cada grupo con sus primeras 3-5 coincidencias y su propio "Ver todos" hacia la sección con la búsqueda ya en la URL.
+
+**Precisión del founder (segunda vuelta): el shell de Inicio es exactamente el de hoy, no una cabecera nueva.** El `contexto` del renglón 1 en `AgendaInicio.tsx` lleva hoy dos chips: el de fecha y el de ciudad (`ChipCiudad`, seleccionable, abre la misma hoja "Dónde" de siempre). En Inicio se usa **el mismo `ui/Cabecera.tsx` con el mismo `contexto`**, pero con el chip de fecha oculto (Inicio no filtra por día, no tiene sentido "hoy/mañana" ahí) y el chip de ciudad igual de seleccionable que en Agenda y Lugares — cambiar de ciudad en Inicio cambia la ciudad de todos los carriles, igual que cambia la de la Agenda. En el prototipo esto se ve tal cual: el chip de ciudad con su pin y su caret, sin chip de fecha al lado. Al implementarse en código, no se crea un componente de cabecera nuevo: es `<Cabecera contexto={<ChipCiudad …/>} onBuscar={…} campo={…} filtros={undefined} />`, con el chip de fecha simplemente fuera del `contexto` que le pasa `AgendaInicio`/la futura `Inicio.tsx`.
 
 **Cómo se reparte con los tres buscadores actuales — no se tiran, se reordenan:**
 - El campo de Agenda (`CampoBuscar` en memoria, filtra los eventos ya cargados en el teléfono) y el de Lugares (mismo componente, mismo patrón) siguen existiendo tal cual: siguen siendo lo más rápido cuando la persona ya está dentro de esa sección y solo quiere acotar lo que ve.
@@ -57,23 +75,28 @@ Orden de arriba hacia abajo en la pantalla: **1 (tus favoritos) → 3 (destacado
 
 **Ya existen (nada que migrar para el prototipo ni para una primera versión en código):**
 - `seguimientos` (lugar_id, artista_id) → carril 1.
-- `cargarCercanos()` → carril 2.
-- `leerTira()` / tabla de destacados → carril 3.
-- RPC `van_por_evento` → carril 4.
-- Eventos por lugar/artista con fecha (`eventos.lugar_id`, `eventos_artistas`) → carril 5 y filtro "esta semana" en Lugares/Artistas (hoy no existe ese chip; es chico: `WHERE` por rango de fecha sobre eventos ya relacionados).
+- `leerTira()` / tabla de destacados → carril 2.
+- `cargarCercanos()` → carril 3.
+- Eventos por lugar/artista con fecha (`eventos.lugar_id`, `eventos_artistas`) → carriles 4 y 6, y filtro "esta semana" en Lugares/Artistas (hoy no existe ese chip; es chico: `WHERE` por rango de fecha sobre eventos ya relacionados).
+- RPC `van_por_evento` → carril 5.
 - `CampoBuscar`, `Buscador` (URL) → base del buscador único.
 
 **Falta:**
 - Un chip o pestaña "Esta semana" en Lugares y en Artistas (hoy sus filtros son por tipo/disciplina y ciudad, no por fecha de sus eventos).
-- Un orden "por popularidad" en Agenda para que "Ver todos" del carril 4 tenga a dónde apuntar (hoy Agenda solo ordena por fecha).
-- Un endpoint o función de servidor que arme las 5 listas de golpe para no hacer 5+ consultas sueltas desde el cliente (equivalente a lo que hace `cargar()` en `src/app/page.tsx`, pero con los 5 criterios).
+- Un orden "por popularidad" en Agenda para que "Ver todos" del carril 5 tenga a dónde apuntar (hoy Agenda solo ordena por fecha).
+- Un endpoint o función de servidor que arme las 6 listas de golpe para no hacer 6+ consultas sueltas desde el cliente (equivalente a lo que hace `cargar()` en `src/app/page.tsx`, pero con los 6 criterios).
 - Búsqueda combinada en servidor que consulte `eventos`, `lugares` y `artistas` en paralelo y devuelva agrupado — hoy cada sección busca solo en su propia tabla.
 - Intereses/disciplinas elegidas por la persona (L4) para un futuro carril "de tu disciplina favorita": las disciplinas ya existen como dato de las fichas (doc 24 lo anota), pero no hay campo de "interés elegido" en el perfil. **No entra en esta pieza** (el encargo de hoy no lo pidió como carril fijo, solo lo cita como antecedente) — queda anotado para cuando el founder quiera esa capa.
 
-## Preguntas para el founder
+## Preguntas de la primera vuelta (ya resueltas por el founder, se conservan tachadas por el razonamiento)
 
-1. ¿"Para ti" va primera en la barra inferior (antes de Agenda) o al final (después de Artistas)? Cambia qué ve la persona al abrir la app la primera vez y si hay que mover el resto de iconos.
-2. ¿El buscador único vive siempre visible en la barra superior (un toque menos, ocupa espacio en todas las pantallas) o se abre con una lupa como hoy en Agenda y Lugares (menos ocupado, un toque más)?
-3. ¿Los 5 carriles del encargo son fijos para todos o el founder quiere, más adelante, dejar que la persona reordene u oculte los que no le sirven? (Se puede construir fijo ahora y dejar la puerta abierta después; no bloquea nada.)
-4. El carril "eventos populares" y "eventos destacados" pueden solaparse mucho al principio (pocos eventos con "Voy"). ¿Está bien que Populares quede corto o vacío las primeras semanas (y por tanto no se muestre), o prefiere fusionar ambos criterios en un solo carril mientras crece el uso?
-5. "Esta semana" para el carril 5 y los nuevos chips de Lugares/Artistas: ¿semana de calendario (lunes a domingo) o "próximos 7 días" desde hoy, como ya usa `cargarCercanos`? Se recomienda "próximos 7 días" por consistencia con lo que ya existe.
+1. ~~¿"Para ti" va primera en la barra inferior (antes de Agenda) o al final (después de Artistas)?~~ → **Inicio, primera posición.**
+2. ~~¿El buscador único vive siempre visible en la barra superior o se abre con una lupa como hoy en Agenda y Lugares?~~ → **Con la lupa, dentro del canon de `ui/Cabecera.tsx`.**
+3. ~~¿Los carriles del encargo son fijos para todos o el founder quiere, más adelante, dejar que la persona reordene u oculte los que no le sirven?~~ → **Fijos.**
+4. ~~El carril "eventos populares" y "eventos destacados" pueden solaparse mucho al principio. ¿Está bien que Populares quede corto o vacío?~~ → **Sí, puede quedar vacío y no se muestra (misma regla que todos).**
+5. ~~"Esta semana" para los carriles 4 y 6 y los nuevos chips de Lugares/Artistas: ¿semana de calendario o "próximos 7 días"?~~ → **Próximos 7 días.**
+
+## Sigue pendiente
+
+- El nombre exacto del chip nuevo "Esta semana" en Lugares y Artistas (texto y posición entre los chips existentes).
+- Si el carril "Eventos populares" necesita, además del mínimo de 3 asistentes, algún tope de antigüedad del "Voy" para no quedar dominado por un solo evento viejo con muchos asistentes acumulados — no lo pidió el founder, se anota por si aparece con datos reales.
