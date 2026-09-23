@@ -6,7 +6,7 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import FormularioArtista from "../FormularioArtista";
 import { crearArtista } from "../acciones";
 
-export const metadata = { title: "Registrar artista · Somos Nosotros" };
+export const metadata = { title: "Registrar artista · Somos Nosotros", robots: { index: false, follow: false } };
 
 export default async function NuevoArtista({ searchParams }: { searchParams: Promise<{ nombre?: string; ciudad?: string }> }) {
   const { nombre, ciudad: slug } = await searchParams;

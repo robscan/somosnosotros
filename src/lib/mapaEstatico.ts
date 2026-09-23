@@ -4,8 +4,8 @@ import { configPublica } from "./config";
 export const ANCHO_MAPA_FICHA = 600;
 export const ALTO_MAPA_FICHA = 170;
 
-/** --primario; Mapbox pide el color del pin literal, sin "#". */
-const COLOR_PIN = "0f6b7c";
+/** --primario (violeta, OL-146); Mapbox pide el color del pin literal, sin "#". */
+const COLOR_PIN = "6d34c8";
 
 /**
  * El estilo de la cuenta (FLOWYA_Light) se apoya en `mapbox://styles/mapbox/standard` mediante `imports`
