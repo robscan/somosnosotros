@@ -5,7 +5,17 @@ import CampoLargo from "./CampoLargo";
 import limpiar from "./Limpiar.module.css";
 import styles from "./Campo.module.css";
 
-type Base = { etiqueta: string; ayuda?: string; error?: string; name: string; mostrarContador?: boolean };
+type Base = {
+  etiqueta: string;
+  ayuda?: string;
+  error?: string;
+  name: string;
+  mostrarContador?: boolean;
+  /** OL-168: cuando el campo ya trae su propia ✕ de "quitar" fuera de la caja (un enlace en `SelectorEnlaces`,
+   * por ejemplo), la ✕ de "vaciar" del campo queda demasiado cerca (8px) y las dos se confunden. `false` por
+   * defecto: nadie más pierde su ✕ de vaciar. */
+  sinLimpiar?: boolean;
+};
 type PropsInput = Base & { multilinea?: false } & InputHTMLAttributes<HTMLInputElement>;
 type PropsArea = Base & { multilinea: true } & TextareaHTMLAttributes<HTMLTextAreaElement>;
 
@@ -14,7 +24,7 @@ type PropsArea = Base & { multilinea: true } & TextareaHTMLAttributes<HTMLTextAr
  * artista) se abre a pantalla completa al tocarlo — ver CampoLargo, OL-147.
  */
 export default function Campo(props: PropsInput | PropsArea) {
-  const { etiqueta, ayuda, error, name, mostrarContador } = props;
+  const { etiqueta, ayuda, error, name, mostrarContador, sinLimpiar } = props;
   const id = `campo-${name}`;
   const describedBy = [ayuda ? `${id}-ayuda` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
   if (props.multilinea) {
@@ -30,7 +40,7 @@ export default function Campo(props: PropsInput | PropsArea) {
       </label>
       <span className={limpiar.caja}>
         <input id={id} className={styles.control} aria-invalid={!!error} aria-describedby={describedBy} {...omitir(props)} />
-        <Limpiar visible={typeof props.value === "string" && props.value.length > 0} />
+        {!sinLimpiar && <Limpiar visible={typeof props.value === "string" && props.value.length > 0} />}
       </span>
       {ayuda && !error && (
         <p id={`${id}-ayuda`} className={styles.ayuda}>
@@ -47,10 +57,14 @@ export default function Campo(props: PropsInput | PropsArea) {
 }
 
 function omitir<T extends Base & { multilinea?: boolean }>(p: T) {
-  const { etiqueta: _e, ayuda: _a, error: _r, multilinea: _m, ...rest } = p;
+  // OL-168: faltaba quitar `mostrarContador` antes de esparcir el resto sobre el <input>; en un campo de una
+  // línea (sin pasar por CampoLargo) se colaba como atributo DOM desconocido. `sinLimpiar` es del mismo tipo.
+  const { etiqueta: _e, ayuda: _a, error: _r, multilinea: _m, mostrarContador: _c, sinLimpiar: _s, ...rest } = p;
   void _e;
   void _a;
   void _r;
   void _m;
+  void _c;
+  void _s;
   return rest;
 }

@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lugar del evento a pantalla completa (OL-169)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens: los de src/app/globals.css (línea gráfica firmada; --primario es violeta desde OL-146, no el azul
+     petróleo de prototipos viejos). */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2; --fondo-mapa: #eef0ec;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: color-mix(in srgb, var(--primario) 12%, white);
+    --ok: #1f6f43;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px; --radio-grande: 16px;
+    --alto-estado: 48px; --alto-barra: 56px;
+    --sombra: 0 2px 12px rgba(0,0,0,.08); --sombra-flotante: 0 6px 20px rgba(0,0,0,.22); --sombra-panel: 0 -2px 16px rgba(0,0,0,.1);
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; padding: 24px 16px 60px; min-height: 100vh; }
+  button, input { font: inherit; color: inherit; }
+  svg { display: block; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 1240px; margin: 0 auto; }
+  .rotulo { flex: 0 0 100%; max-width: 900px; margin: 0 auto 4px; color: var(--estudio-suave); font-size: 14px; line-height: 1.5; }
+  .rotulo strong { display: block; color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 22px; margin-bottom: 6px; }
+  .rotulo ul { margin: 8px 0 0 18px; }
+  .rotulo code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+
+  .controles { flex: 0 0 100%; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; max-width: 900px; margin: 0 auto 8px; padding: 14px 16px; border-radius: var(--radio); background: #fff; box-shadow: var(--sombra); }
+  .grupo-control { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .grupo-control > b { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--estudio-suave); margin-right: 2px; }
+  .btn-control { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--borde); background: #fff; color: var(--texto); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-control[aria-pressed="true"] { background: var(--texto); color: #fff; border-color: var(--texto); }
+  .btn-control.acento[aria-pressed="true"] { background: var(--primario); border-color: var(--primario); }
+
+  .par { display: grid; gap: 8px; justify-items: center; }
+  .par figcaption { max-width: 390px; font-size: 12.5px; color: var(--estudio-suave); text-align: center; }
+
+  .telefono { position: relative; width: 390px; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); }
+  .estado-ios { position: relative; z-index: 30; height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 28px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+
+  /* Pantalla base: alta de evento, detrás de la hoja (para mostrar la vuelta, patrón de texto-largo). */
+  .base { position: absolute; inset: var(--alto-estado) 0 0 0; overflow: hidden; padding: 0 var(--gutter) 24px; background: var(--fondo-contenido); }
+  .barra { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .logotipo { grid-column: 2; font-size: 21px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+  .cerrar-barra { grid-column: 3; justify-self: end; display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); }
+  h1 { font-size: 24px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin: 14px 0; }
+  .renglon-donde { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; column-gap: 12px; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; cursor: pointer; }
+  .renglon-donde.pendiente { border-style: dashed; }
+  .renglon-donde .clave-valor { min-width: 0; display: grid; }
+  .renglon-donde .clave { font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); }
+  .renglon-donde .valor { font-size: 16px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .renglon-donde .valor.falta { color: var(--texto-suave); font-weight: 500; }
+  .renglon-donde .cambiar { color: var(--primario); font-weight: 700; font-size: 14px; }
+  .simulado { min-height: 48px; margin-top: 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); opacity: .5; }
+
+  /* La hoja "¿Dónde es?" a pantalla completa: la vuelta Atrás/Listo, patrón de texto-largo (OL-145). */
+  .sheet { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; background: var(--fondo); transform: translateY(100%); transition: transform .22s ease; }
+  .sheet.abierta { transform: translateY(0); }
+  .cabecera-sheet { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 8px; min-height: calc(var(--alto-estado) + var(--alto-barra)); padding: var(--alto-estado) var(--gutter) 0; border-bottom: 1px solid var(--borde); background: var(--fondo); }
+  .cabecera-sheet button { min-height: 44px; padding: 0 6px; border: none; background: none; color: var(--primario); font-size: 15px; font-weight: 700; cursor: pointer; }
+  .cabecera-sheet button:disabled { color: var(--estudio-suave); opacity: .5; cursor: default; }
+  .cabecera-sheet h2 { grid-column: 2; text-align: center; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .cuerpo-sheet { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .campo-buscar { position: relative; flex: none; margin: 10px var(--gutter); z-index: 4; }
+  .campo-buscar svg.icono-buscar { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); pointer-events: none; }
+  .campo-buscar input { width: 100%; min-height: var(--toque); padding: 0 40px 0 42px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 16px; box-shadow: var(--sombra); }
+  .campo-buscar input:focus { outline: 2px solid var(--primario); outline-offset: -1px; }
+  .campo-buscar .limpiar { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border: none; background: none; color: var(--texto-suave); display: none; place-items: center; cursor: pointer; }
+  .campo-buscar .limpiar.visible { display: grid; }
+
+  .mapa-lleno { position: relative; flex: 1; min-height: 0; background: var(--fondo-mapa); overflow: hidden; }
+  .lienzo { width: 100%; height: 100%; touch-action: none; }
+  .calle-nombre { fill: #8f8f8a; font-size: 9px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+  .colonia { fill: #a3a39d; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+
+  .lugar { cursor: pointer; }
+  .lugar circle { fill: var(--primario); stroke: var(--fondo); stroke-width: 1.5; }
+  .lugar .nombre { fill: var(--texto); font-size: 12px; font-weight: 700; font-variation-settings: var(--ancho-titulo); text-anchor: middle; paint-order: stroke; stroke: var(--fondo); stroke-width: 3; stroke-linejoin: round; pointer-events: none; }
+  .lugar.elegido circle { stroke-width: 2.5; }
+
+  .poi { cursor: pointer; }
+  .poi circle { fill: var(--fondo); stroke: var(--texto-suave); stroke-width: 1.6; stroke-dasharray: 2.5 2.5; }
+  .poi .nombre { fill: var(--texto-suave); font-size: 11px; font-weight: 600; text-anchor: middle; paint-order: stroke; stroke: var(--fondo); stroke-width: 3; pointer-events: none; }
+
+  .yo-halo { fill: rgba(26,115,232,.18); }
+  .yo-punto { fill: #1a73e8; stroke: #fff; stroke-width: 2; }
+
+  .seleccion { cursor: grab; touch-action: none; }
+  .seleccion.arrastrando { cursor: grabbing; }
+  .seleccion .agarre { fill: transparent; }
+  .seleccion .forma { fill: var(--primario); stroke: #fff; stroke-width: 1.6; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .seleccion .centro { fill: #fff; }
+
+  .ubicame { position: absolute; left: var(--gutter); bottom: 16px; z-index: 6; display: grid; place-items: center; width: var(--toque); height: var(--toque); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); cursor: pointer; }
+  .atribucion { position: absolute; left: 76px; bottom: 6px; z-index: 3; color: #6b6b66; font-size: 11px; font-weight: 700; opacity: .8; }
+
+  .resumen-pin { position: absolute; left: var(--gutter); right: var(--gutter); top: 68px; z-index: 5; display: none; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; padding: 10px 14px; border-radius: var(--radio); background: rgba(255,255,255,.97); box-shadow: var(--sombra-flotante); font-size: 13px; color: var(--texto-suave); }
+  .resumen-pin b { color: var(--texto); font-weight: 700; min-width: 0; }
+  .resumen-pin.visible { display: flex; }
+  .resumen-pin input.nombre-editable { flex: 1 1 140px; min-width: 0; border: none; background: none; font: inherit; font-size: 15px; font-weight: 700; color: var(--texto); padding: 3px 0; border-bottom: 1.5px dashed var(--primario); }
+  .resumen-pin .nota-ajuste { flex: 0 0 100%; margin-top: 2px; font-size: 12px; font-weight: 600; color: var(--primario); }
+
+  /* Listado flotante de sugerencias, anclado justo debajo del campo: nunca empuja el mapa ni nada más. */
+  .lista-flotante { position: absolute; left: var(--gutter); right: var(--gutter); top: 68px; z-index: 8; overflow-y: auto; border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra-flotante); display: none; }
+  .lista-flotante.visible { display: block; }
+  .lista-flotante ul { list-style: none; padding: 6px; display: grid; gap: 2px; }
+  .renglon { display: grid; grid-template-columns: 22px minmax(0, 1fr); grid-template-areas: "icono nombre" "icono direccion"; column-gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 6px 8px; border: none; border-radius: 10px; background: none; text-align: left; cursor: pointer; }
+  .renglon:hover, .renglon:active { background: var(--fondo-suave); }
+  .renglon > svg { grid-area: icono; color: var(--texto-suave); }
+  .renglon > b { grid-area: nombre; font-size: 15px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .renglon > small { grid-area: direccion; color: var(--texto-suave); font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .renglon.accion > svg { color: var(--primario); }
+  .renglon.accion > b { grid-area: nombre / nombre / direccion / direccion; color: var(--primario); }
+  .separador-tipo { padding: 8px 12px 2px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--texto-suave); }
+  .aviso-no-encontrado { padding: 12px 14px; font-size: 14px; line-height: 1.4; color: var(--texto-suave); }
+  .aviso-no-encontrado b { display: block; color: var(--texto); font-size: 15px; margin-bottom: 2px; }
+
+  /* Variante B: barra de acciones principal, sticky sobre el teclado o al pie. */
+  .barra-acciones { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; display: none; gap: 10px; padding: 10px var(--gutter) 20px; background: var(--fondo); box-shadow: var(--sombra-panel); }
+  .barra-acciones.visible { display: flex; }
+  .barra-acciones button { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--toque); padding: 0 10px; border-radius: var(--radio); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .barra-acciones .agregar { border: none; background: var(--primario); color: var(--primario-texto); }
+  .barra-acciones .mapa { border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+
+  /* Panel flotante: "Agregar lugar", con la casilla de privado. */
+  .panel-flotante { position: absolute; left: var(--gutter); right: var(--gutter); top: 68px; z-index: 10; display: none; padding: 14px; border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra-flotante); }
+  .panel-flotante.visible { display: block; }
+  .panel-flotante h3 { font-size: 15px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 10px; }
+  .campo-panel { display: block; margin-bottom: 10px; }
+  .campo-panel > span { display: block; font-size: 12px; font-weight: 600; color: var(--texto-suave); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .panel-flotante input[type="text"] { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--borde); border-radius: 10px; font-size: 15px; }
+  .direccion-fija { font-size: 14px; color: var(--texto-suave); padding: 4px 0; min-width: 0; }
+  .fila-privado { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--fondo-suave); }
+  .texto-privado { flex: 1; min-width: 0; }
+  .texto-privado b { display: block; font-size: 14px; font-weight: 600; }
+  .texto-privado small { display: block; font-weight: 400; color: var(--texto-suave); font-size: 12.5px; }
+  .palanca { position: relative; width: 44px; height: 26px; border-radius: 999px; border: none; background: var(--borde); flex: none; cursor: pointer; }
+  .palanca::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .15s ease; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .palanca[aria-checked="true"] { background: var(--primario); }
+  .palanca[aria-checked="true"]::after { left: 21px; }
+  .panel-flotante .guardar { width: 100%; min-height: var(--toque); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 15px; font-weight: 700; cursor: pointer; }
+
+  .teclado { position: absolute; left: 0; right: 0; bottom: 0; z-index: 25; height: 300px; background: #d3d5db; border-top: 1px solid #b9bbc2; display: none; align-items: flex-start; justify-content: center; padding-top: 130px; color: #6f7178; font-size: 13px; text-align: center; }
+  .teclado.visible { display: flex; }
+
+  @media (max-width: 860px) { .telefono { transform: scale(.92); transform-origin: top center; } }
+</style>
+</head>
+<body>
+<div class="estudio">
+  <p class="rotulo">
+    <strong>Lugar del evento a pantalla completa (OL-169, bitácora 204)</strong>
+    Pedido del founder, 2026-09-24: la selección de lugar debe ser pantalla completa (patrón de
+    <code>docs/rediseno/39-texto-largo.md</code>), un solo campo «Nombre o dirección», mapa con los lugares ya
+    registrados de fondo, registro automático del lugar salvo «es privado», y probar si «Agregar lugar»/«Buscar en
+    el mapa sin agregar» van dentro del listado (variante A) o como barra de acciones sticky (variante B). Detalle
+    en <code>docs/rediseno/43-lugar-evento-pantalla.md</code>. Datos de ejemplo, no reales.
+    <br><br>
+    <b>Leyenda del mapa:</b> punto violeta lleno = lugar ya registrado (toca para elegirlo) · punto punteado gris =
+    punto de interés sin registrar (toca para elegirlo igual) · pin violeta grande = tu selección actual (arrástralo
+    para ajustarlo) · punto azul = tu posición aproximada («Estoy aquí»).
+  </p>
+
+  <div class="controles">
+    <div class="grupo-control">
+      <b>Variante</b>
+      <button type="button" class="btn-control acento" data-variante="A" aria-pressed="true">A · en la lista</button>
+      <button type="button" class="btn-control acento" data-variante="B" aria-pressed="false">B · barra sticky</button>
+    </div>
+    <div class="grupo-control">
+      <b>Teclado</b>
+      <button type="button" class="btn-control" id="btnTeclado" aria-pressed="false">Mostrar teclado</button>
+    </div>
+    <div class="grupo-control">
+      <b>Escenario</b>
+      <button type="button" class="btn-control" data-escenario="inicio">01 · Al abrir</button>
+      <button type="button" class="btn-control" data-escenario="sugerencias">02 · Escribiendo</button>
+      <button type="button" class="btn-control" data-escenario="no-encontrado">03/04/05 · No encontrado</button>
+      <button type="button" class="btn-control" data-escenario="estoy-aqui">06 · Estoy aquí</button>
+      <button type="button" class="btn-control" data-escenario="pin-ajustado">07 · Pin ajustado</button>
+      <button type="button" class="btn-control" data-escenario="agregar">08 · Agregar lugar</button>
+    </div>
+  </div>
+
+  <figure class="par">
+    <div class="telefono" id="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+
+      <div class="base">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span><span class="cerrar-barra">✕</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="simulado" style="min-height:44px"></div>
+        <button type="button" class="renglon-donde" id="renglonBase">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>
+          <span class="clave-valor"><span class="clave">Dónde</span><span class="valor falta" id="valorBase">Falta</span></span>
+          <span class="cambiar" id="cambiarBase">Elegir</span>
+        </button>
+        <div class="simulado"></div>
+        <div class="simulado"></div>
+      </div>
+
+      <div class="sheet abierta" id="sheet">
+        <div class="cabecera-sheet">
+          <button type="button" id="btnAtras">‹ Atrás</button>
+          <h2>¿Dónde es?</h2>
+          <button type="button" id="btnListo" disabled>Listo</button>
+        </div>
+        <div class="cuerpo-sheet">
+          <label class="campo-buscar">
+            <svg class="icono-buscar" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+            <input type="text" id="campoBuscar" placeholder="Nombre o dirección" aria-label="Buscar el lugar" autocomplete="off">
+            <button type="button" class="limpiar" id="btnLimpiar" aria-label="Borrar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </label>
+          <div class="mapa-lleno">
+            <svg class="lienzo" id="lienzo" viewBox="140 150 360 520" preserveAspectRatio="xMidYMid slice" aria-label="Mapa de San Luis Potosí">
+              <use href="#base-mapa" x="0" y="0" width="640" height="900"/>
+              <g class="lugares" id="capaLugares"></g>
+              <g class="poi" id="capaPoi"></g>
+              <g class="yo" id="capaYo" style="display:none"><circle class="yo-halo" r="20"/><circle class="yo-punto" r="6"/></g>
+              <g class="seleccion" id="capaSeleccion" style="display:none">
+                <circle class="agarre" r="20" cy="-18"/>
+                <path class="forma" d="M0 -32 C -13 -32 -22 -20.5 -22 -8 C -22 10 0 30 0 30 C 0 30 22 10 22 -8 C 22 -20.5 13 -32 0 -32 Z"/>
+                <circle class="centro" r="6.5" cy="-18"/>
+              </g>
+            </svg>
+            <button type="button" class="ubicame" id="btnEstoyAqui" aria-label="Estoy aquí" title="Estoy aquí">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+            </button>
+            <span class="atribucion">mapbox</span>
+
+            <div class="resumen-pin" id="resumenPin"></div>
+            <div class="lista-flotante" id="listaFlotante"></div>
+            <div class="panel-flotante" id="panelAgregar">
+              <h3>Agregar lugar</h3>
+              <label class="campo-panel"><span>Nombre</span><input type="text" id="nombreAgregarInput" placeholder="Nombre del lugar"></label>
+              <label class="campo-panel"><span>Dirección</span><p class="direccion-fija" id="direccionFijaEl"></p></label>
+              <div class="fila-privado">
+                <div class="texto-privado"><b>Es un lugar privado, no registrarlo</b><small>Se guarda solo en este evento, sin ficha pública</small></div>
+                <button type="button" role="switch" class="palanca" id="privadoBtn" aria-checked="false" aria-label="Lugar privado"></button>
+              </div>
+              <button type="button" class="guardar" id="guardarAgregarBtn">Guardar y usar este lugar</button>
+            </div>
+            <div class="barra-acciones" id="barraAcciones">
+              <button type="button" class="agregar" id="btnAccionAgregar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                <span id="txtAccionAgregar">Agregar lugar</span>
+              </button>
+              <button type="button" class="mapa" id="btnAccionMapa">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>
+                Buscar en el mapa sin agregar
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="teclado" id="teclado" aria-hidden="true">⌨︎ teclado del sistema</div>
+      </div>
+    </div>
+    <figcaption>Único archivo, sin dependencias externas salvo Google Fonts. Escribe en el campo, arrastra el pin,
+      toca «Estoy aquí» o usa los controles de arriba para saltar a cualquier estado.</figcaption>
+  </figure>
+</div>
+
+<!-- Mapa base dibujado a mano, sin token de Mapbox (mismo patrón que docs/rediseno/prototipos/mapa-lugares.html). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="base-mapa" viewBox="0 0 640 900">
+      <rect width="640" height="900" fill="#fafaf8"/>
+      <path d="M0 700 Q80 640 160 690 T320 700 T480 740 T640 700 V900 H0 Z" fill="#e4efdd"/>
+      <path d="M0 780 Q90 720 180 770 T360 790 T640 780 V900 H0 Z" fill="#d6e8cc"/>
+      <path d="M0 40 L110 40 L120 150 L40 170 L0 140 Z" fill="#d3e9c8"/>
+      <rect x="300" y="330" width="80" height="60" rx="4" fill="#cfe8c4"/>
+      <rect x="330" y="435" width="34" height="34" rx="3" fill="#dcead2"/>
+      <g stroke="#e4e4df" stroke-width="2">
+        <path d="M0 180H640M0 220H520M0 260H640M100 300H640M0 340H300M380 340H640M0 380H640M0 460H640M60 500H640M0 540H420M480 540H640M0 580H640M140 620H640M0 660H360M0 700H640"/>
+        <path d="M80 140V700M120 100V820M160 180V900M200 100V560M240 220V900M280 100V700M360 100V600M400 180V900M440 100V700M480 220V900M520 100V620M560 180V900M600 300V900"/>
+        <path d="M0 120 Q200 100 320 130 T640 90" fill="none" stroke-width="3"/>
+        <path d="M440 900 Q470 700 560 640 T640 480" fill="none" stroke-width="3"/>
+      </g>
+      <g stroke="#d6d6d2" stroke-width="5" fill="none" stroke-linecap="round">
+        <path d="M0 420H640"/>
+        <path d="M320 100V900"/>
+        <path d="M0 640 L640 260"/>
+        <path d="M60 100 Q40 400 120 900"/>
+      </g>
+      <g class="calle-nombre">
+        <text x="140" y="413">Av. Venustiano Carranza</text>
+        <text x="334" y="260" transform="rotate(-90 334 260)">Av. Universidad</text>
+      </g>
+      <g class="colonia">
+        <text x="285" y="445" text-anchor="middle">Centro</text>
+        <text x="340" y="365" text-anchor="middle">Alameda</text>
+        <text x="520" y="560" text-anchor="middle">Lomas</text>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+"use strict";
+/* ---------- Datos de ejemplo (San Luis Potosí, inventados) ---------- */
+// Al menos dos nombres al tope de longitud, para comprobar que no rompen la maquetación (rejilla plana,
+// min-width: 0 en los textos).
+var LUGARES = [
+  { id: "artes", nombre: "Centro de las Artes de San Luis Potosí", direccion: "Calzada de Guadalupe 705, Barrio de Guadalupe", x: 250, y: 230 },
+  { id: "paz", nombre: "Teatro de la Paz", direccion: "Villerías 2, Centro", x: 345, y: 460 },
+  { id: "tlaxcala", nombre: "Casa de Cultura del Barrio de Tlaxcala y La Lonja", direccion: "Universidad 165, Barrio de Tlaxcala", x: 410, y: 300 },
+  { id: "silva", nombre: "Museo Federico Silva Escultura Contemporánea", direccion: "Álvaro Obregón 80, Centro", x: 330, y: 520 },
+  { id: "muni", nombre: "MUNI Museo Universitario UASLP", direccion: "Av. Universidad, Centro", x: 190, y: 560 },
+  { id: "laberinto", nombre: "Museo Laberinto", direccion: "Insurgentes 100, Tequisquiapan", x: 430, y: 565 },
+  { id: "poeta", nombre: "Casa del Poeta", direccion: "Universidad 235, Centro", x: 290, y: 495 },
+  { id: "ferrocarril", nombre: "Museo del Ferrocarril", direccion: "Prol. Othón esq. Nicolás Zapata, Centro", x: 420, y: 430 },
+];
+var POI = { nombre: "Plaza de los Fundadores", direccion: "Jardín Guerrero, Centro", x: 365, y: 395 };
+var DIRECCIONES = [
+  { direccion: "Hermenegildo Galeana 423, Moderna", x: 230, y: 250 },
+  { direccion: "Avenida Universidad 900, Tequisquiapan", x: 200, y: 600 },
+  { direccion: "Calzada de Guadalupe 300, Barrio de Guadalupe", x: 460, y: 200 },
+];
+var YO = { x: 300, y: 480 };
+var REFERENCIAS = LUGARES.concat(DIRECCIONES);
+
+/* ---------- Estado ---------- */
+var estado = {
+  variante: "A",
+  teclado: false,
+  texto: "",
+  resultados: [],
+  mapaLibre: false,
+  seleccion: null, // { nombre, direccion, x, y, tipo, privado? }
+  pinAjustado: false,
+  mostrarYo: false,
+  nombreManual: "",
+  panelAgregar: false,
+  agregarNombre: "",
+  privadoAgregar: false,
+};
+
+/* ---------- Utilidades ---------- */
+function quita(s) { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+function iconoPin(w) {
+  w = w || 20;
+  return '<svg width="' + w + '" height="' + w + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>';
+}
+function iconoPoi(w) {
+  w = w || 20;
+  return '<svg width="' + w + '" height="' + w + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.5 2.5"><circle cx="12" cy="12" r="7"/></svg>';
+}
+function iconoMas(w) {
+  w = w || 18;
+  return '<svg width="' + w + '" height="' + w + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+}
+function direccionCercana(x, y) {
+  var mejor = null, d = Infinity;
+  for (var i = 0; i < REFERENCIAS.length; i++) {
+    var r = REFERENCIAS[i], dist = Math.hypot(r.x - x, r.y - y);
+    if (dist < d) { d = dist; mejor = r; }
+  }
+  if (!mejor) return "Ubicación en el mapa";
+  return d < 10 ? mejor.direccion : "Cerca de " + mejor.direccion;
+}
+function buscar(q) {
+  var t = quita(q.trim());
+  if (!t) return [];
+  var lugares = LUGARES.filter(function (l) { return quita(l.nombre).indexOf(t) !== -1 || quita(l.direccion).indexOf(t) !== -1; })
+    .map(function (l) { return Object.assign({ tipo: "lugar" }, l); });
+  var otros = [POI].concat(DIRECCIONES).filter(function (o) { return quita(o.nombre || "").indexOf(t) !== -1 || quita(o.direccion).indexOf(t) !== -1; })
+    .map(function (o) { return Object.assign({ tipo: o.nombre ? "poi" : "direccion" }, o); });
+  return lugares.concat(otros);
+}
+
+/* ---------- Referencias al DOM ---------- */
+var telefono = document.getElementById("telefono");
+var sheet = document.getElementById("sheet");
+var renglonBase = document.getElementById("renglonBase");
+var valorBase = document.getElementById("valorBase");
+var cambiarBase = document.getElementById("cambiarBase");
+var btnAtras = document.getElementById("btnAtras");
+var btnListo = document.getElementById("btnListo");
+var campoBuscar = document.getElementById("campoBuscar");
+var btnLimpiar = document.getElementById("btnLimpiar");
+var lienzo = document.getElementById("lienzo");
+var capaLugares = document.getElementById("capaLugares");
+var capaPoi = document.getElementById("capaPoi");
+var capaYo = document.getElementById("capaYo");
+var capaSeleccion = document.getElementById("capaSeleccion");
+var resumenPin = document.getElementById("resumenPin");
+var listaFlotante = document.getElementById("listaFlotante");
+var panelAgregar = document.getElementById("panelAgregar");
+var nombreAgregarInput = document.getElementById("nombreAgregarInput");
+var direccionFijaEl = document.getElementById("direccionFijaEl");
+var privadoBtn = document.getElementById("privadoBtn");
+var guardarAgregarBtn = document.getElementById("guardarAgregarBtn");
+var barraAcciones = document.getElementById("barraAcciones");
+var txtAccionAgregar = document.getElementById("txtAccionAgregar");
+var btnAccionAgregar = document.getElementById("btnAccionAgregar");
+var btnAccionMapa = document.getElementById("btnAccionMapa");
+var btnEstoyAqui = document.getElementById("btnEstoyAqui");
+var teclado = document.getElementById("teclado");
+
+/* ---------- Pintar los pines fijos (una sola vez) ---------- */
+LUGARES.forEach(function (l) {
+  var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "lugar");
+  g.setAttribute("data-id", l.id);
+  g.setAttribute("transform", "translate(" + l.x + " " + l.y + ")");
+  g.innerHTML = '<circle r="7"/><text class="nombre" y="19">' + esc(l.nombre.length > 26 ? l.nombre.slice(0, 26) + "…" : l.nombre) + "</text>";
+  capaLugares.appendChild(g);
+});
+(function () {
+  var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("class", "poi");
+  g.setAttribute("data-poi", "1");
+  g.setAttribute("transform", "translate(" + POI.x + " " + POI.y + ")");
+  g.innerHTML = '<circle r="6"/><text class="nombre" y="17">' + esc(POI.nombre) + "</text>";
+  capaPoi.appendChild(g);
+})();
+
+/* ---------- Conversión de coordenadas de pantalla a coordenadas del mapa (viewBox) ---------- */
+function puntoSVG(clientX, clientY) {
+  var pt = lienzo.createSVGPoint();
+  pt.x = clientX; pt.y = clientY;
+  var ctm = lienzo.getScreenCTM();
+  return pt.matrixTransform(ctm.inverse());
+}
+
+/* ---------- Interacción con el mapa: elegir lugar, POI, o tocar el mapa para poner el pin ---------- */
+lienzo.addEventListener("click", function (e) {
+  if (e.target.closest(".seleccion")) return; // lo maneja el arrastre
+  var gLugar = e.target.closest(".lugar");
+  if (gLugar) { seleccionarLugar(gLugar.getAttribute("data-id")); return; }
+  var gPoi = e.target.closest(".poi");
+  if (gPoi) { seleccionarOtro(Object.assign({ tipo: "poi" }, POI)); return; }
+  var p = puntoSVG(e.clientX, e.clientY);
+  colocarPinManual(p.x, p.y);
+});
+
+var arrastrando = false;
+capaSeleccion.addEventListener("pointerdown", function (e) {
+  if (!estado.seleccion) return;
+  arrastrando = true;
+  capaSeleccion.classList.add("arrastrando");
+  capaSeleccion.setPointerCapture(e.pointerId);
+  e.stopPropagation();
+});
+capaSeleccion.addEventListener("pointermove", function (e) {
+  if (!arrastrando) return;
+  var p = puntoSVG(e.clientX, e.clientY);
+  estado.seleccion.x = p.x; estado.seleccion.y = p.y;
+  capaSeleccion.setAttribute("transform", "translate(" + p.x + " " + p.y + ")");
+});
+function finalizarArrastre(e) {
+  if (!arrastrando) return;
+  arrastrando = false;
+  capaSeleccion.classList.remove("arrastrando");
+  estado.pinAjustado = true;
+  estado.seleccion.direccion = direccionCercana(estado.seleccion.x, estado.seleccion.y);
+  estado.mapaLibre = true;
+  render();
+}
+capaSeleccion.addEventListener("pointerup", finalizarArrastre);
+capaSeleccion.addEventListener("pointercancel", finalizarArrastre);
+capaSeleccion.addEventListener("click", function (e) { e.stopPropagation(); });
+
+/* ---------- Acciones que cambian el estado ---------- */
+function seleccionarLugar(id) {
+  var l = LUGARES.filter(function (x) { return x.id === id; })[0];
+  if (!l) return;
+  estado.seleccion = { id: l.id, nombre: l.nombre, direccion: l.direccion, x: l.x, y: l.y, tipo: "lugar" };
+  estado.texto = ""; estado.resultados = []; estado.pinAjustado = false; estado.mapaLibre = false; estado.mostrarYo = false;
+  estado.panelAgregar = false;
+  render();
+}
+function seleccionarOtro(o) {
+  estado.seleccion = { nombre: o.nombre || "", direccion: o.direccion, x: o.x, y: o.y, tipo: o.tipo };
+  estado.nombreManual = o.nombre || "";
+  estado.texto = ""; estado.resultados = []; estado.pinAjustado = false; estado.mapaLibre = false; estado.mostrarYo = false;
+  estado.panelAgregar = false;
+  render();
+}
+function colocarPinManual(x, y) {
+  estado.seleccion = { nombre: "", direccion: direccionCercana(x, y), x: x, y: y, tipo: "manual" };
+  estado.nombreManual = "";
+  estado.pinAjustado = false; estado.mapaLibre = true; estado.mostrarYo = false; estado.panelAgregar = false;
+  render();
+}
+function estoyAqui() {
+  estado.seleccion = { nombre: "", direccion: direccionCercana(YO.x, YO.y), x: YO.x, y: YO.y, tipo: "estoy-aqui" };
+  estado.nombreManual = "";
+  estado.pinAjustado = false; estado.mapaLibre = true; estado.mostrarYo = true; estado.panelAgregar = false;
+  estado.texto = ""; estado.resultados = [];
+  render();
+}
+function actualizarBusqueda(texto) {
+  estado.texto = texto;
+  estado.mapaLibre = false;
+  estado.resultados = buscar(texto);
+  render();
+}
+function accionAgregar() {
+  if (!estado.seleccion) {
+    var p = { x: 300, y: 400 };
+    estado.seleccion = { nombre: "", direccion: direccionCercana(p.x, p.y), x: p.x, y: p.y, tipo: "manual" };
+  }
+  estado.agregarNombre = estado.texto.trim() || estado.seleccion.nombre || "";
+  estado.privadoAgregar = false;
+  estado.panelAgregar = true;
+  render();
+  nombreAgregarInput.focus();
+}
+function accionMapa() {
+  estado.mapaLibre = true;
+  estado.panelAgregar = false;
+  render();
+}
+function guardarAgregar() {
+  var nombre = nombreAgregarInput.value.trim();
+  if (!nombre) { nombreAgregarInput.focus(); return; }
+  estado.seleccion = { nombre: nombre, direccion: estado.seleccion.direccion, x: estado.seleccion.x, y: estado.seleccion.y, tipo: "nuevo", privado: estado.privadoAgregar };
+  estado.panelAgregar = false; estado.mapaLibre = false; estado.texto = ""; estado.resultados = [];
+  render();
+}
+
+/* ---------- Render ---------- */
+function modoActual() {
+  if (estado.panelAgregar) return "agregar";
+  if (estado.texto.trim() && !estado.mapaLibre) return estado.resultados.length ? "resultados" : "no-encontrado";
+  return "inicial";
+}
+function renglonLugarHTML(l) {
+  return '<li><button type="button" class="renglon" data-lugar="' + l.id + '">' + iconoPin() + "<b>" + esc(l.nombre) + "</b><small>" + esc(l.direccion) + "</small></button></li>";
+}
+function renglonOtroHTML(o, i) {
+  var icono = o.tipo === "poi" ? iconoPoi() : iconoPin();
+  var nombre = o.nombre || o.direccion;
+  var detalle = o.nombre ? o.direccion + " · sin registrar" : "Dirección";
+  return '<li><button type="button" class="renglon" data-otro="' + i + '">' + icono + "<b>" + esc(nombre) + "</b><small>" + esc(detalle) + "</small></button></li>";
+}
+function renglonAccionHTML(cual) {
+  if (cual === "agregar") {
+    return '<li><button type="button" class="renglon accion" data-accion="agregar">' + iconoMas() + "<b>Agregar «" + esc(estado.texto.trim()) + "» como lugar</b></button></li>";
+  }
+  return '<li><button type="button" class="renglon accion" data-accion="mapa">' + iconoPin() + "<b>Buscar en el mapa sin agregar</b></button></li>";
+}
+function construirLista(modo) {
+  var html = "";
+  if (modo === "resultados") {
+    var lugares = estado.resultados.filter(function (r) { return r.tipo === "lugar"; });
+    var otros = estado.resultados.filter(function (r) { return r.tipo !== "lugar"; });
+    html += "<ul>";
+    html += lugares.map(renglonLugarHTML).join("");
+    if (otros.length) { html += '<li class="separador-tipo">En el mapa</li>' + otros.map(renglonOtroHTML).join(""); }
+    if (estado.variante === "A") { html += renglonAccionHTML("agregar") + renglonAccionHTML("mapa"); }
+    html += "</ul>";
+  } else if (modo === "no-encontrado") {
+    html += '<div class="aviso-no-encontrado"><b>«' + esc(estado.texto.trim()) + '» no está registrado.</b>Puedes agregarlo como lugar o buscarlo en el mapa sin agregarlo.</div>';
+    if (estado.variante === "A") { html += "<ul>" + renglonAccionHTML("agregar") + renglonAccionHTML("mapa") + "</ul>"; }
+  }
+  listaFlotante.innerHTML = html;
+  var botones = listaFlotante.querySelectorAll("[data-lugar]");
+  for (var i = 0; i < botones.length; i++) { botones[i].addEventListener("click", function (e) { seleccionarLugar(e.currentTarget.getAttribute("data-lugar")); }); }
+  var otrosBtn = listaFlotante.querySelectorAll("[data-otro]");
+  for (var j = 0; j < otrosBtn.length; j++) {
+    (function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = Number(btn.getAttribute("data-otro"));
+        seleccionarOtro(estado.resultados.filter(function (r) { return r.tipo !== "lugar"; })[idx]);
+      });
+    })(otrosBtn[j]);
+  }
+  var accAgregar = listaFlotante.querySelector('[data-accion="agregar"]');
+  if (accAgregar) accAgregar.addEventListener("click", accionAgregar);
+  var accMapa = listaFlotante.querySelector('[data-accion="mapa"]');
+  if (accMapa) accMapa.addEventListener("click", accionMapa);
+}
+function pintarResumen(modo) {
+  var mostrar = modo === "inicial" && !!estado.seleccion;
+  resumenPin.classList.toggle("visible", mostrar);
+  if (!mostrar) { resumenPin.innerHTML = ""; return; }
+  var s = estado.seleccion;
+  var html = iconoPin(18);
+  if (s.nombre) {
+    html += "<b>" + esc(s.nombre) + "</b><span>· " + esc(s.direccion) + "</span>";
+  } else {
+    html += '<input type="text" class="nombre-editable" id="nombreManualInput" placeholder="Nombre del lugar" value="' + esc(estado.nombreManual) + '"><span>· ' + esc(s.direccion) + "</span>";
+  }
+  if (estado.pinAjustado) html += '<span class="nota-ajuste">Moviste el pin. Revisa que la dirección corresponda.</span>';
+  resumenPin.innerHTML = html;
+  var inp = document.getElementById("nombreManualInput");
+  if (inp) inp.addEventListener("input", function (e) { estado.nombreManual = e.target.value; estado.seleccion.nombre = e.target.value; actualizarListo(); });
+}
+function pintarPanelAgregar(modo) {
+  var mostrar = modo === "agregar";
+  panelAgregar.classList.toggle("visible", mostrar);
+  if (!mostrar) return;
+  nombreAgregarInput.value = estado.agregarNombre;
+  direccionFijaEl.textContent = estado.seleccion ? estado.seleccion.direccion : "Ajusta el pin en el mapa para fijar la dirección";
+  privadoBtn.setAttribute("aria-checked", String(estado.privadoAgregar));
+}
+function pintarBarraAcciones(modo) {
+  var mostrar = estado.variante === "B" && (modo === "resultados" || modo === "no-encontrado");
+  barraAcciones.classList.toggle("visible", mostrar);
+  barraAcciones.style.bottom = estado.teclado ? "300px" : "0px";
+  txtAccionAgregar.textContent = estado.texto.trim() ? "Agregar «" + estado.texto.trim() + "»" : "Agregar lugar";
+}
+function pintarPines() {
+  var grupos = capaLugares.querySelectorAll(".lugar");
+  for (var i = 0; i < grupos.length; i++) {
+    var esElegido = estado.seleccion && estado.seleccion.tipo === "lugar" && estado.seleccion.id === grupos[i].getAttribute("data-id");
+    grupos[i].classList.toggle("elegido", !!esElegido);
+  }
+}
+function posicionarSeleccion() {
+  if (estado.seleccion) {
+    capaSeleccion.style.display = "";
+    capaSeleccion.setAttribute("transform", "translate(" + estado.seleccion.x + " " + estado.seleccion.y + ")");
+  } else {
+    capaSeleccion.style.display = "none";
+  }
+  capaYo.style.display = estado.mostrarYo ? "" : "none";
+  if (estado.mostrarYo) capaYo.setAttribute("transform", "translate(" + YO.x + " " + YO.y + ")");
+}
+function actualizarListo() {
+  var listo = !!estado.seleccion && (!!estado.seleccion.nombre || estado.seleccion.tipo === "lugar" || estado.seleccion.tipo === "nuevo");
+  if (estado.panelAgregar) listo = !!nombreAgregarInput.value.trim();
+  btnListo.disabled = !listo;
+}
+function actualizarRenglonBase() {
+  if (!estado.seleccion) { valorBase.textContent = "Falta"; valorBase.classList.add("falta"); cambiarBase.textContent = "Elegir"; renglonBase.classList.add("pendiente"); return; }
+  valorBase.textContent = estado.seleccion.nombre || estado.seleccion.direccion;
+  valorBase.classList.remove("falta");
+  cambiarBase.textContent = "Cambiar";
+  renglonBase.classList.remove("pendiente");
+}
+function render() {
+  var modo = modoActual();
+  campoBuscar.value = estado.texto;
+  btnLimpiar.classList.toggle("visible", !!estado.texto);
+  listaFlotante.classList.toggle("visible", modo === "resultados" || modo === "no-encontrado");
+  if (modo === "resultados" || modo === "no-encontrado") construirLista(modo);
+  pintarResumen(modo);
+  pintarPanelAgregar(modo);
+  pintarBarraAcciones(modo);
+  pintarPines();
+  posicionarSeleccion();
+  teclado.classList.toggle("visible", estado.teclado);
+  actualizarListo();
+  document.querySelectorAll(".btn-control[data-variante]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-variante") === estado.variante)); });
+  document.getElementById("btnTeclado").setAttribute("aria-pressed", String(estado.teclado));
+}
+
+/* ---------- Controles del estudio ---------- */
+document.querySelectorAll(".btn-control[data-variante]").forEach(function (b) {
+  b.addEventListener("click", function () { estado.variante = b.getAttribute("data-variante"); render(); });
+});
+document.getElementById("btnTeclado").addEventListener("click", function () { estado.teclado = !estado.teclado; render(); });
+document.querySelectorAll(".btn-control[data-escenario]").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var e = b.getAttribute("data-escenario");
+    // Cada botón de escenario parte de un estado limpio: un salto directo produce siempre el mismo resultado,
+    // sin depender de qué se haya tocado antes (para probar cualquier estado en cualquier orden).
+    estado.panelAgregar = false; estado.mostrarYo = false; estado.pinAjustado = false; estado.seleccion = null;
+    estado.mapaLibre = false; estado.nombreManual = "";
+    if (e === "inicio") { actualizarBusqueda(""); }
+    else if (e === "sugerencias") { actualizarBusqueda("casa"); }
+    else if (e === "no-encontrado") { actualizarBusqueda("El teatrito"); }
+    else if (e === "estoy-aqui") { estoyAqui(); }
+    else if (e === "pin-ajustado") {
+      seleccionarLugar("paz");
+      estado.seleccion.x += 30; estado.seleccion.y -= 24;
+      estado.seleccion.direccion = direccionCercana(estado.seleccion.x, estado.seleccion.y);
+      estado.pinAjustado = true; estado.mapaLibre = true;
+      render();
+    } else if (e === "agregar") { actualizarBusqueda("El teatrito"); accionAgregar(); }
+  });
+});
+
+/* ---------- Controles de la hoja ---------- */
+campoBuscar.addEventListener("input", function (e) { actualizarBusqueda(e.target.value); });
+btnLimpiar.addEventListener("click", function () { actualizarBusqueda(""); campoBuscar.focus(); });
+btnEstoyAqui.addEventListener("click", estoyAqui);
+btnAccionAgregar.addEventListener("click", accionAgregar);
+btnAccionMapa.addEventListener("click", accionMapa);
+privadoBtn.addEventListener("click", function () { estado.privadoAgregar = !estado.privadoAgregar; privadoBtn.setAttribute("aria-checked", String(estado.privadoAgregar)); });
+guardarAgregarBtn.addEventListener("click", guardarAgregar);
+nombreAgregarInput.addEventListener("input", function (e) { estado.agregarNombre = e.target.value; actualizarListo(); });
+btnAtras.addEventListener("click", function () { sheet.classList.remove("abierta"); });
+btnListo.addEventListener("click", function () {
+  if (btnListo.disabled) return;
+  if (estado.panelAgregar) { guardarAgregar(); }
+  sheet.classList.remove("abierta");
+  actualizarRenglonBase();
+});
+renglonBase.addEventListener("click", function () { sheet.classList.add("abierta"); });
+
+render();
+</script>
+</body>
+</html>

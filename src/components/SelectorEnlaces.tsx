@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { etiquetaEnlace, LIMITE_ENLACES, reconocerEnlace, type Enlace } from "@/lib/enlaces";
+import { etiquetaEnlace, LIMITE_ENLACES, LIMITE_TITULO_ENLACE, reconocerEnlace, type Enlace } from "@/lib/enlaces";
+import Campo from "./ui/Campo";
 import IconoRed from "./ui/IconoRed";
 import { IconoCerrar } from "./ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
@@ -38,6 +39,11 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
   function quitar(e: Enlace) {
     setEnlaces(enlaces.filter((x) => x !== e));
   }
+  // El título de cada enlace lo puede cambiar la persona (OL-168): se guarda tal cual escribió, aunque quede
+  // igual a la etiqueta automática; un campo vacío no se rellena solo, así "queda vacío" es una opción real.
+  function cambiarTitulo(url: string, titulo: string) {
+    setEnlaces((prev) => prev.map((x) => (x.url === url ? { ...x, titulo: titulo.replace(/[\r\n]+/g, " ").slice(0, LIMITE_TITULO_ENLACE) } : x)));
+  }
 
   return (
     <div className={styles.selector}>
@@ -46,13 +52,23 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
       )}
       {enlaces.length > 0 && (
         <ul className={styles.lista} aria-label="Enlaces">
-          {enlaces.map((e) => (
+          {enlaces.map((e, i) => (
             <li key={e.url} className={styles.enlace}>
               <IconoRed red={e.red} />
-              <span className={styles.texto}>
-                <b>{etiquetaEnlace(e)}</b>
-                <small>{e.url.replace(/^https?:\/\/(www\.)?/, "")}</small>
-              </span>
+              <Campo
+                etiqueta="Título"
+                name={`titulo-enlace-${i}`}
+                value={e.titulo ?? etiquetaEnlace(e)}
+                onChange={(ev) => cambiarTitulo(e.url, ev.target.value)}
+                maxLength={LIMITE_TITULO_ENLACE}
+                mostrarContador
+                ayuda={e.url.replace(/^https?:\/\/(www\.)?/, "")}
+                autoComplete="off"
+                // La ✕ de "quitar el enlace" ya vive fuera del campo, a 8px: con la ✕ de "vaciar" del campo
+                // ahí también se confundían (hallazgo del gestor). Vaciar el título a mano se sigue pudiendo
+                // con Retroceso; vacío = etiqueta automática (limpiarTituloEnlace en el servidor).
+                sinLimpiar
+              />
               <button type="button" className={styles.quitar} onClick={() => quitar(e)} aria-label={`Quitar ${etiquetaEnlace(e)}`}>
                 <IconoCerrar width={18} height={18} />
               </button>
