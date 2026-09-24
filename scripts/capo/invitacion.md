@@ -2,7 +2,9 @@
 
 Plantilla para invitar a los artistas y grupos que llegaron del Catálogo de Artistas Potosinos (CAPO)
 a reclamar su ficha con "Soy yo / es mi grupo". Un solo llamado, sin jerga, español de tú.
-Se llena con el nombre del artista y la liga a su ficha (`https://somosnosotros.org/artistas/<id>`).
+Se llena con el nombre del artista y la liga a su ficha (`https://somosnosotros.org/artistas/<slug>`;
+si el artista aún no tiene slug, cae al UUID, que el proxy redirige con 308 a la de slug — OL-123,
+bitácora 158).
 
 Por confirmar con el founder antes de mandar nada: el texto y cuál de las dos variantes de asunto.
 

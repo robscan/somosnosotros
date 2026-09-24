@@ -35,8 +35,10 @@ export function asuntoDe(nombre: string, variante: Variante = "A"): string {
   return variante === "A" ? `${nombre}, tu ficha ya está en Somos Nosotros` : `¿Eres ${nombre}? Tu ficha te espera en Somos Nosotros`;
 }
 
-export function urlFicha(artistaId: string): string {
-  return `${SITIO}/artistas/${artistaId}`;
+/** La ficha por su slug (la dirección de hoy) o, si aún no tiene, por el UUID (la vieja, que el proxy
+ * sigue resolviendo con un 308 a la de slug: OL-123, bitácora 158). */
+export function urlFicha(artistaId: string, slug?: string | null): string {
+  return `${SITIO}/artistas/${slug || artistaId}`;
 }
 
 export function cuerpoTexto(nombre: string, url: string): string {
@@ -66,14 +68,14 @@ export function cuerpoHtml(_nombre: string, url: string): string {
   ].join("\n");
 }
 
-export function armarCorreo(nombre: string, artistaId: string, variante: Variante = "A"): { asunto: string; texto: string; html: string; url: string } {
-  const url = urlFicha(artistaId);
+export function armarCorreo(nombre: string, artistaId: string, slug?: string | null, variante: Variante = "A"): { asunto: string; texto: string; html: string; url: string } {
+  const url = urlFicha(artistaId, slug);
   return { asunto: asuntoDe(nombre, variante), texto: cuerpoTexto(nombre, url), html: cuerpoHtml(nombre, url), url };
 }
 
 // ---------- puro: elegir la tanda ----------
 
-export type Candidato = { artistaId: string; nombre: string; correo: string };
+export type Candidato = { artistaId: string; nombre: string; correo: string; slug?: string | null };
 
 /** Como mucho un correo por artista (el primero que llegue) y hasta `n`, respetando el orden recibido. */
 export function elegirTanda(candidatos: Candidato[], n: number): Candidato[] {
@@ -91,9 +93,9 @@ export function elegirTanda(candidatos: Candidato[], n: number): Candidato[] {
 
 // ---------- impuro: Supabase y Resend ----------
 
-type FilaContacto = { artista_id: string; correo: string; artistas: { nombre: string; visible: boolean } | { nombre: string; visible: boolean }[] | null };
+type FilaContacto = { artista_id: string; correo: string; artistas: { nombre: string; visible: boolean; slug: string | null } | { nombre: string; visible: boolean; slug: string | null }[] | null };
 
-function artistaDe(f: FilaContacto["artistas"]): { nombre: string; visible: boolean } | null {
+function artistaDe(f: FilaContacto["artistas"]): { nombre: string; visible: boolean; slug: string | null } | null {
   return Array.isArray(f) ? (f[0] ?? null) : f;
 }
 
@@ -115,7 +117,7 @@ export async function invitadosPrevios(db: SupabaseClient): Promise<Set<string>>
 export async function candidatosPendientes(db: SupabaseClient): Promise<Candidato[]> {
   const { data, error } = await db
     .from("contactos_importados")
-    .select("artista_id, correo, artistas!inner(nombre, visible)")
+    .select("artista_id, correo, artistas!inner(nombre, visible, slug)")
     .not("artista_id", "is", null)
     .order("capturado_en", { ascending: true });
   if (error) throw error;
@@ -126,7 +128,7 @@ export async function candidatosPendientes(db: SupabaseClient): Promise<Candidat
     const artista = artistaDe(f.artistas);
     if (!artista?.visible) continue;
     if (yaInvitados.has(f.artista_id)) continue;
-    candidatos.push({ artistaId: f.artista_id, nombre: artista.nombre, correo: f.correo });
+    candidatos.push({ artistaId: f.artista_id, nombre: artista.nombre, correo: f.correo, slug: artista.slug });
   }
   return candidatos;
 }
@@ -163,7 +165,7 @@ async function main() {
 
   if (!enviar) {
     const primero = tanda[0];
-    const correo = armarCorreo(primero.nombre, primero.artistaId);
+    const correo = armarCorreo(primero.nombre, primero.artistaId, primero.slug);
     console.log(`Ensayo: no se manda nada ni se escribe en la base.`);
     console.log("");
     console.log(`Tanda de ${tanda.length} (de ${pendientes.length} pendientes en total):`);
@@ -185,7 +187,7 @@ async function main() {
   let mandados = 0;
   let fallidos = 0;
   for (const c of tanda) {
-    const correo = armarCorreo(c.nombre, c.artistaId);
+    const correo = armarCorreo(c.nombre, c.artistaId, c.slug);
     const r = await mandarCorreo({ para: c.correo, asunto: correo.asunto, texto: correo.texto, html: correo.html });
     if (r.ok) {
       const { error } = await db.from("invitaciones_enviadas").insert({ artista_id: c.artistaId, correo: c.correo, resend_id: r.id });
