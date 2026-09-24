@@ -3,7 +3,18 @@
    ficha tienen que verse iguales, revisión del gestor tras la primera entrega de esta pieza (bitácora 210).
    "Publicar" y "Ver más" reusan el botón de texto del canon de formularios (`ui/FormularioCanon.module.css`,
    `.cambiar`). Aquí solo lo propio: el layout de la cabecera (título + "Publicar" en la misma línea), la lista
-   sin viñetas y cada tarjeta de novedad. */
+   sin viñetas y cada tarjeta de novedad.
+
+   Ritmo vertical (segunda revisión del gestor, bitácora 210): el mismo mecanismo que ya separa "Enlaces" de lo
+   que sigue (`Ficha.module.css`, `.acciones`/`.seccionEnlaces`: `margin-bottom: var(--espacio-5)`, sin margen a
+   mano) — aquí, como lo que precede a "Novedades" es la descripción compartida (`Desplegable.module.css`, que no
+   se toca por ser de varias fichas), el mismo `var(--espacio-5)` va de `margin-top` en `.seccion`: colapsa con
+   el `margin-bottom` de la descripción y deja siempre 20 px, el ancho de los dos. Del título al primer
+   reproductor, 16 px iguales a "Enlaces" (`.seccionEnlaces h2`, sin tocarla): `.novedad:first-child` no suma su
+   propio relleno de arriba, para no duplicarlo encima del margen del título. */
+.seccion {
+  margin-top: var(--espacio-5);
+}
 .cabecera {
   display: flex;
   justify-content: space-between;
@@ -29,6 +40,9 @@
 .novedad {
   padding: var(--espacio-3) 0;
   border-bottom: 1px solid var(--borde);
+}
+.novedad:first-child {
+  padding-top: 0;
 }
 .novedad:last-child {
   border-bottom: none;

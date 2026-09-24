@@ -217,6 +217,22 @@ Hallazgo: «Novedades» usaba el título de `FichaLista.module.css` (`.lista h2`
 «Publicar» en la misma línea del título vía el propio `<h2>` (`styles.cabecera`, flex); capturas 01, 02 y 07
 rehechas y confirmadas (título negro, sin línea, igual que «Enlaces», comparados en la misma pantalla en la 01).
 
+## Segundo ajuste del gestor: ritmo vertical de «Novedades» como «Enlaces»
+
+El título ya salía igual (revisión anterior), pero el ritmo no: «Novedades» quedaba pegado a la descripción
+(4 px) y con un hueco de 28 px hasta el primer reproductor, en vez de los 20 px y 16 px de «Enlaces». Medido con
+`getBoundingClientRect()` en el arnés (`caso=normal`, con "Enlaces" añadido arriba para comparar), antes y
+después:
+
+| Medición | Antes | Después | Mecanismo |
+|---|---|---|---|
+| Enlaces (fin) → descripción (inicio) | 20 px | 20 px (sin tocar) | `Ficha.module.css`: `.seccionEnlaces`/`.acciones` `margin-bottom: var(--espacio-5)`; la descripción no tiene margen arriba |
+| Descripción (fin) → título «Novedades» | **4 px** | **20 px** | La descripción es de `Desplegable.module.css` (varias fichas, no se toca): su `margin-bottom` es solo `--espacio-1` (4 px). Se añadió `margin-top: var(--espacio-5)` a la propia sección de Novedades (`SeccionNovedades.module.css`, clase `.seccion`, junto a `ficha.seccionEnlaces`) — mismo token que usa Enlaces, colapsa con el margen de la descripción y deja siempre 20 px |
+| Título «Novedades» → primer reproductor | **28 px** | **16 px** | `.seccionEnlaces h2 { margin-bottom: var(--espacio-4) }` (16 px) ya se heredaba; sobraban 12 px del `padding-top` de `.novedad`, que se aplicaba también al primer renglón. Se agregó `.novedad:first-child { padding-top: 0 }`: el hueco entre novedades no cambia, solo el de arriba del todo |
+
+Ningún archivo compartido (`Ficha.module.css`, `Desplegable.module.css`) se tocó; los dos ajustes viven en
+`SeccionNovedades.module.css`, propio de esta pieza. Capturas 01 y 02 rehechas y confirmadas con Read.
+
 ## Cierre
 
 Sin PR (lo da el gestor). Commit local en `novedades-artista-fase1` con

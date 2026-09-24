@@ -30,7 +30,7 @@ export default function SeccionNovedades({ novedades, artistaNombre, hrefPublica
   const hayMas = !abierto && novedades.length > NOVEDADES_ARTISTA_VISIBLES_DE_ENTRADA;
 
   return (
-    <section className={ficha.seccionEnlaces} aria-label="Novedades">
+    <section className={`${ficha.seccionEnlaces} ${styles.seccion}`} aria-label="Novedades">
       <h2 className={styles.cabecera}>
         <span className={styles.tituloSeccion}>Novedades</span>
         {hrefPublicar && (
