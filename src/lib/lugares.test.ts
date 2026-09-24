@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, filtrarLugares, hrefLugar, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, tiposPresentes, validarLugar } from "./lugares";
+import { calleCorta, conProximo, diasConEvento, filtrarLugares, hrefLugar, lugaresConEventoElDia, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -129,6 +129,27 @@ describe("conProximo", () => {
     ]);
     expect(r[0].proximo).toEqual({ id: "e1", inicio: "2026-09-15T01:00:00Z", zona: "America/Mexico_City", titulo: "Uno" });
     expect(r[1].proximo).toBeNull();
+  });
+});
+
+describe("diasConEvento y lugaresConEventoElDia (docs/rediseno/45, OL-174: chip de fecha del mapa)", () => {
+  const eventos = [
+    { inicio: "2026-09-25T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" }, // jue 24, 19:00 SLP
+    { inicio: "2026-09-27T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" }, // sáb 26, 19:00 SLP: segundo evento del mismo lugar
+    { inicio: "2026-09-25T01:00:00Z", lugar_id: "b", zona: "America/Mexico_City" },
+    { inicio: "2026-09-25T01:00:00Z", lugar_id: null, zona: "America/Mexico_City" }, // sin lugar: se ignora
+  ];
+  it("junta, por lugar, los días (en la zona del evento) en que tiene evento, sin repetir", () => {
+    const r = diasConEvento([{ id: "a" }, { id: "b" }, { id: "c" }], eventos);
+    expect(r.find((l) => l.id === "a")!.diasEvento).toEqual(["2026-09-24", "2026-09-26"]);
+    expect(r.find((l) => l.id === "b")!.diasEvento).toEqual(["2026-09-24"]);
+    expect(r.find((l) => l.id === "c")!.diasEvento).toEqual([]); // sin eventos: lista vacía, no undefined
+  });
+  it("filtra los lugares con evento ese día; los demás salen del mapa", () => {
+    const conDias = diasConEvento([{ id: "a" }, { id: "b" }, { id: "c" }], eventos);
+    expect(lugaresConEventoElDia(conDias, "2026-09-24").map((l) => l.id)).toEqual(["a", "b"]);
+    expect(lugaresConEventoElDia(conDias, "2026-09-26").map((l) => l.id)).toEqual(["a"]);
+    expect(lugaresConEventoElDia(conDias, "2026-09-21")).toEqual([]); // ningún lugar tiene evento ese día
   });
 });
 
