@@ -160,15 +160,23 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
   const s = supabase && actual ? await supabase.from("seguimientos").select("artista_id").eq("usuario_id", actual.perfil.id).not("artista_id", "is", null).limit(1000) : null;
   const seguidos = actual ? ((s?.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id) : null;
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
-  return (
+  // Corrección del gestor (OL-177): NO como hermanos antes de <ListaArtistas> — ahí caen entre la Barra (el
+  // logotipo, que se esconde al bajar) y el renglón de chips (ui/Cabecera, pegajoso), la cabecera única de
+  // OL-087. Van como contenido normal de la página, debajo de esa cabecera completa: se le pasan a
+  // ListaArtistas, que los pinta después de `cabecera` y antes de la tira de letras y el conteo.
+  const arriba = actual && (
     <>
-      {actual && conArtistasLigados(misArtistasConQr) && (
+      {conArtistasLigados(misArtistasConQr) && (
         <div className={styles.misArtistas}>
           <MisArtistas artistas={misArtistasConQr} />
         </div>
       )}
-      {actual && correoLigado.map((a) => <LetreroCorreoLigado key={a.id} artista={a} reclamar={reclamarArtista} />)}
-      <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} ciudad={ciudad} ciudades={ciudades} seguidos={seguidos} avisos={avisos} />
+      {correoLigado.map((a) => <LetreroCorreoLigado key={a.id} artista={a} reclamar={reclamarArtista} />)}
+    </>
+  );
+  return (
+    <>
+      <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} ciudad={ciudad} ciudades={ciudades} seguidos={seguidos} avisos={avisos} arriba={arriba} />
       {/* El filtro y la ciudad viven en la URL; lo que se recuerda al volver de una ficha es el scroll. */}
       <MemoriaPantalla seccion="artistas" />
       <Publicar que="artista" ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
