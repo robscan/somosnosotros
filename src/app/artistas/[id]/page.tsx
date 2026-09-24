@@ -33,7 +33,7 @@ import { jsonLdArtista, jsonLdMigajas } from "@/lib/estructurados";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
-import { cabenRepartidas } from "@/lib/ficha";
+import { repartoDeAcciones } from "@/lib/ficha";
 import { qrDeUrl } from "@/lib/qr";
 import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
 import { videoEmbedDe } from "@/lib/video";
@@ -251,6 +251,8 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   // revisión previa; el resto de las redes (incluido un video con forma irreconocible) sigue como botón de enlace.
   const videos = redes.map((r) => videoEmbedDe(r)).filter((v): v is NonNullable<typeof v> => v !== null);
   const redesConEnlace = redes.filter((r) => !videoEmbedDe(r));
+  const repartoEnlaces = repartoDeAcciones(redesConEnlace.length);
+  const claseRepartoEnlaces = repartoEnlaces === "repartidas" ? ficha.accionesRepartidas : repartoEnlaces === "carril" ? ficha.accionesCarril : "";
   const faltanDetalles = a.disciplina === "por_completar" || (!a.descripcion && !a.foto && redes.length === 0);
   const url = `${ORIGEN}${hrefArtista(a)}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
@@ -366,7 +368,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       {redesConEnlace.length > 0 && (
         <section className={ficha.seccionEnlaces} aria-label="Enlaces">
           <h2>Enlaces</h2>
-          <div className={`${ficha.acciones} ${cabenRepartidas(redesConEnlace.length) ? ficha.accionesRepartidas : ficha.accionesCarril}`}>
+          <div className={`${ficha.acciones} ${claseRepartoEnlaces}`}>
             {redesConEnlace.map((r) => (
               <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
                 <span className={ficha.accionIcono}>
