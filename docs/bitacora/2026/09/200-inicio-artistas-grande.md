@@ -78,6 +78,47 @@ para no depender de red — con los componentes reales: `Barra`, `NavInferior`, 
   Potosí»), la tira de letras (A, C, E, L, M, T) y la lista de renglones directamente debajo — sin ningún
   carril de destacados ni de «esta semana» arriba, igual que Agenda.
 
+### La barra inferior «flotando a media página» en la primera versión de la captura 02: artefacto, no un despegue
+
+El gestor vio en la primera versión de `02-artistas-lista-directa.png` (una captura de **página
+completa**, `page.screenshot({ fullPage: true })`) la barra inferior a media altura de la imagen en vez de
+pegada abajo, y preguntó si era un artefacto de esa técnica de captura o el mismo despegue de OL-157 (un
+`transform` residual en un envoltorio que convierte a `position: fixed` en relativo a ese envoltorio en vez
+de a la ventana).
+
+Es artefacto de la captura de página completa, confirmado por medición, no un despegue real:
+`nav[aria-label="Secciones"]` sigue siendo `position: fixed` de verdad, pegada a la ventana, en las tres
+pantallas y también con el árbol de componentes exacto de esta pieza. Medido con Chrome real
+(`playwright-core`), viewport 390×844 **sin** `fullPage`, `getBoundingClientRect()` de la barra antes y
+después de `window.scrollTo(0, 700)` (en Inicio, Artistas y Agenda reales, sin Supabase, se les agregó un
+`<div style="height:2000px">` al final del `<body>` solo para tener algo que desplazar — no es parte del
+commit; y por separado, sobre el arnés temporal con el árbol de componentes real de esta pieza, con
+contenido propio suficiente para desplazar):
+
+| Pantalla | `bottom` antes (`scrollY=0`) | `bottom` después de desplazar | `scrollY` después |
+|---|---|---|---|
+| Inicio (real + relleno) | 844 | 844 | 700 |
+| Artistas (real + relleno) | 844 | 844 | 700 |
+| Agenda (real + relleno) | 844 | 844 | 700 |
+| Arnés Inicio (carril grande, contenido propio) | 844 | 844 | 35 (todo lo que hay que desplazar) |
+| Arnés Artistas (lista directa, contenido propio) | 844 | 844 | 351 (todo lo que hay que desplazar) |
+
+`innerHeight` es 844 en los cinco casos: `bottom = 844` significa pegada exactamente al borde inferior de
+la ventana, sin moverse un píxel al desplazar. `layout.tsx` (raíz de toda la app) no tiene ningún
+`transform` entre `<body>` y `NavInferior`, y esta pieza no agregó ninguno (los carriles y la lista viven
+como hermanos de `<nav>` dentro de `<main class="raiz">`, no como sus ancestros) — no hay envoltorio que
+pueda convertirse en contenedor de lo fijo, a diferencia de OL-157 (`EntradaFicha` sí envolvía la barra con
+un `transform`).
+
+La causa del artefacto: el `fullPage: true` de Playwright/Chromium agranda el viewport de captura al alto
+completo del documento y vuelve a pintar la página en ese tamaño nuevo; un elemento `position: fixed` se
+sigue anclando a los bordes de la ventana, pero ahora esa "ventana" mide todo el documento — la barra queda
+pegada al fondo del documento entero, no al fondo de los 844 px que se ven en un teléfono real, y en la
+imagen final aparece a la altura relativa de un viewport de 844 dentro de una imagen mucho más alta: a
+media página. Con la captura reemplazada (viewport normal, sin `fullPage`, lista desplazada 300 px) la
+barra sale donde tiene que salir: pegada abajo (medido en el momento de la captura: `bottom: 844`,
+`scrollY: 300`).
+
 ## Lo que no se tocó
 
 - Lugares conserva sus dos carriles en `/lugares` (tira de destacados y «Con eventos esta semana»): el
