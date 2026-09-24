@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enlaceVisible, enlacesDesdeJson, etiquetaEnlace, normalizarRedes, reconocerEnlace } from "./enlaces";
+import { enlaceVisible, enlacesDesdeJson, etiquetaEnlace, LIMITE_TITULO_ENLACE, normalizarRedes, reconocerEnlace } from "./enlaces";
 
 describe("reconocerEnlace", () => {
   it("reconoce la red por el dominio, con o sin https", () => {
@@ -34,6 +34,19 @@ describe("reconocerEnlace", () => {
     expect(reconocerEnlace("https://instagram.com/cinemacuarentena")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
     expect(reconocerEnlace("https://www.instagram.com/cinemacuarentena/")).toEqual({ red: "instagram", url: "https://www.instagram.com/cinemacuarentena/" });
   });
+  it("OL-168: reconoce Mixcloud, Deezer, Tidal, Twitch y Audiomack por su dominio", () => {
+    const mixcloud = reconocerEnlace("https://www.mixcloud.com/usuario/");
+    expect(mixcloud?.red).toBe("mixcloud");
+    expect(etiquetaEnlace(mixcloud!)).toBe("Mixcloud");
+    expect(reconocerEnlace("deezer.com/mx/artist/123")?.red).toBe("deezer");
+    expect(etiquetaEnlace(reconocerEnlace("deezer.com/mx/artist/123")!)).toBe("Deezer");
+    expect(reconocerEnlace("https://tidal.com/browse/artist/1")?.red).toBe("tidal");
+    expect(etiquetaEnlace(reconocerEnlace("https://tidal.com/browse/artist/1")!)).toBe("Tidal");
+    expect(reconocerEnlace("twitch.tv/losvecinos")?.red).toBe("twitch");
+    expect(etiquetaEnlace(reconocerEnlace("twitch.tv/losvecinos")!)).toBe("Twitch");
+    expect(reconocerEnlace("https://audiomack.com/losvecinos")?.red).toBe("audiomack");
+    expect(etiquetaEnlace(reconocerEnlace("https://audiomack.com/losvecinos")!)).toBe("Audiomack");
+  });
   it("lo demás queda como sitio con etiqueta 'Sitio web'; lo que no es nada, null", () => {
     const e = reconocerEnlace("www.casa1100.mx/agenda");
     expect(e?.red).toBe("sitio");
@@ -41,6 +54,31 @@ describe("reconocerEnlace", () => {
     expect(reconocerEnlace("")).toBeNull();
     expect(reconocerEnlace("hola")).toBeNull();
     expect(reconocerEnlace("123")).toBeNull();
+  });
+});
+
+describe("titulo (OL-168): la persona puede cambiar la etiqueta de cada enlace", () => {
+  it("etiquetaEnlace usa el título si lo hay; si no, la etiqueta automática", () => {
+    expect(etiquetaEnlace({ red: "mixcloud", url: "https://mixcloud.com/x", titulo: "Mi mezcla favorita" })).toBe("Mi mezcla favorita");
+    expect(etiquetaEnlace({ red: "mixcloud", url: "https://mixcloud.com/x" })).toBe("Mixcloud");
+    expect(etiquetaEnlace({ red: "mixcloud", url: "https://mixcloud.com/x", titulo: "" })).toBe("Mixcloud");
+  });
+  it("normalizarRedes recorta el título a 30 caracteres, quita saltos de línea y lo descarta si queda vacío", () => {
+    const treinta1 = "123456789012345678901234567890X"; // 31 caracteres
+    const [conTope] = normalizarRedes([{ url: "https://vimeo.com/a", titulo: treinta1 }]);
+    expect(conTope.titulo).toHaveLength(LIMITE_TITULO_ENLACE);
+    expect(conTope.titulo).toBe(treinta1.slice(0, LIMITE_TITULO_ENLACE));
+
+    const [conSalto] = normalizarRedes([{ url: "https://vimeo.com/b", titulo: "Mi\ncanal " }]);
+    expect(conSalto.titulo).toBe("Mi canal");
+
+    const [sinTitulo] = normalizarRedes([{ url: "https://vimeo.com/c", titulo: "   " }]);
+    expect(sinTitulo.titulo).toBeUndefined();
+  });
+  it("enlacesDesdeJson (lo que llega del formulario) conserva el título de cada enlace", () => {
+    expect(enlacesDesdeJson(JSON.stringify([{ url: "https://www.mixcloud.com/usuario/", titulo: "Set en vivo" }]))).toEqual([
+      { red: "mixcloud", url: "https://www.mixcloud.com/usuario", titulo: "Set en vivo" },
+    ]);
   });
 });
 

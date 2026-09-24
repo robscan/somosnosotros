@@ -1,3 +1,5 @@
+import { limpiar } from "./formulario";
+
 /**
  * Enlaces y redes de lugares y artistas (docs/rediseno/09-enlaces-flujo-y-estados.md).
  * La persona no elige la red: pega un enlace, un @usuario o un teléfono y el sistema reconoce
@@ -17,11 +19,27 @@ export const REDES = [
   { red: "x", etiqueta: "X", dominios: ["x.com", "twitter.com"] },
   { red: "threads", etiqueta: "Threads", dominios: ["threads.net", "threads.com"] },
   { red: "linktree", etiqueta: "Linktree", dominios: ["linktr.ee"] },
+  // OL-168: reconocidas de más para artistas (founder: "ahora me puso 'sitio web' en un enlace que debería
+  // decir Mixcloud"). Mismo criterio que las de arriba: sin glifo propio, la ficha usa el icono genérico.
+  { red: "mixcloud", etiqueta: "Mixcloud", dominios: ["mixcloud.com"] },
+  { red: "deezer", etiqueta: "Deezer", dominios: ["deezer.com"] },
+  { red: "tidal", etiqueta: "Tidal", dominios: ["tidal.com"] },
+  { red: "twitch", etiqueta: "Twitch", dominios: ["twitch.tv"] },
+  { red: "audiomack", etiqueta: "Audiomack", dominios: ["audiomack.com"] },
 ] as const;
 export type Red = (typeof REDES)[number]["red"] | "sitio";
-export type Enlace = { red: Red; url: string };
+/** `titulo`: lo que la persona escribió para este enlace en vez del nombre de la red (OL-168); vacío o ausente
+ * usa la etiqueta automática. Se guarda tal cual se escribió, recortado a `LIMITE_TITULO_ENLACE`. */
+export type Enlace = { red: Red; url: string; titulo?: string };
 
 export const LIMITE_ENLACES = 8;
+export const LIMITE_TITULO_ENLACE = 30;
+
+/** El título de un enlace: recortado a su tope, sin saltos de línea; vacío queda sin título (etiqueta automática). */
+export function limpiarTituloEnlace(v: unknown): string | undefined {
+  const t = limpiar(typeof v === "string" ? v : "").slice(0, LIMITE_TITULO_ENLACE);
+  return t || undefined;
+}
 
 function etiquetaDe(red: Red): string {
   return REDES.find((r) => r.red === red)?.etiqueta ?? "Sitio";
@@ -42,8 +60,10 @@ export function enlaceVisible(url: string): string {
   return url.replace(/^https?:\/\//i, "");
 }
 
-/** Etiqueta del botón en la ficha: el nombre de la red, o "Sitio web" si es un sitio. */
+/** Etiqueta del botón en la ficha: el título que la persona escribió (OL-168) o, si no hay, el nombre de la
+ * red, o "Sitio web" si es un sitio. */
 export function etiquetaEnlace(e: Enlace): string {
+  if (e.titulo) return e.titulo;
   return e.red === "sitio" ? "Sitio web" : etiquetaDe(e.red);
 }
 
@@ -116,7 +136,11 @@ export function normalizarRedes(json: unknown): Enlace[] {
   };
   if (Array.isArray(json)) {
     for (const x of json) {
-      if (x && typeof x === "object" && typeof (x as { url?: unknown }).url === "string") meter(reconocerEnlace((x as { url: string }).url));
+      if (x && typeof x === "object" && typeof (x as { url?: unknown }).url === "string") {
+        const e = reconocerEnlace((x as { url: string }).url);
+        const titulo = limpiarTituloEnlace((x as { titulo?: unknown }).titulo);
+        meter(e && titulo ? { ...e, titulo } : e);
+      }
     }
   } else if (json && typeof json === "object") {
     for (const [clave, valor] of Object.entries(json as Record<string, unknown>)) if (typeof valor === "string") meter(desdeClaveVieja(clave, valor));

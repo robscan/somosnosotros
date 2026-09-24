@@ -47,10 +47,13 @@ export default function Campo(props: PropsInput | PropsArea) {
 }
 
 function omitir<T extends Base & { multilinea?: boolean }>(p: T) {
-  const { etiqueta: _e, ayuda: _a, error: _r, multilinea: _m, ...rest } = p;
+  // OL-168: faltaba quitar `mostrarContador` antes de esparcir el resto sobre el <input>; en un campo de una
+  // línea (sin pasar por CampoLargo) se colaba como atributo DOM desconocido.
+  const { etiqueta: _e, ayuda: _a, error: _r, multilinea: _m, mostrarContador: _c, ...rest } = p;
   void _e;
   void _a;
   void _r;
   void _m;
+  void _c;
   return rest;
 }

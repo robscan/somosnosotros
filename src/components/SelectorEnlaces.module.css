@@ -14,38 +14,29 @@
 }
 .enlace {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
-  align-items: center;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: start;
   column-gap: var(--espacio-3);
-  min-height: var(--toque);
-  padding: 0 0 0 var(--espacio-3);
+  padding: var(--espacio-3) 0 var(--espacio-3) var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
 }
 .enlace > svg {
   color: var(--texto-suave);
+  margin-top: var(--espacio-3);
 }
-.texto {
+/* El campo del título (ui/Campo) es el segundo hijo de la rejilla: sin este min-width:0 la pista
+   minmax(0, 1fr) no basta, el input crece por su contenido y empuja el ✕ fuera de la tarjeta. */
+.enlace > *:nth-child(2) {
   min-width: 0;
-  line-height: 1.2;
-}
-.texto b {
-  display: block;
-  font-weight: 600;
-}
-.texto small {
-  display: block;
-  overflow: hidden;
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-bottom: 0;
 }
 .quitar {
   display: grid;
   place-items: center;
   width: var(--toque);
   height: var(--toque);
+  margin-top: var(--espacio-1);
   border: none;
   background: none;
   color: var(--texto-suave);
