@@ -1,7 +1,8 @@
-/* «Mis artistas» en Mi perfil (OL-154; tarjeta repuesta en OL-163): mismo rótulo en mayúsculas que Ajustes,
-   tarjetas iguales para uno o varios artistas (región común), grid con áreas y sin sobreanidación. Sin el botón
-   de compartir de la versión original (vive en la ficha desde OL-159): solo queda "foto nombre boton", y la
-   disciplina puede usar hasta dos líneas con el espacio que libera. */
+/* «Mis artistas» en Mi perfil (OL-154; tarjeta repuesta en OL-163; sin botón de texto, corrección del founder
+   sobre esa misma pieza): mismo rótulo en mayúsculas que Ajustes, tarjetas iguales para uno o varios artistas
+   (región común). La tarjeta es un grid de dos columnas — el enlace (`.frente`) y el compartir, hermanos, nunca
+   uno anidado dentro del otro — mismo patrón que `Renglon.module.css` (`.renglon`/`.frente`); el círculo de
+   compartir usa el canon de `ui/Ficha.module.css` (`.accionIcono`), sin una clase propia para la misma idea. */
 .seccion {
   margin: var(--espacio-4) 0 var(--espacio-5);
 }
@@ -16,18 +17,26 @@
 }
 .tarjeta {
   display: grid;
-  grid-template-columns: 52px 1fr auto;
-  grid-template-areas: "foto nombre boton";
-  column-gap: var(--espacio-3);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+  column-gap: var(--espacio-3);
   padding: var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
   margin-bottom: var(--espacio-2);
 }
+.frente {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  column-gap: var(--espacio-3);
+  align-items: center;
+  min-width: 0;
+  color: var(--texto);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
 .foto {
-  grid-area: foto;
   width: 52px;
   height: 52px;
   border-radius: 50%;
@@ -42,7 +51,6 @@
   font-weight: 700;
 }
 .nombre {
-  grid-area: nombre;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -53,8 +61,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Disciplina a dos líneas máximo, con puntos suspensivos si no cabe (founder, OL-163: el texto ya no comparte
-   espacio con el botón de compartir, así que puede crecer una línea más antes de cortarse). */
+/* Disciplina a dos líneas máximo, con puntos suspensivos si no cabe. */
 .nombre small {
   color: var(--texto-suave);
   font-size: var(--letra-xs);
@@ -62,17 +69,4 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-.verFicha {
-  grid-area: boton;
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-3);
-  border-radius: 20px;
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  white-space: nowrap;
 }
