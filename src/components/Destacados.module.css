@@ -119,17 +119,37 @@
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
-.van {
+/* El único contenedor con `grid-area: foto` de la tarjeta (OL-176): «Te interesa» y «N van», si están los dos, van
+   apilados en columna abajo a la izquierda de la foto (el orden se decidió midiendo legibilidad: interesa arriba). */
+.chips {
   grid-area: foto;
   align-self: end;
   justify-self: start;
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  margin: 0 0 var(--espacio-2) var(--espacio-2);
+}
+.van {
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-1);
-  margin: 0 0 var(--espacio-2) var(--espacio-2);
   padding: 2px var(--espacio-2) 2px 6px;
   border-radius: 999px;
   background: var(--vidrio);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+}
+/* Mismos tokens que `.meta > .estado` del renglón (Renglon.module.css): ya trae fondo propio (`--primario-suave`),
+   así que se lee igual de bien sobre la foto sin necesitar el vidrio de `.van`. */
+.interesa {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 var(--espacio-2) 0 6px;
+  border-radius: 999px;
+  background: var(--primario-suave);
+  color: var(--primario);
   font-size: var(--letra-xs);
   font-weight: 700;
 }
