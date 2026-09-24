@@ -13,7 +13,7 @@ import { zonaSegura } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import type { LugarResumen } from "@/lib/lugares";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
-import { clienteServidor } from "@/lib/supabase/servidor";
+import { clienteServidor, esAdminDeSesion } from "@/lib/supabase/servidor";
 import { zonaDePunto } from "@/lib/zona";
 
 /** Publicar lleva a la ficha nueva reemplazando el alta; guardar devuelve a dónde volver (el formulario termina la tarea). */
@@ -93,10 +93,10 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
 
 
 export async function crearEvento(_previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
-  const { supabase } = await sesionOEntrar("/eventos/nuevo");
+  const { supabase, user } = await sesionOEntrar("/eventos/nuevo");
   const entrada = leer(formData);
-  const lugar = await lugarDelEvento(supabase, entrada);
-  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
+  const [lugar, esAdmin] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id)]);
+  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin });
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
   const { data } = await guardarCompleto(supabase, null, datos, ciudad, quienDesdeJson(formData.get("quien")), formData.get("operacion"));
@@ -111,10 +111,10 @@ export async function crearEvento(_previo: ResultadoEvento | null, formData: For
 }
 
 export async function actualizarEvento(id: string, _previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
-  const { supabase } = await sesionOEntrar(`/eventos/${id}/editar`);
+  const { supabase, user } = await sesionOEntrar(`/eventos/${id}/editar`);
   const entrada = leer(formData);
-  const lugar = await lugarDelEvento(supabase, entrada);
-  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar));
+  const [lugar, esAdmin, { data: existente }] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id), supabase.from("eventos").select("imagen").eq("id", id).maybeSingle()]);
+  const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin, imagenActual: existente?.imagen ?? null });
   if (Object.keys(errores).length) return { ok: false, errores };
   const ciudad = ciudadDe(datos, lugar);
   const revision = formData.get("revision");

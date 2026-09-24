@@ -3,6 +3,7 @@ import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { diaLocal, diaPin, formatearCuando } from "./fechas";
+import { imagenPermitida } from "./imagenes";
 import type { Origen } from "./origen";
 import { LIMITES_LUGAR } from "./limites";
 
@@ -215,7 +216,15 @@ export type DatosLugar = {
 export type ErroresLugar = Partial<Record<"nombre" | "tipo" | "direccion" | "ubicacion" | "descripcion" | "portada" | "enlaces" | "detalle", string>>;
 
 
-export function validarLugar(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosLugar; errores: ErroresLugar } {
+/** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `portadaActual` es la
+ *  que ya estaba guardada, para no romper una edición que reenvía sin tocarla la portada de una ficha importada
+ *  de otro dominio (S-01, docs/rediseno/46). */
+export type OpcionesValidarLugar = { esAdmin?: boolean; portadaActual?: string | null };
+
+export function validarLugar(
+  entrada: Record<string, FormDataEntryValue | null | undefined>,
+  opciones: OpcionesValidarLugar = {},
+): { datos: DatosLugar; errores: ErroresLugar } {
   const lat = Number(limpiar(entrada.lat));
   const lng = Number(limpiar(entrada.lng));
   const tipo = limpiar(entrada.tipo) as Tipo;
@@ -242,7 +251,7 @@ export function validarLugar(entrada: Record<string, FormDataEntryValue | null |
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0) || Math.abs(lat) > 90 || Math.abs(lng) > 180)
     errores.ubicacion = "Falta la ubicación: busca la dirección o mueve el pin en el mapa.";
   if (datos.descripcion.length > LIMITES_LUGAR.descripcion) errores.descripcion = `Máximo ${LIMITES_LUGAR.descripcion} caracteres.`;
-  if (datos.portada && !/^https:\/\/[^\s]+$/.test(datos.portada)) errores.portada = "La foto no se subió bien. Intenta de nuevo.";
+  if (datos.portada && !imagenPermitida(datos.portada, { esAdmin: !!opciones.esAdmin, actual: opciones.portadaActual })) errores.portada = "La foto no se subió bien. Intenta de nuevo.";
   if (redes.some((e) => e.url.length > 300)) errores.enlaces = "Hay un enlace demasiado largo.";
   return { datos, errores };
 }

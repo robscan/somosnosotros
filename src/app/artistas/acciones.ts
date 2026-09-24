@@ -6,7 +6,7 @@ import { artistaIgual, hrefArtista, validarArtista, type ArtistaResumen, type Er
 import { esUuid } from "@/lib/formulario";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
-import { clienteServidor } from "@/lib/supabase/servidor";
+import { clienteServidor, esAdminDeSesion } from "@/lib/supabase/servidor";
 
 /** Un artista cuyo correo capturado (CAPO) coincide con el de la cuenta, y que aún no reclama (OL-177, migración
  * 20260925110000_artistas_con_mi_correo). Lo mínimo para el letrero «Tu correo está enlazado a…»: el nombre para
@@ -50,7 +50,8 @@ async function existenteIgual(supabase: Cliente, nombre: string, ciudad: string)
 /** Alta de artista. Si ya hay uno con el mismo nombre, devuelve el existente para preguntar "¿es este?" (decisión 5). */
 export async function crearArtista(_previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
   const { supabase, user } = await sesionOEntrar("/artistas/nuevo");
-  const { datos, errores } = validarArtista(leer(formData));
+  const esAdmin = await esAdminDeSesion(supabase, user.id);
+  const { datos, errores } = validarArtista(leer(formData), { esAdmin });
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const { data, error } = await supabase
@@ -69,8 +70,9 @@ export async function crearArtista(_previo: ResultadoArtista | null, formData: F
 }
 
 export async function actualizarArtista(id: string, _previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
-  const { supabase } = await sesionOEntrar(`/artistas/${id}/editar`);
-  const { datos, errores } = validarArtista(leer(formData));
+  const { supabase, user } = await sesionOEntrar(`/artistas/${id}/editar`);
+  const [esAdmin, { data: existente }] = await Promise.all([esAdminDeSesion(supabase, user.id), supabase.from("artistas").select("foto").eq("id", id).maybeSingle()]);
+  const { datos, errores } = validarArtista(leer(formData), { esAdmin, fotoActual: existente?.foto ?? null });
   if (Object.keys(errores).length) return { ok: false, errores };
 
   // La ciudad también se edita: es un renglón del formulario (pedido del founder, 2026-09-16, noche).

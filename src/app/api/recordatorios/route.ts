@@ -1,3 +1,4 @@
+import { autorizadoPorSecreto } from "@/lib/autorizacionCron";
 import { drenarAvisos } from "@/lib/avisosWorker";
 import { guardarIndicadores } from "@/lib/indicadores";
 
@@ -11,8 +12,7 @@ export const dynamic = "force-dynamic";
  * Protegido con CRON_SECRET: Vercel lo manda como Bearer.
  */
 export async function GET(request: Request) {
-  const secreto = process.env.CRON_SECRET;
-  if (!secreto || request.headers.get("authorization") !== `Bearer ${secreto}`) return new Response("No autorizado", { status: 401 });
+  if (!autorizadoPorSecreto(request.headers, process.env.CRON_SECRET)) return new Response("No autorizado", { status: 401 });
   let r;
   try { r = await drenarAvisos({ ms: 40_000, recordatorios: true }); }
   catch { return Response.json({ ok: false, error: "avisos_no_disponibles" }, { status: 503 }); }

@@ -224,4 +224,19 @@ describe("validarArtista", () => {
     expect(validarArtista({ nombre: "Los Vecinos", ciudad: "" }).datos.ciudad).toBe("San Luis Potosí");
     expect(validarArtista({ nombre: "Los Vecinos" }).datos.ciudad).toBe("San Luis Potosí");
   });
+  describe("S-01 (docs/rediseno/46): la foto solo acepta cualquier dominio cuando esAdmin viene de la sesión", () => {
+    it("sin esAdmin (por defecto), una foto de otro dominio se rechaza", () => {
+      const { errores } = validarArtista({ nombre: "Los Vecinos", foto: "https://evil.example/x.png" });
+      expect(errores.foto).toBe("La foto no se subió bien. Intenta de nuevo.");
+    });
+    it("con esAdmin: true, la misma foto de otro dominio se acepta", () => {
+      const { errores } = validarArtista({ nombre: "Los Vecinos", foto: "https://evil.example/x.png" }, { esAdmin: true });
+      expect(errores.foto).toBeUndefined();
+    });
+    it("igual a fotoActual, se acepta aunque no sea admin (ficha del CAPO con foto de otro dominio)", () => {
+      const foto = "https://catalogo-externo.example/foto.jpg";
+      const { errores } = validarArtista({ nombre: "Los Vecinos", foto }, { esAdmin: false, fotoActual: foto });
+      expect(errores.foto).toBeUndefined();
+    });
+  });
 });

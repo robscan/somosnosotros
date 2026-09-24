@@ -34,9 +34,46 @@ describe("validarEvento", () => {
   });
   it("con precio hay que decir cuánto; el enlace se completa con https", () => {
     expect(validarEvento({ ...base, gratis: "no", precio: "" }).errores.precio).toBeTruthy();
-    const { datos } = validarEvento({ ...base, gratis: "no", precio: "$150", enlace: "boletos.mx/jazz" });
+    const { datos, errores } = validarEvento({ ...base, gratis: "no", precio: "$150", enlace: "boletos.mx/jazz" });
     expect(datos.precio).toBe("$150");
     expect(datos.enlace).toBe("https://boletos.mx/jazz");
+    expect(errores.enlace).toBeUndefined();
+  });
+  describe("S-04 (docs/rediseno/46): el enlace de boletos tiene que ser una URL bien formada", () => {
+    it("con espacios, se rechaza", () => {
+      const { errores } = validarEvento({ ...base, enlace: "boletos mx/jazz" });
+      expect(errores.enlace).toBe("Ese enlace no se ve bien. Revisa que empiece con https://");
+    });
+    it("http:// (no https) se rechaza: se exige el protocolo https", () => {
+      const { errores } = validarEvento({ ...base, enlace: "http://boletos.mx/jazz" });
+      expect(errores.enlace).toBe("Ese enlace no se ve bien. Revisa que empiece con https://");
+    });
+    it("un hostname sin punto se rechaza", () => {
+      const { errores } = validarEvento({ ...base, enlace: "https://localhost/jazz" });
+      expect(errores.enlace).toBe("Ese enlace no se ve bien. Revisa que empiece con https://");
+    });
+    it("javascript: no forma una URL válida aunque el https:// se anteponga; queda rechazado, no solo inerte", () => {
+      const { errores } = validarEvento({ ...base, enlace: "javascript:alert(1)" });
+      expect(errores.enlace).toBeTruthy();
+    });
+    it("un enlace bien formado no da error", () => {
+      expect(validarEvento({ ...base, enlace: "https://boletos.mx/jazz" }).errores.enlace).toBeUndefined();
+    });
+  });
+  describe("S-01 (docs/rediseno/46): la imagen solo acepta cualquier dominio cuando esAdmin viene de la sesión", () => {
+    it("sin esAdmin (por defecto), una imagen de otro dominio se rechaza", () => {
+      const { errores } = validarEvento({ ...base, imagen: "https://evil.example/x.png" });
+      expect(errores.imagen).toBe("La imagen no se subió bien. Intenta de nuevo.");
+    });
+    it("con esAdmin: true, la misma imagen de otro dominio se acepta", () => {
+      const { errores } = validarEvento({ ...base, imagen: "https://evil.example/x.png" }, undefined, { esAdmin: true });
+      expect(errores.imagen).toBeUndefined();
+    });
+    it("igual a imagenActual, se acepta aunque no sea admin", () => {
+      const imagen = "https://catalogo-externo.example/foto.jpg";
+      const { errores } = validarEvento({ ...base, imagen }, undefined, { esAdmin: false, imagenActual: imagen });
+      expect(errores.imagen).toBeUndefined();
+    });
   });
   it("cooperación solidaria: sin cifra, se guarda como texto en precio y no pide precio", () => {
     const { datos, errores } = validarEvento({ ...base, gratis: "no", cooperacion: "si", precio: "" });
