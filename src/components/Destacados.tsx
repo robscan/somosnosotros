@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UIEvent } from "react";
 import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
-import { huboArrastre } from "@/lib/deslizar";
+import { huboArrastre, type Asistencia } from "@/lib/deslizar";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
-import { IconoPersonas } from "./ui/Iconos";
+import { IconoEstrella, IconoPersonas } from "./ui/Iconos";
 import styles from "./Destacados.module.css";
 
 /**
@@ -25,8 +25,14 @@ import styles from "./Destacados.module.css";
  * siempre. Con esto, `grande`/`redondas`/(ninguno) son el canon de los tres tamaños de tarjeta de un carril —
  * grande, mediana (el tamaño de siempre) y chica (`redondas`, la más pequeña que ya existía) — y la pantalla de
  * Inicio no necesita un componente de tarjeta propio.
+ *
+ * `estadoDe` (OL-176, bitácora 211): solo en los carriles de eventos, el mismo chip «Te interesa» del renglón
+ * (`RenglonEvento`), apilado con «N van» en la esquina inferior izquierda de la foto. `Tarjeta` no trae lo que la
+ * persona decidió (no es suyo: lo decide en la ficha, no al armar la tarjeta); en vez de eso, el llamador pasa el
+ * `estado(id)` que ya expone `useAsistenciaEnLista` — el mismo hook que le da `boton` — sin tocar ese hook ni el
+ * tipo `Tarjeta`. Sin `estadoDe` (lugares, artistas) no aparece nada.
  */
-export default function Destacados({ tarjetas, grande = false, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false, boton, verTodos }: { tarjetas: Tarjeta[]; grande?: boolean; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean; boton?: (t: Tarjeta) => EstadoBotonRenglon; verTodos?: { href: string; texto?: string } }) {
+export default function Destacados({ tarjetas, grande = false, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false, boton, estadoDe, verTodos }: { tarjetas: Tarjeta[]; grande?: boolean; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean; boton?: (t: Tarjeta) => EstadoBotonRenglon; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; texto?: string } }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -95,24 +101,38 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
         )}
       </div>
       <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${grande ? styles.grande : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
-        {ordenadas.map((t) => (
-          <li key={t.id}>
-            <Link href={t.href} className={styles.tarjeta}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-              <img src={t.foto} alt="" className={styles.foto} loading="lazy" decoding="async" />
-              <b>{t.titulo}</b>
-              <small>{t.detalle}</small>
-              {/* Va al final para que se oiga después del título; el grid lo pone sobre la foto. */}
-              {t.van > 0 && (
-                <span className={styles.van}>
-                  <IconoPersonas width={14} height={14} />
-                  {t.van === 1 ? "1 va" : `${t.van} van`}
-                </span>
-              )}
-            </Link>
-            {boton && <BotonRenglon {...boton(t)} />}
-          </li>
-        ))}
+        {ordenadas.map((t) => {
+          const interesa = estadoDe?.(t.id) === "me_interesa";
+          return (
+            <li key={t.id}>
+              <Link href={t.href} className={styles.tarjeta}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+                <img src={t.foto} alt="" className={styles.foto} loading="lazy" decoding="async" />
+                <b>{t.titulo}</b>
+                <small>{t.detalle}</small>
+                {/* Van al final para que se oigan después del título; un solo contenedor con grid-area: foto (nunca
+                    dos sueltos que se pisen), «Te interesa» y «N van» apilados abajo a la izquierda de la foto. */}
+                {(interesa || t.van > 0) && (
+                  <span className={styles.chips}>
+                    {interesa && (
+                      <span className={styles.interesa}>
+                        <IconoEstrella width={14} height={14} />
+                        Te interesa
+                      </span>
+                    )}
+                    {t.van > 0 && (
+                      <span className={styles.van}>
+                        <IconoPersonas width={14} height={14} />
+                        {t.van === 1 ? "1 va" : `${t.van} van`}
+                      </span>
+                    )}
+                  </span>
+                )}
+              </Link>
+              {boton && <BotonRenglon {...boton(t)} />}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

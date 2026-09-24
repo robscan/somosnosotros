@@ -2,24 +2,21 @@
 
 import Link from "next/link";
 import { PanelPestana, Pestana, Pestanas } from "@/components/ui/Pestanas";
-import chip from "@/components/ui/Chip.module.css";
 import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo } from "@/lib/agenda";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { tandaAcotada, siguienteTanda, TANDA_INICIAL } from "@/lib/tandas";
 import ChipCiudad from "./Ciudad";
-import { diaCorto, diaLargo, localAIso } from "@/lib/fechas";
+import { diaLargo } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import { useCentinela } from "./useCentinela";
-import { usePunteroFinoAncho } from "./usePunteroFinoAncho";
 import CargarMas from "./ui/CargarMas";
 import { EsqueletoRenglones } from "./ui/Esqueleto";
 import RenglonEvento from "./RenglonEvento";
 import { CampoBuscar } from "./ui/Buscador";
 import Cabecera from "./ui/Cabecera";
-import SelectorFecha from "./ui/SelectorFecha";
-import { IconoCalendario, IconoCaret, IconoCerrar } from "./ui/Iconos";
+import ChipFecha from "./ui/ChipFecha";
 import { useAsistenciaEnLista } from "./useAsistenciaEnLista";
 import { AvisoAbajo, useCanalDeListas } from "./useCanalDeListas";
 import type { AvisosLista } from "./useSeguirEnLista";
@@ -71,11 +68,6 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona, ante
   // primera tanda otra vez. Vive aquí (no en `AgendaLista`, diferida) para que una sola `useMemoriaPantalla` guarde
   // todo junto — dos llamadas con la misma clave se pisarían la una a la otra (OL-161).
   const [mostrados, setMostrados] = useState(TANDA_INICIAL);
-  // En escritorio con puntero fino, el chip de fecha abre la hoja propia (OL-162, bitácora 197: el selector nativo
-  // de Chrome no aparece en la app instalada en un monitor externo). En táctil y móvil, el input nativo de abajo.
-  const escritorio = usePunteroFinoAncho();
-  const [hojaFecha, setHojaFecha] = useState(false);
-  const disparadorFecha = useRef<HTMLButtonElement | null>(null);
 
   useMemoriaPantalla<Recordado>("agenda", { filtro, fecha, busqueda, buscando, mostrados }, (r) => {
     if (FILTROS.some((f) => f.clave === r.filtro)) setFiltro(r.filtro);
@@ -85,63 +77,14 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona, ante
     if (typeof r.mostrados === "number") setMostrados(r.mostrados);
   });
 
-  const ahora = new Date();
-  const hoyIso = localAIso(`${hoy}T12:00`, zona) ?? new Date().toISOString();
-
   return (
     <>
       <Cabecera
         contexto={
           <>
-            {fecha ? (
-              // Con fecha elegida el chip solo se quita: vuelve a hoy sin abrir el selector.
-              <span className={`${chip.chip} ${chip.deContexto} ${styles.marcado}`}>
-                <IconoCalendario width={16} height={16} />
-                <span>{diaCorto(localAIso(`${fecha}T12:00`, zona) ?? hoyIso, ahora, zona)}</span>
-                <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => setFecha("")}>
-                  <IconoCerrar width={18} height={18} />
-                </button>
-              </span>
-            ) : escritorio ? (
-              // Escritorio: el chip abre la hoja propia en vez del input nativo (mismo aspecto, otro selector).
-              <button
-                type="button"
-                className={`${chip.chip} ${chip.deContexto}`}
-                onClick={(e) => {
-                  disparadorFecha.current = e.currentTarget;
-                  setHojaFecha(true);
-                }}
-              >
-                <IconoCalendario width={16} height={16} />
-                <span>Seleccionar</span>
-                <IconoCaret width={12} height={12} />
-              </button>
-            ) : (
-              // Sin fecha elegida: estado vacío "Seleccionar". El chip es el selector nativo: el toque cae en él.
-              <label className={`${chip.chip} ${chip.deContexto} ${chip.chipNativo}`} htmlFor="agenda-fecha">
-                <IconoCalendario width={16} height={16} />
-                <span>Seleccionar</span>
-                <IconoCaret width={12} height={12} />
-                <input type="date" id="agenda-fecha" className={chip.encima} min={hoy} value={hoy} onChange={(e) => setFecha(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir una fecha" />
-              </label>
-            )}
-            {hojaFecha && (
-              <SelectorFecha
-                titulo="Fecha"
-                fecha={fecha || hoy}
-                min={hoy}
-                zona={zona}
-                onListo={(f) => {
-                  setFecha(f === hoy ? "" : f);
-                  setHojaFecha(false);
-                  disparadorFecha.current?.focus();
-                }}
-                onCerrar={() => {
-                  setHojaFecha(false);
-                  disparadorFecha.current?.focus();
-                }}
-              />
-            )}
+            {/* ui/ChipFecha (docs/rediseno/45, OL-174): el mismo chip que Lugares — solo el ícono sin elegir,
+                "mié 30 sep" con fecha elegida, sin "Hoy"/"Mañana". */}
+            <ChipFecha fecha={fecha} onCambiar={setFecha} hoy={hoy} zona={zona} />
             <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/agenda" : `/agenda?ciudad=${c.slug}`)} />
           </>
         }

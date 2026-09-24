@@ -1,0 +1,46 @@
+/* Mapa de fondo de la pantalla completa "¿Dónde es?" (OL-173, docs/rediseno/43): llena el hueco entre el campo y
+   la barra/panel de abajo, nunca la pantalla entera (ese sitio ya lo usan la cabecera y el campo). */
+.mapa {
+  position: absolute;
+  inset: 0;
+  background: var(--fondo-mapa);
+}
+.lienzo {
+  position: absolute;
+  inset: 0;
+}
+.aviso {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 80vw;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--vidrio);
+  color: var(--texto-suave);
+  font-size: var(--letra-md);
+  text-align: center;
+  box-shadow: var(--sombra);
+}
+
+/* La persona: punto azul con halo (mismo dibujo que Mapa.module.css, copiado aquí para no tocar Mapa.tsx mientras
+   OL-174 sigue en vuelo con ese archivo; ver la nota en HojaDondeEs.tsx). */
+.yo {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(26, 115, 232, 0.18);
+  pointer-events: none;
+}
+.yo::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1a73e8;
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
