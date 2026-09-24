@@ -114,8 +114,15 @@
   /* La hoja "Agregar lugar", segunda versión (OL-182): a media pantalla, pegada abajo (sobre el teclado cuando lo
      hay), deja el mapa visible arriba con el pin -nunca tapa el campo de dirección ni "Estoy aquí" (segundo
      defecto reportado por el founder: "no me deja especificar la ubicación"). */
-  .hoja-agregar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; display: none; flex-direction: column; padding: 10px 20px calc(20px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); transition: bottom .12s ease; }
+  .hoja-agregar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; display: none; flex-direction: column; padding: 10px 20px calc(20px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); transition: bottom .12s ease, top .12s ease; }
   .hoja-agregar.visible { display: flex; }
+  /* Con "Dirección" enfocada y el teclado abierto (regla dura del founder, 2026-09-24: "las sugerencias van
+     DEBAJO del campo en uso, nunca encima"): la hoja se estira hacia arriba (tapa más mapa mientras se escribe) y
+     se hace desplazable por dentro; el scroll interno deja el campo "Dirección" arriba del todo -título y
+     "Nombre" salen por encima, fuera de la vista- para que SIEMPRE quede espacio debajo y la lista nunca tenga
+     que abrir hacia arriba sobre el propio campo. Se recupera (top:auto, la altura vuelve a su contenido) al
+     cerrarse las sugerencias. */
+  .hoja-agregar.expandida { top: 8px; overflow-y: auto; }
   .asa { align-self: center; width: 36px; height: 4px; margin-bottom: 10px; border-radius: 999px; background: var(--borde); }
   .hoja-agregar h3 { font-size: 16px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 10px; }
   .campo-hoja { display: block; margin-bottom: 10px; }
@@ -363,6 +370,7 @@ var hojaAgregar = document.getElementById("hojaAgregar");
 var nombreHoja = document.getElementById("nombreHoja");
 var direccionHoja = document.getElementById("direccionHoja");
 var listaDireccion = document.getElementById("listaDireccion");
+var campoDireccionWrap = document.getElementById("campoDireccionWrap");
 var privadoBtn = document.getElementById("privadoBtn");
 var btnGuardarHoja = document.getElementById("btnGuardarHoja");
 var ayudaGuardar = document.getElementById("ayudaGuardar");
@@ -417,10 +425,37 @@ function colocarLista(el, campoEl, pisoLocal) {
   el.style.maxHeight = Math.min(260, disponible) + "px";
 }
 
+/**
+ * Con "Dirección" enfocada Y sus sugerencias abiertas: la hoja se recoloca (`top` sube casi hasta el propio campo
+ * principal) y se hace desplazable por dentro, con el scroll puesto para que el campo "Dirección" quede arriba
+ * del todo -título y "Nombre" salen de la vista-. Corrección del gestor (revisión de OL-182, parte 1): la lista
+ * de sugerencias NUNCA debe abrir encima del campo que se está usando (MEMORIA_GESTOR.md, 2026-09-24, "si
+ * sugieres algo sea debajo del campo que estoy usando"); en vez de dejar que `colocarLista` decida hacia arriba
+ * cuando no hay sitio abajo, aquí se le DA sitio abajo -moviendo lo que sobra hacia arriba y fuera de la vista-,
+ * para que la propia lógica de siempre (mismo `colocarLista`, sin casos especiales) elija "abajo" con margen de
+ * sobra. Si aun así no entran los tres renglones, la lista muestra los que quepan y se desplaza por dentro
+ * (`overflow-y: auto`, ya lo tenía).
+ */
+function actualizarExpansionHoja() {
+  var expandir = estado.hoja && estado.listaDireccion;
+  hojaAgregar.classList.toggle("expandida", expandir);
+  if (expandir) {
+    hojaAgregar.scrollTop = Math.max(0, campoDireccionWrap.offsetTop - 10);
+  } else {
+    hojaAgregar.style.top = "";
+    hojaAgregar.scrollTop = 0;
+  }
+  // Mientras la hoja está así de estirada, "Estoy aquí" quedaría flotando sobre un campo de texto -no hay nada
+  // útil que tocar en el mapa en ese instante, con el mapa casi tapado-: se oculta y vuelve al cerrar la lista.
+  btnEstoyAqui.style.display = expandir ? "none" : "";
+}
+
 function posicionar() {
   var tecladoAltoPx = estado.teclado ? 300 : 0;
   barraAcciones.style.bottom = tecladoAltoPx + "px";
   hojaAgregar.style.bottom = tecladoAltoPx + "px";
+
+  actualizarExpansionHoja();
 
   // "Estoy aquí" (doc 43, segunda versión): encima de la barra si está visible, o encima de la hoja si está
   // abierta -nunca debajo de ninguna de las dos.
@@ -442,8 +477,8 @@ function posicionar() {
     colocarLista(listaFlotante, campoBuscar.closest(".campo-buscar"), pisoLista);
   }
 
-  // La lista de direcciones dentro de la hoja: anclada al campo "Dirección", nunca tapada por el teclado (mismo
-  // mecanismo: si no cabe abajo antes del teclado, abre hacia arriba, dentro de la propia hoja).
+  // La lista de direcciones dentro de la hoja: anclada al campo "Dirección". Con la hoja ya expandida y el
+  // scroll puesto arriba, el mismo `colocarLista` de siempre encuentra sitio de sobra abajo (sin caso especial).
   if (estado.listaDireccion && estado.hoja) {
     var mapaR2 = medir(mapaLleno);
     var pisoDir = mapaR2.height - tecladoAltoPx - 8;

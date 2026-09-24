@@ -207,6 +207,34 @@ encontró en producción en su iPhone, 2026-09-24, sobre la hoja «¿Dónde es?�
   de dirección de la hoja, revisar la especificidad de cualquier selector `> span`/`> input` genérico antes de
   anidar un segundo campo dentro.
 
+### Corrección del gestor a la primera entrega: la lista de dirección abría encima del campo
+
+Revisión del gestor sobre la primera entrega del prototipo: en `proto-03-sugerencias-direccion.png` la lista abría
+hacia ARRIBA y tapaba el propio campo «Dirección» que se estaba usando (se veía «Nombre», luego la lista, y el
+campo quedaba debajo). Va contra una regla dura del founder, 2026-09-24 (`MEMORIA_GESTOR.md`): «si sugieres algo
+sea debajo del campo que estoy usando» — una lista de sugerencias nunca tapa el campo con el foco.
+
+Causa: el campo «Dirección» de la hoja queda bastante abajo en la pantalla (la hoja ya está pegada sobre el
+teclado) y el espacio libre hasta el teclado no llegaba a los 120 px que `calcularPosicion` (ver
+`ListaFlotante.tsx`) pide para abrir hacia abajo; con menos, decide abrir hacia arriba — la misma lógica que ya
+usa la lista principal (estado a), donde SÍ es correcta (ahí no hay ningún campo debajo que tapar).
+
+**Corrección** (no cambia `calcularPosicion`, cambia el layout que le llega): al abrirse las sugerencias de
+dirección, la hoja gana la clase `expandida` (`top: 8px`, casi hasta el campo principal, `overflow-y: auto`) y se
+le pone el `scrollTop` necesario para que el campo «Dirección» quede lo más arriba posible dentro de esa hoja ya
+más alta — el mismo criterio que `scrollIntoView({ block: "start" })`. Con eso, el espacio libre hasta el teclado
+pasa a ser el de una hoja casi tan alta como el hueco disponible, muy por encima de los 120 px, y la MISMA
+`colocarLista` (sin ningún caso especial para «nunca arriba») elige «abajo» por sí sola, con margen de sobra.
+«Estoy aquí» se oculta mientras la hoja está así de estirada (no hay nada útil que tocar en el mapa, casi tapado,
+mientras se escribe una dirección) y todo vuelve a su tamaño normal al cerrarse la lista.
+
+Medido en el propio prototipo (390×844, teclado 300 px): la hoja expandida mide 364 px de alto visible y 383 px de
+contenido — sí hace falta un poco de scroll (19 px, el máximo posible), pero no tanto como para sacar «Nombre» de
+la vista del todo; con un contenido más alto (una dirección larga que ocupe dos líneas, o un teclado con la barra
+de autocompletar de iOS, más alta que los 300 px simulados aquí) el mismo mecanismo desplazaría más, hasta sacar
+también el título y «Nombre» -como describió el gestor-, siempre dejando sitio abajo. Es decir: el ajuste es
+adaptable al espacio real, no un valor fijo.
+
 ### Capturas (`docs/rediseno/capturas-217/`), 390×844 (y 320×844 la (b))
 
 Chromium real (`/opt/pw-browsers/chromium` vía `playwright-core`), Bricolage Grotesque inyectada desde el woff2
@@ -221,7 +249,8 @@ elemento con el borde fuera de su ancho (comprobado por script antes de cada cap
   «Estoy aquí» sobre la hoja, «Nombre» prellenado, «Dirección» vacía, interruptor apagado, «Guardar y usar este
   lugar» apagado con el porqué debajo.
 - **`proto-03-sugerencias-direccion.png`:** el campo «Dirección» de la hoja con «Av. Indus» escrito y sus tres
-  sugerencias abiertas (arriba del campo, con el teclado simulado debajo de la hoja).
+  sugerencias abiertas DEBAJO del campo (nunca encima: corrección de esta misma parte, ver más arriba), con el
+  teclado simulado debajo de la hoja.
 - **`proto-04-punto-fijado.png`:** dirección elegida («Av. Industrias 101, Zona Industrial»), pin violeta en el
   mapa (arriba, visible, sin que la hoja lo tape), «Guardar y usar este lugar» encendido.
 - **`proto-05-agregar-sin-punto-320.png`:** el estado (b) a 320 px — el peor caso de ancho, sin desbordes.
