@@ -130,24 +130,47 @@ filtraba, además la consulta corre sin sesión de verdad). `VistaLugares.tsx`/`
   su propia lista y del campo (`ancla`), y el mapa no es ninguno de los dos -comprobado, no hizo falta tocar nada
   ahí.
 
-### Hallazgo durante las capturas: el propio botón «Agregar» puede no responder a un toque simulado
+### Hallazgo durante las capturas, CORREGIDO en esta misma pieza: el botón «Agregar» no respondía a un toque real
 
 Reproducido con Chromium real (Playwright, `.click()` con mousedown/mouseup/click reales y separados, no
-sintéticos): tocar «Agregar «nombre»» a veces no abre el panel. Causa, medida: el botón vive DENTRO de
-`.barraAcciones`, que NO está contenida ni en la lista flotante (`listaRef`) ni en el campo (`ancla`) de
-`ui/ListaFlotante` -así que, para su propio "tocar fuera", el botón "Agregar" cuenta como "fuera"-; el
-`mousedown` sobre el botón dispara primero el cierre de la lista/barra (React re-renderiza y el botón desaparece
-del DOM) y para cuando llega el evento `click` (después de `mouseup`, por el modelo de eventos del navegador) ya
-no hay nada que lo reciba, así que `abrirAgregar` nunca se ejecuta. Con un solo `click` sintético
-(`dispatchEvent("click")`, sin `mousedown`/`mouseup` reales de por medio) el panel sí abre siempre.
+sintéticos): tocar «Agregar «nombre»» a veces no abría el panel. Causa, medida: el botón vive DENTRO de
+`.barraAcciones`, que NO estaba contenida ni en la lista flotante (`listaRef`) ni en el campo (`ancla`) de
+`ui/ListaFlotante` -así que, para su propio "tocar fuera", el botón "Agregar" contaba como "fuera"-; el
+`mousedown` sobre el botón disparaba primero el cierre de la lista/barra (React re-renderiza y el botón desaparece
+del DOM) y para cuando llegaba el evento `click` (después de `mouseup`, por el modelo de eventos del navegador) ya
+no había nada que lo recibiera, así que `abrirAgregar` nunca se ejecutaba. Anterior a esta pieza (`ui/ListaFlotante`
+y la posición de `.barraAcciones` no se habían tocado hasta ahora; el mismo problema aplicaba igual a los DOS
+botones de la barra de OL-173), pero el gestor pidió corregirlo AQUÍ: con un solo botón, un toque que se pierde
+deja a la persona sin ninguna salida para registrar un lugar nuevo desde esta hoja.
 
-**Esto es anterior a esta pieza**: `ui/ListaFlotante` y la posición de `.barraAcciones` (fuera de `listaRef`/
-`ancla`) no se tocaron aquí, y el mismo problema aplicaría igual de antes a los DOS botones de la barra de
-OL-173. No se corrige en esta pieza (tocar `ui/ListaFlotante` es un componente canon compartido, fuera del
-alcance del encargo) pero **es más grave ahora que antes**: con un solo botón, si de verdad falla en el iPhone
-del founder, no hay ninguna otra salida para registrar un lugar nuevo desde esta hoja. El founder debe probarlo
-con un toque real (no un clic de mouse) al validar esta pieza; si falla, es una pieza aparte sobre
-`ui/ListaFlotante.tsx` (contener la barra dentro de su "ancla" efectiva, o que la barra no cuente como "fuera").
+**Corrección** (`src/components/ui/ListaFlotante.tsx`): nueva prop opcional `dentro?: RefObject<HTMLElement |
+null>[]` -elementos que también cuentan como "dentro" para "tocar fuera", aunque vivan fuera de la lista y de su
+ancla. `alTocarFuera` los comprueba con una función pura nueva y exportada, `tocoDentro(objetivo, contenedores)`
+(probada sin DOM real en `ListaFlotante.test.ts`, con objetos de mentira que solo implementan `.contains`); la
+última versión de `dentro` se lee de un `ref` actualizado cada render (no entra en las dependencias del efecto:
+un array nuevo por render, aunque los refs de dentro sean siempre los mismos, no debe reinstalar el listener).
+`HojaDondeEs.tsx`: `barraRef` en `.barraAcciones`, pasado como `dentro={[barraRef]}` a `<ListaFlotante>`. Con
+esto, el `mousedown` en «Agregar» ya no cierra nada por su cuenta; `abrirAgregar` abre el panel, que a su vez
+cierra la lista como ya hacía (`modo` pasa a `"agregar"`, `ListaFlotante` deja de estar `abierta`).
+
+**Prueba** (`ListaFlotante.test.ts`, 4 nuevas): un `mousedown` dentro de uno de los contenedores de `dentro` no
+cuenta como "fuera"; fuera de todos, sí; un contenedor `null` (una ref sin `.current` todavía) no rompe la
+comprobación; sin ningún `dentro` (el valor por omisión), siempre "fuera" -mismo comportamiento que antes de esta
+corrección, para no cambiar ninguna otra pantalla que use `ListaFlotante` sin pasar la prop nueva.
+
+**Comprobado con Chromium real, 8 clicks reales seguidos** (mousedown+mouseup+click, no `dispatchEvent`): las 8
+veces el panel abrió. Captura `07-agregar-abre-con-click-real.png`.
+
+## 4bis. Ficha de un lugar privado: sin el círculo «Compartir» (añadido al encargo, founder, 2026-09-24)
+
+«si, esconde si no sirve botón de compartir». El enlace de un lugar privado no le abre a nadie más que a su autor
+y a la administración (la política de lectura lo esconde), así que compartirlo no sirve. `src/app/lugares/[id]/page.tsx`:
+`<BotonCompartir>` dentro de `{!lugar.privado && (…)}`; «Cómo llegar» se queda igual. El conteo que decide el
+reparto (`repartoDeAcciones`, `src/lib/ficha.ts`, sin tocar) pasa de `2 + redes.length` a `(lugar.privado ? 1 : 2)
++ redes.length`, para que un lugar privado sin redes (el caso normal) quede con una sola acción "a la izquierda"
+(`repartoDeAcciones(1) === "izquierda"`, ya probado en `ficha.test.ts`) en vez de en el hueco que dejaría
+"repartidas" pensado para dos. Sin prueba unitaria nueva: no hay ninguna función pura nueva que probar -el cambio
+es la condición de un `<BotonCompartir>` en JSX y el número que ya se pasaba a una función pura sin tocar.
 
 ## 4. Sugerencias y consultas de lugares (`eventos/nuevo/page.tsx`, `eventos/[id]/editar/page.tsx`)
 
@@ -172,9 +195,10 @@ npm run lint && npm run typecheck && npm test && npm run build
 ```
 
 Los cuatro en verde: lint sin errores (1 warning preexistente y sin relación,
-`docs/diseno/logotipo/iconos-sn.mjs`); typecheck limpio; **1096 pruebas, 91 archivos** (7 nuevas en
-`acciones.desde-evento.test.ts` -las 5 que ya había más 2 nuevas para privado-, sobre las 1094 que ya traía la
-base de OL-173, ninguna rota); build completo, sin la ruta del arnés (ver abajo) en el árbol de rutas final.
+`docs/diseno/logotipo/iconos-sn.mjs`); typecheck limpio; **1100 pruebas, 91 archivos** (7 nuevas en
+`acciones.desde-evento.test.ts` -las 5 que ya había más 2 nuevas para privado- y 4 nuevas en `ListaFlotante.test.ts`
+-`tocoDentro`, corrección del botón «Agregar», ver abajo-, sobre las 1094 que ya traía la base de OL-173, ninguna
+rota); build completo, sin la ruta del arnés (ver abajo) en el árbol de rutas final.
 
 ### Banco Postgres (`npm run test:db`)
 
@@ -204,6 +228,9 @@ tocar- más las de este archivo nuevo.)
 
 ## Capturas reales (`docs/rediseno/capturas-214/`), 390×844 (320×844 la 06)
 
+(01–06 de la primera entrega; 07 y la 05 rehecha, de la corrección del botón «Agregar» pedida por el gestor -ver
+más arriba-: el arnés se rearmó igual para esas dos, con el mismo cuidado, y se volvió a borrar entero.)
+
 `next build && next start` (puerto 4214; sin procesos viejos propios que matar), Chromium real de
 `/opt/pw-browsers/chromium` vía `playwright-core` (instalado en el scratchpad de la sesión, nunca en el repo). Sin
 `--ignore-certificate-errors`. `document.fonts` con al menos una variante de "Bricolage Grotesque" en
@@ -222,7 +249,7 @@ con las clases reales de `Ficha.module.css`/`FichaLista.module.css` y el letrero
 «Cierre»).
 
 En cada captura: sin `scrollWidth` mayor que el ancho de la ventana y ningún elemento con el borde derecho más
-allá de ese ancho (medido con un script propio antes de cada `screenshot`; las seis salieron limpias).
+allá de ese ancho (medido con un script propio antes de cada `screenshot`; las siete salieron limpias).
 
 - **`01-sin-coincidencias-boton-unico.png`:** «El Teatrito de la esquina» sin coincidencias, aviso «"El Teatrito
   de la esquina" no está registrado. Agrégalo, o toca el mapa para ubicarlo.», un solo botón «Agregar "El
@@ -235,9 +262,14 @@ allá de ese ancho (medido con un script propio antes de cada `screenshot`; las 
 - **`04-donde-lugar-privado-reservado.png`:** el renglón «Dónde» del formulario de evento con «El Teatrito de la
   esquina · reservado» (nombre visible, sin dirección: el mismo dibujo que cualquier sitio reservado de hoy).
 - **`05-ficha-lugar-privado.png`:** ficha de «Cochera de Lupe» con el letrero «Lugar privado: solo lo ves tú. No
-  sale en el mapa ni en la lista para nadie más.» arriba de la portada.
+  sale en el mapa ni en la lista para nadie más.» arriba de la portada, y **sin el círculo «Compartir»** (founder,
+  añadido al encargo, 2026-09-24: «esconde si no sirve botón de compartir»; solo «Cómo llegar», a la izquierda —
+  `repartoDeAcciones(1)` ya daba "izquierda", sin cambios en `src/lib/ficha.ts`).
 - **`06-320px-peor-caso.png`:** lo mismo que 02 a 320 px: la marca «PRIVADO» y la dirección larga (dos líneas)
   caben sin desbordar; el botón «Agregar "Cochera" como lugar» con el texto recortado a lo que cabe.
+- **`07-agregar-abre-con-click-real.png`:** el panel «Agregar lugar» abierto justo después de un `click` real de
+  Chromium (no `dispatchEvent`) sobre el botón «Agregar «El Teatrito de la esquina» como lugar» -repetido 8 veces
+  seguidas, las 8 abrió- prueba de la corrección del hallazgo de arriba.
 
 ## Correos en el diff
 

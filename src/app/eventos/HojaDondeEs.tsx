@@ -132,6 +132,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   // parecido siempre es público) y se avisa, en vez de tratarlo como privado (founder, 2026-09-24, OL-179).
   const [avisoPublico, setAvisoPublico] = useState<string | null>(null);
   const campoRef = useRef<HTMLDivElement>(null);
+  // La barra de acciones vive fuera del campo y de la lista flotante: sin esto, su propio "tocar fuera" (gestor,
+  // revisión de OL-179, bitácora 214) la cerraba con el mousedown del propio botón "Agregar", antes de que le
+  // llegara el click.
+  const barraRef = useRef<HTMLDivElement>(null);
   const sesion = useRef("");
   const versionPin = useRef(0);
   const versionBusqueda = useRef(0);
@@ -435,7 +439,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               {avisoPublico && <span className={styles.notaAjuste}>{avisoPublico}</span>}
             </div>
           )}
-          <ListaFlotante abierta={listaAbierta} onCerrar={() => setCerradaParaTexto(q)} ancla={campoRef} id="lista-donde-es" etiqueta="Lugares y direcciones">
+          <ListaFlotante abierta={listaAbierta} onCerrar={() => setCerradaParaTexto(q)} ancla={campoRef} dentro={[barraRef]} id="lista-donde-es" etiqueta="Lugares y direcciones">
             {modo === "resultados" &&
               combinados.map((r) =>
                 r.tipo === "lugar" ? (
@@ -512,7 +516,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           {barraVisible && (
             // Un solo botón (founder, 2026-09-24: "en el paso anterior solo mostremos un botón de agregar"): el
             // mapa ya se puede tocar siempre, sin un botón aparte para "buscar sin agregar" (el aviso lo dice).
-            <div className={styles.barraAcciones} style={{ bottom: bottomBarra }}>
+            <div ref={barraRef} className={styles.barraAcciones} style={{ bottom: bottomBarra }}>
               <button type="button" className={styles.accionAgregar} onClick={abrirAgregar}>
                 <IconoMas width={18} height={18} />
                 <span>{textoAgregar}</span>
