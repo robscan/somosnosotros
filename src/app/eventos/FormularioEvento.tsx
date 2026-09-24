@@ -129,6 +129,10 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const modoInicial: ModoSitio = evento?.sitio_reservado ? "reservado" : evento?.sitio_texto ? "otro" : "lugar";
   const [modoSitio, setModoSitio] = useState<ModoSitio>(modoInicial);
   const [lugarId, setLugarId] = useState(evento?.lugar_id ?? lugarInicial ?? (lugares.length === 1 ? lugares[0].id : ""));
+  // "Agregar lugar" (OL-173, docs/rediseno/43) registra en línea, sin navegar a /lugares/nuevo: el lugar nuevo
+  // todavía no está en `lugares` (la trajo el primer pintado del servidor), así que esta lista propia lo recibe de
+  // vuelta de la hoja y lo agrega, para que "Dónde" lo encuentre igual que a cualquier lugar ya registrado.
+  const [listaLugares, setListaLugares] = useState<LugarResumen[]>(lugares);
   const [otro, setOtro] = useState<OtroSitio>(() => ({
     reservado: modoInicial === "reservado",
     sitioTexto: evento?.sitio_texto ?? "",
@@ -346,7 +350,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlace, errores.imagen, errorImagen);
   const hojaSalir = useSalirSinPublicar(formRef, modo !== "editar", olvidarBorrador);
 
-  const lugar = lugares.find((l) => l.id === lugarId);
+  const lugar = listaLugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && esAlta;
   const dondeResuelto = modoSitio === "lugar" ? !!lugar : sitioListo(otro);
   // Vacío de verdad (nada escrito) contra leído-pendiente-de-confirmar (hay nombre/dirección, pero el pin no está
@@ -364,13 +368,14 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const valorCuanto = gratis ? "Gratis" : cooperacion ? COOPERACION_SOLIDARIA : precio.trim() || "Con costo";
   const valorQuien = quien.length ? unirNombres(quien.map((q) => (q.id && mios.some((m) => m.id === q.id) ? `${q.nombre} · tú` : q.nombre))) : "Sin artista";
 
-  /** Lo que sale de la hoja: un lugar registrado, o un sitio (reservado o no). */
-  function elegirLugar(id: string) {
+  /** Lo que sale de la hoja: un lugar registrado (`nuevo` si acaba de crearse ahí mismo), o un sitio (reservado o no). */
+  function elegirLugar(id: string, nuevo?: LugarResumen) {
     gestos.current.tocar("donde");
+    if (nuevo) setListaLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo]));
     setModoSitio("lugar");
     setLugarId(id);
     setHoja(false);
-    resugerir(sugerida, cuando, setInicio, setFin, zonaSegura(lugares.find((l) => l.id === id)?.zona));
+    resugerir(sugerida, cuando, setInicio, setFin, zonaSegura((nuevo ?? listaLugares.find((l) => l.id === id))?.zona));
   }
   function cambiarOtro(o: OtroSitio, desdePin = false) {
     const version = gestos.current.tocar("donde");
@@ -778,7 +783,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
       </form>
       {hoja && (
         <HojaDondeEs
-          lugares={lugares}
+          lugares={listaLugares}
           modoSitio={modoSitio}
           lugarId={lugarId}
           otro={otro}

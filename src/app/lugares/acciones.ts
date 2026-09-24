@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
+import { deducirTipo } from "@/lib/buscarLugares";
 import { esUuid } from "@/lib/formulario";
 import { rutaSegura } from "@/lib/rutas";
 import { hrefLugar, validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
@@ -59,6 +60,34 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
   const siguiente = rutaSegura(formData.get("siguiente") as string | null, "");
   if (siguiente) return { ok: true, id: data.id, volver: siguiente };
   redirect(`${hrefLugar(data)}?nuevo=1`, RedirectType.replace);
+}
+
+export type ResultadoLugarDesdeEvento = { ok: true; id: string; reutilizado: boolean } | { ok: false; error: string };
+
+/**
+ * "Agregar lugar" desde la pantalla completa "¿Dónde es?" del alta de evento (OL-173, docs/rediseno/43, paso 6):
+ * registro automático, salvo que la persona marque "Es un lugar privado, no registrarlo" (esa rama nunca llama
+ * aquí; se queda en el propio evento, como hoy "Es en otro sitio"). Reutiliza `crearLugar` entero -misma
+ * validación, mismos 150 m ("un lugar es un lugar", docs/DEFINICION.md)-, así que si ya hay un lugar parecido no
+ * se duplica: se usa el que ya existe (`reutilizado: true`) en vez de fallar o preguntar de nuevo, porque la pantalla
+ * de agregar no tiene espacio para el "¿es este?" completo de `/lugares/nuevo` (decisión de esta pieza, el doc 43
+ * no lo cubre). El tipo no lo pide el panel corto (docs/rediseno/43: solo nombre, dirección y el interruptor): se
+ * deduce del nombre, igual que hace `FormularioLugar` cuando nadie lo elige a mano; sin pista, "otro".
+ * `siguiente` se manda solo para que `crearLugar` NO redirija (aquí se usa el resultado en línea, sin navegar).
+ */
+export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: string; lat: number; lng: number; ciudad: string; volverA: string }): Promise<ResultadoLugarDesdeEvento> {
+  const fd = new FormData();
+  fd.set("nombre", datos.nombre);
+  fd.set("tipo", deducirTipo(datos.nombre) ?? "otro");
+  fd.set("direccion", datos.direccion);
+  fd.set("lat", String(datos.lat));
+  fd.set("lng", String(datos.lng));
+  fd.set("ciudad", datos.ciudad);
+  fd.set("siguiente", rutaSegura(datos.volverA, "/eventos/nuevo"));
+  const r = await crearLugar(null, fd);
+  if (r.ok) return { ok: true, id: r.id, reutilizado: false };
+  if (r.parecidos && r.parecidos.length > 0) return { ok: true, id: r.parecidos[0].id, reutilizado: true };
+  return { ok: false, error: r.general ?? Object.values(r.errores)[0] ?? "No se pudo guardar el lugar. Intenta de nuevo." };
 }
 
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {

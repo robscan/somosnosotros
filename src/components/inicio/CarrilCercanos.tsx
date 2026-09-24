@@ -50,7 +50,7 @@ export default function CarrilCercanos({ excluirPromise, avisos, verTodosHref }:
     : [];
   return (
     <>
-      <Destacados tarjetas={eventos.map((e) => tarjetaEvento(e, ahora))} memoria="inicio-cercanos" encabezado="Eventos cercanos esta semana" verTodos={{ href: verTodosHref }} boton={(t) => asistencia.boton(t)} />
+      <Destacados tarjetas={eventos.map((e) => tarjetaEvento(e, ahora))} memoria="inicio-cercanos" encabezado="Eventos cercanos esta semana" verTodos={{ href: verTodosHref }} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
       {asistencia.extras}
     </>
   );

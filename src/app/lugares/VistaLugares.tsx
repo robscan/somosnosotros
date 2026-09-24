@@ -16,14 +16,15 @@ import Hoja from "@/components/ui/Hoja";
 import Mapa from "@/components/Mapa";
 import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
-import Cabecera, { BotonRedondo } from "@/components/ui/Cabecera";
+import Cabecera from "@/components/ui/Cabecera";
+import ChipFecha from "@/components/ui/ChipFecha";
 import { IconoCalendario, IconoLista, IconoMapa, IconoUbicacion } from "@/components/ui/Iconos";
 import { useAltoHoja } from "@/components/ui/useAltoHoja";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado, Tarjeta } from "@/lib/destacados";
 import { SIN_FOTO } from "@/lib/imagen";
 import ChipCiudad from "@/components/Ciudad";
-import { calleCorta, etiquetaTipo, filtrarLugares, hrefLugar, lugaresEncuadreInicial, ordenarLugares, textoProximoPin, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
+import { calleCorta, etiquetaTipo, filtrarLugares, hrefLugar, lugaresConEventoElDia, lugaresEncuadreInicial, ordenarLugares, textoProximoPin, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import { PanelPestana, Pestana, PestanaEnlace, Pestanas } from "@/components/ui/Pestanas";
 import { CampoBuscar } from "@/components/ui/Buscador";
@@ -71,6 +72,11 @@ type Props = {
   extras: Promise<ExtrasLugares>;
   /** Con qué texto abrir la búsqueda ya escrita (el "Ver todos" del grupo Lugares del buscador único, OL-153). */
   busquedaInicial?: string;
+  /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan); mínimo elegible
+   *  del chip de fecha (docs/rediseno/45, OL-174). */
+  hoy: string;
+  /** Zona horaria de la ciudad (la de "hoy" y el chip de fecha). */
+  zona: string;
 };
 
 /**
@@ -79,12 +85,15 @@ type Props = {
  * ubicación al tocarlo, no la guarda y es exclusiva con el tipo: en la lista ordena por distancia, en el mapa centra
  * en el punto azul. Decisiones en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/cabeceras.html.
  */
-export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, tipo, barra, extras, busquedaInicial }: Props) {
+export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, tipo, barra, extras, busquedaInicial, hoy, zona }: Props) {
   const router = useRouter();
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [punto, setPunto] = useState<Punto | null>(null);
   const [vez, setVez] = useState(0);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
+  // El chip de fecha (docs/rediseno/45, OL-174, mismo componente que Agenda): filtra los pines del Mapa; la Lista
+  // no filtra por fecha (pedido literal del founder — el chip en el mapa es para filtrar el mapa).
+  const [fecha, setFecha] = useState("");
   // El tipo elegido vive en la URL y vale para las dos vistas: cambiar de Mapa a Lista no lo pierde. Las pestañas
   // (Todos, Cercanos, tipos) solo necesitan `lugares`, que ya llega resuelto: pintan al instante, con la barra
   // (OL-161, bitácora 196) — antes esperaban también destacados, la tira de la semana y quién sigue qué.
@@ -100,10 +109,11 @@ export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, 
   const [buscando, setBuscando] = useState(!!busquedaInicial);
   // Al volver de una ficha, la misma vista, lo escrito y el scroll de la lista (el tipo ya viene en la URL; la tira
   // de letras no selecciona nada que recordar: es un acceso directo, no un filtro, corrección del founder, 2026-09-19).
-  useMemoriaPantalla<{ vista: Vista; busqueda: string }>("lugares", { vista, busqueda }, (r) => {
+  useMemoriaPantalla<{ vista: Vista; busqueda: string; fecha: string }>("lugares", { vista, busqueda, fecha }, (r) => {
     if (r.vista === "mapa" || r.vista === "lista") setVista(r.vista);
     if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
     setBuscando(!!r.busqueda);
+    if (typeof r.fecha === "string") setFecha(r.fecha);
   });
   // Lo que `CuerpoLugares` rellena al montar, para que un toque en la Cabecera (buscar, recentrar) actúe en el
   // mismo instante en vez de esperar un efecto reaccionando al cambio de prop (ver el tipo `InteraccionMapa`).
@@ -160,17 +170,12 @@ export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, 
       <main className={`raiz ${vista === "mapa" ? styles.sinRelleno : ""}`}>
         {barra}
         <Cabecera
-          contexto={chipCiudad}
-          acciones={
-            vista === "mapa" ? (
-              <BotonRedondo etiqueta="Ver la lista" onClick={() => cambiarVista("lista")}>
-                <IconoLista />
-              </BotonRedondo>
-            ) : (
-              <BotonRedondo etiqueta="Ver el mapa" onClick={() => cambiarVista("mapa")}>
-                <IconoMapa />
-              </BotonRedondo>
-            )
+          contexto={
+            <>
+              {/* ui/ChipFecha (docs/rediseno/45, OL-174): antes del chip de ciudad, mismo orden que Agenda. */}
+              <ChipFecha fecha={fecha} onCambiar={setFecha} hoy={hoy} zona={zona} />
+              {chipCiudad}
+            </>
           }
           onBuscar={lugares.length >= UMBRAL_BUSCAR_LUGARES ? () => setBuscando(true) : undefined}
           campo={buscando && <CampoBuscar placeholder="Buscar un lugar" ariaLabel="Buscar un lugar por nombre" valor={busqueda} onCambiar={buscar} onCerrar={() => { setBuscando(false); buscar(""); }} autoFocus />}
@@ -208,6 +213,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, 
             ciudad={ciudad}
             tipo={tipo}
             vista={vista}
+            fecha={fecha}
             busqueda={busqueda}
             punto={punto}
             vez={vez}
@@ -215,6 +221,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, 
             geoPidiendo={geo === "pidiendo"}
             onCerrarGeo={() => setGeo("sin-pedir")}
             onUbicacion={centrarEnMi}
+            onCambiarVista={cambiarVista}
           />
         </Suspense>
 
@@ -244,6 +251,7 @@ function CuerpoLugares({
   ciudad,
   tipo,
   vista,
+  fecha,
   busqueda,
   punto,
   vez,
@@ -251,6 +259,7 @@ function CuerpoLugares({
   geoPidiendo,
   onCerrarGeo,
   onUbicacion,
+  onCambiarVista,
 }: {
   mapaRef: RefObject<InteraccionMapa | null>;
   extras: Promise<ExtrasLugares>;
@@ -258,6 +267,8 @@ function CuerpoLugares({
   ciudad: Ciudad;
   tipo: string | null;
   vista: Vista;
+  /** El chip de fecha de la cabecera (docs/rediseno/45, OL-174): "" = sin elegir. Solo filtra el Mapa. */
+  fecha: string;
   busqueda: string;
   punto: Punto | null;
   vez: number;
@@ -265,10 +276,14 @@ function CuerpoLugares({
   geoPidiendo: boolean;
   onCerrarGeo: () => void;
   onUbicacion: () => void;
+  onCambiarVista: (v: Vista) => void;
 }) {
   const extra = use(extras);
   const [elegido, setElegido] = useState<LugarLista | null>(null);
   const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
+  // El chip de fecha filtra solo el Mapa (pedido literal del founder: "la idea de traer chip de fecha a mapa es
+  // para filtrar por fecha precisamente"); la Lista no lo usa (docs/rediseno/45).
+  const pinesDelDia = useMemo(() => (fecha ? lugaresConEventoElDia(enMapa, fecha) : enMapa), [enMapa, fecha]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos`
   // llega null y ningún pin se resalta como seguido. Sin aro en ningún caso (OL-146, 2026-09-23): decisión del
   // founder tras firmar el doc 35 (2026-09-22) y el doc 37 (2026-09-23).
@@ -327,7 +342,7 @@ function CuerpoLugares({
       {vista === "mapa" ? (
         <div className={styles.cajaMapa}>
           <Mapa
-            lugares={enMapa}
+            lugares={pinesDelDia}
             encuadre={encuadre}
             ciudad={ciudad}
             presentacion="caja"
@@ -357,6 +372,14 @@ function CuerpoLugares({
             {busqueda.trim() && enMapa.length === 0 && <p className={styles.nadaMapa}>Ningún lugar se llama así. Si existe, regístralo.</p>}
           </div>
           {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={styles.avisoMapa} />}
+          {/* Con fecha elegida y ningún lugar con evento ese día (docs/rediseno/45, OL-174): el mapa queda vacío
+              con este aviso, en vez de solo no pintar nada. */}
+          {fecha && pinesDelDia.length === 0 && (
+            <div className={styles.vacioFecha}>
+              <b>Ningún lugar tiene eventos ese día</b>
+              Prueba con otra fecha o quita el filtro para ver todos los lugares.
+            </div>
+          )}
           <button
             type="button"
             className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`}
@@ -408,6 +431,21 @@ function CuerpoLugares({
       )}
       </PanelPestana>
 
+      {/* El conmutador Mapa · Lista (docs/rediseno/45, OL-174) salió del renglón 1 de la cabecera: ahora flota,
+          secundario, sobre "Registrar lugar" — mismo lugar en las dos vistas. Se retira con la hoja del pin
+          abierta, igual que "Registrar lugar" (no compiten con la hoja, que sube desde abajo). */}
+      {!elegido &&
+        (vista === "mapa" ? (
+          <button type="button" className={styles.verOtraVista} onClick={() => onCambiarVista("lista")}>
+            <IconoLista width={18} height={18} />
+            Ver en lista
+          </button>
+        ) : (
+          <button type="button" className={styles.verOtraVista} onClick={() => onCambiarVista("mapa")}>
+            <IconoMapa width={18} height={18} />
+            Ver en mapa
+          </button>
+        ))}
       {!elegido && <Publicar que="lugar" />}
     </>
   );
