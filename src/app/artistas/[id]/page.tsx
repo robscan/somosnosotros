@@ -111,27 +111,34 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
   });
 }
 
-/** Las novedades visibles del artista, más nueva primero (doc 44 §4, OL-175). El `src` del reproductor se arma y
- * valida aquí, con la misma `incrustadoDeNovedad` que arma el reproductor (doc 44 §2/§3, OL-181) — nunca la URL
- * cruda de la fila. Sin tope propio: "Ver más" (SeccionNovedades) las destapa todas en el cliente, sin paginar (el
- * volumen esperado no lo pide). */
+/** Las novedades del artista, más nueva primero (doc 44 §4, OL-175). El `src` del reproductor se arma y valida
+ * aquí, con la misma `incrustadoDeNovedad` que arma el reproductor (doc 44 §2/§3, OL-181) — nunca la URL cruda de
+ * la fila. Sin tope propio: "Ver más" (SeccionNovedades) las destapa todas en el cliente, sin paginar (el volumen
+ * esperado no lo pide).
+ *
+ * Sin `.eq("visible", true)` a propósito (OL-185): la política de lectura de la migración
+ * 20260925100000_novedades_artista.sql ya decide qué llega — lo visible para cualquiera, y también lo oculto para
+ * quien gestiona la ficha o la administración (probado en supabase/tests/pg/novedades-artista.test.mjs). Un
+ * visitante sin ese permiso nunca recibe una fila con `visible = false`: la etiqueta "Oculta" de la ficha
+ * (`SeccionNovedades`) se apoya en ese contrato de la base, no en una comprobación propia aquí — antes de esta
+ * pieza el filtro explícito ocultaba lo oculto incluso a quien gestiona, que es lo que pedía corregir el encargo. */
 async function cargarNovedadesArtista(artistaId: string): Promise<NovedadParaFicha[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
   const { data } = await supabase
     .from("novedades_artista")
-    .select("id, url, proveedor, embed_id, titulo, texto, creado_en")
+    .select("id, url, proveedor, embed_id, titulo, texto, creado_en, visible")
     .eq("artista_id", artistaId)
-    .eq("visible", true)
     .order("creado_en", { ascending: false })
     .limit(50);
-  return ((data ?? []) as Pick<NovedadArtista, "id" | "url" | "proveedor" | "embed_id" | "titulo" | "texto" | "creado_en">[]).map((n) => ({
+  return ((data ?? []) as Pick<NovedadArtista, "id" | "url" | "proveedor" | "embed_id" | "titulo" | "texto" | "creado_en" | "visible">[]).map((n) => ({
     id: n.id,
     titulo: n.titulo,
     texto: n.texto,
     creado_en: n.creado_en,
     proveedor: n.proveedor,
     incrustado: incrustadoDeNovedad({ proveedor: n.proveedor, url: n.url, embed_id: n.embed_id }),
+    visible: n.visible,
   }));
 }
 
@@ -417,7 +424,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
 
       {/* Novedades, fase 1 (doc 44 §1, OL-175): después de la descripción, antes de Video (Enlaces, arriba, no se
           toca: ya vivía antes de la descripción). Sin novedades y sin poder publicar, la sección no aparece. */}
-      <SeccionNovedades novedades={novedades} artistaNombre={a.nombre} hrefPublicar={hrefPublicarNovedad} />
+      <SeccionNovedades novedades={novedades} artistaNombre={a.nombre} hrefPublicar={hrefPublicarNovedad} hrefFicha={hrefArtista(a)} />
 
       {videos.length > 0 && (
         <section className={styles.lista} aria-label="Video">

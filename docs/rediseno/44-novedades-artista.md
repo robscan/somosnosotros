@@ -104,6 +104,8 @@ Lo que ya guarda la novedad **sin migrar nada** el día que se construya el blog
 
 **Lo que NO se construye ahora:** ninguna URL propia por novedad (hoy vive solo dentro de la ficha del artista, sin dirección propia), sin comentarios, sin categorías ni etiquetas, sin editor de texto enriquecido (solo el título y el texto plano de hoy), sin RSS, sin portada ni imagen propia más allá del reproductor incrustado, sin edición después de publicar (alcanza con publicar + ocultar).
 
+> **Nota (2026-09-24, OL-185, bitácora [220](../bitacora/2026/09/220-novedades-editar.md)):** el founder cambió esta última regla. Sus palabras: «crea opción de editar publicaciones de artista, para borrar o corregir subidas.» Desde entonces, quien gestiona la ficha corrige (enlace, título, texto) y borra sus novedades; ocultar (`visible`) sigue siendo solo de la administración (sin cambios en el resto de §4).
+
 ## 7. Fases de construcción
 
 Una por una, cada una con su prueba en el iPhone del founder (Safari), como manda `CLAUDE.md`.

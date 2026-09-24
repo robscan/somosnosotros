@@ -37,7 +37,7 @@ export default async function PublicarNovedadArtista({ params }: { params: Promi
       <Barra volver={{ href: hrefArtista(artista), texto: "Volver a la ficha" }} />
       <h1 className="titulo">Publicar novedad</h1>
       <p className="subtitulo">Para {artista.nombre}</p>
-      <FormularioNovedad accion={publicarNovedadArtista.bind(null, artista.id, hrefArtista(artista))} artistaNombre={artista.nombre} />
+      <FormularioNovedad accion={publicarNovedadArtista.bind(null, artista.id, hrefArtista(artista))} artistaNombre={artista.nombre} modo="nueva" />
     </main>
   );
 }
