@@ -6,22 +6,32 @@ describe("asuntoDe y urlFicha", () => {
     expect(asuntoDe("Vitalis")).toBe("Vitalis, tu ficha ya está en Somos Nosotros");
     expect(asuntoDe("Vitalis", "B")).toBe("¿Eres Vitalis? Tu ficha te espera en Somos Nosotros");
   });
-  it("la ficha va a somosnosotros.org/artistas/<id>", () => {
+  it("con slug, la ficha va a somosnosotros.org/artistas/<slug>", () => {
+    expect(urlFicha("abc-123", "vitalis")).toBe("https://somosnosotros.org/artistas/vitalis");
+  });
+  it("sin slug (respaldo), la ficha va a somosnosotros.org/artistas/<id>", () => {
     expect(urlFicha("abc-123")).toBe("https://somosnosotros.org/artistas/abc-123");
+    expect(urlFicha("abc-123", null)).toBe("https://somosnosotros.org/artistas/abc-123");
   });
 });
 
 describe("armarCorreo", () => {
-  it("un solo llamado: abrir la ficha y tocar Soy yo / es mi grupo", () => {
-    const c = armarCorreo("Vitalis", "abc-123");
+  it("con slug: un solo llamado, la URL usa el slug, no el UUID", () => {
+    const c = armarCorreo("Vitalis", "abc-123", "vitalis");
     expect(c.asunto).toBe("Vitalis, tu ficha ya está en Somos Nosotros");
-    expect(c.url).toBe("https://somosnosotros.org/artistas/abc-123");
-    expect(c.texto).toContain("https://somosnosotros.org/artistas/abc-123");
+    expect(c.url).toBe("https://somosnosotros.org/artistas/vitalis");
+    expect(c.texto).toContain("https://somosnosotros.org/artistas/vitalis");
     expect(c.texto).toContain('"Soy yo / es mi grupo"');
     expect(c.texto).toContain("Catálogo de Artistas Potosinos");
     expect(c.texto).toContain("pedir que se quite");
-    expect(c.html).toContain('href="https://somosnosotros.org/artistas/abc-123"');
+    expect(c.html).toContain('href="https://somosnosotros.org/artistas/vitalis"');
     expect(c.html).toContain("Soy yo / es mi grupo");
+  });
+  it("sin slug (artista aún sin migrar): cae al UUID, no rompe el correo", () => {
+    const c = armarCorreo("Vitalis", "abc-123");
+    expect(c.url).toBe("https://somosnosotros.org/artistas/abc-123");
+    expect(c.texto).toContain("https://somosnosotros.org/artistas/abc-123");
+    expect(c.html).toContain('href="https://somosnosotros.org/artistas/abc-123"');
   });
 });
 
