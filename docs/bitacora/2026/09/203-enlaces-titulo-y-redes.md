@@ -2,7 +2,10 @@
 
 **Fecha:** 2026-09-24 · **Rama:** `enlaces-titulo-y-redes`, desde `origin/main`. Segunda entrega:
 `git merge origin/ficha-boton-compartir-y-reparto` (OL-167, SHA `56db73e`, PR #202) para corregir el
-hallazgo 1 sobre el `Ficha.module.css`/`lib/ficha.ts` ya al día.
+hallazgo 1 sobre el `Ficha.module.css`/`lib/ficha.ts` ya al día. Tercera entrega: a 320px (el ancho mínimo
+que exige el proyecto) el 4.º círculo de cuatro enlaces se cortaba por el borde — `@media (max-width: 340px)`
+en `.accionesRepartidas` (`justify-content: flex-start; gap: var(--espacio-2)`), sin tocar `min-width` ni el
+círculo; medidas y captura 07 rehecha en la sección del hallazgo 1.
 
 ## Causa
 
@@ -129,28 +132,27 @@ título de 28–30 caracteres) a 320, 375 y 390px — 12 combinaciones:
 |---|---|---|---|
 | 2 | sin desborde (max 180) | sin desborde (max 180) | sin desborde (max 180) |
 | 3 | sin desborde (max 300) | sin desborde (max 355) | sin desborde (max 370) |
-| 4 (`accionesRepartidas`) | **4px** de un hijo (ver abajo) | sin desborde (max 355) | sin desborde (max 370) |
+| 4 (`accionesRepartidas`) | corregido en la tercera entrega (ver abajo) | sin desborde (max 355) | sin desborde (max 370) |
 | 6 (`accionesCarril`) | hijos fuera del viewport, **por diseño** (ver abajo) | ídem | ídem |
 
 - **n=6 (carril):** `.acciones` tiene `overflow-x:auto` en las dos variantes (`Ficha.module.css`, sin tocar);
   con más de 4 el carril se desplaza y el círculo siguiente asoma a propósito («el carril sigue asomando el
   siguiente círculo», pedido del gestor) — confirmado: sigue asomando en las tres anchuras, sin scroll de
   página (`scrollWidth === clientWidth` en los tres casos).
-- **n=4 a 320px, 4px de un hijo:** con el título recortado a `min(80, (320-88)/4) = 58px` el 4.º círculo
-  aún se sale 4px del viewport (324 vs 320). Medido que es **previo a esta pieza y ajeno al título**: con
-  las mismas cuatro etiquetas reemplazadas por nombres de red cortos («Mixcloud», «Instagram», «Vimeo»,
-  «Facebook», sin título propio) el desborde es idéntico (4 círculos de exactamente 64px — el propio
-  `min-width` de `.accion`, no su contenido — + 3 gaps de 16px = 304px, contra 280px de hueco disponible a
-  320px: 4×64 ya no cabe con el `min-width` actual, tenga o no título el enlace). No se tocó (el gestor pidió
-  explícitamente no cambiar el `min-width` de `.accion`, que es de OL-167); es de `.acciones`, que ya
-  desplaza internamente (`overflow-x:auto`) — `scrollWidth === clientWidth` en el documento (320) en los tres
-  casos, así que **no hay scroll horizontal de página**, solo 4px del último círculo dentro del propio carril
-  de `.acciones`. Queda anotado para quien decida el ajuste (bajar `min-width` unos px, o correr el umbral de
-  `accionesCarril` a 4 en vez de 5 a partir de cierto ancho); no es un bloqueante de esta pieza porque no lo
-  causa el título.
+- **n=4 a 320px (corregido en la tercera entrega):** con el `gap` normal (16px) 4 círculos de exactamente
+  64px (el `min-width` de `.accion`, no su contenido) más 3 gaps dan 304px contra 280px de hueco disponible
+  a 320px (320 − 2×20px de `--gutter`) — se salían 4px, con o sin título (medido reproduciendo con nombres de
+  red cortos, «Mixcloud», «Instagram», «Vimeo», «Facebook»: mismo desborde, así que no lo causaba el título).
+  El gestor pidió que a 320 —el ancho mínimo que exige el proyecto— no valiera como «previo»: 320 es
+  justamente el ancho mínimo, no un caso aparte. Corrección de una regla, sin tocar `min-width` ni el
+  círculo: `@media (max-width: 340px) { .accionesRepartidas { justify-content: flex-start; gap: var(--espacio-2);
+  } }` — con 8px de gap, 4×64 + 3×8 = 280px, exacto. Medido con `getBoundingClientRect()`: los cuatro
+  `.accion` terminan en 84/156/228/300px (los cuatro `right <= 320`) y `.acciones`/`<html>` con
+  `scrollWidth === clientWidth` (320 = 320). Captura **07** rehecha, confirmada con `Read`: los cuatro
+  círculos completos, ninguno cortado por el borde de la pantalla.
 
-Capturas **06** (4 enlaces con título al tope, 390) y **07** (lo mismo, 320) nuevas; **03** reemplazada por
-una sin desborde.
+Capturas **06** (4 enlaces con título al tope, 390) y **07** (lo mismo, 320, con la corrección de arriba)
+nuevas; **03** reemplazada por una sin desborde.
 
 **2) Sobreanidación en el formulario.** `SelectorEnlaces.module.css`: se quitaron `border`, `border-radius`
 y el `padding` propios de `.enlace` — el renglón es la rejilla `24px minmax(0, 1fr) auto` a secas (icono,
@@ -240,14 +242,15 @@ no lista ninguna ruta `/arnes203-temporal/…`). `document.fonts.check('700 20px
   (estado E4 de doc 09, `LIMITE_ENLACES = 8`), sin scroll horizontal ni cajas anidadas.
 - **`06-ficha-artista-cuatro-enlaces-390.png`**: cuatro enlaces con título de 28–30 caracteres cada uno, los
   cuatro círculos repartidos, ninguna etiqueta fuera de su círculo.
-- **`07-ficha-artista-cuatro-enlaces-320.png`**: lo mismo a 320px — sin scroll horizontal de página (el
-  hallazgo de 4px del último círculo queda dentro del propio carril de `.acciones`, documentado arriba).
+- **`07-ficha-artista-cuatro-enlaces-320.png`** (rehecha en la tercera entrega): lo mismo a 320px — los
+  cuatro círculos completos, ninguno cortado por el borde de la pantalla (`@media (max-width: 340px)` en
+  `.accionesRepartidas`, ver arriba).
 
 ## Lo que no se tocó
 
 - El círculo (`.accionIcono`) ni el `min-width: 64px` de `.accion` en `Ficha.module.css` (pedido explícito
-  del gestor); el desborde de 4px a 320px con 4 enlaces que causa ese `min-width` (ajeno al título, medido
-  arriba) queda anotado, no corregido.
+  del gestor en las dos entregas): la tercera corrección resuelve el desborde a 320px sin cambiar ninguno de
+  los dos, solo el `gap`/`justify-content` de `.accionesRepartidas` bajo `max-width: 340px`.
 - `src/app/eventos/[id]/page.tsx` («Compartir», «A mi calendario», «Cómo llegar»): etiquetas fijas y cortas,
   sin título editable, fuera del alcance de esta pieza; no comparten fila con enlaces de título largo.
 - El flujo de reconocer lo pegado (`reconocerEnlace`, `@usuario`, teléfono, el límite de 8, los avisos en

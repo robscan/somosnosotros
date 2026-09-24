@@ -157,6 +157,16 @@
 .accionesRepartidas {
   justify-content: space-between;
 }
+/* A 320px, cuatro círculos de 64px (min-width de `.accion`, sin tocar) con el `gap` normal (16px) no caben:
+   4×64 + 3×16 = 304px contra 280px útiles (320 − 2×20px de `--gutter`, comprobado en globals.css). Con
+   8px de gap sí: 4×64 + 3×8 = 280px, exacto. `space-between` no ayuda aquí (no hay espacio de sobra que
+   repartir), así que también se alinean a la izquierda, como con 1-2 enlaces. */
+@media (max-width: 340px) {
+  .accionesRepartidas {
+    justify-content: flex-start;
+    gap: var(--espacio-2);
+  }
+}
 .accionesCarril {
   gap: 20px;
 }
