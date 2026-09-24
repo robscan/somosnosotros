@@ -76,7 +76,9 @@ export default function Inicio({ ciudad, ciudades, conSesion, avisos, excluirDeC
             <CarrilCercanos excluirPromise={excluirDeCercanosPromise} avisos={avisos} verTodosHref={verTodosCercanosHref} />
           </Suspense>
           <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>
-          <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotArtistasDestacados}</Suspense>
+          {/* OL-165: «Artistas destacados» pasó a grande (misma tarjeta que la tira de Artistas); el esqueleto
+              cambia con él para no saltar cuando llega la respuesta real. */}
+          <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotArtistasDestacados}</Suspense>
           <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotPopulares}</Suspense>
           <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotNuevos}</Suspense>
           <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotArtistasSemana}</Suspense>
