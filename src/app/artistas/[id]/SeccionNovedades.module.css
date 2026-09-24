@@ -1,16 +1,30 @@
-/* Novedades del artista, fase 1 (OL-175, doc 44). El bloque en sí (título pegajoso, "vacío") sale del canon
-   compartido de fichas (`ui/FichaLista.module.css`, `.lista`/`.vacio`); "Publicar" y "Ver más" reusan el botón de
-   texto del canon de formularios (`ui/FormularioCanon.module.css`, `.cambiar`). Aquí solo lo propio: la cabecera
-   con "Publicar" a la derecha del título, y cada tarjeta de novedad. */
+/* Novedades del artista, fase 1 (OL-175, doc 44). El título de la sección sale de `ficha.seccionEnlaces`
+   (`Ficha.module.css`), el mismo que "Enlaces" (OL-163: sin línea, negro, --letra-xl) — dos títulos de la misma
+   ficha tienen que verse iguales, revisión del gestor tras la primera entrega de esta pieza (bitácora 210).
+   "Publicar" y "Ver más" reusan el botón de texto del canon de formularios (`ui/FormularioCanon.module.css`,
+   `.cambiar`). Aquí solo lo propio: el layout de la cabecera (título + "Publicar" en la misma línea), la lista
+   sin viñetas y cada tarjeta de novedad. */
 .cabecera {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: var(--espacio-2);
 }
+.tituloSeccion {
+  min-width: 0;
+}
 .cabecera > a {
   flex: none;
   text-decoration: none;
+}
+.lista {
+  list-style: none;
+}
+.vacio {
+  padding: var(--espacio-3) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
 }
 .novedad {
   padding: var(--espacio-3) 0;

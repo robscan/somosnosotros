@@ -209,6 +209,14 @@ ya existentes en `docs/ops/OPEN_LOOPS.md` (de piezas anteriores, sin tocar) y lo
 en el dominio sintético `@local.test` (mismo patrón que `rls.test.mjs`, `pincel-freno.test.mjs`, etc.), nunca una
 dirección real.
 
+## Revisión del gestor (PR #211): título de «Novedades» igual al de «Enlaces»
+
+Hallazgo: «Novedades» usaba el título de `FichaLista.module.css` (`.lista h2`: gris, pegajoso, con línea debajo);
+«Enlaces», fijado en OL-163, usa `ficha.seccionEnlaces` (negro, `--letra-xl`, sin línea — el founder: la línea
+«se ve horrible»). Corregido: la sección ahora usa `ficha.seccionEnlaces` (sin tocar `Ficha.module.css`), con
+«Publicar» en la misma línea del título vía el propio `<h2>` (`styles.cabecera`, flex); capturas 01, 02 y 07
+rehechas y confirmadas (título negro, sin línea, igual que «Enlaces», comparados en la misma pantalla en la 01).
+
 ## Cierre
 
 Sin PR (lo da el gestor). Commit local en `novedades-artista-fase1` con
