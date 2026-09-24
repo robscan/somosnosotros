@@ -46,29 +46,34 @@ Medido con Chrome real (`playwright-core`) sobre el prototipo, no a ojo: ancho d
 
 | Ancho | Chip de fecha | Ciudad | Ancho del chip de ciudad | ¿Se lee completo? | Libre hasta la lupa |
 | --- | --- | --- | --- | --- | --- |
-| 390 px | ícono (40 px) | San Luis Potosí | 181 px | Completo | 81 px |
+| 390 px | ícono (40 px) | San Luis Potosí | 157 px | Completo | 105 px |
 | 390 px | ícono (40 px) | Dolores Hidalgo Cuna… | 262 px | Recortado («Dolores Hidalgo Cuna…») | 0 px |
-| 390 px | «mié 30 sep» (147 px) | San Luis Potosí | 155 px | **Recortado** («San Luis …») | 0 px |
-| 390 px | «mié 30 sep» (147 px) | Dolores Hidalgo Cuna… | 155 px | Recortado («Dolo…») | 0 px |
-| 375 px | ícono (40 px) | San Luis Potosí | 181 px | Completo | 66 px |
+| 390 px | «mié 30 sep» (133 px) | San Luis Potosí | 157 px | Completo | 12 px |
+| 390 px | «mié 30 sep» (133 px) | Dolores Hidalgo Cuna… | 169 px | Recortado («Dolores…») | 0 px |
+| 375 px | ícono (40 px) | San Luis Potosí | 157 px | Completo | 90 px |
 | 375 px | ícono (40 px) | Dolores Hidalgo Cuna… | 247 px | Recortado | 0 px |
-| 375 px | «mié 30 sep» (147 px) | San Luis Potosí | 140 px | Recortado («San Lui…») | 0 px |
-| 375 px | «mié 30 sep» (147 px) | Dolores Hidalgo Cuna… | 140 px | Recortado | 0 px |
-| 320 px | ícono (40 px) | San Luis Potosí | 181 px | Completo (11 px de sobra, el mínimo) | 11 px |
+| 375 px | «mié 30 sep» (133 px) | San Luis Potosí | 154 px | **Recortado** («San Luis Pot…») | 0 px |
+| 375 px | «mié 30 sep» (133 px) | Dolores Hidalgo Cuna… | 154 px | Recortado | 0 px |
+| 320 px | ícono (40 px) | San Luis Potosí | 157 px | Completo (35 px de sobra) | 35 px |
 | 320 px | ícono (40 px) | Dolores Hidalgo Cuna… | 192 px | Recortado | 0 px |
-| 320 px | «mié 30 sep» (147 px) | San Luis Potosí | 85 px | Recortado («San …») | 0 px |
-| 320 px | «mié 30 sep» (147 px) | Dolores Hidalgo Cuna… | 85 px | Recortado | 0 px |
+| 320 px | «mié 30 sep» (133 px) | San Luis Potosí | 99 px | **Recortado** («Sa…») | 0 px |
+| 320 px | «mié 30 sep» (133 px) | Dolores Hidalgo Cuna… | 99 px | Recortado | 0 px |
+
+Medido con la fuente real de la app (la variable de `next/font`, no la que Google Fonts sirve por defecto a
+un `<link>` sin las señas del navegador real — la primera versión de esta tabla usaba esa segunda, más ancha
+al no aplicar bien el eje de condensado, y decía cosas que las capturas no mostraban; corregido, ver
+«Correcciones del gestor» en la bitácora 205).
 
 **«0 px libre» no es un choque: es el límite funcionando.** Es el punto exacto donde el chip de ciudad, al encogerse, toca el borde izquierdo de la lupa sin cruzarlo — comprobado con `getBoundingClientRect()`: el borde derecho del chip y el borde izquierdo del botón de la lupa coinciden exactamente, nunca se superponen. En el capítulo «sin regla» (más abajo) sí hay un choque real, distinto de este.
 
-**Hallazgo que el founder debe conocer:** con una fecha elegida, **hasta «San Luis Potosí» —la única ciudad que hay hoy— se recorta** a «San Luis …» en un iPhone normal (390 px). No es un error de la regla (el mecanismo evita el choque, que es lo que importa), pero si el founder quiere que el nombre de la única ciudad de la plataforma siempre se lea completo, hay una opción a evaluar (ver «Decisiones que debe firmar el founder»).
+**Hallazgo, corregido:** «San Luis Potosí» —la única ciudad que hay hoy— **se lee completa en 390 px**, con fecha elegida o sin ella (captura 02). El recorte solo aparece **a partir de 375 px**, y solo cuando además hay una fecha elegida (a 375 px se lee «San Luis Pot…»; a 320 px, «Sa…»). Sin fecha elegida (el chip en su ícono), «San Luis Potosí» se lee completa en los tres anchos, incluido 320 px (35 px libres, el margen más chico). No es un error de la regla (el mecanismo evita el choque en los tres anchos); es información para que el founder decida si le importa que, en un teléfono angosto con una fecha elegida, el nombre de la única ciudad se acorte (ver «Decisiones que debe firmar el founder»).
 
 ## La regla propuesta (y por qué)
 
 **El chip de ciudad se encoge y se corta con puntos suspensivos antes de tocar la lupa; la lupa nunca se mueve ni se achica.**
 
 - **No hace falta inventar un mecanismo nuevo**: el que ya existe en `src/components/ui/Chip.module.css` (clase `.deContexto`, usada hoy por el chip de fecha y el de ciudad de Agenda) ya hace exactamente esto — `flex: 0 1 auto` + `min-width: 0` en el chip, `overflow: hidden; text-overflow: ellipsis` en su texto. El prototipo reproduce el mismo mecanismo (clases `.chip170`/`.chipCiudad170` en `cabeceras.html`, `.chipFecha`/`.chipCiudad` en `mapa-lugares.html`), no uno inventado para esta pieza.
-- **No es un número fijo de caracteres.** Un tope fijo («máximo 12 letras») se ve bien en un ancho y raro en otro; dejar que el texto ocupe el espacio que sobra y se corte solo cuando hace falta es correcto en cualquier ancho — las cuatro filas de «San Luis Potosí» en la tabla lo prueban: a veces se lee completo (cuando sobra espacio) y a veces se recorta (cuando no), sin que nadie tenga que decidir un número.
+- **No es un número fijo de caracteres.** Un tope fijo («máximo 12 letras») se ve bien en un ancho y raro en otro; dejar que el texto ocupe el espacio que sobra y se corte solo cuando hace falta es correcto en cualquier ancho — las seis filas de «San Luis Potosí» en la tabla lo prueban: se lee completa cuando sobra espacio (390 px siempre, 375/320 sin fecha elegida) y se recorta cuando no (375/320 px con una fecha elegida), sin que nadie tenga que decidir un número.
 - **La lupa nunca cede.** La rejilla del renglón 1 (`minmax(0, 1fr) | auto`, la misma que ya usa `ui/Cabecera.module.css`) reserva siempre el ancho completo de la lupa (40 px); lo que se puede encoger a cero es el contexto (fecha + ciudad), nunca las acciones. Es la opción contraria a que «el buscador cede y se vuelve ícono» (ya es solo ícono hoy) o a un carril deslizable en el renglón 1 (dos chips no necesitan una fila que se desliza; ver el punto siguiente).
 - **Por qué no un carril deslizable en el renglón 1:** el renglón 1 solo lleva dos chips (fecha, ciudad) más la lupa — deslizar una fila de dos elementos para leer el segundo completo es más fricción que un texto recortado con «…», y rompería el patrón de que el renglón 1 nunca se desliza (solo el renglón 2, pestañas, ya se desliza cuando no caben). Un carril deslizable sí tiene sentido si algún día hay **más** de dos chips en ese renglón; con dos, la regla de encoger + recortar alcanza.
 
@@ -89,13 +94,13 @@ Aparte del chip: los títulos «Hoy» y «Mañana» que agrupan la Agenda (`diaC
 
 ## Prototipo y capturas
 
-`prototipos/cabeceras.html` y `prototipos/mapa-lugares.html`: cada uno con una sección nueva «OL-170» al final, con sus propios teléfonos — no tocan ni reusan los teléfonos ya firmados por el founder más arriba en esos mismos documentos (OL-087 en `cabeceras.html`, OL-124→OL-141 en `mapa-lugares.html`). Fuente Bricolage Grotesque cargada de Google Fonts, como en los demás prototipos.
+`prototipos/cabeceras.html` y `prototipos/mapa-lugares.html`: cada uno con una sección nueva «OL-170» al final, con sus propios teléfonos — no tocan ni reusan los teléfonos ya firmados por el founder más arriba en esos mismos documentos (OL-087 en `cabeceras.html`, OL-124→OL-141 en `mapa-lugares.html`). Fuente Bricolage Grotesque cargada de Google Fonts, como en los demás prototipos; el color de los teléfonos de Lugares es el violeta `#6d34c8` que el founder firmó como `--primario` el 2026-09-23 (OL-146, en producción), acotado a la sección OL-170 (`--primario` puesto en su `<div class="estudio">`, no en el `:root` del archivo) para no cambiar el color de los cuatro teléfonos de arriba, que el founder ya vio y firmó con el azul petróleo anterior.
 
-Capturas reales (Chromium de `/opt/pw-browsers` por `playwright-core`, `document.fonts.check('700 20px "Bricolage Grotesque"')` = `true` en las nueve, 390×844 a doble densidad salvo la 09), en [`capturas-205/`](capturas-205/):
+Capturas reales (Chromium de `/opt/pw-browsers` por `playwright-core`, 390×844 a doble densidad salvo la 09), en [`capturas-205/`](capturas-205/). Para confirmar la fuente real (no la de reserva) se inyectó el `.woff2` variable del propio build de la app y se esperó a que `document.fonts` reportara `status: "loaded"` para «Bricolage Grotesque» — `document.fonts.check(...)` a secas puede dar `true` en este entorno sin que la fuente haya llegado, y la primera versión de las capturas usó por error un `.woff2` distinto (el que sirve `fonts.googleapis.com` a un navegador headless sin las señas completas de uno real), más ancho por no aplicar bien el eje de condensado — de ahí el error del hallazgo, ya corregido arriba:
 
 - **`01.png`** — Agenda, el chip de fecha en su estado inicial: solo el ícono del calendario, sin la palabra «Seleccionar», mismo alto que el chip de ciudad.
-- **`02.png`** — Agenda, con «mié 30 sep» elegido (sin «de»), con su quitar (✕); revela el hallazgo de la tabla: «San Luis Potosí» ya se recorta a «San Luis …» en 390 px con una fecha elegida.
-- **`03.png`** — Lugares (Mapa), el chip de fecha solo ícono (sin filtro: se ven los mismos lugares de siempre) y **«Ver en lista» flotando sobre «Registrar lugar»**, con el botón de ubicación intacto abajo a la izquierda.
+- **`02.png`** — Agenda, con «mié 30 sep» elegido (sin «de»), con su quitar (✕); «San Luis Potosí» se lee completa, con aire antes de la lupa (a 390 px la regla no necesita recortarla).
+- **`03.png`** — Lugares (Mapa), el chip de fecha solo ícono (sin filtro: se ven los mismos lugares de siempre) y **«Ver en lista» flotando sobre «Registrar lugar»**, con el botón de ubicación intacto abajo a la izquierda; color de acción violeta, como en producción.
 - **`04.png`** — Lugares (Mapa) filtrado: con «jue 24 sep» elegido, solo queda pintado el lugar con evento ese día (Casa de Cultura del Barrio de Tlaxcala); los demás se quitan del mapa.
 - **`05.png`** — Lugares (Mapa) filtrado sin resultados: con «lun 21 sep» elegido (ningún lugar del catálogo de ejemplo tiene evento un lunes), el mapa queda vacío con el aviso «Ningún lugar tiene eventos ese día».
 - **`06.png`** — Lugares (Lista), con **«Ver en mapa» flotando sobre «Registrar lugar»**, en el mismo lugar exacto que en el Mapa.
@@ -106,7 +111,7 @@ Capturas reales (Chromium de `/opt/pw-browsers` por `playwright-core`, `document
 ## Decisiones que debe firmar el founder
 
 1. **«Hoy»/«Mañana» en el chip de fecha:** ¿se quedan como caso especial (opción a) o el chip siempre usa la fecha corta, sin excepción (opción b, la que muestran las capturas 01/02 y la que recomendamos)?
-2. **El hallazgo de «San Luis Potosí» recortada:** ¿le parece aceptable que la única ciudad de la plataforma se lea «San Luis …» cuando hay una fecha elegida en 390 px (la regla evita el choque, solo acorta el texto), o prefiere que se investigue una forma de darle al chip de ciudad un ancho mínimo (p. ej. 96 px, para que nunca enseñe menos de ~10 caracteres), a costa de que el chip de fecha tenga que ceder espacio primero?
+2. **El hallazgo de «San Luis Potosí» recortada, a partir de 375 px:** en 390 px se lee completa siempre; a 375 y 320 px, solo si además hay una fecha elegida («San Luis Pot…» y «Sa…»). ¿Le parece aceptable (la regla evita el choque, solo acorta el texto en pantallas angostas), o prefiere que se investigue un ancho mínimo para el chip de ciudad, a costa de que el chip de fecha ceda espacio primero?
 3. **¿La Lista de Lugares también filtra por fecha**, o el filtro es solo del Mapa (como pidió literalmente)?
 4. **Aprobar la posición de «Ver en lista»/«Ver en mapa»** (flotante, secundario, 76 px del borde, sobre «Registrar lugar») y que el botón redondo salga del renglón 1 de la cabecera de Lugares.
 5. **Probar las nueve capturas en su iPhone (Safari)**, como manda la regla del proyecto antes de pasar a código.

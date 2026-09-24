@@ -431,7 +431,12 @@
   }
 </script>
 
-<div class="estudio" style="margin-top:32px">
+<!-- El color base del archivo (--primario) sigue siendo el azul petróleo con el que se firmó OL-124→OL-141,
+     anterior a que el founder eligiera el violeta como color de acción (2026-09-23, OL-146, producción:
+     src/app/globals.css). Esta sección es nueva (2026-09-24): usa el violeta ya en producción, con el mismo
+     método que ya trae este archivo (?color=C, doc rediseno/37) pero acotado a este `<div>`, para no cambiar
+     el color de los cuatro teléfonos de arriba que el founder ya vio y firmó con el azul. -->
+<div class="estudio" style="margin-top:32px; --primario:#6d34c8; --primario-suave:color-mix(in srgb, #6d34c8 12%, white);">
   <div class="rotulo">
     <strong>OL-170 · Chip de fecha en Lugares, filtra el mapa; «Ver en lista» baja al pie</strong>
     Pedido del founder (2026-09-24): «Mantén canon de header entre agenda y lugares, es decir nuestro selector de fecha. […] en mapa mueve el accionable para ver en listado abajo, puede flotar sobre agregar lugar. […] la idea de traer chip de fecha a mapa es para filtrar por fecha precisamente». Cuatro teléfonos nuevos, montados aparte de los cuatro de arriba (que el founder ya firmó, OL-124 → OL-141): no los tocan.
