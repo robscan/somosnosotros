@@ -1,26 +1,200 @@
-/* Hoja "Dónde es" del alta de evento (docs/rediseno/15, decisión 2):
-   1. Título y campo (canon) · 2. Lugares registrados con foto · 3. Atajos: otro sitio, registrar · 4. Otro sitio: mapa y reservado */
-
-/* 1. El campo se queda arriba al recorrer la lista (founder, 2026-09-16); la sombra del color del fondo tapa lo que pasa por debajo */
-.pegajoso {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+/* "¿Dónde es?" a pantalla completa (OL-173, docs/rediseno/43, variante B): el mapa llena todo el hueco entre el
+   campo y el pie; sobre él flotan el resumen del pin, la lista de sugerencias (ui/ListaFlotante, en su propio
+   portal), el panel "Agregar lugar" y la barra de acciones. Mismo patrón de capa fija que CampoLargo.module.css
+   (`.capa`/`.cabecera`), con "‹ Atrás" además de "Listo" (docs/rediseno/39-texto-largo.md más el pedido explícito
+   del founder de una vuelta atrás real, doc 43). */
+.capa {
+  position: fixed;
+  inset: 0;
+  /* Por debajo de ui/ListaFlotante (60, portal a document.body): la lista flotante de esta misma hoja tiene que
+     pintarse ENCIMA de la pantalla completa, no debajo (a diferencia de CampoLargo, que no usa ninguna lista
+     flotante y por eso puede ir en 70). Por encima de ui/Hoja (40) y de Cartel (50): nada de eso convive con esta
+     pantalla a la vez. */
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
   background: var(--fondo);
-  box-shadow: 0 0 0 var(--espacio-3) var(--fondo);
+}
+.cabecera {
+  flex: none;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  min-height: var(--alto-barra);
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.cabecera h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: var(--letra-lg);
+  font-weight: 700;
+}
+.atras,
+.listo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-1);
+  border: none;
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+.listo:disabled {
+  color: var(--texto-suave);
+  opacity: 0.6;
+  cursor: default;
 }
 
-/* 2. Lugares y atajos: renglones de ui/Sugerencia; aquí solo el respiro entre listas */
-.lista {
-  margin-bottom: var(--espacio-3);
+.cuerpo {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.nadie {
-  margin: 0 0 var(--espacio-3);
+
+/* El campo, siempre visible y siempre arriba: nunca lo tapa el mapa ni la lista. */
+.campo {
+  position: relative;
+  z-index: 4;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  margin: 10px var(--gutter);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  box-shadow: var(--sombra);
+}
+.campo > svg:first-child {
+  flex: none;
+  color: var(--texto-suave);
+}
+.campo input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: max(16px, var(--letra-md));
+  color: var(--texto);
+}
+.campo input:focus {
+  outline: none;
+}
+
+/* El mapa de fondo, edge-to-edge (encargo OL-173): llena todo el resto del alto. */
+.mapaLleno {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* "Estoy aquí" sobre el mapa: abajo a la izquierda, sube cuando la barra de acciones está a la vista. */
+.estoyAqui {
+  position: absolute;
+  left: var(--gutter);
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  border: none;
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  box-shadow: var(--sombra-flotante);
+  cursor: pointer;
+  transition: bottom 120ms ease;
+}
+.estoyAqui:disabled {
+  opacity: 0.6;
+}
+
+.avisoUbicacion {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 12px;
+  z-index: 5;
+  margin: 0;
+  padding: var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--vidrio);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+  box-shadow: var(--sombra);
 }
 
-/* "Buscando…" o el error, dentro de la lista flotante (ui/ListaFlotante): no son una opción, solo texto. */
+/* El resumen del pin elegido: nombre (fijo o editable) y dirección, con el aviso si se arrastró. */
+.resumen {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 12px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--espacio-2);
+  padding: var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--vidrio);
+  box-shadow: var(--sombra-flotante);
+  font-size: var(--letra-sm);
+  color: var(--texto-suave);
+}
+.resumen > svg {
+  flex: none;
+  color: var(--primario);
+  align-self: center;
+}
+.resumen b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--texto);
+  font-weight: 700;
+}
+.nombreEditable {
+  flex: 1 1 140px;
+  min-width: 0;
+  border: none;
+  border-bottom: 1.5px dashed var(--primario);
+  background: none;
+  padding: 2px 0;
+  font: inherit;
+  font-size: max(16px, var(--letra-md));
+  font-weight: 700;
+  color: var(--texto);
+}
+.nombreEditable:focus {
+  outline: none;
+}
+.resumenDireccion {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.notaAjuste {
+  flex: 0 0 100%;
+  margin-top: 2px;
+  font-weight: 700;
+  color: var(--primario);
+}
+
+/* Las filas de la lista flotante (dentro de ui/ListaFlotante): reutiliza ui/Sugerencia.module.css; aquí solo lo
+   que no cubre (avisos y el separador entre lugares y lo de Mapbox). */
 .avisoFlotante {
   padding: var(--espacio-3);
   color: var(--texto-suave);
@@ -29,171 +203,159 @@
 .avisoFlotante[role="alert"] {
   color: var(--error);
 }
-
-/* La salida "No es ninguna: pon el pin en el mapa" se queda pegada al fondo de la lista flotante (revisión del
-   gestor): ninguna búsqueda de Mapbox es infalible, y esta salida tiene que verse siempre, sin desplazar la lista
-   para encontrarla. */
-.salidaManual {
-  position: sticky;
-  bottom: 0;
-  background: var(--fondo);
-}
-.salidaManual > button {
-  color: var(--texto);
-}
-
-/* Botón con un toque para acercar la búsqueda a la posición de la persona (OL-100, founder 2026-09-21: la
-   ubicación se pide con un toque, en el momento en que ayuda; nunca automático al abrir la hoja). */
-.usarUbicacion {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-2);
-  width: 100%;
-  min-height: var(--toque-min);
-  margin-bottom: var(--espacio-3);
-  padding: var(--espacio-2) var(--espacio-3);
-  border: 1px dashed var(--primario);
-  border-radius: var(--radio);
-  background: var(--primario-suave);
-  color: var(--primario);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-}
-.usarUbicacion > svg {
-  flex-shrink: 0;
-}
-/* El texto es el único hijo que puede necesitar dos líneas: sin min-width:0 un flex item no se encoge por debajo
-   de su contenido y puede salirse del botón (aviso del founder sobre formularios que se salen de la tarjeta). */
-.usarUbicacion > span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.usarUbicacion:disabled {
-  opacity: 0.6;
-}
-
-.atajo > svg {
-  grid-area: foto;
-  color: var(--texto-suave);
-}
-
-/* 4. Otro sitio: el mapa con su botón de ubicación, el interruptor de reservado y sus campos */
-.otro {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--espacio-3);
-  margin-bottom: var(--espacio-4);
-}
-.mapa {
-  position: relative;
-}
-.mapa .ubicame {
-  bottom: 40px;
-}
-.reservado {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "etiqueta palanca"
-    "detalle palanca";
-  column-gap: var(--espacio-3);
-  align-items: center;
-  min-height: 52px;
-}
-.reservado > b {
-  grid-area: etiqueta;
-  font-weight: 600;
-}
-.reservado > small {
-  grid-area: detalle;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.reservado > button {
-  grid-area: palanca;
-}
-.select {
-  min-height: var(--toque-min);
-  padding: 0 14px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  font-size: max(16px, var(--letra-md));
-  -webkit-appearance: none;
-  appearance: none;
-}
-.nota {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.volver {
-  justify-self: start;
-  align-self: flex-start;
-  min-height: var(--toque-min);
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--primario);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-/* Buscar lugar (OL-137): aviso de "no existe" y rótulo de sección, del mismo tono que los demás avisos de la hoja. */
-.noExiste {
-  margin: 0 0 var(--espacio-3);
+.avisoNoEncontrado {
   padding: var(--espacio-3);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
   font-size: var(--letra-md);
   line-height: 1.35;
 }
-.noExiste > b {
+.avisoNoEncontrado > b {
   display: block;
+  margin-bottom: 2px;
 }
-.separador {
-  margin: var(--espacio-3) 0 var(--espacio-1);
+
+/* Barra de acciones, variante B: pegada sobre el teclado (JS mueve `bottom`) o al pie sin él. */
+.barraAcciones {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 9;
+  display: flex;
+  gap: var(--espacio-2);
+  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--fondo);
+  box-shadow: var(--sombra-panel);
+  transition: bottom 120ms ease;
+}
+.accionAgregar,
+.accionMapa {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-2);
+  border-radius: var(--radio);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.accionAgregar > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.accionAgregar {
+  border: none;
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.accionMapa {
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  color: var(--texto);
+}
+
+/* Panel "Agregar lugar": nombre, dirección ya resuelta y el interruptor de privado. */
+.panelAgregar {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 12px;
+  z-index: 10;
+  padding: var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  box-shadow: var(--sombra-flotante);
+}
+.panelAgregar h3 {
+  margin-bottom: var(--espacio-3);
+  font-size: var(--letra-md);
+  font-weight: 700;
+}
+.campoPanel {
+  display: block;
+  margin-bottom: var(--espacio-3);
+}
+.campoPanel > span {
+  display: block;
+  margin-bottom: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-xs);
   font-weight: 600;
-  letter-spacing: 0.04em;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
-
-/* La hoja de Dónde es (OL-137): campo fijo, zona de lista que se encoge y se desplaza, y el mapa siempre debajo. */
-.zona {
-  flex: 0 1 auto;
-  min-height: 0;
-  overflow-y: auto;
+.campoPanel input[type="text"] {
+  width: 100%;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  font-size: max(16px, var(--letra-md));
 }
-.mapaFijo {
-  flex: 1 1 0;
-  min-height: 120px;
-  display: flex;
-  margin-top: var(--espacio-2);
-}
-.mapaFijo > div {
-  flex: 1;
-  height: auto;
-}
-.pie {
-  margin: 0 0 var(--espacio-2);
-  padding: 0 var(--espacio-1);
+.direccionFija {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: var(--espacio-1) 0;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-.pie a,
-.pie button {
+.filaPrivado {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+  margin: var(--espacio-1) 0 var(--espacio-4);
+  padding: var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--fondo-suave);
+}
+.textoPrivado {
+  flex: 1;
+  min-width: 0;
+}
+.textoPrivado b {
+  display: block;
+  font-size: var(--letra-sm);
+  font-weight: 600;
+}
+.textoPrivado small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+}
+.palanca {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
   border: none;
-  background: none;
-  color: var(--primario);
-  font: inherit;
-  font-weight: 700;
-  text-decoration: underline;
+  border-radius: 999px;
+  background: var(--borde);
   cursor: pointer;
 }
-.elegido {
-  background: var(--primario-suave);
+.palanca::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: left 120ms ease;
+}
+.palanca[aria-checked="true"] {
+  background: var(--primario);
+}
+.palanca[aria-checked="true"]::after {
+  left: 21px;
+}
+.notaError {
+  margin-bottom: var(--espacio-2);
+  color: var(--error);
+  font-size: var(--letra-sm);
 }

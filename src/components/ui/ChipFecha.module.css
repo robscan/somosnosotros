@@ -1,0 +1,50 @@
+/* El chip de fecha (ui/ChipFecha, docs/rediseno/45, OL-174): a diferencia del chip de ciudad, nunca se encoge — el
+   `.chip` base de Chip.module.css ya es `flex: none`; aquí no se usa `.deContexto` (esa clase sí encoge, y es la
+   que el chip de ciudad necesita para no chocar con la lupa). */
+
+/* Sin fecha elegida: solo el ícono, redondo de 40×40, como los demás botones de acción del renglón (la lupa,
+   Mapa · Lista). El área de toque llega a 44+ px con un borde invisible (`::before`, `inset: -4px`), sin cambiar
+   lo que se ve (el founder pidió las dos cosas: "mismo alto que los otros chips" y "área de toque ≥ 44 px"). */
+.soloIcono {
+  position: relative;
+  width: 40px;
+  min-height: 40px;
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+  color: var(--texto-suave);
+}
+.soloIcono::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+.soloIcono > svg {
+  margin-right: 0;
+}
+
+/* Con fecha elegida: pastilla con el texto corto y su quitar (✕). La clase va dos veces para pesar más que el
+   borde de ui/Chip sin depender del orden de los módulos (mismo motivo que antes en AgendaInicio.module.css). */
+.conFecha.conFecha {
+  min-height: 40px;
+  gap: 6px;
+  padding: 0 var(--espacio-3) 0 10px;
+  border-color: var(--primario);
+}
+.conFecha > svg {
+  margin-right: 0;
+  color: var(--texto-suave);
+}
+.quitar {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: 40px;
+  margin: 0 -8px 0 2px;
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  cursor: pointer;
+}

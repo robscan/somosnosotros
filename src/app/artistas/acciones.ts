@@ -8,6 +8,19 @@ import type { MotivoReclamo } from "@/lib/reportes";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
+/** Un artista cuyo correo capturado (CAPO) coincide con el de la cuenta, y que aún no reclama (OL-177, migración
+ * 20260925110000_artistas_con_mi_correo). Lo mínimo para el letrero «Tu correo está enlazado a…»: el nombre para
+ * el texto, el id para reclamar. */
+export type ArtistaConMiCorreo = { id: string; nombre: string; slug: string };
+
+/** Sin sesión, vacío: la función de la base también lo haría (lee auth.uid()), pero no vale la pena consultar. */
+export async function artistasConMiCorreo(): Promise<ArtistaConMiCorreo[]> {
+  const supabase = await clienteServidor();
+  if (!supabase) return [];
+  const { data } = await supabase.rpc("artistas_con_mi_correo");
+  return (data ?? []) as ArtistaConMiCorreo[];
+}
+
 /** Publicar lleva a la ficha nueva reemplazando el alta; guardar devuelve a dónde volver (el formulario termina la tarea). */
 export type ResultadoArtista =
   | { ok: true; id: string; volver: string }

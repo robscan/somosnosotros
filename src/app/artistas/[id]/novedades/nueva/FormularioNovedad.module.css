@@ -1,0 +1,5 @@
+/* Publicar novedad (OL-175, doc 44 fase 1): lo demás sale del canon (FormularioCanon.module.css); aquí solo el
+   espacio alrededor de la vista previa del reproductor, que no vive en ese canon. */
+.previa {
+  margin: 12px 0 4px;
+}

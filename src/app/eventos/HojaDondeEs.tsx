@@ -1,29 +1,23 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import Mapa from "@/components/Mapa";
+import { useEffect, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
-import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
-import Hoja from "@/components/ui/Hoja";
 import Limpiar from "@/components/ui/Limpiar";
-import limpiar from "@/components/ui/Limpiar.module.css";
-import { IconoBuscar, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
+import { IconoBuscar, IconoChevronIzquierda, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
-import { LIMITES_EVENTO, REVELAR_OPCIONES, type ModoSitio } from "@/lib/eventos";
+import MapaDondeEs from "@/components/MapaDondeEs";
+import { LIMITES_EVENTO, type ModoSitio } from "@/lib/eventos";
 import type { Punto } from "@/lib/geo";
-import { SIN_FOTO } from "@/lib/imagen";
-import { etiquetaLugar, type LugarResumen } from "@/lib/lugares";
+import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
+import { lugarDesdePunto } from "@/lib/geocodificar";
+import type { LugarResumen } from "@/lib/lugares";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
-import { buscarDirecciones, type Sugerencia } from "@/lib/geocodificar";
-import { sugerirLugares, recuperarLugar, type LugarSugerido } from "@/lib/buscarLugares";
-import { ubicacionCercanaFresca, leerUbicacionCercana } from "@/lib/ubicacion";
-import { buscarConContexto, ciudadDeContexto, descartarSinCalle, filtrarYOrdenarDirecciones, necesitaReintento, necesitaReintentoLugares, redondearParaMapbox } from "./direccionContexto";
-import { cambiarReserva, consultarMapa, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
-import { avisarQueVuelvo } from "./borrador";
-import canon from "@/components/ui/FormularioCanon.module.css";
-import mapa from "@/components/Mapa.module.css";
+import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
+import { buscarConContexto, ciudadDeContexto, descartarSinCalle, necesitaReintentoLugares } from "./direccionContexto";
+import { consultarMapa, lugaresPorTexto, puntoValido } from "./direccionEvento";
+import { altoTeclado, combinarResultados, decidirGuardado, modoDePantalla } from "./dondeEsPantalla";
+import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaDondeEs.module.css";
 
@@ -54,446 +48,430 @@ type Props = {
   yo: (Punto & { vez: number }) | null;
   ubicando: boolean;
   avisoUbicacion: string | null;
-  /** Adónde vuelve "Registrar un lugar nuevo" con el lugar elegido. */
+  /** Ya no se navega a /lugares/nuevo (el registro es en línea, docs/rediseno/43): se usa como `siguiente` al crear
+   *  el lugar, solo para que la acción de servidor nunca redirija (siempre hay una ruta interna que la satisface). */
   volverA: string;
-  onLugar: (id: string) => void;
+  /** `nuevo` llega con el lugar recién creado en esta misma hoja (aún no está en `lugares`, que es del primer
+   *  pintado de la página): quien llama lo agrega a su lista para que el renglón "Dónde" lo encuentre. */
+  onLugar: (id: string, nuevo?: LugarResumen) => void;
   onOtro: (o: OtroSitio, desdePin?: boolean) => void;
   onGesto: () => void;
   onEstoyAqui: (poner: (p: Punto) => void) => void;
   onCerrar: () => void;
-  /**
-   * Ciudad del chip de la Agenda desde la que se entró a publicar (OL-100, punto 6 de docs/rediseno/26): una pista
-   * más de la cascada de contexto, por debajo del propio texto y del lugar leído del cartel. Null si no llega
-   * ninguna (hoy `/eventos/nuevo` no la recibe todavía).
-   */
   ciudadContexto?: Ciudad | null;
 };
 
+/** El pin en construcción: viene de un lugar registrado (fijo) o de cualquier otro punto (nombre editable). */
+type Draft = {
+  origen: "lugar" | "manual";
+  nombre: string;
+  direccion: string;
+  punto: Punto | null;
+  lugarId?: string;
+  /** Solo cuando "Agregar lugar" acaba de crear uno de verdad y todavía no está en `lugares` (ver la nota de `volverA`). */
+  lugarNuevo?: LugarResumen;
+  editable: boolean;
+  ciudad: string | null;
+};
+
+const ALTO_BARRA_ACCIONES = 56; // min-height de .barraAcciones en HojaDondeEs.module.css
+
 /**
- * Hoja "Dónde es" del alta de evento (docs/rediseno/15, decisión 2): un solo camino para resolver Dónde. Arriba el
- * campo con la lupa y los lugares registrados (foto, tipo, calle) que se filtran al escribir; debajo, "Es en otro
- * sitio" (nombre, pin y el interruptor de reservado con la dirección exacta) y "Registrar un lugar nuevo".
+ * "¿Dónde es?" del alta de evento, a pantalla completa (OL-173, docs/rediseno/43): el mapa de fondo, un solo campo
+ * "Nombre o dirección" y los lugares registrados como pines tocables. Escribir abre una lista flotante (nunca tapa
+ * nada); tocar un pin, un punto de interés del mapa o cualquier punto vacío mueve el pin; arrastrarlo hace reverse
+ * geocoding. Sin coincidencias, la barra de acciones (variante B, firmada en el doc 43) ofrece "Agregar lugar"
+ * -que registra uno de verdad, salvo "privado"- o "Buscar en el mapa sin agregar". "Listo" confirma y vuelve al
+ * formulario; "Atrás" no cambia nada (todo vive en el estado local de esta hoja, no se avisa al padre hasta Listo).
  *
- * La búsqueda de direcciones y lugares (OL-100, docs/rediseno/26) acota a una "ciudad de contexto" en cascada: el
- * propio texto (si dice "S.L.P.", "SLP"…), el chip de la Agenda, o la posición aproximada del teléfono (cacheada, o
- * pedida con un toque aquí mismo — regla de ubicación firmada por el founder, 2026-09-21); San Luis Potosí de
- * respaldo. Si la primera búsqueda no trae nada cerca de esa ciudad, una segunda automática con el texto limpio y
- * la ciudad pegada (caso con nombre: "Galeana #423, S.L.P." → "Galeana 423, San Luis Potosí"), una sola vez.
+ * El mapa es un componente nuevo, `MapaDondeEs` (no `Mapa.tsx`): esta pantalla necesita lugares tocables Y un pin
+ * que se mueve a cualquier punto A LA VEZ, algo que ningún modo de `Mapa.tsx` da junto, y ese archivo lo lleva
+ * OL-174 en paralelo (instrucción del gestor: no tocarlo). Documentado como algo por unificar más adelante.
  */
 export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubicando, avisoUbicacion, volverA, onLugar, onOtro, onGesto, onEstoyAqui, onCerrar, ciudadContexto = null }: Props) {
-  const [q, setQ] = useState("");
-  // Las sugerencias del mapa solo existen dentro de "Buscar en el mapa sin agregar" (OL-137): nunca sobre los lugares registrados.
-  const [enMapa, setEnMapa] = useState(false);
-  // El lugar registrado elegido: el mapa lo muestra con su pin y la hoja se cierra sola un momento después.
-  const [elegido, setElegido] = useState<LugarResumen | null>(null);
-  const cierre = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (cierre.current) clearTimeout(cierre.current); }, []);
-  const [vista, setVista] = useState<"lista" | "otro">(modoSitio !== "lugar" && (textoDelSitio(otro) || otro.reservado) ? "otro" : "lista");
-  const [consulta, setConsulta] = useState<{ texto: string; tipo: "direccion" | "lugar" } | null>(() => {
-    const texto = otro.reservado ? otro.direccionPrivada : otro.direccion;
-    return modoSitio !== "lugar" && texto && !(otro.reservado ? otro.privadoPunto : otro.sitioPunto) ? { texto, tipo: "direccion" } : null;
+  const [draft, setDraft] = useState<Draft | null>(() => {
+    if (modoSitio === "lugar") {
+      const l = lugares.find((x) => x.id === lugarId);
+      return l ? { origen: "lugar", nombre: l.nombre, direccion: l.direccion ?? "", punto: { lat: l.lat, lng: l.lng }, lugarId: l.id, editable: false, ciudad: null } : null;
+    }
+    const punto = otro.reservado ? otro.privadoPunto : otro.sitioPunto;
+    const direccion = otro.reservado ? otro.direccionPrivada : (otro.direccion ?? "");
+    const nombre = otro.sitioTexto;
+    if (!nombre.trim() && !direccion.trim() && !punto) return null;
+    return { origen: "manual", nombre, direccion, punto, editable: true, ciudad: otro.ciudad };
   });
-  const [direcciones, setDirecciones] = useState<Sugerencia[]>([]);
-  const [sugeridos, setSugeridos] = useState<LugarSugerido[]>([]);
+  // Nada se avisa al padre hasta "Listo" (doc 43: "Atrás no cambia nada"); `tocado` distingue "se reabrió con algo
+  // ya elegido y no se tocó" (Listo no debe pisar un sitio reservado existente) de un cambio de verdad.
+  const [tocado, setTocado] = useState(false);
+  const [ajustado, setAjustado] = useState(false);
+  const [q, setQ] = useState("");
+  // La lista/barra se cierra con un toque (fuera, Escape, "Buscar en el mapa sin agregar") y vuelve a abrirse sola
+  // en cuanto el texto cambia: en vez de un booleano que un efecto tendría que resetear, se guarda PARA QUÉ texto
+  // se cerró -así "cerrada" se deriva solo comparando con `q`, sin useRef ni useEffect (react-hooks/refs).
+  const [cerradaParaTexto, setCerradaParaTexto] = useState<string | null>(null);
+  const [resultadosMapbox, setResultadosMapbox] = useState<LugarSugerido[]>([]);
   const [buscando, setBuscando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const version = useRef(0);
+  const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
+  const [panelAgregar, setPanelAgregar] = useState(false);
+  const [nombreAgregar, setNombreAgregar] = useState("");
+  const [privadoAgregar, setPrivadoAgregar] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [errorAgregar, setErrorAgregar] = useState<string | null>(null);
+  const campoRef = useRef<HTMLDivElement>(null);
   const sesion = useRef("");
+  const versionPin = useRef(0);
+  const versionBusqueda = useRef(0);
   useEffect(() => {
     sesion.current = crypto.randomUUID();
-    const invalidar = () => { ++version.current; };
-    return invalidar;
   }, []);
-  const punto = otro.reservado ? otro.privadoPunto : otro.sitioPunto;
-  // Posición aproximada del teléfono: la que ya quedó cacheada de otra pantalla, o la que se pida aquí con el botón.
-  const [posicionPedida, setPosicionPedida] = useState<Punto | null>(null);
-  const [pidiendoUbicacionCerca, setPidiendoUbicacionCerca] = useState(false);
-  const posicionTelefono = posicionPedida ?? ubicacionCercanaFresca();
-  // Ciudad de contexto en cascada (OL-100, founder 2026-09-21): el punto ya elegido manda; si no hay, el texto de la
-  // búsqueda, la ciudad del chip o la posición del teléfono, y San Luis Potosí de respaldo. La posición del teléfono
-  // va redondeada a 3 decimales antes de entrar a la cascada: es lo único de esto que sale hacia Mapbox como pista
-  // de ubicación (regla de DEFINICION, "aproximada"); el pin que la persona confirma a mano (`punto`) no se toca,
-  // es el dato del evento.
-  const contexto = useMemo(() => {
-    if (punto) return { ciudad: CIUDAD_INICIAL, centro: punto, origen: "posicion" as const };
-    const posicion = yo ?? posicionTelefono;
-    return ciudadDeContexto({ texto: consulta?.texto, ciudadChip: ciudadContexto, posicion: posicion ? redondearParaMapbox(posicion) : null });
-  }, [punto, consulta?.texto, ciudadContexto, yo, posicionTelefono]);
-  const cerca = contexto.centro;
-  // Sin ninguna pista real (ni texto, ni chip, ni posición): se ofrece pedirla con un toque, nunca automático.
-  const sinPistaDeCiudad = !punto && !yo && !posicionTelefono && contexto.origen === "inicial";
-  async function usarMiUbicacionCerca() {
-    setPidiendoUbicacionCerca(true);
-    try {
-      setPosicionPedida(await leerUbicacionCercana());
-    } catch {
-      // Silencioso, como "Estoy aquí": sin ella, la búsqueda sigue con el centro de la ciudad de respaldo.
-    } finally {
-      setPidiendoUbicacionCerca(false);
-    }
+
+  function marcarTocado() {
+    onGesto();
+    setTocado(true);
   }
+
+  // Ciudad de contexto en cascada (mismo criterio que OL-100, docs/rediseno/26): el pin ya puesto manda; si no, el
+  // texto escrito, la ciudad del chip o la posición cacheada del teléfono (nunca pedida aquí sin un toque: ya se
+  // pidió antes, en Cercanos o en otra pantalla); San Luis Potosí de respaldo. Cálculo puro y barato: no hace
+  // falta useMemo (y el compilador de React se queja si la lista de dependencias no calza con lo que infiere).
+  const posicionTelefono = ubicacionCercanaFresca();
+  const contexto = draft?.punto ? { ciudad: CIUDAD_INICIAL, centro: draft.punto, origen: "posicion" as const } : ciudadDeContexto({ texto: q, ciudadChip: ciudadContexto, posicion: yo ?? posicionTelefono });
+
+  const listaCerradaActual = cerradaParaTexto === q;
+
+  // Búsqueda en Mapbox (Search Box: lugares y direcciones juntos), acotada a la ciudad de contexto y con el
+  // reintento automático si el primer intento no trae nada cerca (buscarConContexto, ya construido en OL-100).
+  // Con menos de 3 letras no se busca; lo que haya quedado de una búsqueda más larga se ignora al mostrar (abajo),
+  // así el efecto no necesita "limpiar" nada por su cuenta cuando el texto se acorta.
   useEffect(() => {
-    if (!consulta || consulta.texto.trim().length < 3) return;
+    const texto = q.trim();
+    if (texto.length < 3) return;
     const { mapboxToken } = configPublica();
-    const revision = version.current;
-    let vigente = true;
+    const version = ++versionBusqueda.current;
     const timer = setTimeout(async () => {
       setBuscando(true);
-      setError(null);
+      setErrorBusqueda(null);
       try {
         if (!mapboxToken) throw new Error("Sin servicio de direcciones");
-        if (consulta.tipo === "direccion") {
-          const opciones = await buscarConContexto(
-            consulta.texto,
-            contexto,
-            (texto, bbox) => buscarDirecciones(texto, mapboxToken, cerca, consultarMapa, bbox).then((r) => filtrarYOrdenarDirecciones(r.filter(puntoValido), consulta.texto, cerca, contexto.ciudad.nombre)),
-            (r) => necesitaReintento(r, cerca),
-          );
-          if (vigente && revision === version.current) {
-            setDirecciones(opciones);
-            if (!opciones.length) setError("No encontré esa dirección. Prueba con calle, número y ciudad, o toca el mapa.");
-          }
-        } else {
-          const opciones = await buscarConContexto(
-            consulta.texto,
-            contexto,
-            (texto, bbox) => sugerirLugares(texto, mapboxToken, cerca, sesion.current, consultarMapa, bbox).then((r) => descartarSinCalle(r, consulta.texto)),
-            (r) => necesitaReintentoLugares(r.map((o) => o.distanciaM)),
-          );
-          if (vigente && revision === version.current) setSugeridos(opciones);
-        }
+        const opciones = await buscarConContexto(
+          texto,
+          contexto,
+          (t, bbox) => sugerirLugares(t, mapboxToken, contexto.centro, sesion.current, consultarMapa, bbox).then((r) => descartarSinCalle(r, texto)),
+          (r) => necesitaReintentoLugares(r.map((o) => o.distanciaM)),
+        );
+        if (version === versionBusqueda.current) setResultadosMapbox(opciones);
       } catch {
-        if (vigente && revision === version.current) setError("No pude buscar la dirección. Intenta de nuevo o toca el mapa.");
+        if (version === versionBusqueda.current) setErrorBusqueda("No pude buscar. Intenta de nuevo o toca el mapa.");
       } finally {
-        if (vigente && revision === version.current) setBuscando(false);
+        if (version === versionBusqueda.current) setBuscando(false);
       }
     }, 350);
-    return () => { vigente = false; clearTimeout(timer); };
-  }, [consulta, cerca, contexto]);
-  function invalidar() {
-    const revision = ++version.current;
-    onGesto();
-    setConsulta(null);
-    setDirecciones([]);
-    setSugeridos([]);
-    setBuscando(false);
-    setError(null);
-    return revision;
-  }
-  function cambiar(parte: Partial<OtroSitio>, desdePin = false) {
-    invalidar();
-    onOtro({ ...otro, ...parte }, desdePin);
-  }
-  function escribirDireccion(texto: string) {
-    cambiar({ ...revisarNombreLegacy(otro), pinPendiente: !!texto.trim(), ...(otro.reservado ? { direccionPrivada: texto, privadoPunto: null, ciudad: null } : { direccion: texto, sitioPunto: null, ciudad: null }) });
-    setConsulta({ texto, tipo: "direccion" });
-  }
-  function elegirDireccion(s: Sugerencia) {
-    if (!puntoValido(s)) return;
-    const p = { lat: s.lat, lng: s.lng };
-    cambiar({ ...revisarNombreLegacy(otro), pinPendiente: false, ...(otro.reservado ? { direccionPrivada: s.direccion, privadoPunto: p, ciudad: s.ciudad } : { direccion: s.direccion, sitioPunto: p, ciudad: s.ciudad }) });
-  }
-  async function elegirSugerido(s: LugarSugerido) {
-    const revision = invalidar();
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, contexto.origen, contexto.ciudad.slug]);
+
+  const textoBusqueda = q.trim();
+  const conTextoLargo = textoBusqueda.length >= 3;
+  const lugaresFiltrados = textoBusqueda ? lugaresPorTexto(lugares, q) : [];
+  const combinados = combinarResultados(lugaresFiltrados, conTextoLargo ? resultadosMapbox : []);
+  const modo = modoDePantalla(q, panelAgregar, combinados.length > 0);
+  const listaAbierta = (modo === "resultados" || modo === "no-encontrado") && !listaCerradaActual;
+  const barraVisible = (modo === "resultados" || modo === "no-encontrado") && !listaCerradaActual;
+
+  /** Mueve el pin a cualquier punto: se escriba el nombre a mano o venga de un POI, y reverse geocoding para la dirección. */
+  async function moverPin(punto: Punto, nombreFijo?: string, esArrastre = false) {
+    marcarTocado();
+    setAjustado(esArrastre);
+    const version = ++versionPin.current;
+    setDraft((actual) => ({ origen: "manual", nombre: nombreFijo ?? (actual?.editable ? actual.nombre : ""), direccion: "Ubicando…", punto, editable: true, ciudad: actual?.editable ? actual.ciudad : null }));
     const { mapboxToken } = configPublica();
-    if (!mapboxToken) return;
-    setBuscando(true);
+    if (!mapboxToken) {
+      if (version === versionPin.current) setDraft((a) => (a && a.punto === punto ? { ...a, direccion: "" } : a));
+      return;
+    }
     try {
-      const r = await recuperarLugar(s.mapboxId, mapboxToken, sesion.current, consultarMapa);
-      if (revision !== version.current) return;
-      if (!r || !puntoValido(r)) throw new Error("Sin coordenadas");
-      const p = { lat: r.lat, lng: r.lng };
-      const revisado = revisarNombreLegacy(otro);
-      onOtro({ ...revisado, pinPendiente: false, sitioTexto: otro.reservado || s.esDireccion ? revisado.sitioTexto : s.nombre, ciudad: r.ciudad,
-        ...(otro.reservado ? { direccionPrivada: r.direccion || s.direccion, privadoPunto: p } : { direccion: r.direccion || s.direccion, sitioPunto: p }) });
-      setVista("otro");
+      const r = await lugarDesdePunto(punto, mapboxToken);
+      if (version !== versionPin.current) return;
+      setDraft((a) => (a && a.punto === punto ? { ...a, direccion: r?.direccion ?? "", ciudad: r?.ciudad ?? a.ciudad } : a));
     } catch {
-      if (revision === version.current) setError("No pude ubicar esa opción. Busca de nuevo o toca el mapa.");
-    } finally {
-      if (revision === version.current) setBuscando(false);
+      if (version === versionPin.current) setDraft((a) => (a && a.punto === punto ? { ...a, direccion: "" } : a));
     }
   }
-  const cerrar = () => { invalidar(); onCerrar(); };
-  const filtrados = lugaresPorTexto(lugares, q);
-  const otroListo = sitioListo(otro);
-  // Las dos búsquedas remotas (direcciones y lugares) flotan sobre el layout, ancladas a su campo: nunca empujan el
-  // mapa ni los campos de abajo (founder, producción, 2026-09-21). ui/ListaFlotante hace el trabajo; aquí solo el
-  // contenido: "Buscando…", el error, o las opciones.
-  const campoDireccionRef = useRef<HTMLElement>(null);
-  const panelDireccion = !!consulta && consulta.tipo === "direccion";
-  // Ninguna búsqueda de Mapbox es infalible (revisión del gestor: "Galeana 423" existe en dos municipios distintos
-  // y ninguno es el del cartel; afinar el texto quita la basura pero no garantiza encontrar la calle exacta). La
-  // salida siempre visible, del mismo peso que una sugerencia: cierra la lista, conserva lo escrito y deja el
-  // mapa listo para poner el pin a mano.
-  const salidaManual = (
-    <li className={styles.salidaManual}>
-      <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={invalidar}>
-        <IconoPin width={20} height={20} />
-        <b>No es ninguna</b>
-        <small>Pon el pin en el mapa</small>
-      </button>
-    </li>
-  );
-  const contenidoDirecciones = (
-    <>
-      {buscando ? (
-        <li className={styles.avisoFlotante} role="status">Buscando…</li>
-      ) : error ? (
-        <li className={styles.avisoFlotante} role="alert">{error}</li>
-      ) : (
-        direcciones.map((s) => (
-          <li key={`${s.lat},${s.lng}`}>
-            <button type="button" className={sug.renglon} role="option" aria-selected={false} onClick={() => elegirDireccion(s)}>
-              <IconoPin width={20} height={20} />
-              <b>{s.nombre || s.direccion}</b>
-              <small>{[s.nombre ? s.direccion : null, s.ciudad].filter(Boolean).join(" · ")}</small>
-            </button>
-          </li>
-        ))
-      )}
-      {!buscando && salidaManual}
-    </>
-  );
 
-  if (vista === "otro") {
-    const ponerPunto = (p: Punto) => cambiar(ponerPinManual(otro, p), true);
-    return (
-      <Hoja etiqueta="Es en otro sitio" titulo="Es en otro sitio" onCerrar={cerrar}>
-        <div className={styles.otro}>
-          <label className={`${canon.campo} ${canon.sinIcono}`}>
-            <input type="text" value={otro.sitioTexto} onChange={(e) => cambiar({ sitioTexto: e.target.value, nombreLegacy: false })} maxLength={LIMITES_EVENTO.sitio} placeholder={otro.reservado ? "Cómo se anuncia, ej. Casa en Tequis" : "Nombre del sitio, ej. Plaza de Armas"} aria-label={otro.reservado ? "Cómo se anuncia" : "Nombre del sitio"} autoComplete="off" autoFocus />
-            <Limpiar visible={!!otro.sitioTexto} />
-            <ContadorCaracteres valor={otro.sitioTexto} tope={LIMITES_EVENTO.sitio} />
-          </label>
-          {/* La ayuda de qué falta va bajo el campo, no dentro del botón (founder, 2026-09-21: canon para todos los formularios). */}
-          {/* Nunca canon.cuerpoNota aquí: lleva grid-area: cuerpo, y .otro es una rejilla sin esa área — el
-              navegador crea una columna implícita para ubicarlo y toda la hoja se rompe (founder, producción,
-              2026-09-21). Clase llana, como el resto de los avisos de esta hoja. */}
-          {!otro.sitioTexto.trim() && <p className={styles.nota}>Falta el nombre del sitio.</p>}
-          {otro.referenciaLegacy && !otro.sitioTexto.trim() && <p className={styles.nota}>Nombre público por confirmar. Texto anterior: {otro.referenciaLegacy}</p>}
-          {!otro.reservado && (
-            <label className={canon.campo} ref={campoDireccionRef as React.RefObject<HTMLLabelElement>}>
-              <IconoBuscar width={20} height={20} />
-              <input
-                type="text"
-                value={otro.direccion ?? ""}
-                onChange={(e) => escribirDireccion(e.target.value)}
-                maxLength={LIMITES_EVENTO.direccion}
-                placeholder="Calle y número, o colonia"
-                aria-label="Buscar la dirección"
-                autoComplete="off"
-                role="combobox"
-                aria-expanded={panelDireccion}
-                aria-controls="lista-direcciones"
-                aria-autocomplete="list"
-              />
-              <Limpiar visible={!!otro.direccion} />
-              <ContadorCaracteres valor={otro.direccion} tope={LIMITES_EVENTO.direccion} />
-            </label>
-          )}
-          <div className={styles.mapa}>
-            {/* Sin pin todavía, el mapa arranca centrado en la ciudad de contexto (no siempre San Luis Potosí por
-                defecto): quien no encontró su dirección en la lista puede poner el pin a mano, ya en su zona
-                (revisión del gestor, salida "No es ninguna: pon el pin en el mapa"). */}
-            <Mapa modo="elegir" valor={punto} onCambio={ponerPunto} ubicacion={yo} centrarEn={punto ? null : contexto.centro} ciudad={contexto.ciudad} />
-            <button type="button" className={`${mapa.ubicame} ${styles.ubicame}`} onClick={() => { invalidar(); onEstoyAqui(ponerPunto); }} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
-              <IconoUbicacion width={22} height={22} />
-            </button>
-          </div>
-          {avisoUbicacion && <p className={styles.nota}>{avisoUbicacion}</p>}
-          {otro.sitioTexto.trim() && otro.pinPendiente && <p className={styles.nota}>Falta confirmar el pin.</p>}
-          <div className={styles.reservado}>
-            <b>Reservado</b>
-            <small>{otro.reservado ? "La dirección exacta solo la ven quienes van, cuando toque" : "La dirección solo la ven quienes van"}</small>
-            <button type="button" role="switch" aria-checked={otro.reservado} aria-label="Sitio reservado" className={canon.palanca} onClick={() => cambiar(cambiarReserva(otro))} />
-          </div>
-          {otro.reservado && (
-            <>
-              <span className={limpiar.caja} ref={campoDireccionRef as React.RefObject<HTMLSpanElement>}>
+  function elegirLugarLista(l: LugarResumen) {
+    marcarTocado();
+    setPanelAgregar(false);
+    setErrorAgregar(null);
+    setDraft({ origen: "lugar", nombre: l.nombre, direccion: l.direccion ?? "", punto: { lat: l.lat, lng: l.lng }, lugarId: l.id, editable: false, ciudad: null });
+    setQ("");
+  }
+
+  async function elegirMapbox(item: LugarSugerido) {
+    const { mapboxToken } = configPublica();
+    if (!mapboxToken) return;
+    marcarTocado();
+    setPanelAgregar(false);
+    setErrorAgregar(null);
+    setBuscando(true);
+    try {
+      const r = await recuperarLugar(item.mapboxId, mapboxToken, sesion.current, consultarMapa);
+      if (!r || !puntoValido(r)) throw new Error("Sin coordenadas");
+      setDraft({ origen: "manual", nombre: item.esDireccion ? "" : item.nombre, direccion: r.direccion || item.direccion, punto: { lat: r.lat, lng: r.lng }, editable: true, ciudad: r.ciudad });
+      setQ("");
+    } catch {
+      setErrorBusqueda("No pude ubicar esa opción. Busca de nuevo o toca el mapa.");
+    } finally {
+      setBuscando(false);
+    }
+  }
+
+  function estoyAquiClick() {
+    onEstoyAqui((p) => {
+      setPanelAgregar(false);
+      setErrorAgregar(null);
+      void moverPin(p);
+    });
+  }
+
+  function abrirAgregar() {
+    if (!draft?.punto) void moverPin(contexto.centro, q.trim() || undefined);
+    setNombreAgregar(q.trim() || draft?.nombre || "");
+    setPrivadoAgregar(false);
+    setErrorAgregar(null);
+    setPanelAgregar(true);
+    setCerradaParaTexto(q);
+  }
+
+  async function guardarAgregar() {
+    if (!nombreAgregar.trim() || !draft?.punto) return;
+    const direccionActual = draft.direccion === "Ubicando…" ? "" : draft.direccion;
+    const { modo: destino, nombre, direccion } = decidirGuardado(privadoAgregar, nombreAgregar, direccionActual);
+    marcarTocado();
+    if (destino === "privado") {
+      setDraft({ origen: "manual", nombre, direccion, punto: draft.punto, editable: true, ciudad: draft.ciudad });
+      setPanelAgregar(false);
+      setQ("");
+      return;
+    }
+    setGuardando(true);
+    setErrorAgregar(null);
+    try {
+      const r = await crearLugarDesdeEvento({ nombre, direccion, lat: draft.punto.lat, lng: draft.punto.lng, ciudad: draft.ciudad ?? contexto.ciudad.nombre, volverA });
+      if (!r.ok) {
+        setErrorAgregar(r.error);
+        return;
+      }
+      const existente = lugares.find((l) => l.id === r.id);
+      const tipo = deducirTipo(nombre) ?? "otro";
+      const lugarResultante: LugarResumen = existente ?? { id: r.id, nombre, tipo, direccion, lat: draft.punto.lat, lng: draft.punto.lng, portada: null };
+      setDraft({ origen: "lugar", nombre: lugarResultante.nombre, direccion: lugarResultante.direccion ?? "", punto: { lat: lugarResultante.lat, lng: lugarResultante.lng }, lugarId: lugarResultante.id, lugarNuevo: existente ? undefined : lugarResultante, editable: false, ciudad: null });
+      setPanelAgregar(false);
+      setQ("");
+    } catch {
+      setErrorAgregar("No se pudo guardar el lugar. Intenta de nuevo.");
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  function atras() {
+    onCerrar();
+  }
+  function listo() {
+    if (!draft) {
+      onCerrar();
+      return;
+    }
+    if (draft.origen === "lugar" && draft.lugarId) {
+      onLugar(draft.lugarId, draft.lugarNuevo);
+      onCerrar();
+      return;
+    }
+    if (!tocado || !draft.punto || !draft.nombre.trim()) {
+      onCerrar();
+      return;
+    }
+    onOtro({ ...otro, reservado: false, sitioTexto: draft.nombre.trim().slice(0, LIMITES_EVENTO.sitio), direccion: draft.direccion.slice(0, LIMITES_EVENTO.direccion), sitioPunto: draft.punto, pinPendiente: false, ciudad: draft.ciudad, direccionPrivada: "", privadoPunto: null }, false);
+    onCerrar();
+  }
+
+  const listoHabilitado = !panelAgregar && !!draft?.punto && (draft.origen === "lugar" || draft.nombre.trim().length > 0);
+
+  // La barra sobre el teclado (variante B, doc 43 punto 5): `visualViewport` mide el área visible de verdad en
+  // iOS; sin él (navegador que no lo da), se queda al pie -`altoTeclado` devuelve 0 en los dos casos sin teclado.
+  const [bottomBarra, setBottomBarra] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    function medir() {
+      setBottomBarra(altoTeclado(window.innerHeight, vv ? { height: vv.height, offsetTop: vv.offsetTop } : null));
+    }
+    medir();
+    if (!vv) return;
+    vv.addEventListener("resize", medir);
+    vv.addEventListener("scroll", medir);
+    return () => {
+      vv.removeEventListener("resize", medir);
+      vv.removeEventListener("scroll", medir);
+    };
+  }, []);
+  const estoyAquiBottom = barraVisible ? bottomBarra + ALTO_BARRA_ACCIONES + 16 : 16;
+
+  const textoAgregar = q.trim() ? `Agregar «${q.trim()}» como lugar` : "Agregar lugar";
+
+  return (
+    <div className={styles.capa} role="dialog" aria-label="¿Dónde es?">
+      <div className={styles.cabecera}>
+        <button type="button" className={styles.atras} onClick={atras}>
+          <IconoChevronIzquierda width={18} height={18} />
+          Atrás
+        </button>
+        <h2>¿Dónde es?</h2>
+        <button type="button" className={styles.listo} onClick={listo} disabled={!listoHabilitado}>
+          Listo
+        </button>
+      </div>
+      <div className={styles.cuerpo}>
+        <div className={styles.campo} ref={campoRef}>
+          <IconoBuscar width={20} height={20} />
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Nombre o dirección"
+            aria-label="Buscar el lugar"
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={listaAbierta}
+            aria-controls="lista-donde-es"
+            aria-autocomplete="list"
+          />
+          <Limpiar visible={!!q} />
+        </div>
+        <div className={styles.mapaLleno}>
+          <MapaDondeEs
+            lugares={lugares}
+            seleccion={draft?.punto ?? null}
+            centrarEn={contexto.centro}
+            ciudad={contexto.ciudad}
+            yo={yo}
+            onLugar={(id) => {
+              const l = lugares.find((x) => x.id === id);
+              if (l) elegirLugarLista(l);
+            }}
+            onPoi={(nombre, p) => void moverPin(p, nombre)}
+            onPunto={(p) => void moverPin(p)}
+            onArrastre={(p) => void moverPin(p, undefined, true)}
+          />
+          <button type="button" className={styles.estoyAqui} style={{ bottom: estoyAquiBottom }} onClick={estoyAquiClick} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+            <IconoUbicacion width={22} height={22} />
+          </button>
+          {modo === "inicial" && avisoUbicacion && <p className={styles.avisoUbicacion}>{avisoUbicacion}</p>}
+          {modo === "inicial" && draft && (
+            <div className={styles.resumen}>
+              <IconoPin width={18} height={18} />
+              {draft.editable ? (
                 <input
                   type="text"
-                  value={otro.direccionPrivada}
-                  onChange={(e) => escribirDireccion(e.target.value)}
-                  maxLength={LIMITES_EVENTO.direccion}
-                  placeholder="Dirección exacta: calle y número, colonia"
-                  aria-label="Dirección exacta"
-                  className={canon.entrada}
-                  autoComplete="off"
-                  role="combobox"
-                  aria-expanded={panelDireccion}
-                  aria-controls="lista-direcciones"
-                  aria-autocomplete="list"
+                  className={styles.nombreEditable}
+                  value={draft.nombre}
+                  onChange={(e) => {
+                    marcarTocado();
+                    setDraft((a) => (a ? { ...a, nombre: e.target.value } : a));
+                  }}
+                  maxLength={LIMITES_EVENTO.sitio}
+                  placeholder="Nombre del lugar"
+                  aria-label="Nombre del lugar"
                 />
-                <Limpiar visible={!!otro.direccionPrivada} />
-                <ContadorCaracteres valor={otro.direccionPrivada} tope={LIMITES_EVENTO.direccion} />
-              </span>
-              {otro.sitioTexto.trim() && !otro.pinPendiente && !otro.direccionPrivada.trim() && <p className={styles.nota}>Falta la dirección exacta.</p>}
-              <select value={otro.revelarHoras} onChange={(e) => cambiar({ revelarHoras: Number(e.target.value) })} aria-label="Cuándo se revela" className={styles.select}>
-                {REVELAR_OPCIONES.map((o) => (
-                  <option key={o.horas} value={o.horas}>
-                    Se revela {o.etiqueta}
-                  </option>
-                ))}
-              </select>
-              <span className={limpiar.caja}>
-                <input type="text" value={otro.indicaciones} onChange={(e) => cambiar({ indicaciones: e.target.value })} maxLength={LIMITES_EVENTO.indicaciones} placeholder="Indicaciones, ej. portón verde (opcional)" aria-label="Indicaciones" className={canon.entrada} autoComplete="off" />
-                <Limpiar visible={!!otro.indicaciones} />
-                <ContadorCaracteres valor={otro.indicaciones} tope={LIMITES_EVENTO.indicaciones} />
-              </span>
-            </>
+              ) : (
+                <b>{draft.nombre}</b>
+              )}
+              <span className={styles.resumenDireccion}>{draft.direccion || (draft.punto ? "Ubicando…" : "")}</span>
+              {ajustado && <span className={styles.notaAjuste}>Moviste el pin. Revisa que la dirección corresponda.</span>}
+            </div>
           )}
-          {otro.pinPendiente && punto && puntoValido(punto) && (
-            <div>
-              <p className={styles.nota}>Moviste el pin. Revisa que la dirección corresponda.</p>
-              <button type="button" className={styles.volver} onClick={() => cambiar({ pinPendiente: false })}>
-                Usar esta dirección con el pin
+          <ListaFlotante abierta={listaAbierta} onCerrar={() => setCerradaParaTexto(q)} ancla={campoRef} id="lista-donde-es" etiqueta="Lugares y direcciones">
+            {modo === "resultados" &&
+              combinados.map((r) =>
+                r.tipo === "lugar" ? (
+                  <li key={`l-${r.lugar.id}`}>
+                    <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirLugarLista(r.lugar)}>
+                      <IconoPin width={20} height={20} />
+                      <b>{r.lugar.nombre}</b>
+                      <small>{r.lugar.direccion}</small>
+                    </button>
+                  </li>
+                ) : (
+                  <li key={`m-${r.item.mapboxId}`}>
+                    <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => void elegirMapbox(r.item)}>
+                      <IconoPin width={20} height={20} />
+                      <b>{r.item.esDireccion ? q.trim() : r.item.nombre}</b>
+                      <small>{[r.item.direccion, r.item.ciudad].filter(Boolean).join(" · ")}</small>
+                    </button>
+                  </li>
+                ),
+              )}
+            {modo === "no-encontrado" && (
+              <li className={styles.avisoNoEncontrado} role="status">
+                <b>«{q.trim()}» no está registrado.</b>
+                Puedes agregarlo como lugar o buscarlo en el mapa sin agregarlo.
+              </li>
+            )}
+            {conTextoLargo && modo === "resultados" && buscando && (
+              <li className={styles.avisoFlotante} role="status">
+                Buscando…
+              </li>
+            )}
+            {/* Con "no está registrado" ya dicho arriba, repetir el error de red no cabe ni hace falta (además
+                de que los dos juntos podían alargar la lista hasta tapar la barra de acciones, medido con las
+                capturas de esta pieza): el aviso de red solo se suma cuando SÍ hay resultados. */}
+            {conTextoLargo && modo === "resultados" && errorBusqueda && (
+              <li className={styles.avisoFlotante} role="alert">
+                {errorBusqueda}
+              </li>
+            )}
+          </ListaFlotante>
+          {panelAgregar && (
+            <div className={styles.panelAgregar}>
+              <h3>Agregar lugar</h3>
+              <label className={styles.campoPanel}>
+                <span>Nombre</span>
+                <input type="text" value={nombreAgregar} onChange={(e) => setNombreAgregar(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Nombre del lugar" aria-label="Nombre del lugar nuevo" autoFocus />
+              </label>
+              <label className={styles.campoPanel}>
+                <span>Dirección</span>
+                <p className={styles.direccionFija}>{draft && draft.direccion !== "Ubicando…" ? draft.direccion || "Ajusta el pin en el mapa para fijar la dirección" : "Ubicando…"}</p>
+              </label>
+              <div className={styles.filaPrivado}>
+                <div className={styles.textoPrivado}>
+                  <b>Es un lugar privado, no registrarlo</b>
+                  <small>Se guarda solo en este evento, sin ficha pública</small>
+                </div>
+                <button type="button" role="switch" aria-checked={privadoAgregar} aria-label="Lugar privado" className={styles.palanca} onClick={() => setPrivadoAgregar((v) => !v)} />
+              </div>
+              {errorAgregar && (
+                <p className={styles.notaError} role="alert">
+                  {errorAgregar}
+                </p>
+              )}
+              <Boton type="button" onClick={() => void guardarAgregar()} disabled={!nombreAgregar.trim() || guardando}>
+                {guardando ? "Guardando…" : "Guardar y usar este lugar"}
+              </Boton>
+            </div>
+          )}
+          {barraVisible && (
+            <div className={styles.barraAcciones} style={{ bottom: bottomBarra }}>
+              <button type="button" className={styles.accionAgregar} onClick={abrirAgregar}>
+                <IconoMas width={18} height={18} />
+                <span>{textoAgregar}</span>
+              </button>
+              <button type="button" className={styles.accionMapa} onClick={() => setCerradaParaTexto(q)}>
+                <IconoPin width={18} height={18} />
+                Buscar en el mapa sin agregar
               </button>
             </div>
           )}
-          <button type="button" className={styles.volver} onClick={() => { invalidar(); setEnMapa(false); setVista("lista"); }}>
-            Mejor un lugar registrado
-          </button>
         </div>
-        <ListaFlotante abierta={panelDireccion} onCerrar={invalidar} ancla={campoDireccionRef} id="lista-direcciones" etiqueta="Direcciones encontradas">
-          {contenidoDirecciones}
-        </ListaFlotante>
-        <Boton type="button" onClick={cerrar} disabled={!otroListo}>
-          Listo
-        </Boton>
-      </Hoja>
-    );
-  }
-
-  const texto = q.trim();
-  function escribirLugar(valor: string) {
-    setQ(valor);
-    // En el mapa, la búsqueda sigue viva y lo anterior se queda hasta que llega lo nuevo (sin parpadeo).
-    if (enMapa) setConsulta({ texto: valor, tipo: "lugar" });
-  }
-  function buscarEnMapa() {
-    invalidar();
-    setEnMapa(true);
-    setConsulta({ texto, tipo: "lugar" });
-  }
-  function salirDelMapa() {
-    invalidar();
-    setEnMapa(false);
-  }
-  function elegirLugar(l: LugarResumen) {
-    if (elegido) return;
-    invalidar();
-    setElegido(l);
-    cierre.current = setTimeout(() => onLugar(l.id), 400);
-  }
-  // Tocar el mapa (solo en «Buscar en el mapa»): pone el pin, con lo escrito como nombre del sitio, y pasa a «Es en otro sitio».
-  function ponerPinDesdeMapa(p: Punto) {
-    invalidar();
-    const nombre = otro.sitioTexto.trim() ? otro.sitioTexto : texto.slice(0, LIMITES_EVENTO.sitio);
-    onOtro(ponerPinManual({ ...otro, sitioTexto: nombre }, p), true);
-    setEnMapa(false);
-    setVista("otro");
-  }
-  const campo = (
-    <label className={`${canon.campo} ${styles.pegajoso}`}>
-      <IconoBuscar width={20} height={20} />
-      <input type="text" value={q} onChange={(e) => escribirLugar(e.target.value)} placeholder="Nombre o dirección" aria-label="Buscar el lugar" autoComplete="off" autoFocus disabled={!!elegido} />
-      <Limpiar visible={!!q && !elegido} />
-    </label>
-  );
-  const salidas = (
-    <ul className={`${sug.lista} ${styles.lista}`}>
-      <li>
-        <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} className={sug.renglon} onClick={avisarQueVuelvo}>
-          <IconoMas width={20} height={20} />
-          <b>Agregar «{texto}» como lugar</b>
-          <small>Lo registras y vuelves aquí con él elegido</small>
-        </Link>
-      </li>
-      <li>
-        <button type="button" className={sug.renglon} onClick={buscarEnMapa}>
-          <IconoPin width={20} height={20} />
-          <b>Buscar en el mapa sin agregar</b>
-          <small>Solo para este evento: pones el pin</small>
-        </button>
-      </li>
-    </ul>
-  );
-  const zona = elegido ? (
-    <ul className={`${sug.lista} ${styles.lista}`}>
-      <li>
-        <div className={`${sug.renglon} ${sug.conFoto} ${styles.elegido}`} role="status">
-          {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-          <img src={elegido.portada ?? SIN_FOTO} alt="" className={sug.foto} />
-          <b>{elegido.nombre}</b>
-          <small>{[etiquetaLugar(elegido), elegido.direccion].filter(Boolean).join(" · ")}</small>
-        </div>
-      </li>
-    </ul>
-  ) : enMapa ? (
-    <>
-      {sinPistaDeCiudad && texto.length >= 3 && (
-        <button type="button" className={styles.usarUbicacion} onClick={usarMiUbicacionCerca} disabled={pidiendoUbicacionCerca}>
-          <IconoUbicacion width={20} height={20} />
-          <span>{pidiendoUbicacionCerca ? "Ubicando…" : "Usar mi ubicación para buscar cerca"}</span>
-        </button>
-      )}
-      <p className={styles.separador} role="status">{buscando ? "Buscando en el mapa…" : "En el mapa"}</p>
-      {error && <p className={styles.nota} role="alert">{error}</p>}
-      {sugeridos.length > 0 && (
-        <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares y direcciones encontrados">
-          {sugeridos.map((s) => (
-            <li key={s.mapboxId}>
-              <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirSugerido(s)}>
-                <IconoPin width={20} height={20} />
-                <b>{s.nombre}</b>
-                <small>{[s.direccion, s.ciudad].filter(Boolean).join(" · ")}</small>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
-  ) : !texto ? null : filtrados.length > 0 ? (
-    <>
-      <ul className={`${sug.lista} ${styles.lista}`} role="listbox" aria-label="Lugares registrados">
-        {filtrados.map((l) => (
-          <li key={l.id}>
-            <button type="button" role="option" aria-selected={l.id === lugarId} className={`${sug.renglon} ${sug.conFoto}`} onClick={() => elegirLugar(l)}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-              <img src={l.portada ?? SIN_FOTO} alt="" className={sug.foto} />
-              <b>{l.nombre}</b>
-              <small>{[etiquetaLugar(l), l.direccion].filter(Boolean).join(" · ")}</small>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <p className={styles.pie}>
-        ¿No es ninguno?{" "}
-        <Link href={`/lugares/nuevo?siguiente=${encodeURIComponent(volverA)}`} onClick={avisarQueVuelvo}>Agregar</Link>
-        {" · "}
-        <button type="button" onClick={buscarEnMapa}>Buscar en el mapa</button>
-      </p>
-    </>
-  ) : (
-    <>
-      <div className={styles.noExiste} role="status">
-        <b>«{texto}» no está registrado.</b>
-        Puedes agregarlo como lugar o buscarlo en el mapa sin agregarlo.
       </div>
-      {salidas}
-    </>
-  );
-  // El mapa está siempre, en el mismo sitio (una sola instancia): solo cambia lo que muestra. Referencia al abrir y con
-  // resultados; con un lugar elegido, su pin; en «Buscar en el mapa», la herramienta que pone el pin al tocar.
-  const pinElegido = elegido ? { lat: elegido.lat, lng: elegido.lng } : null;
-  return (
-    <Hoja etiqueta="Dónde es" titulo="Dónde es" completa plano onCerrar={cerrar}>
-      {enMapa && !elegido && <button type="button" className={styles.volver} onClick={salirDelMapa}>‹ Lugares registrados</button>}
-      {campo}
-      <div className={styles.zona}>{zona}</div>
-      <div className={styles.mapaFijo}>
-        <Mapa modo="elegir" valor={pinElegido} onCambio={enMapa ? ponerPinDesdeMapa : undefined} ubicacion={yo} centrarEn={pinElegido ? null : contexto.centro} ciudad={contexto.ciudad} />
-      </div>
-    </Hoja>
+    </div>
   );
 }

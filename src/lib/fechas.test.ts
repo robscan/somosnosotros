@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, diaPin, eventoPaso, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { aFechaIcs, combinarFechaHora, diaCorto, diaLargo, diaPin, eventoPaso, fechaCortaChip, filtroSinPasar, formatearCuando, formatearLargo, fraseCuando, horaCorta, inicioDelDia, isoALocal, localAIso, proximosDias, resugerirCuando, sugerirInicio, sumarHoras, terminaDe, tramo, yaPaso, ZONA_INICIAL, zonaSegura } from "./fechas";
 
 // "ahora": sábado 19 sep 2026, 10:00 hora de la ciudad (16:00Z)
 const AHORA = new Date("2026-09-19T16:00:00Z");
@@ -70,6 +70,23 @@ describe("fechas", () => {
   });
   it("las listas filtran con termina, que la base calcula en la zona de cada evento", () => {
     expect(filtroSinPasar(AHORA)).toBe(`termina.gte."2026-09-19T16:00:00.000Z"`);
+  });
+});
+
+describe("fechaCortaChip", () => {
+  it("«mié 30 sep»: día en tres letras con acento y minúscula, número sin cero, mes en tres letras, sin «de»", () => {
+    expect(fechaCortaChip("2026-09-30T18:00:00Z")).toBe("mié 30 sep");
+    expect(fechaCortaChip("2026-09-24T18:00:00Z")).toBe("jue 24 sep");
+    expect(fechaCortaChip("2026-01-05T18:00:00Z")).toBe("lun 5 ene");
+  });
+  it("nunca dice Hoy ni Mañana, siempre la fecha corta", () => {
+    // AHORA es sábado 19 sep 2026; "2026-09-20T01:00:00Z" es hoy (19:00 hora local); "...21T01:00:00Z" es mañana.
+    expect(fechaCortaChip("2026-09-20T01:00:00Z")).toBe("sáb 19 sep");
+    expect(fechaCortaChip("2026-09-21T01:00:00Z")).toBe("dom 20 sep");
+  });
+  it("en la zona pedida (America/Mexico_City por defecto)", () => {
+    expect(fechaCortaChip("2026-09-19T20:00:00Z", "Europe/Madrid")).toBe("sáb 19 sep"); // 22:00 en Madrid, mismo día
+    expect(fechaCortaChip("2026-09-19T22:30:00Z", "Europe/Madrid")).toBe("dom 20 sep"); // 00:30 del día siguiente en Madrid
   });
 });
 

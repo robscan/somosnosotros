@@ -2,7 +2,7 @@ import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
-import { diaPin, formatearCuando } from "./fechas";
+import { diaLocal, diaPin, formatearCuando } from "./fechas";
 import type { Origen } from "./origen";
 import { LIMITES_LUGAR } from "./limites";
 
@@ -49,8 +49,9 @@ export function hrefLugar(l: { id: string; slug?: string | null }): string {
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
 export type ProximoEvento = { id: string; inicio: string; zona: string; titulo: string };
 
-/** Lo que la lista, el mapa y la tarjeta del pin enseñan de cada lugar. */
-export type LugarLista = LugarResumen & { proximo: ProximoEvento | null };
+/** Lo que la lista, el mapa y la tarjeta del pin enseñan de cada lugar. `diasEvento` es opcional: solo lo
+ *  necesita el mapa, para el chip de fecha (docs/rediseno/45, OL-174); las demás pantallas no lo piden. */
+export type LugarLista = LugarResumen & { proximo: ProximoEvento | null; diasEvento?: string[] };
 
 export type Lugar = LugarResumen & {
   descripcion: string | null;
@@ -127,6 +128,30 @@ export function conProximo<T extends { id: string }>(lugares: T[], eventos: (Pro
   const proximo = new Map<string, ProximoEvento>();
   for (const e of eventos) if (e.lugar_id && !proximo.has(e.lugar_id)) proximo.set(e.lugar_id, { id: e.id, inicio: e.inicio, zona: e.zona, titulo: e.titulo });
   return lugares.map((l) => ({ ...l, proximo: proximo.get(l.id) ?? null }));
+}
+
+/**
+ * Cada lugar con los días (YYYY-MM-DD, en la zona del propio evento) en que tiene al menos un evento próximo: lo
+ * que el chip de fecha del mapa de Lugares necesita para filtrar pines por día (docs/rediseno/45, OL-174). Los
+ * mismos eventos que ya carga `cargar()` para el "próximo evento" de cada pin (`conProximo`), sin otra consulta:
+ * esa consulta no tiene tope de días, solo de cuántos eventos trae (500), así que cualquier fecha que la persona
+ * elija ya está entre los datos que el mapa recibió.
+ */
+export function diasConEvento<T extends { id: string }>(lugares: T[], eventos: { inicio: string; zona: string; lugar_id: string | null }[]): (T & { diasEvento: string[] })[] {
+  const dias = new Map<string, Set<string>>();
+  for (const e of eventos) {
+    if (!e.lugar_id) continue;
+    const set = dias.get(e.lugar_id) ?? new Set<string>();
+    set.add(diaLocal(new Date(e.inicio), e.zona));
+    dias.set(e.lugar_id, set);
+  }
+  return lugares.map((l) => ({ ...l, diasEvento: [...(dias.get(l.id) ?? [])] }));
+}
+
+/** Los lugares con al menos un evento ese día (docs/rediseno/45, OL-174): lo que pinta el mapa con el chip de
+ *  fecha elegido — el filtro es solo del mapa (la Lista no filtra por fecha, pedido literal del founder). */
+export function lugaresConEventoElDia<T extends { diasEvento?: string[] }>(lugares: T[], fecha: string): T[] {
+  return lugares.filter((l) => l.diasEvento?.includes(fecha));
 }
 
 export { LIMITES_LUGAR } from "./limites";

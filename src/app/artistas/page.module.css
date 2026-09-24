@@ -1,0 +1,6 @@
+/* Artistas (OL-177): "Mis artistas" arriba del listado. `.raiz` no pone gutter horizontal (cada sección lo pone
+   el suyo, como `.lista`/`.conteo`/`.vacio` de Lista.module.css); MisArtistas.module.css (perfil/, no se toca en
+   esta pieza) tampoco lo trae — ahí lo pone `ui/Ficha.module.css` `.pagina`, que envuelve Mi perfil. */
+.misArtistas {
+  padding: 0 var(--gutter);
+}

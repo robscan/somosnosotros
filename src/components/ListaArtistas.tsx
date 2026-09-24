@@ -42,6 +42,10 @@ type Props = {
   seguidos?: string[] | null;
   /** Para la pregunta de avisos tras el primer Seguir; null = sin sesión. */
   avisos?: AvisosLista | null;
+  /** «Mis artistas» y el letrero de correo enlazado (OL-177): contenido normal de la página, debajo de la
+   * cabecera (chips) y antes de la tira de letras y el conteo — nunca antes de `cabecera`, que junto con la
+   * Barra de arriba forma la cabecera única y pegajosa de OL-087 (`docs/rediseno/prototipos/cabeceras.html`). */
+  arriba?: React.ReactNode;
 };
 
 /**
@@ -56,7 +60,7 @@ type Props = {
  * "Con eventos esta semana" ya viven en Inicio (`CarrilEntidad`/`CarrilEntidadCliente`), que reutiliza la misma
  * tarjeta grande (`tarjetaArtista` + `Destacados` con `grande`) que tenía esta pantalla.
  */
-export default function ListaArtistas({ artistas, total, quedan, totalCiudad, disciplinas, detalles, letras, posiciones, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
+export default function ListaArtistas({ artistas, total, quedan, totalCiudad, disciplinas, detalles, letras, posiciones, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null, arriba = null }: Props) {
   // Al deslizar un artista: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   const seguir = useSeguirEnLista("artista", seguidos, avisos);
   // La ciudad viaja en la URL como en la agenda y Lugares (ausente = la inicial, para que el enlace sea limpio).
@@ -152,6 +156,7 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
     return (
       <section aria-label="Artistas">
         {cabecera}
+        {arriba}
         <div className={comun.vacio}>
           <h2>Artistas</h2>
           <p>Aún no hay artistas registrados en {ciudad.nombre}. ¿Eres artista o grupo, o conoces a alguien? Regístralo.</p>
@@ -165,6 +170,7 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
   return (
     <section aria-label="Artistas">
       {cabecera}
+      {arriba}
       {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
