@@ -7,9 +7,7 @@ import Buscador from "@/components/ui/Buscador";
 import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaDisciplina, hrefArtistas, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
-import { tarjetaArtista, type Tarjeta } from "@/lib/destacados";
 import { conGrupos, idGrupo } from "@/lib/indice";
-import Destacados from "./Destacados";
 import RenglonArtista from "./RenglonArtista";
 import TiraLetras, { irAlGrupo, useLetraActiva } from "./TiraLetras";
 import Cabecera, { antesDeSaltar } from "./ui/Cabecera";
@@ -24,9 +22,6 @@ import styles from "./ListaArtistas.module.css";
 type Opcion = { valor: string; etiqueta: string; n?: number };
 type Props = {
   artistas: ArtistaLista[];
-  /** La tira de destacados (docs/rediseno/20); llega vacía con filtro o búsqueda. */
-  destacados?: ArtistaLista[];
-  eventosSemana?: Tarjeta[];
   /** Cuántos cumplen el filtro (disciplina, detalle o búsqueda), se vean o no (la página trae `n`). */
   total: number;
   /** Cuántos faltan por ver tras los que trae la página. */
@@ -56,8 +51,12 @@ type Props = {
  * (género, técnica). Una tira de letras lleva a cada grupo, sin filtrar ni seleccionar nada (corrección del founder,
  * 2026-09-19): si la letra no está cargada, pide con `n` lo justo para que lo esté. El resto del filtro vive en la
  * URL y lo aplica el servidor: la página trae `pagina` artistas y "Ver más" pide otros tantos.
+ *
+ * Sin carriles propios (OL-165, pedido del founder): va directo a la lista, como Agenda. La tira de destacados y
+ * "Con eventos esta semana" ya viven en Inicio (`CarrilEntidad`/`CarrilEntidadCliente`), que reutiliza la misma
+ * tarjeta grande (`tarjetaArtista` + `Destacados` con `grande`) que tenía esta pantalla.
  */
-export default function ListaArtistas({ artistas, destacados = [], eventosSemana = [], total, quedan, totalCiudad, disciplinas, detalles, letras, posiciones, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
+export default function ListaArtistas({ artistas, total, quedan, totalCiudad, disciplinas, detalles, letras, posiciones, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null }: Props) {
   // Al deslizar un artista: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   const seguir = useSeguirEnLista("artista", seguidos, avisos);
   // La ciudad viaja en la URL como en la agenda y Lugares (ausente = la inicial, para que el enlace sea limpio).
@@ -167,10 +166,6 @@ export default function ListaArtistas({ artistas, destacados = [], eventosSemana
     <section aria-label="Artistas">
       {cabecera}
       {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
-      {/* Los carriles no dependen de la tira (corrección del founder, 2026-09-19): solo se van con disciplina,
-          detalle o búsqueda. Destacados no pinta nada si no le llegan tarjetas (con ese filtro, o con búsqueda). */}
-      <Destacados tarjetas={destacados.map((a) => tarjetaArtista(a))} grande boton={(t) => seguir.boton(t.id, t.titulo)} />
-      {!filtro.hace && !filtro.que && !filtro.q && <Destacados tarjetas={eventosSemana} redondas encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto boton={(t) => seguir.boton(t.id, t.titulo)} />}
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
           <p>{queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>
