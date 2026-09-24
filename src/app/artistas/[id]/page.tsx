@@ -34,6 +34,7 @@ import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { repartoDeAcciones } from "@/lib/ficha";
+import { incrustadoDeNovedad } from "@/lib/incrustado";
 import type { NovedadArtista } from "@/lib/novedadesArtista";
 import { qrDeUrl } from "@/lib/qr";
 import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
@@ -111,24 +112,26 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
 }
 
 /** Las novedades visibles del artista, más nueva primero (doc 44 §4, OL-175). El `src` del reproductor se arma y
- * valida aquí, con la misma `videoEmbedDe` de "Redes" (OL-154) — nunca la URL cruda de la fila. Sin tope propio:
- * "Ver más" (SeccionNovedades) las destapa todas en el cliente, sin paginar (el volumen esperado no lo pide). */
+ * valida aquí, con la misma `incrustadoDeNovedad` que arma el reproductor (doc 44 §2/§3, OL-181) — nunca la URL
+ * cruda de la fila. Sin tope propio: "Ver más" (SeccionNovedades) las destapa todas en el cliente, sin paginar (el
+ * volumen esperado no lo pide). */
 async function cargarNovedadesArtista(artistaId: string): Promise<NovedadParaFicha[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
   const { data } = await supabase
     .from("novedades_artista")
-    .select("id, url, proveedor, titulo, texto, creado_en")
+    .select("id, url, proveedor, embed_id, titulo, texto, creado_en")
     .eq("artista_id", artistaId)
     .eq("visible", true)
     .order("creado_en", { ascending: false })
     .limit(50);
-  return ((data ?? []) as Pick<NovedadArtista, "id" | "url" | "proveedor" | "titulo" | "texto" | "creado_en">[]).map((n) => ({
+  return ((data ?? []) as Pick<NovedadArtista, "id" | "url" | "proveedor" | "embed_id" | "titulo" | "texto" | "creado_en">[]).map((n) => ({
     id: n.id,
     titulo: n.titulo,
     texto: n.texto,
     creado_en: n.creado_en,
-    video: videoEmbedDe({ red: n.proveedor, url: n.url }),
+    proveedor: n.proveedor,
+    incrustado: incrustadoDeNovedad({ proveedor: n.proveedor, url: n.url, embed_id: n.embed_id }),
   }));
 }
 

@@ -1,8 +1,18 @@
 import subprocess,re
 g=lambda r:subprocess.run(['git','show',r+':docs/ops/OPEN_LOOPS.md'],capture_output=True,text=True).stdout
 base=subprocess.run(['git','merge-base','HEAD','origin/main'],capture_output=True,text=True).stdout.strip()
-B,R,M=g(base),g('HEAD'),g('origin/main'); P='**Last updated:** '
-cab=lambda t:[l for l in t.splitlines() if l.startswith(P)][0][len(P):]
+P='**Last updated:** '; B,R,M=g(base),g('HEAD'),g('origin/main')
+# La cabecera puede venir partida en varias líneas (un operador la envolvió a 120 columnas): se toma el párrafo
+# entero, desde «**Last updated:**» hasta la primera línea en blanco, unido en una sola línea.
+def cab(t):
+    ls=t.splitlines(); i=next(k for k,l in enumerate(ls) if l.startswith(P)); j=i
+    while j+1<len(ls) and ls[j+1].strip(): j+=1
+    return ' '.join(l.strip() for l in ls[i:j+1])[len(P):]
+def sin_partir(t):
+    ls=t.splitlines(keepends=True); i=next(k for k,l in enumerate(ls) if l.startswith(P)); j=i
+    while j+1<len(ls) and ls[j+1].strip(): j+=1
+    return ''.join(ls[:i])+P+cab(t)+'\n'+''.join(ls[j+1:])
+B,R,M=sin_partir(B),sin_partir(R),sin_partir(M)
 cb,cr,cm=cab(B),cab(R),cab(M); S='; antes, '; assert cr.endswith(cb)
 # main puede haber reordenado trozos viejos (uniones anteriores); basta con que conserve todos los de la base.
 faltan_cab=[t for t in cb.split(S) if t not in set(cm.split(S))]; assert not faltan_cab, faltan_cab[:2]
@@ -10,7 +20,9 @@ nuevo=cr[:len(cr)-len(cb)]; bs=set(B.splitlines())
 lr=[l for l in R.splitlines() if l not in bs and not l.startswith(P)]
 # Las líneas nuevas que empiezan por fecha son de «Decidido»; el resto, entradas de «Ahora».
 dec=[l for l in lr if re.match(r'- \*\*\d{4}-\d{2}-\d{2} ·',l)]; aho=[l for l in lr if l not in dec]
-out=M.replace(P+cm,P+nuevo+cm,1); a='## Ahora\n\n'; d='## Decidido\n'; assert out.count(a)==1 and out.count(d)==1
+out=M.replace(P+cm,P+nuevo+cm,1); d='## Decidido\n'; assert out.count('## Ahora\n')==1 and out.count(d)==1
+# «## Ahora» puede ir seguido de una línea en blanco o directamente de la primera entrada (un operador la pegó sin blanco).
+a='## Ahora\n\n' if '## Ahora\n\n' in out else '## Ahora\n'
 # Una entrada de «Ahora» cuyo OL ya existe en main la SUSTITUYE (parte de la más larga) y conserva el sufijo «En producción» de main.
 marca=' **En producción (gestión de cambios'; sust=set()
 for l in list(aho):
