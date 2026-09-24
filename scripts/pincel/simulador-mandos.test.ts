@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { conectarCanal, percentil } from "./simulador-mandos.mjs";
 
-/** Canal falso: dispara la secuencia de estados dada, cada uno un poco después del anterior. */
+/** Canal falso: dispara la secuencia de estados dada, cada uno un poco después del anterior, y SIEMPRE en ese
+ * orden: cada estado programa el siguiente al dispararse (un temporizador a la vez). Antes se programaban todos
+ * de golpe con retrasos distintos (5, 10, 15 ms…) y en la CI cargada (dos núcleos, 89 archivos de prueba en
+ * paralelo) el de 10 ms llegó a dispararse antes que el de 5 ms: «CHANNEL_ERROR» antes que «SUBSCRIBED» y la
+ * prueba fallaba sin que el código de Pincel tuviera nada que ver (main, 2026-09-24, OL-172). */
 function canalFalso(secuencia: string[], intervaloMs = 5) {
   return {
     subscribe(cb: (estado: string) => void) {
-      secuencia.forEach((estado, i) => setTimeout(() => cb(estado), intervaloMs * (i + 1)));
+      const siguiente = (i: number) => {
+        if (i >= secuencia.length) return;
+        setTimeout(() => { cb(secuencia[i]); siguiente(i + 1); }, intervaloMs);
+      };
+      siguiente(0);
     },
   };
 }
