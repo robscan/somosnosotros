@@ -168,6 +168,46 @@
   .regla li + li { margin-top: 6px; }
   .regla .abierto { margin-top: 16px; color: var(--estudio-suave); }
   .regla .abierto b { color: var(--estudio-texto); }
+
+  /* ==========================================================================
+     OL-170 (2026-09-24): chip de fecha en Lugares, mismo canon que Agenda;
+     chip solo ícono al inicio; ciudad larga. Teléfonos propios, aparte de los
+     de arriba (ya firmados por el founder, OL-087): no los toca ni los reusa.
+     ========================================================================== */
+  .telefono170 { position: relative; max-width: 100%; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); display: flex; flex-direction: column; }
+  .estado170 { flex: none; height: 48px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 30px 6px; background: var(--fondo); font-size: 15px; font-weight: 700; }
+  .renglon170 { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); padding: 8px var(--gutter) 12px; }
+  .contexto170 { grid-column: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+  .acciones170 { grid-column: 2; display: flex; }
+  /* Un solo chip base (fecha o ciudad); cada uno decide si se encoge. */
+  .chip170 { flex: none; display: inline-flex; align-items: center; min-height: 40px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 15px; font-weight: 600; white-space: nowrap; }
+  /* El chip de fecha: solo el ícono (sin «Seleccionar»), redondo de 40×40 como los botones de acción; el área de
+     toque llega a 44+ con un ::before invisible, sin cambiar el alto visible (el founder pidió las dos cosas:
+     "mismo alto que los otros chips" Y "área de toque ≥ 44 px"). Con fecha elegida, se abre en pastilla con el
+     texto corto y un quitar (✕) que lo regresa a este estado, igual que hace hoy `AgendaInicio.tsx`. */
+  .chipFecha170 { position: relative; width: 40px; justify-content: center; padding: 0; gap: 0; color: var(--texto-suave); }
+  .chipFecha170::before { content: ""; position: absolute; inset: -4px; }
+  .chipFecha170.conFecha170 { width: auto; padding: 0 8px 0 12px; gap: 6px; color: var(--texto); }
+  .chipFecha170 .quitar170 { display: grid; place-items: center; width: 20px; height: 20px; color: var(--texto-suave); }
+  .chipFecha170 .quitar170 svg { width: 14px; height: 14px; }
+  /* El chip de ciudad: con la regla, se encoge y trunca con puntos suspensivos antes de tocar la lupa (el mismo
+     mecanismo que ya usa `Chip.module.css` → `.deContexto`: `flex: 0 1 auto` + `min-width: 0` + `text-overflow:
+     ellipsis` en el texto). Sin la regla, no se encoge (`flex: none`) y su texto no se corta: a esto se empalma
+     con la lupa (visible en 07): el navegador lo pinta detrás del botón redondo, más allá del borde del teléfono. */
+  .chipCiudad170 { gap: 6px; padding: 0 12px 0 14px; }
+  .chipCiudad170 svg { flex: none; color: var(--texto-suave); }
+  .chipCiudad170.conRegla170 { min-width: 0; flex: 0 1 auto; }
+  .chipCiudad170.conRegla170 span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chipCiudad170.sinRegla170 { flex: none; }
+  .redondo170 { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); }
+  .redondo170 svg { width: 18px; height: 18px; color: var(--texto); }
+  .cuerpo170 { flex: 1; overflow: hidden; padding: 12px var(--gutter) 0; }
+  .renglonEvento170 { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--borde); }
+  .renglonEvento170 .foto170 { width: 64px; height: 64px; border-radius: 8px; background: var(--fondo-miniatura); }
+  .renglonEvento170 b { display: block; font-size: 18px; font-weight: 800; font-variation-settings: var(--ancho-titulo); line-height: 1.25; }
+  .renglonEvento170 small { display: block; margin-top: 4px; color: var(--texto-suave); font-size: 14px; }
+  .medida170 { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--borde); font-size: 13px; }
+  .medida170 b { display: block; color: var(--estudio-texto); }
 </style>
 </head>
 <body>
@@ -431,6 +471,86 @@ document.addEventListener("click", (ev) => {
 });
 document.getElementById("marcar").addEventListener("change", pintar);
 pintar();
+</script>
+
+<div class="intro" style="margin-top:56px">
+  <h1>OL-170 · Chip de fecha en Lugares, chip solo ícono, ciudades largas</h1>
+  Pedido del founder (2026-09-24): «Mantén canon de header entre agenda y lugares, es decir nuestro selector de fecha. […] estado inicial solo con icono, sin la palabra “seleccionar”, al seleccionar fecha escribir “mié 30 sep” evitar el “de” para ahorrar espacio. […] Anticipa qué pasaría si los chips del lado derecho en header son muy anchos por nombre de ciudad. ¿Se empalma con buscador?». Teléfonos nuevos, aparte de los de arriba: no tocan lo ya firmado.
+</div>
+<div class="estudio" id="estudioOL170"></div>
+<div class="regla">
+  <h2>La regla del chip de fecha</h2>
+  <ol>
+    <li><b>Estado inicial, solo el ícono</b> (sin «Seleccionar»): un botón redondo de 40×40, como la lupa o Mapa · Lista. Mismo alto que los demás chips del renglón; el área de toque llega a 44+ px con un borde invisible alrededor (`::before` con `inset: -4px`), sin agrandar lo que se ve.</li>
+    <li><b>Con fecha elegida, «mié 30 sep»:</b> día de la semana en tres letras, minúscula y con acento («mié», «sáb»…), número sin cero a la izquierda, mes en tres letras — sin «de». Con un quitar (✕) que regresa al ícono solo, igual que hoy `AgendaInicio.tsx` (el chip se convierte en el propio quitar).</li>
+    <li><b>«Hoy» y «Mañana» — pendiente de firma.</b> Hoy `diaCorto()` (`src/lib/fechas.ts`) da tres formas: «Hoy», «Mañana» o «sáb 20 de sep». En el chip de Agenda, elegir «hoy» de hecho limpia el filtro (`setFecha(f === hoy ? "" : f)`): el chip nunca llega a decir «Hoy», vuelve al ícono. Elegir mañana sí podría mostrar «Mañana» en el chip, mezclando una palabra con fechas cortas en el mismo control. <b>Dos caminos para que el founder elija:</b> (a) dejar «Mañana» como caso especial del chip (menos cambio, una palabra más corta) o (b) que el chip siempre use la fecha corta («jue 25 sep»), una sola regla sin excepción — nuestra recomendación, porque el icono ya dice «hay una fecha elegida» y mezclar «Mañana» con «mié 30 sep» en el mismo chip pide dos lecturas distintas. Las capturas 01/02 de este documento y las 03/04 del mapa muestran (b). Ninguna de las dos toca los títulos de día dentro de las listas («Hoy», «Mañana»…), que siguen igual.</li>
+    <li><b>Ciudad larga: se encoge y trunca, la lupa nunca se mueve.</b> El chip de ciudad usa el mismo mecanismo que ya existe en `Chip.module.css` (`.deContexto`: `flex: 0 1 auto` + `min-width: 0` + `text-overflow: ellipsis`) — no hace falta inventar uno nuevo, ni cortar a un número fijo de letras: se trunca lo que haga falta según el espacio que quede. La fila entera es una rejilla `minmax(0, 1fr) | auto` (como `ui/Cabecera.module.css`): el contexto (fecha + ciudad) se puede encoger a cero, las acciones (lupa) nunca — reservan su ancho siempre. Comparar 07 (sin la regla: el texto no se encoge y su cola queda detrás del botón de buscar, cortada por el borde del teléfono) con 08 (con la regla: el chip se corta con «…» antes de tocar la lupa) y 09 (lo mismo a 320 px, el ancho más chico que se soporta).</li>
+  </ol>
+</div>
+
+<script>
+  (function () {
+    const cal = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+    const cerrar14 = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    const pin = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>';
+    const caret12 = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+    const buscar18 = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>';
+
+    function chipFecha(texto) {
+      return `<button type="button" class="chip170 chipFecha170${texto ? " conFecha170" : ""}" aria-label="${texto ? `Fecha: ${texto}. Quitar para ver todos los días` : "Elegir una fecha"}">${cal}${texto ? `<span>${texto}</span><span class="quitar170">${cerrar14}</span>` : ""}</button>`;
+    }
+    function chipCiudad(nombre, regla) {
+      return `<button type="button" class="chip170 chipCiudad170${regla ? " conRegla170" : " sinRegla170"}" aria-label="Ciudad: ${nombre}">${pin}<span>${nombre}</span>${caret12}</button>`;
+    }
+    function renglon1(fechaTexto, ciudad, regla) {
+      return `<div class="renglon170"><div class="contexto170">${chipFecha(fechaTexto)}${chipCiudad(ciudad, regla)}</div><div class="acciones170"><button type="button" class="redondo170" aria-label="Buscar">${buscar18}</button></div></div>`;
+    }
+    function cuerpo() {
+      return `<div class="cuerpo170">
+        <div class="renglonEvento170"><div class="foto170"></div><div><b>Presentación editorial: 70 poemas en pétalos de orquídeas</b><small>17:30 · CEART</small></div></div>
+        <div class="renglonEvento170"><div class="foto170"></div><div><b>Gala de arias de las óperas de Julián Carrillo</b><small>19:00 · Teatro de la Paz</small></div></div>
+      </div>`;
+    }
+    function telefono(ancho, renglon) {
+      const div = document.createElement("div");
+      div.className = "telefono170";
+      div.style.width = ancho + "px";
+      div.style.height = "844px";
+      div.innerHTML = `<div class="estado170"><span>9:41</span><span>●●● ▮</span></div>${renglon}${cuerpo()}`;
+      return div;
+    }
+
+    const casos = [
+      ["01", "Agenda · chip solo ícono (sin «Seleccionar»)", 390, renglon1("", "San Luis Potosí", true)],
+      ["02", "Agenda · con fecha elegida", 390, renglon1("mié 30 sep", "San Luis Potosí", true)],
+      ["07", "Ciudad larga · SIN la regla (se empalma)", 390, renglon1("mié 30 sep", "Dolores Hidalgo Cuna de la Independencia Nacional", false)],
+      ["08", "Ciudad larga · CON la regla", 390, renglon1("mié 30 sep", "Dolores Hidalgo Cuna de la Independencia Nacional", true)],
+      ["09", "320 px de ancho · CON la regla", 320, renglon1("mié 30 sep", "Dolores Hidalgo Cuna de la Independencia Nacional", true)],
+    ];
+    const estudio = document.getElementById("estudioOL170");
+    for (const [num, titulo, ancho, renglon] of casos) {
+      const tel = telefono(ancho, renglon);
+      tel.dataset.captura = num;
+      const fig = document.createElement("figure");
+      const cap = document.createElement("figcaption");
+      cap.innerHTML = `<b>${num} · ${titulo}</b>`;
+      fig.appendChild(tel);
+      fig.appendChild(cap);
+      estudio.appendChild(fig);
+      // Medidas reales (para el documento): ancho del chip de ciudad y hueco libre entre el contexto y la lupa.
+      requestAnimationFrame(() => {
+        const chipC = tel.querySelector(".chipCiudad170");
+        const chipF = tel.querySelector(".chipFecha170");
+        const redondo = tel.querySelector(".redondo170");
+        if (!chipC || !redondo) return;
+        const rc = chipC.getBoundingClientRect(), rf = chipF.getBoundingClientRect(), rr = redondo.getBoundingClientRect();
+        const medida = document.createElement("div");
+        medida.className = "medida170";
+        medida.innerHTML = `<b>Medido a ${ancho} px</b>chip fecha ${Math.round(rf.width)} px · chip ciudad ${Math.round(rc.width)} px · lupa a ${Math.round(rr.left - rc.right)} px del borde del chip de ciudad (${rr.left < rc.right ? "se empalman" : "libre"}).`;
+        cap.appendChild(medida);
+      });
+    }
+  })();
 </script>
 </body>
 </html>
