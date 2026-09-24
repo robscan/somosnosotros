@@ -406,3 +406,16 @@ export const IconoDescarga = (p: P) => (
     <path d="M4.5 17v1.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V17" />
   </svg>
 );
+/** Agarre de arrastre: seis puntos en dos columnas (OL-184), el mismo dibujo que usan los lectores de listas
+ * reordenables. Relleno, no trazo (mismo criterio que IconoPuntos): a este tamaño un trazo de 1.8 en un punto
+ * de ~3px se ve como un anillo, no como un punto. */
+export const IconoAgarre = (p: P) => (
+  <svg {...base({ fill: "currentColor", stroke: "none", ...p })}>
+    <circle cx="9" cy="6" r="1.6" />
+    <circle cx="15" cy="6" r="1.6" />
+    <circle cx="9" cy="12" r="1.6" />
+    <circle cx="15" cy="12" r="1.6" />
+    <circle cx="9" cy="18" r="1.6" />
+    <circle cx="15" cy="18" r="1.6" />
+  </svg>
+);

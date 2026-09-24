@@ -21,18 +21,57 @@
   align-items: start;
   column-gap: var(--espacio-3);
 }
+/* Con más de un enlace hay algo que reordenar: una columna más, el agarre (OL-184). */
+.enlace.conAgarre {
+  grid-template-columns: var(--toque-min) 24px minmax(0, 1fr) auto;
+}
 .enlace > svg {
   color: var(--texto-suave);
   /* Alinea con la caja del campo (`.control`), no con la etiqueta "Título" de encima: alto de la etiqueta
      más su margen (`ui/Campo.module.css`, `.etiqueta`). */
   margin-top: 20px;
 }
-/* El campo del título (ui/Campo) es el segundo hijo de la rejilla: sin este min-width:0 la pista
-   minmax(0, 1fr) no basta, el input crece por su contenido y empuja el ✕ fuera del renglón. Sin margen
-   propio: el espacio entre renglones lo da `.lista`, no el campo (una sola fuente de espacio, no dos). */
-.enlace > *:nth-child(2) {
+/* El campo del título (ui/Campo): penúltimo hijo de la rejilla tanto con agarre (4 columnas) como sin él (3),
+   así no hace falta una regla distinta para cada caso. Sin este min-width:0 la pista minmax(0, 1fr) no basta,
+   el input crece por su contenido y empuja el ✕ fuera del renglón. Sin margen propio: el espacio entre
+   renglones lo da `.lista`, no el campo (una sola fuente de espacio, no dos). */
+.enlace > *:nth-last-child(2) {
   min-width: 0;
   margin-bottom: 0;
+}
+/* Agarre de arrastre (OL-184): reset completo de <button> (regla dura del gestor, MEMORIA_GESTOR 2026-09-24,
+   tercera mordida del borde nativo), área de toque de 44px, `touch-action: none` SOLO aquí — el resto del
+   renglón sigue permitiendo desplazar la página y editar el título con el dedo. */
+.agarre {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+  margin-top: 8px;
+  font: inherit;
+  display: grid;
+  place-items: center;
+  width: var(--toque-min);
+  height: var(--toque-min);
+  color: var(--texto-suave);
+  touch-action: none;
+  cursor: grab;
+}
+.agarre:active {
+  cursor: grabbing;
+}
+/* Anuncio del nuevo puesto tras arrastrar o mover con flechas (OL-184): se oye, no se ve. */
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .quitar {
   display: grid;
