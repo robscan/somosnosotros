@@ -16,19 +16,25 @@ type Props = {
   accion: (previo: ResultadoNovedadArtista | null, formData: FormData) => Promise<ResultadoNovedadArtista>;
   /** Para el `title` del iframe ("Video de <artista> en YouTube" / "Audio de <artista> en SoundCloud", como en la ficha). */
   artistaNombre: string;
+  /** "nueva" (Publicar novedad) o "editar" (Editar novedad, OL-185): solo cambia la etiqueta del botón — el resto
+   * del formulario (ayuda de proveedores, vista previa, contadores) es igual en los dos modos. */
+  modo: "nueva" | "editar";
+  /** Solo en modo "editar": los valores ya guardados de la novedad, para precargar el formulario. */
+  inicial?: { url: string; titulo: string; texto: string };
 };
 
 const NO_RECONOCIDO = "No se reconoce este enlace. Funciona con YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud.";
 
 /**
- * "Publicar novedad" (docs/rediseno/44-novedades-artista.md, OL-175/OL-181, código de OL-171): un enlace de
- * YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud (`reconocerNovedadEnlace`) con título y texto opcionales. La
- * vista previa usa `incrustadoDeNovedad`, la misma función que la ficha: para Bandcamp no hay vista previa todavía
- * (su `embed_id` se resuelve al publicar, con el oEmbed) — el banner "Reconocido" ya confirma que el enlace vale.
- * Sin push todavía (fase 3 del doc): la nota lo dice tal cual. Terminar vuelve a la ficha sin dejar el formulario
- * en el historial (mismo patrón que Editar artista y Editar perfil).
+ * "Publicar novedad" / "Editar novedad" (docs/rediseno/44-novedades-artista.md, OL-175/OL-181, código de OL-171;
+ * edición, OL-185): un enlace de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud (`reconocerNovedadEnlace`) con
+ * título y texto opcionales. La vista previa usa `incrustadoDeNovedad`, la misma función que la ficha: para
+ * Bandcamp no hay vista previa todavía (su `embed_id` se resuelve al publicar/guardar, con el oEmbed) — el banner
+ * "Reconocido" ya confirma que el enlace vale. Sin push todavía (fase 3 del doc): la nota lo dice tal cual, en los
+ * dos modos. Terminar vuelve a la ficha sin dejar el formulario en el historial (mismo patrón que Editar artista y
+ * Editar perfil).
  */
-export default function FormularioNovedad({ accion, artistaNombre }: Props) {
+export default function FormularioNovedad({ accion, artistaNombre, modo, inicial }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoNovedadArtista | null, FormData>(accion, null);
   const terminar = useTerminar();
   const terminado = resultado?.ok === true;
@@ -37,9 +43,9 @@ export default function FormularioNovedad({ accion, artistaNombre }: Props) {
   }, [resultado, terminar]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
 
-  const [url, setUrl] = useState("");
-  const [titulo, setTitulo] = useState("");
-  const [texto, setTexto] = useState("");
+  const [url, setUrl] = useState(inicial?.url ?? "");
+  const [titulo, setTitulo] = useState(inicial?.titulo ?? "");
+  const [texto, setTexto] = useState(inicial?.texto ?? "");
 
   const urlLimpia = url.trim();
   const reconocido = urlLimpia ? reconocerNovedadEnlace(urlLimpia) : null;
@@ -110,7 +116,7 @@ export default function FormularioNovedad({ accion, artistaNombre }: Props) {
       )}
 
       <Boton type="submit" disabled={enviando || terminado || !listo}>
-        {enviando || terminado ? "Publicando…" : "Publicar"}
+        {modo === "editar" ? (enviando || terminado ? "Guardando…" : "Guardar cambios") : enviando || terminado ? "Publicando…" : "Publicar"}
       </Boton>
     </form>
   );

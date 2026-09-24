@@ -63,11 +63,26 @@
   color: var(--texto-suave);
   white-space: pre-line;
 }
-.cuando {
-  display: block;
+/* Pie de cada novedad (OL-185): la fecha (con "Oculta" si aplica) y, para quien gestiona, "Editar" — en un
+   renglón, nunca se envuelven ni empujan el ancho de la tarjeta (min-width: 0 en ambos lados del flex). */
+.pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--espacio-2);
   margin-top: var(--espacio-1);
+}
+.cuando {
+  min-width: 0;
   font-size: var(--letra-xs);
   color: var(--texto-suave);
+}
+.oculta {
+  color: var(--error);
+  font-weight: 600;
+}
+.pie > a {
+  flex: none;
 }
 .masBoton {
   margin-top: var(--espacio-1);

@@ -51,7 +51,11 @@ export async function run({ as, check, expectError, query }) {
   await as("anon", null, () => expectError(() => query(INSERTA, [AR_LUIS, null, null, null]), "42501", "sin sesión, tampoco se publica"));
 
   // ---------- lectura: visible para cualquiera, oculto solo para quien gestiona o admin ----------
-  await query("update public.novedades_artista set visible = false where id = $1", [idDeCarla]);
+  // Se prepara como admin (OL-185, migración 20260925140000_novedades_editar.sql): desde esa pieza, cambiar
+  // `visible` sin sesión de administración choca con el disparador nuevo (novedades_artista_editar_candado), no
+  // solo con la política; una escritura de preparación del fixture usa la misma cuenta que el resto de esta
+  // prueba usa para ocultar.
+  await as("authenticated", F, () => query("update public.novedades_artista set visible = false where id = $1", [idDeCarla]));
 
   const veAnonimo = await as("anon", null, () => query("select id from public.novedades_artista where artista_id = $1", [AR_LUIS]));
   check(veAnonimo.rows.every((f) => f.id !== idDeCarla) && veAnonimo.rowCount >= 2, "un visitante anónimo no ve la novedad oculta, pero sí las visibles");
@@ -66,12 +70,26 @@ export async function run({ as, check, expectError, query }) {
   check(veAdmin.rowCount === 1, "la administración también la ve");
 
   // ---------- ocultar (visible = false): solo la administración ----------
+  // Desde OL-185 (migración 20260925140000_novedades_editar.sql) quien gestiona la ficha también puede hacer un
+  // UPDATE de su novedad (edita el resto de la fila), así que ya no es la política la que detiene a Luis o Carla
+  // aquí (antes: 0 filas, sin error) — es el disparador nuevo, con un rechazo explícito. Detalle de ese contrato
+  // en supabase/tests/pg/novedades-editar.test.mjs; aquí se deja el mismo caso, ajustado.
   const otraVisible = (await query("select id from public.novedades_artista where artista_id = $1 and visible order by creado_en limit 1", [AR_LUIS])).rows[0].id;
 
-  const ocultaAutor = await as("authenticated", L, () => query("update public.novedades_artista set visible = false where id = $1 returning id", [otraVisible]));
-  check(ocultaAutor.rowCount === 0, "el autor no oculta su propia novedad: solo la administración");
-  const ocultaLigada = await as("authenticated", C, () => query("update public.novedades_artista set visible = false where id = $1 returning id", [otraVisible]));
-  check(ocultaLigada.rowCount === 0, "ni la cuenta ligada");
+  await as("authenticated", L, () =>
+    expectError(
+      () => query("update public.novedades_artista set visible = false where id = $1", [otraVisible]),
+      "23514",
+      "el autor no oculta su propia novedad: solo la administración (OL-185, disparador de la pieza de editar)",
+    ),
+  );
+  await as("authenticated", C, () =>
+    expectError(
+      () => query("update public.novedades_artista set visible = false where id = $1", [otraVisible]),
+      "23514",
+      "ni la cuenta ligada",
+    ),
+  );
   const ocultaAdmin = await as("authenticated", F, () => query("update public.novedades_artista set visible = false where id = $1 returning id", [otraVisible]));
   check(ocultaAdmin.rowCount === 1, "la administración sí oculta");
   const vuelveAdmin = await as("authenticated", F, () => query("update public.novedades_artista set visible = true where id = $1 returning id", [otraVisible]));
@@ -98,8 +116,14 @@ export async function run({ as, check, expectError, query }) {
   const otroArtista = await as("authenticated", F, () => query(INSERTA, [AR_OTRO, null, null, F]));
   check(otroArtista.rowCount === 1, "otro artista no se topa: el tope es por artista, no global");
 
-  // Lo de ayer no cuenta para el tope de hoy.
+  // Lo de ayer no cuenta para el tope de hoy. Desde OL-185 (migración 20260925140000_novedades_editar.sql)
+  // `creado_en` no se puede tocar con un UPDATE normal, ni siquiera como administración (el disparador
+  // `novedades_artista_editar_candado` lo rechaza siempre) — este truco de la prueba (mover una fecha para
+  // simular "ayer") no es el recorrido de ningún rol real, así que se apaga el disparador nada más para este
+  // paso de preparación y se vuelve a encender de inmediato.
+  await query("alter table public.novedades_artista disable trigger novedades_artista_editar_candado");
   await query("update public.novedades_artista set creado_en = creado_en - interval '1 day' where artista_id = $1", [AR_LUIS]);
+  await query("alter table public.novedades_artista enable trigger novedades_artista_editar_candado");
   const conElDiaNuevo = await as("authenticated", F, () => query(INSERTA, [AR_LUIS, null, null, F]));
   check(conElDiaNuevo.rowCount === 1, "con el tope de ayer movido, hoy se puede publicar de nuevo");
 
