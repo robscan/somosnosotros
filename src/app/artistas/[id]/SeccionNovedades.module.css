@@ -1,0 +1,47 @@
+/* Novedades del artista, fase 1 (OL-175, doc 44). El bloque en sí (título pegajoso, "vacío") sale del canon
+   compartido de fichas (`ui/FichaLista.module.css`, `.lista`/`.vacio`); "Publicar" y "Ver más" reusan el botón de
+   texto del canon de formularios (`ui/FormularioCanon.module.css`, `.cambiar`). Aquí solo lo propio: la cabecera
+   con "Publicar" a la derecha del título, y cada tarjeta de novedad. */
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--espacio-2);
+}
+.cabecera > a {
+  flex: none;
+  text-decoration: none;
+}
+.novedad {
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.novedad:last-child {
+  border-bottom: none;
+}
+.titulo {
+  margin-top: var(--espacio-2);
+  min-width: 0;
+  font-size: var(--letra-md);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.25;
+}
+.texto {
+  margin-top: 2px;
+  min-width: 0;
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+  color: var(--texto-suave);
+  white-space: pre-line;
+}
+.cuando {
+  display: block;
+  margin-top: var(--espacio-1);
+  font-size: var(--letra-xs);
+  color: var(--texto-suave);
+}
+.masBoton {
+  margin-top: var(--espacio-1);
+  padding-left: 0;
+}

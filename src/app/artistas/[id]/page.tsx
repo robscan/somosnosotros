@@ -34,6 +34,7 @@ import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
 import { repartoDeAcciones } from "@/lib/ficha";
+import type { NovedadArtista } from "@/lib/novedadesArtista";
 import { qrDeUrl } from "@/lib/qr";
 import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
 import { videoEmbedDe } from "@/lib/video";
@@ -41,6 +42,7 @@ import { avisosParaListas } from "@/app/avisos/paraListas";
 import { decididasDe } from "@/app/eventos/decididas";
 import { borrarArtista, cambiarSeguimientoArtista, cambiarVisibleArtista } from "../acciones";
 import EsMiNombre from "./EsMiNombre";
+import SeccionNovedades, { type NovedadParaFicha } from "./SeccionNovedades";
 import styles from "@/components/ui/FichaLista.module.css";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
@@ -106,6 +108,28 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
     const lugar = Array.isArray(f.lugar) ? (f.lugar[0] ?? null) : f.lugar;
     return { ...f, lugar, lat: null, lng: null, van: van.get(f.id) ?? 0 };
   });
+}
+
+/** Las novedades visibles del artista, más nueva primero (doc 44 §4, OL-175). El `src` del reproductor se arma y
+ * valida aquí, con la misma `videoEmbedDe` de "Redes" (OL-154) — nunca la URL cruda de la fila. Sin tope propio:
+ * "Ver más" (SeccionNovedades) las destapa todas en el cliente, sin paginar (el volumen esperado no lo pide). */
+async function cargarNovedadesArtista(artistaId: string): Promise<NovedadParaFicha[]> {
+  const supabase = await clienteServidor();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("novedades_artista")
+    .select("id, url, proveedor, titulo, texto, creado_en")
+    .eq("artista_id", artistaId)
+    .eq("visible", true)
+    .order("creado_en", { ascending: false })
+    .limit(50);
+  return ((data ?? []) as Pick<NovedadArtista, "id" | "url" | "proveedor" | "titulo" | "texto" | "creado_en">[]).map((n) => ({
+    id: n.id,
+    titulo: n.titulo,
+    texto: n.texto,
+    creado_en: n.creado_en,
+    video: videoEmbedDe({ red: n.proveedor, url: n.url }),
+  }));
 }
 
 // `cargarFechas` y cuántos siguen al artista se piden de nuevo abajo (`MetaArtista` y `SeccionFechasArtista`, en
@@ -234,9 +258,10 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   // `MetaArtista` y `SeccionFechasArtista`, memoizadas con `cache()` para pedirse una sola vez). La cabecera (foto,
   // nombre, etiqueta), el menú de administración y el compartir junto al avatar no las esperan. Si yo lo sigo se
   // pregunta aparte, una fila como mucho (nunca la lista entera), para que el botón Seguir salga ya con su estado.
-  const [mio, ligados] = await Promise.all([
+  const [mio, ligados, novedades] = await Promise.all([
     actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("artista_id", a.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
     cargarLigadas(a.id),
+    cargarNovedadesArtista(a.id),
   ]);
   const sigo = !!mio.data;
   const esAdmin = actual?.perfil.rol === "admin";
@@ -254,6 +279,8 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const repartoEnlaces = repartoDeAcciones(redesConEnlace.length);
   const claseRepartoEnlaces = repartoEnlaces === "repartidas" ? ficha.accionesRepartidas : repartoEnlaces === "carril" ? ficha.accionesCarril : "";
   const faltanDetalles = a.disciplina === "por_completar" || (!a.descripcion && !a.foto && redes.length === 0);
+  // Novedades, fase 1 (doc 44, OL-175): "Publicar" solo para quien gestiona la ficha (mismo criterio que Editar).
+  const hrefPublicarNovedad = puedeEditar ? `${hrefArtista(a)}/novedades/nueva` : null;
   const url = `${ORIGEN}${hrefArtista(a)}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
   const hrefPublicarFecha = actual ? `/eventos/nuevo?artista=${a.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?artista=${a.id}`)}`;
@@ -384,6 +411,10 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       )}
 
       {a.descripcion && <Desplegable texto={a.descripcion} />}
+
+      {/* Novedades, fase 1 (doc 44 §1, OL-175): después de la descripción, antes de Video (Enlaces, arriba, no se
+          toca: ya vivía antes de la descripción). Sin novedades y sin poder publicar, la sección no aparece. */}
+      <SeccionNovedades novedades={novedades} artistaNombre={a.nombre} hrefPublicar={hrefPublicarNovedad} />
 
       {videos.length > 0 && (
         <section className={styles.lista} aria-label="Video">
