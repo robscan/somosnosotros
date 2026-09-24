@@ -357,4 +357,12 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
 - 2026-09-24, hallazgo «fuera de alcance» de un operador: si toca el entregable de la pieza (el botón único de
   OL-179 perdía el toque), entra en la pieza aunque el defecto sea anterior. Leer el código antes de decidirlo,
   no aceptar «a veces» sin causa.
+- 2026-09-24, capturas en la nube sin token de Mapbox: las capturas de OL-179 no mostraron ni la lista tapando la
+  barra ni el punto inventado, porque sin Mapbox no hay sugerencias largas ni geocodificación. Todo lo que dependa
+  del mapa o de una red externa (proveedores de reproductores, oEmbed) queda comprobado solo en forma y en el DOM;
+  el iPhone del founder es la prueba real y hay que decírselo en cada entrega de ese tipo, con la lista exacta de
+  qué probar.
+- 2026-09-24, pieza de pantalla con prototipo: pedir al operador que entregue el prototipo y TERMINE su turno; el
+  gestor lo revisa, se lo muestra al founder y lo manda al código con un mensaje. Sirvió en OL-182: una corrección
+  en el prototipo (sugerencias encima de su campo) costó minutos; en código habría costado una vuelta entera.
 
