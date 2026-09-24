@@ -327,3 +327,23 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   empujando el layout (ya decidido el 2026-09-21); si el teclado tapa las acciones que siguen a la lista, las
   acciones van pegadas sobre el teclado. Cuando el flujo no cabe en una hoja, va a pantalla completa (patrón de
   «Texto largo», OL-147).
+
+- 2026-09-24, capturas de prototipos desde la nube (gestor en la nube, sesión `session_01XrJvzKysk1Y39vzpLGT9HG`): en
+  este entorno el Chromium preinstalado (`/opt/pw-browsers/chromium`) NO confía en el certificado del proxy de la
+  sesión (`net::ERR_CERT_AUTHORITY_INVALID`), así que Google Fonts no carga y las capturas salen en Arial aunque
+  `document.fonts.ready` y `document.fonts.check(...)` devuelvan «listo»: `fonts.check` responde true cuando no hay
+  ninguna `@font-face` registrada que cargar (OL-169 y OL-171 entregaron seis y ocho capturas así; se rehicieron).
+  Regla: ningún operador usa `--ignore-certificate-errors` ni toca el proxy; para capturar un prototipo se inyecta
+  Bricolage Grotesque desde el woff2 del build de la app (`.next/static/media/*.woff2`, tomado de un `npm run build`
+  local) con `page.addStyleTag` + `document.fonts.load` y se espera a que `[...document.fonts]` tenga la familia con
+  `status === "loaded"`; el gestor deja el ejemplo listo en su scratchpad (`fuentes/capturar-ejemplo.mjs`) y lo cita
+  en cada encargo. El gestor abre cada captura y comprueba a ojo la letra («g» de una sola planta, formas
+  condensadas) antes de aceptar. Un prototipo que reutiliza `mapa-lugares.html` o `cabeceras.html` hereda el azul
+  petróleo viejo (`#0f6b7c`): las pantallas nuevas van con el violeta firmado (`#6d34c8`, doc 37, OL-146).
+- 2026-09-24, el dominio `somosnosotros.org` está fuera de la política de red de este entorno (403 del proxy): el
+  «dominio en 200» tras cada publicación lo comprueba el founder en su teléfono o el gestor local, hasta que el
+  founder añada el dominio a los permitidos del entorno. La CI de main sí se comprueba desde aquí.
+- 2026-09-24, operadores en la nube: un operador editó tres archivos en la carpeta principal en vez de en su árbol
+  (OL-167); el encargo ya decía «cd al árbol en cada comando» y aun así pasó. Desde ahora el encargo incluye la
+  comprobación al cierre («`git -C /home/user/somosnosotros status --short` vacío») y el gestor la repite antes
+  de aceptar.
