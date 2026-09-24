@@ -211,6 +211,50 @@
   .nota { position: absolute; left: var(--gutter); right: var(--gutter); bottom: 140px; z-index: 9; padding: 12px 14px; border-radius: var(--radio); background: var(--texto); color: var(--fondo); font-size: 15px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 200ms, transform 200ms; }
   .nota.visible { opacity: 1; transform: none; }
 
+  /* ==========================================================================
+     8. Novedades del artista (OL-171): marco de reproductor (nunca carga nada externo,
+        es un dibujo), tarjeta de novedad, líneas de reconocido/no-reconocido, campos con
+        contador y el aviso de que se avisará a los seguidores. Violeta (LINEA_GRAFICA.md,
+        OL-146) solo en estas pantallas nuevas, sin tocar el resto del prototipo firmado.
+     ========================================================================== */
+  .pantalla.violeta { --primario: #6d34c8; --primario-suave: color-mix(in srgb, #6d34c8 12%, white); }
+  .marco-reproductor { position: relative; display: flex; align-items: center; border-radius: var(--radio); overflow: hidden; color: #fff; }
+  .marco-reproductor.video { aspect-ratio: 16 / 9; justify-content: center; background: linear-gradient(135deg, #9fb3a6, #4d6a5c); }
+  .marco-reproductor.audio { height: 76px; padding: 0 14px; gap: 12px; background: linear-gradient(135deg, #c9b8a3, #7d6b58); }
+  .boton-play { flex: none; width: 52px; height: 52px; border-radius: 50%; background: rgba(255, 255, 255, .94); color: var(--texto); display: grid; place-items: center; }
+  .marco-reproductor.audio .boton-play { width: 40px; height: 40px; }
+  .marco-reproductor.audio .boton-play svg, .marco-reproductor.audio .proveedor svg { width: 18px; height: 18px; }
+  .onda { flex: 1; height: 30px; opacity: .6; }
+  .proveedor { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+  .marco-reproductor.video .proveedor { position: absolute; left: 10px; bottom: 8px; padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, .55); }
+  .novedad-artista { display: grid; gap: 8px; padding: 14px 0; border-bottom: 1px solid var(--borde); }
+  .novedad-artista:last-child { border-bottom: none; }
+  .novedad-artista h3 { font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.25; }
+  .novedad-artista p { font-size: 15px; line-height: 1.4; color: var(--texto-suave); }
+  .novedad-artista .cuando { font-size: 13px; color: var(--texto-suave); }
+  .reconocido-linea, .no-reconocido-linea { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .reconocido-linea { color: var(--ok); } .reconocido-linea svg { color: var(--ok); flex: none; margin-top: 1px; }
+  .no-reconocido-linea { color: var(--error); } .no-reconocido-linea svg { color: var(--error); flex: none; margin-top: 1px; }
+  .lista-proveedores { margin-top: 6px; color: var(--texto-suave); font-size: 13px; line-height: 1.4; }
+  .previa { margin: 12px 0 4px; }
+  .campo-texto-largo { display: grid; margin-bottom: 12px; }
+  .rotulo-campo { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; color: var(--texto-suave); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .contador { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .campo-texto-largo input, .campo-texto-largo textarea { width: 100%; padding: 0 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); font-size: 16px; }
+  .campo-texto-largo input { min-height: var(--toque-min); }
+  .campo-texto-largo textarea { min-height: 72px; padding-top: 10px; resize: none; }
+  .nota-avisara { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0; padding: 10px 12px; border-radius: var(--radio); background: var(--primario-suave); font-size: 14px; line-height: 1.35; }
+  .nota-avisara svg { color: var(--primario); flex: none; margin-top: 1px; }
+  /* Aviso push: pantalla de bloqueo dibujada, sin capturar el sistema operativo real. */
+  .bloqueo { position: absolute; inset: var(--alto-estado) 0 0; z-index: 6; display: flex; flex-direction: column; align-items: center; padding-top: 64px; background: linear-gradient(180deg, #2b3240, #12151c); color: #fff; text-align: center; }
+  .bloqueo .hora { font-size: 72px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1; }
+  .bloqueo .fecha { margin-top: 6px; font-size: 17px; font-weight: 600; opacity: .9; }
+  .banner-push { display: grid; grid-template-columns: 36px 1fr; column-gap: 10px; width: calc(100% - 32px); margin-top: 44px; padding: 12px 14px; border-radius: 18px; background: rgba(255, 255, 255, .94); color: #111; text-align: left; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+  .banner-push .icono-app { width: 36px; height: 36px; border-radius: 9px; background: #1a1a1a; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+  .banner-push .cabecera-push { display: flex; justify-content: space-between; gap: 8px; color: #767676; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+  .banner-push h4 { margin-top: 2px; font-size: 15px; font-weight: 700; line-height: 1.25; }
+  .banner-push p { margin-top: 2px; font-size: 14px; line-height: 1.3; color: #333; }
+
   /* Utilería */
   .utileria { width: 300px; max-width: 100%; flex: none; padding: 18px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
   .utileria h3 { margin-bottom: 4px; color: var(--panel-suave); font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
@@ -231,7 +275,7 @@
 <body>
 
 <div class="estudio">
-  <p class="rotulo"><strong>Novedades, perfil y alta de lugar v4</strong> <span>Campana y Novedades · perfil con Ajustes y Compartir juntos arriba a la derecha y el resumen en números como pestañas en una línea · Atrás genérico · alta de lugar con dos salidas en Dónde y el mapa en su hoja</span> <span>Datos de ejemplo, no reales</span></p>
+  <p class="rotulo"><strong>Novedades, perfil y alta de lugar v4</strong> <span>Campana y Novedades · perfil con Ajustes y Compartir juntos arriba a la derecha y el resumen en números como pestañas en una línea · Atrás genérico · alta de lugar con dos salidas en Dónde y el mapa en su hoja</span> <span>+ OL-171: ficha del artista con novedades incrustadas, publicar novedad y el aviso push</span> <span>Datos de ejemplo, no reales</span></p>
 
   <div class="telefono">
     <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
@@ -245,12 +289,14 @@
   <aside class="utileria" aria-label="Utilería de revisión">
     <h3>Utilería de revisión</h3>
     <p class="nota-utileria">No es parte del diseño. Cambia de pantalla y fuerza los estados; los ID corresponden a la tabla del documento.</p>
-    <label class="control"><span>Pantalla</span><select id="vista"><option value="agenda">Agenda (campana)</option><option value="novedades">Novedades</option><option value="perfil">Mi perfil</option><option value="persona">Persona (ajena)</option><option value="ajustes">Ajustes</option><option value="lugar">Registrar lugar</option></select></label>
+    <label class="control"><span>Pantalla</span><select id="vista"><option value="agenda">Agenda (campana)</option><option value="novedades">Novedades</option><option value="perfil">Mi perfil</option><option value="persona">Persona (ajena)</option><option value="ajustes">Ajustes</option><option value="lugar">Registrar lugar</option><option value="artista-ficha">OL-171 · Ficha del artista</option><option value="publicar-novedad">OL-171 · Publicar novedad</option><option value="aviso-push">OL-171 · Aviso push</option></select></label>
     <label class="control"><span><code>N0–N4</code>Novedades</span><select id="novedadesEstado"><option value="hay">Hay nuevas</option><option value="nada">Nada nuevo</option><option value="sinseguir">No sigue nada</option><option value="sinsesion">Sin sesión</option></select></label>
     <label class="control"><span><code>P1</code>Perfil incompleto</span><input type="checkbox" id="incompleto"></label>
     <label class="control"><span><code>R1</code>Coincidencias en la ajena</span><input type="checkbox" id="coincide" checked></label>
     <label class="control"><span><code>S0</code>Es administrador</span><input type="checkbox" id="admin"></label>
     <label class="control"><span><code>L0–L4</code>Alta de lugar</span><select id="lugarEstado"><option value="L0">L0 · llega</option><option value="L1">L1 · escribió "workshop"</option><option value="L2">L2 · lugar elegido</option><option value="L3">L3 · dirección o pin</option><option value="L4">L4 · ya existe cerca</option></select></label>
+    <label class="control"><span><code>NA</code>Ficha con novedades</span><select id="novedadArtistaCaso"><option value="normal">Tres novedades</option><option value="tope">Título y texto al tope</option></select></label>
+    <label class="control"><span><code>PN</code>Publicar novedad</span><select id="publicarNovedadEstado"><option value="vacio">Campo vacío</option><option value="reconocido">Enlace reconocido</option><option value="no-reconocido">Enlace no reconocido</option><option value="listo">Lista para publicar</option></select></label>
     <button type="button" class="reiniciar" id="reiniciar">Reiniciar datos</button>
     <p class="decisiones">Fricciones y decisiones: <a href="https://github.com/robscan/somosnosotros/blob/main/docs/rediseno/13-novedades-perfil-alta-flujo-y-estados.md">13-novedades-perfil-alta-flujo-y-estados.md</a>. Pasa el ratón por los iconos para ver su nombre; en el teléfono aparece abajo al tocarlos.</p>
   </aside>
@@ -258,8 +304,11 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const estado = { vista: "agenda", novedades: "hay", incompleto: false, coincide: true, admin: false, lugar: "L0", leidas: false, tipoElegido: null, tipoAbierto: false, queEs: "", correo: true, telefono: false, reservado: false, pestana: "va" };
+  const estado = { vista: "agenda", novedades: "hay", incompleto: false, coincide: true, admin: false, lugar: "L0", leidas: false, tipoElegido: null, tipoAbierto: false, queEs: "", correo: true, telefono: false, reservado: false, pestana: "va", novedadArtistaCaso: "normal", publicarNovedadEstado: "reconocido" };
   const inicial = JSON.parse(JSON.stringify(estado));
+  // OL-171: título y texto de ejemplo exactos al tope (60 y 280 letras), para la captura "al tope".
+  const TITULO_TOPE = "Nuestro nuevo EP: lo grabamos en vivo, aquí, en el patio hoy";
+  const TEXTO_TOPE = "Grabamos las seis canciones en una sola tarde, con el público del patio cantando fuerte en la última. Se puede escuchar completo aquí abajo: si les gusta, compártanlo ya con quien piensen que también lo disfrutaría. Gracias de verdad por acompañarnos siempre, hasta el día de hoy.";
   const I = {
     pin: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
     cal: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
@@ -286,6 +335,9 @@
     chevron: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     ok: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     pinMapa: `<svg viewBox="0 0 28 36" aria-hidden="true"><path d="M14 35S3 21 3 13a11 11 0 0 1 22 0c0 8-11 22-11 22z" stroke-width="2"/><circle cx="14" cy="13" r="4" fill="#fff"/></svg>`,
+    play: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7.5l8 4.5-8 4.5z" fill="currentColor"/></svg>`,
+    onda: `<svg viewBox="0 0 48 24" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12h2M7 6v12M12 9v6M17 2v20M22 8v8M27 11v2M32 4v16M37 9v6M42 12h2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+    alerta: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l9.5 16.5H2.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9.5v5M12 17.3h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
   };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -356,6 +408,58 @@
     return h;
   }
 
+  /* OL-171 · Novedades del artista: reproductor dibujado (nunca carga nada externo), la ficha con
+     novedades, publicar novedad (reconocido / no reconocido / vista previa) y el aviso push. */
+  function marcoReproductor(tipo, proveedor) {
+    if (tipo === "audio") return `<div class="marco-reproductor audio" role="img" aria-label="Reproductor de ${esc(proveedor)} (maqueta, no reproduce nada)"><span class="boton-play">${I.play}</span>${I.onda}<span class="proveedor">${esc(proveedor)}</span></div>`;
+    return `<div class="marco-reproductor video" role="img" aria-label="Reproductor de ${esc(proveedor)} (maqueta, no reproduce nada)"><span class="boton-play">${I.play}</span><span class="proveedor">${esc(proveedor)}</span></div>`;
+  }
+  function novedadArtista({ tipo, proveedor, titulo, texto, cuando }) {
+    return `<li class="novedad-artista">${marcoReproductor(tipo, proveedor)}${titulo ? `<h3>${esc(titulo)}</h3>` : ""}${texto ? `<p>${esc(texto)}</p>` : ""}<span class="cuando">${esc(cuando)}</span></li>`;
+  }
+  function pantallaArtistaFicha(caso) {
+    let h = barraInterior("Artistas");
+    h += `<div class="cabecera"><span class="avatar">AR</span><h1>Ana Reyes</h1><div class="acciones"><button type="button" class="accion" data-tip="Compartir" aria-label="Compartir" data-nota="Abriría la hoja de compartir (ya existe, OL-154)">${I.compartir}</button></div><span class="colonia">Música · Solista</span></div>`;
+    h += `<p class="sobre-mi">Canta y toca la guitarra; casi siempre anda por el Centro.</p>`;
+    h += `<section class="grupo"><h2 style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">Novedades<a href="#" id="ir-publicar-novedad" style="font-size:14px;color:var(--primario);">Publicar</a></h2><ul class="lista">`;
+    if (caso === "tope") {
+      h += novedadArtista({ tipo: "audio", proveedor: "Bandcamp", titulo: TITULO_TOPE, texto: TEXTO_TOPE, cuando: "Hace 2 días" });
+      h += novedadArtista({ tipo: "video", proveedor: "YouTube", titulo: "", texto: "", cuando: "Hace 5 días" });
+    } else {
+      h += novedadArtista({ tipo: "video", proveedor: "YouTube", titulo: "", texto: "", cuando: "Hoy" });
+      h += novedadArtista({ tipo: "audio", proveedor: "SoundCloud", titulo: "Nuevo sencillo: Luces de octubre", texto: "Grabado con toda la banda en una sola toma, para las noches frías que vienen.", cuando: "Hace 3 días" });
+      h += novedadArtista({ tipo: "audio", proveedor: "Bandcamp", titulo: "", texto: "", cuando: "Hace 1 semana" });
+    }
+    h += `</ul></section>`;
+    h += `<section class="grupo"><h3>Redes</h3><div class="chips"><span class="chip">${I.etiqueta}Instagram</span><span class="chip">${I.etiqueta}Sitio web</span></div></section>`;
+    return h;
+  }
+  function campoTexto(id, etiqueta, valor, tope, larga) {
+    const len = valor.length;
+    const cont = len >= tope * 0.75 ? `<span class="contador">${len}/${tope}</span>` : "";
+    const rotulo = `<div class="rotulo-campo"><span>${etiqueta}</span>${cont}</div>`;
+    if (larga) return `<div class="campo-texto-largo">${rotulo}<textarea id="${id}" maxlength="${tope}" placeholder="Cuéntales de qué se trata">${esc(valor)}</textarea></div>`;
+    return `<div class="campo-texto-largo">${rotulo}<input id="${id}" type="text" maxlength="${tope}" value="${esc(valor)}" placeholder="Un título corto"></div>`;
+  }
+  function pantallaPublicarNovedad(e) {
+    const urlEjemplo = e === "vacio" ? "" : e === "no-reconocido" ? "misitio.com/cancion-nueva" : "mixcloud.com/anareyes/set-de-otono";
+    let h = barraInterior("Ana Reyes") + `<h1>Publicar novedad</h1><p class="colonia" style="margin:-8px 0 14px;">Para Ana Reyes</p>`;
+    h += `<label class="campo">${I.etiqueta}<input id="enlaceNovedad" type="text" placeholder="Enlace de YouTube, Vimeo, SoundCloud…" value="${esc(urlEjemplo)}" aria-label="Enlace de la novedad"></label>`;
+    if (e === "reconocido" || e === "listo") { h += `<p class="reconocido-linea">${I.ok}Reconocido: Mixcloud</p><div class="previa">${marcoReproductor("audio", "Mixcloud")}</div>`; }
+    else if (e === "no-reconocido") { h += `<p class="no-reconocido-linea">${I.alerta}No se reconoce este enlace.</p><p class="lista-proveedores">Funciona con enlaces de YouTube, Vimeo, SoundCloud, Mixcloud, Bandcamp, Spotify y Deezer.</p>`; }
+    else { h += `<p class="lista-proveedores">Pega el enlace de tu publicación: YouTube, Vimeo, SoundCloud, Mixcloud, Bandcamp, Spotify o Deezer.</p>`; }
+    const conTexto = e === "listo";
+    h += campoTexto("tituloNovedad", "Título (opcional)", conTexto ? TITULO_TOPE : "", 60, false);
+    h += campoTexto("textoNovedad", "Texto (opcional)", conTexto ? TEXTO_TOPE : "", 280, true);
+    h += `<p class="nota-avisara">${I.campana}<span>Al publicar, avisamos a quienes te siguen y tienen los avisos activados en su teléfono.</span></p>`;
+    const listo = e === "reconocido" || e === "listo";
+    h += `<button type="button" class="primario" ${listo ? `data-nota="Publicaría la novedad y avisaría a quienes siguen a Ana Reyes"` : `aria-disabled="true"`}>Publicar${listo ? "" : `<small>falta un enlace reconocido</small>`}</button>`;
+    return h;
+  }
+  function pantallaAvisoPush() {
+    return `<div class="bloqueo"><div class="hora">9:41</div><div class="fecha">jueves, 24 de septiembre</div><div class="banner-push"><span class="icono-app">SN</span><div><div class="cabecera-push"><span>Somos Nosotros</span><span>ahora</span></div><h4>Ana Reyes publicó una novedad</h4><p>${esc(TITULO_TOPE)}</p></div></div></div>`;
+  }
+
   /* Registrar lugar */
   const SUG = [
     { poi: true, nombre: "Workshop 850", direccion: "Av. Venustiano Carranza 850, Centro", categoria: "Cafetería y taller" },
@@ -396,8 +500,12 @@
     else if (estado.vista === "perfil") h = pantallaPersona(true);
     else if (estado.vista === "persona") h = pantallaPersona(false);
     else if (estado.vista === "ajustes") h = pantallaAjustes();
+    else if (estado.vista === "artista-ficha") h = pantallaArtistaFicha(estado.novedadArtistaCaso);
+    else if (estado.vista === "publicar-novedad") h = pantallaPublicarNovedad(estado.publicarNovedadEstado);
+    else if (estado.vista === "aviso-push") h = pantallaAvisoPush();
     else { const r = pantallaLugar(); h = r.h; pie = r.pie; }
     $("pantalla").innerHTML = h;
+    $("pantalla").classList.toggle("violeta", ["artista-ficha", "publicar-novedad", "aviso-push"].includes(estado.vista));
     $("nav").hidden = !conNav; $("nav").innerHTML = conNav ? nav() : "";
     const esTeclado = pie.includes("teclado");
     $("pie").hidden = !pie || esTeclado; $("pie").innerHTML = esTeclado ? "" : pie;
@@ -405,6 +513,7 @@
     if (esTeclado) $("pantalla").insertAdjacentHTML("afterend", pie);
     $("hoja").innerHTML = hoja();
     $("vista").value = estado.vista; $("novedadesEstado").value = estado.novedades; $("incompleto").checked = estado.incompleto; $("coincide").checked = estado.coincide; $("admin").checked = estado.admin; $("lugarEstado").value = estado.lugar;
+    $("novedadArtistaCaso").value = estado.novedadArtistaCaso; $("publicarNovedadEstado").value = estado.publicarNovedadEstado;
   }
   let notaT;
   function nota(t) { const n = $("nota"); n.textContent = t; n.classList.add("visible"); clearTimeout(notaT); notaT = setTimeout(() => n.classList.remove("visible"), 1800); }
@@ -419,10 +528,14 @@
     if (id === "campana") { estado.vista = "novedades"; estado.leidas = true; render(); return; }
     if (id === "ir-perfil") { estado.vista = "perfil"; render(); return; }
     if (id === "ir-ajustes") { estado.vista = "ajustes"; render(); return; }
-    if (id === "volver") { estado.vista = estado.vista === "ajustes" ? "perfil" : "agenda"; render(); return; }
+    if (id === "volver") {
+      estado.vista = estado.vista === "ajustes" ? "perfil" : estado.vista === "publicar-novedad" ? "artista-ficha" : "agenda";
+      render(); return;
+    }
     if (id === "activar-telefono") { estado.telefono = true; render(); nota("Avisos activados en este teléfono"); return; }
     if (id === "sw-correo") { estado.correo = !estado.correo; render(); nota("Guardado"); return; }
     if (id === "sw-telefono") { estado.telefono = !estado.telefono; render(); nota(estado.telefono ? "Guardado" : "Avisos del teléfono apagados"); return; }
+    if (id === "ir-publicar-novedad") { estado.vista = "publicar-novedad"; estado.publicarNovedadEstado = "vacio"; render(); return; }
     if (id === "abrir-donde") { abrirHoja(true); return; }
     if (id === "estoy-aqui") { estado.lugar = "L3"; render(); nota("Pin donde estás; la dirección se dedujo sola"); return; }
     if (id === "ubicame") { estado.lugar = "L3"; render(); abrirHoja(false); nota("Pin donde estás"); return; }
@@ -450,6 +563,8 @@
   $("coincide").addEventListener("change", (e) => { estado.coincide = e.target.checked; render(); });
   $("admin").addEventListener("change", (e) => { estado.admin = e.target.checked; render(); });
   $("lugarEstado").addEventListener("change", (e) => { estado.lugar = e.target.value; estado.tipoElegido = null; estado.tipoAbierto = false; estado.queEs = ""; render(); });
+  $("novedadArtistaCaso").addEventListener("change", (e) => { estado.novedadArtistaCaso = e.target.value; render(); });
+  $("publicarNovedadEstado").addEventListener("change", (e) => { estado.publicarNovedadEstado = e.target.value; render(); });
   $("reiniciar").addEventListener("click", () => { Object.assign(estado, JSON.parse(JSON.stringify(inicial))); render(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarHoja(); });
   render();
