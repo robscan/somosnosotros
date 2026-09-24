@@ -129,10 +129,15 @@
 }
 
 /* 3. Acciones secundarias: icono en círculo con elevación y letrero debajo, como la barra inferior de la app y el
-   botón de "Voy"/"Seguir" de los renglones (`ui/BotonRenglon`, mismo token de sombra y tamaño; corrección del
-   founder, OL-159, 2026-09-23: antes eran tarjetas con borde, dos estilos distintos para la misma idea de botón
-   de acción — ahora solo hay uno). Sangra hasta el borde de la pantalla como el carril de Destacados
-   (founder, 2026-09-21). */
+   botón de "Voy"/"Seguir" de los renglones (`ui/BotonRenglon`, mismo token de sombra; corrección del founder,
+   OL-159, 2026-09-23: antes eran tarjetas con borde, dos estilos distintos para la misma idea de botón de
+   acción — ahora solo hay uno). Sangra hasta el borde de la pantalla como el carril de Destacados
+   (founder, 2026-09-21).
+   Reparto (founder, 2026-09-23, OL-163): un solo círculo queda a la izquierda (el flex por defecto ya lo hace,
+   sin clase aparte); de dos a los que quepan (`.accionesRepartidas`, decidido por `lib/ficha.ts` sin medir el
+   DOM) se reparten a todo el ancho con el mismo espacio entre sí; más de los que caben (`.accionesCarril`) van
+   en un carril deslizable con espacio fijo, y el siguiente círculo asoma por el borde porque su ancho no es
+   múltiplo exacto del espacio visible — el mismo efecto que el carril de Destacados, sin nada especial de más. */
 .acciones {
   display: flex;
   gap: var(--espacio-4);
@@ -145,6 +150,12 @@
 }
 .acciones::-webkit-scrollbar {
   display: none;
+}
+.accionesRepartidas {
+  justify-content: space-between;
+}
+.accionesCarril {
+  gap: 20px;
 }
 .accion {
   flex: none;
@@ -161,19 +172,44 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-/* El círculo va en un `<span>` alrededor del icono (nunca todo el botón): mismas medidas y sombra que
-   `ui/BotonRenglon.module.css` (.boton/.invitar), sin su borde de contorno. */
+/* El círculo va en un `<span>` alrededor del icono (nunca todo el botón): la sombra de `ui/BotonRenglon.module.css`
+   (.boton/.invitar), sin su borde de contorno. Círculo de 56 px con el icono más grande (founder, 2026-09-23,
+   OL-163: "se ven bien pero deben verse más presionables"): la sombra se queda exactamente igual, sin tocarla.
+   `border: none` y `appearance: none` (founder, 2026-09-23, corrección sobre «Mis artistas»): esta clase nació
+   para un `<span>` dentro de un `<a>`/`<button className={ficha.accion}>`, donde un `<span>` no trae borde
+   propio; al reusarla directo en el `<button>` de `CompartirFicha` (sin el `<a>` alrededor, en la tarjeta de
+   «Mis artistas»), salía el borde nativo del navegador (`2px outset`, `appearance: auto`) alrededor del círculo
+   — «elevación, no contorno». Sin efecto en los usos existentes (un `<span>` no tiene borde ni apariencia nativa
+   que quitar). */
 .accionIcono {
   display: grid;
   place-items: center;
-  width: var(--toque);
-  height: var(--toque);
+  width: 56px;
+  height: 56px;
   min-width: var(--toque-min);
   min-height: var(--toque-min);
+  border: none;
   border-radius: 50%;
   background: var(--fondo);
   color: var(--primario);
   box-shadow: var(--sombra);
+  appearance: none;
+}
+.accionIcono svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Título «Enlaces» sobre el carril de acciones (ficha de artista): sección propia, no `FichaLista.module.css`
+   (`.lista h2`) — ese título es fijo/pegajoso para listas largas que se recorren; aquí es un carril corto, sin
+   nada de eso. Sin línea debajo del título (founder, 2026-09-23, OL-163: "se ve horrible") y 16 px hasta el
+   carril, como el título de un carril en Inicio (`Destacados.module.css`, `.cabecera` con `gap: var(--espacio-4)`). */
+.seccionEnlaces {
+  margin-bottom: var(--espacio-5);
+}
+.seccionEnlaces h2 {
+  margin-bottom: var(--espacio-4);
+  font-size: var(--letra-xl);
 }
 .accion:active .accionIcono {
   background: var(--fondo-suave);

@@ -406,7 +406,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
 
       <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
 
-      <div className={ficha.acciones}>
+      <div className={`${ficha.acciones} ${ficha.accionesRepartidas}`}>
         <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>
           <span className={ficha.accionIcono}>
             <IconoCompartir />

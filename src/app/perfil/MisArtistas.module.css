@@ -1,6 +1,8 @@
-/* «Mis artistas» en Mi perfil (OL-154; renglón simple desde OL-159): mismo rótulo en mayúsculas que Ajustes,
-   la lista reusa el renglón de artista de toda la app (`RenglonArtista`/`Renglon.module.css`), solo con el
-   reset de lista. */
+/* «Mis artistas» en Mi perfil (OL-154; tarjeta repuesta en OL-163; sin botón de texto, corrección del founder
+   sobre esa misma pieza): mismo rótulo en mayúsculas que Ajustes, tarjetas iguales para uno o varios artistas
+   (región común). La tarjeta es un grid de dos columnas — el enlace (`.frente`) y el compartir, hermanos, nunca
+   uno anidado dentro del otro — mismo patrón que `Renglon.module.css` (`.renglon`/`.frente`); el círculo de
+   compartir usa el canon de `ui/Ficha.module.css` (`.accionIcono`), sin una clase propia para la misma idea. */
 .seccion {
   margin: var(--espacio-4) 0 var(--espacio-5);
 }
@@ -13,6 +15,58 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.lista {
-  list-style: none;
+.tarjeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  padding: var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  margin-bottom: var(--espacio-2);
+}
+.frente {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  column-gap: var(--espacio-3);
+  align-items: center;
+  min-width: 0;
+  color: var(--texto);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.foto {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.fotoVacia {
+  display: grid;
+  place-items: center;
+  color: var(--texto-suave);
+  font-size: var(--letra-xl);
+  font-weight: 700;
+}
+.nombre {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.nombre b {
+  font-size: var(--letra-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Disciplina a dos líneas máximo, con puntos suspensivos si no cabe. */
+.nombre small {
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

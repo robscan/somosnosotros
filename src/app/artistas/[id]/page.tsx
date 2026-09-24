@@ -33,6 +33,7 @@ import { jsonLdArtista, jsonLdMigajas } from "@/lib/estructurados";
 import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
+import { cabenRepartidas } from "@/lib/ficha";
 import { qrDeUrl } from "@/lib/qr";
 import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
 import { videoEmbedDe } from "@/lib/video";
@@ -363,9 +364,9 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       {/* Compartir ya no vive aquí (corrección del founder, OL-159): el carril es solo enlaces externos, con su
           propio título corto, como los demás bloques de la ficha. Sin enlaces, el bloque entero no aparece. */}
       {redesConEnlace.length > 0 && (
-        <section className={styles.lista} aria-label="Enlaces">
+        <section className={ficha.seccionEnlaces} aria-label="Enlaces">
           <h2>Enlaces</h2>
-          <div className={ficha.acciones}>
+          <div className={`${ficha.acciones} ${cabenRepartidas(redesConEnlace.length) ? ficha.accionesRepartidas : ficha.accionesCarril}`}>
             {redesConEnlace.map((r) => (
               <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
                 <span className={ficha.accionIcono}>
