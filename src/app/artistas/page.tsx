@@ -6,8 +6,12 @@ import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
-import { conProximaFecha, DISCIPLINAS, filtroDesdeUrl, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FechaDeArtista, type FiltroLeido } from "@/lib/artistas";
+import MisArtistas from "@/app/perfil/MisArtistas";
+import { conArtistasLigados, conProximaFecha, DISCIPLINAS, filtroDesdeUrl, hrefArtista, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FechaDeArtista, type FiltroLeido } from "@/lib/artistas";
 import type { Metadata } from "next";
+import { artistasConMiCorreo, reclamarArtista } from "./acciones";
+import { cargarMisArtistas } from "./consultas";
+import LetreroCorreoLigado from "./LetreroCorreoLigado";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
@@ -15,7 +19,10 @@ import { nombreSitio } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { gruposConPosicion } from "@/lib/indice";
 import { normalizarNombre } from "@/lib/lugares";
+import { qrDeUrl } from "@/lib/qr";
+import { ORIGEN } from "@/lib/sitemap";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import styles from "./page.module.css";
 
 type SearchParams = { ciudad?: string; hace?: string; que?: string; q?: string; n?: string };
 
@@ -137,7 +144,17 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
   // Las ciudades de Artistas salen de los artistas que hay; la del alta es la elegida aquí y se cambia en el formulario.
   const [ciudades, actual] = await Promise.all([cargarCiudadesDeArtistas(), usuarioActual()]);
   const ciudad: Ciudad = ciudadPorSlug(slug, ciudades);
-  const cargado = await cargar(filtro, ciudad.nombre);
+  // Arriba del listado, solo con sesión (OL-177, pedido del founder 2026-09-24): "Mis artistas" (las fichas que
+  // ya gestiona, mismo componente y carga que en Mi perfil — perfil/page.tsx) y, si su correo coincide con el
+  // que el CAPO capturó para alguna ficha sin reclamar, un letrero por cada una. Las tres consultas van con la
+  // del listado para no atrasar la carga progresiva de la lista (dentro del mismo <Suspense>).
+  const [cargado, misArtistas, correoLigado] = await Promise.all([
+    cargar(filtro, ciudad.nombre),
+    actual ? cargarMisArtistas(actual.perfil.id) : Promise.resolve([] as ArtistaResumen[]),
+    actual ? artistasConMiCorreo() : Promise.resolve([]),
+  ]);
+  // El QR de cada artista ligado, calculado en el servidor: mismo patrón que Mi perfil (OL-154/OL-163).
+  const misArtistasConQr = await Promise.all(misArtistas.map(async (artista) => ({ artista, url: `${ORIGEN}${hrefArtista(artista)}`, svg: await qrDeUrl(`${ORIGEN}${hrefArtista(artista)}`) })));
   // Con sesión, los artistas que sigue: la lista los marca y deja seguir al deslizar (bitácora 071).
   const supabase = actual ? await clienteServidor() : null;
   const s = supabase && actual ? await supabase.from("seguimientos").select("artista_id").eq("usuario_id", actual.perfil.id).not("artista_id", "is", null).limit(1000) : null;
@@ -145,6 +162,12 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
   return (
     <>
+      {actual && conArtistasLigados(misArtistasConQr) && (
+        <div className={styles.misArtistas}>
+          <MisArtistas artistas={misArtistasConQr} />
+        </div>
+      )}
+      {actual && correoLigado.map((a) => <LetreroCorreoLigado key={a.id} artista={a} reclamar={reclamarArtista} />)}
       <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} ciudad={ciudad} ciudades={ciudades} seguidos={seguidos} avisos={avisos} />
       {/* El filtro y la ciudad viven en la URL; lo que se recuerda al volver de una ficha es el scroll. */}
       <MemoriaPantalla seccion="artistas" />
