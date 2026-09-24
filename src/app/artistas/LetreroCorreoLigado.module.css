@@ -1,0 +1,59 @@
+/* LetreroCorreoLigado (OL-177): mismo dibujo que la invitación a crear cuenta de Inicio (Inicio.module.css,
+   .invitacion/.crearCuenta) — caja violeta clara, título en negrita, párrafo, botón violeta redondeado — copiado
+   aquí en vez de importado (Inicio.tsx no se toca en esta pieza: otro operador puede estar en ese árbol) y
+   adaptado a un <button> real: reset de apariencia completo (regla dura de docs/ops/MEMORIA_GESTOR.md, tercer
+   aviso del founder por el mismo motivo). Una instancia por artista ligado; se apilan con el margen de la última. */
+.invitacion {
+  display: grid;
+  gap: var(--espacio-1);
+  margin: var(--espacio-3) var(--gutter) 0;
+  padding: var(--espacio-4);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+  min-width: 0;
+}
+.invitacion b {
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: break-word;
+}
+.invitacion p {
+  min-width: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.reclamar {
+  appearance: none;
+  border: 0;
+  padding: 0 var(--espacio-4);
+  font: inherit;
+  justify-self: start;
+  min-height: var(--toque-min);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-weight: 700;
+  cursor: pointer;
+}
+.reclamar:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.hecho {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-width: 0;
+  font-size: var(--letra-sm);
+  line-height: 1.35;
+}
+.hecho > svg {
+  flex: none;
+  color: var(--ok);
+}
+.error {
+  color: var(--error);
+  font-size: var(--letra-sm);
+}

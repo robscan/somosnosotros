@@ -107,6 +107,21 @@ export function diaCorto(iso: string, ahora: Date = new Date(), zona: string = Z
   return diaCortoDe(d, ahora, zona);
 }
 
+/**
+ * «mié 30 sep»: el chip de fecha de Agenda y Lugares, un solo formato (docs/rediseno/45, OL-174) — día de la
+ * semana en tres letras con su acento y en minúscula, número sin cero a la izquierda, mes en tres letras, sin
+ * «de» (para ahorrar espacio) y sin año. Sin «Hoy»/«Mañana»: decisión por defecto del gestor, 2026-09-24 (la
+ * recomendación del doc 45) — el ícono del chip ya avisa que hay una fecha elegida, y mezclar una palabra con una
+ * fecha corta en el mismo chip pide dos lecturas distintas para la misma cosa. No toca `diaCorto`/`diaCortoDe`
+ * (que sí dicen «Hoy»/«Mañana» y siguen igual en el resto de la app: los títulos de día de las listas).
+ */
+export function fechaCortaChip(iso: string, zona: string = ZONA_INICIAL): string {
+  return new Intl.DateTimeFormat("es-MX", { timeZone: zonaSegura(zona), weekday: "short", day: "numeric", month: "short" })
+    .format(new Date(iso))
+    .replace(/[.,]/g, "")
+    .replace(/\bde\s+/, "");
+}
+
 /** "sábado 19 de septiembre" (con año si no es el actual) a partir de un día YYYY-MM-DD de la zona. */
 export function diaLargo(fecha: string, ahora: Date = new Date(), zona: string = ZONA_INICIAL): string {
   const iso = localAIso(`${fecha}T12:00`, zona);

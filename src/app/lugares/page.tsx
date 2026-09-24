@@ -6,8 +6,8 @@ import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
 import { leerTira } from "@/lib/destacados";
-import { filtroSinPasar } from "@/lib/fechas";
-import { conProximo, TIPOS, type LugarLista, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
+import { diaLocal, filtroSinPasar } from "@/lib/fechas";
+import { conProximo, diasConEvento, TIPOS, type LugarLista, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import VistaLugares, { type ExtrasLugares } from "./VistaLugares";
 
@@ -39,7 +39,12 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   };
 }
 
-/** Los lugares de la ciudad con su próximo evento: el mapa primero, la lista como segunda vista. */
+/**
+ * Los lugares de la ciudad con su próximo evento: el mapa primero, la lista como segunda vista. `diasEvento`
+ * (docs/rediseno/45, OL-174) sale de la misma consulta de eventos, sin otra: esa consulta ya trae todo lo que no
+ * ha pasado, sin tope de días (solo de cuántos eventos trae, 500) — lo que el chip de fecha del mapa necesita
+ * para filtrar pines por día ya está aquí.
+ */
 async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
   const supabase = await clienteServidor();
   if (!supabase) return [];
@@ -53,7 +58,9 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
     supabase.from("lugares").select("id, slug, nombre, tipo, direccion, lat, lng, portada, privado").eq("visible", true).eq("privado", false).eq("ciudad", ciudadNombre).order("nombre").limit(1000),
     supabase.from("eventos").select("id, inicio, lugar_id, zona, titulo").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
   ]);
-  return conProximo((l.data ?? []) as LugarResumen[], (e.data ?? []) as (ProximoEvento & { lugar_id: string | null })[]);
+  const eventos = (e.data ?? []) as (ProximoEvento & { lugar_id: string | null })[];
+  const conProx = conProximo((l.data ?? []) as LugarResumen[], eventos);
+  return diasConEvento(conProx, eventos);
 }
 
 /**
@@ -82,5 +89,18 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
   const extras = cargarExtras(ciudad);
   // El tipo elegido vive en la URL (se comparte y sobrevive al volver atrás); solo vale si existe.
   const tipoElegido = tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
-  return <VistaLugares lugares={lugares} ciudad={ciudad} ciudades={ciudades} vistaInicial={vista === "lista" ? "lista" : "mapa"} tipo={tipoElegido} barra={<Barra derecha={<Sesion />} />} extras={extras} busquedaInicial={q} />;
+  return (
+    <VistaLugares
+      lugares={lugares}
+      ciudad={ciudad}
+      ciudades={ciudades}
+      vistaInicial={vista === "lista" ? "lista" : "mapa"}
+      tipo={tipoElegido}
+      barra={<Barra derecha={<Sesion />} />}
+      extras={extras}
+      busquedaInicial={q}
+      hoy={diaLocal(new Date(), ciudad.zona)}
+      zona={ciudad.zona}
+    />
+  );
 }

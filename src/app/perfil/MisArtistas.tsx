@@ -16,6 +16,10 @@ export type ArtistaLigadoConQr = { artista: ArtistaResumen; url: string; svg: st
  * así el toque en un botón nunca navega ni se confunde con el toque en el otro. Quien llama decide si se
  * muestra: sin artistas ligados, el bloque entero no aparece. El QR de cada uno ya viene calculado
  * (server-only, `qrDeUrl`): un componente síncrono no complica pasarlo como prop.
+ *
+ * "Publicar" (novedad, OL-175, doc 44 fase 1): un tercer hermano junto al enlace y el compartir, nunca anidado
+ * dentro de otro. Aquí solo se listan artistas que la cuenta ya gestiona, así que el enlace no comprueba permiso
+ * aparte (la pantalla de destino, `/novedades/nueva`, sí lo hace por su cuenta).
  */
 export default function MisArtistas({ artistas }: { artistas: ArtistaLigadoConQr[] }) {
   return (
@@ -36,6 +40,9 @@ export default function MisArtistas({ artistas }: { artistas: ArtistaLigadoConQr
               <b>{a.nombre}</b>
               <small>{etiquetaArtista(a)}</small>
             </span>
+          </Link>
+          <Link href={`${hrefArtista(a)}/novedades/nueva`} className={styles.publicar}>
+            Publicar
           </Link>
           <CompartirFicha titulo={a.nombre} texto={`${a.nombre} · ${etiquetaArtista(a)}`} url={url} svg={svg} etiqueta={`Compartir la ficha de ${a.nombre}`} className={ficha.accionIcono} slug={a.slug} />
         </div>

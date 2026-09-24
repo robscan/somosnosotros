@@ -23,6 +23,9 @@ export const LIMITES_ARTISTA = { nombre: 80, detalle: 40, descripcion: 600 } as 
 /** Topes de un perfil: nombre (en pestaña Seguidos va con su bio y ciudad), bio. */
 export const LIMITES_PERFIL = { nombre: 60, colonia: 60, bio: 140 } as const;
 
+/** Topes de una novedad de artista (doc 44 §4, OL-175): título y texto, los dos opcionales. */
+export const LIMITES_NOVEDAD_ARTISTA = { titulo: 60, texto: 280 } as const;
+
 /** Devuelve el tope de un campo dado su nombre, o null si no existe tope. */
 export function topeDe(tabla: "lugar" | "evento" | "artista" | "perfil", campo: string): number | null {
   const limites = { lugar: LIMITES_LUGAR, evento: LIMITES_EVENTO, artista: LIMITES_ARTISTA, perfil: LIMITES_PERFIL };
