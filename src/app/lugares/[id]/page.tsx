@@ -26,7 +26,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { filtroSinPasar } from "@/lib/fechas";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
-import { cabenRepartidas } from "@/lib/ficha";
+import { repartoDeAcciones } from "@/lib/ficha";
 import { etiquetaLugar, etiquetaTipo, hrefLugar, textoProximo, type Lugar } from "@/lib/lugares";
 import { jsonLdLugar, jsonLdMigajas } from "@/lib/estructurados";
 import { ORIGENES } from "@/lib/origen";
@@ -216,6 +216,8 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
   const url = `${ORIGEN}${hrefLugar(lugar)}`;
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
+  const reparto = repartoDeAcciones(2 + redes.length);
+  const claseReparto = reparto === "repartidas" ? ficha.accionesRepartidas : reparto === "carril" ? ficha.accionesCarril : "";
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
   // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos eventos tiene: el menú de administración sigue
   // en el HTML inicial y no puede esperar esa consulta aparte.
@@ -320,7 +322,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
 
       <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
 
-      <div className={`${ficha.acciones} ${cabenRepartidas(2 + redes.length) ? ficha.accionesRepartidas : ficha.accionesCarril}`}>
+      <div className={`${ficha.acciones} ${claseReparto}`}>
         <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
           <span className={ficha.accionIcono}>
             <IconoRuta />
