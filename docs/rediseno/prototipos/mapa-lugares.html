@@ -150,6 +150,36 @@
   .tarjeta .meta .destacado { color: var(--destacado-texto); font-weight: 700; }
   .tarjeta .meta .destacado::before { content: ""; width: 8px; height: 8px; border: 2px solid var(--fondo); border-radius: 50%; background: var(--destacado); box-shadow: 0 0 0 1px var(--destacado); }
   .ver { grid-area: ver; margin-top: 8px; display: inline-flex; align-items: center; justify-content: center; min-height: var(--toque); border: none; border-radius: 10px; background: var(--primario); color: var(--primario-texto); font-size: var(--letra-lg); font-weight: 700; }
+
+  /* ==========================================================================
+     5. OL-170 (2026-09-24): chip de fecha en Lugares (mismo canon que Agenda),
+     filtra los pines por día; «Ver en lista» / «Ver en mapa» baja al pie,
+     flotando sobre «Registrar lugar». Teléfonos propios, montados aparte:
+     no tocan los cuatro estados de arriba (firmados, OL-124 → OL-141).
+     ========================================================================== */
+  .chipFecha { position: relative; width: 40px; justify-content: center; padding: 0; gap: 0; color: var(--texto-suave); }
+  .chipFecha::before { content: ""; position: absolute; inset: -4px; } /* área de toque ≥44px, sin cambiar el alto visible (40px, igual que el chip de ciudad) */
+  .chipFecha.conFecha { width: auto; padding: 0 8px 0 12px; gap: 6px; color: var(--texto); }
+  .chipFecha .quitar { display: grid; place-items: center; width: 20px; height: 20px; color: var(--texto-suave); }
+  .chipFecha .quitar svg { width: 14px; height: 14px; }
+
+  /* «Ver en lista» / «Ver en mapa»: secundario (no compite con el primario «Registrar lugar»), flota justo
+     encima: 16px (el propio «Registrar») + 48px de su alto + 12px de aire = 76px del borde. */
+  .verOtraVista { position: absolute; right: var(--gutter); bottom: 76px; z-index: 3; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); color: var(--texto); font-size: var(--letra-md); font-weight: 700; box-shadow: var(--sombra-flotante); }
+  .verOtraVista svg { width: 18px; height: 18px; }
+
+  .vacioFecha { position: absolute; left: var(--gutter); right: var(--gutter); top: 42%; z-index: 2; text-align: center; background: var(--fondo); border: 1px solid var(--borde); border-radius: var(--radio); padding: 18px; box-shadow: var(--sombra); color: var(--texto-suave); font-size: var(--letra-sm); }
+  .vacioFecha b { display: block; color: var(--texto); font-size: var(--letra-md); font-weight: 800; font-variation-settings: var(--ancho-titulo); margin-bottom: 4px; }
+
+  /* La Lista, vista inversa del Mapa: mismo hueco de la rejilla (`grid-area: mapa`), con renglones en vez del lienzo. */
+  .lista170 { grid-area: mapa; position: relative; overflow-y: auto; background: var(--fondo); }
+  .filaLugar170 { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px var(--gutter); border-bottom: 1px solid var(--borde); }
+  .filaLugar170 .foto170 { width: 48px; height: 48px; border-radius: 8px; background: var(--fondo-miniatura); display: grid; place-items: center; color: #b9b9b3; font-weight: 800; font-size: 14px; }
+  .filaLugar170 b { display: block; min-width: 0; font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); }
+  .filaLugar170 small { display: block; margin-top: 2px; color: var(--texto-suave); font-size: var(--letra-xs); }
+  /* El ↑ de los listados: mismo botón y esquina que la ubicación del Mapa — nunca coinciden porque uno vive
+     solo en Mapa y el otro solo en Lista. */
+  .arriba170 { position: absolute; left: var(--gutter); bottom: 16px; z-index: 5; display: grid; place-items: center; width: var(--toque); height: var(--toque); border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); }
 </style>
 </head>
 <body>
@@ -399,6 +429,90 @@
     // el nodo no estaba en el DOM y la hoja medía 0).
     subirBoton();
   }
+</script>
+
+<div class="estudio" style="margin-top:32px">
+  <div class="rotulo">
+    <strong>OL-170 · Chip de fecha en Lugares, filtra el mapa; «Ver en lista» baja al pie</strong>
+    Pedido del founder (2026-09-24): «Mantén canon de header entre agenda y lugares, es decir nuestro selector de fecha. […] en mapa mueve el accionable para ver en listado abajo, puede flotar sobre agregar lugar. […] la idea de traer chip de fecha a mapa es para filtrar por fecha precisamente». Cuatro teléfonos nuevos, montados aparte de los cuatro de arriba (que el founder ya firmó, OL-124 → OL-141): no los tocan.
+  </div>
+</div>
+
+<script>
+  // OL-170 (2026-09-24): mismo canon de fecha que Agenda en la cabecera de Lugares (chip antes del de ciudad,
+  // solo ícono al inicio); el chip filtra qué pines se pintan; «Ver la lista» sale del renglón 1 y baja al pie,
+  // flotando sobre «Registrar lugar», con su inverso «Ver en mapa» en la Lista. Reusa `LUGARES`, `ENCUADRE`,
+  // `svg()` y `pintarLugares()` de arriba, pero monta sus propios teléfonos: no toca los cuatro estados firmados.
+  (function () {
+    const calSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+    const cerrarSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    const listaSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>';
+    const mapaSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>';
+    const arribaSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+    const pinMasSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><path d="M12 8.5v5M9.5 11h5"/></svg>';
+
+    function pintarLugares170(capa, diaFiltro) {
+      const base = diaFiltro ? LUGARES.filter((l) => l.dia === diaFiltro) : LUGARES;
+      const orden = [...base].sort((a, b) => (a.seguido - b.seguido) || ((a.dia ? 1 : 0) - (b.dia ? 1 : 0)));
+      for (const l of orden) {
+        const clase = l.seguido ? "seguido" : l.destacado ? "destacado" : l.dia ? "evento" : "";
+        const g = svg("g", { class: `lugar${clase ? ` ${clase}` : ""}`, "data-id": l.id, transform: `translate(${l.x} ${l.y})` });
+        const r = l.dia ? 12 : 5;
+        g.appendChild(svg("circle", { class: "punto", r }));
+        if (l.dia) g.appendChild(svg("text", { class: "dia" }, l.dia));
+        const nombre = svg("text", { class: "nombre", y: r + 12 });
+        l.nombre.forEach((linea, i) => nombre.appendChild(svg("tspan", { x: 0, dy: i ? 14 : 0 }, linea)));
+        g.appendChild(nombre);
+        capa.appendChild(g);
+      }
+    }
+    function filasLugares170() {
+      return LUGARES.map((l) => `<div class="filaLugar170"><div class="foto170">SN</div><div><b>${l.nombre.join(" ")}</b><small>${l.tipo}${l.dia ? ` · ${l.dia} con evento` : ""}</small></div></div>`).join("");
+    }
+
+    function montar170({ id, titulo, texto, fechaTexto = "", diaFiltro = null, vista = "mapa" }) {
+      const tel = document.getElementById("plantilla").content.firstElementChild.cloneNode(true);
+      // El chip de fecha entra antes que el de ciudad (mismo orden que Agenda); "Ver la lista" sale del
+      // renglón 1 (baja al pie, como `.verOtraVista`) y las pestañas de tipo no hacen falta para esta pieza.
+      const chipFechaHTML = `<button type="button" class="chip chipFecha${fechaTexto ? " conFecha" : ""}" aria-label="${fechaTexto ? `Fecha: ${fechaTexto}. Quitar para ver todos los días` : "Elegir una fecha"}">${calSvg}${fechaTexto ? `<span>${fechaTexto}</span><span class="quitar">${cerrarSvg}</span>` : ""}</button>`;
+      tel.querySelector(".contexto").insertAdjacentHTML("afterbegin", chipFechaHTML);
+      tel.querySelector('[aria-label="Ver la lista"]').remove();
+      tel.querySelector(".pestanas").remove();
+      tel.querySelector(".cabecera").style.gridTemplateAreas = '"contexto acciones"';
+
+      const zona = tel.querySelector(".mapa");
+      if (vista === "mapa") {
+        pintarLugares170(zona.querySelector(".lugares"), diaFiltro);
+        const hayAlguno = !diaFiltro || LUGARES.some((l) => l.dia === diaFiltro);
+        if (!hayAlguno) zona.insertAdjacentHTML("beforeend", `<div class="vacioFecha"><b>Ningún lugar tiene eventos ese día</b>Prueba con otra fecha o quita el filtro para ver todos los lugares.</div>`);
+        zona.insertAdjacentHTML("beforeend", `<button type="button" class="verOtraVista">${listaSvg}Ver en lista</button>`);
+      } else {
+        // El ↑ no sale aquí: solo aparece tras bajar un buen tramo (regla ya firmada de `ui/Cabecera.module.css`
+        // `.volver`), y esta lista de ejemplo cabe sin desplazar. Documentado aparte que usa la misma esquina que
+        // la ubicación del Mapa, sin pisarla nunca: viven en vistas distintas.
+        zona.className = "lista170";
+        zona.innerHTML = `${filasLugares170()}<button type="button" class="publicar">${pinMasSvg}Registrar lugar</button><button type="button" class="verOtraVista">${mapaSvg}Ver en mapa</button>`;
+      }
+
+      const pie = document.createElement("p");
+      pie.className = "pie";
+      pie.innerHTML = `<b>${id} · ${titulo}</b> · ${texto}`;
+      const caja = document.createElement("div");
+      caja.dataset.captura = id;
+      caja.appendChild(tel);
+      caja.appendChild(pie);
+      return caja;
+    }
+
+    const ESTADOS170 = [
+      { id: "03", titulo: "Chip solo ícono · «Ver en lista» abajo", texto: "Sin fecha elegida (ícono, sin «Seleccionar»): el mapa muestra todo, igual que antes. «Ver en lista» flota sobre «Registrar lugar» (16 + 48 + 12 = 76 px del borde); el botón de ubicación sigue abajo a la izquierda, sin tocarse entre ellos.", fechaTexto: "", diaFiltro: null, vista: "mapa" },
+      { id: "04", titulo: "Filtrado por fecha", texto: "Con «jue 24 sep» elegido, solo se pinta el lugar con evento ese día (Casa de Cultura del Barrio de Tlaxcala): a los demás se les quita del mapa, no solo cambian de color o tamaño.", fechaTexto: "jue 24 sep", diaFiltro: "Jue", vista: "mapa" },
+      { id: "05", titulo: "Filtrado sin resultados", texto: "Con «lun 21 sep» elegido (ningún lugar del catálogo de ejemplo tiene evento un lunes), el mapa queda vacío con el aviso «Ningún lugar tiene eventos ese día».", fechaTexto: "lun 21 sep", diaFiltro: "Lun", vista: "mapa" },
+      { id: "06", titulo: "Lista · «Ver en mapa» abajo", texto: "El estado inverso: en la Lista, «Ver en mapa» flota en el mismo lugar sobre «Registrar lugar». El botón ↑ (aparece tras bajar) usa la esquina que en el Mapa ocupa la ubicación — nunca están los dos a la vez, porque cada uno vive en una sola vista.", fechaTexto: "", diaFiltro: null, vista: "lista" },
+    ];
+    const estudio170 = document.querySelectorAll(".estudio")[1];
+    for (const cfg of ESTADOS170) estudio170.appendChild(montar170(cfg));
+  })();
 </script>
 </body>
 </html>
