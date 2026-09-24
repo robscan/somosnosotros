@@ -8,6 +8,62 @@
   size: A4;
   margin: 18mm;
 }
+/* Barra arriba (OL-183): «Atrás» a la ficha y «Imprimir o guardar PDF», el mismo recurso del visor de PDF de la
+   app instalada que no trae ni una ni otra. Sticky y con borde, como la cabecera interior del canon
+   (`ui/Barra.module.css` `.interior`), pero fuera de `.pagina`: sus 6vw de `gap`/8vw de `padding` son para el
+   contenido del letrero, no para esta franja. Nunca sale en el papel ni en el PDF. */
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  min-height: var(--alto-barra);
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
+  background: #fff;
+  border-bottom: 1px solid var(--borde);
+}
+.atras {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--toque-min);
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Reset de apariencia nativa del `<button>` (regla dura del gestor, 2026-09-24: tres veces ya mordió el borde
+   nativo de un botón reusando una clase escrita para `<a>`). */
+.imprimirBarra {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  appearance: none;
+  border: 1px solid var(--primario);
+  border-radius: 999px;
+  background: none;
+  padding: 0 var(--espacio-4);
+  margin: 0;
+  min-height: var(--toque-min);
+  color: var(--primario);
+  font: inherit;
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.imprimirBarra:active {
+  background: var(--primario-suave);
+}
+@media print {
+  .barra {
+    display: none;
+  }
+}
 .pagina {
   display: grid;
   justify-items: center;
