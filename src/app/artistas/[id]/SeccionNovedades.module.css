@@ -83,6 +83,7 @@
 }
 .pie > a {
   flex: none;
+  text-decoration: none;
 }
 .masBoton {
   margin-top: var(--espacio-1);
