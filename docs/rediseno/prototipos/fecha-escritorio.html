@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hoja propia de fecha y hora en escritorio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens: los de globals.css de somosnosotros (línea gráfica firmada), como en los demás prototipos. */
+  :root {
+    color-scheme: light;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-miniatura: #e6e6e2;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #6d34c8; --primario-texto: #ffffff; --primario-suave: #efe6f9;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px; --radio-grande: 16px; --columna: 600px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; padding: 32px 16px 60px; }
+  button, input { font: inherit; color: inherit; }
+  svg { width: 20px; height: 20px; flex: none; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; align-items: flex-start; max-width: 1360px; margin: 0 auto; }
+  .rotulo { flex: 0 0 100%; margin-bottom: 4px; color: var(--estudio-suave); font-size: 14px; line-height: 1.5; text-align: center; }
+  .rotulo strong { display: block; color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 22px; margin-bottom: 4px; }
+  .par { display: grid; gap: 10px; justify-items: center; }
+  .par > figcaption { max-width: 1280px; color: var(--estudio-suave); font-size: 13px; line-height: 1.4; text-align: left; }
+  .par > figcaption b { display: block; color: var(--estudio-texto); font-size: 15px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 2px; }
+
+  /* La ventana de escritorio: 1280×800, como la app instalada de Chrome (sin barra de direcciones). */
+  .pantalla { position: relative; width: 1280px; height: 800px; overflow: hidden; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); }
+  .barra { display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 28px; background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .logotipo { font-size: 20px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+  .cuerpo { max-width: var(--columna); margin: 0 auto; padding: 28px var(--gutter) 40px; }
+  h1 { font-size: 24px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 18px; }
+
+  /* Renglón "Cuándo" del canon de formularios: ya resuelto, con Cambiar (referencia visual, detrás del velo). */
+  .resuelto { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; column-gap: 12px; min-height: 60px; padding: 10px 14px; margin-bottom: 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }
+  .resuelto .clave { display: block; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); }
+  .resuelto .valor { font-size: 16px; font-weight: 600; }
+  .resuelto .cambiar { border: none; background: none; color: var(--primario); font-size: 14px; font-weight: 700; }
+
+  /* Chip de contexto de Agenda: fecha + ciudad. */
+  .chips { display: flex; gap: 10px; padding: 14px var(--gutter); background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--fondo); font-size: 14px; font-weight: 600; }
+
+  /* Fondo oscurecido tras la hoja (el resto de la pantalla, apagado). */
+  .velo { position: absolute; inset: 0; background: rgba(0,0,0,.32); }
+
+  /* La hoja: canon ui/Hoja — centrada al ancho de columna, pegada abajo. */
+  .hoja { position: absolute; left: 0; right: 0; bottom: 0; max-width: var(--columna); max-height: calc(100% - 48px); margin-inline: auto; border-radius: var(--radio-grande) var(--radio-grande) 0 0; background: var(--fondo); box-shadow: 0 -8px 30px rgba(0,0,0,.16); padding: 14px 20px 24px; display: flex; flex-direction: column; overflow-y: auto; }
+  .hoja::before { content: ""; display: block; width: 36px; height: 4px; margin: 0 auto 12px; border-radius: 2px; background: #d9d9d9; }
+  .hoja h3 { font-size: 19px; margin-bottom: 12px; }
+  .cerrarHoja { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; display: grid; place-items: center; border: none; background: none; color: var(--texto-suave); }
+
+  .cabeceraMes { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; }
+  .cabeceraMes strong { font-size: 17px; font-weight: 700; } /* sin text-transform: capitalize pone "De" con mayúscula */
+  .flecha { width: 36px; height: 36px; border: none; border-radius: 50%; background: none; display: grid; place-items: center; }
+  .flecha:hover { background: var(--fondo-suave); }
+  .diasSemana { display: grid; grid-template-columns: repeat(7,1fr); color: var(--texto-suave); font-size: 13px; text-align: center; padding: 4px 0; }
+  .grid { display: flex; flex-direction: column; gap: 2px; }
+  .semana { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+  /* Círculo de 44px (toque mínimo), centrado en su columna: sin aspect-ratio, que con columnas de ~80px de ancho
+     estiraba las filas a ~80px de alto (corrección del gestor). */
+  .dia { width: 44px; height: 44px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; font-size: 15px; }
+  .fuera { color: var(--texto-suave); opacity: .5; }
+  .hoy { font-weight: 700; box-shadow: inset 0 0 0 1px var(--primario); }
+  .elegido { background: var(--primario); color: var(--primario-texto); box-shadow: none; }
+  .pasado { color: var(--texto-suave); opacity: .35; }
+
+  .horas { height: 264px; margin-top: 12px; border-top: 1px solid var(--borde); overflow-y: auto; } /* 6 filas de 44px */
+  .hora { display: flex; align-items: center; width: 100%; height: 44px; padding: 0 8px; font-size: 16px; border-bottom: 1px solid var(--borde); }
+  .horaElegida { background: var(--primario-suave); color: var(--primario); font-weight: 700; }
+  .horaSugerida { font-weight: 700; }
+  .duracion { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--borde); font-size: 15px; color: var(--texto-suave); }
+  .duracion b { color: var(--texto); font-weight: 700; }
+
+  .listo { display: block; width: 100%; height: 48px; margin-top: 14px; border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 17px; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="estudio">
+    <div class="rotulo"><strong>Hoja propia de fecha y hora en escritorio (OL-162, bitácora 197)</strong>
+      En pantallas con puntero fino y anchas, «Cuándo» del alta de evento y el chip de fecha de Agenda abren esta hoja en vez del selector nativo de Chrome (que no aparece en la app instalada en un monitor externo, bitácora 195). En táctil y móvil sigue el selector nativo, sin cambios.</div>
+
+    <figure class="par">
+      <div class="pantalla" id="alta-evento">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span></div>
+        <div class="cuerpo">
+          <h1>Publicar un evento</h1>
+          <div class="resuelto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            <div><span class="clave">Cuándo</span><span class="valor">23 sep 2026 · 7:00 p.m.</span></div>
+            <button class="cambiar">Listo</button>
+          </div>
+        </div>
+        <div class="velo"></div>
+        <div class="hoja">
+          <button class="cerrarHoja">✕</button>
+          <h3>Cuándo empieza</h3>
+          <div class="cabeceraMes">
+            <button class="flecha">‹</button>
+            <strong>Septiembre de 2026</strong>
+            <button class="flecha">›</button>
+          </div>
+          <div class="diasSemana"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+          <div class="grid" id="grid-evento"></div>
+          <div class="horas" id="horas-evento"></div>
+          <div class="duracion"><span>Duración</span><b>2 horas</b></div>
+          <button class="listo">Listo</button>
+        </div>
+      </div>
+      <figcaption><b>Alta de evento · «Cuándo»</b> Calendario del mes (lunes a domingo, hoy con aro, 23 elegido en violeta), lista de horas en pasos de 15 minutos con la sugerida (7:00 p.m.) marcada en negrita, la duración tal cual funciona hoy (se mueve con el inicio) y «Listo». Las flechas cambian de mes sin cerrar la hoja.</figcaption>
+    </figure>
+
+    <figure class="par">
+      <div class="pantalla" id="agenda">
+        <div class="barra"><span class="logotipo">SMSNSTRS</span></div>
+        <div class="chips">
+          <span class="chip">📅 23 sep</span>
+          <span class="chip">📍 San Luis Potosí</span>
+        </div>
+        <div class="cuerpo" style="padding-top: 40px; color: var(--texto-suave); font-size: 15px;">La lista de eventos del día elegido, detrás de la hoja.</div>
+        <div class="velo"></div>
+        <div class="hoja">
+          <button class="cerrarHoja">✕</button>
+          <h3>Fecha</h3>
+          <div class="cabeceraMes">
+            <button class="flecha">‹</button>
+            <strong>Septiembre de 2026</strong>
+            <button class="flecha">›</button>
+          </div>
+          <div class="diasSemana"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+          <div class="grid" id="grid-agenda"></div>
+          <button class="listo">Listo</button>
+        </div>
+      </div>
+      <figcaption><b>Agenda · chip de fecha</b> La misma hoja, solo con calendario: sin lista de horas ni duración — Agenda filtra por día, no por instante. El resto (mes, hoy, elegido, pasados atenuados) es idéntico al de la hoja del evento: un solo componente, dos usos.</figcaption>
+    </figure>
+  </div>
+
+<script>
+  // Un mes real (septiembre 2026: empieza en martes, 30 días) armado a mano, solo para el dibujo del prototipo;
+  // la lógica real vive en src/lib/calendario.ts y no se repite aquí.
+  const DIAS = (() => {
+    const out = [];
+    // relleno del mes anterior: lunes 31 de agosto
+    out.push({ n: 31, fuera: true });
+    for (let d = 1; d <= 30; d++) out.push({ n: d, fuera: false, hoy: d === 19, elegido: d === 23, pasado: d < 19 });
+    for (let d = 1; d <= 4; d++) out.push({ n: d, fuera: true });
+    return out;
+  })();
+  function pintarGrid(id, conElegido) {
+    const cont = document.getElementById(id);
+    for (let s = 0; s < DIAS.length; s += 7) {
+      const semana = document.createElement("div");
+      semana.className = "semana";
+      for (const d of DIAS.slice(s, s + 7)) {
+        const b = document.createElement("div");
+        b.className = "dia" + (d.fuera ? " fuera" : "") + (d.hoy ? " hoy" : "") + (d.elegido && conElegido ? " elegido" : "") + (d.pasado ? " pasado" : "");
+        b.textContent = d.n;
+        semana.appendChild(b);
+      }
+      cont.appendChild(semana);
+    }
+  }
+  pintarGrid("grid-evento", true);
+  pintarGrid("grid-agenda", true);
+
+  function pintarHoras(id) {
+    const cont = document.getElementById(id);
+    for (let m = 0; m < 24 * 60; m += 15) {
+      const h = String(Math.floor(m / 60)).padStart(2, "0"), mi = String(m % 60).padStart(2, "0");
+      const div = document.createElement("div");
+      const elegida = h === "19" && mi === "00";
+      div.className = "hora" + (elegida ? " horaElegida horaSugerida" : "");
+      const fecha = new Date(2000, 0, 1, h, mi);
+      div.textContent = fecha.toLocaleTimeString("es-MX", { hour: "numeric", minute: "2-digit", hour12: true });
+      cont.appendChild(div);
+      if (elegida) requestAnimationFrame(() => div.scrollIntoView({ block: "center" }));
+    }
+  }
+  pintarHoras("horas-evento");
+</script>
+</body>
+</html>

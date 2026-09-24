@@ -1,0 +1,172 @@
+/* Hoja propia de fecha y hora (OL-162): grid con áreas, sin sobreanidación (maquetación plana). */
+.selector {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.cabeceraMes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--espacio-2);
+}
+.cabeceraMes strong {
+  font-size: var(--letra-md);
+  font-weight: 700;
+  /* Sin text-transform: "capitalize" pone mayúscula a cada palabra ("Septiembre De 2026"); la mayúscula inicial
+     ya la pone tituloMes() en SelectorFecha.tsx, una sola vez (corrección del gestor, bitácora 197). */
+}
+.flecha {
+  display: grid;
+  place-items: center;
+  min-width: var(--toque-min);
+  min-height: var(--toque-min);
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto);
+  cursor: pointer;
+}
+.flecha:hover {
+  background: var(--fondo-suave);
+}
+.izquierda {
+  transform: rotate(90deg);
+}
+.derecha {
+  transform: rotate(-90deg);
+}
+.diasSemana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: var(--espacio-1) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  text-align: center;
+}
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.dia {
+  /* Círculo de 44px (toque mínimo) centrado en su columna: sin aspect-ratio, que con columnas de ~80px de ancho
+     (600px de columna / 7) estiraba las filas a ~80px de alto y desperdiciaba la hoja (corrección del gestor). */
+  width: var(--toque-min);
+  height: var(--toque-min);
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  cursor: pointer;
+}
+.dia:hover {
+  background: var(--fondo-suave);
+}
+.dia:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}
+.fuera {
+  color: var(--texto-suave);
+  opacity: 0.5;
+}
+.hoy {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--primario);
+}
+.elegido {
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.elegido.hoy {
+  box-shadow: none;
+}
+.pasado {
+  color: var(--texto-suave);
+  opacity: 0.35;
+  cursor: default;
+}
+
+.horas {
+  /* Alto fijo de 6 filas (6 × 44px, el toque mínimo): con flex:1 dependía del alto de la hoja (que aquí es del
+     contenido, no fijo) y a veces se quedaba en 2-3 filas. Desplazable; la hora elegida se centra al abrir
+     (SelectorFecha.tsx, scrollIntoView). Corrección del gestor, bitácora 197. */
+  height: calc(6 * var(--toque-min));
+  margin-top: var(--espacio-3);
+  border-top: 1px solid var(--borde);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.hora {
+  display: block;
+  width: 100%;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-2);
+  border: none;
+  border-bottom: 1px solid var(--borde);
+  background: none;
+  color: var(--texto);
+  font-size: var(--letra-md);
+  text-align: left;
+  cursor: pointer;
+}
+.hora:hover {
+  background: var(--fondo-suave);
+}
+.hora:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: -2px;
+}
+.horaElegida {
+  background: var(--primario-suave);
+  color: var(--primario);
+  font-weight: 700;
+}
+.horaSugerida {
+  font-weight: 700;
+}
+
+.duracion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--toque-min);
+  margin-top: var(--espacio-1);
+  padding-top: var(--espacio-2);
+  border-top: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.duracion b {
+  color: var(--texto);
+  font-weight: 700;
+}
+
+.listo {
+  display: block;
+  width: 100%;
+  min-height: var(--toque);
+  margin-top: var(--espacio-3);
+  border: none;
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  cursor: pointer;
+}
+.listo:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
