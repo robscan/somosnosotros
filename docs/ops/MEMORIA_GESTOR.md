@@ -311,3 +311,19 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   empujan (founder: «deben de "flotar" siempre sobre el layout no recorrer los campos debajo»).
 
 **Ver la app en local para capturas (OL-109, 2026-09-21).** Dos tropiezos medidos por el operador de OL-109, para decírselos a quien monte un respaldo local: (1) con `next dev` (Turbopack) la app puede no hidratarse nunca en estas carpetas (ningún clic ni tecla responde, aunque el campo acepte texto y la captura «parezca» buena): usar `next build && next start`, y comprobar que un clic real cambia algo antes de dar por buena una captura; (2) el respaldo local no debe decidir «una sola fila» por la cabecera `Accept: application/vnd.pgrst.object+json`: en el servidor de Next llega `Accept: */*`; devolver siempre un arreglo. Y una regla de producto que salió de la misma pieza: `capture` en un `<input type="file">` fuerza la cámara y quita el carrete en el teléfono; nunca se añade «para ofrecer la cámara».
+
+- 2026-09-24, TERCER llamado de atención del founder por maquetación («Te llamo nuevamente la atención respecto a la
+  atención al detalle en maquetación»): el botón «Compartir» de la ficha de lugar salía con un envolvente rectangular
+  de bordes redondeados alrededor del círculo y el letrero. Causa: `Ficha.module.css .accion` se escribió para `<a>`
+  y `BotonCompartir` es un `<button>`, que conserva borde, fondo y `appearance` nativos; la corrección de OL-163
+  reseteó solo el `<span>` del círculo, no el botón. Es la tercera vez que muerde el borde nativo del `<button>`
+  (OL-159, OL-163, ahora). Regla dura de revisión: toda clase que se aplique a un `<button>` lleva
+  `appearance: none; border: 0; background: none; padding: 0; font: inherit` o hereda de `ui/Boton`; al revisar
+  una ficha o formulario, buscar `<button` y `<BotonCompartir` con clases de `Ficha.module.css` y mirarlos en la
+  captura uno por uno. Y no se acepta una captura con menos de dos y más de cuatro acciones a la vista: los
+  tres estados del reparto se capturan.
+- 2026-09-24, regla del founder para todos los formularios: «si sugieres algo sea debajo del campo que estoy
+  usando». Una lista de sugerencias flota justo debajo del campo con el foco, nunca debajo de otro campo ni
+  empujando el layout (ya decidido el 2026-09-21); si el teclado tapa las acciones que siguen a la lista, las
+  acciones van pegadas sobre el teclado. Cuando el flujo no cabe en una hoja, va a pantalla completa (patrón de
+  «Texto largo», OL-147).

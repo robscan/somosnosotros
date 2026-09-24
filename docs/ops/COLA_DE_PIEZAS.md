@@ -73,6 +73,18 @@ Pegados en el chat del gestor el 2026-09-23 («agrega estos comentarios al plan 
 
 Orden (founder, 2026-09-23): E1 ahora (urgente); E2 unida a B4, ahora; E7 ahora (es barata); E4 en cuanto E1 esté en producción (mismo formulario); E5 y E6 después; E8 (construir el boletín) sin prisa; E9 (ajustes de cargador y transiciones) y E3 (app nativa) al final. **Founder, 2026-09-23:** «quiero seguir con C1, 2, 5 y 4». **Estado 2026-09-23:** E1 (OL-137), E7 (OL-139) en producción; E2 decidida (OL-138); E4 en curso (OL-140); E5 (OL-141) y E6 (OL-142) encargadas.
 
+## Tanda F · Comentarios del founder tras probar (2026-09-24)
+
+Pegados en el chat del gestor en la nube el 2026-09-24. Clasificados por el gestor; reservas en ASIGNACIONES.
+
+| Pieza | Qué pide el founder | Modelo | Notas |
+| --- | --- | --- | --- |
+| F1 · Botón de compartir sin envolvente; reparto de enlaces a partir de 3 | «Botón de compartir en ficha de lugar tiene un envolvente rectangular con bordes redondeados que contiene botón de acción y letrero.» Y: el reparto de enlaces a lo ancho «a partir de 3, con dos se percibe como error». | Sonnet 5, bajo | **OL-167 / 202, en curso.** Causa medida: `<button>` con borde nativo. |
+| F5 · Mixcloud reconocido y título editable de los enlaces | «me puso “sitio web” en un enlace que debería decir Mixcloud»; «permitir a los artistas cambiar el título de los enlaces que pegan en redes y contacto». | Sonnet 5, medio | **OL-168 / 203, en curso.** Sin migración (`redes` es jsonb). |
+| F2 · Lugar del evento a pantalla completa | Sugerencias de dirección bajo el campo en uso; selección de lugar a pantalla completa con mapa y un solo campo (nombre o dirección; Mapbox obtiene los dos al elegir); lugares registrados en el mapa como pines; POI seleccionable; pin ajustable; «Estoy aquí» con nombre/dirección sugeridos y editables; «Agregar lugar» y «Buscar en el mapa sin agregar» sin que el mapa ni el teclado las tapen; registro automático del lugar salvo que la persona diga que es privado. Prototipo rápido con dos variantes de las acciones: dentro de la lista de resultados o como barra pegada sobre el teclado (al pie sin teclado). | Sonnet 5, medio | **OL-169 / 204**, prototipo primero. Espera el OK del founder al plan. |
+| F3 · Cabecera de Lugares con chip de fecha; chip solo icono; «ver en lista» abajo | Mismo canon de cabecera en Agenda y Lugares con el selector de fecha (en el mapa filtra por fecha); estado inicial solo icono, sin «Seleccionar»; con fecha, «mié 30 sep» sin «de»; el accionable de ver en lista pasa abajo, flotando sobre «Agregar lugar»; anticipar chips anchos por nombre de ciudad frente al buscador. | Sonnet 5, medio | **OL-170 / 205**, prototipo primero. Espera el OK del founder al plan. |
+| F4 · Novedades del artista con reproductor incrustado | Pegar un enlace de YouTube, Vimeo, SoundCloud, Mixcloud, Bandcamp (y más) y que se vea un reproductor incrustado en la ficha; más adelante alimenta el blog (E10); desde ahora avisa por push a seguidores. | Sonnet 5, medio | **OL-171 / 206**, propuesta y prototipo primero (parte del doc 40 y `novedades-perfil-alta.html`). Con migración que solo añade. Espera el OK del founder al plan. |
+
 ## Orden propuesto
 
 1. **Ahora (con el OK):** A1, A2, A3, A4 en Sonnet 5 y A5 en Haiku 4.5. Cinco chats, zonas de código distintas. A0 ya corre.
