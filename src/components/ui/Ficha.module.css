@@ -133,11 +133,14 @@
    OL-159, 2026-09-23: antes eran tarjetas con borde, dos estilos distintos para la misma idea de botón de
    acción — ahora solo hay uno). Sangra hasta el borde de la pantalla como el carril de Destacados
    (founder, 2026-09-21).
-   Reparto (founder, 2026-09-23, OL-163): un solo círculo queda a la izquierda (el flex por defecto ya lo hace,
-   sin clase aparte); de dos a los que quepan (`.accionesRepartidas`, decidido por `lib/ficha.ts` sin medir el
-   DOM) se reparten a todo el ancho con el mismo espacio entre sí; más de los que caben (`.accionesCarril`) van
-   en un carril deslizable con espacio fijo, y el siguiente círculo asoma por el borde porque su ancho no es
-   múltiplo exacto del espacio visible — el mismo efecto que el carril de Destacados, sin nada especial de más. */
+   Reparto (founder, 2026-09-24, OL-167, corrige OL-163 — «Te había pedido que en los enlaces de artistas
+   distribuyeras elementos en espacio disponible y que lo hicieras a partir de 2, pero quiero que lo cambies a
+   partir de 3, con dos se percibe como error»): con uno o dos círculos, quedan a la izquierda con el espacio
+   normal del carril (el flex por defecto ya lo hace, sin clase aparte, sin estirarse); de tres a los que quepan
+   (`.accionesRepartidas`, decidido por `lib/ficha.ts` sin medir el DOM) se reparten a todo el ancho con el mismo
+   espacio entre sí; más de los que caben (`.accionesCarril`) van en un carril deslizable con espacio fijo, y el
+   siguiente círculo asoma por el borde porque su ancho no es múltiplo exacto del espacio visible — el mismo
+   efecto que el carril de Destacados, sin nada especial de más. */
 .acciones {
   display: flex;
   gap: var(--espacio-4);
@@ -157,6 +160,11 @@
 .accionesCarril {
   gap: 20px;
 }
+/* `.accion` se usa en `<a>` (Cómo llegar, redes), en el `<span aria-disabled>` de "sin dirección" y en el
+   `<button>` de `BotonCompartir` — reset de apariencia nativa (founder, 2026-09-24, OL-167: el botón de
+   Compartir salía con una cápsula gris de borde redondeado alrededor del círculo y el letrero; la corrección de
+   OL-163 solo reseteó el `<span class="accionIcono">` de adentro, no el `<button>` que lo envuelve). Un `<a>` y
+   un `<span>` no traen borde, fondo, padding ni `appearance` propios, así que el reset no les cambia nada. */
 .accion {
   flex: none;
   display: flex;
@@ -164,12 +172,18 @@
   align-items: center;
   gap: 6px;
   min-width: 64px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
   color: var(--texto);
+  font: inherit;
   font-size: var(--letra-xs);
   font-weight: 600;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
+  appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
 /* El círculo va en un `<span>` alrededor del icono (nunca todo el botón): la sombra de `ui/BotonRenglon.module.css`
