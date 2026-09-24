@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { publicarNovedadArtista } from "./acciones";
 
 const m = vi.hoisted(() => ({ sesion: vi.fn(), insertar: vi.fn(), revalidar: vi.fn() }));
@@ -8,6 +8,18 @@ vi.mock("@/lib/supabase/sesion", () => ({ sesionOEntrar: m.sesion }));
 const ARTISTA_ID = "00000000-0000-4000-8000-000000000301";
 const VOLVER = "/artistas/trio-de-luis";
 const URL_YT = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+const URL_BANDCAMP = "https://anareyes.bandcamp.com/album/nuevo-disco";
+
+// Ejemplo fijo de una respuesta real del oEmbed de Bandcamp (doc del encargo, OL-181): la red a bandcamp.com está
+// cerrada en este entorno, así que estas pruebas simulan `fetch`, no llaman a la red real.
+function jsonOembedBandcamp(idHtml = "album=1234567890") {
+  return {
+    version: "1.0",
+    type: "rich",
+    provider_name: "Bandcamp",
+    html: `<iframe style="border: 0; width: 100%; height: 120px;" src="https://bandcamp.com/EmbeddedPlayer/${idHtml}/size=large/bgcol=ffffff/linkcol=0687f5/tracklist=false/artwork=small/transparent=true/" seamless><a href="…">…</a></iframe>`,
+  };
+}
 
 function formulario(campos: Record<string, string>) {
   const fd = new FormData();
@@ -20,6 +32,10 @@ beforeEach(() => {
   const supabase = { from: () => ({ insert: m.insertar }) };
   m.sesion.mockResolvedValue({ supabase, user: { id: "persona" } });
   m.insertar.mockResolvedValue({ error: null });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("publicarNovedadArtista", () => {
@@ -42,9 +58,9 @@ describe("publicarNovedadArtista", () => {
     expect(m.insertar).not.toHaveBeenCalled();
   });
 
-  it("un enlace que no es de YouTube no llega a insertar", async () => {
-    const r = await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: "https://vimeo.com/123456789" }));
-    expect(r).toEqual({ ok: false, errores: { url: "Solo enlaces de YouTube por ahora." } });
+  it("un enlace que no reconoce ningún proveedor de esta pieza (p. ej. Spotify) no llega a insertar", async () => {
+    const r = await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: "https://open.spotify.com/track/abc123" }));
+    expect(r).toEqual({ ok: false, errores: { url: "Solo enlaces de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud." } });
     expect(m.insertar).not.toHaveBeenCalled();
   });
 
@@ -54,7 +70,7 @@ describe("publicarNovedadArtista", () => {
     expect(m.insertar).not.toHaveBeenCalled();
   });
 
-  it("inserta con publicado_por de la sesión del servidor, nunca del formulario", async () => {
+  it("inserta con publicado_por de la sesión del servidor, nunca del formulario; embed_id null fuera de Bandcamp", async () => {
     const fd = formulario({ url: URL_YT, titulo: "Nuevo sencillo", texto: "Grabado en vivo" });
     fd.set("publicado_por", "otra-cuenta"); // si algo lo manda, se ignora: no forma parte de leer()
     const r = await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, fd);
@@ -62,12 +78,74 @@ describe("publicarNovedadArtista", () => {
       artista_id: ARTISTA_ID,
       url: URL_YT,
       proveedor: "youtube",
+      embed_id: null,
       titulo: "Nuevo sencillo",
       texto: "Grabado en vivo",
       publicado_por: "persona",
     });
     expect(r).toEqual({ ok: true, volver: VOLVER });
     expect(m.revalidar).toHaveBeenCalledWith(VOLVER);
+  });
+
+  it("Vimeo, SoundCloud y Mixcloud insertan directo, sin llamar a fetch (solo Bandcamp necesita el oEmbed)", async () => {
+    const fetchEspia = vi.fn();
+    vi.stubGlobal("fetch", fetchEspia);
+
+    await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: "https://vimeo.com/123456789" }));
+    expect(m.insertar).toHaveBeenCalledWith(expect.objectContaining({ proveedor: "vimeo", embed_id: null }));
+
+    await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: "https://soundcloud.com/anareyes/set-de-otono" }));
+    expect(m.insertar).toHaveBeenCalledWith(expect.objectContaining({ proveedor: "soundcloud", embed_id: null }));
+
+    await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: "https://www.mixcloud.com/anareyes/set-de-otono/" }));
+    expect(m.insertar).toHaveBeenCalledWith(expect.objectContaining({ proveedor: "mixcloud", embed_id: null }));
+
+    expect(fetchEspia).not.toHaveBeenCalled();
+  });
+
+  it("Bandcamp: consulta el oEmbed, guarda solo el embed_id ('album=123'), nunca el HTML", async () => {
+    const fetchEspia = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(jsonOembedBandcamp("album=1234567890")) });
+    vi.stubGlobal("fetch", fetchEspia);
+
+    const r = await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: URL_BANDCAMP }));
+
+    expect(fetchEspia).toHaveBeenCalledTimes(1);
+    const [urlLlamada, opciones] = fetchEspia.mock.calls[0];
+    expect(urlLlamada).toBe(`https://bandcamp.com/oembed?url=${encodeURIComponent(URL_BANDCAMP)}&format=json`);
+    expect(opciones).toMatchObject({ redirect: "error" });
+    expect(opciones.signal).toBeInstanceOf(AbortSignal);
+
+    expect(m.insertar).toHaveBeenCalledWith(expect.objectContaining({ proveedor: "bandcamp", url: URL_BANDCAMP, embed_id: "album=1234567890" }));
+    const filaInsertada = m.insertar.mock.calls[0][0];
+    expect(JSON.stringify(filaInsertada)).not.toContain("iframe"); // nunca se guarda el HTML del oEmbed
+    expect(r).toEqual({ ok: true, volver: VOLVER });
+  });
+
+  it("Bandcamp: una pista ('track=123') también se guarda", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(jsonOembedBandcamp("track=42")) }));
+    await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: "https://anareyes.bandcamp.com/track/otra-cancion" }));
+    expect(m.insertar).toHaveBeenCalledWith(expect.objectContaining({ proveedor: "bandcamp", embed_id: "track=42" }));
+  });
+
+  it("Bandcamp: si el oEmbed no trae un id reconocible, no se guarda y el error queda bajo el campo", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ html: "<iframe src=\"https://bandcamp.com/otra-cosa/\"></iframe>" }) }));
+    const r = await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: URL_BANDCAMP }));
+    expect(r).toEqual({ ok: false, errores: { url: "No pude leer ese enlace de Bandcamp. Revisa que sea la página de un álbum o una pista." } });
+    expect(m.insertar).not.toHaveBeenCalled();
+  });
+
+  it("Bandcamp: si el oEmbed responde con error HTTP, no se guarda", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
+    const r = await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: URL_BANDCAMP }));
+    expect(r).toEqual({ ok: false, errores: { url: "No pude leer ese enlace de Bandcamp. Revisa que sea la página de un álbum o una pista." } });
+    expect(m.insertar).not.toHaveBeenCalled();
+  });
+
+  it("Bandcamp: si fetch falla (red, tiempo agotado), no se guarda y no revienta", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("sin red")));
+    const r = await publicarNovedadArtista(ARTISTA_ID, VOLVER, null, formulario({ url: URL_BANDCAMP }));
+    expect(r).toEqual({ ok: false, errores: { url: "No pude leer ese enlace de Bandcamp. Revisa que sea la página de un álbum o una pista." } });
+    expect(m.insertar).not.toHaveBeenCalled();
   });
 
   it("sin título ni texto, se guardan como null, no como cadena vacía", async () => {
