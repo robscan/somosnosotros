@@ -61,20 +61,18 @@ decisión para el founder.
 
 ## Capturas reales (`docs/rediseno/capturas-205/`), 390×844 (09 a 320 px de ancho)
 
-Chromium de `/opt/pw-browsers` (`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`) vía `playwright-core`
-(`npm i --no-save` en el scratchpad de la sesión, nunca en el repo). Aviso del gestor atendido: en este
-entorno `document.fonts.ready` se resuelve aunque Bricolage Grotesque no haya llegado (le pasó al operador de
-OL-169); cada captura esperó con `page.waitForFunction` a que
-`document.fonts.check('700 20px "Bricolage Grotesque"')` **y**
-`document.fonts.check('400 16px "Bricolage Grotesque"')` dieran `true` (con margen de 20 s), y las nueve
-salieron `true` en las dos comprobaciones. El fuente de Google Fonts en sí no cargaba por el proxy de la
-sesión (`net::ERR_CERT_AUTHORITY_INVALID` en Chromium, aunque `curl` con el mismo bundle de CA sí lo resolvía
-bien): se resolvió pidiendo el CSS y los tres `.woff2` con `curl` (que sí confía en el bundle de la sesión) y
-sirviéndolos a Chromium con `page.route()`, sin tocar el `<link>` real de los archivos del repo (que siguen
-apuntando a `fonts.googleapis.com` tal cual, como todos los demás prototipos). Las nueve se abrieron con
-`Read` y se compararon letra por letra contra Arial antes de aceptarlas: los trazos de «SMSNSTRS», «Ver en
-lista»/«Ver en mapa» y los títulos de renglón son inconfundiblemente Bricolage Grotesque (condensada, con los
-rasgos propios de la fuente), no la de reserva.
+Chromium de `/opt/pw-browsers` vía `playwright-core` (`npm i --no-save` en el scratchpad de la sesión, nunca
+en el repo). En este entorno Chromium no confía en el certificado del proxy y Google Fonts no carga
+(`net::ERR_CERT_AUTHORITY_INVALID`), y `document.fonts.check(...)` puede dar `true` en vacío sin que la fuente
+real haya llegado (le pasó al operador de OL-169). Corrección del gestor, atendida: en vez de fiarse de
+`check()`, cada captura inyectó la fuente local con `page.addStyleTag()` (el mismo `.woff2` variable del build
+de la app, servido por `file://` desde el scratchpad — nunca desde el repo) y esperó con `page.waitForFunction`
+a que `[...document.fonts]` tuviera una entrada `Bricolage Grotesque` con `status === "loaded"` (máx. 20 s);
+las nueve dieron `loaded`. El `<link>` de los dos archivos del repo sigue intacto, apuntando a
+`fonts.googleapis.com`, como todos los demás prototipos — el truco es solo del script de captura. Las nueve
+se abrieron con `Read` y se compararon letra por letra contra Arial antes de aceptarlas: los trazos de
+«SMSNSTRS», «Ver en lista»/«Ver en mapa» y los títulos de renglón son inconfundiblemente Bricolage Grotesque
+(condensada, con los rasgos propios de la fuente), no la de reserva.
 
 - **`01.png`** — Agenda, chip de fecha solo ícono.
 - **`02.png`** — Agenda, con «mié 30 sep» elegido; revela que «San Luis Potosí» ya se recorta a «San Luis …».
