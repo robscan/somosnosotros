@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { fechaRelativaNovedadArtista, reconocerNovedadEnlace, validarNovedadArtista } from "./novedadesArtista";
 
 describe("reconocerNovedadEnlace", () => {
-  it("un enlace de YouTube se reconoce, normalizado y con su video embebido", () => {
+  it("un enlace de YouTube se reconoce, normalizado", () => {
     const r = reconocerNovedadEnlace("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30s");
-    expect(r).toEqual({ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30s", proveedor: "youtube", video: { proveedor: "youtube", id: "dQw4w9WgXcQ", src: "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" } });
+    expect(r).toEqual({ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30s", proveedor: "youtube" });
   });
 
   it("youtu.be y un dominio pelón (sin https://) también se reconocen", () => {
@@ -12,9 +12,34 @@ describe("reconocerNovedadEnlace", () => {
     expect(reconocerNovedadEnlace("youtube.com/watch?v=dQw4w9WgXcQ")?.proveedor).toBe("youtube");
   });
 
-  it("Vimeo y SoundCloud, aunque son redes reconocidas, no entran en esta fase (solo YouTube)", () => {
-    expect(reconocerNovedadEnlace("https://vimeo.com/123456789")).toBeNull();
-    expect(reconocerNovedadEnlace("https://soundcloud.com/anareyes/set-de-otono")).toBeNull();
+  it("Vimeo se reconoce (OL-181, fase 2 del doc 44)", () => {
+    expect(reconocerNovedadEnlace("https://vimeo.com/123456789")).toEqual({ url: "https://vimeo.com/123456789", proveedor: "vimeo" });
+    expect(reconocerNovedadEnlace("https://vimeo.com/cineastaslp")).toBeNull(); // id no numérico: no se reconoce
+  });
+
+  it("SoundCloud: pista o set se reconocen; una forma sin pista (solo perfil) no", () => {
+    expect(reconocerNovedadEnlace("https://soundcloud.com/anareyes/set-de-otono")).toEqual({ url: "https://soundcloud.com/anareyes/set-de-otono", proveedor: "soundcloud" });
+    expect(reconocerNovedadEnlace("https://soundcloud.com/anareyes/sets/lo-mejor-2026")?.proveedor).toBe("soundcloud");
+    expect(reconocerNovedadEnlace("https://soundcloud.com/anareyes")).toBeNull(); // solo el perfil, sin pista
+  });
+
+  it("Mixcloud: usuario/show se reconoce; solo el usuario, sin show, no", () => {
+    // reconocerEnlace normaliza sin la barra final (lib/enlaces.ts, sin tocarlo).
+    expect(reconocerNovedadEnlace("https://www.mixcloud.com/anareyes/set-de-otono/")).toEqual({ url: "https://www.mixcloud.com/anareyes/set-de-otono", proveedor: "mixcloud" });
+    expect(reconocerNovedadEnlace("https://www.mixcloud.com/anareyes/")).toBeNull();
+  });
+
+  it("Bandcamp: álbum o pista de un subdominio de artista se reconocen; www.bandcamp.com y bandcamp.com pelón no", () => {
+    expect(reconocerNovedadEnlace("https://anareyes.bandcamp.com/album/nuevo-disco")).toEqual({ url: "https://anareyes.bandcamp.com/album/nuevo-disco", proveedor: "bandcamp" });
+    expect(reconocerNovedadEnlace("https://anareyes.bandcamp.com/track/otra-cancion")?.proveedor).toBe("bandcamp");
+    expect(reconocerNovedadEnlace("https://www.bandcamp.com/album/nuevo-disco")).toBeNull();
+    expect(reconocerNovedadEnlace("https://bandcamp.com/album/nuevo-disco")).toBeNull();
+    expect(reconocerNovedadEnlace("https://anareyes.bandcamp.com/")).toBeNull(); // sin /album/ ni /track/
+  });
+
+  it("Spotify, Deezer y el resto del doc 44 no entran en esta pieza", () => {
+    expect(reconocerNovedadEnlace("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC")).toBeNull();
+    expect(reconocerNovedadEnlace("https://www.deezer.com/track/123456")).toBeNull();
   });
 
   it("un sitio cualquiera, un enlace vacío o mal formado no se reconoce", () => {
@@ -28,6 +53,11 @@ describe("reconocerNovedadEnlace", () => {
     expect(reconocerNovedadEnlace("https://www.youtube.com/channel/UC1234567890")).toBeNull();
     expect(reconocerNovedadEnlace("https://www.youtube.com/@artista")).toBeNull();
   });
+
+  it("intentos de inyección en la ruta de SoundCloud/Mixcloud no se reconocen (la regex es estricta)", () => {
+    expect(reconocerNovedadEnlace('https://soundcloud.com/anareyes/<script>alert(1)</script>')).toBeNull();
+    expect(reconocerNovedadEnlace("https://www.mixcloud.com/anareyes/../../admin/")).toBeNull();
+  });
 });
 
 describe("validarNovedadArtista", () => {
@@ -35,6 +65,12 @@ describe("validarNovedadArtista", () => {
     const { datos, errores } = validarNovedadArtista({ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", titulo: "", texto: "" });
     expect(errores).toEqual({});
     expect(datos).toEqual({ url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", proveedor: "youtube", titulo: null, texto: null });
+  });
+
+  it("un enlace de Bandcamp reconocido no trae error de enlace", () => {
+    const { datos, errores } = validarNovedadArtista({ url: "https://anareyes.bandcamp.com/album/nuevo-disco", titulo: "", texto: "" });
+    expect(errores.url).toBeUndefined();
+    expect(datos).toEqual({ url: "https://anareyes.bandcamp.com/album/nuevo-disco", proveedor: "bandcamp", titulo: null, texto: null });
   });
 
   it("con título y texto dentro del tope, los conserva recortados de espacios", () => {
@@ -50,11 +86,11 @@ describe("validarNovedadArtista", () => {
     expect(datos.proveedor).toBeNull();
   });
 
-  it("un enlace no reconocido dice que por ahora solo YouTube", () => {
-    const { errores, datos } = validarNovedadArtista({ url: "misitio.com/cancion-nueva", titulo: "", texto: "" });
-    expect(errores.url).toBe("Solo enlaces de YouTube por ahora.");
+  it("un enlace no reconocido (Spotify, o cualquier otro sitio) dice cuáles proveedores sí funcionan", () => {
+    const { errores, datos } = validarNovedadArtista({ url: "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC", titulo: "", texto: "" });
+    expect(errores.url).toBe("Solo enlaces de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud.");
     expect(datos.proveedor).toBeNull();
-    expect(datos.url).toBe("misitio.com/cancion-nueva");
+    expect(datos.url).toBe("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC");
   });
 
   it("título y texto por encima del tope (60 y 280) dan su propio error, sin tocar el del enlace", () => {

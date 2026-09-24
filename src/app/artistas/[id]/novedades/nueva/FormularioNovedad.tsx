@@ -4,26 +4,29 @@ import { useActionState, useEffect, useState } from "react";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
+import Incrustado from "@/components/ui/Incrustado";
 import { IconoCampana, IconoOk } from "@/components/ui/Iconos";
-import VideoEmbed from "@/components/ui/VideoEmbed";
-import { LIMITES_NOVEDAD_ARTISTA, reconocerNovedadEnlace } from "@/lib/novedadesArtista";
+import { incrustadoDeNovedad } from "@/lib/incrustado";
+import { ETIQUETA_PROVEEDOR_NOVEDAD_ARTISTA, LIMITES_NOVEDAD_ARTISTA, reconocerNovedadEnlace } from "@/lib/novedadesArtista";
 import type { ResultadoNovedadArtista } from "../acciones";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import estilos from "./FormularioNovedad.module.css";
 
 type Props = {
   accion: (previo: ResultadoNovedadArtista | null, formData: FormData) => Promise<ResultadoNovedadArtista>;
-  /** Para el `title` del iframe ("Video de <artista> en YouTube", como en la ficha). */
+  /** Para el `title` del iframe ("Video de <artista> en YouTube" / "Audio de <artista> en SoundCloud", como en la ficha). */
   artistaNombre: string;
 };
 
-const NO_RECONOCIDO = "No se reconoce este enlace. Por ahora solo funciona con YouTube.";
+const NO_RECONOCIDO = "No se reconoce este enlace. Funciona con YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud.";
 
 /**
- * "Publicar novedad", fase 1 (docs/rediseno/44-novedades-artista.md, OL-175, código de OL-171): un enlace de
- * YouTube (`reconocerNovedadEnlace`, mismo reconocimiento y `VideoEmbed` que ya usa "Redes", OL-154) con título y
- * texto opcionales. Sin push todavía (fase 3 del doc): la nota lo dice tal cual. Terminar vuelve a la ficha sin
- * dejar el formulario en el historial (mismo patrón que Editar artista y Editar perfil).
+ * "Publicar novedad" (docs/rediseno/44-novedades-artista.md, OL-175/OL-181, código de OL-171): un enlace de
+ * YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud (`reconocerNovedadEnlace`) con título y texto opcionales. La
+ * vista previa usa `incrustadoDeNovedad`, la misma función que la ficha: para Bandcamp no hay vista previa todavía
+ * (su `embed_id` se resuelve al publicar, con el oEmbed) — el banner "Reconocido" ya confirma que el enlace vale.
+ * Sin push todavía (fase 3 del doc): la nota lo dice tal cual. Terminar vuelve a la ficha sin dejar el formulario
+ * en el historial (mismo patrón que Editar artista y Editar perfil).
  */
 export default function FormularioNovedad({ accion, artistaNombre }: Props) {
   const [resultado, enviar, enviando] = useActionState<ResultadoNovedadArtista | null, FormData>(accion, null);
@@ -40,6 +43,7 @@ export default function FormularioNovedad({ accion, artistaNombre }: Props) {
 
   const urlLimpia = url.trim();
   const reconocido = urlLimpia ? reconocerNovedadEnlace(urlLimpia) : null;
+  const previa = reconocido ? incrustadoDeNovedad({ proveedor: reconocido.proveedor, url: reconocido.url, embed_id: null }) : null;
   const noReconocido = urlLimpia.length > 0 && !reconocido;
   const errorUrl = errores.url ?? (noReconocido ? NO_RECONOCIDO : undefined);
   const listo = !!reconocido && titulo.length <= LIMITES_NOVEDAD_ARTISTA.titulo && texto.length <= LIMITES_NOVEDAD_ARTISTA.texto;
@@ -51,7 +55,7 @@ export default function FormularioNovedad({ accion, artistaNombre }: Props) {
         name="url"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder="Enlace de YouTube"
+        placeholder="Enlace de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud"
         aria-label="Enlace de la novedad"
         error={errorUrl}
         autoComplete="off"
@@ -60,16 +64,16 @@ export default function FormularioNovedad({ accion, artistaNombre }: Props) {
       {!errorUrl && reconocido && (
         <p className={canon.existe} role="status">
           <IconoOk width={20} height={20} />
-          <span>Reconocido: YouTube.</span>
+          <span>Reconocido: {ETIQUETA_PROVEEDOR_NOVEDAD_ARTISTA[reconocido.proveedor]}.</span>
         </p>
       )}
-      {reconocido && (
+      {reconocido && previa && (
         <div className={estilos.previa}>
-          <VideoEmbed video={reconocido.video} titulo={artistaNombre} />
+          <Incrustado incrustado={previa} proveedor={reconocido.proveedor} nombre={artistaNombre} />
         </div>
       )}
       {!errorUrl && !reconocido && !urlLimpia && (
-        <p className={canon.cuerpoNota}>Funciona con enlaces de YouTube; por ahora, solo ese proveedor.</p>
+        <p className={canon.cuerpoNota}>Funciona con enlaces de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud.</p>
       )}
 
       <Campo
