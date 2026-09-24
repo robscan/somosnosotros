@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { LugarSugerido } from "@/lib/buscarLugares";
 import type { LugarResumen } from "@/lib/lugares";
-import { altoTeclado, combinarResultados, decidirGuardado, modoDePantalla } from "./dondeEsPantalla";
+import { altoTeclado, combinarResultados, decidirGuardado, modoDePantalla, puedeGuardarLugar } from "./dondeEsPantalla";
 
 function lugar(id: string, nombre: string): LugarResumen {
   return { id, nombre, tipo: "museo", direccion: "Calle 1", lat: 22.15, lng: -100.97, portada: null };
@@ -69,5 +69,20 @@ describe("altoTeclado", () => {
   });
   it("una diferencia de un pixel (redondeo) no cuenta como teclado", () => {
     expect(altoTeclado(844, { height: 843.5, offsetTop: 0 })).toBe(0);
+  });
+});
+
+describe("puedeGuardarLugar (OL-182, bitácora 217: nunca guardar un punto inventado)", () => {
+  it("con nombre y punto: sí", () => {
+    expect(puedeGuardarLugar({ nombre: "Cochera de Lupe", punto: { lat: 22.15, lng: -100.97 } })).toBe(true);
+  });
+  it("sin punto (el defecto reportado: guardaba un punto que nadie eligió): no, aunque haya nombre", () => {
+    expect(puedeGuardarLugar({ nombre: "Cochera de Lupe", punto: null })).toBe(false);
+  });
+  it("sin nombre (solo espacios): no, aunque haya punto", () => {
+    expect(puedeGuardarLugar({ nombre: "   ", punto: { lat: 22.15, lng: -100.97 } })).toBe(false);
+  });
+  it("sin nombre y sin punto: no", () => {
+    expect(puedeGuardarLugar({ nombre: "", punto: null })).toBe(false);
   });
 });

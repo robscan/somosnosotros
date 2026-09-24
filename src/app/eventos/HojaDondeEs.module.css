@@ -102,11 +102,14 @@
   min-height: 0;
 }
 
-/* "Estoy aquí" sobre el mapa: abajo a la izquierda, sube cuando la barra de acciones está a la vista. */
+/* "Estoy aquí" sobre el mapa: abajo a la izquierda, sube cuando la barra de acciones o la hoja "Agregar lugar"
+   están a la vista. z-index por encima de la hoja (10) a propósito -OL-182, doc 43 segunda versión: "el botón
+   flotante Estoy aquí queda encima de la hoja, no debajo"-, aunque en la práctica nunca se superponen (el bottom
+   se calcula para que quede siempre arriba de lo que haya). */
 .estoyAqui {
   position: absolute;
   left: var(--gutter);
-  z-index: 6;
+  z-index: 11;
   display: grid;
   place-items: center;
   width: var(--toque);
@@ -265,19 +268,52 @@
   white-space: nowrap;
 }
 
-/* Panel "Agregar lugar": nombre, dirección ya resuelta y el interruptor de privado. */
-.panelAgregar {
+/* Hoja "Agregar lugar", segunda versión (OL-182, doc 43): a media pantalla, pegada abajo -sobre el teclado cuando
+   lo hay, mismo mecanismo que .barraAcciones (JS mueve `bottom`)-, dejando el mapa y el pin siempre visibles
+   arriba (`MapaDondeEs` recibe `paddingInferior`). Antes de esta pieza era un panel flotante que tapaba el mapa
+   entero y "Ajusta el pin en el mapa" no se podía cumplir -el defecto que reportó el founder en producción.
+   z-index 10: por debajo de "Estoy aquí" (11, doc 43: "queda encima de la hoja, no debajo") y de ListaFlotante
+   (60, portal), por encima de .barraAcciones (9, nunca conviven: la barra se oculta en modo "agregar"). */
+.hojaAgregar {
   position: absolute;
-  left: var(--gutter);
-  right: var(--gutter);
-  top: 12px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 10;
-  padding: var(--espacio-4);
-  border-radius: var(--radio);
+  display: flex;
+  flex-direction: column;
+  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-4) + env(safe-area-inset-bottom, 0px));
+  border-radius: 20px 20px 0 0;
   background: var(--fondo);
-  box-shadow: var(--sombra-flotante);
+  box-shadow: var(--sombra-panel);
+  transition:
+    bottom 120ms ease,
+    top 120ms ease;
 }
-.panelAgregar h3 {
+/* Con las sugerencias de dirección abiertas y sin sitio abajo del campo (pegado sobre el teclado): la hoja se
+   estira hacia arriba y se hace desplazable por dentro; un efecto en HojaDondeEs.tsx pone el scroll para que el
+   campo "Dirección" quede arriba del todo -así la lista SIEMPRE abre debajo del campo en uso, nunca encima
+   (regla dura del founder, 2026-09-24: "si sugieres algo sea debajo del campo que estoy usando"). */
+.hojaAgregar.expandida {
+  top: 12px;
+  overflow-y: auto;
+}
+/* Ningún hijo se encoge (flex-shrink: 0): con la hoja expandida y desplazable, el contenido manda su alto de
+   verdad y lo que no quepa se ve con scroll -nunca aplastado. */
+.hojaAgregar > * {
+  flex-shrink: 0;
+}
+.asaHoja {
+  align-self: center;
+  flex: none;
+  width: 36px;
+  height: 4px;
+  margin-bottom: var(--espacio-2);
+  border-radius: 999px;
+  background: var(--borde);
+}
+.hojaAgregar h3 {
+  flex: none;
   margin-bottom: var(--espacio-3);
   font-size: var(--letra-md);
   font-weight: 700;
@@ -303,12 +339,33 @@
   border-radius: var(--radio);
   font-size: max(16px, var(--letra-md));
 }
-.direccionFija {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  padding: var(--espacio-1) 0;
+/* El campo "Dirección" de la hoja (OL-182): ya no es texto fijo -era "Ajusta el pin en el mapa", imposible de
+   cumplir cuando el propio panel tapaba el mapa-, es un campo de búsqueda real, mismo trato visual que el campo
+   principal (.campo, arriba) pero sin su margen (va dentro de .campoPanel, que ya separa). */
+.campoDireccion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.campoDireccion > svg {
+  flex: none;
   color: var(--texto-suave);
-  font-size: var(--letra-sm);
+}
+.campoDireccion input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: max(16px, var(--letra-md));
+  color: var(--texto);
+}
+.campoDireccion input:focus {
+  outline: none;
 }
 .filaPrivado {
   display: flex;
@@ -365,4 +422,12 @@
   margin-bottom: var(--espacio-2);
   color: var(--error);
   font-size: var(--letra-sm);
+}
+/* El porqué del botón "Guardar" apagado (OL-182): debajo de él, nunca dentro (canon de formularios, OL-100). */
+.ayudaGuardar {
+  margin-top: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.4;
+  text-align: center;
 }

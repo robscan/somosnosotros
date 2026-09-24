@@ -16,7 +16,7 @@ import { configPublica } from "@/lib/config";
 import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
 import { buscarConContexto, ciudadDeContexto, descartarSinCalle, necesitaReintentoLugares } from "./direccionContexto";
 import { consultarMapa, lugaresPorTexto, puntoValido } from "./direccionEvento";
-import { altoTeclado, combinarResultados, decidirGuardado, modoDePantalla } from "./dondeEsPantalla";
+import { altoTeclado, combinarResultados, decidirGuardado, modoDePantalla, puedeGuardarLugar } from "./dondeEsPantalla";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaDondeEs.module.css";
@@ -83,16 +83,30 @@ type Draft = {
 const ALTO_BARRA_ACCIONES = 56; // min-height de .barraAcciones en HojaDondeEs.module.css
 
 /**
- * "¿Dónde es?" del alta de evento, a pantalla completa (OL-173, docs/rediseno/43; lugar privado de OL-179): el
- * mapa de fondo, un solo campo "Nombre o dirección" y los lugares registrados como pines tocables (los privados
- * propios entre ellos, marcados "Privado"). Escribir abre una lista flotante (nunca tapa nada); tocar un pin, un
- * punto de interés del mapa o cualquier punto vacío mueve el pin; arrastrarlo hace reverse geocoding. Sin
+ * "¿Dónde es?" del alta de evento, a pantalla completa (OL-173, docs/rediseno/43; lugar privado de OL-179; hoja
+ * "Agregar lugar" sin punto inventado, OL-182): el mapa de fondo, un solo campo "Nombre o dirección" y los
+ * lugares registrados como pines tocables (los privados propios entre ellos, marcados "Privado"). Escribir abre
+ * una lista flotante (nunca tapa nada, y nunca tapa la barra de acciones: `reservaAbajo`, OL-182); tocar un pin,
+ * un punto de interés del mapa o cualquier punto vacío mueve el pin; arrastrarlo hace reverse geocoding. Sin
  * coincidencias, la barra de acciones muestra un solo botón, "Agregar lugar" (founder, 2026-09-24: "en el paso
  * anterior solo mostremos un botón de agregar"; antes había un segundo botón, "Buscar en el mapa sin agregar" -el
- * mapa siempre se puede tocar, el aviso lo dice). "Agregar lugar" registra uno de verdad -privado o no-; con
- * privado, el evento se guarda como sitio reservado (nombre visible, dirección oculta hasta la hora que toque),
- * igual que si se elige un lugar privado ya registrado de las sugerencias. "Listo" confirma y vuelve al
- * formulario; "Atrás" no cambia nada (todo vive en el estado local de esta hoja, no se avisa al padre hasta Listo).
+ * mapa siempre se puede tocar, el aviso lo dice).
+ *
+ * "Agregar lugar" abre una HOJA a media pantalla, pegada abajo (OL-182: el founder encontró en producción que el
+ * panel anterior inventaba un pin en silencio -`moverPin(contexto.centro…)`- y guardaba una ubicación que nadie
+ * eligió). Esta hoja NUNCA inventa un punto: dentro, el campo "Dirección" (con las mismas sugerencias que el
+ * campo principal) es una tercera manera de fijarlo, además de tocar/arrastrar el pin en el mapa -que queda
+ * visible arriba, nunca tapado (`MapaDondeEs` recibe `paddingInferior`)- y del botón "Estoy aquí" -que queda
+ * SIEMPRE encima de la hoja, nunca debajo-. "Guardar y usar este lugar" está apagado mientras no haya un punto de
+ * verdad (`puedeGuardarLugar`), con el porqué en texto chico debajo. Si las sugerencias de dirección necesitan
+ * abrir y no hay sitio abajo (el campo queda bajo, pegado sobre el teclado), la propia hoja se estira y se
+ * desplaza para dejarle sitio -la lista NUNCA abre encima del campo que se está usando (regla dura del founder,
+ * 2026-09-24: "si sugieres algo sea debajo del campo que estoy usando").
+ *
+ * Registra un lugar de verdad -privado o no-; con privado, el evento se guarda como sitio reservado (nombre
+ * visible, dirección oculta hasta la hora que toque), igual que si se elige un lugar privado ya registrado de las
+ * sugerencias. "Listo" confirma y vuelve al formulario; "Atrás" no cambia nada (todo vive en el estado local de
+ * esta hoja, no se avisa al padre hasta Listo).
  *
  * El mapa es un componente nuevo, `MapaDondeEs` (no `Mapa.tsx`): esta pantalla necesita lugares tocables Y un pin
  * que se mueve a cualquier punto A LA VEZ, algo que ningún modo de `Mapa.tsx` da junto, y ese archivo lo lleva
@@ -131,16 +145,34 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   // Al pedir privado, si ya existe un lugar público parecido se usa ese (lugares_parecidos nunca ve privados: un
   // parecido siempre es público) y se avisa, en vez de tratarlo como privado (founder, 2026-09-24, OL-179).
   const [avisoPublico, setAvisoPublico] = useState<string | null>(null);
+  // El campo "Dirección" DENTRO de la hoja "Agregar lugar" (OL-182): mismo patrón que el campo principal (texto,
+  // resultados de Mapbox, "cerrada para este texto"), pero solo direcciones/POIs -sin lugares registrados: ya se
+  // descartó que coincidiera nada al abrir esta hoja, mezclar lugares aquí confundiría con el campo de arriba.
+  const [qDireccionAgregar, setQDireccionAgregar] = useState("");
+  const [resultadosDireccionAgregar, setResultadosDireccionAgregar] = useState<LugarSugerido[]>([]);
+  const [buscandoDireccion, setBuscandoDireccion] = useState(false);
+  const [errorBusquedaDireccion, setErrorBusquedaDireccion] = useState<string | null>(null);
+  const [cerradaDireccionParaTexto, setCerradaDireccionParaTexto] = useState<string | null>(null);
+  // Alto real de la hoja (con ResizeObserver: cambia con el contenido -el aviso de error, la propia expansión al
+  // abrir las sugerencias de dirección-), para que "Estoy aquí" quede siempre encima de ella y el mapa reciba el
+  // `paddingInferior` exacto que le hace falta para no tapar el pin (OL-182).
+  const [altoHoja, setAltoHoja] = useState(0);
   const campoRef = useRef<HTMLDivElement>(null);
   // La barra de acciones vive fuera del campo y de la lista flotante: sin esto, su propio "tocar fuera" (gestor,
   // revisión de OL-179, bitácora 214) la cerraba con el mousedown del propio botón "Agregar", antes de que le
   // llegara el click.
   const barraRef = useRef<HTMLDivElement>(null);
+  const hojaRef = useRef<HTMLDivElement>(null);
+  const campoDireccionRef = useRef<HTMLDivElement>(null);
+  const campoDireccionWrapRef = useRef<HTMLLabelElement>(null);
   const sesion = useRef("");
+  const sesionDireccion = useRef("");
   const versionPin = useRef(0);
   const versionBusqueda = useRef(0);
+  const versionBusquedaDireccion = useRef(0);
   useEffect(() => {
     sesion.current = crypto.randomUUID();
+    sesionDireccion.current = crypto.randomUUID();
   }, []);
 
   function marcarTocado() {
@@ -188,6 +220,36 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, contexto.origen, contexto.ciudad.slug]);
 
+  // La misma búsqueda, para el campo "Dirección" de la hoja "Agregar lugar" (OL-182): mismo mecanismo
+  // (buscarConContexto/sugerirLugares), su propia sesión de Mapbox. "Ubicando…" (lo que deja moverPin mientras
+  // resuelve el reverse geocoding) nunca dispara una búsqueda -no es texto que la persona haya escrito.
+  useEffect(() => {
+    const texto = qDireccionAgregar.trim();
+    if (texto.length < 3 || texto === "Ubicando…") return;
+    const { mapboxToken } = configPublica();
+    const version = ++versionBusquedaDireccion.current;
+    const timer = setTimeout(async () => {
+      setBuscandoDireccion(true);
+      setErrorBusquedaDireccion(null);
+      try {
+        if (!mapboxToken) throw new Error("Sin servicio de direcciones");
+        const opciones = await buscarConContexto(
+          texto,
+          contexto,
+          (t, bbox) => sugerirLugares(t, mapboxToken, contexto.centro, sesionDireccion.current, consultarMapa, bbox).then((r) => descartarSinCalle(r, texto)),
+          (r) => necesitaReintentoLugares(r.map((o) => o.distanciaM)),
+        );
+        if (version === versionBusquedaDireccion.current) setResultadosDireccionAgregar(opciones);
+      } catch {
+        if (version === versionBusquedaDireccion.current) setErrorBusquedaDireccion("No pude buscar. Intenta de nuevo o toca el mapa.");
+      } finally {
+        if (version === versionBusquedaDireccion.current) setBuscandoDireccion(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qDireccionAgregar, contexto.origen, contexto.ciudad.slug]);
+
   const textoBusqueda = q.trim();
   const conTextoLargo = textoBusqueda.length >= 3;
   const lugaresFiltrados = textoBusqueda ? lugaresPorTexto(lugares, q) : [];
@@ -196,24 +258,82 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const listaAbierta = (modo === "resultados" || modo === "no-encontrado") && !listaCerradaActual;
   const barraVisible = (modo === "resultados" || modo === "no-encontrado") && !listaCerradaActual;
 
-  /** Mueve el pin a cualquier punto: se escriba el nombre a mano o venga de un POI, y reverse geocoding para la dirección. */
+  const textoDireccionAgregar = qDireccionAgregar.trim();
+  const conTextoLargoDireccion = textoDireccionAgregar.length >= 3;
+  // Mismas dos fuentes que el campo principal (lugares registrados + Mapbox, `combinarResultados`): elegir un
+  // lugar registrado aquí no cambia de modo -"Agregar lugar" sigue igual-, solo toma su punto y su dirección,
+  // igual que una dirección o un POI de Mapbox (docs/rediseno/43, segunda versión: "sugerencias de direcciones y
+  // POIs, como el campo de arriba").
+  const lugaresFiltradosDireccion = textoDireccionAgregar ? lugaresPorTexto(lugares, qDireccionAgregar) : [];
+  const combinadosDireccion = combinarResultados(lugaresFiltradosDireccion, conTextoLargoDireccion ? resultadosDireccionAgregar : []);
+  const listaDireccionCerradaActual = cerradaDireccionParaTexto === qDireccionAgregar;
+  const listaDireccionAbierta = panelAgregar && combinadosDireccion.length > 0 && !listaDireccionCerradaActual;
+
+  /** Mueve el pin a cualquier punto: se escriba el nombre a mano o venga de un POI, y reverse geocoding para la
+   *  dirección. También refleja el resultado en el campo "Dirección" de la hoja "Agregar lugar" si está abierta
+   *  -las tres maneras de fijar el punto (dirección, mapa, "Estoy aquí") terminan en el mismo lugar (OL-182). */
   async function moverPin(punto: Punto, nombreFijo?: string, esArrastre = false) {
     marcarTocado();
     setAjustado(esArrastre);
     setAvisoPublico(null);
     const version = ++versionPin.current;
     setDraft((actual) => ({ origen: "manual", nombre: nombreFijo ?? (actual?.editable ? actual.nombre : ""), direccion: "Ubicando…", punto, editable: true, ciudad: actual?.editable ? actual.ciudad : null }));
+    setQDireccionAgregar("Ubicando…");
+    setCerradaDireccionParaTexto("Ubicando…");
     const { mapboxToken } = configPublica();
     if (!mapboxToken) {
-      if (version === versionPin.current) setDraft((a) => (a && a.punto === punto ? { ...a, direccion: "" } : a));
+      if (version === versionPin.current) {
+        setDraft((a) => (a && a.punto === punto ? { ...a, direccion: "" } : a));
+        setQDireccionAgregar("");
+        setCerradaDireccionParaTexto("");
+      }
       return;
     }
     try {
       const r = await lugarDesdePunto(punto, mapboxToken);
       if (version !== versionPin.current) return;
-      setDraft((a) => (a && a.punto === punto ? { ...a, direccion: r?.direccion ?? "", ciudad: r?.ciudad ?? a.ciudad } : a));
+      const direccionResuelta = r?.direccion ?? "";
+      setDraft((a) => (a && a.punto === punto ? { ...a, direccion: direccionResuelta, ciudad: r?.ciudad ?? a.ciudad } : a));
+      setQDireccionAgregar(direccionResuelta);
+      setCerradaDireccionParaTexto(direccionResuelta);
     } catch {
-      if (version === versionPin.current) setDraft((a) => (a && a.punto === punto ? { ...a, direccion: "" } : a));
+      if (version === versionPin.current) {
+        setDraft((a) => (a && a.punto === punto ? { ...a, direccion: "" } : a));
+        setQDireccionAgregar("");
+        setCerradaDireccionParaTexto("");
+      }
+    }
+  }
+
+  /** Fija el pin y la dirección desde el campo "Dirección" de la hoja, sin tocar el nombre (el de la hoja es un
+   *  campo aparte, `nombreAgregar`) ni el resto del "Agregar lugar" en curso -elegir aquí un lugar YA registrado
+   *  solo presta su punto y su dirección, igual que una dirección o un POI de Mapbox; no cambia de modo ni de
+   *  nombre (eso sería `elegirLugarLista`, para el campo de arriba). */
+  function fijarPuntoDesdeDireccion(punto: Punto, direccion: string, ciudad: string | null) {
+    marcarTocado();
+    setAvisoPublico(null);
+    setDraft((a) => (a ? { ...a, origen: "manual", punto, direccion, ciudad } : { origen: "manual", nombre: nombreAgregar, direccion, punto, editable: true, ciudad }));
+    setQDireccionAgregar(direccion);
+    setCerradaDireccionParaTexto(direccion);
+  }
+
+  function elegirDireccionLugar(l: LugarResumen) {
+    fijarPuntoDesdeDireccion({ lat: l.lat, lng: l.lng }, l.direccion ?? "", null);
+  }
+
+  async function elegirDireccionMapbox(item: LugarSugerido) {
+    const { mapboxToken } = configPublica();
+    if (!mapboxToken) return;
+    marcarTocado();
+    setBuscandoDireccion(true);
+    try {
+      const r = await recuperarLugar(item.mapboxId, mapboxToken, sesionDireccion.current, consultarMapa);
+      if (!r || !puntoValido(r)) throw new Error("Sin coordenadas");
+      fijarPuntoDesdeDireccion({ lat: r.lat, lng: r.lng }, r.direccion || item.direccion, r.ciudad);
+    } catch {
+      setErrorBusquedaDireccion("No pude ubicar esa opción. Busca de nuevo o toca el mapa.");
+    } finally {
+      setBuscandoDireccion(false);
     }
   }
 
@@ -246,28 +366,39 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     }
   }
 
+  /** "Estoy aquí": SIEMPRE fija el punto en el mismo lugar (draft) tanto si la hoja "Agregar lugar" está abierta
+   *  (una de sus tres maneras de fijar el punto, sin cerrarla) como si no (el resumen de la pantalla principal). */
   function estoyAquiClick() {
     onEstoyAqui((p) => {
-      setPanelAgregar(false);
       setErrorAgregar(null);
       setAvisoPublico(null);
       void moverPin(p);
     });
   }
 
+  /** Abre la hoja "Agregar lugar" (OL-182): NUNCA inventa un punto -antes movía el pin en silencio al centro de
+   *  contexto y guardaba esa ubicación sin que nadie la eligiera, el defecto que reportó el founder en
+   *  producción-. Si ya había un punto puesto a mano (un POI, el mapa, "Estoy aquí"), se conserva tal cual -la
+   *  hoja abre con "Guardar" ya encendido-; si el "draft" era un lugar YA REGISTRADO (otro lugar, no uno nuevo),
+   *  no tiene sentido heredar su pin para uno nuevo: se limpia y la hoja abre sin punto. */
   function abrirAgregar() {
-    if (!draft?.punto) void moverPin(contexto.centro, q.trim() || undefined);
+    if (draft?.origen === "lugar") setDraft(null);
     setNombreAgregar(q.trim() || draft?.nombre || "");
+    setQDireccionAgregar(draft?.origen === "manual" && draft.direccion !== "Ubicando…" ? draft.direccion : "");
+    setCerradaDireccionParaTexto(null);
     setPrivadoAgregar(false);
     setErrorAgregar(null);
+    setErrorBusquedaDireccion(null);
     setAvisoPublico(null);
     setPanelAgregar(true);
     setCerradaParaTexto(q);
   }
 
   async function guardarAgregar() {
-    if (!nombreAgregar.trim() || !draft?.punto) return;
-    const punto = draft.punto;
+    const punto = draft?.punto ?? null;
+    // Botón apagado mientras no haya punto (OL-182): esta comprobación es la misma que ya deshabilita el botón
+    // (`puedeGuardarLugar`), por si acaso llega a llamarse de otro modo -nunca se guarda un punto inventado.
+    if (!draft || !punto || !puedeGuardarLugar({ nombre: nombreAgregar, punto })) return;
     const direccionActual = draft.direccion === "Ubicando…" ? "" : draft.direccion;
     const { modo: destino, nombre, direccion } = decidirGuardado(privadoAgregar, nombreAgregar, direccionActual);
     marcarTocado();
@@ -363,7 +494,35 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       vv.removeEventListener("scroll", medir);
     };
   }, []);
-  const estoyAquiBottom = barraVisible ? bottomBarra + ALTO_BARRA_ACCIONES + 16 : 16;
+  // Alto real de la hoja "Agregar lugar" (ResizeObserver: cambia con el error, o al expandirse para dejarle
+  // sitio a las sugerencias de dirección) -para que el mapa reciba el `paddingInferior` justo y "Estoy aquí"
+  // quede siempre encima, nunca debajo (OL-182, doc 43 segunda versión).
+  useEffect(() => {
+    // Sin la hoja abierta no hay nada que medir; el valor viejo de `altoHoja` no se usa en ningún lado mientras
+    // `panelAgregar` es falso (estoyAquiBottom y el padding del mapa lo comprueban), así que no hace falta
+    // resetearlo aquí -evita un setState síncrono dentro del cuerpo del efecto.
+    if (!panelAgregar) return;
+    const el = hojaRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entradas) => setAltoHoja(entradas[0]?.contentRect.height ?? 0));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [panelAgregar]);
+
+  // Cuando las sugerencias de dirección necesitan abrir y no hay sitio abajo del campo (pegado sobre el teclado),
+  // la propia hoja se estira hacia arriba (clase .expandida, CSS) y se desplaza por dentro para que el campo
+  // "Dirección" quede arriba del todo: así SIEMPRE hay sitio libre debajo y la lista nunca abre encima del campo
+  // que se está usando (regla dura del founder, 2026-09-24: "si sugieres algo sea debajo del campo que estoy
+  // usando"; corrección pedida por el gestor sobre la primera entrega del prototipo de esta pieza).
+  useEffect(() => {
+    if (!listaDireccionAbierta) return;
+    const hoja = hojaRef.current;
+    const campo = campoDireccionWrapRef.current;
+    if (!hoja || !campo) return;
+    hoja.scrollTop = Math.max(0, campo.offsetTop - 10);
+  }, [listaDireccionAbierta]);
+
+  const estoyAquiBottom = panelAgregar ? bottomBarra + altoHoja + 16 : barraVisible ? bottomBarra + ALTO_BARRA_ACCIONES + 16 : 16;
 
   const textoAgregar = q.trim() ? `Agregar «${q.trim()}» como lugar` : "Agregar lugar";
 
@@ -403,6 +562,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             centrarEn={contexto.centro}
             ciudad={contexto.ciudad}
             yo={yo}
+            paddingInferior={panelAgregar ? altoHoja + 12 : 0}
             onLugar={(id) => {
               const l = lugares.find((x) => x.id === id);
               if (l) elegirLugarLista(l);
@@ -439,7 +599,15 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               {avisoPublico && <span className={styles.notaAjuste}>{avisoPublico}</span>}
             </div>
           )}
-          <ListaFlotante abierta={listaAbierta} onCerrar={() => setCerradaParaTexto(q)} ancla={campoRef} dentro={[barraRef]} id="lista-donde-es" etiqueta="Lugares y direcciones">
+          <ListaFlotante
+            abierta={listaAbierta}
+            onCerrar={() => setCerradaParaTexto(q)}
+            ancla={campoRef}
+            dentro={[barraRef]}
+            id="lista-donde-es"
+            etiqueta="Lugares y direcciones"
+            reservaAbajo={barraVisible ? ALTO_BARRA_ACCIONES + 8 : undefined}
+          >
             {modo === "resultados" &&
               combinados.map((r) =>
                 r.tipo === "lugar" ? (
@@ -486,16 +654,75 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             )}
           </ListaFlotante>
           {panelAgregar && (
-            <div className={styles.panelAgregar}>
+            // Hoja "Agregar lugar" a media pantalla, pegada abajo -sobre el teclado cuando lo hay, mismo mecanismo
+            // que la barra- dejando el mapa (y el pin, con `paddingInferior`) siempre visibles arriba (OL-182). Con
+            // las sugerencias de dirección abiertas, ".expandida" la estira y el efecto de arriba la desplaza para
+            // que el campo "Dirección" quede al ras de arriba: así la lista SIEMPRE tiene sitio debajo.
+            <div ref={hojaRef} className={listaDireccionAbierta ? `${styles.hojaAgregar} ${styles.expandida}` : styles.hojaAgregar} style={{ bottom: bottomBarra }} role="group" aria-label="Agregar lugar">
+              <div className={styles.asaHoja} aria-hidden="true" />
               <h3>Agregar lugar</h3>
               <label className={styles.campoPanel}>
                 <span>Nombre</span>
                 <input type="text" value={nombreAgregar} onChange={(e) => setNombreAgregar(e.target.value)} maxLength={LIMITES_EVENTO.sitio} placeholder="Nombre del lugar" aria-label="Nombre del lugar nuevo" autoFocus />
               </label>
-              <label className={styles.campoPanel}>
+              <label className={styles.campoPanel} ref={campoDireccionWrapRef}>
                 <span>Dirección</span>
-                <p className={styles.direccionFija}>{draft && draft.direccion !== "Ubicando…" ? draft.direccion || "Ajusta el pin en el mapa para fijar la dirección" : "Ubicando…"}</p>
+                <div className={styles.campoDireccion} ref={campoDireccionRef}>
+                  <IconoBuscar width={18} height={18} />
+                  <input
+                    type="text"
+                    value={qDireccionAgregar}
+                    onChange={(e) => setQDireccionAgregar(e.target.value)}
+                    placeholder="Busca la dirección"
+                    aria-label="Dirección del lugar nuevo"
+                    autoComplete="off"
+                    role="combobox"
+                    aria-expanded={listaDireccionAbierta}
+                    aria-controls="lista-direccion-agregar"
+                  />
+                </div>
               </label>
+              <ListaFlotante
+                abierta={listaDireccionAbierta}
+                onCerrar={() => setCerradaDireccionParaTexto(qDireccionAgregar)}
+                ancla={campoDireccionRef}
+                id="lista-direccion-agregar"
+                etiqueta="Direcciones"
+                reservaAbajo={0}
+              >
+                {combinadosDireccion.map((r) =>
+                  r.tipo === "lugar" ? (
+                    <li key={`dl-${r.lugar.id}`}>
+                      <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirDireccionLugar(r.lugar)}>
+                        <IconoPin width={20} height={20} />
+                        <b>
+                          {r.lugar.nombre}
+                          {r.lugar.privado && <span className={styles.marcaPrivado}>Privado</span>}
+                        </b>
+                        <small>{r.lugar.direccion}</small>
+                      </button>
+                    </li>
+                  ) : (
+                    <li key={`dm-${r.item.mapboxId}`}>
+                      <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => void elegirDireccionMapbox(r.item)}>
+                        <IconoPin width={20} height={20} />
+                        <b>{r.item.esDireccion ? textoDireccionAgregar : r.item.nombre}</b>
+                        <small>{[r.item.direccion, r.item.ciudad].filter(Boolean).join(" · ")}</small>
+                      </button>
+                    </li>
+                  ),
+                )}
+                {buscandoDireccion && (
+                  <li className={styles.avisoFlotante} role="status">
+                    Buscando…
+                  </li>
+                )}
+                {errorBusquedaDireccion && (
+                  <li className={styles.avisoFlotante} role="alert">
+                    {errorBusquedaDireccion}
+                  </li>
+                )}
+              </ListaFlotante>
               <div className={styles.filaPrivado}>
                 <div className={styles.textoPrivado}>
                   <b>Es un lugar privado</b>
@@ -508,9 +735,12 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
                   {errorAgregar}
                 </p>
               )}
-              <Boton type="button" onClick={() => void guardarAgregar()} disabled={!nombreAgregar.trim() || guardando}>
+              <Boton type="button" onClick={() => void guardarAgregar()} disabled={!puedeGuardarLugar({ nombre: nombreAgregar, punto: draft?.punto ?? null }) || guardando}>
                 {guardando ? "Guardando…" : "Guardar y usar este lugar"}
               </Boton>
+              {/* La ayuda de qué falta va debajo del botón, nunca dentro (canon de formularios, OL-100) -y solo
+                  habla de la ubicación: el nombre ya llega prellenado con lo escrito, rara vez falta. */}
+              {!draft?.punto && <p className={styles.ayudaGuardar}>Falta la ubicación: busca la dirección, toca el mapa o usa «Estoy aquí».</p>}
             </div>
           )}
           {barraVisible && (

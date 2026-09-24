@@ -6,6 +6,7 @@
  * teclado o al pie, usando `visualViewport` cuando existe.
  */
 import type { LugarSugerido } from "@/lib/buscarLugares";
+import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
 
 export type ResultadoLugarRegistrado = { tipo: "lugar"; lugar: LugarResumen };
@@ -57,4 +58,15 @@ export function altoTeclado(altoVentana: number, visualViewport: { height: numbe
   if (!visualViewport) return 0;
   const oculto = altoVentana - visualViewport.height - visualViewport.offsetTop;
   return oculto > 1 ? Math.round(oculto) : 0;
+}
+
+/**
+ * ¿Puede guardarse el lugar que se está agregando? (OL-182, doc 43 segunda versión — dos defectos reportados por
+ * el founder en producción: la hoja "Agregar lugar" guardaba un punto inventado, y su botón a veces no hacía
+ * nada). Hace falta un nombre Y un punto de verdad -nunca un pin inventado en silencio en el centro de contexto-;
+ * el botón "Guardar y usar este lugar" queda apagado mientras `punto` sea `null`, con el porqué en texto chico
+ * debajo ("Falta la ubicación…").
+ */
+export function puedeGuardarLugar({ nombre, punto }: { nombre: string; punto: Punto | null }): boolean {
+  return nombre.trim().length > 0 && punto !== null;
 }
