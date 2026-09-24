@@ -17,7 +17,7 @@ export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, ti
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
   return (
     <>
-      <Destacados tarjetas={tarjetas} grande={tamano === "grande"} memoria={memoria} encabezado={titulo} verTodos={{ href: verTodosHref }} boton={(t) => asistencia.boton(t)} />
+      <Destacados tarjetas={tarjetas} grande={tamano === "grande"} memoria={memoria} encabezado={titulo} verTodos={{ href: verTodosHref }} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
       {asistencia.extras}
     </>
   );
