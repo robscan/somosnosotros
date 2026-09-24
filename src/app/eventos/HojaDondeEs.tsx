@@ -70,6 +70,12 @@ type Draft = {
   lugarId?: string;
   /** Solo cuando "Agregar lugar" acaba de crear uno de verdad y todavía no está en `lugares` (ver la nota de `volverA`). */
   lugarNuevo?: LugarResumen;
+  /** El lugar elegido (registrado o recién creado) es privado: "Listo" lo guarda como sitio reservado, nunca por
+   *  `lugar_id` (OL-179, founder 2026-09-24: "solo lo ve él"). Solo tiene sentido con `origen: "lugar"`. */
+  privado?: boolean;
+  /** Un sitio manual que debe guardarse como reservado (el panel "Agregar lugar" con el interruptor de privado
+   *  encendido, sin que hubiera un lugar público parecido). Solo tiene sentido con `origen: "manual"`. */
+  reservado?: boolean;
   editable: boolean;
   ciudad: string | null;
 };
@@ -77,11 +83,15 @@ type Draft = {
 const ALTO_BARRA_ACCIONES = 56; // min-height de .barraAcciones en HojaDondeEs.module.css
 
 /**
- * "¿Dónde es?" del alta de evento, a pantalla completa (OL-173, docs/rediseno/43): el mapa de fondo, un solo campo
- * "Nombre o dirección" y los lugares registrados como pines tocables. Escribir abre una lista flotante (nunca tapa
- * nada); tocar un pin, un punto de interés del mapa o cualquier punto vacío mueve el pin; arrastrarlo hace reverse
- * geocoding. Sin coincidencias, la barra de acciones (variante B, firmada en el doc 43) ofrece "Agregar lugar"
- * -que registra uno de verdad, salvo "privado"- o "Buscar en el mapa sin agregar". "Listo" confirma y vuelve al
+ * "¿Dónde es?" del alta de evento, a pantalla completa (OL-173, docs/rediseno/43; lugar privado de OL-179): el
+ * mapa de fondo, un solo campo "Nombre o dirección" y los lugares registrados como pines tocables (los privados
+ * propios entre ellos, marcados "Privado"). Escribir abre una lista flotante (nunca tapa nada); tocar un pin, un
+ * punto de interés del mapa o cualquier punto vacío mueve el pin; arrastrarlo hace reverse geocoding. Sin
+ * coincidencias, la barra de acciones muestra un solo botón, "Agregar lugar" (founder, 2026-09-24: "en el paso
+ * anterior solo mostremos un botón de agregar"; antes había un segundo botón, "Buscar en el mapa sin agregar" -el
+ * mapa siempre se puede tocar, el aviso lo dice). "Agregar lugar" registra uno de verdad -privado o no-; con
+ * privado, el evento se guarda como sitio reservado (nombre visible, dirección oculta hasta la hora que toque),
+ * igual que si se elige un lugar privado ya registrado de las sugerencias. "Listo" confirma y vuelve al
  * formulario; "Atrás" no cambia nada (todo vive en el estado local de esta hoja, no se avisa al padre hasta Listo).
  *
  * El mapa es un componente nuevo, `MapaDondeEs` (no `Mapa.tsx`): esta pantalla necesita lugares tocables Y un pin
@@ -92,7 +102,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const [draft, setDraft] = useState<Draft | null>(() => {
     if (modoSitio === "lugar") {
       const l = lugares.find((x) => x.id === lugarId);
-      return l ? { origen: "lugar", nombre: l.nombre, direccion: l.direccion ?? "", punto: { lat: l.lat, lng: l.lng }, lugarId: l.id, editable: false, ciudad: null } : null;
+      return l ? { origen: "lugar", nombre: l.nombre, direccion: l.direccion ?? "", punto: { lat: l.lat, lng: l.lng }, lugarId: l.id, privado: l.privado === true, editable: false, ciudad: null } : null;
     }
     const punto = otro.reservado ? otro.privadoPunto : otro.sitioPunto;
     const direccion = otro.reservado ? otro.direccionPrivada : (otro.direccion ?? "");
@@ -105,9 +115,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const [tocado, setTocado] = useState(false);
   const [ajustado, setAjustado] = useState(false);
   const [q, setQ] = useState("");
-  // La lista/barra se cierra con un toque (fuera, Escape, "Buscar en el mapa sin agregar") y vuelve a abrirse sola
-  // en cuanto el texto cambia: en vez de un booleano que un efecto tendría que resetear, se guarda PARA QUÉ texto
-  // se cerró -así "cerrada" se deriva solo comparando con `q`, sin useRef ni useEffect (react-hooks/refs).
+  // La lista/barra se cierra con un toque fuera (incluido el mapa, que siempre queda tocable) o Escape (ambos los
+  // resuelve `ListaFlotante` con su "tocar fuera"), y vuelve a abrirse sola en cuanto el texto cambia: en vez de un
+  // booleano que un efecto tendría que resetear, se guarda PARA QUÉ texto se cerró -así "cerrada" se deriva solo
+  // comparando con `q`, sin useRef ni useEffect (react-hooks/refs).
   const [cerradaParaTexto, setCerradaParaTexto] = useState<string | null>(null);
   const [resultadosMapbox, setResultadosMapbox] = useState<LugarSugerido[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -117,6 +128,9 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const [privadoAgregar, setPrivadoAgregar] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [errorAgregar, setErrorAgregar] = useState<string | null>(null);
+  // Al pedir privado, si ya existe un lugar público parecido se usa ese (lugares_parecidos nunca ve privados: un
+  // parecido siempre es público) y se avisa, en vez de tratarlo como privado (founder, 2026-09-24, OL-179).
+  const [avisoPublico, setAvisoPublico] = useState<string | null>(null);
   const campoRef = useRef<HTMLDivElement>(null);
   const sesion = useRef("");
   const versionPin = useRef(0);
@@ -182,6 +196,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   async function moverPin(punto: Punto, nombreFijo?: string, esArrastre = false) {
     marcarTocado();
     setAjustado(esArrastre);
+    setAvisoPublico(null);
     const version = ++versionPin.current;
     setDraft((actual) => ({ origen: "manual", nombre: nombreFijo ?? (actual?.editable ? actual.nombre : ""), direccion: "Ubicando…", punto, editable: true, ciudad: actual?.editable ? actual.ciudad : null }));
     const { mapboxToken } = configPublica();
@@ -202,7 +217,8 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     marcarTocado();
     setPanelAgregar(false);
     setErrorAgregar(null);
-    setDraft({ origen: "lugar", nombre: l.nombre, direccion: l.direccion ?? "", punto: { lat: l.lat, lng: l.lng }, lugarId: l.id, editable: false, ciudad: null });
+    setAvisoPublico(null);
+    setDraft({ origen: "lugar", nombre: l.nombre, direccion: l.direccion ?? "", punto: { lat: l.lat, lng: l.lng }, lugarId: l.id, privado: l.privado === true, editable: false, ciudad: null });
     setQ("");
   }
 
@@ -212,6 +228,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     marcarTocado();
     setPanelAgregar(false);
     setErrorAgregar(null);
+    setAvisoPublico(null);
     setBuscando(true);
     try {
       const r = await recuperarLugar(item.mapboxId, mapboxToken, sesion.current, consultarMapa);
@@ -229,6 +246,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     onEstoyAqui((p) => {
       setPanelAgregar(false);
       setErrorAgregar(null);
+      setAvisoPublico(null);
       void moverPin(p);
     });
   }
@@ -238,33 +256,41 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     setNombreAgregar(q.trim() || draft?.nombre || "");
     setPrivadoAgregar(false);
     setErrorAgregar(null);
+    setAvisoPublico(null);
     setPanelAgregar(true);
     setCerradaParaTexto(q);
   }
 
   async function guardarAgregar() {
     if (!nombreAgregar.trim() || !draft?.punto) return;
+    const punto = draft.punto;
     const direccionActual = draft.direccion === "Ubicando…" ? "" : draft.direccion;
     const { modo: destino, nombre, direccion } = decidirGuardado(privadoAgregar, nombreAgregar, direccionActual);
     marcarTocado();
-    if (destino === "privado") {
-      setDraft({ origen: "manual", nombre, direccion, punto: draft.punto, editable: true, ciudad: draft.ciudad });
-      setPanelAgregar(false);
-      setQ("");
-      return;
-    }
     setGuardando(true);
     setErrorAgregar(null);
+    setAvisoPublico(null);
     try {
-      const r = await crearLugarDesdeEvento({ nombre, direccion, lat: draft.punto.lat, lng: draft.punto.lng, ciudad: draft.ciudad ?? contexto.ciudad.nombre, volverA });
+      // Con privado o sin él, el lugar se registra (OL-179, founder 2026-09-24): la diferencia es si además, al
+      // guardar el evento, se usa por `lugar_id` (normal) o como sitio reservado (privado de verdad).
+      const r = await crearLugarDesdeEvento({ nombre, direccion, lat: punto.lat, lng: punto.lng, ciudad: draft.ciudad ?? contexto.ciudad.nombre, volverA, privado: destino === "privado" });
       if (!r.ok) {
         setErrorAgregar(r.error);
         return;
       }
       const existente = lugares.find((l) => l.id === r.id);
       const tipo = deducirTipo(nombre) ?? "otro";
-      const lugarResultante: LugarResumen = existente ?? { id: r.id, nombre, tipo, direccion, lat: draft.punto.lat, lng: draft.punto.lng, portada: null };
-      setDraft({ origen: "lugar", nombre: lugarResultante.nombre, direccion: lugarResultante.direccion ?? "", punto: { lat: lugarResultante.lat, lng: lugarResultante.lng }, lugarId: lugarResultante.id, lugarNuevo: existente ? undefined : lugarResultante, editable: false, ciudad: null });
+      const lugarResultante: LugarResumen = existente ?? { id: r.id, nombre, tipo, direccion, lat: punto.lat, lng: punto.lng, portada: null };
+      if (destino === "privado" && !r.reutilizado) {
+        // Privado de verdad: el evento se guarda como sitio reservado (como hoy), nunca por `lugar_id` -el lugar
+        // recién creado solo queda ahí para reutilizarlo otro día ("¿Dónde es?" ya lo ofrece entre las sugerencias).
+        setDraft({ origen: "manual", nombre, direccion, punto, editable: true, ciudad: draft.ciudad, reservado: true });
+      } else {
+        // Sin privado, o con privado pero ya existía como lugar público (lugares_parecidos nunca ve privados: un
+        // parecido encontrado aquí es siempre público): se usa como un lugar normal, y se avisa si tocaba privado.
+        if (destino === "privado" && r.reutilizado) setAvisoPublico(`«${nombre}» ya existe como lugar público.`);
+        setDraft({ origen: "lugar", nombre: lugarResultante.nombre, direccion: lugarResultante.direccion ?? "", punto: { lat: lugarResultante.lat, lng: lugarResultante.lng }, lugarId: lugarResultante.id, lugarNuevo: existente ? undefined : lugarResultante, editable: false, ciudad: null });
+      }
       setPanelAgregar(false);
       setQ("");
     } catch {
@@ -283,7 +309,13 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       return;
     }
     if (draft.origen === "lugar" && draft.lugarId) {
-      onLugar(draft.lugarId, draft.lugarNuevo);
+      // Un lugar registrado privado (propio, de las sugerencias) rellena el evento como reservado, nunca por
+      // `lugar_id`: solo su autor y la administración pueden verlo (OL-179, founder 2026-09-24).
+      if (draft.privado) {
+        onOtro({ ...otro, reservado: true, sitioTexto: draft.nombre.trim().slice(0, LIMITES_EVENTO.sitio), direccionPrivada: draft.direccion.slice(0, LIMITES_EVENTO.direccion), privadoPunto: draft.punto, sitioPunto: null, direccion: "", pinPendiente: false, ciudad: draft.ciudad }, false);
+      } else {
+        onLugar(draft.lugarId, draft.lugarNuevo);
+      }
       onCerrar();
       return;
     }
@@ -291,7 +323,20 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       onCerrar();
       return;
     }
-    onOtro({ ...otro, reservado: false, sitioTexto: draft.nombre.trim().slice(0, LIMITES_EVENTO.sitio), direccion: draft.direccion.slice(0, LIMITES_EVENTO.direccion), sitioPunto: draft.punto, pinPendiente: false, ciudad: draft.ciudad, direccionPrivada: "", privadoPunto: null }, false);
+    const reservado = !!draft.reservado;
+    onOtro(
+      {
+        ...otro,
+        reservado,
+        sitioTexto: draft.nombre.trim().slice(0, LIMITES_EVENTO.sitio),
+        pinPendiente: false,
+        ciudad: draft.ciudad,
+        ...(reservado
+          ? { direccionPrivada: draft.direccion.slice(0, LIMITES_EVENTO.direccion), privadoPunto: draft.punto, sitioPunto: null, direccion: "" }
+          : { direccion: draft.direccion.slice(0, LIMITES_EVENTO.direccion), sitioPunto: draft.punto, direccionPrivada: "", privadoPunto: null }),
+      },
+      false,
+    );
     onCerrar();
   }
 
@@ -387,6 +432,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               )}
               <span className={styles.resumenDireccion}>{draft.direccion || (draft.punto ? "Ubicando…" : "")}</span>
               {ajustado && <span className={styles.notaAjuste}>Moviste el pin. Revisa que la dirección corresponda.</span>}
+              {avisoPublico && <span className={styles.notaAjuste}>{avisoPublico}</span>}
             </div>
           )}
           <ListaFlotante abierta={listaAbierta} onCerrar={() => setCerradaParaTexto(q)} ancla={campoRef} id="lista-donde-es" etiqueta="Lugares y direcciones">
@@ -396,7 +442,12 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
                   <li key={`l-${r.lugar.id}`}>
                     <button type="button" role="option" aria-selected={false} className={sug.renglon} onClick={() => elegirLugarLista(r.lugar)}>
                       <IconoPin width={20} height={20} />
-                      <b>{r.lugar.nombre}</b>
+                      <b>
+                        {r.lugar.nombre}
+                        {/* Un lugar privado propio (OL-179): entre las sugerencias, con una marca chica -solo lo
+                            ve su autor, la política de lectura ya se lo dio a esta consulta. */}
+                        {r.lugar.privado && <span className={styles.marcaPrivado}>Privado</span>}
+                      </b>
                       <small>{r.lugar.direccion}</small>
                     </button>
                   </li>
@@ -413,7 +464,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             {modo === "no-encontrado" && (
               <li className={styles.avisoNoEncontrado} role="status">
                 <b>«{q.trim()}» no está registrado.</b>
-                Puedes agregarlo como lugar o buscarlo en el mapa sin agregarlo.
+                Agrégalo, o toca el mapa para ubicarlo.
               </li>
             )}
             {conTextoLargo && modo === "resultados" && buscando && (
@@ -443,8 +494,8 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
               </label>
               <div className={styles.filaPrivado}>
                 <div className={styles.textoPrivado}>
-                  <b>Es un lugar privado, no registrarlo</b>
-                  <small>Se guarda solo en este evento, sin ficha pública</small>
+                  <b>Es un lugar privado</b>
+                  <small>Solo tú lo ves; podrás volver a usarlo en otros eventos</small>
                 </div>
                 <button type="button" role="switch" aria-checked={privadoAgregar} aria-label="Lugar privado" className={styles.palanca} onClick={() => setPrivadoAgregar((v) => !v)} />
               </div>
@@ -459,14 +510,12 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             </div>
           )}
           {barraVisible && (
+            // Un solo botón (founder, 2026-09-24: "en el paso anterior solo mostremos un botón de agregar"): el
+            // mapa ya se puede tocar siempre, sin un botón aparte para "buscar sin agregar" (el aviso lo dice).
             <div className={styles.barraAcciones} style={{ bottom: bottomBarra }}>
               <button type="button" className={styles.accionAgregar} onClick={abrirAgregar}>
                 <IconoMas width={18} height={18} />
                 <span>{textoAgregar}</span>
-              </button>
-              <button type="button" className={styles.accionMapa} onClick={() => setCerradaParaTexto(q)}>
-                <IconoPin width={18} height={18} />
-                Buscar en el mapa sin agregar
               </button>
             </div>
           )}

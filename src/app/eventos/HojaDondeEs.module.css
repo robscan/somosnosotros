@@ -213,6 +213,21 @@
   margin-bottom: 2px;
 }
 
+/* Marca chica "Privado" junto al nombre, en la lista flotante (OL-179): un lugar propio entre las sugerencias que
+   nadie más ve. Sin icono de candado en el canon (ui/Iconos): texto solo, como pide el encargo. */
+.marcaPrivado {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
 /* Barra de acciones, variante B: pegada sobre el teclado (JS mueve `bottom`) o al pie sin él. */
 .barraAcciones {
   position: absolute;
@@ -226,8 +241,7 @@
   box-shadow: var(--sombra-panel);
   transition: bottom 120ms ease;
 }
-.accionAgregar,
-.accionMapa {
+.accionAgregar {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -236,7 +250,10 @@
   gap: 6px;
   min-height: var(--toque);
   padding: 0 var(--espacio-2);
+  border: none;
   border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
   font-size: var(--letra-sm);
   font-weight: 700;
   cursor: pointer;
@@ -246,16 +263,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.accionAgregar {
-  border: none;
-  background: var(--primario);
-  color: var(--primario-texto);
-}
-.accionMapa {
-  border: 1px solid var(--borde);
-  background: var(--fondo);
-  color: var(--texto);
 }
 
 /* Panel "Agregar lugar": nombre, dirección ya resuelta y el interruptor de privado. */

@@ -169,6 +169,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${lugar.nombre} · Somos Nosotros`,
     description: descripcion,
+    // Un lugar privado no lo indexa Google (OL-179): en la práctica ya es inalcanzable sin sesión (la política de
+    // lectura lo esconde de cualquiera que no sea su autor o la administración), pero se lo decimos igual.
+    ...(lugar.privado ? { robots: { index: false, follow: false } } : {}),
     alternates: { canonical: `${ORIGEN}${hrefLugar(lugar)}` },
     openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}${hrefLugar(lugar)}`, type: "website", images: [{ url: imagen }], locale: "es_MX", siteName: "Somos Nosotros" },
     twitter: { card: "summary_large_image", title: lugar.nombre, description: descripcion, images: [imagen] },

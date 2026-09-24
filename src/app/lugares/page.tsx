@@ -46,7 +46,11 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
   const [l, e] = await Promise.all([
     // 1 000 lugares en una sola ciudad son muchos más de los que hay hoy (decenas); tope explícito para no
     // depender del corte silencioso de PostgREST si la ciudad crece (revisión 2026-09-14, A1).
-    supabase.from("lugares").select("id, slug, nombre, tipo, direccion, lat, lng, portada, privado").eq("visible", true).eq("ciudad", ciudadNombre).order("nombre").limit(1000),
+    // `.eq("privado", false)` explícito (OL-179, founder 2026-09-24: "los lugares privados NUNCA aparecen en
+    // listados públicos aunque la persona sea su autora"): sin él, la política de lectura dejaría pasar también
+    // los privados de QUIEN MIRA (creado_por = auth.uid()) en este mapa y lista públicos -correcto en una ficha
+    // propia, un error aquí. No depender de la RLS para esto (auditoría de la bitácora 214).
+    supabase.from("lugares").select("id, slug, nombre, tipo, direccion, lat, lng, portada, privado").eq("visible", true).eq("privado", false).eq("ciudad", ciudadNombre).order("nombre").limit(1000),
     supabase.from("eventos").select("id, inicio, lugar_id, zona, titulo").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
   ]);
   return conProximo((l.data ?? []) as LugarResumen[], (e.data ?? []) as (ProximoEvento & { lugar_id: string | null })[]);
