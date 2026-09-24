@@ -18,10 +18,10 @@ Solo añade: `public.artistas_con_mi_correo()` (`security definer`, `set search_
 
 ### Prueba en Postgres local (`supabase/tests/pg/artistas-con-mi-correo.test.mjs`)
 
-Este árbol usa el banco de pruebas real (`scripts/test-db.mjs`, `pg` contra un Postgres local con roles `anon`/`authenticated`/`service_role` aislados), no PGlite en npm — es lo que hoy corren las demás migraciones (`supabase/tests/pg/*.test.mjs`). Postgres 16 ya estaba instalado y corriendo en este entorno (puerto 5432); se le puso contraseña al rol `postgres` y se creó la base de control `sn_control` (no existía) para poder correr `npm run test:db` — nada de esto se comitea, es infraestructura del entorno, no del repo.
+Este árbol usa el banco de pruebas real (`scripts/test-db.mjs`, `pg` contra un Postgres local con roles `anon`/`authenticated`/`service_role` aislados), no PGlite en npm — es lo que hoy corren las demás migraciones (`supabase/tests/pg/*.test.mjs`). Postgres 16 ya estaba instalado y corriendo en este entorno (puerto 5432); se le puso una contraseña efímera al rol `postgres` y se creó la base de control `sn_control` (no existía) para poder correr `npm run test:db` — nada de esto se comitea ni es un secreto del proyecto, es infraestructura de este entorno.
 
 ```
-TEST_DATABASE_URL=postgresql://postgres:localtest@127.0.0.1:5432/sn_control PGPASSFILE=/dev/null npm run test:db
+TEST_DATABASE_URL=postgresql://postgres:<contraseña local>@127.0.0.1:5432/sn_control PGPASSFILE=/dev/null npm run test:db
 ```
 
 **60 migraciones aplicadas, 862 pruebas, 0 fallaron** (853 antes de esta pieza + 9 nuevas). Casos probados: sin sesión → vacío; correo sin coincidencia → vacío; correo coincidente (sin distinguir mayúsculas) → trae el artista con su slug; ya ligada a la cuenta → vacío (no se repite, ya está en «Mis artistas»); con un reclamo pendiente sobre esa ficha → vacío; el mismo reclamo ya atendido → vuelve a aparecer; `anon` sin `EXECUTE` (42501); permisos: solo `authenticated`.
