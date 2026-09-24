@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { calcularPosicion } from "./ListaFlotante";
+import { calcularPosicion, tocoDentro } from "./ListaFlotante";
+
+/** Un "Node" de mentira: solo lo que `tocoDentro` necesita (`contains`), sin levantar un DOM real. */
+function contenedor(contiene: readonly unknown[]): Pick<Node, "contains"> {
+  return { contains: (n) => contiene.includes(n) };
+}
 
 describe("calcularPosicion", () => {
   it("con espacio de sobra abajo, abre hacia abajo pegada al campo", () => {
@@ -32,5 +37,29 @@ describe("calcularPosicion", () => {
     // Ventana muy chica (200 px), el campo a la mitad: ni arriba ni abajo caben más de ~82 px.
     const pocoEspacio = calcularPosicion({ left: 0, top: 90, bottom: 110, width: 300 }, 200, 0, 200);
     expect(pocoEspacio.maxHeight).toBe(100);
+  });
+});
+
+describe("tocoDentro (OL-179, bitácora 214: un elemento en `dentro` no cuenta como \"fuera\")", () => {
+  const objetivo = {} as Node;
+
+  it("dentro de uno de los contenedores (p. ej. la barra de acciones pasada en `dentro`): true, no cierra", () => {
+    const barra = contenedor([objetivo]);
+    expect(tocoDentro(objetivo, [null, barra])).toBe(true);
+  });
+
+  it("fuera de todos los contenedores: false, sí cierra", () => {
+    const lista = contenedor([]);
+    const ancla = contenedor([]);
+    const barra = contenedor([]);
+    expect(tocoDentro(objetivo, [lista, ancla, barra])).toBe(false);
+  });
+
+  it("un contenedor null (sin ref todavía, p. ej. ancla.current) no rompe la comprobación", () => {
+    expect(tocoDentro(objetivo, [null, undefined])).toBe(false);
+  });
+
+  it("sin ningún contenedor (dentro=[] por omisión): siempre fuera", () => {
+    expect(tocoDentro(objetivo, [])).toBe(false);
   });
 });
