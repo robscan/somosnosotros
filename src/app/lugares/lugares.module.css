@@ -78,6 +78,57 @@
 .ubicacionActiva {
   color: var(--primario);
 }
+/* El conmutador Mapa · Lista (docs/rediseno/45, OL-174): salió del renglón 1 de la cabecera; flota, secundario
+   (contorno, no relleno: no compite con "Registrar lugar", la acción primaria), justo encima de él — 16 px (lo
+   que ya sube "Registrar lugar" sobre la navegación) + 48 px de su alto (`--toque`) + 12 px de aire. Mismo sitio
+   exacto en el Mapa ("Ver en lista") y en la Lista ("Ver en mapa"). */
+.verOtraVista {
+  position: fixed;
+  right: var(--gutter);
+  bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + var(--espacio-4) + var(--toque) + 12px);
+  z-index: 21;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  box-shadow: var(--sombra-flotante);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.verOtraVista svg {
+  flex: none;
+}
+/* Con el chip de fecha elegido y ningún lugar con evento ese día (docs/rediseno/45, OL-174): el mapa queda vacío
+   con este aviso, centrado sobre el lienzo. */
+.vacioFecha {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 42%;
+  z-index: 2;
+  text-align: center;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: var(--espacio-4);
+  box-shadow: var(--sombra);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.vacioFecha b {
+  display: block;
+  color: var(--texto);
+  font-size: var(--letra-md);
+  font-weight: 800;
+  margin-bottom: 4px;
+}
 /* Mientras llega, el icono late (como los chips "en camino"); sin texto. */
 .ubicacionPidiendo svg {
   animation: latir 1.1s ease-in-out infinite;

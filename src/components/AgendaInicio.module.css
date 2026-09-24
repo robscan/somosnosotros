@@ -1,23 +1,7 @@
-/* El chip de fecha elegida (ui/Chip de contexto en ui/Cabecera): borde de acción y su ✕ para volver a hoy.
-   La clase va dos veces para pesar más que el borde de ui/Chip sin depender del orden de los módulos. */
-.marcado.marcado {
-  border-color: var(--primario);
-}
-.quitar {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  min-width: 32px;
-  min-height: 40px;
-  margin: 0 -8px 0 2px;
-  border: none;
-  background: none;
-  color: var(--texto-suave);
-  cursor: pointer;
-}
+/* El chip de fecha vive en ui/ChipFecha (docs/rediseno/45, OL-174: mismo componente en Agenda y Lugares); su CSS
+   (marcado, quitar) está en ui/ChipFecha.module.css.
 
-/* Grupos por día con título pegajoso debajo de lo que la cabecera deja a la vista (`--alto-cabecera`, de ui/Cabecera).
+   Grupos por día con título pegajoso debajo de lo que la cabecera deja a la vista (`--alto-cabecera`, de ui/Cabecera).
    Cada grupo pone su propio gutter. */
 .grupo {
   margin: 0 var(--gutter) var(--espacio-6);
