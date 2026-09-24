@@ -70,3 +70,14 @@ export function altoTeclado(altoVentana: number, visualViewport: { height: numbe
 export function puedeGuardarLugar({ nombre, punto }: { nombre: string; punto: Punto | null }): boolean {
   return nombre.trim().length > 0 && punto !== null;
 }
+
+/**
+ * Qué dirección guardar al tocar "Guardar y usar este lugar" (OL-182, corrección del gestor sobre la entrega de
+ * código: `guardarAgregar` tomaba solo la dirección YA RESUELTA -por una sugerencia o el reverse geocoding del
+ * pin- e ignoraba que la persona la hubiera corregido a mano en el campo "Dirección", editable desde el doc 43).
+ * Lo escrito manda; si está vacío o el reverse geocoding todavía no terminó ("Ubicando…"), se usa la resuelta.
+ */
+export function direccionAGuardar(texto: string, resuelta: string): string {
+  const escrito = texto.trim();
+  return escrito && escrito !== "Ubicando…" ? escrito : resuelta;
+}

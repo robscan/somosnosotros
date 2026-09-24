@@ -16,7 +16,7 @@ import { configPublica } from "@/lib/config";
 import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
 import { buscarConContexto, ciudadDeContexto, descartarSinCalle, necesitaReintentoLugares } from "./direccionContexto";
 import { consultarMapa, lugaresPorTexto, puntoValido } from "./direccionEvento";
-import { altoTeclado, combinarResultados, decidirGuardado, modoDePantalla, puedeGuardarLugar } from "./dondeEsPantalla";
+import { altoTeclado, combinarResultados, decidirGuardado, direccionAGuardar, modoDePantalla, puedeGuardarLugar } from "./dondeEsPantalla";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaDondeEs.module.css";
@@ -399,7 +399,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     // Botón apagado mientras no haya punto (OL-182): esta comprobación es la misma que ya deshabilita el botón
     // (`puedeGuardarLugar`), por si acaso llega a llamarse de otro modo -nunca se guarda un punto inventado.
     if (!draft || !punto || !puedeGuardarLugar({ nombre: nombreAgregar, punto })) return;
-    const direccionActual = draft.direccion === "Ubicando…" ? "" : draft.direccion;
+    // La persona puede haber corregido a mano el campo "Dirección" sin volver a elegir una sugerencia (el doc 43
+    // lo da como editable): eso manda sobre la dirección ya resuelta -antes se perdía (gestor, revisión de esta
+    // pieza).
+    const direccionActual = direccionAGuardar(qDireccionAgregar, draft.direccion === "Ubicando…" ? "" : draft.direccion);
     const { modo: destino, nombre, direccion } = decidirGuardado(privadoAgregar, nombreAgregar, direccionActual);
     marcarTocado();
     setGuardando(true);
@@ -522,7 +525,15 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     hoja.scrollTop = Math.max(0, campo.offsetTop - 10);
   }, [listaDireccionAbierta]);
 
-  const estoyAquiBottom = panelAgregar ? bottomBarra + altoHoja + 16 : barraVisible ? bottomBarra + ALTO_BARRA_ACCIONES + 16 : 16;
+  // Con la hoja estirada (sugerencias de dirección abiertas), el mapa queda casi tapado y "Estoy aquí" no sirve
+  // ahí -se oculta (gestor, revisión de OL-182): sin esto, con `altoHoja` grande se montaba sobre el propio campo
+  // "Nombre o dirección" de arriba (ese `bottom` empuja el botón por ENCIMA del alto entero de `.mapaLleno`, que
+  // no tiene `overflow: hidden`, hacia donde vive el campo). Fuera de ese caso, un tope defensivo con `min()`
+  // -nunca más de calc(100% - 64px) del propio `.mapaLleno`- para que tampoco se monte ahí si la hoja compacta
+  // creciera de más por un error largo.
+  const estoyAquiOculto = listaDireccionAbierta;
+  const estoyAquiBottomPx = panelAgregar ? bottomBarra + altoHoja + 16 : barraVisible ? bottomBarra + ALTO_BARRA_ACCIONES + 16 : 16;
+  const estoyAquiBottom = estoyAquiBottomPx > 16 ? `min(${estoyAquiBottomPx}px, calc(100% - 64px))` : `${estoyAquiBottomPx}px`;
 
   const textoAgregar = q.trim() ? `Agregar «${q.trim()}» como lugar` : "Agregar lugar";
 
@@ -571,9 +582,11 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             onPunto={(p) => void moverPin(p)}
             onArrastre={(p) => void moverPin(p, undefined, true)}
           />
-          <button type="button" className={styles.estoyAqui} style={{ bottom: estoyAquiBottom }} onClick={estoyAquiClick} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
-            <IconoUbicacion width={22} height={22} />
-          </button>
+          {!estoyAquiOculto && (
+            <button type="button" className={styles.estoyAqui} style={{ bottom: estoyAquiBottom }} onClick={estoyAquiClick} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+              <IconoUbicacion width={22} height={22} />
+            </button>
+          )}
           {modo === "inicial" && avisoUbicacion && <p className={styles.avisoUbicacion}>{avisoUbicacion}</p>}
           {modo === "inicial" && draft && (
             <div className={styles.resumen}>

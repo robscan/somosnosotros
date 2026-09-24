@@ -122,6 +122,43 @@ en su iPhone.
    prellenado con lo que ya se escribió arriba, así que casi nunca es lo que falta; el texto exacto que pidió el
    founder («busca la dirección, toca el mapa o usa «Estoy aquí»») ya lo dice.
 
+## Tres correcciones del gestor sobre la primera entrega de código, en la misma rama
+
+Revisión del gestor tras la primera entrega de la parte 2: «la lógica está bien y la lista ya respeta la barra»,
+con tres hallazgos sobre las capturas 02/03/04/05. Corregidos en el mismo commit de esta parte (sin tocar nada
+más):
+
+1. **Caja dentro de caja en «Dirección».** `.campoPanel input[type="text"]` es un selector DESCENDIENTE (no solo
+   del hijo directo que es el `<input>` de «Nombre»): también alcanzaba al `<input>` de «Dirección», anidado un
+   nivel más adentro dentro de `.campoDireccion`, y con más especificidad que `.campoDireccion input` le dibujaba
+   su propio borde y fondo -exactamente la sobreanidación por la que el founder ya llamó la atención tres veces
+   (`MEMORIA_GESTOR.md`, la última el mismo 2026-09-24, sobre el botón «Compartir»). Corregido cambiando el
+   selector a `.campoPanel > input[type="text"]` (hijo directo): como el `<input>` de «Dirección» NO es hijo
+   directo de su `.campoPanel` (vive dentro de `.campoDireccion`), el combinador `>` lo excluye por estructura, sin
+   pelear especificidad. `.campoDireccion` gana `:focus-within { border-color: var(--primario) }` (mismo violeta
+   de siempre) y su `input` pasa a `border: 0; background: none; outline: none; padding: 0; font: inherit; width:
+   100%` -receta exacta de `.campo`, el campo principal de la misma hoja. Comprobado con `getComputedStyle`: el
+   input interior queda en `0px none` de borde, fondo transparente, `outline: none`, `padding: 0px`; el
+   contenedor, con el foco puesto, en `border-color: rgb(109, 52, 200)` (`#6d34c8`).
+2. **«Estoy aquí» montado sobre el campo de arriba.** Con la hoja estirada (sugerencias de dirección abiertas),
+   `estoyAquiBottom = bottomBarra + altoHoja + 16` podía superar el alto entero de `.mapaLleno` (que no tiene
+   `overflow: hidden`) y el botón se salía por ARRIBA de ese contenedor, montándose sobre el campo «Nombre o
+   dirección». Corregido en dos partes: mientras la hoja está estirada (`listaDireccionAbierta`), el botón se
+   OCULTA por completo -el mapa está casi tapado, no sirve de nada ahí-; en cualquier otro caso, su `bottom` usa
+   `min(valorJS, calc(100% - 64px))` -un tope defensivo relativo al propio `.mapaLleno` (100% es su alto, por ser
+   el contenedor `position: relative` de `.estoyAqui`), para que tampoco se monte ahí si la hoja compacta creciera
+   de más por, por ejemplo, un error largo.
+3. **La dirección escrita a mano se perdía al guardar.** `guardarAgregar` tomaba `draft.direccion` (la ya
+   resuelta, por una sugerencia o el reverse geocoding) e ignoraba que la persona hubiera corregido el TEXTO del
+   campo «Dirección» sin volver a elegir nada -el doc 43 lo da como editable. Función pura nueva en
+   `dondeEsPantalla.ts`, `direccionAGuardar(texto, resuelta)`: lo escrito manda; si está vacío o todavía dice
+   «Ubicando…» (el reverse geocoding no terminó), usa la resuelta. 5 pruebas nuevas. `guardarAgregar` la llama con
+   `qDireccionAgregar` (el campo) y `draft.direccion` (lo resuelto).
+
+Capturas 02, 03, 04 y 05 rehechas (01 no cambió: mismos bytes, no la tocan estas tres correcciones). **1188
+pruebas, 96 archivos** (5 más que la primera entrega, las de `direccionAGuardar`); lint, typecheck y build otra
+vez en verde.
+
 ## ¿Hace falta una migración?
 
 No. Mismo modelo de datos que OL-173/OL-179 (`OtroSitio`, `lugares`); esta pieza solo cambia cuándo y cómo se
@@ -134,10 +171,10 @@ npm run lint && npm run typecheck && npm test && npm run build
 ```
 
 Los cuatro en verde: lint sin errores (1 warning preexistente y sin relación,
-`docs/diseno/logotipo/iconos-sn.mjs`); typecheck limpio; **1183 pruebas, 96 archivos** (8 nuevas de esta pieza -4
-en `ListaFlotante.test.ts`, `reservaAbajo`; 4 en `dondeEsPantalla.test.ts`, `puedeGuardarLugar`- sobre la base ya
-traída de `origin/main`, ninguna rota); build completo, sin la ruta del arnés (ver «Capturas» abajo) en el árbol
-de rutas final.
+`docs/diseno/logotipo/iconos-sn.mjs`); typecheck limpio; **1188 pruebas, 96 archivos** (13 nuevas de esta pieza -4
+en `ListaFlotante.test.ts`, `reservaAbajo`; 9 en `dondeEsPantalla.test.ts`, `puedeGuardarLugar` y
+`direccionAGuardar`, esta última de la revisión del gestor- sobre la base ya traída de `origin/main`, ninguna
+rota); build completo, sin la ruta del arnés (ver «Capturas» abajo) en el árbol de rutas final.
 
 ### Capturas reales (`docs/rediseno/capturas-217/`), 390×844 (y 320×844 la 05)
 
