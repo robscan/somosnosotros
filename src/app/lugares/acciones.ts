@@ -29,13 +29,15 @@ function revalidar(id: string, slug?: string | null) {
   if (slug) revalidatePath(`/lugares/${slug}`);
 }
 
-type Cliente = Awaited<ReturnType<typeof sesionOEntrar>>["supabase"];
-
-/** "Privado" solo lo puede marcar el administrador (la política de la base lo exige también). */
-async function privadoPermitido(supabase: Cliente, usuarioId: string, pedido: boolean): Promise<boolean> {
-  if (!pedido) return false;
-  const { data } = await supabase.from("perfiles").select("rol").eq("id", usuarioId).maybeSingle();
-  return data?.rol === "admin";
+/**
+ * "Privado": antes solo la administración lo podía marcar (mapeo personal). Founder, 2026-09-24 (OL-179): «Otra
+ * cosa es que si lo marca como privado sí se guarda, pero como privado por si el usuario vuelve a organizar algo
+ * ahí, solo lo ve él» — cualquier cuenta con sesión lo puede marcar en SU PROPIO lugar. Ya no depende del rol:
+ * basta con pedirlo, porque la política de la base (`20260925120000_lugares_privados_de_todos.sql`) exige de
+ * todas formas que el lugar sea suyo (`creado_por = auth.uid()`) o que la cuenta sea administración.
+ */
+function privadoPermitido(pedido: boolean): boolean {
+  return pedido;
 }
 
 /** Alta de lugar. Si hay uno parecido a menos de 150 m y no se confirmó, devuelve los parecidos para preguntar "¿es este?". */
@@ -52,7 +54,7 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
 
   const { data, error } = await supabase
     .from("lugares")
-    .insert({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null, creado_por: user.id })
+    .insert({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: privadoPermitido(datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null, creado_por: user.id })
     .select("id, slug")
     .single();
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar el lugar. Intenta de nuevo." };
@@ -67,17 +69,24 @@ export async function crearLugar(_previo: ResultadoLugar | null, formData: FormD
 export type ResultadoLugarDesdeEvento = { ok: true; id: string; reutilizado: boolean } | { ok: false; error: string };
 
 /**
- * "Agregar lugar" desde la pantalla completa "¿Dónde es?" del alta de evento (OL-173, docs/rediseno/43, paso 6):
- * registro automático, salvo que la persona marque "Es un lugar privado, no registrarlo" (esa rama nunca llama
- * aquí; se queda en el propio evento, como hoy "Es en otro sitio"). Reutiliza `crearLugar` entero -misma
- * validación, mismos 150 m ("un lugar es un lugar", docs/DEFINICION.md)-, así que si ya hay un lugar parecido no
- * se duplica: se usa el que ya existe (`reutilizado: true`) en vez de fallar o preguntar de nuevo, porque la pantalla
- * de agregar no tiene espacio para el "¿es este?" completo de `/lugares/nuevo` (decisión de esta pieza, el doc 43
- * no lo cubre). El tipo no lo pide el panel corto (docs/rediseno/43: solo nombre, dirección y el interruptor): se
- * deduce del nombre, igual que hace `FormularioLugar` cuando nadie lo elige a mano; sin pista, "otro".
- * `siguiente` se manda solo para que `crearLugar` NO redirija (aquí se usa el resultado en línea, sin navegar).
+ * "Agregar lugar" desde la pantalla completa "¿Dónde es?" del alta de evento (OL-173, docs/rediseno/43, paso 6;
+ * `privado` desde OL-179). Reutiliza `crearLugar` entero -misma validación, mismos 150 m ("un lugar es un lugar",
+ * docs/DEFINICION.md)-, así que si ya hay un lugar parecido no se duplica: se usa el que ya existe
+ * (`reutilizado: true`) en vez de fallar o preguntar de nuevo, porque la pantalla de agregar no tiene espacio para
+ * el "¿es este?" completo de `/lugares/nuevo`. El tipo no lo pide el panel corto (docs/rediseno/43: solo nombre,
+ * dirección y el interruptor): se deduce del nombre, igual que hace `FormularioLugar` cuando nadie lo elige a
+ * mano; sin pista, "otro". `siguiente` se manda solo para que `crearLugar` NO redirija (aquí se usa el resultado
+ * en línea, sin navegar).
+ *
+ * `privado` (founder, 2026-09-24, OL-179): con él, el lugar se crea con `privado = true` -pero `lugares_parecidos`
+ * nunca ve privados (`20260915110000_lugares_privados.sql`), así que esto SOLO deduplica contra lugares públicos a
+ * menos de 150 m; contra los privados de otras cuentas, o los propios ya guardados, no hay forma de saberlo desde
+ * aquí y no se intenta. Si `reutilizado` viene `true` con `privado` pedido, el lugar encontrado es público de
+ * verdad (por lo mismo que acaba de decirse) y quien llama debe avisarlo ("ya existe como lugar público") en vez
+ * de tratarlo como privado. El EVENTO que llama a esta acción decide por su cuenta cómo guardarse (reservado o
+ * no; ver `HojaDondeEs.tsx`) — esta función solo registra o reutiliza el lugar, nunca el evento.
  */
-export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: string; lat: number; lng: number; ciudad: string; volverA: string }): Promise<ResultadoLugarDesdeEvento> {
+export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: string; lat: number; lng: number; ciudad: string; volverA: string; privado: boolean }): Promise<ResultadoLugarDesdeEvento> {
   const fd = new FormData();
   fd.set("nombre", datos.nombre);
   fd.set("tipo", deducirTipo(datos.nombre) ?? "otro");
@@ -85,6 +94,7 @@ export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: 
   fd.set("lat", String(datos.lat));
   fd.set("lng", String(datos.lng));
   fd.set("ciudad", datos.ciudad);
+  fd.set("privado", datos.privado ? "1" : "0");
   fd.set("siguiente", rutaSegura(datos.volverA, "/eventos/nuevo"));
   const r = await crearLugar(null, fd);
   if (r.ok) return { ok: true, id: r.id, reutilizado: false };
@@ -100,7 +110,7 @@ export async function actualizarLugar(id: string, _previo: ResultadoLugar | null
 
   const { data, error } = await supabase
     .from("lugares")
-    .update({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: await privadoPermitido(supabase, user.id, datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null })
+    .update({ ...datos, zona: zonaDePunto(datos.lat, datos.lng), privado: privadoPermitido(datos.privado), descripcion: datos.descripcion || null, direccion: datos.direccion || null })
     .eq("id", id)
     .select("id, slug")
     .maybeSingle();

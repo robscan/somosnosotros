@@ -29,7 +29,9 @@ export type LugarResumen = {
   lat: number;
   lng: number;
   portada: string | null;
-  /** Mapeo personal del administrador: solo lo ve él. La base ya lo esconde a los demás; aquí solo se señala. */
+  /** Mapeo personal de quien lo creó, para reutilizarlo en otro evento sin ficha pública (founder, 2026-09-24,
+   *  OL-179: antes solo la administración lo podía marcar). Solo lo ve su autor y la administración; la base ya
+   *  lo esconde a los demás (RLS) y ningún listado público debe depender solo de eso — aquí solo se señala. */
   privado?: boolean;
   /** Zona horaria del lugar (migración 0029): la de sus eventos. Solo llega donde se pide. */
   zona?: string;

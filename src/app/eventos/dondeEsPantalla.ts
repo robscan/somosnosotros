@@ -1,9 +1,9 @@
 /**
- * Lógica pura de la pantalla completa "¿Dónde es?" (OL-173, docs/rediseno/43): sin red ni DOM, para poder probarla
- * sin levantar Mapbox ni React. Tres piezas: el orden de la lista flotante (lugares registrados primero, luego lo
- * que trae Mapbox), la decisión de si "Agregar lugar" registra un lugar de verdad o lo guarda solo en el evento
- * ("Es un lugar privado, no registrarlo"), y dónde va la barra de acciones (variante B, sticky sobre el teclado o
- * al pie) usando `visualViewport` cuando existe.
+ * Lógica pura de la pantalla completa "¿Dónde es?" (OL-173, docs/rediseno/43; lugar privado de OL-179): sin red ni
+ * DOM, para poder probarla sin levantar Mapbox ni React. Tres piezas: el orden de la lista flotante (lugares
+ * registrados primero, luego lo que trae Mapbox), qué guarda "Agregar lugar" según el interruptor "Es un lugar
+ * privado" (`decidirGuardado`), y dónde va la barra de acciones -un solo botón, "Agregar lugar"- sticky sobre el
+ * teclado o al pie, usando `visualViewport` cuando existe.
  */
 import type { LugarSugerido } from "@/lib/buscarLugares";
 import type { LugarResumen } from "@/lib/lugares";
@@ -31,16 +31,18 @@ export function modoDePantalla(texto: string, panelAgregar: boolean, hayResultad
 }
 
 export type DecisionGuardado = {
-  /** "registrar": crea un lugar de verdad (ficha pública, visible en Lugares). "privado": solo queda en el evento. */
+  /** "registrar": lugar de verdad, ficha pública, visible en Lugares. "privado": también se registra (OL-179,
+   *  founder 2026-09-24: "si lo marca como privado sí se guarda"), pero con `privado = true` -sin ficha pública, y
+   *  el EVENTO que lo usa se guarda como sitio reservado, no por `lugar_id` (ver `HojaDondeEs.tsx`). */
   modo: "registrar" | "privado";
   nombre: string;
   direccion: string;
 };
 
 /**
- * Qué hace "Guardar y usar este lugar" (docs/rediseno/43, paso 6): registrado salvo que la persona marque "Es un
- * lugar privado, no registrarlo". El nombre y la dirección se recortan aquí (la validación de verdad, del lado del
- * servidor, vuelve a limpiarlos igual que cualquier alta de lugar).
+ * Qué hace "Guardar y usar este lugar" (docs/rediseno/43, paso 6; OL-179): registrar, con o sin privado según el
+ * interruptor "Es un lugar privado". El nombre y la dirección se recortan aquí (la validación de verdad, del lado
+ * del servidor, vuelve a limpiarlos igual que cualquier alta de lugar).
  */
 export function decidirGuardado(privado: boolean, nombre: string, direccion: string): DecisionGuardado {
   return { modo: privado ? "privado" : "registrar", nombre: nombre.trim(), direccion: direccion.trim() };

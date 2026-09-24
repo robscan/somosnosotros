@@ -169,6 +169,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${lugar.nombre} · Somos Nosotros`,
     description: descripcion,
+    // Un lugar privado no lo indexa Google (OL-179): en la práctica ya es inalcanzable sin sesión (la política de
+    // lectura lo esconde de cualquiera que no sea su autor o la administración), pero se lo decimos igual.
+    ...(lugar.privado ? { robots: { index: false, follow: false } } : {}),
     alternates: { canonical: `${ORIGEN}${hrefLugar(lugar)}` },
     openGraph: { title: lugar.nombre, description: descripcion, url: `${ORIGEN}${hrefLugar(lugar)}`, type: "website", images: [{ url: imagen }], locale: "es_MX", siteName: "Somos Nosotros" },
     twitter: { card: "summary_large_image", title: lugar.nombre, description: descripcion, images: [imagen] },
@@ -216,7 +219,9 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
   const url = `${ORIGEN}${hrefLugar(lugar)}`;
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
-  const reparto = repartoDeAcciones(2 + redes.length);
+  // Compartir no sirve en un lugar privado: el enlace no le abre a nadie más que a su autor y a la administración
+  // (founder, 2026-09-24, OL-179: «esconde si no sirve botón de compartir»). Cómo llegar se queda.
+  const reparto = repartoDeAcciones((lugar.privado ? 1 : 2) + redes.length);
   const claseReparto = reparto === "repartidas" ? ficha.accionesRepartidas : reparto === "carril" ? ficha.accionesCarril : "";
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
   // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos eventos tiene: el menú de administración sigue
@@ -329,12 +334,14 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           </span>
           Cómo llegar
         </a>
-        <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`} url={url} className={ficha.accion}>
-          <span className={ficha.accionIcono}>
-            <IconoCompartir />
-          </span>
-          Compartir
-        </BotonCompartir>
+        {!lugar.privado && (
+          <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`} url={url} className={ficha.accion}>
+            <span className={ficha.accionIcono}>
+              <IconoCompartir />
+            </span>
+            Compartir
+          </BotonCompartir>
+        )}
         {redes.map((r) => (
           <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
             <span className={ficha.accionIcono}>

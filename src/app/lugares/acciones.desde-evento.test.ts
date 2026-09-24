@@ -28,7 +28,7 @@ beforeEach(() => {
   m.insert.mockReturnValue({ select: () => ({ single: () => Promise.resolve({ data: { id: LUGAR_ID, slug: "casa-de-cultura" }, error: null }) }) });
 });
 
-const datos = { nombre: "Casa de Cultura del Barrio", direccion: "Universidad 165, Barrio de Tlaxcala", lat: 22.15, lng: -100.97, ciudad: "San Luis Potosí", volverA: "/eventos/nuevo" };
+const datos = { nombre: "Casa de Cultura del Barrio", direccion: "Universidad 165, Barrio de Tlaxcala", lat: 22.15, lng: -100.97, ciudad: "San Luis Potosí", volverA: "/eventos/nuevo", privado: false };
 
 describe("crearLugarDesdeEvento (OL-173, panel Agregar lugar)", () => {
   it("registra el lugar y deduce el tipo del nombre (sin pedirlo en el panel corto)", async () => {
@@ -55,5 +55,21 @@ describe("crearLugarDesdeEvento (OL-173, panel Agregar lugar)", () => {
   });
   it("manda «siguiente» para que crearLugar nunca intente redirigir (se usa el resultado en línea, sin navegar)", async () => {
     await expect(crearLugarDesdeEvento(datos)).resolves.toMatchObject({ ok: true });
+  });
+});
+
+describe("crearLugarDesdeEvento con privado (OL-179, founder 2026-09-24: «si lo marca como privado sí se guarda»)", () => {
+  it("cualquier cuenta con sesión (no solo administración) lo guarda con privado = true", async () => {
+    const r = await crearLugarDesdeEvento({ ...datos, privado: true });
+    expect(r).toEqual({ ok: true, id: LUGAR_ID, reutilizado: false });
+    expect(m.insert.mock.calls[0][0]).toMatchObject({ privado: true, creado_por: USUARIO });
+    // El rol de la cuenta ("miembro", no admin) ya no importa: no se volvió a consultar el rol para decidirlo.
+    expect(m.rol).not.toHaveBeenCalled();
+  });
+  it("con un parecido PÚBLICO a menos de 150 m: se reutiliza ese (lugares_parecidos nunca ve privados, así que un match aquí es siempre público)", async () => {
+    m.rpc.mockResolvedValue({ data: [{ id: LUGAR_ID, nombre: "Casa de Cultura", tipo: "casa_de_cultura", direccion: "Universidad 165", lat: 22.15, lng: -100.97, portada: null }], error: null });
+    const r = await crearLugarDesdeEvento({ ...datos, privado: true });
+    expect(r).toEqual({ ok: true, id: LUGAR_ID, reutilizado: true });
+    expect(m.insert).not.toHaveBeenCalled();
   });
 });

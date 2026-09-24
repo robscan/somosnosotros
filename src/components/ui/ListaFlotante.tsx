@@ -27,6 +27,20 @@ export function calcularPosicion(campo: Rect, altoVisible: number, offsetTopVisi
   };
 }
 
+/**
+ * ¿El punto donde se tocó cuenta como "dentro" de alguno de estos contenedores? Pura -sin DOM real-, para poder
+ * probar sin levantar un navegador que un elemento pasado en `dentro` (p. ej. una barra de acciones que vive
+ * fuera de la lista y de su ancla) no cuenta como "fuera" y por lo tanto no cierra la lista al tocarlo. Antes de
+ * esto, "tocar fuera" solo miraba `listaRef`/`ancla`: un botón en esa barra recibía su propio `mousedown` DESPUÉS
+ * de que ese `mousedown` ya hubiera cerrado la lista (y desmontado el botón), así que el `click` que sigue nunca
+ * llegaba a su `onClick` -hallazgo del gestor, revisión de OL-179, bitácora 214.
+ */
+export function tocoDentro(objetivo: Node | null, contenedores: readonly (Pick<Node, "contains"> | null | undefined)[]): boolean {
+  return contenedores.some((c) => c?.contains(objetivo));
+}
+
+const SIN_DENTRO: RefObject<HTMLElement | null>[] = [];
+
 type Props = {
   abierta: boolean;
   onCerrar: () => void;
@@ -35,6 +49,10 @@ type Props = {
   /** Para `aria-controls` en el campo y el `id` del propio listbox. */
   id: string;
   etiqueta: string;
+  /** Elementos que también cuentan como "dentro" para "tocar fuera" (OL-179), aunque vivan fuera de la lista y
+   *  de `ancla` -p. ej. una barra de acciones flotante sobre el mismo layout. Tocar uno de ellos no cierra la
+   *  lista; el propio elemento decide si la cierra o no (p. ej. abriendo un panel encima). */
+  dentro?: RefObject<HTMLElement | null>[];
   children: React.ReactNode;
 };
 
@@ -56,9 +74,15 @@ type Props = {
  * aquí, flecha arriba/abajo mueve el foco real entre las opciones (en vez de `aria-activedescendant`: son botones
  * de verdad, ya alcanzables con Tab), Escape y tocar fuera cierran.
  */
-export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, children }: Props) {
+export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, dentro = SIN_DENTRO, children }: Props) {
   const listaRef = useRef<HTMLUListElement>(null);
   const [posicion, setPosicion] = useState<PosicionFlotante | null>(null);
+  // Última versión de `dentro`, leída dentro de `alTocarFuera` sin que su efecto tenga que reinstalar el
+  // listener en cada render (un array nuevo por render, aunque los refs de dentro sean siempre los mismos).
+  const dentroRef = useRef(dentro);
+  useEffect(() => {
+    dentroRef.current = dentro;
+  });
 
   useEffect(() => {
     if (!abierta) return;
@@ -102,9 +126,8 @@ export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, 
       opciones[siguiente]?.focus();
     }
     function alTocarFuera(e: MouseEvent) {
-      const dentroLista = listaRef.current?.contains(e.target as Node);
-      const dentroAncla = ancla.current?.contains(e.target as Node);
-      if (!dentroLista && !dentroAncla) onCerrar();
+      const contenedores = [listaRef.current, ancla.current, ...dentroRef.current.map((r) => r.current)];
+      if (!tocoDentro(e.target as Node, contenedores)) onCerrar();
     }
     document.addEventListener("keydown", alTeclado);
     document.addEventListener("mousedown", alTocarFuera);

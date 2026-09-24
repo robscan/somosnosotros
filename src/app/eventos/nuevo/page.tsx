@@ -25,7 +25,10 @@ export default async function NuevoEvento({ searchParams }: { searchParams: Prom
   const volverA = `/eventos/nuevo${lugar ? `?lugar=${lugar}` : artista ? `?artista=${artista}` : ""}`;
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(volverA)}`);
   const supabase = await clienteServidor();
-  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona").eq("visible", true).order("nombre")) ?? { data: [] };
+  // `privado`: la política de lectura ya deja pasar los lugares privados de la propia cuenta (RLS), así que esta
+  // consulta -de por sí solo suya, la sesión- también trae los suyos entre los registrados; "¿Dónde es?" los
+  // ofrece marcados "Privado" y elegirlos rellena el evento como reservado (OL-179, founder 2026-09-24).
+  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre")) ?? { data: [] };
   let base: Partial<Evento> | undefined;
   let quien: QuienItem[] | undefined;
   if (desde && esUuid(desde)) {
