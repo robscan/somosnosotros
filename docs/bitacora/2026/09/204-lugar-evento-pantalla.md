@@ -67,9 +67,22 @@ coincidencias (detalle completo en el documento 43).
 ## Capturas (`docs/rediseno/capturas-204/`), 390×844 a escala 2
 
 Con el Chromium de `/opt/pw-browsers` (`playwright-core`, instalado con `npm i --no-save` en el scratchpad de la
-sesión, nunca en el repo), esperando `document.fonts.ready` (`document.fonts.check('700 20px "Bricolage
-Grotesque"')` → `true`). Todas abiertas y revisadas antes de entregar: nada fuera de pantalla, sin scroll
+sesión, nunca en el repo). Todas abiertas y revisadas antes de entregar: nada fuera de pantalla, sin scroll
 horizontal, la lista siempre bajo el campo, las acciones nunca tapadas por el mapa ni por el teclado simulado.
+
+**Corrección (mismo día, revisión del gestor):** la primera tanda de capturas salió con la fuente de reserva
+(Arial/Helvetica), no con Bricolage Grotesque, aunque `document.fonts.ready` y `document.fonts.check('700 20px
+"Bricolage Grotesque"')` daban `true` — falso positivo: Chromium lanzado por `playwright-core` no hereda
+`HTTPS_PROXY` del entorno por su cuenta, así que la petición al CSS de Google Fonts fallaba por certificado
+(`net::ERR_CERT_AUTHORITY_INVALID`, el proxy del entorno firma con su propia CA) y, sin ningún `@font-face`
+registrado para "Bricolage Grotesque", `check()` devuelve `true` trivialmente (no hay nada que esperar). Se
+corrigió lanzando el navegador con `proxy: { server: process.env.HTTPS_PROXY }` y `--ignore-certificate-errors`,
+y esperando antes de cada captura, con `page.waitForFunction` (máximo 20 s), que `document.fonts.check()` para
+peso 700/20px y 400/16px dé `true` **y** que exista una entrada de `document.fonts` con
+`family === "Bricolage Grotesque"` y `status === "loaded"` (confirmado con red: `RESP 200` al CSS y al `.woff2`
+de `fonts.gstatic.com`). Con eso resuelto en unos 200 ms, no hizo falta el `@font-face` local de respaldo. Las
+ocho capturas se rehicieron y se abrieron una por una con Read para confirmar a ojo la letra de Bricolage (la «g»
+de una sola planta en «Agregar»/«registrarlo», el ancho condensado de los títulos) frente a la Arial de antes.
 
 - **`01-al-abrir.png`:** mapa con los 8 lugares y el POI, campo «Nombre o dirección» vacío, sin lista.
 - **`02-escribiendo-sugerencias-A-teclado.png`:** variante A, texto «casa» (dos lugares coinciden), lista
