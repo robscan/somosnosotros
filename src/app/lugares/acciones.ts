@@ -7,6 +7,7 @@ import { esUuid } from "@/lib/formulario";
 import { rutaSegura } from "@/lib/rutas";
 import { hrefLugar, validarLugar, type ErroresLugar, type LugarResumen } from "@/lib/lugares";
 import type { MotivoReclamo } from "@/lib/reportes";
+import { esAdminDeSesion } from "@/lib/supabase/servidor";
 import { sesionOEntrar } from "@/lib/supabase/sesion";
 import { zonaDePunto } from "@/lib/zona";
 
@@ -42,7 +43,8 @@ function privadoPermitido(pedido: boolean): boolean {
 /** Alta de lugar. Si hay uno parecido a menos de 150 m y no se confirmó, devuelve los parecidos para preguntar "¿es este?". */
 export async function crearLugar(_previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
   const { supabase, user } = await sesionOEntrar("/lugares/nuevo");
-  const { datos, errores } = validarLugar(leer(formData));
+  const esAdmin = await esAdminDeSesion(supabase, user.id);
+  const { datos, errores } = validarLugar(leer(formData), { esAdmin });
   if (Object.keys(errores).length) return { ok: false, errores };
 
   if (formData.get("confirmado") !== "1") {
@@ -101,8 +103,9 @@ export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: 
 }
 
 export async function actualizarLugar(id: string, _previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
-  const { supabase } = await sesionOEntrar(`/lugares/${id}/editar`);
-  const { datos, errores } = validarLugar(leer(formData));
+  const { supabase, user } = await sesionOEntrar(`/lugares/${id}/editar`);
+  const [esAdmin, { data: existente }] = await Promise.all([esAdminDeSesion(supabase, user.id), supabase.from("lugares").select("portada").eq("id", id).maybeSingle()]);
+  const { datos, errores } = validarLugar(leer(formData), { esAdmin, portadaActual: existente?.portada ?? null });
   if (Object.keys(errores).length) return { ok: false, errores };
 
   const { data, error } = await supabase

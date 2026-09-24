@@ -35,9 +35,23 @@ export type Enlace = { red: Red; url: string; titulo?: string };
 export const LIMITE_ENLACES = 8;
 export const LIMITE_TITULO_ENLACE = 30;
 
-/** El título de un enlace: recortado a su tope, sin saltos de línea; vacío queda sin título (etiqueta automática). */
+/**
+ * Caracteres de control y de formato Unicode que no son espacio (categorías Cc y Cf: U+200B–U+200F,
+ * U+202A–U+202E, U+2066–U+2069, U+FEFF…): invisibles al escribir o pegar, pueden usarse para que un título "se
+ * vea" distinto de lo que dice — p. ej. U+202E (RTL override) invierte visualmente el texto que sigue (S-06,
+ * docs/rediseno/46). Los que sí son espacio (tabulador, salto de línea…) ya los colapsa `limpiar()`, por eso se
+ * quitan después, no antes: quitarlos primero uniría palabras que debían quedar separadas por un salto de línea.
+ */
+const CARACTERES_INVISIBLES = /[\p{Cc}\p{Cf}]/gu;
+
+/** El título de un enlace: sin caracteres invisibles, recortado a su tope, sin saltos de línea; vacío queda sin
+ * título (etiqueta automática). */
 export function limpiarTituloEnlace(v: unknown): string | undefined {
-  const t = limpiar(typeof v === "string" ? v : "").slice(0, LIMITE_TITULO_ENLACE);
+  const sinInvisibles = limpiar(typeof v === "string" ? v : "")
+    .replace(CARACTERES_INVISIBLES, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const t = sinInvisibles.slice(0, LIMITE_TITULO_ENLACE);
   return t || undefined;
 }
 
@@ -94,9 +108,18 @@ export function reconocerEnlace(texto: string): Enlace | null {
   } catch {
     return null;
   }
+  // Usuario/contraseña incrustados en la URL (S-05, docs/rediseno/46): lo que va antes de la "@" no es el
+  // dominio real ("https://ejemplo.com@evil.com" navega a evil.com). Se rechaza igual que un enlace inválido.
+  if (url.username || url.password) return null;
   // Un dominio de verdad: letras, al menos un punto y una terminación de letras ("123" no es un sitio).
   if (!/^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(url.hostname)) return null;
   const red = redPorDominio(url.hostname);
+  // Homógrafos IDN (S-02, docs/rediseno/46): una letra de otro alfabeto que se ve igual a una latina ("аpple.com"
+  // con а cirílica) llega aquí ya convertida por `new URL()` a su forma punycode ("xn--pple-43d.com"), así que
+  // basta con rechazar cualquier etiqueta en punycode que no sea una de las redes reconocidas (ninguna lo es).
+  // Se rechazan también los IDN legítimos (acentos latinos como "ñ") por ahora: decisión explícita de esta
+  // pieza, más simple y más segura; se puede abrir después si hace falta.
+  if (red === "sitio" && url.hostname.split(".").some((etiqueta) => etiqueta.startsWith("xn--"))) return null;
   let urlFinal = url.toString().replace(/\/$/, "");
   // Instagram: normalizar a www y con barra final
   if (red === "instagram") {

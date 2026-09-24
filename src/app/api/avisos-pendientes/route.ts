@@ -1,11 +1,11 @@
+import { autorizadoPorSecreto } from "@/lib/autorizacionCron";
 import { drenarAvisos, drenarAvisosAdmin } from "@/lib/avisosWorker";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const secreto = process.env.CRON_SECRET;
-  if (!secreto || request.headers.get("authorization") !== `Bearer ${secreto}`) return new Response("No autorizado", { status: 401 });
+  if (!autorizadoPorSecreto(request.headers, process.env.CRON_SECRET)) return new Response("No autorizado", { status: 401 });
   try {
     // Mismo cron y endpoint que el aviso al administrador (OL-115): corren en paralelo, cada uno con su cola.
     const [principal, admin] = await Promise.all([

@@ -3,6 +3,7 @@ import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
+import { imagenPermitida } from "./imagenes";
 import { compararNombres, normalizarNombre } from "./lugares";
 import type { Origen } from "./origen";
 import { LIMITES_ARTISTA } from "./limites";
@@ -307,7 +308,15 @@ export type DatosArtista = {
 export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "enlaces", string>>;
 
 
-export function validarArtista(entrada: Record<string, FormDataEntryValue | null | undefined>): { datos: DatosArtista; errores: ErroresArtista } {
+/** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `fotoActual` es la
+ *  que ya estaba guardada, para no romper una edición que reenvía sin tocarla la foto de una ficha importada
+ *  de otro dominio (S-01, docs/rediseno/46). */
+export type OpcionesValidarArtista = { esAdmin?: boolean; fotoActual?: string | null };
+
+export function validarArtista(
+  entrada: Record<string, FormDataEntryValue | null | undefined>,
+  opciones: OpcionesValidarArtista = {},
+): { datos: DatosArtista; errores: ErroresArtista } {
   const redes = enlacesDesdeJson(entrada.enlaces);
   const disciplina = (limpiar(entrada.disciplina) || "por_completar") as Disciplina;
   const tipo = (limpiar(entrada.tipo) || "solista") as TipoArtista;
@@ -328,7 +337,7 @@ export function validarArtista(entrada: Record<string, FormDataEntryValue | null
   if (!TIPOS_ARTISTA.some((t) => t.valor === tipo)) errores.tipo = "Elige si es solista, grupo o colectivo.";
   if (datos.detalle && datos.detalle.length > LIMITES_ARTISTA.detalle) errores.detalle = `Máximo ${LIMITES_ARTISTA.detalle} caracteres.`;
   if (datos.descripcion && datos.descripcion.length > LIMITES_ARTISTA.descripcion) errores.descripcion = `Máximo ${LIMITES_ARTISTA.descripcion} caracteres.`;
-  if (datos.foto && !/^https:\/\/[^\s]+$/.test(datos.foto)) errores.foto = "La foto no se subió bien. Intenta de nuevo.";
+  if (datos.foto && !imagenPermitida(datos.foto, { esAdmin: !!opciones.esAdmin, actual: opciones.fotoActual })) errores.foto = "La foto no se subió bien. Intenta de nuevo.";
   if (redes.some((e) => e.url.length > 300)) errores.enlaces = "Hay un enlace demasiado largo.";
   return { datos, errores };
 }

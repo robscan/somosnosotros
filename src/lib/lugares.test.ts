@@ -66,6 +66,21 @@ describe("validarLugar", () => {
     expect(validarLugar({ ...base, enlaces: JSON.stringify(["123"]) }).datos.redes).toEqual([]);
     expect(validarLugar({ ...base, enlaces: JSON.stringify(["4441234567"]) }).datos.redes).toEqual([{ red: "whatsapp", url: "https://wa.me/524441234567" }]);
   });
+  describe("S-01 (docs/rediseno/46): la portada solo acepta cualquier dominio cuando esAdmin viene de la sesión", () => {
+    it("sin esAdmin (por defecto), una portada de otro dominio se rechaza", () => {
+      const { errores } = validarLugar({ ...base, portada: "https://evil.example/x.png" });
+      expect(errores.portada).toBe("La foto no se subió bien. Intenta de nuevo.");
+    });
+    it("con esAdmin: true, la misma portada de otro dominio se acepta", () => {
+      const { errores } = validarLugar({ ...base, portada: "https://evil.example/x.png" }, { esAdmin: true });
+      expect(errores.portada).toBeUndefined();
+    });
+    it("igual a portadaActual, se acepta aunque no sea admin (ficha del CAPO con portada de otro dominio)", () => {
+      const portada = "https://catalogo-externo.example/foto.jpg";
+      const { errores } = validarLugar({ ...base, portada }, { esAdmin: false, portadaActual: portada });
+      expect(errores.portada).toBeUndefined();
+    });
+  });
 });
 
 describe("calleCorta", () => {

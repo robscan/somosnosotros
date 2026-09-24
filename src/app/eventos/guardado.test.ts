@@ -6,7 +6,7 @@ vi.mock("next/cache", () => ({ revalidatePath: m.invalidar }));
 vi.mock("next/server", () => ({ after: m.after }));
 vi.mock("next/navigation", () => ({ redirect: m.redirect, RedirectType: { replace: "replace" } }));
 vi.mock("@/lib/supabase/sesion", () => ({ sesionOEntrar: m.sesion }));
-vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: vi.fn() }));
+vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: vi.fn(), esAdminDeSesion: vi.fn().mockResolvedValue(false) }));
 vi.mock("@/lib/avisosWorker", () => ({ intentarDrenarAvisos: vi.fn() }));
 vi.mock("@/lib/cartel", () => ({ leerCartel: vi.fn() }));
 

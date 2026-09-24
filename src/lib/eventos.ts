@@ -1,6 +1,7 @@
 import { ciudadCanonica } from "./ciudad";
 import { esUuid, limpiar } from "./formulario";
 import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
+import { imagenPermitida } from "./imagenes";
 import { LIMITES_EVENTO } from "./limites";
 
 export { LIMITES_EVENTO } from "./limites";
@@ -96,6 +97,23 @@ export type DatosEvento = {
 export type ErroresEvento = Partial<
   Record<"lugar_id" | "sitio_texto" | "sitio_direccion" | "direccion_privada" | "titulo" | "inicio" | "fin" | "descripcion" | "imagen" | "precio" | "enlace", string>
 >;
+
+/**
+ * ¿El enlace de boletos/más información está bien formado? (S-04, docs/rediseno/46). No pasa por
+ * `reconocerEnlace` (ese es para redes y "Otro enlace" de artistas/lugares; aquí no hay dominios reconocidos
+ * que mostrar con icono, solo un enlace suelto). Exige protocolo `https:` y un hostname con al menos un punto,
+ * sin espacios — antes solo se anteponía "https://" sin comprobar que el resultado fuera una URL de verdad
+ * (aceptaba espacios, por ejemplo).
+ */
+function enlaceBienFormado(v: string): boolean {
+  if (/\s/.test(v)) return false;
+  try {
+    const url = new URL(v);
+    return url.protocol === "https:" && url.hostname.includes(".");
+  } catch {
+    return false;
+  }
+}
 
 function numeroONull(v: FormDataEntryValue | null | undefined): number | null {
   const t = limpiar(v);
@@ -225,8 +243,17 @@ export function jsonLdEvento(e: DatosJsonLdEvento): Record<string, unknown> {
   return data;
 }
 
+/** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `imagenActual` es la
+ *  que ya estaba guardada, para no romper una edición que reenvía sin tocarla la imagen de una ficha importada
+ *  de otro dominio (S-01, docs/rediseno/46). */
+export type OpcionesValidarEvento = { esAdmin?: boolean; imagenActual?: string | null };
+
 /** Lee el formulario del evento. Las horas del selector se leen en `zona`, la del sitio del evento. */
-export function validarEvento(entrada: Record<string, FormDataEntryValue | null | undefined>, zona: string = ZONA_INICIAL): { datos: DatosEvento; errores: ErroresEvento } {
+export function validarEvento(
+  entrada: Record<string, FormDataEntryValue | null | undefined>,
+  zona: string = ZONA_INICIAL,
+  opciones: OpcionesValidarEvento = {},
+): { datos: DatosEvento; errores: ErroresEvento } {
   const modo = (limpiar(entrada.modo_sitio) || "lugar") as ModoSitio;
   const zonaSitio = zonaSegura(zona);
   const inicio = localAIso(limpiar(entrada.inicio), zonaSitio);
@@ -300,10 +327,15 @@ export function validarEvento(entrada: Record<string, FormDataEntryValue | null 
   if (finTexto && !fin) errores.fin = "La hora de fin no se entiende.";
   if (inicio && fin && new Date(fin) <= new Date(inicio)) errores.fin = "El fin tiene que ser después del inicio.";
   if (datos.descripcion.length > LIMITES_EVENTO.descripcion) errores.descripcion = `Máximo ${LIMITES_EVENTO.descripcion} caracteres.`;
-  if (datos.imagen && !/^https:\/\/[^\s]+$/.test(datos.imagen)) errores.imagen = "La imagen no se subió bien. Intenta de nuevo.";
+  if (datos.imagen && !imagenPermitida(datos.imagen, { esAdmin: !!opciones.esAdmin, actual: opciones.imagenActual })) errores.imagen = "La imagen no se subió bien. Intenta de nuevo.";
   if (!gratis && !cooperacion && !precioRaw) errores.precio = "Pon el precio, o marca que es gratis.";
   if (precioRaw && !precioValido) errores.precio = "El precio debe ser solo números (máximo 6 dígitos, ej. 150).";
-  if (datos.enlace && datos.enlace.length > 500) errores.enlace = "Demasiado largo.";
+  if (datos.enlace) {
+    if (datos.enlace.length > 500) errores.enlace = "Demasiado largo.";
+    // S-04 (docs/rediseno/46): un enlace bien formado, no solo "https:// antepuesto". Sin protocolo https, sin
+    // un hostname con al menos un punto o con espacios, no se guarda.
+    else if (!enlaceBienFormado(datos.enlace)) errores.enlace = "Ese enlace no se ve bien. Revisa que empiece con https://";
+  }
   return { datos, errores };
 }
 

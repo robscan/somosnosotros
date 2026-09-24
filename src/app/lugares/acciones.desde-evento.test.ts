@@ -63,8 +63,9 @@ describe("crearLugarDesdeEvento con privado (OL-179, founder 2026-09-24: «si lo
     const r = await crearLugarDesdeEvento({ ...datos, privado: true });
     expect(r).toEqual({ ok: true, id: LUGAR_ID, reutilizado: false });
     expect(m.insert.mock.calls[0][0]).toMatchObject({ privado: true, creado_por: USUARIO });
-    // El rol de la cuenta ("miembro", no admin) ya no importa: no se volvió a consultar el rol para decidirlo.
-    expect(m.rol).not.toHaveBeenCalled();
+    // El rol de la cuenta ("miembro", no admin) ya no decide «privado»: el doble responde "miembro" y aun así se
+    // guarda privado. El rol sí se consulta, pero para otra cosa: la foto de la ficha (S-01, OL-180, `esAdminDeSesion`).
+    expect(m.rol).toHaveBeenCalledTimes(1);
   });
   it("con un parecido PÚBLICO a menos de 150 m: se reutiliza ese (lugares_parecidos nunca ve privados, así que un match aquí es siempre público)", async () => {
     m.rpc.mockResolvedValue({ data: [{ id: LUGAR_ID, nombre: "Casa de Cultura", tipo: "casa_de_cultura", direccion: "Universidad 165", lat: 22.15, lng: -100.97, portada: null }], error: null });

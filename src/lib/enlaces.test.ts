@@ -57,6 +57,34 @@ describe("reconocerEnlace", () => {
   });
 });
 
+describe("S-02 (docs/rediseno/46): homógrafos IDN se rechazan como un enlace inválido", () => {
+  it("una letra de otro alfabeto que se ve igual a una latina (\"а\" cirílica U+0430) se rechaza, no se acepta como sitio", () => {
+    expect(reconocerEnlace("аpple.com")).toBeNull();
+    expect(reconocerEnlace("https://аpple.com/")).toBeNull();
+  });
+  it("un dominio ya en punycode (xn--) se rechaza igual", () => {
+    expect(reconocerEnlace("https://xn--pple-43d.com/")).toBeNull();
+  });
+  it("un IDN legítimo (acento latino, p. ej. ñ) también se rechaza por ahora (decisión explícita de esta pieza)", () => {
+    expect(reconocerEnlace("https://peña.mx")).toBeNull();
+  });
+  it("un dominio ASCII normal, sin punycode, se sigue aceptando", () => {
+    expect(reconocerEnlace("casa1100.mx")?.red).toBe("sitio");
+  });
+});
+
+describe("S-05 (docs/rediseno/46): usuario/contraseña incrustados en la URL se rechazan", () => {
+  it("\"https://ejemplo.com@evil.com\" no se acepta (el dominio real es evil.com, no ejemplo.com)", () => {
+    expect(reconocerEnlace("https://ejemplo.com@evil.com")).toBeNull();
+  });
+  it("con contraseña también se rechaza", () => {
+    expect(reconocerEnlace("https://usuario:clave@evil.com")).toBeNull();
+  });
+  it("una URL normal, sin arroba de usuario, sigue funcionando", () => {
+    expect(reconocerEnlace("https://vimeo.com/cineastaslp")?.red).toBe("vimeo");
+  });
+});
+
 describe("limpiarTituloEnlace (OL-168, hallazgo del gestor: vaciar el título a mano sigue funcionando)", () => {
   it("un título vacío (borrado a mano en el campo, sin la ✕ de vaciar) queda sin título: undefined, no ''", () => {
     expect(limpiarTituloEnlace("")).toBeUndefined();
@@ -66,6 +94,14 @@ describe("limpiarTituloEnlace (OL-168, hallazgo del gestor: vaciar el título a 
   it("recorta a 30, colapsa espacios y saltos de línea", () => {
     expect(limpiarTituloEnlace("Mi\ncanal  favorito ".padEnd(50, "x"))).toHaveLength(LIMITE_TITULO_ENLACE);
     expect(limpiarTituloEnlace("Mi\ncanal")).toBe("Mi canal");
+  });
+  it("S-06 (docs/rediseno/46): quita caracteres de control/formato Unicode invisibles antes de recortar", () => {
+    // U+202E (RTL override): invierte visualmente el texto que sigue; se quita, no se guarda.
+    expect(limpiarTituloEnlace("Mi‮titulo")).toBe("Mititulo");
+    // U+200B (espacio de ancho cero) también se quita.
+    expect(limpiarTituloEnlace("Mi​canal")).toBe("Micanal");
+    // Un título hecho solo de caracteres invisibles queda sin título (undefined), no una cadena vacía "visible".
+    expect(limpiarTituloEnlace("‮​")).toBeUndefined();
   });
 });
 

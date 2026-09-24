@@ -24,6 +24,18 @@ export async function clienteServidor() {
   });
 }
 
+export type ClienteServidor = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
+
+/**
+ * ¿La cuenta con sesión es administración? Se comprueba siempre en el servidor con esta consulta — nunca se
+ * confía en un campo que mande el formulario (S-01, docs/rediseno/46): la pantalla puede esconder un campo a
+ * quien no es admin, pero eso es solo la pantalla.
+ */
+export async function esAdminDeSesion(supabase: ClienteServidor, usuarioId: string): Promise<boolean> {
+  const { data } = await supabase.from("perfiles").select("rol").eq("id", usuarioId).maybeSingle();
+  return data?.rol === "admin";
+}
+
 export type Perfil = {
   id: string;
   nombre: string;
