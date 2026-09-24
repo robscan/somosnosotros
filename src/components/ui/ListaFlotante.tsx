@@ -9,14 +9,17 @@ export type PosicionFlotante = { left: number; top?: number; bottom?: number; wi
 
 /**
  * La cuenta de dónde poner la lista, pura y sin DOM (para poder probarla sin navegador): dado el rectángulo del
- * campo, el alto visible de verdad (con el teclado, `visualViewport` mide menos que la ventana) y el alto de la
- * ventana completa (`position: fixed` con `bottom` se mide desde ahí, no desde el área visible), decide si abre
- * hacia abajo o hacia arriba y cuánto alto máximo le cabe.
+ * campo, el alto visible de verdad (con el teclado, `visualViewport` mide menos que la ventana), el alto de la
+ * ventana completa (`position: fixed` con `bottom` se mide desde ahí, no desde el área visible) y cuánto hay que
+ * reservar abajo por algo que no es el teclado (`reservaAbajo`, p. ej. una barra de acciones sticky que vive
+ * DEBAJO del espacio "visible" del `visualViewport`: OL-182, founder 2026-09-24 — con tres resultados largos la
+ * lista llegaba hasta el teclado y la barra pegada sobre él quedaba tapada), decide si abre hacia abajo o hacia
+ * arriba y cuánto alto máximo le cabe.
  */
-export function calcularPosicion(campo: Rect, altoVisible: number, offsetTopVisible: number, altoVentana: number): PosicionFlotante {
-  const espacioAbajo = altoVisible - campo.bottom - 8;
+export function calcularPosicion(campo: Rect, altoVisible: number, offsetTopVisible: number, altoVentana: number, reservaAbajo = 0): PosicionFlotante {
+  const espacioAbajo = altoVisible - campo.bottom - 8 - reservaAbajo;
   const espacioArriba = campo.top - offsetTopVisible - 8;
-  // Si no cabe abajo pero sí arriba, se abre hacia arriba (nunca tapada por el teclado ni cortada).
+  // Si no cabe abajo pero sí arriba, se abre hacia arriba (nunca tapada por el teclado, la reserva, ni cortada).
   const haciaArriba = espacioAbajo < 120 && espacioArriba > espacioAbajo;
   return {
     left: campo.left,
@@ -53,6 +56,10 @@ type Props = {
    *  de `ancla` -p. ej. una barra de acciones flotante sobre el mismo layout. Tocar uno de ellos no cierra la
    *  lista; el propio elemento decide si la cierra o no (p. ej. abriendo un panel encima). */
   dentro?: RefObject<HTMLElement | null>[];
+  /** Cuánto reservar abajo, en px, además del teclado (OL-182): algo sticky que vive debajo del área "visible"
+   *  del `visualViewport` -p. ej. una barra de acciones- y que la lista no debe tapar. 0 por omisión (sin nada
+   *  que reservar, el comportamiento de siempre). */
+  reservaAbajo?: number;
   children: React.ReactNode;
 };
 
@@ -74,14 +81,16 @@ type Props = {
  * aquí, flecha arriba/abajo mueve el foco real entre las opciones (en vez de `aria-activedescendant`: son botones
  * de verdad, ya alcanzables con Tab), Escape y tocar fuera cierran.
  */
-export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, dentro = SIN_DENTRO, children }: Props) {
+export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, dentro = SIN_DENTRO, reservaAbajo = 0, children }: Props) {
   const listaRef = useRef<HTMLUListElement>(null);
   const [posicion, setPosicion] = useState<PosicionFlotante | null>(null);
-  // Última versión de `dentro`, leída dentro de `alTocarFuera` sin que su efecto tenga que reinstalar el
-  // listener en cada render (un array nuevo por render, aunque los refs de dentro sean siempre los mismos).
+  // Última versión de `dentro`/`reservaAbajo`, leídas dentro del bucle de ubicar/`alTocarFuera` sin que sus
+  // efectos tengan que reinstalarse en cada render (un valor nuevo por render no debe reiniciar el bucle).
   const dentroRef = useRef(dentro);
+  const reservaAbajoRef = useRef(reservaAbajo);
   useEffect(() => {
     dentroRef.current = dentro;
+    reservaAbajoRef.current = reservaAbajo;
   });
 
   useEffect(() => {
@@ -95,7 +104,7 @@ export default function ListaFlotante({ abierta, onCerrar, ancla, id, etiqueta, 
       const vv = window.visualViewport;
       const altoVisible = vv ? vv.offsetTop + vv.height : window.innerHeight;
       const offsetTop = vv?.offsetTop ?? 0;
-      const p = calcularPosicion(r, altoVisible, offsetTop, window.innerHeight);
+      const p = calcularPosicion(r, altoVisible, offsetTop, window.innerHeight, reservaAbajoRef.current);
       setPosicion((actual) => (actual && actual.left === p.left && actual.top === p.top && actual.bottom === p.bottom && actual.width === p.width && actual.maxHeight === p.maxHeight ? actual : p));
     }
     function bucle() {

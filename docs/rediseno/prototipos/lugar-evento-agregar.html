@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agregar lugar sin inventar ubicación (OL-182)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+  /* Tokens: los mismos de src/app/globals.css y de docs/rediseno/prototipos/lugar-evento-pantalla.html (violeta
+     firmado, OL-146). Este archivo es independiente (no depende de aquél): reutiliza su cabecera, su campo y sus
+     colores, pero se enfoca solo en los dos defectos de OL-182. */
+  :root {
+    color-scheme: light dark;
+    --estudio: #ebeae6; --estudio-texto: #3b3a37; --estudio-suave: #8a8883;
+    --fondo: #ffffff; --fondo-contenido: #f6f5f1; --fondo-suave: #f4f4f2; --fondo-mapa: #eef0ec;
+    --texto: #1a1a1a; --texto-suave: #5c5c5c; --borde: #dcdcd8; --error: #b3261e;
+    --primario: #6d34c8; --primario-texto: #ffffff;
+    --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ancho-titulo: "wdth" 75; --ancho-texto: "wdth" 80;
+    --toque: 48px; --toque-min: 44px; --gutter: 20px; --radio: 12px;
+    --alto-estado: 48px; --alto-barra: 56px;
+    --sombra: 0 2px 12px rgba(0,0,0,.08); --sombra-flotante: 0 6px 20px rgba(0,0,0,.22); --sombra-panel: 0 -2px 16px rgba(0,0,0,.1);
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --estudio: #232321; --estudio-texto: #d9d7d1; --estudio-suave: #8f8d86; } }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--estudio); color: var(--estudio-texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-optical-sizing: auto; padding: 24px 16px 60px; min-height: 100vh; }
+  button, input { font: inherit; color: inherit; }
+  svg { display: block; }
+  .estudio { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; max-width: 1200px; margin: 0 auto; }
+  .rotulo { flex: 0 0 100%; max-width: 900px; margin: 0 auto 4px; color: var(--estudio-suave); font-size: 14px; line-height: 1.55; }
+  .rotulo strong { display: block; color: var(--estudio-texto); font-weight: 700; font-variation-settings: var(--ancho-titulo); font-size: 22px; margin-bottom: 6px; }
+  .rotulo em { color: var(--estudio-texto); font-style: normal; }
+  .rotulo code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+  .rotulo ul { margin: 8px 0 0 18px; }
+
+  .controles { flex: 0 0 100%; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; max-width: 900px; margin: 0 auto 8px; padding: 14px 16px; border-radius: var(--radio); background: #fff; box-shadow: var(--sombra); }
+  .grupo-control { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .grupo-control > b { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--estudio-suave); margin-right: 2px; }
+  .btn-control { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--borde); background: #fff; color: var(--texto); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-control[aria-pressed="true"] { background: var(--primario); color: #fff; border-color: var(--primario); }
+
+  .par { display: grid; gap: 8px; justify-items: center; }
+  .par figcaption { max-width: 390px; font-size: 12.5px; color: var(--estudio-suave); text-align: center; }
+
+  .telefono { position: relative; width: 390px; height: 844px; flex: none; overflow: hidden; border-radius: 40px; background: var(--fondo-contenido); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.08); transition: width .15s ease; }
+  .telefono.angosto { width: 320px; }
+  .estado-ios { position: relative; z-index: 30; height: var(--alto-estado); display: flex; align-items: flex-end; justify-content: space-between; padding: 0 26px 4px; background: var(--fondo); font-size: 15px; font-weight: 600; }
+  .telefono.angosto .estado-ios { padding: 0 18px 4px; font-size: 14px; }
+
+  /* Pantalla base: alta de evento, detrás de la hoja (para mostrar la vuelta, patrón de texto-largo). */
+  .base { position: absolute; inset: var(--alto-estado) 0 0 0; overflow: hidden; padding: 0 var(--gutter) 24px; background: var(--fondo-contenido); }
+  .barra-app { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: var(--alto-barra); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); background: var(--fondo); }
+  .logotipo { grid-column: 2; font-size: 21px; font-weight: 800; font-variation-settings: var(--ancho-titulo); }
+  h1 { font-size: 24px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin: 14px 0; }
+  .renglon-donde { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; column-gap: 12px; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px dashed var(--borde); border-radius: var(--radio); background: var(--fondo); text-align: left; cursor: pointer; }
+  .renglon-donde .clave-valor { min-width: 0; display: grid; }
+  .renglon-donde .clave { font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--texto-suave); }
+  .renglon-donde .valor { font-size: 16px; font-weight: 500; color: var(--texto-suave); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .renglon-donde .cambiar { color: var(--primario); font-weight: 700; font-size: 14px; }
+  .simulado { min-height: 48px; margin-top: 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); opacity: .5; }
+
+  /* La hoja "¿Dónde es?" a pantalla completa (docs/rediseno/43, OL-173/OL-179): patrón Atrás/Listo. */
+  .sheet { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; background: var(--fondo); }
+  .cabecera-sheet { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 8px; min-height: calc(var(--alto-estado) + var(--alto-barra)); padding: var(--alto-estado) var(--gutter) 0; border-bottom: 1px solid var(--borde); background: var(--fondo); }
+  .cabecera-sheet button { min-height: 44px; padding: 0 6px; border: none; background: none; color: var(--primario); font-size: 15px; font-weight: 700; cursor: pointer; }
+  .cabecera-sheet button:disabled { color: var(--estudio-suave); opacity: .5; cursor: default; }
+  .cabecera-sheet h2 { grid-column: 2; text-align: center; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .cuerpo-sheet { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .campo-buscar { position: relative; flex: none; display: flex; align-items: center; gap: 10px; min-height: var(--toque); margin: 10px var(--gutter); padding: 0 var(--espacio-3, 14px); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra); z-index: 4; }
+  .campo-buscar svg.icono-buscar { flex: none; color: var(--texto-suave); }
+  .campo-buscar input { flex: 1; min-width: 0; border: none; background: none; font-size: 16px; color: var(--texto); }
+  .campo-buscar input:focus { outline: none; }
+  .campo-buscar .limpiar { flex: none; display: none; width: 28px; height: 28px; place-items: center; border: none; background: none; color: var(--texto-suave); cursor: pointer; }
+  .campo-buscar .limpiar.visible { display: grid; }
+
+  .mapa-lleno { position: relative; flex: 1; min-height: 0; background: var(--fondo-mapa); overflow: hidden; }
+  .lienzo { width: 100%; height: 100%; }
+  .calle-nombre { fill: #8f8f8a; font-size: 9px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+  .colonia { fill: #a3a39d; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .lugar circle { fill: var(--primario); stroke: var(--fondo); stroke-width: 1.5; }
+  .lugar .nombre { fill: var(--texto); font-size: 11px; font-weight: 700; text-anchor: middle; paint-order: stroke; stroke: var(--fondo); stroke-width: 3; pointer-events: none; }
+  .poi circle { fill: var(--fondo); stroke: var(--texto-suave); stroke-width: 1.6; stroke-dasharray: 2.5 2.5; }
+  .poi .nombre { fill: var(--texto-suave); font-size: 10.5px; font-weight: 600; text-anchor: middle; paint-order: stroke; stroke: var(--fondo); stroke-width: 3; pointer-events: none; }
+  .seleccion { display: none; }
+  .seleccion.visible { display: block; }
+  .seleccion .forma { fill: var(--primario); stroke: #fff; stroke-width: 1.6; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+  .seleccion .centro { fill: #fff; }
+  .atribucion { position: absolute; left: 14px; bottom: 6px; z-index: 3; color: #6b6b66; font-size: 11px; font-weight: 700; opacity: .8; }
+
+  /* "Estoy aquí": z-index alto a propósito (13) para quedar SIEMPRE por encima de la hoja "Agregar lugar" (12) -
+     founder, doc 43 segunda versión: "queda encima de la hoja, no debajo"; el bug reportado dejaba el panel tapando
+     el mapa y este botón, sin ninguna de las tres maneras de fijar el punto a la vista. */
+  .ubicame { position: absolute; left: var(--gutter); z-index: 13; display: grid; place-items: center; width: var(--toque); height: var(--toque); border: none; border-radius: 50%; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra-flotante); cursor: pointer; transition: bottom .12s ease; }
+
+  /* Lista flotante de sugerencias (ui/ListaFlotante): nunca tapa el layout de abajo. Aquí, además, nunca tapa la
+     barra "Agregar" (OL-182, primer defecto): `maxHeight` se recalcula para detenerse encima de ella. */
+  .lista-flotante { position: absolute; left: var(--gutter); right: var(--gutter); top: 8px; z-index: 8; overflow-y: auto; border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra-flotante); display: none; }
+  .lista-flotante.visible { display: block; }
+  .lista-flotante ul { list-style: none; padding: 6px; display: grid; gap: 2px; }
+  .renglon { display: grid; grid-template-columns: 22px minmax(0, 1fr); grid-template-areas: "icono nombre" "icono direccion"; column-gap: 12px; align-items: center; width: 100%; min-height: 56px; padding: 6px 8px; border: none; border-radius: 10px; background: none; text-align: left; cursor: pointer; }
+  .renglon:hover, .renglon:active { background: var(--fondo-suave); }
+  .renglon > svg { grid-area: icono; color: var(--texto-suave); }
+  .renglon > b { grid-area: nombre; font-size: 15px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .renglon > small { grid-area: direccion; color: var(--texto-suave); font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Barra de acciones (variante B, OL-173/179): un solo botón "Agregar". */
+  .barra-acciones { position: absolute; left: 0; right: 0; bottom: 0; z-index: 9; display: none; gap: 10px; padding: 10px var(--gutter) 20px; background: var(--fondo); box-shadow: var(--sombra-panel); transition: bottom .12s ease; }
+  .barra-acciones.visible { display: flex; }
+  .barra-acciones button { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--toque); padding: 0 10px; border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 14px; font-weight: 700; cursor: pointer; }
+  .barra-acciones button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* La hoja "Agregar lugar", segunda versión (OL-182): a media pantalla, pegada abajo (sobre el teclado cuando lo
+     hay), deja el mapa visible arriba con el pin -nunca tapa el campo de dirección ni "Estoy aquí" (segundo
+     defecto reportado por el founder: "no me deja especificar la ubicación"). */
+  .hoja-agregar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 12; display: none; flex-direction: column; padding: 10px 20px calc(20px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); transition: bottom .12s ease, top .12s ease; }
+  .hoja-agregar.visible { display: flex; }
+  /* Con "Dirección" enfocada y el teclado abierto (regla dura del founder, 2026-09-24: "las sugerencias van
+     DEBAJO del campo en uso, nunca encima"): la hoja se estira hacia arriba (tapa más mapa mientras se escribe) y
+     se hace desplazable por dentro; el scroll interno deja el campo "Dirección" arriba del todo -título y
+     "Nombre" salen por encima, fuera de la vista- para que SIEMPRE quede espacio debajo y la lista nunca tenga
+     que abrir hacia arriba sobre el propio campo. Se recupera (top:auto, la altura vuelve a su contenido) al
+     cerrarse las sugerencias. */
+  .hoja-agregar.expandida { top: 8px; overflow-y: auto; }
+  .asa { align-self: center; width: 36px; height: 4px; margin-bottom: 10px; border-radius: 999px; background: var(--borde); }
+  .hoja-agregar h3 { font-size: 16px; font-weight: 700; font-variation-settings: var(--ancho-titulo); margin-bottom: 10px; }
+  .campo-hoja { display: block; margin-bottom: 10px; }
+  /* Solo la etiqueta (primer <span>, "Nombre"/"Dirección"): el campo de dirección envuelve icono+input en OTRO
+     <span class="campo-buscar"> hermano -sin ":first-child" aquí, ese selector genérico de "span hijo" también lo
+     alcanzaba a él y le apagaba su propio "display:flex" (mismo peso de especificidad, gana el que viene después). */
+  .campo-hoja > span:first-child { display: block; margin-bottom: 4px; color: var(--texto-suave); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .campo-hoja input[type="text"] { width: 100%; min-height: var(--toque-min); padding: 0 14px; border: 1px solid var(--borde); border-radius: var(--radio); font-size: 15px; }
+  .campo-hoja input[type="text"]:focus { outline: 2px solid var(--primario); outline-offset: -1px; }
+  .campo-hoja .campo-buscar { margin: 0; box-shadow: none; }
+  /* El input de dentro no lleva SU PROPIO borde/relleno -el envolvente ".campo-buscar" ya lo da-, si no se
+     repite el reglón (".campo-hoja input[type=text]" es más específico que ".campo-buscar input" y si no se
+     pisa aquí, dibuja una caja anidada dentro de la caja del campo). */
+  .campo-hoja .campo-buscar input[type="text"] { min-height: auto; padding: 0; border: none; border-radius: 0; }
+  .fila-privado { display: flex; align-items: center; gap: 10px; margin: 2px 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--fondo-suave); }
+  .texto-privado { flex: 1; min-width: 0; }
+  .texto-privado b { display: block; font-size: 14px; font-weight: 600; }
+  .texto-privado small { display: block; color: var(--texto-suave); font-size: 12.5px; }
+  .palanca { position: relative; width: 44px; height: 26px; border: none; border-radius: 999px; background: var(--borde); flex: none; cursor: pointer; }
+  .palanca::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .12s ease; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .palanca[aria-checked="true"] { background: var(--primario); }
+  .palanca[aria-checked="true"]::after { left: 21px; }
+  .guardar-hoja { width: 100%; min-height: var(--toque); border: none; border-radius: var(--radio); background: var(--primario); color: var(--primario-texto); font-size: 15px; font-weight: 700; cursor: pointer; }
+  .guardar-hoja:disabled { background: var(--fondo-suave); color: var(--texto-suave); cursor: default; }
+  /* El porqué del botón apagado, en texto chico debajo (canon de formularios, OL-100: "la ayuda de qué falta va
+     debajo del campo o del renglón, nunca dentro del botón"). */
+  .ayuda-guardar { display: none; margin-top: 8px; color: var(--texto-suave); font-size: 12.5px; line-height: 1.4; text-align: center; }
+  .ayuda-guardar.visible { display: block; }
+
+  /* Sugerencias de dirección DENTRO de la hoja: mismo componente (ui/ListaFlotante), anclado al campo "Dirección" -
+     por encima de todo lo demás de la hoja (portal, como en la app real). */
+  .lista-direccion { position: absolute; left: 20px; right: 20px; z-index: 14; overflow-y: auto; border-radius: var(--radio); background: var(--fondo); box-shadow: var(--sombra-flotante); display: none; max-height: 220px; }
+  .lista-direccion.visible { display: block; }
+  .lista-direccion ul { list-style: none; padding: 6px; display: grid; gap: 2px; }
+
+  .teclado { position: absolute; left: 0; right: 0; bottom: 0; z-index: 25; height: 300px; background: #d3d5db; border-top: 1px solid #b9bbc2; display: none; align-items: flex-start; justify-content: center; padding-top: 130px; color: #6f7178; font-size: 13px; text-align: center; }
+  .teclado.visible { display: flex; }
+
+  @media (max-width: 860px) { .telefono { transform: scale(.92); transform-origin: top center; } }
+</style>
+</head>
+<body>
+<div class="estudio">
+  <p class="rotulo">
+    <strong>Agregar lugar sin inventar ubicación — segunda versión (OL-182, bitácora 217)</strong>
+    Dos defectos que el founder encontró en producción en su iPhone, 2026-09-24 (sus palabras): <em>«cuando se
+    guarda un lugar, ejemplo "laboratorio de arte escenico" mira como el listado de sugerencias se sobrepone al cta
+    de guardar nuevo lugar, luego, cuando selecciono la opcion de guardar nuevo lugar, no me deja especificar la
+    ubicación, solo guarda el lugar con una ubicación que no sé de dónde sacó. Error grosso.»</em>
+    <ul>
+      <li><b>La lista se detiene encima de la barra</b> — <code>ui/ListaFlotante</code> gana <code>reservaAbajo</code>
+      y ya no deja que tres resultados largos lleguen hasta taparla.</li>
+      <li><b>«Agregar» ya no inventa un punto</b> — se quita el <code>moverPin(contexto.centro…)</code> silencioso;
+      la hoja «Agregar lugar» pasa a media pantalla, pegada abajo, sin tapar el mapa: se puede buscar la dirección,
+      tocar el mapa o usar «Estoy aquí», las tres siempre visibles. «Guardar» queda apagado, con el porqué debajo,
+      hasta que exista un punto de verdad.</li>
+    </ul>
+    Firmado por el founder («acepto tus recomendaciones», 2026-09-24). Detalle completo en
+    <code>docs/rediseno/43-lugar-evento-pantalla.md</code>, sección «Agregar lugar, segunda versión (OL-182)».
+    Reutiliza la cabecera, el campo y los colores de <code>lugar-evento-pantalla.html</code> (OL-169/173/179); mapa
+    dibujado a mano, datos de ejemplo, no reales.
+  </p>
+
+  <div class="controles">
+    <div class="grupo-control">
+      <b>Estado</b>
+      <button type="button" class="btn-control" data-escenario="a">a · Lista sobre la barra</button>
+      <button type="button" class="btn-control" data-escenario="b">b · Agregar sin punto</button>
+      <button type="button" class="btn-control" data-escenario="c">c · Sugerencias de dirección</button>
+      <button type="button" class="btn-control" data-escenario="d">d · Punto fijado</button>
+    </div>
+    <div class="grupo-control">
+      <b>Ancho</b>
+      <button type="button" class="btn-control" data-ancho="390">390 px</button>
+      <button type="button" class="btn-control" data-ancho="320">320 px</button>
+    </div>
+  </div>
+
+  <figure class="par">
+    <div class="telefono" id="telefono">
+      <div class="estado-ios" aria-hidden="true"><span>9:41</span><span>●●● ▲ ▮</span></div>
+
+      <div class="base">
+        <div class="barra-app"><span class="logotipo">SMSNSTRS</span></div>
+        <h1>Publicar un evento</h1>
+        <div class="simulado" style="min-height:44px"></div>
+        <button type="button" class="renglon-donde">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>
+          <span class="clave-valor"><span class="clave">Dónde</span><span class="valor">Falta</span></span>
+          <span class="cambiar">Elegir</span>
+        </button>
+        <div class="simulado"></div>
+        <div class="simulado"></div>
+      </div>
+
+      <div class="sheet" id="sheet">
+        <div class="cabecera-sheet">
+          <button type="button">‹ Atrás</button>
+          <h2>¿Dónde es?</h2>
+          <button type="button" disabled>Listo</button>
+        </div>
+        <div class="cuerpo-sheet" id="cuerpoSheet">
+          <label class="campo-buscar">
+            <svg class="icono-buscar" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+            <input type="text" id="campoBuscar" placeholder="Nombre o dirección" aria-label="Buscar el lugar" autocomplete="off">
+            <button type="button" class="limpiar" id="btnLimpiar" aria-label="Borrar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </label>
+          <div class="mapa-lleno" id="mapaLleno">
+            <svg class="lienzo" id="lienzo" viewBox="140 150 360 520" preserveAspectRatio="xMidYMid slice" aria-label="Mapa de San Luis Potosí">
+              <use href="#base-mapa" x="0" y="0" width="640" height="900"/>
+              <g class="lugares">
+                <g class="lugar" transform="translate(250 230)"><circle r="7"/><text class="nombre" y="18">Teatro de la Paz</text></g>
+                <g class="lugar" transform="translate(195 560)"><circle r="7"/><text class="nombre" y="18">Centro de las Artes</text></g>
+              </g>
+              <g class="poi"><g transform="translate(365 395)"><circle r="6"/><text class="nombre" y="17">Plaza de los Fundadores</text></g></g>
+              <g class="seleccion" id="capaSeleccion" transform="translate(300 260)">
+                <path class="forma" d="M0 -32 C -13 -32 -22 -20.5 -22 -8 C -22 10 0 30 0 30 C 0 30 22 10 22 -8 C 22 -20.5 13 -32 0 -32 Z"/>
+                <circle class="centro" r="6.5" cy="-18"/>
+              </g>
+            </svg>
+            <span class="atribucion">mapbox</span>
+            <button type="button" class="ubicame" id="btnEstoyAqui" aria-label="Estoy aquí" title="Estoy aquí">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+            </button>
+
+            <div class="lista-flotante" id="listaFlotante"></div>
+
+            <div class="barra-acciones" id="barraAcciones">
+              <button type="button" id="btnAccionAgregar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                <span id="txtAccionAgregar">Agregar lugar</span>
+              </button>
+            </div>
+
+            <div class="hoja-agregar" id="hojaAgregar">
+              <div class="asa"></div>
+              <h3>Agregar lugar</h3>
+              <label class="campo-hoja">
+                <span>Nombre</span>
+                <input type="text" id="nombreHoja" placeholder="Nombre del lugar">
+              </label>
+              <label class="campo-hoja" id="campoDireccionWrap">
+                <span>Dirección</span>
+                <span class="campo-buscar">
+                  <svg class="icono-buscar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>
+                  <input type="text" id="direccionHoja" placeholder="Busca la dirección" autocomplete="off">
+                </span>
+              </label>
+              <div class="fila-privado">
+                <div class="texto-privado"><b>Es un lugar privado</b><small>Solo tú lo ves; podrás volver a usarlo en otros eventos</small></div>
+                <button type="button" role="switch" class="palanca" id="privadoBtn" aria-checked="false" aria-label="Lugar privado"></button>
+              </div>
+              <button type="button" class="guardar-hoja" id="btnGuardarHoja" disabled>Guardar y usar este lugar</button>
+              <p class="ayuda-guardar" id="ayudaGuardar">Falta la ubicación: busca la dirección, toca el mapa o usa «Estoy aquí».</p>
+            </div>
+
+            <div class="lista-direccion" id="listaDireccion"></div>
+          </div>
+        </div>
+        <div class="teclado" id="teclado" aria-hidden="true">⌨︎ teclado del sistema</div>
+      </div>
+    </div>
+    <figcaption>Los botones «Estado» saltan a cada una de las cuatro capturas. «Ancho» cambia el teléfono a 320 px
+      (solo hace falta para el estado b). El mapa, «Estoy aquí» y tocarlo con el clic también responden.</figcaption>
+  </figure>
+</div>
+
+<!-- Mapa base dibujado a mano, sin token de Mapbox (mismo patrón que lugar-evento-pantalla.html). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="base-mapa" viewBox="0 0 640 900">
+      <rect width="640" height="900" fill="#fafaf8"/>
+      <path d="M0 700 Q80 640 160 690 T320 700 T480 740 T640 700 V900 H0 Z" fill="#e4efdd"/>
+      <path d="M0 780 Q90 720 180 770 T360 790 T640 780 V900 H0 Z" fill="#d6e8cc"/>
+      <path d="M0 40 L110 40 L120 150 L40 170 L0 140 Z" fill="#d3e9c8"/>
+      <rect x="300" y="330" width="80" height="60" rx="4" fill="#cfe8c4"/>
+      <g stroke="#e4e4df" stroke-width="2">
+        <path d="M0 180H640M0 220H520M0 260H640M100 300H640M0 340H300M380 340H640M0 380H640M0 460H640M60 500H640M0 540H420M480 540H640M0 580H640M140 620H640M0 660H360M0 700H640"/>
+        <path d="M80 140V700M120 100V820M160 180V900M200 100V560M240 220V900M280 100V700M360 100V600M400 180V900M440 100V700M480 220V900M520 100V620M560 180V900M600 300V900"/>
+      </g>
+      <g stroke="#d6d6d2" stroke-width="5" fill="none" stroke-linecap="round">
+        <path d="M0 420H640"/>
+        <path d="M320 100V900"/>
+      </g>
+      <g class="calle-nombre">
+        <text x="140" y="413">Av. Venustiano Carranza</text>
+        <text x="334" y="260" transform="rotate(-90 334 260)">Av. Universidad</text>
+      </g>
+      <g class="colonia">
+        <text x="285" y="445" text-anchor="middle">Centro</text>
+        <text x="500" y="250" text-anchor="middle">Zona Industrial</text>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+"use strict";
+/* ---------- Datos de ejemplo: el caso real del founder ("laboratorio de arte escenico") ---------- */
+var RESULTADOS_LARGOS = [
+  { nombre: "Laboratorio de Arte Escénico Universitario", direccion: "Av. Industrias 101, Zona Industrial" },
+  { nombre: "Laboratorio de Artes Visuales y Escénicas de la UASLP", direccion: "Dr. Manuel Nava 8, Zona Universitaria" },
+  { nombre: "Centro Laboratorio de Experimentación Escénica y Danza Contemporánea", direccion: "Calzada de Guadalupe 400, Barrio de San Miguelito" },
+];
+var DIRECCIONES = [
+  { direccion: "Av. Industrias 101, Zona Industrial" },
+  { direccion: "Avenida Industrias 250, Zona Industrial" },
+  { direccion: "Av. Industrias esq. Eje Vial Oriente, Zona Industrial" },
+];
+var NOMBRE_TIPEADO = "laboratorio de arte escenico";
+var NOMBRE_PROPUESTO = "Laboratorio de Arte Escénico";
+
+/* ---------- Configuración de cada uno de los cuatro estados pedidos en el encargo ---------- */
+var ESCENARIOS = {
+  a: { teclado: true, hoja: false, texto: NOMBRE_TIPEADO, listaAbierta: true },
+  b: { teclado: false, hoja: true, texto: NOMBRE_TIPEADO, nombreHoja: NOMBRE_PROPUESTO, direccionHoja: "", conPunto: false, listaDireccion: false },
+  c: { teclado: true, hoja: true, texto: NOMBRE_TIPEADO, nombreHoja: NOMBRE_PROPUESTO, direccionHoja: "Av. Indus", conPunto: false, listaDireccion: true },
+  d: { teclado: false, hoja: true, texto: NOMBRE_TIPEADO, nombreHoja: NOMBRE_PROPUESTO, direccionHoja: "Av. Industrias 101, Zona Industrial", conPunto: true, listaDireccion: false },
+};
+
+var estado = { escenario: "a", ancho: 390, privado: false };
+Object.assign(estado, ESCENARIOS.a);
+
+/* ---------- Utilidades ---------- */
+function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+function iconoPin(w) {
+  w = w || 20;
+  return '<svg width="' + w + '" height="' + w + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>';
+}
+
+/* ---------- Referencias al DOM ---------- */
+var telefono = document.getElementById("telefono");
+var sheet = document.getElementById("sheet");
+var cuerpoSheet = document.getElementById("cuerpoSheet");
+var mapaLleno = document.getElementById("mapaLleno");
+var campoBuscar = document.getElementById("campoBuscar");
+var btnLimpiar = document.getElementById("btnLimpiar");
+var listaFlotante = document.getElementById("listaFlotante");
+var barraAcciones = document.getElementById("barraAcciones");
+var txtAccionAgregar = document.getElementById("txtAccionAgregar");
+var btnAccionAgregar = document.getElementById("btnAccionAgregar");
+var hojaAgregar = document.getElementById("hojaAgregar");
+var nombreHoja = document.getElementById("nombreHoja");
+var direccionHoja = document.getElementById("direccionHoja");
+var listaDireccion = document.getElementById("listaDireccion");
+var campoDireccionWrap = document.getElementById("campoDireccionWrap");
+var privadoBtn = document.getElementById("privadoBtn");
+var btnGuardarHoja = document.getElementById("btnGuardarHoja");
+var ayudaGuardar = document.getElementById("ayudaGuardar");
+var btnEstoyAqui = document.getElementById("btnEstoyAqui");
+var capaSeleccion = document.getElementById("capaSeleccion");
+var teclado = document.getElementById("teclado");
+
+/* ---------- Listas (sugerencias principales y de dirección) ---------- */
+function renglonHTML(nombre, direccion) {
+  return '<li><button type="button" class="renglon">' + iconoPin() + "<b>" + esc(nombre) + "</b><small>" + esc(direccion) + "</small></button></li>";
+}
+function pintarListaPrincipal() {
+  var abierta = estado.listaAbierta && !estado.hoja;
+  listaFlotante.classList.toggle("visible", abierta);
+  if (!abierta) return;
+  listaFlotante.innerHTML = "<ul>" + RESULTADOS_LARGOS.map(function (r) { return renglonHTML(r.nombre, r.direccion); }).join("") + "</ul>";
+}
+function pintarListaDireccion() {
+  var abierta = !!estado.listaDireccion && estado.hoja;
+  listaDireccion.classList.toggle("visible", abierta);
+  if (!abierta) return;
+  listaDireccion.innerHTML = "<ul>" + DIRECCIONES.map(function (r) { return renglonHTML(estado.nombreHoja || NOMBRE_PROPUESTO, r.direccion); }).join("") + "</ul>";
+}
+
+/* ---------- Posicionar: la barra sobre el teclado, la hoja sobre el teclado, "Estoy aquí" sobre la hoja ---------- */
+function medir(el) { return el.getBoundingClientRect(); }
+
+/**
+ * Coloca una lista flotante (`el`) anclada a `campoEl`, dentro del sistema de coordenadas de `mapaLleno` (mismo
+ * criterio que `calcularPosicion` de `ui/ListaFlotante.tsx`, aquí en JS de estudio): si no cabe abajo antes del
+ * `piso` (el teclado o la barra "Agregar", `reservaAbajo`) pero sí cabe arriba, abre hacia arriba -nunca tapa lo
+ * que reservó el piso, y nunca fuerza un alto mayor que el que de verdad hay disponible (eso fue justamente el
+ * primer defecto reportado: una lista que se estira hasta encima de la barra).
+ */
+function colocarLista(el, campoEl, pisoLocal) {
+  var mapaR = medir(mapaLleno);
+  var campoR = medir(campoEl);
+  var techo = 8;
+  var localTop = campoR.top - mapaR.top;
+  var localBottom = campoR.bottom - mapaR.top;
+  var espacioAbajo = pisoLocal - localBottom;
+  var espacioArriba = localTop - techo;
+  var arriba = espacioAbajo < 120 && espacioArriba > espacioAbajo;
+  var disponible = Math.max(0, arriba ? espacioArriba : espacioAbajo);
+  if (arriba) {
+    el.style.top = "";
+    el.style.bottom = (mapaR.height - localTop + 4) + "px";
+  } else {
+    el.style.bottom = "";
+    el.style.top = (localBottom + 4) + "px";
+  }
+  el.style.maxHeight = Math.min(260, disponible) + "px";
+}
+
+/**
+ * Con "Dirección" enfocada Y sus sugerencias abiertas: la hoja se recoloca (`top` sube casi hasta el propio campo
+ * principal) y se hace desplazable por dentro, con el scroll puesto para que el campo "Dirección" quede arriba
+ * del todo -título y "Nombre" salen de la vista-. Corrección del gestor (revisión de OL-182, parte 1): la lista
+ * de sugerencias NUNCA debe abrir encima del campo que se está usando (MEMORIA_GESTOR.md, 2026-09-24, "si
+ * sugieres algo sea debajo del campo que estoy usando"); en vez de dejar que `colocarLista` decida hacia arriba
+ * cuando no hay sitio abajo, aquí se le DA sitio abajo -moviendo lo que sobra hacia arriba y fuera de la vista-,
+ * para que la propia lógica de siempre (mismo `colocarLista`, sin casos especiales) elija "abajo" con margen de
+ * sobra. Si aun así no entran los tres renglones, la lista muestra los que quepan y se desplaza por dentro
+ * (`overflow-y: auto`, ya lo tenía).
+ */
+function actualizarExpansionHoja() {
+  var expandir = estado.hoja && estado.listaDireccion;
+  hojaAgregar.classList.toggle("expandida", expandir);
+  if (expandir) {
+    hojaAgregar.scrollTop = Math.max(0, campoDireccionWrap.offsetTop - 10);
+  } else {
+    hojaAgregar.style.top = "";
+    hojaAgregar.scrollTop = 0;
+  }
+  // Mientras la hoja está así de estirada, "Estoy aquí" quedaría flotando sobre un campo de texto -no hay nada
+  // útil que tocar en el mapa en ese instante, con el mapa casi tapado-: se oculta y vuelve al cerrar la lista.
+  btnEstoyAqui.style.display = expandir ? "none" : "";
+}
+
+function posicionar() {
+  var tecladoAltoPx = estado.teclado ? 300 : 0;
+  barraAcciones.style.bottom = tecladoAltoPx + "px";
+  hojaAgregar.style.bottom = tecladoAltoPx + "px";
+
+  actualizarExpansionHoja();
+
+  // "Estoy aquí" (doc 43, segunda versión): encima de la barra si está visible, o encima de la hoja si está
+  // abierta -nunca debajo de ninguna de las dos.
+  var extra = 16;
+  if (estado.hoja) {
+    var hHoja = medir(hojaAgregar).height;
+    btnEstoyAqui.style.bottom = (tecladoAltoPx + hHoja + extra) + "px";
+  } else if (estado.listaAbierta) {
+    btnEstoyAqui.style.bottom = (tecladoAltoPx + medir(barraAcciones).height + extra) + "px";
+  } else {
+    btnEstoyAqui.style.bottom = extra + "px";
+  }
+
+  // La lista principal (OL-182, primer defecto): se detiene ENCIMA de la barra -nunca la tapa- restando su alto
+  // más un respiro (equivalente a `reservaAbajo = ALTO_BARRA_ACCIONES + 8` en el código real).
+  if (estado.listaAbierta && !estado.hoja) {
+    var mapaR = medir(mapaLleno);
+    var pisoLista = barraAcciones.classList.contains("visible") ? medir(barraAcciones).top - mapaR.top - 8 : mapaR.height - tecladoAltoPx - 8;
+    colocarLista(listaFlotante, campoBuscar.closest(".campo-buscar"), pisoLista);
+  }
+
+  // La lista de direcciones dentro de la hoja: anclada al campo "Dirección". Con la hoja ya expandida y el
+  // scroll puesto arriba, el mismo `colocarLista` de siempre encuentra sitio de sobra abajo (sin caso especial).
+  if (estado.listaDireccion && estado.hoja) {
+    var mapaR2 = medir(mapaLleno);
+    var pisoDir = mapaR2.height - tecladoAltoPx - 8;
+    colocarLista(listaDireccion, direccionHoja.closest(".campo-buscar"), pisoDir);
+  }
+}
+
+/* ---------- Render principal ---------- */
+function actualizarGuardar() {
+  var habilitado = estado.hoja && estado.conPunto && !!(estado.nombreHoja || "").trim();
+  btnGuardarHoja.disabled = !habilitado;
+  ayudaGuardar.classList.toggle("visible", estado.hoja && !estado.conPunto);
+}
+function render() {
+  telefono.classList.toggle("angosto", estado.ancho === 320);
+
+  campoBuscar.value = estado.texto || "";
+  btnLimpiar.classList.toggle("visible", !!estado.texto);
+
+  var modoResultados = estado.listaAbierta && !estado.hoja;
+  barraAcciones.classList.toggle("visible", modoResultados);
+  txtAccionAgregar.textContent = estado.texto ? "Agregar «" + estado.texto + "» como lugar" : "Agregar lugar";
+
+  hojaAgregar.classList.toggle("visible", !!estado.hoja);
+  nombreHoja.value = estado.nombreHoja || "";
+  direccionHoja.value = estado.direccionHoja || "";
+  privadoBtn.setAttribute("aria-checked", String(estado.privado));
+
+  capaSeleccion.classList.toggle("visible", !!estado.conPunto);
+
+  teclado.classList.toggle("visible", !!estado.teclado);
+
+  pintarListaPrincipal();
+  pintarListaDireccion();
+  actualizarGuardar();
+
+  requestAnimationFrame(posicionar);
+
+  document.querySelectorAll(".btn-control[data-escenario]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-escenario") === estado.escenario)); });
+  document.querySelectorAll(".btn-control[data-ancho]").forEach(function (b) { b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-ancho")) === estado.ancho)); });
+}
+
+/* ---------- Controles del estudio: cada escenario parte de un estado limpio, salta directo ---------- */
+document.querySelectorAll(".btn-control[data-escenario]").forEach(function (b) {
+  b.addEventListener("click", function () {
+    estado.escenario = b.getAttribute("data-escenario");
+    Object.assign(estado, ESCENARIOS[estado.escenario]);
+    estado.privado = false;
+    render();
+  });
+});
+document.querySelectorAll(".btn-control[data-ancho]").forEach(function (b) {
+  b.addEventListener("click", function () { estado.ancho = Number(b.getAttribute("data-ancho")); render(); });
+});
+
+/* ---------- Interacción real: buscar, abrir "Agregar", elegir dirección, tocar el mapa, "Estoy aquí" ---------- */
+campoBuscar.addEventListener("input", function (e) { estado.texto = e.target.value; estado.listaAbierta = !!estado.texto.trim(); render(); });
+btnLimpiar.addEventListener("click", function () { estado.texto = ""; estado.listaAbierta = false; render(); campoBuscar.focus(); });
+btnAccionAgregar.addEventListener("click", function () {
+  estado.hoja = true; estado.listaAbierta = false;
+  estado.nombreHoja = estado.texto || NOMBRE_PROPUESTO; estado.direccionHoja = ""; estado.conPunto = false; estado.listaDireccion = false;
+  render();
+});
+nombreHoja.addEventListener("input", function (e) { estado.nombreHoja = e.target.value; render(); });
+direccionHoja.addEventListener("input", function (e) { estado.direccionHoja = e.target.value; estado.listaDireccion = e.target.value.trim().length >= 3; render(); });
+direccionHoja.addEventListener("focus", function () { if (direccionHoja.value.trim().length >= 3) { estado.listaDireccion = true; render(); } });
+listaDireccion.addEventListener("click", function (e) {
+  var r = e.target.closest(".renglon");
+  if (!r) return;
+  estado.direccionHoja = r.querySelector("small").textContent;
+  estado.conPunto = true; estado.listaDireccion = false;
+  render();
+});
+privadoBtn.addEventListener("click", function () { estado.privado = !estado.privado; render(); });
+btnEstoyAqui.addEventListener("click", function () {
+  if (!estado.hoja) return; // fuera del alcance de estos cuatro estados (no cambia con esta pieza)
+  estado.conPunto = true; estado.direccionHoja = "Cerca de tu ubicación actual"; estado.listaDireccion = false;
+  render();
+});
+mapaLleno.addEventListener("click", function (e) {
+  if (!estado.hoja || e.target.closest(".ubicame")) return;
+  estado.conPunto = true; estado.direccionHoja = estado.direccionHoja || "Ubicando…"; estado.listaDireccion = false;
+  render();
+  window.setTimeout(function () { if (estado.direccionHoja === "Ubicando…") { estado.direccionHoja = "Av. Industrias 101, Zona Industrial"; render(); } }, 500);
+});
+
+render();
+</script>
+</body>
+</html>

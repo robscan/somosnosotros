@@ -38,6 +38,47 @@ describe("calcularPosicion", () => {
     const pocoEspacio = calcularPosicion({ left: 0, top: 90, bottom: 110, width: 300 }, 200, 0, 200);
     expect(pocoEspacio.maxHeight).toBe(100);
   });
+
+  describe("reservaAbajo (OL-182, bitácora 217: la lista nunca tapa la barra de acciones)", () => {
+    it("sin reservaAbajo (por omisión, 0), se comporta exactamente como antes", () => {
+      const campo = { left: 20, top: 100, bottom: 140, width: 300 };
+      expect(calcularPosicion(campo, 800, 0, 800)).toEqual(calcularPosicion(campo, 800, 0, 800, 0));
+    });
+
+    it("con reservaAbajo, se achica pero sigue abriendo hacia abajo si aún cabe", () => {
+      // Sin reserva, 300 px de sobra (pero el tope ya la deja en 260); con la barra "Agregar" (56 px + 8 de
+      // respiro = 64) reservados, quedan 236 -sigue abriendo hacia abajo, y ahora sí se nota el achique.
+      const campo = { left: 20, top: 150, bottom: 192, width: 350 };
+      const sinReserva = calcularPosicion(campo, 500, 0, 800);
+      expect(sinReserva.maxHeight).toBe(260);
+      const conReserva = calcularPosicion(campo, 500, 0, 800, 64);
+      expect(conReserva.top).toBe(196);
+      expect(conReserva.bottom).toBeUndefined();
+      expect(conReserva.maxHeight).toBe(236);
+      expect(conReserva.maxHeight).toBeLessThan(sinReserva.maxHeight);
+    });
+
+    it("puede forzar la apertura hacia arriba cuando sin reservaAbajo habría abierto hacia abajo", () => {
+      const campo = { left: 20, top: 160, bottom: 200, width: 350 };
+      // Sin reserva: 500-200-8=292, abre abajo.
+      const sinReserva = calcularPosicion(campo, 500, 0, 500);
+      expect(sinReserva.top).toBeDefined();
+      expect(sinReserva.bottom).toBeUndefined();
+      // Con una barra que reserva 250 px: 292-250=42 (<120) y arriba hay 160-0-8=152 (>42): abre arriba, sin
+      // pisar jamás la reserva.
+      const conReserva = calcularPosicion(campo, 500, 0, 500, 250);
+      expect(conReserva.top).toBeUndefined();
+      expect(conReserva.bottom).toBeDefined();
+      expect(conReserva.maxHeight).toBe(152);
+    });
+
+    it("la lista NUNCA se estira más allá de lo que deja la reserva (el defecto reportado por el founder)", () => {
+      // Tres resultados largos necesitarían ~220 px; con la barra (64) sobre el teclado, solo hay 100 -la lista
+      // se achica a eso, nunca "260 de sobra" tapando la barra.
+      const p = calcularPosicion({ left: 20, top: 480, bottom: 520, width: 350 }, 844, 0, 844, 64);
+      expect(p.maxHeight).toBeLessThanOrEqual(844 - 520 - 8 - 64);
+    });
+  });
 });
 
 describe("tocoDentro (OL-179, bitácora 214: un elemento en `dentro` no cuenta como \"fuera\")", () => {

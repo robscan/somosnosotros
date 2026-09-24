@@ -21,6 +21,10 @@ type Props = {
   ciudad?: Ciudad;
   /** La persona en el mapa (punto azul), si "Estoy aquí" ya se tocó. */
   yo?: (Punto & { vez: number }) | null;
+  /** Cuánto del mapa tapa, en px, algo pegado abajo (OL-182: la hoja "Agregar lugar", a media pantalla): el pin
+   *  y el centro se recentran con ese margen para quedar siempre en la parte de arriba, visible. 0 sin nada que
+   *  tape el mapa. */
+  paddingInferior?: number;
   /** Tocar un lugar registrado. */
   onLugar: (id: string) => void;
   /** Tocar un punto de interés del propio estilo de Mapbox (si el estilo lo expone; ver HojaDondeEs.tsx). */
@@ -104,12 +108,13 @@ function poiTocado(mapa: MapaGL, e: MapMouseEvent): { nombre: string; punto: Pun
  * instancia, capas por datos, tema claro forzado) para no tocar `Mapa.tsx` mientras OL-174 trabaja ahí a la vez
  * (instrucción del gestor). Documentado en la bitácora 208 como algo por unificar más adelante.
  */
-export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarEn, ciudad = CIUDAD_INICIAL, yo = null, onLugar, onPoi, onPunto, onArrastre }: Props) {
+export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarEn, ciudad = CIUDAD_INICIAL, yo = null, paddingInferior = 0, onLugar, onPoi, onPunto, onArrastre }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const pinRef = useRef<Marker | null>(null);
   const yoRef = useRef<Marker | null>(null);
   const arrastrando = useRef(false);
+  const paddingAplicado = useRef(0);
   const onLugarRef = useRef(onLugar);
   const onPoiRef = useRef(onPoi);
   const onPuntoRef = useRef(onPunto);
@@ -205,7 +210,9 @@ export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarE
     });
   }, [estado, lugares]);
 
-  // El pin del evento: se crea al aparecer la primera selección y luego solo se mueve (arrastrable siempre).
+  // El pin del evento: se crea al aparecer la primera selección y luego solo se mueve (arrastrable siempre). El
+  // recentrado (nuevo o movido) siempre respeta `paddingInferior` -la hoja "Agregar lugar" (OL-182) no debe tapar
+  // el pin- y también se repite si SOLO cambia el padding (la hoja se abre/achica/crece con el mismo punto).
   useEffect(() => {
     const mapa = mapaRef.current;
     if (estado !== "listo" || !mapa) return;
@@ -214,6 +221,7 @@ export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarE
       pinRef.current = null;
       return;
     }
+    const padding = { top: 0, bottom: paddingInferior, left: 0, right: 0 };
     let cancelado = false;
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
@@ -228,19 +236,32 @@ export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarE
           onArrastreRef.current({ lat: p.lat, lng: p.lng });
         });
         pinRef.current = pin;
-        mapa.flyTo({ center: [seleccion.lng, seleccion.lat], zoom: Math.max(mapa.getZoom(), 16), duration: 500 });
+        mapa.flyTo({ center: [seleccion.lng, seleccion.lat], zoom: Math.max(mapa.getZoom(), 16), duration: 500, padding });
       } else {
         const actual = pinRef.current.getLngLat();
-        if (Math.abs(actual.lat - seleccion.lat) > 1e-7 || Math.abs(actual.lng - seleccion.lng) > 1e-7) {
-          pinRef.current.setLngLat([seleccion.lng, seleccion.lat]);
-          mapa.flyTo({ center: [seleccion.lng, seleccion.lat], zoom: Math.max(mapa.getZoom(), 16), duration: 500 });
+        const movido = Math.abs(actual.lat - seleccion.lat) > 1e-7 || Math.abs(actual.lng - seleccion.lng) > 1e-7;
+        if (movido) pinRef.current.setLngLat([seleccion.lng, seleccion.lat]);
+        // Se recentra si el punto cambió, o si solo cambió `paddingInferior` (la hoja acaba de abrirse/crecer):
+        // en los dos casos el pin puede quedar tapado si no se ajusta.
+        if (movido || paddingInferior !== paddingAplicado.current) {
+          mapa.flyTo({ center: [seleccion.lng, seleccion.lat], zoom: Math.max(mapa.getZoom(), 16), duration: 400, padding });
         }
       }
+      paddingAplicado.current = paddingInferior;
     });
     return () => {
       cancelado = true;
     };
-  }, [estado, seleccion]);
+  }, [estado, seleccion, paddingInferior]);
+
+  // Sin selección todavía (recién se abrió "Agregar lugar", antes de tocar el mapa): el CENTRO por omisión -la
+  // ciudad de contexto- también debe quedar visible arriba de la hoja, no a la mitad de la pantalla tapado por
+  // ella (doc 43, segunda versión: "el pin y el centro queden en la parte visible").
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    if (estado !== "listo" || !mapa || seleccion) return;
+    mapa.easeTo({ center: [centrarEn.lng, centrarEn.lat], zoom: ciudad.zoom, padding: { top: 0, bottom: paddingInferior, left: 0, right: 0 }, duration: 300 });
+  }, [estado, seleccion, paddingInferior, centrarEn.lat, centrarEn.lng, ciudad.zoom]);
 
   // La persona en el mapa (punto azul), si ya se ubicó.
   useEffect(() => {

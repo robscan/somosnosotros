@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { LugarSugerido } from "@/lib/buscarLugares";
 import type { LugarResumen } from "@/lib/lugares";
-import { altoTeclado, combinarResultados, decidirGuardado, modoDePantalla } from "./dondeEsPantalla";
+import { altoTeclado, combinarResultados, decidirGuardado, direccionAGuardar, modoDePantalla, puedeGuardarLugar } from "./dondeEsPantalla";
 
 function lugar(id: string, nombre: string): LugarResumen {
   return { id, nombre, tipo: "museo", direccion: "Calle 1", lat: 22.15, lng: -100.97, portada: null };
@@ -69,5 +69,39 @@ describe("altoTeclado", () => {
   });
   it("una diferencia de un pixel (redondeo) no cuenta como teclado", () => {
     expect(altoTeclado(844, { height: 843.5, offsetTop: 0 })).toBe(0);
+  });
+});
+
+describe("puedeGuardarLugar (OL-182, bitácora 217: nunca guardar un punto inventado)", () => {
+  it("con nombre y punto: sí", () => {
+    expect(puedeGuardarLugar({ nombre: "Cochera de Lupe", punto: { lat: 22.15, lng: -100.97 } })).toBe(true);
+  });
+  it("sin punto (el defecto reportado: guardaba un punto que nadie eligió): no, aunque haya nombre", () => {
+    expect(puedeGuardarLugar({ nombre: "Cochera de Lupe", punto: null })).toBe(false);
+  });
+  it("sin nombre (solo espacios): no, aunque haya punto", () => {
+    expect(puedeGuardarLugar({ nombre: "   ", punto: { lat: 22.15, lng: -100.97 } })).toBe(false);
+  });
+  it("sin nombre y sin punto: no", () => {
+    expect(puedeGuardarLugar({ nombre: "", punto: null })).toBe(false);
+  });
+});
+
+describe("direccionAGuardar (OL-182, corrección del gestor: lo escrito a mano no se pierde al guardar)", () => {
+  it("con texto escrito a mano (corrigiendo lo que trajo la sugerencia), gana lo escrito", () => {
+    expect(direccionAGuardar("Av. Industrias 101-A, Zona Industrial", "Av. Industrias 101, Zona Industrial")).toBe("Av. Industrias 101-A, Zona Industrial");
+  });
+  it("recorta el texto escrito", () => {
+    expect(direccionAGuardar("  Villerías 2, Centro  ", "")).toBe("Villerías 2, Centro");
+  });
+  it("con el campo vacío, usa la dirección ya resuelta", () => {
+    expect(direccionAGuardar("", "Villerías 2, Centro")).toBe("Villerías 2, Centro");
+    expect(direccionAGuardar("   ", "Villerías 2, Centro")).toBe("Villerías 2, Centro");
+  });
+  it('con "Ubicando…" (el reverse geocoding no terminó todavía), usa la resuelta, nunca el texto de espera', () => {
+    expect(direccionAGuardar("Ubicando…", "Villerías 2, Centro")).toBe("Villerías 2, Centro");
+  });
+  it("sin nada en ningún lado, cadena vacía", () => {
+    expect(direccionAGuardar("", "")).toBe("");
   });
 });
