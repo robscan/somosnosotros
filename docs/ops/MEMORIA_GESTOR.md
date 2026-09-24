@@ -347,3 +347,14 @@ Esto es una instantanea, no un estado en vivo. Revalidar antes de actuar.
   (OL-167); el encargo ya decía «cd al árbol en cada comando» y aun así pasó. Desde ahora el encargo incluye la
   comprobación al cierre («`git -C /home/user/somosnosotros status --short` vacío») y el gestor la repite antes
   de aceptar.
+- 2026-09-24, uniones con `resolver_ol.py`: el guion supone que la cabecera «Last updated» de la rama es UNA línea
+  que termina con la de la base. Dos operadores la partieron en varias líneas (párrafo envuelto a 120 columnas) y el
+  guion abortó; además el bloque «## Ahora» choca cuando dos ramas insertan su entrada arriba. Resolución a mano
+  que sirve: cabecera = trozo de la rama (hasta «; antes, », unido en una línea) + «; antes, » + cabecera de main
+  completa; «Ahora» = entrada de la rama y después las de main; comprobar «faltan de main: 0» antes de empujar. En
+  el encargo, pedir la cabecera en una sola línea. Un choque en código (dos piezas sobre `lugares/acciones.ts`) se
+  resuelve leyendo las dos intenciones, y la prueba que dejó de valer se ajusta en un commit propio con el porqué.
+- 2026-09-24, hallazgo «fuera de alcance» de un operador: si toca el entregable de la pieza (el botón único de
+  OL-179 perdía el toque), entra en la pieza aunque el defecto sea anterior. Leer el código antes de decidirlo,
+  no aceptar «a veces» sin causa.
+
