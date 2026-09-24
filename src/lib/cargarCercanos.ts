@@ -17,9 +17,9 @@ export const LIMITE_CERCANOS = 200;
 
 export type RespuestaCercanos = { ok: true; eventos: EventoAgenda[]; asistencias: Decididas } | { ok: false; error: string };
 
-// Mismo contrato que la agenda principal y que Nuevos: sin campos de dirección exacta ni migraciones nuevas
-// (deliberadamente un archivo propio, no una función compartida con cargarNuevos.ts: los limites y filtros de
-// cada pestaña son distintos y así ninguna de las dos piezas que tocan esa zona choca con la otra).
+// Mismo contrato que la agenda principal: sin campos de dirección exacta ni migraciones nuevas
+// (archivo propio, con sus propios límites y filtros; la carga de «Nuevos» que existía al lado se retiró en OL-166
+// porque ninguna pantalla la usaba desde que Nuevos vive como carril en Inicio).
 export const CAMPOS_CERCANOS = "id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))";
 
 const fecha = z.string().datetime({ offset: true });
