@@ -1,8 +1,9 @@
 /* «Mis artistas» en Mi perfil (OL-154; tarjeta repuesta en OL-163; sin botón de texto, corrección del founder
    sobre esa misma pieza): mismo rótulo en mayúsculas que Ajustes, tarjetas iguales para uno o varios artistas
-   (región común). La tarjeta es un grid de dos columnas — el enlace (`.frente`) y el compartir, hermanos, nunca
-   uno anidado dentro del otro — mismo patrón que `Renglon.module.css` (`.renglon`/`.frente`); el círculo de
-   compartir usa el canon de `ui/Ficha.module.css` (`.accionIcono`), sin una clase propia para la misma idea. */
+   (región común). La tarjeta es un grid de tres columnas — el enlace (`.frente`), "Publicar" (OL-175, doc 44) y
+   el compartir, hermanos, nunca uno anidado dentro del otro — mismo patrón que `Renglon.module.css`
+   (`.renglon`/`.frente`); el círculo de compartir usa el canon de `ui/Ficha.module.css` (`.accionIcono`), sin una
+   clase propia para la misma idea. */
 .seccion {
   margin: var(--espacio-4) 0 var(--espacio-5);
 }
@@ -17,14 +18,28 @@
 }
 .tarjeta {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  column-gap: var(--espacio-3);
+  column-gap: var(--espacio-2);
   padding: var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
   margin-bottom: var(--espacio-2);
+}
+/* "Publicar" (novedad, OL-175): texto en negrita del color de acción, como `.cambiar` del canon de formularios,
+   sin importar ese módulo aparte solo por esta clase. */
+.publicar {
+  flex: none;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-1);
+  display: inline-flex;
+  align-items: center;
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
 }
 .frente {
   display: grid;
