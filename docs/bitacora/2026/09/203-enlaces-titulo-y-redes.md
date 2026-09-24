@@ -1,6 +1,8 @@
 # 203 · Mixcloud reconocido y título editable de cada enlace (OL-168)
 
-**Fecha:** 2026-09-24 · **Rama:** `enlaces-titulo-y-redes`, desde `origin/main`.
+**Fecha:** 2026-09-24 · **Rama:** `enlaces-titulo-y-redes`, desde `origin/main`. Segunda entrega:
+`git merge origin/ficha-boton-compartir-y-reparto` (OL-167, SHA `56db73e`, PR #202) para corregir el
+hallazgo 1 sobre el `Ficha.module.css`/`lib/ficha.ts` ya al día.
 
 ## Causa
 
@@ -95,6 +97,109 @@ propio, así que caen en el `default` que ya devuelve el icono genérico (`Icono
 "sitio"»): no hizo falta tocar el componente ni dibujar ningún glifo. Confirmado en las capturas 01/03/05
 (Mixcloud y Deezer con el icono de cadena genérico).
 
+## Correcciones del gestor (segunda entrega)
+
+Devuelta con cinco hallazgos sobre la primera entrega (`e96e8d3`). Antes de corregir el 1: `git fetch origin
+&& git merge origin/ficha-boton-compartir-y-reparto` (OL-167, SHA `56db73e`, PR #202 — «botón Compartir sin
+envolvente y reparto de acciones a partir de 3», bitácora 202) — único choque, `docs/ops/OPEN_LOOPS.md`
+(las dos entradas OL-168/OL-167 y los dos trozos de «Last updated» conservados, sin perder ninguna línea de
+`main`); `Ficha.module.css`, `lib/ficha.ts` y los `page.tsx` de artistas/lugares llegaron con la versión de
+OL-167 sin más choques.
+
+**1) BLOQUEANTE — la etiqueta larga se salía de la pantalla en la ficha (36.7px medidos en la entrega
+anterior).** `Ficha.module.css`: nueva clase `.accionEtiqueta` en el `<span>` que envuelve el texto de cada
+`.accion` (antes texto suelto) — `display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+overflow:hidden; overflow-wrap:anywhere; white-space:normal`, envuelve a dos líneas y corta con puntos
+suspensivos; el círculo y el `min-width:64px` de `.accion` no se tocaron. Se aplicó el `<span>` en
+`src/app/artistas/[id]/page.tsx` y `src/app/lugares/[id]/page.tsx` (los dos usos de `etiquetaEnlace(r)`
+dentro de `.acciones`); no se tocó `src/app/eventos/[id]/page.tsx` («Compartir», «A mi calendario», «Cómo
+llegar»: etiquetas fijas y cortas, sin riesgo, fuera del alcance de esta pieza).
+
+Ancho de la etiqueta: 80px es el máximo a 390px (la propia cuenta del gestor: 390 − 2×20px de `--gutter` −
+3×16px de `gap`, entre 4 ≈ 75.5px). Medido a 320 y 375 ese mismo 80px fijo se salía (ver más abajo), así que
+en `.accionesRepartidas` (3–4 círculos sin desplazarse) el ancho es `min(80px, calc((100vw - 88px) / 4))`:
+la misma cuenta pero con el ancho real de la pantalla, nunca más de 80px. En `.accionesCarril` y con 1-2
+(sin clase de reparto) se queda fijo en 80px: esos círculos se desplazan o sobra espacio, no necesitan
+encoger.
+
+Medido con `getBoundingClientRect()`/`scrollWidth` en la ficha de artista, `?n=2|3|4|6` enlaces (todos con
+título de 28–30 caracteres) a 320, 375 y 390px — 12 combinaciones:
+
+| n\\ancho | 320px | 375px | 390px |
+|---|---|---|---|
+| 2 | sin desborde (max 180) | sin desborde (max 180) | sin desborde (max 180) |
+| 3 | sin desborde (max 300) | sin desborde (max 355) | sin desborde (max 370) |
+| 4 (`accionesRepartidas`) | **4px** de un hijo (ver abajo) | sin desborde (max 355) | sin desborde (max 370) |
+| 6 (`accionesCarril`) | hijos fuera del viewport, **por diseño** (ver abajo) | ídem | ídem |
+
+- **n=6 (carril):** `.acciones` tiene `overflow-x:auto` en las dos variantes (`Ficha.module.css`, sin tocar);
+  con más de 4 el carril se desplaza y el círculo siguiente asoma a propósito («el carril sigue asomando el
+  siguiente círculo», pedido del gestor) — confirmado: sigue asomando en las tres anchuras, sin scroll de
+  página (`scrollWidth === clientWidth` en los tres casos).
+- **n=4 a 320px, 4px de un hijo:** con el título recortado a `min(80, (320-88)/4) = 58px` el 4.º círculo
+  aún se sale 4px del viewport (324 vs 320). Medido que es **previo a esta pieza y ajeno al título**: con
+  las mismas cuatro etiquetas reemplazadas por nombres de red cortos («Mixcloud», «Instagram», «Vimeo»,
+  «Facebook», sin título propio) el desborde es idéntico (4 círculos de exactamente 64px — el propio
+  `min-width` de `.accion`, no su contenido — + 3 gaps de 16px = 304px, contra 280px de hueco disponible a
+  320px: 4×64 ya no cabe con el `min-width` actual, tenga o no título el enlace). No se tocó (el gestor pidió
+  explícitamente no cambiar el `min-width` de `.accion`, que es de OL-167); es de `.acciones`, que ya
+  desplaza internamente (`overflow-x:auto`) — `scrollWidth === clientWidth` en el documento (320) en los tres
+  casos, así que **no hay scroll horizontal de página**, solo 4px del último círculo dentro del propio carril
+  de `.acciones`. Queda anotado para quien decida el ajuste (bajar `min-width` unos px, o correr el umbral de
+  `accionesCarril` a 4 en vez de 5 a partir de cierto ancho); no es un bloqueante de esta pieza porque no lo
+  causa el título.
+
+Capturas **06** (4 enlaces con título al tope, 390) y **07** (lo mismo, 320) nuevas; **03** reemplazada por
+una sin desborde.
+
+**2) Sobreanidación en el formulario.** `SelectorEnlaces.module.css`: se quitaron `border`, `border-radius`
+y el `padding` propios de `.enlace` — el renglón es la rejilla `24px minmax(0, 1fr) auto` a secas (icono,
+`Campo`, ✕); la única caja visible es la del campo (`ui/Campo`, `.control`). Los renglones se separan con
+`.lista { gap: var(--espacio-4) }` (antes `--espacio-1`, 4px, pensado para cuando cada uno ya traía su
+propio borde) — el mismo criterio que `.renglones` del canon (`ui/FormularioCanon.module.css`): un `gap` en
+el contenedor de la lista, sin borde propio en cada renglón repetido. El icono se realinea con
+`margin-top: 20px` (antes offset por el `padding` del contenedor que ya no existe) para quedar a la altura
+del campo, no de la etiqueta «Título». Confirmado con `Read` sobre la captura 01: una sola caja por enlace,
+no dos anidadas.
+
+**3) Dos cruces juntas.** `ui/Campo.tsx`: prop nueva `sinLimpiar?: boolean` (por defecto `false`: nadie más
+pierde su ✕ de vaciar) — con ella, `Campo` no monta `ui/Limpiar` dentro de la caja del campo.
+`SelectorEnlaces.tsx` la pasa en el `Campo` del título: la única ✕ del renglón es la de «quitar el enlace»,
+fuera del campo. `omitir()` también deja fuera `sinLimpiar` antes de esparcir el resto sobre el `<input>`
+(mismo arreglo que ya llevaba `mostrarContador`, mismo motivo: si no, se cuela como atributo DOM
+desconocido). Vaciar el título a mano (Retroceso/seleccionar y borrar) sigue funcionando: nueva prueba
+directa en `enlaces.test.ts`, `limpiarTituloEnlace("") → undefined` (y `"   "` y `undefined`), más las que ya
+probaban el recorte a 30 y el colapso de saltos de línea — 15 pruebas en el archivo (eran 13).
+
+**4) El título de 30 caracteres no cabía en su campo.** Al quitar el borde/padding de `.enlace` (hallazgo 2)
+y la ✕ interior (hallazgo 3) el campo ganó ancho. Medido en el enlace real de la captura 01/02 («Recital en
+vivo del 12 de sept», 30 caracteres, `vimeo`, tercer enlace):
+
+| Ancho | `input.clientWidth` | `input.scrollWidth` | ¿Cabe entero? |
+|---|---|---|---|
+| 390px | 222px | 222px | **sí**, sin scroll interno |
+| 320px | 152px | 216px | no, hace scroll interno del input (como cualquier campo) |
+
+A 390px un título real de 30 caracteres se ve completo (antes, con la doble caja, se cortaba: «Fotos del
+taller de cerá…»; ver captura 01 nueva). A 320px no cabe entero y el input se desplaza por dentro, tal como
+pidió el gestor si no cabe («que el texto haga scroll dentro del input»), sin cortar palabras a la mitad
+(scroll de texto nativo del `<input>`, no recorte de caracteres) y sin romper la rejilla.
+
+También se midió el peor caso posible — 30 letras anchas repetidas («MMMMMMMMMMMMMMMMMMMMMMMMMMMMMM», la
+letra más ancha de la fuente, 30 veces seguidas): `clientWidth` 252px a 390px y 182px a 320px, contra
+`scrollWidth` 400px en los dos — no cabe entero en ninguno de los dos anchos. Es una medida honesta, no un
+hallazgo por corregir: ninguna palabra real tiene esa forma (ni el ejemplo de arriba, un título real de 30
+caracteres con palabras normales, la necesita), y un campo que comparte renglón con un icono de 24px y un
+botón ✕ de 48px no puede alojar 30 letras anchas a tamaño legible en una pantalla de 390px sin encoger la
+letra o quitar el icono/botón — ninguna de las dos cosas se pidió. Con el peor caso el campo hace scroll
+interno igual que a 320px con el título real, sin desbordar la rejilla ni la página (comprobado con la misma
+medición de `scrollWidth`/`clientWidth` del documento).
+
+**5) Capturas de página completa.** Las cinco capturas del formulario se rehicieron con viewport 390×844
+(y una a 320×844) **sin** `fullPage`, desplazando la página con `scrollIntoView` hasta «Redes y contacto»
+cuando hacía falta, una captura por estado (no una tira larga). `07-ficha-artista-cuatro-enlaces-320.png` es
+la única fuera de 390: a 320px por pedido explícito del hallazgo 1.
+
 ## Pruebas
 
 ```
@@ -102,76 +207,54 @@ npm run lint && npm run typecheck && npm test && npm run build
 ```
 
 Verdes: lint 0 errores (1 warning preexistente sin relación, `docs/diseno/logotipo/iconos-sn.mjs`);
-typecheck limpio; **1072 pruebas, 89 archivos**, todas en verde (incluye las 13 de `enlaces.test.ts`, antes
-8); build completo, sin la ruta del arnés (ver abajo) en el árbol de rutas final. `git diff
-origin/main..HEAD | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+'` no encontró ninguna dirección.
+typecheck limpio; **1075 pruebas, 89 archivos** (eran 1072/89 antes del merge con OL-167 y de las dos pruebas
+nuevas de `limpiarTituloEnlace`), todas en verde; build completo, sin la ruta del arnés en el árbol de rutas
+final. `git diff origin/main..HEAD | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+'` no encontró ninguna
+dirección.
 
-## Capturas reales (`docs/rediseno/capturas-203/`), 390×844
+## Capturas reales (`docs/rediseno/capturas-203/`), viewport 390×844 (07: 320×844), sin `fullPage`
 
 Sin Supabase en este árbol: arnés temporal `src/app/arnes203-temporal/` (datos inventados — el artista «Los
-Vecinos» y el lugar «Casa 1100» — con los componentes reales `FormularioArtista`, `FormularioLugar` y el
-bloque de «Enlaces» de la ficha de artista, con los mismos `Ficha.module.css`/`lib/ficha.ts` que usa la
-página real, solo leídos, no tocados), servido con `next build && next start` en el puerto 4203 y capturado
-con el Chromium de `/opt/pw-browsers` vía `playwright-core` (instalado con `npm i --no-save` en el
-scratchpad de la sesión, nunca en el repo). **Se borró entero antes de comitear** (no aparece en `git
-status`; el build final, corrido después de borrarlo, no lista ninguna ruta `/arnes203-temporal/…`).
-`document.fonts.check('700 20px "Bricolage Grotesque"')` → `true`.
+Vecinos» y el lugar «Casa 1100», más una ruta `?n=` para elegir 2/3/4/6 enlaces y una ruta aparte para el
+título de letras anchas — con los componentes reales `FormularioArtista`, `FormularioLugar` y el bloque de
+«Enlaces» de la ficha de artista, con el `Ficha.module.css`/`lib/ficha.ts` ya corregidos), servido con
+`next build && next start` en el puerto 4203 y capturado con el Chromium de `/opt/pw-browsers` vía
+`playwright-core` (instalado con `npm i --no-save` en el scratchpad de la sesión, nunca en el repo). **Se
+borró entero antes de comitear** (no aparece en `git status`; el build final, corrido después de borrarlo,
+no lista ninguna ruta `/arnes203-temporal/…`). `document.fonts.check('700 20px "Bricolage Grotesque"')` →
+`true`.
 
-- **`01-formulario-artista-tres-enlaces.png`** (página completa, sin nada con foco): los tres enlaces
-  pedidos — Mixcloud reconocido sin título propio (icono genérico, etiqueta «Mixcloud», campo Título vacío
-  mostrando el prellenado), uno con título editado («Fotos del taller de cerámica», 28/30) y uno con el
-  título al tope exacto («Recital en vivo del 12 de sept», 30/30, contador visible). Debajo, «Otro enlace»
-  (con 3 de 8 enlaces, el campo sigue ahí) y la descripción.
-- **`02-formulario-artista-titulo-con-foco.png`**: mismo estado, con el campo Título del segundo enlace (el
-  editado) con foco — borde morado del canon, contador 28/30 visible.
-- **`03-ficha-artista-enlaces.png`**: la ficha de «Los Vecinos» con los tres botones de «Enlaces»: Mixcloud
-  (icono genérico, etiqueta automática «Mixcloud»), el de título editado («Fotos del taller de cerámica») y
-  el del tope («Recital en vivo del 12 d…», ver límite abajo).
+- **`01-formulario-artista-tres-enlaces.png`** (viewport, desplazado a «Redes y contacto», sin nada con
+  foco): los tres enlaces pedidos — Mixcloud reconocido sin título propio (icono genérico, etiqueta
+  «Mixcloud»), uno con título editado («Fotos del taller de cerámica», 28/30, completo, sin cortar) y uno con
+  el título al tope exacto («Recital en vivo del 12 de sept», 30/30, completo). Una sola caja por enlace (el
+  campo), sin borde envolvente; una sola ✕ por renglón (quitar, a la derecha).
+- **`02-formulario-artista-titulo-con-foco.png`**: mismo estado, con el campo Título del segundo enlace con
+  foco — borde morado del canon, contador 28/30 visible.
+- **`03-ficha-artista-enlaces.png`** (reemplaza la de la primera entrega, que se salía 36.7px): la ficha de
+  «Los Vecinos» con los tres botones de «Enlaces» — Mixcloud, el de título editado y el del tope, los tres
+  dentro de su círculo, sin cortarse por el borde de la pantalla.
 - **`04-formulario-lugar-enlace-titulo.png`**: «Casa 1100» con un enlace (Vimeo) con título editado
-  («Recorrido por la casa»), mismo `Campo` y misma rejilla que en artistas (el componente es compartido).
-- **`05-formulario-artista-ocho-enlaces.png`** (extra, para la medición al tope de longitud que pide el
-  encargo: título de 30 caracteres y 8 enlaces en una misma captura — 01/02 ya cubren el título al tope, esta
-  cubre los 8 enlaces): ocho enlaces pegados (los tres de antes más Facebook, YouTube, Spotify, Deezer y
-  WhatsApp), el campo «Otro enlace» ya no aparece (estado E4 de doc 09, `LIMITE_ENLACES = 8`), sin scroll
-  horizontal ni ningún renglón fuera de su tarjeta.
-
-Medido con `getBoundingClientRect()` en las cinco pantallas: `document.documentElement.scrollWidth` igual a
-`clientWidth` (390) en todas — sin scroll horizontal de página en ningún caso.
-
-### Límite encontrado: el título largo puede salirse de su círculo en la ficha (no corregido aquí)
-
-En `03-ficha-artista-enlaces.png`, con tres enlaces y al menos uno de título largo, el tercero («Recital en
-vivo del 12 de sept», 30 caracteres) se ve cortado por el borde derecho de la pantalla. Medido:
-
-```
-scrollWidth/clientWidth de <html> y <body>: 390 (igual) — sin scroll horizontal de página.
-Tercer botón de acción ("Recital en vivo del 12 de sept"):
-  left: 267.8, right: 426.7 (viewport: 390) → el propio botón se sale 36.7px de la ventana.
-```
-
-La página no se desplaza (el `scrollWidth` no crece), pero la etiqueta de ese botón sí queda fuera de lo
-visible: `Ficha.module.css` reparte los círculos de `.accionesRepartidas` a ancho igual y su etiqueta
-(`.accion`) no envuelve ni recorta el texto — funcionaba porque ningún nombre de red pasaba de 11 caracteres
-(«Apple Music»); un título de hasta 30 no cabe ahí con 2 a 4 enlaces por fila. `Ficha.module.css` y
-`lib/ficha.ts` son de OL-167 (que los está tocando en paralelo) y esta pieza no los tocó, así que no se
-corrigió aquí: **para el gestor**, la corrección (recortar con elipsis la etiqueta de `.accion` a partir de
-cierto ancho, o angostar la fuente del contador) va en ese archivo y conviene coordinarla con OL-167 antes
-de integrar. Mientras tanto, el título completo (hasta 30 caracteres) se guarda y se puede leer siempre
-entrando al enlace; el problema es solo visual, en la ficha, con 2 a 4 enlaces y al menos uno largo.
+  («Recorrido por la casa»), mismo `Campo` y misma rejilla plana que en artistas.
+- **`05-formulario-artista-ocho-enlaces.png`**: ocho enlaces pegados, el campo «Otro enlace» ya no aparece
+  (estado E4 de doc 09, `LIMITE_ENLACES = 8`), sin scroll horizontal ni cajas anidadas.
+- **`06-ficha-artista-cuatro-enlaces-390.png`**: cuatro enlaces con título de 28–30 caracteres cada uno, los
+  cuatro círculos repartidos, ninguna etiqueta fuera de su círculo.
+- **`07-ficha-artista-cuatro-enlaces-320.png`**: lo mismo a 320px — sin scroll horizontal de página (el
+  hallazgo de 4px del último círculo queda dentro del propio carril de `.acciones`, documentado arriba).
 
 ## Lo que no se tocó
 
-- `src/components/ui/Ficha.module.css` y `src/lib/ficha.ts` (alcance de OL-167, que los está tocando en
-  paralelo) — el hallazgo de arriba queda documentado, no corregido.
+- El círculo (`.accionIcono`) ni el `min-width: 64px` de `.accion` en `Ficha.module.css` (pedido explícito
+  del gestor); el desborde de 4px a 320px con 4 enlaces que causa ese `min-width` (ajeno al título, medido
+  arriba) queda anotado, no corregido.
+- `src/app/eventos/[id]/page.tsx` («Compartir», «A mi calendario», «Cómo llegar»): etiquetas fijas y cortas,
+  sin título editable, fuera del alcance de esta pieza; no comparten fila con enlaces de título largo.
 - El flujo de reconocer lo pegado (`reconocerEnlace`, `@usuario`, teléfono, el límite de 8, los avisos en
   línea): sin cambios.
-- Las 13 redes que ya había en `REDES`: ninguna se quitó ni cambió de dominio o etiqueta.
-- No hizo falta migración (medido arriba) ni tocar `src/app/artistas/acciones.ts` ni
-  `src/app/lugares/acciones.ts`: ambos ya delegaban toda la validación de `enlaces` en
-  `enlacesDesdeJson`/`normalizarRedes`, que es donde vive el cambio.
-- `src/app/artistas/[id]/page.tsx` y `src/app/lugares/[id]/page.tsx`: siguen llamando a `etiquetaEnlace(r)`
-  tal cual; como esa función ya resuelve el título ahí adentro, la ficha real muestra el título editado sin
-  que estos archivos se tocaran.
+- Las 18 redes de `REDES` (13 de antes + 5 de esta pieza): ninguna se quitó ni cambió de dominio o etiqueta.
+- No hizo falta migración (medido en la primera entrega) ni tocar `src/app/artistas/acciones.ts` ni
+  `src/app/lugares/acciones.ts`.
 
 ## Cierre
 

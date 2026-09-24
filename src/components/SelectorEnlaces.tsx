@@ -64,6 +64,10 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
                 mostrarContador
                 ayuda={e.url.replace(/^https?:\/\/(www\.)?/, "")}
                 autoComplete="off"
+                // La ✕ de "quitar el enlace" ya vive fuera del campo, a 8px: con la ✕ de "vaciar" del campo
+                // ahí también se confundían (hallazgo del gestor). Vaciar el título a mano se sigue pudiendo
+                // con Retroceso; vacío = etiqueta automática (limpiarTituloEnlace en el servidor).
+                sinLimpiar
               />
               <button type="button" className={styles.quitar} onClick={() => quitar(e)} aria-label={`Quitar ${etiquetaEnlace(e)}`}>
                 <IconoCerrar width={18} height={18} />

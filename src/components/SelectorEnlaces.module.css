@@ -6,27 +6,30 @@
   margin-bottom: var(--espacio-4);
 }
 
-/* 1. Reconocidos */
+/* 1. Reconocidos. Sin tarjeta propia (corrección del gestor, OL-168): la única caja es la del campo del
+   título (`ui/Campo`, `.control`); antes `.enlace` traía su propio borde alrededor, dos cajas anidadas. Los
+   renglones se separan solo con el espacio vertical de `.lista` (mismo criterio que `.renglones` del canon,
+   `ui/FormularioCanon.module.css`: sin borde propio en el contenedor de la lista, un `gap` hace la separación). */
 .lista {
   list-style: none;
   display: grid;
-  gap: var(--espacio-1);
+  gap: var(--espacio-4);
 }
 .enlace {
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) auto;
   align-items: start;
   column-gap: var(--espacio-3);
-  padding: var(--espacio-3) 0 var(--espacio-3) var(--espacio-3);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
 }
 .enlace > svg {
   color: var(--texto-suave);
-  margin-top: var(--espacio-3);
+  /* Alinea con la caja del campo (`.control`), no con la etiqueta "Título" de encima: alto de la etiqueta
+     más su margen (`ui/Campo.module.css`, `.etiqueta`). */
+  margin-top: 20px;
 }
 /* El campo del título (ui/Campo) es el segundo hijo de la rejilla: sin este min-width:0 la pista
-   minmax(0, 1fr) no basta, el input crece por su contenido y empuja el ✕ fuera de la tarjeta. */
+   minmax(0, 1fr) no basta, el input crece por su contenido y empuja el ✕ fuera del renglón. Sin margen
+   propio: el espacio entre renglones lo da `.lista`, no el campo (una sola fuente de espacio, no dos). */
 .enlace > *:nth-child(2) {
   min-width: 0;
   margin-bottom: 0;

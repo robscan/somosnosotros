@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { enlaceVisible, enlacesDesdeJson, etiquetaEnlace, LIMITE_TITULO_ENLACE, normalizarRedes, reconocerEnlace } from "./enlaces";
+import { enlaceVisible, enlacesDesdeJson, etiquetaEnlace, LIMITE_TITULO_ENLACE, limpiarTituloEnlace, normalizarRedes, reconocerEnlace } from "./enlaces";
 
 describe("reconocerEnlace", () => {
   it("reconoce la red por el dominio, con o sin https", () => {
@@ -54,6 +54,18 @@ describe("reconocerEnlace", () => {
     expect(reconocerEnlace("")).toBeNull();
     expect(reconocerEnlace("hola")).toBeNull();
     expect(reconocerEnlace("123")).toBeNull();
+  });
+});
+
+describe("limpiarTituloEnlace (OL-168, hallazgo del gestor: vaciar el título a mano sigue funcionando)", () => {
+  it("un título vacío (borrado a mano en el campo, sin la ✕ de vaciar) queda sin título: undefined, no ''", () => {
+    expect(limpiarTituloEnlace("")).toBeUndefined();
+    expect(limpiarTituloEnlace("   ")).toBeUndefined();
+    expect(limpiarTituloEnlace(undefined)).toBeUndefined();
+  });
+  it("recorta a 30, colapsa espacios y saltos de línea", () => {
+    expect(limpiarTituloEnlace("Mi\ncanal  favorito ".padEnd(50, "x"))).toHaveLength(LIMITE_TITULO_ENLACE);
+    expect(limpiarTituloEnlace("Mi\ncanal")).toBe("Mi canal");
   });
 });
 

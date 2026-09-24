@@ -374,7 +374,9 @@ export default async function FichaArtista({ params, searchParams }: Params) {
                 <span className={ficha.accionIcono}>
                   <IconoRed red={r.red} />
                 </span>
-                {etiquetaEnlace(r)}
+                {/* Título editable de hasta 30 caracteres (OL-168): a dos líneas con puntos suspensivos, nunca
+                    fuera de la pantalla (ficha.accionEtiqueta). */}
+                <span className={ficha.accionEtiqueta}>{etiquetaEnlace(r)}</span>
               </EnlaceExterno>
             ))}
           </div>

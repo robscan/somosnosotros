@@ -213,6 +213,30 @@
   width: 26px;
   height: 26px;
 }
+/* Etiqueta de una acción (OL-168, corrección del gestor): con el título editable de un enlace (hasta 30
+   caracteres) el texto ya no cabe siempre en una línea de "Cómo llegar" o "Instagram". Envuelve a dos líneas
+   como máximo y corta con puntos suspensivos, sin tocar el círculo ni el `min-width` de `.accion`. Con una
+   etiqueta corta ("Cómo llegar") que cabe en una línea, `-webkit-line-clamp` no la toca: se ve igual que antes.
+   80px es el ancho a 390px (el máximo que reparte `.accionesRepartidas`, doc `lib/ficha.ts`): 390 − 2×20px de
+   `--gutter` − 3×16px de `gap` de `.acciones`, entre 4 círculos ≈ 75.5px, 80 redondeado. En el carril
+   (`.accionesCarril`) y con 1-2 (sin clase de reparto) los círculos no cambian de ancho con la pantalla — se
+   desplazan o sobra espacio — así que 80px fijo. */
+.accionEtiqueta {
+  display: -webkit-box;
+  max-width: 80px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+/* Con 3-4 (`.accionesRepartidas`) los círculos SÍ se reparten a todo el ancho sin desplazarse: a 390px caben
+   4 etiquetas de 80px, pero a 320/375 no (medido, segundo hallazgo del gestor: 4 títulos al tope de 30
+   caracteres se salían 52px a 320px). La misma cuenta de arriba, pero con el ancho real de la pantalla
+   (`100vw`) en vez de 390 fijo, y sin pasar nunca de los 80px que ya fijó el founder para 390px. */
+.accionesRepartidas .accionEtiqueta {
+  max-width: min(80px, calc((100vw - 88px) / 4));
+}
 
 /* Título «Enlaces» sobre el carril de acciones (ficha de artista): sección propia, no `FichaLista.module.css`
    (`.lista h2`) — ese título es fijo/pegajoso para listas largas que se recorren; aquí es un carril corto, sin
