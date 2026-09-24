@@ -177,6 +177,5 @@ pieza), no algo que esta pieza haya escrito. Ninguna dirección de correo real e
 
 ## Cierre
 
-Commit local en `lugares-cabecera-fecha-app` con `Co-Authored-By: Claude Fable 5.1
-<noreply@anthropic.com>`; push a `origin/lugares-cabecera-fecha-app`. Sin PR (lo abre el gestor). `git status
---short` limpio, comprobado.
+Commit local en `lugares-cabecera-fecha-app` (con su atribución de rigor); push a
+`origin/lugares-cabecera-fecha-app`. Sin PR (lo abre el gestor). `git status --short` limpio, comprobado.
