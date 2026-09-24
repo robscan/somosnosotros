@@ -174,7 +174,13 @@
 }
 /* El círculo va en un `<span>` alrededor del icono (nunca todo el botón): la sombra de `ui/BotonRenglon.module.css`
    (.boton/.invitar), sin su borde de contorno. Círculo de 56 px con el icono más grande (founder, 2026-09-23,
-   OL-163: "se ven bien pero deben verse más presionables"): la sombra se queda exactamente igual, sin tocarla. */
+   OL-163: "se ven bien pero deben verse más presionables"): la sombra se queda exactamente igual, sin tocarla.
+   `border: none` y `appearance: none` (founder, 2026-09-23, corrección sobre «Mis artistas»): esta clase nació
+   para un `<span>` dentro de un `<a>`/`<button className={ficha.accion}>`, donde un `<span>` no trae borde
+   propio; al reusarla directo en el `<button>` de `CompartirFicha` (sin el `<a>` alrededor, en la tarjeta de
+   «Mis artistas»), salía el borde nativo del navegador (`2px outset`, `appearance: auto`) alrededor del círculo
+   — «elevación, no contorno». Sin efecto en los usos existentes (un `<span>` no tiene borde ni apariencia nativa
+   que quitar). */
 .accionIcono {
   display: grid;
   place-items: center;
@@ -182,10 +188,12 @@
   height: 56px;
   min-width: var(--toque-min);
   min-height: var(--toque-min);
+  border: none;
   border-radius: 50%;
   background: var(--fondo);
   color: var(--primario);
   box-shadow: var(--sombra);
+  appearance: none;
 }
 .accionIcono svg {
   width: 26px;

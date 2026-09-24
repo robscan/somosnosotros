@@ -80,6 +80,25 @@ Con la tarjeta ya de vuelta (punto 4), el founder corrigió el botón: fuera el 
 
 **`04-mi-perfil-dos-artistas.png` (reemplazada):** misma composición que antes (las tres variantes de Enlaces arriba, «Mi perfil» debajo), pero ahora cada tarjeta de «Mis artistas» termina en un círculo violeta elevado con el icono de compartir, sin ningún botón de texto — sin cambio en la foto, el nombre ni la disciplina de cada tarjeta.
 
+## Segunda corrección del founder (2026-09-23): aro oscuro alrededor del círculo de compartir
+
+Al abrir la captura 04, el gestor vio un aro oscuro de unos 2 px alrededor del círculo de compartir de «Mis artistas» — justo lo que el founder no quiere («elevación, no contorno»). Pidió averiguar el origen (¿`outline` de `:focus-visible` por un foco que dejó el arnés, o un `border` propio de `CompartirFicha`/su envoltorio?), medir `getComputedStyle` (`border`, `outline`, `box-shadow`) y anotarlo aquí.
+
+**Causa, medida con Chrome real antes de tocar nada** (`getComputedStyle` del botón, sin ningún elemento enfocado — `document.activeElement` era `BODY`):
+
+| | antes (con el aro) | después (corregido) |
+|---|---|---|
+| `border` | `2px outset rgb(0, 0, 0)` | `0px none` |
+| `outline` | `none` (no era el foco) | `none` |
+| `boxShadow` | `rgba(0,0,0,.08) 0px 2px 12px 0px` | igual, sin cambios |
+| `appearance` | `auto` | `none` |
+
+No era el foco (el `outline` ya salía `none` en las dos mediciones: la hoja del arnés nunca tuvo nada enfocado al capturar). Era el borde nativo del `<button>` del navegador (`2px outset`, `appearance: auto`): `.accionIcono` (`ui/Ficha.module.css`) nació para pintar un `<span>` dentro de un `<a>`/`<button className={ficha.accion}>` — un `<span>` no trae borde propio, así que nunca hizo falta declarar `border: none`. La corrección anterior de esta misma bitácora puso `.accionIcono` **directo** en el `<button>` raíz de `CompartirFicha` (sin el `<a>`/`.accion` alrededor), y ahí sí aparece el borde nativo del navegador siguiendo el `border-radius: 50%` — el aro oscuro.
+
+**Arreglo:** `.accionIcono` suma `border: none;` y `appearance: none;`. Sin efecto en los usos existentes (los `<span>` de los carriles de Enlaces y de las acciones de lugar/evento): un `<span>` no tiene borde ni apariencia nativa que quitar, así que esas capturas no cambian.
+
+**Pruebas:** `npm run lint && npm run typecheck && npm test && npm run build`, verdes (1123 pruebas, sin cambios en el número: es solo CSS). **`04-mi-perfil-dos-artistas.png` reemplazada de nuevo:** mismo encuadre, el círculo de compartir ahora es blanco liso con la sombra de elevación, sin ningún aro ni contorno alrededor.
+
 ## Límites
 
 - El número que reparte o manda al carril (4) es fijo, no una medida en vivo del ancho disponible: es simple y cubre el caso que el founder señaló (390 px); una pantalla mucho más ancha (tablet, `--columna` de 600 px) podría tener sitio de sobra para un quinto círculo repartido y aun así ir al carril. No se amplió a una medida real del contenedor (`ResizeObserver` o similar) porque no se pidió y hubiera sido JavaScript donde el founder pidió CSS si se podía.
