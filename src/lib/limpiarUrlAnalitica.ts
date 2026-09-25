@@ -3,6 +3,7 @@
  * - Quita parámetros de consulta (query string): búsqueda, ciudad y tokens de invitación/reclamación.
  * - Evita rastrear rutas privadas: admin, perfil, ajustes y enlacescon token.
  * - Solo se envían rutas públicas sin identificación personal.
+ * - Devuelve la URL ABSOLUTA (con esquema y dominio): Vercel Analytics rechaza URLs relativas.
  *
  * Vercel Analytics se configura con `beforeSend` en layout.tsx para usar esta función.
  */
@@ -28,7 +29,7 @@ const RUTAS_PRIVADAS_PREFIJOS = [
 
 /**
  * @param url - La URL completa o relativa con pathname y search.
- * @returns URL limpia para Analytics, o `null` para no tracear.
+ * @returns URL absoluta limpia para Analytics, o `null` para no tracear.
  */
 export function limpiarUrlAnalitica(url: string): string | null {
   try {
@@ -50,8 +51,8 @@ export function limpiarUrlAnalitica(url: string): string | null {
     );
     keysToDelete.forEach((key) => params.delete(key));
 
-    // 3. Construir la URL limpia (sin host, solo pathname + search)
-    const cleaned = pathname + (params.toString() ? `?${params.toString()}` : "");
+    // 3. Construir la URL limpia absoluta (conserva el origen real de la entrada)
+    const cleaned = urlObj.origin + pathname + (params.toString() ? `?${params.toString()}` : "");
     return cleaned;
   } catch {
     // Si algo falla en el parsing, no tracear por seguridad

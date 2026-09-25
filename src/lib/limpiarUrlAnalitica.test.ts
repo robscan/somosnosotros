@@ -4,35 +4,37 @@ import { limpiarUrlAnalitica } from "./limpiarUrlAnalitica";
 describe("limpiarUrlAnalitica", () => {
   describe("Rutas públicas permitidas", () => {
     it("permite rastrear la página de inicio", () => {
-      expect(limpiarUrlAnalitica("/")).toBe("/");
+      expect(limpiarUrlAnalitica("/")).toBe("https://somosnosotros.org/");
     });
 
     it("permite rastrear una lista de lugares sin query", () => {
-      expect(limpiarUrlAnalitica("/lugares")).toBe("/lugares");
+      expect(limpiarUrlAnalitica("/lugares")).toBe("https://somosnosotros.org/lugares");
     });
 
     it("permite rastrear una ficha de lugar", () => {
-      expect(limpiarUrlAnalitica("/lugares/123")).toBe("/lugares/123");
+      expect(limpiarUrlAnalitica("/lugares/123")).toBe("https://somosnosotros.org/lugares/123");
     });
 
     it("permite rastrear una lista de eventos", () => {
-      expect(limpiarUrlAnalitica("/eventos")).toBe("/eventos");
+      expect(limpiarUrlAnalitica("/eventos")).toBe("https://somosnosotros.org/eventos");
     });
 
     it("permite rastrear una ficha de evento", () => {
-      expect(limpiarUrlAnalitica("/eventos/abc-def")).toBe("/eventos/abc-def");
+      expect(limpiarUrlAnalitica("/eventos/abc-def")).toBe(
+        "https://somosnosotros.org/eventos/abc-def"
+      );
     });
 
     it("permite rastrear una lista de artistas", () => {
-      expect(limpiarUrlAnalitica("/artistas")).toBe("/artistas");
+      expect(limpiarUrlAnalitica("/artistas")).toBe("https://somosnosotros.org/artistas");
     });
 
     it("permite rastrear la página de reglas", () => {
-      expect(limpiarUrlAnalitica("/reglas")).toBe("/reglas");
+      expect(limpiarUrlAnalitica("/reglas")).toBe("https://somosnosotros.org/reglas");
     });
 
     it("permite rastrear la página de privacidad", () => {
-      expect(limpiarUrlAnalitica("/privacidad")).toBe("/privacidad");
+      expect(limpiarUrlAnalitica("/privacidad")).toBe("https://somosnosotros.org/privacidad");
     });
   });
 
@@ -69,55 +71,72 @@ describe("limpiarUrlAnalitica", () => {
 
   describe("Parámetros privados removidos", () => {
     it("remueve la query de búsqueda", () => {
-      expect(limpiarUrlAnalitica("/lugares?q=teatro")).toBe("/lugares");
+      expect(limpiarUrlAnalitica("/lugares?q=teatro")).toBe("https://somosnosotros.org/lugares");
     });
 
     it("remueve el parámetro de ciudad", () => {
-      expect(limpiarUrlAnalitica("/lugares?ciudad=SLP")).toBe("/lugares");
+      expect(limpiarUrlAnalitica("/lugares?ciudad=SLP")).toBe("https://somosnosotros.org/lugares");
     });
 
     it("remueve múltiples parámetros privados", () => {
-      expect(limpiarUrlAnalitica("/lugares?q=danza&ciudad=monterrey")).toBe("/lugares");
+      expect(limpiarUrlAnalitica("/lugares?q=danza&ciudad=monterrey")).toBe(
+        "https://somosnosotros.org/lugares"
+      );
     });
 
     it("remueve token de invitación", () => {
-      expect(limpiarUrlAnalitica("/lugares?token=abc123xyz")).toBe("/lugares");
+      expect(limpiarUrlAnalitica("/lugares?token=abc123xyz")).toBe(
+        "https://somosnosotros.org/lugares"
+      );
     });
 
     it("remueve código de acceso", () => {
-      expect(limpiarUrlAnalitica("/eventos?codigo=123456")).toBe("/eventos");
+      expect(limpiarUrlAnalitica("/eventos?codigo=123456")).toBe(
+        "https://somosnosotros.org/eventos"
+      );
     });
 
     it("mantiene parámetros públicos permitidos", () => {
       expect(limpiarUrlAnalitica("/lugares?tipo=museo&estado=activo")).toBe(
-        "/lugares?tipo=museo&estado=activo"
+        "https://somosnosotros.org/lugares?tipo=museo&estado=activo"
       );
     });
 
     it("remueve parámetros privados y mantiene públicos", () => {
       expect(limpiarUrlAnalitica("/eventos?q=concierto&tipo=gratuito")).toBe(
-        "/eventos?tipo=gratuito"
+        "https://somosnosotros.org/eventos?tipo=gratuito"
       );
     });
   });
 
   describe("Casos complejos", () => {
-    it("limpia URL completa con protocolo", () => {
+    it("limpia URL completa con protocolo y conserva el origen real", () => {
       expect(limpiarUrlAnalitica("https://somosnosotros.org/lugares?q=música")).toBe(
-        "/lugares"
+        "https://somosnosotros.org/lugares"
+      );
+    });
+
+    it("conserva el origen real cuando la entrada trae otro dominio", () => {
+      expect(limpiarUrlAnalitica("https://otro-dominio.example/lugares?q=música")).toBe(
+        "https://otro-dominio.example/lugares"
       );
     });
 
     it("remueve múltiples parámetros manteniendo orden", () => {
       expect(
         limpiarUrlAnalitica("/artistas?buscar=lopez&ciudad=slp&disciplina=artes-visuales")
-      ).toBe("/artistas?disciplina=artes-visuales");
+      ).toBe("https://somosnosotros.org/artistas?disciplina=artes-visuales");
     });
 
     it("mantiene ruta correcta después de limpiar", () => {
       expect(limpiarUrlAnalitica("/lugares/123?q=teatro&tipo=cultural")).toBe(
-        "/lugares/123?tipo=cultural"
+        "https://somosnosotros.org/lugares/123?tipo=cultural"
       );
+    });
+
+    it("el resultado siempre empieza por https://", () => {
+      expect(limpiarUrlAnalitica("/lugares")).toMatch(/^https:\/\//);
+      expect(limpiarUrlAnalitica("https://somosnosotros.org/eventos")).toMatch(/^https:\/\//);
     });
   });
 
