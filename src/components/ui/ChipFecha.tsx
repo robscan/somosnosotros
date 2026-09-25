@@ -58,20 +58,22 @@ export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL }
           <IconoCalendario width={16} height={16} />
         </button>
       ) : (
-        // Táctil/móvil: el chip ES el selector nativo, invisible encima, para que el toque caiga en él.
+        // Táctil/móvil: el chip ES el selector nativo, invisible encima, para que el toque caiga en él. "" es
+        // siempre "sin filtro"; `hoy` nunca es sentinel de nada (bug OL-188: usarlo como valor inicial hacía que
+        // elegir hoy no se distinguiera de no haber elegido nada).
         <label className={`${chip.chip} ${chip.chipNativo} ${styles.soloIcono}`} htmlFor={idNativo}>
           <IconoCalendario width={16} height={16} />
-          <input type="date" id={idNativo} className={chip.encima} min={hoy} value={hoy} onChange={(e) => onCambiar(e.target.value === hoy ? "" : e.target.value)} aria-label="Elegir fecha" />
+          <input type="date" id={idNativo} className={chip.encima} min={hoy} value="" onChange={(e) => onCambiar(e.target.value)} aria-label="Elegir fecha" />
         </label>
       )}
       {hoja && (
         <SelectorFecha
           titulo="Fecha"
-          fecha={hoy}
+          fecha={fecha}
           min={hoy}
           zona={zona}
           onListo={(f) => {
-            onCambiar(f === hoy ? "" : f);
+            onCambiar(f);
             setHoja(false);
             disparador.current?.focus();
           }}
