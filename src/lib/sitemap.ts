@@ -10,7 +10,7 @@ export const ORIGEN = "https://somosnosotros.org";
 /** Páginas fijas, sin ficha: no hace falta traerlas de la base. */
 /** "/" es Inicio y "/agenda" la lista de eventos (OL-156, segunda vuelta): las dos son indexables, con su propio
  *  título y descripción (`generateMetadata` de cada página); "/inicio" ya no existe, redirige 308 a "/" (next.config). */
-export const RUTAS_ESTATICAS = ["/", "/agenda", "/lugares", "/artistas", "/reglas", "/privacidad"] as const;
+export const RUTAS_ESTATICAS = ["/", "/agenda", "/lugares", "/artistas", "/reglas", "/privacidad", "/ayuda"] as const;
 
 /** `lastModified` solo en fichas (viene de `actualizado_en`, un dato real); una ruta fija no tiene una fecha propia que
  *  decir, y poner "ahora" en cada visita mentiría (cambiaría en cada rastreo aunque la página no haya cambiado). */
