@@ -27,9 +27,9 @@ Cada respuesta se comprobó contra el código real antes de escribirla:
 
 - **Cómo escribirnos:** `hola@somosnosotros.org` (enlace `mailto:`) — ya es la dirección pública del proyecto,
   usada como `VAPID_SUBJECT` por defecto en `src/lib/push.ts:18`. No se usó el correo personal del founder que
-  lleva `/privacidad` (`oscar@agenciaparadigma.com`, el responsable legal de datos): son dos preguntas
-  distintas — soporte de la app vs. derechos ARCO — y la instrucción de esta pieza pedía específicamente la
-  dirección del proyecto.
+  lleva `/privacidad` como responsable legal de datos (`RESPONSABLE.contacto`, ese mismo archivo): son dos
+  preguntas distintas — soporte de la app vs. derechos ARCO — y la instrucción de esta pieza pedía
+  específicamente la dirección del proyecto.
 - **Qué es Somos Nosotros:** tomado de `docs/DEFINICION.md` («Qué es» y «Reglas simples»).
 - **Cómo publico un evento:** confirmado en `src/app/eventos/nuevo/page.tsx` (requiere sesión, redirige a
   `/entrar` si no la hay) y `src/lib/cartel.ts` (`leerCartel`: si hay cartel, se leen título, fecha, hora,
