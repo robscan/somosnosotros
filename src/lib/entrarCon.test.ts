@@ -3,6 +3,7 @@ import {
   botonesProveedor,
   codificarIntento,
   decidirVuelta,
+  destinoTrasEntrar,
   leerCampos,
   leerEncendidos,
   leerIntento,
@@ -73,6 +74,23 @@ describe("intento en la cookie", () => {
     expect(leerIntento(undefined)).toBeNull();
     expect(leerIntento(Buffer.from(JSON.stringify({ ...i, p: "facebook" })).toString("base64url"), 1)).toBeNull();
     expect(leerIntento(Buffer.from(JSON.stringify({ ...i, siguiente: "//malo.com" })).toString("base64url"), 1)?.siguiente).toBe("/perfil");
+  });
+  it("enApp viaja igual que el resto del intento, y por defecto es false (OL-194)", () => {
+    expect(nuevoIntento("apple", "/perfil", 0).enApp).toBe(false);
+    const i = nuevoIntento("apple", "/perfil", 0, true);
+    expect(i.enApp).toBe(true);
+    expect(leerIntento(codificarIntento(i), 1)).toEqual(i);
+    // un intento viejo, guardado antes de que existiera el campo, no se lee como si viniera de la app
+    expect(leerIntento(Buffer.from(JSON.stringify({ p: "apple", estado: "e", nonce: "n", siguiente: "/perfil", desde: 0 })).toString("base64url"), 1)?.enApp).toBe(false);
+  });
+});
+
+describe("destinoTrasEntrar (OL-194: la vuelta al envoltorio de iPhone)", () => {
+  it("fuera de la app, va directo a siguiente", () => {
+    expect(destinoTrasEntrar("/eventos/abc?accion=voy", false)).toBe("/eventos/abc?accion=voy");
+  });
+  it("dentro de la app, pasa por /auth/app-vuelta (la única ruta que la app reclama como enlace universal)", () => {
+    expect(destinoTrasEntrar("/eventos/abc?accion=voy", true)).toBe("/auth/app-vuelta?siguiente=%2Feventos%2Fabc%3Faccion%3Dvoy");
   });
 });
 

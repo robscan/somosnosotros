@@ -54,11 +54,18 @@ export function leerEncendidos(ajustes: unknown): Record<Proveedor, boolean> {
 export const COOKIE_ENTRAR = "sn_entrar";
 export const VIGENCIA_SEGUNDOS = 600;
 
-export type Intento = { p: Proveedor; estado: string; nonce: string; siguiente: string; desde: number };
+/**
+ * `enApp`: el toque salió del envoltorio de iPhone (apps/ios, OL-194): el botón abrió esta misma dirección en el
+ * navegador del sistema (`Browser.open`, no en el WKWebView de la app) porque Google bloquea su entrada dentro de
+ * cualquier vista web embebida. Va en el intento (no en la URL de vuelta que registramos con Apple y con Google:
+ * esa no puede cambiar) para que, al terminar, se vuelva por `/auth/app-vuelta` (una ruta de `/auth/*`, la única
+ * que la app reclama como enlace universal) y no directo a `siguiente`, que casi nunca lo es.
+ */
+export type Intento = { p: Proveedor; estado: string; nonce: string; siguiente: string; desde: number; enApp: boolean };
 
-export function nuevoIntento(p: Proveedor, siguiente: string | null, ahora = Date.now()): Intento {
+export function nuevoIntento(p: Proveedor, siguiente: string | null, ahora = Date.now(), enApp = false): Intento {
   const azar = () => randomBytes(24).toString("base64url");
-  return { p, estado: azar(), nonce: azar(), siguiente: rutaSegura(siguiente, "/perfil"), desde: ahora };
+  return { p, estado: azar(), nonce: azar(), siguiente: rutaSegura(siguiente, "/perfil"), desde: ahora, enApp };
 }
 
 export function codificarIntento(intento: Intento): string {
@@ -72,7 +79,7 @@ export function leerIntento(valor: string | undefined, ahora = Date.now()): Inte
     const i = JSON.parse(Buffer.from(valor, "base64url").toString("utf8")) as Partial<Intento>;
     if (!esProveedor(i.p) || typeof i.estado !== "string" || typeof i.nonce !== "string" || typeof i.desde !== "number") return null;
     if (ahora - i.desde > VIGENCIA_SEGUNDOS * 1000 || i.desde > ahora + 60_000) return null;
-    return { p: i.p, estado: i.estado, nonce: i.nonce, siguiente: rutaSegura(i.siguiente, "/perfil"), desde: i.desde };
+    return { p: i.p, estado: i.estado, nonce: i.nonce, siguiente: rutaSegura(i.siguiente, "/perfil"), desde: i.desde, enApp: i.enApp === true };
   } catch {
     return null;
   }
@@ -148,6 +155,16 @@ export function urlEntrar(siguiente: string, fallo?: Proveedor): string {
   const q = new URLSearchParams({ siguiente });
   if (fallo) q.set("error", fallo);
   return `/entrar?${q}`;
+}
+
+/**
+ * A dónde vuelve `/auth/[proveedor]/fin` cuando entrar salió bien (OL-194). Fuera de la app, directo a `siguiente`,
+ * como siempre. Dentro de la app, el navegador del sistema (Browser.open) sigue viendo esta página: para que el
+ * envoltorio pueda tomar el control con un enlace universal hace falta que la dirección esté bajo `/auth/*` (la
+ * única ruta que la app reclama), así que se pasa por `/auth/app-vuelta` antes de llegar a `siguiente`.
+ */
+export function destinoTrasEntrar(siguiente: string, enApp: boolean): string {
+  return enApp ? `/auth/app-vuelta?siguiente=${encodeURIComponent(siguiente)}` : siguiente;
 }
 
 /** El nombre que Apple manda solo la primera vez, en el campo "user": {"name":{"firstName":"Rosa","lastName":"Pérez"}}. */

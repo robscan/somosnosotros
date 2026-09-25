@@ -1,7 +1,7 @@
 import { createClient, type User } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { configPublica } from "@/lib/config";
-import { COOKIE_ENTRAR, decidirVuelta, esProveedor, leerCampos, leerIntento, nombreDeApple, nombrePorDefecto, urlEntrar } from "@/lib/entrarCon";
+import { COOKIE_ENTRAR, decidirVuelta, destinoTrasEntrar, esProveedor, leerCampos, leerIntento, nombreDeApple, nombrePorDefecto, urlEntrar } from "@/lib/entrarCon";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 type Contexto = { params: Promise<{ proveedor: string }> };
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest, { params }: Contexto) {
     return volver(urlEntrar(siguiente, proveedor));
   }
   if (proveedor === "apple") await ponerNombreDeApple(data.user, data.session.access_token, campos.user);
-  return volver(siguiente);
+  return volver(destinoTrasEntrar(siguiente, intento?.enApp === true));
 }
 
 /**
