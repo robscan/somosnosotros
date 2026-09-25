@@ -1,121 +1,164 @@
-# 47 · App nativa para iOS: plan de implementación
+# 47 · App en las tiendas: iOS y Android
 
-**OL-191 · Bitácora 225 · 2026-09-25. Segunda versión, con las correcciones del gestor.** Plan de la app de iOS en la tienda de Apple. Sin código: solo documentación, decisiones y piezas propuestas. El founder decide si la app nativa va antes o después del blog.
+**OL-191 · Bitácora 225 · 2026-09-25. Tercera versión: ahora cubre Android, a pedido del founder («asegúrate de considerar en el plan Android e iOS»).** Plan de la app en las dos tiendas (Apple y Google). Sin código: solo documentación, decisiones y piezas propuestas. El founder decide si la app nativa va antes o después del blog, y qué tienda sale primero.
 
-## 1. Qué es la app de iOS
+## 1. Qué es la app
 
-La app nativa es **la misma web de somosnosotros.org envuelta en un contenedor de tienda** (un `WKWebView`), sin reescribir ninguna pantalla en Swift. Agenda, directorio, perfiles y Wallet siguen siendo la web; el envoltorio solo añade lo que el navegador no puede darle a una web instalada: avisos por APNs, un inicio de sesión que funcione dentro del contenedor, enlaces directos (Universal Links) y, más adelante, NFC o vibración si aparece un uso concreto.
+La app nativa es **la misma web de somosnosotros.org envuelta en un contenedor de tienda**, sin reescribir ninguna pantalla en Swift ni en Kotlin. En iOS el envoltorio es Capacitor (control sobre un `WKWebView`); en Android se recomienda una Trusted Web Activity (TWA), que corre en Chrome, no en un WebView (sección 6). Agenda, directorio, perfiles y Wallet siguen siendo la web; el envoltorio solo añade lo que el navegador de cada plataforma todavía no le da a una web instalada: en iOS, avisos por APNs y un inicio de sesión que funcione dentro del contenedor (secciones 3 y 4); en Android, con TWA, casi todo ya funciona igual que en la web instalada de hoy.
 
-**Qué NO es:** no se reescribe ninguna pantalla; no se abandona Next.js ni Supabase; no se inventan funciones que nadie pidió («validar entradas por NFC», «modo offline», «deslizar con háptica» quedan fuera: son ideas sin un uso real detrás).
+**Qué NO es:** no se reescribe ninguna pantalla; no se abandona Next.js ni Supabase; no se inventan funciones que nadie pidió («validar entradas por NFC», «modo offline», «deslizar con háptica» quedan fuera: son ideas sin un uso real detrás), en ninguna de las dos plataformas.
 
-## 2. Corrección importante: Wallet no es exclusiva de la app nativa
+## 2. Wallet: no es exclusiva de la app nativa, y en Android es un pase distinto
 
-El borrador anterior usaba Wallet como la prueba de que la app «hace algo que la web no hace». Es falso: Safari en el iPhone **ya puede agregar un `.pkpass` a Wallet desde una página web común** (Content-Type `application/vnd.apple.pkpass`), sin app nativa, desde iOS 6. Esto ya está planeado como OL-155 y solo espera que el founder cree el certificado Pass Type ID. En la app nativa el mismo pase se agrega igual: con PassKit (`PKAddPassesViewController`) o simplemente abriendo la misma URL del `.pkpass` dentro del WKWebView, que dispara el mismo flujo de Safari.
+El borrador anterior usaba Wallet como la prueba de que la app «hace algo que la web no hace». Es falso: Safari en el iPhone **ya puede agregar un `.pkpass` a Wallet desde una página web común** (Content-Type `application/vnd.apple.pkpass`), sin app nativa, desde iOS 6. Esto ya está planeado como OL-155 y solo espera que el founder cree el certificado Pass Type ID. En la app nativa el mismo pase se agrega igual: con PassKit (`PKAddPassesViewController`) o abriendo la misma URL del `.pkpass` dentro del envoltorio.
 
-Conclusión: Wallet no sirve como argumento frente a la guía 4.2.2. Lo que de verdad distingue a la app nativa de «el sitio empaquetado» se explica en la sección 4.
+En Android no existe Apple Wallet; el equivalente es **Google Wallet**, con otro sistema por completo (API de Google Wallet, cuenta de emisor propia, pases «Guardar en Google Wallet»). No es la misma pieza que OL-155 ni se resuelve con el mismo certificado: se propone como **pieza aparte y opcional** (sección 11) que no bloquea la salida a ninguna tienda.
 
-## 3. Avisos: dentro del contenedor no llegan los push web
+Conclusión: Wallet no sirve como argumento frente a la guía 4.2.2 de Apple ni frente a la política equivalente de Play. Lo que de verdad distingue a la app nativa de «el sitio empaquetado» se explica en la sección 8.
 
-Los avisos push de hoy (`PushManager`, `src/lib/pushCliente.ts`, `public/sw.js`) funcionan porque Safari registra un service worker cuando la persona instala la web en el inicio. **Un `WKWebView` metido en una app nativa no tiene ese registro**: ni `PushManager` ni el service worker se comportan igual que en Safari instalado. Si la app nativa no trae su propio canal de avisos, quien la instale **pierde los avisos que ya tenía en la web instalada** — no es opcional, hay que resolverlo antes de enviar la app.
+## 3. Avisos: dentro del contenedor no siempre llegan los push web
 
-La solución es APNs (Apple Push Notification service), con un puente claro:
+Los avisos push de hoy (`PushManager`, `src/lib/pushCliente.ts`, `public/sw.js`) funcionan porque el navegador registra un service worker cuando la persona instala la web en el inicio.
 
-1. La app nativa se registra ante Apple y recibe un token de dispositivo.
-2. La app manda ese token al servidor (endpoint nuevo, por ejemplo `/api/dispositivos`).
-3. El servidor, en `src/lib/avisosWorker.ts`, ya sabe mandar web push (Vercel); se le agrega una segunda vía: si el destinatario tiene un token de APNs guardado, manda por APNs además o en vez de web push, según de dónde venga ese dispositivo.
+**iOS:** un envoltorio Capacitor/WKWebView no tiene ese registro: ni `PushManager` ni el service worker se comportan como en Safari instalado. Si la app no trae su propio canal, quien la instale **pierde los avisos que ya tenía en la web** — hay que resolverlo antes de enviarla. La solución es APNs: (1) la app se registra ante Apple y recibe un token; (2) lo manda al servidor (endpoint nuevo, ej. `/api/dispositivos`); (3) `src/lib/avisosWorker.ts`, que ya manda web push, agrega una segunda vía por APNs cuando hay token guardado.
 
-Nada de esto cambia el web push que ya existe para quien usa la web instalada sin la app de tienda (`docs/rediseno/28-avisos-y-boletin.md`).
+**Android:** depende del envoltorio elegido. Con **TWA (la vía recomendada, sección 6)** el service worker sigue siendo el de Chrome: los avisos push web de hoy llegan igual, sin tocar nada. Con Capacitor en Android (la alternativa no recomendada) el service worker queda dentro de un WebView y deja de recibir push web, igual que en iOS; haría falta un puente con FCM (Firebase Cloud Messaging), cuenta de Firebase propia y su SDK — trabajo extra que TWA evita.
+
+Nada de esto cambia el web push que ya existe para quien usa la web instalada sin app de tienda (`docs/rediseno/28-avisos-y-boletin.md`).
 
 ## 4. Inicio de sesión dentro del contenedor
 
 Hoy `src/app/entrar` ofrece tres caminos (revisado en el código, no supuesto):
 
-- **Correo:** `signInWithOtp` manda un código de 8 dígitos y también un enlace («también trae un enlace, por si prefieres tocarlo»). Es una llamada directa a Supabase, sin salir a otra página: **funciona igual dentro del WKWebView**, sin ajustes.
-- **Google:** `src/app/auth/[proveedor]/route.ts` redirige a Google y Google devuelve con un POST. Google **bloquea este flujo dentro de cualquier webview embebido** desde 2021 (error `disallowed_useragent`): el botón de Google fallaría siempre dentro del contenedor. El propio código ya excluye ese botón cuando detecta un navegador embebido tipo Instagram o Facebook (`botonesProveedor`, `src/lib/entrarCon.ts`); hay que aplicar la misma exclusión cuando el agente sea el de nuestro propio WKWebView, o resolverlo con el punto siguiente.
-- **Apple:** mismo mecanismo de redirección y POST; no está bloqueado como Google, pero Apple recomienda no hacerlo en un webview simple porque es frágil (cookies de sesión, seguimiento de terceros).
+- **Correo:** `signInWithOtp` manda un código de 8 dígitos y también un enlace. Es una llamada directa a Supabase, sin salir de la página: **funciona igual dentro de cualquier envoltorio**, en iOS y en Android.
+- **Google:** `src/app/auth/[proveedor]/route.ts` redirige a Google, que devuelve con un POST. Google **bloquea este flujo dentro de cualquier webview embebido** desde 2021 (`disallowed_useragent`): fallaría en un WKWebView (iOS) o en un WebView de Capacitor-Android. El código ya excluye el botón en navegadores embebidos conocidos (`botonesProveedor`, `src/lib/entrarCon.ts`); hay que aplicar la misma exclusión al agente de nuestro envoltorio, o resolverlo abajo. **Una TWA en Android no tiene este problema**: corre en Chrome real, no en un WebView embebido, así que el botón funciona sin cambios.
+- **Apple:** mismo mecanismo de redirección y POST; no está bloqueado como Google, pero Apple recomienda no hacerlo en un webview simple por ser frágil (cookies, seguimiento de terceros). En Android no aplica esta guía, pero el mismo riesgo existe si el envoltorio fuera Capacitor.
 
-**Solución habitual y la que se propone aquí:** abrir el inicio de sesión (Apple o Google) en `ASWebAuthenticationSession` (o `SFSafariViewController`), que es una ventana de navegador de verdad controlada por iOS, no el WKWebView de la app; al terminar, Apple o Google regresan por un enlace que la app reconoce (deep link) y cierra esa ventana. El correo con código sigue funcionando siempre dentro del WKWebView, como respaldo si algo falla.
+**Solución para iOS y para un eventual Capacitor-Android:** abrir Apple o Google en `ASWebAuthenticationSession` (iOS) o **Custom Tabs** (Android), ventanas de navegador reales controladas por el sistema, no el WebView de la app; al terminar, regresan por un enlace que la app reconoce (deep link). El correo con código sigue funcionando dentro del contenedor como respaldo. Con TWA en Android este paso no hace falta: ya es Chrome.
 
-La prueba de esta pieza no es solo «cargó la página»: es entrar de las tres formas (correo, Apple, Google) sin que ninguna falle dentro del contenedor, y volver a entrar tras cerrar la app para comprobar que la sesión quedó guardada.
+La prueba de esta pieza es entrar de las tres formas sin que ninguna falle dentro del contenedor, y volver a entrar tras cerrar la app — en las dos plataformas.
 
-Dos guías de Apple entran aquí:
+Dos guías de Apple entran aquí (políticas equivalentes de Play en la sección 10):
 
-- **4.8 (Sign in with Apple):** si la app ofrece otros inicios de sesión de terceros, debe ofrecer también Apple. Ya existe para la web (`org.somosnosotros.web`); falta comprobar que el mismo botón funcione dentro de la app con el mecanismo de arriba.
-- **5.1.1(v) (borrado de cuenta):** debe poder borrarse la cuenta desde dentro de la app. **Corrección al borrador anterior:** la cuenta no se borra en `/borrado` — esa pantalla es la confirmación de borrar un evento, lugar o artista. Borrar la cuenta vive en `/ajustes` («Borrar mi cuenta», acción `borrarMiCuenta` en `src/app/perfil/acciones`). Basta con que `/ajustes` sea alcanzable dentro del WKWebView, cosa que ya es cierta porque es parte de la misma web.
+- **4.8 (Sign in with Apple):** obligatorio si hay otros inicios de sesión de terceros. Ya existe en la web (`org.somosnosotros.web`); falta comprobar que funcione dentro de la app con el mecanismo de arriba.
+- **5.1.1(v) (borrado de cuenta):** debe poder borrarse desde dentro de la app. **Corrección al borrador anterior:** la cuenta no se borra en `/borrado` (esa pantalla confirma borrar un evento, lugar o artista); vive en `/ajustes` («Borrar mi cuenta», acción `borrarMiCuenta`). Basta con que `/ajustes` sea alcanzable dentro del envoltorio, cosa ya cierta por ser la misma web. Play exige lo mismo y además un **enlace web** de borrado fuera de la app: `/ajustes` ya cumple las dos formas.
 
-## 5. Permisos del navegador dentro del WKWebView
+## 5. Permisos del navegador dentro del envoltorio
 
-Cámara, micrófono, ubicación y movimiento ya los usa la web hoy (con permiso, memoria del founder 2026-09-21). Dentro de un WKWebView no llegan solos: cada uno es trabajo real del envoltorio, no un ajuste automático.
+Cámara, micrófono, ubicación y movimiento ya los usa la web hoy (con permiso, memoria del founder 2026-09-21). Dentro de un WebView embebido no llegan solos: son trabajo real del envoltorio. **Esto solo aplica a iOS y a un eventual Capacitor-Android**; una TWA es Chrome, así que estos permisos siguen pidiéndose igual que en la web instalada de hoy, sin puente que escribir.
 
-| Capacidad | Qué hace falta en el envoltorio | Permiso en Info.plist |
-|---|---|---|
-| Cámara / micrófono (`getUserMedia`) | Funciona en WKWebView desde iOS 14.3; el delegado `decideMediaCapturePermissionFor` (iOS 15+) decide si se pregunta o no | `NSCameraUsageDescription`, `NSMicrophoneUsageDescription` |
-| Ubicación (`navigator.geolocation`, usado en `src/lib/ubicacion.ts`) | El delegado de WKWebView pide el permiso nativo de localización la primera vez que la web lo solicita | `NSLocationWhenInUseUsageDescription` |
-| Movimiento y orientación | Solo si algún flujo lo usa (hoy no se encontró uso en el código); si se agrega, pide su propio permiso nativo | `NSMotionUsageDescription` (solo si aplica) |
-
-Nada de esto se prueba solo mirando el código: hay que abrir el flujo en un dispositivo real (o el simulador) y comprobar que Apple y Google de verdad regresan a la app, no solo que el redirect sale bien en la web.
-
-## 6. Enfoque técnico: WKWebView propio, Capacitor o PWABuilder
-
-| Aspecto | WKWebView propio en Swift | Capacitor (Ionic) | PWABuilder |
+| Capacidad | iOS (Capacitor/WKWebView) | Android con Capacitor | Android con TWA |
 |---|---|---|---|
-| Puentes de permisos, push y deep links | Se escriben a mano | Ya vienen en plugins mantenidos por la comunidad | Limitados, sin APNs nativo |
-| Control sobre el código | Completo | El envoltorio es de Capacitor; los plugins, de terceros | Bajo, depende de la herramienta |
-| Equipo | Una persona con Swift | Una persona, con menos Swift | Una persona, atada a la herramienta |
-| Riesgo | Escribir y mantener los puentes propios | Actualizaciones de Capacitor y de sus plugins | La herramienta puede quedar obsoleta |
+| Cámara / micrófono (`getUserMedia`) | Funciona desde iOS 14.3; `decideMediaCapturePermissionFor` (iOS 15+) decide si se pregunta | Plugin de Capacitor + permiso en `AndroidManifest.xml` | Ya funciona, es el permiso de Chrome |
+| Ubicación (`navigator.geolocation`, `src/lib/ubicacion.ts`) | `NSLocationWhenInUseUsageDescription` | Plugin + permiso en el manifiesto | Ya funciona, es el permiso de Chrome |
+| Movimiento y orientación | `NSMotionUsageDescription` (solo si aparece un uso) | Plugin + permiso en el manifiesto | Ya funciona, es el permiso de Chrome |
 
-**Recomendación: Capacitor.** Para una persona sola manteniendo el proyecto, no vale la pena escribir y mantener a mano los puentes de permisos, push y deep links: Capacitor ya los trae como plugins mantenidos (incluido APNs y `ASWebAuthenticationSession`), y sigue siendo la web de siempre por dentro — no hay reescritura. El costo es aceptar la capa de Capacitor como dependencia adicional; el ahorro de tiempo de desarrollo y mantenimiento la compensa.
+Nada de esto se prueba solo mirando el código: hay que abrir el flujo en un dispositivo real (o simulador/emulador) y comprobar que Apple y Google de verdad regresan a la app.
 
-## 7. Qué distingue a la app nativa de «el sitio empaquetado» (guía 4.2.2)
+## 6. Enfoque técnico: iOS con Capacitor, Android con TWA o Capacitor
 
-La guía 4.2.2 es el riesgo real de rechazo: una app que solo carga una URL sin más se rechaza. Lo cierto, sin inventar funciones:
+| Aspecto | WKWebView propio (iOS) | Capacitor (iOS y Android) | PWABuilder | TWA en Android (Bubblewrap/PWABuilder) |
+|---|---|---|---|---|
+| Puentes de permisos, push y deep links | Se escriben a mano | Plugins mantenidos por la comunidad | Limitados, sin push nativo | No hacen falta: es Chrome, ya los da la web instalada |
+| Control sobre el código | Completo | Envoltorio de Capacitor; plugins de terceros | Bajo, depende de la herramienta | Bajo: casi no hay código nativo que mantener |
+| Equipo | Una persona con Swift | Una persona, con menos Swift/Kotlin | Una persona, atada a la herramienta | Una persona, sin Kotlin real |
+| Riesgo | Escribir y mantener los puentes propios | Actualizaciones de Capacitor y sus plugins | La herramienta puede quedar obsoleta | Que la web deje de servir `assetlinks.json` |
 
-- **Avisos por APNs**, con el mismo contenido que hoy pero por el canal nativo del teléfono (sección 3).
-- **Entrada con Apple integrada** en el propio flujo de la app, sin salto visible a Safari (sección 4).
-- **Universal Links**: un enlace a un evento (por SMS o WhatsApp) abre directo la app, no el navegador.
-- **La promesa de NFC y vibración cuando aparezca un uso concreto** pedido por el founder (nunca antes: CLAUDE.md es explícito en que estas capacidades esperan a esa etapa).
+**Recomendación para iOS: Capacitor** (para una persona sola, no vale la pena escribir a mano los puentes de permisos, push y deep links).
 
-Si Apple rechaza igual alegando «es un wrapper»: se responde con capturas de los avisos llegando por APNs, del inicio de sesión con Apple dentro de la app y de un Universal Link abriendo un evento directo — sin inventar nada que no esté en la app.
+**TWA frente a Capacitor, solo para Android:**
 
-## 8. Deep links: falta un archivo en la web, no solo un ajuste en la app
+| | TWA (Bubblewrap/PWABuilder) | Capacitor en Android |
+|---|---|---|
+| Dónde corre | Chrome real | WebView embebido |
+| Avisos push | Los de hoy, sin cambios (sección 3) | Hace falta FCM (sección 3) |
+| Entrar con Google/Apple | Igual que en la web (sección 4) | Bloqueado o frágil; hace falta Custom Tabs |
+| NFC y vibración | Ya los da Chrome (sección 7) | También los da el WebView, pero sin necesidad |
+| Costo del proyecto | Un envoltorio distinto al de iOS | Mismo proyecto que iOS, un solo código nativo |
 
-Los Universal Links necesitan **dos partes que coincidan**: el entitlement `associated-domains` en la app, y un archivo `/.well-known/apple-app-site-association` servido por `somosnosotros.org` en HTTPS, sin redirecciones, con el Team ID y el identificador de la app. La segunda parte es código en el repo web (una ruta que sirva ese archivo), no algo que el founder configure solo desde Apple Developer.
+**Recomendación: TWA para Android.** Casi no hay trabajo nativo que mantener y los avisos, el inicio de sesión, NFC y la vibración siguen funcionando tal cual ya funcionan en la web instalada; el costo es sostener dos envoltorios distintos (TWA en Android, Capacitor en iOS) en vez de un solo proyecto, un costo menor que escribir y mantener FCM y Custom Tabs dentro de Capacitor solo para evitar esa duplicidad.
 
-## 9. Guías de Apple citadas (confirmadas por su numeración vigente)
+## 7. NFC y vibración: solo le faltan a iOS
 
-- **2.5.6** — toda navegación web dentro de la app debe usar WebKit (WKWebView cumple; Chrome o Firefox embebidos no).
-- **4.2 / 4.2.2** — funcionalidad mínima: la app debe ser más que el sitio empaquetado (sección 7).
+Chrome en Android ya da Web NFC y la Vibration API dentro de la web instalada de hoy, con o sin envoltorio: no son argumento para pedir una app nativa en Android. En iPhone, Safari sigue sin ofrecer ninguna de las dos (memoria del founder 2026-09-21): siguen siendo lo que solo una app nativa de iOS puede dar, y solo cuando el founder pida un uso concreto (sección 13).
+
+## 8. Qué distingue a la app nativa de «el sitio empaquetado»
+
+La guía 4.2.2 de Apple (y la política equivalente de Play sobre apps que solo envuelven una web, sección 10) es el riesgo real de rechazo. Lo cierto, sin inventar funciones:
+
+- **Avisos por su canal nativo:** APNs en iOS (sección 3); en Android los avisos web de siempre ya cumplen porque TWA es la misma web instalada.
+- **Entrada con Apple integrada** en el propio flujo de la app en iOS, sin salto visible a Safari (sección 4).
+- **Enlaces directos:** Universal Links en iOS, App Links en Android; un enlace a un evento (SMS o WhatsApp) abre la app, no el navegador, en las dos plataformas (sección 9).
+- **NFC y vibración en iOS** cuando aparezca un uso concreto pedido por el founder (nunca antes: CLAUDE.md es explícito en que esperan a esa etapa); en Android no aplica, la web ya los tiene (sección 7).
+
+Si Apple o Google rechazan igual alegando «es un wrapper»: se responde con capturas de los avisos llegando por su canal nativo, del inicio de sesión integrado y de un enlace directo abriendo un evento — sin inventar nada que no esté en la app.
+
+## 9. Enlaces profundos: dos archivos servidos por la web
+
+Los enlaces directos necesitan dos partes que coincidan, en cada plataforma:
+
+- **iOS:** el entitlement `associated-domains` en la app, y un archivo `/.well-known/apple-app-site-association` servido por `somosnosotros.org` en HTTPS, sin redirecciones, con el Team ID y el identificador de la app.
+- **Android:** la declaración de intent filters en la app, y un archivo `/.well-known/assetlinks.json` (Digital Asset Links) servido por `somosnosotros.org`, con la huella digital del certificado de firma de la app.
+
+Las dos partes son código en el repo web (una ruta que sirva cada archivo), no algo que el founder configure solo desde Apple Developer o Google Play Console. Se agrupan en una sola pieza, OL-195 (sección 11).
+
+## 10. Guías de Apple y políticas de Google Play citadas
+
+**Apple (confirmadas por su numeración vigente):**
+
+- **2.5.6** — toda navegación web dentro de la app debe usar WebKit.
+- **4.2 / 4.2.2** — funcionalidad mínima: la app debe ser más que el sitio empaquetado (sección 8).
 - **4.8** — Sign in with Apple obligatorio si hay otros inicios de sesión de terceros (sección 4).
 - **5.1.1** — privacidad y datos; **5.1.1(v)** exige que la cuenta pueda borrarse desde dentro de la app (sección 4).
-- **5.1.2** — uso de datos: lo que se declare en la ficha debe coincidir con lo que la app de verdad hace.
+- **5.1.2** — uso de datos: lo declarado en la ficha debe coincidir con lo que la app de verdad hace.
 - **App Privacy (etiquetas de la ficha)** — declarar qué se recopila; con Vercel Analytics sin Analytics Plus, el rastreo es mínimo y sin identificar personas (memoria del founder).
 
-## 10. Piezas propuestas y orden
+**Google Play (confirmadas 2026-09-25):**
 
-Pocas piezas, realistas, cada una con su prueba. El founder prueba cada hito en su iPhone (TestFlight) antes de la siguiente.
+- **Funcionalidad mínima / «Webviews» y spam** — igual que la 4.2.2 de Apple: una app que solo envuelve una web sin más se retira o rechaza.
+- **Seguridad de los datos (Data safety)** — sección obligatoria de la ficha, declarar qué se recopila.
+- **Borrado de cuenta** — dentro de la app y también por un **enlace web** fuera de ella; `/ajustes` cubre ambas formas (sección 4).
+- **Target API level** — Play exige apuntar a una versión reciente de Android; el requisito sube cada año, hay que revisar la vigente al subir el paquete.
+- **Clasificación de contenido** — cuestionario IARC en Play Console, equivalente a la etiqueta de edad de Apple.
+- **Cuenta de desarrollador** — pago único de 25 USD (confirmado: sigue siendo pago único, no anual) más verificación de identidad. Las cuentas **personales** creadas después de noviembre de 2023 deben completar una **prueba cerrada con al menos 12 personas inscritas de forma continua durante 14 días seguidos** antes de poder pedir producción (cifra vigente desde el 11 de diciembre de 2024, cuando Google la bajó de 20 a 12; fuente: Play Console Help, `support.google.com/googleplay/android-developer/answer/14151465`). Las cuentas de **organización** (piden D-U-N-S y documentos) no tienen esta regla, pero su verificación toma más tiempo; se menciona como opción si el proyecto se constituye como asociación.
+
+## 11. Piezas propuestas y orden
+
+Pocas piezas, realistas, cada una con su prueba, ordenadas para que la prueba cerrada de 14 días de Play arranque cuanto antes y corra en paralelo al resto (ese es el plazo largo de Android, no la revisión en sí).
 
 | # | Pieza | OL sugerido | Tamaño | Prototipo | Qué cierra |
 |---|---|---|---|---|---|
-| 1 | Llaves del founder (APNs `.p8` y certificado Pass Type ID) + Wallet en la web | **OL-155** (ya reservada, no duplicar) | Mediana | Sí (ya en curso) | Certificado y llave en Vercel; botón «Agregar a Wallet» funcionando en la web, sin app nativa |
-| 2 | Envoltorio Capacitor: sesión persistente, permisos puenteados (cámara, micrófono, ubicación), entrar por `ASWebAuthenticationSession` y vuelta por deep link, archivo `apple-app-site-association` | OL-192 | Grande | Sí (boceto del flujo de entrar y de los permisos) | Binario que carga somosnosotros.org, permisos nativos funcionando, entrar con Apple y con Google sin fallar, un evento abierto por SMS abre la app |
-| 3 | APNs: registro del token en la app y envío desde el servidor junto al web push actual | OL-193 | Mediana | Sí (diagrama app → servidor → APNs) | La app registra su token; `avisosWorker.ts` manda por APNs si hay token, sin tocar el web push existente; prueba con un evento real |
-| 4 | TestFlight con el founder | OL-194 | Chica | No | El founder instala desde TestFlight, entra, ve la agenda, recibe un aviso y borra su cuenta de prueba, todo dentro de la app |
-| 5 | Ficha de la tienda: textos, capturas reales del iPhone, etiquetas de privacidad, edad, y envío a revisión | OL-195 | Chica–mediana | Sí (5 capturas 390×844 con datos reales) | Ficha completa en App Store Connect; envío hecho; número de caso anotado |
-| — | Tras la aprobación: NFC o vibración | Sin OL todavía | — | — | Solo si el founder pide un uso concreto; hasta entonces, no se propone nada |
+| 1 | Llaves del founder (APNs `.p8` y certificado Pass Type ID) + Wallet en la web | **OL-155** (ya reservada, no duplicar) | Mediana | Sí (ya en curso) | Certificado y llave en Vercel; botón «Agregar a Wallet» en la web |
+| 2 | Envoltorio Android: TWA con Bubblewrap o PWABuilder | OL-192 | Mediana | Sí (boceto de la ficha del paquete) | Paquete Android que abre la web instalada como app, listo para subir a Play |
+| 3 | Cuenta de Google Play + arranque de la prueba cerrada con 12 probadores | OL-193 | Chica | No | Prueba cerrada corriendo — arranca aquí para que los 14 días avancen mientras se hace el resto |
+| 4 | Envoltorio Capacitor iOS: sesión persistente, permisos puenteados, entrar por `ASWebAuthenticationSession` y vuelta por deep link | OL-194 | Grande | Sí (boceto del flujo de entrar y de los permisos) | Binario iOS que carga la web, permisos nativos, entrar con Apple y Google sin fallar |
+| 5 | Enlaces profundos: `apple-app-site-association` (iOS) y `assetlinks.json` (Android), servidos por la web, más el entitlement/intent filter en cada app | OL-195 | Chica | Sí (boceto del enlace compartido) | Un evento compartido por SMS/WhatsApp abre la app instalada, en las dos plataformas |
+| 6 | APNs: token del cliente iOS + envío desde el servidor junto al web push actual (Android sigue con web push, sin FCM) | OL-196 | Mediana | Sí (diagrama app → servidor → APNs) | La app iOS registra su token; `avisosWorker.ts` manda por APNs si hay token |
+| 7 | TestFlight con el founder (iOS) | OL-197 | Chica | No | El founder instala, entra, ve la agenda, recibe un aviso y borra su cuenta de prueba |
+| 8 | Fichas de las dos tiendas: textos, capturas reales (iPhone y Android), Data safety y App Privacy, borrado de cuenta por enlace web, clasificación de contenido, target API vigente, envío a revisión en ambas | OL-198 | Mediana | Sí (5 capturas 390×844 con datos reales, en las dos plataformas) | Fichas completas; envío hecho en las dos tiendas; número de caso anotado |
+| — | Google Wallet (API propia, cuenta de emisor) | Sin OL todavía | — | — | Pieza aparte de OL-155, opcional; no bloquea la salida a ninguna tienda |
+| — | Tras la aprobación: NFC o vibración en iOS | Sin OL todavía | — | — | Solo si el founder pide un uso concreto; en Android ya los da Chrome (sección 7) |
 
-El blog avanza en paralelo mientras Apple revisa (normalmente entre uno y pocos días, sin garantía): es web pura y llega a la app sin reenviar nada.
+El blog avanza en paralelo mientras las tiendas revisan: es web pura y llega a las dos apps sin reenviar nada.
 
-## 11. Tiempos de revisión
+## 12. Tiempos de revisión y de prueba
 
-Normalmente entre uno y pocos días, sin garantía; un rechazo suma otra vuelta. No hay una cifra más precisa que ofrecer.
+- **Apple:** normalmente entre uno y pocos días, sin garantía; un rechazo suma otra vuelta.
+- **Google Play:** los 12 probadores deben quedar inscritos 14 días **seguidos** antes de pedir producción (si alguien sale y vuelve a entrar, esos días no cuentan); después, la revisión de producción propia de Play. No hay una cifra más precisa que ofrecer en ninguna de las dos.
 
-## 12. Pendientes del founder (solo él puede hacerlos)
+## 13. Pendientes del founder (solo él puede hacerlos)
 
 1. Crear la llave APNs (`.p8`) y el certificado Pass Type ID en developer.apple.com, y pasar esos secretos a Vercel — nunca al repositorio.
 2. Aceptar los acuerdos pendientes en App Store Connect.
-3. Probar cada hito en TestFlight, en su propio iPhone.
-4. Dar la orden de enviar a revisión cuando la ficha esté lista.
+3. **Crear la cuenta de Google Play** (no consta que exista hoy): pago único de 25 USD y verificación de identidad.
+4. Decidir quiénes son los **12 probadores** de la prueba cerrada de Play: se propone la comunidad cercana del founder y los artistas que ya reclamaron su ficha en el CAPO como primer grupo natural.
+5. Probar cada hito en TestFlight (iOS) y en la prueba cerrada de Play (Android), en sus propios teléfonos.
+6. Dar la orden de enviar a revisión en cada tienda cuando la ficha esté lista.
 
-## 13. ¿App nativa antes o después del blog?
+## 14. ¿App nativa antes o después del blog?
 
-Antes, o en paralelo. El blog es web pura y llega a la app sin reenviar: en cuanto la app esté en la tienda, el blog se ve ahí solo. La revisión de Apple es el único plazo que no controlamos, así que conviene arrancarla ya y avanzar el blog mientras se espera.
+Antes, o en paralelo, en las dos tiendas. El blog es web pura y llega a ambas apps sin reenviar: en cuanto una app esté en su tienda, el blog se ve ahí solo. La revisión de Apple y la prueba cerrada de Play son los únicos plazos que no controlamos, así que conviene arrancarlos ya y avanzar el blog mientras se espera.
+
+## 15. ¿Cuál tienda primero?
+
+Ninguna espera a la otra: se arrancan las dos en cuanto exista el envoltorio de cada una, porque el plazo largo de Android (los 14 días de prueba cerrada) no depende de terminar iOS y conviene que corra cuanto antes. En la práctica eso significa construir primero el envoltorio de Android (TWA, la pieza más chica) para abrir esa prueba cerrada, mientras se construye en paralelo el de iOS (Capacitor, la pieza más grande); la que termine antes su revisión sale primero, sin que haga falta decidirlo de antemano.
