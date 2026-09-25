@@ -148,5 +148,5 @@ src/lib/sitemap.ts src/lib/sitemap.test.ts | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z
 
 ## Cierre
 
-`git status --short` en la rama, limpio salvo lo de esta pieza. Commit local en `ayuda`; push y PR contra
-`main` sin unir (lo une el gestor).
+`git status --short` en la rama, limpio salvo lo de esta pieza. Commit local en `ayuda`; push y PR #236
+contra `main` (https://github.com/robscan/somosnosotros/pull/236), sin unir (lo une el gestor).
