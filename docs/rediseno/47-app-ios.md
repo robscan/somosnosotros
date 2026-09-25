@@ -103,7 +103,7 @@ Pocas piezas, realistas, cada una con su prueba. El founder prueba cada hito en 
 | 5 | Ficha de la tienda: textos, capturas reales del iPhone, etiquetas de privacidad, edad, y envío a revisión | OL-195 | Chica–mediana | Sí (5 capturas 390×844 con datos reales) | Ficha completa en App Store Connect; envío hecho; número de caso anotado |
 | — | Tras la aprobación: NFC o vibración | Sin OL todavía | — | — | Solo si el founder pide un uso concreto; hasta entonces, no se propone nada |
 
-El blog avanza en paralelo mientras Apple revisa (3 a 10 días, sin garantía): es web pura y llega a la app sin reenviar nada.
+El blog avanza en paralelo mientras Apple revisa (normalmente entre uno y pocos días, sin garantía): es web pura y llega a la app sin reenviar nada.
 
 ## 11. Tiempos de revisión
 
