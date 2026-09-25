@@ -130,12 +130,31 @@ describe("coincidenciaClara (OL-187: la búsqueda automática solo fija sola una
     const unico = combinarResultados([lugar("a", "Museo A")], []);
     expect(coincidenciaClara(unico)).toEqual({ tipo: "lugar", lugar: lugar("a", "Museo A") });
   });
-  it("dos o más resultados: ninguno se fija solo, la persona elige de la lista", () => {
-    const dos = combinarResultados([lugar("a", "Museo A"), lugar("b", "Museo B")], []);
-    expect(coincidenciaClara(dos)).toBeNull();
-  });
   it("sin resultados: nada que fijar (regla de OL-182, nunca inventar un punto)", () => {
     expect(coincidenciaClara([])).toBeNull();
+  });
+  // Revisión del gestor sobre el primer arreglo: Mapbox casi siempre trae varias sugerencias para una dirección
+  // con número (la exacta y otras parecidas, de otra colonia o con otro número cerca) -exigir "exactamente una"
+  // dejaba sin fijarse solo el caso real del founder. Con varias, se acepta la PRIMERA cuya dirección empiece por
+  // la calle y el número de la dirección leída (antes de la primera coma), normalizada igual que `lugaresPorTexto`.
+  it("varios resultados y el primero coincide por calle y número: ese se fija", () => {
+    const cerca = { ...sugerido("x", "Calle Prueba 123"), direccion: "Calle Prueba 123, Ciudad de prueba" };
+    const varios = combinarResultados([], [cerca, sugerido("y", "Otra dirección")]);
+    expect(coincidenciaClara(varios, "Calle Prueba 123, Ciudad de prueba")).toBe(varios[0]);
+  });
+  it("acentos, mayúsculas y puntuación no impiden la coincidencia (misma normalización que lugaresPorTexto)", () => {
+    const conAcento = { ...lugar("a", "Museo Á"), direccion: "AV. INDUSTRIAS 101-A, Zona Industrial" };
+    const varios = combinarResultados([conAcento], [sugerido("x", "Otra")]);
+    expect(coincidenciaClara(varios, "av industrias 101-a, zona industrial")).toBe(varios[0]);
+  });
+  it("varios resultados y ninguno coincide con la dirección leída: no se fija nada", () => {
+    const varios = combinarResultados([], [sugerido("x", "Calle Distinta 9"), sugerido("y", "Otra calle 5")]);
+    expect(coincidenciaClara(varios, "Calle Prueba 123, Ciudad de prueba")).toBeNull();
+  });
+  it("dirección leída sin número (o sin dirección) y varios resultados: no se fija nada", () => {
+    const varios = combinarResultados([lugar("a", "Museo A"), lugar("b", "Museo B")], []);
+    expect(coincidenciaClara(varios, "Andador sin número")).toBeNull();
+    expect(coincidenciaClara(varios)).toBeNull();
   });
 });
 

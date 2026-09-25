@@ -40,9 +40,14 @@ bitácora [217](217-lugar-evento-pantalla-app.md), que dejó la hoja «¿Dónde 
 - **`necesitaConfirmarDireccion(draft)`**: verdadero cuando el `draft` es `"manual"` (nunca un lugar YA
   REGISTRADO, que siempre trae su punto al elegirlo), no tiene punto, y sí tiene una dirección escrita -el estado
   exacto que deja el cartel al leer sin geocodificar.
-- **`coincidenciaClara(combinados)`**: con exactamente un resultado (lugares registrados + Mapbox, la misma lista
-  que ya arma `combinarResultados`) lo devuelve; con cero o con más de uno, `null` -nunca se adivina entre varias
-  direcciones (regla de OL-182).
+- **`coincidenciaClara(combinados, direccionLeida)`**: con exactamente un resultado (lugares registrados + Mapbox,
+  la misma lista que ya arma `combinarResultados`) lo devuelve. Con varios -**revisión del gestor sobre la primera
+  entrega**: Mapbox casi siempre trae más de una sugerencia para una dirección con número (la exacta y otras
+  parecidas, de otra colonia o con otro número cerca), así que exigir "exactamente una" dejaba SIN fijarse solo el
+  caso real del founder- se acepta la PRIMERA cuya dirección, normalizada con `normalizarNombre` (de
+  `@/lib/lugares`, la misma que ya usa `lugaresPorTexto`: sin acentos, minúsculas, sin puntuación, espacios
+  colapsados), EMPIEZA por la calle y el número de la dirección leída (la parte antes de la primera coma). Sin un
+  número ahí, o si ninguna coincide así, `null` -nunca se adivina entre varias direcciones (regla de OL-182).
 
 `src/app/eventos/HojaDondeEs.tsx`:
 
@@ -51,8 +56,8 @@ bitácora [217](217-lugar-evento-pantalla-app.md), que dejó la hoja «¿Dónde 
   sesgo (ya la usa `buscarConContexto`/`contexto`), sin que nadie tenga que borrar nada.
 - Dentro del `useEffect` que ya hacía esa búsqueda (el del campo `q`), al terminar (éxito o error, en el `finally`)
   se comprueba, solo para ESTA primera búsqueda automática (`direccionInicial`, para no repetirlo si la persona
-  escribe algo distinto después): si hay una `coincidenciaClara` entre lo encontrado, se llama a la función nueva
-  `confirmarDireccionLeida(r)`.
+  escribe algo distinto después): si `coincidenciaClara(combinados, direccionInicial.current)` encuentra algo, se
+  llama a la función nueva `confirmarDireccionLeida(r)`.
 - **`confirmarDireccionLeida`** reutiliza `fijarPuntoDesdeDireccion` -la misma función que ya usaba el campo
   «Dirección» de la hoja «Agregar lugar» (OL-182) para prestar un punto sin cambiar de nombre ni de modo- en vez
   de `elegirLugarLista`/`elegirMapbox` (las que usa la persona al buscar desde cero, y que SÍ reemplazan el
@@ -86,12 +91,14 @@ npm run lint && npm run typecheck && npm test && npm run build
   updated»; CI en Linux no la tiene). `npm install` sí hacía falta -el árbol de trabajo llegó sin
   `@vercel/analytics` ni `qrcode` instalados, ajeno a esta pieza- y no tocó `package.json` ni `package-lock.json`
   (comprobado con `git status --short` antes y después).
-- **Pruebas:** **1252, 98 archivos** (11 nuevas en `dondeEsPantalla.test.ts`: `necesitaConfirmarDireccion`,
-  `coincidenciaClara`, y un bloque «el bug de OL-187, de punta a punta con las funciones puras» que reproduce el
-  estado exacto del defecto). Comprobado que fallan sin el arreglo: con `dondeEsPantalla.ts` puesto momentáneamente
-  en el estado de `origin/main` (vía `git stash`, aplicado y retirado sin tocar nada más), 11 de las pruebas nuevas
-  fallan con `necesitaConfirmarDireccion is not a function` / `coincidenciaClara is not a function` -las otras 23
-  (sobre funciones que ya existían) siguen pasando, como debe ser.
+- **Pruebas:** **1255, 98 archivos** (14 nuevas en `dondeEsPantalla.test.ts`: `necesitaConfirmarDireccion`,
+  `coincidenciaClara` -incluida la revisión del gestor: un solo resultado, varios con el primero coincidiendo por
+  calle y número (con acentos/mayúsculas/puntuación, para probar que reusa `normalizarNombre`), varios sin ninguna
+  coincidencia, y una dirección sin número con varios resultados-, y un bloque «el bug de OL-187, de punta a punta
+  con las funciones puras» que reproduce el estado exacto del defecto). Comprobado que fallan sin el arreglo: con
+  `dondeEsPantalla.ts` puesto momentáneamente en el estado de `origin/main` (vía `git stash`, aplicado y retirado
+  sin tocar nada más), las pruebas nuevas fallan con `necesitaConfirmarDireccion is not a function` /
+  `coincidenciaClara is not a function` -las que prueban funciones que ya existían siguen pasando, como debe ser.
 - **Build:** `next build` compila -"Compiled successfully"- y falla en el mismo paso de TypeScript por la misma
   colisión de mayúsculas de macOS (no relacionada con esta pieza).
 
@@ -110,22 +117,47 @@ Mapbox ni de Supabase (no se usan en este flujo). Fuente Bricolage Grotesque car
 Flujo de cada captura: cartel simulado (mismo lugar/dirección que reporta el founder, "Foro ficticio" / "Calle
 Prueba 123, Ciudad de prueba") → botón **Confirmar** del renglón «Dónde» → hoja «¿Dónde es?».
 
-- **`01-antes-confirmar-abierto.png` / `02-antes-tras-esperar.png`** (código de `origin/main`, el defecto): nombre
-  y dirección correctos en el resumen, «Listo» apagado (gris) y sin pin en el mapa -esperar 1.2 s no cambia nada
-  (ninguna búsqueda se dispara sola): reproduce exacto lo que reportó el founder.
+- **`01-antes-confirmar-abierto.png`**: código de `origin/main` (el defecto), justo al abrir la hoja «¿Dónde es?»
+  por «Confirmar»: nombre («Foro ficticio») y dirección («Calle Prueba 123, Ciudad de prueba») correctos en el
+  resumen, «Listo» apagado (gris) y sin pin en el mapa.
+- **`02-antes-tras-esperar.png`**: el mismo estado 1.2 s después, sin ningún cambio -ninguna búsqueda se dispara
+  sola: reproduce exacto lo que reportó el founder, incluido que se queda así para siempre sin un gesto nuevo.
 - **`01-despues-confirmar-abierto.png`**: con el arreglo, al abrir la hoja el campo de búsqueda se llena solo con
   la dirección leída y por un instante muestra «no está registrado» (la búsqueda de Mapbox aún no responde).
 - **`02-despues-tras-esperar.png`**: tras responder Mapbox con una sola coincidencia, el pin queda puesto (morado,
   en el mapa), el campo de búsqueda vuelve a estar vacío y **«Listo» se habilita** (texto morado) -mismo nombre y
   dirección que antes, nunca se sustituyeron.
-- **`01-despues-ambiguo-confirmar-abierto.png` / `02-despues-ambiguo-tras-esperar.png`** (`AMBIGUO=1`, dos
-  sugerencias para la misma dirección): ningún punto se fija solo -«Listo» se queda apagado-, la lista de
-  sugerencias queda abierta con las dos opciones para elegir con un toque, tal como pide la regla de OL-182 de
-  nunca inventar ni adivinar un punto.
+- **`01-despues-ambiguo-sin-coincidencia-clara.png`** (`AMBIGUO=1`, dos sugerencias para «Calle Prueba 123, Ciudad
+  de prueba»: «Avenida Prueba 123…» y «Calle Prueba 456…» -ninguna empieza por «calle prueba 123» normalizado,
+  revisión del gestor sobre el primer arreglo, ver más abajo): la lista de sugerencias sigue abierta con las DOS
+  opciones visibles y distintas (se ve cada dirección completa en el renglón de abajo de cada una), «Listo» sigue
+  apagado y sin pin -tal como pide la regla de OL-182 de nunca inventar ni adivinar un punto entre varias.
+  (Revisión del gestor: la primera entrega de esta captura, `01-despues-ambiguo-confirmar-abierto.png`, resultó
+  ser BYTE POR BYTE igual a `01-despues-confirmar-abierto.png` -123908 bytes, mismo `sha1sum`- porque ambas se
+  tomaban en el mismo instante, justo al abrir la hoja, ANTES de que la búsqueda automática respondiera: en ese
+  momento el DOM es idéntico sin importar qué traerá Mapbox después. Se quitó esa captura redundante y se dejó
+  solo la de después de esperar, que sí muestra la diferencia real -las dos sugerencias- y es la única que aporta
+  algo nuevo sobre el caso ambiguo.)
 
-Ningún `document.documentElement.scrollWidth` mayor que 390 en ninguna de las seis capturas (comprobado a mano
+Ningún `document.documentElement.scrollWidth` mayor que 390 en ninguna de las cinco capturas (comprobado a mano
 sobre las imágenes). Consola sin errores de JavaScript propios (solo `404`/`ERR_FAILED` de recursos que el arnés
 no sirve -sprites e iconos del estilo de mapa local, sin relación con la lógica de esta pieza).
+
+## Revisión del gestor sobre la primera entrega, en la misma rama
+
+Dos hallazgos sobre el PR #229, corregidos en un segundo commit (sin tocar nada más):
+
+1. **`coincidenciaClara` exigía "exactamente un resultado", y Mapbox casi nunca da uno solo** para una dirección
+   con número (trae la exacta y otras parecidas cerca): en el caso real del founder, el punto hubiera seguido sin
+   fijarse solo. Corregido: con varios resultados, se acepta el primero cuya dirección normalizada empiece por la
+   calle y el número de la dirección leída (ver «El arreglo» arriba, firma nueva `coincidenciaClara(combinados,
+   direccionLeida)`), reusando `normalizarNombre` de `@/lib/lugares` en vez de escribir otra normalización.
+2. **Dos capturas resultaron ser la misma imagen** (`01-despues-confirmar-abierto.png` y
+   `01-despues-ambiguo-confirmar-abierto.png`, 123908 bytes, mismo `sha1sum`): las dos se tomaban en el instante de
+   abrir la hoja, antes de que la búsqueda respondiera -en ese momento el DOM no puede diferir, sin importar qué
+   traerá Mapbox después. Se quitó la captura redundante y se volvió a capturar el caso ambiguo YA con la lista
+   resuelta (`01-despues-ambiguo-sin-coincidencia-clara.png`, con las dos sugerencias distintas visibles) -detalle
+   en «Capturas reales» arriba.
 
 ## Correos en el diff
 

@@ -231,7 +231,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
           // vuelto a escribir después: `direccionInicial` la fija una sola vez, al montar).
           if (confirmarDireccion.current && texto === direccionInicial.current) {
             confirmarDireccion.current = false;
-            const claro = coincidenciaClara(combinarResultados(lugaresPorTexto(lugares, texto), opciones));
+            const claro = coincidenciaClara(combinarResultados(lugaresPorTexto(lugares, texto), opciones), direccionInicial.current);
             if (claro) void confirmarDireccionLeida(claro);
           }
         }

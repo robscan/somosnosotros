@@ -7,7 +7,7 @@
  */
 import type { LugarSugerido } from "@/lib/buscarLugares";
 import type { Punto } from "@/lib/geo";
-import type { LugarResumen } from "@/lib/lugares";
+import { normalizarNombre, type LugarResumen } from "@/lib/lugares";
 
 export type ResultadoLugarRegistrado = { tipo: "lugar"; lugar: LugarResumen };
 export type ResultadoMapbox = { tipo: "mapbox"; item: LugarSugerido };
@@ -94,12 +94,28 @@ export function necesitaConfirmarDireccion(draft: { origen: "lugar" | "manual"; 
   return !!draft && draft.origen === "manual" && draft.punto === null && draft.direccion.trim().length > 0;
 }
 
+function direccionDe(r: ResultadoBusqueda): string {
+  return (r.tipo === "lugar" ? r.lugar.direccion : r.item.direccion) ?? "";
+}
+
 /**
  * ¿Hay una sola coincidencia clara entre lugares registrados y lo que trae Mapbox para la dirección leída del
  * cartel (OL-187)? Con exactamente un resultado se fija solo -sigue siendo una búsqueda real de esa misma
- * dirección, nunca un punto inventado (regla de OL-182)-; con cero o con más de uno, la persona elige con un
- * toque de la lista, que ya queda abierta (mismo mecanismo que cualquier búsqueda en este campo).
+ * dirección, nunca un punto inventado (regla de OL-182)-.
+ *
+ * Con más de uno (revisión del gestor sobre el primer arreglo: Mapbox casi siempre trae varias sugerencias para
+ * una dirección con número -una exacta y otras de la misma calle en otra colonia o con otro número cerca-, así
+ * que exigir "exactamente una" dejaba el caso real del founder sin fijarse solo), se acepta el PRIMER resultado
+ * cuya dirección -normalizada con `normalizarNombre` (sin acentos, minúsculas, sin puntuación, espacios
+ * colapsados), igual que ya compara `lugaresPorTexto`- EMPIEZA por la calle y el número de la dirección leída (la
+ * parte antes de la primera coma). Sin un número en esa parte (una dirección sin número, o sin coma reconocible),
+ * o si ninguna coincide así, no se fija nada -la persona elige con un toque de la lista, que ya queda abierta.
  */
-export function coincidenciaClara(combinados: readonly ResultadoBusqueda[]): ResultadoBusqueda | null {
-  return combinados.length === 1 ? combinados[0] : null;
+export function coincidenciaClara(combinados: readonly ResultadoBusqueda[], direccionLeida = ""): ResultadoBusqueda | null {
+  if (combinados.length === 1) return combinados[0];
+  const calleYNumero = direccionLeida.split(",")[0] ?? "";
+  if (!/\d/.test(calleYNumero)) return null;
+  const prefijo = normalizarNombre(calleYNumero);
+  if (!prefijo) return null;
+  return combinados.find((r) => normalizarNombre(direccionDe(r)).startsWith(prefijo)) ?? null;
 }
