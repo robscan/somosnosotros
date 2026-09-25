@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { archivoIcs, diasEnMes, escaparIcs, mesAnterior, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso } from "./calendario";
+import { archivoIcs, diasEnMes, escaparIcs, filtroAlElegirFecha, mesAnterior, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso } from "./calendario";
 
 const evento = { id: "fba5bd3e-7898-4261-b4fd-97a17b1d61ee", titulo: "Navidad queretana: danza, música; y más", inicio: "2026-12-06T18:00:00.000Z", fin: null, descripcion: "Espectáculo\nnavideño", lugar: "Teatro del IMSS, Tomasa Estévez 805" };
 
@@ -138,5 +138,15 @@ describe("calendario del mes", () => {
     expect(pasoMasCercano("23:59")).toBe("23:45"); // no se pasa de la última hora del día
     expect(pasoMasCercano("00:00")).toBe("00:00");
     expect(pasoMasCercano("nada")).toBe("00:00");
+  });
+});
+
+describe("filtroAlElegirFecha (bug OL-188: elegir hoy no filtraba)", () => {
+  it("elegir hoy filtra por hoy, no lo deja en «sin filtro»", () => {
+    expect(filtroAlElegirFecha("2026-09-25")).toBe("2026-09-25");
+  });
+
+  it("elegir cualquier otro día también se guarda tal cual", () => {
+    expect(filtroAlElegirFecha("2026-10-01")).toBe("2026-10-01");
   });
 });
