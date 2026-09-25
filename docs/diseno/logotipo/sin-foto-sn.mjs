@@ -9,7 +9,8 @@ import path from "node:path";
 const raiz = process.cwd();
 const simbolo = fs.readFileSync(path.join(raiz, "docs/diseno/logotipo/LogoFinal/SN - Symbol.svg"), "utf8");
 const [, vbx, vby, vbw, vbh] = simbolo.match(/viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/).map(Number);
-const d = simbolo.match(/ d="([^"]+)"/)[1];
+// El arte final trae la S y la N como dos <path> separados (antes uno solo con subtrazos): tomar todos.
+const ds = [...simbolo.matchAll(/<path[^>]* d="([^"]+)"/g)].map((m) => m[1]);
 const FONDO = "#e6e6e2"; // --fondo-miniatura
 const TINTA = "#b1b0a9"; // se lee a 48 px sin competir con las fotos de al lado
 
@@ -17,9 +18,10 @@ const TINTA = "#b1b0a9"; // se lee a 48 px sin competir con las fotos de al lado
 async function imagen(rel, ancho, alto, proporcion) {
   const h = Math.min(ancho, alto) * proporcion;
   const w = (h * vbw) / vbh;
+  const trazos = ds.map((d) => `<path fill="${TINTA}" d="${d}"/>`).join("");
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${ancho}" height="${alto}"><rect width="${ancho}" height="${alto}" fill="${FONDO}"/>` +
-    `<svg x="${(ancho - w) / 2}" y="${(alto - h) / 2}" width="${w}" height="${h}" viewBox="${vbx} ${vby} ${vbw} ${vbh}"><path fill="${TINTA}" d="${d}"/></svg></svg>`;
+    `<svg x="${(ancho - w) / 2}" y="${(alto - h) / 2}" width="${w}" height="${h}" viewBox="${vbx} ${vby} ${vbw} ${vbh}">${trazos}</svg></svg>`;
   const buf = await sharp(Buffer.from(svg)).png({ compressionLevel: 9, palette: true }).toBuffer();
   fs.writeFileSync(path.join(raiz, rel), buf);
   console.log(rel, `${ancho}×${alto}`, buf.length, "bytes");

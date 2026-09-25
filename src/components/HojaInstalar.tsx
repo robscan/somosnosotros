@@ -72,7 +72,8 @@ export default function HojaInstalar({ onCerrar }: { onCerrar: () => void }) {
         ))}
       </ol>
       <p className={styles.despues}>
-        <Image src="/apple-touch-icon.png" alt="" width={44} height={44} className={styles.icono} />
+        {/* ?v=2: símbolo SN nuevo (OL-200), mismo nombre de archivo. */}
+        <Image src="/apple-touch-icon.png?v=2" alt="" width={44} height={44} className={styles.icono} />
         <span>
           <b>Después</b>, ábrela desde tu inicio y toca Activar.
         </span>

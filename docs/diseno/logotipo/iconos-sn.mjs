@@ -8,7 +8,8 @@ import path from "node:path";
 const raiz = process.cwd();
 const simbolo = fs.readFileSync(path.join(raiz, "docs/diseno/logotipo/LogoFinal/SN - Symbol.svg"), "utf8");
 const [, vbx, vby, vbw, vbh] = simbolo.match(/viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/).map(Number);
-const d = simbolo.match(/ d="([^"]+)"/)[1];
+// El arte final trae la S y la N como dos <path> separados (antes uno solo con subtrazos): tomar todos.
+const ds = [...simbolo.matchAll(/<path[^>]* d="([^"]+)"/g)].map((m) => m[1]);
 const TINTA = "#1a1a1a", BLANCO = "#ffffff";
 
 /** Lienzo cuadrado de `px` con el símbolo centrado. `relleno`: margen por lado (fracción). `seguro`: diagonal del símbolo
@@ -17,9 +18,10 @@ function lienzo(px, { relleno = 0.14, seguro = null, fondo = BLANCO, tinta = TIN
   const s = seguro ? (seguro * px) / Math.hypot(vbw, vbh) : Math.min((px * (1 - 2 * relleno)) / vbw, (px * (1 - 2 * relleno)) / vbh);
   const w = vbw * s, h = vbh * s, x = (px - w) / 2, y = (px - h) / 2;
   const rect = fondo ? `<rect width="${px}" height="${px}" fill="${fondo}"/>` : "";
+  const trazos = ds.map((d) => `<path fill="${tinta}" d="${d}"/>`).join("");
   return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">${rect}` +
-      `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${vbx} ${vby} ${vbw} ${vbh}"><path fill="${tinta}" d="${d}"/></svg></svg>`,
+      `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${vbx} ${vby} ${vbw} ${vbh}">${trazos}</svg></svg>`,
   );
 }
 const png = (svg) => sharp(svg).png({ compressionLevel: 9 }).toBuffer();

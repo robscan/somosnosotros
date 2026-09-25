@@ -10,9 +10,10 @@ self.addEventListener("push", (e) => {
   e.waitUntil(
     self.registration.showNotification(datos.titulo, {
       body: datos.cuerpo,
-      icon: "/icono-192.png",
+      // ?v=2: símbolo SN nuevo (OL-200), mismo nombre de archivo.
+      icon: "/icono-192.png?v=2",
       // Android pinta el icono chico solo con su silueta: va el SN transparente (docs/diseno/logotipo/insignia.py), no el cuadro.
-      badge: "/icono-aviso.png",
+      badge: "/icono-aviso.png?v=2",
       data: { url: datos.url },
       tag: datos.tag || datos.url,
       renotify: false,
