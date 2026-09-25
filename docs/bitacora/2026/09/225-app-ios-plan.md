@@ -55,3 +55,31 @@ El gestor de cambios devolvió el primer borrador con estos errores, ya corregid
 - El founder firma el plan corregido y elige si app antes o después del blog (recomendación: antes o en paralelo).
 - Confirmar OL-192 a OL-195 en ASIGNACIONES cuando el founder dé la orden de arrancar.
 - Primera pieza real: seguir OL-155 (Wallet en la web) hasta que el founder tenga las llaves; después, OL-192.
+
+## Tercera versión: Android
+
+Pedido del founder (2026-09-25): «asegúrate de considerar en el plan Android e iOS». El doc 47 pasó de «App nativa para iOS» a «App en las tiendas: iOS y Android» sin renombrar el archivo. Rama `app-tiendas-android`.
+
+### Qué leí de más
+
+- Documentación pública de Trusted Web Activity (TWA) y Digital Asset Links (`/.well-known/assetlinks.json`): TWA corre en Chrome, no en un WebView, así que el service worker, el web push, el inicio de sesión con Google/Apple y las capacidades del navegador (cámara, ubicación, NFC, vibración) siguen funcionando igual que en la web instalada, sin puentes nativos.
+- Comparación honesta TWA frente a Capacitor-Android (hecho pedido por el gestor): con TWA casi no hay trabajo nativo pero queda un envoltorio distinto por plataforma (TWA en Android, Capacitor en iOS); con Capacitor en las dos, un solo proyecto pero en Android dentro de un WebView, donde los avisos no llegan sin FCM (Firebase Cloud Messaging) y Google bloquea su botón de inicio de sesión sin Custom Tabs. Recomendación: TWA para Android — el ahorro de no mantener FCM ni Custom Tabs compensa sostener dos envoltorios en vez de uno.
+- Confirmado con búsqueda web (2026-09-25, Play Console Help, `support.google.com/googleplay/android-developer/answer/14151465`): las cuentas de desarrollador **personales** de Google Play creadas después de noviembre de 2023 deben correr una prueba cerrada con **12 probadores** inscritos 14 días **seguidos** antes de pedir producción; la cifra bajó de 20 a 12 el 11 de diciembre de 2024. Las cuentas de **organización** (con D-U-N-S) no tienen esta regla.
+- Confirmado con búsqueda web: el registro de desarrollador de Google Play sigue siendo un pago **único** de 25 USD, no anual.
+- NFC (Web NFC) y vibración (Vibration API) ya los da Chrome en Android dentro de la web instalada de hoy: en Android no son argumento para pedir la app nativa, solo en iOS (Safari no los da).
+- Google Wallet es el equivalente de Android a Apple Wallet, con API y cuenta de emisor propias; no es la misma pieza que OL-155. Se deja como pieza aparte y opcional que no bloquea la salida a ninguna tienda.
+
+### Qué decidí
+
+1. Doc 47 ahora compara TWA/Capacitor/PWABuilder/WKWebView en una sola tabla (con Android como columna) y agrega una tabla dedicada TWA-vs-Capacitor solo para Android, con la recomendación de TWA.
+2. Las secciones de avisos, inicio de sesión y permisos del navegador ahora distinguen iOS, Android-TWA y Android-Capacitor en vez de hablar solo de un contenedor genérico.
+3. La pieza de enlaces profundos (OL-195) agrupa `apple-app-site-association` y `assetlinks.json`: ambos son archivos que sirve la web, no un ajuste de founder en las consolas de cada tienda.
+4. Piezas renumeradas a una sola lista para las dos tiendas (OL-192 a OL-198), ordenada para que la prueba cerrada de Play (OL-193) arranque apenas exista el envoltorio de Android (OL-192), antes de construir el de iOS: así los 14 días corren en paralelo al resto en vez de esperar a que iOS esté listo.
+5. Se agregó «Pendientes del founder»: crear la cuenta de Google Play (no consta que exista) y decidir los 12 probadores — se propone la comunidad cercana del founder y los artistas que ya reclamaron su ficha en el CAPO.
+6. Nueva sección final «¿Cuál tienda primero?»: ninguna espera a la otra, se arrancan ambas en cuanto exista cada envoltorio.
+
+### Qué queda
+
+- El founder confirma si empezar por el envoltorio de Android (OL-192) o el de iOS (OL-194), y decide los 12 probadores de Play.
+- Confirmar OL-192 a OL-198 en ASIGNACIONES cuando dé la orden de arrancar.
+- Sin código en esta pieza: el envoltorio, `assetlinks.json` y `apple-app-site-association` son trabajo de piezas futuras.
