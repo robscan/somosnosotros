@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { IconoOk } from "@/components/ui/Iconos";
 import type { MotivoReclamo } from "@/lib/reportes";
 import type { ArtistaConMiCorreo, ResultadoReclamo } from "./acciones";
-import { siguienteEstadoLetrero, type EstadoFinalLetrero } from "./letreroCorreoLigado";
+import { siguienteEstadoLetrero, type EstadoFinalLetrero } from "./letreroCorreoLigadoLogica";
 import styles from "./LetreroCorreoLigado.module.css";
 
 type Props = {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { siguienteEstadoLetrero } from "./letreroCorreoLigado";
+import { siguienteEstadoLetrero } from "./letreroCorreoLigadoLogica";
 
 describe("siguienteEstadoLetrero", () => {
   it("correo coincidente: aprobado, sin mensaje de error", () => {
