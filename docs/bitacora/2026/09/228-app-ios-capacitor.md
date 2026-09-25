@@ -219,3 +219,85 @@ guardado en `apps/ios/package-lock.json` por el operador original, sin tocar en 
 - El aviso del sistema dice `"App"` en vez de `"Somos Nosotros"` en este build de simulador sin firmar
   (`simctl install`); confirmar que dice el nombre correcto cuando el founder lo instale desde TestFlight (el
   `Info.plist` ya trae bien el `CFBundleDisplayName`, así que debería resolverse solo).
+
+## Corrección de seguridad: vuelta por https (2026-09-25, PR #234, mismo día)
+
+**El problema.** La corrección anterior (arriba, «Correcciones del gestor») hacía volver la sesión a la app por
+el esquema propio `somosnosotros://` (`ASWebAuthenticationSession` con `callbackURLScheme`). Cualquier app puede
+registrar el mismo esquema en el teléfono: si alguien lograba que la víctima abriera `/auth/google?app=1` en
+Safari (fuera de esta app), Safari podía entregar esa vuelta —con el `token_hash` de un enlace mágico de un solo
+uso— a una app impostora que también reclamara el esquema, y esa app se quedaba con la sesión de la víctima.
+
+**El arreglo.** La vuelta ahora es una URL https del propio dominio, que solo puede recibir la app cuyo
+Associated Domains lo verificó:
+
+- `src/lib/entrarCon.ts`: `urlAppTrasEntrar` ya no arma `somosnosotros://auth?...`, arma
+  `${origen}/auth/app-regreso?token_hash=...&siguiente=...`, con el origen de la propia petición (nunca una
+  constante) para que funcione también en vistas previas de Vercel. `URL_APP_ERROR` (constante) se volvió
+  `urlAppError(origen)` (función), por la misma razón. `src/app/auth/[proveedor]/fin/route.ts` pasa
+  `request.nextUrl.origin` a las dos.
+- `src/app/auth/app-vuelta/` se renombró a `src/app/auth/app-regreso/` (con su prueba): como ya hacía exactamente
+  lo que pedía el encargo (confirmar el `token_hash` con `confirmarEnlaceMagico` y seguir a `siguiente`, o volver a
+  `/entrar?error=enlace`), no hizo falta escribir una ruta nueva — la vieja `app-vuelta` YA era, sin saberlo, la
+  ruta correcta para el caso "se abre fuera de la app": bastó con moverla al nombre `app-regreso` y dejar que la
+  reciba también `EntrarSistemaPlugin.swift`, en vez de crear una segunda ruta idéntica.
+- `apps/ios/ios/App/App/EntrarSistemaPlugin.swift`: `ASWebAuthenticationSession(url:callbackURLScheme:)` pasó a
+  `ASWebAuthenticationSession(url:callback:)` con `ASWebAuthenticationSession.Callback.https(host:
+  "somosnosotros.org", path: "/auth/app-regreso")` (API de iOS 17.4+). `alTerminar` se simplificó: como la
+  callback ya es la URL https final, se carga tal cual en el `WKWebView` (antes reconstruía la URL a mano desde
+  el esquema propio). Se quitó el bloque `CFBundleURLTypes` de `Info.plist` (ya no hay ningún esquema propio que
+  registrar).
+- **Deployment target subido de 15.0 a 17.4** (las 4 apariciones de `IPHONEOS_DEPLOYMENT_TARGET` en
+  `App.xcodeproj/project.pbxproj`): lo exige `ASWebAuthenticationSession.Callback.https`, documentado por Apple
+  como disponible desde iOS 17.4.
+- `apple-app-site-association`: sin cambios de contenido (ya no reclamaba `/auth/*`, correcto: la callback la
+  atrapa la propia `ASWebAuthenticationSession`, no un enlace universal). Confirmado con la documentación de Apple
+  (búsqueda web) que la callback https exige `webcredentials` con el dominio — ya estaba desde la pieza original.
+  Solo se ajustaron los comentarios que explicaban el porqué.
+- Pruebas: `entrarCon.test.ts` y `fin/route.test.ts` comprueban que la vuelta es siempre `https://.../auth/app-regreso...`
+  y nunca empieza con el esquema propio; `app-regreso/route.test.ts` (renombrado de `app-vuelta`) cubre token
+  válido, inválido, ausente y `siguiente` externo. `grep -rn "somosnosotros://" src apps/ios/ios` queda vacío
+  (las únicas menciones de esa cadena que quedaban en comentarios y nombres de prueba, explicando qué se dejó de
+  hacer, se reescribieron para no contener el texto literal, ya que la evidencia pedía el grep vacío a secas).
+
+**Verificación.**
+
+```
+npm run lint       # 0 errores (mismo warning preexistente, ajeno)
+npm run typecheck  # verde
+npm test           # 101 archivos, 1271 pruebas, todas verdes
+npm run build      # verde
+```
+
+`grep -rn "somosnosotros://" src apps/ios/ios` → vacío. Correos del diff: solo `persona@example.com`.
+
+**Compilado en el simulador — con un límite que hay que anotar.** `xcodebuild -scheme App -destination "id=<udid>"
+build` (simulador propio, el mismo `OL-194 correcciones iPhone` de la corrección anterior, borrado y rearrancado
+antes de esta prueba) compila en verde con el deployment target 17.4. La app instala, arranca y carga la web real
+(captura `06-entrar-apple-limite-firma-simulador.png`). Pero **tocar «Continuar con Apple» no llega a mostrar la
+hoja del sistema en este entorno**: `EntrarSistemaPlugin.swift` sí intercepta la navegación y abre la sesión
+(`log show` confirma que se crea la escena de `SafariViewService` y llega a `ready`), pero de inmediato el sistema
+la cancela sola (`"SFAuthenticationSession was cancelled by user"`, sin que nadie haya tocado nada, siempre en
+menos de 30 ms desde que la escena está lista — reproducido igual tras borrar el simulador entero, así que no es
+un caché viejo).
+
+La causa, comprobada con `codesign -d -vvv` sobre el `.app` compilado: en esta máquina/sesión no hay ninguna
+cuenta ni equipo de Apple Developer disponible para Xcode (`DEVELOPMENT_TEAM` vacío en el proyecto y en
+`-showBuildSettings`), así que **cualquier build aquí queda firmado ad-hoc** (`Signature=adhoc`,
+`TeamIdentifier=not set`) aunque no se le pida explícitamente. El archivo interno que el simulador usa para
+comprobar Associated Domains (`Entitlements-Simulated.plist`) sigue declarando el identificador real del founder
+(`AT53235M7U.org.somosnosotros.app`), y ese desajuste entre lo declarado y la firma real basta para que
+`ASWebAuthenticationSession.Callback.https` rechace la sesión — a diferencia del esquema propio de antes
+(`callbackURLScheme`), que no depende de ninguna firma ni de Associated Domains, por eso sí se veía en el
+simulador (capturas 03 y 05 de la corrección anterior). No se intentó arreglar esto con una cuenta, certificado o
+perfil de aprovisionamiento (fuera de alcance de este encargo: «nada en la cuenta de Apple»).
+
+Por esto, `06-entrar-apple-limite-firma-simulador.png` muestra la pantalla de Entrar con el botón de Apple, **no**
+la hoja del sistema — nombrarla como si la mostrara sería declarar algo sin evidencia real. La confirmación de que
+el aviso nativo y la página de Apple aparecen con la vuelta https de verdad queda pendiente de un build firmado
+de verdad (TestFlight o un dispositivo con el certificado de distribución del founder), el mismo requisito que ya
+dejó pendiente la pieza original para el recorrido completo con una cuenta real.
+
+**Qué falta.** Lo mismo que ya dejaba pendiente la pieza original, más: confirmar en TestFlight o en un
+dispositivo firmado que la hoja de `ASWebAuthenticationSession` sí aparece con la callback https (aquí no se pudo,
+por lo de arriba) y que, tras entrar de verdad, `/auth/app-regreso` deja la sesión en la app.

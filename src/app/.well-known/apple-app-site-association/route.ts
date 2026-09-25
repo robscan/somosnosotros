@@ -9,12 +9,14 @@ import { NextResponse } from "next/server";
  * enlace compartido.
  *
  * `applinks` reclama solo lo que la app de verdad abre hoy: las fichas (eventos, lugares, artistas). `/auth/*` no
- * está aquí (corrección del gestor, OL-194, bitácora 228): la vuelta de entrar con Apple o Google ya no depende de
- * un enlace universal, sino de `ASWebAuthenticationSession` con el esquema propio "somosnosotros://" (ver
- * `EntrarSistemaPlugin.swift` y `urlAppTrasEntrar` en src/lib/entrarCon.ts), así que reclamar `/auth/*` no hacía
- * falta y, peor, competía con el enlace del correo cuando alguien lo abre fuera de la app (Apple prefiere abrir la
- * app instalada si reclama la ruta, y ahí el enlace del correo no sirve de nada). `webcredentials` deja que el
- * llavero de iOS sugiera la cuenta de somosnosotros.org dentro de la app, igual que ya hace en Safari.
+ * está aquí: la vuelta de entrar con Apple o Google no depende de un enlace universal (`applinks`), sino de
+ * `ASWebAuthenticationSession.Callback.https(host:path:)` (iOS 17.4+, ver `EntrarSistemaPlugin.swift` y
+ * `urlAppTrasEntrar` en src/lib/entrarCon.ts): esa callback la atrapa la propia sesión del sistema antes de que
+ * llegue a ser una navegación, así que reclamar `/auth/*` en `applinks` no hace falta y, peor, competiría con el
+ * enlace del correo cuando alguien lo abre fuera de la app (Apple prefiere abrir la app instalada si reclama la
+ * ruta, y ahí el enlace del correo no sirve de nada). Lo que sí exige esa callback https, según la documentación de
+ * Apple, es `webcredentials` con el dominio — ya está, y además deja que el llavero de iOS sugiera la cuenta de
+ * somosnosotros.org dentro de la app, igual que ya hace en Safari.
  *
  * Confirmar que nada la redirige: src/proxy.ts solo actúa sobre `/artistas|lugares|eventos/<uuid>` (no sobre
  * `/.well-known/*`) y next.config.ts no tiene ninguna regla que toque esta ruta.

@@ -161,18 +161,30 @@ export function urlEntrar(siguiente: string, fallo?: Proveedor): string {
  * A dónde manda `/auth/[proveedor]/fin` al envoltorio de iPhone cuando entrar salió bien y el intento venía de la
  * app (OL-194). La sesión que Supabase acaba de poner queda en las cookies de la `ASWebAuthenticationSession` (las
  * comparte con Safari), no en el WKWebView de la app: en vez de mandar ahí, se manda un enlace de un solo uso (el
- * `token_hash` de un enlace mágico, generado sin enviarlo por correo) por el esquema propio "somosnosotros://".
- * `ASWebAuthenticationSession` entrega esa dirección directo a `EntrarSistemaPlugin.swift` sin volver a mostrar
- * nada en pantalla (coincide con `callbackURLScheme`), que carga `/auth/app-vuelta?token_hash=…&siguiente=…` ya en
- * el WKWebView de la app: ahí `verifyOtp` deja la sesión en el almacenamiento propio de la app. Nunca lleva un
- * access_token ni un refresh_token, solo el token de un enlace mágico de un solo uso, con la misma vigencia.
+ * `token_hash` de un enlace mágico, generado sin enviarlo por correo) por una URL https de nuestro propio dominio,
+ * nunca por un esquema propio.
+ *
+ * Corrección de seguridad (OL-194): un esquema propio de la app (el prefijo "somosnosotros" con dos barras) lo
+ * puede registrar cualquier app en el teléfono; si alguien hace abrir `/auth/google?app=1` a la víctima fuera de
+ * esta app, Safari podría mandar esa vuelta a una app impostora que también reclame el esquema, y esa app se
+ * quedaría con la sesión de la víctima. Con
+ * `ASWebAuthenticationSession.Callback.https(host:path:)` (iOS 17.4+, `EntrarSistemaPlugin.swift`) la vuelta solo
+ * la puede recibir la app cuyo Associated Domains verificó ese dominio (`webcredentials:somosnosotros.org`,
+ * `App.entitlements`); ninguna otra app puede registrarla. Recibe el origen de la propia petición (nunca una
+ * constante) para que también funcione en las vistas previas de Vercel.
+ *
+ * La ruta de destino, `/auth/app-regreso`, hace exactamente lo mismo si alguien la abre FUERA de la app (un
+ * navegador normal, o el teléfono sin la app instalada): canjea el `token_hash` en ESE navegador y ahí se queda la
+ * sesión — nunca llega a otra app, porque ya no viaja por un esquema que cualquiera pueda registrar.
  */
-export function urlAppTrasEntrar(siguiente: string, tokenHash: string): string {
-  return `somosnosotros://auth?${new URLSearchParams({ token_hash: tokenHash, siguiente }).toString()}`;
+export function urlAppTrasEntrar(origen: string, siguiente: string, tokenHash: string): string {
+  return `${origen}/auth/app-regreso?${new URLSearchParams({ token_hash: tokenHash, siguiente }).toString()}`;
 }
 
-/** Cuando no se pudo generar el enlace de un solo uso: `EntrarSistemaPlugin.swift` lo entiende como fallo y deja la pantalla de Entrar tal cual. */
-export const URL_APP_ERROR = "somosnosotros://auth?error=1";
+/** Cuando no se pudo generar el enlace de un solo uso: `/auth/app-regreso?error=1` deja la pantalla de Entrar tal cual (ver `urlAppTrasEntrar`). */
+export function urlAppError(origen: string): string {
+  return `${origen}/auth/app-regreso?error=1`;
+}
 
 /** El nombre que Apple manda solo la primera vez, en el campo "user": {"name":{"firstName":"Rosa","lastName":"Pérez"}}. */
 export function nombreDeApple(user: string | undefined): string | null {

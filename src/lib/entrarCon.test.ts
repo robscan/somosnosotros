@@ -11,7 +11,7 @@ import {
   nuevoIntento,
   paginaRelevo,
   sha256hex,
-  URL_APP_ERROR,
+  urlAppError,
   urlAppTrasEntrar,
   urlEntrar,
   urlProveedor,
@@ -86,12 +86,22 @@ describe("intento en la cookie", () => {
   });
 });
 
-describe("urlAppTrasEntrar (OL-194, corrección del gestor: la vuelta al envoltorio de iPhone por un enlace de un solo uso)", () => {
-  it("arma el esquema propio con el token_hash y siguiente, codificados", () => {
-    expect(urlAppTrasEntrar("/eventos/abc?accion=voy", "el-token")).toBe("somosnosotros://auth?token_hash=el-token&siguiente=%2Feventos%2Fabc%3Faccion%3Dvoy");
+describe("urlAppTrasEntrar (OL-194, corrección de seguridad: la vuelta al envoltorio de iPhone por https del propio dominio, nunca un esquema propio)", () => {
+  it("arma la URL https de /auth/app-regreso con el origen recibido, el token_hash y siguiente, codificados", () => {
+    expect(urlAppTrasEntrar("https://somosnosotros.org", "/eventos/abc?accion=voy", "el-token")).toBe(
+      "https://somosnosotros.org/auth/app-regreso?token_hash=el-token&siguiente=%2Feventos%2Fabc%3Faccion%3Dvoy",
+    );
   });
-  it("URL_APP_ERROR es la señal fija de fallo, sin datos de nadie", () => {
-    expect(URL_APP_ERROR).toBe("somosnosotros://auth?error=1");
+  it("nunca arma un esquema propio de la app (el prefijo 'somosnosotros' con dos barras): cualquier app podría registrarlo", () => {
+    expect(urlAppTrasEntrar("https://somosnosotros.org", "/perfil", "el-token")).not.toMatch(/^somosnosotros:\/\//);
+  });
+  it("usa el origen recibido, no una constante: funciona también en una vista previa de Vercel", () => {
+    expect(urlAppTrasEntrar("https://app-ios-capacitor.somosnosotros.vercel.app", "/perfil", "el-token")).toBe(
+      "https://app-ios-capacitor.somosnosotros.vercel.app/auth/app-regreso?token_hash=el-token&siguiente=%2Fperfil",
+    );
+  });
+  it("urlAppError es la señal de fallo sobre el mismo origen, sin datos de nadie", () => {
+    expect(urlAppError("https://somosnosotros.org")).toBe("https://somosnosotros.org/auth/app-regreso?error=1");
   });
 });
 

@@ -3,19 +3,30 @@ import Capacitor
 import WebKit
 
 /**
- * OL-194 (docs/rediseno/47-app-ios.md §4), corrección del gestor (bitácora 228, «Correcciones del gestor»): Google
- * bloquea "accounts.google.com" dentro de cualquier WKWebView embebido (disallowed_useragent) y Apple recomienda lo
- * mismo por fragilidad de cookies, así que entrar con Apple o con Google no puede pasar por el WKWebView de la app.
+ * OL-194 (docs/rediseno/47-app-ios.md §4): Google bloquea "accounts.google.com" dentro de cualquier WKWebView
+ * embebido (disallowed_useragent) y Apple recomienda lo mismo por fragilidad de cookies, así que entrar con Apple o
+ * con Google no puede pasar por el WKWebView de la app.
  *
  * La primera versión de esta pieza abría un `SFSafariViewController` sobre la propia app. No sirvió: esa hoja
  * comparte las cookies de Safari.app, no las del WKWebView de la app, así que la sesión que Supabase deja al
  * terminar (`/auth/[proveedor]/fin`) nunca llegaba a donde la app puede leerla; y una redirección de servidor al
  * mismo dominio dentro de esa hoja tampoco dispara un enlace universal, así que ni la vuelta por un enlace así
  * habría llegado a tiempo. `ASWebAuthenticationSession` resuelve las dos cosas a la vez: entrega la vuelta directo
- * a esta función en cuanto la dirección coincide con `callbackURLScheme` (sin pasar por ningún enlace universal ni
- * por Safari.app), y aquí se toma esa dirección — con el `token_hash` de un enlace de un solo uso, ver
- * `urlAppTrasEntrar` en src/lib/entrarCon.ts — y se carga a mano en el WKWebView de la app, que es donde de verdad
- * hace falta la sesión.
+ * a esta función en cuanto la dirección coincide con la callback registrada (sin pasar por ningún enlace universal
+ * ni por Safari.app), y aquí se carga esa dirección a mano en el WKWebView de la app, que es donde de verdad hace
+ * falta la sesión.
+ *
+ * Corrección de seguridad (OL-194): la primera versión de esta corrección usaba un esquema propio de la app (el
+ * prefijo "somosnosotros" con dos barras, vía `callbackURLScheme`) para esa entrega. Cualquier app puede registrar
+ * el mismo esquema en el teléfono: si alguien hacía abrir `/auth/google?app=1` a la víctima fuera de esta app,
+ * Safari podía mandar esa vuelta —con el `token_hash` de un enlace de un solo uso, ver `urlAppTrasEntrar` en
+ * src/lib/entrarCon.ts— a una app impostora que también reclamara ese esquema, quedándose con la sesión de la
+ * víctima. Con
+ * `ASWebAuthenticationSession.Callback.https(host:path:)` (iOS 17.4+) la callback es una URL https de nuestro
+ * propio dominio: el sistema solo se la entrega a la app cuyo Associated Domains lo verificó
+ * (`webcredentials:somosnosotros.org`, App.entitlements) — ninguna otra app puede recibirla. Y si esa misma URL se
+ * abriera fuera de esta app (navegador normal, o el teléfono sin la app instalada), `/auth/app-regreso` hace
+ * exactamente lo mismo ahí: la sesión se queda en quien la abrió, nunca llega a otra app.
  *
  * `shouldOverrideLoad` intercepta la ida a `/auth/apple` o `/auth/google` (las rutas de
  * src/app/auth/[proveedor]/route.ts) antes de que el WKWebView las cargue — antes, se interceptaba la ida a
@@ -33,9 +44,10 @@ public class EntrarSistemaPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticati
     public let jsName = "EntrarSistema"
     public let pluginMethods: [CAPPluginMethod] = []
 
-    /// Esquema propio, registrado en Info.plist (CFBundleURLTypes). ASWebAuthenticationSession solo entrega de
-    /// vuelta una dirección con este esquema (nunca https): así ninguna navegación normal la dispara por error.
-    private static let esquemaDeVuelta = "somosnosotros"
+    /// El dominio y la ruta de la callback (iOS 17.4+): ASWebAuthenticationSession solo la entrega a la app cuyo
+    /// Associated Domains verificó "webcredentials:somosnosotros.org" (App.entitlements) — corrección de seguridad
+    /// de OL-194, ver el comentario de arriba. Debe ser la misma ruta que src/app/auth/app-regreso/route.ts.
+    private static let callbackDeVuelta = ASWebAuthenticationSession.Callback.https(host: "somosnosotros.org", path: "/auth/app-regreso")
 
     /// Los mismos dominios que reconoce la web (DOMINIOS_REGISTRADOS en src/lib/entrarCon.ts).
     private static let dominiosPropios = ["somosnosotros.org", "www.somosnosotros.org"]
@@ -65,7 +77,7 @@ public class EntrarSistemaPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticati
     }
 
     private func abrirSesionDelSistema(_ url: URL) {
-        let sesion = ASWebAuthenticationSession(url: url, callbackURLScheme: Self.esquemaDeVuelta) { [weak self] callback, error in
+        let sesion = ASWebAuthenticationSession(url: url, callback: Self.callbackDeVuelta) { [weak self] callback, error in
             self?.alTerminar(callback: callback, error: error)
         }
         sesion.presentationContextProvider = self
@@ -74,29 +86,19 @@ public class EntrarSistemaPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticati
     }
 
     /**
-     * `/auth/[proveedor]/fin` (src/app/auth) manda la vuelta por este esquema con `token_hash` y `siguiente`
-     * cuando entrar salió bien, o con `error=1` cuando no pudo armar el enlace de un solo uso. Si la persona
-     * cancela la hoja del sistema (o Apple/Google fallan sin volver a esta app), `callback` viene vacío: no hay
-     * nada que cargar, el WKWebView se queda donde estaba (la navegación original ya se había cancelado) y la
-     * pantalla sigue en Entrar, igual que si nunca se hubiera tocado el botón.
+     * `/auth/[proveedor]/fin` (src/app/auth) manda la vuelta a `/auth/app-regreso` con `token_hash` y `siguiente`
+     * cuando entrar salió bien, o con `error=1` cuando no pudo armar el enlace de un solo uso. Como la callback ya
+     * es la URL https de nuestro propio dominio (`callbackDeVuelta`), no hay que reconstruir nada: se carga tal
+     * cual en el WKWebView de la app, y `/auth/app-regreso` (misma ruta que si alguien la abriera fuera de la app)
+     * decide qué hacer con el `token_hash` o con el error. Si la persona cancela la hoja del sistema (o Apple/Google
+     * fallan sin volver a esta app), `callback` viene vacío: no hay nada que cargar, el WKWebView se queda donde
+     * estaba (la navegación original ya se había cancelado) y la pantalla sigue en Entrar, igual que si nunca se
+     * hubiera tocado el botón.
      */
     private func alTerminar(callback: URL?, error: Error?) {
         sesion = nil
         guard let callback, let bridge = bridge else { return }
-        let componentes = URLComponents(url: callback, resolvingAgainstBaseURL: false)
-        let conError = componentes?.queryItems?.contains { $0.name == "error" } ?? true
-        var destino = URLComponents()
-        destino.scheme = "https"
-        destino.host = "somosnosotros.org"
-        if conError {
-            destino.path = "/entrar"
-            destino.queryItems = [URLQueryItem(name: "error", value: "enlace")]
-        } else {
-            destino.path = "/auth/app-vuelta"
-            destino.queryItems = componentes?.queryItems
-        }
-        guard let url = destino.url else { return }
-        DispatchQueue.main.async { bridge.webView?.load(URLRequest(url: url)) }
+        DispatchQueue.main.async { bridge.webView?.load(URLRequest(url: callback)) }
     }
 
     public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {

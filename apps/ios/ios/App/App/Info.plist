@@ -28,19 +28,6 @@
 	<string>Somos Nosotros pide tu cámara solo cuando eliges tomar una foto para tu perfil, un lugar, un artista o un evento.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Somos Nosotros pide tu ubicación para ordenar lugares y eventos por cercanía. Nunca se guarda.</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>org.somosnosotros.app.entrar</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<!-- OL-194, corrección del gestor (bitácora 228): la vuelta de ASWebAuthenticationSession -->
-				<!-- (EntrarSistemaPlugin.swift), nunca un enlace web de verdad. -->
-				<string>somosnosotros</string>
-			</array>
-		</dict>
-	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
