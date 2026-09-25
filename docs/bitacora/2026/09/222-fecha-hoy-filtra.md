@@ -34,19 +34,34 @@ OL-174) y la hoja de escritorio (OL-162).
 - `ui/ChipFecha.tsx`: el `<input type="date">` nativo arranca en `value=""` (nunca `hoy`), así que elegir hoy sí
   es un cambio de valor y el navegador dispara `change`. La hoja propia se abre con `fecha={fecha}` (el estado
   real, `""` si no hay filtro) en vez de `fecha={hoy}`, así que al abrir no hay ningún día "elegido" marcado (hoy
-  se ve solo con el anillo de "hoy", no como seleccionado).
-- `lib/calendario.ts`: nueva función pura `filtroAlElegirFecha(elegido)`, que reemplaza la traducción
-  `f === hoy ? "" : f` de los dos sitios (`onChange` del nativo y `onListo` de la hoja) — ahora simplemente
-  devuelve `elegido` tal cual, sea hoy o cualquier otro día. Queda como una sola fuente de verdad para "qué
-  guardar cuando se elige una fecha", documentada con la historia del bug para que no se repita.
+  se ve solo con el anillo de "hoy", no como seleccionado). Lo elegido (`e.target.value` del nativo, `f` de la
+  hoja) se pasa tal cual a `onCambiar`, sin traducir nada; un comentario en el propio archivo deja escrito que
+  `""` es siempre "sin filtro" y que `hoy` nunca es sentinel de nada.
 - No se tocó `SelectorCuando.tsx` (fecha/hora de un evento, alta/edición): ese componente no usa `ChipFecha` ni el
   sentinel `hoy` — pasa la fecha real en todo momento, así que no tenía este bug.
 
+**Corrección del gestor (revisión del PR #228):** la primera entrega sacaba la traducción a una función
+`filtroAlElegirFecha(elegido) { return elegido; }` en `lib/calendario.ts` — una identidad con doce líneas de
+comentario que no aportaba nada. Se quitó esa función (y su prueba en `calendario.test.ts`); `ChipFecha.tsx` pasa
+el valor tal cual (`onCambiar(e.target.value)`, `onCambiar(f)`) con un comentario corto en el propio componente.
+
 ## Prueba
 
-`src/lib/calendario.test.ts`, nuevo bloque `filtroAlElegirFecha (bug OL-188: elegir hoy no filtraba)`: comprobado
-a mano que con la lógica vieja (`elegido === hoy ? "" : elegido`) la prueba `elegir hoy filtra por hoy, no lo deja
-en «sin filtro»` falla (`expected '' to be '2026-09-25'`); con el arreglo pasa.
+`src/lib/calendario.test.ts` ya no tiene una prueba de esto (se quitó junto con la función identidad: no hay nada
+puro que probar — pasar un valor tal cual no es lógica). En su lugar, prueba de componente
+`src/components/ui/ChipFecha.componentes.test.mjs` (Chrome real vía Playwright, como las demás
+`.componentes.test.mjs` del repo — no corre con `npm test`, que solo toma `.test.ts`; se corrió a mano:
+`PLAYWRIGHT_MODULE=.../playwright-core/index.mjs CHROME_EXECUTABLE=.../Google Chrome node --test
+src/components/ui/ChipFecha.componentes.test.mjs`). Monta el `ChipFecha` real en un ancho de 390px (la rama
+táctil/móvil, `usePunteroFinoAncho` da `false` con ese ancho) y comprueba, contra el DOM real:
+
+1. Sin filtro, el `<input type="date">` arranca con `value=""` (nunca con `hoy` ya puesto).
+2. Elegir hoy (`input.fill('2026-09-25')`) hace que `onCambiar` reciba `'2026-09-25'` — antes del arreglo se
+   quedaba en `''`.
+3. Elegir cualquier otro día también llega tal cual.
+
+Comprobado a mano que, con la lógica vieja (`value={hoy}` y `onChange` traduciendo `f === hoy ? "" : f`), las
+pruebas 1 y 2 fallan (`expected '2026-09-25' to be ''` y viceversa) y con el arreglo las tres pasan.
 
 ## Evidencia
 
@@ -54,7 +69,8 @@ en «sin filtro»` falla (`expected '' to be '2026-09-25'`); con el arreglo pasa
 npm run lint        → 0 errores (1 warning preexistente y ajeno, docs/diseno/logotipo/iconos-sn.mjs)
 npm run typecheck   → 1 error preexistente y ajeno: colisión de mayúsculas LetreroCorreoLigado.tsx/letreroCorreoLigado.ts
                        (conocida en macOS, anotada en el encargo; CI en Linux la pasa)
-npm test            → 98 archivos, 1243 pruebas, todas verdes (con node_modules completo — ver nota abajo)
+npm test            → 98 archivos, 1241 pruebas, todas verdes (con node_modules completo — ver nota abajo; la
+                       prueba de este bug quedó aparte, ChipFecha.componentes.test.mjs, ver "Prueba")
 npm run build       → compila con Turbopack; el "Failed to type check" es la misma colisión de mayúsculas de arriba,
                        no relacionado con este cambio
 ```

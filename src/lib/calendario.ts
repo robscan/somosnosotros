@@ -154,20 +154,3 @@ export function pasoMasCercano(hora: string, paso = 15): string {
   const acotado = Math.min(Math.max(Math.round(total / paso) * paso, 0), 24 * 60 - paso);
   return `${String(Math.floor(acotado / 60)).padStart(2, "0")}:${String(acotado % 60).padStart(2, "0")}`;
 }
-
-/**
- * Qué guardar como filtro cuando la persona elige `elegido` en `ui/ChipFecha` (el `<input type="date">` nativo o
- * la hoja propia): la fecha elegida tal cual, sea hoy o cualquier otro día.
- *
- * Bug OL-188 (founder, 2026-09-25): antes `ChipFecha` usaba `hoy` como valor "sin elegir" — tanto el `value` del
- * `<input>` nativo como la `fecha` inicial de la hoja propia arrancaban en `hoy`, y elegir esa misma fecha se
- * traducía de vuelta a "" ("sin filtro"). Dos fallas por el mismo motivo: (1) el selector nativo abría con hoy ya
- * marcado como si estuviera elegido, aunque no hubiera ningún filtro puesto; (2) si la persona volvía a tocar hoy,
- * el navegador no disparaba `change` (el valor ya era ese) y, cuando sí lo hacía (la hoja propia, que no depende de
- * `change`), el código convertía "hoy" en "sin filtro" en vez de filtrar por hoy. El sentinel de "sin elegir" ahora
- * es la fecha real ("" cuando no hay filtro), nunca `hoy`, y esta función deja de necesitar traducir nada: lo
- * elegido se guarda tal cual.
- */
-export function filtroAlElegirFecha(elegido: string): string {
-  return elegido;
-}

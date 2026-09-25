@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { filtroAlElegirFecha } from "@/lib/calendario";
 import { fechaCortaChip, localAIso, ZONA_INICIAL } from "@/lib/fechas";
 import { usePunteroFinoAncho } from "../usePunteroFinoAncho";
 import chip from "./Chip.module.css";
@@ -59,12 +58,12 @@ export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL }
           <IconoCalendario width={16} height={16} />
         </button>
       ) : (
-        // Táctil/móvil: el chip ES el selector nativo, invisible encima, para que el toque caiga en él. `value=""`
-        // (nunca `hoy`): sin filtro no hay nada elegido, así que elegir hoy también dispara `change` (antes, con
-        // `value={hoy}`, el navegador no avisa si se vuelve a elegir el mismo valor — bug OL-188).
+        // Táctil/móvil: el chip ES el selector nativo, invisible encima, para que el toque caiga en él. "" es
+        // siempre "sin filtro"; `hoy` nunca es sentinel de nada (bug OL-188: usarlo como valor inicial hacía que
+        // elegir hoy no se distinguiera de no haber elegido nada).
         <label className={`${chip.chip} ${chip.chipNativo} ${styles.soloIcono}`} htmlFor={idNativo}>
           <IconoCalendario width={16} height={16} />
-          <input type="date" id={idNativo} className={chip.encima} min={hoy} value="" onChange={(e) => onCambiar(filtroAlElegirFecha(e.target.value))} aria-label="Elegir fecha" />
+          <input type="date" id={idNativo} className={chip.encima} min={hoy} value="" onChange={(e) => onCambiar(e.target.value)} aria-label="Elegir fecha" />
         </label>
       )}
       {hoja && (
@@ -74,7 +73,7 @@ export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL }
           min={hoy}
           zona={zona}
           onListo={(f) => {
-            onCambiar(filtroAlElegirFecha(f));
+            onCambiar(f);
             setHoja(false);
             disparador.current?.focus();
           }}
