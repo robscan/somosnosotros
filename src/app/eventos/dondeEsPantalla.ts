@@ -81,3 +81,25 @@ export function direccionAGuardar(texto: string, resuelta: string): string {
   const escrito = texto.trim();
   return escrito && escrito !== "Ubicando…" ? escrito : resuelta;
 }
+
+/**
+ * ¿"¿Dónde es?" se abrió con una dirección ya leída (del cartel o de una sugerencia) pero sin punto? (OL-187).
+ * Bug del founder: "se leyó bien la dirección, pidió confirmar y seguía estando bien la dirección con el nombre
+ * escritos en campo, pero no permitía seleccionar listo, el pin no se colocó" -nadie disparaba la búsqueda de esa
+ * misma dirección, así que `puedeGuardarLugar`/"Listo" se quedaban apagados para siempre sin que la persona
+ * volviera a escribir. Solo aplica al origen "manual": un lugar YA REGISTRADO siempre trae su punto puesto al
+ * elegirlo (`elegirLugarLista`), nunca llega aquí sin él.
+ */
+export function necesitaConfirmarDireccion(draft: { origen: "lugar" | "manual"; punto: Punto | null; direccion: string } | null): boolean {
+  return !!draft && draft.origen === "manual" && draft.punto === null && draft.direccion.trim().length > 0;
+}
+
+/**
+ * ¿Hay una sola coincidencia clara entre lugares registrados y lo que trae Mapbox para la dirección leída del
+ * cartel (OL-187)? Con exactamente un resultado se fija solo -sigue siendo una búsqueda real de esa misma
+ * dirección, nunca un punto inventado (regla de OL-182)-; con cero o con más de uno, la persona elige con un
+ * toque de la lista, que ya queda abierta (mismo mecanismo que cualquier búsqueda en este campo).
+ */
+export function coincidenciaClara(combinados: readonly ResultadoBusqueda[]): ResultadoBusqueda | null {
+  return combinados.length === 1 ? combinados[0] : null;
+}
