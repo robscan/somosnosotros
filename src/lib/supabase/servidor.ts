@@ -27,6 +27,17 @@ export async function clienteServidor() {
 export type ClienteServidor = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 
 /**
+ * Confirma un enlace mágico (token_hash) con el cliente que escribe cookies: si sale bien, la sesión queda puesta
+ * en el navegador que hizo la petición. La usan /auth/callback (el enlace que manda el correo) y /auth/app-vuelta
+ * (el enlace de un solo uso que arma OL-194 para que el envoltorio de iPhone recupere la sesión en su WKWebView).
+ */
+export async function confirmarEnlaceMagico(supabase: ClienteServidor | null, tokenHash: string, tipo: "magiclink" | "email" = "magiclink"): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo });
+  return !error;
+}
+
+/**
  * ¿La cuenta con sesión es administración? Se comprueba siempre en el servidor con esta consulta — nunca se
  * confía en un campo que mande el formulario (S-01, docs/rediseno/46): la pantalla puede esconder un campo a
  * quien no es admin, pero eso es solo la pantalla.

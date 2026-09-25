@@ -12,11 +12,11 @@ it("responde JSON sin redirección, con el Content-Type exacto que pide Apple", 
   expect(respuesta.headers.get("location")).toBeNull();
 });
 
-it("reclama fichas (eventos, lugares, artistas) y /auth/* con el Team ID y el identificador de la app", async () => {
+it("reclama fichas (eventos, lugares, artistas) con el Team ID y el identificador de la app, y no /auth/* (corrección del gestor: entrar ya no depende de un enlace universal)", async () => {
   const datos = await (await GET()).json();
   const [detalle] = datos.applinks.details;
   expect(detalle.appIDs).toEqual(["AT53235M7U.org.somosnosotros.app"]);
   const rutas = detalle.components.map((c: { "/": string }) => c["/"]);
-  expect(rutas).toEqual(["/eventos/*", "/lugares/*", "/artistas/*", "/auth/*"]);
+  expect(rutas).toEqual(["/eventos/*", "/lugares/*", "/artistas/*"]);
   expect(datos.webcredentials.apps).toEqual(["AT53235M7U.org.somosnosotros.app"]);
 });

@@ -3,7 +3,6 @@ import {
   botonesProveedor,
   codificarIntento,
   decidirVuelta,
-  destinoTrasEntrar,
   leerCampos,
   leerEncendidos,
   leerIntento,
@@ -12,6 +11,8 @@ import {
   nuevoIntento,
   paginaRelevo,
   sha256hex,
+  URL_APP_ERROR,
+  urlAppTrasEntrar,
   urlEntrar,
   urlProveedor,
 } from "./entrarCon";
@@ -85,12 +86,12 @@ describe("intento en la cookie", () => {
   });
 });
 
-describe("destinoTrasEntrar (OL-194: la vuelta al envoltorio de iPhone)", () => {
-  it("fuera de la app, va directo a siguiente", () => {
-    expect(destinoTrasEntrar("/eventos/abc?accion=voy", false)).toBe("/eventos/abc?accion=voy");
+describe("urlAppTrasEntrar (OL-194, corrección del gestor: la vuelta al envoltorio de iPhone por un enlace de un solo uso)", () => {
+  it("arma el esquema propio con el token_hash y siguiente, codificados", () => {
+    expect(urlAppTrasEntrar("/eventos/abc?accion=voy", "el-token")).toBe("somosnosotros://auth?token_hash=el-token&siguiente=%2Feventos%2Fabc%3Faccion%3Dvoy");
   });
-  it("dentro de la app, pasa por /auth/app-vuelta (la única ruta que la app reclama como enlace universal)", () => {
-    expect(destinoTrasEntrar("/eventos/abc?accion=voy", true)).toBe("/auth/app-vuelta?siguiente=%2Feventos%2Fabc%3Faccion%3Dvoy");
+  it("URL_APP_ERROR es la señal fija de fallo, sin datos de nadie", () => {
+    expect(URL_APP_ERROR).toBe("somosnosotros://auth?error=1");
   });
 });
 

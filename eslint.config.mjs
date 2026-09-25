@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Árboles de trabajo de otros chats (cada uno con su node_modules y .next).
     ".claude/**",
+    // Envoltorio nativo de iOS (Capacitor): tiene su propio proyecto y dependencias, no forma parte de la web.
+    "apps/**",
   ]),
 ]);
 

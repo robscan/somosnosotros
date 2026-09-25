@@ -79,3 +79,143 @@ npm run build      # falla en el mismo punto que typecheck, por la misma colisi�
 - APNs (OL-196), Wallet (OL-155), icono y pantalla de arranque finales (OL-198), nada de esto es de esta pieza.
 - Certificado de distribución y perfil de aprovisionamiento para probar en un iPhone real: del founder, en developer.apple.com — no se tocó nada de su cuenta.
 - La colisión de `LetreroCorreoLigado` (OL-199) sigue bloqueando `typecheck`/`build` en macOS; ajena a esta pieza, la arregla su propio operador.
+
+## Correcciones del gestor (2026-09-25, operador nuevo, misma rama)
+
+El gestor de cambios revisó el PR #234 y encontró un build roto en Vercel y un fallo de diseño en la vuelta de
+entrar con Apple/Google. Base: `origin/main` del día (trae OL-199, la colisión de mayúsculas del letrero, ya
+resuelta) mergeado sobre esta rama sin perder nada de `OPEN_LOOPS.md`.
+
+### 1. Build roto en Vercel: `apps/**` fuera del `tsconfig.json` y del lint de la raíz
+
+`tsconfig.json` incluye `**/*.ts` desde la raíz sin excluir `apps/`, así que `tsc` (y el `next build` que lo usa)
+intentaba compilar `apps/ios/capacitor.config.ts`, que importa `@capacitor/cli` — una dependencia que solo vive en
+`apps/ios/node_modules`, nunca instalada en la raíz. Arreglado añadiendo `"apps"` al `exclude` de `tsconfig.json`
+y `"apps/**"` a los `globalIgnores` de `eslint.config.mjs` (vitest ya solo mira `src/**` y `scripts/**`, no hacía
+falta tocarlo). Comprobado con `npm install` en la raíz (el `node_modules` de este árbol de trabajo no existía) y
+`npm run typecheck && npm run build`, los dos en verde.
+
+### 2. La sesión no pasaba a la app: `SFSafariViewController` → `ASWebAuthenticationSession`
+
+El diseño original interceptaba la navegación del `WKWebView` hacia `appleid.apple.com`/`accounts.google.com` y la
+abría en un `SFSafariViewController` sobre la propia app. Dos problemas, los dos reales (no solo teóricos):
+
+- `SFSafariViewController` comparte las cookies de Safari.app, no las del `WKWebView` de la app. La cookie del
+  intento (`sn_entrar`) y la sesión que `signInWithIdToken` deja en `/auth/[proveedor]/fin` quedaban en ese
+  almacenamiento compartido con Safari, nunca en el de la app — la vista web de la app volvía sin sesión, aunque
+  entrar con Apple hubiera salido bien.
+- Una redirección de servidor al mismo dominio dentro de esa hoja tampoco dispara un enlace universal, así que ni
+  la vuelta por `/auth/app-vuelta` (el plan original, un enlace universal reclamado en `apple-app-site-association`)
+  habría llegado a tiempo.
+
+Rediseño:
+
+- **Swift** (`apps/ios/ios/App/App/EntrarSistemaPlugin.swift`, reescrito): `shouldOverrideLoad` ahora intercepta la
+  ida a `/auth/apple` o `/auth/google` (antes, un paso más tarde, la ida a los dominios de Apple/Google), le añade
+  `?app=1` y la abre en una `ASWebAuthenticationSession` con `callbackURLScheme: "somosnosotros"` (registrado en
+  `Info.plist`, `CFBundleURLTypes`). Guarda una referencia fuerte a la sesión (`private var sesion`) y pone
+  `presentationContextProvider` (el propio plugin, conformando `ASWebAuthenticationPresentationContextProviding`).
+  Al terminar, si la vuelta trae `token_hash` y `siguiente`, carga `https://somosnosotros.org/auth/app-vuelta` con
+  esos parámetros directo en el `WKWebView` de la app; si trae `error`, o si la persona cancela la hoja (no hay
+  `callback`), no navega a ningún lado — la pantalla se queda en Entrar, o va a `/entrar?error=enlace` si sí hubo
+  un intento fallido de armar el enlace.
+- **`SceneDelegate.swift`**: se quitó la parte que cerraba `EntrarSistemaPlugin.hojaAbierta` (ya no existe esa
+  hoja); el observador de `capacitorOpenUniversalLink` queda solo para enlaces universales normales (una ficha
+  compartida), no para la vuelta de entrar.
+- **`apple-app-site-association`** (`src/app/.well-known/apple-app-site-association/route.ts`): se quitó
+  `/auth/*` de `applinks.details[0].components`. Ya no hace falta (la vuelta no usa enlaces universales) y podía
+  competir con el enlace del correo si alguien lo abre fuera de la app. Sigue reclamando `/eventos/*`, `/lugares/*`
+  y `/artistas/*`. Prueba actualizada.
+- **Web** (`src/lib/entrarCon.ts`): se quitó `destinoTrasEntrar` (mandaba a `/auth/app-vuelta?siguiente=…`, sin
+  ninguna sesión que llevar). En su lugar, `urlAppTrasEntrar(siguiente, tokenHash)` arma
+  `somosnosotros://auth?token_hash=…&siguiente=…`, y `URL_APP_ERROR` es la señal fija de fallo
+  (`somosnosotros://auth?error=1`).
+- **`src/app/auth/[proveedor]/fin/route.ts`**: cuando `intento.enApp` es verdadero y `signInWithIdToken` salió
+  bien, en vez de redirigir a `siguiente` genera un enlace mágico de un solo uso con el cliente de servicio
+  (`clienteAdmin()`, `src/lib/supabase/admin.ts`; la llave nunca sale del servidor) —
+  `admin.auth.admin.generateLink({ type: "magiclink", email })`, que no manda ningún correo — toma
+  `data.properties.hashed_token` y redirige (303) a `urlAppTrasEntrar(siguiente, tokenHash)`. Si falla (sin correo,
+  o Supabase da error), redirige a `URL_APP_ERROR`. Nunca viaja un `access_token` ni un `refresh_token`, solo el
+  token de un enlace mágico de un solo uso.
+- **`src/app/auth/app-vuelta/route.ts`**: antes era un 303 trivial a `siguiente` (sin comprobar nada). Ahora, con
+  el cliente de servidor normal (el que escribe cookies), confirma el `token_hash` con `verifyOtp` — la misma
+  llamada que ya usaba `/auth/callback` para el enlace del correo, extraída a `confirmarEnlaceMagico` en
+  `src/lib/supabase/servidor.ts` para no duplicarla — y solo entonces redirige a `siguiente`; sin `token_hash` o si
+  `verifyOtp` falla, redirige a `/entrar?error=enlace` (el mismo aviso que ya usa el enlace del correo cuando ya no
+  sirve).
+- **Pruebas**: `src/lib/entrarCon.test.ts` (se quitaron las de `destinoTrasEntrar`, se añadieron las de
+  `urlAppTrasEntrar` y `URL_APP_ERROR`), `fin/route.test.ts` (rehecho: con `enApp` genera el enlace y redirige al
+  esquema propio; si `generateLink` falla, redirige a `URL_APP_ERROR`; sin `enApp` la rama web normal queda
+  intacta, comprobado que no toca `clienteAdmin`), `app-vuelta/route.test.ts` (rehecho: token válido confirma y
+  sigue a `siguiente`; token inválido o ausente vuelve a `/entrar?error=enlace`; `siguiente` externo cae a
+  `/perfil` con `rutaSegura`), `apple-app-site-association/route.test.ts` (ya no espera `/auth/*`).
+
+**Seguridad — por qué un `token_hash` en un esquema propio es aceptable:** es el mismo mecanismo que un enlace
+mágico de correo (un solo uso, caduca igual), solo que en vez de mandarlo por correo lo entrega el sistema
+operativo directo a esta app. `ASWebAuthenticationSession` solo llama al bloque de cierre con la URL de vuelta
+cuando la navegación coincide con el `callbackURLScheme` registrado a esta app (`somosnosotros`) — ninguna otra
+app en el teléfono puede registrar el mismo esquema y recibirlo primero sin que iOS avise de un conflicto al
+instalar, y nada de esto pasa por el navegador del sistema ni por una vista web ajena. Que viaje por `somosnosotros://`
+en vez de `https://` no lo hace menos seguro: sigue siendo un token de un solo uso, con la misma vigencia que
+Supabase le da a cualquier enlace mágico.
+
+### 3. Fixture `a@a.com` → `persona@example.com`
+
+En `src/app/auth/[proveedor]/fin/route.test.ts`. Sin más ocurrencias en código (queda una mención en la sección
+"Qué hice" de arriba, de cuando existía; es historia de esta misma bitácora, no un dato real).
+
+### 4. Compilado y probado en el simulador
+
+Simulador propio, `OL-194 correcciones iPhone` (`xcrun simctl create ... iPhone-17-Pro ... iOS-26-3`), para no
+tocar el `OL-194 iPhone` de la sesión original. `xcodebuild -scheme App -destination "id=<udid>" -configuration
+Debug CODE_SIGNING_ALLOWED=NO build` — build verde (antes hubo que arreglar un error propio: un comentario Swift
+con el texto `` `/auth/*` `` que Swift interpretó como el inicio de un comentario `/*` anidado sin cerrar —
+"Unterminated '/* comment'" — se reescribió el comentario sin esa secuencia de caracteres).
+
+**Capturas (`docs/rediseno/capturas-228/`), abiertas y descritas una por una:**
+
+- `03-apple-navegador-sistema.png` (sustituida) — al tocar "Continuar con Apple", ya no aparece la barra de Safari
+  de un `SFSafariViewController`: se ve la página real de `appleid.apple.com` ("Usa tu cuenta de Apple para
+  iniciar sesión en Somos Nosotros", con el campo "Correo o número telefónico" y el teclado abierto) dentro de la
+  ficha de `ASWebAuthenticationSession`, con su barra propia (el botón "X", el dominio arriba, el ícono de
+  "escritorio" a la derecha). Es la prueba de que `EntrarSistemaPlugin.swift` interceptó `/auth/apple`, le puso
+  `?app=1` y la sesión del sistema llegó de verdad hasta Apple.
+- `05-aviso-sistema.png` (nueva) — el instante justo antes de esa página: el aviso nativo de
+  `ASWebAuthenticationSession`, `""App" quiere utilizar "somosnosotros.org" para iniciar sesión" / "Esto le permite
+  a la app y al sitio compartir información acerca de ti."`, con "Cancelar" y "Continuar". Dice `"App"` en vez de
+  `"Somos Nosotros"`: comprobado que `CFBundleDisplayName` en el `Info.plist` del `.app` compilado sí dice "Somos
+  Nosotros" (`plutil -p .../App.app/Info.plist`) — es un efecto de instalar con `simctl install` a mano en vez de
+  con Xcode o TestFlight (SpringBoard no registra el nombre igual), no un error de esta pieza. El founder lo verá
+  con el nombre correcto al probar en TestFlight.
+- `04-vuelta-tras-cerrar-apple.png` (sustituida) — al cerrar esa ficha con la "X" (sin escribir ninguna
+  credencial), la app vuelve a la pantalla de Entrar intacta, igual que antes de tocar el botón: confirma que
+  cancelar no rompe nada (la navegación original ya se había cancelado en el `WKWebView`, así que no hay adónde
+  volver más que ahí).
+
+No se tocó ninguna cuenta de Apple ni se escribió ninguna credencial real: el recorrido completo (entrar de
+verdad, con una cuenta de Apple o Google real y confirmar que `/perfil` queda con sesión) lo prueba el founder en
+TestFlight.
+
+### Verificación
+
+```
+npm run lint       # 0 errores (mismo warning preexistente de docs/diseno/logotipo/iconos-sn.mjs, ajeno)
+npm run typecheck  # verde
+npm test           # 101 archivos, 1268 pruebas, todas verdes
+npm run build      # verde
+```
+
+Correos en el diff (`git diff origin/main...HEAD | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+'`): solo
+`persona@example.com` (el fixture corregido), `@objc`/`@UIApplicationMain` (atributos de Swift),
+`AppIcon-512@2x.png` (nombre de imagen) y `uuid@10`/`uuid@11`/`uuid@latest` (texto de un aviso de `npm install`
+guardado en `apps/ios/package-lock.json` por el operador original, sin tocar en esta corrección). La mención de
+`a@a.com` en la sección "Qué hice" de esta misma bitácora es historia, no código.
+
+### Qué queda
+
+- Lo mismo que dejó pendiente la pieza original (Universal Link de fichas ya probado en el simulador de forma
+  indirecta, APNs, Wallet, ficha y envío) más: **el recorrido completo de entrar con Apple/Google de punta a
+  punta**, con una cuenta real, solo se puede probar en TestFlight — este operador no escribió ninguna credencial.
+- El aviso del sistema dice `"App"` en vez de `"Somos Nosotros"` en este build de simulador sin firmar
+  (`simctl install`); confirmar que dice el nombre correcto cuando el founder lo instale desde TestFlight (el
+  `Info.plist` ya trae bien el `CFBundleDisplayName`, así que debería resolverse solo).

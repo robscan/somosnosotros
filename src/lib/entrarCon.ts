@@ -55,11 +55,11 @@ export const COOKIE_ENTRAR = "sn_entrar";
 export const VIGENCIA_SEGUNDOS = 600;
 
 /**
- * `enApp`: el toque salió del envoltorio de iPhone (apps/ios, OL-194): el botón abrió esta misma dirección en el
- * navegador del sistema (`Browser.open`, no en el WKWebView de la app) porque Google bloquea su entrada dentro de
- * cualquier vista web embebida. Va en el intento (no en la URL de vuelta que registramos con Apple y con Google:
- * esa no puede cambiar) para que, al terminar, se vuelva por `/auth/app-vuelta` (una ruta de `/auth/*`, la única
- * que la app reclama como enlace universal) y no directo a `siguiente`, que casi nunca lo es.
+ * `enApp`: el toque salió del envoltorio de iPhone (apps/ios, OL-194): `EntrarSistemaPlugin.swift` interceptó la
+ * ida a esta ruta (`/auth/apple` o `/auth/google`, con `?app=1`) y la abrió en una `ASWebAuthenticationSession`
+ * (la ficha del sistema, no el WKWebView de la app) porque Google bloquea su entrada dentro de cualquier vista web
+ * embebida. Va en el intento porque la URL de vuelta que registramos con Apple y con Google no puede cambiar; con
+ * ella, al terminar, `/auth/[proveedor]/fin` no manda a la persona directo a `siguiente` (ver `urlAppTrasEntrar`).
  */
 export type Intento = { p: Proveedor; estado: string; nonce: string; siguiente: string; desde: number; enApp: boolean };
 
@@ -158,14 +158,21 @@ export function urlEntrar(siguiente: string, fallo?: Proveedor): string {
 }
 
 /**
- * A dónde vuelve `/auth/[proveedor]/fin` cuando entrar salió bien (OL-194). Fuera de la app, directo a `siguiente`,
- * como siempre. Dentro de la app, el navegador del sistema (Browser.open) sigue viendo esta página: para que el
- * envoltorio pueda tomar el control con un enlace universal hace falta que la dirección esté bajo `/auth/*` (la
- * única ruta que la app reclama), así que se pasa por `/auth/app-vuelta` antes de llegar a `siguiente`.
+ * A dónde manda `/auth/[proveedor]/fin` al envoltorio de iPhone cuando entrar salió bien y el intento venía de la
+ * app (OL-194). La sesión que Supabase acaba de poner queda en las cookies de la `ASWebAuthenticationSession` (las
+ * comparte con Safari), no en el WKWebView de la app: en vez de mandar ahí, se manda un enlace de un solo uso (el
+ * `token_hash` de un enlace mágico, generado sin enviarlo por correo) por el esquema propio "somosnosotros://".
+ * `ASWebAuthenticationSession` entrega esa dirección directo a `EntrarSistemaPlugin.swift` sin volver a mostrar
+ * nada en pantalla (coincide con `callbackURLScheme`), que carga `/auth/app-vuelta?token_hash=…&siguiente=…` ya en
+ * el WKWebView de la app: ahí `verifyOtp` deja la sesión en el almacenamiento propio de la app. Nunca lleva un
+ * access_token ni un refresh_token, solo el token de un enlace mágico de un solo uso, con la misma vigencia.
  */
-export function destinoTrasEntrar(siguiente: string, enApp: boolean): string {
-  return enApp ? `/auth/app-vuelta?siguiente=${encodeURIComponent(siguiente)}` : siguiente;
+export function urlAppTrasEntrar(siguiente: string, tokenHash: string): string {
+  return `somosnosotros://auth?${new URLSearchParams({ token_hash: tokenHash, siguiente }).toString()}`;
 }
+
+/** Cuando no se pudo generar el enlace de un solo uso: `EntrarSistemaPlugin.swift` lo entiende como fallo y deja la pantalla de Entrar tal cual. */
+export const URL_APP_ERROR = "somosnosotros://auth?error=1";
 
 /** El nombre que Apple manda solo la primera vez, en el campo "user": {"name":{"firstName":"Rosa","lastName":"Pérez"}}. */
 export function nombreDeApple(user: string | undefined): string | null {

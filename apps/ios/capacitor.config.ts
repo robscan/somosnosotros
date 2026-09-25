@@ -9,9 +9,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * cancela a propósito para abrir Apple o Google en el navegador del sistema, y dejaba la app entera mostrando
  * "Sin conexión" con la red perfectamente encendida (visto en el simulador). En un arranque normal nunca se ve.
  *
- * `appendUserAgent` marca el navegador de la app para que la web (src/lib/entrarCon.ts) sepa que corre dentro
- * del contenedor y abra Apple/Google en una sesión del sistema en vez de dentro del WKWebView (sección 4 del plan:
- * Google bloquea su entrada dentro de cualquier webview embebido).
+ * `appendUserAgent` marca el navegador de la app (por si una pieza futura necesita distinguirlo); quien decide hoy
+ * que Apple y Google salen por una sesión del sistema en vez de por el WKWebView es EntrarSistemaPlugin.swift, que
+ * intercepta la ida a `/auth/apple` y `/auth/google` sin mirar el user-agent (sección 4 del plan: Google bloquea
+ * su entrada dentro de cualquier webview embebido).
  *
  * `allowNavigation` deja navegar (documentos completos e iframes) solo a los dominios que la web usa hoy:
  * Supabase (Auth/Storage del proyecto, dominio *.supabase.co: revisar si el proyecto pasa a un dominio propio),
