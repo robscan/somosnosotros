@@ -16,7 +16,7 @@ import { configPublica } from "@/lib/config";
 import { crearLugarDesdeEvento } from "@/app/lugares/acciones";
 import { buscarConContexto, ciudadDeContexto, descartarSinCalle, necesitaReintentoLugares } from "./direccionContexto";
 import { consultarMapa, lugaresPorTexto, puntoValido } from "./direccionEvento";
-import { altoTeclado, combinarResultados, decidirGuardado, direccionAGuardar, modoDePantalla, puedeGuardarLugar } from "./dondeEsPantalla";
+import { altoTeclado, coincidenciaClara, combinarResultados, decidirGuardado, direccionAGuardar, modoDePantalla, necesitaConfirmarDireccion, puedeGuardarLugar, type ResultadoBusqueda } from "./dondeEsPantalla";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaDondeEs.module.css";
@@ -170,9 +170,20 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
   const versionPin = useRef(0);
   const versionBusqueda = useRef(0);
   const versionBusquedaDireccion = useRef(0);
+  // OL-187: si se abrió con una dirección ya leída (del cartel) pero sin punto, la primera búsqueda del campo
+  // principal es esa misma dirección, disparada sola -en vez de esperar a que la persona la borre y la vuelva a
+  // escribir-. `direccionInicial` recuerda CUÁL fue esa búsqueda (para no repetir el intento si la persona escribe
+  // algo distinto después); `confirmarDireccion` se apaga en cuanto ese primer resultado llega, se use o no.
+  const confirmarDireccion = useRef(necesitaConfirmarDireccion(draft));
+  const direccionInicial = useRef(draft?.direccion ?? "");
   useEffect(() => {
     sesion.current = crypto.randomUUID();
     sesionDireccion.current = crypto.randomUUID();
+  }, []);
+  useEffect(() => {
+    if (confirmarDireccion.current && draft) setQ(draft.direccion);
+    // Solo al montar: es la búsqueda que abre la hoja, no una que deba repetirse si `draft` cambia después.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function marcarTocado() {
@@ -201,9 +212,10 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     const timer = setTimeout(async () => {
       setBuscando(true);
       setErrorBusqueda(null);
+      let opciones: LugarSugerido[] = [];
       try {
         if (!mapboxToken) throw new Error("Sin servicio de direcciones");
-        const opciones = await buscarConContexto(
+        opciones = await buscarConContexto(
           texto,
           contexto,
           (t, bbox) => sugerirLugares(t, mapboxToken, contexto.centro, sesion.current, consultarMapa, bbox).then((r) => descartarSinCalle(r, texto)),
@@ -213,7 +225,16 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
       } catch {
         if (version === versionBusqueda.current) setErrorBusqueda("No pude buscar. Intenta de nuevo o toca el mapa.");
       } finally {
-        if (version === versionBusqueda.current) setBuscando(false);
+        if (version === versionBusqueda.current) {
+          setBuscando(false);
+          // OL-187: esta es la búsqueda automática de la dirección leída del cartel (nunca una que la persona haya
+          // vuelto a escribir después: `direccionInicial` la fija una sola vez, al montar).
+          if (confirmarDireccion.current && texto === direccionInicial.current) {
+            confirmarDireccion.current = false;
+            const claro = coincidenciaClara(combinarResultados(lugaresPorTexto(lugares, texto), opciones), direccionInicial.current);
+            if (claro) void confirmarDireccionLeida(claro);
+          }
+        }
       }
     }, 350);
     return () => clearTimeout(timer);
@@ -315,6 +336,30 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
     setDraft((a) => (a ? { ...a, origen: "manual", punto, direccion, ciudad } : { origen: "manual", nombre: nombreAgregar, direccion, punto, editable: true, ciudad }));
     setQDireccionAgregar(direccion);
     setCerradaDireccionParaTexto(direccion);
+  }
+
+  /** OL-187: la búsqueda automática de la dirección ya leída (del cartel) encontró UNA sola coincidencia clara.
+   *  Reutiliza `fijarPuntoDesdeDireccion` -presta el punto y la dirección resuelta, nunca cambia el nombre ni el
+   *  modo- porque el nombre ya es el correcto (lo trajo el cartel); adoptar aquí el nombre de un lugar registrado
+   *  parecido, como hace `elegirLugarLista`/`elegirMapbox` para una búsqueda nueva desde cero, sería sustituir en
+   *  silencio lo que la persona ya vio y confirmó. Cierra el campo de búsqueda (que la abrió) al terminar. */
+  async function confirmarDireccionLeida(r: ResultadoBusqueda) {
+    if (r.tipo === "lugar") {
+      fijarPuntoDesdeDireccion({ lat: r.lugar.lat, lng: r.lugar.lng }, r.lugar.direccion ?? "", null);
+      setQ("");
+      return;
+    }
+    const { mapboxToken } = configPublica();
+    if (!mapboxToken) return;
+    try {
+      const res = await recuperarLugar(r.item.mapboxId, mapboxToken, sesion.current, consultarMapa);
+      if (!res || !puntoValido(res)) return;
+      fijarPuntoDesdeDireccion({ lat: res.lat, lng: res.lng }, res.direccion || r.item.direccion, res.ciudad);
+      setQ("");
+    } catch {
+      // Sin retiro posible: la búsqueda queda con su texto puesto y la lista de sugerencias abierta (nunca se
+      // limpió `q`), para que la persona elija con un toque -la misma salida que si hubiera dos coincidencias.
+    }
   }
 
   function elegirDireccionLugar(l: LugarResumen) {
