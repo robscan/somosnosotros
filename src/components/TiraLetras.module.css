@@ -5,7 +5,7 @@
    letra y la letra iluminada cuentan con ella. */
 .tira {
   position: sticky;
-  top: var(--alto-cabecera);
+  top: calc(var(--tope) + var(--alto-cabecera));
   z-index: 9;
   display: flex;
   height: var(--toque-min);
