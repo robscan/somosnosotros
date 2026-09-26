@@ -22,3 +22,10 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+
+/* Reglas de uso y aviso de privacidad son justo el texto que alguien puede querer citar o compartir: dentro de la
+   app (OL-205, `.app-nativa` en `globals.css`) no pierde la selección aunque el resto de la pantalla sí. */
+:global(.app-nativa) .texto {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+}

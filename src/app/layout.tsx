@@ -7,6 +7,7 @@ import AnalyticsVercel from "@/components/AnalyticsVercel";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
 import TituloInstalada from "@/components/TituloInstalada";
+import { GUION_APP_NATIVA } from "@/lib/appNativa";
 import { GUION_AVISO_INSTALAR } from "@/lib/avisoInstalar";
 import { jsonLdSitio } from "@/lib/estructurados";
 import "./globals.css";
@@ -54,6 +55,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Guarda el aviso de instalar de Chrome, Edge o Android antes de que cargue React: llega una sola vez. */}
         <Script id="aviso-instalar" strategy="beforeInteractive">
           {GUION_AVISO_INSTALAR}
+        </Script>
+        {/* Dentro de la app de iPhone (OL-205): pone ".app-nativa" en <html> antes de que React pinte nada, por el
+            sello de user-agent que añade Capacitor (`src/lib/appNativa.ts`). Sin esto, Safari y Chrome normales
+            nunca la traen. */}
+        <Script id="app-nativa" strategy="beforeInteractive">
+          {GUION_APP_NATIVA}
         </Script>
         {children}
         <RegistroSW />

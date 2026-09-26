@@ -13,6 +13,10 @@ import Network
  *    opción `server.errorPath` de Capacitor (ver el comentario de capacitor.config.ts: esa dispara con cualquier
  *    navegación cancelada, incluida la que EntrarSistemaPlugin cancela a propósito para abrir Apple o Google en
  *    el navegador del sistema).
+ *
+ * OL-205 (auditoría OL-202, docs/rediseno/48-shell-ios.md §3.3): el gesto de deslizar desde el borde para volver
+ * se enciende aquí (`allowsBackForwardNavigationGestures`), pero `GestoAtrasPlugin` (ver ese archivo) cancela la
+ * navegación nativa que dispara y le pide a la web que vuelva con su propia marca de historial.
  */
 class MainViewController: CAPBridgeViewController {
     private let monitorDeRed = NWPathMonitor()
@@ -21,6 +25,8 @@ class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(EntrarSistemaPlugin())
+        bridge?.registerPluginInstance(GestoAtrasPlugin())
+        webView?.allowsBackForwardNavigationGestures = true
         observarRed()
     }
 

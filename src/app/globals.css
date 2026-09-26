@@ -132,6 +132,13 @@ select {
   padding: calc(var(--espacio-5) + env(safe-area-inset-top, 0px)) var(--gutter)
     calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px));
 }
+/* Con una barra interior (Entrar y las 8 altas/ediciones: `ui/Barra.tsx`, `volver` o `cerrar`), ella ya pone su
+   propio colchón de zona segura (`Barra.module.css` `.interior`, pegajosa arriba): sumarlo aquí también dejaba un
+   hueco doble antes de la barra, más grande que en una ficha (OL-205, auditoría OL-202 problema 2,
+   docs/rediseno/48-shell-ios.md §2). Sin barra (error, 404) el colchón de aquí sigue siendo el único que hay. */
+.pagina:has(> header:first-child) {
+  padding-top: 0;
+}
 
 .titulo {
   font-size: var(--letra-2xl);
@@ -180,6 +187,29 @@ a:active,
 button:active:not(:disabled) {
   opacity: 0.6;
   transition: opacity 0s;
+}
+
+/* Solo dentro de la app instalada de iPhone (Capacitor añade "SomosNosotrosApp" al user-agent; la clase la pone
+   `src/lib/appNativa.ts` en <html>, antes de que React pinte nada): sin el menú nativo "Copy · Look Up · Translate"
+   al mantener pulsado un texto ni el resaltado gris al tocar — se siente como parte de la app, no como una página
+   web (OL-205, auditoría OL-202 problema 4). Nunca en el navegador normal (Safari, Chrome): sin la clase, estas
+   reglas no existen. Los campos de formulario, los enlaces y los textos largos que la gente puede querer copiar o
+   citar (`Desplegable.module.css` en fichas, `legal.module.css` en Reglas/Privacidad) quedan fuera a propósito. */
+.app-nativa * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+}
+.app-nativa input,
+.app-nativa textarea,
+.app-nativa select,
+.app-nativa [contenteditable="true"] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+}
+.app-nativa a {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Foco visible solo cuando se navega con teclado (o lector de pantalla), nunca tras un toque. */
