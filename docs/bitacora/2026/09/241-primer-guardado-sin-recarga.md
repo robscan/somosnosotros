@@ -153,4 +153,4 @@ Al terminar: se detuvieron `next start` y el respaldo, se borró `.env.local` (n
 - **Prueba:** `src/components/Seguir.componentes.test.mjs` (falla con el código de antes, pasa con el
   arreglo) + suite completa en verde (sección 5).
 - **Capturas:** `docs/rediseno/capturas-241/241-{1..6}-*.png`, descritas en la sección 6.
-- **PR:** se añade aquí y en OPEN_LOOPS al terminar.
+- **PR:** [#247](https://github.com/robscan/somosnosotros/pull/247), sin migraciones ni variables de entorno nuevas. Sin unir; a la espera del founder.
