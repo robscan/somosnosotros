@@ -57,4 +57,4 @@ Prototipo y documento, sin código de la app: no aplica `npm run lint && npm run
 
 ## Estado y límites
 
-Sin unir a `main` (instrucción de esta pieza: solo PR, sin merge). Queda para el founder: las tres preguntas abiertas de arriba, antes de que cualquier chat empiece el código de OL-217.
+PR [#253](https://github.com/robscan/somosnosotros/pull/253), sin unir a `main` (instrucción de esta pieza: solo PR, sin merge). Queda para el founder: las tres preguntas abiertas de arriba, antes de que cualquier chat empiece el código de OL-217.
