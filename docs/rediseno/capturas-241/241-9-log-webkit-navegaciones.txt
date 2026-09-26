@@ -1,0 +1,47 @@
+OL-212, segunda vuelta (bitácora 241): xcrun simctl spawn <id> log stream --predicate 'process == "App"'
+mientras se reproducía a mano dentro de la app de iPhone (simulador OL212-repro, org.somosnosotros.app),
+contra next build/start local + respaldo local (nunca producción). Filtrado a las líneas de WebKit que dicen
+si hubo una navegación de documento de verdad (didCommitLoadForFrame / decidePolicyForNavigationAction /
+loadRequestWithNavigationShared) o solo una navegación de "mismo documento" hecha por el propio JS
+(didSameDocumentNavigationForFrameViaJS: la que hace el router de Next al cambiar de pantalla o al releer
+datos con revalidatePath, sin recargar el documento).
+
+Correspondencia con los toques (hora local del Mac):
+- 22:17:05  primer toque en "Seguir" (Lugar de prueba)                         -> type=2 (solo mismo documento)
+- 22:17:19  hoja de avisos abierta ("¿Te avisamos de sus eventos?")            -> type=2
+- 22:17:36  "En el teléfono" (queda "Falta un paso": WKWebView sin Notification)-> type=2 y type=3
+- 22:17:40  cerrar la hoja de "Instala Somos Nosotros" con la X                -> type=1
+- 22:17:49  "No" a "Mientras, ¿por correo?"                                     -> type=1
+- 22:17:53  cerrar la hoja de avisos final con la X                            -> type=1
+- 22:18:20  primer toque en "Voy" (Evento de prueba)                            -> type=1
+- 22:18:30  (releer tras el guardado)                                          -> type=2
+- 22:18:53+ xcrun simctl terminate + launch (relanzar la app A PROPÓSITO,       -> AQUÍ SÍ:
+            para probar con datos frescos; no es parte del bug)                   loadRequestWithNavigationShared,
+                                                                                     decidePolicyForNavigationAction,
+                                                                                     didCommitLoadForFrame (PID nuevo)
+
+En ninguno de los toques del bug (22:17:05 a 22:18:30 — el guardado de Seguir, las cuatro maneras de contestar
+o cerrar su hoja de avisos, y el guardado de Voy) aparece `didCommitLoadForFrame` ni `decidePolicyForNavigationAction`:
+WebKit nunca cargó un documento nuevo. Esas dos líneas SÍ aparecen, con un PID de proceso web distinto, en el
+único momento donde de verdad hubo una recarga: el relanzamiento deliberado de la app con `simctl terminate`/`launch`
+que se hizo para repetir la prueba con la cuenta en limpio — no un toque de Voy o Seguir.
+
+--- líneas exactas (log completo, 1415 líneas, quedó en el scratchpad de la sesión, no en el repo) ---
+
+2026-09-25 22:17:05.536 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=2
+2026-09-25 22:17:19.898 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=2
+2026-09-25 22:17:36.376 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=2
+2026-09-25 22:17:36.380 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=3
+2026-09-25 22:17:40.472 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=1
+2026-09-25 22:17:49.914 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=1
+2026-09-25 22:17:53.614 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=1
+2026-09-25 22:18:20.839 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=1
+2026-09-25 22:18:30.422 Df App[34427:206e27] [com.apple.WebKit:Loading] 0x104822e18 - [pageProxyID=7, webPageID=8, PID=34432] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=2
+2026-09-25 22:18:53.510 Df App[36308:20aa02] [com.apple.WebKit:Process] 0x10584d018 - [pageProxyID=7, webPageID=8, PID=0] WebPageProxy::WebPageProxy::shouldForceForegroundPriorityForClientNavigation() returns 1 based on PageClient::canTakeForegroundAssertions()
+2026-09-25 22:18:53.510 Df App[36308:20aa02] [com.apple.WebKit:Loading] 0x10584d018 - [pageProxyID=7, webPageID=8, PID=0] WebPageProxy::loadRequestWithNavigationShared:
+2026-09-25 22:18:53.885 Df App[36308:20aa02] [com.apple.WebKit:Loading] 0x10584d018 - [pageProxyID=7, webPageID=8, PID=36312] WebPageProxy::decidePolicyForNavigationAction: frameID=8589934593, isMainFrame=1, navigationID=25
+2026-09-25 22:18:53.898 Df App[36308:20aa02] [com.apple.WebKit:Loading] 0x10584d018 - [pageProxyID=7, webPageID=8, PID=36312] WebPageProxy::decidePolicyForNavigationAction: listener called: frameID=8589934593, isMainFrame=1, navigationID=25, policyAction=Use, isAppBoundDomain=0, wasNavigationIntercepted=0
+2026-09-25 22:18:53.898 Df App[36308:20aa02] [com.apple.WebKit:ProcessSwapping] 0x10584d018 - [pageProxyID=7, webPageID=8, PID=36312] WebPageProxy::decidePolicyForNavigationAction: keep using process 36312 for navigation, reason=Process has not yet committed any provisional loads
+2026-09-25 22:18:54.098 Df App[36308:20aa02] [com.apple.WebKit:Loading] 0x10584d018 - [pageProxyID=7, webPageID=8, PID=36312] WebPageProxy::didCommitLoadForFrame: frameID=8589934593, isMainFrame=1
+2026-09-25 22:18:54.214 Df App[36308:20aa02] [com.apple.WebKit:Loading] 0x10584d018 - [pageProxyID=7, webPageID=8, PID=36312] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=2
+2026-09-25 22:18:54.221 Df App[36308:20aa02] [com.apple.WebKit:Loading] 0x10584d018 - [pageProxyID=7, webPageID=8, PID=36312] WebPageProxy::didSameDocumentNavigationForFrameViaJS: frameID=8589934593, isMainFrame=1, type=2

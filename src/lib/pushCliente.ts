@@ -1,9 +1,66 @@
 /** Avisos push desde el navegador: qué se puede en este teléfono y cómo darlo de alta. Solo en el cliente. */
 import { decidirEstadoPush, leerPlataforma, type EstadoPush, type Plataforma } from "./plataforma";
-import { suscripcionPushActiva } from "@/app/perfil/acciones";
+import { suscripcionPushActiva, tokenApnsActivo } from "@/app/perfil/acciones";
 import { clienteNavegador } from "./supabase/navegador";
+import { esAppNativa } from "./appNativa";
+import type { EntornoApns } from "./dispositivosApns";
 
 export type { EstadoPush } from "./plataforma";
+
+// ---------- OL-213 (bitácora 242): dentro de la app de iPhone no hay Web Push (PushManager no existe en su
+// WKWebView), así que aquí abajo cada función que pide permiso, da de alta o consulta el estado se desvía al
+// puente nativo que agrega @capacitor/push-notifications (apps/ios/package.json; sin paquete nuevo en la web: el
+// bridge lo inyecta la app en cualquier página que cargue, `window.Capacitor.Plugins.*`, sin que la web lo
+// importe). Fuera de la app (`esAppNativa` falso) nada de esta sección se toca: mismo camino de siempre. ----------
+
+type PuentePush = {
+  checkPermissions(): Promise<{ receive: "granted" | "denied" | "prompt" }>;
+  requestPermissions(): Promise<{ receive: "granted" | "denied" | "prompt" }>;
+  register(): Promise<void>;
+  unregister(): Promise<void>;
+  // Por `window.Capacitor.Plugins` (sin el paquete de npm) la app devuelve el objeto para quitar el oyente directamente,
+  // no una promesa: en TestFlight 1.0 (3) el `.then` rompía el alta (OL-220). Se aceptan las dos formas.
+  addListener(evento: "registration", cb: (t: { value: string }) => void): Promise<Oyente> | Oyente;
+  addListener(evento: "registrationError", cb: (e: { error: string }) => void): Promise<Oyente> | Oyente;
+};
+type PuenteEntorno = { entorno(): Promise<{ entorno: EntornoApns }> };
+type Oyente = { remove: () => void | Promise<void> };
+type Capacitor = { Plugins?: { PushNotifications?: PuentePush; EntornoApns?: PuenteEntorno } };
+
+function puenteApns(): PuentePush | null {
+  if (typeof window === "undefined") return null;
+  return (window as unknown as { Capacitor?: Capacitor }).Capacitor?.Plugins?.PushNotifications ?? null;
+}
+
+/** El puente nativo está: siempre dentro de la app (registrado por Capacitor), nunca fuera de ella. */
+export function hayPuenteApns(): boolean {
+  return !!puenteApns();
+}
+
+const CLAVE_TOKEN_APNS = "somosnosotros:apns-token";
+
+// El permiso nativo solo se lee con una llamada async del puente (a diferencia de `Notification.permission`, que
+// es síncrona); se cachea para que `disponibilidadPush` (síncrona, se llama desde el toque) tenga algo que decir de
+// inmediato, y se refresca en cada llamada para que la siguiente lectura ya venga al día.
+let permisoNativoCache: NotificationPermission | null = null;
+function comoPermiso(receive: "granted" | "denied" | "prompt"): NotificationPermission {
+  return receive === "prompt" ? "default" : receive;
+}
+function refrescarPermisoNativo(): void {
+  const p = puenteApns();
+  if (!p) return;
+  p.checkPermissions().then((r) => { permisoNativoCache = comoPermiso(r.receive); }).catch(() => {});
+}
+
+// El entorno (sandbox/producción) no lo decide la web: lo sabe el compilador nativo (#if DEBUG, EntornoApnsPlugin.swift).
+// Una sola consulta por sesión: no cambia mientras la app sigue abierta.
+let entornoApnsCache: Promise<EntornoApns> | null = null;
+function entornoApns(): Promise<EntornoApns> {
+  const plugin = typeof window === "undefined" ? null : (window as unknown as { Capacitor?: Capacitor }).Capacitor?.Plugins?.EntornoApns;
+  if (!plugin) return Promise.resolve("produccion");
+  entornoApnsCache ??= plugin.entorno().then((r) => r.entorno).catch(() => "produccion" as const);
+  return entornoApnsCache;
+}
 
 function base64AUint8(b64: string): Uint8Array {
   const relleno = "=".repeat((4 - (b64.length % 4)) % 4);
@@ -53,6 +110,10 @@ function conTope<T>(promesa: Promise<T>, ms: number): Promise<T> {
 /** Compatibilidad local: permite pedir el permiso desde el toque, sin esperar una consulta de red. */
 export function disponibilidadPush(llavePublica: string): EstadoPush {
   const p = plataformaActual();
+  if (esAppNativa(navigator.userAgent)) {
+    refrescarPermisoNativo();
+    return decidirEstadoPush(p, { llave: true, soporte: hayPuenteApns(), permiso: permisoNativoCache, suscrito: false, nativo: true });
+  }
   const soporte = hayAvisosEnElNavegador();
   const permiso = "Notification" in window ? Notification.permission : null;
   return decidirEstadoPush(p, { llave: !!llavePublica, soporte, permiso, suscrito: false });
@@ -64,6 +125,7 @@ export function disponibilidadPush(llavePublica: string): EstadoPush {
  * subtítulo no lo distinguía. null si el estado no es "no-soportado".
  */
 export function detalleNoSoportado(llavePublica: string): string | null {
+  if (esAppNativa(navigator.userAgent)) return hayPuenteApns() ? null : "La app no pudo activar los avisos nativos";
   if (!llavePublica) return "Falta la llave pública de avisos en este despliegue";
   if (!hayAvisosEnElNavegador()) return "Este navegador no tiene Service Worker, Push o Notification";
   return null;
@@ -73,6 +135,21 @@ export function detalleNoSoportado(llavePublica: string): string | null {
 export async function estadoPush(llavePublica: string): Promise<EstadoPush> {
   const disponible = disponibilidadPush(llavePublica);
   if (disponible !== "apagado") return disponible;
+  if (esAppNativa(navigator.userAgent)) {
+    const p = puenteApns();
+    if (!p) return "apagado";
+    let token: string | null = null;
+    try { token = localStorage.getItem(CLAVE_TOKEN_APNS); } catch { /* modo privado: sin memoria, se vuelve a pedir */ }
+    if (!token) return "apagado";
+    try {
+      const chequeo = await p.checkPermissions();
+      permisoNativoCache = comoPermiso(chequeo.receive);
+      if (chequeo.receive !== "granted" || navigator.onLine === false) return "apagado";
+      return (await conTope(tokenApnsActivo(token), 8000)) ? "encendido" : "apagado";
+    } catch {
+      return "apagado";
+    }
+  }
   if (Notification.permission !== "granted" || navigator.onLine === false) return "apagado";
   try {
     const reg = await registroListo();
@@ -130,7 +207,10 @@ export function observarEstadoPush(llavePublica: string, recibir: (estado: Estad
   };
 }
 
-export type Suscripcion = { endpoint: string; keys: { p256dh: string; auth: string } };
+export type SuscripcionWeb = { endpoint: string; keys: { p256dh: string; auth: string } };
+/** Lo que guarda un teléfono con la app: no hay endpoint ni llaves, solo el token que dio APNs y su entorno. */
+export type SuscripcionApns = { apns: { token: string; entorno: EntornoApns } };
+export type Suscripcion = SuscripcionWeb | SuscripcionApns;
 export type ResultadoAlta =
   | { ok: true; sub: Suscripcion }
   | { ok: false; motivo: "bloqueado" | "silenciado" | "rechazado" | "fallo"; detalle?: string };
@@ -153,6 +233,58 @@ function detalleDe(e: unknown): string | undefined {
   return err.message ? `${err.name}: ${err.message}` : err.name;
 }
 
+/** Como `pedirPermiso`, pero con el puente nativo (`requestPermissions` en vez de `Notification.requestPermission`). */
+async function pedirPermisoNativo(p: PuentePush, ms = 8000): Promise<NotificationPermission | typeof TARDANDO> {
+  return Promise.race([p.requestPermissions().then((r) => comoPermiso(r.receive)), new Promise<typeof TARDANDO>((r) => setTimeout(() => r(TARDANDO), ms))]);
+}
+
+/**
+ * `register()` solo dispara el pedido; el token de verdad llega por el evento `registration` (o el error, por
+ * `registrationError`) — con el mismo tope de 8 s que el resto de este archivo, para no dejar "Activando…" para
+ * siempre si el evento nunca llega.
+ */
+function esperarTokenApns(p: PuentePush, ms = 8000): Promise<string | null> {
+  return new Promise((resolver) => {
+    let listo = false;
+    const limpiar: Array<() => void> = [];
+    const terminar = (valor: string | null) => {
+      if (listo) return;
+      listo = true;
+      limpiar.forEach((f) => f());
+      resolver(valor);
+    };
+    const id = setTimeout(() => terminar(null), ms);
+    limpiar.push(() => clearTimeout(id));
+    const guardar = (h: Promise<Oyente> | Oyente) =>
+      Promise.resolve(h)
+        .then((o) => limpiar.push(() => void o?.remove?.()))
+        .catch(() => {});
+    guardar(p.addListener("registration", (t) => terminar(t.value)));
+    guardar(p.addListener("registrationError", () => terminar(null)));
+    p.register().catch(() => terminar(null));
+  });
+}
+
+/** El alta dentro de la app: permiso nativo + token APNs, sin llave VAPID ni Service Worker (OL-213, bitácora 242). */
+async function suscribirApns(): Promise<ResultadoAlta> {
+  const p = puenteApns();
+  if (!p) return { ok: false, motivo: "fallo" };
+  try {
+    const chequeo = await p.checkPermissions();
+    const permiso = chequeo.receive === "prompt" ? await pedirPermisoNativo(p) : comoPermiso(chequeo.receive);
+    if (permiso === TARDANDO) return { ok: false, motivo: "silenciado" };
+    permisoNativoCache = permiso;
+    if (permiso === "denied") return { ok: false, motivo: "bloqueado" };
+    if (permiso !== "granted") return { ok: false, motivo: "fallo" };
+    const token = await esperarTokenApns(p);
+    if (!token) return { ok: false, motivo: "fallo" };
+    try { localStorage.setItem(CLAVE_TOKEN_APNS, token); } catch { /* modo privado: se vuelve a pedir la próxima vez */ }
+    return { ok: true, sub: { apns: { token, entorno: await entornoApns() } } };
+  } catch (e) {
+    return { ok: false, motivo: "fallo", detalle: detalleDe(e) };
+  }
+}
+
 /**
  * Pide el permiso y da de alta este teléfono. Se llama desde un toque: el iPhone solo muestra su permiso así.
  * "bloqueado": dijo que no (o ya estaba bloqueado); "silenciado": el navegador no mostró su aviso a tiempo (queda un
@@ -169,6 +301,7 @@ function detalleDe(e: unknown): string | undefined {
  * "Activar"; si no, se da de baja y se pide una nueva, propia de esta cuenta.
  */
 export async function suscribirPush(llavePublica: string): Promise<ResultadoAlta> {
+  if (esAppNativa(navigator.userAgent)) return suscribirApns();
   try {
     if (!llavePublica || !hayAvisosEnElNavegador()) return { ok: false, motivo: "fallo" };
     const permiso = await pedirPermiso();
@@ -193,12 +326,21 @@ export async function suscribirPush(llavePublica: string): Promise<ResultadoAlta
   }
 }
 
-/** Da de baja este teléfono. Devuelve el endpoint que tenía, para borrarlo en la base. */
-export async function desuscribirPush(): Promise<string | null> {
+export type IdentidadPush = { tipo: "web"; endpoint: string } | { tipo: "apns"; token: string };
+
+/** Da de baja este teléfono. Devuelve lo que tenía (endpoint o token), para borrarlo en la base. */
+export async function desuscribirPush(): Promise<IdentidadPush | null> {
+  if (esAppNativa(navigator.userAgent)) {
+    let token: string | null = null;
+    try { token = localStorage.getItem(CLAVE_TOKEN_APNS); } catch { /* nada que leer sin memoria */ }
+    await puenteApns()?.unregister().catch(() => {});
+    try { localStorage.removeItem(CLAVE_TOKEN_APNS); } catch { /* nada que borrar sin memoria */ }
+    return token ? { tipo: "apns", token } : null;
+  }
   const reg = await registroListo();
   const sub = reg ? await reg.pushManager.getSubscription() : null;
   if (!sub) return null;
   const endpoint = sub.endpoint;
   await sub.unsubscribe();
-  return endpoint;
+  return { tipo: "web", endpoint };
 }

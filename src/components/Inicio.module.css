@@ -1,36 +1,9 @@
-/* Inicio (OL-153, bitácora 188): los seis carriles, uno debajo del otro; cada uno es `Destacados`, que ya decide
-   si se pinta (un carril vacío no existe). Maquetación plana: sin envoltorios de más entre este grid y las secciones. */
+/* Inicio (OL-153, bitácora 188; nueve carriles desde OL-219): uno debajo del otro; cada uno es `Destacados`, que ya
+   decide si se pinta (un carril vacío no existe). Maquetación plana: sin envoltorios de más entre este grid y las
+   secciones. La invitación a crear cuenta que vivía aquí se quitó en OL-219 (founder: «dejemos de presentar el
+   callout que invita a crear cuenta en inicio») — el botón «Entrar» de la barra sigue siendo la única puerta. */
 .carriles {
   display: grid;
   gap: var(--espacio-2);
   padding-bottom: var(--espacio-4);
-}
-
-/* La invitación a crear cuenta, sin sesión (mismo tono que ActivarAvisos: nunca un muro que bloquea). */
-.invitacion {
-  display: grid;
-  gap: var(--espacio-1);
-  margin: var(--espacio-3) var(--gutter) 0;
-  padding: var(--espacio-4);
-  border-radius: var(--radio);
-  background: var(--primario-suave);
-}
-.invitacion b {
-  font-weight: 700;
-}
-.invitacion p {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.crearCuenta {
-  justify-self: start;
-  min-height: var(--toque-min);
-  display: inline-flex;
-  align-items: center;
-  padding: 0 var(--espacio-4);
-  border-radius: 999px;
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-weight: 700;
-  text-decoration: none;
 }

@@ -11,12 +11,17 @@ export function escaparIcs(texto: string): string {
   return texto.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 }
 
+/** Sin hora de fin, dura 2 horas (mismo criterio que `archivoIcs` y `datosEventoNativo`). */
+function finPorDefecto(inicio: string): string {
+  return new Date(new Date(inicio).getTime() + 2 * 3600000).toISOString();
+}
+
 /**
  * El archivo .ics de un evento. Lleva una alerta 1 hora antes: sin ella el iPhone lo agregaba con "Alerta: Ninguna" y
  * el calendario no recordaba nada (fricción K2, decisión 13 de docs/rediseno/17). Sin hora de fin, dura 2 horas.
  */
 export function archivoIcs(e: EventoCalendario, ahora: Date = new Date()): string {
-  const fin = e.fin ?? new Date(new Date(e.inicio).getTime() + 2 * 3600000).toISOString();
+  const fin = e.fin ?? finPorDefecto(e.inicio);
   const url = `${ORIGEN}${hrefEvento(e)}`;
   const lineas = [
     "BEGIN:VCALENDAR",
@@ -53,6 +58,15 @@ export function nombreArchivoIcs(titulo: string): string {
     .slice(0, 60)
     .replace(/-+$/, "");
   return `${base || "evento"}.ics`;
+}
+
+/** Lo que le pide `EKEventEditViewController` (OL-214, bitácora 243): mismos datos que `archivoIcs`, sin escapar
+ *  (EventKit los recibe tal cual, no como líneas de un archivo RFC 5545). */
+export type EventoCalendarioNativo = { titulo: string; inicio: string; fin: string; lugar: string | null; url: string; notas: string | null };
+
+/** El fin (con el mismo valor por defecto que `archivoIcs`) y la URL de la ficha, listos para el plugin nativo de la app. */
+export function datosEventoNativo(e: EventoCalendario): EventoCalendarioNativo {
+  return { titulo: e.titulo, inicio: e.inicio, fin: e.fin ?? finPorDefecto(e.inicio), lugar: e.lugar, url: `${ORIGEN}${hrefEvento(e)}`, notas: e.descripcion };
 }
 
 /**

@@ -25,8 +25,9 @@ export type EstadoDestacado = "elegido" | "quitado" | "ninguno";
 /** Lo decidido que sigue vigente, con su plazo y cuándo se decidió: Deshacer lo repone tal cual. */
 export type Decidido = { estado: EstadoDestacado; plazo: string | null; creado: string | null };
 export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: null };
-/** Una tarjeta de la tira, lista para pintarse. */
-export type Tarjeta = { id: string; href: string; foto: string; titulo: string; detalle: string; van: number };
+/** Una tarjeta de la tira, lista para pintarse. `reciente` (OL-219, insignia «Recién agregado»): solo la ponen las
+ *  tarjetas de evento (`tarjetaEvento`); lugares y artistas no tienen fecha de publicación que mostrar así. */
+export type Tarjeta = { id: string; href: string; foto: string; titulo: string; detalle: string; van: number; reciente?: boolean };
 
 /** Foto real primero; el orden de la selección o de las fechas se conserva dentro de cada grupo. */
 export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
@@ -52,8 +53,16 @@ export function enOrden<T extends { id: string }>(tira: Destacado[], fichas: T[]
 
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
+/** Ventana de la insignia «Recién agregado» (Inicio, OL-219 segunda vuelta): publicado en los últimos 7 días. Vive
+ *  aquí, no en `lib/inicio.ts` (que ya importa de este archivo), para no cerrar un ciclo de importación entre los
+ *  dos — coincide con `DIAS_ESTA_SEMANA`, pero es una ventana propia, no la misma constante. */
+export const DIAS_RECIEN_AGREGADO = 7;
+export function esRecienAgregado(creadoEn: string, ahora = new Date()): boolean {
+  return new Date(creadoEn).getTime() >= ahora.getTime() - DIAS_RECIEN_AGREGADO * 86400000;
+}
+
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): Tarjeta {
-  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van };
+  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van, reciente: esRecienAgregado(e.creado_en, ahora) };
 }
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {

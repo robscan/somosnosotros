@@ -3,6 +3,8 @@
  * que dice el navegador y decide; `pushCliente` le pasa los datos reales. Sin `window` aquí, para poder probarla.
  */
 
+import { esAppNativa } from "./appNativa";
+
 export type Plataforma = {
   /** iPhone o iPad (el iPad con Safari se presenta como Mac, pero tiene pantalla táctil). */
   ios: boolean;
@@ -42,7 +44,8 @@ export function leerPlataforma(agente: string, puntosTactiles: number, instalada
     deOtraApp,
     computadora,
     chrome,
-    instalada,
+    // Dentro de la app de iPhone ya está "instalada" por definición: no se ofrece instalarla (OL-220).
+    instalada: instalada || esAppNativa(agente),
   };
 }
 
@@ -52,11 +55,15 @@ export type EstadoPush = "otra-app" | "instalar-primero" | "no-soportado" | "blo
  * El orden importa: Safari del iPhone solo tiene avisos dentro de la app instalada, así que primero se mira si es un
  * iPhone sin instalar (hoja de instalar) y solo después si el navegador los soporta. Al revés, todo iPhone respondía
  * "no se puede" y la hoja nunca salía (fricción I1 de docs/rediseno/16).
+ *
+ * `s.nativo` (OL-213, bitácora 242): dentro de la app de iPhone (Capacitor) no aplica ni "instalar primero" (ya está
+ * instalada, por definición) ni la llave VAPID (los avisos ahí van por APNs, no por Web Push); `s.soporte` en ese
+ * caso lo dice el puente nativo (`hayPuenteApns`, pushCliente.ts), no las tres APIs del navegador.
  */
-export function decidirEstadoPush(p: Plataforma, s: { llave: boolean; soporte: boolean; permiso: NotificationPermission | null; suscrito: boolean }): EstadoPush {
+export function decidirEstadoPush(p: Plataforma, s: { llave: boolean; soporte: boolean; permiso: NotificationPermission | null; suscrito: boolean; nativo?: boolean }): EstadoPush {
   if (p.deOtraApp) return "otra-app";
-  if (p.ios && !p.instalada) return "instalar-primero";
-  if (!s.llave || !s.soporte) return "no-soportado";
+  if (p.ios && !p.instalada && !s.nativo) return "instalar-primero";
+  if (!s.soporte || (!s.nativo && !s.llave)) return "no-soportado";
   if (s.permiso === "denied") return "bloqueado";
   return s.suscrito ? "encendido" : "apagado";
 }

@@ -1,5 +1,6 @@
 import Capacitor
 import Network
+import UserNotifications
 
 /**
  * OL-194: dos cambios sobre la vista base de Capacitor.
@@ -17,8 +18,20 @@ import Network
  * OL-205 (auditoría OL-202, docs/rediseno/48-shell-ios.md §3.3): el gesto de deslizar desde el borde para volver
  * se enciende aquí (`allowsBackForwardNavigationGestures`), pero `GestoAtrasPlugin` (ver ese archivo) cancela la
  * navegación nativa que dispara y le pide a la web que vuelva con su propia marca de historial.
+ *
+ * OL-213 (bitácora 242): tocar un aviso push abre la ficha del evento/artista/lugar tal como venga en su URL —
+ * mismo camino que un enlace universal `capacitorOpenUniversalLink` (SceneDelegate.swift): cargarla en este mismo
+ * WKWebView. `notificationRouter.pushNotificationHandler` (Capacitor 8, ver NotificationRouter.swift en
+ * @capacitor/ios) es EL sitio pensado para esto, no un UNUserNotificationCenterDelegate propio a mano: Capacitor ya
+ * pone su propio delegate una sola vez y reparte a quien registre aquí. `@capacitor/push-notifications` reclama
+ * este mismo puesto en su `load()`; registrar el nuestro DESPUÉS de `super.capacitorDidLoad()` (que ya cargó los
+ * plugins) lo sustituye a propósito: seguimos usando el plugin para pedir permiso y el token (`register()`,
+ * `requestPermissions()`, el evento `registration`), pero la apertura al tocar la maneja esta clase, no sus propios
+ * eventos JS `pushNotificationActionPerformed` (que dejan de dispararse, sin que nada los use).
+ * OL-214 (bitácora 243): `CalendarioPlugin` (ver ese archivo) se registra igual que los dos de arriba — nativo
+ * puro, sin paquete de npm.
  */
-class MainViewController: CAPBridgeViewController {
+class MainViewController: CAPBridgeViewController, NotificationHandlerProtocol {
     private let monitorDeRed = NWPathMonitor()
     private var mostrandoSinConexion = false
 
@@ -26,8 +39,23 @@ class MainViewController: CAPBridgeViewController {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(EntrarSistemaPlugin())
         bridge?.registerPluginInstance(GestoAtrasPlugin())
+        bridge?.registerPluginInstance(EntornoApnsPlugin())
+        bridge?.notificationRouter.pushNotificationHandler = self
+        bridge?.registerPluginInstance(CalendarioPlugin())
         webView?.allowsBackForwardNavigationGestures = true
         observarRed()
+    }
+
+    /// Mostrar el aviso con la app abierta (banner + sonido): sin esto, un push con la app en primer plano no se ve.
+    func willPresent(notification: UNNotification) -> UNNotificationPresentationOptions {
+        [.banner, .list, .sound]
+    }
+
+    /// Al tocar el aviso (o su acción por defecto): la URL va en el payload de APNs, fuera de "aps" (src/lib/push.ts,
+    /// `payloadApns`), así que UNUserNotifications la entrega tal cual en `content.userInfo["url"]`.
+    func didReceive(response: UNNotificationResponse) {
+        guard let urlString = response.notification.request.content.userInfo["url"] as? String, let url = URL(string: urlString) else { return }
+        webView?.load(URLRequest(url: url))
     }
 
     private func observarRed() {
