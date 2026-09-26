@@ -229,50 +229,21 @@
 }
 
 /*
- * Una sola tarjeta, de cualquier fila (Tus planes, Esta semana, Populares, Nuevos, Cerca de ti, carriles de Agenda
- * y de Lugares…): apilada a lo ancho, con la imagen SIEMPRE arriba y el título, el detalle y los sellos abajo —
- * nunca la foto angosta al lado del texto. El founder vio esa disposición horizontal en su iPhone, en «Tus planes»
- * con un solo plan: los sellos («Recién agregado», partido en dos líneas, y «N van») salían diminutos y el check
- * tapaba «Recién agregado» (2026-09-26, OL-226): «prefiero que siempre se muestre la imagen arriba y el texto
- * abajo para tener espacio suficiente para chips» (ver Decidido, cambia la nota de abajo). Mismo tamaño de foto que
- * ya usaba `.grande` (264px, proporción 5:3): una tarjeta sola no compite por ancho con ninguna otra, así que usa
- * siempre esa foto grande, sea cual sea el tamaño normal de la fila — por eso ya no hace falta un `.uno.grande`
- * aparte. El botón tampoco necesita un ancla propia: la esquina superior derecha de la imagen coincide con la de
- * siempre (`.carril > li > button`), y ahí queda sin tapar ningún sello.
+ * Una sola tarjeta (OL-226, founder: «prefiero que siempre se muestre la imagen arriba y el texto abajo para tener
+ * espacio suficiente para chips»): a lo ancho, con la imagen arriba en 5:3 y los sellos dentro de ella, abajo a la
+ * izquierda, como en cualquier otra tarjeta. La fila de la foto mide lo que la imagen: con un alto fijo, los sellos
+ * quedaban colgando fuera de ella (founder, 2026-09-26). Las redondas de artistas no cambian.
  */
-.uno {
+.uno:not(.redondas) {
   grid-auto-columns: 100%;
 }
-.uno .tarjeta {
-  grid-template-columns: none;
-  grid-template-rows: 264px auto auto;
-  grid-template-areas: "foto" "titulo" "detalle";
+.uno:not(.redondas) .tarjeta {
+  grid-template-rows: auto auto auto;
 }
-.uno .foto {
+.uno:not(.redondas) .foto {
   height: auto;
   max-height: 264px;
   aspect-ratio: 5 / 3;
-}
-.uno small {
-  white-space: normal;
-}
-/*
- * Las redondas (artistas) quedan fuera de esta regla: una sola artista se ve igual que cualquier otra redonda —
- * círculo de 104px con el nombre debajo, sin irse a lo ancho ni deformarse (founder, 2026-09-26, OL-226).
- */
-.uno.redondas {
-  grid-auto-columns: 104px;
-}
-.uno.redondas .tarjeta {
-  grid-template-rows: 104px auto auto;
-}
-.uno.redondas .foto {
-  height: 100%;
-  max-height: none;
-  aspect-ratio: auto;
-}
-.uno.redondas small {
-  white-space: nowrap;
 }
 
 /* En el carril semanal, fecha y hora completas incluso en las tarjetas redondas. */

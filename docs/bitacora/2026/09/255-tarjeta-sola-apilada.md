@@ -43,3 +43,39 @@ Una cuenta desechable, `planes@example.com`, con Voy en un evento («Recital de 
 ## Cierre
 
 `.env.local`, el respaldo local y `playwright-core` quedaron en el scratchpad de la sesión (nunca en el repo). No se tocó `package.json`/lock, `CLAUDE.md` ni `apps/**`. Commit local en `tarjeta-sola-apilada`, PR abierto contra `main`, sin unir: pendiente `gh pr checks` y que el founder lo pruebe en su iPhone (Safari).
+
+## Segunda vuelta: los sellos, dentro de la imagen (gestor)
+
+Con el PR #264 ya en producción, el founder escribió: «En las fotos compartidas los chips se salen de los márgenes
+de imagen. Te vuelvo a llamar la atención respecto a la manera como maquetas. Sin sobre anidar, simplificar
+estructura y código. Pulcritud y atención al detalle por favor».
+
+**Causa.** La fila de la foto medía 264px fijos, pero la imagen a lo ancho en 5:3 mide 210px a 390px de pantalla.
+Los sellos se alinean al fondo de esa fila y no de la imagen, así que colgaban por debajo de ella: dos sellos
+montaban el borde y uno solo flotaba en el hueco. `.uno.grande` ya tenía el mismo defecto. El gestor lo vio en
+la revisión y lo dejó pasar porque «ya estaba así». No debió.
+
+**Arreglo.** Tres reglas en lugar de nueve, y ninguna deshace a otra:
+- `.uno:not(.redondas)` para la columna a lo ancho;
+- la fila de la foto en `auto`, para que mida lo que la imagen;
+- la imagen en 5:3 con tope de 264px.
+
+Las redondas quedan fuera con `:not()`, sin reglas que deshagan otras. Desaparecen `grid-template-columns: none`,
+las áreas repetidas (la tarjeta base ya las define), `.uno small` y los cuatro `.uno.redondas`. El JSDoc de
+`Destacados.tsx` queda en una línea.
+
+**Medido** con `getBoundingClientRect`: build de producción local contra el respaldo inventado de esta bitácora,
+Chrome real a 390×844.
+- Tus planes con un plan: foto 350×210. «Recién agregado» (126×24) y «2 van» (62×24) quedan dentro de la
+  imagen, a 8px del borde izquierdo; «2 van» a 8px del fondo. El check (48×48) queda a 8px de arriba y de la
+  derecha.
+- Populares con una tarjeta: «5 van» dentro, a 8px de la izquierda y del fondo; el botón a 8px de la esquina.
+- Esta semana, con dos tarjetas: fotos de 220×132 como antes, sin cambio.
+- Artista sola: círculo de 104×104. El botón flota sobre el perímetro (9px fuera), como decidió el founder el
+  2026-09-21 para todas las redondas.
+
+**Capturas:**
+- `255-9-tusplanes-sellos-dentro.png`: los dos sellos dentro de la imagen, abajo a la izquierda; el check arriba
+  a la derecha; título y fecha debajo.
+- `255-10-populares-y-artista-sellos-dentro.png`: Populares con «5 van» dentro de la imagen, y la artista sola
+  en su círculo.
