@@ -6,7 +6,7 @@ import { ordenarTarjetasPorFoto, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
-import { IconoEstrella, IconoPersonas } from "./ui/Iconos";
+import { IconoCalendarioMas, IconoChevronDerecha, IconoEstrella, IconoPersonas } from "./ui/Iconos";
 import styles from "./Destacados.module.css";
 
 /**
@@ -21,18 +21,27 @@ import styles from "./Destacados.module.css";
  * ya tiene para sus renglones (`useAsistenciaEnLista`/`useSeguirEnLista`): `Tarjeta` ya trae `id`/`titulo` de la
  * propia entidad, así que no hace falta ninguna consulta nueva.
  *
- * `verTodos` (OL-153, bitácora 188): un enlace junto al título que abre la sección con sus listados y filtros de
- * siempre. Con esto, `grande`/`redondas`/(ninguno) son el canon de los tres tamaños de tarjeta de un carril —
- * grande, mediana (el tamaño de siempre) y chica (`redondas`, la más pequeña que ya existía) — y la pantalla de
- * Inicio no necesita un componente de tarjeta propio.
+ * `verTodos` (OL-153, bitácora 188; chevron en vez de texto desde OL-219): un enlace junto al título que abre la
+ * sección con sus listados y filtros de siempre. Desde OL-219 (prototipo firmado, canon de Apple Music pedido por
+ * el founder) ya no es un texto "Ver todos →" aparte: todo el título + un `IconoChevronDerecha` es un solo enlace,
+ * con `aria-label="Ver todos: <encabezado>"` y un alto mínimo de `--toque-min` (44 px) aunque el glifo sea chico,
+ * para que un toque cerca del icono no falle. Sin `verTodos` (Lugares, que no pasa esta prop) el título se queda un
+ * simple `<h2>`, sin enlace ni chevron: un carril sin destino no lleva uno. Con esto, `grande`/`redondas`/(ninguno)
+ * son el canon de los tres tamaños de tarjeta de un carril — grande, mediana (el tamaño de siempre) y chica
+ * (`redondas`, la más pequeña que ya existía) — y la pantalla de Inicio no necesita un componente de tarjeta propio.
  *
  * `estadoDe` (OL-176, bitácora 211): solo en los carriles de eventos, el mismo chip «Te interesa» del renglón
  * (`RenglonEvento`), apilado con «N van» en la esquina inferior izquierda de la foto. `Tarjeta` no trae lo que la
  * persona decidió (no es suyo: lo decide en la ficha, no al armar la tarjeta); en vez de eso, el llamador pasa el
  * `estado(id)` que ya expone `useAsistenciaEnLista` — el mismo hook que le da `boton` — sin tocar ese hook ni el
  * tipo `Tarjeta`. Sin `estadoDe` (lugares, artistas) no aparece nada.
+ *
+ * `t.reciente` (OL-219, segunda vuelta del prototipo): la insignia «Recién agregado» (publicado hace ≤7 días,
+ * `lib/destacados.ts` `esRecienAgregado`), apilada con «Te interesa» y «N van» — misma insignia de fondo vidrio que
+ * «N van», mismo icono que ya usa Novedades para "evento nuevo" (`IconoCalendarioMas`). Puede salir en cualquier
+ * carril de Inicio, no solo en «Esta semana»; `Tarjeta` solo la trae en tarjetas de evento (`tarjetaEvento`).
  */
-export default function Destacados({ tarjetas, grande = false, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false, boton, estadoDe, verTodos }: { tarjetas: Tarjeta[]; grande?: boolean; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean; boton?: (t: Tarjeta) => EstadoBotonRenglon; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string; texto?: string } }) {
+export default function Destacados({ tarjetas, grande = false, redondas = false, encabezado = "Destacados", memoria = "destacados", detalleCompleto = false, boton, estadoDe, verTodos }: { tarjetas: Tarjeta[]; grande?: boolean; redondas?: boolean; encabezado?: string; memoria?: string; detalleCompleto?: boolean; boton?: (t: Tarjeta) => EstadoBotonRenglon; estadoDe?: (id: string) => Asistencia; verTodos?: { href: string } }) {
   const titulo = useId();
   /** El guardado que espera: la URL donde se deslizó y su temporizador. */
   const pendiente = useRef<{ clave: string; temporizador: number } | null>(null);
@@ -93,11 +102,15 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
   return (
     <section className={styles.destacados} aria-labelledby={titulo}>
       <div className={styles.cabecera}>
-        <h2 id={titulo}>{encabezado}</h2>
-        {verTodos && (
-          <Link href={verTodos.href} className={styles.verTodos}>
-            {verTodos.texto ?? "Ver todos"} →
+        {verTodos ? (
+          <Link href={verTodos.href} className={styles.tituloCarril} aria-label={`Ver todos: ${encabezado}`}>
+            <h2 id={titulo}>{encabezado}</h2>
+            <span className={styles.chevron} aria-hidden="true">
+              <IconoChevronDerecha width={20} height={20} strokeWidth={2} />
+            </span>
           </Link>
+        ) : (
+          <h2 id={titulo}>{encabezado}</h2>
         )}
       </div>
       <ul ref={recordar} className={`${styles.carril} ${ordenadas.length === 1 ? styles.uno : ""} ${grande ? styles.grande : ""} ${redondas ? styles.redondas : ""} ${detalleCompleto ? styles.detalleCompleto : ""}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
@@ -111,13 +124,20 @@ export default function Destacados({ tarjetas, grande = false, redondas = false,
                 <b>{t.titulo}</b>
                 <small>{t.detalle}</small>
                 {/* Van al final para que se oigan después del título; un solo contenedor con grid-area: foto (nunca
-                    dos sueltos que se pisen), «Te interesa» y «N van» apilados abajo a la izquierda de la foto. */}
-                {(interesa || t.van > 0) && (
+                    dos sueltos que se pisen), «Te interesa», «Recién agregado» y «N van» apilados abajo a la
+                    izquierda de la foto. */}
+                {(interesa || t.reciente || t.van > 0) && (
                   <span className={styles.chips}>
                     {interesa && (
                       <span className={styles.interesa}>
                         <IconoEstrella width={14} height={14} />
                         Te interesa
+                      </span>
+                    )}
+                    {t.reciente && (
+                      <span className={styles.reciente}>
+                        <IconoCalendarioMas width={14} height={14} />
+                        Recién agregado
                       </span>
                     )}
                     {t.van > 0 && (

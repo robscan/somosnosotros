@@ -85,6 +85,9 @@ describe("decidirEstadoPush", () => {
 });
 
 describe("decidirInstalar", () => {
+  it("dentro de la app de iPhone ya está instalada: no se ofrece instalarla (OL-220)", () => {
+    expect(decidirInstalar(leerPlataforma(`${IPHONE_APP_INSTALADA} SomosNosotrosApp`, 5, false), false)).toBe("ya-instalada");
+  });
   it("instalada no ofrece nada", () => {
     expect(decidirInstalar(leerPlataforma(IPHONE_APP_INSTALADA, 5, true), false)).toBe("ya-instalada");
   });

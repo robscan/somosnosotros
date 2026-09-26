@@ -18,10 +18,13 @@ type PuentePush = {
   requestPermissions(): Promise<{ receive: "granted" | "denied" | "prompt" }>;
   register(): Promise<void>;
   unregister(): Promise<void>;
-  addListener(evento: "registration", cb: (t: { value: string }) => void): Promise<{ remove: () => void }>;
-  addListener(evento: "registrationError", cb: (e: { error: string }) => void): Promise<{ remove: () => void }>;
+  // Por `window.Capacitor.Plugins` (sin el paquete de npm) la app devuelve el objeto para quitar el oyente directamente,
+  // no una promesa: en TestFlight 1.0 (3) el `.then` rompía el alta (OL-220). Se aceptan las dos formas.
+  addListener(evento: "registration", cb: (t: { value: string }) => void): Promise<Oyente> | Oyente;
+  addListener(evento: "registrationError", cb: (e: { error: string }) => void): Promise<Oyente> | Oyente;
 };
 type PuenteEntorno = { entorno(): Promise<{ entorno: EntornoApns }> };
+type Oyente = { remove: () => void | Promise<void> };
 type Capacitor = { Plugins?: { PushNotifications?: PuentePush; EntornoApns?: PuenteEntorno } };
 
 function puenteApns(): PuentePush | null {
@@ -252,8 +255,12 @@ function esperarTokenApns(p: PuentePush, ms = 8000): Promise<string | null> {
     };
     const id = setTimeout(() => terminar(null), ms);
     limpiar.push(() => clearTimeout(id));
-    p.addListener("registration", (t) => terminar(t.value)).then((h) => limpiar.push(h.remove));
-    p.addListener("registrationError", () => terminar(null)).then((h) => limpiar.push(h.remove));
+    const guardar = (h: Promise<Oyente> | Oyente) =>
+      Promise.resolve(h)
+        .then((o) => limpiar.push(() => void o?.remove?.()))
+        .catch(() => {});
+    guardar(p.addListener("registration", (t) => terminar(t.value)));
+    guardar(p.addListener("registrationError", () => terminar(null)));
     p.register().catch(() => terminar(null));
   });
 }

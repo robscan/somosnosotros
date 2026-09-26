@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { cargarPersona, type Persona } from "@/app/personas/consultas";
 import Inicio from "@/components/Inicio";
 import CarrilAgenda from "@/components/inicio/CarrilAgenda";
 import CarrilEntidad from "@/components/inicio/CarrilEntidad";
+import CarrilTusPlanes from "@/components/inicio/CarrilTusPlanes";
 import NavInferior from "@/components/NavInferior";
 import Publicar from "@/components/Publicar";
 import Sesion from "@/components/Sesion";
@@ -13,7 +15,7 @@ import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { tarjetaArtista } from "@/lib/destacados";
-import { idsUsadosEnAgenda } from "@/lib/inicio";
+import { carrilTusPlanes, idsUsadosEnAgenda } from "@/lib/inicio";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
 type SearchParams = { ciudad?: string };
@@ -37,12 +39,13 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 /**
  * Carga progresiva (pedido del founder tras probar en producción, OL-156): esta función solo espera la ciudad y la
- * sesión —rápidas, un par de consultas chicas— antes de pintar el shell entero (cabecera, barra, invitación). Las
- * siete consultas de los carriles NUNCA se esperan aquí: se pasan como promesas sin resolver a cada carril (un
- * componente de servidor propio, dentro de su `<Suspense>` en `Inicio.tsx`), que las espera por su cuenta y
- * transmite (streaming del App Router) en cuanto responde. Antes de esta pieza, `InicioPagina` esperaba todo con un
- * solo `Promise.all` y Next mostraba el cargador de página completa (`app/loading.tsx`, el logo SN) hasta que la
- * consulta más lenta terminaba; con esto, esa pantalla nunca vuelve a aparecer para esta ruta.
+ * sesión —rápidas, un par de consultas chicas— antes de pintar el shell entero (cabecera, barra). Las consultas de
+ * los carriles (agenda, "Tus planes"/`cargarPersona`, lugares y artistas de la semana, artistas destacados) NUNCA se
+ * esperan aquí: se pasan como promesas sin resolver a cada carril (un componente de servidor propio, dentro de su
+ * `<Suspense>` en `Inicio.tsx`), que las espera por su cuenta y transmite (streaming del App Router) en cuanto
+ * responde. Antes de esta pieza, `InicioPagina` esperaba todo con un solo `Promise.all` y Next mostraba el cargador
+ * de página completa (`app/loading.tsx`, el logo SN) hasta que la consulta más lenta terminaba; con esto, esa
+ * pantalla nunca vuelve a aparecer para esta ruta.
  */
 export default async function InicioPagina({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug } = await searchParams;
@@ -61,7 +64,13 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
     usuarioId && supabase
       ? Promise.resolve(supabase.from("seguimientos").select("artista_id").eq("usuario_id", usuarioId).not("artista_id", "is", null).limit(1000)).then((r) => ((r.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id))
       : Promise.resolve(usuarioId ? [] : null);
-  const excluirDeCercanosPromise = agendaPromise.then((a) => idsUsadosEnAgenda(a, ahora));
+  // «Tus planes» (OL-219): Voy + Me interesa, la misma consulta que ya usa Mi perfil (`cargarPersona`), sin filtro
+  // de ciudad (un compromiso ya hecho no deja de ser tuyo por cambiar de ciudad en Inicio). Sus ids se restan de
+  // Estelar/Esta semana/Populares/Nuevos (`calcularCarrilesAgenda`, `vistosIniciales`) y, con ellos ya incluidos, de
+  // Cercanos también, vía `excluirDeCercanosPromise`.
+  const personaPromise: Promise<Persona | null> = usuarioId ? cargarPersona(usuarioId) : Promise.resolve(null);
+  const tusPlanesIdsPromise: Promise<string[]> = personaPromise.then((p) => (p ? carrilTusPlanes(p.eventos, p.interesan).map((e) => e.id) : []));
+  const excluirDeCercanosPromise = Promise.all([agendaPromise, tusPlanesIdsPromise]).then(([a, ids]) => idsUsadosEnAgenda(a, ahora, ids));
   const seguidosLugaresPromise = agendaPromise.then((a) => a.seguidos);
 
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
@@ -86,12 +95,17 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         avisos={avisos}
         excluirDeCercanosPromise={excluirDeCercanosPromise}
         verTodosCercanosHref={conCiudad("/agenda")}
-        slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda", "siguiendo")} />}
-        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos esta semana" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
+        // Sin sesión, ni se construye: pasar el elemento igual lo haría ejecutarse (RSC renderiza cualquier hijo de
+        // servidor que cruce a un componente de cliente, aunque ese cliente decida no montarlo) y filtraría "Tus
+        // planes" al streaming de alguien sin cuenta, sin necesidad (OL-219).
+        slotTusPlanes={actual ? <CarrilTusPlanes personaPromise={personaPromise} avisos={avisos} verTodosHref="/perfil" /> : null}
+        slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} tusPlanesIdsPromise={tusPlanesIdsPromise} avisos={avisos} verTodosHref={conCiudad("/agenda", "siguiendo")} />}
+        slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} tusPlanesIdsPromise={tusPlanesIdsPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
+        slotPopulares={<CarrilAgenda parte="populares" agendaPromise={agendaPromise} tusPlanesIdsPromise={tusPlanesIdsPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
+        slotNuevos={<CarrilAgenda parte="nuevos" agendaPromise={agendaPromise} tusPlanesIdsPromise={tusPlanesIdsPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
+        slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
         slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacados" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
-        slotPopulares={<CarrilAgenda parte="populares" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
-        slotNuevos={<CarrilAgenda parte="nuevos" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
-        slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos esta semana" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
+        slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
       />
       <Publicar ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
       <NavInferior />
