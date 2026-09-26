@@ -56,7 +56,12 @@ const config: CapacitorConfig = {
   },
   ios: {
     appendUserAgent: "SomosNosotrosApp",
-    contentInset: "always",
+    // La web pone su propia zona segura (OL-209): la franja de la hora la cubre `body::before` en globals.css y las
+    // cabeceras pegajosas se detienen en `--tope`. Con "always", iOS reservaba además ese espacio dentro del
+    // desplazamiento: hueco doble arriba, franja con el fondo del sistema (negra en modo oscuro) y el contenido
+    // pasaba bajo la hora al desplazar (visto por el founder en TestFlight 1.0 (2), 2026-09-25).
+    contentInset: "never",
+    backgroundColor: "#ffffff",
   },
   plugins: {
     Keyboard: {

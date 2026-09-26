@@ -1,4 +1,7 @@
 :root {
+  /* Alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone, OL-209). En Safari y en la web
+     instalada del iPhone vale 0: ahí el navegador ya deja la página debajo de la hora. */
+  --tope: env(safe-area-inset-top, 0px);
   color-scheme: light; /* tema claro, sin modo oscuro (DEFINICION) */
 
   /* Variables de diseño: una sola fuente de verdad para color, espacio y forma. */
@@ -116,6 +119,18 @@ input,
 textarea,
 select {
   font-size: max(16px, var(--letra-md));
+}
+
+/* La franja de la hora (OL-209): fija, del color de las cabeceras, encima de lo que se desplaza y debajo de las hojas
+   (z 40). Sin ella, en la app de iPhone el contenido pasaba bajo el reloj al desplazar. Donde `--tope` vale 0 no se ve. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: var(--tope);
+  background: var(--fondo);
+  z-index: 30;
+  pointer-events: none;
 }
 
 /* Pantallas raíz (Agenda, Lugares, Artistas): barra arriba, contenido en su tono, navegación inferior fija. */
