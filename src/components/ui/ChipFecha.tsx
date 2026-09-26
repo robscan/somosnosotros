@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { fechaCortaChip, localAIso, ZONA_INICIAL } from "@/lib/fechas";
+import { ESTADO_INICIAL_FECHA_NATIVA, type EstadoFechaNativa, siguienteEstadoFechaNativa } from "@/lib/fechaNativa";
 import { usePunteroFinoAncho } from "../usePunteroFinoAncho";
 import chip from "./Chip.module.css";
 import styles from "./ChipFecha.module.css";
@@ -29,6 +30,8 @@ export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL }
   const [hoja, setHoja] = useState(false);
   const disparador = useRef<HTMLButtonElement | null>(null);
   const idNativo = useId();
+  // Estado del selector nativo entre abrir y cerrar (OL-204, bitácora 233): ver lib/fechaNativa.
+  const estadoNativo = useRef<EstadoFechaNativa>(ESTADO_INICIAL_FECHA_NATIVA);
 
   if (fecha) {
     const iso = localAIso(`${fecha}T12:00`, zona) ?? new Date().toISOString();
@@ -61,9 +64,34 @@ export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL }
         // Táctil/móvil: el chip ES el selector nativo, invisible encima, para que el toque caiga en él. "" es
         // siempre "sin filtro"; `hoy` nunca es sentinel de nada (bug OL-188: usarlo como valor inicial hacía que
         // elegir hoy no se distinguiera de no haber elegido nada).
+        // Se aplica al CERRAR el selector (`blur`), no en cada `change` (bug OL-204: Safari de iPhone dispara
+        // `change` con hoy nada más abrir, con el campo vacío, y aplicarlo ahí cerraba el selector solo). Ver
+        // lib/fechaNativa para el porqué de cada paso.
         <label className={`${chip.chip} ${chip.chipNativo} ${styles.soloIcono}`} htmlFor={idNativo}>
           <IconoCalendario width={16} height={16} />
-          <input type="date" id={idNativo} className={chip.encima} min={hoy} value="" onChange={(e) => onCambiar(e.target.value)} aria-label="Elegir fecha" />
+          <input
+            type="date"
+            id={idNativo}
+            className={chip.encima}
+            min={hoy}
+            value=""
+            onFocus={() => {
+              const { estado, aplicar } = siguienteEstadoFechaNativa(estadoNativo.current, { tipo: "focus" });
+              estadoNativo.current = estado;
+              if (aplicar) onCambiar(aplicar);
+            }}
+            onChange={(e) => {
+              const { estado, aplicar } = siguienteEstadoFechaNativa(estadoNativo.current, { tipo: "change", valor: e.target.value });
+              estadoNativo.current = estado;
+              if (aplicar) onCambiar(aplicar);
+            }}
+            onBlur={() => {
+              const { estado, aplicar } = siguienteEstadoFechaNativa(estadoNativo.current, { tipo: "blur" });
+              estadoNativo.current = estado;
+              if (aplicar) onCambiar(aplicar);
+            }}
+            aria-label="Elegir fecha"
+          />
         </label>
       )}
       {hoja && (
