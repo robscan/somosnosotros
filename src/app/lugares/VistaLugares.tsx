@@ -63,6 +63,10 @@ export type ExtrasLugares = {
 
 type Props = {
   lugares: LugarLista[];
+  /** Qué días tienen al menos un evento de un lugar en la ciudad (OL-218): mismo criterio que
+   *  `lugaresConEventoElDia` — un día está activo si algún lugar tiene eventos ese día. Arreglo serializable
+   *  (no `Map`, que no cruza el límite de servidor a cliente); se vuelve `Map` aquí con `useMemo`. */
+  diasActivos: [string, number][];
   ciudad: Ciudad;
   ciudades: CiudadConDatos[];
   vistaInicial: Vista;
@@ -85,8 +89,11 @@ type Props = {
  * ubicación al tocarlo, no la guarda y es exclusiva con el tipo: en la lista ordena por distancia, en el mapa centra
  * en el punto azul. Decisiones en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/cabeceras.html.
  */
-export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, tipo, barra, extras, busquedaInicial, hoy, zona }: Props) {
+export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, vistaInicial, tipo, barra, extras, busquedaInicial, hoy, zona }: Props) {
   const router = useRouter();
+  // El chip de fecha (OL-218) recibe un `Map` ya armado, no la `Promise` que usa Agenda: los eventos de Lugares
+  // ya están cargados aquí (sin `<Suspense>` que esperar) — `useMemo` evita rehacer el `Map` en cada repintado.
+  const diasActivosMapa = useMemo(() => new Map(diasActivos), [diasActivos]);
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [punto, setPunto] = useState<Punto | null>(null);
   const [vez, setVez] = useState(0);
@@ -173,7 +180,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, 
           contexto={
             <>
               {/* ui/ChipFecha (docs/rediseno/45, OL-174): antes del chip de ciudad, mismo orden que Agenda. */}
-              <ChipFecha fecha={fecha} onCambiar={setFecha} hoy={hoy} zona={zona} />
+              <ChipFecha fecha={fecha} onCambiar={setFecha} hoy={hoy} zona={zona} diasActivos={diasActivosMapa} />
               {chipCiudad}
             </>
           }

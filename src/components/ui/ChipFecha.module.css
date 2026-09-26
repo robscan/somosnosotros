@@ -31,9 +31,36 @@
   padding: 0 var(--espacio-3) 0 10px;
   border-color: var(--primario);
 }
-.conFecha > svg {
+/* El resto de la pastilla (ícono + texto) reabre la hoja con la fecha ya elegida (OL-218): para poder tocarla
+   otra vez y quitarla, igual que el prototipo firmado. La ✕ sigue aparte, sin cambios: quita directo. */
+.conFechaBoton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.conFechaBoton > svg {
   margin-right: 0;
   color: var(--texto-suave);
+}
+/* "Cambiar la fecha," antes del texto corto (OL-218): se oye, no se ve — sin ella, un lector de pantalla anuncia
+   solo la fecha ("mié 30 sep") sin decir que tocarla reabre el selector. */
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .quitar {
   position: relative;

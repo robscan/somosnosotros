@@ -1,13 +1,12 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import { fechaCortaChip, localAIso, ZONA_INICIAL } from "@/lib/fechas";
-import { ESTADO_INICIAL_FECHA_NATIVA, type EstadoFechaNativa, siguienteEstadoFechaNativa } from "@/lib/fechaNativa";
-import { usePunteroFinoAncho } from "../usePunteroFinoAncho";
+import type { DiasActivos } from "@/lib/calendario";
 import chip from "./Chip.module.css";
 import styles from "./ChipFecha.module.css";
 import { IconoCalendario, IconoCerrar } from "./Iconos";
-import SelectorFecha from "./SelectorFecha";
+import SelectorFecha, { SelectorFechaCargando } from "./SelectorFecha";
 
 type Props = {
   /** "" = sin elegir; si no, YYYY-MM-DD en `zona`. */
@@ -16,101 +15,74 @@ type Props = {
   /** Hoy, YYYY-MM-DD en `zona` (mínimo elegible; lo decide el servidor para que cliente y servidor coincidan). */
   hoy: string;
   zona?: string;
+  /** Qué días tienen al menos un evento en la ciudad (OL-218): con ella, la hoja desactiva los días sin eventos.
+   *  Un `Promise` (Agenda, diferida junto con la consulta pesada) muestra `SelectorFechaCargando` mientras
+   *  resuelve; en Lugares llega ya resuelto (los eventos ya están cargados, sin `<Suspense>` que esperar). */
+  diasActivos?: DiasActivos | Promise<DiasActivos>;
 };
 
 /**
  * El chip de fecha, un solo componente para Agenda y Lugares (docs/rediseno/45, OL-174). Sin fecha: solo el
  * ícono, sin la palabra "Seleccionar". Con fecha: "mié 30 sep" (sin "de", sin "Hoy"/"Mañana": ver
- * `fechaCortaChip`) y su quitar (✕), que regresa al ícono solo — no reabre el selector. En escritorio con
- * puntero fino (`usePunteroFinoAncho`, OL-162) el ícono abre la hoja propia; en táctil, el `<input type="date">`
- * nativo va encima del chip, invisible, y el toque cae en él (Safari no abre su selector por código).
+ * `fechaCortaChip`) y su quitar (✕), que regresa al ícono solo sin abrir la hoja. Tocar el resto de la pastilla
+ * (el ícono y el texto) reabre la hoja con ese día ya marcado, para poder tocarlo otra vez y quitarlo (OL-218).
+ *
+ * Desde OL-218 (bitácora 247) la hoja propia (`ui/SelectorFecha`, OL-162) es la misma en cualquier pantalla, en
+ * modo "filtro": ya no hay una rama nativa (`<input type="date">`) para táctil/móvil — ese selector no podía
+ * desactivar un día suelto, y dio dos regresiones reales (OL-188, OL-204) antes de reemplazarlo. Ver
+ * `docs/rediseno/prototipos/calendario-dias-con-eventos.html`, el prototipo que firmó el founder.
  */
-export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL }: Props) {
-  const escritorio = usePunteroFinoAncho();
+export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL, diasActivos }: Props) {
   const [hoja, setHoja] = useState(false);
   const disparador = useRef<HTMLButtonElement | null>(null);
-  const idNativo = useId();
-  // Estado del selector nativo entre abrir y cerrar (OL-204, bitácora 233): ver lib/fechaNativa.
-  const estadoNativo = useRef<EstadoFechaNativa>(ESTADO_INICIAL_FECHA_NATIVA);
+
+  function abrir(e: React.MouseEvent<HTMLButtonElement>) {
+    disparador.current = e.currentTarget;
+    setHoja(true);
+  }
+  function cerrar() {
+    setHoja(false);
+    disparador.current?.focus();
+  }
 
   if (fecha) {
     const iso = localAIso(`${fecha}T12:00`, zona) ?? new Date().toISOString();
     return (
       <span className={`${chip.chip} ${styles.conFecha}`}>
-        <IconoCalendario width={16} height={16} />
-        <span>{fechaCortaChip(iso, zona)}</span>
+        <button type="button" className={styles.conFechaBoton} onClick={abrir}>
+          <IconoCalendario width={16} height={16} />
+          <span className={styles.soloLector}>Cambiar la fecha,</span>
+          <span>{fechaCortaChip(iso, zona)}</span>
+        </button>
         <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => onCambiar("")}>
           <IconoCerrar width={18} height={18} />
         </button>
+        {hoja && <Hoja fecha={fecha} hoy={hoy} zona={zona} diasActivos={diasActivos} onCambiar={onCambiar} onCerrar={cerrar} />}
       </span>
     );
   }
   return (
     <>
-      {escritorio ? (
-        // Escritorio: el chip abre la hoja propia en vez del selector nativo (mismo aspecto, otro selector).
-        <button
-          type="button"
-          className={`${chip.chip} ${styles.soloIcono}`}
-          aria-label="Elegir fecha"
-          onClick={(e) => {
-            disparador.current = e.currentTarget;
-            setHoja(true);
-          }}
-        >
-          <IconoCalendario width={16} height={16} />
-        </button>
-      ) : (
-        // Táctil/móvil: el chip ES el selector nativo, invisible encima, para que el toque caiga en él. "" es
-        // siempre "sin filtro"; `hoy` nunca es sentinel de nada (bug OL-188: usarlo como valor inicial hacía que
-        // elegir hoy no se distinguiera de no haber elegido nada).
-        // Se aplica al CERRAR el selector (`blur`), no en cada `change` (bug OL-204: Safari de iPhone dispara
-        // `change` con hoy nada más abrir, con el campo vacío, y aplicarlo ahí cerraba el selector solo). Ver
-        // lib/fechaNativa para el porqué de cada paso.
-        <label className={`${chip.chip} ${chip.chipNativo} ${styles.soloIcono}`} htmlFor={idNativo}>
-          <IconoCalendario width={16} height={16} />
-          <input
-            type="date"
-            id={idNativo}
-            className={chip.encima}
-            min={hoy}
-            value=""
-            onFocus={() => {
-              const { estado, aplicar } = siguienteEstadoFechaNativa(estadoNativo.current, { tipo: "focus" });
-              estadoNativo.current = estado;
-              if (aplicar) onCambiar(aplicar);
-            }}
-            onChange={(e) => {
-              const { estado, aplicar } = siguienteEstadoFechaNativa(estadoNativo.current, { tipo: "change", valor: e.target.value });
-              estadoNativo.current = estado;
-              if (aplicar) onCambiar(aplicar);
-            }}
-            onBlur={() => {
-              const { estado, aplicar } = siguienteEstadoFechaNativa(estadoNativo.current, { tipo: "blur" });
-              estadoNativo.current = estado;
-              if (aplicar) onCambiar(aplicar);
-            }}
-            aria-label="Elegir fecha"
-          />
-        </label>
-      )}
-      {hoja && (
-        <SelectorFecha
-          titulo="Fecha"
-          fecha={fecha}
-          min={hoy}
-          zona={zona}
-          onListo={(f) => {
-            onCambiar(f);
-            setHoja(false);
-            disparador.current?.focus();
-          }}
-          onCerrar={() => {
-            setHoja(false);
-            disparador.current?.focus();
-          }}
-        />
-      )}
+      <button type="button" className={`${chip.chip} ${styles.soloIcono}`} aria-label="Elegir fecha" onClick={abrir}>
+        <IconoCalendario width={16} height={16} />
+      </button>
+      {hoja && <Hoja fecha={fecha} hoy={hoy} zona={zona} diasActivos={diasActivos} onCambiar={onCambiar} onCerrar={cerrar} />}
     </>
+  );
+}
+
+/** La hoja, con su propio `<Suspense>` (OL-218): con `diasActivos` diferido (Agenda), `SelectorFecha` entero
+ *  suspende (`use()`) y esto pinta `SelectorFechaCargona` mientras tanto — mismo título y tamaño, sin saltos. */
+function Hoja({ fecha, hoy, zona, diasActivos, onCambiar, onCerrar }: { fecha: string; hoy: string; zona: string; diasActivos: DiasActivos | Promise<DiasActivos> | undefined; onCambiar: (fecha: string) => void; onCerrar: () => void }) {
+  // En modo "filtro" elegir (o quitar) un día ya cierra la hoja sola (SelectorFecha llama a `onListo`, aquí,
+  // sin botón "Listo"): además de aplicar el filtro, hay que cerrarla — `onCerrar` no se dispara solo.
+  function alListo(f: string) {
+    onCambiar(f);
+    onCerrar();
+  }
+  return (
+    <Suspense fallback={<SelectorFechaCargando titulo="Selecciona una fecha" fecha={fecha} min={hoy} zona={zona} onCerrar={onCerrar} />}>
+      <SelectorFecha titulo="Selecciona una fecha" fecha={fecha} min={hoy} zona={zona} modo="filtro" diasActivos={diasActivos} onListo={alListo} onCerrar={onCerrar} />
+    </Suspense>
   );
 }

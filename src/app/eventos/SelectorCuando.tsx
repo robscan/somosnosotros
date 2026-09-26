@@ -2,10 +2,8 @@
 
 import { useRef, useState } from "react";
 import { combinarFechaHora, localAIso, sumarHoras, yaPaso } from "@/lib/fechas";
-import { ChipNativo } from "@/components/ui/Chip";
 import chip from "@/components/ui/Chip.module.css";
 import SelectorFecha from "@/components/ui/SelectorFecha";
-import { usePunteroFinoAncho } from "@/components/usePunteroFinoAncho";
 import { IconoCerrar } from "@/components/ui/Iconos";
 import styles from "./SelectorCuando.module.css";
 
@@ -59,18 +57,19 @@ function etiquetaDuracion(horas: number): string {
 
 /**
  * Cuándo, como en el calendario del teléfono (referencia del founder, 2026-09-14): dos renglones, Empieza y Termina,
- * cada uno con su fecha y su hora en píldoras que abren el selector nativo. Sin frase de confirmación: las píldoras ya lo dicen.
+ * cada uno con su fecha y su hora en píldoras que abren la hoja propia (`ui/SelectorFecha`, calendario + horas).
+ * Sin frase de confirmación: las píldoras ya lo dicen.
  *
- * En escritorio con puntero fino (OL-162, bitácora 197): el selector nativo de Chrome no aparece en la app instalada
- * en un monitor externo (bitácora 195, OL-160), así que ahí las píldoras abren la hoja propia (`ui/SelectorFecha`,
- * calendario + horas) en vez del `<input type="date|time">`. En táctil y en móvil (`usePunteroFinoAncho` en false)
- * nada cambia: siguen siendo el selector nativo de siempre.
+ * Hasta OL-218 (bitácora 247) el selector nativo (`<input type="date|time">`) seguía siendo la rama táctil/móvil
+ * (la hoja propia solo reemplazaba al nativo en escritorio con puntero fino, OL-162, bitácora 197 — el nativo de
+ * Chrome no aparece en la app instalada en un monitor externo, bitácora 195, OL-160). Precisión del founder en
+ * OL-218: "el mismo componente de hoja se usa... en el alta y la edición de evento", sin acotarlo a escritorio —
+ * la misma unificación que ya hizo `ui/ChipFecha` para Agenda y Lugares. Ya no hay rama nativa aquí tampoco.
  */
 export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInicio, errorFin, sugeridaActual }: Props) {
   const { fecha, hora } = partir(inicio);
   const finP = partir(fin);
   const duracion = fin ? horasEntre(inicio, fin, zona) : 0;
-  const escritorio = usePunteroFinoAncho();
   const [hoja, setHoja] = useState<"inicio" | "fin" | null>(null);
   const disparador = useRef<HTMLButtonElement | null>(null);
   // Instantánea de la hora sugerida, tomada al abrir la hoja (evento, no render): `sugeridaActual` vive en una
@@ -100,21 +99,12 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
     <div className={styles.selector}>
       <div className={styles.fila}>
         <span className={styles.rotulo}>Empieza</span>
-        {escritorio ? (
-          <>
-            <button type="button" className={chip.chip} onClick={(e) => abrirHoja("inicio", e)}>
-              {etiquetaFecha(fecha)}
-            </button>
-            <button type="button" className={chip.chip} onClick={(e) => abrirHoja("inicio", e)}>
-              {etiquetaHora(hora)}
-            </button>
-          </>
-        ) : (
-          <>
-            <ChipNativo tipo="date" valor={fecha} activo={false} etiqueta={etiquetaFecha(fecha)} onCambio={(v) => v && fijarInicio(v, hora || "19:00")} ariaLabel="Fecha en que empieza" />
-            <ChipNativo tipo="time" valor={hora} activo={false} etiqueta={etiquetaHora(hora)} onCambio={(v) => v && fijarInicio(fecha, v)} ariaLabel="Hora en que empieza" />
-          </>
-        )}
+        <button type="button" className={chip.chip} onClick={(e) => abrirHoja("inicio", e)}>
+          {etiquetaFecha(fecha)}
+        </button>
+        <button type="button" className={chip.chip} onClick={(e) => abrirHoja("inicio", e)}>
+          {etiquetaHora(hora)}
+        </button>
       </div>
       {errorInicio && (
         <p className={styles.error} role="alert">
@@ -123,23 +113,14 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
       )}
       <div className={styles.fila}>
         <span className={styles.rotulo}>Termina</span>
-        {escritorio ? (
-          <>
-            {fin && (
-              <button type="button" className={chip.chip} onClick={(e) => abrirHoja("fin", e)}>
-                {etiquetaFecha(finP.fecha)}
-              </button>
-            )}
-            <button type="button" className={chip.chip} onClick={(e) => abrirHoja("fin", e)}>
-              {fin ? etiquetaHora(finP.hora) : "Sin hora de fin"}
-            </button>
-          </>
-        ) : (
-          <>
-            {fin && <ChipNativo tipo="date" valor={finP.fecha} activo={false} etiqueta={etiquetaFecha(finP.fecha)} onCambio={(v) => v && fijarFin(v, finP.hora)} ariaLabel="Fecha en que termina" />}
-            <ChipNativo tipo="time" valor={finP.hora} activo={false} etiqueta={fin ? etiquetaHora(finP.hora) : "Sin hora de fin"} onCambio={(v) => fijarFin(finP.fecha, v)} ariaLabel="Hora en que termina" />
-          </>
+        {fin && (
+          <button type="button" className={chip.chip} onClick={(e) => abrirHoja("fin", e)}>
+            {etiquetaFecha(finP.fecha)}
+          </button>
         )}
+        <button type="button" className={chip.chip} onClick={(e) => abrirHoja("fin", e)}>
+          {fin ? etiquetaHora(finP.hora) : "Sin hora de fin"}
+        </button>
         {fin && (
           <button type="button" className={styles.quitar} onClick={() => onCambio(inicio, "")} aria-label="Quitar la hora de fin">
             <IconoCerrar width={20} height={20} />
@@ -162,12 +143,14 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
 
       {hoja === "inicio" && (
         <SelectorFecha
-          titulo="Cuándo empieza"
+          // Precisión del founder (OL-218, bitácora 247): "Selecciona la fecha del evento" en el alta y la
+          // edición, mismo canon que Agenda y Lugares ("Selecciona una fecha") pero para un campo, no un filtro.
+          titulo="Selecciona la fecha del evento"
           fecha={fecha}
           hora={hora || "19:00"}
           zona={zona}
           conHora
-          bloquearPasado={false}
+          modo="campo"
           sugerida={sugeridaHoja}
           duracion={etiquetaDuracion(duracion)}
           onListo={(f, h) => {
@@ -179,12 +162,12 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
       )}
       {hoja === "fin" && (
         <SelectorFecha
-          titulo="Cuándo termina"
+          titulo="Selecciona la fecha del evento"
           fecha={finP.fecha || fecha}
           hora={finP.hora}
           zona={zona}
           conHora
-          bloquearPasado={false}
+          modo="campo"
           onListo={(f, h) => {
             if (h) fijarFin(f, h);
             cerrarHoja();
