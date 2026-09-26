@@ -1,31 +1,50 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { guardarSuscripcionPush, suscripcionPushActiva } from "./acciones";
+import { borrarSuscripcionPush, guardarSuscripcionPush, suscripcionPushActiva, tokenApnsActivo } from "./acciones";
 
 const mocks = vi.hoisted(() => ({ cliente: vi.fn(), usuario: vi.fn(), upsert: vi.fn(), perfil: vi.fn(),
-  filtroPerfil: vi.fn(), seleccionar: vi.fn(), filtro: vi.fn(), leer: vi.fn(), invalidar: vi.fn() }));
+  filtroPerfil: vi.fn(), seleccionar: vi.fn(), filtro: vi.fn(), leer: vi.fn(), invalidar: vi.fn(),
+  apnsUpsert: vi.fn(), apnsSeleccionar: vi.fn(), apnsFiltro: vi.fn(), apnsLeer: vi.fn(),
+  borrarWeb: vi.fn(), borrarApns: vi.fn(), contarWeb: vi.fn(), contarApns: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.invalidar }));
 vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: mocks.cliente }));
 
 const sub = { endpoint: "https://fcm.googleapis.com/fcm/send/prueba", keys: {
   p256dh: Buffer.concat([Buffer.from([4]), Buffer.alloc(64)]).toString("base64url"), auth: Buffer.alloc(16).toString("base64url"),
 } };
+const TOKEN_APNS = "a".repeat(64);
 
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.usuario.mockResolvedValue({ data: { user: { id: "persona" } }, error: null });
   mocks.upsert.mockResolvedValue({ error: null });
+  mocks.apnsUpsert.mockResolvedValue({ error: null });
   mocks.perfil.mockResolvedValue({ data: { id: "persona", avisos_push: true }, error: null });
   mocks.filtroPerfil.mockReturnValue({ select: () => ({ maybeSingle: mocks.perfil }) });
   mocks.leer.mockResolvedValue({ data: { endpoint: sub.endpoint, perfiles: { avisos_push: true } }, error: null });
   const lectura = { eq: mocks.filtro, maybeSingle: mocks.leer };
   mocks.filtro.mockReturnValue(lectura);
   mocks.seleccionar.mockReturnValue(lectura);
-  mocks.cliente.mockResolvedValue({
+  mocks.apnsLeer.mockResolvedValue({ data: { token: TOKEN_APNS, perfiles: { avisos_push: true } }, error: null });
+  const lecturaApns = { eq: mocks.apnsFiltro, maybeSingle: mocks.apnsLeer };
+  mocks.apnsFiltro.mockReturnValue(lecturaApns);
+  mocks.apnsSeleccionar.mockReturnValue(lecturaApns);
+  mocks.borrarWeb.mockReturnValue({ eq: () => Promise.resolve({ error: null }) });
+  mocks.borrarApns.mockReturnValue({ eq: () => Promise.resolve({ error: null }) });
+  mocks.contarWeb.mockReturnValue({ eq: () => Promise.resolve({ count: 0 }) });
+  mocks.contarApns.mockReturnValue({ eq: () => Promise.resolve({ count: 0 }) });
+  // `select(cols, { count, head })` (quedanDispositivos) usa una segunda firma; se distingue por el número de
+  // argumentos de `select(cols)` (suscripcionPushActiva/tokenApnsActivo), que solo recibe uno.
+  mocks.cliente.mockImplementation(async () => ({
     auth: { getUser: mocks.usuario },
-    from: (table: string) => table === "suscripciones_push"
-      ? { upsert: mocks.upsert, select: mocks.seleccionar }
-      : { update: () => ({ eq: mocks.filtroPerfil }) },
-  });
+    from: (table: string) => ({
+      upsert: table === "suscripciones_push" ? mocks.upsert : mocks.apnsUpsert,
+      delete: table === "suscripciones_push" ? mocks.borrarWeb : mocks.borrarApns,
+      select: (...args: unknown[]) => (args.length > 1
+        ? (table === "suscripciones_push" ? mocks.contarWeb() : mocks.contarApns())
+        : (table === "suscripciones_push" ? mocks.seleccionar(args[0] as string) : mocks.apnsSeleccionar(args[0] as string))),
+      update: () => ({ eq: mocks.filtroPerfil }),
+    }),
+  }));
 });
 
 describe("guardarSuscripcionPush", () => {
@@ -123,5 +142,75 @@ describe("suscripcionPushActiva", () => {
     mocks.leer.mockRejectedValue(new Error("sin red"));
     expect(await suscripcionPushActiva(sub.endpoint)).toBe(false);
     expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+});
+
+// ---------- OL-213 (bitácora 242): dentro de la app de iPhone no hay endpoint/llaves, solo un token APNs; mismas
+// reglas que arriba (cuenta autenticada, consentimiento en la misma consulta RLS), tabla distinta. ----------
+describe("guardarSuscripcionPush: token APNs (dentro de la app)", () => {
+  it("registra en dispositivos_apns, no en suscripciones_push", async () => {
+    expect(await guardarSuscripcionPush({ apns: { token: TOKEN_APNS, entorno: "sandbox" } })).toBe(true);
+    expect(mocks.apnsUpsert).toHaveBeenCalledWith({ token: TOKEN_APNS, usuario_id: "persona", entorno: "sandbox", actualizado_en: expect.any(String) });
+    expect(mocks.upsert).not.toHaveBeenCalled();
+    expect(mocks.invalidar).toHaveBeenCalledTimes(2);
+  });
+  it("rechaza un token con forma invalida antes de consultar la base", async () => {
+    expect(await guardarSuscripcionPush({ apns: { token: "no-es-hex", entorno: "sandbox" } })).toBe(false);
+    expect(mocks.cliente).not.toHaveBeenCalled();
+  });
+  it("no confirma exito si fallan las preferencias", async () => {
+    mocks.perfil.mockResolvedValue({ error: { message: "fallo" } });
+    expect(await guardarSuscripcionPush({ apns: { token: TOKEN_APNS, entorno: "produccion" } })).toBe(false);
+    expect(mocks.invalidar).not.toHaveBeenCalled();
+  });
+});
+
+describe("tokenApnsActivo", () => {
+  it("exige token, cuenta y consentimiento en la misma consulta RLS", async () => {
+    expect(await tokenApnsActivo(TOKEN_APNS)).toBe(true);
+    expect(mocks.apnsSeleccionar).toHaveBeenCalledWith("token, perfiles!inner(avisos_push)");
+    expect(mocks.apnsFiltro.mock.calls).toEqual([
+      ["token", TOKEN_APNS], ["usuario_id", "persona"], ["perfiles.avisos_push", true],
+    ]);
+  });
+  it.each([null, 12, "no-es-hex"])("rechaza entrada invalida: %s", async (token) => {
+    expect(await tokenApnsActivo(token as string)).toBe(false);
+    expect(mocks.cliente).not.toHaveBeenCalled();
+  });
+  it("sin registro o sin consentimiento no declara encendido", async () => {
+    mocks.apnsLeer.mockResolvedValue({ data: null, error: null });
+    expect(await tokenApnsActivo(TOKEN_APNS)).toBe(false);
+  });
+});
+
+describe("borrarSuscripcionPush", () => {
+  it("un endpoint de navegador se borra de suscripciones_push, nunca de dispositivos_apns", async () => {
+    await borrarSuscripcionPush({ tipo: "web", endpoint: sub.endpoint });
+    expect(mocks.borrarWeb).toHaveBeenCalled();
+    expect(mocks.borrarApns).not.toHaveBeenCalled();
+  });
+  it("un token APNs se borra de dispositivos_apns, nunca de suscripciones_push", async () => {
+    await borrarSuscripcionPush({ tipo: "apns", token: TOKEN_APNS });
+    expect(mocks.borrarApns).toHaveBeenCalled();
+    expect(mocks.borrarWeb).not.toHaveBeenCalled();
+  });
+  it("apaga avisos_push solo si no queda NINGÚN dispositivo (ni navegador ni app)", async () => {
+    await borrarSuscripcionPush({ tipo: "web", endpoint: sub.endpoint });
+    expect(mocks.filtroPerfil).toHaveBeenCalledWith("id", "persona");
+  });
+  it("borrar el último navegador no apaga la cuenta si el teléfono con la app sigue dado de alta", async () => {
+    mocks.contarApns.mockReturnValue({ eq: () => Promise.resolve({ count: 1 }) });
+    await borrarSuscripcionPush({ tipo: "web", endpoint: sub.endpoint });
+    expect(mocks.filtroPerfil).not.toHaveBeenCalled();
+  });
+  it("borrar el último token APNs no apaga la cuenta si un navegador sigue dado de alta", async () => {
+    mocks.contarWeb.mockReturnValue({ eq: () => Promise.resolve({ count: 1 }) });
+    await borrarSuscripcionPush({ tipo: "apns", token: TOKEN_APNS });
+    expect(mocks.filtroPerfil).not.toHaveBeenCalled();
+  });
+  it("sin sesion no toca la base", async () => {
+    mocks.usuario.mockResolvedValue({ data: { user: null }, error: null });
+    await borrarSuscripcionPush({ tipo: "web", endpoint: sub.endpoint });
+    expect(mocks.filtroPerfil).not.toHaveBeenCalled();
   });
 });
