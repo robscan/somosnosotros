@@ -100,3 +100,69 @@ Orden de arriba hacia abajo en la pantalla: **1 (tus favoritos) → 2 (destacado
 
 - El nombre exacto del chip nuevo "Esta semana" en Lugares y Artistas (texto y posición entre los chips existentes).
 - Si el carril "Eventos populares" necesita, además del mínimo de 3 asistentes, algún tope de antigüedad del "Voy" para no quedar dominado por un solo evento viejo con muchos asistentes acumulados — no lo pidió el founder, se anota por si aparece con datos reales.
+
+## Tercera vuelta (OL-217, 2026-09-25): «Tus planes», «Esta semana» y sin el aviso de crear cuenta
+
+**Reemplaza** el orden de la sección anterior ("Orden final, arriba hacia abajo") y la fila 5 de la tabla de carriles (que ya no aplica: Populares ya no es el respaldo del carril estelar, ni comparte fila con "artistas y lugares"). El resto de la segunda vuelta (nombre "Inicio", posición en la barra, buscador con lupa, tarjetas apaisadas para eventos sueltos) sigue firme y no se toca.
+
+Founder, 2026-09-25, palabras suyas: «Falta una fila de "eventos a los que voy" en inicio y eventos que me interesan. Aunque los tenemos en perfil, de momento no es relevante. Y dejemos de presentar el callout que invita a crear cuenta en inicio y en ese caso asegúrate de que se vean eventos de esta semana, no solo los nuevos o los destacados. Cuando no se tiene cuenta debemos ver eso con mayor jerarquía antes de artistas y lugares.» Y después: «Arranca prototipo para inicio y acepto tus recomendaciones» (las recomendaciones del operador, ya integradas abajo). Prototipo: [prototipos/inicio-planes-semana.html](prototipos/inicio-planes-semana.html) · Bitácora: [246](../bitacora/2026/09/246-inicio-planes-semana.md).
+
+**Importante: esta vuelta se dibujó sobre el código de hoy (`src/components/Inicio.tsx`, `src/app/page.tsx`, `src/lib/inicio.ts`), no sobre el prototipo de la segunda vuelta.** El código ya evolucionó más allá de lo que ese prototipo mostraba (OL-156 en adelante, bitácoras 188-211): hoy son **siete** carriles, no seis, y el orden en producción es Estelar → Cercanos → Lugares de la semana → Artistas destacados → Populares → Nuevos → Artistas de la semana (Lugares y Artistas destacados intercalados justo después de Cercanos, no al final). Esta pieza reordena eso.
+
+### 1. Se quita la invitación a crear cuenta
+
+`Inicio.tsx` pintaba, sin sesión, una tarjeta lila "Sigue lugares y artistas / Con una cuenta, esta pantalla se llena con lo tuyo... / Crear cuenta". Se quita entera, con o sin ubicación concedida. El botón **Entrar** de la barra superior (violeta, `Sesion.tsx`) se queda: sigue siendo la única invitación a entrar, sin bloquear nada delante del contenido — la app nunca se queda sin una puerta a Entrar, solo sin el cartel de más.
+
+### 2. «Tus planes» (nuevo, solo con sesión)
+
+Una sola fila, arriba de todo, con los próximos eventos donde la persona ya dijo **Voy** o **Me interesa**, juntos y ordenados por fecha — exactamente lo que hoy junta `ActividadPersona.tsx` para "Mi perfil" (`enOrden([...eventos, ...interesan])`, ordenado por `inicio`) y lo que ya devuelve `cargarPersona()` en `src/app/personas/consultas.ts` (`eventos: porEstado("voy")`, `interesan: porEstado("me_interesa")`, ya filtrados a solo futuros por `filtroSinPasar()`). No es un dato nuevo: es la unión de dos listas que ya existen, ordenadas juntas.
+
+- **Solo aparece si hay algo.** Sin sesión no existe; con sesión y sin ningún Voy/Me interesa futuro tampoco (mismo colapso sin hueco que cualquier carril vacío de `Destacados`) — el prototipo lo dibuja como **B2** ("con cuenta, sin planes"): la pantalla sigue directo a "De tus favoritos".
+- **Tamaño de tarjeta: mediana** (220×132, la de siempre para un evento suelto — Cercanos/Populares/Nuevos), no el cartel ("grande", reservado a lo curado por administración o por seguimiento) ni el círculo (lugares/artistas). Es una lista plana de eventos individuales, no una curaduría.
+- **La marca Voy/Me interesa no es una pieza nueva de UI:** cada tarjeta de evento en Inicio ya trae, hermano del enlace, el botón redondo de `BotonRenglon` (verde `--ok` con check si la persona ya decidió, blanco con `+` si no — `BotonRenglon.module.css`, corrección del founder 2026-09-21) y, si el estado es "me interesa", el chip violeta «Te interesa» (`estadoDe`, `Destacados.module.css .interesa`, ya usado en Cercanos/Populares/Nuevos, OL-176). Como todo lo que entra a Tus planes es, por definición, Voy o Me interesa, ese mismo botón y ese mismo chip ya distinguen cada tarjeta — Voy se ve en el check verde, Me interesa en el chip. No se inventa un color ni una insignia nueva.
+- **"Ver todos"** → `/perfil` (ahí ya se ven "Voy a" y "Me interesa" como pestañas separadas de `ActividadPersona`; no se crea una tercera vista que las junte).
+- **Tope:** igual que el carril estelar hoy (`TOPE_ESTELAR = 12`, `src/lib/inicio.ts`), para que una persona muy activa no convierta esto en una lista sin fin.
+
+### 3. «Esta semana» (nuevo)
+
+Todos los eventos de los próximos 7 días (misma ventana que ya usa `eventosEstaSemana()`, `src/lib/inicio.ts`), en orden de fecha, con o sin sesión.
+
+- **Decisión: marca el día en cada tarjeta, no agrupa con encabezados de día.** Es un carril horizontal (el lenguaje "Netflix" que ya usa toda la pantalla), no una lista vertical como Agenda o Perfil — un encabezado de día partiendo el carril no cabe en ese formato, y obligaría a inventar una tarjeta o una estructura nueva. Además, **la tarjeta de evento que ya existe (`tarjetaEvento`, `src/lib/destacados.ts`) ya resuelve esto sola**: su `detalle` es `${formatearCuando(inicio)} · ${nombreSitio}`, y `formatearCuando`/`diaCorto` (`src/lib/fechas.ts`) ya devuelven "Hoy", "Mañana" o "sáb 27 sep" según toque. "Esta semana" reutiliza esa misma tarjeta tal cual, sin ninguna variante nueva.
+- **Con menos de 3 eventos:** se pinta igual, sin mensaje ni relleno. A diferencia de Populares (que exige un mínimo de 3 "Voy" para existir), "Esta semana" no tiene piso: muestra lo que haya, aunque sea 1 o 2 tarjetas — el carril simplemente se ve corto, nunca vacío de mentira ni con un texto de "aún no hay nada" (esa frase está prohibida dentro de un carril desde el doc 20).
+- **Con muchos eventos:** tope de **20 tarjetas** (más alto que el tope de 12 del carril estelar, porque "Esta semana" presume ser "todos" y por eso puede necesitar algo más de margen antes de cortar). Lo que sobra del tope sigue accesible en un toque: "Ver todos" abre Agenda, ya ordenada por fecha — nada desaparece, solo cambia dónde se ve.
+- **"Ver todos"** → Agenda (pestaña "Todos", orden de fecha de siempre; no hace falta un filtro nuevo en la URL).
+
+### 4. Orden final: eventos antes que lugares y artistas
+
+Literal el pedido del founder ("con mayor jerarquía antes de artistas y lugares"): los carriles de **eventos** van todos antes que los de **lugares y artistas** — ya no intercalados, como corren hoy en producción.
+
+**Con sesión:**
+
+| # | Carril | Tamaño | Aparece si | "Ver todos" abre |
+|---|---|---|---|---|
+| 1 | **Tus planes** (nuevo) | mediana | Con sesión y con algo próximo en Voy/Me interesa | `/perfil` |
+| 2 | **De tus favoritos** / Destacados esta semana (respaldo) | grande (cartel) | Siempre (con seguidos usa el primero; sin seguidos, el segundo) | Agenda, "Siguiendo" / tira de Destacados |
+| 3 | **Eventos cercanos esta semana** | mediana | Solo con ubicación fresca en el teléfono (Inicio nunca la pide) | Agenda, "Cercanos" |
+| 4 | **Esta semana** (nuevo) | mediana | Siempre que haya al menos un evento en 7 días no mostrado ya arriba | Agenda, "Todos" |
+| 5 | **Eventos populares** | mediana | Si hay alguno con ≥3 "Voy" no mostrado ya arriba | Agenda, orden por popularidad |
+| 6 | **Eventos nuevos esta semana** | mediana | Si hay alguno publicado en 7 días no mostrado ya arriba | Agenda |
+| 7 | **Lugares con eventos esta semana** | chica (círculo) | Si hay alguno | Lugares, chip "Esta semana" |
+| 8 | **Artistas destacados** | grande (cartel) | Si hay alguno | Artistas |
+| 9 | **Artistas con eventos esta semana** | chica (círculo) | Si hay alguno | Artistas, chip "Esta semana" |
+
+**Sin sesión:** igual, sin la fila 1 y con la fila 2 siempre en su forma de respaldo ("Destacados esta semana"). El prototipo lo dibuja como **A1** (con ubicación) y **A2** (sin ubicación: la fila 3 no existe, y nada la reemplaza — sus eventos simplemente aparecen en la fila 4, "Esta semana", si caen dentro de los 7 días).
+
+**Ningún evento se repite entre filas de eventos** (filas 1 a 6): se extiende el mismo `Set` compartido que hoy usan `calcularCarrilesAgenda`/`sinRepetidos` (`src/lib/inicio.ts`) para Estelar → Populares → Nuevos. Con esta pieza, la cadena crece a Tus planes → Estelar/Destacados → Cercanos → **Esta semana** → Populares → Nuevos, cada una añadiendo sus ids al mismo conjunto antes de que la siguiente calcule la suya. Las filas 7 a 9 (lugares y artistas) no compiten por ids de evento y no entran en ese `Set`.
+
+### Corrección de fidelidad frente a la segunda vuelta
+
+Al comparar el prototipo anterior contra el código real se encontraron dos detalles que el prototipo de la 2ª vuelta dibujaba distinto de como corre hoy en producción; el prototipo de esta pieza (OL-217) ya los corrige:
+
+- **Sin saludo ni título "Inicio" en pantalla.** `Inicio.tsx` no pinta ningún `<h1>`; el prototipo de la 2ª vuelta sí dibujaba uno ("Inicio" / "Lo que ya sigues, primero") que nunca se implementó así.
+- **"Lugares con eventos esta semana" en círculo, no en cuadro.** `CarrilEntidadCliente.tsx` pasa `redondas={!grande}` igual para lugares y para artistas: hoy ambas filas de "esta semana" (lugares y artistas) se ven en círculos de 104 px, no solo la de artistas como dibujaba el prototipo anterior.
+
+### Preguntas abiertas para el founder
+
+1. Con "Esta semana" mostrando literalmente todos los eventos de 7 días, algunas semanas "Populares" o "Nuevos" pueden quedar más cortos o vacíos de lo que quedarían hoy (ya era válido para Populares, pregunta 4 de la primera vuelta — pero con esta pieza le puede pasar también a Nuevos, porque un evento reciente que además cae esta semana ya se lo llevó "Esta semana"). ¿Se acepta ese vaciado extra, o "Esta semana" debería dejarle a Populares/Nuevos lo que ya les toca por su propio criterio, en vez de quedárselo por ir primero en la cadena?
+2. "Cerca de ti" se resuelve en el teléfono, después del primer pintado (nunca pide permiso desde Inicio); "Esta semana" se calcularía en el servidor junto con Destacados/Populares/Nuevos. Hoy no hay forma de que ese cálculo del servidor sepa qué eligió Cercanos en el teléfono: un evento que es cercano y también cae esta semana podría, en un caso raro, salir en las dos filas. En este prototipo no ocurre (los datos de ejemplo se armaron para no chocar), pero al programarlo hay que decidir: ¿"Esta semana" excluye lo que Cercanos podría mostrar (aceptando el riesgo raro) o conviene mover también "Esta semana" al cliente para una deduplicación real?
+3. El tope de 20 tarjetas en "Esta semana" es una propuesta del operador, no un número que haya pedido el founder — falta confirmarlo (o cambiarlo) antes de programarlo.
