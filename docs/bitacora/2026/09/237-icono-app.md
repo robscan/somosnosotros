@@ -10,7 +10,7 @@ Founder: «acabo de hacer el icono en la app de Icon Composer, con versión dark
 
 El documento `iconoApp.icon`, guardado en iCloud Drive (`Documents/smsnstrs/`):
 
-- Una capa, `SN - Symbol.svg`, al 80 % del lienzo. El SVG es **idéntico byte a byte** a `docs/diseno/logotipo/LogoFinal/SN - Symbol.svg`: el símbolo no cambia.
+- Una capa, `SN - Symbol.svg`, al 80 % del lienzo. El archivo SVG es idéntico byte a byte a `docs/diseno/logotipo/LogoFinal/SN - Symbol.svg`, pero **el icono no es el mismo**: la capa del símbolo va **sin cristal** (`glass-specializations: false`, en claro y en oscuro). Corrección del founder: «por fin le quité el efecto de glass en el símbolo y es plasta negra». En iOS 26 el símbolo sale negro plano, sin el relieve de Liquid Glass que iOS pone por su cuenta a los iconos de las apps web (ver la memoria del proyecto sobre el icono en iOS 26): esto solo se puede hacer en la app de tienda.
 - Fondo en degradado automático sobre el crema Display P3 (0.96078, 0.94902, 0.92549), que en sRGB es `#F6F2EB`.
 - En oscuro, el símbolo va en crema sobre fondo oscuro. En teñido (mono), en gris que iOS tiñe. Sin cristal en la capa, con sombra neutra y translucidez al 50 %.
 
