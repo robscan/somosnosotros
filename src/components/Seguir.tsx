@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
 import Hoja from "@/components/ui/Hoja";
@@ -46,11 +45,15 @@ type Props = {
  * ficha los comparte con su lista de eventos, así no se encinan ni se pregunta dos veces (OL-057).
  */
 export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, hrefEntrar, avisosPreguntado, avisosCorreo, correo, llavePush }: Props) {
-  const router = useRouter();
   const plataforma = usePlataforma();
   const [pendiente, iniciar] = useTransition();
   const [estado, fijar] = useOptimistic(sigo, (_a, nuevo: boolean) => nuevo);
   const [hoja, setHoja] = useState(false);
+  // Lo que se eligió en la hoja de avisos, para la promesa de la barra: llega de la propia hoja (onDecidido), nunca
+  // pidiendo la página entera de nuevo (antes `router.refresh()` al cerrarla, OL-212 — recargaba todo por una
+  // frase, con esqueletos de "Próximos eventos" parpadeando de vuelta).
+  const [correoElegido, setCorreoElegido] = useState(avisosCorreo);
+  const [preguntadoLocal, setPreguntadoLocal] = useState(avisosPreguntado);
   const toques = useRef<Toques>({});
   const barra = useAltoBarraFija<HTMLDivElement>();
   const propio = useCanalDeListas();
@@ -88,15 +91,19 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       if (nuevo && hayQuePreguntar(cuenta, avisosPreguntado) && tomarPregunta()) setHoja(true);
     });
   }
-  /** Se va la hoja (contestada, cerrada o cerrada sola porque el teléfono no puede con los avisos): la barra relee el
-   *  consentimiento recién guardado. Soltar la pregunta lo hace `HojaAbierta` al desmontarse, venga por donde venga. */
+  /** Se va la hoja (contestada, cerrada o cerrada sola porque el teléfono no puede con los avisos). Soltar la
+   *  pregunta lo hace `HojaAbierta` al desmontarse, venga por donde venga. */
   function cerrarHoja() {
     setHoja(false);
-    router.refresh();
+  }
+  /** Lo que quedó guardado en la hoja (correo sí/no, ya contestada): la barra lo sabe sin pedirle nada al servidor. */
+  function alDecidirAvisos(decision: { correo: boolean }) {
+    setCorreoElegido(decision.correo);
+    setPreguntadoLocal(true);
   }
 
-  const canales = [avisosCorreo && "por correo", telefono === "encendido" && enEste(plataforma)].filter(Boolean);
-  const promesa = canales.length ? `Te avisamos ${canales.join(" y ")} de sus ${cosas}` : avisosPreguntado ? "Sin avisos; se cambia en Ajustes" : null;
+  const canales = [correoElegido && "por correo", telefono === "encendido" && enEste(plataforma)].filter(Boolean);
+  const promesa = canales.length ? `Te avisamos ${canales.join(" y ")} de sus ${cosas}` : preguntadoLocal ? "Sin avisos; se cambia en Ajustes" : null;
 
   if (!conSesion) {
     return (
@@ -133,7 +140,7 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       {hoja && <HojaAbierta canal={canal} />}
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
-          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={cerrarHoja} />
+          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={cerrarHoja} onDecidido={alDecidirAvisos} />
         </Hoja>
       )}
     </>
