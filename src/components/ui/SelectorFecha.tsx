@@ -8,9 +8,6 @@ import { IconoCaret } from "./Iconos";
 import styles from "./SelectorFecha.module.css";
 
 const DIAS_SEMANA = ["L", "M", "M", "J", "V", "S", "D"];
-// Pausa entre marcar/desmarcar el círculo del día y cerrar la hoja sola (modo "filtro"): sin ella la hoja
-// desaparecería tan rápido que no se alcanza a ver qué pasó con el toque (bitácora 245, prototipo firmado).
-const PAUSA_ANTES_DE_CERRAR = 180;
 
 function tituloMes(anio: number, mes: number): string {
   const texto = new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", month: "long", year: "numeric" }).format(new Date(Date.UTC(anio, mes - 1, 1, 12)));
@@ -53,16 +50,19 @@ type Props = {
    *  `<Suspense>` con `SelectorFechaCargando` de respaldo. */
   diasActivos?: DiasActivos | Promise<DiasActivos>;
   /**
-   * "filtro" (`ui/ChipFecha`, Agenda y Lugares): tocar un día disponible lo elige, filtra y cierra la hoja sola,
-   * sin botón "Listo"; tocar el mismo día ya elegido lo quita (la fecha no es obligatoria: "" vale, sin filtro) —
-   * el mecanismo que firmó el founder en el prototipo (bitácora 245, "de acuerdo con tus recomendaciones de
-   * calendario... activa que se vuelva a seleccionar el día y con eso se desactive").
-   * "campo" (`SelectorCuando`, alta y edición de evento, precisión del founder OL-218 en la bitácora 247): la
-   * fecha es obligatoria — tocar un día disponible lo elige (se ve marcado al instante) pero la hoja NO se cierra
-   * sola (la hora, y la fecha de fin si existe, se siguen confirmando con "Listo", igual que hoy); tocar el
-   * mismo día ya elegido no hace nada (no se puede dejar sin fecha). Un día pasado se bloquea, salvo el que ya
-   * traía `fecha` al abrir (para poder seguir viendo y conservando la fecha de un evento ya pasado al editarlo,
-   * sin abrir la puerta a elegir OTRO día pasado).
+   * Las dos hojas comparten el mismo mecanismo desde la corrección del founder en la bitácora 247 («Hace rato
+   * quise decir que dejaras el botón de listo en los dos calendarios», tras un «Entonces deja listo en los dos
+   * lados» anterior): tocar un día disponible lo marca, sin cerrar la hoja; el botón "Listo" aplica lo marcado y
+   * cierra. La ✕ de la hoja (o Escape, o tocar fuera) cierra sin aplicar nada.
+   *
+   * "filtro" (`ui/ChipFecha`, Agenda y Lugares): tocar el mismo día ya marcado lo desmarca — la fecha no es
+   * obligatoria, "" es un resultado válido ("Listo" sin nada marcado quita el filtro). "Listo" siempre se puede
+   * tocar, marcado o no.
+   * "campo" (`SelectorCuando`, alta y edición de evento): la fecha es obligatoria — tocar el mismo día ya
+   * marcado no hace nada (no se puede dejar sin fecha); "Listo" se deshabilita hasta que haya un día marcado
+   * (y, con `conHora`, también una hora). Un día pasado se bloquea, salvo el que ya traía `fecha` al abrir (para
+   * poder seguir viendo y conservando la fecha de un evento ya pasado al editarlo, sin abrir la puerta a elegir
+   * OTRO día pasado).
    */
   modo: "filtro" | "campo";
   onListo: (fecha: string, hora?: string) => void;
@@ -89,8 +89,6 @@ export default function SelectorFecha({ titulo, fecha, hora, min, zona = ZONA_IN
   const [foco, setFoco] = useState(fecha || limite);
   const gridRef = useRef<HTMLDivElement>(null);
   const horasRef = useRef<HTMLDivElement>(null);
-  const pausaRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (pausaRef.current) clearTimeout(pausaRef.current); }, []);
 
   const semanas = semanasDelMes(anio, mes, hoy, min);
   const sugeridaPaso = sugerida ? pasoMasCercano(sugerida.slice(11, 16) || sugerida) : undefined;
@@ -116,22 +114,14 @@ export default function SelectorFecha({ titulo, fecha, hora, min, zona = ZONA_IN
     if (diaBloqueado(d)) return;
     if (diasResueltos && !d.pasado && !diasResueltos.has(d.fecha)) return; // sin eventos: no se puede elegir
     setFoco(d.fecha);
-    if (modo === "filtro") {
-      // Sin "Listo": tocar un día disponible lo elige, filtra y cierra la hoja; tocar el MISMO día ya elegido lo
-      // quita. Una pausa breve antes de cerrar deja ver el toque marcado (relleno puesto o quitado).
-      if (pausaRef.current) clearTimeout(pausaRef.current);
-      if (d.fecha === elegido) {
-        setElegido("");
-        pausaRef.current = setTimeout(() => onListo(""), PAUSA_ANTES_DE_CERRAR);
-      } else {
-        setElegido(d.fecha);
-        pausaRef.current = setTimeout(() => onListo(d.fecha), PAUSA_ANTES_DE_CERRAR);
-      }
+    // Tocar un día disponible lo marca; "Listo" aplica lo marcado y cierra (corrección del founder, bitácora
+    // 247: las dos hojas comparten este mecanismo, sin pausa ni cierre automático al tocar).
+    if (d.fecha === elegido) {
+      // Tocar el mismo día ya marcado lo desmarca en modo "filtro" (la fecha no es obligatoria: "Listo" sin
+      // nada marcado quita el filtro); en modo "campo" no hace nada (no se puede dejar sin fecha).
+      if (modo === "filtro") setElegido("");
       return;
     }
-    // "campo": la fecha es obligatoria — tocar el mismo día ya elegido no hace nada (no se puede dejar sin
-    // fecha); la hoja se sigue confirmando con "Listo", igual que hoy.
-    if (d.fecha === elegido) return;
     setElegido(d.fecha);
   }
 
@@ -189,7 +179,9 @@ export default function SelectorFecha({ titulo, fecha, hora, min, zona = ZONA_IN
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const puedeConfirmar = !!elegido && (!conHora || !!horaElegida);
+  // En "filtro" "Listo" siempre se puede tocar (marcado o no: "" es un resultado válido, quita el filtro);
+  // en "campo" la fecha es obligatoria (y, con hora, también la hora).
+  const puedeConfirmar = modo === "filtro" || (!!elegido && (!conHora || !!horaElegida));
   const ahora = new Date();
 
   return (
@@ -264,11 +256,9 @@ export default function SelectorFecha({ titulo, fecha, hora, min, zona = ZONA_IN
             <b>{duracion}</b>
           </div>
         )}
-        {modo === "campo" && (
-          <button type="button" className={styles.listo} disabled={!puedeConfirmar} onClick={() => onListo(elegido, conHora ? horaElegida : undefined)}>
-            Listo
-          </button>
-        )}
+        <button type="button" className={styles.listo} disabled={!puedeConfirmar} onClick={() => onListo(elegido, conHora ? horaElegida : undefined)}>
+          Listo
+        </button>
       </div>
     </Hoja>
   );
@@ -315,6 +305,12 @@ export function SelectorFechaCargando({ titulo, fecha, min, zona = ZONA_INICIAL,
             </div>
           ))}
         </div>
+        {/* Mismo lugar que el botón "Listo" de la hoja real (desde la corrección del founder, bitácora 247, las
+            dos hojas lo llevan siempre): reservado y deshabilitado aquí también, para que nada salte de tamaño
+            al llegar los datos. */}
+        <button type="button" className={styles.listo} disabled aria-hidden="true">
+          Listo
+        </button>
       </div>
     </Hoja>
   );

@@ -354,3 +354,68 @@ mismas 1416 pruebas.
 
 Push al mismo PR #258 (sin unir); `gh pr checks` en verde, incluido `verificar` (el que no había corrido por el
 choque).
+
+## Corrección del founder sobre lo firmado (2026-09-26): "Listo" también en modo "filtro"
+
+El founder cambió lo que había firmado en el prototipo (bitácora 245: "sin botón Listo" en Agenda y Lugares).
+Palabras exactas, relayadas por el gestor — primero: «Entonces deja listo en los dos lados»; después, más
+explícito: **«Hace rato quise decir que dejaras el botón de listo en los dos calendarios».**
+
+**Comportamiento nuevo, en los dos modos por igual:**
+- Tocar un día disponible lo **marca**, sin cerrar la hoja.
+- Tocar el mismo día ya marcado lo **desmarca** (modo "filtro"; en "campo" sigue sin hacer nada — la fecha ahí es
+  obligatoria).
+- **"Listo" aplica lo marcado y cierra** — en "filtro", "Listo" con nada marcado quita el filtro (aplica ""); por
+  eso "Listo" nunca se deshabilita en ese modo, marcado o no.
+- La ✕ de la hoja (o Escape, o tocar fuera) **cierra sin aplicar nada** — lo marcado se descarta si no se llegó
+  a tocar "Listo".
+- La ✕ del chip (fuera de la hoja, cuando ya hay una fecha aplicada) se queda igual: quita directo, sin abrir la
+  hoja.
+- **Sin pausa ni cierre automático al tocar un día** (se quitó `PAUSA_ANTES_DE_CERRAR` y el `setTimeout` que
+  cerraba sola la hoja): ya no hace falta, "Listo" es el único gesto que aplica y cierra.
+
+**Qué cambié:**
+- `SelectorFecha.tsx`: `elegirDia` ya no distingue por `modo` para cerrar — nunca cierra sola; solo decide si
+  tocar el mismo día ya marcado lo desmarca ("filtro") o no hace nada ("campo"). `puedeConfirmar` ahora depende
+  del modo: en "filtro" siempre `true` (marcado o no, "Listo" se puede tocar); en "campo" sigue exigiendo un día
+  (y, con `conHora`, también una hora). El botón "Listo" ya no está condicionado a `modo === "campo"`: se
+  renderiza siempre. Quitados `PAUSA_ANTES_DE_CERRAR`, el `pausaRef` y su `useEffect` de limpieza (código muerto
+  sin la pausa).
+- `SelectorFechaCargando`: agregado un botón "Listo" deshabilitado, en el mismo lugar donde va el de verdad —
+  sin él, el esqueleto de "cargando" quedaría más corto que la hoja real y todo saltaría un poco al resolver
+  (confirmado en la captura `247-06`, que ya lo muestra reservado).
+- `ChipFecha.tsx`: **sin cambios** — `alListo` (`onCambiar(f); onCerrar();`) ya solo se llama desde `onListo`, que
+  ahora solo dispara al tocar "Listo" en vez de al tocar un día; el mecanismo ya estaba bien armado para esto.
+- `SelectorCuando.tsx`: sin cambios — modo "campo" ya tenía este comportamiento desde el principio de la pieza.
+
+**Pruebas:** reescrita `ChipFecha.componentes.test.mjs` (9 casos, antes 9 con otro guion): ahora marca con un
+toque y confirma con "Listo" en vez de esperar una pausa; nueva prueba de que la ✕ de la hoja cierra sin aplicar
+lo marcado; `"Listo"` visible y sin deshabilitar desde que se abre la hoja, con o sin nada marcado. Sin cambios
+en las pruebas unitarias (`calendario.test.ts`, `agenda.test.ts`, `lugares.test.ts`): la lógica pura que prueban
+(`ocupaDia`, `diasActivosCalendario`, `etiquetaDia`, etc.) no cambió, solo el mecanismo de la hoja alrededor.
+`npm run lint && npm run typecheck && npm test && npm run build` en verde (108 archivos, 1416 pruebas).
+
+**Recapturadas las 10 vistas de Agenda y Lugares** (todas cambiaron: ahora muestran "Listo"), abiertas y
+comparadas una por una:
+
+- **`247-01-agenda-hoja-abierta.png`**: igual que antes, más el botón "Listo" abajo, sin deshabilitar aunque nada
+  esté marcado.
+- **`247-02a-agenda-dia-elegido-en-hoja.png`**: domingo 27 tocado — se marca (relleno morado), la hoja **sigue
+  abierta** (ya no hay pausa ni cierre solo), "Listo" visible y habilitado.
+- **`247-02b-agenda-chip-tras-elegir.png`**: tras tocar "Listo" — hoja cerrada, chip "dom 27 sep ✕", Agenda
+  filtrada. Idéntica, byte a byte, a la versión anterior (el estado final es el mismo; solo cambió cómo se llega).
+- **`247-03-agenda-reabrir-con-fecha-elegida.png`**: reabierta con la pastilla, 27 sigue marcado, "Listo" visible.
+- **`247-04a-agenda-toca-para-quitar-en-vuelo.png`**: tocado otra vez el 27 ya marcado — se desmarca, la hoja
+  **sigue abierta**, "Listo" sigue habilitado (no se deshabilita por quedar sin nada marcado).
+- **`247-04b-agenda-quitado-chip-vacio.png`**: tras tocar "Listo" con nada marcado — hoja cerrada, filtro
+  quitado, chip de vuelta al ícono solo.
+- **`247-05-agenda-mes-siguiente.png`**: octubre, con "Listo" abajo; "Mes siguiente" sigue deshabilitado
+  correctamente (gris, confirma que el arreglo de la flecha se mantiene).
+- **`247-06-agenda-cargando.png`**: el esqueleto ahora reserva el lugar de "Listo" con un botón deshabilitado del
+  mismo tamaño — sin saltos al resolver.
+- **`247-07-escritorio-hoja.png`**: la misma hoja en 1280×900, con "Listo".
+- **`247-08-lugares-hoja-abierta.png`**: con "Listo".
+- **`247-09-lugares-dia-elegido-lista.png`**: domingo 27 marcado y confirmado con "Listo" — la Lista de Lugares
+  queda en "Museo Francisco Cossío".
+
+Push al mismo PR #258 (sin unir); `gh pr checks` pendiente de correr tras este push.

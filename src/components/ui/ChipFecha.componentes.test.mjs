@@ -1,9 +1,13 @@
 /** Prueba de componente de `ui/ChipFecha` + `ui/SelectorFecha` en modo "filtro" (OL-218, bitácora 247): desde que
  *  se quitó el `<input type="date">` nativo (OL-188/OL-204, este mismo archivo antes de esta pieza), la hoja
  *  propia es la ÚNICA rama en cualquier pantalla — ya no hace falta simular escritorio y táctil por separado.
- *  Cubre las transiciones que firmó el founder en el prototipo (bitácora 245): elegir un día cierra la hoja sola,
- *  tocar el mismo día ya elegido lo quita, y reabrir con la pastilla muestra el día ya marcado; también que un
- *  día sin eventos no se puede elegir y que la navegación de mes se detiene donde ya no hay datos.
+ *  Cubre las transiciones firmadas: un día sin eventos no se puede elegir; tocar un día disponible lo marca sin
+ *  cerrar la hoja; "Listo" aplica lo marcado y cierra; tocar el mismo día ya marcado lo desmarca y "Listo" quita
+ *  el filtro; reabrir con la pastilla muestra el día ya marcado; y la navegación de mes se detiene donde ya no
+ *  hay datos. El botón "Listo" en modo "filtro" (sin pausa ni cierre automático al tocar un día) es una
+ *  corrección del founder sobre lo firmado en el prototipo (bitácora 247: «Hace rato quise decir que dejaras el
+ *  botón de listo en los dos calendarios», tras un «Entonces deja listo en los dos lados» anterior) — antes de
+ *  esta corrección, tocar un día cerraba la hoja solo, con una pausa de 180 ms.
  *  Los días se ubican por `[data-fecha]` (estable), no por su nombre accesible: elegir un día cambia su propio
  *  `aria-label` al instante (agrega ", toca para quitar"), así que un `getByRole(..., {name})` tomado ANTES del
  *  toque dejaría de encontrar nada después.
@@ -92,14 +96,20 @@ function hoja(page) {
 function dia(page, fecha) {
   return page.locator(`[data-fecha="${fecha}"]`);
 }
+function listo(page) {
+  return page.getByRole("button", { name: "Listo" });
+}
 
-test("sin fecha, el chip es solo el ícono y abre la hoja con el mes actual", async () => {
+test('sin fecha, el chip es solo el ícono y abre la hoja con el mes actual, con "Listo" ya visible', async () => {
   const { context, page } = await abrir();
   await page.getByLabel("Elegir fecha").click();
   await hoja(page).waitFor();
   await assert.doesNotReject(page.getByText("Septiembre de 2026").waitFor());
   // El mes actual: "Mes anterior" no se puede tocar (bitácora 245: no antes del mes de hoy).
   assert.equal(await page.getByLabel("Mes anterior").isDisabled(), true);
+  // "Listo" en modo "filtro" (corrección del founder, bitácora 247): visible y sin deshabilitar aunque nada esté
+  // marcado todavía — tocarlo sin marcar nada es un resultado válido (quita el filtro, aquí ya no había ninguno).
+  assert.equal(await listo(page).isDisabled(), false);
   await context.close();
 });
 
@@ -111,25 +121,24 @@ test("un día sin eventos no se puede elegir (aria-disabled, sin efecto al tocar
   assert.equal(await sinEventos.getAttribute("aria-label"), "sábado 26 de septiembre, sin eventos");
   assert.equal(await sinEventos.getAttribute("aria-disabled"), "true");
   await sinEventos.click({ force: true });
-  await page.waitForTimeout(250);
-  assert.equal(await page.evaluate(() => window.qa.fecha), ""); // nada cambió
+  assert.equal(await sinEventos.getAttribute("aria-selected"), "false"); // no se marcó
   await assert.doesNotReject(hoja(page).waitFor()); // la hoja sigue abierta
   await context.close();
 });
 
-test('tocar un día disponible lo elige, filtra y cierra la hoja sola (sin botón "Listo")', async () => {
+test('tocar un día disponible lo marca sin cerrar; "Listo" aplica el filtro y cierra', async () => {
   const { context, page } = await abrir();
   await page.getByLabel("Elegir fecha").click();
-  await assert.rejects(page.getByRole("button", { name: "Listo" }).waitFor({ timeout: 200 })); // no existe en modo "filtro"
   const domingo27 = dia(page, "2026-09-27");
   assert.equal(await domingo27.getAttribute("aria-label"), "domingo 27 de septiembre, 2 eventos");
   await domingo27.click();
-  // Dentro de la pausa (180 ms): el círculo ya se ve elegido, la hoja todavía abierta, y el nombre accesible ya
-  // dice "toca para quitar" (se actualiza al instante, no al cerrar).
+  // El círculo se marca al instante y el nombre accesible ya dice "toca para quitar" — pero la hoja NO se cierra
+  // sola (corrección del founder, bitácora 247): sigue abierta hasta tocar "Listo".
   assert.equal(await domingo27.getAttribute("aria-selected"), "true");
   assert.equal(await domingo27.getAttribute("aria-label"), "domingo 27 de septiembre, 2 eventos, toca para quitar");
-  await hoja(page).waitFor(); // sigue abierta a mitad de la pausa
-  await page.waitForTimeout(250); // pasada la pausa
+  await assert.doesNotReject(hoja(page).waitFor());
+  assert.equal(await page.evaluate(() => window.qa.fecha), ""); // nada aplicado todavía
+  await listo(page).click();
   await hoja(page).waitFor({ state: "hidden" });
   assert.equal(await page.evaluate(() => window.qa.fecha), "2026-09-27");
   await assert.doesNotReject(page.getByText("dom 27 sep").waitFor());
@@ -140,7 +149,8 @@ test("reabrir con la pastilla (no la ✕) muestra el día ya marcado", async () 
   const { context, page } = await abrir();
   await page.getByLabel("Elegir fecha").click();
   await dia(page, "2026-09-27").click();
-  await page.waitForTimeout(250);
+  await listo(page).click();
+  await hoja(page).waitFor({ state: "hidden" });
   await page.getByRole("button", { name: /Cambiar la fecha/ }).click();
   await hoja(page).waitFor();
   const marcado = dia(page, "2026-09-27");
@@ -150,22 +160,35 @@ test("reabrir con la pastilla (no la ✕) muestra el día ya marcado", async () 
   await context.close();
 });
 
-test('tocar el mismo día ya elegido lo quita y cierra (reemplaza al "Quitar fecha")', async () => {
+test('tocar el mismo día ya marcado lo desmarca; "Listo" sin nada marcado quita el filtro y cierra', async () => {
   const { context, page } = await abrir();
   await page.getByLabel("Elegir fecha").click();
   await dia(page, "2026-09-27").click();
-  await page.waitForTimeout(250);
+  await listo(page).click();
+  await hoja(page).waitFor({ state: "hidden" });
   await page.getByRole("button", { name: /Cambiar la fecha/ }).click();
   await hoja(page).waitFor();
   const marcado = dia(page, "2026-09-27");
   await marcado.click();
-  // Dentro de la pausa: el círculo ya perdió el relleno y el nombre accesible vuelve al original.
+  // El círculo pierde el relleno y el nombre accesible vuelve al original, sin cerrar la hoja todavía.
   assert.equal(await marcado.getAttribute("aria-selected"), "false");
   assert.equal(await marcado.getAttribute("aria-label"), "domingo 27 de septiembre, 2 eventos");
-  await page.waitForTimeout(250);
+  await assert.doesNotReject(hoja(page).waitFor());
+  assert.equal(await listo(page).isDisabled(), false); // "Listo" sigue tocable sin nada marcado
+  await listo(page).click();
   await hoja(page).waitFor({ state: "hidden" });
   assert.equal(await page.evaluate(() => window.qa.fecha), "");
   await assert.doesNotReject(page.getByLabel("Elegir fecha").waitFor()); // vuelve a ser solo el ícono
+  await context.close();
+});
+
+test("la ✕ de la hoja cierra sin aplicar nada marcado", async () => {
+  const { context, page } = await abrir();
+  await page.getByLabel("Elegir fecha").click();
+  await dia(page, "2026-09-27").click(); // marca, pero no se toca "Listo"
+  await page.getByLabel("Cerrar").click();
+  await hoja(page).waitFor({ state: "hidden" });
+  assert.equal(await page.evaluate(() => window.qa.fecha), ""); // nada se aplicó
   await context.close();
 });
 
@@ -173,7 +196,8 @@ test("la ✕ del chip quita directo, sin abrir la hoja", async () => {
   const { context, page } = await abrir();
   await page.getByLabel("Elegir fecha").click();
   await dia(page, "2026-09-27").click();
-  await page.waitForTimeout(250);
+  await listo(page).click();
+  await hoja(page).waitFor({ state: "hidden" });
   await page.getByLabel("Quitar la fecha").click();
   assert.equal(await page.evaluate(() => window.qa.fecha), "");
   await assert.rejects(hoja(page).waitFor({ timeout: 200 }));
