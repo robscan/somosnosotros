@@ -15,21 +15,22 @@ import limpiar from "@/components/ui/Limpiar.module.css";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBuscar, IconoEtiqueta, IconoMas, IconoOk, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
-import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
+import type { Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
-import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
+import { consultarMapa, deducirTipo, lugaresPorTexto, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
+import { buscarConContexto, descartarSinCalle, necesitaReintentoLugares } from "@/lib/direccionContexto";
 import { normalizarRedes } from "@/lib/enlaces";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
 import { etiquetaTipo, hrefLugar, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { quitarGuardia } from "@/lib/guardiaSalida";
 import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
-import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
-import { leerUbicacion } from "@/lib/ubicacion";
+import { leerUbicacion, ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { esteAparatoInicial } from "@/lib/plataforma";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
 import type { ResultadoLugar } from "./acciones";
+import { contextoDondeEsta } from "./dondeEstaPantalla";
 import HojaDondeLugar from "./HojaDondeLugar";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
@@ -89,6 +90,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const [ciudad, setCiudad] = useState(lugar?.ciudad ?? "");
   const [sugeridos, setSugeridos] = useState<LugarSugerido[]>([]);
   const [buscando, setBuscando] = useState(false);
+  const [errorBusqueda, setErrorBusqueda] = useState<string | null>(null);
   const [recuperando, setRecuperando] = useState(false);
   const [existentes, setExistentes] = useState<LugarResumen[]>([]);
   const [tipoAbierto, setTipoAbierto] = useState(false);
@@ -107,6 +109,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const sesionRef = useRef<string>("");
   const ultimaBusqueda = useRef("");
   const nombreElegido = useRef("");
+  const versionBusquedaNombre = useRef(0);
   // La lista de sugerencias y el aviso "Ya está registrado" flotan sobre el layout, anclados al campo del nombre
   // (ui/ListaFlotante), y solo viven mientras el campo tiene el foco: es un autocompletado, tapar lo de abajo con
   // el teclado abierto es natural, pero un panel que se queda tapando el siguiente paso (Dónde) sin poder cerrarlo
@@ -119,35 +122,55 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
   useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces, errores.portada, errorPortada);
   const hojaSalir = useSalirSinPublicar(formRef, esAlta);
+  // La posición cacheada del teléfono (si ya se pidió antes, en otra pantalla): último eslabón de la cascada de
+  // contexto antes de San Luis Potosí de respaldo, igual que "¿Dónde está?" (`contextoDondeEsta`).
+  const posicionTelefono = ubicacionCercanaFresca();
 
   // Sesión de búsqueda de Mapbox (una por formulario).
   useEffect(() => {
     sesionRef.current = crypto.randomUUID();
   }, []);
 
-  // Nombre → lugares sugeridos por Mapbox (350 ms tras dejar de escribir) y lugares ya registrados. Solo en el alta:
+  // Nombre → lugares sugeridos por Mapbox y lugares ya registrados (350 ms tras dejar de escribir). Solo en el alta:
   // al editar, el lugar ya está ubicado y con nombre (la lista salía debajo del título al abrir; founder, 2026-09-16).
+  // Misma cascada de contexto que "¿Dónde está?" (`contextoDondeEsta`, OL-211, corrección del gestor sobre el PR
+  // #249: sin ella, este campo sugería en todo el país -"Laboratorio de Arte Escénico" traía Aguascalientes,
+  // Pachuca y CDMX- y un toque llenaba el nombre Y la dirección con un lugar de otro estado); los ya registrados
+  // salen con la MISMA comparación pura que la pantalla (`lugaresPorTexto`, sobre el mismo `lugares` ya cargado),
+  // no con la función RPC de antes.
   useEffect(() => {
     if (!esAlta) return;
     const texto = nombre.trim();
     if (texto.length < 3 || texto === ultimaBusqueda.current || texto === nombreElegido.current) return;
     const { mapboxToken } = configPublica();
+    const contexto = contextoDondeEsta(punto, texto, ciudadContexto, yo, posicionTelefono);
+    const version = ++versionBusquedaNombre.current;
     const t = setTimeout(async () => {
       ultimaBusqueda.current = texto;
       setBuscando(true);
+      setErrorBusqueda(null);
+      setExistentes(lugaresPorTexto(lugares, texto));
       try {
-        const [sug, ex] = await Promise.all([
-          mapboxToken ? sugerirLugares(texto, mapboxToken, punto ?? yo ?? CIUDAD_INICIAL.centro, sesionRef.current) : Promise.resolve([]),
-          buscarExistentes(texto),
-        ]);
-        setSugeridos(sug);
-        setExistentes(ex);
+        if (!mapboxToken) throw new Error("Sin servicio de direcciones");
+        const opciones = await buscarConContexto(
+          texto,
+          contexto,
+          (t2, bbox) => sugerirLugares(t2, mapboxToken, contexto.centro, sesionRef.current, consultarMapa, bbox).then((r) => descartarSinCalle(r, t2)),
+          (r) => necesitaReintentoLugares(r.map((o) => o.distanciaM)),
+        );
+        if (version === versionBusquedaNombre.current) setSugeridos(opciones);
+      } catch {
+        if (version === versionBusquedaNombre.current) {
+          setSugeridos([]);
+          setErrorBusqueda("No pude buscar. Intenta de nuevo.");
+        }
       } finally {
-        setBuscando(false);
+        if (version === versionBusquedaNombre.current) setBuscando(false);
       }
     }, 350);
     return () => clearTimeout(t);
-  }, [esAlta, nombre, punto, yo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [esAlta, nombre, punto, yo, ciudadContexto]);
 
   /** Al escribir el nombre: limpia listas si es corto y deduce el tipo si nadie lo eligió a mano (Otro si no hay pista). */
   function alEscribirNombre(valor: string) {
@@ -155,16 +178,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     if (valor.trim().length < 3) {
       setSugeridos([]);
       setExistentes([]);
+      setErrorBusqueda(null);
     }
     if (!tipoElegidoAMano) setTipo(valor.trim() ? (deducirTipo(valor) ?? "otro") : "");
-  }
-
-  /** Lugares ya registrados cuyo nombre contiene lo escrito (RPC lugares_con_nombre, mínimo 4 letras). */
-  async function buscarExistentes(texto: string): Promise<LugarResumen[]> {
-    const supabase = clienteNavegador();
-    if (!supabase) return [];
-    const { data } = await supabase.rpc("lugares_con_nombre", { p_nombre: texto });
-    return (data ?? []) as LugarResumen[];
   }
 
   async function elegirSugerido(s: LugarSugerido) {
@@ -190,7 +206,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         const deducido = deducirTipo(nombreFinal, [...s.categorias, ...(r?.categorias ?? [])]);
         if (deducido) setTipo(deducido);
       }
-      setExistentes(await buscarExistentes(nombreFinal));
+      setExistentes(lugaresPorTexto(lugares, nombreFinal));
     } finally {
       setRecuperando(false);
     }
@@ -238,7 +254,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const faltaNombre = nombre.trim().length === 0;
   const faltaDonde = !punto;
   const listo = !faltaNombre && !faltaDonde && !!tipo;
-  const sugerenciasAbiertas = enfocadoNombre && (buscando || recuperando || sugeridos.length > 0 || existentes.length > 0);
+  const sugerenciasAbiertas = enfocadoNombre && (buscando || recuperando || sugeridos.length > 0 || existentes.length > 0 || !!errorBusqueda);
   // Al salir del campo, si sigue habiendo coincidencia, una sola línea de ayuda (no el panel) — recortada a una
   // línea, con el nombre completo disponible al abrir el lugar (revisión del gestor, 2026-09-21).
   const primerExistente = existentes[0];
@@ -337,6 +353,11 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
                   </button>
                 </li>
               ))}
+              {errorBusqueda && (
+                <li className={styles.avisoFlotante} role="alert">
+                  {errorBusqueda}
+                </li>
+              )}
             </>
           )}
         </ListaFlotante>

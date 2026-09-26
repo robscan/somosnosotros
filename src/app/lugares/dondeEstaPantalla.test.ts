@@ -103,6 +103,29 @@ describe("contextoDondeEsta (corrección del gestor, PR #249: sin la ciudad eleg
   });
 });
 
+describe('contextoDondeEsta, el mismo que usa el campo "Nombre del lugar" (corrección del gestor sobre el PR #249, segunda vuelta)', () => {
+  // El bug real, reproducido tal cual lo reportó el gestor: escribiendo "Laboratorio de Arte Escénico" en el
+  // campo del NOMBRE (todavía sin ubicación -`punto: null`, el caso normal al dar de alta), sin geolocalización
+  // del teléfono -las sugerencias de Mapbox no traían ningún `bbox` y proponían Aguascalientes, Pachuca y CDMX; un
+  // toque llenaba el nombre Y la dirección con un lugar de otro estado. `FormularioLugar.tsx` ahora arma este
+  // mismo contexto (con `ciudadContexto`, el mismo prop que ya recibe "¿Dónde está?") antes de llamar a Mapbox.
+  it("sin ubicación todavía (dando de alta) y con la ciudad elegida: hay `bbox` real, San Luis Potosí -no todo el país", () => {
+    const r = contextoDondeEsta(null, "Laboratorio de Arte Escénico", CIUDAD_INICIAL, null, null);
+    expect(r).toEqual({ ciudad: CIUDAD_INICIAL, centro: CIUDAD_INICIAL.centro, origen: "chip" });
+  });
+
+  it("el mismo caso SIN la ciudad elegida (el defecto reportado): sin ninguna pista real, cae en San Luis Potosí de respaldo pero SIN bbox -exactamente el hueco que dejaba buscar en todo el país", () => {
+    const r = contextoDondeEsta(null, "Laboratorio de Arte Escénico", null, null, null);
+    expect(r.origen).toBe("inicial");
+  });
+
+  it("ya con un punto puesto (editando, o ya fijado en esta misma sesión): el nombre no cambia la cascada, manda el pin", () => {
+    const punto = { lat: 22.15, lng: -100.97 };
+    const r = contextoDondeEsta(punto, "Laboratorio de Arte Escénico", null, null, null);
+    expect(r).toEqual({ ciudad: CIUDAD_INICIAL, centro: punto, origen: "posicion" });
+  });
+});
+
 describe("resultadosDondeEsta (corrección del gestor, PR #249: los registrados salen primero y no desaparecen cuando Mapbox responde)", () => {
   it("un lugar registrado que coincide, antes de que Mapbox responda (resultadosMapbox aún vacío): aparece solo", () => {
     const museoA = lugar("a", "Museo A", 22.15, -100.97);

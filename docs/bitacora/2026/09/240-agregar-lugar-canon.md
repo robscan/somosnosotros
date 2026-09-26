@@ -135,16 +135,55 @@ registrado que coincide Y una lista de "resultadosMapbox" ya llena (simulando qu
 sugerencias), el lugar registrado sigue apareciendo, PRIMERO, sin importar cuántos resultados de Mapbox lo
 sigan — la garantía queda fija en código, no solo en la memoria de quien lo revisó a mano.
 
+## Segunda corrección del gestor: el MISMO bug, en el campo «Nombre del lugar» del formulario
+
+Verificado con Mapbox real: «¿Dónde está?» ya buscaba bien en San Luis Potosí («YA EXISTE» primero con «Casa del
+Poeta», aviso por cercanía con «Ver ficha» funcionando) — pero el campo **«Nombre del lugar»** de arriba, el
+combobox de arriba del formulario (`FormularioLugar.tsx`, no `HojaDondeLugar.tsx`), es un autocompletado APARTE,
+de antes de OL-211 (founder, 2026-09-16), con su propia búsqueda de Mapbox: llamaba a `sugerirLugares(texto,
+mapboxToken, punto ?? yo ?? CIUDAD_INICIAL.centro, sesionRef.current)` **directo, sin `buscarConContexto` ni
+`bbox`** — el mismo defecto exacto del punto 1, en un lugar distinto del código. Con «Laboratorio de Arte
+Escénico» proponía Aguascalientes, Pachuca y CDMX, y tocar la primera llenaba el nombre Y la dirección con un
+lugar de Aguascalientes.
+
+Arreglo, en `FormularioLugar.tsx`:
+- La búsqueda de Mapbox de este campo ahora arma su contexto con `contextoDondeEsta(punto, texto, ciudadContexto,
+  yo, posicionTelefono)` — la MISMA función de `dondeEstaPantalla.ts` que ya usa "¿Dónde está?" (no una copia) — y
+  llama a `buscarConContexto` en vez de `sugerirLugares` a secas: mismo `bbox`, misma cascada, mismo reintento
+  acotado. Con versión (`versionBusquedaNombre`) para no pisar una búsqueda más nueva con una vieja que tarda más.
+- Los lugares YA REGISTRADOS que coinciden («Ya está registrado: …», el bloque que ya salía primero en la lista,
+  con su link a la ficha — founder 2026-09-16, revisado por el gestor 2026-09-21) ahora se calculan con
+  `lugaresPorTexto(lugares, texto)` -la MISMA comparación pura que usa la pantalla, sobre el mismo directorio ya
+  cargado- en vez de la función RPC `lugares_con_nombre` de antes: dos caminos que hoy deberían dar el mismo
+  resultado, mecanismo único. Se quitó la dependencia de `clienteNavegador`/Supabase en el navegador para esto.
+- El bloque "Ya está registrado" (con su Link a la ficha) ya salía PRIMERO en la lista, antes de las sugerencias
+  de Mapbox, y ya llevaba a la ficha sin adoptar nada (nunca llenó nombre/dirección al tocarlo) — eso ya cumplía
+  "sale primero, sin adoptarlo, con su ficha"; no se tocó esa parte de la interfaz, solo de dónde saca los datos.
+
+**Prueba unitaria** (`dondeEstaPantalla.test.ts`, describe nuevo "el mismo que usa el campo «Nombre del lugar»"):
+reproduce el caso real reportado -sin ubicación todavía y sin ciudad elegida, cae en San Luis Potosí SIN `bbox`
+(el hueco exacto)-, confirma que con la ciudad elegida sí hay un `bbox` real, y que con un punto ya puesto (al
+editar) manda el pin sobre el nombre escrito. **3 pruebas nuevas** (25 en total en ese archivo; 1334 en el
+proyecto). No hay lógica pura nueva en este campo que no esté ya cubierta por las mismas pruebas de
+`contextoDondeEsta`/`lugaresPorTexto` -es la misma función, no una copia-, así que la prueba de regresión real es
+compartida entre las dos pantallas: si alguien rompe la cascada, truena en los dos lados.
+
+Sin captura nueva de este arreglo: sin token de Mapbox en este entorno no se puede ver la diferencia (antes y
+después caen en el mismo aviso "No pude buscar"/"Falta el token"); el gestor dijo que verifica el mapa real él
+mismo.
+
 ## Evidencia
 
 - `npm run lint`: limpio (1 warning preexistente y ajeno, `docs/diseno/logotipo/iconos-sn.mjs`).
 - `npm run typecheck`: limpio.
-- `npm test`: **1331 pruebas, 107 archivos**, todas en verde — incluidas las movidas (`direccionContexto.test.ts`,
+- `npm test`: **1334 pruebas, 107 archivos**, todas en verde — incluidas las movidas (`direccionContexto.test.ts`,
   41), las que cambiaron de import (`gestosFlyer.test.ts`, 23) y las de `src/app/lugares/dondeEstaPantalla.test.ts`
-  (**22 pruebas** tras la corrección del gestor: las 11 originales —`lugarCercano`, `textoInicialBusqueda`— más
-  11 nuevas: `contextoDondeEsta` (5 casos, incluido el defecto exacto que reportó el gestor — sin ciudad elegida
-  ni posición, cae en San Luis Potosí sin ninguna pista real) y `resultadosDondeEsta` (6 casos, incluida la
-  garantía de que un lugar registrado sigue primero aunque Mapbox ya haya respondido con varias sugerencias).
+  (**25 pruebas** tras las dos rondas de corrección del gestor: las 11 originales —`lugarCercano`,
+  `textoInicialBusqueda`— más 11 de la primera ronda (`contextoDondeEsta`, 5 casos, incluido el defecto exacto
+  que reportó el gestor; `resultadosDondeEsta`, 6 casos, la garantía de que un lugar registrado sigue primero
+  aunque Mapbox ya haya respondido) más 3 de la segunda ronda (el mismo `contextoDondeEsta` reproduciendo el caso
+  del campo «Nombre del lugar»: sin ubicación ni ciudad elegida cae sin `bbox`, con la ciudad elegida sí lo tiene,
+  y con un punto ya puesto manda el pin).
 - `npm run build`: verde (`next build`, Turbopack), sin ninguna ruta `arnes240-temporal` en el árbol final.
 - **Correos en el diff:** `git diff | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+'` y lo mismo sobre los archivos
   nuevos — ninguna dirección.
