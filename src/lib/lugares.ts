@@ -152,7 +152,8 @@ export function diasConEvento<T extends { id: string }>(lugares: T[], eventos: {
 }
 
 /** Los lugares con al menos un evento ese día (docs/rediseno/45, OL-174): lo que pinta el mapa con el chip de
- *  fecha elegido — el filtro es solo del mapa (la Lista no filtra por fecha, pedido literal del founder). */
+ *  fecha elegido. Desde OL-210 la Lista usa la misma función (no una regla propia) para filtrar sus renglones —
+ *  el founder pidió que el chip afecte también la lista, no solo el mapa. */
 export function lugaresConEventoElDia<T extends { diasEvento?: string[] }>(lugares: T[], fecha: string): T[] {
   return lugares.filter((l) => l.diasEvento?.includes(fecha));
 }

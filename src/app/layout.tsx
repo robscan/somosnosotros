@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     "Agenda y directorio de la cultura local. Mira qué hay, conoce a la gente. Gratis, sin cuenta para mirar.",
   applicationName: "Somos Nosotros",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Somos Nosotros" },
-  // El favicon (símbolo SN sobre crema) lo sirve src/app/favicon.ico; el icono de "Añadir a inicio", apple-touch-icon y el manifiesto (docs/diseno/logotipo/iconos-sn.mjs).
+  // El favicon (símbolo SN sobre el degradado del icono) lo sirve src/app/favicon.ico; el icono de "Añadir a inicio", apple-touch-icon y el manifiesto (docs/diseno/logotipo/iconos-sn.mjs).
   icons: { apple: "/apple-touch-icon.png" },
   // Vista previa al pegar el enlace del sitio (WhatsApp, Messages): el logotipo sobre hueso, docs/diseno/logotipo/portada.html.
   metadataBase: new URL("https://somosnosotros.org"),

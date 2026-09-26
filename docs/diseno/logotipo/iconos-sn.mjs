@@ -1,8 +1,9 @@
 // Favicon, iconos de instalación e insignia de avisos a partir del símbolo SN final del founder
 // (LogoFinal/SN - Symbol.svg). Fondo opaco en todos los iconos: iOS pinta oscuro lo transparente (visto en el iPhone
-// del founder el 2026-09-16). Fondo crema, tinta negra y el símbolo al 80 % del lado, como el icono de la app que el
-// founder hizo en Icon Composer (apps/ios/ios/App/App/AppIcon.icon, OL-208): el crema es su color Display P3
-// (0.96078, 0.94902, 0.92549) pasado a sRGB. Uso, desde la raíz del repo:  node docs/diseno/logotipo/iconos-sn.mjs
+// del founder el 2026-09-16). Tinta negra, el símbolo al 80 % del lado y el fondo en degradado vertical, como el icono de
+// la app que el founder hizo en Icon Composer (apps/ios/ios/App/App/AppIcon.icon, OL-208 y OL-215): de #FFFBF5 arriba a
+// #D7D6D1 al 70 % del alto, y de ahí liso (sus colores Display P3 (1, 0.98465, 0.96499) y (0.84346, 0.83767, 0.82030)
+// pasados a sRGB; así los dibuja ictool). Uso, desde la raíz del repo:  node docs/diseno/logotipo/iconos-sn.mjs
 import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
@@ -11,14 +12,19 @@ const raiz = process.cwd();
 const simbolo = fs.readFileSync(path.join(raiz, "docs/diseno/logotipo/LogoFinal/SN - Symbol.svg"), "utf8");
 const [, vbx, vby, vbw, vbh] = simbolo.match(/viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/).map(Number);
 const d = simbolo.match(/ d="([^"]+)"/)[1];
-const TINTA = "#000000", CREMA = "#F6F2EB", BLANCO = "#ffffff";
+const TINTA = "#000000", DEGRADADO = ["#FFFBF5", "#D7D6D1"], BLANCO = "#ffffff";
 
 /** Lienzo cuadrado de `px` con el símbolo centrado. `relleno`: margen por lado (fracción). `seguro`: diagonal del símbolo
  *  como fracción del lado (icono adaptable de Android: el dibujo cabe en el círculo seguro). */
-function lienzo(px, { relleno = 0.096, seguro = null, fondo = CREMA, tinta = TINTA } = {}) {
+function lienzo(px, { relleno = 0.096, seguro = null, fondo = DEGRADADO, tinta = TINTA } = {}) {
   const s = seguro ? (seguro * px) / Math.hypot(vbw, vbh) : Math.min((px * (1 - 2 * relleno)) / vbw, (px * (1 - 2 * relleno)) / vbh);
   const w = vbw * s, h = vbh * s, x = (px - w) / 2, y = (px - h) / 2;
-  const rect = fondo ? `<rect width="${px}" height="${px}" fill="${fondo}"/>` : "";
+  const rect = !fondo
+    ? ""
+    : Array.isArray(fondo)
+      ? `<defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="0.7"><stop offset="0" stop-color="${fondo[0]}"/>` +
+        `<stop offset="1" stop-color="${fondo[1]}"/></linearGradient></defs><rect width="${px}" height="${px}" fill="url(#f)"/>`
+      : `<rect width="${px}" height="${px}" fill="${fondo}"/>`;
   return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">${rect}` +
       `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${vbx} ${vby} ${vbw} ${vbh}"><path fill="${tinta}" d="${d}"/></svg></svg>`,
