@@ -322,6 +322,16 @@ describe("dentro de la app de iPhone (APNs)", () => {
     expect(await suscribirPush("")).toEqual({ ok: false, motivo: "bloqueado" });
     expect(puente.register).not.toHaveBeenCalled();
   });
+  it("si la app devuelve el oyente sin promesa (window.Capacitor.Plugins), el alta sigue (OL-220)", async () => {
+    puente.addListener.mockImplementation((evento: string, cb: (arg: { value?: string }) => void) => {
+      (listeners[evento] ??= []).push(cb);
+      return { remove: vi.fn() };
+    });
+    const alta = suscribirPush("");
+    await vi.waitFor(() => expect(puente.register).toHaveBeenCalled());
+    dispararRegistro("a".repeat(64));
+    expect(await alta).toMatchObject({ ok: true });
+  });
   it("un registrationError sin token es un fallo, no un bloqueo (el permiso sí se concedió)", async () => {
     const alta = suscribirPush("");
     await vi.waitFor(() => expect(puente.register).toHaveBeenCalled());
