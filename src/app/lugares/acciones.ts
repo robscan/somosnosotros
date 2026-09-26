@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
+import { after } from "next/server";
 import { deducirTipo } from "@/lib/buscarLugares";
 import { esUuid } from "@/lib/formulario";
 import { rutaSegura } from "@/lib/rutas";
@@ -131,15 +132,27 @@ export async function cambiarVisible(id: string, visible: boolean) {
 }
 
 /** Seguir / dejar de seguir un lugar. Un toque. Devuelve si se guardó (la lista deshace y ofrece Reintentar si no). */
-export async function cambiarSeguimiento(lugarId: string, seguir: boolean): Promise<boolean> {
+/**
+ * `diferir` (OL-212, tercera vuelta): igual que en `cambiarAsistencia` (eventos/acciones.ts) — desde un renglón de
+ * lista (`useSeguirEnLista`, Inicio o cualquier lista de lugares) el botón ya se ve al día solo; revalidar de
+ * inmediato solo repintaría de más la pantalla en la que ya se está (cualquier `revalidatePath` en la acción hace
+ * que Next vuelva a renderizar toda la ruta actual en la misma respuesta, sin importar qué ruta se le pase). Con
+ * `after` la invalidación aplica igual para la próxima vez que se pida cada ruta, sin repintar esta. La ficha
+ * (`Seguir.tsx`, sin tocar) no manda `diferir`: sigue viendo su "N personas lo siguen" al día en el mismo toque.
+ */
+export async function cambiarSeguimiento(lugarId: string, seguir: boolean, diferir = false): Promise<boolean> {
   const { supabase, user } = await sesionOEntrar(`/lugares/${lugarId}?accion=${seguir ? "seguir" : ""}`);
   const { error } = seguir
     ? await supabase.from("seguimientos").upsert({ usuario_id: user.id, lugar_id: lugarId }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true })
     : await supabase.from("seguimientos").delete().eq("usuario_id", user.id).eq("lugar_id", lugarId);
   if (error) return false;
-  revalidatePath(`/lugares/${lugarId}`);
-  revalidatePath("/perfil");
-  revalidatePath(`/personas/${user.id}`);
+  const revalidar = () => {
+    revalidatePath(`/lugares/${lugarId}`);
+    revalidatePath("/perfil");
+    revalidatePath(`/personas/${user.id}`);
+  };
+  if (diferir) after(revalidar);
+  else revalidar();
   return true;
 }
 

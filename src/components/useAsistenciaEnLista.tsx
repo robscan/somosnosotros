@@ -76,7 +76,8 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     iniciar(async () => {
       let guardado = false;
       try {
-        guardado = await cambiarAsistencia(e.id, valor);
+        // `diferir: true` (OL-212, tercera vuelta): mismo motivo que useSeguirEnLista.tsx.
+        guardado = await cambiarAsistencia(e.id, valor, true);
       } catch {
         guardado = false;
       }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
+import { after } from "next/server";
 import { artistaIgual, hrefArtista, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
 import { esUuid } from "@/lib/formulario";
 import type { MotivoReclamo } from "@/lib/reportes";
@@ -96,15 +97,20 @@ export async function cambiarVisibleArtista(id: string, visible: boolean) {
 }
 
 /** Seguir / dejar de seguir a un artista. Un toque. Devuelve si se guardó (la lista deshace y ofrece Reintentar si no). */
-export async function cambiarSeguimientoArtista(artistaId: string, seguir: boolean): Promise<boolean> {
+/** `diferir`: mismo motivo y patrón que `cambiarSeguimiento` (lugares/acciones.ts), OL-212 tercera vuelta. */
+export async function cambiarSeguimientoArtista(artistaId: string, seguir: boolean, diferir = false): Promise<boolean> {
   const { supabase, user } = await sesionOEntrar(`/artistas/${artistaId}?accion=${seguir ? "seguir" : ""}`);
   const { error } = seguir
     ? await supabase.from("seguimientos").upsert({ usuario_id: user.id, artista_id: artistaId }, { onConflict: "usuario_id,artista_id", ignoreDuplicates: true })
     : await supabase.from("seguimientos").delete().eq("usuario_id", user.id).eq("artista_id", artistaId);
   if (error) return false;
-  revalidatePath(`/artistas/${artistaId}`);
-  revalidatePath("/perfil");
-  revalidatePath(`/personas/${user.id}`);
+  const revalidar = () => {
+    revalidatePath(`/artistas/${artistaId}`);
+    revalidatePath("/perfil");
+    revalidatePath(`/personas/${user.id}`);
+  };
+  if (diferir) after(revalidar);
+  else revalidar();
   return true;
 }
 
