@@ -12,13 +12,12 @@ type Parte = "estelar" | "estaSemana" | "populares" | "nuevos";
  * criterio nuevo de "Nuevos eventos", OL-219) — una consulta, no cuatro — y recalcula los carriles completos de
  * forma pura para quedarse solo con el suyo: así cada `<Suspense>` es independiente de verdad (no importa en qué
  * orden resuelvan los otros), sin repetir la consulta a la base ni compartir un `Set` mutable entre streams.
- * `tusPlanesIdsPromise` (OL-219): los ids que ya se llevó "Tus planes" (otra consulta, `cargarPersona`), para que
- * ninguno de estos cuatro los repita. Ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
+ * "Tus planes" no les quita eventos (OL-221): ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
  */
-export default async function CarrilAgenda({ parte, agendaPromise, tusPlanesIdsPromise, avisos, verTodosHref }: { parte: Parte; agendaPromise: Promise<Agenda>; tusPlanesIdsPromise: Promise<string[]>; avisos: AvisosLista | null; verTodosHref: string }) {
-  const [agenda, tusPlanesIds] = await Promise.all([agendaPromise, tusPlanesIdsPromise]);
+export default async function CarrilAgenda({ parte, agendaPromise, avisos, verTodosHref }: { parte: Parte; agendaPromise: Promise<Agenda>; avisos: AvisosLista | null; verTodosHref: string }) {
+  const agenda = await agendaPromise;
   const ahora = new Date();
-  const carriles = calcularCarrilesAgenda(agenda, ahora, tusPlanesIds);
+  const carriles = calcularCarrilesAgenda(agenda, ahora);
   const datos =
     parte === "estelar"
       ? { titulo: carriles.titulo, eventos: carriles.estelar, tamano: "grande" as const, memoria: "inicio-estelar" }

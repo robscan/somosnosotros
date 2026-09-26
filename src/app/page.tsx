@@ -15,7 +15,7 @@ import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { tarjetaArtista } from "@/lib/destacados";
-import { carrilTusPlanes, idsUsadosEnAgenda } from "@/lib/inicio";
+import { idsUsadosEnAgenda } from "@/lib/inicio";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
 type SearchParams = { ciudad?: string };
@@ -69,8 +69,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
   // Estelar/Esta semana/Populares/Nuevos (`calcularCarrilesAgenda`, `vistosIniciales`) y, con ellos ya incluidos, de
   // Cercanos también, vía `excluirDeCercanosPromise`.
   const personaPromise: Promise<Persona | null> = usuarioId ? cargarPersona(usuarioId) : Promise.resolve(null);
-  const tusPlanesIdsPromise: Promise<string[]> = personaPromise.then((p) => (p ? carrilTusPlanes(p.eventos, p.interesan).map((e) => e.id) : []));
-  const excluirDeCercanosPromise = Promise.all([agendaPromise, tusPlanesIdsPromise]).then(([a, ids]) => idsUsadosEnAgenda(a, ahora, ids));
+  const excluirDeCercanosPromise = agendaPromise.then((a) => idsUsadosEnAgenda(a, ahora));
   const seguidosLugaresPromise = agendaPromise.then((a) => a.seguidos);
 
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
@@ -99,10 +98,10 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         // servidor que cruce a un componente de cliente, aunque ese cliente decida no montarlo) y filtraría "Tus
         // planes" al streaming de alguien sin cuenta, sin necesidad (OL-219).
         slotTusPlanes={actual ? <CarrilTusPlanes personaPromise={personaPromise} avisos={avisos} verTodosHref="/perfil" /> : null}
-        slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} tusPlanesIdsPromise={tusPlanesIdsPromise} avisos={avisos} verTodosHref={conCiudad("/agenda", "siguiendo")} />}
-        slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} tusPlanesIdsPromise={tusPlanesIdsPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
-        slotPopulares={<CarrilAgenda parte="populares" agendaPromise={agendaPromise} tusPlanesIdsPromise={tusPlanesIdsPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
-        slotNuevos={<CarrilAgenda parte="nuevos" agendaPromise={agendaPromise} tusPlanesIdsPromise={tusPlanesIdsPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
+        slotEstelar={<CarrilAgenda parte="estelar" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda", "siguiendo")} />}
+        slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
+        slotPopulares={<CarrilAgenda parte="populares" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
+        slotNuevos={<CarrilAgenda parte="nuevos" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
         slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacados" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
         slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}

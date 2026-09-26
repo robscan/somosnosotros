@@ -131,11 +131,12 @@ export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "
 /** Los cuatro carriles de eventos de Inicio que salen de una sola `cargarAgenda` (estelar, esta semana, populares,
  *  nuevos): se calculan juntos y puros, a partir del mismo objeto `Agenda`, para poder recalcularlos sin red desde
  *  cualquier carril que los pida (streaming, OL-156: cada carril puede recalcular esto por su cuenta sin depender
- *  del orden de llegada de otro). `vistosIniciales` (OL-219): los ids que ya se usó "Tus planes" — de otra consulta
- *  (`cargarPersona`, no `cargarAgenda`), así que llegan de fuera en vez de calcularse aquí. */
+ *  del orden de llegada de otro). "Tus planes" no entra en la regla de no repetir (founder, 2026-09-26, OL-221): es la
+ *  agenda de la persona, no un carril de descubrir; si le quitaba eventos a estos, al tocar «Voy» el evento
+ *  desaparecía de la fila donde se tocó. Aquí sigue saliendo, con su check de «Voy». */
 export type CarrilesDeAgenda = { titulo: string; estelar: EventoAgenda[]; estaSemana: EventoAgenda[]; populares: EventoAgenda[]; nuevos: EventoAgenda[]; vistos: Set<string> };
-export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date(), vistosIniciales: Iterable<string> = []): CarrilesDeAgenda {
-  const vistos = new Set<string>(vistosIniciales);
+export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date()): CarrilesDeAgenda {
+  const vistos = new Set<string>();
   const favoritos = filtrarAgenda(agenda.eventos, { filtro: "siguiendo", punto: null, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, fecha: "", ahora }).lista;
   const hayFavoritos = favoritos.length > 0;
   const estelar = hayFavoritos
@@ -147,11 +148,11 @@ export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date(),
   return { titulo: tituloEstelar(hayFavoritos), estelar, estaSemana, populares, nuevos, vistos };
 }
 
-/** Los ids que ya usaron los carriles de eventos de Inicio (tus planes, estelar, esta semana, populares, nuevos):
+/** Los ids que ya usaron los carriles de eventos de Inicio (estelar, esta semana, populares, nuevos; no "Tus planes"):
  *  el carril de Cercanos (cliente, en `Inicio.tsx`) los recibe para tampoco repetirlos, sin tener que esperar a los
  *  otros. Con esto, "Cerca de ti" excluye también lo que ya se llevó "Esta semana" (founder, encargo de OL-219). */
-export function idsUsadosEnAgenda(agenda: Agenda, ahora: Date = new Date(), vistosIniciales: Iterable<string> = []): string[] {
-  return [...calcularCarrilesAgenda(agenda, ahora, vistosIniciales).vistos];
+export function idsUsadosEnAgenda(agenda: Agenda, ahora: Date = new Date()): string[] {
+  return [...calcularCarrilesAgenda(agenda, ahora).vistos];
 }
 
 export type SeccionBuscador = "inicio" | "agenda" | "lugares" | "artistas";
