@@ -118,4 +118,5 @@ src/lib/artistas.ts src/lib/artistas.test.ts | grep -oE '[A-Za-z0-9._%+-]+@[A-Za
 ## Cierre
 
 `git status --short` en la rama, limpio salvo lo de esta pieza (el arnés temporal ya no existe). Commit local
-en `que-hace-dos-pasos`; push y PR contra `main`, sin unir (lo une el gestor de cambios).
+en `que-hace-dos-pasos`; push y PR [#240](https://github.com/robscan/somosnosotros/pull/240) contra `main`,
+sin unir (lo une el gestor de cambios).
