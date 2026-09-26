@@ -8,6 +8,7 @@ import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
+import BotonCalendario from "@/components/BotonCalendario";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
@@ -24,6 +25,7 @@ import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { jsonLdMigajas } from "@/lib/estructurados";
+import { datosEventoNativo } from "@/lib/calendario";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { direccionPublicaSitio, enlaceComoLlegar, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, textoCompartir } from "@/lib/eventos";
 import { hrefLugar } from "@/lib/lugares";
@@ -233,6 +235,10 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const destacable = esAdmin && puedeDestacarse({ visible: e.visible, paso, lugar: e.lugar }) ? await cargarDestacado("evento", e.id) : null;
   const url = `${ORIGEN}${hrefEvento(e)}`;
   const texto = textoCompartir(e.titulo, formatearCuando(e.inicio, e.fin, new Date(), e.zona), sitio, url).replace(`\n${url}`, "");
+  // Con dirección cuando se puede (a diferencia de `sitio`, que solo da el nombre): mismo criterio que el archivo
+  // .ics (`donde` en .../calendario/route.ts) para que la hoja nativa del sistema muestre algo útil para llegar.
+  const lugarCalendario = e.lugar ? [e.lugar.nombre, e.lugar.direccion].filter(Boolean).join(", ") : sitio;
+  const datosCalendario = datosEventoNativo({ id: e.id, slug: e.slug, titulo: e.titulo, inicio: e.inicio, fin: e.fin, descripcion: e.descripcion, lugar: lugarCalendario });
   const argsSitio = { lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado };
   const comoLlegar = enlaceComoLlegar(argsSitio);
   const puntoMapa = puntoComoLlegar(argsSitio);
@@ -413,13 +419,14 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </span>
           Compartir
         </BotonCompartir>
-        {/* Dice lo que hace: agrega el evento, con su alerta, al calendario del teléfono (decisión 12 de docs/rediseno/17). */}
-        <a href={`${hrefEvento(e)}/calendario`} className={ficha.accion}>
+        {/* Dice lo que hace: agrega el evento, con su alerta, al calendario del teléfono (decisión 12 de docs/rediseno/17).
+            Dentro de la app de iPhone abre la hoja nativa del sistema en vez de descargar el .ics (OL-214, bitácora 243). */}
+        <BotonCalendario datos={datosCalendario} href={`${hrefEvento(e)}/calendario`} className={ficha.accion}>
           <span className={ficha.accionIcono}>
             <IconoCalendarioAgregar width={24} height={24} />
           </span>
           A mi calendario
-        </a>
+        </BotonCalendario>
         {comoLlegar ? (
           <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
             <span className={ficha.accionIcono}>

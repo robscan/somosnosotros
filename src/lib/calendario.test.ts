@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { archivoIcs, diasEnMes, escaparIcs, mesAnterior, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso } from "./calendario";
+import { archivoIcs, datosEventoNativo, diasEnMes, escaparIcs, mesAnterior, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso } from "./calendario";
 
 const evento = { id: "fba5bd3e-7898-4261-b4fd-97a17b1d61ee", titulo: "Navidad queretana: danza, música; y más", inicio: "2026-12-06T18:00:00.000Z", fin: null, descripcion: "Espectáculo\nnavideño", lugar: "Teatro del IMSS, Tomasa Estévez 805" };
 
@@ -35,6 +35,31 @@ describe("archivoIcs", () => {
   });
   it("termina en CRLF", () => {
     expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
+  });
+});
+
+describe("datosEventoNativo", () => {
+  it("sin hora de fin, dura 2 horas (mismo criterio que archivoIcs)", () => {
+    const datos = datosEventoNativo({ ...evento, fin: null });
+    expect(datos.inicio).toBe(evento.inicio);
+    expect(datos.fin).toBe("2026-12-06T20:00:00.000Z");
+  });
+
+  it("respeta la hora de fin cuando llega", () => {
+    const datos = datosEventoNativo({ ...evento, fin: "2026-12-06T21:00:00.000Z" });
+    expect(datos.fin).toBe("2026-12-06T21:00:00.000Z");
+  });
+
+  it("arma la URL de la ficha (slug si lo hay) y pasa el lugar y las notas sin escapar", () => {
+    const datos = datosEventoNativo({ ...evento, slug: "navidad-queretana" });
+    expect(datos.url).toBe("https://somosnosotros.org/eventos/navidad-queretana");
+    expect(datos.titulo).toBe(evento.titulo);
+    expect(datos.lugar).toBe(evento.lugar);
+    expect(datos.notas).toBe(evento.descripcion);
+  });
+
+  it("sin slug, la URL cae al UUID", () => {
+    expect(datosEventoNativo({ ...evento, slug: null }).url).toBe(`https://somosnosotros.org/eventos/${evento.id}`);
   });
 });
 
