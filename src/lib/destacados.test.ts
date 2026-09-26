@@ -35,7 +35,7 @@ describe("tarjetas", () => {
   it("evento: su cartel, si no la foto del lugar, si no la imagen ancha del símbolo; cuándo y dónde", () => {
     // `creado_en` por defecto ("2026-09-14") cae 3 días antes de AHORA ("2026-09-17"): dentro de la ventana de
     // «Recién agregado» (OL-219), así que `reciente` sale en `true` también en este caso base.
-    expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", detalle: "mañana · 19:00 · Teatro de la Paz", van: 14, reciente: true });
+    expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", detalle: "mañana · 19:00 · Teatro de la Paz", van: 14, reciente: true, inicio: MANANA_19, fin: null, zona: ZONA });
     expect(tarjetaEvento(evento({ lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).foto).toBe("/teatro.jpg");
     expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: SIN_FOTO_ANCHA, detalle: "mañana · 19:00 · Plaza de Armas" });
   });

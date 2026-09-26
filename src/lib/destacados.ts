@@ -29,6 +29,14 @@ export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: n
  *  tarjetas de evento (`tarjetaEvento`); lugares y artistas no tienen fecha de publicación que mostrar así. */
 export type Tarjeta = { id: string; href: string; foto: string; titulo: string; detalle: string; van: number; reciente?: boolean };
 
+/**
+ * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
+ * 253): `tarjetaEvento` siempre las trae; lugares y artistas no («Tus planes» solo junta eventos). El «recuerdo de la
+ * visita» (`lib/decisionesVisita.ts`) guarda esta misma forma para poder agregar, sin volver a pedirle nada al
+ * servidor, la tarjeta de un evento recién decidido (Voy o Me interesa) que todavía no viene en la página.
+ */
+export type TarjetaConFecha = Tarjeta & { inicio: string; fin: string | null; zona: string };
+
 /** Foto real primero; el orden de la selección o de las fechas se conserva dentro de cada grupo. */
 export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
   return tarjetas.toSorted((a, b) => Number(a.foto.includes("/sin-foto")) - Number(b.foto.includes("/sin-foto")));
@@ -61,8 +69,8 @@ export function esRecienAgregado(creadoEn: string, ahora = new Date()): boolean 
   return new Date(creadoEn).getTime() >= ahora.getTime() - DIAS_RECIEN_AGREGADO * 86400000;
 }
 
-export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): Tarjeta {
-  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van, reciente: esRecienAgregado(e.creado_en, ahora) };
+export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): TarjetaConFecha {
+  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van, reciente: esRecienAgregado(e.creado_en, ahora), inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {
