@@ -97,3 +97,23 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
   const porEstado = (estado: string) => filas.filter((x) => x.estado === estado).map((x) => aAgenda(x.e)).sort((a, b) => a.inicio.localeCompare(b.inicio));
   return { perfil: perfil as Perfil, eventos: porEstado("voy"), interesan: porEstado("me_interesa"), lugares, artistas };
 }
+
+/** Quien mira bloqueó a esta ficha (OL-203): su propia fila en `bloqueos`, la única que su sesión puede leer. */
+export async function estaBloqueada(supabase: Cliente, quien: string, bloqueado: string): Promise<boolean> {
+  const { data } = await supabase.from("bloqueos").select("quien").eq("quien", quien).eq("bloqueado", bloqueado).maybeSingle();
+  return !!data;
+}
+
+export type PersonaBloqueada = { id: string; nombre: string; foto: string | null };
+
+/** La lista de Ajustes → Personas bloqueadas: a quién bloqueó, más reciente primero. */
+export async function cargarBloqueados(supabase: Cliente, quien: string): Promise<PersonaBloqueada[]> {
+  const { data } = await supabase
+    .from("bloqueos")
+    .select("creado_en, persona:perfiles!bloqueos_bloqueado_fkey(id, nombre, foto)")
+    .eq("quien", quien)
+    .order("creado_en", { ascending: false })
+    .limit(500);
+  type Fila = { persona: PersonaBloqueada | PersonaBloqueada[] | null };
+  return ((data ?? []) as unknown as Fila[]).map((f) => uno(f.persona)).filter((p): p is PersonaBloqueada => !!p);
+}

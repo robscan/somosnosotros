@@ -1,0 +1,68 @@
+/* Bloquear: el enlace discreto (en el menú "···" de la ficha) y la hoja de confirmación, misma composición que
+   Borrar.module.css (icono, textos centrados, dos botones) pero sin rojo: bloquear no es destructivo, se deshace. */
+.enlace {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: var(--espacio-2) var(--espacio-1);
+  min-height: var(--toque);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  text-align: left;
+  cursor: pointer;
+}
+.confirmar {
+  display: grid;
+  justify-items: center;
+  gap: var(--espacio-2);
+  padding-top: var(--espacio-4);
+  text-align: center;
+}
+.icono {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--espacio-2);
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+}
+.confirmar h3 {
+  font-size: var(--letra-2xl);
+  font-weight: 700;
+}
+.confirmar p {
+  max-width: 34ch;
+  margin-bottom: var(--espacio-4);
+  color: var(--texto-suave);
+  line-height: 1.4;
+}
+.confirmarBoton {
+  min-height: var(--toque);
+  padding: 0 var(--espacio-5);
+  border: none;
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: var(--letra-lg);
+  font-weight: 700;
+  cursor: pointer;
+}
+.confirmarBoton:disabled {
+  opacity: 0.6;
+}
+.cancelar {
+  border: none;
+  background: none;
+  padding: 0 var(--espacio-2);
+  min-height: var(--toque);
+  color: var(--texto-suave);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.error {
+  color: var(--error);
+  font-size: var(--letra-sm);
+}

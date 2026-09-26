@@ -1,0 +1,43 @@
+/* Ajustes → Personas bloqueadas: la misma tarjeta de filas que Ajustes (region comun), una fila por persona
+   (foto, nombre, Desbloquear a la derecha). Vacio: un texto llano, sin ceremonia. */
+.tarjeta {
+  list-style: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  overflow: hidden;
+}
+.tarjeta > li + li {
+  border-top: 1px solid var(--borde);
+}
+.fila {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  column-gap: 12px;
+  align-items: center;
+  min-height: 60px;
+  padding: 8px 14px;
+}
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+.avatarVacio {
+  display: grid;
+  place-items: center;
+  color: var(--texto-suave);
+  font-weight: 700;
+}
+.nombre {
+  font-size: var(--letra-md);
+  font-weight: 600;
+}
+.vacio {
+  padding: var(--espacio-4) 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}

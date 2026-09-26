@@ -24,6 +24,9 @@ type Props = {
   origen: string;
   /** «Mis artistas» en Mi perfil (OL-154, doc 40b), antes de la actividad: lo tuyo primero. Solo en `mia`. */
   misArtistas?: ReactNode;
+  /** Quien mira bloqueó a esta persona (OL-203): el botón Desbloquear, ya armado por la página. Con esto, la
+   *  actividad no se pinta (se dejó de ver lo que publicó) y en su lugar sale el aviso llano. */
+  bloqueado?: ReactNode;
 };
 
 /**
@@ -32,7 +35,7 @@ type Props = {
  * (Voy a · Sigo · Van a lo mismo) y la lista de la pestaña, con los renglones y gestos de las listas (ActividadPersona,
  * OL-057). Lo que se configura vive en Ajustes. Un perfil reservado no pinta ni manda sus listas.
  */
-export default function FichaPersona({ perfil, mia, eventos, interesan = [], lugares, artistas, gestos, origen, misArtistas }: Props) {
+export default function FichaPersona({ perfil, mia, eventos, interesan = [], lugares, artistas, gestos, origen, misArtistas, bloqueado }: Props) {
   const reservada = !mia && !!perfil.reservado;
   const incompleto = mia && (!perfil.colonia || !perfil.bio);
 
@@ -91,7 +94,12 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
         </p>
       )}
       {misArtistas}
-      {reservada ? (
+      {bloqueado ? (
+        <div className={styles.bloqueado}>
+          <p>Bloqueaste a esta persona: no ves lo que publica.</p>
+          {bloqueado}
+        </div>
+      ) : reservada ? (
         <p className={styles.reservada}>
           Perfil reservado: solo se ve el nombre.
         </p>

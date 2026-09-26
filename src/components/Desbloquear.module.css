@@ -1,0 +1,22 @@
+/* Desbloquear: mismo botón secundario que el resto de la app (ficha.secundario), suelto porque se usa en dos
+   sitios (la ficha de la persona bloqueada y Ajustes → Personas bloqueadas) con marcos distintos alrededor. */
+.boton {
+  min-height: var(--toque);
+  padding: 0 var(--espacio-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-md);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.boton:disabled {
+  opacity: 0.6;
+}
+.error {
+  margin-top: var(--espacio-1);
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
