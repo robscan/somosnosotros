@@ -8,15 +8,21 @@ import { NextResponse } from "next/server";
  * developer.apple.com (`org.somosnosotros.app`); ninguno de los dos es secreto, viajan a la vista en cualquier
  * enlace compartido.
  *
- * `applinks` reclama solo lo que la app de verdad abre hoy: las fichas (eventos, lugares, artistas). `/auth/*` no
- * está aquí: la vuelta de entrar con Apple o Google no depende de un enlace universal (`applinks`), sino de
- * `ASWebAuthenticationSession.Callback.https(host:path:)` (iOS 17.4+, ver `EntrarSistemaPlugin.swift` y
- * `urlAppTrasEntrar` en src/lib/entrarCon.ts): esa callback la atrapa la propia sesión del sistema antes de que
- * llegue a ser una navegación, así que reclamar `/auth/*` en `applinks` no hace falta y, peor, competiría con el
- * enlace del correo cuando alguien lo abre fuera de la app (Apple prefiere abrir la app instalada si reclama la
- * ruta, y ahí el enlace del correo no sirve de nada). Lo que sí exige esa callback https, según la documentación de
- * Apple, es `webcredentials` con el dominio — ya está, y además deja que el llavero de iOS sugiera la cuenta de
- * somosnosotros.org dentro de la app, igual que ya hace en Safari.
+ * `applinks` reclama todo el sitio (OL-223): cualquier enlace de somosnosotros.org abre la app instalada, que es
+ * donde está la sesión. Antes solo reclamaba las fichas, y el QR de Pincel (`/obra/<id>/mando`) abría Safari y
+ * pedía entrar. La app carga el enlace que le llega (`SceneDelegate.swift`), también con la app cerrada: Capacitor
+ * 8.5.2 lo entrega en `capacitorViewDidAppear`, cuando el observador ya existe. iOS relee este archivo (vía la CDN
+ * de Apple) al instalar o actualizar la app. Las exclusiones van primero porque gana la primera que coincide:
+ * - `/auth/*`: la vuelta de entrar con Apple o Google no depende de un enlace universal, sino de
+ *   `ASWebAuthenticationSession.Callback.https(host:path:)` (iOS 17.4+, ver `EntrarSistemaPlugin.swift` y
+ *   `urlAppTrasEntrar` en src/lib/entrarCon.ts), que la atrapa antes de que llegue a ser una navegación. Reclamarla
+ *   competiría con el enlace del correo cuando alguien lo abre fuera de la app, y ahí no sirve de nada.
+ * - `/api/*`: no son páginas.
+ * - `/avisos/baja*`: la baja de avisos del correo funciona sin sesión, en el navegador donde se abre.
+ * - `/eventos/<id>/calendario`: el .ics. Dentro de la app el calendario va por la hoja nativa (OL-214).
+ * Lo que sí exige la callback https, según la documentación de Apple, es `webcredentials` con el dominio — ya
+ * está, y además deja que el llavero de iOS sugiera la cuenta de somosnosotros.org dentro de la app, igual que ya
+ * hace en Safari.
  *
  * Confirmar que nada la redirige: src/proxy.ts solo actúa sobre `/artistas|lugares|eventos/<uuid>` (no sobre
  * `/.well-known/*`) y next.config.ts no tiene ninguna regla que toque esta ruta.
@@ -28,7 +34,13 @@ const CONTENIDO = {
     details: [
       {
         appIDs: [APP_ID],
-        components: [{ "/": "/eventos/*" }, { "/": "/lugares/*" }, { "/": "/artistas/*" }],
+        components: [
+          { "/": "/auth/*", exclude: true },
+          { "/": "/api/*", exclude: true },
+          { "/": "/avisos/baja*", exclude: true },
+          { "/": "/eventos/*/calendario*", exclude: true },
+          { "/": "/*" },
+        ],
       },
     ],
   },

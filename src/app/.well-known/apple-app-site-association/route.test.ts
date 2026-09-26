@@ -12,11 +12,30 @@ it("responde JSON sin redirección, con el Content-Type exacto que pide Apple", 
   expect(respuesta.headers.get("location")).toBeNull();
 });
 
-it("reclama fichas (eventos, lugares, artistas) con el Team ID y el identificador de la app, y no /auth/* (corrección del gestor: entrar ya no depende de un enlace universal)", async () => {
+type Componente = { "/": string; exclude?: boolean };
+
+/** Como lo lee iOS: gana el primer componente que coincide; `*` es cualquier tramo y `?` un carácter. */
+function abreLaApp(componentes: Componente[], ruta: string): boolean {
+  for (const c of componentes) {
+    const patron = c["/"].replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
+    if (new RegExp(`^${patron}$`).test(ruta)) return !c.exclude;
+  }
+  return false;
+}
+
+it("reclama todo el sitio con el Team ID y el identificador de la app (OL-223: el QR de Pincel abría Safari)", async () => {
   const datos = await (await GET()).json();
   const [detalle] = datos.applinks.details;
   expect(detalle.appIDs).toEqual(["AT53235M7U.org.somosnosotros.app"]);
-  const rutas = detalle.components.map((c: { "/": string }) => c["/"]);
-  expect(rutas).toEqual(["/eventos/*", "/lugares/*", "/artistas/*"]);
   expect(datos.webcredentials.apps).toEqual(["AT53235M7U.org.somosnosotros.app"]);
+  for (const ruta of ["/", "/obra/9f1c/mando", "/eventos/concierto-en-el-jardin", "/lugares/museo-leonora-carrington", "/artistas/ana", "/agenda", "/ajustes"]) {
+    expect(abreLaApp(detalle.components, ruta), ruta).toBe(true);
+  }
+});
+
+it("deja en el navegador entrar, la API, la baja de avisos y el .ics del calendario", async () => {
+  const [detalle] = (await (await GET()).json()).applinks.details;
+  for (const ruta of ["/auth/callback", "/auth/app-regreso", "/auth/google/fin", "/api/estado", "/avisos/baja", "/eventos/concierto-en-el-jardin/calendario"]) {
+    expect(abreLaApp(detalle.components, ruta), ruta).toBe(false);
+  }
 });
