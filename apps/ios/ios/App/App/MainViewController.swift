@@ -17,6 +17,9 @@ import Network
  * OL-205 (auditoría OL-202, docs/rediseno/48-shell-ios.md §3.3): el gesto de deslizar desde el borde para volver
  * se enciende aquí (`allowsBackForwardNavigationGestures`), pero `GestoAtrasPlugin` (ver ese archivo) cancela la
  * navegación nativa que dispara y le pide a la web que vuelva con su propia marca de historial.
+ *
+ * OL-214 (bitácora 243): `CalendarioPlugin` (ver ese archivo) se registra igual que los dos de arriba — nativo
+ * puro, sin paquete de npm.
  */
 class MainViewController: CAPBridgeViewController {
     private let monitorDeRed = NWPathMonitor()
@@ -26,6 +29,7 @@ class MainViewController: CAPBridgeViewController {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(EntrarSistemaPlugin())
         bridge?.registerPluginInstance(GestoAtrasPlugin())
+        bridge?.registerPluginInstance(CalendarioPlugin())
         webView?.allowsBackForwardNavigationGestures = true
         observarRed()
     }
