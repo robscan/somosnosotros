@@ -1,0 +1,60 @@
+{
+  "fill" : {
+    "automatic-gradient" : "display-p3:0.96078,0.94902,0.92549,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "display-p3:0.96078,0.94902,0.92549,1.00000"
+              }
+            },
+            {
+              "appearance" : "tinted",
+              "value" : {
+                "solid" : "extended-gray:1.00000,1.00000"
+              }
+            }
+          ],
+          "glass-specializations" : [
+            {
+              "value" : false
+            },
+            {
+              "appearance" : "dark",
+              "value" : false
+            }
+          ],
+          "hidden" : false,
+          "image-name" : "SN - Symbol.svg",
+          "name" : "SN - Symbol",
+          "position" : {
+            "scale" : 0.8,
+            "translation-in-points" : [
+              0.21141259439400528,
+              0.2648131647790706
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
