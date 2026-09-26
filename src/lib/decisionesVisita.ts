@@ -19,16 +19,36 @@
  * si otro dispositivo cambiara la misma decisión antes de que el servidor la reflejara aquí, esta pestaña tardaría en
  * verlo (se queda con lo decidido aquí hasta que el servidor coincida) — más seguro que el bug de hoy, que siempre
  * muestra lo viejo.
+ *
+ * «Tus planes al instante» (OL-224, bitácora 253): además de corregir el estado, ahora `guardarDecisionAsistencia`
+ * puede guardar junto con la decisión una foto mínima de la tarjeta (`TarjetaConFecha`, lo que ya arma `tarjetaEvento`)
+ * y `tarjetasTusPlanes` la agrega a lo que trae el servidor cuando el evento decidido (Voy o Me interesa, futuro, y
+ * que el servidor todavía no incluye) no estaba en «Tus planes» — así aparece ahí sin esperar a la próxima visita,
+ * en cualquier fila de Inicio donde se haya decidido. Para que la fila de «Tus planes» se entere aunque la decisión
+ * se haya guardado desde OTRA fila (otro componente, mismo render de la página), `suscribirseDecisionesVisita` +
+ * `crudoDecisionesVisita` exponen este módulo como un external store de `useSyncExternalStore` (mismo patrón que
+ * `lib/avisoSalida.ts`): cada escritura avisa, y quien esté suscrito vuelve a pintar.
+ *
+ * Una decisión con tarjeta no la borra `limpiarAsistenciasResueltas` aunque el estado ya coincida (bug real, visto
+ * al reproducir con Chrome real: ir a Agenda con datos frescos y volver a Inicio, todavía con su copia vieja de 60 s,
+ * la borraba antes de que «Tus planes» llegara a usarla) — la borra `limpiarTarjetasTusPlanesResueltas`, y solo
+ * cuando la propia fila de «Tus planes» recibe una lista fresca que ya trae ese evento.
  */
 
+import { compararEventos } from "./agenda";
 import type { Asistencia } from "./deslizar";
+import type { TarjetaConFecha } from "./destacados";
+import { eventoPaso } from "./fechas";
 
 export type Almacen = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 type Decidido<V> = { valor: V; hora: number };
+/** Además del valor, la tarjeta mínima de ese evento (solo si ya se guardó una vez, OL-224): con ella, `tarjetasTusPlanes`
+ *  puede agregarla a «Tus planes» sin volver a pedirle nada al servidor. */
+type DecididoAsistencia = Decidido<Asistencia> & { tarjeta?: TarjetaConFecha };
 type Datos = {
   cuenta: string;
-  asistencia: Record<string, Decidido<Asistencia>>;
+  asistencia: Record<string, DecididoAsistencia>;
   seguirLugar: Record<string, Decidido<boolean>>;
   seguirArtista: Record<string, Decidido<boolean>>;
 };
@@ -65,14 +85,26 @@ function escribir(datos: Datos, almacen: Almacen | null): void {
   if (!almacen) return;
   try {
     almacen.setItem(CLAVE, JSON.stringify(datos));
-  } catch {}
+  } catch {
+    return; // no se guardó nada: no hay cambio que avisar
+  }
+  notificarCambioDecisionesVisita();
 }
 
-/** Voy, Me interesa o quitar (`null`) en un evento, decidido ahora mismo desde una lista. */
-export function guardarDecisionAsistencia(cuenta: string, eventoId: string, valor: Asistencia, almacen: Almacen | null = almacenDelNavegador()): void {
+/**
+ * Voy, Me interesa o quitar (`null`) en un evento, decidido ahora mismo desde una lista. `tarjeta` (OL-224, bitácora
+ * 253, opcional): la foto mínima de esa tarjeta, para poder agregarla a «Tus planes» sin el servidor — solo hace
+ * falta al decidir Voy o Me interesa (al quitar, `null`, no se manda). Si esta vez no llega (por ejemplo, la ficha de
+ * un lugar que no arma tarjetas, o un Deshacer que vuelve a llamar sin ella) pero ya había una guardada, se conserva
+ * tal cual: ni cambiar de Voy a Me interesa ni quitar y luego deshacer sin una tarjeta fresca deben perder la que ya
+ * se tenía — quitar la deja «dormida» junto con el `null` (inofensiva: `tarjetasTusPlanes` nunca agrega una decisión
+ * en `null`) por si un Deshacer posterior la vuelve a necesitar.
+ */
+export function guardarDecisionAsistencia(cuenta: string, eventoId: string, valor: Asistencia, almacen: Almacen | null = almacenDelNavegador(), tarjeta: TarjetaConFecha | null = null): void {
   if (!cuenta) return;
   const datos = leer(cuenta, almacen);
-  datos.asistencia[eventoId] = { valor, hora: Date.now() };
+  const tarjetaFinal = tarjeta ?? datos.asistencia[eventoId]?.tarjeta;
+  datos.asistencia[eventoId] = tarjetaFinal ? { valor, hora: Date.now(), tarjeta: tarjetaFinal } : { valor, hora: Date.now() };
   escribir(datos, almacen);
 }
 
@@ -120,13 +152,20 @@ export function corregirSeguidos(cuenta: string | null, que: "lugar" | "artista"
   return cambio ? [...conjunto] : servidor;
 }
 
-/** Llegó una foto nueva del servidor: lo que ya coincide se limpia, para no seguir corrigiendo con eso ni dejarlo tirado. */
+/**
+ * Llegó una foto nueva del servidor (de cualquier pantalla: Agenda, una ficha, Mi perfil…): lo que ya coincide se
+ * limpia, para no seguir corrigiendo con eso ni dejarlo tirado. Una decisión con tarjeta (OL-224, bitácora 253) no
+ * se borra aquí aunque el estado ya coincida: esa tarjeta la sigue necesitando «Tus planes» mientras SU PROPIA
+ * página siga mostrando la copia vieja (`staleTimes`, hasta 60 s, o Atrás) — esta pantalla que llama aquí no tiene
+ * forma de saber si esa otra ya se enteró. La borra `limpiarTarjetasTusPlanesResueltas`, cuando la propia fila lo
+ * confirma.
+ */
 export function limpiarAsistenciasResueltas(cuenta: string | null, servidor: Record<string, Asistencia> | null, almacen: Almacen | null = almacenDelNavegador()): void {
   if (!cuenta || !servidor) return;
   const datos = leer(cuenta, almacen);
   let cambio = false;
   for (const [id, decidido] of Object.entries(datos.asistencia)) {
-    if ((servidor[id] ?? null) === decidido.valor) {
+    if ((servidor[id] ?? null) === decidido.valor && !decidido.tarjeta) {
       delete datos.asistencia[id];
       cambio = true;
     }
@@ -155,5 +194,81 @@ export function borrarDecisionesVisita(almacen: Almacen | null = almacenDelNaveg
   if (!almacen) return;
   try {
     almacen.removeItem(CLAVE);
-  } catch {}
+  } catch {
+    return;
+  }
+  notificarCambioDecisionesVisita();
+}
+
+/**
+ * «Tus planes» con lo decidido en esta visita, agregado a lo que trae el servidor (OL-224, bitácora 253): tocar Voy o
+ * Me interesa en cualquier fila de Inicio guarda ahí mismo la tarjeta (`guardarDecisionAsistencia`); aquí se agrega
+ * al final, en su lugar por fecha, solo si el servidor todavía no la trae — una página fresca que ya la incluya
+ * manda (su foto, su «N van» y su fecha son las buenas, la del recuerdo se descarta) — y solo si el evento decidido
+ * sigue vigente (`eventoPaso`, igual que el resto de la app). Quitar (`null`) nunca agrega nada. Puro: no toca el
+ * almacén ni lo escribe.
+ */
+export function tarjetasTusPlanes(cuenta: string | null, servidor: TarjetaConFecha[], ahora: Date = new Date(), almacen: Almacen | null = almacenDelNavegador()): TarjetaConFecha[] {
+  if (!cuenta) return servidor;
+  const datos = leer(cuenta, almacen);
+  const enServidor = new Set(servidor.map((t) => t.id));
+  const agregadas: TarjetaConFecha[] = [];
+  for (const [id, decidido] of Object.entries(datos.asistencia)) {
+    if (decidido.valor === null || enServidor.has(id) || !decidido.tarjeta) continue;
+    if (eventoPaso(decidido.tarjeta.inicio, decidido.tarjeta.fin, ahora, decidido.tarjeta.zona)) continue;
+    agregadas.push(decidido.tarjeta);
+  }
+  if (agregadas.length === 0) return servidor;
+  return [...servidor, ...agregadas].toSorted(compararEventos);
+}
+
+/**
+ * La propia fila de «Tus planes» recibió una lista fresca del servidor que ya trae un evento con tarjeta guardada
+ * (OL-224, bitácora 253): esa tarjeta ya no hace falta (la real, con su foto y su «N van» al día, la reemplaza) y se
+ * borra junto con su decisión — a diferencia de `limpiarAsistenciasResueltas` (que cualquier pantalla dispara y por
+ * eso nunca toca una decisión con tarjeta), esta la dispara solo `CarrilEventosCliente` cuando `tusPlanes` es cierto,
+ * así que "está en esta lista" es la confirmación correcta: nadie más la necesita para esto.
+ */
+export function limpiarTarjetasTusPlanesResueltas(cuenta: string | null, servidor: TarjetaConFecha[] | null, almacen: Almacen | null = almacenDelNavegador()): void {
+  if (!cuenta || !servidor) return;
+  const datos = leer(cuenta, almacen);
+  const enServidor = new Set(servidor.map((t) => t.id));
+  let cambio = false;
+  for (const [id, decidido] of Object.entries(datos.asistencia)) {
+    if (decidido.tarjeta && enServidor.has(id)) {
+      delete datos.asistencia[id];
+      cambio = true;
+    }
+  }
+  if (cambio) escribir(datos, almacen);
+}
+
+type Escucha = () => void;
+const escuchas = new Set<Escucha>();
+
+/**
+ * Para leer con `useSyncExternalStore` (Tus planes, OL-224, bitácora 253; mismo patrón que `lib/avisoSalida.ts`):
+ * vuelve a pintar esa fila cuando OTRA fila de Inicio (otro componente, mismo render de la página) guarda una
+ * decisión en esta visita, sin `useEffect` + `setState`.
+ */
+export function suscribirseDecisionesVisita(escucha: Escucha): () => void {
+  escuchas.add(escucha);
+  return () => {
+    escuchas.delete(escucha);
+  };
+}
+
+function notificarCambioDecisionesVisita(): void {
+  escuchas.forEach((escucha) => escucha());
+}
+
+/** El texto crudo del recuerdo, para el `getSnapshot` de `useSyncExternalStore`: cambia con cualquier escritura de
+ *  esta visita (a cualquier cuenta); en el servidor, o sin almacén, siempre "". */
+export function crudoDecisionesVisita(almacen: Almacen | null = almacenDelNavegador()): string {
+  if (!almacen) return "";
+  try {
+    return almacen.getItem(CLAVE) ?? "";
+  } catch {
+    return "";
+  }
 }

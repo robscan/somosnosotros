@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState, useTransition, type ReactNode } fro
 import { cambiarAsistencia } from "@/app/eventos/acciones";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { corregirAsistencias, guardarDecisionAsistencia, limpiarAsistenciasResueltas } from "@/lib/decisionesVisita";
+import type { TarjetaConFecha } from "@/lib/destacados";
 import { hrefEvento } from "@/lib/eventos";
 import { asistenciaTras, claveVoy, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
 import { anotarIntencion } from "@/lib/intencionAvisos";
@@ -17,7 +18,16 @@ import type { AvisosLista } from "./useSeguirEnLista";
 
 /** Lo que la persona decidió en cada evento cargado; null = sin sesión. */
 export type Decididas = Record<string, Exclude<Asistencia, null>> | null;
-type EventoLista = { id: string; slug?: string | null; titulo: string };
+/** El resto de `TarjetaConFecha` es opcional: solo lo trae una tarjeta de carril (Inicio); un renglón de Agenda o de
+ *  una ficha (`EventoAgenda`) no lo tiene, y por eso no guarda tarjeta para «Tus planes» (OL-224, ver `tarjetaDe`). */
+type EventoLista = { id: string; slug?: string | null; titulo: string } & Partial<Omit<TarjetaConFecha, "id" | "titulo">>;
+
+/** La tarjeta de este renglón, si trae lo mínimo para pintarse sola en «Tus planes» (OL-224, bitácora 253): solo las
+ *  tarjetas de carril (`Destacados`, con `tarjetaEvento`) lo traen completo; un renglón de Agenda/ficha, no. */
+function tarjetaDe(e: EventoLista): TarjetaConFecha | null {
+  if (e.href === undefined || e.foto === undefined || e.detalle === undefined || e.van === undefined || e.inicio === undefined || e.fin === undefined || e.zona === undefined) return null;
+  return { id: e.id, href: e.href, foto: e.foto, titulo: e.titulo, detalle: e.detalle, van: e.van, reciente: e.reciente, inicio: e.inicio, fin: e.fin, zona: e.zona };
+}
 
 /**
  * El botón "Voy"/"Vas" del renglón (OL-104, bitácora 139; antes, deslizar: OL-056, bitácora 085): lo que la persona
@@ -32,6 +42,11 @@ type EventoLista = { id: string; slug?: string | null; titulo: string };
  * `decididas` puede venir de una página vieja (Next la reutiliza hasta 60 s, y siempre con Atrás/Adelante) que no
  * conoce lo decidido en esta visita (OL-222, bitácora 251, `lib/decisionesVisita`): se corrige con lo guardado en el
  * teléfono para esta cuenta antes de usarse, y lo que el servidor ya refleje se limpia solo.
+ *
+ * Al guardar bien, además de la corrección, se guarda junto con la decisión la tarjeta del renglón, si la trae
+ * (`tarjetaDe`; OL-224, bitácora 253): con eso, «Tus planes» puede agregarla al instante aunque el toque haya sido en
+ * otra fila de Inicio (Destacados, Esta semana, Populares, Nuevos, Cerca de ti…) — este hook no sabe nada de "Tus
+ * planes", solo dejar la miga; quien la recoge es `tarjetasTusPlanes`, en `CarrilEventosCliente`.
  *
  * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
  * la lista tiene los suyos y pinta su aviso en `extras`.
@@ -98,7 +113,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
         avisar({ texto: `No se pudo guardar «${recortar(e.titulo)}»`, boton: siSigueSiendoElUltimo(toques.current, e.id, vez, reintentar), etiqueta: "Reintentar", fallo: true, de });
         return;
       }
-      if (cuenta) guardarDecisionAsistencia(cuenta, e.id, valor);
+      if (cuenta) guardarDecisionAsistencia(cuenta, e.id, valor, undefined, valor === null ? null : tarjetaDe(e));
       alGuardar?.();
     });
     return vez;
