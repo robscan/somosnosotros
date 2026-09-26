@@ -9,7 +9,7 @@ import type { LugarResumen } from "@/lib/lugares";
 import { cargarCiudades } from "@/lib/ciudades";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDelSitio } from "@/lib/zona";
-import { ciudadDesdeSlug } from "../direccionContexto";
+import { ciudadDesdeSlug } from "@/lib/direccionContexto";
 import FormularioEvento from "../FormularioEvento";
 import { crearEvento, cupoDeCartel } from "../acciones";
 

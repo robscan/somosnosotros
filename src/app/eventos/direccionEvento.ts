@@ -1,4 +1,4 @@
-import { normalizarNombre, type LugarResumen } from "@/lib/lugares";
+import { puntoValido } from "@/lib/buscarLugares";
 import type { Punto } from "@/lib/geo";
 import type { OtroSitio } from "./HojaDondeEs";
 
@@ -31,23 +31,4 @@ export function cambiarReserva(otro: OtroSitio): OtroSitio {
   if (otro.reservado) return { ...otro, reservado: false, pinPendiente: false };
   const privadoPunto = otro.privadoPunto ?? otro.sitioPunto;
   return { ...revisarNombreLegacy(otro), reservado: true, direccionPrivada: otro.direccionPrivada || otro.direccion || "", privadoPunto, direccion: "", sitioPunto: null, pinPendiente: !!otro.pinPendiente || !privadoPunto };
-}
-
-export function lugaresPorTexto(lugares: LugarResumen[], texto: string): LugarResumen[] {
-  const partes = normalizarNombre(texto).split(/\s+/).filter(Boolean);
-  return lugares.filter(l => {
-    const contenido = normalizarNombre(`${l.nombre} ${l.direccion ?? ""}`);
-    return partes.every(p => contenido.includes(p));
-  });
-}
-
-export function puntoValido(p: Punto): boolean {
-  return Number.isFinite(p.lat) && Number.isFinite(p.lng) && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180;
-}
-
-/** Los helpers compartidos devuelven [] ante HTTP no-ok; aqui el fallo debe distinguirse de cero opciones. */
-export async function consultarMapa(url: string, init?: RequestInit): Promise<Response> {
-  const respuesta = await fetch(url, init);
-  if (!respuesta.ok) throw new Error("No se pudo consultar el mapa");
-  return respuesta;
 }
