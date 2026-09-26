@@ -147,7 +147,7 @@ describe("conProximo", () => {
   });
 });
 
-describe("diasConEvento y lugaresConEventoElDia (docs/rediseno/45, OL-174: chip de fecha del mapa)", () => {
+describe("diasConEvento y lugaresConEventoElDia (docs/rediseno/45, OL-174: chip de fecha; OL-210: misma regla para el Mapa y la Lista)", () => {
   const eventos = [
     { inicio: "2026-09-25T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" }, // jue 24, 19:00 SLP
     { inicio: "2026-09-27T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" }, // sáb 26, 19:00 SLP: segundo evento del mismo lugar
@@ -165,6 +165,16 @@ describe("diasConEvento y lugaresConEventoElDia (docs/rediseno/45, OL-174: chip 
     expect(lugaresConEventoElDia(conDias, "2026-09-24").map((l) => l.id)).toEqual(["a", "b"]);
     expect(lugaresConEventoElDia(conDias, "2026-09-26").map((l) => l.id)).toEqual(["a"]);
     expect(lugaresConEventoElDia(conDias, "2026-09-21")).toEqual([]); // ningún lugar tiene evento ese día
+  });
+  it("OL-210: la misma función (y el mismo resultado) es lo que filtra la Lista, no una regla propia de esa vista", () => {
+    const conDias = diasConEvento([{ id: "a" }, { id: "b" }, { id: "c" }], eventos);
+    // `VistaLugares` llama a `lugaresConEventoElDia` una vez para los pines del Mapa (sobre los lugares ya
+    // filtrados por búsqueda) y otra para `ListaLugares` (sobre los lugares ya filtrados por tipo, antes de la
+    // búsqueda que la propia Lista aplica): dos llamadas al mismo lugar de la función, no dos implementaciones.
+    const paraElMapa = lugaresConEventoElDia(conDias, "2026-09-24");
+    const paraLaLista = lugaresConEventoElDia(conDias, "2026-09-24");
+    expect(paraLaLista).toEqual(paraElMapa);
+    expect(paraLaLista.map((l) => l.id)).toEqual(["a", "b"]);
   });
 });
 

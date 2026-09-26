@@ -25,6 +25,9 @@ type Props = {
   conSesion: boolean;
   /** Tipo ya aplicado por VistaLugares (los lugares llegan filtrados); solo para el texto del vacío. */
   tipo?: string | null;
+  /** El chip de fecha ya aplicado por VistaLugares (`lugaresConEventoElDia`, OL-210): `lugares` llega filtrado;
+   *  esta prop es solo para distinguir, en el texto del vacío, "sin fecha" de "no había lugares que cargar". */
+  fecha?: string;
   /** La búsqueda por nombre vive en la cabecera de VistaLugares: la misma sirve al mapa. */
   busqueda: string;
   /** El aviso de ubicación, arriba de la lista. */
@@ -33,7 +36,7 @@ type Props = {
   seguidos?: string[] | null;
   /** Para la pregunta de avisos tras el primer Seguir; null = sin sesión. */
   avisos?: AvisosLista | null;
-  /** La tira de destacados (docs/rediseno/20); se va con un tipo o una búsqueda. */
+  /** La tira de destacados (docs/rediseno/20); se va con un tipo, una búsqueda o una fecha elegida (OL-210). */
   destacados?: Destacado[];
   eventosSemana?: Tarjeta[];
 };
@@ -42,10 +45,10 @@ type Props = {
  * Lista de lugares: renglones como los de la agenda (foto, nombre, calle, próximo evento); alfabético por defecto,
  * con encabezados de letra y una tira de acceso directo (corrección del founder, 2026-09-19: no filtra, lleva al
  * grupo), o por distancia con la ubicación. Con Cercanos o búsqueda, los encabezados y la tira se van, y se ordena
- * por cercanía o se busca en todo. La búsqueda, Cercanos y los tipos van en la cabecera de VistaLugares, que los
- * comparte con el mapa.
+ * por cercanía o se busca en todo. La búsqueda, Cercanos, los tipos y el chip de fecha van en la cabecera de
+ * VistaLugares, que los comparte con el mapa; `lugares` ya llega filtrado por fecha desde ahí (OL-210).
  */
-export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ciudad, conSesion, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
+export default function ListaLugares({ lugares, tipo = null, fecha = "", busqueda, punto, ciudad, conSesion, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
   const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
   // Sin Cercanos ni búsqueda, la lista se agrupa por letra y la tira lleva a cada grupo; con cualquiera de
   // las dos, no tiene sentido (el orden ya no es alfabético) y se van las dos cosas.
@@ -75,7 +78,10 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
   const hayMasLugares = mostrados < filas.length;
   const centinelaRef = useCentinela(hayMasLugares, () => setMostrados((m) => siguienteTanda(filas.length, m).mostrados));
 
-  if (lugares.length === 0 && !tipo) {
+  // "Aún no hay lugares" es la ciudad genuinamente vacía: con una fecha elegida, `lugares` puede llegar en 0
+  // porque ningún lugar tiene evento ese día (OL-210), no porque la ciudad no tenga ninguno — ese caso usa el
+  // texto del `<p className={comun.conteo}>` de abajo, no esta tarjeta.
+  if (lugares.length === 0 && !tipo && !fecha) {
     return (
       <section className={comun.vacio}>
         <h2>Lugares</h2>
@@ -90,13 +96,19 @@ export default function ListaLugares({ lugares, tipo = null, busqueda, punto, ci
     <section className={styles.lista} aria-label="Lugares">
       {alfabetico && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={(letra) => { antesDeSaltar(); irAlGrupo(letra); }} />}
       {aviso}
-      {!tipo && !busqueda.trim() && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} grande boton={(t) => seguir.boton(t.id, t.titulo)} />}
-      {!tipo && !busqueda.trim() && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto boton={(t) => seguir.boton(t.id, t.titulo)} />}
+      {/* Como con un tipo o una búsqueda, las tiras se van con una fecha elegida (OL-210): son curaduría de la
+          ciudad entera, no del día elegido, y seguir mostrándolas repetiría el bug de esta pieza a otra escala. */}
+      {!tipo && !busqueda.trim() && !fecha && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} grande boton={(t) => seguir.boton(t.id, t.titulo)} />}
+      {!tipo && !busqueda.trim() && !fecha && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto boton={(t) => seguir.boton(t.id, t.titulo)} />}
       <p className={comun.conteo}>
         {lista.length === 0
           ? busqueda.trim()
             ? "Ningún lugar se llama así. Si existe, regístralo."
-            : `Todavía no hay lugares de tipo ${etiquetaTipo(tipo ?? "").toLowerCase()}.`
+            : fecha
+              ? // Mismo texto que el vacío del Mapa con esta fecha (docs/rediseno/45, OL-174; OL-210: ahora también
+                // la Lista): con o sin tipo elegido, ninguno tiene evento ese día.
+                "Ningún lugar tiene eventos ese día."
+              : `Todavía no hay lugares de tipo ${etiquetaTipo(tipo ?? "").toLowerCase()}.`
           : `${lista.length === 1 ? "1 lugar" : `${lista.length} lugares`}${punto ? " · ordenados por cercanía" : ""}`}
       </p>
       <ul>
