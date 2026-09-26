@@ -154,3 +154,150 @@ Al terminar: se detuvieron `next start` y el respaldo, se borró `.env.local` (n
   arreglo) + suite completa en verde (sección 5).
 - **Capturas:** `docs/rediseno/capturas-241/241-{1..6}-*.png`, descritas en la sección 6.
 - **PR:** [#247](https://github.com/robscan/somosnosotros/pull/247), sin migraciones ni variables de entorno nuevas. Sin unir; a la espera del founder.
+
+## Segunda vuelta (2026-09-25, noche) — reproducción DENTRO de la app de iPhone
+
+PR #247 ya se unió a `main` (limpieza del `router.refresh()` de `Seguir.tsx`). El founder sigue viendo la
+recarga en TestFlight, con «Voy» y con «Seguir», la primera vez por tipo de objeto. Descartado por el gestor:
+Skew Protection de Vercel (ya activo, 12 h, `?dpl=` en las páginas) — no es un desfase de versión entre
+cliente y servidor. Encargo: reproducirlo de verdad dentro de la app de iPhone (Capacitor/WKWebView), en un
+simulador propio, creado y borrado al final; no tocar `apps/ios` salvo que la causa esté ahí.
+
+### 8. Cómo se armó la reproducción dentro de la app
+
+- **Simulador propio** (nunca uno compartido con otro chat): `xcrun simctl create "OL212-repro" "iPhone 17
+  Pro" com.apple.CoreSimulator.SimRuntime.iOS-26-3`, arrancado con `simctl boot`. Borrado al terminar con
+  `simctl shutdown && simctl delete` (dos veces: una simulación se rehizo a medio camino, sección 10).
+- **La web:** el mismo respaldo local y `next build && next start -p 3100` de la sección 1 (`.env.local` en
+  este árbol, nunca comiteado — confirmado con `git status`/`git diff` al terminar), más dos endpoints nuevos
+  en el respaldo (`/auth/v1/otp`, `/auth/v1/verify`) para poder entrar de verdad con el formulario de la app
+  (código de 8 dígitos fijo) en vez de inyectar una cookie a mano — dentro de un WKWebView real no hay forma
+  de poner una cookie sin pasar por el propio flujo de la app.
+- **La app nativa, apuntando a esa web local (TEMPORAL, nunca comiteado):**
+  - `apps/ios/capacitor.config.ts`: `server.url` de `https://somosnosotros.org` a `http://127.0.0.1:3100`, con
+    `cleartext: true` y `127.0.0.1` añadido a `allowNavigation`.
+  - `apps/ios/ios/App/App/Info.plist`: `NSAppTransportSecurity` → `NSAllowsArbitraryLoads` (si no, iOS bloquea
+    la carga por http a un host que no sea `somosnosotros.org`).
+  - `npx cap sync ios` para que el proyecto nativo recogiera el cambio; `xcodebuild` (herramienta `build` del
+    simulador) contra el `App.xcodeproj` real, sin Pods (usa Swift Package Manager, `CapApp-SPM`).
+  - Una insignia visible **temporal**, `src/components/DebugCargasOL212.tsx`, montada una sola vez en
+    `src/app/layout.tsx`: sube un contador en `sessionStorage` al montarse. Un `router.refresh()` o una
+    navegación blanda de Next NO remonta el layout raíz (React reconcilia el árbol), así que el contador solo
+    sube si el **documento** se recarga de verdad — la misma idea que `window.__marca` de la sección 1, pero
+    visible en una captura de pantalla del simulador, sin necesitar Safari Web Inspector.
+  - Todo esto se revirtió por completo antes de cerrar (`git checkout -- apps/ios/capacitor.config.ts
+    apps/ios/ios/App/App/Info.plist src/app/layout.tsx`, se borró `DebugCargasOL212.tsx` y `.env.local`);
+    `git status`/`git diff` limpios, confirmado en la sección 10.
+- **Sesión real dentro de la app:** `xcrun simctl install`/`launch`, y con `mcp__computer-use` (acceso
+  concedido a Simulator.app, control en segundo plano sin robarle la pantalla al founder) se tocó "Entrar", se
+  escribió `prueba@example.com` y el código de 8 dígitos por el teclado en pantalla (el mismo que usaría un
+  dedo), tal como pide el encargo — nunca inyectando la sesión.
+- **Detectar la recarga:** dos maneras a la vez, más fuertes que solo mirar la insignia:
+  1. La insignia `OL212 cargas:N` en cada captura (`xcrun simctl io <id> screenshot`).
+  2. `xcrun simctl spawn <id> log stream --predicate 'process == "App"'` en segundo plano, filtrado a las
+     líneas de WebKit que distinguen una navegación de documento de verdad (`didCommitLoadForFrame`,
+     `decidePolicyForNavigationAction`, `loadRequestWithNavigationShared`) de una del propio JS sin recargar
+     nada (`didSameDocumentNavigationForFrameViaJS`, lo que hace el router de Next al cambiar de pantalla o al
+     releer datos con `revalidatePath`). Esta es la prueba más dura: no depende de que la insignia se haya
+     pintado a tiempo, lee directo el motor de WebKit.
+
+### 9. Lo que se tocó y lo que se vio
+
+Con sesión de verdad dentro de la app (`prueba@example.com`, código `12345678` fijo del respaldo), navegando
+por la propia UI (Lugares → «Lugar de prueba» → su evento; nunca por deep link, que no aplica aquí) — capturas
+390×844 reales del simulador en `docs/rediseno/capturas-241/241-{7,8}-*.png` (inicio sin sesión y, tras un
+relanzamiento deliberado de la app para repetir la prueba con la cuenta en limpio, inicio con la sesión
+repuesta sola: Capacitor conserva la cookie entre relanzamientos).
+
+**Seguir (Lugar de prueba), primera vez, las cuatro salidas de su hoja de avisos, una tras otra:**
+1. Tocar «Seguir» → guarda, «1 persona lo sigue», se abre «¿Te avisamos de sus eventos?».
+2. «En el teléfono» → dentro del WKWebView de la app (no es un Safari instalado a mano) `disponibilidadPush`
+   da "instalar-primero": sale la hoja «Instala Somos Nosotros» con los pasos, **sin pedir permiso de
+   verdad** (el WKWebView de una app nativa no ofrece `Notification`/permiso del sistema como sí lo hace un
+   Safari o una PWA instalada — una de las hipótesis del encargo, comprobada: no hay tal permiso que pedir
+   aquí, así que no puede ser la causa de una recarga en este camino).
+3. Cerrar esa hoja con la X → queda «Falta un paso», pregunta «Mientras, ¿por correo?».
+4. «No» → sigue «Falta un paso» (no se autocierra: `telefono === "pendiente"`, por diseño).
+5. Cerrar la hoja final con la X → la barra pasa sola a «Sigues · Sin avisos; se cambia en Ajustes» (el
+   arreglo de la primera vuelta funcionando dentro de la app de verdad, sin pedirle nada al servidor).
+
+**Voy (Evento de prueba), primera vez:** tocar «Voy» → guarda, «Va 1 persona», «✓ Voy · Ya estás en la lista».
+No volvió a salir la hoja de avisos (ya se había contestado en la cuenta durante el paso de Seguir, en la
+misma pestaña — el mismo comportamiento «una sola pregunta por sesión» ya visto y correcto en la sección 1;
+no hizo falta forzar una cuenta nueva para confirmarlo).
+
+**En ninguno de los dos guardados, ni en ninguna de las cuatro salidas de la hoja de avisos, la insignia
+`cargas` subió de 1**, y el registro de WebKit (sección siguiente) confirma que en ningún momento de ese tramo
+hubo `didCommitLoadForFrame` ni `decidePolicyForNavigationAction`: **no hubo una recarga de documento dentro
+de la app, en ninguno de los caminos pedidos por el encargo.**
+
+### 10. El registro de WebKit, la prueba más dura
+
+`docs/rediseno/capturas-241/241-9-log-webkit-navegaciones.txt` (extracto anotado; el registro completo, 1415
+líneas, quedó en el scratchpad de la sesión). De 22:17:05 a 22:18:30 — el guardado de Seguir, sus cuatro
+salidas de hoja, y el guardado de Voy — cada toque aparece como `didSameDocumentNavigationForFrameViaJS`
+(navegación de "mismo documento", hecha por el propio JS de Next: cambiar de pantalla o releer datos tras
+`revalidatePath`, sin tocar el documento). **`didCommitLoadForFrame` y `decidePolicyForNavigationAction`
+—las líneas que sí significan "WebKit cargó un documento nuevo"— no aparecen ni una vez en ese tramo.**
+Aparecen una sola vez en todo el registro, a las 22:18:53, con un PID de proceso web nuevo: exactamente
+cuando se relanzó la app a propósito (`simctl terminate` + `simctl launch`, sección 9) para repetir la prueba
+con la cuenta en limpio — no un toque de Voy o Seguir. Esa es la única recarga de documento de toda la sesión,
+y fue deliberada.
+
+Un tropiezo sin consecuencia: a media reproducción el Mac se bloqueó solo (founder ausente) y
+`mcp__computer-use` dejó de poder tocar la pantalla (`app_screenshot` seguía funcionando: es la política de
+Accessibility de macOS bajo bloqueo, no algo de esta pieza). Se esperó, se recreó un segundo simulador
+(`OL212-repro2`) para repetir la prueba de Voy con una cuenta fresca desde cero, pero el founder volvió a usar
+su Mac durante esa segunda vuelta (los toques en segundo plano se rechazaron solos, "user interrupt": la
+propia herramienta corta si detecta uso real del Mac) — se dejó ahí, sin insistir, porque la primera vuelta ya
+había cubierto Voy y las cuatro salidas de la hoja de Seguir con evidencia completa (capturas + registro de
+WebKit). No hizo falta repetir Voy con cuenta fresca: ya se había confirmado en la sección 1 (Chrome real) y
+en el 9 (dentro de la app) que la pregunta de avisos es "una por sesión", no por tipo de objeto — así que
+probarla de nuevo en Voy no iba a decir algo distinto de lo que ya dijo en Seguir con el mismo mecanismo.
+
+### 11. Sospechosos del encargo, comprobados uno por uno
+
+- **`MainViewController.swift` (`NWPathMonitor` recarga `config.appStartServerURL` al recuperar la red):**
+  sigue sin poder confirmarse ni descartarse del todo (no se provocó una caída de red real durante la prueba),
+  pero el registro de WebKit ya dice que **no fue lo que pasó en esta reproducción**: si hubiera disparado,
+  habría un `didCommitLoadForFrame` en el tramo de 22:17 a 22:18, y no lo hay. Sigue como pista sin confirmar,
+  ahora con menos peso.
+- **`GestoAtrasPlugin`/`EntrarSistemaPlugin` (`shouldOverrideLoad`):** leídos de nuevo completos (sección 4 de
+  la primera vuelta). Solo interceptan navegaciones de tipo `.backForward` (el gesto de deslizar o
+  `goBack()`/`goForward()`) y las idas a `/auth/apple`/`/auth/google`. Ninguna de las dos categorías ocurre al
+  tocar Voy o Seguir (son llamadas `fetch` de una acción de servidor, no navegaciones), y el registro de
+  WebKit no muestra ningún `.backForward` en ese tramo. Descartados para este bug.
+- **La hoja de avisos pidiendo `Notification` inexistente en WKWebView:** comprobado en el paso 2 de la
+  sección 9 — "En el teléfono" no truena ni cuelga nada: `disponibilidadPush` reconoce que hace falta instalar
+  primero y muestra la hoja de instalación, con la misma UI que un iPhone en Safari sin instalar. No hay
+  ningún permiso de `Notification` que la app intente pedir y que WKWebView no tenga: el código ya lo prevé.
+  Descartado.
+- **`avisoInstalar.ts` (`beforeinstallprompt`):** ese evento es de Chrome/Android; WKWebView no lo dispara
+  nunca, así que este guion no hace nada dentro de la app (ni bien ni mal). Descartado.
+
+### 12. Informe final de la segunda vuelta
+
+- **Se reprodujo de verdad dentro de la app de iPhone** (simulador propio, `next build`/`next start` local +
+  respaldo local, sesión real por el formulario de Entrar, nunca inyectada): el guardado de «Seguir» con sus
+  cuatro salidas de hoja de avisos, y el guardado de «Voy» — sección 9.
+- **No hubo recarga del documento en ninguno de esos caminos**, ni por la insignia (`cargas` se quedó en 1)
+  ni, más importante, por el registro de WebKit (`didCommitLoadForFrame`/`decidePolicyForNavigationAction`
+  ausentes en todo ese tramo; solo aparecen, con un proceso nuevo, en el relanzamiento deliberado de la app) —
+  secciones 9 y 10.
+- **Sospechosos del encargo, uno por uno:** `GestoAtrasPlugin`/`EntrarSistemaPlugin` y el permiso de avisos en
+  WKWebView, descartados con evidencia; `MainViewController.swift`/`NWPathMonitor` sigue sin confirmarse ni
+  descartarse del todo (no se cayó la red durante la prueba) — sección 11.
+- **No se tocó `apps/ios`:** todos los cambios para esta reproducción (URL del servidor, ATS, la insignia)
+  fueron temporales y locales, revertidos antes de cerrar — `git status`/`git diff` limpios, sección 8.
+- **Se dice con honestidad, tal como pidió el encargo:** con la evidencia de esta pieza, la recarga que ve el
+  founder en TestFlight no se pudo reproducir — ni en Chrome real (primera vuelta) ni dentro de la app en el
+  simulador (esta vuelta) — con los caminos previstos por el encargo. Queda una única pista sin cerrar
+  (`NWPathMonitor`), que necesitaría probarse con una caída de red real en el propio TestFlight del founder
+  para confirmarse o descartarse del todo.
+- **Sin cambios de código en esta vuelta** (nada que arreglar: no se encontró una causa nueva que arreglar,
+  distinta de la ya arreglada en el PR #247). Suite completa (`npm run lint && npm run typecheck && npm test
+  && npm run build`) corrida de nuevo tras revertir los archivos temporales, en verde.
+- **Capturas:** `docs/rediseno/capturas-241/241-{7,8}-*.png` (inicio de la app, sin sesión y con sesión tras
+  relanzar) y `241-9-log-webkit-navegaciones.txt` (el registro de WebKit anotado, sección 10).
+- **PR:** número que sigue en el resumen de cierre / `gh pr create` (se añade aquí y en OPEN_LOOPS al
+  terminar). Contra `main` (que ya trae el PR #247 unido), sin unir, a la espera del founder.
