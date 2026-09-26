@@ -228,48 +228,51 @@
   right: -9px;
 }
 
-/* Una sola tarjeta: a lo ancho, con la foto a la izquierda; nada queda solo en un carril. */
+/*
+ * Una sola tarjeta, de cualquier fila (Tus planes, Esta semana, Populares, Nuevos, Cerca de ti, carriles de Agenda
+ * y de Lugares…): apilada a lo ancho, con la imagen SIEMPRE arriba y el título, el detalle y los sellos abajo —
+ * nunca la foto angosta al lado del texto. El founder vio esa disposición horizontal en su iPhone, en «Tus planes»
+ * con un solo plan: los sellos («Recién agregado», partido en dos líneas, y «N van») salían diminutos y el check
+ * tapaba «Recién agregado» (2026-09-26, OL-226): «prefiero que siempre se muestre la imagen arriba y el texto
+ * abajo para tener espacio suficiente para chips» (ver Decidido, cambia la nota de abajo). Mismo tamaño de foto que
+ * ya usaba `.grande` (264px, proporción 5:3): una tarjeta sola no compite por ancho con ninguna otra, así que usa
+ * siempre esa foto grande, sea cual sea el tamaño normal de la fila — por eso ya no hace falta un `.uno.grande`
+ * aparte. El botón tampoco necesita un ancla propia: la esquina superior derecha de la imagen coincide con la de
+ * siempre (`.carril > li > button`), y ahí queda sin tapar ningún sello.
+ */
 .uno {
   grid-auto-columns: 100%;
 }
 .uno .tarjeta {
-  grid-template-columns: 124px 1fr;
-  grid-template-rows: auto auto;
-  grid-template-areas: "foto titulo" "foto detalle";
-  align-items: start;
-  column-gap: var(--espacio-3);
-  text-align: left;
-}
-.uno .foto {
-  height: 93px;
-}
-.uno small {
-  white-space: normal;
-}
-.uno.redondas .tarjeta {
-  grid-template-columns: 93px 1fr;
-}
-/* La foto va al lado del texto, no arriba: el botón se ancla a la esquina de la FOTO (124 px de ancho), no a una
-   posición fija — si no, un título de dos líneas lo deja a la altura del texto en vez de la imagen. */
-.uno > li > button {
-  right: calc(100% - 124px + var(--espacio-2));
-}
-.uno.redondas > li > button {
-  right: calc(100% - 93px + var(--espacio-2));
-}
-/* Uno solo y grande: conserva el rectángulo apilado (la foto no vuelve al lado del texto). */
-.uno.grande .tarjeta {
   grid-template-columns: none;
   grid-template-rows: 264px auto auto;
   grid-template-areas: "foto" "titulo" "detalle";
 }
-.uno.grande .foto {
+.uno .foto {
   height: auto;
   max-height: 264px;
   aspect-ratio: 5 / 3;
 }
-.uno.grande > li > button {
-  right: var(--espacio-2);
+.uno small {
+  white-space: normal;
+}
+/*
+ * Las redondas (artistas) quedan fuera de esta regla: una sola artista se ve igual que cualquier otra redonda —
+ * círculo de 104px con el nombre debajo, sin irse a lo ancho ni deformarse (founder, 2026-09-26, OL-226).
+ */
+.uno.redondas {
+  grid-auto-columns: 104px;
+}
+.uno.redondas .tarjeta {
+  grid-template-rows: 104px auto auto;
+}
+.uno.redondas .foto {
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
+}
+.uno.redondas small {
+  white-space: nowrap;
 }
 
 /* En el carril semanal, fecha y hora completas incluso en las tarjetas redondas. */

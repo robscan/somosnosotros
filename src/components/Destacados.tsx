@@ -11,7 +11,11 @@ import styles from "./Destacados.module.css";
 
 /**
  * La tira de destacados arriba de un listado (docs/rediseno/20). Se desliza con el dedo, sin avance automático, y la
- * siguiente tarjeta asoma (decisiones 1 y 2). Sin tarjetas no existe (decisión 4); con una sola, ocupa el ancho.
+ * siguiente tarjeta asoma (decisiones 1 y 2). Sin tarjetas no existe (decisión 4); con una sola, ocupa el ancho,
+ * apilada con la imagen siempre arriba y el texto abajo (nunca la foto angosta al lado del texto), igual en
+ * cualquier tamaño de fila — la redonda de artista es la excepción, se queda como cualquier otra redonda (founder,
+ * 2026-09-26, con foto de su iPhone en «Tus planes», OL-226: «prefiero que siempre se muestre la imagen arriba y
+ * el texto abajo para tener espacio suficiente para chips»; `Destacados.module.css` trae el detalle).
  * Solo «Destacados» (lo que elige la administración) va al doble y rectangular (`grande`, founder, 2026-09-18);
  * «Con eventos esta semana» conserva su tamaño de siempre (corrección del founder, 2026-09-19), y en Artistas sigue
  * en redondo, como su avatar. Al volver de una ficha queda donde estaba (decisión 12).
