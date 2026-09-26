@@ -95,6 +95,14 @@ export function textoLetrero(nombre: string): { titulo: string; subtitulo: strin
 export function etiquetaDisciplina(d: string): string {
   return DISCIPLINAS.find((x) => x.valor === d)?.etiqueta ?? "Por completar";
 }
+
+/**
+ * OL-206, docs/rediseno/15 (decisión 11): la pregunta de la subcategoría lleva el nombre propio de la
+ * disciplina elegida — "¿Qué tipo de artes visuales?", "¿Qué tipo de música?" — en vez de una genérica.
+ */
+export function preguntaSubcategoria(d: Disciplina): string {
+  return `¿Qué tipo de ${etiquetaDisciplina(d).toLowerCase()}?`;
+}
 export function etiquetaTipoArtista(t: string): string {
   return TIPOS_ARTISTA.find((x) => x.valor === t)?.etiqueta ?? "Solista";
 }
@@ -234,6 +242,38 @@ export function subcategoriaParecida<T extends Subcategoria>(existentes: T[], es
   }
   if (mejor && normalizarNombre(mejor.detalle) === norm && mejor.detalle === escrito.trim()) return null;
   return mejor;
+}
+
+/**
+ * "Qué hace" en dos pasos (OL-206, docs/rediseno/15 decisión 11): paso 1 = elegir la disciplina entre todas;
+ * paso 2 = con una ya elegida, se ocultan las demás, queda su ✕ (como ui/ChipFecha) y, bajo una línea, se
+ * pregunta la subcategoría. Estas funciones son la lógica pura del cambio de paso, sin nada de React, para
+ * poder probarla sin montar el formulario.
+ */
+export type PasoQueHace = 1 | 2;
+
+/** El renglón está en el paso 2 en cuanto hay una disciplina elegida a mano (por tocar un chip o, al editar,
+ *  la que ya traía la ficha); sin elegir a mano, aunque el nombre deduzca una, sigue en el paso 1. */
+export function pasoQueHace(disciplinaElegida: Disciplina | ""): PasoQueHace {
+  return disciplinaElegida ? 2 : 1;
+}
+
+/** Al tocar un chip de disciplina en el paso 1: la elige y suelta cualquier subcategoría de una anterior. */
+export function alElegirDisciplina(d: Disciplina): { disciplinaElegida: Disciplina; detalle: string; otraAbierta: boolean } {
+  return { disciplinaElegida: d, detalle: "", otraAbierta: false };
+}
+
+/** La ✕ del chip elegido (paso 2): deshace los dos pasos completos — vuelven todas las disciplinas y se
+ *  borra la subcategoría, exactamente como si no se hubiera tocado nada. */
+export function alQuitarDisciplina(): { disciplinaElegida: ""; detalle: string; otraAbierta: boolean } {
+  return { disciplinaElegida: "", detalle: "", otraAbierta: false };
+}
+
+/** Elegir una subcategoría ya usada (un chip, o "Usar esa" sobre una parecida): fija el detalle y suelta
+ *  "Otra…" si estaba abierta. Quien la llama cierra además el renglón (mismo resultado en toda disciplina
+ *  que tenga subcategorías: el valor del renglón queda, por ejemplo, "Artes visuales · Grabado"). */
+export function alElegirSubcategoria(detalle: string): { detalle: string; otraAbierta: false } {
+  return { detalle, otraAbierta: false };
 }
 
 /** El registrado cuyo nombre es igual al escrito (sin acentos ni mayúsculas), si lo hay. */
