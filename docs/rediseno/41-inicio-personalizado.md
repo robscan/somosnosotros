@@ -141,16 +141,18 @@ Literal el pedido del founder ("con mayor jerarquía antes de artistas y lugares
 | # | Carril | Tamaño | Aparece si | "Ver todos" abre |
 |---|---|---|---|---|
 | 1 | **Tus planes** (nuevo) | mediana | Con sesión y con algo próximo en Voy/Me interesa | `/perfil` |
-| 2 | **De tus favoritos** / Destacados esta semana (respaldo) | grande (cartel) | Siempre (con seguidos usa el primero; sin seguidos, el segundo) | Agenda, "Siguiendo" / tira de Destacados |
-| 3 | **Eventos cercanos esta semana** | mediana | Solo con ubicación fresca en el teléfono (Inicio nunca la pide) | Agenda, "Cercanos" |
+| 2 | **Seleccionados para ti** / Destacados (respaldo) | grande (cartel) | Siempre (con seguidos usa el primero; sin seguidos, el segundo) | Agenda, "Siguiendo" / tira de Destacados |
+| 3 | **Cerca de ti** | mediana | Solo con ubicación fresca en el teléfono (Inicio nunca la pide) | Agenda, "Cercanos" |
 | 4 | **Esta semana** (nuevo) | mediana | Siempre que haya al menos un evento en 7 días no mostrado ya arriba | Agenda, "Todos" |
-| 5 | **Eventos populares** | mediana | Si hay alguno con ≥3 "Voy" no mostrado ya arriba | Agenda, orden por popularidad |
-| 6 | **Eventos nuevos esta semana** | mediana | Si hay alguno publicado en 7 días no mostrado ya arriba | Agenda |
-| 7 | **Lugares con eventos esta semana** | chica (círculo) | Si hay alguno | Lugares, chip "Esta semana" |
+| 5 | **Populares** | mediana | Si hay alguno con ≥3 "Voy" no mostrado ya arriba (indistinto entre semanas) | Agenda, orden por popularidad |
+| 6 | **Nuevos eventos** | mediana | Si hay ≥3 publicados hace poco con fecha DESPUÉS de "Esta semana" | Agenda |
+| 7 | **Lugares con eventos** | chica (círculo) | Si hay alguno | Lugares, chip "Esta semana" |
 | 8 | **Artistas destacados** | grande (cartel) | Si hay alguno | Artistas |
-| 9 | **Artistas con eventos esta semana** | chica (círculo) | Si hay alguno | Artistas, chip "Esta semana" |
+| 9 | **Artistas con eventos** | chica (círculo) | Si hay alguno | Artistas, chip "Esta semana" |
 
-**Sin sesión:** igual, sin la fila 1 y con la fila 2 siempre en su forma de respaldo ("Destacados esta semana"). El prototipo lo dibuja como **A1** (con ubicación) y **A2** (sin ubicación: la fila 3 no existe, y nada la reemplaza — sus eventos simplemente aparecen en la fila 4, "Esta semana", si caen dentro de los 7 días).
+**Sin sesión:** igual, sin la fila 1 y con la fila 2 siempre en su forma de respaldo ("Destacados"). El prototipo lo dibuja como **A1** (con ubicación) y **A2** (sin ubicación: la fila 3 no existe, y nada la reemplaza — sus eventos simplemente aparecen en la fila 4, "Esta semana", si caen dentro de los 7 días).
+
+**Nombres y criterio de las filas 2, 3, 5, 6, 7 y 9 corregidos en la segunda vuelta del prototipo (misma pieza, ver más abajo): ninguno lleva ya "esta semana" salvo la fila 4, y la fila 6 cambió de criterio, no solo de nombre.**
 
 **Ningún evento se repite entre filas de eventos** (filas 1 a 6): se extiende el mismo `Set` compartido que hoy usan `calcularCarrilesAgenda`/`sinRepetidos` (`src/lib/inicio.ts`) para Estelar → Populares → Nuevos. Con esta pieza, la cadena crece a Tus planes → Estelar/Destacados → Cercanos → **Esta semana** → Populares → Nuevos, cada una añadiendo sus ids al mismo conjunto antes de que la siguiente calcule la suya. Las filas 7 a 9 (lugares y artistas) no compiten por ids de evento y no entran en ese `Set`.
 
@@ -161,8 +163,30 @@ Al comparar el prototipo anterior contra el código real se encontraron dos deta
 - **Sin saludo ni título "Inicio" en pantalla.** `Inicio.tsx` no pinta ningún `<h1>`; el prototipo de la 2ª vuelta sí dibujaba uno ("Inicio" / "Lo que ya sigues, primero") que nunca se implementó así.
 - **"Lugares con eventos esta semana" en círculo, no en cuadro.** `CarrilEntidadCliente.tsx` pasa `redondas={!grande}` igual para lugares y para artistas: hoy ambas filas de "esta semana" (lugares y artistas) se ven en círculos de 104 px, no solo la de artistas como dibujaba el prototipo anterior.
 
+### 5. «Recién agregado»: una insignia, no una fila (segunda vuelta del prototipo, mismo día)
+
+Founder, sobre la primera entrega: «Se lee muy redundante "Esta semana" por todos lados. Nuevos y esta semana pienso que se pueden fusionar, pero podríamos considerar chip (Recién agregado), puede ser: Destacados, Cercanos, Esta semana (con recién agregados), Populares (indistinto entre semanas) y Eventos nuevos esta semana (cambiar nombre a nuevos eventos)». Resuelto:
+
+- **Se quita "esta semana" de todos los títulos salvo el de la fila 4** (que se llama, literal, "Esta semana"): "Destacados esta semana" → **Destacados**; "Eventos cercanos esta semana" → **Cerca de ti**; "Eventos populares" → **Populares**; "Eventos nuevos esta semana" → **Nuevos eventos**; "Lugares/Artistas con eventos esta semana" → **Lugares con eventos** / **Artistas con eventos**; "De tus favoritos" → **Seleccionados para ti**.
+- **"Nuevos eventos" cambia de criterio, no solo de nombre.** Antes competía con "Esta semana" por los mismos eventos recién publicados dentro de los 7 días (y el `Set` de deduplicación decidía quién se los quedaba, a veces dejando a Nuevos casi vacío — la pregunta 1 de la vuelta anterior). Ahora son **solo** los publicados hace poco cuya fecha cae **después** de la ventana de 7 días: ya no compite por el mismo evento con "Esta semana", así que esa pregunta queda resuelta de raíz.
+- **"Populares" ya era indistinto entre semanas** (`carrilPopulares` no filtra por fecha, solo por "Voy" ≥ 3): el nombre nuevo, sin "esta semana", deja de prometer algo que el criterio no cumplía.
+- **Propuesta del gestor, a validar por el founder:** "Recién agregado" = publicado en los últimos 7 días. Es una **insignia**, no una fila nueva: puede salir en cualquier carril donde aparezca ese evento (Destacados, Cercanos, Esta semana, Populares…), no solo en "Esta semana". Reutiliza la misma insignia de fondo vidrio que ya usa "N van" (`Destacados.module.css .van`), con el icono que ya usa Novedades para "evento nuevo" (`IconoCalendarioMas`) — no se inventa una pieza visual nueva. El prototipo la muestra dos veces para probar que viaja entre filas: en "Esta semana" ("Rodada nocturna cultural") y en "Populares" ("Obra: Los de abajo", apilada con su "21 van").
+- **Otra propuesta del gestor, a validar:** "Nuevos eventos" no se pinta con menos de 3 candidatos (mismo umbral que "Populares"). El prototipo lo demuestra: A1/A2/B1 tienen 3 (se ve); **B2 tiene solo 2 y el carril no existe** (mismo colapso sin hueco que cualquier carril vacío).
+
+### 6. El chevron en vez de «Ver todos» (canon Apple Music)
+
+Founder: «a un lado derecho del título agrega un angle icon ">" en lugar de botón de ver todos. Es más sutil y se parece al canon de Apple Music; lo que sucede cuando el usuario presiona ese elemento es que va a ver todos; cuida que el icono esté envuelto en un target invisible suficientemente grande para que la selección con tap no falle». Aplicado a los 9 carriles (32 encabezados entre las 4 pantallas):
+
+- Se quita el enlace "Ver todos →" de la derecha. En su lugar, `IconoChevronDerecha` (ya existe en `ui/Iconos.tsx`) va pegado al final del título, del color `--texto-suave` — no un acento nuevo.
+- **Todo el título + chevron es un solo enlace**, nunca un botón aparte: tocar el texto o el chevron hace lo mismo. Nombre accesible fijo: «Ver todos: &lt;título del carril&gt;».
+- **El objetivo de toque del chevron mide 44×44 px**, aunque el glifo visible sea de 20 px — el pedido explícito del founder de que un toque cerca del icono, no solo sobre él, no falle. La insignia "Nuevo" del propio prototipo (no es de la app) queda fuera de ese enlace, para no competir con su objetivo.
+- El prototipo agrega un panel "Revisión · área tocable del título" (no es un teléfono ni parte del diseño) con tres encabezados de ejemplo y el enlace sombreado en violeta, para que se vea exactamente cuánto mide ese objetivo — incluido que un título largo no lo reduce.
+- Ningún carril de esta pieza se quedó sin destino, así que los 32 llevan chevron; si algún carril futuro no tuviera adónde ir, iría sin él (regla anotada, sin caso todavía).
+
 ### Preguntas abiertas para el founder
 
-1. Con "Esta semana" mostrando literalmente todos los eventos de 7 días, algunas semanas "Populares" o "Nuevos" pueden quedar más cortos o vacíos de lo que quedarían hoy (ya era válido para Populares, pregunta 4 de la primera vuelta — pero con esta pieza le puede pasar también a Nuevos, porque un evento reciente que además cae esta semana ya se lo llevó "Esta semana"). ¿Se acepta ese vaciado extra, o "Esta semana" debería dejarle a Populares/Nuevos lo que ya les toca por su propio criterio, en vez de quedárselo por ir primero en la cadena?
-2. "Cerca de ti" se resuelve en el teléfono, después del primer pintado (nunca pide permiso desde Inicio); "Esta semana" se calcularía en el servidor junto con Destacados/Populares/Nuevos. Hoy no hay forma de que ese cálculo del servidor sepa qué eligió Cercanos en el teléfono: un evento que es cercano y también cae esta semana podría, en un caso raro, salir en las dos filas. En este prototipo no ocurre (los datos de ejemplo se armaron para no chocar), pero al programarlo hay que decidir: ¿"Esta semana" excluye lo que Cercanos podría mostrar (aceptando el riesgo raro) o conviene mover también "Esta semana" al cliente para una deduplicación real?
+1. <s>Con "Esta semana" mostrando todo lo próximo de 7 días, "Populares"/"Nuevos" podían quedar muy cortos.</s> **Resuelta** con el nuevo criterio de "Nuevos eventos" (sección 5): ya no compite con "Esta semana" por los mismos eventos.
+2. "Cerca de ti" se resuelve en el teléfono, después del primer pintado; "Esta semana" se calcularía en el servidor junto con Destacados/Populares/Nuevos. Hoy no hay forma de que ese cálculo del servidor sepa qué eligió Cercanos en el teléfono: un evento que es cercano y también cae esta semana podría, en un caso raro, salir en las dos filas. En este prototipo no ocurre (los datos de ejemplo se armaron para no chocar), pero al programarlo hay que decidir: ¿"Esta semana" excluye lo que Cercanos podría mostrar (aceptando el riesgo raro) o conviene mover también "Esta semana" al cliente para una deduplicación real?
 3. El tope de 20 tarjetas en "Esta semana" es una propuesta del operador, no un número que haya pedido el founder — falta confirmarlo (o cambiarlo) antes de programarlo.
+4. **Nuevo, de la segunda vuelta:** ¿"Recién agregado" = publicado en los últimos 7 días es la ventana correcta (o el founder prefiere otra, más corta)? ¿Y el mínimo de 3 para que "Nuevos eventos" exista es el número correcto?
+5. El texto exacto de "Ver todos" de Tus planes: ¿siempre a `/perfil` (pestaña "Voy a" por defecto), o debería abrir directo en una pestaña que ya muestre los dos juntos (hoy no existe esa vista combinada en Perfil)?

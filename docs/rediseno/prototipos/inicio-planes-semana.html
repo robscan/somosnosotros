@@ -104,11 +104,18 @@
      la semana). El botón (+ / ✓) es hermano del <a>, nunca su hijo.
      ========================================================================== */
   .carril-bloque { padding-top: 32px; }
-  .carril-cabecera { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 var(--gutter) 16px; }
-  .carril-cabecera h2 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
-  .carril-cabecera a { flex: none; font-size: 15px; font-weight: 700; color: var(--primario); white-space: nowrap; text-decoration: none; }
+  .carril-cabecera { display: flex; align-items: center; gap: 6px; padding: 0 calc(var(--gutter) - 4px) 16px var(--gutter); }
+  /* Founder, 2026-09-25: «a un lado derecho del título agrega un angle icon ">" en lugar de botón de ver todos [...]
+     se parece al canon de Apple Music». Todo el título + chevron es UN SOLO enlace (nunca un botón "Ver todos" aparte):
+     tocar cualquier parte del texto o del chevron abre lo mismo. El chevron en sí mide 20px, pero su envoltura
+     (`.chevron-target`) es de 44×44 — el mínimo accionable — para que un toque cerca del glifo, no solo sobre él,
+     no falle (pedido explícito del founder). */
+  .titulo-carril { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--texto); -webkit-tap-highlight-color: transparent; }
+  .titulo-carril h2 { font-size: 19px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.1; }
+  .chevron-target { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 44px; margin-right: -10px; color: var(--texto-suave); }
+  .chevron-target svg { width: 20px; height: 20px; }
   /* Marca "NUEVO" del propio prototipo (no es de la app): para que se note cuál carril es el de este encargo. */
-  .nuevo-marca { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: var(--ok); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; vertical-align: middle; }
+  .nuevo-marca { display: inline-block; margin-left: -2px; padding: 1px 6px; border-radius: 6px; background: var(--ok); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; vertical-align: middle; }
 
   .carril { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: 220px; gap: 12px; overflow-x: auto; padding: 4px var(--gutter) 8px; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); overscroll-behavior-x: contain; scrollbar-width: none; }
   .carril::-webkit-scrollbar { display: none; }
@@ -129,12 +136,15 @@
   .foto.f { background: linear-gradient(135deg,#b7a6cc,#5c4a7a); }
   .foto.sn { background: var(--fondo-suave); border: 1px dashed var(--borde); display: grid; place-items: center; color: var(--texto-suave); font-weight: 800; font-size: 22px; }
 
-  /* Chips apilados abajo a la izquierda de la foto (Destacados.module.css: interesa arriba, van abajo). */
+  /* Chips apilados abajo a la izquierda de la foto (Destacados.module.css: interesa arriba, van abajo).
+     "Recién agregado" (propuesta del gestor, OL-217 2ª vuelta): MISMA insignia que "N van" (fondo vidrio, no una
+     pieza nueva) con el icono que ya usa Novedades para "evento nuevo" (`IconoCalendarioMas`). Puede salir en
+     cualquier carril donde aparezca ese evento, no solo en "Esta semana" — por eso su clase vive junto a las demás. */
   .chips { position: absolute; left: 8px; bottom: 8px; display: grid; gap: 4px; justify-items: start; }
-  .chip-interesa, .chip-van { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px 2px 6px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .chip-interesa, .chip-van, .chip-nuevo { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px 2px 6px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; }
   .chip-interesa { background: var(--primario-suave); color: var(--primario); }
-  .chip-van { background: var(--vidrio); color: var(--texto); }
-  .chip-interesa svg, .chip-van svg { width: 14px; height: 14px; }
+  .chip-van, .chip-nuevo { background: var(--vidrio); color: var(--texto); }
+  .chip-interesa svg, .chip-van svg, .chip-nuevo svg { width: 14px; height: 14px; }
 
   /* El botón Voy/Seguir (BotonRenglon): hermano del <a>, flota sobre la esquina superior derecha de la foto. */
   .boton { position: absolute; top: 8px; right: 8px; width: 48px; height: 48px; min-width: 44px; min-height: 44px; border: none; border-radius: 50%; display: grid; place-items: center; box-shadow: var(--sombra); }
@@ -146,6 +156,15 @@
   .tarjeta b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 17px; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }
   .tarjeta small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-suave); font-size: 15px; }
   .carril.redondas .tarjeta small { white-space: normal; }
+
+  /* Solo para revisar el objetivo de toque del chevron (founder, 2026-09-25): NO es un teléfono ni parte del
+     diseño final, por eso vive fuera de `.telefono` y con su propio fondo. El sombreado violeta calca el `.titulo-carril`
+     real (mismo padding, mismo alto de 44px) para que se vea, sin ambigüedad, cuánto mide el área tocable. */
+  .revision-card { width: 390px; max-width: 100%; padding: 20px var(--gutter); border-radius: 24px; background: var(--fondo); box-shadow: 0 20px 60px rgba(0,0,0,.14), 0 0 0 1px rgba(0,0,0,.06); }
+  .revision-card .carril-bloque, .revision-card .carril-cabecera { padding-top: 0; }
+  .revision.carril-cabecera { padding: 0 0 4px; margin-bottom: 4px; }
+  .revision .titulo-carril { background: var(--primario-suave); outline: 1.5px dashed var(--primario); outline-offset: -1px; border-radius: 10px; padding: 0 4px; margin: 0 -4px; }
+  .revision-medida { margin: 0 0 18px; padding: 0 2px; color: var(--texto-suave); font-size: 13px; line-height: 1.4; }
 
   /* Panel de utilería (fuera del teléfono, no es diseño). */
   .utileria { width: 340px; max-width: 100%; flex: none; padding: 20px; border-radius: 16px; background: var(--panel); color: var(--panel-texto); font-size: 14px; }
@@ -190,9 +209,10 @@
             </div>
           </div>
 
-          <!-- 1. Destacados esta semana (grande, cartel) — sin cuenta no hay favoritos, este es el respaldo. -->
+          <!-- 1. Destacados (grande, cartel) — sin cuenta no hay favoritos, este es el respaldo. "Destacados" ya no
+               lleva "esta semana" en el nombre (2ª vuelta, OL-217): puede incluir destacados de semanas siguientes. -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Destacados esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Destacados"><h2>Destacados</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>14 van</span></span></div><b>Materia: arte sonoro</b><small>Hoy · 20:00 · Museo Federico Silva</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Feria del libro CEART</b><small>Sáb 27 sep · 11:00 · CEART</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -202,7 +222,7 @@
 
           <!-- 2. Cerca de ti (mediana) — solo porque hay ubicación fresca; nunca la pide desde Inicio. -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos cercanos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Cerca de ti"><h2>Cerca de ti</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
               <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Cine club al aire libre</b><small>Hoy · 19:30 · 800 m</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Mercado de trueque cultural</b><small>Sáb 27 sep · 11:00 · 1.2 km</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -211,9 +231,9 @@
 
           <!-- 3. ESTA SEMANA — NUEVO (OL-217): todos los eventos de los próximos 7 días, por fecha, día visible por tarjeta. -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Esta semana<span class="nuevo-marca">Nuevo</span></h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Esta semana"><h2>Esta semana</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a><span class="nuevo-marca">Nuevo</span></div>
             <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Rodada nocturna cultural</b><small>Hoy · 20:30 · Alameda Juan Sarabia</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-nuevo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>Recién agregado</span></span></div><b>Rodada nocturna cultural</b><small>Hoy · 20:30 · Alameda Juan Sarabia</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto f"></div><b>Concierto de cámara: Camerata SLP</b><small>Mañana · 19:00 · Templo del Carmen</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>Noche de jazz en Aurora Co-Lab</b><small>Mañana · 21:00 · Aurora Co-Lab</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>45 van</span></span></div><b>Festival Independencia Cultural</b><small>Sáb 27 sep · 12:00 · Plaza de los Fundadores</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -222,27 +242,35 @@
             </ul>
           </section>
 
-          <!-- 4. Populares (mediana) — lo que ya salió arriba (Festival Independencia, van 45) no se repite aquí. -->
+          <!-- 4. Populares (mediana) — indistinto entre semanas (founder, 2ª vuelta): "Obra: Los de abajo" y
+               "Concierto Sinfónica" son de octubre, fuera de los 7 días de "Esta semana", pero igual cuentan; el
+               Festival Independencia Cultural (van 45, dentro de la ventana) ya salió arriba, en Esta semana, y no
+               se repite aquí. "Obra: Los de abajo" también lleva "Recién agregado" (propuesta a validar): la
+               insignia no es exclusiva de la fila "Esta semana", sale en cualquier carril donde aparezca ese evento. -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos populares</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Populares"><h2>Populares</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>21 van</span></span></div><b>Obra: Los de abajo</b><small>Vie 9 oct · 20:30 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-nuevo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>Recién agregado</span><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>21 van</span></span></div><b>Obra: Los de abajo</b><small>Vie 9 oct · 20:30 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>18 van</span></span></div><b>Concierto Sinfónica de la UASLP</b><small>Jue 15 oct · 20:00 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
             </ul>
           </section>
 
-          <!-- 5. Nuevos esta semana (mediana) — publicados en los últimos 7 días; los que ya salieron en Esta semana no vuelven. -->
+          <!-- 5. Nuevos eventos (mediana) — criterio nuevo (2ª vuelta): publicados hace poco Y con fecha DESPUÉS de
+               los 7 días de "Esta semana" (antes competía por los mismos eventos que "Esta semana"; ya no). Con 3
+               candidatos, el carril existe (aquí y en A2/B1); con menos de 3 no se pinta (ver B2). -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos nuevos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Nuevos eventos"><h2>Nuevos eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Exposición: Trazos del Centro</b><small>Mar 6 oct · 12:00 · Centro Cultural Bicentenario</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Taller de cerámica</b><small>Jue 8 oct · 17:00 · Casa del Artesano</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto f"></div><b>Mural colectivo en el Barrio de San Miguel</b><small>Lun 19 oct · 18:00 · Barrio de San Miguel</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
             </ul>
           </section>
 
-          <!-- 6. Lugares con eventos esta semana (chica, redonda — igual que Artistas: así lo pinta hoy el código). -->
+          <!-- 6. Lugares con eventos (chica, redonda — igual que Artistas: así lo pinta hoy el código; nombre sin
+               "esta semana", 2ª vuelta). -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Lugares con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Lugares con eventos"><h2>Lugares con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril redondas">
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Teatro de la Paz</b><small>2 eventos</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>CEART</b><small>3 eventos</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -252,7 +280,7 @@
 
           <!-- 7. Artistas destacados (grande, cartel — misma tarjeta que la tira de Artistas). -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Artistas destacados</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Artistas destacados"><h2>Artistas destacados</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Disonauta</b><small>Rock · próx. vie 26 sep</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>La Lupita</b><small>Son · próx. sáb 10 oct</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -260,9 +288,9 @@
             </ul>
           </section>
 
-          <!-- 8. Artistas con eventos esta semana (chica, redonda). -->
+          <!-- 8. Artistas con eventos (chica, redonda; nombre sin "esta semana", 2ª vuelta). -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Artistas con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Artistas con eventos"><h2>Artistas con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril redondas">
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>Cumbia Fantasma</b><small>Dom 28</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Camerata SLP</b><small>Vie 26</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -305,7 +333,7 @@
           </div>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Destacados esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Destacados"><h2>Destacados</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>14 van</span></span></div><b>Materia: arte sonoro</b><small>Hoy · 20:00 · Museo Federico Silva</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Feria del libro CEART</b><small>Sáb 27 sep · 11:00 · CEART</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -316,10 +344,10 @@
           <!-- Sin ubicación, «Eventos cercanos esta semana» simplemente no existe: no se pinta hueco ni mensaje. -->
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Esta semana<span class="nuevo-marca">Nuevo</span></h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Esta semana"><h2>Esta semana</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a><span class="nuevo-marca">Nuevo</span></div>
             <ul class="carril">
               <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Cine club al aire libre</b><small>Hoy · 19:30 · Parque Tangamanga</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
-              <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Rodada nocturna cultural</b><small>Hoy · 20:30 · Alameda Juan Sarabia</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-nuevo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>Recién agregado</span></span></div><b>Rodada nocturna cultural</b><small>Hoy · 20:30 · Alameda Juan Sarabia</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto f"></div><b>Concierto de cámara: Camerata SLP</b><small>Mañana · 19:00 · Templo del Carmen</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>Noche de jazz en Aurora Co-Lab</b><small>Mañana · 21:00 · Aurora Co-Lab</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>45 van</span></span></div><b>Festival Independencia Cultural</b><small>Sáb 27 sep · 12:00 · Plaza de los Fundadores</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -330,23 +358,24 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos populares</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Populares"><h2>Populares</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>21 van</span></span></div><b>Obra: Los de abajo</b><small>Vie 9 oct · 20:30 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-nuevo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>Recién agregado</span><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>21 van</span></span></div><b>Obra: Los de abajo</b><small>Vie 9 oct · 20:30 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>18 van</span></span></div><b>Concierto Sinfónica de la UASLP</b><small>Jue 15 oct · 20:00 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
             </ul>
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos nuevos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Nuevos eventos"><h2>Nuevos eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Exposición: Trazos del Centro</b><small>Mar 6 oct · 12:00 · Centro Cultural Bicentenario</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Taller de cerámica</b><small>Jue 8 oct · 17:00 · Casa del Artesano</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto f"></div><b>Mural colectivo en el Barrio de San Miguel</b><small>Lun 19 oct · 18:00 · Barrio de San Miguel</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
             </ul>
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Lugares con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Lugares con eventos"><h2>Lugares con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril redondas">
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Teatro de la Paz</b><small>2 eventos</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>CEART</b><small>3 eventos</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -355,7 +384,7 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Artistas destacados</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Artistas destacados"><h2>Artistas destacados</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Disonauta</b><small>Rock · próx. vie 26 sep</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>La Lupita</b><small>Son · próx. sáb 10 oct</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -364,7 +393,7 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Artistas con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Artistas con eventos"><h2>Artistas con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril redondas">
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>Cumbia Fantasma</b><small>Dom 28</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Camerata SLP</b><small>Vie 26</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -411,7 +440,7 @@
 
           <!-- 0. TUS PLANES — NUEVO (OL-217): Voy + Me interesa, por fecha, marca ya existente (botón verde / chip «Te interesa»). -->
           <section class="carril-bloque" style="padding-top:16px">
-            <div class="carril-cabecera"><h2>Tus planes<span class="nuevo-marca">Nuevo</span></h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Tus planes"><h2>Tus planes</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a><span class="nuevo-marca">Nuevo</span></div>
             <ul class="carril">
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>Noche de jazz en Aurora Co-Lab</b><small>Mañana · 21:00 · Aurora Co-Lab</small></a><button type="button" class="boton decidido" aria-label="Ya vas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto b"><span class="chips"><span class="chip-interesa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/></svg>Te interesa</span></span></div><b>Cumbia Fantasma en vivo</b><small>Dom 28 sep · 20:00 · Foro Alicia SLP</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -419,9 +448,10 @@
             </ul>
           </section>
 
-          <!-- 1. De tus favoritos (grande, cartel) — lo de Aurora Co-Lab y Cumbia Fantasma ya está en Tus planes: no vuelve aquí. -->
+          <!-- 1. Seleccionados para ti (grande, cartel; antes "De tus favoritos", 2ª vuelta) — lo de Aurora Co-Lab y
+               Cumbia Fantasma ya está en Tus planes: no vuelve aquí. -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>De tus favoritos</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Seleccionados para ti"><h2>Seleccionados para ti</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>14 van</span></span></div><b>Materia: arte sonoro</b><small>Hoy · 20:00 · sigues Museo Federico Silva</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Feria del libro CEART</b><small>Sáb 27 sep · sigues CEART</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -431,7 +461,7 @@
 
           <!-- 2. Cerca de ti (mediana). -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos cercanos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Cerca de ti"><h2>Cerca de ti</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
               <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Cine club al aire libre</b><small>Hoy · 19:30 · 800 m</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Mercado de trueque cultural</b><small>Sáb 27 sep · 1.2 km</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -440,9 +470,9 @@
 
           <!-- 3. ESTA SEMANA — NUEVO. -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Esta semana<span class="nuevo-marca">Nuevo</span></h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Esta semana"><h2>Esta semana</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a><span class="nuevo-marca">Nuevo</span></div>
             <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Rodada nocturna cultural</b><small>Hoy · 20:30 · Alameda Juan Sarabia</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-nuevo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>Recién agregado</span></span></div><b>Rodada nocturna cultural</b><small>Hoy · 20:30 · Alameda Juan Sarabia</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto f"></div><b>Concierto de cámara: Camerata SLP</b><small>Mañana · 19:00 · Templo del Carmen</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>45 van</span></span></div><b>Festival Independencia Cultural</b><small>Sáb 27 sep · 12:00 · Plaza de los Fundadores</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Lectura: poetas potosinos</b><small>Dom 28 sep · 18:00 · Casa del Poeta</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -451,22 +481,23 @@
 
           <!-- 4. Populares — ambos ya "gastados" (van 45 en Esta semana, Sinfónica en Tus planes): queda solo uno. -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos populares</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Populares"><h2>Populares</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>21 van</span></span></div><b>Obra: Los de abajo</b><small>Vie 9 oct · 20:30 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-nuevo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>Recién agregado</span><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>21 van</span></span></div><b>Obra: Los de abajo</b><small>Vie 9 oct · 20:30 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
             </ul>
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos nuevos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Nuevos eventos"><h2>Nuevos eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Exposición: Trazos del Centro</b><small>Mar 6 oct · 12:00 · Centro Cultural Bicentenario</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Taller de cerámica</b><small>Jue 8 oct · 17:00 · Casa del Artesano</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto f"></div><b>Mural colectivo en el Barrio de San Miguel</b><small>Lun 19 oct · 18:00 · Barrio de San Miguel</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
             </ul>
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Lugares con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Lugares con eventos"><h2>Lugares con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril redondas">
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Teatro de la Paz</b><small>2 eventos</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>CEART</b><small>3 eventos</small></a><button type="button" class="boton decidido" aria-label="Ya sigues"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></li>
@@ -475,7 +506,7 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Artistas destacados</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Artistas destacados"><h2>Artistas destacados</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Disonauta</b><small>Rock · próx. vie 26 sep</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>La Lupita</b><small>Son · próx. sáb 10 oct</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -484,7 +515,7 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Artistas con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Artistas con eventos"><h2>Artistas con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril redondas">
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>Cumbia Fantasma</b><small>Dom 28</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Camerata SLP</b><small>Vie 26</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -532,7 +563,7 @@
           <!-- Sin «Tus planes»: nada que mostrar. Directo a «De tus favoritos», que ahora sí incluye Aurora Co-Lab y
                Cumbia Fantasma (nadie los reclamó arriba). -->
           <section class="carril-bloque" style="padding-top:16px">
-            <div class="carril-cabecera"><h2>De tus favoritos</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Seleccionados para ti"><h2>Seleccionados para ti</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>14 van</span></span></div><b>Materia: arte sonoro</b><small>Hoy · 20:00 · sigues Museo Federico Silva</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>Noche de jazz en Aurora Co-Lab</b><small>Mañana · 21:00 · sigues Aurora Co-Lab</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -542,7 +573,7 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos cercanos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Cerca de ti"><h2>Cerca de ti</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
               <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Cine club al aire libre</b><small>Hoy · 19:30 · 800 m</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Mercado de trueque cultural</b><small>Sáb 27 sep · 1.2 km</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -550,9 +581,9 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Esta semana<span class="nuevo-marca">Nuevo</span></h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Esta semana"><h2>Esta semana</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a><span class="nuevo-marca">Nuevo</span></div>
             <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Rodada nocturna cultural</b><small>Hoy · 20:30 · Alameda Juan Sarabia</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-nuevo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>Recién agregado</span></span></div><b>Rodada nocturna cultural</b><small>Hoy · 20:30 · Alameda Juan Sarabia</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto f"></div><b>Concierto de cámara: Camerata SLP</b><small>Mañana · 19:00 · Templo del Carmen</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto e"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>45 van</span></span></div><b>Festival Independencia Cultural</b><small>Sáb 27 sep · 12:00 · Plaza de los Fundadores</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Lectura: poetas potosinos</b><small>Dom 28 sep · 18:00 · Casa del Poeta</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -561,23 +592,20 @@
 
           <!-- Populares: sin «Tus planes» que se lleve la Sinfónica, aquí aparecen las dos. -->
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos populares</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Populares"><h2>Populares</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>21 van</span></span></div><b>Obra: Los de abajo</b><small>Vie 9 oct · 20:30 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
+              <li><a class="tarjeta" href="#"><div class="foto c"><span class="chips"><span class="chip-nuevo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>Recién agregado</span><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>21 van</span></span></div><b>Obra: Los de abajo</b><small>Vie 9 oct · 20:30 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"><span class="chips"><span class="chip-van"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg>18 van</span></span></div><b>Concierto Sinfónica de la UASLP</b><small>Jue 15 oct · 20:00 · Teatro de la Paz</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
             </ul>
           </section>
 
-          <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Eventos nuevos esta semana</h2><a href="#">Ver todos →</a></div>
-            <ul class="carril">
-              <li><a class="tarjeta" href="#"><div class="foto d"></div><b>Exposición: Trazos del Centro</b><small>Mar 6 oct · 12:00 · Centro Cultural Bicentenario</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
-              <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Taller de cerámica</b><small>Jue 8 oct · 17:00 · Casa del Artesano</small></a><button type="button" class="boton invitar" aria-label="Voy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
-            </ul>
-          </section>
+          <!-- «Nuevos eventos» NO se pinta aquí (propuesta del gestor, OL-217 2ª vuelta: mínimo 3 para
+               existir): en B2 solo hay 2 candidatos (Exposición: Trazos del Centro, Taller de cerámica) —
+               el mismo colapso sin hueco que cualquier carril vacío. Compárese con A1/A2/B1, que sí lo
+               muestran con un tercero ("Mural colectivo en el Barrio de San Miguel"). -->
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Lugares con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Lugares con eventos"><h2>Lugares con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril redondas">
               <li><a class="tarjeta" href="#"><div class="foto e"></div><b>Teatro de la Paz</b><small>2 eventos</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>CEART</b><small>3 eventos</small></a><button type="button" class="boton decidido" aria-label="Ya sigues"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></li>
@@ -586,7 +614,7 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Artistas destacados</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Artistas destacados"><h2>Artistas destacados</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril grande">
               <li><a class="tarjeta" href="#"><div class="foto b"></div><b>Disonauta</b><small>Rock · próx. vie 26 sep</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto d"></div><b>La Lupita</b><small>Son · próx. sáb 10 oct</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -595,7 +623,7 @@
           </section>
 
           <section class="carril-bloque">
-            <div class="carril-cabecera"><h2>Artistas con eventos esta semana</h2><a href="#">Ver todos →</a></div>
+            <div class="carril-cabecera"><a class="titulo-carril" href="#" aria-label="Ver todos: Artistas con eventos"><h2>Artistas con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a></div>
             <ul class="carril redondas">
               <li><a class="tarjeta" href="#"><div class="foto"></div><b>Cumbia Fantasma</b><small>Dom 28</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
               <li><a class="tarjeta" href="#"><div class="foto c"></div><b>Camerata SLP</b><small>Vie 26</small></a><button type="button" class="boton invitar" aria-label="Seguir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button></li>
@@ -613,6 +641,25 @@
     </div>
   </div>
 
+  <!-- ============================= Revisión · área tocable del título (NO es un teléfono, no es diseño final) ============================= -->
+  <div class="col">
+    <div class="etiqueta">Revisión · área tocable del título<small>Founder, 2026-09-25: «cuida que el icono esté envuelto en un target invisible suficientemente grande para que la selección con tap no falle». El sombreado marca ese objetivo; no se ve así en la app.</small></div>
+    <div class="revision-card">
+      <div class="carril-cabecera revision">
+        <a class="titulo-carril" href="#" aria-label="Ver todos: Destacados"><h2>Destacados</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a>
+      </div>
+      <div class="revision-medida">↑ todo el recuadro violeta es un solo enlace («Ver todos: Destacados»); el texto y el chevron se tocan igual</div>
+      <div class="carril-cabecera revision">
+        <a class="titulo-carril" href="#" aria-label="Ver todos: Esta semana"><h2>Esta semana</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a><span class="nuevo-marca">Nuevo</span>
+      </div>
+      <div class="revision-medida">↑ la insignia "Nuevo" (solo de este prototipo) queda fuera del enlace, sin estorbarlo</div>
+      <div class="carril-cabecera revision">
+        <a class="titulo-carril" href="#" aria-label="Ver todos: Artistas con eventos"><h2>Artistas con eventos</h2><span class="chevron-target" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span></a>
+      </div>
+      <div class="revision-medida">↑ un título largo no reduce el objetivo del chevron: sigue midiendo 44×44 px al final del texto</div>
+    </div>
+  </div>
+
   <aside class="utileria">
     <h3>Qué es esto</h3>
     <p>Prototipo estático (sin JavaScript: cada estado es su propio teléfono, pensado para capturarse tal cual, incluso con JS desactivado). Doc completo: <code>docs/rediseno/41-inicio-personalizado.md</code>, sección «Tercera vuelta (OL-217)». Bitácora: <code>docs/bitacora/2026/09/246-inicio-planes-semana.md</code>.</p>
@@ -625,9 +672,9 @@
       <li>La invitación <del>«Sigue lugares y artistas / Crear cuenta»</del> se quita entera, con o sin ubicación. El botón «Entrar» de la barra se queda.</li>
       <li>Con cuenta: nueva fila <b>«Tus planes»</b> arriba de todo — Voy y Me interesa juntos, por fecha — solo si hay algo (B2 la omite igual que un carril vacío).</li>
       <li>Nueva fila <b>«Esta semana»</b>: todos los eventos de los próximos 7 días, por fecha.</li>
-      <li>Reordenado: los cinco carriles de <b>eventos</b> (Tus planes, De tus favoritos/Destacados, Cercanos, Esta semana, Populares, Nuevos) van todos antes que los tres carriles de <b>lugares y artistas</b> (Lugares de la semana, Artistas destacados, Artistas de la semana) — literal el pedido del founder, y distinto del orden que hoy corre en producción (`src/app/page.tsx`), donde Lugares de la semana y Artistas destacados se intercalaban entre Cercanos y Populares.</li>
+      <li>Reordenado: los carriles de <b>eventos</b> van todos antes que los de <b>lugares y artistas</b> — literal el pedido del founder, y distinto del orden que hoy corre en producción (<code>src/app/page.tsx</code>), donde Lugares y Artistas destacados se intercalaban entre Cercanos y Populares.</li>
       <li>Sin «saludo» ni título «Inicio» en la pantalla: el código de hoy (<code>src/components/Inicio.tsx</code>) no tiene ninguno; el prototipo de la 2ª vuelta sí dibujaba un <code>&lt;h1&gt;</code> que nunca se implementó así — se corrige aquí.</li>
-      <li>Tarjetas de «Lugares con eventos esta semana» en <b>círculo</b> (104 px), igual que Artistas: así lo pinta <code>CarrilEntidadCliente.tsx</code> hoy (<code>redondas={!grande}</code> para ambos), aunque el prototipo de la 2ª vuelta las dibujaba cuadradas.</li>
+      <li>Tarjetas de «Lugares con eventos» en <b>círculo</b> (104 px), igual que Artistas: así lo pinta <code>CarrilEntidadCliente.tsx</code> hoy (<code>redondas={!grande}</code> para ambos), aunque el prototipo de la 2ª vuelta las dibujaba cuadradas.</li>
     </ul>
 
     <h3>Decisiones de esta pieza</h3>
@@ -641,10 +688,31 @@
       <li><b>«Ver todos» de Tus planes</b> → <code>/perfil</code> (donde ya se ven "Voy a" y "Me interesa" como pestañas separadas; no se inventa una tercera vista).</li>
     </ul>
 
+    <h3>Segunda vuelta del prototipo (mismo día, 2026-09-25)</h3>
+    <p>El gestor trajo dos precisiones más del founder sobre esta misma pieza, antes de que el founder la viera terminada. Las dos ya están aplicadas en las cuatro pantallas y en el panel de revisión de arriba.</p>
+    <p><b>1. Menos «esta semana» repetido, y una insignia para lo recién publicado.</b> Founder, literal: «Se lee muy redundante "Esta semana" por todos lados. Nuevos y esta semana pienso que se pueden fusionar, pero podríamos considerar chip (Recién agregado), puede ser: Destacados, Cercanos, Esta semana (con recién agregados), Populares (indistinto entre semanas) y Eventos nuevos esta semana (cambiar nombre a nuevos eventos)». Resuelto así:</p>
+    <ul>
+      <li><b>Ningún título lleva «esta semana» salvo el carril que se llama, literal, «Esta semana».</b> Renombrados: «Destacados esta semana» → <b>Destacados</b>; «Eventos cercanos esta semana» → <b>Cerca de ti</b>; «Eventos populares» → <b>Populares</b>; «Eventos nuevos esta semana» → <b>Nuevos eventos</b>; «Lugares/Artistas con eventos esta semana» → <b>Lugares con eventos</b> / <b>Artistas con eventos</b>. «De tus favoritos» → <b>Seleccionados para ti</b> (con el mismo respaldo a «Destacados» si no sigue nada).</li>
+      <li><b>«Nuevos eventos» cambia de criterio, no solo de nombre:</b> antes competía con «Esta semana» por los mismos eventos recién publicados de los próximos 7 días (y el «Set» de deduplicación decidía quién se los quedaba, dejando a veces a Nuevos casi vacío). Ahora «Nuevos eventos» son <b>solo</b> los publicados hace poco cuya fecha cae <b>después</b> de la ventana de 7 días — ya no compite con «Esta semana» por el mismo evento, resuelve de raíz la pregunta abierta que dejó la primera vuelta.</li>
+      <li><b>«Populares» es indistinto entre semanas</b> (ya lo era en el código: <code>carrilPopulares</code> no filtra por fecha, solo por «Voy» ≥ 3) — el nombre nuevo, sin «esta semana», ahora no promete algo que el criterio no cumplía.</li>
+      <li><b>Propuesta del gestor, a validar por el founder:</b> «Recién agregado» = publicado en los últimos 7 días; es una insignia, no una fila — puede salir en <b>cualquier</b> carril donde aparezca ese evento (Destacados, Cercanos, Esta semana, Populares…), no solo en «Esta semana». El prototipo lo muestra dos veces para probarlo: en «Esta semana» («Rodada nocturna cultural») y también en «Populares» («Obra: Los de abajo», junto con su «21 van» — las dos insignias apiladas, igual que ya conviven «Te interesa» y «N van» hoy). <b>No es una pieza nueva:</b> misma insignia de fondo vidrio que «N van», con el icono que ya usa Novedades para «evento nuevo» (<code>IconoCalendarioMas</code>).</li>
+      <li><b>Otra propuesta del gestor, a validar:</b> «Nuevos eventos» no se pinta con menos de 3 candidatos (mismo umbral que ya tiene «Populares», para no dejar un carril de una sola tarjeta suelta). El prototipo lo demuestra: A1/A2/B1 tienen 3 y se ve; <b>B2 tiene solo 2 y el carril no existe</b> (mismo colapso sin hueco que cualquier carril vacío).</li>
+    </ul>
+    <p><b>2. El chevron en vez de «Ver todos», canon Apple Music.</b> Founder, literal: «a un lado derecho del título agrega un angle icon ">" en lugar de botón de ver todos. Es más sutil y se parece al canon de Apple Music [...] cuida que el icono esté envuelto en un target invisible suficientemente grande para que la selección con tap no falle». Aplicado en los 32 encabezados de carril de las 4 pantallas:</p>
+    <ul>
+      <li>Se quitó el enlace «Ver todos →» de la derecha. En su lugar, un <code>IconoChevronDerecha</code> (el que ya existe en <code>ui/Iconos.tsx</code>) va pegado al final del título, del color <code>--texto-suave</code> — el mismo gris del canon, no un color de acento nuevo.</li>
+      <li><b>Todo el título + chevron es un solo enlace</b> (nunca un botón aparte): tocar el texto o el chevron hace lo mismo. Nombre accesible fijo: «Ver todos: &lt;título del carril&gt;» (no solo "Ver todos", para quien usa lector de pantalla y no ve a qué carril pertenece).</li>
+      <li><b>El objetivo del chevron mide 44×44 px</b> (<code>.chevron-target</code>), aunque el glifo visible sea de 20 px — el pedido explícito del founder de que un toque cerca del icono, no solo sobre él, no falle. La insignia "Nuevo" del propio prototipo (verde, no es de la app) queda fuera de ese enlace, para no competir con su objetivo de toque.</li>
+      <li><b>Panel «Revisión · área tocable del título»</b> (al final de las cuatro pantallas, no es un teléfono ni parte del diseño): tres encabezados de ejemplo con el enlace sombreado en violeta, para que se vea exactamente cuánto mide el objetivo de toque real — un título largo («Artistas con eventos») no reduce ese objetivo, y la insignia "Nuevo" no lo interrumpe.</li>
+      <li>Ningún carril de esta pieza se quedó sin destino, así que los 32 llevan chevron; si en el futuro alguno no tuviera adónde ir, iría sin él (regla que deja anotada el founder, sin caso que dibujar todavía).</li>
+    </ul>
+
     <h3>Preguntas abiertas para el founder</h3>
     <ul>
-      <li>Con «Esta semana» mostrando literalmente todo lo próximo de 7 días, algunas semanas «Populares» o «Nuevos» pueden quedar muy cortos o vacíos (lo que ya era válido antes para Populares, doc 41, pregunta 4 — pero ahora también le puede pasar a Nuevos). ¿Se acepta ese vaciado adicional, o «Esta semana» debería IGNORAR lo que ya cumple el criterio de Populares/Nuevos (dejárselos a ellos) en vez de quedárselo por ir primero?</li>
-      <li>«Cerca de ti» se resuelve en el teléfono (cliente, después del primer pintado) mientras que «Esta semana» se puede calcular en el servidor junto con Destacados/Populares/Nuevos: un evento que es both cercano y de esta semana podría, en teoría, salir dos veces (una en cada carril) porque hoy no hay forma de que el cálculo del servidor sepa qué eligió Cercanos. En este prototipo no ocurre (se armaron los datos para que no choquen), pero al programarlo hace falta decidir: ¿"Esta semana" excluye lo que Cercanos podría mostrar (perdiendo la garantía en casos raros) o vale la pena mover "Esta semana" también al cliente para dedupe real?</li>
+      <li><del>Con «Esta semana» mostrando todo lo próximo de 7 días, «Populares»/«Nuevos» podían quedar muy cortos.</del> Resuelta con el nuevo criterio de «Nuevos eventos» (solo lo publicado hace poco que cae después de esta semana) y con que «Populares» siempre fue indistinto entre semanas: ya no compiten por los mismos eventos.</li>
+      <li>«Cerca de ti» se resuelve en el teléfono (cliente, después del primer pintado) mientras que «Esta semana» se puede calcular en el servidor junto con Destacados/Populares/Nuevos: un evento que es cercano y también de esta semana podría, en teoría, salir dos veces porque hoy no hay forma de que el servidor sepa qué eligió Cercanos. En este prototipo no ocurre (los datos se armaron para no chocar), pero al programarlo hay que decidir: ¿"Esta semana" excluye lo que Cercanos podría mostrar (aceptando el riesgo raro) o conviene mover también "Esta semana" al cliente?</li>
+      <li>El tope de <b>20 tarjetas</b> en «Esta semana»: propuesta del operador, no una cifra que haya dado el founder.</li>
+      <li><b>Nuevo, de esta vuelta:</b> ¿"Recién agregado" = publicado en los últimos 7 días es la ventana correcta, o el founder prefiere otra (más corta, "3 días", por ejemplo)? ¿Y el mínimo de 3 para que "Nuevos eventos" exista es el número correcto?</li>
       <li>El texto exacto de "Ver todos" de Tus planes: ¿siempre a <code>/perfil</code> (pestaña "Voy a" por defecto), o debería abrir directo en una pestaña que ya muestre los dos juntos (hoy no existe esa vista combinada en Perfil)?</li>
     </ul>
 

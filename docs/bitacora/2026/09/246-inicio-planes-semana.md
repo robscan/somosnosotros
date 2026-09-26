@@ -45,16 +45,57 @@ Todas abiertas y revisadas antes de este cierre. Ningún correo real: el prototi
 4. **"Ver todos" de Tus planes → `/perfil`** (no se inventa una vista nueva que junte "Voy a" y "Me interesa": ya son pestañas separadas ahí).
 5. **La marca Voy/Me interesa reutiliza el botón y el chip que ya existen** (`BotonRenglon`, chip "Te interesa"): no se diseñó ninguna insignia nueva.
 
-## Preguntas abiertas para el founder
+## Preguntas abiertas para el founder (de la primera vuelta; ver más abajo cuáles se resolvieron)
 
-1. Con "Esta semana" mostrando literalmente todos los eventos de 7 días, algunas semanas "Populares" o "Nuevos" pueden quedar más cortos o vacíos de lo que quedarían hoy. ¿Se acepta ese vaciado extra, o "Esta semana" debería dejarle a Populares/Nuevos lo que ya les toca por su propio criterio?
+1. ~~Con "Esta semana" mostrando literalmente todos los eventos de 7 días, algunas semanas "Populares" o "Nuevos" pueden quedar más cortos o vacíos de lo que quedarían hoy.~~ **Resuelta en la segunda vuelta** (ver abajo): "Nuevos eventos" cambió de criterio y ya no compite por los mismos eventos.
 2. "Cerca de ti" se resuelve en el teléfono (cliente); "Esta semana" se calcularía en el servidor. Hoy no hay forma de que el servidor sepa qué eligió Cercanos: en un caso raro, un evento podría salir en las dos filas. ¿"Esta semana" excluye lo que Cercanos podría mostrar (aceptando el riesgo raro) o conviene mover también "Esta semana" al cliente?
 3. ¿El tope de 20 tarjetas en "Esta semana" es el número correcto, o el founder prefiere otro?
 
+## Segunda vuelta del prototipo (mismo día, 2026-09-25)
+
+El gestor trajo dos precisiones más del founder sobre esta misma pieza, transmitidas antes de que la viera terminada — mismo OL-217, misma bitácora, mismo PR #253, sin crear ninguno nuevo.
+
+### 1. «Se lee muy redundante "Esta semana" por todos lados»
+
+Founder, literal: «Se lee muy redundante "Esta semana" por todos lados. Nuevos y esta semana pienso que se pueden fusionar, pero podríamos considerar chip (Recién agregado), puede ser: Destacados, Cercanos, Esta semana (con recién agregados), Populares (indistinto entre semanas) y Eventos nuevos esta semana (cambiar nombre a nuevos eventos). Lo anterior aplica para A1 y A2, para B1 y B2: Tus planes, De tus favoritos cambiar por: Seleccionados para ti, los demás aplican las mismas recomendaciones».
+
+Aplicado en `docs/rediseno/prototipos/inicio-planes-semana.html` (script de Python, en el scratchpad de la sesión, para los 32 encabezados de carril a la vez — no a mano uno por uno) y en `docs/rediseno/41-inicio-personalizado.md` (secciones 5 nueva y tabla corregida):
+
+- **Renombrados, quitando "esta semana" de todo salvo del carril que se llama así:** "Destacados esta semana" → **Destacados**; "Eventos cercanos esta semana" → **Cerca de ti**; "Eventos populares" → **Populares**; "Eventos nuevos esta semana" → **Nuevos eventos**; "Lugares/Artistas con eventos esta semana" → **Lugares con eventos** / **Artistas con eventos**; "De tus favoritos" → **Seleccionados para ti** (mismo respaldo a "Destacados" sin seguidos).
+- **"Nuevos eventos" cambia de criterio, no solo de nombre:** antes competía con "Esta semana" por los mismos eventos recién publicados dentro de los 7 días — la pregunta 1 de arriba, ahora resuelta. Su nuevo criterio es publicado hace poco **y** con fecha **después** de esos 7 días: ya no se cruza con "Esta semana".
+- **Propuesta del gestor, marcada como tal en el doc y en el prototipo (no una decisión firme):** insignia "Recién agregado" = publicado en los últimos 7 días, la misma insignia de fondo vidrio que "N van" (`Destacados.module.css .van`), con el icono que ya usa Novedades para "evento nuevo" (`IconoCalendarioMas`) — sin inventar una pieza visual. Puede salir en cualquier carril, no solo en "Esta semana": el prototipo la repite en "Esta semana" ("Rodada nocturna cultural") y en "Populares" ("Obra: Los de abajo", apilada con su "21 van"), para probar justo eso.
+- **Otra propuesta del gestor, también marcada a validar:** "Nuevos eventos" no se pinta con menos de 3 candidatos (mismo umbral que "Populares"). Demostrado con datos reales del prototipo: A1, A2 y B1 tienen 3 (se agregó un tercer evento ficticio, "Mural colectivo en el Barrio de San Miguel", para que se viera); **B2 se dejó con solo 2 y el carril directamente no existe** — mismo colapso sin hueco que cualquier carril vacío de `Destacados`.
+
+### 2. «Un angle icon ">" en lugar de botón de ver todos»
+
+Founder, literal: «a un lado derecho del título agrega un angle icon ">" en lugar de botón de ver todos. Es más sutil y se parece al canon de Apple Music; lo que sucede cuando el usuario presiona ese elemento es que va a ver todos; cuida que el icono esté envuelto en un target invisible suficientemente grande para que la selección con tap no falle».
+
+Se quitó el enlace "Ver todos →" de los 32 encabezados de carril (9 carriles × 4 pantallas menos el que falta en B2) y se reemplazó por `IconoChevronDerecha` (ya existía en `ui/Iconos.tsx`, no se dibujó ninguno nuevo), pegado al final del texto del título, color `--texto-suave`. Todo el título + chevron quedó como un solo `<a>` (nunca un botón aparte): `aria-label="Ver todos: <título>"` para que el nombre accesible diga a qué carril pertenece, no solo "Ver todos" genérico. El objetivo de toque del chevron (`.chevron-target`) mide **44×44 px**, el mínimo accionable del canon (`--toque-min`), aunque el glifo dibujado sea de 20 px — exactamente el cuidado que pidió el founder, para que un toque cerca del icono y no justo sobre él no falle. La insignia "Nuevo" del propio prototipo (marca de qué carril es nuevo en esta pieza, no de la app) se dejó fuera de ese enlace para no competirle su objetivo de toque.
+
+**Evidencia del área tocable, para revisión (pedido explícito):** se agregó un panel nuevo, "Revisión · área tocable del título" — no es un teléfono, no es parte del diseño final, vive fuera de `.telefono` con su propio fondo — con tres encabezados de ejemplo (`Destacados`, `Esta semana` con su insignia "Nuevo", y `Artistas con eventos` como título largo) con el `<a>` real sombreado en violeta y un borde punteado, para que se vea sin ambigüedad cuánto mide el objetivo de toque. Capturado aparte en `chevron-area-tocable.png`.
+
+### Capturas repetidas
+
+Las 15 capturas de la primera vuelta se repitieron completas (mismos nombres de archivo, contenido actualizado) más una nueva:
+
+- **`chevron-area-tocable.png`** — el panel de revisión: "Destacados" con su recuadro violeta punteado (todo el título + chevron, un solo enlace), "Esta semana" con la insignia "Nuevo" fuera del recuadro, y "Artistas con eventos" (título largo) con el mismo objetivo de 44×44 px al final del texto.
+- **`{a1,a2,b1,b2}-...-{arriba,medio,abajo}.png`** — mismos 12 archivos, revisados de nuevo: los 8-9 títulos de cada pantalla llevan ahora su chevron y sus nombres nuevos (`Destacados`, `Cerca de ti`, `Esta semana` con "Recién agregado" en "Rodada nocturna cultural", `Populares` con "Obra: Los de abajo" llevando las dos insignias apiladas, `Nuevos eventos` con 3 tarjetas en A1/A2/B1 y ausente en B2, `Lugares con eventos`, `Artistas con eventos`; en B1/B2, `Seleccionados para ti` en vez de "De tus favoritos").
+- **`sin-js-b1-{arriba,medio}.png`** — repetidas con javaScriptEnabled:false; comparadas de nuevo contra las equivalentes con JavaScript: mismo contenido, confirma que el cambio de esta vuelta (chip, chevron, renombrados) sigue pintándose completo sin ningún script.
+
+Las 16 abiertas y revisadas antes de este cierre.
+
+## Preguntas abiertas para el founder (actualizado tras la segunda vuelta)
+
+1. ~~Vaciado de Populares/Nuevos por "Esta semana".~~ **Resuelta** (ver arriba: nuevo criterio de "Nuevos eventos").
+2. "Cerca de ti" (cliente) vs. "Esta semana" (servidor): el mismo riesgo raro de repetición que ya se anotó en la primera vuelta, sin cambios.
+3. ¿El tope de 20 tarjetas en "Esta semana" es el número correcto?
+4. **Nuevas, de esta vuelta:** ¿"Recién agregado" = 7 días es la ventana correcta? ¿El mínimo de 3 para que "Nuevos eventos" exista es el número correcto? (las dos son propuestas del gestor, marcadas como tal en el doc y el prototipo, no decisiones firmes).
+5. El texto exacto de "Ver todos" de Tus planes: ¿siempre a `/perfil`, o una vista combinada que hoy no existe?
+
 ## Pruebas
 
-Prototipo y documento, sin código de la app: no aplica `npm run lint && npm run typecheck && npm test` (regla de "ajuste de pruebas por costo", `docs/ops/GESTION_DE_CAMBIOS.md`). Verificación hecha: las 15 capturas abiertas y descritas arriba, comparadas a mano contra el HTML fuente y contra el código real de `Inicio.tsx`/`Destacados.module.css`/`Sesion.tsx` citado en cada sección; capturas con y sin JavaScript comparadas para confirmar el pintado completo sin script; revisado a mano que no aparece ningún correo ni nombre de persona real en el documento, el prototipo, la bitácora ni las capturas.
+Prototipo y documento, sin código de la app: no aplica `npm run lint && npm run typecheck && npm test` (regla de "ajuste de pruebas por costo", `docs/ops/GESTION_DE_CAMBIOS.md`). Verificación hecha: las 16 capturas (15 repetidas + `chevron-area-tocable.png`) abiertas y descritas arriba, comparadas a mano contra el HTML fuente y contra el código real de `Inicio.tsx`/`Destacados.module.css`/`Sesion.tsx`/`ui/Iconos.tsx` citado en cada sección; capturas con y sin JavaScript comparadas otra vez para confirmar el pintado completo sin script tras los cambios de esta vuelta; revisado a mano que no aparece ningún correo ni nombre de persona real en el documento, el prototipo, la bitácora ni las capturas.
 
 ## Estado y límites
 
-PR [#253](https://github.com/robscan/somosnosotros/pull/253), sin unir a `main` (instrucción de esta pieza: solo PR, sin merge). Queda para el founder: las tres preguntas abiertas de arriba, antes de que cualquier chat empiece el código de OL-217.
+PR [#253](https://github.com/robscan/somosnosotros/pull/253), sin unir a `main` (instrucción de esta pieza: solo PR, sin merge). Queda para el founder: las preguntas abiertas de arriba (la mayoría ya resueltas o son propuestas a validar, no bloqueos), antes de que cualquier chat empiece el código de OL-217.
