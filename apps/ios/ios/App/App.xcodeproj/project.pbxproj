@@ -12,6 +12,7 @@
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		958DCC772DB07C7200EA8C64 /* EntrarSistemaPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */; };
+		958DCC792DB07C7200EA8C66 /* GestoAtrasPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */; };
 		958DCC752DB07C7200EA8C62 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC742DB07C7200EA8C61 /* MainViewController.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
@@ -35,6 +36,7 @@
 		958DCC732DB07C7200EA8C60 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		958DCC742DB07C7200EA8C61 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntrarSistemaPlugin.swift; sourceTree = "<group>"; };
+		958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestoAtrasPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +75,7 @@
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */,
+				958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */,
 				958DCC742DB07C7200EA8C61 /* MainViewController.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
@@ -168,6 +171,7 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				958DCC772DB07C7200EA8C64 /* EntrarSistemaPlugin.swift in Sources */,
+				958DCC792DB07C7200EA8C66 /* GestoAtrasPlugin.swift in Sources */,
 				958DCC752DB07C7200EA8C62 /* MainViewController.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);

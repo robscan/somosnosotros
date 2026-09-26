@@ -22,3 +22,10 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* La descripción de un evento, lugar o artista es justo el texto que alguien puede querer copiar o citar: dentro
+   de la app (OL-205, `.app-nativa` en `globals.css`) no pierde la selección aunque el resto de la pantalla sí. */
+:global(.app-nativa) .texto {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+}

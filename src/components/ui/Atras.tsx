@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { pedirSalida } from "@/lib/guardiaSalida";
-import { alVolver, hayAnterior, vuelveADestino } from "../Navegacion";
+import { alVolver, hayAnterior, registrarVolverVisible, vuelveADestino } from "../Navegacion";
 import { IconoChevronIzquierda } from "./Iconos";
 import styles from "./Atras.module.css";
 
@@ -20,20 +20,28 @@ function claveDe(url: string): string {
  * Si la madre tiene la misma ruta que la pantalla actual (la de error de la agenda), se recarga: Next.js solo quita la
  * pantalla de error cuando cambia la ruta. Si la pantalla tiene algo sin publicar (guardia de salida), primero
  * pregunta ella y se le entrega la salida.
+ *
+ * Mientras el botón (o la ✕) está en pantalla, esta misma función queda registrada (`registrarVolverVisible`,
+ * OL-205) para que el gesto nativo de deslizar desde el borde, dentro de la app de iPhone, vuelva exactamente igual
+ * que un toque — nunca con el `WKBackForwardList` a secas, que no conoce la marca propia del historial.
  */
 export function useVolver(href: string): (e: React.MouseEvent<HTMLAnchorElement>) => void {
   const router = useRouter();
-  return function volver(e) {
-    // Abrir en otra pestaña (Cmd, Ctrl, clic central) sigue siendo cosa del navegador.
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
+  const irse = useCallback(() => {
     const anterior = hayAnterior();
-    const irse = () => {
+    const ir = () => {
       if (anterior) router.back();
       else if (new URL(href, window.location.href).pathname === window.location.pathname) window.location.replace(href);
       else router.replace(href);
     };
-    if (pedirSalida(irse)) return;
+    if (pedirSalida(ir)) return;
+    ir();
+  }, [href, router]);
+  useEffect(() => registrarVolverVisible(irse), [irse]);
+  return function volver(e) {
+    // Abrir en otra pestaña (Cmd, Ctrl, clic central) sigue siendo cosa del navegador.
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
     irse();
   };
 }

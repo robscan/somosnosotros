@@ -1,8 +1,12 @@
 "use client";
 
+import { crearRegistroVolver } from "@/lib/gestoAtras";
 import { hayPantallaAnterior, leerMarca, marcaDeLlegada, ponerMarca, reponerPantallaAnterior, vuelveA } from "@/lib/historial";
 
 const INSTALADA = "__somosnosotrosMarca";
+
+/** Lo que Capacitor pone en `window` dentro de la app de iPhone; en el navegador normal, no existe. */
+type PuenteCapacitor = { Plugins?: { GestoAtras?: { addListener: (evento: "atras", fn: () => void) => void } } };
 
 /** El almacén de la pestaña, o null donde el navegador lo niega (modo privado, almacenamiento bloqueado). */
 function sesion(): Storage | null {
@@ -15,6 +19,11 @@ function sesion(): Storage | null {
 
 /** Quienes necesitan enterarse de una vuelta antes de que se pinte la pantalla de destino. */
 const alVolverSuscritos = new Set<() => void>();
+
+/** Quién puede "volver" ahora mismo en pantalla (ver `lib/gestoAtras.ts`): lo usa el gesto nativo de deslizar. */
+const registroVolver = crearRegistroVolver();
+/** Atrás o Cerrar se registra aquí al montarse (`ui/Atras.tsx`). */
+export const registrarVolverVisible = registroVolver.registrar;
 
 /**
  * Atrás, adelante o el gesto (popstate). React pinta la pantalla de destino dentro del mismo evento, así que quien
@@ -43,6 +52,13 @@ if (typeof window !== "undefined") {
       reponerPantallaAnterior(window.history, sesion(), window.location.pathname + window.location.search, Date.now());
     } catch {}
     window.addEventListener("popstate", () => alVolverSuscritos.forEach((fn) => fn()));
+    // Dentro de la app de iPhone (OL-205, `GestoAtrasPlugin.swift`): el gesto de deslizar desde el borde avisa aquí
+    // en vez de navegar solo con el `WKBackForwardList` nativo; se ejecuta la misma función que ya usa "Atrás" o la
+    // ✕ visibles (`ui/Atras.tsx`), la que respeta la marca propia del historial. En el navegador normal `Capacitor`
+    // no existe, así que esto no hace nada.
+    try {
+      (window as Window & { Capacitor?: PuenteCapacitor }).Capacitor?.Plugins?.GestoAtras?.addListener("atras", () => registroVolver.disparar());
+    } catch {}
   }
 }
 
