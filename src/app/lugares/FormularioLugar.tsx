@@ -30,7 +30,7 @@ import { leerUbicacion } from "@/lib/ubicacion";
 import { esteAparatoInicial } from "@/lib/plataforma";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
 import type { ResultadoLugar } from "./acciones";
-import HojaDonde from "./HojaDonde";
+import HojaDondeLugar from "./HojaDondeLugar";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./FormularioLugar.module.css";
@@ -44,6 +44,9 @@ type Props = {
   siguiente?: string;
   /** El administrador puede pegar la dirección de una imagen y marcar el lugar como privado (mapeo personal). */
   esAdmin?: boolean;
+  /** Lugares ya registrados y visibles (sin el propio, al editar): pines de "Dónde está" (OL-211) para avisar "ya
+   *  existe" sin inventar -y sin ofrecerlos para elegir, que aquí no aplica (se está creando/corrigiendo ESTE). */
+  lugares: LugarResumen[];
 };
 
 /**
@@ -53,7 +56,7 @@ type Props = {
  * redes, foto). El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón que falta
  * (founder, 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26).
  */
-export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false }: Props) {
+export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false, lugares }: Props) {
   const plataforma = usePlataforma();
   const esAlta = !lugar;
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(accion, null);
@@ -88,6 +91,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   const [tipoAbierto, setTipoAbierto] = useState(false);
   const [masAbierto, setMasAbierto] = useState(!esAlta);
   const [hoja, setHoja] = useState<null | { conFoco: boolean }>(null);
+  // Sin el propio lugar (al editar): su pin no debe avisarse a sí mismo "ya existe" (OL-211).
+  const lugaresParaMapa = lugar ? lugares.filter((l) => l.id !== lugar.id) : lugares;
   const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
   const [ubicando, setUbicando] = useState(false);
   const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
@@ -199,13 +204,16 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     });
   }, []);
 
-  async function estoyAqui() {
+  /** Lee la ubicación y la entrega a quien la pidió: el renglón "Dónde" (con `alMoverPin`, directo) o la hoja
+   *  "Dónde está" abierta (con su propio `moverPin`, que muestra "Ubicando…" mientras llega la dirección -mismo
+   *  contrato que `onEstoyAqui` en HojaDondeEs.tsx del alta de evento, OL-211). */
+  async function estoyAqui(poner: (p: Punto) => void) {
     setUbicando(true);
     setAvisoUbicacion(null);
     try {
       const p = await leerUbicacion(true);
       setYo((y) => ({ ...p, vez: (y?.vez ?? 0) + 1 }));
-      alMoverPin(p);
+      poner(p);
     } catch (e) {
       setAvisoUbicacion(e === "sin-soporte" ? `${esteAparatoInicial(plataforma)} no da su ubicación. Busca la dirección o toca el mapa.` : "No se pudo leer tu ubicación. Busca la dirección o toca el mapa.");
     } finally {
@@ -346,7 +354,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
               <>
                 <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
                 <span className={canon.opciones}>
-                  <button type="button" className={canon.accionIcono} onClick={estoyAqui} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+                  <button type="button" className={canon.accionIcono} onClick={() => void estoyAqui(alMoverPin)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
                     <IconoUbicacion width={22} height={22} />
                   </button>
                   <button type="button" className={canon.accionIcono} onClick={() => setHoja({ conFoco: true })} aria-label="Buscar la dirección" title="Buscar la dirección">
@@ -488,16 +496,22 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         </Boton>
       </form>
       {hoja && (
-        <HojaDonde
+        <HojaDondeLugar
+          lugares={lugaresParaMapa}
+          nombreForm={nombre}
           conFoco={hoja.conFoco}
           punto={punto}
           direccion={direccion}
+          ciudad={ciudad}
           yo={yo}
           ubicando={ubicando}
-          onPunto={alMoverPin}
-          onDireccion={setDireccion}
-          onCiudad={setCiudad}
+          avisoUbicacion={avisoUbicacion}
           onEstoyAqui={estoyAqui}
+          onListo={({ punto: p, direccion: d, ciudad: c }) => {
+            setPunto(p);
+            setDireccion(d);
+            if (c) setCiudad(c);
+          }}
           onCerrar={() => setHoja(null)}
         />
       )}

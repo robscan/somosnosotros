@@ -1,35 +1,18 @@
 /**
- * Lógica pura de la pantalla completa "¿Dónde es?" (OL-173, docs/rediseno/43; lugar privado de OL-179): sin red ni
- * DOM, para poder probarla sin levantar Mapbox ni React. Tres piezas: el orden de la lista flotante (lugares
- * registrados primero, luego lo que trae Mapbox), qué guarda "Agregar lugar" según el interruptor "Es un lugar
- * privado" (`decidirGuardado`), y dónde va la barra de acciones -un solo botón, "Agregar lugar"- sticky sobre el
- * teclado o al pie, usando `visualViewport` cuando existe.
+ * Lógica pura de la pantalla completa "¿Dónde es?" DEL ALTA DE EVENTO (OL-173, docs/rediseno/43; lugar privado de
+ * OL-179): sin red ni DOM, para poder probarla sin levantar Mapbox ni React. Lo genérico de esta pantalla
+ * (`combinarResultados`, `modoDePantalla`, `altoTeclado`) se movió a `@/lib/buscarLugares` en OL-211, compartido
+ * con "Agregar lugar" (`src/app/lugares/HojaDondeLugar.tsx`) — re-exportado aquí para no romper nada que ya
+ * importara de este archivo. Lo que sigue siendo solo del EVENTO: qué guarda "Agregar lugar" según el interruptor
+ * "Es un lugar privado" (`decidirGuardado`), y la confirmación automática de una dirección ya leída del cartel
+ * (OL-187).
  */
-import type { LugarSugerido } from "@/lib/buscarLugares";
+import type { ResultadoBusqueda } from "@/lib/buscarLugares";
 import type { Punto } from "@/lib/geo";
-import { normalizarNombre, type LugarResumen } from "@/lib/lugares";
+import { normalizarNombre } from "@/lib/lugares";
 
-export type ResultadoLugarRegistrado = { tipo: "lugar"; lugar: LugarResumen };
-export type ResultadoMapbox = { tipo: "mapbox"; item: LugarSugerido };
-export type ResultadoBusqueda = ResultadoLugarRegistrado | ResultadoMapbox;
-
-/**
- * Lugares registrados primero (el directorio manda), luego lo que trae Mapbox (docs/rediseno/43, paso 2): ninguna
- * lista se reordena entre sí, solo se concatenan — cada una ya viene en su propio orden (`lugaresPorTexto` filtra
- * el directorio; `sugerirLugares`/`buscarConContexto` ya ordenan lo de Mapbox por relevancia y cercanía).
- */
-export function combinarResultados(lugares: readonly LugarResumen[], mapbox: readonly LugarSugerido[]): ResultadoBusqueda[] {
-  return [...lugares.map((lugar): ResultadoLugarRegistrado => ({ tipo: "lugar", lugar })), ...mapbox.map((item): ResultadoMapbox => ({ tipo: "mapbox", item }))];
-}
-
-export type ModoPantalla = "inicial" | "resultados" | "no-encontrado" | "agregar";
-
-/** Qué se muestra bajo el campo: nada al abrir, la lista con resultados, el aviso "no está registrado", o el panel "Agregar lugar". */
-export function modoDePantalla(texto: string, panelAgregar: boolean, hayResultados: boolean): ModoPantalla {
-  if (panelAgregar) return "agregar";
-  if (!texto.trim()) return "inicial";
-  return hayResultados ? "resultados" : "no-encontrado";
-}
+export type { ModoPantalla, ResultadoLugarRegistrado, ResultadoMapbox, ResultadoBusqueda } from "@/lib/buscarLugares";
+export { altoTeclado, combinarResultados, modoDePantalla } from "@/lib/buscarLugares";
 
 export type DecisionGuardado = {
   /** "registrar": lugar de verdad, ficha pública, visible en Lugares. "privado": también se registra (OL-179,
@@ -47,17 +30,6 @@ export type DecisionGuardado = {
  */
 export function decidirGuardado(privado: boolean, nombre: string, direccion: string): DecisionGuardado {
   return { modo: privado ? "privado" : "registrar", nombre: nombre.trim(), direccion: direccion.trim() };
-}
-
-/**
- * Alto del teclado en píxeles, tal como lo mide `visualViewport` (iOS): la ventana completa menos el área visible
- * y su desplazamiento. Sin `visualViewport` (navegador que no lo da), 0: la barra se queda al pie, como pide el
- * punto 5 del encargo ("si no hay visualViewport, al pie").
- */
-export function altoTeclado(altoVentana: number, visualViewport: { height: number; offsetTop: number } | null): number {
-  if (!visualViewport) return 0;
-  const oculto = altoVentana - visualViewport.height - visualViewport.offsetTop;
-  return oculto > 1 ? Math.round(oculto) : 0;
 }
 
 /**

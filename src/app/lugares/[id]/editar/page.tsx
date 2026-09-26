@@ -1,7 +1,7 @@
 import Barra from "@/components/ui/Barra";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { esUuid } from "@/lib/formulario";
-import { hrefLugar, type Lugar } from "@/lib/lugares";
+import { hrefLugar, type Lugar, type LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioLugar from "../../FormularioLugar";
 import { actualizarLugar } from "../../acciones";
@@ -29,11 +29,13 @@ export default async function EditarLugar({ params }: { params: Promise<{ id: st
   const { data: liga } = (await supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", lugar.id).eq("perfil_id", actual.perfil.id).maybeSingle()) ?? { data: null };
   // Edita el autor, la cuenta ligada ("¿Es tu espacio?") o el administrador.
   if (actual.perfil.rol !== "admin" && lugar.creado_por !== actual.perfil.id && !liga) redirect(hrefLugar(lugar));
+  // Pines de "Dónde está" (OL-211): FormularioLugar quita el propio lugar de esta lista antes de avisar "ya existe".
+  const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre")) ?? { data: [] };
   return (
     <main className="pagina">
       <Barra volver={{ href: hrefLugar(lugar), texto: "Volver al lugar" }} />
       <h1 className="titulo">Editar lugar</h1>
-      <FormularioLugar accion={actualizarLugar.bind(null, lugar.id)} lugar={lugar} usuarioId={actual.perfil.id} esAdmin={actual.perfil.rol === "admin"} />
+      <FormularioLugar accion={actualizarLugar.bind(null, lugar.id)} lugar={lugar} usuarioId={actual.perfil.id} esAdmin={actual.perfil.rol === "admin"} lugares={(lugares ?? []) as LugarResumen[]} />
     </main>
   );
 }
