@@ -15,7 +15,8 @@ export async function GET(request: NextRequest, { params }: Contexto) {
   const cliente = esProveedor(proveedor) ? CLIENTES[proveedor] : null;
   if (!esProveedor(proveedor) || !cliente) return NextResponse.redirect(new URL(urlEntrar(rutaSegura(siguiente, "/perfil")), origen), 303);
 
-  const intento = nuevoIntento(proveedor, siguiente);
+  // `app=1`: el toque salió del envoltorio de iPhone (apps/ios, OL-194); ver el comentario de `Intento.enApp`.
+  const intento = nuevoIntento(proveedor, siguiente, Date.now(), request.nextUrl.searchParams.get("app") === "1");
   const respuesta = NextResponse.redirect(urlProveedor(proveedor, { cliente, vuelta: direccionDeVuelta(origen, proveedor), estado: intento.estado, nonce: intento.nonce }), 303);
   respuesta.cookies.set(COOKIE_ENTRAR, codificarIntento(intento), {
     httpOnly: true,

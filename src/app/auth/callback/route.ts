@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { clienteServidor } from "@/lib/supabase/servidor";
+import { clienteServidor, confirmarEnlaceMagico } from "@/lib/supabase/servidor";
 import { rutaSegura } from "@/lib/rutas";
 
 /**
@@ -21,8 +21,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     fallo = !!error;
   } else if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as "magiclink" | "email" });
-    fallo = !!error;
+    fallo = !(await confirmarEnlaceMagico(supabase, tokenHash, type as "magiclink" | "email"));
   } else {
     fallo = true;
   }
