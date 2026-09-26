@@ -108,7 +108,7 @@ El gestor trajo cuatro decisiones del founder tras ver el prototipo y su leyenda
 ## Qué pasa al tocar un día desactivado
 
 **Nada — sin mensaje de error, sin pista.** Coherente con cómo ya se comportan los demás controles deshabilitados
-de la app (`.chip:disabled`, `.listo:disabled`, el propio `.pasado` de `SelectorFecha` hoy): un botón sin
+de la app (`.chip:disabled`, el propio `.pasado` de `SelectorFecha` hoy): un botón sin
 `opacity`/`cursor` de acción y sin manejador de toque no necesita explicarse aparte. Agregar un mensaje ("Este día
 no tiene eventos") sería el patrón contrario al que ya eligió el founder en otras piezas (memoria: menos texto de
 ayuda, el sistema hace el trabajo en vez de explicarlo) y un componente nuevo solo para este caso. Los botones
