@@ -1,6 +1,8 @@
 // Favicon, iconos de instalación e insignia de avisos a partir del símbolo SN final del founder
-// (LogoFinal/SN - Symbol.svg). Fondo blanco opaco en todos los iconos: iOS pinta oscuro lo transparente
-// (visto en el iPhone del founder el 2026-09-16). Uso, desde la raíz del repo:  node docs/diseno/logotipo/iconos-sn.mjs
+// (LogoFinal/SN - Symbol.svg). Fondo opaco en todos los iconos: iOS pinta oscuro lo transparente (visto en el iPhone
+// del founder el 2026-09-16). Fondo crema, tinta negra y el símbolo al 80 % del lado, como el icono de la app que el
+// founder hizo en Icon Composer (apps/ios/ios/App/App/AppIcon.icon, OL-208): el crema es su color Display P3
+// (0.96078, 0.94902, 0.92549) pasado a sRGB. Uso, desde la raíz del repo:  node docs/diseno/logotipo/iconos-sn.mjs
 import sharp from "sharp";
 import fs from "node:fs";
 import path from "node:path";
@@ -9,11 +11,11 @@ const raiz = process.cwd();
 const simbolo = fs.readFileSync(path.join(raiz, "docs/diseno/logotipo/LogoFinal/SN - Symbol.svg"), "utf8");
 const [, vbx, vby, vbw, vbh] = simbolo.match(/viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/).map(Number);
 const d = simbolo.match(/ d="([^"]+)"/)[1];
-const TINTA = "#1a1a1a", BLANCO = "#ffffff";
+const TINTA = "#000000", CREMA = "#F6F2EB", BLANCO = "#ffffff";
 
 /** Lienzo cuadrado de `px` con el símbolo centrado. `relleno`: margen por lado (fracción). `seguro`: diagonal del símbolo
  *  como fracción del lado (icono adaptable de Android: el dibujo cabe en el círculo seguro). */
-function lienzo(px, { relleno = 0.14, seguro = null, fondo = BLANCO, tinta = TINTA } = {}) {
+function lienzo(px, { relleno = 0.096, seguro = null, fondo = CREMA, tinta = TINTA } = {}) {
   const s = seguro ? (seguro * px) / Math.hypot(vbw, vbh) : Math.min((px * (1 - 2 * relleno)) / vbw, (px * (1 - 2 * relleno)) / vbh);
   const w = vbw * s, h = vbh * s, x = (px - w) / 2, y = (px - h) / 2;
   const rect = fondo ? `<rect width="${px}" height="${px}" fill="${fondo}"/>` : "";
