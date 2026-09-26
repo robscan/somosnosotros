@@ -243,4 +243,4 @@ verde (1308 pruebas, subieron de 1281 por las piezas nuevas).
 ## Cierre
 
 `git status --short` en la rama, limpio salvo lo de esta pieza. Commit local en `app-ios-arreglos`; push y PR
-contra `main` (sin unir — lo une el gestor).
+[#241](https://github.com/robscan/somosnosotros/pull/241) contra `main`, sin unir (lo une el gestor).
