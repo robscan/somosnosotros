@@ -94,6 +94,16 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+.bloqueado {
+  display: grid;
+  gap: var(--espacio-3);
+  justify-items: start;
+  padding: var(--espacio-4) 0;
+}
+.bloqueado > p {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
 
 /* 3. Listas: días en gris, renglones de la agenda o de lugares y artistas; vacíos con salida. */
 .dia {
