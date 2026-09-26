@@ -54,3 +54,20 @@ un tiempo. Tras publicar, el gestor comprueba con `curl` que la CDN ya muestra `
 1. Borra la app y la reinstala desde TestFlight. Tendrá que volver a entrar.
 2. Abre la pared de una obra en la computadora y escanea el QR con la cámara del iPhone.
 3. Debe abrirse la app, directo en el mando, con su sesión.
+
+## Prueba en el simulador (después de publicar)
+
+Con el archivo nuevo ya en la CDN de Apple, instalé una compilación de simulador de main en el FLOWYA iPhone SE
+(iOS 26.3), con `applinks:somosnosotros.org` y el identificador `AT53235M7U.org.somosnosotros.app` en sus
+permisos. Luego abrí los enlaces desde fuera con `simctl openurl`, que se porta como tocar un enlace en otra app:
+
+- `01-qr-pincel-app-cerrada.png`: `https://somosnosotros.org/obra/prueba/mando` con la app cerrada del todo. Se
+  abre la app, no Safari: no hay barra de direcciones y arriba a la izquierda sale «◀ Safari», la vuelta a la app
+  de donde vino. Muestra «Esto ya no está» porque la obra `prueba` no existe. Lo que importa es que la app cargó
+  la dirección exacta del enlace al arrancar en frío.
+- `02-agenda-app-en-segundo-plano.png`: `https://somosnosotros.org/agenda` con la app abierta en segundo plano.
+  Se abre la app en Agenda, también con «◀ Safari» arriba.
+
+En el iPhone del founder el código siguió abriendo Safari. El teléfono tiene que volver a leer la lista: borrar y
+reinstalar la app desde TestFlight. Si aun así sigue en Safari, hay que dejar el dedo sobre un enlace del sitio
+(por ejemplo en Notas) y elegir «Abrir en Somos Nosotros».
