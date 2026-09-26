@@ -72,3 +72,15 @@ nuevas incluidas), typecheck y build sin errores; lint solo con la advertencia p
 
 `apps/**`, `ui/ChipFecha`, `ui/SelectorFecha`, `src/app/lugares/VistaLugares.tsx` ni el formulario de eventos
 (OL-218 en curso) — por diseño, el arreglo no necesitó tocar ninguno de estos: los hooks bastan.
+
+## Revisión del gestor antes de unir
+
+El recuerdo de la visita manda siempre sobre lo que diga el servidor cuando no coinciden: no compara horas. Eso dejaba un caso roto:
+
+1. Se quita un «Voy» desde una lista, y queda anotado «no voy».
+2. Después se vuelve a marcar «Voy» desde la ficha del evento, que no anota nada en el recuerdo.
+3. Al volver a Inicio, el «no voy» viejo le ganaba a la decisión más nueva y el evento desaparecía de «Tus planes».
+
+Arreglo: `src/app/eventos/[id]/Asistencia.tsx` y `src/components/Seguir.tsx` (las fichas) llaman `borrarDecisionesVisita()` tras guardar con éxito. Sus acciones revalidan en el acto, sin `diferir`: el router tira sus copias y cada pantalla se vuelve a pedir fresca, así que el recuerdo ya no hace falta y no puede ganarle a lo nuevo.
+
+`npm run lint`, `npm run typecheck` y `npm test` (114 archivos, 1440 pruebas) siguen en verde.

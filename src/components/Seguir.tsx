@@ -13,6 +13,7 @@ import { enEste } from "@/lib/plataforma";
 import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
 import { useEstadoPush, usePlataforma } from "@/lib/useAvisosTelefono";
 import { AvisoAbajo, HojaAbierta, useCanalDeListas, useCanalDePantalla } from "./useCanalDeListas";
+import { borrarDecisionesVisita } from "@/lib/decisionesVisita";
 
 type Props = {
   /** Lugar ("sus eventos") o artista ("sus fechas"): cambia la promesa y la hoja de avisos. */
@@ -82,6 +83,10 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
       } catch {
         guardado = false;
       }
+      // Guardado desde la ficha: la acción revalida en el acto (sin `diferir`), así que el router tira sus copias y cada
+      // pantalla se vuelve a pedir fresca. El recuerdo de la visita (OL-222) ya no hace falta y, si se quedara, una
+      // decisión vieja tomada en una lista podría ganarle a esta más nueva: se borra.
+      if (guardado) borrarDecisionesVisita();
       if (!esElUltimo(toques.current, ruta, vez)) return;
       if (!guardado) {
         avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, de, boton: siSigueSiendoElUltimo(toques.current, ruta, vez, () => cambiar(nuevo)) });

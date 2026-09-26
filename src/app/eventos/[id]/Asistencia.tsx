@@ -12,6 +12,7 @@ import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
 import { AvisoAbajo, HojaAbierta, useCanalDeListas, useCanalDePantalla } from "@/components/useCanalDeListas";
 import { hrefEvento } from "@/lib/eventos";
+import { borrarDecisionesVisita } from "@/lib/decisionesVisita";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
 import styles from "./ficha.module.css";
 
@@ -73,6 +74,10 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
       } catch {
         guardado = false;
       }
+      // Guardado desde la ficha: la acción revalida en el acto (sin `diferir`), así que el router tira sus copias y cada
+      // pantalla se vuelve a pedir fresca. El recuerdo de la visita (OL-222) ya no hace falta y, si se quedara, una
+      // decisión vieja tomada en una lista podría ganarle a esta más nueva: se borra.
+      if (guardado) borrarDecisionesVisita();
       if (!esElUltimo(toques.current, eventoId, vez)) return;
       if (!guardado) {
         avisar({ texto: "No se pudo guardar", etiqueta: "Reintentar", fallo: true, de, boton: siSigueSiendoElUltimo(toques.current, eventoId, vez, () => cambiar(nuevo)) });
