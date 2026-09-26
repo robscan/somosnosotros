@@ -7,7 +7,7 @@
 Con capturas de TestFlight 1.0 (2): «Header se rompe horrible. No se integra bien.»
 
 - Arriba, una franja negra del alto de la hora y, debajo, un hueco crema antes de la cabecera (Inicio, Agenda y Entrar).
-- Al desplazar, el contenido pasaba por debajo del reloj, y la cabecera pegajosa de Inicio se enciamaba con la hora.
+- Al desplazar, el contenido pasaba por debajo del reloj, y la cabecera pegajosa de Inicio se encimaba con la hora.
 - En Entrar, otra franja negra abajo.
 
 ## Causa
