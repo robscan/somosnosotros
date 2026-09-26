@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { contenidoCorreo, contenidoPush, contenidoPushAdmin, type Cambio, type EventoParaAviso, type TipoAviso } from "./avisos";
 import { urlBaja } from "./baja";
 import { cuerpoCorreo, enviarCorreoIdempotente, type ResultadoEnvio } from "./correo";
-import { enviarPushEndpoint } from "./push";
+import { enviarPush } from "./push";
 import { clienteAdmin } from "./supabase/admin";
 import { configPublica } from "./config";
 
@@ -15,7 +15,9 @@ export type DependenciasAvisos = {
   rpc: <T>(nombre: string, args?: Record<string, unknown>, timeoutMs?: number) => Promise<T>;
   correoDe: (id: string, timeoutMs?: number) => Promise<string>;
   correo: typeof enviarCorreoIdempotente;
-  push: typeof enviarPushEndpoint;
+  // Un endpoint de navegador (Web Push) o, dentro de la app de iPhone, un token APNs (dispositivos_apns): `enviarPush`
+  // (push.ts) distingue la forma de `suscripcion` sin que este worker necesite saberlo (OL-213, bitácora 242).
+  push: typeof enviarPush;
   baja: (id: string) => string;
   ahora: () => number;
 };
@@ -44,7 +46,7 @@ function dependencias(): DependenciasAvisos {
       if (!user?.email || !user.email_confirmed_at) throw new Error("avisos_sin_correo_confirmado");
       return user.email;
     },
-    correo: enviarCorreoIdempotente, push: enviarPushEndpoint, ahora: Date.now,
+    correo: enviarCorreoIdempotente, push: enviarPush, ahora: Date.now,
     baja: (id) => {
       return urlBaja(id, llave);
     },

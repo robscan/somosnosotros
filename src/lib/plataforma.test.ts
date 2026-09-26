@@ -70,9 +70,24 @@ describe("decidirEstadoPush", () => {
     expect(decidirEstadoPush(p, { ...conSoporte, llave: false })).toBe("no-soportado");
     expect(decidirEstadoPush(p, sinSoporte)).toBe("no-soportado");
   });
+  it("dentro de la app de iPhone (nativo) no manda a instalar ni exige la llave VAPID (OL-213, bitácora 242)", () => {
+    // La app YA está instalada por definición y los avisos van por APNs (puente nativo), no por Web Push: sin esto,
+    // decidirEstadoPush mandaba a "instalar-primero" dentro de la propia app instalada.
+    const p = leerPlataforma(IPHONE_APP_INSTALADA, 5, false); // display-mode: standalone falso en el WKWebView de Capacitor
+    expect(decidirEstadoPush(p, { llave: false, soporte: true, permiso: "default", suscrito: false, nativo: true })).toBe("apagado");
+    expect(decidirEstadoPush(p, { llave: false, soporte: true, permiso: "denied", suscrito: false, nativo: true })).toBe("bloqueado");
+    expect(decidirEstadoPush(p, { llave: false, soporte: true, permiso: "granted", suscrito: true, nativo: true })).toBe("encendido");
+  });
+  it("nativo sin el puente (no debería pasar dentro de la app real) sigue diciendo no-soportado", () => {
+    const p = leerPlataforma(IPHONE_APP_INSTALADA, 5, false);
+    expect(decidirEstadoPush(p, { llave: false, soporte: false, permiso: null, suscrito: false, nativo: true })).toBe("no-soportado");
+  });
 });
 
 describe("decidirInstalar", () => {
+  it("dentro de la app de iPhone ya está instalada: no se ofrece instalarla (OL-220)", () => {
+    expect(decidirInstalar(leerPlataforma(`${IPHONE_APP_INSTALADA} SomosNosotrosApp`, 5, false), false)).toBe("ya-instalada");
+  });
   it("instalada no ofrece nada", () => {
     expect(decidirInstalar(leerPlataforma(IPHONE_APP_INSTALADA, 5, true), false)).toBe("ya-instalada");
   });

@@ -73,8 +73,8 @@ export default function AvisosPerfil({ correo: correoInicial, correoTexto, llave
     setTrabajando(true);
     try {
       if (estado === "encendido") {
-        const endpoint = await desuscribirPush();
-        if (endpoint) await borrarSuscripcionPush(endpoint);
+        const id = await desuscribirPush();
+        if (id) await borrarSuscripcionPush(id);
         setEstado("apagado");
         router.refresh();
         return;

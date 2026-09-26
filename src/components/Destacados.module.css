@@ -20,9 +20,7 @@
 }
 .cabecera {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--espacio-2);
+  align-items: center;
   padding-inline: var(--gutter);
 }
 /* Un carril vacío colapsa desde el alto del esqueleto (arranca ahí con `@starting-style`, la "entrada" de este nodo
@@ -61,12 +59,29 @@
   font-variation-settings: var(--ancho-titulo);
   line-height: 1.1;
 }
-.verTodos {
+/*
+ * El chevron en vez de «Ver todos» (founder, 2026-09-25, OL-219: «un angle icon ">" [...] se parece al canon de
+ * Apple Music»). Todo el título + chevron es un solo enlace (nunca un botón aparte): `.tituloCarril` mide al menos
+ * `--toque-min` (44px) de alto, aunque el glifo dibujado (`.chevron`) sea de 20px — un toque cerca del icono, no
+ * solo sobre él, no falla.
+ */
+.tituloCarril {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  color: var(--texto);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.chevron {
+  display: inline-flex;
   flex: none;
-  color: var(--primario);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: var(--toque-min);
+  margin-right: -10px;
+  color: var(--texto-suave);
 }
 .carril {
   display: grid;
@@ -130,7 +145,8 @@
   justify-items: start;
   margin: 0 0 var(--espacio-2) var(--espacio-2);
 }
-.van {
+/* «N van» y «Recién agregado» (OL-219): la misma insignia de fondo vidrio, no una pieza nueva. */
+.van, .reciente {
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-1);

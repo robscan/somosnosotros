@@ -13,6 +13,7 @@
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		958DCC772DB07C7200EA8C64 /* EntrarSistemaPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */; };
 		958DCC792DB07C7200EA8C66 /* GestoAtrasPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */; };
+		958DCC7A2DB07C7200EA8C67 /* EntornoApnsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC7B2DB07C7200EA8C68 /* EntornoApnsPlugin.swift */; };
 		C84ECFAE493C9603C8B04848 /* CalendarioPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C29139F20F8D399B7D3F6C /* CalendarioPlugin.swift */; };
 		958DCC752DB07C7200EA8C62 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC742DB07C7200EA8C61 /* MainViewController.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
@@ -40,6 +41,7 @@
 		958DCC742DB07C7200EA8C61 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntrarSistemaPlugin.swift; sourceTree = "<group>"; };
 		958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestoAtrasPlugin.swift; sourceTree = "<group>"; };
+		958DCC7B2DB07C7200EA8C68 /* EntornoApnsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntornoApnsPlugin.swift; sourceTree = "<group>"; };
 		24C29139F20F8D399B7D3F6C /* CalendarioPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarioPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -80,6 +82,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */,
 				958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */,
+				958DCC7B2DB07C7200EA8C68 /* EntornoApnsPlugin.swift */,
 				24C29139F20F8D399B7D3F6C /* CalendarioPlugin.swift */,
 				958DCC742DB07C7200EA8C61 /* MainViewController.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -179,6 +182,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				958DCC772DB07C7200EA8C64 /* EntrarSistemaPlugin.swift in Sources */,
 				958DCC792DB07C7200EA8C66 /* GestoAtrasPlugin.swift in Sources */,
+				958DCC7A2DB07C7200EA8C67 /* EntornoApnsPlugin.swift in Sources */,
 				C84ECFAE493C9603C8B04848 /* CalendarioPlugin.swift in Sources */,
 				958DCC752DB07C7200EA8C62 /* MainViewController.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
@@ -323,7 +327,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = AT53235M7U;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
@@ -347,7 +351,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = AT53235M7U;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.4;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EventoAgenda } from "./agenda";
 import type { ArtistaLista } from "./artistas";
-import { decididoVigente, enOrden, fechasValidas, opcionDestacar, ordenarTarjetasPorFoto, puedeDestacarse, SIN_DECIDIR, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
+import { decididoVigente, DIAS_RECIEN_AGREGADO, enOrden, esRecienAgregado, fechasValidas, opcionDestacar, ordenarTarjetasPorFoto, puedeDestacarse, SIN_DECIDIR, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
 import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 import type { LugarLista } from "./lugares";
 
@@ -33,9 +33,17 @@ describe("ordenarTarjetasPorFoto", () => {
 
 describe("tarjetas", () => {
   it("evento: su cartel, si no la foto del lugar, si no la imagen ancha del símbolo; cuándo y dónde", () => {
-    expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", detalle: "mañana · 19:00 · Teatro de la Paz", van: 14 });
+    // `creado_en` por defecto ("2026-09-14") cae 3 días antes de AHORA ("2026-09-17"): dentro de la ventana de
+    // «Recién agregado» (OL-219), así que `reciente` sale en `true` también en este caso base.
+    expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", detalle: "mañana · 19:00 · Teatro de la Paz", van: 14, reciente: true });
     expect(tarjetaEvento(evento({ lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).foto).toBe("/teatro.jpg");
     expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: SIN_FOTO_ANCHA, detalle: "mañana · 19:00 · Plaza de Armas" });
+  });
+  it("evento: «reciente» (OL-219, insignia «Recién agregado») marca lo publicado en los últimos 7 días", () => {
+    expect(DIAS_RECIEN_AGREGADO).toBe(7);
+    expect(esRecienAgregado(new Date(AHORA.getTime() - DIAS_RECIEN_AGREGADO * 86400000).toISOString(), AHORA)).toBe(true);
+    expect(esRecienAgregado(new Date(AHORA.getTime() - (DIAS_RECIEN_AGREGADO * 86400000 + 1)).toISOString(), AHORA)).toBe(false);
+    expect(tarjetaEvento(evento({ creado_en: "2026-08-01T00:00:00Z" }), AHORA).reciente).toBe(false);
   });
   it("lugar: su próximo evento o, sin él, qué es", () => {
     expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: SIN_FOTO_ANCHA, detalle: "Próximo: mañana · 19:00" });
