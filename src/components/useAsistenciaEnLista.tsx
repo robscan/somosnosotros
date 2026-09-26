@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { cambiarAsistencia } from "@/app/eventos/acciones";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
+import { corregirAsistencias, guardarDecisionAsistencia, limpiarAsistenciasResueltas } from "@/lib/decisionesVisita";
 import { hrefEvento } from "@/lib/eventos";
 import { asistenciaTras, claveVoy, recortar, textoHecho, type Asistencia, type ClaveAccion } from "@/lib/deslizar";
 import { anotarIntencion } from "@/lib/intencionAvisos";
@@ -28,6 +29,10 @@ type EventoLista = { id: string; slug?: string | null; titulo: string };
  * Lo que llega del servidor manda (al volver de la ficha, en la respuesta de la acción): lo elegido aquí se superpone
  * solo mientras se guarda. Cada toque lleva su número por renglón (lib/toques): lo que trae un guardado viejo se ignora.
  *
+ * `decididas` puede venir de una página vieja (Next la reutiliza hasta 60 s, y siempre con Atrás/Adelante) que no
+ * conoce lo decidido en esta visita (OL-222, bitácora 251, `lib/decisionesVisita`): se corrige con lo guardado en el
+ * teléfono para esta cuenta antes de usarse, y lo que el servidor ya refleje se limpia solo.
+ *
  * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
  * la lista tiene los suyos y pinta su aviso en `extras`.
  */
@@ -40,6 +45,11 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     setRecibidas(decididas);
     setElegidas(alRecibir);
   }
+  const cuenta = avisos?.cuenta ?? null;
+  const corregidas = corregirAsistencias(cuenta, decididas);
+  useEffect(() => {
+    limpiarAsistenciasResueltas(cuenta, decididas);
+  }, [cuenta, decididas]);
   const toques = useRef<Toques>({});
   // ¿La lista sigue en la pantalla? El canal es de la pantalla y la sobrevive (Lugares, con Mapa y Lista): un guardado
   // que termina cuando la lista ya no está no puede tomar la pregunta, porque nadie pintaría la hoja ni la soltaría.
@@ -62,9 +72,9 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
   // y la pregunta trabada.
   if (hoja && !avisos) setHoja(null);
 
-  const estado = (id: string): Asistencia => (id in elegidas ? elegidas[id].valor : (decididas?.[id] ?? null));
+  const estado = (id: string): Asistencia => (id in elegidas ? elegidas[id].valor : (corregidas?.[id] ?? null));
   /** Lo mismo, pero solo con lo que ya quedó guardado: lo que se está guardando (y lo que falló) no cuenta. */
-  const guardado = (id: string): Asistencia => (elegidas[id]?.guardada ? elegidas[id].valor : (decididas?.[id] ?? null));
+  const guardado = (id: string): Asistencia => (elegidas[id]?.guardada ? elegidas[id].valor : (corregidas?.[id] ?? null));
 
   /**
    * Un toque: muestra `valor` al momento y lo guarda. Si al terminar ya hubo otro toque en el renglón, no hace nada más.
@@ -88,6 +98,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
         avisar({ texto: `No se pudo guardar «${recortar(e.titulo)}»`, boton: siSigueSiendoElUltimo(toques.current, e.id, vez, reintentar), etiqueta: "Reintentar", fallo: true, de });
         return;
       }
+      if (cuenta) guardarDecisionAsistencia(cuenta, e.id, valor);
       alGuardar?.();
     });
     return vez;
