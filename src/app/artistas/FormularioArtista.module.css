@@ -42,3 +42,43 @@
   white-space: nowrap;
   color: var(--texto);
 }
+
+/* 3. "Qué hace" en dos pasos (OL-206, docs/rediseno/15 decisión 11): al elegir una disciplina con
+   subcategorías, se oculta el resto y queda sola, con su ✕ — mismo dibujo que el chip elegido de
+   ui/ChipFecha (pastilla con borde de color y quitar a la derecha), reutilizando la clase `.chip` de
+   ui/Chip.module.css en vez de una nueva. Debajo, una línea divide la disciplina de su subcategoría. */
+.chipElegido.chipElegido {
+  min-height: var(--toque-min);
+  gap: 6px;
+  padding: 0 var(--espacio-3) 0 var(--espacio-4);
+  border-color: var(--primario);
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-weight: 600;
+}
+.quitarChip {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: var(--toque-min);
+  margin: 0 -8px 0 2px;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.divisorPasos {
+  height: 1px;
+  margin: 0;
+  border: none;
+  background: var(--borde);
+}
+/* La pregunta de la subcategoría lleva el nombre propio de la disciplina ("¿Qué tipo de artes visuales?"). */
+.preguntaSubcategoria {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artistaIgual, conArtistasLigados, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, hrefLetreroArtista, nombreArchivoQr, ordenarArtistas, quienDesdeJson, subcategoriaParecida, textoLetrero, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
+import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, conArtistasLigados, deducirDisciplina, conProximaFecha, deducirTipoArtista, detallesDe, disciplinasPresentes, etiquetaArtista, filtrarArtistas, filtroDesdeUrl, hrefArtistas, hrefLetreroArtista, nombreArchivoQr, ordenarArtistas, pasoQueHace, preguntaSubcategoria, quienDesdeJson, subcategoriaParecida, textoLetrero, textoProximaFecha, unirNombres, validarArtista } from "./artistas";
 
 describe("deducirDisciplina", () => {
   it("lee la disciplina del nombre y, sin pista, propone música", () => {
@@ -84,6 +84,35 @@ describe("subcategoriaParecida", () => {
   it("elige la más parecida cuando hay más de una candidata", () => {
     const varias = [{ detalle: "danza", artistas: 5 }, { detalle: "compañía de danza", artistas: 13 }];
     expect(subcategoriaParecida(varias, "danz")?.detalle).toBe("danza");
+  });
+});
+
+describe("preguntaSubcategoria (OL-206, «Qué hace» en dos pasos)", () => {
+  it("usa el nombre propio de la disciplina, en minúsculas", () => {
+    expect(preguntaSubcategoria("artes_visuales")).toBe("¿Qué tipo de artes visuales?");
+    expect(preguntaSubcategoria("musica")).toBe("¿Qué tipo de música?");
+    expect(preguntaSubcategoria("teatro")).toBe("¿Qué tipo de teatro?");
+    expect(preguntaSubcategoria("circo")).toBe("¿Qué tipo de artes circenses?");
+  });
+});
+
+describe("pasoQueHace, alElegirDisciplina, alQuitarDisciplina y alElegirSubcategoria (OL-206)", () => {
+  it("sin elegir a mano está en el paso 1, aunque el nombre haya deducido algo", () => {
+    expect(pasoQueHace("")).toBe(1);
+  });
+  it("con una disciplina elegida a mano (o la que trae la ficha al editar) está en el paso 2", () => {
+    expect(pasoQueHace("artes_visuales")).toBe(2);
+  });
+  it("elegir una disciplina fija esa y suelta el detalle y «Otra…» de una anterior", () => {
+    expect(alElegirDisciplina("artes_visuales")).toEqual({ disciplinaElegida: "artes_visuales", detalle: "", otraAbierta: false });
+  });
+  it("la ✕ deshace los dos pasos: vuelve al paso 1 sin subcategoría", () => {
+    const vacio = alQuitarDisciplina();
+    expect(vacio).toEqual({ disciplinaElegida: "", detalle: "", otraAbierta: false });
+    expect(pasoQueHace(vacio.disciplinaElegida)).toBe(1);
+  });
+  it("elegir una subcategoría ya usada fija el detalle y cierra «Otra…»", () => {
+    expect(alElegirSubcategoria("Fotografía")).toEqual({ detalle: "Fotografía", otraAbierta: false });
   });
 });
 

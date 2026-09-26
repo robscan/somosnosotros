@@ -8,12 +8,13 @@ import Boton from "@/components/ui/Boton";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
+import chip from "@/components/ui/Chip.module.css";
 import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin, IconoCerrar } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import ListaFlotante from "@/components/ui/ListaFlotante";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
-import { artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, LIMITES_ARTISTA, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
+import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, LIMITES_ARTISTA, pasoQueHace, preguntaSubcategoria, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
 import type { CiudadConArtistas } from "@/lib/ciudad";
 import { normalizarRedes } from "@/lib/enlaces";
 import { normalizarNombre } from "@/lib/lugares";
@@ -232,75 +233,110 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           </button>
           {abierta === "hace" && (
             <div className={canon.cuerpo}>
-              <div className={canon.chips}>
-                {DISCIPLINAS.map((d) => (
-                  <Chip
-                    key={d.valor}
-                    activo={disciplina === d.valor}
-                    onClick={() => {
-                      if (d.valor === disciplina) return;
-                      setDisciplinaElegida(d.valor);
-                      // Una subcategoría es de su disciplina: al cambiarla, se suelta la anterior.
-                      setDetalle("");
-                      setOtraAbierta(false);
-                    }}
-                  >
-                    {d.etiqueta}
-                  </Chip>
-                ))}
-              </div>
-              {/* Subcategorías ya usadas en esta disciplina (OL-101): elegir una, o "Otra…" para escribir. */}
-              {subcategorias.length > 0 && (
+              {/* "Qué hace" en dos pasos (OL-206, docs/rediseno/15 decisión 11): paso 1, elegir entre todas las
+                  disciplinas; paso 2, con una elegida (a mano, o ya la de la ficha al editar), se oculta el
+                  resto y queda su ✕ — deshace los dos pasos a la vez. */}
+              {pasoQueHace(disciplinaElegida) === 1 ? (
                 <div className={canon.chips}>
-                  {subcategorias.map((s) => (
+                  {DISCIPLINAS.map((d) => (
                     <Chip
-                      key={s.detalle}
-                      activo={!otraAbierta && normalizarNombre(detalle) === normalizarNombre(s.detalle)}
+                      key={d.valor}
+                      activo={disciplina === d.valor}
                       onClick={() => {
-                        setDetalle(s.detalle);
-                        setOtraAbierta(false);
+                        const siguiente = alElegirDisciplina(d.valor);
+                        setDisciplinaElegida(siguiente.disciplinaElegida);
+                        setDetalle(siguiente.detalle);
+                        setOtraAbierta(siguiente.otraAbierta);
                       }}
                     >
-                      {s.detalle}
+                      {d.etiqueta}
                     </Chip>
                   ))}
-                  <Chip activo={otraAbierta} onClick={() => setOtraAbierta(true)}>
-                    Otra…
-                  </Chip>
                 </div>
-              )}
-              {(subcategorias.length === 0 || otraAbierta) && (
+              ) : disciplinaElegida ? (
                 <>
-                  <span className={limpiar.caja}>
-                    <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_ARTISTA.detalle} placeholder="Ej. son huasteco, jazz (opcional)" aria-label="En una palabra" className={canon.entrada} autoComplete="off" />
-                    <Limpiar visible={!!detalle} />
-                    <ContadorCaracteres valor={detalle} tope={LIMITES_ARTISTA.detalle} error={errores.detalle} />
-                  </span>
-                  {/* Antes de crear una subcategoría nueva, ¿ya existe una parecida? (docs/rediseno/27). */}
-                  {(() => {
-                    const parecida = subcategoriaParecida(subcategorias, detalle);
-                    if (!parecida) return null;
-                    return (
-                      <p className={canon.existe} role="status">
-                        <IconoOk width={20} height={20} />
-                        <span>
-                          Ya hay <b>{parecida.artistas}</b> {parecida.artistas === 1 ? "artista" : "artistas"} con &ldquo;<b>{parecida.detalle}</b>&rdquo;.{" "}
-                          <button
-                            type="button"
-                            className={canon.cambiar}
+                  <div className={canon.chips}>
+                    <span className={`${chip.chip} ${estilos.chipElegido}`}>
+                      {etiquetaDisciplina(disciplinaElegida)}
+                      <button
+                        type="button"
+                        className={estilos.quitarChip}
+                        aria-label="Quitar la disciplina elegida"
+                        onClick={() => {
+                          const vacio = alQuitarDisciplina();
+                          setDisciplinaElegida(vacio.disciplinaElegida);
+                          setDetalle(vacio.detalle);
+                          setOtraAbierta(vacio.otraAbierta);
+                        }}
+                      >
+                        <IconoCerrar width={18} height={18} />
+                      </button>
+                    </span>
+                  </div>
+                  <hr className={estilos.divisorPasos} />
+                  {/* Subcategorías ya usadas en esta disciplina (OL-101): elegir una cierra el renglón con el
+                      resumen ("Artes visuales · Grabado"), o "Otra…" para escribir. Sin ninguna conocida
+                      todavía, se va directo al texto, como hoy. */}
+                  {subcategorias.length > 0 && (
+                    <>
+                      <p className={estilos.preguntaSubcategoria}>{preguntaSubcategoria(disciplinaElegida)}</p>
+                      <div className={canon.chips}>
+                        {subcategorias.map((s) => (
+                          <Chip
+                            key={s.detalle}
+                            activo={!otraAbierta && normalizarNombre(detalle) === normalizarNombre(s.detalle)}
                             onClick={() => {
-                              setDetalle(parecida.detalle);
-                              setOtraAbierta(false);
+                              const siguiente = alElegirSubcategoria(s.detalle);
+                              setDetalle(siguiente.detalle);
+                              setOtraAbierta(siguiente.otraAbierta);
+                              setAbierta(null);
                             }}
                           >
-                            Usar esa
-                          </button>
-                        </span>
-                      </p>
-                    );
-                  })()}
+                            {s.detalle}
+                          </Chip>
+                        ))}
+                        <Chip activo={otraAbierta} onClick={() => setOtraAbierta(true)}>
+                          Otra…
+                        </Chip>
+                      </div>
+                    </>
+                  )}
+                  {(subcategorias.length === 0 || otraAbierta) && (
+                    <>
+                      <span className={limpiar.caja}>
+                        <input type="text" name="detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)} maxLength={LIMITES_ARTISTA.detalle} placeholder="Ej. son huasteco, jazz (opcional)" aria-label="En una palabra" className={canon.entrada} autoComplete="off" />
+                        <Limpiar visible={!!detalle} />
+                        <ContadorCaracteres valor={detalle} tope={LIMITES_ARTISTA.detalle} error={errores.detalle} />
+                      </span>
+                      {/* Antes de crear una subcategoría nueva, ¿ya existe una parecida? (docs/rediseno/27). */}
+                      {(() => {
+                        const parecida = subcategoriaParecida(subcategorias, detalle);
+                        if (!parecida) return null;
+                        return (
+                          <p className={canon.existe} role="status">
+                            <IconoOk width={20} height={20} />
+                            <span>
+                              Ya hay <b>{parecida.artistas}</b> {parecida.artistas === 1 ? "artista" : "artistas"} con &ldquo;<b>{parecida.detalle}</b>&rdquo;.{" "}
+                              <button
+                                type="button"
+                                className={canon.cambiar}
+                                onClick={() => {
+                                  const siguiente = alElegirSubcategoria(parecida.detalle);
+                                  setDetalle(siguiente.detalle);
+                                  setOtraAbierta(siguiente.otraAbierta);
+                                  setAbierta(null);
+                                }}
+                              >
+                                Usar esa
+                              </button>
+                            </span>
+                          </p>
+                        );
+                      })()}
+                    </>
+                  )}
                 </>
-              )}
+              ) : null}
               {(errores.disciplina || errores.detalle) && (
                 <p className={canon.error} role="alert">
                   {errores.disciplina ?? errores.detalle}
