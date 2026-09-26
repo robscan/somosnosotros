@@ -296,3 +296,61 @@ eventos y un "Admin de prueba" ficticio, con `admin@example.com`).
   de prueba en el repo").
 
 Rama `calendario-codigo`; commit local, push y PR sin unir, como pide el encargo.
+
+## Revisión del gestor (2026-09-26): dos correcciones antes de pasarlo al founder
+
+**1) El PR chocaba con `main`.** `origin/main` avanzó bastante mientras esta pieza estaba en curso (OL-211,
+212, 213, 214, 216 segunda vuelta, 217, 219, 220). Choque en tres archivos:
+
+- **`src/lib/calendario.ts`**: auto-mergeó limpio, sin marcas de conflicto — OL-214 (bitácora 243, "A mi
+  calendario y Compartir nativos") agregó `finPorDefecto`/`EventoCalendarioNativo`/`datosEventoNativo` a la mitad
+  del archivo (después de `archivoIcs`); mis funciones nuevas de OL-218 van al final, después de `pasoMasCercano`
+  — zonas distintas, sin choque de líneas de verdad.
+- **`src/lib/calendario.test.ts`**: choque real, en la única línea que las dos piezas tocaron — el `import` del
+  principio. Se resolvió a mano, uniendo las dos listas (`datosEventoNativo` de OL-214 junto con
+  `diasActivosCalendario`, `etiquetaDia`, etc. de OL-218). Las 40 pruebas (36 de esta pieza + 4 de OL-214) pasan
+  juntas.
+- **`docs/ops/OPEN_LOOPS.md`**: resuelto con `python3 scripts/ops/resolver_ol.py` (el caso normal: mi rama solo
+  tocó la línea de su propia entrada OL-218, sin trozos nuevos de "Last updated"). Comprobado línea por línea
+  contra `origin/main` (`diff`): las 557 líneas de main quedaron intactas, la única diferencia es la línea
+  OL-218 misma, ahora más larga (con lo entregado). Nada de "Last updated" ni de "Decidido" se perdió.
+
+`git merge origin/main --no-edit` (commit `97a2c71`). Los tres archivos en conflicto quedaron resueltos; el
+resto del choque (`apps/ios/**`, `src/components/inicio/**`, etc.) lo trajo `git` solo, sin marcas de conflicto
+— contenido nuevo de main que mi rama no tocaba.
+
+Vueltos a correr, ya con `main` adentro: `npm run lint && npm run typecheck && npm test && npm run build`, los
+cuatro en verde. `npm test` ahora corre **108 archivos, 1416 pruebas** (más que antes: se sumaron las de OL-214 y
+las demás piezas que traía main). `src/lib/calendario.test.ts` solo, 40 pruebas, verde.
+
+**2) La flecha "‹" de mes anterior se veía negra (activa) en vez de gris (desactivada).** Cierto: `SelectorFecha`
+ya le pone `disabled` a la flecha (`hayMesAnterior`), pero **`SelectorFecha.module.css` nunca tuvo una regla
+`.flecha:disabled`** — no es un choque de especificidad, es que antes de esta pieza esa flecha nunca se
+deshabilitaba (no había tope de mes), así que el estilo nunca hizo falta. Con `disabled` puesto y sin estilo, el
+navegador solo agrega su propio gris de "control deshabilitado" muy tenue, casi indistinguible del negro normal
+en este diseño — de ahí que se viera "activa".
+
+Arreglo: agregada `.flecha:disabled { color: var(--texto-suave); opacity: 0.35; cursor: default; }` en
+`SelectorFecha.module.css`, el mismo valor que ya trae el prototipo firmado
+(`docs/rediseno/prototipos/calendario-dias-con-eventos.html`, regla `.flecha:disabled`) — **no** el 0.65 de
+`.dia.desactivado` (son elementos distintos: un botón de navegación de mes, no un día del calendario).
+
+**Recapturadas `247-01` y `247-12`** (mismo respaldo local, mismos datos; el reloj real de la sesión ya iba en
+26 de septiembre, por eso "hoy" en las capturas es el 26, no el 25 — sin cambio de fondo, ya documentado arriba
+en la entrega original). Abiertas y comparadas:
+
+- **`247-01-agenda-hoja-abierta.png`**: la flecha "‹" ahora se ve gris/tenue, igual que en el prototipo firmado
+  (comparada directamente contra `docs/rediseno/capturas-245/245-01-hoja-sin-fecha.png`, que llegó al repo con
+  este mismo merge — antes no estaba en mi árbol). Confirmado también por computada: `opacity: 0.35`, `color:
+  rgb(92, 92, 92)` (`--texto-suave`), `disabled: true` — antes del arreglo la regla no existía y el navegador
+  pintaba su propio gris apenas perceptible.
+- **`247-12-alta-evento-dia-elegido-sigue-abierta.png`**: misma flecha, mismo arreglo (el componente es el
+  mismo `SelectorFecha`, en modo "campo" aquí); de paso confirma que el arreglo anterior (`.dia:hover:not(.elegido)`)
+  se mantiene — el día 26 sigue elegido (relleno morado) al tocarlo otra vez.
+
+`npm run lint && npm run typecheck && npm test && npm run build` corridos una vez más tras el arreglo de CSS
+(no cambia nada de JS/TS, pero se corrió completo de todas formas, como pide la revisión): los cuatro en verde,
+mismas 1416 pruebas.
+
+Push al mismo PR #258 (sin unir); `gh pr checks` en verde, incluido `verificar` (el que no había corrido por el
+choque).

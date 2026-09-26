@@ -31,6 +31,16 @@
 .flecha:hover {
   background: var(--fondo-suave);
 }
+/* Sin esto la flecha deshabilitada (OL-218: "mes anterior" en el mes actual, "mes siguiente" sin más datos) se
+   veía negra, como si siguiera activa — el atributo `disabled` ya estaba puesto, pero nunca hubo un estilo
+   `:disabled` para `.flecha` (esta rejilla no tenía tope de mes antes de OL-218). Mismo valor que el prototipo
+   firmado (`docs/rediseno/prototipos/calendario-dias-con-eventos.html`, `.flecha:disabled`), no el 0.65 de
+   `.desactivado` — son dos elementos distintos (un botón de navegación, no un día). */
+.flecha:disabled {
+  color: var(--texto-suave);
+  opacity: 0.35;
+  cursor: default;
+}
 .izquierda {
   transform: rotate(90deg);
 }
