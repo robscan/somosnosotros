@@ -54,11 +54,18 @@ export function leerEncendidos(ajustes: unknown): Record<Proveedor, boolean> {
 export const COOKIE_ENTRAR = "sn_entrar";
 export const VIGENCIA_SEGUNDOS = 600;
 
-export type Intento = { p: Proveedor; estado: string; nonce: string; siguiente: string; desde: number };
+/**
+ * `enApp`: el toque salió del envoltorio de iPhone (apps/ios, OL-194): `EntrarSistemaPlugin.swift` interceptó la
+ * ida a esta ruta (`/auth/apple` o `/auth/google`, con `?app=1`) y la abrió en una `ASWebAuthenticationSession`
+ * (la ficha del sistema, no el WKWebView de la app) porque Google bloquea su entrada dentro de cualquier vista web
+ * embebida. Va en el intento porque la URL de vuelta que registramos con Apple y con Google no puede cambiar; con
+ * ella, al terminar, `/auth/[proveedor]/fin` no manda a la persona directo a `siguiente` (ver `urlAppTrasEntrar`).
+ */
+export type Intento = { p: Proveedor; estado: string; nonce: string; siguiente: string; desde: number; enApp: boolean };
 
-export function nuevoIntento(p: Proveedor, siguiente: string | null, ahora = Date.now()): Intento {
+export function nuevoIntento(p: Proveedor, siguiente: string | null, ahora = Date.now(), enApp = false): Intento {
   const azar = () => randomBytes(24).toString("base64url");
-  return { p, estado: azar(), nonce: azar(), siguiente: rutaSegura(siguiente, "/perfil"), desde: ahora };
+  return { p, estado: azar(), nonce: azar(), siguiente: rutaSegura(siguiente, "/perfil"), desde: ahora, enApp };
 }
 
 export function codificarIntento(intento: Intento): string {
@@ -72,7 +79,7 @@ export function leerIntento(valor: string | undefined, ahora = Date.now()): Inte
     const i = JSON.parse(Buffer.from(valor, "base64url").toString("utf8")) as Partial<Intento>;
     if (!esProveedor(i.p) || typeof i.estado !== "string" || typeof i.nonce !== "string" || typeof i.desde !== "number") return null;
     if (ahora - i.desde > VIGENCIA_SEGUNDOS * 1000 || i.desde > ahora + 60_000) return null;
-    return { p: i.p, estado: i.estado, nonce: i.nonce, siguiente: rutaSegura(i.siguiente, "/perfil"), desde: i.desde };
+    return { p: i.p, estado: i.estado, nonce: i.nonce, siguiente: rutaSegura(i.siguiente, "/perfil"), desde: i.desde, enApp: i.enApp === true };
   } catch {
     return null;
   }
@@ -148,6 +155,35 @@ export function urlEntrar(siguiente: string, fallo?: Proveedor): string {
   const q = new URLSearchParams({ siguiente });
   if (fallo) q.set("error", fallo);
   return `/entrar?${q}`;
+}
+
+/**
+ * A dónde manda `/auth/[proveedor]/fin` al envoltorio de iPhone cuando entrar salió bien y el intento venía de la
+ * app (OL-194). La sesión que Supabase acaba de poner queda en las cookies de la `ASWebAuthenticationSession` (las
+ * comparte con Safari), no en el WKWebView de la app: en vez de mandar ahí, se manda un enlace de un solo uso (el
+ * `token_hash` de un enlace mágico, generado sin enviarlo por correo) por una URL https de nuestro propio dominio,
+ * nunca por un esquema propio.
+ *
+ * Corrección de seguridad (OL-194): un esquema propio de la app (el prefijo "somosnosotros" con dos barras) lo
+ * puede registrar cualquier app en el teléfono; si alguien hace abrir `/auth/google?app=1` a la víctima fuera de
+ * esta app, Safari podría mandar esa vuelta a una app impostora que también reclame el esquema, y esa app se
+ * quedaría con la sesión de la víctima. Con
+ * `ASWebAuthenticationSession.Callback.https(host:path:)` (iOS 17.4+, `EntrarSistemaPlugin.swift`) la vuelta solo
+ * la puede recibir la app cuyo Associated Domains verificó ese dominio (`webcredentials:somosnosotros.org`,
+ * `App.entitlements`); ninguna otra app puede registrarla. Recibe el origen de la propia petición (nunca una
+ * constante) para que también funcione en las vistas previas de Vercel.
+ *
+ * La ruta de destino, `/auth/app-regreso`, hace exactamente lo mismo si alguien la abre FUERA de la app (un
+ * navegador normal, o el teléfono sin la app instalada): canjea el `token_hash` en ESE navegador y ahí se queda la
+ * sesión — nunca llega a otra app, porque ya no viaja por un esquema que cualquiera pueda registrar.
+ */
+export function urlAppTrasEntrar(origen: string, siguiente: string, tokenHash: string): string {
+  return `${origen}/auth/app-regreso?${new URLSearchParams({ token_hash: tokenHash, siguiente }).toString()}`;
+}
+
+/** Cuando no se pudo generar el enlace de un solo uso: `/auth/app-regreso?error=1` deja la pantalla de Entrar tal cual (ver `urlAppTrasEntrar`). */
+export function urlAppError(origen: string): string {
+  return `${origen}/auth/app-regreso?error=1`;
 }
 
 /** El nombre que Apple manda solo la primera vez, en el campo "user": {"name":{"firstName":"Rosa","lastName":"Pérez"}}. */

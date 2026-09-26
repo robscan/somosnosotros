@@ -11,6 +11,8 @@ import {
   nuevoIntento,
   paginaRelevo,
   sha256hex,
+  urlAppError,
+  urlAppTrasEntrar,
   urlEntrar,
   urlProveedor,
 } from "./entrarCon";
@@ -73,6 +75,33 @@ describe("intento en la cookie", () => {
     expect(leerIntento(undefined)).toBeNull();
     expect(leerIntento(Buffer.from(JSON.stringify({ ...i, p: "facebook" })).toString("base64url"), 1)).toBeNull();
     expect(leerIntento(Buffer.from(JSON.stringify({ ...i, siguiente: "//malo.com" })).toString("base64url"), 1)?.siguiente).toBe("/perfil");
+  });
+  it("enApp viaja igual que el resto del intento, y por defecto es false (OL-194)", () => {
+    expect(nuevoIntento("apple", "/perfil", 0).enApp).toBe(false);
+    const i = nuevoIntento("apple", "/perfil", 0, true);
+    expect(i.enApp).toBe(true);
+    expect(leerIntento(codificarIntento(i), 1)).toEqual(i);
+    // un intento viejo, guardado antes de que existiera el campo, no se lee como si viniera de la app
+    expect(leerIntento(Buffer.from(JSON.stringify({ p: "apple", estado: "e", nonce: "n", siguiente: "/perfil", desde: 0 })).toString("base64url"), 1)?.enApp).toBe(false);
+  });
+});
+
+describe("urlAppTrasEntrar (OL-194, corrección de seguridad: la vuelta al envoltorio de iPhone por https del propio dominio, nunca un esquema propio)", () => {
+  it("arma la URL https de /auth/app-regreso con el origen recibido, el token_hash y siguiente, codificados", () => {
+    expect(urlAppTrasEntrar("https://somosnosotros.org", "/eventos/abc?accion=voy", "el-token")).toBe(
+      "https://somosnosotros.org/auth/app-regreso?token_hash=el-token&siguiente=%2Feventos%2Fabc%3Faccion%3Dvoy",
+    );
+  });
+  it("nunca arma un esquema propio de la app (el prefijo 'somosnosotros' con dos barras): cualquier app podría registrarlo", () => {
+    expect(urlAppTrasEntrar("https://somosnosotros.org", "/perfil", "el-token")).not.toMatch(/^somosnosotros:\/\//);
+  });
+  it("usa el origen recibido, no una constante: funciona también en una vista previa de Vercel", () => {
+    expect(urlAppTrasEntrar("https://app-ios-capacitor.somosnosotros.vercel.app", "/perfil", "el-token")).toBe(
+      "https://app-ios-capacitor.somosnosotros.vercel.app/auth/app-regreso?token_hash=el-token&siguiente=%2Fperfil",
+    );
+  });
+  it("urlAppError es la señal de fallo sobre el mismo origen, sin datos de nadie", () => {
+    expect(urlAppError("https://somosnosotros.org")).toBe("https://somosnosotros.org/auth/app-regreso?error=1");
   });
 });
 

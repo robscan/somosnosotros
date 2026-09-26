@@ -1,7 +1,8 @@
 import { createClient, type User } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { configPublica } from "@/lib/config";
-import { COOKIE_ENTRAR, decidirVuelta, esProveedor, leerCampos, leerIntento, nombreDeApple, nombrePorDefecto, urlEntrar } from "@/lib/entrarCon";
+import { COOKIE_ENTRAR, decidirVuelta, esProveedor, leerCampos, leerIntento, nombreDeApple, nombrePorDefecto, urlAppError, urlAppTrasEntrar, urlEntrar } from "@/lib/entrarCon";
+import { clienteAdmin } from "@/lib/supabase/admin";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 type Contexto = { params: Promise<{ proveedor: string }> };
@@ -9,7 +10,10 @@ type Contexto = { params: Promise<{ proveedor: string }> };
 /**
  * El final de entrar con Apple o Google (src/lib/entrarCon.ts). Llega desde la página de relevo, con la cookie del
  * intento: comprueba que la vuelta es de este navegador, entrega la identidad a Supabase (signInWithIdToken deja la
- * sesión en cookies) y manda a la persona a donde iba, donde la pantalla aplica su intención (Voy, Seguir…).
+ * sesión en cookies) y manda a la persona a donde iba, donde la pantalla aplica su intención (Voy, Seguir…). Si el
+ * intento venía del envoltorio de iPhone (OL-194), en vez de mandarla a `siguiente` la manda a una URL https de
+ * nuestro propio dominio con un enlace de un solo uso: ver `urlVueltaAlApp` más abajo y el comentario de
+ * `urlAppTrasEntrar` en entrarCon.ts (por qué https y no un esquema propio: es la corrección de seguridad de OL-194).
  */
 export async function POST(request: NextRequest, { params }: Contexto) {
   const { proveedor } = await params;
@@ -38,7 +42,29 @@ export async function POST(request: NextRequest, { params }: Contexto) {
     return volver(urlEntrar(siguiente, proveedor));
   }
   if (proveedor === "apple") await ponerNombreDeApple(data.user, data.session.access_token, campos.user);
+  if (intento?.enApp === true) return volver(await urlVueltaAlApp(data.user, siguiente, request.nextUrl.origin));
   return volver(siguiente);
+}
+
+/**
+ * OL-194, corrección de seguridad: la sesión que `signInWithIdToken` acaba de poner queda en las cookies de la
+ * `ASWebAuthenticationSession` (comparte las de Safari), no en el WKWebView de la app: ver el comentario de
+ * `urlAppTrasEntrar` en src/lib/entrarCon.ts. Aquí se genera, con el cliente de servicio (la llave solo vive en el
+ * servidor, src/lib/supabase/admin.ts), un enlace mágico de un solo uso para el correo de quien acaba de entrar —
+ * `generateLink` nunca lo envía, solo lo genera — y se manda su `token_hash` por una URL https del propio origen de
+ * la petición (nunca un esquema propio: cualquier app podría registrarlo). Sin correo (no debería pasar: Apple y
+ * Google siempre lo dan) o si Supabase falla, se avisa el fallo por la misma vía.
+ */
+async function urlVueltaAlApp(usuario: User, siguiente: string, origen: string): Promise<string> {
+  const admin = clienteAdmin();
+  if (!admin || !usuario.email) return urlAppError(origen);
+  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email: usuario.email });
+  const tokenHash = data?.properties?.hashed_token;
+  if (error || !tokenHash) {
+    console.error(`vuelta a la app: ${error?.message ?? "sin hashed_token"}`);
+    return urlAppError(origen);
+  }
+  return urlAppTrasEntrar(origen, siguiente, tokenHash);
 }
 
 /**

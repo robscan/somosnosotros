@@ -1,0 +1,20 @@
+{
+  "name": "somosnosotros-ios",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Envoltorio de iPhone (Capacitor) de somosnosotros.org. La app carga la web en producción; este paquete solo trae el proyecto nativo y sus plugins. No es la web (esa vive en la raíz del repo).",
+  "scripts": {
+    "sync": "cap sync ios",
+    "open": "cap open ios",
+    "run": "cap run ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "8.1.1",
+    "@capacitor/browser": "8.0.4",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}
