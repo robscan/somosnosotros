@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { PanelPestana, Pestana, Pestanas } from "@/components/ui/Pestanas";
-import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, use, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo } from "@/lib/agenda";
+import { diasActivosCalendario } from "@/lib/calendario";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { tandaAcotada, siguienteTanda, TANDA_INICIAL } from "@/lib/tandas";
@@ -68,6 +69,21 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona, ante
   // primera tanda otra vez. Vive aquí (no en `AgendaLista`, diferida) para que una sola `useMemoriaPantalla` guarde
   // todo junto — dos llamadas con la misma clave se pisarían la una a la otra (OL-161).
   const [mostrados, setMostrados] = useState(TANDA_INICIAL);
+  // Qué días tienen al menos un evento (OL-218): de la misma consulta que ya carga la lista, sin otra — se
+  // deriva una vez por cada `agenda` (su referencia no cambia entre repintados, solo al navegar a otra ciudad,
+  // que remonta `AgendaInicio` por su `key={ciudad.slug}` en la página). `ui/ChipFecha` la difiere en su propio
+  // `<Suspense>`, así que la cabecera no espera por esto.
+  // OJO: `agenda` es la Promise especial que Next reenvía del servidor al cliente (RSC): su `.then()` no
+  // devuelve una Promise encadenable de verdad (llamarla con `agenda.then(fn)` a secas deja `diasActivos` en
+  // `undefined`, sin ningún error — se vio en la captura real, bitácora 247). Se envuelve a mano en una Promise
+  // propia, usando `agenda.then(onCumplida, onRechazada)` solo por su efecto (no por su valor de retorno).
+  const diasActivos = useMemo(
+    () =>
+      new Promise<ReturnType<typeof diasActivosCalendario>>((resolve, reject) => {
+        agenda.then((a) => resolve(diasActivosCalendario(a.eventos)), reject);
+      }),
+    [agenda],
+  );
 
   useMemoriaPantalla<Recordado>("agenda", { filtro, fecha, busqueda, buscando, mostrados }, (r) => {
     if (FILTROS.some((f) => f.clave === r.filtro)) setFiltro(r.filtro);
@@ -84,7 +100,7 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona, ante
           <>
             {/* ui/ChipFecha (docs/rediseno/45, OL-174): el mismo chip que Lugares — solo el ícono sin elegir,
                 "mié 30 sep" con fecha elegida, sin "Hoy"/"Mañana". */}
-            <ChipFecha fecha={fecha} onCambiar={setFecha} hoy={hoy} zona={zona} />
+            <ChipFecha fecha={fecha} onCambiar={setFecha} hoy={hoy} zona={zona} diasActivos={diasActivos} />
             <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => (c.slug === CIUDAD_INICIAL.slug ? "/agenda" : `/agenda?ciudad=${c.slug}`)} />
           </>
         }

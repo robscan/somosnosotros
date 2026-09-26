@@ -29,6 +29,17 @@ describe("agenda", () => {
     const ctx = { filtro: "todos" as const, punto: null, seguidos: null, fecha: "2026-09-15", ahora: AHORA };
     expect(filtrarAgenda([slp, madrid], ctx).lista.map((e) => e.id)).toEqual(["madrid"]);
   });
+  it("el chip de fecha también encuentra un evento de varios días en cualquiera de los días que ocupa (OL-218)", () => {
+    // Del 6 al 8 de octubre: el calendario de ChipFecha marca los tres días como disponibles (`diasActivosCalendario`)
+    // — sin esto, elegir el 7 (no el día de inicio) filtraba a una lista vacía (bitácora 247).
+    const varios = evento({ id: "varios", inicio: "2026-10-06T17:00:00Z", fin: "2026-10-08T20:00:00Z" });
+    const ctxSinFin = { filtro: "todos" as const, punto: null, seguidos: null, fecha: "", ahora: AHORA };
+    for (const dia of ["2026-10-06", "2026-10-07", "2026-10-08"]) {
+      expect(filtrarAgenda([varios], { ...ctxSinFin, fecha: dia }).lista.map((e) => e.id)).toEqual(["varios"]);
+    }
+    expect(filtrarAgenda([varios], { ...ctxSinFin, fecha: "2026-10-05" }).lista).toEqual([]);
+    expect(filtrarAgenda([varios], { ...ctxSinFin, fecha: "2026-10-09" }).lista).toEqual([]);
+  });
   it("con orden dado, respeta el orden dentro del día (Cercanos: por distancia) y los días siguen en orden", () => {
     const grupos = agruparPorDia(
       [evento({ id: "lejos-manana", inicio: "2026-09-16T01:00:00Z" }), evento({ id: "cerca-hoy-tarde", inicio: "2026-09-15T01:00:00Z" }), evento({ id: "lejos-hoy-temprano", inicio: "2026-09-14T23:00:00Z" })],

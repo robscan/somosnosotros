@@ -1,3 +1,4 @@
+import { ocupaDia } from "./calendario";
 import { distanciaKm } from "./geo";
 import type { EventoResumen } from "./eventos";
 import { nombreSitio } from "./eventos";
@@ -168,7 +169,10 @@ export type ContextoFiltro = {
  * (era el defecto que el founder vio el 2026-09-17, bitácora 099).
  */
 export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: ContextoFiltro): { lista: T[]; km: Map<string, number> } {
-  let lista = eventos.filter((e) => !ctx.fecha || diaLocal(new Date(e.inicio), e.zona) === ctx.fecha).sort(compararEventos);
+  // Un evento de varios días cuenta en cada día que ocupa (OL-218, `ocupaDia`): sin esto, el chip de fecha podía
+  // marcar un día como "disponible" en el calendario (por un evento que lo ocupa sin empezar ahí) y, al elegirlo,
+  // la lista salía vacía — confirmado con un evento de ejemplo del 6 al 8 de octubre, bitácora 247.
+  let lista = eventos.filter((e) => !ctx.fecha || ocupaDia(e, ctx.fecha)).sort(compararEventos);
   const km = new Map<string, number>();
   if (ctx.filtro === "cercanos" && ctx.punto) {
     for (const e of lista) {

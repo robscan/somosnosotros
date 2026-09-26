@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { archivoIcs, diasEnMes, escaparIcs, mesAnterior, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso } from "./calendario";
+import { archivoIcs, diasActivosCalendario, diasEnMes, escaparIcs, etiquetaDia, hayMesAnterior, haySiguienteMes, mesAnterior, mesInicial, mesSiguiente, nombreArchivoIcs, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso } from "./calendario";
 
 const evento = { id: "fba5bd3e-7898-4261-b4fd-97a17b1d61ee", titulo: "Navidad queretana: danza, música; y más", inicio: "2026-12-06T18:00:00.000Z", fin: null, descripcion: "Espectáculo\nnavideño", lugar: "Teatro del IMSS, Tomasa Estévez 805" };
 
@@ -138,5 +138,98 @@ describe("calendario del mes", () => {
     expect(pasoMasCercano("23:59")).toBe("23:45"); // no se pasa de la última hora del día
     expect(pasoMasCercano("00:00")).toBe("00:00");
     expect(pasoMasCercano("nada")).toBe("00:00");
+  });
+});
+
+// El calendario propio con días sin eventos desactivados (OL-218, bitácora 247): qué días tienen eventos, hasta
+// dónde se puede navegar y el nombre accesible de cada día.
+describe("diasActivosCalendario", () => {
+  const ZONA = "America/Mexico_City";
+
+  it("un evento sin fin cuenta solo su día de inicio (nunca 'dura' más, igual que terminaDe)", () => {
+    const dias = diasActivosCalendario([{ inicio: "2026-09-25T19:00:00-06:00", fin: null, zona: ZONA }]);
+    expect([...dias.entries()]).toEqual([["2026-09-25", 1]]);
+  });
+
+  it("un evento de varios días cuenta en cada día que ocupa, igual que la Agenda", () => {
+    const dias = diasActivosCalendario([{ inicio: "2026-09-25T10:00:00-06:00", fin: "2026-09-27T18:00:00-06:00", zona: ZONA }]);
+    expect([...dias.keys()].sort()).toEqual(["2026-09-25", "2026-09-26", "2026-09-27"]);
+    expect(dias.get("2026-09-26")).toBe(1);
+  });
+
+  it("suma cuántos eventos toca cada día, entre varios eventos y zonas distintas", () => {
+    const dias = diasActivosCalendario([
+      { inicio: "2026-09-25T19:00:00-06:00", fin: null, zona: ZONA }, // San Luis Potosí
+      { inicio: "2026-09-25T19:00:00+02:00", fin: null, zona: "Europe/Madrid" }, // 17:00 de Madrid, sigue siendo 25 allá
+      { inicio: "2026-09-26T09:00:00-06:00", fin: null, zona: ZONA },
+    ]);
+    expect(dias.get("2026-09-25")).toBe(2);
+    expect(dias.get("2026-09-26")).toBe(1);
+  });
+
+  it("un `fin` corrupto (antes del inicio) no cuelga la función: solo cuenta el día de inicio", () => {
+    const dias = diasActivosCalendario([{ inicio: "2026-09-25T19:00:00-06:00", fin: "2026-09-20T19:00:00-06:00", zona: ZONA }]);
+    expect([...dias.keys()]).toEqual(["2026-09-25"]);
+  });
+
+  it("sin eventos, un Map vacío", () => {
+    expect(diasActivosCalendario([]).size).toBe(0);
+  });
+});
+
+describe("hayMesAnterior", () => {
+  it("sin bloquear pasado, siempre se puede ir atrás", () => {
+    expect(hayMesAnterior(2020, 1, "2026-09-19", false)).toBe(true);
+  });
+  it("bloqueando pasado, no antes del mes de `limite`", () => {
+    expect(hayMesAnterior(2026, 9, "2026-09-19", true)).toBe(false); // ya se muestra el mes de hoy
+    expect(hayMesAnterior(2026, 10, "2026-09-19", true)).toBe(true); // se puede volver a septiembre
+    expect(hayMesAnterior(2026, 8, "2026-09-19", true)).toBe(false); // ya antes del límite
+  });
+});
+
+describe("haySiguienteMes", () => {
+  it("sin `diasActivos` (alta de evento), siempre se puede avanzar", () => {
+    expect(haySiguienteMes(2026, 9)).toBe(true);
+  });
+  it("con `diasActivos`, solo hasta donde haya datos", () => {
+    const dias = diasActivosCalendario([{ inicio: "2026-10-04T19:00:00-06:00", fin: null, zona: "America/Mexico_City" }]);
+    expect(haySiguienteMes(2026, 9, dias)).toBe(true); // octubre tiene datos
+    expect(haySiguienteMes(2026, 10, dias)).toBe(false); // no hay nada después de octubre
+  });
+  it("sin ningún día activo, nunca hay mes siguiente", () => {
+    expect(haySiguienteMes(2026, 9, new Map())).toBe(false);
+  });
+});
+
+describe("etiquetaDia", () => {
+  const disponible = { hoy: false, pasado: false };
+  const hoy = { hoy: true, pasado: false };
+  const pasado = { hoy: false, pasado: true };
+
+  it("sin `conEventos` (alta de evento), solo el texto largo y, si aplica, 'hoy'", () => {
+    expect(etiquetaDia("viernes 25 de septiembre", disponible)).toBe("viernes 25 de septiembre");
+    expect(etiquetaDia("viernes 25 de septiembre", hoy)).toBe("viernes 25 de septiembre, hoy");
+  });
+  it("con `conEventos` (Agenda y Lugares): hoy, cuántos eventos, o 'sin eventos' o 'ya pasó'", () => {
+    expect(etiquetaDia("viernes 25 de septiembre", hoy, { conEventos: 3 })).toBe("viernes 25 de septiembre, hoy, 3 eventos");
+    expect(etiquetaDia("domingo 27 de septiembre", disponible, { conEventos: 1 })).toBe("domingo 27 de septiembre, 1 evento");
+    expect(etiquetaDia("sábado 26 de septiembre", disponible, { conEventos: 0 })).toBe("sábado 26 de septiembre, sin eventos");
+    expect(etiquetaDia("miércoles 23 de septiembre", pasado, { conEventos: 0 })).toBe("miércoles 23 de septiembre, ya pasó");
+  });
+  it('elegido y `permiteQuitar` (modo "filtro"): agrega "toca para quitar"', () => {
+    expect(etiquetaDia("domingo 27 de septiembre", disponible, { conEventos: 2, elegido: true, permiteQuitar: true })).toBe("domingo 27 de septiembre, 2 eventos, toca para quitar");
+  });
+  it('elegido sin `permiteQuitar` (modo "campo", alta de evento): no agrega nada por estar elegido', () => {
+    expect(etiquetaDia("domingo 27 de septiembre", disponible, { elegido: true })).toBe("domingo 27 de septiembre");
+  });
+});
+
+describe("mesInicial", () => {
+  it("con una fecha ya elegida, el mes de esa fecha", () => {
+    expect(mesInicial("2026-12-24", "2026-09-19")).toEqual({ anio: 2026, mes: 12 });
+  });
+  it("sin fecha elegida, el mes del límite (hoy, o `min` si es posterior)", () => {
+    expect(mesInicial("", "2026-09-19")).toEqual({ anio: 2026, mes: 9 });
   });
 });

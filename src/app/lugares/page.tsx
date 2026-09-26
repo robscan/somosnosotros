@@ -5,6 +5,7 @@ import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
+import { diasActivosCalendario } from "@/lib/calendario";
 import { leerTira } from "@/lib/destacados";
 import { diaLocal, filtroSinPasar } from "@/lib/fechas";
 import { conProximo, diasConEvento, TIPOS, type LugarLista, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
@@ -43,11 +44,15 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  * Los lugares de la ciudad con su próximo evento: el mapa primero, la lista como segunda vista. `diasEvento`
  * (docs/rediseno/45, OL-174) sale de la misma consulta de eventos, sin otra: esa consulta ya trae todo lo que no
  * ha pasado, sin tope de días (solo de cuántos eventos trae, 500) — lo que el chip de fecha del mapa necesita
- * para filtrar pines por día ya está aquí.
+ * para filtrar pines por día ya está aquí. `diasActivos` (OL-218: qué días desactivar en la hoja del chip de
+ * fecha) sale de la MISMA consulta también — un lugar tiene evento ese día (`lugaresConEventoElDia`) es
+ * exactamente el mismo criterio que "el día está activo en el calendario de Lugares", así que se calcula una vez
+ * sobre los mismos eventos, no con otra consulta. Se manda como arreglo (no `Map`, que no cruza a un componente
+ * de cliente) y `VistaLugares` lo vuelve `Map` con `useMemo`.
  */
-async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
+async function cargar(ciudadNombre: string): Promise<{ lugares: LugarLista[]; diasActivos: [string, number][] }> {
   const supabase = await clienteServidor();
-  if (!supabase) return [];
+  if (!supabase) return { lugares: [], diasActivos: [] };
   const [l, e] = await Promise.all([
     // 1 000 lugares en una sola ciudad son muchos más de los que hay hoy (decenas); tope explícito para no
     // depender del corte silencioso de PostgREST si la ciudad crece (revisión 2026-09-14, A1).
@@ -56,11 +61,12 @@ async function cargar(ciudadNombre: string): Promise<LugarLista[]> {
     // los privados de QUIEN MIRA (creado_por = auth.uid()) en este mapa y lista públicos -correcto en una ficha
     // propia, un error aquí. No depender de la RLS para esto (auditoría de la bitácora 214).
     supabase.from("lugares").select("id, slug, nombre, tipo, direccion, lat, lng, portada, privado").eq("visible", true).eq("privado", false).eq("ciudad", ciudadNombre).order("nombre").limit(1000),
-    supabase.from("eventos").select("id, inicio, lugar_id, zona, titulo").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
+    // `fin` (OL-218): un evento de varios días cuenta en cada día que ocupa, igual que la Agenda (`diasActivosCalendario`).
+    supabase.from("eventos").select("id, inicio, fin, lugar_id, zona, titulo").eq("visible", true).not("lugar_id", "is", null).or(filtroSinPasar()).order("inicio").limit(500),
   ]);
-  const eventos = (e.data ?? []) as (ProximoEvento & { lugar_id: string | null })[];
+  const eventos = (e.data ?? []) as (ProximoEvento & { fin: string | null; lugar_id: string | null })[];
   const conProx = conProximo((l.data ?? []) as LugarResumen[], eventos);
-  return diasConEvento(conProx, eventos);
+  return { lugares: diasConEvento(conProx, eventos), diasActivos: [...diasActivosCalendario(eventos)] };
 }
 
 /**
@@ -85,13 +91,14 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
   const ciudad = ciudadPorSlug(slug, ciudades);
   // `lugares` es lo único que piden la barra y las pestañas (Todos, tipos con su cuenta): se espera aquí, aparte de
   // `extras` (destacados, semana, seguidos, avisos), que solo necesitan el mapa y la lista y se difieren abajo.
-  const lugares = await cargar(ciudad.nombre);
+  const { lugares, diasActivos } = await cargar(ciudad.nombre);
   const extras = cargarExtras(ciudad);
   // El tipo elegido vive en la URL (se comparte y sobrevive al volver atrás); solo vale si existe.
   const tipoElegido = tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
   return (
     <VistaLugares
       lugares={lugares}
+      diasActivos={diasActivos}
       ciudad={ciudad}
       ciudades={ciudades}
       vistaInicial={vista === "lista" ? "lista" : "mapa"}

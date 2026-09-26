@@ -176,6 +176,16 @@ describe("diasConEvento y lugaresConEventoElDia (docs/rediseno/45, OL-174: chip 
     expect(paraLaLista).toEqual(paraElMapa);
     expect(paraLaLista.map((l) => l.id)).toEqual(["a", "b"]);
   });
+  it("un evento de varios días cuenta en cada día que ocupa, igual que el calendario de ChipFecha (OL-218)", () => {
+    // Sin esto, el calendario podía marcar un día como disponible (`diasActivosCalendario`, misma consulta) y el
+    // mapa o la lista de Lugares salir vacíos al elegirlo — confirmado con un evento del 6 al 8 de octubre,
+    // bitácora 247.
+    const conRango = [{ inicio: "2026-10-06T17:00:00Z", fin: "2026-10-09T02:00:00Z", lugar_id: "a", zona: "America/Mexico_City" }]; // 11:00-20:00 SLP, del 6 al 8
+    const r = diasConEvento([{ id: "a" }], conRango);
+    expect(r[0].diasEvento).toEqual(["2026-10-06", "2026-10-07", "2026-10-08"]);
+    expect(lugaresConEventoElDia(r, "2026-10-07").map((l) => l.id)).toEqual(["a"]);
+    expect(lugaresConEventoElDia(r, "2026-10-09")).toEqual([]);
+  });
 });
 
 describe("hrefLugar", () => {

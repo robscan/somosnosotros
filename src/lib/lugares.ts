@@ -1,8 +1,9 @@
+import { diasActivosCalendario } from "./calendario";
 import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
 import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
-import { diaLocal, diaPin, formatearCuando } from "./fechas";
+import { diaPin, formatearCuando } from "./fechas";
 import { imagenPermitida } from "./imagenes";
 import type { Origen } from "./origen";
 import { LIMITES_LUGAR } from "./limites";
@@ -138,17 +139,19 @@ export function conProximo<T extends { id: string }>(lugares: T[], eventos: (Pro
  * que el chip de fecha del mapa de Lugares necesita para filtrar pines por día (docs/rediseno/45, OL-174). Los
  * mismos eventos que ya carga `cargar()` para el "próximo evento" de cada pin (`conProximo`), sin otra consulta:
  * esa consulta no tiene tope de días, solo de cuántos eventos trae (500), así que cualquier fecha que la persona
- * elija ya está entre los datos que el mapa recibió.
+ * elija ya está entre los datos que el mapa recibió. Un evento de varios días cuenta en cada día que ocupa
+ * (`diasActivosCalendario`, OL-218): sin esto, el calendario podía marcar un día como disponible y el mapa/lista
+ * salir vacíos al elegirlo (confirmado con un evento de ejemplo del 6 al 8 de octubre, bitácora 247).
  */
-export function diasConEvento<T extends { id: string }>(lugares: T[], eventos: { inicio: string; zona: string; lugar_id: string | null }[]): (T & { diasEvento: string[] })[] {
-  const dias = new Map<string, Set<string>>();
+export function diasConEvento<T extends { id: string }>(lugares: T[], eventos: { inicio: string; fin?: string | null; zona: string; lugar_id: string | null }[]): (T & { diasEvento: string[] })[] {
+  const porLugar = new Map<string, { inicio: string; fin: string | null; zona: string }[]>();
   for (const e of eventos) {
     if (!e.lugar_id) continue;
-    const set = dias.get(e.lugar_id) ?? new Set<string>();
-    set.add(diaLocal(new Date(e.inicio), e.zona));
-    dias.set(e.lugar_id, set);
+    const lista = porLugar.get(e.lugar_id) ?? [];
+    lista.push({ inicio: e.inicio, fin: e.fin ?? null, zona: e.zona });
+    porLugar.set(e.lugar_id, lista);
   }
-  return lugares.map((l) => ({ ...l, diasEvento: [...(dias.get(l.id) ?? [])] }));
+  return lugares.map((l) => ({ ...l, diasEvento: [...diasActivosCalendario(porLugar.get(l.id) ?? []).keys()] }));
 }
 
 /** Los lugares con al menos un evento ese día (docs/rediseno/45, OL-174): lo que pinta el mapa con el chip de
