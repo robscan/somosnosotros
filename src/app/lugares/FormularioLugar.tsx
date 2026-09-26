@@ -15,7 +15,7 @@ import limpiar from "@/components/ui/Limpiar.module.css";
 import { Chip } from "@/components/ui/Chip";
 import { IconoBuscar, IconoEtiqueta, IconoMas, IconoOk, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
-import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { deducirTipo, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
 import { normalizarRedes } from "@/lib/enlaces";
@@ -44,9 +44,12 @@ type Props = {
   siguiente?: string;
   /** El administrador puede pegar la dirección de una imagen y marcar el lugar como privado (mapeo personal). */
   esAdmin?: boolean;
-  /** Lugares ya registrados y visibles (sin el propio, al editar): pines de "Dónde está" (OL-211) para avisar "ya
-   *  existe" sin inventar -y sin ofrecerlos para elegir, que aquí no aplica (se está creando/corrigiendo ESTE). */
+  /** Lugares ya registrados y visibles (sin el propio, al editar): pines de "¿Dónde está?" (OL-211) para avisar
+   *  "ya existe" sin inventar -y sin ofrecerlos para elegir, que aquí no aplica (se está creando/corrigiendo ESTE). */
   lugares: LugarResumen[];
+  /** La ciudad elegida (chip): misma cascada de contexto que el alta de evento (OL-100), para que la búsqueda de
+   *  "¿Dónde está?" no busque en todo el país sin el pin ya puesto (corrección del gestor sobre el PR #249). */
+  ciudadContexto?: Ciudad | null;
 };
 
 /**
@@ -56,7 +59,7 @@ type Props = {
  * redes, foto). El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón que falta
  * (founder, 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26).
  */
-export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false, lugares }: Props) {
+export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false, lugares, ciudadContexto }: Props) {
   const plataforma = usePlataforma();
   const esAlta = !lugar;
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(accion, null);
@@ -503,6 +506,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           punto={punto}
           direccion={direccion}
           ciudad={ciudad}
+          ciudadContexto={ciudadContexto}
           yo={yo}
           ubicando={ubicando}
           avisoUbicacion={avisoUbicacion}

@@ -6,15 +6,15 @@ import Limpiar from "@/components/ui/Limpiar";
 import { IconoBuscar, IconoChevronIzquierda, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
 import MapaDondeEs from "@/components/MapaDondeEs";
-import { altoTeclado, combinarResultados, consultarMapa, lugaresPorTexto, modoDePantalla, puntoValido, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
-import { CIUDAD_INICIAL } from "@/lib/ciudad";
+import { altoTeclado, consultarMapa, modoDePantalla, puntoValido, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
+import type { Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
-import { buscarConContexto, ciudadDeContexto, descartarSinCalle, necesitaReintentoLugares } from "@/lib/direccionContexto";
+import { buscarConContexto, descartarSinCalle, necesitaReintentoLugares } from "@/lib/direccionContexto";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
 import { hrefLugar, type LugarResumen } from "@/lib/lugares";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
-import { lugarCercano, textoInicialBusqueda } from "./dondeEstaPantalla";
+import { contextoDondeEsta, lugarCercano, resultadosDondeEsta, textoInicialBusqueda } from "./dondeEstaPantalla";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaDondeLugar.module.css";
 
@@ -31,6 +31,9 @@ type Props = {
   punto: Punto | null;
   direccion: string;
   ciudad: string;
+  /** La ciudad elegida (chip): misma cascada que el alta de evento, para que Mapbox no busque en todo el país
+   *  cuando todavía no hay pin ni posición (founder/gestor, corrección sobre el PR #249). */
+  ciudadContexto?: Ciudad | null;
   yo: (Punto & { vez: number }) | null;
   ubicando: boolean;
   avisoUbicacion: string | null;
@@ -40,7 +43,7 @@ type Props = {
 };
 
 /**
- * "Dónde está" de Agregar/Editar lugar (OL-211), adaptación del canon "¿Dónde es?" del alta de evento (OL-173,
+ * "¿Dónde está?" de Agregar/Editar lugar (OL-211), adaptación del canon "¿Dónde es?" del alta de evento (OL-173,
  * docs/rediseno/43; arreglos de OL-179/OL-182/OL-187) — mismo mapa de fondo con los lugares registrados como
  * pines, un solo campo "Nombre o dirección", lista flotante que nunca tapa nada, pin arrastrable con
  * geocodificación inversa, "Estoy aquí" y sin inventar nunca una ubicación. La adaptación (founder, OL-211): aquí
@@ -49,8 +52,13 @@ type Props = {
  * `lugares/acciones.ts`; `elegirLugarExistente` de aquí abajo), nunca se adoptan como el propio punto. El nombre
  * vive en el formulario de fuera (no se repite aquí): "Listo" solo confirma dirección, coordenadas y ciudad;
  * "Atrás" no cambia nada, igual que en el canon.
+ *
+ * Título con signos de pregunta y `ciudadContexto` en la misma cascada del canon: decisión del founder sobre dos
+ * preguntas de la bitácora 240 -"un lugar «está», un evento «es»: misma forma de pregunta que «¿Dónde es?»"- y
+ * corrección del gestor sobre el PR #249 (sin `ciudadContexto`, Mapbox buscaba en todo el país sin el pin puesto).
+ * El nombre nunca se edita aquí (segunda decisión del founder): corregir la búsqueda no cambia el del formulario.
  */
-export default function HojaDondeLugar({ lugares, nombreForm, conFoco, punto, direccion, ciudad, yo, ubicando, avisoUbicacion, onEstoyAqui, onListo, onCerrar }: Props) {
+export default function HojaDondeLugar({ lugares, nombreForm, conFoco, punto, direccion, ciudad, ciudadContexto, yo, ubicando, avisoUbicacion, onEstoyAqui, onListo, onCerrar }: Props) {
   const [draft, setDraft] = useState<Draft>({ punto, direccion, ciudad: ciudad || null });
   const [ajustado, setAjustado] = useState(false);
   // Lugar registrado tocado (su pin, o su renglón en la lista): solo un aviso "ya existe" con su ficha, nunca
@@ -70,7 +78,7 @@ export default function HojaDondeLugar({ lugares, nombreForm, conFoco, punto, di
   }, []);
 
   const posicionTelefono = ubicacionCercanaFresca();
-  const contexto = draft.punto ? { ciudad: CIUDAD_INICIAL, centro: draft.punto, origen: "posicion" as const } : ciudadDeContexto({ texto: q, posicion: yo ?? posicionTelefono });
+  const contexto = contextoDondeEsta(draft.punto, q, ciudadContexto, yo, posicionTelefono);
 
   const listaCerradaActual = cerradaParaTexto === q;
 
@@ -105,8 +113,9 @@ export default function HojaDondeLugar({ lugares, nombreForm, conFoco, punto, di
 
   const textoBusqueda = q.trim();
   const conTextoLargo = textoBusqueda.length >= 3;
-  const lugaresFiltrados = textoBusqueda ? lugaresPorTexto(lugares, q) : [];
-  const combinados = combinarResultados(lugaresFiltrados, conTextoLargo ? resultadosMapbox : []);
+  // Los lugares registrados que coinciden salen SIEMPRE, primero, tanto si Mapbox ya respondió como si no
+  // (`resultadosDondeEsta`, corrección del gestor sobre el PR #249: no deben desaparecer cuando Mapbox responde).
+  const combinados = resultadosDondeEsta(lugares, q, resultadosMapbox);
   const modo = modoDePantalla(q, false, combinados.length > 0);
   const listaAbierta = (modo === "resultados" || modo === "no-encontrado") && !listaCerradaActual;
 
@@ -198,13 +207,13 @@ export default function HojaDondeLugar({ lugares, nombreForm, conFoco, punto, di
   const estoyAquiBottom = estoyAquiBottomPx > 16 ? `min(${estoyAquiBottomPx}px, calc(100% - 64px))` : `${estoyAquiBottomPx}px`;
 
   return (
-    <div className={styles.capa} role="dialog" aria-label="Dónde está">
+    <div className={styles.capa} role="dialog" aria-label="¿Dónde está?">
       <div className={styles.cabecera}>
         <button type="button" className={styles.atras} onClick={atras}>
           <IconoChevronIzquierda width={18} height={18} />
           Atrás
         </button>
-        <h2>Dónde está</h2>
+        <h2>¿Dónde está?</h2>
         <button type="button" className={styles.listo} onClick={listo} disabled={!listoHabilitado}>
           Listo
         </button>

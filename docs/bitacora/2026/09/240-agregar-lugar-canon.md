@@ -73,28 +73,83 @@ abrir la hoja) sigue exactamente igual, llamando `estoyAqui(alMoverPin)`; el bot
 llama `estoyAqui((p) => moverPin(p))`, para mostrar «Ubicando…» mientras resuelve la dirección, igual que el
 canon.
 
-## Preguntas abiertas para el founder (elegida la opción más cercana al canon, sin inventar)
+## Preguntas al founder, y sus decisiones («Tomo tus recomendaciones»)
 
-1. **Título de la pantalla:** el canon dice «¿Dónde es?»; aquí se dejó «Dónde está» (el título que ya tenía
-   `HojaDonde.tsx`, para no romper la continuidad de un texto que la gente ya vio). ¿Debe decir «¿Dónde es?»
-   igual que en el evento, o queda mejor «Dónde está» al ser un lugar?
-2. **Nombre editable dentro de la hoja:** el canon del evento deja editar el nombre en el propio resumen del pin
-   (`draft.nombre` con `<input>`). Aquí se decidió que NO —el nombre vive solo en el campo de arriba del
-   formulario, la hoja solo resuelve ubicación— porque editar el nombre dos veces (aquí y en el campo de arriba)
-   parecía confuso. ¿Está bien esa lectura, o el founder prefiere poder ajustar el nombre también desde la hoja?
+1. **Título de la pantalla:** ¿«¿Dónde es?» igual que en el evento, o «Dónde está» (el título que ya tenía
+   `HojaDonde.tsx`)? **Decisión del founder:** «¿Dónde está?», con signos de pregunta — un lugar «está», un
+   evento «es»; misma forma de pregunta que el canon «¿Dónde es?». Cambiado el `<h2>` y el `aria-label` de
+   `HojaDondeLugar.tsx`.
+2. **Nombre editable dentro de la hoja:** ¿se puede ajustar el nombre desde ahí, como el resumen del pin del
+   evento, o solo vive en el campo de arriba del formulario? **Decisión del founder:** el nombre NO se edita
+   dentro de la hoja — solo arranca la búsqueda; corregir la búsqueda no cambia el nombre del formulario. Sin
+   cambios de código (ya era así); documentado en el docstring de `HojaDondeLugar.tsx`.
+
+## Correcciones del gestor sobre el PR #249 (revisó con el mapa real, token propio)
+
+**1) La ciudad elegida faltaba en la cascada.** Buscando «Laboratorio de Arte Escénico» en «¿Dónde está?», las
+sugerencias venían de Aguascalientes, Pachuca y Ciudad de México. Causa: `HojaDondeLugar` armaba el contexto con
+`ciudadDeContexto({ texto: q, posicion: yo ?? posicionTelefono })` **sin** `ciudadChip` — a diferencia del canon
+(`HojaDondeEs.tsx`, que sí recibe `ciudadContexto` y lo pasa en la cascada de OL-100: pin → texto → ciudad elegida
+→ posición → San Luis Potosí de respaldo). Sin una ciudad elegida ni una posición real (nadie llega a "Agregar
+lugar" con el teléfono ya ubicado), el contexto caía en `origen: "inicial"` — y sin una pista real, `bboxParaContexto`
+no pone ningún `bbox` a propósito (para no acotar en falso a alguien que en verdad está en otra ciudad), así que
+Mapbox buscaba en todo el país.
+
+Arreglo: nueva función pura `contextoDondeEsta(punto, q, ciudadContexto, yo, posicionTelefono)` en
+`dondeEstaPantalla.ts` (misma cascada, con pruebas — 5 casos, incluido el defecto reproducido exacto: sin ciudad
+elegida ni posición, cae en San Luis Potosí SIN pista real). `HojaDondeLugar` gana el prop `ciudadContexto` y lo
+usa ahí; `FormularioLugar` lo recibe y lo pasa. De dónde sale esa ciudad:
+- `lugares/nuevo/page.tsx`: `ciudadPorSlug(searchParams.ciudad, ciudades)` — mismo respaldo silencioso a San Luis
+  Potosí que ya usa `lugares/page.tsx` (el listado), no el más estricto `ciudadDesdeSlug` del evento (que cae en
+  `null` con un slug inválido): aquí no hay otra pista real donde ese `null` proteja algo, y hoy no existe forma
+  de llegar a "Agregar lugar" con una ciudad EQUIVOCADA (solo hay una).
+- `lugares/[id]/editar/page.tsx`: `ciudadPorNombre(lugar.ciudad, ciudades)` — la ciudad del propio lugar (en la
+  práctica no cambia nada: el pin ya puesto siempre manda en la cascada, edita siempre trae uno).
+
+**Pendiente, fuera de esta pieza:** `src/components/Publicar.tsx` (el botón flotante "Registrar lugar") no arma
+su `href` con `?ciudad=`, a diferencia de "Publicar evento"/"Registrar artista"; y su único lugar de uso,
+`src/app/lugares/VistaLugares.tsx:454` (`<Publicar que="lugar" />`, sin el prop `ciudad`), es justo el archivo que
+esta pieza tiene prohibido tocar (OL-210 en curso ahí). Hoy no cambia nada (con una sola ciudad, el respaldo de
+`ciudadPorSlug` ya cae en San Luis Potosí), pero si el producto abre otra ciudad, alguien tendrá que enchufar ese
+`ciudad` en `VistaLugares.tsx` para que el chip real llegue hasta aquí — anotado para quien cierre OL-210 o el
+gestor.
+
+**2) «Los registrados deben salir primero junto a Mapbox, y no desaparecer cuando Mapbox responde.»** Revisando
+`combinarResultados`/el cómputo de `combinados` en `HojaDondeLugar.tsx`, la lógica ya es —byte a byte— la MISMA
+que usa el canon en producción (`HojaDondeEs.tsx`, sin ningún cambio en esta pieza): los lugares registrados que
+coinciden con el texto se calculan con `lugaresPorTexto` de forma pura y síncrona a partir de `q`/`lugares`,
+**sin ninguna dependencia de si Mapbox ya respondió, falló, o cuántos resultados trajo** — y `combinarResultados`
+los antepone siempre. No se encontró ninguna forma de que el código actual los quite o los reordene.
+
+La explicación más probable, dado que la lógica es idéntica a la del canon que sí funciona en producción: es un
+efecto del punto 1. Sin `bbox` (la ciudad elegida faltaba), Mapbox devolvía resultados nacionales sin acotar —
+hasta 5, el tope de `descartarSinCalle`— y ese ruido, sumado a la propia falla de mi arnés de pruebas (sin token,
+mostraba un error donde el gestor sí tenía resultados reales), hace fácil perder de vista un renglón que en
+realidad seguía ahí, primero. Con el punto 1 corregido (un `bbox` real de San Luis Potosí), Mapbox debería volver
+a traer solo lo relevante, y el registrado —siempre primero— vuelve a notarse.
+
+Aun así, para no dejarlo solo en una hipótesis: se extrajo el cómputo entero a una función pura y probada,
+`resultadosDondeEsta(lugares, q, resultadosMapbox)` en `dondeEstaPantalla.ts`, usada ahora por `HojaDondeLugar`
+en vez de repetir el cálculo en el propio componente. La prueba clave (`dondeEstaPantalla.test.ts`): con un lugar
+registrado que coincide Y una lista de "resultadosMapbox" ya llena (simulando que Mapbox YA respondió, con varias
+sugerencias), el lugar registrado sigue apareciendo, PRIMERO, sin importar cuántos resultados de Mapbox lo
+sigan — la garantía queda fija en código, no solo en la memoria de quien lo revisó a mano.
 
 ## Evidencia
 
 - `npm run lint`: limpio (1 warning preexistente y ajeno, `docs/diseno/logotipo/iconos-sn.mjs`).
 - `npm run typecheck`: limpio.
-- `npm test`: **1319 pruebas, 107 archivos**, todas en verde — incluidas las movidas (`direccionContexto.test.ts`,
-  41), las que cambiaron de import (`gestosFlyer.test.ts`, 23) y las nuevas de esta pieza
-  (`src/app/lugares/dondeEstaPantalla.test.ts`, **11 pruebas**: `lugarCercano` con varios casos de distancia —
-  dentro, justo en el punto, fuera, el más cercano de varios, radio configurable— y `textoInicialBusqueda` con
-  «Buscar»/«Cambiar»).
+- `npm test`: **1331 pruebas, 107 archivos**, todas en verde — incluidas las movidas (`direccionContexto.test.ts`,
+  41), las que cambiaron de import (`gestosFlyer.test.ts`, 23) y las de `src/app/lugares/dondeEstaPantalla.test.ts`
+  (**22 pruebas** tras la corrección del gestor: las 11 originales —`lugarCercano`, `textoInicialBusqueda`— más
+  11 nuevas: `contextoDondeEsta` (5 casos, incluido el defecto exacto que reportó el gestor — sin ciudad elegida
+  ni posición, cae en San Luis Potosí sin ninguna pista real) y `resultadosDondeEsta` (6 casos, incluida la
+  garantía de que un lugar registrado sigue primero aunque Mapbox ya haya respondido con varias sugerencias).
 - `npm run build`: verde (`next build`, Turbopack), sin ninguna ruta `arnes240-temporal` en el árbol final.
 - **Correos en el diff:** `git diff | grep -oE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+'` y lo mismo sobre los archivos
   nuevos — ninguna dirección.
+- Se unió `origin/main` a la rama (17 commits; el único choque fue `docs/ops/OPEN_LOOPS.md`, resuelto con
+  `scripts/ops/resolver_ol.py` — conserva la entrada OL-211 de esta pieza y el «Last updated» de main).
 
 ### Capturas reales (`docs/rediseno/capturas-240/`), 390×844, Bricolage real
 
@@ -139,6 +194,18 @@ ve completo.
   evento, con el mismo arnés montando `FormularioEvento` real — «¿Dónde es?» abre igual que siempre y, con un
   texto sin coincidencias, la barra «Agregar "Sitio inventado xyz" como lugar» sigue apareciendo igual —
   comprobación visual de que mover la lógica compartida a `src/lib/` no cambió el comportamiento del evento.
+
+Las capturas 02 a 04 son de ANTES de la decisión del founder sobre el título (siguen mostrando «Dónde está», sin
+signos de pregunta) — siguen siendo válidas para lo que muestran (lista, aviso, «Estoy aquí»), no se rehicieron
+para no reabrir todo el flujo por un solo rótulo. La corrección del título se capturó aparte:
+
+- **`08-titulo-donde-esta-con-signos.png`**: misma pantalla, ya con **«¿Dónde está?»** en la cabecera (y en el
+  `aria-label`) — decisión del founder sobre la pregunta de la bitácora.
+
+La ciudad elegida (`ciudadContexto`) y que los registrados no desaparezcan con Mapbox real son correcciones que
+dependen de un token de Mapbox de verdad para verse en una captura (sin él, todo cae en el mismo aviso «Falta el
+token»); quedan protegidas por las 11 pruebas nuevas de `contextoDondeEsta`/`resultadosDondeEsta` — el gestor
+dijo que verifica el mapa real él mismo al final.
 
 ## Cierre
 
