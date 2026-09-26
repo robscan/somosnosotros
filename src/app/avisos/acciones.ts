@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 export type EleccionAvisos = { correo?: boolean; push?: boolean };
@@ -30,7 +31,16 @@ export async function elegirAvisos(eleccion: EleccionAvisos): Promise<boolean> {
   if (error) return false;
   // Ajustes y la agenda muestran lo elegido. Que no se vuelva a preguntar no depende de esto: lo apunta la hoja para la
   // cuenta (lib/avisosPreguntados).
-  revalidatePath("/perfil");
-  revalidatePath("/");
+  // Con `after` (OL-212, tercera vuelta): la hoja (ConsentimientoAvisos) ya avisa lo decidido a quien la abrió por
+  // `onDecidido`, sin pedirle nada al servidor (arreglo de la primera vuelta) — y Mi perfil hace su propio
+  // `router.refresh()` tras guardar. Nadie necesita el `revalidatePath` de inmediato; revalidar aquí solo repintaría
+  // de más la pantalla desde la que se abrió la hoja (un carril de Inicio, una ficha…), porque cualquier
+  // `revalidatePath` en una acción hace que Next rehaga y reenvíe toda la ruta actual en la misma respuesta, sin
+  // importar qué ruta se le pase (server-actions.md de Next 16.3.5, la versión instalada). Aplazado, Perfil e
+  // Inicio se marcan igual de viejos para la próxima vez que se pidan, sin repintar esta.
+  after(() => {
+    revalidatePath("/perfil");
+    revalidatePath("/");
+  });
   return true;
 }
