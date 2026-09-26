@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Somos Nosotros · Calendario con días sin eventos desactivados (OL-216)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<style>
+/* ==========================================================================
+   Tokens (copiados de src/app/globals.css; solo los que usa este prototipo)
+   ========================================================================== */
+:root {
+  --fondo: #ffffff;
+  --fondo-suave: #f4f4f2;
+  --fondo-contenido: #f6f5f1;
+  --texto: #1a1a1a;
+  --texto-suave: #5c5c5c;
+  --borde: #dcdcd8;
+  --primario: #6d34c8;
+  --primario-texto: #ffffff;
+  --primario-suave: color-mix(in srgb, var(--primario) 12%, white);
+  --asa: #d9d9d9;
+  --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
+  --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --radio: 12px;
+  --radio-grande: 16px;
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-5: 20px;
+  --espacio-6: 24px;
+  --alto-nav: 60px;
+  --toque: 48px;
+  --toque-min: 44px;
+  --letra-xs: 0.875rem;
+  --letra-sm: 0.9375rem;
+  --letra-md: 1.0625rem;
+  --letra-lg: 1.125rem;
+  --letra-xl: 1.1875rem;
+  --letra-2xl: 1.625rem;
+  --ancho-titulo: "wdth" 75;
+  --ancho-texto: "wdth" 80;
+  --fuente: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* estudio: el fondo de la página de revisión, no de la app */
+  --estudio: #ebeae6;
+  --estudio-texto: #3b3a37;
+  --estudio-suave: #6d6b66;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+/* El atributo `hidden` tiene que ganar siempre, aunque el elemento también lleve una clase con `display`
+   (`.chip`, `.grid`…): por especificidad igual, la regla del autor le gana a la del navegador y `hidden` no
+   ocultaba nada (bug encontrado al capturar esta misma pieza — chipVacio y chipConFecha se veían los dos a la vez). */
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--estudio);
+  color: var(--estudio-texto);
+  font-family: var(--fuente);
+  font-variation-settings: var(--ancho-texto);
+  font-optical-sizing: auto;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  padding: 28px 16px 60px;
+}
+button, input { font: inherit; color: inherit; }
+h1, h2, h3 { font-variation-settings: var(--ancho-titulo); font-weight: 700; line-height: 1.15; }
+:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+:focus:not(:focus-visible) { outline: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ==========================================================================
+   Estudio de revisión: rótulo + teléfono + utilería (la utilería NO es parte
+   del diseño, sólo sirve para llegar a un estado desde este archivo)
+   ========================================================================== */
+.estudio { max-width: 900px; margin: 0 auto; }
+.rotulo { margin-bottom: 18px; font-size: 14px; line-height: 1.5; color: var(--estudio-suave); }
+.rotulo strong { display: block; color: var(--estudio-texto); font-size: 19px; margin-bottom: 2px; }
+.envoltura-telefono { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+
+.telefono {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  flex: none;
+  overflow: hidden;
+  background: var(--fondo-contenido);
+  color: var(--texto);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+/* -- Fondo: Agenda (aproximado, mismos tokens que la app real) ---------- */
+.cabecera-app {
+  background: var(--fondo);
+  box-shadow: inset 0 -1px 0 var(--borde);
+}
+.fila-contexto {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: var(--espacio-3) var(--espacio-5) var(--espacio-3);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--letra-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip-solo-icono { width: 40px; justify-content: center; padding: 0; color: var(--texto-suave); }
+.chip-solo-icono svg { display: block; }
+.chip-con-fecha { gap: 6px; padding: 0 var(--espacio-3) 0 10px; border-color: var(--primario); }
+.chip-con-fecha svg { color: var(--texto-suave); }
+/* El resto de la pastilla (ícono + texto) reabre la hoja con la fecha ya elegida — para poder tocarla otra vez y
+   quitarla (pedido del founder); la ✕ sigue aparte y sin cambios, quita directo sin abrir nada. */
+.chip-con-fecha-boton {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px;
+  border: none; background: none; padding: 0; color: inherit; font: inherit; cursor: pointer;
+}
+.chip-con-fecha .quitar {
+  display: grid; place-items: center; min-width: 28px; min-height: 40px; margin: 0 -6px 0 2px;
+  border: none; background: none; color: var(--texto-suave); cursor: pointer;
+}
+.chip-ciudad { gap: 6px; padding: 0 var(--espacio-3); font-weight: 600; }
+.chip-ciudad svg { color: var(--texto-suave); }
+.espaciador { flex: 1; }
+.redondo {
+  display: grid; place-items: center; width: 40px; height: 40px; flex: none;
+  border: 1px solid var(--borde); border-radius: 50%; background: var(--fondo); color: var(--texto); cursor: pointer;
+}
+.pestanas { display: flex; gap: var(--espacio-5); padding: 0 var(--espacio-5); box-shadow: inset 0 -1px 0 var(--borde); }
+.pestana {
+  display: inline-flex; align-items: center; min-height: var(--toque-min); padding: 0 var(--espacio-1);
+  border: none; border-bottom: 2px solid transparent; background: none; color: var(--texto-suave);
+  font-size: var(--letra-sm); font-weight: 600; cursor: pointer;
+}
+.pestana[aria-selected="true"] { color: var(--primario); border-bottom-color: var(--primario); font-weight: 700; }
+
+.lista-agenda { padding: var(--espacio-4) var(--espacio-5) 120px; height: calc(844px - 100px); overflow: hidden; }
+.titulo-dia { font-size: var(--letra-sm); font-weight: 700; color: var(--texto-suave); margin-bottom: var(--espacio-2); }
+.renglon {
+  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "foto titulo" "foto meta";
+  column-gap: var(--espacio-3); align-content: center; min-height: 64px; padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.foto-marcador { grid-area: foto; width: 56px; height: 56px; border-radius: var(--radio); background: var(--fondo-suave); }
+.renglon .titulo { grid-area: titulo; font-weight: 700; font-size: var(--letra-md); }
+.renglon .meta { grid-area: meta; display: flex; align-items: center; gap: 6px; color: var(--texto-suave); font-size: var(--letra-sm); }
+.renglon .meta svg { color: var(--texto-suave); }
+
+.nav-inferior {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+  display: grid; grid-template-columns: repeat(4, 1fr); height: var(--alto-nav);
+  background: var(--fondo); border-top: 1px solid var(--borde); box-shadow: var(--sombra-panel);
+}
+.nav-inferior a, .destino-nav {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  color: var(--texto-suave); font-size: 12px; font-weight: 600;
+}
+.destino-nav.activo { color: var(--primario); }
+.destino-nav.activo span:last-child { font-weight: 700; }
+.destino-nav .icono-nav { display: grid; place-items: center; width: 60px; height: 32px; border-radius: 16px; }
+.destino-nav.activo .icono-nav { background: var(--primario); color: var(--primario-texto); }
+
+/* -- Hoja (la pieza del encargo) ----------------------------------------- */
+.fondo-hoja {
+  position: absolute; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.32);
+  display: flex; align-items: flex-end;
+}
+.fondo-hoja[hidden] { display: none; }
+.hoja {
+  position: relative; width: 100%; max-height: calc(100% - 48px); overflow-y: auto;
+  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + 10px);
+  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+  background: var(--fondo); box-shadow: var(--sombra-panel);
+}
+.hoja::before {
+  content: ""; display: block; width: 36px; height: 4px; margin: 0 auto var(--espacio-3);
+  border-radius: 2px; background: var(--asa);
+}
+.hoja h3 { font-size: var(--letra-xl); margin-bottom: var(--espacio-3); padding-right: var(--toque-min); }
+.hoja .cerrar {
+  position: absolute; top: var(--espacio-2); right: var(--espacio-2);
+  display: grid; place-items: center; min-width: var(--toque-min); min-height: var(--toque-min);
+  border: none; background: none; color: var(--texto-suave); cursor: pointer;
+}
+
+.cabecera-mes { display: flex; align-items: center; justify-content: space-between; padding-bottom: var(--espacio-2); }
+.cabecera-mes strong { font-size: var(--letra-md); font-weight: 700; }
+.flecha {
+  display: grid; place-items: center; min-width: var(--toque-min); min-height: var(--toque-min);
+  border: none; border-radius: 50%; background: none; color: var(--texto); cursor: pointer;
+}
+.flecha:disabled { color: var(--texto-suave); opacity: 0.35; cursor: default; }
+.flecha svg.izquierda { transform: rotate(90deg); }
+.flecha svg.derecha { transform: rotate(-90deg); }
+
+.dias-semana {
+  display: grid; grid-template-columns: repeat(7, 1fr); padding: var(--espacio-1) 0;
+  color: var(--texto-suave); font-size: var(--letra-xs); text-align: center;
+}
+
+.grid-envoltura { position: relative; min-height: calc(5 * 46px); }
+.grid { display: flex; flex-direction: column; gap: 2px; }
+.grid[hidden] { display: none; }
+.semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.dia {
+  width: var(--toque-min); height: var(--toque-min); margin: 0 auto;
+  display: grid; place-items: center; border: none; border-radius: 50%;
+  background: none; color: var(--texto); font-size: var(--letra-sm); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.dia:active:not(:disabled) { background: var(--fondo-suave); }
+.dia:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+.dia.hoy { font-weight: 700; box-shadow: inset 0 0 0 1px var(--primario); }
+.dia.elegido { background: var(--primario); color: var(--primario-texto); }
+.dia.elegido.hoy { box-shadow: none; }
+/* Desactivado: agrupa dos razones distintas («pasado» y «sin eventos») bajo el MISMO estilo — ver bitácora 245,
+   sección "días pasados vs. sin eventos", por qué no llevan dos estilos. El aria-label sí distingue la razón.
+   Contraste: 0.65 (~2.99:1 ≈ 3:1) — decisión del founder tras ver las dos variantes en la leyenda (la de 0.35,
+   ~1.71:1, quedó descartada). */
+.dia.desactivado { color: var(--texto-suave); opacity: 0.65; cursor: default; }
+.dia.fuera { visibility: hidden; }
+
+.skeleton { position: absolute; inset: 0; display: none; flex-direction: column; gap: 2px; }
+.skeleton[data-activo] { display: flex; }
+.skeleton .semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.skeleton .celda { width: var(--toque-min); height: var(--toque-min); margin: 0 auto; border-radius: 50%; background: var(--fondo-suave); animation: latido 1.1s ease-in-out infinite; }
+@keyframes latido { 50% { opacity: 0.45; } }
+.sr-solo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ==========================================================================
+   Utilería de revisión (no es parte del diseño ni de la app)
+   ========================================================================== */
+.utileria {
+  flex: 1; min-width: 240px; padding: 18px; border-radius: 14px;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  font-size: 14px; color: var(--estudio-texto);
+}
+.utileria h3 { font-size: 16px; margin-bottom: 8px; }
+.utileria p { margin-bottom: 12px; color: var(--estudio-suave); line-height: 1.5; }
+.utileria button {
+  display: block; width: 100%; min-height: 40px; margin-bottom: 8px; border: 1px dashed #9a9a94;
+  border-radius: 8px; background: #faf9f7; cursor: pointer; font-weight: 600;
+}
+.utileria button:active { background: #f0efec; }
+
+/* ==========================================================================
+   Leyenda de estados: una celda ampliada por estado, para firmar uno por uno
+   ========================================================================== */
+.leyenda-envoltura { max-width: 900px; margin: 40px auto 0; }
+.leyenda-envoltura h2 { font-size: 21px; margin-bottom: 6px; }
+.leyenda-envoltura > p { color: var(--estudio-suave); margin-bottom: 18px; font-size: 14px; max-width: 560px; line-height: 1.5; }
+.leyenda {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;
+  width: 390px; max-width: 100%;
+}
+.estado-leyenda {
+  background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 16px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+}
+.estado-leyenda .nombre { font-size: 13px; font-weight: 700; }
+.estado-leyenda .detalle { font-size: 12px; color: var(--texto-suave); line-height: 1.4; }
+
+/* Corrección del gestor (revisión de esta misma pieza): la leyenda pintaba una réplica aparte de cada estado
+   (`.m-elegido`, `.m-hoy`…) en vez de las clases reales del calendario (`.dia`, `.hoy`, `.elegido`,
+   `.desactivado`, `.fuera`) — y esa réplica perdía contra `.estado-leyenda .muestra { color; background }`, un
+   selector de MÁS especificidad (dos clases contra una) que ganaba sin importar el orden. "Seleccionado" y
+   "Hoy + seleccionado" salían sin relleno y con texto negro: la leyenda no mostraba el estado que decía.
+   Arreglo de fondo, no un parche de especificidad: la leyenda ahora pinta con las mismas clases que usa la hoja
+   real (`class="dia hoy elegido"`, etc.) — así no puede haber una segunda copia que se desalinee de la primera.
+   Esta regla solo AMPLÍA el tamaño (56×56, el círculo real mide 44×44) sin tocar color ni fondo, que los pone
+   `.dia`/`.hoy`/`.elegido`/`.desactivado`/`.fuera` de verdad. */
+.estado-leyenda .dia.leyenda-muestra {
+  width: 56px; height: 56px; margin: 0 auto; font-size: 17px; cursor: default;
+}
+/* "Presionado" y "foco de teclado" son pseudo-clases (:active, :focus-visible): una captura estática no puede
+   sostenerlas vivas sin JavaScript. Estas dos clases de demostración copian, literalmente, las declaraciones de
+   las reglas reales (`button:active:not(:disabled)` + `.dia:active:not(:disabled)` en globals.css;
+   `:focus-visible` global y `.dia:focus-visible` en SelectorFecha.module.css) — mismos valores, congelados. */
+.demo-presionado { background: var(--fondo-suave); opacity: 0.6; }
+.demo-foco { outline: 2px solid var(--primario); outline-offset: 2px; }
+/* "Cargando" reutiliza el esqueleto real (`.skeleton .celda`), solo liberado de su posición absoluta de rejilla
+   completa para caber en una tarjeta de la leyenda. */
+.estado-leyenda .leyenda-carga { position: static; inset: auto; display: inline-flex; width: 56px; height: 56px; }
+.estado-leyenda .leyenda-carga .celda { width: 56px; height: 56px; margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="estudio">
+  <p class="rotulo">
+    <strong>Calendario propio con días sin eventos desactivados (OL-216)</strong>
+    Teléfono 390×844 — Agenda de fondo, hoja de fecha abierta (la misma hoja de escritorio de OL-162, ahora también en el teléfono).
+    Datos de ejemplo, no reales. Hoy: viernes 25 de septiembre de 2026.
+  </p>
+
+  <div class="envoltura-telefono">
+    <div class="telefono" id="telefono" aria-label="Teléfono de 390 por 844, Agenda">
+      <!-- Fondo: Agenda (aproximado) -->
+      <header class="cabecera-app">
+        <div class="fila-contexto">
+          <button type="button" class="chip chip-solo-icono" id="chipVacio" aria-label="Elegir fecha">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+          </button>
+          <span class="chip chip-con-fecha" id="chipConFecha" hidden>
+            <button type="button" class="chip-con-fecha-boton" id="btnAbrirConFecha">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+              <span class="sr-solo">Cambiar la fecha,</span>
+              <span id="textoChipFecha">vie 25 sep</span>
+            </button>
+            <button type="button" class="quitar" id="btnQuitarChip" aria-label="Quitar la fecha">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </span>
+          <button type="button" class="chip chip-ciudad">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>
+            <span>San Luis Potosí</span>
+          </button>
+          <div class="espaciador"></div>
+          <button type="button" class="redondo" aria-label="Buscar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </button>
+        </div>
+        <div class="pestanas" role="tablist">
+          <button type="button" role="tab" class="pestana" aria-selected="true">Todos</button>
+          <button type="button" role="tab" class="pestana" aria-selected="false">Siguiendo</button>
+        </div>
+      </header>
+      <main class="lista-agenda" aria-hidden="true">
+        <h3 class="titulo-dia">Hoy · vie 25 sep</h3>
+        <ul style="list-style:none">
+          <li class="renglon"><span class="foto-marcador"></span><span class="titulo">Noche de son en el patio</span><span class="meta">19:30 · 12 van</span></li>
+          <li class="renglon"><span class="foto-marcador"></span><span class="titulo">Cineclub: documental potosino</span><span class="meta">20:00 · Gratis</span></li>
+        </ul>
+        <h3 class="titulo-dia" style="margin-top:16px">dom 27 sep</h3>
+        <ul style="list-style:none">
+          <li class="renglon"><span class="foto-marcador"></span><span class="titulo">Taller de linograbado</span><span class="meta">17:00 · $80</span></li>
+        </ul>
+      </main>
+      <nav class="nav-inferior" aria-hidden="true">
+        <span class="destino-nav"><span class="icono-nav">🏠</span><span>Inicio</span></span>
+        <span class="destino-nav activo"><span class="icono-nav">📅</span><span>Agenda</span></span>
+        <span class="destino-nav"><span class="icono-nav">📍</span><span>Lugares</span></span>
+        <span class="destino-nav"><span class="icono-nav">⭐</span><span>Artistas</span></span>
+      </nav>
+
+      <!-- Hoja de fecha: la pieza del encargo -->
+      <div class="fondo-hoja" id="fondoHoja">
+        <div class="hoja" role="dialog" aria-label="Fecha" id="hojaFecha">
+          <button type="button" class="cerrar" id="btnCerrarHoja" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+          <h3>Fecha</h3>
+          <div class="selector">
+            <div class="cabecera-mes">
+              <button type="button" class="flecha" id="btnMesAnterior" aria-label="Mes anterior" disabled>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="izquierda" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <strong id="tituloMes">Septiembre de 2026</strong>
+              <button type="button" class="flecha" id="btnMesSiguiente" aria-label="Mes siguiente">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="derecha" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+            </div>
+            <div class="dias-semana" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+            <p class="sr-solo" id="avisoCarga" role="status" aria-live="polite"></p>
+            <div class="grid-envoltura" id="gridEnvoltura">
+              <!-- Septiembre 2026: mes actual, primer pintado sin JavaScript -->
+              <div class="grid" role="grid" aria-label="Días del mes" id="gridSeptiembre">
+                <div class="semana" role="row">
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">31</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="martes 1 de septiembre, ya pasó" data-fecha="2026-09-01">1</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 2 de septiembre, ya pasó" data-fecha="2026-09-02">2</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="jueves 3 de septiembre, ya pasó" data-fecha="2026-09-03">3</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="viernes 4 de septiembre, ya pasó" data-fecha="2026-09-04">4</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 5 de septiembre, ya pasó" data-fecha="2026-09-05">5</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="domingo 6 de septiembre, ya pasó" data-fecha="2026-09-06">6</button>
+                </div>
+                <div class="semana" role="row">
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="lunes 7 de septiembre, ya pasó" data-fecha="2026-09-07">7</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="martes 8 de septiembre, ya pasó" data-fecha="2026-09-08">8</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 9 de septiembre, ya pasó" data-fecha="2026-09-09">9</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="jueves 10 de septiembre, ya pasó" data-fecha="2026-09-10">10</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="viernes 11 de septiembre, ya pasó" data-fecha="2026-09-11">11</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 12 de septiembre, ya pasó" data-fecha="2026-09-12">12</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="domingo 13 de septiembre, ya pasó" data-fecha="2026-09-13">13</button>
+                </div>
+                <div class="semana" role="row">
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="lunes 14 de septiembre, ya pasó" data-fecha="2026-09-14">14</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="martes 15 de septiembre, ya pasó" data-fecha="2026-09-15">15</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 16 de septiembre, ya pasó" data-fecha="2026-09-16">16</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="jueves 17 de septiembre, ya pasó" data-fecha="2026-09-17">17</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="viernes 18 de septiembre, ya pasó" data-fecha="2026-09-18">18</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 19 de septiembre, ya pasó" data-fecha="2026-09-19">19</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="domingo 20 de septiembre, ya pasó" data-fecha="2026-09-20">20</button>
+                </div>
+                <div class="semana" role="row">
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="lunes 21 de septiembre, ya pasó" data-fecha="2026-09-21">21</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="martes 22 de septiembre, ya pasó" data-fecha="2026-09-22">22</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 23 de septiembre, ya pasó" data-fecha="2026-09-23">23</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="jueves 24 de septiembre, ya pasó" data-fecha="2026-09-24">24</button>
+                  <button type="button" class="dia hoy" role="gridcell" aria-current="date" aria-selected="false" aria-label="viernes 25 de septiembre, hoy, 3 eventos" data-fecha="2026-09-25" tabindex="0">25</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 26 de septiembre, sin eventos" data-fecha="2026-09-26">26</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="domingo 27 de septiembre, 2 eventos" data-fecha="2026-09-27">27</button>
+                </div>
+                <div class="semana" role="row">
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="lunes 28 de septiembre, sin eventos" data-fecha="2026-09-28">28</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="martes 29 de septiembre, 1 evento" data-fecha="2026-09-29">29</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 30 de septiembre, sin eventos" data-fecha="2026-09-30">30</button>
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">1</button>
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">2</button>
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">3</button>
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">4</button>
+                </div>
+              </div>
+
+              <!-- Octubre 2026: hasta donde hay datos -->
+              <div class="grid" role="grid" aria-label="Días del mes" id="gridOctubre" hidden>
+                <div class="semana" role="row">
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">28</button>
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">29</button>
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">30</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="jueves 1 de octubre, 2 eventos" data-fecha="2026-10-01">1</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="viernes 2 de octubre, sin eventos" data-fecha="2026-10-02">2</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 3 de octubre, sin eventos" data-fecha="2026-10-03">3</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="domingo 4 de octubre, 1 evento" data-fecha="2026-10-04">4</button>
+                </div>
+                <div class="semana" role="row">
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="lunes 5 de octubre, sin eventos" data-fecha="2026-10-05">5</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="martes 6 de octubre, 4 eventos" data-fecha="2026-10-06">6</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 7 de octubre, sin eventos" data-fecha="2026-10-07">7</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="jueves 8 de octubre, sin eventos" data-fecha="2026-10-08">8</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="viernes 9 de octubre, 2 eventos" data-fecha="2026-10-09">9</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 10 de octubre, sin eventos" data-fecha="2026-10-10">10</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="domingo 11 de octubre, sin eventos" data-fecha="2026-10-11">11</button>
+                </div>
+                <div class="semana" role="row">
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="lunes 12 de octubre, 1 evento" data-fecha="2026-10-12">12</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="martes 13 de octubre, sin eventos" data-fecha="2026-10-13">13</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 14 de octubre, sin eventos" data-fecha="2026-10-14">14</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="jueves 15 de octubre, 3 eventos" data-fecha="2026-10-15">15</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="viernes 16 de octubre, sin eventos" data-fecha="2026-10-16">16</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 17 de octubre, sin eventos" data-fecha="2026-10-17">17</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="domingo 18 de octubre, 1 evento" data-fecha="2026-10-18">18</button>
+                </div>
+                <div class="semana" role="row">
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="lunes 19 de octubre, sin eventos" data-fecha="2026-10-19">19</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="martes 20 de octubre, 2 eventos" data-fecha="2026-10-20">20</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 21 de octubre, sin eventos" data-fecha="2026-10-21">21</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="jueves 22 de octubre, sin eventos" data-fecha="2026-10-22">22</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="viernes 23 de octubre, 1 evento" data-fecha="2026-10-23">23</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 24 de octubre, sin eventos" data-fecha="2026-10-24">24</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="domingo 25 de octubre, sin eventos" data-fecha="2026-10-25">25</button>
+                </div>
+                <div class="semana" role="row">
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="lunes 26 de octubre, 2 eventos" data-fecha="2026-10-26">26</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="martes 27 de octubre, sin eventos" data-fecha="2026-10-27">27</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="miércoles 28 de octubre, sin eventos" data-fecha="2026-10-28">28</button>
+                  <button type="button" class="dia" role="gridcell" aria-selected="false" aria-label="jueves 29 de octubre, 1 evento" data-fecha="2026-10-29">29</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="viernes 30 de octubre, sin eventos" data-fecha="2026-10-30">30</button>
+                  <button type="button" class="dia desactivado" role="gridcell" aria-disabled="true" aria-label="sábado 31 de octubre, sin eventos" data-fecha="2026-10-31">31</button>
+                  <button type="button" class="dia fuera" tabindex="-1" aria-hidden="true">1</button>
+                </div>
+              </div>
+
+              <!-- Cargando: mientras no se sabe qué días tienen eventos. Mismo tamaño de rejilla que arriba
+                   (5 semanas × 7), para que nada salte cuando lleguen los datos reales. -->
+              <div class="skeleton" id="skeletonGrid" aria-hidden="true">
+                <div class="semana">
+                  <span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span>
+                </div>
+                <div class="semana">
+                  <span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span>
+                </div>
+                <div class="semana">
+                  <span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span>
+                </div>
+                <div class="semana">
+                  <span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span>
+                </div>
+                <div class="semana">
+                  <span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span><span class="celda"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="utileria" aria-label="Utilería de revisión (no es parte del diseño)">
+      <h3>Utilería de revisión</h3>
+      <p>No es parte del diseño ni de la app: solo ayuda a llegar al estado «cargando» para la captura, ya que en la app real dura poco.</p>
+      <button type="button" id="btnDemoCargando">Simular «cargando» (sin datos aún)</button>
+      <button type="button" id="btnDemoReiniciar">Reiniciar el prototipo</button>
+      <p style="margin-top:10px; margin-bottom:0">Todo lo demás (abrir/cerrar la hoja, cambiar de mes, tocar un día para elegirlo y cerrar, tocar el mismo día otra vez para quitarlo, tocar la pastilla de fecha para reabrir la hoja) es la interacción real del diseño: pruébalo con el mouse o el dedo.</p>
+    </aside>
+  </div>
+</div>
+
+<div class="leyenda-envoltura">
+  <h2>Leyenda de estados</h2>
+  <p>Cada celda ampliada (56×56, el círculo real mide 44×44) y aislada, para firmar una por una. El texto bajo cada
+     una es el nombre del estado tal como aparece en la bitácora 245.</p>
+  <div class="leyenda">
+    <div class="estado-leyenda"><button type="button" class="dia leyenda-muestra" tabindex="-1" aria-hidden="true">27</button><span class="nombre">Disponible (con eventos)</span><span class="detalle">El normal: número en --texto, sin marca</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia hoy leyenda-muestra" tabindex="-1" aria-hidden="true">25</button><span class="nombre">Día actual (hoy)</span><span class="detalle">Aro de 1px --primario, negrita</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia elegido leyenda-muestra" tabindex="-1" aria-hidden="true">29</button><span class="nombre">Seleccionado</span><span class="detalle">Fondo --primario, texto blanco</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia elegido leyenda-muestra" tabindex="-1" aria-hidden="true">27</button><span class="nombre">Seleccionado · toca para quitar</span><span class="detalle">Mismo aspecto (sin marca nueva encima: ya se ve distinto de los demás días) — el nombre accesible cambia a «…, seleccionado, toca para quitar», como los chips de filtro que ya se tocan dos veces en la app (p. ej. «Cerca de mí» en Lugares)</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia hoy elegido leyenda-muestra" tabindex="-1" aria-hidden="true">25</button><span class="nombre">Hoy + seleccionado</span><span class="detalle">El relleno gana; sin el aro (regla ya existente en SelectorFecha.module.css). También se quita al tocarlo otra vez</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia hoy desactivado leyenda-muestra" tabindex="-1" aria-hidden="true">25</button><span class="nombre">Hoy sin eventos</span><span class="detalle">Aro tenue + número tenue: se reconoce que es hoy, pero no se puede elegir</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia desactivado leyenda-muestra" tabindex="-1" aria-hidden="true">26</button><span class="nombre">Desactivado · sin eventos</span><span class="detalle">Decisión del founder: opacity: .65 ≈ 2.99:1 (≈3:1) — descartada la de .35 (~1.71:1) que se mostró antes en esta misma leyenda</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia desactivado leyenda-muestra" tabindex="-1" aria-hidden="true">23</button><span class="nombre">Desactivado · pasado</span><span class="detalle">Mismo estilo que «sin eventos» a propósito — solo cambia el aria-label</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia fuera leyenda-muestra" tabindex="-1" aria-hidden="true">31</button><span class="nombre">Fuera del mes</span><span class="detalle">Vacío, sin número ni toque: no se sabe si tiene eventos sin cargar el mes vecino</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia demo-presionado leyenda-muestra" tabindex="-1" aria-hidden="true">6</button><span class="nombre">Presionado (al tocar)</span><span class="detalle">opacity: .6, la misma regla global de toda la app</span></div>
+    <div class="estado-leyenda"><button type="button" class="dia demo-foco leyenda-muestra" tabindex="-1" aria-hidden="true">9</button><span class="nombre">Foco de teclado</span><span class="detalle">Contorno 2px --primario, solo con teclado (:focus-visible)</span></div>
+    <div class="estado-leyenda"><div class="skeleton leyenda-carga" aria-hidden="true"><span class="celda"></span></div><span class="nombre">Cargando</span><span class="detalle">Mientras no se sabe qué días tienen eventos: nada se puede tocar</span></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var fondoHoja = document.getElementById("fondoHoja");
+  var telefono = document.getElementById("telefono");
+  var gridSeptiembre = document.getElementById("gridSeptiembre");
+  var gridOctubre = document.getElementById("gridOctubre");
+  var skeletonGrid = document.getElementById("skeletonGrid");
+  var gridEnvoltura = document.getElementById("gridEnvoltura");
+  var tituloMes = document.getElementById("tituloMes");
+  var btnMesAnterior = document.getElementById("btnMesAnterior");
+  var btnMesSiguiente = document.getElementById("btnMesSiguiente");
+  var btnCerrarHoja = document.getElementById("btnCerrarHoja");
+  var chipVacio = document.getElementById("chipVacio");
+  var chipConFecha = document.getElementById("chipConFecha");
+  var btnAbrirConFecha = document.getElementById("btnAbrirConFecha");
+  var textoChipFecha = document.getElementById("textoChipFecha");
+  var btnQuitarChip = document.getElementById("btnQuitarChip");
+  var avisoCarga = document.getElementById("avisoCarga");
+
+  // El nombre accesible base de cada día elegible, guardado ANTES de tocar nada: al seleccionarlo se le agrega
+  // ", toca para quitar":  al quitarlo, vuelve a este texto exacto (nunca se acumula el sufijo dos veces).
+  Array.prototype.forEach.call(document.querySelectorAll(".grid .dia[data-fecha]"), function (b) {
+    if (!b.classList.contains("desactivado")) b.dataset.labelBase = b.getAttribute("aria-label");
+  });
+
+  var MESES = { septiembre: { grid: gridSeptiembre, titulo: "Septiembre de 2026", anterior: false, siguiente: true },
+                octubre: { grid: gridOctubre, titulo: "Octubre de 2026", anterior: true, siguiente: false } };
+  var TEXTO_CORTO = {
+    "2026-09-25": "vie 25 sep", "2026-09-27": "dom 27 sep", "2026-09-29": "mar 29 sep",
+    "2026-10-01": "jue 1 oct", "2026-10-04": "dom 4 oct", "2026-10-06": "mar 6 oct", "2026-10-09": "vie 9 oct",
+    "2026-10-12": "lun 12 oct", "2026-10-15": "jue 15 oct", "2026-10-18": "dom 18 oct", "2026-10-20": "mar 20 oct",
+    "2026-10-23": "vie 23 oct", "2026-10-26": "lun 26 oct", "2026-10-29": "jue 29 oct"
+  };
+
+  var mesVisible = "septiembre";
+  var elegido = null; // botón <button> actualmente elegido, o null
+  var cargando = false;
+
+  function mostrarMes(clave) {
+    mesVisible = clave;
+    Object.keys(MESES).forEach(function (k) {
+      MESES[k].grid.hidden = k !== clave || cargando;
+    });
+    tituloMes.textContent = MESES[clave].titulo;
+    btnMesAnterior.disabled = !MESES[clave].anterior || cargando;
+    btnMesSiguiente.disabled = !MESES[clave].siguiente || cargando;
+  }
+
+  // Nada de "Listo": tocar un día disponible lo elige, filtra y cierra la hoja (founder, 2026-09-25). Tocar el
+  // MISMO día ya elegido lo quita en vez de no hacer nada — reemplaza al enlace "Quitar fecha" que no le gustó
+  // («De acuerdo con tus recomendaciones de calendario, en el prototipo pones "Quitar fecha", no me gusta, activa
+  // que se vuelva a seleccionar el día y con eso se desactive»). Una pausa breve (180 ms) antes de cerrar deja ver
+  // el toque marcado (relleno puesto o quitado) en vez de que la hoja desaparezca de golpe.
+  var PAUSA_ANTES_DE_CERRAR = 180;
+
+  function marcarVisualDia(boton) {
+    boton.classList.add("elegido");
+    boton.setAttribute("aria-selected", "true");
+    if (boton.dataset.labelBase) boton.setAttribute("aria-label", boton.dataset.labelBase + ", toca para quitar");
+  }
+  function quitarVisualDia(boton) {
+    boton.classList.remove("elegido");
+    boton.setAttribute("aria-selected", "false");
+    if (boton.dataset.labelBase) boton.setAttribute("aria-label", boton.dataset.labelBase);
+  }
+  /** Deja el día visualmente sin elegir, sin tocar la hoja ni el chip (para la ✕ del chip y Reiniciar). */
+  function limpiarEleccion() {
+    if (elegido) quitarVisualDia(elegido);
+    elegido = null;
+  }
+
+  function abrirHoja() {
+    fondoHoja.hidden = false;
+  }
+  function cerrarHoja() {
+    fondoHoja.hidden = true;
+  }
+
+  function aplicarYCerrar(fecha) {
+    if (fecha) {
+      chipVacio.hidden = true;
+      chipConFecha.hidden = false;
+      textoChipFecha.textContent = TEXTO_CORTO[fecha] || fecha;
+    } else {
+      chipVacio.hidden = false;
+      chipConFecha.hidden = true;
+    }
+    cerrarHoja();
+  }
+
+  function tocarDia(boton) {
+    if (cargando || boton.classList.contains("desactivado") || boton.classList.contains("fuera")) return;
+    if (boton === elegido) {
+      // Ya estaba elegido: quitarlo, quitar el filtro y cerrar.
+      quitarVisualDia(boton);
+      elegido = null;
+      setTimeout(function () { aplicarYCerrar(""); }, PAUSA_ANTES_DE_CERRAR);
+      return;
+    }
+    if (elegido) quitarVisualDia(elegido);
+    marcarVisualDia(boton);
+    elegido = boton;
+    setTimeout(function () { aplicarYCerrar(boton.dataset.fecha); }, PAUSA_ANTES_DE_CERRAR);
+  }
+
+  telefono.addEventListener("click", function (e) {
+    var boton = e.target.closest("button");
+    if (!boton) {
+      if (e.target === fondoHoja) cerrarHoja();
+      return;
+    }
+    if (boton === chipVacio) { abrirHoja(); return; }
+    if (boton === btnAbrirConFecha) {
+      // Reabre la hoja con el día ya elegido a la vista, en su mes — para poder tocarlo otra vez y quitarlo.
+      if (elegido) mostrarMes(elegido.dataset.fecha.slice(5, 7) === "09" ? "septiembre" : "octubre");
+      abrirHoja();
+      return;
+    }
+    if (boton === btnCerrarHoja) { cerrarHoja(); return; }
+    if (boton === btnMesSiguiente && !boton.disabled) { mostrarMes("octubre"); return; }
+    if (boton === btnMesAnterior && !boton.disabled) { mostrarMes("septiembre"); return; }
+    if (boton === btnQuitarChip) { limpiarEleccion(); chipVacio.hidden = false; chipConFecha.hidden = true; return; }
+    if (boton.matches(".dia") && boton.closest(".grid")) { tocarDia(boton); return; }
+  });
+  fondoHoja.addEventListener("click", function (e) { if (e.target === fondoHoja) cerrarHoja(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !fondoHoja.hidden) cerrarHoja(); });
+
+  document.getElementById("btnDemoCargando").addEventListener("click", function () {
+    cargando = !cargando;
+    skeletonGrid.toggleAttribute("data-activo", cargando);
+    if (cargando) {
+      gridSeptiembre.hidden = true;
+      gridOctubre.hidden = true;
+      btnMesAnterior.disabled = true;
+      btnMesSiguiente.disabled = true;
+      avisoCarga.textContent = "Cargando los días con eventos…";
+    } else {
+      avisoCarga.textContent = "";
+      mostrarMes(mesVisible);
+    }
+  });
+  document.getElementById("btnDemoReiniciar").addEventListener("click", function () {
+    limpiarEleccion();
+    chipVacio.hidden = false;
+    chipConFecha.hidden = true;
+    cargando = false;
+    skeletonGrid.removeAttribute("data-activo");
+    avisoCarga.textContent = "";
+    mostrarMes("septiembre");
+    abrirHoja();
+  });
+})();
+</script>
+</body>
+</html>

@@ -28,6 +28,8 @@ import UserNotifications
  * plugins) lo sustituye a propósito: seguimos usando el plugin para pedir permiso y el token (`register()`,
  * `requestPermissions()`, el evento `registration`), pero la apertura al tocar la maneja esta clase, no sus propios
  * eventos JS `pushNotificationActionPerformed` (que dejan de dispararse, sin que nada los use).
+ * OL-214 (bitácora 243): `CalendarioPlugin` (ver ese archivo) se registra igual que los dos de arriba — nativo
+ * puro, sin paquete de npm.
  */
 class MainViewController: CAPBridgeViewController, NotificationHandlerProtocol {
     private let monitorDeRed = NWPathMonitor()
@@ -39,6 +41,7 @@ class MainViewController: CAPBridgeViewController, NotificationHandlerProtocol {
         bridge?.registerPluginInstance(GestoAtrasPlugin())
         bridge?.registerPluginInstance(EntornoApnsPlugin())
         bridge?.notificationRouter.pushNotificationHandler = self
+        bridge?.registerPluginInstance(CalendarioPlugin())
         webView?.allowsBackForwardNavigationGestures = true
         observarRed()
     }

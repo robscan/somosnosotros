@@ -1,0 +1,207 @@
+/* "Dónde está" de Agregar/Editar lugar (OL-211): mismo patrón visual que "¿Dónde es?" del alta de evento
+   (src/app/eventos/HojaDondeEs.module.css, docs/rediseno/43) -el mapa llena todo el hueco entre el campo y el
+   pie; sobre él flotan el resumen del pin y la lista de sugerencias (ui/ListaFlotante, en su propio portal).
+   Sin barra de acciones ni hoja "Agregar lugar": aquí no hay nada que agregar aparte -ya se está creando un
+   lugar-, así que ese hueco no aplica (adaptación, bitácora 240). */
+.capa {
+  position: fixed;
+  inset: 0;
+  /* Por debajo de ui/ListaFlotante (60, portal a document.body). */
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  background: var(--fondo);
+}
+.cabecera {
+  flex: none;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  min-height: var(--alto-barra);
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.cabecera h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: var(--letra-lg);
+  font-weight: 700;
+}
+.atras,
+.listo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-1);
+  border: none;
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+.listo:disabled {
+  color: var(--texto-suave);
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cuerpo {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.campo {
+  position: relative;
+  z-index: 4;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  margin: 10px var(--gutter);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  box-shadow: var(--sombra);
+}
+.campo > svg:first-child {
+  flex: none;
+  color: var(--texto-suave);
+}
+.campo input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: max(16px, var(--letra-md));
+  color: var(--texto);
+}
+.campo input:focus {
+  outline: none;
+}
+
+.mapaLleno {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.estoyAqui {
+  position: absolute;
+  left: var(--gutter);
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  width: var(--toque);
+  height: var(--toque);
+  border: none;
+  border-radius: 50%;
+  background: var(--fondo);
+  color: var(--texto);
+  box-shadow: var(--sombra-flotante);
+  cursor: pointer;
+  transition: bottom 120ms ease;
+}
+.estoyAqui:disabled {
+  opacity: 0.6;
+}
+
+.avisoUbicacion {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 12px;
+  z-index: 5;
+  margin: 0;
+  padding: var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--vidrio);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  box-shadow: var(--sombra);
+}
+
+/* El resumen del pin elegido: solo dirección (el nombre vive en el formulario de fuera, OL-211) y el aviso "ya
+   existe"/"moviste el pin" si aplica. */
+.resumen {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 12px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--espacio-2);
+  padding: var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--vidrio);
+  box-shadow: var(--sombra-flotante);
+  font-size: var(--letra-sm);
+  color: var(--texto-suave);
+}
+.resumen > svg {
+  flex: none;
+  color: var(--primario);
+  align-self: center;
+}
+.resumenDireccion {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--texto);
+  font-weight: 600;
+}
+.notaAjuste {
+  flex: 0 0 100%;
+  margin-top: 2px;
+  font-weight: 700;
+  color: var(--primario);
+}
+.notaAjuste a {
+  color: var(--primario);
+  text-decoration: underline;
+}
+
+.avisoFlotante {
+  padding: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.avisoFlotante[role="alert"] {
+  color: var(--error);
+}
+.avisoNoEncontrado {
+  padding: var(--espacio-3);
+  font-size: var(--letra-md);
+  line-height: 1.35;
+}
+.avisoNoEncontrado > b {
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Marca chica "Ya existe" junto al nombre, en la lista flotante (OL-211): equivalente a "Privado" en el alta de
+   evento (HojaDondeEs.module.css .marcaPrivado), aquí para un lugar que este renglón NO deja elegir. */
+.marcaExiste {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel } from "./gestosFlyer";
-import { cambiarReserva, lugaresPorTexto, ponerPinManual, puntoValido, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
+import { cambiarReserva, ponerPinManual, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
+import { lugaresPorTexto, puntoValido } from "@/lib/buscarLugares";
 import type { OtroSitio } from "./HojaDondeEs";
 import type { LugarResumen } from "@/lib/lugares";
 
