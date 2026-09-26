@@ -3,7 +3,7 @@
    la raya común abajo. Compacta: sube lo que mide el renglón 1 (`--fila1`, lo mide ui/Cabecera). */
 .cabecera {
   position: sticky;
-  top: 0;
+  top: var(--tope);
   z-index: 10;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -15,7 +15,7 @@
   grid-column: 1 / -1;
 }
 .cabecera[data-compacta] {
-  top: calc(-1 * var(--fila1, 56px));
+  top: calc(var(--tope) - var(--fila1, 56px));
 }
 
 /* Renglón 1 */

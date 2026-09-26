@@ -8,7 +8,7 @@
 }
 .grupo h2 {
   position: sticky;
-  top: var(--alto-cabecera);
+  top: calc(var(--tope) + var(--alto-cabecera));
   z-index: 5;
   transition: top var(--cabecera-animacion, 0.2s) ease;
   padding: 14px 0 6px;
