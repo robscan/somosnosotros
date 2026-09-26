@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { detalleNoSoportado, disponibilidadPush, estadoPush, observarEstadoPush, suscribirPush } from "./pushCliente";
+import { desuscribirPush, detalleNoSoportado, disponibilidadPush, estadoPush, observarEstadoPush, suscribirPush } from "./pushCliente";
 
-const mocks = vi.hoisted(() => ({ activa: vi.fn(), suscripcion: vi.fn(), alta: vi.fn(), sesion: vi.fn(), desobservar: vi.fn(), unsuscribir: vi.fn() }));
-vi.mock("@/app/perfil/acciones", () => ({ suscripcionPushActiva: mocks.activa }));
+const mocks = vi.hoisted(() => ({ activa: vi.fn(), tokenActivo: vi.fn(), suscripcion: vi.fn(), alta: vi.fn(), sesion: vi.fn(), desobservar: vi.fn(), unsuscribir: vi.fn() }));
+vi.mock("@/app/perfil/acciones", () => ({ suscripcionPushActiva: mocks.activa, tokenApnsActivo: mocks.tokenActivo }));
 vi.mock("./supabase/navegador", () => ({ clienteNavegador: () => ({ auth: { onAuthStateChange: mocks.sesion } }) }));
 
 const sub = { endpoint: "https://fcm.googleapis.com/fcm/send/prueba", toJSON: () => ({ keys: { p256dh: "p", auth: "a" } }), unsubscribe: mocks.unsuscribir };
@@ -251,5 +251,112 @@ describe("detalleNoSoportado", () => {
   it("nombra lo que falta cuando el navegador no las tiene", () => {
     vi.stubGlobal("window", Object.assign(new EventTarget(), { matchMedia: () => ({ matches: true }) })); // sin PushManager
     expect(detalleNoSoportado("AA")).toBe("Este navegador no tiene Service Worker, Push o Notification");
+  });
+});
+
+// ---------- OL-213 (bitácora 242): dentro de la app de iPhone no hay PushManager; todo pasa por el puente que
+// agrega @capacitor/push-notifications (window.Capacitor.Plugins.*), sin paquete nuevo en la web. ----------
+describe("dentro de la app de iPhone (APNs)", () => {
+  const NATIVO = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 SomosNosotrosApp";
+  const CLAVE = "somosnosotros:apns-token";
+  let almacen: Map<string, string>;
+  let puente: { checkPermissions: ReturnType<typeof vi.fn>; requestPermissions: ReturnType<typeof vi.fn>; register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn>; addListener: ReturnType<typeof vi.fn> };
+  let listeners: Record<string, Array<(arg: { value?: string }) => void>>;
+
+  beforeEach(() => {
+    almacen = new Map();
+    vi.stubGlobal("localStorage", {
+      getItem: (k: string) => (almacen.has(k) ? (almacen.get(k) as string) : null),
+      setItem: (k: string, v: string) => { almacen.set(k, v); },
+      removeItem: (k: string) => { almacen.delete(k); },
+    });
+    listeners = {};
+    puente = {
+      checkPermissions: vi.fn().mockResolvedValue({ receive: "granted" }),
+      requestPermissions: vi.fn().mockResolvedValue({ receive: "granted" }),
+      register: vi.fn().mockResolvedValue(undefined),
+      unregister: vi.fn().mockResolvedValue(undefined),
+      addListener: vi.fn((evento: string, cb: (arg: { value?: string }) => void) => {
+        (listeners[evento] ??= []).push(cb);
+        return Promise.resolve({ remove: vi.fn() });
+      }),
+    };
+    vi.stubGlobal("navigator", { userAgent: NATIVO, maxTouchPoints: 5, onLine: true });
+    (window as unknown as { Capacitor?: unknown }).Capacitor = {
+      Plugins: { PushNotifications: puente, EntornoApns: { entorno: vi.fn().mockResolvedValue({ entorno: "sandbox" }) } },
+    };
+  });
+
+  function dispararRegistro(token: string) {
+    listeners.registration?.forEach((cb) => cb({ value: token }));
+  }
+  function dispararErrorDeRegistro() {
+    listeners.registrationError?.forEach((cb) => cb({}));
+  }
+
+  it("disponibilidadPush usa el puente nativo, no la llave VAPID ni las tres APIs del navegador", () => {
+    expect(disponibilidadPush("")).toBe("apagado");
+  });
+  it("sin el puente (no debería pasar dentro de la app real), no-soportado", () => {
+    (window as unknown as { Capacitor?: unknown }).Capacitor = undefined;
+    expect(disponibilidadPush("")).toBe("no-soportado");
+  });
+  it("suscribirPush pide permiso si hace falta, espera el token del evento 'registration' y guarda el entorno que dio la app", async () => {
+    puente.checkPermissions.mockResolvedValue({ receive: "prompt" });
+    const alta = suscribirPush("");
+    await vi.waitFor(() => expect(puente.register).toHaveBeenCalled());
+    dispararRegistro("token-nativo");
+    expect(await alta).toEqual({ ok: true, sub: { apns: { token: "token-nativo", entorno: "sandbox" } } });
+    expect(localStorage.getItem(CLAVE)).toBe("token-nativo");
+    expect(puente.requestPermissions).toHaveBeenCalled();
+  });
+  it("con el permiso ya concedido, no lo vuelve a pedir", async () => {
+    const alta = suscribirPush("");
+    await vi.waitFor(() => expect(puente.register).toHaveBeenCalled());
+    dispararRegistro("token-nativo");
+    await alta;
+    expect(puente.requestPermissions).not.toHaveBeenCalled();
+  });
+  it("permiso bloqueado no llega a pedir el token", async () => {
+    puente.checkPermissions.mockResolvedValue({ receive: "denied" });
+    expect(await suscribirPush("")).toEqual({ ok: false, motivo: "bloqueado" });
+    expect(puente.register).not.toHaveBeenCalled();
+  });
+  it("un registrationError sin token es un fallo, no un bloqueo (el permiso sí se concedió)", async () => {
+    const alta = suscribirPush("");
+    await vi.waitFor(() => expect(puente.register).toHaveBeenCalled());
+    dispararErrorDeRegistro();
+    expect(await alta).toEqual({ ok: false, motivo: "fallo" });
+  });
+  it("sin respuesta del evento de registro a tiempo, fallo (con tope, como el resto del archivo)", async () => {
+    vi.useFakeTimers();
+    const alta = suscribirPush("");
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(await alta).toEqual({ ok: false, motivo: "fallo" });
+    vi.useRealTimers();
+  });
+  it("estadoPush sin token guardado en este teléfono esta apagado, sin consultar el servidor", async () => {
+    expect(await estadoPush("")).toBe("apagado");
+    expect(mocks.tokenActivo).not.toHaveBeenCalled();
+  });
+  it("estadoPush con token guardado consulta al servidor con ESE token", async () => {
+    almacen.set(CLAVE, "token-guardado");
+    mocks.tokenActivo.mockResolvedValue(true);
+    expect(await estadoPush("")).toBe("encendido");
+    expect(mocks.tokenActivo).toHaveBeenCalledWith("token-guardado");
+  });
+  it("estadoPush con token guardado pero sin consentimiento del servidor esta apagado", async () => {
+    almacen.set(CLAVE, "token-guardado");
+    mocks.tokenActivo.mockResolvedValue(false);
+    expect(await estadoPush("")).toBe("apagado");
+  });
+  it("desuscribirPush llama unregister y devuelve el token guardado, para borrarlo en la base", async () => {
+    almacen.set(CLAVE, "token-viejo");
+    expect(await desuscribirPush()).toEqual({ tipo: "apns", token: "token-viejo" });
+    expect(puente.unregister).toHaveBeenCalled();
+    expect(localStorage.getItem(CLAVE)).toBeNull();
+  });
+  it("desuscribirPush sin token guardado no tiene nada que borrar en la base", async () => {
+    expect(await desuscribirPush()).toBeNull();
   });
 });

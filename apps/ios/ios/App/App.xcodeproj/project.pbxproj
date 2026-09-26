@@ -13,6 +13,7 @@
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		958DCC772DB07C7200EA8C64 /* EntrarSistemaPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */; };
 		958DCC792DB07C7200EA8C66 /* GestoAtrasPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */; };
+		958DCC7A2DB07C7200EA8C67 /* EntornoApnsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC7B2DB07C7200EA8C68 /* EntornoApnsPlugin.swift */; };
 		958DCC752DB07C7200EA8C62 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958DCC742DB07C7200EA8C61 /* MainViewController.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		5A1C0A000000000000000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0A000000000000000002 /* AppIcon.icon */; };
@@ -39,6 +40,7 @@
 		958DCC742DB07C7200EA8C61 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntrarSistemaPlugin.swift; sourceTree = "<group>"; };
 		958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestoAtrasPlugin.swift; sourceTree = "<group>"; };
+		958DCC7B2DB07C7200EA8C68 /* EntornoApnsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntornoApnsPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -78,6 +80,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				958DCC762DB07C7200EA8C63 /* EntrarSistemaPlugin.swift */,
 				958DCC782DB07C7200EA8C65 /* GestoAtrasPlugin.swift */,
+				958DCC7B2DB07C7200EA8C68 /* EntornoApnsPlugin.swift */,
 				958DCC742DB07C7200EA8C61 /* MainViewController.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				5A1C0A000000000000000002 /* AppIcon.icon */,
@@ -176,6 +179,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				958DCC772DB07C7200EA8C64 /* EntrarSistemaPlugin.swift in Sources */,
 				958DCC792DB07C7200EA8C66 /* GestoAtrasPlugin.swift in Sources */,
+				958DCC7A2DB07C7200EA8C67 /* EntornoApnsPlugin.swift in Sources */,
 				958DCC752DB07C7200EA8C62 /* MainViewController.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
