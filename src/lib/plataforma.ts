@@ -3,6 +3,8 @@
  * que dice el navegador y decide; `pushCliente` le pasa los datos reales. Sin `window` aquí, para poder probarla.
  */
 
+import { esAppNativa } from "./appNativa";
+
 export type Plataforma = {
   /** iPhone o iPad (el iPad con Safari se presenta como Mac, pero tiene pantalla táctil). */
   ios: boolean;
@@ -42,7 +44,8 @@ export function leerPlataforma(agente: string, puntosTactiles: number, instalada
     deOtraApp,
     computadora,
     chrome,
-    instalada,
+    // Dentro de la app de iPhone ya está "instalada" por definición: no se ofrece instalarla (OL-220).
+    instalada: instalada || esAppNativa(agente),
   };
 }
 
