@@ -31,6 +31,16 @@
 .flecha:hover {
   background: var(--fondo-suave);
 }
+/* Sin esto la flecha deshabilitada (OL-218: "mes anterior" en el mes actual, "mes siguiente" sin más datos) se
+   veía negra, como si siguiera activa — el atributo `disabled` ya estaba puesto, pero nunca hubo un estilo
+   `:disabled` para `.flecha` (esta rejilla no tenía tope de mes antes de OL-218). Mismo valor que el prototipo
+   firmado (`docs/rediseno/prototipos/calendario-dias-con-eventos.html`, `.flecha:disabled`), no el 0.65 de
+   `.desactivado` — son dos elementos distintos (un botón de navegación, no un día). */
+.flecha:disabled {
+  color: var(--texto-suave);
+  opacity: 0.35;
+  cursor: default;
+}
 .izquierda {
   transform: rotate(90deg);
 }
@@ -70,16 +80,21 @@
   font-size: var(--letra-sm);
   cursor: pointer;
 }
-.dia:hover {
+/* `:not(.elegido)`: sin él, `:hover` (dos clases de especificidad) le gana a `.elegido` (una), sin importar el
+   orden — un día ya elegido se veía gris al pasar el mouse encima, como si se hubiera desmarcado (bug real,
+   encontrado al capturar OL-218/247: en el alta de evento, tocar el mismo día ya elegido no debía cambiar nada,
+   y el mouse simulado se quedaba encima justo de eso). */
+.dia:hover:not(.elegido) {
   background: var(--fondo-suave);
 }
 .dia:focus-visible {
   outline: 2px solid var(--primario);
   outline-offset: 2px;
 }
+/* Fuera del mes: vacío e intocable (decisión del founder, bitácora 245/247) — visibility, no solo opacidad, para
+   que ni el navegador lo deje recibir un toque; el número sigue en el DOM (mismo tamaño de rejilla, sin saltos). */
 .fuera {
-  color: var(--texto-suave);
-  opacity: 0.5;
+  visibility: hidden;
 }
 .hoy {
   font-weight: 700;
@@ -92,9 +107,12 @@
 .elegido.hoy {
   box-shadow: none;
 }
-.pasado {
+/* Desactivado: agrupa dos razones distintas (día ya pasado y, en el modo "filtro", día sin eventos) bajo el
+   MISMO estilo — el `aria-label` sí distingue la razón (`etiquetaDia`). Contraste 0.65 (~2.99:1 ≈ 3:1): decisión
+   del founder tras ver las dos variantes en el prototipo (la de 0.35, ~1.71:1, quedó descartada; bitácora 245). */
+.desactivado {
   color: var(--texto-suave);
-  opacity: 0.35;
+  opacity: 0.65;
   cursor: default;
 }
 
@@ -169,4 +187,42 @@
 .listo:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* El aviso "Cargando los días con eventos…" (SelectorFechaCargando): se oye, no se ve. */
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* Esqueleto de "cargando" (SelectorFechaCargona): mismo tamaño de rejilla (5 semanas × 7, `.toque-min` por celda)
+   que la real, para que nada salte ni parpadee cuando llegan los días con eventos. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.skeleton .semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.celda {
+  width: var(--toque-min);
+  height: var(--toque-min);
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--fondo-suave);
+  animation: latido 1.1s ease-in-out infinite;
+}
+@keyframes latido {
+  50% {
+    opacity: 0.45;
+  }
 }

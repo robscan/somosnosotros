@@ -1,4 +1,4 @@
-import { aFechaIcs } from "./fechas";
+import { aFechaIcs, diaLocal } from "./fechas";
 import { hrefEvento } from "./eventos";
 
 /** Lo que va en el archivo de calendario de un evento. */
@@ -167,4 +167,94 @@ export function pasoMasCercano(hora: string, paso = 15): string {
   const total = Number(m[1]) * 60 + Number(m[2]);
   const acotado = Math.min(Math.max(Math.round(total / paso) * paso, 0), 24 * 60 - paso);
   return `${String(Math.floor(acotado / 60)).padStart(2, "0")}:${String(acotado % 60).padStart(2, "0")}`;
+}
+
+/** Los días (YYYY-MM-DD) en que hay al menos un evento, con cuántos, para el calendario propio de `ui/ChipFecha` y
+ *  `ui/SelectorFecha` (OL-218): qué días dejar disponibles y cuáles desactivar por "sin eventos". */
+export type DiasActivos = Map<string, number>;
+
+/**
+ * Igual que carga la Agenda (`cargarAgenda`) y Lugares (`cargar()` de `/lugares`): la misma consulta de eventos que
+ * ya no ha pasado, sin otra — esta función solo agrupa lo que ya llegó, sin pedir nada nuevo (la cheapest query
+ * posible es no pedir ninguna). Sin `fin`, el evento ocupa solo su día de inicio (mismo criterio que `terminaDe`
+ * en `fechas.ts`: sin fin explícito, "termina" al acabar ese mismo día, nunca se cuenta como si durara más). Con
+ * `fin`, ocupa cada día de calendario entre el de inicio y el de fin (inclusive), en la zona del propio evento —
+ * un evento de varios días cuenta en cada día que ocupa, igual que hace la Agenda al decidir cuándo se oculta.
+ */
+type EventoConRango = { inicio: string; fin: string | null; zona: string };
+
+/** El día de inicio y el de fin (YYYY-MM-DD, en la zona del propio evento) que ocupa un evento en el calendario:
+ *  sin `fin`, los dos son el día de inicio (mismo criterio que `terminaDe` en `fechas.ts` — sin fin explícito,
+ *  nunca dura más de ese día). Un `fin` corrupto (antes del inicio, dato roto) se acota a `inicio`, para no
+ *  perder ni el día de inicio. */
+function rangoDelEvento(e: EventoConRango): { inicio: string; fin: string } {
+  const inicio = diaLocal(new Date(e.inicio), e.zona);
+  const finCalculado = e.fin ? diaLocal(new Date(e.fin), e.zona) : inicio;
+  return { inicio, fin: finCalculado < inicio ? inicio : finCalculado };
+}
+
+/** ¿Ocupa este evento el día `fecha` (YYYY-MM-DD)? Un evento de varios días cuenta en cada día que ocupa, desde
+ *  su día de inicio hasta el de fin (inclusive) — la misma regla que `diasActivosCalendario`, para un evento
+ *  solo: la usan Agenda (`filtrarAgenda`) y Lugares (`diasConEvento`) al filtrar por el día del chip, para que
+ *  nunca desentonen con lo que el calendario ya marcó como disponible. */
+export function ocupaDia(e: EventoConRango, fecha: string): boolean {
+  const { inicio, fin } = rangoDelEvento(e);
+  return fecha >= inicio && fecha <= fin;
+}
+
+export function diasActivosCalendario(eventos: EventoConRango[]): DiasActivos {
+  const dias: DiasActivos = new Map();
+  for (const e of eventos) {
+    const { inicio, fin } = rangoDelEvento(e);
+    let d = inicio;
+    // Tope de sobra (367 días) para nunca colgarse con un dato corrupto (un `fin` absurdo o anterior al inicio).
+    for (let i = 0; d <= fin && i < 367; i++) {
+      dias.set(d, (dias.get(d) ?? 0) + 1);
+      d = sumarDiasIso(d, 1);
+    }
+  }
+  return dias;
+}
+
+/** ¿Se puede ir al mes anterior? Sin `bloquearPasado` (alta de evento, admite corregir una fecha ya pasada), sí
+ *  siempre; con él (Agenda y Lugares, por defecto), no antes del mes de `limite` (hoy, o `min` si es posterior). */
+export function hayMesAnterior(anio: number, mes: number, limite: string, bloquearPasado: boolean): boolean {
+  if (!bloquearPasado) return true;
+  return `${anio}-${String(mes).padStart(2, "0")}` > limite.slice(0, 7);
+}
+
+/** ¿Hay algún día con eventos después del mes que se muestra? Sin `diasActivos` (alta de evento, que no restringe
+ *  por día), siempre true: solo el calendario de Agenda/Lugares limita "hasta donde haya datos" (prototipo OL-216). */
+export function haySiguienteMes(anio: number, mes: number, diasActivos?: DiasActivos): boolean {
+  if (!diasActivos) return true;
+  const mesMostrado = `${anio}-${String(mes).padStart(2, "0")}`;
+  for (const d of diasActivos.keys()) if (d.slice(0, 7) > mesMostrado) return true;
+  return false;
+}
+
+/**
+ * El nombre accesible de un día del calendario (OL-218, bitácora 245): a partir del texto largo ya calculado
+ * ("viernes 25 de septiembre", `fechas.ts#diaLargo`), agrega "hoy", "ya pasó"/"sin eventos"/"N evento(s)" (solo si
+ * se sabe: `conEventos` llega undefined en la hoja de alta de evento, que no restringe por día) y, solo en el modo
+ * "filtro" del calendario (Agenda y Lugares, donde tocar el día ya elegido lo quita), "toca para quitar" en el día
+ * ya elegido — mismas palabras y orden que firmó el founder en el prototipo, sin agregar la palabra
+ * "seleccionado" (el prototipo no la lleva). En modo "campo" (alta de evento, la fecha es obligatoria y tocar la
+ * ya elegida no la quita) no se agrega nada por estar elegido: el estado ya se anuncia con `aria-selected`.
+ */
+export function etiquetaDia(textoLargo: string, d: { hoy: boolean; pasado: boolean }, opts: { conEventos?: number; elegido?: boolean; permiteQuitar?: boolean } = {}): string {
+  const partes = [textoLargo];
+  if (d.hoy) partes.push("hoy");
+  if (opts.conEventos !== undefined) {
+    if (d.pasado) partes.push("ya pasó");
+    else if (!opts.conEventos) partes.push("sin eventos");
+    else partes.push(opts.conEventos === 1 ? "1 evento" : `${opts.conEventos} eventos`);
+  }
+  if (opts.permiteQuitar && opts.elegido) partes.push("toca para quitar");
+  return partes.join(", ");
+}
+
+/** El mes inicial de la hoja: el de `fecha` si ya hay una elegida; si no, el de `limite` (hoy, o `min` si es posterior). */
+export function mesInicial(fecha: string, limite: string): { anio: number; mes: number } {
+  const base = fecha || limite;
+  return { anio: Number(base.slice(0, 4)), mes: Number(base.slice(5, 7)) };
 }
