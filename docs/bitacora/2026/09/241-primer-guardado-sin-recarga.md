@@ -567,4 +567,4 @@ Al terminar: se detuvieron `next start` y el respaldo, se borró `.env.local` (n
 - **Pruebas:** 5 archivos nuevos/ampliados (sección 17); falla antes (7 casos, comprobado revirtiendo el parche
   de verdad) y pasa después (113 archivos, 1 403 pruebas). Suite completa en verde.
 - **Capturas:** `docs/rediseno/capturas-241/3-{a,b,c,d}*.png` (sección 18).
-- **PR:** [número pendiente, se añade tras `gh pr create`], contra `main`. Sin unir; a la espera del founder.
+- **PR:** [#257](https://github.com/robscan/somosnosotros/pull/257), contra `main`. Sin unir; a la espera del founder.
