@@ -21,6 +21,10 @@ type Props = {
   correo: string;
   llavePush: string;
   onListo?: () => void;
+  /** Se llama cada vez que queda guardada una elección (correo sí/no; qué tan lejos llegó el alta de push en este
+   *  teléfono): quien pinta la promesa de la barra (Seguir, ficha de evento) la toma de aquí, nunca pidiéndole la
+   *  página entera al servidor (antes `router.refresh()` al cerrar la hoja, OL-212). */
+  onDecidido?: (decision: { correo: boolean; push: boolean }) => void;
   /** Solo Voy: el archivo de calendario del evento, que se ofrece a quien no quiere avisos (decisión 14 de docs/rediseno/17). */
   calendarioUrl?: string;
 };
@@ -43,7 +47,7 @@ type Problema = null | "bloqueado" | "fallo" | "no-soportado" | "otra-app";
  * antes de tiempo); lo que no se puede se dice con su causa y el correo como salida, y un "sí" nunca se guarda como "no";
  * dado de alta en Chrome o Android se ofrece instalar en un toque; y a quien no quiere avisos, su calendario.
  */
-export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta, correo, llavePush, onListo, calendarioUrl }: Props) {
+export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta, correo, llavePush, onListo, onDecidido, calendarioUrl }: Props) {
   const copy = COPY[contexto];
   const plataforma = usePlataforma();
   const { puede: puedeInstalar, instalar } = useInstalarApp();
@@ -153,6 +157,12 @@ export default function ConsentimientoAvisos({ contexto = "voy", titulo, cuenta,
     const id = setTimeout(onListo, 1600);
     return () => clearTimeout(id);
   }, [cierraSola, onListo]);
+  // Cada vez que algo queda guardado (correo, o el teléfono llegó a "hecho"/"pendiente"), quien pinte la barra de
+  // afuera se entera aquí mismo: sin esto, solo un `router.refresh()` se lo hubiera dicho (OL-212).
+  useEffect(() => {
+    if (correoOk === null && telefono === null) return;
+    onDecidido?.({ correo: correoOk === true, push: telefono === "hecho" || telefono === "pendiente" });
+  }, [correoOk, telefono, onDecidido]);
 
   const ok = <IconoOk width={18} height={18} />;
   const pendiente = <IconoPendiente width={18} height={18} />;
