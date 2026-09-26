@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Bloquear from "@/components/Bloquear";
+import Desbloquear from "@/components/Desbloquear";
 import FichaPersona from "@/components/FichaPersona";
 import Barra from "@/components/ui/Barra";
 import ficha from "@/components/ui/Ficha.module.css";
-import { usuarioActual } from "@/lib/supabase/servidor";
+import MenuAcciones from "@/components/ui/MenuAcciones";
+import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { avisosParaListas } from "@/app/avisos/paraListas";
-import { cargarPersona, relacionDe } from "../consultas";
+import { cargarPersona, estaBloqueada, relacionDe } from "../consultas";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -41,15 +44,28 @@ export default async function PaginaPersona({ params }: Params) {
   // leídos con su sesión y solo para ella. De ahí sale también "Van a lo mismo" (decisión 7). Sin sesión, a Entrar.
   const mios = actual && !soyYo ? await cargarPersona(actual.perfil.id) : null;
   const gestos = soyYo ? null : { ...(mios ? relacionDe(mios, d) : { decididas: null, seguidos: null }), avisos: avisosParaListas(actual) };
+  // ¿La bloqueé? (OL-203): solo tiene sentido en una ficha ajena y con sesión; sin sesión no hay bloqueos.
+  const bloqueada = actual && !soyYo ? await estaBloqueada((await clienteServidor())!, actual.perfil.id, id) : false;
   return (
     <main className={ficha.pagina}>
-      <Barra volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }} />
+      <Barra
+        volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }}
+        derecha={
+          !soyYo && !bloqueada ? (
+            <MenuAcciones>
+              <li className={ficha.menuItem}>
+                <Bloquear personaId={id} nombre={d.perfil.nombre} volver={`/personas/${id}`} conSesion={!!actual} />
+              </li>
+            </MenuAcciones>
+          ) : undefined
+        }
+      />
       {soyYo && (
         <p className="aviso-ok" role="status">
           Así te ven los demás.
         </p>
       )}
-      <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} lugares={d.lugares} artistas={d.artistas} gestos={gestos} origen={ORIGEN} />
+      <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} lugares={d.lugares} artistas={d.artistas} gestos={gestos} origen={ORIGEN} bloqueado={bloqueada ? <Desbloquear personaId={id} /> : undefined} />
     </main>
   );
 }

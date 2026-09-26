@@ -428,3 +428,10 @@ export const IconoAyuda = (p: P) => (
     <circle cx="12" cy="16.8" r="0.6" fill="currentColor" />
   </svg>
 );
+/** Bloquear: el círculo con diagonal de "prohibido" (OL-203), el mismo símbolo que se reconoce fuera de la app. */
+export const IconoBloquear = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M6.5 6.5l11 11" />
+  </svg>
+);

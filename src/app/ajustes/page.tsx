@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Barra from "@/components/ui/Barra";
-import { IconoAyuda, IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoHerramientas, IconoLapiz, IconoLibro, IconoPersona } from "@/components/ui/Iconos";
+import { IconoAyuda, IconoBloquear, IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoHerramientas, IconoLapiz, IconoLibro, IconoPersona } from "@/components/ui/Iconos";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { textoPendientes } from "@/lib/panel";
 import { TEXTO_INVITAR } from "@/lib/perfil";
@@ -69,6 +69,16 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
             <IconoPersona width={20} height={20} />
             <b>Entras con {correo}</b>
             <small>Sin contraseña: cada vez te mandamos un código</small>
+          </li>
+          <li>
+            <Link href="/ajustes/bloqueados" className={styles.fila}>
+              <IconoBloquear width={20} height={20} />
+              <b>Personas bloqueadas</b>
+              <small>Dejaste de ver lo que publican</small>
+              <span className={styles.valor}>
+                <IconoChevronDerecha />
+              </span>
+            </Link>
           </li>
           <li>
             <BotonSalir />
