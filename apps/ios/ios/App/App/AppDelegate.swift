@@ -41,4 +41,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         config.delegateClass = SceneDelegate.self
         return config
     }
+
+    // OL-213 (bitácora 242): boilerplate que pide la propia documentación de Capacitor para avisos push — sin
+    // esto, PushNotificationsPlugin.swift (@capacitor/push-notifications) nunca se entera de que el sistema ya
+    // contestó al `registerForRemoteNotifications()` que dispara `PushNotifications.register()` (pushNativo desde
+    // src/lib/pushCliente.ts): solo reenvía lo que UIKit le entrega aquí, vía el NotificationCenter que ese plugin
+    // ya escucha (`capacitorDidRegisterForRemoteNotifications`/`capacitorDidFailToRegisterForRemoteNotifications`).
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
 }
