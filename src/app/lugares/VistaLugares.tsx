@@ -91,8 +91,8 @@ export default function VistaLugares({ lugares, ciudad, ciudades, vistaInicial, 
   const [punto, setPunto] = useState<Punto | null>(null);
   const [vez, setVez] = useState(0);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
-  // El chip de fecha (docs/rediseno/45, OL-174, mismo componente que Agenda): filtra los pines del Mapa; la Lista
-  // no filtra por fecha (pedido literal del founder — el chip en el mapa es para filtrar el mapa).
+  // El chip de fecha (docs/rediseno/45, OL-174, mismo componente que Agenda): filtra los pines del Mapa y, desde
+  // OL-210, también la Lista, con la misma regla (`lugaresConEventoElDia`) — el founder pidió que afecte las dos.
   const [fecha, setFecha] = useState("");
   // El tipo elegido vive en la URL y vale para las dos vistas: cambiar de Mapa a Lista no lo pierde. Las pestañas
   // (Todos, Cercanos, tipos) solo necesitan `lugares`, que ya llega resuelto: pintan al instante, con la barra
@@ -267,7 +267,8 @@ function CuerpoLugares({
   ciudad: Ciudad;
   tipo: string | null;
   vista: Vista;
-  /** El chip de fecha de la cabecera (docs/rediseno/45, OL-174): "" = sin elegir. Solo filtra el Mapa. */
+  /** El chip de fecha de la cabecera (docs/rediseno/45, OL-174): "" = sin elegir. Filtra el Mapa y, desde
+   *  OL-210, también la Lista (misma regla, `lugaresConEventoElDia`). */
   fecha: string;
   busqueda: string;
   punto: Punto | null;
@@ -281,9 +282,12 @@ function CuerpoLugares({
   const extra = use(extras);
   const [elegido, setElegido] = useState<LugarLista | null>(null);
   const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
-  // El chip de fecha filtra solo el Mapa (pedido literal del founder: "la idea de traer chip de fecha a mapa es
-  // para filtrar por fecha precisamente"); la Lista no lo usa (docs/rediseno/45).
+  // El chip de fecha filtra los pines del Mapa con `lugaresConEventoElDia` (docs/rediseno/45).
   const pinesDelDia = useMemo(() => (fecha ? lugaresConEventoElDia(enMapa, fecha) : enMapa), [enMapa, fecha]);
+  // La Lista usa la misma función sobre `lugaresDelTipo` (antes de la búsqueda, que `ListaLugares` aplica ella
+  // misma): un chip, una regla, dos vistas (OL-210; antes la Lista no filtraba por fecha, pedido literal del
+  // founder que él mismo cambió el 2026-09-25 — "debería afectar la lista también").
+  const lugaresListaDelDia = useMemo(() => (fecha ? lugaresConEventoElDia(lugaresDelTipo, fecha) : lugaresDelTipo), [lugaresDelTipo, fecha]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos`
   // llega null y ningún pin se resalta como seguido. Sin aro en ningún caso (OL-146, 2026-09-23): decisión del
   // founder tras firmar el doc 35 (2026-09-22) y el doc 37 (2026-09-23).
@@ -416,8 +420,9 @@ function CuerpoLugares({
         <BuscadorUnificado seccion="lugares" q={busqueda} ciudadSlug={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} ciudadNombre={ciudad.nombre} />
       ) : (
         <ListaLugares
-          lugares={lugaresDelTipo}
+          lugares={lugaresListaDelDia}
           tipo={tipo}
+          fecha={fecha}
           busqueda={busqueda}
           punto={punto}
           ciudad={ciudad}
