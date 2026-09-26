@@ -4,8 +4,14 @@ import { borrarSuscripcionPush, guardarSuscripcionPush, suscripcionPushActiva, t
 const mocks = vi.hoisted(() => ({ cliente: vi.fn(), usuario: vi.fn(), upsert: vi.fn(), perfil: vi.fn(),
   filtroPerfil: vi.fn(), seleccionar: vi.fn(), filtro: vi.fn(), leer: vi.fn(), invalidar: vi.fn(),
   apnsUpsert: vi.fn(), apnsSeleccionar: vi.fn(), apnsFiltro: vi.fn(), apnsLeer: vi.fn(),
-  borrarWeb: vi.fn(), borrarApns: vi.fn(), contarWeb: vi.fn(), contarApns: vi.fn() }));
+  borrarWeb: vi.fn(), borrarApns: vi.fn(), contarWeb: vi.fn(), contarApns: vi.fn(),
+  // `after` (OL-212, tercera vuelta): aquí se ejecuta el cuerpo al toque, como si la respuesta ya hubiera salido,
+  // para que las pruebas de abajo (ya escritas antes de esta pieza) seguir viendo `invalidar` sin tocarlas; la
+  // prueba nueva de cada bloque comprueba que se llamó a `after` (no a `revalidatePath` directo) para demostrar
+  // que la revalidación quedó aplazada y no repinta la pantalla desde la que se guarda.
+  despues: vi.fn((cuerpo: () => void) => cuerpo()) }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.invalidar }));
+vi.mock("next/server", () => ({ after: mocks.despues }));
 vi.mock("@/lib/supabase/servidor", () => ({ clienteServidor: mocks.cliente }));
 
 const sub = { endpoint: "https://fcm.googleapis.com/fcm/send/prueba", keys: {
@@ -66,6 +72,13 @@ describe("guardarSuscripcionPush", () => {
     expect(mocks.upsert).toHaveBeenCalledWith({ endpoint: sub.endpoint, usuario_id: "persona", ...sub.keys });
     expect(mocks.filtroPerfil).toHaveBeenCalledWith("id", "persona");
     expect(mocks.invalidar).toHaveBeenCalledTimes(2);
+  });
+  it("OL-212 (tercera vuelta): revalida con `after`, no de inmediato — quien llama ya se entera solo (onDecidido, su propio estado o su propio router.refresh), y revalidar aquí de más solo repintaría la pantalla desde la que se guarda", async () => {
+    expect(await guardarSuscripcionPush(sub)).toBe(true);
+    expect(mocks.despues).toHaveBeenCalledTimes(1);
+    expect(mocks.despues).toHaveBeenCalledWith(expect.any(Function));
+    expect(mocks.invalidar).toHaveBeenCalledWith("/perfil");
+    expect(mocks.invalidar).toHaveBeenCalledWith("/");
   });
   it("un rechazo de cupo no activa las preferencias", async () => {
     mocks.upsert.mockResolvedValue({ error: { code: "23514" } });
@@ -153,6 +166,11 @@ describe("guardarSuscripcionPush: token APNs (dentro de la app)", () => {
     expect(mocks.apnsUpsert).toHaveBeenCalledWith({ token: TOKEN_APNS, usuario_id: "persona", entorno: "sandbox", actualizado_en: expect.any(String) });
     expect(mocks.upsert).not.toHaveBeenCalled();
     expect(mocks.invalidar).toHaveBeenCalledTimes(2);
+  });
+  it("OL-212 (tercera vuelta): revalida con `after`, no de inmediato (mismo motivo que la suscripción web)", async () => {
+    expect(await guardarSuscripcionPush({ apns: { token: TOKEN_APNS, entorno: "sandbox" } })).toBe(true);
+    expect(mocks.despues).toHaveBeenCalledTimes(1);
+    expect(mocks.despues).toHaveBeenCalledWith(expect.any(Function));
   });
   it("rechaza un token con forma invalida antes de consultar la base", async () => {
     expect(await guardarSuscripcionPush({ apns: { token: "no-es-hex", entorno: "sandbox" } })).toBe(false);
