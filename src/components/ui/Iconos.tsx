@@ -419,3 +419,12 @@ export const IconoAgarre = (p: P) => (
     <circle cx="15" cy="18" r="1.6" />
   </svg>
 );
+/** Signo de interrogación en un círculo: entrada a /ayuda desde Ajustes (OL-201). Convencional, como el resto
+ * de los enlaces de esa lista (escudo para privacidad, libro para reglas). */
+export const IconoAyuda = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M9.5 9.3a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 1.9-2.4 3.5" />
+    <circle cx="12" cy="16.8" r="0.6" fill="currentColor" />
+  </svg>
+);

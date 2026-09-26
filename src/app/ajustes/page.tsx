@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Barra from "@/components/ui/Barra";
-import { IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoHerramientas, IconoLapiz, IconoLibro, IconoPersona } from "@/components/ui/Iconos";
+import { IconoAyuda, IconoChevronDerecha, IconoCompartir, IconoEscudo, IconoHerramientas, IconoLapiz, IconoLibro, IconoPersona } from "@/components/ui/Iconos";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { textoPendientes } from "@/lib/panel";
 import { TEXTO_INVITAR } from "@/lib/perfil";
@@ -101,6 +101,16 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
             </li>
           )}
           <AvisoSalidaAjuste />
+          <li>
+            <Link href="/ayuda" className={styles.fila}>
+              <IconoAyuda width={20} height={20} />
+              <b>Ayuda</b>
+              <small>Preguntas frecuentes y cómo escribirnos</small>
+              <span className={styles.valor}>
+                <IconoChevronDerecha />
+              </span>
+            </Link>
+          </li>
           <li>
             <Link href="/privacidad" className={styles.fila}>
               <IconoEscudo width={20} height={20} />
