@@ -14,11 +14,12 @@ import type { RespuestaCercanos } from "@/lib/cargarCercanos";
 import { ubicacionCercanaFresca } from "@/lib/ubicacion";
 
 /**
- * "Eventos cercanos esta semana" (OL-156, segunda vuelta): solo si ya hay una ubicación fresca guardada en el
- * teléfono — Inicio no pide permiso (doc 41). Ya era cliente antes de esta pieza (bitácora 188); ahora, además,
- * recibe la lista de ids que ya usaron los otros carriles (`excluirPromise`, resuelta por la misma `cargarAgenda` que
- * ellos) para tampoco repetirlos, sin bloquear su propio pintado por eso: el `<Suspense>` que lo envuelve en
- * `Inicio.tsx` solo espera esa lista corta, no la agenda entera ni la respuesta de geolocalización.
+ * "Cerca de ti" (OL-156, segunda vuelta; renombrado en OL-219, antes "Eventos cercanos esta semana"): solo si ya
+ * hay una ubicación fresca guardada en el teléfono — Inicio no pide permiso (doc 41). Ya era cliente antes de esta
+ * pieza (bitácora 188); ahora, además, recibe la lista de ids que ya usaron los otros carriles (`excluirPromise`,
+ * resuelta por la misma `cargarAgenda` que ellos, más "Tus planes" y "Esta semana", OL-219) para tampoco repetirlos,
+ * sin bloquear su propio pintado por eso: el `<Suspense>` que lo envuelve en `Inicio.tsx` solo espera esa lista
+ * corta, no la agenda entera ni la respuesta de geolocalización.
  */
 export default function CarrilCercanos({ excluirPromise, avisos, verTodosHref }: { excluirPromise: Promise<string[]>; avisos: AvisosLista | null; verTodosHref: string }) {
   const excluir = use(excluirPromise);
@@ -50,7 +51,7 @@ export default function CarrilCercanos({ excluirPromise, avisos, verTodosHref }:
     : [];
   return (
     <>
-      <Destacados tarjetas={eventos.map((e) => tarjetaEvento(e, ahora))} memoria="inicio-cercanos" encabezado="Eventos cercanos esta semana" verTodos={{ href: verTodosHref }} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
+      <Destacados tarjetas={eventos.map((e) => tarjetaEvento(e, ahora))} memoria="inicio-cercanos" encabezado="Cerca de ti" verTodos={{ href: verTodosHref }} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
       {asistencia.extras}
     </>
   );
