@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { validarTokenApns } from "@/lib/dispositivosApns";
 import { validarPerfil, type ErroresPerfil } from "@/lib/perfil";
 import type { IdentidadPush, Suscripcion } from "@/lib/pushCliente";
@@ -130,8 +131,14 @@ async function guardarSuscripcionPushWeb(sub: { endpoint: string; keys: { p256dh
       .eq("id", user.id).select("id, avisos_push").maybeSingle();
     if (errorPerfil || perfil?.id !== user.id || perfil.avisos_push !== true) return false;
     // Como elegirAvisos: Ajustes y la agenda al día; la pregunta ya no depende de esto (lib/avisosPreguntados).
-    revalidatePath("/perfil");
-    revalidatePath("/");
+    // Aplazado con `after` (OL-212, tercera vuelta, mismo motivo que avisos/acciones.ts · elegirAvisos): quien llama
+    // a esta acción (ConsentimientoAvisos, con su propio `onDecidido`; AvisosPerfil, con su propio
+    // `router.refresh()`; ActivarAvisos, con su propio estado local) ya se entera sin pedirle nada al servidor —
+    // revalidar de inmediato solo repintaría de más la pantalla desde la que se guardó.
+    after(() => {
+      revalidatePath("/perfil");
+      revalidatePath("/");
+    });
     return true;
   } catch {
     return false;
@@ -154,8 +161,10 @@ async function guardarTokenApns(apns: { token: string; entorno: "sandbox" | "pro
       .update({ avisos_push: true, avisos_push_desde: new Date().toISOString(), avisos_preguntado: true })
       .eq("id", user.id).select("id, avisos_push").maybeSingle();
     if (errorPerfil || perfil?.id !== user.id || perfil.avisos_push !== true) return false;
-    revalidatePath("/perfil");
-    revalidatePath("/");
+    after(() => {
+      revalidatePath("/perfil");
+      revalidatePath("/");
+    });
     return true;
   } catch {
     return false;

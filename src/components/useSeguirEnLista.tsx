@@ -75,7 +75,9 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     iniciar(async () => {
       let guardado = false;
       try {
-        guardado = await (que === "lugar" ? cambiarSeguimiento(id, seguir) : cambiarSeguimientoArtista(id, seguir));
+        // `diferir: true` (OL-212, tercera vuelta): el renglón ya se ve al día con el estado optimista de abajo;
+        // que la acción revalide de inmediato solo repintaría de más la lista desde la que se guarda (Inicio…).
+        guardado = await (que === "lugar" ? cambiarSeguimiento(id, seguir, true) : cambiarSeguimientoArtista(id, seguir, true));
       } catch {
         guardado = false;
       }

@@ -269,21 +269,19 @@ describe("Inicio: los carriles de una sola agenda (estelar, esta semana, popular
     expect(r.estelar.map((e) => e.id)).toEqual(["destacado"]);
     expect(r.estaSemana).toEqual([]);
   });
-  it("vistosIniciales (lo que ya se llevó 'Tus planes', de `cargarPersona`, no de esta agenda): tampoco se repite aquí", () => {
-    const yaEnTusPlanes = eventoAgenda("ya-en-tus-planes", { lugar_id: "lugar-1", van: 50 });
-    const r = calcularCarrilesAgenda(agenda({ eventos: [yaEnTusPlanes], seguidos: ["lugar-1"] }), ahora, ["ya-en-tus-planes"]);
-    expect(r.estelar).toEqual([]);
-    expect(r.estaSemana).toEqual([]);
-    expect(r.populares).toEqual([]);
-    expect(r.vistos.has("ya-en-tus-planes")).toBe(true);
+  it("'Tus planes' no le quita eventos a los carriles de descubrir: lo que ya está en tus planes sigue saliendo aquí (founder, OL-221)", () => {
+    const enTusPlanes = eventoAgenda("en-tus-planes", { lugar_id: "lugar-1", van: 50 });
+    expect(carrilTusPlanes([enTusPlanes], []).map((e) => e.id)).toEqual(["en-tus-planes"]);
+    const r = calcularCarrilesAgenda(agenda({ eventos: [enTusPlanes], seguidos: ["lugar-1"] }), ahora);
+    expect(r.estelar.map((e) => e.id)).toEqual(["en-tus-planes"]);
   });
 });
 
 describe("Inicio: idsUsadosEnAgenda", () => {
-  it("incluye los vistosIniciales que se le pasen (de Tus planes), además de lo que calculó de esta agenda", () => {
+  it("solo lo que calculó de esta agenda (sin 'Tus planes', OL-221)", () => {
     const popular = eventoAgenda("popular", { van: 10, inicio: "2026-10-25T01:00:00Z", fin: "2026-10-25T03:00:00Z" });
-    const ids = idsUsadosEnAgenda(agenda({ eventos: [popular] }), ahora, ["externo"]);
-    expect(new Set(ids)).toEqual(new Set(["externo", "popular"]));
+    const ids = idsUsadosEnAgenda(agenda({ eventos: [popular] }), ahora);
+    expect(new Set(ids)).toEqual(new Set(["popular"]));
   });
 });
 

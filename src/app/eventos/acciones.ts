@@ -177,18 +177,32 @@ export type EstadoAsistencia = "voy" | "me_interesa" | null;
 /**
  * "Voy" / "Me interesa" / quitar. Un toque; la política de la base cuida que cada quien mueva solo lo suyo. Devuelve si
  * se guardó: las listas deshacen lo que mostraron y ofrecen Reintentar (bitácora 085).
+ *
+ * `diferir` (OL-212, tercera vuelta): desde un renglón de lista (`useAsistenciaEnLista`, Inicio o cualquier otra
+ * pantalla con carriles) el botón ya se ve al día solo, con su propio estado optimista — revalidar aquí de
+ * inmediato solo repintaría de más la pantalla en la que ya se está (Next vuelve a pedir y renderizar toda la ruta
+ * actual en la misma respuesta de la acción en cuanto se llama a `revalidatePath`, sin importar qué ruta se le dé:
+ * "How Server Actions work", docs/api-reference/functions/revalidatePath.md de Next 16.3.5, la versión instalada).
+ * Con `after` (`next/server`) la invalidación se aplica igual —Perfil, Inicio y la ficha no se quedan viejos la
+ * próxima vez que se pidan— pero después de que la respuesta ya salió, así que no repinta la pantalla desde la que
+ * se guardó. La ficha (`Asistencia.tsx`, sin tocar) no manda `diferir`: sigue viendo su propio "van" al día en el
+ * mismo toque, como antes.
  */
-export async function cambiarAsistencia(eventoId: string, estado: EstadoAsistencia): Promise<boolean> {
+export async function cambiarAsistencia(eventoId: string, estado: EstadoAsistencia, diferir = false): Promise<boolean> {
   const { supabase, user } = await sesionOEntrar(`/eventos/${eventoId}?accion=${estado ?? ""}`);
   const { error } = estado
     ? await supabase.from("asistencias").upsert({ usuario_id: user.id, evento_id: eventoId, estado })
     : await supabase.from("asistencias").delete().eq("usuario_id", user.id).eq("evento_id", eventoId);
   if (error) return false;
-  revalidatePath(`/eventos/${eventoId}`);
   // La agenda muestra lo decidido en cada renglón (y se reutiliza hasta un minuto): al volver de la ficha, al día.
-  revalidatePath("/");
-  revalidatePath("/perfil");
-  revalidatePath(`/personas/${user.id}`);
+  const revalidar = () => {
+    revalidatePath(`/eventos/${eventoId}`);
+    revalidatePath("/");
+    revalidatePath("/perfil");
+    revalidatePath(`/personas/${user.id}`);
+  };
+  if (diferir) after(revalidar);
+  else revalidar();
   return true;
 }
 
