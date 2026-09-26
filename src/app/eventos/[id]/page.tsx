@@ -410,8 +410,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         </li>
       </ul>
 
-      <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
-
+      {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
       <div className={`${ficha.acciones} ${ficha.accionesRepartidas}`}>
         <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>
           <span className={ficha.accionIcono}>
@@ -444,6 +443,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </span>
         )}
       </div>
+
+      <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
 
       {e.descripcion && <Desplegable texto={e.descripcion} />}
       {e.enlace && (

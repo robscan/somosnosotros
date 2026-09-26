@@ -325,8 +325,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         </Suspense>
       </ul>
 
-      <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
-
+      {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
       <div className={`${ficha.acciones} ${claseReparto}`}>
         <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
           <span className={ficha.accionIcono}>
@@ -353,6 +352,8 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           </EnlaceExterno>
         ))}
       </div>
+
+      <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
 
       {lugar.descripcion && <Desplegable texto={lugar.descripcion} />}
 
