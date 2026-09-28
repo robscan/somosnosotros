@@ -190,3 +190,101 @@ y la línea de OPEN_LOOPS; PR contra `main` para lectura, sin unir. Apagados `ne
 borrado; simulador «OL-227 iPhone 17 Pro» borrado; `CLAUDE.md` intacto. El `node_modules` y `.next` del árbol quedan
 (ignorados por git). Siguiente paso: las cuatro decisiones del founder (doc 50, sección 11) → prototipo de pantallas
 reales en `docs/rediseno/prototipos/restructura-ui*.html` → plan definitivo y piezas para operadores.
+
+## Segunda parte (mismo día): el prototipo interactivo
+
+**Lo que contestó el founder al primer avance:** «Me gusta el "+" de publicar pero entonces qué icono usamos para "Voy"
+y "Seguir"? cómo puedes mejorar fichas? siento poca estructura y se aprovecha poco el espacio, estaba pensando en crear
+kpi's, optimizar lectura, mejorar la estructura de diseño. Quiero ver primero prototipos por favor y dime si quieres
+ayuda de claude design o tú tienes suficiente habilidad de diseño. Tenemos pendiente proyecto de cargadores y
+transiciones, creo que lo podemos incluir en esta pasada, acepto tus recomendaciones en general. vamos viendo cómo se
+siente». Respuesta: Voy = palomita en contorno (modelo de Facebook), Seguir = persona con «+» (X, LinkedIn,
+Instagram), decidido = palomita verde llena en los tres; fichas con KPI y estructura; el prototipo en HTML con las
+variables reales (Claude Design solo si al verlo quiere explorar variantes visuales); cargadores y transiciones dentro.
+
+**Lo hecho.** `docs/rediseno/prototipos/restructura-ui.html` (148 KB, un archivo): la app entera dentro de un aparato
+que cambia de tamaño (teléfono 390×844 con franja de hora e indicador, tableta 820×1180, escritorio 1280×800) con el
+**mismo marcado**: las reglas responsivas son consultas de contenedor (`@container`) sobre el aparato, que en la app real
+serán `@media` con los mismos números (624/792/1048 incluyen los 24 px del marco). Ocho pantallas reales con datos
+verosímiles y los carteles públicos del sitio: Inicio (seis carriles), Agenda, Lugares (mapa y lista), Artistas, ficha
+de evento, ficha de lugar, alta de evento, Ajustes; más la hoja de publicar, la hoja del pin del mapa y el aviso con
+Deshacer. Se genera con un script de Python en el scratchpad a partir del sprite de iconos de la app
+(`src/components/ui/Iconos.tsx`), el logotipo inline y el mapa base del prototipo firmado `mapa-lugares.html`.
+
+**Cómo está maquetado (la regla de la pieza, cumplida en el prototipo):** un solo `:root` con las variables de la
+sección 5.1 del doc 50; `.app` es una rejilla de dos áreas (`pantalla`, `nav`) que en tableta y escritorio pasa a dos
+columnas (`nav pantalla`); cada pantalla es una rejilla de una columna con `grid-auto-rows: max-content` (lección de
+esta sesión: un contenedor de desplazamiento con altura definida encoge las filas `auto` de los hijos con `overflow:
+hidden`; `max-content` lo evita); la página no lleva gutter, cada bloque pone el suyo (`margin-inline: var(--gutter)`),
+así no hay márgenes negativos en todo el archivo; la cabecera es una sola pieza pegajosa con filas `minmax(0, 1fr)
+minmax(0, 1fr) auto auto` que pasan a `minmax(0, 0fr)` al bajar (con el relleno a cero), sin JavaScript de alturas ni
+`margin-top` negativo; el mapa llena la fila central (`auto minmax(0, 1fr)`) sin `calc` de alturas; renglón único con
+cuatro pieles (`lista`, `dato`, `ajuste`, `resuelto`); `BotonIcono` con tres tamaños (44, 48, 56) y tres relieves
+(plano, contorno, elevado); `Boton` con primario, secundario, texto y decidido; chips, segmento, pestañas, palanca.
+Transiciones: `document.startViewTransition` con `view-transition-name: cartel` (el cartel tocado se convierte en la
+portada), fundido de 200 ms entre secciones, la tarea sube en 250 ms; respaldo con `@keyframes` donde no exista y
+nada con `prefers-reduced-motion: reduce`; un temporizador de 700 ms salta la transición si el navegador la congela
+(el panel integrado de la app frena las animaciones cuando está oculto). Esqueletos de renglón con los mismos tokens al
+entrar por primera vez a Agenda y Artistas.
+
+**Tropiezos que quedaron corregidos y sirven de aviso a las piezas de código:** (1) una caja no puede consultarse a
+sí misma con `@container`: el contenedor es el aparato, no `.app`; (2) `<use>` de un símbolo con `viewBox` negativo
+necesita `width`/`height` en el `<use>` y un `viewBox` positivo en el `<svg>` de destino; (3) `grid-template-rows:
+0fr` no colapsa un hijo con altura fija ni con relleno: altura `auto`, `min-height: 0`, `overflow: hidden` y relleno a
+cero al compactar; (4) el manejador del segmento «Mapa · Lista» buscaba `[data-vista]` y se tragaba todos los toques
+de Lugares porque la sección también lleva ese atributo; (5) al compactar la cabecera el scroll se recoloca solo y
+disparaba el estado contrario: 300 ms de reposo tras cada cambio, como ya hace `ui/Cabecera` en la app.
+
+**Verificación:** navegador integrado de la app (Chromium) para cada pantalla y tamaño, con medidas de rejilla por
+JavaScript (`getComputedStyle(...).gridTemplateRows`, `getBoundingClientRect`) cuando la captura no bastaba; capturas
+finales con el Chrome real de la Mac vía `playwright-core` (`scripts/ops/auditoria-ui/capturar-prototipo.mjs`, 2× en
+teléfono, 1,5× en tableta, 1× en escritorio), comprimidas a PNG de paleta.
+
+### Capturas del prototipo (`docs/rediseno/capturas-256/256-30…49-proto-*.png`), abiertas y descritas
+
+- **`256-30-proto-inicio-telefono`:** cabecera única (SMSNSTRS, «+» con contorno, campana con punto, avatar; chip de
+  ciudad y campo Buscar), «Tus planes» con dos tarjetas (sello «1 va» / «2 van», palomita verde), «Destacados» con
+  carteles verticales y la palomita en contorno sobre la foto; nav abajo con Inicio activo. Sin botón flotante.
+- **`256-31-proto-agenda-telefono`:** cabecera con fecha, ciudad, Buscar y pestañas «Todos · Siguiendo»; «Hoy · 2»;
+  renglones de dos líneas de meta («18:00 · Templo de San Francisco», «Gratis»), palomita en contorno a la derecha.
+- **`256-32-proto-agenda-compacta-telefono`:** tras bajar, solo quedan las pestañas (44 px) bajo la franja de la hora;
+  renglones con «Vas» como chip y el decidido en verde lleno.
+- **`256-33-proto-lugares-mapa-telefono`:** segmento «Mapa · Lista» y chips de tipo en la misma fila; el mapa llena
+  hasta la nav; puntos negros, días en violeta (Dom, Jue), destacado en naranja (Museo del Ferrocarril) y seguidos en
+  verde (MUNI, San Miguelito) sin encimarse; ubicación abajo a la izquierda; atribución.
+- **`256-34-proto-lugares-lista-telefono`:** la lista del directorio con foto 56, nombre, «Galería · Valentín Gama
+  840, Centro · 1,6 km», «Próximo: …», persona con «+»; el seguido en verde.
+- **`256-35-proto-artistas-telefono`:** chips de disciplina y tira de letras en la cabecera; renglones con foto redonda
+  (símbolo SN cuando no hay), «Rock, metal y alternativo · Grupo» en una línea, persona con «+».
+- **`256-36-proto-ficha-evento-telefono`:** barra interior (chevron con contorno, logotipo, ···); portada 5:3 con el
+  cartel entero sobre su tono; título; tres KPI (Cuándo, Cuánto, Quiénes); tres acciones alineadas a la izquierda;
+  tarjeta «Dónde» con minimapa; barra fija «☆ Me interesa | ✓ Vas · Ya estás en la lista».
+- **`256-37-proto-ficha-evento-abajo-telefono`:** el resto de la ficha: dirección con chevron, «Con» (chip de artista),
+  «Sobre el evento», «Quién va» (pila de avatares y nombres), pie.
+- **`256-38-proto-ficha-lugar-telefono`:** portada, título con chip «Museo», KPI (Dónde y distancia, Eventos,
+  Comunidad), **cinco acciones en una fila** (Cómo llegar, Compartir, Sitio web, Facebook, Instagram), «Próximos
+  eventos», «+ Seguir» fijo.
+- **`256-39-proto-hoja-publicar-telefono`:** la hoja del «+»: Un evento, Un lugar, Un artista, con el renglón de ajuste.
+- **`256-40-proto-alta-evento-telefono`:** barra de tarea (logotipo, ✕); tarjeta del cartel; campo con lupa; renglones
+  Cuándo, Dónde (Estoy aquí, Buscar), Quién, Cuánto, Más; «Publicar evento» apagado con una sola nota debajo.
+- **`256-41-proto-ajustes-telefono`:** cabecera de perfil (avatar, nombre, colonia y correo, Editar); grupos Tu ficha,
+  Avisos (palancas), Cuenta, Somos Nosotros con el mismo renglón de ajuste.
+- **`256-42-proto-inicio-tableta`:** carril lateral (logotipo, cuatro destinos, «+» Publicar, Novedades, Ana); carriles a
+  lo ancho con tres o cuatro tarjetas a la vista; cabecera con ciudad y Buscar.
+- **`256-43-proto-lugares-tableta`:** panel de lista a la izquierda y mapa a la derecha; chips de tipo arriba.
+- **`256-44-proto-inicio-escritorio`:** lo mismo a 1280: cuatro carteles de «Destacados» completos.
+- **`256-45-proto-agenda-escritorio`:** lista en la columna con títulos de día; palomitas a la derecha; sin flotante.
+- **`256-46-proto-lugares-escritorio`:** panel de 400 y mapa; el segmento no hace falta.
+- **`256-47-proto-ficha-lugar-escritorio`:** dos columnas: foto y cinco acciones a la izquierda; título, chip, KPI,
+  «Próximos eventos» y «Dónde» a la derecha; «Seguir» abajo a la izquierda.
+- **`256-48-proto-ficha-evento-escritorio`:** dos columnas: cartel y acciones; título, KPI, «Dónde», «Con», «Sobre»;
+  barra fija con el par de botones.
+- **`256-49-proto-alta-evento-escritorio`:** el alta centrada en 600 px con el carril a la izquierda y la ✕ arriba a la
+  derecha.
+
+## Cierre (segunda parte)
+
+Commit en `restructura-ui` con el prototipo, las 20 capturas, el doc 50 (sección 6 y estado) y esta bitácora; push al
+PR #266. El servidor estático del scratchpad y el navegador integrado se usaron solo para revisar; nada queda corriendo
+que toque producción. Siguiente paso: el founder lo prueba («vamos viendo cómo se siente»), corrige, y con su firma se
+cierra el plan por piezas (doc 50, sección 7) y se abren los operadores.

@@ -1,8 +1,9 @@
 # 50 · Reestructura de la interfaz para web, iPhone y Android (OL-227)
 
-**Fecha:** 2026-09-28 · **Estado:** primer avance para la lectura del founder: auditoría con evidencia (secciones 1 a 4,
-completas) y propuesta en primera versión (sección 5). El prototipo de pantallas reales (sección 6) y el plan
-definitivo por piezas (sección 7) se cierran después de esa lectura, con lo que él corrija. **Sin código de la app.**
+**Fecha:** 2026-09-28 · **Estado:** auditoría con evidencia (secciones 1 a 4), propuesta (sección 5, ajustada con las
+respuestas del founder del mismo día) y **prototipo interactivo de las pantallas reales** (sección 6,
+[`prototipos/restructura-ui.html`](prototipos/restructura-ui.html)) para su firma; el plan por piezas (sección 7) se
+cierra con esa firma. **Sin código de la app.**
 · **Rama:** `restructura-ui` · **Bitácora:** [256](../bitacora/2026/09/256-restructura-ui.md) · **Capturas:**
 [`capturas-256/`](capturas-256/) (38 PNG reales, abiertas y descritas una por una en la bitácora) · Gestor de
 cambios III, Fable 5.1 en máximo. Sin council, workflows ni agentes.
@@ -465,13 +466,49 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo (pendiente de la lectura del founder)
+## 6. Prototipo interactivo (entregado el 2026-09-28, mismo día)
 
-Se hará en `docs/rediseno/prototipos/restructura-ui.html` (teléfono 390×844) y `restructura-ui-escritorio.html`
-(1280×800 con carril lateral), con las pantallas reales y datos verosímiles: Inicio, Agenda, Lugares con mapa (imagen
-del mapa real con las etiquetas resueltas), Artistas, ficha de evento, ficha de lugar (cinco enlaces), alta de evento y
-Ajustes; con las variables de 5.1 en un solo `:root`, sin envoltorios, comprobado en el navegador integrado y con
-capturas reales en `capturas-256/`. Primero el founder corrige la propuesta; el prototipo no se dibuja dos veces.
+**Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
+dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
+marcado**: las reglas responsivas de 5.4 son consultas de contenedor sobre el mismo HTML. Se navega de verdad: las
+cuatro secciones, tocar una tarjeta o un renglón abre la ficha, el «+» abre la hoja de publicar y de ahí el alta, el
+avatar abre Ajustes, «Mapa · Lista» conmuta, Voy y Seguir cambian de estado con su aviso y Deshacer, y al bajar en una
+lista la cabecera se compacta. Capturas reales con el Chrome de la Mac en
+[`capturas-256/256-30…49-proto-*.png`](capturas-256/) (descritas en la bitácora 256, segunda parte).
+
+**Lo que responde a la vuelta del founder («me gusta el "+" de publicar pero entonces qué icono usamos para Voy y
+Seguir», «cómo puedes mejorar fichas… crear kpi's, optimizar lectura, mejorar la estructura», «cargadores y
+transiciones… incluir en esta pasada», «acepto tus recomendaciones en general»):**
+
+- **Iconos.** El «+» queda para publicar (barra superior en teléfono; carril lateral en tableta y escritorio). «Voy»
+  pasa a la palomita en contorno (modelo de Facebook: *Going* es ✓, *Interested* es ☆, que ya usamos); «Seguir», a la
+  persona con «+» (X, LinkedIn, Instagram). El estado decidido es la palomita verde llena en los tres casos: «ya
+  quedó» se lee igual en toda la app. Sobre fondo hueso el botón es un círculo con contorno (sin sombra); sobre foto,
+  elevado (decisión 4).
+- **Fichas con estructura y KPI.** Portada 5:3 con el cartel entero sobre su tono; título; **tres KPI** en tarjetas
+  (evento: cuándo · cuánto · quiénes; lugar: dónde y distancia · eventos próximos · comunidad), cada uno tocable (salta
+  al calendario, al mapa, a quién va); acciones alineadas a la izquierda (5 caben a 48 px); «Dónde» como tarjeta con
+  mapa y dirección; «Con», «Sobre», «Quién va» como bloques con el mismo renglón de dato; pie; barra fija con el par
+  secundario + primario del mismo alto. En el lugar, **su agenda dentro de la ficha** («Próximos eventos», tres
+  renglones) en vez de «Próximo: … ver». En escritorio, dos columnas: cartel y acciones a la izquierda; título, KPI y
+  bloques a la derecha.
+- **Cargadores y transiciones** (doc 38 y OL-152, en esta pasada): esqueleto de renglones al entrar a Agenda y Artistas
+  (mismos tokens que el renglón real), fundido de 200 ms entre secciones, la ficha entra deslizando 220 ms y el cartel
+  tocado **se convierte en la portada** (View Transitions; con respaldo en CSS donde no exista y salto directo con
+  «reducir movimiento»), el alta sube como tarea (250 ms), la hoja sube con fondo oscuro. Ninguna animación toca la
+  barra de navegación.
+- **Las cuatro decisiones (sección 11), aplicadas:** «+» en la barra (se retira el flotante de las cuatro raíces);
+  navegación lateral desde tableta; «Mapa · Lista» como segmento en la cabecera; «+» de renglón con contorno y sin
+  sombra sobre hueso.
+
+**Lo que el prototipo demuestra sobre la maquetación (regla de esta pieza):** cero márgenes negativos; la página no
+lleva gutter (cada bloque pone el suyo); la cabecera se compacta con `grid-template-rows: minmax(0, 1fr) → minmax(0,
+0fr)`, sin `margin-top` negativo ni JavaScript de alturas; el mapa llena la fila central de la rejilla sin `calc` de
+alturas; la única regla con altura fija es la de la barra; un solo `:root` con las variables de 5.1; renglón único con
+cuatro pieles; once círculos → un `BotonIcono` con tres tamaños y tres relieves.
+
+**Lo que todavía es dibujo, no medida:** el mapa es un fondo esquemático con los puntos colocados a mano para
+mostrar el resultado que debe dar la capa de símbolos (H-12); los carteles se cargan de las URL públicas del sitio.
 
 ## 7. Plan de implementación (primera versión; se cierra tras el prototipo firmado)
 
@@ -538,7 +575,7 @@ council. Orden por dependencias:
 chica` y `--alto-hoja` duplicado; el carril semanal de la lista de Lugares; la frase del alta de lugar; las clases
 globales `.raiz` y `.pagina` (pasan a plantillas con áreas).
 
-## 11. Lo que necesito que el founder decida (cuatro cosas)
+## 11. Lo que se le pidió al founder (contestado el mismo día: «acepto tus recomendaciones en general»)
 
 1. **«+» de publicar en la barra superior** (y en el carril lateral en tableta y escritorio), retirando el botón
    flotante de las cuatro raíces. Es lo que cierra H-01, H-08, H-15 y H-36 de golpe.
@@ -547,4 +584,4 @@ globales `.raiz` y `.pagina` (pasan a plantillas con áreas).
    flotara; la medida de H-13 y H-15 es el motivo para volverlo a subir).
 4. **Botón «+» de renglón sin sombra** sobre fondo hueso (se queda a la vista, solo pesa menos).
 
-Con esas cuatro respuestas se dibuja el prototipo (sección 6) y se cierra el plan (sección 7).
+Las cuatro quedaron aplicadas en el prototipo (sección 6). Lo que sigue es su firma sobre el prototipo y, con ella, el plan definitivo (sección 7).
