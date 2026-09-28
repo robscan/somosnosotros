@@ -268,7 +268,7 @@ lugares = f'''<section class="pantalla raiz" data-id="lugares" data-hoja-estado=
   {cabecera(chip_ciudad() + chip_filtros('filtros-lugares', 1) + chip_activo('Museo'))}
   <div class="mapa">{mapa}<button type="button" class="boton-icono elevado ubicacion" aria-label="Mi ubicación">{i("ubicacion")}</button><span class="atribucion">© Mapbox © OpenStreetMap</span></div>
   <div class="hoja-lugares" role="region" aria-label="Lugares">
-    <div class="espacio" aria-hidden="true"></div><div class="espacio" aria-hidden="true"></div>
+    <div class="espacio" aria-hidden="true"></div><div class="espacio" aria-hidden="true"></div><div class="espacio" aria-hidden="true"></div>
     <div class="cuerpo-hoja">
     <button type="button" class="asa" aria-label="Mostrar u ocultar la lista"></button>
     <b class="resumen">62 lugares <small>· los más cercanos primero</small></b>
@@ -781,7 +781,8 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
       (de la franja de estado al pie) y DESPLAZA: dos espaciadores invisibles y luego el cuerpo blanco, que asoma desde abajo.
       Arrastrar el cuerpo lo sube (la hoja «crece»); cuando su borde llega arriba (llena) el mismo gesto sigue desplazando el
       contenido: una sola inercia. Al soltar entre alturas se asienta en la más cercana (asoma · media · llena).
-      Tocar un pin o un renglón muestra la ficha en el cuerpo (la lista conserva su desplazamiento) a la altura de foto + KPI.
+      Tocar un pin o un renglón muestra la ficha en el cuerpo (la lista conserva su desplazamiento) a la altura de foto + KPI;
+      jalarla hacia abajo la recoge hasta su cabecera (nunca se cierra sola: solo con la ✕); la lista recogida muestra solo la cantidad.
       Desde 792 la hoja es el panel izquierdo (sin espaciadores) y desplaza como cualquier panel.
    ========================================================================== */
 .pantalla[data-id="lugares"] {{ grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding-bottom: var(--nav-abajo); }}
@@ -824,13 +825,12 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 /* Llena, la hoja es una página completa: el mando de la izquierda es Atrás (vuelve a foto + KPI); Cerrar solo mientras asoma */
 .cabecera-hoja > [data-atras-hoja], .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-cerrar-ficha] {{ display: none; }}
 .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-atras-hoja] {{ display: inline-grid; }}
-/* Recogida: solo el asa y el resumen (se llega jalando hacia abajo desde «asoma») */
-.hoja-lugares {{ transition: transform 250ms var(--curva); }}
-.pantalla[data-id="lugares"][data-hoja-estado="cerrada"] .hoja-lugares {{ transform: translateY(112px); }}
-.ficha-hoja[data-compacta] > .cabecera-hoja {{ background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }}
-.ficha-hoja[data-compacta] > .cabecera-hoja > .asa::before {{ background: #d9d9d9; box-shadow: none; }}
-.ficha-hoja[data-compacta] > .cabecera-hoja > .titulo-hoja {{ opacity: 1; }}
-.ficha-hoja[data-compacta] > .cabecera-hoja > .boton-icono {{ background: none; box-shadow: none; }}
+/* Recogida (la altura más baja, a la que se llega jalando): la lista muestra solo el asa y la cantidad; la ficha, solo su cabecera compacta, sin la pastilla. Ninguna se cierra: la ficha solo con la ✕ */
+.pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .flotantes {{ visibility: hidden; }}
+.ficha-hoja[data-compacta] > .cabecera-hoja, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja {{ background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }}
+.ficha-hoja[data-compacta] > .cabecera-hoja > .asa::before, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja > .asa::before {{ background: #d9d9d9; box-shadow: none; }}
+.ficha-hoja[data-compacta] > .cabecera-hoja > .titulo-hoja, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja > .titulo-hoja {{ opacity: 1; }}
+.ficha-hoja[data-compacta] > .cabecera-hoja > .boton-icono, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja > .boton-icono {{ background: none; box-shadow: none; }}
 .ficha-hoja[hidden] {{ display: none; }}
 
 /* ==========================================================================
@@ -1144,25 +1144,24 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   function abrirAlta(tipo) {{ ponerTipoAlta(tipo); ir("alta", "tarea"); }}
   // La hoja de Lugares desplaza como un todo: los espaciadores fijan las alturas (asoma · media · llena) y el cuerpo asoma desde abajo.
   const lugaresP = de("lugares");
-  const [espA, espB] = hojaL.querySelectorAll(":scope > .espacio");
+  const [espA, espB, espC] = hojaL.querySelectorAll(":scope > .espacio");
   const fichaHoja = hojaL.querySelector(".ficha-hoja");
   const enTelefono = () => getComputedStyle(hojaL).position !== "static";
   const zoom = () => parseFloat(aparato.style.zoom || "1");
+  // Alturas visibles sobre la navegación: lista recogida 64 (asa y cantidad) · asoma 176 · media 56 % · llena; ficha recogida (su cabecera) · media (foto + KPI) · llena.
   function ajustarHoja() {{
-    if (!enTelefono()) {{ espA.style.height = espB.style.height = "0px"; return; }}
+    if (!enTelefono()) {{ espA.style.height = espB.style.height = espC.style.height = "0px"; return; }}
     const util = hojaL.clientHeight - app.querySelector(".navegacion").offsetHeight;
-    let a, b;
-    if (lugaresP.dataset.ficha) {{ const k = fichaHoja.querySelector(".kpis"); a = 0; b = util - Math.min(util, k.offsetTop + k.offsetHeight + 80); }}
-    else {{ const media = util * 0.56; a = media - 176; b = util - media; }}
-    espA.style.height = Math.max(0, a) + "px"; espB.style.height = Math.max(0, b) + "px";
+    let a, b, c;
+    if (lugaresP.dataset.ficha) {{ const k = fichaHoja.querySelector(".kpis"), cab = fichaHoja.querySelector(".cabecera-hoja"); const media = Math.min(util, k.offsetTop + k.offsetHeight + 80); a = media - cab.offsetHeight; b = util - media; c = 0; }}
+    else {{ const media = util * 0.56; a = 176 - 64; b = media - 176; c = util - media; }}
+    espA.style.height = Math.max(0, a) + "px"; espB.style.height = Math.max(0, b) + "px"; espC.style.height = Math.max(0, c) + "px";
   }}
-  const detentes = () => {{ const a = espA.offsetHeight, b = espB.offsetHeight; return lugaresP.dataset.ficha ? {{ media: 0, llena: a + b }} : {{ asoma: 0, media: a, llena: a + b }}; }};
-  function masCercano(y) {{ let mejor = "asoma", d = Infinity; for (const [k, v] of Object.entries(detentes())) {{ const dd = Math.abs(v - y); if (dd < d) {{ d = dd; mejor = k; }} }} return mejor; }}
+  const detentes = () => {{ const a = espA.offsetHeight, b = espB.offsetHeight, c = espC.offsetHeight; return lugaresP.dataset.ficha ? {{ recogida: 0, media: a, llena: a + b }} : {{ recogida: 0, asoma: a, media: a + b, llena: a + b + c }}; }};
+  function masCercano(y) {{ let mejor = "recogida", d = Infinity; for (const [k, v] of Object.entries(detentes())) {{ const dd = Math.abs(v - y); if (dd < d) {{ d = dd; mejor = k; }} }} return mejor; }}
   const irA = (y) => hojaL.scrollTo({{ top: y, behavior: reduce ? "auto" : "smooth" }});
   function asentar() {{ const y = hojaL.scrollTop, d = detentes(); if (y >= d.llena - 1) return; const destino = d[masCercano(y)]; if (Math.abs(destino - y) > 1) irA(destino); }}
-  let ultimoScroll = 0;
   hojaL.addEventListener("scroll", () => {{
-    ultimoScroll = Date.now();
     const y = hojaL.scrollTop, d = detentes();
     if (enTelefono()) {{
       if (d.llena <= 0) return;
@@ -1171,28 +1170,9 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
       app.toggleAttribute("data-nav-oculta", llena);
       clearTimeout(hojaL.reposo); hojaL.reposo = setTimeout(asentar, 140);
     }}
-    if (lugaresP.dataset.ficha) fichaHoja.toggleAttribute("data-compacta", y > (enTelefono() ? d.llena : 0) + umbral(fichaHoja));
+    if (lugaresP.dataset.ficha) fichaHoja.toggleAttribute("data-compacta", y > (enTelefono() ? d.llena : 0) + umbral(fichaHoja) || lugaresP.dataset.hojaEstado === "recogida");
   }}, {{ passive: true }});
   new ResizeObserver(() => {{ const antes = lugaresP.dataset.hojaEstado; ajustarHoja(); if (enTelefono()) hojaL.scrollTop = detentes()[antes] ?? 0; }}).observe(hojaL);
-  // Jalar hacia abajo desde el inicio (dedo o rueda, con la hoja en reposo): la ficha vuelve a la lista; la lista se recoge (asa y resumen).
-  function jalarAbajo() {{
-    if (!enTelefono() || hojaL.scrollTop > 0) return false;
-    if (lugaresP.dataset.ficha) cerrarFichaHoja();
-    else if (lugaresP.dataset.hojaEstado === "asoma") lugaresP.dataset.hojaEstado = "cerrada";
-    else return false;
-    return true;
-  }}
-  let dedo = null, rueda = 0, ruedaT = 0;
-  hojaL.addEventListener("touchstart", (e) => {{ dedo = {{ y0: e.touches[0].clientY, arriba: hojaL.scrollTop === 0 }}; }}, {{ passive: true }});
-  hojaL.addEventListener("touchmove", (e) => {{ if (dedo && dedo.arriba && (e.touches[0].clientY - dedo.y0) / zoom() > 80 && jalarAbajo()) dedo = null; }}, {{ passive: true }});
-  hojaL.addEventListener("touchend", () => (dedo = null), {{ passive: true }});
-  hojaL.addEventListener("wheel", (e) => {{
-    const ahora = Date.now();
-    if (e.deltaY >= 0 || hojaL.scrollTop > 0 || ahora - ultimoScroll < 300) {{ rueda = 0; return; }}
-    if (ahora - ruedaT > 500) rueda = 0;
-    ruedaT = ahora; rueda += -e.deltaY;
-    if (rueda > 120) {{ rueda = 0; jalarAbajo(); }}
-  }}, {{ passive: true }});
   // La ficha de lugar en el cuerpo de la hoja (la lista conserva su desplazamiento); abre a la altura de foto + KPI; al cerrar vuelve lo anterior.
   function abrirFichaHoja() {{
     if (!lugaresP.dataset.ficha) {{ lugaresP.dataset.estadoAntes = lugaresP.dataset.hojaEstado; lugaresP.dataset.scrollAntes = hojaL.scrollTop; }}
@@ -1200,7 +1180,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     fichaHoja.hidden = false;
     fichaHoja.removeAttribute("data-compacta");
     ajustarHoja();
-    hojaL.scrollTop = 0;
+    hojaL.scrollTop = enTelefono() ? detentes().media : 0;
     lugaresP.dataset.hojaEstado = enTelefono() ? "media" : "llena";
     if (!reduce) {{ fichaHoja.classList.add("entra"); fichaHoja.addEventListener("animationend", () => fichaHoja.classList.remove("entra"), {{ once: true }}); }}
   }}
@@ -1209,7 +1189,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     delete lugaresP.dataset.ficha;
     ajustarHoja();
     const estado = lugaresP.dataset.estadoAntes || "asoma";
-    hojaL.scrollTop = enTelefono() ? (detentes()[estado] ?? 0) : +lugaresP.dataset.scrollAntes || 0;
+    hojaL.scrollTop = enTelefono() ? (detentes()[estado] ?? detentes().asoma) : +lugaresP.dataset.scrollAntes || 0;
     lugaresP.dataset.hojaEstado = estado;
     app.toggleAttribute("data-nav-oculta", estado === "llena" && enTelefono());
   }}
@@ -1288,7 +1268,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     const atrasHoja = e.target.closest("[data-atras-hoja]");
     if (atrasHoja) {{ irA(detentes().media); return; }}
     const asa = e.target.closest(".asa");
-    if (asa) {{ if (lugaresP.dataset.hojaEstado === "cerrada") {{ lugaresP.dataset.hojaEstado = "asoma"; return; }} const alturas = Object.values(detentes()); const y = hojaL.scrollTop; const i = alturas.findIndex((v) => v > y + 1); irA(i === -1 ? alturas[0] : alturas[i]); return; }}
+    if (asa) {{ const alturas = Object.values(detentes()); const y = hojaL.scrollTop; const i = alturas.findIndex((v) => v > y + 1); irA(i === -1 ? alturas[0] : alturas[i]); return; }}
     const at = e.target.closest("[data-atras]");
     if (at) {{ e.preventDefault(); atras(); return; }}
     const ir_ = e.target.closest("[data-ir]");

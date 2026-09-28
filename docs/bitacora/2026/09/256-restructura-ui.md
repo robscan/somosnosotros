@@ -572,8 +572,10 @@ los controles por debajo de 44 son los mismos de la v2.
   blanco y el aviso.
 - **`256-115-v3-lugares-ficha-sigues-telefono`:** en la hoja llena, tras tocar «Seguir»: «✓ Sigues» en verde y el
   aviso.
-- **`256-116-v3-lugares-recogida-telefono`:** la lista recogida tras jalarla hacia abajo: solo el asa y «62 lugares ·
-  los más cercanos primero» sobre la navegación; el mapa entero.
+- **`256-116-v3-lugares-ficha-recogida-telefono`:** la ficha recogida tras jalarla hacia abajo: solo su cabecera
+  (asa, ✕, Museo del Ferrocarril Jesús García…, ⋯) sobre la navegación; el mapa entero; no se cierra.
+- **`256-117-v3-lugares-recogida-telefono`:** la lista recogida: solo el asa y «62 lugares · los más cercanos primero»
+  sobre la navegación; el mapa entero.
 
 ### Desde el lienzo de Claude Design
 
@@ -604,9 +606,11 @@ entraba «llena» por un evento disparado antes de medir (doc 50 § 6.6). Captur
 Tres hilos más en el lienzo: «me quedo con la idea de que floten, olvidemos la barra» (la variante en barra sale del
 tablero de acciones); «aceptada la propuesta de héroe… si llegáramos a incluir chips aquí sería como en sheet de
 lugares… ¿podemos hacer que el sheet se convierta en una hoja completa que muestre este botón atrás?… ¿y que si el
-usuario jala el sheet hasta abajo se cierre?» (hecho: llena, la hoja muestra Atrás y vuelve a foto + KPI; jalar
-hacia abajo desde el inicio cierra la ficha o recoge la lista hasta el asa y el resumen; probado con la rueda en
-`probar-hoja2.mjs`); «muy bien resuelto, te felicito, aceptada esta propuesta» sobre el KPI de fecha. Captura
+usuario jala el sheet hasta abajo se cierre?» y, tras probarlo, «ojo, el listado de lugares nunca se va: si lo jalas
+se activa el estado peek con solo la cantidad» y «también vale la pena hacer estado peek de ficha de lugar y que no
+se cierre hasta dar tap en la X» (hecho: llena, la hoja muestra Atrás y vuelve a foto + KPI; «recogida» es una
+altura real más para las dos, lista con la cantidad y ficha con su cabecera; nada se cierra solo y la ficha solo con
+la ✕; probado con la rueda en `probar-hoja-atras.mjs` y `probar-hoja-recogida.mjs`); «muy bien resuelto, te felicito, aceptada esta propuesta» sobre el KPI de fecha. Captura
 `256-116` con la lista recogida. Y seis hilos sobre el prototipo mismo: «bájale al redondeado, más sugerido, para
 todos los casos, es canon» (radios a la mitad); «¿puedes centrar los filtros en tablet y desktop?» (centrados, salvo
 Lugares); «la línea del lado derecho se ve cortada por la barra superior; el menú debería comenzar desde donde
@@ -618,7 +622,7 @@ entre contenido y barra de atrás»). Doc 50 § 11, puntos 38 a 41.
 
 ### Cierre (cuarta parte)
 
-Commits en `restructura-ui` con el prototipo v3 (el segundo con las correcciones del founder al verla), las 42 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7 y P10,
+Commits en `restructura-ui` con el prototipo v3 (el segundo con las correcciones del founder al verla), las 43 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7 y P10,
 § 10 y § 11 con la quinta y la sexta vuelta), el generador y el script de captura actualizados, esta bitácora y
 OPEN_LOOPS; push al PR #266; artefacto republicado. Pendiente: que el founder pruebe la v3 y conteste los puntos 18 a
 24 y 28 a 30 del doc 50 § 11 (nombre de la primera pestaña y carril Destacados, variante del título, campana, dos

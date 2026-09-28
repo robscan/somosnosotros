@@ -623,10 +623,13 @@ Tres mensajes seguidos sobre la v2. Lo que dijo, lo que se cuestionó y lo que q
   200 px de rueda la llenan, los siguientes desplazan el contenido, la rueda hacia arriba la devuelve a foto + KPI.
   Dos añadidos del founder desde el lienzo: **llena, la hoja es una página completa con Atrás** («¿podemos hacer que
   el sheet se convierta en una hoja completa que muestre este botón atrás?»): el mando de la izquierda pasa de Cerrar
-  a Atrás y devuelve la hoja a foto + KPI; y **jalar hacia abajo cierra** («¿si el usuario jala el sheet hasta abajo
-  se cierre?»): desde foto + KPI, jalar 80 px con el dedo (o la rueda hacia arriba con la hoja en reposo) cierra la
-  ficha y devuelve la lista; desde la lista asomando, la recoge hasta el asa y el resumen («62 lugares»), que la
-  vuelven a abrir con un toque.
+  a Atrás y devuelve la hoja a foto + KPI; y **jalar hacia abajo recoge, nunca cierra** («¿si el usuario jala el
+  sheet hasta abajo se cierre?» y luego «ojo, el listado de lugares nunca se va: si lo jalas se activa el estado peek,
+  que muestre solo la cantidad de lugares», «también vale la pena hacer estado peek de ficha de lugar y que no se
+  cierre hasta dar tap en la X»): la altura más baja de la hoja es «recogida», una altura real más (lista: solo el asa
+  y «62 lugares», 64 px; ficha: solo su cabecera compacta con el nombre, sin la pastilla), a la que se llega jalando;
+  desde ahí se vuelve a subir con el mismo gesto o con un toque en el asa. La ficha solo se cierra con la ✕, que
+  devuelve la lista a la altura y al desplazamiento que tenía.
 - **Cuatro ajustes más desde los comentarios del founder sobre el prototipo:** el **radio** baja a la mitad en todos
   los casos («bájale al redondeado, más sugerido, para todos los casos, es canon»: 4 · 8 · 12 en vez de 8 · 12 · 16;
   las fotos de renglón a 4; la hoja conserva sus 24); los **filtros van centrados** en tableta y escritorio («¿puedes
@@ -887,10 +890,11 @@ Lo que el founder confirma o corrige al probar la v3:
     hoja con el héroe y el título dentro de la imagen es la definitiva. Queda por confirmar que la hoja con la lista
     (sin ficha) no necesita Cerrar: el asa la baja.
 36. **La hoja con una sola inercia** (abre a foto + KPI, crece hasta llenar, luego desplaza): hecha con un contenedor
-    que desplaza y espaciadores; en el teléfono real es el mismo gesto con inercia nativa. Llena, es una página
-    completa con Atrás (vuelve a foto + KPI); jalar hacia abajo desde el inicio cierra la ficha (vuelve la lista) o
-    recoge la lista hasta el asa. Queda por confirmar en el iPhone del founder que bajar desde arriba del todo
-    (contenido en su inicio) también la encoja, como con la rueda.
+    que desplaza y tres espaciadores (recogida · asoma · media · llena); en el teléfono real es el mismo gesto con
+    inercia nativa. Llena, es una página completa con Atrás (vuelve a foto + KPI); jalar hacia abajo recoge (la lista
+    a la cantidad, la ficha a su cabecera) y nada se cierra solo: la ficha, con la ✕. Queda por confirmar en el
+    iPhone del founder que bajar desde arriba del todo (contenido en su inicio) también la encoja, como con la
+    rueda.
 37. **Chips en el héroe de la ficha de evento**: si algún día entran, con el mismo estilo que la etiqueta de la hoja
     de lugar (MUSEO: violeta sobre blanco, encima del título). Anotado, sin construir.
 38. **Radio más sugerido en todos los casos** (4 · 8 · 12; fotos de renglón 4; hoja 24). **Hecho** («es canon»).

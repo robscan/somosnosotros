@@ -1,4 +1,4 @@
-// Capturas reales del prototipo v3 (Chrome de la Mac): teléfono a 2×, tableta a 1,5×, escritorio a 1×; 42 capturas y un muestrario de iconos.
+// Capturas reales del prototipo v3 (Chrome de la Mac): teléfono a 2×, tableta a 1,5×, escritorio a 1×; 43 capturas y un muestrario de iconos.
 // node capturar-prototipo.mjs http://127.0.0.1:8090/restructura-ui.html <carpeta>   (servir docs/rediseno/prototipos con python3 -m http.server 8090)
 import { chromium } from "playwright-core";
 import fs from "node:fs";
@@ -26,7 +26,7 @@ const click = (page, sel) => page.evaluate((s) => { const e = document.querySele
 const espera = (page, ms) => page.waitForTimeout(ms);
 const variante = (page, v) => click(page, `.modos-estudio [data-titulo="${v}"]`);
 // La hoja de Lugares: cada altura es una posición de desplazamiento del contenedor (espaciadores + cuerpo)
-const hoja = (page, estado, mas = 0) => page.evaluate(([e, m]) => { const c = document.querySelector(".hoja-lugares"); const [a, b] = [...c.querySelectorAll(":scope > .espacio")].map((x) => x.offsetHeight); c.scrollTop = (e === "asoma" ? 0 : e === "media" ? a : a + b) + m; c.dispatchEvent(new Event("scroll")); }, [estado, mas]);
+const hoja = (page, estado, mas = 0) => page.evaluate(([e, m]) => { const c = document.querySelector(".hoja-lugares"); const ficha = !!document.querySelector('.pantalla[data-id="lugares"]').dataset.ficha; const [a, b, cc] = [...c.querySelectorAll(":scope > .espacio")].map((x) => x.offsetHeight); const d = ficha ? { recogida: 0, media: a, llena: a + b } : { recogida: 0, asoma: a, media: a + b, llena: a + b + cc }; c.scrollTop = d[e] + m; c.dispatchEvent(new Event("scroll")); }, [estado, mas]);
 const desplazar = (page, sel, y) => page.evaluate(([s, yy]) => { const p = document.querySelector(s); p.scrollTop = yy; p.dispatchEvent(new Event("scroll")); }, [sel, y]);
 
 // Teléfono
@@ -161,9 +161,11 @@ await hoja(page, "llena"); await espera(page, 700);
 await click(page, '.ficha-hoja [data-accion-ficha="seguir"]'); await espera(page, 300);
 await foto(page, "v3-41-lugares-ficha-sigues-telefono");
 await click(page, '[data-atras-hoja]'); await espera(page, 900);
+await hoja(page, "recogida"); await espera(page, 800);
+await foto(page, "v3-42-lugares-ficha-recogida-telefono");
 await click(page, '[data-cerrar-ficha]'); await espera(page, 600);
-await page.evaluate(() => (document.querySelector('.pantalla[data-id="lugares"]').dataset.hojaEstado = "cerrada")); await espera(page, 500);
-await foto(page, "v3-42-lugares-recogida-telefono");
+await hoja(page, "recogida"); await espera(page, 800);
+await foto(page, "v3-43-lugares-recogida-telefono");
 await ctx.close();
 await browser.close();
 console.log("errores de página:", errores.length, errores.slice(0, 5));
