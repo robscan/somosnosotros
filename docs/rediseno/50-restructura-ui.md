@@ -1,0 +1,550 @@
+# 50 · Reestructura de la interfaz para web, iPhone y Android (OL-227)
+
+**Fecha:** 2026-09-28 · **Estado:** primer avance para la lectura del founder: auditoría con evidencia (secciones 1 a 4,
+completas) y propuesta en primera versión (sección 5). El prototipo de pantallas reales (sección 6) y el plan
+definitivo por piezas (sección 7) se cierran después de esa lectura, con lo que él corrija. **Sin código de la app.**
+· **Rama:** `restructura-ui` · **Bitácora:** [256](../bitacora/2026/09/256-restructura-ui.md) · **Capturas:**
+[`capturas-256/`](capturas-256/) (38 PNG reales, abiertas y descritas una por una en la bitácora) · Gestor de
+cambios III, Fable 5.1 en máximo. Sin council, workflows ni agentes.
+
+Antecedentes que no se heredan: el doc 48 (rama `shell-ios`) y el doc 49 con su prototipo (rama
+`navegacion-plataformas`), rechazados por el founder. Sigue vigente hasta que se firme lo nuevo: Atrás con marca
+propia (`src/lib/historial.ts`), memoria de pantalla, «filtrar no es navegar», el canon de formularios (docs 14, 15 y
+26) y la línea gráfica ([LINEA_GRAFICA](../diseno/LINEA_GRAFICA.md)).
+
+## 0. Veredicto en tres líneas
+
+1. **Por dentro la app está razonablemente limpia** (fichas de 45 a 83 nodos, profundidad 4 a 7, cero desbordes en
+   9 de 10 pantallas públicas), **pero el sistema se repite:** once maneras de dibujar un botón redondo, cuatro
+   rejillas distintas para el mismo renglón «icono | texto | acción», dos hojas «¿Dónde?» idénticas, 691 medidas en
+   duro y 44 `z-index` en 17 valores sin escala. Cada pieza nueva paga ese peaje (y así nacieron los tres llamados de
+   atención por maquetación de septiembre).
+2. **Hay defectos silenciosos medidos, no de sensación:** el botón flotante tapa renglones y sus «+» en Agenda, Lugares e
+   Inicio (también en la app de iPhone); en Artistas el texto de 16 renglones se mete hasta 31 px debajo del «+»; en la
+   ficha de lugar con cinco enlaces el quinto queda cortado al 52 %; en el mapa el nombre de un lugar y el día de otro
+   se enciman. Lista completa con archivo y línea en la sección 8.
+3. **En tableta y escritorio la app es el teléfono estirado:** una columna de 600 px, barra inferior de cuatro destinos
+   a 320 px entre sí, carriles que sangran solo hacia la derecha, flotantes al centro. La propuesta (sección 5) usa las
+   mismas piezas y variables en los tres tamaños y cambia solo dónde viven: navegación abajo en teléfono y lateral en
+   tableta y escritorio; mapa junto a la lista; ficha a dos columnas; y una plantilla por tipo de pantalla que hace
+   imposibles los márgenes negativos y los flotantes sobre contenido.
+
+## 1. Qué se auditó y cómo (evidencia)
+
+| Qué | Cómo | Dónde está |
+|---|---|---|
+| Producción (`somosnosotros.org`), 10 pantallas públicas × 3 tamaños: teléfono 390×844 (2×, toque, sin hover), tableta 820×1180 y escritorio 1280×800 (ratón) | Chrome real de la Mac vía `playwright-core`, fuente Bricolage comprobada cargada en cada captura (`document.fonts`) | `capturas-256/256-01…10-*.png` |
+| Pantallas con sesión (Inicio con «Tus planes», Agenda, alta de evento, Ajustes, Mi perfil, ficha con «Voy», alta de lugar, Editar perfil, Novedades) | `next build && next start` de esta rama contra un respaldo local 100 % inventado (Node puro, cuenta `ana@example.com`; imita Auth y PostgREST; nunca tocó producción ni un `.env`) | `256-20…27-*.png` |
+| App de iPhone (Capacitor, `apps/ios`, compilada de esta rama) | Simulador propio «OL-227 iPhone 17 Pro» (iOS 26.3, creado y borrado con `simctl`), la app cargando producción | `256-11…15-ios-*.png` |
+| **Medición del DOM** de cada pantalla: nodos y profundidad dentro de `main`, envoltorios sin función (`div`/`span` con un solo hijo y sin texto), hijos que se salen de la caja de su padre, elementos fuera de la ventana, márgenes negativos, contextos de apilamiento, cajas cuyo contenido es más alto que ellas, objetivos de toque menores de 44 px, controles que se solapan o quedan a menos de 8 px | Script propio evaluado en la página real (`getBoundingClientRect` + `getComputedStyle`), 48 corridas | JSON en el scratchpad; cifras en la sección 2 y en la bitácora |
+| **Inventario estático del CSS**: los 99 `.module.css` más `globals.css` parseados con PostCSS: tokens definidos y usados, medidas y colores en duro, alturas fijas, `z-index`, posiciones, bloques de declaraciones repetidos | Script propio | Sección 3 |
+| Medidas puntuales de los defectos candidatos (flotantes contra renglones, carril de enlaces, mapa, barra fija, texto de Artistas) | Script propio a 390×844 | Sección 8 |
+
+Lo que no se pudo medir y se dice: el mapa de Mapbox no carga en local (sin token), así que el mapa se auditó solo
+en producción; el desbordamiento horizontal en escritorios con barra de desplazamiento clásica (Windows) no se pudo
+reproducir en el Chrome de la Mac (usa barras superpuestas) y queda como riesgo documentado (H-38); el simulador es un
+iPhone 17 Pro (402×874 pt), no 390×844.
+
+## 2. Hallazgos por pantalla
+
+Cada pantalla: qué viene a hacer la persona (*job to be done*), lo medido, lo que se ve en las capturas, los
+hallazgos numerados (H-nn) con la ley que los explica y qué se propone. Las cifras son del teléfono salvo que se diga
+otra cosa.
+
+### 2.1 Inicio (`/`)
+
+**A qué viene la persona:** a ver rápido qué hay y decidir a qué ir; con cuenta, a repasar sus planes.
+
+**Medido:** 300 nodos, profundidad 8, 25 envoltorios (6 tipos), altura del documento 2 088 px (2,5 pantallas). Barra
+56 px que se desplaza + cabecera pegajosa 56 px. Flotante «Publicar evento» de 182×48 en (188–370, 720–768): tapa 2
+tarjetas del carril que queda debajo; en la app de iPhone tapa además el «+» de la primera tarjeta de «Esta semana».
+Capturas [256-01-inicio-movil](capturas-256/256-01-inicio-movil.png), [completa](capturas-256/256-01-inicio-movil-completa.png),
+[tableta](capturas-256/256-01-inicio-tableta.png), [escritorio](capturas-256/256-01-inicio-escritorio.png),
+[iPhone](capturas-256/256-11-ios-inicio.png), [con sesión](capturas-256/256-20-inicio-sesion-movil.png).
+
+- **H-01 · El flotante tapa contenido y otro accionable.** `Publicar.module.css:2-5` (fijo, abajo a la derecha,
+  z 21). En reposo cubre 2 tarjetas; al desplazar, cada «+» de tarjeta pasa detrás de él. Fitts (el objetivo tapado no
+  existe), Hick (dos accionables en el mismo sitio para dos decisiones). Propuesta: publicar vive en la barra superior
+  como «+» de 44 px (canon iOS que el founder prefiere: «botones de acción solo con un icono»), y en tableta y
+  escritorio en la navegación lateral. El flotante se retira de las cuatro pantallas raíz.
+- **H-02 · Tres capas sobre cada cartel** (sello «Recién agregado», sello «N van», botón «+», más el «✓» verde con
+  sesión): el cartel, que es lo que vende el evento, queda debajo de tres objetos. Aesthetic-Usability y la regla del
+  founder «reforzar la UI no es añadir cosas». Propuesta: un solo sello sobre la foto (el más útil para decidir: «N
+  van» o «hoy»); «Recién agregado» pasa al texto como detalle; el «+» se queda (decisión firmada) pero sin sombra
+  cuando no va sobre foto.
+- **H-03 · Carriles enteros en gris.** «Lugares con eventos» y «Artistas destacados» pintan círculos y tarjetas de
+  165×248 con el símbolo SN cuando no hay foto (captura completa): un carril casi todo gris. Aesthetic-Usability.
+  Propuesta: la tarjeta sin foto es compacta (fondo suave, nombre grande, sin bloque de imagen) y «destacado» exige
+  foto.
+- **H-04 · Dos cabeceras con dos comportamientos.** La barra del logotipo (56) se desplaza; la cabecera de contexto
+  (56 en Inicio, 100 en Agenda/Lugares/Artistas) es pegajosa y se compacta a 44; en las fichas la barra sí es
+  pegajosa. Consistencia y estándares (iOS y Android fijan una sola barra). Propuesta: una sola cabecera pegajosa
+  (logotipo + contexto + filtros) que se compacta a 44 px al bajar, igual en todas las raíces.
+- **H-05 · Accionables de cabecera por debajo de 44 px:** «Entrar» 74×40 (`Sesion.module.css:4`), chip de ciudad y
+  de fecha 40 (`Chip.module.css:82`, `ChipFecha.module.css:10`), lupa 40 (`Cabecera.module.css:56`), Atrás 40
+  (`Atras.module.css:7`), ✕ 40 (`Cerrar.module.css:6`). Fitts, `--toque-min` de PRINCIPIOS_UX y la observación del
+  founder en OL-207 («más pequeños que el canon de iOS»). Propuesta: todo control de barra mide 44; el token existe.
+- **H-06 · Chevron con margen negativo y envoltorio.** `Destacados.module.css:76-84`: `span.chevron` (solo envuelve al
+  svg) con `margin-right: -10px`; sobresale 10 px de su enlace en cada carril (5 veces por pantalla). Es el patrón
+  «estado con margen negativo» que la regla de maquetación prohíbe. Propuesta: el svg como hijo directo del enlace con
+  `padding-inline` en el propio enlace.
+- **H-07 · Escritorio y tableta: teléfono estirado.** Columna de 600 px centrada; los carriles arrancan en la columna
+  y sangran solo hacia la derecha hasta el borde de la ventana (asimetría visible en tableta y escritorio); tarjetas del
+  mismo tamaño que en el teléfono; flotante al centro-abajo tapando tarjetas; barra inferior de 4 destinos a 320 px.
+  Propuesta en la sección 5.4.
+
+### 2.2 Agenda (`/agenda`)
+
+**A qué viene:** a saber qué hay hoy y esta semana, y a decir «voy».
+
+**Medido:** 391 nodos, profundidad 8, 5 envoltorios (2 tipos), 0 desbordes, 0 márgenes negativos, 23 renglones (4 467
+px de alto: 5,3 pantallas). Cabecera 100 px + barra 56 = 156 px de chrome arriba (18,5 % de la pantalla) y 60 abajo;
+útil 628 px; compacta, la cabecera deja 44 px. Flotante: 3 botones «+» a la vista; en reposo tapa 1 renglón (su
+precio y su lugar). Capturas [256-02-agenda-movil](capturas-256/256-02-agenda-movil.png),
+[escritorio](capturas-256/256-02-agenda-escritorio.png), [iPhone](capturas-256/256-12-ios-agenda.png),
+[con sesión](capturas-256/256-21-agenda-sesion-movil.png).
+
+- **H-08 · El flotante compite con la columna de «+».** Los dos viven a 20 px del borde derecho (el «+» de 48 en x 322–370,
+  el flotante en 188–370): al desplazar, el botón de cada renglón cruza por detrás del flotante y el texto del
+  renglón queda tapado. Fitts. Misma solución que H-01.
+- **H-09 · Renglones de hasta 190 px.** Título en dos líneas + hora + lugar (con la dirección postal completa en tres
+  líneas cuando el evento es «en otro sitio»: «Templo de San Francisco · Calle Jardín Guerrero 7, 78000 San Luis
+  Potosí, San Luis Potosí, México») + precio. «Gratis» se repite en todos. Caben 3 o 4 eventos por pantalla. Tesler (el
+  sistema resume: en la lista, el nombre del sitio; la dirección, en la ficha) y Hick. Propuesta: renglón de dos
+  líneas de meta como máximo (hora · sitio; precio solo cuando no es gratis) y foto 56.
+- **H-10 · Dos estilos para el mismo título de sección.** El título del día (`AgendaInicio.module.css:12-19`) lleva
+  raya inferior en tinta y 14/6 px de aire; los títulos de carril (`Destacados h2`) no llevan raya y van con chevron.
+  Consistencia. Propuesta: un solo título de sección (con o sin chevron) y la raya solo como separador de grupo pegajoso.
+- **H-11 · Tiras que se cortan sin señal.** «Todos · Siguiendo» va repartida a mitades; en Lugares y Artistas la misma
+  tira de tipos se corta a la derecha (Lugares: 967 px de contenido en 390) sin degradado ni flecha. Consistencia y
+  Jakob (iOS: control segmentado cabe; si no cabe, chips desplazables con borde que asoma). Propuesta: la tira que no
+  cabe se desliza y asoma media pestaña (nunca se corta en un límite exacto).
+
+### 2.3 Lugares: mapa (`/lugares`)
+
+**A qué viene:** a ver dónde hay algo cerca, hoy o esta semana, y llegar.
+
+**Medido:** 83 nodos, profundidad 9 (capas de Mapbox). Controles sobre el mapa: ubicación (48), ⓘ y marca Mapbox,
+«Ver en lista» (144×48), «Registrar lugar» (178×48), más nav y cabecera. Capturas
+[256-03-lugares-mapa-movil](capturas-256/256-03-lugares-mapa-movil.png),
+[tableta](capturas-256/256-03-lugares-mapa-tableta.png), [escritorio](capturas-256/256-03-lugares-mapa-escritorio.png),
+[iPhone](capturas-256/256-13-ios-lugares-mapa.png).
+
+- **H-12 · Etiquetas encimadas.** En el centro, el nombre en violeta de «Museo del Ferrocarril Jesús García Corona»
+  y el pin «Vie» de un lugar vecino se pisan; «Casa Bauen» queda bajo el pin «Mar» de San Miguelito (tableta); «MUNI
+  Museo Universitario UASLP» sale cortado por el borde izquierdo. Causa: el punto, el día y el nombre son símbolos de
+  capas distintas y Mapbox resuelve colisiones capa por capa. Propuesta técnica: un solo símbolo por lugar
+  (icono + texto), `symbol-sort-key` por prioridad (seguido › destacado › con evento › resto), `text-variable-anchor`
+  para que el nombre busque sitio, `text-padding`, y ocultar el nombre (nunca el punto) cuando aun así choca.
+- **H-13 · Cuatro flotantes sobre el mapa.** Con cabecera y nav, los controles ocupan cerca del 40 % de la altura útil
+  a 390×844; «Ver en lista» y «Registrar lugar» apilados cubren 108 px de alto y 198 px de ancho (51 %). Región común:
+  el conmutador Mapa · Lista es un cambio de vista, no una acción, y la gente lo espera arriba (Apple Maps, Google
+  Maps: segmento en la cabecera). Propuesta: «Mapa · Lista» como segmento en la cabecera; «Registrar lugar» al «+» de
+  la barra; en el mapa quedan solo ubicación y la atribución.
+- **H-14 · El alto del mapa depende de una variable viva.** `lugares.module.css:11-14`: `height: calc(100dvh − … −
+  var(--alto-cabecera) − …)`, y `--alto-cabecera` la publica `ui/Cabecera` desde JavaScript al medirse. Acoplamiento
+  frágil (si la cabecera cambia, el mapa salta o deja hueco). Propuesta: la plantilla raíz es `grid-template-rows:
+  auto 1fr auto` y el mapa llena la fila central sin cálculo.
+
+### 2.4 Lugares: lista (`/lugares?vista=lista`)
+
+**Medido:** 320 nodos, profundidad 8. Dos flotantes apilados: tapan 2 renglones y 2 botones «+» en reposo. Carril
+«Con eventos esta semana» arriba, contador «62 lugares», índice por letra pegajoso. Capturas
+[256-04-lugares-lista-movil](capturas-256/256-04-lugares-lista-movil.png),
+[escritorio](capturas-256/256-04-lugares-lista-escritorio.png).
+
+- **H-15 · Dos flotantes tapan dos renglones** (medido). Misma raíz que H-01.
+- **H-16 · Tres modelos en una pantalla:** carril semanal (repite el «Lugares con eventos» de Inicio), contador y
+  directorio alfabético. Modelo mental: Lugares es el directorio; lo semanal ya vive en Inicio (la misma decisión que
+  el founder tomó para Artistas el 2026-09-23). Propuesta: quitar el carril de la lista de Lugares, como en Artistas.
+
+### 2.5 Artistas (`/artistas`)
+
+**Medido:** 999 nodos (la primera tanda de renglones y la tira de letras), profundidad 7, 102 envoltorios (5 tipos;
+50 son el `span` sin estilo de cada meta). **16 renglones desbordan** su columna de texto entre 4 y 43 px; en dos, el
+texto pasa 27 y 31 px por debajo del botón «+» («Tradicional, folclore y canto nuevo · Solista»). Capturas
+[256-05-artistas-movil](capturas-256/256-05-artistas-movil.png), [escritorio](capturas-256/256-05-artistas-escritorio.png).
+
+- **H-17 · Texto debajo del botón (bug silencioso).** `Renglon.module.css:101` pone `white-space: nowrap` a cada dato
+  del meta; la columna ya tiene `min-width: 0`, pero el hijo se niega a partirse y se sale de la caja hasta debajo del
+  «+». Propuesta: el dato se parte o se recorta con puntos suspensivos; `nowrap` solo en la hora.
+- **H-18 · Tres tiras pegajosas apiladas** (cabecera 100 → tira de letras 44): a 390×844 quedan 584 px útiles. La
+  tira de letras se mete bajo la cabecera con un margen negativo de 44 (`TiraLetras.module.css`). Propuesta: la tira
+  de letras forma parte de la cabecera (una sola pieza pegajosa que se compacta) sin margen negativo.
+- **H-19 · Veinte «+» por pantalla** en una lista de 582 artistas: el botón con sombra pesa lo mismo que la foto.
+  Aesthetic-Usability. El botón a la vista está decidido (2026-09-21); la propuesta es solo de peso: sin sombra ni
+  círculo blanco cuando va sobre el fondo hueso (icono de 44 px, círculo solo sobre fotos).
+
+### 2.6 Ficha de evento (`/eventos/<slug>`)
+
+**A qué viene:** a decidir si va y a resolver cómo (cuándo, dónde, cuánto, con quién) y avisar.
+
+**Medido:** 57 nodos, profundidad 4 (la pantalla más limpia). Barra fija de 73 px; mapa de 170 px que en la primera
+pantalla queda medio tapado por la barra; acciones «repartidas»: Compartir 20–84, A mi calendario 152–237, Cómo
+llegar 305–370 (68 px entre círculos; en escritorio, 600 px de extremo a extremo). Capturas
+[256-06-ficha-evento-movil](capturas-256/256-06-ficha-evento-movil.png), [completa](capturas-256/256-06-ficha-evento-movil-completa.png),
+[escritorio](capturas-256/256-06-ficha-evento-escritorio.png), [iPhone sin foto](capturas-256/256-14-ios-ficha-evento.png),
+[con «Voy»](capturas-256/256-25-ficha-evento-voy-movil.png).
+
+- **H-20 · Acciones repartidas a los extremos.** `Ficha.module.css:157` (`justify-content: space-between`): con tres
+  se pegan a los bordes y no se leen como una fila. Proximidad. Propuesta: fila alineada a la izquierda con aire fijo
+  (16 px) y como máximo 4 círculos visibles; de 5 en adelante, «Más».
+- **H-21 · Números donde iría una variable.** `.pagina` reserva `96px` abajo (`Ficha.module.css:12`) mientras la
+  barra fija mide 73 y `Hecho` publica `--alto-barra-fija`; el mapa mide `170px` (`MapaFicha.module.css:5`); la foto
+  `220px` (`Cartel.module.css:6`). Propuesta: tokens de la plantilla ficha (sección 5.1).
+- **H-22 · Foto de 220 px fijos.** Recorta los carteles verticales (el «28» de la Sinfónica queda cortado en
+  escritorio) y, sin foto, deja un bloque gris de 220 px con el símbolo (captura iPhone). Aesthetic-Usability.
+  Propuesta: caja 5:3 con el cartel entero (`object-fit: contain`) sobre su color dominante; sin foto, sin caja.
+- **H-23 · Dos pesos para dos decisiones del mismo nivel.** «Me interesa» en texto subrayado y «Voy» lleno; el
+  founder dijo que «las dos son útiles» (2026-09-17). Consistencia. Propuesta: par secundario + primario del mismo
+  alto (el botón secundario del canon).
+- **H-24 · Escapar del gutter con márgenes negativos.** `Barra.module.css:32` (`margin: 0 calc(-1 * var(--gutter))`)
+  y `Ficha.module.css:144-150` (`.acciones`): en escritorio son −340 px por lado. Cualquier caja que no compense
+  exactamente el gutter rompe; así llegó rota a producción «Es en otro sitio» (2026-09-21). Propuesta: la página no
+  lleva gutter; cada bloque pone el suyo con una sola clase `.columna` (sección 5.3).
+
+### 2.7 Ficha de lugar (`/lugares/<slug>`)
+
+**Medido:** 83 nodos (4 enlaces) y 73 (5 enlaces), profundidad 7. Con cinco enlaces el carril mide 441 px en 390: el
+quinto («Instagram») queda al 52 % (31 px fuera), aire de 20 px, sin señal de que se desliza. Capturas
+[256-07-ficha-lugar-4-movil](capturas-256/256-07-ficha-lugar-4-movil.png),
+[256-08-ficha-lugar-5-movil](capturas-256/256-08-ficha-lugar-5-movil.png), [escritorio](capturas-256/256-08-ficha-lugar-5-escritorio.png).
+
+- **H-25 · El quinto enlace cortado** (el «Instagram pegado al borde» que vio el founder). `lib/ficha.ts` manda a
+  carril desde 5. Propuesta: cinco caben a 390 con círculos de 48 y 12 px de aire (5×48 + 4×12 = 288 < 350); seis o
+  más, «Más» abre una hoja. Las acciones nunca van en carril.
+- **H-26 · «ver» (34×44) y «más» (24×44)** en gris subrayado al extremo derecho (`Ficha.module.css:81-116`,
+  `Desplegable`): objetivos estrechos y débiles. Fitts. Propuesta: el renglón entero toca (chevron de 44) y «más»
+  como enlace de 44 de alto a lo ancho.
+
+### 2.8 Ficha de artista (`/artistas/<slug>`)
+
+**Medido:** 45 nodos, profundidad 5. Captura [256-09-ficha-artista-movil](capturas-256/256-09-ficha-artista-movil.png).
+
+- **H-27 · Compartir en dos sitios y dos formas.** En el artista flota sobre el avatar (−4 px fuera de la foto,
+  `Ficha.module.css:42-58`); en evento y lugar es un círculo de la fila. Consistencia. Propuesta: siempre en la fila.
+- **H-28 · Sección «Enlaces» con un solo elemento** lleva título propio, y «Se presenta en» vacío pone texto más un
+  botón que queda detrás de la barra fija. Progressive disclosure. Propuesta: sin título cuando hay un solo enlace; el
+  vacío en una línea, sin botón repetido (el «+» de la barra ya publica).
+
+### 2.9 Alta de evento (`/eventos/nuevo`) y alta de lugar (`/lugares/nuevo`)
+
+**Medido:** 73 y 62 nodos, profundidad 8. Capturas [256-22-alta-evento-movil](capturas-256/256-22-alta-evento-movil.png),
+[escritorio](capturas-256/256-22-alta-evento-escritorio.png), [256-26-alta-lugar-movil](capturas-256/256-26-alta-lugar-movil.png).
+(En local no sale la tarjeta del cartel: la lectura de carteles está apagada sin llave; la pantalla real la lleva.)
+
+- **H-29 · Mensaje doble.** El campo dice «Falta el nombre» (placeholder) y debajo, en gris, «Falta el nombre.»;
+  Dónde dice «Falta» y debajo «Falta ubicación.». Evidencia sin ruido: el borde discontinuo ya marca lo pendiente.
+  Propuesta: un solo mensaje por renglón, y solo tras el primer intento de publicar.
+- **H-30 · Las dos altas se contradicen.** El alta de lugar dice «Con el nombre y dónde está basta. Lo demás se puede
+  agregar después.»; el alta de evento no lo dice porque el founder lo prohibió el 2026-09-17 («no promovemos la
+  creación de eventos incompletos»). Consistencia. Propuesta: quitar la frase del alta de lugar.
+- **H-31 · Márgenes negativos para corregir el aire del padre.** `FormularioCanon.module.css:192-193` (`.estado`
+  con `margin: calc(-1 * var(--espacio-2)) …`) y `ajustes.module.css:13` (`.ajustes > h2` con `margin-bottom:
+  calc(-1 * var(--espacio-5) + var(--espacio-2))`). El aire se decide en la rejilla con `gap`, no restando.
+- **H-32 · Botón deshabilitado mudo.** «Publicar evento» lavado (opacidad 0,55) no dice qué falta; en escritorio la
+  pantalla termina a 660 px sin pie. El canon dice «la ayuda de qué falta va bajo el campo»: se cumple, pero el botón
+  podría decirlo una vez (Zeigarnik: lo incompleto con los pasos exactos).
+
+### 2.10 Ajustes (`/ajustes`), Mi perfil, Editar perfil, Novedades
+
+**Medido:** 98, 63, 44 y 41 nodos. Capturas [256-23-ajustes-movil](capturas-256/256-23-ajustes-movil.png),
+[completa](capturas-256/256-23-ajustes-movil-completa.png), [escritorio](capturas-256/256-23-ajustes-escritorio.png),
+[256-24-perfil-movil](capturas-256/256-24-perfil-movil.png), [256-27-editar-perfil-movil](capturas-256/256-27-editar-perfil-movil.png).
+
+- **Ajustes cumple región común y proximidad** (grupos con rótulo, tarjetas, aire): es la referencia de agrupación.
+- **H-33 · Cuatro rejillas para el mismo renglón.** `ajustes.module.css:32` (`.fila`), `FormularioCanon.module.css:229`
+  (`.resuelto`), `Ficha.module.css:81` (`.dato`) y `Renglon.module.css` (`.frente`) dibujan «icono | principal /
+  secundario | acción» con columnas 24/22/64 px y aires 12/10/12 distintos; `.palanca` está dos veces
+  (`ajustes.module.css:82`, `FormularioCanon.module.css:324`). Propuesta: un `Renglon` con cuatro pieles (sección 5.2).
+- **Mi perfil:** avatar 160 px con dos círculos de 48 (ajustes, compartir) y una tarjeta violeta de «Completar»;
+  pestañas «Voy a 2 · Sigo 2» con el número en grande. Bien agrupado; el «✓» verde de 48 con sombra repite H-19.
+
+### 2.11 Entrar (`/entrar`)
+
+18 nodos, profundidad 3: la pantalla más simple. Capturas [256-10-entrar-movil](capturas-256/256-10-entrar-movil.png),
+[escritorio](capturas-256/256-10-entrar-escritorio.png), [iPhone con teclado](capturas-256/256-15-ios-entrar-teclado.png).
+En la app de iPhone no aparece «Continuar con Google» (solo Apple y correo): lo decide `src/lib/entrarCon.ts` por
+navegador; se anota para confirmar que es a propósito.
+
+### 2.12 App de iPhone (shell)
+
+Las cinco capturas del simulador (`256-11` a `256-15`) muestran las zonas seguras bien resueltas: la franja de la
+hora, la barra bajo la isla dinámica, la nav sobre el indicador de inicio y, con el teclado abierto en Entrar, la barra
+«Atrás · SMSNSTRS» en su sitio (el problema 1 del doc 48 quedó resuelto con OL-205). La app reproduce H-01, H-08 y
+H-12 tal cual, porque es la misma web. No hay nada que adaptar «a nativo»: lo que hay que arreglar es la web.
+
+### 2.13 Tableta y escritorio (transversal)
+
+- **H-34 · Barra inferior estirada.** 60 px a todo lo ancho con 4 destinos a 320 px entre sí (1280) o 205 (820); la
+  píldora activa de 60×32 flota en celdas enormes. Estándares: en tableta y escritorio el modelo es carril lateral
+  (Material 3 *navigation rail*; iPadOS barra lateral). Propuesta: sección 5.4.
+- **H-35 · Dos anchos incoherentes en la misma sección.** Lugares a 1280 px: la lista en 600 y el mapa a lo ancho; la
+  ficha en 600 con la foto de 600×220. Propuesta: el ancho de contenido crece por plantilla (lista 600–680; mapa +
+  lista lado a lado; ficha a dos columnas desde 1024).
+- **H-36 · Flotantes al centro de la ventana.** «Publicar evento» y «Ver en lista» quedan flotando a mitad de un
+  escritorio de 1280, dentro de la columna, tapando tarjetas. Se resuelve con H-01 y H-13.
+- **H-37 · Cabecera de escritorio de teléfono.** Chip de ciudad y lupa de 40 px en una barra de 1280; la búsqueda
+  podría ser un campo visible. Propuesta: en escritorio la lupa es un campo de 320 px en la cabecera.
+- **H-38 · `--al-centro` sobre `100vw`** (`globals.css:50`). En navegadores con barra de desplazamiento clásica
+  (Windows, Linux, Mac con «siempre»), `100vw` incluye la barra: el gutter calculado se pasa 7 u 8 px por lado y los
+  márgenes negativos de H-24 pueden abrir desplazamiento horizontal. No se pudo reproducir en el Chrome de la Mac
+  (barras superpuestas); queda como riesgo. Se resuelve quitando `100vw` (contenedor con `max-width` y `margin: auto`).
+
+## 3. Inventario del sistema actual
+
+### 3.1 Cifras
+
+| Qué | Cuánto | Nota |
+|---|---|---|
+| Hojas de estilo | 100 (99 `.module.css` + `globals.css`), 8 648 líneas, 1 246 reglas | `admin.module.css` 793 líneas; `HojaDondeEs` 444; `mando` 441; `FormularioCanon` 427; `Ficha` 417 |
+| Tokens en `globals.css` | 50, todos en uso | Faltan: escala de capas (z), radios chico y píldora, alto de control de barra, zonas seguras con nombre, puntos de quiebre, aire de 32 y 40 |
+| Tokens locales (definidos fuera de `globals.css`) | 9 archivos | `--alto-mediana/grande/chica` (Destacados), `--alto-hoja` (Mapa y lugares, dos veces), `--cabecera-animacion` (3 archivos), `--fila1`, `--alto-barra-fija`, `--pos`, `--pulso` |
+| Medidas en píxeles en duro (sin 0, 1 y 2) | 691 | `border-radius: 999px` ×35, `padding: 14px` ×29, `10px` ×23, `gap: 6px` ×17, `grid-template-columns: 24px` ×15, `font-size: 16px` ×12, `border-radius: 10px` ×10, `min-height: 40px` ×9, `width/height: 44px` ×14, `64px` ×14, `40px` ×14… |
+| Colores literales | 68 usos, 42 distintos | Entre ellos el azul petróleo retirado en septiembre, aún en `mando.module.css:227,242,409` (`rgba(15,107,124,…)`); `#0a84ff` y `#1a73e8` (azules de sistema); `#666`, `#999` (letrero); `#fdf3f2` (fondo de error sin token) |
+| Alturas fijas (`height`/`min-height`/`max-height` en px) | 137 | admin 17, Esqueleto 12, FormularioCanon 12, mando 8, ChipFecha 5, Ficha 4, Cabecera 4, ajustes 4… |
+| `z-index` | 44 declaraciones, **17 valores distintos** (1, 2, 3, 4, 5, 9, 10, 11, 20, 21, 30, 40, 50, 55, 60, 70) | Sin escala: la hoja es 40, la capa de «Dónde» 55, la lista flotante 60, el texto largo 70, el visor del cartel 50, la sonda de Pincel 30 igual que la franja de la hora |
+| `position` | 50 `absolute`, 17 `fixed`, 7 `sticky`, 30 `relative` | 5 elementos fijos pueden coincidir en una raíz (barra de hora, nav, flotante, conmutador, volver arriba) |
+| Bloques de declaraciones repetidos (≥ 4 iguales en ≥ 2 reglas) | 35 | Ver 3.3 |
+| Consultas de medios | 14 `prefers-reduced-motion`, 3 `print`, 2 `max-width` (340 y 350 px, parches), 1 `hover` | Ninguna regla responsiva de verdad: un solo diseño para 320 a 1920 px |
+| Componentes | 36 en `ui/`, 51 en `components/` | `ui/Tarjeta.tsx` no lo usa nadie |
+
+### 3.2 Lo que se repite entre pantallas (variantes que se pisan)
+
+**Once botones redondos** (el mismo gesto, once dibujos): lupa y acciones de cabecera 40 con borde
+(`Cabecera.redondo`); ✕ 40 con borde (`Cerrar`); chip de fecha 40 con borde y 4 px invisibles (`ChipFecha.soloIcono`);
+ubicación 48 borde + sombra flotante (`lugares.ubicacion`); volver arriba 48 borde + sombra flotante
+(`Cabecera.volver`); acciones de ficha 56 con sombra (`Ficha.accionIcono`); compartir sobre avatar 48 con sombra
+(`Ficha.compartirFoto`); «+» de renglón y tarjeta 48 con sombra (`BotonRenglon`); ··· de barra 44 plano
+(`Ficha.iconoBarra`); campana y administración 44 planos (`Sesion`); «Estoy aquí» 48 con sombra sin borde
+(`Mapa.ubicame`).
+
+**Siete píldoras:** flotante 48 primario (`Publicar`); Entrar 40 primario (`Sesion.entrar`); Atrás 40 secundario;
+«Ver en lista» 48 secundario con sombra (`verOtraVista`); chips 44 y 40 (`Chip`, `.deContexto`); «Probar con otra
+foto» 36 (`rehacerCartel`); sellos 24 (`van`, `reciente`, `interesa`, `estado`).
+
+**Seis rectangulares:** `Boton` 48 (radio 12, ancho completo); `Ficha.primaria` 48; `Ficha.secundario` 48;
+`AgendaInicio.accion` 48 (borde en tinta); `publicadoBoton` 44 (radio 10, borde en tinta); `menuItem` 48 (sin borde).
+
+**Cuatro renglones** (3.1, H-33) y **dos tarjetas de lista** (`ui/Tarjeta` sin uso y `Renglon`). **Radios:** 999, 50 %,
+16, 12, 10, 8 y 4 px, con tokens solo para 12 y 16.
+
+### 3.3 Duplicados exactos (mismas declaraciones, archivos distintos)
+
+- `HojaDondeEs.module.css` ≡ `HojaDondeLugar.module.css`: once bloques iguales (`.resumen` 15 declaraciones, `.estoyAqui`
+  14, `.campo` 13, `.avisoUbicacion` 12, `.atras/.listo` 11, `.marcaPrivado`≡`.marcaExiste` 10, `.cabecera` 8,
+  `.cabecera h2` 7, `.capa`, `.cuerpo`, `.campo input` 6). Son la misma hoja, dos veces (444 y 207 líneas).
+- `Mapa.module.css` ≡ `MapaDondeEs.module.css`: `.aviso` 12, `.yo` 7, `.yo::after` 7.
+- `.palanca` y `.palanca::after`: `ajustes` y `FormularioCanon` (19 declaraciones).
+- `.soloLector` ×3 (`SelectorEnlaces`, `ChipFecha`, `SelectorFecha`); `.icono` ×3 (`borrado`, `Bloquear`, `Borrar`);
+  `.tarjeta` ×4 (`admin`, `ajustes`, `bloqueados`, `Sugerencia.lista`); `Desbloquear.boton` ≡ `Ficha.secundario`;
+  `FormularioArtista.notaExiste/nombreRecortado` ≡ `FormularioLugar`; `Bloquear.confirmar/cancelar` ≡ `Borrar`.
+- `Esqueleto.module.css` copia a mano las medidas de `Renglon` (64), `Destacados` (132, 248, 104, 220 px) y las fichas:
+  dos fuentes de verdad que ya se separaron una vez (OL-226 cambió la tarjeta sola y el esqueleto no).
+
+### 3.4 Reglas que deshacen otras
+
+`ChipFecha .conFecha.conFecha` (clase repetida para pesar más que `Chip`), `AgendaInicio` con el mismo truco antes,
+`Destacados .uno.redondas` (corregido en OL-226 con `:not()`), `.cartelSinCupo`/`.cartelPedida`/`.cartelLeido` que
+devuelven a `.cartel` sus valores por defecto, `Cabecera .acciones:empty { padding: 0 }`, `FormularioCanon
+.accionIcono` con un `grid-area` que «no aplica dentro de `.opciones`». Cada una es una variante que compite con la
+base en vez de partir de ella.
+
+## 4. Lectura transversal por leyes
+
+- **Región común.** Bien en Ajustes, en las tarjetas del canon de formularios y en la barra de acciones de la ficha.
+  Mal donde las acciones se reparten a los extremos (H-20) y donde un flotante invade la región de la lista (H-01,
+  H-08, H-15).
+- **Proximidad.** Los grupos de Inicio están claros (32 px entre carriles, 16 dentro); en la ficha, 68 px entre
+  acciones hermanas las separa más que lo que las separa del mapa (H-20); en Agenda, cuatro líneas de meta a 2 px
+  se leen como un bloque de texto, no como datos (H-09).
+- **Consistencia y estándares.** Once círculos, siete píldoras, cuatro renglones, dos títulos de sección, dos cabeceras
+  con dos comportamientos, Compartir en dos sitios (3.2, H-04, H-10, H-27). Frente a iOS y Android: la barra de
+  pestañas abajo es correcta en teléfono; en tableta y escritorio ninguna de las dos plataformas la estira (H-34);
+  la acción de crear vive en la barra (iOS) o en un botón flotante que **no** tapa acciones de fila (Android reserva
+  el borde derecho para él y quita los accionables de esa columna).
+- **Fitts.** 5 controles de cabecera a 40 px (H-05), «ver» de 34 px y «más» de 24 (H-26), enlaces legales de 18 px de
+  alto; objetivos tapados por el flotante (H-01, H-08, H-15); acciones opuestas «Me interesa / Voy» con 18 px de aire
+  (cumple los 14 mínimos).
+- **Tesler.** El sistema ya absorbe mucho (fecha sugerida, tipo deducido, ciudad por contexto). Le carga a la persona
+  la dirección postal en la lista (H-09), tres sellos por cartel (H-02), leer un carril de enlaces que se corta (H-25) y
+  descubrir que la tira de tipos sigue a la derecha (H-11).
+- **Modelos mentales.** Agenda = lista por día con acción rápida (cumple). Mapa = ver y tocar puntos, cambiar de vista
+  arriba (H-13). Ficha = foto, título, datos, acciones, más (cumple; H-22 en la foto). Alta = un campo y renglones
+  resueltos (cumple; H-29). Directorio = letras (cumple; H-16 lo mezcla con carril). Escritorio = barra lateral y dos
+  columnas (H-34, H-35).
+- **Aesthetic-Usability.** Lo que más resta: carriles grises (H-03), bloques grises de 220 px (H-22), tres capas sobre
+  el cartel (H-02), veinte círculos con sombra por pantalla (H-19), controles de tamaños distintos en la misma barra.
+- **Jobs to be done** por pantalla: en la sección 2. El que hoy peor se sirve es «llegar a un lugar y saber si hay algo
+  ahora» en el mapa (etiquetas encimadas, controles encima) y «ver de un vistazo qué hay hoy» en Agenda (3 eventos por
+  pantalla).
+- **UX invisible.** El alta cumple (deduce, resume, abre selectores). Donde el sistema muestra dos cosas para una
+  decisión: mensaje doble (H-29), dos accionables superpuestos (H-01), dos títulos para lo mismo (H-10).
+
+## 5. Propuesta (primera versión, para discutir con el founder)
+
+Principio: **las mismas piezas, las mismas variables y las mismas reglas en teléfono, tableta y escritorio, y en web,
+iPhone y Android; solo cambia dónde vive cada pieza.** Nada de componentes «nativos» ni de versiones por plataforma
+(decisión del founder del 2026-09-25). Estética como criterio máximo: menos objetos por pantalla, un solo peso para
+cada tipo de control, aire por rejilla.
+
+### 5.1 Variables canónicas (`globals.css`)
+
+| Grupo | Tokens | Sustituye a |
+|---|---|---|
+| Aire | `--espacio-1…8` = 4, 8, 12, 16, 20, 24, **32, 40** | los `32px` literales (Destacados), `14px`, `10px`, `6px` (se normalizan a 16/12/8/4) |
+| Radios | `--radio-chico 8`, `--radio 12`, `--radio-grande 16`, `--radio-pildora 999px`, `--radio-redondo 50%` | 35 `999px`, 10 `10px`, 7 `8px` literales |
+| Controles | `--control 44` (todo lo que se toca en barras y cabeceras), `--toque 48` (botones y campos), `--boton-icono 48`, `--boton-icono-grande 56` (solo acciones de ficha), `--toque-min 44` (se queda) | los 40 px de H-05 y los once círculos |
+| Barras | `--alto-barra 56` (raíz y ficha; 64 en escritorio), `--alto-cabecera-compacta 44`, `--alto-nav 60`, `--alto-barra-acciones 72`, `--ancho-carril-nav 88` (tableta y escritorio) | `96px` de `.pagina`, `72px`, `73px` |
+| Zonas seguras | `--tope` (se queda), `--piso: env(safe-area-inset-bottom)`, `--lado-izq`, `--lado-der` | los 16 `env(safe-area-inset-bottom, 0px)` sueltos |
+| Capas | `--z-pegajoso 10`, `--z-flotante 20`, `--z-barra 30`, `--z-hoja 40`, `--z-capa 50`, `--z-encima 60` | 44 `z-index` en 17 valores; ningún `z-index` fuera de un token |
+| Color | los 17 de hoy + `--error-suave #fdf3f2`, `--ok-suave`, `--sistema-azul` (ubicación) | `#fdf3f2`, `#1a73e8`, `#0a84ff`, `rgba(15,107,124,…)` |
+| Letra | la escala de hoy + `--letra-2xs 0.75rem` (nav, sellos) | `0.75rem`, `13px` ×6 |
+| Anchos | `--columna 600` (lectura), `--columna-ancha 960` (escritorio), `--panel 400` (lista junto al mapa) | `--al-centro` sobre `100vw` (H-38) |
+| Puntos de quiebre (en `@media`, con comentario al token) | teléfono < 600 · teléfono grande / apaisado 600–767 · tableta 768–1023 · escritorio ≥ 1024 | los parches de 340/350 px |
+| Tarjetas y renglones | `--tarjeta-mediana 220/132`, `--tarjeta-grande 165/248`, `--tarjeta-chica 104`, `--foto-renglon 56`, `--foto-ficha 5/3` | los números copiados en `Esqueleto` |
+
+### 5.2 Biblioteca de componentes canónicos (qué se unifica, qué se retira)
+
+| Componente | Variantes | Estados | Sustituye / retira |
+|---|---|---|---|
+| `Boton` | `primario`, `secundario`, `texto`, `peligro`; forma `recta` o `pildora`; alto `control` (44) o `toque` (48); ancho `contenido` o `completo` | reposo, pulsado, foco, deshabilitado **con motivo**, en camino | `Ficha.primaria/.secundario`, `AgendaInicio.accion`, `publicadoBoton`, `Sesion.entrar`, `rehacerCartel`, `verOtraVista`, `Publicar` |
+| `BotonIcono` | tamaño `control` 44 (barras), `accion` 48 (renglón, tarjeta, mapa), `grande` 56 (ficha); relieve `plano`, `contorno`, `elevado` (solo sobre fotos o mapa) | los mismos + `decidido` (verde) | los once círculos de 3.2, `Atras` (chevron + texto sigue siendo `Boton` secundario píldora), `Cerrar` |
+| `Chip` | `filtro` (botón o enlace), `contexto` (ciudad, fecha), `estado` (Vas, Sigues, Te interesa), `sello` (sobre foto: vidrio) | reposo, activo, en camino, deshabilitado | `Destacados .van/.reciente/.interesa`, `Renglon .estado/.sello`, `ChipFecha` (queda como composición) |
+| `Pestanas` | `repartidas`, `desplazables` (asoman) | activa, en camino | igual, con la regla de H-11 |
+| `Barra` | `raiz` (logotipo, «+», sesión), `interior` (Atrás, logotipo, ···), `tarea` (logotipo, ✕) | pegajosa siempre; compacta en raíz | las tres de hoy; sin márgenes negativos |
+| `Cabecera` | contexto + acciones + filtros (+ tira de letras) | compacta / completa; búsqueda abierta | igual, una sola pieza pegajosa (H-04, H-18) |
+| `Navegacion` | `abajo` (teléfono: 4 destinos), `lateral` (tableta y escritorio: 4 destinos + «+» + sesión) | activo, con punto | `NavInferior`; el flotante se retira |
+| `Renglon` | `lista` (foto 56, título, meta ≤ 2 líneas, acción), `dato` (icono, principal, secundario, acción), `ajuste` (icono, etiqueta, detalle, valor/palanca/chevron), `resuelto` (icono, clave/valor, acción, cuerpo) | reposo, pulsado, elegido, pendiente, abierto, apagado | `.frente`, `.dato`, `.fila`, `.resuelto`; `Esqueleto.renglon` se deriva de sus tokens |
+| `Tarjeta` (de carril) | `grande`, `mediana`, `chica` (redonda), `sola` | con sello, con acción, decidida | `Destacados` (se queda como carril) + `CarrilEsqueleto` derivado; `ui/Tarjeta.tsx` (sin uso) se borra |
+| `Palanca`, `SoloLector`, `IconoEnCirculo` | — | — | las copias de 3.3 |
+| `HojaDonde` | `evento`, `lugar` | — | `HojaDondeEs` + `HojaDondeLugar`; `MapaDondeEs` entra en `Mapa` como modo `elegir` |
+| `Ficha` (plantilla) | cabecera (foto 5:3 o avatar), título, `Renglon dato` ×n, acciones (≤ 4 + Más), cuerpo, pie, barra de acciones | — | `Ficha.module.css` reordenado; `Cartel` con caja 5:3 |
+| Se conservan tal cual | `Hoja`, `Aviso`, `Campo`, `CampoLargo`, `Buscador`, `SelectorFecha`, `Esqueleto` (derivado), `Cargando`, `Logotipo`, `ListaFlotante`, `Sugerencia` | | |
+
+### 5.3 Plantillas de pantalla (rejillas con áreas, sin envoltorios)
+
+Regla común: **la página no lleva gutter; cada bloque pone el suyo** con una clase `.columna` (`padding-inline:
+var(--gutter)`) o `.a-lo-ancho`. Desaparecen los márgenes negativos (H-24, H-31, H-06, H-18). Los únicos elementos
+fijos son la navegación, la barra de acciones de la ficha y la hoja; ningún flotante sobre listas.
+
+- **Raíz** (Inicio, Agenda, Lugares, Artistas): `main` con `grid-template-rows: auto 1fr auto` y áreas `cabecera`,
+  `contenido`, `nav`. La cabecera es una sola pieza pegajosa (barra + contexto + filtros) que se compacta a 44. El mapa
+  llena `contenido` (H-14). En tableta y escritorio el `nav` pasa a la columna izquierda: `grid-template-columns:
+  var(--ancho-carril-nav) 1fr`.
+- **Lista**: la raíz con `contenido` = títulos de grupo pegajosos bajo la cabecera + `Renglon lista`. Escritorio:
+  columna de 680 px; tableta: 600 centrada en lo que queda.
+- **Ficha**: `barra` (interior, pegajosa), `cabecera-ficha`, `datos`, `acciones`, `cuerpo`, `pie`, `barra-acciones`
+  (fija abajo, alto `--alto-barra-acciones`, y `contenido` reserva exactamente ese alto). Desde 1024 px: dos columnas
+  (foto y datos a la izquierda 5/12; acciones, mapa y quién va a la derecha 7/12) dentro de `--columna-ancha`.
+- **Alta**: `barra tarea`, `titulo`, `campo`, `renglones resueltos`, `boton` (viaja sobre el teclado). Escritorio:
+  600 centrada, con pie visible (H-32).
+- **Hoja**: portal; teléfono desde abajo; tableta y escritorio centrada a 600 (como hoy).
+
+### 5.4 Reglas responsivas y por plataforma
+
+| Ancho | Navegación | Contenido | Carriles | Mapa | Ficha |
+|---|---|---|---|---|---|
+| Teléfono < 600 | abajo, 4 destinos; «+» en la barra | una columna, gutter 20 | a lo ancho, asoman | pantalla completa entre cabecera y nav | una columna, barra de acciones fija |
+| Teléfono grande / apaisado 600–767 | abajo | columna 600 centrada | **simétricos** (sangran a los dos lados) | igual | igual |
+| Tableta 768–1023 | **lateral** de 88 px con iconos y etiquetas | columna 600 centrada en lo que queda | dos tarjetas más por fila | mapa + panel de lista de 400 a la izquierda | una columna de 680 |
+| Escritorio ≥ 1024 | lateral con «+» y sesión | hasta 960 | tarjetas de la misma medida, más por fila | mapa + panel 400 | dos columnas |
+
+Por plataforma, sin perder consistencia: **web** (ratón: hover en renglones y tarjetas; foco visible; campo de búsqueda
+visible en escritorio); **iPhone** (Capacitor: zonas seguras por `--tope/--piso`, gesto de atrás nativo ya resuelto, sin
+menú de copiar, sin hover); **Android** (TWA: el botón físico de atrás es el historial, que ya lleva la marca propia;
+color de la barra de estado por `themeColor`; el «+» arriba evita el choque con el gesto de atrás del borde inferior).
+Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) o de tamaño (columna).
+
+### 5.5 Reparto de acciones y sellos (las reglas que cierran los defectos)
+
+- Acciones de ficha: alineadas a la izquierda, aire 16, hasta 4 visibles a 48 px (5 caben a 390 con aire 12); desde
+  6, «Más» abre una hoja. Nunca carril (H-20, H-25).
+- Un sello sobre la foto como máximo; el «+» sin sombra sobre fondo hueso (H-02, H-19).
+- Foto de ficha en caja 5:3 con el cartel entero; sin foto, sin caja (H-22).
+- Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
+- Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
+
+## 6. Prototipo (pendiente de la lectura del founder)
+
+Se hará en `docs/rediseno/prototipos/restructura-ui.html` (teléfono 390×844) y `restructura-ui-escritorio.html`
+(1280×800 con carril lateral), con las pantallas reales y datos verosímiles: Inicio, Agenda, Lugares con mapa (imagen
+del mapa real con las etiquetas resueltas), Artistas, ficha de evento, ficha de lugar (cinco enlaces), alta de evento y
+Ajustes; con las variables de 5.1 en un solo `:root`, sin envoltorios, comprobado en el navegador integrado y con
+capturas reales en `capturas-256/`. Primero el founder corrige la propuesta; el prototipo no se dibuja dos veces.
+
+## 7. Plan de implementación (primera versión; se cierra tras el prototipo firmado)
+
+Cada pieza la hace un operador nuevo (Sonnet) en su rama, con su número de `siguiente-bitacora.sh`, capturas reales a
+390×844 y 1280×800 del respaldo local, medición del DOM (el script de esta auditoría se deja en `scripts/ops/`) y sin
+council. Orden por dependencias:
+
+| # | Pieza | Toca | Tamaño | Prueba que la cierra |
+|---|---|---|---|---|
+| P1 | Tokens y utilidades: 5.1 completo, `.columna`/`.a-lo-ancho`, quitar `100vw` | `globals.css` | M | inventario: 0 `z-index` fuera de token, 0 `100vw`; build verde; nada cambia a la vista (capturas iguales) |
+| P2 | `BotonIcono` y `Boton` unificados | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
+| P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
+| P4 | Cabecera única pegajosa y compacta; «+» en la barra; se retira el flotante y el conmutador flotante (segmento Mapa · Lista) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
+| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio, Agenda, Lugares, Artistas; renglón de dos líneas | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
+| P6 | Plantilla ficha: acciones ≤ 4 + Más, foto 5:3, par Me interesa/Voy, Compartir en la fila, tokens de barra | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista | L | H-20 a H-28 |
+| P7 | Navegación lateral y reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
+| P8 | Mapa: un símbolo por lugar, prioridad y anclaje variable | `Mapa.tsx` (capas) | M | H-12: 0 etiquetas superpuestas en el centro a zoom por defecto (captura) |
+| P9 | Altas: `HojaDonde` única, mensaje único, frase del alta de lugar, botón que dice qué falta | `HojaDondeEs`, `HojaDondeLugar`, `FormularioEvento`, `FormularioLugar`, `FormularioCanon` | M | H-29 a H-32 |
+| P10 | Chips y sellos unificados; tarjeta sin foto compacta; un sello por foto | `Chip`, `Destacados`, `Renglon` | M | H-02, H-03, H-19 |
+| P11 | Protección: script de inventario y medición como pruebas (sección 9) | `scripts/ops/`, `package.json` (scripts), CI | M | la CI falla con un `z-index` literal, un margen negativo, un desborde o un toque < 44 |
+| P12 | Retiros (sección 10) y limpieza de los duplicados que queden | varios | S | inventario: bloques duplicados 35 → 0 |
+
+## 8. Lista consolidada de defectos silenciosos (con archivo y línea)
+
+| # | Defecto | Dónde | Medida |
+|---|---|---|---|
+| H-01/08/15 | El flotante tapa renglones y «+» | `Publicar.module.css:2-5`, `lugares.module.css:85` | Agenda: 1 renglón tapado en reposo; Lugares lista: 2 renglones y 2 botones; Inicio: 2 tarjetas (+ el «+» en iPhone) |
+| H-17 | Texto bajo el botón «+» | `Renglon.module.css:101` (`white-space: nowrap`) | 16 renglones desbordan 4–43 px; 2 pasan 27–31 px bajo el botón |
+| H-25 | Quinto enlace cortado | `lib/ficha.ts` (carril desde 5), `Ficha.module.css:170` | 52 % visible, 31 px fuera |
+| H-12 | Etiquetas del mapa encimadas | `Mapa.tsx` (capas de nombre y día separadas) | captura 256-03 y 256-13 |
+| H-06 | Chevron con margen negativo | `Destacados.module.css:83` | −10 px, 5 veces por pantalla |
+| H-18 | Tira de letras con margen negativo | `TiraLetras.module.css` | −44 px |
+| H-24 | Barra y acciones escapan del gutter | `Barra.module.css:32`, `Ficha.module.css:144-150` | −20 px en teléfono, −340 en escritorio |
+| H-31 | Márgenes negativos para corregir `gap` | `FormularioCanon.module.css:193`, `ajustes.module.css:13` | −8 y −12 px |
+| H-14 | Alto del mapa acoplado a una variable viva | `lugares.module.css:13` | `calc(100dvh − … − var(--alto-cabecera) …)` |
+| H-21/22 | Números fijos donde va un token | `Ficha.module.css:12` (96), `MapaFicha.module.css:5` (170), `Cartel.module.css:6` (220) | |
+| H-38 | `100vw` en el gutter | `globals.css:50` | riesgo con barra de desplazamiento clásica |
+| 3.1 | Azul petróleo retirado, aún en Pincel | `mando.module.css:227,242,409` | 3 sombras |
+| 3.3 | Hoja «¿Dónde?» duplicada | `HojaDondeEs.module.css` / `HojaDondeLugar.module.css` | 11 bloques iguales |
+| 3.3 | Esqueleto con medidas copiadas | `Esqueleto.module.css:33,65,78,84,99` | ya se desalineó una vez (OL-226) |
+| H-05 | Controles de barra a 40 px | `Sesion:4`, `Chip:82`, `ChipFecha:10`, `Cabecera:56`, `Atras:7`, `Cerrar:6` | 40 < 44 |
+| 3.1 | 44 `z-index` en 17 valores | todos los módulos | sin escala |
+
+## 9. Cómo se protege el sistema después
+
+1. **Inventario como prueba** (`scripts/ops/inventario-css.mjs`, el de esta auditoría): falla la CI si aparece un
+   `z-index` que no sea un token, un color literal fuera de la lista blanca (logos de Apple y Google, azul de sistema),
+   `100vw`, un margen negativo fuera de una clase permitida, o si el número de bloques duplicados o de medidas en duro
+   sube respecto al último aceptado (un archivo `inventario.aceptado.json` con las cifras).
+2. **Medición del DOM como prueba** (`scripts/ops/medir-pantallas.mjs`, con el respaldo local y Chrome): por plantilla,
+   un presupuesto de nodos y profundidad, 0 hijos fuera de la caja de su padre (salvo lo declarado: sellos sobre foto),
+   0 desplazamiento horizontal, 0 accionables tapados por un elemento fijo en reposo, 0 controles menores de 44 px
+   fuera de una lista de excepciones (enlaces en texto), a 320, 390, 820 y 1280 px.
+3. **Reglas de revisión** que ya existen (MEMORIA_GESTOR, 2026-09-21 y 24) se vuelven mecánicas: la CI corre las dos
+   pruebas en cada PR y el gestor solo abre las capturas.
+4. **Una sola fuente de tamaños**: `Esqueleto` y `CarrilEsqueleto` leen los mismos tokens que la pieza real (P3, P10).
+
+## 10. Qué se retira
+
+`ui/Tarjeta.tsx` y su CSS (sin uso); el flotante `Publicar` y el conmutador `verOtraVista` (si el founder acepta el
+«+» en la barra y el segmento Mapa · Lista); `HojaDondeLugar` y `MapaDondeEs` (absorbidos); `.palanca`, `.soloLector`,
+`.icono`, `.tarjeta` duplicados; `AgendaInicio.accion`, `publicadoBoton`, `Sesion.entrar` como estilos propios (pasan a
+`Boton`); `--al-centro`; los parches `@media (max-width: 340px/350px)`; los tokens locales `--alto-mediana/grande/
+chica` y `--alto-hoja` duplicado; el carril semanal de la lista de Lugares; la frase del alta de lugar; las clases
+globales `.raiz` y `.pagina` (pasan a plantillas con áreas).
+
+## 11. Lo que necesito que el founder decida (cuatro cosas)
+
+1. **«+» de publicar en la barra superior** (y en el carril lateral en tableta y escritorio), retirando el botón
+   flotante de las cuatro raíces. Es lo que cierra H-01, H-08, H-15 y H-36 de golpe.
+2. **Navegación lateral en tableta y escritorio**, con la barra inferior solo en teléfono.
+3. **«Mapa · Lista» como segmento en la cabecera** de Lugares (el founder lo sacó de la cabecera el 2026-09-24 para que
+   flotara; la medida de H-13 y H-15 es el motivo para volverlo a subir).
+4. **Botón «+» de renglón sin sombra** sobre fondo hueso (se queda a la vista, solo pesa menos).
+
+Con esas cuatro respuestas se dibuja el prototipo (sección 6) y se cierra el plan (sección 7).
