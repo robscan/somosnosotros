@@ -47,7 +47,7 @@ ul { list-style: none; }
   --sombra: 0 2px 12px rgba(0,0,0,.08); --sombra-panel: 0 -2px 16px rgba(0,0,0,.1); --sombra-flotante: 0 6px 20px rgba(0,0,0,.22);
   --velo-titulo: linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.44) 55%, rgba(0,0,0,0));
   --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px; --espacio-8: 40px;
-  --radio-chico: 8px; --radio: 12px; --radio-grande: 16px; --radio-pildora: 999px;
+  --radio-chico: 8px; --radio: 12px; --radio-grande: 16px; --radio-hoja: 24px; --radio-pildora: 999px;
   --control: 44px; --toque: 48px; --boton-icono: 48px; --boton-icono-grande: 56px; --toque-min: 44px;
   --alto-barra: 56px; --alto-filtros: 48px; --alto-nav: 60px; --alto-modos: 56px; --ancho-carril-nav: 88px;
   --tope: 0px; --piso: 0px; --nav-abajo: calc(var(--alto-nav) + var(--piso));
@@ -289,10 +289,10 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .lienzo .persona .yo { fill: var(--sistema-azul); stroke: #fff; stroke-width: 2.5px; }
 .ubicacion { position: absolute; right: var(--gutter); top: var(--espacio-3); z-index: 2; color: var(--texto); }
 .atribucion { position: absolute; left: var(--espacio-2); top: calc(var(--espacio-3) + 14px); font-size: 10px; color: var(--texto-suave); opacity: .8; }
-.hoja-lugares { grid-row: 2; grid-column: 1; align-self: end; position: relative; z-index: var(--z-flotante); display: grid; grid-template-rows: auto auto minmax(0, 1fr); height: var(--hoja-asoma); background: var(--fondo); border-radius: var(--radio-grande) var(--radio-grande) 0 0; box-shadow: var(--sombra-panel); transition: height 250ms var(--curva); touch-action: none; }
+.hoja-lugares { grid-row: 2; grid-column: 1; align-self: end; position: relative; z-index: var(--z-flotante); display: grid; grid-template-rows: auto auto minmax(0, 1fr); height: var(--hoja-asoma); background: var(--fondo); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; box-shadow: var(--sombra-panel); transition: height 250ms var(--curva); touch-action: none; }
 .pantalla[data-id="lugares"][data-hoja-estado="media"] .hoja-lugares { height: 56%; }
 /* Con la ficha dentro, la altura media es la del asa, la portada 16:9 y la pastilla: nada queda tapado en reposo */
-.pantalla[data-id="lugares"][data-ficha][data-hoja-estado="media"] .hoja-lugares { height: calc((100cqw - 24px) * 9 / 16 + 80px); }
+.pantalla[data-id="lugares"][data-ficha][data-hoja-estado="media"] .hoja-lugares { height: calc((100cqw - 24px) * 2 / 3 + 80px); }
 .pantalla[data-id="lugares"][data-hoja-estado="llena"] .hoja-lugares { height: 100%; border-radius: 0; }
 .hoja-lugares.arrastrando { transition: none; }
 .asa { width: 100%; height: 28px; border: 0; background: none; cursor: grab; }
@@ -305,10 +305,10 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .ficha-hoja::-webkit-scrollbar { display: none; }
 /* Cabecera de la hoja: ocupa una fila de alto 0 y se pega arriba; en reposo es transparente sobre el héroe (asa, menú y Cerrar elevados);
    al desplazar (data-compacta) toma fondo blanco, muestra el título y los botones dejan de flotar. Nada de esto sale de la hoja. */
-.cabecera-hoja { grid-area: cabecera; align-self: start; position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-rows: 28px var(--boton-icono); grid-template-areas: "asa asa asa" "titulo menu cerrar"; align-items: center; column-gap: var(--espacio-2); width: 100%; padding: 0 var(--espacio-3) var(--espacio-2) var(--gutter); transition: background-color 150ms, box-shadow 150ms; }
-.cabecera-hoja > .asa { grid-area: asa; }
+.cabecera-hoja { grid-area: cabecera; align-self: start; position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: 20px var(--boton-icono); grid-template-areas: "asa asa asa" "cerrar titulo menu"; align-items: center; column-gap: var(--espacio-2); width: 100%; padding: 0 var(--gutter) var(--espacio-2); transition: background-color 150ms, box-shadow 150ms; }
+.cabecera-hoja > .asa { grid-area: asa; align-self: start; }
 .cabecera-hoja > .asa::before { background: rgba(255,255,255,.92); box-shadow: 0 0 3px rgba(0,0,0,.35); }
-.cabecera-hoja > .titulo-hoja { grid-area: titulo; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); opacity: 0; transition: opacity 150ms; }
+.cabecera-hoja > .titulo-hoja { grid-area: titulo; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); opacity: 0; transition: opacity 150ms; }
 .cabecera-hoja > [aria-label="Más opciones"] { grid-area: menu; color: var(--texto); }
 .cabecera-hoja > [data-cerrar-ficha] { grid-area: cerrar; color: var(--texto); }
 .ficha-hoja[data-compacta] > .cabecera-hoja { background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
@@ -329,7 +329,7 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .portada > .cartel { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; view-transition-name: cartel; }
 .portada > .sn { position: absolute; inset: 0; background-size: 30%; }
 .titulo-ficha { align-self: end; z-index: 1; display: grid; gap: var(--espacio-2); margin: 0; padding: var(--espacio-8) var(--gutter) var(--espacio-4); background: var(--velo-titulo); color: #fff; font-size: var(--letra-2xl); pointer-events: none; }
-.titulo-ficha > .tipo { justify-self: start; padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); color: var(--texto); font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-texto); letter-spacing: .02em; text-transform: uppercase; }
+.titulo-ficha > .tipo { order: -1; justify-self: start; padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); color: var(--primario); font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-texto); letter-spacing: .02em; text-transform: uppercase; }
 .app[data-titulo="barra"] .titulo-ficha { display: none; }
 .pantalla.ficha > .perfil-cabecera { margin-top: var(--espacio-5); }
 .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); margin-top: var(--espacio-4); }
@@ -362,8 +362,9 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 /* El aviso sube por encima de las acciones flotantes cuando hay ficha a la vista */
 .app:has(> .pantalla.ficha:not([hidden])) > .toast, .app:has(> .pantalla[data-id="lugares"][data-ficha]:not([hidden])) > .toast { bottom: calc(var(--nav-abajo) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }
 .app:has(> .pantalla.ficha:not([hidden])) > .toast { bottom: calc(var(--piso) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }
-/* Dentro de la hoja la portada es 16:9: a media altura se ven título, etiqueta y el arranque de los KPI sin que la acción flotante los tape */
-.ficha-hoja > .portada { aspect-ratio: 16 / 9; }
+/* Dentro de la hoja la portada es 3:2 (el founder la subió de 16:9 en el lienzo); a media altura se ven título, etiqueta y el arranque de los KPI */
+.ficha-hoja > .portada { aspect-ratio: 3 / 2; }
+.ficha-hoja > .titulo-ficha { font-size: var(--letra-xl); }
 .pantalla.ficha { padding-bottom: var(--espacio-4); }
 .ficha-hoja > .flotantes { bottom: var(--espacio-4); }
 .ficha-hoja { padding-bottom: var(--espacio-4); }
@@ -397,7 +398,7 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
    ========================================================================== */
 .hoja-fondo { position: absolute; inset: 0; z-index: var(--z-hoja); display: grid; align-items: end; background: rgba(0,0,0,.32); }
 .hoja-fondo[hidden] { display: none; }
-.hoja { position: relative; display: grid; gap: var(--espacio-3); justify-self: center; width: 100%; max-width: var(--columna); max-height: calc(100% - 48px); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-4) + var(--piso)); border-radius: var(--radio-grande) var(--radio-grande) 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); overflow-y: auto; animation: subir 250ms var(--curva); }
+.hoja { position: relative; display: grid; gap: var(--espacio-3); justify-self: center; width: 100%; max-width: var(--columna); max-height: calc(100% - 48px); padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-4) + var(--piso)); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; background: var(--fondo); box-shadow: var(--sombra-panel); overflow-y: auto; animation: subir 250ms var(--curva); }
 .hoja::before { content: ""; display: block; width: 36px; height: 4px; margin: 0 auto; border-radius: 2px; background: #d9d9d9; }
 .hoja > h3 { padding-right: var(--control); font-size: var(--letra-xl); }
 .hoja > h4 { margin-top: var(--espacio-2); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-variation-settings: var(--ancho-texto); }
@@ -455,11 +456,12 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   .pantalla[data-id="lugares"] .hoja-lugares, .pantalla[data-id="lugares"][data-hoja-estado] .hoja-lugares { grid-area: hoja; align-self: stretch; height: auto; min-height: 0; border-radius: 0; box-shadow: none; border-right: 1px solid var(--borde); background: var(--fondo-contenido); }
   .hoja-lugares > .asa { display: none; }
   .cabecera-hoja { grid-template-rows: var(--espacio-3) var(--boton-icono); }
+  .cabecera-hoja > .asa { height: var(--espacio-3); }
   .cabecera-hoja > .asa { visibility: hidden; }
   .hoja-lugares > .resumen { padding: var(--espacio-3) var(--espacio-5) var(--espacio-2); font-size: var(--letra-lg); }
   .hoja-lugares > .lista.panel > .renglon.lista { padding-inline: var(--espacio-5); }
   .toast { left: calc(var(--ancho-carril-nav) + var(--gutter)); right: auto; width: 420px; bottom: var(--espacio-6); }
-  .hoja { align-self: center; border-radius: var(--radio-grande); padding-bottom: var(--espacio-4); animation: fundir 200ms var(--curva); }
+  .hoja { align-self: center; border-radius: var(--radio-hoja); padding-bottom: var(--espacio-4); animation: fundir 200ms var(--curva); }
   .hoja-fondo { align-items: center; }
 }
 @container app (min-width: 1048px) {
@@ -1123,7 +1125,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   // La hoja de Lugares se arrastra desde el asa o el resumen y suelta en el estado más cercano (alturas relativas a la fila del mapa).
   let arr = null;
   const zoom = () => parseFloat(aparato.style.zoom || "1");
-  const alturaEstado = (estado) => { const total = lugaresP.querySelector(".mapa").getBoundingClientRect().height / zoom(); const ancho = aparato.getBoundingClientRect().width / zoom() - 24; return { asoma: 176, media: lugaresP.dataset.ficha ? ancho * 9 / 16 + 80 : total * 0.56, llena: total }[estado]; };
+  const alturaEstado = (estado) => { const total = lugaresP.querySelector(".mapa").getBoundingClientRect().height / zoom(); const ancho = aparato.getBoundingClientRect().width / zoom() - 24; return { asoma: 176, media: lugaresP.dataset.ficha ? ancho * 2 / 3 + 80 : total * 0.56, llena: total }[estado]; };
   hojaL.addEventListener("pointerdown", (e) => {
     if (!e.target.closest(".asa, .resumen")) return;
     arr = { y0: e.clientY, h0: hojaL.getBoundingClientRect().height / zoom(), movido: false };

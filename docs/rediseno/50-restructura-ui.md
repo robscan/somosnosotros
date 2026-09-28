@@ -846,6 +846,11 @@ Lo que el founder confirma o corrige al probar la v3:
     suya el mismo día. **Confirmado en el lienzo** («esta es la opción que me gusta, héroe con todo integrado»): la
     hoja con el héroe y el título dentro de la imagen es la definitiva. Queda por confirmar que la hoja con la lista
     (sin ficha) no necesita Cerrar: el asa la baja.
+34. **La hoja de lugar como la editó el founder en el lienzo** («observa que he modificado: redondeado de sheet, posición
+    de accionables X y ⋯, posición de chips, tamaño y posición de título»): radio de 24 px en todas las hojas, héroe
+    3:2 en la hoja, Cerrar arriba a la izquierda y el menú arriba a la derecha sobre la imagen, título de 19 px dentro
+    de la imagen con la etiqueta (MUSEO, violeta sobre blanco) encima del título. Aplicado en el prototipo; la ficha a
+    pantalla completa toma la etiqueta encima del título y conserva el título de 26 px sobre el héroe 4:3 (confirmar).
 33. **Los KPI abrazan su contenido** («no logro disminuir el alto, debe ser hug al contenido, deja mucho espacio
     abajo», en el lienzo): fuera el alto mínimo de 84 px; los tres siguen del mismo alto porque la rejilla estira cada
     tarjeta a la fila. Aplicado en el prototipo y en el lienzo.

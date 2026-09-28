@@ -571,7 +571,11 @@ El founder comentó en el lienzo (dos hilos enviados a Claude): «esta es la opc
 integrado» sobre la hoja de lugar A (queda como decisión: doc 50 § 11, punto 31) y, sobre un KPI, «no logro
 disminuir el alto aquí, debe ser hug al contenido, deja mucho espacio abajo»: los KPI pierden el alto mínimo de 84 px
 en el lienzo y en el prototipo (la rejilla los sigue estirando a la fila, así que los tres quedan del mismo alto);
-capturas regeneradas.
+capturas regeneradas. Después editó él mismo la hoja de lugar en el lienzo («observa que he modificado: redondeado de
+sheet, posición de accionables X y ⋯, posición de chips, tamaño y posición de título»): se leyó su versión frente a
+la generada (radio 24, héroe 3:2, Cerrar a la izquierda y menú a la derecha sobre la imagen, título de 19 px con la
+etiqueta encima en violeta) y se pasó al prototipo (doc 50 § 11, punto 34); en el lienzo se le quitó a un KPI el alto
+fijo de 33 px que dejó su prueba.
 
 ### Cierre (cuarta parte)
 
