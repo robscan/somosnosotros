@@ -143,6 +143,30 @@
       if (d < 8) pegados.push({ a: desc(inter[i].e), b: desc(inter[j].e), distancia: Math.round(d), solapan: dx === 0 && dy === 0 });
     }
   }
+  // Contraste del glifo de cada botón contra el fondo real que tiene debajo (WCAG 2.1: 3:1 para controles).
+  const lum = (c) => {
+    const m = c.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);
+    if (!m) return null;
+    const v = [m[1], m[2], m[3]].map((x) => { const n = parseFloat(x) / 255; return n <= 0.03928 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4); });
+    return { l: 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2], a: m[4] === undefined ? 1 : parseFloat(m[4]) };
+  };
+  const fondoDe = (el) => {
+    let e = el;
+    while (e && e !== document.documentElement) { const f = lum(getComputedStyle(e).backgroundColor); if (f && f.a > 0.9) return f.l; e = e.parentElement; }
+    return 1;
+  };
+  const contraste = [];
+  for (const b of raiz.querySelectorAll("button, a[href], [role=\"button\"]")) {
+    const svg = b.querySelector("svg");
+    if (!svg) continue;
+    const r = b.getBoundingClientRect();
+    if (r.width === 0) continue;
+    const g = lum(getComputedStyle(svg).color);
+    if (!g) continue;
+    const fondo = fondoDe(b);
+    const ratio = (Math.max(g.l, fondo) + 0.05) / (Math.min(g.l, fondo) + 0.05);
+    if (ratio < 3) contraste.push({ el: desc(b), ratio: +ratio.toFixed(2), etiqueta: (b.getAttribute("aria-label") || b.textContent || "").trim().slice(0, 24) });
+  }
   const franjas = {};
   for (const h of document.querySelectorAll("header")) {
     const r = h.getBoundingClientRect();
@@ -178,5 +202,6 @@
     contenidoDesborda,
     textoChico,
     pegados: pegados.slice(0, 60),
+    contraste,
   };
 })()

@@ -1,0 +1,44 @@
+IconoReloj | {...base(p)} | <circle cx="12" cy="12" r="8.5" /> <path d="M12 7.5V12l3 2" />
+IconoPin | {...base(p)} | <path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" /> <circle cx="12" cy="11" r="2.2" />
+IconoPersonas | {...base(p)} | <circle cx="9" cy="8" r="3.2" /> <path d="M3.5 19a5.5 5.5 0 0 1 11 0" /> <circle cx="16.5" cy="9" r="2.6" /> <path d="M15.5 14.2a4.5 4.5 0 0 1 5 4.3" />
+IconoCampana | {...base(p)} | <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /> <path d="M10 20a2 2 0 0 0 4 0" />
+IconoPersona | {...base(p)} | <circle cx="12" cy="8" r="3.5" /> <path d="M5 20a7 7 0 0 1 14 0" />
+IconoEtiqueta | {...base(p)} | <path d="M3 12V4h8l10 10-8 8z" /> <circle cx="7.5" cy="8.5" r="1.2" fill="currentColor" />
+IconoEngrane | {...base(p)} | <path d="M10.3 3h3.4l.5 2.3a7 7 0 0 1 1.9 1.1l2.2-.8 1.7 3-1.8 1.5a7 7 0 0 1 0 2.2l1.8 1.5-1.7 3-2.2-.8a7 7 0 0 1-1.9 1.1l-.5 2.3h-3.4l-.5-2.3a7 7 0 0 1-1.9-1.1l-2.2.8-1.7-3 1.8-1.5a7 7 0 0 1 0-2.2L4 8.6l1.7-3 2.2.8a7 7 0 0 1 1.9-1.1z" /> <circle cx="12" cy="12" r="2.6" />
+IconoLapiz | {...base(p)} | <path d="M4 20l4.5-1 10-10-3.5-3.5-10 10z" /> <path d="M13 7.5l3.5 3.5" />
+IconoOjo | {...base(p)} | <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /> <circle cx="12" cy="12" r="3" />
+IconoSalir | {...base(p)} | <path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M14 8l4 4-4 4M8 12h10" />
+IconoEscudo | {...base(p)} | <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
+IconoLibro | {...base(p)} | <path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z" />
+IconoChevronDerecha | {...base(p)} | <path d="M9 6l6 6-6 6" />
+IconoCorreo | {...base(p)} | <rect x="3" y="5" width="18" height="14" rx="2" /> <path d="M3 7l9 6 9-6" />
+IconoBoleto | {...base(p)} | <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v1a2.5 2.5 0 0 0 0 5v1a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 15.5v-1a2.5 2.5 0 0 0 0-5z" /> <path d="M13 8v8" strokeDasharray="2 2" />
+IconoCalendario | {...base(p)} | <rect x="3" y="5" width="18" height="16" rx="2" /> <path d="M3 10h18M8 3v4M16 3v4" />
+IconoEstrella | {...base(p)} | <path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z" />
+IconoCaret | {...base({ strokeWidth: 2, ...p })} | <path d="M6 9l6 6 6-6" />
+IconoLista | {...base(p)} | <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
+IconoMapa | {...base(p)} | <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" /> <path d="M9 4v14M15 6v14" />
+IconoPinMas | {...base({ strokeWidth: 1.9, ...p })} | <path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" /> <path d="M12 8.5v5M9.5 11h5" />
+IconoUbicacion | {...base(p)} | <circle cx="12" cy="12" r="3" /> <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /> <circle cx="12" cy="12" r="8" />
+IconoRuta | {...base(p)} | <path d="M12 3l9 9-9 9-9-9z" /> <path d="M9.5 13.5v-2h5l-1.8-1.8M14.5 11.5l-1.8 1.8" />
+IconoCompartir | {...base({ strokeWidth: 1.9, ...p })} | <path d="M12 3v12M8 7l4-4 4 4" /> <path d="M6 11v8.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V11" />
+IconoInstagram | {...base(p)} | <rect x="3.5" y="3.5" width="17" height="17" rx="5" /> <circle cx="12" cy="12" r="3.8" /> <circle cx="17" cy="7" r="1" fill="currentColor" stroke="none" />
+IconoFacebook | {...base(p)} | <circle cx="12" cy="12" r="8.5" /> <path d="M13.5 20.5v-7h2.3l.4-2.8h-2.7V9c0-.8.3-1.4 1.4-1.4h1.4V5.2c-.3 0-1.1-.1-2-.1-2 0-3.4 1.2-3.4 3.5v2.1H8.6v2.8h2.3v7" />
+IconoSitio | {...base(p)} | <circle cx="12" cy="12" r="8.5" /> <path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" />
+IconoPuntos | {...base({ fill: "currentColor", stroke: "none", ...p })} | <circle cx="5" cy="12" r="1.8" /> <circle cx="12" cy="12" r="1.8" /> <circle cx="19" cy="12" r="1.8" />
+IconoEstrellaMas | {...base({ strokeWidth: 1.9, ...p })} | <path d="M10 3l2.2 4.6 5 .7-3.6 3.5.9 5L10 14.4l-4.5 2.4.9-5L2.8 8.3l5-.7z" /> <path d="M19 13v6M16 16h6" />
+IconoBuscar | {...base({ strokeWidth: 2, ...p })} | <circle cx="11" cy="11" r="6.5" /> <path d="M16 16l4 4" />
+IconoYouTube | {...base(p)} | <rect x="3" y="6" width="18" height="12" rx="4" /> <path d="M10 9.5v5l4.5-2.5z" fill="currentColor" stroke="none" />
+IconoTikTok | {...base(p)} | <path d="M13.5 4v10.2a3.2 3.2 0 1 1-3.2-3.2" /> <path d="M13.5 4c.4 2.6 2.1 4.2 4.5 4.4" />
+IconoEnlace | {...base(p)} | <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5" /> <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5" />
+IconoChevronIzquierda | {...base({ strokeWidth: 2, ...p })} | <path d="M14.5 6l-6 6 6 6" />
+IconoCerrar | {...base({ strokeWidth: 2, ...p })} | <path d="M6 6l12 12M18 6L6 18" />
+IconoCalendarioAgregar | {...base(p)} | <path d="M20 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7.5" /> <path d="M3 10h17M8 3v4M15 3v4M18 15v6M15 18h6" />
+IconoInstalar | {...base(p)} | <rect x="7" y="2.5" width="10" height="19" rx="2" /> <path d="M12 7v7M9.2 11.3L12 14l2.8-2.7" />
+IconoMas | {...base({ strokeWidth: 2.2, ...p })} | <path d="M12 5v14M5 12h14" />
+IconoOk | {...base({ strokeWidth: 2.2, ...p })} | <path d="M5 12.5l4.5 4.5L19 7.5" />
+IconoCamara | {...base(p)} | <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /> <circle cx="12" cy="13" r="3.2" />
+IconoCasa | {...base(p)} | <path d="M4 11l8-7 8 7v9H4z" /> <path d="M10 20v-6h4v6" />
+IconoTexto | {...base(p)} | <path d="M5 7h14M5 12h14M5 17h9" />
+IconoAyuda | {...base(p)} | <circle cx="12" cy="12" r="8.5" /> <path d="M9.5 9.3a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 1.9-2.4 3.5" /> <circle cx="12" cy="16.8" r="0.6" fill="currentColor" />
+IconoBloquear | {...base(p)} | <circle cx="12" cy="12" r="8.5" /> <path d="M6.5 6.5l11 11" />

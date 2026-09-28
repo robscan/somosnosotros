@@ -288,3 +288,127 @@ Commit en `restructura-ui` con el prototipo, las 20 capturas, el doc 50 (secció
 PR #266. El servidor estático del scratchpad y el navegador integrado se usaron solo para revisar; nada queda corriendo
 que toque producción. Siguiente paso: el founder lo prueba («vamos viendo cómo se siente»), corrige, y con su firma se
 cierra el plan por piezas (doc 50, sección 7) y se abren los operadores.
+
+## Tercera parte (mismo día): prototipo v2 tras tres vueltas más del founder
+
+### Lo que pidió
+
+Sobre la v1, en tres mensajes seguidos: el campo de búsqueda desplegado «no suma nada… se ve poco minimalista»; en los
+iconos de ir «se redunda el envolvente circular… de las propuestas que más me decepcionan»; en los accionables de
+listado «el contorno blanco no me gusta, por eso estaba a favor de elevación… estética solamente»; el estado siguiendo
+«muestra un icono en azul en un contenedor verde, el icono no se ve… ese error de accesibilidad es básico»; el «+»
+«pierde demasiado protagonismo, podría ir por una estructura tipo Instagram: izquierda "+", centro el logo, derecha
+notificaciones, con el perfil integrado en navbar»; cuestionar si el buscador va a la barra inferior; filtros «en línea
+de buscador pero más como un accionable que despliega listado multiselección en bottom sheet»; «no me gusta dónde se
+colocó segmented mapa/lista»; «Analiza, cuestiona, propón». Luego: al presionar «+», «un componente similar al de
+Instagram… tabs en la base con los tipos de publicación, tomando en cuenta el contexto para elegir qué tab mostrar».
+Y sobre Inicio y fichas: «gaps de sección de inicio, especialmente el de título y slider se ve muy amplio»; «fichas
+con héroe ancho completo y la imagen cover»; «cards de KPI del mismo alto, KPI de ubicación solo distancia sin
+colonia, "Dónde" no se entiende»; «"Con" debe decir algo como Artistas… propón acorde al estilo de comunicación»;
+«el listado debajo debería tener angle del lado derecho»; «la ficha de artista igual debe mejorar». Ofreció dos veces
+la ayuda de Claude Design.
+
+### Qué cambió en el prototipo (detalle en el doc 50, § 6.2)
+
+Barra raíz tipo Instagram («+», logotipo, lupa, campana) y Perfil como quinto destino de la barra inferior; la lupa
+abre la pantalla de búsqueda (sin campo desplegado); fila de filtros = Filtros con conteo · ciudad · activos con ✕, y
+hoja inferior de selección múltiple por sección; Lugares sin segmento: mapa entero y la lista en una hoja de tres
+alturas con tarjeta del pin (panel fijo desde 792 px); acciones Voy/Seguir elevadas, una sola palomita, decidido verde
+con glifo blanco; «+» abre publicar con el formulario por contexto y la tira EVENTO · LUGAR · ARTISTA; Inicio con
+secciones a 16 px y título a 14 px del carril; fichas con cover 4:3, tres KPI del mismo alto y etiquetas Fecha · Costo
+· Van / Distancia · Eventos · Seguidores / Fechas · Seguidores · Lugares, «Artistas» con chevrones, ficha de artista
+completa; en escritorio la portada a la izquierda y todo lo demás corre por la derecha.
+
+### Cómo se revisó y qué se encontró
+
+Tres tandas de 25 capturas con el Chrome real (teléfono a 2×, tableta a 1,5×, escritorio a 1×), abiertas una por una:
+
+1. **Primera tanda:** doce capturas de teléfono salieron con la hoja de filtros encima. No era la captura: **la hoja no
+   se cerraba**. El manejador de clics buscaba `[data-hoja]` antes que `[data-cerrar]`, y el contenedor de la hoja
+   también lleva `data-hoja`, así que ✕, «Ver N» y el fondo la volvían a abrir. Se reordenó y se excluyó el contenedor;
+   prueba automática: abre, y cierra con ✕, con el fondo y con «Ver 23 eventos».
+2. **Segunda tanda:** la barra Me interesa · Vas apareció a media pantalla al bajar en la ficha. **Las barras al pie
+   estaban en `position: absolute` dentro del contenedor que desplaza** (se mueven con el contenido); igual la tira de
+   modos del alta. Pasan a `position: sticky; bottom: 0` como último hijo, sin padding reservado; el alta reparte sus
+   filas `auto 1fr auto` para que la tira quede abajo también con un formulario corto. Medido: 0 px del pie con el
+   scroll en 0, en 600 y al final, en ficha y en alta.
+3. Con la medición del DOM sobre las once pantallas: la tarjeta del pin no cabía en la hoja «asoma»; un `<span>` sin
+   estilo alrededor del chevron y de opciones únicas; la pila de avatares y el chip con ✕ con márgenes negativos; el
+   botón de las tarjetas redondas fuera de su caja; el resumen del panel de escritorio con el gutter de la página. Todo
+   cerrado; **tercera tanda limpia**, 0 errores de página.
+
+Se añadió a `scripts/ops/auditoria-ui/medir.js` la comprobación de contraste de los iconos de control (color del
+glifo contra el fondo real del botón, umbral 3:1): así el error del violeta sobre verde no vuelve a pasar sin aviso.
+
+| Medida (v2, teléfono, once pantallas) | Resultado |
+|---|---|
+| Envoltorios sin estilo | 0 |
+| Desbordes | 0 |
+| Márgenes negativos | 0 |
+| Iconos de control < 3:1 | 0 |
+| Profundidad máxima | 6 (alta, Lugares) |
+| Nodos | 33 (Buscar) a 229 (Inicio) |
+| Controles < 44 px | chips 36 (44 al tacto), tira de letras 34×36, asa 28, `input` dentro de campos de 48, palancas 51×31, enlace «Reportar» en párrafo |
+
+### Capturas del prototipo v2 (`docs/rediseno/capturas-256/256-50…74-v2-*.png`), abiertas y descritas
+
+- **`256-50-v2-inicio-telefono`:** barra «+» · SMSNSTRS · lupa · campana con punto; chip de ciudad; «Tus planes» con
+  tarjetas apaisadas (sello «1 va», palomita verde elevada arriba a la derecha); «Destacados» con carteles verticales
+  (uno decidido, otro con palomita violeta sobre blanco); barra inferior de cinco: Inicio, Agenda, Lugares, Artistas,
+  Perfil (avatar).
+- **`256-51-v2-agenda-telefono`:** fila Filtros · San Luis Potosí; días «Hoy · 2», «Mañana», «mié 30 de sep»; renglones
+  con foto, título de dos líneas, hora · lugar, costo · asistentes, sello «Vas»; botones elevados.
+- **`256-52-v2-agenda-compacta-telefono`:** tras bajar, la barra raíz desaparece y la fila de filtros queda pegada
+  arriba; la lista sigue.
+- **`256-53-v2-filtros-telefono`:** la hoja «Filtros» sobre Agenda: Cuándo (Hoy, Mañana, Fin de semana, Elegir
+  fecha), Cuánto (Gratis, Cooperación), Siguiendo (palanca «Solo lo que sigo»), Dónde (San Luis Potosí · La ciudad
+  ordena, no limita · Cambiar); pie Limpiar · «Ver 23 eventos».
+- **`256-54-v2-lugares-mapa-telefono`:** Filtros (1) · ciudad · chip activo «Museo ✕»; el mapa llena la pantalla con
+  ubicación y atribución; la hoja asoma con «62 lugares · los más cercanos primero» y el primer renglón (decidido).
+- **`256-55-v2-lugares-hoja-media-telefono`:** la hoja a media altura con el asa, el resumen y cuatro renglones con
+  su botón Seguir elevado.
+- **`256-56-v2-lugares-pin-telefono`:** tras tocar un pin, la hoja muestra la tarjeta del Museo del Ferrocarril
+  (foto, tipo · dirección, próximo evento, Seguir), «Ver la ficha» y «Volver a la lista», completa.
+- **`256-57-v2-artistas-telefono`:** Filtros (1) · ciudad · «Música ✕»; tira de letras «# A B C…» con la actual en
+  violeta; grupos «#» y «A» con avatares redondos y Seguir elevado; uno decidido en verde.
+- **`256-58-v2-perfil-telefono`:** Perfil como pestaña: avatar, nombre, colonia, Ajustes; tres KPI (Voy 2, Me
+  interesa 1, Sigo 2) del mismo alto; chips Voy · Me interesa · Sigo; la lista de planes; «Así te ven los demás».
+- **`256-59-v2-ficha-evento-telefono`:** barra Atrás · logotipo · más; portada a todo lo ancho en cover con la lupa
+  flotante; título; KPI Fecha (vie 2 oct / 19:00) · Costo (Gratis) · Van (2) del mismo alto; Compartir, A mi
+  calendario, Cómo llegar; «Dónde»; barra fija Me interesa · Vas.
+- **`256-60-v2-ficha-evento-abajo-telefono`:** tras bajar: Dónde con minimapa y renglón con chevron; «Artistas» con el
+  colectivo y chevron; Sobre el evento; Quién va (pila de avatares, chevron); pie con Reportar; la barra fija sigue
+  abajo.
+- **`256-61-v2-ficha-artista-telefono`:** avatar redondo, nombre, disciplinas · tipo · ciudad, Compartir; KPI Fechas ·
+  Seguidores · Lugares; Instagram, Sitio web, YouTube; Próximas fechas con su Voy; barra fija «Seguir».
+- **`256-62-v2-ficha-lugar-telefono`:** foto en cover; título de dos líneas y píldora MUSEO; KPI Distancia (1,4 km) ·
+  Eventos (3 próximos) · Seguidores (48); cinco acciones; barra fija «Seguir».
+- **`256-63-v2-alta-lugar-telefono`:** «Registrar un lugar» abierto desde Lugares: campo con lupa, Dónde (Estoy aquí,
+  Buscar), Tipo, Más, «Publicar lugar» apagado con «Falta el nombre y dónde está»; tira EVENTO · LUGAR · ARTISTA con
+  LUGAR marcado.
+- **`256-64-v2-alta-evento-telefono`:** al tocar EVENTO en la tira: tarjeta del cartel, campo, Cuándo, Dónde, Quién,
+  Cuánto, Más, «Publicar evento»; la tira abajo con EVENTO marcado.
+- **`256-65-v2-buscar-telefono`:** campo «Buscar un evento, lugar o artista» con ✕; «En San Luis Potosí»; Recientes
+  (evento, lugar, artista); Esta semana (Cine, Gratis, Fin de semana, Centro).
+- **`256-66-v2-inicio-tableta`:** carril lateral (marca, cinco destinos, Publicar violeta, Buscar, Novedades) y el
+  mismo Inicio con carriles más anchos.
+- **`256-67-v2-lugares-tableta`:** panel izquierdo con el resumen y la lista, mapa a la derecha con ubicación.
+- **`256-68-v2-inicio-escritorio`:** carril, chip de ciudad, «Tus planes» y «Destacados» con cuatro carteles.
+- **`256-69-v2-agenda-escritorio`:** fila Filtros · ciudad y la agenda a una columna de 960.
+- **`256-70-v2-lugares-escritorio`:** panel de 400 px con «62 lugares · los más cercanos primero» en un renglón, mapa
+  con pins y etiquetas, ubicación.
+- **`256-71-v2-ficha-lugar-escritorio`:** foto 5:3 a la izquierda; título, MUSEO, KPI, cinco acciones, Próximos eventos
+  y Dónde por la derecha; «Seguir» fijo abajo.
+- **`256-72-v2-ficha-evento-escritorio`:** cartel a la izquierda; título, KPI, acciones, Dónde, Artistas por la
+  derecha, sin hueco entre título y KPI; Me interesa · Vas fijo.
+- **`256-73-v2-ficha-artista-escritorio`:** cabecera y enlaces a la izquierda; KPI, Próximas fechas, Sobre, Se presenta
+  en por la derecha; «Seguir».
+- **`256-74-v2-alta-evento-escritorio`:** el formulario centrado en una columna de 600 con la tira de tipos abajo.
+
+### Cierre (tercera parte)
+
+Commit en `restructura-ui` con el prototipo v2, las 25 capturas, el doc 50 (§ 6 y § 11 reescritos; H-13, H-37, 5.2,
+P4 a P6 y § 10 ajustados), la fuente del prototipo y los scripts de captura y medición en `scripts/ops/auditoria-ui/`,
+esta bitácora y OPEN_LOOPS; push al PR #266; artefacto republicado con los carteles incrustados. Pendiente: que el
+founder pruebe la v2 y confirme o corrija los cinco puntos del doc 50 § 11; con su firma, plan definitivo por piezas
+y operadores nuevos.

@@ -140,8 +140,9 @@ precio y su lugar). Capturas [256-02-agenda-movil](capturas-256/256-02-agenda-mo
 - **H-13 · Cuatro flotantes sobre el mapa.** Con cabecera y nav, los controles ocupan cerca del 40 % de la altura útil
   a 390×844; «Ver en lista» y «Registrar lugar» apilados cubren 108 px de alto y 198 px de ancho (51 %). Región común:
   el conmutador Mapa · Lista es un cambio de vista, no una acción, y la gente lo espera arriba (Apple Maps, Google
-  Maps: segmento en la cabecera). Propuesta: «Mapa · Lista» como segmento en la cabecera; «Registrar lugar» al «+» de
-  la barra; en el mapa quedan solo ubicación y la atribución.
+  Maps: segmento en la cabecera). Propuesta (v1): «Mapa · Lista» como segmento en la cabecera. El founder no lo quiso
+  ahí; **v2**: sin segmento, la lista en una hoja inferior con tres alturas (6.2); «Registrar lugar» al «+» de la
+  barra; en el mapa quedan solo ubicación y la atribución.
 - **H-14 · El alto del mapa depende de una variable viva.** `lugares.module.css:11-14`: `height: calc(100dvh − … −
   var(--alto-cabecera) − …)`, y `--alto-cabecera` la publica `ui/Cabecera` desde JavaScript al medirse. Acoplamiento
   frágil (si la cabecera cambia, el mapa salta o deja hueco). Propuesta: la plantilla raíz es `grid-template-rows:
@@ -286,7 +287,8 @@ H-12 tal cual, porque es la misma web. No hay nada que adaptar «a nativo»: lo 
 - **H-36 · Flotantes al centro de la ventana.** «Publicar evento» y «Ver en lista» quedan flotando a mitad de un
   escritorio de 1280, dentro de la columna, tapando tarjetas. Se resuelve con H-01 y H-13.
 - **H-37 · Cabecera de escritorio de teléfono.** Chip de ciudad y lupa de 40 px en una barra de 1280; la búsqueda
-  podría ser un campo visible. Propuesta: en escritorio la lupa es un campo de 320 px en la cabecera.
+  podría ser un campo visible. Propuesta (v1): campo visible en escritorio. El founder: «buscar desplegado no suma
+  nada»; **v2**: la lupa abre la pantalla de búsqueda y en escritorio vive en el carril.
 - **H-38 · `--al-centro` sobre `100vw`** (`globals.css:50`). En navegadores con barra de desplazamiento clásica
   (Windows, Linux, Mac con «siempre»), `100vw` incluye la barra: el gutter calculado se pasa 7 u 8 px por lado y los
   márgenes negativos de H-24 pueden abrir desplazamiento horizontal. No se pudo reproducir en el Chrome de la Mac
@@ -410,7 +412,7 @@ cada tipo de control, aire por rejilla.
 | Componente | Variantes | Estados | Sustituye / retira |
 |---|---|---|---|
 | `Boton` | `primario`, `secundario`, `texto`, `peligro`; forma `recta` o `pildora`; alto `control` (44) o `toque` (48); ancho `contenido` o `completo` | reposo, pulsado, foco, deshabilitado **con motivo**, en camino | `Ficha.primaria/.secundario`, `AgendaInicio.accion`, `publicadoBoton`, `Sesion.entrar`, `rehacerCartel`, `verOtraVista`, `Publicar` |
-| `BotonIcono` | tamaño `control` 44 (barras), `accion` 48 (renglón, tarjeta, mapa), `grande` 56 (ficha); relieve `plano`, `contorno`, `elevado` (solo sobre fotos o mapa) | los mismos + `decidido` (verde) | los once círculos de 3.2, `Atras` (chevron + texto sigue siendo `Boton` secundario píldora), `Cerrar` |
+| `BotonIcono` | tamaño `control` 44 (barras), `accion` 48 (renglón, tarjeta, mapa), `grande` 56 (ficha); relieve `plano` (barras), `elevado` (acciones en listas, tarjetas, mapa y ficha), `contorno` (solo opciones secundarias en formularios) | los mismos + `decidido` (verde con glifo blanco, contraste medido) | los once círculos de 3.2, `Atras` (chevron + texto sigue siendo `Boton` secundario píldora), `Cerrar` |
 | `Chip` | `filtro` (botón o enlace), `contexto` (ciudad, fecha), `estado` (Vas, Sigues, Te interesa), `sello` (sobre foto: vidrio) | reposo, activo, en camino, deshabilitado | `Destacados .van/.reciente/.interesa`, `Renglon .estado/.sello`, `ChipFecha` (queda como composición) |
 | `Pestanas` | `repartidas`, `desplazables` (asoman) | activa, en camino | igual, con la regla de H-11 |
 | `Barra` | `raiz` (logotipo, «+», sesión), `interior` (Atrás, logotipo, ···), `tarea` (logotipo, ✕) | pegajosa siempre; compacta en raíz | las tres de hoy; sin márgenes negativos |
@@ -466,46 +468,106 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (entregado el 2026-09-28, mismo día)
+## 6. Prototipo interactivo (v1 y v2 el 2026-09-28; la v2 recoge tres vueltas más del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
 marcado**: las reglas responsivas de 5.4 son consultas de contenedor sobre el mismo HTML. Se navega de verdad: las
-cuatro secciones, tocar una tarjeta o un renglón abre la ficha, el «+» abre la hoja de publicar y de ahí el alta, el
-avatar abre Ajustes, «Mapa · Lista» conmuta, Voy y Seguir cambian de estado con su aviso y Deshacer, y al bajar en una
-lista la cabecera se compacta. Capturas reales con el Chrome de la Mac en
-[`capturas-256/256-30…49-proto-*.png`](capturas-256/) (descritas en la bitácora 256, segunda parte).
+cinco pestañas, tocar una tarjeta o un renglón abre la ficha, el «+» abre la pantalla de publicar, la lupa abre la
+búsqueda, «Filtros» abre su hoja, la hoja de Lugares se arrastra, tocar un pin muestra su tarjeta, Voy y Seguir
+cambian de estado con su aviso y Deshacer, y al bajar en una lista la cabecera se compacta. Capturas reales con el
+Chrome de la Mac: v1 en [`capturas-256/256-30…49-proto-*.png`](capturas-256/) y v2 en
+[`capturas-256/256-50…74-v2-*.png`](capturas-256/), descritas en la bitácora 256 (segunda y tercera parte). La
+fuente del prototipo (un generador de Python con sus SVG) queda en `scripts/ops/auditoria-ui/prototipo/`.
 
-**Lo que responde a la vuelta del founder («me gusta el "+" de publicar pero entonces qué icono usamos para Voy y
-Seguir», «cómo puedes mejorar fichas… crear kpi's, optimizar lectura, mejorar la estructura», «cargadores y
-transiciones… incluir en esta pasada», «acepto tus recomendaciones en general»):**
+### 6.1 Lo que la v1 respondió (primera vuelta del founder)
 
-- **Iconos.** El «+» queda para publicar (barra superior en teléfono; carril lateral en tableta y escritorio). «Voy»
-  pasa a la palomita en contorno (modelo de Facebook: *Going* es ✓, *Interested* es ☆, que ya usamos); «Seguir», a la
-  persona con «+» (X, LinkedIn, Instagram). El estado decidido es la palomita verde llena en los tres casos: «ya
-  quedó» se lee igual en toda la app. Sobre fondo hueso el botón es un círculo con contorno (sin sombra); sobre foto,
-  elevado (decisión 4).
-- **Fichas con estructura y KPI.** Portada 5:3 con el cartel entero sobre su tono; título; **tres KPI** en tarjetas
-  (evento: cuándo · cuánto · quiénes; lugar: dónde y distancia · eventos próximos · comunidad), cada uno tocable (salta
-  al calendario, al mapa, a quién va); acciones alineadas a la izquierda (5 caben a 48 px); «Dónde» como tarjeta con
-  mapa y dirección; «Con», «Sobre», «Quién va» como bloques con el mismo renglón de dato; pie; barra fija con el par
-  secundario + primario del mismo alto. En el lugar, **su agenda dentro de la ficha** («Próximos eventos», tres
-  renglones) en vez de «Próximo: … ver». En escritorio, dos columnas: cartel y acciones a la izquierda; título, KPI y
-  bloques a la derecha.
-- **Cargadores y transiciones** (doc 38 y OL-152, en esta pasada): esqueleto de renglones al entrar a Agenda y Artistas
-  (mismos tokens que el renglón real), fundido de 200 ms entre secciones, la ficha entra deslizando 220 ms y el cartel
-  tocado **se convierte en la portada** (View Transitions; con respaldo en CSS donde no exista y salto directo con
-  «reducir movimiento»), el alta sube como tarea (250 ms), la hoja sube con fondo oscuro. Ninguna animación toca la
-  barra de navegación.
-- **Las cuatro decisiones (sección 11), aplicadas:** «+» en la barra (se retira el flotante de las cuatro raíces);
-  navegación lateral desde tableta; «Mapa · Lista» como segmento en la cabecera; «+» de renglón con contorno y sin
-  sombra sobre hueso.
+«Me gusta el "+" de publicar pero entonces qué icono usamos para Voy y Seguir», «cómo puedes mejorar fichas… crear
+kpi's, optimizar lectura, mejorar la estructura», «cargadores y transiciones… incluir en esta pasada», «acepto tus
+recomendaciones en general»:
+
+- **Iconos.** El «+» queda para publicar. «Voy» es la palomita (modelo de Facebook: *Going* es ✓, *Interested* es ☆,
+  que ya usamos); «Seguir», la persona con «+» (X, LinkedIn, Instagram). El estado decidido es el círculo verde con la
+  palomita blanca en los tres casos: «ya quedó» se lee igual en toda la app.
+- **Fichas con estructura y KPI.** Portada, título, tres KPI en tarjetas tocables, acciones alineadas, «Dónde» como
+  tarjeta con mapa y dirección, bloques con el mismo renglón de dato, pie, barra fija con el par secundario + primario.
+  En el lugar, su agenda dentro de la ficha («Próximos eventos») en vez de «Próximo: … ver».
+- **Cargadores y transiciones** (doc 38 y OL-152): esqueleto de renglones al entrar a Agenda y Artistas (mismos tokens
+  que el renglón real), fundido de 200 ms entre secciones, la ficha entra deslizando y el cartel tocado **se convierte
+  en la portada** (View Transitions con respaldo en CSS y salto directo con «reducir movimiento»), el alta sube como
+  tarea, la hoja sube con fondo oscuro. Ninguna animación toca la barra de navegación.
+
+### 6.2 Lo que la v2 cambió (vueltas dos, tres y cuatro del founder, el mismo día)
+
+- **Barra raíz tipo Instagram** («podría ir por una estructura tipo Instagram… con el perfil integrado en navbar»):
+  «+» a la izquierda, logotipo al centro, lupa y campana a la derecha; **Perfil** entra a la barra inferior como
+  quinto destino (con el avatar). En tableta y escritorio el carril lleva la marca, los cinco destinos, Publicar, Buscar
+  y Novedades.
+- **Buscar no se despliega** («no suma nada… se ve poco minimalista»): la lupa abre la pantalla de búsqueda con el
+  campo, la ciudad, «Recientes» y atajos de la semana. Se cuestionó llevar Buscar a la barra inferior: con Perfil ya
+  son cinco destinos, seis rompen los 44 px por destino a 390 px, y Instagram tampoco la mete en la barra en la web;
+  por eso va arriba a la derecha (sección 11, para confirmar).
+- **Filtros como accionable** («más como un accionable que despliega listado multi selección en bottom sheet»): la
+  fila lleva «Filtros» con el conteo de activos, el chip de ciudad (la ciudad ordena, no limita) y cada filtro activo
+  como chip que se quita con ✕. «Filtros» abre una **hoja inferior de selección múltiple** por bloques (Agenda: Cuándo,
+  Cuánto, Siguiendo, Dónde; Lugares: Tipo con conteos, Cuándo, Siguiendo, Dónde; Artistas: Disciplina con conteos, Con
+  fechas, Siguiendo, Dónde) con «Limpiar» y «Ver N eventos/lugares/artistas». Se retiran los chips rápidos sueltos.
+- **Lugares sin segmento Mapa · Lista** («no me gusta dónde se colocó»; «Analiza, cuestiona, propón»): el mapa llena la
+  pantalla y **la lista vive en una hoja inferior** con tres alturas (asoma: resumen y primer renglón; media; llena)
+  que se arrastra o se toca en el asa; tocar un pin muestra su tarjeta en la hoja («Ver la ficha», «Volver a la
+  lista»). Desde 792 px la hoja es el panel izquierdo (400 px) y el mapa el resto, como Apple Maps y Google Maps en
+  escritorio. Cero flotantes además de ubicación y atribución.
+- **Botones de acción elevados** («el contorno blanco no me gusta, por eso estaba a favor de elevación… estética
+  solamente»): Voy y Seguir en listas, tarjetas y mapa llevan sombra (relieve `elevado`); una sola palomita (se quitó
+  el círculo dentro del círculo, «de las propuestas que más me decepcionan»); el estado decidido es **verde con el
+  glifo blanco**: el violeta sobre verde de la v1 daba 1,4:1 y no se veía («ese error de accesibilidad es básico»).
+  Desde esta v2 la medición del DOM comprueba el contraste de cada icono de control (≥ 3:1, WCAG 1.4.11): 0 fallos en
+  las once pantallas. El relieve `contorno` queda solo para opciones secundarias dentro de formularios (Estoy aquí,
+  Buscar el lugar).
+- **«+» abre publicar tipo Instagram** («se muestran tabs en la base con los tipos de publicación, tomando en cuenta el
+  contexto»): la pantalla trae el formulario del tipo que toca por contexto (Inicio y Agenda → evento; Lugares →
+  lugar; Artistas → artista) y una **tira inferior con los tres tipos** (EVENTO · LUGAR · ARTISTA, el actual en negro
+  con un punto) para cambiar sin salir. Se retira la hoja intermedia «¿Qué publicas?» de la v1.
+- **Inicio con menos aire** («el de título y slider se ve muy amplio»): cada sección a 16 px de la anterior y el título
+  a 14 px de su carril (antes 24 y 44).
+- **Fichas** («héroe ancho completo, imagen cover», «KPI del mismo alto», «ubicación solo distancia», «Dónde no se
+  entiende», «Con debe decir Artistas», «angle del lado derecho», «la de artista debe mejorar»): portada a todo lo ancho
+  con la imagen en **cover 4:3** (el cartel entero se abre con la lupa flotante); **tres KPI del mismo alto** (rejilla:
+  cada tarjeta estira a la fila) con etiquetas que dicen qué son: evento *Fecha* (día y hora en dos líneas) · *Costo* ·
+  *Van*; lugar *Distancia* («1,4 km», sin colonia) · *Eventos* · *Seguidores*; artista *Fechas* · *Seguidores* ·
+  *Lugares*. «**Artistas**» en vez de «Con» (frase llana, como el resto de la app), y **chevron a la derecha** en todo
+  renglón que lleva a otra ficha (Dónde, Artistas, Quién va, Se presenta en). **Ficha de artista**: cabecera con
+  avatar redondo, nombre, disciplinas · tipo · ciudad y Compartir; KPI; enlaces (Instagram, Sitio web, YouTube);
+  Próximas fechas con su Voy; Sobre; Se presenta en; barra fija «Seguir» que pasa a «Sigues». En escritorio la
+  portada (o la cabecera del artista) ocupa la columna izquierda y todo lo demás corre por la derecha, como Instagram
+  en escritorio, sin filas infladas por el reparto de la rejilla.
+
+### 6.3 Defectos que la revisión de la v2 encontró y cerró antes de enseñarla
+
+Regla de esta pieza: nada se declara verificado sin la captura. La primera tanda de capturas mostró la hoja de filtros
+encima de doce pantallas: **la hoja no se cerraba** (el manejador de clics tomaba el contenedor de la hoja, que
+también lleva `data-hoja`, como disparador y la volvía a abrir). Se corrigió el orden y el selector, y se probó que
+abre y cierra con ✕, con el fondo y con «Ver N». La segunda tanda mostró **la barra de acciones a media pantalla** al
+bajar en la ficha: estaba en `position: absolute` dentro del contenedor que desplaza, igual que la tira de modos del
+alta. Las dos pasan a `position: sticky; bottom: 0` como último hijo, sin padding reservado (medidas a 0 px del pie con
+el scroll en 0, en 600 y al final). También: la tarjeta del pin no cabía en la hoja «asoma» (altura del contenido
+cuando hay pin); un `<span>` sin estilo alrededor del chevron y de opciones únicas (fuera); la pila de avatares y el
+chip con ✕ usaban márgenes negativos (columnas que se solapan y padding); el botón de las tarjetas redondas se salía
+de su caja (dentro); «Voy a» en Perfil frente a «Voy» en su KPI (una sola palabra).
+
+### 6.4 Medición de la v2 (`medir.js` sobre las once pantallas, teléfono)
+
+0 envoltorios sin estilo, 0 desbordes, 0 márgenes negativos, 0 iconos de control por debajo de 3:1, profundidad máxima
+6 (229 nodos en Inicio, 33 en Buscar). Los únicos controles por debajo de 44 px: los chips (36 px visibles, 44 al tacto
+con `::before`), la tira de letras (34×36, se arrastra), el asa de la hoja (28 px a todo lo ancho), los `input` dentro
+de campos de 48, las palancas de 51×31 (todo el renglón conmuta) y el enlace «Reportar» dentro de un párrafo (WCAG
+2.5.8 lo exceptúa).
 
 **Lo que el prototipo demuestra sobre la maquetación (regla de esta pieza):** cero márgenes negativos; la página no
 lleva gutter (cada bloque pone el suyo); la cabecera se compacta con `grid-template-rows: minmax(0, 1fr) → minmax(0,
 0fr)`, sin `margin-top` negativo ni JavaScript de alturas; el mapa llena la fila central de la rejilla sin `calc` de
-alturas; la única regla con altura fija es la de la barra; un solo `:root` con las variables de 5.1; renglón único con
-cuatro pieles; once círculos → un `BotonIcono` con tres tamaños y tres relieves.
+alturas; las barras al pie son `sticky` y no reservan padding; un solo `:root` con las variables de 5.1; renglón único
+con cuatro pieles; once círculos → un `BotonIcono` con tres tamaños y tres relieves.
 
 **Lo que todavía es dibujo, no medida:** el mapa es un fondo esquemático con los puntos colocados a mano para
 mostrar el resultado que debe dar la capa de símbolos (H-12); los carteles se cargan de las URL públicas del sitio.
@@ -521,9 +583,9 @@ council. Orden por dependencias:
 | P1 | Tokens y utilidades: 5.1 completo, `.columna`/`.a-lo-ancho`, quitar `100vw` | `globals.css` | M | inventario: 0 `z-index` fuera de token, 0 `100vw`; build verde; nada cambia a la vista (capturas iguales) |
 | P2 | `BotonIcono` y `Boton` unificados | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
 | P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
-| P4 | Cabecera única pegajosa y compacta; «+» en la barra; se retira el flotante y el conmutador flotante (segmento Mapa · Lista) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
-| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio, Agenda, Lugares, Artistas; renglón de dos líneas | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
-| P6 | Plantilla ficha: acciones ≤ 4 + Más, foto 5:3, par Me interesa/Voy, Compartir en la fila, tokens de barra | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista | L | H-20 a H-28 |
+| P4 | Cabecera única pegajosa y compacta; barra raíz «+» · logotipo · lupa · campana y Perfil como quinto destino; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
+| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio, Agenda, Lugares, Artistas; renglón de dos líneas; hoja inferior de Lugares (tres alturas, tarjeta del pin); fila Filtros · ciudad · activos y su hoja de selección múltiple | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
+| P6 | Plantilla ficha: portada cover 4:3 (cartel entero a un toque), tres KPI del mismo alto, acciones alineadas, «Artistas» y renglones con chevron, par Me interesa/Voy y barra al pie `sticky`, ficha de artista | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista | L | H-20 a H-28 |
 | P7 | Navegación lateral y reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
 | P8 | Mapa: un símbolo por lugar, prioridad y anclaje variable | `Mapa.tsx` (capas) | M | H-12: 0 etiquetas superpuestas en el centro a zoom por defecto (captura) |
 | P9 | Altas: `HojaDonde` única, mensaje único, frase del alta de lugar, botón que dice qué falta | `HojaDondeEs`, `HojaDondeLugar`, `FormularioEvento`, `FormularioLugar`, `FormularioCanon` | M | H-29 a H-32 |
@@ -568,20 +630,35 @@ council. Orden por dependencias:
 
 ## 10. Qué se retira
 
-`ui/Tarjeta.tsx` y su CSS (sin uso); el flotante `Publicar` y el conmutador `verOtraVista` (si el founder acepta el
-«+» en la barra y el segmento Mapa · Lista); `HojaDondeLugar` y `MapaDondeEs` (absorbidos); `.palanca`, `.soloLector`,
+`ui/Tarjeta.tsx` y su CSS (sin uso); el flotante `Publicar` y el conmutador `verOtraVista` (el founder aceptó el «+»
+en la barra y retiró el segmento Mapa · Lista: la lista pasa a la hoja inferior); `HojaDondeLugar` y `MapaDondeEs` (absorbidos); `.palanca`, `.soloLector`,
 `.icono`, `.tarjeta` duplicados; `AgendaInicio.accion`, `publicadoBoton`, `Sesion.entrar` como estilos propios (pasan a
 `Boton`); `--al-centro`; los parches `@media (max-width: 340px/350px)`; los tokens locales `--alto-mediana/grande/
 chica` y `--alto-hoja` duplicado; el carril semanal de la lista de Lugares; la frase del alta de lugar; las clases
 globales `.raiz` y `.pagina` (pasan a plantillas con áreas).
 
-## 11. Lo que se le pidió al founder (contestado el mismo día: «acepto tus recomendaciones en general»)
+## 11. Lo que se le pidió al founder y lo que contestó (cuatro vueltas el 2026-09-28)
+
+Las cuatro decisiones del primer avance y su respuesta:
 
 1. **«+» de publicar en la barra superior** (y en el carril lateral en tableta y escritorio), retirando el botón
-   flotante de las cuatro raíces. Es lo que cierra H-01, H-08, H-15 y H-36 de golpe.
-2. **Navegación lateral en tableta y escritorio**, con la barra inferior solo en teléfono.
-3. **«Mapa · Lista» como segmento en la cabecera** de Lugares (el founder lo sacó de la cabecera el 2026-09-24 para que
-   flotara; la medida de H-13 y H-15 es el motivo para volverlo a subir).
-4. **Botón «+» de renglón sin sombra** sobre fondo hueso (se queda a la vista, solo pesa menos).
+   flotante de las cuatro raíces. **Aceptado**; en la v2 va a la izquierda con el logotipo al centro (Instagram).
+2. **Navegación lateral en tableta y escritorio**, con la barra inferior solo en teléfono. **Aceptado.**
+3. **«Mapa · Lista» como segmento en la cabecera** de Lugares. **Rechazado donde quedó** («no me gusta dónde se colocó
+   segmented mapa/lista»); la v2 lo retira: la lista vive en una hoja inferior (6.2).
+4. **Botón «+» de renglón sin sombra** sobre fondo hueso. **Rechazado por estética**: elevación en todos los accionables
+   de listado, tarjeta y mapa (6.2).
 
-Las cuatro quedaron aplicadas en el prototipo (sección 6). Lo que sigue es su firma sobre el prototipo y, con ella, el plan definitivo (sección 7).
+Lo que la v2 decide y el founder confirma o corrige al probarla:
+
+5. **La lupa arriba a la derecha** abre la búsqueda (y no un sexto destino en la barra inferior): cinco destinos con
+   Perfil ya llenan los 390 px a 44 por destino; Instagram tampoco mete Buscar en la barra en la web.
+6. **La fila de filtros sin chips rápidos**: Filtros (con conteo) · ciudad · activos con ✕. Todo lo demás, en la hoja.
+7. **Etiquetas de los KPI**: Fecha · Costo · Van; Distancia · Eventos · Seguidores; Fechas · Seguidores · Lugares.
+8. **El alta con tira de tipos** y el tipo inicial por contexto (Inicio y Agenda → evento; Lugares → lugar; Artistas →
+   artista).
+9. **Ayuda de Claude Design**: el founder la ofreció dos veces. Las variantes de barra, botón de acción y KPI se
+   trabajaron aquí con medición (contraste, toques, desbordes) y capturas reales; si el founder prefiere comparar
+   variantes visuales en un lienzo antes de firmar, se abre uno con esas tres piezas.
+
+Con su firma sobre la v2 se cierra el plan definitivo por piezas (sección 7).

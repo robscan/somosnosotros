@@ -16,3 +16,16 @@ código de la app; sirven para repetir la medición en cada pieza de la reestruc
   lugares y eventos verosímiles, carteles públicos de `imagenes.json`). La app se apunta con un `.env.local` temporal
   (`NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8823`, llave anon inventada), `next build && next start -p 3100`, y la
   sesión es la cookie `sb-127-auth-token` que exporta `fixture.mjs` (`cookie`). Nunca toca producción ni un `.env`.
+
+## Prototipo de la reestructura (OL-227, doc 50 § 6)
+
+- `prototipo/generar.py <raíz del repo>` escribe `docs/rediseno/prototipos/restructura-ui.html` a partir de sus assets
+  (`logo.svg`, `mapa-base.svg`, `sn.txt`, `iconos.txt`) y de los carteles de `respaldo-local/imagenes.json`. Las
+  correcciones se hacen en el generador y se regenera; el HTML no se edita a mano.
+- Servir la carpeta: `python3 -m http.server 8090 --directory docs/rediseno/prototipos`.
+- `capturar-prototipo.mjs <url> <carpeta>`: las 25 capturas (teléfono 2×, tableta 1,5×, escritorio 1×) navegando el
+  prototipo de verdad (los clics se despachan como eventos para que también funcionen sobre `<g>` del SVG); imprime los
+  errores de página. Después, `comprimir.mjs` hacia `docs/rediseno/capturas-NNN/`.
+- Los tres scripts de Node usan `playwright-core` como `auditar.mjs` (instalado fuera del repo, ver arriba).
+- `medir-prototipo.mjs <url>`: `medir.js` sobre cada pantalla del prototipo (envoltorios sin estilo, desbordes,
+  márgenes negativos, toques < 44 y, desde la v2, iconos de control con contraste < 3:1 contra el fondo real del botón).
