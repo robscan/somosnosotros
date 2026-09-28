@@ -565,6 +565,14 @@ los controles por debajo de 44 son los mismos de la v2.
 - **`256-115-v3-lugares-ficha-sigues-telefono`:** en la hoja llena, tras tocar «Seguir»: «✓ Sigues» en verde y el
   aviso.
 
+### Desde el lienzo de Claude Design
+
+El founder comentó en el lienzo (dos hilos enviados a Claude): «esta es la opción que me gusta, héroe con todo
+integrado» sobre la hoja de lugar A (queda como decisión: doc 50 § 11, punto 31) y, sobre un KPI, «no logro
+disminuir el alto aquí, debe ser hug al contenido, deja mucho espacio abajo»: los KPI pierden el alto mínimo de 84 px
+en el lienzo y en el prototipo (la rejilla los sigue estirando a la fila, así que los tres quedan del mismo alto);
+capturas regeneradas.
+
 ### Cierre (cuarta parte)
 
 Commits en `restructura-ui` con el prototipo v3 (el segundo con las correcciones del founder al verla), las 41 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7 y P10,

@@ -843,7 +843,12 @@ Lo que el founder confirma o corrige al probar la v3:
 32. **Ayuda de Claude Design**: aceptada; se abre un lienzo con las piezas cuestionadas (hoja con ficha, barras de la
     ficha, letra de listas, pastillas) para comparar variantes ahí.
 31. **Sin línea bajo la barra de la app** y **toda la información de la hoja dentro de la hoja**: hechos a petición
-    suya el mismo día; confirmar que la hoja con la lista (sin ficha) no necesita Cerrar: el asa la baja.
+    suya el mismo día. **Confirmado en el lienzo** («esta es la opción que me gusta, héroe con todo integrado»): la
+    hoja con el héroe y el título dentro de la imagen es la definitiva. Queda por confirmar que la hoja con la lista
+    (sin ficha) no necesita Cerrar: el asa la baja.
+33. **Los KPI abrazan su contenido** («no logro disminuir el alto, debe ser hug al contenido, deja mucho espacio
+    abajo», en el lienzo): fuera el alto mínimo de 84 px; los tres siguen del mismo alto porque la rejilla estira cada
+    tarjeta a la fila. Aplicado en el prototipo y en el lienzo.
 22. **La ficha de lugar desde otras entradas** (el Dónde de un evento, Buscar, Perfil) sigue a pantalla completa con
     Atrás; dentro de la hoja solo cuando se viene de Lugares.
 23. **Esconder la barra inferior entera** (web) frente a minimizarla a una píldora como hace iOS 26.
