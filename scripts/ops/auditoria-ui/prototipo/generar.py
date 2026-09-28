@@ -2,7 +2,11 @@
 """Prototipo de la reestructura (OL-227, doc 50): genera docs/rediseno/prototipos/restructura-ui.html.
 Uso: python3 generar.py <raíz del repo>. Assets al lado (logo.svg, mapa-base.svg, sn.txt, iconos.txt) y carteles de ../respaldo-local/imagenes.json.
 v2: barra tipo Instagram («+» · logo · lupa · campana), perfil en la barra inferior, filtros en hoja,
-mapa con la lista en hoja inferior, alta con tira de modos, Voy/Seguir con un solo glifo sobre círculo elevado."""
+mapa con la lista en hoja inferior, alta con tira de modos, Voy/Seguir con un solo glifo sobre círculo elevado.
+v3 (quinta vuelta): barra superior única en los tres tamaños («+» · logo · lupa · campana) y carril lateral en dos grupos;
+Eventos absorbe Inicio y Agenda; fila de contexto [ciudad · cuándo · filtros] igual en todas las raíces; la ficha de lugar
+vive en la hoja de Lugares; título sobre la imagen o en la barra (conmutador del estudio); campana para seguir lugares;
+la barra inferior se esconde al bajar y vuelve al subir; visor de la imagen al tocarla; carril con subgrid."""
 import json, re, sys, os
 S = os.path.dirname(os.path.abspath(__file__))
 RAIZ = sys.argv[1]
@@ -21,6 +25,8 @@ extra = {
   'filtros': '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/>',
   'crear': '<rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/>',
   'estrella-llena': '<path fill="currentColor" stroke="none" d="M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.8z"/>',
+  'campana-mas': '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/><path d="M12 9.5v5M9.5 12h5"/>',
+  'marcador-mas': '<path d="M7 3.5h10v17l-5-3.6-5 3.6z"/><path d="M12 8v5M9.5 10.5h5"/>',
 }
 nombres = {
  'IconoCasa':'casa','IconoCalendario':'calendario','IconoPin':'pin','IconoEstrella':'estrella','IconoBuscar':'buscar','IconoCampana':'campana','IconoMas':'mas','IconoOk':'ok','IconoPersona':'persona','IconoPersonas':'personas','IconoCompartir':'compartir','IconoRuta':'ruta','IconoBoleto':'boleto','IconoReloj':'reloj','IconoChevronIzquierda':'chevron-izq','IconoChevronDerecha':'chevron-der','IconoCerrar':'cerrar','IconoPuntos':'puntos','IconoLista':'lista','IconoMapa':'mapa','IconoUbicacion':'ubicacion','IconoCalendarioAgregar':'calendario-agregar','IconoEnlace':'enlace','IconoInstagram':'instagram','IconoFacebook':'facebook','IconoEngrane':'engrane','IconoLapiz':'lapiz','IconoSitio':'sitio','IconoCamara':'camara','IconoTexto':'texto','IconoEtiqueta':'etiqueta','IconoSalir':'salir','IconoAyuda':'ayuda','IconoEscudo':'escudo','IconoLibro':'libro','IconoCorreo':'correo','IconoOjo':'ojo','IconoBloquear':'bloquear','IconoInstalar':'instalar','IconoPinMas':'pin-mas','IconoEstrellaMas':'estrella-mas','IconoCaret':'caret','IconoYouTube':'youtube','IconoTikTok':'tiktok'}
@@ -75,21 +81,23 @@ ar = [
  ('0Backside0','Rock, metal y alternativo · Grupo'),('A83','Rock, metal y alternativo · Grupo'),('Aaron Cadena','Artes visuales · Solista'),('Abdiel El Andromeda','Pop, urbano y electrónica · Solista'),('Abraham Delgadillo','Pintura · Solista'),('Abril Merlot','Música académica y clásica · Solista'),('Acorde-ón','Tradicional, folclore y canto nuevo · Grupo'),('Adriana Cortés','Danza contemporánea · Solista'),('Ale Pizarro','Teatro · Solista'),
 ]
 
-def boton_accion(decidido, seguir=False, etiqueta=None):
-    ic = 'ok' if decidido else ('persona-mas' if seguir else 'ok')
+def boton_accion(decidido, seguir=False, etiqueta=None, lugar=False):
+    # Un glifo por objeto: persona con «+» para artistas, campana con «+» para lugares (seguir = que te avisen); decidido = palomita blanca en verde.
+    ic = 'ok' if decidido else ('campana-mas' if (seguir and lugar) else 'persona-mas' if seguir else 'ok')
     lab = etiqueta or ('Sigues' if (decidido and seguir) else 'Seguir' if seguir else 'Ya vas' if decidido else 'Voy')
-    return f'<button type="button" class="boton-icono elevado{" decidido" if decidido else ""}" data-accion="{"seguir" if seguir else "voy"}" aria-pressed="{"true" if decidido else "false"}" aria-label="{lab}">{i(ic)}</button>'
+    objeto = ' data-objeto="lugar"' if lugar else ''
+    return f'<button type="button" class="boton-icono elevado{" decidido" if decidido else ""}" data-accion="{"seguir" if seguir else "voy"}"{objeto} aria-pressed="{"true" if decidido else "false"}" aria-label="{lab}">{i(ic)}</button>'
 
-def tarjeta(clave, sello=None, decidido=False, nombre=None, meta=None, img=None, ir='evento', seguir=False):
+def tarjeta(clave, sello=None, decidido=False, nombre=None, meta=None, img=None, ir='evento', seguir=False, lugar=False):
     d = ev.get(clave) if clave in ev else None
     titulo = nombre or d['t']; m = meta or d['cuando'] + ' · ' + d['sitio']
     src = img if img is not None else (d['img'] if d else None)
     s = f'<span class="sello">{sello}</span>' if sello else ''
-    return f'<li><a class="tarjeta" href="#" data-ir="{ir}">{foto(src, "", "foto")}{s}<b>{titulo}</b><small>{m}</small></a>{boton_accion(decidido, seguir)}</li>'
+    return f'<li><a class="tarjeta" href="#" data-ir="{ir}">{foto(src, "", "foto")}{s}<b>{titulo}</b><small>{m}</small></a>{boton_accion(decidido, seguir, lugar=lugar)}</li>'
 
-def carril(titulo, items, tam='mediana', ir='agenda'):
-    return (f'<section class="seccion-carril"><a class="titulo-seccion" href="#" data-ir="{ir}">{titulo}{i("chevron-der","i chevron")}</a>'
-            f'<ul class="carril {tam}">{"".join(items)}</ul></section>')
+def carril(titulo, items, tam='grande', ir=None):
+    cab = f'<a class="titulo-seccion" href="#" data-ir="{ir}">{titulo}{i("chevron-der","i chevron")}</a>' if ir else f'<h2 class="titulo-seccion">{titulo}</h2>'
+    return f'<section class="seccion-carril">{cab}<ul class="carril {tam}">{"".join(items)}</ul></section>'
 
 def renglon_evento(clave, decidido=False, interesa=False, tipo_meta=None):
     d = ev[clave]
@@ -104,21 +112,25 @@ def renglon_lugar(clave, sigue=False, ir='lugar'):
     d = lu[clave]
     prox = f'<small class="segundo">{i("calendario","i chico")} Próximo: {d["prox"]}</small>' if d['prox'] else ''
     return (f'<li class="renglon lista"><a class="frente" href="#" data-ir="{ir}">{foto(d["img"],"","foto")}<b>{d["n"]}</b>'
-            f'<small>{d["tipo"]} · {d["dir"]} · {d["km"]}</small>{prox}</a>{boton_accion(sigue, seguir=True)}</li>')
+            f'<small>{d["tipo"]} · {d["dir"]} · {d["km"]}</small>{prox}</a>{boton_accion(sigue, seguir=True, lugar=True)}</li>')
 
 def renglon_artista(n, m, sigue=False):
     return (f'<li class="renglon lista"><a class="frente" href="#" data-ir="artista">{foto(None,"","foto redonda")}<b>{n}</b><small>{m}</small></a>{boton_accion(sigue, seguir=True)}</li>')
 
 def barra_raiz():
-    return (f'<div class="barra">'
+    # Una sola barra para los tres tamaños, a nivel de la app: «+» · logotipo · lupa · campana.
+    return (f'<header class="barra">'
             f'<button type="button" class="boton-icono plano" data-publicar aria-label="Publicar">{i("crear")}</button>'
-            f'<a class="logotipo-enlace" href="#" data-ir="inicio" aria-label="Inicio">{logo}</a>'
+            f'<a class="logotipo-enlace" href="#" data-ir="eventos" aria-label="Inicio">{logo}</a>'
             f'<button type="button" class="boton-icono plano" data-ir="buscar" aria-label="Buscar">{i("buscar")}</button>'
             f'<button type="button" class="boton-icono plano" aria-label="Novedades">{i("campana")}<span class="punto"></span></button>'
-            f'</div>')
+            f'</header>')
 
 def chip_ciudad():
-    return f'<button type="button" class="chip contexto">{i("pin","i chico")}<span>San Luis Potosí</span>{i("caret","i chico")}</button>'
+    return f'<button type="button" class="chip contexto" data-hoja="ciudad">{i("pin","i chico")}<span>San Luis Potosí</span>{i("caret","i chico")}</button>'
+
+def chip_cuando(valor=None):
+    return f'<button type="button" class="chip contexto{" activo" if valor else ""}" data-hoja="cuando">{i("calendario","i chico")}<span>{valor or "Cuándo"}</span></button>'
 
 def chip_filtros(hoja, n=0):
     cuenta = f'<span class="cuenta-filtros">{n}</span>' if n else ''
@@ -127,20 +139,22 @@ def chip_filtros(hoja, n=0):
 def chip_activo(texto):
     return f'<button type="button" class="chip activo quitar" aria-label="Quitar {texto}">{texto}{i("cerrar","i chico")}</button>'
 
-def cabecera(filtros='', extra='', contexto=''):
+def cabecera(filtros='', extra=''):
+    # La cabecera de una raíz es solo la fila de contexto (pegajosa); la barra vive a nivel de la app.
     return f'''<header class="cabecera">
-      {barra_raiz()}
-      {f'<div class="contexto">{contexto}</div>' if contexto else ''}
       {f'<div class="filtros">{filtros}</div>' if filtros else ''}
       {extra}
     </header>'''
 
-def barra_interior(tarea=False, campo=None):
+def barra_interior(tarea=False, campo=None, titulo='', cerrar=False, fija=False):
     if campo:
         return f'<header class="barra-interior tarea con-campo"><label class="campo buscar-campo">{i("buscar")}<input type="search" placeholder="{campo}" aria-label="{campo}"></label><button type="button" class="boton-icono plano" data-atras aria-label="Cerrar">{i("cerrar")}</button></header>'
     if tarea:
-        return f'<header class="barra-interior tarea"><a class="logotipo-enlace" href="#" data-ir="inicio">{logo_chico}</a><button type="button" class="boton-icono contorno" data-atras aria-label="Cerrar">{i("cerrar")}</button></header>'
-    return f'<header class="barra-interior"><button type="button" class="boton-icono contorno" data-atras aria-label="Atrás">{i("chevron-izq")}</button><a class="logotipo-enlace" href="#" data-ir="inicio">{logo_chico}</a><button type="button" class="boton-icono plano" aria-label="Más opciones">{i("puntos")}</button></header>'
+        return f'<header class="barra-interior tarea"><b class="titulo-barra">{titulo}</b><button type="button" class="boton-icono contorno" data-atras aria-label="Cerrar">{i("cerrar")}</button></header>'
+    # Ficha: Atrás (o Cerrar cuando vive en la hoja de Lugares) · título · más opciones. El título se ve al desplazar o siempre (variante «en la barra»).
+    primero = (f'<button type="button" class="boton-icono contorno" data-cerrar-ficha aria-label="Cerrar">{i("cerrar")}</button>' if cerrar
+               else f'<button type="button" class="boton-icono contorno" data-atras aria-label="Atrás">{i("chevron-izq")}</button>')
+    return f'<header class="barra-interior{" fija" if fija else ""}">{primero}<b class="titulo-barra">{titulo}</b><button type="button" class="boton-icono plano" aria-label="Más opciones">{i("puntos")}</button></header>'
 
 letras = '<div class="letras" role="group" aria-label="Ir a la letra">' + ''.join('<button type="button"' + (' aria-current="true"' if l == '#' else '') + '>' + l + '</button>' for l in '#ABCDEFGHIJKLMNOPQRSTUVWXYZ') + '</div>'
 
@@ -172,80 +186,108 @@ mapa = f'''<svg class="lienzo" viewBox="120 262 390 440" preserveAspectRatio="xM
 minimapa = '<svg class="minimapa" viewBox="300 330 300 132" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><use href="#base" x="0" y="0" width="640" height="900"/><g class="lugar" transform="translate(450 396)"><circle r="7"/></g></svg>'
 
 # ---------- pantallas ----------
-inicio = f'''<section class="pantalla raiz" data-id="inicio">
-  {cabecera(contexto=chip_ciudad().replace('class="chip contexto"', 'class="chip contexto texto"'))}
-  {carril('Tus planes', [tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('leonora', sello='Te interesa')])}
-  {carril('Destacados', [tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('master', sello='9 van'), tarjeta('leonora', sello='Recién agregado'), tarjeta('desierto', sello='1 va')], 'grande')}
-  {carril('Esta semana', [tarjeta('sinfonica', sello='Hoy'), tarjeta('macario', sello='Hoy'), tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('fellini'), tarjeta('pimpolina', sello='4 van')])}
-  {carril('Nuevos eventos', [tarjeta('juana', sello='Recién agregado'), tarjeta('arttoy', sello='3 van'), tarjeta('susurros', sello='Recién agregado'), tarjeta('oca')])}
-  {carril('Lugares con eventos', [tarjeta('x', nombre=lu[k]['n'], meta=lu[k]['prox'] or '', img=lu[k]['img'], ir='lugar', seguir=True, decidido=(k=='miguelito')) for k in ('miguelito','paz','ferro','muni','ache')], 'chica', 'lugares')}
-  {carril('Artistas destacados', [tarjeta('x', nombre=n, meta=m, img=None, ir='artista', seguir=True) for n, m in ar[2:6]], 'grande', 'artistas')}
-</section>'''
+esqueleto = lambda redonda=False: '<ul class="lista esqueleto" aria-hidden="true" hidden>' + ''.join(f'<li class="renglon lista"><span class="foto{" redonda" if redonda else ""} respira"></span><span class="linea titulo respira"></span><span class="linea meta respira"></span></li>' for _ in range(6)) + '</ul>'
 
-esqueleto = lambda redonda=False: '<ul class="lista esqueleto" aria-hidden="true">' + ''.join(f'<li class="renglon lista"><span class="foto{" redonda" if redonda else ""} respira"></span><span class="linea titulo respira"></span><span class="linea meta respira"></span></li>' for _ in range(6)) + '</ul>'
-
-agenda = f'''<section class="pantalla raiz" data-id="agenda">
-  {cabecera(chip_filtros('filtros-agenda') + chip_ciudad())}
+# Eventos absorbe Inicio y Agenda: fila de contexto, un carril de destacados y la lista por día.
+eventos = f'''<section class="pantalla raiz" data-id="eventos">
+  {cabecera(chip_ciudad() + chip_cuando() + chip_filtros('filtros-eventos'))}
+  {carril('Destacados', [tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('master', sello='9 van'), tarjeta('leonora', sello='Recién agregado'), tarjeta('desierto', sello='1 va')])}
   {esqueleto()}
-  <h2 class="grupo">Hoy <span>· 2</span></h2>
-  <ul class="lista">{renglon_evento('sinfonica')}{renglon_evento('macario')}</ul>
-  <h2 class="grupo">Mañana</h2>
-  <ul class="lista">{renglon_evento('cristiada', decidido=True)}</ul>
-  <h2 class="grupo">mié 30 de sep</h2>
-  <ul class="lista">{renglon_evento('fellini')}</ul>
-  <h2 class="grupo">jue 1 de oct</h2>
-  <ul class="lista">{renglon_evento('pimpolina')}</ul>
-  <h2 class="grupo">vie 2 de oct</h2>
-  <ul class="lista">{renglon_evento('colocaos', decidido=True)}</ul>
-  <h2 class="grupo">sáb 3 de oct</h2>
-  <ul class="lista">{renglon_evento('arttoy')}</ul>
-  <h2 class="grupo">dom 4 de oct</h2>
-  <ul class="lista">{renglon_evento('susurros')}</ul>
-  <h2 class="grupo">lun 5 de oct</h2>
-  <ul class="lista">{renglon_evento('juana')}{renglon_evento('feleal')}</ul>
-  <h2 class="grupo">mié 7 de oct</h2>
-  <ul class="lista">{renglon_evento('leonora', interesa=True)}</ul>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="Hoy">Hoy</button><span>· 2</span></h2>
+  <ul class="lista">{renglon_evento('sinfonica')}{renglon_evento('macario')}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="Mañana">Mañana</button></h2>
+  <ul class="lista">{renglon_evento('cristiada', decidido=True)}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="mié 30 sep">mié 30 sep</button></h2>
+  <ul class="lista">{renglon_evento('fellini')}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="jue 1 oct">jue 1 oct</button></h2>
+  <ul class="lista">{renglon_evento('pimpolina')}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="vie 2 oct">vie 2 oct</button></h2>
+  <ul class="lista">{renglon_evento('colocaos', decidido=True)}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="sáb 3 oct">sáb 3 oct</button></h2>
+  <ul class="lista">{renglon_evento('arttoy')}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="dom 4 oct">dom 4 oct</button></h2>
+  <ul class="lista">{renglon_evento('susurros')}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="lun 5 oct">lun 5 oct</button></h2>
+  <ul class="lista">{renglon_evento('juana')}{renglon_evento('feleal')}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="mié 7 oct">mié 7 oct</button></h2>
+  <ul class="lista">{renglon_evento('leonora', interesa=True)}</ul></section>
 </section>'''
+
+# El cuerpo de la ficha de lugar se usa dos veces: a pantalla completa y dentro de la hoja de Lugares.
+def cuerpo_lugar():
+    return f'''<figure class="portada" style="--tono:#7a4a2e" data-visor>{foto(lu['ferro']['img'], 'Museo del Ferrocarril', 'cartel')}</figure>
+  <h1 class="titulo-ficha">Museo del Ferrocarril Jesús García Corona<span class="tipo">Museo</span></h1>
+  <ul class="kpis">
+    <li><a href="#">{i("pin")}<b>1,4 km</b><small>Distancia</small></a></li>
+    <li><a href="#">{i("calendario")}<b>3 próximos</b><small>Eventos</small></a></li>
+    <li><a href="#">{i("personas")}<b>48</b><small>Seguidores</small></a></li>
+  </ul>
+  <div class="acciones">
+    <a class="accion" href="#"><span class="boton-icono grande elevado">{i("ruta")}</span>Cómo llegar</a>
+    <button type="button" class="accion"><span class="boton-icono grande elevado">{i("compartir")}</span>Compartir</button>
+    <a class="accion" href="#"><span class="boton-icono grande elevado">{i("sitio")}</span>Sitio web</a>
+    <a class="accion" href="#"><span class="boton-icono grande elevado">{i("facebook")}</span>Facebook</a>
+    <a class="accion" href="#"><span class="boton-icono grande elevado">{i("instagram")}</span>Instagram</a>
+  </div>
+  <section class="bloque proximos">
+    <h2>Próximos eventos</h2>
+    <ul class="lista">{renglon_evento('colocaos').replace('MUNI Museo Universitario','Museo del Ferrocarril')}{renglon_evento('oca').replace('Museo Nacional de la Máscara','Museo del Ferrocarril')}{renglon_evento('feleal').replace('Teatro de la Paz','Museo del Ferrocarril')}</ul>
+  </section>
+  <section class="tarjeta-dato">
+    <h2>Dónde</h2>
+    {minimapa}
+    <a class="renglon dato" href="#">{i("pin")}<b>Manuel José Othón s/n esq. Chico Sein</b><small>Centro Histórico, 78000, San Luis Potosí</small>{i("chevron-der","i chevron")}</a>
+  </section>
+  <section class="bloque sobre">
+    <h2>Sobre el lugar</h2>
+    <p>Antigua estación de ferrocarril convertida en museo, con locomotoras, salas de exposición y un foro para conciertos. Martes a domingo de 10:00 a 18:00.</p>
+  </section>
+  <p class="pie">Ficha de la institución · <a href="#">Reportar</a></p>
+  <div class="flotantes">
+    <button type="button" class="flotante primaria" data-accion-ficha="seguir" data-objeto="lugar" aria-pressed="false">{i("campana-mas")}Seguir</button>
+  </div>'''
 
 lugares = f'''<section class="pantalla raiz" data-id="lugares" data-hoja-estado="asoma">
-  {cabecera(chip_filtros('filtros-lugares', 1) + chip_ciudad() + chip_activo('Museo'))}
+  {cabecera(chip_ciudad() + chip_filtros('filtros-lugares', 1) + chip_activo('Museo'))}
+  {barra_interior(titulo=lu['ferro']['n'], cerrar=True)}
   <div class="mapa">{mapa}<button type="button" class="boton-icono elevado ubicacion" aria-label="Mi ubicación">{i("ubicacion")}</button><span class="atribucion">© Mapbox © OpenStreetMap</span></div>
   <div class="hoja-lugares" role="region" aria-label="Lugares">
     <button type="button" class="asa" aria-label="Mostrar u ocultar la lista"></button>
     <b class="resumen">62 lugares <small>· los más cercanos primero</small></b>
-    <div class="pin-tarjeta" hidden>{renglon_lugar('ferro').replace('<li class="renglon lista">','<div class="renglon lista">').replace('</li>','</div>')}<button type="button" class="boton primario completo" data-ir="lugar">Ver la ficha</button><button type="button" class="boton texto" data-volver-lista>Volver a la lista</button></div>
     <ul class="lista panel">{''.join(renglon_lugar(k, sigue=(k=='miguelito')) for k in ('miguelito','paz','ferro','mascara','poeta','ache','aether','archivo','rafael','biblioteca','muni'))}</ul>
+    <article class="ficha-hoja" aria-label="Ficha del lugar" hidden>
+  {cuerpo_lugar()}
+    </article>
   </div>
 </section>'''
 
 artistas = f'''<section class="pantalla raiz" data-id="artistas" style="--alto-extra: 36px">
-  {cabecera(chip_filtros('filtros-artistas', 1) + chip_ciudad() + chip_activo('Música'), extra=letras)}
+  {cabecera(chip_ciudad() + chip_filtros('filtros-artistas', 1) + chip_activo('Música'), extra=letras)}
   {esqueleto(True)}
-  <h2 class="grupo">#</h2>
-  <ul class="lista">{renglon_artista(*ar[0])}</ul>
-  <h2 class="grupo">A</h2>
-  <ul class="lista">{''.join(renglon_artista(n, m, sigue=(n=='Aaron Cadena')) for n, m in ar[1:])}</ul>
+  <section class="tramo"><h2 class="grupo">#</h2>
+  <ul class="lista">{renglon_artista(*ar[0])}</ul></section>
+  <section class="tramo"><h2 class="grupo">A</h2>
+  <ul class="lista">{''.join(renglon_artista(n, m, sigue=(n=='Aaron Cadena')) for n, m in ar[1:])}</ul></section>
 </section>'''
 
 perfil = f'''<section class="pantalla raiz" data-id="perfil">
-  {cabecera()}
   <div class="perfil-cabecera"><span class="avatar grande">A</span><b>Ana Rentería</b><small>Barrio de San Miguelito</small><button type="button" class="boton-icono contorno" data-ir="ajustes" aria-label="Ajustes">{i("engrane")}</button></div>
   <ul class="kpis">
     <li><a href="#">{i("ok")}<b>2</b><small>Voy</small></a></li>
     <li><a href="#">{i("estrella")}<b>1</b><small>Me interesa</small></a></li>
-    <li><a href="#">{i("persona-mas")}<b>2</b><small>Sigo</small></a></li>
+    <li><a href="#">{i("campana")}<b>2</b><small>Sigo</small></a></li>
   </ul>
   <div class="filtros"><button type="button" class="chip activo">Voy</button><button type="button" class="chip">Me interesa</button><button type="button" class="chip">Sigo</button></div>
-  <h2 class="grupo">Mañana</h2>
-  <ul class="lista">{renglon_evento('cristiada', decidido=True)}</ul>
-  <h2 class="grupo">vie 2 de oct</h2>
-  <ul class="lista">{renglon_evento('colocaos', decidido=True)}</ul>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="Mañana">Mañana</button></h2>
+  <ul class="lista">{renglon_evento('cristiada', decidido=True)}</ul></section>
+  <section class="tramo"><h2 class="grupo"><button type="button" class="chip fecha" data-fecha="vie 2 oct">vie 2 oct</button></h2>
+  <ul class="lista">{renglon_evento('colocaos', decidido=True)}</ul></section>
   <a class="boton texto enlace-perfil" href="#">Así te ven los demás</a>
 </section>'''
 
 evento = f'''<section class="pantalla ficha" data-id="evento">
-  {barra_interior()}
-  <figure class="portada" style="--tono:#4a3d3a">{foto(ev['colocaos']['img'], 'Cartel de LXS COLOCAOS', 'cartel')}<button type="button" class="boton-icono elevado lupa" aria-label="Ver el cartel entero">{i("buscar")}</button></figure>
+  {barra_interior(titulo=ev['colocaos']['t'])}
+  <figure class="portada" style="--tono:#4a3d3a" data-visor>{foto(ev['colocaos']['img'], 'Cartel de LXS COLOCAOS', 'cartel')}</figure>
   <h1 class="titulo-ficha">LXS COLOCAOS: La última fogueada</h1>
   <ul class="kpis">
     <li><a href="#">{i("calendario")}<b>vie 2 oct<br>19:00</b><small>Fecha</small></a></li>
@@ -275,50 +317,19 @@ evento = f'''<section class="pantalla ficha" data-id="evento">
     <a class="renglon dato" href="#"><span class="pila"><span class="avatar chico">M</span><span class="avatar chico">A</span></span><b>Marcos Ledesma y Ana Rentería</b><small>Y 1 persona más tiene interés</small>{i("chevron-der","i chevron")}</a>
   </section>
   <p class="pie">Publicado por MUNI Museo Universitario · <a href="#">Reportar</a></p>
-  <div class="barra-acciones">
-    <button type="button" class="boton secundario">{i("estrella")}Me interesa</button>
-    <button type="button" class="boton primario decidido" aria-pressed="true">{i("ok")}Vas<small>Ya estás en la lista</small></button>
+  <div class="flotantes">
+    <button type="button" class="flotante secundaria" data-accion-ficha="interesa" aria-pressed="false">{i("estrella")}Me interesa</button>
+    <button type="button" class="flotante primaria" data-accion-ficha="voy" aria-pressed="true">{i("ok")}Vas</button>
   </div>
 </section>'''
 
 lugar = f'''<section class="pantalla ficha" data-id="lugar">
-  {barra_interior()}
-  <figure class="portada" style="--tono:#7a4a2e">{foto(lu['ferro']['img'], 'Museo del Ferrocarril', 'cartel')}<button type="button" class="boton-icono elevado lupa" aria-label="Ver la foto entera">{i("buscar")}</button></figure>
-  <h1 class="titulo-ficha">Museo del Ferrocarril Jesús García Corona<span class="tipo">Museo</span></h1>
-  <ul class="kpis">
-    <li><a href="#">{i("pin")}<b>1,4 km</b><small>Distancia</small></a></li>
-    <li><a href="#">{i("calendario")}<b>3 próximos</b><small>Eventos</small></a></li>
-    <li><a href="#">{i("personas")}<b>48</b><small>Seguidores</small></a></li>
-  </ul>
-  <div class="acciones">
-    <a class="accion" href="#"><span class="boton-icono grande elevado">{i("ruta")}</span>Cómo llegar</a>
-    <button type="button" class="accion"><span class="boton-icono grande elevado">{i("compartir")}</span>Compartir</button>
-    <a class="accion" href="#"><span class="boton-icono grande elevado">{i("sitio")}</span>Sitio web</a>
-    <a class="accion" href="#"><span class="boton-icono grande elevado">{i("facebook")}</span>Facebook</a>
-    <a class="accion" href="#"><span class="boton-icono grande elevado">{i("instagram")}</span>Instagram</a>
-  </div>
-  <section class="bloque proximos">
-    <h2>Próximos eventos</h2>
-    <ul class="lista">{renglon_evento('colocaos').replace('MUNI Museo Universitario','Museo del Ferrocarril')}{renglon_evento('oca').replace('Museo Nacional de la Máscara','Museo del Ferrocarril')}{renglon_evento('feleal').replace('Teatro de la Paz','Museo del Ferrocarril')}</ul>
-  </section>
-  <section class="tarjeta-dato">
-    <h2>Dónde</h2>
-    {minimapa}
-    <a class="renglon dato" href="#">{i("pin")}<b>Manuel José Othón s/n esq. Chico Sein</b><small>Centro Histórico, 78000, San Luis Potosí</small>{i("chevron-der","i chevron")}</a>
-  </section>
-  <section class="bloque sobre">
-    <h2>Sobre el lugar</h2>
-    <p>Antigua estación de ferrocarril convertida en museo, con locomotoras, salas de exposición y un foro para conciertos. Martes a domingo de 10:00 a 18:00.</p>
-  </section>
-  <p class="pie">Ficha de la institución · <a href="#">Reportar</a></p>
-  <div class="barra-acciones">
-    <button type="button" class="boton primario">{i("persona-mas")}Seguir</button>
-  </div>
+  {barra_interior(titulo=lu['ferro']['n'])}
+  {cuerpo_lugar()}
 </section>'''
 
-
 artista = f'''<section class="pantalla ficha" data-id="artista">
-  {barra_interior()}
+  {barra_interior(titulo='Aaron Cadena')}
   <div class="perfil-cabecera"><span class="foto redonda grande sn" role="img" aria-label="Sin foto"></span><b>Aaron Cadena</b><small>Artes visuales · Fotografía · Solista · San Luis Potosí</small><button type="button" class="boton-icono elevado" aria-label="Compartir">{i("compartir")}</button></div>
   <ul class="kpis">
     <li><a href="#">{i("calendario")}<b>2 próximas</b><small>Fechas</small></a></li>
@@ -344,8 +355,8 @@ artista = f'''<section class="pantalla ficha" data-id="artista">
     <a class="renglon dato" href="#" data-ir="lugar">{foto(None,'','foto chica')}<b>Aether</b><small>Galería · Centro</small>{i("chevron-der","i chevron")}</a>
   </section>
   <p class="pie">Ficha reclamada por el artista · <a href="#">Reportar</a></p>
-  <div class="barra-acciones">
-    <button type="button" class="boton primario">{i("persona-mas")}Seguir</button>
+  <div class="flotantes">
+    <button type="button" class="flotante primaria" data-accion-ficha="seguir" aria-pressed="false">{i("persona-mas")}Seguir</button>
   </div>
 </section>'''
 
@@ -356,9 +367,8 @@ def renglon_resuelto(icono, clave, valor, accion, pendiente=False, opciones=None
     return f'<li class="renglon resuelto{clase_p}">{i(icono)}<small>{clave}</small><b{clase_b}>{valor}</b>{acc}</li>'
 
 alta = f'''<section class="pantalla tarea" data-id="alta" data-tipo="evento">
-  {barra_interior(tarea=True)}
+  {barra_interior(tarea=True, titulo='Publicar un evento')}
   <form class="alta evento" action="#">
-    <h1 class="titulo-pagina">Publicar un evento</h1>
     <label class="tarjeta-cartel"><span class="boton-icono elevado primario">{i("camara")}</span><b>Sube el cartel</b><small>Leemos la fecha, el lugar y el título por ti.</small><input type="file" accept="image/*"></label>
     <label class="campo">{i("buscar")}<input type="text" placeholder="Nombre del evento"></label>
     <ul class="renglones">
@@ -372,7 +382,6 @@ alta = f'''<section class="pantalla tarea" data-id="alta" data-tipo="evento">
     <p class="nota-boton">Falta el nombre y dónde es.</p>
   </form>
   <form class="alta lugar" action="#" hidden>
-    <h1 class="titulo-pagina">Registrar un lugar</h1>
     <label class="campo">{i("buscar")}<input type="text" placeholder="Nombre del lugar"></label>
     <ul class="renglones">
       {renglon_resuelto('pin','Dónde','Falta','', pendiente=True, opciones=f'<span class="opciones"><button type="button" class="boton-icono contorno" aria-label="Estoy aquí">{i("ubicacion")}</button><button type="button" class="boton-icono contorno" aria-label="Buscar la dirección">{i("buscar")}</button></span>')}
@@ -383,7 +392,6 @@ alta = f'''<section class="pantalla tarea" data-id="alta" data-tipo="evento">
     <p class="nota-boton">Falta el nombre y dónde está.</p>
   </form>
   <form class="alta artista" action="#" hidden>
-    <h1 class="titulo-pagina">Registrar un artista</h1>
     <label class="campo">{i("buscar")}<input type="text" placeholder="Nombre del artista o grupo"></label>
     <ul class="renglones">
       {renglon_resuelto('estrella','Disciplina','Falta','', pendiente=True, opciones='<button type="button" class="boton texto">Elegir</button>')}
@@ -403,7 +411,7 @@ alta = f'''<section class="pantalla tarea" data-id="alta" data-tipo="evento">
 
 buscar = f'''<section class="pantalla tarea" data-id="buscar">
   {barra_interior(campo='Buscar un evento, lugar o artista')}
-  <button type="button" class="chip contexto texto en-busqueda">{i("pin","i chico")}<span>En San Luis Potosí</span>{i("caret","i chico")}</button>
+  <div class="filtros">{chip_ciudad()}</div>
   <h2 class="rotulo-grupo">Recientes</h2>
   <ul class="lista">
     <li class="renglon lista"><a class="frente" href="#" data-ir="evento">{foto(ev['colocaos']['img'],'','foto')}<b>LXS COLOCAOS: La última fogueada</b><small>Evento · vie 2 oct · MUNI</small></a></li>
@@ -426,8 +434,7 @@ def fila_ajuste(icono, etiqueta, detalle='', valor='', palanca=None, ir=None):
     return f'<li><{tag} class="renglon ajuste"{href}{irr}>{i(icono)}<b>{etiqueta}</b>{det}{accion}</{tag}></li>'
 
 ajustes = f'''<section class="pantalla ficha" data-id="ajustes">
-  {barra_interior()}
-  <h1 class="titulo-pagina">Ajustes</h1>
+  {barra_interior(titulo='Ajustes', fija=True)}
   <h2 class="rotulo-grupo">Tu ficha</h2>
   <ul class="tarjeta-lista">{fila_ajuste('lapiz','Editar','Foto, nombre, colonia, sobre ti')}{fila_ajuste('ojo','Perfil','Tu ficha y tu nombre en «quién va» se ven','Público')}{fila_ajuste('estrella','Mis artistas','Fichas que administras','1')}</ul>
   <h2 class="rotulo-grupo">Avisos</h2>
@@ -439,38 +446,46 @@ ajustes = f'''<section class="pantalla ficha" data-id="ajustes">
   <button type="button" class="boton texto peligro">Borrar mi cuenta</button>
 </section>'''
 
+# Barra inferior en teléfono (cuatro destinos); carril lateral en dos grupos desde 792: secciones arriba, perfil abajo.
 nav = f'''<nav class="navegacion" aria-label="Secciones">
-  <a class="marca" href="#" data-ir="inicio" aria-label="Inicio">{logo_chico}</a>
-  <a class="destino" href="#" data-ir="inicio" aria-current="page"><span class="pildora">{i("casa")}</span><span>Inicio</span></a>
-  <a class="destino" href="#" data-ir="agenda"><span class="pildora">{i("calendario")}</span><span>Agenda</span></a>
+  <a class="destino" href="#" data-ir="eventos" aria-current="page"><span class="pildora">{i("calendario")}</span><span>Eventos</span></a>
   <a class="destino" href="#" data-ir="lugares"><span class="pildora">{i("pin")}</span><span>Lugares</span></a>
   <a class="destino" href="#" data-ir="artistas"><span class="pildora">{i("estrella")}</span><span>Artistas</span></a>
-  <a class="destino" href="#" data-ir="perfil"><span class="pildora"><span class="avatar chico">A</span></span><span>Perfil</span></a>
-  <button type="button" class="destino publicar" data-publicar><span class="pildora">{i("crear")}</span><span>Publicar</span></button>
-  <button type="button" class="destino" data-ir="buscar"><span class="pildora">{i("buscar")}</span><span>Buscar</span></button>
-  <button type="button" class="destino" aria-label="Novedades"><span class="pildora">{i("campana")}<span class="punto"></span></span><span>Novedades</span></button>
+  <a class="destino perfil" href="#" data-ir="perfil"><span class="pildora"><span class="avatar chico">A</span></span><span>Perfil</span></a>
 </nav>'''
 
-def hoja_filtros(id_, titulo, bloques, resultado):
-    cuerpo = ''
+def hoja_filtros(id_, titulo, bloques, resultado, nota=''):
+    cuerpo = f'<p class="nota-hoja">{nota}</p>' if nota else ''
     for rotulo, contenido in bloques:
-        cuerpo += f'<h4>{rotulo}</h4>{contenido}'
+        cuerpo += (f'<h4>{rotulo}</h4>' if rotulo else '') + contenido
     return f'''<div class="hoja-fondo" data-hoja="{id_}" hidden>
   <div class="hoja" role="dialog" aria-label="{titulo}">
     <button type="button" class="boton-icono plano cerrar" data-cerrar aria-label="Cerrar">{i("cerrar")}</button>
     <h3>{titulo}</h3>
     {cuerpo}
-    <div class="pie-hoja"><button type="button" class="boton texto">Limpiar</button><button type="button" class="boton primario" data-cerrar>{resultado}</button></div>
+    <div class="pie-hoja"><button type="button" class="boton texto" data-limpiar>Limpiar</button><button type="button" class="boton primario" data-cerrar>{resultado}</button></div>
   </div>
 </div>'''
-chips_multi = lambda items: '<div class="chips multi envuelve">' + ''.join(f'<button type="button" class="chip{" activo" if a else ""}" aria-pressed="{"true" if a else "false"}">{t}{f" <small>{n}</small>" if n else ""}</button>' for t, n, a in items) + '</div>'
-palanca_fila = lambda etiqueta, detalle, on: f'<div class="renglon ajuste sola">{i("persona-mas")}<b>{etiqueta}</b><small>{detalle}</small><button type="button" class="palanca" role="switch" aria-checked="{"true" if on else "false"}" aria-label="{etiqueta}"></button></div>'
-ciudad_fila = f'<a class="renglon ajuste sola" href="#">{i("pin")}<b>San Luis Potosí</b><small>La ciudad ordena, no limita</small><span class="valor">Cambiar{i("chevron-der","i chevron")}</span></a>'
+chips_multi = lambda items, una=False: f'<div class="chips multi{" una" if una else ""} envuelve">' + ''.join(f'<button type="button" class="chip{" activo" if a else ""}" aria-pressed="{"true" if a else "false"}">{t}{f" <small>{n}</small>" if n else ""}</button>' for t, n, a in items) + '</div>'
+palanca_fila = lambda etiqueta, detalle, on: f'<div class="renglon ajuste sola">{i("campana")}<b>{etiqueta}</b><small>{detalle}</small><button type="button" class="palanca" role="switch" aria-checked="{"true" if on else "false"}" aria-label="{etiqueta}"></button></div>'
+ACTUAL = ' aria-current="true"'
+fila_ciudad = lambda icono, nombre, detalle, actual=False: f'<li><button type="button" class="renglon ajuste" data-ciudad="{nombre}"{ACTUAL if actual else ""}>{i(icono)}<b>{nombre}</b><small>{detalle}</small>{i("ok" if actual else "chevron-der","i chevron")}</button></li>'
+hoja_ciudad = f'''<div class="hoja-fondo" data-hoja="ciudad" hidden>
+  <div class="hoja" role="dialog" aria-label="Dónde estás">
+    <button type="button" class="boton-icono plano cerrar" data-cerrar aria-label="Cerrar">{i("cerrar")}</button>
+    <h3>Dónde estás</h3>
+    <p class="nota-hoja">Lo cercano va primero y lo demás después: la ciudad ordena, no limita.</p>
+    <ul class="tarjeta-lista">{fila_ciudad('ubicacion','Cerca de ti','Usa la ubicación del teléfono')}{fila_ciudad('pin','San Luis Potosí','Centro Histórico', actual=True)}{fila_ciudad('buscar','Otra ciudad','Escribe su nombre')}</ul>
+  </div>
+</div>'''
 hojas = (
-  hoja_filtros('filtros-agenda', 'Filtros', [('Cuándo', chips_multi([('Hoy',0,False),('Mañana',0,False),('Fin de semana',0,False),('Elegir fecha',0,False)])), ('Cuánto', chips_multi([('Gratis',0,False),('Cooperación',0,False)])), ('Siguiendo', palanca_fila('Solo lo que sigo','Lugares y artistas que sigues', False)), ('Dónde', ciudad_fila)], 'Ver 23 eventos')
-  + hoja_filtros('filtros-lugares', 'Filtros', [('Tipo', chips_multi([('Casa de cultura',16,False),('Museo',13,True),('Foro',10,False),('Galería',4,False),('Escuela',9,False),('Colectivo',3,False),('Biblioteca',3,False)])), ('Cuándo', chips_multi([('Con eventos esta semana',0,False),('Hoy',0,False)])), ('Siguiendo', palanca_fila('Solo los que sigo','Tus lugares', False)), ('Dónde', ciudad_fila)], 'Ver 13 lugares')
-  + hoja_filtros('filtros-artistas', 'Filtros', [('Disciplina', chips_multi([('Música',310,True),('Teatro',56,False),('Danza',28,False),('Artes visuales',93,False),('Letras',31,False),('Cine',13,False),('Artes circenses',7,False)])), ('Con fechas', chips_multi([('Con fechas próximas',0,False)])), ('Siguiendo', palanca_fila('Solo los que sigo','Tus artistas', False)), ('Dónde', ciudad_fila)], 'Ver 310 artistas')
+  hoja_filtros('cuando', 'Cuándo', [('', chips_multi([('Próximos',0,True),('Hoy',0,False),('Mañana',0,False),('Fin de semana',0,False),('Esta semana',0,False),('Elegir fecha…',0,False)], una=True))], 'Ver 23 eventos')
+  + hoja_ciudad
+  + hoja_filtros('filtros-eventos', 'Filtros', [('Cuánto', chips_multi([('Gratis',0,False),('Cooperación',0,False)])), ('Siguiendo', palanca_fila('Solo lo que sigo','Lugares y artistas que sigues', False))], 'Ver 23 eventos')
+  + hoja_filtros('filtros-lugares', 'Filtros', [('Tipo', chips_multi([('Casa de cultura',16,False),('Museo',13,True),('Foro',10,False),('Galería',4,False),('Escuela',9,False),('Colectivo',3,False),('Biblioteca',3,False)])), ('Con eventos', chips_multi([('Esta semana',0,False),('Hoy',0,False)])), ('Siguiendo', palanca_fila('Solo los que sigo','Tus lugares', False))], 'Ver 13 lugares')
+  + hoja_filtros('filtros-artistas', 'Filtros', [('Disciplina', chips_multi([('Música',310,True),('Teatro',56,False),('Danza',28,False),('Artes visuales',93,False),('Letras',31,False),('Cine',13,False),('Artes circenses',7,False)])), ('Con fechas', chips_multi([('Con fechas próximas',0,False)])), ('Siguiendo', palanca_fila('Solo los que sigo','Tus artistas', False))], 'Ver 310 artistas')
   + '<output class="toast" hidden></output>'
+  + f'<div class="visor" hidden><img alt=""><button type="button" class="boton-icono plano cerrar" data-cerrar-visor aria-label="Cerrar">{i("cerrar")}</button></div>'
 )
 
 html = f'''<!doctype html>
@@ -478,8 +493,8 @@ html = f'''<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Somos Nosotros · Reestructura de la interfaz, v2 (OL-227)</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap">
+<title>Somos Nosotros · Reestructura de la interfaz, v3 (OL-227)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Inter:wght@400..700&display=swap">
 <style>
 /* ==========================================================================
    0. La sala de prototipos (no es la app)
@@ -491,7 +506,7 @@ button, input {{ font: inherit; color: inherit; }}
 a {{ color: inherit; text-decoration: none; }}
 ul {{ list-style: none; }}
 .sprite {{ display: none; }}
-.estudio {{ display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; max-width: 1320px; margin: 0 auto; padding: 16px 16px 8px; }}
+.estudio {{ display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px 16px; align-items: center; max-width: 1320px; margin: 0 auto; padding: 16px 16px 8px; }}
 .estudio strong {{ font-variation-settings: var(--ancho-titulo); font-size: 18px; }}
 .estudio .nota {{ grid-column: 1 / -1; font-size: 14px; color: var(--estudio-suave); }}
 .modos-estudio {{ display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: #dedcd6; }}
@@ -520,41 +535,62 @@ ul {{ list-style: none; }}
   --ok: #1f6f43; --ok-suave: color-mix(in srgb, #1f6f43 12%, white); --error: #b3261e; --error-suave: #fdf3f2;
   --destacado: #d35400; --destacado-texto: #a94400; --vidrio: rgba(255,255,255,.92); --sistema-azul: #1a73e8;
   --sombra: 0 2px 12px rgba(0,0,0,.08); --sombra-panel: 0 -2px 16px rgba(0,0,0,.1); --sombra-flotante: 0 6px 20px rgba(0,0,0,.22);
+  --velo-titulo: linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.44) 55%, rgba(0,0,0,0));
   --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px; --espacio-8: 40px;
   --radio-chico: 8px; --radio: 12px; --radio-grande: 16px; --radio-pildora: 999px;
   --control: 44px; --toque: 48px; --boton-icono: 48px; --boton-icono-grande: 56px; --toque-min: 44px;
-  --alto-barra: 56px; --alto-filtros: 48px; --alto-nav: 60px; --alto-barra-acciones: 72px; --alto-modos: 56px; --ancho-carril-nav: 88px;
-  --tope: 0px; --piso: 0px;
+  --alto-barra: 56px; --alto-filtros: 48px; --alto-nav: 60px; --alto-modos: 56px; --ancho-carril-nav: 88px;
+  --tope: 0px; --piso: 0px; --nav-abajo: calc(var(--alto-nav) + var(--piso));
   --z-pegajoso: 10; --z-flotante: 20; --z-barra: 30; --z-hoja: 40; --z-capa: 50; --z-encima: 60;
   --letra-2xs: .75rem; --letra-xs: .875rem; --letra-sm: .9375rem; --letra-md: 1.0625rem; --letra-lg: 1.125rem; --letra-xl: 1.1875rem; --letra-2xl: 1.625rem; --letra-3xl: 1.875rem;
   --gutter: 20px; --columna: 600px; --columna-ancha: 960px; --panel: 400px;
-  --tarjeta-mediana: 220px; --tarjeta-mediana-foto: 132px; --tarjeta-grande: 165px; --tarjeta-grande-foto: 248px; --tarjeta-chica: 104px; --foto-renglon: 56px;
+  --tarjeta-grande: 165px; --tarjeta-grande-foto: 248px; --foto-renglon: 56px;
   --hoja-asoma: 176px;
   --duracion: 200ms; --duracion-ficha: 220ms; --curva: cubic-bezier(.22,.61,.36,1);
+  /* Letra de listas y tarjetas (título y meta de renglones y tarjetas): la marca sigue en títulos, KPI y botones */
+  --fuente-lista: var(--fuente); --ancho-lista-titulo: var(--ancho-titulo); --ancho-lista-meta: var(--ancho-texto); --letra-lista-titulo: var(--letra-xl); --letra-lista-meta: var(--letra-sm); --peso-lista-titulo: 700; --interlinea-lista: 1.15;
 }}
+.app[data-letra="bricolage-ancha"] {{ --ancho-lista-titulo: "wdth" 100; --ancho-lista-meta: "wdth" 100; --letra-lista-titulo: 1rem; --letra-lista-meta: .875rem; --interlinea-lista: 1.25; }}
+.app[data-letra="inter"] {{ --fuente-lista: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; --ancho-lista-titulo: normal; --ancho-lista-meta: normal; --letra-lista-titulo: 1rem; --letra-lista-meta: .875rem; --peso-lista-titulo: 600; --interlinea-lista: 1.3; }}
 
 /* ==========================================================================
-   2. El armazón: rejilla de dos áreas (pantalla, nav); en tableta y escritorio la nav pasa a columna lateral
+   2. El armazón: barra arriba y pantalla; la barra inferior flota al pie en teléfono y se esconde al bajar.
+      Desde 792 la barra ocupa todo el ancho y la navegación es un carril lateral en dos grupos.
    ========================================================================== */
-.app {{ position: relative; display: grid; grid-template: "pantalla" 1fr "nav" auto / 1fr; width: 100%; height: 100%; overflow: hidden; border-radius: 30px; background: var(--fondo-contenido); color: var(--texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-size: var(--letra-md); line-height: 1.4; }}
+.app {{ position: relative; display: grid; grid-template: "barra" auto "pantalla" minmax(0, 1fr) / minmax(0, 1fr); width: 100%; height: 100%; overflow: hidden; border-radius: 30px; background: var(--fondo-contenido); color: var(--texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-size: var(--letra-md); line-height: 1.4; }}
 .aparato[data-modo="telefono"] .app {{ --tope: 48px; --piso: 34px; }}
 .aparato[data-modo="tableta"] .app {{ --tope: 24px; --piso: 20px; border-radius: 18px; }}
 .aparato[data-modo="escritorio"] .app {{ border-radius: 6px; }}
 .pantalla {{ grid-area: pantalla; position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }}
 .pantalla::-webkit-scrollbar {{ display: none; }}
 .pantalla[hidden] {{ display: none; }}
-.pantalla.raiz {{ padding-bottom: var(--espacio-8); }}
+.pantalla.raiz {{ padding-bottom: calc(var(--nav-abajo) + var(--espacio-6)); }}
 .pantalla.tarea {{ background: var(--fondo); }}
 .pantalla[data-id="alta"] {{ grid-template-rows: auto 1fr auto; }}
 h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700; line-height: 1.15; text-wrap: balance; }}
 .i {{ width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }}
 .i.chico {{ width: 16px; height: 16px; }}
 .i.chevron {{ width: 18px; height: 18px; color: var(--texto-suave); }}
-.bloque, .tarjeta-dato, .seccion-carril > .titulo-seccion, .grupo, .kpis, .acciones, .titulo-ficha, .titulo-pagina, .pie, .campo, .renglones, .tarjeta-cartel, .nota-boton, .rotulo-grupo, .tarjeta-lista, .perfil-cabecera, .boton.completo, .boton.texto.peligro, .en-busqueda, .enlace-perfil {{ margin-inline: var(--gutter); }}
+.bloque, .tarjeta-dato, .seccion-carril > .titulo-seccion, .grupo, .kpis, .acciones, .pie, .campo, .renglones, .tarjeta-cartel, .nota-boton, .rotulo-grupo, .tarjeta-lista, .perfil-cabecera, .boton.completo, .boton.texto.peligro, .en-busqueda, .enlace-perfil {{ margin-inline: var(--gutter); }}
 
-/* ---- navegación: abajo en teléfono (cinco destinos, el perfil incluido); lateral desde 792 ---- */
-.navegacion {{ grid-area: nav; position: relative; z-index: var(--z-barra); display: grid; grid-template-columns: repeat(5, 1fr); height: calc(var(--alto-nav) + var(--piso)); padding: 0 var(--espacio-1) var(--piso); background: var(--fondo); border-top: 1px solid var(--borde); box-shadow: var(--sombra-panel); }}
-.navegacion .marca, .navegacion button.destino {{ display: none; }}
+/* ---- barra de la app: «+» · logotipo · lupa · campana. En teléfono se guarda al bajar (queda la franja de estado) ---- */
+.barra {{ grid-area: barra; position: relative; z-index: var(--z-pegajoso); display: grid; grid-template-columns: var(--control) var(--control) minmax(0, 1fr) var(--control) var(--control); align-items: center; height: calc(var(--alto-barra) + var(--tope)); padding: var(--tope) calc(var(--gutter) - var(--espacio-2)) 0; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); overflow: hidden; transition: height var(--duracion) var(--curva); }}
+.app[data-compacta] > .barra {{ height: var(--tope); }}
+.app:has(> .pantalla.ficha:not([hidden])) > .barra, .app:has(> .pantalla.tarea:not([hidden])) > .barra, .app:has(> .pantalla[data-id="lugares"][data-ficha]:not([hidden])) > .barra {{ display: none; }}
+.barra > :nth-child(1) {{ grid-column: 1; }}
+.barra > :nth-child(2) {{ grid-column: 3; justify-self: center; }}
+.barra > :nth-child(3) {{ grid-column: 4; }}
+.barra > :nth-child(4) {{ grid-column: 5; }}
+.barra .i {{ width: 26px; height: 26px; }}
+.logotipo-enlace {{ display: grid; align-items: center; min-height: var(--control); }}
+.logotipo {{ display: block; height: 28px; width: auto; aspect-ratio: 3903 / 790; }}
+.punto {{ position: absolute; top: 3px; right: 14px; width: 9px; height: 9px; border-radius: 50%; background: var(--primario); box-shadow: 0 0 0 2px var(--fondo); }}
+.barra .punto {{ top: 8px; right: 8px; }}
+
+/* ---- navegación: cuatro destinos al pie en teléfono; se esconde al bajar y vuelve al subir (como la barra) ---- */
+.navegacion {{ position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-barra); display: grid; grid-template-columns: repeat(4, 1fr); height: var(--nav-abajo); padding: 0 var(--espacio-1) var(--piso); background: var(--fondo); border-top: 1px solid var(--borde); box-shadow: var(--sombra-panel); transition: transform var(--duracion) var(--curva); }}
+.app[data-nav-oculta] > .navegacion {{ transform: translateY(100%); }}
+.app:has(> .pantalla.ficha:not([hidden])) > .navegacion, .app:has(> .pantalla.tarea:not([hidden])) > .navegacion {{ display: none; }}
 .destino {{ display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .02em; cursor: pointer; }}
 .destino .pildora {{ position: relative; display: grid; place-items: center; width: 60px; height: 32px; border-radius: 16px; transition: background-color 150ms; }}
 .destino .pildora .i {{ width: 26px; height: 26px; }}
@@ -563,43 +599,27 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .destino[aria-current="page"] .pildora {{ background: var(--primario); color: var(--primario-texto); }}
 .destino[aria-current="page"] .pildora .avatar.chico {{ box-shadow: 0 0 0 2px var(--primario-texto); }}
 .destino[aria-current="page"] span:last-child {{ font-weight: 700; }}
-.punto {{ position: absolute; top: 3px; right: 14px; width: 9px; height: 9px; border-radius: 50%; background: var(--primario); box-shadow: 0 0 0 2px var(--fondo); }}
-.barra .punto {{ top: 8px; right: 8px; }}
-.app:has(> .pantalla.ficha:not([hidden])) .navegacion, .app:has(> .pantalla.tarea:not([hidden])) .navegacion {{ display: none; }}
 
 /* ==========================================================================
-   3. Cabecera única de las raíces (tipo Instagram): «+» · logotipo · lupa · campana, y debajo una sola fila de filtros.
-      Pegajosa; al bajar se guarda la barra (fila 0fr) y quedan los filtros (48). Sin márgenes negativos.
+   3. Cabecera de las raíces: solo la fila de contexto [ciudad · cuándo · filtros · activos], pegajosa bajo la barra
    ========================================================================== */
-.cabecera {{ position: sticky; top: 0; z-index: var(--z-pegajoso); display: grid; grid-template-rows: minmax(0, 1fr) auto auto; padding-top: var(--tope); background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); transition: grid-template-rows var(--duracion) var(--curva); }}
-.cabecera[data-compacta] {{ grid-template-rows: minmax(0, 0fr) auto auto; }}
-.cabecera > * {{ min-height: 0; overflow: hidden; transition: padding var(--duracion) var(--curva); }}
-.cabecera[data-compacta] > .barra {{ padding-block: 0; }}
-.barra {{ display: grid; grid-template-columns: var(--control) var(--control) 1fr var(--control) var(--control); align-items: center; padding: calc((var(--alto-barra) - var(--control)) / 2) calc(var(--gutter) - var(--espacio-2)); }}
-.barra > :nth-child(1) {{ grid-column: 1; }}
-.barra > :nth-child(2) {{ grid-column: 3; justify-self: center; }}
-.barra > :nth-child(3) {{ grid-column: 4; }}
-.barra > :nth-child(4) {{ grid-column: 5; }}
-.barra .i {{ width: 26px; height: 26px; }}
-.logotipo-enlace {{ display: grid; align-items: center; min-height: var(--control); }}
-.logotipo {{ display: block; height: 28px; width: auto; aspect-ratio: 3903 / 790; }}
-.logotipo.chico {{ height: 24px; }}
-.contexto {{ display: flex; align-items: center; gap: var(--espacio-2); min-height: 40px; padding: 0 var(--gutter) var(--espacio-2); }}
+.cabecera {{ position: sticky; top: 0; z-index: var(--z-pegajoso); display: grid; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }}
 .filtros {{ display: flex; align-items: center; gap: var(--espacio-2); min-height: var(--alto-filtros); padding: 0 var(--gutter) var(--espacio-2); overflow-x: auto; scrollbar-width: none; scroll-padding-inline: var(--gutter); }}
 .filtros::-webkit-scrollbar {{ display: none; }}
 .avatar {{ display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--fondo-miniatura); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; cursor: pointer; }}
 .avatar.chico {{ width: 28px; height: 28px; font-size: var(--letra-2xs); border: 2px solid var(--fondo); }}
 .avatar.grande {{ width: 72px; height: 72px; font-size: var(--letra-2xl); }}
 
-/* ---- barra interior (fichas), de tarea (altas) y de búsqueda (campo): la misma pieza, tres columnas ---- */
-.barra-interior {{ position: sticky; top: 0; z-index: var(--z-pegajoso); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--espacio-2); height: calc(var(--alto-barra) + var(--tope)); padding: var(--tope) var(--gutter) 0; background: var(--fondo); border-bottom: 1px solid var(--borde); margin-bottom: var(--espacio-4); }}
-.barra-interior > :first-child {{ justify-self: start; }}
-.barra-interior > :last-child {{ justify-self: end; }}
-.barra-interior.tarea > :first-child {{ grid-column: 2; justify-self: center; }}
+/* ---- barra interior (fichas), de tarea (altas) y de búsqueda (campo): la misma pieza, tres columnas; el título va al centro ---- */
+.barra-interior {{ position: sticky; top: 0; z-index: var(--z-pegajoso); display: grid; grid-template-columns: var(--control) minmax(0, 1fr) var(--control); align-items: center; gap: var(--espacio-2); height: calc(var(--alto-barra) + var(--tope)); padding: var(--tope) var(--gutter) 0; background: var(--fondo); border-bottom: 1px solid var(--borde); margin-bottom: var(--espacio-4); }}
+.barra-interior.tarea > :first-child {{ grid-column: 2; }}
 .barra-interior.tarea > :last-child {{ grid-column: 3; }}
 .barra-interior.con-campo {{ grid-template-columns: minmax(0, 1fr) auto; }}
-.barra-interior.con-campo > :first-child {{ grid-column: 1; justify-self: stretch; margin: 0; }}
+.barra-interior.con-campo > :first-child {{ grid-column: 1; margin: 0; }}
 .barra-interior.con-campo > :last-child {{ grid-column: 2; }}
+.titulo-barra {{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); transition: opacity 150ms; }}
+/* Variante «sobre la imagen»: el título de la barra aparece cuando la portada ya se desplazó. Variante «en la barra»: siempre. Tareas y Ajustes: siempre. */
+.app:not([data-titulo="barra"]) .pantalla:not([data-compacta]) > .barra-interior:not(.tarea):not(.fija) > .titulo-barra {{ opacity: 0; }}
 
 /* ==========================================================================
    4. Controles canónicos: Boton, BotonIcono, Chip, Palanca
@@ -612,9 +632,6 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .boton.chico {{ min-height: 36px; padding: 0 var(--espacio-3); font-size: var(--letra-sm); border-radius: var(--radio-pildora); }}
 .boton.completo {{ width: auto; display: flex; }}
 .boton:disabled {{ opacity: .55; cursor: default; }}
-.boton.decidido {{ display: inline-grid; grid-template-columns: auto 1fr; grid-template-areas: "icono texto" "icono nota"; column-gap: var(--espacio-2); text-align: left; line-height: 1.1; background: var(--ok-suave); border-color: var(--ok); color: var(--ok); font-size: var(--letra-md); }}
-.boton.decidido > .i {{ grid-area: icono; }}
-.boton.decidido > small {{ grid-area: nota; color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 500; }}
 .boton-icono {{ display: inline-grid; place-items: center; width: var(--control); height: var(--control); border: 0; border-radius: 50%; background: none; color: var(--texto); cursor: pointer; -webkit-tap-highlight-color: transparent; }}
 .boton-icono.contorno {{ border: 1px solid var(--borde); background: var(--fondo); }}
 .boton-icono.elevado {{ width: var(--boton-icono); height: var(--boton-icono); background: var(--fondo); color: var(--primario); box-shadow: var(--sombra); }}
@@ -633,10 +650,8 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .chip.quitar {{ padding-right: var(--espacio-2); }}
 .chip.filtro {{ font-weight: 600; }}
 .cuenta-filtros {{ display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--primario); color: var(--primario-texto); font-size: var(--letra-2xs); font-weight: 700; }}
-.chip.contexto {{ font-weight: 600; min-height: 36px; }}
+.chip.contexto {{ font-weight: 600; }}
 .chip.contexto > span {{ overflow: hidden; text-overflow: ellipsis; }}
-.chip.contexto.texto {{ border: 0; padding: 0 var(--espacio-1); background: none; }}
-.chip.persona {{ padding: 4px var(--espacio-3) 4px 4px; }}
 .chips {{ display: flex; gap: var(--espacio-2); overflow-x: auto; scrollbar-width: none; scroll-padding-inline: var(--gutter); }}
 .chips::-webkit-scrollbar {{ display: none; }}
 .chips.envuelve {{ flex-wrap: wrap; overflow: visible; }}
@@ -660,8 +675,8 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .renglon.lista {{ grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "frente accion"; padding: var(--espacio-3) var(--gutter); border-bottom: 1px solid var(--borde); column-gap: var(--espacio-3); }}
 .renglon.lista > .frente {{ grid-area: frente; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "foto titulo" "foto meta" "foto segundo"; column-gap: var(--espacio-3); align-content: center; min-height: var(--foto-renglon); min-width: 0; }}
 .renglon.lista > .frente > .foto {{ grid-area: foto; align-self: start; }}
-.renglon.lista > .frente > b {{ grid-area: titulo; font-size: var(--letra-xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }}
-.renglon.lista > .frente > small {{ grid-area: meta; margin-top: 3px; color: var(--texto-suave); font-size: var(--letra-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }}
+.renglon.lista > .frente > b {{ grid-area: titulo; font-family: var(--fuente-lista); font-size: var(--letra-lista-titulo); font-weight: var(--peso-lista-titulo); font-variation-settings: var(--ancho-lista-titulo); line-height: var(--interlinea-lista); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }}
+.renglon.lista > .frente > small {{ grid-area: meta; margin-top: 3px; color: var(--texto-suave); font-family: var(--fuente-lista); font-size: var(--letra-lista-meta); font-variation-settings: var(--ancho-lista-meta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }}
 .renglon.lista > .frente > small.segundo {{ grid-area: segundo; display: flex; align-items: center; gap: 6px; margin-top: 2px; }}
 .renglon.lista > .boton-icono {{ grid-area: accion; }}
 .foto {{ width: var(--foto-renglon); height: var(--foto-renglon); border-radius: 10px; object-fit: cover; background: var(--fondo-miniatura); }}
@@ -674,7 +689,8 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .lista > .renglon:last-child {{ border-bottom: 0; }}
 .renglon.dato {{ min-height: var(--control); padding: var(--espacio-2) 0; }}
 .renglon.dato > .i:first-child {{ color: var(--texto-suave); align-self: center; }}
-.renglon.dato > b {{ font-weight: 600; }}
+.renglon.dato > b {{ font-family: var(--fuente-lista); font-size: var(--letra-lista-titulo); font-weight: var(--peso-lista-titulo); font-variation-settings: var(--ancho-lista-titulo); line-height: var(--interlinea-lista); }}
+.renglon.dato > small {{ font-family: var(--fuente-lista); font-size: var(--letra-lista-meta); font-variation-settings: var(--ancho-lista-meta); }}
 .renglon.dato > .pila {{ grid-area: foto; display: grid; grid-auto-flow: column; grid-auto-columns: 20px; padding-right: 8px; }}
 .pila .avatar {{ position: relative; }}
 .pila .avatar + .avatar {{ z-index: 1; }}
@@ -686,7 +702,9 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .renglon.ajuste > b {{ font-weight: 600; }}
 .renglon.ajuste > small {{ white-space: normal; line-height: 1.3; }}
 .renglon.ajuste > .valor {{ display: inline-flex; align-items: center; gap: 4px; color: var(--texto-suave); font-size: var(--letra-sm); }}
+.renglon.ajuste[aria-current="true"] > .chevron {{ color: var(--primario); }}
 .rotulo-grupo {{ margin-top: var(--espacio-5); margin-bottom: var(--espacio-2); padding-left: 4px; color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }}
+.pantalla.ficha > .barra-interior + .rotulo-grupo {{ margin-top: 0; }}
 .renglones {{ display: grid; gap: var(--espacio-2); margin-bottom: var(--espacio-4); }}
 .renglon.resuelto {{ grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: "foto meta accion" "foto titulo accion"; min-height: 60px; padding: 10px 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }}
 .renglon.resuelto.pendiente {{ border-style: dashed; }}
@@ -697,33 +715,31 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .renglon.resuelto > .opciones {{ display: flex; gap: 6px; align-items: center; }}
 
 /* ==========================================================================
-   6. Carriles y tarjetas (Inicio)
+   6. Carril de tarjetas (Destacados): el carril define las tres filas y cada tarjeta las hereda (subgrid): foto, título y meta alineados entre tarjetas
    ========================================================================== */
-.seccion-carril {{ display: grid; gap: 0; padding-top: var(--espacio-4); }}
+.seccion-carril {{ display: grid; padding-top: var(--espacio-4); }}
 .titulo-seccion {{ display: inline-flex; align-items: center; gap: 2px; justify-self: start; min-height: var(--control); padding-right: var(--espacio-2); font-size: var(--letra-xl); font-weight: 700; font-variation-settings: var(--ancho-titulo); }}
 .titulo-seccion > .chevron {{ width: 20px; height: 20px; }}
-.carril {{ display: grid; grid-auto-flow: column; grid-auto-columns: var(--tarjeta-mediana); gap: var(--espacio-3); padding: var(--espacio-1) var(--gutter) var(--espacio-2); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none; }}
+.carril {{ display: grid; grid-auto-flow: column; grid-auto-columns: var(--tarjeta-grande); grid-template-rows: var(--tarjeta-grande-foto) auto auto; gap: var(--espacio-1) var(--espacio-3); padding: var(--espacio-1) var(--gutter) var(--espacio-2); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none; }}
 .carril::-webkit-scrollbar {{ display: none; }}
-.carril > li {{ position: relative; min-width: 0; scroll-snap-align: start; }}
+.carril > li {{ position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; grid-row: 1 / -1; min-width: 0; scroll-snap-align: start; }}
 .carril > li > .boton-icono {{ position: absolute; top: var(--espacio-2); right: var(--espacio-2); }}
-.tarjeta {{ display: grid; grid-template-rows: var(--tarjeta-mediana-foto) auto auto; grid-template-areas: "foto" "titulo" "meta"; row-gap: var(--espacio-1); }}
-.tarjeta > .foto {{ grid-area: foto; width: 100%; height: 100%; border-radius: var(--radio); }}
-.tarjeta > .sello {{ grid-area: foto; align-self: end; justify-self: start; margin: 0 0 var(--espacio-2) var(--espacio-2); padding: 3px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); font-size: var(--letra-xs); font-weight: 700; }}
-.tarjeta > b {{ grid-area: titulo; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; }}
-.tarjeta > small {{ grid-area: meta; overflow: hidden; color: var(--texto-suave); font-size: var(--letra-sm); text-overflow: ellipsis; white-space: nowrap; }}
-.carril.grande {{ grid-auto-columns: var(--tarjeta-grande); }}
-.carril.grande .tarjeta {{ grid-template-rows: var(--tarjeta-grande-foto) auto auto; }}
-.carril.chica {{ grid-auto-columns: var(--tarjeta-chica); }}
-.carril.chica .tarjeta {{ grid-template-rows: var(--tarjeta-chica) auto auto; text-align: center; }}
-.carril.chica .foto {{ border-radius: 50%; }}
-.carril.chica > li > .boton-icono {{ top: 0; right: 0; }}
-.carril.chica .tarjeta > .sello {{ display: none; }}
+.tarjeta {{ display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; grid-row: 1 / -1; min-width: 0; }}
+.tarjeta > .foto {{ grid-area: 1 / 1; width: 100%; height: 100%; border-radius: var(--radio); }}
+.tarjeta > .sello {{ grid-area: 1 / 1; align-self: end; justify-self: start; margin: 0 0 var(--espacio-2) var(--espacio-2); padding: 3px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); font-size: var(--letra-xs); font-weight: 700; }}
+.tarjeta > b {{ grid-area: 2 / 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--fuente-lista); font-size: var(--letra-lista-titulo); font-weight: var(--peso-lista-titulo); font-variation-settings: var(--ancho-lista-titulo); line-height: var(--interlinea-lista); }}
+.tarjeta > small {{ grid-area: 3 / 1; overflow: hidden; color: var(--texto-suave); font-family: var(--fuente-lista); font-size: var(--letra-lista-meta); font-variation-settings: var(--ancho-lista-meta); text-overflow: ellipsis; white-space: nowrap; }}
 
 /* ==========================================================================
-   7. Listas: títulos de grupo pegajosos bajo los filtros; esqueleto con los mismos tokens
+   7. Listas: títulos de grupo pegajosos bajo la fila de contexto; esqueleto con los mismos tokens
    ========================================================================== */
-.grupo {{ position: sticky; top: calc(var(--tope) + var(--alto-filtros) + var(--alto-extra, 0px)); z-index: calc(var(--z-pegajoso) - 1); padding: 14px 0 6px; background: var(--fondo-contenido); border-bottom: 1px solid var(--borde); font-size: var(--letra-xl); }}
+.tramo {{ display: block; }}
+.grupo {{ position: sticky; top: calc(var(--alto-filtros) + var(--espacio-2) + var(--alto-extra, 0px)); z-index: calc(var(--z-pegajoso) - 1); display: flex; align-items: center; gap: var(--espacio-2); padding: 10px 0 8px; background: var(--fondo-contenido); border-bottom: 1px solid var(--borde); font-size: var(--letra-xl); }}
 .grupo > span {{ color: var(--texto-suave); font-weight: 500; }}
+/* La fecha del día es un chip: tocarlo deja solo ese día (y el chip Cuándo lo muestra); tocarlo otra vez lo quita */
+.grupo > .chip.fecha {{ font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); }}
+.tramo[hidden] {{ display: none; }}
+.pantalla[data-id="perfil"] .grupo {{ top: 0; }}
 .esqueleto[hidden] {{ display: none; }}
 .esqueleto .renglon.lista {{ grid-template-columns: var(--foto-renglon) minmax(0, 1fr); grid-template-areas: "foto titulo" "foto meta"; row-gap: 8px; }}
 .esqueleto .foto {{ grid-area: foto; }}
@@ -734,10 +750,15 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 @keyframes respirar {{ 50% {{ opacity: .55; }} }}
 
 /* ==========================================================================
-   8. Lugares: mapa a pantalla completa y la lista en una hoja inferior que se arrastra (asoma · media · llena)
+   8. Lugares: la fila de contexto arriba; el mapa y la hoja comparten la segunda fila de la rejilla (la hoja se alinea al pie).
+      Tocar un pin o un renglón abre la ficha DENTRO de la hoja (capa sobre la lista, que conserva su desplazamiento);
+      la barra de la app da paso a Cerrar · título · más opciones. Desde 792, hoja = panel izquierdo con su propia barra.
    ========================================================================== */
-.pantalla[data-id="lugares"] {{ grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding-bottom: 0; }}
-.mapa {{ position: relative; min-height: 0; background: var(--fondo-mapa); overflow: hidden; }}
+.pantalla[data-id="lugares"] {{ grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding-bottom: var(--nav-abajo); }}
+.pantalla[data-id="lugares"] > .barra-interior {{ display: none; margin-bottom: 0; }}
+.pantalla[data-id="lugares"][data-ficha] > .cabecera {{ display: none; }}
+.pantalla[data-id="lugares"][data-ficha] > .barra-interior {{ display: grid; }}
+.mapa {{ grid-row: 2; grid-column: 1; position: relative; min-height: 0; background: var(--fondo-mapa); overflow: hidden; }}
 .lienzo {{ position: absolute; inset: 0; width: 100%; height: 100%; }}
 .lienzo text {{ font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-weight: 700; font-size: 12.5px; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; text-anchor: middle; fill: var(--texto); }}
 #base text {{ display: none; }}
@@ -754,10 +775,11 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .lienzo .persona .yo {{ fill: var(--sistema-azul); stroke: #fff; stroke-width: 2.5px; }}
 .ubicacion {{ position: absolute; right: var(--gutter); top: var(--espacio-3); z-index: 2; color: var(--texto); }}
 .atribucion {{ position: absolute; left: var(--espacio-2); top: calc(var(--espacio-3) + 14px); font-size: 10px; color: var(--texto-suave); opacity: .8; }}
-.hoja-lugares {{ position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-flotante); display: grid; grid-template-rows: auto auto minmax(0, 1fr); height: var(--hoja-asoma); background: var(--fondo); border-radius: var(--radio-grande) var(--radio-grande) 0 0; box-shadow: var(--sombra-panel); transition: height 250ms var(--curva); touch-action: none; }}
-.pantalla[data-id="lugares"][data-pin][data-hoja-estado="asoma"] .hoja-lugares {{ height: auto; }}
+.hoja-lugares {{ grid-row: 2; grid-column: 1; align-self: end; position: relative; z-index: var(--z-flotante); display: grid; grid-template-rows: auto auto minmax(0, 1fr); height: var(--hoja-asoma); background: var(--fondo); border-radius: var(--radio-grande) var(--radio-grande) 0 0; box-shadow: var(--sombra-panel); transition: height 250ms var(--curva); touch-action: none; }}
 .pantalla[data-id="lugares"][data-hoja-estado="media"] .hoja-lugares {{ height: 56%; }}
-.pantalla[data-id="lugares"][data-hoja-estado="llena"] .hoja-lugares {{ height: calc(100% - var(--tope) - var(--alto-barra) - var(--alto-filtros)); }}
+/* Con la ficha dentro, la altura media es la del asa, la portada 16:9 y la pastilla: nada queda tapado en reposo */
+.pantalla[data-id="lugares"][data-ficha][data-hoja-estado="media"] .hoja-lugares {{ height: calc(28px + (100cqw - 24px) * 9 / 16 + 80px); }}
+.pantalla[data-id="lugares"][data-hoja-estado="llena"] .hoja-lugares {{ height: 100%; border-radius: 0; }}
 .hoja-lugares.arrastrando {{ transition: none; }}
 .asa {{ width: 100%; height: 28px; border: 0; background: none; cursor: grab; }}
 .asa::before {{ content: ""; display: block; width: 36px; height: 4px; margin: 8px auto 0; border-radius: 2px; background: #d9d9d9; }}
@@ -765,24 +787,25 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .resumen small {{ color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 500; font-variation-settings: var(--ancho-texto); }}
 .hoja-lugares > .lista.panel {{ overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; touch-action: pan-y; }}
 .hoja-lugares > .lista.panel::-webkit-scrollbar {{ display: none; }}
-.pin-tarjeta {{ display: grid; gap: var(--espacio-2); padding: 0 var(--gutter) var(--espacio-3); }}
-.pin-tarjeta[hidden] {{ display: none; }}
-.pin-tarjeta > .renglon.lista {{ padding-inline: 0; border: 0; }}
-.pin-tarjeta > .boton.completo {{ margin-inline: 0; }}
-.pantalla[data-id="lugares"][data-pin] .hoja-lugares > .lista.panel {{ display: none; }}
-.pantalla[data-id="lugares"][data-pin] .hoja-lugares > .resumen {{ display: none; }}
+.ficha-hoja {{ position: absolute; top: 28px; left: 0; right: 0; bottom: 0; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "portada"; grid-auto-rows: max-content; align-content: start; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; touch-action: pan-y; background: var(--fondo); --gutter: var(--espacio-5); }}
+.ficha-hoja::-webkit-scrollbar {{ display: none; }}
+.ficha-hoja[hidden] {{ display: none; }}
 
 /* ==========================================================================
-   9. Ficha, alta con tira de modos, búsqueda, perfil
+   9. Ficha: la portada y el título comparten el área «portada» (el título va al pie de la imagen, sobre un velo);
+      tocar la imagen abre el visor. Alta con tira de modos, búsqueda, perfil.
    ========================================================================== */
-.portada {{ position: relative; margin: 0; aspect-ratio: 4 / 3; background: var(--tono, var(--fondo-miniatura)); overflow: hidden; }}
+.pantalla.ficha {{ grid-template-areas: "barra" "portada"; }}
+.pantalla[data-id="ajustes"] {{ grid-template-areas: "barra"; }}
+.pantalla.ficha > .barra-interior {{ grid-area: barra; margin-bottom: 0; }}
+.pantalla.ficha > .portada, .pantalla.ficha > .titulo-ficha, .ficha-hoja > .portada, .ficha-hoja > .titulo-ficha {{ grid-area: portada; }}
+.portada {{ position: relative; margin: 0; aspect-ratio: 4 / 3; background: var(--tono, var(--fondo-miniatura)); overflow: hidden; cursor: zoom-in; }}
 .portada > .cartel {{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; view-transition-name: cartel; }}
-.pantalla.ficha > .barra-interior {{ margin-bottom: 0; }}
-.pantalla.ficha > .perfil-cabecera {{ margin-top: var(--espacio-5); }}
 .portada > .sn {{ position: absolute; inset: 0; background-size: 30%; }}
-.portada > .lupa {{ position: absolute; right: var(--espacio-3); bottom: var(--espacio-3); color: var(--texto); }}
-.titulo-ficha {{ display: grid; gap: var(--espacio-1); margin-top: var(--espacio-4); font-size: var(--letra-2xl); }}
-.titulo-ficha > .tipo {{ justify-self: start; padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--primario-suave); color: var(--primario); font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-texto); letter-spacing: .02em; text-transform: uppercase; }}
+.titulo-ficha {{ align-self: end; z-index: 1; display: grid; gap: var(--espacio-2); margin: 0; padding: var(--espacio-8) var(--gutter) var(--espacio-4); background: var(--velo-titulo); color: #fff; font-size: var(--letra-2xl); pointer-events: none; }}
+.titulo-ficha > .tipo {{ justify-self: start; padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); color: var(--texto); font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-texto); letter-spacing: .02em; text-transform: uppercase; }}
+.app[data-titulo="barra"] .titulo-ficha {{ display: none; }}
+.pantalla.ficha > .perfil-cabecera {{ margin-top: var(--espacio-5); }}
 .kpis {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); margin-top: var(--espacio-4); }}
 .kpis li {{ display: grid; }}
 .kpis a {{ display: grid; gap: 2px; align-content: start; height: 100%; min-height: 84px; padding: 10px var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }}
@@ -803,16 +826,28 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .bloque > .lista > .renglon.lista {{ padding-inline: 0; }}
 .pie {{ margin-top: var(--espacio-6); padding-top: var(--espacio-3); border-top: 1px solid var(--borde); color: var(--texto-suave); font-size: var(--letra-sm); }}
 .pie a {{ text-decoration: underline; }}
-.barra-acciones {{ position: sticky; bottom: 0; z-index: var(--z-barra); margin-top: var(--espacio-4); display: grid; grid-template-columns: auto 1fr; gap: var(--espacio-3); align-items: center; min-height: var(--alto-barra-acciones); padding: var(--espacio-3) var(--gutter) calc(var(--espacio-3) + var(--piso)); background: var(--fondo); border-top: 1px solid var(--borde); }}
-.barra-acciones:has(> :only-child) {{ grid-template-columns: 1fr; }}
-.alta {{ display: grid; align-content: start; }}
+/* Acciones de la ficha: pastillas que flotan sobre el contenido (sticky al pie), una línea, sin nota dentro del botón */
+.flotantes {{ position: sticky; bottom: calc(var(--piso) + var(--espacio-4)); z-index: var(--z-barra); justify-self: center; display: flex; gap: var(--espacio-2); margin-top: var(--espacio-6); padding-inline: var(--gutter); }}
+.flotante {{ display: inline-flex; align-items: center; gap: var(--espacio-2); min-height: var(--toque); padding: 0 var(--espacio-5) 0 var(--espacio-4); border: 0; border-radius: var(--radio-pildora); font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); box-shadow: var(--sombra-flotante); cursor: pointer; -webkit-tap-highlight-color: transparent; }}
+.flotante.primaria {{ background: var(--primario); color: var(--primario-texto); }}
+.flotante.secundaria {{ background: var(--fondo); color: var(--texto); }}
+.flotante.primaria[aria-pressed="true"] {{ background: var(--ok); }}
+.flotante.secundaria[aria-pressed="true"] {{ color: var(--primario); }}
+/* El aviso sube por encima de las acciones flotantes cuando hay ficha a la vista */
+.app:has(> .pantalla.ficha:not([hidden])) > .toast, .app:has(> .pantalla[data-id="lugares"][data-ficha]:not([hidden])) > .toast {{ bottom: calc(var(--nav-abajo) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }}
+.app:has(> .pantalla.ficha:not([hidden])) > .toast {{ bottom: calc(var(--piso) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }}
+/* Dentro de la hoja la portada es 16:9: a media altura se ven título, etiqueta y el arranque de los KPI sin que la acción flotante los tape */
+.ficha-hoja > .portada {{ aspect-ratio: 16 / 9; }}
+.pantalla.ficha {{ padding-bottom: var(--espacio-4); }}
+.ficha-hoja > .flotantes {{ bottom: var(--espacio-4); }}
+.ficha-hoja {{ padding-bottom: var(--espacio-4); }}
+.alta {{ display: grid; align-content: start; padding-top: var(--espacio-2); }}
 .alta[hidden] {{ display: none; }}
 .tarjeta-cartel {{ position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr); grid-template-areas: "icono titulo" "icono nota"; column-gap: 14px; align-items: center; margin-bottom: var(--espacio-6); padding: 12px 16px; border: 1px solid var(--primario); border-radius: var(--radio); background: var(--primario-suave); cursor: pointer; }}
 .tarjeta-cartel > .boton-icono {{ grid-area: icono; }}
 .tarjeta-cartel > b {{ grid-area: titulo; }}
 .tarjeta-cartel > small {{ grid-area: nota; color: var(--texto-suave); font-size: var(--letra-sm); }}
 .tarjeta-cartel > input {{ position: absolute; inset: 0; opacity: 0; cursor: pointer; }}
-.titulo-pagina {{ margin-bottom: var(--espacio-4); font-size: var(--letra-2xl); }}
 .campo {{ display: grid; grid-template-columns: auto 1fr; align-items: center; gap: var(--espacio-2); min-height: var(--toque); margin-bottom: var(--espacio-3); padding: 0 14px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); color: var(--texto-suave); }}
 .campo:focus-within {{ border-color: var(--texto); }}
 .campo input {{ min-width: 0; border: 0; background: none; outline: none; color: var(--texto); }}
@@ -828,11 +863,11 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .perfil-cabecera > small {{ grid-area: meta; color: var(--texto-suave); font-size: var(--letra-sm); }}
 .perfil-cabecera > .boton, .perfil-cabecera > .boton-icono {{ grid-area: editar; }}
 .enlace-perfil {{ justify-self: start; text-decoration: underline; color: var(--texto); margin-top: var(--espacio-4); }}
-.en-busqueda {{ justify-self: start; margin-top: var(--espacio-1); }}
+.pantalla[data-id="buscar"] > .barra-interior {{ margin-bottom: var(--espacio-2); }}
 .chips.en-busqueda {{ justify-self: stretch; }}
 
 /* ==========================================================================
-   10. Hoja, aviso y transiciones
+   10. Hoja, visor, aviso y transiciones
    ========================================================================== */
 .hoja-fondo {{ position: absolute; inset: 0; z-index: var(--z-hoja); display: grid; align-items: end; background: rgba(0,0,0,.32); }}
 .hoja-fondo[hidden] {{ display: none; }}
@@ -840,9 +875,15 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .hoja::before {{ content: ""; display: block; width: 36px; height: 4px; margin: 0 auto; border-radius: 2px; background: #d9d9d9; }}
 .hoja > h3 {{ padding-right: var(--control); font-size: var(--letra-xl); }}
 .hoja > h4 {{ margin-top: var(--espacio-2); color: var(--texto-suave); font-size: var(--letra-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-variation-settings: var(--ancho-texto); }}
+.hoja > .nota-hoja {{ color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.35; }}
 .hoja > .cerrar {{ position: absolute; top: var(--espacio-2); right: var(--espacio-2); color: var(--texto-suave); }}
+.hoja > .tarjeta-lista {{ margin-inline: 0; }}
 .pie-hoja {{ position: sticky; bottom: calc(-1 * var(--espacio-4) - var(--piso)); display: grid; grid-template-columns: auto 1fr; gap: var(--espacio-3); margin-top: var(--espacio-2); padding: var(--espacio-3) 0 0; background: var(--fondo); border-top: 1px solid var(--borde); }}
-.toast {{ position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--alto-nav) + var(--piso) + var(--espacio-4)); z-index: var(--z-encima); display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--espacio-3); padding: var(--espacio-3) var(--espacio-4); border-radius: var(--radio); background: var(--texto); color: var(--fondo); font-size: var(--letra-sm); box-shadow: var(--sombra-flotante); animation: subir 200ms var(--curva); }}
+.visor {{ position: absolute; inset: 0; z-index: var(--z-capa); display: grid; place-items: center; background: rgba(0,0,0,.94); animation: fundir 200ms var(--curva); cursor: zoom-out; }}
+.visor[hidden] {{ display: none; }}
+.visor > img {{ max-width: 100%; max-height: 100%; object-fit: contain; }}
+.visor > .cerrar {{ position: absolute; top: calc(var(--tope) + var(--espacio-2)); right: var(--espacio-2); color: #fff; }}
+.toast {{ position: absolute; left: var(--gutter); right: var(--gutter); bottom: calc(var(--nav-abajo) + var(--espacio-4)); z-index: var(--z-encima); display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--espacio-3); padding: var(--espacio-3) var(--espacio-4); border-radius: var(--radio); background: var(--texto); color: var(--fondo); font-size: var(--letra-sm); box-shadow: var(--sombra-flotante); animation: subir 200ms var(--curva); }}
 .toast[hidden] {{ display: none; }}
 .toast button {{ border: 0; background: none; color: #d8c6ff; font-weight: 700; cursor: pointer; }}
 @keyframes subir {{ from {{ transform: translateY(24px); opacity: 0; }} }}
@@ -852,12 +893,13 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .pantalla.entra-seccion {{ animation: fundir var(--duracion) var(--curva); }}
 .pantalla.entra-ficha {{ animation: entrar-lado var(--duracion-ficha) var(--curva); }}
 .pantalla.entra-tarea {{ animation: entrar-abajo 250ms var(--curva); }}
+.ficha-hoja.entra {{ animation: fundir var(--duracion) var(--curva); }}
 ::view-transition-old(root), ::view-transition-new(root) {{ animation-duration: 200ms; }}
 html[data-transicion="tarea"]::view-transition-new(root) {{ animation: entrar-abajo 250ms var(--curva); }}
 html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-lado 220ms var(--curva); }}
 ::view-transition-group(cartel) {{ animation-duration: 220ms; animation-timing-function: var(--curva); }}
 @media (prefers-reduced-motion: reduce) {{
-  .pantalla, .hoja, .toast, .cabecera, .palanca, .palanca::after, .destino .pildora, .hoja-lugares {{ animation: none !important; transition: none !important; }}
+  .pantalla, .hoja, .toast, .barra, .navegacion, .palanca, .palanca::after, .destino .pildora, .hoja-lugares, .ficha-hoja, .visor, .titulo-barra {{ animation: none !important; transition: none !important; }}
   .respira {{ animation: none; }}
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {{ animation: none !important; }}
 }}
@@ -869,34 +911,27 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .app {{ --gutter: max(20px, calc((100cqw - 24px - var(--columna)) / 2)); }}
 }}
 @container app (min-width: 792px) {{
-  .app {{ grid-template: "nav pantalla" 1fr / var(--ancho-carril-nav) minmax(0, 1fr); --gutter: max(24px, calc((100cqw - 24px - var(--ancho-carril-nav) - var(--columna)) / 2)); }}
-  .app:has(> .pantalla.ficha:not([hidden])) .navegacion, .app:has(> .pantalla.tarea:not([hidden])) .navegacion {{ display: grid; }}
-  .navegacion {{ grid-template-columns: 1fr; grid-template-rows: auto repeat(5, auto) auto 1fr auto auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: calc(var(--tope) + var(--espacio-4)) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 1px solid var(--borde); box-shadow: none; }}
-  .navegacion .marca {{ display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: var(--espacio-2); }}
-  .navegacion .marca .logotipo {{ height: 16px; }}
-  .navegacion button.destino {{ display: flex; }}
-  .navegacion .publicar {{ grid-row: 7; }}
-  .navegacion .publicar .pildora {{ width: 48px; height: 48px; border-radius: 50%; background: var(--primario); color: var(--primario-texto); box-shadow: var(--sombra); }}
-  .navegacion > [data-ir="buscar"] {{ grid-row: 9; }}
-  .navegacion > [aria-label="Novedades"] {{ grid-row: 10; }}
+  .app {{ --nav-abajo: 0px; grid-template: "barra barra" auto "nav pantalla" minmax(0, 1fr) / var(--ancho-carril-nav) minmax(0, 1fr); --gutter: max(24px, calc((100cqw - 24px - var(--ancho-carril-nav) - var(--columna)) / 2)); }}
+  /* La barra de la app ocupa todo el ancho y no se guarda; sigue ahí en fichas y tareas */
+  .app > .barra, .app[data-compacta] > .barra, .app:has(> .pantalla.ficha:not([hidden])) > .barra, .app:has(> .pantalla.tarea:not([hidden])) > .barra, .app:has(> .pantalla[data-id="lugares"][data-ficha]:not([hidden])) > .barra {{ display: grid; height: calc(var(--alto-barra) + var(--tope)); padding-inline: var(--espacio-4); }}
+  /* Carril lateral en dos grupos: secciones arriba, perfil abajo; no se esconde y sigue en fichas y tareas */
+  .navegacion, .app[data-nav-oculta] > .navegacion, .app:has(> .pantalla.ficha:not([hidden])) > .navegacion, .app:has(> .pantalla.tarea:not([hidden])) > .navegacion {{ position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: var(--espacio-4) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 1px solid var(--borde); box-shadow: none; transform: none; }}
+  .navegacion > .perfil {{ grid-row: 5; }}
   .destino {{ width: 72px; padding: 6px 0; border-radius: var(--radio); }}
-  .barra, .barra-interior > .logotipo-enlace {{ display: none; }}
-  .cabecera, .cabecera[data-compacta] {{ grid-template-rows: auto auto auto; }}
-  .contexto, .filtros {{ padding-top: var(--espacio-3); }}
-  .barra-interior {{ grid-template-columns: auto 1fr auto; }}
-  .barra-interior.tarea > :first-child {{ display: none; }}
-  .barra-interior.tarea > :last-child {{ grid-column: 3; }}
+  .pantalla.raiz {{ padding-bottom: var(--espacio-8); }}
+  .filtros {{ padding-top: var(--espacio-3); }}
+  .barra-interior {{ height: var(--alto-barra); padding-top: 0; }}
   .barra-interior.con-campo > :first-child {{ display: grid; max-width: 520px; }}
-  .pantalla[data-id="lugares"] {{ grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; }}
-  .pantalla[data-id="lugares"] > .cabecera {{ grid-area: cabecera; }}
+  .pantalla[data-id="lugares"] {{ grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "barra mapa" "hoja mapa"; padding-bottom: 0; }}
+  .pantalla[data-id="lugares"] > .cabecera, .pantalla[data-id="lugares"][data-ficha] > .cabecera {{ display: grid; grid-area: cabecera; }}
+  .pantalla[data-id="lugares"] > .cabecera > .filtros {{ padding-inline: var(--espacio-5); }}
+  .pantalla[data-id="lugares"] > .barra-interior {{ grid-area: barra; position: static; padding-inline: var(--espacio-3); border-right: 1px solid var(--borde); }}
   .pantalla[data-id="lugares"] > .mapa {{ grid-area: mapa; }}
-  .pantalla[data-id="lugares"] .hoja-lugares, .pantalla[data-id="lugares"][data-hoja-estado] .hoja-lugares {{ position: static; grid-area: hoja; height: auto; min-height: 0; border-radius: 0; box-shadow: none; border-right: 1px solid var(--borde); background: var(--fondo-contenido); }}
+  .pantalla[data-id="lugares"] .hoja-lugares, .pantalla[data-id="lugares"][data-hoja-estado] .hoja-lugares {{ grid-area: hoja; align-self: stretch; height: auto; min-height: 0; border-radius: 0; box-shadow: none; border-right: 1px solid var(--borde); background: var(--fondo-contenido); }}
   .hoja-lugares > .asa {{ display: none; }}
-  .hoja-lugares > .resumen, .hoja-lugares > .pin-tarjeta {{ padding-inline: var(--espacio-5); }}
-  .hoja-lugares > .resumen {{ padding-top: var(--espacio-3); font-size: var(--letra-lg); }}
-  .pantalla[data-id="lugares"] .renglon.lista {{ padding-inline: var(--espacio-5); }}
-  .barra-acciones > * {{ max-width: 320px; }}
-  .barra-acciones:has(> :only-child) {{ justify-content: start; }}
+  .ficha-hoja {{ top: 0; }}
+  .hoja-lugares > .resumen {{ padding: var(--espacio-3) var(--espacio-5) var(--espacio-2); font-size: var(--letra-lg); }}
+  .hoja-lugares > .lista.panel > .renglon.lista {{ padding-inline: var(--espacio-5); }}
   .toast {{ left: calc(var(--ancho-carril-nav) + var(--gutter)); right: auto; width: 420px; bottom: var(--espacio-6); }}
   .hoja {{ align-self: center; border-radius: var(--radio-grande); padding-bottom: var(--espacio-4); animation: fundir 200ms var(--curva); }}
   .hoja-fondo {{ align-items: center; }}
@@ -907,7 +942,10 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .pantalla.ficha > .barra-interior {{ grid-area: barra; }}
   .pantalla.ficha > .portada {{ grid-area: portada; margin-left: var(--gutter); border-radius: var(--radio-grande); aspect-ratio: 5 / 3; align-self: start; }}
   .pantalla.ficha > .perfil-cabecera {{ grid-area: portada; margin-right: 0; align-self: start; }}
-  .pantalla.ficha > .titulo-ficha {{ grid-area: titulo; margin-left: 0; margin-top: 0; font-size: var(--letra-3xl); }}
+  /* En escritorio el título vuelve a la columna derecha (sobre la imagen solo en teléfono y en el panel); en la variante «en la barra» no se repite */
+  .pantalla.ficha > .titulo-ficha {{ grid-area: titulo; align-self: start; margin: 0; padding: 0; background: none; color: var(--texto); font-size: var(--letra-3xl); pointer-events: auto; }}
+  .pantalla.ficha > .titulo-ficha > .tipo {{ background: var(--primario-suave); color: var(--primario); }}
+  .app[data-titulo="barra"] .pantalla.ficha > .titulo-ficha {{ display: none; }}
   .pantalla.ficha > .kpis {{ grid-area: kpis; margin-left: 0; }}
   .pantalla.ficha > .acciones {{ grid-area: acciones; margin-left: 0; margin-right: 0; }}
   .pantalla[data-id="artista"] > .acciones {{ margin-left: var(--gutter); }}
@@ -917,37 +955,44 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .pantalla.ficha > .quien {{ grid-area: quien; margin-left: 0; }}
   .pantalla.ficha > .proximos {{ grid-area: proximos; margin-left: 0; }}
   .pantalla.ficha > .pie {{ grid-area: pie; margin-left: 0; }}
-  .pantalla.ficha > .barra-acciones {{ grid-column: 1 / -1; }}
+  .pantalla.ficha > .flotantes {{ grid-column: 1 / -1; justify-self: end; }}
   .pantalla[data-id="lugar"] {{ grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". donde" ". sobre" ". pie"; }}
   .pantalla[data-id="artista"] {{ grid-template-areas: "barra barra" "portada kpis" "acciones proximos" ". sobre" ". lugares" ". pie"; }}
   .pantalla[data-id="artista"] > .lugares {{ grid-area: lugares; margin-left: 0; }}
-  .pantalla[data-id="ajustes"] {{ grid-template-columns: minmax(0, 1fr); grid-template-areas: none; }}
-  .pantalla[data-id="ajustes"] > * {{ grid-area: auto; }}
+  .pantalla[data-id="ajustes"] {{ grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; }}
   .pantalla[data-id="ajustes"] > :not(.barra-interior) {{ max-width: var(--columna); }}
   .pantalla.tarea > :not(.barra-interior):not(.modos) {{ width: 100%; max-width: var(--columna); justify-self: center; }}
-  .carril.grande {{ grid-auto-columns: 190px; }}
-  .carril.grande .tarjeta {{ grid-template-rows: 285px auto auto; }}
+  .carril {{ grid-auto-columns: 190px; grid-template-rows: 285px auto auto; }}
 }}
 </style>
 </head>
 <body>
 <header class="estudio">
-  <strong>Somos Nosotros · reestructura de la interfaz (OL-227) · prototipo v2</strong>
+  <strong>Somos Nosotros · reestructura de la interfaz (OL-227) · prototipo v3</strong>
+  <div class="modos-estudio" role="group" aria-label="Título de la ficha">
+    <button type="button" data-titulo="imagen" aria-pressed="true">Título sobre la imagen</button>
+    <button type="button" data-titulo="barra" aria-pressed="false">Título en la barra</button>
+  </div>
+  <div class="modos-estudio" role="group" aria-label="Letra de listas y tarjetas">
+    <button type="button" data-letra="inter" aria-pressed="true">Inter (propuesta)</button>
+    <button type="button" data-letra="bricolage-ancha" aria-pressed="false">Bricolage ancha</button>
+    <button type="button" data-letra="bricolage" aria-pressed="false">Bricolage condensada (v2)</button>
+  </div>
   <div class="modos-estudio" role="group" aria-label="Tamaño">
     <button type="button" data-modo="telefono" aria-pressed="true">Teléfono 390</button>
     <button type="button" data-modo="tableta" aria-pressed="false">Tableta 820</button>
     <button type="button" data-modo="escritorio" aria-pressed="false">Escritorio 1280</button>
   </div>
-  <p class="nota">Mismo marcado en los tres tamaños. Toca «+» desde cada sección, la lupa, Filtros, un punto del mapa, arrastra la hoja de Lugares, abre una tarjeta; baja en Agenda.</p>
+  <p class="nota">Mismo marcado en los tres tamaños. Toca la fecha de un día para quedarte con ese día; en la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
 </header>
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg"><defs>{sprite}{mapa_base}</defs></svg>
 <div class="escenario">
   <div class="aparato" data-modo="telefono">
     <div class="estado-ios"><span>10:46</span><span class="isla"></span><span class="derecha"><span>●●●●</span><span class="bateria"></span></span></div>
-    <div class="app" id="app">
+    <div class="app" id="app" data-letra="inter">
+      {barra_raiz()}
       {nav}
-      {inicio}
-      {agenda}
+      {eventos}
       {lugares}
       {artistas}
       {perfil}
@@ -968,12 +1013,14 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   const aparato = document.querySelector(".aparato");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const pantallas = [...app.querySelectorAll(":scope > .pantalla")];
-  const raices = ["inicio", "agenda", "lugares", "artistas", "perfil"];
-  const tipoPorSeccion = {{ inicio: "evento", agenda: "evento", lugares: "lugar", artistas: "artista", perfil: "evento" }};
+  const raices = ["eventos", "lugares", "artistas", "perfil"];
+  const tipoPorSeccion = {{ eventos: "evento", lugares: "lugar", artistas: "artista", perfil: "evento" }};
+  const tituloAlta = {{ evento: "Publicar un evento", lugar: "Registrar un lugar", artista: "Registrar un artista" }};
   const pila = [];
   const scrollDe = new Map();
   let actual = pantallas.find((p) => !p.hidden);
   const de = (id) => pantallas.find((p) => p.dataset.id === id);
+  esqueleto(actual);
 
   function pintarNav() {{
     app.querySelectorAll(".navegacion .destino[data-ir]").forEach((d) => {{
@@ -986,15 +1033,16 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     destino.hidden = false;
     destino.scrollTop = tipo === "atras" ? scrollDe.get(destino.dataset.id) || 0 : 0;
     actual = destino;
+    delete app.dataset.compacta; delete app.dataset.navOculta;
     pintarNav();
-    if (destino.dataset.id === "agenda" || destino.dataset.id === "artistas") esqueleto(destino);
+    if (destino.dataset.id === "eventos" || destino.dataset.id === "artistas") esqueleto(destino);
     if (destino.dataset.id === "buscar") setTimeout(() => destino.querySelector("input")?.focus(), 250);
   }}
   function esqueleto(p) {{
     if (p.dataset.cargada) return;
     p.dataset.cargada = "1";
     const esq = p.querySelector(".esqueleto");
-    const reales = [...p.querySelectorAll(":scope > .grupo, :scope > .lista:not(.esqueleto)")];
+    const reales = [...p.querySelectorAll(":scope > .tramo")];
     reales.forEach((e) => (e.hidden = true));
     esq.hidden = false;
     setTimeout(() => {{ esq.hidden = true; reales.forEach((e) => (e.hidden = false)); }}, reduce ? 0 : 600);
@@ -1018,7 +1066,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
       if (!reduce) {{ const c = "entra-" + (tipo === "atras" ? "seccion" : tipo); destino.classList.add(c); destino.addEventListener("animationend", () => destino.classList.remove(c), {{ once: true }}); }}
     }}
   }}
-  function atras() {{ ir(pila.pop() || "inicio", "atras"); }}
+  function atras() {{ ir(pila.pop() || "eventos", "atras"); }}
   function aviso(texto) {{
     const t = app.querySelector(".toast");
     t.innerHTML = texto + ' <button type="button">Deshacer</button>';
@@ -1027,21 +1075,69 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     t.temporizador = setTimeout(() => (t.hidden = true), 3500);
     t.querySelector("button").onclick = () => (t.hidden = true);
   }}
-  function abrirAlta(tipo) {{
+  function ponerTipoAlta(tipo) {{
     const alta = de("alta");
     alta.dataset.tipo = tipo;
+    alta.querySelector(".titulo-barra").textContent = tituloAlta[tipo];
     alta.querySelectorAll(".modos [data-tipo]").forEach((b) => b.setAttribute("aria-selected", b.dataset.tipo === tipo ? "true" : "false"));
     alta.querySelectorAll(":scope > .alta").forEach((f) => (f.hidden = !f.classList.contains(tipo)));
-    ir("alta", "tarea");
+  }}
+  function abrirAlta(tipo) {{ ponerTipoAlta(tipo); ir("alta", "tarea"); }}
+  // La ficha de lugar dentro de la hoja: capa sobre la lista (que conserva su desplazamiento); al cerrar vuelve el estado anterior de la hoja.
+  const lugaresP = de("lugares");
+  const hojaL = lugaresP.querySelector(".hoja-lugares");
+  const fichaHoja = hojaL.querySelector(".ficha-hoja");
+  function abrirFichaHoja() {{
+    if (!lugaresP.dataset.ficha) lugaresP.dataset.estadoAntes = lugaresP.dataset.hojaEstado;
+    lugaresP.dataset.ficha = "1";
+    delete lugaresP.dataset.compacta;
+    fichaHoja.hidden = false;
+    fichaHoja.scrollTop = 0;
+    if (!reduce) {{ fichaHoja.classList.add("entra"); fichaHoja.addEventListener("animationend", () => fichaHoja.classList.remove("entra"), {{ once: true }}); }}
+    if (lugaresP.dataset.hojaEstado === "asoma") lugaresP.dataset.hojaEstado = "media";
+  }}
+  function cerrarFichaHoja() {{
+    fichaHoja.hidden = true;
+    delete lugaresP.dataset.ficha; delete lugaresP.dataset.compacta;
+    lugaresP.dataset.hojaEstado = lugaresP.dataset.estadoAntes || "asoma";
+  }}
+  const visor = app.querySelector(".visor");
+  // Un día elegido (chip de fecha o hoja Cuándo) deja solo ese tramo y lo muestra en el chip Cuándo; null vuelve a Próximos.
+  function filtrarDia(p, dia) {{
+    p.querySelectorAll(":scope > .tramo").forEach((t) => {{ const chip = t.querySelector(".chip.fecha"); const es = dia && chip?.dataset.fecha === dia; t.hidden = !!dia && !es; chip?.classList.toggle("activo", !!es); }});
+    p.querySelectorAll('.chip[data-hoja="cuando"]').forEach((chip) => {{ chip.querySelector("span").textContent = dia || "Cuándo"; chip.classList.toggle("activo", !!dia); }});
+    const hoja = app.querySelector('.hoja-fondo[data-hoja="cuando"]');
+    hoja.querySelectorAll(".chip").forEach((c, k) => {{ const on = dia ? c.textContent.trim() === dia : k === 0; c.classList.toggle("activo", on); c.setAttribute("aria-pressed", on ? "true" : "false"); }});
   }}
   app.addEventListener("click", (e) => {{
+    if (e.target.closest(".visor")) {{ visor.hidden = true; return; }}
+    const portada = e.target.closest("[data-visor]");
+    if (portada) {{ const img = portada.querySelector("img"); if (img) {{ visor.querySelector("img").src = img.src; visor.hidden = false; }} return; }}
     const publicar = e.target.closest("[data-publicar]");
     if (publicar) {{ e.preventDefault(); abrirAlta(tipoPorSeccion[actual.dataset.id] || "evento"); return; }}
     const modo = e.target.closest(".modos [data-tipo]");
-    if (modo) {{ const alta = de("alta"); alta.dataset.tipo = modo.dataset.tipo; alta.querySelectorAll(".modos [data-tipo]").forEach((b) => b.setAttribute("aria-selected", b === modo ? "true" : "false")); alta.querySelectorAll(":scope > .alta").forEach((f) => (f.hidden = !f.classList.contains(modo.dataset.tipo))); alta.scrollTop = 0; return; }}
+    if (modo) {{ ponerTipoAlta(modo.dataset.tipo); de("alta").scrollTop = 0; return; }}
+    const limpiar = e.target.closest("[data-limpiar]");
+    if (limpiar) {{ const f = limpiar.closest(".hoja-fondo"); f.querySelectorAll(".chip").forEach((c, k) => {{ const on = f.dataset.hoja === "cuando" && k === 0; c.classList.toggle("activo", on); c.setAttribute("aria-pressed", on ? "true" : "false"); }}); f.querySelectorAll(".palanca").forEach((p) => p.setAttribute("aria-checked", "false")); return; }}
     const cerrar = e.target.closest("[data-cerrar]");
-    if (cerrar) {{ cerrar.closest(".hoja-fondo").hidden = true; return; }}
+    if (cerrar) {{
+      const f = cerrar.closest(".hoja-fondo"); f.hidden = true;
+      if (f.dataset.hoja === "cuando") {{
+        const t = f.querySelector(".chip.activo")?.textContent.trim() || "Próximos";
+        const tiene = [...actual.querySelectorAll(".chip.fecha")].some((c) => c.dataset.fecha === t);
+        if (t === "Próximos" || tiene) filtrarDia(actual, t === "Próximos" ? null : t);
+        else app.querySelectorAll('.chip[data-hoja="cuando"]').forEach((chip) => {{ chip.querySelector("span").textContent = t; chip.classList.add("activo"); }});
+      }}
+      return;
+    }}
     if (e.target.classList.contains("hoja-fondo")) {{ e.target.hidden = true; return; }}
+    const ciudad = e.target.closest("[data-ciudad]");
+    if (ciudad) {{
+      const f = ciudad.closest(".hoja-fondo");
+      f.querySelectorAll("[data-ciudad]").forEach((b) => {{ const on = b === ciudad; b.toggleAttribute("aria-current", on); b.querySelector(".chevron use").setAttribute("href", on ? "#i-ok" : "#i-chevron-der"); }});
+      app.querySelectorAll('.chip[data-hoja="ciudad"] > span').forEach((s) => (s.textContent = ciudad.dataset.ciudad === "Otra ciudad" ? "Elegir ciudad" : ciudad.dataset.ciudad));
+      f.hidden = true; return;
+    }}
     const hoja = e.target.closest("[data-hoja]:not(.hoja-fondo)");
     if (hoja) {{ e.preventDefault(); app.querySelector(`.hoja-fondo[data-hoja="${{hoja.dataset.hoja}}"]`).hidden = false; return; }}
     const accion = e.target.closest("[data-accion]");
@@ -1049,28 +1145,44 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
       e.preventDefault();
       const decidido = accion.getAttribute("aria-pressed") === "true";
       const seguir = accion.dataset.accion === "seguir";
+      const glifo = seguir ? (accion.dataset.objeto === "lugar" ? "campana-mas" : "persona-mas") : "ok";
       accion.setAttribute("aria-pressed", decidido ? "false" : "true");
       accion.classList.toggle("decidido", !decidido);
-      accion.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${{decidido ? (seguir ? "persona-mas" : "ok") : "ok"}}"/></svg>`;
+      accion.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${{decidido ? glifo : "ok"}}"/></svg>`;
       accion.setAttribute("aria-label", decidido ? (seguir ? "Seguir" : "Voy") : (seguir ? "Sigues" : "Ya vas"));
       const que = accion.closest("li, .renglon")?.querySelector("b")?.textContent || "esto";
       aviso(decidido ? (seguir ? `Ya no sigues a «${{que}}»` : `Ya no vas a «${{que}}»`) : (seguir ? `Sigues a «${{que}}»` : `Vas a «${{que}}»`));
       return;
     }}
+    const accionFicha = e.target.closest("[data-accion-ficha]");
+    if (accionFicha) {{
+      const ya = accionFicha.getAttribute("aria-pressed") === "true";
+      const tipo = accionFicha.dataset.accionFicha;
+      accionFicha.setAttribute("aria-pressed", ya ? "false" : "true");
+      const etiqueta = {{ voy: ["Voy", "Vas"], interesa: ["Me interesa", "Te interesa"], seguir: ["Seguir", "Sigues"] }}[tipo][ya ? 0 : 1];
+      const glifo = tipo === "interesa" ? (ya ? "estrella" : "estrella-llena") : tipo === "seguir" && ya ? (accionFicha.dataset.objeto === "lugar" ? "campana-mas" : "persona-mas") : "ok";
+      accionFicha.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${{glifo}}"/></svg>${{etiqueta}}`;
+      const que = actual.querySelector(".titulo-ficha, .perfil-cabecera > b, .titulo-barra")?.textContent.trim().split("MUSEO")[0] || "esto";
+      aviso(ya ? {{ voy: `Ya no vas a «${{que}}»`, interesa: `Ya no te interesa «${{que}}»`, seguir: `Ya no sigues a «${{que}}»` }}[tipo] : {{ voy: `Vas a «${{que}}»`, interesa: `Te interesa «${{que}}»`, seguir: `Sigues a «${{que}}»` }}[tipo]);
+      return;
+    }}
+    const fecha = e.target.closest(".chip.fecha");
+    if (fecha) {{ filtrarDia(fecha.closest(".pantalla"), fecha.classList.contains("activo") ? null : fecha.dataset.fecha); return; }}
     const quitar = e.target.closest(".chip.quitar");
     if (quitar) {{ quitar.remove(); const c = actual.querySelector(".cuenta-filtros"); if (c) c.remove(); return; }}
     const lugarMapa = e.target.closest(".lienzo .lugar");
-    if (lugarMapa) {{ const p = de("lugares"); p.dataset.pin = "1"; p.querySelector(".pin-tarjeta").hidden = false; p.dataset.hojaEstado = "asoma"; return; }}
-    const volver = e.target.closest("[data-volver-lista]");
-    if (volver) {{ const p = de("lugares"); delete p.dataset.pin; p.querySelector(".pin-tarjeta").hidden = true; return; }}
+    if (lugarMapa) {{ abrirFichaHoja(); return; }}
+    const cerrarFicha = e.target.closest("[data-cerrar-ficha]");
+    if (cerrarFicha) {{ cerrarFichaHoja(); return; }}
     const asa = e.target.closest(".asa");
-    if (asa && !asa.dataset.arrastro) {{ const p = de("lugares"); p.dataset.hojaEstado = {{ asoma: "media", media: "llena", llena: "asoma" }}[p.dataset.hojaEstado]; return; }}
+    if (asa && !asa.dataset.arrastro) {{ lugaresP.dataset.hojaEstado = {{ asoma: "media", media: "llena", llena: "asoma" }}[lugaresP.dataset.hojaEstado]; return; }}
     const at = e.target.closest("[data-atras]");
     if (at) {{ e.preventDefault(); atras(); return; }}
     const ir_ = e.target.closest("[data-ir]");
     if (ir_) {{
       e.preventDefault();
       const id = ir_.dataset.ir;
+      if (id === "lugar" && ir_.closest(".hoja-lugares > .lista.panel")) {{ abrirFichaHoja(); return; }}
       const enHoja = ir_.closest(".hoja-fondo");
       if (enHoja) enHoja.hidden = true;
       const tipo = raices.includes(id) ? "seccion" : id === "buscar" ? "tarea" : "ficha";
@@ -1079,8 +1191,10 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
       return;
     }}
     const chip = e.target.closest(".chips .chip, .filtros .chip:not(.filtro):not(.contexto):not(.quitar), .letras button");
+    if (chip && chip.classList.contains("fecha")) return;
     if (chip) {{
       const grupo = chip.parentElement;
+      if (grupo.classList.contains("una")) {{ grupo.querySelectorAll(".chip").forEach((b) => {{ b.classList.toggle("activo", b === chip); b.setAttribute("aria-pressed", b === chip ? "true" : "false"); }}); return; }}
       if (grupo.classList.contains("multi")) {{ chip.classList.toggle("activo"); chip.setAttribute("aria-pressed", chip.classList.contains("activo") ? "true" : "false"); return; }}
       if (grupo.classList.contains("letras")) {{ grupo.querySelectorAll("button").forEach((b) => b.toggleAttribute("aria-current", b === chip)); return; }}
       if (grupo.classList.contains("filtros")) {{ chip.classList.toggle("activo"); return; }}
@@ -1089,46 +1203,48 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     const palanca = e.target.closest(".palanca");
     if (palanca) palanca.setAttribute("aria-checked", palanca.getAttribute("aria-checked") === "true" ? "false" : "true");
   }});
-  // Cabecera compacta: al bajar más de una barra se guarda la barra; al subir un poco vuelve. Con reposo tras cada cambio.
-  pantallas.forEach((p) => {{
-    const cab = p.querySelector(":scope > .cabecera");
-    if (!cab) return;
+  // Raíces: al bajar más de una barra se guardan la barra y la navegación; al subir un poco (o cerca del inicio) vuelven. Reposo tras cada cambio.
+  pantallas.filter((p) => p.classList.contains("raiz") && p.dataset.id !== "lugares").forEach((p) => {{
     let antes = 0, quietaHasta = 0;
     p.addEventListener("scroll", () => {{
       const y = p.scrollTop, paso = y - antes; antes = y;
       if (Date.now() < quietaHasta) return;
-      const compacta = cab.hasAttribute("data-compacta");
-      if ((y < 60 || paso < -6) && compacta) {{ cab.removeAttribute("data-compacta"); quietaHasta = Date.now() + 300; }}
-      else if (paso > 6 && y > 120 && !compacta) {{ cab.setAttribute("data-compacta", ""); quietaHasta = Date.now() + 300; }}
+      const guardada = app.hasAttribute("data-compacta");
+      const alFinal = y + p.clientHeight >= p.scrollHeight - 4;
+      if ((y < 60 || paso < -6 || alFinal) && guardada) {{ delete app.dataset.compacta; delete app.dataset.navOculta; quietaHasta = Date.now() + 300; }}
+      else if (paso > 6 && y > 120 && !guardada && !alFinal) {{ app.dataset.compacta = ""; app.dataset.navOculta = ""; quietaHasta = Date.now() + 300; }}
     }}, {{ passive: true }});
   }});
-  // La hoja de Lugares se arrastra desde el asa o el resumen y suelta en el estado más cercano.
-  const lugaresP = de("lugares");
-  const hojaL = lugaresP.querySelector(".hoja-lugares");
+  // Fichas: cuando la portada (o la cabecera del artista) ya se desplazó, el título pasa a la barra.
+  const umbral = (p) => {{ const portada = p.querySelector(":scope > .portada"); return portada ? portada.getBoundingClientRect().height / parseFloat(aparato.style.zoom || "1") - 56 : 96; }};
+  pantallas.filter((p) => p.classList.contains("ficha")).forEach((p) => {{
+    p.addEventListener("scroll", () => p.toggleAttribute("data-compacta", p.scrollTop > umbral(p)), {{ passive: true }});
+  }});
+  fichaHoja.addEventListener("scroll", () => lugaresP.toggleAttribute("data-compacta", fichaHoja.scrollTop > umbral(fichaHoja)), {{ passive: true }});
+  // La hoja de Lugares se arrastra desde el asa o el resumen y suelta en el estado más cercano (alturas relativas a la fila del mapa).
   let arr = null;
-  const alturaEstado = (estado) => {{ const h = lugaresP.querySelector(".mapa").getBoundingClientRect().height + hojaL.getBoundingClientRect().height * 0; const total = lugaresP.getBoundingClientRect().height; return {{ asoma: 176, media: total * 0.56, llena: total - 48 - 56 - 48 }}[estado]; }};
+  const zoom = () => parseFloat(aparato.style.zoom || "1");
+  const alturaEstado = (estado) => {{ const total = lugaresP.querySelector(".mapa").getBoundingClientRect().height / zoom(); const ancho = aparato.getBoundingClientRect().width / zoom() - 24; return {{ asoma: 176, media: lugaresP.dataset.ficha ? 28 + ancho * 9 / 16 + 80 : total * 0.56, llena: total }}[estado]; }};
   hojaL.addEventListener("pointerdown", (e) => {{
     if (!e.target.closest(".asa, .resumen")) return;
-    arr = {{ y0: e.clientY, h0: hojaL.getBoundingClientRect().height, movido: false }};
+    arr = {{ y0: e.clientY, h0: hojaL.getBoundingClientRect().height / zoom(), movido: false }};
     hojaL.classList.add("arrastrando");
     hojaL.setPointerCapture(e.pointerId);
   }});
   hojaL.addEventListener("pointermove", (e) => {{
     if (!arr) return;
-    const k = parseFloat(aparato.style.zoom || "1");
-    const h = Math.max(120, arr.h0 + (arr.y0 - e.clientY) / k);
+    const h = Math.max(120, arr.h0 + (arr.y0 - e.clientY) / zoom());
     if (Math.abs(arr.y0 - e.clientY) > 4) arr.movido = true;
     hojaL.style.height = h + "px";
   }});
-  const soltar = (e) => {{
+  const soltar = () => {{
     if (!arr) return;
     hojaL.classList.remove("arrastrando");
-    const h = hojaL.getBoundingClientRect().height / parseFloat(aparato.style.zoom || "1");
+    const h = hojaL.getBoundingClientRect().height / zoom();
     hojaL.style.height = "";
     if (arr.movido) {{
-      const estados = ["asoma", "media", "llena"];
       let mejor = "asoma", d = Infinity;
-      for (const s of estados) {{ const dd = Math.abs(alturaEstado(s) - h); if (dd < d) {{ d = dd; mejor = s; }} }}
+      for (const s of ["asoma", "media", "llena"]) {{ const dd = Math.abs(alturaEstado(s) - h); if (dd < d) {{ d = dd; mejor = s; }} }}
       lugaresP.dataset.hojaEstado = mejor;
       const asa = hojaL.querySelector(".asa"); asa.dataset.arrastro = "1"; setTimeout(() => delete asa.dataset.arrastro, 50);
     }}
@@ -1136,15 +1252,19 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   }};
   hojaL.addEventListener("pointerup", soltar);
   hojaL.addEventListener("pointercancel", soltar);
-  // Tamaños del aparato (las consultas de contenedor hacen el resto).
-  const modos = document.querySelectorAll(".modos-estudio button");
+  // Tamaños del aparato y variante del título (las consultas de contenedor hacen el resto).
+  const modos = document.querySelectorAll(".modos-estudio [data-modo]");
   function ajustar() {{ const ancho = {{ telefono: 414, tableta: 844, escritorio: 1304 }}[aparato.dataset.modo]; aparato.style.zoom = Math.min(1, (document.documentElement.clientWidth - 32) / ancho); }}
   modos.forEach((b) => b.addEventListener("click", () => {{ modos.forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false")); aparato.dataset.modo = b.dataset.modo; ajustar(); }}));
+  const letras_ = document.querySelectorAll(".modos-estudio [data-letra]");
+  letras_.forEach((b) => b.addEventListener("click", () => {{ letras_.forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false")); app.dataset.letra = b.dataset.letra; }}));
+  const variantes = document.querySelectorAll(".modos-estudio [data-titulo]");
+  variantes.forEach((b) => b.addEventListener("click", () => {{ variantes.forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false")); app.dataset.titulo = b.dataset.titulo; }}));
   addEventListener("resize", ajustar);
   ajustar();
   // El mapa se dibuja 1:1 en cualquier tamaño: el viewBox sigue a la caja.
   const lienzo = app.querySelector(".mapa .lienzo");
-  const centrar = () => {{ const caja = lienzo.parentElement.getBoundingClientRect(); const k = parseFloat(aparato.style.zoom || "1"); const w = Math.max(320, caja.width / k), h = Math.max(320, caja.height / k); lienzo.setAttribute("viewBox", `${{Math.round(330 - w / 2)}} ${{Math.round(450 - h / 2)}} ${{Math.round(w)}} ${{Math.round(h)}}`); }};
+  const centrar = () => {{ const caja = lienzo.parentElement.getBoundingClientRect(); const k = zoom(); const w = Math.max(320, caja.width / k), h = Math.max(320, caja.height / k); lienzo.setAttribute("viewBox", `${{Math.round(330 - w / 2)}} ${{Math.round(450 - h / 2)}} ${{Math.round(w)}} ${{Math.round(h)}}`); }};
   new ResizeObserver(centrar).observe(lienzo.parentElement);
   centrar();
 }})();
@@ -1153,7 +1273,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
 </html>
 '''
 html = html.replace('SNURI', sn)
-html = re.sub(r'<section class="pantalla ([a-z]+)" data-id="(?!inicio)([a-z]+)"', r'<section class="pantalla \1" data-id="\2" hidden', html)
+html = re.sub(r'<section class="pantalla ([a-z]+)" data-id="(?!eventos)([a-z]+)"', r'<section class="pantalla \1" data-id="\2" hidden', html)
 salida = os.path.join(RAIZ, 'docs/rediseno/prototipos/restructura-ui.html')
 open(salida, 'w', encoding='utf-8').write(html)
 print('escrito', salida, len(html), 'bytes', html.count('\n'), 'líneas')

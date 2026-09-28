@@ -468,17 +468,20 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (v1 y v2 el 2026-09-28; la v2 recoge tres vueltas más del founder)
+## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge la quinta vuelta del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
 marcado**: las reglas responsivas de 5.4 son consultas de contenedor sobre el mismo HTML. Se navega de verdad: las
-cinco pestañas, tocar una tarjeta o un renglón abre la ficha, el «+» abre la pantalla de publicar, la lupa abre la
-búsqueda, «Filtros» abre su hoja, la hoja de Lugares se arrastra, tocar un pin muestra su tarjeta, Voy y Seguir
-cambian de estado con su aviso y Deshacer, y al bajar en una lista la cabecera se compacta. Capturas reales con el
-Chrome de la Mac: v1 en [`capturas-256/256-30…49-proto-*.png`](capturas-256/) y v2 en
-[`capturas-256/256-50…74-v2-*.png`](capturas-256/), descritas en la bitácora 256 (segunda y tercera parte). La
-fuente del prototipo (un generador de Python con sus SVG) queda en `scripts/ops/auditoria-ui/prototipo/`.
+cuatro pestañas, tocar una tarjeta o un renglón abre la ficha, el «+» abre la pantalla de publicar, la lupa abre la
+búsqueda, la ciudad, Cuándo y Filtros abren su hoja, la hoja de Lugares se arrastra, tocar un pin o un renglón de
+Lugares abre la ficha dentro de la hoja, la portada abre el visor, Voy y Seguir cambian de estado con su aviso y
+Deshacer, y al bajar en una lista la barra y la navegación se guardan (vuelven al subir). Un conmutador de la sala
+alterna el título de la ficha sobre la imagen o en la barra y otro la letra de listas y tarjetas. Capturas reales
+con el Chrome de la Mac: v1 en
+[`capturas-256/256-30…49-proto-*.png`](capturas-256/), v2 en [`capturas-256/256-50…74-v2-*.png`](capturas-256/) y v3
+en [`capturas-256/256-75…117-v3-*.png`](capturas-256/), descritas en la bitácora 256 (segunda, tercera y cuarta
+parte). La fuente del prototipo (un generador de Python con sus SVG) queda en `scripts/ops/auditoria-ui/prototipo/`.
 
 ### 6.1 Lo que la v1 respondió (primera vuelta del founder)
 
@@ -572,6 +575,134 @@ con cuatro pieles; once círculos → un `BotonIcono` con tres tamaños y tres r
 **Lo que todavía es dibujo, no medida:** el mapa es un fondo esquemático con los puntos colocados a mano para
 mostrar el resultado que debe dar la capa de símbolos (H-12); los carteles se cargan de las URL públicas del sitio.
 
+### 6.5 Lo que la v3 cambió (quinta vuelta del founder, el mismo día)
+
+Tres mensajes seguidos sobre la v2. Lo que dijo, lo que se cuestionó y lo que quedó:
+
+- **Orden de la fila y un solo estilo** («¿primero colocamos ubicación y luego filtros, fecha, chips de filtros?»,
+  «usas diferentes estilos para selector de lugar en Inicio que en el resto de la app», «¿agregarías selector de fecha
+  en Inicio? ¿La fecha (Cuándo) debería permanecer fuera de filtros?»). Una sola fila de contexto en todas las raíces,
+  con el mismo chip: **[ciudad · Cuándo · Filtros] y después los activos con ✕**. Ciudad primero porque no filtra:
+  dice desde dónde se mide («la ciudad ordena, no limita»). Cuándo segundo porque es la pregunta más frecuente de una
+  agenda («¿qué hay hoy, el fin de semana?») y merece un toque, no dos: **sale de la hoja de filtros** y abre la suya
+  (Próximos · Hoy · Mañana · Fin de semana · Esta semana · Elegir fecha); el chip muestra el valor elegido en violeta.
+  Filtros al final porque refina lo que ya está acotado. El selector de ciudad sin borde de Inicio (y el de Buscar)
+  desaparecen: es el mismo chip en todas partes y abre la hoja «Dónde estás» (Cerca de ti · San Luis Potosí · Otra
+  ciudad). Cuestionado: con un valor en Cuándo la fila ya no cabe en 390 y se desplaza (como en Google Maps); se
+  aceptó antes que abreviar.
+- **Agenda fuera del menú** («¿Es necesario mantener en el menú la opción de agenda?»). No: Inicio con un selector de
+  fecha *es* la agenda. **Eventos absorbe Inicio y Agenda**: la fila de contexto, un carril de Destacados y la lista
+  por día; la barra inferior queda con **cuatro destinos** (Eventos · Lugares · Artistas · Perfil), más grandes
+  (Fitts) y paralelos a los tres tipos que publica el «+». Se retiran los carriles «Tus planes» (vive en Perfil),
+  «Esta semana» y «Nuevos eventos» (son la lista), «Lugares con eventos» y «Artistas destacados» (tienen su pestaña y
+  el mapa ya marca los lugares con evento). Cuestionado: se conserva un solo carril (Destacados, con carteles grandes:
+  efecto estético y Peak-End) y se pregunta si se queda; el nombre «Eventos» frente a «Inicio» también (sección 11).
+- **La ficha de lugar dentro de la hoja** («al seleccionar un pin, mostrar directamente la ficha del lugar en drawer…
+  evitar el paso adicional de ver la ficha y volver a lista… la ficha se muestra sobre el drawer de lista y al cerrar
+  se regresa al estado anterior manteniendo scroll; lo mismo un elemento del listado»). Hecho: pin o renglón abren la
+  ficha **como capa sobre la lista** (la lista no se desmonta y conserva su desplazamiento), la hoja sube a media
+  altura, y arriba la barra de la app da paso a **Cerrar · título · más opciones** (ahí viven Editar, Reportar y
+  Compartir). Cerrar devuelve la hoja al estado que tenía. Desde 792 la ficha abre en el panel con la misma barra, y
+  el mapa y la fila de contexto siguen a la vista. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
+  la lista»). Cuestionado: desde otras entradas (el «Dónde» de un evento, Buscar, Perfil) la ficha sigue abriendo a
+  pantalla completa con Atrás, para no cambiar de pestaña a quien viene de un evento (sección 11).
+- **Título sobre el héroe o en la barra** («héroe y en la base del héroe las letras, dentro del contenedor de imagen,
+  sobre la imagen, con un pequeño degradado… el icono de lupa no es necesario, es intuitivo el tap para verla en
+  grande… otra posición es la zona tool bar, pues ya no aplicaría poner logo, quiero ver las dos»). Las dos están en
+  el prototipo con un conmutador en la sala («Título sobre la imagen» · «Título en la barra»): **A**, el título (y la
+  etiqueta MUSEO) al pie de la portada sobre un velo (`--velo-titulo`, negro al 78 % que se desvanece hacia arriba), y
+  **B**, el título en la barra interior (Atrás · título · más opciones), sin logotipo en las barras de ficha y de
+  tarea. Propuesta: **A en reposo y B al desplazar**: cuando la portada sale de la vista el título aparece en la barra
+  (modelo de iOS: título grande que se recoge). En escritorio el título vuelve a la columna derecha (una portada de
+  5:3 a la izquierda no es un héroe) y en B va solo a la barra. La lupa se retira: la portada entera es el toque y
+  abre un **visor** a pantalla completa. Cuestionado: el velo tapa el pie de algunos carteles (las fechas en el de LXS
+  COLOCAOS); el visor lo resuelve y por eso se queda.
+- **Icono para seguir un lugar** («el icono de seguir lugares es el de seguir personas, busca si hay otro más
+  apropiado»). Se probaron tres en el mismo renglón ([`256-99`](capturas-256/256-99-v3-iconos-seguir-lugar.png)):
+  campana con «+», marcador con «+» y pin con «+». Queda la **campana con «+»**: seguir un lugar es que te avisen de lo
+  que publica (Ajustes → Avisos: «cambios en lo que sigues»); el marcador dice «guardar» (otra acción: Google Maps la
+  separa de «seguir») y el pin con «+» ya significa «registrar un lugar» en la app de hoy (`Publicar.tsx`). Los
+  artistas conservan la persona con «+» (convención de Instagram y X). El decidido sigue siendo la palomita blanca en
+  verde. El KPI «Sigo» de Perfil y la palanca «Solo lo que sigo» usan la campana.
+- **La barra inferior se esconde al bajar** («cuando hacemos scroll down se oculta navbar para liberar más espacio, se
+  vuelve a mostrar al hacer scroll up, como el comportamiento en header»). Hecho con la misma regla que la barra de
+  arriba (más de una barra hacia abajo la guarda; 6 px hacia arriba, el inicio o el final de la lista la devuelven).
+  La barra de la app se recoge hasta la franja de estado y la fila de contexto queda pegada debajo. Cuestionado: iOS
+  26 hace lo mismo de forma nativa pero *minimiza* la barra a una píldora en vez de esconderla; en la web se esconde
+  entera (más espacio) y vuelve con cualquier gesto hacia arriba; en Lugares no se esconde porque el mapa no desplaza
+  y la hoja se apoya en ella.
+- **Barra superior a todo lo ancho y carril en dos grupos en tableta y escritorio** («top bar en ancho completo,
+  logotipo en centro, publicar en el extremo superior izquierdo, buscar y novedades a la derecha; en sidebar dos
+  grupos: el perfil en el extremo inferior izquierdo y el resto de las opciones arriba»). Hecho: **una sola barra**
+  para los tres tamaños (a nivel de la app, no dentro de cada pantalla) y el carril lateral solo con Eventos · Lugares ·
+  Artistas arriba y Perfil abajo (dos grupos = dos papeles: contenido e identidad). Cuestionado: el logotipo se centra
+  en la ventana, no en la columna de contenido (queda 44 px a la izquierda del centro de la columna; es el mismo trazo
+  que en el teléfono); y en las fichas de escritorio quedan dos barras apiladas (la de la app y la de la ficha con
+  Atrás · más opciones); se pregunta si la segunda se queda o sus dos botones flotan en la columna (sección 11).
+
+Sexta vuelta, antes de enseñar la v3 («presenta fecha del evento en chip para que al seleccionarlo se muestre listado
+filtrado por esa fecha», «retoma cuestionamiento de estilo de letra para listados y cards… otra letra que facilite
+lectura y que sea más pequeña… súper legibilidad y tamaño moderado», «la barra de bottom con las opciones de ficha,
+"voy" "seguir" y sus estados necesita trabajo de diseño… considera colocar acciones flotando… "vas" tiene interlineado
+muy grande, tampoco se justifica "Ya estás en la lista" dentro del botón»):
+
+- **La fecha del día es un chip.** Cada título de día de Eventos y de Perfil («Hoy», «Mañana», «mié 30 sep») es el
+  mismo chip que la fila de contexto; tocarlo deja solo ese día y el chip Cuándo lo muestra en violeta; tocarlo otra
+  vez (o elegir Próximos en la hoja) vuelve a todos los días. Es el mismo objeto en los dos sitios: la fecha que se
+  toca en la lista es la que aparece en Cuándo (continuidad, y «filtrar no es navegar»: no apila historial). El conteo
+  («· 2») queda fuera del chip. Las letras de Artistas no son chips: para eso está la tira de letras.
+- **Letra de listas y tarjetas: tres opciones con conmutador** («Inter (propuesta)» · «Bricolage ancha» · «Bricolage
+  condensada (v2)»; capturas [256-112](capturas-256/256-112-v3-letra-inter-telefono.png),
+  [256-113](capturas-256/256-113-v3-letra-bricolage-ancha-telefono.png) y
+  [256-114](capturas-256/256-114-v3-letra-bricolage-telefono.png)). Se cuestionó lo que decidía la línea gráfica
+  («Bricolage condensada para toda la app»): la condensada a 19 px en negrita lee bien como título pero en un renglón
+  de dos líneas más dos metas aprieta las contraformas y obliga a subir el cuerpo. Propuesta: **Inter para el título y
+  la meta de renglones, tarjetas y renglones de dato** (16 px semibold y 14 px, interlínea 1,3; tabular en cifras) y
+  **Bricolage condensada donde habla la marca**: títulos de pantalla y de ficha, chips de fecha, KPI, botones y
+  acciones. Inter es una letra hecha para pantalla (ojo alto, aperturas abiertas), pesa 60 KB en variable y no compite
+  con la marca porque nunca ocupa un título. La alternativa sin segunda familia es Bricolage al ancho 100 al mismo
+  cuerpo (256-113): legible, pero con las formas caprichosas de la familia en cuerpos chicos. Lo decide el founder
+  (sección 11); si Inter se queda, se corrige `docs/diseno/LINEA_GRAFICA.md`.
+- **Acciones de la ficha: pastillas flotantes, no barra.** Se retira la barra al pie con el par de botones y el
+  «decidido» de dos líneas. Las acciones flotan sobre el contenido (sticky a 16 px del pie, sombra, una línea): en
+  evento «☆ Me interesa» (blanca) y «✓ Voy» (violeta); en lugar y artista «Seguir» (campana o persona con «+»). Los
+  estados son la misma pastilla con otra palabra y color: **Vas** y **Sigues** en verde con la palomita, **Te
+  interesa** en blanco con la estrella llena en violeta; tocar otra vez deshace (con aviso y Deshacer). Nada de
+  «Ya estás en la lista» dentro del botón: el aviso ya lo dice. En escritorio flotan a la derecha de la columna; dentro
+  de la hoja de Lugares flotan sobre la ficha y la portada pasa a 16:9 para que a media altura se vean título,
+  etiqueta y el arranque de los KPI. Capturas [256-115](capturas-256/256-115-v3-ficha-evento-voy-telefono.png),
+  [256-116](capturas-256/256-116-v3-ficha-evento-te-interesa-telefono.png) y
+  [256-117](capturas-256/256-117-v3-lugares-ficha-sigues-telefono.png).
+
+### 6.6 Defectos que la revisión de la v3 encontró y cerró
+
+El founder señaló que «elemento de lugar se desalinea en tableta y escritorio»: era cierto y silencioso. **El renglón
+del pin llevaba 20 px más de sangría que la lista** en ≥ 792 porque `.pantalla[data-id="lugares"] .renglon.lista {
+padding-inline: 20px }` pesa más que `.pin-tarjeta > .renglon.lista { padding-inline: 0 }` y le devolvía el relleno
+dentro de una tarjeta que ya lo tenía (la misma clase de defecto que 3.4: reglas que se pisan por especificidad). Ese
+renglón desaparece en la v3 y la regla queda acotada a `.lista.panel > .renglon`. Al mismo tiempo la **fila de filtros
+de Lugares** flotaba con el gutter de la columna centrada mientras el panel iba pegado a la izquierda (capturas 256-67
+y 256-70): en ≥ 792 la fila lleva el relleno del panel. Y en el carril **la línea de meta bailaba entre tarjetas**
+según el título tuviera una o dos líneas: el carril define las tres filas y cada tarjeta las hereda con `subgrid`
+(foto, título y meta alineados en todas las tarjetas, 256-102).
+
+En las capturas de la v3, antes de enseñarla: la tarjeta del carril abría una segunda columna (foto y sello competían
+por la fila 1 sin columna explícita: la foto medía 111 px en una tarjeta de 165); el esqueleto de carga salía encima
+de la lista al arrancar (ahora oculto y mostrado 600 ms como en cualquier entrada); los títulos de día no se empujaban
+entre sí (cada día es ahora una `section.tramo` y el título pegajoso vive en ella); un margen negativo en Buscar
+(fuera). Con la sexta vuelta: la clase de las pastillas flotantes chocaba con la del icono de la navegación (los
+cuatro destinos salieron con sombra y fondo blanco en una tanda: renombrada); el aviso tapaba las pastillas (sube por
+encima cuando hay ficha a la vista); y dentro de la hoja a media altura la pastilla tapaba el título sobre la portada
+4:3 (portada 16:9 en la hoja).
+
+### 6.7 Medición de la v3 (`medir.js` sobre las diez pantallas, teléfono)
+
+0 envoltorios sin estilo, 0 desbordes, 0 márgenes negativos, 0 iconos de control por debajo de 3:1, profundidad máxima
+7 (199 nodos en Eventos, 198 en Lugares con la ficha dentro de la hoja, 34 en Buscar). Los controles por debajo de 44
+px son los mismos de la v2 más los chips de fecha (36 visibles, 44 al tacto con `::before`): letras 34×36, asa,
+`input` dentro de campos de 48, palancas, «Reportar». Cero errores de página y cero respuestas 4xx/5xx en las 43
+capturas.
+
 ## 7. Plan de implementación (primera versión; se cierra tras el prototipo firmado)
 
 Cada pieza la hace un operador nuevo (Sonnet) en su rama, con su número de `siguiente-bitacora.sh`, capturas reales a
@@ -580,16 +711,16 @@ council. Orden por dependencias:
 
 | # | Pieza | Toca | Tamaño | Prueba que la cierra |
 |---|---|---|---|---|
-| P1 | Tokens y utilidades: 5.1 completo, `.columna`/`.a-lo-ancho`, quitar `100vw` | `globals.css` | M | inventario: 0 `z-index` fuera de token, 0 `100vw`; build verde; nada cambia a la vista (capturas iguales) |
-| P2 | `BotonIcono` y `Boton` unificados | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
+| P1 | Tokens y utilidades: 5.1 completo más la letra de listas (familia, cuerpo y ancho como variables), `.columna`/`.a-lo-ancho`, quitar `100vw` | `globals.css` | M | inventario: 0 `z-index` fuera de token, 0 `100vw`; build verde; nada cambia a la vista (capturas iguales) |
+| P2 | `BotonIcono` y `Boton` unificados; glifos de acción: palomita (Voy), persona con «+» (seguir artista), campana con «+» (seguir lugar); decidido verde con glifo blanco | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
 | P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
-| P4 | Cabecera única pegajosa y compacta; barra raíz «+» · logotipo · lupa · campana y Perfil como quinto destino; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
-| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio, Agenda, Lugares, Artistas; renglón de dos líneas; hoja inferior de Lugares (tres alturas, tarjeta del pin); fila Filtros · ciudad · activos y su hoja de selección múltiple | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
-| P6 | Plantilla ficha: portada cover 4:3 (cartel entero a un toque), tres KPI del mismo alto, acciones alineadas, «Artistas» y renglones con chevron, par Me interesa/Voy y barra al pie `sticky`, ficha de artista | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista | L | H-20 a H-28 |
-| P7 | Navegación lateral y reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
+| P4 | Barra de la app única en los tres tamaños («+» · logotipo · lupa · campana) a nivel del layout, que se recoge al bajar y vuelve al subir; barra inferior de cuatro destinos que se esconde y vuelve con la misma regla; fila de contexto pegajosa; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
+| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Eventos (absorbe Inicio y Agenda: `/agenda` redirige a `/`), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista y barra Cerrar · título · más opciones; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
+| P6 | Plantilla ficha: portada cover 4:3 con el título al pie sobre el velo (o en la barra, según firme el founder) y el visor al tocarla, título en la barra al desplazar, tres KPI del mismo alto, acciones alineadas, «Artistas» y renglones con chevron, pastillas flotantes Me interesa · Voy / Seguir con sus estados (Vas, Te interesa, Sigues), ficha de artista; el mismo cuerpo de ficha de lugar sirve a pantalla completa y dentro de la hoja (portada 16:9) | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista | L | H-20 a H-28 |
+| P7 | Carril lateral en dos grupos (secciones arriba, Perfil abajo) bajo la barra de la app a todo lo ancho; reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel con la ficha dentro del panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
 | P8 | Mapa: un símbolo por lugar, prioridad y anclaje variable | `Mapa.tsx` (capas) | M | H-12: 0 etiquetas superpuestas en el centro a zoom por defecto (captura) |
 | P9 | Altas: `HojaDonde` única, mensaje único, frase del alta de lugar, botón que dice qué falta | `HojaDondeEs`, `HojaDondeLugar`, `FormularioEvento`, `FormularioLugar`, `FormularioCanon` | M | H-29 a H-32 |
-| P10 | Chips y sellos unificados; tarjeta sin foto compacta; un sello por foto | `Chip`, `Destacados`, `Renglon` | M | H-02, H-03, H-19 |
+| P10 | Chips y sellos unificados (el chip de contexto abre su hoja, Cuándo muestra su valor y la fecha de cada día es un chip que filtra); carril con `subgrid`; tarjeta sin foto compacta; un sello por foto | `Chip`, `Destacados`, `Renglon` | M | H-02, H-03, H-19 |
 | P11 | Protección: script de inventario y medición como pruebas (sección 9) | `scripts/ops/`, `package.json` (scripts), CI | M | la CI falla con un `z-index` literal, un margen negativo, un desborde o un toque < 44 |
 | P12 | Retiros (sección 10) y limpieza de los duplicados que queden | varios | S | inventario: bloques duplicados 35 → 0 |
 
@@ -635,7 +766,10 @@ en la barra y retiró el segmento Mapa · Lista: la lista pasa a la hoja inferio
 `.icono`, `.tarjeta` duplicados; `AgendaInicio.accion`, `publicadoBoton`, `Sesion.entrar` como estilos propios (pasan a
 `Boton`); `--al-centro`; los parches `@media (max-width: 340px/350px)`; los tokens locales `--alto-mediana/grande/
 chica` y `--alto-hoja` duplicado; el carril semanal de la lista de Lugares; la frase del alta de lugar; las clases
-globales `.raiz` y `.pagina` (pasan a plantillas con áreas).
+globales `.raiz` y `.pagina` (pasan a plantillas con áreas). La v3 retira además los carriles de Inicio («Tus
+planes», «Esta semana», «Nuevos eventos», «Lugares con eventos», «Artistas destacados»: `Inicio.tsx` y
+`Destacados.tsx`, salvo el carril de destacados que pasa a Eventos), la ruta `/agenda` como sección (redirige a `/`),
+la tarjeta intermedia del pin, la lupa sobre la portada y el logotipo en las barras de ficha y de tarea.
 
 ## 11. Lo que se le pidió al founder y lo que contestó (cuatro vueltas el 2026-09-28)
 
@@ -661,4 +795,46 @@ Lo que la v2 decide y el founder confirma o corrige al probarla:
    trabajaron aquí con medición (contraste, toques, desbordes) y capturas reales; si el founder prefiere comparar
    variantes visuales en un lienzo antes de firmar, se abre uno con esas tres piezas.
 
-Con su firma sobre la v2 se cierra el plan definitivo por piezas (sección 7).
+Quinta vuelta (sobre la v2, tres mensajes el mismo día) y lo que la v3 decide (detalle en 6.5):
+
+10. **Fila de contexto en el mismo orden y con el mismo chip en todas las raíces** (ciudad · Cuándo · Filtros ·
+    activos), con Cuándo fuera de la hoja de filtros. **Hecho.**
+11. **Agenda fuera del menú**: Eventos absorbe Inicio y Agenda; barra inferior de cuatro destinos. **Hecho.**
+12. **Ficha de lugar dentro de la hoja** al tocar un pin o un renglón; cerrar devuelve el estado y el desplazamiento;
+    el menú de edición y reporte en la barra. **Hecho.**
+13. **Título sobre el héroe o en la barra**: las dos variantes con conmutador; la lupa fuera y el visor al tocar la
+    imagen. **Hecho.**
+14. **Icono de seguir lugar**: campana con «+», elegida sobre marcador y pin con el muestrario de tres. **Hecho.**
+15. **La barra inferior se esconde al bajar y vuelve al subir**, como la de arriba. **Hecho.**
+16. **Barra superior a todo lo ancho y carril en dos grupos** en tableta y escritorio. **Hecho.**
+17. **«Elemento de lugar se desalinea en tableta y escritorio»**: encontrado, explicado y cerrado (6.6).
+
+Sexta vuelta (antes de enseñar la v3):
+
+25. **La fecha de cada día como chip que filtra la lista** y se refleja en Cuándo. **Hecho.**
+26. **Otra letra, más chica y más legible, para listados y tarjetas**: tres opciones con conmutador; propuesta Inter
+    16/14 con Bricolage condensada donde habla la marca. **Hecho; lo firma el founder (punto 29).**
+27. **Acciones de la ficha rediseñadas como pastillas flotantes** de una línea con estados Vas · Te interesa · Sigues,
+    sin nota dentro del botón. **Hecho.**
+
+Lo que el founder confirma o corrige al probar la v3:
+
+18. **Nombre y contenido de la primera pestaña**: «Eventos» (paralelo a Lugares · Artistas y a los tres tipos del «+»)
+    o «Inicio»; y si el carril «Destacados» se queda arriba de la lista por día o se retira.
+19. **Título de la ficha**: A (sobre la imagen, y en la barra al desplazar) o B (siempre en la barra). Recomendación: A.
+20. **Campana con «+»** para seguir lugares (o marcador con «+»); la persona con «+» sigue para artistas.
+21. **Fichas en escritorio**: dos barras apiladas (la de la app y la de la ficha) o Atrás y más opciones flotando en la
+    columna sin segunda barra.
+22. **La ficha de lugar desde otras entradas** (el Dónde de un evento, Buscar, Perfil) sigue a pantalla completa con
+    Atrás; dentro de la hoja solo cuando se viene de Lugares.
+23. **Esconder la barra inferior entera** (web) frente a minimizarla a una píldora como hace iOS 26.
+24. Siguen abiertos los puntos 5 a 9 que la v3 no cambió: la lupa arriba, las etiquetas de KPI, el tipo inicial del
+    alta por contexto y el lienzo de Claude Design.
+28. **Chips de fecha en los títulos de día**: confirmar que el conteo queda fuera del chip y que tocar el chip activo
+    lo quita (o si prefiere que solo la hoja Cuándo lo quite).
+29. **Letra de listas y tarjetas**: Inter (propuesta), Bricolage ancha o Bricolage condensada; con Inter se corrige la
+    línea gráfica (una familia para la marca, otra para leer).
+30. **Pastillas flotantes**: si se quedan flotando (propuesta) o prefiere una barra al pie de una sola línea; y si el
+    par de evento va centrado (teléfono) y a la derecha (escritorio) como en el prototipo.
+
+Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).

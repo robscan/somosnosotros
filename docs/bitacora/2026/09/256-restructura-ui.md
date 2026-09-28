@@ -412,3 +412,150 @@ P4 a P6 y § 10 ajustados), la fuente del prototipo y los scripts de captura y m
 esta bitácora y OPEN_LOOPS; push al PR #266; artefacto republicado con los carteles incrustados. Pendiente: que el
 founder pruebe la v2 y confirme o corrija los cinco puntos del doc 50 § 11; con su firma, plan definitivo por piezas
 y operadores nuevos.
+
+## Cuarta parte (mismo día): prototipo v3 tras la quinta vuelta del founder
+
+### Lo que pidió
+
+Sobre la v2, tres mensajes seguidos. Primero: «¿primero colocamos ubicación y luego filtros, fecha, chips de filtros,
+etc.? Usas diferentes estilos para selector de lugar en Inicio que en el resto de la app… ¿agregarías selector de
+fecha en Inicio? ¿La fecha (Cuándo) debería permanecer fuera de filtros? ¿Es necesario mantener en el menú la opción
+de agenda?»; en Lugares, «al seleccionar un pin podríamos mostrar directamente la ficha del lugar en drawer… el drawer
+debería poderse cerrar y hay que colocar el menú de ediciones/reportes… la ficha se muestra sobre el drawer de lista y
+al cerrar se regresa al estado anterior manteniendo scroll; lo mismo un elemento del listado abre ficha»; en la
+ficha, «héroe y en la base del héroe las letras, dentro del contenedor de imagen, sobre la imagen, con un pequeño
+degradado… el icono de lupa sobre imagen no es necesario, es intuitivo el tap para verla en grande… otra posición es
+la zona tool bar, pues ya no aplicaría poner logo, quiero ver las dos»; «el icono de seguir lugares es el de seguir
+personas, busca si hay otro más apropiado»; «Cuestiona lo que te digo, identifica áreas de oportunidad y propón
+soluciones». Segundo: «cuando hacemos scroll down se oculta navbar para liberar más espacio, se vuelve a mostrar al
+hacer scroll up, como el comportamiento en header. Te vuelvo a llamar atención por la maquetación, elemento de lugar
+se desalinea en tableta y escritorio». Tercero: «para tablet y desktop probemos top bar en ancho completo, logotipo en
+centro, publicar en el extremo superior izquierdo, buscar y novedades a la derecha; en sidebar dos grupos, el perfil
+en el extremo inferior izquierdo y el resto de las opciones del menú arriba. Cuestiona lo que te digo». Y un cuarto,
+antes de enseñar la v3: «presenta fecha del evento en chip para que al seleccionarlo se muestre listado filtrado por
+esa fecha (hoy, mañana, mié 30 sep). Retoma cuestionamiento de estilo de letra para listados y cards, resuelve si se
+puede usar otra letra que facilite lectura y que sea más pequeña; en esos textos queremos súper legibilidad y tamaño
+moderado. La barra de bottom con las opciones de ficha, "voy" "seguir" y sus estados necesita trabajo de diseño,
+rediséñalas, considera colocar acciones flotando; "vas" tiene interlineado muy grande, tampoco se justifica "Ya estás
+en la lista" dentro del botón».
+
+### Qué cambió en el prototipo (detalle en el doc 50, § 6.5)
+
+- Una sola fila de contexto en todas las raíces con el mismo chip: ciudad · Cuándo · Filtros · activos. Cuándo sale de
+  la hoja de filtros y abre la suya; la ciudad abre «Dónde estás». El selector sin borde de Inicio y el de Buscar se
+  fueron.
+- Eventos absorbe Inicio y Agenda: fila de contexto, un carril de Destacados y la lista por día. Barra inferior de
+  cuatro destinos (Eventos · Lugares · Artistas · Perfil).
+- Ficha de lugar dentro de la hoja de Lugares al tocar un pin o un renglón: capa sobre la lista (la lista conserva su
+  desplazamiento), hoja a media altura, barra Cerrar · título · más opciones en lugar de la barra de la app; cerrar
+  devuelve la hoja a su estado. En tableta y escritorio, dentro del panel. La tarjeta intermedia del pin se fue.
+- Título de la ficha en dos variantes con conmutador: sobre la imagen (velo al pie del héroe, con el título en la barra
+  al desplazar) o en la barra. Sin lupa: la portada abre un visor.
+- Campana con «+» para seguir lugares (muestrario con marcador y pin); persona con «+» sigue para artistas.
+- La barra inferior se esconde al bajar y vuelve al subir, con la misma regla que la barra de arriba (que se recoge
+  hasta la franja de estado). En Lugares no se esconde.
+- Barra superior única a todo lo ancho en los tres tamaños («+» · logotipo · lupa · campana) y carril lateral en dos
+  grupos (secciones arriba, Perfil abajo). Las barras de ficha y de tarea llevan el título en vez del logotipo.
+- Carril con `subgrid` (foto, título y meta alineados entre tarjetas); cada día o letra en su `section` con el título
+  pegajoso que empuja al anterior.
+- La fecha de cada día (Eventos y Perfil) es un chip: tocarlo deja solo ese día y Cuándo lo muestra; otro toque lo
+  quita.
+- Letra de listas y tarjetas en tres opciones con conmutador: Inter 16/14 (propuesta, por defecto), Bricolage ancha
+  16/14 y Bricolage condensada 19/15 (v2). La marca sigue en títulos, chips de fecha, KPI y botones.
+- Acciones de la ficha como pastillas flotantes de una línea (Me interesa · Voy; Seguir) con estados Vas, Te interesa
+  y Sigues, aviso con Deshacer; fuera la barra al pie y el botón de dos líneas. Dentro de la hoja de Lugares la
+  portada pasa a 16:9.
+
+### Cómo se revisó y qué se encontró
+
+Primero se cazó lo que el founder señaló («elemento de lugar se desalinea en tableta y escritorio») con capturas
+nuevas de la v2 en tableta y escritorio (Inicio desplazado hasta «Lugares con eventos», panel de Lugares con pin,
+Perfil, ficha de artista): el renglón del pin llevaba 20 px más de sangría que la lista porque una regla de más peso
+le devolvía el relleno; la fila de filtros de Lugares flotaba con el gutter de la columna centrada y no seguía al
+panel; y en los carriles la línea de meta bailaba según el título tuviera una o dos líneas. Los tres se cierran en la
+v3 (doc 50, § 6.6). Luego tres rondas de captura con el Chrome de la Mac (36 capturas por ronda, cada PNG abierto):
+la primera mostró la tarjeta del carril con la foto a 111 px en una columna de 165 (foto y sello competían por la
+fila 1 sin columna explícita) y el esqueleto de carga encima de la lista al arrancar; la segunda, los títulos de día
+sin empuje entre sí (cada día pasa a su `section`); la tercera, limpia, con cero errores de página y cero respuestas
+4xx/5xx. Con la sexta vuelta, dos tandas más: la primera mostró los cuatro destinos de la navegación con sombra y fondo
+blanco (la clase nueva de las pastillas chocaba con la del icono de la navegación), el aviso encima de las pastillas y
+la pastilla tapando el título de la ficha en la hoja a media altura; la segunda, limpia. `medir.js` sobre las diez
+pantallas: 0 envoltorios, 0 desbordes, 0 márgenes negativos (uno en Buscar, retirado), 0 iconos por debajo de 3:1;
+los controles por debajo de 44 son los mismos de la v2 más los chips de fecha (36 visibles, 44 al tacto).
+
+### Capturas del prototipo v3 (`docs/rediseno/capturas-256/256-75…117-v3-*.png`), abiertas y descritas
+
+- **`256-75-v3-eventos-telefono`:** barra «+» · logotipo · lupa · campana; fila San Luis Potosí ⌄ · Cuándo · Filtros;
+  Destacados con cuatro carteles (subgrid: títulos y metas alineados, en Inter); el chip «Hoy» · 2 y la lista; barra
+  de cuatro destinos.
+- **`256-76-v3-eventos-guardada-telefono`:** tras bajar: la barra recogida hasta la franja de estado, la fila de
+  contexto pegada, la navegación escondida; la lista ocupa todo.
+- **`256-77-v3-eventos-vuelve-telefono`:** tras subir 20 px: barra y navegación de vuelta; «Mañana» empuja a «Hoy».
+- **`256-78-v3-cuando-telefono`:** hoja Cuándo con Próximos (activo) · Hoy · Mañana · Fin de semana · Esta semana ·
+  Elegir fecha…, Limpiar y «Ver 23 eventos».
+- **`256-79-v3-ciudad-telefono`:** hoja «Dónde estás» con la nota «la ciudad ordena, no limita» y Cerca de ti · San
+  Luis Potosí (✓) · Otra ciudad.
+- **`256-80-v3-filtros-telefono`:** hoja Filtros de eventos solo con Cuánto y Siguiendo (Cuándo y Dónde ya viven fuera).
+- **`256-81-v3-eventos-fin-de-semana-telefono`:** el chip Cuándo en violeta con «Fin de semana»; la fila se desplaza.
+- **`256-82-v3-lugares-mapa-telefono`:** mapa entero, fila ciudad · Filtros 1 · Museo ✕, hoja «asoma» con el resumen y
+  el primer renglón (campana con «+»).
+- **`256-83-v3-lugares-hoja-media-telefono`:** la hoja a media altura con la lista y sus campanas.
+- **`256-84-v3-lugares-pin-ficha-telefono`:** tras tocar el pin: barra Cerrar · ⋯, mapa arriba, la ficha en la hoja con
+  el héroe 16:9, el título y MUSEO sobre el velo, y la pastilla «Seguir» flotando.
+- **`256-85-v3-lugares-ficha-llena-telefono`:** la hoja llena: héroe con título y MUSEO, KPI, cinco acciones.
+- **`256-86-v3-lugares-ficha-desplazada-telefono`:** desplazada: el título pasa a la barra (Cerrar · Museo del
+  Ferrocarril Jesús García C… · ⋯); Próximos eventos y Dónde.
+- **`256-87-v3-lugares-ficha-titulo-barra-telefono`:** variante B: título en la barra desde el principio, héroe limpio.
+- **`256-88-v3-lugares-cerrada-telefono`:** tras Cerrar: vuelve la barra de la app, la fila y la hoja «asoma».
+- **`256-89-v3-artistas-telefono`:** fila ciudad · Filtros 1 · Música ✕, tira de letras, renglones con persona «+».
+- **`256-90-v3-perfil-telefono`:** cabecera, KPI Voy · Me interesa · Sigo (campana), chips y la lista por día.
+- **`256-91-v3-ficha-evento-telefono`:** variante A: Atrás · ⋯ sin título, cartel cover con «LXS COLOCAOS: La última
+  fogueada» sobre el velo, KPI, acciones, Dónde; las pastillas «☆ Me interesa» y «✓ Vas» (verde) flotando.
+- **`256-92-v3-ficha-evento-desplazada-telefono`:** el título en la barra al desplazar; Dónde, Artistas, Sobre.
+- **`256-93-v3-ficha-evento-titulo-barra-telefono`:** variante B: título en la barra, cartel limpio, KPI debajo.
+- **`256-94-v3-visor-telefono`:** el cartel entero a pantalla completa sobre fondo oscuro con ✕.
+- **`256-95-v3-ficha-artista-telefono`:** cabecera con foto redonda, KPI, enlaces, Próximas fechas; la pastilla
+  «Seguir» con persona «+» flotando.
+- **`256-96-v3-ficha-lugar-completa-telefono`:** la ficha de lugar a pantalla completa (desde el Dónde de un evento):
+  Atrás · ⋯, héroe 4:3 con título y MUSEO, KPI, acciones; la pastilla «Seguir» con campana flotando.
+- **`256-97-v3-alta-lugar-telefono`:** barra con «Registrar un lugar» y ✕ (sin logotipo), campo, renglones, tira de
+  tipos.
+- **`256-98-v3-buscar-telefono`:** campo, el mismo chip de ciudad que en las raíces, Recientes y atajos.
+- **`256-99-v3-iconos-seguir-lugar`:** el mismo renglón tres veces: campana con «+» (propuesta), marcador con «+»,
+  pin con «+».
+- **`256-100-v3-eventos-tableta`:** barra a todo lo ancho, carril con Eventos · Lugares · Artistas arriba y Perfil
+  abajo, fila de contexto alineada a la columna, Destacados y la lista.
+- **`256-101-v3-lugares-ficha-tableta`:** la ficha dentro del panel (Cerrar · ⋯, héroe 16:9, KPI, acciones, Próximos
+  eventos, «Seguir» flotando) con el mapa y la fila de contexto a la vista.
+- **`256-102-v3-eventos-escritorio`:** lo mismo a 1280; las cuatro tarjetas con foto, título y meta alineados.
+- **`256-103-v3-lugares-escritorio`:** panel y mapa; la fila de contexto ahora va con el relleno del panel.
+- **`256-104-v3-lugares-ficha-escritorio`:** la ficha en el panel con el título sobre el héroe.
+- **`256-105-v3-lugares-ficha-desplazada-escritorio`:** el título en la barra del panel al desplazar.
+- **`256-106-v3-ficha-evento-escritorio`:** variante A en escritorio: barra de la app, barra de ficha (Atrás · ⋯),
+  cartel a la izquierda y el título en la columna derecha.
+- **`256-107-v3-ficha-evento-titulo-barra-escritorio`:** variante B: el título en la barra de ficha y la columna
+  arranca con los KPI.
+- **`256-108-v3-ficha-artista-escritorio`:** cabecera y enlaces a la izquierda; KPI, fechas, Sobre, Se presenta en.
+- **`256-109-v3-alta-evento-escritorio`:** barra con «Publicar un evento» y ✕; formulario centrado; tira de tipos.
+- **`256-110-v3-perfil-escritorio`:** Perfil con el carril lateral marcando el destino de abajo.
+- **`256-111-v3-eventos-dia-telefono`:** tras tocar el chip «Mañana»: solo ese día en la lista y el chip Cuándo en
+  violeta con «Mañana».
+- **`256-112-v3-letra-inter-telefono`:** la lista en Inter 16/14: títulos y metas más chicos y abiertos; los chips de
+  fecha siguen en Bricolage.
+- **`256-113-v3-letra-bricolage-ancha-telefono`:** la misma lista en Bricolage al ancho 100, 16/14.
+- **`256-114-v3-letra-bricolage-telefono`:** la misma lista en Bricolage condensada 19/15 (como la v2).
+- **`256-115-v3-ficha-evento-voy-telefono`:** tras tocar «Vas»: la pastilla vuelve a «✓ Voy» en violeta y el aviso
+  «Ya no vas a…» con Deshacer, por encima de las pastillas.
+- **`256-116-v3-ficha-evento-te-interesa-telefono`:** tras tocar «Me interesa»: «★ Te interesa» en violeta sobre
+  blanco y el aviso.
+- **`256-117-v3-lugares-ficha-sigues-telefono`:** en la hoja llena, tras tocar «Seguir»: «✓ Sigues» en verde y el
+  aviso.
+
+### Cierre (cuarta parte)
+
+Commit en `restructura-ui` con el prototipo v3, las 43 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7 y P10,
+§ 10 y § 11 con la quinta y la sexta vuelta), el generador y el script de captura actualizados, esta bitácora y
+OPEN_LOOPS; push al PR #266; artefacto republicado. Pendiente: que el founder pruebe la v3 y conteste los puntos 18 a
+24 y 28 a 30 del doc 50 § 11 (nombre de la primera pestaña y carril Destacados, variante del título, campana, dos
+barras en escritorio, ficha desde otras entradas, esconder o minimizar la navegación, chips de fecha, letra de listas,
+pastillas flotantes); con su firma, plan definitivo por piezas y operadores nuevos.
