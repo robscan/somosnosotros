@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarCorreo, asuntoDe, type Candidato, elegirTanda, enmascarar, urlFicha } from "./invitar";
+import { armarCorreo, asuntoDe, type Candidato, elegirTanda, enmascarar, normalizarCorreo, urlFicha } from "./invitar";
 
 describe("asuntoDe y urlFicha", () => {
   it("dos variantes de asunto, con el nombre del artista", () => {
@@ -61,5 +61,18 @@ describe("elegirTanda", () => {
   it("respeta el tamaño de la tanda", () => {
     expect(elegirTanda(candidatos, 2).map((c) => c.artistaId)).toEqual(["1", "2"]);
     expect(elegirTanda(candidatos, 0)).toEqual([]);
+  });
+  it("una sola invitación por dirección aunque varios artistas la compartan (sin distinguir mayúsculas ni espacios)", () => {
+    const compartida: Candidato[] = [
+      { artistaId: "1", nombre: "Ana", correo: "agencia@x.mx" },
+      { artistaId: "2", nombre: "Beto", correo: " Agencia@X.mx" },
+      { artistaId: "3", nombre: "Coco", correo: "c@x.mx" },
+      { artistaId: "4", nombre: "Dani", correo: "agencia@x.mx" },
+    ];
+    expect(elegirTanda(compartida, 10).map((c) => c.artistaId)).toEqual(["1", "3"]);
+  });
+  it("salta las direcciones que ya recibieron invitación en tandas anteriores", () => {
+    const tanda = elegirTanda(candidatos, 10, new Set([normalizarCorreo("B@x.mx ")]));
+    expect(tanda.map((c) => c.artistaId)).toEqual(["1", "3"]);
   });
 });

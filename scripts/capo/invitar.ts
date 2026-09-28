@@ -77,14 +77,24 @@ export function armarCorreo(nombre: string, artistaId: string, slug?: string | n
 
 export type Candidato = { artistaId: string; nombre: string; correo: string; slug?: string | null };
 
-/** Como mucho un correo por artista (el primero que llegue) y hasta `n`, respetando el orden recibido. */
-export function elegirTanda(candidatos: Candidato[], n: number): Candidato[] {
+/** La misma dirección escrita con mayúsculas o espacios distintos cuenta como una sola. */
+export function normalizarCorreo(correo: string): string {
+  return correo.trim().toLowerCase();
+}
+
+/** Como mucho un correo por artista y uno por dirección (varios artistas del catálogo comparten la
+ * misma cuenta, p. ej. la de una agencia: se le escribe una sola vez, nunca una por artista), sin
+ * repetir direcciones que ya recibieron invitación, y hasta `n`, respetando el orden recibido. */
+export function elegirTanda(candidatos: Candidato[], n: number, correosYaInvitados: ReadonlySet<string> = new Set()): Candidato[] {
   if (n <= 0) return [];
-  const vistos = new Set<string>();
+  const artistas = new Set<string>();
+  const correos = new Set<string>(correosYaInvitados);
   const tanda: Candidato[] = [];
   for (const c of candidatos) {
-    if (vistos.has(c.artistaId)) continue;
-    vistos.add(c.artistaId);
+    const correo = normalizarCorreo(c.correo);
+    if (artistas.has(c.artistaId) || correos.has(correo)) continue;
+    artistas.add(c.artistaId);
+    correos.add(correo);
     tanda.push(c);
     if (tanda.length >= n) break;
   }
@@ -99,21 +109,26 @@ function artistaDe(f: FilaContacto["artistas"]): { nombre: string; visible: bool
   return Array.isArray(f) ? (f[0] ?? null) : f;
 }
 
-/** Artistas ya invitados (para no repetir). Si la migración de `invitaciones_enviadas` aún no está
- * aplicada, se trata como si nadie hubiera sido invitado todavía (la tabla no existe en producción
- * hasta que el founder la apruebe). */
-export async function invitadosPrevios(db: SupabaseClient): Promise<Set<string>> {
-  const { data, error } = await db.from("invitaciones_enviadas").select("artista_id");
+/** Artistas y direcciones ya invitados (para no repetir ni a la persona ni al buzón). Si la migración
+ * de `invitaciones_enviadas` aún no está aplicada, se trata como si nadie hubiera sido invitado todavía
+ * (la tabla no existe en producción hasta que el founder la apruebe). */
+export async function invitadosPrevios(db: SupabaseClient): Promise<{ artistas: Set<string>; correos: Set<string> }> {
+  const { data, error } = await db.from("invitaciones_enviadas").select("artista_id, correo");
   if (error) {
     // 42P01: Postgres directo, "relation ... does not exist". PGRST205: PostgREST, tabla fuera de su caché de esquema
     // (mismo caso: la migración es nueva y aún no está aplicada a producción).
-    if (error.code === "42P01" || error.code === "PGRST205" || /does not exist|could not find the table/i.test(error.message)) return new Set();
+    if (error.code === "42P01" || error.code === "PGRST205" || /does not exist|could not find the table/i.test(error.message)) return { artistas: new Set(), correos: new Set() };
     throw error;
   }
-  return new Set((data ?? []).map((r: { artista_id: string }) => r.artista_id));
+  const filas = (data ?? []) as { artista_id: string; correo: string | null }[];
+  return {
+    artistas: new Set(filas.map((r) => r.artista_id)),
+    correos: new Set(filas.flatMap((r) => (r.correo ? [normalizarCorreo(r.correo)] : []))),
+  };
 }
 
-/** Artistas del CAPO con correo de contacto y sin invitación previa, en el orden en que se capturaron. */
+/** Artistas del CAPO con correo de contacto y sin invitación previa (ni ellos ni su dirección), en el
+ * orden en que se capturaron. */
 export async function candidatosPendientes(db: SupabaseClient): Promise<Candidato[]> {
   const { data, error } = await db
     .from("contactos_importados")
@@ -127,7 +142,7 @@ export async function candidatosPendientes(db: SupabaseClient): Promise<Candidat
   for (const f of filas) {
     const artista = artistaDe(f.artistas);
     if (!artista?.visible) continue;
-    if (yaInvitados.has(f.artista_id)) continue;
+    if (yaInvitados.artistas.has(f.artista_id) || yaInvitados.correos.has(normalizarCorreo(f.correo))) continue;
     candidatos.push({ artistaId: f.artista_id, nombre: artista.nombre, correo: f.correo, slug: artista.slug });
   }
   return candidatos;
