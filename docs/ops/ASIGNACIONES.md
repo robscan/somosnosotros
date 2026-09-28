@@ -199,6 +199,8 @@ Lo que este gestor puede hacer desde la nube: revisar entregas que lleguen como 
 
 El chat «Gestor de cambios II» (`local_ffd34d86-6c74-4f3a-b5f5-8879b4c446ed`, Fable 5.1, esfuerzo max) cierra por tamaño de contexto y entrega a «Gestor de cambios III», con las mismas reglas de este registro, de `docs/ops/GESTION_DE_CAMBIOS.md` y de `docs/ops/MEMORIA_GESTOR.md`. Orden del founder: «Guarda memoria de trabajo, abre nuevo chat "Gestor de cambios III" y retoma proyecto de restructura de UI». El nuevo gestor anota aquí su id de sesión al arrancar y confirma que corre en Fable 5.1 con esfuerzo max.
 
+**Arranque del gestor III (2026-09-28):** sesión `local_004a210b-4803-4298-bd64-2666df33576c`, título «Gestor de cambios III», modelo `claude-fable-5-1`, esfuerzo `max` (comprobado con `get_session "self"` al arrancar). Pieza propia: OL-227 / bitácora 256 (`docs/rediseno/50-restructura-ui.md`, `docs/bitacora/2026/09/256-restructura-ui.md`, prototipo `docs/rediseno/prototipos/restructura-ui*.html`, capturas `docs/rediseno/capturas-256/`), rama `restructura-ui` desde `origin/main` en `.claude/worktrees/restructura-ui`. Siguiente libre: OL-228 / bitácora 257.
+
 Estado al relevo (main `6d870573`):
 
 - **Producción al día con main.** Sin PR de código abiertos. Abiertos solo como referencia: PR #237 (doc 48, auditoría del shell, OL-202) y PR #242 (borrador, doc 49 y prototipo de navegación, OL-207, pospuesto por el founder).
