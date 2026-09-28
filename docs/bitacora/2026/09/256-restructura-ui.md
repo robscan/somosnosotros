@@ -513,22 +513,26 @@ los controles por debajo de 44 son los mismos de la v2.
 - **`256-80-v3-filtros-telefono`:** hoja Filtros de eventos solo con Cuánto y Siguiendo (Cuándo y Dónde ya viven fuera).
 - **`256-81-v3-inicio-lista-fin-de-semana-telefono`:** Inicio en modo lista: el chip Cuándo en violeta con «Fin de
   semana» (la fila se desplaza) y la lista por día en lugar de los carriles.
-- **`256-82-v3-lugares-mapa-telefono`:** mapa entero, fila ciudad · Filtros 1 · Museo ✕, hoja «asoma» con el resumen y
-  el primer renglón (campana con «+»).
+- **`256-82-v3-lugares-mapa-telefono`:** mapa entero, fila ciudad · Filtros 1 · Museo ✕, la hoja asomando (radio 24)
+  con el resumen y el primer renglón (campana con «+»), encima de la navegación.
 - **`256-83-v3-lugares-hoja-media-telefono`:** la hoja a media altura con la lista y sus campanas.
 - **`256-84-v3-lugares-pin-ficha-telefono`:** tras tocar el pin: la barra del sitio y la fila siguen arriba, el mapa
-  en medio, la hoja con el héroe 16:9 a todo lo ancho, el asa, ⋯ y Cerrar elevados sobre la imagen, el título y
-  MUSEO dentro de la imagen sobre el velo, y la pastilla «Seguir» flotando.
-- **`256-85-v3-lugares-ficha-llena-telefono`:** la hoja llena: el mismo héroe, KPI, cinco acciones.
-- **`256-86-v3-lugares-ficha-desplazada-telefono`:** desplazada: dentro de la hoja, la cabecera compacta pegajosa
-  (asa, Museo del Ferrocarril Jesús García C…, ⋯, ✕) sobre Próximos eventos y Dónde; la barra del sitio intacta.
+  en medio, la hoja a la altura justa de foto + KPI: héroe 3:2 con el asa, Cerrar (izquierda) y ⋯ (derecha)
+  elevados sobre la imagen, MUSEO y el título dentro de la imagen sobre el velo, los tres KPI enteros y la pastilla
+  «Seguir» flotando debajo.
+- **`256-85-v3-lugares-ficha-llena-telefono`:** la hoja llena: cubre barra, filtros y mapa, la navegación se guardó;
+  héroe bajo la franja de estado, KPI, cinco acciones, Próximos eventos; la pastilla al pie.
+- **`256-86-v3-lugares-ficha-desplazada-telefono`:** desplazada dentro de la hoja llena: la cabecera compacta pegajosa
+  (asa, ✕, Museo del Ferrocarril Jesús García…, ⋯) sobre Próximos eventos y Dónde.
 - **`256-87-v3-lugares-cerrada-telefono`:** tras Cerrar: vuelve la barra de la app, la fila y la hoja «asoma».
 - **`256-88-v3-artistas-telefono`:** fila ciudad · Filtros 1 · Música ✕, tira de letras, renglones con persona «+».
 - **`256-89-v3-perfil-telefono`:** cabecera, KPI Voy · Me interesa · Sigo (campana), chips y la lista por día.
-- **`256-90-v3-ficha-evento-telefono`:** variante A: Atrás · ⋯ sin título, cartel cover con «LXS COLOCAOS: La última
-  fogueada» sobre el velo, KPI, acciones, Dónde; las pastillas «☆ Me interesa» y «✓ Vas» (verde) flotando.
+- **`256-90-v3-ficha-evento-telefono`:** el canon de la hoja: cartel 3:2 arriba a todo lo ancho con Atrás y menú
+  elevados encima y «LXS COLOCAOS: La última fogueada» a 19 px sobre el velo; KPI (vie 2 oct · 19:00, Gratis, 2 van),
+  acciones, Dónde; las pastillas «☆ Me interesa» y «✓ Vas» (verde) flotando.
 - **`256-91-v3-ficha-evento-desplazada-telefono`:** el título en la barra al desplazar; Dónde, Artistas, Sobre.
-- **`256-92-v3-ficha-evento-titulo-barra-telefono`:** variante B: título en la barra, cartel limpio, KPI debajo.
+- **`256-92-v3-ficha-evento-abajo-telefono`:** más abajo: Dónde, Artistas y Sobre el evento bajo la barra compacta;
+  las pastillas siguen flotando.
 - **`256-93-v3-visor-telefono`:** el cartel entero a pantalla completa sobre fondo oscuro con ✕.
 - **`256-94-v3-ficha-artista-telefono`:** cabecera con foto redonda, KPI, enlaces, Próximas fechas; la pastilla
   «Seguir» con persona «+» flotando.
@@ -537,27 +541,27 @@ los controles por debajo de 44 son los mismos de la v2.
 - **`256-96-v3-alta-lugar-telefono`:** barra con «Registrar un lugar» y ✕ (sin logotipo), campo, renglones, tira de
   tipos.
 - **`256-97-v3-buscar-telefono`:** campo, el mismo chip de ciudad que en las raíces, Recientes y atajos.
-- **`256-98-v3-iconos-seguir-lugar`:** el mismo renglón tres veces: campana con «+» (propuesta), marcador con «+»,
-  pin con «+».
+- **`256-98-v3-iconos-seguir-lugar`:** el cuerpo de la hoja con el mismo renglón tres veces: campana con «+»
+  (propuesta), marcador con «+», pin con «+».
 - **`256-99-v3-inicio-tableta`:** barra a todo lo ancho, carril con Inicio · Lugares · Artistas arriba y Perfil
   abajo, fila de contexto alineada a la columna, los carriles de Inicio.
-- **`256-100-v3-lugares-ficha-tableta`:** la ficha dentro del panel (⋯ y Cerrar sobre el héroe 16:9, KPI, acciones,
-  Próximos eventos, «Seguir» flotando) con el mapa y la fila de contexto a la vista.
+- **`256-100-v3-lugares-ficha-tableta`:** la ficha dentro del panel (Cerrar y ⋯ sobre el héroe 3:2, MUSEO y título
+  dentro, KPI, acciones, Próximos eventos, «Seguir» flotando) con el mapa y la fila de contexto a la vista.
 - **`256-101-v3-inicio-escritorio`:** lo mismo a 1280; las tarjetas con foto, título y meta alineados.
 - **`256-102-v3-lugares-escritorio`:** panel y mapa; la fila de contexto ahora va con el relleno del panel.
-- **`256-103-v3-lugares-ficha-escritorio`:** la ficha en el panel con ⋯ y Cerrar sobre el héroe y el título al pie.
-- **`256-104-v3-lugares-ficha-desplazada-escritorio`:** al desplazar aparece la barra del panel con el título.
-- **`256-105-v3-ficha-evento-escritorio`:** variante A en escritorio: barra de la app, barra de ficha (Atrás · ⋯),
-  cartel a la izquierda y el título en la columna derecha.
-- **`256-106-v3-ficha-evento-titulo-barra-escritorio`:** variante B: el título en la barra de ficha y la columna
-  arranca con los KPI.
+- **`256-103-v3-lugares-ficha-escritorio`:** la ficha en el panel con Cerrar y ⋯ sobre el héroe y el título dentro.
+- **`256-104-v3-lugares-ficha-desplazada-escritorio`:** al desplazar, la cabecera compacta del panel con el título.
+- **`256-105-v3-ficha-evento-escritorio`:** en escritorio: barra de la app, barra de ficha (Atrás · ⋯) arriba,
+  cartel a la izquierda, el título en la columna derecha y las pastillas abajo a la derecha.
+- **`256-106-v3-ficha-lugar-escritorio`:** la ficha de lugar completa en escritorio: barra, foto 5:3 a la
+  izquierda; etiqueta, título, KPI, acciones y Próximos eventos por la derecha; «Seguir» flotando.
 - **`256-107-v3-ficha-artista-escritorio`:** cabecera y enlaces a la izquierda; KPI, fechas, Sobre, Se presenta en.
 - **`256-108-v3-alta-evento-escritorio`:** barra con «Publicar un evento» y ✕; formulario centrado; tira de tipos.
 - **`256-109-v3-perfil-escritorio`:** Perfil con el carril lateral marcando el destino de abajo.
-- **`256-110-v3-letra-inter-telefono`:** Inicio en modo lista (Todos los próximos) en Inter 16/14: títulos y metas más
-  chicos y abiertos; los títulos de día siguen en Bricolage.
-- **`256-111-v3-letra-bricolage-ancha-telefono`:** la misma lista en Bricolage al ancho 100, 16/14.
-- **`256-112-v3-letra-bricolage-telefono`:** la misma lista en Bricolage condensada 19/15 (como la v2).
+- **`256-110-v3-letra-bricolage-telefono`:** Inicio en modo lista (Todos los próximos) en Bricolage condensada
+  19/15: la letra que se queda.
+- **`256-111-v3-letra-bricolage-ancha-telefono`:** la misma lista en Bricolage al ancho 100, 16/14 (descartada).
+- **`256-112-v3-letra-inter-telefono`:** la misma lista en Inter 16/14 (descartada).
 - **`256-113-v3-ficha-evento-voy-telefono`:** tras tocar «Vas»: la pastilla vuelve a «✓ Voy» en violeta y el aviso
   «Ya no vas a…» con Deshacer, por encima de las pastillas.
 - **`256-114-v3-ficha-evento-te-interesa-telefono`:** tras tocar «Me interesa»: «★ Te interesa» en violeta sobre
@@ -575,7 +579,22 @@ capturas regeneradas. Después editó él mismo la hoja de lugar en el lienzo (�
 sheet, posición de accionables X y ⋯, posición de chips, tamaño y posición de título»): se leyó su versión frente a
 la generada (radio 24, héroe 3:2, Cerrar a la izquierda y menú a la derecha sobre la imagen, título de 19 px con la
 etiqueta encima en violeta) y se pasó al prototipo (doc 50 § 11, punto 34); en el lienzo se le quitó a un KPI el alto
-fijo de 33 px que dejó su prueba.
+fijo de 33 px que dejó su prueba. Cuatro hilos más en el lienzo, todos decisiones: «me gusta que flotan, muy moderno,
+bien hecho» (pastillas flotantes, se quedan); «esta se queda» sobre Bricolage condensada 19/15 (la letra de listas no
+cambia; Inter y la ancha, descartadas); «aquí debemos replicar el canon de héroe de sheet, te reto a traerlo acá»
+(la ficha a pantalla completa toma el canon de la hoja: héroe 3:2 con Atrás y menú elevados sobre la imagen, título
+de 19 px dentro, barra compacta al desplazar; fuera la variante «título en la barra»); «demasiado alto, no es
+necesario poner palabra fecha, es obvio» (el KPI de fecha: día y hora en dos líneas, sin etiqueta). Prototipo y
+lienzo actualizados; capturas regeneradas. Luego, en el chat: «el comportamiento de sheet es muy torpe y muy poco
+intuitivo: que aparezca en el alto suficiente para que se vea foto y KPI; al deslizar hacia arriba dentro del sheet
+primero se hace más grande hasta cubrir la pantalla, no es necesario que se vea header ni filtros; luego ya se activa
+el scroll interno, pero solo hasta que el sheet alcanza su alto máximo». La hoja se rehízo como un solo contenedor
+que desplaza (dos espaciadores invisibles y el cuerpo que asoma): el mismo gesto la sube, la llena y luego desplaza
+el contenido, con inercia nativa; se asienta en la altura más cercana al soltar. Probado con la rueda del Chrome
+(`probar-hoja.mjs`): abre a foto + KPI, 200 px la llenan, los siguientes desplazan, hacia arriba vuelve, Cerrar
+devuelve la lista a su estado. Dos defectos en esa pasada: la barra de la ficha de evento salió al pie en escritorio
+(la clase `sobre` chocaba con el bloque «Sobre el evento» y heredaba su área de rejilla: ahora `heroe`) y la hoja
+entraba «llena» por un evento disparado antes de medir (doc 50 § 6.6). Capturas regeneradas y medición limpia.
 
 ### Cierre (cuarta parte)
 

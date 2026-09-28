@@ -604,14 +604,23 @@ Tres mensajes seguidos sobre la v2. Lo que dijo, lo que se cuestionó y lo que q
   tener botón de cerrar en sheet»; «cuando abres sheet la información de sheet debe estar dentro de esa sheet, estás
   usando la barra del sitio»; «los héroes de ancho completo y el título dentro de la imagen van en el sentido de
   integrar elementos»). Hecho: pin o renglón abren la ficha **como capa sobre la lista** (la lista no se desmonta y
-  conserva su desplazamiento) y la hoja sube a media altura. **Todo lo de la hoja vive en la hoja:** el héroe a todo
-  lo ancho arriba con el título y la etiqueta dentro de la imagen, y sobre la imagen el asa, el menú (Editar,
-  Reportar, Compartir) y Cerrar, elevados; al desplazar la ficha, esa misma cabecera se vuelve compacta y pegajosa
-  dentro de la hoja (fondo blanco, título en una línea, menú y Cerrar). La barra del sitio y la fila de contexto no
-  cambian (como Google Maps con la tarjeta de un lugar). Cerrar devuelve la hoja al estado que tenía. Desde 792 la
+  conserva su desplazamiento). **Todo lo de la hoja vive en la hoja:** el héroe a todo lo ancho arriba con la
+  etiqueta y el título dentro de la imagen, y sobre la imagen el asa, Cerrar (izquierda) y el menú (derecha: Editar,
+  Reportar, Compartir), elevados; al desplazar, esa misma cabecera se vuelve compacta y pegajosa dentro de la hoja
+  (fondo blanco, título en una línea). Cerrar devuelve la hoja al estado y al desplazamiento que tenía. Desde 792 la
   ficha abre en el panel con la misma cabecera, y el mapa y la fila de contexto siguen a la vista. Una pasada
   intermedia había puesto Cerrar y el título en la barra del sitio; el founder la paró («que diablos sucede») y se
-  corrigió. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
+  corrigió.
+  **Cómo se mueve la hoja** («el comportamiento es muy torpe y poco intuitivo: que aparezca en el alto suficiente para
+  que se vea foto y KPI; al deslizar hacia arriba dentro del sheet primero se hace más grande hasta cubrir la
+  pantalla, no es necesario que se vea header ni filtros; luego ya se activa el scroll interno, pero solo hasta que el
+  sheet alcanza su alto máximo»): la hoja es **un solo contenedor que desplaza**, con dos espaciadores invisibles y
+  después el cuerpo blanco que asoma desde abajo. Arrastrar (o la rueda) sobre el cuerpo lo sube: la hoja «crece»; en
+  cuanto su borde llega arriba (cubre barra, filtros y mapa, y la navegación se guarda) el mismo gesto sigue
+  desplazando el contenido, con una sola inercia nativa. Al soltar entre alturas se asienta en la más cercana (lista:
+  asoma · media · llena; ficha: foto + KPI · llena). Con la ficha, abre a la altura exacta de foto + KPI (medida) y
+  al bajar del todo vuelve a esa altura; Cerrar devuelve la lista. Probado con la rueda del Chrome: abre a foto + KPI,
+  200 px de rueda la llenan, los siguientes desplazan el contenido, la rueda hacia arriba la devuelve a foto + KPI. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
   la lista»). Cuestionado: desde otras entradas (el «Dónde» de un evento, Buscar, Perfil) la ficha sigue abriendo a
   pantalla completa con Atrás, para no cambiar de pestaña a quien viene de un evento (sección 11).
 - **Título sobre el héroe o en la barra** («héroe y en la base del héroe las letras, dentro del contenedor de imagen,
@@ -659,17 +668,17 @@ muy grande, tampoco se justifica "Ya estás en la lista" dentro del botón»):
   fecha»). Los títulos de día vuelven a ser texto («Hoy · 2», «Mañana», «mié 30 sep»); el día se elige solo en la hoja
   Cuándo.
 - **Letra de listas y tarjetas: tres opciones con conmutador** («Inter (propuesta)» · «Bricolage ancha» · «Bricolage
-  condensada (v2)»; capturas [256-110](capturas-256/256-110-v3-letra-inter-telefono.png),
+  condensada (v2)»; capturas [256-110](capturas-256/256-110-v3-letra-bricolage-telefono.png),
   [256-111](capturas-256/256-111-v3-letra-bricolage-ancha-telefono.png) y
-  [256-112](capturas-256/256-112-v3-letra-bricolage-telefono.png)). Se cuestionó lo que decidía la línea gráfica
+  [256-112](capturas-256/256-112-v3-letra-inter-telefono.png)). Se cuestionó lo que decidía la línea gráfica
   («Bricolage condensada para toda la app»): la condensada a 19 px en negrita lee bien como título pero en un renglón
   de dos líneas más dos metas aprieta las contraformas y obliga a subir el cuerpo. Propuesta: **Inter para el título y
   la meta de renglones, tarjetas y renglones de dato** (16 px semibold y 14 px, interlínea 1,3; tabular en cifras) y
   **Bricolage condensada donde habla la marca**: títulos de pantalla y de ficha, chips de fecha, KPI, botones y
   acciones. Inter es una letra hecha para pantalla (ojo alto, aperturas abiertas), pesa 60 KB en variable y no compite
   con la marca porque nunca ocupa un título. La alternativa sin segunda familia es Bricolage al ancho 100 al mismo
-  cuerpo (256-111): legible, pero con las formas caprichosas de la familia en cuerpos chicos. Lo decide el founder
-  (sección 11); si Inter se queda, se corrige `docs/diseno/LINEA_GRAFICA.md`.
+  cuerpo (256-111): legible, pero con las formas caprichosas de la familia en cuerpos chicos. **Decidido en el lienzo
+  («esta se queda» sobre la condensada 19/15): la letra de listas no cambia y la línea gráfica tampoco.**
 - **Acciones de la ficha: pastillas flotantes, no barra.** Se retira la barra al pie con el par de botones y el
   «decidido» de dos líneas. Las acciones flotan sobre el contenido (sticky a 16 px del pie, sombra, una línea): en
   evento «☆ Me interesa» (blanca) y «✓ Voy» (violeta); en lugar y artista «Seguir» (campana o persona con «+»). Los
@@ -700,7 +709,13 @@ En las capturas de la v3, antes de enseñarla: la tarjeta del carril abría una 
 por la fila 1 sin columna explícita: la foto medía 111 px en una tarjeta de 165); el esqueleto de carga salía encima
 de la lista al arrancar (ahora oculto y mostrado 600 ms como en cualquier entrada); los títulos de día no se empujaban
 entre sí (cada día es ahora una `section.tramo` y el título pegajoso vive en ella); un margen negativo en Buscar
-(fuera). Con la sexta vuelta: la clase de las pastillas flotantes chocaba con la del icono de la navegación (los
+(fuera). Al traer el canon del héroe a la ficha de evento, **la barra Atrás · ⋯ salió al pie en escritorio y las
+pastillas arriba**: la barra llevaba la clase `sobre` («sobre el héroe»), que es también la del bloque «Sobre el
+evento», y heredó su área de rejilla (`grid-area: sobre`); las pastillas, sin sitio, tomaron la fila libre de la
+barra. La clase pasa a `heroe`. Es la tercera colisión de nombre de esta pieza (`pildora`, `sobre`): regla para el
+código, un prefijo por componente y ningún nombre que sea también una sección. Y al rehacer la hoja, **entraba
+«llena»** porque se disparaba un evento de desplazamiento antes de medir los espaciadores; el manejador ignora el
+estado mientras no hay medidas. Con la sexta vuelta: la clase de las pastillas flotantes chocaba con la del icono de la navegación (los
 cuatro destinos salieron con sombra y fondo blanco en una tanda: renombrada); el aviso tapaba las pastillas (sube por
 encima cuando hay ficha a la vista); y dentro de la hoja a media altura la pastilla tapaba el título sobre la portada
 4:3 (portada 16:9 en la hoja). Con la vuelta a Inicio: el carril con foto y sello en la misma celda y columna
@@ -813,9 +828,11 @@ Quinta vuelta (sobre la v2, tres mensajes el mismo día) y lo que la v3 decide (
 11. **Agenda fuera del menú**: Inicio conserva sus carriles y gana la fila de contexto; un valor en Cuándo muestra la
     lista por día dentro de Inicio; barra inferior de cuatro destinos. **Hecho** (tras corregir la primera pasada que
     fundía las dos en «Eventos»).
-12. **Ficha de lugar dentro de la hoja** al tocar un pin o un renglón; héroe con el título dentro, asa, menú y Cerrar
+12. **Ficha de lugar dentro de la hoja** al tocar un pin o un renglón; héroe con el título dentro, asa, Cerrar y menú
     sobre la imagen y cabecera compacta pegajosa dentro de la hoja al desplazar; cerrar devuelve el estado y el
-    desplazamiento; la barra del sitio no cambia. **Hecho.**
+    desplazamiento; la barra del sitio no cambia. **Hecho.** Y la hoja se mueve como pidió («abre a la altura de foto
+    y KPI, crece hasta cubrir la pantalla y solo entonces desplaza el contenido»): un solo contenedor que desplaza,
+    con espaciadores y el cuerpo asomando (6.5). **Hecho y probado con la rueda.**
 13. **Título sobre el héroe o en la barra**: las dos variantes con conmutador; la lupa fuera y el visor al tocar la
     imagen. **Hecho.**
 14. **Icono de seguir lugar**: campana con «+», elegida sobre marcador y pin con el muestrario de tres. **Hecho.**
@@ -836,7 +853,9 @@ Lo que el founder confirma o corrige al probar la v3:
 
 18. **Inicio con dos modos**: carriles en reposo y lista por día cuando Cuándo tiene valor (Limpiar vuelve a los
     carriles); los títulos Destacados, Esta semana y Nuevos eventos abren la lista. Confirmar.
-19. **Título de la ficha**: A (sobre la imagen, y en la barra al desplazar) o B (siempre en la barra). Recomendación: A.
+19. **Título de la ficha**: decidido en el lienzo («aquí debemos replicar el canon de héroe de sheet»): la ficha a
+    pantalla completa toma el canon de la hoja (héroe 3:2 arriba, Atrás y menú elevados sobre la imagen, título de
+    19 px dentro de la imagen, barra compacta al desplazar). La variante «en la barra» se descarta.
 20. **Campana con «+»** para seguir lugares (o marcador con «+»); la persona con «+» sigue para artistas.
 21. **Fichas en escritorio**: dos barras apiladas (la de la app y la de la ficha) o Atrás y más opciones flotando en la
     columna sin segunda barra.
@@ -846,11 +865,17 @@ Lo que el founder confirma o corrige al probar la v3:
     suya el mismo día. **Confirmado en el lienzo** («esta es la opción que me gusta, héroe con todo integrado»): la
     hoja con el héroe y el título dentro de la imagen es la definitiva. Queda por confirmar que la hoja con la lista
     (sin ficha) no necesita Cerrar: el asa la baja.
+36. **La hoja con una sola inercia** (abre a foto + KPI, crece hasta llenar, luego desplaza): hecha con un contenedor
+    que desplaza y espaciadores; en el teléfono real es el mismo gesto con inercia nativa. Queda por confirmar en el
+    iPhone del founder que bajar la hoja desde arriba del todo (contenido en su inicio) también la encoja, como con la
+    rueda.
+35. **El KPI de fecha sin la palabra «Fecha»** («demasiado alto, no es necesario poner palabra fecha, es obvio»): el
+    día en la primera línea y la hora en la segunda, a la altura de los otros dos.
 34. **La hoja de lugar como la editó el founder en el lienzo** («observa que he modificado: redondeado de sheet, posición
     de accionables X y ⋯, posición de chips, tamaño y posición de título»): radio de 24 px en todas las hojas, héroe
     3:2 en la hoja, Cerrar arriba a la izquierda y el menú arriba a la derecha sobre la imagen, título de 19 px dentro
-    de la imagen con la etiqueta (MUSEO, violeta sobre blanco) encima del título. Aplicado en el prototipo; la ficha a
-    pantalla completa toma la etiqueta encima del título y conserva el título de 26 px sobre el héroe 4:3 (confirmar).
+    de la imagen con la etiqueta (MUSEO, violeta sobre blanco) encima del título. Aplicado en el prototipo y, por el
+    punto 19, también en la ficha a pantalla completa (héroe 3:2, título de 19 px).
 33. **Los KPI abrazan su contenido** («no logro disminuir el alto, debe ser hug al contenido, deja mucho espacio
     abajo», en el lienzo): fuera el alto mínimo de 84 px; los tres siguen del mismo alto porque la rejilla estira cada
     tarjeta a la fila. Aplicado en el prototipo y en el lienzo.
@@ -860,9 +885,10 @@ Lo que el founder confirma o corrige al probar la v3:
 24. Siguen abiertos los puntos 5 a 9 que la v3 no cambió: la lupa arriba, las etiquetas de KPI, el tipo inicial del
     alta por contexto y el lienzo de Claude Design.
 28. (Retirado: los chips de fecha.)
-29. **Letra de listas y tarjetas**: Inter (propuesta), Bricolage ancha o Bricolage condensada; con Inter se corrige la
-    línea gráfica (una familia para la marca, otra para leer).
-30. **Pastillas flotantes**: si se quedan flotando (propuesta) o prefiere una barra al pie de una sola línea; y si el
-    par de evento va centrado (teléfono) y a la derecha (escritorio) como en el prototipo.
+29. **Letra de listas y tarjetas**: decidido en el lienzo («esta se queda» sobre Bricolage condensada 19/15): se
+    queda la de la v2; la línea gráfica no cambia. Inter y Bricolage ancha quedan descartadas (el conmutador de la
+    sala las conserva marcadas como descartadas).
+30. **Pastillas flotantes**: decidido en el lienzo («me gusta que flotan, muy moderno, bien hecho»): se quedan
+    flotando; el par de evento va centrado en teléfono y a la derecha en escritorio.
 
 Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).

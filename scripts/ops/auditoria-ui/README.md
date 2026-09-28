@@ -26,8 +26,10 @@ código de la app; sirven para repetir la medición en cada pieza de la reestruc
 - `capturar-prototipo.mjs <url> <carpeta>`: las 41 capturas de la v3 (teléfono 2×, tableta 1,5×, escritorio 1×)
   navegando el prototipo de verdad (los clics se despachan como eventos para que también funcionen sobre `<g>` del SVG;
   el desplazamiento se dispara con un evento `scroll` para que actúen la barra y la navegación que se guardan); imprime
-  los errores de página y las respuestas 4xx/5xx. Incluye el muestrario de iconos para «seguir un lugar» (el mismo
-  renglón con tres glifos), Inicio en modo lista con las tres letras de listas y los estados de las pastillas flotantes. Después, `comprimir.mjs` hacia `docs/rediseno/capturas-NNN/`.
+  los errores de página y las respuestas 4xx/5xx. La hoja de Lugares se lleva a cada altura desplazando su
+  contenedor (los espaciadores fijan asoma · media · llena). Incluye el muestrario de iconos para «seguir un lugar»
+  (el mismo renglón con tres glifos), Inicio en modo lista con las tres letras de listas y los estados de las
+  pastillas flotantes. Después, `comprimir.mjs` hacia `docs/rediseno/capturas-NNN/`.
 - Los tres scripts de Node usan `playwright-core` como `auditar.mjs` (instalado fuera del repo, ver arriba).
 - `medir-prototipo.mjs <url>`: `medir.js` sobre cada pantalla del prototipo (envoltorios sin estilo, desbordes,
   márgenes negativos, toques < 44 y, desde la v2, iconos de control con contraste < 3:1 contra el fondo real del botón).
