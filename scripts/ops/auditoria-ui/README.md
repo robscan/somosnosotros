@@ -23,7 +23,7 @@ código de la app; sirven para repetir la medición en cada pieza de la reestruc
   (`logo.svg`, `mapa-base.svg`, `sn.txt`, `iconos.txt`) y de los carteles de `respaldo-local/imagenes.json`. Las
   correcciones se hacen en el generador y se regenera; el HTML no se edita a mano.
 - Servir la carpeta: `python3 -m http.server 8090 --directory docs/rediseno/prototipos`.
-- `capturar-prototipo.mjs <url> <carpeta>`: las 41 capturas de la v3 (teléfono 2×, tableta 1,5×, escritorio 1×)
+- `capturar-prototipo.mjs <url> <carpeta>`: las 42 capturas de la v3 (teléfono 2×, tableta 1,5×, escritorio 1×)
   navegando el prototipo de verdad (los clics se despachan como eventos para que también funcionen sobre `<g>` del SVG;
   el desplazamiento se dispara con un evento `scroll` para que actúen la barra y la navegación que se guardan); imprime
   los errores de página y las respuestas 4xx/5xx. La hoja de Lugares se lleva a cada altura desplazando su
@@ -31,5 +31,8 @@ código de la app; sirven para repetir la medición en cada pieza de la reestruc
   (el mismo renglón con tres glifos), Inicio en modo lista con las tres letras de listas y los estados de las
   pastillas flotantes. Después, `comprimir.mjs` hacia `docs/rediseno/capturas-NNN/`.
 - Los tres scripts de Node usan `playwright-core` como `auditar.mjs` (instalado fuera del repo, ver arriba).
+- `probar-hoja.mjs <url>` y `probar-hoja-atras.mjs <url>`: prueban con la rueda del Chrome el comportamiento de la
+  hoja de Lugares (abre a foto + KPI, crece hasta llenar, luego desplaza el contenido; llena muestra Atrás; jalar
+  hacia abajo cierra la ficha o recoge la lista) e imprimen estado, desplazamiento y alturas en cada paso.
 - `medir-prototipo.mjs <url>`: `medir.js` sobre cada pantalla del prototipo (envoltorios sin estilo, desbordes,
   márgenes negativos, toques < 44 y, desde la v2, iconos de control con contraste < 3:1 contra el fondo real del botón).

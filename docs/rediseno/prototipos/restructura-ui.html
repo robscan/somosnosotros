@@ -309,7 +309,13 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .cabecera-hoja > .asa::before { background: rgba(255,255,255,.92); box-shadow: 0 0 3px rgba(0,0,0,.35); }
 .cabecera-hoja > .titulo-hoja { grid-area: titulo; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); opacity: 0; transition: opacity 150ms; }
 .cabecera-hoja > [aria-label="Más opciones"] { grid-area: menu; color: var(--texto); }
-.cabecera-hoja > [data-cerrar-ficha] { grid-area: cerrar; color: var(--texto); }
+.cabecera-hoja > [data-cerrar-ficha], .cabecera-hoja > [data-atras-hoja] { grid-area: cerrar; color: var(--texto); }
+/* Llena, la hoja es una página completa: el mando de la izquierda es Atrás (vuelve a foto + KPI); Cerrar solo mientras asoma */
+.cabecera-hoja > [data-atras-hoja], .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-cerrar-ficha] { display: none; }
+.pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-atras-hoja] { display: inline-grid; }
+/* Recogida: solo el asa y el resumen (se llega jalando hacia abajo desde «asoma») */
+.hoja-lugares { transition: transform 250ms var(--curva); }
+.pantalla[data-id="lugares"][data-hoja-estado="cerrada"] .hoja-lugares { transform: translateY(112px); }
 .ficha-hoja[data-compacta] > .cabecera-hoja { background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
 .ficha-hoja[data-compacta] > .cabecera-hoja > .asa::before { background: #d9d9d9; box-shadow: none; }
 .ficha-hoja[data-compacta] > .cabecera-hoja > .titulo-hoja { opacity: 1; }
@@ -464,6 +470,8 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   .cuerpo-hoja, .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cuerpo-hoja { min-height: 0; padding-bottom: 0; border-radius: 0; box-shadow: none; background: var(--fondo-contenido); }
   .cuerpo-hoja > .asa { display: none; }
   .cabecera-hoja { grid-template-rows: var(--espacio-3) var(--boton-icono); }
+  .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-atras-hoja] { display: none; }
+  .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-cerrar-ficha] { display: inline-grid; }
   .cabecera-hoja > .asa { height: var(--espacio-3); }
   .cabecera-hoja > .asa { visibility: hidden; }
   .cuerpo-hoja > .resumen { padding: var(--espacio-3) var(--espacio-5) var(--espacio-2); font-size: var(--letra-lg); }
@@ -655,7 +663,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     <b class="resumen">62 lugares <small>· los más cercanos primero</small></b>
     <ul class="lista panel"><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/casa-de-cultura-del-barrio-de-san-miguelito.jpg" alt="" loading="lazy"><b>Casa de Cultura del Barrio de San Miguelito</b><small>Casa de cultura · 5 de Mayo 1225, San Miguelito · 0,8 km</small><small class="segundo"><svg class="i chico" aria-hidden="true"><use href="#i-calendario"/></svg> Próximo: mañana · 19:30</small></a><button type="button" class="boton-icono elevado decidido" data-accion="seguir" data-objeto="lugar" aria-pressed="true" aria-label="Sigues"><svg class="i" aria-hidden="true"><use href="#i-ok"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/teatro-de-la-paz.jpg" alt="" loading="lazy"><b>Teatro de la Paz</b><small>Foro · Villerías 205, Centro · 1,1 km</small><small class="segundo"><svg class="i chico" aria-hidden="true"><use href="#i-calendario"/></svg> Próximo: jue 1 oct · 18:00</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/museo-del-ferrocarril-jesus-garcia-corona.jpg" alt="" loading="lazy"><b>Museo del Ferrocarril Jesús García Corona</b><small>Museo · Manuel José Othón s/n esq. Chico Sein, Centro · 1,4 km</small><small class="segundo"><svg class="i chico" aria-hidden="true"><use href="#i-calendario"/></svg> Próximo: vie 2 oct · 17:00</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/museo-nacional-de-la-mascara.jpg" alt="" loading="lazy"><b>Museo Nacional de la Máscara</b><small>Museo · Villerías 2, Centro · 1,0 km</small><small class="segundo"><svg class="i chico" aria-hidden="true"><use href="#i-calendario"/></svg> Próximo: jue 8 oct · 19:00</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/casa-del-poeta-ramon-lopez-velarde.jpg" alt="" loading="lazy"><b>Casa del Poeta Ramón López Velarde</b><small>Museo · Vallejo 150, Centro · 1,1 km</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/ache-galeria.jpg" alt="" loading="lazy"><b>ACHE Galería</b><small>Galería · Valentín Gama 840, Centro · 1,6 km</small><small class="segundo"><svg class="i chico" aria-hidden="true"><use href="#i-calendario"/></svg> Próximo: sáb 3 oct · 18:00</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><span class="foto sn" role="img" aria-label="Sin foto"></span><b>Aether</b><small>Galería · Graciano Sánchez 220-A, Centro · 1,3 km</small><small class="segundo"><svg class="i chico" aria-hidden="true"><use href="#i-calendario"/></svg> Próximo: dom 4 oct · 20:00</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/archivo-historico-del-estado-de-san-luis-potosi.png" alt="" loading="lazy"><b>Archivo Histórico del Estado</b><small>Biblioteca · Mariano Arista 400, Centro · 1,2 km</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/auditorio-rafael-nieto.jpg" alt="" loading="lazy"><b>Auditorio Rafael Nieto</b><small>Foro · Álvaro Obregón 64, Centro · 1,2 km</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/biblioteca-central-del-estado.jpg" alt="" loading="lazy"><b>Biblioteca Central del Estado</b><small>Biblioteca · Av. Universidad 1100, Centro · 1,9 km</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li><li class="renglon lista"><a class="frente" href="#" data-ir="lugar"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/muni-museo-universitario-uaslp.jpg" alt="" loading="lazy"><b>MUNI Museo Universitario UASLP</b><small>Museo · Av. Manuel Nava 101, Zona Universitaria · 3,2 km</small><small class="segundo"><svg class="i chico" aria-hidden="true"><use href="#i-calendario"/></svg> Próximo: vie 2 oct · 19:00</small></a><button type="button" class="boton-icono elevado" data-accion="seguir" data-objeto="lugar" aria-pressed="false" aria-label="Seguir"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg></button></li></ul>
     <article class="ficha-hoja" aria-label="Ficha del lugar" hidden>
-  <header class="cabecera-hoja"><button type="button" class="asa" aria-label="Subir o bajar la hoja"></button><b class="titulo-hoja">Museo del Ferrocarril Jesús García Corona</b><button type="button" class="boton-icono elevado" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button><button type="button" class="boton-icono elevado" data-cerrar-ficha aria-label="Cerrar"><svg class="i" aria-hidden="true"><use href="#i-cerrar"/></svg></button></header><figure class="portada" style="--tono:#7a4a2e" data-visor><img class="cartel" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/museo-del-ferrocarril-jesus-garcia-corona.jpg" alt="Museo del Ferrocarril" loading="lazy"></figure>
+  <header class="cabecera-hoja"><button type="button" class="asa" aria-label="Subir o bajar la hoja"></button><b class="titulo-hoja">Museo del Ferrocarril Jesús García Corona</b><button type="button" class="boton-icono elevado" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button><button type="button" class="boton-icono elevado" data-cerrar-ficha aria-label="Cerrar"><svg class="i" aria-hidden="true"><use href="#i-cerrar"/></svg></button><button type="button" class="boton-icono elevado" data-atras-hoja aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button></header><figure class="portada" style="--tono:#7a4a2e" data-visor><img class="cartel" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/museo-del-ferrocarril-jesus-garcia-corona.jpg" alt="Museo del Ferrocarril" loading="lazy"></figure>
   <h1 class="titulo-ficha">Museo del Ferrocarril Jesús García Corona<span class="tipo">Museo</span></h1>
   <ul class="kpis">
     <li><a href="#"><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg><b>1,4 km</b><small>Distancia</small></a></li>
@@ -1017,7 +1025,9 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   function masCercano(y) { let mejor = "asoma", d = Infinity; for (const [k, v] of Object.entries(detentes())) { const dd = Math.abs(v - y); if (dd < d) { d = dd; mejor = k; } } return mejor; }
   const irA = (y) => hojaL.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
   function asentar() { const y = hojaL.scrollTop, d = detentes(); if (y >= d.llena - 1) return; const destino = d[masCercano(y)]; if (Math.abs(destino - y) > 1) irA(destino); }
+  let ultimoScroll = 0;
   hojaL.addEventListener("scroll", () => {
+    ultimoScroll = Date.now();
     const y = hojaL.scrollTop, d = detentes();
     if (enTelefono()) {
       if (d.llena <= 0) return;
@@ -1029,6 +1039,25 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     if (lugaresP.dataset.ficha) fichaHoja.toggleAttribute("data-compacta", y > (enTelefono() ? d.llena : 0) + umbral(fichaHoja));
   }, { passive: true });
   new ResizeObserver(() => { const antes = lugaresP.dataset.hojaEstado; ajustarHoja(); if (enTelefono()) hojaL.scrollTop = detentes()[antes] ?? 0; }).observe(hojaL);
+  // Jalar hacia abajo desde el inicio (dedo o rueda, con la hoja en reposo): la ficha vuelve a la lista; la lista se recoge (asa y resumen).
+  function jalarAbajo() {
+    if (!enTelefono() || hojaL.scrollTop > 0) return false;
+    if (lugaresP.dataset.ficha) cerrarFichaHoja();
+    else if (lugaresP.dataset.hojaEstado === "asoma") lugaresP.dataset.hojaEstado = "cerrada";
+    else return false;
+    return true;
+  }
+  let dedo = null, rueda = 0, ruedaT = 0;
+  hojaL.addEventListener("touchstart", (e) => { dedo = { y0: e.touches[0].clientY, arriba: hojaL.scrollTop === 0 }; }, { passive: true });
+  hojaL.addEventListener("touchmove", (e) => { if (dedo && dedo.arriba && (e.touches[0].clientY - dedo.y0) / zoom() > 80 && jalarAbajo()) dedo = null; }, { passive: true });
+  hojaL.addEventListener("touchend", () => (dedo = null), { passive: true });
+  hojaL.addEventListener("wheel", (e) => {
+    const ahora = Date.now();
+    if (e.deltaY >= 0 || hojaL.scrollTop > 0 || ahora - ultimoScroll < 300) { rueda = 0; return; }
+    if (ahora - ruedaT > 500) rueda = 0;
+    ruedaT = ahora; rueda += -e.deltaY;
+    if (rueda > 120) { rueda = 0; jalarAbajo(); }
+  }, { passive: true });
   // La ficha de lugar en el cuerpo de la hoja (la lista conserva su desplazamiento); abre a la altura de foto + KPI; al cerrar vuelve lo anterior.
   function abrirFichaHoja() {
     if (!lugaresP.dataset.ficha) { lugaresP.dataset.estadoAntes = lugaresP.dataset.hojaEstado; lugaresP.dataset.scrollAntes = hojaL.scrollTop; }
@@ -1121,8 +1150,10 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     if (aLista) { e.preventDefault(); filtrarDia(actual, aLista.dataset.lista); actual.scrollTop = 0; return; }
     const cerrarFicha = e.target.closest("[data-cerrar-ficha]");
     if (cerrarFicha) { cerrarFichaHoja(); return; }
+    const atrasHoja = e.target.closest("[data-atras-hoja]");
+    if (atrasHoja) { irA(detentes().media); return; }
     const asa = e.target.closest(".asa");
-    if (asa) { const alturas = Object.values(detentes()); const y = hojaL.scrollTop; const i = alturas.findIndex((v) => v > y + 1); irA(i === -1 ? alturas[0] : alturas[i]); return; }
+    if (asa) { if (lugaresP.dataset.hojaEstado === "cerrada") { lugaresP.dataset.hojaEstado = "asoma"; return; } const alturas = Object.values(detentes()); const y = hojaL.scrollTop; const i = alturas.findIndex((v) => v > y + 1); irA(i === -1 ? alturas[0] : alturas[i]); return; }
     const at = e.target.closest("[data-atras]");
     if (at) { e.preventDefault(); atras(); return; }
     const ir_ = e.target.closest("[data-ir]");

@@ -228,7 +228,8 @@ def cuerpo_lugar(en_hoja=False):
         cabeza = (f'<header class="cabecera-hoja"><button type="button" class="asa" aria-label="Subir o bajar la hoja"></button>'
                   f'<b class="titulo-hoja">Museo del Ferrocarril Jesús García Corona</b>'
                   f'<button type="button" class="boton-icono elevado" aria-label="Más opciones">{i("puntos")}</button>'
-                  f'<button type="button" class="boton-icono elevado" data-cerrar-ficha aria-label="Cerrar">{i("cerrar")}</button></header>')
+                  f'<button type="button" class="boton-icono elevado" data-cerrar-ficha aria-label="Cerrar">{i("cerrar")}</button>'
+                  f'<button type="button" class="boton-icono elevado" data-atras-hoja aria-label="Atrás">{i("chevron-izq")}</button></header>')
     else:
         cabeza = ''
     return f'''{cabeza}<figure class="portada" style="--tono:#7a4a2e" data-visor>{foto(lu['ferro']['img'], 'Museo del Ferrocarril', 'cartel')}</figure>
@@ -817,7 +818,13 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .cabecera-hoja > .asa::before {{ background: rgba(255,255,255,.92); box-shadow: 0 0 3px rgba(0,0,0,.35); }}
 .cabecera-hoja > .titulo-hoja {{ grid-area: titulo; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); opacity: 0; transition: opacity 150ms; }}
 .cabecera-hoja > [aria-label="Más opciones"] {{ grid-area: menu; color: var(--texto); }}
-.cabecera-hoja > [data-cerrar-ficha] {{ grid-area: cerrar; color: var(--texto); }}
+.cabecera-hoja > [data-cerrar-ficha], .cabecera-hoja > [data-atras-hoja] {{ grid-area: cerrar; color: var(--texto); }}
+/* Llena, la hoja es una página completa: el mando de la izquierda es Atrás (vuelve a foto + KPI); Cerrar solo mientras asoma */
+.cabecera-hoja > [data-atras-hoja], .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-cerrar-ficha] {{ display: none; }}
+.pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-atras-hoja] {{ display: inline-grid; }}
+/* Recogida: solo el asa y el resumen (se llega jalando hacia abajo desde «asoma») */
+.hoja-lugares {{ transition: transform 250ms var(--curva); }}
+.pantalla[data-id="lugares"][data-hoja-estado="cerrada"] .hoja-lugares {{ transform: translateY(112px); }}
 .ficha-hoja[data-compacta] > .cabecera-hoja {{ background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }}
 .ficha-hoja[data-compacta] > .cabecera-hoja > .asa::before {{ background: #d9d9d9; box-shadow: none; }}
 .ficha-hoja[data-compacta] > .cabecera-hoja > .titulo-hoja {{ opacity: 1; }}
@@ -972,6 +979,8 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .cuerpo-hoja, .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cuerpo-hoja {{ min-height: 0; padding-bottom: 0; border-radius: 0; box-shadow: none; background: var(--fondo-contenido); }}
   .cuerpo-hoja > .asa {{ display: none; }}
   .cabecera-hoja {{ grid-template-rows: var(--espacio-3) var(--boton-icono); }}
+  .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-atras-hoja] {{ display: none; }}
+  .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-cerrar-ficha] {{ display: inline-grid; }}
   .cabecera-hoja > .asa {{ height: var(--espacio-3); }}
   .cabecera-hoja > .asa {{ visibility: hidden; }}
   .cuerpo-hoja > .resumen {{ padding: var(--espacio-3) var(--espacio-5) var(--espacio-2); font-size: var(--letra-lg); }}
@@ -1144,7 +1153,9 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   function masCercano(y) {{ let mejor = "asoma", d = Infinity; for (const [k, v] of Object.entries(detentes())) {{ const dd = Math.abs(v - y); if (dd < d) {{ d = dd; mejor = k; }} }} return mejor; }}
   const irA = (y) => hojaL.scrollTo({{ top: y, behavior: reduce ? "auto" : "smooth" }});
   function asentar() {{ const y = hojaL.scrollTop, d = detentes(); if (y >= d.llena - 1) return; const destino = d[masCercano(y)]; if (Math.abs(destino - y) > 1) irA(destino); }}
+  let ultimoScroll = 0;
   hojaL.addEventListener("scroll", () => {{
+    ultimoScroll = Date.now();
     const y = hojaL.scrollTop, d = detentes();
     if (enTelefono()) {{
       if (d.llena <= 0) return;
@@ -1156,6 +1167,25 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     if (lugaresP.dataset.ficha) fichaHoja.toggleAttribute("data-compacta", y > (enTelefono() ? d.llena : 0) + umbral(fichaHoja));
   }}, {{ passive: true }});
   new ResizeObserver(() => {{ const antes = lugaresP.dataset.hojaEstado; ajustarHoja(); if (enTelefono()) hojaL.scrollTop = detentes()[antes] ?? 0; }}).observe(hojaL);
+  // Jalar hacia abajo desde el inicio (dedo o rueda, con la hoja en reposo): la ficha vuelve a la lista; la lista se recoge (asa y resumen).
+  function jalarAbajo() {{
+    if (!enTelefono() || hojaL.scrollTop > 0) return false;
+    if (lugaresP.dataset.ficha) cerrarFichaHoja();
+    else if (lugaresP.dataset.hojaEstado === "asoma") lugaresP.dataset.hojaEstado = "cerrada";
+    else return false;
+    return true;
+  }}
+  let dedo = null, rueda = 0, ruedaT = 0;
+  hojaL.addEventListener("touchstart", (e) => {{ dedo = {{ y0: e.touches[0].clientY, arriba: hojaL.scrollTop === 0 }}; }}, {{ passive: true }});
+  hojaL.addEventListener("touchmove", (e) => {{ if (dedo && dedo.arriba && (e.touches[0].clientY - dedo.y0) / zoom() > 80 && jalarAbajo()) dedo = null; }}, {{ passive: true }});
+  hojaL.addEventListener("touchend", () => (dedo = null), {{ passive: true }});
+  hojaL.addEventListener("wheel", (e) => {{
+    const ahora = Date.now();
+    if (e.deltaY >= 0 || hojaL.scrollTop > 0 || ahora - ultimoScroll < 300) {{ rueda = 0; return; }}
+    if (ahora - ruedaT > 500) rueda = 0;
+    ruedaT = ahora; rueda += -e.deltaY;
+    if (rueda > 120) {{ rueda = 0; jalarAbajo(); }}
+  }}, {{ passive: true }});
   // La ficha de lugar en el cuerpo de la hoja (la lista conserva su desplazamiento); abre a la altura de foto + KPI; al cerrar vuelve lo anterior.
   function abrirFichaHoja() {{
     if (!lugaresP.dataset.ficha) {{ lugaresP.dataset.estadoAntes = lugaresP.dataset.hojaEstado; lugaresP.dataset.scrollAntes = hojaL.scrollTop; }}
@@ -1248,8 +1278,10 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     if (aLista) {{ e.preventDefault(); filtrarDia(actual, aLista.dataset.lista); actual.scrollTop = 0; return; }}
     const cerrarFicha = e.target.closest("[data-cerrar-ficha]");
     if (cerrarFicha) {{ cerrarFichaHoja(); return; }}
+    const atrasHoja = e.target.closest("[data-atras-hoja]");
+    if (atrasHoja) {{ irA(detentes().media); return; }}
     const asa = e.target.closest(".asa");
-    if (asa) {{ const alturas = Object.values(detentes()); const y = hojaL.scrollTop; const i = alturas.findIndex((v) => v > y + 1); irA(i === -1 ? alturas[0] : alturas[i]); return; }}
+    if (asa) {{ if (lugaresP.dataset.hojaEstado === "cerrada") {{ lugaresP.dataset.hojaEstado = "asoma"; return; }} const alturas = Object.values(detentes()); const y = hojaL.scrollTop; const i = alturas.findIndex((v) => v > y + 1); irA(i === -1 ? alturas[0] : alturas[i]); return; }}
     const at = e.target.closest("[data-atras]");
     if (at) {{ e.preventDefault(); atras(); return; }}
     const ir_ = e.target.closest("[data-ir]");

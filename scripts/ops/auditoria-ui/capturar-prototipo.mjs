@@ -1,4 +1,4 @@
-// Capturas reales del prototipo v3 (Chrome de la Mac): teléfono a 2×, tableta a 1,5×, escritorio a 1×; 41 capturas y un muestrario de iconos.
+// Capturas reales del prototipo v3 (Chrome de la Mac): teléfono a 2×, tableta a 1,5×, escritorio a 1×; 42 capturas y un muestrario de iconos.
 // node capturar-prototipo.mjs http://127.0.0.1:8090/restructura-ui.html <carpeta>   (servir docs/rediseno/prototipos con python3 -m http.server 8090)
 import { chromium } from "playwright-core";
 import fs from "node:fs";
@@ -160,6 +160,10 @@ await click(page, '.lienzo .lugar.destacado'); await espera(page, 500);
 await hoja(page, "llena"); await espera(page, 700);
 await click(page, '.ficha-hoja [data-accion-ficha="seguir"]'); await espera(page, 300);
 await foto(page, "v3-41-lugares-ficha-sigues-telefono");
+await click(page, '[data-atras-hoja]'); await espera(page, 900);
+await click(page, '[data-cerrar-ficha]'); await espera(page, 600);
+await page.evaluate(() => (document.querySelector('.pantalla[data-id="lugares"]').dataset.hojaEstado = "cerrada")); await espera(page, 500);
+await foto(page, "v3-42-lugares-recogida-telefono");
 await ctx.close();
 await browser.close();
 console.log("errores de página:", errores.length, errores.slice(0, 5));

@@ -520,10 +520,11 @@ los controles por debajo de 44 son los mismos de la v2.
   en medio, la hoja a la altura justa de foto + KPI: héroe 3:2 con el asa, Cerrar (izquierda) y ⋯ (derecha)
   elevados sobre la imagen, MUSEO y el título dentro de la imagen sobre el velo, los tres KPI enteros y la pastilla
   «Seguir» flotando debajo.
-- **`256-85-v3-lugares-ficha-llena-telefono`:** la hoja llena: cubre barra, filtros y mapa, la navegación se guardó;
-  héroe bajo la franja de estado, KPI, cinco acciones, Próximos eventos; la pastilla al pie.
+- **`256-85-v3-lugares-ficha-llena-telefono`:** la hoja llena es una página completa: cubre barra, filtros y mapa, la
+  navegación se guardó; Atrás (en vez de Cerrar) y ⋯ sobre el héroe bajo la franja de estado, KPI, cinco acciones,
+  Próximos eventos; la pastilla al pie.
 - **`256-86-v3-lugares-ficha-desplazada-telefono`:** desplazada dentro de la hoja llena: la cabecera compacta pegajosa
-  (asa, ✕, Museo del Ferrocarril Jesús García…, ⋯) sobre Próximos eventos y Dónde.
+  (asa, ‹, Museo del Ferrocarril Jesús García…, ⋯) sobre Próximos eventos y Dónde.
 - **`256-87-v3-lugares-cerrada-telefono`:** tras Cerrar: vuelve la barra de la app, la fila y la hoja «asoma».
 - **`256-88-v3-artistas-telefono`:** fila ciudad · Filtros 1 · Música ✕, tira de letras, renglones con persona «+».
 - **`256-89-v3-perfil-telefono`:** cabecera, KPI Voy · Me interesa · Sigo (campana), chips y la lista por día.
@@ -568,6 +569,8 @@ los controles por debajo de 44 son los mismos de la v2.
   blanco y el aviso.
 - **`256-115-v3-lugares-ficha-sigues-telefono`:** en la hoja llena, tras tocar «Seguir»: «✓ Sigues» en verde y el
   aviso.
+- **`256-116-v3-lugares-recogida-telefono`:** la lista recogida tras jalarla hacia abajo: solo el asa y «62 lugares ·
+  los más cercanos primero» sobre la navegación; el mapa entero.
 
 ### Desde el lienzo de Claude Design
 
@@ -595,10 +598,17 @@ el contenido, con inercia nativa; se asienta en la altura más cercana al soltar
 devuelve la lista a su estado. Dos defectos en esa pasada: la barra de la ficha de evento salió al pie en escritorio
 (la clase `sobre` chocaba con el bloque «Sobre el evento» y heredaba su área de rejilla: ahora `heroe`) y la hoja
 entraba «llena» por un evento disparado antes de medir (doc 50 § 6.6). Capturas regeneradas y medición limpia.
+Tres hilos más en el lienzo: «me quedo con la idea de que floten, olvidemos la barra» (la variante en barra sale del
+tablero de acciones); «aceptada la propuesta de héroe… si llegáramos a incluir chips aquí sería como en sheet de
+lugares… ¿podemos hacer que el sheet se convierta en una hoja completa que muestre este botón atrás?… ¿y que si el
+usuario jala el sheet hasta abajo se cierre?» (hecho: llena, la hoja muestra Atrás y vuelve a foto + KPI; jalar
+hacia abajo desde el inicio cierra la ficha o recoge la lista hasta el asa y el resumen; probado con la rueda en
+`probar-hoja2.mjs`); «muy bien resuelto, te felicito, aceptada esta propuesta» sobre el KPI de fecha. Captura
+`256-116` con la lista recogida.
 
 ### Cierre (cuarta parte)
 
-Commits en `restructura-ui` con el prototipo v3 (el segundo con las correcciones del founder al verla), las 41 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7 y P10,
+Commits en `restructura-ui` con el prototipo v3 (el segundo con las correcciones del founder al verla), las 42 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7 y P10,
 § 10 y § 11 con la quinta y la sexta vuelta), el generador y el script de captura actualizados, esta bitácora y
 OPEN_LOOPS; push al PR #266; artefacto republicado. Pendiente: que el founder pruebe la v3 y conteste los puntos 18 a
 24 y 28 a 30 del doc 50 § 11 (nombre de la primera pestaña y carril Destacados, variante del título, campana, dos

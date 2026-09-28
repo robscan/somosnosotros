@@ -620,7 +620,13 @@ Tres mensajes seguidos sobre la v2. Lo que dijo, lo que se cuestionó y lo que q
   desplazando el contenido, con una sola inercia nativa. Al soltar entre alturas se asienta en la más cercana (lista:
   asoma · media · llena; ficha: foto + KPI · llena). Con la ficha, abre a la altura exacta de foto + KPI (medida) y
   al bajar del todo vuelve a esa altura; Cerrar devuelve la lista. Probado con la rueda del Chrome: abre a foto + KPI,
-  200 px de rueda la llenan, los siguientes desplazan el contenido, la rueda hacia arriba la devuelve a foto + KPI. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
+  200 px de rueda la llenan, los siguientes desplazan el contenido, la rueda hacia arriba la devuelve a foto + KPI.
+  Dos añadidos del founder desde el lienzo: **llena, la hoja es una página completa con Atrás** («¿podemos hacer que
+  el sheet se convierta en una hoja completa que muestre este botón atrás?»): el mando de la izquierda pasa de Cerrar
+  a Atrás y devuelve la hoja a foto + KPI; y **jalar hacia abajo cierra** («¿si el usuario jala el sheet hasta abajo
+  se cierre?»): desde foto + KPI, jalar 80 px con el dedo (o la rueda hacia arriba con la hoja en reposo) cierra la
+  ficha y devuelve la lista; desde la lista asomando, la recoge hasta el asa y el resumen («62 lugares»), que la
+  vuelven a abrir con un toque. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
   la lista»). Cuestionado: desde otras entradas (el «Dónde» de un evento, Buscar, Perfil) la ficha sigue abriendo a
   pantalla completa con Atrás, para no cambiar de pestaña a quien viene de un evento (sección 11).
 - **Título sobre el héroe o en la barra** («héroe y en la base del héroe las letras, dentro del contenedor de imagen,
@@ -853,7 +859,8 @@ Lo que el founder confirma o corrige al probar la v3:
 
 18. **Inicio con dos modos**: carriles en reposo y lista por día cuando Cuándo tiene valor (Limpiar vuelve a los
     carriles); los títulos Destacados, Esta semana y Nuevos eventos abren la lista. Confirmar.
-19. **Título de la ficha**: decidido en el lienzo («aquí debemos replicar el canon de héroe de sheet»): la ficha a
+19. **Título de la ficha**: decidido en el lienzo («aquí debemos replicar el canon de héroe de sheet»; después,
+    «aceptada la propuesta de héroe» y «muy bien resuelto, aceptada esta propuesta» sobre el KPI de fecha): la ficha a
     pantalla completa toma el canon de la hoja (héroe 3:2 arriba, Atrás y menú elevados sobre la imagen, título de
     19 px dentro de la imagen, barra compacta al desplazar). La variante «en la barra» se descarta.
 20. **Campana con «+»** para seguir lugares (o marcador con «+»); la persona con «+» sigue para artistas.
@@ -866,9 +873,12 @@ Lo que el founder confirma o corrige al probar la v3:
     hoja con el héroe y el título dentro de la imagen es la definitiva. Queda por confirmar que la hoja con la lista
     (sin ficha) no necesita Cerrar: el asa la baja.
 36. **La hoja con una sola inercia** (abre a foto + KPI, crece hasta llenar, luego desplaza): hecha con un contenedor
-    que desplaza y espaciadores; en el teléfono real es el mismo gesto con inercia nativa. Queda por confirmar en el
-    iPhone del founder que bajar la hoja desde arriba del todo (contenido en su inicio) también la encoja, como con la
-    rueda.
+    que desplaza y espaciadores; en el teléfono real es el mismo gesto con inercia nativa. Llena, es una página
+    completa con Atrás (vuelve a foto + KPI); jalar hacia abajo desde el inicio cierra la ficha (vuelve la lista) o
+    recoge la lista hasta el asa. Queda por confirmar en el iPhone del founder que bajar desde arriba del todo
+    (contenido en su inicio) también la encoja, como con la rueda.
+37. **Chips en el héroe de la ficha de evento**: si algún día entran, con el mismo estilo que la etiqueta de la hoja
+    de lugar (MUSEO: violeta sobre blanco, encima del título). Anotado, sin construir.
 35. **El KPI de fecha sin la palabra «Fecha»** («demasiado alto, no es necesario poner palabra fecha, es obvio»): el
     día en la primera línea y la hora en la segunda, a la altura de los otros dos.
 34. **La hoja de lugar como la editó el founder en el lienzo** («observa que he modificado: redondeado de sheet, posición
@@ -888,7 +898,8 @@ Lo que el founder confirma o corrige al probar la v3:
 29. **Letra de listas y tarjetas**: decidido en el lienzo («esta se queda» sobre Bricolage condensada 19/15): se
     queda la de la v2; la línea gráfica no cambia. Inter y Bricolage ancha quedan descartadas (el conmutador de la
     sala las conserva marcadas como descartadas).
-30. **Pastillas flotantes**: decidido en el lienzo («me gusta que flotan, muy moderno, bien hecho»): se quedan
-    flotando; el par de evento va centrado en teléfono y a la derecha en escritorio.
+30. **Pastillas flotantes**: decidido en el lienzo («me gusta que flotan, muy moderno, bien hecho»; «me quedo con la
+    idea de que floten, olvidemos la barra»): se quedan flotando y la variante en barra sale del lienzo; el par de
+    evento va centrado en teléfono y a la derecha en escritorio.
 
 Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).
