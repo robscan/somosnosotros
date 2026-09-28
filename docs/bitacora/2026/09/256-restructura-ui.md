@@ -535,8 +535,9 @@ los controles por debajo de 44 son los mismos de la v2.
 - **`256-92-v3-ficha-evento-abajo-telefono`:** más abajo: Dónde, Artistas y Sobre el evento bajo la barra compacta;
   las pastillas siguen flotando.
 - **`256-93-v3-visor-telefono`:** el cartel entero a pantalla completa sobre fondo oscuro con ✕.
-- **`256-94-v3-ficha-artista-telefono`:** cabecera con foto redonda, KPI, enlaces, Próximas fechas; la pastilla
-  «Seguir» con persona «+» flotando.
+- **`256-94-v3-ficha-artista-telefono`:** el héroe del artista con el símbolo SN como placeholder, ARTES VISUALES,
+  «Aaron Cadena» y la meta dentro de la imagen, Atrás y menú flotando; KPI, Compartir y enlaces, Próximas fechas; la
+  pastilla «Seguir» con persona «+» flotando.
 - **`256-95-v3-ficha-lugar-completa-telefono`:** la ficha de lugar a pantalla completa (desde el Dónde de un evento):
   Atrás · ⋯, héroe 4:3 con título y MUSEO, KPI, acciones; la pastilla «Seguir» con campana flotando.
 - **`256-96-v3-alta-lugar-telefono`:** barra con «Registrar un lugar» y ✕ (sin logotipo), campo, renglones, tira de
@@ -544,11 +545,12 @@ los controles por debajo de 44 son los mismos de la v2.
 - **`256-97-v3-buscar-telefono`:** campo, el mismo chip de ciudad que en las raíces, Recientes y atajos.
 - **`256-98-v3-iconos-seguir-lugar`:** el cuerpo de la hoja con el mismo renglón tres veces: campana con «+»
   (propuesta), marcador con «+», pin con «+».
-- **`256-99-v3-inicio-tableta`:** barra a todo lo ancho, carril con Inicio · Lugares · Artistas arriba y Perfil
-  abajo, fila de contexto alineada a la columna, los carriles de Inicio.
+- **`256-99-v3-inicio-tableta`:** barra a todo lo ancho, la fila de contexto centrada, y el carril (Inicio · Lugares ·
+  Artistas arriba, Perfil abajo) que empieza donde termina esa fila; los carriles de Inicio con el radio sugerido.
 - **`256-100-v3-lugares-ficha-tableta`:** la ficha dentro del panel (Cerrar y ⋯ sobre el héroe 3:2, MUSEO y título
   dentro, KPI, acciones, Próximos eventos, «Seguir» flotando) con el mapa y la fila de contexto a la vista.
-- **`256-101-v3-inicio-escritorio`:** lo mismo a 1280; las tarjetas con foto, título y meta alineados.
+- **`256-101-v3-inicio-escritorio`:** lo mismo a 1280; filtros centrados, carril bajo la fila, las tarjetas con foto,
+  título y meta alineados.
 - **`256-102-v3-lugares-escritorio`:** panel y mapa; la fila de contexto ahora va con el relleno del panel.
 - **`256-103-v3-lugares-ficha-escritorio`:** la ficha en el panel con Cerrar y ⋯ sobre el héroe y el título dentro.
 - **`256-104-v3-lugares-ficha-desplazada-escritorio`:** al desplazar, la cabecera compacta del panel con el título.
@@ -556,7 +558,8 @@ los controles por debajo de 44 son los mismos de la v2.
   cartel a la izquierda, el título en la columna derecha y las pastillas abajo a la derecha.
 - **`256-106-v3-ficha-lugar-escritorio`:** la ficha de lugar completa en escritorio: barra, foto 5:3 a la
   izquierda; etiqueta, título, KPI, acciones y Próximos eventos por la derecha; «Seguir» flotando.
-- **`256-107-v3-ficha-artista-escritorio`:** cabecera y enlaces a la izquierda; KPI, fechas, Sobre, Se presenta en.
+- **`256-107-v3-ficha-artista-escritorio`:** el placeholder 5:3 a la izquierda; etiqueta, nombre, meta, KPI,
+  acciones y fechas por la derecha, como la de lugar; «Seguir» flotando.
 - **`256-108-v3-alta-evento-escritorio`:** barra con «Publicar un evento» y ✕; formulario centrado; tira de tipos.
 - **`256-109-v3-perfil-escritorio`:** Perfil con el carril lateral marcando el destino de abajo.
 - **`256-110-v3-letra-bricolage-telefono`:** Inicio en modo lista (Todos los próximos) en Bricolage condensada
@@ -604,7 +607,14 @@ lugares… ¿podemos hacer que el sheet se convierta en una hoja completa que mu
 usuario jala el sheet hasta abajo se cierre?» (hecho: llena, la hoja muestra Atrás y vuelve a foto + KPI; jalar
 hacia abajo desde el inicio cierra la ficha o recoge la lista hasta el asa y el resumen; probado con la rueda en
 `probar-hoja2.mjs`); «muy bien resuelto, te felicito, aceptada esta propuesta» sobre el KPI de fecha. Captura
-`256-116` con la lista recogida.
+`256-116` con la lista recogida. Y seis hilos sobre el prototipo mismo: «bájale al redondeado, más sugerido, para
+todos los casos, es canon» (radios a la mitad); «¿puedes centrar los filtros en tablet y desktop?» (centrados, salvo
+Lugares); «la línea del lado derecho se ve cortada por la barra superior; el menú debería comenzar desde donde
+termina la barra de filtros» (el carril arranca bajo la fila, con su fondo entero y sus líneas desde ahí; una primera
+pasada con margen dejaba la esquina gris y se corrigió); «nombre de artista acá como canon… cuestióname… ¿podemos
+agregar héroe a artistas para estandarizar…? Cuestiona» (héroe con placeholder en la ficha de artista, avatar fuera,
+Seguir flotante); y dos que el canon del héroe ya había resuelto («¿podemos poner título acá?», «no hay gap visible
+entre contenido y barra de atrás»). Doc 50 § 11, puntos 38 a 41.
 
 ### Cierre (cuarta parte)
 

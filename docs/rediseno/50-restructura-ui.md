@@ -626,7 +626,21 @@ Tres mensajes seguidos sobre la v2. Lo que dijo, lo que se cuestionó y lo que q
   a Atrás y devuelve la hoja a foto + KPI; y **jalar hacia abajo cierra** («¿si el usuario jala el sheet hasta abajo
   se cierre?»): desde foto + KPI, jalar 80 px con el dedo (o la rueda hacia arriba con la hoja en reposo) cierra la
   ficha y devuelve la lista; desde la lista asomando, la recoge hasta el asa y el resumen («62 lugares»), que la
-  vuelven a abrir con un toque. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
+  vuelven a abrir con un toque.
+- **Cuatro ajustes más desde los comentarios del founder sobre el prototipo:** el **radio** baja a la mitad en todos
+  los casos («bájale al redondeado, más sugerido, para todos los casos, es canon»: 4 · 8 · 12 en vez de 8 · 12 · 16;
+  las fotos de renglón a 4; la hoja conserva sus 24); los **filtros van centrados** en tableta y escritorio («¿puedes
+  centrar los filtros?»), salvo en Lugares, donde se alinean con el panel para no quedar sobre el mapa (a confirmar);
+  el **carril empieza donde termina la fila de filtros** («la línea del lado derecho se ve cortada por la barra
+  superior; el menú debería comenzar desde donde termina la barra de filtros»): el carril pinta su fondo entero y
+  dibuja sus dos líneas desde esa altura (68 px; 104 con la tira de letras de Artistas; 56 bajo la barra de una ficha
+  o tarea), así que la esquina queda blanca y la fila parece cruzarla; y la **ficha de artista toma el héroe** («¿podemos
+  agregar héroe a artistas para estandarizar e igualar el canon definido para evento y lugar? Obvio con placeholder
+  hasta que el usuario suba su foto de portada al editar. Cuestiona»): portada 3:2 con el símbolo SN mientras no hay
+  portada, etiqueta de disciplina, nombre y meta dentro de la imagen, Atrás y menú flotando, Compartir entre las
+  acciones y Seguir como pastilla flotante; el avatar redondo sale de la ficha (sigue en listas y carriles). Lo que
+  se le cuestionó: la mayoría de los artistas abrirá con el placeholder (por eso el bloque lleva la marca y no un
+  gris vacío), y artista y lugar quedan visualmente iguales salvo la etiqueta y los bloques de abajo. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
   la lista»). Cuestionado: desde otras entradas (el «Dónde» de un evento, Buscar, Perfil) la ficha sigue abriendo a
   pantalla completa con Atrás, para no cambiar de pestaña a quien viene de un evento (sección 11).
 - **Título sobre el héroe o en la barra** («héroe y en la base del héroe las letras, dentro del contenedor de imagen,
@@ -879,6 +893,11 @@ Lo que el founder confirma o corrige al probar la v3:
     (contenido en su inicio) también la encoja, como con la rueda.
 37. **Chips en el héroe de la ficha de evento**: si algún día entran, con el mismo estilo que la etiqueta de la hoja
     de lugar (MUSEO: violeta sobre blanco, encima del título). Anotado, sin construir.
+38. **Radio más sugerido en todos los casos** (4 · 8 · 12; fotos de renglón 4; hoja 24). **Hecho** («es canon»).
+39. **Filtros centrados en tableta y escritorio**, salvo Lugares (alineados con el panel). **Hecho**; confirmar Lugares.
+40. **El carril empieza donde termina la fila de filtros** (tableta y escritorio). **Hecho.**
+41. **Héroe en la ficha de artista** con placeholder hasta que suba su portada (6.5). **Hecho a falta de su
+    confirmación**: el avatar redondo sale de la ficha, Seguir flota, artista y lugar quedan casi iguales.
 35. **El KPI de fecha sin la palabra «Fecha»** («demasiado alto, no es necesario poner palabra fecha, es obvio»): el
     día en la primera línea y la hora en la segunda, a la altura de los otros dos.
 34. **La hoja de lugar como la editó el founder en el lienzo** («observa que he modificado: redondeado de sheet, posición

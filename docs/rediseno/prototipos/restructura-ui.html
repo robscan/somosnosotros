@@ -47,7 +47,7 @@ ul { list-style: none; }
   --sombra: 0 2px 12px rgba(0,0,0,.08); --sombra-panel: 0 -2px 16px rgba(0,0,0,.1); --sombra-flotante: 0 6px 20px rgba(0,0,0,.22);
   --velo-titulo: linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,.44) 55%, rgba(0,0,0,0));
   --espacio-1: 4px; --espacio-2: 8px; --espacio-3: 12px; --espacio-4: 16px; --espacio-5: 20px; --espacio-6: 24px; --espacio-7: 32px; --espacio-8: 40px;
-  --radio-chico: 8px; --radio: 12px; --radio-grande: 16px; --radio-hoja: 24px; --radio-pildora: 999px;
+  --radio-chico: 4px; --radio: 8px; --radio-grande: 12px; --radio-hoja: 24px; --radio-pildora: 999px;
   --control: 44px; --toque: 48px; --boton-icono: 48px; --boton-icono-grande: 56px; --toque-min: 44px;
   --alto-barra: 56px; --alto-filtros: 48px; --alto-nav: 60px; --alto-modos: 56px; --ancho-carril-nav: 88px;
   --tope: 0px; --piso: 0px; --nav-abajo: calc(var(--alto-nav) + var(--piso));
@@ -188,7 +188,7 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .renglon.lista > .frente > small { grid-area: meta; margin-top: 3px; color: var(--texto-suave); font-family: var(--fuente-lista); font-size: var(--letra-lista-meta); font-variation-settings: var(--ancho-lista-meta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .renglon.lista > .frente > small.segundo { grid-area: segundo; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
 .renglon.lista > .boton-icono { grid-area: accion; }
-.foto { width: var(--foto-renglon); height: var(--foto-renglon); border-radius: 10px; object-fit: cover; background: var(--fondo-miniatura); }
+.foto { width: var(--foto-renglon); height: var(--foto-renglon); border-radius: var(--radio-chico); object-fit: cover; background: var(--fondo-miniatura); }
 .foto.redonda { border-radius: 50%; }
 .foto.chica { width: 40px; height: 40px; }
 .foto.grande { width: 96px; height: 96px; }
@@ -339,8 +339,9 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .pantalla.ficha > .portada, .pantalla.ficha > .titulo-ficha, .ficha-hoja > .portada, .ficha-hoja > .titulo-ficha { grid-area: portada; }
 .portada { position: relative; margin: 0; aspect-ratio: 3 / 2; background: var(--tono, var(--fondo-miniatura)); overflow: hidden; cursor: zoom-in; }
 .portada > .cartel { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; view-transition-name: cartel; }
-.portada > .sn { position: absolute; inset: 0; background-size: 30%; }
+.portada > .sn { position: absolute; inset: 0; width: 100%; height: 100%; background-color: var(--fondo-miniatura); background-size: 30%; }
 .titulo-ficha { align-self: end; z-index: 1; display: grid; gap: var(--espacio-2); margin: 0; padding: var(--espacio-8) var(--gutter) var(--espacio-4); background: var(--velo-titulo); color: #fff; font-size: var(--letra-xl); pointer-events: none; }
+.titulo-ficha > small { font-size: var(--letra-sm); font-weight: 500; font-variation-settings: var(--ancho-texto); opacity: .9; }
 .titulo-ficha > .tipo { order: -1; justify-self: start; padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); color: var(--primario); font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-texto); letter-spacing: .02em; text-transform: uppercase; }
 .pantalla.ficha > .perfil-cabecera { margin-top: var(--espacio-5); }
 .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); margin-top: var(--espacio-4); }
@@ -454,11 +455,16 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   /* La barra de la app ocupa todo el ancho y no se guarda; sigue ahí en fichas y tareas */
   .app > .barra, .app[data-compacta] > .barra, .app:has(> .pantalla.ficha:not([hidden])) > .barra, .app:has(> .pantalla.tarea:not([hidden])) > .barra { display: grid; height: calc(var(--alto-barra) + var(--tope)); padding-inline: var(--espacio-4); }
   /* Carril lateral en dos grupos: secciones arriba, perfil abajo; no se esconde y sigue en fichas y tareas */
-  .navegacion, .app[data-nav-oculta] > .navegacion, .app:has(> .pantalla.ficha:not([hidden])) > .navegacion, .app:has(> .pantalla.tarea:not([hidden])) > .navegacion { position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: var(--espacio-4) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 1px solid var(--borde); box-shadow: none; transform: none; }
+  .navegacion, .app[data-nav-oculta] > .navegacion, .app:has(> .pantalla.ficha:not([hidden])) > .navegacion, .app:has(> .pantalla.tarea:not([hidden])) > .navegacion { position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: calc(var(--nav-arriba) + var(--espacio-4)) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 0; background: linear-gradient(var(--borde), var(--borde)) no-repeat 0 calc(var(--nav-arriba) - 1px) / 100% 1px, linear-gradient(var(--borde), var(--borde)) no-repeat 100% var(--nav-arriba) / 1px 100%, var(--fondo); box-shadow: none; transform: none; }
   .navegacion > .perfil { grid-row: 5; }
   .destino { width: 72px; padding: 6px 0; border-radius: var(--radio); }
   .pantalla.raiz { padding-bottom: var(--espacio-8); }
-  .filtros { padding-top: var(--espacio-3); }
+  .filtros { padding-top: var(--espacio-3); justify-content: center; }
+  .pantalla[data-id="lugares"] > .cabecera > .filtros, .pantalla[data-id="perfil"] > .filtros { justify-content: start; }
+  /* El carril empieza donde termina la fila de filtros (68 px; 104 con la tira de letras; 56 bajo la barra de una ficha o tarea), con su línea de arriba a la misma altura */
+  .app { --nav-arriba: 68px; }
+  .app:has(> .pantalla[data-id="artistas"]:not([hidden])) { --nav-arriba: 104px; }
+  .app:has(> .pantalla.ficha:not([hidden])), .app:has(> .pantalla.tarea:not([hidden])) { --nav-arriba: var(--alto-barra); }
   .barra-interior { height: var(--alto-barra); padding-top: 0; }
   .barra-interior.con-campo > :first-child { display: grid; max-width: 520px; }
   .pantalla[data-id="lugares"] { grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; padding-bottom: 0; }
@@ -495,7 +501,6 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   .pantalla.ficha > .titulo-ficha > .tipo { background: var(--primario-suave); color: var(--primario); }
   .pantalla.ficha > .kpis { grid-area: kpis; margin-left: 0; }
   .pantalla.ficha > .acciones { grid-area: acciones; margin-left: 0; margin-right: 0; }
-  .pantalla[data-id="artista"] > .acciones { margin-left: var(--gutter); }
   .pantalla.ficha > .tarjeta-dato { grid-area: donde; margin-left: 0; }
   .pantalla.ficha > .con { grid-area: con; margin-left: 0; }
   .pantalla.ficha > .sobre { grid-area: sobre; margin-left: 0; }
@@ -504,7 +509,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   .pantalla.ficha > .pie { grid-area: pie; margin-left: 0; }
   .pantalla.ficha > .flotantes { grid-column: 1 / -1; justify-self: end; }
   .pantalla[data-id="lugar"] { grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". donde" ". sobre" ". pie"; }
-  .pantalla[data-id="artista"] { grid-template-areas: "barra barra" "portada kpis" "acciones proximos" ". sobre" ". lugares" ". pie"; }
+  .pantalla[data-id="artista"] { grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". sobre" ". lugares" ". pie"; }
   .pantalla[data-id="artista"] > .lugares { grid-area: lugares; margin-left: 0; }
   .pantalla[data-id="ajustes"] { grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; }
   .pantalla[data-id="ajustes"] > :not(.barra-interior) { max-width: var(--columna); }
@@ -795,14 +800,16 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   </div>
 </section>
       <section class="pantalla ficha" data-id="artista" hidden>
-  <header class="barra-interior"><button type="button" class="boton-icono contorno" data-atras aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button><b class="titulo-barra">Aaron Cadena</b><button type="button" class="boton-icono plano" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button></header>
-  <div class="perfil-cabecera"><span class="foto redonda grande sn" role="img" aria-label="Sin foto"></span><b>Aaron Cadena</b><small>Artes visuales · Fotografía · Solista · San Luis Potosí</small><button type="button" class="boton-icono elevado" aria-label="Compartir"><svg class="i" aria-hidden="true"><use href="#i-compartir"/></svg></button></div>
+  <header class="barra-interior heroe"><button type="button" class="boton-icono contorno" data-atras aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button><b class="titulo-barra">Aaron Cadena</b><button type="button" class="boton-icono plano" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button></header>
+  <figure class="portada" style="--tono:#3b3a37" data-visor><span class="cartel sn" role="img" aria-label="Sin foto"></span></figure>
+  <h1 class="titulo-ficha">Aaron Cadena<span class="tipo">Artes visuales</span><small>Fotografía · Solista · San Luis Potosí</small></h1>
   <ul class="kpis">
     <li><a href="#"><svg class="i" aria-hidden="true"><use href="#i-calendario"/></svg><b>2 próximas</b><small>Fechas</small></a></li>
     <li><a href="#"><svg class="i" aria-hidden="true"><use href="#i-personas"/></svg><b>120</b><small>Seguidores</small></a></li>
     <li><a href="#"><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg><b>4</b><small>Lugares</small></a></li>
   </ul>
   <div class="acciones">
+    <button type="button" class="accion"><span class="boton-icono grande elevado"><svg class="i" aria-hidden="true"><use href="#i-compartir"/></svg></span>Compartir</button>
     <a class="accion" href="#"><span class="boton-icono grande elevado"><svg class="i" aria-hidden="true"><use href="#i-instagram"/></svg></span>Instagram</a>
     <a class="accion" href="#"><span class="boton-icono grande elevado"><svg class="i" aria-hidden="true"><use href="#i-sitio"/></svg></span>Sitio web</a>
     <a class="accion" href="#"><span class="boton-icono grande elevado"><svg class="i" aria-hidden="true"><use href="#i-youtube"/></svg></span>YouTube</a>
@@ -1092,7 +1099,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   app.addEventListener("click", (e) => {
     if (e.target.closest(".visor")) { visor.hidden = true; return; }
     const portada = e.target.closest("[data-visor]");
-    if (portada) { const img = portada.querySelector("img"); if (img) { visor.querySelector("img").src = img.src; visor.hidden = false; } return; }
+    if (portada) { const img = portada.querySelector("img"); if (img && img.src) { visor.querySelector("img").src = img.src; visor.hidden = false; } return; }
     const publicar = e.target.closest("[data-publicar]");
     if (publicar) { e.preventDefault(); abrirAlta(tipoPorSeccion[actual.dataset.id] || "evento"); return; }
     const modo = e.target.closest(".modos [data-tipo]");
