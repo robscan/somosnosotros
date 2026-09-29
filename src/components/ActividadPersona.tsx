@@ -124,7 +124,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
             )}
           </p>
         ) : (
-          <ListaSeguidos lugares={p.lugares} artistas={p.artistas} conChips={conChips} lugar={gestos ? seguirLugar : undefined} artista={gestos ? seguirArtista : undefined} />
+          <ListaSeguidos lugares={p.lugares} artistas={p.artistas} conChips={conChips} lugar={gestos ? seguirLugar : undefined} artista={gestos ? seguirArtista : undefined} raiz={mia} />
         )
       ) : p.clave === "va" ? (
         listaEventos(
