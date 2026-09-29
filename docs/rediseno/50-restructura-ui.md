@@ -746,7 +746,9 @@ cuatro destinos salieron con sombra y fondo blanco en una tanda: renombrada); el
 encima cuando hay ficha a la vista); y dentro de la hoja a media altura la pastilla tapaba el título sobre la portada
 4:3 (portada 16:9 en la hoja). Con la vuelta a Inicio: el carril con foto y sello en la misma celda y columna
 explícita valía para un tamaño; los tres tamaños (mediana, grande, chica) definen sus filas en el carril y la tarjeta
-las hereda.
+las hereda. Señalado por el founder en el prototipo («hace falta padding arriba y abajo o disminuye tamaño de foto de
+perfil»): el avatar de Perfil medía 26 px dentro de la píldora de 32 de la barra inferior, sin el aire que los iconos
+de trazo tienen de sobra porque su dibujo no llega al borde; el avatar baja a 22 px.
 
 ### 6.7 Medición de la v3 (`medir.js` sobre las diez pantallas, teléfono)
 
@@ -905,6 +907,9 @@ Lo que el founder confirma o corrige al probar la v3:
 40. **El carril empieza donde termina la fila de filtros** (tableta y escritorio). **Hecho.**
 41. **Héroe en la ficha de artista** con placeholder hasta que suba su portada (6.5). **Hecho a falta de su
     confirmación**: el avatar redondo sale de la ficha, Seguir flota, artista y lugar quedan casi iguales.
+43. **El avatar de Perfil en la barra inferior** («hace falta padding arriba y abajo o disminuye tamaño de foto de
+    perfil o agrandamos todos los altos de icono»): baja a 22 px dentro de la píldora de 32, con el mismo aire que los
+    iconos de trazo (6.6). **Hecho.**
 42. **KPI: la etiqueta junto al icono** («¿qué opinas de juntar este texto con el icono de arriba? Como canon, en
     todos los KPI»): icono de 16 px y etiqueta en la fila de arriba, como una sola unidad «qué es»; el valor solo en la
     de abajo con todo el ancho; la etiqueta con elipsis para que nunca rompa la fila. En las fichas, en Perfil y en

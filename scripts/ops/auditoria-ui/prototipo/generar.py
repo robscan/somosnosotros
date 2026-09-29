@@ -614,7 +614,7 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .destino {{ display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .02em; cursor: pointer; }}
 .destino .pildora {{ position: relative; display: grid; place-items: center; width: 60px; height: 32px; border-radius: 16px; transition: background-color 150ms; }}
 .destino .pildora .i {{ width: 26px; height: 26px; }}
-.destino .pildora .avatar.chico {{ width: 26px; height: 26px; border: 0; }}
+.destino .pildora .avatar.chico {{ width: 22px; height: 22px; border: 0; font-size: 11px; }}
 .destino[aria-current="page"] {{ color: var(--primario); }}
 .destino[aria-current="page"] .pildora {{ background: var(--primario); color: var(--primario-texto); }}
 .destino[aria-current="page"] .pildora .avatar.chico {{ box-shadow: 0 0 0 2px var(--primario-texto); }}

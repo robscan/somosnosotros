@@ -619,8 +619,10 @@ pasada con margen dejaba la esquina gris y se corrigió); «nombre de artista ac
 agregar héroe a artistas para estandarizar…? Cuestiona» (héroe con placeholder en la ficha de artista, avatar fuera,
 Seguir flotante); y dos que el canon del héroe ya había resuelto («¿podemos poner título acá?», «no hay gap visible
 entre contenido y barra de atrás»). Después, «¿qué opinas de juntar este texto con el icono de arriba? Como canon, en
-todos los KPI» (icono y etiqueta en la fila de arriba, el valor solo abajo; en prototipo y lienzo). Doc 50 § 11,
-puntos 38 a 42.
+todos los KPI» (icono y etiqueta en la fila de arriba, el valor solo abajo; en prototipo y lienzo); «¿por qué se fue
+la sección de Agenda?» (contestado: por su pregunta de la quinta vuelta; sigue abierto en el punto 18); y «hace falta
+padding arriba y abajo o disminuye tamaño de foto de perfil» (el avatar de la barra inferior baja a 22 px dentro de la
+píldora de 32). Doc 50 § 11, puntos 38 a 43.
 
 ### Cierre (cuarta parte)
 
