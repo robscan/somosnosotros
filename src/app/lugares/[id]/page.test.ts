@@ -81,8 +81,13 @@ function* recorrer(nodo: unknown): Generator<{ type: unknown; props: Record<stri
 describe("ficha de lugar: la cabecera pinta antes que sus eventos (OL-161)", () => {
   it("el árbol inicial trae el nombre, el JSON-LD y deja quién sigue y sus eventos en Suspense", async () => {
     const { default: FichaLugar } = await import("./page");
+    const { default: CuerpoLugar } = await import("./CuerpoLugar");
     const arbol = await FichaLugar({ params: Promise.resolve({ id: "lugar-de-prueba" }), searchParams: Promise.resolve({}) });
-    const elementos = [...recorrer(arbol)];
+    const enPagina = [...recorrer(arbol)];
+    // El cuerpo (datos, acciones, eventos) es un componente aparte, el mismo de la hoja de Lugares: se abre igual, sin pintarlo.
+    const cuerpo = enPagina.find((e) => e.type === CuerpoLugar);
+    expect(cuerpo).toBeTruthy();
+    const elementos = [...enPagina, ...recorrer(CuerpoLugar(cuerpo!.props as Parameters<typeof CuerpoLugar>[0]))];
 
     const h1 = elementos.find((e) => e.type === "h1");
     expect(h1?.props?.children).toBe("Lugar de prueba");

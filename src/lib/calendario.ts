@@ -169,8 +169,8 @@ export function pasoMasCercano(hora: string, paso = 15): string {
   return `${String(Math.floor(acotado / 60)).padStart(2, "0")}:${String(acotado % 60).padStart(2, "0")}`;
 }
 
-/** Los días (YYYY-MM-DD) en que hay al menos un evento, con cuántos, para el calendario propio de `ui/ChipFecha` y
- *  `ui/SelectorFecha` (OL-218): qué días dejar disponibles y cuáles desactivar por "sin eventos". */
+/** Los días (YYYY-MM-DD) en que hay al menos un evento, con cuántos, para el calendario de la hoja Cuándo (OL-218,
+ *  doc 50 P5): qué días llevan su punto. */
 export type DiasActivos = Map<string, number>;
 
 /**

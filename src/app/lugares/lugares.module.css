@@ -1,70 +1,47 @@
 /* ==========================================================================
-   Lugares (docs/rediseno/06-lugares-flujo-y-estados.md). La cabecera es ui/Cabecera.
-   1. Mapa: caja, lo encontrado, tarjeta del pin · 2. Lista: aviso de ubicación
+   Lugares (docs/rediseno/06-lugares-flujo-y-estados.md; docs/rediseno/50, P5b). La fila de contexto es ui/Cabecera; la hoja con la
+   lista y la ficha, HojaLugares.module.css.
+   1. La pantalla: fila arriba y mapa debajo · 2. Lo que flota sobre el mapa
    ========================================================================== */
 
-/* 1. Mapa: llena lo que queda entre la cabecera y la navegación; la página no se desplaza */
-.sinRelleno {
-  min-height: 0;
+/* 1. Una rejilla de dos filas, la cabecera y el mapa: el mapa llena lo que deja la fila, sin calcular nada (H-14), y acaba donde
+   empieza la navegación; la página no se desplaza. La hoja es una capa sobre el mapa (teléfono) o el panel de la izquierda
+   (desde 792, donde el mapa ocupa el resto). */
+.lugares {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "cabecera"
+    "mapa";
+  height: calc(100dvh - var(--barra-flujo, 0px));
   padding-bottom: var(--nav-abajo);
 }
-.cajaMapa {
+.lugares > header {
+  grid-area: cabecera;
+}
+.mapa {
+  grid-area: mapa;
   position: relative;
-  height: calc(100dvh - var(--barra-flujo, 0px) - var(--alto-cabecera) - var(--nav-abajo));
-  min-height: 320px;
+  min-height: 0;
 }
-/* Lo que flota sobre el mapa (aviso, resultados, mensaje sin eventos y botón de ubicación) va justo bajo la cabecera
-   pegajosa; entre sí se ordenan como están en el marcado. Aviso de ubicación: flota arriba, a lo ancho */
-.avisoMapa {
-  position: absolute;
-  top: var(--espacio-3);
-  left: var(--gutter);
-  right: var(--gutter);
-  z-index: calc(var(--z-pegajoso) - 1);
+@media (min-width: 792px) {
+  .lugares {
+    grid-template-columns: var(--panel) minmax(0, 1fr);
+    grid-template-areas:
+      "cabecera cabecera"
+      "hoja mapa";
+  }
 }
-/* Lo encontrado por la lupa de la cabecera, flotando arriba del mapa, en la columna */
-.sobreMapa {
-  position: absolute;
-  top: var(--espacio-3);
-  left: 0;
-  right: 0;
-  z-index: calc(var(--z-pegajoso) - 1);
-  display: grid;
-  gap: var(--espacio-2);
-}
-.sobreMapa > * {
-  margin-inline: var(--gutter);
-}
-/* Renglones de ui/Sugerencia; la caja flota con sombra */
-.resultadosMapa {
-  margin-block: 0; /* a los lados manda el gutter de .sobreMapa */
-  box-shadow: var(--sombra);
-}
-.resultadoMas {
-  padding: var(--espacio-2) var(--espacio-4);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.nadaMapa {
-  justify-self: start;
-  padding: var(--espacio-2) var(--espacio-3);
-  border-radius: var(--radio);
-  background: var(--vidrio);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  box-shadow: var(--sombra);
-}
-/* El botón de ubicación (docs/rediseno/35, ui/BotonIcono): abajo a la izquierda, el mismo botón que el ↑ de los
-   listados (ui/Cabecera .volver). Con la hoja del pin abierta sube justo por encima de ella (nunca se tapa):
-   `--alto-hoja` lo publica ui/useAltoHoja con el alto real de la hoja, y aquí se resta lo que la caja del mapa ya
-   deja libre sobre la navegación, para no subir de más. Su glifo dice si ya hay ubicación: oscuro sin ella, del
-   color de acción con ella (va en el icono para no pelear con el color del propio botón). */
+
+/* 2. Lo que flota sobre el mapa: solo «Mi ubicación», arriba a la derecha (la lista ya está en la hoja), y su aviso debajo. Su
+   glifo dice si ya hay ubicación: oscuro sin ella, del color de acción con ella (va en el icono para no pelear con el color del
+   propio botón); mientras llega, late. */
 .ubicacion {
   position: absolute;
-  left: var(--gutter);
-  bottom: calc(16px + max(0px, var(--alto-hoja, 0px) - var(--nav-abajo)));
-  z-index: calc(var(--z-pegajoso) - 1);
-  transition: bottom 200ms ease;
+  top: var(--espacio-3);
+  right: var(--espacio-4);
+  z-index: 1;
 }
 .ubicacion > svg {
   color: var(--texto);
@@ -72,59 +49,7 @@
 .ubicacionActiva > svg {
   color: var(--primario);
 }
-/* El conmutador Mapa · Lista (docs/rediseno/45, OL-174): salió del renglón 1 de la cabecera; flota, secundario
-   (contorno, no relleno), abajo a la derecha, a 16 px de la navegación: el sitio de «Registrar lugar», que ahora es
-   el «+» de la barra de la app. Mismo sitio exacto en el Mapa («Ver en lista») y en la Lista («Ver en mapa»). Se queda
-   hasta que la lista pase a la hoja inferior (docs/rediseno/50, P5). */
-.verOtraVista {
-  position: fixed;
-  right: var(--gutter);
-  bottom: calc(var(--nav-abajo) + var(--espacio-4));
-  z-index: calc(var(--z-flotante) + 1);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espacio-2);
-  min-height: var(--toque);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-pildora);
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-md);
-  font-weight: 700;
-  box-shadow: var(--sombra-flotante);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.verOtraVista svg {
-  flex: none;
-}
-/* Con el chip de fecha elegido y ningún lugar con evento ese día (docs/rediseno/45, OL-174): el mapa queda vacío
-   con este aviso, centrado sobre el lienzo. */
-.vacioFecha {
-  position: absolute;
-  left: var(--gutter);
-  right: var(--gutter);
-  top: 42%;
-  z-index: calc(var(--z-pegajoso) - 1);
-  text-align: center;
-  background: var(--fondo);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  padding: var(--espacio-4);
-  box-shadow: var(--sombra);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.vacioFecha b {
-  display: block;
-  color: var(--texto);
-  font-size: var(--letra-md);
-  font-weight: 800;
-  margin-bottom: var(--espacio-1);
-}
-/* Mientras llega, el icono late (como los chips "en camino"); sin texto. */
-.ubicacionPidiendo svg {
+.ubicacionPidiendo > svg {
   animation: latir 1.1s ease-in-out infinite;
 }
 @keyframes latir {
@@ -136,68 +61,15 @@
     opacity: 0.45;
   }
 }
-
-/* La hoja del pin (ui/Hoja): foto, título y datos en rejilla plana; "Ver ficha" es un hijo directo de la hoja. */
-.hojaLugar {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas:
-    "foto titulo"
-    "foto meta";
-  column-gap: var(--espacio-3);
-  row-gap: 2px;
-  margin-bottom: var(--espacio-4);
+.avisoMapa {
+  position: absolute;
+  top: calc(var(--espacio-3) + var(--boton-icono) + var(--espacio-2));
+  left: var(--espacio-4);
+  right: var(--espacio-4);
+  z-index: 1;
 }
-.hojaFoto {
-  grid-area: foto;
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radio-chico);
-  background: var(--fondo-miniatura);
-  align-self: start;
-}
-.hojaTitulo {
-  grid-area: titulo;
-  min-width: 0;
-  font-size: var(--letra-xl);
-  line-height: 1.15;
-  text-wrap: balance;
-}
-.hojaMeta {
-  grid-area: meta;
-  display: grid;
-  gap: 2px;
-  min-width: 0;
+/* Lo que dice la hoja cuando la búsqueda o los filtros no dejan ver ningún lugar. */
+.nada {
+  padding: var(--espacio-2) var(--gutter) var(--espacio-4);
   color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.hojaMeta > span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.hojaMeta b {
-  color: var(--texto);
-}
-/* Un destacado lo dice en la hoja, con el punto naranja del mapa (docs/rediseno/20, M2) */
-.destacado {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--destacado-texto);
-  font-weight: 700;
-}
-.destacado::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border: 2px solid var(--fondo);
-  border-radius: 50%;
-  background: var(--destacado);
-  box-shadow: 0 0 0 1px var(--destacado);
-}
-
-/* 2. Lista: el aviso de ubicación, arriba de la lista, en la columna */
-.avisoLista {
-  margin: var(--espacio-3) var(--gutter) var(--espacio-2);
 }

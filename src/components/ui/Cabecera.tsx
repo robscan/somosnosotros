@@ -14,22 +14,20 @@ type Props = {
   onBuscar?: () => void;
   /** La búsqueda abierta: ocupa la fila entera, con el mismo alto (la cabecera no se mueve). */
   campo?: ReactNode;
-  /** Debajo de la fila: qué ver (ui/Pestanas). */
-  filtros?: ReactNode;
-  /** Debajo de las pestañas: el segundo nivel (chips de detalle en Artistas, la tira de letras). */
+  /** Debajo de la fila: el segundo nivel (la tira de letras de Artistas). */
   children?: ReactNode;
 };
 
 /**
  * La cabecera única de Inicio, Agenda, Lugares y Artistas (docs/rediseno/prototipos/cabeceras.html, OL-087): la fila
- * de contexto y, debajo, las pestañas; se queda pegada arriba, justo bajo la barra de la app (o arriba del todo cuando
- * la barra se recoge: `--barra-vista`, del armazón) y forma con ella una sola región, con la raya común solo abajo.
+ * de contexto y, si la pantalla la trae, la tira de letras debajo; se queda pegada arriba, justo bajo la barra de la app (o
+ * arriba del todo cuando la barra se recoge: `--barra-vista`, del armazón) y forma con ella una sola región, con la raya común solo abajo.
  * La lupa ya no vive aquí: es la de la barra de la app, y esta cabecera solo le presta lo que abre (`onBuscar`).
  * Publica en `--alto-cabecera` lo que mide, que es donde se pegan los títulos de día. Si los chips de la fila no caben,
  * la fila se desliza de lado y su borde derecho se desvanece mientras haya más (H-11). Tras bajar una pantalla aparece el
  * botón para volver arriba.
  */
-export default function Cabecera({ contexto, onBuscar, campo, filtros, children }: Props) {
+export default function Cabecera({ contexto, onBuscar, campo, children }: Props) {
   const ref = useRef<HTMLElement>(null);
   const lejos = useMideYVigilaLejos(ref);
   const fila = useTiraQueSigue<HTMLDivElement>();
@@ -46,7 +44,6 @@ export default function Cabecera({ contexto, onBuscar, campo, filtros, children 
         <div ref={fila} className={campo ? styles.campo : styles.contexto}>
           {campo || contexto}
         </div>
-        {filtros}
         {children}
       </header>
       {lejos && (

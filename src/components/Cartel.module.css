@@ -12,6 +12,17 @@
   background: var(--fondo-miniatura);
   cursor: zoom-in;
 }
+/* Héroe (hoja de Lugares): la portada 3:2 a todo lo ancho, sin lupa; el título de la ficha va encima, sobre su velo */
+.heroe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+  background: var(--fondo-miniatura);
+  cursor: zoom-in;
+}
 /* Avatar de la ficha de artista: redondo, 112 px, sin lupa; el toque lo abre entero igual */
 .avatar {
   display: block;

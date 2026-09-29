@@ -44,9 +44,8 @@
 }
 
 /* 3. "Qué hace" en dos pasos (OL-206, docs/rediseno/15 decisión 11): al elegir una disciplina con
-   subcategorías, se oculta el resto y queda sola, con su ✕ — mismo dibujo que el chip elegido de
-   ui/ChipFecha (pastilla con borde de color y quitar a la derecha), reutilizando la clase `.chip` de
-   ui/Chip.module.css en vez de una nueva. Debajo, una línea divide la disciplina de su subcategoría. */
+   subcategorías, se oculta el resto y queda sola, con su ✕ — un chip elegido (pastilla con borde de color y quitar a la
+   derecha), reutilizando la clase `.chip` de ui/Chip.module.css en vez de una nueva. Debajo, una línea divide la disciplina de su subcategoría. */
 .chipElegido.chipElegido {
   min-height: var(--toque-min);
   gap: 6px;

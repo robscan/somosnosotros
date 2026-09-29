@@ -1,7 +1,7 @@
 import "server-only";
 import type { EventoAgenda } from "@/lib/agenda";
 import { conProximaFecha, type Disciplina, type FechaDeArtista, type ProximaFecha, type TipoArtista } from "@/lib/artistas";
-import { nombreSitio } from "@/lib/eventos";
+import { sitioEnLista } from "@/lib/eventos";
 import { eventoPaso, filtroSinPasar } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
 import { conProximo, type ProximoEvento } from "@/lib/lugares";
@@ -42,7 +42,7 @@ async function conProximasFechas(supabase: Cliente, artistas: ArtistaSeguido[]):
     const e = uno(fila.evento);
     if (!e) continue;
     const lugar = uno(e.lugar);
-    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
+    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: sitioEnLista({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
   }
   return conProximaFecha(artistas, fechas);
 }

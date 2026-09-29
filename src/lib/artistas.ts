@@ -246,7 +246,7 @@ export function subcategoriaParecida<T extends Subcategoria>(existentes: T[], es
 
 /**
  * "Qué hace" en dos pasos (OL-206, docs/rediseno/15 decisión 11): paso 1 = elegir la disciplina entre todas;
- * paso 2 = con una ya elegida, se ocultan las demás, queda su ✕ (como ui/ChipFecha) y, bajo una línea, se
+ * paso 2 = con una ya elegida, se ocultan las demás, queda su ✕ y, bajo una línea, se
  * pregunta la subcategoría. Estas funciones son la lógica pura del cambio de paso, sin nada de React, para
  * poder probarla sin montar el formulario.
  */

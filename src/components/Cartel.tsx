@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { SIN_FOTO, SIN_FOTO_ANCHA } from "@/lib/imagen";
 import BotonIcono from "./ui/BotonIcono";
 import { IconoCerrar } from "./ui/Iconos";
@@ -9,7 +10,9 @@ import styles from "./Cartel.module.css";
 /**
  * El cartel (o la portada) llena una banda baja (cover); un toque lo enseña entero a pantalla completa.
  * Con forma "avatar" (ficha de artista) es un círculo, como en la lista: la gente es redonda, los lugares cuadrados.
- * Sin `src`, la imagen con el símbolo SN ocupa la misma caja, sin lupa ni visor.
+ * Con forma "heroe" (la hoja de Lugares) es la portada 3:2 a todo lo ancho, sin lupa: su título va encima, sobre un velo.
+ * Sin `src`, la imagen con el símbolo SN ocupa la misma caja, sin lupa ni visor. El visor se pinta al final del body: así
+ * ninguna capa que lo contenga (la hoja de Lugares) lo deja debajo de la navegación.
  */
 export default function Cartel({
   src,
@@ -18,7 +21,7 @@ export default function Cartel({
 }: {
   src: string | null;
   alt: string;
-  forma?: "banda" | "avatar";
+  forma?: "banda" | "avatar" | "heroe";
 }) {
   const [abierto, setAbierto] = useState(false);
   useEffect(() => {
@@ -30,13 +33,13 @@ export default function Cartel({
   }, [abierto]);
   if (!src) {
     // eslint-disable-next-line @next/next/no-img-element -- imagen fija de public
-    return <img src={forma === "avatar" ? SIN_FOTO : SIN_FOTO_ANCHA} alt="" className={`${forma === "avatar" ? styles.avatar : styles.banda} ${styles.sinFoto}`} />;
+    return <img src={forma === "avatar" ? SIN_FOTO : SIN_FOTO_ANCHA} alt="" className={`${styles[forma]} ${styles.sinFoto}`} />;
   }
   return (
     <>
       <button
         type="button"
-        className={forma === "avatar" ? styles.avatar : styles.banda}
+        className={styles[forma]}
         onClick={() => setAbierto(true)}
         aria-label={`Ver ${alt} entero`}
       >
@@ -64,20 +67,17 @@ export default function Cartel({
           </span>
         )}
       </button>
-      {abierto && (
-        <div
-          className={styles.visor}
-          role="dialog"
-          aria-label={alt}
-          onClick={() => setAbierto(false)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-          <img src={src} alt={alt} className={styles.visorImagen} />
-          <BotonIcono relieve="elevado" className={styles.visorCerrar} onClick={() => setAbierto(false)} aria-label="Cerrar">
-            <IconoCerrar width={22} height={22} />
-          </BotonIcono>
-        </div>
-      )}
+      {abierto &&
+        createPortal(
+          <div className={styles.visor} role="dialog" aria-label={alt} onClick={() => setAbierto(false)}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
+            <img src={src} alt={alt} className={styles.visorImagen} />
+            <BotonIcono relieve="elevado" className={styles.visorCerrar} onClick={() => setAbierto(false)} aria-label="Cerrar">
+              <IconoCerrar width={22} height={22} />
+            </BotonIcono>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

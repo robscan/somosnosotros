@@ -1,0 +1,191 @@
+/* ==========================================================================
+   La ficha de un lugar dentro de la hoja de Lugares (docs/rediseno/50, P5b; `cuerpo_lugar(en_hoja=True)` del prototipo firmado).
+   Una rejilla de dos áreas: la cabecera (una fila de alto 0 que se pega arriba y se abre sobre el héroe) y la portada con su título
+   dentro. Lo que cambia con la altura de la hoja lo dicen `data-hoja` (en la hoja: Atrás en vez de ✕ cuando está llena, la barra
+   de Seguir) y `data-compacta` (en esta ficha: la cabecera con la portada oscurecida detrás del título).
+   1. La ficha y su cabecera · 2. El héroe · 3. El cuerpo y la barra de Seguir
+   ========================================================================== */
+@keyframes fundir {
+  from {
+    opacity: 0;
+  }
+}
+
+/* 1. La cabecera: en reposo es transparente sobre el héroe, con el asa, la ✕ y el menú elevados; compacta, toma la portada
+   oscurecida, muestra el título y los botones dejan de flotar. El asa cubre toda la cabecera (pasa de 44) y los botones van encima. */
+.ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 0 max-content;
+  grid-template-areas:
+    "cabecera"
+    "portada";
+  grid-auto-rows: max-content;
+  align-content: start;
+  background: var(--fondo);
+  animation: fundir var(--duracion) var(--curva);
+}
+.ficha:focus {
+  outline: none;
+}
+.cabecera {
+  grid-area: cabecera;
+  align-self: start;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: var(--boton-icono) minmax(0, 1fr) var(--boton-icono);
+  grid-template-rows: 20px var(--boton-icono);
+  grid-template-areas:
+    "asa asa asa"
+    "cerrar titulo menu";
+  align-items: center;
+  column-gap: var(--espacio-2);
+  width: 100%;
+  padding: 0 var(--gutter) var(--espacio-2);
+  transition: background-color 150ms;
+}
+.asa {
+  grid-area: 1 / 1 / -1 / -1;
+  display: grid;
+  align-content: start;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
+}
+.asa::before {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 4px;
+  margin: var(--espacio-2) auto 0;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.35);
+}
+.cabecera > :is(.cerrar, .atras, .menu) {
+  color: var(--texto);
+}
+.cabecera > :is(.cerrar, .atras) {
+  grid-area: cerrar;
+}
+.cabecera > .menu {
+  grid-area: menu;
+}
+.cabecera > .titulo {
+  grid-area: titulo;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: var(--letra-md);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  opacity: 0;
+  transition: opacity 150ms;
+  pointer-events: none;
+}
+/* Llena, la hoja es una página completa: el mando de la izquierda es Atrás (vuelve a foto y datos); la ✕ solo mientras asoma. */
+.cabecera > .atras {
+  display: none;
+}
+:global([data-hoja="llena"]) .cabecera > .cerrar {
+  display: none;
+}
+:global([data-hoja="llena"]) .cabecera > .atras {
+  display: inline-grid;
+}
+.ficha[data-compacta] > .cabecera {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+    var(--portada, none) center / cover,
+    var(--texto);
+  color: #fff;
+}
+.ficha[data-compacta] > .cabecera > .titulo {
+  opacity: 1;
+}
+.ficha[data-compacta] > .cabecera > :is(.cerrar, .atras, .menu) {
+  background: none;
+  box-shadow: none;
+  color: #fff;
+}
+
+/* Desde 792 la hoja es un panel: sin alturas no hay asa, y arriba solo queda un respiro para la ✕ y el menú. */
+@media (min-width: 792px) {
+  .cabecera {
+    grid-template-rows: var(--espacio-3) var(--boton-icono);
+  }
+  .asa {
+    display: none;
+  }
+}
+
+/* 2. El héroe: la portada 3:2 a todo lo ancho y, encima, en la misma celda, la etiqueta y el título sobre un velo (las manos,
+   sin bloquear el toque que abre la imagen entera). */
+.heroe {
+  grid-area: portada;
+  display: grid;
+}
+.heroe > * {
+  grid-area: 1 / 1;
+}
+.encima {
+  align-self: end;
+  z-index: 1;
+  display: grid;
+  justify-items: start;
+  gap: var(--espacio-2);
+  padding: var(--espacio-8) var(--gutter) var(--espacio-4);
+  background: var(--velo-titulo);
+  color: #fff;
+  pointer-events: none;
+}
+.encima h2 {
+  font-size: var(--letra-xl);
+}
+.etiqueta {
+  padding: 2px var(--espacio-2);
+  border-radius: var(--radio-pildora);
+  background: var(--vidrio);
+  color: var(--primario);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-texto);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* 3. El cuerpo es el de la ficha a pantalla completa, con el aire de la hoja abajo para la barra de Seguir. */
+.cuerpo {
+  padding: var(--espacio-4) var(--gutter) calc(96px + var(--piso));
+}
+.fallo {
+  color: var(--texto-suave);
+}
+/* La barra de Seguir (`ui/Seguir`) es fija al pie de la ventana; aquí va pegajosa dentro de la hoja. Esta caja, de alto 0, es su
+   sitio: `contain: layout` la vuelve el bloque de contención de la barra (que se apoya en su borde y llega de lado a lado de la
+   hoja), y ella se pega sobre la navegación mientras la hoja asoma, al pie cuando está llena (la navegación se va) y no se ve
+   recogida. En el panel no hay alturas ni navegación debajo. */
+.accion {
+  position: sticky;
+  bottom: 0;
+  height: 0;
+  contain: layout;
+  transition: bottom var(--duracion-recogida) var(--curva);
+}
+:global([data-hoja]) .accion {
+  bottom: var(--nav-abajo);
+}
+:global([data-hoja="llena"]) .accion {
+  bottom: 0;
+}
+:global([data-hoja="recogida"]) .accion {
+  visibility: hidden;
+}
