@@ -468,7 +468,7 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la undécima vuelta del founder)
+## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la duodécima vuelta del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
@@ -853,6 +853,21 @@ esta semana» sigue como segundo carril o se funde.
 Capturas [256-129](capturas-256/256-129-v3-carril-destacados-telefono.png) y
 [256-130](capturas-256/256-130-v3-carril-semana-escritorio.png).
 
+**Duodécima vuelta (el mismo día, en el chat; deshace la undécima):** «no sirve la solución que te pedí: Destacados son 4,
+al seleccionar esa opción manda a ver los mismos cuatro pero en lista… Regresamos a la opción de ver todo, es decir
+que aparezca el título del lado izquierdo y del lado derecho "Ver todo >" y en caso de eventos vamos a la sección
+agenda, esto implica revivir agenda. En caso de artistas manda a la sección de artistas, lo mismo con lugares». Queda
+así: cada carril lleva su título a la izquierda y **«Ver todo ›»** a la derecha; en los carriles de eventos lleva a
+**Agenda**, que vuelve como pantalla propia (barra con Atrás y «Agenda», fila de contexto ciudad · Cuándo · Filtros y
+la lista por día de todos los próximos, sin ningún filtro puesto); en «Lugares con eventos», a Lugares; en «Artistas
+destacadxs», a Artistas; en «Tus planes», a Perfil. Agenda no ocupa lugar en la barra inferior (su «temo que hay
+demasiado ya» de la firma sigue en pie): se llega por «Ver todo» o eligiendo un valor en Cuándo desde Inicio, y Atrás
+vuelve a Inicio con memoria. Inicio pierde su modo lista (era la agenda disfrazada) y se queda con sus carriles; el
+calendario de Cuándo y los atajos filtran la Agenda, desde Inicio o desde ella. Las listas propias de la undécima
+vuelta salen del prototipo. Capturas [256-75](capturas-256/256-75-v3-inicio-telefono.png),
+[256-129](capturas-256/256-129-v3-agenda-telefono.png), [256-130](capturas-256/256-130-v3-agenda-escritorio.png) y
+[256-81](capturas-256/256-81-v3-agenda-fin-de-semana-telefono.png).
+
 ### 6.6 Defectos que la revisión de la v3 encontró y cerró
 
 El founder señaló que «elemento de lugar se desalinea en tableta y escritorio»: era cierto y silencioso. **El renglón
@@ -918,7 +933,7 @@ council. Orden por dependencias:
 | P2 | `BotonIcono` y `Boton` unificados; glifos de acción: palomita (Voy), persona con «+» (seguir artista), campana con «+» (seguir lugar); decidido verde con glifo blanco | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
 | P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
 | P4 | Armazón único: un grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro, con `data-vista` (raíz · ficha · tarea) puesto por el layout; barra de la app única en los tres tamaños («+» · Atrás · logotipo · lupa · campana · menú; Atrás y menú solo desde 792 con ficha a la vista) que en teléfono se recoge al bajar y vuelve al subir; barra inferior de cuatro destinos que se esconde y vuelve con la misma regla; fila de contexto pegajosa; sin `:has()` ni medidas por pantalla; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
-| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio (carriles en reposo y lista por día cuando Cuándo tiene valor: `/agenda` redirige a `/`; el título de cada carril abre su lista propia con Atrás, cuántos hay y «Ver toda la agenda», sin chips: punto 59), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista, Cerrar y menú dentro de la hoja y barra Cerrar · título · más opciones al desplazar; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
+| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio (solo carriles; `/agenda` sigue siendo la lista por día, sin lugar en la barra; cada carril con su título y «Ver todo ›» a la derecha; Agenda como pantalla propia con Atrás, fuera de la barra, con la fila de contexto y la lista por día: punto 60), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista, Cerrar y menú dentro de la hoja y barra Cerrar · título · más opciones al desplazar; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
 | P6 | Plantilla ficha con el canon del héroe: portada 3:2 con la etiqueta, el título y la meta dentro de la imagen sobre el velo, Atrás y menú elevados sobre ella, barra compacta al desplazar con la portada oscurecida detrás del título, visor al tocar la imagen; tres KPI que abrazan su contenido (icono y etiqueta arriba, valor abajo; fecha sin etiqueta); acciones alineadas; pastillas flotantes Me interesa · Voy / Seguir con sus estados (Vas, Te interesa, Sigues); ficha de artista con avatar dentro del héroe y sección Novedades, sin «Se presenta en»; el mismo cuerpo de ficha de lugar sirve a pantalla completa y dentro de la hoja | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista, `SeccionNovedades` | L | H-20 a H-28 |
 | P7 | Carril lateral en dos grupos (secciones arriba, Perfil abajo) bajo la barra de la app a todo lo ancho; reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel con la ficha dentro del panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
 | P8 | Mapa: un símbolo por lugar, prioridad y anclaje variable | `Mapa.tsx` (capas) | M | H-12: 0 etiquetas superpuestas en el centro a zoom por defecto (captura) |
@@ -1030,8 +1045,9 @@ Sexta vuelta (antes de enseñar la v3):
 Lo que el founder confirma o corrige al probar la v3:
 
 18. **Inicio con dos modos**: carriles en reposo y lista por día cuando Cuándo tiene valor (Limpiar vuelve a los
-    carriles); los títulos de carril abren su lista propia (punto 59; antes ponían el chip Cuándo). **Decidido (2026-09-28, noche):
-    «Agenda se queda fuera por ahora, temo que hay demasiado ya en barra de navegación».** Cuatro destinos.
+    carriles). **Decidido (2026-09-28, noche): «Agenda se queda fuera por ahora, temo que hay demasiado ya en barra
+    de navegación».** Cuatro destinos. **Después (punto 60): Agenda vuelve como pantalla propia, fuera de la barra,
+    a la que se llega por «Ver todo» de los carriles de eventos o por Cuándo; Inicio pierde el modo lista.**
 19. **Título de la ficha**: decidido en el lienzo («aquí debemos replicar el canon de héroe de sheet»; después,
     «aceptada la propuesta de héroe» y «muy bien resuelto, aceptada esta propuesta» sobre el KPI de fecha): la ficha a
     pantalla completa toma el canon de la hoja (héroe 3:2 arriba, Atrás y menú elevados sobre la imagen, título de
@@ -1155,9 +1171,13 @@ Lo que el founder confirma o corrige al probar la v3:
 59. **El título de un carril abre su lista propia, no un filtro** (founder, desde el chat de investigación: «el
     destino sea una lista solo con ese conjunto, con el título del carril como encabezado y cierre/atrás a Inicio,
     sin chips de filtro»): pantalla de tarea con Atrás, el título, cuántos hay, los renglones y «Ver toda la agenda»
-    al final (6.5, undécima vuelta). **Hecho en el prototipo; entra en P5.** «Artistas con eventos esta semana» sí
-    tiene datos y sí se pinta en producción (último carril, sin enlace visible): en P5, un solo carril de artistas con
-    título enlazado, o dos si el founder lo pide.
+    al final (6.5, undécima vuelta). **Rechazado por el founder al verlo** («Destacados son 4, al seleccionar manda a
+    ver los mismos cuatro pero en lista»): sustituido por el punto 60. Lo de «Artistas con eventos esta semana» (sí
+    tiene datos y sí se pinta en producción, último carril y sin enlace visible) queda para P5 con el punto 60.
+60. **Título a la izquierda y «Ver todo ›» a la derecha; Agenda revivida** (founder: «regresamos a la opción de ver
+    todo… en caso de eventos vamos a la sección agenda, esto implica revivir agenda; artistas a Artistas, lugares a
+    Lugares»): Agenda como pantalla propia con Atrás, fuera de la barra inferior; Inicio sin modo lista; Cuándo filtra
+    la Agenda desde Inicio o desde ella (6.5, duodécima vuelta). **Hecho; entra en P5.**
 
 **Firma (2026-09-28, noche, en el chat):** «Respondo tus preguntas: 1: Agenda se queda fuera por ahora, temo que hay
 demasiado ya en barra de navegación. 2. Lugares. 3. Acepto tu propuesta. 4. Interesan. 5. Confirmo todo, buen
