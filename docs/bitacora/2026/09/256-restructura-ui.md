@@ -744,13 +744,13 @@ con el título como encabezado, Atrás a Inicio y sin chips. El prototipo hacía
 Cuándo): ahora cada título abre su pantalla de lista (Atrás · título, «4 eventos», los renglones, «Ver toda la agenda»
 que vuelve a Inicio en la lista por día; «Ver todos los lugares» / «Ver artistas» en los de lugares y artistas), con
 memoria de pantalla al volver. Entra en la pieza P5 (doc 50 § 6.5, undécima vuelta; § 11 punto 59; fila P5). Sobre el
-carril «Artistas con eventos esta semana» que el founder no ve: en el código se rellena con los artistas de los eventos
-de los próximos siete días y colapsa sin hueco si no hay ninguno; lo más probable es dato, no error; se comprueba con
-datos en P5. El otro hallazgo (una tarjeta con título de un renglón, un renglón vacío y el detalle en dos renglones, en
+carril «Artistas con eventos esta semana» que el founder no ve: el chat de investigación lo comprobó en la base y en
+producción (hay 14 artistas ligados a 8 eventos de la semana y el carril se pinta, el último de Inicio, sin enlace
+visible): es sitio y señal, no dato ni error; P5 lo resuelve con el carril único de artistas del prototipo. El otro hallazgo (una tarjeta con título de un renglón, un renglón vacío y el detalle en dos renglones, en
 su iPhone) coincide con lo que ya es canon en el prototipo desde la novena vuelta: el carril reparte sus filas con
 `subgrid`, así que la fila del título mide el título más largo del carril (los cortos dejan aire debajo) y la meta va
-en dos líneas alineadas entre tarjetas; el chat de investigación no lo reprodujo con el CSS de producción, que sigue
-en una sola línea. Capturas nuevas, abiertas y descritas:
+en dos líneas alineadas entre tarjetas; la captura del founder («vie 2 de oct») es de producción con el CSS de la
+primera entrega de OL-226, una página vieja en memoria del teléfono, no del prototipo. Capturas nuevas, abiertas y descritas:
 
 - **`256-129-v3-carril-destacados-telefono`:** la lista propia de «Destacados» en teléfono: barra con Atrás y el título,
   «4 eventos», los cuatro renglones (LXS COLOCAOS con «Vas», Master Class, Leonora con «Te interesa», DESIERTO) y el

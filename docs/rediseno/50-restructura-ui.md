@@ -845,9 +845,11 @@ tarea: barra con Atrás y el título del carril, cuántos hay como evidencia, lo
 final, «Ver toda la agenda», que vuelve a Inicio en la lista por día; para lugares y artistas, «Ver todos los
 lugares» y «Ver artistas»); Atrás vuelve a Inicio donde estaba (memoria de pantalla); ninguna hoja nueva. El chip
 Cuándo queda solo para la fecha que la persona elige. El mismo chat avisa que el founder no ve en la app el carril
-«Artistas con eventos esta semana»: en el código de hoy ese carril se rellena con los artistas de los eventos de los
-próximos siete días y colapsa sin hueco cuando no hay ninguno (`CarrilEntidad`), así que lo más probable es que sea
-por dato (ningún artista ligado a eventos de la semana), no por error; se comprueba con datos al construir P5.
+«Artistas con eventos esta semana»: ese mismo chat lo comprobó en la base (solo lectura) y en producción: hay dato
+(14 artistas ligados a 8 eventos de los próximos siete días) y el carril sí se pinta, el último de Inicio, abajo del
+todo, sin chevron ni «Ver todos» visibles. No es dato ni error: es sitio y señal. El prototipo firmado trae un solo
+carril de artistas («Artistas destacadxs», con su título que abre la lista); P5 decide con el founder si «con eventos
+esta semana» sigue como segundo carril o se funde.
 Capturas [256-129](capturas-256/256-129-v3-carril-destacados-telefono.png) y
 [256-130](capturas-256/256-130-v3-carril-semana-escritorio.png).
 
@@ -1153,8 +1155,9 @@ Lo que el founder confirma o corrige al probar la v3:
 59. **El título de un carril abre su lista propia, no un filtro** (founder, desde el chat de investigación: «el
     destino sea una lista solo con ese conjunto, con el título del carril como encabezado y cierre/atrás a Inicio,
     sin chips de filtro»): pantalla de tarea con Atrás, el título, cuántos hay, los renglones y «Ver toda la agenda»
-    al final (6.5, undécima vuelta). **Hecho en el prototipo; entra en P5.** Pendiente de comprobar con datos si
-    «Artistas con eventos esta semana» colapsa por falta de artistas ligados a eventos de la semana.
+    al final (6.5, undécima vuelta). **Hecho en el prototipo; entra en P5.** «Artistas con eventos esta semana» sí
+    tiene datos y sí se pinta en producción (último carril, sin enlace visible): en P5, un solo carril de artistas con
+    título enlazado, o dos si el founder lo pide.
 
 **Firma (2026-09-28, noche, en el chat):** «Respondo tus preguntas: 1: Agenda se queda fuera por ahora, temo que hay
 demasiado ya en barra de navegación. 2. Lugares. 3. Acepto tu propuesta. 4. Interesan. 5. Confirmo todo, buen
