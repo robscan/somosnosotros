@@ -643,7 +643,10 @@ Tres mensajes seguidos sobre la v2. Lo que dijo, lo que se cuestionó y lo que q
   portada, etiqueta de disciplina, nombre y meta dentro de la imagen, Atrás y menú flotando, Compartir entre las
   acciones y Seguir como pastilla flotante; el avatar redondo sale de la ficha (sigue en listas y carriles). Lo que
   se le cuestionó: la mayoría de los artistas abrirá con el placeholder (por eso el bloque lleva la marca y no un
-  gris vacío), y artista y lugar quedan visualmente iguales salvo la etiqueta y los bloques de abajo. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
+  gris vacío), y artista y lugar quedan visualmente iguales salvo la etiqueta y los bloques de abajo. Y el **KPI con la
+  etiqueta junto al icono** («¿qué opinas de juntar este texto con el icono de arriba? Como canon»): icono de 16 px y
+  etiqueta en la fila de arriba, el valor solo en la de abajo; mejora la lectura (icono y etiqueta ya compartían color
+  y peso, y la etiqueta quedaba huérfana bajo el valor) y el valor gana todo el ancho para «Gratis» o una fecha. Se retira la tarjeta intermedia del pin («Ver la ficha», «Volver a
   la lista»). Cuestionado: desde otras entradas (el «Dónde» de un evento, Buscar, Perfil) la ficha sigue abriendo a
   pantalla completa con Atrás, para no cambiar de pestaña a quien viene de un evento (sección 11).
 - **Título sobre el héroe o en la barra** («héroe y en la base del héroe las letras, dentro del contenedor de imagen,
@@ -902,6 +905,10 @@ Lo que el founder confirma o corrige al probar la v3:
 40. **El carril empieza donde termina la fila de filtros** (tableta y escritorio). **Hecho.**
 41. **Héroe en la ficha de artista** con placeholder hasta que suba su portada (6.5). **Hecho a falta de su
     confirmación**: el avatar redondo sale de la ficha, Seguir flota, artista y lugar quedan casi iguales.
+42. **KPI: la etiqueta junto al icono** («¿qué opinas de juntar este texto con el icono de arriba? Como canon, en
+    todos los KPI»): icono de 16 px y etiqueta en la fila de arriba, como una sola unidad «qué es»; el valor solo en la
+    de abajo con todo el ancho; la etiqueta con elipsis para que nunca rompa la fila. En las fichas, en Perfil y en
+    el lienzo. **Hecho.**
 35. **El KPI de fecha sin la palabra «Fecha»** («demasiado alto, no es necesario poner palabra fecha, es obvio»): el
     día en la primera línea y la hora en la segunda, a la altura de los otros dos.
 34. **La hoja de lugar como la editó el founder en el lienzo** («observa que he modificado: redondeado de sheet, posición

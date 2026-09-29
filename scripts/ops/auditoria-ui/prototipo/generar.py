@@ -857,10 +857,10 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .pantalla.ficha > .perfil-cabecera {{ margin-top: var(--espacio-5); }}
 .kpis {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); margin-top: var(--espacio-4); }}
 .kpis li {{ display: grid; }}
-.kpis a {{ display: grid; gap: 2px; align-content: start; height: 100%; padding: 10px var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }}
-.kpis .i {{ width: 20px; height: 20px; color: var(--texto-suave); }}
-.kpis b {{ font-size: 1rem; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; overflow-wrap: anywhere; text-wrap: balance; }}
-.kpis small {{ color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }}
+.kpis a {{ display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "icono etiqueta" "valor valor"; align-items: center; align-content: start; column-gap: var(--espacio-1); row-gap: var(--espacio-1); height: 100%; padding: 10px var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }}
+.kpis .i {{ grid-area: icono; width: 16px; height: 16px; color: var(--texto-suave); }}
+.kpis b {{ grid-area: valor; font-size: 1rem; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; overflow-wrap: anywhere; text-wrap: balance; }}
+.kpis small {{ grid-area: etiqueta; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }}
 .pantalla[data-id="perfil"] .kpis b {{ font-size: var(--letra-2xl); }}
 .pantalla[data-id="perfil"] .filtros {{ padding-top: var(--espacio-4); }}
 .acciones {{ display: flex; gap: var(--espacio-4); margin-top: var(--espacio-5); }}

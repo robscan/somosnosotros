@@ -618,7 +618,9 @@ termina la barra de filtros» (el carril arranca bajo la fila, con su fondo ente
 pasada con margen dejaba la esquina gris y se corrigió); «nombre de artista acá como canon… cuestióname… ¿podemos
 agregar héroe a artistas para estandarizar…? Cuestiona» (héroe con placeholder en la ficha de artista, avatar fuera,
 Seguir flotante); y dos que el canon del héroe ya había resuelto («¿podemos poner título acá?», «no hay gap visible
-entre contenido y barra de atrás»). Doc 50 § 11, puntos 38 a 41.
+entre contenido y barra de atrás»). Después, «¿qué opinas de juntar este texto con el icono de arriba? Como canon, en
+todos los KPI» (icono y etiqueta en la fila de arriba, el valor solo abajo; en prototipo y lienzo). Doc 50 § 11,
+puntos 38 a 42.
 
 ### Cierre (cuarta parte)
 
