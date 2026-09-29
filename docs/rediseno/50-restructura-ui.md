@@ -933,6 +933,10 @@ un parche sobre shell: agregaste una línea donde montaste un título que nunca 
 desde tableta la Agenda usa la barra de la app (Atrás junto a «+»), sin barra propia, y la fila de contexto va directo
 debajo; en teléfono conserva su barra porque la de la app se esconde. El armazón gana la vista «lista» (raíz · ficha ·
 tarea · lista), que solo decide qué enseña la barra de la app.
+Y al jalar hacia abajo en un listado (el rebote del desplazamiento en iPhone y en Mac), la fila de contexto se separa de
+la barra y entre las dos asomaba el fondo del listado («que se desprenda no lo veo mal, pero que deje ver fondo se ve
+como un error»): la fila lleva ahora un relleno blanco que se extiende 300 px hacia arriba y solo se ve en ese rebote;
+lo que asoma es del mismo blanco que la barra.
 
 ### 6.7 Medición de la v3 (`medir.js` sobre las diez pantallas, teléfono)
 

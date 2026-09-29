@@ -117,6 +117,8 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
    3. Cabecera de las raíces: solo la fila de contexto [ciudad · cuándo · filtros · activos], pegajosa bajo la barra
    ========================================================================== */
 .cabecera { position: sticky; top: 0; z-index: var(--z-pegajoso); display: grid; background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }
+/* Al jalar hacia abajo (rebote del desplazamiento) la fila se separa de la barra: lo que asoma entre las dos es este relleno blanco, no el fondo del listado (el founder lo vio como un error) */
+.cabecera::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 300px; background: var(--fondo); }
 .filtros { display: flex; align-items: center; gap: var(--espacio-2); min-height: var(--alto-filtros); padding: 0 var(--gutter) var(--espacio-2); overflow-x: auto; scrollbar-width: none; scroll-padding-inline: var(--gutter); }
 .filtros::-webkit-scrollbar { display: none; }
 .avatar { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--fondo-miniatura); color: var(--texto-suave); font-size: var(--letra-sm); font-weight: 700; cursor: pointer; }

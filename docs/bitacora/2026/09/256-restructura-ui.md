@@ -783,6 +783,9 @@ Y en tableta y escritorio: «hiciste un parche sobre shell, agregaste una línea
 usamos»: la Agenda llevaba su barra propia bajo la barra de la app; desde tableta usa la barra de la app con Atrás
 junto a «+» (como las fichas, punto 55) y la fila de contexto va directo debajo; en teléfono conserva su barra. Vista
 «lista» en el armazón. Capturas `256-130` (Agenda en escritorio) y las de letras regeneradas.
+Y del rebote al jalar un listado hacia abajo («la barra de filtros se desprende del header y deja ver fondo de atrás… que
+deje ver fondo se ve como un error»): la fila de contexto lleva un relleno blanco hacia arriba que solo asoma en el
+rebote (no se puede capturar en el Chrome sin cabeza, que no rebota; se prueba en el iPhone).
 
 - **`256-75-v3-inicio-telefono`:** Inicio con cada carril con su título a la izquierda y «Ver todo ›» a la derecha.
 - **`256-81-v3-agenda-fin-de-semana-telefono`:** tras elegir Fin de semana en Cuándo desde Inicio: la Agenda con Atrás,
