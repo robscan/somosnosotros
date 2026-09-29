@@ -1,4 +1,4 @@
-// Capturas reales del prototipo v3 (Chrome de la Mac): teléfono a 2×, tableta a 1,5×, escritorio a 1×; 54 capturas y dos muestrarios de iconos.
+// Capturas reales del prototipo v3 (Chrome de la Mac): teléfono a 2×, tableta a 1,5×, escritorio a 1×; 56 capturas y dos muestrarios de iconos.
 // node capturar-prototipo.mjs http://127.0.0.1:8090/restructura-ui.html <carpeta>   (servir docs/rediseno/prototipos con python3 -m http.server 8090)
 import { chromium } from "playwright-core";
 import fs from "node:fs";
@@ -143,7 +143,7 @@ await ctx.close();
 // Sexta vuelta: tres letras para listas y tarjetas, acciones flotantes de la ficha con sus estados
 ({ ctx, page } = await contexto(2, 480, 920));
 await page.waitForTimeout(900);
-await click(page, '.pantalla[data-id="inicio"] .titulo-seccion[data-lista]'); await espera(page, 300);
+await click(page, '.pantalla[data-id="inicio"] [data-hoja="cuando"]'); await click(page, '.hoja-fondo[data-hoja="cuando"] .chips .chip:nth-child(6)'); await click(page, '.hoja-fondo[data-hoja="cuando"] .pie-hoja [data-cerrar]'); await espera(page, 300);
 await desplazar(page, '.pantalla[data-id="inicio"]', 300); await espera(page, 500);
 for (const l of ["bricolage", "bricolage-ancha", "inter"]) { await click(page, `.modos-estudio [data-letra="${l}"]`); await espera(page, 500); await foto(page, `v3-${l === "bricolage" ? "36" : l === "bricolage-ancha" ? "37" : "38"}-letra-${l}-telefono`); }
 await click(page, '.modos-estudio [data-letra="bricolage"]');
@@ -205,6 +205,14 @@ await page.evaluate(() => {
 await click(page, '.pantalla[data-id="artista"] [data-atras]'); await espera(page, 800);
 await click(page, '.pantalla[data-id="evento"] [data-atras]'); await espera(page, 800);
 await page.locator(".navegacion").screenshot({ path: `${dir}/v3-54-iconos-artistas.png` }); console.log("v3-54-iconos-artistas");
+// Undécima vuelta: el título de un carril abre su lista propia
+await click(page, '.pantalla[data-id="inicio"] .titulo-seccion[data-ir="carril-destacados"]'); await espera(page, 900);
+await foto(page, "v3-55-carril-destacados-telefono");
+await ctx.close();
+({ ctx, page } = await contexto(1, 1360, 880, "escritorio"));
+await page.waitForTimeout(900);
+await click(page, '.pantalla[data-id="inicio"] .titulo-seccion[data-ir="carril-semana"]'); await espera(page, 900);
+await foto(page, "v3-56-carril-semana-escritorio");
 await ctx.close();
 await browser.close();
 console.log("errores de página:", errores.length, errores.slice(0, 5));

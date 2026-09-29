@@ -468,7 +468,7 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la décima vuelta del founder)
+## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la undécima vuelta del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
@@ -834,6 +834,23 @@ de asoma y sobraba: la lista tiene tres alturas (recogida · asoma · llena) y l
 Capturas [256-82](capturas-256/256-82-v3-lugares-mapa-telefono.png) y
 [256-83](capturas-256/256-83-v3-lugares-hoja-llena-telefono.png).
 
+**Undécima vuelta (el mismo día; hallazgo del founder en el chat «Actividad de investigación de eventos», relayado por
+ese chat):** en la app de hoy, tocar el título de un carril de Inicio («Destacados», «Esta semana», «Nuevos eventos»,
+«Lugares con eventos», «Artistas destacados») lleva a la sección con filtros activos que la persona no puso, y no sabe
+cómo quitarlos. El founder propone que el destino sea **una lista solo con ese conjunto, con el título del carril como
+encabezado y cierre o Atrás a Inicio, sin chips de filtro**. El prototipo v3 hacía algo parecido (el título ponía el
+chip Cuándo en violeta y Limpiar devolvía los carriles): era el mismo defecto con otra cara, un filtro que nadie
+eligió. Queda así, y es lo que construye la pieza P5: **el título de cada carril abre su lista propia** (pantalla de
+tarea: barra con Atrás y el título del carril, cuántos hay como evidencia, los mismos renglones, y un solo enlace al
+final, «Ver toda la agenda», que vuelve a Inicio en la lista por día; para lugares y artistas, «Ver todos los
+lugares» y «Ver artistas»); Atrás vuelve a Inicio donde estaba (memoria de pantalla); ninguna hoja nueva. El chip
+Cuándo queda solo para la fecha que la persona elige. El mismo chat avisa que el founder no ve en la app el carril
+«Artistas con eventos esta semana»: en el código de hoy ese carril se rellena con los artistas de los eventos de los
+próximos siete días y colapsa sin hueco cuando no hay ninguno (`CarrilEntidad`), así que lo más probable es que sea
+por dato (ningún artista ligado a eventos de la semana), no por error; se comprueba con datos al construir P5.
+Capturas [256-129](capturas-256/256-129-v3-carril-destacados-telefono.png) y
+[256-130](capturas-256/256-130-v3-carril-semana-escritorio.png).
+
 ### 6.6 Defectos que la revisión de la v3 encontró y cerró
 
 El founder señaló que «elemento de lugar se desalinea en tableta y escritorio»: era cierto y silencioso. **El renglón
@@ -885,7 +902,7 @@ carriles, y «Ver 23 eventos» era una cifra inventada: los tres días entran y 
 8 (Lugares con la ficha dentro de la hoja; 402 nodos en Inicio con sus doce días, sus carriles y el esqueleto; 34 en
 Buscar). Los controles por debajo de 44 px son los mismos de la v2 (chips de 36 con 44 al tacto, letras 34×36, asa,
 `input` dentro de campos de 48, palancas, «Reportar»); los días del calendario miden 44 de alto con su círculo de 38.
-Cero errores de página y cero respuestas 4xx/5xx en las 54 capturas (medición repetida tras la séptima y la octava vuelta).
+Cero errores de página y cero respuestas 4xx/5xx en las 56 capturas (medición repetida en cada vuelta).
 
 ## 7. Plan de implementación (definitivo: prototipo firmado el 2026-09-28 por la noche)
 
@@ -899,7 +916,7 @@ council. Orden por dependencias:
 | P2 | `BotonIcono` y `Boton` unificados; glifos de acción: palomita (Voy), persona con «+» (seguir artista), campana con «+» (seguir lugar); decidido verde con glifo blanco | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
 | P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
 | P4 | Armazón único: un grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro, con `data-vista` (raíz · ficha · tarea) puesto por el layout; barra de la app única en los tres tamaños («+» · Atrás · logotipo · lupa · campana · menú; Atrás y menú solo desde 792 con ficha a la vista) que en teléfono se recoge al bajar y vuelve al subir; barra inferior de cuatro destinos que se esconde y vuelve con la misma regla; fila de contexto pegajosa; sin `:has()` ni medidas por pantalla; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
-| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio (carriles en reposo y lista por día cuando Cuándo tiene valor: `/agenda` redirige a `/`), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista, Cerrar y menú dentro de la hoja y barra Cerrar · título · más opciones al desplazar; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
+| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio (carriles en reposo y lista por día cuando Cuándo tiene valor: `/agenda` redirige a `/`; el título de cada carril abre su lista propia con Atrás, cuántos hay y «Ver toda la agenda», sin chips: punto 59), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista, Cerrar y menú dentro de la hoja y barra Cerrar · título · más opciones al desplazar; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
 | P6 | Plantilla ficha con el canon del héroe: portada 3:2 con la etiqueta, el título y la meta dentro de la imagen sobre el velo, Atrás y menú elevados sobre ella, barra compacta al desplazar con la portada oscurecida detrás del título, visor al tocar la imagen; tres KPI que abrazan su contenido (icono y etiqueta arriba, valor abajo; fecha sin etiqueta); acciones alineadas; pastillas flotantes Me interesa · Voy / Seguir con sus estados (Vas, Te interesa, Sigues); ficha de artista con avatar dentro del héroe y sección Novedades, sin «Se presenta en»; el mismo cuerpo de ficha de lugar sirve a pantalla completa y dentro de la hoja | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista, `SeccionNovedades` | L | H-20 a H-28 |
 | P7 | Carril lateral en dos grupos (secciones arriba, Perfil abajo) bajo la barra de la app a todo lo ancho; reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel con la ficha dentro del panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
 | P8 | Mapa: un símbolo por lugar, prioridad y anclaje variable | `Mapa.tsx` (capas) | M | H-12: 0 etiquetas superpuestas en el centro a zoom por defecto (captura) |
@@ -1011,7 +1028,7 @@ Sexta vuelta (antes de enseñar la v3):
 Lo que el founder confirma o corrige al probar la v3:
 
 18. **Inicio con dos modos**: carriles en reposo y lista por día cuando Cuándo tiene valor (Limpiar vuelve a los
-    carriles); los títulos Destacados, Esta semana y Nuevos eventos abren la lista. **Decidido (2026-09-28, noche):
+    carriles); los títulos de carril abren su lista propia (punto 59; antes ponían el chip Cuándo). **Decidido (2026-09-28, noche):
     «Agenda se queda fuera por ahora, temo que hay demasiado ya en barra de navegación».** Cuatro destinos.
 19. **Título de la ficha**: decidido en el lienzo («aquí debemos replicar el canon de héroe de sheet»; después,
     «aceptada la propuesta de héroe» y «muy bien resuelto, aceptada esta propuesta» sobre el KPI de fecha): la ficha a
@@ -1132,6 +1149,12 @@ Lo que el founder confirma o corrige al probar la v3:
     se vean 2,5 lugares aquí… además de poner barra de scroll del lado derecho?»): hecho (6.5, décima vuelta); la
     barra fina se ve llena y en el panel; en el iPhone será la del sistema al desplazar. La lista queda con tres alturas
     (recogida · asoma · llena); la ficha conserva su media. **Hecho.**
+
+59. **El título de un carril abre su lista propia, no un filtro** (founder, desde el chat de investigación: «el
+    destino sea una lista solo con ese conjunto, con el título del carril como encabezado y cierre/atrás a Inicio,
+    sin chips de filtro»): pantalla de tarea con Atrás, el título, cuántos hay, los renglones y «Ver toda la agenda»
+    al final (6.5, undécima vuelta). **Hecho en el prototipo; entra en P5.** Pendiente de comprobar con datos si
+    «Artistas con eventos esta semana» colapsa por falta de artistas ligados a eventos de la semana.
 
 **Firma (2026-09-28, noche, en el chat):** «Respondo tus preguntas: 1: Agenda se queda fuera por ahora, temo que hay
 demasiado ya en barra de navegación. 2. Lugares. 3. Acepto tu propuesta. 4. Interesan. 5. Confirmo todo, buen

@@ -736,6 +736,29 @@ sin navegación; la barra de desplazamiento no sale en el Chrome sin cabeza porq
 desplazar). Doc 50 § 6.5 (décima vuelta) y
 § 11, punto 58.
 
+### Undécima vuelta (mismo día): el título de un carril abre su lista propia
+
+El chat «Actividad de investigación de eventos» relayó dos hallazgos del founder. Uno cambia el canon: en la app de hoy
+el título de un carril lleva a la sección con filtros que la persona no puso; él pide una lista solo con ese conjunto,
+con el título como encabezado, Atrás a Inicio y sin chips. El prototipo hacía lo mismo con otra cara (ponía el chip
+Cuándo): ahora cada título abre su pantalla de lista (Atrás · título, «4 eventos», los renglones, «Ver toda la agenda»
+que vuelve a Inicio en la lista por día; «Ver todos los lugares» / «Ver artistas» en los de lugares y artistas), con
+memoria de pantalla al volver. Entra en la pieza P5 (doc 50 § 6.5, undécima vuelta; § 11 punto 59; fila P5). Sobre el
+carril «Artistas con eventos esta semana» que el founder no ve: en el código se rellena con los artistas de los eventos
+de los próximos siete días y colapsa sin hueco si no hay ninguno; lo más probable es dato, no error; se comprueba con
+datos en P5. El otro hallazgo (una tarjeta con título de un renglón, un renglón vacío y el detalle en dos renglones, en
+su iPhone) coincide con lo que ya es canon en el prototipo desde la novena vuelta: el carril reparte sus filas con
+`subgrid`, así que la fila del título mide el título más largo del carril (los cortos dejan aire debajo) y la meta va
+en dos líneas alineadas entre tarjetas; el chat de investigación no lo reprodujo con el CSS de producción, que sigue
+en una sola línea. Capturas nuevas, abiertas y descritas:
+
+- **`256-129-v3-carril-destacados-telefono`:** la lista propia de «Destacados» en teléfono: barra con Atrás y el título,
+  «4 eventos», los cuatro renglones (LXS COLOCAOS con «Vas», Master Class, Leonora con «Te interesa», DESIERTO) y el
+  enlace «Ver toda la agenda»; sin barra de la app ni navegación.
+- **`256-130-v3-carril-semana-escritorio`:** «Esta semana» en escritorio: la barra de la app arriba, el carril lateral,
+  la barra de la lista con Atrás y el título, «8 eventos hasta el domingo» y los días Hoy a dom 4 oct con sus títulos
+  pegajosos.
+
 ### Firma del founder (mismo día, noche)
 
 Respondió en el chat a la lista de pendientes: «1: Agenda se queda fuera por ahora, temo que hay demasiado ya en barra
@@ -749,7 +772,7 @@ diga «publica».
 ### Cierre (cuarta parte)
 
 Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcciones del founder al verla, la
-séptima vuelta desde los hilos, la vuelta de la estrella, la octava vuelta del armazón, la novena de las tarjetas y la décima de la hoja), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
+séptima vuelta desde los hilos, la vuelta de la estrella, la octava vuelta del armazón, la novena de las tarjetas, la décima de la hoja y la undécima de las listas de carril), las 56 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
 § 11 con la quinta a la séptima vuelta), el generador y el script de captura actualizados, esta bitácora y
 OPEN_LOOPS; push al PR #266; artefacto republicado y los hilos contestados (los resueltos, resueltos; los de decisión,
 abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 45 a 47 y

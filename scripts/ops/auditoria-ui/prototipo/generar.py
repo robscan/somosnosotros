@@ -11,6 +11,8 @@ v3, séptima vuelta (hilos del prototipo): «Elegir fecha…» abre un calendari
 «Otra ciudad» abre un campo con sugerencias y recarga; el icono de Artistas con figura y pincel se probó y el founder lo rechazó (sigue la estrella); la ficha de artista conserva el avatar
 dentro del héroe, pierde «Se presenta en» y muestra sus novedades publicadas; la barra compacta de las fichas y de la hoja lleva la portada
 oscurecida detrás del título; KPI «Interesan» (el founder eligió esa palabra sobre «Interesadxs») y «Siguen» (lenguaje incluyente).
+v3, undécima vuelta (founder, desde el chat de investigación): el título de un carril abre una lista propia con ese conjunto (encabezado,
+cuántos hay, «Ver toda la agenda», Atrás con memoria), no la lista de Inicio con un filtro que nadie puso.
 v3, décima vuelta (hilo): la hoja de Lugares asoma con dos renglones y medio (se ve que hay más abajo) y enseña su barra de desplazamiento llena y en el panel.
 v3, novena vuelta (chat): en las tarjetas del carril la meta va en dos líneas (fecha y hora · lugar) y el título baja a 17 px.
 v3, octava vuelta (hilos del prototipo): armazón simplificado. Un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que
@@ -111,11 +113,9 @@ def tarjeta(clave, sello=None, decidido=False, nombre=None, meta=None, img=None,
     s = f'<span class="sello">{sello}</span>' if sello else ''
     return f'<li><a class="tarjeta" href="#" data-ir="{ir}">{foto(src, "", "foto")}{s}<b>{titulo}</b><small>{m}</small></a>{boton_accion(decidido, seguir, lugar=lugar)}</li>'
 
-def carril(titulo, items, tam='mediana', ir=None, lista=None):
-    # El título salta a otra sección (ir) o abre la lista por día dentro de Inicio con ese valor de Cuándo (lista).
-    if ir: cab = f'<a class="titulo-seccion" href="#" data-ir="{ir}">{titulo}{i("chevron-der","i chevron")}</a>'
-    elif lista: cab = f'<a class="titulo-seccion" href="#" data-lista="{lista}">{titulo}{i("chevron-der","i chevron")}</a>'
-    else: cab = f'<h2 class="titulo-seccion">{titulo}</h2>'
+def carril(titulo, items, tam='mediana', ir=None):
+    # El título salta a la lista propia del carril (o a una sección): nunca deja puesto un filtro que la persona no eligió.
+    cab = f'<a class="titulo-seccion" href="#" data-ir="{ir}">{titulo}{i("chevron-der","i chevron")}</a>' if ir else f'<h2 class="titulo-seccion">{titulo}</h2>'
     return f'<section class="seccion-carril">{cab}<ul class="carril {tam}">{"".join(items)}</ul></section>'
 
 def renglon_evento(clave, decidido=False, interesa=False, tipo_meta=None):
@@ -168,7 +168,7 @@ def cabecera(filtros='', extra=''):
       {extra}
     </header>'''
 
-def barra_interior(tarea=False, campo=None, titulo='', cerrar=False, fija=False, sobre=False):
+def barra_interior(tarea=False, campo=None, titulo='', cerrar=False, fija=False, sobre=False, menu=True):
     if campo:
         return f'<header class="barra-interior tarea con-campo"><label class="campo buscar-campo">{i("buscar")}<input type="search" placeholder="{campo}" aria-label="{campo}"></label><button type="button" class="boton-icono plano" data-atras aria-label="Cerrar">{i("cerrar")}</button></header>'
     if tarea:
@@ -176,7 +176,8 @@ def barra_interior(tarea=False, campo=None, titulo='', cerrar=False, fija=False,
     # Ficha: Atrás (o Cerrar cuando vive en la hoja de Lugares) · título · más opciones. El título se ve al desplazar o siempre (variante «en la barra»).
     primero = (f'<button type="button" class="boton-icono contorno" data-cerrar-ficha aria-label="Cerrar">{i("cerrar")}</button>' if cerrar
                else f'<button type="button" class="boton-icono contorno" data-atras aria-label="Atrás">{i("chevron-izq")}</button>')
-    return f'<header class="barra-interior{" fija" if fija else ""}{" heroe" if sobre else ""}">{primero}<b class="titulo-barra">{titulo}</b><button type="button" class="boton-icono plano" aria-label="Más opciones">{i("puntos")}</button></header>'
+    mas = f'<button type="button" class="boton-icono plano" aria-label="Más opciones">{i("puntos")}</button>' if menu else '<span></span>'
+    return f'<header class="barra-interior{" fija" if fija else ""}{" heroe" if sobre else ""}">{primero}<b class="titulo-barra">{titulo}</b>{mas}</header>'
 
 letras = '<div class="letras" role="group" aria-label="Ir a la letra">' + ''.join('<button type="button"' + (' aria-current="true"' if l == '#' else '') + '>' + l + '</button>' for l in '#ABCDEFGHIJKLMNOPQRSTUVWXYZ') + '</div>'
 
@@ -218,9 +219,10 @@ dias_inicio = [
   ('dom 4 oct', '2026-10-04', [('susurros', '')]), ('lun 5 oct', '2026-10-05', [('juana', ''), ('feleal', '')]), ('mar 6 oct', '2026-10-06', [('master', '')]),
   ('mié 7 oct', '2026-10-07', [('leonora', 'interesa')]), ('jue 8 oct', '2026-10-08', [('oca', '')]), ('vie 9 oct', '2026-10-09', [('desierto', '')]),
 ]
-def tramos_inicio():
+def tramos_inicio(hasta=None):
     out = ''
     for dia, fecha, renglones in dias_inicio:
+        if hasta and fecha > hasta: continue
         cuenta = f'<span>· {len(renglones)}</span>' if len(renglones) > 1 else ''
         filas = ''.join(renglon_evento(k, decidido=(e == 'voy'), interesa=(e == 'interesa')) for k, e in renglones)
         out += f'  <section class="tramo" data-dia="{dia}" data-fecha="{fecha}"><h2 class="grupo">{dia}{cuenta}</h2>\n  <ul class="lista">{filas}</ul></section>\n'
@@ -229,11 +231,11 @@ inicio = f'''<section class="pantalla raiz" data-id="inicio">
   {cabecera(chip_ciudad() + chip_cuando() + chip_filtros('filtros-eventos'))}
   {esqueleto()}
   {carril('Tus planes', [tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('leonora', sello='Te interesa')], ir='perfil')}
-  {carril('Destacados', [tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('master', sello='9 van'), tarjeta('leonora', sello='Recién agregado'), tarjeta('desierto', sello='1 va')], 'grande', lista='Todos los próximos')}
-  {carril('Esta semana', [tarjeta('sinfonica', sello='Hoy'), tarjeta('macario', sello='Hoy'), tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('fellini'), tarjeta('pimpolina', sello='4 van')], lista='Esta semana')}
-  {carril('Nuevos eventos', [tarjeta('juana', sello='Recién agregado'), tarjeta('arttoy', sello='3 van'), tarjeta('susurros', sello='Recién agregado'), tarjeta('oca')], lista='Todos los próximos')}
-  {carril('Lugares con eventos', [tarjeta('x', nombre=lu[k]['n'], meta=lu[k]['prox'] or '', img=lu[k]['img'], ir='lugar', seguir=True, lugar=True, decidido=(k=='miguelito')) for k in ('miguelito','paz','ferro','muni','ache')], 'chica', ir='lugares')}
-  {carril('Artistas destacadxs', [tarjeta('x', nombre=n, meta=m, img=None, ir='artista', seguir=True) for n, m in ar[2:6]], 'grande', ir='artistas')}
+  {carril('Destacados', [tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('master', sello='9 van'), tarjeta('leonora', sello='Recién agregado'), tarjeta('desierto', sello='1 va')], 'grande', ir='carril-destacados')}
+  {carril('Esta semana', [tarjeta('sinfonica', sello='Hoy'), tarjeta('macario', sello='Hoy'), tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('fellini'), tarjeta('pimpolina', sello='4 van')], ir='carril-semana')}
+  {carril('Nuevos eventos', [tarjeta('juana', sello='Recién agregado'), tarjeta('arttoy', sello='3 van'), tarjeta('susurros', sello='Recién agregado'), tarjeta('oca')], ir='carril-nuevos')}
+  {carril('Lugares con eventos', [tarjeta('x', nombre=lu[k]['n'], meta=lu[k]['prox'] or '', img=lu[k]['img'], ir='lugar', seguir=True, lugar=True, decidido=(k=='miguelito')) for k in ('miguelito','paz','ferro','muni','ache')], 'chica', ir='carril-lugares')}
+  {carril('Artistas destacadxs', [tarjeta('x', nombre=n, meta=m, img=None, ir='artista', seguir=True) for n, m in ar[2:6]], 'grande', ir='carril-artistas')}
   {tramos_inicio()}
 </section>'''
 
@@ -319,6 +321,23 @@ perfil = f'''<section class="pantalla raiz" data-id="perfil">
   <ul class="lista">{renglon_evento('colocaos', decidido=True)}</ul></section>
   <a class="boton texto enlace-perfil" href="#">Así te ve la gente</a>
 </section>'''
+
+def pantalla_carril(id_, titulo, cuenta, cuerpo, enlace=('Ver toda la agenda', 'data-agenda')):
+    # Lista propia de un carril (founder, 2026-09-28, desde el chat de investigación): el título del carril como encabezado, cuántos hay,
+    # los mismos renglones, un solo enlace al final y Atrás con memoria de pantalla; sin chips de filtro, sin hoja.
+    return f'''<section class="pantalla ficha lista-carril" data-id="{id_}" data-vista="tarea">
+  {barra_interior(titulo=titulo, fija=True, menu=False)}
+  <b class="resumen">{cuenta}</b>
+  {cuerpo}
+  <a class="boton texto enlace-agenda" href="#" {enlace[1]}>{enlace[0]}</a>
+</section>'''
+listas_carril = (
+  pantalla_carril('carril-destacados', 'Destacados', '4 eventos', f'<ul class="lista">{renglon_evento("colocaos", decidido=True)}{renglon_evento("master")}{renglon_evento("leonora", interesa=True)}{renglon_evento("desierto")}</ul>')
+  + pantalla_carril('carril-semana', 'Esta semana', '8 eventos hasta el domingo', tramos_inicio(hasta='2026-10-04'))
+  + pantalla_carril('carril-nuevos', 'Nuevos eventos', '4 eventos publicados esta semana', f'<ul class="lista">{renglon_evento("juana")}{renglon_evento("arttoy")}{renglon_evento("susurros")}{renglon_evento("oca")}</ul>')
+  + pantalla_carril('carril-lugares', 'Lugares con eventos', '5 lugares', f'<ul class="lista">{"".join(renglon_lugar(k, sigue=(k == "miguelito")) for k in ("miguelito", "paz", "ferro", "muni", "ache"))}</ul>', ('Ver todos los lugares', 'data-ir="lugares"'))
+  + pantalla_carril('carril-artistas', 'Artistas destacadxs', '4 artistas', f'<ul class="lista">{"".join(renglon_artista(n, m, sigue=(n == "Aaron Cadena")) for n, m in ar[2:6])}</ul>', ('Ver artistas', 'data-ir="artistas"'))
+)
 
 evento = f'''<section class="pantalla ficha con-heroe" data-id="evento" data-vista="ficha">
   {barra_interior(titulo=ev['colocaos']['t'], sobre=True)}
@@ -809,7 +828,7 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 /* Mientras se recarga por otra ciudad, Inicio muestra su esqueleto en lugar de carriles y lista */
 .pantalla[data-cargando] > .seccion-carril, .pantalla[data-cargando] > .tramo {{ display: none; }}
 .pantalla[data-cargando] > .esqueleto {{ display: block; }}
-/* Inicio tiene dos modos: sus carriles (en reposo) y la lista por día (cuando Cuándo tiene un valor o se toca «Destacados», «Esta semana» o «Nuevos eventos») */
+/* Inicio tiene dos modos: sus carriles (en reposo) y la lista por día (cuando Cuándo tiene un valor). El título de un carril abre su lista propia. */
 .pantalla[data-id="inicio"]:not([data-lista]) > .tramo {{ display: none; }}
 .pantalla[data-id="inicio"][data-lista] > .seccion-carril {{ display: none; }}
 
@@ -904,7 +923,11 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 /* Compacta, la barra es el héroe en miniatura: la portada oscurecida detrás del título (se sabe de qué ficha es), Atrás y menú en blanco */
 .pantalla.ficha[data-compacta] > .barra-interior.heroe {{ background: linear-gradient(rgba(0,0,0,.6), rgba(0,0,0,.6)), var(--portada, none) center / cover, var(--tono, #3b3a37); color: #fff; }}
 .pantalla.ficha[data-compacta] > .barra-interior.heroe > .boton-icono {{ background: none; box-shadow: none; color: #fff; }}
-.pantalla[data-id="ajustes"] {{ grid-template-areas: "barra"; }}
+.pantalla[data-id="ajustes"], .pantalla.lista-carril {{ grid-template-areas: "barra"; }}
+/* Lista propia de un carril: su barra (Atrás · título), cuántos hay, los renglones y un enlace al final; los títulos de día se pegan bajo la barra */
+.lista-carril > .resumen {{ padding-top: var(--espacio-4); }}
+.lista-carril .grupo {{ top: calc(var(--alto-barra) + var(--tope)); }}
+.enlace-agenda {{ justify-self: center; margin: var(--espacio-4) 0 var(--espacio-7); }}
 .pantalla.ficha > .barra-interior {{ grid-area: barra; margin-bottom: 0; }}
 .pantalla.ficha > .portada, .pantalla.ficha > .titulo-ficha, .ficha-hoja > .portada, .ficha-hoja > .titulo-ficha {{ grid-area: portada; }}
 .portada {{ position: relative; margin: 0; aspect-ratio: 3 / 2; background: var(--tono, var(--fondo-miniatura)); overflow: hidden; cursor: zoom-in; }}
@@ -1064,6 +1087,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .filtros {{ padding-top: var(--espacio-3); justify-content: center; }}
   .pantalla[data-id="perfil"] > .filtros {{ justify-content: start; }}
   .barra-interior {{ height: var(--alto-barra); padding-top: 0; }}
+  .lista-carril .grupo {{ top: var(--alto-barra); }}
   .barra-interior.con-campo > :first-child {{ display: grid; max-width: 520px; }}
   .pantalla[data-id="lugares"] {{ grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; padding-bottom: 0; }}
   .pantalla[data-id="lugares"] > .cabecera {{ grid-area: cabecera; }}
@@ -1105,7 +1129,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .pantalla[data-id="lugar"] {{ grid-template-areas: "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". donde" ". sobre" ". pie"; }}
   .pantalla[data-id="artista"] {{ grid-template-areas: "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". novedades" ". sobre" ". pie"; }}
   .pantalla[data-id="artista"] > .novedades {{ grid-area: novedades; margin-left: 0; }}
-  .pantalla[data-id="ajustes"] {{ grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; padding-top: 0; }}
+  .pantalla[data-id="ajustes"], .pantalla.lista-carril {{ grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; padding-top: 0; }}
   .pantalla[data-id="ajustes"] > :not(.barra-interior) {{ max-width: var(--columna); }}
   .pantalla.tarea > :not(.barra-interior):not(.modos) {{ width: 100%; max-width: var(--columna); justify-self: center; }}
   .carril.grande {{ grid-auto-columns: 190px; grid-template-rows: 285px auto auto; }}
@@ -1125,7 +1149,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     <button type="button" data-modo="tableta" aria-pressed="false">Tableta 820</button>
     <button type="button" data-modo="escritorio" aria-pressed="false">Escritorio 1280</button>
   </div>
-  <p class="nota">Mismo marcado en los tres tamaños. En Inicio, Cuándo (o el título de Destacados, Esta semana y Nuevos eventos) abre la lista por día; «Elegir fecha…» abre el calendario (un toque, un día; dos, un rango); Limpiar vuelve a los carriles. En la ciudad, «Otra ciudad» abre el campo con sugerencias. Desde tableta, la barra de la ficha se funde con la de la app (Atrás junto a «+», menú junto a la campana). En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
+  <p class="nota">Mismo marcado en los tres tamaños. En Inicio, Cuándo abre la lista por día («Elegir fecha…» abre el calendario: un toque, un día; dos, un rango; Limpiar vuelve a los carriles) y el título de cada carril abre su lista propia con Atrás. En la ciudad, «Otra ciudad» abre el campo con sugerencias. Desde tableta, la barra de la ficha se funde con la de la app (Atrás junto a «+», menú junto a la campana). En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
 </header>
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg"><defs>{sprite}{mapa_base}</defs></svg>
 <div class="escenario">
@@ -1138,6 +1162,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
       {lugares}
       {artistas}
       {perfil}
+      {listas_carril}
       {evento}
       {lugar}
       {artista}
@@ -1390,8 +1415,8 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     if (quitar) {{ quitar.remove(); const c = actual.querySelector(".cuenta-filtros"); if (c) c.remove(); return; }}
     const lugarMapa = e.target.closest(".lienzo .lugar");
     if (lugarMapa) {{ abrirFichaHoja(); return; }}
-    const aLista = e.target.closest("[data-lista]");
-    if (aLista) {{ e.preventDefault(); aplicarCuando(aLista.dataset.lista); actual.scrollTop = 0; return; }}
+    const agenda = e.target.closest("[data-agenda]");
+    if (agenda) {{ e.preventDefault(); atras(); aplicarCuando("Todos los próximos"); inicioP.scrollTop = 0; return; }}
     const cerrarFicha = e.target.closest("[data-cerrar-ficha]");
     if (cerrarFicha) {{ cerrarFichaHoja(); return; }}
     const atrasHoja = e.target.closest("[data-atras-hoja]");
