@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 import Bloquear from "@/components/Bloquear";
 import Desbloquear from "@/components/Desbloquear";
 import FichaPersona from "@/components/FichaPersona";
-import Barra from "@/components/ui/Barra";
+import BarraFicha from "@/components/ui/BarraFicha";
 import ficha from "@/components/ui/Ficha.module.css";
-import MenuAcciones from "@/components/ui/MenuAcciones";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { cargarPersona, estaBloqueada, relacionDe } from "../consultas";
@@ -47,23 +46,20 @@ export default async function PaginaPersona({ params }: Params) {
   // ¿La bloqueé? (OL-203): solo tiene sentido en una ficha ajena y con sesión; sin sesión no hay bloqueos.
   const bloqueada = actual && !soyYo ? await estaBloqueada((await clienteServidor())!, actual.perfil.id, id) : false;
   return (
-    <main className={ficha.pagina}>
-      <Barra
-        volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }}
-        derecha={
-          !soyYo && !bloqueada ? (
-            <MenuAcciones>
-              <li className={ficha.menuItem}>
-                <Bloquear personaId={id} nombre={d.perfil.nombre} volver={`/personas/${id}`} conSesion={!!actual} />
-              </li>
-            </MenuAcciones>
-          ) : undefined
-        }
-      />
+    <main className={ficha.persona}>
+      <BarraFicha solida volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }} titulo={d.perfil.nombre}>
+        {!soyYo && !bloqueada && (
+          <li>
+            <Bloquear personaId={id} nombre={d.perfil.nombre} volver={`/personas/${id}`} conSesion={!!actual} />
+          </li>
+        )}
+      </BarraFicha>
       {soyYo && (
-        <p className="aviso-ok" role="status">
-          Así te ven los demás.
-        </p>
+        <div className="columna">
+          <p className="aviso-ok" role="status">
+            Así te ven los demás.
+          </p>
+        </div>
       )}
       <FichaPersona perfil={d.perfil} mia={false} eventos={d.eventos} lugares={d.lugares} artistas={d.artistas} gestos={gestos} origen={ORIGEN} bloqueado={bloqueada ? <Desbloquear personaId={id} /> : undefined} />
     </main>

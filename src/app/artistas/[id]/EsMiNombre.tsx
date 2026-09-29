@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
-import { IconoOk } from "@/components/ui/Iconos";
+import { IconoOk, IconoPersona } from "@/components/ui/Iconos";
+import renglon from "@/components/ui/Renglon.module.css";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { reclamarArtista } from "../acciones";
 import styles from "@/components/ui/Reclamar.module.css";
@@ -30,7 +31,7 @@ type Props = {
 /**
  * "Soy yo / es mi grupo" (decisión 11; texto elegido por el founder el 2026-09-14, el mismo del interruptor del alta):
  * el artista real que encuentra su ficha registrada por otra persona.
- * Dentro del menú ··· se despliega en el sitio, como Reportar y Borrar: dos salidas, "Quiero editarlo yo"
+ * Dentro del menú ··· es una fila (como las de Ajustes) que se despliega en el sitio, como Reportar y Borrar: dos salidas, "Quiero editarlo yo"
  * o "Quiero que se quite". Termina con evidencia, no promesa: quién lo revisa y por dónde responde.
  * Sin sesión, entra y vuelve con la pregunta ya abierta.
  */
@@ -43,13 +44,22 @@ export default function EsMiNombre({ artistaId, slug, nombre, conSesion, correo,
   const [aprobado, setAprobado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendiente, iniciar] = useTransition();
-  const claseDisparador = discreto ? styles.discreto : styles.enlace;
+  const claseDisparador = discreto ? styles.discreto : renglon.ajuste;
   const textoDisparador = discreto ? "¿Eres tú o tu banda?" : "Soy yo / es mi grupo";
+  // El letrero discreto es solo texto; la fila del menú lleva su icono.
+  const disparador = discreto ? (
+    textoDisparador
+  ) : (
+    <>
+      <IconoPersona width={20} height={20} />
+      <b>{textoDisparador}</b>
+    </>
+  );
 
   if (!conSesion) {
     return (
       <Link href={`/entrar?siguiente=${encodeURIComponent(`/artistas/${slug}?accion=mio`)}`} className={claseDisparador}>
-        {textoDisparador}
+        {disparador}
       </Link>
     );
   }
@@ -112,7 +122,7 @@ export default function EsMiNombre({ artistaId, slug, nombre, conSesion, correo,
   if (!abierta) {
     return (
       <button type="button" className={claseDisparador} onClick={() => setAbierta(true)}>
-        {textoDisparador}
+        {disparador}
       </button>
     );
   }

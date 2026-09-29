@@ -26,6 +26,17 @@ export function vistaDeRuta(ruta: string): Vista {
   return "tarea";
 }
 
+/** Las fichas que siempre traen su menú «···» (Reportar está siempre): la persona no, a veces no lo tiene. */
+const FICHAS_CON_MENU: readonly string[] = ["eventos", "lugares", "artistas"];
+
+/**
+ * ¿La ruta es una ficha que siempre trae su menú «···»? Entonces la barra de la app lo dibuja desde el primer cuadro, en el HTML
+ * del servidor, y no espera a que la ficha se lo preste al hidratar (a 1 280 aparecía un instante después de Atrás).
+ */
+export function fichaConMenu(ruta: string): boolean {
+  return vistaDeRuta(ruta) === "ficha" && FICHAS_CON_MENU.includes(ruta.split("/").filter(Boolean)[0]);
+}
+
 /** Lo que se puede dar de alta desde el «+» de la barra: cada sección lleva a la suya; fuera de ellas, un evento. */
 export type Alta = "evento" | "lugar" | "artista";
 

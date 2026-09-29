@@ -70,7 +70,7 @@
 .hoja[data-hoja="llena"] .cuerpo {
   border-radius: 0;
 }
-/* Con la ficha abierta, la ficha misma pone el aire de abajo: su barra de Seguir llega al pie de la hoja, no a un colchón de más. */
+/* Con la ficha abierta, la ficha misma pone el aire de abajo: su pastilla de Seguir queda al pie de la hoja, no a un colchón de más. */
 .hoja[data-ficha] .cuerpo {
   padding-bottom: 0;
 }

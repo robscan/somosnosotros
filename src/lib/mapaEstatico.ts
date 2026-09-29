@@ -1,8 +1,12 @@
 import { configPublica } from "./config";
 
-/** Ancho de columna y alto de tarjeta (docs/ops, OL-089); @2x en la URL le da el doble de píxeles para retina. */
+/**
+ * Ancho de columna y el alto que le queda en la tarjeta «Dónde» de una ficha (docs/ops, OL-089; docs/rediseno/50, P6: 5:2, el mismo
+ * del prototipo firmado); @2x en la URL le da el doble de píxeles para retina. `MapaFicha` toma de aquí también su proporción,
+ * así la caja mide lo que la imagen y ni el CSS lleva un alto suelto.
+ */
 export const ANCHO_MAPA_FICHA = 600;
-export const ALTO_MAPA_FICHA = 170;
+export const ALTO_MAPA_FICHA = 250;
 
 /** --primario (violeta, OL-146); Mapbox pide el color del pin literal, sin "#". */
 const COLOR_PIN = "6d34c8";

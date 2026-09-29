@@ -2,12 +2,11 @@ import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import BotonCompartir from "@/components/BotonCompartir";
-import Cartel from "@/components/Cartel";
-import Barra from "@/components/ui/Barra";
+import BarraFicha from "@/components/ui/BarraFicha";
 import Boton, { claseBoton } from "@/components/ui/Boton";
-import MenuAcciones from "@/components/ui/MenuAcciones";
+import Ficha from "@/components/ui/Ficha";
+import Heroe from "@/components/ui/Heroe";
 import ficha from "@/components/ui/Ficha.module.css";
-import styles from "@/components/ui/FichaLista.module.css";
 import { normalizarRedes } from "@/lib/enlaces";
 import { jsonLdLugar, jsonLdMigajas } from "@/lib/estructurados";
 import { etiquetaLugar, etiquetaTipo, hrefLugar } from "@/lib/lugares";
@@ -67,66 +66,65 @@ export default async function FichaLugar({ params, searchParams }: Params) {
   const jsonLd = jsonLdVisible ? jsonLdLugar({ nombre: lugar.nombre, descripcion: lugar.descripcion, direccion: lugar.direccion, ciudad: lugar.ciudad, lat: lugar.lat, lng: lugar.lng, imagen: lugar.portada, url: hrefLugar(lugar) }) : null;
   const migajas = jsonLdVisible ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Lugares", url: "/lugares" }, { nombre: lugar.nombre, url: hrefLugar(lugar) }]) : null;
 
+  const hayAvisos = nuevo === "1" || (puedeEditar && faltanDetalles) || error === "tiene-eventos" || error === "borrar" || lugar.privado || !lugar.visible;
+
   return (
-    <main className={ficha.pagina}>
+    <Ficha portada={lugar.portada}>
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
       {migajas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(migajas).replace(/</g, "\\u003c") }} />}
-      <Barra
-        volver={{ href: "/lugares", texto: "Lugares" }}
-        derecha={
-          <MenuAcciones>
-            <OpcionesLugar f={f} />
-          </MenuAcciones>
-        }
-      />
-      {nuevo === "1" && (
-        <div className={ficha.publicado} role="status">
-          <b>Publicado.</b>
-          Ya está en Lugares.
-          {puedeEditar && faltanDetalles ? (
-            <Boton href={`${hrefLugar(lugar)}/editar`} variante="secundario" alto="control" ancho="contenido" className={ficha.publicadoBoton}>
-              Completar
-            </Boton>
+      <BarraFicha volver={{ href: "/lugares", texto: "Lugares" }} titulo={lugar.nombre}>
+        <OpcionesLugar f={f} />
+      </BarraFicha>
+      <Heroe portada={lugar.portada} alt={`Portada de ${lugar.nombre}`} titulo={lugar.nombre} etiqueta={etiquetaLugar(lugar)} />
+
+      {hayAvisos && (
+        <div className={ficha.avisos}>
+          {nuevo === "1" && (
+            <div className={ficha.publicado} role="status">
+              <b>Publicado.</b>
+              Ya está en Lugares.
+              {puedeEditar && faltanDetalles ? (
+                <Boton href={`${hrefLugar(lugar)}/editar`} variante="secundario" alto="control" ancho="contenido" className={ficha.publicadoBoton}>
+                  Completar
+                </Boton>
+              ) : (
+                <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}`} url={url} className={BOTON_PUBLICADO}>
+                  Compartir
+                </BotonCompartir>
+              )}
+            </div>
+          )}
+          {nuevo !== "1" && puedeEditar && faltanDetalles && (
+            <p className={ficha.nota}>
+              Aún sin descripción, redes ni foto. <Link href={`${hrefLugar(lugar)}/editar`}>Completar</Link>
+            </p>
+          )}
+          {error === "tiene-eventos" && (
+            <p className="aviso-error" role="alert">
+              Este lugar tiene eventos publicados por otras personas; no se puede borrar. Si ya no existe, ocúltalo o avisa al administrador.
+            </p>
+          )}
+          {error === "borrar" && (
+            <p className="aviso-error" role="alert">
+              No se pudo borrar. ¿Sigues con sesión y es tu lugar?
+            </p>
+          )}
+          {lugar.privado ? (
+            <p className={`aviso-ok ${ficha.oculto}`} role="status">
+              Lugar privado: solo lo ves tú. No sale en el mapa ni en la lista para nadie más.
+            </p>
           ) : (
-            <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}`} url={url} className={BOTON_PUBLICADO}>
-              Compartir
-            </BotonCompartir>
+            !lugar.visible && (
+              <p className={`aviso-error ${ficha.oculto}`} role="status">
+                Este lugar está oculto: solo lo ven su autor, su cuenta ligada y el administrador.
+              </p>
+            )
           )}
         </div>
       )}
-      {nuevo !== "1" && puedeEditar && faltanDetalles && (
-        <p className={styles.nota}>
-          Aún sin descripción, redes ni foto. <Link href={`${hrefLugar(lugar)}/editar`}>Completar</Link>
-        </p>
-      )}
-      {error === "tiene-eventos" && (
-        <p className="aviso-error" role="alert">
-          Este lugar tiene eventos publicados por otras personas; no se puede borrar. Si ya no existe, ocúltalo o avisa al administrador.
-        </p>
-      )}
-      {error === "borrar" && (
-        <p className="aviso-error" role="alert">
-          No se pudo borrar. ¿Sigues con sesión y es tu lugar?
-        </p>
-      )}
-      {lugar.privado ? (
-        <p className={`aviso-ok ${ficha.oculto}`} role="status">
-          Lugar privado: solo lo ves tú. No sale en el mapa ni en la lista para nadie más.
-        </p>
-      ) : (
-        !lugar.visible && (
-          <p className={`aviso-error ${ficha.oculto}`} role="status">
-            Este lugar está oculto: solo lo ven su autor, su cuenta ligada y el administrador.
-          </p>
-        )
-      )}
-
-      <Cartel src={lugar.portada} alt={`Portada de ${lugar.nombre}`} />
-      <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{lugar.nombre}</h1>
-      <p className={ficha.etiqueta}>{etiquetaLugar(lugar)}</p>
 
       <CuerpoLugar f={f} />
       <SeguirLugar f={f} />
-    </main>
+    </Ficha>
   );
 }

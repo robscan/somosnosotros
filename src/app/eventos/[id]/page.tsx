@@ -6,22 +6,21 @@ import { crearDesdeEvento } from "@/app/admin/obras-colectivas/acciones";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { Fragment } from "react";
 import Borrar from "@/components/Borrar";
 import BotonCalendario from "@/components/BotonCalendario";
 import BotonCompartir from "@/components/BotonCompartir";
-import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
-import { EsqueletoBloqueTexto, EsqueletoDato } from "@/components/ui/Esqueleto";
+import { EsqueletoBloqueTexto, EsqueletoKpi } from "@/components/ui/Esqueleto";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
-import Barra from "@/components/ui/Barra";
+import BarraFicha from "@/components/ui/BarraFicha";
 import { claseBoton } from "@/components/ui/Boton";
 import { claseBotonIcono } from "@/components/ui/BotonIcono";
-import { IconoBoleto, IconoCalendarioAgregar, IconoCompartir, IconoEstrella, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
-import MenuAcciones from "@/components/ui/MenuAcciones";
-import Salto from "@/components/ui/Salto";
+import Ficha from "@/components/ui/Ficha";
+import Heroe from "@/components/ui/Heroe";
+import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoChevronDerecha, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoRuta } from "@/components/ui/Iconos";
+import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import { cargarQuien } from "@/app/artistas/consultas";
@@ -31,8 +30,10 @@ import { jsonLdMigajas } from "@/lib/estructurados";
 import { datosEventoNativo } from "@/lib/calendario";
 import type { Evento, SitioPrivado } from "@/lib/eventos";
 import { direccionPublicaSitio, enlaceComoLlegar, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, textoCompartir } from "@/lib/eventos";
+import { kpiCuando } from "@/lib/ficha";
 import { hrefLugar } from "@/lib/lugares";
-import { hrefArtista } from "@/lib/artistas";
+import { etiquetaArtista, hrefArtista } from "@/lib/artistas";
+import { SIN_FOTO } from "@/lib/imagen";
 import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
@@ -88,7 +89,7 @@ async function cargarAsistencias(id: string, miId: string | null): Promise<{ van
 }
 
 /**
- * Solo mi estado (Voy / Me interesa / nada), para la barra de acciones que sí pinta en el HTML inicial (OL-161,
+ * Solo mi estado (Voy / Me interesa / nada), para las pastillas, que sí se pintan en el HTML inicial (OL-161,
  * bitácora 196): una fila, no la lista entera de quién va, que sí se difiere.
  */
 async function cargarMiEstado(id: string, miId: string | null): Promise<EstadoAsistencia> {
@@ -99,7 +100,7 @@ async function cargarMiEstado(id: string, miId: string | null): Promise<EstadoAs
 }
 
 // Las tres consultas de "quién va" (nombres, cuántos van, el cartel de artistas) se piden una sola vez por petición
-// aunque se usen desde dos bloques diferidos distintos (`DatosQuienEvento` y `QuienVaDiferido`): `cache()` de React
+// aunque se usen desde varios bloques diferidos (`KpiVan`, `ArtistasEvento` y `QuienVaDiferido`): `cache()` de React
 // las memoiza por argumento (gestión de cambios, OL-059, mismo patrón que `cargarLigadas` en la ficha de artista).
 const cargarAsistenciasCache = cache(cargarAsistencias);
 const cargarQuienCache = cache(cargarQuien);
@@ -110,51 +111,53 @@ const cargarTotalVanCache = cache(async (id: string): Promise<number> => {
 });
 
 /**
- * Con quién se presenta y cuánta gente va: dos renglones de `<ul className={ficha.datos}>` que piden una consulta
- * aparte de la del evento (OL-161). Van en `<Suspense>`, con un renglón de esqueleto del mismo alto mientras llegan
- * (el de «Van N personas», que siempre aparece; `EsqueletoDato`, canon de `docs/PRINCIPIOS_UX.md`).
+ * Cuánta gente va: el tercer número de la ficha (`ui/Kpi`), que baja hasta «Quién va». Pide una consulta aparte de la del evento
+ * (OL-161); va en `<Suspense>`, con una tarjeta de esqueleto del mismo alto mientras llega (`EsqueletoKpi`, canon de
+ * `docs/PRINCIPIOS_UX.md`).
  */
-async function DatosQuienEvento({ eventoId, miId }: { eventoId: string; miId: string | null }) {
-  const [asistencias, quien, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarQuienCache(eventoId), cargarTotalVanCache(eventoId)]);
-  const totalVan = Math.max(totalVanRpc, asistencias.van.length);
+async function KpiVan({ eventoId, miId }: { eventoId: string; miId: string | null }) {
+  const [asistencias, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarTotalVanCache(eventoId)]);
+  return <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta="Van" valor={Math.max(totalVanRpc, asistencias.van.length)} salto="quien-va" />;
+}
+
+/**
+ * Quién se presenta, en su orden: una fila por artista (su foto redonda, qué hace y un chevron a su ficha). Su consulta también es
+ * aparte (`cargarQuien`); sin artistas no hay bloque, y tampoco un hueco mientras llega.
+ */
+async function ArtistasEvento({ eventoId }: { eventoId: string }) {
+  const quien = await cargarQuienCache(eventoId);
+  if (quien.length === 0) return null;
   return (
-    <>
-      {quien.length > 0 && (
-        <li className={renglon.dato}>
-          <IconoEstrella width={20} height={20} />
-          <b>
-            Con{" "}
-            {quien.map((q, i) => (
-              <Fragment key={q.id}>
-                {i > 0 && (i === quien.length - 1 ? " y " : ", ")}
-                <Link href={hrefArtista(q)}>{q.nombre}</Link>
-              </Fragment>
-            ))}
-          </b>
-        </li>
-      )}
-      <li className={renglon.dato}>
-        <IconoPersonas width={20} height={20} />
-        <b>{totalVan === 0 ? "Nadie ha dicho que va todavía" : totalVan === 1 ? "Va 1 persona" : `Van ${totalVan} personas`}</b>
-        {totalVan > 0 && (
-          <Salto destino="quien-va">ver</Salto>
-        )}
-      </li>
-    </>
+    <section className={ficha.bloque} aria-label="Artistas">
+      <h2>Artistas</h2>
+      <ul>
+        {quien.map((q) => (
+          <li key={q.id}>
+            <Link href={hrefArtista(q)} className={renglon.dato}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage o la imagen fija de public */}
+              <img src={q.foto ?? SIN_FOTO} alt="" />
+              <b>{q.nombre}</b>
+              <small>{etiquetaArtista(q)}</small>
+              <IconoChevronDerecha />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
 /** Fallback de `QuienVaDiferido`: el título fijo de la sección (no depende de ninguna consulta) y dos líneas grises. */
 function EsqueletoQuienVa() {
   return (
-    <section className={styles.quienVa} id="quien-va" aria-label="Quién va" aria-hidden="true">
+    <section className={ficha.bloque} id="quien-va" aria-label="Quién va" aria-hidden="true">
       <h2>Quién va</h2>
       <EsqueletoBloqueTexto lineas={2} />
     </section>
   );
 }
 
-/** La lista de quién va (`QuienVa`), diferida: la misma consulta que `DatosQuienEvento`, memoizada por `cache()`. */
+/** La lista de quién va (`QuienVa`), diferida: la misma consulta que `KpiVan`, memoizada por `cache()`. */
 async function QuienVaDiferido({ eventoId, miId, conSesion }: { eventoId: string; miId: string | null; conSesion: boolean }) {
   const [asistencias, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarTotalVanCache(eventoId)]);
   const totalVan = Math.max(totalVanRpc, asistencias.van.length);
@@ -187,13 +190,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-const ICONO_CANDADO = (
-  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-    <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
-    <path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" strokeWidth="1.8" />
-  </svg>
-);
-
 export default async function FichaEvento({ params, searchParams }: Params) {
   const { id } = await params;
   const { nuevo, accion, error } = (await searchParams) ?? {};
@@ -222,7 +218,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   }
   // "Quién va" (nombres, cuántos van, el cartel de artistas) es su propia consulta, aparte de la del evento: se
   // difiere en `<Suspense>` (OL-161, bitácora 196) — la cabecera (foto, nombre, cuándo, dónde) no la espera. Solo mi
-  // estado, para la barra de acciones que sí pinta al instante, se pide aquí (una fila, no la lista entera).
+  // estado, para las pastillas, que sí se pintan al instante, se pide aquí (una fila, no la lista entera).
   const miEstado = await cargarMiEstado(e.id, actual?.perfil.id ?? null);
   const privado = e.sitio_reservado ? await cargarPrivado(e.id) : null;
   const sitio = nombreSitio({ lugar: e.lugar, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado });
@@ -278,179 +274,195 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   // BreadcrumbList (OL-143, doc 36): misma condición que el JSON-LD del evento — lo que también vería un visitante sin sesión.
   const migajas = e.visible && !paso ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Agenda", url: "/" }, { nombre: e.titulo, url: hrefEvento(e) }]) : null;
 
+  const portada = e.imagen ?? e.lugar?.portada ?? null;
+  const cuando = kpiCuando(e.inicio, e.fin, e.zona);
+  const hayAvisos = nuevo === "1" || error === "borrar" || !e.visible || paso;
+  const hayDonde = !!e.lugar || !!e.sitio_texto || e.sitio_reservado;
+
   return (
-    <main className={ficha.pagina}>
+    <Ficha portada={portada}>
       {jsonLd && (
         // Se escapa "<" para que un título o descripción con "</script>" no rompa la página (gestión de cambios, OL-059).
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       )}
       {migajas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(migajas).replace(/</g, "\\u003c") }} />}
-      <Barra
-        volver={{ href: "/", texto: "Agenda" }}
-        derecha={
-          <MenuAcciones>
-            {puedeEditar && (
-              <>
-                <li>
-                  <Link href={`${hrefEvento(e)}/editar`} className={ficha.menuItem}>
-                    Editar
-                  </Link>
-                </li>
-                <li>
-                  <Link href={`/eventos/nuevo?desde=${e.id}`} className={ficha.menuItem}>
-                    Duplicar con otra fecha
-                  </Link>
-                </li>
-              </>
-            )}
-            {destacable && <DestacarFicha tipo="evento" id={e.id} {...destacable} />}
-            {esAdmin && (
-              <li>
-                <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>
-                  <button type="submit" className={ficha.menuItem}>
-                    {e.visible ? "Ocultar de la agenda" : "Volver a mostrar"}
-                  </button>
-                </form>
-              </li>
-            )}
-            {esAdmin && (
-              <li>
-                {/* crearDesdeEvento (OL-088) entra a la obra ya abierta de este evento o su lugar en vez de duplicarla. */}
-                <form action={crearDesdeEvento.bind(null, e.id)}>
-                  <button type="submit" className={ficha.menuItem}>
-                    Activar obra colectiva
-                  </button>
-                </form>
-              </li>
-            )}
-            <li className={ficha.menuItem}>
-              <Reportar tipo="evento" objetoId={e.id} volver={hrefEvento(e)} conSesion={!!actual} />
+      <BarraFicha volver={{ href: "/", texto: "Agenda" }} titulo={e.titulo}>
+        {puedeEditar && (
+          <>
+            <li>
+              <Link href={`${hrefEvento(e)}/editar`} className={renglon.ajuste}>
+                <IconoLapiz width={20} height={20} />
+                <b>Editar</b>
+              </Link>
             </li>
-            {puedeEditar && (
-              <li className={ficha.menuItem}>
-                <Borrar que="el evento" icono="evento" aviso={avisoBorrar} accion={borrarEvento.bind(null, e.id, e.lugar_id)} />
-              </li>
-            )}
-          </MenuAcciones>
-        }
-      />
-      {nuevo === "1" && (
-        <div className={ficha.publicado} role="status">
-          <b>Publicado.</b>
-          Ya está en la agenda.
-          <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={BOTON_PUBLICADO}>
-            Compartir
-          </BotonCompartir>
+            <li>
+              <Link href={`/eventos/nuevo?desde=${e.id}`} className={renglon.ajuste}>
+                <IconoCalendarioMas width={20} height={20} />
+                <b>Duplicar con otra fecha</b>
+              </Link>
+            </li>
+          </>
+        )}
+        {destacable && <DestacarFicha tipo="evento" id={e.id} {...destacable} />}
+        {esAdmin && (
+          <li>
+            <form action={cambiarVisibleEvento.bind(null, e.id, e.lugar_id, !e.visible)}>
+              <button type="submit" className={renglon.ajuste}>
+                {e.visible ? <IconoOjoTachado width={20} height={20} /> : <IconoOjo width={20} height={20} />}
+                <b>{e.visible ? "Ocultar de la agenda" : "Volver a mostrar"}</b>
+              </button>
+            </form>
+          </li>
+        )}
+        {esAdmin && (
+          <li>
+            {/* crearDesdeEvento (OL-088) entra a la obra ya abierta de este evento o su lugar en vez de duplicarla. */}
+            <form action={crearDesdeEvento.bind(null, e.id)}>
+              <button type="submit" className={renglon.ajuste}>
+                <IconoPincel width={20} height={20} />
+                <b>Activar obra colectiva</b>
+              </button>
+            </form>
+          </li>
+        )}
+        <li>
+          <Reportar tipo="evento" objetoId={e.id} volver={hrefEvento(e)} conSesion={!!actual} />
+        </li>
+        {puedeEditar && (
+          <li>
+            <Borrar fila que="el evento" icono="evento" aviso={avisoBorrar} accion={borrarEvento.bind(null, e.id, e.lugar_id)} />
+          </li>
+        )}
+      </BarraFicha>
+      <Heroe portada={portada} alt={e.imagen ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`} titulo={e.titulo} />
+
+      {hayAvisos && (
+        <div className={ficha.avisos}>
+          {nuevo === "1" && (
+            <div className={ficha.publicado} role="status">
+              <b>Publicado.</b>
+              Ya está en la agenda.
+              <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={BOTON_PUBLICADO}>
+                Compartir
+              </BotonCompartir>
+            </div>
+          )}
+          {error === "borrar" && (
+            <p className="aviso-error" role="alert">
+              No se pudo borrar. ¿Sigues con sesión y es tu evento?
+            </p>
+          )}
+          {(!e.visible || paso) && (
+            <p className={`aviso-error ${ficha.oculto}`} role="status">
+              {paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven su autor y el administrador.
+            </p>
+          )}
         </div>
       )}
-      {error === "borrar" && (
-        <p className="aviso-error" role="alert">
-          No se pudo borrar. ¿Sigues con sesión y es tu evento?
-        </p>
-      )}
-      {(!e.visible || paso) && (
-        <p className={`aviso-error ${ficha.oculto}`} role="status">
-          {paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven su autor y el administrador.
-        </p>
-      )}
 
-      <Cartel src={e.imagen ?? e.lugar?.portada ?? null} alt={e.imagen ? `Cartel de ${e.titulo}` : `Foto de ${e.lugar?.nombre ?? e.titulo}`} />
-      <h1 className={ficha.titulo}>{e.titulo}</h1>
+      <div className={ficha.cuerpo} data-cuerpo>
+        <Kpis>
+          <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta={cuando.hora} valor={cuando.dia} />
+          <Kpi icono={<IconoBoleto width={16} height={16} />} etiqueta="Costo" valor={e.precio ?? "Gratis"} />
+          <Suspense fallback={<EsqueletoKpi />}>
+            <KpiVan eventoId={e.id} miId={actual?.perfil.id ?? null} />
+          </Suspense>
+        </Kpis>
 
-      <ul className={ficha.datos}>
-        <li className={renglon.dato}>
-          <IconoReloj width={20} height={20} />
-          <b>{formatearLargo(e.inicio, new Date(), e.fin, e.zona)}</b>
-        </li>
-        {e.lugar && (
-          <li className={renglon.dato}>
-            <IconoPin width={20} height={20} />
-            <b>
-              <Link href={hrefLugar(e.lugar)}>{e.lugar.nombre}</Link>
-            </b>
-            {e.lugar.direccion && <small>{e.lugar.direccion}</small>}
-          </li>
-        )}
-        {!e.lugar && e.sitio_texto && !e.sitio_reservado && (
-          <li className={renglon.dato}>
-            <IconoPin width={20} height={20} />
-            <b>{e.sitio_texto}</b>
-            {e.sitio_direccion && <small>{e.sitio_direccion}</small>}
-          </li>
-        )}
-        {e.sitio_reservado && (
-          <li className={renglon.dato}>
-            {privado ? <IconoPin width={20} height={20} /> : ICONO_CANDADO}
-            <b>{privado ? privado.direccion : `${e.sitio_texto} · sitio reservado`}</b>
-            {privado ? (
-              privado.indicaciones && <small>{privado.indicaciones}</small>
-            ) : actual ? (
-              <small>La dirección se revela aquí {e.sitio_revelar_desde ? `el ${revela}` : revela}.</small>
-            ) : (
-              <small>Entra para ver la dirección cuando toque.</small>
+        {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
+        <div className={ficha.acciones}>
+          <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>
+            <span className={CIRCULO}>
+              <IconoCompartir />
+            </span>
+            Compartir
+          </BotonCompartir>
+          {/* Dice lo que hace: agrega el evento, con su alerta, al calendario del teléfono (decisión 12 de docs/rediseno/17).
+              Dentro de la app de iPhone abre la hoja nativa del sistema en vez de descargar el .ics (OL-214, bitácora 243). */}
+          <BotonCalendario datos={datosCalendario} href={`${hrefEvento(e)}/calendario`} className={ficha.accion}>
+            <span className={CIRCULO}>
+              <IconoCalendarioAgregar width={24} height={24} />
+            </span>
+            A mi calendario
+          </BotonCalendario>
+          {comoLlegar ? (
+            <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
+              <span className={CIRCULO}>
+                <IconoRuta />
+              </span>
+              Cómo llegar
+            </a>
+          ) : (
+            <span className={ficha.accion} aria-disabled="true">
+              <span className={CIRCULO}>
+                <IconoRuta />
+              </span>
+              Cómo llegar
+              <small>sin dirección</small>
+            </span>
+          )}
+        </div>
+
+        {hayDonde && (
+          <section className={ficha.tarjeta}>
+            <h2>Dónde</h2>
+            <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
+            {e.lugar && (
+              <Link href={hrefLugar(e.lugar)} className={renglon.dato}>
+                <IconoPin width={20} height={20} />
+                <b>{e.lugar.nombre}</b>
+                {e.lugar.direccion && <small>{e.lugar.direccion}</small>}
+                <IconoChevronDerecha />
+              </Link>
             )}
-            {!privado && !actual && (
-              <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEvento(e))}`}>Entrar</Link>
+            {!e.lugar && e.sitio_texto && !e.sitio_reservado && (
+              <div className={renglon.dato}>
+                <IconoPin width={20} height={20} />
+                <b>{e.sitio_texto}</b>
+                {e.sitio_direccion && <small>{e.sitio_direccion}</small>}
+              </div>
             )}
-          </li>
+            {e.sitio_reservado &&
+              (privado || actual ? (
+                <div className={renglon.dato}>
+                  {privado ? <IconoPin width={20} height={20} /> : <IconoCandado width={20} height={20} />}
+                  <b>{privado ? privado.direccion : `${e.sitio_texto} · sitio reservado`}</b>
+                  {privado ? privado.indicaciones && <small>{privado.indicaciones}</small> : <small>La dirección se revela aquí {e.sitio_revelar_desde ? `el ${revela}` : revela}.</small>}
+                </div>
+              ) : (
+                // Sin sesión no se ve la dirección reservada: toda la fila lleva a entrar.
+                <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEvento(e))}`} className={renglon.dato}>
+                  <IconoCandado width={20} height={20} />
+                  <b>{e.sitio_texto} · sitio reservado</b>
+                  <small>Entra para ver la dirección cuando toque.</small>
+                  <IconoChevronDerecha />
+                </Link>
+              ))}
+          </section>
         )}
-        <Suspense fallback={<EsqueletoDato />}>
-          <DatosQuienEvento eventoId={e.id} miId={actual?.perfil.id ?? null} />
+
+        <Suspense fallback={null}>
+          <ArtistasEvento eventoId={e.id} />
         </Suspense>
-        <li className={renglon.dato}>
-          <IconoBoleto width={20} height={20} />
-          <b>{e.precio ?? "Gratis"}</b>
-        </li>
-      </ul>
 
-      {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
-      <div className={`${ficha.acciones} ${ficha.accionesRepartidas}`}>
-        <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>
-          <span className={CIRCULO}>
-            <IconoCompartir />
-          </span>
-          Compartir
-        </BotonCompartir>
-        {/* Dice lo que hace: agrega el evento, con su alerta, al calendario del teléfono (decisión 12 de docs/rediseno/17).
-            Dentro de la app de iPhone abre la hoja nativa del sistema en vez de descargar el .ics (OL-214, bitácora 243). */}
-        <BotonCalendario datos={datosCalendario} href={`${hrefEvento(e)}/calendario`} className={ficha.accion}>
-          <span className={CIRCULO}>
-            <IconoCalendarioAgregar width={24} height={24} />
-          </span>
-          A mi calendario
-        </BotonCalendario>
-        {comoLlegar ? (
-          <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
-            <span className={CIRCULO}>
-              <IconoRuta />
-            </span>
-            Cómo llegar
-          </a>
-        ) : (
-          <span className={ficha.accion} aria-disabled="true">
-            <span className={CIRCULO}>
-              <IconoRuta />
-            </span>
-            Cómo llegar
-            <small>sin dirección</small>
-          </span>
+        {(e.descripcion || e.enlace) && (
+          <section className={ficha.bloque} aria-label="Sobre el evento">
+            <h2>Sobre el evento</h2>
+            {e.descripcion && <Desplegable texto={e.descripcion} />}
+            {e.enlace && (
+              <EnlaceExterno href={e.enlace} className={styles.enlaceExterno}>
+                Más información en la página del evento →
+              </EnlaceExterno>
+            )}
+          </section>
         )}
+
+        <Suspense fallback={<EsqueletoQuienVa />}>
+          <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} />
+        </Suspense>
+
+        <p className={ficha.pie}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}</p>
       </div>
-
-      <MapaFicha punto={puntoMapa} href={comoLlegar} alt={sitio} />
-
-      {e.descripcion && <Desplegable texto={e.descripcion} />}
-      {e.enlace && (
-        <EnlaceExterno href={e.enlace} className={styles.enlaceExterno}>
-          Más información en la página del evento →
-        </EnlaceExterno>
-      )}
-
-      <Suspense fallback={<EsqueletoQuienVa />}>
-        <QuienVaDiferido eventoId={e.id} miId={actual?.perfil.id ?? null} conSesion={!!actual} />
-      </Suspense>
-
-      <p className={ficha.autor}>Publicado por {e.autor ? <Link href={`/personas/${e.autor.id}`}>{e.autor.nombre}</Link> : "una cuenta borrada"}.</p>
 
       <Asistencia
         eventoId={e.id}
@@ -463,6 +475,6 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         correo={actual?.correo ? enmascararCorreo(actual.correo) : "tu correo"}
         llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />
-    </main>
+    </Ficha>
   );
 }

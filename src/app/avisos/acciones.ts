@@ -31,9 +31,8 @@ export async function elegirAvisos(eleccion: EleccionAvisos): Promise<boolean> {
   if (error) return false;
   // Ajustes y la agenda muestran lo elegido. Que no se vuelva a preguntar no depende de esto: lo apunta la hoja para la
   // cuenta (lib/avisosPreguntados).
-  // Con `after` (OL-212, tercera vuelta): la hoja (ConsentimientoAvisos) ya avisa lo decidido a quien la abrió por
-  // `onDecidido`, sin pedirle nada al servidor (arreglo de la primera vuelta) — y Mi perfil hace su propio
-  // `router.refresh()` tras guardar. Nadie necesita el `revalidatePath` de inmediato; revalidar aquí solo repintaría
+  // Con `after` (OL-212, tercera vuelta): la pastilla de la ficha ya no dice qué avisos hay (docs/rediseno/50, P6) y Mi
+  // perfil hace su propio `router.refresh()` tras guardar. Nadie necesita el `revalidatePath` de inmediato; revalidar aquí solo repintaría
   // de más la pantalla desde la que se abrió la hoja (un carril de Inicio, una ficha…), porque cualquier
   // `revalidatePath` en una acción hace que Next rehaga y reenvíe toda la ruta actual en la misma respuesta, sin
   // importar qué ruta se le pase (server-actions.md de Next 16.3.5, la versión instalada). Aplazado, Perfil e

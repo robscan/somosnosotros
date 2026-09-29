@@ -1,0 +1,58 @@
+/* Los tres números de una pantalla (docs/rediseno/50, P6; canon del prototipo firmado): tarjetas que abrazan su contenido, con el
+   icono y lo que es en la fila de arriba (una sola unidad: «qué es») y el valor solo, con todo el ancho, en la de abajo. Las tres
+   miden lo mismo porque la rejilla estira cada una a la fila. Las usa la ficha (`ui/Kpi`) y las pestañas de Perfil, que le suman lo suyo. */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espacio-2);
+  list-style: none;
+}
+.kpis > li {
+  display: grid;
+}
+.kpi {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icono etiqueta"
+    "valor valor";
+  align-items: center;
+  align-content: start;
+  column-gap: var(--espacio-1);
+  row-gap: var(--espacio-1);
+  padding: 10px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  text-align: left;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.kpi > svg {
+  grid-area: icono;
+  width: 16px;
+  height: 16px;
+  color: var(--texto-suave);
+}
+.kpi > small {
+  grid-area: etiqueta;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.kpi > b {
+  grid-area: valor;
+  font-size: 1rem;
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}

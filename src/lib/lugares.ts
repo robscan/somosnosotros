@@ -81,6 +81,12 @@ export function calleCorta(direccion: string | null | undefined): string {
   return partes[0] ?? direccion.trim();
 }
 
+/** Una dirección en dos: la calle («Manuel José Othón s/n esq. Chico Sein») y lo demás («Centro Histórico, 78000, San Luis Potosí»). */
+export function partesDeDireccion(direccion: string | null | undefined): { calle: string; resto: string } {
+  const [calle = "", ...resto] = (direccion ?? "").split(",").map((p) => p.trim());
+  return { calle, resto: resto.join(", ") };
+}
+
 type Distancia = Punto;
 
 /**

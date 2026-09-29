@@ -37,16 +37,22 @@
   margin-top: var(--espacio-2);
 }
 
-/* Dato de ficha: el mismo renglón `dato` (ui/Renglon), con un icono del tamaño del real y una línea del alto de su letra. */
-.iconoDato {
-  width: 20px;
-  height: 20px;
+/* Un número de ficha: la misma tarjeta (ui/Kpi) con un icono del tamaño del real y dos barras del alto de su letra. */
+.iconoKpi {
+  grid-area: icono;
+  width: 16px;
+  height: 16px;
   border-radius: var(--radio-chico);
 }
-.lineaDato {
-  grid-area: titulo;
+.etiquetaKpi {
+  grid-area: etiqueta;
   width: 60%;
-  height: var(--letra-md);
+  height: var(--letra-2xs);
+}
+.valorKpi {
+  grid-area: valor;
+  width: 70%;
+  height: 1.15rem;
 }
 
 /* Tarjeta de carril: mismas medidas que traía CarrilEsqueleto.module.css. */
@@ -81,25 +87,6 @@
 .chica .linea {
   justify-self: center;
   width: 80%;
-}
-
-/* Cabecera de ficha: foto, nombre, dos líneas de meta (evento/lugar/artista). */
-.cabeceraFicha {
-  display: grid;
-  row-gap: var(--espacio-2);
-  padding: var(--espacio-3) var(--gutter);
-}
-.fotoFicha {
-  height: 220px;
-  border-radius: var(--radio);
-}
-.nombreFicha {
-  width: 70%;
-  height: 24px;
-}
-.metaFicha {
-  width: 50%;
-  height: 16px;
 }
 
 /* Bloque de texto: unas líneas de párrafo. */

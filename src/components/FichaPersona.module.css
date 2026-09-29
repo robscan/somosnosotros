@@ -1,28 +1,17 @@
 /* Ficha de persona (Mi perfil y ficha ajena; docs/rediseno/13, decisiones 5 a 7).
-   1. Cabecera · 2. Sobre mí y completar · 3. Listas por pestaña */
+   1. Cabecera · 2. Sobre mí y completar · 3. Lo que dice una lista sin nada */
 
-/* 1. Cabecera plana: foto | nombre + acciones (Ajustes y Compartir, botones redondos con borde) a la derecha; colonia debajo. */
+/* 1. Cabecera plana: foto | nombre + acciones (Ajustes y Compartir, botones redondos con borde) a la derecha; colonia debajo. La misma
+   en Mi perfil y en la ficha de otra persona, con el avatar del prototipo firmado y un poco de aire arriba. */
 .cabecera {
   display: grid;
-  grid-template-columns: 96px 1fr auto;
+  grid-template-columns: var(--avatar-perfil) 1fr auto;
   grid-template-areas:
     "foto nombre acciones"
     "foto colonia colonia";
   column-gap: var(--espacio-4);
   align-items: center;
-  margin: var(--espacio-3) 0 var(--espacio-3);
-}
-/* Mi perfil (raíz): el avatar de 72 del prototipo firmado y un poco de aire arriba, bajo la barra de la app. */
-.deRaiz {
-  grid-template-columns: 72px 1fr auto;
-  margin-top: var(--espacio-4);
-}
-.deRaiz > .avatar {
-  width: 72px;
-  height: 72px;
-}
-.deRaiz > .avatarVacio {
-  font-size: var(--letra-2xl);
+  margin: var(--espacio-4) 0 var(--espacio-3);
 }
 .acciones {
   grid-area: acciones;
@@ -32,8 +21,8 @@
 }
 .avatar {
   grid-area: foto;
-  width: 96px;
-  height: 96px;
+  width: var(--avatar-perfil);
+  height: var(--avatar-perfil);
   border-radius: 50%;
   object-fit: cover;
   background: var(--fondo-miniatura);
@@ -42,7 +31,7 @@
   display: grid;
   place-items: center;
   color: var(--texto-suave);
-  font-size: var(--letra-3xl);
+  font-size: var(--letra-2xl);
   font-weight: 700;
 }
 .nombre {
@@ -78,7 +67,7 @@
   color: var(--primario);
 }
 .reservada {
-  padding: var(--espacio-4) 0;
+  padding-block: var(--espacio-4);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
@@ -86,23 +75,14 @@
   display: grid;
   gap: var(--espacio-3);
   justify-items: start;
-  padding: var(--espacio-4) 0;
+  padding-block: var(--espacio-4);
 }
 .bloqueado > p {
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
 
-/* 3. Listas: días en gris, renglones de la agenda o de lugares y artistas; vacíos con salida. */
-.dia {
-  padding: var(--espacio-3) 0 var(--espacio-1);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-}
-.lista {
-  list-style: none;
-}
+/* 3. Lo que dice una lista sin nada, con su salida. */
 .vacio {
   padding: var(--espacio-3) 0;
   color: var(--texto-suave);

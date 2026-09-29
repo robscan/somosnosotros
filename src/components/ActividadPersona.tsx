@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import { mismaMemoria, pestanasDePersona, recordar, unirVistos, type Memoria } from "@/lib/actividad";
 import type { Asistencia } from "@/lib/deslizar";
@@ -71,25 +71,18 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
   const estado = gestos ? asistencia.estado : () => null;
   const sigo = (id: string) => (esLugar.has(id) ? seguirLugar.sigo(id) : seguirArtista.sigo(id));
 
-  // Mi perfil es una raíz: cada día es un grupo con su título pegado (`ui/Grupo`). La ficha de otra persona conserva su
-  // título suelto hasta que la rehaga su pieza (P6).
+  // Cada día es un grupo con su título pegado (`ui/Grupo`), en Mi perfil y en la ficha de otra persona.
   const listaEventos = (lista: EventoAgenda[], vacio: ReactNode, conSello: boolean) =>
     lista.length === 0 ? (
       <p className={styles.vacio}>{vacio}</p>
     ) : (
       agruparPorDia(lista).map((g) => {
-        const filas = g.eventos.map((e) => <RenglonEvento key={e.id} evento={e} estado={conSello ? estado(e.id) : null} boton={gestos ? asistencia.boton(e) : undefined} />);
-        return mia ? (
+        return (
           <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
-            {filas}
+            {g.eventos.map((e) => (
+              <RenglonEvento key={e.id} evento={e} estado={conSello ? estado(e.id) : null} boton={gestos ? asistencia.boton(e) : undefined} />
+            ))}
           </Grupo>
-        ) : (
-          <Fragment key={g.clave}>
-            <h3 className={styles.dia}>{g.titulo}</h3>
-            <ul className={styles.lista} aria-label={g.titulo}>
-              {filas}
-            </ul>
-          </Fragment>
         );
       })
     );
@@ -124,7 +117,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
             )}
           </p>
         ) : (
-          <ListaSeguidos lugares={p.lugares} artistas={p.artistas} conChips={conChips} lugar={gestos ? seguirLugar : undefined} artista={gestos ? seguirArtista : undefined} raiz={mia} />
+          <ListaSeguidos lugares={p.lugares} artistas={p.artistas} conChips={conChips} lugar={gestos ? seguirLugar : undefined} artista={gestos ? seguirArtista : undefined} />
         )
       ) : p.clave === "va" ? (
         listaEventos(
@@ -147,7 +140,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
 
   return (
     <>
-      <PestanasPersona pestanas={pestanas} raiz={mia} />
+      <PestanasPersona pestanas={pestanas} />
       <AvisoAbajo canal={canal} />
       {asistencia.extras}
       {seguirLugar.extras}

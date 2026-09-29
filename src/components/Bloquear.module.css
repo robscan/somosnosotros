@@ -1,17 +1,5 @@
-/* Bloquear: el enlace discreto (en el menú "···" de la ficha) y la hoja de confirmación, misma composición que
-   Borrar.module.css (icono, textos centrados, dos botones) pero sin rojo: bloquear no es destructivo, se deshace. */
-.enlace {
-  display: block;
-  width: 100%;
-  border: none;
-  background: none;
-  padding: var(--espacio-2) var(--espacio-1);
-  min-height: var(--toque);
-  color: var(--texto);
-  font-size: var(--letra-md);
-  text-align: left;
-  cursor: pointer;
-}
+/* Bloquear: la hoja de confirmación, misma composición que Borrar.module.css (icono, textos centrados, dos botones) pero sin
+   rojo: bloquear no es destructivo, se deshace. */
 .confirmar {
   display: grid;
   justify-items: center;

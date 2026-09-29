@@ -19,7 +19,7 @@ type Props = {
 /**
  * Los próximos eventos de una ficha (lugar, artista) por día, con Voy y Me interesa al deslizar para quien mira, como en la
  * agenda (OL-057). El título del día y la lista toman sus estilos de la sección que los contiene; el aviso, uno para toda
- * la ficha, flota sobre su barra fija (ui/useAltoBarraFija).
+ * la ficha, flota sobre su pastilla (`Hecho`).
  */
 export default function EventosPorDia({ eventos, sinSitio = false, decididas, avisos }: Props) {
   // El aviso y la pregunta son de toda la ficha: los comparte con su barra (Seguir o Voy).

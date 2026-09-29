@@ -144,3 +144,32 @@ test("el botón Seguir lleva el glifo de lo que se sigue: la campana con «+» e
   assert.ok((await trazos("")).includes("M12 9.5v5M9.5 12h5"), "un lugar lleva la campana con «+»");
   assert.ok((await trazos("?que=artista")).includes("M19 7.5v6M16 10.5h6"), "un artista lleva la persona con «+»");
 });
+
+/** El color llega en el cuadro siguiente (con «reducir movimiento» las transiciones duran 0,01 ms, pero no cero): se espera a que llegue. */
+async function colorLlega(p, loc, propiedad, esperado, mensaje) {
+  let visto;
+  for (let i = 0; i < 100; i++) {
+    visto = await loc.evaluate((e, k) => getComputedStyle(e)[k], propiedad);
+    if (visto === esperado) return;
+    await p.waitForTimeout(20);
+  }
+  assert.equal(visto, esperado, mensaje);
+}
+
+test("la pastilla flotante dice Seguir y, ya seguido, Sigues en verde con su palomita y sin nota; tocarla otra vez deja de seguir", async (t) => {
+  const p = await nuevaPagina(t);
+  const pastilla = (nombre) => p.getByRole("button", { name: nombre, exact: true });
+  assert.equal(await pastilla("Seguir").getAttribute("aria-pressed"), "false");
+  await colorLlega(p, pastilla("Seguir"), "backgroundColor", "rgb(109, 52, 200)", "sin decidir: el violeta de la acción");
+  await pastilla("Seguir").click();
+  await p.getByRole("button", { name: "No, gracias" }).click(); // la primera vez pregunta por los avisos
+  await p.waitForSelector('[aria-label="Avisos"]', { state: "detached" });
+  await pastilla("Sigues").waitFor();
+  assert.equal(await pastilla("Sigues").getAttribute("aria-pressed"), "true");
+  await colorLlega(p, pastilla("Sigues"), "backgroundColor", "rgb(31, 111, 67)", "decidido: el verde de lo que ya quedó");
+  assert.equal(await pastilla("Sigues").innerText(), "Sigues", "sin nota dentro de la pastilla");
+  assert.ok((await pastilla("Sigues").locator("path").evaluateAll((ps) => ps.map((x) => x.getAttribute("d")))).includes("M5 12.5l4.5 4.5L19 7.5"), "con la palomita");
+  await pastilla("Sigues").click();
+  await pastilla("Seguir").waitFor();
+  assert.deepEqual(await p.evaluate(() => window.qa.acciones), [true, false]);
+});

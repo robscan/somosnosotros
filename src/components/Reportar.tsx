@@ -5,15 +5,17 @@ import { useActionState, useState } from "react";
 import { MOTIVOS } from "@/lib/reportes";
 import { reportar, type ResultadoReporte } from "@/app/reportes";
 import Boton from "@/components/ui/Boton";
+import { IconoBandera } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./Reportar.module.css";
 
 import type { TipoReportado } from "@/lib/reportes";
 
 type Props = { tipo: TipoReportado; objetoId: string; volver: string; conSesion: boolean };
 
-/** Un enlace discreto "Reportar"; al tocarlo, motivo y un renglón opcional. El admin lo revisa. */
+/** «Reportar», una fila del menú «···» de una ficha (como las de Ajustes); al tocarla, motivo y un renglón opcional. El admin lo revisa. */
 export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {
   const [abierto, setAbierto] = useState(false);
   const [detalle, setDetalle] = useState("");
@@ -22,14 +24,16 @@ export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {
   if (resultado?.ok) return <p className={styles.gracias}>Gracias. El administrador lo revisa.</p>;
   if (!conSesion)
     return (
-      <Link href={`/entrar?siguiente=${encodeURIComponent(volver)}`} className={styles.enlace}>
-        Reportar
+      <Link href={`/entrar?siguiente=${encodeURIComponent(volver)}`} className={renglon.ajuste}>
+        <IconoBandera width={20} height={20} />
+        <b>Reportar</b>
       </Link>
     );
   if (!abierto)
     return (
-      <button type="button" className={styles.enlace} onClick={() => setAbierto(true)}>
-        Reportar
+      <button type="button" className={renglon.ajuste} onClick={() => setAbierto(true)}>
+        <IconoBandera width={20} height={20} />
+        <b>Reportar</b>
       </button>
     );
   return (

@@ -42,7 +42,7 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
 
   const cabeza = (
     <>
-      <div className={mia ? `${styles.cabecera} ${styles.deRaiz}` : styles.cabecera}>
+      <div className={styles.cabecera}>
         {perfil.foto ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
           <img src={perfil.foto} alt="" className={styles.avatar} />
@@ -97,16 +97,16 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
   );
   return (
     <>
-      {/* Mi perfil es una raíz (docs/rediseno/50, 5.3): la página no lleva aire a los lados y cada bloque pone el suyo; sus listas,
-          que son grupos de día pegajosos, lo traen. La ficha de otra persona sigue dentro del aire de su página. */}
-      {mia ? <div className="columna">{cabeza}</div> : cabeza}
+      {/* Mi perfil y la ficha de otra persona son de la misma familia (docs/rediseno/50, 5.3 y P6): la página no lleva aire a los
+          lados y cada bloque pone el suyo; sus listas, que son grupos de día pegajosos, lo traen. */}
+      <div className="columna">{cabeza}</div>
       {bloqueado ? (
-        <div className={styles.bloqueado}>
+        <div className={`columna ${styles.bloqueado}`}>
           <p>Bloqueaste a esta persona: no ves lo que publica.</p>
           {bloqueado}
         </div>
       ) : reservada ? (
-        <p className={styles.reservada}>
+        <p className={`columna ${styles.reservada}`}>
           Perfil reservado: solo se ve el nombre.
         </p>
       ) : (

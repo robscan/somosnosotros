@@ -1,5 +1,5 @@
 /* Cabecera interior (ui/Barra): blanca, alto mínimo, hijos centrados en vertical. Sin envoltorios: sus hijos son el
-   regreso, el logotipo y lo de la derecha. */
+   regreso (o la ✕) y el logotipo. */
 .barra {
   align-items: center;
   min-height: var(--alto-barra);
@@ -7,7 +7,7 @@
 }
 
 /* Franja de borde a borde (sale del gutter de la página con margen negativo), pegajosa arriba y con borde; tres
-   columnas para que el logotipo quede siempre al centro, haya o no menú. Pegajosa bajo lo que la barra de la app deje
+   columnas para que el logotipo quede siempre al centro, haya regreso o ✕. Pegajosa bajo lo que la barra de la app deje
    pegado (`--barra-vista`): nada en el teléfono, donde esta cabecera es la única barra; la barra de la app desde 792. */
 .interior {
   position: sticky;
@@ -20,13 +20,10 @@
   padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
   border-bottom: 1px solid var(--borde);
 }
-/* El regreso, a la izquierda y capaz de encogerse; el menú "···", a la derecha */
+/* El regreso, a la izquierda y capaz de encogerse */
 .interior > :first-child {
   justify-self: start;
   min-width: 0;
-}
-.interior > :nth-child(3) {
-  justify-self: end;
 }
 /* Alta: sin regreso; el logotipo va a la columna del centro y la ✕ a la derecha, sin hueco vacío en el árbol */
 .alta > :first-child {
@@ -38,14 +35,11 @@
   justify-self: end;
 }
 
-/* Desde 792 la barra de la app ya trae la franja de la hora y el logotipo. La ficha no lleva cabecera propia: su Atrás
-   y su menú están en la barra de la app (nunca dos barras). Una tarea conserva la suya, sin repetir el logotipo. */
+/* Desde 792 la barra de la app ya trae la franja de la hora y el logotipo. Una tarea conserva su cabecera, sin repetir el
+   logotipo. */
 @media (min-width: 792px) {
   .interior {
     padding-top: 0;
-  }
-  :global([data-vista="ficha"]) .interior {
-    display: none;
   }
   :global([data-vista="tarea"]) .logotipo {
     display: none;
