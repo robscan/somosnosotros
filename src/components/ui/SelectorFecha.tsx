@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import Boton from "./Boton";
 import Hoja from "./Hoja";
 import { etiquetaDia, hayMesAnterior, haySiguienteMes, mesAnterior, mesInicial, mesSiguiente, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso, type DiaCalendario, type DiasActivos } from "@/lib/calendario";
 import { diaLargo, diaLocal, ZONA_INICIAL } from "@/lib/fechas";
@@ -256,9 +257,9 @@ export default function SelectorFecha({ titulo, fecha, hora, min, zona = ZONA_IN
             <b>{duracion}</b>
           </div>
         )}
-        <button type="button" className={styles.listo} disabled={!puedeConfirmar} onClick={() => onListo(elegido, conHora ? horaElegida : undefined)}>
+        <Boton type="button" className={styles.listo} disabled={!puedeConfirmar} onClick={() => onListo(elegido, conHora ? horaElegida : undefined)}>
           Listo
-        </button>
+        </Boton>
       </div>
     </Hoja>
   );
@@ -308,9 +309,9 @@ export function SelectorFechaCargando({ titulo, fecha, min, zona = ZONA_INICIAL,
         {/* Mismo lugar que el botón "Listo" de la hoja real (desde la corrección del founder, bitácora 247, las
             dos hojas lo llevan siempre): reservado y deshabilitado aquí también, para que nada salte de tamaño
             al llegar los datos. */}
-        <button type="button" className={styles.listo} disabled aria-hidden="true">
+        <Boton type="button" className={styles.listo} disabled aria-hidden="true">
           Listo
-        </button>
+        </Boton>
       </div>
     </Hoja>
   );

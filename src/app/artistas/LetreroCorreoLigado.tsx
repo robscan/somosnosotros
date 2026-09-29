@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Boton from "@/components/ui/Boton";
 import { IconoOk } from "@/components/ui/Iconos";
 import type { MotivoReclamo } from "@/lib/reportes";
 import type { ArtistaConMiCorreo, ResultadoReclamo } from "./acciones";
@@ -58,9 +59,9 @@ export default function LetreroCorreoLigado({ artista, reclamar }: Props) {
       ) : (
         <>
           <p>Puedes reclamar su ficha aquí mismo y empezar a gestionarla.</p>
-          <button type="button" className={styles.reclamar} onClick={reclamarFicha} disabled={pendiente}>
+          <Boton type="button" forma="pildora" alto="control" ancho="contenido" className={styles.reclamar} onClick={reclamarFicha} disabled={pendiente}>
             {pendiente ? "Enviando…" : "Reclamar ficha"}
-          </button>
+          </Boton>
           {resultado?.estado === "error" && (
             <p className={styles.error} role="alert">
               {resultado.error}

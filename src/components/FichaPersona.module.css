@@ -1,7 +1,7 @@
 /* Ficha de persona (Mi perfil y ficha ajena; docs/rediseno/13, decisiones 5 a 7).
    1. Cabecera · 2. Sobre mí y completar · 3. Listas por pestaña */
 
-/* 1. Cabecera plana: foto | nombre + acciones (Ajustes y Compartir) a la derecha; colonia debajo. */
+/* 1. Cabecera plana: foto | nombre + acciones (Ajustes y Compartir, botones redondos con borde) a la derecha; colonia debajo. */
 .cabecera {
   display: grid;
   grid-template-columns: 96px 1fr auto;
@@ -44,19 +44,6 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-/* Acciones de icono: 44 pt, con borde para que se lean como botones; el nombre va en aria-label. */
-.accion {
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  cursor: pointer;
-}
-
 /* 2. Sobre mí y el aviso de completar (solo la mía, si falta algo). */
 .sobreMi {
   margin-bottom: var(--espacio-2);
@@ -77,17 +64,6 @@
 }
 .completa > svg {
   color: var(--primario);
-}
-.completa > a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 0 var(--espacio-3);
-  border-radius: var(--radio-pildora);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-weight: 700;
-  text-decoration: none;
 }
 .reservada {
   padding: var(--espacio-4) 0;

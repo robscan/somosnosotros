@@ -17,6 +17,8 @@ import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
+import { claseBoton } from "@/components/ui/Boton";
+import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import { IconoBoleto, IconoCalendarioAgregar, IconoCompartir, IconoEstrella, IconoPersonas, IconoPin, IconoReloj, IconoRuta } from "@/components/ui/Iconos";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import Salto from "@/components/ui/Salto";
@@ -41,6 +43,9 @@ type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?
 type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
+/** El círculo de cada acción (ui/BotonIcono) y el botón de la tarjeta «Publicado» (ui/Boton, en su celda). */
+const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
+const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${ficha.publicadoBoton}`;
 
 /**
  * Se busca por slug (la dirección de hoy) y, si no aparece nada, por UUID (la dirección vieja, para que siga
@@ -343,7 +348,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         <div className={ficha.publicado} role="status">
           <b>Publicado.</b>
           Ya está en la agenda.
-          <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.publicadoBoton}>
+          <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={BOTON_PUBLICADO}>
             Compartir
           </BotonCompartir>
         </div>
@@ -413,7 +418,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
       <div className={`${ficha.acciones} ${ficha.accionesRepartidas}`}>
         <BotonCompartir titulo={e.titulo} texto={texto} url={url} className={ficha.accion}>
-          <span className={ficha.accionIcono}>
+          <span className={CIRCULO}>
             <IconoCompartir />
           </span>
           Compartir
@@ -421,21 +426,21 @@ export default async function FichaEvento({ params, searchParams }: Params) {
         {/* Dice lo que hace: agrega el evento, con su alerta, al calendario del teléfono (decisión 12 de docs/rediseno/17).
             Dentro de la app de iPhone abre la hoja nativa del sistema en vez de descargar el .ics (OL-214, bitácora 243). */}
         <BotonCalendario datos={datosCalendario} href={`${hrefEvento(e)}/calendario`} className={ficha.accion}>
-          <span className={ficha.accionIcono}>
+          <span className={CIRCULO}>
             <IconoCalendarioAgregar width={24} height={24} />
           </span>
           A mi calendario
         </BotonCalendario>
         {comoLlegar ? (
           <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
-            <span className={ficha.accionIcono}>
+            <span className={CIRCULO}>
               <IconoRuta />
             </span>
             Cómo llegar
           </a>
         ) : (
           <span className={ficha.accion} aria-disabled="true">
-            <span className={ficha.accionIcono}>
+            <span className={CIRCULO}>
               <IconoRuta />
             </span>
             Cómo llegar

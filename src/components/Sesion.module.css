@@ -1,15 +1,3 @@
-.entrar {
-  display: inline-flex;
-  align-items: center;
-  min-height: 40px;
-  padding: 0 var(--espacio-4);
-  border-radius: var(--radio-pildora);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-md);
-  font-weight: 700;
-  text-decoration: none;
-}
 .perfil {
   display: inline-flex;
   align-items: center;
@@ -31,23 +19,10 @@
   color: var(--texto-suave);
 }
 
-/* Campana de Novedades: 44 pt, con un punto del color de acción cuando hay algo no visto. */
-.campana {
+/* La campana de Novedades y el acceso a Administración (L40, OL-115, entre ella y la foto) llevan un punto del
+   color de acción cuando hay algo no visto o por revisar. */
+.conPunto {
   position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  color: var(--texto);
-}
-/* Acceso a Administración (L40, OL-115): mismo tamaño y punto que la campana, entre ella y la foto. */
-.admin {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  color: var(--texto);
 }
 .punto {
   position: absolute;

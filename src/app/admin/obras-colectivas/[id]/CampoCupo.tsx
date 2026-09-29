@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import BotonIcono from "@/components/ui/BotonIcono";
 import { cambiarCupo } from "../acciones";
 import styles from "../obras.module.css";
 
@@ -41,13 +42,13 @@ export default function CampoCupo({ id, cupo, tope }: { id: string; cupo: number
           <small>Quien llega después se conecta y ve la pared, pero espera su turno.</small>
         </div>
         <div className={styles.contador}>
-          <button type="button" aria-label="Bajar" disabled={pendiente || valor <= MIN} onClick={() => cambiar(valor - 1)}>
+          <BotonIcono relieve="contorno" aria-label="Bajar" disabled={pendiente || valor <= MIN} onClick={() => cambiar(valor - 1)}>
             −
-          </button>
+          </BotonIcono>
           <input id="cupo" type="text" inputMode="numeric" value={valor} readOnly />
-          <button type="button" aria-label="Subir" disabled={pendiente || valor >= maximo} onClick={() => cambiar(valor + 1)}>
+          <BotonIcono relieve="contorno" aria-label="Subir" disabled={pendiente || valor >= maximo} onClick={() => cambiar(valor + 1)}>
             +
-          </button>
+          </BotonIcono>
         </div>
       </div>
       <p className={styles.notaTope}>Quedan {Math.max(maximo - valor, 0)} mandos entre todas las obras abiertas.</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SIN_FOTO, SIN_FOTO_ANCHA } from "@/lib/imagen";
+import BotonIcono from "./ui/BotonIcono";
 import { IconoCerrar } from "./ui/Iconos";
 import styles from "./Cartel.module.css";
 
@@ -72,14 +73,9 @@ export default function Cartel({
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
           <img src={src} alt={alt} className={styles.visorImagen} />
-          <button
-            type="button"
-            className={styles.visorCerrar}
-            onClick={() => setAbierto(false)}
-            aria-label="Cerrar"
-          >
+          <BotonIcono relieve="elevado" className={styles.visorCerrar} onClick={() => setAbierto(false)} aria-label="Cerrar">
             <IconoCerrar width={22} height={22} />
-          </button>
+          </BotonIcono>
         </div>
       )}
     </>

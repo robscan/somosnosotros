@@ -11,6 +11,7 @@ import type { AvisosLista } from "@/components/useSeguirEnLista";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import Aviso from "@/components/ui/Aviso";
 import Boton from "@/components/ui/Boton";
+import BotonIcono from "@/components/ui/BotonIcono";
 import { EsqueletoCaja, EsqueletoRenglones } from "@/components/ui/Esqueleto";
 import Hoja from "@/components/ui/Hoja";
 import Mapa from "@/components/Mapa";
@@ -391,14 +392,15 @@ function CuerpoLugares({
               Prueba con otra fecha o quita el filtro para ver todos los lugares.
             </div>
           )}
-          <button
-            type="button"
+          <BotonIcono
+            tamano="accion"
+            relieve="elevado"
             className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`}
             onClick={onUbicacion}
             aria-label="Mi ubicación"
           >
             <IconoUbicacion width={22} height={22} />
-          </button>
+          </BotonIcono>
           {elegido && (
             <Hoja etiqueta="Lugar" onCerrar={() => setElegido(null)}>
               <div ref={hojaRef} className={styles.hojaLugar}>
@@ -414,7 +416,7 @@ function CuerpoLugares({
                   </span>
                 </span>
               </div>
-              <Boton href={hrefLugar(elegido)} className={styles.verFicha}>
+              <Boton href={hrefLugar(elegido)}>
                 Ver ficha
               </Boton>
             </Hoja>

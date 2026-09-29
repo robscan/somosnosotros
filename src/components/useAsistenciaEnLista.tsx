@@ -149,6 +149,7 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     const decidido = previo === "voy";
     const ruta = hrefEvento(e);
     return {
+      objeto: "evento",
       decidido,
       // El nombre no cambia con el estado (sería contradictorio con `aria-pressed`, que ya lo dice): "conmutador presionado"
       // con un nombre que dice "ya no vas" suena al revés.

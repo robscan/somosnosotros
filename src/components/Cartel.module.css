@@ -61,16 +61,12 @@
   max-height: 100%;
   object-fit: contain;
 }
+/* Cerrar el visor (ui/BotonIcono): el círculo blanco sobre la imagen, con la ✕ oscura */
 .visorCerrar {
   position: absolute;
   top: calc(var(--espacio-3) + env(safe-area-inset-top, 0px));
   right: var(--espacio-3);
-  display: grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
+}
+.visorCerrar > svg {
+  color: var(--texto);
 }

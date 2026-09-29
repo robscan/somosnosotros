@@ -1,8 +1,8 @@
 "use client";
 
+import BotonIcono from "./BotonIcono";
 import { useVolver } from "./Atras";
 import { IconoCerrar } from "./Iconos";
-import styles from "./Cerrar.module.css";
 
 /**
  * Cerrar (pedido del founder, 2026-09-16): en los formularios de alta no hay Atrás sino una ✕ en el extremo derecho
@@ -12,8 +12,8 @@ import styles from "./Cerrar.module.css";
 export default function Cerrar({ href, texto }: { href: string; texto: string }) {
   const volver = useVolver(href);
   return (
-    <a href={href} className={styles.cerrar} onClick={volver} aria-label={`Cerrar (${texto})`}>
+    <BotonIcono href={href} prefetch={false} relieve="contorno" onClick={volver} aria-label={`Cerrar (${texto})`}>
       <IconoCerrar width={20} height={20} />
-    </a>
+    </BotonIcono>
   );
 }

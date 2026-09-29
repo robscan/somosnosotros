@@ -243,19 +243,9 @@
   flex: none;
 }
 .contador button {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
   font-size: 20px;
   font-weight: 700;
   color: var(--primario);
-  cursor: pointer;
-}
-.contador button:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 .contador input {
   width: 44px;

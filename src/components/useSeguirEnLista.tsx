@@ -129,6 +129,7 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     const antes = sigo(id);
     const clave = claveSeguir(antes);
     return {
+      objeto: que,
       decidido: antes,
       // El nombre no cambia con el estado (`aria-pressed` ya lo dice).
       nombreAccesible: `Seguir — ${nombre}`,

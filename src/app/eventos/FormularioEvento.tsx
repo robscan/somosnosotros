@@ -3,6 +3,7 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
+import BotonIcono from "@/components/ui/BotonIcono";
 import Campo from "@/components/ui/Campo";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
@@ -641,9 +642,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             ) : (
               <>
                 <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
-                <button type="button" className={canon.accionIcono} onClick={() => setHoja(true)} aria-label="Buscar el lugar" title="Buscar el lugar">
+                <BotonIcono relieve="contorno" className={canon.salida} onClick={() => setHoja(true)} aria-label="Buscar el lugar" title="Buscar el lugar">
                   <IconoBuscar width={22} height={22} />
-                </button>
+                </BotonIcono>
               </>
             )}
             {/* La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios). */}

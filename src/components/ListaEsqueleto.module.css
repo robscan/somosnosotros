@@ -20,7 +20,7 @@
 }
 .chip {
   width: 96px;
-  height: 40px;
+  height: var(--control);
   border-radius: var(--radio-pildora);
 }
 .pestanas {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { MOTIVOS } from "@/lib/reportes";
 import { reportar, type ResultadoReporte } from "@/app/reportes";
+import Boton from "@/components/ui/Boton";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./Reportar.module.css";
@@ -53,9 +54,9 @@ export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {
         </p>
       )}
       <div className={styles.acciones}>
-        <button type="submit" className={styles.enviar} disabled={enviando}>
+        <Boton type="submit" alto="control" ancho="contenido" disabled={enviando}>
           {enviando ? "Enviando…" : "Enviar reporte"}
-        </button>
+        </Boton>
         <button type="button" className={styles.enlace} onClick={() => setAbierto(false)}>
           Cancelar
         </button>

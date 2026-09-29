@@ -142,20 +142,11 @@
 .cartelFallo small {
   color: var(--error);
 }
-/* "Probar con otra foto": lo dice, pero el control es el recuadro entero (nada interactivo dentro de un label). */
+/* "Probar con otra foto": lo dice (ui/Boton en una etiqueta, `claseBoton`), pero el control es el recuadro entero
+   (nada interactivo dentro de un label). */
 .rehacerCartel {
-  display: block;
   width: fit-content;
   margin-top: var(--espacio-2);
-  min-height: 36px;
-  padding: 0 var(--espacio-3);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-pildora);
-  background: var(--fondo);
-  color: var(--primario);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  line-height: 34px;
 }
 .barritaCartel {
   display: block;
@@ -290,30 +281,19 @@
   white-space: nowrap;
   cursor: pointer;
 }
-/* Salidas por intención: iconos redondos a la derecha (la cámara, Estoy aquí, la lupa). */
+/* Salidas por intención: iconos redondos a la derecha (la cámara, Estoy aquí, la lupa), ui/BotonIcono con borde. */
 .opciones {
   grid-area: accion;
   display: flex;
   gap: 6px;
 }
-.accionIcono {
-  grid-area: accion; /* solo, va directo al área; dentro de .opciones (flex) no aplica */
+/* Una salida sola va directo al área; dentro de .opciones (flex) no aplica. La cámara es un label con el campo de
+   archivo escondido dentro. */
+.salida {
+  grid-area: accion;
   position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  cursor: pointer;
 }
-.accionIcono:disabled {
-  opacity: 0.6;
-}
-/* La cámara es un label con el campo de archivo escondido dentro. */
-.accionIcono > input {
+.salida > input {
   position: absolute;
   width: 1px;
   height: 1px;

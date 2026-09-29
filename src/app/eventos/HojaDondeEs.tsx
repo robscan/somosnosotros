@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Boton from "@/components/ui/Boton";
+import BotonIcono from "@/components/ui/BotonIcono";
 import Limpiar from "@/components/ui/Limpiar";
 import { IconoBuscar, IconoChevronIzquierda, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
@@ -627,9 +628,9 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
             onArrastre={(p) => void moverPin(p, undefined, true)}
           />
           {!estoyAquiOculto && (
-            <button type="button" className={styles.estoyAqui} style={{ bottom: estoyAquiBottom }} onClick={estoyAquiClick} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+            <BotonIcono tamano="accion" relieve="elevado" className={styles.estoyAqui} style={{ bottom: estoyAquiBottom }} onClick={estoyAquiClick} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
               <IconoUbicacion width={22} height={22} />
-            </button>
+            </BotonIcono>
           )}
           {modo === "inicial" && avisoUbicacion && <p className={styles.avisoUbicacion}>{avisoUbicacion}</p>}
           {modo === "inicial" && draft && (

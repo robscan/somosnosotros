@@ -172,21 +172,7 @@
 }
 
 .listo {
-  display: block;
-  width: 100%;
-  min-height: var(--toque);
   margin-top: var(--espacio-3);
-  border: none;
-  border-radius: var(--radio);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  cursor: pointer;
-}
-.listo:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 /* El aviso "Cargando los días con eventos…" (SelectorFechaCargando): se oye, no se ve. */

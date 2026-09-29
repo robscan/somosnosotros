@@ -30,6 +30,22 @@ export const IconoCampana = (p: P) => (
     <path d="M10 20a2 2 0 0 0 4 0" />
   </svg>
 );
+/** Seguir un artista: la persona con «+» (la convención de Instagram y X). Decidido, la palomita en verde. */
+export const IconoPersonaMas = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="10" cy="8" r="3.5" />
+    <path d="M3.5 20a6.5 6.5 0 0 1 13 0" />
+    <path d="M19 7.5v6M16 10.5h6" />
+  </svg>
+);
+/** Seguir un lugar: la campana con «+», porque seguir es que te avisen de lo que publica. */
+export const IconoCampanaMas = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+    <path d="M12 9.5v5M9.5 12h5" />
+  </svg>
+);
 export const IconoTelefono = (p: P) => (
   <svg {...base(p)}>
     <rect x="7" y="2.5" width="10" height="19" rx="2" />

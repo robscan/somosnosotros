@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { bloquear } from "@/app/personas/acciones";
+import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import { IconoBloquear } from "@/components/ui/Iconos";
 import styles from "./Bloquear.module.css";
@@ -59,9 +60,9 @@ export default function Bloquear({ personaId, nombre, volver, conSesion }: Props
                 {error}
               </p>
             )}
-            <button type="button" className={styles.confirmarBoton} disabled={pendiente} onClick={confirmar}>
+            <Boton type="button" ancho="contenido" disabled={pendiente} onClick={confirmar}>
               {pendiente ? "Bloqueando…" : "Sí, bloquear"}
-            </button>
+            </Boton>
             <button type="button" className={styles.cancelar} onClick={() => setAbierta(false)} disabled={pendiente}>
               Cancelar
             </button>

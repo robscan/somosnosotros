@@ -8,6 +8,7 @@ import { useAbrirConError } from "@/components/ui/abrirConError";
 import { useTerminar } from "@/components/ui/Atras";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import Boton from "@/components/ui/Boton";
+import BotonIcono from "@/components/ui/BotonIcono";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import Limpiar from "@/components/ui/Limpiar";
@@ -378,12 +379,12 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
               <>
                 <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
                 <span className={canon.opciones}>
-                  <button type="button" className={canon.accionIcono} onClick={() => void estoyAqui(alMoverPin)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+                  <BotonIcono relieve="contorno" onClick={() => void estoyAqui(alMoverPin)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
                     <IconoUbicacion width={22} height={22} />
-                  </button>
-                  <button type="button" className={canon.accionIcono} onClick={() => setHoja({ conFoco: true })} aria-label="Buscar la dirección" title="Buscar la dirección">
+                  </BotonIcono>
+                  <BotonIcono relieve="contorno" onClick={() => setHoja({ conFoco: true })} aria-label="Buscar la dirección" title="Buscar la dirección">
                     <IconoBuscar width={22} height={22} />
-                  </button>
+                  </BotonIcono>
                 </span>
               </>
             )}

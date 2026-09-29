@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import BotonIcono from "./BotonIcono";
 import { IconoArriba, IconoBuscar } from "./Iconos";
 import styles from "./Cabecera.module.css";
 
@@ -49,9 +50,9 @@ export default function Cabecera({ contexto, acciones, onBuscar, campo, filtros,
             <div className={styles.acciones}>
               {acciones}
               {onBuscar && (
-                <BotonRedondo etiqueta="Buscar" onClick={onBuscar}>
-                  <IconoBuscar />
-                </BotonRedondo>
+                <BotonIcono relieve="contorno" onClick={onBuscar} aria-label="Buscar">
+                  <IconoBuscar width={18} height={18} />
+                </BotonIcono>
               )}
             </div>
           </>
@@ -60,20 +61,11 @@ export default function Cabecera({ contexto, acciones, onBuscar, campo, filtros,
         {children}
       </header>
       {lejos && (
-        <button type="button" className={styles.volver} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Volver arriba">
+        <BotonIcono tamano="accion" relieve="elevado" className={styles.volver} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Volver arriba">
           <IconoArriba width={22} height={22} />
-        </button>
+        </BotonIcono>
       )}
     </>
-  );
-}
-
-/** Botón de solo icono del renglón 1 (la lupa, Mapa o Lista). */
-export function BotonRedondo({ etiqueta, onClick, children }: { etiqueta: string; onClick: () => void; children: ReactNode }) {
-  return (
-    <button type="button" className={styles.redondo} onClick={onClick} aria-label={etiqueta}>
-      {children}
-    </button>
   );
 }
 

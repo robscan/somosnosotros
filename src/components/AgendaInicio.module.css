@@ -39,20 +39,6 @@
   font-size: var(--letra-sm);
   line-height: 1.4;
 }
-.accion {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-5);
-  border: 1px solid var(--texto);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-}
 .lista {
   list-style: none;
 }

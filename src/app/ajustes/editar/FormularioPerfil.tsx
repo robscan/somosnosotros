@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
+import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import { IconoCamara, IconoCandado, IconoCasa, IconoPersona, IconoTexto } from "@/components/ui/Iconos";
 import { LIMITES } from "@/lib/perfil";
 import { subirFoto } from "@/lib/subirFoto";
@@ -111,7 +112,7 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
           )}
           <span className={canon.clave}>Foto</span>
           <span className={`${canon.valor} ${foto ? "" : canon.falta}`}>{subiendo ? "Subiendo…" : foto ? "Tu foto" : "Sin foto"}</span>
-          <label className={canon.accionIcono} title={foto ? "Cambiar la foto" : "Poner una foto"}>
+          <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Poner una foto"}>
             <IconoCamara width={22} height={22} />
             <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Poner una foto"} />
           </label>

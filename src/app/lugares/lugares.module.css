@@ -54,29 +54,22 @@
   font-size: var(--letra-sm);
   box-shadow: var(--sombra);
 }
-/* El botón de ubicación (docs/rediseno/35): abajo a la izquierda, el mismo botón que el ↑ de los listados
-   (ui/Cabecera .volver). Con la hoja del pin abierta sube justo por encima de ella (nunca se tapa): `--alto-hoja`
-   lo publica ui/useAltoHoja con el alto real de la hoja, y aquí se resta lo que la caja del mapa ya deja libre
-   sobre la navegación, para no subir de más. */
+/* El botón de ubicación (docs/rediseno/35, ui/BotonIcono): abajo a la izquierda, el mismo botón que el ↑ de los
+   listados (ui/Cabecera .volver). Con la hoja del pin abierta sube justo por encima de ella (nunca se tapa):
+   `--alto-hoja` lo publica ui/useAltoHoja con el alto real de la hoja, y aquí se resta lo que la caja del mapa ya
+   deja libre sobre la navegación, para no subir de más. Su glifo dice si ya hay ubicación: oscuro sin ella, del
+   color de acción con ella (va en el icono para no pelear con el color del propio botón). */
 .ubicacion {
   position: absolute;
   left: var(--gutter);
   bottom: calc(16px + max(0px, var(--alto-hoja, 0px) - var(--nav-abajo)));
   z-index: calc(var(--z-pegajoso) - 1);
-  display: grid;
-  place-items: center;
-  width: var(--toque);
-  height: var(--toque);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  box-shadow: var(--sombra-flotante);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
   transition: bottom 200ms ease;
 }
-.ubicacionActiva {
+.ubicacion > svg {
+  color: var(--texto);
+}
+.ubicacionActiva > svg {
   color: var(--primario);
 }
 /* El conmutador Mapa · Lista (docs/rediseno/45, OL-174): salió del renglón 1 de la cabecera; flota, secundario
@@ -185,9 +178,6 @@
 }
 .hojaMeta b {
   color: var(--texto);
-}
-.verFicha {
-  width: 100%;
 }
 /* Un destacado lo dice en la hoja, con el punto naranja del mapa (docs/rediseno/20, M2) */
 .destacado {

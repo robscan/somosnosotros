@@ -1,8 +1,5 @@
-/* LetreroCorreoLigado (OL-177): mismo dibujo que la invitación a crear cuenta de Inicio (Inicio.module.css,
-   .invitacion/.crearCuenta) — caja violeta clara, título en negrita, párrafo, botón violeta redondeado — copiado
-   aquí en vez de importado (Inicio.tsx no se toca en esta pieza: otro operador puede estar en ese árbol) y
-   adaptado a un <button> real: reset de apariencia completo (regla dura de docs/ops/MEMORIA_GESTOR.md, tercer
-   aviso del founder por el mismo motivo). Una instancia por artista ligado; se apilan con el margen de la última. */
+/* LetreroCorreoLigado (OL-177): caja violeta clara, título en negrita, párrafo y el botón de la app (ui/Boton, en
+   píldora). Una instancia por artista ligado; se apilan con el margen de la última. */
 .invitacion {
   display: grid;
   gap: var(--espacio-1);
@@ -23,23 +20,7 @@
   font-size: var(--letra-sm);
 }
 .reclamar {
-  appearance: none;
-  border: 0;
-  padding: 0 var(--espacio-4);
-  font: inherit;
   justify-self: start;
-  min-height: var(--toque-min);
-  display: inline-flex;
-  align-items: center;
-  border-radius: var(--radio-pildora);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-weight: 700;
-  cursor: pointer;
-}
-.reclamar:disabled {
-  opacity: 0.7;
-  cursor: default;
 }
 .hecho {
   display: flex;

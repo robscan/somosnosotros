@@ -106,25 +106,16 @@
 /* "Estoy aquí" sobre el mapa: abajo a la izquierda, sube cuando la barra de acciones o la hoja "Agregar lugar"
    están a la vista. z-index por encima de la hoja (`--z-hoja`) a propósito -OL-182, doc 43 segunda versión: "el botón
    flotante Estoy aquí queda encima de la hoja, no debajo"-, aunque en la práctica nunca se superponen (el bottom
-   se calcula para que quede siempre arriba de lo que haya). */
+   se calcula para que quede siempre arriba de lo que haya). Es un ui/BotonIcono; su glifo es oscuro, como el del
+   botón de ubicación del mapa de Lugares. */
 .estoyAqui {
   position: absolute;
   left: var(--gutter);
   z-index: calc(var(--z-hoja) + 1);
-  display: grid;
-  place-items: center;
-  width: var(--toque);
-  height: var(--toque);
-  border: none;
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  box-shadow: var(--sombra-flotante);
-  cursor: pointer;
   transition: bottom 120ms ease;
 }
-.estoyAqui:disabled {
-  opacity: 0.6;
+.estoyAqui > svg {
+  color: var(--texto);
 }
 
 .avisoUbicacion {
