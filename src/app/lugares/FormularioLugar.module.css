@@ -29,7 +29,7 @@
 .notaExiste {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: var(--espacio-1);
   padding-top: var(--espacio-2);
   /* Pegada al campo (mismo padding-top que canon.cuerpoNota, "Falta el nombre."); abajo, la separación normal
      entre renglones (canon.renglones usa var(--espacio-2) de gap) — antes tocaba el renglón de abajo sin espacio

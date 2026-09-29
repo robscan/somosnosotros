@@ -29,7 +29,7 @@
   color: var(--texto-suave);
   /* Alinea con la caja del campo (`.control`), no con la etiqueta "Título" de encima: alto de la etiqueta
      más su margen (`ui/Campo.module.css`, `.etiqueta`). */
-  margin-top: 20px;
+  margin-top: var(--espacio-5);
 }
 /* El campo del título (ui/Campo): penúltimo hijo de la rejilla tanto con agarre (4 columnas) como sin él (3),
    así no hace falta una regla distinta para cada caso. Sin este min-width:0 la pista minmax(0, 1fr) no basta,
@@ -48,7 +48,7 @@
   background: none;
   padding: 0;
   margin: 0;
-  margin-top: 8px;
+  margin-top: var(--espacio-2);
   font: inherit;
   display: grid;
   place-items: center;

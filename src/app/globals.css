@@ -1,10 +1,10 @@
 :root {
-  /* Alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone, OL-209). En Safari y en la web
-     instalada del iPhone vale 0: ahí el navegador ya deja la página debajo de la hora. */
-  --tope: env(safe-area-inset-top, 0px);
   color-scheme: light; /* tema claro, sin modo oscuro (DEFINICION) */
 
-  /* Variables de diseño: una sola fuente de verdad para color, espacio y forma. */
+  /* Variables de diseño: una sola fuente de verdad para color, aire, forma, capas y medidas. Sus valores son los del
+     prototipo firmado de la reestructura de la interfaz (OL-227; doc 50, 5.1). */
+
+  /* Color */
   --fondo: #ffffff;
   --fondo-suave: #f4f4f2;
   --fondo-contenido: #f6f5f1; /* zona de contenido de las pantallas raíz: distinta de la cabecera y la nav, que son blancas */
@@ -15,44 +15,83 @@
   --primario-texto: #ffffff;
   --primario-suave: color-mix(in srgb, var(--primario) 12%, white); /* fondo del estado seleccionado ("✓ Voy"); derivado del primario (doc 37), antes #e3f0f2 fijo */
   --error: #b3261e; /* rojo solo para errores y borrar */
+  --error-suave: #fdf3f2; /* fondo de un campo con error */
   --ok: #1f6f43; /* verde: algo ya decidido (Vas, Sigues) — distinto de --primario a propósito, para no invitar a tocarlo otra vez (OL-106) */
+  --ok-suave: color-mix(in srgb, var(--ok) 12%, white); /* fondo suave de lo ya decidido; derivado de --ok como --primario-suave */
   --destacado: #d35400; /* naranja cempasúchil: los destacados en el mapa (founder, 2026-09-16); 3.8:1 con el fondo del mapa */
   --destacado-texto: #a94400; /* el mismo naranja para letra: 5.5:1 sobre el fondo de contenido */
   --destacado-suave: #fbebdd; /* fondo de la etiqueta "Destacado" en el panel */
+  --sistema-azul: #1a73e8; /* azul de los mapas: el punto de «tú estás aquí» */
   --fondo-miniatura: #e6e6e2; /* miniaturas y avatares sin foto */
   --fondo-mapa: #eef0ec; /* tono claro mientras carga el mapa: nunca pantalla negra */
   --asa: #d9d9d9; /* asa del panel inferior */
   --vidrio: rgba(255, 255, 255, 0.92); /* rótulos sobre el mapa */
+  --velo-titulo: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.44) 55%, rgba(0, 0, 0, 0)); /* oscurece el pie de una portada para que se lea el título que va encima */
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
   --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
   --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
 
-  --radio: 12px;
-  --radio-grande: 16px;
+  /* Aire: de 4 a 40, para el espacio entre cosas y el relleno */
   --espacio-1: 4px;
   --espacio-2: 8px;
   --espacio-3: 12px;
   --espacio-4: 16px;
   --espacio-5: 20px;
   --espacio-6: 24px;
-  --alto-barra: 56px; /* barra superior: logotipo y sesión, o regreso y logotipo */
-  --alto-nav: 60px; /* barra de navegación inferior (píldora de 32 + etiqueta), sin el área segura */
-  --alto-cabecera: 100px; /* lo que ui/Cabecera deja a la vista (chips 56 + pestañas 44); ella lo remide en vivo */
+  --espacio-7: 32px;
+  --espacio-8: 40px;
+
+  /* Forma */
+  --radio-chico: 4px; /* fotos de renglón */
+  --radio: 8px; /* botones, campos y tarjetas */
+  --radio-grande: 12px; /* portadas y tarjetas grandes */
+  --radio-hoja: 24px; /* las dos esquinas de arriba de una hoja */
+  --radio-pildora: 999px; /* chips, sellos y botones en píldora */
+
+  /* Controles: lo que se toca */
+  --control: 44px; /* alto de lo que se toca en barras y cabeceras */
   --toque: 48px; /* alto de botones y campos: cómodo para el pulgar */
+  --boton-icono: 48px; /* botón redondo de icono en listas, tarjetas y mapa */
+  --boton-icono-grande: 56px; /* botón redondo de icono de las acciones de una ficha */
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
 
-  /* Una sola columna en cualquier pantalla (decisión de maquetación, 2026-09-14). En el teléfono el gutter es 20px;
-     en tablet y escritorio crece solo lo que sobra a cada lado de la columna, así el contenido queda centrado y
+  /* Barras */
+  --alto-barra: 56px; /* barra superior: logotipo y sesión, o regreso y logotipo */
+  --alto-filtros: 48px; /* fila de contexto de las pantallas raíz: ciudad, Cuándo y Filtros */
+  --alto-cabecera: 100px; /* lo que ui/Cabecera deja a la vista (chips 56 + pestañas 44); ella lo remide en vivo */
+  --alto-nav: 60px; /* barra de navegación inferior (píldora de 32 + etiqueta), sin el área segura */
+  --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
+
+  /* Zonas seguras. `--tope` es el alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone,
+     OL-209); en Safari y en la web instalada del iPhone vale 0: ahí el navegador ya deja la página debajo de la hora. */
+  --tope: env(safe-area-inset-top, 0px);
+  --piso: env(safe-area-inset-bottom, 0px); /* zona segura de abajo (la barra de gestos del iPhone); 0 donde el navegador ya la deja libre */
+  --nav-abajo: calc(var(--alto-nav) + var(--piso)); /* lo que ocupa la navegación inferior con su zona segura */
+
+  /* Capas, de abajo arriba. Dos cosas de la misma banda se separan con +1 o −1, nunca con un número suelto. */
+  --z-pegajoso: 10; /* cabeceras y barras que se quedan pegadas al desplazar; los títulos de día y la tira de letras, justo bajo ellas (−1) */
+  --z-flotante: 20; /* fijo al pie sobre el contenido: navegación y barra de acciones; los botones flotantes, +1 */
+  --z-barra: 30; /* franja de la hora y avisos con Deshacer, sobre lo flotante */
+  --z-hoja: 40; /* hojas que suben desde abajo, con su fondo */
+  --z-capa: 50; /* capas a pantalla completa: el visor del cartel; «¿Dónde es?», +1 */
+  --z-encima: 60; /* lo que va sobre cualquier capa: la lista flotante; el texto largo, +1 */
+
+  /* Anchos. Una sola columna en cualquier pantalla (decisión de maquetación, 2026-09-14). En el teléfono el gutter es
+     20px; en tablet y escritorio crece solo lo que sobra a cada lado de la columna, así el contenido queda centrado y
      las barras (superior, inferior) siguen a lo ancho. Sin media queries ni envoltorios: todo gutter
      horizontal de página se escribe var(--gutter). Los botones y sangrías siguen con --espacio-N.
      Solo en cajas que van a todo lo ancho de la ventana: una caja que ya mide la columna (ui/Hoja) usa --espacio-5. */
-  --columna: 600px;
-  --al-centro: calc((100vw - var(--columna)) / 2); /* lo que sobra a cada lado; negativo en el teléfono. Sobre el ancho de la
-     ventana, no del contenedor: así vale lo mismo dentro de cualquier caja y un margen negativo llega al borde de la pantalla */
-  --gutter: max(var(--espacio-5), var(--al-centro));
+  --columna: 600px; /* ancho de lectura */
+  --columna-ancha: 960px; /* ancho de lectura en escritorio */
+  --panel: 400px; /* la lista que va junto al mapa */
+  /* Se mide sobre el ancho de la ventana, no del contenedor: así vale lo mismo dentro de cualquier caja y un margen
+     negativo llega al borde de la pantalla. Es la única medida de la ventana que queda: con barra de desplazamiento
+     clásica `vw` la incluye (H-38), y se va cuando las plantillas usen `.columna` en vez de este gutter. */
+  --gutter: max(var(--espacio-5), calc((100vw - var(--columna)) / 2));
 
   /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él.
      Un punto más grande que con la letra del sistema: la condensada se percibe más chica (LINEA_GRAFICA). */
+  --letra-2xs: 0.75rem; /* 12px: etiquetas de la navegación y sellos */
   --letra-xs: 0.875rem; /* 14px: etiquetas en mayúsculas, cuándo */
   --letra-sm: 0.9375rem; /* 15px: detalle, ayuda, error */
   --letra-md: 1.0625rem; /* 17px: texto y campos */
@@ -68,6 +107,29 @@
   --ancho-texto: "wdth" 80;
 
   --fuente: var(--fuente-bricolage), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Letra de listas y tarjetas (título y datos de un renglón o una tarjeta): la marca sigue en títulos, KPI y botones */
+  --fuente-lista: var(--fuente);
+  --ancho-lista-titulo: var(--ancho-titulo);
+  --ancho-lista-meta: var(--ancho-texto);
+  --letra-lista-titulo: var(--letra-xl); /* 19px */
+  --letra-tarjeta-titulo: var(--letra-md); /* 17px */
+  --letra-lista-meta: var(--letra-sm); /* 15px */
+  --peso-lista-titulo: 700;
+  --interlinea-lista: 1.15;
+
+  /* Tarjetas del carril y foto del renglón: las medidas de la pieza y de su esqueleto */
+  --tarjeta-mediana: 220px; /* ancho de la tarjeta mediana */
+  --tarjeta-mediana-foto: 132px; /* alto de su foto */
+  --tarjeta-grande: 165px; /* ancho de la tarjeta de cartel vertical */
+  --tarjeta-grande-foto: 248px; /* alto de su foto */
+  --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
+  --foto-renglon: 56px; /* lado de la foto de un renglón de lista (hoy mide 64: baja a 56 con el renglón nuevo) */
+
+  /* Movimiento */
+  --duracion: 200ms; /* transición corriente: barras, hojas, cabeceras */
+  --duracion-ficha: 220ms; /* una ficha al entrar o salir */
+  --curva: cubic-bezier(0.22, 0.61, 0.36, 1); /* aceleración de todo lo que se mueve */
 }
 
 * {
@@ -122,14 +184,15 @@ select {
 }
 
 /* La franja de la hora (OL-209): fija, del color de las cabeceras, encima de lo que se desplaza y debajo de las hojas
-   (z 40). Sin ella, en la app de iPhone el contenido pasaba bajo el reloj al desplazar. Donde `--tope` vale 0 no se ve. */
+   (`--z-hoja`). Sin ella, en la app de iPhone el contenido pasaba bajo el reloj al desplazar. Donde `--tope` vale 0 no
+   se ve. */
 body::before {
   content: "";
   position: fixed;
   inset: 0 0 auto;
   height: var(--tope);
   background: var(--fondo);
-  z-index: 30;
+  z-index: var(--z-barra);
   pointer-events: none;
 }
 
@@ -137,7 +200,7 @@ body::before {
 .raiz {
   min-height: 100dvh;
   padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + 96px);
+  padding-bottom: calc(var(--nav-abajo) + 96px);
   background: var(--fondo-contenido);
 }
 
@@ -145,7 +208,7 @@ body::before {
 .pagina {
   min-height: 100dvh;
   padding: calc(var(--espacio-5) + env(safe-area-inset-top, 0px)) var(--gutter)
-    calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px));
+    calc(var(--espacio-6) + var(--piso));
 }
 /* Con una barra interior (Entrar y las 8 altas/ediciones: `ui/Barra.tsx`, `volver` o `cerrar`), ella ya pone su
    propio colchón de zona segura (`Barra.module.css` `.interior`, pegajosa arriba): sumarlo aquí también dejaba un
@@ -153,6 +216,19 @@ body::before {
    docs/rediseno/48-shell-ios.md §2). Sin barra (error, 404) el colchón de aquí sigue siendo el único que hay. */
 .pagina:has(> header:first-child) {
   padding-top: 0;
+}
+
+/* Ancho de un bloque (doc 50, 5.3): la página no lleva aire a los lados y cada bloque escoge una de las dos. `.columna`
+   mide como mucho la columna más su aire y se centra sola, sin medir la ventana (H-38); `.a-lo-ancho` llega a los dos
+   bordes: un carril, una barra, una portada. */
+.columna {
+  width: 100%;
+  max-width: calc(var(--columna) + 2 * var(--espacio-5));
+  margin-inline: auto;
+  padding-inline: var(--espacio-5);
+}
+.a-lo-ancho {
+  width: 100%;
 }
 
 .titulo {

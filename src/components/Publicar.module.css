@@ -1,14 +1,14 @@
 .publicar {
   position: fixed;
   right: var(--gutter);
-  bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + var(--espacio-4));
-  z-index: 21;
+  bottom: calc(var(--nav-abajo) + var(--espacio-4));
+  z-index: calc(var(--z-flotante) + 1);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espacio-2);
   min-height: var(--toque);
   padding: 0 var(--espacio-5);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--primario);
   color: var(--fondo);
   font-size: var(--letra-lg);

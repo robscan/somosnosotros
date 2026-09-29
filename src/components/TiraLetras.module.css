@@ -6,7 +6,7 @@
 .tira {
   position: sticky;
   top: calc(var(--tope) + var(--alto-cabecera));
-  z-index: 9;
+  z-index: calc(var(--z-pegajoso) - 1);
   display: flex;
   height: var(--toque-min);
   margin-bottom: calc(-1 * var(--toque-min));

@@ -4,7 +4,7 @@
 .cabecera {
   position: sticky;
   top: var(--tope);
-  z-index: 10;
+  z-index: var(--z-pegajoso);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   background: var(--fondo);
@@ -86,8 +86,8 @@
 .volver {
   position: fixed;
   left: var(--gutter);
-  bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + var(--espacio-4));
-  z-index: 21;
+  bottom: calc(var(--nav-abajo) + var(--espacio-4));
+  z-index: calc(var(--z-flotante) + 1);
   display: grid;
   place-items: center;
   width: var(--toque);

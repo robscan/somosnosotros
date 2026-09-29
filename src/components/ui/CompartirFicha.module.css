@@ -35,7 +35,7 @@
   min-height: 38px;
   padding: 0 var(--espacio-3);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radio);
   background: var(--primario-suave);
   color: var(--primario);
   font-size: var(--letra-sm);

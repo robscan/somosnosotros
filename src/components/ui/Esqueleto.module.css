@@ -37,14 +37,14 @@
 .renglon .foto {
   width: 64px;
   height: 64px;
-  border-radius: 10px;
+  border-radius: var(--radio-chico);
 }
 .fotoRedonda {
   border-radius: 50%;
 }
 .renglonTextos {
   display: grid;
-  row-gap: 8px;
+  row-gap: var(--espacio-2);
 }
 .tituloRenglon {
   width: 65%;

@@ -126,7 +126,7 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
   function estiloFila(indice: number): CSSProperties | undefined {
     if (!arrastre) return undefined;
     if (indice === arrastre.indice) {
-      return { transform: `translateY(${arrastre.desplazamiento}px)`, transition: "none", zIndex: 2, boxShadow: "var(--sombra-panel)", position: "relative" };
+      return { transform: `translateY(${arrastre.desplazamiento}px)`, transition: "none", zIndex: "calc(var(--z-pegajoso) - 1)", boxShadow: "var(--sombra-panel)", position: "relative" };
     }
     const { indice: origen, objetivo, altoRenglon: alto } = arrastre;
     let salto = 0;

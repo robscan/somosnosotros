@@ -13,7 +13,7 @@
   width: 56px;
   height: 56px;
   flex: none;
-  border-radius: 10px;
+  border-radius: var(--radio-chico);
   overflow: hidden;
   background: var(--fondo-miniatura);
   display: grid;

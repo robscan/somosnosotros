@@ -15,7 +15,7 @@
 .barra {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-pegajoso);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -44,7 +44,7 @@
   gap: 6px;
   appearance: none;
   border: 1px solid var(--primario);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: none;
   padding: 0 var(--espacio-4);
   margin: 0;

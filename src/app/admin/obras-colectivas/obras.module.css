@@ -32,9 +32,9 @@
   width: 100%;
   min-width: 0;
   min-height: var(--toque-min);
-  padding: 0 12px;
+  padding: 0 var(--espacio-3);
   border: 1px solid var(--borde);
-  border-radius: 10px;
+  border-radius: var(--radio);
   background: var(--fondo);
   color: var(--texto);
   font: inherit;
@@ -239,7 +239,7 @@
 .contador {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--espacio-1);
   flex: none;
 }
 .contador button {

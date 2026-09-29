@@ -7,7 +7,7 @@
   min-height: 40px;
   padding: 0 var(--espacio-4) 0 var(--espacio-2);
   border: 1px solid var(--borde);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--fondo);
   color: var(--texto);
   font-size: var(--letra-sm);

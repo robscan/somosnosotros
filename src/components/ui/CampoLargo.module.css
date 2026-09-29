@@ -61,7 +61,7 @@
 .capa {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: calc(var(--z-encima) + 1);
   display: flex;
   flex-direction: column;
   background: var(--fondo);

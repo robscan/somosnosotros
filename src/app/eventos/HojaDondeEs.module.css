@@ -6,11 +6,12 @@
 .capa {
   position: fixed;
   inset: 0;
-  /* Por debajo de ui/ListaFlotante (60, portal a document.body): la lista flotante de esta misma hoja tiene que
-     pintarse ENCIMA de la pantalla completa, no debajo (a diferencia de CampoLargo, que no usa ninguna lista
-     flotante y por eso puede ir en 70). Por encima de ui/Hoja (40) y de Cartel (50): nada de eso convive con esta
-     pantalla a la vez. */
-  z-index: 55;
+  /* Por debajo de ui/ListaFlotante (`--z-encima`, portal a document.body): la lista flotante de esta misma hoja tiene
+     que pintarse ENCIMA de la pantalla completa, no debajo (a diferencia de CampoLargo, que no usa ninguna lista
+     flotante y por eso puede ir en `--z-encima` + 1). Por encima de ui/Hoja (`--z-hoja`) y de Cartel (`--z-capa`): nada
+     de eso convive con esta pantalla a la vez. Dentro, cada pieza usa la banda de la escala que le toca, en el orden de
+     siempre: campo, resumen y aviso, barra de acciones, hoja «Agregar lugar», «Estoy aquí». */
+  z-index: calc(var(--z-capa) + 1);
   display: flex;
   flex-direction: column;
   background: var(--fondo);
@@ -66,7 +67,7 @@
 /* El campo, siempre visible y siempre arriba: nunca lo tapa el mapa ni la lista. */
 .campo {
   position: relative;
-  z-index: 4;
+  z-index: var(--z-pegajoso);
   flex: none;
   display: flex;
   align-items: center;
@@ -103,13 +104,13 @@
 }
 
 /* "Estoy aquí" sobre el mapa: abajo a la izquierda, sube cuando la barra de acciones o la hoja "Agregar lugar"
-   están a la vista. z-index por encima de la hoja (10) a propósito -OL-182, doc 43 segunda versión: "el botón
+   están a la vista. z-index por encima de la hoja (`--z-hoja`) a propósito -OL-182, doc 43 segunda versión: "el botón
    flotante Estoy aquí queda encima de la hoja, no debajo"-, aunque en la práctica nunca se superponen (el bottom
    se calcula para que quede siempre arriba de lo que haya). */
 .estoyAqui {
   position: absolute;
   left: var(--gutter);
-  z-index: 11;
+  z-index: calc(var(--z-hoja) + 1);
   display: grid;
   place-items: center;
   width: var(--toque);
@@ -131,7 +132,7 @@
   left: var(--gutter);
   right: var(--gutter);
   top: 12px;
-  z-index: 5;
+  z-index: var(--z-flotante);
   margin: 0;
   padding: var(--espacio-2) var(--espacio-3);
   border-radius: var(--radio);
@@ -147,7 +148,7 @@
   left: var(--gutter);
   right: var(--gutter);
   top: 12px;
-  z-index: 5;
+  z-index: var(--z-flotante);
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -221,7 +222,7 @@
 .marcaPrivado {
   margin-left: 6px;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--fondo-suave);
   color: var(--texto-suave);
   font-size: var(--letra-xs);
@@ -236,10 +237,10 @@
   position: absolute;
   left: 0;
   right: 0;
-  z-index: 9;
+  z-index: var(--z-barra);
   display: flex;
   gap: var(--espacio-2);
-  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-3) + env(safe-area-inset-bottom, 0px));
+  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-3) + var(--piso));
   background: var(--fondo);
   box-shadow: var(--sombra-panel);
   transition: bottom 120ms ease;
@@ -272,18 +273,19 @@
    lo hay, mismo mecanismo que .barraAcciones (JS mueve `bottom`)-, dejando el mapa y el pin siempre visibles
    arriba (`MapaDondeEs` recibe `paddingInferior`). Antes de esta pieza era un panel flotante que tapaba el mapa
    entero y "Ajusta el pin en el mapa" no se podía cumplir -el defecto que reportó el founder en producción.
-   z-index 10: por debajo de "Estoy aquí" (11, doc 43: "queda encima de la hoja, no debajo") y de ListaFlotante
-   (60, portal), por encima de .barraAcciones (9, nunca conviven: la barra se oculta en modo "agregar"). */
+   `--z-hoja`: por debajo de "Estoy aquí" (`--z-hoja` + 1, doc 43: "queda encima de la hoja, no debajo") y de
+   ListaFlotante (`--z-encima`, portal), por encima de .barraAcciones (`--z-barra`, nunca conviven: la barra se oculta
+   en modo "agregar"). */
 .hojaAgregar {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 10;
+  z-index: var(--z-hoja);
   display: flex;
   flex-direction: column;
-  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-4) + env(safe-area-inset-bottom, 0px));
-  border-radius: 20px 20px 0 0;
+  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-4) + var(--piso));
+  border-radius: var(--radio-hoja) var(--radio-hoja) 0 0;
   background: var(--fondo);
   box-shadow: var(--sombra-panel);
   transition:
@@ -309,7 +311,7 @@
   width: 36px;
   height: 4px;
   margin-bottom: var(--espacio-2);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--borde);
 }
 .hojaAgregar h3 {
@@ -407,7 +409,7 @@
   width: 44px;
   height: 26px;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--borde);
   cursor: pointer;
 }

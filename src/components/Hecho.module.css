@@ -4,8 +4,8 @@
   position: fixed;
   left: var(--gutter);
   right: var(--gutter);
-  bottom: calc(var(--alto-barra-fija, calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px))) + var(--espacio-3));
-  z-index: 30;
+  bottom: calc(var(--alto-barra-fija, var(--nav-abajo)) + var(--espacio-3));
+  z-index: var(--z-barra);
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;

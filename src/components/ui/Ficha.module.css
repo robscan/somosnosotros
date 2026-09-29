@@ -9,7 +9,7 @@
    contenido en su tono, barra de acciones blanca abajo. Deja sitio abajo para la barra pegajosa. */
 .pagina {
   min-height: 100dvh;
-  padding: 0 var(--gutter) calc(96px + env(safe-area-inset-bottom, 0px));
+  padding: 0 var(--gutter) calc(96px + var(--piso));
   background: var(--fondo-contenido);
 }
 .iconoBarra {
@@ -124,7 +124,7 @@
 /* Acción deshabilitada con explicación ("Cómo llegar · sin dirección") */
 .accion small {
   color: var(--texto-suave);
-  font-size: 0.75rem;
+  font-size: var(--letra-2xs);
   font-weight: 400;
 }
 
@@ -156,6 +156,7 @@
 }
 .accionesRepartidas {
   justify-content: space-between;
+  container-type: inline-size; /* para medir las etiquetas contra el ancho de esta caja y no contra el de la ventana */
 }
 /* A 320px, cuatro círculos de 64px (min-width de `.accion`, sin tocar) con el `gap` normal (16px) no caben:
    4×64 + 3×16 = 304px contra 280px útiles (320 − 2×20px de `--gutter`, comprobado en globals.css). Con
@@ -168,7 +169,7 @@
   }
 }
 .accionesCarril {
-  gap: 20px;
+  gap: var(--espacio-5);
 }
 /* `.accion` se usa en `<a>` (Cómo llegar, redes), en el `<span aria-disabled>` de "sin dirección" y en el
    `<button>` de `BotonCompartir` — reset de apariencia nativa (founder, 2026-09-24, OL-167: el botón de
@@ -242,10 +243,11 @@
 }
 /* Con 3-4 (`.accionesRepartidas`) los círculos SÍ se reparten a todo el ancho sin desplazarse: a 390px caben
    4 etiquetas de 80px, pero a 320/375 no (medido, segundo hallazgo del gestor: 4 títulos al tope de 30
-   caracteres se salían 52px a 320px). La misma cuenta de arriba, pero con el ancho real de la pantalla
-   (`100vw`) en vez de 390 fijo, y sin pasar nunca de los 80px que ya fijó el founder para 390px. */
+   caracteres se salían 52px a 320px). La misma cuenta de arriba, pero con el ancho real de la caja
+   (`100cqw`, el de `.accionesRepartidas`) en vez de 390 fijo, y sin pasar nunca de los 80px que ya fijó el founder para
+   390px. */
 .accionesRepartidas .accionEtiqueta {
-  max-width: min(80px, calc((100vw - 88px) / 4));
+  max-width: min(80px, calc((100cqw - 3 * var(--espacio-4)) / 4));
 }
 
 /* Título «Enlaces» sobre el carril de acciones (ficha de artista): sección propia, no `FichaLista.module.css`
@@ -286,13 +288,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 20;
+  z-index: var(--z-flotante);
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--espacio-3);
   align-items: center;
   min-height: 72px;
-  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-3) + env(safe-area-inset-bottom, 0px));
+  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-3) + var(--piso));
   background: var(--fondo);
   border-top: 1px solid var(--borde);
 }
@@ -409,7 +411,7 @@
   min-height: var(--toque-min);
   padding: 0 var(--espacio-4);
   border: 1px solid var(--texto);
-  border-radius: 10px;
+  border-radius: var(--radio);
   background: var(--fondo);
   color: var(--texto);
   font-weight: 700;

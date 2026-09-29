@@ -66,7 +66,7 @@
 .completa {
   display: grid;
   grid-template-columns: 24px 1fr auto;
-  column-gap: 12px;
+  column-gap: var(--espacio-3);
   align-items: center;
   margin: var(--espacio-2) 0;
   padding: 10px 14px;
@@ -82,8 +82,8 @@
   display: inline-flex;
   align-items: center;
   min-height: 36px;
-  padding: 0 12px;
-  border-radius: 999px;
+  padding: 0 var(--espacio-3);
+  border-radius: var(--radio-pildora);
   background: var(--primario);
   color: var(--primario-texto);
   font-weight: 700;
@@ -107,7 +107,7 @@
 
 /* 3. Listas: días en gris, renglones de la agenda o de lugares y artistas; vacíos con salida. */
 .dia {
-  padding: 12px 0 4px;
+  padding: var(--espacio-3) 0 var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   font-weight: 700;

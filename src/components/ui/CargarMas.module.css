@@ -7,7 +7,7 @@
   margin-block: var(--espacio-2);
   padding: var(--espacio-2) var(--espacio-4);
   border: 1px solid var(--borde);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: none;
   color: var(--texto);
   font: inherit;
