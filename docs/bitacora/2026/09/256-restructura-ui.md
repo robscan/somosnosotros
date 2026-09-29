@@ -515,7 +515,8 @@ los controles por debajo de 44 son los mismos de la v2.
   semana» (la fila se desplaza) y la lista por día en lugar de los carriles.
 - **`256-82-v3-lugares-mapa-telefono`:** mapa entero, fila ciudad · Filtros 1 · Museo ✕, la hoja asomando (radio 24)
   con el resumen y el primer renglón (campana con «+»), encima de la navegación.
-- **`256-83-v3-lugares-hoja-media-telefono`:** la hoja a media altura con la lista y sus campanas.
+- **`256-83-v3-lugares-hoja-llena-telefono`:** la lista de Lugares a pantalla completa tras subir la hoja: el asa
+  arriba, «62 lugares · los más cercanos primero» y los renglones; la navegación se guarda.
 - **`256-84-v3-lugares-pin-ficha-telefono`:** tras tocar el pin: la barra del sitio y la fila siguen arriba, el mapa
   en medio, la hoja a la altura justa de foto + KPI: héroe 3:2 con el asa, Cerrar (izquierda) y ⋯ (derecha)
   elevados sobre la imagen, MUSEO y el título dentro de la imagen sobre el velo, los tres KPI enteros y la pastilla
@@ -728,8 +729,11 @@ que se entienda que hay más contenido debajo, además de poner barra de scroll 
 pasa de 176 px fijos a asa + cantidad + dos renglones y medio medidos en el DOM (el tercero se corta a propósito), y la
 hoja llena enseña una barra de desplazamiento fina a la derecha (en tableta y escritorio el panel la enseña siempre;
 en el iPhone es la del sistema al desplazar). Probado con la rueda (`probar-hoja.mjs`, `probar-hoja-recogida.mjs`):
-los estados no cambian, solo la altura de asoma. Capturas regeneradas; cambian `256-82` (el mapa con la hoja asomando
-dos renglones y medio), `256-85` (llena, con su barra) y las de escritorio del panel. Doc 50 § 6.5 (décima vuelta) y
+con asoma a dos renglones y medio la altura «media» de la lista quedaba a 40 px y sobraba, así que la lista tiene tres
+alturas (recogida · asoma · llena) y la ficha conserva su media. Capturas regeneradas; cambian `256-82` (el mapa con la
+hoja asomando dos renglones y medio) y `256-83`, que pasa de «hoja media» a «hoja llena» (la lista a pantalla completa,
+sin navegación; la barra de desplazamiento no sale en el Chrome sin cabeza porque pinta barras superpuestas solo al
+desplazar). Doc 50 § 6.5 (décima vuelta) y
 § 11, punto 58.
 
 ### Cierre (cuarta parte)

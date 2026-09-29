@@ -829,8 +829,10 @@ que se entienda que hay más contenido debajo, además de poner barra de scroll 
 de la hoja ya no es un número fijo (176 px): es el asa, la cantidad y dos renglones y medio, medidos en el DOM (el
 tercer renglón sale cortado a propósito). Llena, la hoja enseña su barra de desplazamiento fina a la derecha (cubre la
 pantalla, así que la barra es la suya); en tableta y escritorio el panel la enseña siempre. En el iPhone la barra es
-la del sistema, que aparece al desplazar. Capturas [256-82](capturas-256/256-82-v3-lugares-mapa-telefono.png) y
-[256-85](capturas-256/256-85-v3-lugares-ficha-llena-telefono.png).
+la del sistema, que aparece al desplazar. Con asoma a dos renglones y medio, la altura «media» de la lista (56 %) quedaba a 40 px
+de asoma y sobraba: la lista tiene tres alturas (recogida · asoma · llena) y la ficha conserva su media (foto + KPI).
+Capturas [256-82](capturas-256/256-82-v3-lugares-mapa-telefono.png) y
+[256-83](capturas-256/256-83-v3-lugares-hoja-llena-telefono.png).
 
 ### 6.6 Defectos que la revisión de la v3 encontró y cerró
 
@@ -1126,6 +1128,7 @@ Lo que el founder confirma o corrige al probar la v3:
 
 58. **La hoja de Lugares asoma con dos renglones y medio y enseña su barra de desplazamiento** («¿podemos hacer que
     se vean 2,5 lugares aquí… además de poner barra de scroll del lado derecho?»): hecho (6.5, décima vuelta); la
-    barra fina se ve llena y en el panel; en el iPhone será la del sistema al desplazar. **Hecho.**
+    barra fina se ve llena y en el panel; en el iPhone será la del sistema al desplazar. La lista queda con tres alturas
+    (recogida · asoma · llena); la ficha conserva su media. **Hecho.**
 
 Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).

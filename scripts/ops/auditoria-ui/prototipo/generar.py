@@ -10,7 +10,7 @@ la barra inferior se esconde al bajar y vuelve al subir; visor de la imagen al t
 v3, séptima vuelta (hilos del prototipo): «Elegir fecha…» abre un calendario (un día o dos para un rango) y el valor de Cuándo filtra los días;
 «Otra ciudad» abre un campo con sugerencias y recarga; el icono de Artistas con figura y pincel se probó y el founder lo rechazó (sigue la estrella); la ficha de artista conserva el avatar
 dentro del héroe, pierde «Se presenta en» y muestra sus novedades publicadas; la barra compacta de las fichas y de la hoja lleva la portada
-oscurecida detrás del título; KPI «Interesadxs» y «Siguen» (lenguaje incluyente).
+oscurecida detrás del título; KPI «Interesan» (el founder eligió esa palabra sobre «Interesadxs») y «Siguen» (lenguaje incluyente).
 v3, décima vuelta (hilo): la hoja de Lugares asoma con dos renglones y medio (se ve que hay más abajo) y enseña su barra de desplazamiento llena y en el panel.
 v3, novena vuelta (chat): en las tarjetas del carril la meta va en dos líneas (fecha y hora · lugar) y el título baja a 17 px.
 v3, octava vuelta (hilos del prototipo): armazón simplificado. Un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que
@@ -309,7 +309,7 @@ perfil = f'''<section class="pantalla raiz" data-id="perfil">
   <div class="perfil-cabecera"><span class="avatar grande">A</span><b>Ana Rentería</b><small>Barrio de San Miguelito</small><button type="button" class="boton-icono contorno" data-ir="ajustes" aria-label="Ajustes">{i("engrane")}</button></div>
   <ul class="kpis">
     <li><a href="#">{i("ok")}<b>2</b><small>Voy</small></a></li>
-    <li><a href="#">{i("estrella")}<b>1</b><small>Interesadxs</small></a></li>
+    <li><a href="#">{i("estrella")}<b>1</b><small>Interesan</small></a></li>
     <li><a href="#">{i("campana")}<b>2</b><small>Sigo</small></a></li>
   </ul>
   <div class="filtros"><button type="button" class="chip activo">Voy</button><button type="button" class="chip">Me interesa</button><button type="button" class="chip">Sigo</button></div>
@@ -835,7 +835,7 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
       (de la franja de estado al pie) y DESPLAZA: un hueco arriba (::before, la hoja entera menos lo que asoma recogida) y luego el
       cuerpo blanco, que asoma desde abajo; nada en el marcado.
       Arrastrar el cuerpo lo sube (la hoja «crece»); cuando su borde llega arriba (llena) el mismo gesto sigue desplazando el
-      contenido: una sola inercia. Al soltar entre alturas se asienta en la más cercana (asoma · media · llena).
+      contenido: una sola inercia. Al soltar entre alturas se asienta en la más cercana (recogida · asoma · llena; la ficha, recogida · media · llena).
       Tocar un pin o un renglón muestra la ficha en el cuerpo (la lista conserva su desplazamiento) a la altura de foto + KPI;
       jalarla hacia abajo la recoge hasta su cabecera (nunca se cierra sola: solo con la ✕); la lista recogida muestra solo la cantidad.
       Desde 792 la hoja es el panel izquierdo (sin espaciadores) y desplaza como cualquier panel.
@@ -1233,12 +1233,12 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   const fichaHoja = hojaL.querySelector(".ficha-hoja");
   const enTelefono = () => getComputedStyle(hojaL).position !== "static";
   const zoom = () => parseFloat(aparato.style.zoom || "1");
-  // Alturas visibles sobre la navegación: lista recogida 64 (asa y cantidad) · asoma (asa, cantidad y dos renglones y medio: se ve que hay más abajo) · media 56 % · llena; ficha recogida (su cabecera) · media (foto + KPI) · llena.
+  // Alturas visibles sobre la navegación: lista recogida 64 (asa y cantidad) · asoma (asa, cantidad y dos renglones y medio: se ve que hay más abajo) · llena; ficha recogida (su cabecera) · media (foto + KPI) · llena.
   function detentes() {{
     const util = hojaL.clientHeight - navP.offsetHeight;
     if (lugaresP.dataset.ficha) {{ const r = fichaHoja.querySelector(".cabecera-hoja").offsetHeight, k = fichaHoja.querySelector(".kpis"); return {{ recogida: 0, media: Math.min(util, k.offsetTop + k.offsetHeight + 80) - r, llena: util - r }}; }}
     const fila = hojaL.querySelector(".lista.panel > .renglon").offsetHeight;
-    return {{ recogida: 0, asoma: 2.5 * fila, media: util * 0.56 - 64, llena: util - 64 }};
+    return {{ recogida: 0, asoma: 2.5 * fila, llena: util - 64 }};
   }}
   hojaL.detentes = detentes;
   function masCercano(y) {{ let mejor = "recogida", d = Infinity; for (const [k, v] of Object.entries(detentes())) {{ const dd = Math.abs(v - y); if (dd < d) {{ d = dd; mejor = k; }} }} return mejor; }}
