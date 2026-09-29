@@ -46,11 +46,11 @@
   position: fixed;
   top: calc(var(--alto-barra, 56px) + 8px); /* en la zona vacía de arriba: no tapa el botón, las tarjetas ni la ayuda */
   left: 8px;
-  z-index: 30;
+  z-index: var(--z-barra);
   max-width: 64vw;
   margin: 0;
-  padding: 6px 8px;
-  border-radius: 8px;
+  padding: 6px var(--espacio-2);
+  border-radius: var(--radio);
   background: rgba(255, 255, 255, 0.9);
   color: var(--error);
   font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -87,7 +87,7 @@
   gap: 6px;
   width: 100%;
   min-height: 84px;
-  padding: 10px 4px;
+  padding: 10px var(--espacio-1);
   border: 1px solid var(--borde);
   border-radius: 20px;
   background: var(--fondo);
@@ -133,7 +133,7 @@
 }
 /* Tinta Blanco (OL-126): la punta blanca sobre la tarjeta blanca no se ve; un fondo gris suave detrás, solo entonces. */
 .muestra[data-clara="true"] {
-  border-radius: 8px;
+  border-radius: var(--radio);
   background: var(--fondo-miniatura);
 }
 .tinta {
@@ -149,7 +149,7 @@
 }
 .menu {
   position: absolute;
-  z-index: 3;
+  z-index: var(--z-flotante);
   bottom: calc(100% + 30px); /* hacia arriba, sin tocar el botón */
   left: 0;
   display: grid;
@@ -171,7 +171,7 @@
   justify-items: center;
   gap: 10px;
   min-height: 52px;
-  padding: 0 12px 0 6px;
+  padding: 0 var(--espacio-3) 0 6px;
   border: 2px solid transparent;
   border-radius: 13px;
   background: transparent;
@@ -198,12 +198,12 @@
   justify-self: center;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espacio-2);
   min-height: var(--toque-min);
   margin: 0 0 22px;
   padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--fondo);
   color: var(--texto);
   font-size: 15px;
@@ -318,7 +318,7 @@
 /* OL-117: el nombre/mensaje del error del permiso, discreto, para leerlo en el teléfono durante la prueba. */
 .detalle {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-xs);
   font-weight: 400;
@@ -334,7 +334,7 @@
   margin: 10px auto 0;
   padding: 0 var(--espacio-4);
   border: 1px solid var(--primario);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   color: var(--primario);
   font-size: 15px;
   font-weight: 700;
@@ -386,7 +386,7 @@
   display: inline-flex;
   align-items: center;
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--fondo-miniatura);
   color: var(--texto-suave);
   font-size: 13px;
@@ -397,11 +397,11 @@
   top: 10px;
   left: 0;
   right: 0;
-  z-index: 4;
+  z-index: calc(var(--z-flotante) + 1);
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
   align-items: center;
-  column-gap: 12px;
+  column-gap: var(--espacio-3);
   padding: 14px;
   border-radius: var(--radio);
   background: var(--primario);

@@ -21,7 +21,7 @@
 .chip {
   width: 96px;
   height: 40px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
 }
 .pestanas {
   display: flex;
@@ -30,7 +30,7 @@
 .pestana {
   width: 84px;
   height: 36px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
 }
 .lista {
   padding-inline: var(--gutter);

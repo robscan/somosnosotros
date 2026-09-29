@@ -4,11 +4,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 20;
+  z-index: var(--z-flotante);
   display: grid;
   grid-template-columns: repeat(4, 1fr); /* Inicio · Agenda · Lugares · Artistas (OL-153) */
-  height: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px));
-  padding: 0 max(var(--espacio-2), var(--al-centro)) env(safe-area-inset-bottom, 0px);
+  height: var(--nav-abajo);
+  /* Los cuatro destinos se reparten en la columna; a cada lado queda lo que sobra del ancho de la barra (fija: su 100% es la ventana) */
+  padding: 0 max(var(--espacio-2), calc((100% - var(--columna)) / 2)) var(--piso);
   background: var(--fondo);
   border-top: 1px solid var(--borde);
   box-shadow: var(--sombra-panel);
@@ -21,7 +22,7 @@
   gap: 3px;
   color: var(--texto-suave);
   text-decoration: none;
-  font-size: 0.75rem;
+  font-size: var(--letra-2xs);
   font-weight: 600;
   letter-spacing: 0.02em;
   -webkit-tap-highlight-color: transparent;
@@ -32,7 +33,7 @@
   place-items: center;
   width: 60px;
   height: 32px;
-  border-radius: 16px;
+  border-radius: var(--radio-pildora);
   transition: background-color 150ms;
 }
 .destino:active .icono {

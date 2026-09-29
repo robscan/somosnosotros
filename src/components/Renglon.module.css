@@ -54,14 +54,14 @@
 .frente:focus-visible {
   outline: 2px solid var(--primario);
   outline-offset: -2px;
-  border-radius: 4px;
+  border-radius: var(--radio-chico);
 }
 .foto {
   grid-area: foto;
   width: 64px;
   height: 64px;
   align-self: start;
-  border-radius: 10px;
+  border-radius: var(--radio-chico);
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
@@ -85,7 +85,7 @@
   flex-wrap: wrap;
   min-width: 0;
   gap: 2px var(--espacio-3);
-  margin-top: 4px;
+  margin-top: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
@@ -97,7 +97,7 @@
 .meta > span {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--espacio-1);
   white-space: nowrap;
 }
 .meta > span > svg {
@@ -117,7 +117,7 @@
 .meta > .estado {
   gap: 3px;
   padding: 0 var(--espacio-2) 0 6px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--primario-suave);
   color: var(--primario);
   font-size: var(--letra-xs);

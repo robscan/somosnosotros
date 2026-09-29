@@ -11,7 +11,7 @@
 }
 .ajustes > h2 {
   margin-bottom: calc(-1 * var(--espacio-5) + var(--espacio-2));
-  padding-left: 4px;
+  padding-left: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-xs);
   font-weight: 600;
@@ -35,12 +35,12 @@
   grid-template-areas:
     "icono etiqueta accion"
     "icono detalle accion";
-  column-gap: 12px;
+  column-gap: var(--espacio-3);
   align-items: center;
   align-content: center;
   width: 100%;
   min-height: 52px;
-  padding: 8px 14px;
+  padding: var(--espacio-2) 14px;
   border: none;
   background: none;
   color: var(--texto);
@@ -71,7 +71,7 @@ a.fila {
   grid-area: accion;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
@@ -85,7 +85,7 @@ a.fila {
   width: 51px;
   height: 31px;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--borde);
   cursor: pointer;
   transition: background-color 150ms;

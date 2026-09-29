@@ -31,7 +31,7 @@
   min-height: var(--toque-min);
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--primario);
   color: var(--primario-texto);
   font-weight: 700;

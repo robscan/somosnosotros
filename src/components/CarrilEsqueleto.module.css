@@ -4,7 +4,7 @@
 .esqueleto {
   display: grid;
   gap: var(--espacio-4);
-  padding-top: 32px;
+  padding-top: var(--espacio-7);
 }
 .cabecera {
   display: flex;

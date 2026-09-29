@@ -41,7 +41,7 @@ Con ratón, al pasar por encima el renglón se levanta en blanco con una marca d
 
 ## Una columna en cualquier pantalla
 
-La app se diseña para el teléfono y se ve en tablet y escritorio con **la misma maquetación**: una columna de 600 px centrada. Tres tokens en `globals.css`: `--columna` (600 px), `--al-centro` (lo que sobra a cada lado, calculado sobre el ancho de la ventana para que valga lo mismo dentro de cualquier caja; negativo en el teléfono) y `--gutter: max(20px, --al-centro)`. En el teléfono el gutter vale 20 px, como siempre; en pantallas anchas crece hasta centrar la columna.
+La app se diseña para el teléfono y se ve en tablet y escritorio con **la misma maquetación**: una columna de 600 px centrada. Dos tokens en `globals.css`: `--columna` (600 px) y `--gutter: max(20px, (ancho de la ventana − --columna) / 2)` (se calcula sobre la ventana para que valga lo mismo dentro de cualquier caja). En el teléfono el gutter vale 20 px, como siempre; en pantallas anchas crece hasta centrar la columna. Las clases `.columna` (ancho de lectura, centrado, sin medir la ventana) y `.a-lo-ancho` (de borde a borde) son la forma nueva, para las plantillas que se rehacen sin gutter en la página.
 
 - **Regla:** todo gutter horizontal de página se escribe `var(--gutter)`. Los rellenos de botones y las sangrías siguen con `--espacio-N`.
 - **Las barras van a lo ancho; el contenido, en la columna.** Barra superior, nav inferior, barra pegajosa de las fichas, hojas y cabeceras pegajosas pintan su fondo de borde a borde y alinean sus hijos con la columna. El mapa llena la pantalla; sus controles y la tarjeta del lugar se alinean con la columna.

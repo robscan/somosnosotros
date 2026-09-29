@@ -4,14 +4,13 @@
  * Espaciado (founder, 2026-09-23, tras probar en producción, OL-156): la barra de título con "Ver todos" queda más
  * lejos del carril, para no tocar la primera tarjeta sin querer al tocar "Ver todos" — 4px (`--espacio-1`) → 16px
  * (`--espacio-4`), los "unos 12px más" que pidió. El espacio ENTRE carriles (el `padding-top` de este mismo bloque,
- * de un `.destacados` al siguiente) tiene que notarse claramente más grande que ese: 32px fijos, el doble, siguiendo
- * el ejemplo del founder ("32px entre grupos frente a 12 dentro") — no hay un token de espaciado de 32px en la
- * escala (llega a --espacio-6, 24px), así que va literal, con esta nota de dónde sale el número.
+ * de un `.destacados` al siguiente) tiene que notarse claramente más grande que ese: 32px (`--espacio-7`), el doble,
+ * siguiendo el ejemplo del founder ("32px entre grupos frente a 12 dentro").
  */
 .destacados {
   display: grid;
   gap: var(--espacio-4);
-  padding-top: 32px;
+  padding-top: var(--espacio-7);
   /* El alto reservado por el esqueleto (CarrilEsqueleto) para que el colapso de un carril vacío (`.vacio`, más abajo)
      empiece del mismo alto en vez de saltar. */
   --alto-mediana: 246px;
@@ -141,7 +140,7 @@
   align-self: end;
   justify-self: start;
   display: grid;
-  gap: 4px;
+  gap: var(--espacio-1);
   justify-items: start;
   margin: 0 0 var(--espacio-2) var(--espacio-2);
 }
@@ -151,7 +150,7 @@
   align-items: center;
   gap: var(--espacio-1);
   padding: 2px var(--espacio-2) 2px 6px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--vidrio);
   font-size: var(--letra-xs);
   font-weight: 700;
@@ -163,7 +162,7 @@
   align-items: center;
   gap: 3px;
   padding: 0 var(--espacio-2) 0 6px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--primario-suave);
   color: var(--primario);
   font-size: var(--letra-xs);

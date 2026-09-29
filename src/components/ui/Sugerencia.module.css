@@ -22,7 +22,7 @@
   align-items: center;
   width: 100%;
   min-height: var(--toque);
-  padding: 8px 14px;
+  padding: var(--espacio-2) 14px;
   border: none;
   background: none;
   color: var(--texto);
@@ -52,13 +52,13 @@
 /* Con foto cuadrada (lugares) o miniatura redonda (artistas); sin icono (resultados del mapa) */
 .conFoto {
   grid-template-columns: 40px 1fr;
-  column-gap: 12px;
+  column-gap: var(--espacio-3);
 }
 .foto {
   grid-area: icono;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radio-chico);
   object-fit: cover;
   background: var(--fondo-miniatura);
 }

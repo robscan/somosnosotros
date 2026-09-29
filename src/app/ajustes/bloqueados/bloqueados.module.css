@@ -13,10 +13,10 @@
 .fila {
   display: grid;
   grid-template-columns: 40px 1fr auto;
-  column-gap: 12px;
+  column-gap: var(--espacio-3);
   align-items: center;
   min-height: 60px;
-  padding: 8px 14px;
+  padding: var(--espacio-2) 14px;
 }
 .avatar {
   width: 40px;
