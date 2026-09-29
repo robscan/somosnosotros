@@ -1489,7 +1489,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
 </html>
 '''
 html = html.replace('SNURI', sn)
-html = re.sub(r'<section class="pantalla ([a-z -]+)" data-id="(?!inicio)([a-z]+)"', r'<section class="pantalla \1" data-id="\2" hidden', html)
+html = re.sub(r'<section class="pantalla ([a-z -]+)" data-id="(?!inicio)([a-z-]+)"', r'<section class="pantalla \1" data-id="\2" hidden', html)
 salida = os.path.join(RAIZ, 'docs/rediseno/prototipos/restructura-ui.html')
 open(salida, 'w', encoding='utf-8').write(html)
 print('escrito', salida, len(html), 'bytes', html.count('\n'), 'líneas')
