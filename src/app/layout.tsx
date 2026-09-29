@@ -10,7 +10,7 @@ import PerfilEnNav from "@/components/PerfilEnNav";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
-import Sesion from "@/components/Sesion";
+import Sesion, { AccesoAdmin } from "@/components/Sesion";
 import TituloInstalada from "@/components/TituloInstalada";
 import { IconoPersona } from "@/components/ui/Iconos";
 import { GUION_APP_NATIVA } from "@/lib/appNativa";
@@ -74,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Armazon
           barra={
             <Suspense fallback={null}>
-              <BarraApp sesion={<Suspense fallback={null}><Sesion /></Suspense>} />
+              <BarraApp admin={<Suspense fallback={null}><AccesoAdmin /></Suspense>} sesion={<Suspense fallback={null}><Sesion /></Suspense>} />
             </Suspense>
           }
           nav={<NavInferior perfil={<Suspense fallback={<IconoPersona width={26} height={26} />}><PerfilEnNav /></Suspense>} />}

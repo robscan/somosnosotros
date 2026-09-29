@@ -38,13 +38,16 @@
   justify-self: end;
 }
 
-/* Desde 792 la barra de la app ya trae la franja de la hora, y la ficha no lleva cabecera propia: su Atrás y su menú
-   están en la barra de la app (nunca dos barras). */
+/* Desde 792 la barra de la app ya trae la franja de la hora y el logotipo. La ficha no lleva cabecera propia: su Atrás
+   y su menú están en la barra de la app (nunca dos barras). Una tarea conserva la suya, sin repetir el logotipo. */
 @media (min-width: 792px) {
   .interior {
     padding-top: 0;
   }
   :global([data-vista="ficha"]) .interior {
+    display: none;
+  }
+  :global([data-vista="tarea"]) .logotipo {
     display: none;
   }
 }

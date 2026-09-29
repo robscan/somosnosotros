@@ -109,10 +109,10 @@ export default function Atras({ href, texto }: { href: string; texto: string }) 
  * El mismo Atrás, solo con el chevron, para la barra de la app (44): desde 792 la ficha no lleva cabecera propia y su
  * Atrás vive ahí. Vuelve igual que el otro (`useVolver`).
  */
-export function AtrasIcono({ href, texto, className }: { href: string; texto: string; className?: string }) {
+export function AtrasIcono({ href, texto }: { href: string; texto: string }) {
   const volver = useVolver(href);
   return (
-    <BotonIcono href={href} prefetch={false} onClick={volver} className={className} aria-label={`Atrás (${texto})`}>
+    <BotonIcono href={href} prefetch={false} onClick={volver} aria-label={`Atrás (${texto})`}>
       <IconoChevronIzquierda width={26} height={26} />
     </BotonIcono>
   );

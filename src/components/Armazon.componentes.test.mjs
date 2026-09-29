@@ -39,16 +39,28 @@ before(async () => {
       import BarraApp from './src/components/BarraApp';
       import NavInferior from './src/components/NavInferior';
       import EnBarra from './src/components/EnBarra';
+      import Barra from './src/components/ui/Barra';
+      import Boton from './src/components/ui/Boton';
       import Cabecera from './src/components/ui/Cabecera';
       import BotonIcono from './src/components/ui/BotonIcono';
-      import {IconoCampana, IconoPuntos} from './src/components/ui/Iconos';
+      import {IconoCampana, IconoHerramientas, IconoPuntos} from './src/components/ui/Iconos';
+      import {usePathname} from 'next/navigation';
       import sesionStyles from './src/components/Sesion.module.css';
       import './src/app/globals.css';
-      const campana = <BotonIcono href="/novedades" className={sesionStyles.sesion} aria-label="Novedades"><IconoCampana width={26} height={26} /></BotonIcono>;
+      // Lo que la sesión pone en la barra (Sesion.tsx), a elegir con ?sesion=: la campana, «Entrar» o la campana con la llave de administración.
+      const campana = <BotonIcono href="/novedades" aria-label="Novedades"><IconoCampana width={26} height={26} /></BotonIcono>;
+      const entrar = <Boton href="/entrar" forma="pildora" alto="control" ancho="contenido" className={sesionStyles.entrar}>Entrar</Boton>;
+      const llave = <BotonIcono href="/admin" aria-label="Administración"><IconoHerramientas width={26} height={26} /></BotonIcono>;
       const menu = <BotonIcono aria-label="Más acciones"><IconoPuntos /></BotonIcono>;
+      const sesion = new URLSearchParams(location.search).get('sesion');
+      // Una tarea lleva su propia cabecera interior (la del alta, con su ✕); las demás pantallas de prueba no.
+      function Tarea() {
+        return usePathname() === '/eventos/nuevo' ? <Barra cerrar={{ href: '/agenda', texto: 'Agenda' }} /> : null;
+      }
       function App() {
         return (
-          <Armazon barra={<BarraApp sesion={campana} />} nav={<NavInferior perfil={<span>A</span>} />}>
+          <Armazon barra={<BarraApp admin={sesion === 'admin' ? llave : null} sesion={sesion === 'entrar' ? entrar : campana} />} nav={<NavInferior perfil={<span>A</span>} />}>
+            <Tarea />
             <main className="raiz">
               <EnBarra volver={{ href: '/agenda', texto: 'Agenda' }} menu={menu} />
               <Cabecera contexto={<span style={{ height: 44 }}>chip</span>} onBuscar={() => {}} />
@@ -77,7 +89,7 @@ before(async () => {
     ["/logotipo.svg", ["image/svg+xml", await readFile(join(root, "public/logotipo.svg"))]],
   ]);
   server = createServer((req, res) => {
-    const a = assets.get(req.url);
+    const a = assets.get(req.url.split("?")[0]);
     res.writeHead(a ? 200 : 404, { "Content-Type": `${a?.[0] ?? "text/plain"}; charset=utf-8` });
     res.end(a?.[1] ?? "");
   });
@@ -92,7 +104,7 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function pagina(t, ancho = 390, alto = 844) {
+async function pagina(t, ancho = 390, alto = 844, consulta = "") {
   const context = await browser.newContext({ viewport: { width: ancho, height: alto } });
   t.after(() => context.close());
   const p = await context.newPage();
@@ -100,7 +112,7 @@ async function pagina(t, ancho = 390, alto = 844) {
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
-  await p.goto(origin);
+  await p.goto(origin + consulta);
   await p.locator("[data-vista]").waitFor();
   return p;
 }
@@ -173,14 +185,31 @@ test("teléfono: al llegar al final vuelven, y cada pantalla nueva empieza con t
   assert.equal(await p.locator("[data-vista]").getAttribute("data-recogida"), null, "otra pantalla, la barra a la vista");
 });
 
-test("la barra: cada botón de la barra y de la navegación se toca en 44×44 como mínimo; el logotipo queda al centro", async (t) => {
+test("la barra: cada botón de la barra y de la navegación se toca en 44×44 como mínimo", async (t) => {
   const p = await pagina(t);
   await ir(p, "/agenda");
   const medidas = await p.locator("[data-vista] > header a, [data-vista] > header button, nav[aria-label=Secciones] a").evaluateAll((els) => els.map((e) => ({ n: e.getAttribute("aria-label") || e.textContent.trim(), w: Math.round(e.getBoundingClientRect().width), h: Math.round(e.getBoundingClientRect().height) })));
   assert.equal(medidas.length, 4 + 5, "«+», logotipo, lupa, campana y los cinco destinos");
   for (const m of medidas) assert.ok(m.w >= 44 && m.h >= 44, `${m.n}: ${m.w}×${m.h}`);
-  const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
-  assert.ok(Math.abs(logo.x + logo.w / 2 - 195) <= 1, `centro del logotipo en ${logo.x + logo.w / 2}`);
+});
+
+test("la barra: el logotipo queda en el centro exacto con sesión, sin ella (Entrar) y con la llave de administración, a 390 y a 320", async (t) => {
+  for (const ancho of [390, 320]) {
+    for (const sesion of ["campana", "entrar", "admin"]) {
+      const p = await pagina(t, ancho, 844, `?sesion=${sesion}`);
+      await ir(p, "/agenda");
+      const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
+      const mas = await caja(barra(p).locator("a[aria-label='Publicar un evento']"));
+      const lupa = await caja(barra(p).locator("a[aria-label='Buscar']"));
+      const cuando = `${ancho} · ${sesion}`;
+      assert.ok(Math.abs(logo.x + logo.w / 2 - ancho / 2) <= 0.5, `${cuando}: centro del logotipo en ${logo.x + logo.w / 2}`);
+      assert.ok(mas.x + mas.w <= logo.x + 1 && logo.x + logo.w <= lupa.x + 1, `${cuando}: el logotipo no pisa al «+» ni a la lupa`);
+      if (sesion === "entrar") {
+        const e = await caja(barra(p).locator("a[href='/entrar']"));
+        assert.ok(e.w >= 44 && e.h >= 44 && e.x >= lupa.x + lupa.w - 1, `${cuando}: «Entrar» ${e.w}×${e.h} junto a la lupa`);
+      }
+    }
+  }
 });
 
 test("la fila de contexto: el relleno blanco de 300 px sobre ella no tapa la barra", async (t) => {
@@ -200,14 +229,40 @@ test("desde 792: la barra está en las fichas y las tareas, con Atrás y el men�
   assert.deepEqual((({ y, h }) => [y, h])(await caja(barra(p))), [0, 56]);
   await bajar(p, 900);
   assert.deepEqual([(await caja(barra(p))).y, (await caja(cabecera(p))).y], [0, 56], "la barra no se recoge");
+  const lupa = (await caja(barra(p).locator("a[aria-label='Buscar']"))).x;
+  const campana = (await caja(barra(p).locator("a[aria-label='Novedades']"))).x;
   await ir(p, "/eventos/concierto");
   const botones = await barra(p).locator("a, button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
   assert.ok(botones.includes("Atrás (Agenda)") && botones.includes("Más acciones"), `${botones}`);
   const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
-  assert.ok(Math.abs(logo.x + logo.w / 2 - 640) <= 1, "el logotipo, al centro de la ventana");
+  assert.ok(Math.abs(logo.x + logo.w / 2 - 640) <= 0.5, "el logotipo, al centro de la ventana");
+  assert.deepEqual([(await caja(barra(p).locator("a[aria-label='Buscar']"))).x, (await caja(barra(p).locator("a[aria-label='Novedades']"))).x], [lupa, campana], "la lupa y la campana no se mueven cuando llegan Atrás y el menú");
   await ir(p, "/eventos/nuevo");
   assert.equal((await caja(barra(p))).display, "grid");
   assert.equal(await barra(p).locator("a[aria-label^='Atrás']").count(), 0, "las tareas no traen Atrás en la barra de la app");
   await ir(p, "/obra/4d2e/pared");
   assert.equal((await caja(barra(p))).display, "none");
+});
+
+test("desde 792: en una ficha el logotipo sigue al centro sin sesión y con la llave de administración, con Atrás y el menú a la vista", async (t) => {
+  for (const sesion of ["entrar", "admin"]) {
+    const p = await pagina(t, 1280, 800, `?sesion=${sesion}`);
+    await ir(p, "/eventos/concierto");
+    const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
+    assert.ok(Math.abs(logo.x + logo.w / 2 - 640) <= 0.5, `${sesion}: centro del logotipo en ${logo.x + logo.w / 2}`);
+    assert.equal(await barra(p).locator("a[aria-label^='Atrás'], button[aria-label='Más acciones']").count(), 2, `${sesion}: Atrás y el menú a la vista`);
+  }
+});
+
+test("una tarea lleva el logotipo en su cabecera en el teléfono; desde 792 no lo repite: el único es el de la barra de la app", async (t) => {
+  const logotipos = (p) => p.locator("a[aria-label^='Somos Nosotros']:visible");
+  const telefono = await pagina(t, 390, 844);
+  await ir(telefono, "/eventos/nuevo");
+  assert.equal(await logotipos(telefono).count(), 1);
+  assert.equal(await barra(telefono).locator("a[aria-label^='Somos Nosotros']:visible").count(), 0, "teléfono: el de la cabecera de la tarea, no el de la barra de la app");
+  const escritorio = await pagina(t, 1280, 800);
+  await ir(escritorio, "/eventos/nuevo");
+  assert.equal(await logotipos(escritorio).count(), 1);
+  assert.equal(await barra(escritorio).locator("a[aria-label^='Somos Nosotros']:visible").count(), 1, "escritorio: el de la barra de la app");
+  assert.equal(await escritorio.locator("a[aria-label^='Cerrar']:visible").count(), 1, "y la cabecera de la tarea conserva su ✕");
 });

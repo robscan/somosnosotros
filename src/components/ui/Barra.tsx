@@ -26,13 +26,14 @@ type Props =
  * teléfono, donde la barra de la app no se ve. Interior: regreso a la izquierda, SMSNSTRS al centro y, si hay algo que
  * poner, un menú "···" a la derecha. Alta: SMSNSTRS al centro y ✕ a la derecha. Las raíces ya no la llevan: su barra
  * es la de la app (`BarraApp`, en el layout). Desde 792 la ficha tampoco la enseña (nunca dos barras): su Atrás y su
- * menú, que aquí se le prestan a la barra de la app (`EnBarra`), viven ahí.
+ * menú, que aquí se le prestan a la barra de la app (`EnBarra`), viven ahí. Una tarea (alta, Ajustes, Entrar) sí la
+ * conserva desde 792, pero sin el logotipo, que ya trae la barra de la app: le quedan su Atrás o su ✕.
  */
 export default function Barra({ volver, cerrar, derecha }: Props) {
   if (cerrar) {
     return (
       <header className={`${styles.barra} ${styles.interior} ${styles.alta}`}>
-        <Logotipo chico />
+        <Logotipo chico className={styles.logotipo} />
         <Cerrar href={cerrar.href} texto={cerrar.texto} />
       </header>
     );
@@ -40,7 +41,7 @@ export default function Barra({ volver, cerrar, derecha }: Props) {
   return (
     <header className={`${styles.barra} ${styles.interior}`}>
       <Atras href={volver.href} texto={volver.texto} />
-      <Logotipo chico />
+      <Logotipo chico className={styles.logotipo} />
       {derecha}
       <EnBarra volver={volver} menu={derecha} />
     </header>

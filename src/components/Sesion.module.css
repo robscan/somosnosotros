@@ -1,10 +1,9 @@
-/* Lo que la sesión pone en la barra de la app: cada pieza va a su área de la rejilla de BarraApp. Entrar y la campana
-   comparten la suya (una u otra); Administración va junto al «+». */
-.sesion {
-  grid-area: sesion;
-}
-.admin {
-  grid-area: admin;
+/* Lo que la sesión pone en la barra de la app: hijos directos de uno de sus dos lados (BarraApp). */
+
+/* «Entrar» junto a la lupa es lo más ancho que llega a haber en un lado de la barra: con este relleno compacto cabe en
+   los 3,5rem que la barra le reserva (`--flanco` de BarraApp.module.css) y el logotipo no se achica de más. */
+.entrar {
+  --boton-relleno: 0 var(--espacio-2);
 }
 
 /* La campana de Novedades y el acceso a Administración (L40, OL-115) llevan un punto del color de acción cuando hay

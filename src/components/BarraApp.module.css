@@ -1,16 +1,17 @@
 /* La barra de la app (docs/rediseno/50, P4), del prototipo firmado (bloque «2. El armazón»): blanca, pegajosa arriba y
    sin filete propio. Con la fila de contexto de las raíces (ui/Cabecera) es una sola región y el único filete va bajo
-   esa fila. Una rejilla plana con áreas: cada hijo va al suyo, sin envoltorios (el menú «···» llega de la ficha ya
-   armado y por eso sí trae el suyo). En el teléfono son cinco columnas, con un hueco a cada lado del logotipo para
-   que quede al centro (el de la izquierda es de administración); desde 792 son siete, con Atrás y el menú. */
+   esa fila. Tres celdas de una rejilla: un lado, el logotipo y el otro lado. Los dos lados valen lo mismo (`--flanco` y
+   lo que sobre, a partes iguales), así el logotipo queda en el centro exacto de la barra pase lo que pase en ellos:
+   con o sin sesión, con o sin Atrás y menú, y también mientras la sesión llega del servidor. */
 .barra {
+  /* Lo que reserva cada lado: la lupa y «Entrar» (Sesion.module.css), lo más ancho que llega a haber junto al logotipo. */
+  --flanco: calc(var(--control) + 3.5rem);
   grid-area: barra;
   position: sticky;
   top: 0;
   z-index: calc(var(--z-pegajoso) + 1);
   display: grid;
-  grid-template-areas: "publicar admin logotipo buscar sesion";
-  grid-template-columns: var(--control) var(--control) minmax(0, 1fr) var(--control) minmax(var(--control), auto);
+  grid-template-columns: minmax(var(--flanco), 1fr) auto minmax(var(--flanco), 1fr);
   align-items: center;
   height: calc(var(--alto-barra) + var(--tope));
   padding: var(--tope) calc(var(--gutter) - var(--espacio-2)) 0;
@@ -19,29 +20,26 @@
     transform var(--duracion-recogida) var(--curva),
     visibility 0s;
 }
-.publicar {
-  grid-area: publicar;
+/* Cada lado es una fila de botones: el izquierdo desde su borde, el derecho hacia el suyo. */
+.lado {
+  display: flex;
+  align-items: center;
 }
-.atras {
-  grid-area: atras;
+.derecho {
+  justify-content: flex-end;
 }
+/* El lugar de Atrás y el del menú «···»: en el teléfono no hay (la barra no se ve con una ficha); desde 792 se reservan
+   aunque no haya ficha, para que lo demás no se mueva al pasar de una pantalla a otra. */
+.hueco {
+  display: none;
+}
+/* En una ventana muy angosta (320) el logotipo se achica dentro de su celda en vez de pasar bajo un lado. */
 .logotipo {
-  grid-area: logotipo;
-  justify-self: center;
   min-width: 0;
 }
-/* En una ventana muy angosta (320) el logotipo se achica dentro de su columna en vez de pasar bajo la lupa. */
 .logotipo > img {
   max-width: 100%;
   object-fit: contain;
-}
-.buscar {
-  grid-area: buscar;
-}
-.menu {
-  grid-area: menu;
-  display: grid;
-  justify-items: center;
 }
 
 /* En el teléfono lo que no es raíz lleva su propia cabecera y la barra de la app no se ve. */
@@ -65,13 +63,15 @@
 @media (min-width: 792px) {
   :global([data-vista]:not([data-vista="completa"])) .barra {
     display: grid;
-    grid-template-areas: "publicar atras admin logotipo buscar sesion menu";
-    grid-template-columns: var(--control) var(--control) var(--control) minmax(0, 1fr) var(--control) minmax(var(--control), auto) var(--control);
     padding-inline: var(--espacio-4);
     transform: none;
     visibility: visible;
   }
   :global([data-vista]:not([data-vista="raiz"])) .barra {
     box-shadow: inset 0 -1px 0 var(--borde);
+  }
+  .hueco {
+    display: flex;
+    min-width: var(--control);
   }
 }
