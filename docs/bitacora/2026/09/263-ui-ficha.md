@@ -1,6 +1,6 @@
 # 263 · Ficha: la plantilla con el canon del héroe para evento, lugar y artista (OL-235, pieza P6)
 
-**Fecha:** 2026-09-29 · **Rama:** `ui-ficha`, desde `origin/ui-lugares` (`9c31cfee`) · **OL:** OL-235 · **PR:** por asignar al abrirlo (sin unir; va montado sobre #272, `ui-lugares`, que va sobre #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Séptima pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1, los botones de P2, el renglón de P3, el armazón de P4 y la hoja de P5b.
+**Fecha:** 2026-09-29 · **Rama:** `ui-ficha`, desde `origin/ui-lugares` (`9c31cfee`) · **OL:** OL-235 · **PR:** #273 (sin unir; va montado sobre #272, `ui-lugares`, que va sobre #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Séptima pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1, los botones de P2, el renglón de P3, el armazón de P4 y la hoja de P5b.
 
 ## Pedido
 
