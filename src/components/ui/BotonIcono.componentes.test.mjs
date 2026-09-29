@@ -212,7 +212,7 @@ test("Boton enlace: mientras el servidor no responde late; un botón, solo con a
   const enCamino = await pagina(t, { enCamino: true });
   const entrar = enCamino.getByRole("link", { name: "Entrar" });
   assert.notEqual(await entrar.evaluate((e) => getComputedStyle(e).animationName), "none");
-  assert.equal((await medir(entrar)).ancho > 0, true); // el marcador no ocupa sitio
+  assert.equal((await medir(entrar)).ancho, (await medir(quieto.getByRole("link", { name: "Entrar" }))).ancho, "el marcador no ocupa sitio");
   assert.equal(await enCamino.getByRole("button", { name: "Guardar" }).evaluate((e) => getComputedStyle(e).animationName), "none");
   assert.notEqual(await quieto.getByRole("button", { name: "Enviando" }).evaluate((e) => getComputedStyle(e).animationName), "none");
 });

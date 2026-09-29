@@ -6,7 +6,7 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  border: 1px solid transparent;
+  border: 0;
   border-radius: 50%;
   background: none;
   color: var(--texto);
@@ -37,7 +37,7 @@
 /* Relieve: `contorno` (borde), solo para opciones secundarias dentro de un formulario; `elevado` (fondo blanco, sombra
    y glifo violeta), para acciones sobre listas, tarjetas, mapa y ficha */
 .contorno {
-  border-color: var(--borde);
+  border: 1px solid var(--borde);
   background: var(--fondo);
 }
 .elevado {
@@ -52,8 +52,8 @@
   cursor: default;
 }
 
-/* Decidido (Voy y Seguir ya quedaron): verde con el glifo en blanco. Va al final y con la misma fuerza que los
-   relieves, para que nada lo pise. */
+/* Decidido (Voy y Seguir ya quedaron): verde con el glifo en blanco (y, con contorno, su borde también). Va al final y
+   con la misma fuerza que los relieves, para que nada lo pise. */
 .decidido {
   background: var(--ok);
   border-color: var(--ok);
