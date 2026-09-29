@@ -11,6 +11,7 @@ v3, séptima vuelta (hilos del prototipo): «Elegir fecha…» abre un calendari
 «Otra ciudad» abre un campo con sugerencias y recarga; el icono de Artistas con figura y pincel se probó y el founder lo rechazó (sigue la estrella); la ficha de artista conserva el avatar
 dentro del héroe, pierde «Se presenta en» y muestra sus novedades publicadas; la barra compacta de las fichas y de la hoja lleva la portada
 oscurecida detrás del título; KPI «Interesadxs» y «Siguen» (lenguaje incluyente).
+v3, décima vuelta (hilo): la hoja de Lugares asoma con dos renglones y medio (se ve que hay más abajo) y enseña su barra de desplazamiento llena y en el panel.
 v3, novena vuelta (chat): en las tarjetas del carril la meta va en dos líneas (fecha y hora · lugar) y el título baja a 17 px.
 v3, octava vuelta (hilos del prototipo): armazón simplificado. Un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que
 hay dentro: el JS pone data-vista (raiz · ficha · tarea) y el CSS solo lee ese atributo (fuera los :has() y el --nav-arriba con sus rayas
@@ -859,6 +860,8 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .atribucion {{ position: absolute; left: var(--espacio-2); top: calc(var(--espacio-3) + 14px); font-size: 10px; color: var(--texto-suave); opacity: .8; }}
 .hoja-lugares {{ position: absolute; left: 0; right: 0; top: var(--tope); bottom: 0; z-index: var(--z-flotante); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; pointer-events: none; }}
 .hoja-lugares::-webkit-scrollbar {{ display: none; }}
+/* Llena, la hoja enseña su barra de desplazamiento a la derecha (la hoja cubre la pantalla y la barra es la suya) */
+.pantalla[data-id="lugares"][data-hoja-estado="llena"] .hoja-lugares {{ scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.28) transparent; }}
 .hoja-lugares {{ --hoja-recogida: 64px; }}
 .pantalla[data-id="lugares"][data-ficha] .hoja-lugares {{ --hoja-recogida: calc(20px + var(--boton-icono) + var(--espacio-2)); }}
 .hoja-lugares::before {{ content: ""; display: block; height: calc(100% - var(--nav-abajo) - var(--hoja-recogida)); }}
@@ -1065,7 +1068,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .pantalla[data-id="lugares"] {{ grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; padding-bottom: 0; }}
   .pantalla[data-id="lugares"] > .cabecera {{ grid-area: cabecera; }}
   .pantalla[data-id="lugares"] > .mapa {{ grid-area: mapa; }}
-  .pantalla[data-id="lugares"] .hoja-lugares {{ position: static; grid-area: hoja; min-height: 0; pointer-events: auto; border-right: 1px solid var(--borde); background: var(--fondo-contenido); }}
+  .pantalla[data-id="lugares"] .hoja-lugares {{ position: static; grid-area: hoja; min-height: 0; pointer-events: auto; border-right: 1px solid var(--borde); background: var(--fondo-contenido); scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.28) transparent; }}
   .hoja-lugares::before {{ display: none; }}
   .cuerpo-hoja, .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cuerpo-hoja {{ min-height: 0; padding-bottom: 0; border-radius: 0; box-shadow: none; background: var(--fondo-contenido); }}
   .cuerpo-hoja > .asa {{ display: none; }}
@@ -1230,11 +1233,12 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   const fichaHoja = hojaL.querySelector(".ficha-hoja");
   const enTelefono = () => getComputedStyle(hojaL).position !== "static";
   const zoom = () => parseFloat(aparato.style.zoom || "1");
-  // Alturas visibles sobre la navegación: lista recogida 64 (asa y cantidad) · asoma 176 · media 56 % · llena; ficha recogida (su cabecera) · media (foto + KPI) · llena.
+  // Alturas visibles sobre la navegación: lista recogida 64 (asa y cantidad) · asoma (asa, cantidad y dos renglones y medio: se ve que hay más abajo) · media 56 % · llena; ficha recogida (su cabecera) · media (foto + KPI) · llena.
   function detentes() {{
     const util = hojaL.clientHeight - navP.offsetHeight;
     if (lugaresP.dataset.ficha) {{ const r = fichaHoja.querySelector(".cabecera-hoja").offsetHeight, k = fichaHoja.querySelector(".kpis"); return {{ recogida: 0, media: Math.min(util, k.offsetTop + k.offsetHeight + 80) - r, llena: util - r }}; }}
-    return {{ recogida: 0, asoma: 176 - 64, media: util * 0.56 - 64, llena: util - 64 }};
+    const fila = hojaL.querySelector(".lista.panel > .renglon").offsetHeight;
+    return {{ recogida: 0, asoma: 2.5 * fila, media: util * 0.56 - 64, llena: util - 64 }};
   }}
   hojaL.detentes = detentes;
   function masCercano(y) {{ let mejor = "recogida", d = Infinity; for (const [k, v] of Object.entries(detentes())) {{ const dd = Math.abs(v - y); if (dd < d) {{ d = dd; mejor = k; }} }} return mejor; }}

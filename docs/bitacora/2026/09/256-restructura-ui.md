@@ -721,10 +721,21 @@ dos líneas quedan alineadas entre tarjetas. Capturas regeneradas (cambian a la 
 a `256-77`, `256-99`, `256-101`, `256-125` y `256-126`); medición sin cambios. Doc 50 § 6.5 (novena vuelta) y § 11,
 punto 57.
 
+### Décima vuelta (mismo día): la hoja de Lugares asoma más
+
+Hilo del founder sobre el primer renglón de la lista de Lugares: «¿podemos hacer que se vean 2,5 lugares aquí, para
+que se entienda que hay más contenido debajo, además de poner barra de scroll del lado derecho?». La altura «asoma»
+pasa de 176 px fijos a asa + cantidad + dos renglones y medio medidos en el DOM (el tercero se corta a propósito), y la
+hoja llena enseña una barra de desplazamiento fina a la derecha (en tableta y escritorio el panel la enseña siempre;
+en el iPhone es la del sistema al desplazar). Probado con la rueda (`probar-hoja.mjs`, `probar-hoja-recogida.mjs`):
+los estados no cambian, solo la altura de asoma. Capturas regeneradas; cambian `256-82` (el mapa con la hoja asomando
+dos renglones y medio), `256-85` (llena, con su barra) y las de escritorio del panel. Doc 50 § 6.5 (décima vuelta) y
+§ 11, punto 58.
+
 ### Cierre (cuarta parte)
 
 Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcciones del founder al verla, la
-séptima vuelta desde los hilos, la vuelta de la estrella, la octava vuelta del armazón y la novena de las tarjetas), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
+séptima vuelta desde los hilos, la vuelta de la estrella, la octava vuelta del armazón, la novena de las tarjetas y la décima de la hoja), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
 § 11 con la quinta a la séptima vuelta), el generador y el script de captura actualizados, esta bitácora y
 OPEN_LOOPS; push al PR #266; artefacto republicado y los hilos contestados (los resueltos, resueltos; los de decisión,
 abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 45 a 47 y

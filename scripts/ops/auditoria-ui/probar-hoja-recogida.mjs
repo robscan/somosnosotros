@@ -11,7 +11,7 @@ await click('.navegacion [data-ir="lugares"]'); await page.waitForTimeout(700);
 console.log("lista asoma", JSON.stringify(await estado()));
 await sobreCuerpo(); await page.mouse.wheel(0, -200); await page.waitForTimeout(700);
 console.log("jalar lista → recogida (solo cantidad)", JSON.stringify(await estado()));
-await sobreCuerpo(); await page.mouse.wheel(0, 120); await page.waitForTimeout(700);
+await sobreCuerpo(); await page.mouse.wheel(0, 320); await page.waitForTimeout(700);
 console.log("subir → asoma", JSON.stringify(await estado()));
 await click('.lienzo .lugar.destacado'); await page.waitForTimeout(700);
 console.log("ficha abierta (foto + KPI)", JSON.stringify(await estado()));

@@ -468,7 +468,7 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la novena vuelta del founder)
+## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la décima vuelta del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
@@ -824,6 +824,14 @@ título baja de 19 a 17 px (token propio `--letra-tarjeta-titulo`; los renglones
 que firmó). Como el carril reparte sus filas con `subgrid`, las dos líneas de meta quedan alineadas entre tarjetas.
 Captura [256-75](capturas-256/256-75-v3-inicio-telefono.png).
 
+**Décima vuelta (el mismo día, un hilo sobre la hoja de Lugares):** «¿podemos hacer que se vean 2,5 lugares aquí, para
+que se entienda que hay más contenido debajo, además de poner barra de scroll del lado derecho?». La altura «asoma»
+de la hoja ya no es un número fijo (176 px): es el asa, la cantidad y dos renglones y medio, medidos en el DOM (el
+tercer renglón sale cortado a propósito). Llena, la hoja enseña su barra de desplazamiento fina a la derecha (cubre la
+pantalla, así que la barra es la suya); en tableta y escritorio el panel la enseña siempre. En el iPhone la barra es
+la del sistema, que aparece al desplazar. Capturas [256-82](capturas-256/256-82-v3-lugares-mapa-telefono.png) y
+[256-85](capturas-256/256-85-v3-lugares-ficha-llena-telefono.png).
+
 ### 6.6 Defectos que la revisión de la v3 encontró y cerró
 
 El founder señaló que «elemento de lugar se desalinea en tableta y escritorio»: era cierto y silencioso. **El renglón
@@ -1115,5 +1123,9 @@ Lo que el founder confirma o corrige al probar la v3:
 
 57. **Tarjetas del carril: meta en dos líneas y título más chico** («el lugar se corta en cards…»): fecha y hora en la
     primera línea, el lugar en la segunda, título a 17 px (6.5, novena vuelta). **Hecho.**
+
+58. **La hoja de Lugares asoma con dos renglones y medio y enseña su barra de desplazamiento** («¿podemos hacer que
+    se vean 2,5 lugares aquí… además de poner barra de scroll del lado derecho?»): hecho (6.5, décima vuelta); la
+    barra fina se ve llena y en el panel; en el iPhone será la del sistema al desplazar. **Hecho.**
 
 Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).
