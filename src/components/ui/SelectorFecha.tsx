@@ -6,6 +6,7 @@ import Hoja from "./Hoja";
 import { etiquetaDia, hayMesAnterior, haySiguienteMes, mesAnterior, mesInicial, mesSiguiente, pasoMasCercano, pasosHora, semanasDelMes, sumarDiasIso, type DiaCalendario, type DiasActivos } from "@/lib/calendario";
 import { diaLargo, diaLocal, ZONA_INICIAL } from "@/lib/fechas";
 import { IconoCaret } from "./Iconos";
+import SoloLector from "./SoloLector";
 import styles from "./SelectorFecha.module.css";
 
 const DIAS_SEMANA = ["L", "M", "M", "J", "V", "S", "D"];
@@ -294,9 +295,9 @@ export function SelectorFechaCargando({ titulo, fecha, min, zona = ZONA_INICIAL,
             <span key={i}>{d}</span>
           ))}
         </div>
-        <p className={styles.soloLector} role="status" aria-live="polite">
+        <SoloLector role="status" aria-live="polite">
           Cargando los días con eventos…
-        </p>
+        </SoloLector>
         <div className={styles.skeleton} aria-hidden="true">
           {Array.from({ length: 5 }).map((_semana, i) => (
             <div className={styles.semana} key={i}>

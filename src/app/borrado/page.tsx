@@ -3,6 +3,7 @@ import NavInferior from "@/components/NavInferior";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
+import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoCalendario, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import styles from "./borrado.module.css";
 
@@ -22,9 +23,9 @@ export default async function Borrado({ searchParams }: { searchParams: Promise<
     <main className="raiz">
       <Barra derecha={<Sesion />} />
       <section className={styles.vacio} role="status" aria-live="polite">
-        <span className={styles.icono} aria-hidden="true">
+        <IconoEnCirculo>
           <t.Icono width={28} height={28} />
-        </span>
+        </IconoEnCirculo>
         <h1>{t.titulo}</h1>
         <p>{t.texto}</p>
         <Boton href={t.href} ancho="contenido">

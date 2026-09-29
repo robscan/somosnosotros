@@ -7,6 +7,7 @@ import Boton from "./ui/Boton";
 import Campo from "./ui/Campo";
 import IconoRed from "./ui/IconoRed";
 import { IconoAgarre, IconoCerrar } from "./ui/Iconos";
+import SoloLector from "./ui/SoloLector";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./SelectorEnlaces.module.css";
@@ -201,9 +202,8 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
           ))}
         </ul>
       )}
-      <p className={styles.soloLector} aria-live="polite">
-        {anuncio}
-      </p>
+      {/* El nuevo puesto tras arrastrar o mover con flechas (OL-184): se oye, no se ve. */}
+      <SoloLector aria-live="polite">{anuncio}</SoloLector>
       {!lleno && (
         <>
           <label htmlFor="campo-enlace" className={styles.etiqueta}>

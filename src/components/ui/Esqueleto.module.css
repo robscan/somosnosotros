@@ -18,41 +18,35 @@
   border-radius: var(--radio);
 }
 
-/* Renglón de listado: mismas medidas que Renglon.module.css (.renglon/.frente/.foto/.titulo/.meta), para que la
-   fila real caiga encima sin saltar. */
+/* Renglón de listado: el mismo renglón de lista (ui/Renglon) con barras en lugar de foto, título y meta. Alto, foto,
+   aire y filete son los suyos; aquí solo va lo que dibuja una barra: su largo y el alto de la letra que sustituye. */
 .listaRenglones {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.renglon {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
-  column-gap: var(--espacio-3);
-  align-items: center;
-  min-height: 64px;
-  padding: var(--espacio-3) 0;
-  border-bottom: 1px solid var(--borde);
-}
-.renglon .foto {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radio-chico);
-}
-.fotoRedonda {
-  border-radius: 50%;
-}
-.renglonTextos {
-  display: grid;
-  row-gap: var(--espacio-2);
-}
 .tituloRenglon {
+  grid-area: titulo;
   width: 65%;
-  height: 19px;
+  height: var(--letra-lista-titulo);
 }
 .metaRenglon {
+  grid-area: meta;
   width: 45%;
-  height: 15px;
+  height: var(--letra-lista-meta);
+  margin-top: var(--espacio-2);
+}
+
+/* Dato de ficha: el mismo renglón `dato` (ui/Renglon), con un icono del tamaño del real y una línea del alto de su letra. */
+.iconoDato {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radio-chico);
+}
+.lineaDato {
+  grid-area: titulo;
+  width: 60%;
+  height: var(--letra-md);
 }
 
 /* Tarjeta de carril: mismas medidas que traía CarrilEsqueleto.module.css. */

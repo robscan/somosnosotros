@@ -155,7 +155,7 @@
   font-size: var(--letra-xs);
   font-weight: 700;
 }
-/* Mismos tokens que `.meta > .estado` del renglón (Renglon.module.css): ya trae fondo propio (`--primario-suave`),
+/* Mismos tokens que `.estado` del renglón (ui/Renglon.module.css): ya trae fondo propio (`--primario-suave`),
    así que se lee igual de bien sobre la foto sin necesitar el vidrio de `.van`. */
 .interesa {
   display: inline-flex;

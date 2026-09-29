@@ -4,7 +4,7 @@ import { cerrarSesion } from "@/app/perfil/acciones";
 import { IconoChevronDerecha, IconoSalir } from "@/components/ui/Iconos";
 import { borrarDecisionesVisita } from "@/lib/decisionesVisita";
 import { borrarUbicacionCercana } from "@/lib/ubicacion";
-import styles from "./ajustes.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 /**
  * "Cerrar sesión": el mismo formulario y acción de siempre, solo que aquí (componente cliente) también se borra
@@ -20,12 +20,10 @@ export default function BotonSalir() {
         borrarDecisionesVisita();
       }}
     >
-      <button type="submit" className={styles.fila}>
+      <button type="submit" className={renglon.ajuste}>
         <IconoSalir width={20} height={20} />
         <b>Cerrar sesión</b>
-        <span className={styles.valor}>
-          <IconoChevronDerecha />
-        </span>
+        <IconoChevronDerecha />
       </button>
     </form>
   );

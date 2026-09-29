@@ -10,6 +10,7 @@ import { incrustadoDeNovedad } from "@/lib/incrustado";
 import { ETIQUETA_PROVEEDOR_NOVEDAD_ARTISTA, LIMITES_NOVEDAD_ARTISTA, reconocerNovedadEnlace } from "@/lib/novedadesArtista";
 import type { ResultadoNovedadArtista } from "../acciones";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import estilos from "./FormularioNovedad.module.css";
 
 type Props = {
@@ -79,7 +80,7 @@ export default function FormularioNovedad({ accion, artistaNombre, modo, inicial
         </div>
       )}
       {!errorUrl && !reconocido && !urlLimpia && (
-        <p className={canon.cuerpoNota}>Funciona con enlaces de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud.</p>
+        <p className={renglon.nota}>Funciona con enlaces de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud.</p>
       )}
 
       <Campo

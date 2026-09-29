@@ -12,6 +12,7 @@ import { guardarPerfil, type ResultadoGuardar } from "@/app/perfil/acciones";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 type Props = { perfil: Perfil; correo: string };
 type Renglon = "nombre" | "colonia" | "bio";
@@ -55,19 +56,19 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
   const alternar = (r: Renglon) => setAbierto((a) => (a === r ? null : r));
 
   /** Un renglón de texto: cerrado muestra el valor; abierto, el campo dentro con foco. El valor viaja siempre (campo escondido si está cerrado). */
-  function renglon(clave: Renglon, etiqueta: string, icono: React.ReactNode, valor: string, setValor: (v: string) => void, placeholder: string, maxLength: number, multilinea = false, notaFalta?: string) {
+  function renglonDeTexto(clave: Renglon, etiqueta: string, icono: React.ReactNode, valor: string, setValor: (v: string) => void, placeholder: string, maxLength: number, multilinea = false, notaFalta?: string) {
     const estaAbierto = abierto === clave;
     const error = errores[clave];
     return (
-      <li className={`${canon.resuelto} ${estaAbierto ? canon.abierta : ""}`}>
+      <li className={`${renglon.resuelto} ${estaAbierto ? renglon.abierto : ""}`}>
         {icono}
-        <span className={canon.clave}>{etiqueta}</span>
-        <span className={`${canon.valor} ${valor.trim() ? "" : canon.falta}`}>{valor.trim() || "Falta"}</span>
-        <button type="button" className={canon.cambiar} onClick={() => alternar(clave)} aria-expanded={estaAbierto}>
+        <small>{etiqueta}</small>
+        <b className={valor.trim() ? undefined : renglon.falta}>{valor.trim() || "Falta"}</b>
+        <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => alternar(clave)} aria-expanded={estaAbierto}>
           {estaAbierto ? "Listo" : "Cambiar"}
-        </button>
+        </Boton>
         {estaAbierto ? (
-          <div className={canon.cuerpo}>
+          <div className={renglon.cuerpo}>
             {multilinea ? (
               <textarea name={clave} value={valor} onChange={(e) => setValor(e.target.value)} maxLength={maxLength} placeholder={placeholder} aria-label={etiqueta} className={canon.entrada} autoFocus />
             ) : (
@@ -86,12 +87,12 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
           <>
             <input type="hidden" name={clave} value={valor} />
             {error ? (
-              <p className={canon.cuerpoNota} role="alert">
+              <p className={renglon.nota} role="alert">
                 {error}
               </p>
             ) : (
               // La ayuda va bajo el renglón, no dentro del botón de guardar (founder, 2026-09-21: canon para todos los formularios).
-              notaFalta && <p className={canon.cuerpoNota}>{notaFalta}</p>
+              notaFalta && <p className={renglon.nota}>{notaFalta}</p>
             )}
           </>
         )}
@@ -101,35 +102,35 @@ export default function FormularioPerfil({ perfil, correo }: Props) {
 
   return (
     <form action={guardar} noValidate>
-      <ul className={canon.renglones}>
+      <ul className={renglon.renglones}>
         {/* Foto: la cámara como acción; la foto puesta ocupa el sitio del icono. */}
-        <li className={`${canon.resuelto} ${foto ? "" : canon.pendiente}`}>
+        <li className={`${renglon.resuelto} ${foto ? "" : renglon.pendiente}`}>
           {foto ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-            <img src={foto} alt="" className={canon.miniatura} />
+            <img src={foto} alt="" />
           ) : (
             <IconoCamara width={20} height={20} />
           )}
-          <span className={canon.clave}>Foto</span>
-          <span className={`${canon.valor} ${foto ? "" : canon.falta}`}>{subiendo ? "Subiendo…" : foto ? "Tu foto" : "Sin foto"}</span>
+          <small>Foto</small>
+          <b className={foto ? undefined : renglon.falta}>{subiendo ? "Subiendo…" : foto ? "Tu foto" : "Sin foto"}</b>
           <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Poner una foto"}>
             <IconoCamara width={22} height={22} />
             <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Poner una foto"} />
           </label>
           {(errorFoto || errores.foto) && (
-            <p className={canon.cuerpoNota} role="alert">
+            <p className={renglon.nota} role="alert">
               {errorFoto ?? errores.foto}
             </p>
           )}
         </li>
-        {renglon("nombre", "Nombre", <IconoPersona width={20} height={20} />, nombre, setNombre, "Tu nombre", LIMITES.nombre, false, faltaNombre ? "Falta el nombre." : undefined)}
-        {renglon("colonia", "Colonia", <IconoCasa width={20} height={20} />, colonia, setColonia, "Para ordenar lo que te queda cerca", LIMITES.colonia)}
-        {renglon("bio", "Sobre ti", <IconoTexto width={20} height={20} />, bio, setBio, `Una línea, hasta ${LIMITES.bio} caracteres`, LIMITES.bio, true)}
+        {renglonDeTexto("nombre", "Nombre", <IconoPersona width={20} height={20} />, nombre, setNombre, "Tu nombre", LIMITES.nombre, false, faltaNombre ? "Falta el nombre." : undefined)}
+        {renglonDeTexto("colonia", "Colonia", <IconoCasa width={20} height={20} />, colonia, setColonia, "Para ordenar lo que te queda cerca", LIMITES.colonia)}
+        {renglonDeTexto("bio", "Sobre ti", <IconoTexto width={20} height={20} />, bio, setBio, `Una línea, hasta ${LIMITES.bio} caracteres`, LIMITES.bio, true)}
         {/* El correo se dice aquí y solo aquí; no se cambia desde la app. */}
-        <li className={canon.resuelto}>
+        <li className={renglon.resuelto}>
           <IconoCandado width={20} height={20} />
-          <span className={canon.clave}>Entras con</span>
-          <span className={canon.valor}>{correo}</span>
+          <small>Entras con</small>
+          <b>{correo}</b>
         </li>
       </ul>
       <input type="hidden" name="foto" value={foto ?? ""} />

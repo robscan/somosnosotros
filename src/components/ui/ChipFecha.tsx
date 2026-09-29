@@ -7,6 +7,7 @@ import BotonIcono from "./BotonIcono";
 import chip from "./Chip.module.css";
 import styles from "./ChipFecha.module.css";
 import { IconoCalendario, IconoCerrar } from "./Iconos";
+import SoloLector from "./SoloLector";
 import SelectorFecha, { SelectorFechaCargando } from "./SelectorFecha";
 
 type Props = {
@@ -52,7 +53,8 @@ export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL, 
       <span className={`${chip.chip} ${styles.conFecha}`}>
         <button type="button" className={styles.conFechaBoton} onClick={abrir}>
           <IconoCalendario width={16} height={16} />
-          <span className={styles.soloLector}>Cambiar la fecha,</span>
+          {/* Sin esta frase (OL-218), un lector de pantalla anuncia solo la fecha («mié 30 sep») sin decir que tocarla reabre el selector. */}
+          <SoloLector>Cambiar la fecha,</SoloLector>
           <span>{fechaCortaChip(iso, zona)}</span>
         </button>
         <button type="button" className={styles.quitar} aria-label="Quitar la fecha" onClick={() => onCambiar("")}>

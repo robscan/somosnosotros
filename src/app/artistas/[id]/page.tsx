@@ -13,7 +13,7 @@ import VideoEmbed from "@/components/ui/VideoEmbed";
 import { ORIGENES } from "@/lib/origen";
 import { CAPO_SIN_RECLAMAR_EN_SITEMAP } from "@/lib/sitemap";
 import Desplegable from "@/components/Desplegable";
-import { EsqueletoBloqueTexto, EsqueletoRenglones } from "@/components/ui/Esqueleto";
+import { EsqueletoDato, EsqueletoRenglones } from "@/components/ui/Esqueleto";
 import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
@@ -26,6 +26,7 @@ import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import type { EventoAgenda } from "@/lib/agenda";
 import { etiquetaArtista, hrefArtista, textoProximaFecha, type Artista } from "@/lib/artistas";
 import { enmascararCorreo } from "@/lib/comunidad";
@@ -159,42 +160,31 @@ const cargarSeguidoresArtistaCache = cache(async (artistaId: string): Promise<nu
 
 /**
  * Cuánta gente sigue al artista y su próxima fecha: los dos renglones de `<ul className={ficha.datos}>` que piden
- * una consulta aparte de la del artista (OL-161). Se difieren en `<Suspense>`; la cabecera (foto, nombre, etiqueta)
- * no los espera.
+ * una consulta aparte de la del artista (OL-161). Se difieren en `<Suspense>`, con un renglón de esqueleto del mismo
+ * alto mientras llegan; la cabecera (foto, nombre, etiqueta) no los espera.
  */
 async function MetaArtista({ artista }: { artista: ArtistaConAutor }) {
   const [seguidores, fechas] = await Promise.all([cargarSeguidoresArtistaCache(artista.id), cargarFechasCache(artista.id)]);
   const proxima = fechas[0] ? { id: fechas[0].id, inicio: fechas[0].inicio, sitio: nombreSitio(fechas[0]), zona: fechas[0].zona } : null;
   return seguidores === 0 && !proxima ? (
-    <li className={ficha.dato}>
+    <li className={renglon.dato}>
       <IconoCalendario width={20} height={20} />
-      <span className={ficha.suave}>Sin fechas próximas · Nadie lo sigue todavía</span>
+      <small>Sin fechas próximas · Nadie lo sigue todavía</small>
     </li>
   ) : (
     <>
-      <li className={ficha.dato}>
+      <li className={renglon.dato}>
         <IconoPersonas width={20} height={20} />
         <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
       </li>
-      <li className={ficha.dato}>
+      <li className={renglon.dato}>
         <IconoCalendario width={20} height={20} />
         <b>{proxima ? textoProximaFecha(proxima) : "Sin fechas próximas"}</b>
         {proxima && (
-          <Salto destino="fechas" className={ficha.datoEnlace}>
-            ver
-          </Salto>
+          <Salto destino="fechas">ver</Salto>
         )}
       </li>
     </>
-  );
-}
-
-/** Fallback de `MetaArtista`: un renglón del mismo alto (el caso con más texto, "Nadie lo sigue todavía"). */
-function EsqueletoMetaArtista() {
-  return (
-    <li className={ficha.dato} aria-hidden="true">
-      <EsqueletoBloqueTexto lineas={1} />
-    </li>
   );
 }
 
@@ -396,11 +386,11 @@ export default async function FichaArtista({ params, searchParams }: Params) {
 
       <ul className={ficha.datos}>
         {/* De dónde es, como la dirección en la ficha de un lugar. */}
-        <li className={ficha.dato}>
+        <li className={renglon.dato}>
           <IconoPin width={20} height={20} />
           <b>{a.ciudad}</b>
         </li>
-        <Suspense fallback={<EsqueletoMetaArtista />}>
+        <Suspense fallback={<EsqueletoDato />}>
           <MetaArtista artista={a} />
         </Suspense>
       </ul>

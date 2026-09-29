@@ -174,19 +174,6 @@
 .listo {
   margin-top: var(--espacio-3);
 }
-
-/* El aviso "Cargando los días con eventos…" (SelectorFechaCargando): se oye, no se ve. */
-.soloLector {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
 /* Esqueleto de "cargando" (SelectorFechaCargona): mismo tamaño de rejilla (5 semanas × 7, `.toque-min` por celda)
    que la real, para que nada salte ni parpadee cuando llegan los días con eventos. */
 .skeleton {

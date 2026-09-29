@@ -1,7 +1,7 @@
 /* ==========================================================================
    El canon de formulario (docs/rediseno/13, 15 y 26; bitácora 039): lo comparten el alta de lugar, el alta de
    artista, Editar perfil y el alta de evento. 1. Campo con icono · 2. Estado, error y "ya está registrado" ·
-   3. Renglones resueltos (icono | clave / valor / acción; cuerpo debajo al abrir) · 4. Cuerpo: chips, entrada,
+   3. Renglones resueltos (la piel `resuelto` de ui/Renglon: aquí solo su cámara) · 4. Cuerpo: chips, entrada,
    subir foto · 5. El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón (founder,
    2026-09-21, canon ampliado)
    ========================================================================== */
@@ -209,88 +209,9 @@
   font-weight: 700;
 }
 
-/* 3. Renglones resueltos: icono | clave / valor | acción; el cuerpo, al abrir, debajo a lo ancho. */
-.renglones {
-  list-style: none;
-  display: grid;
-  gap: var(--espacio-2);
-  margin-bottom: var(--espacio-4);
-}
-.resuelto {
-  display: grid;
-  grid-template-columns: 24px 1fr auto;
-  grid-template-areas:
-    "icono clave accion"
-    "icono valor accion"
-    "cuerpo cuerpo cuerpo";
-  column-gap: var(--espacio-3);
-  align-items: center;
-  align-content: center;
-  min-height: 60px;
-  padding: 10px 14px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-}
-.pendiente {
-  border-style: dashed;
-}
-.abierta {
-  border-color: var(--texto);
-}
-.resuelto > svg {
-  grid-area: icono;
-  color: var(--texto-suave);
-}
-/* La foto ya puesta ocupa el sitio del icono. */
-.miniatura {
-  grid-area: icono;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.clave {
-  grid-area: clave;
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.valor {
-  grid-area: valor;
-  font-size: var(--letra-md);
-  font-weight: 600;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-.falta {
-  color: var(--texto-suave);
-  font-weight: 500;
-}
-.cambiar {
-  grid-area: accion;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-2);
-  border: none;
-  background: none;
-  color: var(--primario);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-/* Salidas por intención: iconos redondos a la derecha (la cámara, Estoy aquí, la lupa), ui/BotonIcono con borde. */
-.opciones {
-  grid-area: accion;
-  display: flex;
-  gap: 6px;
-}
-/* Una salida sola va directo al área; dentro de .opciones (flex) no aplica. La cámara es un label con el campo de
-   archivo escondido dentro. */
+/* 3. Renglones resueltos: son la piel `resuelto` de ui/Renglon (Renglon.module.css). Aquí queda solo lo de dentro de un
+   renglón que es del formulario: la cámara, una etiqueta con forma de botón que lleva escondido el campo de archivo. */
 .salida {
-  grid-area: accion;
   position: relative;
 }
 .salida > input {
@@ -299,57 +220,9 @@
   height: 1px;
   opacity: 0;
 }
-/* Interruptor en el renglón (Soy yo / es mi grupo). */
-.palanca {
-  grid-area: accion;
-  position: relative;
-  width: 51px;
-  height: 31px;
-  border: none;
-  border-radius: var(--radio-pildora);
-  background: var(--borde);
-  cursor: pointer;
-  transition: background-color 150ms;
-}
-.palanca::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 27px;
-  height: 27px;
-  border-radius: 50%;
-  background: var(--fondo);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform 150ms;
-}
-.palanca[aria-checked="true"] {
-  background: var(--primario);
-}
-.palanca[aria-checked="true"]::after {
-  transform: translateX(20px);
-}
 
-/* 4. El cuerpo abierto: chips, una entrada, subir foto. */
-.cuerpo {
-  grid-area: cuerpo;
-  display: grid;
-  gap: var(--espacio-3);
-  padding-top: var(--espacio-3);
-}
-.cuerpo[hidden] {
-  display: none;
-}
-.cuerpoNota {
-  grid-area: cuerpo;
-  padding-top: var(--espacio-2);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.cuerpoNota[role="alert"] {
-  color: var(--error);
-}
-/* La ayuda bajo un campo suelto (no un renglón de canon.resuelto): mismo aspecto que .cuerpoNota, sin
+/* 4. Lo que va dentro de un cuerpo abierto: chips, una entrada, subir foto. */
+/* La ayuda bajo un campo suelto (no un renglón resuelto): mismo aspecto que la `nota` de un renglón (ui/Renglon), sin
    grid-area — esa clase solo se reutiliza dentro de la rejilla para la que fue escrita (regla del gestor,
    2026-09-21, tras el bug de "Es en otro sitio"). */
 .notaCampo {
@@ -396,11 +269,4 @@ textarea.entrada {
   width: 1px;
   height: 1px;
   opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .palanca,
-  .palanca::after {
-    transition: none;
-  }
 }

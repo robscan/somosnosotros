@@ -9,7 +9,7 @@ import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
-import { EsqueletoBloqueTexto, EsqueletoRenglones } from "@/components/ui/Esqueleto";
+import { EsqueletoDato, EsqueletoRenglones } from "@/components/ui/Esqueleto";
 import EventosPorDia from "@/components/EventosPorDia";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
@@ -22,6 +22,7 @@ import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import type { EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
@@ -96,41 +97,30 @@ const cargarSeguidoresLugarCache = cache(async (lugarId: string): Promise<number
 
 /**
  * Cuántos siguen al lugar y su próximo evento: los dos renglones de `<ul className={ficha.datos}>` que piden una
- * consulta aparte de la del lugar (OL-161). Se difieren en `<Suspense>`; la cabecera (foto, nombre, dirección) no
- * los espera.
+ * consulta aparte de la del lugar (OL-161). Se difieren en `<Suspense>`, con un renglón de esqueleto del mismo alto
+ * mientras llegan; la cabecera (foto, nombre, dirección) no los espera.
  */
 async function MetaLugar({ lugar }: { lugar: LugarConAutor }) {
   const [seguidores, eventos] = await Promise.all([cargarSeguidoresLugarCache(lugar.id), cargarEventosCache(lugar)]);
   return seguidores === 0 && !eventos[0] ? (
-    <li className={ficha.dato}>
+    <li className={renglon.dato}>
       <IconoCalendario width={20} height={20} />
-      <span className={ficha.suave}>Sin eventos próximos · Nadie lo sigue todavía</span>
+      <small>Sin eventos próximos · Nadie lo sigue todavía</small>
     </li>
   ) : (
     <>
-      <li className={ficha.dato}>
+      <li className={renglon.dato}>
         <IconoPersonas width={20} height={20} />
         <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
       </li>
-      <li className={ficha.dato}>
+      <li className={renglon.dato}>
         <IconoCalendario width={20} height={20} />
         <b>{eventos[0] ? textoProximo(eventos[0]) : "Sin eventos próximos"}</b>
         {eventos[0] && (
-          <Salto destino="eventos" className={ficha.datoEnlace}>
-            ver
-          </Salto>
+          <Salto destino="eventos">ver</Salto>
         )}
       </li>
     </>
-  );
-}
-
-/** Fallback de `MetaLugar`: un renglón del mismo alto (el caso con más texto, "Nadie lo sigue todavía"). */
-function EsqueletoMetaLugar() {
-  return (
-    <li className={ficha.dato} aria-hidden="true">
-      <EsqueletoBloqueTexto lineas={1} />
-    </li>
   );
 }
 
@@ -320,11 +310,11 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       <p className={ficha.etiqueta}>{etiquetaLugar(lugar)}</p>
 
       <ul className={ficha.datos}>
-        <li className={ficha.dato}>
+        <li className={renglon.dato}>
           <IconoPin width={20} height={20} />
           <b>{lugar.direccion ?? "Sin dirección"}</b>
         </li>
-        <Suspense fallback={<EsqueletoMetaLugar />}>
+        <Suspense fallback={<EsqueletoDato />}>
           <MetaLugar lugar={lugar} />
         </Suspense>
       </ul>

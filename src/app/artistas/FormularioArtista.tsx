@@ -14,6 +14,7 @@ import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona,
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import ListaFlotante from "@/components/ui/ListaFlotante";
+import Palanca from "@/components/ui/Palanca";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
 import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, LIMITES_ARTISTA, pasoQueHace, preguntaSubcategoria, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
 import type { CiudadConArtistas } from "@/lib/ciudad";
@@ -27,6 +28,7 @@ import CampoImagenUrl from "@/components/CampoImagenUrl";
 import type { ResultadoArtista } from "./acciones";
 import HojaCiudad from "./HojaCiudad";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import estilos from "./FormularioArtista.module.css";
 
 type Props = {
@@ -196,7 +198,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </p>
       ) : faltaNombre ? (
         // La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios).
-        <p className={canon.cuerpoNota}>Falta el nombre.</p>
+        <p className={renglon.nota}>Falta el nombre.</p>
       ) : (
         // Con el campo sin foco, si sigue habiendo un repetido queda esta línea en vez del panel flotante: el
         // panel tapaba Qué hace sin poder cerrarse (revisión del gestor, 2026-09-21).
@@ -223,17 +225,17 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         )}
       </ListaFlotante>
 
-      <ul className={canon.renglones}>
+      <ul className={renglon.renglones}>
         {/* 2. Qué hace: deducido del nombre; chips y "en una palabra" al abrir. */}
-        <li className={`${canon.resuelto} ${abierta === "hace" ? canon.abierta : ""}`}>
+        <li className={`${renglon.resuelto} ${abierta === "hace" ? renglon.abierto : ""}`}>
           <IconoNota width={20} height={20} />
-          <span className={canon.clave}>Qué hace</span>
-          <span className={`${canon.valor} ${disciplina ? "" : canon.falta}`}>{valorHace}</span>
-          <button type="button" className={canon.cambiar} onClick={() => setAbierta(abierta === "hace" ? null : "hace")} aria-expanded={abierta === "hace"}>
+          <small>Qué hace</small>
+          <b className={disciplina ? undefined : renglon.falta}>{valorHace}</b>
+          <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setAbierta(abierta === "hace" ? null : "hace")} aria-expanded={abierta === "hace"}>
             {abierta === "hace" ? "Listo" : "Cambiar"}
-          </button>
+          </Boton>
           {abierta === "hace" && (
-            <div className={canon.cuerpo}>
+            <div className={renglon.cuerpo}>
               {/* "Qué hace" en dos pasos (OL-206, docs/rediseno/15 decisión 11): paso 1, elegir entre todas las
                   disciplinas; paso 2, con una elegida (a mano, o ya la de la ficha al editar), se oculta el
                   resto y queda su ✕ — deshace los dos pasos a la vez. */}
@@ -318,9 +320,11 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
                             <IconoOk width={20} height={20} />
                             <span>
                               Ya hay <b>{parecida.artistas}</b> {parecida.artistas === 1 ? "artista" : "artistas"} con &ldquo;<b>{parecida.detalle}</b>&rdquo;.{" "}
-                              <button
+                              <Boton
                                 type="button"
-                                className={canon.cambiar}
+                                variante="texto"
+                                alto="control"
+                                ancho="contenido"
                                 onClick={() => {
                                   const siguiente = alElegirSubcategoria(parecida.detalle);
                                   setDetalle(siguiente.detalle);
@@ -329,7 +333,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
                                 }}
                               >
                                 Usar esa
-                              </button>
+                              </Boton>
                             </span>
                           </p>
                         );
@@ -348,15 +352,15 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </li>
 
         {/* 3. Es: deducido del nombre ("Los", "Trío", "Colectivo"); chips al abrir. */}
-        <li className={`${canon.resuelto} ${abierta === "es" ? canon.abierta : ""}`}>
+        <li className={`${renglon.resuelto} ${abierta === "es" ? renglon.abierto : ""}`}>
           <IconoPersonas width={20} height={20} />
-          <span className={canon.clave}>Es</span>
-          <span className={canon.valor}>{etiquetaTipoArtista(tipo)}</span>
-          <button type="button" className={canon.cambiar} onClick={() => setAbierta(abierta === "es" ? null : "es")} aria-expanded={abierta === "es"}>
+          <small>Es</small>
+          <b>{etiquetaTipoArtista(tipo)}</b>
+          <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setAbierta(abierta === "es" ? null : "es")} aria-expanded={abierta === "es"}>
             {abierta === "es" ? "Listo" : "Cambiar"}
-          </button>
+          </Boton>
           {abierta === "es" && (
-            <div className={canon.cuerpo}>
+            <div className={renglon.cuerpo}>
               <div className={canon.chips}>
                 {TIPOS_ARTISTA.map((t) => (
                   <Chip
@@ -381,26 +385,26 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         </li>
 
         {/* 4. Ciudad: la de entrada casi siempre es la buena; si no, se busca en una hoja (el teclado no tapa los resultados). */}
-        <li className={canon.resuelto}>
+        <li className={renglon.resuelto}>
           <IconoPin width={20} height={20} />
-          <span className={canon.clave}>Ciudad</span>
-          <span className={canon.valor}>{ciudad}</span>
-          <button type="button" className={canon.cambiar} onClick={() => setAbierta("ciudad")} aria-haspopup="dialog">
+          <small>Ciudad</small>
+          <b>{ciudad}</b>
+          <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setAbierta("ciudad")} aria-haspopup="dialog">
             Cambiar
-          </button>
+          </Boton>
         </li>
 
         {/* 5. Foto: la cámara como acción; la foto puesta ocupa el sitio del icono. */}
-        <li className={`${canon.resuelto} ${foto ? "" : canon.pendiente}`}>
+        <li className={`${renglon.resuelto} ${foto ? "" : renglon.pendiente}`}>
           {foto ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
-            <img src={foto} alt="" className={canon.miniatura} />
+            <img src={foto} alt="" />
           ) : (
             <IconoCamara width={20} height={20} />
           )}
-          <span className={canon.clave}>Foto</span>
-          <span className={`${canon.valor} ${foto ? "" : canon.falta}`}>{subiendo ? "Subiendo…" : foto ? "Lista" : "Sin foto"}</span>
-          <div className={canon.opciones}>
+          <small>Foto</small>
+          <b className={foto ? undefined : renglon.falta}>{subiendo ? "Subiendo…" : foto ? "Lista" : "Sin foto"}</b>
+          <div className={renglon.opciones}>
             <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
               <IconoCamara width={22} height={22} />
               <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
@@ -412,7 +416,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
             )}
           </div>
           {(errorFoto || errores.foto) && (
-            <p className={canon.cuerpoNota} role="alert">
+            <p className={renglon.nota} role="alert">
               {errorFoto ?? errores.foto}
             </p>
           )}
@@ -420,23 +424,23 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
 
         {/* 6. Soy yo / es mi grupo (solo en el alta; después lo liga el administrador). Al encender, el valor dice qué da. */}
         {esAlta && (
-          <li className={canon.resuelto}>
+          <li className={renglon.resuelto}>
             <IconoPersona width={20} height={20} />
-            <span className={canon.clave}>Soy yo / es mi grupo</span>
-            <span className={`${canon.valor} ${soy ? "" : canon.falta}`}>{soy ? "Sí: podrás editar la ficha y publicar sus fechas" : "No"}</span>
-            <button type="button" role="switch" aria-checked={soy} aria-label="Soy yo / es mi grupo" className={canon.palanca} onClick={() => setSoy((s) => !s)} />
+            <small>Soy yo / es mi grupo</small>
+            <b className={soy ? undefined : renglon.falta}>{soy ? "Sí: podrás editar la ficha y publicar sus fechas" : "No"}</b>
+            <Palanca encendida={soy} aria-label="Soy yo / es mi grupo" onClick={() => setSoy((s) => !s)} />
           </li>
         )}
 
         {/* 7. Más: redes y descripción. Se esconde, no se desmonta: lo escrito se queda aunque se cierre. */}
-        <li className={`${canon.resuelto} ${masAbierto ? canon.abierta : canon.pendiente}`}>
+        <li className={`${renglon.resuelto} ${masAbierto ? renglon.abierto : renglon.pendiente}`}>
           <IconoMas width={20} height={20} />
-          <span className={canon.clave}>Más</span>
-          <span className={`${canon.valor} ${canon.falta}`}>Redes, descripción</span>
-          <button type="button" className={canon.cambiar} onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
+          <small>Más</small>
+          <b className={renglon.falta}>Redes, descripción</b>
+          <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
             {masAbierto ? "Listo" : "Agregar"}
-          </button>
-          <div className={canon.cuerpo} hidden={!masAbierto}>
+          </Boton>
+          <div className={renglon.cuerpo} hidden={!masAbierto}>
             <SelectorEnlaces inicial={normalizarRedes(artista?.redes)} error={errores.enlaces} />
             <Campo etiqueta="Descripción" name="descripcion" multilinea defaultValue={artista?.descripcion ?? ""} maxLength={LIMITES_ARTISTA.descripcion} placeholder="Qué hace y dónde suele estar" error={errores.descripcion} mostrarContador />
             {esAdmin && <CampoImagenUrl valor={foto} onCambio={setFoto} />}

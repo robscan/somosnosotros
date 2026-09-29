@@ -34,6 +34,7 @@ import type { ResultadoLugar } from "./acciones";
 import { contextoDondeEsta } from "./dondeEstaPantalla";
 import HojaDondeLugar from "./HojaDondeLugar";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./FormularioLugar.module.css";
 
@@ -302,7 +303,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           </p>
         ) : faltaNombre ? (
           // La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios).
-          <p className={canon.cuerpoNota}>Falta el nombre.</p>
+          <p className={renglon.nota}>Falta el nombre.</p>
         ) : (
           // Con el campo sin foco, si sigue habiendo coincidencia queda esta línea (recortada a una) en vez del
           // panel flotante: el panel tapaba Dónde sin poder cerrarse (revisión del gestor, 2026-09-21).
@@ -363,22 +364,22 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           )}
         </ListaFlotante>
 
-        <ul className={canon.renglones}>
+        <ul className={renglon.renglones}>
           {/* 2. Dónde: resuelto en cuanto algo lo resuelve; si falta, dos salidas por intención. */}
-          <li className={`${canon.resuelto} ${punto ? "" : canon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${punto ? "" : renglon.pendiente}`}>
             <IconoPin width={20} height={20} />
-            <span className={canon.clave}>Dónde</span>
+            <small>Dónde</small>
             {punto ? (
               <>
-                <span className={canon.valor}>{direccion || "Pin en el mapa"}</span>
-                <button type="button" className={canon.cambiar} onClick={() => setHoja({ conFoco: false })}>
+                <b>{direccion || "Pin en el mapa"}</b>
+                <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setHoja({ conFoco: false })}>
                   Cambiar
-                </button>
+                </Boton>
               </>
             ) : (
               <>
-                <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
-                <span className={canon.opciones}>
+                <b className={renglon.falta}>Falta</b>
+                <span className={renglon.opciones}>
                   <BotonIcono relieve="contorno" onClick={() => void estoyAqui(alMoverPin)} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
                     <IconoUbicacion width={22} height={22} />
                   </BotonIcono>
@@ -390,26 +391,26 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             )}
             {/* La ayuda va bajo el renglón, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios). */}
             {errores.ubicacion || errores.direccion ? (
-              <p className={canon.cuerpoNota} role="alert">
+              <p className={renglon.nota} role="alert">
                 {errores.ubicacion ?? errores.direccion}
               </p>
             ) : avisoUbicacion ? (
-              <p className={canon.cuerpoNota}>{avisoUbicacion}</p>
+              <p className={renglon.nota}>{avisoUbicacion}</p>
             ) : (
-              faltaDonde && <p className={canon.cuerpoNota}>Falta dónde está.</p>
+              faltaDonde && <p className={renglon.nota}>Falta dónde está.</p>
             )}
           </li>
 
           {/* 3. Tipo: deducido del nombre; chips al abrir; con Otro, qué es (opcional). */}
-          <li className={`${canon.resuelto} ${tipoAbierto ? canon.abierta : ""}`}>
+          <li className={`${renglon.resuelto} ${tipoAbierto ? renglon.abierto : ""}`}>
             <IconoEtiqueta width={20} height={20} />
-            <span className={canon.clave}>Tipo</span>
-            <span className={`${canon.valor} ${tipo ? "" : canon.falta}`}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre"}</span>
-            <button type="button" className={canon.cambiar} onClick={() => setTipoAbierto((a) => !a)} aria-expanded={tipoAbierto}>
+            <small>Tipo</small>
+            <b className={tipo ? undefined : renglon.falta}>{tipo ? `${etiquetaTipo(tipo)}${tipo === "otro" && detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre"}</b>
+            <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setTipoAbierto((a) => !a)} aria-expanded={tipoAbierto}>
               {tipoAbierto ? "Listo" : "Cambiar"}
-            </button>
+            </Boton>
             {tipoAbierto && (
-              <div className={canon.cuerpo}>
+              <div className={renglon.cuerpo}>
                 <div className={canon.chips}>
                   {TIPOS.map((t) => (
                     <Chip
@@ -442,15 +443,15 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           </li>
 
           {/* 4. Más: descripción, redes, foto (y lo del administrador). Puede hacerse después. */}
-          <li className={`${canon.resuelto} ${masAbierto ? canon.abierta : canon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${masAbierto ? renglon.abierto : renglon.pendiente}`}>
             <IconoMas width={20} height={20} />
-            <span className={canon.clave}>Más</span>
-            <span className={`${canon.valor} ${canon.falta}`}>Descripción, redes, foto</span>
-            <button type="button" className={canon.cambiar} onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
+            <small>Más</small>
+            <b className={renglon.falta}>Descripción, redes, foto</b>
+            <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
               {masAbierto ? "Listo" : "Agregar"}
-            </button>
+            </Boton>
             {/* Se esconde, no se desmonta: lo escrito y los enlaces se quedan aunque se cierre. */}
-            <div className={canon.cuerpo} hidden={!masAbierto}>
+            <div className={renglon.cuerpo} hidden={!masAbierto}>
               <Campo etiqueta="Descripción corta" name="descripcion" multilinea defaultValue={lugar?.descripcion ?? ""} maxLength={LIMITES_LUGAR.descripcion} placeholder="Qué es y qué pasa ahí" error={errores.descripcion} mostrarContador />
               <SelectorEnlaces inicial={normalizarRedes(lugar?.redes)} error={errores.enlaces} />
               {portada && (

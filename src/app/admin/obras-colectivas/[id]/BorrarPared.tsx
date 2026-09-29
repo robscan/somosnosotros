@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
+import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoPincel } from "@/components/ui/Iconos";
 import estilosBorrar from "@/components/Borrar.module.css";
 import { abrirCanalObra } from "@/lib/canal-obra";
@@ -81,9 +82,9 @@ export default function BorrarPared({ obraId, perfilId }: { obraId: string; perf
       {confirmar && (
         <Hoja etiqueta="Borrar la pared" onCerrar={cerrar}>
           <div className={estilosBorrar.confirmar}>
-            <span className={estilosBorrar.icono} aria-hidden="true">
+            <IconoEnCirculo>
               <IconoPincel width={28} height={28} />
-            </span>
+            </IconoEnCirculo>
             {estado === "hecho" ? (
               <>
                 <h3>La pared quedó limpia</h3>

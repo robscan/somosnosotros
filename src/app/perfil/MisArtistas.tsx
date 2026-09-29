@@ -12,7 +12,7 @@ export type ArtistaLigadoConQr = { artista: ArtistaResumen; url: string; svg: st
  * misma pieza, 2026-09-23: fuera el botón de texto «Ver ficha»/«Ver mi ficha de artista»). La tarjeta blanca de
  * siempre, pero ahora el compartir es el que se toca a la derecha: mismo canon circular elevado que las acciones
  * de la ficha (`ui/BotonIcono`, grande y elevado), sin letrero — no hace falta uno nuevo para la misma idea
- * de botón. La tarjeta entera es el enlace a la ficha (`.frente`, como `RenglonArtista`/`Renglon.module.css`) y
+ * de botón. La tarjeta entera es el enlace a la ficha (`.frente`, como el renglón de lista de `ui/Renglon`) y
  * el compartir es su hermano, nunca su hijo (el mismo patrón que el botón sobre una tarjeta de `Destacados`):
  * así el toque en un botón nunca navega ni se confunde con el toque en el otro. Quien llama decide si se
  * muestra: sin artistas ligados, el bloque entero no aparece. El QR de cada uno ya viene calculado

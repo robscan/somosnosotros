@@ -79,6 +79,17 @@ Dos piezas para todos los botones de la app (OL-230, doc 50 § 5.2), sin más di
 - **`ui/BotonIcono`** (solo icono, redondo): tamaño `control` 44 (barras y cabeceras), `accion` 48 (renglones, tarjetas y mapa) o `grande` 56 (acciones de una ficha); relieve `plano` (barras), `elevado` (blanco con sombra y glifo violeta: acciones sobre listas, tarjetas, mapa y ficha) o `contorno` (borde, solo opciones secundarias de un formulario). **Decidido** es verde (`--ok`) con el glifo en blanco.
 - **Glifos de acción:** «Voy» es la palomita; «seguir» es que te avisen, la campana con «+» en un lugar y la persona con «+» en un artista. Ya decidido, la palomita blanca sobre verde en los tres casos.
 
+## Renglones y palanca
+
+Una sola rejilla con áreas para toda fila de la app (OL-231, doc 50 § 5.2): `ui/Renglon` y sus cuatro pieles. Lo visual va a la izquierda (icono o foto), el texto en el centro y la acción a la derecha; cada hijo va a su área por lo que es (el primero es lo visual, `b` el texto principal, `small` el secundario y todo lo demás la acción).
+
+- **`lista`** (Agenda, Lugares, Artistas y las fichas): foto de 56 (`--foto-renglon`), título, datos con icono y el botón de acción a la derecha, hermano del enlace. Ningún dato pasa del borde de su columna: el que es una sola línea se corta con puntos suspensivos y la dirección se parte.
+- **`dato`** (fichas): icono, principal, secundario y, si lo hay, el enlace que lleva más lejos; 44 de alto como mínimo.
+- **`ajuste`** (Ajustes): icono en una columna de 24, etiqueta, detalle y chevron, valor o palanca; 52 de alto como mínimo.
+- **`resuelto`** (altas y ediciones): icono, clave sobre valor y acción (`Boton` de texto, `BotonIcono` de contorno o `Palanca`); 60 de alto como mínimo, con el cuerpo debajo al abrir. Pendiente lleva el borde discontinuo; abierto, el de tinta.
+- **`ui/Palanca`**: el interruptor único. Se ve en 51×31 y se toca en 51×45; la perilla mide 27 y recorre 20.
+- **`ui/Esqueleto`** dibuja el renglón con barras grises y la misma rejilla: mide lo que el renglón, sin medidas propias.
+
 ## Roles tipográficos
 
 | Rol | Peso | Ancho | Tamaño | Notas |
