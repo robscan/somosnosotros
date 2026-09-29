@@ -1,6 +1,6 @@
 # 262 · Lugares: la lista en la hoja inferior con la ficha dentro (OL-234, pieza P5b)
 
-**Fecha:** 2026-09-29 · **Rama:** `ui-lugares`, desde `origin/ui-raices` (`2c70c3a9`) · **OL:** OL-234 · **PR:** #NNN (sin unir; va montado sobre #271, `ui-raices`, que va sobre #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Sexta pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1, los botones de P2, el renglón de P3, el armazón de P4 y la fila de contexto de P5.
+**Fecha:** 2026-09-29 · **Rama:** `ui-lugares`, desde `origin/ui-raices` (`2c70c3a9`) · **OL:** OL-234 · **PR:** #272 (sin unir; va montado sobre #271, `ui-raices`, que va sobre #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Sexta pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1, los botones de P2, el renglón de P3, el armazón de P4 y la fila de contexto de P5.
 
 ## Pedido
 
