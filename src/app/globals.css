@@ -56,9 +56,9 @@
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
 
   /* Barras */
-  --alto-barra: 56px; /* barra superior: logotipo y sesión, o regreso y logotipo */
+  --alto-barra: 56px; /* barra de la app (BarraApp) y cabecera interior de una ficha o una tarea: 56 sin la franja de la hora */
   --alto-filtros: 48px; /* fila de contexto de las pantallas raíz: ciudad, Cuándo y Filtros */
-  --alto-cabecera: 104px; /* lo que ui/Cabecera deja a la vista (chips 60 + pestañas 44); ella lo remide en vivo */
+  --alto-cabecera: 104px; /* lo que mide ui/Cabecera (chips 60 + pestañas 44); ella lo remide en vivo */
   --alto-nav: 60px; /* barra de navegación inferior (píldora de 32 + etiqueta), sin el área segura */
   --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
 
@@ -84,10 +84,11 @@
   --columna: 600px; /* ancho de lectura */
   --columna-ancha: 960px; /* ancho de lectura en escritorio */
   --panel: 400px; /* la lista que va junto al mapa */
-  /* Se mide sobre el ancho de la ventana, no del contenedor: así vale lo mismo dentro de cualquier caja y un margen
-     negativo llega al borde de la pantalla. Es la única medida de la ventana que queda: con barra de desplazamiento
-     clásica `vw` la incluye (H-38), y se va cuando las plantillas usen `.columna` en vez de este gutter. */
-  --gutter: max(var(--espacio-5), calc((100vw - var(--columna)) / 2));
+  /* Se mide sobre el ancho del armazón, que es un contenedor (`container-type` en Armazon.module.css): `100cqw` no
+     cuenta la barra de desplazamiento clásica que `100vw` sí incluye (H-38) y vale lo mismo dentro de cualquier caja
+     del armazón. Lo que se pinta fuera de él (lo que sube por portal a `body`) no tiene contenedor y mide la ventana.
+     Se va cuando las plantillas usen `.columna` en vez de este gutter. */
+  --gutter: max(var(--espacio-5), calc((100cqw - var(--columna)) / 2));
 
   /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él.
      Un punto más grande que con la letra del sistema: la condensada se percibe más chica (LINEA_GRAFICA). */
@@ -196,17 +197,17 @@ body::before {
   pointer-events: none;
 }
 
-/* Pantallas raíz (Agenda, Lugares, Artistas): barra arriba, contenido en su tono, navegación inferior fija. */
+/* Pantallas raíz (Inicio, Agenda, Lugares, Artistas): el contenido en su tono, bajo la barra de la app y con sitio abajo
+   para la navegación inferior fija. `--barra-flujo` es lo que la barra ocupa arriba (lo pone el armazón). */
 .raiz {
-  min-height: 100dvh;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: calc(var(--nav-abajo) + 96px);
+  min-height: calc(100dvh - var(--barra-flujo, 0px));
+  padding-bottom: calc(var(--nav-abajo) + var(--espacio-6));
   background: var(--fondo-contenido);
 }
 
 /* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */
 .pagina {
-  min-height: 100dvh;
+  min-height: calc(100dvh - var(--barra-flujo, 0px));
   padding: calc(var(--espacio-5) + env(safe-area-inset-top, 0px)) var(--gutter)
     calc(var(--espacio-6) + var(--piso));
 }

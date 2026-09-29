@@ -1,38 +1,20 @@
-/* La tira de letras (Lugares y Artistas): una fila pegada bajo lo que ui/Cabecera deja a la vista, sobre el tono
-   de la lista. Va al principio de la lista, así ya está pegada cuando se enciende. No ocupa sitio: su margen negativo
-   sube lo que sigue por debajo de ella, y aparecer o esconderse no mueve nada. Arriba del todo no se ve (founder,
-   2026-09-19); `.visible` la muestra al entrar en la zona de la primera letra. Escondida mide lo mismo: el salto a una
-   letra y la letra iluminada cuentan con ella. */
+/* La tira de letras (Artistas): la última fila de ui/Cabecera, del prototipo firmado (docs/rediseno/50, H-18). No es
+   pegajosa ni tiene fondo ni margen negativo: la cabecera la pega con ella, la pinta de blanco y la mide. Solo la
+   letra, sin círculo ni borde; cada una es un toque de 44×44. Si no caben todas, se desliza de lado. */
 .tira {
-  position: sticky;
-  top: calc(var(--tope) + var(--alto-cabecera));
-  z-index: calc(var(--z-pegajoso) - 1);
   display: flex;
-  height: var(--toque-min);
-  margin-bottom: calc(-1 * var(--toque-min));
-  padding-inline: var(--gutter);
+  padding-inline: calc(var(--gutter) - var(--espacio-3));
   overflow-x: auto;
   scrollbar-width: none;
-  background: var(--fondo-contenido);
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    top var(--cabecera-animacion, 0.2s) ease,
-    opacity 0.15s ease,
-    visibility 0.15s;
 }
 .tira::-webkit-scrollbar {
   display: none;
 }
-.visible {
-  opacity: 1;
-  visibility: visible;
-}
 
-/* Solo la letra: 44 px de alto para el dedo, lo justo de ancho, sin separación */
 .letra {
   flex: none;
-  min-width: 34px;
+  width: var(--toque-min);
+  height: var(--toque-min);
   padding: 0;
   border: none;
   background: none;

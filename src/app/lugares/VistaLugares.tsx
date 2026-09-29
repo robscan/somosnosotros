@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { use, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { use, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Suspense } from "react";
 import { Cuenta } from "@/components/ui/Chip";
 import BuscadorUnificado from "@/components/BuscadorUnificado";
@@ -15,8 +15,7 @@ import BotonIcono from "@/components/ui/BotonIcono";
 import { EsqueletoCaja, EsqueletoRenglones } from "@/components/ui/Esqueleto";
 import Hoja from "@/components/ui/Hoja";
 import Mapa from "@/components/Mapa";
-import NavInferior from "@/components/NavInferior";
-import Publicar from "@/components/Publicar";
+import TiraLetras, { irAlGrupo, useLetraActiva } from "@/components/TiraLetras";
 import Cabecera from "@/components/ui/Cabecera";
 import ChipFecha from "@/components/ui/ChipFecha";
 import { IconoCalendario, IconoLista, IconoMapa, IconoUbicacion } from "@/components/ui/Iconos";
@@ -25,6 +24,7 @@ import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado, Tarjeta } from "@/lib/destacados";
 import { SIN_FOTO } from "@/lib/imagen";
 import ChipCiudad from "@/components/Ciudad";
+import { letrasPresentes } from "@/lib/indice";
 import { calleCorta, etiquetaTipo, filtrarLugares, hrefLugar, lugaresConEventoElDia, lugaresEncuadreInicial, ordenarLugares, textoProximoPin, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import { PanelPestana, Pestana, PestanaEnlace, Pestanas } from "@/components/ui/Pestanas";
@@ -73,7 +73,6 @@ type Props = {
   vistaInicial: Vista;
   /** Tipo elegido, leído de la URL (`?tipo=`); vale para el mapa y la lista. */
   tipo: string | null;
-  barra: ReactNode;
   extras: Promise<ExtrasLugares>;
   /** Con qué texto abrir la búsqueda ya escrita (el "Ver todos" del grupo Lugares del buscador único, OL-153). */
   busquedaInicial?: string;
@@ -90,7 +89,7 @@ type Props = {
  * ubicación al tocarlo, no la guarda y es exclusiva con el tipo: en la lista ordena por distancia, en el mapa centra
  * en el punto azul. Decisiones en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/cabeceras.html.
  */
-export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, vistaInicial, tipo, barra, extras, busquedaInicial, hoy, zona }: Props) {
+export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, vistaInicial, tipo, extras, busquedaInicial, hoy, zona }: Props) {
   const router = useRouter();
   // El chip de fecha (OL-218) recibe un `Map` ya armado, no la `Promise` que usa Agenda: los eventos de Lugares
   // ya están cargados aquí (sin `<Suspense>` que esperar) — `useMemo` evita rehacer el `Map` en cada repintado.
@@ -123,6 +122,16 @@ export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, v
     setBuscando(!!r.busqueda);
     if (typeof r.fecha === "string") setFecha(r.fecha);
   });
+  // La Lista y su tira de letras usan lo mismo: los lugares del tipo elegido y, con fecha, solo los que tienen evento ese
+  // día (`lugaresConEventoElDia`, docs/rediseno/45; OL-210: un chip, una regla, dos vistas — antes la Lista no filtraba
+  // por fecha, pedido literal del founder que él mismo cambió el 2026-09-25: "debería afectar la lista también"). La tira
+  // lleva a cada grupo de letra, y solo hay grupos sin Cercanos ni búsqueda (el orden ya no es alfabético): va en la
+  // cabecera, como su última fila (docs/rediseno/50, H-18), y no en la lista.
+  const lugaresDelDia = useMemo(() => (fecha ? lugaresConEventoElDia(lugaresDelTipo, fecha) : lugaresDelTipo), [lugaresDelTipo, fecha]);
+  const conLetras = vista === "lista" && !punto && !busqueda.trim();
+  const letras = useMemo(() => (conLetras ? letrasPresentes(ordenarLugares(lugaresDelDia, null).lista, (l) => l.nombre) : []), [conLetras, lugaresDelDia]);
+  const tiraRef = useRef<HTMLDivElement>(null);
+  const letraActiva = useLetraActiva(letras, tiraRef, letras.length > 0);
   // Lo que `CuerpoLugares` rellena al montar, para que un toque en la Cabecera (buscar, recentrar) actúe en el
   // mismo instante en vez de esperar un efecto reaccionando al cambio de prop (ver el tipo `InteraccionMapa`).
   const mapaRef = useRef<InteraccionMapa | null>(null);
@@ -176,7 +185,6 @@ export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, v
   return (
     <PantallaConAviso>
       <main className={`raiz ${vista === "mapa" ? styles.sinRelleno : ""}`}>
-        {barra}
         <Cabecera
           contexto={
             <>
@@ -209,7 +217,9 @@ export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, v
                 ))}
             </Pestanas>
           }
-        />
+        >
+          <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={irAlGrupo} />
+        </Cabecera>
 
         {/* El mapa y la lista sí esperan una consulta aparte (quién sigue qué, destacados, la tira de la semana):
             van en su propio `<Suspense>`, con un esqueleto del mismo tamaño mientras llega (OL-161, bitácora 196). */}
@@ -218,6 +228,7 @@ export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, v
             mapaRef={mapaRef}
             extras={extras}
             lugaresDelTipo={lugaresDelTipo}
+            lugaresDelDia={lugaresDelDia}
             ciudad={ciudad}
             tipo={tipo}
             vista={vista}
@@ -232,8 +243,6 @@ export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, v
             onCambiarVista={cambiarVista}
           />
         </Suspense>
-
-        <NavInferior />
       </main>
     </PantallaConAviso>
   );
@@ -256,6 +265,7 @@ function CuerpoLugares({
   mapaRef,
   extras,
   lugaresDelTipo,
+  lugaresDelDia,
   ciudad,
   tipo,
   vista,
@@ -272,6 +282,8 @@ function CuerpoLugares({
   mapaRef: RefObject<InteraccionMapa | null>;
   extras: Promise<ExtrasLugares>;
   lugaresDelTipo: LugarLista[];
+  /** Los del tipo elegido que tienen evento el día del chip de fecha (todos, sin fecha): lo que lista la Lista. */
+  lugaresDelDia: LugarLista[];
   ciudad: Ciudad;
   tipo: string | null;
   vista: Vista;
@@ -292,10 +304,6 @@ function CuerpoLugares({
   const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
   // El chip de fecha filtra los pines del Mapa con `lugaresConEventoElDia` (docs/rediseno/45).
   const pinesDelDia = useMemo(() => (fecha ? lugaresConEventoElDia(enMapa, fecha) : enMapa), [enMapa, fecha]);
-  // La Lista usa la misma función sobre `lugaresDelTipo` (antes de la búsqueda, que `ListaLugares` aplica ella
-  // misma): un chip, una regla, dos vistas (OL-210; antes la Lista no filtraba por fecha, pedido literal del
-  // founder que él mismo cambió el 2026-09-25 — "debería afectar la lista también").
-  const lugaresListaDelDia = useMemo(() => (fecha ? lugaresConEventoElDia(lugaresDelTipo, fecha) : lugaresDelTipo), [lugaresDelTipo, fecha]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos`
   // llega null y ningún pin se resalta como seguido. Sin aro en ningún caso (OL-146, 2026-09-23): decisión del
   // founder tras firmar el doc 35 (2026-09-22) y el doc 37 (2026-09-23).
@@ -429,7 +437,7 @@ function CuerpoLugares({
         <BuscadorUnificado seccion="lugares" q={busqueda} ciudadSlug={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} ciudadNombre={ciudad.nombre} />
       ) : (
         <ListaLugares
-          lugares={lugaresListaDelDia}
+          lugares={lugaresDelDia}
           tipo={tipo}
           fecha={fecha}
           busqueda={busqueda}
@@ -446,8 +454,9 @@ function CuerpoLugares({
       </PanelPestana>
 
       {/* El conmutador Mapa · Lista (docs/rediseno/45, OL-174) salió del renglón 1 de la cabecera: ahora flota,
-          secundario, sobre "Registrar lugar" — mismo lugar en las dos vistas. Se retira con la hoja del pin
-          abierta, igual que "Registrar lugar" (no compiten con la hoja, que sube desde abajo). */}
+          secundario, sobre la navegación — mismo lugar en las dos vistas. Se retira con la hoja del pin abierta (no
+          compite con la hoja, que sube desde abajo). Se queda hasta que la lista pase a la hoja inferior de Lugares
+          (docs/rediseno/50, P5); registrar un lugar es ahora el «+» de la barra de la app. */}
       {!elegido &&
         (vista === "mapa" ? (
           <button type="button" className={styles.verOtraVista} onClick={() => onCambiarVista("lista")}>
@@ -460,7 +469,6 @@ function CuerpoLugares({
             Ver en mapa
           </button>
         ))}
-      {!elegido && <Publicar que="lugar" />}
     </>
   );
 }

@@ -16,6 +16,8 @@ type Props = {
   ciudad: Ciudad;
   ciudades: CiudadConDatos[];
   conSesion: boolean;
+  /** La búsqueda ya abierta y con el cursor puesto: a Inicio llega la lupa de la barra desde una pantalla sin búsqueda propia. */
+  buscarAlAbrir: boolean;
   avisos: AvisosLista | null;
   /** Los ids que ya usaron los otros carriles de eventos, para que Cercanos tampoco los repita (lib/inicio.ts). */
   excluirDeCercanosPromise: Promise<string[]>;
@@ -35,11 +37,11 @@ type Props = {
 
 /**
  * Inicio (docs/rediseno/41, tercera vuelta OL-219): nueve carriles con el shell de siempre — `ui/Cabecera` con el
- * chip de ciudad y la lupa. Carga progresiva (pedido del founder tras probar en producción): esta pantalla ya no
+ * chip de ciudad. Carga progresiva (pedido del founder tras probar en producción): esta pantalla ya no
  * espera ninguna consulta antes de pintar; cada carril llega por su cuenta (streaming del App Router, cada uno en su
  * `<Suspense>`) y un esqueleto del tamaño exacto (`CarrilEsqueleto`) ocupa su lugar mientras tanto. Un carril vacío
- * colapsa sin salto (`Destacados.module.css`, `.vacio`). El buscador único es la misma lupa, con los resultados
- * agrupados por tipo (`BuscadorUnificado`). Todos los carriles comparten un solo aviso/pregunta de avisos
+ * colapsa sin salto (`Destacados.module.css`, `.vacio`). El buscador único es la lupa de la barra de la app, con los
+ * resultados agrupados por tipo (`BuscadorUnificado`). Todos los carriles comparten un solo aviso/pregunta de avisos
  * (`PantallaConAviso`, la misma pieza que ya usan las fichas): el de más abajo se pinta una sola vez, para toda la
  * pantalla, aunque cada carril tenga su propio botón.
  *
@@ -47,10 +49,10 @@ type Props = {
  * crear cuenta en inicio»): el botón «Entrar» de la barra (`Sesion.tsx`) se queda como única puerta a entrar, sin
  * bloquear nada delante del contenido de eventos, lugares y artistas.
  */
-export default function Inicio({ ciudad, ciudades, conSesion, avisos, excluirDeCercanosPromise, slotTusPlanes, slotEstelar, slotEstaSemana, slotLugaresSemana, slotArtistasDestacados, slotPopulares, slotNuevos, slotArtistasSemana, verTodosCercanosHref }: Props) {
+export default function Inicio({ ciudad, ciudades, conSesion, buscarAlAbrir, avisos, excluirDeCercanosPromise, slotTusPlanes, slotEstelar, slotEstaSemana, slotLugaresSemana, slotArtistasDestacados, slotPopulares, slotNuevos, slotArtistasSemana, verTodosCercanosHref }: Props) {
   const [busqueda, setBusqueda] = useState("");
-  const [buscando, setBuscando] = useState(false);
-  const [enfocar, setEnfocar] = useState(false);
+  const [buscando, setBuscando] = useState(buscarAlAbrir);
+  const [enfocar, setEnfocar] = useState(buscarAlAbrir);
 
   const esCiudadInicial = ciudad.slug === CIUDAD_INICIAL.slug;
 

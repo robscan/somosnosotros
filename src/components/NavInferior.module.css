@@ -1,4 +1,6 @@
-/* Navegación inferior: fija, elevada sobre el contenido; el destino activo lleva una píldora detrás del icono */
+/* Navegación inferior: fija, elevada sobre el contenido; el destino activo lleva una píldora detrás del icono. Solo en
+   las raíces: las demás vistas llevan su propia cabecera y no traen navegación (data-vista, ver Armazon.tsx). En el
+   teléfono se recoge con la barra de arriba: baja y se va al bajar, y vuelve al subir. */
 .nav {
   position: fixed;
   left: 0;
@@ -6,13 +8,32 @@
   bottom: 0;
   z-index: var(--z-flotante);
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Inicio · Agenda · Lugares · Artistas (OL-153) */
+  grid-template-columns: repeat(5, 1fr); /* Inicio · Agenda · Lugares · Artistas · Perfil */
   height: var(--nav-abajo);
-  /* Los cuatro destinos se reparten en la columna; a cada lado queda lo que sobra del ancho de la barra (fija: su 100% es la ventana) */
-  padding: 0 max(var(--espacio-2), calc((100% - var(--columna)) / 2)) var(--piso);
+  /* Los cinco destinos se reparten en la columna; a cada lado queda lo que sobra del ancho de la barra (fija: su 100% es la ventana) */
+  padding: 0 max(var(--espacio-1), calc((100% - var(--columna)) / 2)) var(--piso);
   background: var(--fondo);
   border-top: 1px solid var(--borde);
   box-shadow: var(--sombra-panel);
+  transition:
+    transform var(--duracion-recogida) var(--curva),
+    visibility 0s;
+}
+:global([data-vista]:not([data-vista="raiz"])) .nav {
+  display: none;
+}
+:global([data-recogida]) .nav {
+  transform: translateY(100%);
+  visibility: hidden;
+  transition:
+    transform var(--duracion-recogida) var(--curva),
+    visibility 0s var(--duracion-recogida);
+}
+@media (min-width: 792px) {
+  :global([data-recogida]) .nav {
+    transform: none;
+    visibility: visible;
+  }
 }
 .destino {
   display: flex;
@@ -48,4 +69,21 @@
 }
 .activo span:last-child {
   font-weight: 700;
+}
+
+/* La foto de la persona (o su inicial) en la píldora de Perfil (PerfilEnNav): con el destino activo, un aro blanco la separa del violeta */
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  font-size: 11px;
+  font-weight: 700;
+  object-fit: cover;
+}
+.activo .avatar {
+  box-shadow: 0 0 0 2px var(--primario-texto);
 }

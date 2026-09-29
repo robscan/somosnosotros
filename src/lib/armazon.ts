@@ -1,0 +1,78 @@
+/**
+ * El armazón de la app (docs/rediseno/50, P4): una sola rejilla con la barra de la app, la pantalla y la navegación.
+ * No sabe qué hay dentro de la pantalla: el layout le dice cuál es (`data-vista`, según la ruta) y el CSS solo lee ese
+ * atributo. Aquí vive lo puro: qué vista es cada ruta, a dónde lleva el «+» y cuáles son los cinco destinos.
+ */
+
+/**
+ * - `raiz`: las cinco secciones de la navegación (y la pantalla que confirma un borrado): barra de la app y navegación.
+ * - `ficha`: un evento, un lugar, un artista o una persona: en el teléfono llevan su propia cabecera; desde 792 la
+ *   barra de la app ofrece Atrás y el menú.
+ * - `tarea`: altas, ediciones, buscar, ajustes, entrar…: en el teléfono llevan su propia barra.
+ * - `completa`: la pared y el mando de una obra colectiva y el letrero para imprimir; la pantalla se queda con todo.
+ */
+export type Vista = "raiz" | "ficha" | "tarea" | "completa";
+
+const RAICES: readonly string[] = ["/", "/agenda", "/lugares", "/artistas", "/perfil", "/borrado"];
+/** Las secciones cuyo `/:id` es una ficha (`/eventos/nuevo` no: es un alta). */
+const FICHAS: readonly string[] = ["eventos", "lugares", "artistas", "personas"];
+
+/** La vista de una ruta (`usePathname`, sin consulta). Lo que no es raíz, ficha ni pantalla completa es una tarea. */
+export function vistaDeRuta(ruta: string): Vista {
+  if (RAICES.includes(ruta)) return "raiz";
+  const [seccion, id, ...resto] = ruta.split("/").filter(Boolean);
+  if (seccion === "obra" || (seccion === "artistas" && resto.join("/") === "letrero")) return "completa";
+  if (FICHAS.includes(seccion) && id && id !== "nuevo" && resto.length === 0) return "ficha";
+  return "tarea";
+}
+
+/** Lo que se puede dar de alta desde el «+» de la barra: cada sección lleva a la suya; fuera de ellas, un evento. */
+export type Alta = "evento" | "lugar" | "artista";
+
+export function altaDeRuta(ruta: string): Alta {
+  if (ruta === "/lugares" || ruta.startsWith("/lugares/")) return "lugar";
+  if (ruta === "/artistas" || ruta.startsWith("/artistas/")) return "artista";
+  return "evento";
+}
+
+const ALTAS: Record<Alta, { href: string; etiqueta: string; conCiudad: boolean }> = {
+  evento: { href: "/eventos/nuevo", etiqueta: "Publicar un evento", conCiudad: true },
+  lugar: { href: "/lugares/nuevo", etiqueta: "Registrar un lugar", conCiudad: false },
+  artista: { href: "/artistas/nuevo", etiqueta: "Registrar un artista", conCiudad: true },
+};
+
+/**
+ * A dónde lleva el «+» y cómo se llama para quien no lo ve. Con la ciudad que se está viendo (`?ciudad=`), el evento y
+ * el artista empiezan ahí (bitácoras 051, 053 y OL-100); el lugar se ubica por su dirección y no la lleva. Con o sin
+ * sesión lleva al alta: la sesión se pide después, con el valor por delante.
+ */
+export function enlaceDeAlta(alta: Alta, ciudad: string | null): { href: string; etiqueta: string } {
+  const { href, etiqueta, conCiudad } = ALTAS[alta];
+  return { href: conCiudad && ciudad ? `${href}?ciudad=${encodeURIComponent(ciudad)}` : href, etiqueta };
+}
+
+/**
+ * A dónde lleva la lupa de la barra en una pantalla sin búsqueda propia: a la de Inicio, que busca en toda la app, ya
+ * abierta y con la ciudad que se está viendo. Donde la pantalla sí tiene la suya (`prestamoBarra.ts`), la lupa la abre.
+ */
+export function enlaceDeBusqueda(ciudad: string | null): string {
+  return ciudad ? `/?buscar=1&ciudad=${encodeURIComponent(ciudad)}` : "/?buscar=1";
+}
+
+/**
+ * Los cinco destinos de la navegación, en su orden. `recuerda`: la sección vuelve a la última URL que se vio en ella
+ * (filtro, ciudad); Perfil no tiene filtros que recordar.
+ */
+export const DESTINOS = [
+  { clave: "inicio", href: "/", etiqueta: "Inicio", recuerda: true },
+  { clave: "agenda", href: "/agenda", etiqueta: "Agenda", recuerda: true },
+  { clave: "lugares", href: "/lugares", etiqueta: "Lugares", recuerda: true },
+  { clave: "artistas", href: "/artistas", etiqueta: "Artistas", recuerda: true },
+  { clave: "perfil", href: "/perfil", etiqueta: "Perfil", recuerda: false },
+] as const;
+
+
+/** ¿La ruta está dentro de este destino? El inicio es solo `/`; los demás, su ruta y lo que cuelga de ella. */
+export function estaEnDestino(ruta: string, href: string): boolean {
+  return href === "/" ? ruta === "/" : ruta === href || ruta.startsWith(`${href}/`);
+}

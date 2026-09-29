@@ -5,6 +5,7 @@ import { useCallback, useEffect } from "react";
 import { pedirSalida } from "@/lib/guardiaSalida";
 import { alVolver, hayAnterior, registrarVolverVisible, vuelveADestino } from "../Navegacion";
 import Boton from "./Boton";
+import BotonIcono from "./BotonIcono";
 import { IconoChevronIzquierda } from "./Iconos";
 import styles from "./Atras.module.css";
 
@@ -101,5 +102,18 @@ export default function Atras({ href, texto }: { href: string; texto: string }) 
       <IconoChevronIzquierda width={18} height={18} />
       <span>Atrás</span>
     </Boton>
+  );
+}
+
+/**
+ * El mismo Atrás, solo con el chevron, para la barra de la app (44): desde 792 la ficha no lleva cabecera propia y su
+ * Atrás vive ahí. Vuelve igual que el otro (`useVolver`).
+ */
+export function AtrasIcono({ href, texto, className }: { href: string; texto: string; className?: string }) {
+  const volver = useVolver(href);
+  return (
+    <BotonIcono href={href} prefetch={false} onClick={volver} className={className} aria-label={`Atrás (${texto})`}>
+      <IconoChevronIzquierda width={26} height={26} />
+    </BotonIcono>
   );
 }

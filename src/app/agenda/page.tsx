@@ -2,10 +2,6 @@ import { Suspense } from "react";
 import ActivarAvisos from "@/components/ActivarAvisos";
 import AgendaInicio from "@/components/AgendaInicio";
 import ListaEsqueleto from "@/components/ListaEsqueleto";
-import NavInferior from "@/components/NavInferior";
-import Publicar from "@/components/Publicar";
-import Sesion from "@/components/Sesion";
-import Barra from "@/components/ui/Barra";
 import { cargarAgenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
@@ -42,7 +38,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 /**
  * La agenda misma (OL-158, bitácora 193): todo lo que necesita la consulta de eventos, en un componente de
- * servidor aparte para que su `<Suspense>` sea independiente de `Barra` y `NavInferior`, que no esperan nada.
+ * servidor aparte para que su `<Suspense>` sea independiente de la barra y la navegación (el armazón, en el layout),
+ * que no esperan nada.
  */
 async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { cuenta, ciudad: slug, filtro, q } = await searchParams;
@@ -81,25 +78,23 @@ async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchP
         avisos={avisos}
         antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
       />
-      <Publicar ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
     </>
   );
 }
 
 /**
- * `Barra` y `NavInferior` no esperan ninguna consulta: pintan al momento (OL-158, precisión del founder — "que la
- * persona vea la primera línea de contenido ya cargada y el resto llegue después"). Lo que sí espera (la ciudad,
- * la sesión) vive en `AgendaContenido`, dentro de un `<Suspense>` con `ListaEsqueleto` de `fallback` — pero ya no
- * espera los eventos: esa consulta la difiere `AgendaInicio` en su propio `<Suspense>` interno (OL-161).
+ * La barra y la navegación (el armazón, en el layout) no esperan ninguna consulta: pintan al momento (OL-158, precisión
+ * del founder — "que la persona vea la primera línea de contenido ya cargada y el resto llegue después"). Lo que sí
+ * espera (la ciudad, la sesión) vive en `AgendaContenido`, dentro de un `<Suspense>` con `ListaEsqueleto` de
+ * `fallback` — pero ya no espera los eventos: esa consulta la difiere `AgendaInicio` en su propio `<Suspense>`
+ * interno (OL-161).
  */
 export default function Agenda({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
     <main className="raiz">
-      <Barra derecha={<Sesion />} />
       <Suspense fallback={<ListaEsqueleto />}>
         <AgendaContenido searchParams={searchParams} />
       </Suspense>
-      <NavInferior />
     </main>
   );
 }

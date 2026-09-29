@@ -4,10 +4,6 @@ import Inicio from "@/components/Inicio";
 import CarrilAgenda from "@/components/inicio/CarrilAgenda";
 import CarrilEntidad from "@/components/inicio/CarrilEntidad";
 import CarrilTusPlanes from "@/components/inicio/CarrilTusPlanes";
-import NavInferior from "@/components/NavInferior";
-import Publicar from "@/components/Publicar";
-import Sesion from "@/components/Sesion";
-import Barra from "@/components/ui/Barra";
 import { cargarAgenda } from "@/lib/cargarAgenda";
 import { cargarArtistasDestacados } from "@/lib/cargarArtistasDestacados";
 import { cargarEventosSemana } from "@/lib/cargarEventosSemana";
@@ -18,7 +14,7 @@ import { tarjetaArtista } from "@/lib/destacados";
 import { idsUsadosEnAgenda } from "@/lib/inicio";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
-type SearchParams = { ciudad?: string };
+type SearchParams = { ciudad?: string; buscar?: string };
 
 /**
  * La app abre siempre en Inicio (OL-156, segunda vuelta): esta pantalla es la raíz del dominio. Título propio y
@@ -48,7 +44,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  * pantalla nunca vuelve a aparecer para esta ruta.
  */
 export default async function InicioPagina({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { ciudad: slug } = await searchParams;
+  const { ciudad: slug, buscar } = await searchParams;
   const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
   const usuarioId = actual?.perfil.id ?? null;
@@ -85,10 +81,11 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
 
   return (
     <main className="raiz">
-      <Barra derecha={<Sesion />} />
       <Inicio
         key={ciudad.slug}
         ciudad={ciudad}
+        // La lupa de la barra, desde una pantalla sin búsqueda propia (Perfil, una ficha), llega aquí con la búsqueda ya abierta.
+        buscarAlAbrir={buscar === "1"}
         ciudades={ciudades}
         conSesion={!!actual}
         avisos={avisos}
@@ -106,8 +103,6 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacados" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
         slotArtistasSemana={<CarrilEntidad promise={semanaArtistasPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas con eventos" memoria="inicio-artistas-semana" verTodosHref={conCiudad("/artistas")} />}
       />
-      <Publicar ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
-      <NavInferior />
     </main>
   );
 }

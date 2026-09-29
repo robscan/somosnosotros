@@ -2,27 +2,23 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
+import { DESTINOS, estaEnDestino } from "@/lib/armazon";
 import { raizConCiudad } from "@/lib/ciudad";
 import { leerUrlSeccion } from "@/lib/memoriaPantalla";
 import { pedirVuelta } from "./MemoriaScroll";
-import type { Seccion } from "./MemoriaPantalla";
 import { IconoCalendario, IconoCasa, IconoEstrella, IconoPin } from "./ui/Iconos";
 import styles from "./NavInferior.module.css";
 
-const DESTINOS = [
-  { seccion: "inicio", href: "/", etiqueta: "Inicio", Icono: IconoCasa },
-  { seccion: "agenda", href: "/agenda", etiqueta: "Agenda", Icono: IconoCalendario },
-  { seccion: "lugares", href: "/lugares", etiqueta: "Lugares", Icono: IconoPin },
-  { seccion: "artistas", href: "/artistas", etiqueta: "Artistas", Icono: IconoEstrella },
-] as const satisfies readonly { seccion: Seccion; href: string; etiqueta: string; Icono: typeof IconoPin }[];
+const ICONOS = { inicio: IconoCasa, agenda: IconoCalendario, lugares: IconoPin, artistas: IconoEstrella } as const;
 
 /**
- * Barra de navegación inferior de las pantallas raíz: Inicio · Agenda · Lugares · Artistas (OL-156, segunda vuelta:
- * la app abre siempre en Inicio, que pasa a ser la raíz del dominio, `/`; Agenda se muda a `/agenda`. Antes, OL-153,
- * bitácora 188, Inicio se agregó primera con Agenda todavía en la raíz).
- * Navega, no actúa (publicar es el botón flotante). El destino activo lleva una píldora de color detrás del icono
- * y la etiqueta en el color de acción (ajuste del founder, 2026-09-14: la nav tiene que notarse).
+ * Barra de navegación inferior de las pantallas raíz: Inicio · Agenda · Lugares · Artistas · Perfil (OL-156, segunda
+ * vuelta: la app abre siempre en Inicio, que es la raíz del dominio, `/`; Agenda vive en `/agenda`; Perfil entra como
+ * quinto destino en la reestructura, OL-232). Los destinos salen de `lib/armazon.ts`.
+ * Navega, no actúa (publicar es el «+» de la barra de arriba). El destino activo lleva una píldora de color detrás del
+ * icono y la etiqueta en el color de acción (ajuste del founder, 2026-09-14: la nav tiene que notarse). El icono de
+ * Perfil llega armado (`perfil`, la foto de la persona) porque depende de la sesión, que se lee en el servidor.
  * Cada sección vuelve a la última URL que se vio en ella (su filtro), y la pantalla repone su scroll:
  * como las pestañas del teléfono (pedido del founder, 2026-09-15). Tocar la sección en la que ya se está la lleva a su
  * raíz sin apilar historial, con la ciudad que se está viendo: sigue siendo la misma pantalla (OL-055).
@@ -31,16 +27,16 @@ function sinSuscripcion() {
   return () => {};
 }
 function leerUltimas() {
-  return DESTINOS.map((d) => leerUrlSeccion(d.seccion) ?? "").join("\n");
+  return DESTINOS.map((d) => (d.recuerda ? (leerUrlSeccion(d.clave) ?? "") : "")).join("\n");
 }
 /** Solo vale una URL de la propia sección (la raíz o la raíz con consulta). */
-function ultimaValida(seccion: Seccion, raiz: string, url: string | undefined): string | null {
+function ultimaValida(raiz: string, url: string | undefined): string | null {
   if (!url) return null;
   if (raiz === "/") return url === "/" || url.startsWith("/?") ? url : null;
   return url === raiz || url.startsWith(`${raiz}?`) ? url : null;
 }
 
-export default function NavInferior() {
+export default function NavInferior({ perfil }: { perfil: ReactNode }) {
   const ruta = usePathname();
   const router = useRouter();
   /** La sección en la que ya se está: a su raíz, reemplazando y sin soltar la ciudad (se lee al tocar, no al pintar). */
@@ -54,17 +50,20 @@ export default function NavInferior() {
   const ultimas = guardadas.split("\n");
   return (
     <nav className={styles.nav} aria-label="Secciones">
-      {DESTINOS.map(({ seccion, href, etiqueta, Icono }, i) => {
-        const activo = href === "/" ? ruta === "/" : ruta.startsWith(href);
+      {DESTINOS.map((d, i) => {
+        const activo = estaEnDestino(ruta, d.href);
         return (
-          <Link key={href} href={activo ? href : ultimaValida(seccion, href, ultimas[i]) ?? href} replace={activo} onClick={activo ? (e) => aLaRaiz(e, href) : pedirVuelta} className={`${styles.destino} ${activo ? styles.activo : ""}`} aria-current={activo ? "page" : undefined}>
-            <span className={styles.icono}>
-              <Icono width={26} height={26} />
-            </span>
-            <span>{etiqueta}</span>
+          <Link key={d.href} href={activo ? d.href : (ultimaValida(d.href, ultimas[i]) ?? d.href)} replace={activo} onClick={activo ? (e) => aLaRaiz(e, d.href) : pedirVuelta} className={`${styles.destino} ${activo ? styles.activo : ""}`} aria-current={activo ? "page" : undefined}>
+            <span className={styles.icono}>{d.clave === "perfil" ? perfil : <Icono clave={d.clave} />}</span>
+            <span>{d.etiqueta}</span>
           </Link>
         );
       })}
     </nav>
   );
+}
+
+function Icono({ clave }: { clave: keyof typeof ICONOS }) {
+  const Glifo = ICONOS[clave];
+  return <Glifo width={26} height={26} />;
 }
