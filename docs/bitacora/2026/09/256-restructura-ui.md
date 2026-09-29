@@ -736,6 +736,16 @@ sin navegación; la barra de desplazamiento no sale en el Chrome sin cabeza porq
 desplazar). Doc 50 § 6.5 (décima vuelta) y
 § 11, punto 58.
 
+### Firma del founder (mismo día, noche)
+
+Respondió en el chat a la lista de pendientes: «1: Agenda se queda fuera por ahora, temo que hay demasiado ya en barra
+de navegación. 2. Lugares. 3. Acepto tu propuesta. 4. Interesan. 5. Confirmo todo, buen trabajo. 6. Sigue adelante,
+pruebo en prod. Cierra y dale a la maqueta, con ultra cuidado, atención a detalle, sin código basura, sin sobreanidar,
+siempre simple, elimina todo lo innecesario, cuida mucho el código.» El KPI de Perfil pasa a «Interesan» (capturas
+regeneradas). Con eso el prototipo v3 queda firmado: el plan por piezas del doc 50 § 7 es el definitivo y arranca la
+primera pieza (P1, tokens; rama `ui-tokens`, OL-229, bitácora 257) con un operador nuevo; el PR #266 se une cuando
+diga «publica».
+
 ### Cierre (cuarta parte)
 
 Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcciones del founder al verla, la

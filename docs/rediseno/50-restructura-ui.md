@@ -887,7 +887,7 @@ Buscar). Los controles por debajo de 44 px son los mismos de la v2 (chips de 36 
 `input` dentro de campos de 48, palancas, «Reportar»); los días del calendario miden 44 de alto con su círculo de 38.
 Cero errores de página y cero respuestas 4xx/5xx en las 54 capturas (medición repetida tras la séptima y la octava vuelta).
 
-## 7. Plan de implementación (primera versión; se cierra tras el prototipo firmado)
+## 7. Plan de implementación (definitivo: prototipo firmado el 2026-09-28 por la noche)
 
 Cada pieza la hace un operador nuevo (Sonnet) en su rama, con su número de `siguiente-bitacora.sh`, capturas reales a
 390×844 y 1280×800 del respaldo local, medición del DOM (el script de esta auditoría se deja en `scripts/ops/`) y sin
@@ -895,7 +895,7 @@ council. Orden por dependencias:
 
 | # | Pieza | Toca | Tamaño | Prueba que la cierra |
 |---|---|---|---|---|
-| P1 | Tokens y utilidades: 5.1 completo más la letra de listas (familia, cuerpo y ancho como variables), `.columna`/`.a-lo-ancho`, quitar `100vw` | `globals.css` | M | inventario: 0 `z-index` fuera de token, 0 `100vw`; build verde; nada cambia a la vista (capturas iguales) |
+| P1 | Tokens y utilidades: 5.1 completo con los valores del prototipo firmado (radios 4 · 8 · 12 · 24, aire 4…40, letra con `--letra-2xs`, controles 44/48/56, barras, capas, anchos, tarjetas) más la letra de listas (familia, cuerpo y ancho como variables), `.columna`/`.a-lo-ancho`, quitar `100vw`; los `z-index` literales pasan a los seis tokens conservando el orden de apilado (tabla de correspondencia en la bitácora) | `globals.css` y los `.module.css` que usan literales | M | inventario: 0 `z-index` fuera de token, 0 `100vw`; build verde; nada cambia a la vista salvo los radios (capturas antes y después) |
 | P2 | `BotonIcono` y `Boton` unificados; glifos de acción: palomita (Voy), persona con «+» (seguir artista), campana con «+» (seguir lugar); decidido verde con glifo blanco | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
 | P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
 | P4 | Armazón único: un grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro, con `data-vista` (raíz · ficha · tarea) puesto por el layout; barra de la app única en los tres tamaños («+» · Atrás · logotipo · lupa · campana · menú; Atrás y menú solo desde 792 con ficha a la vista) que en teléfono se recoge al bajar y vuelve al subir; barra inferior de cuatro destinos que se esconde y vuelve con la misma regla; fila de contexto pegajosa; sin `:has()` ni medidas por pantalla; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
@@ -1011,7 +1011,8 @@ Sexta vuelta (antes de enseñar la v3):
 Lo que el founder confirma o corrige al probar la v3:
 
 18. **Inicio con dos modos**: carriles en reposo y lista por día cuando Cuándo tiene valor (Limpiar vuelve a los
-    carriles); los títulos Destacados, Esta semana y Nuevos eventos abren la lista. Confirmar.
+    carriles); los títulos Destacados, Esta semana y Nuevos eventos abren la lista. **Decidido (2026-09-28, noche):
+    «Agenda se queda fuera por ahora, temo que hay demasiado ya en barra de navegación».** Cuatro destinos.
 19. **Título de la ficha**: decidido en el lienzo («aquí debemos replicar el canon de héroe de sheet»; después,
     «aceptada la propuesta de héroe» y «muy bien resuelto, aceptada esta propuesta» sobre el KPI de fecha): la ficha a
     pantalla completa toma el canon de la hoja (héroe 3:2 arriba, Atrás y menú elevados sobre la imagen, título de
@@ -1030,7 +1031,7 @@ Lo que el founder confirma o corrige al probar la v3:
     inercia nativa. Llena, es una página completa con Atrás (vuelve a foto + KPI); jalar hacia abajo recoge (la lista
     a la cantidad, la ficha a su cabecera) y nada se cierra solo: la ficha, con la ✕. Queda por confirmar en el
     iPhone del founder que bajar desde arriba del todo (contenido en su inicio) también la encoja, como con la
-    rueda.
+    rueda. **Founder: «sigue adelante, pruebo en prod».**
 37. **Chips en el héroe de la ficha de evento**: si algún día entran, con el mismo estilo que la etiqueta de la hoja
     de lugar (MUSEO: violeta sobre blanco, encima del título). Anotado, sin construir.
 38. **Radio más sugerido en todos los casos** (4 · 8 · 12; fotos de renglón 4; hoja 24). **Hecho** («es canon»).
@@ -1074,15 +1075,16 @@ Lo que el founder confirma o corrige al probar la v3:
     usuario selecciona Elegir fecha»): dos meses desde la semana en curso, un toque elige un día y dos un rango, el
     botón cuenta los eventos, Inicio filtra sus días y el chip muestra la fecha (6.5). **Hecho**; confirmar. Queda una
     decisión pequeña: si los meses siguientes se cargan al desplazar (como en el prototipo, que trae dos) o con
-    flechas.
+    flechas. **Confirmado** («confirmo todo, buen trabajo»).
 46. **«Otra ciudad» con campo y sugerencias** (hilo, «desarrolla qué pasa cuando pongo otra ciudad»): campo bajo la
     lista, sugerencias con cuenta de eventos y país cuando distingue, recarga con esqueleto (6.5). **Hecho**;
-    confirmar. En la app el mapa sí se centrará en la ciudad elegida.
+    confirmar. En la app el mapa sí se centrará en la ciudad elegida. **Confirmado.**
 47. **Lenguaje incluyente** (hilo, «acorta letrero: Interesadxs; revisemos que en la plataforma se esté usando
     lenguaje incluyente»): en el prototipo, lo listado en 6.5 (Interesadxs, Siguen, amistades, «Así te ve la gente»,
     «Registrar artista», «Solo a quienes sigo», «Ficha a cargo de…», «destacadxs»). **Hecho**; que confirme la regla
     («primero neutro, la x solo si no hay otra salida») y que decida sobre «Interesadxs» en su perfil (nombra
-    personas y el número cuenta eventos; «Interés» o «Interesan» caben sin tocar el KPI). Lo que queda en la app en
+    personas y el número cuenta eventos; «Interés» o «Interesan» caben sin tocar el KPI). **Decidido: «Interesan»**
+    (aplicado en el prototipo). Lo que queda en la app en
     producción, para la pieza P13: «Invita a tus amigos» (Ajustes), «Así te ven los demás» (Mi perfil y la ficha
     pública), «Nombre del artista o grupo» y «Otro artista o grupo» (alta de artista y selector Quién), «Registrar un
     artista» / «Buscar un artista» / «Ver los artistas» / «artistas registrados… Registra un artista» (Publicar, lista,
@@ -1100,27 +1102,27 @@ Lo que el founder confirma o corrige al probar la v3:
 49. **Ficha de artista: el avatar vuelve, dentro del héroe** (hilo, «acordamos poner foto de portada pero mantener
     foto de avatar o perfil que ya estaba»). **Hecho.** Cierra también el punto 41.
 50. **«Se presenta en» fuera de la ficha de artista** (hilo, «es redundante como la pintaste»): el KPI «Lugares» es
-    el camino a sus lugares (al mapa con los suyos). **Hecho**; confirmar el destino del KPI.
+    el camino a sus lugares (al mapa con los suyos). **Hecho y confirmado.**
 51. **Novedades publicadas en la ficha de artista** (hilo, «muestra cómo se vería con novedades publicadas»): tres
-    publicaciones como las de la app, después de las fechas y antes de Sobre. **Hecho**; confirmar el orden (fechas
-    primero porque es a lo que se va).
+    publicaciones como las de la app, después de las fechas y antes de Sobre. **Hecho y confirmado** (fechas primero).
 52. **La cabecera compacta con la portada** (hilo, «deja imagen de fondo aquí para que se entienda que es sheet de
     lugar»): en la hoja recogida y desplazada y, por el mismo canon, en la barra compacta de las tres fichas
-    (6.5). **Hecho**; confirmar que también en las fichas a pantalla completa (si no, se queda solo en la hoja).
+    (6.5). **Hecho y confirmado** también en las fichas a pantalla completa.
 53. **«Lugares» → «Mapa»** (hilo, «¿si en lugar de llamarse Lugares le ponemos Mapa? Pues también se mencionan
     eventos»): se le contestó que Lugares nombra qué hay (como Inicio, Artistas, Perfil) y Mapa nombraría cómo se ve,
     que en tableta y escritorio el mapa es solo la columna derecha y que los eventos ahí cuelgan siempre de un lugar;
-    se le ofreció verlo con la etiqueta cambiada. Abierto.
+    se le ofreció verlo con la etiqueta cambiada. **Decidido: «Lugares».**
 
 54. **El armazón simplificado** (hilo, «esta maquetación de shell es de una complejidad innecesaria… el objetivo
     estratégico: definir ese shell para que nos sirva en desktop, tablet, mobile y sea fácil exportar app»): un solo
     grid de tres áreas con `data-vista`, sin `:has()`, sin `--nav-arriba`, sin espaciadores; el carril arranca bajo
     la barra de la app con un borde normal (6.5, octava vuelta). **Hecho**; confirmar. Consecuencia que se le señala:
     el carril ya no arranca bajo la fila de filtros como pidió en la sexta vuelta (punto 40), sino bajo la barra; a
-    cambio la fila no lleva línea propia y no hay nada que medir.
+    cambio la fila no lleva línea propia y no hay nada que medir. **Decidido: «acepto tu propuesta».**
 55. **Barras fusionadas en escritorio y tableta** (hilo, «fusionar las barras, poniendo flecha atrás a un lado de
     agregar y "…" a un lado de campana»): **Hecho**; confirmar. Las tareas y Ajustes conservan su barra interior
-    (título y ✕); si también la quiere fuera, el título pasaría al arranque del contenido.
+    (título y ✕); si también la quiere fuera, el título pasaría al arranque del contenido. **Decidido: «acepto tu
+    propuesta».**
 56. **Filtros de Lugares centrados** («centrada»): **Hecho.** Cierra el punto 39.
 
 57. **Tarjetas del carril: meta en dos líneas y título más chico** («el lugar se corta en cards…»): fecha y hora en la
@@ -1131,4 +1133,10 @@ Lo que el founder confirma o corrige al probar la v3:
     barra fina se ve llena y en el panel; en el iPhone será la del sistema al desplazar. La lista queda con tres alturas
     (recogida · asoma · llena); la ficha conserva su media. **Hecho.**
 
-Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).
+**Firma (2026-09-28, noche, en el chat):** «Respondo tus preguntas: 1: Agenda se queda fuera por ahora, temo que hay
+demasiado ya en barra de navegación. 2. Lugares. 3. Acepto tu propuesta. 4. Interesan. 5. Confirmo todo, buen
+trabajo. 6. Sigue adelante, pruebo en prod. Cierra y dale a la maqueta, con ultra cuidado, atención a detalle, sin
+código basura, sin sobreanidar, siempre simple, elimina todo lo innecesario, cuida mucho el código.» Los puntos 20
+(campana), 21 (barras en escritorio: fusionadas), 22 (ficha desde otras entradas: a pantalla completa) y 23 (la
+navegación se esconde al bajar) quedan como están en el prototipo. Con esto el plan por piezas de la sección 7 es el
+definitivo y arrancan los operadores, uno por pieza.
