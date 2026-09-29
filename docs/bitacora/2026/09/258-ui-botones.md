@@ -1,6 +1,6 @@
 # 258 · Boton y BotonIcono unificados; glifos de acción (OL-230, pieza P2)
 
-**Fecha:** 2026-09-28 · **Rama:** `ui-botones`, desde `origin/main` (`27841f9f`) · **OL:** OL-230 · **PR:** {{PR}} (sin unir) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Segunda pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1 (`--control`, `--toque`, `--boton-icono`, `--boton-icono-grande`, `--ok`).
+**Fecha:** 2026-09-28 (el encargo) y 2026-09-29 (la entrega, pasada la medianoche) · **Rama:** `ui-botones`, desde `origin/main` (`27841f9f`) · **OL:** OL-230 · **PR:** #268 (sin unir) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Segunda pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1 (`--control`, `--toque`, `--boton-icono`, `--boton-icono-grande`, `--ok`).
 
 ## Pedido
 
