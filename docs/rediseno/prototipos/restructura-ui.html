@@ -80,7 +80,7 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .i { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .i.chico { width: 16px; height: 16px; }
 .i.chevron { width: 18px; height: 18px; color: var(--texto-suave); }
-.bloque, .tarjeta-dato, .seccion-carril > .titulo-seccion, .grupo, .kpis, .acciones, .pie, .campo, .renglones, .tarjeta-cartel, .nota-boton, .rotulo-grupo, .tarjeta-lista, .perfil-cabecera, .boton.completo, .boton.texto.peligro, .en-busqueda, .enlace-perfil { margin-inline: var(--gutter); }
+.bloque, .tarjeta-dato, .seccion-carril > .titulo-seccion, .kpis, .acciones, .pie, .campo, .renglones, .tarjeta-cartel, .nota-boton, .rotulo-grupo, .tarjeta-lista, .perfil-cabecera, .boton.completo, .boton.texto.peligro, .en-busqueda, .enlace-perfil { margin-inline: var(--gutter); }
 
 /* ---- barra de la app: «+» · logotipo · lupa · campana. En teléfono se guarda al bajar (queda la franja de estado) ---- */
 .barra { grid-area: barra; position: relative; z-index: var(--z-pegajoso); display: grid; grid-template-columns: var(--control) var(--control) minmax(0, 1fr) var(--control) var(--control); align-items: center; height: calc(var(--alto-barra) + var(--tope)); padding: var(--tope) calc(var(--gutter) - var(--espacio-2)) 0; background: var(--fondo); overflow: hidden; transition: height var(--duracion) var(--curva); }
@@ -252,7 +252,7 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
    7. Listas: títulos de grupo pegajosos bajo la fila de contexto; esqueleto con los mismos tokens
    ========================================================================== */
 .tramo { display: block; }
-.grupo { position: sticky; top: calc(var(--alto-filtros) + var(--espacio-2) + var(--alto-extra, 0px)); z-index: calc(var(--z-pegajoso) - 1); display: flex; align-items: center; gap: var(--espacio-2); padding: 10px 0 8px; background: var(--fondo-contenido); border-bottom: 1px solid var(--borde); font-size: var(--letra-xl); }
+.grupo { position: sticky; top: calc(var(--alto-filtros) + var(--alto-extra, 0px)); z-index: calc(var(--z-pegajoso) - 1); display: flex; align-items: center; gap: var(--espacio-2); padding: 10px var(--gutter) 8px; background: var(--fondo-contenido); border-bottom: 1px solid var(--borde); font-size: var(--letra-xl); }
 .grupo > span { color: var(--texto-suave); font-weight: 500; }
 .tramo[hidden] { display: none; }
 .pantalla[data-id="perfil"] .grupo { top: 0; }

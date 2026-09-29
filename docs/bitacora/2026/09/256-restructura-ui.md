@@ -622,7 +622,10 @@ entre contenido y barra de atrás»). Después, «¿qué opinas de juntar este t
 todos los KPI» (icono y etiqueta en la fila de arriba, el valor solo abajo; en prototipo y lienzo); «¿por qué se fue
 la sección de Agenda?» (contestado: por su pregunta de la quinta vuelta; sigue abierto en el punto 18); y «hace falta
 padding arriba y abajo o disminuye tamaño de foto de perfil» (el avatar de la barra inferior baja a 22 px dentro de la
-píldora de 32). Doc 50 § 11, puntos 38 a 43.
+píldora de 32); «pues no estoy seguro, me está gustando como luce ahora, mantén el respaldo de ese dominio en lo que
+decido» (Agenda: la app en producción no se tocó y el prototipo v2 con la pantalla está en el commit 3b2ee3c6);
+«aquí se ve la parte de atrás de fecha, hay desfase de elementos» (el título de día pegajoso se anclaba 8 px por
+debajo de la fila de contexto y no cubría el ancho entero; medido y corregido). Doc 50 § 11, puntos 38 a 44.
 
 ### Cierre (cuarta parte)
 

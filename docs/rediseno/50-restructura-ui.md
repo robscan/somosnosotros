@@ -748,7 +748,12 @@ encima cuando hay ficha a la vista); y dentro de la hoja a media altura la pasti
 explícita valía para un tamaño; los tres tamaños (mediana, grande, chica) definen sus filas en el carril y la tarjeta
 las hereda. Señalado por el founder en el prototipo («hace falta padding arriba y abajo o disminuye tamaño de foto de
 perfil»): el avatar de Perfil medía 26 px dentro de la píldora de 32 de la barra inferior, sin el aire que los iconos
-de trazo tienen de sobra porque su dibujo no llega al borde; el avatar baja a 22 px.
+de trazo tienen de sobra porque su dibujo no llega al borde; el avatar baja a 22 px. Y en la lista por día («aquí se
+ve la parte de atrás de fecha, hay desfase de elementos»): el título de día pegajoso se anclaba 8 px por debajo de
+la fila de contexto (la fila mide 48 con su relleno dentro y el ancla sumaba 8 de más), así que en esa franja
+pasaban los renglones por detrás; y el título llevaba márgenes laterales en vez de relleno, con lo que no cubría el
+ancho entero y las líneas de los renglones asomaban a los lados. Medido con el DOM antes de tocar: ancla a 48 y
+título a todo lo ancho con su relleno.
 
 ### 6.7 Medición de la v3 (`medir.js` sobre las diez pantallas, teléfono)
 
@@ -907,6 +912,8 @@ Lo que el founder confirma o corrige al probar la v3:
 40. **El carril empieza donde termina la fila de filtros** (tableta y escritorio). **Hecho.**
 41. **Héroe en la ficha de artista** con placeholder hasta que suba su portada (6.5). **Hecho a falta de su
     confirmación**: el avatar redondo sale de la ficha, Seguir flota, artista y lugar quedan casi iguales.
+44. **Título de día pegajoso** («se ve la parte de atrás de fecha, hay desfase de elementos»): anclado justo bajo la
+    fila de contexto y a todo lo ancho (6.6). **Hecho.**
 43. **El avatar de Perfil en la barra inferior** («hace falta padding arriba y abajo o disminuye tamaño de foto de
     perfil o agrandamos todos los altos de icono»): baja a 22 px dentro de la píldora de 32, con el mismo aire que los
     iconos de trazo (6.6). **Hecho.**
