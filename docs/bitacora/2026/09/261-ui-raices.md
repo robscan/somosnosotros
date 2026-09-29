@@ -35,10 +35,10 @@ Tus planes · Destacados (o «Seleccionados para ti») · Esta semana · Nuevos 
 - **`ui/Grupo`**: un día o una letra en su `section` con el título pegado bajo la cabecera (`--barra-vista` + `--alto-cabecera`); un solo estilo (H-10). Las letras saltan a su grupo (`irAlGrupo` mide solo la cabecera).
 - **Renglón de evento a dos líneas** (`RenglonEvento`, H-09): título hasta dos líneas (para todos los renglones de lista), primera línea «19:00 · $150 · 4 van» (el precio solo si no es gratis) y segunda el nombre del sitio, sin la dirección postal (`sitioEnLista`); cada una corta con puntos suspensivos. `Renglon` pierde su opción `columna`: todos los datos van uno por línea.
 - **Artistas**: fila ciudad · Filtros · lo puesto; sin las pestañas de disciplina ni los chips de detalle; letras y grupos por letra.
-- **Perfil** (`FichaPersona`, `PestanasPersona`): raíz; avatar de 72; tres tarjetas **Voy · Interesan · Sigo** que hacen de pestañas; los días son grupos pegajosos; «Así te ven los demás» es un botón de texto de 44. La ficha de otra persona no cambia.
+- **Perfil** (`FichaPersona`, `PestanasPersona`): raíz; avatar de 72; tres tarjetas **Voy · Interesan · Sigo** que hacen de pestañas; los días de «Voy» y los tipos de «Sigo» (Lugares, Artistas) son grupos pegajosos; «Así te ven los demás» es un botón de texto de 44. La ficha de otra persona conserva su cabecera y sus subtítulos; solo cambia el renglón de evento de «Va a», que ahora es de dos líneas (139,7 → 116,7).
 
 ### 5. Lo que se retiró
-`CarrilCercanos`, `app/accionesAgenda.ts` (`cargarCercanos`) y `lib/cargarCercanos.ts` (solo los usaba ese carril); `carrilPopulares`, `idsUsadosEnAgenda` y `MINIMO_POPULARES` (`lib/inicio`); `Inicio.module.css`, `AgendaInicio.module.css`; las pestañas Todos · Siguiendo y `FILTROS` de `lib/agenda`; `repartidas` de `Pestanas`; `columna` de `Renglon`; `.chevron` de `Destacados` (con su margen negativo). Para restaurar lo de Inicio: `git checkout 55c2469b -- src/components/inicio/CarrilCercanos.tsx src/app/accionesAgenda.ts src/lib/cargarCercanos.ts`.
+`CarrilCercanos`, `app/accionesAgenda.ts` (`cargarCercanos`) y `lib/cargarCercanos.ts` (solo los usaba ese carril); `carrilPopulares`, `idsUsadosEnAgenda` y `MINIMO_POPULARES` (`lib/inicio`); `ocupaDia` (`lib/calendario`: `ocupaRango` cubre también un solo día); `Inicio.module.css`, `AgendaInicio.module.css`; las pestañas Todos · Siguiendo y `FILTROS` de `lib/agenda`; `repartidas` de `Pestanas`; `columna` de `Renglon`; `.chevron` de `Destacados` (con su margen negativo). Para restaurar lo de Inicio: `git checkout 55c2469b -- src/components/inicio/CarrilCercanos.tsx src/app/accionesAgenda.ts src/lib/cargarCercanos.ts`.
 
 ## Decidí yo (para que el gestor confirme)
 
@@ -57,7 +57,7 @@ Tus planes · Destacados (o «Seleccionados para ti») · Esta semana · Nuevos 
 - **Artistas**: sin las dos filas de pestañas y chips; Filtros abre una hoja; títulos de letra pegados.
 - **Perfil**: avatar 72, tarjetas de números, días pegados, enlace de texto.
 - **Las tres hojas** y la **tira de chips** con señal.
-- **Lo que no cambia** (comparado píxel a píxel, script de la sesión): Lugares (0,01 % el mapa y 0,06 % la lista: el desvanecido de su tira de tipos y poco más), Ajustes y la hoja de fecha y hora del alta de evento (`SelectorFecha` sobre `Calendario`): idénticos; la primera pantalla de las fichas de lugar y de artista, 0,01 % y 0,03 %.
+- **Lo que no cambia** (comparado píxel a píxel, script de la sesión): Lugares (0,01 % el mapa y 0,06 % la lista: el desvanecido de su tira de tipos y poco más), Ajustes y la hoja de fecha y hora del alta de evento (`SelectorFecha` sobre `Calendario`): idénticos; la primera pantalla de las fichas de lugar y de artista, 0,01 % y 0,03 %; la ficha de otra persona cambia solo en su renglón de evento (4,93 % de los píxeles: el renglón de dos líneas; sus subtítulos de siempre no se mueven).
 
 ## Verificación
 
@@ -79,7 +79,7 @@ Tus planes · Destacados (o «Seleccionados para ti») · Esta semana · Nuevos 
 
 ## Capturas
 
-`docs/rediseno/capturas-261/` (28 PNG de paleta, 2,3 MB, a 390×844 a 2× salvo las de 1 280×800). «Antes» es la compilación de `origin/ui-armazon` y «después» esta rama, ambas con la sesión de `ana@example.com` del respaldo local inventado; cada una abierta y descrita.
+`docs/rediseno/capturas-261/` (32 PNG de paleta, 2,4 MB, a 390×844 a 2× salvo las de 1 280×800). «Antes» es la compilación de `origin/ui-armazon` y «después» esta rama, ambas con la sesión de `ana@example.com` del respaldo local inventado; cada una abierta y descrita.
 
 1. **Inicio** (`01`): antes, solo el chip de ciudad y un chevron pegado a cada título; después, tres chips (ciudad · Cuándo · Filtros) y «Ver mi perfil ›» y «Ver la agenda ›» a la derecha en violeta. Tus planes a 340 px en las dos; lo de abajo sube 8 px.
 2. **Inicio desplazado** (`02`): antes, «Nuevos eventos», «Lugares con eventos» y «Artistas destacados» con su chevron y la fila con solo la ciudad; después, la fila de tres chips pegada arriba y «Ver la agenda ›», «Ver lugares ›» y «Ver artistas ›».
@@ -95,6 +95,8 @@ Tus planes · Destacados (o «Seleccionados para ti») · Esta semana · Nuevos 
 12. **Cuándo** (`12`): antes, «Selecciona una fecha» con el mes entero, 27 días apagados y «Listo»; después, los seis chips (Elegir fecha… abierto), el calendario dentro de la hoja desde la semana de hoy (28 apagado, 29 hoy, 30) con un punto bajo cada día con eventos, y «Limpiar» y «Ver 13 eventos».
 13. **Filtros** (`13`, solo después): «Cuánto» (Gratis, Cooperación), «Siguiendo» («Solo lo que sigo» con su palanca) y «Ver 13 eventos».
 14. **Inicio a 1 280** (`14`) y 15. **Agenda a 1 280** (`15`): la fila alineada con la columna, el enlace de cada carril en el borde derecho de la columna y, en Agenda, los títulos de día a todo lo ancho con su texto en la columna y los renglones de dos líneas (antes la meta iba en una fila y crecía con la dirección).
+16. **Perfil, pestaña Sigo** (`16`): antes, «Voy a 2 · Sigo 2» con el número al lado, los subtítulos pequeños «Lugares · 1» y «Artistas · 1» en gris y el enlace subrayado; después, las tarjetas Voy y Sigo (Sigo en violeta, la activa) y los títulos «Lugares» y «Artistas» pegados con su raya, como los días de Voy (la cuenta solo sale con dos o más). El renglón del artista sigue con la dirección postal en «Próximo:» (decisión 5).
+17. **Ficha de otra persona** (`17`): antes y después con la misma cabecera de 96, las pestañas «Va a 2 · Sigue 1 · Van a lo mismo 1» y los subtítulos de día en gris; solo cambia el renglón de evento: «19:00 · 2 van» y el sitio, en dos líneas en vez de tres (139,7 → 116,7; «Gratis» ya no se repite).
 
 ## Anotado para las piezas que siguen
 
