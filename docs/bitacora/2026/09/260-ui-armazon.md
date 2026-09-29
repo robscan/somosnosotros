@@ -31,7 +31,7 @@ Perfil pasa a **raíz** (su «Atrás» y el logotipo chico salen: la barra y la 
 
 ### 2. La barra de la app (`BarraApp`, `BarraApp.module.css`)
 
-Una rejilla plana con áreas: «+» · administración · logotipo · lupa · sesión (cinco columnas en el teléfono, con un hueco a cada lado del logotipo para que quede al centro) y, desde 792, «+» · Atrás · administración · logotipo · lupa · sesión · menú (siete). Todo es `BotonIcono` a 44; iconos de 26 (el «+» es un icono nuevo del prototipo, `IconoCrear`). Sticky arriba, blanca, sin raya, con la franja de la hora dentro (`--tope`).
+Una rejilla plana con áreas: «+» · administración · logotipo · lupa · sesión (cinco columnas en el teléfono, con un hueco a cada lado del logotipo para que quede al centro) y, desde 792, «+» · Atrás · administración · logotipo · lupa · sesión · menú (siete). Todo es `BotonIcono` a 44; iconos de 26 (el «+» es un icono nuevo del prototipo, `IconoCrear`). Sticky arriba, blanca, sin raya (desde 792, en las fichas y las tareas, que no traen fila de contexto debajo, lleva la suya para cerrar la región), con la franja de la hora dentro (`--tope`).
 
 - **«+»** lleva a la misma alta que el flotante en cada sección (evento en Inicio, Agenda y Perfil; lugar en Lugares; artista en Artistas) con la ciudad que se ve (`?ciudad=` en evento y artista, como el flotante); fuera de esas secciones, evento. Con o sin sesión, como antes. El prototipo no distingue secciones: es una sola alta genérica; se siguió el comportamiento de hoy.
 - **Sesión** (`Sesion`, en el servidor): sin sesión «Entrar»; con sesión la campana (con su punto) y, para administración, la llave, que va junto al «+» (el hueco de la izquierda). La foto de perfil ya no vive arriba: es el quinto destino de la navegación.
@@ -73,7 +73,7 @@ Sale simple (una línea en `globals.css` y `container-type: inline-size` en `.ar
 
 **A. Lo que el encargo enumera** (capturas 01 a 04, 08 a 15)
 - Barra nueva: «+» a la izquierda, logotipo al centro, lupa y campana; la foto pasa a Perfil, en la navegación.
-- El flotante desaparece: los accionables que tapaba quedan a la vista (19 → 0 en Inicio, Agenda y Artistas; ver abajo Lugares).
+- El flotante desaparece: los accionables que tapaba quedan a la vista (11 → 0 en Inicio, Agenda y Artistas; en la lista de Lugares 8 → 6, ver abajo).
 - Cinco destinos; una sola cabecera con su raya abajo; la tira de letras dentro de ella, siempre visible, con letras de 44×44.
 - Desde 792: la barra a todo lo ancho con Atrás y el menú en las fichas.
 
