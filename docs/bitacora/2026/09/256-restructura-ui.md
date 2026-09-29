@@ -775,6 +775,10 @@ medido: Inicio 302 nodos, Agenda 169, 0 envoltorios, 0 desbordes, 0 márgenes ne
 de nombre `256-81` (Agenda con Fin de semana desde Inicio), `256-120` y `256-122` (Agenda con un día y con un rango),
 `256-129` y `256-130` (Agenda en teléfono y en escritorio); las de letras (`256-110` a `256-112`) muestran ahora la
 Agenda. Doc 50 § 6.5 (duodécima vuelta), § 11 puntos 18, 59 y 60, fila P5.
+Al verla, el founder señaló «una línea rara… entre filtros y header, ya te la había señalado antes» (la barra de la Agenda
+llevaba su filete además del de la fila): fuera el filete de la barra. Y sobre las pestañas Todo / Seguidos de la app
+de hoy: «vi que filtras por lo que sigo, déjalo así y solo corrige la línea»: el filtro «Solo lo que sigo» de la hoja
+de Filtros se queda y no hay pestañas.
 
 - **`256-75-v3-inicio-telefono`:** Inicio con cada carril con su título a la izquierda y «Ver todo ›» a la derecha.
 - **`256-81-v3-agenda-fin-de-semana-telefono`:** tras elegir Fin de semana en Cuándo desde Inicio: la Agenda con Atrás,

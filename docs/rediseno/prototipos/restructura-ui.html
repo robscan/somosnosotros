@@ -350,7 +350,7 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .pantalla[data-id="ajustes"] { grid-template-areas: "barra"; }
 /* Agenda: su barra (Atrás · Agenda) pegada arriba, la fila de contexto pegada debajo y los títulos de día debajo de las dos */
 .agenda { padding-bottom: var(--espacio-6); }
-.agenda > .barra-interior { margin-bottom: 0; }
+.agenda > .barra-interior { margin-bottom: 0; border-bottom: 0; } /* la barra y la fila de contexto son una sola región: el filete va solo bajo la fila (el founder lo señaló dos veces) */
 .agenda > .cabecera { top: calc(var(--alto-barra) + var(--tope)); }
 .agenda .grupo { top: calc(var(--alto-barra) + var(--tope) + var(--alto-filtros)); }
 .pantalla.ficha > .barra-interior { grid-area: barra; margin-bottom: 0; }

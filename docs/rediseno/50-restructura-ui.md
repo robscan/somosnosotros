@@ -912,6 +912,11 @@ vuelta anterior sin que nadie lo notara, e «Interesadxs» también cortaba (69)
 medidos. La lista por día de Inicio **no tenía mar 6, jue 8 ni vie 9 de octubre** aunque sus eventos estaban en los
 carriles, y «Ver 23 eventos» era una cifra inventada: los tres días entran y las hojas cuentan los eventos en el DOM
 (14). Y el velo de la barra compacta al 52 % dejaba competir las letras grandes de los carteles con el título: 60 %.
+Al revivir la Agenda, su barra (Atrás · Agenda) llevaba el filete de toda barra interior y la fila de contexto el suyo: dos
+líneas a 48 px, la misma «línea rara» entre cabecera y filtros que el founder ya había señalado en la sexta vuelta y
+volvió a señalar aquí. La barra de la Agenda no lleva filete: barra y fila son una sola región y la línea va solo bajo
+la fila. El filtro «Solo lo que sigo» de la hoja de Filtros se queda tal cual («vi que filtras por lo que sigo, déjalo
+así»).
 
 ### 6.7 Medición de la v3 (`medir.js` sobre las diez pantallas, teléfono)
 
