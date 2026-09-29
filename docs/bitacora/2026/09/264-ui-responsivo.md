@@ -1,6 +1,6 @@
 # 264 · Carril lateral y reglas de tableta y escritorio (OL-236, pieza P7)
 
-**Fecha:** 2026-09-29 · **Rama:** `ui-responsivo`, desde `origin/ui-ficha` (`1e68df23`) · **OL:** OL-236 · **PR:** #«PR» (sin unir; va montado sobre #273, `ui-ficha`, que va sobre #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Octava pieza del plan de OL-227 (doc 50, § 7); usa el armazón de P4, las raíces de P5, la hoja de Lugares de P5b y la ficha de P6.
+**Fecha:** 2026-09-29 · **Rama:** `ui-responsivo`, desde `origin/ui-ficha` (`1e68df23`) · **OL:** OL-236 · **PR:** #274 (sin unir; va montado sobre #273, `ui-ficha`, que va sobre #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Octava pieza del plan de OL-227 (doc 50, § 7); usa el armazón de P4, las raíces de P5, la hoja de Lugares de P5b y la ficha de P6.
 
 ## Pedido
 
