@@ -1,6 +1,6 @@
 # 257 · Tokens y utilidades de la reestructura de la interfaz (OL-229, pieza P1)
 
-**Fecha:** 2026-09-28 · **Rama:** `ui-tokens`, desde `origin/main` (`8b2ad8c3`) · **OL:** OL-229 · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Primera pieza del plan de OL-227 (doc 50, § 7): la base de las demás.
+**Fecha:** 2026-09-28 · **Rama:** `ui-tokens`, desde `origin/main` (`8b2ad8c3`) · **OL:** OL-229 · **PR:** #267 (sin unir) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Primera pieza del plan de OL-227 (doc 50, § 7): la base de las demás.
 
 ## Pedido
 
