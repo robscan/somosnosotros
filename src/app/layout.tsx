@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import Armazon from "@/components/Armazon";
 import BarraApp from "@/components/BarraApp";
 import Navegacion from "@/components/Navegacion";
-import NavInferior from "@/components/NavInferior";
+import NavSecciones from "@/components/NavSecciones";
 import PerfilEnNav from "@/components/PerfilEnNav";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
 import RegistroSW from "@/components/RegistroSW";
@@ -68,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="app-nativa" strategy="beforeInteractive">
           {GUION_APP_NATIVA}
         </Script>
-        {/* El armazón (docs/rediseno/50, P4): la barra de la app, la pantalla y la navegación, una sola vez para todas las
+        {/* El armazón (docs/rediseno/50, P4 y P7): la barra de la app, la pantalla y la navegación, una sola vez para todas las
             rutas. La sesión (campana, Entrar, foto) se lee aquí, en el servidor, sin frenar a la pantalla. La barra lee
             la ciudad de la consulta: en la pantalla «No está», que se prerenderiza, esa lectura espera al teléfono. */}
         <Armazon
@@ -77,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <BarraApp admin={<Suspense fallback={null}><AccesoAdmin /></Suspense>} sesion={<Suspense fallback={null}><Sesion /></Suspense>} />
             </Suspense>
           }
-          nav={<NavInferior perfil={<Suspense fallback={<IconoPersona width={26} height={26} />}><PerfilEnNav /></Suspense>} />}
+          nav={<NavSecciones perfil={<Suspense fallback={<IconoPersona width={26} height={26} />}><PerfilEnNav /></Suspense>} />}
         >
           {children}
         </Armazon>

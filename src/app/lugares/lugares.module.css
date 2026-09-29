@@ -5,8 +5,9 @@
    ========================================================================== */
 
 /* 1. Una rejilla de dos filas, la cabecera y el mapa: el mapa llena lo que deja la fila, sin calcular nada (H-14), y acaba donde
-   empieza la navegación; la página no se desplaza. La hoja es una capa sobre el mapa (teléfono) o el panel de la izquierda
-   (desde 792, donde el mapa ocupa el resto). */
+   empieza la navegación de abajo (`--nav-abajo`: en el teléfono la barra; desde 792 el carril va a la izquierda y solo queda la
+   zona segura); la página no se desplaza. La hoja es una capa sobre el mapa (teléfono) o el panel de la izquierda (desde 792,
+   donde el mapa ocupa el resto). */
 .lugares {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

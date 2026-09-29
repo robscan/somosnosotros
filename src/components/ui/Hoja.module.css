@@ -9,7 +9,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  max-width: var(--columna); /* en escritorio, del ancho de la columna y centrada */
+  max-width: var(--columna); /* desde 792, del ancho de la columna y centrada */
   margin-inline: auto;
   max-height: calc(100% - 48px);
   overflow-y: auto;
@@ -30,6 +30,23 @@
   margin: 0 auto var(--espacio-3);
   border-radius: 2px;
   background: var(--asa);
+}
+/* Desde 792 la hoja es un diálogo al centro de la ventana: las cuatro esquinas redondas y sin asa, que no hay borde de abajo del que
+   subirla. */
+@media (min-width: 792px) {
+  .fondo {
+    display: grid;
+    place-items: center;
+  }
+  .hoja {
+    position: relative;
+    width: 100%;
+    padding-bottom: var(--espacio-4);
+    border-radius: var(--radio-hoja);
+  }
+  .hoja::before {
+    display: none;
+  }
 }
 /* Título y texto de apoyo como hijos directos de la hoja. Con :where() no pesan: una hoja puede afinar los suyos. */
 :where(.hoja) > h3 {

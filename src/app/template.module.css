@@ -1,4 +1,4 @@
-/* Fundido de 200 ms solo al cambiar entre las tres secciones raíz de la barra inferior (docs/rediseno/38). */
+/* Fundido de 200 ms solo al cambiar entre las tres secciones raíz de la navegación (docs/rediseno/38). */
 @keyframes fundido {
   from {
     opacity: 0;

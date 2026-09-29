@@ -10,7 +10,7 @@ export type Seccion = "inicio" | "agenda" | "lugares" | "artistas";
  * Recuerda el estado de un listado (pestaña, filtro, búsqueda) y lo devuelve al volver a la misma URL
  * (pedido del founder, 2026-09-15: volver de una ficha a la agenda no puede perder el punto de lectura).
  * Al montar, si hay memoria de esta URL, `aplicar` recibe el estado guardado antes de pintar (sin parpadeo);
- * después, cada cambio de estado se guarda y la URL queda como última de su sección para la barra inferior.
+ * después, cada cambio de estado se guarda y la URL queda como última de su sección para la navegación.
  * El scroll lo repone MemoriaScroll (global, en el layout), en cuanto la lista está en su sitio.
  */
 export function useMemoriaPantalla<T>(seccion: Seccion, estado: T, aplicar: (estado: T) => void) {

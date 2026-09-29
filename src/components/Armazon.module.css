@@ -1,9 +1,10 @@
-/* El armazón (docs/rediseno/50, P4): una rejilla de dos filas, la barra de la app y la pantalla; la navegación es fija
-   al pie (ui/NavInferior). No depende de lo que hay dentro: cada pieza lee `data-vista` (raiz · ficha · tarea ·
-   completa), que pone el layout según la ruta, y `data-recogida`, que pone `Armazon.tsx` al bajar. La pantalla es la
-   página tal cual llega; el desplazamiento sigue siendo el de la ventana. */
+/* El armazón (docs/rediseno/50, P4 y P7): una rejilla con la barra de la app, la pantalla y la navegación. No depende de lo que hay
+   dentro: cada pieza lee `data-vista` (raiz · ficha · tarea · completa), que pone el layout según la ruta, y `data-recogida`, que
+   pone `Armazon.tsx` al bajar en el teléfono. La pantalla es la página tal cual llega; el desplazamiento sigue siendo el de la
+   ventana. En el teléfono son dos filas, la barra y la pantalla, y la navegación es una barra fija al pie (NavSecciones). Desde
+   792 son dos columnas: la barra ocupa todo el ancho y debajo van el carril de la navegación y la pantalla. */
 .armazon {
-  container-type: inline-size; /* `--gutter` se mide sobre su ancho (`100cqw`, globals.css) */
+  container-type: inline-size; /* la barra mide `--gutter` sobre su ancho (`100cqw`, globals.css) */
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
@@ -14,8 +15,8 @@
 
   /* Lo que la barra de la app ocupa en el flujo de la página (0 donde no se ve), cuánto sube al recogerse y lo que
      deja pegado arriba: ahí se pegan la fila de contexto y los títulos de día (ui/Cabecera, AgendaInicio) y con ella
-     miden las pantallas que llenan la ventana (`min-height`, el mapa). `--duracion-recogida` es lo que dura todo eso;
-     un salto a una letra lo pone en 0 para que quien mide lea ya el alto final. */
+     miden las pantallas que llenan la ventana (`min-height`, el mapa) y el carril. `--duracion-recogida` es lo que dura todo
+     eso; un salto a una letra lo pone en 0 para que quien mide lea ya el alto final. */
   --duracion-recogida: var(--duracion);
   --barra-flujo: 0px;
   --recogida: 0px;
@@ -23,10 +24,10 @@
 }
 .pantalla {
   grid-area: pantalla;
+  container-type: inline-size; /* `--gutter` se mide sobre lo que la pantalla ocupa: con el carril, el ancho menos el carril */
 }
 
-/* Raíz: en el teléfono la barra de la app se ve y, al bajar, sube hasta dejar solo la franja de la hora. Las demás
-   vistas llevan su propia cabecera y la barra no se ve. */
+/* Raíz: en el teléfono la barra de la app se ve y, al bajar, sube hasta dejar solo la franja de la hora. */
 .armazon[data-vista="raiz"] {
   --barra-flujo: calc(var(--alto-barra) + var(--tope));
 }
@@ -34,12 +35,34 @@
   --recogida: var(--alto-barra);
 }
 
-/* Desde 792 la barra de la app está en todas las pantallas menos en las que llenan la ventana, y no se recoge. */
+/* La pantalla completa se queda con toda la ventana. En el teléfono, las demás vistas que no son raíz llevan su propia
+   cabecera: tampoco traen la barra de la app ni la navegación. */
+.armazon[data-vista="completa"] > :is(header, nav) {
+  display: none;
+}
+@media (max-width: 791px) {
+  .armazon:not([data-vista="raiz"]) > :is(header, nav) {
+    display: none;
+  }
+}
+
+/* Desde 792 la barra está en todas las pantallas menos en la completa, ocupa todo el ancho y no se recoge; la navegación es el
+   carril bajo ella. */
 @media (min-width: 792px) {
   .armazon:not([data-vista="completa"]) {
+    grid-template-columns: var(--ancho-carril-nav) minmax(0, 1fr);
+    grid-template-areas:
+      "barra barra"
+      "nav pantalla";
     --barra-flujo: calc(var(--alto-barra) + var(--tope));
   }
-  .armazon[data-recogida] {
-    --recogida: 0px;
+}
+
+/* Desde 1048 las raíces y las fichas usan la columna ancha; las tareas y las pantallas completas siguen con la de lectura. `--gutter`
+   ya se resolvió con la columna de lectura en `:root`: aquí se vuelve a decir con la ancha, y `.columna` la lee de `--columna`. */
+@media (min-width: 1048px) {
+  .armazon:is([data-vista="raiz"], [data-vista="ficha"]) {
+    --columna: var(--columna-ancha);
+    --gutter: max(var(--espacio-5), calc((100cqw - var(--columna)) / 2));
   }
 }

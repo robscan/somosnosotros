@@ -60,14 +60,14 @@
   --alto-barra: 56px; /* barra de la app (BarraApp) y cabecera interior de una ficha o una tarea: 56 sin la franja de la hora */
   --alto-filtros: 48px; /* fila de contexto de las pantallas raíz: ciudad, Cuándo y Filtros */
   --alto-cabecera: 104px; /* lo que mide ui/Cabecera (chips 60 + pestañas 44); ella lo remide en vivo */
-  --alto-nav: 60px; /* barra de navegación inferior (píldora de 32 + etiqueta), sin el área segura */
+  --alto-nav: 60px; /* la barra de navegación del teléfono (píldora de 32 + etiqueta), sin el área segura */
   --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
 
   /* Zonas seguras. `--tope` es el alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone,
      OL-209); en Safari y en la web instalada del iPhone vale 0: ahí el navegador ya deja la página debajo de la hora. */
   --tope: env(safe-area-inset-top, 0px);
   --piso: env(safe-area-inset-bottom, 0px); /* zona segura de abajo (la barra de gestos del iPhone); 0 donde el navegador ya la deja libre */
-  --nav-abajo: calc(var(--alto-nav) + var(--piso)); /* lo que ocupa la navegación inferior con su zona segura */
+  --nav-abajo: calc(var(--alto-nav) + var(--piso)); /* lo que ocupa abajo la navegación con su zona segura: la barra del teléfono; desde 792 (el carril), solo la zona segura */
 
   /* Capas, de abajo arriba. Dos cosas de la misma banda se separan con +1 o −1, nunca con un número suelto. */
   --z-pegajoso: 10; /* cabeceras y barras que se quedan pegadas al desplazar; los títulos de día y la tira de letras, justo bajo ellas (−1) */
@@ -78,17 +78,17 @@
   --z-encima: 60; /* lo que va sobre cualquier capa: la lista flotante; el texto largo, +1 */
 
   /* Anchos. Una sola columna en cualquier pantalla (decisión de maquetación, 2026-09-14). En el teléfono el gutter es
-     20px; en tablet y escritorio crece solo lo que sobra a cada lado de la columna, así el contenido queda centrado y
-     las barras (superior, inferior) siguen a lo ancho. Sin media queries ni envoltorios: todo gutter
-     horizontal de página se escribe var(--gutter). Los botones y sangrías siguen con --espacio-N.
-     Solo en cajas que van a todo lo ancho de la ventana: una caja que ya mide la columna (ui/Hoja) usa --espacio-5. */
+     20px; en tablet y escritorio crece solo lo que sobra a cada lado de la columna, así el contenido queda centrado en lo que
+     la pantalla ocupa (con el carril, la ventana menos el carril). Todo gutter horizontal de página se escribe var(--gutter).
+     Los botones y sangrías siguen con --espacio-N. Solo en cajas que van a todo lo ancho de la pantalla: una caja que ya mide
+     la columna (ui/Hoja) usa --espacio-5. Desde 1048 las raíces y las fichas pasan a la columna ancha (Armazon.module.css). */
   --columna: 600px; /* ancho de lectura */
-  --columna-ancha: 960px; /* ancho de lectura en escritorio */
+  --columna-ancha: 960px; /* ancho de lectura de las raíces y las fichas en escritorio */
   --panel: 400px; /* la lista que va junto al mapa */
-  /* Se mide sobre el ancho del armazón, que es un contenedor (`container-type` en Armazon.module.css): `100cqw` no
-     cuenta la barra de desplazamiento clásica que `100vw` sí incluye (H-38) y vale lo mismo dentro de cualquier caja
-     del armazón. Lo que se pinta fuera de él (lo que sube por portal a `body`) no tiene contenedor y mide la ventana.
-     Se va cuando las plantillas usen `.columna` en vez de este gutter. */
+  /* Se mide sobre el ancho de la pantalla, que es un contenedor (`container-type` en Armazon.module.css): `100cqw` no cuenta la
+     barra de desplazamiento clásica que `100vw` sí incluye (H-38) ni el carril de la navegación. Lo que se pinta fuera de ella
+     (lo que sube por portal a `body`) no tiene contenedor y mide la ventana. Se va cuando las plantillas usen `.columna` en vez
+     de este gutter. */
   --gutter: max(var(--espacio-5), calc((100cqw - var(--columna)) / 2));
 
   /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él.
@@ -134,6 +134,12 @@
   --duracion: 200ms; /* transición corriente: barras, hojas, cabeceras */
   --duracion-ficha: 220ms; /* una ficha al entrar o salir */
   --curva: cubic-bezier(0.22, 0.61, 0.36, 1); /* aceleración de todo lo que se mueve */
+}
+/* Desde 792 la navegación es un carril a la izquierda (docs/rediseno/50, P7): abajo ya no hay barra, solo la zona segura. */
+@media (min-width: 792px) {
+  :root {
+    --nav-abajo: var(--piso);
+  }
 }
 
 * {
@@ -201,10 +207,10 @@ body::before {
 }
 
 /* Pantallas raíz (Inicio, Agenda, Lugares, Artistas, Perfil; docs/rediseno/50, 5.3): una rejilla de una columna, en el
-   tono del contenido, bajo la barra de la app y con sitio abajo para la navegación inferior fija. La cabecera es la del
-   área `cabecera` y cada bloque de lo que sigue, una fila. La página no lleva aire a los lados y cada bloque pone el suyo
-   (`.columna`, o `--gutter` donde el fondo llega a los bordes: los títulos de grupo, los carriles); nada se escapa del aire
-   con un margen negativo. `--barra-flujo` es lo que la barra ocupa arriba (lo pone el armazón). */
+   tono del contenido, bajo la barra de la app y con sitio abajo para la navegación (`--nav-abajo`: la barra fija del teléfono).
+   La cabecera es la del área `cabecera` y cada bloque de lo que sigue, una fila. La página no lleva aire a los lados y cada
+   bloque pone el suyo (`.columna`, o `--gutter` donde el fondo llega a los bordes: los títulos de grupo, los carriles); nada se
+   escapa del aire con un margen negativo. `--barra-flujo` es lo que la barra ocupa arriba (lo pone el armazón). */
 .raiz {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

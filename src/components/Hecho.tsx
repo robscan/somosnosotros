@@ -16,7 +16,7 @@ type Props = {
 /**
  * Aviso breve de algo hecho desde una lista al deslizar ("Te interesa «…»", "Sigues a …"), con Deshacer; o de que no se
  * pudo guardar, con Reintentar. Se va solo a los 7 s (con 5 no daba tiempo a decidir). Quien lo usa le da una `key` nueva
- * en cada acción para reiniciar el tiempo. Flota sobre la barra inferior o, si hay una pastilla flotante a la vista (la de Voy o
+ * en cada acción para reiniciar el tiempo. Flota sobre la navegación de abajo (la barra del teléfono) o, si hay una pastilla flotante a la vista (la de Voy o
  * Seguir en una ficha, `data-flotantes`), sobre ella: se mide al salir, donde la pastilla está en ese momento.
  */
 export default function Hecho({ texto, onDeshacer, onCerrar, etiqueta = "Deshacer", fallo = false }: Props) {
