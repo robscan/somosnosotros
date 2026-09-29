@@ -31,9 +31,11 @@
   grid-column: 1;
   padding-left: var(--gutter);
 }
+/* Las acciones (la lupa, de 44) dejan 4 px de aire a su izquierda y no 8: la lupa crece hacia la izquierda sin quitarle
+   ancho a los chips (con un día elegido la fila iba justa y el nombre de la ciudad se cortaba). */
 .acciones {
   grid-column: 2;
-  padding: var(--espacio-1) var(--gutter) var(--espacio-3) var(--espacio-2);
+  padding: var(--espacio-1) var(--gutter) var(--espacio-3) var(--espacio-1);
 }
 .acciones:empty {
   padding: 0;
