@@ -468,7 +468,7 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge la quinta vuelta del founder)
+## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la séptima vuelta del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
@@ -477,10 +477,10 @@ cuatro pestañas, tocar una tarjeta o un renglón abre la ficha, el «+» abre l
 búsqueda, la ciudad, Cuándo y Filtros abren su hoja (un valor en Cuándo pasa Inicio a la lista por día), la hoja de Lugares se arrastra, tocar un pin o un renglón de
 Lugares abre la ficha dentro de la hoja, la portada abre el visor, Voy y Seguir cambian de estado con su aviso y
 Deshacer, y al bajar en una lista la barra y la navegación se guardan (vuelven al subir). Un conmutador de la sala
-alterna el título de la ficha sobre la imagen o en la barra y otro la letra de listas y tarjetas. Capturas reales
+alterna la letra de listas y tarjetas (la condensada que se queda y las dos descartadas). Capturas reales
 con el Chrome de la Mac: v1 en
 [`capturas-256/256-30…49-proto-*.png`](capturas-256/), v2 en [`capturas-256/256-50…74-v2-*.png`](capturas-256/) y v3
-en [`capturas-256/256-75…115-v3-*.png`](capturas-256/), descritas en la bitácora 256 (segunda, tercera y cuarta
+en [`capturas-256/256-75…128-v3-*.png`](capturas-256/), descritas en la bitácora 256 (segunda, tercera y cuarta
 parte). La fuente del prototipo (un generador de Python con sus SVG) queda en `scripts/ops/auditoria-ui/prototipo/`.
 
 ### 6.1 Lo que la v1 respondió (primera vuelta del founder)
@@ -719,6 +719,70 @@ muy grande, tampoco se justifica "Ya estás en la lista" dentro del botón»):
   header y antes de filtros»): la barra de la app llevaba su propio filete inferior además del de la fila; barra y
   fila son una sola región y el filete queda solo bajo la fila.
 
+**Séptima vuelta (el mismo día, desde los hilos que el founder dejó sobre el prototipo):**
+
+- **«Desarrolla flujo cuando usuario selecciona Elegir fecha».** «Elegir fecha…» ya no es un chip muerto: al tocarlo se
+  despliega, dentro de la misma hoja Cuándo, un calendario de dos meses (el mes en curso arranca en la semana de hoy,
+  sin filas de días pasados; hoy en violeta; un punto bajo cada día con eventos; los pasados apagados). Un toque
+  elige un día; un segundo toque en un día posterior cierra un rango (extremos en círculo lleno, los de en medio en
+  violeta suave); tocar el mismo día lo quita. El chip de la hoja muestra lo elegido («mié 30 sep», «30 sep – 3 oct»)
+  y el botón dice cuántos eventos hay («Ver 4 eventos»; «Sin eventos», apagado, cuando no hay). Al confirmar, Inicio
+  pasa a la lista por día con solo los días del rango y el chip Cuándo en violeta con la fecha; Limpiar devuelve los
+  carriles. Los atajos son ahora rangos de verdad (Hoy, Mañana, Fin de semana = sáb 3 y dom 4, Esta semana = lun 28 a
+  dom 4, Todos los próximos), así que la lista deja de mostrar todo con cualquier valor. Capturas
+  [256-118](capturas-256/256-118-v3-cuando-calendario-telefono.png) a
+  [256-122](capturas-256/256-122-v3-inicio-lista-rango-telefono.png).
+- **«Desarrolla qué pasa cuando pongo otra ciudad».** «Otra ciudad» abre, bajo la lista de la hoja Dónde estás, un
+  campo «Nombre de la ciudad» con sugerencias (ciudades con eventos y su cuenta; «Córdoba, España» con el país, porque
+  el país distingue) que se filtran al escribir, sin acentos. Elegir una cierra la hoja, pone la ciudad en el chip de
+  contexto, marca «Otra ciudad · Querétaro» como la actual y recarga la pantalla (Inicio y Artistas enseñan su
+  esqueleto 600 ms; los datos del prototipo son los mismos, y el mapa dibujado no se mueve). «Cerca de ti» hace lo
+  mismo con la ubicación del teléfono. Capturas [256-123](capturas-256/256-123-v3-ciudad-otra-telefono.png) a
+  [256-126](capturas-256/256-126-v3-inicio-queretaro-telefono.png).
+- **Icono de Artistas** («no me gusta tanto, se relaciona más a las estrellas de música y tenemos artistas de todo
+  tipo; ¿podrías buscar un icono de figura humana con atributo de arte?»): figura humana (la cabeza y los hombros del
+  icono de Perfil, corrida a la izquierda) con un pincel arriba a la derecha, dibujado con el mismo trazo de 1,8 que
+  el resto. Se probaron pincel, pincel lleno, chispa, boina, paleta, máscara y marco a 26 px sobre la píldora: la
+  paleta, la máscara y el marco se vuelven manchas; la boina parece casco; la chispa lee limpio pero es otra estrella;
+  el pincel es el atributo de arte más universal y a 26 px se distingue el mango y la brocha. Va en la barra inferior,
+  en el carril lateral y en «Mis artistas» de Ajustes. Muestrario en
+  [256-128](capturas-256/256-128-v3-iconos-artistas.png).
+- **Ficha de artista** (tres hilos): «acordamos poner foto de portada pero mantener foto de avatar»: el avatar redondo
+  vuelve, dentro del héroe, a la izquierda de la etiqueta, el nombre y la meta (64 px con aro blanco; en escritorio
+  junto al nombre en la columna derecha). «¿Cuál es la diferencia entre Se presenta en y Próximas fechas? Es
+  redundante»: cierto, repetía los lugares de las fechas; se quita, y el KPI «Lugares» es el que lleva a esos lugares
+  (al mapa con los suyos). «Muestra cómo se vería con novedades publicadas»: la sección «Novedades» como la tiene la
+  app (título, texto, medio incrustado y fecha relativa; `SeccionNovedades.tsx`) con tres publicaciones de muestra
+  (con imagen, con foto, con video), después de las fechas y antes de «Sobre»; son lo que reciben en la campana
+  quienes siguen al artista. La portada de muestra es un cartel real del respaldo; sin portada queda el símbolo SN,
+  como antes. Capturas [256-94](capturas-256/256-94-v3-ficha-artista-telefono.png),
+  [256-127](capturas-256/256-127-v3-ficha-artista-novedades-telefono.png) y
+  [256-107](capturas-256/256-107-v3-ficha-artista-escritorio.png).
+- **La cabecera compacta con la portada** («¿podrías dejar imagen de fondo aquí para que se entienda que es sheet de
+  lugar?»): cuando la hoja está recogida o desplazada, su cabecera ya no es blanca: lleva la portada del lugar
+  oscurecida al 60 % con el título, la ✕ (o Atrás) y el menú en blanco, un héroe en miniatura. Por el mismo canon, la
+  barra compacta de las tres fichas a pantalla completa hace lo mismo con su cartel (en escritorio la barra sigue
+  siendo una fila blanca). La imagen entra como variable CSS que el propio prototipo toma de la portada al arrancar,
+  así que sirve igual con carteles remotos o incrustados. Capturas
+  [256-116](capturas-256/256-116-v3-lugares-ficha-recogida-telefono.png),
+  [256-86](capturas-256/256-86-v3-lugares-ficha-desplazada-telefono.png) y
+  [256-91](capturas-256/256-91-v3-ficha-evento-desplazada-telefono.png).
+- **«Acorta letrero: Interesadxs. Revisemos que en la plataforma se esté usando lenguaje incluyente».** El KPI de
+  Perfil dice «Interesadxs». Medido antes: «Me interesa» ya salía cortado (67 px en 65 de sitio) e «Interesadxs»
+  también (69); los KPI bajan su relleno lateral de 12 a 10 px y la etiqueta su tracking de .04 a .02 em, y ahora
+  caben los tres. Dos cosas que se le señalan: «Interesadxs» nombra a personas y en su perfil el número cuenta eventos
+  que le interesan («Interés» o «Interesan» cabrían sin tocar el KPI), y los chips de abajo siguen diciendo «Me
+  interesa» porque son el estado del evento. Con la revisión del resto del prototipo cambian: «Seguidores» → «Siguen»
+  (KPI de lugar y de artista, como «Van»), «Invita a tus amigos» → «Invita a tus amistades», «Así te ven los demás» →
+  «Así te ve la gente», «Registrar un artista» / «Nombre del artista o grupo» → «Registrar artista» / «Nombre de
+  artista o grupo», «Solo los que sigo» → «Solo lo que sigo» (lugares) y «Solo a quienes sigo» (artistas), «Ficha
+  reclamada por el artista» → «Ficha a cargo de Aaron Cadena», «Artistas destacados» → «Artistas destacadxs». No
+  cambian los que nombran cosas y no personas («Nuevos eventos», «Destacados», «Todos los próximos», «Más opciones»,
+  que una respuesta anterior en el hilo listó por error). La regla que se propone para toda la app: primero
+  reescribir en neutro (verbos, «gente», «personas», «quienes»); la «x» solo cuando no hay otra salida
+  («Interesadxs», «destacadxs»). Lo que queda en la app en producción va en la pieza P13 (sección 7) con su lista en
+  el punto 47 de la sección 11.
+
 ### 6.6 Defectos que la revisión de la v3 encontró y cerró
 
 El founder señaló que «elemento de lugar se desalinea en tableta y escritorio»: era cierto y silencioso. **El renglón
@@ -755,12 +819,22 @@ pasaban los renglones por detrás; y el título llevaba márgenes laterales en v
 ancho entero y las líneas de los renglones asomaban a los lados. Medido con el DOM antes de tocar: ancla a 48 y
 título a todo lo ancho con su relleno.
 
+Con la séptima vuelta, antes de enseñarla: el día elegido del calendario salía como **elipse** (radio del 50 % sobre
+una celda más ancha que alta): el número va ahora en un círculo propio de 38 px dentro de la celda de 44; el mes en
+curso enseñaba **cuatro filas de días pasados** apagados antes de llegar a hoy: arranca en la semana en curso. En
+Perfil, **«Me interesa» ya salía cortado** con puntos suspensivos en el KPI (67 px de texto en 65 de sitio) desde la
+vuelta anterior sin que nadie lo notara, e «Interesadxs» también cortaba (69): relleno y tracking del KPI ajustados y
+medidos. La lista por día de Inicio **no tenía mar 6, jue 8 ni vie 9 de octubre** aunque sus eventos estaban en los
+carriles, y «Ver 23 eventos» era una cifra inventada: los tres días entran y las hojas cuentan los eventos en el DOM
+(14). Y el velo de la barra compacta al 52 % dejaba competir las letras grandes de los carteles con el título: 60 %.
+
 ### 6.7 Medición de la v3 (`medir.js` sobre las diez pantallas, teléfono)
 
 0 envoltorios sin estilo, 0 desbordes, 0 márgenes negativos, 0 iconos de control por debajo de 3:1, profundidad máxima
-7 (Inicio con carriles y lista, Lugares con la ficha dentro de la hoja; 34 nodos en Buscar). Los controles por debajo
-de 44 px son los mismos de la v2 (chips de 36 con 44 al tacto, letras 34×36, asa, `input` dentro de campos de 48,
-palancas, «Reportar»). Cero errores de página y cero respuestas 4xx/5xx en las 41 capturas.
+8 (Lugares con la ficha dentro de la hoja; 402 nodos en Inicio con sus doce días, sus carriles y el esqueleto; 34 en
+Buscar). Los controles por debajo de 44 px son los mismos de la v2 (chips de 36 con 44 al tacto, letras 34×36, asa,
+`input` dentro de campos de 48, palancas, «Reportar»); los días del calendario miden 44 de alto con su círculo de 38.
+Cero errores de página y cero respuestas 4xx/5xx en las 54 capturas (medición repetida tras la séptima vuelta).
 
 ## 7. Plan de implementación (primera versión; se cierra tras el prototipo firmado)
 
@@ -775,13 +849,14 @@ council. Orden por dependencias:
 | P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
 | P4 | Barra de la app única en los tres tamaños («+» · logotipo · lupa · campana) a nivel del layout, que se recoge al bajar y vuelve al subir; barra inferior de cuatro destinos que se esconde y vuelve con la misma regla; fila de contexto pegajosa; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
 | P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio (carriles en reposo y lista por día cuando Cuándo tiene valor: `/agenda` redirige a `/`), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista, Cerrar y menú dentro de la hoja y barra Cerrar · título · más opciones al desplazar; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
-| P6 | Plantilla ficha: portada cover 4:3 con el título al pie sobre el velo (o en la barra, según firme el founder) y el visor al tocarla, título en la barra al desplazar, tres KPI del mismo alto, acciones alineadas, «Artistas» y renglones con chevron, pastillas flotantes Me interesa · Voy / Seguir con sus estados (Vas, Te interesa, Sigues), ficha de artista; el mismo cuerpo de ficha de lugar sirve a pantalla completa y dentro de la hoja (portada 16:9) | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista | L | H-20 a H-28 |
+| P6 | Plantilla ficha con el canon del héroe: portada 3:2 con la etiqueta, el título y la meta dentro de la imagen sobre el velo, Atrás y menú elevados sobre ella, barra compacta al desplazar con la portada oscurecida detrás del título, visor al tocar la imagen; tres KPI que abrazan su contenido (icono y etiqueta arriba, valor abajo; fecha sin etiqueta); acciones alineadas; pastillas flotantes Me interesa · Voy / Seguir con sus estados (Vas, Te interesa, Sigues); ficha de artista con avatar dentro del héroe y sección Novedades, sin «Se presenta en»; el mismo cuerpo de ficha de lugar sirve a pantalla completa y dentro de la hoja | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista, `SeccionNovedades` | L | H-20 a H-28 |
 | P7 | Carril lateral en dos grupos (secciones arriba, Perfil abajo) bajo la barra de la app a todo lo ancho; reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel con la ficha dentro del panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
 | P8 | Mapa: un símbolo por lugar, prioridad y anclaje variable | `Mapa.tsx` (capas) | M | H-12: 0 etiquetas superpuestas en el centro a zoom por defecto (captura) |
 | P9 | Altas: `HojaDonde` única, mensaje único, frase del alta de lugar, botón que dice qué falta | `HojaDondeEs`, `HojaDondeLugar`, `FormularioEvento`, `FormularioLugar`, `FormularioCanon` | M | H-29 a H-32 |
 | P10 | Chips y sellos unificados (el chip de contexto abre su hoja y Cuándo muestra su valor); carril con `subgrid` en sus tres tamaños; tarjeta sin foto compacta; un sello por foto | `Chip`, `Destacados`, `Renglon` | M | H-02, H-03, H-19 |
 | P11 | Protección: script de inventario y medición como pruebas (sección 9) | `scripts/ops/`, `package.json` (scripts), CI | M | la CI falla con un `z-index` literal, un margen negativo, un desborde o un toque < 44 |
 | P12 | Retiros (sección 10) y limpieza de los duplicados que queden | varios | S | inventario: bloques duplicados 35 → 0 |
+| P13 | Lenguaje incluyente en toda la app: la lista del punto 47 de la sección 11 (textos de la interfaz; no se tocan nombres propios ni títulos de eventos) con la regla «primero neutro, la x solo si no hay otra salida» | páginas y componentes con esos textos | S | `grep` de las frases marcadas = 0; capturas de Perfil, Ajustes, fichas y reglas |
 
 ## 8. Lista consolidada de defectos silenciosos (con archivo y línea)
 
@@ -943,5 +1018,46 @@ Lo que el founder confirma o corrige al probar la v3:
 30. **Pastillas flotantes**: decidido en el lienzo («me gusta que flotan, muy moderno, bien hecho»; «me quedo con la
     idea de que floten, olvidemos la barra»): se quedan flotando y la variante en barra sale del lienzo; el par de
     evento va centrado en teléfono y a la derecha en escritorio.
+
+45. **«Elegir fecha…» con calendario dentro de la hoja Cuándo** (hilo del prototipo, «desarrolla flujo cuando
+    usuario selecciona Elegir fecha»): dos meses desde la semana en curso, un toque elige un día y dos un rango, el
+    botón cuenta los eventos, Inicio filtra sus días y el chip muestra la fecha (6.5). **Hecho**; confirmar. Queda una
+    decisión pequeña: si los meses siguientes se cargan al desplazar (como en el prototipo, que trae dos) o con
+    flechas.
+46. **«Otra ciudad» con campo y sugerencias** (hilo, «desarrolla qué pasa cuando pongo otra ciudad»): campo bajo la
+    lista, sugerencias con cuenta de eventos y país cuando distingue, recarga con esqueleto (6.5). **Hecho**;
+    confirmar. En la app el mapa sí se centrará en la ciudad elegida.
+47. **Lenguaje incluyente** (hilo, «acorta letrero: Interesadxs; revisemos que en la plataforma se esté usando
+    lenguaje incluyente»): en el prototipo, lo listado en 6.5 (Interesadxs, Siguen, amistades, «Así te ve la gente»,
+    «Registrar artista», «Solo a quienes sigo», «Ficha a cargo de…», «destacadxs»). **Hecho**; que confirme la regla
+    («primero neutro, la x solo si no hay otra salida») y que decida sobre «Interesadxs» en su perfil (nombra
+    personas y el número cuenta eventos; «Interés» o «Interesan» caben sin tocar el KPI). Lo que queda en la app en
+    producción, para la pieza P13: «Invita a tus amigos» (Ajustes), «Así te ven los demás» (Mi perfil y la ficha
+    pública), «Nombre del artista o grupo» y «Otro artista o grupo» (alta de artista y selector Quién), «Registrar un
+    artista» / «Buscar un artista» / «Ver los artistas» / «artistas registrados… Registra un artista» (Publicar, lista,
+    borrado, ciudades), «Nadie lo sigue todavía · 1 persona lo sigue · N personas lo siguen» (fichas de artista y de
+    lugar: «Nadie sigue esta ficha todavía · 1 persona la sigue · N personas la siguen», o con el nombre), «Entra para
+    seguir a los tuyos» (Inicio, filtro Siguiendo), «un artista con nombre», «un lugar, un artista o una persona que
+    no eres» y «a petición del artista o del lugar» (Reglas), «la ficha de un lugar o un artista» (Ayuda), «Artista
+    borrado… Ver los artistas» (borrado), «Ya está registrado» / «no está registrado» (altas: «Ya tiene ficha» / «no
+    tiene ficha»), «Artistas invitados» (admin CAPO: «Fichas invitadas»), «un @usuario» (enlaces: «un @perfil»). No
+    tocan: «Todos» como filtro de eventos, «Listo», «Destacados», «Nuevos», los nombres de eventos.
+48. **Icono de Artistas: figura humana con pincel** (hilo, «este icono no me gusta tanto… figura humana con atributo
+    de arte»): elegido el pincel; en el muestrario van el pincel lleno, la chispa y la estrella de antes (6.5).
+    **Hecho**; confirmar.
+49. **Ficha de artista: el avatar vuelve, dentro del héroe** (hilo, «acordamos poner foto de portada pero mantener
+    foto de avatar o perfil que ya estaba»). **Hecho.** Cierra también el punto 41.
+50. **«Se presenta en» fuera de la ficha de artista** (hilo, «es redundante como la pintaste»): el KPI «Lugares» es
+    el camino a sus lugares (al mapa con los suyos). **Hecho**; confirmar el destino del KPI.
+51. **Novedades publicadas en la ficha de artista** (hilo, «muestra cómo se vería con novedades publicadas»): tres
+    publicaciones como las de la app, después de las fechas y antes de Sobre. **Hecho**; confirmar el orden (fechas
+    primero porque es a lo que se va).
+52. **La cabecera compacta con la portada** (hilo, «deja imagen de fondo aquí para que se entienda que es sheet de
+    lugar»): en la hoja recogida y desplazada y, por el mismo canon, en la barra compacta de las tres fichas
+    (6.5). **Hecho**; confirmar que también en las fichas a pantalla completa (si no, se queda solo en la hoja).
+53. **«Lugares» → «Mapa»** (hilo, «¿si en lugar de llamarse Lugares le ponemos Mapa? Pues también se mencionan
+    eventos»): se le contestó que Lugares nombra qué hay (como Inicio, Artistas, Perfil) y Mapa nombraría cómo se ve,
+    que en tableta y escritorio el mapa es solo la columna derecha y que los eventos ahí cuelgan siempre de un lugar;
+    se le ofreció verlo con la etiqueta cambiada. Abierto.
 
 Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).

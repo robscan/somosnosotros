@@ -627,11 +627,70 @@ decido» (Agenda: la app en producción no se tocó y el prototipo v2 con la pan
 «aquí se ve la parte de atrás de fecha, hay desfase de elementos» (el título de día pegajoso se anclaba 8 px por
 debajo de la fila de contexto y no cubría el ancho entero; medido y corregido). Doc 50 § 11, puntos 38 a 44.
 
+### Séptima vuelta (mismo día): los hilos del founder sobre el prototipo
+
+Doce hilos abiertos al volver a leer el artefacto. Ocho pedían trabajo y los ocho están hechos (detalle en el doc 50
+§ 6.5, «séptima vuelta», y § 11 puntos 45 a 53): «desarrolla flujo cuando usuario selecciona Elegir fecha» (calendario
+dentro de la hoja Cuándo: un día o un rango, el botón cuenta los eventos, Inicio filtra sus días); «desarrolla qué
+pasa cuando pongo otra ciudad» (campo con sugerencias bajo la lista, recarga con esqueleto, el chip cambia); «este
+icono no me gusta tanto… figura humana con atributo de arte» (figura con pincel, elegida entre siete candidatos
+mirados a 26 px sobre la píldora; muestrario con pincel lleno, chispa y la estrella de antes); «acordamos poner foto
+de portada pero mantener foto de avatar» (el avatar redondo vuelve dentro del héroe); «¿cuál es la diferencia entre
+Se presenta en y Próximas fechas? Es redundante» (fuera; el KPI Lugares lleva a sus lugares); «muestra cómo se vería
+con novedades publicadas» (sección Novedades como la de la app, con tres publicaciones de muestra); «¿podrías dejar
+imagen de fondo aquí para que se entienda que es sheet de lugar?» (la cabecera compacta de la hoja lleva la portada
+oscurecida; por el mismo canon, la barra compacta de las tres fichas); «acorta letrero: Interesadxs… revisemos que en
+la plataforma se esté usando lenguaje incluyente» (KPI «Interesadxs», medido: no cabía ni «Me interesa»; el relleno y
+el tracking del KPI ajustados; revisión del prototipo aplicada y lista de lo que queda en la app para la pieza P13).
+Cuatro hilos siguen abiertos porque son decisiones suyas: Agenda («no estoy seguro, me está gustando como luce
+ahora»), «Lugares» → «Mapa» (se le contestó con argumentos para dejar Lugares), los filtros de Lugares centrados o
+no, y la confirmación del héroe de artista, que los tres hilos nuevos sobre esa ficha ya dan por bueno.
+
+Cómo se revisó: cada flujo se probó en el Chrome real con un guion (`probar7.mjs`, en el scratchpad) que imprime el
+estado tras cada toque (chip, modo lista, días visibles, texto del botón) y toma capturas; en la primera pasada
+salieron la elipse del día elegido, las cuatro filas de días muertos, el velo flojo y el pincel que no se distinguía a
+26 px (doc 50 § 6.6), y se corrigieron antes de la tanda definitiva. `medir-prototipo.mjs` sobre las diez pantallas:
+0 envoltorios, 0 desbordes, 0 márgenes negativos, 0 iconos con contraste bajo; 0 errores de página en las 54
+capturas. Las 54 se regeneraron: cambian a la vista `256-81` (Fin de semana ya enseña solo sáb 3 y dom 4), `256-86` y
+`256-116` (la cabecera de la hoja con la portada), `256-88` (el pincel en la barra), `256-89` (INTERESADXS), `256-91`
+(la barra compacta del evento con su cartel), `256-94`, `256-104` y `256-107` (artista con avatar y novedades; el
+panel de escritorio con la cabecera con imagen), `256-95` (SIGUEN).
+
+Capturas nuevas (`docs/rediseno/capturas-256/256-118…128`), abiertas y descritas:
+
+- **`256-118-v3-cuando-calendario-telefono`:** la hoja Cuándo con «Elegir fecha…» activo: el calendario bajo los
+  atajos; septiembre arranca en la semana en curso (28 en violeta, 29, 30) y octubre entero, con un punto bajo cada
+  día con eventos; «Ver 14 eventos».
+- **`256-119-v3-cuando-un-dia-telefono`:** tras tocar el 30: el día en círculo violeta, el chip de la hoja dice
+  «mié 30 sep» y el botón «Ver 1 evento».
+- **`256-120-v3-inicio-lista-un-dia-telefono`:** Inicio en lista con solo mié 30 sep (Cine de barrio: ciclo Fellini)
+  y el chip Cuándo en violeta con «mié 30 sep».
+- **`256-121-v3-cuando-rango-telefono`:** segundo toque en el 3 de octubre: rango 30 sep – 3 oct con los extremos en
+  círculo lleno y el 1 y el 2 en violeta suave; chip «30 sep – 3 oct»; «Ver 4 eventos».
+- **`256-122-v3-inicio-lista-rango-telefono`:** la lista con los cuatro días del rango (Fellini, Pimpolina, LXS
+  COLOCAOS, Art Toy) y el chip «30 sep – 3 oct»; la fila de contexto se desplaza porque ya no cabe.
+- **`256-123-v3-ciudad-otra-telefono`:** «Dónde estás» tras tocar «Otra ciudad»: el campo «Nombre de la ciudad» y las
+  seis sugerencias (Querétaro, Guadalajara, Ciudad de México, Monterrey, Zacatecas, Córdoba, España) con su cuenta de
+  eventos.
+- **`256-124-v3-ciudad-otra-escribiendo-telefono`:** con «Que» escrito queda solo Querétaro.
+- **`256-125-v3-inicio-cargando-queretaro-telefono`:** al elegirla, el chip dice «Querétaro» e Inicio enseña su
+  esqueleto mientras recarga.
+- **`256-126-v3-inicio-queretaro-telefono`:** Inicio recargado con el chip «Querétaro» (los datos de muestra son los
+  mismos).
+- **`256-127-v3-ficha-artista-novedades-telefono`:** la ficha de artista desplazada: barra compacta con la portada
+  oscurecida y «Aaron Cadena» en blanco; «Novedades» con tres publicaciones (con imagen, con foto, con video), su
+  título, su texto en una línea y «hace 2 días»; «Sobre»; «Seguir» flotando.
+- **`256-128-v3-iconos-artistas`:** la barra inferior con el pincel elegido (activo, en la píldora violeta), el pincel
+  lleno, la chispa y la estrella de antes.
+
 ### Cierre (cuarta parte)
 
-Commits en `restructura-ui` con el prototipo v3 (el segundo con las correcciones del founder al verla), las 43 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7 y P10,
-§ 10 y § 11 con la quinta y la sexta vuelta), el generador y el script de captura actualizados, esta bitácora y
-OPEN_LOOPS; push al PR #266; artefacto republicado. Pendiente: que el founder pruebe la v3 y conteste los puntos 18 a
-24 y 28 a 30 del doc 50 § 11 (nombre de la primera pestaña y carril Destacados, variante del título, campana, dos
-barras en escritorio, ficha desde otras entradas, esconder o minimizar la navegación, letra de listas, pastillas
-flotantes, Inicio con dos modos); con su firma, plan definitivo por piezas y operadores nuevos.
+Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcciones del founder al verla y la
+séptima vuelta desde los hilos), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
+§ 11 con la quinta a la séptima vuelta), el generador y el script de captura actualizados, esta bitácora y
+OPEN_LOOPS; push al PR #266; artefacto republicado y los hilos contestados (los resueltos, resueltos; los de decisión,
+abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 39, 45 a 48 y
+50 a 53 del doc 50 § 11 (Inicio con dos modos y Agenda, campana, dos barras en escritorio, ficha desde otras
+entradas, esconder o minimizar la navegación, la hoja en el iPhone, filtros de Lugares, calendario, otra ciudad,
+lenguaje incluyente e «Interesadxs», icono de Artistas, KPI Lugares, orden de Novedades, cabecera con portada
+también en las fichas, «Lugares» o «Mapa»); con su firma, plan definitivo por piezas y operadores nuevos.

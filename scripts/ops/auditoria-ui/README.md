@@ -23,13 +23,15 @@ código de la app; sirven para repetir la medición en cada pieza de la reestruc
   (`logo.svg`, `mapa-base.svg`, `sn.txt`, `iconos.txt`) y de los carteles de `respaldo-local/imagenes.json`. Las
   correcciones se hacen en el generador y se regenera; el HTML no se edita a mano.
 - Servir la carpeta: `python3 -m http.server 8090 --directory docs/rediseno/prototipos`.
-- `capturar-prototipo.mjs <url> <carpeta>`: las 43 capturas de la v3 (teléfono 2×, tableta 1,5×, escritorio 1×)
+- `capturar-prototipo.mjs <url> <carpeta>`: las 54 capturas de la v3 (teléfono 2×, tableta 1,5×, escritorio 1×)
   navegando el prototipo de verdad (los clics se despachan como eventos para que también funcionen sobre `<g>` del SVG;
   el desplazamiento se dispara con un evento `scroll` para que actúen la barra y la navegación que se guardan); imprime
   los errores de página y las respuestas 4xx/5xx. La hoja de Lugares se lleva a cada altura desplazando su
   contenedor (los espaciadores fijan asoma · media · llena). Incluye el muestrario de iconos para «seguir un lugar»
   (el mismo renglón con tres glifos), Inicio en modo lista con las tres letras de listas y los estados de las
-  pastillas flotantes. Después, `comprimir.mjs` hacia `docs/rediseno/capturas-NNN/`.
+  pastillas flotantes; con la séptima vuelta, el calendario de Cuándo (un día y un rango), «Otra ciudad» con
+  sugerencias y la recarga, la ficha de artista desplazada con sus novedades y el muestrario del icono de Artistas.
+  Después, `comprimir.mjs` hacia `docs/rediseno/capturas-NNN/`.
 - Los tres scripts de Node usan `playwright-core` como `auditar.mjs` (instalado fuera del repo, ver arriba).
 - `probar-hoja.mjs`, `probar-hoja-atras.mjs` y `probar-hoja-recogida.mjs <url>`: prueban con la rueda del Chrome el
   comportamiento de la hoja de Lugares (abre a foto + KPI, crece hasta llenar, luego desplaza el contenido; llena

@@ -1,4 +1,4 @@
-// Capturas reales del prototipo v3 (Chrome de la Mac): teléfono a 2×, tableta a 1,5×, escritorio a 1×; 43 capturas y un muestrario de iconos.
+// Capturas reales del prototipo v3 (Chrome de la Mac): teléfono a 2×, tableta a 1,5×, escritorio a 1×; 54 capturas y dos muestrarios de iconos.
 // node capturar-prototipo.mjs http://127.0.0.1:8090/restructura-ui.html <carpeta>   (servir docs/rediseno/prototipos con python3 -m http.server 8090)
 import { chromium } from "playwright-core";
 import fs from "node:fs";
@@ -166,6 +166,45 @@ await foto(page, "v3-42-lugares-ficha-recogida-telefono");
 await click(page, '[data-cerrar-ficha]'); await espera(page, 600);
 await hoja(page, "recogida"); await espera(page, 800);
 await foto(page, "v3-43-lugares-recogida-telefono");
+await ctx.close();
+
+// Séptima vuelta (hilos del prototipo): Elegir fecha (un día y un rango), Otra ciudad, ficha de artista con novedades, muestrario del icono de Artistas
+({ ctx, page } = await contexto(2, 480, 920));
+await page.waitForTimeout(900);
+await click(page, '.pantalla[data-id="inicio"] [data-hoja="cuando"]');
+await click(page, '.hoja-fondo[data-hoja="cuando"] .chip[data-elegir]'); await espera(page, 200);
+await foto(page, "v3-44-cuando-calendario-telefono");
+await click(page, '.hoja-fondo[data-hoja="cuando"] .dia[data-fecha="2026-09-30"]'); await espera(page, 200);
+await foto(page, "v3-45-cuando-un-dia-telefono");
+await click(page, '.hoja-fondo[data-hoja="cuando"] .pie-hoja [data-cerrar]'); await espera(page, 400);
+await foto(page, "v3-46-inicio-lista-un-dia-telefono");
+await click(page, '.pantalla[data-id="inicio"] [data-hoja="cuando"]');
+await click(page, '.hoja-fondo[data-hoja="cuando"] .dia[data-fecha="2026-10-03"]'); await espera(page, 200);
+await foto(page, "v3-47-cuando-rango-telefono");
+await click(page, '.hoja-fondo[data-hoja="cuando"] .pie-hoja [data-cerrar]'); await espera(page, 400);
+await foto(page, "v3-48-inicio-lista-rango-telefono");
+await click(page, '.pantalla[data-id="inicio"] [data-hoja="cuando"]'); await click(page, '.hoja-fondo[data-hoja="cuando"] [data-limpiar]'); await click(page, '.hoja-fondo[data-hoja="cuando"] .cerrar'); await espera(page, 300);
+await click(page, '.pantalla[data-id="inicio"] [data-hoja="ciudad"]');
+await click(page, '.hoja-fondo[data-hoja="ciudad"] [data-ciudad="Otra ciudad"]'); await espera(page, 200);
+await foto(page, "v3-49-ciudad-otra-telefono");
+await page.evaluate(() => { const i = document.querySelector('.hoja-fondo[data-hoja="ciudad"] input'); i.value = "Que"; i.dispatchEvent(new Event("input", { bubbles: true })); }); await espera(page, 200);
+await foto(page, "v3-50-ciudad-otra-escribiendo-telefono");
+await click(page, '.hoja-fondo[data-hoja="ciudad"] .sugerencias [data-ciudad="Querétaro"]');
+await foto(page, "v3-51-inicio-cargando-queretaro-telefono", 120);
+await foto(page, "v3-52-inicio-queretaro-telefono", 900);
+await click(page, '.pantalla[data-id="inicio"] .carril .tarjeta'); await espera(page, 900);
+await click(page, '.pantalla[data-id="evento"] .con .renglon'); await espera(page, 900);
+await desplazar(page, '.pantalla[data-id="artista"]', 560); await espera(page, 400);
+await foto(page, "v3-53-ficha-artista-novedades-telefono");
+// Muestrario del icono de Artistas: la barra con el elegido (figura con pincel) y las alternativas (pincel lleno, chispa) junto a la estrella que se va
+await page.evaluate(() => {
+  const nav = document.querySelector(".navegacion");
+  const etiquetas = [["artista", "Pincel (elegido)"], ["artista-lleno", "Pincel lleno"], ["artista-chispa", "Chispa"], ["estrella", "Estrella (antes)"]];
+  [...nav.children].forEach((d, i) => { const [g, t] = etiquetas[i]; d.removeAttribute("aria-current"); if (i === 0) d.setAttribute("aria-current", "page"); d.querySelector(".pildora").innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${g}"/></svg>`; d.lastElementChild.textContent = t; });
+});
+await click(page, '.pantalla[data-id="artista"] [data-atras]'); await espera(page, 800);
+await click(page, '.pantalla[data-id="evento"] [data-atras]'); await espera(page, 800);
+await page.locator(".navegacion").screenshot({ path: `${dir}/v3-54-iconos-artistas.png` }); console.log("v3-54-iconos-artistas");
 await ctx.close();
 await browser.close();
 console.log("errores de página:", errores.length, errores.slice(0, 5));

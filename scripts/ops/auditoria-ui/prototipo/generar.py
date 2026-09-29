@@ -6,8 +6,12 @@ mapa con la lista en hoja inferior, alta con tira de modos, Voy/Seguir con un so
 v3 (quinta vuelta): barra superior única en los tres tamaños («+» · logo · lupa · campana) y carril lateral en dos grupos;
 Eventos absorbe Inicio y Agenda; fila de contexto [ciudad · cuándo · filtros] igual en todas las raíces; la ficha de lugar
 vive en la hoja de Lugares; título sobre la imagen o en la barra (conmutador del estudio); campana para seguir lugares;
-la barra inferior se esconde al bajar y vuelve al subir; visor de la imagen al tocarla; carril con subgrid."""
-import json, re, sys, os
+la barra inferior se esconde al bajar y vuelve al subir; visor de la imagen al tocarla; carril con subgrid.
+v3, séptima vuelta (hilos del prototipo): «Elegir fecha…» abre un calendario (un día o dos para un rango) y el valor de Cuándo filtra los días;
+«Otra ciudad» abre un campo con sugerencias y recarga; icono de Artistas con figura humana y pincel; la ficha de artista conserva el avatar
+dentro del héroe, pierde «Se presenta en» y muestra sus novedades publicadas; la barra compacta de las fichas y de la hoja lleva la portada
+oscurecida detrás del título; KPI «Interesadxs» y «Siguen» (lenguaje incluyente)."""
+import json, re, sys, os, datetime
 S = os.path.dirname(os.path.abspath(__file__))
 RAIZ = sys.argv[1]
 logo_crudo = open(f'{S}/logo.svg').read()
@@ -27,6 +31,10 @@ extra = {
   'estrella-llena': '<path fill="currentColor" stroke="none" d="M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.8z"/>',
   'campana-mas': '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/><path d="M12 9.5v5M9.5 12h5"/>',
   'marcador-mas': '<path d="M7 3.5h10v17l-5-3.6-5 3.6z"/><path d="M12 8v5M9.5 10.5h5"/>',
+  # Artistas: figura humana (cabeza y hombros como en Perfil, corrida a la izquierda) con un pincel arriba a la derecha; «lleno» y «chispa» son las alternativas del muestrario
+  'artista': '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 20.5a6 6 0 0 1 12 0"/><path d="M23 1l-5.6 5.6"/><path d="M15.9 5.1a2 2 0 0 1 2.9 2.9l-2 2c-1.1 1.1-2.6 1.5-4.1 1.1.2-1.4.7-2.7 1.7-3.7z"/>',
+  'artista-lleno': '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 20.5a6 6 0 0 1 12 0"/><path d="M23 1l-5.6 5.6"/><path fill="currentColor" d="M15.9 5.1a2 2 0 0 1 2.9 2.9l-2 2c-1.1 1.1-2.6 1.5-4.1 1.1.2-1.4.7-2.7 1.7-3.7z"/>',
+  'artista-chispa': '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0"/><path fill="currentColor" stroke="none" d="M18.5 2l1.2 3.3L23 6.5l-3.3 1.2L18.5 11l-1.2-3.3L14 6.5l3.3-1.2z"/>',
 }
 nombres = {
  'IconoCasa':'casa','IconoCalendario':'calendario','IconoPin':'pin','IconoEstrella':'estrella','IconoBuscar':'buscar','IconoCampana':'campana','IconoMas':'mas','IconoOk':'ok','IconoPersona':'persona','IconoPersonas':'personas','IconoCompartir':'compartir','IconoRuta':'ruta','IconoBoleto':'boleto','IconoReloj':'reloj','IconoChevronIzquierda':'chevron-izq','IconoChevronDerecha':'chevron-der','IconoCerrar':'cerrar','IconoPuntos':'puntos','IconoLista':'lista','IconoMapa':'mapa','IconoUbicacion':'ubicacion','IconoCalendarioAgregar':'calendario-agregar','IconoEnlace':'enlace','IconoInstagram':'instagram','IconoFacebook':'facebook','IconoEngrane':'engrane','IconoLapiz':'lapiz','IconoSitio':'sitio','IconoCamara':'camara','IconoTexto':'texto','IconoEtiqueta':'etiqueta','IconoSalir':'salir','IconoAyuda':'ayuda','IconoEscudo':'escudo','IconoLibro':'libro','IconoCorreo':'correo','IconoOjo':'ojo','IconoBloquear':'bloquear','IconoInstalar':'instalar','IconoPinMas':'pin-mas','IconoEstrellaMas':'estrella-mas','IconoCaret':'caret','IconoYouTube':'youtube','IconoTikTok':'tiktok'}
@@ -191,33 +199,31 @@ minimapa = '<svg class="minimapa" viewBox="300 330 300 132" preserveAspectRatio=
 # ---------- pantallas ----------
 esqueleto = lambda redonda=False: '<ul class="lista esqueleto" aria-hidden="true" hidden>' + ''.join(f'<li class="renglon lista"><span class="foto{" redonda" if redonda else ""} respira"></span><span class="linea titulo respira"></span><span class="linea meta respira"></span></li>' for _ in range(6)) + '</ul>'
 
-# Eventos absorbe Inicio y Agenda: fila de contexto, un carril de destacados y la lista por día.
+# Inicio: fila de contexto, seis carriles y, cuando Cuándo tiene valor, la lista por día. Cada día lleva su fecha ISO para filtrar por rango.
+HOY = datetime.date(2026, 9, 28)
+dias_inicio = [
+  ('Hoy', '2026-09-28', [('sinfonica', ''), ('macario', '')]), ('Mañana', '2026-09-29', [('cristiada', 'voy')]), ('mié 30 sep', '2026-09-30', [('fellini', '')]),
+  ('jue 1 oct', '2026-10-01', [('pimpolina', '')]), ('vie 2 oct', '2026-10-02', [('colocaos', 'voy')]), ('sáb 3 oct', '2026-10-03', [('arttoy', '')]),
+  ('dom 4 oct', '2026-10-04', [('susurros', '')]), ('lun 5 oct', '2026-10-05', [('juana', ''), ('feleal', '')]), ('mar 6 oct', '2026-10-06', [('master', '')]),
+  ('mié 7 oct', '2026-10-07', [('leonora', 'interesa')]), ('jue 8 oct', '2026-10-08', [('oca', '')]), ('vie 9 oct', '2026-10-09', [('desierto', '')]),
+]
+def tramos_inicio():
+    out = ''
+    for dia, fecha, renglones in dias_inicio:
+        cuenta = f'<span>· {len(renglones)}</span>' if len(renglones) > 1 else ''
+        filas = ''.join(renglon_evento(k, decidido=(e == 'voy'), interesa=(e == 'interesa')) for k, e in renglones)
+        out += f'  <section class="tramo" data-dia="{dia}" data-fecha="{fecha}"><h2 class="grupo">{dia}{cuenta}</h2>\n  <ul class="lista">{filas}</ul></section>\n'
+    return out
 inicio = f'''<section class="pantalla raiz" data-id="inicio">
   {cabecera(chip_ciudad() + chip_cuando() + chip_filtros('filtros-eventos'))}
+  {esqueleto()}
   {carril('Tus planes', [tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('leonora', sello='Te interesa')], ir='perfil')}
   {carril('Destacados', [tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('master', sello='9 van'), tarjeta('leonora', sello='Recién agregado'), tarjeta('desierto', sello='1 va')], 'grande', lista='Todos los próximos')}
   {carril('Esta semana', [tarjeta('sinfonica', sello='Hoy'), tarjeta('macario', sello='Hoy'), tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('fellini'), tarjeta('pimpolina', sello='4 van')], lista='Esta semana')}
   {carril('Nuevos eventos', [tarjeta('juana', sello='Recién agregado'), tarjeta('arttoy', sello='3 van'), tarjeta('susurros', sello='Recién agregado'), tarjeta('oca')], lista='Todos los próximos')}
   {carril('Lugares con eventos', [tarjeta('x', nombre=lu[k]['n'], meta=lu[k]['prox'] or '', img=lu[k]['img'], ir='lugar', seguir=True, lugar=True, decidido=(k=='miguelito')) for k in ('miguelito','paz','ferro','muni','ache')], 'chica', ir='lugares')}
-  {carril('Artistas destacados', [tarjeta('x', nombre=n, meta=m, img=None, ir='artista', seguir=True) for n, m in ar[2:6]], 'grande', ir='artistas')}
-  <section class="tramo" data-dia="Hoy"><h2 class="grupo">Hoy<span>· 2</span></h2>
-  <ul class="lista">{renglon_evento('sinfonica')}{renglon_evento('macario')}</ul></section>
-  <section class="tramo" data-dia="Mañana"><h2 class="grupo">Mañana</h2>
-  <ul class="lista">{renglon_evento('cristiada', decidido=True)}</ul></section>
-  <section class="tramo" data-dia="mié 30 sep"><h2 class="grupo">mié 30 sep</h2>
-  <ul class="lista">{renglon_evento('fellini')}</ul></section>
-  <section class="tramo" data-dia="jue 1 oct"><h2 class="grupo">jue 1 oct</h2>
-  <ul class="lista">{renglon_evento('pimpolina')}</ul></section>
-  <section class="tramo" data-dia="vie 2 oct"><h2 class="grupo">vie 2 oct</h2>
-  <ul class="lista">{renglon_evento('colocaos', decidido=True)}</ul></section>
-  <section class="tramo" data-dia="sáb 3 oct"><h2 class="grupo">sáb 3 oct</h2>
-  <ul class="lista">{renglon_evento('arttoy')}</ul></section>
-  <section class="tramo" data-dia="dom 4 oct"><h2 class="grupo">dom 4 oct</h2>
-  <ul class="lista">{renglon_evento('susurros')}</ul></section>
-  <section class="tramo" data-dia="lun 5 oct"><h2 class="grupo">lun 5 oct</h2>
-  <ul class="lista">{renglon_evento('juana')}{renglon_evento('feleal')}</ul></section>
-  <section class="tramo" data-dia="mié 7 oct"><h2 class="grupo">mié 7 oct</h2>
-  <ul class="lista">{renglon_evento('leonora', interesa=True)}</ul></section>
+  {carril('Artistas destacadxs', [tarjeta('x', nombre=n, meta=m, img=None, ir='artista', seguir=True) for n, m in ar[2:6]], 'grande', ir='artistas')}
+  {tramos_inicio()}
 </section>'''
 
 # El cuerpo de la ficha de lugar se usa dos veces: a pantalla completa y dentro de la hoja de Lugares.
@@ -237,7 +243,7 @@ def cuerpo_lugar(en_hoja=False):
   <ul class="kpis">
     <li><a href="#">{i("pin")}<b>1,4 km</b><small>Distancia</small></a></li>
     <li><a href="#">{i("calendario")}<b>3 próximos</b><small>Eventos</small></a></li>
-    <li><a href="#">{i("personas")}<b>48</b><small>Seguidores</small></a></li>
+    <li><a href="#">{i("personas")}<b>48</b><small>Siguen</small></a></li>
   </ul>
   <div class="acciones">
     <a class="accion" href="#"><span class="boton-icono grande elevado">{i("ruta")}</span>Cómo llegar</a>
@@ -293,7 +299,7 @@ perfil = f'''<section class="pantalla raiz" data-id="perfil">
   <div class="perfil-cabecera"><span class="avatar grande">A</span><b>Ana Rentería</b><small>Barrio de San Miguelito</small><button type="button" class="boton-icono contorno" data-ir="ajustes" aria-label="Ajustes">{i("engrane")}</button></div>
   <ul class="kpis">
     <li><a href="#">{i("ok")}<b>2</b><small>Voy</small></a></li>
-    <li><a href="#">{i("estrella")}<b>1</b><small>Me interesa</small></a></li>
+    <li><a href="#">{i("estrella")}<b>1</b><small>Interesadxs</small></a></li>
     <li><a href="#">{i("campana")}<b>2</b><small>Sigo</small></a></li>
   </ul>
   <div class="filtros"><button type="button" class="chip activo">Voy</button><button type="button" class="chip">Me interesa</button><button type="button" class="chip">Sigo</button></div>
@@ -301,7 +307,7 @@ perfil = f'''<section class="pantalla raiz" data-id="perfil">
   <ul class="lista">{renglon_evento('cristiada', decidido=True)}</ul></section>
   <section class="tramo" data-dia="vie 2 oct"><h2 class="grupo">vie 2 oct</h2>
   <ul class="lista">{renglon_evento('colocaos', decidido=True)}</ul></section>
-  <a class="boton texto enlace-perfil" href="#">Así te ven los demás</a>
+  <a class="boton texto enlace-perfil" href="#">Así te ve la gente</a>
 </section>'''
 
 evento = f'''<section class="pantalla ficha" data-id="evento">
@@ -347,13 +353,20 @@ lugar = f'''<section class="pantalla ficha" data-id="lugar">
   {cuerpo_lugar()}
 </section>'''
 
+def novedad(img, titulo, texto, cuando, icono=None):
+    mini = f'<span class="foto miniatura-texto">{i(icono)}</span>' if icono else foto(img, '', 'foto')
+    return f'<li class="renglon lista"><a class="frente" href="#">{mini}<b>{titulo}</b><small>{texto}</small><small class="segundo">{cuando}</small></a></li>'
+
+# La ficha de artista con el canon del héroe: portada 3:2 (la que suba; sin ella, el símbolo SN), el avatar redondo que ya tenía dentro del
+# título, etiqueta de disciplina, nombre y meta sobre la imagen; KPI; acciones; próximas fechas; novedades publicadas (lo que reciben quienes
+# siguen, en la campana); sobre. «Se presenta en» se fue: repetía los lugares de las próximas fechas; el KPI «Lugares» lleva al mapa con los suyos.
 artista = f'''<section class="pantalla ficha" data-id="artista">
   {barra_interior(titulo='Aaron Cadena', sobre=True)}
-  <figure class="portada" style="--tono:#3b3a37" data-visor>{foto(None, 'Sin portada', 'cartel')}</figure>
-  <h1 class="titulo-ficha">Aaron Cadena<span class="tipo">Artes visuales</span><small>Fotografía · Solista · San Luis Potosí</small></h1>
+  <figure class="portada" style="--tono:#3b3a37" data-visor>{foto(E.get('susurros-del-inconsciente'), 'Portada de Aaron Cadena', 'cartel')}</figure>
+  <h1 class="titulo-ficha con-avatar">{foto(None, '', 'foto redonda avatar-ficha')}Aaron Cadena<span class="tipo">Artes visuales</span><small>Fotografía · Solista · San Luis Potosí</small></h1>
   <ul class="kpis">
     <li><a href="#">{i("calendario")}<b>2 próximas</b><small>Fechas</small></a></li>
-    <li><a href="#">{i("personas")}<b>120</b><small>Seguidores</small></a></li>
+    <li><a href="#">{i("personas")}<b>120</b><small>Siguen</small></a></li>
     <li><a href="#">{i("pin")}<b>4</b><small>Lugares</small></a></li>
   </ul>
   <div class="acciones">
@@ -366,16 +379,19 @@ artista = f'''<section class="pantalla ficha" data-id="artista">
     <h2>Próximas fechas</h2>
     <ul class="lista">{renglon_evento('arttoy')}{renglon_evento('desierto')}</ul>
   </section>
+  <section class="bloque novedades">
+    <h2>Novedades</h2>
+    <ul class="lista">
+      {novedad(E.get('desierto-observacion-y-espacio'), 'Nueva serie: Desierto', 'Abro la exposición el vie 9 oct en Aether. Entrada libre.', 'hace 2 días')}
+      {novedad(None, 'Convocatoria: retratos en el Centro', 'Busco personas para una sesión abierta el sáb 3 oct por la mañana.', 'hace 5 días', icono='camara')}
+      {novedad(None, 'Entrevista en Radio UASLP', 'Sobre fotografía documental en San Luis; el audio, en YouTube.', 'hace 2 semanas', icono='youtube')}
+    </ul>
+  </section>
   <section class="bloque sobre">
     <h2>Sobre</h2>
     <p>Artista visual, fotoperiodista y fotógrafo documental originario de San Luis Potosí. Su trabajo explora temas sociales, el cruce de géneros y narrativas personales.</p>
   </section>
-  <section class="bloque lugares">
-    <h2>Se presenta en</h2>
-    <a class="renglon dato" href="#" data-ir="lugar">{foto(lu['ache']['img'],'','foto chica')}<b>ACHE Galería</b><small>Galería · Centro</small>{i("chevron-der","i chevron")}</a>
-    <a class="renglon dato" href="#" data-ir="lugar">{foto(None,'','foto chica')}<b>Aether</b><small>Galería · Centro</small>{i("chevron-der","i chevron")}</a>
-  </section>
-  <p class="pie">Ficha reclamada por el artista · <a href="#">Reportar</a></p>
+  <p class="pie">Ficha a cargo de Aaron Cadena · <a href="#">Reportar</a></p>
   <div class="flotantes">
     <button type="button" class="flotante primaria" data-accion-ficha="seguir" aria-pressed="false">{i("persona-mas")}Seguir</button>
   </div>
@@ -413,7 +429,7 @@ alta = f'''<section class="pantalla tarea" data-id="alta" data-tipo="evento">
     <p class="nota-boton">Falta el nombre y dónde está.</p>
   </form>
   <form class="alta artista" action="#" hidden>
-    <label class="campo">{i("buscar")}<input type="text" placeholder="Nombre del artista o grupo"></label>
+    <label class="campo">{i("buscar")}<input type="text" placeholder="Nombre de artista o grupo"></label>
     <ul class="renglones">
       {renglon_resuelto('estrella','Disciplina','Falta','', pendiente=True, opciones='<button type="button" class="boton texto">Elegir</button>')}
       {renglon_resuelto('camara','Foto','Sin foto','', pendiente=True, opciones=f'<button type="button" class="boton-icono contorno" aria-label="Tomar o subir foto">{i("camara")}</button>')}
@@ -457,13 +473,13 @@ def fila_ajuste(icono, etiqueta, detalle='', valor='', palanca=None, ir=None):
 ajustes = f'''<section class="pantalla ficha" data-id="ajustes">
   {barra_interior(titulo='Ajustes', fija=True)}
   <h2 class="rotulo-grupo">Tu ficha</h2>
-  <ul class="tarjeta-lista">{fila_ajuste('lapiz','Editar','Foto, nombre, colonia, sobre ti')}{fila_ajuste('ojo','Perfil','Tu ficha y tu nombre en «quién va» se ven','Público')}{fila_ajuste('estrella','Mis artistas','Fichas que administras','1')}</ul>
+  <ul class="tarjeta-lista">{fila_ajuste('lapiz','Editar','Foto, nombre, colonia, sobre ti')}{fila_ajuste('ojo','Perfil','Tu ficha y tu nombre en «quién va» se ven','Público')}{fila_ajuste('artista','Mis artistas','Fichas que administras','1')}</ul>
   <h2 class="rotulo-grupo">Avisos</h2>
   <ul class="tarjeta-lista">{fila_ajuste('correo','Por correo','Cada correo trae su baja',palanca=True)}{fila_ajuste('campana','En el teléfono','Cambios en lo que sigues y a lo que vas',palanca=False)}</ul>
   <h2 class="rotulo-grupo">Cuenta</h2>
   <ul class="tarjeta-lista">{fila_ajuste('persona','Entras con an…@example.com','Sin contraseña: cada vez te mandamos un código')}{fila_ajuste('bloquear','Personas bloqueadas','Dejaste de ver lo que publican')}{fila_ajuste('salir','Cerrar sesión')}</ul>
   <h2 class="rotulo-grupo">Somos Nosotros</h2>
-  <ul class="tarjeta-lista">{fila_ajuste('instalar','Instalar la app','5 toques en Safari')}{fila_ajuste('compartir','Invita a tus amigos','Se comparte el enlace del sitio')}{fila_ajuste('enlace','Avisar al salir del sitio','Boletos, redes y sitios de artistas y lugares',palanca=True)}{fila_ajuste('ayuda','Ayuda')}{fila_ajuste('escudo','Aviso de privacidad')}{fila_ajuste('libro','Reglas de uso')}</ul>
+  <ul class="tarjeta-lista">{fila_ajuste('instalar','Instalar la app','5 toques en Safari')}{fila_ajuste('compartir','Invita a tus amistades','Se comparte el enlace del sitio')}{fila_ajuste('enlace','Avisar al salir del sitio','Boletos, redes y sitios de artistas y lugares',palanca=True)}{fila_ajuste('ayuda','Ayuda')}{fila_ajuste('escudo','Aviso de privacidad')}{fila_ajuste('libro','Reglas de uso')}</ul>
   <button type="button" class="boton texto peligro">Borrar mi cuenta</button>
 </section>'''
 
@@ -471,7 +487,7 @@ ajustes = f'''<section class="pantalla ficha" data-id="ajustes">
 nav = f'''<nav class="navegacion" aria-label="Secciones">
   <a class="destino" href="#" data-ir="inicio" aria-current="page"><span class="pildora">{i("casa")}</span><span>Inicio</span></a>
   <a class="destino" href="#" data-ir="lugares"><span class="pildora">{i("pin")}</span><span>Lugares</span></a>
-  <a class="destino" href="#" data-ir="artistas"><span class="pildora">{i("estrella")}</span><span>Artistas</span></a>
+  <a class="destino" href="#" data-ir="artistas"><span class="pildora">{i("artista")}</span><span>Artistas</span></a>
   <a class="destino perfil" href="#" data-ir="perfil"><span class="pildora"><span class="avatar chico">A</span></span><span>Perfil</span></a>
 </nav>'''
 
@@ -487,7 +503,23 @@ def hoja_filtros(id_, titulo, bloques, resultado, nota=''):
     <div class="pie-hoja"><button type="button" class="boton texto" data-limpiar>Limpiar</button><button type="button" class="boton primario" data-cerrar>{resultado}</button></div>
   </div>
 </div>'''
-chips_multi = lambda items, una=False: f'<div class="chips multi{" una" if una else ""} envuelve">' + ''.join(f'<button type="button" class="chip{" activo" if a else ""}" aria-pressed="{"true" if a else "false"}">{t}{f" <small>{n}</small>" if n else ""}</button>' for t, n, a in items) + '</div>'
+chips_multi = lambda items, una=False: f'<div class="chips multi{" una" if una else ""} envuelve">' + ''.join(f'<button type="button" class="chip{" activo" if a else ""}" aria-pressed="{"true" if a else "false"}"{" data-elegir" if t.startswith("Elegir") else ""}>{f"<span>{t}</span>" if t.startswith("Elegir") else t}{f" <small>{n}</small>" if n else ""}</button>' for t, n, a in items) + '</div>'
+# Calendario de la hoja Cuándo: los meses a la vista desde hoy, los días con eventos llevan un punto, los pasados van apagados; un toque elige un día y un
+# segundo toque en un día posterior cierra un rango (la hoja lo desplaza si no cabe).
+eventos_por_fecha = {fecha: len(r) for _, fecha, r in dias_inicio}
+def mes_html(anio, mes):
+    nombre = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][mes - 1]
+    d = datetime.date(anio, mes, 1)
+    if (anio, mes) == (HOY.year, HOY.month): d = HOY - datetime.timedelta(days=HOY.weekday())  # desde el lunes de esta semana
+    celdas = ''; primero = True
+    while d.month == mes:
+        iso = d.isoformat(); n = eventos_por_fecha.get(iso)
+        attrs = (f' style="grid-column-start: {d.weekday() + 1}"' if primero else '') + (f' data-eventos="{n}"' if n else '') + (' disabled' if d < HOY else '')
+        celdas += f'<button type="button" class="dia{" hoy" if d == HOY else ""}" data-fecha="{iso}"{attrs} aria-pressed="false"><span>{d.day}</span></button>'
+        d += datetime.timedelta(days=1); primero = False
+    semana = ''.join(f'<span class="semana">{l}</span>' for l in 'LMXJVSD')
+    return f'<section class="mes"><h4>{nombre.capitalize()} {anio}</h4>{semana}{celdas}</section>'
+calendario = f'<div class="calendario" hidden>{mes_html(2026, 9)}{mes_html(2026, 10)}</div>'
 palanca_fila = lambda etiqueta, detalle, on: f'<div class="renglon ajuste sola">{i("campana")}<b>{etiqueta}</b><small>{detalle}</small><button type="button" class="palanca" role="switch" aria-checked="{"true" if on else "false"}" aria-label="{etiqueta}"></button></div>'
 ACTUAL = ' aria-current="true"'
 fila_ciudad = lambda icono, nombre, detalle, actual=False: f'<li><button type="button" class="renglon ajuste" data-ciudad="{nombre}"{ACTUAL if actual else ""}>{i(icono)}<b>{nombre}</b><small>{detalle}</small>{i("ok" if actual else "chevron-der","i chevron")}</button></li>'
@@ -497,14 +529,18 @@ hoja_ciudad = f'''<div class="hoja-fondo" data-hoja="ciudad" hidden>
     <h3>Dónde estás</h3>
     <p class="nota-hoja">Lo cercano va primero y lo demás después: la ciudad ordena, no limita.</p>
     <ul class="tarjeta-lista">{fila_ciudad('ubicacion','Cerca de ti','Usa la ubicación del teléfono')}{fila_ciudad('pin','San Luis Potosí','Centro Histórico', actual=True)}{fila_ciudad('buscar','Otra ciudad','Escribe su nombre')}</ul>
+    <div class="otra-ciudad" hidden>
+      <label class="campo">{i("buscar")}<input type="search" placeholder="Nombre de la ciudad" aria-label="Nombre de la ciudad" autocomplete="off"></label>
+      <ul class="tarjeta-lista sugerencias">{''.join(fila_ciudad('pin', n, d) for n, d in [('Querétaro', 'Querétaro · 12 eventos'), ('Guadalajara', 'Jalisco · 40 eventos'), ('Ciudad de México', '58 eventos'), ('Monterrey', 'Nuevo León · 21 eventos'), ('Zacatecas', 'Zacatecas · 6 eventos'), ('Córdoba, España', '9 eventos')])}</ul>
+    </div>
   </div>
 </div>'''
 hojas = (
-  hoja_filtros('cuando', 'Cuándo', [('', chips_multi([('Hoy',0,False),('Mañana',0,False),('Fin de semana',0,False),('Esta semana',0,False),('Elegir fecha…',0,False),('Todos los próximos',0,False)], una=True))], 'Ver 23 eventos')
+  hoja_filtros('cuando', 'Cuándo', [('', chips_multi([('Hoy',0,False),('Mañana',0,False),('Fin de semana',0,False),('Esta semana',0,False),('Elegir fecha…',0,False),('Todos los próximos',0,False)], una=True) + calendario)], 'Ver 14 eventos')
   + hoja_ciudad
-  + hoja_filtros('filtros-eventos', 'Filtros', [('Cuánto', chips_multi([('Gratis',0,False),('Cooperación',0,False)])), ('Siguiendo', palanca_fila('Solo lo que sigo','Lugares y artistas que sigues', False))], 'Ver 23 eventos')
-  + hoja_filtros('filtros-lugares', 'Filtros', [('Tipo', chips_multi([('Casa de cultura',16,False),('Museo',13,True),('Foro',10,False),('Galería',4,False),('Escuela',9,False),('Colectivo',3,False),('Biblioteca',3,False)])), ('Con eventos', chips_multi([('Esta semana',0,False),('Hoy',0,False)])), ('Siguiendo', palanca_fila('Solo los que sigo','Tus lugares', False))], 'Ver 13 lugares')
-  + hoja_filtros('filtros-artistas', 'Filtros', [('Disciplina', chips_multi([('Música',310,True),('Teatro',56,False),('Danza',28,False),('Artes visuales',93,False),('Letras',31,False),('Cine',13,False),('Artes circenses',7,False)])), ('Con fechas', chips_multi([('Con fechas próximas',0,False)])), ('Siguiendo', palanca_fila('Solo los que sigo','Tus artistas', False))], 'Ver 310 artistas')
+  + hoja_filtros('filtros-eventos', 'Filtros', [('Cuánto', chips_multi([('Gratis',0,False),('Cooperación',0,False)])), ('Siguiendo', palanca_fila('Solo lo que sigo','Lugares y artistas que sigues', False))], 'Ver 14 eventos')
+  + hoja_filtros('filtros-lugares', 'Filtros', [('Tipo', chips_multi([('Casa de cultura',16,False),('Museo',13,True),('Foro',10,False),('Galería',4,False),('Escuela',9,False),('Colectivo',3,False),('Biblioteca',3,False)])), ('Con eventos', chips_multi([('Esta semana',0,False),('Hoy',0,False)])), ('Siguiendo', palanca_fila('Solo lo que sigo','Tus lugares', False))], 'Ver 13 lugares')
+  + hoja_filtros('filtros-artistas', 'Filtros', [('Disciplina', chips_multi([('Música',310,True),('Teatro',56,False),('Danza',28,False),('Artes visuales',93,False),('Letras',31,False),('Cine',13,False),('Artes circenses',7,False)])), ('Con fechas', chips_multi([('Con fechas próximas',0,False)])), ('Siguiendo', palanca_fila('Solo a quienes sigo','Tus artistas', False))], 'Ver 310 artistas')
   + '<output class="toast" hidden></output>'
   + f'<div class="visor" hidden><img alt=""><button type="button" class="boton-icono plano cerrar" data-cerrar-visor aria-label="Cerrar">{i("cerrar")}</button></div>'
 )
@@ -755,6 +791,9 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .carril.chica .foto {{ border-radius: 50%; }}
 .carril.chica > li > .boton-icono {{ top: 0; right: 0; }}
 .carril.chica .tarjeta > .sello {{ display: none; }}
+/* Mientras se recarga por otra ciudad, Inicio muestra su esqueleto en lugar de carriles y lista */
+.pantalla[data-cargando] > .seccion-carril, .pantalla[data-cargando] > .tramo {{ display: none; }}
+.pantalla[data-cargando] > .esqueleto {{ display: block; }}
 /* Inicio tiene dos modos: sus carriles (en reposo) y la lista por día (cuando Cuándo tiene un valor o se toca «Destacados», «Esta semana» o «Nuevos eventos») */
 .pantalla[data-id="inicio"]:not([data-lista]) > .tramo {{ display: none; }}
 .pantalla[data-id="inicio"][data-lista] > .seccion-carril {{ display: none; }}
@@ -827,10 +866,9 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cabecera-hoja > [data-atras-hoja] {{ display: inline-grid; }}
 /* Recogida (la altura más baja, a la que se llega jalando): la lista muestra solo el asa y la cantidad; la ficha, solo su cabecera compacta, sin la pastilla. Ninguna se cierra: la ficha solo con la ✕ */
 .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .flotantes {{ visibility: hidden; }}
-.ficha-hoja[data-compacta] > .cabecera-hoja, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja {{ background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }}
-.ficha-hoja[data-compacta] > .cabecera-hoja > .asa::before, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja > .asa::before {{ background: #d9d9d9; box-shadow: none; }}
+.ficha-hoja[data-compacta] > .cabecera-hoja, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja {{ background: linear-gradient(rgba(0,0,0,.6), rgba(0,0,0,.6)), var(--portada, none) center / cover, var(--tono, #3b3a37); color: #fff; }}
 .ficha-hoja[data-compacta] > .cabecera-hoja > .titulo-hoja, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja > .titulo-hoja {{ opacity: 1; }}
-.ficha-hoja[data-compacta] > .cabecera-hoja > .boton-icono, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja > .boton-icono {{ background: none; box-shadow: none; }}
+.ficha-hoja[data-compacta] > .cabecera-hoja > .boton-icono, .pantalla[data-id="lugares"][data-hoja-estado="recogida"] .ficha-hoja > .cabecera-hoja > .boton-icono {{ background: none; box-shadow: none; color: #fff; }}
 .ficha-hoja[hidden] {{ display: none; }}
 
 /* ==========================================================================
@@ -843,8 +881,9 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .barra-interior.heroe {{ align-self: start; height: calc(var(--tope) + var(--espacio-2) + var(--boton-icono) + var(--espacio-2)); padding: calc(var(--tope) + var(--espacio-2)) var(--gutter) 0; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; background: transparent; border-bottom: 0; z-index: 3; transition: background-color 150ms, box-shadow 150ms; }}
 .barra-interior.heroe > .boton-icono {{ width: var(--boton-icono); height: var(--boton-icono); border: 0; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); }}
 .barra-interior.heroe > .titulo-barra {{ align-self: center; }}
-.pantalla.ficha[data-compacta] > .barra-interior.heroe {{ background: var(--fondo); box-shadow: inset 0 -1px 0 var(--borde); }}
-.pantalla.ficha[data-compacta] > .barra-interior.heroe > .boton-icono {{ background: none; box-shadow: none; }}
+/* Compacta, la barra es el héroe en miniatura: la portada oscurecida detrás del título (se sabe de qué ficha es), Atrás y menú en blanco */
+.pantalla.ficha[data-compacta] > .barra-interior.heroe {{ background: linear-gradient(rgba(0,0,0,.6), rgba(0,0,0,.6)), var(--portada, none) center / cover, var(--tono, #3b3a37); color: #fff; }}
+.pantalla.ficha[data-compacta] > .barra-interior.heroe > .boton-icono {{ background: none; box-shadow: none; color: #fff; }}
 .pantalla[data-id="ajustes"] {{ grid-template-areas: "barra"; }}
 .pantalla.ficha > .barra-interior {{ grid-area: barra; margin-bottom: 0; }}
 .pantalla.ficha > .portada, .pantalla.ficha > .titulo-ficha, .ficha-hoja > .portada, .ficha-hoja > .titulo-ficha {{ grid-area: portada; }}
@@ -853,14 +892,17 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .portada > .sn {{ position: absolute; inset: 0; width: 100%; height: 100%; background-color: var(--fondo-miniatura); background-size: 30%; }}
 .titulo-ficha {{ align-self: end; z-index: 1; display: grid; gap: var(--espacio-2); margin: 0; padding: var(--espacio-8) var(--gutter) var(--espacio-4); background: var(--velo-titulo); color: #fff; font-size: var(--letra-xl); pointer-events: none; }}
 .titulo-ficha > small {{ font-size: var(--letra-sm); font-weight: 500; font-variation-settings: var(--ancho-texto); opacity: .9; }}
+.titulo-ficha.con-avatar {{ grid-template-columns: auto minmax(0, 1fr); column-gap: var(--espacio-3); align-items: end; }}
+.titulo-ficha > .avatar-ficha {{ grid-area: 1 / 1 / 4 / 2; align-self: end; width: 64px; height: 64px; box-shadow: 0 0 0 2px #fff; }}
+.miniatura-texto {{ display: grid; place-items: center; color: var(--texto-suave); }}
 .titulo-ficha > .tipo {{ order: -1; justify-self: start; padding: 2px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); color: var(--primario); font-size: var(--letra-xs); font-weight: 700; font-variation-settings: var(--ancho-texto); letter-spacing: .02em; text-transform: uppercase; }}
 .pantalla.ficha > .perfil-cabecera {{ margin-top: var(--espacio-5); }}
 .kpis {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--espacio-2); margin-top: var(--espacio-4); }}
 .kpis li {{ display: grid; }}
-.kpis a {{ display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "icono etiqueta" "valor valor"; align-items: center; align-content: start; column-gap: var(--espacio-1); row-gap: var(--espacio-1); height: 100%; padding: 10px var(--espacio-3); border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }}
+.kpis a {{ display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "icono etiqueta" "valor valor"; align-items: center; align-content: start; column-gap: var(--espacio-1); row-gap: var(--espacio-1); height: 100%; padding: 10px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--fondo); }}
 .kpis .i {{ grid-area: icono; width: 16px; height: 16px; color: var(--texto-suave); }}
 .kpis b {{ grid-area: valor; font-size: 1rem; font-weight: 700; font-variation-settings: var(--ancho-titulo); line-height: 1.15; overflow-wrap: anywhere; text-wrap: balance; }}
-.kpis small {{ grid-area: etiqueta; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }}
+.kpis small {{ grid-area: etiqueta; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }}
 .pantalla[data-id="perfil"] .kpis b {{ font-size: var(--letra-2xl); }}
 .pantalla[data-id="perfil"] .filtros {{ padding-top: var(--espacio-4); }}
 .acciones {{ display: flex; gap: var(--espacio-4); margin-top: var(--espacio-5); }}
@@ -929,6 +971,26 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .hoja > .nota-hoja {{ color: var(--texto-suave); font-size: var(--letra-sm); line-height: 1.35; }}
 .hoja > .cerrar {{ position: absolute; top: var(--espacio-2); right: var(--espacio-2); color: var(--texto-suave); }}
 .hoja > .tarjeta-lista {{ margin-inline: 0; }}
+/* Calendario de Cuándo: dos meses en rejilla de siete; hoy en violeta, punto bajo los días con eventos, los pasados apagados; un día elegido en violeta lleno y el rango en violeta suave */
+.calendario {{ display: grid; gap: var(--espacio-4); }}
+.calendario[hidden] {{ display: none; }}
+.mes {{ display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px; }}
+.mes > h4 {{ grid-column: 1 / -1; margin: 0 0 var(--espacio-2); color: var(--texto); font-size: var(--letra-md); font-weight: 700; font-variation-settings: var(--ancho-titulo); letter-spacing: 0; text-transform: none; }}
+.mes > .semana {{ padding-bottom: 4px; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; text-align: center; }}
+.dia {{ display: grid; place-items: center; height: var(--toque-min); border: 0; background: none; font-size: var(--letra-md); cursor: pointer; }}
+.dia > span {{ position: relative; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; }}
+.dia.hoy {{ color: var(--primario); font-weight: 700; }}
+.dia:disabled {{ color: var(--texto-suave); opacity: .4; cursor: default; }}
+.dia[data-eventos] > span::after {{ content: ""; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--primario); }}
+.dia.en-rango {{ background: var(--primario-suave); }}
+.dia[aria-pressed="true"] > span {{ background: var(--primario); color: var(--primario-texto); font-weight: 700; }}
+.dia[aria-pressed="true"] > span::after {{ background: var(--primario-texto); }}
+/* «Otra ciudad»: el campo y las sugerencias aparecen bajo la lista, dentro de la misma hoja */
+.otra-ciudad {{ display: grid; gap: var(--espacio-2); }}
+.otra-ciudad[hidden] {{ display: none; }}
+.otra-ciudad > .campo {{ margin: 0; }}
+.otra-ciudad > .tarjeta-lista {{ margin-inline: 0; }}
+.otra-ciudad > .tarjeta-lista > li[hidden] {{ display: none; }}
 .pie-hoja {{ position: sticky; bottom: calc(-1 * var(--espacio-4) - var(--piso)); display: grid; grid-template-columns: auto 1fr; gap: var(--espacio-3); margin-top: var(--espacio-2); padding: var(--espacio-3) 0 0; background: var(--fondo); border-top: 1px solid var(--borde); }}
 .visor {{ position: absolute; inset: 0; z-index: var(--z-capa); display: grid; place-items: center; background: rgba(0,0,0,.94); animation: fundir 200ms var(--curva); cursor: zoom-out; }}
 .visor[hidden] {{ display: none; }}
@@ -1002,8 +1064,8 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .pantalla.ficha {{ grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: var(--espacio-7); grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada donde" ". con" ". sobre" ". quien" ". pie"; align-content: start; }}
   .pantalla.ficha > .barra-interior {{ grid-area: barra; }}
   .pantalla.ficha:has(> .barra-interior.heroe) {{ grid-template-rows: none; }}
-  .barra-interior.heroe, .pantalla.ficha[data-compacta] > .barra-interior.heroe {{ align-self: auto; height: var(--alto-barra); padding: 0 var(--gutter); align-items: center; background: var(--fondo); border-bottom: 1px solid var(--borde); box-shadow: none; }}
-  .barra-interior.heroe > .boton-icono, .pantalla.ficha[data-compacta] > .barra-interior.heroe > .boton-icono {{ width: var(--control); height: var(--control); box-shadow: none; background: none; }}
+  .barra-interior.heroe, .pantalla.ficha[data-compacta] > .barra-interior.heroe {{ align-self: auto; height: var(--alto-barra); padding: 0 var(--gutter); align-items: center; background: var(--fondo); color: var(--texto); border-bottom: 1px solid var(--borde); box-shadow: none; }}
+  .barra-interior.heroe > .boton-icono, .pantalla.ficha[data-compacta] > .barra-interior.heroe > .boton-icono {{ width: var(--control); height: var(--control); box-shadow: none; background: none; color: var(--texto); }}
   .barra-interior.heroe > [data-atras] {{ border: 1px solid var(--borde); background: var(--fondo); }}
   .pantalla.ficha > .portada {{ grid-area: portada; margin-left: var(--gutter); border-radius: var(--radio-grande); aspect-ratio: 5 / 3; align-self: start; }}
   .pantalla.ficha > .perfil-cabecera {{ grid-area: portada; margin-right: 0; align-self: start; }}
@@ -1020,8 +1082,8 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .pantalla.ficha > .pie {{ grid-area: pie; margin-left: 0; }}
   .pantalla.ficha > .flotantes {{ grid-column: 1 / -1; justify-self: end; }}
   .pantalla[data-id="lugar"] {{ grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". donde" ". sobre" ". pie"; }}
-  .pantalla[data-id="artista"] {{ grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". sobre" ". lugares" ". pie"; }}
-  .pantalla[data-id="artista"] > .lugares {{ grid-area: lugares; margin-left: 0; }}
+  .pantalla[data-id="artista"] {{ grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". novedades" ". sobre" ". pie"; }}
+  .pantalla[data-id="artista"] > .novedades {{ grid-area: novedades; margin-left: 0; }}
   .pantalla[data-id="ajustes"] {{ grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; }}
   .pantalla[data-id="ajustes"] > :not(.barra-interior) {{ max-width: var(--columna); }}
   .pantalla.tarea > :not(.barra-interior):not(.modos) {{ width: 100%; max-width: var(--columna); justify-self: center; }}
@@ -1042,7 +1104,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     <button type="button" data-modo="tableta" aria-pressed="false">Tableta 820</button>
     <button type="button" data-modo="escritorio" aria-pressed="false">Escritorio 1280</button>
   </div>
-  <p class="nota">Mismo marcado en los tres tamaños. En Inicio, Cuándo (o el título de Destacados, Esta semana y Nuevos eventos) abre la lista por día; Limpiar vuelve a los carriles. En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
+  <p class="nota">Mismo marcado en los tres tamaños. En Inicio, Cuándo (o el título de Destacados, Esta semana y Nuevos eventos) abre la lista por día; «Elegir fecha…» abre el calendario (un toque, un día; dos, un rango); Limpiar vuelve a los carriles. En la ciudad, «Otra ciudad» abre el campo con sugerencias. En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
 </header>
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg"><defs>{sprite}{mapa_base}</defs></svg>
 <div class="escenario">
@@ -1074,7 +1136,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   const pantallas = [...app.querySelectorAll(":scope > .pantalla")];
   const raices = ["inicio", "lugares", "artistas", "perfil"];
   const tipoPorSeccion = {{ inicio: "evento", lugares: "lugar", artistas: "artista", perfil: "evento" }};
-  const tituloAlta = {{ evento: "Publicar un evento", lugar: "Registrar un lugar", artista: "Registrar un artista" }};
+  const tituloAlta = {{ evento: "Publicar un evento", lugar: "Registrar un lugar", artista: "Registrar artista" }};
   const pila = [];
   const scrollDe = new Map();
   let actual = pantallas.find((p) => !p.hidden);
@@ -1194,16 +1256,56 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     app.toggleAttribute("data-nav-oculta", estado === "llena" && enTelefono());
   }}
   const visor = app.querySelector(".visor");
-  // Un valor en Cuándo pasa Inicio a la lista por día (un día concreto deja solo su tramo); null vuelve a los carriles.
-  function filtrarDia(p, dia) {{
-    const tramos = [...p.querySelectorAll(":scope > .tramo")];
-    const concreto = tramos.some((t) => t.dataset.dia === dia);
-    if (p.dataset.id === "inicio") p.toggleAttribute("data-lista", !!dia);
-    tramos.forEach((t) => {{ t.hidden = concreto && t.dataset.dia !== dia; }});
-    const etiqueta = dia === "Todos los próximos" ? "Próximos" : dia;
-    p.querySelectorAll('.chip[data-hoja="cuando"]').forEach((chip) => {{ chip.querySelector("span").textContent = etiqueta || "Cuándo"; chip.classList.toggle("activo", !!dia); }});
-    app.querySelector('.hoja-fondo[data-hoja="cuando"]').querySelectorAll(".chip").forEach((c) => {{ const on = !!dia && c.textContent.trim() === dia; c.classList.toggle("activo", on); c.setAttribute("aria-pressed", on ? "true" : "false"); }});
+  // Cuándo: los atajos son rangos fijos y «Elegir fecha…» abre el calendario (un día, o dos toques para un rango). El valor filtra los días de Inicio.
+  const atajos = {{ "Hoy": ["2026-09-28", "2026-09-28"], "Mañana": ["2026-09-29", "2026-09-29"], "Fin de semana": ["2026-10-03", "2026-10-04"], "Esta semana": ["2026-09-28", "2026-10-04"], "Todos los próximos": ["", "9999"] }};
+  const inicioP = de("inicio");
+  const hojaCuando = app.querySelector('.hoja-fondo[data-hoja="cuando"]');
+  const calendario = hojaCuando.querySelector(".calendario");
+  const chipElegir = hojaCuando.querySelector(".chip[data-elegir]");
+  const botonVer = hojaCuando.querySelector(".pie-hoja .primario");
+  const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const corta = (iso) => `${{+iso.slice(8)}} ${{MESES[+iso.slice(5, 7) - 1]}}`;
+  const larga = (iso) => iso === "2026-09-28" ? "Hoy" : iso === "2026-09-29" ? "Mañana" : `${{DIAS[new Date(iso + "T12:00:00").getDay()]}} ${{corta(iso)}}`;
+  const rangoDe = (clave) => !clave ? null : clave.startsWith("fecha:") ? clave.slice(6).split(":") : atajos[clave];
+  const etiquetaDe = (clave) => {{ if (!clave) return "Cuándo"; if (clave === "Todos los próximos") return "Próximos"; if (!clave.startsWith("fecha:")) return clave; const [d, h] = clave.slice(6).split(":"); return d === h ? larga(d) : `${{corta(d)}} – ${{corta(h)}}`; }};
+  const enRango = (t, r) => !r || (t.dataset.fecha >= r[0] && t.dataset.fecha <= r[1]);
+  const cuentaEventos = (clave) => {{ const r = rangoDe(clave); let n = 0; inicioP.querySelectorAll(":scope > .tramo").forEach((t) => {{ if (enRango(t, r)) n += t.querySelectorAll(".renglon").length; }}); return n; }};
+  function pintarCalendario(desde, hasta) {{
+    calendario.dataset.desde = desde || ""; calendario.dataset.hasta = hasta || "";
+    calendario.querySelectorAll(".dia").forEach((b) => {{ const f = b.dataset.fecha; b.setAttribute("aria-pressed", f === desde || f === hasta ? "true" : "false"); b.classList.toggle("en-rango", !!desde && !!hasta && f > desde && f < hasta); }});
+    chipElegir.querySelector("span").textContent = desde ? etiquetaDe(`fecha:${{desde}}:${{hasta || desde}}`) : "Elegir fecha…";
   }}
+  function claveDeHoja() {{ const on = hojaCuando.querySelector(".chip.activo"); if (!on) return null; if (on !== chipElegir) return on.textContent.trim(); const d = calendario.dataset.desde; return d ? `fecha:${{d}}:${{calendario.dataset.hasta || d}}` : null; }}
+  function pintarCuenta() {{ const n = cuentaEventos(claveDeHoja()); botonVer.textContent = n ? `Ver ${{n}} evento${{n === 1 ? "" : "s"}}` : "Sin eventos"; botonVer.disabled = !n; }}
+  // Un valor en Cuándo pasa Inicio a la lista por día con solo los días del rango; null vuelve a los carriles. Pinta el chip, la hoja y el calendario.
+  function aplicarCuando(clave) {{
+    const r = rangoDe(clave), fecha = !!clave && clave.startsWith("fecha:");
+    inicioP.toggleAttribute("data-lista", !!clave);
+    inicioP.querySelectorAll(":scope > .tramo").forEach((t) => {{ t.hidden = !enRango(t, r); }});
+    app.querySelectorAll('.chip[data-hoja="cuando"]').forEach((chip) => {{ chip.querySelector("span").textContent = etiquetaDe(clave); chip.classList.toggle("activo", !!clave); }});
+    hojaCuando.querySelectorAll(".chip").forEach((c) => {{ const on = fecha ? c === chipElegir : !!clave && c.textContent.trim() === clave; c.classList.toggle("activo", on); c.setAttribute("aria-pressed", on ? "true" : "false"); }});
+    const [d, h] = fecha ? clave.slice(6).split(":") : [null, null];
+    pintarCalendario(d, d && h !== d ? h : null);
+    calendario.hidden = !fecha;
+    pintarCuenta();
+  }}
+  aplicarCuando(null);
+  app.querySelector('.hoja-fondo[data-hoja="filtros-eventos"] .pie-hoja .primario').textContent = `Ver ${{cuentaEventos(null)}} eventos`;
+  // Dónde estás: «Otra ciudad» abre un campo con sugerencias (se filtran al escribir, sin acentos); elegir una cambia el chip y recarga la pantalla.
+  const hojaCiudad = app.querySelector('.hoja-fondo[data-hoja="ciudad"]');
+  const otraCiudad = hojaCiudad.querySelector(".otra-ciudad"), campoCiudad = otraCiudad.querySelector("input");
+  let ciudadActual = "San Luis Potosí";
+  const sinAcentos = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  campoCiudad.addEventListener("input", () => {{ const q = sinAcentos(campoCiudad.value.trim()); otraCiudad.querySelectorAll("[data-ciudad]").forEach((b) => (b.parentElement.hidden = !!q && !sinAcentos(b.dataset.ciudad).includes(q))); }});
+  function marcarCiudad(fila) {{ hojaCiudad.querySelectorAll(".tarjeta-lista:not(.sugerencias) [data-ciudad]").forEach((b) => {{ const on = b === fila; b.toggleAttribute("aria-current", on); b.querySelector(".chevron use").setAttribute("href", on ? "#i-ok" : "#i-chevron-der"); }}); }}
+  function cerrarOtraCiudad() {{ otraCiudad.hidden = true; campoCiudad.value = ""; campoCiudad.dispatchEvent(new Event("input")); }}
+  // La pantalla se recarga con la ciudad nueva: Inicio y Artistas muestran su esqueleto 600 ms (los datos del prototipo son los mismos).
+  function recargar(p) {{
+    if (p.dataset.id === "artistas") {{ delete p.dataset.cargada; esqueleto(p); return; }}
+    if (p.dataset.id === "inicio") {{ p.dataset.cargando = ""; setTimeout(() => delete p.dataset.cargando, reduce ? 0 : 600); }}
+  }}
+  // Las fichas y la hoja llevan su portada como variable para la barra compacta (héroe en miniatura); sin imagen queda el tono de la portada.
+  app.querySelectorAll(".pantalla.ficha, .ficha-hoja").forEach((p) => {{ const f = p.querySelector(":scope > .portada"); if (!f) return; const img = f.querySelector("img"); p.style.setProperty("--tono", getComputedStyle(f).getPropertyValue("--tono").trim() || "#3b3a37"); if (img) p.style.setProperty("--portada", `url("${{img.getAttribute("src")}}")`); }});
   app.addEventListener("click", (e) => {{
     if (e.target.closest(".visor")) {{ visor.hidden = true; return; }}
     const portada = e.target.closest("[data-visor]");
@@ -1212,21 +1314,29 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     if (publicar) {{ e.preventDefault(); abrirAlta(tipoPorSeccion[actual.dataset.id] || "evento"); return; }}
     const modo = e.target.closest(".modos [data-tipo]");
     if (modo) {{ ponerTipoAlta(modo.dataset.tipo); de("alta").scrollTop = 0; return; }}
+    const dia = e.target.closest(".calendario .dia");
+    if (dia) {{ const f = dia.dataset.fecha, d = calendario.dataset.desde, h = calendario.dataset.hasta; if (!d || h || f < d) pintarCalendario(f, null); else if (f > d) pintarCalendario(d, f); else pintarCalendario(null, null); pintarCuenta(); return; }}
     const limpiar = e.target.closest("[data-limpiar]");
-    if (limpiar) {{ const f = limpiar.closest(".hoja-fondo"); if (f.dataset.hoja === "cuando") {{ filtrarDia(actual, null); return; }} f.querySelectorAll(".chip").forEach((c) => {{ c.classList.remove("activo"); c.setAttribute("aria-pressed", "false"); }}); f.querySelectorAll(".palanca").forEach((p) => p.setAttribute("aria-checked", "false")); return; }}
+    if (limpiar) {{ const f = limpiar.closest(".hoja-fondo"); if (f.dataset.hoja === "cuando") {{ aplicarCuando(null); return; }} f.querySelectorAll(".chip").forEach((c) => {{ c.classList.remove("activo"); c.setAttribute("aria-pressed", "false"); }}); f.querySelectorAll(".palanca").forEach((p) => p.setAttribute("aria-checked", "false")); return; }}
     const cerrar = e.target.closest("[data-cerrar]");
     if (cerrar) {{
       const f = cerrar.closest(".hoja-fondo"); f.hidden = true;
-      if (f.dataset.hoja === "cuando") filtrarDia(actual, f.querySelector(".chip.activo")?.textContent.trim() || null);
+      if (f.dataset.hoja === "cuando") aplicarCuando(claveDeHoja());
+      if (f.dataset.hoja === "ciudad") cerrarOtraCiudad();
       return;
     }}
-    if (e.target.classList.contains("hoja-fondo")) {{ e.target.hidden = true; return; }}
+    if (e.target.classList.contains("hoja-fondo")) {{ e.target.hidden = true; if (e.target.dataset.hoja === "ciudad") cerrarOtraCiudad(); return; }}
     const ciudad = e.target.closest("[data-ciudad]");
     if (ciudad) {{
-      const f = ciudad.closest(".hoja-fondo");
-      f.querySelectorAll("[data-ciudad]").forEach((b) => {{ const on = b === ciudad; b.toggleAttribute("aria-current", on); b.querySelector(".chevron use").setAttribute("href", on ? "#i-ok" : "#i-chevron-der"); }});
-      app.querySelectorAll('.chip[data-hoja="ciudad"] > span').forEach((s) => (s.textContent = ciudad.dataset.ciudad === "Otra ciudad" ? "Elegir ciudad" : ciudad.dataset.ciudad));
-      f.hidden = true; return;
+      if (ciudad.dataset.ciudad === "Otra ciudad") {{ otraCiudad.hidden = false; setTimeout(() => campoCiudad.focus(), 50); return; }}
+      const nombre = ciudad.dataset.ciudad, sugerida = !!ciudad.closest(".sugerencias");
+      const fila = sugerida ? hojaCiudad.querySelector('[data-ciudad="Otra ciudad"]') : ciudad;
+      if (sugerida) fila.querySelector("small").textContent = nombre;
+      marcarCiudad(fila);
+      app.querySelectorAll('.chip[data-hoja="ciudad"] > span').forEach((s) => (s.textContent = nombre));
+      hojaCiudad.hidden = true; cerrarOtraCiudad();
+      if (nombre !== ciudadActual) {{ ciudadActual = nombre; recargar(actual); }}
+      return;
     }}
     const hoja = e.target.closest("[data-hoja]:not(.hoja-fondo)");
     if (hoja) {{ e.preventDefault(); app.querySelector(`.hoja-fondo[data-hoja="${{hoja.dataset.hoja}}"]`).hidden = false; return; }}
@@ -1262,7 +1372,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     const lugarMapa = e.target.closest(".lienzo .lugar");
     if (lugarMapa) {{ abrirFichaHoja(); return; }}
     const aLista = e.target.closest("[data-lista]");
-    if (aLista) {{ e.preventDefault(); filtrarDia(actual, aLista.dataset.lista); actual.scrollTop = 0; return; }}
+    if (aLista) {{ e.preventDefault(); aplicarCuando(aLista.dataset.lista); actual.scrollTop = 0; return; }}
     const cerrarFicha = e.target.closest("[data-cerrar-ficha]");
     if (cerrarFicha) {{ cerrarFichaHoja(); return; }}
     const atrasHoja = e.target.closest("[data-atras-hoja]");
@@ -1286,7 +1396,11 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     const chip = e.target.closest(".chips .chip, .filtros .chip:not(.filtro):not(.contexto):not(.quitar), .letras button");
     if (chip) {{
       const grupo = chip.parentElement;
-      if (grupo.classList.contains("una")) {{ grupo.querySelectorAll(".chip").forEach((b) => {{ b.classList.toggle("activo", b === chip); b.setAttribute("aria-pressed", b === chip ? "true" : "false"); }}); return; }}
+      if (grupo.classList.contains("una")) {{
+        grupo.querySelectorAll(".chip").forEach((b) => {{ b.classList.toggle("activo", b === chip); b.setAttribute("aria-pressed", b === chip ? "true" : "false"); }});
+        if (hojaCuando.contains(chip)) {{ calendario.hidden = chip !== chipElegir; if (calendario.hidden) pintarCalendario(null, null); pintarCuenta(); }}
+        return;
+      }}
       if (grupo.classList.contains("multi")) {{ chip.classList.toggle("activo"); chip.setAttribute("aria-pressed", chip.classList.contains("activo") ? "true" : "false"); return; }}
       if (grupo.classList.contains("letras")) {{ grupo.querySelectorAll("button").forEach((b) => b.toggleAttribute("aria-current", b === chip)); return; }}
       if (grupo.classList.contains("filtros")) {{ chip.classList.toggle("activo"); return; }}
