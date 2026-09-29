@@ -1,6 +1,6 @@
 # 261 · Plantillas raíz: Inicio, Agenda, Artistas, Perfil y la fila de contexto con sus tres hojas (OL-233, pieza P5)
 
-**Fecha:** 2026-09-29 · **Rama:** `ui-raices`, desde `origin/ui-armazon` (`55c2469b`) · **OL:** OL-233 · **PR:** #PR (sin unir; va montado sobre #270, `ui-armazon`, que va sobre #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Quinta pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1, los botones de P2, el renglón de P3 y el armazón de P4.
+**Fecha:** 2026-09-29 · **Rama:** `ui-raices`, desde `origin/ui-armazon` (`55c2469b`) · **OL:** OL-233 · **PR:** #271 (sin unir; va montado sobre #270, `ui-armazon`, que va sobre #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Quinta pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1, los botones de P2, el renglón de P3 y el armazón de P4.
 
 ## Pedido
 
