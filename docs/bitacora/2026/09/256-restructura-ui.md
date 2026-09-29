@@ -633,8 +633,9 @@ Doce hilos abiertos al volver a leer el artefacto. Ocho pedían trabajo y los oc
 § 6.5, «séptima vuelta», y § 11 puntos 45 a 53): «desarrolla flujo cuando usuario selecciona Elegir fecha» (calendario
 dentro de la hoja Cuándo: un día o un rango, el botón cuenta los eventos, Inicio filtra sus días); «desarrolla qué
 pasa cuando pongo otra ciudad» (campo con sugerencias bajo la lista, recarga con esqueleto, el chip cambia); «este
-icono no me gusta tanto… figura humana con atributo de arte» (figura con pincel, elegida entre siete candidatos
-mirados a 26 px sobre la píldora; muestrario con pincel lleno, chispa y la estrella de antes); «acordamos poner foto
+icono no me gusta tanto… figura humana con atributo de arte» (se probó una figura con pincel, elegida entre siete
+candidatos mirados a 26 px sobre la píldora, y el founder la rechazó en cuanto la vio en la barra: «se ve horrible,
+regresa el que tenías»; la estrella se queda y el muestrario queda como registro); «acordamos poner foto
 de portada pero mantener foto de avatar» (el avatar redondo vuelve dentro del héroe); «¿cuál es la diferencia entre
 Se presenta en y Próximas fechas? Es redundante» (fuera; el KPI Lugares lleva a sus lugares); «muestra cómo se vería
 con novedades publicadas» (sección Novedades como la de la app, con tres publicaciones de muestra); «¿podrías dejar
@@ -652,7 +653,7 @@ salieron la elipse del día elegido, las cuatro filas de días muertos, el velo 
 26 px (doc 50 § 6.6), y se corrigieron antes de la tanda definitiva. `medir-prototipo.mjs` sobre las diez pantallas:
 0 envoltorios, 0 desbordes, 0 márgenes negativos, 0 iconos con contraste bajo; 0 errores de página en las 54
 capturas. Las 54 se regeneraron: cambian a la vista `256-81` (Fin de semana ya enseña solo sáb 3 y dom 4), `256-86` y
-`256-116` (la cabecera de la hoja con la portada), `256-88` (el pincel en la barra), `256-89` (INTERESADXS), `256-91`
+`256-116` (la cabecera de la hoja con la portada), `256-88` (la barra, con la estrella de vuelta tras el rechazo del pincel), `256-89` (INTERESADXS), `256-91`
 (la barra compacta del evento con su cartel), `256-94`, `256-104` y `256-107` (artista con avatar y novedades; el
 panel de escritorio con la cabecera con imagen), `256-95` (SIGUEN).
 
@@ -680,8 +681,8 @@ Capturas nuevas (`docs/rediseno/capturas-256/256-118…128`), abiertas y descrit
 - **`256-127-v3-ficha-artista-novedades-telefono`:** la ficha de artista desplazada: barra compacta con la portada
   oscurecida y «Aaron Cadena» en blanco; «Novedades» con tres publicaciones (con imagen, con foto, con video), su
   título, su texto en una línea y «hace 2 días»; «Sobre»; «Seguir» flotando.
-- **`256-128-v3-iconos-artistas`:** la barra inferior con el pincel elegido (activo, en la píldora violeta), el pincel
-  lleno, la chispa y la estrella de antes.
+- **`256-128-v3-iconos-artistas`:** la barra inferior con la estrella que se queda (activa, en la píldora violeta) y
+  los tres candidatos rechazados: pincel, pincel lleno y chispa.
 
 ### Cierre (cuarta parte)
 
@@ -689,8 +690,8 @@ Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcci
 séptima vuelta desde los hilos), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
 § 11 con la quinta a la séptima vuelta), el generador y el script de captura actualizados, esta bitácora y
 OPEN_LOOPS; push al PR #266; artefacto republicado y los hilos contestados (los resueltos, resueltos; los de decisión,
-abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 39, 45 a 48 y
+abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 39, 45 a 47 y
 50 a 53 del doc 50 § 11 (Inicio con dos modos y Agenda, campana, dos barras en escritorio, ficha desde otras
 entradas, esconder o minimizar la navegación, la hoja en el iPhone, filtros de Lugares, calendario, otra ciudad,
-lenguaje incluyente e «Interesadxs», icono de Artistas, KPI Lugares, orden de Novedades, cabecera con portada
+lenguaje incluyente e «Interesadxs», KPI Lugares, orden de Novedades, cabecera con portada
 también en las fichas, «Lugares» o «Mapa»); con su firma, plan definitivo por piezas y operadores nuevos.

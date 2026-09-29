@@ -744,9 +744,10 @@ muy grande, tampoco se justifica "Ya estás en la lista" dentro del botón»):
   icono de Perfil, corrida a la izquierda) con un pincel arriba a la derecha, dibujado con el mismo trazo de 1,8 que
   el resto. Se probaron pincel, pincel lleno, chispa, boina, paleta, máscara y marco a 26 px sobre la píldora: la
   paleta, la máscara y el marco se vuelven manchas; la boina parece casco; la chispa lee limpio pero es otra estrella;
-  el pincel es el atributo de arte más universal y a 26 px se distingue el mango y la brocha. Va en la barra inferior,
-  en el carril lateral y en «Mis artistas» de Ajustes. Muestrario en
-  [256-128](capturas-256/256-128-v3-iconos-artistas.png).
+  el pincel es el atributo de arte más universal y a 26 px se distingue el mango y la brocha. Se puso en la barra
+  inferior, en el carril lateral y en «Mis artistas» de Ajustes, y **el founder lo rechazó al verlo** («tengo que ser
+  sincero, el icono de artistas se ve horrible, regresa el que tenías»): **la estrella se queda**. El muestrario
+  queda como registro de lo probado: [256-128](capturas-256/256-128-v3-iconos-artistas.png).
 - **Ficha de artista** (tres hilos): «acordamos poner foto de portada pero mantener foto de avatar»: el avatar redondo
   vuelve, dentro del héroe, a la izquierda de la etiqueta, el nombre y la meta (64 px con aro blanco; en escritorio
   junto al nombre en la columna derecha). «¿Cuál es la diferencia entre Se presenta en y Próximas fechas? Es
@@ -1042,9 +1043,10 @@ Lo que el founder confirma o corrige al probar la v3:
     borrado… Ver los artistas» (borrado), «Ya está registrado» / «no está registrado» (altas: «Ya tiene ficha» / «no
     tiene ficha»), «Artistas invitados» (admin CAPO: «Fichas invitadas»), «un @usuario» (enlaces: «un @perfil»). No
     tocan: «Todos» como filtro de eventos, «Listo», «Destacados», «Nuevos», los nombres de eventos.
-48. **Icono de Artistas: figura humana con pincel** (hilo, «este icono no me gusta tanto… figura humana con atributo
-    de arte»): elegido el pincel; en el muestrario van el pincel lleno, la chispa y la estrella de antes (6.5).
-    **Hecho**; confirmar.
+48. **Icono de Artistas** (hilo, «este icono no me gusta tanto… figura humana con atributo de arte»): se probó la
+    figura humana con pincel (y pincel lleno, chispa, boina, paleta, máscara y marco a 26 px) y el founder la rechazó
+    al verla en la barra («se ve horrible, regresa el que tenías»). **Decidido: la estrella se queda.** El muestrario
+    (256-128) queda como registro.
 49. **Ficha de artista: el avatar vuelve, dentro del héroe** (hilo, «acordamos poner foto de portada pero mantener
     foto de avatar o perfil que ya estaba»). **Hecho.** Cierra también el punto 41.
 50. **«Se presenta en» fuera de la ficha de artista** (hilo, «es redundante como la pintaste»): el KPI «Lugares» es

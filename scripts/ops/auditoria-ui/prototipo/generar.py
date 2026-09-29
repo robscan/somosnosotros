@@ -8,7 +8,7 @@ Eventos absorbe Inicio y Agenda; fila de contexto [ciudad · cuándo · filtros]
 vive en la hoja de Lugares; título sobre la imagen o en la barra (conmutador del estudio); campana para seguir lugares;
 la barra inferior se esconde al bajar y vuelve al subir; visor de la imagen al tocarla; carril con subgrid.
 v3, séptima vuelta (hilos del prototipo): «Elegir fecha…» abre un calendario (un día o dos para un rango) y el valor de Cuándo filtra los días;
-«Otra ciudad» abre un campo con sugerencias y recarga; icono de Artistas con figura humana y pincel; la ficha de artista conserva el avatar
+«Otra ciudad» abre un campo con sugerencias y recarga; el icono de Artistas con figura y pincel se probó y el founder lo rechazó (sigue la estrella); la ficha de artista conserva el avatar
 dentro del héroe, pierde «Se presenta en» y muestra sus novedades publicadas; la barra compacta de las fichas y de la hoja lleva la portada
 oscurecida detrás del título; KPI «Interesadxs» y «Siguen» (lenguaje incluyente)."""
 import json, re, sys, os, datetime
@@ -31,7 +31,7 @@ extra = {
   'estrella-llena': '<path fill="currentColor" stroke="none" d="M12 3.2l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.8z"/>',
   'campana-mas': '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/><path d="M12 9.5v5M9.5 12h5"/>',
   'marcador-mas': '<path d="M7 3.5h10v17l-5-3.6-5 3.6z"/><path d="M12 8v5M9.5 10.5h5"/>',
-  # Artistas: figura humana (cabeza y hombros como en Perfil, corrida a la izquierda) con un pincel arriba a la derecha; «lleno» y «chispa» son las alternativas del muestrario
+  # Candidatos probados para Artistas (figura humana con pincel, pincel lleno, chispa): el founder los rechazó al verlos («se ve horrible, regresa el que tenías»); la estrella se queda. Quedan solo para el muestrario.
   'artista': '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 20.5a6 6 0 0 1 12 0"/><path d="M23 1l-5.6 5.6"/><path d="M15.9 5.1a2 2 0 0 1 2.9 2.9l-2 2c-1.1 1.1-2.6 1.5-4.1 1.1.2-1.4.7-2.7 1.7-3.7z"/>',
   'artista-lleno': '<circle cx="9" cy="8.5" r="3.3"/><path d="M3 20.5a6 6 0 0 1 12 0"/><path d="M23 1l-5.6 5.6"/><path fill="currentColor" d="M15.9 5.1a2 2 0 0 1 2.9 2.9l-2 2c-1.1 1.1-2.6 1.5-4.1 1.1.2-1.4.7-2.7 1.7-3.7z"/>',
   'artista-chispa': '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0"/><path fill="currentColor" stroke="none" d="M18.5 2l1.2 3.3L23 6.5l-3.3 1.2L18.5 11l-1.2-3.3L14 6.5l3.3-1.2z"/>',
@@ -473,7 +473,7 @@ def fila_ajuste(icono, etiqueta, detalle='', valor='', palanca=None, ir=None):
 ajustes = f'''<section class="pantalla ficha" data-id="ajustes">
   {barra_interior(titulo='Ajustes', fija=True)}
   <h2 class="rotulo-grupo">Tu ficha</h2>
-  <ul class="tarjeta-lista">{fila_ajuste('lapiz','Editar','Foto, nombre, colonia, sobre ti')}{fila_ajuste('ojo','Perfil','Tu ficha y tu nombre en «quién va» se ven','Público')}{fila_ajuste('artista','Mis artistas','Fichas que administras','1')}</ul>
+  <ul class="tarjeta-lista">{fila_ajuste('lapiz','Editar','Foto, nombre, colonia, sobre ti')}{fila_ajuste('ojo','Perfil','Tu ficha y tu nombre en «quién va» se ven','Público')}{fila_ajuste('estrella','Mis artistas','Fichas que administras','1')}</ul>
   <h2 class="rotulo-grupo">Avisos</h2>
   <ul class="tarjeta-lista">{fila_ajuste('correo','Por correo','Cada correo trae su baja',palanca=True)}{fila_ajuste('campana','En el teléfono','Cambios en lo que sigues y a lo que vas',palanca=False)}</ul>
   <h2 class="rotulo-grupo">Cuenta</h2>
@@ -487,7 +487,7 @@ ajustes = f'''<section class="pantalla ficha" data-id="ajustes">
 nav = f'''<nav class="navegacion" aria-label="Secciones">
   <a class="destino" href="#" data-ir="inicio" aria-current="page"><span class="pildora">{i("casa")}</span><span>Inicio</span></a>
   <a class="destino" href="#" data-ir="lugares"><span class="pildora">{i("pin")}</span><span>Lugares</span></a>
-  <a class="destino" href="#" data-ir="artistas"><span class="pildora">{i("artista")}</span><span>Artistas</span></a>
+  <a class="destino" href="#" data-ir="artistas"><span class="pildora">{i("estrella")}</span><span>Artistas</span></a>
   <a class="destino perfil" href="#" data-ir="perfil"><span class="pildora"><span class="avatar chico">A</span></span><span>Perfil</span></a>
 </nav>'''
 

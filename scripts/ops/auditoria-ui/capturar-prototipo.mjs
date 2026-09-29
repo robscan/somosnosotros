@@ -196,10 +196,10 @@ await click(page, '.pantalla[data-id="inicio"] .carril .tarjeta'); await espera(
 await click(page, '.pantalla[data-id="evento"] .con .renglon'); await espera(page, 900);
 await desplazar(page, '.pantalla[data-id="artista"]', 560); await espera(page, 400);
 await foto(page, "v3-53-ficha-artista-novedades-telefono");
-// Muestrario del icono de Artistas: la barra con el elegido (figura con pincel) y las alternativas (pincel lleno, chispa) junto a la estrella que se va
+// Muestrario del icono de Artistas: la estrella que se queda (activa) junto a los candidatos que el founder rechazó (pincel, pincel lleno, chispa)
 await page.evaluate(() => {
   const nav = document.querySelector(".navegacion");
-  const etiquetas = [["artista", "Pincel (elegido)"], ["artista-lleno", "Pincel lleno"], ["artista-chispa", "Chispa"], ["estrella", "Estrella (antes)"]];
+  const etiquetas = [["estrella", "Estrella (se queda)"], ["artista", "Pincel (rechazado)"], ["artista-lleno", "Pincel lleno"], ["artista-chispa", "Chispa"]];
   [...nav.children].forEach((d, i) => { const [g, t] = etiquetas[i]; d.removeAttribute("aria-current"); if (i === 0) d.setAttribute("aria-current", "page"); d.querySelector(".pildora").innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${g}"/></svg>`; d.lastElementChild.textContent = t; });
 });
 await click(page, '.pantalla[data-id="artista"] [data-atras]'); await espera(page, 800);
