@@ -468,7 +468,7 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la duodécima vuelta del founder)
+## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la decimotercera vuelta del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
@@ -868,6 +868,18 @@ vuelta salen del prototipo. Capturas [256-75](capturas-256/256-75-v3-inicio-tele
 [256-129](capturas-256/256-129-v3-agenda-telefono.png), [256-130](capturas-256/256-130-v3-agenda-escritorio.png) y
 [256-81](capturas-256/256-81-v3-agenda-fin-de-semana-telefono.png).
 
+**Decimotercera vuelta (el mismo día, en el chat):** «no me hace sentido esa solución de agenda, mejor vuelve a poner
+la sección en nav bar, porque me pierde completamente esa navegación. Además los letreros deben ser más honestos acerca
+de a dónde llevan: Ver todo para todos los casos no aplica, será Ver mi perfil, Ver la agenda, Ver Lugares, Ver
+artistas». Queda así: **Agenda vuelve a la barra inferior como sección** (cinco destinos: Inicio · Agenda · Lugares ·
+Artistas · Perfil; en tableta y escritorio, quinto renglón del carril lateral), con la barra de la app, la fila de
+contexto y la lista por día, sin barra propia; y cada carril dice a dónde lleva: «Ver mi perfil» (Tus planes), «Ver la
+agenda» (Destacados, Esta semana, Nuevos eventos), «Ver lugares» y «Ver artistas». Cuándo desde Inicio sigue llevando
+a Agenda con el valor elegido. Esto cierra la ida y vuelta de Agenda: fuera de la barra en la firma («temo que hay
+demasiado ya»), revivida sin lugar en la duodécima, y de vuelta en la barra aquí porque sin ella se pierde la
+navegación. Capturas [256-75](capturas-256/256-75-v3-inicio-telefono.png),
+[256-129](capturas-256/256-129-v3-agenda-telefono.png) y [256-130](capturas-256/256-130-v3-agenda-escritorio.png).
+
 ### 6.6 Defectos que la revisión de la v3 encontró y cerró
 
 El founder señaló que «elemento de lugar se desalinea en tableta y escritorio»: era cierto y silencioso. **El renglón
@@ -941,8 +953,8 @@ council. Orden por dependencias:
 | P1 | Tokens y utilidades: 5.1 completo con los valores del prototipo firmado (radios 4 · 8 · 12 · 24, aire 4…40, letra con `--letra-2xs`, controles 44/48/56, barras, capas, anchos, tarjetas) más la letra de listas (familia, cuerpo y ancho como variables), `.columna`/`.a-lo-ancho`, quitar `100vw`; los `z-index` literales pasan a los seis tokens conservando el orden de apilado (tabla de correspondencia en la bitácora) | `globals.css` y los `.module.css` que usan literales | M | inventario: 0 `z-index` fuera de token, 0 `100vw`; build verde; nada cambia a la vista salvo los radios (capturas antes y después) |
 | P2 | `BotonIcono` y `Boton` unificados; glifos de acción: palomita (Voy), persona con «+» (seguir artista), campana con «+» (seguir lugar); decidido verde con glifo blanco | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
 | P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
-| P4 | Armazón único: un grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro, con `data-vista` (raíz · ficha · tarea) puesto por el layout; barra de la app única en los tres tamaños («+» · Atrás · logotipo · lupa · campana · menú; Atrás y menú solo desde 792 con ficha a la vista) que en teléfono se recoge al bajar y vuelve al subir; barra inferior de cuatro destinos que se esconde y vuelve con la misma regla; fila de contexto pegajosa; sin `:has()` ni medidas por pantalla; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
-| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio (solo carriles; `/agenda` sigue siendo la lista por día, sin lugar en la barra; cada carril con su título y «Ver todo ›» a la derecha; Agenda como pantalla propia con Atrás, fuera de la barra, con la fila de contexto y la lista por día: punto 60), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista, Cerrar y menú dentro de la hoja y barra Cerrar · título · más opciones al desplazar; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
+| P4 | Armazón único: un grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro, con `data-vista` (raíz · ficha · tarea) puesto por el layout; barra de la app única en los tres tamaños («+» · Atrás · logotipo · lupa · campana · menú; Atrás y menú solo desde 792 con ficha a la vista) que en teléfono se recoge al bajar y vuelve al subir; barra inferior de cinco destinos (Inicio · Agenda · Lugares · Artistas · Perfil) que se esconde y vuelve con la misma regla; fila de contexto pegajosa; sin `:has()` ni medidas por pantalla; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
+| P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio (solo carriles; `/agenda` sigue siendo la lista por día, con su destino en la barra; cada carril con su título y, a la derecha, «Ver mi perfil» / «Ver la agenda» / «Ver lugares» / «Ver artistas»; Agenda como sección de la barra con la fila de contexto y la lista por día: puntos 60 y 61), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista, Cerrar y menú dentro de la hoja y barra Cerrar · título · más opciones al desplazar; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
 | P6 | Plantilla ficha con el canon del héroe: portada 3:2 con la etiqueta, el título y la meta dentro de la imagen sobre el velo, Atrás y menú elevados sobre ella, barra compacta al desplazar con la portada oscurecida detrás del título, visor al tocar la imagen; tres KPI que abrazan su contenido (icono y etiqueta arriba, valor abajo; fecha sin etiqueta); acciones alineadas; pastillas flotantes Me interesa · Voy / Seguir con sus estados (Vas, Te interesa, Sigues); ficha de artista con avatar dentro del héroe y sección Novedades, sin «Se presenta en»; el mismo cuerpo de ficha de lugar sirve a pantalla completa y dentro de la hoja | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista, `SeccionNovedades` | L | H-20 a H-28 |
 | P7 | Carril lateral en dos grupos (secciones arriba, Perfil abajo) bajo la barra de la app a todo lo ancho; reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel con la ficha dentro del panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
 | P8 | Mapa: un símbolo por lugar, prioridad y anclaje variable | `Mapa.tsx` (capas) | M | H-12: 0 etiquetas superpuestas en el centro a zoom por defecto (captura) |
@@ -1055,8 +1067,8 @@ Lo que el founder confirma o corrige al probar la v3:
 
 18. **Inicio con dos modos**: carriles en reposo y lista por día cuando Cuándo tiene valor (Limpiar vuelve a los
     carriles). **Decidido (2026-09-28, noche): «Agenda se queda fuera por ahora, temo que hay demasiado ya en barra
-    de navegación».** Cuatro destinos. **Después (punto 60): Agenda vuelve como pantalla propia, fuera de la barra,
-    a la que se llega por «Ver todo» de los carriles de eventos o por Cuándo; Inicio pierde el modo lista.**
+    de navegación».** Cuatro destinos. **Después (punto 60): Agenda vuelve como pantalla propia, fuera de la barra.
+    Y al final (punto 61): Agenda de vuelta en la barra, cinco destinos; Inicio sin modo lista.**
 19. **Título de la ficha**: decidido en el lienzo («aquí debemos replicar el canon de héroe de sheet»; después,
     «aceptada la propuesta de héroe» y «muy bien resuelto, aceptada esta propuesta» sobre el KPI de fecha): la ficha a
     pantalla completa toma el canon de la hoja (héroe 3:2 arriba, Atrás y menú elevados sobre la imagen, título de
@@ -1186,7 +1198,11 @@ Lo que el founder confirma o corrige al probar la v3:
 60. **Título a la izquierda y «Ver todo ›» a la derecha; Agenda revivida** (founder: «regresamos a la opción de ver
     todo… en caso de eventos vamos a la sección agenda, esto implica revivir agenda; artistas a Artistas, lugares a
     Lugares»): Agenda como pantalla propia con Atrás, fuera de la barra inferior; Inicio sin modo lista; Cuándo filtra
-    la Agenda desde Inicio o desde ella (6.5, duodécima vuelta). **Hecho; entra en P5.**
+    la Agenda desde Inicio o desde ella (6.5, duodécima vuelta). **Hecho y superado por el punto 61.**
+61. **Agenda en la barra y letreros honestos** (founder: «no me hace sentido esa solución de agenda, mejor vuelve a
+    poner la sección en nav bar, porque me pierde completamente esa navegación… Ver mi perfil, Ver la agenda, Ver
+    Lugares, Ver artistas»): cinco destinos; cada carril dice a dónde lleva (6.5, decimotercera vuelta). **Hecho;
+    entra en P4 (barra) y P5 (Inicio y Agenda).**
 
 **Firma (2026-09-28, noche, en el chat):** «Respondo tus preguntas: 1: Agenda se queda fuera por ahora, temo que hay
 demasiado ya en barra de navegación. 2. Lugares. 3. Acepto tu propuesta. 4. Interesan. 5. Confirmo todo, buen

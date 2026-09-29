@@ -11,6 +11,8 @@ v3, séptima vuelta (hilos del prototipo): «Elegir fecha…» abre un calendari
 «Otra ciudad» abre un campo con sugerencias y recarga; el icono de Artistas con figura y pincel se probó y el founder lo rechazó (sigue la estrella); la ficha de artista conserva el avatar
 dentro del héroe, pierde «Se presenta en» y muestra sus novedades publicadas; la barra compacta de las fichas y de la hoja lleva la portada
 oscurecida detrás del título; KPI «Interesan» (el founder eligió esa palabra sobre «Interesadxs») y «Siguen» (lenguaje incluyente).
+v3, decimotercera vuelta (founder, chat): Agenda vuelve a la barra inferior como sección (cinco destinos: «me pierde completamente esa
+navegación») y cada carril dice a dónde lleva: «Ver mi perfil», «Ver la agenda», «Ver lugares», «Ver artistas».
 v3, duodécima vuelta (founder, chat): fuera las listas propias de carril («manda a ver los mismos cuatro en lista»); el título a la izquierda y
 «Ver todo ›» a la derecha: eventos a Agenda (revivida como pantalla con Atrás, sin lugar en la barra), artistas a Artistas, lugares a Lugares;
 Inicio sin modo lista; Cuándo desde Inicio o desde Agenda filtra la Agenda.
@@ -116,9 +118,9 @@ def tarjeta(clave, sello=None, decidido=False, nombre=None, meta=None, img=None,
     s = f'<span class="sello">{sello}</span>' if sello else ''
     return f'<li><a class="tarjeta" href="#" data-ir="{ir}">{foto(src, "", "foto")}{s}<b>{titulo}</b><small>{m}</small></a>{boton_accion(decidido, seguir, lugar=lugar)}</li>'
 
-def carril(titulo, items, tam='mediana', ir=None):
-    # El título a la izquierda y «Ver todo ›» a la derecha (founder): eventos a Agenda, artistas a Artistas, lugares a Lugares, planes a Perfil.
-    ver = f'<a class="ver-todo" href="#" data-ir="{ir}">Ver todo{i("chevron-der","i chevron")}</a>' if ir else ''
+def carril(titulo, items, tam='mediana', ir=None, ver=None):
+    # El título a la izquierda y, a la derecha, un enlace que dice a dónde lleva (founder: «los letreros deben ser más honestos»).
+    ver = f'<a class="ver-todo" href="#" data-ir="{ir}">{ver}{i("chevron-der","i chevron")}</a>' if ir else ''
     return f'<section class="seccion-carril"><header class="cabecera-carril"><h2 class="titulo-seccion">{titulo}</h2>{ver}</header><ul class="carril {tam}">{"".join(items)}</ul></section>'
 
 def renglon_evento(clave, decidido=False, interesa=False, tipo_meta=None):
@@ -233,12 +235,12 @@ def tramos_inicio(hasta=None):
 inicio = f'''<section class="pantalla raiz" data-id="inicio">
   {cabecera(chip_ciudad() + chip_cuando() + chip_filtros('filtros-eventos'))}
   {esqueleto()}
-  {carril('Tus planes', [tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('leonora', sello='Te interesa')], ir='perfil')}
-  {carril('Destacados', [tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('master', sello='9 van'), tarjeta('leonora', sello='Recién agregado'), tarjeta('desierto', sello='1 va')], 'grande', ir='agenda')}
-  {carril('Esta semana', [tarjeta('sinfonica', sello='Hoy'), tarjeta('macario', sello='Hoy'), tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('fellini'), tarjeta('pimpolina', sello='4 van')], ir='agenda')}
-  {carril('Nuevos eventos', [tarjeta('juana', sello='Recién agregado'), tarjeta('arttoy', sello='3 van'), tarjeta('susurros', sello='Recién agregado'), tarjeta('oca')], ir='agenda')}
-  {carril('Lugares con eventos', [tarjeta('x', nombre=lu[k]['n'], meta=lu[k]['prox'] or '', img=lu[k]['img'], ir='lugar', seguir=True, lugar=True, decidido=(k=='miguelito')) for k in ('miguelito','paz','ferro','muni','ache')], 'chica', ir='lugares')}
-  {carril('Artistas destacadxs', [tarjeta('x', nombre=n, meta=m, img=None, ir='artista', seguir=True) for n, m in ar[2:6]], 'grande', ir='artistas')}
+  {carril('Tus planes', [tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('leonora', sello='Te interesa')], ir='perfil', ver='Ver mi perfil')}
+  {carril('Destacados', [tarjeta('colocaos', sello='2 van', decidido=True), tarjeta('master', sello='9 van'), tarjeta('leonora', sello='Recién agregado'), tarjeta('desierto', sello='1 va')], 'grande', ir='agenda', ver='Ver la agenda')}
+  {carril('Esta semana', [tarjeta('sinfonica', sello='Hoy'), tarjeta('macario', sello='Hoy'), tarjeta('cristiada', sello='1 va', decidido=True), tarjeta('fellini'), tarjeta('pimpolina', sello='4 van')], ir='agenda', ver='Ver la agenda')}
+  {carril('Nuevos eventos', [tarjeta('juana', sello='Recién agregado'), tarjeta('arttoy', sello='3 van'), tarjeta('susurros', sello='Recién agregado'), tarjeta('oca')], ir='agenda', ver='Ver la agenda')}
+  {carril('Lugares con eventos', [tarjeta('x', nombre=lu[k]['n'], meta=lu[k]['prox'] or '', img=lu[k]['img'], ir='lugar', seguir=True, lugar=True, decidido=(k=='miguelito')) for k in ('miguelito','paz','ferro','muni','ache')], 'chica', ir='lugares', ver='Ver lugares')}
+  {carril('Artistas destacadxs', [tarjeta('x', nombre=n, meta=m, img=None, ir='artista', seguir=True) for n, m in ar[2:6]], 'grande', ir='artistas', ver='Ver artistas')}
 </section>'''
 
 # El cuerpo de la ficha de lugar se usa dos veces: a pantalla completa y dentro de la hoja de Lugares.
@@ -324,11 +326,10 @@ perfil = f'''<section class="pantalla raiz" data-id="perfil">
   <a class="boton texto enlace-perfil" href="#">Así te ve la gente</a>
 </section>'''
 
-# Agenda, revivida (founder, duodécima vuelta): la lista por día de todos los próximos con la fila de contexto. Se llega por «Ver todo» de los
-# carriles de eventos o eligiendo un valor en Cuándo desde Inicio; Atrás vuelve a Inicio. No ocupa lugar en la barra inferior («hay demasiado ya»).
-# En teléfono lleva su barra (Atrás · Agenda) porque la barra de la app se esconde; desde tableta usa la barra de la app (Atrás junto a «+»): sin barra propia ni título.
-agenda = f'''<section class="pantalla agenda" data-id="agenda" data-vista="lista">
-  {barra_interior(titulo='Agenda', fija=True, menu=False)}
+# Agenda: sección de la barra inferior (founder, decimotercera vuelta: «vuelve a poner la sección en nav bar, me pierde completamente esa
+# navegación»): la lista por día de todos los próximos con la fila de contexto. También se llega por «Ver la agenda» de los carriles de eventos
+# o eligiendo un valor en Cuándo desde Inicio.
+agenda = f'''<section class="pantalla raiz" data-id="agenda">
   {cabecera(chip_ciudad() + chip_cuando() + chip_filtros('filtros-eventos'))}
   {tramos_inicio()}
 </section>'''
@@ -506,9 +507,10 @@ ajustes = f'''<section class="pantalla ficha" data-id="ajustes" data-vista="tare
   <button type="button" class="boton texto peligro">Borrar mi cuenta</button>
 </section>'''
 
-# Barra inferior en teléfono (cuatro destinos); carril lateral en dos grupos desde 792: secciones arriba, perfil abajo.
+# Barra inferior en teléfono (cinco destinos: Inicio · Agenda · Lugares · Artistas · Perfil); carril lateral en dos grupos desde 792: secciones arriba, perfil abajo.
 nav = f'''<nav class="navegacion" aria-label="Secciones">
   <a class="destino" href="#" data-ir="inicio" aria-current="page"><span class="pildora">{i("casa")}</span><span>Inicio</span></a>
+  <a class="destino" href="#" data-ir="agenda"><span class="pildora">{i("calendario")}</span><span>Agenda</span></a>
   <a class="destino" href="#" data-ir="lugares"><span class="pildora">{i("pin")}</span><span>Lugares</span></a>
   <a class="destino" href="#" data-ir="artistas"><span class="pildora">{i("estrella")}</span><span>Artistas</span></a>
   <a class="destino perfil" href="#" data-ir="perfil"><span class="pildora"><span class="avatar chico">A</span></span><span>Perfil</span></a>
@@ -634,7 +636,7 @@ ul {{ list-style: none; }}
 
 /* ==========================================================================
    2. El armazón: un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro. El JS pone en la app
-      data-vista = raiz · ficha · tarea · lista y el CSS solo lee ese atributo: en teléfono todo lo que no es raíz esconde la barra y la
+      data-vista = raiz · ficha · tarea y el CSS solo lee ese atributo: en teléfono todo lo que no es raíz esconde la barra y la
       navegación; desde 792 la barra ocupa todo el ancho, la navegación es un carril lateral en dos grupos y la ficha usa la barra
       de la app (Atrás junto a «+», menú junto a la campana). En una app nativa es lo mismo: barra, tab bar o sidebar y el contenido.
    ========================================================================== */
@@ -670,8 +672,8 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .punto {{ position: absolute; top: 3px; right: 14px; width: 9px; height: 9px; border-radius: 50%; background: var(--primario); box-shadow: 0 0 0 2px var(--fondo); }}
 .barra .punto {{ top: 8px; right: 8px; }}
 
-/* ---- navegación: cuatro destinos al pie en teléfono; se esconde al bajar y vuelve al subir (como la barra) ---- */
-.navegacion {{ position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-barra); display: grid; grid-template-columns: repeat(4, 1fr); height: var(--nav-abajo); padding: 0 var(--espacio-1) var(--piso); background: var(--fondo); border-top: 1px solid var(--borde); box-shadow: var(--sombra-panel); transition: transform var(--duracion) var(--curva); }}
+/* ---- navegación: cinco destinos al pie en teléfono; se esconde al bajar y vuelve al subir (como la barra) ---- */
+.navegacion {{ position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-barra); display: grid; grid-template-columns: repeat(5, 1fr); height: var(--nav-abajo); padding: 0 var(--espacio-1) var(--piso); background: var(--fondo); border-top: 1px solid var(--borde); box-shadow: var(--sombra-panel); transition: transform var(--duracion) var(--curva); }}
 .app[data-nav-oculta] > .navegacion {{ transform: translateY(100%); }}
 .app:not([data-vista="raiz"]) > .navegacion {{ display: none; }}
 .destino {{ display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .02em; cursor: pointer; }}
@@ -918,11 +920,6 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .pantalla.ficha[data-compacta] > .barra-interior.heroe {{ background: linear-gradient(rgba(0,0,0,.6), rgba(0,0,0,.6)), var(--portada, none) center / cover, var(--tono, #3b3a37); color: #fff; }}
 .pantalla.ficha[data-compacta] > .barra-interior.heroe > .boton-icono {{ background: none; box-shadow: none; color: #fff; }}
 .pantalla[data-id="ajustes"] {{ grid-template-areas: "barra"; }}
-/* Agenda: su barra (Atrás · Agenda) pegada arriba, la fila de contexto pegada debajo y los títulos de día debajo de las dos */
-.agenda {{ padding-bottom: var(--espacio-6); }}
-.agenda > .barra-interior {{ margin-bottom: 0; border-bottom: 0; }} /* la barra y la fila de contexto son una sola región: el filete va solo bajo la fila (el founder lo señaló dos veces) */
-.agenda > .cabecera {{ top: calc(var(--alto-barra) + var(--tope)); }}
-.agenda .grupo {{ top: calc(var(--alto-barra) + var(--tope) + var(--alto-filtros)); }}
 .pantalla.ficha > .barra-interior {{ grid-area: barra; margin-bottom: 0; }}
 .pantalla.ficha > .portada, .pantalla.ficha > .titulo-ficha, .ficha-hoja > .portada, .ficha-hoja > .titulo-ficha {{ grid-area: portada; }}
 .portada {{ position: relative; margin: 0; aspect-ratio: 3 / 2; background: var(--tono, var(--fondo-miniatura)); overflow: hidden; cursor: zoom-in; }}
@@ -1075,18 +1072,13 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   /* La fila de contexto no lleva su propia línea: la de la barra cruza todo el ancho y el carril arranca debajo */
   .cabecera {{ box-shadow: none; }}
   /* Carril lateral en dos grupos: secciones arriba, perfil abajo; no se esconde y sigue en fichas y tareas; un borde derecho normal, de la barra al pie */
-  .navegacion, .app[data-nav-oculta] > .navegacion, .app:not([data-vista="raiz"]) > .navegacion {{ position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: var(--espacio-4) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 1px solid var(--borde); background: var(--fondo); box-shadow: none; transform: none; }}
-  .navegacion > .perfil {{ grid-row: 5; }}
+  .navegacion, .app[data-nav-oculta] > .navegacion, .app:not([data-vista="raiz"]) > .navegacion {{ position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: repeat(4, auto) minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: var(--espacio-4) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 1px solid var(--borde); background: var(--fondo); box-shadow: none; transform: none; }}
+  .navegacion > .perfil {{ grid-row: 6; }}
   .destino {{ width: 72px; padding: 6px 0; border-radius: var(--radio); }}
   .pantalla.raiz {{ padding-bottom: var(--espacio-8); }}
   .filtros {{ padding-top: var(--espacio-3); justify-content: center; }}
   .pantalla[data-id="perfil"] > .filtros {{ justify-content: start; }}
   .barra-interior {{ height: var(--alto-barra); padding-top: 0; }}
-  /* Agenda desde tableta: la barra de la app con Atrás junto a «+», sin barra propia ni título; la fila de contexto va directo debajo */
-  .agenda > .barra-interior {{ display: none; }}
-  .agenda > .cabecera {{ top: 0; }}
-  .agenda .grupo {{ top: var(--alto-filtros); }}
-  .app[data-vista="lista"] > .barra > .atras-barra {{ visibility: visible; }}
   .barra-interior.con-campo > :first-child {{ display: grid; max-width: 520px; }}
   .pantalla[data-id="lugares"] {{ grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; padding-bottom: 0; }}
   .pantalla[data-id="lugares"] > .cabecera {{ grid-area: cabecera; }}
@@ -1148,7 +1140,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     <button type="button" data-modo="tableta" aria-pressed="false">Tableta 820</button>
     <button type="button" data-modo="escritorio" aria-pressed="false">Escritorio 1280</button>
   </div>
-  <p class="nota">Mismo marcado en los tres tamaños. «Ver todo» de un carril lleva a Agenda (eventos), Artistas o Lugares. Cuándo, en Inicio o en Agenda, deja en Agenda los días elegidos («Elegir fecha…» abre el calendario: un toque, un día; dos, un rango; Limpiar deja todos los próximos); Atrás vuelve a Inicio. En la ciudad, «Otra ciudad» abre el campo con sugerencias. Desde tableta, la barra de la ficha se funde con la de la app (Atrás junto a «+», menú junto a la campana). En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
+  <p class="nota">Mismo marcado en los tres tamaños. Cada carril dice a dónde lleva («Ver la agenda», «Ver lugares», «Ver artistas», «Ver mi perfil»). Agenda es la segunda pestaña: la lista por día; Cuándo, en Inicio o en Agenda, deja en Agenda los días elegidos («Elegir fecha…» abre el calendario: un toque, un día; dos, un rango; Limpiar deja todos los próximos). En la ciudad, «Otra ciudad» abre el campo con sugerencias. Desde tableta, la barra de la ficha se funde con la de la app (Atrás junto a «+», menú junto a la campana). En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
 </header>
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg"><defs>{sprite}{mapa_base}</defs></svg>
 <div class="escenario">
@@ -1179,7 +1171,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   const aparato = document.querySelector(".aparato");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const pantallas = [...app.querySelectorAll(":scope > .pantalla")];
-  const raices = ["inicio", "lugares", "artistas", "perfil"];
+  const raices = ["inicio", "agenda", "lugares", "artistas", "perfil"];
   const tipoPorSeccion = {{ inicio: "evento", lugares: "lugar", artistas: "artista", perfil: "evento" }};
   const tituloAlta = {{ evento: "Publicar un evento", lugar: "Registrar un lugar", artista: "Registrar artista" }};
   const pila = [];
@@ -1363,7 +1355,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     const cerrar = e.target.closest("[data-cerrar]");
     if (cerrar) {{
       const f = cerrar.closest(".hoja-fondo"); f.hidden = true;
-      if (f.dataset.hoja === "cuando") {{ const clave = claveDeHoja(); aplicarCuando(clave); if (clave && actual !== agendaP) {{ agendaP.scrollTop = 0; ir("agenda", "ficha"); }} }}
+      if (f.dataset.hoja === "cuando") {{ const clave = claveDeHoja(); aplicarCuando(clave); if (clave && actual !== agendaP) {{ pila.length = 0; ir("agenda", "seccion"); }} }}
       if (f.dataset.hoja === "ciudad") cerrarOtraCiudad();
       return;
     }}

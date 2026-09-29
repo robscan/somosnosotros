@@ -792,6 +792,19 @@ junto a «+» (como las fichas, punto 55) y la fila de contexto va directo debaj
 - **`256-130-v3-agenda-escritorio`:** la misma Agenda en escritorio: barra de la app, carril lateral, la barra de la
   Agenda con Atrás, la fila centrada y la lista por día.
 
+### Decimotercera vuelta (mismo día): Agenda de vuelta en la barra y letreros honestos
+
+El founder, al ver la Agenda con Atrás: «no me hace sentido esa solución de agenda, mejor vuelve a poner la sección en
+nav bar, porque me pierde completamente esa navegación. Además los letreros deben ser más honestos acerca de a dónde
+llevan: Ver todo para todos los casos no aplica, será Ver mi perfil, Ver la agenda, Ver Lugares, Ver artistas». Hecho:
+Agenda es la segunda pestaña de la barra (cinco destinos; quinto renglón del carril lateral desde tableta), con la
+barra de la app y la fila de contexto, sin barra propia; los enlaces de carril dicen «Ver mi perfil», «Ver la agenda»,
+«Ver lugares» y «Ver artistas». Fuera la vista «lista» del armazón (queda raíz · ficha · tarea). Probado con el guion de
+flujos y medido (Agenda 164 nodos, 0 envoltorios, 0 desbordes). Capturas regeneradas: `256-75` (Inicio con los
+letreros), `256-129` y `256-130` (Agenda como pestaña en teléfono y escritorio), `256-81`, `256-120` y `256-122`
+(Agenda filtrada desde Inicio) y la barra de cinco en todas las de teléfono. Doc 50 § 6.5 (decimotercera vuelta),
+§ 11 puntos 18, 60 y 61, filas P4 y P5.
+
 ### Firma del founder (mismo día, noche)
 
 Respondió en el chat a la lista de pendientes: «1: Agenda se queda fuera por ahora, temo que hay demasiado ya en barra
@@ -805,7 +818,7 @@ diga «publica».
 ### Cierre (cuarta parte)
 
 Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcciones del founder al verla, la
-séptima vuelta desde los hilos, la vuelta de la estrella, la octava vuelta del armazón, la novena de las tarjetas, la décima de la hoja, la undécima de las listas de carril y la duodécima que las sustituye por «Ver todo» y la Agenda revivida), las 56 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
+séptima vuelta desde los hilos, la vuelta de la estrella, la octava vuelta del armazón, la novena de las tarjetas, la décima de la hoja, la undécima de las listas de carril, la duodécima que las sustituye por «Ver todo» y la Agenda revivida, y la decimotercera con Agenda de vuelta en la barra y letreros honestos), las 56 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
 § 11 con la quinta a la séptima vuelta), el generador y el script de captura actualizados, esta bitácora y
 OPEN_LOOPS; push al PR #266; artefacto republicado y los hilos contestados (los resueltos, resueltos; los de decisión,
 abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 45 a 47 y

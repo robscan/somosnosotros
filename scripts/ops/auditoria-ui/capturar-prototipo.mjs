@@ -43,7 +43,7 @@ await click(page, '.hoja-fondo[data-hoja="cuando"] .chips .chip:nth-child(3)');
 await click(page, '.hoja-fondo[data-hoja="cuando"] .pie-hoja [data-cerrar]'); await espera(page, 1000);
 await foto(page, "v3-07-agenda-fin-de-semana-telefono");
 await click(page, '.pantalla[data-id="agenda"] [data-hoja="cuando"]'); await click(page, '.hoja-fondo[data-hoja="cuando"] [data-limpiar]'); await click(page, '.hoja-fondo[data-hoja="cuando"] .cerrar');
-await click(page, '.pantalla[data-id="agenda"] [data-atras]'); await espera(page, 900);
+await click(page, '.navegacion [data-ir="inicio"]'); await espera(page, 700);
 await click(page, '.pantalla[data-id="inicio"] [data-hoja="ciudad"]');
 await foto(page, "v3-05-ciudad-telefono");
 await click(page, '.hoja-fondo[data-hoja="ciudad"] [data-cerrar]');
@@ -149,7 +149,7 @@ await desplazar(page, '.pantalla[data-id="agenda"]', 300); await espera(page, 50
 for (const l of ["bricolage", "bricolage-ancha", "inter"]) { await click(page, `.modos-estudio [data-letra="${l}"]`); await espera(page, 500); await foto(page, `v3-${l === "bricolage" ? "36" : l === "bricolage-ancha" ? "37" : "38"}-letra-${l}-telefono`); }
 await click(page, '.modos-estudio [data-letra="bricolage"]');
 await click(page, '.pantalla[data-id="agenda"] [data-hoja="cuando"]'); await click(page, '.hoja-fondo[data-hoja="cuando"] [data-limpiar]'); await click(page, '.hoja-fondo[data-hoja="cuando"] .cerrar');
-await click(page, '.pantalla[data-id="agenda"] [data-atras]'); await espera(page, 900);
+await click(page, '.navegacion [data-ir="inicio"]'); await espera(page, 700);
 await desplazar(page, '.pantalla[data-id="inicio"]', 0); await espera(page, 400);
 await click(page, '.pantalla[data-id="inicio"] .carril .tarjeta'); await espera(page, 900);
 await click(page, '.pantalla[data-id="evento"] [data-accion-ficha="voy"]'); await espera(page, 300);
@@ -186,7 +186,7 @@ await foto(page, "v3-47-cuando-rango-telefono");
 await click(page, '.hoja-fondo[data-hoja="cuando"] .pie-hoja [data-cerrar]'); await espera(page, 400);
 await foto(page, "v3-48-agenda-rango-telefono");
 await click(page, '.pantalla[data-id="agenda"] [data-hoja="cuando"]'); await click(page, '.hoja-fondo[data-hoja="cuando"] [data-limpiar]'); await click(page, '.hoja-fondo[data-hoja="cuando"] .cerrar'); await espera(page, 300);
-await click(page, '.pantalla[data-id="agenda"] [data-atras]'); await espera(page, 900);
+await click(page, '.navegacion [data-ir="inicio"]'); await espera(page, 700);
 await click(page, '.pantalla[data-id="inicio"] [data-hoja="ciudad"]');
 await click(page, '.hoja-fondo[data-hoja="ciudad"] [data-ciudad="Otra ciudad"]'); await espera(page, 200);
 await foto(page, "v3-49-ciudad-otra-telefono");
@@ -199,18 +199,19 @@ await click(page, '.pantalla[data-id="inicio"] .carril .tarjeta'); await espera(
 await click(page, '.pantalla[data-id="evento"] .con .renglon'); await espera(page, 900);
 await desplazar(page, '.pantalla[data-id="artista"]', 560); await espera(page, 400);
 await foto(page, "v3-53-ficha-artista-novedades-telefono");
+// Agenda, sección de la barra: «Ver la agenda» desde un carril de eventos, sin filtros puestos (antes del muestrario, que reescribe la barra)
+await click(page, '.pantalla[data-id="artista"] [data-atras]'); await espera(page, 800);
+await click(page, '.pantalla[data-id="evento"] [data-atras]'); await espera(page, 800);
+await click(page, '.pantalla[data-id="inicio"] .ver-todo[data-ir="agenda"]'); await espera(page, 800);
+await foto(page, "v3-55-agenda-telefono");
+await click(page, '.navegacion [data-ir="inicio"]'); await espera(page, 700);
 // Muestrario del icono de Artistas: la estrella que se queda (activa) junto a los candidatos que el founder rechazó (pincel, pincel lleno, chispa)
 await page.evaluate(() => {
   const nav = document.querySelector(".navegacion");
   const etiquetas = [["estrella", "Estrella (se queda)"], ["artista", "Pincel (rechazado)"], ["artista-lleno", "Pincel lleno"], ["artista-chispa", "Chispa"]];
-  [...nav.children].forEach((d, i) => { const [g, t] = etiquetas[i]; d.removeAttribute("aria-current"); if (i === 0) d.setAttribute("aria-current", "page"); d.querySelector(".pildora").innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${g}"/></svg>`; d.lastElementChild.textContent = t; });
+  [...nav.children].forEach((d, i) => { if (!etiquetas[i]) { d.style.display = "none"; return; } const [g, t] = etiquetas[i]; d.removeAttribute("aria-current"); if (i === 0) d.setAttribute("aria-current", "page"); d.querySelector(".pildora").innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${g}"/></svg>`; d.lastElementChild.textContent = t; });
 });
-await click(page, '.pantalla[data-id="artista"] [data-atras]'); await espera(page, 800);
-await click(page, '.pantalla[data-id="evento"] [data-atras]'); await espera(page, 800);
 await page.locator(".navegacion").screenshot({ path: `${dir}/v3-54-iconos-artistas.png` }); console.log("v3-54-iconos-artistas");
-// Duodécima vuelta: «Ver todo» de un carril de eventos lleva a Agenda (con Atrás), sin filtros puestos
-await click(page, '.pantalla[data-id="inicio"] .ver-todo[data-ir="agenda"]'); await espera(page, 1000);
-await foto(page, "v3-55-agenda-telefono");
 await ctx.close();
 ({ ctx, page } = await contexto(1, 1360, 880, "escritorio"));
 await page.waitForTimeout(900);
