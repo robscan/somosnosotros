@@ -63,8 +63,10 @@ ul { list-style: none; }
 .app[data-letra="inter"] { --fuente-lista: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; --ancho-lista-titulo: normal; --ancho-lista-meta: normal; --letra-lista-titulo: 1rem; --letra-lista-meta: .875rem; --peso-lista-titulo: 600; --interlinea-lista: 1.3; }
 
 /* ==========================================================================
-   2. El armazón: barra arriba y pantalla; la barra inferior flota al pie en teléfono y se esconde al bajar.
-      Desde 792 la barra ocupa todo el ancho y la navegación es un carril lateral en dos grupos.
+   2. El armazón: un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro. El JS pone en la app
+      data-vista = raiz · ficha · tarea y el CSS solo lee ese atributo: en teléfono la ficha y la tarea esconden la barra y la
+      navegación; desde 792 la barra ocupa todo el ancho, la navegación es un carril lateral en dos grupos y la ficha usa la barra
+      de la app (Atrás junto a «+», menú junto a la campana). En una app nativa es lo mismo: barra, tab bar o sidebar y el contenido.
    ========================================================================== */
 .app { position: relative; display: grid; grid-template: "barra" auto "pantalla" minmax(0, 1fr) / minmax(0, 1fr); width: 100%; height: 100%; overflow: hidden; border-radius: 30px; background: var(--fondo-contenido); color: var(--texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-size: var(--letra-md); line-height: 1.4; }
 .aparato[data-modo="telefono"] .app { --tope: 48px; --piso: 34px; }
@@ -85,11 +87,13 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 /* ---- barra de la app: «+» · logotipo · lupa · campana. En teléfono se guarda al bajar (queda la franja de estado) ---- */
 .barra { grid-area: barra; position: relative; z-index: var(--z-pegajoso); display: grid; grid-template-columns: var(--control) var(--control) minmax(0, 1fr) var(--control) var(--control); align-items: center; height: calc(var(--alto-barra) + var(--tope)); padding: var(--tope) calc(var(--gutter) - var(--espacio-2)) 0; background: var(--fondo); overflow: hidden; transition: height var(--duracion) var(--curva); }
 .app[data-compacta] > .barra { height: var(--tope); }
-.app:has(> .pantalla.ficha:not([hidden])) > .barra, .app:has(> .pantalla.tarea:not([hidden])) > .barra { display: none; }
-.barra > :nth-child(1) { grid-column: 1; }
-.barra > :nth-child(2) { grid-column: 3; justify-self: center; }
-.barra > :nth-child(3) { grid-column: 4; }
-.barra > :nth-child(4) { grid-column: 5; }
+.app:not([data-vista="raiz"]) > .barra { display: none; }
+.barra > .publicar { grid-column: 1; }
+.barra > .logotipo-enlace { grid-column: 3; justify-self: center; }
+.barra > .buscar-barra { grid-column: 4; }
+.barra > .campana-barra { grid-column: 5; }
+/* Atrás y el menú de la ficha viven en la barra solo desde 792; en teléfono la ficha lleva su propia cabecera sobre el héroe */
+.barra > .atras-barra, .barra > .mas-barra { display: none; }
 .barra .i { width: 26px; height: 26px; }
 .logotipo-enlace { display: grid; align-items: center; min-height: var(--control); }
 .logotipo { display: block; height: 28px; width: auto; aspect-ratio: 3903 / 790; }
@@ -99,7 +103,7 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 /* ---- navegación: cuatro destinos al pie en teléfono; se esconde al bajar y vuelve al subir (como la barra) ---- */
 .navegacion { position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-barra); display: grid; grid-template-columns: repeat(4, 1fr); height: var(--nav-abajo); padding: 0 var(--espacio-1) var(--piso); background: var(--fondo); border-top: 1px solid var(--borde); box-shadow: var(--sombra-panel); transition: transform var(--duracion) var(--curva); }
 .app[data-nav-oculta] > .navegacion { transform: translateY(100%); }
-.app:has(> .pantalla.ficha:not([hidden])) > .navegacion, .app:has(> .pantalla.tarea:not([hidden])) > .navegacion { display: none; }
+.app:not([data-vista="raiz"]) > .navegacion { display: none; }
 .destino { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .02em; cursor: pointer; }
 .destino .pildora { position: relative; display: grid; place-items: center; width: 60px; height: 32px; border-radius: 16px; transition: background-color 150ms; }
 .destino .pildora .i { width: 26px; height: 26px; }
@@ -270,7 +274,8 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 
 /* ==========================================================================
    8. Lugares: la fila de contexto arriba y el mapa en la segunda fila. La hoja es una capa transparente que cubre la pantalla
-      (de la franja de estado al pie) y DESPLAZA: dos espaciadores invisibles y luego el cuerpo blanco, que asoma desde abajo.
+      (de la franja de estado al pie) y DESPLAZA: un hueco arriba (::before, la hoja entera menos lo que asoma recogida) y luego el
+      cuerpo blanco, que asoma desde abajo; nada en el marcado.
       Arrastrar el cuerpo lo sube (la hoja «crece»); cuando su borde llega arriba (llena) el mismo gesto sigue desplazando el
       contenido: una sola inercia. Al soltar entre alturas se asienta en la más cercana (asoma · media · llena).
       Tocar un pin o un renglón muestra la ficha en el cuerpo (la lista conserva su desplazamiento) a la altura de foto + KPI;
@@ -297,7 +302,9 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .atribucion { position: absolute; left: var(--espacio-2); top: calc(var(--espacio-3) + 14px); font-size: 10px; color: var(--texto-suave); opacity: .8; }
 .hoja-lugares { position: absolute; left: 0; right: 0; top: var(--tope); bottom: 0; z-index: var(--z-flotante); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; pointer-events: none; }
 .hoja-lugares::-webkit-scrollbar { display: none; }
-.hoja-lugares > .espacio { height: 0; }
+.hoja-lugares { --hoja-recogida: 64px; }
+.pantalla[data-id="lugares"][data-ficha] .hoja-lugares { --hoja-recogida: calc(20px + var(--boton-icono) + var(--espacio-2)); }
+.hoja-lugares::before { content: ""; display: block; height: calc(100% - var(--nav-abajo) - var(--hoja-recogida)); }
 .cuerpo-hoja { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; min-height: 100%; padding-bottom: var(--nav-abajo); background: var(--fondo); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; box-shadow: var(--sombra-panel); overflow: clip; pointer-events: auto; transition: border-radius 150ms; }
 .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cuerpo-hoja { border-radius: 0; }
 .pantalla[data-id="lugares"][data-ficha] .cuerpo-hoja > :not(.ficha-hoja) { display: none; }
@@ -330,7 +337,7 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
    ========================================================================== */
 .pantalla.ficha { grid-template-areas: "barra" "portada"; }
 /* Canon de la hoja en la ficha: la barra ocupa una fila de alto 0 y se pega arriba; en reposo es transparente sobre el héroe (Atrás y menú elevados); al desplazar toma fondo blanco y muestra el título */
-.pantalla.ficha:has(> .barra-interior.heroe) { grid-template-rows: 0 max-content; }
+.pantalla.con-heroe { grid-template-rows: 0 max-content; }
 .barra-interior.heroe { align-self: start; height: calc(var(--tope) + var(--espacio-2) + var(--boton-icono) + var(--espacio-2)); padding: calc(var(--tope) + var(--espacio-2)) var(--gutter) 0; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; background: transparent; border-bottom: 0; z-index: 3; transition: background-color 150ms, box-shadow 150ms; }
 .barra-interior.heroe > .boton-icono { width: var(--boton-icono); height: var(--boton-icono); border: 0; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); }
 .barra-interior.heroe > .titulo-barra { align-self: center; }
@@ -378,8 +385,8 @@ h1, h2, h3, h4 { font-variation-settings: var(--ancho-titulo); font-weight: 700;
 .flotante.primaria[aria-pressed="true"] { background: var(--ok); }
 .flotante.secundaria[aria-pressed="true"] { color: var(--primario); }
 /* El aviso sube por encima de las acciones flotantes cuando hay ficha a la vista */
-.app:has(> .pantalla.ficha:not([hidden])) > .toast, .app:has(> .pantalla[data-id="lugares"][data-ficha]:not([hidden])) > .toast { bottom: calc(var(--nav-abajo) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }
-.app:has(> .pantalla.ficha:not([hidden])) > .toast { bottom: calc(var(--piso) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }
+.app[data-hoja-ficha] > .toast { bottom: calc(var(--nav-abajo) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }
+.app[data-vista="ficha"] > .toast { bottom: calc(var(--piso) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }
 /* Dentro de la hoja la portada es 3:2 (el founder la subió de 16:9 en el lienzo); a media altura se ven título, etiqueta y el arranque de los KPI */
 .ficha-hoja > .portada { aspect-ratio: 3 / 2; }
 .pantalla.ficha { padding-bottom: var(--espacio-4); }
@@ -478,27 +485,31 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
 }
 @container app (min-width: 792px) {
   .app { --nav-abajo: 0px; grid-template: "barra barra" auto "nav pantalla" minmax(0, 1fr) / var(--ancho-carril-nav) minmax(0, 1fr); --gutter: max(24px, calc((100cqw - 24px - var(--ancho-carril-nav) - var(--columna)) / 2)); }
-  /* La barra de la app ocupa todo el ancho y no se guarda; sigue ahí en fichas y tareas */
-  .app > .barra, .app[data-compacta] > .barra, .app:has(> .pantalla.ficha:not([hidden])) > .barra, .app:has(> .pantalla.tarea:not([hidden])) > .barra { display: grid; height: calc(var(--alto-barra) + var(--tope)); padding-inline: var(--espacio-4); }
-  /* Carril lateral en dos grupos: secciones arriba, perfil abajo; no se esconde y sigue en fichas y tareas */
-  .navegacion, .app[data-nav-oculta] > .navegacion, .app:has(> .pantalla.ficha:not([hidden])) > .navegacion, .app:has(> .pantalla.tarea:not([hidden])) > .navegacion { position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: calc(var(--nav-arriba) + var(--espacio-4)) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 0; background: linear-gradient(var(--borde), var(--borde)) no-repeat 0 calc(var(--nav-arriba) - 1px) / 100% 1px, linear-gradient(var(--borde), var(--borde)) no-repeat 100% var(--nav-arriba) / 1px 100%, var(--fondo); box-shadow: none; transform: none; }
+  /* La barra de la app ocupa todo el ancho, no se guarda y sigue ahí en fichas y tareas; con una ficha a la vista muestra Atrás (junto a «+») y el menú (junto a la campana): una sola barra */
+  .app > .barra, .app[data-compacta] > .barra, .app:not([data-vista="raiz"]) > .barra { display: grid; grid-template-columns: repeat(3, var(--control)) minmax(0, 1fr) repeat(3, var(--control)); height: calc(var(--alto-barra) + var(--tope)); padding-inline: var(--espacio-4); border-bottom: 1px solid var(--borde); }
+  .barra > .atras-barra { display: inline-grid; grid-column: 2; visibility: hidden; }
+  .barra > .logotipo-enlace { grid-column: 4; }
+  .barra > .buscar-barra { grid-column: 5; }
+  .barra > .campana-barra { grid-column: 6; }
+  .barra > .mas-barra { display: inline-grid; grid-column: 7; visibility: hidden; }
+  .app[data-vista="ficha"] > .barra > .atras-barra, .app[data-vista="ficha"] > .barra > .mas-barra { visibility: visible; }
+  .pantalla.ficha > .barra-interior.heroe { display: none; }
+  /* La fila de contexto no lleva su propia línea: la de la barra cruza todo el ancho y el carril arranca debajo */
+  .cabecera { box-shadow: none; }
+  /* Carril lateral en dos grupos: secciones arriba, perfil abajo; no se esconde y sigue en fichas y tareas; un borde derecho normal, de la barra al pie */
+  .navegacion, .app[data-nav-oculta] > .navegacion, .app:not([data-vista="raiz"]) > .navegacion { position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: var(--espacio-4) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 1px solid var(--borde); background: var(--fondo); box-shadow: none; transform: none; }
   .navegacion > .perfil { grid-row: 5; }
   .destino { width: 72px; padding: 6px 0; border-radius: var(--radio); }
   .pantalla.raiz { padding-bottom: var(--espacio-8); }
   .filtros { padding-top: var(--espacio-3); justify-content: center; }
-  .pantalla[data-id="lugares"] > .cabecera > .filtros, .pantalla[data-id="perfil"] > .filtros { justify-content: start; }
-  /* El carril empieza donde termina la fila de filtros (68 px; 104 con la tira de letras; 56 bajo la barra de una ficha o tarea), con su línea de arriba a la misma altura */
-  .app { --nav-arriba: 68px; }
-  .app:has(> .pantalla[data-id="artistas"]:not([hidden])) { --nav-arriba: 104px; }
-  .app:has(> .pantalla.ficha:not([hidden])), .app:has(> .pantalla.tarea:not([hidden])) { --nav-arriba: var(--alto-barra); }
+  .pantalla[data-id="perfil"] > .filtros { justify-content: start; }
   .barra-interior { height: var(--alto-barra); padding-top: 0; }
   .barra-interior.con-campo > :first-child { display: grid; max-width: 520px; }
   .pantalla[data-id="lugares"] { grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; padding-bottom: 0; }
   .pantalla[data-id="lugares"] > .cabecera { grid-area: cabecera; }
-  .pantalla[data-id="lugares"] > .cabecera > .filtros { padding-inline: var(--espacio-5); }
   .pantalla[data-id="lugares"] > .mapa { grid-area: mapa; }
   .pantalla[data-id="lugares"] .hoja-lugares { position: static; grid-area: hoja; min-height: 0; pointer-events: auto; border-right: 1px solid var(--borde); background: var(--fondo-contenido); }
-  .hoja-lugares > .espacio { display: none; }
+  .hoja-lugares::before { display: none; }
   .cuerpo-hoja, .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cuerpo-hoja { min-height: 0; padding-bottom: 0; border-radius: 0; box-shadow: none; background: var(--fondo-contenido); }
   .cuerpo-hoja > .asa { display: none; }
   .cabecera-hoja { grid-template-rows: var(--espacio-3) var(--boton-icono); }
@@ -514,12 +525,9 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
 }
 @container app (min-width: 1048px) {
   .app { --gutter: max(32px, calc((100cqw - 24px - var(--ancho-carril-nav) - var(--columna-ancha)) / 2)); }
-  .pantalla.ficha { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: var(--espacio-7); grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada donde" ". con" ". sobre" ". quien" ". pie"; align-content: start; }
+  .pantalla.ficha { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: var(--espacio-7); grid-template-areas: "portada titulo" "portada kpis" "portada acciones" "portada donde" ". con" ". sobre" ". quien" ". pie"; align-content: start; padding-top: var(--espacio-5); }
+  .pantalla.con-heroe { grid-template-rows: none; }
   .pantalla.ficha > .barra-interior { grid-area: barra; }
-  .pantalla.ficha:has(> .barra-interior.heroe) { grid-template-rows: none; }
-  .barra-interior.heroe, .pantalla.ficha[data-compacta] > .barra-interior.heroe { align-self: auto; height: var(--alto-barra); padding: 0 var(--gutter); align-items: center; background: var(--fondo); color: var(--texto); border-bottom: 1px solid var(--borde); box-shadow: none; }
-  .barra-interior.heroe > .boton-icono, .pantalla.ficha[data-compacta] > .barra-interior.heroe > .boton-icono { width: var(--control); height: var(--control); box-shadow: none; background: none; color: var(--texto); }
-  .barra-interior.heroe > [data-atras] { border: 1px solid var(--borde); background: var(--fondo); }
   .pantalla.ficha > .portada { grid-area: portada; margin-left: var(--gutter); border-radius: var(--radio-grande); aspect-ratio: 5 / 3; align-self: start; }
   .pantalla.ficha > .perfil-cabecera { grid-area: portada; margin-right: 0; align-self: start; }
   /* En escritorio el título vuelve a la columna derecha (sobre la imagen solo en teléfono y en el panel); en la variante «en la barra» no se repite */
@@ -534,10 +542,10 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   .pantalla.ficha > .proximos { grid-area: proximos; margin-left: 0; }
   .pantalla.ficha > .pie { grid-area: pie; margin-left: 0; }
   .pantalla.ficha > .flotantes { grid-column: 1 / -1; justify-self: end; }
-  .pantalla[data-id="lugar"] { grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". donde" ". sobre" ". pie"; }
-  .pantalla[data-id="artista"] { grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". novedades" ". sobre" ". pie"; }
+  .pantalla[data-id="lugar"] { grid-template-areas: "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". donde" ". sobre" ". pie"; }
+  .pantalla[data-id="artista"] { grid-template-areas: "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". novedades" ". sobre" ". pie"; }
   .pantalla[data-id="artista"] > .novedades { grid-area: novedades; margin-left: 0; }
-  .pantalla[data-id="ajustes"] { grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; }
+  .pantalla[data-id="ajustes"] { grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; padding-top: 0; }
   .pantalla[data-id="ajustes"] > :not(.barra-interior) { max-width: var(--columna); }
   .pantalla.tarea > :not(.barra-interior):not(.modos) { width: 100%; max-width: var(--columna); justify-self: center; }
   .carril.grande { grid-auto-columns: 190px; grid-template-rows: 285px auto auto; }
@@ -557,7 +565,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     <button type="button" data-modo="tableta" aria-pressed="false">Tableta 820</button>
     <button type="button" data-modo="escritorio" aria-pressed="false">Escritorio 1280</button>
   </div>
-  <p class="nota">Mismo marcado en los tres tamaños. En Inicio, Cuándo (o el título de Destacados, Esta semana y Nuevos eventos) abre la lista por día; «Elegir fecha…» abre el calendario (un toque, un día; dos, un rango); Limpiar vuelve a los carriles. En la ciudad, «Otra ciudad» abre el campo con sugerencias. En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
+  <p class="nota">Mismo marcado en los tres tamaños. En Inicio, Cuándo (o el título de Destacados, Esta semana y Nuevos eventos) abre la lista por día; «Elegir fecha…» abre el calendario (un toque, un día; dos, un rango); Limpiar vuelve a los carriles. En la ciudad, «Otra ciudad» abre el campo con sugerencias. Desde tableta, la barra de la ficha se funde con la de la app (Atrás junto a «+», menú junto a la campana). En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
 </header>
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg"><defs><symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /> <path d="M12 7.5V12l3 2" /></symbol>
 <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" /> <circle cx="12" cy="11" r="2.2" /></symbol>
@@ -647,7 +655,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   <div class="aparato" data-modo="telefono">
     <div class="estado-ios"><span>10:46</span><span class="isla"></span><span class="derecha"><span>●●●●</span><span class="bateria"></span></span></div>
     <div class="app" id="app" data-letra="bricolage">
-      <header class="barra"><button type="button" class="boton-icono plano" data-publicar aria-label="Publicar"><svg class="i" aria-hidden="true"><use href="#i-crear"/></svg></button><a class="logotipo-enlace" href="#" data-ir="inicio" aria-label="Inicio"><svg class="logotipo" viewBox="0 0 3903 790" aria-label="Somos Nosotros"><use href="#logotipo" width="3903" height="790"/></svg></a><button type="button" class="boton-icono plano" data-ir="buscar" aria-label="Buscar"><svg class="i" aria-hidden="true"><use href="#i-buscar"/></svg></button><button type="button" class="boton-icono plano" aria-label="Novedades"><svg class="i" aria-hidden="true"><use href="#i-campana"/></svg><span class="punto"></span></button></header>
+      <header class="barra"><button type="button" class="boton-icono plano publicar" data-publicar aria-label="Publicar"><svg class="i" aria-hidden="true"><use href="#i-crear"/></svg></button><button type="button" class="boton-icono plano atras-barra" data-atras aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button><a class="logotipo-enlace" href="#" data-ir="inicio" aria-label="Inicio"><svg class="logotipo" viewBox="0 0 3903 790" aria-label="Somos Nosotros"><use href="#logotipo" width="3903" height="790"/></svg></a><button type="button" class="boton-icono plano buscar-barra" data-ir="buscar" aria-label="Buscar"><svg class="i" aria-hidden="true"><use href="#i-buscar"/></svg></button><button type="button" class="boton-icono plano campana-barra" aria-label="Novedades"><svg class="i" aria-hidden="true"><use href="#i-campana"/></svg><span class="punto"></span></button><button type="button" class="boton-icono plano mas-barra" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button></header>
       <nav class="navegacion" aria-label="Secciones">
   <a class="destino" href="#" data-ir="inicio" aria-current="page"><span class="pildora"><svg class="i" aria-hidden="true"><use href="#i-casa"/></svg></span><span>Inicio</span></a>
   <a class="destino" href="#" data-ir="lugares"><span class="pildora"><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg></span><span>Lugares</span></a>
@@ -699,7 +707,6 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     </header>
   <div class="mapa"><svg class="lienzo" viewBox="120 262 390 440" preserveAspectRatio="xMidYMid slice" aria-label="Mapa de San Luis Potosí"><use href="#base" x="0" y="0" width="640" height="900"/><g class="lugar con-evento seguido" transform="translate(188 402)"><circle r="11"/><text class="dia" y="4">Vie</text><text class="nombre" y="26">MUNI Museo Universitario</text></g><g class="lugar " transform="translate(232 392)"><circle r="5"/><text class="nombre" y="20">ACHE Galería</text></g><g class="lugar con-evento " transform="translate(262 348)"><circle r="11"/><text class="dia" y="4">Dom</text><text class="nombre" y="26">Aether</text></g><g class="lugar " transform="translate(300 470)"><circle r="5"/><text class="nombre" y="20">Centro Cultural Alemán</text></g><g class="lugar " transform="translate(232 460)"><circle r="5"/><text class="nombre" y="20">ARTERIA Casa Cultural</text></g><g class="lugar " transform="translate(395 300)"><circle r="5"/><text class="nombre" y="20">Casa de Cultura de Tlaxcala</text></g><g class="lugar con-evento destacado" transform="translate(432 364)"><circle r="11"/><text class="dia" y="4">Vie</text><text class="nombre" y="26">Museo del Ferrocarril</text></g><g class="lugar " transform="translate(455 392)"><circle r="5"/><text class="nombre" y="20"></text></g><g class="lugar " transform="translate(441 402)"><circle r="5"/><text class="nombre" y="20"></text></g><g class="lugar " transform="translate(470 350)"><circle r="5"/><text class="nombre" y="20"></text></g><g class="lugar con-evento " transform="translate(468 430)"><circle r="11"/><text class="dia" y="4">Jue</text><text class="nombre" y="26">Museo de la Máscara</text></g><g class="lugar " transform="translate(405 418)"><circle r="5"/><text class="nombre" y="20">Casa del Poeta</text></g><g class="lugar con-evento " transform="translate(352 430)"><circle r="11"/><text class="dia" y="4">Jue</text><text class="nombre" y="26">Teatro de la Paz</text></g><g class="lugar " transform="translate(478 478)"><circle r="5"/><text class="nombre" y="20">Casa Bauen</text></g><g class="lugar con-evento seguido" transform="translate(430 520)"><circle r="11"/><text class="dia" y="4">Mar</text><text class="nombre" y="26">Casa de Cultura de San Miguelito</text></g><g class="lugar " transform="translate(372 500)"><circle r="5"/><text class="nombre" y="20">Archivo Histórico</text></g><g class="lugar " transform="translate(318 548)"><circle r="5"/><text class="nombre" y="20">La Carrilla</text></g><g class="lugar " transform="translate(280 600)"><circle r="5"/><text class="nombre" y="20"></text></g><g class="lugar " transform="translate(300 650)"><circle r="5"/><text class="nombre" y="20">Museo Laberinto</text></g><g class="persona" transform="translate(330 585)"><circle class="halo" r="20"/><circle class="yo" r="7"/></g></svg><button type="button" class="boton-icono elevado ubicacion" aria-label="Mi ubicación"><svg class="i" aria-hidden="true"><use href="#i-ubicacion"/></svg></button><span class="atribucion">© Mapbox © OpenStreetMap</span></div>
   <div class="hoja-lugares" role="region" aria-label="Lugares">
-    <div class="espacio" aria-hidden="true"></div><div class="espacio" aria-hidden="true"></div><div class="espacio" aria-hidden="true"></div>
     <div class="cuerpo-hoja">
     <button type="button" class="asa" aria-label="Mostrar u ocultar la lista"></button>
     <b class="resumen">62 lugares <small>· los más cercanos primero</small></b>
@@ -765,7 +772,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   <ul class="lista"><li class="renglon lista"><a class="frente" href="#" data-ir="evento"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-ee2acab0-eb1e-4c41-b121-c4f37eba170c.jpeg" alt="" loading="lazy"><b>LXS COLOCAOS: La última fogueada</b><small>19:00 · MUNI Museo Universitario</small><small class="segundo">Gratis · 2 van<span class="estado">Vas</span></small></a><button type="button" class="boton-icono elevado decidido" data-accion="voy" aria-pressed="true" aria-label="Ya vas"><svg class="i" aria-hidden="true"><use href="#i-ok"/></svg></button></li></ul></section>
   <a class="boton texto enlace-perfil" href="#">Así te ve la gente</a>
 </section>
-      <section class="pantalla ficha" data-id="evento" hidden>
+      <section class="pantalla ficha con-heroe" data-id="evento" hidden data-vista="ficha">
   <header class="barra-interior heroe"><button type="button" class="boton-icono contorno" data-atras aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button><b class="titulo-barra">LXS COLOCAOS: La última fogueada</b><button type="button" class="boton-icono plano" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button></header>
   <figure class="portada" style="--tono:#4a3d3a" data-visor><img class="cartel" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-ee2acab0-eb1e-4c41-b121-c4f37eba170c.jpeg" alt="Cartel de LXS COLOCAOS" loading="lazy"></figure>
   <h1 class="titulo-ficha">LXS COLOCAOS: La última fogueada</h1>
@@ -802,7 +809,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     <button type="button" class="flotante primaria" data-accion-ficha="voy" aria-pressed="true"><svg class="i" aria-hidden="true"><use href="#i-ok"/></svg>Vas</button>
   </div>
 </section>
-      <section class="pantalla ficha" data-id="lugar" hidden>
+      <section class="pantalla ficha con-heroe" data-id="lugar" hidden data-vista="ficha">
   <header class="barra-interior heroe"><button type="button" class="boton-icono contorno" data-atras aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button><b class="titulo-barra">Museo del Ferrocarril Jesús García Corona</b><button type="button" class="boton-icono plano" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button></header>
   <figure class="portada" style="--tono:#7a4a2e" data-visor><img class="cartel" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/importadas/museo-del-ferrocarril-jesus-garcia-corona.jpg" alt="Museo del Ferrocarril" loading="lazy"></figure>
   <h1 class="titulo-ficha">Museo del Ferrocarril Jesús García Corona<span class="tipo">Museo</span></h1>
@@ -836,7 +843,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     <button type="button" class="flotante primaria" data-accion-ficha="seguir" data-objeto="lugar" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-campana-mas"/></svg>Seguir</button>
   </div>
 </section>
-      <section class="pantalla ficha" data-id="artista" hidden>
+      <section class="pantalla ficha con-heroe" data-id="artista" hidden data-vista="ficha">
   <header class="barra-interior heroe"><button type="button" class="boton-icono contorno" data-atras aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button><b class="titulo-barra">Aaron Cadena</b><button type="button" class="boton-icono plano" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button></header>
   <figure class="portada" style="--tono:#3b3a37" data-visor><img class="cartel" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-89f1f8a3-ccad-4026-81c6-e4e9bb574920.jpg" alt="Portada de Aaron Cadena" loading="lazy"></figure>
   <h1 class="titulo-ficha con-avatar"><span class="foto redonda avatar-ficha sn" role="img" aria-label="Sin foto"></span>Aaron Cadena<span class="tipo">Artes visuales</span><small>Fotografía · Solista · San Luis Potosí</small></h1>
@@ -872,7 +879,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     <button type="button" class="flotante primaria" data-accion-ficha="seguir" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-persona-mas"/></svg>Seguir</button>
   </div>
 </section>
-      <section class="pantalla tarea" data-id="alta" hidden data-tipo="evento">
+      <section class="pantalla tarea" data-id="alta" hidden data-vista="tarea" data-tipo="evento">
   <header class="barra-interior tarea"><b class="titulo-barra">Publicar un evento</b><button type="button" class="boton-icono contorno" data-atras aria-label="Cerrar"><svg class="i" aria-hidden="true"><use href="#i-cerrar"/></svg></button></header>
   <form class="alta evento" action="#">
     <label class="tarjeta-cartel"><span class="boton-icono elevado primario"><svg class="i" aria-hidden="true"><use href="#i-camara"/></svg></span><b>Sube el cartel</b><small>Leemos la fecha, el lugar y el título por ti.</small><input type="file" accept="image/*"></label>
@@ -914,7 +921,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     <button type="button" role="tab" data-tipo="artista" aria-selected="false">Artista</button>
   </div>
 </section>
-      <section class="pantalla tarea" data-id="buscar" hidden>
+      <section class="pantalla tarea" data-id="buscar" hidden data-vista="tarea">
   <header class="barra-interior tarea con-campo"><label class="campo buscar-campo"><svg class="i" aria-hidden="true"><use href="#i-buscar"/></svg><input type="search" placeholder="Buscar un evento, lugar o artista" aria-label="Buscar un evento, lugar o artista"></label><button type="button" class="boton-icono plano" data-atras aria-label="Cerrar"><svg class="i" aria-hidden="true"><use href="#i-cerrar"/></svg></button></header>
   <div class="filtros"><button type="button" class="chip contexto" data-hoja="ciudad"><svg class="i chico" aria-hidden="true"><use href="#i-pin"/></svg><span>San Luis Potosí</span><svg class="i chico" aria-hidden="true"><use href="#i-caret"/></svg></button></div>
   <h2 class="rotulo-grupo">Recientes</h2>
@@ -926,7 +933,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   <h2 class="rotulo-grupo">Esta semana</h2>
   <div class="chips en-busqueda"><button type="button" class="chip">Cine</button><button type="button" class="chip">Gratis</button><button type="button" class="chip">Fin de semana</button><button type="button" class="chip">Centro</button></div>
 </section>
-      <section class="pantalla ficha" data-id="ajustes" hidden>
+      <section class="pantalla ficha" data-id="ajustes" hidden data-vista="tarea">
   <header class="barra-interior fija"><button type="button" class="boton-icono contorno" data-atras aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button><b class="titulo-barra">Ajustes</b><button type="button" class="boton-icono plano" aria-label="Más opciones"><svg class="i" aria-hidden="true"><use href="#i-puntos"/></svg></button></header>
   <h2 class="rotulo-grupo">Tu ficha</h2>
   <ul class="tarjeta-lista"><li><a class="renglon ajuste" href="#"><svg class="i" aria-hidden="true"><use href="#i-lapiz"/></svg><b>Editar</b><small>Foto, nombre, colonia, sobre ti</small><svg class="i chevron" aria-hidden="true"><use href="#i-chevron-der"/></svg></a></li><li><a class="renglon ajuste" href="#"><svg class="i" aria-hidden="true"><use href="#i-ojo"/></svg><b>Perfil</b><small>Tu ficha y tu nombre en «quién va» se ven</small><span class="valor">Público<svg class="i chevron" aria-hidden="true"><use href="#i-chevron-der"/></svg></span></a></li><li><a class="renglon ajuste" href="#"><svg class="i" aria-hidden="true"><use href="#i-estrella"/></svg><b>Mis artistas</b><small>Fichas que administras</small><span class="valor">1<svg class="i chevron" aria-hidden="true"><use href="#i-chevron-der"/></svg></span></a></li></ul>
@@ -996,6 +1003,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   let actual = pantallas.find((p) => !p.hidden);
   const de = (id) => pantallas.find((p) => p.dataset.id === id);
   const hojaL = app.querySelector('.pantalla[data-id="lugares"] .hoja-lugares');
+  app.dataset.vista = actual.dataset.vista || "raiz";
 
   function pintarNav() {
     app.querySelectorAll(".navegacion .destino[data-ir]").forEach((d) => {
@@ -1008,6 +1016,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     destino.hidden = false;
     destino.scrollTop = tipo === "atras" ? scrollDe.get(destino.dataset.id) || 0 : 0;
     actual = destino;
+    app.dataset.vista = destino.dataset.vista || "raiz";
     delete app.dataset.compacta; delete app.dataset.navOculta;
     pintarNav();
     if (destino.dataset.id === "artistas") esqueleto(destino);
@@ -1058,22 +1067,19 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     alta.querySelectorAll(":scope > .alta").forEach((f) => (f.hidden = !f.classList.contains(tipo)));
   }
   function abrirAlta(tipo) { ponerTipoAlta(tipo); ir("alta", "tarea"); }
-  // La hoja de Lugares desplaza como un todo: los espaciadores fijan las alturas (asoma · media · llena) y el cuerpo asoma desde abajo.
+  // La hoja de Lugares desplaza como un todo sobre un hueco (::before) que mide la hoja menos lo que asoma recogida; cada altura es una posición de desplazamiento.
   const lugaresP = de("lugares");
-  const [espA, espB, espC] = hojaL.querySelectorAll(":scope > .espacio");
+  const navP = app.querySelector(".navegacion");
   const fichaHoja = hojaL.querySelector(".ficha-hoja");
   const enTelefono = () => getComputedStyle(hojaL).position !== "static";
   const zoom = () => parseFloat(aparato.style.zoom || "1");
   // Alturas visibles sobre la navegación: lista recogida 64 (asa y cantidad) · asoma 176 · media 56 % · llena; ficha recogida (su cabecera) · media (foto + KPI) · llena.
-  function ajustarHoja() {
-    if (!enTelefono()) { espA.style.height = espB.style.height = espC.style.height = "0px"; return; }
-    const util = hojaL.clientHeight - app.querySelector(".navegacion").offsetHeight;
-    let a, b, c;
-    if (lugaresP.dataset.ficha) { const k = fichaHoja.querySelector(".kpis"), cab = fichaHoja.querySelector(".cabecera-hoja"); const media = Math.min(util, k.offsetTop + k.offsetHeight + 80); a = media - cab.offsetHeight; b = util - media; c = 0; }
-    else { const media = util * 0.56; a = 176 - 64; b = media - 176; c = util - media; }
-    espA.style.height = Math.max(0, a) + "px"; espB.style.height = Math.max(0, b) + "px"; espC.style.height = Math.max(0, c) + "px";
+  function detentes() {
+    const util = hojaL.clientHeight - navP.offsetHeight;
+    if (lugaresP.dataset.ficha) { const r = fichaHoja.querySelector(".cabecera-hoja").offsetHeight, k = fichaHoja.querySelector(".kpis"); return { recogida: 0, media: Math.min(util, k.offsetTop + k.offsetHeight + 80) - r, llena: util - r }; }
+    return { recogida: 0, asoma: 176 - 64, media: util * 0.56 - 64, llena: util - 64 };
   }
-  const detentes = () => { const a = espA.offsetHeight, b = espB.offsetHeight, c = espC.offsetHeight; return lugaresP.dataset.ficha ? { recogida: 0, media: a, llena: a + b } : { recogida: 0, asoma: a, media: a + b, llena: a + b + c }; };
+  hojaL.detentes = detentes;
   function masCercano(y) { let mejor = "recogida", d = Infinity; for (const [k, v] of Object.entries(detentes())) { const dd = Math.abs(v - y); if (dd < d) { d = dd; mejor = k; } } return mejor; }
   const irA = (y) => hojaL.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
   function asentar() { const y = hojaL.scrollTop, d = detentes(); if (y >= d.llena - 1) return; const destino = d[masCercano(y)]; if (Math.abs(destino - y) > 1) irA(destino); }
@@ -1088,22 +1094,20 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
     }
     if (lugaresP.dataset.ficha) fichaHoja.toggleAttribute("data-compacta", y > (enTelefono() ? d.llena : 0) + umbral(fichaHoja) || lugaresP.dataset.hojaEstado === "recogida");
   }, { passive: true });
-  new ResizeObserver(() => { const antes = lugaresP.dataset.hojaEstado; ajustarHoja(); if (enTelefono()) hojaL.scrollTop = detentes()[antes] ?? 0; }).observe(hojaL);
+  new ResizeObserver(() => { if (enTelefono()) hojaL.scrollTop = detentes()[lugaresP.dataset.hojaEstado] ?? 0; }).observe(hojaL);
   // La ficha de lugar en el cuerpo de la hoja (la lista conserva su desplazamiento); abre a la altura de foto + KPI; al cerrar vuelve lo anterior.
   function abrirFichaHoja() {
     if (!lugaresP.dataset.ficha) { lugaresP.dataset.estadoAntes = lugaresP.dataset.hojaEstado; lugaresP.dataset.scrollAntes = hojaL.scrollTop; }
-    lugaresP.dataset.ficha = "1";
+    lugaresP.dataset.ficha = "1"; app.dataset.hojaFicha = "";
     fichaHoja.hidden = false;
     fichaHoja.removeAttribute("data-compacta");
-    ajustarHoja();
     hojaL.scrollTop = enTelefono() ? detentes().media : 0;
     lugaresP.dataset.hojaEstado = enTelefono() ? "media" : "llena";
     if (!reduce) { fichaHoja.classList.add("entra"); fichaHoja.addEventListener("animationend", () => fichaHoja.classList.remove("entra"), { once: true }); }
   }
   function cerrarFichaHoja() {
     fichaHoja.hidden = true;
-    delete lugaresP.dataset.ficha;
-    ajustarHoja();
+    delete lugaresP.dataset.ficha; delete app.dataset.hojaFicha;
     const estado = lugaresP.dataset.estadoAntes || "asoma";
     hojaL.scrollTop = enTelefono() ? (detentes()[estado] ?? detentes().asoma) : +lugaresP.dataset.scrollAntes || 0;
     lugaresP.dataset.hojaEstado = estado;

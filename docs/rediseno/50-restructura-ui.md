@@ -468,7 +468,7 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la séptima vuelta del founder)
+## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la octava vuelta del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
@@ -784,6 +784,39 @@ muy grande, tampoco se justifica "Ya estás en la lista" dentro del botón»):
   («Interesadxs», «destacadxs»). Lo que queda en la app en producción va en la pieza P13 (sección 7) con su lista en
   el punto 47 de la sección 11.
 
+**Octava vuelta (el mismo día, tres hilos más sobre el armazón):**
+
+- **«Error de maquetación, hay una línea flotando acá… esta maquetación de shell es de una complejidad innecesaria.
+  Reconsidera cómo la estás planteando ahora que ya tienes la propuesta… ojo, todo esto comenzó con el objetivo
+  estratégico de definir ese shell para que nos sirva en desktop, tablet, mobile y sea fácil exportar app».** Tenía
+  razón en las dos cosas. La línea flotante era la raya de 1 px que el carril lateral pintaba con gradientes a la
+  altura de `--nav-arriba` (68, 104 o 56 según la pantalla) para arrancar justo bajo la fila de filtros: cualquier
+  desvío de un píxel la dejaba en el aire. Y ese truco, más las reglas `:has()` que apagaban la barra y la navegación
+  según qué pantalla estuviera visible, más los tres espaciadores de la hoja, eran CSS del prototipo sin equivalente
+  limpio en una app. **El armazón queda así:** un solo grid de tres áreas (barra · nav · pantalla) que no depende de
+  lo que hay dentro; el JS pone en la app `data-vista` = raíz · ficha · tarea al cambiar de pantalla y el CSS solo lee
+  ese atributo (en teléfono la ficha y la tarea esconden barra y navegación; desde 792 nada se esconde); el carril
+  lateral arranca bajo la barra de la app, que lleva su línea de abajo a todo lo ancho, y tiene un borde derecho
+  normal de arriba abajo (la fila de contexto ya no lleva línea propia en tableta y escritorio); la hoja de Lugares
+  desplaza sobre un hueco `::before` (la hoja entera menos lo que asoma recogida) y no hay espaciadores en el
+  marcado. Cero `:has()`, cero `--nav-arriba`, cero medidas por pantalla. En una app nativa es lo mismo: barra, tab
+  bar o sidebar y un área de contenido que cambia de pantalla. Las pruebas de la hoja con la rueda dan los mismos
+  estados y alturas que antes. Capturas [256-101](capturas-256/256-101-v3-inicio-escritorio.png) y
+  [256-99](capturas-256/256-99-v3-inicio-tableta.png).
+- **«En desktop esto no tiene sentido: si ves esta barra y la de arriba, hay muchísimo espacio en blanco… podríamos
+  fusionar las barras, poniendo flecha atrás a un lado de agregar y "…" a un lado de campana».** Fusionadas: desde
+  792 la barra de la app tiene siete columnas simétricas («+» · Atrás · hueco · logotipo · lupa · campana · menú) y
+  Atrás y el menú aparecen solo con una ficha a la vista; la barra propia de la ficha desaparece desde 792 y la ficha
+  empieza en la portada, a 20 px de la barra (en tableta el título sigue sobre la imagen; en escritorio en la
+  columna derecha). Las otras dos salidas que propuso (la navegación sobre la columna de contenido; la columna
+  centrada de tableta también en escritorio) se descartaron: la primera rehace todo el armazón de escritorio y la
+  segunda tira la ficha a dos columnas, que es lo que mejor aprovecha 1280. Las tareas (publicar, buscar) y Ajustes
+  conservan su barra interior porque lleva contenido (título y ✕, o el campo de búsqueda). Capturas
+  [256-105](capturas-256/256-105-v3-ficha-evento-escritorio.png) y
+  [256-107](capturas-256/256-107-v3-ficha-artista-escritorio.png).
+- **«Centrada»** (los filtros de Lugares en tableta y escritorio): centrados como en las demás raíces; la fila cruza
+  el panel y el mapa. Captura [256-102](capturas-256/256-102-v3-lugares-escritorio.png).
+
 ### 6.6 Defectos que la revisión de la v3 encontró y cerró
 
 El founder señaló que «elemento de lugar se desalinea en tableta y escritorio»: era cierto y silencioso. **El renglón
@@ -835,7 +868,7 @@ carriles, y «Ver 23 eventos» era una cifra inventada: los tres días entran y 
 8 (Lugares con la ficha dentro de la hoja; 402 nodos en Inicio con sus doce días, sus carriles y el esqueleto; 34 en
 Buscar). Los controles por debajo de 44 px son los mismos de la v2 (chips de 36 con 44 al tacto, letras 34×36, asa,
 `input` dentro de campos de 48, palancas, «Reportar»); los días del calendario miden 44 de alto con su círculo de 38.
-Cero errores de página y cero respuestas 4xx/5xx en las 54 capturas (medición repetida tras la séptima vuelta).
+Cero errores de página y cero respuestas 4xx/5xx en las 54 capturas (medición repetida tras la séptima y la octava vuelta).
 
 ## 7. Plan de implementación (primera versión; se cierra tras el prototipo firmado)
 
@@ -848,7 +881,7 @@ council. Orden por dependencias:
 | P1 | Tokens y utilidades: 5.1 completo más la letra de listas (familia, cuerpo y ancho como variables), `.columna`/`.a-lo-ancho`, quitar `100vw` | `globals.css` | M | inventario: 0 `z-index` fuera de token, 0 `100vw`; build verde; nada cambia a la vista (capturas iguales) |
 | P2 | `BotonIcono` y `Boton` unificados; glifos de acción: palomita (Voy), persona con «+» (seguir artista), campana con «+» (seguir lugar); decidido verde con glifo blanco | `ui/Boton*`, `Atras`, `Cerrar`, `Cabecera`, `ChipFecha`, `Sesion`, `lugares.ubicacion`, `Ficha`, `BotonRenglon`, `Mapa` | L | 0 círculos fuera del componente; todos los controles de barra a 44 (medido) |
 | P3 | `Renglon` con cuatro pieles + `Esqueleto` derivado + `Palanca`/`SoloLector` compartidos | `Renglon*`, `Ficha .dato`, `ajustes .fila`, `FormularioCanon .resuelto`, `Esqueleto` | L | H-17 y H-33 cerrados; el esqueleto mide lo que el renglón (medido) |
-| P4 | Barra de la app única en los tres tamaños («+» · logotipo · lupa · campana) a nivel del layout, que se recoge al bajar y vuelve al subir; barra inferior de cuatro destinos que se esconde y vuelve con la misma regla; fila de contexto pegajosa; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
+| P4 | Armazón único: un grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro, con `data-vista` (raíz · ficha · tarea) puesto por el layout; barra de la app única en los tres tamaños («+» · Atrás · logotipo · lupa · campana · menú; Atrás y menú solo desde 792 con ficha a la vista) que en teléfono se recoge al bajar y vuelve al subir; barra inferior de cuatro destinos que se esconde y vuelve con la misma regla; fila de contexto pegajosa; sin `:has()` ni medidas por pantalla; se retira el flotante y el conmutador Mapa · Lista (la lista pasa a la hoja inferior, P5) | `Barra`, `Cabecera`, `Publicar`, `lugares`, `VistaLugares`, `TiraLetras` | L | H-01, H-04, H-08, H-13, H-15, H-18: 0 accionables tapados (medido) |
 | P5 | Plantillas raíz y lista (rejillas con áreas, sin márgenes negativos) para Inicio (carriles en reposo y lista por día cuando Cuándo tiene valor: `/agenda` redirige a `/`), Lugares, Artistas y Perfil; cada día o letra en su `section` con el título pegajoso; renglón de dos líneas; hoja inferior de Lugares (tres alturas) con la ficha del lugar como capa sobre la lista, Cerrar y menú dentro de la hoja y barra Cerrar · título · más opciones al desplazar; fila ciudad · Cuándo · Filtros · activos con sus tres hojas (Dónde estás, Cuándo, Filtros) | `globals .raiz`, páginas raíz, `AgendaInicio`, `ListaLugares`, `ListaArtistas` | L | H-09, H-10, H-11, H-14, H-16, H-24 (0 márgenes negativos, medido) |
 | P6 | Plantilla ficha con el canon del héroe: portada 3:2 con la etiqueta, el título y la meta dentro de la imagen sobre el velo, Atrás y menú elevados sobre ella, barra compacta al desplazar con la portada oscurecida detrás del título, visor al tocar la imagen; tres KPI que abrazan su contenido (icono y etiqueta arriba, valor abajo; fecha sin etiqueta); acciones alineadas; pastillas flotantes Me interesa · Voy / Seguir con sus estados (Vas, Te interesa, Sigues); ficha de artista con avatar dentro del héroe y sección Novedades, sin «Se presenta en»; el mismo cuerpo de ficha de lugar sirve a pantalla completa y dentro de la hoja | `Ficha`, `Cartel`, `MapaFicha`, fichas de evento/lugar/artista, `SeccionNovedades` | L | H-20 a H-28 |
 | P7 | Carril lateral en dos grupos (secciones arriba, Perfil abajo) bajo la barra de la app a todo lo ancho; reglas responsivas (tableta y escritorio), ficha a dos columnas, mapa + panel con la ficha dentro del panel | `Navegacion`, plantillas, `VistaLugares` | XL | capturas 820 y 1280; H-34 a H-37 |
@@ -984,8 +1017,8 @@ Lo que el founder confirma o corrige al probar la v3:
 37. **Chips en el héroe de la ficha de evento**: si algún día entran, con el mismo estilo que la etiqueta de la hoja
     de lugar (MUSEO: violeta sobre blanco, encima del título). Anotado, sin construir.
 38. **Radio más sugerido en todos los casos** (4 · 8 · 12; fotos de renglón 4; hoja 24). **Hecho** («es canon»).
-39. **Filtros centrados en tableta y escritorio**, salvo Lugares (alineados con el panel). **Hecho**; confirmar Lugares.
-40. **El carril empieza donde termina la fila de filtros** (tableta y escritorio). **Hecho.**
+39. **Filtros centrados en tableta y escritorio**, salvo Lugares (alineados con el panel). **Hecho**; después pidió «centrada» también en Lugares: hecho (punto 56).
+40. **El carril empieza donde termina la fila de filtros** (tableta y escritorio). **Hecho** en la sexta vuelta; **deshecho en la octava** a petición suya (punto 54): el carril arranca bajo la barra de la app, sin rayas pintadas ni medidas por pantalla.
 41. **Héroe en la ficha de artista** con placeholder hasta que suba su portada (6.5). **Hecho a falta de su
     confirmación**: el avatar redondo sale de la ficha, Seguir flota, artista y lugar quedan casi iguales.
 44. **Título de día pegajoso** («se ve la parte de atrás de fecha, hay desfase de elementos»): anclado justo bajo la
@@ -1061,5 +1094,16 @@ Lo que el founder confirma o corrige al probar la v3:
     eventos»): se le contestó que Lugares nombra qué hay (como Inicio, Artistas, Perfil) y Mapa nombraría cómo se ve,
     que en tableta y escritorio el mapa es solo la columna derecha y que los eventos ahí cuelgan siempre de un lugar;
     se le ofreció verlo con la etiqueta cambiada. Abierto.
+
+54. **El armazón simplificado** (hilo, «esta maquetación de shell es de una complejidad innecesaria… el objetivo
+    estratégico: definir ese shell para que nos sirva en desktop, tablet, mobile y sea fácil exportar app»): un solo
+    grid de tres áreas con `data-vista`, sin `:has()`, sin `--nav-arriba`, sin espaciadores; el carril arranca bajo
+    la barra de la app con un borde normal (6.5, octava vuelta). **Hecho**; confirmar. Consecuencia que se le señala:
+    el carril ya no arranca bajo la fila de filtros como pidió en la sexta vuelta (punto 40), sino bajo la barra; a
+    cambio la fila no lleva línea propia y no hay nada que medir.
+55. **Barras fusionadas en escritorio y tableta** (hilo, «fusionar las barras, poniendo flecha atrás a un lado de
+    agregar y "…" a un lado de campana»): **Hecho**; confirmar. Las tareas y Ajustes conservan su barra interior
+    (título y ✕); si también la quiere fuera, el título pasaría al arranque del contenido.
+56. **Filtros de Lugares centrados** («centrada»): **Hecho.** Cierra el punto 39.
 
 Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).

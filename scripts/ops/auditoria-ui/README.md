@@ -27,7 +27,7 @@ código de la app; sirven para repetir la medición en cada pieza de la reestruc
   navegando el prototipo de verdad (los clics se despachan como eventos para que también funcionen sobre `<g>` del SVG;
   el desplazamiento se dispara con un evento `scroll` para que actúen la barra y la navegación que se guardan); imprime
   los errores de página y las respuestas 4xx/5xx. La hoja de Lugares se lleva a cada altura desplazando su
-  contenedor (los espaciadores fijan asoma · media · llena). Incluye el muestrario de iconos para «seguir un lugar»
+  contenedor (el prototipo expone sus alturas en `.hoja-lugares.detentes()`: recogida · asoma · media · llena). Incluye el muestrario de iconos para «seguir un lugar»
   (el mismo renglón con tres glifos), Inicio en modo lista con las tres letras de listas y los estados de las
   pastillas flotantes; con la séptima vuelta, el calendario de Cuándo (un día y un rango), «Otra ciudad» con
   sugerencias y la recarga, la ficha de artista desplazada con sus novedades y el muestrario del icono de Artistas.

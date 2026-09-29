@@ -10,7 +10,11 @@ la barra inferior se esconde al bajar y vuelve al subir; visor de la imagen al t
 v3, séptima vuelta (hilos del prototipo): «Elegir fecha…» abre un calendario (un día o dos para un rango) y el valor de Cuándo filtra los días;
 «Otra ciudad» abre un campo con sugerencias y recarga; el icono de Artistas con figura y pincel se probó y el founder lo rechazó (sigue la estrella); la ficha de artista conserva el avatar
 dentro del héroe, pierde «Se presenta en» y muestra sus novedades publicadas; la barra compacta de las fichas y de la hoja lleva la portada
-oscurecida detrás del título; KPI «Interesadxs» y «Siguen» (lenguaje incluyente)."""
+oscurecida detrás del título; KPI «Interesadxs» y «Siguen» (lenguaje incluyente).
+v3, octava vuelta (hilos del prototipo): armazón simplificado. Un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que
+hay dentro: el JS pone data-vista (raiz · ficha · tarea) y el CSS solo lee ese atributo (fuera los :has() y el --nav-arriba con sus rayas
+pintadas); desde 792 la barra de la app lleva Atrás junto a «+» y el menú junto a la campana y la barra de la ficha desaparece (una sola
+barra); la hoja de Lugares desplaza sobre un hueco ::before (sin espaciadores en el marcado); filtros centrados también en Lugares."""
 import json, re, sys, os, datetime
 S = os.path.dirname(os.path.abspath(__file__))
 RAIZ = sys.argv[1]
@@ -129,12 +133,15 @@ def renglon_artista(n, m, sigue=False):
     return (f'<li class="renglon lista"><a class="frente" href="#" data-ir="artista">{foto(None,"","foto redonda")}<b>{n}</b><small>{m}</small></a>{boton_accion(sigue, seguir=True)}</li>')
 
 def barra_raiz():
-    # Una sola barra para los tres tamaños, a nivel de la app: «+» · logotipo · lupa · campana.
+    # Una sola barra para los tres tamaños, a nivel de la app: «+» · (Atrás) · logotipo · lupa · campana · (menú).
+    # Atrás y el menú solo se ven desde 792 con una ficha a la vista: la barra de la ficha se funde con la de la app (una sola barra).
     return (f'<header class="barra">'
-            f'<button type="button" class="boton-icono plano" data-publicar aria-label="Publicar">{i("crear")}</button>'
+            f'<button type="button" class="boton-icono plano publicar" data-publicar aria-label="Publicar">{i("crear")}</button>'
+            f'<button type="button" class="boton-icono plano atras-barra" data-atras aria-label="Atrás">{i("chevron-izq")}</button>'
             f'<a class="logotipo-enlace" href="#" data-ir="inicio" aria-label="Inicio">{logo}</a>'
-            f'<button type="button" class="boton-icono plano" data-ir="buscar" aria-label="Buscar">{i("buscar")}</button>'
-            f'<button type="button" class="boton-icono plano" aria-label="Novedades">{i("campana")}<span class="punto"></span></button>'
+            f'<button type="button" class="boton-icono plano buscar-barra" data-ir="buscar" aria-label="Buscar">{i("buscar")}</button>'
+            f'<button type="button" class="boton-icono plano campana-barra" aria-label="Novedades">{i("campana")}<span class="punto"></span></button>'
+            f'<button type="button" class="boton-icono plano mas-barra" aria-label="Más opciones">{i("puntos")}</button>'
             f'</header>')
 
 def chip_ciudad():
@@ -274,7 +281,6 @@ lugares = f'''<section class="pantalla raiz" data-id="lugares" data-hoja-estado=
   {cabecera(chip_ciudad() + chip_filtros('filtros-lugares', 1) + chip_activo('Museo'))}
   <div class="mapa">{mapa}<button type="button" class="boton-icono elevado ubicacion" aria-label="Mi ubicación">{i("ubicacion")}</button><span class="atribucion">© Mapbox © OpenStreetMap</span></div>
   <div class="hoja-lugares" role="region" aria-label="Lugares">
-    <div class="espacio" aria-hidden="true"></div><div class="espacio" aria-hidden="true"></div><div class="espacio" aria-hidden="true"></div>
     <div class="cuerpo-hoja">
     <button type="button" class="asa" aria-label="Mostrar u ocultar la lista"></button>
     <b class="resumen">62 lugares <small>· los más cercanos primero</small></b>
@@ -310,7 +316,7 @@ perfil = f'''<section class="pantalla raiz" data-id="perfil">
   <a class="boton texto enlace-perfil" href="#">Así te ve la gente</a>
 </section>'''
 
-evento = f'''<section class="pantalla ficha" data-id="evento">
+evento = f'''<section class="pantalla ficha con-heroe" data-id="evento" data-vista="ficha">
   {barra_interior(titulo=ev['colocaos']['t'], sobre=True)}
   <figure class="portada" style="--tono:#4a3d3a" data-visor>{foto(ev['colocaos']['img'], 'Cartel de LXS COLOCAOS', 'cartel')}</figure>
   <h1 class="titulo-ficha">LXS COLOCAOS: La última fogueada</h1>
@@ -348,7 +354,7 @@ evento = f'''<section class="pantalla ficha" data-id="evento">
   </div>
 </section>'''
 
-lugar = f'''<section class="pantalla ficha" data-id="lugar">
+lugar = f'''<section class="pantalla ficha con-heroe" data-id="lugar" data-vista="ficha">
   {barra_interior(titulo=lu['ferro']['n'], sobre=True)}
   {cuerpo_lugar()}
 </section>'''
@@ -360,7 +366,7 @@ def novedad(img, titulo, texto, cuando, icono=None):
 # La ficha de artista con el canon del héroe: portada 3:2 (la que suba; sin ella, el símbolo SN), el avatar redondo que ya tenía dentro del
 # título, etiqueta de disciplina, nombre y meta sobre la imagen; KPI; acciones; próximas fechas; novedades publicadas (lo que reciben quienes
 # siguen, en la campana); sobre. «Se presenta en» se fue: repetía los lugares de las próximas fechas; el KPI «Lugares» lleva al mapa con los suyos.
-artista = f'''<section class="pantalla ficha" data-id="artista">
+artista = f'''<section class="pantalla ficha con-heroe" data-id="artista" data-vista="ficha">
   {barra_interior(titulo='Aaron Cadena', sobre=True)}
   <figure class="portada" style="--tono:#3b3a37" data-visor>{foto(E.get('susurros-del-inconsciente'), 'Portada de Aaron Cadena', 'cartel')}</figure>
   <h1 class="titulo-ficha con-avatar">{foto(None, '', 'foto redonda avatar-ficha')}Aaron Cadena<span class="tipo">Artes visuales</span><small>Fotografía · Solista · San Luis Potosí</small></h1>
@@ -403,7 +409,7 @@ def renglon_resuelto(icono, clave, valor, accion, pendiente=False, opciones=None
     clase_b = ' class="falta"' if pendiente else ''
     return f'<li class="renglon resuelto{clase_p}">{i(icono)}<small>{clave}</small><b{clase_b}>{valor}</b>{acc}</li>'
 
-alta = f'''<section class="pantalla tarea" data-id="alta" data-tipo="evento">
+alta = f'''<section class="pantalla tarea" data-id="alta" data-vista="tarea" data-tipo="evento">
   {barra_interior(tarea=True, titulo='Publicar un evento')}
   <form class="alta evento" action="#">
     <label class="tarjeta-cartel"><span class="boton-icono elevado primario">{i("camara")}</span><b>Sube el cartel</b><small>Leemos la fecha, el lugar y el título por ti.</small><input type="file" accept="image/*"></label>
@@ -446,7 +452,7 @@ alta = f'''<section class="pantalla tarea" data-id="alta" data-tipo="evento">
   </div>
 </section>'''
 
-buscar = f'''<section class="pantalla tarea" data-id="buscar">
+buscar = f'''<section class="pantalla tarea" data-id="buscar" data-vista="tarea">
   {barra_interior(campo='Buscar un evento, lugar o artista')}
   <div class="filtros">{chip_ciudad()}</div>
   <h2 class="rotulo-grupo">Recientes</h2>
@@ -470,7 +476,7 @@ def fila_ajuste(icono, etiqueta, detalle='', valor='', palanca=None, ir=None):
     irr = f' data-ir="{ir}"' if ir else ''
     return f'<li><{tag} class="renglon ajuste"{href}{irr}>{i(icono)}<b>{etiqueta}</b>{det}{accion}</{tag}></li>'
 
-ajustes = f'''<section class="pantalla ficha" data-id="ajustes">
+ajustes = f'''<section class="pantalla ficha" data-id="ajustes" data-vista="tarea">
   {barra_interior(titulo='Ajustes', fija=True)}
   <h2 class="rotulo-grupo">Tu ficha</h2>
   <ul class="tarjeta-lista">{fila_ajuste('lapiz','Editar','Foto, nombre, colonia, sobre ti')}{fila_ajuste('ojo','Perfil','Tu ficha y tu nombre en «quién va» se ven','Público')}{fila_ajuste('estrella','Mis artistas','Fichas que administras','1')}</ul>
@@ -610,8 +616,10 @@ ul {{ list-style: none; }}
 .app[data-letra="inter"] {{ --fuente-lista: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; --ancho-lista-titulo: normal; --ancho-lista-meta: normal; --letra-lista-titulo: 1rem; --letra-lista-meta: .875rem; --peso-lista-titulo: 600; --interlinea-lista: 1.3; }}
 
 /* ==========================================================================
-   2. El armazón: barra arriba y pantalla; la barra inferior flota al pie en teléfono y se esconde al bajar.
-      Desde 792 la barra ocupa todo el ancho y la navegación es un carril lateral en dos grupos.
+   2. El armazón: un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro. El JS pone en la app
+      data-vista = raiz · ficha · tarea y el CSS solo lee ese atributo: en teléfono la ficha y la tarea esconden la barra y la
+      navegación; desde 792 la barra ocupa todo el ancho, la navegación es un carril lateral en dos grupos y la ficha usa la barra
+      de la app (Atrás junto a «+», menú junto a la campana). En una app nativa es lo mismo: barra, tab bar o sidebar y el contenido.
    ========================================================================== */
 .app {{ position: relative; display: grid; grid-template: "barra" auto "pantalla" minmax(0, 1fr) / minmax(0, 1fr); width: 100%; height: 100%; overflow: hidden; border-radius: 30px; background: var(--fondo-contenido); color: var(--texto); font-family: var(--fuente); font-variation-settings: var(--ancho-texto); font-size: var(--letra-md); line-height: 1.4; }}
 .aparato[data-modo="telefono"] .app {{ --tope: 48px; --piso: 34px; }}
@@ -632,11 +640,13 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 /* ---- barra de la app: «+» · logotipo · lupa · campana. En teléfono se guarda al bajar (queda la franja de estado) ---- */
 .barra {{ grid-area: barra; position: relative; z-index: var(--z-pegajoso); display: grid; grid-template-columns: var(--control) var(--control) minmax(0, 1fr) var(--control) var(--control); align-items: center; height: calc(var(--alto-barra) + var(--tope)); padding: var(--tope) calc(var(--gutter) - var(--espacio-2)) 0; background: var(--fondo); overflow: hidden; transition: height var(--duracion) var(--curva); }}
 .app[data-compacta] > .barra {{ height: var(--tope); }}
-.app:has(> .pantalla.ficha:not([hidden])) > .barra, .app:has(> .pantalla.tarea:not([hidden])) > .barra {{ display: none; }}
-.barra > :nth-child(1) {{ grid-column: 1; }}
-.barra > :nth-child(2) {{ grid-column: 3; justify-self: center; }}
-.barra > :nth-child(3) {{ grid-column: 4; }}
-.barra > :nth-child(4) {{ grid-column: 5; }}
+.app:not([data-vista="raiz"]) > .barra {{ display: none; }}
+.barra > .publicar {{ grid-column: 1; }}
+.barra > .logotipo-enlace {{ grid-column: 3; justify-self: center; }}
+.barra > .buscar-barra {{ grid-column: 4; }}
+.barra > .campana-barra {{ grid-column: 5; }}
+/* Atrás y el menú de la ficha viven en la barra solo desde 792; en teléfono la ficha lleva su propia cabecera sobre el héroe */
+.barra > .atras-barra, .barra > .mas-barra {{ display: none; }}
 .barra .i {{ width: 26px; height: 26px; }}
 .logotipo-enlace {{ display: grid; align-items: center; min-height: var(--control); }}
 .logotipo {{ display: block; height: 28px; width: auto; aspect-ratio: 3903 / 790; }}
@@ -646,7 +656,7 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 /* ---- navegación: cuatro destinos al pie en teléfono; se esconde al bajar y vuelve al subir (como la barra) ---- */
 .navegacion {{ position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-barra); display: grid; grid-template-columns: repeat(4, 1fr); height: var(--nav-abajo); padding: 0 var(--espacio-1) var(--piso); background: var(--fondo); border-top: 1px solid var(--borde); box-shadow: var(--sombra-panel); transition: transform var(--duracion) var(--curva); }}
 .app[data-nav-oculta] > .navegacion {{ transform: translateY(100%); }}
-.app:has(> .pantalla.ficha:not([hidden])) > .navegacion, .app:has(> .pantalla.tarea:not([hidden])) > .navegacion {{ display: none; }}
+.app:not([data-vista="raiz"]) > .navegacion {{ display: none; }}
 .destino {{ display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; background: none; color: var(--texto-suave); font-size: var(--letra-2xs); font-weight: 600; letter-spacing: .02em; cursor: pointer; }}
 .destino .pildora {{ position: relative; display: grid; place-items: center; width: 60px; height: 32px; border-radius: 16px; transition: background-color 150ms; }}
 .destino .pildora .i {{ width: 26px; height: 26px; }}
@@ -817,7 +827,8 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 
 /* ==========================================================================
    8. Lugares: la fila de contexto arriba y el mapa en la segunda fila. La hoja es una capa transparente que cubre la pantalla
-      (de la franja de estado al pie) y DESPLAZA: dos espaciadores invisibles y luego el cuerpo blanco, que asoma desde abajo.
+      (de la franja de estado al pie) y DESPLAZA: un hueco arriba (::before, la hoja entera menos lo que asoma recogida) y luego el
+      cuerpo blanco, que asoma desde abajo; nada en el marcado.
       Arrastrar el cuerpo lo sube (la hoja «crece»); cuando su borde llega arriba (llena) el mismo gesto sigue desplazando el
       contenido: una sola inercia. Al soltar entre alturas se asienta en la más cercana (asoma · media · llena).
       Tocar un pin o un renglón muestra la ficha en el cuerpo (la lista conserva su desplazamiento) a la altura de foto + KPI;
@@ -844,7 +855,9 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .atribucion {{ position: absolute; left: var(--espacio-2); top: calc(var(--espacio-3) + 14px); font-size: 10px; color: var(--texto-suave); opacity: .8; }}
 .hoja-lugares {{ position: absolute; left: 0; right: 0; top: var(--tope); bottom: 0; z-index: var(--z-flotante); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; pointer-events: none; }}
 .hoja-lugares::-webkit-scrollbar {{ display: none; }}
-.hoja-lugares > .espacio {{ height: 0; }}
+.hoja-lugares {{ --hoja-recogida: 64px; }}
+.pantalla[data-id="lugares"][data-ficha] .hoja-lugares {{ --hoja-recogida: calc(20px + var(--boton-icono) + var(--espacio-2)); }}
+.hoja-lugares::before {{ content: ""; display: block; height: calc(100% - var(--nav-abajo) - var(--hoja-recogida)); }}
 .cuerpo-hoja {{ position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; align-content: start; min-height: 100%; padding-bottom: var(--nav-abajo); background: var(--fondo); border-radius: var(--radio-hoja) var(--radio-hoja) 0 0; box-shadow: var(--sombra-panel); overflow: clip; pointer-events: auto; transition: border-radius 150ms; }}
 .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cuerpo-hoja {{ border-radius: 0; }}
 .pantalla[data-id="lugares"][data-ficha] .cuerpo-hoja > :not(.ficha-hoja) {{ display: none; }}
@@ -877,7 +890,7 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
    ========================================================================== */
 .pantalla.ficha {{ grid-template-areas: "barra" "portada"; }}
 /* Canon de la hoja en la ficha: la barra ocupa una fila de alto 0 y se pega arriba; en reposo es transparente sobre el héroe (Atrás y menú elevados); al desplazar toma fondo blanco y muestra el título */
-.pantalla.ficha:has(> .barra-interior.heroe) {{ grid-template-rows: 0 max-content; }}
+.pantalla.con-heroe {{ grid-template-rows: 0 max-content; }}
 .barra-interior.heroe {{ align-self: start; height: calc(var(--tope) + var(--espacio-2) + var(--boton-icono) + var(--espacio-2)); padding: calc(var(--tope) + var(--espacio-2)) var(--gutter) 0; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; background: transparent; border-bottom: 0; z-index: 3; transition: background-color 150ms, box-shadow 150ms; }}
 .barra-interior.heroe > .boton-icono {{ width: var(--boton-icono); height: var(--boton-icono); border: 0; background: var(--fondo); color: var(--texto); box-shadow: var(--sombra); }}
 .barra-interior.heroe > .titulo-barra {{ align-self: center; }}
@@ -925,8 +938,8 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .flotante.primaria[aria-pressed="true"] {{ background: var(--ok); }}
 .flotante.secundaria[aria-pressed="true"] {{ color: var(--primario); }}
 /* El aviso sube por encima de las acciones flotantes cuando hay ficha a la vista */
-.app:has(> .pantalla.ficha:not([hidden])) > .toast, .app:has(> .pantalla[data-id="lugares"][data-ficha]:not([hidden])) > .toast {{ bottom: calc(var(--nav-abajo) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }}
-.app:has(> .pantalla.ficha:not([hidden])) > .toast {{ bottom: calc(var(--piso) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }}
+.app[data-hoja-ficha] > .toast {{ bottom: calc(var(--nav-abajo) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }}
+.app[data-vista="ficha"] > .toast {{ bottom: calc(var(--piso) + var(--espacio-4) + var(--toque) + var(--espacio-3)); }}
 /* Dentro de la hoja la portada es 3:2 (el founder la subió de 16:9 en el lienzo); a media altura se ven título, etiqueta y el arranque de los KPI */
 .ficha-hoja > .portada {{ aspect-ratio: 3 / 2; }}
 .pantalla.ficha {{ padding-bottom: var(--espacio-4); }}
@@ -1025,27 +1038,31 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
 }}
 @container app (min-width: 792px) {{
   .app {{ --nav-abajo: 0px; grid-template: "barra barra" auto "nav pantalla" minmax(0, 1fr) / var(--ancho-carril-nav) minmax(0, 1fr); --gutter: max(24px, calc((100cqw - 24px - var(--ancho-carril-nav) - var(--columna)) / 2)); }}
-  /* La barra de la app ocupa todo el ancho y no se guarda; sigue ahí en fichas y tareas */
-  .app > .barra, .app[data-compacta] > .barra, .app:has(> .pantalla.ficha:not([hidden])) > .barra, .app:has(> .pantalla.tarea:not([hidden])) > .barra {{ display: grid; height: calc(var(--alto-barra) + var(--tope)); padding-inline: var(--espacio-4); }}
-  /* Carril lateral en dos grupos: secciones arriba, perfil abajo; no se esconde y sigue en fichas y tareas */
-  .navegacion, .app[data-nav-oculta] > .navegacion, .app:has(> .pantalla.ficha:not([hidden])) > .navegacion, .app:has(> .pantalla.tarea:not([hidden])) > .navegacion {{ position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: calc(var(--nav-arriba) + var(--espacio-4)) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 0; background: linear-gradient(var(--borde), var(--borde)) no-repeat 0 calc(var(--nav-arriba) - 1px) / 100% 1px, linear-gradient(var(--borde), var(--borde)) no-repeat 100% var(--nav-arriba) / 1px 100%, var(--fondo); box-shadow: none; transform: none; }}
+  /* La barra de la app ocupa todo el ancho, no se guarda y sigue ahí en fichas y tareas; con una ficha a la vista muestra Atrás (junto a «+») y el menú (junto a la campana): una sola barra */
+  .app > .barra, .app[data-compacta] > .barra, .app:not([data-vista="raiz"]) > .barra {{ display: grid; grid-template-columns: repeat(3, var(--control)) minmax(0, 1fr) repeat(3, var(--control)); height: calc(var(--alto-barra) + var(--tope)); padding-inline: var(--espacio-4); border-bottom: 1px solid var(--borde); }}
+  .barra > .atras-barra {{ display: inline-grid; grid-column: 2; visibility: hidden; }}
+  .barra > .logotipo-enlace {{ grid-column: 4; }}
+  .barra > .buscar-barra {{ grid-column: 5; }}
+  .barra > .campana-barra {{ grid-column: 6; }}
+  .barra > .mas-barra {{ display: inline-grid; grid-column: 7; visibility: hidden; }}
+  .app[data-vista="ficha"] > .barra > .atras-barra, .app[data-vista="ficha"] > .barra > .mas-barra {{ visibility: visible; }}
+  .pantalla.ficha > .barra-interior.heroe {{ display: none; }}
+  /* La fila de contexto no lleva su propia línea: la de la barra cruza todo el ancho y el carril arranca debajo */
+  .cabecera {{ box-shadow: none; }}
+  /* Carril lateral en dos grupos: secciones arriba, perfil abajo; no se esconde y sigue en fichas y tareas; un borde derecho normal, de la barra al pie */
+  .navegacion, .app[data-nav-oculta] > .navegacion, .app:not([data-vista="raiz"]) > .navegacion {{ position: static; grid-area: nav; display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto auto minmax(0, 1fr) auto; align-content: start; justify-items: center; gap: var(--espacio-2); height: auto; padding: var(--espacio-4) var(--espacio-2) calc(var(--espacio-4) + var(--piso)); border-top: 0; border-right: 1px solid var(--borde); background: var(--fondo); box-shadow: none; transform: none; }}
   .navegacion > .perfil {{ grid-row: 5; }}
   .destino {{ width: 72px; padding: 6px 0; border-radius: var(--radio); }}
   .pantalla.raiz {{ padding-bottom: var(--espacio-8); }}
   .filtros {{ padding-top: var(--espacio-3); justify-content: center; }}
-  .pantalla[data-id="lugares"] > .cabecera > .filtros, .pantalla[data-id="perfil"] > .filtros {{ justify-content: start; }}
-  /* El carril empieza donde termina la fila de filtros (68 px; 104 con la tira de letras; 56 bajo la barra de una ficha o tarea), con su línea de arriba a la misma altura */
-  .app {{ --nav-arriba: 68px; }}
-  .app:has(> .pantalla[data-id="artistas"]:not([hidden])) {{ --nav-arriba: 104px; }}
-  .app:has(> .pantalla.ficha:not([hidden])), .app:has(> .pantalla.tarea:not([hidden])) {{ --nav-arriba: var(--alto-barra); }}
+  .pantalla[data-id="perfil"] > .filtros {{ justify-content: start; }}
   .barra-interior {{ height: var(--alto-barra); padding-top: 0; }}
   .barra-interior.con-campo > :first-child {{ display: grid; max-width: 520px; }}
   .pantalla[data-id="lugares"] {{ grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; padding-bottom: 0; }}
   .pantalla[data-id="lugares"] > .cabecera {{ grid-area: cabecera; }}
-  .pantalla[data-id="lugares"] > .cabecera > .filtros {{ padding-inline: var(--espacio-5); }}
   .pantalla[data-id="lugares"] > .mapa {{ grid-area: mapa; }}
   .pantalla[data-id="lugares"] .hoja-lugares {{ position: static; grid-area: hoja; min-height: 0; pointer-events: auto; border-right: 1px solid var(--borde); background: var(--fondo-contenido); }}
-  .hoja-lugares > .espacio {{ display: none; }}
+  .hoja-lugares::before {{ display: none; }}
   .cuerpo-hoja, .pantalla[data-id="lugares"][data-hoja-estado="llena"] .cuerpo-hoja {{ min-height: 0; padding-bottom: 0; border-radius: 0; box-shadow: none; background: var(--fondo-contenido); }}
   .cuerpo-hoja > .asa {{ display: none; }}
   .cabecera-hoja {{ grid-template-rows: var(--espacio-3) var(--boton-icono); }}
@@ -1061,12 +1078,9 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
 }}
 @container app (min-width: 1048px) {{
   .app {{ --gutter: max(32px, calc((100cqw - 24px - var(--ancho-carril-nav) - var(--columna-ancha)) / 2)); }}
-  .pantalla.ficha {{ grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: var(--espacio-7); grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada donde" ". con" ". sobre" ". quien" ". pie"; align-content: start; }}
+  .pantalla.ficha {{ grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: var(--espacio-7); grid-template-areas: "portada titulo" "portada kpis" "portada acciones" "portada donde" ". con" ". sobre" ". quien" ". pie"; align-content: start; padding-top: var(--espacio-5); }}
+  .pantalla.con-heroe {{ grid-template-rows: none; }}
   .pantalla.ficha > .barra-interior {{ grid-area: barra; }}
-  .pantalla.ficha:has(> .barra-interior.heroe) {{ grid-template-rows: none; }}
-  .barra-interior.heroe, .pantalla.ficha[data-compacta] > .barra-interior.heroe {{ align-self: auto; height: var(--alto-barra); padding: 0 var(--gutter); align-items: center; background: var(--fondo); color: var(--texto); border-bottom: 1px solid var(--borde); box-shadow: none; }}
-  .barra-interior.heroe > .boton-icono, .pantalla.ficha[data-compacta] > .barra-interior.heroe > .boton-icono {{ width: var(--control); height: var(--control); box-shadow: none; background: none; color: var(--texto); }}
-  .barra-interior.heroe > [data-atras] {{ border: 1px solid var(--borde); background: var(--fondo); }}
   .pantalla.ficha > .portada {{ grid-area: portada; margin-left: var(--gutter); border-radius: var(--radio-grande); aspect-ratio: 5 / 3; align-self: start; }}
   .pantalla.ficha > .perfil-cabecera {{ grid-area: portada; margin-right: 0; align-self: start; }}
   /* En escritorio el título vuelve a la columna derecha (sobre la imagen solo en teléfono y en el panel); en la variante «en la barra» no se repite */
@@ -1081,10 +1095,10 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .pantalla.ficha > .proximos {{ grid-area: proximos; margin-left: 0; }}
   .pantalla.ficha > .pie {{ grid-area: pie; margin-left: 0; }}
   .pantalla.ficha > .flotantes {{ grid-column: 1 / -1; justify-self: end; }}
-  .pantalla[data-id="lugar"] {{ grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". donde" ". sobre" ". pie"; }}
-  .pantalla[data-id="artista"] {{ grid-template-areas: "barra barra" "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". novedades" ". sobre" ". pie"; }}
+  .pantalla[data-id="lugar"] {{ grid-template-areas: "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". donde" ". sobre" ". pie"; }}
+  .pantalla[data-id="artista"] {{ grid-template-areas: "portada titulo" "portada kpis" "portada acciones" "portada proximos" ". novedades" ". sobre" ". pie"; }}
   .pantalla[data-id="artista"] > .novedades {{ grid-area: novedades; margin-left: 0; }}
-  .pantalla[data-id="ajustes"] {{ grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; }}
+  .pantalla[data-id="ajustes"] {{ grid-template-columns: minmax(0, 1fr); grid-template-areas: "barra"; padding-top: 0; }}
   .pantalla[data-id="ajustes"] > :not(.barra-interior) {{ max-width: var(--columna); }}
   .pantalla.tarea > :not(.barra-interior):not(.modos) {{ width: 100%; max-width: var(--columna); justify-self: center; }}
   .carril.grande {{ grid-auto-columns: 190px; grid-template-rows: 285px auto auto; }}
@@ -1104,7 +1118,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     <button type="button" data-modo="tableta" aria-pressed="false">Tableta 820</button>
     <button type="button" data-modo="escritorio" aria-pressed="false">Escritorio 1280</button>
   </div>
-  <p class="nota">Mismo marcado en los tres tamaños. En Inicio, Cuándo (o el título de Destacados, Esta semana y Nuevos eventos) abre la lista por día; «Elegir fecha…» abre el calendario (un toque, un día; dos, un rango); Limpiar vuelve a los carriles. En la ciudad, «Otra ciudad» abre el campo con sugerencias. En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
+  <p class="nota">Mismo marcado en los tres tamaños. En Inicio, Cuándo (o el título de Destacados, Esta semana y Nuevos eventos) abre la lista por día; «Elegir fecha…» abre el calendario (un toque, un día; dos, un rango); Limpiar vuelve a los carriles. En la ciudad, «Otra ciudad» abre el campo con sugerencias. Desde tableta, la barra de la ficha se funde con la de la app (Atrás junto a «+», menú junto a la campana). En Lugares, arrastra o desplaza sobre la hoja: crece hasta llenar la pantalla y entonces desplaza su contenido; un pin o un renglón abren la ficha en la hoja. En la ficha, Voy, Me interesa y Seguir cambian de estado. Baja en Eventos (la barra y la navegación se guardan; al subir vuelven), toca Cuándo, la ciudad o Filtros, un punto del mapa o un renglón de Lugares (la ficha abre en la hoja), la imagen de una ficha (visor), «+» desde cada sección y la lupa.</p>
 </header>
 <svg class="sprite" xmlns="http://www.w3.org/2000/svg"><defs>{sprite}{mapa_base}</defs></svg>
 <div class="escenario">
@@ -1142,6 +1156,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   let actual = pantallas.find((p) => !p.hidden);
   const de = (id) => pantallas.find((p) => p.dataset.id === id);
   const hojaL = app.querySelector('.pantalla[data-id="lugares"] .hoja-lugares');
+  app.dataset.vista = actual.dataset.vista || "raiz";
 
   function pintarNav() {{
     app.querySelectorAll(".navegacion .destino[data-ir]").forEach((d) => {{
@@ -1154,6 +1169,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     destino.hidden = false;
     destino.scrollTop = tipo === "atras" ? scrollDe.get(destino.dataset.id) || 0 : 0;
     actual = destino;
+    app.dataset.vista = destino.dataset.vista || "raiz";
     delete app.dataset.compacta; delete app.dataset.navOculta;
     pintarNav();
     if (destino.dataset.id === "artistas") esqueleto(destino);
@@ -1204,22 +1220,19 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     alta.querySelectorAll(":scope > .alta").forEach((f) => (f.hidden = !f.classList.contains(tipo)));
   }}
   function abrirAlta(tipo) {{ ponerTipoAlta(tipo); ir("alta", "tarea"); }}
-  // La hoja de Lugares desplaza como un todo: los espaciadores fijan las alturas (asoma · media · llena) y el cuerpo asoma desde abajo.
+  // La hoja de Lugares desplaza como un todo sobre un hueco (::before) que mide la hoja menos lo que asoma recogida; cada altura es una posición de desplazamiento.
   const lugaresP = de("lugares");
-  const [espA, espB, espC] = hojaL.querySelectorAll(":scope > .espacio");
+  const navP = app.querySelector(".navegacion");
   const fichaHoja = hojaL.querySelector(".ficha-hoja");
   const enTelefono = () => getComputedStyle(hojaL).position !== "static";
   const zoom = () => parseFloat(aparato.style.zoom || "1");
   // Alturas visibles sobre la navegación: lista recogida 64 (asa y cantidad) · asoma 176 · media 56 % · llena; ficha recogida (su cabecera) · media (foto + KPI) · llena.
-  function ajustarHoja() {{
-    if (!enTelefono()) {{ espA.style.height = espB.style.height = espC.style.height = "0px"; return; }}
-    const util = hojaL.clientHeight - app.querySelector(".navegacion").offsetHeight;
-    let a, b, c;
-    if (lugaresP.dataset.ficha) {{ const k = fichaHoja.querySelector(".kpis"), cab = fichaHoja.querySelector(".cabecera-hoja"); const media = Math.min(util, k.offsetTop + k.offsetHeight + 80); a = media - cab.offsetHeight; b = util - media; c = 0; }}
-    else {{ const media = util * 0.56; a = 176 - 64; b = media - 176; c = util - media; }}
-    espA.style.height = Math.max(0, a) + "px"; espB.style.height = Math.max(0, b) + "px"; espC.style.height = Math.max(0, c) + "px";
+  function detentes() {{
+    const util = hojaL.clientHeight - navP.offsetHeight;
+    if (lugaresP.dataset.ficha) {{ const r = fichaHoja.querySelector(".cabecera-hoja").offsetHeight, k = fichaHoja.querySelector(".kpis"); return {{ recogida: 0, media: Math.min(util, k.offsetTop + k.offsetHeight + 80) - r, llena: util - r }}; }}
+    return {{ recogida: 0, asoma: 176 - 64, media: util * 0.56 - 64, llena: util - 64 }};
   }}
-  const detentes = () => {{ const a = espA.offsetHeight, b = espB.offsetHeight, c = espC.offsetHeight; return lugaresP.dataset.ficha ? {{ recogida: 0, media: a, llena: a + b }} : {{ recogida: 0, asoma: a, media: a + b, llena: a + b + c }}; }};
+  hojaL.detentes = detentes;
   function masCercano(y) {{ let mejor = "recogida", d = Infinity; for (const [k, v] of Object.entries(detentes())) {{ const dd = Math.abs(v - y); if (dd < d) {{ d = dd; mejor = k; }} }} return mejor; }}
   const irA = (y) => hojaL.scrollTo({{ top: y, behavior: reduce ? "auto" : "smooth" }});
   function asentar() {{ const y = hojaL.scrollTop, d = detentes(); if (y >= d.llena - 1) return; const destino = d[masCercano(y)]; if (Math.abs(destino - y) > 1) irA(destino); }}
@@ -1234,22 +1247,20 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
     }}
     if (lugaresP.dataset.ficha) fichaHoja.toggleAttribute("data-compacta", y > (enTelefono() ? d.llena : 0) + umbral(fichaHoja) || lugaresP.dataset.hojaEstado === "recogida");
   }}, {{ passive: true }});
-  new ResizeObserver(() => {{ const antes = lugaresP.dataset.hojaEstado; ajustarHoja(); if (enTelefono()) hojaL.scrollTop = detentes()[antes] ?? 0; }}).observe(hojaL);
+  new ResizeObserver(() => {{ if (enTelefono()) hojaL.scrollTop = detentes()[lugaresP.dataset.hojaEstado] ?? 0; }}).observe(hojaL);
   // La ficha de lugar en el cuerpo de la hoja (la lista conserva su desplazamiento); abre a la altura de foto + KPI; al cerrar vuelve lo anterior.
   function abrirFichaHoja() {{
     if (!lugaresP.dataset.ficha) {{ lugaresP.dataset.estadoAntes = lugaresP.dataset.hojaEstado; lugaresP.dataset.scrollAntes = hojaL.scrollTop; }}
-    lugaresP.dataset.ficha = "1";
+    lugaresP.dataset.ficha = "1"; app.dataset.hojaFicha = "";
     fichaHoja.hidden = false;
     fichaHoja.removeAttribute("data-compacta");
-    ajustarHoja();
     hojaL.scrollTop = enTelefono() ? detentes().media : 0;
     lugaresP.dataset.hojaEstado = enTelefono() ? "media" : "llena";
     if (!reduce) {{ fichaHoja.classList.add("entra"); fichaHoja.addEventListener("animationend", () => fichaHoja.classList.remove("entra"), {{ once: true }}); }}
   }}
   function cerrarFichaHoja() {{
     fichaHoja.hidden = true;
-    delete lugaresP.dataset.ficha;
-    ajustarHoja();
+    delete lugaresP.dataset.ficha; delete app.dataset.hojaFicha;
     const estado = lugaresP.dataset.estadoAntes || "asoma";
     hojaL.scrollTop = enTelefono() ? (detentes()[estado] ?? detentes().asoma) : +lugaresP.dataset.scrollAntes || 0;
     lugaresP.dataset.hojaEstado = estado;
@@ -1445,7 +1456,7 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
 </html>
 '''
 html = html.replace('SNURI', sn)
-html = re.sub(r'<section class="pantalla ([a-z]+)" data-id="(?!inicio)([a-z]+)"', r'<section class="pantalla \1" data-id="\2" hidden', html)
+html = re.sub(r'<section class="pantalla ([a-z -]+)" data-id="(?!inicio)([a-z]+)"', r'<section class="pantalla \1" data-id="\2" hidden', html)
 salida = os.path.join(RAIZ, 'docs/rediseno/prototipos/restructura-ui.html')
 open(salida, 'w', encoding='utf-8').write(html)
 print('escrito', salida, len(html), 'bytes', html.count('\n'), 'líneas')

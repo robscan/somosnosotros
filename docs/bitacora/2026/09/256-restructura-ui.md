@@ -684,14 +684,41 @@ Capturas nuevas (`docs/rediseno/capturas-256/256-118…128`), abiertas y descrit
 - **`256-128-v3-iconos-artistas`:** la barra inferior con la estrella que se queda (activa, en la píldora violeta) y
   los tres candidatos rechazados: pincel, pincel lleno y chispa.
 
+### Octava vuelta (mismo día): el armazón, a petición del founder
+
+Tres hilos más, leídos después de la séptima vuelta (el founder preguntó en el chat «¿sigues optimizando shell? Te lo
+pedí en un comentario directo en prototipo»): «error de maquetación, hay una línea flotando acá… esta maquetación de
+shell es de una complejidad innecesaria. Reconsidera cómo la estás planteando… ojo, todo esto comenzó con el objetivo
+estratégico de definir ese shell para que nos sirva en desktop, tablet, mobile y sea fácil exportar app»; «en desktop
+esto no tiene sentido, si ves esta barra y la de arriba hay muchísimo espacio en blanco… podríamos fusionar las
+barras, poniendo flecha atrás a un lado de agregar y "…" a un lado de campana»; y «centrada» (los filtros de Lugares).
+Lo hecho (doc 50 § 6.5, octava vuelta, y § 11 puntos 54 a 56): el armazón es un solo grid de tres áreas (barra · nav ·
+pantalla) que no depende de lo que hay dentro; el JS pone `data-vista` (raíz · ficha · tarea) y el CSS solo lee ese
+atributo; fuera los `:has()`, fuera `--nav-arriba` y sus rayas pintadas (la línea flotante que vio), fuera los tres
+espaciadores de la hoja (un hueco `::before`); el carril arranca bajo la barra de la app, que lleva su línea a todo lo
+ancho, con un borde derecho normal; desde 792 la barra de la app lleva Atrás junto a «+» y el menú junto a la campana
+con una ficha a la vista, y la barra de la ficha desaparece; filtros de Lugares centrados. Antes, en el chat, el founder
+rechazó el pincel de Artistas («se ve horrible, regresa el que tenías»): la estrella volvió y el muestrario queda como
+registro.
+
+Cómo se revisó: las tres pruebas de la hoja con la rueda (`probar-hoja*.mjs`) dan los mismos estados y las mismas
+alturas que con los espaciadores (asoma 112, media 341, llena 1241 en el aparato a 1,08×; recogida 64 y 76; Atrás y ✕
+donde tocaba); el guion de flujos de la séptima vuelta sigue igual; `medir-prototipo.mjs`: 0 envoltorios, 0 desbordes,
+0 márgenes negativos, 0 iconos con contraste bajo (202 nodos en Lugares, tres menos); 0 errores de página en las 54
+capturas, regeneradas. Cambian a la vista las de tableta y escritorio: `256-99` y `256-101` (el carril bajo la barra,
+con su borde de arriba abajo y sin línea flotante; la fila de contexto sin línea propia), `256-100`, `256-102`,
+`256-103` y `256-104` (filtros de Lugares centrados; el panel con la ficha), `256-105`, `256-106` y `256-107` (las
+fichas con la barra fusionada: Atrás junto a «+», menú junto a la campana, la portada a 20 px de la barra), `256-108`
+(la tarea conserva su barra con título y ✕) y `256-109` (Perfil). En teléfono no cambia nada a la vista.
+
 ### Cierre (cuarta parte)
 
-Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcciones del founder al verla y la
-séptima vuelta desde los hilos), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
+Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcciones del founder al verla, la
+séptima vuelta desde los hilos, la vuelta de la estrella y la octava vuelta del armazón), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
 § 11 con la quinta a la séptima vuelta), el generador y el script de captura actualizados, esta bitácora y
 OPEN_LOOPS; push al PR #266; artefacto republicado y los hilos contestados (los resueltos, resueltos; los de decisión,
-abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 39, 45 a 47 y
-50 a 53 del doc 50 § 11 (Inicio con dos modos y Agenda, campana, dos barras en escritorio, ficha desde otras
-entradas, esconder o minimizar la navegación, la hoja en el iPhone, filtros de Lugares, calendario, otra ciudad,
+abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 45 a 47 y
+50 a 55 del doc 50 § 11 (Inicio con dos modos y Agenda, campana, dos barras en escritorio, ficha desde otras
+entradas, esconder o minimizar la navegación, la hoja en el iPhone, calendario, otra ciudad,
 lenguaje incluyente e «Interesadxs», KPI Lugares, orden de Novedades, cabecera con portada
-también en las fichas, «Lugares» o «Mapa»); con su firma, plan definitivo por piezas y operadores nuevos.
+también en las fichas, «Lugares» o «Mapa», el armazón simplificado y las barras fusionadas); con su firma, plan definitivo por piezas y operadores nuevos.

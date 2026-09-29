@@ -25,8 +25,8 @@ async function foto(page, nombre, espera = 700) {
 const click = (page, sel) => page.evaluate((s) => { const e = document.querySelector(s); if (!e) throw new Error("no existe " + s); e.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })); }, sel);
 const espera = (page, ms) => page.waitForTimeout(ms);
 const variante = (page, v) => click(page, `.modos-estudio [data-titulo="${v}"]`);
-// La hoja de Lugares: cada altura es una posición de desplazamiento del contenedor (espaciadores + cuerpo)
-const hoja = (page, estado, mas = 0) => page.evaluate(([e, m]) => { const c = document.querySelector(".hoja-lugares"); const ficha = !!document.querySelector('.pantalla[data-id="lugares"]').dataset.ficha; const [a, b, cc] = [...c.querySelectorAll(":scope > .espacio")].map((x) => x.offsetHeight); const d = ficha ? { recogida: 0, media: a, llena: a + b } : { recogida: 0, asoma: a, media: a + b, llena: a + b + cc }; c.scrollTop = d[e] + m; c.dispatchEvent(new Event("scroll")); }, [estado, mas]);
+// La hoja de Lugares: cada altura es una posición de desplazamiento del contenedor (el prototipo expone sus alturas en .hoja-lugares.detentes())
+const hoja = (page, estado, mas = 0) => page.evaluate(([e, m]) => { const c = document.querySelector(".hoja-lugares"); c.scrollTop = c.detentes()[e] + m; c.dispatchEvent(new Event("scroll")); }, [estado, mas]);
 const desplazar = (page, sel, y) => page.evaluate(([s, yy]) => { const p = document.querySelector(s); p.scrollTop = yy; p.dispatchEvent(new Event("scroll")); }, [sel, y]);
 
 // Teléfono
@@ -93,7 +93,7 @@ await foto(page, "v3-23-buscar-telefono");
 // Muestrario de iconos para seguir un lugar: el mismo renglón con campana+, marcador+ y pin+
 await click(page, '.pantalla[data-id="buscar"] [data-atras]'); await espera(page, 600);
 await page.evaluate(() => {
-  const p = document.querySelector('.pantalla[data-id="lugares"]'); const c = p.querySelector(".hoja-lugares"); const [a, b] = [...c.querySelectorAll(":scope > .espacio")].map((x) => x.offsetHeight); c.scrollTop = a + b;
+  const p = document.querySelector('.pantalla[data-id="lugares"]'); const c = p.querySelector(".hoja-lugares"); c.scrollTop = c.detentes().media;
   const lista = p.querySelector(".lista.panel"); const base = lista.children[1];
   lista.innerHTML = "";
   for (const [g, t] of [["campana-mas", "Campana con «+»: seguir = que te avisen (propuesta)"], ["marcador-mas", "Marcador con «+»: guardar (Google Maps, Instagram)"], ["pin-mas", "Pin con «+»: hoy significa «registrar un lugar» en la app"]]) {
