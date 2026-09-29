@@ -1,6 +1,6 @@
 # 259 · Renglon único con cuatro pieles, Esqueleto derivado, Palanca y SoloLector compartidos (OL-231, pieza P3)
 
-**Fecha:** 2026-09-29 · **Rama:** `ui-renglon`, desde `origin/ui-botones` (`91decb46`) · **OL:** OL-231 · **PR:** por abrir (va montado sobre #268, `ui-botones`) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Tercera pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1 (`--foto-renglon`, `--control`, `--toque-min` y los de letra de listas) y los botones de P2.
+**Fecha:** 2026-09-29 · **Rama:** `ui-renglon`, desde `origin/ui-botones` (`91decb46`) · **OL:** OL-231 · **PR:** #269 (sin unir; va montado sobre #268, `ui-botones`) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Tercera pieza del plan de OL-227 (doc 50, § 7); usa los tokens de P1 (`--foto-renglon`, `--control`, `--toque-min` y los de letra de listas) y los botones de P2.
 
 ## Pedido
 
@@ -12,7 +12,7 @@ Encargo del Gestor de cambios III, con el criterio de P1 y P2 («con ultra cuida
 - **H-17:** `white-space: nowrap` en cada dato de la meta. Con el respaldo local, **12 renglones** se salían de su columna y se metían bajo el botón (2 a 390 px y 10 a 320 px; el doc habla de 16 con datos de producción).
 - **Tres copias del interruptor** (`ajustes` y `FormularioCanon`, de 51×31, iguales; `HojaDondeEs`, de 44×26) y siete botones `role="switch"` escritos a mano: ninguno llegaba a 44 de alto.
 - `.soloLector` ×3 (`SelectorEnlaces`, `ChipFecha`, `SelectorFecha`), cada una con `margin: -1px`; el círculo gris de 64 (`.icono`) ×3 (`Borrar`, `Bloquear`, `borrado`) y un cuarto uso que lo pedía prestado (`BorrarPared`).
-- `.cambiar`, el botón de texto del canon, en 18 renglones resueltos y en 3 enlaces de Novedades.
+- `.cambiar`, el botón de texto del canon, en 15 acciones de renglones resueltos (más el «Usar esa» del aviso de artista parecido) y en 3 enlaces de Novedades.
 
 ## Lo que se hizo
 
@@ -48,7 +48,7 @@ Los botones de acción de los resueltos son `Boton variante="texto" alto="contro
 | Regla | Después |
 |---|---|
 | `ajustes.palanca`, `FormularioCanon.palanca`, `HojaDondeEs.palanca` | **Cerradas:** una sola `Palanca` |
-| `FormularioCanon.cambiar` (no estaba en la tabla de 258) | **Cerrada:** `Boton` de texto en los 18 renglones resueltos |
+| `FormularioCanon.cambiar` (no estaba en la tabla de 258) | **Cerrada:** `Boton` de texto en las 15 acciones de los renglones resueltos y en «Usar esa» |
 | `Ficha.menuItem` (las filas del menú ···) | **No se toca; pasa a P6.** El prototipo firmado no dibuja ese menú: la piel `ajuste` trae un icono de 24 (una sangría de 36 px en filas que hoy sangran 4), letra en negrita y 52 de alto, y ninguna de las tres diferencias está entre las que el encargo permite. Lo decide P6 al rehacer «Más» de la ficha |
 | `SeccionNovedades` (Publicar, Editar y Ver más, que usaban `.cambiar`) | Pasan a su propia clase `.accion` en su módulo. Se probó `Boton` de texto y **reacomoda la cabecera y el pie** (el enlace era un elemento flex con el texto arriba de su caja de 44; el botón lo centra: el título bajaba 10 px). Anotado para P6 |
 
