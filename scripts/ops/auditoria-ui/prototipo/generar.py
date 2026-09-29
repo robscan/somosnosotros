@@ -11,6 +11,7 @@ v3, séptima vuelta (hilos del prototipo): «Elegir fecha…» abre un calendari
 «Otra ciudad» abre un campo con sugerencias y recarga; el icono de Artistas con figura y pincel se probó y el founder lo rechazó (sigue la estrella); la ficha de artista conserva el avatar
 dentro del héroe, pierde «Se presenta en» y muestra sus novedades publicadas; la barra compacta de las fichas y de la hoja lleva la portada
 oscurecida detrás del título; KPI «Interesadxs» y «Siguen» (lenguaje incluyente).
+v3, novena vuelta (chat): en las tarjetas del carril la meta va en dos líneas (fecha y hora · lugar) y el título baja a 17 px.
 v3, octava vuelta (hilos del prototipo): armazón simplificado. Un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que
 hay dentro: el JS pone data-vista (raiz · ficha · tarea) y el CSS solo lee ese atributo (fuera los :has() y el --nav-arriba con sus rayas
 pintadas); desde 792 la barra de la app lleva Atrás junto a «+» y el menú junto a la campana y la barra de la ficha desaparece (una sola
@@ -101,8 +102,10 @@ def boton_accion(decidido, seguir=False, etiqueta=None, lugar=False):
     return f'<button type="button" class="boton-icono elevado{" decidido" if decidido else ""}" data-accion="{"seguir" if seguir else "voy"}"{objeto} aria-pressed="{"true" if decidido else "false"}" aria-label="{lab}">{i(ic)}</button>'
 
 def tarjeta(clave, sello=None, decidido=False, nombre=None, meta=None, img=None, ir='evento', seguir=False, lugar=False):
+    # La meta va en dos líneas cuando es un evento (fecha y hora · lugar), cada una con su elipsis; el lugar ya no se corta.
     d = ev.get(clave) if clave in ev else None
-    titulo = nombre or d['t']; m = meta or d['cuando'] + ' · ' + d['sitio']
+    titulo = nombre or d['t']
+    m = f'<span>{meta}</span>' if meta is not None else f'<span>{d["cuando"]}</span><span>{d["sitio"]}</span>'
     src = img if img is not None else (d['img'] if d else None)
     s = f'<span class="sello">{sello}</span>' if sello else ''
     return f'<li><a class="tarjeta" href="#" data-ir="{ir}">{foto(src, "", "foto")}{s}<b>{titulo}</b><small>{m}</small></a>{boton_accion(decidido, seguir, lugar=lugar)}</li>'
@@ -610,7 +613,7 @@ ul {{ list-style: none; }}
   --tarjeta-mediana: 220px; --tarjeta-mediana-foto: 132px; --tarjeta-grande: 165px; --tarjeta-grande-foto: 248px; --tarjeta-chica: 104px; --foto-renglon: 56px;
   --duracion: 200ms; --duracion-ficha: 220ms; --curva: cubic-bezier(.22,.61,.36,1);
   /* Letra de listas y tarjetas (título y meta de renglones y tarjetas): la marca sigue en títulos, KPI y botones */
-  --fuente-lista: var(--fuente); --ancho-lista-titulo: var(--ancho-titulo); --ancho-lista-meta: var(--ancho-texto); --letra-lista-titulo: var(--letra-xl); --letra-lista-meta: var(--letra-sm); --peso-lista-titulo: 700; --interlinea-lista: 1.15;
+  --fuente-lista: var(--fuente); --ancho-lista-titulo: var(--ancho-titulo); --ancho-lista-meta: var(--ancho-texto); --letra-lista-titulo: var(--letra-xl); --letra-tarjeta-titulo: var(--letra-md); --letra-lista-meta: var(--letra-sm); --peso-lista-titulo: 700; --interlinea-lista: 1.15;
 }}
 .app[data-letra="bricolage-ancha"] {{ --ancho-lista-titulo: "wdth" 100; --ancho-lista-meta: "wdth" 100; --letra-lista-titulo: 1rem; --letra-lista-meta: .875rem; --interlinea-lista: 1.25; }}
 .app[data-letra="inter"] {{ --fuente-lista: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; --ancho-lista-titulo: normal; --ancho-lista-meta: normal; --letra-lista-titulo: 1rem; --letra-lista-meta: .875rem; --peso-lista-titulo: 600; --interlinea-lista: 1.3; }}
@@ -793,8 +796,9 @@ h1, h2, h3, h4 {{ font-variation-settings: var(--ancho-titulo); font-weight: 700
 .tarjeta {{ display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; grid-row: 1 / -1; min-width: 0; }}
 .tarjeta > .foto {{ grid-area: 1 / 1; width: 100%; height: 100%; border-radius: var(--radio); }}
 .tarjeta > .sello {{ grid-area: 1 / 1; align-self: end; justify-self: start; margin: 0 0 var(--espacio-2) var(--espacio-2); padding: 3px var(--espacio-2); border-radius: var(--radio-pildora); background: var(--vidrio); font-size: var(--letra-xs); font-weight: 700; }}
-.tarjeta > b {{ grid-area: 2 / 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--fuente-lista); font-size: var(--letra-lista-titulo); font-weight: var(--peso-lista-titulo); font-variation-settings: var(--ancho-lista-titulo); line-height: var(--interlinea-lista); }}
-.tarjeta > small {{ grid-area: 3 / 1; overflow: hidden; color: var(--texto-suave); font-family: var(--fuente-lista); font-size: var(--letra-lista-meta); font-variation-settings: var(--ancho-lista-meta); text-overflow: ellipsis; white-space: nowrap; }}
+.tarjeta > b {{ grid-area: 2 / 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-family: var(--fuente-lista); font-size: var(--letra-tarjeta-titulo); font-weight: var(--peso-lista-titulo); font-variation-settings: var(--ancho-lista-titulo); line-height: var(--interlinea-lista); }}
+.tarjeta > small {{ grid-area: 3 / 1; display: grid; color: var(--texto-suave); font-family: var(--fuente-lista); font-size: var(--letra-lista-meta); font-variation-settings: var(--ancho-lista-meta); line-height: 1.3; }}
+.tarjeta > small > span {{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
 .carril.grande {{ grid-auto-columns: var(--tarjeta-grande); grid-template-rows: var(--tarjeta-grande-foto) auto auto; }}
 .carril.chica {{ grid-auto-columns: var(--tarjeta-chica); grid-template-rows: var(--tarjeta-chica) auto auto; }}
 .carril.chica .tarjeta {{ text-align: center; }}

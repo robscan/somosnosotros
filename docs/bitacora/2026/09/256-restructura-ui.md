@@ -711,10 +711,20 @@ con su borde de arriba abajo y sin línea flotante; la fila de contexto sin lín
 fichas con la barra fusionada: Atrás junto a «+», menú junto a la campana, la portada a 20 px de la barra), `256-108`
 (la tarea conserva su barra con título y ✕) y `256-109` (Perfil). En teléfono no cambia nada a la vista.
 
+### Novena vuelta (mismo día): las tarjetas del carril
+
+En el chat: «el lugar se corta en cards, ¿puedes poner a dos líneas esa información (fecha, hora y lugar)? Y
+disminuye el tamaño de texto en títulos de esas mismas cards». Hecho en el generador: la meta de cada tarjeta de
+evento va en dos líneas (fecha y hora · lugar, cada una con su elipsis) y el título baja a 17 px con un token propio
+(`--letra-tarjeta-titulo`); los renglones de lista no cambian. El carril reparte sus filas con `subgrid`, así que las
+dos líneas quedan alineadas entre tarjetas. Capturas regeneradas (cambian a la vista las que enseñan carriles: `256-75`
+a `256-77`, `256-99`, `256-101`, `256-125` y `256-126`); medición sin cambios. Doc 50 § 6.5 (novena vuelta) y § 11,
+punto 57.
+
 ### Cierre (cuarta parte)
 
 Commits en `restructura-ui` con el prototipo v3 (los siguientes con las correcciones del founder al verla, la
-séptima vuelta desde los hilos, la vuelta de la estrella y la octava vuelta del armazón), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
+séptima vuelta desde los hilos, la vuelta de la estrella, la octava vuelta del armazón y la novena de las tarjetas), las 54 capturas, el doc 50 (§ 6.5 a 6.7, filas P1, P2, P4 a P7, P10 y P13, § 10 y
 § 11 con la quinta a la séptima vuelta), el generador y el script de captura actualizados, esta bitácora y
 OPEN_LOOPS; push al PR #266; artefacto republicado y los hilos contestados (los resueltos, resueltos; los de decisión,
 abiertos). Pendiente: que el founder pruebe la v3 en su iPhone y conteste los puntos 18, 20 a 24, 36, 45 a 47 y

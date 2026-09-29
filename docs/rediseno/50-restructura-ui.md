@@ -468,7 +468,7 @@ Ninguna pieza cambia de dibujo entre plataformas: cambia de sitio (navegación) 
 - Renglón de lista: dos líneas de meta como máximo; el sitio por su nombre; el precio solo si no es gratis (H-09).
 - Un solo mensaje por renglón pendiente, tras el primer intento (H-29); las dos altas con el mismo tono (H-30).
 
-## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la octava vuelta del founder)
+## 6. Prototipo interactivo (v1, v2 y v3 el 2026-09-28; la v3 recoge de la quinta a la novena vuelta del founder)
 
 **Dónde:** [`prototipos/restructura-ui.html`](prototipos/restructura-ui.html), una sola página con la app entera
 dentro de un aparato que cambia de tamaño (teléfono 390×844, tableta 820×1180, escritorio 1280×800) **sin cambiar el
@@ -817,6 +817,13 @@ muy grande, tampoco se justifica "Ya estás en la lista" dentro del botón»):
 - **«Centrada»** (los filtros de Lugares en tableta y escritorio): centrados como en las demás raíces; la fila cruza
   el panel y el mapa. Captura [256-102](capturas-256/256-102-v3-lugares-escritorio.png).
 
+**Novena vuelta (el mismo día, en el chat):** «el lugar se corta en cards, ¿puedes poner a dos líneas esa información
+(fecha, hora y lugar)? Y disminuye el tamaño de texto en títulos de esas mismas cards». En las tarjetas del carril la
+meta va ahora en dos líneas: fecha y hora en la primera y el lugar en la segunda, cada una con su elipsis, y el
+título baja de 19 a 17 px (token propio `--letra-tarjeta-titulo`; los renglones de lista siguen en 19/15, que es lo
+que firmó). Como el carril reparte sus filas con `subgrid`, las dos líneas de meta quedan alineadas entre tarjetas.
+Captura [256-75](capturas-256/256-75-v3-inicio-telefono.png).
+
 ### 6.6 Defectos que la revisión de la v3 encontró y cerró
 
 El founder señaló que «elemento de lugar se desalinea en tableta y escritorio»: era cierto y silencioso. **El renglón
@@ -1105,5 +1112,8 @@ Lo que el founder confirma o corrige al probar la v3:
     agregar y "…" a un lado de campana»): **Hecho**; confirmar. Las tareas y Ajustes conservan su barra interior
     (título y ✕); si también la quiere fuera, el título pasaría al arranque del contenido.
 56. **Filtros de Lugares centrados** («centrada»): **Hecho.** Cierra el punto 39.
+
+57. **Tarjetas del carril: meta en dos líneas y título más chico** («el lugar se corta en cards…»): fecha y hora en la
+    primera línea, el lugar en la segunda, título a 17 px (6.5, novena vuelta). **Hecho.**
 
 Con su firma sobre la v3 se cierra el plan definitivo por piezas (sección 7).
