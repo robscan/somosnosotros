@@ -2,6 +2,7 @@ import Link from "next/link";
 import NavInferior from "@/components/NavInferior";
 import Sesion from "@/components/Sesion";
 import Barra from "@/components/ui/Barra";
+import Boton from "@/components/ui/Boton";
 import { IconoCalendario, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import styles from "./borrado.module.css";
 
@@ -26,9 +27,9 @@ export default async function Borrado({ searchParams }: { searchParams: Promise<
         </span>
         <h1>{t.titulo}</h1>
         <p>{t.texto}</p>
-        <Link href={t.href} className={styles.accion}>
+        <Boton href={t.href} ancho="contenido">
           {t.accion}
-        </Link>
+        </Boton>
         <Link href={t.otro} className={styles.otro}>
           {t.otroTexto}
         </Link>
