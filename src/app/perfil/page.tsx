@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import FichaPersona from "@/components/FichaPersona";
 import { usuarioActual } from "@/lib/supabase/servidor";
@@ -7,14 +6,18 @@ import { cargarMisArtistas } from "@/app/artistas/consultas";
 import { cargarPersona, relacionDe } from "@/app/personas/consultas";
 import { conArtistasLigados, hrefArtista } from "@/lib/artistas";
 import { qrDeUrl } from "@/lib/qr";
-import ficha from "@/components/ui/Ficha.module.css";
+import Boton from "@/components/ui/Boton";
 import MisArtistas from "./MisArtistas";
 import styles from "./perfil.module.css";
 
 export const metadata = { title: "Mi perfil · Somos Nosotros", robots: { index: false, follow: false } };
 const ORIGEN = "https://somosnosotros.org";
 
-/** Mi perfil: la misma ficha que ven los demás, con Ajustes bajo la colonia. Lo que se configura vive en /ajustes (docs/rediseno/13, decisión 5). */
+/**
+ * Mi perfil: la misma ficha que ven los demás, con Ajustes bajo la colonia, en una pantalla raíz (docs/rediseno/50, P5): su
+ * cabecera, los tres números —Voy · Interesan · Sigo— y, debajo, la lista de cada uno por día. Lo que se configura vive en
+ * /ajustes (docs/rediseno/13, decisión 5).
+ */
 export default async function PaginaPerfil() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/perfil");
@@ -26,7 +29,7 @@ export default async function PaginaPerfil() {
   // compartir de la tarjeta): mismo patrón que Pincel.
   const misArtistas = await Promise.all(ligados.map(async (artista) => ({ artista, url: `${ORIGEN}${hrefArtista(artista)}`, svg: await qrDeUrl(`${ORIGEN}${hrefArtista(artista)}`) })));
   return (
-    <main className={ficha.pagina}>
+    <main className={`raiz ${styles.pagina}`}>
       <FichaPersona
         perfil={persona.perfil}
         mia
@@ -39,9 +42,9 @@ export default async function PaginaPerfil() {
         // Antes de "Lo que sigues" (lo tuyo primero, doc 40b); sin artistas ligados, ni se pinta (OL-154).
         misArtistas={conArtistasLigados(misArtistas) && <MisArtistas artistas={misArtistas} />}
       />
-      <p className={styles.pie}>
-        <Link href={`/personas/${persona.perfil.id}`}>Así te ven los demás</Link>
-      </p>
+      <Boton href={`/personas/${persona.perfil.id}`} variante="texto" ancho="contenido" className={styles.enlace}>
+        Así te ven los demás
+      </Boton>
     </main>
   );
 }

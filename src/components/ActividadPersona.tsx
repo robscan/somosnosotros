@@ -7,6 +7,7 @@ import { mismaMemoria, pestanasDePersona, recordar, unirVistos, type Memoria } f
 import type { Asistencia } from "@/lib/deslizar";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import ListaSeguidos, { UMBRAL_CHIPS_SEGUIDOS } from "./ListaSeguidos";
+import Grupo from "./ui/Grupo";
 import PestanasPersona, { type Pestana } from "./PestanasPersona";
 import RenglonEvento from "./RenglonEvento";
 import { useAsistenciaEnLista, type Decididas } from "./useAsistenciaEnLista";
@@ -70,20 +71,27 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
   const estado = gestos ? asistencia.estado : () => null;
   const sigo = (id: string) => (esLugar.has(id) ? seguirLugar.sigo(id) : seguirArtista.sigo(id));
 
+  // Mi perfil es una raíz: cada día es un grupo con su título pegado (`ui/Grupo`). La ficha de otra persona conserva su
+  // título suelto hasta que la rehaga su pieza (P6).
   const listaEventos = (lista: EventoAgenda[], vacio: ReactNode, conSello: boolean) =>
     lista.length === 0 ? (
       <p className={styles.vacio}>{vacio}</p>
     ) : (
-      agruparPorDia(lista).map((g) => (
-        <Fragment key={g.clave}>
-          <h3 className={styles.dia}>{g.titulo}</h3>
-          <ul className={styles.lista} aria-label={g.titulo}>
-            {g.eventos.map((e) => (
-              <RenglonEvento key={e.id} evento={e} estado={conSello ? estado(e.id) : null} boton={gestos ? asistencia.boton(e) : undefined} />
-            ))}
-          </ul>
-        </Fragment>
-      ))
+      agruparPorDia(lista).map((g) => {
+        const filas = g.eventos.map((e) => <RenglonEvento key={e.id} evento={e} estado={conSello ? estado(e.id) : null} boton={gestos ? asistencia.boton(e) : undefined} />);
+        return mia ? (
+          <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
+            {filas}
+          </Grupo>
+        ) : (
+          <Fragment key={g.clave}>
+            <h3 className={styles.dia}>{g.titulo}</h3>
+            <ul className={styles.lista} aria-label={g.titulo}>
+              {filas}
+            </ul>
+          </Fragment>
+        );
+      })
     );
 
   const enPestanas = (estado: (id: string) => Asistencia, sigo: (id: string) => boolean) => pestanasDePersona({ mia, eventos: lista.eventos, lugares: lista.lugares, artistas: lista.artistas, estado, sigo, vistas });
@@ -139,7 +147,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
 
   return (
     <>
-      <PestanasPersona pestanas={pestanas} />
+      <PestanasPersona pestanas={pestanas} raiz={mia} />
       <AvisoAbajo canal={canal} />
       {asistencia.extras}
       {seguirLugar.extras}

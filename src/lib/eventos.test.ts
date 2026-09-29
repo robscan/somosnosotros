@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COOPERACION_SOLIDARIA, cartelAFormulario, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, queCambio, textoCompartir, validarEvento } from "./eventos";
+import { COOPERACION_SOLIDARIA, cartelAFormulario, esCooperacion, direccionPublicaSitio, enlaceComoLlegar, enlaceDesdeCartel, extraerNumero, hrefEvento, jsonLdEvento, nombreSitio, puntoComoLlegar, sitioEnLista, queCambio, textoCompartir, validarEvento } from "./eventos";
 
 const LUGAR = "2a63c4d0-6a3e-4d75-bc67-8c3226d4401b";
 const base = { modo_sitio: "lugar", lugar_id: LUGAR, titulo: "Noche de jazz", inicio: "2026-09-20T19:00", fin: "", descripcion: "", imagen: "", gratis: "si", precio: "", enlace: "" };
@@ -119,6 +119,22 @@ describe("nombreSitio", () => {
     expect(nombreSitio({ lugar: { nombre: "Teatro", portada: null }, sitio_texto: null, sitio_reservado: false })).toBe("Teatro");
     expect(nombreSitio({ lugar: null, sitio_texto: "Casa en Tequis", sitio_reservado: true })).toBe("Casa en Tequis · sitio reservado");
     expect(nombreSitio({ lugar: null, sitio_texto: null, sitio_reservado: false })).toBe("Sitio por confirmar");
+  });
+});
+
+describe("sitioEnLista (H-09: la lista no lleva la dirección postal)", () => {
+  const otroSitio = { lugar: null, sitio_texto: "Templo de San Francisco", sitio_direccion: "Calle Jardín Guerrero 7, 78000 San Luis Potosí, México", sitio_reservado: false };
+  it("dice solo el nombre del sitio cuando el evento es en otro sitio, aunque traiga dirección", () => {
+    expect(sitioEnLista(otroSitio)).toBe("Templo de San Francisco");
+    expect(nombreSitio(otroSitio)).toContain("Calle Jardín Guerrero 7");
+  });
+  it("un lugar registrado, un sitio reservado y un sitio por confirmar dicen lo mismo que en la ficha", () => {
+    expect(sitioEnLista({ ...otroSitio, lugar: { nombre: "Teatro de la Paz", portada: null } })).toBe("Teatro de la Paz");
+    expect(sitioEnLista({ ...otroSitio, sitio_reservado: true })).toBe("Templo de San Francisco · sitio reservado");
+    expect(sitioEnLista({ lugar: null, sitio_texto: null, sitio_direccion: null, sitio_reservado: false })).toBe("Sitio por confirmar");
+  });
+  it("sin nombre pero con dirección, la dirección es lo único que dice dónde es", () => {
+    expect(sitioEnLista({ ...otroSitio, sitio_texto: null })).toBe("Calle Jardín Guerrero 7, 78000 San Luis Potosí, México");
   });
 });
 

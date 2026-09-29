@@ -5,6 +5,7 @@
  * San Luis Potosí es la inicial: existe aunque no tenga nada, y es a la que cae todo lo que no dice ciudad.
  */
 import { ZONA_INICIAL } from "./fechas";
+import { distanciaKm, type Punto } from "./geo";
 
 export type Ciudad = { slug: string; nombre: string; centro: { lng: number; lat: number }; zoom: number };
 /** Una ciudad con lo que tiene: cuántos lugares y cuántos eventos próximos, y su zona horaria (la de "hoy" en su agenda). */
@@ -107,6 +108,11 @@ export function armarCiudadesDeArtistas(artistas: { ciudad: string }[]): CiudadC
 
 export function ciudadPorSlug<T extends Ciudad>(slug: string | null | undefined, ciudades: readonly T[] = CIUDADES as readonly T[]): T {
   return ciudades.find((c) => c.slug === slug) ?? ciudades.find((c) => c.slug === CIUDAD_INICIAL.slug) ?? (CIUDAD_INICIAL as T);
+}
+
+/** La ciudad de la lista cuyo centro queda más cerca de un punto: a la que lleva «Cerca de ti». */
+export function ciudadMasCercana<T extends Ciudad>(punto: Punto, ciudades: readonly T[]): T {
+  return ciudades.reduce((cerca, c) => (distanciaKm(punto, { lat: c.centro.lat, lng: c.centro.lng }) < distanciaKm(punto, { lat: cerca.centro.lat, lng: cerca.centro.lng }) ? c : cerca), ciudades[0] ?? (CIUDAD_INICIAL as T));
 }
 
 export function ciudadPorNombre<T extends Ciudad>(nombre: string | null | undefined, ciudades: readonly T[] = CIUDADES as readonly T[]): T {

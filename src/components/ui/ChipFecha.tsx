@@ -24,7 +24,8 @@ type Props = {
 };
 
 /**
- * El chip de fecha, un solo componente para Agenda y Lugares (docs/rediseno/45, OL-174). Sin fecha: solo el
+ * El chip de fecha de Lugares (docs/rediseno/45, OL-174; Agenda y Inicio ya usan Cuándo, en `FilaEventos`, desde P5 del
+ * doc 50: Lugares lo hará en su pieza). Sin fecha: solo el
  * ícono, sin la palabra "Seleccionar". Con fecha: "mié 30 sep" (sin "de", sin "Hoy"/"Mañana": ver
  * `fechaCortaChip`) y su quitar (✕), que regresa al ícono solo sin abrir la hoja. Tocar el resto de la pastilla
  * (el ícono y el texto) reabre la hoja con ese día ya marcado, para poder tocarlo otra vez y quitarlo (OL-218).

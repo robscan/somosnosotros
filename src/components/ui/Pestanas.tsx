@@ -2,16 +2,18 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useTiraQueSigue } from "./useTiraQueSigue";
 import styles from "./Pestanas.module.css";
 
 /**
  * Tira de pestañas (pasada de maquetación, 2026-09-16): una raya común en la base y la elegida con la raya del color
- * de acción. Es el renglón de filtros de ui/Cabecera en Agenda, Lugares y Artistas, y los números de la ficha de
- * persona. `repartidas`: columnas iguales a lo ancho; si no, una tras otra, y la tira se desliza si no cabe.
+ * de acción. Es el renglón de tipos de ui/Cabecera en Lugares y los números de la ficha de persona: una tras otra, y la
+ * tira se desliza si no cabe, con su borde derecho desvanecido mientras haya más (`useTiraQueSigue`).
  */
-export function Pestanas({ ariaLabel, repartidas = false, className = "", children }: { ariaLabel: string; repartidas?: boolean; className?: string; children: ReactNode }) {
+export function Pestanas({ ariaLabel, className = "", children }: { ariaLabel: string; className?: string; children: ReactNode }) {
+  const ref = useTiraQueSigue<HTMLDivElement>();
   return (
-    <div role="tablist" aria-label={ariaLabel} className={`${styles.tira} ${repartidas ? styles.repartidas : ""} ${className}`}>
+    <div ref={ref} role="tablist" aria-label={ariaLabel} className={`${styles.tira} ${className}`}>
       {children}
     </div>
   );

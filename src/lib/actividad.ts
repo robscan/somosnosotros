@@ -4,9 +4,9 @@ import type { Asistencia } from "./deslizar";
  * Las pestañas de la ficha de una persona con los gestos de quien mira (OL-057, bitácora 086): qué renglones van en cada
  * pestaña según lo que quien mira decidió ahora, cuántos son y qué pestañas se ven.
  *
- * - **Mi perfil:** cada evento va en la pestaña de lo que decidí ahora. Lo que quito desaparece al instante (decisión del
- *   founder: «Quitar pienso que debería desaparecer al instante»), Deshacer lo devuelve a su sitio y Voy desde "Me
- *   interesa" lo pasa a "Voy a". Lo que dejo de seguir sale de "Sigo".
+ * - **Mi perfil:** cada evento va en la pestaña de lo que decidí ahora (Voy · Interesan · Sigo). Lo que quito desaparece al
+ *   instante (decisión del founder: «Quitar pienso que debería desaparecer al instante»), Deshacer lo devuelve a su sitio y
+ *   Voy desde "Interesan" lo pasa a "Voy". Lo que dejo de seguir sale de "Sigo".
  * - **Ficha de otra persona:** "Va a" y "Sigue" son suyos y no cambian con mis gestos; "Van a lo mismo" son los suyos a
  *   los que voy yo, así que sigue a mi Voy.
  * - Una pestaña que ya se mostró en la visita no se va aunque se vacíe (Deshacer la vuelve a llenar); una nueva aparece al
@@ -83,11 +83,12 @@ export function mismaMemoria(a: Memoria, b: Memoria): boolean {
 export function pestanasDePersona<E extends { id: string }, L extends { id: string }, A extends { id: string }>(p: Entrada<E, L, A>): Actividad<E, L, A>[] {
   if (p.mia) {
     const interesa = p.eventos.filter((e) => p.estado(e.id) === "me_interesa");
+    // Los tres números de Mi perfil, en el orden del prototipo firmado (docs/rediseno/50): Voy · Interesan · Sigo.
     const pestanas = [
-      pestana<E, L, A>("va", "Voy a", { eventos: p.eventos.filter((e) => p.estado(e.id) === "voy") }),
+      pestana<E, L, A>("va", "Voy", { eventos: p.eventos.filter((e) => p.estado(e.id) === "voy") }),
       pestana<E, L, A>("sigue", "Sigo", { lugares: p.lugares.filter((l) => p.sigo(l.id)), artistas: p.artistas.filter((a) => p.sigo(a.id)) }),
     ];
-    if (p.vistas.interesa > 0 || interesa.length > 0) pestanas.push(pestana("interesa", "Me interesa", { eventos: interesa }));
+    if (p.vistas.interesa > 0 || interesa.length > 0) pestanas.splice(1, 0, pestana("interesa", "Interesan", { eventos: interesa }));
     return pestanas;
   }
   const juntos = p.eventos.filter((e) => p.estado(e.id) === "voy");

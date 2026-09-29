@@ -1,0 +1,24 @@
+/* Un grupo de una lista raíz (ui/Grupo): el título va a todo lo ancho con su aire a los lados y su raya abajo, y se queda
+   pegado bajo lo que esté pegado arriba: la barra de la app, si se ve (`--barra-vista`, del armazón), y la cabecera
+   (`--alto-cabecera`, de ui/Cabecera; una pantalla sin cabecera lo pone en 0). Los renglones ponen el aire a los lados. */
+.titulo {
+  position: sticky;
+  top: calc(var(--barra-vista, var(--tope)) + var(--alto-cabecera));
+  z-index: calc(var(--z-pegajoso) - 1);
+  display: flex;
+  align-items: baseline;
+  gap: var(--espacio-2);
+  padding: 10px var(--gutter) 8px;
+  border-bottom: 1px solid var(--borde);
+  background: var(--fondo-contenido);
+  font-size: var(--letra-xl);
+  transition: top var(--duracion-recogida, var(--duracion)) var(--curva);
+}
+.titulo > span {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+.lista {
+  list-style: none;
+  padding-inline: var(--gutter);
+}

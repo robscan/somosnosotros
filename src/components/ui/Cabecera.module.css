@@ -24,13 +24,21 @@
   pointer-events: none;
 }
 
-/* La fila de contexto */
+/* La fila de contexto. Si los chips no caben, se desliza de lado sin barra (`useTiraQueSigue` avisa cuándo hay más). */
 .contexto,
 .campo {
   display: flex;
   align-items: center;
   gap: var(--espacio-2);
   padding: var(--espacio-1) var(--gutter) var(--espacio-3);
+}
+.contexto {
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-padding-inline: var(--gutter);
+}
+.contexto::-webkit-scrollbar {
+  display: none;
 }
 /* El campo (ui/Buscador) con el alto de los chips de contexto; su ✕ también, o la fila crecería al abrirlo */
 .campo > label {

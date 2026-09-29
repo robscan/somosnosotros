@@ -4,10 +4,11 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefO
 import { prestarALaBarra } from "../prestamoBarra";
 import BotonIcono from "./BotonIcono";
 import { IconoArriba } from "./Iconos";
+import { useTiraQueSigue } from "./useTiraQueSigue";
 import styles from "./Cabecera.module.css";
 
 type Props = {
-  /** La fila de contexto: dónde y cuándo (chips de contexto: fecha, ciudad). */
+  /** La fila de contexto: los chips de ciudad, Cuándo y Filtros y, después, los filtros puestos con su ✕. */
   contexto: ReactNode;
   /** Qué hace la lupa de la barra de la app en esta pantalla (abrir su búsqueda). Sin él, la lupa lleva a la de Inicio. */
   onBuscar?: () => void;
@@ -24,12 +25,14 @@ type Props = {
  * de contexto y, debajo, las pestañas; se queda pegada arriba, justo bajo la barra de la app (o arriba del todo cuando
  * la barra se recoge: `--barra-vista`, del armazón) y forma con ella una sola región, con la raya común solo abajo.
  * La lupa ya no vive aquí: es la de la barra de la app, y esta cabecera solo le presta lo que abre (`onBuscar`).
- * Publica en `--alto-cabecera` lo que mide, que es donde se pegan los títulos de día. Tras bajar una pantalla aparece
- * el botón para volver arriba.
+ * Publica en `--alto-cabecera` lo que mide, que es donde se pegan los títulos de día. Si los chips de la fila no caben,
+ * la fila se desliza de lado y su borde derecho se desvanece mientras haya más (H-11). Tras bajar una pantalla aparece el
+ * botón para volver arriba.
  */
 export default function Cabecera({ contexto, onBuscar, campo, filtros, children }: Props) {
   const ref = useRef<HTMLElement>(null);
   const lejos = useMideYVigilaLejos(ref);
+  const fila = useTiraQueSigue<HTMLDivElement>();
   // La lupa de la barra llama a lo último que llegó aquí, sin volver a prestarse cada vez que la pantalla se pinta.
   const abrirBusqueda = useRef(onBuscar);
   useLayoutEffect(() => {
@@ -40,7 +43,9 @@ export default function Cabecera({ contexto, onBuscar, campo, filtros, children 
   return (
     <>
       <header ref={ref} className={styles.cabecera}>
-        <div className={campo ? styles.campo : styles.contexto}>{campo || contexto}</div>
+        <div ref={fila} className={campo ? styles.campo : styles.contexto}>
+          {campo || contexto}
+        </div>
         {filtros}
         {children}
       </header>

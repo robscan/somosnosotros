@@ -20,7 +20,7 @@ type Props = {
  */
 export default function RenglonLugar({ lugar: l, km, boton }: Props) {
   return (
-    <Renglon href={hrefLugar(l)} foto={l.portada ?? SIN_FOTO} titulo={l.nombre} columna accion={boton && <BotonRenglon {...boton} />}>
+    <Renglon href={hrefLugar(l)} foto={l.portada ?? SIN_FOTO} titulo={l.nombre} accion={boton && <BotonRenglon {...boton} />}>
       {l.privado && <span className={styles.sello}>Solo tú lo ves</span>}
       <span className={styles.envuelve}>
         <IconoPin width={15} height={15} />

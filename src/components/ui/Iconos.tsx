@@ -120,6 +120,14 @@ export const IconoBoleto = (p: P) => (
     <path d="M13 8v8" strokeDasharray="2 2" />
   </svg>
 );
+/** Los filtros: dos controles deslizantes (el chip Filtros de la fila de contexto). */
+export const IconoFiltros = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+    <circle cx="15" cy="7" r="2.2" />
+    <circle cx="9" cy="17" r="2.2" />
+  </svg>
+);
 export const IconoCalendario = (p: P) => (
   <svg {...base(p)}>
     <rect x="3" y="5" width="18" height="16" rx="2" />

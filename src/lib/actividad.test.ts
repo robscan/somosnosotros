@@ -19,33 +19,33 @@ describe("pestañas de Mi perfil", () => {
 
   it("cada evento va en la pestaña de lo que decidí, en orden", () => {
     const ps = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada(estados, ["l1", "l2", "a1"]), vistas: vistas0 });
-    expect(resumen(ps)).toEqual(["Voy a 2: e1,e3", "Sigo 3: l1,l2,a1", "Me interesa 2: e2,e4"]);
+    expect(resumen(ps)).toEqual(["Voy 2: e1,e3", "Interesan 2: e2,e4", "Sigo 3: l1,l2,a1"]);
   });
 
   it("No voy lo quita al instante y Deshacer lo devuelve a su sitio", () => {
     const quitado = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada({ ...estados, e1: null }, ["l1", "l2", "a1"]), vistas: vistas0 });
-    expect(resumen(quitado)[0]).toBe("Voy a 1: e3");
+    expect(resumen(quitado)[0]).toBe("Voy 1: e3");
     const deshecho = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada(estados, ["l1", "l2", "a1"]), vistas: vistas0 });
-    expect(resumen(deshecho)[0]).toBe("Voy a 2: e1,e3");
+    expect(resumen(deshecho)[0]).toBe("Voy 2: e1,e3");
   });
 
-  it("Voy desde Me interesa lo pasa a Voy a y los números cambian", () => {
+  it("Voy desde Interesan lo pasa a Voy y los números cambian", () => {
     const ps = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada({ ...estados, e2: "voy" }, []), vistas: vistas0 });
-    expect(resumen(ps)).toEqual(["Voy a 3: e1,e2,e3", "Sigo 0: ", "Me interesa 1: e4"]);
+    expect(resumen(ps)).toEqual(["Voy 3: e1,e2,e3", "Interesan 1: e4", "Sigo 0: "]);
   });
 
-  it("Me interesa se queda aunque se vacíe, y aparece al llenarse si no había", () => {
+  it("Interesan se queda aunque se vacíe, y aparece al llenarse si no había", () => {
     const vacia = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada({ e1: "voy", e2: null, e3: "voy", e4: null }, []), vistas: vistas0 });
-    expect(resumen(vacia)[2]).toBe("Me interesa 0: ");
+    expect(resumen(vacia)[1]).toBe("Interesan 0: ");
     const sinHaber = { e1: "voy", e2: "voy", e3: "voy", e4: "voy" } as Record<string, Asistencia>;
     expect(pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada(sinHaber, []), vistas: { juntos: 0, interesa: 0 } })).toHaveLength(2);
     const llena = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada({ ...sinHaber, e4: "me_interesa" }, []), vistas: { juntos: 0, interesa: 0 } });
-    expect(resumen(llena)[2]).toBe("Me interesa 1: e4");
+    expect(resumen(llena)[1]).toBe("Interesan 1: e4");
   });
 
   it("dejar de seguir lo saca de Sigo", () => {
     const ps = pestanasDePersona({ mia: true, eventos, lugares, artistas, ...mirada(estados, ["l2"]), vistas: vistas0 });
-    expect(resumen(ps)[1]).toBe("Sigo 1: l2");
+    expect(resumen(ps)[2]).toBe("Sigo 1: l2");
   });
 });
 

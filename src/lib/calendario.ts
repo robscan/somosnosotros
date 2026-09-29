@@ -198,8 +198,14 @@ function rangoDelEvento(e: EventoConRango): { inicio: string; fin: string } {
  *  solo: la usan Agenda (`filtrarAgenda`) y Lugares (`diasConEvento`) al filtrar por el día del chip, para que
  *  nunca desentonen con lo que el calendario ya marcó como disponible. */
 export function ocupaDia(e: EventoConRango, fecha: string): boolean {
+  return ocupaRango(e, fecha, fecha);
+}
+
+/** ¿Ocupa este evento algún día entre `desde` y `hasta` (YYYY-MM-DD, ambos incluidos)? Cuándo, en Agenda, elige un
+ *  rango de días: un evento de varios días cuenta si su tramo toca el rango, aunque empiece antes o termine después. */
+export function ocupaRango(e: EventoConRango, desde: string, hasta: string): boolean {
   const { inicio, fin } = rangoDelEvento(e);
-  return fecha >= inicio && fecha <= fin;
+  return inicio <= hasta && fin >= desde;
 }
 
 export function diasActivosCalendario(eventos: EventoConRango[]): DiasActivos {

@@ -197,12 +197,23 @@ body::before {
   pointer-events: none;
 }
 
-/* Pantallas raíz (Inicio, Agenda, Lugares, Artistas): el contenido en su tono, bajo la barra de la app y con sitio abajo
-   para la navegación inferior fija. `--barra-flujo` es lo que la barra ocupa arriba (lo pone el armazón). */
+/* Pantallas raíz (Inicio, Agenda, Lugares, Artistas, Perfil; docs/rediseno/50, 5.3): una rejilla de una columna, en el
+   tono del contenido, bajo la barra de la app y con sitio abajo para la navegación inferior fija. La cabecera es la del
+   área `cabecera` y cada bloque de lo que sigue, una fila. La página no lleva aire a los lados y cada bloque pone el suyo
+   (`.columna`, o `--gutter` donde el fondo llega a los bordes: los títulos de grupo, los carriles); nada se escapa del aire
+   con un margen negativo. `--barra-flujo` es lo que la barra ocupa arriba (lo pone el armazón). */
 .raiz {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "cabecera";
+  grid-auto-rows: max-content;
+  align-content: start;
   min-height: calc(100dvh - var(--barra-flujo, 0px));
   padding-bottom: calc(var(--nav-abajo) + var(--espacio-6));
   background: var(--fondo-contenido);
+}
+.raiz > header {
+  grid-area: cabecera;
 }
 
 /* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */
@@ -230,6 +241,11 @@ body::before {
 }
 .a-lo-ancho {
   width: 100%;
+}
+/* Una tira que se desliza de lado y todavía tiene más a la derecha (`useTiraQueSigue` le pone `data-sigue`): su borde
+   derecho se desvanece, para que no parezca que termina ahí (H-11). */
+[data-sigue] {
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--espacio-6)), transparent);
 }
 
 .titulo {

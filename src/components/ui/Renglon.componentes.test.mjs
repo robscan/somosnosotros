@@ -53,7 +53,11 @@ before(async () => {
               </Renglon>
               <EsqueletoRenglon />
               <EsqueletoRenglon redonda />
-              <Renglon href="/largo" foto={FOTO} redonda columna titulo="Un título" accion={voy('Voy largo')}>
+              <Renglon href="/evento" foto={FOTO} titulo="Concierto de la Orquesta Sinfónica de San Luis Potosí con su director invitado, el coro universitario y las voces de la Huasteca" accion={voy('Voy evento')}>
+                <span><IconoReloj width={15} height={15} /><b>18:00</b><span>· $120 a $250 · 6 van</span></span>
+                <span><IconoPin width={15} height={15} /><span>Templo de San Francisco de Asís, antiguo convento de San Luis Potosí, Centro Histórico</span></span>
+              </Renglon>
+              <Renglon href="/largo" foto={FOTO} redonda titulo="Un título" accion={voy('Voy largo')}>
                 <span><IconoNota width={15} height={15} /><span>Música académica y clásica · Solista · Grupo de cámara de San Luis Potosí</span></span>
                 <span className={rs.envuelve}><IconoPin width={15} height={15} />Templo de San Francisco · Calle Jardín Guerrero 7, 78000 San Luis Potosí, San Luis Potosí, México</span>
                 <span><IconoBoleto width={15} height={15} /><span>Cooperación solidaria de doscientos pesos por persona en taquilla</span></span>
@@ -162,6 +166,26 @@ test("lista: ningún dato de la meta pasa del borde de su columna (H-17) y el la
   assert.ok(await corta.evaluate((e) => e.scrollWidth > e.clientWidth), "el texto largo se corta");
   const direccion = await rect(largo.locator("small > span").nth(1));
   assert.ok(direccion.h > 30, `la dirección se parte en dos renglones o más (mide ${direccion.h})`);
+});
+
+test("evento: el título llega a dos líneas y la meta son dos líneas, cada una cortada con puntos suspensivos (H-09)", async (t) => {
+  const p = await pagina(t);
+  const evento = p.locator("ul[aria-label=lista] > li").filter({ has: p.locator('a[href="/evento"]') });
+  const titulo = evento.locator("a > b");
+  const { altoTitulo, linea } = await titulo.evaluate((e) => ({ altoTitulo: e.getBoundingClientRect().height, linea: parseFloat(getComputedStyle(e).lineHeight) }));
+  assert.ok(altoTitulo <= 2 * linea + 1, `el título mide ${altoTitulo} y dos líneas son ${2 * linea}`);
+  assert.ok(await titulo.evaluate((e) => e.scrollHeight > e.clientHeight), "el título largo se corta");
+  const datos = evento.locator("small > span");
+  assert.equal(await datos.count(), 2, "dos líneas de meta");
+  for (let i = 0; i < 2; i++) {
+    const { alto: h, tamano } = await datos.nth(i).evaluate((e) => ({ alto: e.getBoundingClientRect().height, tamano: parseFloat(getComputedStyle(e).fontSize) }));
+    assert.ok(h < tamano * 1.7, `la línea ${i + 1} mide ${h}: cabe en un renglón`);
+  }
+  const texto = datos.nth(1).locator("span");
+  assert.equal(await texto.evaluate((e) => getComputedStyle(e).textOverflow), "ellipsis");
+  assert.ok(await texto.evaluate((e) => e.scrollWidth > e.clientWidth), "el sitio largo se corta");
+  const alto = (await rect(evento)).h;
+  assert.ok(alto <= 120, `el renglón de evento mide ${alto} (antes llegaba a 190 con la dirección postal y cada dato en su línea)`);
 });
 
 test("dato: 44 de alto, el icono y el texto a 32 px y el enlace de la acción en 44×44", async (t) => {

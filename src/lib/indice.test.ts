@@ -1,10 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { conGrupos, gruposConPosicion, idGrupo, letraDe, letrasPresentes } from "./indice";
+import { agruparPorLetra, conGrupos, gruposConPosicion, idGrupo, letraDe, letrasPresentes } from "./indice";
 
 describe("letraDe", () => {
   it("sin acentos ni signos; lo que no empieza con una letra va en «#»", () => {
     expect(["Ángel", "ñandú", "¡Arte!", "3 Tiempos", "zoco", ""].map(letraDe)).toEqual(["A", "N", "A", "#", "Z", "#"]);
   });
+});
+
+describe("agruparPorLetra", () => {
+  it("parte la lista en un grupo por cada racha de la misma letra, en el orden real de la lista", () => {
+    const grupos = agruparPorLetra(["3 Tiempos", "Ana", "Álvaro", "Beto", "Bruno", "Carla"], (x) => x);
+    expect(grupos).toEqual([
+      { letra: "#", items: ["3 Tiempos"] },
+      { letra: "A", items: ["Ana", "Álvaro"] },
+      { letra: "B", items: ["Beto", "Bruno"] },
+      { letra: "C", items: ["Carla"] },
+    ]);
+  });
+  it("sin nada, no hay grupos", () => expect(agruparPorLetra([], (x: string) => x)).toEqual([]));
 });
 
 describe("idGrupo", () => {

@@ -71,6 +71,14 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+/* El pie: siempre a la vista bajo el cuerpo, con su raya arriba. Quien lo llena pone sus botones. */
+.pie {
+  display: flex;
+  gap: var(--espacio-3);
+  margin-top: var(--espacio-3);
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--borde);
+}
 /* A toda la altura, pegada al borde superior seguro (notch / isla): abajo sigue el área segura de siempre. */
 .completa {
   height: calc(100% - env(safe-area-inset-top, 0px));

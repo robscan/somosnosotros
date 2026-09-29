@@ -4,15 +4,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import ChipCiudad from "@/components/Ciudad";
 import Buscador from "@/components/ui/Buscador";
-import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
+import { ChipContexto, ChipEnlace, ChipQuitar, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaDisciplina, hrefArtistas, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
-import { conGrupos, idGrupo } from "@/lib/indice";
+import { agruparPorLetra, idGrupo } from "@/lib/indice";
 import RenglonArtista from "./RenglonArtista";
 import TiraLetras, { irAlGrupo, useLetraActiva } from "./TiraLetras";
 import Cabecera from "./ui/Cabecera";
 import { EsqueletoRenglones } from "./ui/Esqueleto";
-import { PestanaEnlace, Pestanas } from "./ui/Pestanas";
+import Grupo from "./ui/Grupo";
+import HojaFiltros, { BloqueFiltro } from "./ui/HojaFiltros";
+import { IconoFiltros } from "./ui/Iconos";
 import { useCentinela } from "./useCentinela";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
 import Boton from "@/components/ui/Boton";
@@ -49,12 +51,13 @@ type Props = {
 };
 
 /**
- * Lista de artistas: renglones como los de Lugares (foto redonda, nombre, qué hace, próxima fecha y dónde), con
- * encabezados de letra. En ui/Cabecera: ciudad, la lupa a partir de 8 y las disciplinas como pestañas a partir de 12
- * (decisiones 1 y 2, OL-087); dentro de una disciplina con muchos artistas, un segundo nivel de chips por detalle
- * (género, técnica). Una tira de letras lleva a cada grupo, sin filtrar ni seleccionar nada (corrección del founder,
- * 2026-09-19): si la letra no está cargada, pide con `n` lo justo para que lo esté. El resto del filtro vive en la
- * URL y lo aplica el servidor: la página trae `pagina` artistas y "Ver más" pide otros tantos.
+ * Lista de artistas: renglones como los de Lugares (foto redonda, nombre, qué hace, próxima fecha y dónde), en un grupo por
+ * letra con su título pegado (`ui/Grupo`). En ui/Cabecera: la fila de contexto —ciudad, Filtros y, después, lo que hay
+ * puesto con su ✕— y la tira de letras. La lupa de la barra aparece a partir de 8 artistas y Filtros a partir de 12
+ * (decisiones 1 y 2, OL-087); su hoja trae las disciplinas y, dentro de una con muchos artistas, un segundo bloque por
+ * detalle (género, técnica). Una tira de letras lleva a cada grupo, sin filtrar ni seleccionar nada (corrección del founder,
+ * 2026-09-19): si la letra no está cargada, pide con `n` lo justo para que lo esté. El filtro vive en la URL y lo aplica el
+ * servidor: la página trae `pagina` artistas y "Ver más" pide otros tantos.
  *
  * Sin carriles propios (OL-165, pedido del founder): va directo a la lista, como Agenda. La tira de destacados y
  * "Con eventos esta semana" ya viven en Inicio (`CarrilEntidad`/`CarrilEntidadCliente`), que reutiliza la misma
@@ -73,18 +76,18 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
     const destino = `/artistas/nuevo${s ? `?${s}` : ""}`;
     return conSesion ? destino : `/entrar?siguiente=${encodeURIComponent(destino)}`;
   };
-  // Cambiar de ciudad suelta el filtro (disciplina y detalle son de la ciudad que se deja); como en Lugares.
-  const chipCiudad = <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => hrefArtistas({ ciudad: c.slug === CIUDAD_INICIAL.slug ? null : c.slug })} />;
   const queHacen = filtro.que ? (detalles.find((x) => x.valor === filtro.que)?.etiqueta ?? filtro.que) : filtro.hace ? etiquetaDisciplina(filtro.hace) : null;
-  const filas = filtro.q ? artistas.map((x) => ({ x, grupo: null })) : conGrupos(artistas, (a) => a.nombre);
+  // Filtrar no es navegar: quitar o cambiar lo que hay puesto reemplaza la entrada del historial y no mueve la página.
+  const router = useRouter();
+  const irA = (href: string) => router.replace(href, { scroll: false });
   // La letra no filtra ni navega la URL: es un acceso directo. Si ya está cargada, salta a su grupo; si no, pide con
   // `n` lo justo para que quepa (múltiplo de la página, sin apilar historial) y salta en cuanto llegue.
-  const router = useRouter();
   const pendiente = useRef<string | null>(null);
   const tiraRef = useRef<HTMLDivElement>(null);
   const letraActiva = useLetraActiva(letras, tiraRef, !filtro.q && letras.length > 0);
   // La lupa abre el campo en el renglón de la ciudad; con algo buscado en la URL, ya viene abierto.
   const [buscando, setBuscando] = useState(!!filtro.q);
+  const [filtrando, setFiltrando] = useState(false);
   useEffect(() => {
     const letra = pendiente.current;
     if (letra && irAlGrupo(letra)) pendiente.current = null;
@@ -98,7 +101,7 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
     }
     pendiente.current = letra;
     const nNecesario = Math.ceil((posicion + 1) / pagina) * pagina;
-    router.replace(hrefArtistas({ ...filtro, ciudad: cSlug, n: Math.max(nNecesario, filtro.n) }), { scroll: false });
+    irA(hrefArtistas({ ...filtro, ciudad: cSlug, n: Math.max(nNecesario, filtro.n) }));
   }
 
   // Carga progresiva (OL-158): la página siguiente ya se pide al servidor con "Ver más" (`n` en la URL); el
@@ -108,53 +111,77 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
   const hrefSiguiente = quedan > 0 ? hrefArtistas({ ...filtro, ciudad: cSlug, n: filtro.n + pagina }) : null;
   const [cargandoMas, iniciarCargaMas] = useTransition();
   const centinelaRef = useCentinela(!!hrefSiguiente && !cargandoMas, () => {
-    if (hrefSiguiente) iniciarCargaMas(() => router.replace(hrefSiguiente, { scroll: false }));
+    if (hrefSiguiente) iniciarCargaMas(() => irA(hrefSiguiente));
   });
 
+  const hrefSin = (quitar: "hace" | "que") => hrefArtistas({ ciudad: cSlug, hace: quitar === "que" ? filtro.hace : null, q: filtro.q });
   const cabecera = (
     <Cabecera
-      contexto={chipCiudad}
+      contexto={
+        <>
+          <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => hrefArtistas({ ciudad: c.slug === CIUDAD_INICIAL.slug ? null : c.slug })} />
+          {conChips && disciplinas.length > 1 && (
+            <ChipContexto icono={<IconoFiltros width={16} height={16} />} cuenta={(filtro.hace ? 1 : 0) + (filtro.que ? 1 : 0)} onClick={() => setFiltrando(true)}>
+              Filtros
+            </ChipContexto>
+          )}
+          {filtro.hace && <ChipQuitar texto={etiquetaDisciplina(filtro.hace)} onClick={() => irA(hrefSin("hace"))} />}
+          {filtro.que && queHacen && <ChipQuitar texto={queHacen} onClick={() => irA(hrefSin("que"))} />}
+        </>
+      }
       onBuscar={totalCiudad >= UMBRAL_BUSCAR_ARTISTAS ? () => setBuscando(true) : undefined}
       campo={buscando && <Buscador valor={filtro.q ?? ""} placeholder="Buscar un artista" ariaLabel="Buscar un artista por nombre" autoFocus onCerrar={() => setBuscando(false)} />}
-      filtros={
-        conChips &&
-        disciplinas.length > 1 && (
-          <Pestanas ariaLabel="Qué hacen">
-            <PestanaEnlace activa={!filtro.hace} href={hrefArtistas({ ciudad: cSlug, q: filtro.q })}>
-              Todos
-              <Cuenta n={totalCiudad} />
-            </PestanaEnlace>
-            {disciplinas.map((d) => (
-              <PestanaEnlace key={d.valor} activa={filtro.hace === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: d.valor, q: filtro.q })}>
-                {d.etiqueta}
-                {d.n != null && <Cuenta n={d.n} />}
-              </PestanaEnlace>
-            ))}
-          </Pestanas>
-        )
-      }
     >
-      {conChips && detalles.length > 0 && (
-        <Chips ariaLabel={`Qué ${etiquetaDisciplina(filtro.hace!).toLowerCase()}`}>
-          <ChipEnlace activo={!filtro.que} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, q: filtro.q })}>
-            Todo
-            {disciplinas.find((d) => d.valor === filtro.hace)?.n != null && <Cuenta n={disciplinas.find((d) => d.valor === filtro.hace)!.n!} />}
+      {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
+    </Cabecera>
+  );
+  /** La hoja Filtros: cada chip cambia la URL (el servidor filtra) y la hoja queda abierta, con el número al día. */
+  const hoja = filtrando && (
+    <HojaFiltros
+      titulo="Filtros"
+      resultado={total === 1 ? "Ver 1 artista" : `Ver ${total} artistas`}
+      sinResultados={total === 0}
+      onLimpiar={() => irA(hrefArtistas({ ciudad: cSlug, q: filtro.q }))}
+      onVer={() => setFiltrando(false)}
+      onCerrar={() => setFiltrando(false)}
+    >
+      <BloqueFiltro rotulo="Disciplina">
+        <Chips ariaLabel="Qué hacen" envuelve>
+          <ChipEnlace activo={!filtro.hace} href={hrefArtistas({ ciudad: cSlug, q: filtro.q })}>
+            Todos
+            <Cuenta n={totalCiudad} />
           </ChipEnlace>
-          {detalles.map((d) => (
-            <ChipEnlace key={d.valor} activo={filtro.que === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, que: filtro.que === d.valor ? null : d.valor, q: filtro.q })}>
+          {disciplinas.map((d) => (
+            <ChipEnlace key={d.valor} activo={filtro.hace === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: d.valor, q: filtro.q })}>
               {d.etiqueta}
               {d.n != null && <Cuenta n={d.n} />}
             </ChipEnlace>
           ))}
         </Chips>
+      </BloqueFiltro>
+      {conChips && detalles.length > 0 && filtro.hace && (
+        <BloqueFiltro rotulo={`Qué ${etiquetaDisciplina(filtro.hace).toLowerCase()}`}>
+          <Chips ariaLabel={`Qué ${etiquetaDisciplina(filtro.hace).toLowerCase()}`} envuelve>
+            <ChipEnlace activo={!filtro.que} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, q: filtro.q })}>
+              Todo
+              {disciplinas.find((d) => d.valor === filtro.hace)?.n != null && <Cuenta n={disciplinas.find((d) => d.valor === filtro.hace)!.n!} />}
+            </ChipEnlace>
+            {detalles.map((d) => (
+              <ChipEnlace key={d.valor} activo={filtro.que === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, que: filtro.que === d.valor ? null : d.valor, q: filtro.q })}>
+                {d.etiqueta}
+                {d.n != null && <Cuenta n={d.n} />}
+              </ChipEnlace>
+            ))}
+          </Chips>
+        </BloqueFiltro>
       )}
-      {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
-    </Cabecera>
+    </HojaFiltros>
   );
+  const renglon = (a: ArtistaLista) => <RenglonArtista key={a.id} artista={a} boton={seguir.boton(a.id, a.nombre)} />;
 
   if (totalCiudad === 0) {
     return (
-      <section aria-label="Artistas">
+      <>
         {cabecera}
         {arriba}
         <div className={comun.vacio}>
@@ -164,11 +191,11 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
             Registrar un artista
           </Boton>
         </div>
-      </section>
+      </>
     );
   }
   return (
-    <section aria-label="Artistas">
+    <>
       {cabecera}
       {arriba}
       {artistas.length === 0 && !filtro.q ? (
@@ -187,16 +214,15 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
       ) : (
         <>
           <p className={comun.conteo}>{total === 1 ? "1 artista" : `${total} artistas`}</p>
-          <ul className={styles.lista}>
-            {filas.map(({ x: a, grupo }) => [
-              grupo && (
-                <li key={grupo} id={idGrupo(grupo)} className={comun.grupo} aria-hidden>
-                  {grupo}
-                </li>
-              ),
-              <RenglonArtista key={a.id} artista={a} boton={seguir.boton(a.id, a.nombre)} />,
-            ])}
-          </ul>
+          {filtro.q ? (
+            <Grupo>{artistas.map(renglon)}</Grupo>
+          ) : (
+            agruparPorLetra(artistas, (a) => a.nombre).map((g) => (
+              <Grupo key={g.letra} id={idGrupo(g.letra)} titulo={g.letra}>
+                {g.items.map(renglon)}
+              </Grupo>
+            ))
+          )}
           {seguir.extras}
           {hrefSiguiente && (
             <div ref={centinelaRef}>
@@ -208,6 +234,7 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
           )}
         </>
       )}
-    </section>
+      {hoja}
+    </>
   );
 }
