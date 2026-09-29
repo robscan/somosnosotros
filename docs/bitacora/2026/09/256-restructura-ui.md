@@ -779,6 +779,10 @@ Al verla, el founder señaló «una línea rara… entre filtros y header, ya te
 llevaba su filete además del de la fila): fuera el filete de la barra. Y sobre las pestañas Todo / Seguidos de la app
 de hoy: «vi que filtras por lo que sigo, déjalo así y solo corrige la línea»: el filtro «Solo lo que sigo» de la hoja
 de Filtros se queda y no hay pestañas.
+Y en tableta y escritorio: «hiciste un parche sobre shell, agregaste una línea donde montaste un título que nunca antes
+usamos»: la Agenda llevaba su barra propia bajo la barra de la app; desde tableta usa la barra de la app con Atrás
+junto a «+» (como las fichas, punto 55) y la fila de contexto va directo debajo; en teléfono conserva su barra. Vista
+«lista» en el armazón. Capturas `256-130` (Agenda en escritorio) y las de letras regeneradas.
 
 - **`256-75-v3-inicio-telefono`:** Inicio con cada carril con su título a la izquierda y «Ver todo ›» a la derecha.
 - **`256-81-v3-agenda-fin-de-semana-telefono`:** tras elegir Fin de semana en Cuándo desde Inicio: la Agenda con Atrás,

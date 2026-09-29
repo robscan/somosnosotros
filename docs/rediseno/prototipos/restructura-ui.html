@@ -64,7 +64,7 @@ ul { list-style: none; }
 
 /* ==========================================================================
    2. El armazón: un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro. El JS pone en la app
-      data-vista = raiz · ficha · tarea y el CSS solo lee ese atributo: en teléfono la ficha y la tarea esconden la barra y la
+      data-vista = raiz · ficha · tarea · lista y el CSS solo lee ese atributo: en teléfono todo lo que no es raíz esconde la barra y la
       navegación; desde 792 la barra ocupa todo el ancho, la navegación es un carril lateral en dos grupos y la ficha usa la barra
       de la app (Atrás junto a «+», menú junto a la campana). En una app nativa es lo mismo: barra, tab bar o sidebar y el contenido.
    ========================================================================== */
@@ -512,8 +512,11 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   .filtros { padding-top: var(--espacio-3); justify-content: center; }
   .pantalla[data-id="perfil"] > .filtros { justify-content: start; }
   .barra-interior { height: var(--alto-barra); padding-top: 0; }
-  .agenda > .cabecera { top: var(--alto-barra); }
-  .agenda .grupo { top: calc(var(--alto-barra) + var(--alto-filtros)); }
+  /* Agenda desde tableta: la barra de la app con Atrás junto a «+», sin barra propia ni título; la fila de contexto va directo debajo */
+  .agenda > .barra-interior { display: none; }
+  .agenda > .cabecera { top: 0; }
+  .agenda .grupo { top: var(--alto-filtros); }
+  .app[data-vista="lista"] > .barra > .atras-barra { visibility: visible; }
   .barra-interior.con-campo > :first-child { display: grid; max-width: 520px; }
   .pantalla[data-id="lugares"] { grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; padding-bottom: 0; }
   .pantalla[data-id="lugares"] > .cabecera { grid-area: cabecera; }
@@ -757,7 +760,7 @@ html[data-transicion="ficha"]::view-transition-new(root) { animation: entrar-lad
   <ul class="lista"><li class="renglon lista"><a class="frente" href="#" data-ir="evento"><img class="foto" src="https://viesoxgrfvftkgpjbnml.supabase.co/storage/v1/object/public/fotos/lugares/9690e3b6-f389-4e89-a876-cdc9d29221b3/evento-ee2acab0-eb1e-4c41-b121-c4f37eba170c.jpeg" alt="" loading="lazy"><b>LXS COLOCAOS: La última fogueada</b><small>19:00 · MUNI Museo Universitario</small><small class="segundo">Gratis · 2 van<span class="estado">Vas</span></small></a><button type="button" class="boton-icono elevado decidido" data-accion="voy" aria-pressed="true" aria-label="Ya vas"><svg class="i" aria-hidden="true"><use href="#i-ok"/></svg></button></li></ul></section>
   <a class="boton texto enlace-perfil" href="#">Así te ve la gente</a>
 </section>
-      <section class="pantalla agenda" data-id="agenda" hidden data-vista="tarea">
+      <section class="pantalla agenda" data-id="agenda" hidden data-vista="lista">
   <header class="barra-interior fija"><button type="button" class="boton-icono contorno" data-atras aria-label="Atrás"><svg class="i" aria-hidden="true"><use href="#i-chevron-izq"/></svg></button><b class="titulo-barra">Agenda</b><span></span></header>
   <header class="cabecera">
       <div class="filtros"><button type="button" class="chip contexto" data-hoja="ciudad"><svg class="i chico" aria-hidden="true"><use href="#i-pin"/></svg><span>San Luis Potosí</span><svg class="i chico" aria-hidden="true"><use href="#i-caret"/></svg></button><button type="button" class="chip contexto" data-hoja="cuando"><svg class="i chico" aria-hidden="true"><use href="#i-calendario"/></svg><span>Cuándo</span></button><button type="button" class="chip filtro" data-hoja="filtros-eventos"><svg class="i chico" aria-hidden="true"><use href="#i-filtros"/></svg>Filtros</button></div>

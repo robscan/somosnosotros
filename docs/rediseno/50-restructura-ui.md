@@ -916,7 +916,11 @@ Al revivir la Agenda, su barra (Atrás · Agenda) llevaba el filete de toda barr
 líneas a 48 px, la misma «línea rara» entre cabecera y filtros que el founder ya había señalado en la sexta vuelta y
 volvió a señalar aquí. La barra de la Agenda no lleva filete: barra y fila son una sola región y la línea va solo bajo
 la fila. El filtro «Solo lo que sigo» de la hoja de Filtros se queda tal cual («vi que filtras por lo que sigo, déjalo
-así»).
+así»). Y en tableta y escritorio la Agenda había montado una segunda barra con título bajo la barra de la app («hiciste
+un parche sobre shell: agregaste una línea donde montaste un título que nunca antes usamos»), contra el punto 55:
+desde tableta la Agenda usa la barra de la app (Atrás junto a «+»), sin barra propia, y la fila de contexto va directo
+debajo; en teléfono conserva su barra porque la de la app se esconde. El armazón gana la vista «lista» (raíz · ficha ·
+tarea · lista), que solo decide qué enseña la barra de la app.
 
 ### 6.7 Medición de la v3 (`medir.js` sobre las diez pantallas, teléfono)
 

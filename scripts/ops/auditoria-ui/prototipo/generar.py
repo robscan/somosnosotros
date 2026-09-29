@@ -326,7 +326,8 @@ perfil = f'''<section class="pantalla raiz" data-id="perfil">
 
 # Agenda, revivida (founder, duodécima vuelta): la lista por día de todos los próximos con la fila de contexto. Se llega por «Ver todo» de los
 # carriles de eventos o eligiendo un valor en Cuándo desde Inicio; Atrás vuelve a Inicio. No ocupa lugar en la barra inferior («hay demasiado ya»).
-agenda = f'''<section class="pantalla agenda" data-id="agenda" data-vista="tarea">
+# En teléfono lleva su barra (Atrás · Agenda) porque la barra de la app se esconde; desde tableta usa la barra de la app (Atrás junto a «+»): sin barra propia ni título.
+agenda = f'''<section class="pantalla agenda" data-id="agenda" data-vista="lista">
   {barra_interior(titulo='Agenda', fija=True, menu=False)}
   {cabecera(chip_ciudad() + chip_cuando() + chip_filtros('filtros-eventos'))}
   {tramos_inicio()}
@@ -633,7 +634,7 @@ ul {{ list-style: none; }}
 
 /* ==========================================================================
    2. El armazón: un solo grid de tres áreas (barra · nav · pantalla) que no depende de lo que hay dentro. El JS pone en la app
-      data-vista = raiz · ficha · tarea y el CSS solo lee ese atributo: en teléfono la ficha y la tarea esconden la barra y la
+      data-vista = raiz · ficha · tarea · lista y el CSS solo lee ese atributo: en teléfono todo lo que no es raíz esconde la barra y la
       navegación; desde 792 la barra ocupa todo el ancho, la navegación es un carril lateral en dos grupos y la ficha usa la barra
       de la app (Atrás junto a «+», menú junto a la campana). En una app nativa es lo mismo: barra, tab bar o sidebar y el contenido.
    ========================================================================== */
@@ -1081,8 +1082,11 @@ html[data-transicion="ficha"]::view-transition-new(root) {{ animation: entrar-la
   .filtros {{ padding-top: var(--espacio-3); justify-content: center; }}
   .pantalla[data-id="perfil"] > .filtros {{ justify-content: start; }}
   .barra-interior {{ height: var(--alto-barra); padding-top: 0; }}
-  .agenda > .cabecera {{ top: var(--alto-barra); }}
-  .agenda .grupo {{ top: calc(var(--alto-barra) + var(--alto-filtros)); }}
+  /* Agenda desde tableta: la barra de la app con Atrás junto a «+», sin barra propia ni título; la fila de contexto va directo debajo */
+  .agenda > .barra-interior {{ display: none; }}
+  .agenda > .cabecera {{ top: 0; }}
+  .agenda .grupo {{ top: var(--alto-filtros); }}
+  .app[data-vista="lista"] > .barra > .atras-barra {{ visibility: visible; }}
   .barra-interior.con-campo > :first-child {{ display: grid; max-width: 520px; }}
   .pantalla[data-id="lugares"] {{ grid-template-columns: var(--panel) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "cabecera cabecera" "hoja mapa"; padding-bottom: 0; }}
   .pantalla[data-id="lugares"] > .cabecera {{ grid-area: cabecera; }}
