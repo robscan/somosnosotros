@@ -131,8 +131,8 @@ export function useSeguirEnLista(que: "lugar" | "artista", iniciales: string[] |
     return {
       objeto: que,
       decidido: antes,
-      // El nombre no cambia con el estado (`aria-pressed` ya lo dice).
-      nombreAccesible: `Seguir — ${nombre}`,
+      // El nombre dice el estado, nunca la acción contraria: «Seguir — …» por decidir y «Sigues — …» decidido.
+      nombreAccesible: `${antes ? "Sigues" : "Seguir"} — ${nombre}`,
       alTocar: () => {
         if (iniciales === null) {
           anotarIntencion(ruta(id));

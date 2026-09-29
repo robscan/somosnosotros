@@ -11,8 +11,8 @@ export type EstadoBotonRenglon = {
   objeto: keyof typeof GLIFO;
   decidido: boolean;
   /** Con qué evento, lugar o artista habla el botón, para quien usa lector de pantalla (el renglón puede tener más de
-   * uno en la lista). Fijo por acción — no cambia con `decidido` — para no contradecir `aria-pressed`, que ya dice el
-   * estado: un lector diciendo «ya no vas, botón conmutador, presionado» suena al revés (corrección del gestor, OL-104). */
+   * uno en la lista), y qué dice: «Voy» o «Ya vas», «Seguir» o «Sigues». Dice el estado, nunca la acción contraria:
+   * con `aria-pressed` un «ya no vas» suena al revés (corrección del gestor, OL-104). */
   nombreAccesible: string;
   alTocar: () => void;
 };
@@ -21,7 +21,7 @@ export type EstadoBotonRenglon = {
  * El botón de cada renglón y de cada tarjeta de carril (OL-104, bitácora 139; rediseño OL-106, bitácora 141):
  * un `BotonIcono` elevado de 48 px (nunca por debajo del mínimo accionable de 44), solo icono — sin texto: el glifo
  * invita y, decidido, se vuelve una palomita blanca sobre verde (tocarlo lo quita, con el mismo Deshacer de siempre).
- * El nombre completo va en el `aria-label`, fijo; el toast dice qué pasó, así que el icono no necesita decirlo con
+ * El nombre completo va en el `aria-label`; el toast dice qué pasó, así que el icono no necesita decirlo con
  * palabras. Verde (`--ok`) y no el color de acción: el mismo violeta en el estado ya decidido invitaba a tocarlo otra
  * vez en vez de leerse como «esto ya quedó» (corrección del founder, 2026-09-21).
  *

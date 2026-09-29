@@ -151,9 +151,9 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     return {
       objeto: "evento",
       decidido,
-      // El nombre no cambia con el estado (sería contradictorio con `aria-pressed`, que ya lo dice): "conmutador presionado"
-      // con un nombre que dice "ya no vas" suena al revés.
-      nombreAccesible: `Voy — ${e.titulo}`,
+      // El nombre dice el estado, nunca la acción contraria (con `aria-pressed` un «ya no vas» suena al revés, bitácora 139):
+      // «Voy — …» por decidir y «Ya vas — …» decidido.
+      nombreAccesible: `${decidido ? "Ya vas" : "Voy"} — ${e.titulo}`,
       alTocar: () => {
         if (decididas === null) {
           // Sin sesión: la ficha aplica la acción al volver de entrar (y, tras Voy, hace la pregunta de avisos una vez).
