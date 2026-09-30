@@ -3,20 +3,22 @@
    La hoja es un solo elemento que cubre la pantalla, de la franja de estado al pie, y DESPLAZA: un hueco arriba (`::before`, la hoja
    entera menos lo que asoma recogida) y luego el cuerpo blanco, que asoma desde abajo. Arrastrar el cuerpo lo sube; cuando su borde
    llega arriba (llena) el mismo gesto sigue desplazando el contenido: una sola inercia. Las alturas las mide y las asienta
-   `HojaLugares.tsx`, y el CSS solo lee `data-hoja` (recogida · asoma · media · llena), que pone la hoja en el teléfono.
+   `HojaLugares.tsx`, y el CSS solo lee `data-hoja` (recogida · asoma · media · llena), que pone la hoja en el teléfono. Llena, la lista
+   se detiene bajo la fila de contexto (la hoja pasa por debajo de la barra y de la fila) y la ficha cubre la pantalla.
    1. La hoja · 2. El cuerpo y su franja · 3. Desde 792, el panel
    ========================================================================== */
 
-/* 1. La hoja. En el teléfono va sobre la barra y la fila de contexto (llena las cubre) y bajo la navegación. Recibe todos los toques
-   —en el iPhone, un desplazador con `pointer-events: none` no desplaza—; para que el mapa reciba los del hueco, `HojaLugares`
-   la recorta en reposo (`clip-path`). `--alto-franja` es lo que se ve de la lista recogida (el asa y la cantidad); con una ficha
-   abierta, lo que se ve es su cabecera. */
+/* 1. La hoja. En el teléfono la lista vive bajo sus filtros: va por debajo de la barra y de la fila de contexto (`--z-pegajoso`), que se
+   quedan a la vista aunque la lista llene y desplace por debajo de ellas; la ficha es una página y va sobre las dos; las dos van bajo la
+   navegación. Recibe todos los toques —en el iPhone, un desplazador con `pointer-events: none` no desplaza—; para que el mapa reciba
+   los del hueco, `HojaLugares` la recorta en reposo (`clip-path`). `--alto-franja` es lo que se ve de la lista recogida (el asa y la
+   cantidad); con una ficha abierta, lo que se ve es su cabecera. */
 .hoja {
   --alto-franja: 64px;
   --hoja-recogida: var(--alto-franja);
   position: fixed;
   inset: var(--tope) 0 0;
-  z-index: calc(var(--z-flotante) - 1);
+  z-index: calc(var(--z-pegajoso) - 1);
   overflow-y: auto;
   overscroll-behavior: contain;
   /* La posición de la hoja la lleva HojaLugares, no el navegador: sin anclaje, que la movía sola al cambiar lo que hay dentro. */
@@ -25,6 +27,7 @@
 }
 .hoja[data-ficha] {
   --hoja-recogida: calc(20px + var(--boton-icono) + var(--espacio-2));
+  z-index: calc(var(--z-flotante) - 1);
 }
 /* Hasta que la hoja mide sus alturas y se pone en la suya (`data-hoja`, al hidratar) no se ve: así, al cargar la página, no salta de
    recogida a asoma. */

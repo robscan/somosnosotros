@@ -3,7 +3,7 @@
  * desplaza y cada altura es una posición de ese desplazamiento (`y`): 0 es la más baja (solo asoma su franja) y la más
  * alta es `llena`, cuando la hoja ya cubre la pantalla y el mismo gesto sigue desplazando su contenido. La lista tiene
  * tres (recogida · asoma · llena) y la ficha otras tres (recogida · media · llena). Quien la dibuja mide las posiciones
- * en el DOM; aquí se decide cuál es la más cercana, cuándo asentarse y a dónde lleva el asa.
+ * en el DOM; aquí se decide hasta dónde sube cada una, cuál es la altura más cercana, cuándo asentarse y a dónde lleva el asa.
  */
 export type Detente = "recogida" | "asoma" | "media" | "llena";
 export type Detentes = Partial<Record<Detente, number>>;
@@ -44,6 +44,25 @@ export function destinoAlAsentar(y: number, detentes: Detentes): number | null {
 export function alturaSiguiente(y: number, detentes: Detentes): number {
   const alturas = Object.values(detentes).sort((a, b) => a - b);
   return alturas.find((v) => v > y + HOLGURA) ?? alturas[0] ?? 0;
+}
+
+/**
+ * El desplazamiento con el que la hoja llega a «llena»: el borde de arriba del cuerpo (en `arribaDelCuerpo` cuando la hoja va en `y`)
+ * sube hasta el techo. Cada hoja llega hasta donde le toca: la ficha es una página y cubre hasta arriba de la hoja; la lista vive bajo sus
+ * filtros y se detiene justo debajo de la fila de contexto (`bajoLaFila`), que se queda siempre a la vista. Las posiciones se miden en la
+ * ventana y `y` las lleva a desplazamiento, así el resultado no depende de dónde esté la hoja al medir.
+ */
+export function alturaLlena(m: { arribaDelCuerpo: number; y: number; arribaDeLaHoja: number; bajoLaFila: number; conFicha: boolean }): number {
+  const techo = m.conFicha ? m.arribaDeLaHoja : m.bajoLaFila;
+  return Math.round(m.arribaDelCuerpo - techo + m.y);
+}
+
+/**
+ * A dónde va la hoja cuando cambia lo que la persona ve (un filtro, un chip, otra ciudad): recogida sube a asoma para enseñar el
+ * resultado; en asoma o llena se queda donde está.
+ */
+export function detenteAlFiltrar(detente: Detente): Detente {
+  return detente === "recogida" ? "asoma" : detente;
 }
 
 /**

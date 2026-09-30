@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
-import { pedirRecogida } from "@/components/Armazon";
+import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type ReactNode, type Ref } from "react";
+import { avisarHoja } from "@/components/Armazon";
 import { CARRIL } from "@/lib/armazon";
-import { alturaSiguiente, cabeceraCompacta, destinoAlAsentar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
+import { alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
 import styles from "./HojaLugares.module.css";
 
 /** La lista asoma con dos renglones y medio: el tercero sale cortado a propósito, para que se entienda que hay más. */
@@ -25,15 +25,17 @@ type Medidas = {
   compactaDesde: number;
 };
 
-/** Cómo está la hoja cuando se asienta: la altura, el desplazamiento y cuánto tapa del mapa por abajo (px). */
+/** Cómo está la hoja cuando se asienta: la altura, el desplazamiento y cuánto tapa del mapa por abajo (px; llena, lo que taparía a media altura). */
 export type EstadoHoja = { detente: Detente; y: number; cubre: number };
 export type DondeEstaba = { detente: Detente; y: number };
 
-type Manejo = {
+export type Manejo = {
   /** Lleva la hoja a una de sus alturas (el «Atrás» de la ficha llena vuelve a la media). */
   irA: (detente: Detente) => void;
   /** Lo que hace el asa: la siguiente altura hacia arriba y, desde la más alta, la más baja. */
   siguiente: () => void;
+  /** Cambió lo que se ve (un filtro, un chip, otra ciudad): la lista recogida sube a asoma para enseñar el resultado, y avisa cómo quedó. */
+  mostrarLista: () => void;
 };
 const Contexto = createContext<Manejo | null>(null);
 
@@ -53,6 +55,8 @@ type Props = {
   desde?: DondeEstaba;
   /** La hoja se asentó en una altura: cuál es, cuánto se desplazó y cuánto del mapa tapa. */
   alAsentar: (estado: EstadoHoja) => void;
+  /** Lo que se le puede pedir a la hoja desde fuera (`mostrarLista`, al filtrar). */
+  ref?: Ref<Manejo>;
   /** La lista de lugares. */
   children: ReactNode;
 };
@@ -62,8 +66,11 @@ type Props = {
  * desplaza, con un hueco transparente arriba (el mapa se ve y se toca a través de él) y el cuerpo blanco que asoma desde abajo.
  * Arrastrar el cuerpo lo sube; cuando su borde llega arriba (llena) el mismo gesto sigue desplazando el contenido, con una sola
  * inercia. Al soltar entre dos alturas se asienta en la más cercana: la lista, recogida (la franja con la cantidad) · asoma · llena;
- * la ficha, recogida (su cabecera) · media (foto y datos) · llena. Nada se cierra al jalar: la ficha solo con su ✕. Llena, la barra y
- * la navegación se van. Desde 792 es el panel de la izquierda, sin hueco ni asa, y desplaza como cualquier panel.
+ * la ficha, recogida (su cabecera) · media (foto y datos) · llena. Nada se cierra al jalar: la ficha solo con su ✕. Cada una llena
+ * hasta donde le toca: la lista vive bajo sus filtros y llena se detiene justo debajo de la fila de contexto, que se queda siempre a la
+ * vista (la barra de la app se recoge y vuelve con su desplazamiento, como en cualquier raíz); la ficha es una página y llena cubre la
+ * pantalla. En las dos, llena, la navegación se va. Desde 792 es el panel de la izquierda, sin hueco ni asa, y desplaza como cualquier
+ * panel.
  *
  * La hoja recibe todos los toques —en el iPhone, un desplazador con `pointer-events: none` no desplaza aunque lo de dentro los
  * reciba— y, para que el mapa reciba los del hueco, en reposo se recorta (`clip-path`) lo que queda arriba del cuerpo: el recorte
@@ -74,15 +81,15 @@ type Props = {
  * estado de React: cambian con cada cuadro del desplazamiento y no deben volver a pintar la lista. Quien la usa solo se entera
  * cuando la hoja se asienta.
  */
-export default function HojaLugares({ resumen, ficha, desde, alAsentar, children }: Props) {
+export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, children }: Props) {
   const hoja = useRef<HTMLDivElement>(null);
   const cuerpo = useRef<HTMLDivElement>(null);
   const franja = useRef<HTMLDivElement>(null);
   const medidas = useRef<Medidas>({ detentes: {}, franja: 0, compactaDesde: Infinity });
   const reposo = useRef(0);
   const tocando = useRef(false);
-  /** La barra y la navegación están recogidas (la hoja llena). */
-  const recogida = useRef(false);
+  /** Ya le dijimos al armazón que la hoja llena la ventana: al dejar de llenarla hay que decírselo una vez más. */
+  const llenaAvisada = useRef(false);
   /** Dónde estaba la lista cuando se abrió la ficha, para volver ahí al cerrarla. */
   const antes = useRef<DondeEstaba | null>(null);
   /** Un desplazamiento que se repone en cuanto el contenido alcanza a darlo (la ficha llega por la red). */
@@ -97,11 +104,13 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
   const medir = useCallback((): Medidas => {
     const h = hoja.current!;
     const c = cuerpo.current!;
+    const abierta = c.querySelector<HTMLElement>("[data-ficha-hoja]");
+    // La lista llena sube hasta debajo de la fila de contexto: donde empieza `data-techo-hoja`, el mapa, la caja que la pantalla pone bajo la fila.
+    const techo = h.parentElement!.querySelector(":scope > [data-techo-hoja]")!;
     const arribaDelCuerpo = c.getBoundingClientRect().top;
-    const llena = Math.round(arribaDelCuerpo - h.getBoundingClientRect().top + h.scrollTop);
+    const llena = alturaLlena({ arribaDelCuerpo, y: h.scrollTop, arribaDeLaHoja: h.getBoundingClientRect().top, bajoLaFila: techo.getBoundingClientRect().top, conFicha: !!abierta });
     const abajoDe = (el: Element) => el.getBoundingClientRect().bottom - arribaDelCuerpo;
     const arribaDe = (el: Element) => el.getBoundingClientRect().top - arribaDelCuerpo;
-    const abierta = c.querySelector<HTMLElement>("[data-ficha-hoja]");
     if (abierta) {
       const cabecera = abierta.querySelector("header")!;
       const alto = cabecera.offsetHeight;
@@ -117,7 +126,7 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
     return { detentes: { recogida: 0, asoma, llena }, franja: franja.current!.offsetHeight, compactaDesde: Infinity };
   }, []);
 
-  /** Pone en el DOM lo que dice el desplazamiento: la altura (para el CSS), la cabecera compacta de la ficha y la barra y la navegación. */
+  /** Pone en el DOM lo que dice el desplazamiento: la altura (para el CSS) y la cabecera compacta de la ficha; y le cuenta al armazón si la hoja llena. */
   const pintar = useCallback((y: number) => {
     const { detentes, compactaDesde } = medidas.current;
     const panel = enPanel();
@@ -125,10 +134,13 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
     if (panel) delete hoja.current!.dataset.hoja;
     else hoja.current!.dataset.hoja = detente;
     cuerpo.current!.querySelector("[data-ficha-hoja]")?.toggleAttribute("data-compacta", cabeceraCompacta(y, compactaDesde, detente, panel));
+    // Llena, la navegación se va; con la ficha (una página) se va también la barra, y con la lista, que vive bajo sus filtros, el
+    // desplazamiento de la hoja recoge o devuelve la barra, como el de la página en una raíz.
     const llena = !panel && detente === "llena";
-    if (llena !== recogida.current) {
-      recogida.current = llena;
-      pedirRecogida(llena);
+    if (llena || llenaAvisada.current) {
+      llenaAvisada.current = llena;
+      const h = hoja.current!;
+      avisarHoja(llena ? { llena, pagina: habiaFicha.current, y: y - (detentes.llena ?? 0), alFinal: y + h.clientHeight >= h.scrollHeight - 4 } : { llena });
     }
   }, []);
 
@@ -143,7 +155,10 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
     recortar(true);
     const y = hoja.current!.scrollTop;
     const { detentes, franja: alto } = medidas.current;
-    alAsentarActual.current({ detente: estadoEn(y, detentes), y, cubre: enPanel() ? 0 : alto + Math.min(y, detentes.llena ?? y) });
+    // Llena tapa todo el mapa y no se ve: la cámara se encuadra con lo que taparía a media altura (asoma o media), que es con lo que se vuelve
+    // a ver. Con la fila siempre a la vista se puede filtrar con la lista llena, y el mapa queda listo para cuando la hoja baje.
+    const alturaConMapa = detentes.asoma ?? detentes.media ?? y;
+    alAsentarActual.current({ detente: estadoEn(y, detentes), y, cubre: enPanel() ? 0 : alto + Math.min(y, alturaConMapa) });
   }, [recortar]);
 
   const irA = useCallback((y: number) => {
@@ -167,9 +182,23 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
     () => ({
       irA: (detente) => irA(medidas.current.detentes[detente] ?? 0),
       siguiente: () => irA(alturaSiguiente(hoja.current!.scrollTop, medidas.current.detentes)),
+      mostrarLista: () => {
+        const d = hoja.current!;
+        const { detentes } = medidas.current;
+        const actual = estadoEn(d.scrollTop, detentes);
+        const destino = detenteAlFiltrar(actual);
+        // Sin alturas (el panel) o con la ficha a la vista, la lista no sube. Sube de un salto, como la ficha al abrirse: llega a la vez que
+        // la lista nueva y sin depender de un desplazamiento animado que un cambio de tamaño o una pausa del navegador podrían torcer.
+        if (destino !== actual && !enPanel() && !habiaFicha.current) {
+          d.scrollTop = detentes[destino] ?? d.scrollTop;
+          pintar(d.scrollTop);
+        }
+        avisar();
+      },
     }),
-    [irA],
+    [irA, pintar, avisar],
   );
+  useImperativeHandle(ref, () => manejo, [manejo]);
 
   // Al montar: en el teléfono, asoma (o donde estaba, `desde`, más abajo).
   useLayoutEffect(() => {
@@ -240,7 +269,7 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
   useEffect(
     () => () => {
       window.clearTimeout(reposo.current);
-      if (recogida.current) pedirRecogida(false);
+      if (llenaAvisada.current) avisarHoja({ llena: false });
     },
     [],
   );

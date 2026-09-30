@@ -20,6 +20,12 @@
 }
 .lugares > header {
   grid-area: cabecera;
+  transition: transform var(--duracion-recogida, var(--duracion)) var(--curva);
+}
+/* Con la barra recogida (la lista llena, desplazada) la fila sube con ella: la página no se desplaza aquí, así que no la lleva el
+   `sticky` de ui/Cabecera. El hueco que deja lo cubre la hoja. */
+:global([data-recogida]) .lugares > header {
+  transform: translateY(calc(-1 * var(--recogida)));
 }
 .mapa {
   grid-area: mapa;

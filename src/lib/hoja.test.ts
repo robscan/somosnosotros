@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alturaSiguiente, cabeceraCompacta, destinoAlAsentar, estadoEn, masCercano, type Detentes } from "./hoja";
+import { alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, masCercano, type Detentes } from "./hoja";
 
 /** Las alturas de la lista en un teléfono de 844: la franja, dos renglones y medio de 94 y el hueco que la deja llena. */
 const LISTA: Detentes = { recogida: 0, asoma: 235, llena: 690 };
@@ -78,6 +78,41 @@ describe("hoja: el asa", () => {
 
   it("sin alturas medidas no se mueve", () => {
     expect(alturaSiguiente(50, {})).toBe(0);
+  });
+});
+
+describe("alturaLlena: hasta dónde sube cada hoja", () => {
+  // Un teléfono de 844 con la navegación de 60 y la franja de 64: recogida, el cuerpo empieza en 720; la fila de contexto termina en 116.
+  const recogida = { arribaDelCuerpo: 720, y: 0, arribaDeLaHoja: 0, bajoLaFila: 116 };
+
+  it("la lista vive bajo sus filtros: llena se detiene justo debajo de la fila de contexto", () => {
+    expect(alturaLlena({ ...recogida, conFicha: false })).toBe(604);
+  });
+
+  it("la ficha es una página: llena cubre la pantalla hasta arriba de la hoja", () => {
+    expect(alturaLlena({ ...recogida, conFicha: true })).toBe(720);
+  });
+
+  it("no depende de dónde esté la hoja al medir (asoma, llena o desplazada)", () => {
+    for (const y of [238, 604, 900]) {
+      expect(alturaLlena({ ...recogida, arribaDelCuerpo: 720 - y, y, conFicha: false })).toBe(604);
+      expect(alturaLlena({ ...recogida, arribaDelCuerpo: 720 - y, y, conFicha: true })).toBe(720);
+    }
+  });
+});
+
+describe("detenteAlFiltrar: lo que hace la hoja cuando cambia lo que se ve", () => {
+  it("recogida sube a asoma para enseñar el resultado", () => {
+    expect(detenteAlFiltrar("recogida")).toBe("asoma");
+  });
+
+  it("en asoma o llena se queda donde está", () => {
+    expect(detenteAlFiltrar("asoma")).toBe("asoma");
+    expect(detenteAlFiltrar("llena")).toBe("llena");
+  });
+
+  it("la de la ficha (media) tampoco se mueve", () => {
+    expect(detenteAlFiltrar("media")).toBe("media");
   });
 });
 

@@ -187,6 +187,52 @@ test("teléfono: al llegar al final vuelven, y cada pantalla nueva empieza con t
   assert.equal(await p.locator("[data-vista]").getAttribute("data-recogida"), null, "otra pantalla, la barra a la vista");
 });
 
+test("teléfono: la hoja de Lugares llena esconde la navegación; con la lista la barra sigue su desplazamiento y con la ficha se va entera", async (t) => {
+  const p = await pagina(t);
+  await ir(p, "/lugares");
+  const avisa = (aviso) => p.evaluate((a) => window.dispatchEvent(new CustomEvent("armazon:hoja", { detail: a })), aviso);
+  const atributo = (nombre) => p.locator("[data-vista]").getAttribute(nombre);
+  // La lista llena, al principio: la navegación se va y la barra sigue a la vista, con la fila bajo ella.
+  await avisa({ llena: true, pagina: false, y: 0, alFinal: false });
+  await p.waitForTimeout(400);
+  assert.equal(await atributo("data-llena"), "");
+  assert.equal(await atributo("data-recogida"), null, "llena no recoge la barra por sí sola");
+  assert.deepEqual([(await caja(barra(p))).y, (await caja(nav(p))).y, (await caja(cabecera(p))).y], [0, 844, 56], "barra y fila a la vista, navegación fuera por abajo");
+  // Bajar la lista: la barra se recoge y la fila queda arriba; subir un poco: vuelve. La navegación sigue fuera.
+  await avisa({ llena: true, pagina: false, y: 200, alFinal: false });
+  await p.waitForTimeout(400);
+  assert.equal(await atributo("data-recogida"), "");
+  assert.deepEqual([(await caja(barra(p))).y, (await caja(nav(p))).y], [-56, 844]);
+  await avisa({ llena: true, pagina: false, y: 180, alFinal: false });
+  await p.waitForTimeout(400);
+  assert.equal(await atributo("data-recogida"), null, "al subir un poco la barra vuelve");
+  assert.equal((await caja(nav(p))).y, 844, "y la navegación sigue fuera mientras la hoja llene");
+  // Bajar de nuevo y llegar al final de la lista: vuelve, como al final de una página.
+  await avisa({ llena: true, pagina: false, y: 400, alFinal: false });
+  await p.waitForTimeout(400);
+  assert.equal(await atributo("data-recogida"), "");
+  await avisa({ llena: true, pagina: false, y: 700, alFinal: true });
+  assert.equal(await atributo("data-recogida"), null, "en el final de la lista la barra está a mano");
+  // Dejar de llenarla: todo vuelve.
+  await avisa({ llena: false });
+  await p.waitForTimeout(400);
+  assert.equal(await atributo("data-llena"), null);
+  assert.equal((await caja(nav(p))).y, 784, "la navegación vuelve");
+  // La ficha es una página: llena, se va la barra entera, sin esperar a que se desplace; al dejar de llenarla vuelve.
+  await avisa({ llena: true, pagina: true, y: 0, alFinal: false });
+  await p.waitForTimeout(400);
+  assert.equal(await atributo("data-recogida"), "");
+  assert.deepEqual([(await caja(barra(p))).y, (await caja(nav(p))).y], [-56, 844]);
+  await avisa({ llena: false });
+  await p.waitForTimeout(400);
+  assert.equal(await atributo("data-recogida"), null);
+  assert.equal(await atributo("data-llena"), null);
+  // Lo que la hoja llena escondió no se queda escondido en la pantalla que sigue.
+  await avisa({ llena: true, pagina: true, y: 0, alFinal: false });
+  await ir(p, "/agenda");
+  assert.equal(await atributo("data-recogida"), null, "otra pantalla, la barra a la vista");
+});
+
 test("la barra: cada botón de la barra y de la navegación se toca en 44×44 como mínimo", async (t) => {
   const p = await pagina(t);
   await ir(p, "/agenda");

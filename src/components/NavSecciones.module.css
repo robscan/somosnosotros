@@ -1,6 +1,6 @@
 /* La navegación entre las cinco secciones (NavSecciones.tsx). En el teléfono, una barra fija al pie, elevada sobre el contenido,
-   que se recoge con la barra de arriba: baja y se va al bajar, y vuelve al subir. Solo la ven las raíces: el armazón la esconde
-   en las demás vistas (`Armazon.module.css`). Desde 792 es un carril a la izquierda, una columna de la rejilla del armazón bajo la
+   que se recoge con la barra de arriba: baja y se va al bajar, y vuelve al subir; y se va también mientras la hoja de Lugares
+   cubre la ventana (`data-llena`). Solo la ven las raíces: el armazón la esconde en las demás vistas (`Armazon.module.css`). Desde 792 es un carril a la izquierda, una columna de la rejilla del armazón bajo la
    barra de la app, en dos grupos (las cuatro secciones arriba, Perfil abajo), que no se guarda. El destino activo lleva una
    píldora de color detrás del icono. */
 .nav {
@@ -19,7 +19,8 @@
     transform var(--duracion-recogida) var(--curva),
     visibility 0s;
 }
-:global([data-recogida]) .nav {
+:global([data-recogida]) .nav,
+:global([data-llena]) .nav {
   transform: translateY(100%);
   visibility: hidden;
   transition:
