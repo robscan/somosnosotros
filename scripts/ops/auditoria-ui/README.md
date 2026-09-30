@@ -5,30 +5,35 @@ Herramientas de operación (no son código de la app). Las dos primeras son las 
 
 ## Las dos pruebas
 
-- **`npm run inventario`** (Node puro, un segundo). Recorre los `.css` de `src` y falla si aparece un `z-index` que no es un
-  token (`var(--z-…)`, con o sin `± n`), un color literal fuera de los tokens de `globals.css`, `100vw` o un margen negativo,
-  o si el número de bloques duplicados o de medidas en duro (píxeles fuera de los tokens, salvo 0, 1 y 2) sube respecto a lo
-  aceptado. Que baje está bien.
-- **`npm run medir`** (un minuto; necesita Chrome o Chromium). Levanta el respaldo local y la app compilada contra él, abre las
-  pantallas de `pantallas-prod.json` y `pantallas-sesion.json` a 320, 390, 820 y 1280 px y falla si una pantalla pasa de su
-  presupuesto de nodos o de profundidad, o si tiene: un hijo fuera de la caja de su padre, desplazamiento horizontal, un
-  control cuyo toque real mide menos de 44 (se prueba con `elementFromPoint`, no con la caja: un chip de 36 con un `::before`
-  de 44 pasa), un accionable tapado por un elemento fijo que el desplazamiento no libera, un margen negativo o un error de
-  página. No usa llaves reales ni red: las imágenes y el estilo del mapa se contestan en el navegador y el reloj está fijo
-  (`reloj-fijo.cjs`), así que salen los mismos números cualquier día y a cualquier hora. Compila la app en `.next`: no la
-  corras con `next dev` abierto. `CHROME_EXECUTABLE` elige el navegador (sin él, el Chrome de la Mac y si no el Chromium de
-  Playwright); `--solo=texto` mide solo las pantallas cuyo id lo contiene; `MEDIR_HILOS` cambia los cuatro navegadores en paralelo.
+- **`npm run inventario`** (Node puro, un segundo). Recorre los `.css` de `src`. Falla si aparece un `z-index` que no es un
+  token (`var(--z-…)`, con o sin `± n`), un color literal fuera de los tokens de `globals.css`, `100vw` o un margen negativo
+  sin excepción, o si suben los bloques duplicados o las medidas en duro (píxeles fuera de los tokens, salvo 0, 1 y 2) respecto
+  a lo aceptado. Que bajen está bien.
+- **`npm run medir`** (un minuto; necesita Chrome o Chromium). Levanta el respaldo local y la app compilada contra él y abre las
+  pantallas de `pantallas-prod.json` y `pantallas-sesion.json` a 320, 390, 820 y 1280 px. Falla si una pantalla pasa de su
+  presupuesto de nodos o de profundidad, o si tiene:
+  - un hijo fuera de la caja de su padre, o desplazamiento horizontal;
+  - un control cuyo toque real mide menos de 44 (se prueba con `elementFromPoint`, no con la caja: un chip de 36 con un
+    `::before` de 44 pasa; los enlaces dentro de un texto quedan exentos);
+  - un accionable tapado por un elemento fijo que el desplazamiento no libera;
+  - un margen negativo o un error de página.
 
-Lo que no revisan: el desplazamiento interior de la hoja de Lugares, ni las hojas cerradas (Ciudad, Cuándo, Filtros); el
-toque se mide con una resolución de un píxel.
+  No usa llaves reales ni red: las imágenes y el estilo del mapa se contestan en el navegador, y el reloj está fijo
+  (`reloj-fijo.cjs`), así que salen los mismos números cualquier día y a cualquier hora. Compila la app en `.next`: no la
+  corras con `next dev` abierto. La URL de Supabase, la llave y el token de Mapbox los pone la prueba (son inventados) y mandan
+  sobre cualquier `.env.local`: la app solo llega al respaldo. Opciones: `--solo=texto` (solo las pantallas cuyo id lo
+  contiene), `CHROME_EXECUTABLE` (el navegador; sin él, el Chrome de la Mac y si no el Chromium de Playwright, que se instala
+  con `npx playwright-core install chromium`) y `MEDIR_HILOS` (los cuatro navegadores en paralelo).
+
+Lo que no revisan: el desplazamiento interior de la hoja de Lugares ni las hojas cerradas (Ciudad, Cuándo, Filtros); el
+toque se mide con la resolución de un píxel.
 
 ## Aceptar una excepción o una cifra
 
 - Una regla que falla se arregla en el CSS. Si de verdad no se puede, se anota su excepción con el porqué en una línea: en
-  `inventario.aceptado.json` (`excepciones`, por archivo y, si hace falta, selector) o en `medidas.aceptadas.json`
-  (`excepciones`, por regla, elemento, pantalla y anchos). El porqué empieza por «Permanente:» (una regla de la marca o del
-  sistema) o por «Deuda (P12):» (algo que se debe retirar). Cuando el CSS se arregla, se borra la excepción (el inventario
-  falla si sobra una; `medir` la avisa).
+  `inventario.aceptado.json` (por archivo y, si hace falta, selector) o en `medidas.aceptadas.json` (por regla, elemento,
+  pantalla y anchos). El porqué empieza por «Permanente:» (una regla de la marca o del sistema) o por «Deuda (P12):» (algo
+  que se debe retirar). Cuando el CSS se arregla, se borra la excepción (el inventario falla si sobra una; `medir` la avisa).
 - Las cifras se actualizan con un comando explícito, después de comprobar en el diff que solo bajaron:
   `npm run inventario -- --aceptar` (bloques duplicados y medidas en duro) y `npm run medir -- --aceptar` (nodos y
   profundidad por pantalla y ancho). Subir un presupuesto es una decisión del gestor y se explica en la bitácora.

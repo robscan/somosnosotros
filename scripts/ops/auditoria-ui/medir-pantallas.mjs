@@ -170,7 +170,7 @@ const inicio = Date.now();
 const [puertoRespaldo, puertoApp] = [await puertoLibre(), await puertoLibre()];
 const base = `http://127.0.0.1:${puertoApp}`;
 const app = { NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${puertoRespaldo}`, NEXT_PUBLIC_SUPABASE_ANON_KEY: "llave-anon-inventada", NEXT_PUBLIC_MAPBOX_TOKEN: "pk.inventado" };
-const reloj = { RELOJ_FIJO: AHORA, TZ: "America/Mexico_City", NODE_OPTIONS: `--require=${path.join(AQUI, "reloj-fijo.cjs")}` };
+const reloj = { RELOJ_FIJO: AHORA, TZ: "America/Mexico_City", NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --require=${path.join(AQUI, "reloj-fijo.cjs")}` };
 let browser;
 try {
   const respaldo = lanzar("respaldo", [path.join(AQUI, "respaldo-local/server.mjs"), String(puertoRespaldo)], reloj);
