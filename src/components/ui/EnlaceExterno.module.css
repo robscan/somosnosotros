@@ -6,6 +6,11 @@
 .contenido h3 {
   font-size: var(--letra-xl);
 }
+/* El dominio y su porqué van juntos, más cerca entre sí que del resto. */
+.sitio {
+  display: grid;
+  gap: var(--espacio-1);
+}
 .dominio {
   display: flex;
   align-items: center;
@@ -28,7 +33,6 @@
   overflow-wrap: anywhere;
 }
 .porque {
-  margin-top: calc(-1 * var(--espacio-2));
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   line-height: 1.4;

@@ -114,7 +114,7 @@
 }
 .titulo {
   align-self: end;
-  z-index: 1;
+  z-index: var(--z-sobre);
   display: grid;
   justify-items: start;
   gap: var(--espacio-2);

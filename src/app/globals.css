@@ -22,15 +22,34 @@
   --destacado-texto: #a94400; /* el mismo naranja para letra: 5.5:1 sobre el fondo de contenido */
   --destacado-suave: #fbebdd; /* fondo de la etiqueta "Destacado" en el panel */
   --sistema-azul: #1a73e8; /* azul de los mapas: el punto de «tú estás aquí» */
+  --sistema-azul-halo: color-mix(in srgb, var(--sistema-azul) 18%, transparent); /* el halo que rodea a ese punto */
   --fondo-miniatura: #e6e6e2; /* miniaturas y avatares sin foto */
   --fondo-mapa: #eef0ec; /* tono claro mientras carga el mapa: nunca pantalla negra */
   --asa: #d9d9d9; /* asa del panel inferior */
   --vidrio: rgba(255, 255, 255, 0.92); /* rótulos sobre el mapa */
   --velo-titulo: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.44) 55%, rgba(0, 0, 0, 0)); /* oscurece el pie de una portada para que se lea el título que va encima */
   --velo-barra: rgba(0, 0, 0, 0.6); /* oscurece la portada detrás del título de la barra compacta de una ficha */
+  --velo-hoja: rgba(0, 0, 0, 0.32); /* oscurece lo que queda detrás de una hoja */
+  --fondo-visor: rgba(0, 0, 0, 0.94); /* el visor de carteles: casi negro, para que el cartel destaque */
+  --fondo-video: #14181c; /* el marco de un video mientras carga */
+  --fondo-audio: #f2f2f2; /* el marco de un reproductor de audio mientras carga */
+  --barra-desplazamiento: rgba(0, 0, 0, 0.28); /* la barra de desplazamiento de la hoja de Lugares cuando llena */
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
   --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
   --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --sombra-asa: 0 0 3px rgba(0, 0, 0, 0.35); /* el asa de la hoja de Lugares */
+  --sombra-punto: 0 1px 4px rgba(0, 0, 0, 0.3); /* el punto «tú estás aquí» del mapa */
+  --sombra-perilla: 0 1px 3px rgba(0, 0, 0, 0.3); /* la perilla de un interruptor */
+
+  /* El mando de una obra colectiva. Su botón y su aviso de turno siguen brillando en el azul petróleo de antes del violeta (OL-146),
+     aunque el botón ya sea violeta: quien decida si pasan al primario cambia solo estas líneas. */
+  --mando-brillo: 0 12px 28px rgba(15, 107, 124, 0.35);
+  --mando-anillo: 0 0 0 10px rgba(15, 107, 124, 0.22);
+  --mando-aviso: 0 10px 24px rgba(15, 107, 124, 0.4);
+  --mando-brillo-ok: 0 12px 28px color-mix(in srgb, var(--ok) 35%, transparent); /* encendido: el mismo brillo, en el verde de lo decidido */
+  --mando-anillo-ok: 0 0 0 10px color-mix(in srgb, var(--ok) 22%, transparent);
+  --contorno-tinta: inset 0 0 0 1px rgba(0, 0, 0, 0.12); /* la muestra de una tinta */
+  --contorno-tinta-clara: inset 0 0 0 1.5px rgba(0, 0, 0, 0.32); /* la de la tinta blanca, para verse sobre el fondo claro */
 
   /* Aire: de 4 a 40, para el espacio entre cosas y el relleno */
   --espacio-1: 4px;
@@ -71,6 +90,7 @@
   --nav-abajo: calc(var(--alto-nav) + var(--piso)); /* lo que ocupa abajo la navegación con su zona segura: la barra del teléfono; desde 792 (el carril), solo la zona segura */
 
   /* Capas, de abajo arriba. Dos cosas de la misma banda se separan con +1 o −1, nunca con un número suelto. */
+  --z-sobre: 1; /* sobre su vecino dentro de la misma caja: un botón sobre el lienzo del mapa, el título sobre la portada */
   --z-pegajoso: 10; /* cabeceras y barras que se quedan pegadas al desplazar; los títulos de día y la tira de letras, justo bajo ellas (−1) */
   --z-flotante: 20; /* fijo al pie sobre el contenido: navegación y barra de acciones; los botones flotantes, +1 */
   --z-barra: 30; /* franja de la hora y avisos con Deshacer, sobre lo flotante */

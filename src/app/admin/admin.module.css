@@ -29,13 +29,18 @@
   margin-top: var(--espacio-4);
 }
 .nota {
-  margin: calc(-1 * var(--espacio-1)) 0 var(--espacio-2) var(--espacio-1);
+  margin: 0 0 var(--espacio-2) var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-/* Los chips de las listas corren a todo lo ancho: la franja sale del gutter con una sola regla */
+/* El rótulo de un grupo con nota debajo deja 4 y no 8: la nota es suya */
+.conNota {
+  margin-bottom: var(--espacio-1);
+}
+/* Los chips de las listas corren a todo lo ancho: la franja ocupa las tres columnas de la página, con el aire de los lados dentro */
 .lista > [role="group"] {
-  margin: var(--espacio-3) calc(-1 * var(--gutter)) 0;
+  grid-column: 1 / -1;
+  margin-top: var(--espacio-3);
   padding-inline: var(--gutter);
 }
 
@@ -693,7 +698,6 @@ a.ficha::after,
 }
 .menu {
   list-style: none;
-  margin-inline: calc(-1 * var(--gutter));
 }
 .menu > li:last-child {
   margin-top: 6px;
@@ -706,7 +710,7 @@ a.ficha::after,
   align-items: center;
   width: 100%;
   min-height: 54px;
-  padding: 0 var(--gutter);
+  padding: 0;
   border: none;
   background: none;
   color: var(--texto);

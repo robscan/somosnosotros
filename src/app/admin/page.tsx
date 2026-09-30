@@ -45,7 +45,7 @@ export default async function Admin() {
       {/* La llave cambia cuando la lista pasa de no leída a leída (Intentar de nuevo): así se monta con los pendientes reales. */}
       <Pendientes key={errorPendientes ? "sin-leer" : "leidos"} iniciales={pendientes.map((p) => ({ ...p, cuando: cuandoPaso(p.creado_en, ahora) }))} error={errorPendientes} />
 
-      <h2 className={styles.grupo}>Últimos 7 días</h2>
+      <h2 className={resumen ? `${styles.grupo} ${styles.conNota}` : styles.grupo}>Últimos 7 días</h2>
       {resumen ? <Indicadores lista={lista} nota={notaSemana(lista)} /> : <Reintentar texto="No pudimos leer los indicadores." />}
 
       <h2 className={styles.grupo}>Cómo va la comunidad</h2>

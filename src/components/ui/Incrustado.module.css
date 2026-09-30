@@ -6,7 +6,7 @@
   aspect-ratio: 16 / 9;
   border-radius: var(--radio);
   overflow: hidden;
-  background: #14181c;
+  background: var(--fondo-video);
 }
 .marco16x9 + .marco16x9,
 .marco16x9 + .marcoFijo,
@@ -18,7 +18,7 @@
   width: 100%;
   border-radius: var(--radio);
   overflow: hidden;
-  background: #f2f2f2;
+  background: var(--fondo-audio);
 }
 .iframe {
   width: 100%;

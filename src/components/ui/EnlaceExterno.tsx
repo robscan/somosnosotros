@@ -55,11 +55,13 @@ export default function EnlaceExterno({ href, className, children, ariaLabel }: 
               no un párrafo) y el espaciado se resuelve con una sola regla de grid, no botón por botón. */}
           <div className={styles.contenido}>
             <h3>Vas a salir de Somos Nosotros</h3>
-            <div className={styles.dominio}>
-              <IconoEnlace width={20} height={20} />
-              <span className={styles.texto}>{dominioDe(href)}</span>
+            <div className={styles.sitio}>
+              <div className={styles.dominio}>
+                <IconoEnlace width={20} height={20} />
+                <span className={styles.texto}>{dominioDe(href)}</span>
+              </div>
+              <p className={styles.porque}>Ese sitio no es de Somos Nosotros: tiene sus propias reglas.</p>
             </div>
-            <p className={styles.porque}>Ese sitio no es de Somos Nosotros: tiene sus propias reglas.</p>
             <Boton type="button" onClick={continuar}>
               Continuar
             </Boton>
