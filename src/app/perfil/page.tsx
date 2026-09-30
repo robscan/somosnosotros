@@ -8,6 +8,7 @@ import { conArtistasLigados, hrefArtista } from "@/lib/artistas";
 import { qrDeUrl } from "@/lib/qr";
 import Boton from "@/components/ui/Boton";
 import MisArtistas from "./MisArtistas";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./perfil.module.css";
 
 export const metadata = { title: "Mi perfil · Somos Nosotros", robots: { index: false, follow: false } };
@@ -29,7 +30,7 @@ export default async function PaginaPerfil() {
   // compartir de la tarjeta): mismo patrón que Pincel.
   const misArtistas = await Promise.all(ligados.map(async (artista) => ({ artista, url: `${ORIGEN}${hrefArtista(artista)}`, svg: await qrDeUrl(`${ORIGEN}${hrefArtista(artista)}`) })));
   return (
-    <main className={`raiz ${styles.pagina}`}>
+    <main className={`${plantilla.raiz} ${styles.perfil}`}>
       <FichaPersona
         perfil={persona.perfil}
         mia

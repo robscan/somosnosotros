@@ -300,9 +300,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
           // panel flotante: el panel tapaba Dónde sin poder cerrarse (revisión del gestor, 2026-09-21).
           !enfocadoNombre &&
           primerExistente && (
-            <p className={styles.notaExiste}>
+            <p className={canon.notaExiste}>
               <span>Ya hay {existentes.length > 1 ? "varios" : "uno"} con este nombre: </span>
-              <b className={styles.nombreRecortado}>{primerExistente.nombre}</b>
+              <b className={canon.nombreRecortado}>{primerExistente.nombre}</b>
               <Link href={hrefLugar(primerExistente)}>Ver</Link>
             </p>
           )
@@ -320,7 +320,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
           ) : (
             <>
               {existentes.length > 0 && (
-                <li className={`${canon.existe} ${styles.existeFlotante}`} role="status">
+                <li className={`${canon.existe} ${canon.existeFlotante}`} role="status">
                   <IconoOk width={20} height={20} />
                   <span>
                     <b>Ya está registrado:</b>{" "}

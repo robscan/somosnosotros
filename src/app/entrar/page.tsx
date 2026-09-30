@@ -7,6 +7,7 @@ import { proveedoresEncendidos } from "@/lib/supabase/proveedores";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { rutaSegura } from "@/lib/rutas";
 import FormularioEntrar from "./FormularioEntrar";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 export const metadata = { title: "Entrar · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -35,7 +36,7 @@ export default async function Entrar({ searchParams }: { searchParams: Promise<{
     titulo = tituloSeguir((data?.nombre as string | undefined) ?? null);
   }
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: motivo.origen, texto: "Volver" }} />
       <h1 className="titulo">{titulo}</h1>
       {error === "enlace" && (

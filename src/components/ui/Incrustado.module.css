@@ -1,6 +1,6 @@
-/* Reproductor de una novedad de artista (doc 44 §2/§3, OL-181). Video (YouTube, Vimeo): mismo marco 16:9 de
-   `VideoEmbed.module.css`, sin duplicar el criterio (fondo oscuro solo visible mientras carga). Audio (SoundCloud,
-   Mixcloud, Bandcamp): alto fijo por proveedor (lo trae `incrustado.alto`, MEMORIA_GESTOR: sin saltos al cargar). */
+/* Reproductor de una novedad de artista (doc 44 §2/§3, OL-181) y video de Redes (`VideoEmbed`, OL-154). Video (YouTube, Vimeo): marco 16:9,
+   ancho completo, con el fondo oscuro que solo se ve mientras carga el reproductor. Audio (SoundCloud, Mixcloud, Bandcamp): alto fijo por
+   proveedor (lo trae `incrustado.alto`, MEMORIA_GESTOR: sin saltos al cargar). */
 .marco16x9 {
   width: 100%;
   aspect-ratio: 16 / 9;

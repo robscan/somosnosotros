@@ -7,6 +7,7 @@ import { hrefLugar, type Lugar, type LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioLugar from "../../FormularioLugar";
 import { actualizarLugar } from "../../acciones";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 export const metadata = { title: "Editar lugar · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -38,7 +39,7 @@ export default async function EditarLugar({ params }: { params: Promise<{ id: st
   // mismo contrato que el alta (corrección del gestor, revisión sobre el PR #249).
   const ciudadContexto = ciudadPorNombre(lugar.ciudad, await cargarCiudades());
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: hrefLugar(lugar), texto: "Volver al lugar" }} />
       <h1 className="titulo">Editar lugar</h1>
       <FormularioLugar accion={actualizarLugar.bind(null, lugar.id)} lugar={lugar} usuarioId={actual.perfil.id} esAdmin={actual.perfil.rol === "admin"} lugares={(lugares ?? []) as LugarResumen[]} ciudadContexto={ciudadContexto} />

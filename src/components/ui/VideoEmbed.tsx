@@ -1,5 +1,5 @@
 import type { VideoEmbed as VideoEmbedType } from "@/lib/video";
-import styles from "./VideoEmbed.module.css";
+import styles from "./Incrustado.module.css";
 
 const ETIQUETA_PROVEEDOR = { youtube: "YouTube", vimeo: "Vimeo" } as const;
 
@@ -10,7 +10,7 @@ const ETIQUETA_PROVEEDOR = { youtube: "YouTube", vimeo: "Vimeo" } as const;
  */
 export default function VideoEmbed({ video, titulo }: { video: VideoEmbedType; titulo: string }) {
   return (
-    <div className={styles.marco}>
+    <div className={styles.marco16x9}>
       <iframe
         src={video.src}
         title={`Video de ${titulo} en ${ETIQUETA_PROVEEDOR[video.proveedor]}`}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import { IconoBandera, IconoBoleto, IconoCalendario, IconoCampana, IconoChevronDerecha, IconoEstrella, IconoLapiz, IconoPersona, IconoReloj } from "@/components/ui/Iconos";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { datosPersona, estadoRol, unir } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Avatar from "../../Avatar";
@@ -11,6 +11,7 @@ import Reintentar from "../../Reintentar";
 import CorreoPersona from "./CorreoPersona";
 import RolPersona from "./RolPersona";
 import styles from "../../admin.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 export const metadata = { title: "Persona · Administración · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -26,7 +27,7 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
   const { persona: f, error } = await cargarPersona(id);
   if (error) {
     return (
-      <main className={ficha.pagina}>
+      <main className={plantilla.paginaContenido}>
         <Barra volver={{ href: "/admin/personas", texto: "Personas" }} />
         <h1 className={styles.titulo}>Persona</h1>
         <Reintentar texto="No pudimos leer esta cuenta." />
@@ -35,7 +36,7 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
   }
   if (!f) {
     return (
-      <main className={ficha.pagina}>
+      <main className={plantilla.paginaContenido}>
         <Barra volver={{ href: "/admin/personas", texto: "Personas" }} />
         <h1 className={styles.titulo}>Esta cuenta ya no existe</h1>
         <p className={styles.vacio}>Quizá se borró. Lo que publicó se queda, sin su nombre.</p>
@@ -49,7 +50,7 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
   const ahora = new Date();
   const d = datosPersona(f, ahora);
   return (
-    <main className={ficha.pagina}>
+    <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/admin/personas", texto: "Personas" }} />
       <header className={styles.cabecera}>
         <Avatar foto={f.foto} nombre={f.nombre} />
@@ -58,7 +59,7 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
       </header>
 
       <h2 className={styles.grupo}>Cuenta</h2>
-      <ul className={styles.tarjeta}>
+      <ul className={renglon.tarjeta}>
         {f.correo_oculto && <CorreoPersona perfilId={f.id} oculto={f.correo_oculto} />}
         <li className={styles.dato}>
           <IconoCalendario width={20} height={20} />
@@ -78,7 +79,7 @@ export default async function PersonaAdmin({ params }: { params: Promise<{ id: s
       </ul>
 
       <h2 className={styles.grupo}>Actividad</h2>
-      <ul className={styles.tarjeta}>
+      <ul className={renglon.tarjeta}>
         <li className={styles.dato}>
           <IconoBoleto width={20} height={20} />
           <small>Va a</small>

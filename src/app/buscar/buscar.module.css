@@ -1,18 +1,11 @@
 /* ==========================================================================
-   Buscar (docs/rediseno/50, OL-237; bloque «Buscar» del prototipo firmado): una pantalla de tarea con su propia barra. Una rejilla de
-   una columna: la barra (el campo y la ✕), la fila de la ciudad y lo que sigue (recientes y atajos, o los resultados). La página no
-   lleva aire a los lados y cada bloque pone el suyo (`--gutter`); nada se escapa con un margen negativo.
+   Buscar (docs/rediseno/50, OL-237; bloque «Buscar» del prototipo firmado): una pantalla de tarea con su propia barra, sobre la
+   plantilla `raizSinNav` (`ui/Plantilla`): la barra (el campo y la ✕), la fila de la ciudad y lo que sigue (recientes y atajos, o los
+   resultados). La página no lleva aire a los lados y cada bloque pone el suyo (`--gutter`); nada se escapa con un margen negativo.
    ========================================================================== */
 .buscar {
   /* Los títulos de grupo (ui/Grupo) se pegan bajo esta barra: en el teléfono lo único pegado arriba; desde 792, bajo la barra de la app. */
   --alto-cabecera: calc(var(--alto-barra) + var(--tope));
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-auto-rows: max-content;
-  align-content: start;
-  min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding-bottom: calc(var(--espacio-6) + var(--piso));
-  background: var(--fondo-contenido);
 }
 
 /* La barra de tarea con campo: el campo (una píldora en tono suave, sin borde) y la ✕ que cierra. Pegajosa bajo lo que la barra de la

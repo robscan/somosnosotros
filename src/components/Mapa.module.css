@@ -1,7 +1,7 @@
+/* El mapa llena su caja, que es de quien lo pone (el hueco bajo la fila de contexto en Lugares; entre el campo y el panel en «¿Dónde es?»). */
 .mapa {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   background: var(--fondo-mapa);
 }
 

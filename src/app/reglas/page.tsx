@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Barra from "@/components/ui/Barra";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "../privacidad/legal.module.css";
 
 export const metadata: Metadata = { title: "Reglas de uso · Somos Nosotros" };
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Reglas de uso · Somos Nosotros" };
  */
 export default function Reglas() {
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Reglas de uso</h1>

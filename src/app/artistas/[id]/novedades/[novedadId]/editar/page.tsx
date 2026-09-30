@@ -6,6 +6,7 @@ import { hrefArtista, type Artista } from "@/lib/artistas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { actualizarNovedadArtista, borrarNovedadArtista } from "../../acciones";
 import FormularioNovedad from "../../nueva/FormularioNovedad";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 export const metadata = { title: "Editar novedad · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -45,7 +46,7 @@ export default async function EditarNovedadArtista({ params }: { params: Promise
 
   const volver = hrefArtista(artista);
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: volver, texto: "Volver a la ficha" }} />
       <h1 className="titulo">Editar novedad</h1>
       <p className="subtitulo">Para {artista.nombre}</p>

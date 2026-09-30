@@ -24,7 +24,6 @@ async function foto(page, nombre, espera = 700) {
 }
 const click = (page, sel) => page.evaluate((s) => { const e = document.querySelector(s); if (!e) throw new Error("no existe " + s); e.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })); }, sel);
 const espera = (page, ms) => page.waitForTimeout(ms);
-const variante = (page, v) => click(page, `.modos-estudio [data-titulo="${v}"]`);
 // La hoja de Lugares: cada altura es una posición de desplazamiento del contenedor (el prototipo expone sus alturas en .hoja-lugares.detentes())
 const hoja = (page, estado, mas = 0) => page.evaluate(([e, m]) => { const c = document.querySelector(".hoja-lugares"); c.scrollTop = c.detentes()[e] + m; c.dispatchEvent(new Event("scroll")); }, [estado, mas]);
 const desplazar = (page, sel, y) => page.evaluate(([s, yy]) => { const p = document.querySelector(s); p.scrollTop = yy; p.dispatchEvent(new Event("scroll")); }, [sel, y]);

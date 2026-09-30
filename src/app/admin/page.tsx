@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import { IconoCalendario, IconoChevronDerecha, IconoEstrella, IconoPersonas, IconoPin, IconoPincel } from "@/components/ui/Iconos";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { diaLocal } from "@/lib/fechas";
 import { cuandoPaso, indicadores, notaSemana, renglonesGestionar } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
@@ -14,6 +14,7 @@ import Indicadores from "./Indicadores";
 import Pendientes from "./Pendientes";
 import Reintentar from "./Reintentar";
 import styles from "./admin.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 export const metadata = { title: "Administración · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -39,7 +40,7 @@ export default async function Admin() {
   const lista = resumen ? indicadores(resumen, diaLocal(ahora)) : [];
   const renglones = resumen ? renglonesGestionar(resumen.gestionar) : SECCIONES.map((s) => ({ ...s, total: null, detalle: null }));
   return (
-    <main className={ficha.pagina}>
+    <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} />
       <h1 className={styles.titulo}>Administración</h1>
       {/* La llave cambia cuando la lista pasa de no leída a leída (Intentar de nuevo): así se monta con los pendientes reales. */}
@@ -55,7 +56,7 @@ export default async function Admin() {
       {capo ? <CapoComoVa metricas={capo} /> : <Reintentar texto="No pudimos leer los resultados de las invitaciones CAPO." />}
 
       <h2 className={styles.grupo}>Gestionar</h2>
-      <ul className={styles.tarjeta}>
+      <ul className={renglon.tarjeta}>
         {renglones.map((r) => {
           const Icono = ICONO[r.clave];
           return (
@@ -77,7 +78,7 @@ export default async function Admin() {
       {/* Obras colectivas (OL-088) es alta, no moderación: no encaja en SECCIONES/renglonesGestionar(), así que va
           en su propio bloque, no dentro de "Gestionar". */}
       <h2 className={styles.grupo}>Obras colectivas</h2>
-      <ul className={styles.tarjeta}>
+      <ul className={renglon.tarjeta}>
         <li>
           <Link href="/admin/obras-colectivas" className={styles.fila}>
             <IconoPincel width={20} height={20} />

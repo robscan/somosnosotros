@@ -6,6 +6,7 @@ import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import FormularioArtista from "../../FormularioArtista";
 import { actualizarArtista } from "../../acciones";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 export const metadata = { title: "Editar artista · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -31,7 +32,7 @@ export default async function EditarArtista({ params }: { params: Promise<{ id: 
   // Edita el autor, la cuenta ligada ("Soy yo / es mi grupo") o el administrador.
   if (actual.perfil.rol !== "admin" && artista.creado_por !== actual.perfil.id && !liga) redirect(hrefArtista(artista));
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: hrefArtista(artista), texto: "Volver a la ficha" }} />
       <h1 className="titulo">Editar artista</h1>
       <FormularioArtista accion={actualizarArtista.bind(null, artista.id)} artista={artista} usuarioId={actual.perfil.id} esAdmin={actual.perfil.rol === "admin"} ciudadInicial={artista.ciudad} ciudades={ciudades} />

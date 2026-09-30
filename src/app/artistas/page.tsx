@@ -17,6 +17,7 @@ import { gruposConPosicion } from "@/lib/indice";
 import { qrDeUrl } from "@/lib/qr";
 import { ORIGEN } from "@/lib/sitemap";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./page.module.css";
 
 type SearchParams = { ciudad?: string; hace?: string; que?: string; n?: string };
@@ -172,7 +173,7 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */
 export default function Artistas({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
-    <main className="raiz">
+    <main className={plantilla.raiz}>
       <Suspense fallback={<ListaEsqueleto redonda />}>
         <ArtistasContenido searchParams={searchParams} />
       </Suspense>

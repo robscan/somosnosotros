@@ -62,7 +62,7 @@ const comp = [];
 const rr = (x, y, w, h, r, fill) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}"/>`;
 let fondo = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#fff"/>`;
 fondo += rr(10, 10, 300, 250, 0, "#dee1e6") + rr(10, 280, 300, 250, 0, "#35363a") + rr(330, 10, 560, 540, 0, "#5e7b8c") + rr(910, 10, 400, 400, 0, "#eee") + `<circle cx="1110" cy="210" r="160" fill="none" stroke="#b3261e" stroke-width="2"/></svg>`;
-for (const [k, oy] of [[0, 10], [1, 280]]) {
+for (const oy of [10, 280]) {
   let x = 24;
   for (const t of [16, 32, 48]) {
     comp.push({ input: capa(t), left: x, top: oy + 14 });

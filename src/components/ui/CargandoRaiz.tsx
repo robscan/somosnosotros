@@ -1,4 +1,5 @@
 import SimboloCargando from "./SimboloCargando";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./Cargando.module.css";
 
 /**
@@ -9,7 +10,7 @@ import styles from "./Cargando.module.css";
  */
 export default function CargandoRaiz() {
   return (
-    <main className="raiz" aria-busy="true" aria-live="polite" aria-label="Cargando">
+    <main className={plantilla.raiz} aria-busy="true" aria-live="polite" aria-label="Cargando">
       <div className={styles.centro}>
         <SimboloCargando />
       </div>

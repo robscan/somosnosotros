@@ -57,6 +57,8 @@
 :where(.hoja) > h3:has(+ p) {
   margin-bottom: var(--espacio-1);
 }
+/* La nota de una hoja: el párrafo que sigue a su título o abre su cuerpo (`hoja.nota`, en las hojas que llevan su título en la cabecera). */
+.nota,
 :where(.hoja) > h3 + p {
   margin-bottom: var(--espacio-3);
   color: var(--texto-suave);

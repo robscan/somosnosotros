@@ -5,6 +5,7 @@ import { hrefArtista, type Artista } from "@/lib/artistas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { publicarNovedadArtista } from "../acciones";
 import FormularioNovedad from "./FormularioNovedad";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 export const metadata = { title: "Publicar novedad · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -33,7 +34,7 @@ export default async function PublicarNovedadArtista({ params }: { params: Promi
   if (!puedeGestionar) redirect(hrefArtista(artista));
 
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: hrefArtista(artista), texto: "Volver a la ficha" }} />
       <h1 className="titulo">Publicar novedad</h1>
       <p className="subtitulo">Para {artista.nombre}</p>

@@ -1,4 +1,4 @@
-/* Panel de administración (docs/rediseno/19). La página es la de Ajustes (ui/Ficha .pagina): barra blanca, contenido en
+/* Panel de administración (docs/rediseno/19). La página es la de Ajustes (ui/Plantilla .paginaContenido): barra blanca, contenido en
    su tono, grupos con rótulo y tarjetas de renglones. Maquetación plana: cada bloque es hijo directo de main y cada dato,
    hijo directo de su renglón con grid-template-areas.
    1. Títulos y grupos · 2. Pendiente · 3. Indicadores · 4. Renglones (Gestionar y ficha de persona) ·
@@ -403,16 +403,6 @@ a.ficha::after,
 }
 
 /* ---------- 4. Renglones en tarjeta: Gestionar (etiqueta y detalle) y la ficha de una persona (clave y valor) ---------- */
-.tarjeta {
-  list-style: none;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  overflow: hidden;
-}
-.tarjeta > li + li {
-  border-top: 1px solid var(--borde);
-}
 /* "Leyó 20 y publicó 18 este mes": con esto se decide una petición de más lecturas (docs/rediseno/23). */
 .numeros {
   grid-area: numeros;

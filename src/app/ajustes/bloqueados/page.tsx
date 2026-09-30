@@ -3,7 +3,9 @@ import Desbloquear from "@/components/Desbloquear";
 import Barra from "@/components/ui/Barra";
 import { cargarBloqueados } from "@/app/personas/consultas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./bloqueados.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 export const metadata = { title: "Personas bloqueadas · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -14,13 +16,13 @@ export default async function PersonasBloqueadas() {
   const supabase = await clienteServidor();
   const bloqueados = supabase ? await cargarBloqueados(supabase, actual.perfil.id) : [];
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} />
       <h1 className="titulo">Personas bloqueadas</h1>
       {bloqueados.length === 0 ? (
         <p className={styles.vacio}>No has bloqueado a nadie. Desde la ficha de una persona, el menú «···» tiene la opción Bloquear.</p>
       ) : (
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           {bloqueados.map((p) => (
             <li key={p.id} className={styles.fila}>
               {p.foto ? (

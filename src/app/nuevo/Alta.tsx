@@ -8,6 +8,7 @@ import { olvidarBorrador } from "@/app/eventos/borrador";
 import FormularioEvento from "@/app/eventos/FormularioEvento";
 import FormularioLugar from "@/app/lugares/FormularioLugar";
 import FormularioArtista from "@/app/artistas/FormularioArtista";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./Alta.module.css";
 
 type Salida = { href: string; texto: string };
@@ -47,7 +48,7 @@ export default function Alta({ tipoInicial, salidas, evento, lugar, artista }: P
   }
 
   return (
-    <main ref={pantalla} className={`pagina ${styles.alta}`}>
+    <main ref={pantalla} className={`${plantilla.pagina} ${styles.alta}`}>
       <Barra cerrar={salidas[tipo]} titulo={evento.modo === "duplicar" ? "Duplicar evento" : tituloDeAlta(tipo)} />
       <FormularioEvento {...evento} oculta={tipo !== "evento"} />
       {lugar && <FormularioLugar {...lugar} oculta={tipo !== "lugar"} autoFocus={tipoInicial === "lugar"} />}

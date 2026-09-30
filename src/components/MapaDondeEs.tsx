@@ -6,10 +6,10 @@ import type { GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker } from "mapbox
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import type { LugarResumen } from "@/lib/lugares";
-import styles from "./MapaDondeEs.module.css";
+import { colorDiseno, RADIO_TOQUE, type EstadoMapa } from "@/lib/mapa";
+import styles from "./Mapa.module.css";
 
 type Punto = { lat: number; lng: number };
-type EstadoMapa = "cargando" | "listo" | "sin-token" | "error";
 
 type Props = {
   /** Lugares registrados de la ciudad, como pines tocables con su nombre (docs/rediseno/43, paso 1). */
@@ -38,14 +38,7 @@ type Props = {
 const FUENTE = "donde-es-lugares";
 const CAPA_PUNTOS = "donde-es-puntos";
 const CAPA_NOMBRES = "donde-es-nombres";
-/** El dedo necesita más radio que el punto (10 px) para acertar (mismo criterio que Mapa.tsx). */
-const RADIO_TOQUE = 18;
 const SIN_LUGARES: LugarResumen[] = [];
-
-function colorDiseno(nombre: string, reserva: string) {
-  if (typeof document === "undefined") return reserva;
-  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || reserva;
-}
 
 function aGeoJSON(lugares: LugarResumen[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
   return {
@@ -103,10 +96,10 @@ function poiTocado(mapa: MapaGL, e: MapMouseEvent): { nombre: string; punto: Pun
 
 /**
  * El mapa de fondo de "¿Dónde es?" (OL-173): a diferencia de `Mapa.tsx` (los lugares de Lugares), esta pantalla
- * necesita a la vez lugares tocables Y un pin que se mueve a cualquier punto. Se escribió aparte, con el mismo patrón
- * (single instancia, capas por datos, tema claro forzado), para no tocar `Mapa.tsx` mientras OL-174 trabajaba ahí a la
- * vez (instrucción del gestor); `Mapa.tsx` ya no tiene el modo «elegir» (P8), así que este es el único mapa con pin suelto.
- * Documentado en la bitácora 208 como algo por unificar más adelante.
+ * necesita a la vez lugares tocables Y un pin que se mueve a cualquier punto. Comparte con `Mapa.tsx` su hoja de estilo y lo
+ * mínimo de `lib/mapa` (el mismo patrón: una sola instancia, capas por datos, tema claro forzado), pero no su código: los pines
+ * de Lugares llevan tamaño, prioridad y nombre por lugar, y se encuadran con la hoja; este tiene un pin suelto que se arrastra y
+ * una cámara que lo sigue con el margen de la hoja de abajo. Unirlos en un componente con dos modos habría sido más código, no menos.
  */
 export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarEn, ciudad = CIUDAD_INICIAL, yo = null, paddingInferior = 0, onLugar, onPoi, onPunto, onArrastre }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);

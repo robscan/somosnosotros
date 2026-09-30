@@ -1,11 +1,5 @@
 /* La hoja «Dónde estás» (Ciudad.tsx): la nota, el aviso si no se pudo leer la ubicación y el bloque de «Otra ciudad»
    (el campo y sus sugerencias, que aparecen juntos bajo la lista). Las filas son las de ui/Renglon. */
-.nota {
-  margin-bottom: var(--espacio-3);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.35;
-}
 .aviso {
   margin-top: var(--espacio-3);
   color: var(--texto-suave);
@@ -17,6 +11,6 @@
   gap: var(--espacio-2);
   margin-top: var(--espacio-3);
 }
-.otra > .nota {
+.otra > p {
   margin: 0;
 }

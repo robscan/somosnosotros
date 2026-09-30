@@ -249,55 +249,14 @@ body::before {
   pointer-events: none;
 }
 
-/* Pantallas raíz (Inicio, Agenda, Lugares, Artistas, Perfil; docs/rediseno/50, 5.3): una rejilla de una columna, en el
-   tono del contenido, bajo la barra de la app y con sitio abajo para la navegación (`--nav-abajo`: la barra fija del teléfono).
-   La cabecera es la del área `cabecera` y cada bloque de lo que sigue, una fila. La página no lleva aire a los lados y cada
-   bloque pone el suyo (`.columna`, o `--gutter` donde el fondo llega a los bordes: los títulos de grupo, los carriles); nada se
-   escapa del aire con un margen negativo. `--barra-flujo` es lo que la barra ocupa arriba (lo pone el armazón). */
-.raiz {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "cabecera";
-  grid-auto-rows: max-content;
-  align-content: start;
-  min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding-bottom: calc(var(--nav-abajo) + var(--espacio-6));
-  background: var(--fondo-contenido);
-}
-.raiz > header {
-  grid-area: cabecera;
-}
-
-/* Pantallas de tarea y de formulario (`<main className="pagina">`; docs/rediseno/50, 5.3): una rejilla de tres columnas, el aire de los
-   lados (`--gutter`) a cada lado y la columna en medio, donde va todo lo que no diga otra cosa. La barra interior (`ui/Barra`, un `header`)
-   ocupa las tres y llega de borde a borde sin salirse del aire con un margen negativo. Scroll normal: el botón va en el flujo y nunca queda
-   bajo el teclado. Sin barra (error, 404), lo primero baja lo que pide la zona segura de arriba; con ella, la barra ya lo pone
-   (`Barra.module.css` `.interior`; OL-205, auditoría OL-202 problema 2, docs/rediseno/48-shell-ios.md §2). */
-.pagina {
-  display: grid;
-  grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
-  align-content: start;
-  min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding-bottom: calc(var(--espacio-6) + var(--piso));
-}
-:where(.pagina) > * {
-  grid-column: 2;
-}
-.pagina > :first-child:not(header) {
-  margin-top: calc(var(--espacio-5) + env(safe-area-inset-top, 0px));
-}
-
-/* Ancho de un bloque (doc 50, 5.3): la página no lleva aire a los lados y cada bloque escoge una de las dos. `.columna`
-   mide como mucho la columna más su aire y se centra sola, sin medir la ventana (H-38); `.a-lo-ancho` llega a los dos
-   bordes: un carril, una barra, una portada. */
+/* Ancho de un bloque (doc 50, 5.3): la página no lleva aire a los lados y cada bloque pone el suyo. `.columna` mide como mucho la
+   columna más su aire y se centra sola, sin medir la ventana (H-38); lo que llega a los dos bordes (un carril, una barra, una
+   portada) no lleva clase: ocupa la rejilla entera. */
 .columna {
   width: 100%;
   max-width: calc(var(--columna) + 2 * var(--espacio-5));
   margin-inline: auto;
   padding-inline: var(--espacio-5);
-}
-.a-lo-ancho {
-  width: 100%;
 }
 /* Una tira que se desliza de lado y todavía tiene más a la derecha (`useTiraQueSigue` le pone `data-sigue`): su borde
    derecho se desvanece, para que no parezca que termina ahí (H-11). */

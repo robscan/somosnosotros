@@ -123,7 +123,7 @@
   position: absolute;
   left: var(--gutter);
   right: var(--gutter);
-  top: 12px;
+  top: var(--espacio-3);
   z-index: var(--z-flotante);
   margin: 0;
   padding: var(--espacio-2) var(--espacio-3);
@@ -140,7 +140,7 @@
   position: absolute;
   left: var(--gutter);
   right: var(--gutter);
-  top: 12px;
+  top: var(--espacio-3);
   z-index: var(--z-flotante);
   display: flex;
   flex-wrap: wrap;
@@ -294,7 +294,7 @@
    campo "Dirección" quede arriba del todo -así la lista SIEMPRE abre debajo del campo en uso, nunca encima
    (regla dura del founder, 2026-09-24: "si sugieres algo sea debajo del campo que estoy usando"). */
 .hojaAgregar.expandida {
-  top: 12px;
+  top: var(--espacio-3);
   overflow-y: auto;
 }
 /* Ningún hijo se encoge (flex-shrink: 0): con la hoja expandida y desplazable, el contenido manda su alto de

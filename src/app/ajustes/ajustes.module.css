@@ -26,16 +26,6 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.tarjeta {
-  list-style: none;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  overflow: hidden;
-}
-.tarjeta > li + li {
-  border-top: 1px solid var(--borde);
-}
 .nota {
   padding: 0 14px 10px;
   color: var(--texto-suave);

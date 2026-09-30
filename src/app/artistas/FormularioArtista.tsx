@@ -205,9 +205,9 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         // panel tapaba Qué hace sin poder cerrarse (revisión del gestor, 2026-09-21).
         !enfocadoNombre &&
         repetido && (
-          <p className={estilos.notaExiste}>
+          <p className={canon.notaExiste}>
             <span>Ya hay uno con este nombre: </span>
-            <b className={estilos.nombreRecortado}>{repetido.nombre}</b>
+            <b className={canon.nombreRecortado}>{repetido.nombre}</b>
             <Link href={hrefArtista(repetido)}>Ver</Link>
           </p>
         )
@@ -217,7 +217,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           (founder, producción, 2026-09-21; revisión del gestor, 2026-09-21). */}
       <ListaFlotante abierta={avisoRepetidoAbierto} onCerrar={() => setEnfocadoNombre(false)} ancla={campoNombreRef} id="aviso-nombre-repetido" etiqueta="Nombre ya registrado">
         {repetido && (
-          <li className={`${canon.existe} ${estilos.existeFlotante}`} role="status">
+          <li className={`${canon.existe} ${canon.existeFlotante}`} role="status">
             <IconoOk width={20} height={20} />
             <span>
               <b>Ya está registrado:</b> <Link href={hrefArtista(repetido)}>{repetido.nombre}</Link> · {etiquetaArtista(repetido)}. Ábrelo y, si es tuyo, dilo ahí.

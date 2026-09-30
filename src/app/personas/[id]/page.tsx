@@ -4,6 +4,7 @@ import Bloquear from "@/components/Bloquear";
 import Desbloquear from "@/components/Desbloquear";
 import FichaPersona from "@/components/FichaPersona";
 import BarraFicha from "@/components/ui/BarraFicha";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import ficha from "@/components/ui/Ficha.module.css";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { avisosParaListas } from "@/app/avisos/paraListas";
@@ -46,7 +47,7 @@ export default async function PaginaPersona({ params }: Params) {
   // ¿La bloqueé? (OL-203): solo tiene sentido en una ficha ajena y con sesión; sin sesión no hay bloqueos.
   const bloqueada = actual && !soyYo ? await estaBloqueada((await clienteServidor())!, actual.perfil.id, id) : false;
   return (
-    <main className={ficha.persona}>
+    <main className={`${plantilla.raizSinNav} ${ficha.persona}`}>
       <BarraFicha solida volver={{ href: soyYo ? "/perfil" : "/", texto: soyYo ? "Mi perfil" : "Agenda" }} titulo={d.perfil.nombre}>
         {!soyYo && !bloqueada && (
           <li>

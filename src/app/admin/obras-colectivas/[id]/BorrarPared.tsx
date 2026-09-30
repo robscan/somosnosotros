@@ -5,7 +5,7 @@ import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoPincel } from "@/components/ui/Iconos";
-import estilosBorrar from "@/components/Borrar.module.css";
+import estilosBorrar from "@/components/ui/Confirmar.module.css";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import { EVENTO_BORRAR, type MensajeBorrar } from "@/lib/pincel";
 import { clienteNavegador } from "@/lib/supabase/navegador";

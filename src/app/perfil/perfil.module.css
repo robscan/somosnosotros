@@ -1,6 +1,6 @@
-/* Mi perfil no lleva cabecera pegajosa: los títulos de día se pegan justo bajo la barra de la app, sin los 104 px que
+/* Mi perfil no lleva cabecera pegajosa: los títulos de día se pegan justo bajo la barra de la app, sin lo que
    `--alto-cabecera` guarda de partida para las pantallas que sí la llevan. */
-.pagina {
+.perfil {
   --alto-cabecera: 0px;
 }
 

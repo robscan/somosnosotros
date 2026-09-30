@@ -45,7 +45,7 @@
 .sonda {
   position: fixed;
   top: calc(var(--alto-barra, 56px) + 8px); /* en la zona vacía de arriba: no tapa el botón, las tarjetas ni la ayuda */
-  left: 8px;
+  left: var(--espacio-2);
   z-index: var(--z-barra);
   max-width: 64vw;
   margin: 0;

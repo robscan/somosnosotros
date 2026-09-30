@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import CodigoQr from "@/components/ui/CodigoQr";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import Borrar from "@/components/Borrar";
 import { formatearLargo } from "@/lib/fechas";
 import { esUuid } from "@/lib/formulario";
@@ -46,7 +46,7 @@ export default async function DetalleObra({ params, searchParams }: Params) {
   const tope = estadoGlobal ? Math.max(TOPE_MANDOS_GLOBAL - (estadoGlobal.mandosAbiertos - obra.cupoMandos), obra.cupoMandos) : 20;
 
   return (
-    <main className={`${ficha.pagina} ${styles.fichaObra}`}>
+    <main className={`${plantilla.paginaContenido} ${styles.fichaObra}`}>
       <Barra volver={{ href: "/admin/obras-colectivas", texto: "Obras colectivas" }} />
       <h1 className={`${admin.titulo} ${styles.nombre}`}>{obra.nombre}</h1>
       <div className={styles.datos}>

@@ -13,11 +13,9 @@
 .lista {
   list-style: none;
 }
+/* La letra es la de `ficha.vacio` (ui/Ficha); aquí, su aire. */
 .vacio {
   padding: var(--espacio-3) 0;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.4;
 }
 .novedad {
   padding: var(--espacio-3) 0;

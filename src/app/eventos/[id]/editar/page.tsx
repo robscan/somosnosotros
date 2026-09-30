@@ -8,6 +8,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDelSitio } from "@/lib/zona";
 import FormularioEvento from "../../FormularioEvento";
 import { actualizarEvento } from "../../acciones";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 export const metadata = { title: "Editar evento · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -36,7 +37,7 @@ export default async function EditarEvento({ params }: { params: Promise<{ id: s
   const { data: privado } = evento.sitio_reservado ? ((await supabase?.from("eventos_sitio_privado").select("direccion, lat, lng, indicaciones, revelar_desde").eq("evento_id", evento.id).maybeSingle()) ?? { data: null }) : { data: null };
   const [quien, mios] = await Promise.all([cargarQuien(evento.id), cargarMisArtistas(actual.perfil.id)]);
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: hrefEvento(evento), texto: "Volver al evento" }} />
       <h1 className="titulo">Editar evento</h1>
       <FormularioEvento accion={actualizarEvento.bind(null, evento.id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} revision={evento.actualizado_en} privado={privado as SitioPrivado | null} zonaSitio={zonaDelSitio(evento, privado as SitioPrivado | null)} modo="editar" usuarioId={actual.perfil.id} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} />

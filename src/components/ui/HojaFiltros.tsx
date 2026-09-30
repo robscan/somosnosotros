@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Boton from "./Boton";
 import Hoja from "./Hoja";
+import hoja from "./Hoja.module.css";
 import styles from "./HojaFiltros.module.css";
 
 type Props = {
@@ -42,7 +43,7 @@ export default function HojaFiltros({ titulo, nota, resultado, sinResultados = f
         </>
       }
     >
-      {nota && <p className={styles.nota}>{nota}</p>}
+      {nota && <p className={hoja.nota}>{nota}</p>}
       {children}
     </Hoja>
   );

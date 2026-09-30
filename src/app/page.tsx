@@ -13,6 +13,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { tarjetaArtista } from "@/lib/destacados";
 import { diaLocal } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 type SearchParams = { ciudad?: string };
 
@@ -71,7 +72,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
   const conCiudad = (raiz: string) => (ciudad.slug === CIUDAD_INICIAL.slug ? raiz : `${raiz}?ciudad=${ciudad.slug}`);
 
   return (
-    <main className="raiz">
+    <main className={plantilla.raiz}>
       <Inicio
         key={ciudad.slug}
         ciudad={ciudad}
