@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { EventoAgenda } from "./agenda";
 import type { ArtistaLista } from "./artistas";
 import { decididoVigente, enOrden, fechasValidas, opcionDestacar, ordenarTarjetasPorFoto, puedeDestacarse, selloDeTarjeta, SIN_DECIDIR, tarjetaArtista, tarjetaEvento, tarjetaLugar, textoDestacar, textoHecho, textoMotivo, type Destacado } from "./destacados";
-import { esSinFoto, SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 import type { LugarLista } from "./lugares";
 
 // Miércoles 16 de septiembre de 2026, 18:00 en San Luis Potosí.
@@ -25,12 +24,9 @@ describe("enOrden", () => {
 });
 
 describe("ordenarTarjetasPorFoto", () => {
-  it("pone foto real antes del placeholder y conserva el orden dentro de cada grupo", () => {
-    const tarjetas = ["sin-primero", "foto-primera", "sin-segundo", "foto-segunda"].map((id) => ({ id, href: `/${id}`, foto: id.startsWith("sin") ? SIN_FOTO_ANCHA : `/${id}.jpg`, titulo: id, detalle: "", van: 0 }));
+  it("pone la foto real antes de la que no tiene y conserva el orden dentro de cada grupo", () => {
+    const tarjetas = ["sin-primero", "foto-primera", "sin-segundo", "foto-segunda"].map((id) => ({ id, href: `/${id}`, foto: id.startsWith("sin") ? null : `/${id}.jpg`, titulo: id, detalle: "", van: 0 }));
     expect(ordenarTarjetasPorFoto(tarjetas).map((t) => t.id)).toEqual(["foto-primera", "foto-segunda", "sin-primero", "sin-segundo"]);
-  });
-  it("esSinFoto reconoce las dos imágenes de relleno y ninguna otra", () => {
-    expect([SIN_FOTO, SIN_FOTO_ANCHA, "/cartel.jpg", "https://cdn.example.com/sin-foto-de-otro.jpg"].map(esSinFoto)).toEqual([true, true, false, false]);
   });
 });
 
@@ -57,7 +53,7 @@ describe("tarjetas", () => {
   it("evento: su cartel, si no la foto del lugar, si no la imagen ancha del símbolo; cuándo y dónde en dos datos", () => {
     expect(tarjetaEvento(evento({ imagen: "/cartel.jpg", van: 14 }), AHORA)).toEqual({ id: "e1", href: "/eventos/e1", foto: "/cartel.jpg", titulo: "Gala de arias", detalle: "mañana · 19:00", sitio: "Teatro de la Paz", van: 14, hoy: false, inicio: MANANA_19, fin: null, zona: ZONA });
     expect(tarjetaEvento(evento({ lugar: { nombre: "Teatro de la Paz", portada: "/teatro.jpg" } }), AHORA).foto).toBe("/teatro.jpg");
-    expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: SIN_FOTO_ANCHA, detalle: "mañana · 19:00", sitio: "Plaza de Armas" });
+    expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Plaza de Armas" }), AHORA)).toMatchObject({ foto: null, detalle: "mañana · 19:00", sitio: "Plaza de Armas" });
   });
   it("evento: el sitio va sin su dirección postal, como en las listas (H-09)", () => {
     expect(tarjetaEvento(evento({ lugar: null, lugar_id: null, sitio_texto: "Templo de San Francisco", sitio_direccion: "Calle Jardín Guerrero 7, 78000" }), AHORA).sitio).toBe("Templo de San Francisco");
@@ -67,11 +63,11 @@ describe("tarjetas", () => {
     expect(tarjetaEvento(evento(), AHORA).hoy).toBe(false);
   });
   it("lugar: su próximo evento o, sin él, qué es", () => {
-    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: SIN_FOTO_ANCHA, detalle: "Próximo: mañana · 19:00" });
+    expect(tarjetaLugar(lugar({ proximo: { id: "e1", inicio: MANANA_19, zona: ZONA, titulo: "Concierto" } }), AHORA)).toMatchObject({ href: "/lugares/l1", foto: null, detalle: "Próximo: mañana · 19:00" });
     expect(tarjetaLugar(lugar({ portada: "/casa.jpg" }), AHORA)).toMatchObject({ foto: "/casa.jpg", detalle: "Casa de cultura" });
   });
   it("artista: la fecha sin el sitio, o lo que hace", () => {
-    expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/trio-potosino", foto: SIN_FOTO, detalle: "mañana · 19:00" });
+    expect(tarjetaArtista(artista({ proxima: { id: "e1", inicio: MANANA_19, zona: ZONA, sitio: "Teatro de la Paz" } }), AHORA)).toMatchObject({ href: "/artistas/trio-potosino", foto: null, detalle: "mañana · 19:00" });
     expect(tarjetaArtista(artista({ foto: "/trio.jpg" }), AHORA)).toMatchObject({ foto: "/trio.jpg", detalle: "Música · Grupo" });
   });
 });

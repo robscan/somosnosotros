@@ -5,7 +5,7 @@ import type { GrupoBuscador } from "./buscarUnificado";
  * en el navegador (`localStorage`), sin cuenta y sin salir del teléfono; si el almacén no está o se llena, no pasa nada. `meta` son
  * las líneas de datos bajo el nombre, sin el tipo (`metaDe`).
  */
-export type Reciente = { grupo: GrupoBuscador; id: string; href: string; foto: string; titulo: string; meta: string[] };
+export type Reciente = { grupo: GrupoBuscador; id: string; href: string; foto: string | null; titulo: string; meta: string[] };
 
 export const MAXIMO_RECIENTES = 5;
 export const LLAVE_RECIENTES = "somosnosotros:buscar:recientes";
@@ -27,7 +27,7 @@ const GRUPOS: readonly unknown[] = ["eventos", "lugares", "artistas"];
 function esReciente(x: unknown): x is Reciente {
   if (typeof x !== "object" || x === null) return false;
   const r = x as Record<string, unknown>;
-  const cadenas = [r.id, r.href, r.foto, r.titulo].every((v) => typeof v === "string") && Array.isArray(r.meta) && r.meta.every((v) => typeof v === "string");
+  const cadenas = [r.id, r.href, r.titulo].every((v) => typeof v === "string") && (typeof r.foto === "string" || r.foto === null) && Array.isArray(r.meta) && r.meta.every((v) => typeof v === "string");
   return GRUPOS.includes(r.grupo) && cadenas && (r.href as string).startsWith("/") && !(r.href as string).startsWith("//");
 }
 

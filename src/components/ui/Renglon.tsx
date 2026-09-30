@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { MouseEventHandler, ReactNode } from "react";
+import { SIN_FOTO } from "@/lib/imagen";
 import styles from "./Renglon.module.css";
 
 type Props = {
   href: string;
-  /** La foto de la izquierda. */
-  foto: string;
+  /** La foto de la izquierda; sin ella, la imagen de relleno cuadrada (el símbolo SN). */
+  foto: string | null;
   /** Redonda es gente (un artista); cuadrada es un lugar o un evento. */
   redonda?: boolean;
   /** En una lista larga (artistas) las fotos se piden al llegar a ellas. */
@@ -33,7 +34,7 @@ export default function Renglon({ href, foto, redonda = false, perezosa = false,
     <li className={styles.lista}>
       <Link href={href} className={styles.frente} onClick={onClick}>
         {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-        <img src={foto} alt="" className={redonda ? `${styles.foto} ${styles.redonda}` : styles.foto} loading={perezosa ? "lazy" : undefined} decoding={perezosa ? "async" : undefined} />
+        <img src={foto ?? SIN_FOTO} alt="" className={redonda ? `${styles.foto} ${styles.redonda}` : styles.foto} loading={perezosa ? "lazy" : undefined} decoding={perezosa ? "async" : undefined} />
         <b>{titulo}</b>
         <small>{children}</small>
       </Link>

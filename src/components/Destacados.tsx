@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useId, useRef, type MouseEvent, type PointerEvent, type UIEvent } from "react";
 import { ordenarTarjetasPorFoto, selloDeTarjeta, type Tarjeta } from "@/lib/destacados";
 import { huboArrastre, type Asistencia } from "@/lib/deslizar";
-import { esSinFoto } from "@/lib/imagen";
 import { claveDeUrl, guardarScroll, leerScroll } from "@/lib/memoriaPantalla";
 import CarrilEsqueleto from "./CarrilEsqueleto";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
@@ -120,12 +119,11 @@ export default function Destacados({ tarjetas, tamano = "mediana", encabezado = 
       <ul ref={recordar} className={`${styles.carril} ${styles[forma]}`} onScroll={alDesplazar} onPointerDown={alBajarCarril} onClickCapture={alTocarCarril}>
         {ordenadas.map((t) => {
           const sello = selloDeTarjeta(t, estadoDe?.(t.id) === "me_interesa");
-          const sinFoto = esSinFoto(t.foto);
           return (
             <li key={t.id}>
-              <Link href={t.href} className={sinFoto ? `${styles.tarjeta} ${styles.sinFoto}` : styles.tarjeta}>
+              <Link href={t.href} className={t.foto ? styles.tarjeta : `${styles.tarjeta} ${styles.sinFoto}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                {!sinFoto && <img src={t.foto} alt="" className={styles.foto} loading="lazy" decoding="async" />}
+                {t.foto && <img src={t.foto} alt="" className={styles.foto} loading="lazy" decoding="async" />}
                 <b>{t.titulo}</b>
                 <small>
                   <span>{t.detalle}</span>

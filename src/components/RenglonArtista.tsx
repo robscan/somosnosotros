@@ -1,5 +1,4 @@
 import { etiquetaArtista, hrefArtista, textoProximaFecha, type ArtistaResumen, type Disciplina, type ProximaFecha } from "@/lib/artistas";
-import { SIN_FOTO } from "@/lib/imagen";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoPincel, IconoPluma } from "./ui/Iconos";
 import Renglon from "./ui/Renglon";
@@ -36,7 +35,7 @@ type Props = {
  */
 export default function RenglonArtista({ artista: a, boton }: Props) {
   return (
-    <Renglon href={hrefArtista(a)} foto={a.foto ?? SIN_FOTO} redonda perezosa titulo={a.nombre} accion={boton && <BotonRenglon {...boton} />}>
+    <Renglon href={hrefArtista(a)} foto={a.foto} redonda perezosa titulo={a.nombre} accion={boton && <BotonRenglon {...boton} />}>
       <span>
         <IconoDisciplina disciplina={a.disciplina} />
         <span>{etiquetaArtista(a)}</span>
