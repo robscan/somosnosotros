@@ -1,6 +1,6 @@
 # 265 · Buscar único: la pantalla de búsqueda con los tres tipos, y ajustes de Lugares (OL-237)
 
-**Fecha:** 2026-09-29 · **Rama:** `ui-buscar`, desde `origin/ui-responsivo` (`da92553d`) · **OL:** OL-237 · **PR:** por abrir (sin unir; va montado sobre #274, `ui-responsivo`, que va sobre #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Continúa el plan de OL-227 (doc 50, § 7) con lo que el founder decidió el 2026-09-29 sobre el buscador y sobre Lugares tras ver P5b y P6.
+**Fecha:** 2026-09-29 · **Rama:** `ui-buscar`, desde `origin/ui-responsivo` (`da92553d`) · **OL:** OL-237 · **PR:** #275 (sin unir; va montado sobre #274, `ui-responsivo`, que va sobre #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Continúa el plan de OL-227 (doc 50, § 7) con lo que el founder decidió el 2026-09-29 sobre el buscador y sobre Lugares tras ver P5b y P6.
 
 ## Pedido
 
