@@ -10,7 +10,7 @@ Encargo del Gestor de cambios III, con el criterio de siempre («con ultra cuida
 
 - Las herramientas de la auditoría eran informes, no pruebas: `inventario-css.mjs` escribía un JSON y `medir.js` medía el primer `main` del documento. Con el streaming de React ese primer `main` es el esqueleto (3 nodos; el de verdad, con 188, llega oculto en otro `<div hidden>` hasta que React lo coloca), y contaba los toques por su caja: un chip de 36 con `::before` de 44 salía como fallo.
 - Ninguna comprobación de estilos ni de DOM en la CI. Las `*.componentes.test.mjs` no corren en ella.
-- Los números del respaldo cambiaban con la hora: sus eventos son relativos a hoy y, por ejemplo, el de dentro de 7 días a las 19:00 entra a «Esta semana» pasadas las 19:00 (+1 tarjeta), y los de hoy salen al pasar.
+- Los números del respaldo cambiaban con la hora: sus eventos son relativos a hoy y, según el código, el de dentro de 7 días a las 19:00 entra a «Esta semana» pasadas las 19:00 (una tarjeta más) y los de hoy salen al pasar.
 
 ## Lo que se hizo
 
@@ -77,7 +77,7 @@ Todas con su porqué en el JSON, «Permanente» o «Deuda (P12)».
 ## Anotado para las piezas que siguen
 
 - **P12 retiros.** Las excepciones marcadas «Deuda (P12)» de los dos JSON son la lista de trabajo: tres `z-index: 1` (`.ubicacion`, `.avisoMapa`, `Ficha .titulo`); doce archivos con colores por tokenizar (los blancos y el hueso son `--fondo`, los velos y sombras piden token; `Mapa.module.css` y `MapaDondeEs.module.css` son la misma copia); cinco márgenes negativos (admin ×3, `SalirSinPublicar`, `EnlaceExterno`); Perfil a 320 (+2 px); «Mi ubicación» a 320×568; el título pegajoso de Buscar sobre 1 px del chip. Además, 17 bloques duplicados y 414 medidas en duro (lista de la prueba). El informe viejo del inventario (tokens sin uso —`--ok-suave`, `--alto-filtros`, `--duracion-ficha`—, los literales más repetidos) ya no se calcula: está en `git show 33f92dfe:scripts/ops/auditoria-ui/inventario-css.mjs`. Las herramientas de informe (`auditar.mjs`, `resumir.mjs`, `medidas.mjs`, `medir-prototipo.mjs`) no las necesita la prueba y `medidas.mjs` usa selectores de antes de la reestructura: candidatas a retirar.
-- **P13 lenguaje incluyente.** Nada en la app; en el respaldo, «Ana Rentería» y «Marcos Ledesma» siguen siendo los usuarios inventados, sin cambio.
+- **P13 lenguaje incluyente.** Los nombres accesibles de los controles de Mapbox salen en inglés en la prueba («Toggle attribution» de la ⓘ, «Mapbox homepage» del logo): la opción `locale` de `new mapboxgl.Map` los traduce. En el respaldo, «Ana Rentería» y «Marcos Ledesma» siguen siendo los usuarios inventados.
 
 ## Para el doc 50 (no lo toqué)
 
@@ -86,6 +86,6 @@ Todas con su porqué en el JSON, «Permanente» o «Deuda (P12)».
 
 ## Archivos
 
-Sin migraciones ni variables de entorno; la CI no lleva llaves. +611 −144 líneas desde la unión (14 archivos, sin contar esta bitácora, OPEN_LOOPS y las dos capturas).
+Sin migraciones ni variables de entorno; la CI no lleva llaves. +624 −144 líneas desde la unión (14 archivos, sin contar esta bitácora, OPEN_LOOPS y las dos capturas).
 
 **Nuevos:** esta bitácora, `docs/rediseno/capturas-270/`, `scripts/ops/auditoria-ui/medir-pantallas.mjs`, `reloj-fijo.cjs`, `inventario.aceptado.json` y `medidas.aceptadas.json`. **Con cambios:** `scripts/ops/auditoria-ui/inventario-css.mjs`, `medir.js`, `pantallas-prod.json`, `pantallas-sesion.json`, `README.md` y `respaldo-local/fixture.mjs`; `.github/workflows/ci.yml`, `package.json` y `package-lock.json` (`playwright-core`, `inventario` y `medir`), `CLAUDE.md` (la línea de verificación rápida) y `docs/ops/OPEN_LOOPS.md`.
