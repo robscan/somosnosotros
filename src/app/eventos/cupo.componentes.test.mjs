@@ -46,6 +46,7 @@ const mocks = {
   "@/lib/subirFoto": `export async function subirFoto(){window.qa.subidas++;return window.qa.falloSubida ? {error:'No se pudo subir.',motivo:'subida'} : {url:'/nueva.png'}}`,
   "@/components/ui/Atras": "export function useTerminar(){return ()=>{}}",
   "@/components/HojaDonde": "export default function C(){return null}",
+  "@/lib/useAvisosTelefono": "export function usePlataforma(){return null}",
   "./SelectorCuando": "export default function C(){return null}",
   "./SelectorQuien": "export default function C(){return null}",
   "next/link": "import React from 'react'; export function useLinkStatus(){return {pending:false}} export default function Link(p){return React.createElement('a',p)}",
@@ -289,8 +290,8 @@ test("la reconciliacion conserva todos los valores manuales, incluso con error y
   const p = await pantalla(t);
   await p.locator("li").filter({ hasText: "Descripción, enlace" }).getByRole("button", { name: "Agregar" }).click();
   await p.getByRole("button", { name: "Descripción", exact: true }).click();
-  await p.getByLabel("Descripción", { exact: true }).fill("Descripcion escrita a mano");
-  await p.getByRole("button", { name: "Listo" }).click();
+  await p.getByRole("textbox", { name: "Descripción", exact: true }).fill("Descripcion escrita a mano"); // la capa (dialog) y el campo llevan el mismo nombre
+  await p.getByRole("dialog", { name: "Descripción" }).getByRole("button", { name: "Listo" }).click(); // el renglón abierto trae su propio «Listo»
   await p.getByLabel("Enlace", { exact: true }).fill("https://evento.invalid");
   const valores = () => p.locator("form").evaluate(form => [...new FormData(form)].filter(([,v]) => typeof v === "string"));
   const antes = await valores();
