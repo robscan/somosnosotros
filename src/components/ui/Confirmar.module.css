@@ -13,7 +13,7 @@
   font-weight: 700;
 }
 .confirmar p {
-  max-width: var(--ancho-texto, 32ch); /* quien tiene un texto más largo lo ensancha en su envoltorio */
+  max-width: var(--ancho-parrafo, 32ch); /* quien tiene un texto más largo lo ensancha en su envoltorio */
   margin-bottom: var(--espacio-4);
   color: var(--texto-suave);
   line-height: 1.4;

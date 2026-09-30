@@ -40,7 +40,7 @@
 /* Los chips de las listas corren a todo lo ancho: la franja ocupa las tres columnas de la página, con el aire de los lados dentro */
 .lista > [role="group"] {
   grid-column: 1 / -1;
-  margin-top: var(--espacio-3);
+  margin: var(--espacio-3) 0 0;
   padding-inline: var(--gutter);
 }
 

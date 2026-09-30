@@ -1,7 +1,7 @@
 /* La hoja de Bloquear: la composición de ui/Confirmar (sin rojo: bloquear no es destructivo, se deshace), con un texto más largo y su
    aviso de error, en el rojo de los errores. */
 .confirmar {
-  --ancho-texto: 34ch;
+  --ancho-parrafo: 34ch;
 }
 .confirmar .error {
   color: var(--error);
