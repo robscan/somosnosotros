@@ -1,6 +1,6 @@
 # 268 · Hoja de Lugares: la lista bajo sus filtros y la hoja que responde al filtrar (OL-240)
 
-**Fecha:** 2026-09-30 · **Rama:** `ui-hoja-filtros`, desde `origin/ui-altas` (`20a11c8c`) · **OL:** OL-240 · **PR:** por abrir (va montado sobre #277, `ui-altas`, que va sobre #276, #275, #274, #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Pieza entre P9 y P10, sobre lo que el founder decidió el 2026-09-30 (doc 50, puntos 12, 36 y 58).
+**Fecha:** 2026-09-30 · **Rama:** `ui-hoja-filtros`, desde `origin/ui-altas` (`20a11c8c`) · **OL:** OL-240 · **PR:** #278 (sin unir; va montado sobre #277, `ui-altas`, que va sobre #276, #275, #274, #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Pieza entre P9 y P10, sobre lo que el founder decidió el 2026-09-30 (doc 50, puntos 12, 36 y 58).
 
 ## Pedido
 
