@@ -1,6 +1,6 @@
 # 271 · P12 Retiros y deudas: lo que sobra después de la reestructura (OL-243)
 
-**Fecha:** 2026-09-30 · **Rama:** `ui-retiros`, desde `origin/ui-proteccion` (`2428b975`) · **OL:** OL-243 · **PR:** #NNN (sin unir; va montado sobre #280, `ui-proteccion`, que va sobre #279, #278, #277, #276, #275, #274, #273, #272, #271, #270, #269 y #268, y sobre #266, `restructura-ui`) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Pieza P12 del plan de OL-227 (doc 50, § 7 y § 10).
+**Fecha:** 2026-09-30 · **Rama:** `ui-retiros`, desde `origin/ui-proteccion` (`2428b975`) · **OL:** OL-243 · **PR:** #281 (sin unir; va montado sobre #280, `ui-proteccion`, que va sobre #279, #278, #277, #276, #275, #274, #273, #272, #271, #270, #269 y #268, y sobre #266, `restructura-ui`) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Pieza P12 del plan de OL-227 (doc 50, § 7 y § 10).
 
 ## Pedido
 
