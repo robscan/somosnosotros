@@ -12,7 +12,7 @@ const ZONA = "America/Mexico_City";
 
 const evento = (cambios: Partial<EventoAgenda> = {}): EventoAgenda => ({
   id: "e1", titulo: "Gala de arias", inicio: MANANA_19, fin: null, imagen: null, precio: null, lugar_id: "l1", sitio_texto: null, sitio_reservado: false, zona: ZONA,
-  lugar: { nombre: "Teatro de la Paz", portada: null }, creado_en: "2026-09-14T00:00:00Z", lat: null, lng: null, van: 0, ...cambios,
+  lugar: { nombre: "Teatro de la Paz", portada: null }, creado_en: "2026-09-14T00:00:00Z", van: 0, ...cambios,
 });
 const lugar = (cambios: Partial<LugarLista> = {}): LugarLista => ({ id: "l1", nombre: "Casa de la Cultura", tipo: "casa_de_cultura", direccion: null, lat: 22.15, lng: -100.98, portada: null, proximo: null, ...cambios }) as LugarLista;
 const artista = (cambios: Partial<ArtistaLista> = {}): ArtistaLista => ({ id: "a1", slug: "trio-potosino", nombre: "Trío Potosino", disciplina: "musica", detalle: null, tipo: "grupo", foto: null, proxima: null, ...cambios });

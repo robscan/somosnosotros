@@ -12,7 +12,7 @@ export type LugarSeguido = { id: string; slug: string; nombre: string; tipo: str
 export type ArtistaSeguido = { id: string; slug: string; nombre: string; disciplina: Disciplina; detalle: string | null; tipo: TipoArtista; foto: string | null; proxima?: ProximaFecha | null };
 export type Persona = { perfil: Perfil; eventos: EventoAgenda[]; interesan: EventoAgenda[]; lugares: LugarSeguido[]; artistas: ArtistaSeguido[] };
 
-type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; sitio_lat: number | null; sitio_lng: number | null; creado_en: string; lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
+type FilaEvento = { id: string; slug: string; titulo: string; inicio: string; fin: string | null; zona: string; imagen: string | null; precio: string | null; lugar_id: string | null; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; creado_en: string; lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
 type Cliente = NonNullable<Awaited<ReturnType<typeof clienteServidor>>>;
 type FilaFecha = { artista_id: string; evento: FechaEvento | FechaEvento[] | null };
 type FechaEvento = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
@@ -76,7 +76,7 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
     supabase.from("seguimientos").select("lugar:lugares(id, slug, nombre, tipo, direccion, portada), artista:artistas(id, slug, nombre, disciplina, detalle, tipo, foto)").eq("usuario_id", id).limit(1000),
     supabase
       .from("asistencias")
-      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, sitio_lat, sitio_lng, creado_en, lugar:lugares(nombre, portada, lat, lng))")
+      .select("estado, evento:eventos!inner(id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, lugar:lugares(nombre, portada))")
       .eq("usuario_id", id)
       .or(filtroSinPasar(), { referencedTable: "evento" })
       .limit(1000),
@@ -90,10 +90,7 @@ export async function cargarPersona(id: string, { conProximos: proximos = false 
   const { data: conteo } = ids.length ? await supabase.rpc("van_por_evento", { ids }) : { data: [] as { evento_id: string; n: number }[] };
   const van = new Map<string, number>();
   for (const c of (conteo ?? []) as { evento_id: string; n: number }[]) van.set(c.evento_id, Number(c.n));
-  const aAgenda = (e: FilaEvento): EventoAgenda => {
-    const lugar = uno(e.lugar);
-    return { ...e, lugar, lat: lugar?.lat ?? e.sitio_lat, lng: lugar?.lng ?? e.sitio_lng, van: van.get(e.id) ?? 0 };
-  };
+  const aAgenda = (e: FilaEvento): EventoAgenda => ({ ...e, lugar: uno(e.lugar), van: van.get(e.id) ?? 0 });
   const porEstado = (estado: string) => filas.filter((x) => x.estado === estado).map((x) => aAgenda(x.e)).sort((a, b) => a.inicio.localeCompare(b.inicio));
   return { perfil: perfil as Perfil, eventos: porEstado("voy"), interesan: porEstado("me_interesa"), lugares, artistas };
 }

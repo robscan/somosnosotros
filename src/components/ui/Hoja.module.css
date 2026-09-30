@@ -96,11 +96,6 @@
   padding-top: var(--espacio-3);
   border-top: 1px solid var(--borde);
 }
-/* A toda la altura, pegada al borde superior seguro (notch / isla): abajo sigue el área segura de siempre. */
-.completa {
-  height: calc(100% - env(safe-area-inset-top, 0px));
-  max-height: none;
-}
 .plano {
   display: flex;
   flex-direction: column;

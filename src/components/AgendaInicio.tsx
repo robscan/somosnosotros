@@ -122,7 +122,7 @@ function AgendaLista({
   const canal = useCanalDeListas();
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
 
-  const lista = listarAgenda(datos, filtros, ahora);
+  const lista = listarAgenda(datos, filtros);
 
   // Carga progresiva de la lista agrupada por día (OL-158): el total cambia con los filtros o la ciudad;
   // cuando cambia, la tanda se acota de nuevo (nunca menos que la primera, nunca más que lo que hay) en vez de quedarse
@@ -163,7 +163,7 @@ function AgendaLista({
     }
     return (
       <>
-        {agruparPorDia(lista.slice(0, mostrados), ahora, false, filtros.cuando?.desde).map((g) => (
+        {agruparPorDia(lista.slice(0, mostrados), ahora, filtros.cuando?.desde).map((g) => (
           <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
             {g.eventos.map((e) => (
               <RenglonEvento key={e.id} evento={e} estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />

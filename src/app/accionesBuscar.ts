@@ -1,6 +1,6 @@
 "use server";
 
-import { buscarEventos, type EventoAgenda } from "@/lib/agenda";
+import { buscarEventos, type EventoAgenda, type EventoBuscable } from "@/lib/agenda";
 import type { ArtistaLista } from "@/lib/artistas";
 import { LIMITE_BUSQUEDA_UNIFICADA, ordenarPorCiudad, SIN_RESULTADOS_BUSQUEDA, type Encontrado, type ResultadoBusqueda } from "@/lib/buscarUnificado";
 import { tarjetaArtista, tarjetaEvento, tarjetaLugar } from "@/lib/destacados";
@@ -9,7 +9,7 @@ import { normalizarNombre, type LugarLista } from "@/lib/lugares";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 type Nombre = { nombre: string };
-type FilaEvento = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & {
+type FilaEvento = Omit<EventoAgenda, "lugar" | "van"> & {
   ciudad: string;
   lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][];
   artistas: { artista: Nombre | Nombre[] | null }[] | null;
@@ -56,10 +56,10 @@ export async function buscarUnificado(q: string, ciudades: string[]): Promise<Re
     lugares.order("nombre_orden").limit(CANDIDATOS),
     artistas.order("nombre_orden").limit(CANDIDATOS),
   ]);
-  const proximos = ((e.data ?? []) as unknown as FilaEvento[]).map((fila): EventoAgenda & { ciudad: string } => {
+  const proximos = ((e.data ?? []) as unknown as FilaEvento[]).map((fila): EventoBuscable & { ciudad: string } => {
     const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
     const artistas = (fila.artistas ?? []).map((x) => (Array.isArray(x.artista) ? x.artista[0] : x.artista)?.nombre).filter((n): n is string => !!n);
-    return { ...fila, lugar, artistas, lat: null, lng: null, van: 0 };
+    return { ...fila, lugar, artistas, van: 0 };
   });
   const eventos = buscarEventos(proximos, texto).map((p): Encontrado => ({ ...tarjetaEvento(p, ahora), ciudad: p.ciudad }));
   const lugaresHallados = ((l.data ?? []) as unknown as FilaLugar[]).map((fila): Encontrado => ({ ...tarjetaLugar({ ...fila, proximo: null } as LugarLista, ahora), ciudad: fila.ciudad }));

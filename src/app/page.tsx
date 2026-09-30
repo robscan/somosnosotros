@@ -53,7 +53,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
 
   // Sin await: cada promesa viaja tal cual a su carril, que la espera dentro de su propio <Suspense>.
   const agendaPromise = cargarAgenda(ciudad, usuarioId, supabase);
-  const semanaLugaresPromise = cargarEventosSemana(supabase, "lugares", ciudad.nombre, ahora);
+  const semanaLugaresPromise = cargarEventosSemana(supabase, ciudad.nombre, ahora);
   const artistasDestacadosPromise = cargarArtistasDestacados(supabase, ciudad.nombre, ahora).then((lista) => lista.map((a) => tarjetaArtista(a, ahora)));
   const seguidosArtistasPromise: Promise<string[] | null> =
     usuarioId && supabase

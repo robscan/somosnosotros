@@ -122,7 +122,7 @@ export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "
 export type CarrilesDeAgenda = { titulo: string; estelar: EventoAgenda[]; estaSemana: EventoAgenda[]; nuevos: EventoAgenda[] };
 export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date()): CarrilesDeAgenda {
   const vistos = new Set<string>();
-  const favoritos = filtrarAgenda(agenda.eventos, { filtro: "siguiendo", punto: null, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: null, ahora }).lista;
+  const favoritos = filtrarAgenda(agenda.eventos, { siguiendo: true, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: null });
   const hayFavoritos = favoritos.length > 0;
   const estelar = hayFavoritos
     ? carrilEstelar(favoritos, new Set(agenda.destacados.map((d) => d.id)), vistos)

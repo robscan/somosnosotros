@@ -8,7 +8,7 @@ function aparicion(id: string, inicio = "2026-09-19T01:00:00Z", cambios: Partial
     evento: { id: `evento-${id}`, inicio, termina: "2026-09-26T05:59:59Z", zona: "America/Mexico_City", visible: true, lugar_id: null, lugar: null, ...cambios },
   };
 }
-const tarjetas = (a: AparicionSemana[]) => tarjetasDeSemana(a, "artistas", ahora);
+const tarjetas = (a: AparicionSemana[]) => tarjetasDeSemana(a, ahora);
 
 describe("Con eventos esta semana", () => {
   it("sin eventos no ofrece tarjetas", () => expect(tarjetas([])).toEqual([]));
@@ -37,8 +37,8 @@ describe("Con eventos esta semana", () => {
       aparicion("lugar-oculto", undefined, { lugar_id: "l", lugar: { visible: false, privado: false } }),
       aparicion("lugar-no-legible", undefined, { lugar_id: "l", lugar: null }),
     ])).toEqual([]);
-    const oculto = aparicion("artista-oculto"); oculto.ficha.visible = false;
-    const privado = aparicion("lugar-privado"); privado.ficha.privado = true;
+    const oculto = aparicion("lugar-oculto-en-ficha"); oculto.ficha.visible = false;
+    const privado = aparicion("lugar-privado-en-ficha"); privado.ficha.privado = true;
     expect(tarjetas([oculto, privado])).toEqual([]);
   });
   it("deduplica, elige la primera fecha elegible y ordena por instante, nombre e id de forma estable", () => {
@@ -52,19 +52,17 @@ describe("Con eventos esta semana", () => {
     expect(r[1].detalle).toBe("Mañana · 19:00");
     expect(tarjetas([...datos].reverse())).toEqual(r);
   });
-  it("mantiene enlaces a las fichas y su foto en ambos directorios", () => {
-    expect(tarjetas([aparicion("a")])[0]).toMatchObject({ href: "/artistas/a", foto: "/foto.jpg" });
-    expect(tarjetasDeSemana([aparicion("l")], "lugares", ahora)[0]).toMatchObject({ href: "/lugares/l", foto: "/foto.jpg" });
+  it("enlaza a la ficha del lugar con su foto", () => {
+    expect(tarjetas([aparicion("l")])[0]).toMatchObject({ href: "/lugares/l", foto: "/foto.jpg" });
   });
   it("un destacado exige foto (H-03): la ficha sin ella no entra al carril, aunque tenga eventos", () => {
     const sinFoto = aparicion("sin-foto");
     sinFoto.ficha.foto = null;
     expect(tarjetas([sinFoto, aparicion("con-foto")]).map((a) => a.id)).toEqual(["con-foto"]);
-    expect(tarjetasDeSemana([sinFoto], "lugares", ahora)).toEqual([]);
   });
   it("dos apariciones a la misma hora se desempatan por evento, sin depender del lote", () => {
-    const a = aparicion("artista", "2026-09-19T01:00:00Z", { id: "a", zona: "America/Mexico_City" });
-    const b = aparicion("artista", "2026-09-19T01:00:00Z", { id: "b", zona: "Europe/Madrid" });
+    const a = aparicion("lugar", "2026-09-19T01:00:00Z", { id: "a", zona: "America/Mexico_City" });
+    const b = aparicion("lugar", "2026-09-19T01:00:00Z", { id: "b", zona: "Europe/Madrid" });
     expect(tarjetas([b, a])).toEqual(tarjetas([a, b]));
     expect(tarjetas([b, a])[0].detalle).toBe("Hoy · 19:00");
   });

@@ -59,7 +59,6 @@
 
   /* Barras */
   --alto-barra: 56px; /* barra de la app (BarraApp) y cabecera interior de una ficha o una tarea: 56 sin la franja de la hora */
-  --alto-filtros: 48px; /* fila de contexto de las pantallas raíz: ciudad, Cuándo y Filtros */
   --alto-cabecera: 96px; /* lo que mide ui/Cabecera (fila 52 + pestañas 44); ella lo remide en vivo */
   --alto-nav: 60px; /* la barra de navegación del teléfono (píldora de 32 + etiqueta), sin el área segura */
   --alto-modos: 56px; /* la tira de tipos de la pantalla de alta (Evento · Lugar · Artista), sin el área segura */
