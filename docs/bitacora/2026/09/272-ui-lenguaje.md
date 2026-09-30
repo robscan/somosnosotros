@@ -1,6 +1,6 @@
 # 272 · P13 Lenguaje incluyente en toda la app (OL-244)
 
-**Fecha:** 2026-09-30 · **Rama:** `ui-lenguaje`, desde `origin/ui-retiros` (`340b26ec`) · **OL:** OL-244 · **PR:** #PR (sin unir; va montado sobre #281, `ui-retiros`, que va sobre #280, #279, #278, #277, #276, #275, #274, #273, #272, #271, #270, #269 y #268, y sobre #266, `restructura-ui`) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Pieza P13 del plan de OL-227 (doc 50, § 7 y punto 47 de § 11): cierra el plan.
+**Fecha:** 2026-09-30 · **Rama:** `ui-lenguaje`, desde `origin/ui-retiros` (`340b26ec`) · **OL:** OL-244 · **PR:** #282 (sin unir; va montado sobre #281, `ui-retiros`, que va sobre #280, #279, #278, #277, #276, #275, #274, #273, #272, #271, #270, #269 y #268, y sobre #266, `restructura-ui`) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Pieza P13 del plan de OL-227 (doc 50, § 7 y punto 47 de § 11): cierra el plan.
 
 ## Pedido
 
