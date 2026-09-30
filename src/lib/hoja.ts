@@ -45,3 +45,13 @@ export function alturaSiguiente(y: number, detentes: Detentes): number {
   const alturas = Object.values(detentes).sort((a, b) => a - b);
   return alturas.find((v) => v > y + HOLGURA) ?? alturas[0] ?? 0;
 }
+
+/**
+ * ¿La cabecera de la ficha ya es compacta —la portada oscurecida detrás del título—? Desde que la portada se desplazó fuera y, en
+ * el teléfono, con la hoja recogida. Es la misma regla que manda a la pastilla de Seguir (docs/rediseno/50, OL-237): mientras la
+ * portada está a la vista la pastilla vive en el héroe, arriba a la derecha, junto al menú «···»; en cuanto la cabecera se
+ * vuelve compacta, flota abajo.
+ */
+export function cabeceraCompacta(y: number, compactaDesde: number, detente: Detente, enPanel: boolean): boolean {
+  return y >= compactaDesde || (!enPanel && detente === "recogida");
+}

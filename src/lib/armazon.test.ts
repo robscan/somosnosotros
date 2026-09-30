@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { altaDeRuta, CARRIL, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, vistaDeRuta } from "./armazon";
+import { altaDeRuta, buscarDesdeRuta, CARRIL, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, vistaDeRuta } from "./armazon";
 
 describe("armazón: la vista de cada ruta (data-vista)", () => {
   it("las cinco secciones y la pantalla que confirma un borrado son raíz", () => {
@@ -65,9 +65,16 @@ describe("armazón: el «+» de la barra", () => {
 });
 
 describe("armazón: la lupa de la barra", () => {
-  it("sin búsqueda propia lleva a la de Inicio, ya abierta y con la ciudad que se ve", () => {
-    expect(enlaceDeBusqueda(null)).toBe("/?buscar=1");
-    expect(enlaceDeBusqueda("cordoba-espana")).toBe("/?buscar=1&ciudad=cordoba-espana");
+  it("lleva siempre a Buscar, con la ciudad que se ve y el tipo de la sección de donde se abre", () => {
+    expect(enlaceDeBusqueda(null, "eventos")).toBe("/buscar?desde=eventos");
+    expect(enlaceDeBusqueda("cordoba-espana", "lugares")).toBe("/buscar?desde=lugares&ciudad=cordoba-espana");
+  });
+  it("el tipo de origen sale de la ruta: Lugares y Artistas (y sus fichas) son los suyos; todo lo demás, eventos", () => {
+    expect(buscarDesdeRuta("/lugares")).toBe("lugares");
+    expect(buscarDesdeRuta("/lugares/teatro-de-la-paz")).toBe("lugares");
+    expect(buscarDesdeRuta("/artistas")).toBe("artistas");
+    expect(buscarDesdeRuta("/artistas/aaron-cadena")).toBe("artistas");
+    for (const ruta of ["/", "/agenda", "/perfil", "/eventos/concierto", "/ajustes"]) expect(buscarDesdeRuta(ruta)).toBe("eventos");
   });
 });
 

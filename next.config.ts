@@ -56,6 +56,8 @@ const nextConfig: NextConfig = {
       { source: "/personas/:path*", headers: NOINDEX },
       { source: "/entrar", headers: NOINDEX },
       { source: "/borrado", headers: NOINDEX },
+      // Buscar (OL-237): una pantalla de búsqueda, no una página que indexar (respaldo del `robots` de su página).
+      { source: "/buscar", headers: NOINDEX },
       // Alta y edición, y Novedades (OL-143, doc 36): piden sesión, pero conviene decirlo explícito (respaldo del `robots` de cada página).
       { source: "/lugares/nuevo", headers: NOINDEX },
       { source: "/lugares/:id/editar", headers: NOINDEX },

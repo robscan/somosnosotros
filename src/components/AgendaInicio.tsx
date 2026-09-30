@@ -14,7 +14,6 @@ import { EsqueletoRenglones } from "./ui/Esqueleto";
 import FilaEventos from "./FilaEventos";
 import Grupo from "./ui/Grupo";
 import RenglonEvento from "./RenglonEvento";
-import { CampoBuscar } from "./ui/Buscador";
 import Cabecera from "./ui/Cabecera";
 import { useAsistenciaEnLista } from "./useAsistenciaEnLista";
 import { AvisoAbajo, useCanalDeListas } from "./useCanalDeListas";
@@ -40,36 +39,27 @@ type Props = {
   avisos?: AvisosLista | null;
   /** Con qué filtros abrir: los que trae la URL (Cuándo o Filtros elegidos desde Inicio, o un «solo lo que sigo»). */
   filtrosIniciales: FiltrosAgenda;
-  /** Con qué texto abrir la búsqueda ya escrita (el "Ver todos" de un grupo del buscador único). */
-  busquedaInicial?: string;
 };
 /**
- * Lo que la agenda recuerda al salir a una ficha y volver: sus filtros y la búsqueda (decisión 17 de 02).
+ * Lo que la agenda recuerda al salir a una ficha y volver: sus filtros y cuántos renglones iban (decisión 17 de 02).
  */
-type Recordado = { filtros: FiltrosAgenda; busqueda: string; buscando: boolean; mostrados: number };
+type Recordado = { filtros: FiltrosAgenda; mostrados: number };
 
 /**
  * Agenda: la lista por día de todo lo que viene, con la fila de contexto de las pantallas de eventos (`FilaEventos`:
- * ciudad, Cuándo y Filtros) y `ui/Cabecera`, que trae además la lupa de la barra. Cada día es un grupo con su título
- * pegado (`ui/Grupo`); vacíos por causa. Decisiones en docs/rediseno/02 y 50.
+ * ciudad, Cuándo y Filtros) en `ui/Cabecera`. Cada día es un grupo con su título pegado (`ui/Grupo`); vacíos por causa. Buscar
+ * es la lupa de la barra de la app (`app/buscar`), no un campo de esta pantalla. Decisiones en docs/rediseno/02 y 50.
  */
-export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, filtrosIniciales, busquedaInicial }: Props) {
+export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, filtrosIniciales }: Props) {
   const [filtros, setFiltros] = useState(filtrosIniciales);
-  // La lupa abre el campo en el renglón de los chips; lo escrito filtra al vuelo (los eventos ya están en el teléfono).
-  const [busqueda, setBusqueda] = useState(busquedaInicial ?? "");
-  const [buscando, setBuscando] = useState(!!busquedaInicial);
-  // El foco (y el teclado) solo cuando la lupa acaba de abrir el campo; al volver de una ficha no se roba el foco.
-  const [enfocar, setEnfocar] = useState(false);
   // Carga progresiva (OL-158): cuántos renglones van pintados de la lista agrupada por día. La memoria de pantalla
-  // repone este número igual que los filtros o la búsqueda, para que volver de una ficha no colapse la lista a la
+  // repone este número igual que los filtros, para que volver de una ficha no colapse la lista a la
   // primera tanda otra vez. Vive aquí (no en `AgendaLista`, diferida) para que una sola `useMemoriaPantalla` guarde
   // todo junto — dos llamadas con la misma clave se pisarían la una a la otra (OL-161).
   const [mostrados, setMostrados] = useState(TANDA_INICIAL);
 
-  useMemoriaPantalla<Recordado>("agenda", { filtros, busqueda, buscando, mostrados }, (r) => {
+  useMemoriaPantalla<Recordado>("agenda", { filtros, mostrados }, (r) => {
     if (r.filtros) setFiltros(filtrosRecordados(r.filtros)); // una memoria de la versión anterior no trae `filtros`: se ignora
-    if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
-    setBuscando(!!r.buscando || !!r.busqueda);
     if (typeof r.mostrados === "number") setMostrados(r.mostrados);
   });
 
@@ -85,15 +75,9 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZON
             zona={zona}
             agenda={agenda}
             valor={filtros}
-            busqueda={busqueda}
             onCambiar={setFiltros}
           />
         }
-        onBuscar={() => {
-          setBuscando(true);
-          setEnfocar(true);
-        }}
-        campo={buscando && <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, sitio o artista" ariaLabel="Buscar un evento" autoFocus={enfocar} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />}
       />
       {antes}
       {/* La lista sí espera su propia consulta (eventos, quién sigue qué, qué decidió la persona): va en su
@@ -106,7 +90,7 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZON
           </div>
         }
       >
-        <AgendaLista agenda={agenda} filtros={filtros} busqueda={busqueda} ciudad={ciudad} avisos={avisos} mostrados={mostrados} onMostrados={setMostrados} />
+        <AgendaLista agenda={agenda} filtros={filtros} ciudad={ciudad} avisos={avisos} mostrados={mostrados} onMostrados={setMostrados} />
       </Suspense>
     </>
   );
@@ -114,13 +98,12 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZON
 
 /**
  * La lista misma, tras `cargarAgenda` (OL-161, bitácora 196): `use(agenda)` la desenvuelve y, mientras está
- * pendiente, suspende. Los filtros, la búsqueda y cuántos van mostrados llegan como prop desde `AgendaInicio` (que sigue
+ * pendiente, suspende. Los filtros y cuántos van mostrados llegan como prop desde `AgendaInicio` (que sigue
  * siendo su dueño, para la memoria de pantalla): esta lista los usa, no los guarda.
  */
 function AgendaLista({
   agenda,
   filtros,
-  busqueda,
   ciudad,
   avisos,
   mostrados,
@@ -128,7 +111,6 @@ function AgendaLista({
 }: {
   agenda: Promise<Agenda>;
   filtros: FiltrosAgenda;
-  busqueda: string;
   ciudad: Ciudad;
   avisos: AvisosLista | null;
   mostrados: number;
@@ -140,10 +122,9 @@ function AgendaLista({
   const canal = useCanalDeListas();
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
 
-  const lista = listarAgenda(datos, filtros, busqueda, ahora);
-  const hayBusqueda = busqueda.trim().length > 0;
+  const lista = listarAgenda(datos, filtros, ahora);
 
-  // Carga progresiva de la lista agrupada por día (OL-158): el total cambia con los filtros, la búsqueda o la ciudad;
+  // Carga progresiva de la lista agrupada por día (OL-158): el total cambia con los filtros o la ciudad;
   // cuando cambia, la tanda se acota de nuevo (nunca menos que la primera, nunca más que lo que hay) en vez de quedarse
   // con un número que ya no aplica.
   const total = lista.length;
@@ -171,9 +152,8 @@ function AgendaLista({
       return <Vacio titulo="Siguiendo" texto="Todavía no sigues ningún lugar ni artista. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
     }
     if (total === 0) {
-      // Vacío por causa: dice qué se buscó o qué se puso, y la salida.
+      // Vacío por causa: dice qué se puso, y la salida.
       const conFiltros = !!filtros.cuando || filtros.cuanto.length > 0 || filtros.siguiendo;
-      if (hayBusqueda) return <Vacio titulo="Buscar" texto={`Nada con «${busqueda.trim()}»${conFiltros ? " con lo que elegiste" : ""}.${conFiltros ? " Quita algún filtro para buscar en más." : ""}`} />;
       return (
         <Vacio
           titulo={filtros.cuando ? "En esas fechas" : filtros.siguiendo ? "Siguiendo" : "Próximos días"}

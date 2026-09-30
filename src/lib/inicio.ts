@@ -7,8 +7,7 @@ import { enOrden } from "./destacados";
  * Inicio: seis carriles (docs/rediseno/41, tercera vuelta OL-219, bitácora 246/248; doc 50, P5, quitó «Cerca de ti»,
  * «Populares» y «Artistas con eventos»: el prototipo firmado trae esos seis). Aquí solo lo que se puede probar sin
  * base de datos ni navegador: la ventana de "esta semana", el peso de "Tus planes" y del carril estelar, el orden de
- * Nuevos eventos (con su criterio nuevo, que ya no compite con "Esta semana"), que no se repita un evento entre carriles
- * y en qué orden salen los grupos del buscador único según la sección.
+ * Nuevos eventos (con su criterio nuevo, que ya no compite con "Esta semana") y que no se repita un evento entre carriles.
  */
 
 /** "Esta semana" = próximos 7 días desde ahora (decisión del founder, segunda vuelta de doc 41): no es la semana de
@@ -131,24 +130,4 @@ export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date())
   const estaSemana = carrilEstaSemana(agenda.eventos, vistos, ahora);
   const nuevos = carrilNuevos(agenda.eventos, vistos, ahora);
   return { titulo: tituloEstelar(hayFavoritos), estelar, estaSemana, nuevos };
-}
-
-export type SeccionBuscador = "inicio" | "agenda" | "lugares" | "artistas";
-export type GrupoBuscador = "eventos" | "lugares" | "artistas";
-
-/**
- * El buscador único agrupa por tipo; qué grupo va primero lo manda la sección donde está la persona (doc 41, "El
- * buscador único"; L28: "que organice los resultados según la sección en la que está el usuario"). Desde Inicio o
- * Agenda, qué pasa antes que dónde y quién.
- */
-export function ordenBusqueda(seccion: SeccionBuscador): GrupoBuscador[] {
-  if (seccion === "lugares") return ["lugares", "eventos", "artistas"];
-  if (seccion === "artistas") return ["artistas", "eventos", "lugares"];
-  return ["eventos", "lugares", "artistas"];
-}
-
-/** Cuántos resultados por grupo: la sección donde ya está la persona se ve con más (doc 41: "5 en vez de 3"). */
-export function limiteBusqueda(seccion: SeccionBuscador, grupo: GrupoBuscador): number {
-  const propia: Partial<Record<SeccionBuscador, GrupoBuscador>> = { agenda: "eventos", lugares: "lugares", artistas: "artistas" };
-  return propia[seccion] === grupo ? 5 : 3;
 }

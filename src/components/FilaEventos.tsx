@@ -27,8 +27,6 @@ type Props = {
   agenda: Promise<Agenda>;
   /** Lo que hay puesto ahora: en Agenda, sus filtros; en Inicio, nada (Inicio son carriles y no se filtra). */
   valor: FiltrosAgenda;
-  /** Lo que se busca con la lupa: el número de eventos de cada botón también lo respeta. */
-  busqueda?: string;
   /** Al aplicar una hoja o quitar un filtro puesto: Agenda lo guarda; Inicio lleva a Agenda con eso puesto. */
   onCambiar: (valor: FiltrosAgenda) => void;
 };
@@ -41,7 +39,7 @@ const cuantosEventos = (n: number | null) => (n === null ? "Ver eventos" : n ===
  * después cada filtro puesto con su ✕. Cada hoja arma su elección aparte y solo la aplica el botón que dice cuántos
  * eventos da; cerrar con la ✕ o tocando fuera no cambia nada.
  */
-export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona, agenda, valor, busqueda = "", onCambiar }: Props) {
+export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona, agenda, valor, onCambiar }: Props) {
   const [hoja, setHoja] = useState<"cuando" | "filtros" | null>(null);
   const disparador = useRef<HTMLElement | null>(null);
   const cargada = useResuelta(agenda);
@@ -73,25 +71,25 @@ export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona,
         <ChipQuitar key={clave} texto={CUANTOS.find((c) => c.clave === clave)?.etiqueta ?? clave} onClick={() => quitarCuanto(clave)} />
       ))}
       {valor.siguiendo && <ChipQuitar texto="Solo lo que sigo" onClick={() => onCambiar({ ...valor, siguiendo: false })} />}
-      {hoja === "cuando" && <HojaCuando valor={valor} hoy={hoy} zona={zona} agenda={cargada} busqueda={busqueda} onAplicar={aplicar} onCerrar={cerrar} />}
-      {hoja === "filtros" && <HojaDeFiltros valor={valor} agenda={cargada} busqueda={busqueda} onAplicar={aplicar} onCerrar={cerrar} />}
+      {hoja === "cuando" && <HojaCuando valor={valor} hoy={hoy} zona={zona} agenda={cargada} onAplicar={aplicar} onCerrar={cerrar} />}
+      {hoja === "filtros" && <HojaDeFiltros valor={valor} agenda={cargada} onAplicar={aplicar} onCerrar={cerrar} />}
     </>
   );
 }
 
-type PropsHoja = { valor: FiltrosAgenda; agenda: Agenda | null; busqueda: string; onAplicar: (valor: FiltrosAgenda) => void; onCerrar: () => void };
+type PropsHoja = { valor: FiltrosAgenda; agenda: Agenda | null; onAplicar: (valor: FiltrosAgenda) => void; onCerrar: () => void };
 
 /**
  * Cuándo: los atajos (Hoy, Mañana, Fin de semana, Esta semana), «Elegir fecha…» —que abre el calendario dentro de la
  * misma hoja, con un punto en los días con eventos, un día con un toque y un rango con dos— y «Todos los próximos».
  */
-function HojaCuando({ valor, hoy, zona, agenda, busqueda, onAplicar, onCerrar }: PropsHoja & { hoy: string; zona: string }) {
+function HojaCuando({ valor, hoy, zona, agenda, onAplicar, onCerrar }: PropsHoja & { hoy: string; zona: string }) {
   const atajos = atajosCuando(hoy);
   const [borrador, setBorrador] = useState<Cuando | null>(valor.cuando);
   // El calendario se ve mientras se elige con él: al abrir con un valor que no es un atajo, ya viene abierto.
   const [eligiendo, setEligiendo] = useState(() => !!valor.cuando && !atajos.some((a) => mismoCuando(a.cuando, valor.cuando)));
   const dias = useMemo(() => (agenda ? diasActivosCalendario(agenda.eventos) : undefined), [agenda]);
-  const n = agenda ? listarAgenda(agenda, { ...valor, cuando: borrador }, busqueda, new Date()).length : null;
+  const n = agenda ? listarAgenda(agenda, { ...valor, cuando: borrador }, new Date()).length : null;
   const elegir = (cuando: Cuando | null) => {
     setBorrador(cuando);
     setEligiendo(false);
@@ -124,9 +122,9 @@ function HojaCuando({ valor, hoy, zona, agenda, busqueda, onAplicar, onCerrar }:
 }
 
 /** Filtros: cuánto cuesta (uno, otro o los dos) y si solo lo que sigue la persona. */
-function HojaDeFiltros({ valor, agenda, busqueda, onAplicar, onCerrar }: PropsHoja) {
+function HojaDeFiltros({ valor, agenda, onAplicar, onCerrar }: PropsHoja) {
   const [borrador, setBorrador] = useState({ cuanto: valor.cuanto, siguiendo: valor.siguiendo });
-  const n = agenda ? listarAgenda(agenda, { ...valor, ...borrador }, busqueda, new Date()).length : null;
+  const n = agenda ? listarAgenda(agenda, { ...valor, ...borrador }, new Date()).length : null;
   const alternar = (clave: Cuanto) => setBorrador((b) => ({ ...b, cuanto: b.cuanto.includes(clave) ? b.cuanto.filter((c) => c !== clave) : [...b.cuanto, clave] }));
 
   return (

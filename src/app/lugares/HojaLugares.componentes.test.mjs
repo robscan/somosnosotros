@@ -1,8 +1,9 @@
 /** Prueba de componente de `HojaLugares` y `FichaHoja` (docs/rediseno/50, P5b), con sus estilos y en Chrome real a 390×844: las alturas de la lista
  *  (recogida = la franja de 64, asoma = dos renglones y medio, llena = la pantalla y la navegación se va), que jalar hacia abajo recoge y
  *  nunca cierra, que el mapa recibe los toques del hueco y la hoja los del cuerpo, y la ficha: abre a foto y datos, la ✕ la cierra y la
- *  lista vuelve al desplazamiento que tenía, y su cabecera se vuelve compacta al desplazar. Y (docs/rediseno/50, P6) la pastilla flotante de
- *  Seguir: sobre la navegación mientras la hoja asoma, al pie cuando está llena, escondida recogida; y el aviso sube sobre ella.
+ *  lista vuelve al desplazamiento que tenía, y su cabecera se vuelve compacta al desplazar. Y (docs/rediseno/50, P6 y OL-237) la pastilla de
+ *  Seguir: en el héroe, junto al menú «···», mientras la portada se ve; al compactarse la cabecera flota abajo (al pie cuando está llena),
+ *  escondida recogida; y el aviso sube sobre ella.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -205,10 +206,10 @@ test("la ficha abre a foto y datos, la ✕ la cierra y la lista vuelve a donde e
   const media = await estado(page);
   assert.equal(media.ficha, true);
   assert.equal(media.hoja, "media");
-  // Foto y datos con 80 px de lo que sigue: lo que se ve es el borde de abajo del primer bloque + 80.
+  // Foto y datos, hasta donde empieza lo que sigue: lo que se ve es el borde de arriba del segundo bloque de la ficha.
   const esperada = await page.evaluate(() => {
     const c = document.querySelector('[role="region"][aria-label="Lugares"]').firstElementChild;
-    return Math.round(document.querySelector("[data-datos]").getBoundingClientRect().bottom - c.getBoundingClientRect().top + 80);
+    return Math.round(document.querySelector("[data-cuerpo] > :nth-child(2)").getBoundingClientRect().top - c.getBoundingClientRect().top);
   });
   cerca(media.visible, esperada, 3);
   assert.equal(media.compacta, false);
@@ -235,22 +236,57 @@ test("la ficha abre a foto y datos, la ✕ la cierra y la lista vuelve a donde e
   assert.deepEqual(page.errores, []);
 });
 
-test("la pastilla de Seguir flota sobre la navegación mientras la hoja asoma, va al pie cuando está llena y se esconde recogida", async () => {
+/** Dónde están la pastilla de Seguir y el menú «···» de la ficha: sus cajas y lo que hay entre la pastilla y el pie de la ventana. */
+const dondeEstaLaPastilla = (page) =>
+  page.evaluate(() => {
+    const r = (e) => e.getBoundingClientRect();
+    const p = r(document.querySelector("[data-flotantes] button"));
+    const m = r(document.querySelector("[data-ficha-hoja] header button[aria-haspopup]"));
+    return { centroP: p.top + p.height / 2, centroM: m.top + m.height / 2, hueco: m.left - p.right, alto: p.height, abajo: innerHeight - p.bottom };
+  });
+
+test("la pastilla de Seguir vive en el héroe junto al menú «···» mientras la portada se ve; compacta, flota al pie y recogida se esconde", async () => {
   const page = await abrir();
   await page.getByRole("link", { name: "Renglón 2", exact: true }).evaluate((a) => a.click());
   await page.waitForTimeout(900);
-  const pastilla = page.getByRole("button", { name: "Seguir" });
-  const holguraAbajo = async () => page.evaluate(() => innerHeight - document.querySelector("[data-flotantes]").getBoundingClientRect().bottom);
   assert.equal((await estado(page)).hoja, "media");
-  cerca(await holguraAbajo(), 60 + 16, 1); // la navegación (60) y 16 de aire
-  const caja = await pastilla.boundingBox();
-  assert.equal(Math.round(caja.height), 48, "la pastilla mide lo de un toque");
+  assert.equal((await estado(page)).compacta, false);
+  const enElHeroe = await dondeEstaLaPastilla(page);
+  cerca(enElHeroe.centroP, enElHeroe.centroM, 1); // en la fila del menú
+  cerca(enElHeroe.hueco, 8, 1); // pegada a su izquierda
+  assert.equal(Math.round(enElHeroe.alto), 48, "la pastilla mide lo de un toque");
   await rueda(page, 3000);
-  assert.equal((await estado(page)).hoja, "llena");
-  cerca(await holguraAbajo(), 16, 1); // llena, la navegación se guarda y la pastilla baja al pie
+  const llena = await estado(page);
+  assert.equal(llena.hoja, "llena");
+  assert.equal(llena.compacta, true);
+  cerca((await dondeEstaLaPastilla(page)).abajo, 16, 1); // compacta y llena, la navegación se guarda y la pastilla baja al pie
   await rueda(page, -3000);
   assert.equal((await estado(page)).hoja, "recogida");
   assert.equal(await page.locator("[data-flotantes]").evaluate((e) => getComputedStyle(e).visibility), "hidden", "recogida, la pastilla no se ve");
+  assert.deepEqual(page.errores, []);
+});
+
+test("la pastilla cambia de sitio justo cuando la cabecera se compacta, sin un cuadro de por medio", async () => {
+  const page = await abrir();
+  await page.getByRole("link", { name: "Renglón 2", exact: true }).evaluate((a) => a.click());
+  await page.waitForTimeout(900);
+  await rueda(page, 300); // llena, con la portada todavía a la vista
+  const visto = { arriba: 0, abajo: 0 };
+  // De poco en poco, hasta que se compacte: en cada paso la pastilla está donde dice la cabecera (en el héroe o al pie).
+  for (let paso = 0; paso < 40 && visto.abajo < 2; paso++) {
+    await page.mouse.wheel(0, 60);
+    await page.waitForTimeout(250);
+    const { compacta } = await estado(page);
+    const p = await dondeEstaLaPastilla(page);
+    if (compacta) {
+      visto.abajo++;
+      cerca(p.abajo, 16, 1);
+    } else {
+      visto.arriba++;
+      cerca(p.centroP, p.centroM, 1);
+    }
+  }
+  assert.ok(visto.arriba > 0 && visto.abajo > 0, `se vieron los dos lados: ${JSON.stringify(visto)}`);
   assert.deepEqual(page.errores, []);
 });
 
@@ -267,12 +303,12 @@ test("Seguir en la ficha de la hoja: «Sigues» en verde, tocarlo otra vez deja 
   await pastilla("Sigues").click();
   await pastilla("Seguir").waitFor();
   assert.deepEqual(await page.evaluate(() => window.qa.acciones), [true, false]);
-  // Un guardado que falla: el aviso «No se pudo guardar» sube sobre la pastilla, no la tapa.
+  // Un guardado que falla: el aviso «No se pudo guardar» sale sin tapar la pastilla (con la portada a la vista, ella va arriba y el aviso abajo).
   await page.evaluate(() => (window.qa.fallar = true));
   await pastilla("Seguir").click();
   await page.getByText("No se pudo guardar").waitFor();
-  const { aviso, flotante } = await page.evaluate(() => ({ aviso: document.querySelector('[role="alert"]').getBoundingClientRect().bottom, flotante: document.querySelector("[data-flotantes]").getBoundingClientRect().top }));
-  assert.ok(aviso <= flotante, `el aviso termina en ${aviso} y la pastilla empieza en ${flotante}`);
+  const { aviso, flotante } = await page.evaluate(() => ({ aviso: document.querySelector('[role="alert"]').getBoundingClientRect(), flotante: document.querySelector("[data-flotantes] button").getBoundingClientRect() }));
+  assert.ok(aviso.bottom <= flotante.top || aviso.top >= flotante.bottom, `el aviso (${aviso.top}-${aviso.bottom}) no cubre la pastilla (${flotante.top}-${flotante.bottom})`);
   assert.deepEqual(page.errores, []);
 });
 

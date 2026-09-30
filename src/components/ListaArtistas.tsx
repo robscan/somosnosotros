@@ -3,9 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import ChipCiudad from "@/components/Ciudad";
-import Buscador from "@/components/ui/Buscador";
 import { ChipContexto, ChipEnlace, ChipQuitar, Chips, Cuenta } from "@/components/ui/Chip";
-import { etiquetaDisciplina, hrefArtistas, UMBRAL_BUSCAR_ARTISTAS, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
+import { etiquetaDisciplina, hrefArtistas, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
 import { agruparPorLetra, idGrupo } from "@/lib/indice";
 import RenglonArtista from "./RenglonArtista";
@@ -53,8 +52,8 @@ type Props = {
 /**
  * Lista de artistas: renglones como los de Lugares (foto redonda, nombre, qué hace, próxima fecha y dónde), en un grupo por
  * letra con su título pegado (`ui/Grupo`). En ui/Cabecera: la fila de contexto —ciudad, Filtros y, después, lo que hay
- * puesto con su ✕— y la tira de letras. La lupa de la barra aparece a partir de 8 artistas y Filtros a partir de 12
- * (decisiones 1 y 2, OL-087); su hoja trae las disciplinas y, dentro de una con muchos artistas, un segundo bloque por
+ * puesto con su ✕— y la tira de letras. Filtros aparece a partir de 12 artistas (decisión 2, OL-087); buscar es la lupa de
+ * la barra de la app (`app/buscar`); la hoja de Filtros trae las disciplinas y, dentro de una con muchos artistas, un segundo bloque por
  * detalle (género, técnica). Una tira de letras lleva a cada grupo, sin filtrar ni seleccionar nada (corrección del founder,
  * 2026-09-19): si la letra no está cargada, pide con `n` lo justo para que lo esté. El filtro vive en la URL y lo aplica el
  * servidor: la página trae `pagina` artistas y "Ver más" pide otros tantos.
@@ -85,8 +84,6 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
   const pendiente = useRef<string | null>(null);
   const tiraRef = useRef<HTMLDivElement>(null);
   const letraActiva = useLetraActiva(letras, tiraRef, !filtro.q && letras.length > 0);
-  // La lupa abre el campo en el renglón de la ciudad; con algo buscado en la URL, ya viene abierto.
-  const [buscando, setBuscando] = useState(!!filtro.q);
   const [filtrando, setFiltrando] = useState(false);
   useEffect(() => {
     const letra = pendiente.current;
@@ -129,8 +126,6 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
           {filtro.que && queHacen && <ChipQuitar texto={queHacen} onClick={() => irA(hrefSin("que"))} />}
         </>
       }
-      onBuscar={totalCiudad >= UMBRAL_BUSCAR_ARTISTAS ? () => setBuscando(true) : undefined}
-      campo={buscando && <Buscador valor={filtro.q ?? ""} placeholder="Buscar un artista" ariaLabel="Buscar un artista por nombre" autoFocus onCerrar={() => setBuscando(false)} />}
     >
       {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
     </Cabecera>

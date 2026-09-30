@@ -14,7 +14,7 @@ import { tarjetaArtista } from "@/lib/destacados";
 import { diaLocal } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
-type SearchParams = { ciudad?: string; buscar?: string };
+type SearchParams = { ciudad?: string };
 
 /**
  * La app abre siempre en Inicio (OL-156, segunda vuelta): esta pantalla es la raíz del dominio. Título propio y
@@ -44,7 +44,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  * pantalla nunca vuelve a aparecer para esta ruta.
  */
 export default async function InicioPagina({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { ciudad: slug, buscar } = await searchParams;
+  const { ciudad: slug } = await searchParams;
   const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
   const usuarioId = actual?.perfil.id ?? null;
@@ -79,8 +79,6 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         hoy={diaLocal(ahora, ciudad.zona)}
         zona={ciudad.zona}
         agenda={agendaPromise}
-        // La lupa de la barra, desde una pantalla sin búsqueda propia (Perfil, una ficha), llega aquí con la búsqueda ya abierta.
-        buscarAlAbrir={buscar === "1"}
         conSesion={!!actual}
         // Sin sesión, ni se construye: pasar el elemento igual lo haría ejecutarse (RSC renderiza cualquier hijo de
         // servidor que cruce a un componente de cliente, aunque ese cliente decida no montarlo) y filtraría "Tus

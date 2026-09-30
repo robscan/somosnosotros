@@ -2,7 +2,7 @@ import { useSyncExternalStore, type ReactNode } from "react";
 
 /**
  * Lo que la pantalla que se ve le presta a la barra de la app, que vive en el layout y no la conoce: qué hace su
- * lupa (la búsqueda de la pantalla), a dónde vuelve su Atrás y su menú «···». La pantalla lo presta al montarse
+ * lupa (Buscar, que ya está abierta, enfoca su campo), a dónde vuelve su Atrás y su menú «···». La pantalla lo presta al montarse
  * (`prestarALaBarra` devuelve cómo devolverlo) y la barra lo lee; sin nadie que preste, la barra usa lo suyo.
  */
 export type Prestado = {

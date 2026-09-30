@@ -44,6 +44,14 @@ export function guardarMemoria<T>(clave: string, memoria: Memoria<T>, almacen: A
   } catch {}
 }
 
+/** Olvida lo guardado para esa URL: una pantalla que se abre de nuevo (Buscar, desde la lupa) empieza vacía. */
+export function borrarMemoria(clave: string, almacen: Almacen | null = almacenDelNavegador()): void {
+  if (!almacen) return;
+  try {
+    almacen.removeItem(PREFIJO + clave);
+  } catch {}
+}
+
 /** El scroll guardado para esa URL, o null. */
 export function leerScroll(clave: string, almacen: Almacen | null = almacenDelNavegador()): number | null {
   if (!almacen) return null;

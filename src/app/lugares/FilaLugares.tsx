@@ -8,7 +8,7 @@ import { IconoCampana, IconoFiltros } from "@/components/ui/Iconos";
 import Palanca from "@/components/ui/Palanca";
 import renglon from "@/components/ui/Renglon.module.css";
 import type { Ciudad, CiudadConDatos } from "@/lib/ciudad";
-import { CON_EVENTOS, eleccionesPuestas, etiquetaTipo, filtrarLugares, filtrarPorEleccion, SIN_ELECCION, tiposPresentes, UMBRAL_CHIPS_LUGARES, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { CON_EVENTOS, eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, SIN_ELECCION, tiposPresentes, UMBRAL_CHIPS_LUGARES, type EleccionLugares, type LugarLista } from "@/lib/lugares";
 
 type Props = {
   ciudad: Ciudad;
@@ -20,8 +20,6 @@ type Props = {
   hoy: string;
   /** Los lugares que sigue la persona (null sin sesión o mientras llegan): solo se necesitan para «Solo lo que sigo». */
   seguidos: string[] | null;
-  /** Lo que se busca con la lupa: el número de lugares del botón también lo respeta. */
-  busqueda: string;
   valor: EleccionLugares;
   /** Al aplicar la hoja o quitar un filtro puesto. */
   onCambiar: (valor: EleccionLugares) => void;
@@ -35,7 +33,7 @@ const cuantosLugares = (n: number) => (n === 0 ? "Sin lugares" : n === 1 ? "Ver 
  * Cuándo: «Con eventos» (hoy o esta semana) vive dentro de Filtros. Con pocos lugares, filtrar no sirve y no hay Filtros. La hoja
  * arma su elección aparte y solo la aplica el botón, que dice cuántos lugares da; cerrar con la ✕ o tocando fuera no cambia nada.
  */
-export default function FilaLugares({ ciudad, ciudades, hrefDeCiudad, lugares, hoy, seguidos, busqueda, valor, onCambiar }: Props) {
+export default function FilaLugares({ ciudad, ciudades, hrefDeCiudad, lugares, hoy, seguidos, valor, onCambiar }: Props) {
   const [abierta, setAbierta] = useState(false);
   const conFiltros = lugares.length >= UMBRAL_CHIPS_LUGARES;
 
@@ -56,7 +54,6 @@ export default function FilaLugares({ ciudad, ciudades, hrefDeCiudad, lugares, h
           lugares={lugares}
           hoy={hoy}
           seguidos={seguidos}
-          busqueda={busqueda}
           onAplicar={(v) => {
             setAbierta(false);
             onCambiar(v);
@@ -69,10 +66,10 @@ export default function FilaLugares({ ciudad, ciudades, hrefDeCiudad, lugares, h
 }
 
 /** Filtros: qué tipo de lugar, con eventos hoy o esta semana, y si solo lo que sigue la persona. */
-function HojaDeFiltros({ valor, lugares, hoy, seguidos, busqueda, onAplicar, onCerrar }: Pick<Props, "valor" | "lugares" | "hoy" | "seguidos" | "busqueda"> & { onAplicar: (valor: EleccionLugares) => void; onCerrar: () => void }) {
+function HojaDeFiltros({ valor, lugares, hoy, seguidos, onAplicar, onCerrar }: Pick<Props, "valor" | "lugares" | "hoy" | "seguidos"> & { onAplicar: (valor: EleccionLugares) => void; onCerrar: () => void }) {
   const [borrador, setBorrador] = useState(valor);
   const tipos = tiposPresentes(lugares);
-  const n = filtrarLugares(filtrarPorEleccion(lugares, borrador, seguidos, hoy), busqueda).length;
+  const n = filtrarPorEleccion(lugares, borrador, seguidos, hoy).length;
 
   return (
     <HojaFiltros titulo="Filtros" resultado={cuantosLugares(n)} sinResultados={n === 0} onLimpiar={() => setBorrador(SIN_ELECCION)} onVer={() => onAplicar(borrador)} onCerrar={onCerrar}>

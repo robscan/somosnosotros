@@ -7,9 +7,7 @@ import {
   carrilNuevos,
   carrilTusPlanes,
   eventosEstaSemana,
-  limiteBusqueda,
   MINIMO_NUEVOS,
-  ordenBusqueda,
   sinRepetidos,
   TOPE_ESTA_SEMANA,
   TOPE_ESTELAR,
@@ -239,27 +237,5 @@ describe("Inicio: los carriles de una sola agenda (estelar, esta semana, nuevos)
     expect(carrilTusPlanes([enTusPlanes], []).map((e) => e.id)).toEqual(["en-tus-planes"]);
     const r = calcularCarrilesAgenda(agenda({ eventos: [enTusPlanes], seguidos: ["lugar-1"] }), ahora);
     expect(r.estelar.map((e) => e.id)).toEqual(["en-tus-planes"]);
-  });
-});
-
-describe("Inicio: buscador único, orden de grupos", () => {
-  it("desde Inicio o Agenda: eventos, lugares, artistas", () => {
-    expect(ordenBusqueda("inicio")).toEqual(["eventos", "lugares", "artistas"]);
-    expect(ordenBusqueda("agenda")).toEqual(["eventos", "lugares", "artistas"]);
-  });
-  it("desde Lugares: lugares primero", () => expect(ordenBusqueda("lugares")).toEqual(["lugares", "eventos", "artistas"]));
-  it("desde Artistas: artistas primero", () => expect(ordenBusqueda("artistas")).toEqual(["artistas", "eventos", "lugares"]));
-});
-
-describe("Inicio: buscador único, cuántos por grupo", () => {
-  it("la sección propia trae más (5) que las otras (3)", () => {
-    expect(limiteBusqueda("lugares", "lugares")).toBe(5);
-    expect(limiteBusqueda("lugares", "eventos")).toBe(3);
-    expect(limiteBusqueda("lugares", "artistas")).toBe(3);
-  });
-  it("desde Inicio, sin sección propia, las tres van con el mismo tope corto", () => {
-    expect(limiteBusqueda("inicio", "eventos")).toBe(3);
-    expect(limiteBusqueda("inicio", "lugares")).toBe(3);
-    expect(limiteBusqueda("inicio", "artistas")).toBe(3);
   });
 });

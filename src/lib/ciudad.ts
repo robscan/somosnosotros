@@ -115,6 +115,12 @@ export function ciudadMasCercana<T extends Ciudad>(punto: Punto, ciudades: reado
   return ciudades.reduce((cerca, c) => (distanciaKm(punto, { lat: c.centro.lat, lng: c.centro.lng }) < distanciaKm(punto, { lat: cerca.centro.lat, lng: cerca.centro.lng }) ? c : cerca), ciudades[0] ?? (CIUDAD_INICIAL as T));
 }
 
+/** Los nombres de las ciudades en el orden de su cercanía a `actual` (la propia, primero): así se ordena lo encontrado (`ordenarPorCiudad`). */
+export function ciudadesPorCercania(actual: Ciudad, ciudades: readonly Ciudad[]): string[] {
+  const distancia = (c: Ciudad) => distanciaKm({ lat: actual.centro.lat, lng: actual.centro.lng }, { lat: c.centro.lat, lng: c.centro.lng });
+  return [actual.nombre, ...ciudades.filter((c) => c.nombre !== actual.nombre).toSorted((a, b) => distancia(a) - distancia(b)).map((c) => c.nombre)];
+}
+
 export function ciudadPorNombre<T extends Ciudad>(nombre: string | null | undefined, ciudades: readonly T[] = CIUDADES as readonly T[]): T {
   const canon = ciudadCanonica(nombre);
   return ciudades.find((c) => c.nombre === canon) ?? ciudades.find((c) => c.slug === CIUDAD_INICIAL.slug) ?? (CIUDAD_INICIAL as T);

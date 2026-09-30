@@ -41,17 +41,14 @@ before(async () => {
       import NavSecciones from './src/components/NavSecciones';
       import EnBarra from './src/components/EnBarra';
       import Barra from './src/components/ui/Barra';
-      import Boton from './src/components/ui/Boton';
       import Cabecera from './src/components/ui/Cabecera';
       import Hecho from './src/components/Hecho';
       import BotonIcono from './src/components/ui/BotonIcono';
       import {IconoCampana, IconoHerramientas, IconoPuntos} from './src/components/ui/Iconos';
       import {usePathname} from 'next/navigation';
-      import sesionStyles from './src/components/Sesion.module.css';
       import './src/app/globals.css';
-      // Lo que la sesión pone en la barra (Sesion.tsx), a elegir con ?sesion=: la campana, «Entrar» o la campana con la llave de administración.
+      // Lo que la sesión pone en la barra (Sesion.tsx), a elegir con ?sesion=: la campana, nada (sin sesión) o la campana con la llave de administración.
       const campana = <BotonIcono href="/novedades" aria-label="Novedades"><IconoCampana width={26} height={26} /></BotonIcono>;
-      const entrar = <Boton href="/entrar" forma="pildora" alto="control" ancho="contenido" className={sesionStyles.entrar}>Entrar</Boton>;
       const llave = <BotonIcono href="/admin" aria-label="Administración"><IconoHerramientas width={26} height={26} /></BotonIcono>;
       const menu = <BotonIcono aria-label="Más acciones"><IconoPuntos /></BotonIcono>;
       const sesion = new URLSearchParams(location.search).get('sesion');
@@ -61,11 +58,11 @@ before(async () => {
       }
       function App() {
         return (
-          <Armazon barra={<BarraApp admin={sesion === 'admin' ? llave : null} sesion={sesion === 'entrar' ? entrar : campana} />} nav={<NavSecciones perfil={<span>A</span>} />}>
+          <Armazon barra={<BarraApp admin={sesion === 'admin' ? llave : null} sesion={sesion === 'sin-sesion' ? null : campana} />} nav={<NavSecciones perfil={<span>A</span>} />}>
             <Tarea />
             <main className="raiz">
               <EnBarra volver={{ href: '/agenda', texto: 'Agenda' }} menu={menu} />
-              <Cabecera contexto={<span style={{ height: 44 }}>chip</span>} onBuscar={() => {}} />
+              <Cabecera contexto={<span style={{ height: 44 }}>chip</span>} />
               <div data-gutter style={{ margin: '0 var(--gutter)', height: 10 }} />
               {new URLSearchParams(location.search).get('hecho') && <Hecho texto="Te interesa «Concierto»" onDeshacer={() => {}} onCerrar={() => {}} />}
               <ul style={{ listStyle: 'none' }}>{Array.from({ length: 60 }, (_, i) => <li key={i} style={{ height: 80 }}>fila {i}</li>)}</ul>
@@ -198,9 +195,9 @@ test("la barra: cada botón de la barra y de la navegación se toca en 44×44 co
   for (const m of medidas) assert.ok(m.w >= 44 && m.h >= 44, `${m.n}: ${m.w}×${m.h}`);
 });
 
-test("la barra: el logotipo queda en el centro exacto con sesión, sin ella (Entrar) y con la llave de administración, a 390 y a 320", async (t) => {
+test("la barra: el logotipo queda en el centro exacto con sesión, sin ella (ni «Entrar» ni campana) y con la llave de administración, a 390 y a 320", async (t) => {
   for (const ancho of [390, 320]) {
-    for (const sesion of ["campana", "entrar", "admin"]) {
+    for (const sesion of ["campana", "sin-sesion", "admin"]) {
       const p = await pagina(t, ancho, 844, `?sesion=${sesion}`);
       await ir(p, "/agenda");
       const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
@@ -209,10 +206,9 @@ test("la barra: el logotipo queda en el centro exacto con sesión, sin ella (Ent
       const cuando = `${ancho} · ${sesion}`;
       assert.ok(Math.abs(logo.x + logo.w / 2 - ancho / 2) <= 0.5, `${cuando}: centro del logotipo en ${logo.x + logo.w / 2}`);
       assert.ok(mas.x + mas.w <= logo.x + 1 && logo.x + logo.w <= lupa.x + 1, `${cuando}: el logotipo no pisa al «+» ni a la lupa`);
-      if (sesion === "entrar") {
-        const e = await caja(barra(p).locator("a[href='/entrar']"));
-        assert.ok(e.w >= 44 && e.h >= 44 && e.x >= lupa.x + lupa.w - 1, `${cuando}: «Entrar» ${e.w}×${e.h} junto a la lupa`);
-      }
+      // Sin sesión la celda queda vacía: la barra no ofrece «Entrar» (el acceso está en Perfil y al seguir o marcar «Voy»).
+      assert.equal(await barra(p).locator("a[href='/entrar']").count(), 0, `${cuando}: la barra no lleva «Entrar»`);
+      assert.equal(await barra(p).locator("a[aria-label^='Novedades']").count(), sesion === "sin-sesion" ? 0 : 1, `${cuando}: la campana solo con sesión`);
     }
   }
 });

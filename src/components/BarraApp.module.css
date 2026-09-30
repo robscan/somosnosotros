@@ -5,7 +5,7 @@
    queda en el centro exacto de la barra pase lo que pase en ellos: con o sin sesión, con o sin Atrás y menú, y también mientras
    la sesión llega del servidor. */
 .barra {
-  /* Lo que reserva cada lado: la lupa y «Entrar» (Sesion.module.css), lo más ancho que llega a haber junto al logotipo. */
+  /* Lo que reserva cada lado junto al logotipo: un botón de la barra y sitio para el siguiente (la campana, con sesión). */
   --flanco: calc(var(--control) + 3.5rem);
   grid-area: barra;
   position: sticky;

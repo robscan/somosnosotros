@@ -1,9 +1,10 @@
 /* ==========================================================================
    La ficha de un lugar dentro de la hoja de Lugares (docs/rediseno/50, P5b y P6). Es la rejilla de la ficha a pantalla completa
    (`ui/Ficha.module.css`: barra, héroe, cuerpo y pastilla flotante) con lo propio de estar en una hoja: fondo blanco, la barra con el
-   asa arriba y la ✕ (o Atrás, con la hoja llena), y la pastilla de Seguir que se pega sobre la navegación mientras la hoja asoma y al
-   pie cuando está llena. Lo que cambia con la altura de la hoja lo dice `data-hoja` (recogida · asoma · media · llena), que pone la
-   hoja; y `data-compacta`, en esta ficha, la barra con la portada oscurecida detrás del título.
+   asa arriba y la ✕ (o Atrás, con la hoja llena), y la pastilla de Seguir: en el héroe, junto al menú «···», mientras la portada se
+   ve; flotando abajo (sobre la navegación mientras la hoja asoma, al pie cuando está llena) cuando ya no. Lo que cambia con la
+   altura de la hoja lo dice `data-hoja` (recogida · asoma · media · llena), que pone la hoja; y `data-compacta`, en esta ficha, la
+   barra con la portada oscurecida detrás del título.
    ========================================================================== */
 @keyframes fundir {
   from {
@@ -73,8 +74,8 @@
   display: inline-grid;
 }
 
-/* La pastilla flotante: sobre la navegación mientras la hoja asoma, al pie cuando está llena (la navegación se guarda) y no se ve
-   recogida. En el panel no hay alturas ni navegación debajo de la ficha. */
+/* La pastilla flotante (con la cabecera compacta): sobre la navegación mientras la hoja asoma, al pie cuando está llena (la navegación
+   se guarda) y no se ve recogida. En el panel no hay alturas ni navegación debajo de la ficha. */
 :global([data-hoja]) .enHoja {
   --flotantes-abajo: calc(var(--nav-abajo) + var(--espacio-4));
 }
@@ -83,6 +84,26 @@
 }
 :global([data-hoja="recogida"]) .enHoja > [data-flotantes] {
   visibility: hidden;
+}
+
+/* Con la portada a la vista (la cabecera no es compacta: `data-compacta` lo pone la hoja) la pastilla vive en el héroe, arriba a la
+   derecha, en la fila del menú «···» y a su izquierda: ni tapa la fila de acciones (media altura) ni «Publica un evento aquí» (el
+   panel). Ocupa la franja de la barra —la misma celda, pegajosa y del mismo alto— y solo el botón recibe toques: el asa sigue
+   tocable por debajo. */
+.enHoja:not([data-compacta]) > [data-flotantes] {
+  grid-area: barra;
+  align-self: start;
+  justify-self: end;
+  top: 0;
+  bottom: auto;
+  align-items: flex-end;
+  height: var(--alto-barra-ficha);
+  margin: 0 calc(var(--gutter) + var(--boton-icono) + var(--espacio-2)) 0 0;
+  padding-bottom: var(--espacio-2);
+  pointer-events: none;
+}
+.enHoja:not([data-compacta]) > [data-flotantes] > * {
+  pointer-events: auto;
 }
 
 .fallo {

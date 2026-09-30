@@ -16,7 +16,7 @@ export type EventoAgenda = EventoResumen & {
   /** Cuántas personas dijeron "Voy". */
   van: number;
   lugar: (EventoResumen["lugar"] & { lat?: number; lng?: number }) | null;
-  /** Nombres de los artistas que se presentan (para el buscador). */
+  /** Nombres de los artistas que se presentan: solo los trae el buscador único (`app/accionesBuscar.ts`), que busca también por ellos. */
   artistas?: string[];
 };
 
@@ -235,8 +235,9 @@ export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: Context
 }
 
 /**
- * Buscador de la agenda (pedido del founder, 2026-09-15): por título, sitio o artista, escrito a medias,
- * sin importar acentos ni mayúsculas; cada palabra escrita tiene que estar ("jazz museo" halla el jazz del museo).
+ * Buscador de los eventos (pedido del founder, 2026-09-15; hoy lo usa el buscador único, `app/accionesBuscar.ts`): por título,
+ * sitio o artista, escrito a medias, sin importar acentos ni mayúsculas; cada palabra escrita tiene que estar («jazz museo» halla
+ * el jazz del museo).
  */
 export function buscarEventos<T extends Pick<EventoAgenda, "titulo" | "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado" | "artistas">>(eventos: T[], busqueda: string): T[] {
   const palabras = normalizarNombre(busqueda).split(" ").filter(Boolean);
@@ -248,10 +249,9 @@ export function buscarEventos<T extends Pick<EventoAgenda, "titulo" | "lugar" | 
 }
 
 /**
- * Lo que Agenda lista con esos filtros y esa búsqueda, en orden de agenda. La lista y el número de cada botón «Ver N eventos»
- * de las hojas de Cuándo y Filtros salen de aquí: lo que dice el botón es lo que se ve al tocarlo.
+ * Lo que Agenda lista con esos filtros, en orden de agenda. La lista y el número de cada botón «Ver N eventos» de las hojas de
+ * Cuándo y Filtros salen de aquí: lo que dice el botón es lo que se ve al tocarlo.
  */
-export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, busqueda: string, ahora: Date): EventoAgenda[] {
-  const { lista } = filtrarAgenda(agenda.eventos, { filtro: filtros.siguiendo ? "siguiendo" : "todos", punto: null, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto, ahora });
-  return buscarEventos(lista, busqueda);
+export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, ahora: Date): EventoAgenda[] {
+  return filtrarAgenda(agenda.eventos, { filtro: filtros.siguiendo ? "siguiendo" : "todos", punto: null, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto, ahora }).lista;
 }

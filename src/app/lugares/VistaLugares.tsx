@@ -11,14 +11,13 @@ import type { AvisosLista } from "@/components/useSeguirEnLista";
 import Aviso from "@/components/ui/Aviso";
 import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
-import { CampoBuscar } from "@/components/ui/Buscador";
 import Cabecera from "@/components/ui/Cabecera";
 import { EsqueletoCaja } from "@/components/ui/Esqueleto";
 import { IconoUbicacion } from "@/components/ui/Iconos";
 import comun from "@/components/Lista.module.css";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
-import { etiquetaTipo, filtrarLugares, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, UMBRAL_BUSCAR_LUGARES, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
@@ -57,8 +56,8 @@ type Props = {
   /** Tipo elegido, leído de la URL (`?tipo=`). */
   tipo: string | null;
   extras: Promise<ExtrasLugares>;
-  /** Con qué texto abrir la búsqueda ya escrita (el "Ver todos" del grupo Lugares del buscador único, OL-153). */
-  busquedaInicial?: string;
+  /** El lugar cuya ficha abre la hoja al llegar (`?lugar=`, el slug o el id): Buscar, desde Lugares, vuelve al mapa con él. */
+  fichaInicial?: string;
   /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan). */
   hoy: string;
   /** Pide al servidor las piezas de la ficha de un lugar (`fichaEnHoja.tsx`). La página la pasa como prop, y no se importa aquí, para
@@ -67,7 +66,7 @@ type Props = {
 };
 
 /** Lo que Lugares recuerda de la pantalla al salir de ella (a una ficha, a otra pestaña) y repone al volver. */
-type Memoria = { busqueda: string; conEventos: ConEventos | null; soloSigo: boolean; hoja: DondeEstaba & { ficha: string | null } };
+type Memoria = { conEventos: ConEventos | null; soloSigo: boolean; hoja: DondeEstaba & { ficha: string | null } };
 
 /** La dirección de Lugares con lo que vive en la URL: la ciudad (si no es la inicial) y el tipo. */
 function hrefLugares(ciudad: Ciudad, tipo: string | null): string {
@@ -86,36 +85,35 @@ function encuadreCercanosDe(lugares: LugarLista[], p: Punto): Punto[] {
 /**
  * Lugares: el mapa a toda la altura que deja la fila de contexto y, sobre él, la hoja con la lista de lugares y, al tocar un pin
  * o un renglón, la ficha del lugar dentro de la hoja (docs/rediseno/50, P5b; decisiones 31 a 36 y 58 del founder). La fila lleva la
- * ciudad y Filtros (tipo, con eventos, lo que sigo) y la lupa de la barra de la app busca por nombre en el mapa y en la lista.
- * «Mi ubicación» pide la ubicación al tocarla, no la guarda: centra en el punto azul y ordena la lista por cercanía. Decisiones
+ * ciudad y Filtros (tipo, con eventos, lo que sigo); buscar es la lupa de la barra de la app (`app/buscar`), que desde aquí vuelve
+ * con la ficha de un lugar ya abierta (`fichaInicial`). «Mi ubicación» pide la ubicación al tocarla, no la guarda: centra en el punto azul y ordena la lista por cercanía. Decisiones
  * en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/restructura-ui.html.
  */
-export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, busquedaInicial, hoy, abrirFicha }: Props) {
+export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, fichaInicial, hoy, abrirFicha }: Props) {
   const router = useRouter();
-  const [busqueda, setBusqueda] = useState(busquedaInicial ?? "");
-  const [buscando, setBuscando] = useState(!!busquedaInicial);
   const [conEventos, setConEventos] = useState<ConEventos | null>(null);
   const [soloSigo, setSoloSigo] = useState(false);
   const [punto, setPunto] = useState<Punto | null>(null);
   const [vez, setVez] = useState(0);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
   const [encuadre, setEncuadre] = useState<Encuadre | null>(null);
-  const [ficha, setFicha] = useState<FichaAbierta | null>(null);
+  // Con `fichaInicial` (Buscar, desde Lugares) la ficha ya está abierta desde el primer cuadro: la hoja sube a ella y el mapa se centra.
+  const [inicial] = useState(() => (fichaInicial ? lugares.find((l) => (l.slug || l.id) === fichaInicial) : undefined));
+  const [ficha, setFicha] = useState<FichaAbierta | null>(() => (inicial ? { lugar: inicial, piezas: null, deExtra: null } : null));
   /** Cómo quedó la hoja al asentarse (para la memoria de pantalla y para dejar libre al mapa lo que ella tapa). */
   const [hoja, setHoja] = useState<EstadoHoja>({ detente: "asoma", y: 0, cubre: 0 });
   const [restaurar, setRestaurar] = useState<DondeEstaba>();
   /** Lo que tenía el foco al abrir la ficha, para devolvérselo al cerrarla. */
   const disparador = useRef<HTMLElement | null>(null);
   /** El lugar al que la cámara va en cuanto la hoja diga cuánto tapa con la ficha abierta (la ficha abre más alta que la lista). */
-  const irAlLugar = useRef<LugarLista | null>(null);
+  const irAlLugar = useRef<LugarLista | null>(inicial ?? null);
   // Lo diferido ya llegado; con otra promesa (cambiar de tipo, un Seguir) se queda lo anterior hasta que llegue lo nuevo, sin que el
   // mapa y la hoja se vayan y vuelvan.
   const extra = useResuelta(extras);
   const seguidos = extra?.seguidos ?? null;
   const eleccion = useMemo<EleccionLugares>(() => ({ tipo, conEventos, soloSigo }), [tipo, conEventos, soloSigo]);
-  // Lo que dejan pasar los filtros y, además, la búsqueda: lo que enseñan el mapa y la lista.
-  const conFiltros = useMemo(() => filtrarPorEleccion(lugares, eleccion, seguidos, hoy), [lugares, eleccion, seguidos, hoy]);
-  const visibles = useMemo(() => filtrarLugares(conFiltros, busqueda), [conFiltros, busqueda]);
+  // Lo que dejan pasar los filtros: lo que enseñan el mapa y la lista.
+  const visibles = useMemo(() => filtrarPorEleccion(lugares, eleccion, seguidos, hoy), [lugares, eleccion, seguidos, hoy]);
   const abierta = ficha && lugares.some((l) => l.id === ficha.lugar.id) ? ficha : null;
   /** Pide las piezas de la ficha al servidor y, cuando llegan, las pone (si esa ficha sigue abierta). */
   const pedirPiezas = useCallback(
@@ -162,12 +160,6 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
     setSoloSigo(nueva.soloSigo);
     if (nueva.tipo !== tipo) router.replace(hrefLugares(ciudad, nueva.tipo), { scroll: false });
   }
-  /** La lupa: lo encontrado se ve en la lista y en el mapa, que se encuadra en ello. */
-  function buscar(texto: string) {
-    setBusqueda(texto);
-    const hallados = texto.trim() ? filtrarLugares(conFiltros, texto) : [];
-    if (hallados.length > 0) encuadrar(hallados);
-  }
   function pedirUbicacion() {
     setGeo("pidiendo");
     // Con una posición fresca guardada en el teléfono (de aquí o de la agenda) esto resuelve al momento, sin volver a llamar al
@@ -177,7 +169,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
         setPunto(p);
         setVez((v) => v + 1);
         setGeo("sin-pedir");
-        encuadrar(encuadreCercanosDe(conFiltros, p));
+        encuadrar(encuadreCercanosDe(visibles, p));
       },
       (error: unknown) => setGeo(error === "negado" ? "negado" : "error"),
     );
@@ -187,15 +179,13 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
   function centrarEnMi() {
     if (punto) {
       setVez((v) => v + 1);
-      encuadrar(encuadreCercanosDe(conFiltros, punto));
+      encuadrar(encuadreCercanosDe(visibles, punto));
     } else pedirUbicacion();
   }
   const notaGeo = geo === "negado" ? "No pudimos leer tu ubicación. Actívala para este sitio en los ajustes del teléfono." : geo === "error" ? "No pudimos leer tu ubicación." : null;
 
-  // Al volver de una ficha o de otra pestaña: los filtros, lo escrito, la ficha abierta y la hoja donde estaba (altura y desplazamiento).
-  useMemoriaPantalla<Memoria>("lugares", { busqueda, conEventos, soloSigo, hoja: { ficha: abierta?.lugar.slug || abierta?.lugar.id || null, detente: hoja.detente, y: hoja.y } }, (r) => {
-    if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
-    setBuscando(!!r.busqueda);
+  // Al volver de una ficha o de otra pestaña: los filtros, la ficha abierta y la hoja donde estaba (altura y desplazamiento).
+  useMemoriaPantalla<Memoria>("lugares", { conEventos, soloSigo, hoja: { ficha: abierta?.lugar.slug || abierta?.lugar.id || null, detente: hoja.detente, y: hoja.y } }, (r) => {
     setConEventos(r.conEventos === "hoy" || r.conEventos === "semana" ? r.conEventos : null);
     setSoloSigo(!!r.soloSigo);
     if (!r.hoja) return;
@@ -204,29 +194,22 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
     if (lugar) abrir(lugar);
   });
 
+  // Buscar, desde Lugares, llega con `?lugar=`: se piden las piezas de la ficha que ya está abierta y la URL suelta el parámetro (que no se
+  // reabra al volver a la sección). Solo al montar.
+  useEffect(() => {
+    if (!inicial) return;
+    pedirPiezas(inicial, null);
+    window.history.replaceState(null, "", hrefLugares(ciudad, tipo));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar
+  }, []);
+
   // El aviso de abajo y la pregunta de avisos son de la pantalla, no de la hoja: con un canal suyo, cerrar la ficha y abrir otra
   // empezaría de cero (OL-057, revisión de gestión de cambios).
   return (
     <PantallaConAviso>
       <main className={styles.lugares}>
         <Cabecera
-          contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} busqueda={busqueda} valor={eleccion} onCambiar={cambiar} />}
-          onBuscar={lugares.length >= UMBRAL_BUSCAR_LUGARES ? () => setBuscando(true) : undefined}
-          campo={
-            buscando && (
-              <CampoBuscar
-                placeholder="Buscar un lugar"
-                ariaLabel="Buscar un lugar por nombre"
-                valor={busqueda}
-                onCambiar={buscar}
-                onCerrar={() => {
-                  setBuscando(false);
-                  buscar("");
-                }}
-                autoFocus
-              />
-            )
-          }
+          contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} valor={eleccion} onCambiar={cambiar} />}
         />
         {/* El mapa y la hoja esperan una consulta aparte (quién sigue qué, destacados): mientras llega, un esqueleto del alto del mapa
             (OL-161, bitácora 196). */}
@@ -237,7 +220,6 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
             visibles={visibles}
             ciudad={ciudad}
             eleccion={eleccion}
-            busqueda={busqueda}
             punto={punto}
             vez={vez}
             encuadre={encuadre}
@@ -260,9 +242,8 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
   );
 }
 
-/** Por qué no hay ningún lugar que ver, cuando la ciudad sí tiene (la búsqueda o los filtros no dejan pasar ninguno). */
-function porQueNoHay(busqueda: string, { tipo, conEventos, soloSigo }: EleccionLugares): string {
-  if (busqueda.trim()) return "Ningún lugar se llama así. Si existe, regístralo.";
+/** Por qué no hay ningún lugar que ver, cuando la ciudad sí tiene (los filtros no dejan pasar ninguno). */
+function porQueNoHay({ tipo, conEventos, soloSigo }: EleccionLugares): string {
   if (conEventos) return `Ningún lugar tiene eventos ${conEventos === "hoy" ? "hoy" : "esta semana"}.`;
   if (soloSigo) return "Todavía no sigues ningún lugar.";
   if (tipo) return `Todavía no hay lugares de tipo ${etiquetaTipo(tipo).toLowerCase()}.`;
@@ -275,7 +256,6 @@ type PropsCuerpo = {
   visibles: LugarLista[];
   ciudad: Ciudad;
   eleccion: EleccionLugares;
-  busqueda: string;
   punto: Punto | null;
   vez: number;
   encuadre: Encuadre | null;
@@ -294,10 +274,10 @@ type PropsCuerpo = {
 
 /**
  * El mapa y la hoja, ya con lo que llegó de su propia consulta (OL-161, bitácora 196). Lo que la fila necesita mostrar (los
- * filtros, lo escrito, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
+ * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
  * de ese estado.
  */
-function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, busqueda, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, onAbrir, onCerrarFicha, restaurar, alAsentar }: PropsCuerpo) {
+function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, onAbrir, onCerrarFicha, restaurar, alAsentar }: PropsCuerpo) {
   const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
   // pin se resalta como seguido. Sin aro en ningún caso (OL-146, 2026-09-23): decisión del founder tras firmar el doc 35 y el 37.
@@ -356,7 +336,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, busqueda, p
             </Boton>
           </section>
         ) : (
-          <p className={styles.nada}>{porQueNoHay(busqueda, eleccion)}</p>
+          <p className={styles.nada}>{porQueNoHay(eleccion)}</p>
         )}
       </HojaLugares>
     </>
