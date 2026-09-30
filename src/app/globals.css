@@ -193,6 +193,20 @@ select {
   font-size: max(16px, var(--letra-md));
 }
 
+/* El campo escondido que la lupa de la barra enfoca con el toque (`BarraApp`): fuera de la barra, que en el teléfono se esconde al llegar
+   a Buscar, y con 16 px como todos los campos (iOS no hace zoom). */
+.cebo-de-teclado {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* La franja de la hora (OL-209): fija, del color de las cabeceras, encima de lo que se desplaza y debajo de las hojas
    (`--z-hoja`). Sin ella, en la app de iPhone el contenido pasaba bajo el reloj al desplazar. Donde `--tope` vale 0 no
    se ve. */

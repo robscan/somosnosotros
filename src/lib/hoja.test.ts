@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alturaSiguiente, destinoAlAsentar, estadoEn, masCercano, type Detentes } from "./hoja";
+import { alturaSiguiente, cabeceraCompacta, destinoAlAsentar, estadoEn, masCercano, type Detentes } from "./hoja";
 
 /** Las alturas de la lista en un teléfono de 844: la franja, dos renglones y medio de 94 y el hueco que la deja llena. */
 const LISTA: Detentes = { recogida: 0, asoma: 235, llena: 690 };
@@ -78,5 +78,21 @@ describe("hoja: el asa", () => {
 
   it("sin alturas medidas no se mueve", () => {
     expect(alturaSiguiente(50, {})).toBe(0);
+  });
+});
+
+describe("cabeceraCompacta: también dice dónde vive la pastilla de Seguir", () => {
+  // La portada deja de verse cuando el desplazamiento llega a 300: desde ahí la cabecera es compacta y la pastilla flota abajo.
+  it("con la portada a la vista, la cabecera no es compacta y la pastilla va en el héroe, junto al menú", () => {
+    expect(cabeceraCompacta(0, 300, "media", false)).toBe(false);
+    expect(cabeceraCompacta(299, 300, "llena", false)).toBe(false);
+  });
+  it("desde que la portada se desplaza fuera, es compacta y la pastilla flota abajo", () => {
+    expect(cabeceraCompacta(300, 300, "llena", false)).toBe(true);
+    expect(cabeceraCompacta(900, 300, "llena", true)).toBe(true);
+  });
+  it("con la hoja recogida en el teléfono es compacta (la pastilla se esconde); en el panel no hay recogida", () => {
+    expect(cabeceraCompacta(0, 300, "recogida", false)).toBe(true);
+    expect(cabeceraCompacta(0, 300, "recogida", true)).toBe(false);
   });
 });

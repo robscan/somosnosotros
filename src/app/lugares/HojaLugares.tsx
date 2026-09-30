@@ -3,13 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { pedirRecogida } from "@/components/Armazon";
 import { CARRIL } from "@/lib/armazon";
-import { alturaSiguiente, destinoAlAsentar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
+import { alturaSiguiente, cabeceraCompacta, destinoAlAsentar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
 import styles from "./HojaLugares.module.css";
 
 /** La lista asoma con dos renglones y medio: el tercero sale cortado a propósito, para que se entienda que hay más. */
 const RENGLONES_QUE_ASOMAN = 2.5;
-/** La ficha abre a foto y datos con esto de lo que sigue asomando debajo (px). */
-const ASOMA_DE_LO_SIGUIENTE = 80;
 /** Sin desplazamiento durante este tiempo (ms) el gesto se da por terminado y la hoja se asienta. */
 const REPOSO_MS = 140;
 /** Lo que queda de la hoja por encima del borde del cuerpo cuando se recorta el hueco (px): su sombra. */
@@ -102,12 +100,15 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
     const arribaDelCuerpo = c.getBoundingClientRect().top;
     const llena = Math.round(arribaDelCuerpo - h.getBoundingClientRect().top + h.scrollTop);
     const abajoDe = (el: Element) => el.getBoundingClientRect().bottom - arribaDelCuerpo;
+    const arribaDe = (el: Element) => el.getBoundingClientRect().top - arribaDelCuerpo;
     const abierta = c.querySelector<HTMLElement>("[data-ficha-hoja]");
     if (abierta) {
       const cabecera = abierta.querySelector("header")!;
       const alto = cabecera.offsetHeight;
+      // La media termina donde empieza lo que sigue a los tres números: la portada y los datos con su aire, sin asomar lo demás.
       const primero = abierta.querySelector("[data-cuerpo] > :first-child") ?? cabecera;
-      const media = Math.min(llena, abajoDe(primero) + ASOMA_DE_LO_SIGUIENTE - alto);
+      const siguiente = abierta.querySelector("[data-cuerpo] > :nth-child(2)");
+      const media = Math.min(llena, (siguiente ? arribaDe(siguiente) : abajoDe(primero)) - alto);
       return { detentes: { recogida: 0, media, llena }, franja: alto, compactaDesde: llena + abajoDe(abierta.querySelector("[data-portada]")!) - alto };
     }
     const lista = franja.current!.nextElementSibling;
@@ -123,7 +124,7 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
     const detente = estadoEn(y, detentes);
     if (panel) delete hoja.current!.dataset.hoja;
     else hoja.current!.dataset.hoja = detente;
-    cuerpo.current!.querySelector("[data-ficha-hoja]")?.toggleAttribute("data-compacta", y >= compactaDesde || (!panel && detente === "recogida"));
+    cuerpo.current!.querySelector("[data-ficha-hoja]")?.toggleAttribute("data-compacta", cabeceraCompacta(y, compactaDesde, detente, panel));
     const llena = !panel && detente === "llena";
     if (llena !== recogida.current) {
       recogida.current = llena;
@@ -217,6 +218,8 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, children
     const d = hoja.current!;
     const c = cuerpo.current!;
     const observador = new ResizeObserver(() => {
+      // Al salir de la pantalla el aviso puede llegar con la hoja ya quitada, antes de que esto se desconecte: nada que medir.
+      if (!d.isConnected) return;
       medidas.current = medir();
       const { detentes } = medidas.current;
       if (pendiente.current !== null && d.scrollHeight - d.clientHeight >= pendiente.current) {

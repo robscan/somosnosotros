@@ -9,7 +9,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { abrirFichaEnHoja } from "./fichaEnHoja";
 import VistaLugares, { type ExtrasLugares } from "./VistaLugares";
 
-type SearchParams = { ciudad?: string; tipo?: string; q?: string };
+type SearchParams = { ciudad?: string; tipo?: string; lugar?: string };
 
 /**
  * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
@@ -78,7 +78,7 @@ async function cargarExtras(ciudad: Ciudad): Promise<ExtrasLugares> {
 }
 
 export default async function Lugares({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { ciudad: slug, tipo, q } = await searchParams;
+  const { ciudad: slug, tipo, lugar } = await searchParams;
   const ciudades = await cargarCiudades();
   const ciudad = ciudadPorSlug(slug, ciudades);
   // `lugares` es lo único que pide la fila de contexto: se espera aquí, aparte de `extras` (destacados, seguidos, avisos), que solo
@@ -87,5 +87,5 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
   const extras = cargarExtras(ciudad);
   // El tipo elegido vive en la URL (se comparte y sobrevive al volver atrás); solo vale si existe.
   const tipoElegido = tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
-  return <VistaLugares lugares={lugares} ciudad={ciudad} ciudades={ciudades} tipo={tipoElegido} extras={extras} busquedaInicial={q} hoy={diaLocal(new Date(), ciudad.zona)} abrirFicha={abrirFichaEnHoja} />;
+  return <VistaLugares lugares={lugares} ciudad={ciudad} ciudades={ciudades} tipo={tipoElegido} extras={extras} fichaInicial={lugar} hoy={diaLocal(new Date(), ciudad.zona)} abrirFicha={abrirFichaEnHoja} />;
 }

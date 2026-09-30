@@ -1,8 +1,7 @@
-/* La cabecera única (ui/Cabecera): una rejilla plana de una columna. La fila de contexto (o el campo de búsqueda, a
-   todo lo ancho) y debajo, a todo lo ancho, las pestañas y el segundo nivel. Blanca como la barra de la app y pegada
-   justo bajo ella (`--barra-vista`, del armazón): cuando la barra se recoge, sube con ella. Con la barra es una sola
-   región: entre las dos no hay raya, y la raya común va solo abajo; desde 792 la raya es la de la barra, que cruza la ventana
-   sobre el carril, y la fila no lleva la suya. */
+/* La cabecera única (ui/Cabecera): una rejilla plana de una columna. La fila de contexto y, debajo, a todo lo ancho, las
+   pestañas y el segundo nivel. Blanca como la barra de la app y pegada justo bajo ella (`--barra-vista`, del armazón): cuando
+   la barra se recoge, sube con ella. Con la barra es una sola región: entre las dos no hay raya, y la raya común va solo abajo;
+   desde 792 la raya es la de la barra, que cruza la ventana sobre el carril, y la fila no lleva la suya. */
 .cabecera {
   position: sticky;
   top: var(--barra-vista, var(--tope));
@@ -26,14 +25,11 @@
 }
 
 /* La fila de contexto. Si los chips no caben, se desliza de lado sin barra (`useTiraQueSigue` avisa cuándo hay más). */
-.contexto,
-.campo {
+.contexto {
   display: flex;
   align-items: center;
   gap: var(--espacio-2);
   padding: var(--espacio-1) var(--gutter) var(--espacio-3);
-}
-.contexto {
   overflow-x: auto;
   scrollbar-width: none;
   scroll-padding-inline: var(--gutter);
@@ -51,19 +47,6 @@
     justify-content: safe center;
   }
 }
-/* El campo (ui/Buscador) con el alto de los chips de contexto; su ✕ también, o la fila crecería al abrirlo */
-.campo > label {
-  flex: 1;
-  height: var(--control);
-  min-height: 0;
-}
-.campo button {
-  min-height: var(--control);
-}
-.campo input {
-  font-size: var(--letra-md);
-}
-
 /* El segundo nivel (un grupo de chips): el gutter de la columna. Pesa cero (`:where`): la tira de letras, que también es un
    grupo, trae sus propias medidas y gana siempre. */
 :where(.cabecera > [role="group"]) {

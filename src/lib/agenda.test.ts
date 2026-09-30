@@ -266,19 +266,18 @@ describe("Cuándo y Cuánto en la agenda (docs/rediseno/50, P5)", () => {
     const grupos = agruparPorDia([expo, sab], AHORA, false, "2026-09-19");
     expect(grupos.map((g) => [g.clave, g.titulo, g.eventos.map((e) => e.id)])).toEqual([["2026-09-19", "sáb 19 de sep", ["expo", "sab"]]]);
   });
-  it("listarAgenda: lo que dice cada botón «Ver N eventos» es lo que la lista trae con esos filtros y esa búsqueda", () => {
+  it("listarAgenda: lo que dice cada botón «Ver N eventos» es lo que la lista trae con esos filtros", () => {
     // A las 19:00 y 20:00 del sábado 19 y a las 19:00 del domingo 20 (la ciudad va seis horas detrás de UTC).
     const jazz = evento({ id: "jazz", titulo: "Noche de jazz", inicio: "2026-09-20T01:00:00Z", lugar_id: "L1" });
     const cine = evento({ id: "cine", titulo: "Cine de barrio", inicio: "2026-09-20T02:00:00Z", precio: "$50" });
     const domingo = evento({ id: "domingo", titulo: "Jazz en el parque", inicio: "2026-09-21T01:00:00Z", precio: "Cooperación solidaria" });
     const agenda = { eventos: [cine, domingo, jazz], seguidos: ["L1"], eventosSeguidos: [] };
-    const ids = (f: Partial<typeof SIN_FILTROS>, q = "") => listarAgenda(agenda, { ...SIN_FILTROS, ...f }, q, AHORA).map((e) => e.id);
+    const ids = (f: Partial<typeof SIN_FILTROS>) => listarAgenda(agenda, { ...SIN_FILTROS, ...f }, AHORA).map((e) => e.id);
     expect(ids({})).toEqual(["jazz", "cine", "domingo"]);
     expect(ids({ cuando: { desde: "2026-09-19", hasta: "2026-09-19" } })).toEqual(["jazz", "cine"]);
     expect(ids({ siguiendo: true })).toEqual(["jazz"]);
     expect(ids({ cuanto: ["cooperacion"] })).toEqual(["domingo"]);
-    expect(ids({}, "jazz")).toEqual(["jazz", "domingo"]);
-    expect(ids({ cuando: { desde: "2026-09-19", hasta: "2026-09-21" }, cuanto: ["cooperacion"] }, "jazz")).toEqual(["domingo"]);
+    expect(ids({ cuando: { desde: "2026-09-19", hasta: "2026-09-21" }, cuanto: ["cooperacion"] })).toEqual(["domingo"]);
   });
   it("los filtros viajan por la URL de Agenda y lo que no se reconoce se ignora", () => {
     const filtros = { cuando: { desde: "2026-10-03", hasta: "2026-10-04" }, cuanto: ["gratis" as const], siguiendo: true };

@@ -1,24 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, diasConEvento, eleccionesPuestas, filtrarLugares, filtrarPorEleccion, hrefLugar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
+import { calleCorta, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
     expect(normalizarNombre("  Casa de Cultura  #3 — Potosí ")).toBe("casa de cultura 3 potosi");
-  });
-});
-
-describe("filtrarLugares", () => {
-  const lugares = [
-    { nombre: "Teatro de la Paz", direccion: "Villerías 2" },
-    { nombre: "Galería Ángel", direccion: null },
-  ];
-  it("busca sin acentos y a medias", () => {
-    expect(filtrarLugares(lugares, "angel").map((l) => l.nombre)).toEqual(["Galería Ángel"]);
-    expect(filtrarLugares(lugares, "VILLER").map((l) => l.nombre)).toEqual(["Teatro de la Paz"]);
-    expect(filtrarLugares(lugares, "")).toHaveLength(2);
-  });
-  it("sin nada escrito devuelve la misma lista", () => {
-    expect(filtrarLugares(lugares, "  ")).toBe(lugares);
   });
 });
 

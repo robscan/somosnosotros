@@ -30,8 +30,6 @@ export type TipoArtista = (typeof TIPOS_ARTISTA)[number]["valor"];
 
 export { LIMITES_ARTISTA } from "./limites";
 
-/** Umbral a partir del cual aparece la búsqueda por nombre (decisión 2). */
-export const UMBRAL_BUSCAR_ARTISTAS = 8;
 /** Umbral a partir del cual aparecen los chips de disciplina (decisión 2). */
 export const UMBRAL_CHIPS_ARTISTAS = 12;
 /** Un detalle (género, técnica) merece chip cuando lo comparten al menos tantos artistas de la disciplina elegida. */

@@ -1,3 +1,5 @@
+import type { GrupoBuscador } from "./buscarUnificado";
+
 /**
  * El armazón de la app (docs/rediseno/50, P4): una sola rejilla con la barra de la app, la pantalla y la navegación.
  * No sabe qué hay dentro de la pantalla: el layout le dice cuál es (`data-vista`, según la ruta) y el CSS solo lee ese
@@ -71,11 +73,21 @@ export function enlaceDeAlta(alta: Alta, ciudad: string | null): { href: string;
 }
 
 /**
- * A dónde lleva la lupa de la barra en una pantalla sin búsqueda propia: a la de Inicio, que busca en toda la app, ya
- * abierta y con la ciudad que se está viendo. Donde la pantalla sí tiene la suya (`prestamoBarra.ts`), la lupa la abre.
+ * Desde qué tipo se abre Buscar: el de la sección en que se está (Inicio, Agenda y lo que no es Lugares ni Artistas cuentan como
+ * eventos; una ficha, como su sección). Lee la ruta igual que el «+».
  */
-export function enlaceDeBusqueda(ciudad: string | null): string {
-  return ciudad ? `/?buscar=1&ciudad=${encodeURIComponent(ciudad)}` : "/?buscar=1";
+export function buscarDesdeRuta(ruta: string): GrupoBuscador {
+  return { evento: "eventos", lugar: "lugares", artista: "artistas" }[altaDeRuta(ruta)] as GrupoBuscador;
+}
+
+/**
+ * A dónde lleva la lupa de la barra, en las tres medidas y desde cualquier pantalla: a Buscar (una pantalla de tarea con su propio
+ * campo), con la ciudad que se está viendo y el tipo de la sección de donde se abre, que manda qué grupo sale primero.
+ */
+export function enlaceDeBusqueda(ciudad: string | null, desde: GrupoBuscador): string {
+  const consulta = new URLSearchParams({ desde });
+  if (ciudad) consulta.set("ciudad", ciudad);
+  return `/buscar?${consulta}`;
 }
 
 /**

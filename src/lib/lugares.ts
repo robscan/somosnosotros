@@ -210,14 +210,6 @@ export function normalizarNombre(t: string): string {
     .trim();
 }
 
-/** Filtra la lista por nombre (y dirección) escrito a medias, sin importar acentos ni mayúsculas. */
-export function filtrarLugares<T extends { nombre: string; direccion: string | null }>(lugares: T[], busqueda: string): T[] {
-  const q = normalizarNombre(busqueda);
-  return q ? lugares.filter((l) => normalizarNombre(`${l.nombre} ${l.direccion ?? ""}`).includes(q)) : lugares;
-}
-
-/** Umbral a partir del cual aparece la búsqueda por nombre (mapa y lista). */
-export const UMBRAL_BUSCAR_LUGARES = 8;
 /** Umbral a partir del cual aparece el chip Filtros (tipo, con eventos, lo que sigo). */
 export const UMBRAL_CHIPS_LUGARES = 8;
 

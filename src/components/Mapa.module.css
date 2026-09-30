@@ -68,10 +68,18 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* La ⓘ y la marca de Mapbox (la licencia pide que las dos se vean), arriba a la izquierda del mapa de "ver": abajo va la
-   hoja de Lugares y tapa la esquina. El mapa embebido de las hojas Dónde está/Dónde es (modo "elegir") conserva su esquina
-   de siempre. */
+/* La marca de Mapbox y la ⓘ (la licencia pide que las dos se vean), en una sola línea arriba a la izquierda del mapa de "ver", a 8 px
+   de la línea de la fila de contexto: abajo va la hoja de Lugares y tapa la esquina. Sin relleno ni margen negativo: los controles
+   pierden el margen que traen (10 y el −4 del logo). El mapa embebido de las hojas Dónde está/Dónde es (modo "elegir") conserva su
+   esquina de siempre. */
 .mapa :global(.mapboxgl-ctrl-top-left) {
   top: var(--espacio-2);
   left: var(--espacio-2);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-2);
+}
+.mapa :global(.mapboxgl-ctrl-top-left .mapboxgl-ctrl),
+.mapa :global(.mapboxgl-ctrl-top-left .mapboxgl-ctrl-logo) {
+  margin: 0;
 }

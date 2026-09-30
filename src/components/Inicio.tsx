@@ -1,15 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { hrefAgenda, SIN_FILTROS } from "@/lib/agenda";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import CarrilEsqueleto from "./CarrilEsqueleto";
 import FilaEventos from "./FilaEventos";
-import { CampoBuscar } from "./ui/Buscador";
 import Cabecera from "./ui/Cabecera";
-import BuscadorUnificado from "./BuscadorUnificado";
 import PantallaConAviso from "./useCanalDeListas";
 
 type Props = {
@@ -21,8 +19,6 @@ type Props = {
   /** La agenda, diferida como los carriles: de ella salen los puntos del calendario y el número de eventos de cada hoja. */
   agenda: Promise<Agenda>;
   conSesion: boolean;
-  /** La búsqueda ya abierta y con el cursor puesto: a Inicio llega la lupa de la barra desde una pantalla sin búsqueda propia. */
-  buscarAlAbrir: boolean;
   /** Los seis carriles, ya construidos (cada uno, un componente de servidor dentro de su propio `<Suspense>` en
    *  `src/app/page.tsx`). `slotTusPlanes` solo se pinta con sesión (OL-219: sin cuenta, ese carril no existe, no
    *  colapsa vacío). */
@@ -42,21 +38,16 @@ type Props = {
  * del founder tras probar en producción): esta pantalla ya no espera ninguna consulta antes de pintar; cada carril llega
  * por su cuenta (streaming del App Router, cada uno en su `<Suspense>`) y un esqueleto del tamaño exacto
  * (`CarrilEsqueleto`) ocupa su lugar mientras tanto. Un carril vacío colapsa sin salto (`Destacados.module.css`,
- * `.vacio`). El buscador único es la lupa de la barra de la app, con los resultados agrupados por tipo
- * (`BuscadorUnificado`). Todos los carriles comparten un solo aviso/pregunta de avisos (`PantallaConAviso`, la misma
+ * `.vacio`). La lupa de la barra de la app lleva a Buscar (`app/buscar`), la misma desde toda la app. Todos los carriles comparten un solo aviso/pregunta de avisos (`PantallaConAviso`, la misma
  * pieza que ya usan las fichas): el de más abajo se pinta una sola vez, para toda la pantalla, aunque cada carril tenga
  * su propio botón.
  *
  * Ya no hay invitación a crear cuenta (founder, 2026-09-25, OL-219: «dejemos de presentar el callout que invita a
- * crear cuenta en inicio»): el botón «Entrar» de la barra (`Sesion.tsx`) se queda como única puerta a entrar, sin
- * bloquear nada delante del contenido de eventos, lugares y artistas.
+ * crear cuenta en inicio»): y la barra tampoco lleva «Entrar» (founder, 2026-09-29): el acceso se ofrece al entrar a Perfil y al
+ * seguir o marcar «Voy», sin bloquear nada delante del contenido de eventos, lugares y artistas.
  */
-export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion, buscarAlAbrir, slotTusPlanes, slotEstelar, slotEstaSemana, slotNuevos, slotLugaresSemana, slotArtistasDestacados }: Props) {
+export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion, slotTusPlanes, slotEstelar, slotEstaSemana, slotNuevos, slotLugaresSemana, slotArtistasDestacados }: Props) {
   const router = useRouter();
-  const [busqueda, setBusqueda] = useState("");
-  const [buscando, setBuscando] = useState(buscarAlAbrir);
-  const [enfocar, setEnfocar] = useState(buscarAlAbrir);
-
   const esCiudadInicial = ciudad.slug === CIUDAD_INICIAL.slug;
 
   return (
@@ -74,29 +65,18 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
             onCambiar={(valor) => router.push(hrefAgenda(valor, esCiudadInicial ? null : ciudad.slug))}
           />
         }
-        onBuscar={() => {
-          setBuscando(true);
-          setEnfocar(true);
-        }}
-        campo={buscando && <CampoBuscar valor={busqueda} onCambiar={setBusqueda} placeholder="Buscar un evento, lugar o artista" ariaLabel="Buscar en toda la app" autoFocus={enfocar} onCerrar={() => { setBusqueda(""); setBuscando(false); setEnfocar(false); }} />}
       />
-      {buscando && busqueda.trim() ? (
-        <BuscadorUnificado seccion="inicio" q={busqueda} ciudadSlug={esCiudadInicial ? null : ciudad.slug} ciudadNombre={ciudad.nombre} />
-      ) : (
-        <>
-          {/* Orden firmado (doc 41, tercera vuelta): eventos siempre antes que lugares y artistas. "Tus planes"
-              solo con sesión — sin ella, ni se pinta un carril colapsado (a diferencia de los demás, que sí
-              existen vacíos): el componente entero se omite. */}
-          {conSesion && <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotTusPlanes}</Suspense>}
-          <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotEstelar}</Suspense>
-          <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotEstaSemana}</Suspense>
-          <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotNuevos}</Suspense>
-          <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>
-          {/* OL-165: «Artistas destacados» pasó a grande (misma tarjeta que la tira de Artistas); el esqueleto
-              cambia con él para no saltar cuando llega la respuesta real. */}
-          <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotArtistasDestacados}</Suspense>
-        </>
-      )}
+      {/* Orden firmado (doc 41, tercera vuelta): eventos siempre antes que lugares y artistas. "Tus planes"
+          solo con sesión — sin ella, ni se pinta un carril colapsado (a diferencia de los demás, que sí
+          existen vacíos): el componente entero se omite. */}
+      {conSesion && <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotTusPlanes}</Suspense>}
+      <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotEstelar}</Suspense>
+      <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotEstaSemana}</Suspense>
+      <Suspense fallback={<CarrilEsqueleto tamano="mediana" />}>{slotNuevos}</Suspense>
+      <Suspense fallback={<CarrilEsqueleto tamano="chica" />}>{slotLugaresSemana}</Suspense>
+      {/* OL-165: «Artistas destacados» pasó a grande (misma tarjeta que la tira de Artistas); el esqueleto
+          cambia con él para no saltar cuando llega la respuesta real. */}
+      <Suspense fallback={<CarrilEsqueleto tamano="grande" />}>{slotArtistasDestacados}</Suspense>
     </PantallaConAviso>
   );
 }

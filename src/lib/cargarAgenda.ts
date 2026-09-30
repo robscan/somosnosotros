@@ -11,7 +11,6 @@ type Fila = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng" | "artistas"> & {
   sitio_lat: number | null;
   sitio_lng: number | null;
   lugar: EventoAgenda["lugar"] | EventoAgenda["lugar"][];
-  artistas: { artista: { nombre: string } | { nombre: string }[] | null }[] | null;
 };
 
 export type Agenda = {
@@ -37,7 +36,7 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   // nunca trayendo todas las asistencias (PostgREST corta en 1 000 filas sin avisar).
   // Los empates de hora se desempatan también en la base (título, id) para que el corte de 300 no cambie entre cargas.
   const [e, s, destacados] = await Promise.all([
-    supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng), artistas:eventos_artistas(artista:artistas(nombre))").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(300),
+    supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, sitio_lat, sitio_lng, creado_en, ciudad, lugar:lugares(nombre, portada, lat, lng)").eq("visible", true).eq("ciudad", ciudad.nombre).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(300),
     // Lo que sigue una sola persona: tope de sobra para no depender del corte silencioso de PostgREST.
     usuarioId ? supabase.from("seguimientos").select("lugar_id, artista_id").eq("usuario_id", usuarioId).limit(1000) : Promise.resolve({ data: null }),
     leerTira(supabase, "eventos", ciudad.nombre),
@@ -63,9 +62,7 @@ export async function cargarAgenda(ciudad: Ciudad, usuarioId: string | null, sup
   const eventos: EventoAgenda[] = [];
   for (const fila of (e.data ?? []) as unknown as (Fila & { ciudad: string })[]) {
     const lugar = Array.isArray(fila.lugar) ? (fila.lugar[0] ?? null) : fila.lugar;
-    // Quién se presenta, solo el nombre: sirve al buscador ("camerata" halla su concierto).
-    const artistas = (fila.artistas ?? []).map((x) => (Array.isArray(x.artista) ? x.artista[0] : x.artista)?.nombre).filter((n): n is string => !!n);
-    eventos.push({ ...fila, lugar, artistas, lat: fila.sitio_lat, lng: fila.sitio_lng, van: van.get(fila.id) ?? 0 });
+    eventos.push({ ...fila, lugar, lat: fila.sitio_lat, lng: fila.sitio_lng, van: van.get(fila.id) ?? 0 });
   }
   const seguidos = usuarioId ? seguimientos.map((x) => x.lugar_id).filter((x): x is string => !!x) : null;
   return { eventos, seguidos, eventosSeguidos, asistencias, destacados };

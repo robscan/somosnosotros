@@ -69,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {GUION_APP_NATIVA}
         </Script>
         {/* El armazón (docs/rediseno/50, P4 y P7): la barra de la app, la pantalla y la navegación, una sola vez para todas las
-            rutas. La sesión (campana, Entrar, foto) se lee aquí, en el servidor, sin frenar a la pantalla. La barra lee
+            rutas. La sesión (la campana; sin sesión, nada) se lee aquí, en el servidor, sin frenar a la pantalla. La barra lee
             la ciudad de la consulta: en la pantalla «No está», que se prerenderiza, esa lectura espera al teléfono. */}
         <Armazon
           barra={
@@ -83,6 +83,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Armazon>
         <RegistroSW />
         <Navegacion />
+        {/* El campo escondido que la lupa de la barra enfoca con el toque, para que el teclado del iPhone no se cierre al llegar a Buscar (`BarraApp`). */}
+        <input id="cebo-de-teclado" className="cebo-de-teclado" type="text" tabIndex={-1} aria-hidden="true" autoComplete="off" />
         {/* Lee la consulta de la URL: en las pantallas estáticas se monta ya en el teléfono, sin frenar al resto. */}
         <Suspense fallback={null}>
           <MemoriaScroll />
