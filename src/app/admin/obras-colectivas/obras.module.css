@@ -137,7 +137,7 @@
   object-fit: contain;
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  background: var(--fondo);
+  background: var(--fondo-pared);
 }
 .instantanea > figcaption {
   color: var(--texto-suave);

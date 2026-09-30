@@ -2,7 +2,7 @@
 .pared {
   position: fixed;
   inset: 0;
-  background: var(--fondo);
+  background: var(--fondo-pared);
   overflow: hidden;
 }
 /* OL-135 (founder: «se deformó el dibujo… que mantenga aspect ratio y solo se escale»): el marco es el área 16:9

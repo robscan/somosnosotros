@@ -35,6 +35,7 @@
   --fondo-visor: rgba(0, 0, 0, 0.94); /* el visor de carteles: casi negro, para que el cartel destaque */
   --fondo-video: #14181c; /* el marco de un video mientras carga */
   --fondo-audio: #f2f2f2; /* el marco de un reproductor de audio mientras carga */
+  --fondo-pared: #fbfaf8; /* el hueso de la pared de la obra colectiva y del marco de su instantánea: un punto más cálido que el blanco */
   --barra-desplazamiento: rgba(0, 0, 0, 0.28); /* la barra de desplazamiento de la hoja de Lugares cuando llena */
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
   --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
