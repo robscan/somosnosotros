@@ -134,7 +134,7 @@ async function guardarSuscripcionPushWeb(sub: { endpoint: string; keys: { p256dh
     if (errorPerfil || perfil?.id !== user.id || perfil.avisos_push !== true) return false;
     // Como elegirAvisos: Ajustes y la agenda al día; la pregunta ya no depende de esto (lib/avisosPreguntados).
     // Aplazado con `after` (OL-212, tercera vuelta, mismo motivo que avisos/acciones.ts · elegirAvisos): quien llama
-    // a esta acción (ConsentimientoAvisos, con su propio `onDecidido`; AvisosPerfil, con su propio
+    // a esta acción (ConsentimientoAvisos, que ya no pinta lo decidido en la ficha; AvisosPerfil, con su propio
     // `router.refresh()`; ActivarAvisos, con su propio estado local) ya se entera sin pedirle nada al servidor —
     // revalidar de inmediato solo repintaría de más la pantalla desde la que se guardó.
     after(() => {

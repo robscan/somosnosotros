@@ -33,11 +33,11 @@ Por qué esta y no otra: condensada, con toques humanos y artísticos a tamaño 
 
 ## Las tres franjas del shell
 
-Toda pantalla tiene cabecera blanca, contenido en `--fondo-contenido` (hueso) y una franja blanca abajo (la nav en las pantallas raíz; la barra de acciones en las fichas). Las fichas lo cumplen desde el 2026-09-14: la cabecera interior (`ui/Barra`, regreso · SMSNSTRS · ···) es una franja de borde a borde, pegajosa arriba, con borde inferior; lo que se lee va sobre el hueso; los botones y tarjetas van en blanco encima.
+Toda pantalla tiene cabecera blanca, contenido en `--fondo-contenido` (hueso) y una franja blanca abajo (la nav en las pantallas raíz; en las fichas, las pastillas flotantes). Las tareas lo cumplen con la cabecera interior (`ui/Barra`, regreso · SMSNSTRS · ···): una franja de borde a borde, pegajosa arriba, con borde inferior; las fichas, con su propia barra sobre la portada (ver «La ficha»). Lo que se lee va sobre el hueso; los botones y tarjetas van en blanco encima.
 
 ## Estados del renglón de lista
 
-Con ratón, al pasar por encima el renglón se levanta en blanco con una marca de 3 px del color de acción a la izquierda y el título en ese color; pulsado, igual sin marca; el elegido (`aria-current="true"`) va en `--primario-suave`; el foco de teclado lleva el aro interior. Lo que no tiene portada (evento, lugar o artista) muestra una imagen con el símbolo SN al centro, `#b1b0a9` sobre `--fondo-miniatura` (founder, 2026-09-16): `public/sin-foto.png` en miniaturas y avatares, y `public/sin-foto-ancha.png` en la banda de las fichas. Se generan una vez con `docs/diseno/logotipo/sin-foto-sn.mjs`; nunca se componen en vivo ni son un cuadro punteado. Lo de artistas va siempre en contenedor redondo, como su avatar. La línea de calendario solo aparece cuando hay fecha.
+Con ratón, al pasar por encima el renglón se levanta en blanco con una marca de 3 px del color de acción a la izquierda y el título en ese color; pulsado, igual sin marca; el elegido (`aria-current="true"`) va en `--primario-suave`; el foco de teclado lleva el aro interior. Lo que no tiene portada (evento, lugar o artista) muestra una imagen con el símbolo SN al centro, `#b1b0a9` sobre `--fondo-miniatura` (founder, 2026-09-16): `public/sin-foto.png` en miniaturas y avatares, y `public/sin-foto-ancha.png` en la portada de las fichas. Se generan una vez con `docs/diseno/logotipo/sin-foto-sn.mjs`; nunca se componen en vivo ni son un cuadro punteado. Lo de artistas va siempre en contenedor redondo, como su avatar. La línea de calendario solo aparece cuando hay fecha.
 
 ## Una columna en cualquier pantalla
 
@@ -69,13 +69,13 @@ Arriba de la Agenda, de Lugares › Lista y de Artistas: el título «Destacados
 
 ## El regreso
 
-En pantallas interiores, el regreso es una **píldora secundaria** (`ui/Boton`: borde `--borde`, fondo blanco, 44 px de alto) con un chevron corto `‹` y el texto del destino ("Volver", "Artistas"), alineada a la izquierda de la barra. Nunca una flecha larga suelta. Componente `ui/Atras`, también en las páginas de error. Ajuste del founder, 2026-09-14; a 44 px con la reestructura (OL-230).
+En pantallas interiores, el regreso es una **píldora secundaria** (`ui/Boton`: borde `--borde`, fondo blanco, 44 px de alto) con un chevron corto `‹` y el texto del destino ("Volver", "Artistas"), alineada a la izquierda de la barra. Nunca una flecha larga suelta. Componente `ui/Atras`, también en las páginas de error. Ajuste del founder, 2026-09-14; a 44 px con la reestructura (OL-230). En las fichas es un círculo (`AtrasIcono`): 48 y elevado sobre la portada, 44 con borde en la barra blanca de una persona.
 
 ## Botones
 
 Dos piezas para todos los botones de la app (OL-230, doc 50 § 5.2), sin más dibujos sueltos.
 
-- **`ui/Boton`** (con texto): variantes `primario`, `secundario`, `texto` y `peligro`; forma `recta` (`--radio`) o `pildora`; alto `toque` (48, el del pulgar) o `control` (44, el mínimo: barras, cabeceras y renglones); ancho `completo` o `contenido`. Deshabilitado a 0,55; un enlace late mientras el servidor responde.
+- **`ui/Boton`** (con texto): variantes `primario`, `secundario`, `texto` y `peligro`; forma `recta` (`--radio`) o `pildora`; alto `toque` (48, el del pulgar) o `control` (44, el mínimo: barras, cabeceras y renglones); ancho `completo` o `contenido`; `flotante` (la pastilla de una ficha: sombra y letra de título). Deshabilitado a 0,55; un enlace late mientras el servidor responde. Con `aria-pressed`, el primario decidido es verde (`--ok`) y el secundario, del color de acción.
 - **`ui/BotonIcono`** (solo icono, redondo): tamaño `control` 44 (barras y cabeceras), `accion` 48 (renglones, tarjetas y mapa) o `grande` 56 (acciones de una ficha); relieve `plano` (barras), `elevado` (blanco con sombra y glifo violeta: acciones sobre listas, tarjetas, mapa y ficha) o `contorno` (borde, solo opciones secundarias de un formulario). **Decidido** es verde (`--ok`) con el glifo en blanco.
 - **Glifos de acción:** «Voy» es la palomita; «seguir» es que te avisen, la campana con «+» en un lugar y la persona con «+» en un artista. Ya decidido, la palomita blanca sobre verde en los tres casos.
 
@@ -84,17 +84,28 @@ Dos piezas para todos los botones de la app (OL-230, doc 50 § 5.2), sin más di
 Una sola rejilla con áreas para toda fila de la app (OL-231, doc 50 § 5.2): `ui/Renglon` y sus cuatro pieles. Lo visual va a la izquierda (icono o foto), el texto en el centro y la acción a la derecha; cada hijo va a su área por lo que es (el primero es lo visual, `b` el texto principal, `small` el secundario y todo lo demás la acción).
 
 - **`lista`** (Agenda, Lugares, Artistas y las fichas): foto de 56 (`--foto-renglon`), título, datos con icono y el botón de acción a la derecha, hermano del enlace. Ningún dato pasa del borde de su columna: el que es una sola línea se corta con puntos suspensivos y la dirección se parte.
-- **`dato`** (fichas): icono, principal, secundario y, si lo hay, el enlace que lleva más lejos; 44 de alto como mínimo.
+- **`dato`** (fichas): icono, principal en negrita y secundario; toda la fila es el enlace (o el botón) y termina en un chevron; 44 de alto como mínimo.
 - **`ajuste`** (Ajustes): icono en una columna de 24, etiqueta, detalle y chevron, valor o palanca; 52 de alto como mínimo.
 - **`resuelto`** (altas y ediciones): icono, clave sobre valor y acción (`Boton` de texto, `BotonIcono` de contorno o `Palanca`); 60 de alto como mínimo, con el cuerpo debajo al abrir. Pendiente lleva el borde discontinuo; abierto, el de tinta.
 - **`ui/Palanca`**: el interruptor único. Se ve en 51×31 y se toca en 51×45; la perilla mide 27 y recorre 20.
 - **`ui/Esqueleto`** dibuja el renglón con barras grises y la misma rejilla: mide lo que el renglón, sin medidas propias.
 
+## La ficha
+
+Una sola rejilla con áreas para el evento, el lugar y el artista (OL-235, doc 50 P6), a pantalla completa y dentro de la hoja de Lugares: barra · héroe · cuerpo · pastillas. Nada se sale del aire con un margen negativo.
+
+- **Héroe** (`ui/Heroe`): la portada en 3:2 llega a los bordes y, al pie, sobre un velo, van la etiqueta (`--vidrio`, en el color de acción), el título (19 px) y la meta. Sin portada, el símbolo SN ya generado (`sin-foto-ancha.png`). Tocar la imagen abre el visor (fondo al 94 %, ✕ blanca arriba a la derecha). El artista suma su avatar de 64 con aro blanco a la izquierda del título; una persona no lleva héroe: barra blanca y la misma cabecera de Perfil (avatar de 72).
+- **Barra** (`ui/BarraFicha`): Atrás y «···» en círculos de 48 blancos y elevados sobre la portada; al pasar la portada se vuelve compacta (la portada oscurecida detrás del título, los botones en blanco). Desde 792 no hay barra propia: presta Atrás y el menú a la barra de la app. Las filas del menú son las de Ajustes.
+- **Tres números** (`ui/Kpi`): tarjetas que abrazan su contenido (icono de 16 y lo que es, arriba; el valor de 16 px, abajo; 61 de alto con una línea). Las tres miden lo mismo y una etiqueta larga se corta con puntos suspensivos. Evento: el día (y, arriba, la hora: sin la palabra «Fecha»), costo y cuántos van. Lugar: distancia, eventos y quién lo sigue. Artista: fechas, quién lo sigue y lugares. Si hay algo que hacer o a dónde bajar, toda la tarjeta lo hace.
+- **Acciones:** círculos de 56 con su letrero debajo, alineados a la izquierda; las que no caben pasan a la fila de abajo, nunca quedan cortadas.
+- **Pastillas flotantes:** «Me interesa» y «Voy» en un evento; «Seguir» en un lugar (campana con «+») y en un artista (persona con «+»). Pegadas al pie mientras la ficha pasa por debajo, sin nota dentro. Decidido es verde con palomita («Vas», «Sigues»); «Te interesa» lleva la estrella llena y el color de acción. En la hoja de Lugares flotan sobre la navegación mientras asoma, van al pie cuando está llena y no se ven recogida.
+- **Dónde:** una tarjeta con el mapa (5:2) y, debajo, el renglón `dato` del sitio, que lleva a la ruta.
+
 ## El armazón
 
 Una sola rejilla para toda la app (OL-232, doc 50 § 5.3 y § 5.4): la barra de la app, la pantalla y, fija al pie, la navegación. No depende de lo que hay dentro: el layout pone `data-vista` según la ruta (`lib/armazon.ts`) y el CSS solo lee ese atributo.
 
-- **Vistas:** `raiz` (Inicio, Agenda, Lugares, Artistas, Perfil y la confirmación de un borrado: barra de la app y navegación), `ficha` (evento, lugar, artista, persona), `tarea` (altas, ediciones, ajustes, entrar, novedades, administración, textos legales) y `completa` (la pared y el mando de una obra colectiva y el letrero para imprimir: sin barra ni navegación). En el teléfono lo que no es raíz lleva su propia cabecera (`ui/Barra`) y la barra de la app no se ve.
+- **Vistas:** `raiz` (Inicio, Agenda, Lugares, Artistas, Perfil y la confirmación de un borrado: barra de la app y navegación), `ficha` (evento, lugar, artista, persona), `tarea` (altas, ediciones, ajustes, entrar, novedades, administración, textos legales) y `completa` (la pared y el mando de una obra colectiva y el letrero para imprimir: sin barra ni navegación). En el teléfono lo que no es raíz lleva su propia cabecera (`ui/Barra` en una tarea; `ui/BarraFicha`, sobre la portada, en una ficha) y la barra de la app no se ve.
 - **La barra de la app** (`BarraApp`): «+» · Atrás · logotipo · lupa · sesión (campana o «Entrar») · menú «···», todo a 44. Atrás y el menú solo desde 792 y con una ficha a la vista: la ficha los presta (`prestamoBarra`, `EnBarra`) y su cabecera propia deja de verse (nunca dos barras). El «+» lleva al alta de la sección (evento, lugar o artista) con la ciudad que se ve; la lupa abre la búsqueda de la pantalla y, si no tiene, la de Inicio. Administración, para quien lo es, va junto al «+». Son tres celdas de una rejilla (un lado, el logotipo y el otro lado) y los dos lados valen lo mismo (`--flanco`: la lupa y «Entrar», lo más ancho que llega a haber junto al logotipo), así el logotipo queda en el centro exacto con o sin sesión, con o sin la llave de administración y con o sin Atrás y menú; en una ventana muy angosta (320) se achica antes que correrse. Desde 792 los lugares de Atrás y del menú se reservan aunque no haya ficha: nada se mueve al pasar de una pantalla a otra.
 - **Barra y fila de contexto son una región:** las dos blancas, sin raya entre ellas; la única raya va bajo la fila (`ui/Cabecera`), que se pega justo bajo la barra y, cuando la barra se recoge, arriba del todo (`--barra-vista`). Al jalar hacia abajo, un relleno blanco de 300 px sobre la fila evita que asome el fondo del listado.
 - **Se recoge en el teléfono** (raíces): al bajar (más de 120 px, con el dedo bajando) la barra sube y la navegación baja (`data-recogida`); vuelven al subir un poco, cerca del inicio, al llegar al final y en cada pantalla nueva. Un salto a una letra la recoge al momento y sin animar, para medir ya el alto final.

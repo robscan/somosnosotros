@@ -454,3 +454,11 @@ export const IconoBloquear = (p: P) => (
     <path d="M6.5 6.5l11 11" />
   </svg>
 );
+/** Borrar: el bote de basura (la fila «Borrar» del menú «···» de una ficha). */
+export const IconoBasura = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4.5 7h15M9.5 7V4.5h5V7" />
+    <path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.5h6.4a1.5 1.5 0 0 0 1.5-1.5l.8-12" />
+    <path d="M10 11v6M14 11v6" />
+  </svg>
+);

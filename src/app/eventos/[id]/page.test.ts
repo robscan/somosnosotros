@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Suspense } from "react";
+import Heroe from "@/components/ui/Heroe";
 
 /**
  * OL-161 (bitácora 196): la cabecera de la ficha (foto, nombre, cuándo, dónde, JSON-LD, canonical) tiene que salir
@@ -86,13 +87,14 @@ function* recorrer(nodo: unknown): Generator<{ type: unknown; props: Record<stri
 }
 
 describe("ficha de evento: la cabecera pinta antes que quién va (OL-161)", () => {
-  it("el árbol inicial trae el título, el JSON-LD y deja «quién va» en Suspense", async () => {
+  it("el árbol inicial trae el título, el JSON-LD y deja «Van», «Artistas» y «Quién va» en Suspense", async () => {
     const { default: FichaEvento } = await import("./page");
     const arbol = await FichaEvento({ params: Promise.resolve({ id: "evento-de-prueba" }), searchParams: Promise.resolve({}) });
     const elementos = [...recorrer(arbol)];
 
-    const h1 = elementos.find((e) => e.type === "h1");
-    expect(h1?.props?.children).toBe("Evento de prueba");
+    // El héroe (portada y título, `ui/Heroe`) sale con la página, sin esperar nada.
+    const heroe = elementos.find((e) => e.type === Heroe);
+    expect(heroe?.props?.titulo).toBe("Evento de prueba");
 
     const jsonLd = elementos.find((e) => e.type === "script" && e.props?.type === "application/ld+json");
     expect(jsonLd).toBeTruthy();
@@ -100,9 +102,9 @@ describe("ficha de evento: la cabecera pinta antes que quién va (OL-161)", () =
     expect(datos["@type"]).toBe("Event");
     expect(datos.name).toBe("Evento de prueba");
 
-    // "Con quién" + "Van N personas" (un solo Suspense en la lista de datos) y la sección "Quién va": dos límites.
+    // El número «Van», el bloque «Artistas» y la sección «Quién va»: cada uno su límite, con su propia consulta.
     const suspenses = elementos.filter((e) => e.type === Suspense);
-    expect(suspenses.length).toBe(2);
+    expect(suspenses.length).toBe(3);
   });
 
   it("una ficha por UUID redirige (308 permanente) a su slug — el candado y el resto de la cabecera no esperan nada más", async () => {

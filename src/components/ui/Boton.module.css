@@ -64,6 +64,23 @@
   font-size: var(--letra-sm);
 }
 
+/* Flotante: la pastilla de una acción principal (Me interesa, Voy, Seguir): píldora de una línea con la letra de los títulos y la
+   sombra de lo que flota. Lo que ya quedó (`aria-pressed`): el primario, en verde («Vas», «Sigues»); el secundario, del color de acción. */
+.flotante {
+  --boton-relleno: 0 var(--espacio-5) 0 var(--espacio-4);
+  border-color: transparent;
+  border-radius: var(--radio-pildora);
+  font-size: var(--letra-md);
+  font-variation-settings: var(--ancho-titulo);
+  box-shadow: var(--sombra-flotante);
+}
+.primario[aria-pressed="true"] {
+  background: var(--ok);
+}
+.secundario[aria-pressed="true"] {
+  color: var(--primario);
+}
+
 /* Deshabilitado (con `disabled`, o con `aria-disabled` cuando el motivo se lee en pantalla) y en camino: el toque ya
    se mandó y el servidor no ha respondido (un enlace lo sabe solo, con `EnCamino`; un botón, con `aria-busy`). */
 .boton:disabled,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { altaDeRuta, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, vistaDeRuta } from "./armazon";
+import { altaDeRuta, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, vistaDeRuta } from "./armazon";
 
 describe("armazón: la vista de cada ruta (data-vista)", () => {
   it("las cinco secciones y la pantalla que confirma un borrado son raíz", () => {
@@ -32,6 +32,15 @@ describe("armazón: la vista de cada ruta (data-vista)", () => {
   });
   it("la pared, el mando y el letrero se quedan con toda la pantalla", () => {
     for (const ruta of ["/obra/4d2e/pared", "/obra/4d2e/mando", "/artistas/aaron-cadena/letrero"]) expect(vistaDeRuta(ruta), ruta).toBe("completa");
+  });
+});
+
+describe("armazón: el menú «···» de la ficha", () => {
+  it("evento, lugar y artista siempre lo traen: la barra de la app lo dibuja sin esperar", () => {
+    for (const ruta of ["/eventos/concierto-de-la-sinfonica", "/lugares/teatro-de-la-paz", "/artistas/aaron-cadena"]) expect(fichaConMenu(ruta), ruta).toBe(true);
+  });
+  it("la persona a veces no lo tiene, y lo que no es ficha no lo pide", () => {
+    for (const ruta of ["/personas/8f1c2d9e", "/", "/lugares", "/eventos/nuevo", "/eventos/concierto/editar", "/ajustes"]) expect(fichaConMenu(ruta), ruta).toBe(false);
   });
 });
 

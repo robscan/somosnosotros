@@ -27,6 +27,7 @@
   --asa: #d9d9d9; /* asa del panel inferior */
   --vidrio: rgba(255, 255, 255, 0.92); /* rótulos sobre el mapa */
   --velo-titulo: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.44) 55%, rgba(0, 0, 0, 0)); /* oscurece el pie de una portada para que se lea el título que va encima */
+  --velo-barra: rgba(0, 0, 0, 0.6); /* oscurece la portada detrás del título de la barra compacta de una ficha */
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
   --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
   --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
@@ -126,6 +127,8 @@
   --tarjeta-grande-foto: 248px; /* alto de su foto */
   --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
   --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
+  --avatar-ficha: 64px; /* avatar redondo dentro del héroe de la ficha de un artista */
+  --avatar-perfil: 72px; /* avatar redondo de la cabecera de una persona (Mi perfil y su ficha) */
 
   /* Movimiento */
   --duracion: 200ms; /* transición corriente: barras, hojas, cabeceras */

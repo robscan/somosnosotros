@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import RenglonArtista from "./RenglonArtista";
 import RenglonLugar from "./RenglonLugar";
 import { Chip, Chips, Cuenta } from "./ui/Chip";
 import Grupo from "./ui/Grupo";
 import type { EstadoBotonRenglon } from "./ui/BotonRenglon";
-import styles from "./FichaPersona.module.css";
 
 /** A partir de cuántos seguidos aparecen los chips para filtrar (misma regla que las listas de Lugares y Artistas). */
 export const UMBRAL_CHIPS_SEGUIDOS = 12;
@@ -24,16 +23,14 @@ type Props = {
   /** Sin gestos, los renglones solo abren la ficha. */
   lugar?: GestosSeguir;
   artista?: GestosSeguir;
-  /** Mi perfil es una raíz: cada tipo es un grupo con su título pegado (`ui/Grupo`), como los días de «Voy». */
-  raiz?: boolean;
 };
 
 /**
- * Lo que sigue una persona: lugares (foto cuadrada) y artistas (redonda) en grupos con subtítulo, como los días de
- * "Va a". Con muchos seguidos, chips para ver solo lugares o solo artistas (pedido del founder, 2026-09-15). Los
+ * Lo que sigue una persona: lugares (foto cuadrada) y artistas (redonda) en grupos con su título pegado (`ui/Grupo`), como los
+ * días de "Va a". Con muchos seguidos, chips para ver solo lugares o solo artistas (pedido del founder, 2026-09-15). Los
  * renglones son los de las listas de Lugares y Artistas, con el botón "Sigues" de quien mira (OL-057, OL-104).
  */
-export default function ListaSeguidos({ lugares, artistas, conChips, lugar, artista, raiz = false }: Props) {
+export default function ListaSeguidos({ lugares, artistas, conChips, lugar, artista }: Props) {
   const [filtro, setFiltro] = useState<Filtro>("todo");
   const total = lugares.length + artistas.length;
   const verLugares = filtro !== "artistas" && lugares.length > 0;
@@ -57,40 +54,19 @@ export default function ListaSeguidos({ lugares, artistas, conChips, lugar, arti
         </Chips>
       )}
       {verLugares && (
-        <Seccion raiz={raiz} nombre={conChips ? null : "Lugares"} cuenta={lugares.length}>
+        <Grupo titulo={conChips ? undefined : "Lugares"} cuenta={lugares.length}>
           {lugares.map((l) => (
             <RenglonLugar key={l.id} lugar={l} boton={lugar?.boton(l.id, l.nombre)} />
           ))}
-        </Seccion>
+        </Grupo>
       )}
       {verArtistas && (
-        <Seccion raiz={raiz} nombre={conChips ? null : "Artistas"} cuenta={artistas.length}>
+        <Grupo titulo={conChips ? undefined : "Artistas"} cuenta={artistas.length}>
           {artistas.map((a) => (
             <RenglonArtista key={a.id} artista={a} boton={artista?.boton(a.id, a.nombre)} />
           ))}
-        </Seccion>
+        </Grupo>
       )}
-    </>
-  );
-}
-
-/** Un tipo de lo que sigue: en una raíz, un grupo pegajoso; en la ficha de otra persona, su subtítulo y su lista de siempre. Con chips, sin título. */
-function Seccion({ raiz, nombre, cuenta, children }: { raiz: boolean; nombre: string | null; cuenta: number; children: ReactNode }) {
-  if (raiz) {
-    return (
-      <Grupo titulo={nombre ?? undefined} cuenta={cuenta}>
-        {children}
-      </Grupo>
-    );
-  }
-  return (
-    <>
-      {nombre && (
-        <h3 className={styles.dia}>
-          {nombre} · {cuenta}
-        </h3>
-      )}
-      <ul className={styles.lista}>{children}</ul>
     </>
   );
 }

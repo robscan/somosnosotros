@@ -1,10 +1,10 @@
 /* Confirmación con Deshacer: tinta sobre blanco como ui/Aviso, en la columna. Flota sobre la barra inferior o, en una
-   ficha, sobre su barra de acción fija, que publica su alto real (ui/useAltoBarraFija). */
+   ficha, sobre su pastilla flotante (Hecho.tsx lo mide al salir y lo pone en `bottom`). */
 .hecho {
   position: fixed;
   left: var(--gutter);
   right: var(--gutter);
-  bottom: calc(var(--alto-barra-fija, var(--nav-abajo)) + var(--espacio-3));
+  bottom: calc(var(--nav-abajo) + var(--espacio-3));
   z-index: var(--z-barra);
   display: grid;
   grid-template-columns: 1fr auto;

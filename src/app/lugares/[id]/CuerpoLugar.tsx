@@ -14,32 +14,32 @@ import Seguir from "@/components/Seguir";
 import Boton from "@/components/ui/Boton";
 import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
-import { EsqueletoDato, EsqueletoRenglones } from "@/components/ui/Esqueleto";
-import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
+import { EsqueletoKpi, EsqueletoRenglones } from "@/components/ui/Esqueleto";
+import { IconoCalendario, IconoChevronDerecha, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
-import Salto from "@/components/ui/Salto";
+import { Kpi, Kpis } from "@/components/ui/Kpi";
 import ficha from "@/components/ui/Ficha.module.css";
-import styles from "@/components/ui/FichaLista.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import type { EventoAgenda } from "@/lib/agenda";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
 import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
+import { kpiProximos } from "@/lib/ficha";
 import { filtroSinPasar } from "@/lib/fechas";
-import { repartoDeAcciones } from "@/lib/ficha";
 import { esUuid } from "@/lib/formulario";
-import { etiquetaTipo, hrefLugar, textoProximo, type Lugar } from "@/lib/lugares";
+import { etiquetaTipo, hrefLugar, partesDeDireccion, type Lugar } from "@/lib/lugares";
 import { ORIGENES } from "@/lib/origen";
 import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
 import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
 import EsMiEspacio from "./EsMiEspacio";
+import KpiDistancia from "./KpiDistancia";
 
 export const ORIGEN = "https://somosnosotros.org";
 
 type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
 type Actual = { correo: string | null; perfil: Perfil };
 
-/** Lo que la ficha de un lugar necesita saber de quien mira, cargado una vez para su cuerpo, su menú y su barra de Seguir. */
+/** Lo que la ficha de un lugar necesita saber de quien mira, cargado una vez para su cuerpo, su menú y su pastilla de Seguir. */
 export type FichaLugar = {
   lugar: LugarConAutor;
   actual: Actual | null;
@@ -125,7 +125,7 @@ async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
   return filas.map((f) => ({ ...f, lugar: { nombre: lugar.nombre, portada: lugar.portada }, lat: lugar.lat, lng: lugar.lng, van: van.get(f.id) ?? 0 }));
 }
 
-// `cargarEventos` y cuántos siguen al lugar se piden de nuevo abajo (`MetaLugar` y `SeccionEventosLugar`, en
+// `cargarEventos` y cuántos siguen al lugar se piden de nuevo abajo (`KpisLugar` y `SeccionEventosLugar`, en
 // `<Suspense>` separados): `cache()` de React las memoiza por argumento para que sea una sola consulta por petición
 // (OL-161, bitácora 196; mismo patrón que `cargarLigadas` en la ficha de artista).
 const cargarEventosCache = cache(cargarEventos);
@@ -136,45 +136,33 @@ const cargarSeguidoresLugarCache = cache(async (lugarId: string): Promise<number
 });
 
 /**
- * Cuántos siguen al lugar y su próximo evento: los dos renglones de `<ul className={ficha.datos}>` que piden una
- * consulta aparte de la del lugar (OL-161). Se difieren en `<Suspense>`, con un renglón de esqueleto del mismo alto
- * mientras llegan; la cabecera (foto, nombre, dirección) no los espera.
+ * Cuántos eventos vienen y cuánta gente sigue al lugar: los otros dos números de la ficha (`ui/Kpi`; el primero, la distancia, se
+ * calcula en el teléfono). Piden una consulta aparte de la del lugar (OL-161), así que van en `<Suspense>`, con dos tarjetas de
+ * esqueleto del mismo alto mientras llegan; la cabecera (foto, nombre, tipo) no las espera.
  */
-async function MetaLugar({ lugar }: { lugar: LugarConAutor }) {
+async function KpisLugar({ lugar }: { lugar: LugarConAutor }) {
   const [seguidores, eventos] = await Promise.all([cargarSeguidoresLugarCache(lugar.id), cargarEventosCache(lugar)]);
-  return seguidores === 0 && !eventos[0] ? (
-    <li className={renglon.dato}>
-      <IconoCalendario width={20} height={20} />
-      <small>Sin eventos próximos · Nadie lo sigue todavía</small>
-    </li>
-  ) : (
+  return (
     <>
-      <li className={renglon.dato}>
-        <IconoPersonas width={20} height={20} />
-        <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
-      </li>
-      <li className={renglon.dato}>
-        <IconoCalendario width={20} height={20} />
-        <b>{eventos[0] ? textoProximo(eventos[0]) : "Sin eventos próximos"}</b>
-        {eventos[0] && <Salto destino="eventos">ver</Salto>}
-      </li>
+      <Kpi icono={<IconoCalendario width={16} height={16} />} etiqueta="Eventos" valor={kpiProximos(eventos.length)} salto={eventos.length > 0 ? "eventos" : undefined} />
+      <Kpi icono={<IconoPersonas width={16} height={16} />} etiqueta="Siguen" valor={seguidores} />
     </>
   );
 }
 
-/** "Próximos eventos" entero: la misma consulta que `MetaLugar`, memoizada por `cache()`, más quién decidió qué. */
+/** "Próximos eventos" entero: la misma consulta que `KpisLugar`, memoizada por `cache()`, más quién decidió qué. */
 async function SeccionEventosLugar({ lugar, actual, hrefPublicarAqui }: { lugar: LugarConAutor; actual: Actual | null; hrefPublicarAqui: string }) {
   const eventos = await cargarEventosCache(lugar);
   const decididas = await decididasDe(actual?.perfil.id ?? null, eventos.map((e) => e.id));
   return (
-    <section className={styles.lista} id="eventos" aria-label="Próximos eventos">
+    <section className={ficha.bloque} id="eventos" aria-label="Próximos eventos">
       <h2>
         Próximos eventos
-        {eventos.length > 0 && <span> · {eventos.length}</span>}
+        {eventos.length > 0 && <span className={ficha.cuenta}> · {eventos.length}</span>}
       </h2>
-      {eventos.length === 0 && <p className={styles.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
+      {eventos.length === 0 && <p className={ficha.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
       <EventosPorDia eventos={eventos} sinSitio decididas={decididas} avisos={avisosParaListas(actual)} />
-      <Boton href={hrefPublicarAqui} variante="secundario" className={styles.publicar}>
+      <Boton href={hrefPublicarAqui} variante="secundario">
         Publicar un evento aquí
       </Boton>
     </section>
@@ -184,7 +172,7 @@ async function SeccionEventosLugar({ lugar, actual, hrefPublicarAqui }: { lugar:
 /** Fallback de `SeccionEventosLugar`: el título fijo (sin el conteo, que sí espera la consulta) y renglones grises. */
 function EsqueletoSeccionEventos() {
   return (
-    <section className={styles.lista} id="eventos" aria-label="Próximos eventos" aria-hidden="true">
+    <section className={ficha.bloque} id="eventos" aria-label="Próximos eventos" aria-hidden="true">
       <h2>Próximos eventos</h2>
       <EsqueletoRenglones cantidad={3} redonda />
     </section>
@@ -192,40 +180,44 @@ function EsqueletoSeccionEventos() {
 }
 
 /**
- * El cuerpo de la ficha de un lugar, de sus datos a su autor: lo mismo a pantalla completa (`page.tsx`, que pone encima su
- * portada y su título) y dentro de la hoja de Lugares (`HojaLugares`, que pone su héroe y su cabecera). No incluye la barra
- * de Seguir (`SeguirLugar`) ni el menú «···» (`OpcionesLugar`): cada sitio los coloca a su manera.
+ * El cuerpo de la ficha de un lugar (docs/rediseno/50, P6): sus tres números, las acciones, los próximos eventos, «Dónde» (el mapa y
+ * la dirección, que lleva a la ruta), sobre el lugar y quién lo publicó. Lo mismo a pantalla completa (`page.tsx`, que pone encima su
+ * barra y su héroe) y dentro de la hoja de Lugares (`FichaHoja`, que pone su cabecera y su héroe). No incluye la pastilla de Seguir
+ * (`SeguirLugar`) ni el menú «···» (`OpcionesLugar`): cada sitio los coloca a su manera.
  */
 export default function CuerpoLugar({ f: { lugar, actual, puedeEditar } }: { f: FichaLugar }) {
   const redes = normalizarRedes(lugar.redes);
   const url = `${ORIGEN}${hrefLugar(lugar)}`;
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
-  // Compartir no sirve en un lugar privado: el enlace no le abre a nadie más que a su autor y a la administración
-  // (founder, 2026-09-24, OL-179: «esconde si no sirve botón de compartir»). Cómo llegar se queda.
-  const reparto = repartoDeAcciones((lugar.privado ? 1 : 2) + redes.length);
-  const claseReparto = reparto === "repartidas" ? ficha.accionesRepartidas : reparto === "carril" ? ficha.accionesCarril : "";
   const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
+  const { calle, resto } = partesDeDireccion(lugar.direccion);
 
   return (
-    <>
-      <ul className={ficha.datos}>
-        <li className={renglon.dato}>
-          <IconoPin width={20} height={20} />
-          <b>{lugar.direccion ?? "Sin dirección"}</b>
-        </li>
-        <Suspense fallback={<EsqueletoDato />}>
-          <MetaLugar lugar={lugar} />
+    <div className={ficha.cuerpo} data-cuerpo>
+      <Kpis>
+        <KpiDistancia lat={lugar.lat} lng={lugar.lng} />
+        <Suspense
+          fallback={
+            <>
+              <EsqueletoKpi />
+              <EsqueletoKpi />
+            </>
+          }
+        >
+          <KpisLugar lugar={lugar} />
         </Suspense>
-      </ul>
+      </Kpis>
 
       {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
-      <div className={`${ficha.acciones} ${claseReparto}`}>
+      <div className={ficha.acciones}>
         <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
           <span className={CIRCULO}>
             <IconoRuta />
           </span>
           Cómo llegar
         </a>
+        {/* Compartir no sirve en un lugar privado: el enlace no le abre a nadie más que a su autor y a la administración
+            (founder, 2026-09-24, OL-179: «esconde si no sirve botón de compartir»). Cómo llegar se queda. */}
         {!lugar.privado && (
           <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`} url={url} className={ficha.accion}>
             <span className={CIRCULO}>
@@ -246,26 +238,38 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar } }: { f: 
         ))}
       </div>
 
-      <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
-
-      {lugar.descripcion && <Desplegable texto={lugar.descripcion} />}
-
       <Suspense fallback={<EsqueletoSeccionEventos />}>
         <SeccionEventosLugar lugar={lugar} actual={actual} hrefPublicarAqui={hrefPublicarAqui} />
       </Suspense>
 
-      {/* Sin pie de origen para las fichas del catálogo (decisión del founder, 2026-09-14): solo se dice quién la publicó cuando hay quién. */}
-      {!(lugar.origen && !lugar.autor) && (
-        <p className={ficha.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
+      <section className={ficha.tarjeta}>
+        <h2>Dónde</h2>
+        <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
+        <a href={comoLlegar} className={renglon.dato} target="_blank" rel="noopener noreferrer">
+          <IconoPin width={20} height={20} />
+          <b>{calle || "Sin dirección"}</b>
+          {resto && <small>{resto}</small>}
+          <IconoChevronDerecha />
+        </a>
+      </section>
+
+      {lugar.descripcion && (
+        <section className={ficha.bloque} aria-label="Sobre el lugar">
+          <h2>Sobre el lugar</h2>
+          <Desplegable texto={lugar.descripcion} />
+        </section>
       )}
+
+      {/* Sin pie de origen para las fichas del catálogo (decisión del founder, 2026-09-14): solo se dice quién la publicó cuando hay quién. */}
+      {!(lugar.origen && !lugar.autor) && <p className={ficha.pie}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}</p>}
       {/* Quien lleva el espacio de verdad puede pedir la ficha: al final, discreto y solo con sesión (sin sesión
           no se ofrece, para no invitar a reclamos ajenos). El origen se dice dentro de la hoja, no en la ficha. */}
       {actual && !puedeEditar && <EsMiEspacio lugarId={lugar.id} nombre={lugar.nombre} correo={correoDe(actual)} origen={lugar.origen ? ORIGENES[lugar.origen].nombre : undefined} />}
-    </>
+    </div>
   );
 }
 
-/** La barra de Seguir de la ficha: «Seguir» lleno a lo ancho y, ya seguido, «Sigues» con su promesa. */
+/** La pastilla de Seguir de la ficha: «Seguir» y, ya seguido, «Sigues» en verde (`components/Seguir`). */
 export function SeguirLugar({ f: { lugar, actual, sigo } }: { f: FichaLugar }) {
   return (
     <Seguir
@@ -277,14 +281,13 @@ export function SeguirLugar({ f: { lugar, actual, sigo } }: { f: FichaLugar }) {
       accion={cambiarSeguimiento.bind(null, lugar.id)}
       hrefEntrar={`${hrefLugar(lugar)}?accion=seguir`}
       avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
-      avisosCorreo={actual?.perfil.avisos_correo ?? false}
       correo={correoDe(actual)}
       llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
     />
   );
 }
 
-/** Lo secundario de la ficha, dentro de su menú «···»: editar, destacar, ocultar, reportar y borrar, según quién mira. */
+/** Lo secundario de la ficha, dentro de su menú «···»: editar, destacar, ocultar, reportar y borrar, según quien mira. Cada uno, una fila como las de Ajustes. */
 export function OpcionesLugar({ f: { lugar, actual, esAdmin, puedeEditar, puedeBorrar, destacable } }: { f: FichaLugar }) {
   // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos eventos tiene: el menú de administración sigue
   // en el HTML inicial y no puede esperar esa consulta aparte.
@@ -293,8 +296,9 @@ export function OpcionesLugar({ f: { lugar, actual, esAdmin, puedeEditar, puedeB
     <>
       {puedeEditar && (
         <li>
-          <Link href={`${hrefLugar(lugar)}/editar`} className={ficha.menuItem}>
-            Editar
+          <Link href={`${hrefLugar(lugar)}/editar`} className={renglon.ajuste}>
+            <IconoLapiz width={20} height={20} />
+            <b>Editar</b>
           </Link>
         </li>
       )}
@@ -302,18 +306,19 @@ export function OpcionesLugar({ f: { lugar, actual, esAdmin, puedeEditar, puedeB
       {esAdmin && (
         <li>
           <form action={cambiarVisible.bind(null, lugar.id, !lugar.visible)}>
-            <button type="submit" className={ficha.menuItem}>
-              {lugar.visible ? "Ocultar del mapa" : "Volver a mostrar"}
+            <button type="submit" className={renglon.ajuste}>
+              {lugar.visible ? <IconoOjoTachado width={20} height={20} /> : <IconoOjo width={20} height={20} />}
+              <b>{lugar.visible ? "Ocultar del mapa" : "Volver a mostrar"}</b>
             </button>
           </form>
         </li>
       )}
-      <li className={ficha.menuItem}>
+      <li>
         <Reportar tipo="lugar" objetoId={lugar.id} volver={hrefLugar(lugar)} conSesion={!!actual} />
       </li>
       {puedeBorrar && (
-        <li className={ficha.menuItem}>
-          <Borrar que="el lugar" icono="lugar" aviso={avisoBorrar} accion={borrarLugar.bind(null, lugar.id)} />
+        <li>
+          <Borrar fila que="el lugar" icono="lugar" aviso={avisoBorrar} accion={borrarLugar.bind(null, lugar.id)} />
         </li>
       )}
     </>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, diasConEvento, eleccionesPuestas, filtrarLugares, filtrarPorEleccion, hrefLugar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
+import { calleCorta, conProximo, diasConEvento, eleccionesPuestas, filtrarLugares, filtrarPorEleccion, hrefLugar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -82,6 +82,16 @@ describe("calleCorta", () => {
     expect(calleCorta("Av. Carranza 480, Centro, San Luis Potosí")).toBe("Av. Carranza 480");
     expect(calleCorta("Jardín de Tequis 3")).toBe("Jardín de Tequis 3");
     expect(calleCorta(null)).toBe("");
+  });
+});
+
+describe("partesDeDireccion (la fila «Dónde» de una ficha)", () => {
+  it("la calle y, aparte, lo demás", () => {
+    expect(partesDeDireccion("Manuel José Othón s/n esq. Chico Sein, Centro Histórico, 78000, San Luis Potosí, S.L.P.")).toEqual({ calle: "Manuel José Othón s/n esq. Chico Sein", resto: "Centro Histórico, 78000, San Luis Potosí, S.L.P." });
+  });
+  it("sin comas, todo es la calle; sin dirección, nada", () => {
+    expect(partesDeDireccion("Jardín de Tequis 3")).toEqual({ calle: "Jardín de Tequis 3", resto: "" });
+    expect(partesDeDireccion(null)).toEqual({ calle: "", resto: "" });
   });
 });
 

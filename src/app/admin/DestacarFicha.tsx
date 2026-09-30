@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import ficha from "@/components/ui/Ficha.module.css";
+import { IconoDestello } from "@/components/ui/Iconos";
+import renglon from "@/components/ui/Renglon.module.css";
 import { opcionDestacar, textoHecho, type Decidido, type Destacado, type TipoFicha } from "@/lib/destacados";
 import { cambiarDestacado } from "./acciones";
 import styles from "./DestacarFicha.module.css";
@@ -9,8 +10,8 @@ import styles from "./DestacarFicha.module.css";
 type Props = { tipo: TipoFicha; id: string; decidido: Decidido; enTira: Destacado | null; zona?: string };
 
 /**
- * «Destacar» o «Quitar de destacados» en los tres puntos de una ficha, solo para la administración (docs/rediseno/20).
- * No pregunta: debajo dice hasta cuándo o por qué (decisiones 7 y 9). Lo hecho queda escrito en su renglón con Deshacer,
+ * «Destacar» o «Quitar de destacados» en los tres puntos de una ficha, solo para la administración (docs/rediseno/20): una fila
+ * como las de Ajustes. No pregunta: debajo dice hasta cuándo o por qué (decisiones 7 y 9). Lo hecho queda escrito en su fila con Deshacer,
  * como la respuesta de «Reportar» en el mismo menú; Deshacer repone lo decidido antes tal cual, con su plazo y su fecha,
  * para que la tira quede como estaba.
  */
@@ -32,15 +33,17 @@ export default function DestacarFicha({ tipo, id, decidido, enTira, zona }: Prop
   return (
     <li>
       {hecho ? (
-        <p className={`${ficha.menuItem} ${styles.hecho}`} role="status">
-          {hecho.texto}
-          <button type="button" onClick={() => cambiar(hecho.previo, null)} disabled={enCamino}>
+        <p className={renglon.ajuste} role="status">
+          <IconoDestello width={20} height={20} />
+          <b>{hecho.texto}</b>
+          <button type="button" className={styles.deshacer} onClick={() => cambiar(hecho.previo, null)} disabled={enCamino}>
             Deshacer
           </button>
         </p>
       ) : (
-        <button type="button" className={`${ficha.menuItem} ${styles.destacar}`} onClick={() => cambiar({ estado: opcion.quitar ? "quitado" : "elegido", plazo: null, creado: null }, decidido)} disabled={enCamino}>
-          {opcion.quitar ? "Quitar de destacados" : "Destacar"}
+        <button type="button" className={renglon.ajuste} onClick={() => cambiar({ estado: opcion.quitar ? "quitado" : "elegido", plazo: null, creado: null }, decidido)} disabled={enCamino}>
+          <IconoDestello width={20} height={20} />
+          <b>{opcion.quitar ? "Quitar de destacados" : "Destacar"}</b>
           <small>{opcion.detalle}</small>
         </button>
       )}

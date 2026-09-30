@@ -1,7 +1,8 @@
 /** Prueba de componente de `HojaLugares` y `FichaHoja` (docs/rediseno/50, P5b), con sus estilos y en Chrome real a 390×844: las alturas de la lista
  *  (recogida = la franja de 64, asoma = dos renglones y medio, llena = la pantalla y la navegación se va), que jalar hacia abajo recoge y
  *  nunca cierra, que el mapa recibe los toques del hueco y la hoja los del cuerpo, y la ficha: abre a foto y datos, la ✕ la cierra y la
- *  lista vuelve al desplazamiento que tenía, y su cabecera se vuelve compacta al desplazar.
+ *  lista vuelve al desplazamiento que tenía, y su cabecera se vuelve compacta al desplazar. Y (docs/rediseno/50, P6) la pastilla flotante de
+ *  Seguir: sobre la navegación mientras la hoja asoma, al pie cuando está llena, escondida recogida; y el aviso sube sobre ella.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -19,6 +20,12 @@ let browser, server, dir, origin;
 const mocks = {
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){return React.createElement('a',p)}",
   "next/navigation": "export const useRouter=()=>({push(){},replace(){}});export const usePathname=()=>'/lugares';export const useSearchParams=()=>new URLSearchParams();",
+  // Lo que pide la pastilla de Seguir (`components/Seguir`): sin permisos ni avisos del teléfono, sin hablar con el servidor.
+  "@/lib/useAvisosTelefono": "export function usePlataforma(){return null} export function useEstadoPush(){return [null,()=>{}]} export function useInstalarApp(){return {puede:false, instalar: async()=>false}}",
+  "@/lib/pushCliente": "export function disponibilidadPush(){return 'no-soportado'} export async function suscribirPush(){return {ok:false,motivo:'fallo'}}",
+  "@/app/avisos/acciones": "export async function elegirAvisos(){return true}",
+  "@/app/perfil/acciones": "export async function guardarSuscripcionPush(){return true}",
+  "./HojaInstalar": "export default function HojaInstalar(){return null}",
 };
 
 before(async () => {
@@ -32,25 +39,46 @@ before(async () => {
       loader: "tsx",
       contents: `
       import React, {useState} from 'react';import {createRoot} from 'react-dom/client';
-      import HojaLugares from './src/app/lugares/HojaLugares';import FichaHoja from './src/app/lugares/FichaHoja';import './src/app/globals.css';
+      import HojaLugares from './src/app/lugares/HojaLugares';import FichaHoja from './src/app/lugares/FichaHoja';import Seguir from './src/components/Seguir';import lugares from './src/app/lugares/lugares.module.css';import './src/app/globals.css';
       const lugar = { id: 'l1', slug: 'l1', nombre: 'Museo de prueba', tipo: 'museo', direccion: 'Calle 1', lat: 0, lng: 0, portada: null, proximo: null };
-      window.qa = { recogida: [], cambios: [] };
+      window.qa = { recogida: [], cambios: [], fallar: false, acciones: [] };
       window.addEventListener('armazon:recogida', (e) => window.qa.recogida.push(e.detail));
+      // Un Server Component real reenvía "sigo" al día tras guardar; aquí se imita guardando lo que la acción recibió.
+      function SeguirDePrueba() {
+        const [sigo, setSigo] = useState(false);
+        async function accion(seguir) { window.qa.acciones.push(seguir); if (window.qa.fallar) return false; setSigo(seguir); return true; }
+        return <Seguir que="lugar" nombre="Museo de prueba" sigo={sigo} conSesion cuenta="c1" accion={accion} hrefEntrar="/lugares/l1?accion=seguir" avisosPreguntado correo="p...@example.com" llavePush="" />;
+      }
       function App() {
         const [abierta, setAbierta] = useState(false);
-        const piezas = { cuerpo: <><ul data-datos style={{ height: 130, listStyle: 'none' }}><li>datos</li></ul><div style={{ height: 1400 }}>el resto de la ficha</div></>, opciones: <li>Reportar</li>, seguir: null };
-        return (
+        // El cuerpo es un solo elemento con data-cuerpo (así lo entrega CuerpoLugar) y la pastilla, otro hijo de la ficha.
+        const piezas = {
+          cuerpo: <div data-cuerpo><ul data-datos style={{ height: 130, listStyle: 'none' }}><li>datos</li></ul><div style={{ height: 1400 }}>el resto de la ficha</div></div>,
+          opciones: <li>Reportar</li>,
+          seguir: <SeguirDePrueba />,
+        };
+        const hoja = (
+          <HojaLugares resumen="12 lugares" ficha={abierta ? <FichaHoja lugar={lugar} piezas={piezas} onCerrar={() => setAbierta(false)} /> : null} alAsentar={(e) => window.qa.cambios.push(e)}>
+            <ul style={{ listStyle: 'none' }}>
+              {Array.from({ length: 14 }, (_, i) => (
+                <li key={i} style={{ height: 100, borderBottom: '1px solid #ddd' }}>
+                  <a href="#" onClick={(e) => { e.preventDefault(); setAbierta(true); }}>Renglón {i}</a>
+                </li>
+              ))}
+            </ul>
+          </HojaLugares>
+        );
+        // Desde 792 la hoja es el panel de la rejilla de la pantalla de Lugares (la misma de la app); debajo, una capa sobre el mapa.
+        return window.innerWidth >= 792 ? (
+          <main className={lugares.lugares}>
+            <header />
+            <div className={lugares.mapa}>mapa</div>
+            {hoja}
+          </main>
+        ) : (
           <main style={{ height: '100dvh', paddingBottom: 'var(--nav-abajo)' }}>
             <div id="mapa" style={{ height: '100%', background: '#dfe8df' }}>mapa</div>
-            <HojaLugares resumen="12 lugares" ficha={abierta ? <FichaHoja lugar={lugar} piezas={piezas} onCerrar={() => setAbierta(false)} /> : null} alAsentar={(e) => window.qa.cambios.push(e)}>
-              <ul style={{ listStyle: 'none' }}>
-                {Array.from({ length: 14 }, (_, i) => (
-                  <li key={i} style={{ height: 100, borderBottom: '1px solid #ddd' }}>
-                    <a href="#" onClick={(e) => { e.preventDefault(); setAbierta(true); }}>Renglón {i}</a>
-                  </li>
-                ))}
-              </ul>
-            </HojaLugares>
+            {hoja}
           </main>
         );
       }
@@ -88,13 +116,14 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir() {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+async function abrir(ancho = 390, alto = 844) {
+  const context = await browser.newContext({ viewport: { width: ancho, height: alto } });
   const page = await context.newPage();
   const errores = [];
   page.on("pageerror", (e) => errores.push(e.message));
   await page.goto(origin, { waitUntil: "load" });
-  await page.waitForSelector('[role="region"][aria-label="Lugares"][data-hoja]');
+  // Con alturas (data-hoja) en el teléfono; desde 792 es el panel y no las tiene.
+  await page.waitForSelector(ancho >= 792 ? '[role="region"][aria-label="Lugares"]' : '[role="region"][aria-label="Lugares"][data-hoja]');
   await page.waitForTimeout(400);
   page.errores = errores;
   return page;
@@ -114,6 +143,16 @@ const rueda = async (page, dy) => {
   await page.waitForTimeout(900);
 };
 const cerca = (a, b, t = 2) => assert.ok(Math.abs(a - b) <= t, `${a} debía estar a ${t} de ${b}`);
+/** El color llega en el cuadro siguiente (con «reducir movimiento» las transiciones duran 0,01 ms, pero no cero): se espera a que llegue. */
+async function colorLlega(p, loc, propiedad, esperado, mensaje) {
+  let visto;
+  for (let i = 0; i < 100; i++) {
+    visto = await loc.evaluate((e, k) => getComputedStyle(e)[k], propiedad);
+    if (visto === esperado) return;
+    await p.waitForTimeout(20);
+  }
+  assert.equal(visto, esperado, mensaje);
+}
 
 test("la lista abre asomando dos renglones y medio; recogida es la franja y llena cubre la pantalla y esconde la navegación", async () => {
   const page = await abrir();
@@ -193,5 +232,60 @@ test("la ficha abre a foto y datos, la ✕ la cierra y la lista vuelve a donde e
   assert.equal(despues.ficha, false, "solo la ✕ cierra la ficha");
   assert.equal(despues.hoja, antes.hoja);
   cerca(despues.y, antes.y);
+  assert.deepEqual(page.errores, []);
+});
+
+test("la pastilla de Seguir flota sobre la navegación mientras la hoja asoma, va al pie cuando está llena y se esconde recogida", async () => {
+  const page = await abrir();
+  await page.getByRole("link", { name: "Renglón 2", exact: true }).evaluate((a) => a.click());
+  await page.waitForTimeout(900);
+  const pastilla = page.getByRole("button", { name: "Seguir" });
+  const holguraAbajo = async () => page.evaluate(() => innerHeight - document.querySelector("[data-flotantes]").getBoundingClientRect().bottom);
+  assert.equal((await estado(page)).hoja, "media");
+  cerca(await holguraAbajo(), 60 + 16, 1); // la navegación (60) y 16 de aire
+  const caja = await pastilla.boundingBox();
+  assert.equal(Math.round(caja.height), 48, "la pastilla mide lo de un toque");
+  await rueda(page, 3000);
+  assert.equal((await estado(page)).hoja, "llena");
+  cerca(await holguraAbajo(), 16, 1); // llena, la navegación se guarda y la pastilla baja al pie
+  await rueda(page, -3000);
+  assert.equal((await estado(page)).hoja, "recogida");
+  assert.equal(await page.locator("[data-flotantes]").evaluate((e) => getComputedStyle(e).visibility), "hidden", "recogida, la pastilla no se ve");
+  assert.deepEqual(page.errores, []);
+});
+
+test("Seguir en la ficha de la hoja: «Sigues» en verde, tocarlo otra vez deja de seguir, y un fallo avisa sobre la pastilla", async () => {
+  const page = await abrir();
+  await page.getByRole("link", { name: "Renglón 2", exact: true }).evaluate((a) => a.click());
+  await page.waitForTimeout(900);
+  const pastilla = (nombre) => page.getByRole("button", { name: nombre, exact: true });
+  await pastilla("Seguir").click();
+  await pastilla("Sigues").waitFor();
+  assert.equal(await pastilla("Sigues").getAttribute("aria-pressed"), "true");
+  await colorLlega(page, pastilla("Sigues"), "backgroundColor", "rgb(31, 111, 67)", "decidido: el verde de lo que ya quedó");
+  assert.equal(await pastilla("Sigues").innerText(), "Sigues", "sin nota dentro de la pastilla");
+  await pastilla("Sigues").click();
+  await pastilla("Seguir").waitFor();
+  assert.deepEqual(await page.evaluate(() => window.qa.acciones), [true, false]);
+  // Un guardado que falla: el aviso «No se pudo guardar» sube sobre la pastilla, no la tapa.
+  await page.evaluate(() => (window.qa.fallar = true));
+  await pastilla("Seguir").click();
+  await page.getByText("No se pudo guardar").waitFor();
+  const { aviso, flotante } = await page.evaluate(() => ({ aviso: document.querySelector('[role="alert"]').getBoundingClientRect().bottom, flotante: document.querySelector("[data-flotantes]").getBoundingClientRect().top }));
+  assert.ok(aviso <= flotante, `el aviso termina en ${aviso} y la pastilla empieza en ${flotante}`);
+  assert.deepEqual(page.errores, []);
+});
+
+test("desde 792 la hoja es el panel: la ficha no lleva asa y su ✕ queda a un respiro del borde", async () => {
+  const page = await abrir(1280, 800);
+  await page.getByRole("link", { name: "Renglón 2", exact: true }).evaluate((a) => a.click());
+  await page.waitForSelector("[data-ficha-hoja]");
+  const asa = page.locator('button[aria-label="Subir o bajar la ficha"]');
+  assert.equal(await asa.evaluate((e) => getComputedStyle(e).display), "none", "sin alturas no hay asa");
+  const { cerrar, ficha } = await page.evaluate(() => ({
+    cerrar: document.querySelector('[aria-label="Cerrar la ficha"]').getBoundingClientRect().top,
+    ficha: document.querySelector("[data-ficha-hoja]").getBoundingClientRect().top,
+  }));
+  cerca(cerrar - ficha, 12, 1); // `--espacio-3`: sin asa solo queda un respiro sobre la ✕
   assert.deepEqual(page.errores, []);
 });

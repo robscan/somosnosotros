@@ -1,114 +1,50 @@
 /* ==========================================================================
-   Ficha de evento (docs/rediseno/04-ficha-evento-flujo-y-estados.md). Lo común con la ficha de lugar
-   (página, datos, acciones, autor, barra pegajosa, menú) está en components/ui/Ficha.module.css.
-   1. Enlace externo · 2. Quién va · 3. Botones de la barra pegajosa
+   Lo propio de la ficha de evento (docs/rediseno/04-ficha-evento-flujo-y-estados.md). Lo común con las fichas de lugar y de artista
+   (la rejilla, el héroe, las acciones, los bloques, el pie) está en components/ui/Ficha.module.css.
+   1. Enlace externo · 2. Quién va: la pila de avatares
    ========================================================================== */
 
-/* 1. Enlace externo del evento */
+/* 1. Enlace externo del evento, bajo su descripción: se toca en 44 de alto sin cambiar cómo se lee */
 .enlaceExterno {
-  display: block;
-  margin-bottom: var(--espacio-5);
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: var(--toque-min);
   font-size: var(--letra-sm);
 }
 
-/* 2. Quién va */
-.quienVa {
-  margin-bottom: var(--espacio-5);
-  padding-top: var(--espacio-4);
-  border-top: 1px solid var(--borde);
-  /* "ver" la deja justo debajo de la barra pegajosa (OL-055) */
-  scroll-margin-top: calc(var(--alto-barra) + env(safe-area-inset-top, 0px));
-}
-.quienVa h2 {
-  font-size: var(--letra-xl);
-  margin-bottom: var(--espacio-2);
-}
-.nadie,
-.interesados {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.interesados {
-  margin-top: 6px;
-}
-.resumenVan {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 10px;
-  align-items: center;
-  width: 100%;
-  min-height: var(--toque-min);
-  border: none;
-  background: none;
-  color: var(--texto);
-  font-size: var(--letra-md);
-  text-align: left;
-  cursor: pointer;
-}
-.resumenVan > svg {
-  color: var(--texto-suave);
-  transition: transform 200ms;
-}
-.resumenVan[aria-expanded="true"] > svg {
-  transform: rotate(180deg);
-}
+/* 2. Quién va: sus avatares se apilan sin márgenes negativos: cada uno mide más que su columna (28 contra 20) y se encima al
+   siguiente; el relleno de la derecha es lo que sobresale el último. En la lista de personas, la inicial mide lo que una foto de
+   renglón de datos. El caret del renglón gira al abrir. */
 .pila {
-  display: flex;
-}
-.pila .avatar {
-  margin-left: -8px;
-  border: 2px solid var(--fondo);
-}
-.pila .avatar:first-child {
-  margin-left: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 20px;
+  padding-right: var(--espacio-2);
 }
 .avatar {
-  width: 32px;
-  height: 32px;
-  flex: none;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--fondo);
   border-radius: 50%;
   object-fit: cover;
   background: var(--fondo-miniatura);
-  display: inline-grid;
-  place-items: center;
-  font-size: var(--letra-xs);
-  font-weight: 700;
   color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 700;
 }
-.listaVan {
-  list-style: none;
-  display: grid;
-  gap: var(--espacio-1);
-  margin-top: var(--espacio-2);
+.inicialEnLista {
+  width: var(--espacio-8);
+  height: var(--espacio-8);
+  border: 0;
+  font-size: var(--letra-sm);
 }
-.persona {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--toque-min);
-  color: var(--texto);
-  text-decoration: none;
+.resumenVan > svg:last-child {
+  transition: transform var(--duracion);
 }
-
-/* 3. Barra pegajosa: "Voy" es la primaria común; "Me interesa" va en texto */
-.interesa {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px; /* la estrella y el texto */
-  min-height: var(--toque);
-  padding: 0 6px;
-  border: none;
-  background: none;
-  color: var(--texto);
-  font-size: var(--letra-md);
-  font-weight: 600;
-  text-decoration: underline;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .resumenVan > svg {
-    transition: none;
-  }
+.resumenVan[aria-expanded="true"] > svg:last-child {
+  transform: rotate(180deg);
 }

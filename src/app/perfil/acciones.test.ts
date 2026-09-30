@@ -73,7 +73,7 @@ describe("guardarSuscripcionPush", () => {
     expect(mocks.filtroPerfil).toHaveBeenCalledWith("id", "persona");
     expect(mocks.invalidar).toHaveBeenCalledTimes(2);
   });
-  it("OL-212 (tercera vuelta): revalida con `after`, no de inmediato — quien llama ya se entera solo (onDecidido, su propio estado o su propio router.refresh), y revalidar aquí de más solo repintaría la pantalla desde la que se guarda", async () => {
+  it("OL-212 (tercera vuelta): revalida con `after`, no de inmediato — quien llama ya se entera solo (su propio estado o su propio router.refresh), y revalidar aquí de más solo repintaría la pantalla desde la que se guarda", async () => {
     expect(await guardarSuscripcionPush(sub)).toBe(true);
     expect(mocks.despues).toHaveBeenCalledTimes(1);
     expect(mocks.despues).toHaveBeenCalledWith(expect.any(Function));

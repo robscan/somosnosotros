@@ -11,6 +11,8 @@ type Opciones = {
   alto?: "toque" | "control";
   /** `completo` (a todo lo de su caja) o `contenido` (lo que mide su texto). */
   ancho?: "completo" | "contenido";
+  /** La pastilla que flota sobre lo que pasa por debajo (Me interesa, Voy, Seguir): píldora de una línea, con sombra. Con `aria-pressed` lo que ya quedó se ve decidido. */
+  flotante?: boolean;
 };
 type ComoBoton = ButtonHTMLAttributes<HTMLButtonElement> & Opciones & { href?: undefined };
 type ComoEnlace = ComponentProps<typeof Link> & Opciones & { href: string };
@@ -19,8 +21,8 @@ type ComoEnlace = ComponentProps<typeof Link> & Opciones & { href: string };
  * Las clases de un botón, para lo que no puede ser un `<button>` ni un `<a>`: una etiqueta que dice qué hace el
  * control que la contiene (`rehacerCartel`) o un botón que ya trae su propio componente (`BotonCompartir`).
  */
-export function claseBoton({ variante = "primario", forma = "recta", alto = "toque", ancho = "completo" }: Opciones = {}): string {
-  return [styles.boton, styles[variante], styles[ancho], forma === "pildora" && styles.pildora, alto === "control" && styles.control].filter(Boolean).join(" ");
+export function claseBoton({ variante = "primario", forma = "recta", alto = "toque", ancho = "completo", flotante = false }: Opciones = {}): string {
+  return [styles.boton, styles[variante], styles[ancho], forma === "pildora" && styles.pildora, alto === "control" && styles.control, flotante && styles.flotante].filter(Boolean).join(" ");
 }
 
 /**
@@ -31,8 +33,8 @@ export function claseBoton({ variante = "primario", forma = "recta", alto = "toq
  * (late mientras el servidor responde) o con `aria-busy` en un botón.
  */
 export default function Boton(props: ComoBoton | ComoEnlace) {
-  const { variante, forma, alto, ancho, className, ...rest } = props;
-  const clase = [claseBoton({ variante, forma, alto, ancho }), className].filter(Boolean).join(" ");
+  const { variante, forma, alto, ancho, flotante, className, ...rest } = props;
+  const clase = [claseBoton({ variante, forma, alto, ancho, flotante }), className].filter(Boolean).join(" ");
   if (typeof rest.href === "string") {
     const { children, ...enlace } = rest as ComponentProps<typeof Link>;
     return (

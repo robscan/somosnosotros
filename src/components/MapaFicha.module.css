@@ -1,9 +1,8 @@
-/* Mapa de referencia de una ficha: ancho de columna, esquinas como las tarjetas (Cartel.module.css) */
+/* Mapa de referencia de una ficha, dentro de su tarjeta «Dónde»: a lo ancho de ella y con la proporción de su imagen (la pone
+   `MapaFicha`); esquinas como las tarjetas. */
 .mapa {
   display: block;
   width: 100%;
-  height: 170px;
-  margin-bottom: var(--espacio-4);
   border-radius: var(--radio);
   overflow: hidden;
   background: var(--fondo-miniatura);

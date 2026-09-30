@@ -185,23 +185,42 @@
   border-radius: var(--radio-chico);
 }
 
-/* 3. Dato: icono, principal, secundario y, si lo hay, el enlace que lleva más lejos («ver», «Entrar»). */
+/* 3. Dato: lo que dice una ficha, con la letra de la lista. Icono (o foto redonda, o la pila de avatares), principal y secundario;
+   si la fila lleva a otra parte, toda ella es el enlace (`<a class="dato">`) o el botón, y un chevron lo dice. */
 .dato {
   min-height: var(--control);
-  font-size: var(--letra-md);
+  padding: var(--espacio-2) 0;
 }
 .dato > b {
-  font-weight: 500;
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-titulo);
+  font-weight: var(--peso-lista-titulo);
+  font-variation-settings: var(--ancho-lista-titulo);
+  line-height: var(--interlinea-lista);
 }
-.dato > a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-width: var(--toque-min);
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-2);
+.dato > small {
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-meta);
+  font-variation-settings: var(--ancho-lista-meta);
+}
+:is(a, button).dato {
+  width: 100%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.dato > svg:not(:first-child) {
+  width: 16px;
+  height: 16px;
   color: var(--texto-suave);
-  font-size: var(--letra-sm);
+}
+.dato > img:first-child {
+  width: var(--espacio-8);
+  height: var(--espacio-8);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
 }
 
 /* 4. Ajuste: una fila de Ajustes. Es un enlace o un botón (toda ella se toca) o un `<li>` (información, palanca). La

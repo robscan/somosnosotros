@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Suspense } from "react";
+import Heroe from "@/components/ui/Heroe";
 
 /**
  * OL-161 (bitácora 196): la cabecera de la ficha (foto, nombre, etiqueta, JSON-LD, canonical) tiene que salir en el
@@ -82,15 +83,16 @@ describe("ficha de artista: la cabecera pinta antes que sus fechas (OL-161)", ()
     const arbol = await FichaArtista({ params: Promise.resolve({ id: "artista-de-prueba" }), searchParams: Promise.resolve({}) });
     const elementos = [...recorrer(arbol)];
 
-    const h1 = elementos.find((e) => e.type === "h1");
-    expect(h1?.props?.children).toBe("Artista de prueba");
+    // El héroe (portada, avatar y nombre, `ui/Heroe`) sale con la página, sin esperar nada.
+    const heroe = elementos.find((e) => e.type === Heroe);
+    expect(heroe?.props?.titulo).toBe("Artista de prueba");
 
     const jsonLd = elementos.find((e) => e.type === "script" && e.props?.type === "application/ld+json");
     expect(jsonLd).toBeTruthy();
     const datos = JSON.parse((jsonLd!.props.dangerouslySetInnerHTML as { __html: string }).__html);
     expect(datos.name).toBe("Artista de prueba");
 
-    // Cuánta gente lo sigue + su próxima fecha (un renglón, un Suspense) y "Se presenta en" (otro): dos límites.
+    // Sus tres números (un Suspense) y "Próximas fechas" (otro): dos límites.
     const suspenses = elementos.filter((e) => e.type === Suspense);
     expect(suspenses.length).toBe(2);
   });

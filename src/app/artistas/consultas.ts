@@ -12,15 +12,18 @@ export async function cargarArtistaLetrero(idOSlug: string): Promise<{ id: strin
   return data ?? null;
 }
 
-/** Quién se presenta en un evento, en su orden. Lo usan la ficha de evento y su alta al editar o duplicar. */
-export async function cargarQuien(eventoId: string): Promise<{ id: string; slug: string; nombre: string }[]> {
+/**
+ * Quién se presenta en un evento, en su orden, con lo que dice su renglón (a qué se dedica y su foto). Lo usan la ficha de evento
+ * y su alta al editar o duplicar.
+ */
+export async function cargarQuien(eventoId: string): Promise<ArtistaResumen[]> {
   const supabase = await clienteServidor();
   if (!supabase || !esUuid(eventoId)) return [];
   // Un cartel no lleva más de unas decenas de nombres; tope explícito contra el corte silencioso de PostgREST.
-  const { data } = await supabase.from("eventos_artistas").select("orden, artista:artistas(id, slug, nombre)").eq("evento_id", eventoId).order("orden").limit(50);
+  const { data } = await supabase.from("eventos_artistas").select("orden, artista:artistas(id, slug, nombre, disciplina, detalle, tipo, foto)").eq("evento_id", eventoId).order("orden").limit(50);
   return (data ?? [])
     .map((f) => (Array.isArray(f.artista) ? f.artista[0] : f.artista))
-    .filter((a): a is { id: string; slug: string; nombre: string } => !!a);
+    .filter((a): a is ArtistaResumen => !!a);
 }
 
 /** Los artistas ligados a una cuenta ("Soy yo / es mi grupo"): Quién ya viene resuelto con ellos. */

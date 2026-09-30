@@ -106,14 +106,16 @@ export default function Atras({ href, texto }: { href: string; texto: string }) 
 }
 
 /**
- * El mismo Atrás, solo con el chevron, para la barra de la app (44): desde 792 la ficha no lleva cabecera propia y su
- * Atrás vive ahí. Vuelve igual que el otro (`useVolver`).
+ * El mismo Atrás, solo con el chevron, para la barra de la app (44: desde 792 la ficha no lleva cabecera propia y su Atrás vive ahí)
+ * y para la barra de una ficha (48 y en círculo blanco sobre su portada, `tamano` y `relieve` de `ui/BotonIcono`). Vuelve igual
+ * que el otro (`useVolver`).
  */
-export function AtrasIcono({ href, texto }: { href: string; texto: string }) {
+export function AtrasIcono({ href, texto, tamano, relieve }: { href: string; texto: string; tamano?: "control" | "accion"; relieve?: "plano" | "elevado" | "contorno" }) {
   const volver = useVolver(href);
+  const glifo = tamano === "accion" ? 22 : 26;
   return (
-    <BotonIcono href={href} prefetch={false} onClick={volver} aria-label={`Atrás (${texto})`}>
-      <IconoChevronIzquierda width={26} height={26} />
+    <BotonIcono href={href} prefetch={false} tamano={tamano} relieve={relieve} onClick={volver} aria-label={`Atrás (${texto})`}>
+      <IconoChevronIzquierda width={glifo} height={glifo} />
     </BotonIcono>
   );
 }

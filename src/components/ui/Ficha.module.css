@@ -1,124 +1,189 @@
 /* ==========================================================================
-   Lenguaje común de las fichas (evento y lugar):
-   1. Página y barra · 2. Información · 3. Acciones secundarias · 4. Autor ·
-   5. Barra inferior pegajosa · 6. Menú ··· · 7. Recién publicado
-   Lo propio de cada ficha va en su propio módulo, junto a su page.tsx.
+   La ficha (docs/rediseno/50, P6; canon del prototipo firmado): una sola rejilla con áreas, la misma para un evento, un lugar y
+   un artista, a pantalla completa (`ui/Ficha`) y dentro de la hoja de Lugares (`app/lugares/FichaHoja`). De arriba abajo: la barra
+   (una fila de alto 0 que se abre sobre el héroe), el héroe (la portada y su título, en la misma celda), los avisos de la página,
+   el cuerpo y las acciones flotantes. Nada se escapa del aire con un margen negativo: la barra y el héroe llegan a los bordes
+   porque la ficha no lleva aire a los lados, y el cuerpo pone el suyo.
+   1. La rejilla · 2. La barra · 3. El héroe · 4. El cuerpo · 5. Las acciones · 6. Bloques · 7. Las acciones flotantes ·
+   8. Avisos de la página · 9. Otras páginas: la persona y la página de formulario
    ========================================================================== */
 
-/* 1. Página: las tres franjas del shell, como en las pantallas raíz: cabecera blanca (ui/Barra interior),
-   contenido en su tono, barra de acciones blanca abajo. Deja sitio abajo para la barra pegajosa. */
-.pagina {
+/* 1. La rejilla. La página llena la pantalla; la fila de las acciones flotantes absorbe lo que sobre, así que una ficha corta las
+   deja al pie. `--barra-arriba` es lo que la barra deja sobre sus botones (la franja de la hora en la página, el asa en la hoja) y
+   de ahí sale lo que mide la barra: los saltos de una sección a otra la respetan. */
+.ficha {
+  --alto-barra-ficha: calc(var(--barra-arriba) + var(--boton-icono) + var(--espacio-2));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 0 max-content max-content max-content 1fr;
+  grid-template-areas:
+    "barra"
+    "heroe"
+    "avisos"
+    "cuerpo"
+    "flotantes";
+  align-content: start;
+  padding-bottom: calc(var(--espacio-4) + var(--piso));
+}
+.enPagina {
+  --barra-arriba: calc(var(--tope) + var(--espacio-2));
   min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding: 0 var(--gutter) calc(96px + var(--piso));
   background: var(--fondo-contenido);
 }
-/* Desde 792 la ficha no lleva cabecera propia (su Atrás y su menú están en la barra de la app): el aire que esa cabecera
-   dejaba debajo lo pone la página. Eran 12 px de margen que se fundían con los 4 de la primera pieza; como relleno se
-   suman, así que aquí van 8 para que la ficha empiece en el mismo punto. */
+/* Desde 792 el héroe no llega a los bordes y la barra de la app queda encima: un poco de aire antes de la portada. */
 @media (min-width: 792px) {
-  :global([data-vista="ficha"]) .pagina {
-    padding-top: var(--espacio-2);
+  .enPagina {
+    padding-top: var(--espacio-5);
   }
 }
-.oculto {
-  margin-bottom: var(--espacio-3);
+
+/* 2. La barra: en reposo es transparente sobre el héroe, con Atrás y el menú en círculos blancos; compacta (`data-compacta`, que
+   pone la página al pasar la portada o la hoja al desplazarse) toma la portada oscurecida, enseña el título y los botones pasan a
+   blanco sin fondo: un héroe en miniatura. Sus hijos van en la segunda fila, Atrás a la izquierda, el título en medio y el menú
+   a la derecha; el asa de la hoja abarca las dos filas. Desde 792 la ficha no lleva barra: su Atrás y su menú están en la barra
+   de la app (nunca dos barras). */
+.barra {
+  grid-area: barra;
+  align-self: start;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-pegajoso);
+  display: grid;
+  grid-template-columns: var(--boton-icono) minmax(0, 1fr) var(--boton-icono);
+  grid-template-rows: var(--barra-arriba) var(--boton-icono);
+  align-items: center;
+  column-gap: var(--espacio-2);
+  padding: 0 var(--gutter) var(--espacio-2);
+  transition: background-color var(--duracion);
+}
+:where(.barra > *) {
+  grid-row: 2;
+}
+.barra > :is(a, button) {
+  color: var(--texto);
+}
+.tituloBarra {
+  grid-column: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--letra-md);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  opacity: 0;
+  transition: opacity var(--duracion);
+  pointer-events: none;
+}
+.ficha[data-compacta] > .barra {
+  background:
+    linear-gradient(var(--velo-barra), var(--velo-barra)),
+    var(--portada, none) center / cover,
+    var(--texto);
+  color: var(--primario-texto);
+}
+.ficha[data-compacta] > .barra > .tituloBarra {
+  opacity: 1;
+}
+.ficha[data-compacta] > .barra > :is(a, button) {
+  background: none;
+  box-shadow: none;
+  color: var(--primario-texto);
+}
+@media (min-width: 792px) {
+  :global([data-vista="ficha"]) .barra {
+    display: none;
+  }
 }
 
-/* 2. Información: título, etiqueta y renglones con icono, como en la agenda */
-/* Foto con una acción flotante sobre la esquina (por ahora, solo compartir en la ficha de artista, OL-159): el
-   mismo círculo con elevación de las acciones de abajo (ui/BotonIcono), sin letrero — se entiende solo, como la
-   lupa de `Cartel` sobre la portada. */
-.fotoConAccion {
-  position: relative;
-  width: fit-content;
+/* 3. El héroe: la portada 3:2 y su título, en la misma celda (el título al pie, sobre un velo, sin estorbar el toque que abre la
+   imagen). Llega a los bordes en el teléfono; en una pantalla ancha mide lo que la columna y su aire. */
+.portada,
+.titulo {
+  grid-area: heroe;
+  margin-inline: calc(var(--gutter) - var(--espacio-5));
 }
-.compartirFoto {
-  position: absolute;
-  top: -4px;
-  right: -4px;
+.portada {
+  margin-block: 0;
 }
 .titulo {
-  font-size: var(--letra-2xl);
-  margin-bottom: var(--espacio-3);
+  align-self: end;
+  z-index: 1;
+  display: grid;
+  justify-items: start;
+  gap: var(--espacio-2);
+  padding: var(--espacio-8) var(--espacio-5) var(--espacio-4);
+  background: var(--velo-titulo);
+  color: var(--primario-texto);
+  pointer-events: none;
 }
-.tituloConEtiqueta {
-  margin-bottom: 2px;
+.titulo > :is(h1, h2) {
+  font-size: var(--letra-xl);
 }
 .etiqueta {
-  margin-bottom: var(--espacio-3);
-  color: var(--texto-suave);
+  padding: 2px var(--espacio-2);
+  border-radius: var(--radio-pildora);
+  background: var(--vidrio);
+  color: var(--primario);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-texto);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.meta {
   font-size: var(--letra-sm);
+  font-weight: 500;
+  font-variation-settings: var(--ancho-texto);
+  opacity: 0.9;
 }
-/* La lista de datos: cada uno es un renglón `dato` (ui/Renglon.module.css) */
-.datos {
-  list-style: none;
-  display: grid;
-  gap: 2px;
-  margin-bottom: var(--espacio-4);
+/* Un artista: su avatar a la izquierda de la etiqueta, el nombre y la meta (el avatar sí recibe el toque: se abre entero). */
+.conAvatar {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  column-gap: var(--espacio-3);
 }
-/* Acción deshabilitada con explicación ("Cómo llegar · sin dirección") */
-.accion small {
-  color: var(--texto-suave);
-  font-size: var(--letra-2xs);
-  font-weight: 400;
+.conAvatar > :first-child {
+  grid-area: 1 / 1 / span 3;
+  pointer-events: auto;
+}
+.conAvatar > :not(:first-child) {
+  grid-column: 2;
 }
 
-/* 3. Acciones secundarias: icono en círculo con elevación y letrero debajo, como la barra inferior de la app y el
-   botón de "Voy"/"Seguir" de los renglones (el mismo `ui/BotonIcono` elevado; corrección del founder,
-   OL-159, 2026-09-23: antes eran tarjetas con borde, dos estilos distintos para la misma idea de botón de
-   acción — ahora solo hay uno). Sangra hasta el borde de la pantalla como el carril de Destacados
-   (founder, 2026-09-21).
-   Reparto (founder, 2026-09-24, OL-167, corrige OL-163 — «Te había pedido que en los enlaces de artistas
-   distribuyeras elementos en espacio disponible y que lo hicieras a partir de 2, pero quiero que lo cambies a
-   partir de 3, con dos se percibe como error»): con uno o dos círculos, quedan a la izquierda con el espacio
-   normal del carril (el flex por defecto ya lo hace, sin clase aparte, sin estirarse); de tres a los que quepan
-   (`.accionesRepartidas`, decidido por `lib/ficha.ts` sin medir el DOM) se reparten a todo el ancho con el mismo
-   espacio entre sí; más de los que caben (`.accionesCarril`) van en un carril deslizable con espacio fijo, y el
-   siguiente círculo asoma por el borde porque su ancho no es múltiplo exacto del espacio visible — el mismo
-   efecto que el carril de Destacados, sin nada especial de más. */
-.acciones {
+/* 4. El cuerpo: los bloques de la ficha en fila, con el aire de la página a los lados. */
+.cuerpo {
+  grid-area: cuerpo;
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+  padding: var(--espacio-4) var(--gutter) 0;
+}
+.cuerpo > * {
+  margin-top: var(--espacio-6);
+}
+.cuerpo > :first-child {
+  margin-top: 0;
+}
+
+/* 5. Las acciones: un círculo con su letrero debajo (ui/BotonIcono, grande y elevado, en un `<span>` para no meter un botón dentro
+   de otro control), todas en una fila; si no caben, las que sobran pasan a la de abajo, nunca quedan cortadas. `.accion` se usa en
+   `<a>` (Cómo llegar, redes), en el `<span aria-disabled>` de «sin dirección» y en el `<button>` de Compartir: reset de apariencia
+   nativa (un `<a>` y un `<span>` no traen borde, fondo ni `appearance`, así que no les cambia nada). */
+.cuerpo > .acciones {
   display: flex;
-  gap: var(--espacio-4);
-  margin-inline: calc(-1 * var(--gutter));
-  margin-bottom: var(--espacio-5);
-  padding-inline: var(--gutter);
-  overflow-x: auto;
-  scroll-padding-inline: var(--gutter);
-  scrollbar-width: none;
+  flex-wrap: wrap;
+  gap: var(--espacio-3);
+  margin-top: var(--espacio-5);
 }
-.acciones::-webkit-scrollbar {
-  display: none;
-}
-.accionesRepartidas {
-  justify-content: space-between;
-  container-type: inline-size; /* para medir las etiquetas contra el ancho de esta caja y no contra el de la ventana */
-}
-/* A 320px, cuatro círculos de 64px (min-width de `.accion`, sin tocar) con el `gap` normal (16px) no caben:
-   4×64 + 3×16 = 304px contra 280px útiles (320 − 2×20px de `--gutter`, comprobado en globals.css). Con
-   8px de gap sí: 4×64 + 3×8 = 280px, exacto. `space-between` no ayuda aquí (no hay espacio de sobra que
-   repartir), así que también se alinean a la izquierda, como con 1-2 enlaces. */
-@media (max-width: 340px) {
-  .accionesRepartidas {
-    justify-content: flex-start;
-    gap: var(--espacio-2);
-  }
-}
-.accionesCarril {
-  gap: var(--espacio-5);
-}
-/* Una acción: el círculo (ui/BotonIcono, grande y elevado, en un `<span>` para no meter un botón dentro de otro
-   control) con su letrero debajo. `.accion` se usa en `<a>` (Cómo llegar, redes), en el `<span aria-disabled>` de
-   "sin dirección" y en el `<button>` de `BotonCompartir` — reset de apariencia nativa (founder, 2026-09-24,
-   OL-167: el botón de Compartir salía con una cápsula gris de borde redondeado alrededor del círculo y el
-   letrero). Un `<a>` y un `<span>` no traen borde, fondo, padding ni `appearance` propios, así que el reset no
-   les cambia nada. */
 .accion {
   flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  min-width: 64px;
+  min-width: var(--boton-icono-grande);
   border: 0;
   margin: 0;
   padding: 0;
@@ -133,42 +198,16 @@
   appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
-/* Etiqueta de una acción (OL-168, corrección del gestor): con el título editable de un enlace (hasta 30
-   caracteres) el texto ya no cabe siempre en una línea de "Cómo llegar" o "Instagram". Envuelve a dos líneas
-   como máximo y corta con puntos suspensivos, sin tocar el círculo ni el `min-width` de `.accion`. Con una
-   etiqueta corta ("Cómo llegar") que cabe en una línea, `-webkit-line-clamp` no la toca: se ve igual que antes.
-   80px es el ancho a 390px (el máximo que reparte `.accionesRepartidas`, doc `lib/ficha.ts`): 390 − 2×20px de
-   `--gutter` − 3×16px de `gap` de `.acciones`, entre 4 círculos ≈ 75.5px, 80 redondeado. En el carril
-   (`.accionesCarril`) y con 1-2 (sin clase de reparto) los círculos no cambian de ancho con la pantalla — se
-   desplazan o sobra espacio — así que 80px fijo. */
+/* El letrero de una acción con título editable (hasta 30 caracteres, OL-168): a dos líneas como mucho y con puntos suspensivos,
+   sin tocar el círculo. Su ancho máximo es el del círculo y aire a los lados. */
 .accionEtiqueta {
   display: -webkit-box;
-  max-width: 80px;
+  max-width: calc(var(--boton-icono-grande) + var(--espacio-6));
   overflow: hidden;
   overflow-wrap: anywhere;
   white-space: normal;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-}
-/* Con 3-4 (`.accionesRepartidas`) los círculos SÍ se reparten a todo el ancho sin desplazarse: a 390px caben
-   4 etiquetas de 80px, pero a 320/375 no (medido, segundo hallazgo del gestor: 4 títulos al tope de 30
-   caracteres se salían 52px a 320px). La misma cuenta de arriba, pero con el ancho real de la caja
-   (`100cqw`, el de `.accionesRepartidas`) en vez de 390 fijo, y sin pasar nunca de los 80px que ya fijó el founder para
-   390px. */
-.accionesRepartidas .accionEtiqueta {
-  max-width: min(80px, calc((100cqw - 3 * var(--espacio-4)) / 4));
-}
-
-/* Título «Enlaces» sobre el carril de acciones (ficha de artista): sección propia, no `FichaLista.module.css`
-   (`.lista h2`) — ese título es fijo/pegajoso para listas largas que se recorren; aquí es un carril corto, sin
-   nada de eso. Sin línea debajo del título (founder, 2026-09-23, OL-163: "se ve horrible") y 16 px hasta el
-   carril, como el título de un carril en Inicio (`Destacados.module.css`, `.cabecera` con `gap: var(--espacio-4)`). */
-.seccionEnlaces {
-  margin-bottom: var(--espacio-5);
-}
-.seccionEnlaces h2 {
-  margin-bottom: var(--espacio-4);
-  font-size: var(--letra-xl);
 }
 .accion[aria-disabled="true"] {
   color: var(--texto-suave);
@@ -179,88 +218,99 @@
   background: var(--fondo-suave);
   box-shadow: none;
 }
+/* Una acción apagada dice por qué («sin dirección»). */
+.accion small {
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 400;
+}
 
-/* 4. Autor, al pie */
-.autor {
-  padding: var(--espacio-3) 0;
+/* 6. Bloques: un título y lo suyo. La tarjeta (Dónde) es un bloque con su caja; el pie dice quién publicó. `scroll-margin-top` deja
+   la sección justo bajo la barra cuando un número (`ui/Kpi`) baja hasta ella. */
+.bloque,
+.tarjeta {
+  display: grid;
+  gap: var(--espacio-2);
+  scroll-margin-top: var(--alto-barra-ficha);
+}
+.bloque > h2,
+.tarjeta > h2 {
+  font-size: var(--letra-xl);
+}
+/* La cuenta junto al título («Próximos eventos · 3») va en gris */
+.cuenta {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+.bloque ul {
+  list-style: none;
+}
+/* Los eventos de una ficha van por día, con el título del día en gris sobre su lista (`EventosPorDia`: el `h3` y su lista, hijos del
+   bloque; un `h3` más adentro, como el de una novedad, es de su dueño). */
+.bloque > h3 {
+  padding-top: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+}
+.tarjeta {
+  padding: var(--espacio-3) var(--espacio-4) var(--espacio-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: var(--fondo);
+}
+.vacio {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  line-height: 1.4;
+}
+.nota {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--espacio-1);
+  padding-top: var(--espacio-3);
   border-top: 1px solid var(--borde);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+.pie a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--toque-min);
+  text-decoration: underline;
+}
 
-/* 5. Barra inferior pegajosa: acción primaria, y luego estado */
-.accionFija {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--z-flotante);
+/* 7. Las acciones flotantes (Me interesa · Voy, Seguir): pastillas de una línea pegadas al pie mientras la ficha pasa por debajo;
+   la fila que las guarda absorbe lo que sobre, así una ficha corta también las deja al pie. En la hoja de Lugares se pegan sobre la
+   navegación mientras asoma y al pie cuando está llena (`FichaHoja.module.css`, con `--flotantes-abajo`). */
+.flotantes {
+  grid-area: flotantes;
+  align-self: end;
+  position: sticky;
+  bottom: var(--flotantes-abajo, calc(var(--piso) + var(--espacio-4)));
+  z-index: calc(var(--z-flotante) + 1);
+  justify-self: center;
+  display: flex;
+  gap: var(--espacio-2);
+  max-width: 100%;
+  margin-top: var(--espacio-6);
+  transition: bottom var(--duracion-recogida, var(--duracion)) var(--curva);
+}
+
+/* 8. Lo que la página avisa antes del cuerpo: recién publicado (evidencia y la siguiente acción), un error, «oculta». */
+.avisos {
+  grid-area: avisos;
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--espacio-3);
-  align-items: center;
-  min-height: 72px;
-  padding: var(--espacio-3) var(--gutter) calc(var(--espacio-3) + var(--piso));
-  background: var(--fondo);
-  border-top: 1px solid var(--borde);
+  padding: var(--espacio-4) var(--gutter) 0;
 }
-.accionUnica {
-  grid-template-columns: 1fr;
+.oculto {
+  margin-bottom: var(--espacio-3);
 }
-.accionEstado {
-  grid-template-columns: 1fr auto;
-}
-/* Grid con áreas: icono a la izquierda; el texto suelto ("Voy") cae en la celda libre de arriba y small abajo */
-.seleccionado {
-  display: inline-grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas:
-    "icono texto"
-    "icono nota";
-  column-gap: var(--espacio-2);
-  align-items: center;
-  align-content: center;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-4);
-  border: 1.5px solid var(--primario);
-  border-radius: var(--radio);
-  background: var(--primario-suave);
-  color: var(--primario);
-  font-size: var(--letra-md);
-  font-weight: 700;
-  line-height: 1.1;
-}
-.seleccionado > svg {
-  grid-area: icono;
-}
-.seleccionado small {
-  grid-area: nota;
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-  font-weight: 500;
-}
-
-/* 6. Menú ··· (dentro de la hoja) */
-.menu {
-  list-style: none;
-  margin-top: var(--espacio-4);
-}
-.menuItem {
-  display: block;
-  width: 100%;
-  min-height: var(--toque);
-  padding: var(--espacio-2) var(--espacio-1);
-  border: none;
-  border-bottom: 1px solid var(--borde);
-  background: none;
-  color: var(--texto);
-  font-size: var(--letra-md);
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-/* 7. Recién publicado: evidencia y la siguiente acción */
 /* Grid con áreas: el título, el texto suelto (cae en la celda libre) y el botón a la derecha */
 .publicado {
   display: grid;
@@ -286,4 +336,53 @@
 /* El botón de la tarjeta (ui/Boton): solo dice en qué celda va */
 .publicadoBoton {
   grid-area: boton;
+}
+
+/* 9. La ficha de una persona no lleva héroe: una barra blanca (con su raya) y, debajo, lo mismo que Mi perfil, con el aire de
+   cada bloque. La página de formulario (Ajustes, administración, Novedades) es la de siempre: aire a los lados y sitio al pie. */
+.persona {
+  --alto-cabecera: calc(var(--alto-barra) + var(--tope));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
+  min-height: calc(100dvh - var(--barra-flujo, 0px));
+  padding-bottom: calc(var(--espacio-6) + var(--piso));
+  background: var(--fondo-contenido);
+}
+@media (min-width: 792px) {
+  .persona {
+    --alto-cabecera: 0px;
+  }
+}
+.barraSolida {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-pegajoso);
+  display: grid;
+  grid-template-columns: var(--control) minmax(0, 1fr) var(--control);
+  align-items: center;
+  column-gap: var(--espacio-2);
+  height: calc(var(--alto-barra) + var(--tope));
+  padding: var(--tope) var(--gutter) 0;
+  background: var(--fondo);
+  box-shadow: inset 0 -1px 0 var(--borde);
+}
+.barraSolida > .tituloBarra {
+  opacity: 1;
+}
+@media (min-width: 792px) {
+  :global([data-vista="ficha"]) .barraSolida {
+    display: none;
+  }
+}
+.pagina {
+  min-height: calc(100dvh - var(--barra-flujo, 0px));
+  padding: 0 var(--gutter) calc(var(--espacio-8) + var(--piso));
+  background: var(--fondo-contenido);
+}
+
+/* El menú «···» de una ficha (dentro de la hoja): sus filas son las de Ajustes (ui/Renglon), en su tarjeta */
+.menu {
+  margin-top: var(--espacio-4);
 }

@@ -2,11 +2,11 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import type { MouseEvent, ReactNode } from "react";
-import { altaDeRuta, enlaceDeAlta, enlaceDeBusqueda, vistaDeRuta } from "@/lib/armazon";
+import { altaDeRuta, enlaceDeAlta, enlaceDeBusqueda, fichaConMenu, vistaDeRuta } from "@/lib/armazon";
 import { usePrestadoALaBarra } from "./prestamoBarra";
 import { AtrasIcono } from "./ui/Atras";
 import BotonIcono from "./ui/BotonIcono";
-import { IconoBuscar, IconoCrear } from "./ui/Iconos";
+import { IconoBuscar, IconoCrear, IconoPuntos } from "./ui/Iconos";
 import Logotipo from "./ui/Logotipo";
 import styles from "./BarraApp.module.css";
 
@@ -28,6 +28,8 @@ export default function BarraApp({ admin, sesion }: { admin: ReactNode; sesion: 
   const { buscar, volver = VOLVER_AL_INICIO, menu } = usePrestadoALaBarra();
   const alta = enlaceDeAlta(altaDeRuta(ruta), ciudad);
   const ficha = vistaDeRuta(ruta) === "ficha";
+  // El menú lo presta la ficha al hidratar; mientras, su botón ya está donde va (en el HTML del servidor), sin hacer nada todavía.
+  const menuDeLaFicha = menu ?? (fichaConMenu(ruta) ? <BotonIcono aria-label="Más acciones" aria-haspopup="dialog" tabIndex={-1}><IconoPuntos /></BotonIcono> : null);
 
   function alBuscar(e: MouseEvent<HTMLAnchorElement>) {
     if (!buscar || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -50,7 +52,7 @@ export default function BarraApp({ admin, sesion }: { admin: ReactNode; sesion: 
           <IconoBuscar width={26} height={26} />
         </BotonIcono>
         {sesion}
-        <div className={styles.hueco}>{ficha && menu}</div>
+        <div className={styles.hueco}>{ficha && menuDeLaFicha}</div>
       </div>
     </header>
   );

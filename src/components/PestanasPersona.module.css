@@ -1,26 +1,5 @@
-/* Resumen en números como pestañas (ui/Pestanas), en una sola línea: la etiqueta y luego el número grande ("Voy a 2";
-   corrección del founder, 2026-09-15). Lo propio va bajo .kpis para pesar más que la clase base de la tira. */
-.kpis {
-  margin: var(--espacio-3) 0 var(--espacio-2);
-}
-.kpis .kpi {
-  align-items: baseline;
-  padding: var(--espacio-1) 2px 10px;
-}
-.kpi > b {
-  font-size: var(--letra-2xl);
-  font-weight: 700;
-  font-variation-settings: var(--ancho-titulo);
-  line-height: 1;
-  color: var(--texto);
-}
-.kpi[aria-selected="true"] > b {
-  color: var(--primario);
-}
-
-/* Mi perfil (`raiz`): tarjetas con su icono y letrero arriba y el número grande debajo (prototipo firmado). Las que haya
-   se reparten el ancho; la elegida lleva el color de acción. Lo que no es un grupo de día (un vacío, los chips y las
-   listas de lo que sigo) recibe el aire de la página; los grupos (`section`, ui/Grupo) ya lo traen. */
+/* Los números de una persona como pestañas: tarjetas con su icono, letrero y número grande. La tarjeta es la de `ui/Kpi`; aquí solo lo
+   que la vuelve pestaña (se toca, el número es de pantalla y la elegida lleva el color de acción). Las que haya se reparten el ancho. */
 .tarjetas {
   display: grid;
   grid-auto-flow: column;
@@ -29,46 +8,10 @@
   margin: var(--espacio-4) var(--gutter) var(--espacio-3);
 }
 .tarjeta {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas:
-    "icono etiqueta"
-    "valor valor";
-  align-items: center;
-  align-content: start;
-  column-gap: var(--espacio-1);
-  row-gap: var(--espacio-1);
-  padding: 10px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  text-align: left;
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
-.tarjeta > svg {
-  grid-area: icono;
-  color: var(--texto-suave);
-}
-.tarjeta > small {
-  grid-area: etiqueta;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--texto-suave);
-  font-size: var(--letra-2xs);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.tarjeta > b {
-  grid-area: valor;
+.tarjetas > .tarjeta > b {
   font-size: var(--letra-2xl);
-  font-weight: 700;
-  font-variation-settings: var(--ancho-titulo);
-  line-height: 1.15;
 }
 .tarjeta[aria-selected="true"] {
   border-color: var(--primario);
@@ -77,6 +20,8 @@
 .tarjeta[aria-selected="true"] > b {
   color: var(--primario);
 }
-.panelRaiz > :not(section) {
+/* Lo que no es un grupo de día (un vacío, los chips y las listas de lo que sigue) recibe el aire de la página; los grupos
+   (`section`, ui/Grupo) ya lo traen. */
+.panel > :not(section) {
   padding-inline: var(--gutter);
 }

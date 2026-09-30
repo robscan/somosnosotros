@@ -1,7 +1,7 @@
 /* La ficha entra deslizándose desde la derecha en 220 ms (docs/rediseno/38-transiciones-cargador.md).
    Al terminar la entrada pasa a "quieta" (transform: none, OL-157): cualquier transform distinto de
    `none` convierte a `.ficha` en contenedor de los elementos `position: fixed`/`sticky` de dentro (la
-   barra de acciones de lugares y artistas), y esta deja de pegarse al borde de la ventana. */
+   pastilla flotante de lugares y artistas), y esta deja de pegarse al pie de la ventana. */
 .ficha {
   transition: transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }

@@ -8,13 +8,14 @@ import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoBloquear } from "@/components/ui/Iconos";
+import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./Bloquear.module.css";
 
 type Props = { personaId: string; nombre: string; volver: string; conSesion: boolean };
 
 /**
  * "Bloquear" en el menú "···" de la ficha ajena (OL-203, guía 1.2 de App Store: mecanismo de bloqueo de quien
- * abusa, junto al de reportar). Un renglón que abre una hoja de confirmación en texto llano: qué pasa, que no se
+ * abusa, junto al de reportar). Una fila (como las de Ajustes) que abre una hoja de confirmación en texto llano: qué pasa, que no se
  * avisa a la otra persona, y que se deshace. Sin sesión, lleva a entrar (mismo criterio que Reportar).
  */
 export default function Bloquear({ personaId, nombre, volver, conSesion }: Props) {
@@ -25,8 +26,9 @@ export default function Bloquear({ personaId, nombre, volver, conSesion }: Props
 
   if (!conSesion)
     return (
-      <Link href={`/entrar?siguiente=${encodeURIComponent(volver)}`} className={styles.enlace}>
-        Bloquear
+      <Link href={`/entrar?siguiente=${encodeURIComponent(volver)}`} className={renglon.ajuste}>
+        <IconoBloquear width={20} height={20} />
+        <b>Bloquear</b>
       </Link>
     );
 
@@ -45,8 +47,9 @@ export default function Bloquear({ personaId, nombre, volver, conSesion }: Props
 
   return (
     <>
-      <button type="button" className={styles.enlace} onClick={() => setAbierta(true)}>
-        Bloquear
+      <button type="button" className={renglon.ajuste} onClick={() => setAbierta(true)}>
+        <IconoBloquear width={20} height={20} />
+        <b>Bloquear</b>
       </button>
       {abierta && (
         <Hoja etiqueta={`Bloquear a ${nombre}`} onCerrar={() => setAbierta(false)}>

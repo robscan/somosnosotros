@@ -1,7 +1,7 @@
 /** El renglón único (OL-231, bitácora 259): una sola rejilla con cuatro pieles. La lista mide su foto con el token (56) y
- *  su esqueleto mide lo mismo que ella (el del dato, también); ningún dato de la meta pasa del borde de su columna
- *  (H-17), ni el que se corta con puntos suspensivos ni la dirección que se parte; el dato, el ajuste y el resuelto
- *  llevan icono, texto y acción cada uno en su área y con su alto; la `Palanca` se toca en 51×45 y se ve en 51×31;
+ *  su esqueleto mide lo mismo que ella; ningún dato de la meta pasa del borde de su columna (H-17), ni el que se corta con
+ *  puntos suspensivos ni la dirección que se parte; el dato (OL-235: toda la fila es el enlace y un chevron lo dice), el ajuste
+ *  y el resuelto llevan icono, texto y acción cada uno en su área y con su alto; la `Palanca` se toca en 51×45 y se ve en 51×31;
  *  `SoloLector` no ocupa sitio e `IconoEnCirculo` mide 64.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chromium node --test este-archivo
  * (no corre con `npm test`, que solo toma `.test.ts`, como las demás `.componentes.test.mjs` del repo). */
@@ -34,7 +34,7 @@ before(async () => {
       import React from 'react';import {createRoot} from 'react-dom/client';
       import Renglon from './src/components/ui/Renglon';
       import rs from './src/components/ui/Renglon.module.css';
-      import {EsqueletoDato, EsqueletoRenglon} from './src/components/ui/Esqueleto';
+      import {EsqueletoRenglon} from './src/components/ui/Esqueleto';
       import BotonIcono from './src/components/ui/BotonIcono';
       import Boton from './src/components/ui/Boton';
       import Palanca from './src/components/ui/Palanca';
@@ -64,9 +64,8 @@ before(async () => {
               </Renglon>
             </ul>
             <ul aria-label="datos" style={{ listStyle: 'none' }}>
-              <li className={rs.dato} data-id="dato"><IconoPin width={20} height={20} /><b>Villerías 205, Centro</b><small>78000, San Luis Potosí</small><a href="/ver">ver</a></li>
+              <li><a href="/donde" className={rs.dato} data-id="dato"><IconoPin width={20} height={20} /><b>Villerías 205, Centro</b><small>78000, San Luis Potosí</small><IconoChevronDerecha /></a></li>
               <li className={rs.dato} data-id="dato-solo"><IconoReloj width={20} height={20} /><b>Hoy 19:00</b></li>
-              <EsqueletoDato />
             </ul>
             <ul aria-label="ajustes" style={{ listStyle: 'none' }}>
               <li><a href="/editar" className={rs.ajuste} data-id="ajuste"><IconoLapiz width={20} height={20} /><b>Editar</b><small>Foto, nombre, colonia</small><IconoChevronDerecha /></a></li>
@@ -188,20 +187,21 @@ test("evento: el título llega a dos líneas y la meta son dos líneas, cada una
   assert.ok(alto <= 120, `el renglón de evento mide ${alto} (antes llegaba a 190 con la dirección postal y cada dato en su línea)`);
 });
 
-test("dato: 44 de alto, el icono y el texto a 32 px y el enlace de la acción en 44×44", async (t) => {
+test("dato: toda la fila es el enlace, el icono y el texto a 32 px y el chevron de 16 a la derecha", async (t) => {
   const p = await pagina(t);
   const fila = dato(p, "dato");
   const caja = await rect(fila);
-  const icono = await rect(fila.locator("svg"));
+  assert.ok(caja.h >= 44, `la fila se toca en ${caja.h} de alto, no menos de 44`);
+  assert.equal(await fila.evaluate((e) => e.tagName), "A", "la fila entera es el enlace");
+  const icono = await rect(fila.locator("svg").first());
   const texto = await rect(fila.locator("b"));
+  const chevron = await rect(fila.locator("svg").nth(1));
   assert.equal(icono.x - caja.x, 0);
   assert.equal(texto.x - caja.x, 32);
-  const enlace = await rect(fila.locator("a"));
-  assert.deepEqual([enlace.w, enlace.h], [44, 44], "el enlace se toca en 44×44");
-  assert.equal(enlace.r, caja.r, "la acción va al borde de la derecha");
-  assert.ok(texto.r <= enlace.x, "el texto no se mete bajo el enlace");
+  assert.deepEqual([chevron.w, chevron.h], [16, 16]);
+  assert.equal(chevron.r, caja.r, "el chevron va al borde de la derecha");
+  assert.ok(texto.r <= chevron.x, "el texto no se mete bajo el chevron");
   assert.equal((await rect(dato(p, "dato-solo"))).h, 44, "un dato de una línea mide el alto del control");
-  assert.equal((await rect(p.locator("ul[aria-label=datos] > li[aria-hidden=true]"))).h, 44, "y su esqueleto mide lo mismo");
 });
 
 test("ajuste: 52 de alto, icono en una columna de 24, chevron y palanca a la derecha", async (t) => {
