@@ -5,6 +5,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useAbrirConError } from "@/components/ui/abrirConError";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
+import BotonIcono, { claseBotonIcono } from "@/components/ui/BotonIcono";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
@@ -400,20 +401,14 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           <span className={canon.clave}>Foto</span>
           <span className={`${canon.valor} ${foto ? "" : canon.falta}`}>{subiendo ? "Subiendo…" : foto ? "Lista" : "Sin foto"}</span>
           <div className={canon.opciones}>
-            <label className={canon.accionIcono} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
+            <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
               <IconoCamara width={22} height={22} />
               <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
             </label>
             {foto && (
-              <button
-                type="button"
-                className={canon.accionIcono}
-                onClick={() => setFoto(null)}
-                title="Quitar la foto"
-                aria-label="Quitar la foto"
-              >
+              <BotonIcono relieve="contorno" onClick={() => setFoto(null)} title="Quitar la foto" aria-label="Quitar la foto">
                 <IconoCerrar width={22} height={22} />
-              </button>
+              </BotonIcono>
             )}
           </div>
           {(errorFoto || errores.foto) && (

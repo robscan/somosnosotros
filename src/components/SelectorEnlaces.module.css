@@ -111,20 +111,6 @@
 .campo[aria-invalid="true"] {
   border-color: var(--error);
 }
-.agregar {
-  min-height: var(--toque);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--texto);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-weight: 700;
-  cursor: pointer;
-}
-.agregar:disabled {
-  border-color: var(--borde);
-  color: var(--texto-suave);
-}
 .ayuda {
   color: var(--texto-suave);
   font-size: var(--letra-sm);

@@ -12,29 +12,14 @@
   padding: 0 var(--gutter) calc(96px + var(--piso));
   background: var(--fondo-contenido);
 }
-.iconoBarra {
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: var(--texto);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.iconoBarra:active {
-  background: var(--fondo-suave);
-}
 .oculto {
   margin-bottom: var(--espacio-3);
 }
 
 /* 2. Información: título, etiqueta y renglones con icono, como en la agenda */
 /* Foto con una acción flotante sobre la esquina (por ahora, solo compartir en la ficha de artista, OL-159): el
-   mismo círculo con elevación de las acciones de abajo, sin letrero — se entiende solo, como la lupa de `Cartel`
-   sobre la portada. */
+   mismo círculo con elevación de las acciones de abajo (ui/BotonIcono), sin letrero — se entiende solo, como la
+   lupa de `Cartel` sobre la portada. */
 .fotoConAccion {
   position: relative;
   width: fit-content;
@@ -43,21 +28,6 @@
   position: absolute;
   top: -4px;
   right: -4px;
-  display: grid;
-  place-items: center;
-  width: var(--toque);
-  height: var(--toque);
-  min-width: var(--toque-min);
-  min-height: var(--toque-min);
-  border: none;
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--primario);
-  box-shadow: var(--sombra);
-  cursor: pointer;
-}
-.compartirFoto:active {
-  background: var(--fondo-suave);
 }
 .titulo {
   font-size: var(--letra-2xl);
@@ -129,7 +99,7 @@
 }
 
 /* 3. Acciones secundarias: icono en círculo con elevación y letrero debajo, como la barra inferior de la app y el
-   botón de "Voy"/"Seguir" de los renglones (`ui/BotonRenglon`, mismo token de sombra; corrección del founder,
+   botón de "Voy"/"Seguir" de los renglones (el mismo `ui/BotonIcono` elevado; corrección del founder,
    OL-159, 2026-09-23: antes eran tarjetas con borde, dos estilos distintos para la misma idea de botón de
    acción — ahora solo hay uno). Sangra hasta el borde de la pantalla como el carril de Destacados
    (founder, 2026-09-21).
@@ -171,11 +141,12 @@
 .accionesCarril {
   gap: var(--espacio-5);
 }
-/* `.accion` se usa en `<a>` (Cómo llegar, redes), en el `<span aria-disabled>` de "sin dirección" y en el
-   `<button>` de `BotonCompartir` — reset de apariencia nativa (founder, 2026-09-24, OL-167: el botón de
-   Compartir salía con una cápsula gris de borde redondeado alrededor del círculo y el letrero; la corrección de
-   OL-163 solo reseteó el `<span class="accionIcono">` de adentro, no el `<button>` que lo envuelve). Un `<a>` y
-   un `<span>` no traen borde, fondo, padding ni `appearance` propios, así que el reset no les cambia nada. */
+/* Una acción: el círculo (ui/BotonIcono, grande y elevado, en un `<span>` para no meter un botón dentro de otro
+   control) con su letrero debajo. `.accion` se usa en `<a>` (Cómo llegar, redes), en el `<span aria-disabled>` de
+   "sin dirección" y en el `<button>` de `BotonCompartir` — reset de apariencia nativa (founder, 2026-09-24,
+   OL-167: el botón de Compartir salía con una cápsula gris de borde redondeado alrededor del círculo y el
+   letrero). Un `<a>` y un `<span>` no traen borde, fondo, padding ni `appearance` propios, así que el reset no
+   les cambia nada. */
 .accion {
   flex: none;
   display: flex;
@@ -196,33 +167,6 @@
   cursor: pointer;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
-}
-/* El círculo va en un `<span>` alrededor del icono (nunca todo el botón): la sombra de `ui/BotonRenglon.module.css`
-   (.boton/.invitar), sin su borde de contorno. Círculo de 56 px con el icono más grande (founder, 2026-09-23,
-   OL-163: "se ven bien pero deben verse más presionables"): la sombra se queda exactamente igual, sin tocarla.
-   `border: none` y `appearance: none` (founder, 2026-09-23, corrección sobre «Mis artistas»): esta clase nació
-   para un `<span>` dentro de un `<a>`/`<button className={ficha.accion}>`, donde un `<span>` no trae borde
-   propio; al reusarla directo en el `<button>` de `CompartirFicha` (sin el `<a>` alrededor, en la tarjeta de
-   «Mis artistas»), salía el borde nativo del navegador (`2px outset`, `appearance: auto`) alrededor del círculo
-   — «elevación, no contorno». Sin efecto en los usos existentes (un `<span>` no tiene borde ni apariencia nativa
-   que quitar). */
-.accionIcono {
-  display: grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  min-width: var(--toque-min);
-  min-height: var(--toque-min);
-  border: none;
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--primario);
-  box-shadow: var(--sombra);
-  appearance: none;
-}
-.accionIcono svg {
-  width: 26px;
-  height: 26px;
 }
 /* Etiqueta de una acción (OL-168, corrección del gestor): con el título editable de un enlace (hasta 30
    caracteres) el texto ya no cabe siempre en una línea de "Cómo llegar" o "Instagram". Envuelve a dos líneas
@@ -261,14 +205,11 @@
   margin-bottom: var(--espacio-4);
   font-size: var(--letra-xl);
 }
-.accion:active .accionIcono {
-  background: var(--fondo-suave);
-}
 .accion[aria-disabled="true"] {
   color: var(--texto-suave);
   pointer-events: none;
 }
-.accion[aria-disabled="true"] .accionIcono {
+.accion[aria-disabled="true"] > span {
   color: var(--texto-suave);
   background: var(--fondo-suave);
   box-shadow: none;
@@ -304,22 +245,6 @@
 .accionEstado {
   grid-template-columns: 1fr auto;
 }
-.primaria {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--espacio-2); /* icono y texto (Voy, Seguir) */
-  min-height: var(--toque);
-  padding: 0 var(--espacio-4);
-  border: none;
-  border-radius: var(--radio);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-}
 /* Grid con áreas: icono a la izquierda; el texto suelto ("Voy") cae en la celda libre de arriba y small abajo */
 .seleccionado {
   display: inline-grid;
@@ -348,18 +273,6 @@
   color: var(--texto-suave);
   font-size: var(--letra-xs);
   font-weight: 500;
-}
-.secundario {
-  min-height: var(--toque);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-size: var(--letra-md);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
 }
 
 /* 6. Menú ··· (dentro de la hoja) */
@@ -405,15 +318,7 @@
   font-weight: 700;
   font-variation-settings: var(--ancho-titulo);
 }
+/* El botón de la tarjeta (ui/Boton): solo dice en qué celda va */
 .publicadoBoton {
   grid-area: boton;
-
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--texto);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-weight: 700;
-  cursor: pointer;
 }

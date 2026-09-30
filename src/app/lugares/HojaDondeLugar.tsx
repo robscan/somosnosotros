@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import BotonIcono from "@/components/ui/BotonIcono";
 import Limpiar from "@/components/ui/Limpiar";
 import { IconoBuscar, IconoChevronIzquierda, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
@@ -256,9 +257,9 @@ export default function HojaDondeLugar({ lugares, nombreForm, conFoco, punto, di
             onPunto={(p) => void moverPin(p)}
             onArrastre={(p) => void moverPin(p, true)}
           />
-          <button type="button" className={styles.estoyAqui} style={{ bottom: estoyAquiBottom }} onClick={estoyAquiClick} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
+          <BotonIcono tamano="accion" relieve="elevado" className={styles.estoyAqui} style={{ bottom: estoyAquiBottom }} onClick={estoyAquiClick} disabled={ubicando} aria-label="Estoy aquí" title="Estoy aquí">
             <IconoUbicacion width={22} height={22} />
-          </button>
+          </BotonIcono>
           {modo === "inicial" && avisoUbicacion && <p className={styles.avisoUbicacion}>{avisoUbicacion}</p>}
           {/* El aviso "ya existe" vive en el mismo cuadro flotante que el resumen del pin -pero se muestra AUNQUE
               todavía no haya un punto propio puesto (tocar un pin o un renglón registrado, antes de fijar el

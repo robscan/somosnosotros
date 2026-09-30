@@ -2,6 +2,8 @@ import Link from "next/link";
 import { contarPendientes } from "@/app/admin/consultas";
 import { cargarNovedades } from "@/app/novedades/consultas";
 import { usuarioActual } from "@/lib/supabase/servidor";
+import Boton from "./ui/Boton";
+import BotonIcono from "./ui/BotonIcono";
 import { IconoCampana, IconoHerramientas } from "./ui/Iconos";
 import VistoHoy from "./VistoHoy";
 import styles from "./Sesion.module.css";
@@ -17,9 +19,9 @@ export default async function Sesion() {
   const actual = await usuarioActual();
   if (!actual) {
     return (
-      <Link href="/entrar" className={styles.entrar}>
+      <Boton href="/entrar" forma="pildora" alto="control" ancho="contenido">
         Entrar
-      </Link>
+      </Boton>
     );
   }
   const esAdmin = actual.perfil.rol === "admin";
@@ -30,15 +32,15 @@ export default async function Sesion() {
   ]);
   return (
     <>
-      <Link href="/novedades" className={styles.campana} aria-label={hay ? "Novedades, hay nuevas" : "Novedades"}>
+      <BotonIcono href="/novedades" className={styles.conPunto} aria-label={hay ? "Novedades, hay nuevas" : "Novedades"}>
         <IconoCampana />
         {hay && <span className={styles.punto} aria-hidden="true" />}
-      </Link>
+      </BotonIcono>
       {esAdmin && (
-        <Link href="/admin" className={styles.admin} aria-label={pendientes ? "Administración, hay algo por revisar" : "Administración"}>
+        <BotonIcono href="/admin" className={styles.conPunto} aria-label={pendientes ? "Administración, hay algo por revisar" : "Administración"}>
           <IconoHerramientas />
           {!!pendientes && <span className={styles.punto} aria-hidden="true" />}
-        </Link>
+        </BotonIcono>
       )}
       <Link href="/perfil" className={styles.perfil} aria-label={`Mi perfil, ${actual.perfil.nombre || "sin nombre"}`}>
         {actual.perfil.foto ? (

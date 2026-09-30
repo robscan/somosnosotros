@@ -15,7 +15,7 @@
   grid-column: 1 / -1;
 }
 .cabecera[data-compacta] {
-  top: calc(var(--tope) - var(--fila1, 56px));
+  top: calc(var(--tope) - var(--fila1, 60px));
 }
 
 /* Renglón 1 */
@@ -31,9 +31,11 @@
   grid-column: 1;
   padding-left: var(--gutter);
 }
+/* Las acciones (la lupa, de 44) dejan 4 px de aire a su izquierda y no 8: la lupa crece hacia la izquierda sin quitarle
+   ancho a los chips (con un día elegido la fila iba justa y el nombre de la ciudad se cortaba). */
 .acciones {
   grid-column: 2;
-  padding: var(--espacio-1) var(--gutter) var(--espacio-3) var(--espacio-2);
+  padding: var(--espacio-1) var(--gutter) var(--espacio-3) var(--espacio-1);
 }
 .acciones:empty {
   padding: 0;
@@ -44,33 +46,14 @@
 /* El campo (ui/Buscador) con el alto de los chips de contexto; su ✕ también, o el renglón crecería al abrirlo */
 .campo > label {
   flex: 1;
-  height: 40px;
+  height: var(--control);
   min-height: 0;
 }
 .campo button {
-  min-height: 40px;
+  min-height: var(--control);
 }
 .campo input {
   font-size: var(--letra-md);
-}
-.redondo {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.redondo > svg {
-  width: 18px;
-  height: 18px;
-}
-.redondo:active {
-  background: var(--fondo-suave);
 }
 
 /* Renglón 2 y segundo nivel: el gutter de la columna */
@@ -82,21 +65,14 @@
   padding: var(--espacio-3) var(--gutter);
 }
 
-/* Volver arriba: a la izquierda, a la altura del botón flotante de publicar (Publicar.module.css) */
+/* Volver arriba (ui/BotonIcono): a la izquierda, a la altura del botón flotante de publicar (Publicar.module.css).
+   Es una herramienta, no una acción: su glifo es oscuro, como el del botón de ubicación del mapa. */
 .volver {
   position: fixed;
   left: var(--gutter);
   bottom: calc(var(--nav-abajo) + var(--espacio-4));
   z-index: calc(var(--z-flotante) + 1);
-  display: grid;
-  place-items: center;
-  width: var(--toque);
-  height: var(--toque);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
+}
+.volver > svg {
   color: var(--texto);
-  box-shadow: var(--sombra-flotante);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }

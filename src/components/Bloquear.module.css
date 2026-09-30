@@ -39,20 +39,6 @@
   color: var(--texto-suave);
   line-height: 1.4;
 }
-.confirmarBoton {
-  min-height: var(--toque);
-  padding: 0 var(--espacio-5);
-  border: none;
-  border-radius: var(--radio);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  cursor: pointer;
-}
-.confirmarBoton:disabled {
-  opacity: 0.6;
-}
 .cancelar {
   border: none;
   background: none;

@@ -1,7 +1,8 @@
 "use client";
 
-import Link, { useLinkStatus } from "next/link";
+import Link from "next/link";
 import type { ReactNode } from "react";
+import EnCamino from "./EnCamino";
 import styles from "./Chip.module.css";
 
 /** Opción de un toque (día, hora, duración, tipo). Activa = elegida. */
@@ -11,12 +12,6 @@ export function Chip({ activo = false, children, onClick, ariaLabel, disabled = 
       {children}
     </button>
   );
-}
-
-/** Mientras el servidor responde al toque, el chip lo dice (el CSS lo pinta en camino al ver este hijo). */
-function EnCamino() {
-  const { pending } = useLinkStatus();
-  return pending ? <span className={styles.enCamino} aria-hidden="true" /> : null;
 }
 
 /**
@@ -29,7 +24,7 @@ export function ChipEnlace({ activo = false, href, children }: { activo?: boolea
   return (
     <Link href={href} scroll={false} replace className={`${styles.chip} ${activo ? styles.activo : ""}`} aria-current={activo ? "true" : undefined}>
       {children}
-      <EnCamino />
+      <EnCamino className={styles.enCamino} />
     </Link>
   );
 }

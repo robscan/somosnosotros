@@ -69,7 +69,15 @@ Arriba de la Agenda, de Lugares › Lista y de Artistas: el título «Destacados
 
 ## El regreso
 
-En pantallas interiores, el regreso es una **píldora secundaria** (borde `--borde`, fondo blanco, 40 px de alto) con un chevron corto `‹` y el texto del destino ("Volver", "Artistas"), alineada a la izquierda de la barra. Nunca una flecha larga suelta. Componente `ui/Atras`, también en las páginas de error. Ajuste del founder, 2026-09-14.
+En pantallas interiores, el regreso es una **píldora secundaria** (`ui/Boton`: borde `--borde`, fondo blanco, 44 px de alto) con un chevron corto `‹` y el texto del destino ("Volver", "Artistas"), alineada a la izquierda de la barra. Nunca una flecha larga suelta. Componente `ui/Atras`, también en las páginas de error. Ajuste del founder, 2026-09-14; a 44 px con la reestructura (OL-230).
+
+## Botones
+
+Dos piezas para todos los botones de la app (OL-230, doc 50 § 5.2), sin más dibujos sueltos.
+
+- **`ui/Boton`** (con texto): variantes `primario`, `secundario`, `texto` y `peligro`; forma `recta` (`--radio`) o `pildora`; alto `toque` (48, el del pulgar) o `control` (44, el mínimo: barras, cabeceras y renglones); ancho `completo` o `contenido`. Deshabilitado a 0,55; un enlace late mientras el servidor responde.
+- **`ui/BotonIcono`** (solo icono, redondo): tamaño `control` 44 (barras y cabeceras), `accion` 48 (renglones, tarjetas y mapa) o `grande` 56 (acciones de una ficha); relieve `plano` (barras), `elevado` (blanco con sombra y glifo violeta: acciones sobre listas, tarjetas, mapa y ficha) o `contorno` (borde, solo opciones secundarias de un formulario). **Decidido** es verde (`--ok`) con el glifo en blanco.
+- **Glifos de acción:** «Voy» es la palomita; «seguir» es que te avisen, la campana con «+» en un lugar y la persona con «+» en un artista. Ya decidido, la palomita blanca sobre verde en los tres casos.
 
 ## Roles tipográficos
 
@@ -78,7 +86,8 @@ En pantallas interiores, el regreso es una **píldora secundaria** (borde `--bor
 | Logotipo SMSNSTRS (dibujo SVG) | — | — | 28 px de alto en raíz, 24 px en interiores | a la izquierda en pantallas raíz, al centro en interiores |
 | Título de pantalla, nombre de lugar o evento | 700 | 75 | 26–30 px | `text-wrap: balance` |
 | Título de sección, título de tarjeta | 700 | 75 | 19–20 px | |
-| Botón principal | 700 | 80 | 18 px | |
+| Botón principal | 700 | 80 | 18 px | `ui/Boton` de 48 |
+| Botón compacto | 700 | 80 | 15 px | `ui/Boton` de 44 (barras y acciones pequeñas) |
 | Texto y campos | 400 | 80 | 17 px (mínimo 16 px: Safari no hace zoom) | |
 | Detalle, ayuda, error | 400 | 80 | 15 px | |
 | Etiqueta en mayúsculas (cuándo, "sobre el lugar") | 500 | 80 | 14 px | interletrado 0.04em |

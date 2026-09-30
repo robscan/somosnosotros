@@ -1,0 +1,61 @@
+/* El botón redondo de solo icono (ui/BotonIcono): tres tamaños, tres relieves y el estado «decidido». Solo dibuja y
+   mide: dónde va (la esquina de una foto, el borde de un mapa, la celda de un renglón) lo decide quien lo usa, y el
+   glifo trae su propio tamaño. Sin relieve es plano: transparente, para las barras. El pulsado y el foco visible son
+   los de todos los controles (globals.css). */
+.boton {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto);
+  text-decoration: none; /* también cuando es un enlace */
+  cursor: pointer;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Tamaño: `control` en barras y cabeceras, `accion` en renglones, tarjetas y mapa, `grande` en las acciones de una ficha */
+.control {
+  width: var(--control);
+  height: var(--control);
+}
+.accion {
+  width: var(--boton-icono);
+  height: var(--boton-icono);
+}
+.grande {
+  width: var(--boton-icono-grande);
+  height: var(--boton-icono-grande);
+}
+.grande svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Relieve: `contorno` (borde), solo para opciones secundarias dentro de un formulario; `elevado` (fondo blanco, sombra
+   y glifo violeta), para acciones sobre listas, tarjetas, mapa y ficha */
+.contorno {
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+}
+.elevado {
+  background: var(--fondo);
+  color: var(--primario);
+  box-shadow: var(--sombra);
+}
+
+.boton:disabled,
+.boton[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Decidido (Voy y Seguir ya quedaron): verde con el glifo en blanco (y, con contorno, su borde también). Va al final y
+   con la misma fuerza que los relieves, para que nada lo pise. */
+.decidido {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--primario-texto);
+}

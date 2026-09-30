@@ -3,6 +3,7 @@
 import { type CSSProperties, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { etiquetaEnlace, LIMITE_ENLACES, LIMITE_TITULO_ENLACE, reconocerEnlace, type Enlace } from "@/lib/enlaces";
 import { indiceDestino, mover } from "@/lib/reordenar";
+import Boton from "./ui/Boton";
 import Campo from "./ui/Campo";
 import IconoRed from "./ui/IconoRed";
 import { IconoAgarre, IconoCerrar } from "./ui/Iconos";
@@ -236,9 +237,9 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
               />
               <Limpiar visible={!!texto} />
             </span>
-            <button type="button" className={styles.agregar} onClick={agregar} disabled={!texto.trim()}>
+            <Boton type="button" variante="secundario" ancho="contenido" onClick={agregar} disabled={!texto.trim()}>
               Añadir
-            </button>
+            </Boton>
           </div>
           {(aviso || error) && (
             <p id="campo-enlace-aviso" className={styles.aviso} role="alert">

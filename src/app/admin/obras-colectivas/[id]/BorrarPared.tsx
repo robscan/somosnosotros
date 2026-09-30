@@ -97,9 +97,9 @@ export default function BorrarPared({ obraId, perfilId }: { obraId: string; perf
                 <h3>¿Borrar todo lo pintado?</h3>
                 <p>No se puede deshacer. La obra sigue abierta.</p>
                 {error && <p role="alert">{error}</p>}
-                <button type="button" className={estilosBorrar.peligro} disabled={estado === "borrando"} onClick={borrar}>
+                <Boton type="button" variante="peligro" ancho="contenido" disabled={estado === "borrando"} onClick={borrar}>
                   {estado === "borrando" ? "Borrando…" : "Sí, borrar"}
-                </button>
+                </Boton>
                 <button type="button" className={estilosBorrar.enlace} onClick={cerrar}>
                   Cancelar
                 </button>

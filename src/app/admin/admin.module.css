@@ -661,20 +661,6 @@ a.ficha::after,
 .oculta > a > .foto {
   opacity: 0.45;
 }
-.puntos {
-  display: grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: var(--texto-suave);
-  cursor: pointer;
-}
-.puntos:active {
-  background: var(--fondo-suave);
-}
 .verMas {
   margin-top: var(--espacio-4);
 }

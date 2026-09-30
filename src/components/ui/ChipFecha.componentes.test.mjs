@@ -33,6 +33,11 @@ const DIAS_ACTIVOS = [
 ];
 let browser, server, dir, origin;
 
+// `ui/BotonIcono` trae `next/link` al paquete (el círculo sin fecha es uno); aquí no hay Next: un enlace simple.
+const mocks = {
+  "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){return React.createElement('a',p)}",
+};
+
 before(async () => {
   dir = await mkdtemp(join(tmpdir(), "chipfecha-componentes-"));
   await build({
@@ -55,6 +60,13 @@ before(async () => {
       createRoot(document.getElementById('root')).render(<App/>);
     `,
     },
+    plugins: [{
+      name: "dobles",
+      setup(b) {
+        b.onResolve({ filter: /.*/ }, (a) => (a.path in mocks ? { path: a.path, namespace: "mock" } : undefined));
+        b.onLoad({ filter: /.*/, namespace: "mock" }, (a) => ({ contents: mocks[a.path], loader: "js", resolveDir: root }));
+      },
+    }],
   });
   const assets = new Map([
     ["/", ["text/html", '<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/app.css"><style>:root{--fuente-bricolage:Arial}</style><div id="root"></div><script src="/app.js"></script>']],

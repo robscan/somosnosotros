@@ -33,8 +33,10 @@ before(async () => {
       import Destacados from './src/components/Destacados';import './src/app/globals.css';
 
       function tarjeta(id, van) { return { id, href: '/eventos/' + id, foto: '/sin-foto.png', titulo: 'Evento ' + id, detalle: 'vie 10 de oct · 19:00', van }; }
-      function boton(id) { return { decidido: false, nombreAccesible: 'Voy — Evento ' + id, alTocar() {} }; }
-      function botonDecidido(id) { return { decidido: true, nombreAccesible: 'Voy — Evento ' + id, alTocar() {} }; }
+      function boton(id) { return { objeto: 'evento', decidido: false, nombreAccesible: 'Voy — Evento ' + id, alTocar() {} }; }
+      function botonDecidido(id) { return { objeto: 'evento', decidido: true, nombreAccesible: 'Voy — Evento ' + id, alTocar() {} }; }
+      // El glifo lo decide qué se hace: seguir un lugar o un artista (y, decidido, la palomita en los tres).
+      const botonDe = (objeto, decidido) => (id) => ({ objeto, decidido, nombreAccesible: 'Seguir — ' + id, alTocar() {} });
 
       // Carril de eventos: las cuatro combinaciones de "Te interesa" y "N van".
       const conLosDos = tarjeta('con-los-dos', 3);
@@ -52,13 +54,19 @@ before(async () => {
 
       // Un carril de lugares o artistas: tampoco se pasa estadoDe, y nunca trae "van" (siempre 0).
       const lugar = tarjeta('un-lugar', 0);
+      const artista = tarjeta('un-artista', 0);
+      const lugarSeguido = tarjeta('lugar-seguido', 0);
+      const artistaSeguido = tarjeta('artista-seguido', 0);
 
       function App() {
         return React.createElement(React.Fragment, null,
           React.createElement(Destacados, { tarjetas: [conLosDos, soloInteresa, soloVan, sinNada], encabezado: 'Carril de eventos', memoria: 'm1', boton, estadoDe: estadoEventos }),
           React.createElement(Destacados, { tarjetas: [conVoy], encabezado: 'Carril con voy', memoria: 'm2', boton: botonDecidido, estadoDe: estadoVoy }),
           React.createElement(Destacados, { tarjetas: [sinSesion], encabezado: 'Carril sin sesion', memoria: 'm3' }),
-          React.createElement(Destacados, { tarjetas: [lugar], encabezado: 'Carril de lugares', memoria: 'm4', boton }),
+          React.createElement(Destacados, { tarjetas: [lugar], encabezado: 'Carril de lugares', memoria: 'm4', boton: botonDe('lugar', false) }),
+          React.createElement(Destacados, { tarjetas: [artista], encabezado: 'Carril de artistas', memoria: 'm5', boton: botonDe('artista', false) }),
+          React.createElement(Destacados, { tarjetas: [lugarSeguido], encabezado: 'Carril de lugares seguidos', memoria: 'm6', boton: botonDe('lugar', true) }),
+          React.createElement(Destacados, { tarjetas: [artistaSeguido], encabezado: 'Carril de artistas seguidos', memoria: 'm7', boton: botonDe('artista', true) }),
         );
       }
       createRoot(document.getElementById('root')).render(React.createElement(App));
@@ -134,7 +142,7 @@ test("sin sesión (sin estadoDe) no sale nada", async (t) => {
 
 test("un carril de lugares o artistas (sin estadoDe) no cambia: ningún chip", async (t) => {
   const p = await pagina(t);
-  const seccion = p.locator("section", { has: p.getByRole("heading", { name: "Carril de lugares" }) });
+  const seccion = p.locator("section", { has: p.getByRole("heading", { name: "Carril de lugares", exact: true }) });
   const texto = await seccion.innerText();
   assert.doesNotMatch(texto, /Te interesa/);
   assert.doesNotMatch(texto, /van/);
@@ -178,4 +186,28 @@ test("ni interesa ni van: sin chip", async (t) => {
   const texto = await tarjeta(p, "sin-nada").innerText();
   assert.doesNotMatch(texto, /Te interesa/);
   assert.doesNotMatch(texto, /van/);
+});
+
+// Los trazos de los tres glifos de acción (ui/Iconos): la palomita, la campana con «+» y la persona con «+».
+const PALOMITA = "M5 12.5l4.5 4.5L19 7.5";
+const CAMPANA_MAS = "M12 9.5v5M9.5 12h5";
+const PERSONA_MAS = "M19 7.5v6M16 10.5h6";
+
+test("el glifo del botón dice qué hace: palomita para Voy, campana con «+» para seguir un lugar, persona con «+» para un artista", async (t) => {
+  const p = await pagina(t);
+  const trazos = (id) => p.locator(`a[href="/eventos/${id}"] + button`).locator("path").evaluateAll((ps) => ps.map((x) => x.getAttribute("d")));
+  assert.deepEqual(await trazos("sin-nada"), [PALOMITA]);
+  assert.ok((await trazos("un-lugar")).includes(CAMPANA_MAS), "un lugar por seguir lleva la campana con «+»");
+  assert.ok((await trazos("un-artista")).includes(PERSONA_MAS), "un artista por seguir lleva la persona con «+»");
+});
+
+test("ya decidido, la palomita blanca sobre verde en los tres casos", async (t) => {
+  const p = await pagina(t);
+  for (const id of ["con-voy", "lugar-seguido", "artista-seguido"]) {
+    const boton = p.locator(`a[href="/eventos/${id}"] + button`);
+    assert.equal(await boton.getAttribute("aria-pressed"), "true", id);
+    assert.deepEqual(await boton.locator("path").evaluateAll((ps) => ps.map((x) => x.getAttribute("d"))), [PALOMITA], id);
+    const estilo = await boton.evaluate((b) => ({ fondo: getComputedStyle(b).backgroundColor, glifo: getComputedStyle(b.querySelector("svg")).color }));
+    assert.deepEqual(estilo, { fondo: "rgb(31, 111, 67)", glifo: "rgb(255, 255, 255)" }, id);
+  }
 });

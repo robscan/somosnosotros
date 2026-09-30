@@ -3,6 +3,7 @@
 import { Suspense, useRef, useState } from "react";
 import { fechaCortaChip, localAIso, ZONA_INICIAL } from "@/lib/fechas";
 import type { DiasActivos } from "@/lib/calendario";
+import BotonIcono from "./BotonIcono";
 import chip from "./Chip.module.css";
 import styles from "./ChipFecha.module.css";
 import { IconoCalendario, IconoCerrar } from "./Iconos";
@@ -63,9 +64,9 @@ export default function ChipFecha({ fecha, onCambiar, hoy, zona = ZONA_INICIAL, 
   }
   return (
     <>
-      <button type="button" className={`${chip.chip} ${styles.soloIcono}`} aria-label="Elegir fecha" onClick={abrir}>
+      <BotonIcono relieve="contorno" aria-label="Elegir fecha" onClick={abrir}>
         <IconoCalendario width={16} height={16} />
-      </button>
+      </BotonIcono>
       {hoja && <Hoja fecha={fecha} hoy={hoy} zona={zona} diasActivos={diasActivos} onCambiar={onCambiar} onCerrar={cerrar} />}
     </>
   );

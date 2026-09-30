@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
+import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import { IconoEstrella, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
@@ -97,10 +98,10 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
           {ESTRELLA}
           Me interesa
         </Link>
-        <Link href={entrar("voy")} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
+        <Boton href={entrar("voy")} onClick={() => anotarIntencion(ruta)}>
           {OK}
           Voy
-        </Link>
+        </Boton>
       </>
     );
   } else if (estado === "voy") {
@@ -111,9 +112,9 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
           Voy
           <small>Ya estás en la lista</small>
         </span>
-        <button type="button" className={ficha.secundario} onClick={() => cambiar(null)} disabled={pendiente}>
+        <Boton type="button" variante="secundario" ancho="contenido" onClick={() => cambiar(null)} disabled={pendiente}>
           Cancelar
-        </button>
+        </Boton>
       </>
     );
   } else if (estado === "me_interesa") {
@@ -124,10 +125,10 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
           Me interesa
           <small>Guardado en Mi perfil</small>
         </span>
-        <button type="button" className={ficha.primaria} onClick={() => cambiar("voy")} disabled={pendiente}>
+        <Boton type="button" onClick={() => cambiar("voy")} disabled={pendiente}>
           {OK}
           Voy
-        </button>
+        </Boton>
       </>
     );
   } else {
@@ -137,10 +138,10 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
           {ESTRELLA}
           Me interesa
         </button>
-        <button type="button" className={ficha.primaria} onClick={() => cambiar("voy")} disabled={pendiente}>
+        <Boton type="button" onClick={() => cambiar("voy")} disabled={pendiente}>
           {OK}
           Voy
-        </button>
+        </Boton>
       </>
     );
   }

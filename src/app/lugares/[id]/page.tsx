@@ -14,7 +14,8 @@ import EventosPorDia from "@/components/EventosPorDia";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
-import Boton from "@/components/ui/Boton";
+import Boton, { claseBoton } from "@/components/ui/Boton";
+import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
@@ -42,6 +43,9 @@ type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?
 type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
+/** El círculo de cada acción (ui/BotonIcono) y el botón compartir de la tarjeta «Publicado» (ui/Boton, en su celda). */
+const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
+const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${ficha.publicadoBoton}`;
 
 /**
  * Se busca por slug (la dirección de hoy) y, si no aparece nada, por UUID (la dirección vieja, para que siga
@@ -274,11 +278,11 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           <b>Publicado.</b>
           Ya está en Lugares.
           {puedeEditar && faltanDetalles ? (
-            <Link href={`${hrefLugar(lugar)}/editar`} className={ficha.publicadoBoton}>
+            <Boton href={`${hrefLugar(lugar)}/editar`} variante="secundario" alto="control" ancho="contenido" className={ficha.publicadoBoton}>
               Completar
-            </Link>
+            </Boton>
           ) : (
-            <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}`} url={url} className={ficha.publicadoBoton}>
+            <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}`} url={url} className={BOTON_PUBLICADO}>
               Compartir
             </BotonCompartir>
           )}
@@ -328,14 +332,14 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
       <div className={`${ficha.acciones} ${claseReparto}`}>
         <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
-          <span className={ficha.accionIcono}>
+          <span className={CIRCULO}>
             <IconoRuta />
           </span>
           Cómo llegar
         </a>
         {!lugar.privado && (
           <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`} url={url} className={ficha.accion}>
-            <span className={ficha.accionIcono}>
+            <span className={CIRCULO}>
               <IconoCompartir />
             </span>
             Compartir
@@ -343,7 +347,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         )}
         {redes.map((r) => (
           <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
-            <span className={ficha.accionIcono}>
+            <span className={CIRCULO}>
               <IconoRed red={r.red} />
             </span>
             {/* Título editable de hasta 30 caracteres (OL-168): a dos líneas con puntos suspensivos, nunca

@@ -58,7 +58,7 @@
   /* Barras */
   --alto-barra: 56px; /* barra superior: logotipo y sesión, o regreso y logotipo */
   --alto-filtros: 48px; /* fila de contexto de las pantallas raíz: ciudad, Cuándo y Filtros */
-  --alto-cabecera: 100px; /* lo que ui/Cabecera deja a la vista (chips 56 + pestañas 44); ella lo remide en vivo */
+  --alto-cabecera: 104px; /* lo que ui/Cabecera deja a la vista (chips 60 + pestañas 44); ella lo remide en vivo */
   --alto-nav: 60px; /* barra de navegación inferior (píldora de 32 + etiqueta), sin el área segura */
   --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
 

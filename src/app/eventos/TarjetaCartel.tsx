@@ -1,9 +1,13 @@
 "use client";
 
+import { claseBoton } from "@/components/ui/Boton";
 import { IconoCamara, IconoOk } from "@/components/ui/Iconos";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import { AVISAR_DESDE, cuandoSeRenueva, type EstadoCartel } from "./estadoCartel";
 import type { Cupo } from "./acciones";
+
+/** Lo que dice el chip de la tarjeta sobre lo que hace ella misma (ui/Boton en una etiqueta: el control es el recuadro entero). */
+const CHIP = `${claseBoton({ variante: "secundario", forma: "pildora", alto: "control", ancho: "contenido" })} ${canon.rehacerCartel}`;
 
 /**
  * La tarjeta del cartel, antes del formulario (docs/rediseno/22 y 23, firmadas por el founder el 2026-09-17).
@@ -55,7 +59,7 @@ export default function TarjetaCartel({ cartel, cupo, ocupado, pidiendo, errorCu
             <span />
           </span>
         )}
-        {errorCupo ? <span className={canon.rehacerCartel}>Reintentar</span> : sinCupo ? <span className={canon.rehacerCartel}>{pidiendo ? "Pidiendo…" : "Pedir más"}</span> : !pedida && estado === "fallo" && <span className={canon.rehacerCartel}>Probar con otra foto</span>}
+        {errorCupo ? <span className={CHIP}>Reintentar</span> : sinCupo ? <span className={CHIP}>{pidiendo ? "Pidiendo…" : "Pedir más"}</span> : !pedida && estado === "fallo" && <span className={CHIP}>Probar con otra foto</span>}
       </span>
     </>
   );

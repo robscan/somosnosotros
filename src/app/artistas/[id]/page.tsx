@@ -18,7 +18,8 @@ import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import Barra from "@/components/ui/Barra";
-import Boton from "@/components/ui/Boton";
+import Boton, { claseBoton } from "@/components/ui/Boton";
+import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import { IconoCalendario, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
@@ -51,6 +52,10 @@ type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null 
 type FilaEvento = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng"> & { lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
+/** El círculo de cada acción (ui/BotonIcono), el de compartir sobre el avatar y el botón de la tarjeta «Publicado» (ui/Boton, en su celda). */
+const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
+const COMPARTIR_FOTO = `${claseBotonIcono({ tamano: "accion", relieve: "elevado" })} ${ficha.compartirFoto}`;
+const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${ficha.publicadoBoton}`;
 
 /**
  * Quién lleva la ficha (una fila por cuenta ligada). `generateMetadata` y la ficha necesitan la misma pregunta —
@@ -354,11 +359,11 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           <b>Publicado.</b>
           Ya está en Artistas.
           {puedeEditar && faltanDetalles ? (
-            <Link href={`${hrefArtista(a)}/editar`} className={ficha.publicadoBoton}>
+            <Boton href={`${hrefArtista(a)}/editar`} variante="secundario" alto="control" ancho="contenido" className={ficha.publicadoBoton}>
               Completar
-            </Link>
+            </Boton>
           ) : (
-            <BotonCompartir titulo={a.nombre} texto={textoCompartir} url={url} className={ficha.publicadoBoton}>
+            <BotonCompartir titulo={a.nombre} texto={textoCompartir} url={url} className={BOTON_PUBLICADO}>
               Compartir
             </BotonCompartir>
           )}
@@ -384,7 +389,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
         <Cartel src={a.foto} alt={`Foto de ${a.nombre}`} forma="avatar" />
         {/* Compartir junto al avatar, no en el carril de enlaces (corrección del founder, OL-159): mismo círculo
             elevado que las acciones de abajo, sin letrero. Visible para cualquiera, no solo para el dueño. */}
-        <CompartirFicha titulo={a.nombre} texto={textoCompartir} url={url} svg={qrSvg} etiqueta={`Compartir la ficha de ${a.nombre}`} className={ficha.compartirFoto} slug={a.slug} />
+        <CompartirFicha titulo={a.nombre} texto={textoCompartir} url={url} svg={qrSvg} etiqueta={`Compartir la ficha de ${a.nombre}`} className={COMPARTIR_FOTO} slug={a.slug} />
       </div>
       <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{a.nombre}</h1>
       <p className={ficha.etiqueta}>{etiquetaArtista(a)}</p>
@@ -408,7 +413,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           <div className={`${ficha.acciones} ${claseRepartoEnlaces}`}>
             {redesConEnlace.map((r) => (
               <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
-                <span className={ficha.accionIcono}>
+                <span className={CIRCULO}>
                   <IconoRed red={r.red} />
                 </span>
                 {/* Título editable de hasta 30 caracteres (OL-168): a dos líneas con puntos suspensivos, nunca

@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import Boton from "./Boton";
 import { EsqueletoRenglones } from "./Esqueleto";
 import styles from "./CargarMas.module.css";
 
@@ -13,9 +14,9 @@ export default function CargarMas({ hayMas, centinelaRef, onVerMas, redonda = fa
   return (
     <div ref={centinelaRef} className={styles.zona}>
       <EsqueletoRenglones cantidad={3} redonda={redonda} />
-      <button type="button" className={styles.boton} onClick={onVerMas}>
+      <Boton type="button" variante="secundario" forma="pildora" alto="control" ancho="contenido" className={styles.boton} onClick={onVerMas}>
         Ver más
-      </button>
+      </Boton>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { enlaceVisible } from "@/lib/enlaces";
 import { nombreArchivoQr } from "@/lib/artistas";
 import { descargarDataUrl, svgAPng } from "@/lib/qrCliente";
 import BotonCompartir from "../BotonCompartir";
+import { claseBoton } from "./Boton";
 import CodigoQr from "./CodigoQr";
 import Hoja from "./Hoja";
 import { IconoCompartir, IconoDescarga } from "./Iconos";
@@ -99,7 +100,7 @@ export default function CompartirFicha({ titulo, texto, url, svg, etiqueta, clas
               No se pudo preparar el PNG. Intenta de nuevo.
             </p>
           )}
-          <BotonCompartir titulo={titulo} texto={texto} url={url} className={styles.nativo}>
+          <BotonCompartir titulo={titulo} texto={texto} url={url} className={claseBoton()}>
             <IconoCompartir width={20} height={20} />
             Compartir
           </BotonCompartir>

@@ -36,19 +36,6 @@
 }
 .boton {
   grid-area: boton;
-  min-height: 36px;
-  padding: 0 14px;
-  border: none;
-  border-radius: var(--radio-pildora);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font: inherit;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.boton:disabled {
-  opacity: 0.6;
 }
 .cerrar {
   grid-area: cerrar;

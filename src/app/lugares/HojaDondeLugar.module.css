@@ -98,24 +98,15 @@
   min-height: 0;
 }
 
+/* "Estoy aquí" sobre el mapa (ui/BotonIcono, glifo oscuro como el del mapa de Lugares); mismo sitio que en «¿Dónde es?». */
 .estoyAqui {
   position: absolute;
   left: var(--gutter);
   z-index: calc(var(--z-hoja) + 1);
-  display: grid;
-  place-items: center;
-  width: var(--toque);
-  height: var(--toque);
-  border: none;
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  box-shadow: var(--sombra-flotante);
-  cursor: pointer;
   transition: bottom 120ms ease;
 }
-.estoyAqui:disabled {
-  opacity: 0.6;
+.estoyAqui > svg {
+  color: var(--texto);
 }
 
 .avisoUbicacion {

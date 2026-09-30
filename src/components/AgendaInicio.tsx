@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { PanelPestana, Pestana, Pestanas } from "@/components/ui/Pestanas";
 import { Suspense, use, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { agruparPorDia, buscarEventos, FILTROS, filtrarAgenda, type EventoAgenda, type Filtro, type Grupo } from "@/lib/agenda";
@@ -12,6 +11,7 @@ import ChipCiudad from "./Ciudad";
 import { diaLargo } from "@/lib/fechas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import { useCentinela } from "./useCentinela";
+import Boton from "./ui/Boton";
 import CargarMas from "./ui/CargarMas";
 import { EsqueletoRenglones } from "./ui/Esqueleto";
 import RenglonEvento from "./RenglonEvento";
@@ -195,9 +195,9 @@ function AgendaLista({
   if (filtro === "siguiendo" && seguidos === null) {
     cuerpo = (
       <VacioConAccion titulo="Siguiendo" texto="Aquí verás lo que pasa en los lugares y con los artistas que sigues. Entra para seguir a los tuyos.">
-        <Link href="/entrar?siguiente=/agenda" className={styles.accion}>
+        <Boton href="/entrar?siguiente=/agenda" variante="secundario" ancho="contenido">
           Entrar
-        </Link>
+        </Boton>
       </VacioConAccion>
     );
   } else if (filtro === "siguiendo" && seguidos !== null && seguidos.length === 0 && eventosSeguidos.length === 0) {

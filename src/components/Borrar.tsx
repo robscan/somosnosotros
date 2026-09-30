@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Boton from "./ui/Boton";
 import Hoja from "./ui/Hoja";
 import { IconoCalendario, IconoEstrella, IconoPersona, IconoPin, IconoPincel } from "./ui/Iconos";
 import styles from "./Borrar.module.css";
@@ -31,9 +32,9 @@ export default function Borrar({ que, aviso, accion, icono }: Props) {
             </span>
             <h3>¿Borrar {que}?</h3>
             <p>{aviso} No se puede deshacer.</p>
-            <button type="button" className={styles.peligro} disabled={pendiente} onClick={() => iniciar(() => accion())}>
+            <Boton type="button" variante="peligro" ancho="contenido" disabled={pendiente} onClick={() => iniciar(() => accion())}>
               {pendiente ? "Borrando…" : `Sí, borrar ${que}`}
-            </button>
+            </Boton>
             <button type="button" className={styles.enlace} onClick={() => setConfirmar(false)}>
               Cancelar
             </button>

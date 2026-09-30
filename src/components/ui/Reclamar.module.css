@@ -38,12 +38,6 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-.editar,
-.quitar {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
 .quitar {
   margin-top: var(--espacio-3);
 }

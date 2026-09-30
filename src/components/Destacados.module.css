@@ -104,7 +104,7 @@
   scroll-snap-align: start;
 }
 /* El botón (OL-106, bitácora 141): hermano de `.tarjeta` (el <a>), nunca su hijo — flota sobre la esquina superior
-   derecha de la foto. Se selecciona por estructura (`> button`), no por una clase de `ui/BotonRenglon`: esa pieza
+   derecha de la foto. Se selecciona por estructura (`> button`), no por una clase de `ui/BotonIcono`: ese componente
    no sabe que vive en un carril, y así no hace falta tocar su CSS para colocarlo aquí. */
 .carril > li > button {
   position: absolute;

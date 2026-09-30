@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { desbloquear } from "@/app/personas/acciones";
+import Boton from "./ui/Boton";
 import styles from "./Desbloquear.module.css";
 
 /**
@@ -25,9 +26,9 @@ export default function Desbloquear({ personaId }: { personaId: string }) {
 
   return (
     <span>
-      <button type="button" className={styles.boton} disabled={pendiente} onClick={tocar}>
+      <Boton type="button" variante="secundario" ancho="contenido" disabled={pendiente} onClick={tocar}>
         {pendiente ? "Desbloqueando…" : "Desbloquear"}
-      </button>
+      </Boton>
       {error && (
         <p className={styles.error} role="alert">
           {error}

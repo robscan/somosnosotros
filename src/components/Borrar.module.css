@@ -35,14 +35,3 @@
   color: var(--texto-suave);
   line-height: 1.4;
 }
-.peligro {
-  min-height: var(--toque);
-  padding: 0 var(--espacio-5);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--error);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  cursor: pointer;
-}

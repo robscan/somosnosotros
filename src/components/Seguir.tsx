@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
+import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
-import { IconoMas, IconoOk } from "@/components/ui/Iconos";
+import { IconoCampanaMas, IconoOk, IconoPersonaMas } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
 import { useAltoBarraFija } from "@/components/ui/useAltoBarraFija";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
@@ -65,6 +65,8 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   const de = useId();
   const [telefono] = useEstadoPush(llavePush, conSesion && sigo);
   const cosas = que === "artista" ? "fechas" : "eventos";
+  // Seguir es que te avisen: la campana con «+» para un lugar y la persona con «+» para un artista.
+  const Glifo = que === "artista" ? IconoPersonaMas : IconoCampanaMas;
   const ruta = hrefEntrar.split("?")[0];
 
   // Volvió de entrar tras tocar Seguir: la pregunta continúa ese toque, una sola vez.
@@ -113,10 +115,10 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   if (!conSesion) {
     return (
       <div ref={barra} className={`${ficha.accionFija} ${ficha.accionUnica}`}>
-        <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEntrar)}`} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
-          <IconoMas width={20} height={20} />
+        <Boton href={`/entrar?siguiente=${encodeURIComponent(hrefEntrar)}`} onClick={() => anotarIntencion(ruta)}>
+          <Glifo width={20} height={20} />
           Seguir
-        </Link>
+        </Boton>
       </div>
     );
   }
@@ -130,15 +132,15 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
               Sigues
               {promesa && <small>{promesa}</small>}
             </span>
-            <button type="button" className={ficha.secundario} onClick={() => cambiar(false)} disabled={pendiente}>
+            <Boton type="button" variante="secundario" ancho="contenido" onClick={() => cambiar(false)} disabled={pendiente}>
               Dejar de seguir
-            </button>
+            </Boton>
           </>
         ) : (
-          <button type="button" className={ficha.primaria} onClick={() => cambiar(true)} disabled={pendiente}>
-            <IconoMas width={20} height={20} />
+          <Boton type="button" onClick={() => cambiar(true)} disabled={pendiente}>
+            <Glifo width={20} height={20} />
             Seguir
-          </button>
+          </Boton>
         )}
       </div>
       {!dePantalla && <AvisoAbajo canal={propio} />}

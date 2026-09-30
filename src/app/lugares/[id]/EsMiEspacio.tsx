@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import { IconoOk } from "@/components/ui/Iconos";
-import ficha from "@/components/ui/Ficha.module.css";
 import styles from "@/components/ui/Reclamar.module.css";
 import type { MotivoReclamo } from "@/lib/reportes";
 import { reclamarLugar } from "../acciones";
@@ -61,12 +61,12 @@ export default function EsMiEspacio({ lugarId, nombre, correo, origen }: Props) 
                   ? `Esta ficha se tomó del ${origen} y está por confirmar. Si el espacio es tuyo, puedes llevarla tú: la editas, le pones foto y publicas lo que pasa ahí. O puedes pedir que se quite.`
                   : "Esta ficha la registró otra persona. Puedes pedirla para llevarla tú: la editas, le pones foto y publicas lo que pasa ahí. O puedes pedir que se quite."}
               </p>
-              <button type="button" className={`${ficha.primaria} ${styles.editar}`} onClick={() => pedir("es_mio")} disabled={pendiente}>
+              <Boton type="button" onClick={() => pedir("es_mio")} disabled={pendiente}>
                 Sí, quiero llevar yo la ficha
-              </button>
-              <button type="button" className={`${ficha.secundario} ${styles.quitar}`} onClick={() => pedir("retirar")} disabled={pendiente}>
+              </Boton>
+              <Boton type="button" variante="secundario" className={styles.quitar} onClick={() => pedir("retirar")} disabled={pendiente}>
                 Sí, y quiero que se quite
-              </button>
+              </Boton>
               {error && (
                 <p className={styles.error} role="alert">
                   {error}

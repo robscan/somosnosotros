@@ -285,7 +285,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     const suave = colorDiseno("--texto-suave", "#5c5c5c"); // los privados (solo los ve el admin) van en gris
     const tinta = colorDiseno("--texto", "#1a1a1a");
     const primario = colorDiseno("--primario", "#6d34c8");
-    // El mismo verde de "Sigues" (BotonRenglon .decidido, docs/rediseno): un seguido es la elección de la persona,
+    // El mismo verde de "Sigues" (`BotonIcono` decidido, docs/rediseno): un seguido es la elección de la persona,
     // no la del administrador, y merece su propio color, no el naranja de los destacados (OL-128).
     const seguidoColor = colorDiseno("--ok", "#1f6f43");
     const destacadoColor = colorDiseno("--destacado", "#d35400");

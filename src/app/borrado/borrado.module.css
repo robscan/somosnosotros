@@ -26,18 +26,6 @@
   color: var(--texto-suave);
   line-height: 1.4;
 }
-.accion {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-5);
-  border-radius: var(--radio);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
-  text-decoration: none;
-}
 .otro {
   min-height: var(--toque-min);
   display: inline-flex;
