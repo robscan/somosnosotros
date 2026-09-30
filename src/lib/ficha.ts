@@ -2,7 +2,7 @@ import { diaLocal, fechaCortaChip, horaCorta, ZONA_INICIAL } from "./fechas";
 
 /**
  * Los textos de los tres números de una ficha (docs/rediseno/50, P6; `ui/Kpi`): el día y la hora de un evento, la distancia a un
- * lugar y cuántos próximos hay. Puros, para probarlos sin pintar nada.
+ * lugar y cuántos próximos hay; y la meta del sitio de un evento, con su distancia (P8). Puros, para probarlos sin pintar nada.
  */
 
 /**
@@ -19,6 +19,11 @@ export function kpiCuando(inicio: string, fin: string | null, zona: string = ZON
 export function kpiDistancia(km: number): string {
   if (km < 1) return `${Math.max(50, Math.round((km * 1000) / 50) * 50)} m`;
   return `${km < 10 ? km.toFixed(1).replace(".", ",").replace(",0", "") : Math.round(km)} km`;
+}
+
+/** La meta del renglón de un sitio: su dirección y, si ya se sabe a cuánto está de quien mira, la distancia al final («Av. Manuel Nava 101 · 3,2 km»). */
+export function metaSitio(direccion: string | null, km: number | null): string {
+  return [direccion, km === null ? null : kpiDistancia(km)].filter(Boolean).join(" · ");
 }
 
 /** Cuántos eventos (o fechas, con `femenino`) vienen: «Ninguno», «1 próximo», «3 próximos». */

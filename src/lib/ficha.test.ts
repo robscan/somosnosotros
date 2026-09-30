@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { kpiCuando, kpiDistancia, kpiProximos } from "./ficha";
+import { kpiCuando, kpiDistancia, kpiProximos, metaSitio } from "./ficha";
 
 describe("kpiCuando (el número de fecha de una ficha de evento)", () => {
   it("el día en una línea y la hora en la otra, sin la palabra «Fecha»", () => {
@@ -28,6 +28,21 @@ describe("kpiDistancia (el número de distancia de una ficha de lugar)", () => {
   });
   it("de 10 km en adelante, sin decimales", () => {
     expect(kpiDistancia(14.6)).toBe("15 km");
+  });
+});
+
+describe("metaSitio (la meta del renglón del sitio de un evento)", () => {
+  it("con distancia, va al final de la dirección, con el mismo formato del número «Distancia»", () => {
+    expect(metaSitio("Av. Manuel Nava 101, Zona Universitaria", 3.2)).toBe("Av. Manuel Nava 101, Zona Universitaria · 3,2 km");
+    expect(metaSitio("Villerías 205", 1.2)).toBe("Villerías 205 · 1,2 km");
+    expect(metaSitio("Villerías 205", 0.54)).toBe(`Villerías 205 · ${kpiDistancia(0.54)}`);
+  });
+  it("sin ubicación (sin distancia), solo la dirección: nada que pedir", () => {
+    expect(metaSitio("Villerías 205", null)).toBe("Villerías 205");
+  });
+  it("sin dirección, solo la distancia; sin ninguna de las dos, nada", () => {
+    expect(metaSitio(null, 1.2)).toBe("1,2 km");
+    expect(metaSitio(null, null)).toBe("");
   });
 });
 
