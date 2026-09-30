@@ -1,18 +1,21 @@
 "use client";
 
+import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
-import { agruparPorDia, filtrosRecordados, listarAgenda, type FiltrosAgenda } from "@/lib/agenda";
+import { agruparPorDia, agruparPorPublicacion, conFiltros, corteNuevos, filtrosRecordados, listarAgenda, sinSeguirSinSesion, type FiltrosAgenda } from "@/lib/agenda";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { ZONA_INICIAL } from "@/lib/fechas";
+import { marcarNuevosVisto } from "@/lib/nuevosVisto";
 import { tandaAcotada, siguienteTanda, TANDA_INICIAL } from "@/lib/tandas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import { useCentinela } from "./useCentinela";
-import Boton from "./ui/Boton";
+import { useVisitaNuevos } from "./useMarcaNuevos";
 import CargarMas from "./ui/CargarMas";
 import { EsqueletoRenglones } from "./ui/Esqueleto";
 import FilaEventos from "./FilaEventos";
 import Grupo from "./ui/Grupo";
+import { Pestana, Pestanas } from "./ui/Pestanas";
 import RenglonEvento from "./RenglonEvento";
 import Cabecera from "./ui/Cabecera";
 import { useAsistenciaEnLista } from "./useAsistenciaEnLista";
@@ -37,31 +40,61 @@ type Props = {
   /** Lo que pide la pregunta de avisos tras el primer Voy al deslizar (como en la ficha): no depende de la consulta
    *  pesada (sale de la sesión), así que llega ya resuelto. */
   avisos?: AvisosLista | null;
+  /** ¿Hay sesión? «Solo lo que sigo» solo existe con ella: sin sesión, ni se ofrece ni cuenta un valor que venga de la URL o de la memoria. */
+  conSesion: boolean;
   /** Con qué filtros abrir: los que trae la URL (Cuándo o Filtros elegidos desde Inicio, o un «solo lo que sigo»). */
   filtrosIniciales: FiltrosAgenda;
 };
 /**
- * Lo que la agenda recuerda al salir a una ficha y volver: sus filtros y cuántos renglones iban (decisión 17 de 02).
+ * Lo que la agenda recuerda al salir a una ficha y volver: sus filtros, cuántos renglones iban (decisión 17 de 02) y la última visita a Nuevos
+ * con la que se armó esa pestaña (la pestaña misma vive en la URL, y con ella la memoria de pantalla: una por dirección).
  */
-type Recordado = { filtros: FiltrosAgenda; mostrados: number };
+type Recordado = { filtros: FiltrosAgenda; mostrados: number; visita?: string | null };
 
 /**
  * Agenda: la lista por día de todo lo que viene, con la fila de contexto de las pantallas de eventos (`FilaEventos`:
- * ciudad, Cuándo y Filtros) en `ui/Cabecera`. Cada día es un grupo con su título pegado (`ui/Grupo`); vacíos por causa. Buscar
- * es la lupa de la barra de la app (`app/buscar`), no un campo de esta pantalla. Decisiones en docs/rediseno/02 y 50.
+ * ciudad, Cuándo y Filtros) y, debajo, las pestañas Todos · Nuevos, todo en `ui/Cabecera`. Cada día es un grupo con su título
+ * pegado (`ui/Grupo`); vacíos por causa. Buscar es la lupa de la barra de la app (`app/buscar`), no un campo de esta pantalla.
+ * Nuevos es lo publicado desde la última visita (`AgendaNuevos`). Decisiones en docs/rediseno/02, 23 y 50.
  */
-export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, filtrosIniciales }: Props) {
-  const [filtros, setFiltros] = useState(filtrosIniciales);
+export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, conSesion, filtrosIniciales }: Props) {
+  const [guardados, setFiltros] = useState(filtrosIniciales);
+  const filtros = sinSeguirSinSesion(guardados, conSesion);
+  // La pestaña vive en la URL (`?ver=nuevos`; sin él, Todos): se comparte, y tocar la sección en la que ya se está la deja en Todos. Cambiarla
+  // reemplaza la dirección sin apilar historial, como los filtros, y sin pedirle nada al servidor; la lista nueva empieza arriba.
+  const ruta = usePathname();
+  const params = useSearchParams();
+  const nuevos = params.get("ver") === "nuevos";
+  function verPestana(pestana: "todos" | "nuevos") {
+    const siguiente = new URLSearchParams(params);
+    if (pestana === "nuevos") siguiente.set("ver", "nuevos");
+    else siguiente.delete("ver");
+    const consulta = siguiente.toString();
+    window.history.replaceState(null, "", consulta ? `${ruta}?${consulta}` : ruta);
+    window.scrollTo({ top: 0 });
+  }
+  const [visita, setVisita] = useVisitaNuevos(ciudad.slug);
+  const nuevosDesde = nuevos && visita !== undefined ? corteNuevos(visita) : undefined;
   // Carga progresiva (OL-158): cuántos renglones van pintados de la lista agrupada por día. La memoria de pantalla
   // repone este número igual que los filtros, para que volver de una ficha no colapse la lista a la
   // primera tanda otra vez. Vive aquí (no en `AgendaLista`, diferida) para que una sola `useMemoriaPantalla` guarde
   // todo junto — dos llamadas con la misma clave se pisarían la una a la otra (OL-161).
   const [mostrados, setMostrados] = useState(TANDA_INICIAL);
 
-  useMemoriaPantalla<Recordado>("agenda", { filtros, mostrados }, (r) => {
+  useMemoriaPantalla<Recordado>("agenda", { filtros, mostrados, visita }, (r) => {
     if (r.filtros) setFiltros(filtrosRecordados(r.filtros)); // una memoria de la versión anterior no trae `filtros`: se ignora
     if (typeof r.mostrados === "number") setMostrados(r.mostrados);
+    if (r.visita !== undefined) setVisita(r.visita);
   });
+
+  // La lista sí espera su propia consulta (eventos, quién sigue qué, qué decidió la persona): va en su `<Suspense>`, con renglones de esqueleto del
+  // mismo alto (OL-161, bitácora 196) — antes, la cabecera de arriba esperaba lo mismo (observado por el gestor en la captura 01 de la bitácora
+  // 193). Nuevos también lo enseña mientras no se ha leído la última visita (en el servidor y en el primer pintado): nunca un «nada nuevo» en falso.
+  const cargando = (
+    <div className={esqueleto.lista}>
+      <EsqueletoRenglones cantidad={6} />
+    </div>
+  );
 
   return (
     <>
@@ -74,23 +107,31 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZON
             hoy={hoy}
             zona={zona}
             agenda={agenda}
+            conSesion={conSesion}
             valor={filtros}
             onCambiar={setFiltros}
+            nuevosDesde={nuevosDesde}
           />
         }
-      />
-      {antes}
-      {/* La lista sí espera su propia consulta (eventos, quién sigue qué, qué decidió la persona): va en su
-          `<Suspense>`, con renglones de esqueleto del mismo alto (OL-161, bitácora 196) — antes, la cabecera de
-          arriba esperaba lo mismo (observado por el gestor en la captura 01 de la bitácora 193). */}
-      <Suspense
-        fallback={
-          <div className={esqueleto.lista}>
-            <EsqueletoRenglones cantidad={6} />
-          </div>
-        }
       >
-        <AgendaLista agenda={agenda} filtros={filtros} ciudad={ciudad} avisos={avisos} mostrados={mostrados} onMostrados={setMostrados} />
+        <Pestanas ariaLabel="Eventos">
+          <Pestana activa={!nuevos} onClick={() => verPestana("todos")}>
+            Todos
+          </Pestana>
+          <Pestana activa={nuevos} onClick={() => verPestana("nuevos")}>
+            Nuevos
+          </Pestana>
+        </Pestanas>
+      </Cabecera>
+      {antes}
+      <Suspense fallback={cargando}>
+        {!nuevos ? (
+          <AgendaLista agenda={agenda} filtros={filtros} ciudad={ciudad} avisos={avisos} mostrados={mostrados} onMostrados={setMostrados} />
+        ) : nuevosDesde === undefined ? (
+          cargando
+        ) : (
+          <AgendaNuevos agenda={agenda} filtros={filtros} desde={nuevosDesde} ciudad={ciudad} avisos={avisos} />
+        )}
       </Suspense>
     </>
   );
@@ -139,25 +180,15 @@ function AgendaLista({
   const centinelaRef = useCentinela(hayMasEventos, () => onMostrados((m) => siguienteTanda(total, m).mostrados));
 
   function cuerpo() {
-    if (filtros.siguiendo && seguidos === null) {
-      return (
-        <Vacio titulo="Siguiendo" texto="Aquí verás lo que pasa en lugares y con artistas que sigues. Entra para seguir a quienes te importan.">
-          <Boton href="/entrar?siguiente=/agenda" variante="secundario" ancho="contenido">
-            Entrar
-          </Boton>
-        </Vacio>
-      );
-    }
     if (filtros.siguiendo && seguidos !== null && seguidos.length === 0 && eventosSeguidos.length === 0) {
       return <Vacio titulo="Siguiendo" texto="Todavía no sigues lugares ni artistas. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
     }
     if (total === 0) {
       // Vacío por causa: dice qué se puso, y la salida.
-      const conFiltros = !!filtros.cuando || filtros.cuanto.length > 0 || filtros.siguiendo;
       return (
         <Vacio
           titulo={filtros.cuando ? "En esas fechas" : filtros.siguiendo ? "Siguiendo" : "Próximos días"}
-          texto={filtros.siguiendo ? "Lo que sigues no tiene eventos próximos." : conFiltros ? "No hay nada con lo que elegiste. Cambia o quita algún filtro para ver más." : `Aún no hay eventos próximos en ${ciudad.nombre}. Si sabes de uno, publícalo.`}
+          texto={filtros.siguiendo ? "Lo que sigues no tiene eventos próximos." : conFiltros(filtros) ? "No hay nada con lo que elegiste. Cambia o quita algún filtro para ver más." : `Aún no hay eventos próximos en ${ciudad.nombre}. Si sabes de uno, publícalo.`}
         />
       );
     }
@@ -184,13 +215,50 @@ function AgendaLista({
   );
 }
 
-/** Un vacío con su causa y, si la hay, su salida (Entrar). */
-function Vacio({ titulo, texto, children }: { titulo: string; texto: string; children?: ReactNode }) {
+/**
+ * Nuevos (docs/rediseno/23): lo publicado desde la última visita (`desde`, `corteNuevos`: a lo más 7 días y 20 eventos), en grupos por cuándo
+ * se publicó y lo último arriba, con los mismos filtros de la fila de contexto que Todos. Como el grupo dice cuándo se publicó y no cuándo
+ * es, el renglón lleva el día del evento. Enseñarla cuenta como haberla visto (`marcarNuevosVisto`), salvo con filtros puestos: lo que no
+ * se enseñó sigue siendo nuevo.
+ */
+function AgendaNuevos({ agenda, filtros, desde, ciudad, avisos }: { agenda: Promise<Agenda>; filtros: FiltrosAgenda; desde: number; ciudad: Ciudad; avisos: AvisosLista | null }) {
+  const datos = use(agenda);
+  const ahora = new Date();
+  const canal = useCanalDeListas();
+  const asistencia = useAsistenciaEnLista(datos.asistencias, avisos, canal);
+  const lista = listarAgenda(datos, filtros, desde);
+  const vistoTodo = !conFiltros(filtros);
+  useEffect(() => {
+    if (vistoTodo) marcarNuevosVisto(ciudad.slug, datos.eventos);
+  }, [vistoTodo, ciudad.slug, datos.eventos]);
+
+  return (
+    <>
+      {lista.length === 0 ? (
+        <div className={comun.vacio}>
+          <p>{vistoTodo ? "Nada nuevo desde tu última visita." : "Nada nuevo con lo que elegiste. Cambia o quita algún filtro para ver más."}</p>
+        </div>
+      ) : (
+        agruparPorPublicacion(lista, ahora).map((g) => (
+          <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
+            {g.eventos.map((e) => (
+              <RenglonEvento key={e.id} evento={e} conDia estado={asistencia.estado(e.id)} boton={asistencia.boton(e)} />
+            ))}
+          </Grupo>
+        ))
+      )}
+      {asistencia.extras}
+      <AvisoAbajo canal={canal} />
+    </>
+  );
+}
+
+/** Un vacío con su causa. */
+function Vacio({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <div className={comun.vacio}>
       <h2>{titulo}</h2>
       <p>{texto}</p>
-      {children}
     </div>
   );
 }

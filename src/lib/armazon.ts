@@ -1,4 +1,5 @@
 import type { GrupoBuscador } from "./buscarUnificado";
+import type { Punto } from "./geo";
 
 /**
  * El armazón de la app (docs/rediseno/50, P4): una sola rejilla con la barra de la app, la pantalla y la navegación.
@@ -77,13 +78,18 @@ export function tituloDeAlta(alta: Alta): string {
  * A dónde lleva el «+» y cómo se llama para quien no lo ve: a la pantalla de alta, con el tipo de la sección en que se
  * está (`altaDeRuta`). Con la ciudad que se está viendo (`?ciudad=`), el evento y el artista empiezan ahí (bitácoras 051, 053
  * y OL-100); el lugar se ubica por su dirección y no la lleva. Con el `nombre` de lo que se buscó y no se encontró (Buscar), el
- * alta abre con él ya puesto. Con o sin sesión lleva al alta: la sesión se pide después, con el valor por delante.
+ * alta abre con él ya puesto; y con el `punto` donde se sostuvo el dedo en el mapa de Lugares (seis decimales: a unos 10 cm), con el lugar
+ * ya ubicado. Con o sin sesión lleva al alta: la sesión se pide después, con el valor por delante.
  */
-export function enlaceDeAlta(alta: Alta, ciudad: string | null, nombre: string | null = null): { href: string; etiqueta: string } {
+export function enlaceDeAlta(alta: Alta, ciudad: string | null, nombre: string | null = null, punto: Punto | null = null): { href: string; etiqueta: string } {
   const { etiqueta, conCiudad } = ALTAS[alta];
   const consulta = new URLSearchParams({ tipo: alta });
   if (conCiudad && ciudad) consulta.set("ciudad", ciudad);
   if (nombre) consulta.set("nombre", nombre);
+  if (punto) {
+    consulta.set("lat", punto.lat.toFixed(6));
+    consulta.set("lng", punto.lng.toFixed(6));
+  }
   return { href: `/nuevo?${consulta}`, etiqueta };
 }
 

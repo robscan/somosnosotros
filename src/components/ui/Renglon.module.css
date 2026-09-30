@@ -117,12 +117,18 @@
   gap: var(--espacio-1);
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
   white-space: nowrap;
 }
 .frente > small > span > :is(span, b) {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* Lo primero de la línea de un evento no se corta: una etiqueta como «Te interesa» y el cuándo (`b`: la hora y, en Nuevos, el día). Cede lo
+   último, el precio y cuántos van; y si aun así no cabe, la línea se recorta al borde (`overflow`) en vez de pisar el botón. */
+.frente > small > span > :is(b, span:not(:last-child)) {
+  flex: none;
 }
 .frente > small > span > svg {
   flex: none;

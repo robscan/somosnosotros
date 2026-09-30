@@ -1,5 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { agruparPorDia, buscarEventos, filtrarAgenda, filtrosDeUrl, filtrosPuestos, hrefAgenda, listarAgenda, SIN_FILTROS, textoDistancia, type EventoAgenda, type EventoBuscable } from "./agenda";
+import {
+  agruparPorDia,
+  agruparPorPublicacion,
+  buscarEventos,
+  conFiltros,
+  corteNuevos,
+  DIAS_NUEVOS,
+  eventosNuevos,
+  filtrarAgenda,
+  filtrosDeUrl,
+  filtrosPuestos,
+  hrefAgenda,
+  LIMITE_NUEVOS,
+  listarAgenda,
+  SIN_FILTROS,
+  sinSeguirSinSesion,
+  textoDistancia,
+  tituloPublicacion,
+  type EventoAgenda,
+  type EventoBuscable,
+} from "./agenda";
 import { distanciaKm } from "./geo";
 
 // "ahora": lunes 14 sep 2026, 12:00 hora de la ciudad (18:00Z)
@@ -154,5 +174,132 @@ describe("Cuándo y Cuánto en la agenda (docs/rediseno/50, P5)", () => {
     expect(filtrosDeUrl({ desde: "2026-10-03", hasta: "2026-10-04", cuanto: "gratis,otro", filtro: "siguiendo" })).toEqual({ cuando: filtros.cuando, cuanto: ["gratis"], siguiendo: true });
     expect(filtrosDeUrl({ filtro: "cercanos", desde: "mañana" })).toEqual(SIN_FILTROS);
     expect(filtrosPuestos(filtros)).toBe(2);
+  });
+  it("«Solo lo que sigo» solo cuenta con sesión: sin ella, lo que llegue en la URL o en la memoria se ignora y lo demás se queda", () => {
+    const puestos = { cuando: { desde: "2026-10-03", hasta: "2026-10-04" }, cuanto: ["gratis" as const], siguiendo: true };
+    expect(sinSeguirSinSesion(puestos, true)).toBe(puestos);
+    expect(sinSeguirSinSesion(puestos, false)).toEqual({ ...puestos, siguiendo: false });
+    expect(filtrosPuestos(sinSeguirSinSesion(puestos, false))).toBe(1);
+    const sinSeguir = { ...puestos, siguiendo: false };
+    expect(sinSeguirSinSesion(sinSeguir, false)).toBe(sinSeguir);
+    expect(sinSeguirSinSesion(SIN_FILTROS, false)).toBe(SIN_FILTROS);
+  });
+});
+
+describe("Nuevos: lo publicado desde la última visita (docs/rediseno/23)", () => {
+  // Jueves 17 de septiembre de 2026, 18:00 en la ciudad: lo que el founder vio el día que pidió «lo más reciente arriba».
+  const HOY = new Date("2026-09-17T18:00:00Z");
+  const ZONA_SLP = "America/Mexico_City";
+  const suyo = evento({ id: "suyo", inicio: "2026-10-08T23:00:00Z", creado_en: "2026-09-17T17:00:00Z" });
+  const hoyPronto = evento({ id: "hoy-pronto", inicio: "2026-09-19T03:00:00Z", creado_en: "2026-09-17T16:00:00Z" });
+  const ayer = evento({ id: "ayer", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-16T10:00:00Z" });
+  const semana = evento({ id: "semana", inicio: "2026-09-20T01:00:00Z", creado_en: "2026-09-14T10:00:00Z" });
+  const eventos = [ayer, semana, suyo, hoyPronto];
+  const agenda = { eventos, seguidos: null, eventosSeguidos: [] };
+  const tope = HOY.getTime() - DIAS_NUEVOS * 86400000;
+
+  describe("el corte: desde la última visita, con tope de 7 días", () => {
+    it("sin marca, o con una marca ilegible o del futuro (un teléfono con la hora mal puesta), vale el tope", () => {
+      for (const marca of [null, undefined, "", "no es una fecha", "2026-12-31T00:00:00Z", HOY.getTime() + 86400000, Number.NaN]) expect(corteNuevos(marca, HOY)).toBe(tope);
+    });
+    it("con una marca de ayer manda la marca, sea texto o número", () => {
+      const ayerALas18 = new Date("2026-09-16T18:00:00Z").getTime();
+      expect(corteNuevos("2026-09-16T18:00:00Z", HOY)).toBe(ayerALas18);
+      expect(corteNuevos(ayerALas18, HOY)).toBe(ayerALas18);
+    });
+    it("con una marca de hace un mes manda el tope: no se muestran cuatro semanas", () => {
+      expect(corteNuevos("2026-08-17T18:00:00Z", HOY)).toBe(tope);
+      expect(corteNuevos(HOY.getTime() - 30 * 86400000, HOY)).toBe(tope);
+    });
+  });
+
+  describe("lo nuevo: una sola definición", () => {
+    it("deja lo publicado desde el corte, lo último primero, aunque el evento sea el más lejano", () => {
+      // El caso del founder: publica un taller del 8 de octubre y espera verlo primero (con los grupos por día del evento salía el último).
+      expect(eventosNuevos(eventos, tope).map((e) => e.id)).toEqual(["suyo", "hoy-pronto", "ayer", "semana"]);
+      expect(eventosNuevos(eventos, new Date("2026-09-17T00:00:00Z").getTime()).map((e) => e.id)).toEqual(["suyo", "hoy-pronto"]);
+      expect(eventosNuevos(eventos, new Date("2026-09-17T17:30:00Z").getTime())).toEqual([]);
+    });
+    it("lo publicado a la vez va en orden de agenda, llegue como llegue de la base", () => {
+      const a = evento({ id: "a", titulo: "Bailar", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-17T12:00:00Z" });
+      const b = evento({ id: "b", titulo: "Almorzar", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-17T12:00:00Z" });
+      expect(eventosNuevos([a, b], tope).map((e) => e.id)).toEqual(["b", "a"]);
+      expect(eventosNuevos([b, a], tope).map((e) => e.id)).toEqual(["b", "a"]);
+    });
+  });
+
+  describe("los grupos: por cuándo se publicó, en la zona de quien mira", () => {
+    it("Lo más nuevo, Publicado ayer y Esta semana, en ese orden y sin repetirse", () => {
+      const grupos = agruparPorPublicacion(eventosNuevos(eventos, tope), HOY, ZONA_SLP);
+      expect(grupos.map((g) => [g.titulo, g.eventos.map((e) => e.id)])).toEqual([
+        ["Lo más nuevo", ["suyo", "hoy-pronto"]],
+        ["Publicado ayer", ["ayer"]],
+        ["Esta semana", ["semana"]],
+      ]);
+      // El primer grupo no promete un día: quien vuelve tras tres días ve arriba lo de anteayer.
+      expect(tituloPublicacion("2026-09-15T10:00:00Z", HOY, ZONA_SLP)).toBe("Esta semana");
+    });
+    it("agrupa igual llegue como llegue la lista", () => {
+      expect(agruparPorPublicacion([...eventos].reverse(), HOY, ZONA_SLP).map((g) => g.titulo)).toEqual(["Lo más nuevo", "Publicado ayer", "Esta semana"]);
+    });
+    it("el grupo se cuenta en la zona de quien mira, no en la de la ciudad", () => {
+      // Publicado a las 07:00 del 17 en Madrid: allí es de hoy; en San Luis, todavía del 16.
+      const enMadrid = "2026-09-17T05:00:00Z";
+      const ahoraMadrid = new Date("2026-09-17T09:00:00Z");
+      expect(tituloPublicacion(enMadrid, ahoraMadrid, "Europe/Madrid")).toBe("Lo más nuevo");
+      expect(tituloPublicacion(enMadrid, ahoraMadrid, ZONA_SLP)).toBe("Publicado ayer");
+      // Y al revés: lo de ayer a las 23:30 en Tijuana no es «Lo más nuevo» allí.
+      expect(tituloPublicacion("2026-09-17T06:30:00Z", new Date("2026-09-17T20:00:00Z"), "America/Tijuana")).toBe("Publicado ayer");
+    });
+    it("lo publicado «en el futuro» por un reloj atrasado va con lo de hoy, y primero", () => {
+      const futuro = evento({ id: "futuro", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-18T12:00:00Z" });
+      const hoy = evento({ id: "hoy", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-17T10:00:00Z" });
+      const grupos = agruparPorPublicacion([hoy, futuro], HOY, ZONA_SLP);
+      expect(grupos.map((g) => g.titulo)).toEqual(["Lo más nuevo"]);
+      expect(grupos[0].eventos.map((e) => e.id)).toEqual(["futuro", "hoy"]);
+    });
+  });
+
+  describe("la pestaña: los mismos filtros que Todos", () => {
+    const de = (filtros: Partial<typeof SIN_FILTROS>, desde = tope) => listarAgenda(agenda, { ...SIN_FILTROS, ...filtros }, desde).map((e) => e.id);
+    it("sin corte es Todos, en orden de agenda; con él, lo nuevo en orden de publicación", () => {
+      expect(listarAgenda(agenda, SIN_FILTROS).map((e) => e.id)).toEqual(["ayer", "hoy-pronto", "semana", "suyo"]);
+      expect(de({})).toEqual(["suyo", "hoy-pronto", "ayer", "semana"]);
+    });
+    it("Cuándo, Cuánto y «Solo lo que sigo» valen igual en las dos pestañas", () => {
+      const conLugar = evento({ id: "conLugar", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-17T15:00:00Z", lugar_id: "L1", precio: "$80" });
+      const lista = { eventos: [...eventos, conLugar], seguidos: ["L1"], eventosSeguidos: [] };
+      const ids = (filtros: Partial<typeof SIN_FILTROS>, desde?: number) => listarAgenda(lista, { ...SIN_FILTROS, ...filtros }, desde).map((e) => e.id);
+      expect(ids({ siguiendo: true }, tope)).toEqual(["conLugar"]);
+      expect(ids({ cuanto: ["gratis"] }, tope)).toEqual(["suyo", "hoy-pronto", "ayer", "semana"]);
+      // El jueves 18 (a las 19:00 y 21:00 de la ciudad): lo mismo en Todos, en su orden.
+      expect(ids({ cuando: { desde: "2026-09-18", hasta: "2026-09-18" } }, tope)).toEqual(["hoy-pronto", "conLugar", "ayer"]);
+      expect(ids({ cuando: { desde: "2026-09-18", hasta: "2026-09-18" } })).toEqual(["ayer", "conLugar", "hoy-pronto"]);
+    });
+    it("el tope de 20 se aplica después de los filtros: lo que no cumple no le quita su lugar a lo que sí", () => {
+      // 25 eventos: los 5 más recientes cuestan y los 20 anteriores son gratis. Con «Gratis», caben los 20 gratis (y no 15).
+      const muchos = Array.from({ length: 25 }, (_, i) => evento({ id: `e${i}`, inicio: "2026-09-19T01:00:00Z", creado_en: new Date(HOY.getTime() - (i + 1) * 3600000).toISOString(), precio: i < 5 ? "$100" : null }));
+      const lista = { eventos: muchos, seguidos: null, eventosSeguidos: [] };
+      expect(listarAgenda(lista, SIN_FILTROS, tope)).toHaveLength(LIMITE_NUEVOS);
+      expect(listarAgenda(lista, { ...SIN_FILTROS, cuanto: ["gratis"] }, tope)).toHaveLength(LIMITE_NUEVOS);
+      expect(listarAgenda(lista, SIN_FILTROS)).toHaveLength(25);
+    });
+    it("con un día elegido, la pestaña trae solo lo nuevo de ese día: lo que dice el botón «Ver N eventos»", () => {
+      expect(de({}, new Date("2026-09-17T00:00:00Z").getTime())).toEqual(["suyo", "hoy-pronto"]);
+      expect(de({ cuando: { desde: "2026-10-08", hasta: "2026-10-08" } }, new Date("2026-09-17T00:00:00Z").getTime())).toEqual(["suyo"]);
+      expect(de({ cuando: { desde: "2026-09-20", hasta: "2026-09-20" } }, new Date("2026-09-17T00:00:00Z").getTime())).toEqual([]);
+    });
+  });
+
+  it("la pestaña vive en la URL, sin perder la ciudad ni los filtros", () => {
+    expect(hrefAgenda(SIN_FILTROS, null, true)).toBe("/agenda?ver=nuevos");
+    expect(hrefAgenda(SIN_FILTROS, "queretaro", true)).toBe("/agenda?ciudad=queretaro&ver=nuevos");
+    expect(hrefAgenda({ ...SIN_FILTROS, cuanto: ["gratis"] }, "queretaro")).toBe("/agenda?ciudad=queretaro&cuanto=gratis");
+  });
+  it("hay filtros si hay Cuándo o algo en Filtros", () => {
+    expect(conFiltros(SIN_FILTROS)).toBe(false);
+    expect(conFiltros({ ...SIN_FILTROS, cuando: { desde: "2026-09-19", hasta: "2026-09-19" } })).toBe(true);
+    expect(conFiltros({ ...SIN_FILTROS, cuanto: ["gratis"] })).toBe(true);
+    expect(conFiltros({ ...SIN_FILTROS, siguiendo: true })).toBe(true);
   });
 });

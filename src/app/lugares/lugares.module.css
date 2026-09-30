@@ -41,9 +41,9 @@
   }
 }
 
-/* 2. Lo que flota sobre el mapa: solo «Mi ubicación», arriba a la derecha (la lista ya está en la hoja), y su aviso debajo. Su
-   glifo dice si ya hay ubicación: oscuro sin ella, del color de acción con ella (va en el icono para no pelear con el color del
-   propio botón); mientras llega, late. */
+/* 2. Lo que flota sobre el mapa: «Mi ubicación», arriba a la derecha (la lista ya está en la hoja), «Encuadrar los lugares» justo
+   debajo cuando hace falta, y su aviso bajo los dos. Su glifo dice si ya hay ubicación: oscuro sin ella, del color de acción con ella (va
+   en el icono para no pelear con el color del propio botón); mientras llega, late. */
 .ubicacion {
   position: absolute;
   top: var(--espacio-3);
@@ -74,6 +74,31 @@
   left: var(--espacio-4);
   right: var(--espacio-4);
   z-index: var(--z-sobre);
+}
+/* «Encuadrar los lugares»: el mismo botón que «Mi ubicación», debajo de él, solo cuando ninguno de los lugares queda a la vista en lo que
+   deja libre la hoja. Sale y se va con un fundido corto; oculto ni se ve ni se toca, y no mueve nada (vive en su sitio, no en el flujo). Si el
+   aviso de la ubicación está a la vista, baja para no taparlo. */
+.encuadrar {
+  position: absolute;
+  top: calc(var(--espacio-3) + var(--boton-icono) + var(--espacio-2));
+  right: var(--espacio-4);
+  z-index: var(--z-sobre);
+  transition:
+    opacity var(--duracion) var(--curva),
+    visibility 0s;
+}
+.encuadrar > svg {
+  color: var(--texto);
+}
+.encuadrarOculto {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duracion) var(--curva),
+    visibility 0s var(--duracion);
+}
+.avisoMapaBajo {
+  top: calc(var(--espacio-3) + 2 * var(--boton-icono) + 2 * var(--espacio-2));
 }
 /* Lo que dice la hoja cuando la búsqueda o los filtros no dejan ver ningún lugar. */
 .nada {

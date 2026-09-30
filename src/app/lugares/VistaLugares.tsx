@@ -13,12 +13,12 @@ import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Cabecera from "@/components/ui/Cabecera";
 import { EsqueletoCaja } from "@/components/ui/Esqueleto";
-import { IconoUbicacion } from "@/components/ui/Iconos";
+import { IconoEncuadrar, IconoUbicacion } from "@/components/ui/Iconos";
 import comun from "@/components/Lista.module.css";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
-import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
@@ -93,7 +93,7 @@ function encuadreCercanosDe(lugares: LugarLista[], p: Punto): Punto[] {
 /**
  * Lugares: el mapa a toda la altura que deja la fila de contexto y, sobre él, la hoja con la lista de lugares y, al tocar un pin
  * o un renglón, la ficha del lugar dentro de la hoja (docs/rediseno/50, P5b; decisiones 31 a 36 y 58 del founder). La fila lleva la
- * ciudad y Filtros (tipo, con eventos, lo que sigo); buscar es la lupa de la barra de la app (`app/buscar`), que desde aquí vuelve
+ * ciudad y Filtros (tipo, con eventos y, con sesión, lo que sigo); buscar es la lupa de la barra de la app (`app/buscar`), que desde aquí vuelve
  * con la ficha de un lugar ya abierta (`fichaInicial`). «Mi ubicación» pide la ubicación al tocarla, no la guarda: centra en el punto azul y ordena la lista por cercanía. Al elegir
  * algo en Filtros, quitar un chip o cambiar de ciudad, la hoja responde: recogida sube a asoma (asoma o llena se quedan), la cantidad dice lo que quedó y
  * el mapa encuadra los lugares que quedan, sin moverse si no cambió nada (docs/rediseno/50, decisión del founder del 2026-09-30). Decisiones
@@ -118,8 +118,13 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
   // Con `fichaInicial` (Buscar, desde Lugares) la ficha ya está abierta desde el primer cuadro: la hoja sube a ella y el mapa se centra.
   const [inicial] = useState(() => (fichaInicial ? lugares.find((l) => (l.slug || l.id) === fichaInicial) : undefined));
   const [ficha, setFicha] = useState<FichaAbierta | null>(() => (inicial ? { lugar: inicial, piezas: null, deExtra: null } : null));
+  /** Cambia con cada ficha que se abre por un gesto de la persona (un pin, un renglón): la hoja entra con movimiento. Al reponer la pantalla o
+   *  llegar con la ficha ya abierta no cambia, y la ficha aparece en su sitio. */
+  const [entrada, setEntrada] = useState(0);
   /** Cómo quedó la hoja al asentarse (para la memoria de pantalla y para dejar libre al mapa lo que ella tapa). */
   const [hoja, setHoja] = useState<EstadoHoja>({ detente: "asoma", y: 0, cubre: 0 });
+  /** La lista de la hoja ya se desplazó más de una pantalla: aparece el botón de volver arriba (`ui/Cabecera`). */
+  const [lejos, setLejos] = useState(false);
   const [restaurar, setRestaurar] = useState<DondeEstaba>();
   /** Lo que tenía el foco al abrir la ficha, para devolvérselo al cerrarla. */
   const disparador = useRef<HTMLElement | null>(null);
@@ -132,7 +137,10 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
   // mapa y la hoja se vayan y vuelvan.
   const extra = useResuelta(extras);
   const seguidos = extra?.seguidos ?? null;
-  const eleccion = useMemo<EleccionLugares>(() => ({ tipo, conEventos, soloSigo }), [tipo, conEventos, soloSigo]);
+  // «Solo lo que sigo» existe solo con sesión, que se sabe cuando llega lo diferido: sin ella, un valor de la memoria de pantalla no cuenta.
+  // Mientras llega se deja como esté, para que el chip de quien sí tiene sesión no aparezca tarde.
+  const conSesion = extra?.conSesion;
+  const eleccion = useMemo<EleccionLugares>(() => ({ tipo, conEventos, soloSigo: soloSigo && conSesion !== false }), [tipo, conEventos, soloSigo, conSesion]);
   // Lo que dejan pasar los filtros: lo que enseñan el mapa y la lista.
   const visibles = useMemo(() => filtrarPorEleccion(lugares, eleccion, seguidos, hoy), [lugares, eleccion, seguidos, hoy]);
   const abierta = ficha && lugares.some((l) => l.id === ficha.lugar.id) ? ficha : null;
@@ -158,12 +166,13 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
 
   const encuadrar = (puntos: Punto[]) => setEncuadre((e) => ({ puntos, vez: (e?.vez ?? 0) + 1 }));
 
-  function abrir(lugar: LugarLista) {
+  function abrir(lugar: LugarLista, porGesto = true) {
     disparador.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    // Con otra ficha ya abierta la hoja no se mueve y la cámara va al momento; si no, espera a lo que tapará la ficha al abrirse.
+    // Con otra ficha ya abierta la hoja no cambia de altura y la cámara va al momento; si no, espera a lo que tapará la ficha al abrirse.
     if (abierta) encuadrar([lugar]);
     else porEncuadrar.current = [lugar];
     setFicha({ lugar, piezas: null, deExtra: extra });
+    if (porGesto) setEntrada((n) => n + 1);
     pedirPiezas(lugar, extra);
   }
   function alAsentar(estado: EstadoHoja) {
@@ -225,7 +234,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
     if (!r.hoja) return;
     setRestaurar({ detente: r.hoja.detente, y: r.hoja.y });
     const lugar = r.hoja.ficha ? lugares.find((l) => (l.slug || l.id) === r.hoja.ficha) : undefined;
-    if (lugar) abrir(lugar);
+    if (lugar) abrir(lugar, false);
   });
 
   // Al cambiar de ciudad la pantalla sigue montada (la URL trae otros lugares): la hoja y el mapa responden como ante un filtro.
@@ -251,7 +260,8 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
     <PantallaConAviso>
       <main className={styles.lugares}>
         <Cabecera
-          contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} valor={eleccion} onCambiar={cambiar} />}
+          contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} conSesion={!!conSesion} valor={eleccion} onCambiar={cambiar} />}
+          volverArriba={{ lejos, volver: () => hojaRef.current?.irA("llena") }}
         />
         {/* El mapa y la hoja esperan una consulta aparte (quién sigue qué, destacados): mientras llega, un esqueleto del alto del mapa
             (OL-161, bitácora 196). */}
@@ -270,11 +280,14 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
             geoPidiendo={geo === "pidiendo"}
             onCerrarGeo={() => setGeo("sin-pedir")}
             onUbicacion={centrarEnMi}
+            onEncuadrar={encuadrar}
             ficha={abierta}
+            entrada={entrada}
             onAbrir={abrir}
             onCerrarFicha={cerrar}
             restaurar={restaurar}
             alAsentar={alAsentar}
+            alLejos={setLejos}
             hojaRef={hojaRef}
           />
         ) : (
@@ -308,11 +321,16 @@ type PropsCuerpo = {
   geoPidiendo: boolean;
   onCerrarGeo: () => void;
   onUbicacion: () => void;
+  /** Lleva la cámara a estos lugares (el botón «Encuadrar los lugares»). */
+  onEncuadrar: (puntos: Punto[]) => void;
   ficha: FichaAbierta | null;
+  /** Cambia con cada ficha que se abre por un gesto de la persona: la hoja entra con movimiento. */
+  entrada: number;
   onAbrir: (lugar: LugarLista) => void;
   onCerrarFicha: () => void;
   restaurar: DondeEstaba | undefined;
   alAsentar: (estado: EstadoHoja) => void;
+  alLejos: (lejos: boolean) => void;
   hojaRef: RefObject<Manejo | null>;
 };
 
@@ -321,11 +339,11 @@ type PropsCuerpo = {
  * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
  * de ese estado.
  */
-function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, onAbrir, onCerrarFicha, restaurar, alAsentar, hojaRef }: PropsCuerpo) {
+function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, onEncuadrar, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
   const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
   // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
-  // de la ficha abierta, que crece, lleva aro y sombra, y deja a los demás atenuados (P8, 2026-09-29).
+  // de la ficha abierta, que crece, lleva aro y sombra y queda encima de los demás (P8, 2026-09-29).
   const enTira = useMemo(() => extra.destacados.map((d) => d.id), [extra.destacados]);
   const idsSeguidos = useMemo(() => extra.seguidos ?? [], [extra.seguidos]);
   // El encuadre al abrir (docs/rediseno/35, "Cómo se decide el encuadre"): los lugares de esta semana y los destacados; con
@@ -335,6 +353,10 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
     return iniciales.length > 0 ? { puntos: iniciales, vez: 1 } : null;
   });
   const cantidad = visibles.length === 1 ? "1 lugar" : `${visibles.length} lugares`;
+  // «Encuadrar los lugares» sale cuando ninguno de los lugares (con una ficha abierta, el suyo) queda en lo que se ve del mapa, y los trae de vuelta.
+  const [fuera, setFuera] = useState(false);
+  const conEncuadrar = fuera && (ficha !== null || visibles.length > 0);
+  const encuadrarLosLugares = () => onEncuadrar(lugaresAEncuadrar({ ficha: ficha?.lugar ?? null, hayFiltros: eleccionesPuestas(eleccion) > 0, visibles, destacados: enTira, centro: ciudad.centro }));
 
   return (
     <>
@@ -349,10 +371,15 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           seguidos={idsSeguidos}
           destacados={enTira}
           tapaAbajo={tapaAbajo}
+          onFuera={setFuera}
+          onDespejar={() => hojaRef.current?.irA("recogida")}
         />
-        {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={styles.avisoMapa} />}
+        {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={`${styles.avisoMapa} ${conEncuadrar ? styles.avisoMapaBajo : ""}`} />}
         <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
           <IconoUbicacion width={22} height={22} />
+        </BotonIcono>
+        <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.encuadrar} ${conEncuadrar ? "" : styles.encuadrarOculto}`} onClick={encuadrarLosLugares} aria-label="Encuadrar los lugares">
+          <IconoEncuadrar width={22} height={22} />
         </BotonIcono>
       </div>
       <HojaLugares
@@ -368,8 +395,10 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           )
         }
         ficha={ficha && <FichaHoja key={ficha.lugar.id} lugar={ficha.lugar} piezas={ficha.piezas} onCerrar={onCerrarFicha} />}
+        entrada={entrada}
         desde={restaurar}
         alAsentar={alAsentar}
+        alLejos={alLejos}
       >
         {lista.length > 0 ? (
           <ListaLugares lugares={lista} km={km} seguidos={extra.seguidos} avisos={extra.avisos} alAbrir={onAbrir} />

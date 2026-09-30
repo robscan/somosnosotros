@@ -37,10 +37,10 @@ function CuerpoCargando() {
  * (`ui/Ficha.module.css`), el mismo héroe y el mismo cuerpo (`../[id]/CuerpoLugar.tsx`)— con su barra propia: el asa, la ✕ (o Atrás,
  * con la hoja llena), el título (que aparece al desplazar) y el menú «···». Toda su información vive en la hoja, nunca en la barra
  * del sitio. Desplazada, o con la hoja recogida, la barra se vuelve compacta con la portada oscurecida detrás del título
- * (`data-compacta`, que pone la hoja). Solo se cierra con la ✕.
+ * (`data-compacta`, que pone la hoja). Solo se cierra con la ✕, y la hoja baja hasta salir antes de que `onCerrar` la cierre de verdad.
  */
 export default function FichaHoja({ lugar, piezas, onCerrar }: Props) {
-  const { irA, siguiente } = useHoja();
+  const { irA, siguiente, salir } = useHoja();
   const articulo = useRef<HTMLElement>(null);
   // Al abrirse, el foco pasa a la ficha: el renglón que se tocó deja de verse y el foco no debe perderse.
   useEffect(() => articulo.current?.focus({ preventScroll: true }), []);
@@ -49,7 +49,7 @@ export default function FichaHoja({ lugar, piezas, onCerrar }: Props) {
     <article ref={articulo} tabIndex={-1} className={`${ficha.ficha} ${styles.enHoja}`} data-ficha-hoja aria-label={`Ficha de ${lugar.nombre}`} style={estiloPortada(lugar.portada)}>
       <header className={ficha.barra}>
         <button type="button" className={styles.asa} aria-label="Subir o bajar la ficha" onClick={siguiente} />
-        <BotonIcono tamano="accion" relieve="elevado" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar la ficha">
+        <BotonIcono tamano="accion" relieve="elevado" className={styles.cerrar} onClick={() => salir(onCerrar)} aria-label="Cerrar la ficha">
           <IconoCerrar width={22} height={22} />
         </BotonIcono>
         <BotonIcono tamano="accion" relieve="elevado" className={styles.atras} onClick={() => irA("media")} aria-label="Atrás">

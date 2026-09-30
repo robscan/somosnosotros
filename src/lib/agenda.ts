@@ -3,7 +3,7 @@ import type { Agenda } from "./cargarAgenda";
 import { cuandoDeUrl, type Cuando } from "./cuando";
 import type { EventoResumen } from "./eventos";
 import { esCooperacion, nombreSitio } from "./eventos";
-import { diaCorto, diaLocal, localAIso } from "./fechas";
+import { diaCorto, diaLocal, localAIso, ZONA_INICIAL } from "./fechas";
 import { compararNombres, normalizarNombre } from "./lugares";
 
 /** Lo que la agenda del inicio necesita de cada evento, además del resumen. */
@@ -16,6 +16,8 @@ export type EventoAgenda = EventoResumen & {
 export type Grupo<T> = { clave: string; titulo: string; eventos: T[] };
 
 type Ordenable = Pick<EventoAgenda, "id" | "titulo" | "inicio">;
+/** Lo que hace falta para ordenar por publicación (Nuevos): lo de agenda y cuándo se publicó. */
+type Publicable = Ordenable & Pick<EventoAgenda, "creado_en">;
 /** Lo que hace falta para agrupar por día: el orden y la zona del evento. */
 type Agrupable = Ordenable & Pick<EventoAgenda, "zona">;
 
@@ -48,6 +50,76 @@ export function agruparPorDia<T extends Agrupable>(eventos: T[], ahora: Date = n
   return [...grupos.values()].sort((a, b) => a.clave.localeCompare(b.clave));
 }
 
+/** Lo más atrás que Nuevos mira, aunque la última visita sea más vieja (founder, 2026-09-17: «un tope máximo de 7 días»). */
+export const DIAS_NUEVOS = 7;
+/** Cuántos eventos enseña la pestaña Nuevos: es un resumen de lo último, no una segunda agenda (founder, 2026-09-18). */
+export const LIMITE_NUEVOS = 20;
+
+/**
+ * Desde cuándo cuenta como nuevo: lo publicado desde la última vez que se miró Nuevos, con el tope de `DIAS_NUEVOS` (founder, 2026-09-17:
+ * «mostrar nuevos desde la ultima vez que entraste, pero con un tome máximo de 7 días»). Sin marca, ilegible, o en el futuro porque el
+ * teléfono tiene el reloj mal puesto, vale el tope: así un dato roto nunca deja la pestaña vacía.
+ */
+export function corteNuevos(ultimaVisita: string | number | null | undefined, ahora: Date = new Date()): number {
+  const tope = ahora.getTime() - DIAS_NUEVOS * 86400000;
+  const visita = ultimaVisita == null || ultimaVisita === "" ? NaN : typeof ultimaVisita === "number" ? ultimaVisita : new Date(ultimaVisita).getTime();
+  if (!Number.isFinite(visita) || visita > ahora.getTime()) return tope;
+  return Math.max(tope, visita);
+}
+
+/** Lo último publicado primero y, a igual publicación, en orden de agenda: dos cargas no lo traen distinto (bitácora 062). */
+const porPublicacion = (a: Publicable, b: Publicable) => b.creado_en.localeCompare(a.creado_en) || compararEventos(a, b);
+
+/**
+ * Lo nuevo: lo publicado desde `corte` (`corteNuevos`), lo más reciente primero. Es la única definición de «nuevo»: la pestaña Nuevos de
+ * Agenda y el carril «Nuevos eventos» de Inicio parten de aquí.
+ */
+export function eventosNuevos<T extends Publicable>(eventos: T[], corte: number): T[] {
+  return eventos.filter((e) => new Date(e.creado_en).getTime() >= corte).toSorted(porPublicacion);
+}
+
+/** La zona del teléfono, que es la que decide si algo se publicó «hoy» o «ayer» para quien mira. */
+function zonaDelEntorno(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || ZONA_INICIAL;
+  } catch {
+    return ZONA_INICIAL;
+  }
+}
+
+/**
+ * El título del grupo según cuándo se publicó, contado en la zona de quien mira (no en la de la ciudad ni en la del evento): el rótulo
+ * habla de cuándo lo viste tú. Son tres y con el tope de 7 días no puede haber un cuarto. El primero no lleva fecha porque no siempre es
+ * de hoy: quien vuelve tras tres días ve arriba lo de anteayer (founder, 2026-09-17: «Lo mas nuevo, Publicado ayer, etc»).
+ */
+export function tituloPublicacion(creadoEn: string, ahora: Date = new Date(), zona: string = zonaDelEntorno()): string {
+  const hoy = diaLocal(ahora, zona);
+  const dia = diaLocal(new Date(creadoEn), zona);
+  // Con el reloj del teléfono atrasado algo puede venir «del futuro»: es lo más reciente, así que va con lo de hoy.
+  if (dia >= hoy) return "Lo más nuevo";
+  if (dia === diaLocal(new Date(ahora.getTime() - 86400000), zona)) return "Publicado ayer";
+  return "Esta semana";
+}
+
+/**
+ * Nuevos, agrupado por cuándo se publicó y de lo más reciente hacia atrás (el patrón de `/novedades`, con los rótulos que eligió el founder):
+ * como se recorre en ese orden, los grupos salen ya en el suyo. `agruparPorDia` no sirve aquí: agrupa y ordena por el día del evento, que es
+ * justo el eje que esta pestaña no usa.
+ */
+export function agruparPorPublicacion<T extends Publicable>(eventos: T[], ahora: Date = new Date(), zona: string = zonaDelEntorno()): Grupo<T>[] {
+  const grupos = new Map<string, Grupo<T>>();
+  for (const e of eventos.toSorted(porPublicacion)) {
+    const titulo = tituloPublicacion(e.creado_en, ahora, zona);
+    let g = grupos.get(titulo);
+    if (!g) {
+      g = { clave: titulo, titulo, eventos: [] };
+      grupos.set(titulo, g);
+    }
+    g.eventos.push(e);
+  }
+  return [...grupos.values()];
+}
+
 /** "a 600 m" · "a 2.4 km" · "a 12 km". */
 export function textoDistancia(km: number): string {
   if (km < 1) return `a ${Math.max(50, Math.round(km * 1000 / 50) * 50)} m`;
@@ -69,10 +141,20 @@ export const SIN_FILTROS: FiltrosAgenda = { cuando: null, cuanto: [], siguiendo:
 /** Cuántos filtros de la hoja Filtros hay puestos (Cuándo no cuenta: tiene su propio chip). */
 export const filtrosPuestos = (f: FiltrosAgenda) => f.cuanto.length + (f.siguiendo ? 1 : 0);
 
-/** A Agenda con esos filtros: la URL es su estado inicial (después Agenda lo lleva en el teléfono, sin apilar historial). */
-export function hrefAgenda(f: FiltrosAgenda, ciudad?: string | null): string {
+/** ¿Hay algo puesto en la fila de contexto, Cuándo incluido? Decide qué vacío se enseña y si mirar Nuevos cuenta como haberlo visto todo. */
+export const conFiltros = (f: FiltrosAgenda) => !!f.cuando || filtrosPuestos(f) > 0;
+
+/** «Solo lo que sigo» existe solo con sesión: sin ella, un valor que llegue en la URL o en la memoria de pantalla no cuenta y la lista lo enseña todo. */
+export const sinSeguirSinSesion = (f: FiltrosAgenda, conSesion: boolean): FiltrosAgenda => (conSesion || !f.siguiendo ? f : { ...f, siguiendo: false });
+
+/**
+ * A Agenda con esos filtros, y en su pestaña Nuevos si se pide (`?ver=nuevos`: sin el parámetro, Todos): la URL es su estado inicial
+ * (después Agenda lleva los filtros en el teléfono, sin apilar historial; la pestaña sí se queda en la URL).
+ */
+export function hrefAgenda(f: FiltrosAgenda, ciudad?: string | null, nuevos = false): string {
   const p = new URLSearchParams();
   if (ciudad) p.set("ciudad", ciudad);
+  if (nuevos) p.set("ver", "nuevos");
   if (f.cuando) {
     p.set("desde", f.cuando.desde);
     if (f.cuando.hasta !== f.cuando.desde) p.set("hasta", f.cuando.hasta);
@@ -106,21 +188,26 @@ export type ContextoFiltro = {
   cuando: Cuando | null;
   /** Solo lo gratis, solo lo de cooperación o los dos; vacío o sin él, cualquier precio. */
   cuanto?: readonly Cuanto[];
+  /** La pestaña Nuevos: solo lo publicado desde ese instante (`corteNuevos`), lo más reciente primero y con el tope de `LIMITE_NUEVOS`; sin él, toda la agenda. */
+  nuevosDesde?: number;
 };
 
 /**
  * Aplica los filtros de Agenda. La lista va en orden de agenda sin importar cómo llegue de la base (con un día elegido se
- * pinta tal cual).
+ * pinta tal cual); en Nuevos (`nuevosDesde`), en orden de publicación: los filtros valen igual en las dos pestañas y el tope se aplica
+ * después de ellos.
  */
 export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: ContextoFiltro): T[] {
   // Un evento de varios días cuenta en cada día que ocupa (OL-218, `ocupaRango`): sin esto, el calendario podía marcar
   // un día como "disponible" (por un evento que lo ocupa sin empezar ahí) y, al elegirlo, la lista salía vacía —
   // confirmado con un evento de ejemplo del 6 al 8 de octubre, bitácora 247.
-  const lista = eventos.filter((e) => (!ctx.cuando || ocupaRango(e, ctx.cuando.desde, ctx.cuando.hasta)) && cuesta(e, ctx.cuanto)).sort(compararEventos);
-  if (!ctx.siguiendo) return lista;
-  const lugares = new Set(ctx.seguidos ?? []);
-  const porArtista = new Set(ctx.eventosSeguidos ?? []);
-  return lista.filter((e) => (e.lugar_id && lugares.has(e.lugar_id)) || porArtista.has(e.id));
+  let lista = eventos.filter((e) => (!ctx.cuando || ocupaRango(e, ctx.cuando.desde, ctx.cuando.hasta)) && cuesta(e, ctx.cuanto)).sort(compararEventos);
+  if (ctx.siguiendo) {
+    const lugares = new Set(ctx.seguidos ?? []);
+    const porArtista = new Set(ctx.eventosSeguidos ?? []);
+    lista = lista.filter((e) => (e.lugar_id && lugares.has(e.lugar_id)) || porArtista.has(e.id));
+  }
+  return ctx.nuevosDesde === undefined ? lista : eventosNuevos(lista, ctx.nuevosDesde).slice(0, LIMITE_NUEVOS);
 }
 
 /** Un evento y los nombres de los artistas que se presentan: el buscador único (`app/accionesBuscar.ts`) busca también por ellos. */
@@ -141,9 +228,10 @@ export function buscarEventos<T extends Pick<EventoBuscable, "titulo" | "lugar" 
 }
 
 /**
- * Lo que Agenda lista con esos filtros, en orden de agenda. La lista y el número de cada botón «Ver N eventos» de las hojas de
- * Cuándo y Filtros salen de aquí: lo que dice el botón es lo que se ve al tocarlo.
+ * Lo que Agenda lista con esos filtros, en orden de agenda (o, en Nuevos, `nuevosDesde`, lo último publicado primero). La lista y el número de
+ * cada botón «Ver N eventos» de las hojas de Cuándo y Filtros salen de aquí: lo que dice el botón es lo que se ve al tocarlo, en la pestaña
+ * que se está viendo.
  */
-export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda): EventoAgenda[] {
-  return filtrarAgenda(agenda.eventos, { siguiendo: filtros.siguiendo, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto });
+export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, nuevosDesde?: number): EventoAgenda[] {
+  return filtrarAgenda(agenda.eventos, { siguiendo: filtros.siguiendo, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto, nuevosDesde });
 }

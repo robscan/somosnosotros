@@ -1,8 +1,10 @@
 /* La imagen de una ficha (Cartel). Héroe: la portada 3:2 a todo lo ancho, sin lupa; el título de la ficha va encima, sobre su velo
-   (ui/Heroe). Avatar: la foto redonda de un artista, con un aro blanco que la separa de la portada. */
+   (ui/Heroe). En una pantalla apaisada el 3:2 se comería la ventana: el alto se topa a 60 % de ella, y la imagen ya recorta con
+   `object-fit`. Avatar: la foto redonda de un artista, con un aro blanco que la separa de la portada. */
 .heroe {
   display: block;
   width: 100%;
+  max-height: 60dvh;
   aspect-ratio: 3 / 2;
   padding: 0;
   border: none;

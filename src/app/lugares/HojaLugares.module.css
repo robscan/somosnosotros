@@ -29,6 +29,10 @@
   --hoja-recogida: calc(20px + var(--boton-icono) + var(--espacio-2));
   z-index: calc(var(--z-flotante) - 1);
 }
+/* Mientras la hoja baja para irse (`HojaLugares`, al cerrar la ficha) no recibe toques: los recibe el mapa. */
+.hoja[data-sale] {
+  pointer-events: none;
+}
 /* Hasta que la hoja mide sus alturas y se pone en la suya (`data-hoja`, al hidratar) no se ve: así, al cargar la página, no salta de
    recogida a asoma. */
 @media (max-width: 791px) {

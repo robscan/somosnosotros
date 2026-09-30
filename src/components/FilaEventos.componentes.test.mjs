@@ -2,8 +2,10 @@
  *  Filtros, dentro de la `Cabecera` real y con sus estilos. Cubre: los atajos de Cuándo salen de hoy y el botón dice cuántos
  *  eventos da cada uno (o «Sin eventos» y apagado); «Elegir fecha…» abre el calendario en la misma hoja, con un punto en
  *  los días con eventos, un día con un toque y un rango con dos; Filtros cuenta lo gratis y lo que se sigue y lo puesto sale
- *  como chip con su ✕; «Dónde estás» ofrece «Otra ciudad» con sugerencias que se filtran sin acentos; y la fila se desliza y
- *  avisa que sigue cuando los chips no caben (H-11). Cerrar una hoja sin aplicar no cambia nada.
+ *  como chip con su ✕, y «Solo lo que sigo» solo se ofrece con sesión; «Dónde estás» ofrece «Otra ciudad» con sugerencias que se filtran sin acentos; y la fila se desliza y
+ *  avisa que sigue cuando los chips no caben (H-11). Y (ajuste del founder, 2026-09-30) lo que se pone en la fila se nota: el chip entra con el
+ *  resorte y la fila se desliza para mostrarlo, Cuándo se anima en su sitio con su valor, y al quitar uno sale cerrando el hueco antes de quitarse
+ *  el filtro; lo que trae la pantalla al abrir y «reducir movimiento» no se animan. Cerrar una hoja sin aplicar no cambia nada.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -52,7 +54,7 @@ before(async () => {
       const queretaro = { slug: 'queretaro', nombre: 'Querétaro', centro: { lng: -100.39, lat: 20.59 }, zoom: 13, lugares: 3, eventos: 12, zona: 'America/Mexico_City' };
       function App(){
         const [valor,setValor]=useState(inicial);
-        return <Cabecera contexto={<FilaEventos ciudad={ciudad} ciudades={[ciudad, queretaro]} hrefDeCiudad={()=>'/agenda'} hoy='${HOY}' zona='America/Mexico_City' agenda={agenda} valor={valor} onCambiar={(v)=>{window.qa.cambios.push(v);setValor(v);}} />} />;
+        return <Cabecera contexto={<FilaEventos ciudad={ciudad} ciudades={[ciudad, queretaro]} hrefDeCiudad={()=>'/agenda'} hoy='${HOY}' zona='America/Mexico_City' agenda={agenda} conSesion={!params.has('sinSesion')} valor={valor} onCambiar={(v)=>{window.qa.cambios.push(v);setValor(v);}} />} />;
       }
       createRoot(document.getElementById('root')).render(<App/>);
     `,
@@ -86,8 +88,8 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(consulta = "") {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+async function abrir(consulta = "", reducir = false) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: reducir ? "reduce" : "no-preference" });
   const page = await context.newPage();
   await page.clock.install({ time: new Date(`${HOY}T12:00:00`) });
   await page.goto(origin + consulta);
@@ -97,6 +99,7 @@ const hoja = (page, nombre) => page.getByRole("dialog", { name: nombre });
 const dia = (page, fecha) => page.locator(`[data-fecha="${fecha}"]`);
 /** El botón que aplica: «Ver 2 eventos», «Ver 1 evento», «Sin eventos». */
 const aplicar = (page, nombre) => hoja(page, nombre).getByRole("button", { name: /^(Ver|Sin) / });
+const cerca = (a, b, t = 2) => assert.ok(Math.abs(a - b) <= t, `${a} debía estar a ${t} de ${b}`);
 
 test("Cuándo: los atajos se cuentan desde hoy y el botón dice cuántos eventos da cada uno", async () => {
   const { context, page } = await abrir();
@@ -179,9 +182,135 @@ test("Filtros: lo gratis y lo que sigo se cuentan, y lo puesto sale como chip co
   await page.getByRole("button", { name: "Quitar Gratis" }).waitFor();
   assert.match(await page.getByRole("button", { name: /^Filtros/ }).innerText(), /^Filtros\s+2\s+puestos$/, "la cuenta de lo puesto va en el chip");
   await page.getByRole("button", { name: "Quitar Gratis" }).click();
+  await page.waitForFunction(() => window.qa.cambios.at(-1).cuanto.length === 0); // el chip sale con su animación y solo entonces se quita el filtro
   assert.deepEqual(await page.evaluate(() => window.qa.cambios.at(-1)), { cuando: null, cuanto: [], siguiendo: true });
   await page.getByRole("button", { name: "Quitar Solo lo que sigo" }).click();
+  await page.waitForFunction(() => !document.querySelector('[aria-label^="Quitar"]'));
   assert.equal(await page.getByRole("button", { name: /^Quitar/ }).count(), 0);
+  await context.close();
+});
+
+test("Filtros: «Solo lo que sigo» solo se ofrece con sesión; sin ella queda Cuánto, sin título ni raya de más, y todo lo demás sigue igual", async () => {
+  const con = await abrir();
+  await con.page.getByRole("button", { name: "Filtros" }).click();
+  assert.deepEqual(await hoja(con.page, "Filtros").locator("section h4").allTextContents(), ["Cuánto", "Siguiendo"], "con sesión: los dos bloques");
+  assert.equal(await hoja(con.page, "Filtros").getByRole("switch", { name: "Solo lo que sigo" }).count(), 1);
+  await con.context.close();
+
+  const sin = await abrir("/?sinSesion=1");
+  await sin.page.getByRole("button", { name: "Filtros" }).click();
+  const dialogo = hoja(sin.page, "Filtros");
+  assert.deepEqual(await dialogo.locator("section h4").allTextContents(), ["Cuánto"], "sin sesión: ni el título «Siguiendo» ni su fila");
+  assert.equal(await dialogo.getByText("Solo lo que sigo").count(), 0);
+  assert.equal(await dialogo.getByRole("switch").count(), 0);
+  assert.equal(await dialogo.locator("section").count(), 1, "un solo bloque: no sobra ninguna raya entre bloques");
+  await dialogo.getByRole("button", { name: "Gratis", exact: true }).click();
+  assert.equal(await aplicar(sin.page, "Filtros").innerText(), "Ver 3 eventos", "la cuenta no se ve afectada");
+  await aplicar(sin.page, "Filtros").click();
+  assert.deepEqual(await sin.page.evaluate(() => window.qa.cambios.at(-1)), { cuando: null, cuanto: ["gratis"], siguiendo: false });
+  await sin.context.close();
+});
+
+/** Lo que anima un chip de la fila (por su nombre accesible): la duración y las propiedades de cada animación en curso. */
+const animaciones = (page, nombre) =>
+  page.getByRole("button", { name: nombre }).evaluate((e) => e.getAnimations().map((a) => ({ duracion: a.effect.getTiming().duration, propiedades: [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k)).sort() })));
+/** La fila de contexto, la que se desliza. */
+const tira = (page) => page.locator("header > div").first();
+
+test("lo que la persona pone en la fila entra con el resorte y la fila se desliza para mostrarlo; lo que trae la pantalla al abrir no se anima", async () => {
+  // Al abrir con los filtros ya puestos (la URL, la memoria de pantalla) nada se anima.
+  const abierta = await abrir("/?puestos=1");
+  await abierta.page.getByRole("button", { name: "Quitar Cooperación" }).waitFor();
+  await abierta.page.waitForTimeout(200);
+  assert.equal(await abierta.page.evaluate(() => document.getAnimations().length), 0, "nada se anima al abrir con filtros puestos");
+  await abierta.context.close();
+
+  const { context, page } = await abrir();
+  await page.waitForTimeout(200);
+  const antes = await page.evaluate(() => ({ scrollY, izquierda: [...document.querySelectorAll("header > div > *")].map((e) => e.offsetLeft) }));
+  // Se ponen desde la hoja, que se va al aplicar: los tres chips nuevos entran al final.
+  await page.getByRole("button", { name: "Filtros" }).click();
+  await hoja(page, "Filtros").getByRole("button", { name: "Gratis", exact: true }).click();
+  await hoja(page, "Filtros").getByRole("button", { name: "Cooperación", exact: true }).click();
+  await hoja(page, "Filtros").getByRole("switch", { name: "Solo lo que sigo" }).click();
+  await aplicar(page, "Filtros").click();
+  await page.getByRole("button", { name: "Quitar Solo lo que sigo" }).waitFor();
+  for (const nombre of ["Quitar Gratis", "Quitar Cooperación", "Quitar Solo lo que sigo"]) {
+    assert.deepEqual(await animaciones(page, nombre), [{ duracion: 800, propiedades: ["opacity", "transform"] }], `${nombre} entra con el resorte`);
+  }
+  // La fila se desliza lo justo para que el último quede entero, y solo de lado; mientras el chip aún crece, recibe el toque (no se le quita).
+  await page.waitForFunction(() => { const e = document.querySelector('[aria-label="Quitar Solo lo que sigo"]'); return e.getAnimations().length > 0 && e.getBoundingClientRect().right <= innerWidth; });
+  assert.equal(await page.evaluate(() => { const e = document.querySelector('[aria-label="Quitar Solo lo que sigo"]'); const r = e.getBoundingClientRect(); return e.getAnimations().length > 0 && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest("button") === e; }), true, "el chip recibe el toque mientras todavía entra");
+  await page.waitForTimeout(1100);
+  const { chip, fila, relleno } = await page.evaluate(() => {
+    const t = document.querySelector("header > div");
+    return { chip: document.querySelector('[aria-label="Quitar Solo lo que sigo"]').getBoundingClientRect().toJSON(), fila: t.getBoundingClientRect().toJSON(), relleno: parseFloat(getComputedStyle(t).scrollPaddingRight) };
+  });
+  assert.ok(chip.right <= fila.right - relleno + 0.5 && chip.right > fila.right - relleno - 2, `el último chip queda entero y pegado al aire de la fila (${chip.right} contra ${fila.right - relleno})`);
+  assert.ok((await tira(page).evaluate((e) => e.scrollLeft)) > 0, "la fila se deslizó");
+  const despues = await page.evaluate(() => ({ scrollY, izquierda: [...document.querySelectorAll("header > div > *")].map((e) => e.offsetLeft) }));
+  assert.equal(despues.scrollY, antes.scrollY, "la página no se desplazó hacia arriba ni hacia abajo");
+  assert.deepEqual(despues.izquierda.slice(0, antes.izquierda.length), antes.izquierda, "los chips de antes no se movieron de su sitio");
+  assert.equal(await page.evaluate(() => document.getAnimations().length), 0, "al terminar no queda ninguna animación");
+  await context.close();
+});
+
+test("Cuándo con un valor nuevo se anima en su sitio; con «reducir movimiento» no se anima nada y la fila se desliza de golpe", async () => {
+  const { context, page } = await abrir();
+  await page.waitForTimeout(200);
+  await page.getByRole("button", { name: "Cuándo" }).click();
+  await hoja(page, "Cuándo").getByRole("button", { name: "Hoy", exact: true }).click();
+  await aplicar(page, "Cuándo").click();
+  assert.deepEqual(await animaciones(page, /^Hoy/), [{ duracion: 800, propiedades: ["opacity", "transform"] }], "el chip de Cuándo entra en su sitio con su valor");
+  await page.getByRole("button", { name: /^Hoy/ }).click();
+  await hoja(page, "Cuándo").getByRole("button", { name: "Mañana", exact: true }).click();
+  await aplicar(page, "Cuándo").click();
+  assert.deepEqual(await animaciones(page, /^Mañana/), [{ duracion: 800, propiedades: ["opacity", "transform"] }], "y cada valor nuevo lo vuelve a animar");
+  await context.close();
+
+  const quieto = await abrir("", true);
+  await quieto.page.waitForTimeout(200);
+  await quieto.page.getByRole("button", { name: "Filtros" }).click();
+  for (const nombre of ["Gratis", "Cooperación"]) await hoja(quieto.page, "Filtros").getByRole("button", { name: nombre, exact: true }).click();
+  await hoja(quieto.page, "Filtros").getByRole("switch", { name: "Solo lo que sigo" }).click();
+  await aplicar(quieto.page, "Filtros").click();
+  await quieto.page.getByRole("button", { name: "Quitar Solo lo que sigo" }).waitFor();
+  assert.equal(await quieto.page.evaluate(() => document.getAnimations().length), 0, "con «reducir movimiento» nada se anima");
+  const chip = await quieto.page.evaluate(() => ({ derecha: document.querySelector('[aria-label="Quitar Solo lo que sigo"]').getBoundingClientRect().right, fila: document.querySelector("header > div").getBoundingClientRect().right }));
+  assert.ok(chip.derecha <= chip.fila, "la fila ya lo enseña entero en el primer cuadro: se desliza de golpe");
+  await quieto.context.close();
+});
+
+test("al quitar un chip, su ✕ lo encoge y cierra el hueco, y solo entonces se quita el filtro: los de detrás no saltan", async () => {
+  const { context, page } = await abrir("/?puestos=1");
+  const gratis = page.getByRole("button", { name: "Quitar Gratis" });
+  const cooperacion = page.getByRole("button", { name: "Quitar Cooperación" });
+  await cooperacion.waitFor();
+  await page.waitForTimeout(200);
+  // Cada cuadro: dónde está el de detrás y si el chip sigue en la fila.
+  await page.evaluate(() => {
+    window.cuadros = [];
+    const seguir = () => {
+      const c = document.querySelector('[aria-label="Quitar Cooperación"]');
+      window.cuadros.push({ x: c?.getBoundingClientRect().x, chip: !!document.querySelector('[aria-label="Quitar Gratis"]'), cambios: window.qa.cambios.length });
+      if (window.cuadros.length < 90) requestAnimationFrame(seguir);
+    };
+    requestAnimationFrame(seguir);
+  });
+  const antes = (await cooperacion.boundingBox()).x;
+  await gratis.click();
+  assert.equal(await page.evaluate(() => window.qa.cambios.length), 0, "el filtro no se quita hasta que el chip termina de salir");
+  assert.deepEqual(await animaciones(page, "Quitar Gratis"), [{ duracion: 366, propiedades: ["marginRight", "opacity", "transform"] }], "sale con el recorte del resorte");
+  await page.waitForFunction(() => window.qa.cambios.length === 1);
+  await gratis.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => window.qa.cambios.at(-1).cuanto), ["cooperacion"]);
+  await page.waitForTimeout(400);
+  const cuadros = await page.evaluate(() => window.cuadros);
+  const conChip = cuadros.filter((c) => c.chip);
+  const sinChip = cuadros.filter((c) => !c.chip);
+  assert.ok(conChip.length > 5 && sinChip.length > 3, "se ven cuadros con el chip saliendo y sin él");
+  assert.ok(conChip.at(-1).x < antes - 40, `el de detrás llegó a ocupar el hueco antes de que el chip se quitara (de ${antes} a ${conChip.at(-1).x})`);
+  cerca(sinChip[0].x, conChip.at(-1).x, 2.5); // al quitarlo de verdad no hay salto: a lo más lo que avanza un cuadro al final de la curva (sin el margen negativo serían unos 100 px)
   await context.close();
 });
 

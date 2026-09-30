@@ -122,6 +122,16 @@ export function lugaresEncuadreInicial<T extends LugarLista>(lugares: T[], desta
   return [...candidatos, ...cercanos.slice(0, TOPE_ENCUADRE_INICIAL - candidatos.length)];
 }
 
+/**
+ * Qué encuadra el botón «Encuadrar los lugares» cuando la persona movió el mapa y los perdió de vista (docs/rediseno/35): con una ficha abierta,
+ * su lugar, como al abrirla; con filtros puestos, lo que dejan pasar, como al elegirlos; si no, lo mismo que al abrir el mapa
+ * (`lugaresEncuadreInicial`).
+ */
+export function lugaresAEncuadrar<T extends LugarLista>(p: { ficha: T | null; hayFiltros: boolean; visibles: T[]; destacados: string[]; centro: Punto; ahora?: Date }): T[] {
+  if (p.ficha) return [p.ficha];
+  return p.hayFiltros ? p.visibles : lugaresEncuadreInicial(p.visibles, p.destacados, p.centro, p.ahora);
+}
+
 /** "Próximo: hoy · 19:30" · "Próximo: mié 16 de sep · 19:00", con la hora de la zona del evento. */
 export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona">, ahora: Date = new Date()): string {
   const cuando = formatearCuando(p.inicio, null, ahora, p.zona);

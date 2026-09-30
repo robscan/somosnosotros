@@ -76,6 +76,7 @@ async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchP
         hoy={diaLocal(new Date(), ciudad.zona)}
         zona={ciudad.zona}
         avisos={avisos}
+        conSesion={!!actual}
         antes={actual?.perfil.avisos_push ? <ActivarAvisos llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} /> : null}
       />
     </>

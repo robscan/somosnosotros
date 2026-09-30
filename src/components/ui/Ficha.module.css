@@ -30,12 +30,9 @@
   min-height: calc(100dvh - var(--barra-flujo, 0px));
   background: var(--fondo-contenido);
 }
-/* Desde 792 el héroe no llega a los bordes y la barra de la app queda encima: un poco de aire antes de la portada. Las acciones
-   flotantes van al final de la fila, junto al borde de la columna, y no al centro de la ventana. */
+/* Desde 792 la barra de la app queda encima y la portada arranca justo debajo. Las acciones flotantes van al final de la fila, junto
+   al borde de la columna, y no al centro de la ventana. */
 @media (min-width: 792px) {
-  .enPagina {
-    padding-top: var(--espacio-5);
-  }
   .enPagina > .flotantes {
     justify-self: end;
     margin-right: var(--gutter);
@@ -103,14 +100,14 @@
 }
 
 /* 3. El héroe: la portada 3:2 y su título, en la misma celda (el título al pie, sobre un velo, sin estorbar el toque que abre la
-   imagen). Llega a los bordes en el teléfono; en una pantalla ancha mide lo que la columna y su aire. */
+   imagen). A una columna la portada llega a los dos bordes de su contenedor, a cualquier ancho (la ventana, lo que queda a la derecha
+   del carril o la hoja), y lo que va sobre el velo se alinea con la columna del cuerpo (`--gutter`). Su alto lo topa `Cartel.module.css`. */
 .portada,
 .titulo {
   grid-area: heroe;
-  margin-inline: calc(var(--gutter) - var(--espacio-5));
 }
 .portada {
-  margin-block: 0;
+  margin: 0;
 }
 .titulo {
   align-self: end;
@@ -118,7 +115,7 @@
   display: grid;
   justify-items: start;
   gap: var(--espacio-2);
-  padding: var(--espacio-8) var(--espacio-5) var(--espacio-4);
+  padding: var(--espacio-8) var(--gutter) var(--espacio-4);
   background: var(--velo-titulo);
   color: var(--primario-texto);
   pointer-events: none;
@@ -386,6 +383,7 @@
    de la hoja de Lugares es un panel y no cambia. */
 @media (min-width: 1048px) {
   .enPagina {
+    padding-top: var(--espacio-5); /* la portada es una tarjeta con esquinas: deja su aire bajo la barra de la app */
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     grid-template-areas:
       "barra barra"
@@ -398,14 +396,13 @@
   .enPagina > .portada {
     grid-area: portada;
     align-self: start;
-    margin: 0 0 0 var(--gutter);
+    margin-left: var(--gutter);
     border-radius: var(--radio-grande);
     overflow: hidden;
   }
   .enPagina > .titulo {
     grid-area: titulo;
     align-self: start;
-    margin: 0;
     padding: 0 var(--gutter) 0 0;
     background: none;
     color: var(--texto);

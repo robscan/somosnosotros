@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useImperativeHandle,
 import { avisarHoja } from "@/components/Armazon";
 import { CARRIL } from "@/lib/armazon";
 import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
+import { movimiento, sinMovimiento } from "@/lib/movimiento";
 import styles from "./HojaLugares.module.css";
 
 /** La lista asoma con dos renglones y medio: el tercero sale cortado a propósito, para que se entienda que hay más. */
@@ -15,6 +16,10 @@ const REBORDE = 24;
 
 /** Desde el carril la hoja es el panel de la izquierda, sin alturas ni asa. */
 const enPanel = () => window.matchMedia(CARRIL).matches;
+
+/** Lo que se ve del cuerpo de la hoja, del borde de abajo de la pantalla hasta su borde de arriba (px): lo que recorre al entrar o salir. Es
+ *  una resta entre la hoja y su cuerpo, que se mueven juntos, así que da lo mismo aunque un movimiento esté a medias. */
+const visible = (hoja: HTMLElement, cuerpo: HTMLElement) => hoja.getBoundingClientRect().bottom - cuerpo.getBoundingClientRect().top;
 
 /** Lo que la hoja mide de sí misma en el DOM, todo en posiciones de desplazamiento (`y`). */
 type Medidas = {
@@ -36,6 +41,9 @@ export type Manejo = {
   siguiente: () => void;
   /** Cambió lo que se ve (un filtro, un chip, otra ciudad): la lista recogida sube a asoma para enseñar el resultado, y avisa cómo quedó. */
   mostrarLista: () => void;
+  /** Se cierra la ficha: la hoja baja hasta salir por el borde de abajo y solo entonces se llama a `alTerminar` (que la cierra de verdad). Sin
+   *  movimiento (el panel, o quien lo pidió reducido), se llama al momento. */
+  salir: (alTerminar: () => void) => void;
 };
 const Contexto = createContext<Manejo | null>(null);
 
@@ -51,10 +59,16 @@ type Props = {
   resumen: ReactNode;
   /** La ficha abierta dentro de la hoja, o null. La lista sigue montada, y donde estaba, mientras hay una. */
   ficha: ReactNode | null;
+  /** Cambia con cada ficha que entra por un gesto de la persona (un pin, un renglón): la hoja sube desde el borde de abajo hasta su altura.
+   *  Sin cambiar (al reponer la pantalla, o al llegar con la ficha ya abierta) la ficha aparece ya en su sitio. */
+  entrada?: number;
   /** Dónde estaba la hoja al salir de la pantalla: se repone al volver. */
   desde?: DondeEstaba;
   /** La hoja se asentó en una altura: cuál es, cuánto se desplazó y cuánto del mapa tapa. */
   alAsentar: (estado: EstadoHoja) => void;
+  /** La lista se desplazó más de una pantalla desde que la hoja llenó (o dejó de estarlo; nunca con la ficha a la vista): la pantalla ofrece volver
+   *  arriba, como cualquier lista. Solo avisa cuando cambia. */
+  alLejos?: (lejos: boolean) => void;
   /** Lo que se le puede pedir a la hoja desde fuera (`mostrarLista`, al filtrar). */
   ref?: Ref<Manejo>;
   /** La lista de lugares. */
@@ -77,17 +91,27 @@ type Props = {
  * también quita esa zona de la búsqueda de toques. Mientras la hoja se mueve no hay recorte: llegaría con retraso y le cortaría el
  * borde de arriba al cuerpo.
  *
+ * Con una ficha, la hoja entra y sale con movimiento (docs/rediseno/50, ajuste del founder del 2026-09-30): entra desde el borde de
+ * abajo con el resorte «Gentle» de Figma y, al cerrarla, sale hacia él y solo entonces se cierra la ficha; la lista entra igual al
+ * volver. Es solo `transform` sobre la hoja entera (nunca alturas ni desplazamiento animados), una animación a la vez: la que empieza
+ * cancela la anterior, y si la persona toca la hoja mientras entra, termina de golpe (el gesto gana). Las medidas descuentan lo que la
+ * hoja lleve movido (`medir`), así que un movimiento a medias no las falsea.
+ *
  * La altura y la cabecera compacta de la ficha se pintan en el DOM (`data-hoja` en la hoja, `data-compacta` en la ficha) y no en el
  * estado de React: cambian con cada cuadro del desplazamiento y no deben volver a pintar la lista. Quien la usa solo se entera
- * cuando la hoja se asienta.
+ * cuando la hoja se asienta y cuando la lista pasa de una pantalla desplazada (`alLejos`, el botón de volver arriba).
  */
-export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, children }: Props) {
+export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar, alLejos, ref, children }: Props) {
   const hoja = useRef<HTMLDivElement>(null);
   const cuerpo = useRef<HTMLDivElement>(null);
   const franja = useRef<HTMLDivElement>(null);
   const medidas = useRef<Medidas>({ detentes: {}, franja: 0, compactaDesde: Infinity });
   const reposo = useRef(0);
   const tocando = useRef(false);
+  /** La entrada o la salida en curso (o la última). */
+  const enCurso = useRef<Animation | null>(null);
+  /** La ficha se está yendo con su salida: al cerrarse, la lista entra igual desde abajo. */
+  const saliendo = useRef(false);
   /** Ya le dijimos al armazón que la hoja llena la ventana: al dejar de llenarla hay que decírselo una vez más. */
   const llenaAvisada = useRef(false);
   /** Dónde estaba la lista cuando se abrió la ficha, para volver ahí al cerrarla. */
@@ -95,9 +119,13 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
   /** Un desplazamiento que se repone en cuanto el contenido alcanza a darlo (la ficha llega por la red). */
   const pendiente = useRef<number | null>(null);
   const habiaFicha = useRef(false);
+  /** Lo último que se le dijo a la pantalla sobre si la lista está lejos del principio. */
+  const lejosAvisada = useRef(false);
   const alAsentarActual = useRef(alAsentar);
+  const alLejosActual = useRef(alLejos);
   useLayoutEffect(() => {
     alAsentarActual.current = alAsentar;
+    alLejosActual.current = alLejos;
   });
 
   /** Las alturas, medidas en el DOM: el hueco de arriba (lo que la hoja sube hasta cubrir la pantalla) y lo que asoma de cada una. */
@@ -108,7 +136,10 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
     // La lista llena sube hasta debajo de la fila de contexto: donde empieza `data-techo-hoja`, el mapa, la caja que la pantalla pone bajo la fila.
     const techo = h.parentElement!.querySelector(":scope > [data-techo-hoja]")!;
     const arribaDelCuerpo = c.getBoundingClientRect().top;
-    const llena = alturaLlena({ arribaDelCuerpo, y: h.scrollTop, arribaDeLaHoja: h.getBoundingClientRect().top, bajoLaFila: techo.getBoundingClientRect().top, conFicha: !!abierta });
+    // Una entrada o una salida a medias tiene movida la hoja entera: su borde y el del cuerpo se miden ya movidos y el techo, que no se mueve, no.
+    // Lo demás son restas entre cosas de la hoja, que se mueven juntas.
+    const movida = new DOMMatrixReadOnly(getComputedStyle(h).transform).m42;
+    const llena = alturaLlena({ arribaDelCuerpo: arribaDelCuerpo - movida, y: h.scrollTop, arribaDeLaHoja: h.getBoundingClientRect().top - movida, bajoLaFila: techo.getBoundingClientRect().top, conFicha: !!abierta });
     const abajoDe = (el: Element) => el.getBoundingClientRect().bottom - arribaDelCuerpo;
     const arribaDe = (el: Element) => el.getBoundingClientRect().top - arribaDelCuerpo;
     if (abierta) {
@@ -122,9 +153,11 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
     }
     const lista = franja.current!.nextElementSibling;
     const fila = lista?.querySelector("li");
-    // Lo que el mapa deja libre arriba: los mandos que flotan sobre él (`data-libre`) con el mismo aire arriba y abajo.
-    const mando = techo.querySelector("[data-libre]")?.getBoundingClientRect();
-    const libre = mando ? 2 * (mando.top - techo.getBoundingClientRect().top) + mando.height : 0;
+    // Lo que el mapa deja libre arriba: los mandos que flotan sobre él (`data-libre`: «Mi ubicación» y «Encuadrar los lugares», que ocupa su sitio
+    // aunque esté oculto) con el mismo aire arriba del primero y abajo del último.
+    const arribaDelMapa = techo.getBoundingClientRect().top;
+    const mandos = [...techo.querySelectorAll("[data-libre]")].map((m) => m.getBoundingClientRect());
+    const libre = mandos.length ? mandos[0].top - arribaDelMapa + Math.max(...mandos.map((m) => m.bottom)) - arribaDelMapa : 0;
     const asoma = alturaAsoma(fila ? RENGLONES_QUE_ASOMAN * fila.offsetHeight : (lista?.getBoundingClientRect().height ?? 0), llena, libre);
     return { detentes: { recogida: 0, asoma, llena }, franja: franja.current!.offsetHeight, compactaDesde: Infinity };
   }, []);
@@ -137,6 +170,12 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
     if (panel) delete hoja.current!.dataset.hoja;
     else hoja.current!.dataset.hoja = detente;
     cuerpo.current!.querySelector("[data-ficha-hoja]")?.toggleAttribute("data-compacta", cabeceraCompacta(y, compactaDesde, detente, panel));
+    // Más de una pantalla de lista desplazada, sin ficha: desde ahí la pantalla ofrece volver arriba (como una lista de la ventana).
+    const lejos = !habiaFicha.current && y - (detentes.llena ?? 0) > window.innerHeight;
+    if (lejos !== lejosAvisada.current) {
+      lejosAvisada.current = lejos;
+      alLejosActual.current?.(lejos);
+    }
     // Llena, la navegación se va; con la ficha (una página) se va también la barra, y con la lista, que vive bajo sus filtros, el
     // desplazamiento de la hoja recoge o devuelve la barra, como el de la página en una raíz.
     const llena = !panel && detente === "llena";
@@ -165,7 +204,29 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
   }, [recortar]);
 
   const irA = useCallback((y: number) => {
-    hoja.current!.scrollTo({ top: y, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    hoja.current!.scrollTo({ top: y, behavior: sinMovimiento() ? "auto" : "smooth" });
+  }, []);
+
+  /** La hoja sube desde el borde de abajo hasta donde está (el resorte de `globals.css`). Cancela lo que hubiera en curso: una salida a medias
+   *  la reemplaza la ficha que entra. */
+  const entrar = useCallback(() => {
+    const d = hoja.current!;
+    enCurso.current?.cancel();
+    saliendo.current = false;
+    delete d.dataset.sale;
+    if (enPanel() || sinMovimiento()) return;
+    enCurso.current = d.animate({ transform: [`translateY(${visible(d, cuerpo.current!)}px)`, "translateY(0)"] }, movimiento("resorte"));
+  }, []);
+
+  /** La hoja baja hasta salir por el borde de abajo y, ya fuera, llama a `alTerminar`. Mientras baja no recibe toques (los recibe el mapa). */
+  const salir = useCallback((alTerminar: () => void) => {
+    if (enPanel() || sinMovimiento()) return alTerminar();
+    const d = hoja.current!;
+    enCurso.current?.cancel();
+    saliendo.current = true;
+    d.dataset.sale = "";
+    enCurso.current = d.animate({ transform: ["translateY(0)", `translateY(${visible(d, cuerpo.current!)}px)`] }, { ...movimiento("salida"), fill: "forwards" });
+    enCurso.current.onfinish = alTerminar;
   }, []);
 
   /** El gesto terminó: entre dos alturas la hoja se va a la más cercana; en una (o llena) solo lo avisa. */
@@ -198,8 +259,9 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
         }
         avisar();
       },
+      salir,
     }),
-    [irA, pintar, avisar],
+    [irA, pintar, avisar, salir],
   );
   useImperativeHandle(ref, () => manejo, [manejo]);
 
@@ -225,10 +287,20 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
     } else {
       d.scrollTop = antes.current?.y ?? (enPanel() ? 0 : (medidas.current.detentes.asoma ?? 0));
       antes.current = null;
+      // La ficha se fue con su salida: la lista entra igual desde abajo, para que no aparezca de golpe.
+      if (saliendo.current) entrar();
     }
     pintar(d.scrollTop);
     avisar();
-  }, [conFicha, medir, pintar, avisar]);
+  }, [conFicha, medir, pintar, avisar, entrar]);
+
+  // Una ficha entra por un gesto de la persona: la hoja sube desde el borde de abajo. Va después del efecto de arriba, que ya la puso en su altura.
+  const entradaVista = useRef(entrada);
+  useLayoutEffect(() => {
+    if (entrada === entradaVista.current) return;
+    entradaVista.current = entrada;
+    entrar();
+  }, [entrada, entrar]);
 
   // Al volver a la pantalla: la altura y el desplazamiento de antes (memoria de pantalla).
   useLayoutEffect(() => {
@@ -296,6 +368,7 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
           esperarReposo();
         }}
         onTouchStart={() => {
+          enCurso.current?.finish(); // el gesto gana: una entrada a medias termina de golpe y el dedo sigue desde su altura
           tocando.current = true;
           pendiente.current = null;
           recortar(false);
@@ -303,6 +376,7 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
         onTouchEnd={alSoltar}
         onTouchCancel={alSoltar}
         onWheel={() => {
+          enCurso.current?.finish();
           pendiente.current = null;
         }}
       >

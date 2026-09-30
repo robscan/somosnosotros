@@ -61,6 +61,7 @@ export default function Inicio({ ciudad, ciudades, hoy, zona, agenda, conSesion,
             hoy={hoy}
             zona={zona}
             agenda={agenda}
+            conSesion={conSesion}
             valor={SIN_FILTROS}
             onCambiar={(valor) => router.push(hrefAgenda(valor, esCiudadInicial ? null : ciudad.slug))}
           />
