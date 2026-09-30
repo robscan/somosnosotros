@@ -5,8 +5,8 @@
  * - El TAMAÑO dice si hay evento esta semana; el COLOR dice qué es el lugar. Privado (solo lo ve el admin) siempre gris; si no, gana
  *   seguido > destacado > con evento > nada (tinta).
  * - Sin aro en los pines (el founder lo quitó por "demasiado ruido visual", 2026-09-23), salvo en uno: el lugar de la ficha abierta,
- *   el elegido, que crece, lleva un aro blanco ancho y una sombra, y no cambia de color ni de forma (founder, 2026-09-29). Mientras
- *   haya un elegido, los demás pines y sus nombres bajan a media opacidad.
+ *   el elegido, que crece, lleva un aro blanco ancho y una sombra, y no cambia de color ni de forma (founder, 2026-09-29). Los demás
+ *   se quedan como están: el elegido ya se ve activo, y atenuarlos los transparentaba unos sobre otros (founder, 2026-09-30).
  * - La PRIORIDAD dice quién queda encima y a quién se le da el sitio cuando dos nombres chocan.
  */
 
@@ -18,8 +18,6 @@ export const ESCALA_ELEGIDO = 1.9;
 export const BORDE_NORMAL = 1.5;
 export const BORDE_SEGUIDO = 2;
 export const BORDE_ELEGIDO = 4;
-/** Opacidad de los demás pines y de sus nombres mientras hay un elegido. */
-export const OPACIDAD_ATENUADA = 0.5;
 export const TAMANO_DIA = 10;
 export const TAMANO_NOMBRE = 14;
 /** Un punto más grande, para que el nombre del elegido se lea primero. */
@@ -80,11 +78,6 @@ export function prioridadPin({ dia, seguido, destacado, elegido }: Pick<EstadoLu
   return dia ? 1 : 0;
 }
 
-/** Con un elegido, todos los demás bajan a media opacidad; sin él, todos se ven completos. */
-export function opacidadPin({ elegido }: Pick<EstadoLugarPin, "elegido">, hayElegido: boolean): number {
-  return hayElegido && !elegido ? OPACIDAD_ATENUADA : 1;
-}
-
 /** El día dentro del círculo crece con él. */
 export function tamanoDia({ elegido }: Pick<EstadoLugarPin, "elegido">): number {
   return elegido ? TAMANO_DIA * ESCALA_ELEGIDO : TAMANO_DIA;
@@ -96,13 +89,12 @@ export function distanciaNombre(estado: Pick<EstadoLugarPin, "dia" | "seguido" |
 }
 
 /** Todo lo que las capas del mapa leen de un pin: cada regla de arriba, ya calculada. */
-export function propiedadesPin(estado: EstadoLugarPin, hayElegido: boolean, coloresPunto: ColoresPin, coloresTexto: ColoresPin) {
+export function propiedadesPin(estado: EstadoLugarPin, coloresPunto: ColoresPin, coloresTexto: ColoresPin) {
   return {
     radio: radioPin(estado),
     borde: bordePin(estado),
     huella: huellaPin(estado),
     prioridad: prioridadPin(estado),
-    opacidad: opacidadPin(estado, hayElegido),
     tamanoDia: tamanoDia(estado),
     distanciaNombre: distanciaNombre(estado),
     colorPunto: colorPin(estado, coloresPunto),

@@ -325,7 +325,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
   const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
   // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
-  // de la ficha abierta, que crece, lleva aro y sombra, y deja a los demás atenuados (P8, 2026-09-29).
+  // de la ficha abierta, que crece, lleva aro y sombra y queda encima de los demás (P8, 2026-09-29).
   const enTira = useMemo(() => extra.destacados.map((d) => d.id), [extra.destacados]);
   const idsSeguidos = useMemo(() => extra.seguidos ?? [], [extra.seguidos]);
   // El encuadre al abrir (docs/rediseno/35, "Cómo se decide el encuadre"): los lugares de esta semana y los destacados; con

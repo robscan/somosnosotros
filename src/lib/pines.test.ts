@@ -4,7 +4,6 @@ import {
   colorPin,
   distanciaNombre,
   huellaPin,
-  opacidadPin,
   prioridadPin,
   propiedadesPin,
   radioPin,
@@ -12,7 +11,6 @@ import {
   BORDE_NORMAL,
   BORDE_SEGUIDO,
   ESCALA_ELEGIDO,
-  OPACIDAD_ATENUADA,
   RADIO_MEDIANO,
   RADIO_PEQUENO,
   TAMANO_NOMBRE,
@@ -105,20 +103,6 @@ describe("prioridadPin", () => {
   });
 });
 
-describe("opacidadPin", () => {
-  it("con un elegido, los demás bajan a media opacidad y el elegido se ve completo", () => {
-    expect(opacidadPin(estado({}), true)).toBe(OPACIDAD_ATENUADA);
-    expect(opacidadPin(estado({ dia: "Hoy", seguido: true }), true)).toBe(OPACIDAD_ATENUADA);
-    expect(opacidadPin(estado({ elegido: true }), true)).toBe(1);
-    expect(OPACIDAD_ATENUADA).toBe(0.5);
-  });
-
-  it("sin ficha abierta, todos se ven completos", () => {
-    expect(opacidadPin(estado({}), false)).toBe(1);
-    expect(opacidadPin(estado({ dia: "Hoy" }), false)).toBe(1);
-  });
-});
-
 describe("distanciaNombre", () => {
   it("el nombre queda fuera de la huella de su pin, en cualquier estado", () => {
     for (const parcial of [{}, { dia: "Hoy" }, { seguido: true, dia: "Vie" }, { elegido: true }, { elegido: true, dia: "Hoy" }]) {
@@ -132,12 +116,11 @@ describe("distanciaNombre", () => {
 describe("propiedadesPin", () => {
   it("trae cada regla calculada, para que las capas solo lean la propiedad", () => {
     const e = estado({ dia: "Vie", destacado: true, elegido: true });
-    expect(propiedadesPin(e, true, colores, { ...colores, destacado: "#a94400" })).toEqual({
+    expect(propiedadesPin(e, colores, { ...colores, destacado: "#a94400" })).toEqual({
       radio: radioPin(e),
       borde: BORDE_ELEGIDO,
       huella: huellaPin(e),
       prioridad: prioridadPin(e),
-      opacidad: 1,
       tamanoDia: expect.closeTo(19),
       distanciaNombre: distanciaNombre(e),
       colorPunto: colores.destacado,

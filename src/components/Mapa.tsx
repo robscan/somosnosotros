@@ -18,7 +18,7 @@ type Props = {
   lugares?: LugarLista[];
   /** Al tocar un lugar. Sin esto, el lugar navega a su ficha. */
   onPin?: (lugar: LugarLista) => void;
-  /** Id del lugar de la ficha abierta: el único con aro y sombra, con su nombre siempre a la vista y el resto atenuado (`@/lib/pines`). */
+  /** Id del lugar de la ficha abierta: el único con aro y sombra, con su nombre siempre a la vista (`@/lib/pines`). */
   elegido?: string | null;
   /** La persona en el mapa (punto azul); `vez` cambia con cada toque al botón de ubicación para volver a centrar. */
   ubicacion?: (Punto & { vez: number }) | null;
@@ -62,13 +62,12 @@ const sinMovimiento = () => window.matchMedia("(prefers-reduced-motion: reduce)"
 type PropiedadesLugar = PropiedadesPin & { id: string; nombre: string; dia: string; elegido: boolean };
 
 /**
- * Tamaño, color, prioridad y opacidad ya calculados por lugar (`@/lib/pines`, OL-146 y P8): así las capas solo leen la propiedad
+ * Tamaño, color y prioridad ya calculados por lugar (`@/lib/pines`, OL-146 y P8): así las capas solo leen la propiedad
  * (`["get", "radio"]`, `["get", "colorPunto"]`…) y las reglas se prueban aparte, sin levantar Mapbox. El color del nombre repite el del
  * punto, salvo el destacado (naranja más oscuro, `--destacado-texto`, para que el texto siga con 4.5:1 sobre el fondo del mapa).
  */
 function aGeoJSON(lugares: LugarLista[], seguidos: string[], destacados: string[], elegido: string | null, coloresPunto: ColoresPin, coloresTexto: ColoresPin): GeoJSON.FeatureCollection<GeoJSON.Point, PropiedadesLugar> {
   const ahora = new Date();
-  const hayElegido = lugares.some((l) => l.id === elegido);
   return {
     type: "FeatureCollection",
     features: lugares.map((l) => {
@@ -78,13 +77,13 @@ function aGeoJSON(lugares: LugarLista[], seguidos: string[], destacados: string[
         type: "Feature",
         id: l.id,
         geometry: { type: "Point", coordinates: [l.lng, l.lat] },
-        properties: { id: l.id, nombre: l.nombre, dia: dia ?? "", elegido: estado.elegido, ...propiedadesPin(estado, hayElegido, coloresPunto, coloresTexto) },
+        properties: { id: l.id, nombre: l.nombre, dia: dia ?? "", elegido: estado.elegido, ...propiedadesPin(estado, coloresPunto, coloresTexto) },
       };
     }),
   };
 }
 
-/** Los nombres, uno por lugar: en negrita, con halo, del color del pin y con la opacidad que le toque. Mapbox los acomoda alrededor del pin
+/** Los nombres, uno por lugar: en negrita, con halo y del color del pin. Mapbox los acomoda alrededor del pin
  *  (`text-variable-anchor`, el que gana el sitio es el de mayor prioridad) y esconde el que no cabe, nunca el pin. El del elegido va en
  *  su propia capa, un punto más grande y con halo más ancho, y con `text-allow-overlap` no se esconde: Mapbox le busca primero un sitio
  *  sin pisar a nadie y, si no lo hay, lo pone en el primero. */
@@ -108,14 +107,14 @@ function capaNombres(id: string, filter: ExpressionSpecification, elegido: boole
       "symbol-sort-key": ["-", ["get", "prioridad"]], // Mapbox coloca primero la llave menor: la prioridad mayor
     },
     // Negrita y halo ancho: se distinguen de las colonias y calles del estilo (gris, mayúsculas).
-    paint: { "text-color": ["get", "colorTexto"], "text-halo-color": fondo, "text-halo-width": elegido ? 3 : 2, "text-opacity": ["get", "opacidad"] },
+    paint: { "text-color": ["get", "colorTexto"], "text-halo-color": fondo, "text-halo-width": elegido ? 3 : 2 },
   };
 }
 
 /**
  * El TAMAÑO del círculo dice si hay evento esta semana (mediano con "Hoy" o el día en tres letras, chico sin él) y el COLOR dice qué es el
- * lugar (`@/lib/pines`). Sin aro, salvo en el elegido: crece, lleva un aro blanco ancho y una sombra suave debajo, y los demás bajan a
- * media opacidad. Un nombre nunca cae sobre un pin: los círculos no cuentan para las colisiones de Mapbox, así que la capa de arriba
+ * lugar (`@/lib/pines`). Sin aro, salvo en el elegido: crece, lleva un aro blanco ancho y una sombra suave debajo, y queda encima de los
+ * demás. Un nombre nunca cae sobre un pin: los círculos no cuentan para las colisiones de Mapbox, así que la capa de arriba
  * (`CAPA_PINES`) reserva la huella de cada pin —una imagen vacía de 1×1 px estirada a su tamaño— y pinta el día en blanco y negrita al
  * centro del círculo, sin esconderse nunca. Por ir arriba, Mapbox la coloca antes que los nombres: cada nombre busca su sitio alrededor
  * del pin y, si no cabe, se esconde.
@@ -140,10 +139,8 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
     paint: {
       "circle-radius": ["get", "radio"],
       "circle-color": ["get", "colorPunto"],
-      "circle-opacity": ["get", "opacidad"],
       "circle-stroke-color": fondo,
       "circle-stroke-width": ["get", "borde"],
-      "circle-stroke-opacity": ["get", "opacidad"],
     },
   });
   mapa.addLayer(capaNombres(CAPA_NOMBRES, ["!=", ["get", "elegido"], true], false, fondo));
@@ -162,7 +159,7 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
       "text-allow-overlap": true,
       "text-ignore-placement": true,
     },
-    paint: { "text-color": fondo, "text-opacity": ["get", "opacidad"] },
+    paint: { "text-color": fondo },
   });
 }
 
