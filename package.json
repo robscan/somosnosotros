@@ -10,6 +10,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:db": "node scripts/test-db.mjs",
+    "inventario": "node scripts/ops/auditoria-ui/inventario-css.mjs",
+    "medir": "node scripts/ops/auditoria-ui/medir-pantallas.mjs",
     "db:push": "node scripts/db-push.mjs"
   },
   "dependencies": {
@@ -37,6 +39,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.5",
     "pg": "^8.16.3",
+    "playwright-core": "^1.63.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
   },

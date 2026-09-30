@@ -1,22 +1,32 @@
+// Lo que se evalúa dentro de cada página (`page.evaluate(medir)`): la estructura del DOM (nodos, profundidad, hijos fuera de la
+// caja de su padre, márgenes negativos, desplazamiento horizontal) y lo que se toca (toque real menor de 44, accionables tapados
+// por un elemento fijo). Lo comparten el informe de la auditoría (`auditar.mjs`) y la prueba (`medir-pantallas.mjs`, `npm run medir`).
 (() => {
-  const raiz = document.querySelector("main") || document.body;
+  const raiz = document.body;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const todos = [...raiz.querySelectorAll("*")].filter((e) => !(e instanceof SVGElement) || e.tagName === "svg");
+  // Nodo = todo lo que se pinta bajo <body>: sin lo oculto ni lo que no es contenido; un <svg> cuenta como uno.
+  const OMITIDOS = new Set(["SCRIPT", "STYLE", "LINK", "META", "TITLE", "TEMPLATE", "NOSCRIPT", "NEXT-ROUTE-ANNOUNCER"]);
+  const todos = [];
+  const recorrer = (padre) => {
+    for (const e of padre.children) {
+      if (OMITIDOS.has(e.tagName) || getComputedStyle(e).display === "none") continue;
+      todos.push(e);
+      if (!(e instanceof SVGSVGElement)) recorrer(e);
+    }
+  };
+  recorrer(raiz);
   const desc = (el) => {
     const cls = (typeof el.className === "string" ? el.className : el.getAttribute("class") || "")
       .split(/\s+/)
       .filter(Boolean)
-      .map((c) => "." + c.replace(/^(.+?)-module__[A-Za-z0-9]+__/, "$1/"))
+      .map((c) => "." + c.replace(/^(.+?)-module__[\w-]{5,8}__/, "$1/"))
       .join("");
-    return el.tagName.toLowerCase() + cls + (el.id ? "#" + el.id : "");
+    return el.tagName.toLowerCase() + (el.tagName === "INPUT" ? `[${el.type}]` : "") + cls + (el.id ? "#" + el.id : "");
   };
   const profundidad = (el) => {
     let d = 0;
-    while (el && el !== raiz) {
-      d++;
-      el = el.parentElement;
-    }
+    for (; el && el !== raiz; el = el.parentElement) d++;
     return d;
   };
   let maxProf = 0;
@@ -27,7 +37,6 @@
   const fueraVentana = [];
   const negativos = [];
   const apilamiento = [];
-  const toquesChicos = [];
   const contenidoDesborda = [];
   const textoChico = [];
   const posicionados = { absolute: 0, fixed: 0, sticky: 0, relative: 0 };
@@ -118,10 +127,6 @@
       }
       if (!recortado) fueraVentana.push({ el: desc(el), derecha: Math.round(r.right - vw) });
     }
-    const interactivo = el.matches('a[href], button, input, select, textarea, [role="button"], [role="tab"], label');
-    if (interactivo && r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44)) {
-      toquesChicos.push({ el: desc(el), w: Math.round(r.width), h: Math.round(r.height), texto: (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 30) });
-    }
     if (textoPropio) {
       const fs = parseFloat(cs.fontSize);
       if (fs < 12) textoChico.push({ el: desc(el), fs });
@@ -177,7 +182,91 @@
     const r = nav.getBoundingClientRect();
     franjas[desc(nav)] = { top: Math.round(r.top), alto: Math.round(r.height), position: getComputedStyle(nav).position };
   }
-  const mainRect = raiz.getBoundingClientRect();
+  const mainRect = (document.querySelector("main") || raiz).getBoundingClientRect();
+  const texto = (el) => (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 30);
+
+  // Lo que sigue desplaza la página: va al final, cuando todo lo demás ya se midió.
+  const MIN = 44;
+  const ACCIONABLE =
+    'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="tab"], [role="link"], [role="switch"], [role="checkbox"], [role="radio"], [role="menuitem"], label:has(input, select, textarea)';
+  const accionables = todos.filter((e) => {
+    if (!e.matches(ACCIONABLE) || e.disabled || e.closest("[inert]") || e.getBoundingClientRect().width === 0) return false;
+    const cs = getComputedStyle(e);
+    return cs.pointerEvents !== "none" && cs.visibility !== "hidden";
+  });
+
+  // Toque real: lo que recibe el toque, no lo que se ve. Una caja de 36 con un `::before` de 44 se toca de 44. Desde el centro de
+  // cada borde se camina hacia afuera, un píxel a la vez, mientras `elementFromPoint` siga devolviendo el control. Arriba y a la
+  // izquierda el motor da por suyo casi un píxel más allá de la caja, así que ahí se empieza a un píxel; abajo y a la derecha, a medio
+  // (calibrado con cajas de 36 a 44 y extensiones de 0 a 4 px, en posiciones enteras y fraccionarias: sale la medida exacta).
+  const suyo = (el, x, y) => {
+    const h = document.elementFromPoint(x, y);
+    return !!h && (h === el || el.contains(h));
+  };
+  const alcance = (el, borde, sentido, punto) => {
+    let k = 0;
+    while (k < 30 && suyo(el, ...punto(borde + sentido * (k + (sentido < 0 ? 1 : 0.5))))) k++;
+    return k;
+  };
+  const toqueReal = (el, centrar) => {
+    if (centrar) el.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const w = r.width < MIN - 0.5 ? r.width + alcance(el, r.left, -1, (x) => [x, cy]) + alcance(el, r.right, 1, (x) => [x, cy]) : r.width;
+    const h = r.height < MIN - 0.5 ? r.height + alcance(el, r.top, -1, (y) => [cx, y]) + alcance(el, r.bottom, 1, (y) => [cx, y]) : r.height;
+    return { w, h };
+  };
+  // Tapado: lo que recibe el toque en el centro de lo que se ve del control es una capa fija (o pegajosa) que no es suya. Se busca
+  // arriba del todo y al final; a cada candidato se le lleva al centro de la pantalla, y si ahí ya recibe el toque solo pasaba por
+  // debajo de una barra (desplazamiento normal): tapado es lo que el desplazamiento no libera.
+  const capaFija = (e) => {
+    for (; e && e !== document.documentElement; e = e.parentElement) {
+      const p = getComputedStyle(e).position;
+      if (p === "fixed" || p === "sticky") return e;
+    }
+    return null;
+  };
+  const tapa = (el) => {
+    const r = el.getBoundingClientRect();
+    const x0 = Math.max(r.left, 0), x1 = Math.min(r.right, vw), y0 = Math.max(r.top, 0), y1 = Math.min(r.bottom, vh);
+    if (x1 <= x0 || y1 <= y0) return null;
+    const h = document.elementFromPoint((x0 + x1) / 2, (y0 + y1) / 2);
+    if (!h || h === el || el.contains(h) || h.contains(el)) return null;
+    const capa = capaFija(h);
+    return capa && capa !== capaFija(el) ? capa : null;
+  };
+  // Los controles chicos que se ven se miden en reposo, antes de mover nada; los que quedan fuera de la pantalla, al final, cada uno al centro.
+  const chicos = accionables.filter((el) => {
+    const r = el.getBoundingClientRect();
+    return r.width < MIN - 0.5 || r.height < MIN - 0.5;
+  });
+  const enVista = (el) => {
+    const r = el.getBoundingClientRect();
+    return r.top >= 12 && r.left >= 12 && r.bottom <= vh - 12 && r.right <= vw - 12;
+  };
+  const [aLaVista, fuera] = [chicos.filter(enVista), chicos.filter((el) => !enVista(el))];
+  const toquesChicos = [];
+  const medirToque = (centrar) => (el) => {
+    const t = toqueReal(el, centrar);
+    if (t.w < MIN - 0.5 || t.h < MIN - 0.5) {
+      const r = el.getBoundingClientRect();
+      toquesChicos.push({ el: desc(el), w: Math.round(t.w), h: Math.round(t.h), caja: `${Math.round(r.width)}×${Math.round(r.height)}`, enTexto: getComputedStyle(el).display === "inline", texto: texto(el) });
+    }
+  };
+  aLaVista.forEach(medirToque(false));
+  const candidatos = new Set();
+  const buscar = () => accionables.forEach((el) => tapa(el) && candidatos.add(el));
+  buscar();
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" });
+  buscar();
+  const tapados = [];
+  for (const el of candidatos) {
+    el.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
+    const capa = tapa(el);
+    if (capa) tapados.push({ el: desc(el), capa: desc(capa), texto: texto(el) });
+  }
+  fuera.forEach(medirToque(true));
   return {
     url: location.pathname + location.search,
     vw,
@@ -199,6 +288,7 @@
     negativos,
     apilamiento,
     toquesChicos,
+    tapados,
     contenidoDesborda,
     textoChico,
     pegados: pegados.slice(0, 60),

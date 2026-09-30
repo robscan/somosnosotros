@@ -107,14 +107,16 @@ const A = {
   backside: "cccc0001-0000-4000-8000-000000000005",
   merlot: "cccc0001-0000-4000-8000-000000000006",
 };
-const artista = (id, slug, nombre, disciplina, detalle, tipo, descripcion = null, redes = []) => ({
-  id, slug, nombre, nombre_orden: nombre.toLowerCase(), disciplina, detalle, tipo, foto: null, descripcion, ciudad: CIUDAD, redes, creado_por: null, visible: true, origen: null, creado_en: hace(40),
+// Inicio solo destaca a quien tiene foto (doc 50, H-03): los tres con evento próximo usan el cartel público de su propio evento.
+const cartel = (slug) => imagenes.eventos[slug] ?? null;
+const artista = (id, slug, nombre, disciplina, detalle, tipo, descripcion = null, redes = [], foto = null) => ({
+  id, slug, nombre, nombre_orden: nombre.toLowerCase(), disciplina, detalle, tipo, foto, descripcion, ciudad: CIUDAD, redes, creado_por: null, visible: true, origen: null, creado_en: hace(40),
 });
 const artistas = [
-  artista(A.osslp, "orquesta-sinfonica-de-san-luis-potosi", "Orquesta Sinfónica de San Luis Potosí", "musica", "Música académica y clásica", "grupo", "Orquesta estatal fundada en 1946.", [{ url: "https://www.facebook.com/osslp" }]),
+  artista(A.osslp, "orquesta-sinfonica-de-san-luis-potosi", "Orquesta Sinfónica de San Luis Potosí", "musica", "Música académica y clásica", "grupo", "Orquesta estatal fundada en 1946.", [{ url: "https://www.facebook.com/osslp" }], cartel("concierto-de-la-orquesta-sinfonica-de-san-luis-potosi")),
   artista(A.cadena, "aaron-cadena", "Aaron Cadena", "artes_visuales", "Fotografía", "solista", "Artista visual, fotoperiodista y fotógrafo documental originario de San Luis Potosí.", [{ url: "https://aaroncadena.example.com" }]),
-  artista(A.pimpolina, "pimpolina", "Pimpolina", "teatro", "Clown", "solista"),
-  artista(A.feleal, "feleal", "Feleal", "musica", "Acordeón", "solista"),
+  artista(A.pimpolina, "pimpolina", "Pimpolina", "teatro", "Clown", "solista", null, [], cartel("delirium-pollum-clown-y-pantomima-con-pimpolina")),
+  artista(A.feleal, "feleal", "Feleal", "musica", "Acordeón", "solista", null, [], cartel("feleal-un-viaje-por-el-mundo-en-acordeon")),
   artista(A.backside, "0backside0", "0Backside0", "musica", "Rock, metal y alternativo", "grupo"),
   artista(A.merlot, "abril-merlot", "Abril Merlot", "musica", "Música académica y clásica", "solista"),
 ];
@@ -128,7 +130,7 @@ const eventos_artistas = [
 const asistencias = [
   { id: "dddd0001-0000-4000-8000-000000000001", usuario_id: ANA, evento_id: E.colocaos, estado: "voy", creado_en: hace(1) },
   { id: "dddd0001-0000-4000-8000-000000000002", usuario_id: ANA, evento_id: E.cristiada, estado: "voy", creado_en: hace(1) },
-  { id: "dddd0001-0000-4000-8000-000000000003", usuario_id: ANA, evento_id: E.leonora, estado: "interesa", creado_en: hace(0) },
+  { id: "dddd0001-0000-4000-8000-000000000003", usuario_id: ANA, evento_id: E.leonora, estado: "me_interesa", creado_en: hace(0) },
   { id: "dddd0001-0000-4000-8000-000000000004", usuario_id: MARCOS, evento_id: E.colocaos, estado: "voy", creado_en: hace(2) },
   { id: "dddd0001-0000-4000-8000-000000000005", usuario_id: MARCOS, evento_id: E.feleal, estado: "voy", creado_en: hace(2) },
 ];
