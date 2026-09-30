@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import ListaLugares from "@/components/ListaLugares";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
@@ -17,7 +18,7 @@ import comun from "@/components/Lista.module.css";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
-import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
@@ -56,8 +57,6 @@ type Props = {
   lugares: LugarLista[];
   ciudad: Ciudad;
   ciudades: CiudadConDatos[];
-  /** El tipo que trae la URL (`?tipo=`): con él abre la pantalla y a él vuelve cuando la URL cambia por su cuenta (otra ciudad, Atrás). */
-  tipo: string | null;
   extras: Promise<ExtrasLugares>;
   /** El lugar cuya ficha abre la hoja al llegar (`?lugar=`, el slug o el id): Buscar, desde Lugares, vuelve al mapa con él. */
   fichaInicial?: string;
@@ -70,6 +69,12 @@ type Props = {
 
 /** Lo que Lugares recuerda de la pantalla al salir de ella (a una ficha, a otra pestaña) y repone al volver. */
 type Memoria = { conEventos: ConEventos | null; soloSigo: boolean; hoja: DondeEstaba & { ficha: string | null } };
+
+/** El tipo que trae la URL (`?tipo=`): solo vale si existe. */
+function tipoDeLaUrl(params: { get(nombre: string): string | null }): string | null {
+  const tipo = params.get("tipo");
+  return tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
+}
 
 /** La dirección de Lugares con lo que vive en la URL: la ciudad (si no es la inicial) y el tipo. */
 function hrefLugares(ciudad: Ciudad, tipo: string | null): string {
@@ -94,9 +99,10 @@ function encuadreCercanosDe(lugares: LugarLista[], p: Punto): Punto[] {
  * el mapa encuadra los lugares que quedan, sin moverse si no cambió nada (docs/rediseno/50, decisión del founder del 2026-09-30). Decisiones
  * en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/restructura-ui.html.
  */
-export default function VistaLugares({ lugares, ciudad, ciudades, tipo: tipoDeUrl, extras, fichaInicial, hoy, abrirFicha }: Props) {
+export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaInicial, hoy, abrirFicha }: Props) {
   // El tipo se elige aquí, sin pedirle nada al servidor (la lista de la ciudad ya está en el teléfono): la lista y el mapa cambian al
   // instante y la URL lo refleja para poder compartirlo. Si la URL trae otro por su cuenta (otra ciudad, Atrás), el tipo la sigue.
+  const tipoDeUrl = tipoDeLaUrl(useSearchParams());
   const [tipo, setTipo] = useState(tipoDeUrl);
   const [tipoVisto, setTipoVisto] = useState(tipoDeUrl);
   if (tipoDeUrl !== tipoVisto) {
