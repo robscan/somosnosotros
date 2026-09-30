@@ -93,7 +93,7 @@ function encuadreCercanosDe(lugares: LugarLista[], p: Punto): Punto[] {
 /**
  * Lugares: el mapa a toda la altura que deja la fila de contexto y, sobre él, la hoja con la lista de lugares y, al tocar un pin
  * o un renglón, la ficha del lugar dentro de la hoja (docs/rediseno/50, P5b; decisiones 31 a 36 y 58 del founder). La fila lleva la
- * ciudad y Filtros (tipo, con eventos, lo que sigo); buscar es la lupa de la barra de la app (`app/buscar`), que desde aquí vuelve
+ * ciudad y Filtros (tipo, con eventos y, con sesión, lo que sigo); buscar es la lupa de la barra de la app (`app/buscar`), que desde aquí vuelve
  * con la ficha de un lugar ya abierta (`fichaInicial`). «Mi ubicación» pide la ubicación al tocarla, no la guarda: centra en el punto azul y ordena la lista por cercanía. Al elegir
  * algo en Filtros, quitar un chip o cambiar de ciudad, la hoja responde: recogida sube a asoma (asoma o llena se quedan), la cantidad dice lo que quedó y
  * el mapa encuadra los lugares que quedan, sin moverse si no cambió nada (docs/rediseno/50, decisión del founder del 2026-09-30). Decisiones
@@ -135,7 +135,10 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
   // mapa y la hoja se vayan y vuelvan.
   const extra = useResuelta(extras);
   const seguidos = extra?.seguidos ?? null;
-  const eleccion = useMemo<EleccionLugares>(() => ({ tipo, conEventos, soloSigo }), [tipo, conEventos, soloSigo]);
+  // «Solo lo que sigo» existe solo con sesión, que se sabe cuando llega lo diferido: sin ella, un valor de la memoria de pantalla no cuenta.
+  // Mientras llega se deja como esté, para que el chip de quien sí tiene sesión no aparezca tarde.
+  const conSesion = extra?.conSesion;
+  const eleccion = useMemo<EleccionLugares>(() => ({ tipo, conEventos, soloSigo: soloSigo && conSesion !== false }), [tipo, conEventos, soloSigo, conSesion]);
   // Lo que dejan pasar los filtros: lo que enseñan el mapa y la lista.
   const visibles = useMemo(() => filtrarPorEleccion(lugares, eleccion, seguidos, hoy), [lugares, eleccion, seguidos, hoy]);
   const abierta = ficha && lugares.some((l) => l.id === ficha.lugar.id) ? ficha : null;
@@ -255,7 +258,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
     <PantallaConAviso>
       <main className={styles.lugares}>
         <Cabecera
-          contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} valor={eleccion} onCambiar={cambiar} />}
+          contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} conSesion={!!conSesion} valor={eleccion} onCambiar={cambiar} />}
         />
         {/* El mapa y la hoja esperan una consulta aparte (quién sigue qué, destacados): mientras llega, un esqueleto del alto del mapa
             (OL-161, bitácora 196). */}

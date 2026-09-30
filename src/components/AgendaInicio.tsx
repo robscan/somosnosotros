@@ -1,14 +1,13 @@
 "use client";
 
 import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
-import { agruparPorDia, filtrosRecordados, listarAgenda, type FiltrosAgenda } from "@/lib/agenda";
+import { agruparPorDia, filtrosRecordados, listarAgenda, sinSeguirSinSesion, type FiltrosAgenda } from "@/lib/agenda";
 import type { Agenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { ZONA_INICIAL } from "@/lib/fechas";
 import { tandaAcotada, siguienteTanda, TANDA_INICIAL } from "@/lib/tandas";
 import { useMemoriaPantalla } from "./MemoriaPantalla";
 import { useCentinela } from "./useCentinela";
-import Boton from "./ui/Boton";
 import CargarMas from "./ui/CargarMas";
 import { EsqueletoRenglones } from "./ui/Esqueleto";
 import FilaEventos from "./FilaEventos";
@@ -37,6 +36,8 @@ type Props = {
   /** Lo que pide la pregunta de avisos tras el primer Voy al deslizar (como en la ficha): no depende de la consulta
    *  pesada (sale de la sesión), así que llega ya resuelto. */
   avisos?: AvisosLista | null;
+  /** ¿Hay sesión? «Solo lo que sigo» solo existe con ella: sin sesión, ni se ofrece ni cuenta un valor que venga de la URL o de la memoria. */
+  conSesion: boolean;
   /** Con qué filtros abrir: los que trae la URL (Cuándo o Filtros elegidos desde Inicio, o un «solo lo que sigo»). */
   filtrosIniciales: FiltrosAgenda;
 };
@@ -50,8 +51,9 @@ type Recordado = { filtros: FiltrosAgenda; mostrados: number };
  * ciudad, Cuándo y Filtros) en `ui/Cabecera`. Cada día es un grupo con su título pegado (`ui/Grupo`); vacíos por causa. Buscar
  * es la lupa de la barra de la app (`app/buscar`), no un campo de esta pantalla. Decisiones en docs/rediseno/02 y 50.
  */
-export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, filtrosIniciales }: Props) {
-  const [filtros, setFiltros] = useState(filtrosIniciales);
+export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZONA_INICIAL, antes, avisos = null, conSesion, filtrosIniciales }: Props) {
+  const [guardados, setFiltros] = useState(filtrosIniciales);
+  const filtros = sinSeguirSinSesion(guardados, conSesion);
   // Carga progresiva (OL-158): cuántos renglones van pintados de la lista agrupada por día. La memoria de pantalla
   // repone este número igual que los filtros, para que volver de una ficha no colapse la lista a la
   // primera tanda otra vez. Vive aquí (no en `AgendaLista`, diferida) para que una sola `useMemoriaPantalla` guarde
@@ -74,6 +76,7 @@ export default function AgendaInicio({ agenda, ciudad, ciudades, hoy, zona = ZON
             hoy={hoy}
             zona={zona}
             agenda={agenda}
+            conSesion={conSesion}
             valor={filtros}
             onCambiar={setFiltros}
           />
@@ -139,15 +142,6 @@ function AgendaLista({
   const centinelaRef = useCentinela(hayMasEventos, () => onMostrados((m) => siguienteTanda(total, m).mostrados));
 
   function cuerpo() {
-    if (filtros.siguiendo && seguidos === null) {
-      return (
-        <Vacio titulo="Siguiendo" texto="Aquí verás lo que pasa en lugares y con artistas que sigues. Entra para seguir a quienes te importan.">
-          <Boton href="/entrar?siguiente=/agenda" variante="secundario" ancho="contenido">
-            Entrar
-          </Boton>
-        </Vacio>
-      );
-    }
     if (filtros.siguiendo && seguidos !== null && seguidos.length === 0 && eventosSeguidos.length === 0) {
       return <Vacio titulo="Siguiendo" texto="Todavía no sigues lugares ni artistas. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
     }
@@ -184,13 +178,12 @@ function AgendaLista({
   );
 }
 
-/** Un vacío con su causa y, si la hay, su salida (Entrar). */
-function Vacio({ titulo, texto, children }: { titulo: string; texto: string; children?: ReactNode }) {
+/** Un vacío con su causa. */
+function Vacio({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <div className={comun.vacio}>
       <h2>{titulo}</h2>
       <p>{texto}</p>
-      {children}
     </div>
   );
 }

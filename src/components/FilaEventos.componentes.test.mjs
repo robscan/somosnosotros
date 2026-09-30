@@ -2,7 +2,7 @@
  *  Filtros, dentro de la `Cabecera` real y con sus estilos. Cubre: los atajos de Cuándo salen de hoy y el botón dice cuántos
  *  eventos da cada uno (o «Sin eventos» y apagado); «Elegir fecha…» abre el calendario en la misma hoja, con un punto en
  *  los días con eventos, un día con un toque y un rango con dos; Filtros cuenta lo gratis y lo que se sigue y lo puesto sale
- *  como chip con su ✕; «Dónde estás» ofrece «Otra ciudad» con sugerencias que se filtran sin acentos; y la fila se desliza y
+ *  como chip con su ✕, y «Solo lo que sigo» solo se ofrece con sesión; «Dónde estás» ofrece «Otra ciudad» con sugerencias que se filtran sin acentos; y la fila se desliza y
  *  avisa que sigue cuando los chips no caben (H-11). Cerrar una hoja sin aplicar no cambia nada.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
@@ -52,7 +52,7 @@ before(async () => {
       const queretaro = { slug: 'queretaro', nombre: 'Querétaro', centro: { lng: -100.39, lat: 20.59 }, zoom: 13, lugares: 3, eventos: 12, zona: 'America/Mexico_City' };
       function App(){
         const [valor,setValor]=useState(inicial);
-        return <Cabecera contexto={<FilaEventos ciudad={ciudad} ciudades={[ciudad, queretaro]} hrefDeCiudad={()=>'/agenda'} hoy='${HOY}' zona='America/Mexico_City' agenda={agenda} valor={valor} onCambiar={(v)=>{window.qa.cambios.push(v);setValor(v);}} />} />;
+        return <Cabecera contexto={<FilaEventos ciudad={ciudad} ciudades={[ciudad, queretaro]} hrefDeCiudad={()=>'/agenda'} hoy='${HOY}' zona='America/Mexico_City' agenda={agenda} conSesion={!params.has('sinSesion')} valor={valor} onCambiar={(v)=>{window.qa.cambios.push(v);setValor(v);}} />} />;
       }
       createRoot(document.getElementById('root')).render(<App/>);
     `,
@@ -183,6 +183,27 @@ test("Filtros: lo gratis y lo que sigo se cuentan, y lo puesto sale como chip co
   await page.getByRole("button", { name: "Quitar Solo lo que sigo" }).click();
   assert.equal(await page.getByRole("button", { name: /^Quitar/ }).count(), 0);
   await context.close();
+});
+
+test("Filtros: «Solo lo que sigo» solo se ofrece con sesión; sin ella queda Cuánto, sin título ni raya de más, y todo lo demás sigue igual", async () => {
+  const con = await abrir();
+  await con.page.getByRole("button", { name: "Filtros" }).click();
+  assert.deepEqual(await hoja(con.page, "Filtros").locator("section h4").allTextContents(), ["Cuánto", "Siguiendo"], "con sesión: los dos bloques");
+  assert.equal(await hoja(con.page, "Filtros").getByRole("switch", { name: "Solo lo que sigo" }).count(), 1);
+  await con.context.close();
+
+  const sin = await abrir("/?sinSesion=1");
+  await sin.page.getByRole("button", { name: "Filtros" }).click();
+  const dialogo = hoja(sin.page, "Filtros");
+  assert.deepEqual(await dialogo.locator("section h4").allTextContents(), ["Cuánto"], "sin sesión: ni el título «Siguiendo» ni su fila");
+  assert.equal(await dialogo.getByText("Solo lo que sigo").count(), 0);
+  assert.equal(await dialogo.getByRole("switch").count(), 0);
+  assert.equal(await dialogo.locator("section").count(), 1, "un solo bloque: no sobra ninguna raya entre bloques");
+  await dialogo.getByRole("button", { name: "Gratis", exact: true }).click();
+  assert.equal(await aplicar(sin.page, "Filtros").innerText(), "Ver 3 eventos", "la cuenta no se ve afectada");
+  await aplicar(sin.page, "Filtros").click();
+  assert.deepEqual(await sin.page.evaluate(() => window.qa.cambios.at(-1)), { cuando: null, cuanto: ["gratis"], siguiendo: false });
+  await sin.context.close();
 });
 
 test("la fila se desliza cuando los chips no caben y avisa que sigue hasta llegar al final (H-11)", async () => {

@@ -25,6 +25,8 @@ type Props = {
   zona: string;
   /** La agenda, diferida como la lista: de ella salen los puntos del calendario y cuántos eventos da cada elección. */
   agenda: Promise<Agenda>;
+  /** ¿Hay sesión? «Solo lo que sigo» solo existe con ella: sin sesión, Filtros no lo ofrece. */
+  conSesion: boolean;
   /** Lo que hay puesto ahora: en Agenda, sus filtros; en Inicio, nada (Inicio son carriles y no se filtra). */
   valor: FiltrosAgenda;
   /** Al aplicar una hoja o quitar un filtro puesto: Agenda lo guarda; Inicio lleva a Agenda con eso puesto. */
@@ -39,7 +41,7 @@ const cuantosEventos = (n: number | null) => (n === null ? "Ver eventos" : n ===
  * después cada filtro puesto con su ✕. Cada hoja arma su elección aparte y solo la aplica el botón que dice cuántos
  * eventos da; cerrar con la ✕ o tocando fuera no cambia nada.
  */
-export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona, agenda, valor, onCambiar }: Props) {
+export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona, agenda, conSesion, valor, onCambiar }: Props) {
   const [hoja, setHoja] = useState<"cuando" | "filtros" | null>(null);
   const disparador = useRef<HTMLElement | null>(null);
   const cargada = useResuelta(agenda);
@@ -78,7 +80,7 @@ export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona,
         </Chip>
       )}
       {hoja === "cuando" && <HojaCuando valor={valor} hoy={hoy} zona={zona} agenda={cargada} onAplicar={aplicar} onCerrar={cerrar} />}
-      {hoja === "filtros" && <HojaDeFiltros valor={valor} agenda={cargada} onAplicar={aplicar} onCerrar={cerrar} />}
+      {hoja === "filtros" && <HojaDeFiltros valor={valor} agenda={cargada} conSesion={conSesion} onAplicar={aplicar} onCerrar={cerrar} />}
     </>
   );
 }
@@ -127,8 +129,8 @@ function HojaCuando({ valor, hoy, zona, agenda, onAplicar, onCerrar }: PropsHoja
   );
 }
 
-/** Filtros: cuánto cuesta (uno, otro o los dos) y si solo lo que sigue la persona. */
-function HojaDeFiltros({ valor, agenda, onAplicar, onCerrar }: PropsHoja) {
+/** Filtros: cuánto cuesta (uno, otro o los dos) y, con sesión, si solo lo que sigue la persona. */
+function HojaDeFiltros({ valor, agenda, conSesion, onAplicar, onCerrar }: PropsHoja & { conSesion: boolean }) {
   const [borrador, setBorrador] = useState({ cuanto: valor.cuanto, siguiendo: valor.siguiendo });
   const n = agenda ? listarAgenda(agenda, { ...valor, ...borrador }).length : null;
   const alternar = (clave: Cuanto) => setBorrador((b) => ({ ...b, cuanto: b.cuanto.includes(clave) ? b.cuanto.filter((c) => c !== clave) : [...b.cuanto, clave] }));
@@ -144,16 +146,18 @@ function HojaDeFiltros({ valor, agenda, onAplicar, onCerrar }: PropsHoja) {
           ))}
         </Chips>
       </BloqueFiltro>
-      <BloqueFiltro rotulo="Siguiendo">
-        <ul className={renglon.tarjeta}>
-          <li className={renglon.ajuste}>
-            <IconoCampana width={20} height={20} />
-            <b>Solo lo que sigo</b>
-            <small>Lugares y artistas que sigues</small>
-            <Palanca encendida={borrador.siguiendo} aria-label="Solo lo que sigo" onClick={() => setBorrador((b) => ({ ...b, siguiendo: !b.siguiendo }))} />
-          </li>
-        </ul>
-      </BloqueFiltro>
+      {conSesion && (
+        <BloqueFiltro rotulo="Siguiendo">
+          <ul className={renglon.tarjeta}>
+            <li className={renglon.ajuste}>
+              <IconoCampana width={20} height={20} />
+              <b>Solo lo que sigo</b>
+              <small>Lugares y artistas que sigues</small>
+              <Palanca encendida={borrador.siguiendo} aria-label="Solo lo que sigo" onClick={() => setBorrador((b) => ({ ...b, siguiendo: !b.siguiendo }))} />
+            </li>
+          </ul>
+        </BloqueFiltro>
+      )}
     </HojaFiltros>
   );
 }

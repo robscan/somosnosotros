@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agruparPorDia, buscarEventos, filtrarAgenda, filtrosDeUrl, filtrosPuestos, hrefAgenda, listarAgenda, SIN_FILTROS, textoDistancia, type EventoAgenda, type EventoBuscable } from "./agenda";
+import { agruparPorDia, buscarEventos, filtrarAgenda, filtrosDeUrl, filtrosPuestos, hrefAgenda, listarAgenda, SIN_FILTROS, sinSeguirSinSesion, textoDistancia, type EventoAgenda, type EventoBuscable } from "./agenda";
 import { distanciaKm } from "./geo";
 
 // "ahora": lunes 14 sep 2026, 12:00 hora de la ciudad (18:00Z)
@@ -154,5 +154,14 @@ describe("Cuándo y Cuánto en la agenda (docs/rediseno/50, P5)", () => {
     expect(filtrosDeUrl({ desde: "2026-10-03", hasta: "2026-10-04", cuanto: "gratis,otro", filtro: "siguiendo" })).toEqual({ cuando: filtros.cuando, cuanto: ["gratis"], siguiendo: true });
     expect(filtrosDeUrl({ filtro: "cercanos", desde: "mañana" })).toEqual(SIN_FILTROS);
     expect(filtrosPuestos(filtros)).toBe(2);
+  });
+  it("«Solo lo que sigo» solo cuenta con sesión: sin ella, lo que llegue en la URL o en la memoria se ignora y lo demás se queda", () => {
+    const puestos = { cuando: { desde: "2026-10-03", hasta: "2026-10-04" }, cuanto: ["gratis" as const], siguiendo: true };
+    expect(sinSeguirSinSesion(puestos, true)).toBe(puestos);
+    expect(sinSeguirSinSesion(puestos, false)).toEqual({ ...puestos, siguiendo: false });
+    expect(filtrosPuestos(sinSeguirSinSesion(puestos, false))).toBe(1);
+    const sinSeguir = { ...puestos, siguiendo: false };
+    expect(sinSeguirSinSesion(sinSeguir, false)).toBe(sinSeguir);
+    expect(sinSeguirSinSesion(SIN_FILTROS, false)).toBe(SIN_FILTROS);
   });
 });

@@ -69,6 +69,9 @@ export const SIN_FILTROS: FiltrosAgenda = { cuando: null, cuanto: [], siguiendo:
 /** Cuántos filtros de la hoja Filtros hay puestos (Cuándo no cuenta: tiene su propio chip). */
 export const filtrosPuestos = (f: FiltrosAgenda) => f.cuanto.length + (f.siguiendo ? 1 : 0);
 
+/** «Solo lo que sigo» existe solo con sesión: sin ella, un valor que llegue en la URL o en la memoria de pantalla no cuenta y la lista lo enseña todo. */
+export const sinSeguirSinSesion = (f: FiltrosAgenda, conSesion: boolean): FiltrosAgenda => (conSesion || !f.siguiendo ? f : { ...f, siguiendo: false });
+
 /** A Agenda con esos filtros: la URL es su estado inicial (después Agenda lo lleva en el teléfono, sin apilar historial). */
 export function hrefAgenda(f: FiltrosAgenda, ciudad?: string | null): string {
   const p = new URLSearchParams();
