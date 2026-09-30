@@ -2,10 +2,6 @@ import { Suspense } from "react";
 import ListaArtistas from "@/components/ListaArtistas";
 import ListaEsqueleto from "@/components/ListaEsqueleto";
 import MemoriaPantalla from "@/components/MemoriaPantalla";
-import NavInferior from "@/components/NavInferior";
-import Publicar from "@/components/Publicar";
-import Sesion from "@/components/Sesion";
-import Barra from "@/components/ui/Barra";
 import MisArtistas from "@/app/perfil/MisArtistas";
 import { conArtistasLigados, conProximaFecha, DISCIPLINAS, filtroDesdeUrl, hrefArtista, PAGINA_ARTISTAS, UMBRAL_CHIPS_ARTISTAS, type ArtistaLista, type ArtistaResumen, type FechaDeArtista, type FiltroLeido } from "@/lib/artistas";
 import type { Metadata } from "next";
@@ -136,7 +132,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
 
 /**
  * El listado mismo (OL-158, bitácora 193): en su propio componente de servidor para que su `<Suspense>` sea
- * independiente de `Barra` y `NavInferior`, que no esperan ninguna consulta.
+ * independiente de la barra y la navegación (el armazón, en el layout), que no esperan ninguna consulta.
  */
 async function ArtistasContenido({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { ciudad: slug, ...resto } = await searchParams;
@@ -160,10 +156,10 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
   const s = supabase && actual ? await supabase.from("seguimientos").select("artista_id").eq("usuario_id", actual.perfil.id).not("artista_id", "is", null).limit(1000) : null;
   const seguidos = actual ? ((s?.data ?? []) as { artista_id: string }[]).map((x) => x.artista_id) : null;
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
-  // Corrección del gestor (OL-177): NO como hermanos antes de <ListaArtistas> — ahí caen entre la Barra (el
-  // logotipo, que se esconde al bajar) y el renglón de chips (ui/Cabecera, pegajoso), la cabecera única de
-  // OL-087. Van como contenido normal de la página, debajo de esa cabecera completa: se le pasan a
-  // ListaArtistas, que los pinta después de `cabecera` y antes de la tira de letras y el conteo.
+  // Corrección del gestor (OL-177): NO como hermanos antes de <ListaArtistas> — ahí caen entre la barra de la app
+  // y la cabecera pegajosa (ui/Cabecera, la única de OL-087). Van como contenido normal de la página, debajo de esa
+  // cabecera completa (con su tira de letras): se le pasan a ListaArtistas, que los pinta después de `cabecera` y
+  // antes del conteo.
   const arriba = actual && (
     <>
       {conArtistasLigados(misArtistasConQr) && (
@@ -179,7 +175,6 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
       <ListaArtistas {...cargado} filtro={filtro} conChips={cargado.totalCiudad >= UMBRAL_CHIPS_ARTISTAS} pagina={PAGINA_ARTISTAS} conSesion={!!actual} ciudad={ciudad} ciudades={ciudades} seguidos={seguidos} avisos={avisos} arriba={arriba} />
       {/* El filtro y la ciudad viven en la URL; lo que se recuerda al volver de una ficha es el scroll. */}
       <MemoriaPantalla seccion="artistas" />
-      <Publicar que="artista" ciudad={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} />
     </>
   );
 }
@@ -188,11 +183,9 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
 export default function Artistas({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
     <main className="raiz">
-      <Barra derecha={<Sesion />} />
       <Suspense fallback={<ListaEsqueleto redonda />}>
         <ArtistasContenido searchParams={searchParams} />
       </Suspense>
-      <NavInferior />
     </main>
   );
 }

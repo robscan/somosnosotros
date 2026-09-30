@@ -1,0 +1,45 @@
+/* El armazón (docs/rediseno/50, P4): una rejilla de dos filas, la barra de la app y la pantalla; la navegación es fija
+   al pie (ui/NavInferior). No depende de lo que hay dentro: cada pieza lee `data-vista` (raiz · ficha · tarea ·
+   completa), que pone el layout según la ruta, y `data-recogida`, que pone `Armazon.tsx` al bajar. La pantalla es la
+   página tal cual llega; el desplazamiento sigue siendo el de la ventana. */
+.armazon {
+  container-type: inline-size; /* `--gutter` se mide sobre su ancho (`100cqw`, globals.css) */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "barra"
+    "pantalla";
+  min-height: 100dvh;
+
+  /* Lo que la barra de la app ocupa en el flujo de la página (0 donde no se ve), cuánto sube al recogerse y lo que
+     deja pegado arriba: ahí se pegan la fila de contexto y los títulos de día (ui/Cabecera, AgendaInicio) y con ella
+     miden las pantallas que llenan la ventana (`min-height`, el mapa). `--duracion-recogida` es lo que dura todo eso;
+     un salto a una letra lo pone en 0 para que quien mide lea ya el alto final. */
+  --duracion-recogida: var(--duracion);
+  --barra-flujo: 0px;
+  --recogida: 0px;
+  --barra-vista: calc(var(--barra-flujo) - var(--recogida));
+}
+.pantalla {
+  grid-area: pantalla;
+}
+
+/* Raíz: en el teléfono la barra de la app se ve y, al bajar, sube hasta dejar solo la franja de la hora. Las demás
+   vistas llevan su propia cabecera y la barra no se ve. */
+.armazon[data-vista="raiz"] {
+  --barra-flujo: calc(var(--alto-barra) + var(--tope));
+}
+.armazon[data-recogida] {
+  --recogida: var(--alto-barra);
+}
+
+/* Desde 792 la barra de la app está en todas las pantallas menos en las que llenan la ventana, y no se recoge. */
+@media (min-width: 792px) {
+  .armazon:not([data-vista="completa"]) {
+    --barra-flujo: calc(var(--alto-barra) + var(--tope));
+  }
+  .armazon[data-recogida] {
+    --recogida: 0px;
+  }
+}

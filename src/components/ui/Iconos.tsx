@@ -147,12 +147,6 @@ export const IconoMapa = (p: P) => (
     <path d="M9 4v14M15 6v14" />
   </svg>
 );
-export const IconoPinMas = (p: P) => (
-  <svg {...base({ strokeWidth: 1.9, ...p })}>
-    <path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" />
-    <path d="M12 8.5v5M9.5 11h5" />
-  </svg>
-);
 export const IconoUbicacion = (p: P) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="3" />
@@ -202,12 +196,6 @@ export const IconoPuntos = (p: P) => (
     <circle cx="5" cy="12" r="1.8" />
     <circle cx="12" cy="12" r="1.8" />
     <circle cx="19" cy="12" r="1.8" />
-  </svg>
-);
-export const IconoEstrellaMas = (p: P) => (
-  <svg {...base({ strokeWidth: 1.9, ...p })}>
-    <path d="M10 3l2.2 4.6 5 .7-3.6 3.5.9 5L10 14.4l-4.5 2.4.9-5L2.8 8.3l5-.7z" />
-    <path d="M19 13v6M16 16h6" />
   </svg>
 );
 export const IconoNota = (p: P) => (
@@ -364,6 +352,13 @@ export const IconoInstalarComputadora = (p: P) => (
 export const IconoMas = (p: P) => (
   <svg {...base({ strokeWidth: 2.2, ...p })}>
     <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+/** Publicar, en la barra de la app: el cuadrado redondeado con «+» (la convención de Instagram), del prototipo firmado. */
+export const IconoCrear = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <path d="M12 8v8M8 12h8" />
   </svg>
 );
 export const IconoOk = (p: P) => (

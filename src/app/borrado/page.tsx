@@ -1,7 +1,4 @@
 import Link from "next/link";
-import NavInferior from "@/components/NavInferior";
-import Sesion from "@/components/Sesion";
-import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoCalendario, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
@@ -21,7 +18,6 @@ export default async function Borrado({ searchParams }: { searchParams: Promise<
   const t = TEXTOS[(que as keyof typeof TEXTOS) in TEXTOS ? (que as keyof typeof TEXTOS) : "evento"];
   return (
     <main className="raiz">
-      <Barra derecha={<Sesion />} />
       <section className={styles.vacio} role="status" aria-live="polite">
         <IconoEnCirculo>
           <t.Icono width={28} height={28} />
@@ -35,7 +31,6 @@ export default async function Borrado({ searchParams }: { searchParams: Promise<
           {t.otroTexto}
         </Link>
       </section>
-      <NavInferior />
     </main>
   );
 }

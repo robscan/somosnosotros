@@ -2,11 +2,17 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
+import Armazon from "@/components/Armazon";
+import BarraApp from "@/components/BarraApp";
 import Navegacion from "@/components/Navegacion";
+import NavInferior from "@/components/NavInferior";
+import PerfilEnNav from "@/components/PerfilEnNav";
 import AnalyticsVercel from "@/components/AnalyticsVercel";
 import RegistroSW from "@/components/RegistroSW";
 import MemoriaScroll from "@/components/MemoriaScroll";
+import Sesion, { AccesoAdmin } from "@/components/Sesion";
 import TituloInstalada from "@/components/TituloInstalada";
+import { IconoPersona } from "@/components/ui/Iconos";
 import { GUION_APP_NATIVA } from "@/lib/appNativa";
 import { GUION_AVISO_INSTALAR } from "@/lib/avisoInstalar";
 import { jsonLdSitio } from "@/lib/estructurados";
@@ -62,7 +68,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="app-nativa" strategy="beforeInteractive">
           {GUION_APP_NATIVA}
         </Script>
-        {children}
+        {/* El armazón (docs/rediseno/50, P4): la barra de la app, la pantalla y la navegación, una sola vez para todas las
+            rutas. La sesión (campana, Entrar, foto) se lee aquí, en el servidor, sin frenar a la pantalla. La barra lee
+            la ciudad de la consulta: en la pantalla «No está», que se prerenderiza, esa lectura espera al teléfono. */}
+        <Armazon
+          barra={
+            <Suspense fallback={null}>
+              <BarraApp admin={<Suspense fallback={null}><AccesoAdmin /></Suspense>} sesion={<Suspense fallback={null}><Sesion /></Suspense>} />
+            </Suspense>
+          }
+          nav={<NavInferior perfil={<Suspense fallback={<IconoPersona width={26} height={26} />}><PerfilEnNav /></Suspense>} />}
+        >
+          {children}
+        </Armazon>
         <RegistroSW />
         <Navegacion />
         {/* Lee la consulta de la URL: en las pantallas estáticas se monta ya en el teléfono, sin frenar al resto. */}

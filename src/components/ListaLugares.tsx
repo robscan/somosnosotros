@@ -3,14 +3,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Ciudad } from "@/lib/ciudad";
 import { enOrden, tarjetaLugar, type Destacado, type Tarjeta } from "@/lib/destacados";
-import { conGrupos, idGrupo, letrasPresentes } from "@/lib/indice";
+import { conGrupos, idGrupo } from "@/lib/indice";
 import { etiquetaTipo, filtrarLugares, ordenarLugares, type LugarLista } from "@/lib/lugares";
 import { siguienteTanda, tandaInicial } from "@/lib/tandas";
 import CargarMas from "./ui/CargarMas";
 import Destacados from "./Destacados";
 import RenglonLugar from "./RenglonLugar";
-import TiraLetras, { irAlGrupo, useLetraActiva } from "./TiraLetras";
-import { antesDeSaltar } from "./ui/Cabecera";
 import { useCanalDePantalla } from "./useCanalDeListas";
 import { useCentinela } from "./useCentinela";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
@@ -43,20 +41,17 @@ type Props = {
 
 /**
  * Lista de lugares: renglones como los de la agenda (foto, nombre, calle, próximo evento); alfabético por defecto,
- * con encabezados de letra y una tira de acceso directo (corrección del founder, 2026-09-19: no filtra, lleva al
- * grupo), o por distancia con la ubicación. Con Cercanos o búsqueda, los encabezados y la tira se van, y se ordena
+ * con encabezados de letra y una tira de acceso directo en la cabecera (corrección del founder, 2026-09-19: no
+ * filtra, lleva al grupo), o por distancia con la ubicación. Con Cercanos o búsqueda, los encabezados y la tira se van, y se ordena
  * por cercanía o se busca en todo. La búsqueda, Cercanos, los tipos y el chip de fecha van en la cabecera de
  * VistaLugares, que los comparte con el mapa; `lugares` ya llega filtrado por fecha desde ahí (OL-210).
  */
 export default function ListaLugares({ lugares, tipo = null, fecha = "", busqueda, punto, ciudad, conSesion, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
   const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
-  // Sin Cercanos ni búsqueda, la lista se agrupa por letra y la tira lleva a cada grupo; con cualquiera de
-  // las dos, no tiene sentido (el orden ya no es alfabético) y se van las dos cosas.
+  // Sin Cercanos ni búsqueda, la lista se agrupa por letra (y la tira de la cabecera de VistaLugares lleva a cada
+  // grupo); con cualquiera de las dos, no tiene sentido (el orden ya no es alfabético) y se van las dos cosas.
   const alfabetico = !punto && !busqueda.trim();
   const filas = alfabetico ? conGrupos(lista, (l) => l.nombre) : lista.map((x) => ({ x, grupo: null }));
-  const letras = alfabetico ? letrasPresentes(lista, (l) => l.nombre) : [];
-  const tiraRef = useRef<HTMLDivElement>(null);
-  const letraActiva = useLetraActiva(letras, tiraRef, alfabetico && letras.length > 0);
   // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
   // Si la pantalla puso su canal (Lugares, con Mapa y Lista), el aviso y la pregunta son de ella: cambiar de vista no
   // empieza de cero. Sin canal de pantalla, la lista sigue con el suyo.
@@ -94,7 +89,6 @@ export default function ListaLugares({ lugares, tipo = null, fecha = "", busqued
   }
   return (
     <section className={styles.lista} aria-label="Lugares">
-      {alfabetico && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={(letra) => { antesDeSaltar(); irAlGrupo(letra); }} />}
       {aviso}
       {/* Como con un tipo o una búsqueda, las tiras se van con una fecha elegida (OL-210): son curaduría de la
           ciudad entera, no del día elegido, y seguir mostrándolas repetiría el bug de esta pieza a otra escala. */}

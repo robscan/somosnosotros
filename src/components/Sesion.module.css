@@ -1,33 +1,20 @@
-.perfil {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--toque-min);
-  min-height: var(--toque-min);
-  text-decoration: none;
-}
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-  display: inline-grid;
-  place-items: center;
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  color: var(--texto-suave);
+/* Lo que la sesión pone en la barra de la app: hijos directos de uno de sus dos lados (BarraApp). */
+
+/* «Entrar» junto a la lupa es lo más ancho que llega a haber en un lado de la barra: con este relleno compacto cabe en
+   los 3,5rem que la barra le reserva (`--flanco` de BarraApp.module.css) y el logotipo no se achica de más. */
+.entrar {
+  --boton-relleno: 0 var(--espacio-2);
 }
 
-/* La campana de Novedades y el acceso a Administración (L40, OL-115, entre ella y la foto) llevan un punto del
-   color de acción cuando hay algo no visto o por revisar. */
+/* La campana de Novedades y el acceso a Administración (L40, OL-115) llevan un punto del color de acción cuando hay
+   algo no visto o por revisar. */
 .conPunto {
   position: relative;
 }
 .punto {
   position: absolute;
-  top: 9px;
-  right: 9px;
+  top: 8px;
+  right: 8px;
   width: 9px;
   height: 9px;
   border-radius: 50%;

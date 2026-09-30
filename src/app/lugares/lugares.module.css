@@ -10,7 +10,7 @@
 }
 .cajaMapa {
   position: relative;
-  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--alto-barra) - var(--alto-cabecera) - var(--nav-abajo));
+  height: calc(100dvh - var(--barra-flujo, 0px) - var(--alto-cabecera) - var(--nav-abajo));
   min-height: 320px;
 }
 /* Lo que flota sobre el mapa (aviso, resultados, mensaje sin eventos y botón de ubicación) va justo bajo la cabecera
@@ -73,13 +73,13 @@
   color: var(--primario);
 }
 /* El conmutador Mapa · Lista (docs/rediseno/45, OL-174): salió del renglón 1 de la cabecera; flota, secundario
-   (contorno, no relleno: no compite con "Registrar lugar", la acción primaria), justo encima de él — 16 px (lo
-   que ya sube "Registrar lugar" sobre la navegación) + 48 px de su alto (`--toque`) + 12 px de aire. Mismo sitio
-   exacto en el Mapa ("Ver en lista") y en la Lista ("Ver en mapa"). */
+   (contorno, no relleno), abajo a la derecha, a 16 px de la navegación: el sitio de «Registrar lugar», que ahora es
+   el «+» de la barra de la app. Mismo sitio exacto en el Mapa («Ver en lista») y en la Lista («Ver en mapa»). Se queda
+   hasta que la lista pase a la hoja inferior (docs/rediseno/50, P5). */
 .verOtraVista {
   position: fixed;
   right: var(--gutter);
-  bottom: calc(var(--nav-abajo) + var(--espacio-4) + var(--toque) + 12px);
+  bottom: calc(var(--nav-abajo) + var(--espacio-4));
   z-index: calc(var(--z-flotante) + 1);
   display: inline-flex;
   align-items: center;

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import FichaPersona from "@/components/FichaPersona";
-import Barra from "@/components/ui/Barra";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { avisosParaListas } from "@/app/avisos/paraListas";
 import { cargarMisArtistas } from "@/app/artistas/consultas";
@@ -28,7 +27,6 @@ export default async function PaginaPerfil() {
   const misArtistas = await Promise.all(ligados.map(async (artista) => ({ artista, url: `${ORIGEN}${hrefArtista(artista)}`, svg: await qrDeUrl(`${ORIGEN}${hrefArtista(artista)}`) })));
   return (
     <main className={ficha.pagina}>
-      <Barra volver={{ href: "/", texto: "Agenda" }} />
       <FichaPersona
         perfil={persona.perfil}
         mia

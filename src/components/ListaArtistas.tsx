@@ -10,7 +10,7 @@ import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciuda
 import { conGrupos, idGrupo } from "@/lib/indice";
 import RenglonArtista from "./RenglonArtista";
 import TiraLetras, { irAlGrupo, useLetraActiva } from "./TiraLetras";
-import Cabecera, { antesDeSaltar } from "./ui/Cabecera";
+import Cabecera from "./ui/Cabecera";
 import { EsqueletoRenglones } from "./ui/Esqueleto";
 import { PestanaEnlace, Pestanas } from "./ui/Pestanas";
 import { useCentinela } from "./useCentinela";
@@ -92,7 +92,6 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
   function alTocarLetra(letra: string) {
     const posicion = posiciones[letra];
     if (posicion == null) return;
-    antesDeSaltar();
     if (posicion < artistas.length) {
       irAlGrupo(letra);
       return;
@@ -149,6 +148,7 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
           ))}
         </Chips>
       )}
+      {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
     </Cabecera>
   );
 
@@ -171,7 +171,6 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
     <section aria-label="Artistas">
       {cabecera}
       {arriba}
-      {!filtro.q && <TiraLetras ref={tiraRef} letras={letras} activa={letraActiva} alTocar={alTocarLetra} />}
       {artistas.length === 0 && !filtro.q ? (
         <div className={comun.vacio}>
           <p>{queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>

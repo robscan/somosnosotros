@@ -30,7 +30,8 @@ export async function guardarPerfil(_previo: ResultadoGuardar | null, formData: 
   const { error } = await supabase.from("perfiles").update({ nombre: datos.nombre, colonia: datos.colonia || null, bio: datos.bio || null, foto: datos.foto }).eq("id", user.id);
   if (error) return { ok: false, errores: {}, general: "No se pudo guardar. Intenta de nuevo." };
 
-  revalidatePath("/");
+  // Nombre y foto también salen en la navegación (el layout): se revalida el layout entero.
+  revalidatePath("/", "layout");
   revalidatePath("/perfil");
   revalidatePath("/ajustes");
   revalidatePath(`/personas/${user.id}`);
@@ -55,7 +56,8 @@ export async function elegirReserva(reservado: boolean): Promise<boolean> {
 export async function cerrarSesion() {
   const supabase = await clienteServidor();
   await supabase?.auth.signOut();
-  revalidatePath("/");
+  // La sesión se lee en el layout (barra y navegación): sin layout entero, la campana y la foto seguirían ahí.
+  revalidatePath("/", "layout");
   redirect("/");
 }
 
@@ -65,7 +67,7 @@ export async function borrarMiCuenta() {
   const { error } = await supabase.rpc("borrar_mi_cuenta");
   if (error) redirect("/ajustes?error=borrar");
   await supabase.auth.signOut();
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   redirect("/?cuenta=borrada");
 }
 

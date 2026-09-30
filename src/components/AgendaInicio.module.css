@@ -1,16 +1,16 @@
 /* El chip de fecha vive en ui/ChipFecha (docs/rediseno/45, OL-174: mismo componente en Agenda y Lugares); su CSS
    (marcado, quitar) está en ui/ChipFecha.module.css.
 
-   Grupos por día con título pegajoso debajo de lo que la cabecera deja a la vista (`--alto-cabecera`, de ui/Cabecera).
-   Cada grupo pone su propio gutter. */
+   Grupos por día con título pegajoso debajo de lo que queda pegado arriba: la barra de la app, si se ve (`--barra-vista`,
+   del armazón), y la cabecera (`--alto-cabecera`, de ui/Cabecera). Cada grupo pone su propio gutter. */
 .grupo {
   margin: 0 var(--gutter) var(--espacio-6);
 }
 .grupo h2 {
   position: sticky;
-  top: calc(var(--tope) + var(--alto-cabecera));
+  top: calc(var(--barra-vista, var(--tope)) + var(--alto-cabecera));
   z-index: calc(var(--z-pegajoso) - 1);
-  transition: top var(--cabecera-animacion, 0.2s) ease;
+  transition: top var(--duracion-recogida, var(--duracion)) var(--curva);
   padding: 14px 0 6px;
   background: var(--fondo-contenido);
   border-bottom: 1px solid var(--texto);

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { idGrupo } from "@/lib/indice";
+import { recogerBarra } from "./Armazon";
 import styles from "./TiraLetras.module.css";
 
 /**
@@ -19,12 +20,13 @@ function tapaAntesDe(destino: HTMLElement): number {
 }
 
 /**
- * Lleva la página al encabezado de una letra, bajo lo que se queda pegado arriba: la cabecera de la pantalla y,
- * ahora, la propia tira (también pegajosa, founder 2026-09-19).
+ * Lleva la página al encabezado de una letra, bajo lo que se queda pegado arriba: la cabecera de la pantalla, que
+ * lleva la tira dentro. Saltar hacia abajo recoge la barra de la app: se recoge ya, sin animar, para medir el alto final.
  */
 export function irAlGrupo(letra: string): boolean {
   const grupo = document.getElementById(idGrupo(letra));
   if (!grupo) return false;
+  recogerBarra();
   window.scrollTo({ top: grupo.getBoundingClientRect().top + window.scrollY - tapaAntesDe(grupo) });
   return true;
 }
@@ -77,17 +79,16 @@ export function useLetraActiva(letras: string[], tira: RefObject<HTMLElement | n
 /**
  * Tira horizontal de acceso directo por letra (corrección del founder, 2026-09-19: «no es un filtro, es un anchor
  * point»). Solo lista las letras que tienen elementos, en el orden real de la lista; tocar una lleva a su separador,
- * sin apagar ni encender nada más (no es un filtro: `aria-current`, no `aria-pressed`). Se pega bajo lo que
- * ui/Cabecera deja a la vista, pero arriba del todo no se ve: aparece cuando se entra en la zona de la primera letra,
- * es decir, cuando `useLetraActiva` ya ilumina una, y se va al volver a subir (founder: «que no se muestre si no hasta
- * que el usuario ya llegó a la primera letra»). Solo las letras, sin círculo ni borde; la iluminada, en el color de
- * acción. Si no cabe entera, se desliza de lado para que esa letra quede a la vista, sin mover la página en vertical.
- * Se va con la búsqueda o con Cercanos.
+ * sin apagar ni encender nada más (no es un filtro: `aria-current`, no `aria-pressed`). Va dentro de ui/Cabecera, como
+ * su última fila (el prototipo firmado, docs/rediseno/50, H-18): se pega con ella y la cabecera la mide, sin pegajoso ni
+ * margen propios. Solo las letras, sin círculo ni borde; la iluminada, en el color de acción. Cada letra es un toque
+ * de 44×44; si no caben todas, se desliza de lado para que esa letra quede a la vista, sin mover la página en vertical.
+ * Se va con la búsqueda.
  */
 export default function TiraLetras({ ref, letras, activa, alTocar }: { ref: RefObject<HTMLDivElement | null>; letras: string[]; activa: string | null; alTocar: (letra: string) => void }) {
   if (letras.length === 0) return null;
   return (
-    <div ref={ref} role="group" aria-label="Ir a una letra" className={`${styles.tira} ${activa ? styles.visible : ""}`}>
+    <div ref={ref} role="group" aria-label="Ir a una letra" className={styles.tira}>
       {letras.map((l) => (
         <BotonLetra key={l} letra={l} activa={l === activa} onClick={() => alTocar(l)} />
       ))}

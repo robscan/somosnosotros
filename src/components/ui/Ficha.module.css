@@ -8,9 +8,17 @@
 /* 1. Página: las tres franjas del shell, como en las pantallas raíz: cabecera blanca (ui/Barra interior),
    contenido en su tono, barra de acciones blanca abajo. Deja sitio abajo para la barra pegajosa. */
 .pagina {
-  min-height: 100dvh;
+  min-height: calc(100dvh - var(--barra-flujo, 0px));
   padding: 0 var(--gutter) calc(96px + var(--piso));
   background: var(--fondo-contenido);
+}
+/* Desde 792 la ficha no lleva cabecera propia (su Atrás y su menú están en la barra de la app): el aire que esa cabecera
+   dejaba debajo lo pone la página. Eran 12 px de margen que se fundían con los 4 de la primera pieza; como relleno se
+   suman, así que aquí van 8 para que la ficha empiece en el mismo punto. */
+@media (min-width: 792px) {
+  :global([data-vista="ficha"]) .pagina {
+    padding-top: var(--espacio-2);
+  }
 }
 .oculto {
   margin-bottom: var(--espacio-3);

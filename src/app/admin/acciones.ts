@@ -37,7 +37,8 @@ function esOcultable(tipo: string): tipo is TipoOcultable {
 function revalidarFicha(tipo: TipoOcultable, id: string) {
   revalidatePath("/admin");
   revalidatePath(`/admin${RUTA[tipo]}`);
-  revalidatePath("/");
+  // El punto de Administración (pendientes por revisar) vive en la barra de la app, en el layout.
+  revalidatePath("/", "layout");
   revalidatePath(RUTA[tipo]);
   revalidatePath(`${RUTA[tipo]}/${id}`);
 }

@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Sesion from "@/components/Sesion";
-import Barra from "@/components/ui/Barra";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
@@ -103,7 +101,6 @@ export default async function Lugares({ searchParams }: { searchParams: Promise<
       ciudades={ciudades}
       vistaInicial={vista === "lista" ? "lista" : "mapa"}
       tipo={tipoElegido}
-      barra={<Barra derecha={<Sesion />} />}
       extras={extras}
       busquedaInicial={q}
       hoy={diaLocal(new Date(), ciudad.zona)}
