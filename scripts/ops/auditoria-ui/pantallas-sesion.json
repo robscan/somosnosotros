@@ -11,5 +11,6 @@
   { "id": "s10-buscar", "plantilla": "tarea", "url": "/buscar" },
   { "id": "s11-alta-artista", "plantilla": "tarea", "url": "/nuevo?tipo=artista" },
   { "id": "s12-lugares-hoja-llena", "plantilla": "hoja", "url": "/lugares", "paso": "hoja-llena" },
-  { "id": "s13-lugares-ficha-en-hoja", "plantilla": "hoja", "url": "/lugares?lugar=teatro-de-la-paz" }
+  { "id": "s13-lugares-ficha-en-hoja", "plantilla": "hoja", "url": "/lugares?lugar=teatro-de-la-paz" },
+  { "id": "s14-agenda-nuevos", "plantilla": "raíz", "url": "/agenda?ver=nuevos", "completa": true }
 ]

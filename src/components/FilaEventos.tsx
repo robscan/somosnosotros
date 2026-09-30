@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { CUANTOS, filtrosPuestos, listarAgenda, type Cuanto, type FiltrosAgenda } from "@/lib/agenda";
+import { CUANTOS, eventosNuevos, filtrosPuestos, listarAgenda, type Cuanto, type FiltrosAgenda } from "@/lib/agenda";
 import { diasActivosCalendario } from "@/lib/calendario";
 import type { Agenda } from "@/lib/cargarAgenda";
 import type { Ciudad, CiudadConDatos } from "@/lib/ciudad";
@@ -31,6 +31,8 @@ type Props = {
   valor: FiltrosAgenda;
   /** Al aplicar una hoja o quitar un filtro puesto: Agenda lo guarda; Inicio lleva a Agenda con eso puesto. */
   onCambiar: (valor: FiltrosAgenda) => void;
+  /** Solo en la pestaña Nuevos de Agenda, desde cuándo cuenta como nuevo (`corteNuevos`): el botón «Ver N eventos» de cada hoja y los puntos del calendario cuentan lo de esa pestaña. */
+  nuevosDesde?: number;
 };
 
 /** «Ver 14 eventos», «Ver 1 evento», «Sin eventos»; sin saber todavía cuántos, «Ver eventos». */
@@ -41,7 +43,7 @@ const cuantosEventos = (n: number | null) => (n === null ? "Ver eventos" : n ===
  * después cada filtro puesto con su ✕. Cada hoja arma su elección aparte y solo la aplica el botón que dice cuántos
  * eventos da; cerrar con la ✕ o tocando fuera no cambia nada.
  */
-export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona, agenda, conSesion, valor, onCambiar }: Props) {
+export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona, agenda, conSesion, valor, onCambiar, nuevosDesde }: Props) {
   const [hoja, setHoja] = useState<"cuando" | "filtros" | null>(null);
   const disparador = useRef<HTMLElement | null>(null);
   const cargada = useResuelta(agenda);
@@ -79,25 +81,25 @@ export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona,
           Solo lo que sigo
         </Chip>
       )}
-      {hoja === "cuando" && <HojaCuando valor={valor} hoy={hoy} zona={zona} agenda={cargada} onAplicar={aplicar} onCerrar={cerrar} />}
-      {hoja === "filtros" && <HojaDeFiltros valor={valor} agenda={cargada} conSesion={conSesion} onAplicar={aplicar} onCerrar={cerrar} />}
+      {hoja === "cuando" && <HojaCuando valor={valor} hoy={hoy} zona={zona} agenda={cargada} nuevosDesde={nuevosDesde} onAplicar={aplicar} onCerrar={cerrar} />}
+      {hoja === "filtros" && <HojaDeFiltros valor={valor} agenda={cargada} conSesion={conSesion} nuevosDesde={nuevosDesde} onAplicar={aplicar} onCerrar={cerrar} />}
     </>
   );
 }
 
-type PropsHoja = { valor: FiltrosAgenda; agenda: Agenda | null; onAplicar: (valor: FiltrosAgenda) => void; onCerrar: () => void };
+type PropsHoja = { valor: FiltrosAgenda; agenda: Agenda | null; nuevosDesde?: number; onAplicar: (valor: FiltrosAgenda) => void; onCerrar: () => void };
 
 /**
  * Cuándo: los atajos (Hoy, Mañana, Fin de semana, Esta semana), «Elegir fecha…» —que abre el calendario dentro de la
  * misma hoja, con un punto en los días con eventos, un día con un toque y un rango con dos— y «Todos los próximos».
  */
-function HojaCuando({ valor, hoy, zona, agenda, onAplicar, onCerrar }: PropsHoja & { hoy: string; zona: string }) {
+function HojaCuando({ valor, hoy, zona, agenda, nuevosDesde, onAplicar, onCerrar }: PropsHoja & { hoy: string; zona: string }) {
   const atajos = atajosCuando(hoy);
   const [borrador, setBorrador] = useState<Cuando | null>(valor.cuando);
   // El calendario se ve mientras se elige con él: al abrir con un valor que no es un atajo, ya viene abierto.
   const [eligiendo, setEligiendo] = useState(() => !!valor.cuando && !atajos.some((a) => mismoCuando(a.cuando, valor.cuando)));
-  const dias = useMemo(() => (agenda ? diasActivosCalendario(agenda.eventos) : undefined), [agenda]);
-  const n = agenda ? listarAgenda(agenda, { ...valor, cuando: borrador }).length : null;
+  const dias = useMemo(() => (agenda ? diasActivosCalendario(nuevosDesde === undefined ? agenda.eventos : eventosNuevos(agenda.eventos, nuevosDesde)) : undefined), [agenda, nuevosDesde]);
+  const n = agenda ? listarAgenda(agenda, { ...valor, cuando: borrador }, nuevosDesde).length : null;
   const elegir = (cuando: Cuando | null) => {
     setBorrador(cuando);
     setEligiendo(false);
@@ -130,9 +132,9 @@ function HojaCuando({ valor, hoy, zona, agenda, onAplicar, onCerrar }: PropsHoja
 }
 
 /** Filtros: cuánto cuesta (uno, otro o los dos) y, con sesión, si solo lo que sigue la persona. */
-function HojaDeFiltros({ valor, agenda, conSesion, onAplicar, onCerrar }: PropsHoja & { conSesion: boolean }) {
+function HojaDeFiltros({ valor, agenda, conSesion, nuevosDesde, onAplicar, onCerrar }: PropsHoja & { conSesion: boolean }) {
   const [borrador, setBorrador] = useState({ cuanto: valor.cuanto, siguiendo: valor.siguiendo });
-  const n = agenda ? listarAgenda(agenda, { ...valor, ...borrador }).length : null;
+  const n = agenda ? listarAgenda(agenda, { ...valor, ...borrador }, nuevosDesde).length : null;
   const alternar = (clave: Cuanto) => setBorrador((b) => ({ ...b, cuanto: b.cuanto.includes(clave) ? b.cuanto.filter((c) => c !== clave) : [...b.cuanto, clave] }));
 
   return (

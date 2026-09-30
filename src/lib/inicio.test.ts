@@ -13,6 +13,7 @@ import {
   TOPE_ESTELAR,
   tituloEstelar,
 } from "./inicio";
+import { corteNuevos, eventosNuevos, listarAgenda, SIN_FILTROS } from "./agenda";
 import type { Agenda } from "./cargarAgenda";
 
 const ahora = new Date("2026-09-23T18:00:00Z");
@@ -213,6 +214,23 @@ describe("Inicio: carril Nuevos eventos (publicado hace ≤7 días Y empieza des
     const r = carrilNuevos([evento("ya-usado", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(1) }), evento("solo", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(2) })], vistos, ahora);
     expect(r).toEqual([]);
     expect(vistos).toEqual(new Set(["ya-usado"]));
+  });
+  it("«nuevo» es lo mismo que en la pestaña Nuevos de Agenda: el carril trae lo de la pestaña que no cae en Esta semana ni sale en otro carril", () => {
+    const hace = (dias: number) => new Date(ahora.getTime() - dias * 86400000).toISOString();
+    const lejos = (id: string, publicadoHace: number, horas: number) => eventoAgenda(id, { creado_en: hace(publicadoHace), inicio: fechaFueraDeEstaSemana(horas), fin: null });
+    const eventos = [lejos("a", 1, 1), lejos("b", 2, 2), lejos("c", 3, 3), lejos("d", 4, 4), lejos("viejo", 9, 5), eventoAgenda("de-la-semana", { creado_en: hace(0.5) })];
+    const pestana = (desde: number) => listarAgenda(agenda({ eventos }), SIN_FILTROS, desde).map((e) => e.id);
+    // Sin última visita, nuevo es lo de los últimos 7 días, en los dos: «viejo» no entra a ninguno y «de-la-semana» solo a la pestaña (en el carril sería repetirlo).
+    expect(pestana(corteNuevos(null, ahora))).toEqual(["de-la-semana", "a", "b", "c", "d"]);
+    const carril = carrilNuevos(eventos, new Set(), ahora);
+    expect(carril.map((e) => e.id)).toEqual(["a", "b", "c", "d"]);
+    // Con una última visita, `CarrilNuevos` recorta en el teléfono con la misma función que la pestaña: lo que ya se vio se va de los dos.
+    const desdeLaVisita = corteNuevos(hace(2.5), ahora);
+    expect(pestana(desdeLaVisita)).toEqual(["de-la-semana", "a", "b"]);
+    expect(eventosNuevos(carril, desdeLaVisita).map((e) => e.id)).toEqual(["a", "b"]);
+    // Lo que sale en un carril anterior no se repite en este carril, pero la pestaña lo sigue teniendo.
+    expect(carrilNuevos(eventos, new Set(["b"]), ahora).map((e) => e.id)).toEqual(["a", "c", "d"]);
+    expect(pestana(corteNuevos(null, ahora))).toContain("b");
   });
   it("con el mínimo cumplido, sí extiende el conjunto compartido (no repite lo ya visto en un carril anterior)", () => {
     const vistos = new Set(["ya-usado"]);

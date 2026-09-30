@@ -1,0 +1,30 @@
+/* Las pestañas (ui/Pestanas): el último renglón de ui/Cabecera. No llevan raya propia ni alto de más: la cabecera pinta la común abajo y la
+   pestaña elegida la cubre con la suya, de 2 px. Cada una es un toque de 44 px como mínimo. Desde 792 van al centro, como la fila de arriba. */
+.tira {
+  display: flex;
+  gap: var(--espacio-5);
+  padding-inline: var(--gutter);
+}
+.pestana {
+  min-width: var(--toque-min);
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-1);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pestana[aria-selected="true"] {
+  color: var(--primario);
+  border-bottom-color: var(--primario);
+  font-weight: 700;
+}
+@media (min-width: 792px) {
+  .tira {
+    justify-content: center;
+  }
+}
