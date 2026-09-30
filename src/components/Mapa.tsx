@@ -3,62 +3,65 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { ExpressionSpecification, GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker } from "mapbox-gl";
+import type { ExpressionSpecification, GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker, SymbolLayerSpecification } from "mapbox-gl";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { diaPin } from "@/lib/fechas";
 import { hrefLugar, type LugarLista } from "@/lib/lugares";
-import { colorPin, radioPin, type ColoresPin } from "@/lib/pines";
+import { propiedadesPin, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
 import styles from "./Mapa.module.css";
 
 type EstadoMapa = "cargando" | "listo" | "sin-token" | "error";
 type Punto = { lat: number; lng: number };
 
 type Props = {
-  /** "ver": los lugares, llenando la caja donde se pone. "elegir": recuadro con un pin que se arrastra (alta/edición). */
-  modo?: "ver" | "elegir";
   lugares?: LugarLista[];
-  /** Solo en "ver": al tocar un lugar. Sin esto, el lugar navega a su ficha. */
+  /** Al tocar un lugar. Sin esto, el lugar navega a su ficha. */
   onPin?: (lugar: LugarLista) => void;
-  /** Solo en "ver": id del lugar resaltado (el de la ficha abierta). */
+  /** Id del lugar de la ficha abierta: el único con aro y sombra, con su nombre siempre a la vista y el resto atenuado (`@/lib/pines`). */
   elegido?: string | null;
-  /** La persona en el mapa (punto azul); `vez` cambia con cada toque al botón de ubicación para volver a centrar. En "elegir" solo se pinta: el pin es quien centra. */
+  /** La persona en el mapa (punto azul); `vez` cambia con cada toque al botón de ubicación para volver a centrar. */
   ubicacion?: (Punto & { vez: number }) | null;
-  /** Solo en "elegir": posición del pin; null = todavía no hay. */
-  valor?: Punto | null;
-  onCambio?: (p: Punto) => void;
-  /** Solo en "ver": lugar en el que centrar el mapa al abrir. */
-  centrarEn?: Punto | null;
-  /** Solo en "ver": puntos que encuadrar; `vez` cambia con cada encuadre nuevo (búsqueda, encuadre inicial, "cercanos" o el
-   *  lugar cuya ficha se abre). Uno solo: se acerca a él. */
+  /** Puntos que encuadrar; `vez` cambia con cada encuadre nuevo (búsqueda, encuadre inicial, "cercanos" o el lugar cuya ficha se
+   *  abre). Uno solo: se acerca a él. */
   encuadre?: { puntos: Punto[]; vez: number } | null;
-  /** Solo en "ver": lo que una hoja tapa del mapa por abajo (px). Cada encuadre lo deja libre, para que el lugar o los
-   *  lugares encuadrados no queden detrás de ella (la hoja de Lugares, que cambia de altura). */
+  /** Lo que una hoja tapa del mapa por abajo (px). Cada encuadre lo deja libre, para que el lugar o los lugares encuadrados no
+   *  queden detrás de ella (la hoja de Lugares, que cambia de altura). */
   tapaAbajo?: number;
   ciudad?: Ciudad;
-  /** Solo en "ver": los lugares que la persona sigue (con sesión), en verde (`--ok`), encima de los demás. El
-   *  resalte lo lleva el seguido, no el destacado (docs/rediseno/35, decisión del founder tras firmar, 2026-09-22;
-   *  el color, corrección del founder, 2026-09-22, OL-128: "el mismo color de seguidos"). Sin aro: el founder lo
-   *  quitó por "demasiado ruido visual" (2026-09-23, OL-146/doc rediseno/37); el tamaño y el color ya lo dicen. */
+  /** Los lugares que la persona sigue (con sesión), en verde (`--ok`), encima de los demás. El resalte lo lleva el seguido, no el
+   *  destacado (docs/rediseno/35, decisión del founder tras firmar, 2026-09-22; el color, corrección del founder, 2026-09-22,
+   *  OL-128: "el mismo color de seguidos"). */
   seguidos?: string[];
-  /** Solo en "ver": los lugares destacados por el administrador (docs/rediseno/20). Van en naranja (`--destacado`)
-   *  salvo que además sean seguidos, que gana (OL-146/doc rediseno/37). */
+  /** Los lugares destacados por el administrador (docs/rediseno/20). Van en naranja (`--destacado`) salvo que además sean
+   *  seguidos, que gana (OL-146/doc rediseno/37). */
   destacados?: string[];
 };
 
-const COLOR_PIN = "#1a1a1a"; // tinta; Mapbox pide el color literal (pin que se arrastra del alta)
-/** Los lugares van en capas del propio mapa (no en elementos encima): círculo y nombre debajo, como las etiquetas de Mapbox. */
+/** Los lugares van en capas del propio mapa (no en elementos encima). De abajo arriba: sombra del elegido, círculos, nombres, nombre del
+ *  elegido y, encima de todo, el día de cada pin junto con su huella (ver `agregarCapas`). */
 const FUENTE_LUGARES = "lugares";
+const CAPA_SOMBRA = "lugares-sombra";
 const CAPA_PUNTOS = "lugares-puntos";
-const CAPA_DIA = "lugares-dia";
 const CAPA_NOMBRES = "lugares-nombres";
+const CAPA_NOMBRE_ELEGIDO = "lugares-nombre-elegido";
+const CAPA_PINES = "lugares-pines";
+const HUELLA = "huella-pin";
 /** Fuente de los nombres: existe en la cuenta de Mapbox (Noto Sans, la del estilo, da 404; ver OPEN_LOOPS). */
 const FUENTE_NOMBRES = ["DIN Pro Bold", "Arial Unicode MS Bold"];
+/** Dónde puede ir un nombre, en el orden en que Mapbox lo intenta: `top` es el texto debajo del pin (como siempre), luego encima, a la
+ *  derecha y a la izquierda. */
+const ANCLAS_NOMBRE: ("top" | "bottom" | "left" | "right")[] = ["top", "bottom", "left", "right"];
 /** Radio del toque alrededor de un punto (el punto mide 10 px; el dedo necesita más). */
 const RADIO_TOQUE = 18;
 /** Una sola lista vacía para el valor por defecto: una nueva en cada render volvería a pintar las capas. */
 const SIN_SEGUIDOS: string[] = [];
 const SIN_DESTACADOS: string[] = [];
+
+const sinMovimiento = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Lo que las capas leen de cada lugar (`propiedadesPin` más lo que dice el propio lugar). */
+type PropiedadesLugar = PropiedadesPin & { id: string; nombre: string; dia: string; elegido: boolean };
 
 /** Color de una variable de diseño, porque Mapbox pide el valor literal. */
 function colorDiseno(nombre: string, reserva: string) {
@@ -67,106 +70,107 @@ function colorDiseno(nombre: string, reserva: string) {
 }
 
 /**
- * El tamaño (`radio`) y el color ya calculados por lugar (`@/lib/pines`, OL-146): así las capas solo leen la
- * propiedad (`["get", "radio"]`, `["get", "colorPunto"]`…) y la regla de tamaño/color se prueba aparte, sin
- * levantar Mapbox. El color del nombre repite el del punto, salvo el destacado (naranja más oscuro, `--destacado-texto`,
- * para que el texto siga con 4.5:1 sobre el fondo del mapa).
+ * Tamaño, color, prioridad y opacidad ya calculados por lugar (`@/lib/pines`, OL-146 y P8): así las capas solo leen la propiedad
+ * (`["get", "radio"]`, `["get", "colorPunto"]`…) y las reglas se prueban aparte, sin levantar Mapbox. El color del nombre repite el del
+ * punto, salvo el destacado (naranja más oscuro, `--destacado-texto`, para que el texto siga con 4.5:1 sobre el fondo del mapa).
  */
-function aGeoJSON(lugares: LugarLista[], seguidos: string[], destacados: string[], coloresPunto: ColoresPin, coloresTexto: ColoresPin): GeoJSON.FeatureCollection<GeoJSON.Point> {
+function aGeoJSON(lugares: LugarLista[], seguidos: string[], destacados: string[], elegido: string | null, coloresPunto: ColoresPin, coloresTexto: ColoresPin): GeoJSON.FeatureCollection<GeoJSON.Point, PropiedadesLugar> {
   const ahora = new Date();
+  const hayElegido = lugares.some((l) => l.id === elegido);
   return {
     type: "FeatureCollection",
     features: lugares.map((l) => {
       const dia = l.proximo ? diaPin(l.proximo.inicio, ahora, l.proximo.zona) : null;
-      const estado = { dia, privado: !!l.privado, seguido: seguidos.includes(l.id), destacado: destacados.includes(l.id) };
+      const estado = { dia, privado: !!l.privado, seguido: seguidos.includes(l.id), destacado: destacados.includes(l.id), elegido: l.id === elegido };
       return {
         type: "Feature",
         id: l.id,
         geometry: { type: "Point", coordinates: [l.lng, l.lat] },
-        properties: {
-          id: l.id,
-          nombre: l.nombre,
-          dia,
-          privado: estado.privado,
-          seguido: estado.seguido,
-          destacado: estado.destacado,
-          radio: radioPin(estado),
-          colorPunto: colorPin(estado, coloresPunto),
-          colorTexto: colorPin(estado, coloresTexto),
-        },
+        properties: { id: l.id, nombre: l.nombre, dia: dia ?? "", elegido: estado.elegido, ...propiedadesPin(estado, hayElegido, coloresPunto, coloresTexto) },
       };
     }),
   };
 }
 
+/** Los nombres, uno por lugar: en negrita, con halo, del color del pin y con la opacidad que le toque. Mapbox los acomoda alrededor del pin
+ *  (`text-variable-anchor`, el que gana el sitio es el de mayor prioridad) y esconde el que no cabe, nunca el pin. El del elegido va en
+ *  su propia capa, un punto más grande y con halo más ancho, y con `text-allow-overlap` no se esconde: Mapbox le busca primero un sitio
+ *  sin pisar a nadie y, si no lo hay, lo pone en el primero. */
+function capaNombres(id: string, filter: ExpressionSpecification, elegido: boolean, fondo: string): SymbolLayerSpecification {
+  return {
+    id,
+    type: "symbol",
+    source: FUENTE_LUGARES,
+    filter,
+    layout: {
+      "text-field": ["get", "nombre"],
+      "text-font": FUENTE_NOMBRES,
+      "text-size": elegido ? TAMANO_NOMBRE_ELEGIDO : TAMANO_NOMBRE,
+      "text-variable-anchor": ANCLAS_NOMBRE,
+      "text-radial-offset": ["get", "distanciaNombre"],
+      "text-justify": "auto",
+      "text-max-width": 9,
+      "text-line-height": 1.1,
+      "text-letter-spacing": 0.01,
+      "text-allow-overlap": elegido,
+      "symbol-sort-key": ["-", ["get", "prioridad"]], // Mapbox coloca primero la llave menor: la prioridad mayor
+    },
+    // Negrita y halo ancho: se distinguen de las colonias y calles del estilo (gris, mayúsculas).
+    paint: { "text-color": ["get", "colorTexto"], "text-halo-color": fondo, "text-halo-width": elegido ? 3 : 2, "text-opacity": ["get", "opacidad"] },
+  };
+}
+
 /**
- * Sin doble círculo ("aro"): el founder lo quitó por "demasiado ruido visual" (2026-09-23, OL-146/doc
- * rediseno/37). El TAMAÑO dice si hay evento esta semana (mediano con "Hoy" o el día en tres letras, chico sin
- * él) y el COLOR dice qué es el lugar: tinta sin nada, color de acción con evento, naranja el destacado que no
- * se sigue, verde el seguido (gana a los demás); los privados (solo los ve el admin) siempre en gris. El nombre
- * va debajo y cede sitio si choca con otro; ambos, tamaño y color, ya vienen calculados por lugar en `aGeoJSON`
- * (`@/lib/pines`), así las capas solo leen la propiedad.
- * El texto del día usa `text-allow-overlap`/`text-ignore-placement`: Mapbox esconde los símbolos que chocan al
- * cambiar el zoom, y un "Hoy" que desaparece es peor que uno apretado (mismo founder, mismo encargo). El
- * `symbol-sort-key` prioriza seguido > destacado > con día > normal, así que si dos días chocan de verdad, el
- * más importante queda encima en vez de decidirlo el azar.
+ * El TAMAÑO del círculo dice si hay evento esta semana (mediano con "Hoy" o el día en tres letras, chico sin él) y el COLOR dice qué es el
+ * lugar (`@/lib/pines`). Sin aro, salvo en el elegido: crece, lleva un aro blanco ancho y una sombra suave debajo, y los demás bajan a
+ * media opacidad. Un nombre nunca cae sobre un pin: los círculos no cuentan para las colisiones de Mapbox, así que la capa de arriba
+ * (`CAPA_PINES`) reserva la huella de cada pin —una imagen vacía de 1×1 px estirada a su tamaño— y pinta el día en blanco y negrita al
+ * centro del círculo, sin esconderse nunca. Por ir arriba, Mapbox la coloca antes que los nombres: cada nombre busca su sitio alrededor
+ * del pin y, si no cabe, se esconde.
  */
 function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
   const fondo = colorDiseno("--fondo", "#ffffff");
+  const esElegido: ExpressionSpecification = ["==", ["get", "elegido"], true];
   mapa.addSource(FUENTE_LUGARES, { type: "geojson", data: datos, promoteId: "id" });
-  const radio: ExpressionSpecification = ["*", ["get", "radio"], ["case", ["boolean", ["feature-state", "elegido"], false], 1.3, 1]];
-  const prioridad: ExpressionSpecification = ["case", ["get", "seguido"], -3, ["get", "destacado"], -2, ["!=", ["get", "dia"], null], -1, 0];
+  mapa.addImage(HUELLA, { width: 1, height: 1, data: new Uint8Array(4) });
+  mapa.addLayer({
+    id: CAPA_SOMBRA,
+    type: "circle",
+    source: FUENTE_LUGARES,
+    filter: esElegido,
+    paint: { "circle-radius": ["+", ["get", "huella"], 12], "circle-color": colorDiseno("--texto", "#1a1a1a"), "circle-opacity": 0.55, "circle-blur": 0.7, "circle-translate": [0, 5] },
+  });
   mapa.addLayer({
     id: CAPA_PUNTOS,
     type: "circle",
     source: FUENTE_LUGARES,
-    layout: { "circle-sort-key": ["case", ["get", "seguido"], 2, ["get", "destacado"], 1, 0] },
+    layout: { "circle-sort-key": ["get", "prioridad"] }, // el de mayor prioridad, encima
     paint: {
-      "circle-radius": radio,
+      "circle-radius": ["get", "radio"],
       "circle-color": ["get", "colorPunto"],
+      "circle-opacity": ["get", "opacidad"],
       "circle-stroke-color": fondo,
-      "circle-stroke-width": ["case", ["get", "seguido"], 2, 1.5],
+      "circle-stroke-width": ["get", "borde"],
+      "circle-stroke-opacity": ["get", "opacidad"],
     },
   });
-  // "Hoy" o el día en tres letras, en blanco y negrita, al centro del círculo; nunca se esconde por choque de zoom.
+  mapa.addLayer(capaNombres(CAPA_NOMBRES, ["!=", ["get", "elegido"], true], false, fondo));
+  mapa.addLayer(capaNombres(CAPA_NOMBRE_ELEGIDO, esElegido, true, fondo));
   mapa.addLayer({
-    id: CAPA_DIA,
+    id: CAPA_PINES,
     type: "symbol",
     source: FUENTE_LUGARES,
-    filter: ["!=", ["get", "dia"], null],
     layout: {
+      "icon-image": HUELLA,
+      "icon-size": ["*", 2, ["get", "huella"]],
+      "icon-allow-overlap": true,
       "text-field": ["get", "dia"],
       "text-font": FUENTE_NOMBRES,
-      "text-size": 10,
-      "text-anchor": "center",
-      "symbol-sort-key": prioridad,
+      "text-size": ["get", "tamanoDia"],
       "text-allow-overlap": true,
       "text-ignore-placement": true,
     },
-    paint: { "text-color": fondo },
-  });
-  mapa.addLayer({
-    id: CAPA_NOMBRES,
-    type: "symbol",
-    source: FUENTE_LUGARES,
-    layout: {
-      "text-field": ["get", "nombre"],
-      "text-font": FUENTE_NOMBRES,
-      "text-size": 14,
-      "text-anchor": "top",
-      "text-offset": [0, 0.55],
-      "text-max-width": 9,
-      "text-line-height": 1.1,
-      "text-letter-spacing": 0.01,
-      "symbol-sort-key": prioridad, // un seguido, luego un destacado, luego uno con día, gana el sitio si chocan
-    },
-    // El mismo color que el punto (naranja más oscuro en el destacado, para el contraste del texto), en negrita
-    // y con halo ancho: se distinguen de las colonias y calles del estilo (gris, mayúsculas).
-    paint: {
-      "text-color": ["get", "colorTexto"],
-      "text-halo-color": fondo,
-      "text-halo-width": 2,
-    },
+    paint: { "text-color": fondo, "text-opacity": ["get", "opacidad"] },
   });
 }
 
@@ -179,7 +183,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
       [x - RADIO_TOQUE, y - RADIO_TOQUE],
       [x + RADIO_TOQUE, y + RADIO_TOQUE],
     ],
-    { layers: [CAPA_PUNTOS, CAPA_NOMBRES] },
+    { layers: [CAPA_PUNTOS, CAPA_NOMBRES, CAPA_NOMBRE_ELEGIDO] },
   );
   let mejor: { id: string; d: number } | null = null;
   for (const f of cerca) {
@@ -194,13 +198,15 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
 }
 
 /**
- * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
+ * Mapa de los lugares, llenando la caja donde se pone (acuerdo del council: "un solo renderer de mapa" para Lugares).
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS }: Props) {
+export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
+  /** Lo que las capas leen de cada lugar, tal como se calculó la última vez (el pulso toma de aquí el tamaño y el color del elegido). */
+  const pinesRef = useRef<Map<string, PropiedadesLugar>>(new Map());
   const yoRef = useRef<Marker | null>(null);
   const onPinRef = useRef(onPin);
   useEffect(() => {
@@ -211,11 +217,6 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
   useEffect(() => {
     tapaRef.current = tapaAbajo;
   }, [tapaAbajo]);
-  const pinElegirRef = useRef<Marker | null>(null);
-  const onCambioRef = useRef(onCambio);
-  useEffect(() => {
-    onCambioRef.current = onCambio;
-  }, [onCambio]);
   const router = useRouter();
   const routerRef = useRef(router);
   useEffect(() => {
@@ -234,18 +235,17 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
       mapboxgl.accessToken = mapboxToken;
-      const inicio = centrarEn ?? valor ?? ciudad.centro;
       mapa = new mapboxgl.Map({
         container: nodo,
         style: mapboxStyle,
-        center: [inicio.lng, inicio.lat],
-        zoom: centrarEn || valor ? 16 : ciudad.zoom,
+        center: [ciudad.centro.lng, ciudad.centro.lat],
+        zoom: ciudad.zoom,
         language: "es",
         attributionControl: false,
-        logoPosition: modo === "ver" ? "top-left" : "bottom-left", // abajo, en "ver", va la hoja de Lugares
+        logoPosition: "top-left", // abajo va la hoja de Lugares
       });
       mapaRef.current = mapa;
-      mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), modo === "ver" ? "top-left" : "bottom-right");
+      mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), "top-left");
       mapa.on("style.load", () => {
         const importaStandard = mapa?.getStyle()?.imports?.some((i) => i.id === "basemap");
         if (importaStandard) mapa?.setConfigProperty("basemap", "lightPreset", "day");
@@ -255,22 +255,18 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
         console.error("Mapbox:", e.error);
         setEstado((actual) => (actual === "listo" ? actual : "error"));
       });
-      if (modo === "elegir") {
-        mapa.on("click", (e) => onCambioRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
-      } else {
-        // Tocar un lugar abre su ficha; tocar fuera no hace nada.
-        mapa.on("click", (e) => {
-          const id = mapa ? lugarTocado(mapa, e) : null;
-          const lugar = id ? lugaresRef.current.get(id) : undefined;
-          if (!lugar) return;
-          if (onPinRef.current) onPinRef.current(lugar);
-          else routerRef.current.push(hrefLugar(lugar));
-        });
-        // Con ratón, la mano sobre un lugar.
-        mapa.on("mousemove", (e) => {
-          if (mapa) mapa.getCanvas().style.cursor = lugarTocado(mapa, e) ? "pointer" : "";
-        });
-      }
+      // Tocar un lugar abre su ficha; tocar fuera no hace nada.
+      mapa.on("click", (e) => {
+        const id = mapa ? lugarTocado(mapa, e) : null;
+        const lugar = id ? lugaresRef.current.get(id) : undefined;
+        if (!lugar) return;
+        if (onPinRef.current) onPinRef.current(lugar);
+        else routerRef.current.push(hrefLugar(lugar));
+      });
+      // Con ratón, la mano sobre un lugar.
+      mapa.on("mousemove", (e) => {
+        if (mapa) mapa.getCanvas().style.cursor = lugarTocado(mapa, e) ? "pointer" : "";
+      });
     });
 
     return () => {
@@ -282,12 +278,12 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Lugares (modo ver): capas de círculo, día y nombre; se crean una vez y luego solo cambian los datos.
+  // Lugares: las capas se crean una vez y luego solo cambian los datos, también cuando se abre o se cierra una ficha (`elegido`).
   // El encuadre inicial ya no lo decide el mapa (antes: ajustar a todos los lugares): lo decide quien llama
   // (docs/rediseno/35, "Cómo se decide el encuadre") con el primer valor de `encuadre`.
   useEffect(() => {
     const mapa = mapaRef.current;
-    if (estado !== "listo" || !mapa || modo !== "ver") return;
+    if (estado !== "listo" || !mapa) return;
     lugaresRef.current = new Map(lugares.map((l) => [l.id, l]));
     const suave = colorDiseno("--texto-suave", "#5c5c5c"); // los privados (solo los ve el admin) van en gris
     const tinta = colorDiseno("--texto", "#1a1a1a");
@@ -299,20 +295,20 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     const destacadoTexto = colorDiseno("--destacado-texto", "#a94400");
     const coloresPunto: ColoresPin = { tinta, primario, destacado: destacadoColor, seguido: seguidoColor, privado: suave };
     const coloresTexto: ColoresPin = { tinta, primario, destacado: destacadoTexto, seguido: seguidoColor, privado: suave };
-    const datos = aGeoJSON(lugares, seguidos, destacados, coloresPunto, coloresTexto);
+    const datos = aGeoJSON(lugares, seguidos, destacados, elegido, coloresPunto, coloresTexto);
+    pinesRef.current = new Map(datos.features.map((f) => [f.properties.id, f.properties]));
     const fuente = mapa.getSource(FUENTE_LUGARES) as GeoJSONSource | undefined;
     if (fuente) fuente.setData(datos);
     else agregarCapas(mapa, datos);
-  }, [estado, modo, lugares, seguidos, destacados]);
+  }, [estado, lugares, seguidos, destacados, elegido]);
 
   // Los puntos a encuadrar: uno solo, el mapa se acerca (dejando libre lo que tapa la hoja); varios, se encuadran. Sirve
   // para lo que encontró la búsqueda, el encuadre inicial (lugares de la semana y destacados) y "cercanos" (la
   // persona y los cinco lugares más próximos): quien llama decide qué puntos manda (docs/rediseno/35).
   useEffect(() => {
     const mapa = mapaRef.current;
-    if (estado !== "listo" || !mapa || modo !== "ver" || !encuadre || encuadre.puntos.length === 0) return;
-    const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const duration = sinMovimiento ? 0 : 600;
+    if (estado !== "listo" || !mapa || !encuadre || encuadre.puntos.length === 0) return;
+    const duration = sinMovimiento() ? 0 : 600;
     if (encuadre.puntos.length === 1) {
       const p = encuadre.puntos[0];
       mapa.flyTo({ center: [p.lng, p.lat], zoom: Math.max(mapa.getZoom(), 15), padding: { bottom: tapaRef.current }, duration });
@@ -330,18 +326,34 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     return () => {
       cancelado = true;
     };
-  }, [estado, modo, encuadre]);
+  }, [estado, encuadre]);
 
-  // El lugar de la ficha abierta se ve más grande.
+  // Un pulso al elegir un lugar: un anillo que sale de su pin, se abre y se apaga en medio segundo (`.pulso`). Con movimiento reducido, nada.
+  // Para retirarlo: borrar este bloque, `pinesRef` y `.pulso` del CSS.
   useEffect(() => {
     const mapa = mapaRef.current;
-    if (estado !== "listo" || !mapa || !mapa.getSource(FUENTE_LUGARES)) return;
-    mapa.removeFeatureState({ source: FUENTE_LUGARES });
-    if (elegido) mapa.setFeatureState({ source: FUENTE_LUGARES, id: elegido }, { elegido: true });
-  }, [elegido, lugares, estado]);
+    const pin = elegido ? pinesRef.current.get(elegido) : undefined;
+    const lugar = elegido ? lugaresRef.current.get(elegido) : undefined;
+    if (estado !== "listo" || !mapa || !pin || !lugar || sinMovimiento()) return;
+    let cancelado = false;
+    let anillo: Marker | undefined;
+    import("mapbox-gl").then(({ default: mapboxgl }) => {
+      if (cancelado) return;
+      const el = document.createElement("span");
+      el.className = styles.pulso;
+      el.style.setProperty("--pulso-lado", `${pin.huella * 2}px`);
+      el.style.setProperty("--pulso-color", pin.colorPunto);
+      el.addEventListener("animationend", () => anillo?.remove(), { once: true });
+      anillo = new mapboxgl.Marker({ element: el }).setLngLat([lugar.lng, lugar.lat]).addTo(mapa);
+    });
+    return () => {
+      cancelado = true;
+      anillo?.remove();
+    };
+  }, [estado, elegido]);
 
-  // La persona en el mapa: punto azul con halo. Ya no centra por su cuenta (antes lo hacía en "ver"): quien llama
-  // decide la cámara con `encuadre` (en "ver", junto a los lugares cercanos; en "elegir", el pin manda).
+  // La persona en el mapa: punto azul con halo. No centra por su cuenta: quien llama decide la cámara con `encuadre`
+  // (junto a los lugares cercanos).
   useEffect(() => {
     const mapa = mapaRef.current;
     if (estado !== "listo" || !mapa) return;
@@ -367,41 +379,8 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     };
   }, [estado, ubicacion]);
 
-  // Pin que se arrastra (modo elegir).
-  useEffect(() => {
-    const mapa = mapaRef.current;
-    if (estado !== "listo" || !mapa || modo !== "elegir") return;
-    if (!valor) {
-      pinElegirRef.current?.remove();
-      pinElegirRef.current = null;
-      return;
-    }
-    let cancelado = false;
-    import("mapbox-gl").then(({ default: mapboxgl }) => {
-      if (cancelado) return;
-      if (!pinElegirRef.current) {
-        const pin = new mapboxgl.Marker({ color: COLOR_PIN, draggable: true }).setLngLat([valor.lng, valor.lat]).addTo(mapa);
-        pin.on("dragend", () => {
-          const p = pin.getLngLat();
-          onCambioRef.current?.({ lat: p.lat, lng: p.lng });
-        });
-        pinElegirRef.current = pin;
-        mapa.flyTo({ center: [valor.lng, valor.lat], zoom: Math.max(mapa.getZoom(), 16), duration: 600 });
-      } else {
-        const actual = pinElegirRef.current.getLngLat();
-        if (Math.abs(actual.lat - valor.lat) > 1e-7 || Math.abs(actual.lng - valor.lng) > 1e-7) {
-          pinElegirRef.current.setLngLat([valor.lng, valor.lat]);
-          mapa.flyTo({ center: [valor.lng, valor.lat], zoom: Math.max(mapa.getZoom(), 16), duration: 600 });
-        }
-      }
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, [estado, modo, valor]);
-
   return (
-    <div className={modo !== "ver" ? styles.mapaEmbebido : styles.mapa} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
+    <div className={styles.mapa} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
       <div ref={contenedor} className={styles.lienzo} />
       {estado !== "listo" && (
         <p className={styles.aviso} role="status">
@@ -409,9 +388,6 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
           {estado === "sin-token" && "Falta el token de Mapbox (NEXT_PUBLIC_MAPBOX_TOKEN)."}
           {estado === "error" && "No se pudo cargar el mapa. Revisa el token de Mapbox."}
         </p>
-      )}
-      {modo === "elegir" && onCambio && estado === "listo" && (
-        <p className={styles.pista}>{valor ? "Arrastra el pin o toca el mapa para ajustar." : "Toca el mapa donde está el lugar."}</p>
       )}
     </div>
   );
