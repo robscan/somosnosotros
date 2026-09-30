@@ -382,10 +382,18 @@
     display: none;
   }
 }
+/* La página de formulario o de tarea sobre el tono del contenido: la misma rejilla que `.pagina` de globals.css (el aire, la columna y
+   el aire; la barra interior ocupa las tres), con más aire abajo. */
 .pagina {
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
+  align-content: start;
   min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding: 0 var(--gutter) calc(var(--espacio-8) + var(--piso));
+  padding-bottom: calc(var(--espacio-8) + var(--piso));
   background: var(--fondo-contenido);
+}
+:where(.pagina) > * {
+  grid-column: 2;
 }
 
 /* El menú «···» de una ficha (dentro de la hoja): sus filas son las de Ajustes (ui/Renglon), en su tarjeta */

@@ -28,7 +28,7 @@ beforeEach(() => {
   m.insert.mockReturnValue({ select: () => ({ single: () => Promise.resolve({ data: { id: LUGAR_ID, slug: "casa-de-cultura" }, error: null }) }) });
 });
 
-const datos = { nombre: "Casa de Cultura del Barrio", direccion: "Universidad 165, Barrio de Tlaxcala", lat: 22.15, lng: -100.97, ciudad: "San Luis Potosí", volverA: "/eventos/nuevo", privado: false };
+const datos = { nombre: "Casa de Cultura del Barrio", direccion: "Universidad 165, Barrio de Tlaxcala", lat: 22.15, lng: -100.97, ciudad: "San Luis Potosí", volverA: "/nuevo", privado: false };
 
 describe("crearLugarDesdeEvento (OL-173, panel Agregar lugar)", () => {
   it("registra el lugar y deduce el tipo del nombre (sin pedirlo en el panel corto)", async () => {

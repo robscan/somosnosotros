@@ -4,14 +4,21 @@
    componentes de perfil (Editar, Perfil, Avisos) con esa piel. */
 .titulo {
   font-size: var(--letra-2xl);
-  margin: var(--espacio-3) 0 var(--espacio-4);
+  margin: 0 0 var(--espacio-4);
 }
 .ajustes {
   display: grid;
-  gap: var(--espacio-5);
+  gap: var(--espacio-2);
+}
+/* El aire entre grupos lo pone quien abre uno (su rótulo, o lo suelto del final: borrar la cuenta): 8 de la rejilla y 12 suyos son
+   los 20 de siempre; entre un rótulo y su tarjeta quedan solo los 8. */
+.ajustes > :is(h2, button) {
+  margin-top: var(--espacio-3);
+}
+.ajustes > h2:first-child {
+  margin-top: 0;
 }
 .ajustes > h2 {
-  margin-bottom: calc(-1 * var(--espacio-5) + var(--espacio-2));
   padding-left: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-xs);

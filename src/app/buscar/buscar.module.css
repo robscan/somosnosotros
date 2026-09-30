@@ -78,3 +78,11 @@
   padding: var(--espacio-5) var(--gutter);
   color: var(--texto-suave);
 }
+/* «Nada con …»: el aviso y, con sesión, la salida de registrar lo que se buscó. */
+.vacio {
+  display: grid;
+  justify-items: start;
+  gap: var(--espacio-3);
+  padding: var(--espacio-5) var(--gutter);
+  color: var(--texto-suave);
+}

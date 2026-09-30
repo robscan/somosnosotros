@@ -24,7 +24,7 @@ export type Vista = "raiz" | "ficha" | "tarea" | "completa";
 export const CARRIL = "(min-width: 792px)";
 
 const RAICES: readonly string[] = ["/", "/agenda", "/lugares", "/artistas", "/perfil", "/borrado"];
-/** Las secciones cuyo `/:id` es una ficha (`/eventos/nuevo` no: es un alta). */
+/** Las secciones cuyo `/:id` es una ficha. */
 const FICHAS: readonly string[] = ["eventos", "lugares", "artistas", "personas"];
 
 /** La vista de una ruta (`usePathname`, sin consulta). Lo que no es raíz, ficha ni pantalla completa es una tarea. */
@@ -32,7 +32,7 @@ export function vistaDeRuta(ruta: string): Vista {
   if (RAICES.includes(ruta)) return "raiz";
   const [seccion, id, ...resto] = ruta.split("/").filter(Boolean);
   if (seccion === "obra" || (seccion === "artistas" && resto.join("/") === "letrero")) return "completa";
-  if (FICHAS.includes(seccion) && id && id !== "nuevo" && resto.length === 0) return "ficha";
+  if (FICHAS.includes(seccion) && id && resto.length === 0) return "ficha";
   return "tarea";
 }
 
@@ -56,20 +56,35 @@ export function altaDeRuta(ruta: string): Alta {
   return "evento";
 }
 
-const ALTAS: Record<Alta, { href: string; etiqueta: string; conCiudad: boolean }> = {
-  evento: { href: "/eventos/nuevo", etiqueta: "Publicar un evento", conCiudad: true },
-  lugar: { href: "/lugares/nuevo", etiqueta: "Registrar un lugar", conCiudad: false },
-  artista: { href: "/artistas/nuevo", etiqueta: "Registrar un artista", conCiudad: true },
+/** El tipo con el que abre la pantalla de alta (`?tipo=`): lo que no es un tipo conocido es un evento. */
+export function altaDeParametro(valor: string | undefined): Alta {
+  return valor === "lugar" || valor === "artista" ? valor : "evento";
+}
+
+/** `etiqueta`: cómo se llama el «+» para quien no lo ve; `titulo`: el de la pantalla de alta. */
+const ALTAS: Record<Alta, { etiqueta: string; titulo: string; conCiudad: boolean }> = {
+  evento: { etiqueta: "Publicar un evento", titulo: "Publicar un evento", conCiudad: true },
+  lugar: { etiqueta: "Registrar un lugar", titulo: "Registrar un lugar", conCiudad: false },
+  artista: { etiqueta: "Registrar un artista", titulo: "Registrar artista", conCiudad: true },
 };
 
+/** El título de la pantalla de alta de cada tipo. */
+export function tituloDeAlta(alta: Alta): string {
+  return ALTAS[alta].titulo;
+}
+
 /**
- * A dónde lleva el «+» y cómo se llama para quien no lo ve. Con la ciudad que se está viendo (`?ciudad=`), el evento y
- * el artista empiezan ahí (bitácoras 051, 053 y OL-100); el lugar se ubica por su dirección y no la lleva. Con o sin
- * sesión lleva al alta: la sesión se pide después, con el valor por delante.
+ * A dónde lleva el «+» y cómo se llama para quien no lo ve: a la pantalla de alta, con el tipo de la sección en que se
+ * está (`altaDeRuta`). Con la ciudad que se está viendo (`?ciudad=`), el evento y el artista empiezan ahí (bitácoras 051, 053
+ * y OL-100); el lugar se ubica por su dirección y no la lleva. Con el `nombre` de lo que se buscó y no se encontró (Buscar), el
+ * alta abre con él ya puesto. Con o sin sesión lleva al alta: la sesión se pide después, con el valor por delante.
  */
-export function enlaceDeAlta(alta: Alta, ciudad: string | null): { href: string; etiqueta: string } {
-  const { href, etiqueta, conCiudad } = ALTAS[alta];
-  return { href: conCiudad && ciudad ? `${href}?ciudad=${encodeURIComponent(ciudad)}` : href, etiqueta };
+export function enlaceDeAlta(alta: Alta, ciudad: string | null, nombre: string | null = null): { href: string; etiqueta: string } {
+  const { etiqueta, conCiudad } = ALTAS[alta];
+  const consulta = new URLSearchParams({ tipo: alta });
+  if (conCiudad && ciudad) consulta.set("ciudad", ciudad);
+  if (nombre) consulta.set("nombre", nombre);
+  return { href: `/nuevo?${consulta}`, etiqueta };
 }
 
 /**

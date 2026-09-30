@@ -25,7 +25,7 @@
 }
 
 /* La persona: punto azul con halo (mismo dibujo que Mapa.module.css, copiado aquí para no tocar Mapa.tsx mientras
-   OL-174 sigue en vuelo con ese archivo; ver la nota en HojaDondeEs.tsx). */
+   OL-174 sigue en vuelo con ese archivo; ver la nota en HojaDonde.tsx). */
 .yo {
   display: grid;
   place-items: center;

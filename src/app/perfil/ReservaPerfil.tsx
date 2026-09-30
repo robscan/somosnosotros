@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Hoja from "@/components/ui/Hoja";
-import { IconoChevronDerecha, IconoOjo } from "@/components/ui/Iconos";
+import { IconoChevronDerecha, IconoOjo, IconoOjoTachado } from "@/components/ui/Iconos";
 import Palanca from "@/components/ui/Palanca";
 import renglon from "@/components/ui/Renglon.module.css";
 import { elegirReserva } from "./acciones";
@@ -49,8 +49,9 @@ export default function ReservaPerfil({ reservado: inicial }: { reservado: boole
         <Hoja etiqueta="Perfil" onCerrar={cerrar}>
           <h3>Perfil</h3>
           <p>Se guarda al tocar.</p>
-          <div className={styles.interruptor}>
-            Reservado
+          <div className={`${renglon.ajuste} ${renglon.sola}`}>
+            <IconoOjoTachado width={20} height={20} />
+            <b>Reservado</b>
             <small>Tu ficha muestra solo nombre, foto y colonia. En “quién va” cuentas en el número, sin nombre ni foto. Sigues recibiendo avisos.</small>
             <Palanca encendida={reservado} aria-label="Perfil reservado" onClick={cambiar} disabled={trabajando} />
           </div>

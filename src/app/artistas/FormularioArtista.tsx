@@ -6,6 +6,7 @@ import { useAbrirConError } from "@/components/ui/abrirConError";
 import { useTerminar } from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
 import BotonIcono, { claseBotonIcono } from "@/components/ui/BotonIcono";
+import BotonPublicar from "@/components/ui/BotonPublicar";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
@@ -19,9 +20,9 @@ import SelectorEnlaces from "@/components/SelectorEnlaces";
 import { alElegirDisciplina, alElegirSubcategoria, alQuitarDisciplina, artistaIgual, deducirDisciplina, deducirTipoArtista, DISCIPLINAS, etiquetaArtista, etiquetaDisciplina, etiquetaTipoArtista, hrefArtista, LIMITES_ARTISTA, pasoQueHace, preguntaSubcategoria, subcategoriaParecida, TIPOS_ARTISTA, type Artista, type ArtistaResumen, type Disciplina, type Subcategoria, type TipoArtista } from "@/lib/artistas";
 import type { CiudadConArtistas } from "@/lib/ciudad";
 import { normalizarRedes } from "@/lib/enlaces";
+import { faltaEnArtista } from "@/lib/formulario";
 import { normalizarNombre } from "@/lib/lugares";
 import { quitarGuardia } from "@/lib/guardiaSalida";
-import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import { subirFoto } from "@/lib/subirFoto";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
@@ -44,6 +45,10 @@ type Props = {
   ciudadInicial: string;
   /** Las ciudades que ya tienen artistas: las primeras opciones de la hoja Ciudad. */
   ciudades: CiudadConArtistas[];
+  /** El campo del nombre toma el foco al abrir (el alta lo pide solo si es lo primero que se ve). */
+  autoFocus?: boolean;
+  /** La pantalla de alta tiene tres formularios y solo se ve el del tipo elegido: los otros siguen ahí, escondidos, con lo escrito. */
+  oculta?: boolean;
 };
 /** Lo que trae la búsqueda por nombre: el artista con su ciudad (el mismo nombre en otra ciudad es otro artista). */
 type Candidato = ArtistaResumen & { ciudad: string };
@@ -58,7 +63,7 @@ type Abierta = "hace" | "es" | "ciudad" | null;
  * dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón que falta (founder, 2026-09-21: canon
  * ampliado para todos los formularios, docs/rediseno/26).
  */
-export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false, ciudadInicial, ciudades }: Props) {
+export default function FormularioArtista({ accion, artista, usuarioId, nombreInicial, esAdmin = false, ciudadInicial, ciudades, autoFocus = false, oculta = false }: Props) {
   const esAlta = !artista;
   const [resultado, enviar, enviando] = useActionState<ResultadoArtista | null, FormData>(accion, null);
   // Guardado (al editar): la tarea termina sin quedarse en el historial; mientras vuelve, el botón sigue ocupado.
@@ -87,11 +92,9 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   // "Otra…" abre el texto libre aunque ya haya chips de subcategoría; sin subcategorías conocidas, va directo al texto.
   // Al editar una ficha que ya trae detalle, empieza abierto: es lo que ya se ve al llegar, se elija o no un chip después.
   const [otraAbierta, setOtraAbierta] = useState(!esAlta && !!artista?.detalle);
-  // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
   useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces);
-  const hojaSalir = useSalirSinPublicar(formRef, esAlta);
   // "Ya está registrado" flota sobre el layout, anclado al campo del nombre (ui/ListaFlotante), y solo vive
   // mientras el campo tiene el foco: al salir se cierra solo y, si sigue habiendo coincidencia, queda una línea de
   // ayuda bajo el campo — un panel que tapa el siguiente renglón sin poder cerrarlo es peor que uno que empuja
@@ -151,8 +154,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   // Un artista es un artista en su ciudad (decisión 5 de 08 y la base): con otra ciudad, el mismo nombre es otro artista.
   const existente = artistaIgual(candidatos.filter((a) => a.ciudad === ciudad), nombre);
   const repetido = existente ?? (coincide(existenteServidor) ? existenteServidor : null);
-  const faltaNombre = !hayNombre;
-  const listo = !faltaNombre && !repetido;
+  // Lo único que dice qué falta es la nota bajo el botón (doc 50, H-29 y H-32).
+  const falta = faltaEnArtista({ nombre, repetido: !!repetido });
   const valorHace = disciplina ? `${etiquetaDisciplina(disciplina)}${detalle.trim() ? ` · ${detalle.trim()}` : ""}` : "Por el nombre";
   const avisoRepetidoAbierto = enfocadoNombre && !!repetido;
 
@@ -160,7 +163,9 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
     <>
     <form
       ref={formRef}
+      hidden={oculta}
       action={(fd) => {
+        if (falta) return;
         quitarGuardia();
         enviar(fd);
       }}
@@ -182,7 +187,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           aria-invalid={!!errores.nombre}
           autoComplete="off"
           autoCapitalize="words"
-          autoFocus={esAlta}
+          autoFocus={autoFocus}
           required
           role="combobox"
           aria-expanded={avisoRepetidoAbierto}
@@ -196,9 +201,6 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
         <p className={canon.error} role="alert">
           {errores.nombre}
         </p>
-      ) : faltaNombre ? (
-        // La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios).
-        <p className={renglon.nota}>Falta el nombre.</p>
       ) : (
         // Con el campo sin foco, si sigue habiendo un repetido queda esta línea en vez del panel flotante: el
         // panel tapaba Qué hace sin poder cerrarse (revisión del gestor, 2026-09-21).
@@ -462,13 +464,11 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           {resultado.general}
         </p>
       )}
-      {/* El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón (founder, 2026-09-21). */}
-      <Boton type="submit" disabled={enviando || terminado || subiendo || !listo}>
+      <BotonPublicar id="falta-artista" falta={falta} ocupado={enviando || terminado || subiendo}>
         {enviando || terminado ? "Guardando…" : artista ? "Guardar cambios" : "Publicar artista"}
-      </Boton>
+      </BotonPublicar>
     </form>
     {abierta === "ciudad" && <HojaCiudad ciudad={ciudad} ciudades={ciudades} onElegir={setCiudad} onCerrar={() => setAbierta(null)} />}
-    {hojaSalir}
     </>
   );
 }

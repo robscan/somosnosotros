@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import ChipCiudad from "@/components/Ciudad";
 import { ChipContexto, ChipEnlace, ChipQuitar, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaDisciplina, hrefArtistas, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
+import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
 import { agruparPorLetra, idGrupo } from "@/lib/indice";
 import RenglonArtista from "./RenglonArtista";
@@ -68,11 +69,7 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
   // La ciudad viaja en la URL como en la agenda y Lugares (ausente = la inicial, para que el enlace sea limpio).
   const cSlug = ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug;
   const hrefNuevo = (nombre?: string) => {
-    const p = new URLSearchParams();
-    if (cSlug) p.set("ciudad", cSlug);
-    if (nombre) p.set("nombre", nombre);
-    const s = p.toString();
-    const destino = `/artistas/nuevo${s ? `?${s}` : ""}`;
+    const destino = enlaceDeAlta("artista", cSlug, nombre).href;
     return conSesion ? destino : `/entrar?siguiente=${encodeURIComponent(destino)}`;
   };
   const queHacen = filtro.que ? (detalles.find((x) => x.valor === filtro.que)?.etiqueta ?? filtro.que) : filtro.hace ? etiquetaDisciplina(filtro.hace) : null;

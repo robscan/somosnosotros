@@ -6,31 +6,31 @@ import Boton from "./ui/Boton";
 import Hoja from "./ui/Hoja";
 import styles from "./SalirSinPublicar.module.css";
 
-/** Huella de lo que hay en el formulario, campo por campo (un archivo, por su nombre). */
-function huellaDe(form: HTMLFormElement): string {
-  return [...new FormData(form).entries()].map(([k, v]) => `${k}=${typeof v === "string" ? v : v.name}`).join("&");
+/** Huella de lo que hay en los formularios de la pantalla, campo por campo (un archivo, por su nombre). */
+function huellaDe(pantalla: HTMLElement): string {
+  return [...pantalla.querySelectorAll("form")].map((form) => [...new FormData(form).entries()].map(([k, v]) => `${k}=${typeof v === "string" ? v : v.name}`).join("&")).join("|");
 }
 
 /**
- * Guardia de salida estándar de las tres altas (pedido del founder, 2026-09-16): Atrás o la ✕ preguntan solo si el
- * formulario cambió respecto a cómo se abrió. Se compara campo por campo, no si está vacío: un alta que llega con el
- * lugar o el artista puestos, o un duplicado, no pregunta hasta que se toca algo. `olvidar` corre al confirmar la
- * salida (el borrador del alta de evento). Devuelve la hoja "¿Salir sin publicar?" para pintarla al final del formulario.
+ * Guardia de salida estándar de la pantalla de alta (pedido del founder, 2026-09-16): Atrás o la ✕ preguntan solo si lo escrito
+ * cambió respecto a cómo se abrió. Se compara campo por campo, no si está vacío: un alta que llega con el lugar o el artista
+ * puestos, o un duplicado, no pregunta hasta que se toca algo. Vale para los tres formularios de la pantalla (aunque solo se vea
+ * uno, lo escrito en los otros también cuenta). `olvidar` corre al confirmar la salida (el borrador del alta de evento). Devuelve
+ * la hoja «¿Salir sin publicar?» para pintarla dentro de la pantalla.
  */
-export function useSalirSinPublicar(form: RefObject<HTMLFormElement | null>, activa: boolean, olvidar?: () => void) {
+export function useSalirSinPublicar(pantalla: RefObject<HTMLElement | null>, olvidar?: () => void) {
   const inicial = useRef<string | null>(null);
   const [salida, setSalida] = useState<(() => void) | null>(null);
   useLayoutEffect(() => {
-    if (!activa) return;
-    // La huella se toma en cuanto el formulario está en pantalla, antes de que vuelva un borrador (eso ya cuenta como cambio).
-    if (inicial.current === null && form.current) inicial.current = huellaDe(form.current);
+    // La huella se toma en cuanto los formularios están en pantalla, antes de que vuelva un borrador (eso ya cuenta como cambio).
+    if (inicial.current === null && pantalla.current) inicial.current = huellaDe(pantalla.current);
     const g: Guardia = (continuar) => {
-      if (form.current && huellaDe(form.current) !== inicial.current) setSalida(() => continuar);
+      if (pantalla.current && huellaDe(pantalla.current) !== inicial.current) setSalida(() => continuar);
       else continuar();
     };
     ponerGuardia(g);
     return () => quitarGuardia(g);
-  }, [activa, form]);
+  }, [pantalla]);
   if (!salida) return null;
   const seguir = () => setSalida(null);
   const salir = () => {

@@ -54,7 +54,7 @@ before(async () => {
       const sesion = new URLSearchParams(location.search).get('sesion');
       // Una tarea lleva su propia cabecera interior (la del alta, con su ✕); las demás pantallas de prueba no.
       function Tarea() {
-        return usePathname() === '/eventos/nuevo' ? <Barra cerrar={{ href: '/agenda', texto: 'Agenda' }} /> : null;
+        return usePathname() === '/nuevo' ? <Barra cerrar={{ href: '/agenda', texto: 'Agenda' }} titulo="Publicar un evento" /> : null;
       }
       function App() {
         return (
@@ -140,7 +140,7 @@ const bajar = async (p, y) => {
 
 test("el layout pone data-vista según la ruta: raíz, ficha, tarea o pantalla completa", async (t) => {
   const p = await pagina(t);
-  for (const [ruta, vista] of [["/", "raiz"], ["/agenda", "raiz"], ["/perfil", "raiz"], ["/eventos/concierto", "ficha"], ["/personas/8f1c", "ficha"], ["/eventos/nuevo", "tarea"], ["/ajustes", "tarea"], ["/obra/4d2e/pared", "completa"], ["/artistas/aaron/letrero", "completa"]]) {
+  for (const [ruta, vista] of [["/", "raiz"], ["/agenda", "raiz"], ["/perfil", "raiz"], ["/eventos/concierto", "ficha"], ["/personas/8f1c", "ficha"], ["/nuevo", "tarea"], ["/ajustes", "tarea"], ["/obra/4d2e/pared", "completa"], ["/artistas/aaron/letrero", "completa"]]) {
     await ir(p, ruta);
     assert.equal(await p.locator("[data-vista]").getAttribute("data-vista"), vista, ruta);
   }
@@ -153,7 +153,7 @@ test("teléfono: la raíz lleva la barra (56) y la navegación (60); las demás 
   const n = await caja(nav(p));
   assert.deepEqual([b.y, b.h, n.y, n.h], [0, 56, 784, 60]);
   assert.equal((await caja(cabecera(p))).y, 56, "la fila de contexto va pegada bajo la barra");
-  for (const ruta of ["/eventos/concierto", "/eventos/nuevo", "/obra/4d2e/pared"]) {
+  for (const ruta of ["/eventos/concierto", "/nuevo", "/obra/4d2e/pared"]) {
     await ir(p, ruta);
     assert.equal((await caja(barra(p))).display, "none", `${ruta}: sin barra de la app`);
     assert.equal((await caja(nav(p))).display, "none", `${ruta}: sin navegación`);
@@ -238,7 +238,7 @@ test("desde 792: la barra está en las fichas y las tareas, con Atrás y el men�
   const logo = await caja(barra(p).locator("a[aria-label^='Somos Nosotros']"));
   assert.ok(Math.abs(logo.x + logo.w / 2 - 640) <= 0.5, "el logotipo, al centro de la ventana");
   assert.deepEqual([(await caja(barra(p).locator("a[aria-label='Buscar']"))).x, (await caja(barra(p).locator("a[aria-label='Novedades']"))).x], [lupa, campana], "la lupa y la campana no se mueven cuando llegan Atrás y el menú");
-  await ir(p, "/eventos/nuevo");
+  await ir(p, "/nuevo");
   assert.equal((await caja(barra(p))).display, "grid");
   assert.equal(await barra(p).locator("a[aria-label^='Atrás']").count(), 0, "las tareas no traen Atrás en la barra de la app");
   await ir(p, "/obra/4d2e/pared");
@@ -255,16 +255,23 @@ test("desde 792: en una ficha el logotipo sigue al centro sin sesión y con la l
   }
 });
 
-test("una tarea lleva el logotipo en su cabecera en el teléfono; desde 792 no lo repite: el único es el de la barra de la app", async (t) => {
+test("una tarea lleva su título en el centro de la cabecera y no el logotipo: en el teléfono no hay ninguno; desde 792 el único es el de la barra de la app", async (t) => {
   const logotipos = (p) => p.locator("a[aria-label^='Somos Nosotros']:visible");
+  const titulo = (p) => p.getByRole("heading", { name: "Publicar un evento" });
+  const centro = async (p) => {
+    const c = await caja(titulo(p));
+    return c.x + c.w / 2;
+  };
   const telefono = await pagina(t, 390, 844);
-  await ir(telefono, "/eventos/nuevo");
-  assert.equal(await logotipos(telefono).count(), 1);
-  assert.equal(await barra(telefono).locator("a[aria-label^='Somos Nosotros']:visible").count(), 0, "teléfono: el de la cabecera de la tarea, no el de la barra de la app");
+  await ir(telefono, "/nuevo");
+  assert.equal(await logotipos(telefono).count(), 0, "teléfono: ni el de la barra de la app ni uno en la cabecera de la tarea");
+  assert.ok(Math.abs((await centro(telefono)) - 195) <= 0.5, "teléfono: el título, al centro de la ventana");
+  assert.equal(await telefono.locator("a[aria-label^='Cerrar']:visible").count(), 1, "y la ✕ de la cabecera");
   const escritorio = await pagina(t, 1280, 800);
-  await ir(escritorio, "/eventos/nuevo");
+  await ir(escritorio, "/nuevo");
   assert.equal(await logotipos(escritorio).count(), 1);
   assert.equal(await barra(escritorio).locator("a[aria-label^='Somos Nosotros']:visible").count(), 1, "escritorio: el de la barra de la app");
+  assert.ok(Math.abs((await centro(escritorio)) - (88 + 296 + 300)) <= 0.5, "escritorio: el título, al centro de la columna de 600");
   assert.equal(await escritorio.locator("a[aria-label^='Cerrar']:visible").count(), 1, "y la cabecera de la tarea conserva su ✕");
 });
 
@@ -311,7 +318,7 @@ test("desde 792: el carril no se guarda al bajar, sigue en las fichas y las tare
   await ir(p, "/agenda");
   await bajar(p, 900);
   assert.equal(await p.locator("[data-vista]").getAttribute("data-recogida"), null, "en escritorio nada se recoge");
-  for (const ruta of ["/agenda", "/eventos/concierto", "/eventos/nuevo"]) {
+  for (const ruta of ["/agenda", "/eventos/concierto", "/nuevo"]) {
     await ir(p, ruta);
     const n = await caja(nav(p));
     assert.deepEqual([n.x, n.y, n.w, n.h], [0, 56, 88, 744], `${ruta}: el carril sigue a la vista con la página desplazada`);
@@ -331,7 +338,7 @@ test("el aire de página se mide sobre la pantalla: sin el carril queda centrado
   await p.setViewportSize({ width: 1060, height: 800 });
   assert.deepEqual(await columna(p), [88 + 20, 1060 - 88 - 40], "1060: la columna ancha aún no cabe entera, queda el aire mínimo");
   await p.setViewportSize({ width: 1280, height: 800 });
-  for (const [ruta, esperado] of [["/agenda", [88 + 116, 960]], ["/eventos/concierto", [88 + 116, 960]], ["/eventos/nuevo", [88 + 296, 600]], ["/obra/4d2e/pared", [340, 600]]]) {
+  for (const [ruta, esperado] of [["/agenda", [88 + 116, 960]], ["/eventos/concierto", [88 + 116, 960]], ["/nuevo", [88 + 296, 600]], ["/obra/4d2e/pared", [340, 600]]]) {
     await ir(p, ruta);
     assert.deepEqual(await columna(p), esperado, ruta);
   }

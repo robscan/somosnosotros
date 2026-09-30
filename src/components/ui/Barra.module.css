@@ -1,22 +1,24 @@
 /* Cabecera interior (ui/Barra): blanca, alto mínimo, hijos centrados en vertical. Sin envoltorios: sus hijos son el
-   regreso (o la ✕) y el logotipo. */
+   regreso (o la ✕) y el logotipo (o el título). */
 .barra {
   align-items: center;
   min-height: var(--alto-barra);
   background: var(--fondo);
 }
 
-/* Franja de borde a borde (sale del gutter de la página con margen negativo), pegajosa arriba y con borde; tres
-   columnas para que el logotipo quede siempre al centro, haya regreso o ✕. Pegajosa bajo lo que la barra de la app deje
-   pegado (`--barra-vista`): nada en el teléfono, donde esta cabecera es la única barra; la barra de la app desde 792. */
+/* Franja de borde a borde: ocupa las tres columnas de la página (`.pagina`: el aire, la columna y el aire), sin salirse del aire con
+   un margen negativo; pegajosa arriba y con borde; tres columnas para que lo del centro (el logotipo o el título) quede siempre al
+   centro, haya regreso o ✕. Pegajosa bajo lo que la barra de la app deje pegado (`--barra-vista`): nada en el teléfono, donde esta
+   cabecera es la única barra; la barra de la app desde 792. */
 .interior {
+  grid-column: 1 / -1;
   position: sticky;
   top: var(--barra-vista, 0px);
   z-index: var(--z-pegajoso);
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   gap: var(--espacio-2);
-  margin: 0 calc(-1 * var(--gutter)) var(--espacio-3);
+  margin-bottom: var(--espacio-3);
   padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
   border-bottom: 1px solid var(--borde);
 }
@@ -25,7 +27,7 @@
   justify-self: start;
   min-width: 0;
 }
-/* Alta: sin regreso; el logotipo va a la columna del centro y la ✕ a la derecha, sin hueco vacío en el árbol */
+/* Alta: sin regreso; el título va a la columna del centro y la ✕ a la derecha, sin hueco vacío en el árbol */
 .alta > :first-child {
   grid-column: 2;
   justify-self: center;
@@ -34,8 +36,15 @@
   grid-column: 3;
   justify-self: end;
 }
+.titulo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--letra-md);
+}
 
-/* Desde 792 la barra de la app ya trae la franja de la hora y el logotipo. Una tarea conserva su cabecera, sin repetir el
+/* Desde 792 la barra de la app ya trae la franja de la hora y el logotipo. Una tarea con regreso conserva su cabecera, sin repetir el
    logotipo. */
 @media (min-width: 792px) {
   .interior {

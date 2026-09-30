@@ -15,16 +15,6 @@ export function olvidarBorrador(): void {
   } catch {}
 }
 
-/**
- * El lugar recién registrado desde el alta (OL-055): el alta de lugar vuelve con el historial a la misma alta de evento,
- * sin apilar otra, y el lugar llega por aquí en vez de por la URL.
- */
-export function recordarLugarNuevo(id: string): void {
-  try {
-    sessionStorage.setItem(CLAVE_LUGAR, id);
-  } catch {}
-}
-
 /** El lugar recién registrado, una sola vez (lo consume). */
 export function tomarLugarNuevo(): string | null {
   try {

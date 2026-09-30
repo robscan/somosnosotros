@@ -1,8 +1,9 @@
-/* "¿Dónde es?" a pantalla completa (OL-173, docs/rediseno/43, variante B): el mapa llena todo el hueco entre el
-   campo y el pie; sobre él flotan el resumen del pin, la lista de sugerencias (ui/ListaFlotante, en su propio
-   portal), el panel "Agregar lugar" y la barra de acciones. Mismo patrón de capa fija que CampoLargo.module.css
-   (`.capa`/`.cabecera`), con "‹ Atrás" además de "Listo" (docs/rediseno/39-texto-largo.md más el pedido explícito
-   del founder de una vuelta atrás real, doc 43). */
+/* La hoja «Dónde» (`HojaDonde`; OL-173, docs/rediseno/43, variante B; el punto de un lugar, OL-211): «¿Dónde es?» del alta de
+   evento y «¿Dónde está?» del alta de lugar, una sola pantalla completa. El mapa llena todo el hueco entre el campo y el pie;
+   sobre él flotan el resumen del pin, la lista de sugerencias (ui/ListaFlotante, en su propio portal) y, solo en el evento, el
+   panel «Agregar lugar» y la barra de acciones. Mismo patrón de capa fija que CampoLargo.module.css (`.capa`/`.cabecera`),
+   con «‹ Atrás» además de «Listo» (docs/rediseno/39-texto-largo.md más el pedido explícito del founder de una vuelta atrás
+   real, doc 43). */
 .capa {
   position: fixed;
   inset: 0;
@@ -133,7 +134,8 @@
   box-shadow: var(--sombra);
 }
 
-/* El resumen del pin elegido: nombre (fijo o editable) y dirección, con el aviso si se arrastró. */
+/* El resumen del pin elegido: en un evento, el nombre (fijo o editable) y la dirección; en un lugar, solo la dirección (el nombre vive
+   en el formulario de fuera). Con el aviso si se arrastró o si ya existe uno cerca. */
 .resumen {
   position: absolute;
   left: var(--gutter);
@@ -187,6 +189,10 @@
   font-weight: 700;
   color: var(--primario);
 }
+.notaAjuste a {
+  color: var(--primario);
+  text-decoration: underline;
+}
 
 /* Las filas de la lista flotante (dentro de ui/ListaFlotante): reutiliza ui/Sugerencia.module.css; aquí solo lo
    que no cubre (avisos y el separador entre lugares y lo de Mapbox). */
@@ -208,9 +214,9 @@
   margin-bottom: 2px;
 }
 
-/* Marca chica "Privado" junto al nombre, en la lista flotante (OL-179): un lugar propio entre las sugerencias que
-   nadie más ve. Sin icono de candado en el canon (ui/Iconos): texto solo, como pide el encargo. */
-.marcaPrivado {
+/* Marca chica junto al nombre, en la lista flotante: «Privado» (OL-179: un lugar propio entre las sugerencias que nadie más
+   ve) en el evento, «Ya existe» (OL-211: un lugar que esta hoja no deja elegir) en el lugar. */
+.marca {
   margin-left: 6px;
   padding: 1px 6px;
   border-radius: var(--radio-pildora);
@@ -284,7 +290,7 @@
     top 120ms ease;
 }
 /* Con las sugerencias de dirección abiertas y sin sitio abajo del campo (pegado sobre el teclado): la hoja se
-   estira hacia arriba y se hace desplazable por dentro; un efecto en HojaDondeEs.tsx pone el scroll para que el
+   estira hacia arriba y se hace desplazable por dentro; un efecto en HojaDonde.tsx pone el scroll para que el
    campo "Dirección" quede arriba del todo -así la lista SIEMPRE abre debajo del campo en uso, nunca encima
    (regla dura del founder, 2026-09-24: "si sugieres algo sea debajo del campo que estoy usando"). */
 .hojaAgregar.expandida {
@@ -371,28 +377,9 @@
   font-size: max(16px, var(--letra-md));
   color: var(--texto);
 }
-.filaPrivado {
-  display: flex;
-  align-items: center;
-  gap: var(--espacio-3);
+/* «Es un lugar privado»: una fila de palanca suelta (la piel `ajuste sola` de ui/Renglon); aquí solo su sitio en la hoja. */
+.privado {
   margin: var(--espacio-1) 0 var(--espacio-4);
-  padding: var(--espacio-3);
-  border-radius: var(--radio);
-  background: var(--fondo-suave);
-}
-.textoPrivado {
-  flex: 1;
-  min-width: 0;
-}
-.textoPrivado b {
-  display: block;
-  font-size: var(--letra-sm);
-  font-weight: 600;
-}
-.textoPrivado small {
-  display: block;
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
 }
 .notaError {
   margin-bottom: var(--espacio-2);

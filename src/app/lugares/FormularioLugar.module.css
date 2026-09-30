@@ -3,12 +3,8 @@
    1. Sugerencias de Mapbox y "ya existe" (ui/ListaFlotante) · 2. Más: portada e interruptor del administrador · 3. Parecidos
    ========================================================================== */
 
-.formulario {
-  display: block;
-}
-
 /* 1. "Buscando…" o "Trayendo la ubicación…", dentro de la lista flotante (ui/ListaFlotante): no es una opción,
-   solo texto (mismo patrón que HojaDondeEs.module.css). Las sugerencias y "ya existe" flotan sobre el layout, sin
+   solo texto (mismo patrón que HojaDonde.module.css). Las sugerencias y "ya existe" flotan sobre el layout, sin
    empujar Dónde, Tipo, Más ni el botón, mientras el campo del nombre tiene el foco (founder, producción,
    2026-09-21; revisión del gestor, 2026-09-21: el panel solo vive con el foco puesto). */
 .avisoFlotante {
@@ -31,7 +27,7 @@
   align-items: baseline;
   gap: var(--espacio-1);
   padding-top: var(--espacio-2);
-  /* Pegada al campo (mismo padding-top que renglon.nota, "Falta el nombre."); abajo, la separación normal
+  /* Pegada al campo (mismo padding-top que renglon.nota); abajo, la separación normal
      entre renglones (renglon.renglones usa var(--espacio-2) de gap) — antes tocaba el renglón de abajo sin espacio
      (revisión del gestor, 2026-09-21). */
   margin-bottom: var(--espacio-2);

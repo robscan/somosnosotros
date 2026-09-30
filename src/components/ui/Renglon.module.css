@@ -7,7 +7,7 @@
    1. La rejilla · 2. Lista: foto, título, meta y botón · 3. Dato: lo que dice una ficha · 4. Ajuste: una fila de
    Ajustes · 5. Resuelto: una fila de alta o de edición
    Estados: reposo; pulsado (la app entera, y la fila entera en la lista); elegido (`aria-current`, en la lista: todavía
-   nadie lo pone); pendiente y abierto (un resuelto); apagado (un ajuste sin acción posible).
+   nadie lo pone); pendiente y abierto (un resuelto); apagado (un ajuste sin acción posible); suelto (un ajuste sin tarjeta).
    ========================================================================== */
 
 /* 1. La rejilla. `.frente` es el enlace de una lista: lleva lo mismo que los demás, sin la columna de la acción. */
@@ -258,6 +258,11 @@
   gap: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+}
+/* Suelta: una fila de palanca en una hoja o en una página, sin tarjeta de filas alrededor. Sin el aire de los lados, que ya lo
+   pone quien la aloja. */
+.sola {
+  padding-inline: 0;
 }
 /* Sin acción posible aquí (dice por qué en su detalle): la etiqueta, en gris. */
 .apagado > b {

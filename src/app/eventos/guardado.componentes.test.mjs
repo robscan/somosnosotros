@@ -17,8 +17,7 @@ let dir, server, browser, origin;
 const mocks = {
   "./acciones": "export async function zonaDelPunto(){return 'America/Mexico_City'} export async function cupoDeCartel(){return null} export async function pedirMasLecturas(){return {ok:false}} export async function leerCartelAccion(){throw Error('No usar OCR')}",
   "@/components/ui/Atras": "export function useTerminar(){return (url)=>{window.qa.terminado=url}}",
-  "@/components/SalirSinPublicar": "export function useSalirSinPublicar(){return null}",
-  "./HojaDondeEs": "export default function C(){return null}",
+  "@/components/HojaDonde": "export default function C(){return null}",
   "./SelectorCuando": "export default function C(){return null}",
   "./SelectorQuien": "export default function C(){return null}",
   "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){return React.createElement('a',p)}",

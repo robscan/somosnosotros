@@ -78,6 +78,10 @@ describe("limpiarUrlAnalitica", () => {
       expect(limpiarUrlAnalitica("/lugares?ciudad=SLP")).toBe("https://somosnosotros.org/lugares");
     });
 
+    it("remueve el nombre que se buscó y se llevó al alta", () => {
+      expect(limpiarUrlAnalitica("/nuevo?tipo=artista&nombre=Los%20Vecinos")).toBe("https://somosnosotros.org/nuevo?tipo=artista");
+    });
+
     it("remueve múltiples parámetros privados", () => {
       expect(limpiarUrlAnalitica("/lugares?q=danza&ciudad=monterrey")).toBe(
         "https://somosnosotros.org/lugares"

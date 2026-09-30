@@ -15,6 +15,7 @@ import Cabecera from "@/components/ui/Cabecera";
 import { EsqueletoCaja } from "@/components/ui/Esqueleto";
 import { IconoUbicacion } from "@/components/ui/Iconos";
 import comun from "@/components/Lista.module.css";
+import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
 import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
@@ -23,6 +24,9 @@ import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
 import HojaLugares, { type DondeEstaba, type EstadoHoja } from "./HojaLugares";
 import styles from "./lugares.module.css";
+
+/** A dónde lleva «Registrar un lugar» cuando la ciudad no tiene ninguno. */
+const ALTA_DE_LUGAR = enlaceDeAlta("lugar", null).href;
 
 type Punto = { lat: number; lng: number };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
@@ -332,7 +336,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           <section className={comun.vacio}>
             <h2>Lugares</h2>
             <p>Aún no hay lugares en {ciudad.nombre}. Registra el primero.</p>
-            <Boton href={extra.conSesion ? "/lugares/nuevo" : "/entrar?siguiente=/lugares/nuevo"} variante="secundario">
+            <Boton href={extra.conSesion ? ALTA_DE_LUGAR : `/entrar?siguiente=${encodeURIComponent(ALTA_DE_LUGAR)}`} variante="secundario">
               Registrar un lugar
             </Boton>
           </section>

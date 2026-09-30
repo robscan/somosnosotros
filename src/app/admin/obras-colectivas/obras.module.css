@@ -11,7 +11,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--espacio-3);
-  margin-bottom: var(--espacio-4);
   padding: var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
@@ -59,7 +58,7 @@
 .datos {
   display: grid;
   gap: var(--espacio-2);
-  margin: var(--espacio-3) 0;
+  margin: var(--espacio-2) 0 var(--espacio-3);
 }
 .dato {
   display: flex;
@@ -267,29 +266,3 @@
   line-height: 1.4;
 }
 
-/* Interruptor «Pincel apagado» (OL-121): mismo dibujo de fila que .campoCupo, con la `Palanca` a la derecha. */
-.interruptorPincel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--espacio-3);
-  padding: 14px;
-  margin-top: var(--espacio-2);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-}
-.interruptorPincel > div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-.interruptorPincel b {
-  font-weight: 600;
-  font-size: 16px;
-}
-.interruptorPincel small {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.35;
-}

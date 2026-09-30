@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
+import { enlaceDeAlta } from "@/lib/armazon";
 import { artistaIgual, hrefArtista, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
 import { esUuid } from "@/lib/formulario";
 import type { MotivoReclamo } from "@/lib/reportes";
@@ -50,7 +51,7 @@ async function existenteIgual(supabase: Cliente, nombre: string, ciudad: string)
 
 /** Alta de artista. Si ya hay uno con el mismo nombre, devuelve el existente para preguntar "¿es este?" (decisión 5). */
 export async function crearArtista(_previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
-  const { supabase, user } = await sesionOEntrar("/artistas/nuevo");
+  const { supabase, user } = await sesionOEntrar(enlaceDeAlta("artista", null).href);
   const esAdmin = await esAdminDeSesion(supabase, user.id);
   const { datos, errores } = validarArtista(leer(formData), { esAdmin });
   if (Object.keys(errores).length) return { ok: false, errores };

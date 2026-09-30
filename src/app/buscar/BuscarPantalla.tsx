@@ -11,7 +11,7 @@ import { Chip, ChipEnlace, Chips } from "@/components/ui/Chip";
 import Cerrar from "@/components/ui/Cerrar";
 import Grupo from "@/components/ui/Grupo";
 import Renglon from "@/components/ui/Renglon";
-import { enlaceDeBusqueda } from "@/lib/armazon";
+import { enlaceDeAlta, enlaceDeBusqueda } from "@/lib/armazon";
 import { armarVista, atajosDeLaSemana, hrefEnMapa, metaConTipo, metaDe, POR_GRUPO, ROTULO, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
 import { CIUDAD_INICIAL, ciudadesPorCercania, raizConCiudad, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { normalizarNombre } from "@/lib/lugares";
@@ -38,6 +38,8 @@ type Props = {
   desde: GrupoBuscador;
   /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan): los atajos de la semana se cuentan desde ahí. */
   hoy: string;
+  /** Con sesión, lo que no se encuentra se ofrece registrar (publicar pide cuenta, como todo lo que publica). */
+  conSesion: boolean;
 };
 
 /** Un dato por línea bajo el nombre del renglón; cada uno se corta con puntos suspensivos al llegar al borde. */
@@ -64,9 +66,10 @@ function useRecientes(): Reciente[] {
  * único nombre, y una lista en grupos por tipo, el de la sección de origen primero; tres por grupo y «Ver N más» que despliega ahí
  * mismo. Con más de un tipo en lo encontrado, chips para dejar solo uno. La persona nunca elige dónde buscar: las tres cosas se
  * buscan a la vez. Elegir un resultado abre su ficha (desde Lugares, un lugar vuelve al mapa con su ficha en la hoja) y Atrás repone
- * esta pantalla como estaba.
+ * esta pantalla como estaba. Si no hay nada con lo escrito y hay sesión, se ofrece registrarlo: como lugar si se abrió desde Lugares, como
+ * artista desde cualquier otra sección (a una persona o a un grupo se le da de alta por su nombre; un evento pide más que eso).
  */
-export default function BuscarPantalla({ ciudad, ciudades, desde, hoy }: Props) {
+export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion }: Props) {
   const [texto, setTexto] = useState("");
   const [tipo, setTipo] = useState<GrupoBuscador | null>(null);
   const [abiertos, setAbiertos] = useState<GrupoBuscador[]>([]);
@@ -80,6 +83,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy }: Props) 
   const buscable = normalizarNombre(consulta).length >= 2;
   const cargando = buscable && respuesta?.texto !== consulta;
   const vista = buscable && respuesta ? armarVista(respuesta.resultado, respuesta.texto, desde, tipo) : null;
+  const buscado = respuesta?.texto ?? "";
 
   // Buscar no se apila sobre Buscar: su lupa, en la barra de la app, enfoca el campo.
   useEffect(() => prestarALaBarra({ buscar: () => campo.current?.focus() }), []);
@@ -169,7 +173,16 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy }: Props) 
       {buscable && (
         <div aria-busy={cargando}>
           {!vista && <p className={styles.aviso} role="status">Buscando…</p>}
-          {vista && vista.tipos.length === 0 && <p className={styles.aviso}>{`Nada con «${respuesta?.texto}».`}</p>}
+          {vista && vista.tipos.length === 0 && (
+            <div className={styles.vacio}>
+              <p>{`Nada con «${buscado}».`}</p>
+              {conSesion && (
+                <Boton href={enlaceDeAlta(desde === "lugares" ? "lugar" : "artista", slugEnUrl, buscado).href} variante="secundario" ancho="contenido">
+                  {desde === "lugares" ? `Registrar «${buscado}» como lugar` : `Registrar a «${buscado}» como artista`}
+                </Boton>
+              )}
+            </div>
+          )}
           {vista && vista.tipos.length > 1 && (
             <div className={styles.tipos}>
               <Chips ariaLabel="Tipo de resultado">
