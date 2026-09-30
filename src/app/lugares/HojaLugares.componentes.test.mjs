@@ -6,7 +6,9 @@
  *  Seguir: en el héroe, junto al menú «···», mientras la portada se ve; al compactarse la cabecera flota abajo (al pie cuando está llena),
  *  escondida recogida; y el aviso sube sobre ella. Y (ajuste del founder, 2026-09-30) el movimiento: la ficha entra desde el borde de abajo, la ✕
  *  baja la hoja y solo después la cierra, la lista vuelve entrando igual sin que nada medido a media entrada falsee sus alturas, tocar la hoja
- *  termina la entrada, y con «reducir movimiento» o desde 792 nada se mueve.
+ *  termina la entrada, y con «reducir movimiento» o desde 792 nada se mueve. Y (ajuste del founder, 2026-09-30) el botón de volver arriba de
+ *  las listas, en la hoja: aparece con la lista desplazada más de una pantalla, la devuelve a su principio sin cerrar la hoja (al instante con
+ *  «reducir movimiento») y no sale con la ficha a la vista; desde 792 lo enseña el panel.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -56,7 +58,9 @@ before(async () => {
       function App() {
         const [abierta, setAbierta] = useState(false);
         const [entrada, setEntrada] = useState(0);
+        const [lejos, setLejos] = useState(false);
         const manejo = useRef(null);
+        const renglones = Number(new URLSearchParams(location.search).get('renglones') ?? 14);
         window.qa.mostrar = () => manejo.current.mostrarLista();
         // El cuerpo es un solo elemento con data-cuerpo (así lo entrega CuerpoLugar) y la pastilla, otro hijo de la ficha.
         const piezas = {
@@ -65,9 +69,9 @@ before(async () => {
           seguir: <SeguirDePrueba />,
         };
         const hoja = (
-          <HojaLugares ref={manejo} resumen="12 lugares" entrada={entrada} ficha={abierta ? <FichaHoja lugar={lugar} piezas={piezas} onCerrar={() => setAbierta(false)} /> : null} alAsentar={(e) => window.qa.cambios.push(e)}>
+          <HojaLugares ref={manejo} resumen="12 lugares" entrada={entrada} ficha={abierta ? <FichaHoja lugar={lugar} piezas={piezas} onCerrar={() => setAbierta(false)} /> : null} alAsentar={(e) => window.qa.cambios.push(e)} alLejos={setLejos}>
             <ul style={{ listStyle: 'none' }}>
-              {Array.from({ length: 14 }, (_, i) => (
+              {Array.from({ length: renglones }, (_, i) => (
                 <li key={i} style={{ height: 100, borderBottom: '1px solid #ddd' }}>
                   <a href="#" onClick={(e) => { e.preventDefault(); setAbierta(true); setEntrada((n) => n + (window.qa.gesto ? 1 : 0)); }}>Renglón {i}</a>
                 </li>
@@ -79,7 +83,7 @@ before(async () => {
         // una capa sobre el mapa y, desde 792, el panel de la izquierda.
         return (
           <main className={lugares.lugares}>
-            <Cabecera contexto={<span style={{ height: 44 }}>chip</span>} />
+            <Cabecera contexto={<span style={{ height: 44 }}>chip</span>} volverArriba={{ lejos, volver: () => manejo.current.irA('llena') }} />
             <div id="mapa" className={lugares.mapa} data-techo-hoja style={{ background: '#dfe8df' }}>mapa</div>
             {hoja}
           </main>
@@ -119,12 +123,12 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(ancho = 390, alto = 844, reducir = false) {
+async function abrir(ancho = 390, alto = 844, reducir = false, consulta = "") {
   const context = await browser.newContext({ viewport: { width: ancho, height: alto }, reducedMotion: reducir ? "reduce" : "no-preference" });
   const page = await context.newPage();
   const errores = [];
   page.on("pageerror", (e) => errores.push(e.message));
-  await page.goto(origin, { waitUntil: "load" });
+  await page.goto(origin + consulta, { waitUntil: "load" });
   // Con alturas (data-hoja) en el teléfono; desde 792 es el panel y no las tiene.
   await page.waitForSelector(ancho >= 792 ? '[role="region"][aria-label="Lugares"]' : '[role="region"][aria-label="Lugares"][data-hoja]');
   await page.waitForTimeout(400);
@@ -486,4 +490,70 @@ test("desde 792 la hoja es el panel: la ficha no lleva asa y su ✕ queda a un r
   await page.evaluate(() => window.qa.mostrar());
   assert.equal((await estado(page)).y, panel.y, "el panel no tiene alturas: al filtrar no sube nada");
   assert.deepEqual(page.errores, []);
+});
+
+/** La fila de la lista que se ve a media pantalla, para abrir su ficha. */
+const abrirRenglonVisible = (page) => page.evaluate(() => [...document.querySelectorAll("a")].find((a) => /^Renglón/.test(a.textContent) && a.getBoundingClientRect().top > 120 && a.getBoundingClientRect().bottom < 700).click());
+
+test("volver arriba, como en las listas: la hoja llena y desplazada más de una pantalla lo enseña, tocarlo devuelve la lista a su principio sin cerrar la hoja, y con la ficha a la vista no sale", async () => {
+  const page = await abrir(390, 844, false, "/?renglones=40");
+  const boton = page.getByRole("button", { name: "Volver arriba" });
+  assert.equal(await boton.count(), 0, "asomando, sin botón");
+  await rueda(page, 300);
+  const principio = await estado(page);
+  assert.equal(principio.hoja, "llena");
+  assert.equal(await boton.count(), 0, "llena y sin desplazar, sin botón");
+  await rueda(page, 600);
+  assert.ok((await estado(page)).y - principio.y < 844, "esto es menos de una pantalla desplazada");
+  assert.equal(await boton.count(), 0, "menos de una pantalla desplazada, sin botón");
+  await rueda(page, 600);
+  await boton.waitFor();
+  assert.ok((await estado(page)).y - principio.y > 844, "más de una pantalla desplazada");
+  // Abajo a la izquierda y sobre la hoja (en la pantalla real, pegado al piso: llena, el armazón esconde la navegación).
+  const caja = await boton.boundingBox();
+  assert.ok(caja.x < 40 && caja.y + caja.height > 844 - 100, `abajo a la izquierda: (${caja.x}, ${caja.y + caja.height})`);
+  assert.equal(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest("button")?.getAttribute("aria-label"), [caja.x + caja.width / 2, caja.y + caja.height / 2]), "Volver arriba", "flota sobre la hoja: recibe el toque");
+  assert.ok(caja.width >= 44 && caja.height >= 44, "de 44 o más");
+  await boton.click();
+  await page.waitForFunction((y) => Math.abs(document.querySelector('[role="region"][aria-label="Lugares"]').scrollTop - y) < 2, principio.y);
+  await page.waitForTimeout(400); // que termine de asentarse
+  const vuelta = await estado(page);
+  assert.equal(vuelta.hoja, "llena", "la hoja sigue llena");
+  assert.equal(vuelta.cuerpoTop, 60, "y el principio de la lista queda bajo la fila de contexto");
+  assert.ok(await page.getByRole("link", { name: "Renglón 0", exact: true }).isVisible(), "el primer renglón a la vista");
+  await boton.waitFor({ state: "detached" });
+  // Con la ficha a la vista no hay botón; al cerrarla, la lista vuelve a donde estaba (lejos) y el botón con ella.
+  await rueda(page, 1800);
+  await boton.waitFor();
+  await abrirRenglonVisible(page);
+  await page.waitForSelector("[data-ficha-hoja]");
+  assert.equal(await boton.count(), 0, "con la ficha a la vista, sin botón");
+  await page.locator('button[aria-label="Cerrar la ficha"]').click();
+  await page.waitForSelector("[data-ficha-hoja]", { state: "detached" });
+  await boton.waitFor();
+  assert.deepEqual(page.errores, []);
+});
+
+test("volver arriba con «reducir movimiento» llega al instante, y desde 792 el panel lo enseña igual", async () => {
+  const quieto = await abrir(390, 844, true, "/?renglones=40");
+  await rueda(quieto, 300);
+  const principio = await estado(quieto);
+  await rueda(quieto, 1400);
+  const boton = quieto.getByRole("button", { name: "Volver arriba" });
+  await boton.waitFor();
+  await boton.click();
+  cerca((await estado(quieto)).y, principio.y, 2); // sin esperar: sin desplazamiento animado
+  await quieto.context().close();
+
+  const panel = await abrir(1280, 800, false, "/?renglones=40");
+  const botonDelPanel = panel.getByRole("button", { name: "Volver arriba" });
+  await rueda(panel, 600);
+  assert.equal(await botonDelPanel.count(), 0, "menos de una pantalla desplazada, sin botón");
+  await rueda(panel, 600);
+  await botonDelPanel.waitFor();
+  await botonDelPanel.click();
+  await panel.waitForFunction(() => document.querySelector('[role="region"][aria-label="Lugares"]').scrollTop < 2);
+  await botonDelPanel.waitFor({ state: "detached" });
+  assert.deepEqual(panel.errores, []);
+  await panel.context().close();
 });

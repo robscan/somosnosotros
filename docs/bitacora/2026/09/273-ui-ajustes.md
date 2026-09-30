@@ -191,6 +191,40 @@ A 1 280×800 con el elegido a zoom 13: antes 13 pares y 6 discos sobre el elegid
 27. **`273-27` · Agenda con `?filtro=siguiendo`, sin sesión:** antes, el chip Filtros con un «1» y, en lugar de la lista, «Siguiendo · Aquí verás lo que pasa… Entra para seguir a quienes te importan» con el botón «Entrar»; después, la fila «San Luis Potosí · Cuándo · Filtros» sin cuenta y la lista de siempre desde «Hoy · 2» (el Concierto de la Orquesta Sinfónica…).
 28. **`273-28` · Lugares con el filtro guardado, sin sesión:** antes, «Filtros 1» y el chip morado «Solo lo que sigo» (cortado por el borde), el mapa sin pines y la hoja «Ningún lugar · Todavía no sigues ningún lugar»; después, «Filtros» sin cuenta, el mapa con sus pines (ACHE Galería, Aether, MUNI, Casa de Cultura…) y la hoja «9 lugares» con ACHE Galería y Aether.
 
+## 6. El botón de volver arriba de las listas, también en la hoja de Lugares
+
+**Founder (2026-09-30):** «Agregar botón de regresar arriba que ya usamos en los listados para ponerlo en listado de sheet lugares por favor.»
+
+**Qué cambió.** El botón vive en `ui/Cabecera` (el de Agenda, Artistas…, que sale tras bajar una pantalla). En Lugares no salía porque ahí no se desplaza la ventana sino la hoja. Ahora es el mismo botón, en el mismo sitio y con la misma regla:
+- `Cabecera` gana `volverArriba?: { lejos, volver }`: una pantalla que no se desplaza con la ventana dice si ya se bajó una pantalla y cómo volver a su principio. Sin esa prop, todo sigue como antes (la ventana).
+- `HojaLugares` ya sabe su desplazamiento: con la prop nueva `alLejos` avisa cuando la lista pasa de una pantalla desplazada desde que la hoja llenó (más de `window.innerHeight`, como en las listas de la ventana) y nunca con la ficha a la vista; solo avisa cuando cambia, no por cuadro. `VistaLugares` guarda ese booleano y se lo da a `Cabecera` con `volver`, que es `irA("llena")` de la hoja: el principio de la lista con la hoja llena y el primer renglón bajo la fila (animado; al instante con «reducir movimiento», como ya hacía `irA`).
+- Desde 792 es lo mismo con el panel, que es el que se desplaza.
+- **Un ajuste de CSS en la pieza compartida:** `.volver` baja al piso también cuando la hoja llena la ventana (`[data-llena]`, que esconde la navegación), no solo cuando la barra se recoge (`[data-recogida]`). Sin eso, con la hoja llena y la lista subiendo un poco, la barra vuelve pero la navegación sigue sin estar y el botón se quedaba a 76 px del piso (`nav + 16`) sobre un hueco. Medido: suba o baje la lista, a 16 px.
+
+**Medida** (respaldo denso de 40 lugares, mapa real, Chrome; el reloj de la página corre: con el fijo de las demás mediciones la pausa de 300 ms con que el armazón recoge o devuelve la barra nunca termina y la barra no vuelve):
+
+| Teléfono 390×844, hoja llena, lista desplazada | Antes | Después |
+|---|---|---|
+| 600 px | sin botón | sin botón (aún no es una pantalla) |
+| 1 200 y 1 900 px | sin botón | botón a 20 px del borde y a 16 del piso, 48×48 |
+| tocarlo desde 1 900 px | — | la lista vuelve a su principio en unos 600 ms (2 512 → 2 219 → 1 092 → 742 → 634 → 612, una lectura cada 150 ms), la hoja sigue llena, la barra y la fila vuelven, el primer renglón queda a la vista (arriba en 184) y el botón se va |
+| con «reducir movimiento», tocarlo | — | llega al instante: 612 en la primera lectura |
+| con la ficha abierta (desde 2 812 px) | — | sin botón |
+| 1280×800, el panel | sin botón | sale tras más de una pantalla, dentro del panel (x = 204, donde el borde de la columna en las demás listas) y a 16 del piso; tocarlo lleva el panel a 0 |
+| 320×568 | sin botón | x = 20, a 16 del piso |
+
+- **Nada tapado:** con el botón a la vista, en 390, 1280 y 320, **0 campanas de «Seguir» tocadas** por el botón y **0 renglones con su centro debajo de él** (toca el borde de un renglón, su foto o su texto, y el renglón sigue abierto por el resto). El botón mide **48 px** (más de 44).
+
+**Pruebas nuevas** (componente, Chrome real, en `HojaLugares.componentes.test.mjs`; su banco gana `?renglones=N` y el botón cableado como en `VistaLugares`): (1) con 40 renglones, sin botón con la lista asomando, llena sin desplazar y con media pantalla desplazada; con más de una pantalla sale (abajo a la izquierda, recibe el toque, de 44 o más); tocarlo devuelve la lista a su principio sin cerrar la hoja (llena, 60 bajo la fila, «Renglón 0» a la vista) y se va; con la ficha a la vista no hay botón; (2) con «reducir movimiento» llega al instante, y a 1280 el panel lo enseña y tocarlo lo lleva a 0. Se comprobó que fallan si `Cabecera` ignora `volverArriba`.
+
+**Capturas** (`docs/rediseno/capturas-273/`, teléfono 390×844 a 2× salvo la 32, a 1× 1280×800, y la 33, 320×568 a 2×):
+
+29. **`273-29` · la lista desplazada:** antes, la hoja llena con los renglones de «Estudio del Claustro» a «Museo del Ferrocarril Jesús García Corona» y sin botón; después, lo mismo con el círculo blanco de la flecha hacia arriba, abajo a la izquierda, sobre la esquina de la foto del último renglón y lejos de las campanas.
+30. **`273-30` · después de tocarlo:** la lista en su principio con la hoja llena: la barra de la app y la fila a la vista, «40 lugares» y de «ACHE Galería» a «Casa de Cultura del Barrio de San Miguelito», sin botón.
+31. **`273-31` · con la ficha:** la ficha de «Librería Rem» (MUSEO) a media altura sobre el mapa con sus pines, sin botón.
+32. **`273-32` · el panel, 1280×800:** la lista del panel desplazada (de «Librería Rem» a «Ojo Zarco») y el botón abajo, dentro del panel, sobre el texto de «Ojo Zarco» y lejos de las campanas.
+33. **`273-33` · 320×568:** la lista desplazada (de «Departamento…» a «Galería del Portal») y el botón a 20 px del borde, sobre la foto de «Foro Sotanito».
+
 ## Comprobaciones
 
 Con los tres ajustes puestos: `npm run lint` (sin avisos), `npm run typecheck` y `npm test` (119 archivos, **1 584** pruebas: 1 585 de P13, menos 2 de la opacidad y más 1 de `tiempoEnMs`); `next build` sin variables de entorno, como la CI; `npm run inventario` («sin novedades»: 344 medidas en duro, las mismas); `npm run medir` (23 pantallas × 4 anchos, «sin novedades»); y `npm run test:componentes` con `CHROME_EXECUTABLE` en el Chrome de la Mac: **113 de 113** (las 11 de la hoja, con las dos nuevas). Sin migraciones ni variables de entorno. Al cerrar se borraron `.env.local` y `.next` (la llave del mapa queda incrustada en la compilación), se apagaron los procesos propios (respaldo, app e intermediarios) y el simulador volvió a quedar apagado, como estaba. Ninguna llave, ningún correo real y ningún `.env` en el repositorio (la búsqueda de `pk.eyJ` en el árbol da 0).
@@ -198,3 +232,5 @@ Con los tres ajustes puestos: `npm run lint` (sin avisos), `npm run typecheck` y
 **Hallazgos que no se tocaron (para el gestor):**
 - Con «reducir movimiento», la regla global de `globals.css` (`transition-duration: 0.01ms !important` para todo) crea transiciones de 0,01 ms en cualquier propiedad que cambie (`padding-bottom`, `z-index`…). Al cerrar la ficha con la lista llena y desplazada hasta el final, el desplazamiento se fija antes de que `padding-bottom` termine su transición y la lista vuelve 12 px corta (1 388 en vez de 1 400 en la prueba de la ficha). No viene de estos ajustes (con «reducir movimiento» no animan nada, y la hoja hace lo mismo que antes), aunque no se corrió la base con ese ajuste del sistema para confirmarlo; por eso las pruebas de alturas corren sin «reducir movimiento» y solo las del movimiento lo piden.
 - El respaldo local y la prueba de componente no ven lo que el minificador le hace al CSS (`800ms` → `.8s`): lo que se lee de `globals.css` desde TypeScript conviene medirlo en la compilación.
+- **Con la lista de la hoja muy desplazada, abrir una ficha y cerrarla no devuelve la lista a donde estaba:** vuelve a 708 (lo más que se desplaza la ficha recién abierta), y si estaba más abajo se pierde el sitio. Medido con el respaldo denso: lista en 3 623, ficha abierta, ✕, y la lista queda en 708. Causa probable: `HojaLugares` lee el desplazamiento que recordará (`antes.current`) en el efecto que corre cuando ya se pintó la ficha, y con la lista oculta (`display: none` bajo `data-ficha`) el navegador ya lo acotó a lo que da la ficha. No viene de estos ajustes (ese código no cambió) y con listas cortas no se nota. Un arreglo sería guardarlo al tocar el renglón, antes de abrir la ficha.
+- **El reloj fijo de las mediciones congela `Date.now()`:** el armazón pausa 300 ms cada vez que recoge o devuelve la barra y, con el reloj congelado, esa pausa no termina, así que la barra se queda donde está. No afecta a la gente, pero cualquier medición de la barra tiene que correr con el reloj en marcha (mismo día, pero avanzando).

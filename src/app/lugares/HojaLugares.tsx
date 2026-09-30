@@ -73,6 +73,9 @@ type Props = {
   desde?: DondeEstaba;
   /** La hoja se asentó en una altura: cuál es, cuánto se desplazó y cuánto del mapa tapa. */
   alAsentar: (estado: EstadoHoja) => void;
+  /** La lista se desplazó más de una pantalla desde que la hoja llenó (o dejó de estarlo; nunca con la ficha a la vista): la pantalla ofrece volver
+   *  arriba, como cualquier lista. Solo avisa cuando cambia. */
+  alLejos?: (lejos: boolean) => void;
   /** Lo que se le puede pedir a la hoja desde fuera (`mostrarLista`, al filtrar). */
   ref?: Ref<Manejo>;
   /** La lista de lugares. */
@@ -103,9 +106,9 @@ type Props = {
  *
  * La altura y la cabecera compacta de la ficha se pintan en el DOM (`data-hoja` en la hoja, `data-compacta` en la ficha) y no en el
  * estado de React: cambian con cada cuadro del desplazamiento y no deben volver a pintar la lista. Quien la usa solo se entera
- * cuando la hoja se asienta.
+ * cuando la hoja se asienta y cuando la lista pasa de una pantalla desplazada (`alLejos`, el botón de volver arriba).
  */
-export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar, ref, children }: Props) {
+export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar, alLejos, ref, children }: Props) {
   const hoja = useRef<HTMLDivElement>(null);
   const cuerpo = useRef<HTMLDivElement>(null);
   const franja = useRef<HTMLDivElement>(null);
@@ -123,9 +126,13 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
   /** Un desplazamiento que se repone en cuanto el contenido alcanza a darlo (la ficha llega por la red). */
   const pendiente = useRef<number | null>(null);
   const habiaFicha = useRef(false);
+  /** Lo último que se le dijo a la pantalla sobre si la lista está lejos del principio. */
+  const lejosAvisada = useRef(false);
   const alAsentarActual = useRef(alAsentar);
+  const alLejosActual = useRef(alLejos);
   useLayoutEffect(() => {
     alAsentarActual.current = alAsentar;
+    alLejosActual.current = alLejos;
   });
 
   /** Las alturas, medidas en el DOM: el hueco de arriba (lo que la hoja sube hasta cubrir la pantalla) y lo que asoma de cada una. */
@@ -168,6 +175,12 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     if (panel) delete hoja.current!.dataset.hoja;
     else hoja.current!.dataset.hoja = detente;
     cuerpo.current!.querySelector("[data-ficha-hoja]")?.toggleAttribute("data-compacta", cabeceraCompacta(y, compactaDesde, detente, panel));
+    // Más de una pantalla de lista desplazada, sin ficha: desde ahí la pantalla ofrece volver arriba (como una lista de la ventana).
+    const lejos = !habiaFicha.current && y - (detentes.llena ?? 0) > window.innerHeight;
+    if (lejos !== lejosAvisada.current) {
+      lejosAvisada.current = lejos;
+      alLejosActual.current?.(lejos);
+    }
     // Llena, la navegación se va; con la ficha (una página) se va también la barra, y con la lista, que vive bajo sus filtros, el
     // desplazamiento de la hoja recoge o devuelve la barra, como el de la página en una raíz.
     const llena = !panel && detente === "llena";

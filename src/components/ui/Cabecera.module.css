@@ -54,9 +54,9 @@
   padding: var(--espacio-3) var(--gutter);
 }
 
-/* Volver arriba (ui/BotonIcono): abajo a la izquierda, sobre la navegación; si la navegación se recoge (teléfono, al
-   bajar), baja con ella. Es una herramienta, no una acción: su glifo es oscuro, como el del botón de ubicación del mapa. Al
-   ser fijo, mide desde el borde de la ventana: desde 792 pasa el carril antes de llegar a la columna. */
+/* Volver arriba (ui/BotonIcono): abajo a la izquierda, sobre la navegación; si la navegación se va (teléfono: se recoge al
+   bajar, o la hoja de Lugares llena la ventana), baja con ella. Es una herramienta, no una acción: su glifo es oscuro, como el del
+   botón de ubicación del mapa. Al ser fijo, mide desde el borde de la ventana: desde 792 pasa el carril antes de llegar a la columna. */
 .volver {
   position: fixed;
   left: var(--gutter);
@@ -64,7 +64,8 @@
   z-index: calc(var(--z-flotante) + 1);
   transition: bottom var(--duracion-recogida, var(--duracion)) var(--curva);
 }
-:global([data-recogida]) .volver {
+:global([data-recogida]) .volver,
+:global([data-llena]) .volver {
   bottom: calc(var(--piso) + var(--espacio-4));
 }
 @media (min-width: 792px) {

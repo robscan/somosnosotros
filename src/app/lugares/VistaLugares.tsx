@@ -123,6 +123,8 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
   const [entrada, setEntrada] = useState(0);
   /** Cómo quedó la hoja al asentarse (para la memoria de pantalla y para dejar libre al mapa lo que ella tapa). */
   const [hoja, setHoja] = useState<EstadoHoja>({ detente: "asoma", y: 0, cubre: 0 });
+  /** La lista de la hoja ya se desplazó más de una pantalla: aparece el botón de volver arriba (`ui/Cabecera`). */
+  const [lejos, setLejos] = useState(false);
   const [restaurar, setRestaurar] = useState<DondeEstaba>();
   /** Lo que tenía el foco al abrir la ficha, para devolvérselo al cerrarla. */
   const disparador = useRef<HTMLElement | null>(null);
@@ -259,6 +261,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
       <main className={styles.lugares}>
         <Cabecera
           contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} conSesion={!!conSesion} valor={eleccion} onCambiar={cambiar} />}
+          volverArriba={{ lejos, volver: () => hojaRef.current?.irA("llena") }}
         />
         {/* El mapa y la hoja esperan una consulta aparte (quién sigue qué, destacados): mientras llega, un esqueleto del alto del mapa
             (OL-161, bitácora 196). */}
@@ -283,6 +286,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
             onCerrarFicha={cerrar}
             restaurar={restaurar}
             alAsentar={alAsentar}
+            alLejos={setLejos}
             hojaRef={hojaRef}
           />
         ) : (
@@ -323,6 +327,7 @@ type PropsCuerpo = {
   onCerrarFicha: () => void;
   restaurar: DondeEstaba | undefined;
   alAsentar: (estado: EstadoHoja) => void;
+  alLejos: (lejos: boolean) => void;
   hojaRef: RefObject<Manejo | null>;
 };
 
@@ -331,7 +336,7 @@ type PropsCuerpo = {
  * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
  * de ese estado.
  */
-function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, hojaRef }: PropsCuerpo) {
+function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
   const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
   // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
@@ -381,6 +386,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
         entrada={entrada}
         desde={restaurar}
         alAsentar={alAsentar}
+        alLejos={alLejos}
       >
         {lista.length > 0 ? (
           <ListaLugares lugares={lista} km={km} seguidos={extra.seguidos} avisos={extra.avisos} alAbrir={onAbrir} />
