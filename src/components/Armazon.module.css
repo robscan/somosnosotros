@@ -1,8 +1,9 @@
 /* El armazón (docs/rediseno/50, P4 y P7): una rejilla con la barra de la app, la pantalla y la navegación. No depende de lo que hay
-   dentro: cada pieza lee `data-vista` (raiz · ficha · tarea · completa), que pone el layout según la ruta, y `data-recogida`, que
-   pone `Armazon.tsx` al bajar en el teléfono. La pantalla es la página tal cual llega; el desplazamiento sigue siendo el de la
-   ventana. En el teléfono son dos filas, la barra y la pantalla, y la navegación es una barra fija al pie (NavSecciones). Desde
-   792 son dos columnas: la barra ocupa todo el ancho y debajo van el carril de la navegación y la pantalla. */
+   dentro: cada pieza lee `data-vista` (raiz · ficha · tarea · completa), que pone el layout según la ruta, `data-recogida`, que
+   pone `Armazon.tsx` al bajar en el teléfono, y `data-llena`, con la hoja de Lugares cubriendo la ventana (solo se va la navegación).
+   La pantalla es la página tal cual llega; el desplazamiento sigue siendo el de la ventana. En el teléfono son dos filas, la barra y
+   la pantalla, y la navegación es una barra fija al pie (NavSecciones). Desde 792 son dos columnas: la barra ocupa todo el ancho y
+   debajo van el carril de la navegación y la pantalla. */
 .armazon {
   container-type: inline-size; /* la barra mide `--gutter` sobre su ancho (`100cqw`, globals.css) */
   display: grid;

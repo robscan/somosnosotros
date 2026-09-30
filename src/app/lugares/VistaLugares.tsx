@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import ListaLugares from "@/components/ListaLugares";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import Mapa from "@/components/Mapa";
@@ -22,7 +22,7 @@ import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugare
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
-import HojaLugares, { type DondeEstaba, type EstadoHoja } from "./HojaLugares";
+import HojaLugares, { type DondeEstaba, type EstadoHoja, type Manejo } from "./HojaLugares";
 import styles from "./lugares.module.css";
 
 /** A dónde lleva «Registrar un lugar» cuando la ciudad no tiene ninguno. */
@@ -90,7 +90,9 @@ function encuadreCercanosDe(lugares: LugarLista[], p: Punto): Punto[] {
  * Lugares: el mapa a toda la altura que deja la fila de contexto y, sobre él, la hoja con la lista de lugares y, al tocar un pin
  * o un renglón, la ficha del lugar dentro de la hoja (docs/rediseno/50, P5b; decisiones 31 a 36 y 58 del founder). La fila lleva la
  * ciudad y Filtros (tipo, con eventos, lo que sigo); buscar es la lupa de la barra de la app (`app/buscar`), que desde aquí vuelve
- * con la ficha de un lugar ya abierta (`fichaInicial`). «Mi ubicación» pide la ubicación al tocarla, no la guarda: centra en el punto azul y ordena la lista por cercanía. Decisiones
+ * con la ficha de un lugar ya abierta (`fichaInicial`). «Mi ubicación» pide la ubicación al tocarla, no la guarda: centra en el punto azul y ordena la lista por cercanía. Al elegir
+ * algo en Filtros, quitar un chip o cambiar de ciudad, la hoja responde: recogida sube a asoma (asoma o llena se quedan), la cantidad dice lo que quedó y
+ * el mapa encuadra los lugares que quedan, sin moverse si no cambió nada (docs/rediseno/50, decisión del founder del 2026-09-30). Decisiones
  * en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/restructura-ui.html.
  */
 export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, fichaInicial, hoy, abrirFicha }: Props) {
@@ -109,8 +111,11 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
   const [restaurar, setRestaurar] = useState<DondeEstaba>();
   /** Lo que tenía el foco al abrir la ficha, para devolvérselo al cerrarla. */
   const disparador = useRef<HTMLElement | null>(null);
-  /** El lugar al que la cámara va en cuanto la hoja diga cuánto tapa con la ficha abierta (la ficha abre más alta que la lista). */
-  const irAlLugar = useRef<LugarLista | null>(inicial ?? null);
+  /** Lo que se le puede pedir a la hoja (subir a asoma al filtrar). */
+  const hojaRef = useRef<Manejo>(null);
+  /** Lo que la cámara encuadra en cuanto la hoja diga cuánto tapa: el lugar de la ficha que se abre (abre más alta que la lista) o lo que queda
+   *  al filtrar, cuando la hoja recogida sube a asoma. */
+  const porEncuadrar = useRef<Punto[] | null>(inicial ? [inicial] : null);
   // Lo diferido ya llegado; con otra promesa (cambiar de tipo, un Seguir) se queda lo anterior hasta que llegue lo nuevo, sin que el
   // mapa y la hoja se vayan y vuelvan.
   const extra = useResuelta(extras);
@@ -145,24 +150,34 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
     disparador.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     // Con otra ficha ya abierta la hoja no se mueve y la cámara va al momento; si no, espera a lo que tapará la ficha al abrirse.
     if (abierta) encuadrar([lugar]);
-    else irAlLugar.current = lugar;
+    else porEncuadrar.current = [lugar];
     setFicha({ lugar, piezas: null, deExtra: extra });
     pedirPiezas(lugar, extra);
   }
   function alAsentar(estado: EstadoHoja) {
     setHoja(estado);
-    if (irAlLugar.current) encuadrar([irAlLugar.current]);
-    irAlLugar.current = null;
+    if (porEncuadrar.current) encuadrar(porEncuadrar.current);
+    porEncuadrar.current = null;
   }
   function cerrar() {
     setFicha(null);
     if (disparador.current?.isConnected) disparador.current.focus({ preventScroll: true });
+  }
+  /** La persona cambió lo que ve (un filtro, un chip, otra ciudad): la hoja enseña la lista (recogida sube a asoma) y el mapa encuadra `puntos`
+   *  (con null, la cámara se queda donde está). */
+  function mostrarResultado(puntos: Punto[] | null) {
+    if (abierta) return; // con la ficha a la vista la lista no se ve y la cámara es de la ficha
+    porEncuadrar.current = puntos; // la cámara va en cuanto la hoja avise cuánto tapa: ya subió a asoma si estaba recogida
+    hojaRef.current?.mostrarLista();
   }
   /** Lo que se elige en Filtros: el tipo vive en la URL (se comparte y sobrevive al volver atrás), lo demás en el teléfono. */
   function cambiar(nueva: EleccionLugares) {
     setConEventos(nueva.conEventos);
     setSoloSigo(nueva.soloSigo);
     if (nueva.tipo !== tipo) router.replace(hrefLugares(ciudad, nueva.tipo), { scroll: false });
+    const quedan = filtrarPorEleccion(lugares, nueva, seguidos, hoy);
+    // Con lo mismo a la vista, la cámara se queda donde está.
+    mostrarResultado(quedan.length === visibles.length && quedan.every((l, i) => l.id === visibles[i].id) ? null : quedan);
   }
   function pedirUbicacion() {
     setGeo("pidiendo");
@@ -196,6 +211,14 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
     setRestaurar({ detente: r.hoja.detente, y: r.hoja.y });
     const lugar = r.hoja.ficha ? lugares.find((l) => (l.slug || l.id) === r.hoja.ficha) : undefined;
     if (lugar) abrir(lugar);
+  });
+
+  // Al cambiar de ciudad la pantalla sigue montada (la URL trae otros lugares): la hoja y el mapa responden como ante un filtro.
+  const ciudadVista = useRef(ciudad.slug);
+  useEffect(() => {
+    if (ciudadVista.current === ciudad.slug) return;
+    ciudadVista.current = ciudad.slug;
+    mostrarResultado(visibles);
   });
 
   // Buscar, desde Lugares, llega con `?lugar=`: se piden las piezas de la ficha que ya está abierta y la URL suelta el parámetro (que no se
@@ -237,6 +260,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
             onCerrarFicha={cerrar}
             restaurar={restaurar}
             alAsentar={alAsentar}
+            hojaRef={hojaRef}
           />
         ) : (
           <EsqueletoCaja className={styles.mapa} />
@@ -274,6 +298,7 @@ type PropsCuerpo = {
   onCerrarFicha: () => void;
   restaurar: DondeEstaba | undefined;
   alAsentar: (estado: EstadoHoja) => void;
+  hojaRef: RefObject<Manejo | null>;
 };
 
 /**
@@ -281,7 +306,7 @@ type PropsCuerpo = {
  * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
  * de ese estado.
  */
-function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, onAbrir, onCerrarFicha, restaurar, alAsentar }: PropsCuerpo) {
+function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, onAbrir, onCerrarFicha, restaurar, alAsentar, hojaRef }: PropsCuerpo) {
   const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
   // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
@@ -298,7 +323,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
 
   return (
     <>
-      <div className={styles.mapa}>
+      <div className={styles.mapa} data-techo-hoja>
         <Mapa
           lugares={visibles}
           encuadre={encuadre ?? inicial}
@@ -316,6 +341,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
         </BotonIcono>
       </div>
       <HojaLugares
+        ref={hojaRef}
         resumen={
           visibles.length === 0 ? (
             "Ningún lugar"
