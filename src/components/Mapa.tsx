@@ -3,15 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { ExpressionSpecification, GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker, SymbolLayerSpecification } from "mapbox-gl";
+import type { ExpressionSpecification, GeoJSONSource, Map as MapaGL, Marker, SymbolLayerSpecification } from "mapbox-gl";
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { diaPin } from "@/lib/fechas";
 import { hrefLugar, type LugarLista } from "@/lib/lugares";
-import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa } from "@/lib/mapa";
+import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa, type PuntoEnPantalla } from "@/lib/mapa";
 import { sinMovimiento } from "@/lib/movimiento";
 import { prioridadPin, propiedadesPin, rangosDeDias, RADIO_MEDIANO, TAMANO_DIA, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
 import styles from "./Mapa.module.css";
+import PulsacionEnMapa from "./PulsacionEnMapa";
 import { useFueraDeVista } from "./useFueraDeVista";
 
 type Punto = { lat: number; lng: number };
@@ -41,6 +42,8 @@ type Props = {
   /** Avisa cuando ninguno de los lugares que se ven en el mapa (con una ficha abierta, el suyo) cae en lo que se ve de él —su caja menos lo
    *  que tapa la hoja—, y cuando vuelve alguno: el botón de encuadrar aparece y se va con eso (`useFueraDeVista`). */
   onFuera?: (fuera: boolean) => void;
+  /** Sostener el dedo saca una tarjeta que no cabe en lo que la hoja deja ver del mapa: que la hoja se recoja para darle sitio. */
+  onDespejar?: () => void;
 };
 
 /** Los lugares van en capas del propio mapa (no en elementos encima). De abajo arriba, que es de menor a mayor rango (Mapbox coloca primero la
@@ -65,6 +68,7 @@ const ANCLAS_NOMBRE: ("top" | "bottom" | "left" | "right")[] = ["top", "bottom",
 /** Una sola lista vacía para el valor por defecto: una nueva en cada render volvería a pintar las capas. */
 const SIN_SEGUIDOS: string[] = [];
 const SIN_DESTACADOS: string[] = [];
+const NADA = () => {};
 
 /** Lo que las capas leen de cada lugar (`propiedadesPin` más lo que dice el propio lugar). */
 type PropiedadesLugar = PropiedadesPin & { id: string; nombre: string; dia: string; elegido: boolean; rango: number };
@@ -219,10 +223,9 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
   mapa.addLayer(capaNombres(CAPA_NOMBRE_ELEGIDO, esElegido, true, fondo));
 }
 
-/** El lugar bajo el toque: se busca en un cuadro alrededor del punto (punto, disco con día o nombre) y gana el más cercano. */
-function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
+/** El lugar bajo el dedo o el ratón: se busca en un cuadro alrededor del punto (punto, disco con día o nombre) y gana el más cercano. */
+function lugarTocado(mapa: MapaGL, { x, y }: PuntoEnPantalla): string | null {
   if (!mapa.getLayer(CAPA_PUNTOS)) return null;
-  const { x, y } = e.point;
   const cerca = mapa.queryRenderedFeatures(
     [
       [x - RADIO_TOQUE, y - RADIO_TOQUE],
@@ -246,7 +249,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
  * Mapa de los lugares, llenando la caja donde se pone (acuerdo del council: "un solo renderer de mapa" para Lugares).
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS, onFuera }: Props) {
+export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS, onFuera, onDespejar = NADA }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
@@ -267,6 +270,18 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
   useEffect(() => {
     routerRef.current = router;
   }, [router]);
+  /** Abrir un lugar, por un toque o por una pulsación larga sobre él: a su ficha (la hoja, en Lugares). */
+  function abrirLugar(lugar: LugarLista) {
+    if (onPinRef.current) onPinRef.current(lugar);
+    else routerRef.current.push(hrefLugar(lugar));
+  }
+  /** Si hay un lugar registrado bajo ese punto, lo abre y lo dice. */
+  function abrirLugarEn(punto: PuntoEnPantalla): boolean {
+    const id = mapaRef.current ? lugarTocado(mapaRef.current, punto) : null;
+    const lugar = id ? lugaresRef.current.get(id) : undefined;
+    if (lugar) abrirLugar(lugar);
+    return !!lugar;
+  }
   const [estado, setEstado] = useState<EstadoMapa>(() => (configPublica().mapboxToken ? "cargando" : "sin-token"));
   // Lo que cuenta para «¿se ve alguno?»: con una ficha abierta, su lugar; si no, todos los que hay en el mapa.
   const aVer = useMemo(() => (elegido ? lugares.filter((l) => l.id === elegido) : lugares), [lugares, elegido]);
@@ -306,15 +321,11 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
       });
       // Tocar un lugar abre su ficha; tocar fuera no hace nada.
       mapa.on("click", (e) => {
-        const id = mapa ? lugarTocado(mapa, e) : null;
-        const lugar = id ? lugaresRef.current.get(id) : undefined;
-        if (!lugar) return;
-        if (onPinRef.current) onPinRef.current(lugar);
-        else routerRef.current.push(hrefLugar(lugar));
+        if (mapa) abrirLugarEn(e.point);
       });
       // Con ratón, la mano sobre un lugar.
       mapa.on("mousemove", (e) => {
-        if (mapa) mapa.getCanvas().style.cursor = lugarTocado(mapa, e) ? "pointer" : "";
+        if (mapa) mapa.getCanvas().style.cursor = lugarTocado(mapa, e.point) ? "pointer" : "";
       });
     });
 
@@ -433,6 +444,7 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
   return (
     <div className={styles.mapa} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
       <div ref={contenedor} className={styles.lienzo} />
+      <PulsacionEnMapa mapa={mapaRef} contenedor={contenedor} listo={estado === "listo"} elegido={elegido} tapaAbajo={tapaAbajo} alDespejar={onDespejar} alLugar={abrirLugarEn} />
       {estado !== "listo" && (
         <p className={styles.aviso} role="status">
           {estado === "cargando" && "Cargando el mapa…"}

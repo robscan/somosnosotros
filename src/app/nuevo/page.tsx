@@ -12,12 +12,13 @@ import { cargarCiudades, cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { ciudadDesdeSlug } from "@/lib/direccionContexto";
 import type { Evento } from "@/lib/eventos";
 import { esUuid } from "@/lib/formulario";
+import { puntoDeTexto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDelSitio } from "@/lib/zona";
 import Alta from "./Alta";
 
-type Consulta = { tipo?: string; lugar?: string; desde?: string; artista?: string; ciudad?: string; nombre?: string };
+type Consulta = { tipo?: string; lugar?: string; desde?: string; artista?: string; ciudad?: string; nombre?: string; lat?: string; lng?: string };
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Consulta> }): Promise<Metadata> {
   const { tipo } = await searchParams;
@@ -27,15 +28,16 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 /**
  * Publicar (docs/rediseno/50, P9): la única pantalla de alta, con Evento, Lugar y Artista. El tipo con el que abre (`?tipo=`) es el
  * de la sección desde la que se tocó «+»; la ciudad que se veía (`?ciudad=`) acerca la búsqueda de dirección del evento y del lugar y
- * es la de entrada del artista (OL-100); `?nombre=` es lo que buscó quien no encontró nada (Buscar). Un evento ya armado —duplicado
+ * es la de entrada del artista (OL-100); `?nombre=` es lo que buscó quien no encontró nada (Buscar); `?lat=&lng=` es el punto donde se sostuvo el dedo
+ * en el mapa de Lugares, con el lugar ya ubicado (lo ilegible o fuera de la Tierra se ignora). Un evento ya armado —duplicado
  * (`?desde=`), o publicado desde la ficha de un lugar (`?lugar=`) o de un artista (`?artista=`)— abre solo como evento, sin tira de tipos.
  */
 export default async function Nuevo({ searchParams }: { searchParams: Promise<Consulta> }) {
-  const { tipo, lugar, desde, artista, ciudad: ciudadSlug, nombre } = await searchParams;
+  const { tipo, lugar, desde, artista, ciudad: ciudadSlug, nombre, lat, lng } = await searchParams;
   const actual = await usuarioActual();
   // Con o sin sesión se llega aquí; la sesión se pide después, con lo mismo por delante.
   const consulta = new URLSearchParams();
-  for (const [clave, valor] of Object.entries({ tipo, lugar, desde, artista, ciudad: ciudadSlug, nombre })) if (valor) consulta.set(clave, valor);
+  for (const [clave, valor] of Object.entries({ tipo, lugar, desde, artista, ciudad: ciudadSlug, nombre, lat, lng })) if (valor) consulta.set(clave, valor);
   const aqui = `/nuevo${consulta.size ? `?${consulta}` : ""}`;
   if (!actual) redirect(`/entrar?siguiente=${encodeURIComponent(aqui)}`);
   const eventoArmado = !!(desde || lugar || artista);
@@ -104,6 +106,7 @@ export default async function Nuevo({ searchParams }: { searchParams: Promise<Co
               accion: crearLugar,
               usuarioId,
               nombreInicial,
+              puntoInicial: puntoDeTexto(lat, lng) ?? undefined,
               esAdmin,
               lugares: lugaresRegistrados,
               // Sin `?ciudad=` cae en San Luis Potosí -el respaldo que ya usa el listado de Lugares (`ciudadPorSlug`)-: sin él, Mapbox buscaba

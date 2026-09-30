@@ -5,9 +5,12 @@
   background: var(--fondo-mapa);
 }
 
+/* En el lienzo no hay selección ni menú del sistema al sostener el dedo: sostener es registrar un lugar (PulsacionEnMapa). */
 .lienzo {
   position: absolute;
   inset: 0;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 .aviso {

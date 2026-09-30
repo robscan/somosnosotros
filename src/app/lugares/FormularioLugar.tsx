@@ -43,8 +43,10 @@ type Props = {
   /** Sin lugar = alta. Con lugar = edición (todo resuelto de entrada). */
   lugar?: Lugar;
   usuarioId: string;
-  /** El nombre con el que empieza el alta (viene de una búsqueda que no encontró nada). */
+  /** El nombre con el que empieza el alta (viene de una búsqueda que no encontró nada, o del sitio del mapa donde se sostuvo el dedo). */
   nombreInicial?: string;
+  /** El punto con el que empieza el alta ya ubicado (se sostuvo el dedo en el mapa de Lugares): su dirección se deduce sola, como con el pin movido. */
+  puntoInicial?: Punto;
   /** El administrador puede pegar la dirección de una imagen y marcar el lugar como privado (mapeo personal). */
   esAdmin?: boolean;
   /** Lugares ya registrados y visibles (sin el propio, al editar): pines de "¿Dónde está?" (OL-211) para avisar
@@ -66,7 +68,7 @@ type Props = {
  * redes, foto). El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón que falta
  * (founder, 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26).
  */
-export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicial, esAdmin = false, lugares, ciudadContexto, autoFocus = false, oculta = false }: Props) {
+export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicial, puntoInicial, esAdmin = false, lugares, ciudadContexto, autoFocus = false, oculta = false }: Props) {
   const plataforma = usePlataforma();
   const esAlta = !lugar;
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(accion, null);
@@ -84,7 +86,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
   const [tipoElegidoAMano, setTipoElegidoAMano] = useState(!!lugar);
   const [detalle, setDetalle] = useState(lugar?.detalle ?? "");
   const [direccion, setDireccion] = useState(lugar?.direccion ?? "");
-  const [punto, setPunto] = useState<Punto | null>(lugar ? { lat: lugar.lat, lng: lugar.lng } : null);
+  const [punto, setPunto] = useState<Punto | null>(lugar ? { lat: lugar.lat, lng: lugar.lng } : (puntoInicial ?? null));
   const [ciudad, setCiudad] = useState(lugar?.ciudad ?? "");
   const [sugeridos, setSugeridos] = useState<LugarSugerido[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -208,9 +210,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
     }
   }
 
-  // Pin movido con el dedo (o "Estoy aquí"): la dirección se deduce sola.
-  const alMoverPin = useCallback((p: Punto) => {
-    setPunto(p);
+  // La dirección y la ciudad de un punto, deducidas solas: las del pin movido con el dedo, las de "Estoy aquí" y las del punto con el que abrió el alta.
+  const deducirDireccion = useCallback((p: Punto) => {
     const { mapboxToken } = configPublica();
     if (!mapboxToken) return;
     lugarDesdePunto(p, mapboxToken).then((r) => {
@@ -218,6 +219,18 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
       if (r?.ciudad) setCiudad(r.ciudad);
     });
   }, []);
+  // Pin movido con el dedo (o "Estoy aquí"): la dirección se deduce sola.
+  const alMoverPin = useCallback(
+    (p: Punto) => {
+      setPunto(p);
+      deducirDireccion(p);
+    },
+    [deducirDireccion],
+  );
+  // Con un punto de entrada (se sostuvo el dedo en el mapa) el alta abre con «Dónde» resuelto: el punto ya está y la dirección llega enseguida.
+  useEffect(() => {
+    if (puntoInicial) deducirDireccion(puntoInicial);
+  }, [puntoInicial, deducirDireccion]);
 
   /** Lee la ubicación y la entrega a quien la pidió: el renglón "Dónde" (con `alMoverPin`, directo) o la hoja
    *  "Dónde está" abierta (con su propio `moverPin`, que muestra "Ubicando…" mientras llega la dirección -mismo
@@ -281,7 +294,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
             aria-label="Nombre del lugar"
             aria-invalid={!!errores.nombre}
             autoComplete="off"
-            autoFocus={autoFocus}
+            autoFocus={autoFocus && !(nombreInicial && puntoInicial)}
             required
             role="combobox"
             aria-expanded={sugerenciasAbiertas}

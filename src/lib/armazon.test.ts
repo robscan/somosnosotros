@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { puntoDeTexto } from "./geo";
 import { altaDeParametro, altaDeRuta, buscarDesdeRuta, CARRIL, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, tituloDeAlta, vistaDeRuta } from "./armazon";
 
 describe("armazón: la vista de cada ruta (data-vista)", () => {
@@ -64,6 +65,14 @@ describe("armazón: el «+» de la barra", () => {
     expect(enlaceDeAlta("artista", null, "Los Vecinos").href).toBe("/nuevo?tipo=artista&nombre=Los+Vecinos");
     expect(enlaceDeAlta("lugar", "queretaro", "Foro & Café").href).toBe("/nuevo?tipo=lugar&nombre=Foro+%26+Caf%C3%A9");
     expect(enlaceDeAlta("artista", "queretaro", "Trío Xochitl").href).toBe("/nuevo?tipo=artista&ciudad=queretaro&nombre=Tr%C3%ADo+Xochitl");
+  });
+  it("con el punto donde se sostuvo el dedo en el mapa, el alta abre con el lugar ya ubicado (y el nombre del sitio, si lo había)", () => {
+    const punto = { lat: 22.15113049, lng: -100.97860012 };
+    expect(enlaceDeAlta("lugar", null, null, punto).href).toBe("/nuevo?tipo=lugar&lat=22.151130&lng=-100.978600");
+    expect(enlaceDeAlta("lugar", "queretaro", "Museo de la Máscara", punto).href).toBe("/nuevo?tipo=lugar&nombre=Museo+de+la+M%C3%A1scara&lat=22.151130&lng=-100.978600");
+    // Lo que arma lo lee `puntoDeTexto`: ida y vuelta, en la precisión que viaja.
+    const consulta = new URL(enlaceDeAlta("lugar", null, null, punto).href, "https://somosnosotros.org").searchParams;
+    expect(puntoDeTexto(consulta.get("lat") ?? undefined, consulta.get("lng") ?? undefined)).toEqual({ lat: 22.15113, lng: -100.9786 });
   });
   it("el tipo con el que abre la pantalla de alta sale de la consulta: lo desconocido es un evento", () => {
     expect(altaDeParametro("lugar")).toBe("lugar");
