@@ -1,0 +1,39 @@
+{
+  "anchos": [320, 390, 820, 1280],
+  "excepciones": [
+    { "regla": "fuera-de-la-caja", "elemento": "canvas.mapboxgl-canvas", "porque": "Permanente: el lienzo de Mapbox se sale de su contenedor sin altura propia; así se pinta, no es un desborde." },
+    { "regla": "fuera-de-la-caja", "elemento": "div.mapboxgl-ctrl-top-left", "porque": "Permanente: el contenedor de los controles de Mapbox no tiene caja propia." },
+    { "regla": "fuera-de-la-caja", "elemento": "FichaPersona/cabecera >", "pantalla": "perfil", "anchos": [320], "porque": "Deuda (P12): a 320 px la fila de acciones y la colonia del perfil sobresalen 2 px de la cabecera." },
+    { "regla": "toque", "elemento": "a.mapboxgl-ctrl-logo", "porque": "Permanente: Mapbox exige su logotipo a la vista y sin cambios; no se agranda." },
+    { "regla": "toque", "elemento": "input[file]", "porque": "Permanente: el campo de archivo es invisible (1×1); lo que se toca es el botón que lo abre, que mide más de 44." },
+    { "regla": "toque", "elemento": "Chip/contexto", "pantalla": "buscar", "porque": "Deuda (P12): el título de grupo pegajoso pisa 1 px del área de toque del chip de ciudad (se toca de 43)." },
+    { "regla": "tapado", "elemento": "lugares/ubicacion", "pantalla": "lugares", "anchos": [320], "porque": "Deuda (P12): a 320×568 la hoja asoma cubre la mitad de «Mi ubicación»; subir el botón sobre su franja." },
+    { "regla": "tapado", "elemento": "lugares/ubicacion", "pantalla": "hoja-llena", "anchos": [320, 390], "porque": "Permanente: con la hoja llena el mapa queda cubierto a propósito." },
+    { "regla": "tapado", "elemento": "a.mapboxgl-ctrl-logo", "pantalla": "hoja-llena", "anchos": [320, 390], "porque": "Permanente: con la hoja llena el mapa queda cubierto a propósito." }
+  ],
+  "presupuestos": {
+    "01-inicio": { "nodos": [257, 257, 259, 259], "profundidad": [11, 11, 11, 11] },
+    "02-agenda": { "nodos": [265, 265, 267, 267], "profundidad": [10, 10, 10, 10] },
+    "03-lugares-mapa": { "nodos": [171, 171, 172, 172], "profundidad": [12, 12, 12, 12] },
+    "04-lugares-lista": { "nodos": [171, 171, 172, 172], "profundidad": [12, 12, 12, 12] },
+    "05-artistas": { "nodos": [134, 134, 136, 136], "profundidad": [10, 10, 10, 10] },
+    "06-ficha-evento": { "nodos": [73, 73, 103, 103], "profundidad": [9, 9, 9, 9] },
+    "07-ficha-lugar-4": { "nodos": [95, 95, 125, 125], "profundidad": [12, 12, 12, 12] },
+    "08-ficha-lugar-5": { "nodos": [81, 81, 111, 111], "profundidad": [9, 9, 9, 9] },
+    "09-ficha-artista": { "nodos": [54, 54, 84, 84], "profundidad": [9, 9, 9, 9] },
+    "10-entrar": { "nodos": [21, 21, 51, 51], "profundidad": [7, 7, 7, 7] },
+    "s01-inicio-sesion": { "nodos": [282, 282, 284, 284], "profundidad": [9, 9, 9, 9] },
+    "s02-agenda-sesion": { "nodos": [268, 268, 270, 270], "profundidad": [10, 10, 10, 10] },
+    "s03-alta-evento": { "nodos": [48, 48, 82, 82], "profundidad": [9, 9, 9, 9] },
+    "s04-ajustes": { "nodos": [93, 93, 125, 119], "profundidad": [9, 9, 9, 9] },
+    "s05-perfil": { "nodos": [99, 99, 101, 101], "profundidad": [11, 11, 11, 11] },
+    "s06-ficha-evento-voy": { "nodos": [69, 69, 101, 101], "profundidad": [8, 8, 8, 8] },
+    "s07-alta-lugar": { "nodos": [38, 38, 72, 72], "profundidad": [9, 9, 9, 9] },
+    "s08-editar-perfil": { "nodos": [40, 40, 72, 72], "profundidad": [8, 8, 8, 8] },
+    "s09-novedades": { "nodos": [45, 45, 77, 73], "profundidad": [8, 8, 8, 8] },
+    "s10-buscar": { "nodos": [23, 23, 57, 57], "profundidad": [8, 8, 8, 8] },
+    "s11-alta-artista": { "nodos": [52, 52, 86, 86], "profundidad": [9, 9, 9, 9] },
+    "s12-lugares-hoja-llena": { "nodos": [173, 173, 174, 174], "profundidad": [12, 12, 12, 12] },
+    "s13-lugares-ficha-en-hoja": { "nodos": [159, 159, 160, 160], "profundidad": [14, 14, 14, 14] }
+  }
+}

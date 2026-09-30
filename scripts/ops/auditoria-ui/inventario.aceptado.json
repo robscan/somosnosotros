@@ -1,0 +1,43 @@
+{
+  "cifras": {
+    "bloquesDuplicados": 17,
+    "medidasEnDuro": 414
+  },
+  "excepciones": {
+    "zIndex": [
+      { "archivo": "app/lugares/lugares.module.css", "selector": ".ubicacion", "porque": "Deuda (P12): sube «Mi ubicación» sobre el lienzo del mapa, dentro de su caja; la hoja va más arriba. Pasarlo a una capa con nombre." },
+      { "archivo": "app/lugares/lugares.module.css", "selector": ".avisoMapa", "porque": "Deuda (P12): sube el aviso del mapa sobre el lienzo, dentro de su caja. Pasarlo a una capa con nombre." },
+      { "archivo": "components/ui/Ficha.module.css", "selector": ".titulo", "porque": "Deuda (P12): pone el título sobre la portada, que comparte su área; solo ordena a esos dos. Pasarlo a una capa con nombre." }
+    ],
+    "colores": [
+      { "archivo": "app/globals.css", "selector": "[data-sigue]", "porque": "Permanente: la máscara solo usa la transparencia; el color de su parada no se ve." },
+      { "archivo": "app/admin/obras-colectivas/obras.module.css", "porque": "Deuda (P12): el blanco es `--fondo`; el hueso de la miniatura de obra no tiene token." },
+      { "archivo": "app/artistas/[id]/letrero/letrero.module.css", "porque": "Permanente: el letrero se imprime, en blanco y negro fijos, sin depender del tema." },
+      { "archivo": "app/entrar/FormularioEntrar.module.css", "porque": "Permanente: los botones de Apple y de Google llevan los colores y bordes de sus guías de marca." },
+      { "archivo": "app/lugares/FichaHoja.module.css", "porque": "Deuda (P12): sombra del asa de la hoja; sin token." },
+      { "archivo": "app/lugares/HojaLugares.module.css", "porque": "Deuda (P12): color de la barra de desplazamiento de la hoja; sin token." },
+      { "archivo": "app/obra/[id]/mando/mando.module.css", "porque": "Permanente: la obra colectiva pinta su propia paleta, aparte de la de la app." },
+      { "archivo": "app/obra/[id]/pared/pared.module.css", "porque": "Permanente: la obra colectiva pinta su propia paleta, aparte de la de la app." },
+      { "archivo": "components/Cartel.module.css", "porque": "Deuda (P12): fondo oscuro del visor de carteles; sin token." },
+      { "archivo": "components/HojaInstalar.module.css", "porque": "Permanente: azul de sistema de iOS en la pista de «Agregar a inicio»." },
+      { "archivo": "components/Mapa.module.css", "porque": "Permanente: el punto «tú estás aquí» lleva el azul de los mapas con transparencia (el token no la admite) y su aro blanco." },
+      { "archivo": "components/MapaDondeEs.module.css", "porque": "Permanente: el punto «tú estás aquí» lleva el azul de los mapas con transparencia (el token no la admite) y su aro blanco." },
+      { "archivo": "components/ui/CodigoQr.module.css", "porque": "Permanente: el código QR va sobre blanco puro para que las cámaras lo lean con cualquier tema." },
+      { "archivo": "components/ui/Hoja.module.css", "porque": "Deuda (P12): velo detrás de las hojas; sin token." },
+      { "archivo": "components/ui/Incrustado.module.css", "porque": "Deuda (P12): fondos fijos del marco de video mientras carga; sin token." },
+      { "archivo": "components/ui/Palanca.module.css", "porque": "Deuda (P12): sombra de la perilla del interruptor; sin token." },
+      { "archivo": "components/ui/VideoEmbed.module.css", "porque": "Deuda (P12): fondo fijo del marco de video mientras carga; sin token." }
+    ],
+    "vw100": [],
+    "margenesNegativos": [
+      { "archivo": "app/admin/admin.module.css", "selector": ".nota", "porque": "Deuda (P12): acerca la nota al título que la precede; con la rejilla se resuelve con el `gap` del grupo." },
+      { "archivo": "app/admin/admin.module.css", "selector": ".lista > [role=\"group\"]", "porque": "Deuda (P12): los chips de la lista del admin salen del gutter a todo lo ancho." },
+      { "archivo": "app/admin/admin.module.css", "selector": ".menu", "porque": "Deuda (P12): el menú del admin sale del gutter a todo lo ancho." },
+      { "archivo": "app/eventos/SelectorQuien.module.css", "selector": ".elegido > svg", "porque": "Permanente: la ✕ descuenta su aire interno para quedar donde quedaba la letra." },
+      { "archivo": "app/obra/[id]/mando/mando.module.css", "selector": ".tarjeta[aria-expanded=\"true\"] > span::after", "porque": "Permanente: la obra colectiva monta un filete de 1 px sobre el borde de su tarjeta." },
+      { "archivo": "components/SalirSinPublicar.module.css", "selector": ".salida p", "porque": "Deuda (P12): acerca el párrafo al título de la hoja." },
+      { "archivo": "components/ui/Aviso.module.css", "selector": ".cerrar", "porque": "Permanente: la ✕ mide 44 para el toque y no debe engordar la fila del aviso." },
+      { "archivo": "components/ui/EnlaceExterno.module.css", "selector": ".porque", "porque": "Deuda (P12): acerca el porqué al enlace que explica." }
+    ]
+  }
+}
