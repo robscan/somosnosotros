@@ -4,7 +4,9 @@
  *  filtrar la lista recogida sube a asoma, y la ficha: abre a foto y datos, llena cubre la pantalla entera (también la fila), la ✕ la cierra
  *  y la lista vuelve al desplazamiento que tenía, y su cabecera se vuelve compacta al desplazar. Y (docs/rediseno/50, P6 y OL-237) la pastilla de
  *  Seguir: en el héroe, junto al menú «···», mientras la portada se ve; al compactarse la cabecera flota abajo (al pie cuando está llena),
- *  escondida recogida; y el aviso sube sobre ella.
+ *  escondida recogida; y el aviso sube sobre ella. Y (ajuste del founder, 2026-09-30) el movimiento: la ficha entra desde el borde de abajo, la ✕
+ *  baja la hoja y solo después la cierra, la lista vuelve entrando igual sin que nada medido a media entrada falsee sus alturas, tocar la hoja
+ *  termina la entrada, y con «reducir movimiento» o desde 792 nada se mueve.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -43,7 +45,7 @@ before(async () => {
       import React, {useRef, useState} from 'react';import {createRoot} from 'react-dom/client';
       import HojaLugares from './src/app/lugares/HojaLugares';import FichaHoja from './src/app/lugares/FichaHoja';import Seguir from './src/components/Seguir';import Cabecera from './src/components/ui/Cabecera';import lugares from './src/app/lugares/lugares.module.css';import './src/app/globals.css';
       const lugar = { id: 'l1', slug: 'l1', nombre: 'Museo de prueba', tipo: 'museo', direccion: 'Calle 1', lat: 0, lng: 0, portada: null, proximo: null };
-      window.qa = { avisos: [], cambios: [], fallar: false, acciones: [] };
+      window.qa = { avisos: [], cambios: [], fallar: false, acciones: [], gesto: false };
       window.addEventListener('armazon:hoja', (e) => window.qa.avisos.push(e.detail));
       // Un Server Component real reenvía "sigo" al día tras guardar; aquí se imita guardando lo que la acción recibió.
       function SeguirDePrueba() {
@@ -53,6 +55,7 @@ before(async () => {
       }
       function App() {
         const [abierta, setAbierta] = useState(false);
+        const [entrada, setEntrada] = useState(0);
         const manejo = useRef(null);
         window.qa.mostrar = () => manejo.current.mostrarLista();
         // El cuerpo es un solo elemento con data-cuerpo (así lo entrega CuerpoLugar) y la pastilla, otro hijo de la ficha.
@@ -62,11 +65,11 @@ before(async () => {
           seguir: <SeguirDePrueba />,
         };
         const hoja = (
-          <HojaLugares ref={manejo} resumen="12 lugares" ficha={abierta ? <FichaHoja lugar={lugar} piezas={piezas} onCerrar={() => setAbierta(false)} /> : null} alAsentar={(e) => window.qa.cambios.push(e)}>
+          <HojaLugares ref={manejo} resumen="12 lugares" entrada={entrada} ficha={abierta ? <FichaHoja lugar={lugar} piezas={piezas} onCerrar={() => setAbierta(false)} /> : null} alAsentar={(e) => window.qa.cambios.push(e)}>
             <ul style={{ listStyle: 'none' }}>
               {Array.from({ length: 14 }, (_, i) => (
                 <li key={i} style={{ height: 100, borderBottom: '1px solid #ddd' }}>
-                  <a href="#" onClick={(e) => { e.preventDefault(); setAbierta(true); }}>Renglón {i}</a>
+                  <a href="#" onClick={(e) => { e.preventDefault(); setAbierta(true); setEntrada((n) => n + (window.qa.gesto ? 1 : 0)); }}>Renglón {i}</a>
                 </li>
               ))}
             </ul>
@@ -116,8 +119,8 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function abrir(ancho = 390, alto = 844) {
-  const context = await browser.newContext({ viewport: { width: ancho, height: alto } });
+async function abrir(ancho = 390, alto = 844, reducir = false) {
+  const context = await browser.newContext({ viewport: { width: ancho, height: alto }, reducedMotion: reducir ? "reduce" : "no-preference" });
   const page = await context.newPage();
   const errores = [];
   page.on("pageerror", (e) => errores.push(e.message));
@@ -308,6 +311,88 @@ test("la ficha abre a foto y datos, la ✕ la cierra y la lista vuelve a donde e
   assert.equal(despues.hoja, antes.hoja);
   cerca(despues.y, antes.y);
   assert.deepEqual(page.errores, []);
+});
+
+/** El movimiento de la hoja ahora: cuánto lleva corrida hacia abajo (px), cuántas animaciones de `transform` tiene (con «reducir movimiento» las
+ *  transiciones de lo demás duran 0,01 ms y aparecen en `getAnimations`), si la ficha sigue a la vista y si ya no recibe toques. */
+const movimiento = (page) =>
+  page.evaluate(() => {
+    const hoja = document.querySelector('[role="region"][aria-label="Lugares"]');
+    return { y: new DOMMatrixReadOnly(getComputedStyle(hoja).transform).m42, animaciones: hoja.getAnimations().filter((a) => a.effect.getKeyframes().some((k) => "transform" in k)).length, ficha: !!hoja.querySelector("[data-ficha-hoja]"), sale: hoja.hasAttribute("data-sale") };
+  });
+const abrirRenglon = (page, n) => page.getByRole("link", { name: `Renglón ${n}`, exact: true }).evaluate((a) => a.click());
+
+test("con movimiento, la ficha entra desde el borde de abajo, la ✕ la baja y solo después la cierra, y la lista vuelve entrando igual sin perder sus alturas; tocar la hoja termina la entrada", async () => {
+  const page = await abrir();
+  await page.evaluate(() => (window.qa.gesto = true)); // abrir la ficha desde un renglón es un gesto: la hoja entra con movimiento
+  const asoma = await estado(page);
+  // Las alturas de la lista, con la hoja quieta: a dónde la lleva el asa desde asoma (llena) y de vuelta.
+  const asaLista = page.getByRole("button", { name: "Subir o bajar la lista" });
+  await asaLista.click();
+  await page.waitForTimeout(900);
+  const llena = (await estado(page)).y;
+  await asaLista.click();
+  await asaLista.click();
+  await page.waitForTimeout(900);
+  assert.equal((await estado(page)).hoja, "asoma");
+  // Entrada: en el primer cuadro la hoja lleva corrido todo lo que se ve de su cuerpo (empieza en el borde de abajo, sin tiempo muerto) y en menos de un segundo queda en su altura.
+  await abrirRenglon(page, 2);
+  const entra = await movimiento(page);
+  assert.equal(entra.animaciones, 1, "la entrada es una animación de la hoja entera");
+  await page.waitForTimeout(1200);
+  const media = await estado(page);
+  assert.equal(media.hoja, "media");
+  cerca(entra.y, media.visible + 60, 30); // `visible` de `estado` ya resta la navegación (60)
+  assert.deepEqual([(await movimiento(page)).animaciones, (await movimiento(page)).y], [0, 0], "al terminar, la hoja queda sin transform");
+  // Salida: la ficha sigue ahí mientras la hoja baja, sin recibir toques (los recibe el mapa), y solo al salir se cierra.
+  const antes = Date.now();
+  await page.getByRole("button", { name: "Cerrar la ficha" }).click();
+  const sale = await movimiento(page);
+  assert.deepEqual([sale.ficha, sale.sale, sale.animaciones], [true, true, 1]);
+  assert.equal(await page.evaluate(() => document.elementFromPoint(195, 700)?.id), "mapa", "mientras baja, el mapa recibe los toques");
+  await page.waitForFunction(() => !document.querySelector("[data-ficha-hoja]"), null, { timeout: 2000 });
+  const tarda = Date.now() - antes;
+  assert.ok(tarda >= 300 && tarda < 1000, `la ficha se cierra al terminar de salir (${tarda} ms)`);
+  // La lista vuelve entrando igual desde abajo. Si algo mide mientras entra (aquí, un renglón que llega), sus alturas no se falsean.
+  const entraLista = await movimiento(page);
+  assert.deepEqual([entraLista.ficha, entraLista.sale, entraLista.animaciones], [false, false, 1]);
+  assert.ok(entraLista.y > 100, `la lista entra desde abajo (${entraLista.y})`);
+  await page.evaluate(() => {
+    const li = document.createElement("li");
+    li.style.height = "100px";
+    document.querySelector('[role="region"][aria-label="Lugares"] ul').append(li);
+  });
+  await page.waitForTimeout(1500);
+  const vuelve = await estado(page);
+  assert.equal(vuelve.hoja, asoma.hoja);
+  cerca(vuelve.y, asoma.y, 1);
+  assert.deepEqual([(await movimiento(page)).animaciones, (await movimiento(page)).y], [0, 0]);
+  await asaLista.click();
+  await page.waitForTimeout(900);
+  cerca((await estado(page)).y, llena, 1); // «llena» sigue donde estaba: lo medido a media entrada no lo movió
+  await asaLista.click();
+  await asaLista.click();
+  await page.waitForTimeout(900);
+  // El gesto gana: un dedo sobre la hoja a media entrada la termina de golpe.
+  await abrirRenglon(page, 3);
+  assert.equal((await movimiento(page)).animaciones, 1);
+  await page.evaluate(() => document.querySelector('[role="region"][aria-label="Lugares"]').dispatchEvent(new TouchEvent("touchstart", { bubbles: true, cancelable: true })));
+  assert.deepEqual([(await movimiento(page)).animaciones, (await movimiento(page)).y, (await movimiento(page)).ficha], [0, 0, true]);
+  assert.deepEqual(page.errores, []);
+});
+
+test("con «reducir movimiento», y desde 792, la ficha aparece en su sitio y la ✕ la cierra al instante", async () => {
+  for (const [ancho, alto, reducir] of [[390, 844, true], [1280, 800, false]]) {
+    const page = await abrir(ancho, alto, reducir);
+    await page.evaluate(() => (window.qa.gesto = true));
+    await abrirRenglon(page, 2);
+    const abierta = await movimiento(page);
+    assert.deepEqual([abierta.animaciones, abierta.y, abierta.ficha], [0, 0, true], `a ${ancho} la ficha aparece sin animarse`);
+    await page.getByRole("button", { name: "Cerrar la ficha" }).click();
+    const cerrada = await movimiento(page);
+    assert.deepEqual([cerrada.animaciones, cerrada.y, cerrada.ficha, cerrada.sale], [0, 0, false, false], `a ${ancho} la ✕ cierra sin esperar nada`);
+    assert.deepEqual(page.errores, []);
+  }
 });
 
 /** Dónde están la pastilla de Seguir y el menú «···» de la ficha: sus cajas y lo que hay entre la pastilla y el pie de la ventana. */

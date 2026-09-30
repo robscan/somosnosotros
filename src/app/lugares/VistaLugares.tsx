@@ -118,6 +118,9 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
   // Con `fichaInicial` (Buscar, desde Lugares) la ficha ya está abierta desde el primer cuadro: la hoja sube a ella y el mapa se centra.
   const [inicial] = useState(() => (fichaInicial ? lugares.find((l) => (l.slug || l.id) === fichaInicial) : undefined));
   const [ficha, setFicha] = useState<FichaAbierta | null>(() => (inicial ? { lugar: inicial, piezas: null, deExtra: null } : null));
+  /** Cambia con cada ficha que se abre por un gesto de la persona (un pin, un renglón): la hoja entra con movimiento. Al reponer la pantalla o
+   *  llegar con la ficha ya abierta no cambia, y la ficha aparece en su sitio. */
+  const [entrada, setEntrada] = useState(0);
   /** Cómo quedó la hoja al asentarse (para la memoria de pantalla y para dejar libre al mapa lo que ella tapa). */
   const [hoja, setHoja] = useState<EstadoHoja>({ detente: "asoma", y: 0, cubre: 0 });
   const [restaurar, setRestaurar] = useState<DondeEstaba>();
@@ -158,12 +161,13 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
 
   const encuadrar = (puntos: Punto[]) => setEncuadre((e) => ({ puntos, vez: (e?.vez ?? 0) + 1 }));
 
-  function abrir(lugar: LugarLista) {
+  function abrir(lugar: LugarLista, porGesto = true) {
     disparador.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    // Con otra ficha ya abierta la hoja no se mueve y la cámara va al momento; si no, espera a lo que tapará la ficha al abrirse.
+    // Con otra ficha ya abierta la hoja no cambia de altura y la cámara va al momento; si no, espera a lo que tapará la ficha al abrirse.
     if (abierta) encuadrar([lugar]);
     else porEncuadrar.current = [lugar];
     setFicha({ lugar, piezas: null, deExtra: extra });
+    if (porGesto) setEntrada((n) => n + 1);
     pedirPiezas(lugar, extra);
   }
   function alAsentar(estado: EstadoHoja) {
@@ -225,7 +229,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
     if (!r.hoja) return;
     setRestaurar({ detente: r.hoja.detente, y: r.hoja.y });
     const lugar = r.hoja.ficha ? lugares.find((l) => (l.slug || l.id) === r.hoja.ficha) : undefined;
-    if (lugar) abrir(lugar);
+    if (lugar) abrir(lugar, false);
   });
 
   // Al cambiar de ciudad la pantalla sigue montada (la URL trae otros lugares): la hoja y el mapa responden como ante un filtro.
@@ -271,6 +275,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
             onCerrarGeo={() => setGeo("sin-pedir")}
             onUbicacion={centrarEnMi}
             ficha={abierta}
+            entrada={entrada}
             onAbrir={abrir}
             onCerrarFicha={cerrar}
             restaurar={restaurar}
@@ -309,6 +314,8 @@ type PropsCuerpo = {
   onCerrarGeo: () => void;
   onUbicacion: () => void;
   ficha: FichaAbierta | null;
+  /** Cambia con cada ficha que se abre por un gesto de la persona: la hoja entra con movimiento. */
+  entrada: number;
   onAbrir: (lugar: LugarLista) => void;
   onCerrarFicha: () => void;
   restaurar: DondeEstaba | undefined;
@@ -321,7 +328,7 @@ type PropsCuerpo = {
  * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
  * de ese estado.
  */
-function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, onAbrir, onCerrarFicha, restaurar, alAsentar, hojaRef }: PropsCuerpo) {
+function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, hojaRef }: PropsCuerpo) {
   const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
   // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
@@ -368,6 +375,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           )
         }
         ficha={ficha && <FichaHoja key={ficha.lugar.id} lugar={ficha.lugar} piezas={ficha.piezas} onCerrar={onCerrarFicha} />}
+        entrada={entrada}
         desde={restaurar}
         alAsentar={alAsentar}
       >

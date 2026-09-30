@@ -83,3 +83,12 @@ export function detenteAlFiltrar(detente: Detente): Detente {
 export function cabeceraCompacta(y: number, compactaDesde: number, detente: Detente, enPanel: boolean): boolean {
   return y >= compactaDesde || (!enPanel && detente === "recogida");
 }
+
+/**
+ * Un tiempo de CSS (`--duracion-resorte`) en milisegundos. El minificador reescribe la unidad de las variables (`800ms` sale como `.8s`),
+ * así que se entienden las dos.
+ */
+export function tiempoEnMs(css: string): number {
+  const tiempo = css.trim();
+  return tiempo.endsWith("ms") ? parseFloat(tiempo) : parseFloat(tiempo) * 1000;
+}
