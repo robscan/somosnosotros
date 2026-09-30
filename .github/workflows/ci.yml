@@ -37,3 +37,9 @@ jobs:
           TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
 
       - run: npm run build
+
+      # Protección de la interfaz (docs/rediseno/50 § 9): los estilos y el DOM medido, con el respaldo local de datos inventados
+      # y sin ninguna llave. `medir` levanta el respaldo y la app por su cuenta y espera a que respondan.
+      - run: npm run inventario
+      - run: npx playwright-core install --with-deps --only-shell chromium
+      - run: npm run medir
