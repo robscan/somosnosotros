@@ -6,8 +6,9 @@
 .capa {
   position: fixed;
   inset: 0;
-  /* Por debajo de ui/ListaFlotante (60, portal a document.body). */
-  z-index: 55;
+  /* Por debajo de ui/ListaFlotante (`--z-encima`, portal a document.body). Dentro, cada pieza usa la banda de la escala
+     que le toca, en el mismo orden que en «¿Dónde es?»: campo, resumen y aviso, «Estoy aquí». */
+  z-index: calc(var(--z-capa) + 1);
   display: flex;
   flex-direction: column;
   background: var(--fondo);
@@ -62,7 +63,7 @@
 
 .campo {
   position: relative;
-  z-index: 4;
+  z-index: var(--z-pegajoso);
   flex: none;
   display: flex;
   align-items: center;
@@ -100,7 +101,7 @@
 .estoyAqui {
   position: absolute;
   left: var(--gutter);
-  z-index: 11;
+  z-index: calc(var(--z-hoja) + 1);
   display: grid;
   place-items: center;
   width: var(--toque);
@@ -122,7 +123,7 @@
   left: var(--gutter);
   right: var(--gutter);
   top: 12px;
-  z-index: 5;
+  z-index: var(--z-flotante);
   margin: 0;
   padding: var(--espacio-2) var(--espacio-3);
   border-radius: var(--radio);
@@ -139,7 +140,7 @@
   left: var(--gutter);
   right: var(--gutter);
   top: 12px;
-  z-index: 5;
+  z-index: var(--z-flotante);
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -196,7 +197,7 @@
 .marcaExiste {
   margin-left: 6px;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--fondo-suave);
   color: var(--texto-suave);
   font-size: var(--letra-xs);

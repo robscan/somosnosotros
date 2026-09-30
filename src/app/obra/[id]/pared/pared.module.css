@@ -28,9 +28,9 @@
   left: 24px;
   /* OL-120: el QR vive arriba a la derecha; el título cede ancho (se parte) antes que chocar con él. */
   right: clamp(190px, 12vw, 250px);
-  z-index: 1;
+  z-index: var(--z-flotante);
   display: grid;
-  gap: 4px;
+  gap: var(--espacio-1);
   pointer-events: none;
 }
 .titulo > p {
@@ -54,13 +54,13 @@
   position: absolute;
   top: 24px;
   right: 24px;
-  z-index: 1;
+  z-index: var(--z-flotante);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
-  gap: 8px;
+  gap: var(--espacio-2);
   margin: 0;
-  padding: 10px 10px 8px;
+  padding: 10px 10px var(--espacio-2);
   border-radius: var(--radio-grande);
   background: var(--vidrio);
   box-shadow: var(--sombra);
@@ -83,7 +83,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1;
+  z-index: var(--z-flotante);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -95,8 +95,9 @@
 .esquina {
   position: absolute;
   left: 24px;
+  right: 24px; /* con `left` y `right` la esquina mide la ventana menos 24px por lado, y la sonda se topa ahí */
   bottom: 88px;
-  z-index: 2;
+  z-index: calc(var(--z-flotante) + 1);
   display: grid;
   gap: 10px;
   justify-items: start;
@@ -177,10 +178,10 @@
 }
 /* OL-126: la sonda de latencia, solo con `?sonda=1`: abajo a la izquierda (dentro de .esquina), sin toques. */
 .sonda {
-  max-width: min(720px, calc(100vw - 48px));
+  max-width: min(720px, 100%);
   margin: 0;
-  padding: 8px 10px;
-  border-radius: 8px;
+  padding: var(--espacio-2) 10px;
+  border-radius: var(--radio);
   background: rgba(255, 255, 255, 0.9);
   color: var(--error);
   font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;

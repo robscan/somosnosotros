@@ -3,7 +3,7 @@
   align-items: center;
   min-height: 40px;
   padding: 0 var(--espacio-4);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--primario);
   color: var(--primario-texto);
   font-size: var(--letra-md);
