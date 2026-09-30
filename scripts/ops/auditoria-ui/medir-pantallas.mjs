@@ -88,23 +88,31 @@ async function esperar(url, proceso) {
 }
 
 // ---------- una pantalla a un ancho ----------
+// La pantalla está quieta cuando React colocó todo lo que llegó por streaming, el mapa terminó de cargar, no queda ninguna animación
+// con fin (el pulso del pin elegido dura medio segundo y vive en el DOM) y pasaron 30 cuadros sin cambios en el DOM. Se cuentan cuadros
+// y no milisegundos: con la máquina cargada el mapa y sus animaciones también avanzan más despacio.
 async function aquietar(page) {
   await page.waitForLoadState("networkidle", { timeout: 20000 });
   const pendiente = await page.evaluate(async () => {
     await document.fonts.ready;
-    const pendiente = () => document.querySelectorAll('template[id^="B:"], [hidden][id^="S:"]').length; // React aún no coloca lo que llega por streaming
-    const quieto = (ms) =>
+    const animando = () => document.getAnimations().some((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity);
+    const pendiente = () => document.querySelectorAll('template[id^="B:"], [hidden][id^="S:"]').length > 0 || document.body.innerText.includes("Cargando el mapa") || animando();
+    const quieto = (cuadros) =>
       new Promise((ok) => {
-        let t = setTimeout(fin, ms);
-        const o = new MutationObserver(() => { clearTimeout(t); t = setTimeout(fin, ms); });
-        function fin() { o.disconnect(); ok(); }
+        let n = 0;
+        const o = new MutationObserver(() => (n = 0));
         o.observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true });
+        (function paso() {
+          if (++n < cuadros) return requestAnimationFrame(paso);
+          o.disconnect();
+          ok();
+        })();
       });
     let vueltas = 0;
-    do await quieto(400); while (pendiente() && ++vueltas < 25);
+    do await quieto(30); while (pendiente() && ++vueltas < 25);
     return pendiente();
   });
-  if (pendiente) throw new Error("la pantalla no se aquietó: React seguía enviando piezas");
+  if (pendiente) throw new Error("la pantalla no se aquietó (React, el mapa o una animación seguían pendientes)");
 }
 async function medirPantalla(browser, medirJs, base, p, i) {
   const [ancho, alto] = [ANCHOS[i], ALTOS[i]];
