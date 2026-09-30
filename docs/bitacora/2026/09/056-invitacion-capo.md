@@ -57,4 +57,4 @@ El founder aprobó el texto mandando la primera tanda él mismo: `npx tsx script
 - 2026-09-28 · mandados 15 · fallidos 0 · quedan 338
 - 2026-09-28 · mandados 15 · fallidos 0 · quedan 323. Segunda tanda del día (rutina programada).
 - 2026-09-29 · mandados 15 · fallidos 0 · quedan 308
-2026-09-30 · mandados 15 · fallidos 0 · quedan 293
+- 2026-09-30 · mandados 15 · fallidos 0 · quedan 293
