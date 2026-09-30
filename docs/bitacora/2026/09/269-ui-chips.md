@@ -1,6 +1,6 @@
 # 269 · P10 Chips y sellos unificados, carril con subgrid y tarjeta sin foto (OL-241)
 
-**Fecha:** 2026-09-30 · **Rama:** `ui-chips`, desde `origin/ui-hoja-filtros` (`02dc4c06`) · **OL:** OL-241 · **PR:** #PR (sin unir; va montado sobre #278, `ui-hoja-filtros`, que va sobre #277, #276, #275, #274, #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Pieza P10 del plan de OL-227 (doc 50, § 7; H-02, H-03 y H-19).
+**Fecha:** 2026-09-30 · **Rama:** `ui-chips`, desde `origin/ui-hoja-filtros` (`02dc4c06`) · **OL:** OL-241 · **PR:** #279 (sin unir; va montado sobre #278, `ui-hoja-filtros`, que va sobre #277, #276, #275, #274, #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Pieza P10 del plan de OL-227 (doc 50, § 7; H-02, H-03 y H-19).
 
 ## Pedido
 
