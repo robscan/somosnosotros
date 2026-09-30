@@ -2,11 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { pedirRecogida } from "@/components/Armazon";
+import { CARRIL } from "@/lib/armazon";
 import { alturaSiguiente, destinoAlAsentar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
 import styles from "./HojaLugares.module.css";
 
-/** Desde este ancho la hoja es el panel de la izquierda, sin alturas ni asa (la misma consulta que `HojaLugares.module.css`). */
-const PANEL = "(min-width: 792px)";
 /** La lista asoma con dos renglones y medio: el tercero sale cortado a propósito, para que se entienda que hay más. */
 const RENGLONES_QUE_ASOMAN = 2.5;
 /** La ficha abre a foto y datos con esto de lo que sigue asomando debajo (px). */
@@ -16,7 +15,8 @@ const REPOSO_MS = 140;
 /** Lo que queda de la hoja por encima del borde del cuerpo cuando se recorta el hueco (px): su sombra. */
 const REBORDE = 24;
 
-const enPanel = () => window.matchMedia(PANEL).matches;
+/** Desde el carril la hoja es el panel de la izquierda, sin alturas ni asa. */
+const enPanel = () => window.matchMedia(CARRIL).matches;
 
 /** Lo que la hoja mide de sí misma en el DOM, todo en posiciones de desplazamiento (`y`). */
 type Medidas = {

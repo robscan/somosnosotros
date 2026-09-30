@@ -1,11 +1,11 @@
-/* Navegación inferior: fija, elevada sobre el contenido; el destino activo lleva una píldora detrás del icono. Solo en
-   las raíces: las demás vistas llevan su propia cabecera y no traen navegación (data-vista, ver Armazon.tsx). En el
-   teléfono se recoge con la barra de arriba: baja y se va al bajar, y vuelve al subir. */
+/* La navegación entre las cinco secciones (NavSecciones.tsx). En el teléfono, una barra fija al pie, elevada sobre el contenido,
+   que se recoge con la barra de arriba: baja y se va al bajar, y vuelve al subir. Solo la ven las raíces: el armazón la esconde
+   en las demás vistas (`Armazon.module.css`). Desde 792 es un carril a la izquierda, una columna de la rejilla del armazón bajo la
+   barra de la app, en dos grupos (las cuatro secciones arriba, Perfil abajo), que no se guarda. El destino activo lleva una
+   píldora de color detrás del icono. */
 .nav {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: auto 0 0;
   z-index: var(--z-flotante);
   display: grid;
   grid-template-columns: repeat(5, 1fr); /* Inicio · Agenda · Lugares · Artistas · Perfil */
@@ -19,21 +19,12 @@
     transform var(--duracion-recogida) var(--curva),
     visibility 0s;
 }
-:global([data-vista]:not([data-vista="raiz"])) .nav {
-  display: none;
-}
 :global([data-recogida]) .nav {
   transform: translateY(100%);
   visibility: hidden;
   transition:
     transform var(--duracion-recogida) var(--curva),
     visibility 0s var(--duracion-recogida);
-}
-@media (min-width: 792px) {
-  :global([data-recogida]) .nav {
-    transform: none;
-    visibility: visible;
-  }
 }
 .destino {
   display: flex;
@@ -69,6 +60,35 @@
 }
 .activo span:last-child {
   font-weight: 700;
+}
+
+/* El carril: sticky bajo la barra de la app, del alto de lo que queda de la ventana (con la ventana muy baja, un teléfono de
+   lado, se desplaza dentro de sí). Sus filas: las cuatro secciones, lo que sobre y Perfil al final. */
+@media (min-width: 792px) {
+  .nav {
+    position: sticky;
+    inset: var(--barra-flujo) auto auto;
+    grid-area: nav;
+    align-self: start;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(4, max-content) minmax(0, 1fr) max-content;
+    justify-items: center;
+    row-gap: var(--espacio-2);
+    height: calc(100dvh - var(--barra-flujo));
+    padding: var(--espacio-4) var(--espacio-2) calc(var(--espacio-4) + var(--piso));
+    overflow-y: auto;
+    border-top: 0;
+    border-right: 1px solid var(--borde);
+    box-shadow: none;
+  }
+  .destino {
+    width: 72px;
+    padding: 6px 0;
+    border-radius: var(--radio);
+  }
+  .perfil {
+    grid-row: 6;
+  }
 }
 
 /* La foto de la persona (o su inicial) en la píldora de Perfil (PerfilEnNav): con el destino activo, un aro blanco la separa del violeta */

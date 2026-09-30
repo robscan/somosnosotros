@@ -1,7 +1,8 @@
-/** El armazón (OL-232, bitácora 260): una sola rejilla con la barra de la app, la pantalla y la navegación. El layout pone
- *  `data-vista` según la ruta y el CSS solo lee ese atributo: en el teléfono las raíces llevan la barra y la navegación y
- *  las demás vistas no; al bajar se recogen las dos y la fila de contexto sube con ellas; desde 792 la barra está en todas
- *  las vistas menos en las que llenan la ventana y no se recoge. Todo lo que se toca en la barra mide 44 como mínimo.
+/** El armazón (OL-232, bitácora 260; OL-236, bitácora 264): una sola rejilla con la barra de la app, la pantalla y la navegación.
+ *  El layout pone `data-vista` según la ruta y el CSS solo lee ese atributo: en el teléfono las raíces llevan la barra y la
+ *  navegación (abajo) y las demás vistas no; al bajar se recogen las dos y la fila de contexto sube con ellas; desde 792 la barra
+ *  y la navegación (un carril a la izquierda) están en todas las vistas menos en las que llenan la ventana y no se recogen.
+ *  Todo lo que se toca en la barra mide 44 como mínimo.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chromium node --test este-archivo
  * (no corre con `npm test`, que solo toma `.test.ts`, como las demás `.componentes.test.mjs` del repo). */
 import { after, before, test } from "node:test";
@@ -37,11 +38,12 @@ before(async () => {
       import React from 'react';import {createRoot} from 'react-dom/client';
       import Armazon from './src/components/Armazon';
       import BarraApp from './src/components/BarraApp';
-      import NavInferior from './src/components/NavInferior';
+      import NavSecciones from './src/components/NavSecciones';
       import EnBarra from './src/components/EnBarra';
       import Barra from './src/components/ui/Barra';
       import Boton from './src/components/ui/Boton';
       import Cabecera from './src/components/ui/Cabecera';
+      import Hecho from './src/components/Hecho';
       import BotonIcono from './src/components/ui/BotonIcono';
       import {IconoCampana, IconoHerramientas, IconoPuntos} from './src/components/ui/Iconos';
       import {usePathname} from 'next/navigation';
@@ -59,11 +61,13 @@ before(async () => {
       }
       function App() {
         return (
-          <Armazon barra={<BarraApp admin={sesion === 'admin' ? llave : null} sesion={sesion === 'entrar' ? entrar : campana} />} nav={<NavInferior perfil={<span>A</span>} />}>
+          <Armazon barra={<BarraApp admin={sesion === 'admin' ? llave : null} sesion={sesion === 'entrar' ? entrar : campana} />} nav={<NavSecciones perfil={<span>A</span>} />}>
             <Tarea />
             <main className="raiz">
               <EnBarra volver={{ href: '/agenda', texto: 'Agenda' }} menu={menu} />
               <Cabecera contexto={<span style={{ height: 44 }}>chip</span>} onBuscar={() => {}} />
+              <div data-gutter style={{ margin: '0 var(--gutter)', height: 10 }} />
+              {new URLSearchParams(location.search).get('hecho') && <Hecho texto="Te interesa «Concierto»" onDeshacer={() => {}} onCerrar={() => {}} />}
               <ul style={{ listStyle: 'none' }}>{Array.from({ length: 60 }, (_, i) => <li key={i} style={{ height: 80 }}>fila {i}</li>)}</ul>
             </main>
           </Armazon>
@@ -126,7 +130,8 @@ const caja = (loc) =>
   loc.evaluate((e) => {
     const r = e.getBoundingClientRect();
     const d = (v) => Math.round(v * 10) / 10;
-    return { x: d(r.left), y: d(r.top), w: d(r.width), h: d(r.height), b: d(r.bottom), display: getComputedStyle(e).display };
+    const cs = getComputedStyle(e);
+    return { x: d(r.left), y: d(r.top), w: d(r.width), h: d(r.height), b: d(r.bottom), display: cs.display, position: cs.position };
   });
 const barra = (p) => p.locator("[data-vista] > header");
 const nav = (p) => p.locator("nav[aria-label=Secciones]");
@@ -265,4 +270,100 @@ test("una tarea lleva el logotipo en su cabecera en el teléfono; desde 792 no l
   assert.equal(await logotipos(escritorio).count(), 1);
   assert.equal(await barra(escritorio).locator("a[aria-label^='Somos Nosotros']:visible").count(), 1, "escritorio: el de la barra de la app");
   assert.equal(await escritorio.locator("a[aria-label^='Cerrar']:visible").count(), 1, "y la cabecera de la tarea conserva su ✕");
+});
+
+// ---- Desde 792, el carril (OL-236) ----
+
+const destinos = (p) => nav(p).locator("a");
+const hrefs = (p) => destinos(p).evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+/** Dónde queda, y de qué ancho, lo que la pantalla pinta con el aire de página (`--gutter`). */
+const columna = (p) =>
+  p.locator("[data-gutter]").evaluate((e) => {
+    const r = e.getBoundingClientRect();
+    return [Math.round(r.left), Math.round(r.width)];
+  });
+
+test("teléfono: la navegación es la barra de abajo, de borde a borde, con las cinco secciones en fila", async (t) => {
+  const p = await pagina(t);
+  await ir(p, "/agenda");
+  const n = await caja(nav(p));
+  assert.deepEqual([n.x, n.w, n.h, n.position], [0, 390, 60, "fixed"]);
+  const filas = await destinos(p).evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+  assert.equal(new Set(filas).size, 1, `los cinco destinos, en la misma fila: ${filas}`);
+  assert.equal(await destinos(p).count(), 5);
+});
+
+test("desde 792: la navegación es un carril de 88 bajo la barra, del alto de la ventana, con las cuatro secciones arriba y Perfil abajo", async (t) => {
+  for (const [ancho, alto] of [[820, 1180], [1280, 800]]) {
+    const p = await pagina(t, ancho, alto);
+    await ir(p, "/agenda");
+    const n = await caja(nav(p));
+    assert.deepEqual([n.x, n.y, n.w, n.h, n.position], [0, 56, 88, alto - 56, "sticky"], `${ancho}: de la barra al pie de la ventana`);
+    assert.deepEqual(await hrefs(p), ["/", "/agenda", "/lugares", "/artistas", "/perfil"]);
+    const cajas = await destinos(p).evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; }));
+    for (const c of cajas) assert.ok(c.w === 72 && c.h >= 44 && Math.abs(c.x + c.w / 2 - 44) <= 0.5, `${ancho}: cada destino, en el centro del carril y a 44 como mínimo: ${JSON.stringify(c)}`);
+    assert.ok(cajas.slice(0, 4).every((c, i) => i === 0 || c.y > cajas[i - 1].y + cajas[i - 1].h - 1), `${ancho}: las cuatro secciones, una bajo otra`);
+    assert.ok(cajas[3].y + cajas[3].h < alto / 2, `${ancho}: las cuatro, arriba`);
+    assert.ok(Math.abs(cajas[4].y + cajas[4].h + 16 - alto) <= 1, `${ancho}: Perfil, al pie del carril`);
+    const pantalla = await caja(p.locator("[data-vista] > div"));
+    assert.deepEqual([pantalla.x, pantalla.w], [88, ancho - 88], `${ancho}: la pantalla es el resto de la rejilla`);
+  }
+});
+
+test("desde 792: el carril no se guarda al bajar, sigue en las fichas y las tareas, y la pantalla completa no lo trae", async (t) => {
+  const p = await pagina(t, 1280, 800);
+  await ir(p, "/agenda");
+  await bajar(p, 900);
+  assert.equal(await p.locator("[data-vista]").getAttribute("data-recogida"), null, "en escritorio nada se recoge");
+  for (const ruta of ["/agenda", "/eventos/concierto", "/eventos/nuevo"]) {
+    await ir(p, ruta);
+    const n = await caja(nav(p));
+    assert.deepEqual([n.x, n.y, n.w, n.h], [0, 56, 88, 744], `${ruta}: el carril sigue a la vista con la página desplazada`);
+  }
+  await ir(p, "/obra/4d2e/pared");
+  assert.equal((await caja(nav(p))).display, "none", "pantalla completa: sin carril");
+  assert.equal((await caja(barra(p))).display, "none", "pantalla completa: sin barra");
+  assert.deepEqual((({ x, w }) => [x, w])(await caja(p.locator("[data-vista] > div"))), [0, 1280], "pantalla completa: la pantalla se queda con toda la ventana");
+});
+
+test("el aire de página se mide sobre la pantalla: sin el carril queda centrado; las raíces y las fichas usan 960 desde 1048 y lo demás 600", async (t) => {
+  const p = await pagina(t, 390, 844);
+  await ir(p, "/agenda");
+  assert.deepEqual(await columna(p), [20, 350], "teléfono: 20 a cada lado");
+  await p.setViewportSize({ width: 820, height: 1180 });
+  assert.deepEqual(await columna(p), [88 + 66, 600], "820: la columna de 600 en el centro de lo que deja el carril");
+  await p.setViewportSize({ width: 1060, height: 800 });
+  assert.deepEqual(await columna(p), [88 + 20, 1060 - 88 - 40], "1060: la columna ancha aún no cabe entera, queda el aire mínimo");
+  await p.setViewportSize({ width: 1280, height: 800 });
+  for (const [ruta, esperado] of [["/agenda", [88 + 116, 960]], ["/eventos/concierto", [88 + 116, 960]], ["/eventos/nuevo", [88 + 296, 600]], ["/obra/4d2e/pared", [340, 600]]]) {
+    await ir(p, ruta);
+    assert.deepEqual(await columna(p), esperado, ruta);
+  }
+});
+
+test("la barra y la navegación solo se recogen en el teléfono: una ventana que crece hasta 792 las trae de vuelta y ya no se recogen", async (t) => {
+  const p = await pagina(t, 390, 844);
+  await ir(p, "/agenda");
+  await bajar(p, 900);
+  assert.equal(await p.locator("[data-vista]").getAttribute("data-recogida"), "");
+  await p.setViewportSize({ width: 1280, height: 800 });
+  await p.waitForTimeout(300);
+  assert.equal(await p.locator("[data-vista]").getAttribute("data-recogida"), null, "la ventana creció: nada recogido");
+  assert.deepEqual([(await caja(barra(p))).y, (await caja(nav(p))).y], [0, 56]);
+  await bajar(p, 1500);
+  assert.equal(await p.locator("[data-vista]").getAttribute("data-recogida"), null, "con el carril, bajar no recoge nada");
+});
+
+test("lo que se pinta fijo (el aviso con Deshacer y volver arriba) pasa el carril: nace en el borde de la columna y, sin barra de abajo, a 12 y 16 del pie", async (t) => {
+  // `pie`: lo que ocupa la navegación de abajo con la página arriba (60 en el teléfono, nada con el carril).
+  for (const [ancho, alto, izquierda, pie] of [[390, 844, 20, 60], [820, 1180, 88 + 66, 0], [1280, 800, 88 + 116, 0]]) {
+    const p = await pagina(t, ancho, alto, "?hecho=1");
+    await ir(p, "/agenda");
+    const aviso = await caja(p.locator("p[role=status]"));
+    assert.deepEqual([aviso.x, aviso.b], [izquierda, alto - pie - 12], `${ancho}: el aviso, en la columna y sobre la navegación de abajo si la hay`);
+    assert.equal(aviso.w, ancho < 792 ? ancho - 2 * izquierda : 420, `${ancho}: en el teléfono llena la columna; desde 792 no se estira`);
+    await bajar(p, 1500);
+    const volver = await caja(p.locator("button[aria-label='Volver arriba']"));
+    assert.deepEqual([volver.x, volver.b], [izquierda, alto - 16], `${ancho}: volver arriba, en la columna y a 16 del pie (en el teléfono, con la navegación ya recogida)`);
+  }
 });

@@ -4,11 +4,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import styles from "./template.module.css";
 
-/** Las tres secciones raíz de la barra inferior (`NavInferior`), por su ruta exacta (sin filtros ni ciudad). */
+/** Las tres secciones raíz de la navegación (`NavSecciones`), por su ruta exacta (sin filtros ni ciudad). */
 const SECCION_DE_RUTA: Record<string, string> = { "/": "agenda", "/lugares": "lugares", "/artistas": "artistas" };
 
 /**
- * Fundido de 200 ms al cambiar de sección en la barra inferior (Agenda ↔ Lugares ↔ Artistas), como pidió el
+ * Fundido de 200 ms al cambiar de sección en la navegación (Agenda ↔ Lugares ↔ Artistas), como pidió el
  * founder (L46, docs/rediseno/38-transiciones-cargador.md). Nada más se anima aquí: ni las fichas (tienen su propio
  * `template.tsx`), ni la barra o el scroll repuesto por la memoria de pantalla.
  *

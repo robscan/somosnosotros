@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
-import { vistaDeRuta } from "@/lib/armazon";
+import { CARRIL, vistaDeRuta } from "@/lib/armazon";
 import styles from "./Armazon.module.css";
 
 /** Del prototipo firmado: se recoge tras bajar más que esto, y solo si el dedo sigue bajando; vuelve al subir un poco. */
@@ -16,7 +16,8 @@ const RECOGIDA = "armazon:recogida";
 
 /**
  * Antes de llevar la pantalla a un punto (la tira de letras): la barra se recoge al momento y sin animar, así quien
- * mide lo que queda pegado arriba lee su alto final, y el propio salto no la vuelve a mostrar.
+ * mide lo que queda pegado arriba lee su alto final, y el propio salto no la vuelve a mostrar. Con el carril no hay nada que
+ * recoger.
  */
 export function recogerBarra() {
   window.dispatchEvent(new Event(RECOGER));
@@ -31,10 +32,11 @@ export function pedirRecogida(si: boolean) {
 }
 
 /**
- * El armazón de la app (docs/rediseno/50, P4): la barra de la app, la pantalla y la navegación en una sola rejilla que
+ * El armazón de la app (docs/rediseno/50, P4 y P7): la barra de la app, la pantalla y la navegación en una sola rejilla que
  * no sabe qué hay dentro. Pone `data-vista` según la ruta (`lib/armazon.ts`) y el CSS solo lee ese atributo. En el
  * teléfono, en las raíces, la barra y la navegación se recogen al bajar y vuelven al subir: eso es `data-recogida`, que
- * cambia aquí sin volver a pintar nada. `barra` y `nav` llegan ya armadas del servidor (la sesión se lee allí).
+ * cambia aquí sin volver a pintar nada; desde 792 (el carril) nada se recoge y el atributo no se pone. `barra` y `nav` llegan
+ * ya armadas del servidor (la sesión se lee allí).
  */
 export default function Armazon({ barra, nav, children }: { barra: ReactNode; nav: ReactNode; children: ReactNode }) {
   const ruta = usePathname();
@@ -47,9 +49,11 @@ export default function Armazon({ barra, nav, children }: { barra: ReactNode; na
 
   useEffect(() => {
     const el = armazon.current!;
+    const carril = window.matchMedia(CARRIL);
     let antes = window.scrollY;
     let calmaHasta = 0;
     const recoger = (si: boolean) => {
+      if (si && carril.matches) return;
       el.toggleAttribute("data-recogida", si);
       calmaHasta = Date.now() + CALMA_MS;
     };
@@ -71,11 +75,14 @@ export default function Armazon({ barra, nav, children }: { barra: ReactNode; na
       sinAnimar = window.setTimeout(() => el.style.removeProperty("--duracion-recogida"), CALMA_MS);
     };
     const alPedirla = (e: Event) => recoger((e as CustomEvent<boolean>).detail);
+    const alCambiarAncho = () => recoger(false); // una ventana que crece hasta el carril: lo recogido vuelve
     window.addEventListener("scroll", alDesplazar, { passive: true });
     window.addEventListener(RECOGER, alSaltar);
     window.addEventListener(RECOGIDA, alPedirla);
+    carril.addEventListener("change", alCambiarAncho);
     return () => {
       window.clearTimeout(sinAnimar);
+      carril.removeEventListener("change", alCambiarAncho);
       window.removeEventListener("scroll", alDesplazar);
       window.removeEventListener(RECOGER, alSaltar);
       window.removeEventListener(RECOGIDA, alPedirla);

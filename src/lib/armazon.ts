@@ -7,11 +7,19 @@
 /**
  * - `raiz`: las cinco secciones de la navegación (y la pantalla que confirma un borrado): barra de la app y navegación.
  * - `ficha`: un evento, un lugar, un artista o una persona: en el teléfono llevan su propia cabecera; desde 792 la
- *   barra de la app ofrece Atrás y el menú.
- * - `tarea`: altas, ediciones, buscar, ajustes, entrar…: en el teléfono llevan su propia barra.
+ *   barra de la app ofrece Atrás y el menú, y el carril sigue a la vista.
+ * - `tarea`: altas, ediciones, buscar, ajustes, entrar…: en el teléfono llevan su propia barra; desde 792 traen la barra de la
+ *   app y el carril, con su cabecera propia debajo.
  * - `completa`: la pared y el mando de una obra colectiva y el letrero para imprimir; la pantalla se queda con todo.
  */
 export type Vista = "raiz" | "ficha" | "tarea" | "completa";
+
+/**
+ * Desde este ancho la navegación es un carril a la izquierda, la barra de la app va en todas las vistas y nada se recoge: es el
+ * `min-width: 792px` de las hojas de estilo, el corte de tableta del prototipo firmado (doc 50). Lo que lo lee desde JavaScript lo
+ * toma de aquí.
+ */
+export const CARRIL = "(min-width: 792px)";
 
 const RAICES: readonly string[] = ["/", "/agenda", "/lugares", "/artistas", "/perfil", "/borrado"];
 /** Las secciones cuyo `/:id` es una ficha (`/eventos/nuevo` no: es un alta). */

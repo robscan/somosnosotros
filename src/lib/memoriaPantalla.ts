@@ -3,7 +3,7 @@
  * y volver, la pantalla vuelve exactamente donde estaba: la pestaña o filtro, lo escrito en la búsqueda y el scroll.
  * Vive en sessionStorage (muere con la pestaña del navegador, nunca sale del teléfono): el estado del listado y el
  * scroll van en entradas distintas por URL (el scroll lo guarda MemoriaScroll para todas las pantallas).
- * Aparte, cada sección (Agenda, Lugares, Artistas) recuerda su última URL para que la barra inferior regrese a ella.
+ * Aparte, cada sección (Agenda, Lugares, Artistas) recuerda su última URL para que la navegación regrese a ella.
  */
 
 export type Memoria<T> = { estado: T };

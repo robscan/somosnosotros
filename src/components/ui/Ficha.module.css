@@ -5,7 +5,7 @@
    el cuerpo y las acciones flotantes. Nada se escapa del aire con un margen negativo: la barra y el héroe llegan a los bordes
    porque la ficha no lleva aire a los lados, y el cuerpo pone el suyo.
    1. La rejilla · 2. La barra · 3. El héroe · 4. El cuerpo · 5. Las acciones · 6. Bloques · 7. Las acciones flotantes ·
-   8. Avisos de la página · 9. Otras páginas: la persona y la página de formulario
+   8. Avisos de la página · 9. Otras páginas: la persona y la página de formulario · 10. Escritorio: dos columnas
    ========================================================================== */
 
 /* 1. La rejilla. La página llena la pantalla; la fila de las acciones flotantes absorbe lo que sobre, así que una ficha corta las
@@ -30,10 +30,15 @@
   min-height: calc(100dvh - var(--barra-flujo, 0px));
   background: var(--fondo-contenido);
 }
-/* Desde 792 el héroe no llega a los bordes y la barra de la app queda encima: un poco de aire antes de la portada. */
+/* Desde 792 el héroe no llega a los bordes y la barra de la app queda encima: un poco de aire antes de la portada. Las acciones
+   flotantes van al final de la fila, junto al borde de la columna, y no al centro de la ventana. */
 @media (min-width: 792px) {
   .enPagina {
     padding-top: var(--espacio-5);
+  }
+  .enPagina > .flotantes {
+    justify-self: end;
+    margin-right: var(--gutter);
   }
 }
 
@@ -286,8 +291,9 @@
 }
 
 /* 7. Las acciones flotantes (Me interesa · Voy, Seguir): pastillas de una línea pegadas al pie mientras la ficha pasa por debajo;
-   la fila que las guarda absorbe lo que sobre, así una ficha corta también las deja al pie. En la hoja de Lugares se pegan sobre la
-   navegación mientras asoma y al pie cuando está llena (`FichaHoja.module.css`, con `--flotantes-abajo`). */
+   la fila que las guarda absorbe lo que sobre, así una ficha corta también las deja al pie. Al centro en el teléfono y al final
+   de la fila desde 792. En la hoja de Lugares se pegan sobre la navegación mientras asoma y al pie cuando está llena
+   (`FichaHoja.module.css`, con `--flotantes-abajo`). */
 .flotantes {
   grid-area: flotantes;
   align-self: end;
@@ -385,4 +391,47 @@
 /* El menú «···» de una ficha (dentro de la hoja): sus filas son las de Ajustes (ui/Renglon), en su tarjeta */
 .menu {
   margin-top: var(--espacio-4);
+}
+
+/* 10. Escritorio: dos columnas. Desde 1048 la página de la ficha reparte la misma rejilla en dos: la portada a la izquierda, con
+   sus esquinas, y a la derecha el título (ya sin velo: en tinta, sobre el fondo), los avisos y el cuerpo. Cada pieza deja su aire
+   del lado izquierdo a la columna: la portada lo pone antes y las demás lo empiezan en el borde de la suya. Solo la página: la ficha
+   de la hoja de Lugares es un panel y no cambia. */
+@media (min-width: 1048px) {
+  .enPagina {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas:
+      "barra barra"
+      "portada titulo"
+      "portada avisos"
+      "portada cuerpo"
+      "flotantes flotantes";
+    column-gap: var(--espacio-7);
+  }
+  .enPagina > .portada {
+    grid-area: portada;
+    align-self: start;
+    margin: 0 0 0 var(--gutter);
+    border-radius: var(--radio-grande);
+    overflow: hidden;
+  }
+  .enPagina > .titulo {
+    grid-area: titulo;
+    align-self: start;
+    margin: 0;
+    padding: 0 var(--gutter) 0 0;
+    background: none;
+    color: var(--texto);
+    pointer-events: auto;
+  }
+  .enPagina > .titulo > :is(h1, h2) {
+    font-size: var(--letra-3xl);
+  }
+  .enPagina .etiqueta {
+    background: var(--primario-suave);
+  }
+  .enPagina > .avisos,
+  .enPagina > .cuerpo {
+    padding-left: 0;
+  }
 }

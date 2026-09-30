@@ -1,5 +1,6 @@
-/* Confirmación con Deshacer: tinta sobre blanco como ui/Aviso, en la columna. Flota sobre la barra inferior o, en una
-   ficha, sobre su pastilla flotante (Hecho.tsx lo mide al salir y lo pone en `bottom`). */
+/* Confirmación con Deshacer: tinta sobre blanco como ui/Aviso, en la columna. Flota sobre la navegación de abajo (la barra del teléfono) o, en una
+   ficha, sobre su pastilla flotante (Hecho.tsx lo mide al salir y lo pone en `bottom`). Desde 792, a la izquierda de la columna
+   (pasado el carril: al ser fijo, mide desde el borde de la ventana) y sin estirarse a lo ancho. */
 .hecho {
   position: fixed;
   left: var(--gutter);
@@ -28,4 +29,10 @@
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+@media (min-width: 792px) {
+  .hecho {
+    left: calc(var(--ancho-carril-nav) + var(--gutter));
+    max-width: 420px;
+  }
 }

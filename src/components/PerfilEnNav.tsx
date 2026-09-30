@@ -1,6 +1,6 @@
 import { IconoPersona } from "./ui/Iconos";
 import { usuarioDeLaBarra } from "./usuarioDeLaBarra";
-import styles from "./NavInferior.module.css";
+import styles from "./NavSecciones.module.css";
 
 /**
  * Lo que va dentro de la píldora del quinto destino de la navegación: la foto de la persona (o su inicial), y sin

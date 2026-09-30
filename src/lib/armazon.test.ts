@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { altaDeRuta, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, vistaDeRuta } from "./armazon";
+import { altaDeRuta, CARRIL, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, vistaDeRuta } from "./armazon";
 
 describe("armazón: la vista de cada ruta (data-vista)", () => {
   it("las cinco secciones y la pantalla que confirma un borrado son raíz", () => {
@@ -84,5 +85,15 @@ describe("armazón: los cinco destinos", () => {
     expect(estaEnDestino("/lugares/teatro-de-la-paz", "/lugares")).toBe(true);
     expect(estaEnDestino("/lugaresX", "/lugares")).toBe(false);
     expect(DESTINOS.some((d) => estaEnDestino("/borrado", d.href))).toBe(false);
+  });
+});
+
+describe("armazón: el corte del carril", () => {
+  it("el corte de JavaScript es el mismo que el de la rejilla del armazón en las hojas de estilo", () => {
+    const css = readFileSync("src/components/Armazon.module.css", "utf8");
+    expect(CARRIL).toBe("(min-width: 792px)");
+    expect(css).toContain("@media (min-width: 792px) {");
+    // El teléfono es lo que queda por debajo: 791, uno menos.
+    expect(css).toContain("@media (max-width: 791px) {");
   });
 });

@@ -1,7 +1,8 @@
 /* La cabecera única (ui/Cabecera): una rejilla plana de una columna. La fila de contexto (o el campo de búsqueda, a
    todo lo ancho) y debajo, a todo lo ancho, las pestañas y el segundo nivel. Blanca como la barra de la app y pegada
    justo bajo ella (`--barra-vista`, del armazón): cuando la barra se recoge, sube con ella. Con la barra es una sola
-   región: entre las dos no hay raya, y la raya común va solo abajo. */
+   región: entre las dos no hay raya, y la raya común va solo abajo; desde 792 la raya es la de la barra, que cruza la ventana
+   sobre el carril, y la fila no lleva la suya. */
 .cabecera {
   position: sticky;
   top: var(--barra-vista, var(--tope));
@@ -40,9 +41,12 @@
 .contexto::-webkit-scrollbar {
   display: none;
 }
-/* Desde 792 la fila va centrada en la ventana, como en el prototipo firmado (doc 50, puntos 39 y 56); si los chips no caben, se
+/* Desde 792 la fila va centrada en la pantalla, como en el prototipo firmado (doc 50, puntos 39 y 56); si los chips no caben, se
    deslizan desde el primero. */
 @media (min-width: 792px) {
+  .cabecera {
+    box-shadow: none;
+  }
   .contexto {
     justify-content: safe center;
   }
@@ -68,7 +72,8 @@
 }
 
 /* Volver arriba (ui/BotonIcono): abajo a la izquierda, sobre la navegación; si la navegación se recoge (teléfono, al
-   bajar), baja con ella. Es una herramienta, no una acción: su glifo es oscuro, como el del botón de ubicación del mapa. */
+   bajar), baja con ella. Es una herramienta, no una acción: su glifo es oscuro, como el del botón de ubicación del mapa. Al
+   ser fijo, mide desde el borde de la ventana: desde 792 pasa el carril antes de llegar a la columna. */
 .volver {
   position: fixed;
   left: var(--gutter);
@@ -80,8 +85,8 @@
   bottom: calc(var(--piso) + var(--espacio-4));
 }
 @media (min-width: 792px) {
-  :global([data-recogida]) .volver {
-    bottom: calc(var(--nav-abajo) + var(--espacio-4));
+  .volver {
+    left: calc(var(--ancho-carril-nav) + var(--gutter));
   }
 }
 .volver > svg {

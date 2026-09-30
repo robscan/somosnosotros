@@ -12,7 +12,7 @@ const PASO_MS = 50;
 /** Tras reponer, durante este tiempo se corrige la deriva si el contenido cambia de alto (fotos, tipografía). */
 const VIGILANCIA_MS = 600;
 
-/** Pedida desde la barra inferior: la próxima ruta repone su scroll aunque no venga de Atrás. */
+/** Pedida desde la navegación: la próxima ruta repone su scroll aunque no venga de Atrás. */
 let vueltaPedida = false;
 export function pedirVuelta() {
   vueltaPedida = true;
@@ -65,7 +65,7 @@ function reponer(y: number, alTerminar: () => void) {
  * la pantalla de carga (corta); al llegar el contenido, su vista quedaba desincronizada y la cabecera pegajosa se
  * pintaba como un bloque blanco (bitácora 043). Con `scrollRestoration = "manual"` el navegador no toca nada y
  * este componente, único para toda la app, guarda el scroll por URL (sessionStorage) y lo repone al volver
- * (Atrás, gesto, recarga o la barra inferior) en cuanto la página tiene altura para ello. No pinta nada.
+ * (Atrás, gesto, recarga o la navegación) en cuanto la página tiene altura para ello. No pinta nada.
  * La URL es la ruta con su consulta: un filtro o "Ver más" es otra URL de la misma ruta, con su propia posición.
  * Va dentro de un Suspense en el layout porque lee la consulta.
  */
@@ -98,7 +98,7 @@ export default function MemoriaScroll() {
     };
   }, []);
 
-  // Al cambiar la URL: si se viene de atrás (o de la barra inferior), esperar a que la página tenga altura y reponer.
+  // Al cambiar la URL: si se viene de atrás (o de la navegación), esperar a que la página tenga altura y reponer.
   useEffect(() => {
     const clave = claveDeUrl(window.location);
     enPantalla = clave;

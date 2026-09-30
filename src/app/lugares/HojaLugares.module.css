@@ -120,7 +120,7 @@
 }
 
 /* 3. Desde 792 la hoja es el panel izquierdo (400 px), sin hueco ni asa, y desplaza como cualquier panel; el mapa ocupa el resto.
-   La navegación sigue siendo la barra de abajo hasta que sea un carril (P7): el panel acaba donde ella empieza. */
+   La navegación es el carril del armazón, a la izquierda de la pantalla: el panel llega hasta el pie de la ventana. */
 @media (min-width: 792px) {
   .hoja {
     --gutter: var(--espacio-5);
