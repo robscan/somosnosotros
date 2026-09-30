@@ -115,7 +115,7 @@ function HojaDonde({ ciudad, ciudades, hrefDe, onCerrar }: Props & { onCerrar: (
             </ul>
           ) : (
             <p className={hoja.nota}>
-              {buscado ? `Nada con «${texto.trim()}».` : "Aún no hay otras ciudades."} {deArtistas ? "Registra un artista en otra ciudad y aparecerá aquí." : "Registra un lugar en otra ciudad y aparecerá aquí."}
+              {buscado ? `Nada con «${texto.trim()}».` : "Aún no hay otras ciudades."} {deArtistas ? "Registra una ficha de artista en otra ciudad y aparecerá aquí." : "Registra un lugar en otra ciudad y aparecerá aquí."}
             </p>
           )}
         </div>

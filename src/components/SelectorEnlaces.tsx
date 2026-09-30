@@ -20,7 +20,7 @@ type Arrastre = { indice: number; objetivo: number; inicioY: number; desplazamie
 
 /**
  * Enlaces y redes sin elegir la red (docs/rediseno/09-enlaces-flujo-y-estados.md): la persona pega un
- * enlace, un @usuario o un teléfono; el sistema reconoce de qué red es y lo enseña con su icono.
+ * enlace, un @perfil o un teléfono; el sistema reconoce de qué red es y lo enseña con su icono.
  * Tantos como haga falta; se quitan con ✕. Viaja al servidor como JSON en un campo oculto.
  *
  * Reordenar (OL-184): con más de un enlace, cada renglón lleva un agarre a la izquierda. Arrastre con eventos
@@ -56,7 +56,7 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
   function agregar() {
     const e = reconocerEnlace(texto);
     if (!e) {
-      setAviso(texto.trim() ? "No parece un enlace, un @usuario ni un teléfono." : null);
+      setAviso(texto.trim() ? "No parece un enlace, un @perfil ni un teléfono." : null);
       return;
     }
     if (enlaces.some((x) => x.url === e.url)) {

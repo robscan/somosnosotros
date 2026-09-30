@@ -65,7 +65,7 @@ export function altaDeParametro(valor: string | undefined): Alta {
 const ALTAS: Record<Alta, { etiqueta: string; titulo: string; conCiudad: boolean }> = {
   evento: { etiqueta: "Publicar un evento", titulo: "Publicar un evento", conCiudad: true },
   lugar: { etiqueta: "Registrar un lugar", titulo: "Registrar un lugar", conCiudad: false },
-  artista: { etiqueta: "Registrar un artista", titulo: "Registrar artista", conCiudad: true },
+  artista: { etiqueta: "Registrar artista", titulo: "Registrar artista", conCiudad: true },
 };
 
 /** El título de la pantalla de alta de cada tipo. */

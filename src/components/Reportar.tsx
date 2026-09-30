@@ -21,7 +21,7 @@ export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {
   const [detalle, setDetalle] = useState("");
   const [resultado, enviar, enviando] = useActionState<ResultadoReporte | null, FormData>(reportar, null);
 
-  if (resultado?.ok) return <p className={styles.gracias}>Gracias. El administrador lo revisa.</p>;
+  if (resultado?.ok) return <p className={styles.gracias}>Gracias. La administración lo revisa.</p>;
   if (!conSesion)
     return (
       <Link href={`/entrar?siguiente=${encodeURIComponent(volver)}`} className={renglon.ajuste}>
@@ -49,7 +49,7 @@ export default function Reportar({ tipo, objetoId, volver, conSesion }: Props) {
         ))}
       </div>
       <span className={limpiar.caja}>
-        <input name="detalle" className={styles.detalle} placeholder="Algo más que deba saber el administrador (opcional)" maxLength={500} value={detalle} onChange={(e) => setDetalle(e.target.value)} />
+        <input name="detalle" className={styles.detalle} placeholder="Algo más que deba saber la administración (opcional)" maxLength={500} value={detalle} onChange={(e) => setDetalle(e.target.value)} />
         <Limpiar visible={!!detalle} />
       </span>
       {resultado && !resultado.ok && (

@@ -38,7 +38,7 @@ export default async function PaginaPersona({ params }: Params) {
   const { id } = await params;
   const [d, actual] = await Promise.all([cargarPersona(id, { conProximos: true }), usuarioActual()]);
   if (!d) notFound();
-  // La propia ficha, vista como la ven los demás ("Así te ven los demás" en Mi perfil): sin Ajustes, coincidencias ni gestos.
+  // La propia ficha, vista como la ve la gente ("Así te ve la gente" en Mi perfil): sin Ajustes, coincidencias ni gestos.
   const soyYo = actual?.perfil.id === id;
   // Los gestos son de quien mira (OL-057): lo que decidió en los eventos de esta ficha y lo que sigue de lo que ella sigue,
   // leídos con su sesión y solo para ella. De ahí sale también "Van a lo mismo" (decisión 7). Sin sesión, a Entrar.
@@ -58,7 +58,7 @@ export default async function PaginaPersona({ params }: Params) {
       {soyYo && (
         <div className="columna">
           <p className="aviso-ok" role="status">
-            Así te ven los demás.
+            Así te ve la gente.
           </p>
         </div>
       )}

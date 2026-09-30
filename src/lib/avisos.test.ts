@@ -110,7 +110,7 @@ describe("contenidoPushAdmin (OL-115)", () => {
     expect(contenidoPushAdmin({ registro: 1 })).toEqual({ titulo: "Administración", cuerpo: "Alguien se registró", url: "/admin" });
     expect(contenidoPushAdmin({ nuevo_evento: 1 }).cuerpo).toBe("Se publicó un evento nuevo");
     expect(contenidoPushAdmin({ nuevo_lugar: 1 }).cuerpo).toBe("Se publicó un lugar nuevo");
-    expect(contenidoPushAdmin({ nuevo_artista: 1 }).cuerpo).toBe("Se publicó un artista nuevo");
+    expect(contenidoPushAdmin({ nuevo_artista: 1 }).cuerpo).toBe("Se publicó una ficha de artista nueva");
     expect(contenidoPushAdmin({ reporte: 1 }).cuerpo).toBe("Alguien envió un reporte");
   });
   it("agrupado: dice cuántas cosas, nunca un nombre ni un motivo suelto", () => {

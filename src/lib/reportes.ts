@@ -15,8 +15,8 @@ export const TIPOS_REPORTADOS: TipoReportado[] = ["lugar", "evento", "perfil", "
  * de reportar; los escribe su propia acción. El mismo motivo se lee distinto según de qué ficha venga.
  */
 export const MOTIVOS_RECLAMO = [
-  { valor: "es_mio", artista: "Dice que es él o su grupo y quiere llevar la ficha", lugar: "Dice que es su espacio y quiere llevar la ficha" },
-  { valor: "retirar", artista: "Dice que es él o su grupo y pide que se quite", lugar: "Dice que es su espacio y pide que se quite" },
+  { valor: "es_mio", artista: "Dice que es esa persona o su grupo y quiere llevar la ficha", lugar: "Dice que es su espacio y quiere llevar la ficha" },
+  { valor: "retirar", artista: "Dice que es esa persona o su grupo y pide que se quite", lugar: "Dice que es su espacio y pide que se quite" },
 ] as const;
 export type MotivoReclamo = (typeof MOTIVOS_RECLAMO)[number]["valor"];
 

@@ -55,7 +55,7 @@ export default function LetreroCorreoLigado({ artista, reclamar }: Props) {
     <div className={styles.invitacion}>
       <b>Tu correo está enlazado a «{artista.nombre}»</b>
       {resultado?.estado === "enviada" ? (
-        <p>Solicitud enviada al administrador.</p>
+        <p>Solicitud enviada a la administración.</p>
       ) : (
         <>
           <p>Puedes reclamar su ficha aquí mismo y empezar a gestionarla.</p>

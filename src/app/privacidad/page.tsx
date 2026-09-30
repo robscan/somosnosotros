@@ -46,7 +46,7 @@ export default function Privacidad() {
 
         <h2>Fichas tomadas de catálogos públicos</h2>
         <p>
-          Parte de los artistas y lugares se trajeron del Catálogo de Artistas Potosinos de la Dirección de Cultura Municipal: nombre, disciplina, descripción y redes públicas. No copiamos fotos. Los correos de contacto de ese catálogo se guardan aparte, nadie los ve en el sitio, y se usan una sola vez para invitar a cada artista a reclamar su ficha. Si es tu ficha y quieres cambiarla o que se quite, tócala y elige «Reclamar esta ficha», o escríbenos.
+          Parte de las fichas de artistas y lugares se trajeron del Catálogo de Artistas Potosinos de la Dirección de Cultura Municipal: nombre, disciplina, descripción y redes públicas. No copiamos fotos. Los correos de contacto de ese catálogo se guardan aparte, nadie los ve en el sitio, y se usan una sola vez para invitar a cada artista a reclamar su ficha. Si es tu ficha y quieres cambiarla o que se quite, tócala y elige «Reclamar esta ficha», o escríbenos.
         </p>
 
         <h2>Con quién se comparten</h2>

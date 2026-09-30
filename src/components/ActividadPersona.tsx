@@ -114,7 +114,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
                 Todavía no sigues nada. <Link href="/lugares">Ver lugares</Link> · <Link href="/artistas">Ver artistas</Link>
               </>
             ) : (
-              "Todavía no sigue ningún lugar ni artista."
+              "Todavía no sigue lugares ni artistas."
             )}
           </p>
         ) : (

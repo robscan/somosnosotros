@@ -138,7 +138,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
   return (
     <main className={`${plantilla.raizSinNav} ${styles.buscar}`}>
       <form role="search" className={styles.barra} onSubmit={alEnviar}>
-        <CampoBuscar inputRef={campo} valor={texto} onCambiar={setTexto} placeholder="Buscar un evento, lugar o artista" ariaLabel="Buscar un evento, lugar o artista" autoFocus borrar={false} />
+        <CampoBuscar inputRef={campo} valor={texto} onCambiar={setTexto} placeholder="Buscar evento, lugar o artista" ariaLabel="Buscar evento, lugar o artista" autoFocus borrar={false} />
         <Cerrar href={raizConCiudad(salida.raiz, slugEnUrl ? `ciudad=${slugEnUrl}` : "")} texto={salida.texto} relieve="plano" />
       </form>
 

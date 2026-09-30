@@ -173,7 +173,7 @@ export function combinarResultados(lugares: readonly LugarResumen[], mapbox: rea
 export type ModoPantalla = "inicial" | "resultados" | "no-encontrado" | "agregar";
 
 /**
- * Qué se muestra bajo el campo: nada al abrir, la lista con resultados, el aviso "no está registrado", o un panel
+ * Qué se muestra bajo el campo: nada al abrir, la lista con resultados, el aviso "no tiene ficha", o un panel
  * extra (el "Agregar lugar" del alta de evento; ninguna pantalla más lo usa todavía) — `panelExtra` es un booleano
  * genérico, sin nada específico del alta de evento adentro.
  */

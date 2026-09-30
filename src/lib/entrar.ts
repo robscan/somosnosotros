@@ -31,7 +31,7 @@ export function motivoEntrar(siguiente: string): Motivo {
     // La pantalla de alta (`/nuevo?tipo=`): cada tipo vuelve a su sección; un evento (o lo que no dice tipo), al inicio.
     const tipo = url.searchParams.get("tipo");
     if (tipo === "lugar") return { tipo: "registrar", titulo: "Entra para registrar un lugar", origen: "/lugares" };
-    if (tipo === "artista") return { tipo: "registrar", titulo: "Entra para registrar un artista", origen: "/artistas" };
+    if (tipo === "artista") return { tipo: "registrar", titulo: "Entra para registrar artista", origen: "/artistas" };
     return { tipo: "publicar", titulo: "Entra para publicar", origen: "/" };
   }
   if (seccion === "perfil" || seccion === "admin") return { tipo: "ninguno", titulo: "Entrar", origen: "/" };

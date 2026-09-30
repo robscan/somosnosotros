@@ -38,7 +38,7 @@ beforeEach(() => {
  * cambiarSeguimiento (OL-212, tercera vuelta): el tercer parámetro `diferir` distingue quién llama.
  * - La ficha (Seguir.tsx, `cambiarSeguimiento.bind(null, lugarId)`) llama con dos argumentos: `diferir` queda en
  *   `false` por su valor por defecto, y la revalidación sigue exactamente como antes de esta pieza (su propio
- *   "N personas lo siguen", en la misma ruta, se ve al día en el mismo toque).
+ *   número de «Siguen», en la misma ruta, se ve al día en el mismo toque).
  * - Un renglón de lista (useSeguirEnLista.tsx, Inicio u otra pantalla con carriles) llama con `diferir: true`: el
  *   botón ya se ve al día solo (estado optimista), así que revalidar de inmediato solo repintaría de más la
  *   pantalla en la que ya se está — cualquier `revalidatePath` en la acción hace que Next rehaga y reenvíe toda

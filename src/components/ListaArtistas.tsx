@@ -186,9 +186,9 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
         {arriba}
         <div className={comun.vacio}>
           <h2>Artistas</h2>
-          <p>Aún no hay artistas registrados en {ciudad.nombre}. ¿Eres artista o grupo, o conoces a alguien? Regístralo.</p>
+          <p>Aún no hay fichas de artista registradas en {ciudad.nombre}. ¿Eres artista o grupo, o conoces a alguien? Registra la ficha.</p>
           <Boton href={hrefNuevo()} variante="secundario">
-            Registrar un artista
+            Registrar artista
           </Boton>
         </div>
       </>
@@ -200,7 +200,7 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
       {arriba}
       {artistas.length === 0 ? (
         <div className={comun.vacio}>
-          <p>{queHacen ? `Todavía no hay artistas de ${queHacen.toLowerCase()} registrados.` : "Todavía no hay artistas registrados."}</p>
+          <p>{queHacen ? `Todavía no hay fichas de artista registradas en ${queHacen.toLowerCase()}.` : "Todavía no hay fichas de artista registradas."}</p>
         </div>
       ) : (
         <>

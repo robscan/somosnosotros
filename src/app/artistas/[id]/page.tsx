@@ -359,7 +359,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
           )}
           {!a.visible && (
             <p className={`aviso-error ${ficha.oculto}`} role="status">
-              Esta ficha está oculta: solo la ven su autor, su cuenta ligada y el administrador.
+              Esta ficha está oculta: solo la ven quien la publicó, su cuenta ligada y la administración.
             </p>
           )}
         </div>

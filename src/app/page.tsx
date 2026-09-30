@@ -29,7 +29,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const canonical = resuelta.slug === CIUDAD_INICIAL.slug ? "/" : `/?ciudad=${resuelta.slug}`;
   return {
     title: "Somos Nosotros",
-    description: "Lo tuyo primero: tus planes, lo destacado de esta semana, lo nuevo, y los lugares y artistas de tu ciudad.",
+    description: "Lo tuyo primero: tus planes, lo destacado de esta semana, lo nuevo, y lugares y artistas de tu ciudad.",
     alternates: { canonical },
   };
 }
@@ -89,7 +89,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
         slotEstaSemana={<CarrilAgenda parte="estaSemana" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotNuevos={<CarrilAgenda parte="nuevos" agendaPromise={agendaPromise} avisos={avisos} verTodosHref={conCiudad("/agenda")} />}
         slotLugaresSemana={<CarrilEntidad promise={semanaLugaresPromise} que="lugar" seguidosPromise={seguidosLugaresPromise} avisos={avisos} titulo="Lugares con eventos" memoria="inicio-lugares-semana" verTodosHref={conCiudad("/lugares")} />}
-        slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacados" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
+        slotArtistasDestacados={<CarrilEntidad promise={artistasDestacadosPromise} que="artista" seguidosPromise={seguidosArtistasPromise} avisos={avisos} titulo="Artistas destacadxs" memoria="inicio-artistas-destacados" verTodosHref={conCiudad("/artistas")} grande />}
       />
     </main>
   );

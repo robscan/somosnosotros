@@ -7,7 +7,7 @@ import type { Tarjeta } from "@/lib/destacados";
 
 /**
  * El carril de lugares o artistas, ya en el cliente (mismo patrón que `CarrilEventosCliente`): el botón es Seguir.
- * `grande` (OL-165): «Artistas destacados» usa el mismo tamaño y tarjeta que la tira de destacados de la sección
+ * `grande` (OL-165): «Artistas destacadxs» usa el mismo tamaño y tarjeta que la tira de destacados de la sección
  * Artistas (`ListaArtistas.tsx`); «Lugares con eventos» sigue en chica (redonda).
  * Su enlace dice a dónde lleva: «Ver lugares» o «Ver artistas».
  */

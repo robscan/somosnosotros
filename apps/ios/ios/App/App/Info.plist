@@ -27,7 +27,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Somos Nosotros pide tu cámara solo cuando eliges tomar una foto para tu perfil, un lugar, un artista o un evento.</string>
+	<string>Somos Nosotros pide tu cámara solo cuando eliges tomar una foto para tu perfil, un lugar, una ficha de artista o un evento.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Somos Nosotros pide tu ubicación para ordenar lugares y eventos por cercanía. Nunca se guarda.</string>
 	<key>UIApplicationSceneManifest</key>

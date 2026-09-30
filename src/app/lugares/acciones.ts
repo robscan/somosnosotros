@@ -139,7 +139,7 @@ export async function cambiarVisible(id: string, visible: boolean) {
  * inmediato solo repintaría de más la pantalla en la que ya se está (cualquier `revalidatePath` en la acción hace
  * que Next vuelva a renderizar toda la ruta actual en la misma respuesta, sin importar qué ruta se le pase). Con
  * `after` la invalidación aplica igual para la próxima vez que se pida cada ruta, sin repintar esta. La ficha
- * (`Seguir.tsx`, sin tocar) no manda `diferir`: sigue viendo su "N personas lo siguen" al día en el mismo toque.
+ * (`Seguir.tsx`, sin tocar) no manda `diferir`: sigue viendo su número de «Siguen» al día en el mismo toque.
  */
 export async function cambiarSeguimiento(lugarId: string, seguir: boolean, diferir = false): Promise<boolean> {
   const { supabase, user } = await sesionOEntrar(`/lugares/${lugarId}?accion=${seguir ? "seguir" : ""}`);
