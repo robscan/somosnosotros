@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { combinarFechaHora, localAIso, sumarHoras, yaPaso } from "@/lib/fechas";
-import chip from "@/components/ui/Chip.module.css";
+import { Chip } from "@/components/ui/Chip";
 import SelectorFecha from "@/components/ui/SelectorFecha";
 import { IconoCerrar } from "@/components/ui/Iconos";
 import styles from "./SelectorCuando.module.css";
@@ -99,12 +99,12 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
     <div className={styles.selector}>
       <div className={styles.fila}>
         <span className={styles.rotulo}>Empieza</span>
-        <button type="button" className={chip.chip} onClick={(e) => abrirHoja("inicio", e)}>
+        <Chip onClick={(e) => abrirHoja("inicio", e)}>
           {etiquetaFecha(fecha)}
-        </button>
-        <button type="button" className={chip.chip} onClick={(e) => abrirHoja("inicio", e)}>
+        </Chip>
+        <Chip onClick={(e) => abrirHoja("inicio", e)}>
           {etiquetaHora(hora)}
-        </button>
+        </Chip>
       </div>
       {errorInicio && (
         <p className={styles.error} role="alert">
@@ -114,13 +114,13 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
       <div className={styles.fila}>
         <span className={styles.rotulo}>Termina</span>
         {fin && (
-          <button type="button" className={chip.chip} onClick={(e) => abrirHoja("fin", e)}>
+          <Chip onClick={(e) => abrirHoja("fin", e)}>
             {etiquetaFecha(finP.fecha)}
-          </button>
+          </Chip>
         )}
-        <button type="button" className={chip.chip} onClick={(e) => abrirHoja("fin", e)}>
+        <Chip onClick={(e) => abrirHoja("fin", e)}>
           {fin ? etiquetaHora(finP.hora) : "Sin hora de fin"}
-        </button>
+        </Chip>
         {fin && (
           <button type="button" className={styles.quitar} onClick={() => onCambio(inicio, "")} aria-label="Quitar la hora de fin">
             <IconoCerrar width={20} height={20} />

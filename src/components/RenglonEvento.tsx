@@ -4,9 +4,9 @@ import { hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { diaCorto, horaCorta } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
-import { IconoCalendario, IconoEstrella, IconoPin, IconoReloj } from "./ui/Iconos";
+import { Chip } from "./ui/Chip";
+import { IconoCalendario, IconoPin, IconoReloj } from "./ui/Iconos";
 import Renglon from "./ui/Renglon";
-import styles from "./ui/Renglon.module.css";
 
 type Props = {
   evento: EventoAgenda;
@@ -36,12 +36,7 @@ export default function RenglonEvento({ evento: e, sinSitio = false, estado = nu
   return (
     <Renglon href={hrefEvento(e)} foto={foto} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
       <span>
-        {estado === "me_interesa" && (
-          <span className={styles.estado}>
-            <IconoEstrella width={14} height={14} />
-            Te interesa
-          </span>
-        )}
+        {estado === "me_interesa" && <Chip variante="estado">Te interesa</Chip>}
         {conDia ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}
         <b>
           {conDia && `${diaCorto(e.inicio, new Date(), e.zona)} · `}

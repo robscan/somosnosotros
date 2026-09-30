@@ -71,6 +71,11 @@
 .frente > :first-child {
   align-self: start;
 }
+/* El botón de acción de la fila (ui/BotonRenglon): el icono a secas, en el color de acción (H-19); decidido, el círculo verde de
+   siempre. */
+.lista > button:not([aria-pressed="true"]) {
+  color: var(--primario);
+}
 .foto {
   width: var(--foto-renglon);
   height: var(--foto-renglon);
@@ -129,25 +134,6 @@
 .frente > small b {
   color: var(--texto);
   font-weight: 500;
-}
-/* Lo que la persona ya decidió (Vas, Te interesa, Sigues): del color de acción sobre su tono suave, con el icono de la
-   acción, como la barra de la ficha. Va primero en los datos. */
-.frente > small > .estado {
-  gap: 3px;
-  padding: 0 var(--espacio-2) 0 6px;
-  border-radius: var(--radio-pildora);
-  background: var(--primario-suave);
-  color: var(--primario);
-  font-size: var(--letra-xs);
-  font-weight: 700;
-}
-/* Sello chico («Solo tú lo ves»): del color de acción, en mayúsculas pequeñas. */
-.frente > small > .sello {
-  color: var(--primario);
-  font-size: var(--letra-xs);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
 }
 /* Pulsado y, con ratón, al pasar por encima: la fila entera se levanta en blanco con una marca del color de acción a
    la izquierda; el elegido (`aria-current`) va en el tono suave del color de acción. El resaltado llega a los bordes

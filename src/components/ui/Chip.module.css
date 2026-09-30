@@ -1,57 +1,50 @@
-.chips {
-  display: flex;
-  gap: var(--espacio-2);
-  overflow-x: auto;
-  padding-bottom: var(--espacio-1);
-  margin-bottom: var(--espacio-2);
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.chips::-webkit-scrollbar {
-  display: none;
-}
+/* El chip (ui/Chip; docs/rediseno/50, § 5.2): una sola píldora con cinco papeles. Los que se tocan (`.toque`: filtro, contexto y
+   quitar) miden `--alto-chip` a la vista y `--toque-min` al tacto; `estado` y `sello` son rótulos y no se tocan. Estados de los que
+   se tocan: reposo, activo, en camino y deshabilitado. */
 .chip {
-  flex: none;
   display: inline-flex;
   align-items: center;
-  text-decoration: none;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--borde);
+  gap: 6px;
   border-radius: var(--radio-pildora);
+  text-decoration: none; /* también cuando es un enlace */
+  white-space: nowrap;
+}
+.chip > svg {
+  flex: none;
+}
+
+/* Los que se tocan. El área de toque sale de la caja visible (borde incluido) por arriba y por abajo hasta `--toque-min`, sin mover
+   nada; la fila que los lleva (`.chips`, ui/Cabecera) les deja ese aire. */
+.toque {
+  position: relative;
+  flex: none;
+  min-height: var(--alto-chip);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
   background: var(--fondo);
   color: var(--texto);
   font-size: var(--letra-sm);
-  white-space: nowrap;
   cursor: pointer;
 }
+.toque::before {
+  content: "";
+  position: absolute;
+  inset: calc((var(--alto-chip) - var(--toque-min)) / 2 - 1px) -1px; /* el 1px del borde: el toque parte de su borde, no de su relleno */
+}
+
+/* Activo: elegido o con un valor puesto, en el color de acción. */
 .activo {
   border-color: var(--primario);
   background: var(--primario);
   color: var(--primario-texto);
   font-weight: 600;
 }
-.chip > svg {
-  flex: none;
-  margin-right: 6px;
-}
-/* El número de resultados del chip: más chico y suave; en el activo, del color del texto. */
-.cuenta {
-  margin-left: 6px;
-  font-size: var(--letra-xs);
-  font-weight: 500;
-  color: var(--texto-suave);
-}
-.activo .cuenta {
-  color: inherit;
-  opacity: 0.85;
-}
-/* Al tocar, respuesta inmediata aunque el servidor tarde */
-.chip:active {
+/* Al tocar, respuesta inmediata aunque el servidor tarde. */
+.toque:not(.activo):active {
   background: var(--fondo-suave);
 }
-/* En camino: el toque ya se mandó y el servidor no ha respondido; el chip late con el color de acción */
-.chip:has(> .enCamino) {
+/* En camino: el toque ya se mandó y el servidor no ha respondido; el chip late con el color de acción. */
+.toque:has(> .enCamino) {
   border-color: var(--primario);
   background: var(--primario-suave);
   color: var(--primario);
@@ -69,30 +62,26 @@
     opacity: 0.55;
   }
 }
-.chip:disabled {
+.toque:disabled {
   color: var(--texto-suave);
   cursor: default;
 }
-/* Chip de contexto de la cabecera (ciudad, Cuándo, Filtros): en negrita, con el icono suave. No se encoge (`.chip` es
-   `flex: none`): si la fila no cabe, se desliza de lado (`useTiraQueSigue`); solo un nombre más largo que la fila se corta
-   con puntos suspensivos. */
-.deContexto {
+
+/* Contexto (ciudad, Cuándo, Filtros): en negrita y con el icono suave. No se encoge: si la fila no cabe, se desliza de lado
+   (`useTiraQueSigue`); solo un nombre más largo que la fila se corta con puntos suspensivos. */
+.contexto {
   max-width: 100%;
-  min-width: 0;
-  gap: 6px;
-  padding: 0 var(--espacio-3) 0 10px;
   font-weight: 600;
 }
-.deContexto > svg {
-  margin-right: 0;
+.contexto > svg {
   color: var(--texto-suave);
 }
-.deContexto > span {
+.contexto.activo > svg {
+  color: inherit;
+}
+.contexto > span {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.activo.deContexto > svg {
-  color: inherit;
 }
 /* La cuenta de filtros puestos, dentro del chip Filtros: un círculo del color de acción (del texto, si el chip está activo). */
 .cuentaFiltros {
@@ -112,22 +101,60 @@
   background: var(--primario-texto);
   color: var(--primario);
 }
-/* Un filtro puesto con su ✕: activo, con la ✕ pegada al texto y menos aire a la derecha. */
+
+/* Quitar: un filtro puesto, con su ✕ pegada al texto y menos aire a la derecha. */
 .quitar {
-  gap: 6px;
-  padding-right: var(--espacio-3);
+  padding-right: var(--espacio-2);
 }
-.quitar > svg {
-  margin-right: 0;
+
+/* Los rótulos no se tocan. Estado: lo que la persona ya decidió, en el tono suave del color de acción; sello: un dato sobre una
+   foto, en vidrio. */
+.estado,
+.sello {
+  padding: 0 var(--espacio-2);
+  font-size: var(--letra-xs);
+  font-weight: 700;
+}
+.estado {
+  background: var(--primario-suave);
+  color: var(--primario);
+}
+.sello {
+  padding-block: 3px;
+  background: var(--vidrio);
+  color: var(--texto);
+}
+
+/* Cuántos resultados da el chip: más chico y suave; en el activo, del color del texto. */
+.cuenta {
+  font-size: var(--letra-xs);
+  font-weight: 500;
+  color: var(--texto-suave);
+}
+.activo .cuenta {
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* La fila de chips: se desliza a lo ancho sin barra. Arriba y abajo deja lo que el área de toque de los chips sobresale de su caja. */
+.chips {
+  display: flex;
+  gap: var(--espacio-2);
+  overflow-x: auto;
+  padding-block: var(--espacio-1);
+  margin-bottom: var(--espacio-2);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.chips::-webkit-scrollbar {
+  display: none;
 }
 /* En una hoja los chips no se deslizan: pasan al renglón de abajo. */
 .envuelve {
   flex-wrap: wrap;
   overflow: visible;
 }
-.chipNativo {
-  position: relative;
-}
+
 /* El campo nativo va encima del chip, invisible y del mismo tamaño: el toque lo recibe él. */
 .encima {
   position: absolute;
@@ -140,12 +167,4 @@
   border: 0;
   -webkit-appearance: none;
   appearance: none;
-}
-.etiquetaChips {
-  flex: none;
-  align-self: center;
-  font-size: var(--letra-sm);
-  font-weight: 600;
-  color: var(--texto-suave);
-  margin-right: var(--espacio-1);
 }

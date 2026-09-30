@@ -62,6 +62,7 @@
 }
 .contexto {
   display: flex;
+  padding-bottom: var(--espacio-1); /* el área de toque del chip (44) sobresale 4 px de su caja: aquí no la cubre lo de abajo */
 }
 
 /* Los atajos de esta semana: chips que pasan al renglón de abajo si no caben. */

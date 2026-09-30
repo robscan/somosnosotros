@@ -53,7 +53,7 @@ export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, ti
   const visibles = tusPlanes ? tarjetasTusPlanes(cuenta, tarjetas, new Date()).filter((t) => asistencia.estado(t.id) !== null) : tarjetas;
   return (
     <>
-      <Destacados tarjetas={visibles} grande={tamano === "grande"} memoria={memoria} encabezado={titulo} verTodos={verTodos} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
+      <Destacados tarjetas={visibles} tamano={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
       {asistencia.extras}
     </>
   );

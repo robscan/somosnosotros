@@ -7,7 +7,7 @@ import { ciudadMasCercana, type Ciudad, type CiudadConArtistas, type CiudadConDa
 import { normalizarNombre } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import { CampoBuscar } from "./ui/Buscador";
-import chip from "./ui/Chip.module.css";
+import { Chip } from "./ui/Chip";
 import Hoja from "./ui/Hoja";
 import { IconoBuscar, IconoCaret, IconoChevronDerecha, IconoOk, IconoPin, IconoUbicacion } from "./ui/Iconos";
 import renglon from "./ui/Renglon.module.css";
@@ -32,11 +32,9 @@ export default function ChipCiudad({ ciudad, ciudades, hrefDe }: Props) {
   const [abierta, setAbierta] = useState(false);
   return (
     <>
-      <button type="button" className={`${chip.chip} ${chip.deContexto}`} onClick={() => setAbierta(true)} aria-haspopup="dialog">
-        <IconoPin width={16} height={16} />
-        <span>{ciudad.nombre}</span>
-        <IconoCaret width={12} height={12} />
-      </button>
+      <Chip variante="contexto" icono={<IconoPin width={16} height={16} />} fin={<IconoCaret width={12} height={12} />} onClick={() => setAbierta(true)}>
+        {ciudad.nombre}
+      </Chip>
       {abierta && <HojaDonde ciudad={ciudad} ciudades={ciudades} hrefDe={hrefDe} onCerrar={() => setAbierta(false)} />}
     </>
   );

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import ChipCiudad from "@/components/Ciudad";
-import { ChipContexto, ChipEnlace, ChipQuitar, Chips, Cuenta } from "@/components/ui/Chip";
+import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
 import { etiquetaDisciplina, hrefArtistas, type ArtistaLista, type FiltroLeido } from "@/lib/artistas";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConArtistas } from "@/lib/ciudad";
@@ -61,7 +61,7 @@ type Props = {
  *
  * Sin carriles propios (OL-165, pedido del founder): va directo a la lista, como Agenda. La tira de destacados y
  * "Con eventos esta semana" ya viven en Inicio (`CarrilEntidad`/`CarrilEntidadCliente`), que reutiliza la misma
- * tarjeta grande (`tarjetaArtista` + `Destacados` con `grande`) que tenía esta pantalla.
+ * tarjeta grande (`tarjetaArtista` + `Destacados` con `tamano="grande"`) que tenía esta pantalla.
  */
 export default function ListaArtistas({ artistas, total, quedan, totalCiudad, disciplinas, detalles, letras, posiciones, filtro, conChips, pagina, conSesion, ciudad, ciudades, seguidos = null, avisos = null, arriba = null }: Props) {
   // Al deslizar un artista: Seguir (decisión del founder, 2026-09-16; bitácora 071).
@@ -115,12 +115,20 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
         <>
           <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => hrefArtistas({ ciudad: c.slug === CIUDAD_INICIAL.slug ? null : c.slug })} />
           {conChips && disciplinas.length > 1 && (
-            <ChipContexto icono={<IconoFiltros width={16} height={16} />} cuenta={(filtro.hace ? 1 : 0) + (filtro.que ? 1 : 0)} onClick={() => setFiltrando(true)}>
+            <Chip variante="contexto" icono={<IconoFiltros width={16} height={16} />} cuenta={(filtro.hace ? 1 : 0) + (filtro.que ? 1 : 0)} onClick={() => setFiltrando(true)}>
               Filtros
-            </ChipContexto>
+            </Chip>
           )}
-          {filtro.hace && <ChipQuitar texto={etiquetaDisciplina(filtro.hace)} onClick={() => irA(hrefSin("hace"))} />}
-          {filtro.que && queHacen && <ChipQuitar texto={queHacen} onClick={() => irA(hrefSin("que"))} />}
+          {filtro.hace && (
+            <Chip variante="quitar" onClick={() => irA(hrefSin("hace"))}>
+              {etiquetaDisciplina(filtro.hace)}
+            </Chip>
+          )}
+          {filtro.que && queHacen && (
+            <Chip variante="quitar" onClick={() => irA(hrefSin("que"))}>
+              {queHacen}
+            </Chip>
+          )}
         </>
       }
     >
@@ -139,30 +147,30 @@ export default function ListaArtistas({ artistas, total, quedan, totalCiudad, di
     >
       <BloqueFiltro rotulo="Disciplina">
         <Chips ariaLabel="Qué hacen" envuelve>
-          <ChipEnlace activo={!filtro.hace} href={hrefArtistas({ ciudad: cSlug, q: filtro.q })}>
+          <Chip activo={!filtro.hace} href={hrefArtistas({ ciudad: cSlug, q: filtro.q })}>
             Todos
             <Cuenta n={totalCiudad} />
-          </ChipEnlace>
+          </Chip>
           {disciplinas.map((d) => (
-            <ChipEnlace key={d.valor} activo={filtro.hace === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: d.valor, q: filtro.q })}>
+            <Chip key={d.valor} activo={filtro.hace === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: d.valor, q: filtro.q })}>
               {d.etiqueta}
               {d.n != null && <Cuenta n={d.n} />}
-            </ChipEnlace>
+            </Chip>
           ))}
         </Chips>
       </BloqueFiltro>
       {conChips && detalles.length > 0 && filtro.hace && (
         <BloqueFiltro rotulo={`Qué ${etiquetaDisciplina(filtro.hace).toLowerCase()}`}>
           <Chips ariaLabel={`Qué ${etiquetaDisciplina(filtro.hace).toLowerCase()}`} envuelve>
-            <ChipEnlace activo={!filtro.que} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, q: filtro.q })}>
+            <Chip activo={!filtro.que} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, q: filtro.q })}>
               Todo
               {disciplinas.find((d) => d.valor === filtro.hace)?.n != null && <Cuenta n={disciplinas.find((d) => d.valor === filtro.hace)!.n!} />}
-            </ChipEnlace>
+            </Chip>
             {detalles.map((d) => (
-              <ChipEnlace key={d.valor} activo={filtro.que === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, que: filtro.que === d.valor ? null : d.valor, q: filtro.q })}>
+              <Chip key={d.valor} activo={filtro.que === d.valor} href={hrefArtistas({ ciudad: cSlug, hace: filtro.hace, que: filtro.que === d.valor ? null : d.valor, q: filtro.q })}>
                 {d.etiqueta}
                 {d.n != null && <Cuenta n={d.n} />}
-              </ChipEnlace>
+              </Chip>
             ))}
           </Chips>
         </BloqueFiltro>

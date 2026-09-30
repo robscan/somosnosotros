@@ -35,7 +35,7 @@ before(async () => {
       import Renglon from './src/components/ui/Renglon';
       import rs from './src/components/ui/Renglon.module.css';
       import {EsqueletoRenglon} from './src/components/ui/Esqueleto';
-      import BotonIcono from './src/components/ui/BotonIcono';
+      import BotonRenglon from './src/components/ui/BotonRenglon';
       import Boton from './src/components/ui/Boton';
       import Palanca from './src/components/ui/Palanca';
       import SoloLector from './src/components/ui/SoloLector';
@@ -43,7 +43,8 @@ before(async () => {
       import {IconoBoleto, IconoChevronDerecha, IconoLapiz, IconoNota, IconoOk, IconoPin, IconoReloj} from './src/components/ui/Iconos';
       import './src/app/globals.css';
       const FOTO = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
-      const voy = (nombre) => <BotonIcono tamano="accion" relieve="elevado" aria-label={nombre}><IconoOk width={22} height={22} /></BotonIcono>;
+      // El botón real de un renglón (H-19): el icono a secas sobre el fondo hueso.
+      const voy = (nombre, decidido = false) => <BotonRenglon objeto="evento" decidido={decidido} nombreAccesible={nombre} alTocar={() => {}} />;
       function App() {
         return (
           <div style={{ width: 350 }}>
@@ -57,7 +58,7 @@ before(async () => {
                 <span><IconoReloj width={15} height={15} /><b>18:00</b><span>· $120 a $250 · 6 van</span></span>
                 <span><IconoPin width={15} height={15} /><span>Templo de San Francisco de Asís, antiguo convento de San Luis Potosí, Centro Histórico</span></span>
               </Renglon>
-              <Renglon href="/largo" foto={FOTO} redonda titulo="Un título" accion={voy('Voy largo')}>
+              <Renglon href="/largo" foto={FOTO} redonda titulo="Un título" accion={voy('Voy largo', true)}>
                 <span><IconoNota width={15} height={15} /><span>Música académica y clásica · Solista · Grupo de cámara de San Luis Potosí</span></span>
                 <span className={rs.envuelve}><IconoPin width={15} height={15} />Templo de San Francisco · Calle Jardín Guerrero 7, 78000 San Luis Potosí, San Luis Potosí, México</span>
                 <span><IconoBoleto width={15} height={15} /><span>Cooperación solidaria de doscientos pesos por persona en taquilla</span></span>
@@ -150,6 +151,14 @@ test("lista: la foto mide el token (56) y el esqueleto mide lo que el renglón",
   const ancho = await rect(esqueletos.first().locator("span").first());
   assert.deepEqual([ancho.w, ancho.h], [56, 56], "la foto del esqueleto es la del renglón");
   assert.equal(await esqueletos.nth(1).locator("span").first().evaluate((e) => getComputedStyle(e).borderRadius), "50%", "redonda, como la de un artista");
+});
+
+test("lista: el botón de acción es el icono a secas de 44, en el color de acción y sin círculo ni sombra (H-19); decidido, solo el círculo verde", async (t) => {
+  const p = await pagina(t);
+  const medida = (nombre) =>
+    p.getByRole("button", { name: nombre }).evaluate((b) => ({ fondo: getComputedStyle(b).backgroundColor, glifo: getComputedStyle(b.querySelector("svg")).color, sombra: getComputedStyle(b).boxShadow, ancho: Math.round(b.getBoundingClientRect().width), alto: Math.round(b.getBoundingClientRect().height) }));
+  assert.deepEqual(await medida("Voy corto"), { fondo: "rgba(0, 0, 0, 0)", glifo: "rgb(109, 52, 200)", sombra: "none", ancho: 44, alto: 44 });
+  assert.deepEqual(await medida("Voy largo"), { fondo: "rgb(31, 111, 67)", glifo: "rgb(255, 255, 255)", sombra: "none", ancho: 44, alto: 44 });
 });
 
 test("lista: ningún dato de la meta pasa del borde de su columna (H-17) y el largo se corta con puntos suspensivos", async (t) => {

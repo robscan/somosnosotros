@@ -13,7 +13,6 @@ import styles from "./Esqueleto.module.css";
  * - `EsqueletoRenglon`: una fila de listado, el mismo renglón de lista de `ui/Renglon` con barras en lugar de foto, título
  *   y meta: no lleva una medida propia, así que mide lo que el renglón.
  * - `EsqueletoKpi` y `EsqueletoKpis`: uno o los tres números de una ficha, la misma tarjeta de `ui/Kpi`.
- * - `EsqueletoTarjeta`: tarjeta de carril, grande/mediana/chica — las medidas que ya tenía `CarrilEsqueleto`.
  * - `EsqueletoBloqueTexto`: unas líneas de párrafo, para bloques de texto que llegan después.
  */
 
@@ -61,16 +60,6 @@ export function EsqueletoKpis() {
       <EsqueletoKpi />
       <EsqueletoKpi />
     </Kpis>
-  );
-}
-
-export function EsqueletoTarjeta({ tamano = "mediana" }: { tamano?: "grande" | "mediana" | "chica" }) {
-  return (
-    <div className={`${styles.tarjeta} ${styles[tamano]}`} aria-hidden="true">
-      <span className={`${styles.foto} ${styles.respira}`} />
-      <span className={`${styles.linea} ${styles.respira}`} />
-      <span className={`${styles.linea} ${styles.respira} ${styles.corta}`} />
-    </div>
   );
 }
 

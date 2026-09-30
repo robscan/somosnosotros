@@ -55,38 +55,8 @@
   height: 1.15rem;
 }
 
-/* Tarjeta de carril: mismas medidas que traía CarrilEsqueleto.module.css. */
-.tarjeta {
-  display: grid;
-  row-gap: var(--espacio-1);
-  width: 220px;
-}
-.tarjeta .foto {
-  height: 132px;
-  border-radius: var(--radio);
-}
-.tarjeta .linea {
-  height: 14px;
-}
 .corta {
   width: 60%;
-}
-.grande {
-  width: 165px;
-}
-.grande .foto {
-  height: 248px;
-}
-.chica {
-  width: 104px;
-}
-.chica .foto {
-  height: 104px;
-  border-radius: 50%;
-}
-.chica .linea {
-  justify-self: center;
-  width: 80%;
 }
 
 /* Bloque de texto: unas líneas de párrafo. */
