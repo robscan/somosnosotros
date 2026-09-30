@@ -3,8 +3,8 @@ import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import BotonCompartir from "@/components/BotonCompartir";
 import BarraFicha from "@/components/ui/BarraFicha";
-import Boton, { claseBoton } from "@/components/ui/Boton";
-import Ficha from "@/components/ui/Ficha";
+import Boton from "@/components/ui/Boton";
+import Ficha, { BOTON_PUBLICADO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
 import ficha from "@/components/ui/Ficha.module.css";
 import { normalizarRedes } from "@/lib/enlaces";
@@ -14,9 +14,6 @@ import { clienteServidor } from "@/lib/supabase/servidor";
 import CuerpoLugar, { cargarFicha, cargarLugar, OpcionesLugar, ORIGEN, SeguirLugar } from "./CuerpoLugar";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
-
-/** El botón compartir de la tarjeta «Publicado» (ui/Boton, en su celda). */
-const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${ficha.publicadoBoton}`;
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;

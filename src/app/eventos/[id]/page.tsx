@@ -15,9 +15,7 @@ import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import BarraFicha from "@/components/ui/BarraFicha";
-import { claseBoton } from "@/components/ui/Boton";
-import { claseBotonIcono } from "@/components/ui/BotonIcono";
-import Ficha from "@/components/ui/Ficha";
+import Ficha, { BOTON_PUBLICADO, CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
 import { IconoBoleto, IconoCalendario, IconoCalendarioAgregar, IconoCalendarioMas, IconoCandado, IconoChevronDerecha, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoPincel, IconoRuta } from "@/components/ui/Iconos";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
@@ -46,9 +44,6 @@ type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?
 type EventoConLugar = Evento & { lugar: { id: string; slug: string; nombre: string; direccion: string | null; ciudad: string; lat: number; lng: number; portada: string | null; visible: boolean; privado: boolean } | null; autor: { id: string; nombre: string } | null };
 
 const ORIGEN = "https://somosnosotros.org";
-/** El círculo de cada acción (ui/BotonIcono) y el botón de la tarjeta «Publicado» (ui/Boton, en su celda). */
-const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
-const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${ficha.publicadoBoton}`;
 
 /**
  * Se busca por slug (la dirección de hoy) y, si no aparece nada, por UUID (la dirección vieja, para que siga

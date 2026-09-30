@@ -17,10 +17,9 @@ import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import BarraFicha from "@/components/ui/BarraFicha";
-import Boton, { claseBoton } from "@/components/ui/Boton";
-import { claseBotonIcono } from "@/components/ui/BotonIcono";
+import Boton from "@/components/ui/Boton";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
-import Ficha from "@/components/ui/Ficha";
+import Ficha, { BOTON_PUBLICADO, CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
 import { IconoCalendario, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
@@ -51,9 +50,6 @@ type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null 
 type FilaEvento = Omit<EventoAgenda, "lugar" | "van"> & { lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
-/** El círculo de cada acción (ui/BotonIcono) y el botón de la tarjeta «Publicado» (ui/Boton, en su celda). */
-const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
-const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${ficha.publicadoBoton}`;
 
 /**
  * Quién lleva la ficha (una fila por cuenta ligada). `generateMetadata` y la ficha necesitan la misma pregunta —

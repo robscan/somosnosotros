@@ -12,12 +12,12 @@ import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import Boton from "@/components/ui/Boton";
-import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import { EsqueletoKpi, EsqueletoRenglones } from "@/components/ui/Esqueleto";
 import { IconoCalendario, IconoChevronDerecha, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
 import { Kpi, Kpis } from "@/components/ui/Kpi";
+import { CIRCULO } from "@/components/ui/Ficha";
 import ficha from "@/components/ui/Ficha.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import type { EventoAgenda } from "@/lib/agenda";
@@ -52,9 +52,6 @@ export type FichaLugar = {
   puedeBorrar: boolean;
   destacable: Awaited<ReturnType<typeof cargarDestacado>> | null;
 };
-
-/** El círculo de cada acción (ui/BotonIcono). */
-const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
 
 /** El correo de quien mira, enmascarado, para las confirmaciones (la de «¿Es tu espacio?» y la de los avisos de Seguir). */
 const correoDe = (actual: Actual | null) => (actual?.correo ? enmascararCorreo(actual.correo) : "tu correo");

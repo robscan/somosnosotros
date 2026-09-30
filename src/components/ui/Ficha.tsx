@@ -1,5 +1,12 @@
 import type { CSSProperties, ReactNode } from "react";
+import { claseBoton } from "./Boton";
+import { claseBotonIcono } from "./BotonIcono";
 import styles from "./Ficha.module.css";
+
+/** El círculo de cada acción de una ficha (compartir, sitio web, cómo llegar…): el dibujo de un control más grande, con su letrero debajo. */
+export const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
+/** El botón de la tarjeta «Publicado» (compartir o completar): un `ui/Boton` secundario de 44, en su celda. */
+export const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${styles.publicadoBoton}`;
 
 /**
  * La portada de una ficha como variable CSS (`--portada`): la barra compacta la enseña oscurecida detrás del título. Sin portada
