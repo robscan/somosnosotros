@@ -288,7 +288,7 @@ describe("buscarConContexto (revisión del gestor, hasta tres intentos)", () => 
     const buscar = vi.fn(async (texto: string, bbox: Bbox | undefined) => {
       llamadas.push({ texto, bbox });
       // Respuesta real (grabada por el gestor) al primer intento de hoy: ya filtrada y ordenada, como llegaría de
-      // HojaDondeEs.tsx. Ninguna es la dirección correcta (Hermenegildo Galeana 423), pero la primera
+      // HojaDonde.tsx. Ninguna es la dirección correcta (Hermenegildo Galeana 423), pero la primera
       // ("Calle Galeana 423", municipio San Luis Potosí) cae a ~11.7 km del centro — dentro del radio de "cerca".
       return filtrarYOrdenarDirecciones(RESPUESTA_REAL_PRIMER_INTENTO, texto, contexto.centro, contexto.ciudad.nombre);
     });

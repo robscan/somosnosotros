@@ -1,4 +1,5 @@
 import { ciudadCanonica } from "./ciudad";
+import type { Punto } from "./geo";
 import { esUuid, limpiar } from "./formulario";
 import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
 import { imagenPermitida } from "./imagenes";
@@ -8,6 +9,24 @@ export { LIMITES_EVENTO } from "./limites";
 
 /** Dónde es el evento: en un lugar registrado, en otro sitio (público) o en un sitio reservado (dirección con condiciones). */
 export type ModoSitio = "lugar" | "otro" | "reservado";
+
+/** Lo que resuelve Dónde cuando no es un lugar registrado: el sitio, su pin y, si es reservado, la dirección exacta. */
+export type OtroSitio = {
+  reservado: boolean;
+  sitioTexto: string;
+  /** Direccion publica estructurada, nunca parte del alias persistido. */
+  direccion?: string;
+  nombreLegacy?: boolean;
+  referenciaLegacy?: string;
+  pinPendiente?: boolean;
+  sitioPunto: Punto | null;
+  direccionPrivada: string;
+  privadoPunto: Punto | null;
+  revelarHoras: number;
+  indicaciones: string;
+  /** La ciudad del pin, deducida por Mapbox al ponerlo (null hasta entonces). */
+  ciudad: string | null;
+};
 
 /** Cuánto antes del inicio se revela un sitio reservado a las personas con sesión. */
 export const REVELAR_OPCIONES = [

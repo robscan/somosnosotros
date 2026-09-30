@@ -45,6 +45,11 @@ const nextConfig: NextConfig = {
       { source: "/inicio", destination: "/", permanent: true },
       { source: "/", has: [{ type: "query", key: "filtro" }], destination: "/agenda", permanent: true },
       { source: "/", has: [{ type: "query", key: "q" }], destination: "/agenda", permanent: true },
+      // Las tres altas eran tres pantallas; hoy son una (`/nuevo`, con su tira de tipos). Un enlace viejo (`?lugar=`, `?desde=`,
+      // `?ciudad=`…) llega con lo suyo: lo que no se nombra en `destination` viaja solo.
+      { source: "/eventos/nuevo", destination: "/nuevo?tipo=evento", permanent: true },
+      { source: "/lugares/nuevo", destination: "/nuevo?tipo=lugar", permanent: true },
+      { source: "/artistas/nuevo", destination: "/nuevo?tipo=artista", permanent: true },
     ];
   },
   async headers() {
@@ -59,11 +64,9 @@ const nextConfig: NextConfig = {
       // Buscar (OL-237): una pantalla de búsqueda, no una página que indexar (respaldo del `robots` de su página).
       { source: "/buscar", headers: NOINDEX },
       // Alta y edición, y Novedades (OL-143, doc 36): piden sesión, pero conviene decirlo explícito (respaldo del `robots` de cada página).
-      { source: "/lugares/nuevo", headers: NOINDEX },
+      { source: "/nuevo", headers: NOINDEX },
       { source: "/lugares/:id/editar", headers: NOINDEX },
-      { source: "/artistas/nuevo", headers: NOINDEX },
       { source: "/artistas/:id/editar", headers: NOINDEX },
-      { source: "/eventos/nuevo", headers: NOINDEX },
       { source: "/eventos/:id/editar", headers: NOINDEX },
       { source: "/novedades", headers: NOINDEX },
     ];

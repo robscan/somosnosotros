@@ -2,8 +2,10 @@
 
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { useTerminar } from "@/components/ui/Atras";
+import HojaDonde from "@/components/HojaDonde";
 import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
+import BotonPublicar from "@/components/ui/BotonPublicar";
 import Campo from "@/components/ui/Campo";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
@@ -11,25 +13,24 @@ import CampoImagenUrl from "@/components/CampoImagenUrl";
 import { useAbrirConError } from "@/components/ui/abrirConError";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
-import { IconoBoleto, IconoBuscar, IconoMas, IconoPersonas, IconoPin, IconoReloj } from "@/components/ui/Iconos";
+import { IconoBoleto, IconoBuscar, IconoMas, IconoPersonas, IconoPin, IconoReloj, IconoUbicacion } from "@/components/ui/Iconos";
 import type { ArtistaResumen, QuienItem } from "@/lib/artistas";
 import { unirNombres } from "@/lib/artistas";
-import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, REVELAR_OPCIONES, esCooperacion, extraerNumero, type Evento, type ModoSitio, type SitioPrivado } from "@/lib/eventos";
+import { COOPERACION_SOLIDARIA, LIMITES_EVENTO, REVELAR_OPCIONES, esCooperacion, extraerNumero, type Evento, type ModoSitio, type OtroSitio, type SitioPrivado } from "@/lib/eventos";
 import { formatearCuando, isoALocal, localAIso, resugerirCuando, sugerirInicio, ZONA_INICIAL, zonaSegura } from "@/lib/fechas";
+import { faltaEnEvento } from "@/lib/formulario";
 import type { Punto } from "@/lib/geo";
 import type { LugarResumen } from "@/lib/lugares";
 import type { Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import { quitarGuardia } from "@/lib/guardiaSalida";
-import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto, type FalloAlSubir } from "@/lib/subirFoto";
 import { leerUbicacion } from "@/lib/ubicacion";
 import { esteAparatoInicial } from "@/lib/plataforma";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
 import { cupoDeCartel, leerCartelAccion, pedirMasLecturas, zonaDelPunto, type Cupo, type ResultadoEvento } from "./acciones";
 import { CLAVE_BORRADOR, olvidarBorrador, tomarLugarNuevo, vengoDeRegistrarLugar } from "./borrador";
-import HojaDondeEs, { type OtroSitio } from "./HojaDondeEs";
 import SelectorCuando from "./SelectorCuando";
 import TarjetaCartel from "./TarjetaCartel";
 import { operacionEvento } from "./operacionEvento";
@@ -105,6 +106,8 @@ type Props = {
   revision?: string;
   /** Ciudad del chip de la Agenda desde la que se entró a publicar: una pista más para la búsqueda de dirección (OL-100). */
   ciudadContexto?: Ciudad | null;
+  /** La pantalla de alta tiene tres formularios y solo se ve el del tipo elegido: los otros siguen ahí, escondidos, con lo escrito. */
+  oculta?: boolean;
 };
 
 /**
@@ -114,7 +117,7 @@ type Props = {
  * Quién, Cuánto (gratis) y Más. La ayuda de qué falta va bajo el campo o renglón, no dentro del botón (decisión 3
  * ampliada por el founder, 2026-09-21, OL-100: "aplica como canon para todos los formularios").
  */
-export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/eventos/nuevo", cupo = null, revision, ciudadContexto = null }: Props) {
+export default function FormularioEvento({ accion, lugares, lugarInicial, evento, privado, zonaSitio = ZONA_INICIAL, modo, usuarioId, cartelActivo = false, quienInicial, mios = [], esAdmin = false, volverA = "/nuevo", cupo = null, revision, ciudadContexto = null, oculta = false }: Props) {
   const plataforma = usePlataforma();
   const [revisionInicial] = useState(revision);
   const operacion = useRef<ReturnType<typeof operacionEvento> | null>(null);
@@ -131,7 +134,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const modoInicial: ModoSitio = evento?.sitio_reservado ? "reservado" : evento?.sitio_texto ? "otro" : "lugar";
   const [modoSitio, setModoSitio] = useState<ModoSitio>(modoInicial);
   const [lugarId, setLugarId] = useState(evento?.lugar_id ?? lugarInicial ?? (lugares.length === 1 ? lugares[0].id : ""));
-  // "Agregar lugar" (OL-173, docs/rediseno/43) registra en línea, sin navegar a /lugares/nuevo: el lugar nuevo
+  // "Agregar lugar" (OL-173, docs/rediseno/43) registra en línea, sin salir de la pantalla de alta: el lugar nuevo
   // todavía no está en `lugares` (la trajo el primer pintado del servidor), así que esta lista propia lo recibe de
   // vuelta de la hoja y lo agrega, para que "Dónde" lo encuentre igual que a cualquier lugar ya registrado.
   const [listaLugares, setListaLugares] = useState<LugarResumen[]>(lugares);
@@ -278,7 +281,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   }
   const [abierta, setAbierta] = useState<Abierta>(null);
   const [masAbierto, setMasAbierto] = useState(modo === "editar" && !!(evento?.descripcion || evento?.enlace || evento?.imagen));
-  const [hoja, setHoja] = useState(false);
+  // La hoja «Dónde»: cerrada, o abierta (`ubicarme`: con el «Estoy aquí» del renglón, que lee la ubicación al abrir).
+  const [hoja, setHoja] = useState<null | { ubicarme: boolean }>(null);
   // "Estoy aquí" en el pin de otro sitio: la persona en el mapa (punto azul) y el pin donde está.
   const [yo, setYo] = useState<(Punto & { vez: number }) | null>(null);
   const [ubicando, setUbicando] = useState(false);
@@ -346,11 +350,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     } catch {}
   }, [esAlta, titulo, inicio, fin, gratis, cooperacion, precio, descripcion, enlace, imagen, modoSitio, lugarId, otro, quien]);
 
-  // Atrás o la ✕ preguntan solo si el formulario cambió desde que se abrió (guardia estándar de las altas); al confirmar, el borrador se olvida.
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
   useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlace, errores.imagen, errorImagen);
-  const hojaSalir = useSalirSinPublicar(formRef, modo !== "editar", olvidarBorrador);
 
   const lugar = listaLugares.find((l) => l.id === lugarId);
   const ofrecerCartel = cartelActivo && esAlta;
@@ -361,7 +363,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
   const dondeConfirmar = !dondeResuelto && !dondeVacio;
   const errorDonde = errores.lugar_id ?? errores.sitio_texto ?? errores.sitio_direccion ?? errores.direccion_privada;
   const faltaNombre = titulo.trim().length === 0;
-  const listo = !faltaNombre && dondeResuelto;
+  // Lo único que dice qué falta es la nota bajo el botón; cada renglón dice su estado con su valor «Falta» y su borde discontinuo.
+  const falta = faltaEnEvento({ nombre: titulo, donde: dondeResuelto ? "listo" : dondeConfirmar ? "por-confirmar" : "falta" });
 
   const valorDonde = modoSitio === "lugar" ? (lugar?.nombre ?? "") : `${textoDelSitio(otro)} · ${modoSitio === "reservado" ? "reservado" : "otro sitio"}`;
   const zona = zonaSegura(modoSitio === "lugar" ? (lugar?.zona ?? evento?.zona) : clavePunto ? zonaPin : ZONA_INICIAL);
@@ -376,7 +379,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     if (nuevo) setListaLugares((actual) => (actual.some((l) => l.id === nuevo.id) ? actual : [...actual, nuevo]));
     setModoSitio("lugar");
     setLugarId(id);
-    setHoja(false);
+    setHoja(null);
     resugerir(sugerida, cuando, setInicio, setFin, zonaSegura((nuevo ?? listaLugares.find((l) => l.id === id))?.zona));
   }
   function cambiarOtro(o: OtroSitio, desdePin = false) {
@@ -527,8 +530,9 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
     <>
       <form
         ref={formRef}
+        hidden={oculta}
         action={(fd) => {
-          if (!dondeResuelto) { setHoja(true); return; }
+          if (falta) return;
           operacion.current = operacionEvento(fd, operacion.current);
           fd.set("operacion", operacion.current.id);
           // El borrador se suelta al publicar; si el servidor devuelve un error, lo escrito sigue en pantalla.
@@ -539,50 +543,38 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
         noValidate
       >
         {modo === "editar" && <input type="hidden" name="revision" value={revisionInicial ?? ""} />}
+        {modo === "duplicar" && <p className="subtitulo">Mismo evento, nueva fecha. Cambia lo que haga falta.</p>}
         {/* 1. El cartel, antes del formulario: subirlo lo llena todo. Es lo único que explica la pantalla
             (firmado por el founder, 2026-09-17: «el texto de la tarjeta ancha debe hacer ese trabajo»). */}
         {ofrecerCartel && <TarjetaCartel cartel={cartel} cupo={cupoActual} ocupado={subiendo || leyendo || consultandoCupo} errorCupo={errorCupo || !cupoActual} onReintentarCupo={actualizarCupo} pidiendo={pidiendo} onElegir={leerCartel} onPedir={pedirMas} />}
 
-        {/* 2. El nombre, solo con su ✕. Vacío se marca como faltante (mismo peso que Cuándo/Dónde cuando
-            dicen "Falta"): borde discontinuo, placeholder propio y nota bajo el campo — antes solo se pintaba
-            una nota chica y gris, fácil de perder, sobre todo tras leer un cartel sin título (founder,
-            2026-09-21: "el campo no se marca como faltante", OL-113). */}
-        <div className={`${canon.campo} ${canon.sinIcono} ${faltaNombre && !errores.titulo ? canon.campoFalta : ""}`}>
-          {/* Sin autoFocus (founder, 2026-09-21, L2): el teclado ya no sale solo al abrir y tapa la tarjeta del
-              cartel. Por la misma razón, leer un cartel sin título tampoco fuerza el foco aquí: el aviso es
-              visual (borde, placeholder, nota), no una interrupción con teclado que la persona no pidió. */}
+        {/* 2. El nombre, con el icono del canon (el prototipo firmado lo lleva en las tres altas) y su ✕. Vacío se marca como
+            faltante con el mismo peso que Cuándo/Dónde cuando dicen «Falta»: el borde discontinuo; qué falta lo dice una sola vez,
+            la nota bajo el botón (doc 50, H-29 y H-32). Sin autoFocus (founder, 2026-09-21, L2): el teclado ya no sale solo al
+            abrir y tapa la tarjeta del cartel. */}
+        <label className={`${canon.campo} ${faltaNombre && !errores.titulo ? canon.campoFalta : ""}`}>
+          <IconoBuscar width={20} height={20} />
           <input
             name="titulo"
             type="text"
             value={titulo}
             onChange={(e) => { gestos.current.tocar("titulo"); setTitulo(e.target.value); }}
             maxLength={LIMITES_EVENTO.titulo}
-            placeholder={faltaNombre ? "Falta el nombre" : "Nombre del evento"}
+            placeholder="Nombre del evento"
             aria-label="Nombre del evento"
             aria-invalid={!!errores.titulo}
-            aria-describedby={errores.titulo ? "error-nombre-evento" : faltaNombre ? "nota-nombre-evento" : undefined}
+            aria-describedby={errores.titulo ? "error-nombre-evento" : undefined}
             autoComplete="off"
             required
           />
           <Limpiar visible={!!titulo} />
           <ContadorCaracteres valor={titulo} tope={LIMITES_EVENTO.titulo} error={errores.titulo} />
-        </div>
+        </label>
         {subiendo && !cartel && !masAbierto && <p className={canon.estado}>Subiendo…</p>}
-        {errores.titulo ? (
+        {errores.titulo && (
           <p id="error-nombre-evento" className={canon.error} role="alert">
             {errores.titulo}
           </p>
-        ) : (
-          // La ayuda va bajo el campo, con su propia clase: renglon.nota lleva grid-area: cuerpo, pensada
-          // para el cuerpo de un renglón de renglon.resuelto. Aquí, sin una rejilla alrededor, ese grid-area no
-          // rompía nada (no era la causa de que se viera "fácil de perder": eso era el borde sin marcar y el
-          // placeholder genérico, ver más abajo) pero es la clase equivocada — la del gestor: una clase del
-          // canon solo se reutiliza dentro de la rejilla para la que fue escrita.
-          faltaNombre && (
-            <p id="nota-nombre-evento" className={canon.notaCampo}>
-              Falta el nombre.
-            </p>
-          )
         )}
 
         <ul className={renglon.renglones}>
@@ -626,7 +618,7 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             {dondeResuelto ? (
               <>
                 <b>{valorDonde}</b>
-                <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setHoja(true)}>
+                <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setHoja({ ubicarme: false })}>
                   Cambiar
                 </Boton>
               </>
@@ -636,28 +628,28 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               // el aviso del founder sobre formularios que se salen de la tarjeta con datos largos.
               <>
                 <b>{otro.direccion?.trim() || otro.sitioTexto}</b>
-                <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setHoja(true)}>
+                <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setHoja({ ubicarme: false })}>
                   Confirmar
                 </Boton>
               </>
             ) : (
               <>
                 <b className={renglon.falta}>Falta</b>
-                <BotonIcono relieve="contorno" onClick={() => setHoja(true)} aria-label="Buscar el lugar" title="Buscar el lugar">
-                  <IconoBuscar width={22} height={22} />
-                </BotonIcono>
+                <span className={renglon.opciones}>
+                  <BotonIcono relieve="contorno" onClick={() => setHoja({ ubicarme: true })} aria-label="Estoy aquí" title="Estoy aquí">
+                    <IconoUbicacion width={22} height={22} />
+                  </BotonIcono>
+                  <BotonIcono relieve="contorno" onClick={() => setHoja({ ubicarme: false })} aria-label="Buscar el lugar" title="Buscar el lugar">
+                    <IconoBuscar width={22} height={22} />
+                  </BotonIcono>
+                </span>
               </>
             )}
-            {/* La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios). */}
-            {errorDonde ? (
+            {errorDonde && (
               <p className={renglon.nota} role="alert">
                 {errorDonde}
               </p>
-            ) : dondeConfirmar ? (
-              <p className={renglon.nota}>Confirma la ubicación en el mapa.</p>
-            ) : dondeVacio ? (
-              <p className={renglon.nota}>Falta ubicación.</p>
-            ) : null}
+            )}
           </li>
 
           {/* 4. Quién: opcional, no detiene la publicación (Artistas, decisión 12). */}
@@ -778,13 +770,13 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             {resultado.conflicto && evento?.id && <> <a href={`/eventos/${evento.id}`} target="_blank" rel="noopener noreferrer">Ver versión actual en otra pestaña</a></>}
           </p>
         )}
-        {/* La ayuda de qué falta va bajo cada campo, no dentro del botón (decisión 3 ampliada por el founder, 2026-09-21). */}
-        <Boton type="submit" disabled={enviando || terminado || subiendo || leyendo || !listo}>
+        <BotonPublicar id="falta-evento" falta={falta} ocupado={enviando || terminado || subiendo || leyendo}>
           {enviando || terminado ? "Guardando…" : modo === "editar" ? "Guardar cambios" : "Publicar evento"}
-        </Boton>
+        </BotonPublicar>
       </form>
       {hoja && (
-        <HojaDondeEs
+        <HojaDonde
+          para="evento"
           lugares={listaLugares}
           modoSitio={modoSitio}
           lugarId={lugarId}
@@ -797,11 +789,11 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           onOtro={cambiarOtro}
           onGesto={() => gestos.current.tocar("donde")}
           onEstoyAqui={estoyAqui}
-          onCerrar={() => setHoja(false)}
+          onCerrar={() => setHoja(null)}
           ciudadContexto={ciudadContexto}
+          ubicarme={hoja.ubicarme}
         />
       )}
-      {hojaSalir}
     </>
   );
 }

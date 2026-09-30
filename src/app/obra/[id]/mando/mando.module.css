@@ -421,7 +421,7 @@
   opacity: 0.9;
 }
 .cerrada {
-  margin-top: var(--espacio-5, 20px);
+  margin-top: var(--espacio-2);
   color: var(--texto-suave);
   font-size: var(--letra-sm, 0.9375rem);
 }

@@ -189,7 +189,8 @@ export default function CuerpoLugar({ f: { lugar, actual, puedeEditar } }: { f: 
   const redes = normalizarRedes(lugar.redes);
   const url = `${ORIGEN}${hrefLugar(lugar)}`;
   const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
-  const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
+  const publicarAqui = `/nuevo?lugar=${lugar.id}`;
+  const hrefPublicarAqui = actual ? publicarAqui : `/entrar?siguiente=${encodeURIComponent(publicarAqui)}`;
   const { calle, resto } = partesDeDireccion(lugar.direccion);
 
   return (

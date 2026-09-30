@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { altaDeRuta, buscarDesdeRuta, CARRIL, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, vistaDeRuta } from "./armazon";
+import { altaDeParametro, altaDeRuta, buscarDesdeRuta, CARRIL, DESTINOS, enlaceDeAlta, enlaceDeBusqueda, estaEnDestino, fichaConMenu, tituloDeAlta, vistaDeRuta } from "./armazon";
 
 describe("armazón: la vista de cada ruta (data-vista)", () => {
   it("las cinco secciones y la pantalla que confirma un borrado son raíz", () => {
@@ -11,9 +11,7 @@ describe("armazón: la vista de cada ruta (data-vista)", () => {
   });
   it("las altas, las ediciones, ajustes, entrar y lo demás son tareas", () => {
     const tareas = [
-      "/eventos/nuevo",
-      "/lugares/nuevo",
-      "/artistas/nuevo",
+      "/nuevo",
       "/eventos/concierto-de-la-sinfonica/editar",
       "/lugares/teatro-de-la-paz/editar",
       "/artistas/aaron-cadena/editar",
@@ -41,7 +39,7 @@ describe("armazón: el menú «···» de la ficha", () => {
     for (const ruta of ["/eventos/concierto-de-la-sinfonica", "/lugares/teatro-de-la-paz", "/artistas/aaron-cadena"]) expect(fichaConMenu(ruta), ruta).toBe(true);
   });
   it("la persona a veces no lo tiene, y lo que no es ficha no lo pide", () => {
-    for (const ruta of ["/personas/8f1c2d9e", "/", "/lugares", "/eventos/nuevo", "/eventos/concierto/editar", "/ajustes"]) expect(fichaConMenu(ruta), ruta).toBe(false);
+    for (const ruta of ["/personas/8f1c2d9e", "/", "/lugares", "/nuevo", "/eventos/concierto/editar", "/ajustes"]) expect(fichaConMenu(ruta), ruta).toBe(false);
   });
 });
 
@@ -56,11 +54,34 @@ describe("armazón: el «+» de la barra", () => {
     expect(altaDeRuta("/artistas/aaron-cadena")).toBe("artista");
     expect(altaDeRuta("/eventos/concierto")).toBe("evento");
   });
-  it("lleva la ciudad que se está viendo a donde empieza el alta, y el lugar no la lleva", () => {
-    expect(enlaceDeAlta("evento", null)).toEqual({ href: "/eventos/nuevo", etiqueta: "Publicar un evento" });
-    expect(enlaceDeAlta("evento", "queretaro").href).toBe("/eventos/nuevo?ciudad=queretaro");
-    expect(enlaceDeAlta("artista", "queretaro")).toEqual({ href: "/artistas/nuevo?ciudad=queretaro", etiqueta: "Registrar un artista" });
-    expect(enlaceDeAlta("lugar", "queretaro")).toEqual({ href: "/lugares/nuevo", etiqueta: "Registrar un lugar" });
+  it("lleva a la pantalla de alta con el tipo de la sección, y la ciudad que se está viendo solo al evento y al artista", () => {
+    expect(enlaceDeAlta("evento", null)).toEqual({ href: "/nuevo?tipo=evento", etiqueta: "Publicar un evento" });
+    expect(enlaceDeAlta("evento", "queretaro").href).toBe("/nuevo?tipo=evento&ciudad=queretaro");
+    expect(enlaceDeAlta("artista", "queretaro")).toEqual({ href: "/nuevo?tipo=artista&ciudad=queretaro", etiqueta: "Registrar un artista" });
+    expect(enlaceDeAlta("lugar", "queretaro")).toEqual({ href: "/nuevo?tipo=lugar", etiqueta: "Registrar un lugar" });
+  });
+  it("con el nombre que se buscó y no se encontró, el alta abre con él puesto (y bien escrito en la URL)", () => {
+    expect(enlaceDeAlta("artista", null, "Los Vecinos").href).toBe("/nuevo?tipo=artista&nombre=Los+Vecinos");
+    expect(enlaceDeAlta("lugar", "queretaro", "Foro & Café").href).toBe("/nuevo?tipo=lugar&nombre=Foro+%26+Caf%C3%A9");
+    expect(enlaceDeAlta("artista", "queretaro", "Trío Xochitl").href).toBe("/nuevo?tipo=artista&ciudad=queretaro&nombre=Tr%C3%ADo+Xochitl");
+  });
+  it("el tipo con el que abre la pantalla de alta sale de la consulta: lo desconocido es un evento", () => {
+    expect(altaDeParametro("lugar")).toBe("lugar");
+    expect(altaDeParametro("artista")).toBe("artista");
+    expect(altaDeParametro("evento")).toBe("evento");
+    for (const raro of [undefined, "", "Lugar", "lugares", "x"]) expect(altaDeParametro(raro), String(raro)).toBe("evento");
+  });
+  it("cada tipo tiene su título en la pantalla de alta", () => {
+    expect(tituloDeAlta("evento")).toBe("Publicar un evento");
+    expect(tituloDeAlta("lugar")).toBe("Registrar un lugar");
+    expect(tituloDeAlta("artista")).toBe("Registrar artista");
+  });
+  it("el tipo del «+» sobrevive al viaje: lo que arma enlaceDeAlta lo lee altaDeParametro", () => {
+    for (const ruta of ["/", "/agenda", "/perfil", "/lugares", "/lugares/teatro-de-la-paz", "/artistas", "/artistas/aaron-cadena"]) {
+      const alta = altaDeRuta(ruta);
+      const consulta = new URL(enlaceDeAlta(alta, null).href, "https://somosnosotros.org").searchParams;
+      expect(altaDeParametro(consulta.get("tipo") ?? undefined), ruta).toBe(alta);
+    }
   });
 });
 

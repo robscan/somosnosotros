@@ -270,7 +270,8 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   const hrefPublicarNovedad = puedeEditar ? `${hrefArtista(a)}/novedades/nueva` : null;
   const url = `${ORIGEN}${hrefArtista(a)}`;
   const textoCompartir = `${a.nombre} · ${etiquetaArtista(a)}`;
-  const hrefPublicarFecha = actual ? `/eventos/nuevo?artista=${a.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?artista=${a.id}`)}`;
+  const publicarFecha = `/nuevo?artista=${a.id}`;
+  const hrefPublicarFecha = actual ? publicarFecha : `/entrar?siguiente=${encodeURIComponent(publicarFecha)}`;
   const qrSvg = await qrDeUrl(url);
   // Sin las fechas (diferidas) el aviso de borrar ya no dice cuántas tiene: el menú de administración sigue en el
   // HTML inicial y no puede esperar esa consulta aparte.

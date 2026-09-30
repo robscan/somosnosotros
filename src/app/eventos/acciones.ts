@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
+import { enlaceDeAlta } from "@/lib/armazon";
 import { intentarDrenarAvisos } from "@/lib/avisosWorker";
 import { CIUDAD_INICIAL } from "@/lib/ciudad";
 import { leerCartel } from "@/lib/cartel";
@@ -93,7 +94,7 @@ async function guardarCompleto(supabase: Cliente, id: string | null, datos: Dato
 
 
 export async function crearEvento(_previo: ResultadoEvento | null, formData: FormData): Promise<ResultadoEvento> {
-  const { supabase, user } = await sesionOEntrar("/eventos/nuevo");
+  const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const entrada = leer(formData);
   const [lugar, esAdmin] = await Promise.all([lugarDelEvento(supabase, entrada), esAdminDeSesion(supabase, user.id)]);
   const { datos, errores } = validarEvento(entrada, zonaDelEvento(entrada, lugar), { esAdmin });
@@ -144,7 +145,7 @@ export type ResultadoCartel =
 
 /** Lee el cartel ya subido a Storage y devuelve los valores para llenar el formulario. */
 export async function leerCartelAccion(urlImagen: string): Promise<ResultadoCartel> {
-  const { supabase } = await sesionOEntrar("/eventos/nuevo");
+  const { supabase } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const { supabaseUrl } = configPublica();
   if (!supabaseUrl || !urlImagen.startsWith(`${supabaseUrl}/storage/v1/object/public/fotos/`)) return { ok: false, mensaje: "La imagen no es de aquí." };
   // El cupo se aparta aquí, antes de llamar al modelo, y en un solo paso: en el cliente se saltaría en diez
@@ -231,7 +232,7 @@ export async function cupoDeCartel(): Promise<Cupo | null> {
 
 /** "Pedir más": una petición sin atender por cuenta, que llega a lo pendiente del panel. Sin correos. */
 export async function pedirMasLecturas(): Promise<{ ok: boolean }> {
-  const { supabase, user } = await sesionOEntrar("/eventos/nuevo");
+  const { supabase, user } = await sesionOEntrar(enlaceDeAlta("evento", null).href);
   const { error } = await supabase.from("reportes").insert({ tipo: "perfil", objeto_id: user.id, motivo: "mas_lecturas", creado_por: user.id });
   // Si ya había una sin atender, el índice único la rechaza: para quien pide, es lo mismo que si se hubiera mandado.
   if (error && error.code !== "23505") return { ok: false };

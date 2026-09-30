@@ -61,6 +61,7 @@
   --alto-filtros: 48px; /* fila de contexto de las pantallas raíz: ciudad, Cuándo y Filtros */
   --alto-cabecera: 104px; /* lo que mide ui/Cabecera (chips 60 + pestañas 44); ella lo remide en vivo */
   --alto-nav: 60px; /* la barra de navegación del teléfono (píldora de 32 + etiqueta), sin el área segura */
+  --alto-modos: 56px; /* la tira de tipos de la pantalla de alta (Evento · Lugar · Artista), sin el área segura */
   --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
 
   /* Zonas seguras. `--tope` es el alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone,
@@ -239,18 +240,23 @@ body::before {
   grid-area: cabecera;
 }
 
-/* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */
+/* Pantallas de tarea y de formulario (`<main className="pagina">`; docs/rediseno/50, 5.3): una rejilla de tres columnas, el aire de los
+   lados (`--gutter`) a cada lado y la columna en medio, donde va todo lo que no diga otra cosa. La barra interior (`ui/Barra`, un `header`)
+   ocupa las tres y llega de borde a borde sin salirse del aire con un margen negativo. Scroll normal: el botón va en el flujo y nunca queda
+   bajo el teclado. Sin barra (error, 404), lo primero baja lo que pide la zona segura de arriba; con ella, la barra ya lo pone
+   (`Barra.module.css` `.interior`; OL-205, auditoría OL-202 problema 2, docs/rediseno/48-shell-ios.md §2). */
 .pagina {
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
+  align-content: start;
   min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding: calc(var(--espacio-5) + env(safe-area-inset-top, 0px)) var(--gutter)
-    calc(var(--espacio-6) + var(--piso));
+  padding-bottom: calc(var(--espacio-6) + var(--piso));
 }
-/* Con una barra interior (Entrar y las 8 altas/ediciones: `ui/Barra.tsx`, `volver` o `cerrar`), ella ya pone su
-   propio colchón de zona segura (`Barra.module.css` `.interior`, pegajosa arriba): sumarlo aquí también dejaba un
-   hueco doble antes de la barra, más grande que en una ficha (OL-205, auditoría OL-202 problema 2,
-   docs/rediseno/48-shell-ios.md §2). Sin barra (error, 404) el colchón de aquí sigue siendo el único que hay. */
-.pagina:has(> header:first-child) {
-  padding-top: 0;
+:where(.pagina) > * {
+  grid-column: 2;
+}
+.pagina > :first-child:not(header) {
+  margin-top: calc(var(--espacio-5) + env(safe-area-inset-top, 0px));
 }
 
 /* Ancho de un bloque (doc 50, 5.3): la página no lleva aire a los lados y cada bloque escoge una de las dos. `.columna`

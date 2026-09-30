@@ -6,7 +6,7 @@
 
 /* ---------- 1. Títulos y grupos ---------- */
 .titulo {
-  margin: var(--espacio-3) 0 var(--espacio-1);
+  margin: 0 0 var(--espacio-1);
   font-size: var(--letra-2xl);
 }
 .grupo {
@@ -23,6 +23,10 @@
 }
 .grupo > b {
   color: var(--primario);
+}
+/* Los márgenes de la página no se funden (es una rejilla): tras el título, que ya deja el suyo, el grupo completa hasta sus 20 */
+.titulo + .grupo {
+  margin-top: var(--espacio-4);
 }
 .nota {
   margin: calc(-1 * var(--espacio-1)) 0 var(--espacio-2) var(--espacio-1);
@@ -514,7 +518,6 @@ a.ficha::after,
     "avatar detalle";
   column-gap: 14px;
   align-items: center;
-  margin-top: var(--espacio-3);
 }
 .cabecera > h1 {
   grid-area: nombre;
@@ -738,6 +741,10 @@ a.ficha::after,
   margin: var(--espacio-5) 0;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+}
+/* Tras el rótulo de un grupo, que ya deja sus 8, el vacío completa hasta sus 20 */
+.grupo + .vacio {
+  margin-top: var(--espacio-3);
 }
 .error {
   display: grid;

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { Fragment, useActionState, useCallback, useEffect, useRef, useState } from "react";
-import { recordarLugarNuevo } from "@/app/eventos/borrador";
 import CampoImagenUrl from "@/components/CampoImagenUrl";
 import { useAbrirConError } from "@/components/ui/abrirConError";
 import { useTerminar } from "@/components/ui/Atras";
 import SelectorEnlaces from "@/components/SelectorEnlaces";
+import HojaDonde from "@/components/HojaDonde";
 import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
+import BotonPublicar from "@/components/ui/BotonPublicar";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import Limpiar from "@/components/ui/Limpiar";
@@ -21,18 +22,17 @@ import { configPublica } from "@/lib/config";
 import { consultarMapa, deducirTipo, lugaresPorTexto, recuperarLugar, sugerirLugares, type LugarSugerido } from "@/lib/buscarLugares";
 import { buscarConContexto, descartarSinCalle, necesitaReintentoLugares } from "@/lib/direccionContexto";
 import { normalizarRedes } from "@/lib/enlaces";
+import { faltaEnLugar } from "@/lib/formulario";
+import { contextoDondeEsta } from "@/lib/hojaDonde";
 import { lugarDesdePunto } from "@/lib/geocodificar";
 import type { Punto } from "@/lib/geo";
 import { etiquetaTipo, hrefLugar, LIMITES_LUGAR, TIPOS, type Lugar, type LugarResumen, type Tipo } from "@/lib/lugares";
 import { quitarGuardia } from "@/lib/guardiaSalida";
-import { useSalirSinPublicar } from "@/components/SalirSinPublicar";
 import { subirFoto } from "@/lib/subirFoto";
 import { leerUbicacion, ubicacionCercanaFresca } from "@/lib/ubicacion";
 import { esteAparatoInicial } from "@/lib/plataforma";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
 import type { ResultadoLugar } from "./acciones";
-import { contextoDondeEsta } from "./dondeEstaPantalla";
-import HojaDondeLugar from "./HojaDondeLugar";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
@@ -43,8 +43,8 @@ type Props = {
   /** Sin lugar = alta. Con lugar = edición (todo resuelto de entrada). */
   lugar?: Lugar;
   usuarioId: string;
-  /** Desde dónde se vino (el alta de evento): al publicar el lugar se vuelve ahí con el lugar ya elegido. */
-  siguiente?: string;
+  /** El nombre con el que empieza el alta (viene de una búsqueda que no encontró nada). */
+  nombreInicial?: string;
   /** El administrador puede pegar la dirección de una imagen y marcar el lugar como privado (mapeo personal). */
   esAdmin?: boolean;
   /** Lugares ya registrados y visibles (sin el propio, al editar): pines de "¿Dónde está?" (OL-211) para avisar
@@ -53,6 +53,10 @@ type Props = {
   /** La ciudad elegida (chip): misma cascada de contexto que el alta de evento (OL-100), para que la búsqueda de
    *  "¿Dónde está?" no busque en todo el país sin el pin ya puesto (corrección del gestor sobre el PR #249). */
   ciudadContexto?: Ciudad | null;
+  /** El campo del nombre toma el foco al abrir (el alta lo pide solo si es lo primero que se ve). */
+  autoFocus?: boolean;
+  /** La pantalla de alta tiene tres formularios y solo se ve el del tipo elegido: los otros siguen ahí, escondidos, con lo escrito. */
+  oculta?: boolean;
 };
 
 /**
@@ -62,29 +66,21 @@ type Props = {
  * redes, foto). El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón que falta
  * (founder, 2026-09-21: canon ampliado para todos los formularios, docs/rediseno/26).
  */
-export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, esAdmin = false, lugares, ciudadContexto }: Props) {
+export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicial, esAdmin = false, lugares, ciudadContexto, autoFocus = false, oculta = false }: Props) {
   const plataforma = usePlataforma();
   const esAlta = !lugar;
   const [resultado, enviar, enviando] = useActionState<ResultadoLugar | null, FormData>(accion, null);
-  // Guardado, o publicado desde el alta de evento («Regístralo»): la tarea termina sin quedarse en el historial.
-  // Al alta de evento se vuelve con el historial (sin apilar otra) y el lugar llega por su borrador; si no se vino de
-  // ella, se va con el lugar en la URL, como antes. Mientras vuelve, el botón sigue ocupado.
+  // Guardado: la tarea termina sin quedarse en el historial; mientras vuelve, el botón sigue ocupado.
   const terminar = useTerminar();
   const terminado = resultado?.ok === true;
   useEffect(() => {
-    if (!resultado?.ok) return;
-    if (!siguiente) {
-      terminar(resultado.volver);
-      return;
-    }
-    recordarLugarNuevo(resultado.id);
-    terminar(siguiente, { siNo: `${siguiente}${siguiente.includes("?") ? "&" : "?"}lugar=${resultado.id}` });
-  }, [resultado, siguiente, terminar]);
+    if (resultado?.ok) terminar(resultado.volver);
+  }, [resultado, terminar]);
   const errores = resultado && !resultado.ok ? resultado.errores : {};
   const parecidos = resultado && !resultado.ok ? resultado.parecidos : undefined;
 
-  const [nombre, setNombre] = useState(lugar?.nombre ?? "");
-  const [tipo, setTipo] = useState<Tipo | "">(lugar?.tipo ?? "");
+  const [nombre, setNombre] = useState(lugar?.nombre ?? nombreInicial ?? "");
+  const [tipo, setTipo] = useState<Tipo | "">(lugar?.tipo ?? (nombreInicial ? (deducirTipo(nombreInicial) ?? "otro") : ""));
   const [tipoElegidoAMano, setTipoElegidoAMano] = useState(!!lugar);
   const [detalle, setDetalle] = useState(lugar?.detalle ?? "");
   const [direccion, setDireccion] = useState(lugar?.direccion ?? "");
@@ -119,11 +115,9 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
   // coincidencia, queda una sola línea de ayuda bajo el campo (ver más abajo), que sí ocupa su sitio.
   const campoNombreRef = useRef<HTMLElement>(null);
   const [enfocadoNombre, setEnfocadoNombre] = useState(false);
-  // Sin borrador en el teléfono: el alta empieza limpia y, con cambios, Atrás o la ✕ preguntan (guardia estándar, 2026-09-16).
   const formRef = useRef<HTMLFormElement>(null);
   // Los avisos de estos campos viven dentro de "Más": si llega uno con el renglón cerrado, se abre solo.
   useAbrirConError(formRef, setMasAbierto, errores.descripcion, errores.enlaces, errores.portada, errorPortada);
-  const hojaSalir = useSalirSinPublicar(formRef, esAlta);
   // La posición cacheada del teléfono (si ya se pidió antes, en otra pantalla): último eslabón de la cascada de
   // contexto antes de San Luis Potosí de respaldo, igual que "¿Dónde está?" (`contextoDondeEsta`).
   const posicionTelefono = ubicacionCercanaFresca();
@@ -227,7 +221,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
 
   /** Lee la ubicación y la entrega a quien la pidió: el renglón "Dónde" (con `alMoverPin`, directo) o la hoja
    *  "Dónde está" abierta (con su propio `moverPin`, que muestra "Ubicando…" mientras llega la dirección -mismo
-   *  contrato que `onEstoyAqui` en HojaDondeEs.tsx del alta de evento, OL-211). */
+   *  contrato que `onEstoyAqui` en `HojaDonde` del alta de evento, OL-211). */
   async function estoyAqui(poner: (p: Punto) => void) {
     setUbicando(true);
     setAvisoUbicacion(null);
@@ -253,9 +247,8 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     setSubiendo(false);
   }
 
-  const faltaNombre = nombre.trim().length === 0;
-  const faltaDonde = !punto;
-  const listo = !faltaNombre && !faltaDonde && !!tipo;
+  // Lo único que dice qué falta es la nota bajo el botón; cada renglón dice su estado con su valor «Falta» y su borde discontinuo.
+  const falta = faltaEnLugar({ nombre, ubicado: !!punto });
   const sugerenciasAbiertas = enfocadoNombre && (buscando || recuperando || sugeridos.length > 0 || existentes.length > 0 || !!errorBusqueda);
   // Al salir del campo, si sigue habiendo coincidencia, una sola línea de ayuda (no el panel) — recortada a una
   // línea, con el nombre completo disponible al abrir el lugar (revisión del gestor, 2026-09-21).
@@ -265,12 +258,13 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
     <>
       <form
         ref={formRef}
+        hidden={oculta}
         action={(fd) => {
+          if (falta) return;
           quitarGuardia();
           enviar(fd);
         }}
         noValidate
-        className={styles.formulario}
       >
         {/* 1. El nombre: el sistema encuentra el lugar. */}
         <label className={canon.campo} ref={campoNombreRef as React.RefObject<HTMLLabelElement>}>
@@ -287,7 +281,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             aria-label="Nombre del lugar"
             aria-invalid={!!errores.nombre}
             autoComplete="off"
-            autoFocus={esAlta}
+            autoFocus={autoFocus}
             required
             role="combobox"
             aria-expanded={sugerenciasAbiertas}
@@ -301,9 +295,6 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           <p className={canon.error} role="alert">
             {errores.nombre}
           </p>
-        ) : faltaNombre ? (
-          // La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios).
-          <p className={renglon.nota}>Falta el nombre.</p>
         ) : (
           // Con el campo sin foco, si sigue habiendo coincidencia queda esta línea (recortada a una) en vez del
           // panel flotante: el panel tapaba Dónde sin poder cerrarse (revisión del gestor, 2026-09-21).
@@ -319,7 +310,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         {/* La lista de sugerencias y "Ya está registrado" flotan sobre el layout, sin empujar Dónde, Tipo, Más ni el
             botón, y solo viven mientras el campo del nombre tiene el foco (revisión del gestor, 2026-09-21: un
             autocompletado tapa lo de abajo con el teclado abierto, pero se cierra solo al salir del campo — la línea
-            de arriba toma el relevo). Mismo patrón que HojaDondeEs: el estado ("Buscando…"), el aviso y las
+            de arriba toma el relevo). Mismo patrón que `HojaDonde`: el estado ("Buscando…"), el aviso y las
             opciones viven dentro de la misma lista flotante. */}
         <ListaFlotante abierta={sugerenciasAbiertas} onCerrar={() => setEnfocadoNombre(false)} ancla={campoNombreRef} id="lista-sugerencias-lugar" etiqueta="Lugares encontrados">
           {buscando || recuperando ? (
@@ -389,15 +380,12 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
                 </span>
               </>
             )}
-            {/* La ayuda va bajo el renglón, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios). */}
             {errores.ubicacion || errores.direccion ? (
               <p className={renglon.nota} role="alert">
                 {errores.ubicacion ?? errores.direccion}
               </p>
-            ) : avisoUbicacion ? (
-              <p className={renglon.nota}>{avisoUbicacion}</p>
             ) : (
-              faltaDonde && <p className={renglon.nota}>Falta dónde está.</p>
+              avisoUbicacion && <p className={renglon.nota}>{avisoUbicacion}</p>
             )}
           </li>
 
@@ -487,7 +475,6 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
         <input type="hidden" name="ciudad" value={ciudad} />
         <input type="hidden" name="privado" value={privado ? "1" : ""} />
         {!(tipoAbierto && tipo === "otro") && <input type="hidden" name="detalle" value={detalle} />}
-        {siguiente && <input type="hidden" name="siguiente" value={siguiente} />}
 
         {parecidos && parecidos.length > 0 && !confirmado && (
           <div className={styles.parecidos} role="alert">
@@ -516,13 +503,13 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
             {resultado.general}
           </p>
         )}
-        {/* El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón (founder, 2026-09-21). */}
-        <Boton type="submit" disabled={enviando || terminado || subiendo || recuperando || !listo}>
+        <BotonPublicar id="falta-lugar" falta={falta} ocupado={enviando || terminado || subiendo || recuperando}>
           {enviando || terminado ? "Guardando…" : lugar ? "Guardar cambios" : "Publicar lugar"}
-        </Boton>
+        </BotonPublicar>
       </form>
       {hoja && (
-        <HojaDondeLugar
+        <HojaDonde
+          para="lugar"
           lugares={lugaresParaMapa}
           nombreForm={nombre}
           conFoco={hoja.conFoco}
@@ -542,7 +529,6 @@ export default function FormularioLugar({ accion, lugar, usuarioId, siguiente, e
           onCerrar={() => setHoja(null)}
         />
       )}
-      {hojaSalir}
     </>
   );
 }

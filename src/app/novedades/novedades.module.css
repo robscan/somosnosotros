@@ -1,7 +1,7 @@
 /* Novedades: título, grupos por día, renglón con icono por causa; lo no visto lleva un punto a la derecha. */
 .titulo {
   font-size: var(--letra-2xl);
-  margin: var(--espacio-3) 0 var(--espacio-2);
+  margin: 0 0 var(--espacio-2);
 }
 .vacio {
   padding: var(--espacio-3) 0;

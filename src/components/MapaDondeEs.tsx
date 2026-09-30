@@ -27,7 +27,7 @@ type Props = {
   paddingInferior?: number;
   /** Tocar un lugar registrado. */
   onLugar: (id: string) => void;
-  /** Tocar un punto de interés del propio estilo de Mapbox (si el estilo lo expone; ver HojaDondeEs.tsx). */
+  /** Tocar un punto de interés del propio estilo de Mapbox (si el estilo lo expone; ver HojaDonde.tsx). */
   onPoi: (nombre: string, punto: Punto) => void;
   /** Tocar cualquier otro punto del mapa (o un POI, si el estilo no expone ninguno tocable). */
   onPunto: (punto: Punto) => void;
@@ -80,7 +80,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
  * Un punto de interés del propio estilo de Mapbox (una plaza, un parque…), si el estilo lo trae en una capa con
  * nombre reconocible ("poi" en el id de la capa o en su `source-layer`, como en los estilos Streets/Standard de
  * Mapbox). Es "lo que Mapbox exponga en el estilo actual" (encargo OL-173): si la cuenta usa un estilo que no trae
- * ninguna, esto nunca encuentra nada y el toque cae en un punto vacío, sin romperse (ver la nota en HojaDondeEs.tsx
+ * ninguna, esto nunca encuentra nada y el toque cae en un punto vacío, sin romperse (ver la nota en HojaDonde.tsx
  * sobre qué se pudo comprobar sin token de Mapbox en este entorno).
  */
 function poiTocado(mapa: MapaGL, e: MapMouseEvent): { nombre: string; punto: Punto } | null {

@@ -3,6 +3,7 @@
 .atras {
   --boton-relleno: 0 var(--espacio-4) 0 var(--espacio-2);
   --boton-hueco: 2px;
+  justify-self: start; /* suelto en una rejilla (una página sin barra) mide lo que su texto, no la columna */
   max-width: 100%;
 }
 .atras > svg {

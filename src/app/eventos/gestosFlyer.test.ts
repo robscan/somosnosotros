@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel } from "./gestosFlyer";
 import { cambiarReserva, ponerPinManual, revisarNombreLegacy, sitioListo, textoDelSitio } from "./direccionEvento";
 import { lugaresPorTexto, puntoValido } from "@/lib/buscarLugares";
-import type { OtroSitio } from "./HojaDondeEs";
+import type { OtroSitio } from "@/lib/eventos";
 import type { LugarResumen } from "@/lib/lugares";
 
 describe("gestos frente a OCR y geocodificacion", () => {

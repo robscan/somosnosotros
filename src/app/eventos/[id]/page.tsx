@@ -299,7 +299,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               </Link>
             </li>
             <li>
-              <Link href={`/eventos/nuevo?desde=${e.id}`} className={renglon.ajuste}>
+              <Link href={`/nuevo?desde=${e.id}`} className={renglon.ajuste}>
                 <IconoCalendarioMas width={20} height={20} />
                 <b>Duplicar con otra fecha</b>
               </Link>
