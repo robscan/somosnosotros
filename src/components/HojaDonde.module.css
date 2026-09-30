@@ -90,7 +90,7 @@
   min-width: 0;
   border: none;
   background: none;
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
   color: var(--texto);
 }
 .campo input:focus {
@@ -172,7 +172,7 @@
   background: none;
   padding: 2px 0;
   font: inherit;
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
   font-weight: 700;
   color: var(--texto);
 }
@@ -305,8 +305,8 @@
 .asaHoja {
   align-self: center;
   flex: none;
-  width: 36px;
-  height: 4px;
+  width: var(--asa-ancho);
+  height: var(--asa-alto);
   margin-bottom: var(--espacio-2);
   border-radius: var(--radio-pildora);
   background: var(--borde);
@@ -342,7 +342,7 @@
   padding: 0 var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
 }
 /* El campo "Dirección" de la hoja (OL-182): ya no es texto fijo -era "Ajusta el pin en el mapa", imposible de
    cumplir cuando el propio panel tapaba el mapa-, es un campo de búsqueda real: UN solo marco (lupa + texto),
@@ -374,7 +374,7 @@
   outline: none;
   padding: 0;
   font: inherit;
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
   color: var(--texto);
 }
 /* «Es un lugar privado»: una fila de palanca suelta (la piel `ajuste sola` de ui/Renglon); aquí solo su sitio en la hoja. */

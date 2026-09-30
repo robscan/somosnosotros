@@ -212,7 +212,7 @@
 /* 4. Ajuste: una fila de Ajustes. Es un enlace o un botón (toda ella se toca) o un `<li>` (información, palanca). La
    acción es un chevron, un valor con su chevron o una `Palanca`. */
 .ajuste {
-  grid-template-columns: 24px minmax(0, 1fr) auto;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
   width: 100%;
   min-height: 52px;
   padding: var(--espacio-2) 14px;
@@ -276,7 +276,7 @@
   margin-bottom: var(--espacio-4);
 }
 .resuelto {
-  grid-template-columns: 24px minmax(0, 1fr) auto;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
   grid-template-areas:
     "foto meta accion"
     "foto titulo accion"

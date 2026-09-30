@@ -2,7 +2,7 @@
    (icono, frase, botón) con la ✕ de "ahora no". Va en la columna, con su propio gutter, como los grupos. */
 .tarjeta {
   display: grid;
-  grid-template-columns: 24px 1fr auto auto;
+  grid-template-columns: var(--columna-icono) 1fr auto auto;
   grid-template-areas:
     "icono que boton cerrar"
     "icono detalle boton cerrar";
@@ -50,7 +50,7 @@
 }
 /* Listo: una línea con la palomita, que se va sola. */
 .hecha {
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: var(--columna-icono) 1fr;
   grid-template-areas: "icono que";
   padding-right: 14px;
 }
@@ -59,7 +59,7 @@
 }
 /* Bloqueados: blanco con borde (no es una invitación), con dónde se activan y la ✕. */
 .neutra {
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   grid-template-areas:
     "icono que cerrar"
     "icono detalle cerrar";

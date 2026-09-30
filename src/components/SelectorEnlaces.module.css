@@ -17,13 +17,13 @@
 }
 .enlace {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) auto;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
   align-items: start;
   column-gap: var(--espacio-3);
 }
 /* Con más de un enlace hay algo que reordenar: una columna más, el agarre (OL-184). */
 .enlace.conAgarre {
-  grid-template-columns: var(--toque-min) 24px minmax(0, 1fr) auto;
+  grid-template-columns: var(--toque-min) var(--columna-icono) minmax(0, 1fr) auto;
 }
 .enlace > svg {
   color: var(--texto-suave);

@@ -2,6 +2,8 @@
 
 **Fecha:** 2026-09-21 · **Rama:** `boton-en-carriles` · **Bitácora:** [141](../bitacora/2026/09/141-boton-en-carriles.md) · Reservados por el gestor.
 
+> **Nota de la reestructura (OL-243, P12):** el botón que este documento dibuja como círculo elevado ya no existe en las listas: en los renglones (Agenda, Lugares, Artistas y las fichas) es el icono a secas de 44 px, sin círculo ni sombra (H-19 del doc 50, `ui/BotonRenglon`); solo sigue siendo el círculo elevado de 48 px sobre la foto de una tarjeta de carril y, ya decidido, el círculo verde. Se deja como estaba, por su historia.
+
 ## Qué pidió el founder
 
 > «Incluye botón voy y seguir en templates de destacados y con eventos en esta semana. (Agenda, lugares y artistas.» (2026-09-21)

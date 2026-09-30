@@ -57,7 +57,7 @@
 }
 .completa {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   column-gap: var(--espacio-3);
   align-items: center;
   margin: var(--espacio-2) 0;

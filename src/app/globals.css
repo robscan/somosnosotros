@@ -26,6 +26,8 @@
   --fondo-miniatura: #e6e6e2; /* miniaturas y avatares sin foto */
   --fondo-mapa: #eef0ec; /* tono claro mientras carga el mapa: nunca pantalla negra */
   --asa: #d9d9d9; /* asa del panel inferior */
+  --asa-ancho: 36px; /* el asa de una hoja mide 36 × 4 */
+  --asa-alto: 4px;
   --vidrio: rgba(255, 255, 255, 0.92); /* rótulos sobre el mapa */
   --velo-titulo: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.44) 55%, rgba(0, 0, 0, 0)); /* oscurece el pie de una portada para que se lea el título que va encima */
   --velo-barra: rgba(0, 0, 0, 0.6); /* oscurece la portada detrás del título de la barra compacta de una ficha */
@@ -74,6 +76,7 @@
   --boton-icono: 48px; /* botón redondo de icono en listas, tarjetas y mapa */
   --boton-icono-grande: 56px; /* botón redondo de icono de las acciones de una ficha */
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
+  --columna-icono: 24px; /* la columna del icono en un renglón: icono | texto | acción */
   --alto-chip: 36px; /* alto que se ve de un chip que se toca; su ::before lo lleva a --toque-min */
 
   /* Barras */
@@ -120,6 +123,7 @@
   --letra-md: 1.0625rem; /* 17px: texto y campos */
   --letra-lg: 1.125rem; /* 18px: botón principal */
   --letra-xl: 1.1875rem; /* 19px: título de sección y de tarjeta */
+  --letra-campo: max(16px, var(--letra-md)); /* la de un campo: nunca baja de 16px, o Safari hace zoom al enfocarlo */
   --letra-2xl: 1.625rem; /* 26px: título de pantalla */
   --letra-3xl: 1.875rem; /* 30px: nombre del lugar o evento */
   --alto-logo: 1.75rem; /* 28px: dibujo SMSNSTRS en la barra de las pantallas raíz */
@@ -219,7 +223,7 @@ select {
 input,
 textarea,
 select {
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
 }
 
 /* El campo escondido que la lupa de la barra enfoca con el toque (`BarraApp`): fuera de la barra, que en el teléfono se esconde al llegar

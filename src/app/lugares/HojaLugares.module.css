@@ -102,8 +102,8 @@
 .asa::before {
   content: "";
   display: block;
-  width: 36px;
-  height: 4px;
+  width: var(--asa-ancho);
+  height: var(--asa-alto);
   margin: var(--espacio-2) auto 0;
   border-radius: 2px;
   background: var(--asa);

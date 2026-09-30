@@ -102,7 +102,7 @@
 /* Una línea con una acción al final de la tarjeta: Instalar (Chrome, Android) o A mi calendario (tras "No, gracias"). Toda la línea se toca. */
 .linea {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   grid-template-areas:
     "icono que accion"
     "icono detalle accion";

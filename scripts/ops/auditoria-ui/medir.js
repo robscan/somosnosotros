@@ -1,6 +1,6 @@
 // Lo que se evalúa dentro de cada página (`page.evaluate(medir)`): la estructura del DOM (nodos, profundidad, hijos fuera de la
 // caja de su padre, márgenes negativos, desplazamiento horizontal) y lo que se toca (toque real menor de 44, accionables tapados
-// por un elemento fijo). Lo comparten el informe de la auditoría (`auditar.mjs`) y la prueba (`medir-pantallas.mjs`, `npm run medir`).
+// por un elemento fijo). Lo comparten la prueba (`medir-pantallas.mjs`, `npm run medir`) y la medición del prototipo (`medir-prototipo.mjs`).
 (() => {
   const raiz = document.body;
   const vw = window.innerWidth;

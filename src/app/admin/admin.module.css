@@ -102,7 +102,7 @@ p.hecho {
 }
 .pendiente {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   grid-template-areas:
     "icono que que"
     "icono ficha ficha"
@@ -419,7 +419,7 @@ a.ficha::after,
 .fila,
 .dato {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   grid-template-areas:
     "icono etiqueta accion"
     "icono detalle accion"
@@ -695,7 +695,7 @@ a.ficha::after,
 }
 .menuItem {
   display: grid;
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: var(--columna-icono) 1fr;
   column-gap: 14px;
   align-items: center;
   width: 100%;

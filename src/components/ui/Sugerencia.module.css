@@ -4,7 +4,7 @@
    ========================================================================== */
 .renglon {
   display: grid;
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: var(--columna-icono) 1fr;
   grid-template-areas:
     "icono nombre"
     "icono detalle";

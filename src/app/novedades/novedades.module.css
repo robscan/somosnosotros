@@ -76,7 +76,7 @@
 /* Al pie, solo si el teléfono está apagado: icono, frase y la acción. */
 .telefono {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   column-gap: var(--espacio-3);
   align-items: center;
   margin-top: var(--espacio-4);
