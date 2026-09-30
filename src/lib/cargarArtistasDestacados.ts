@@ -29,7 +29,8 @@ export function ordenarPorSeguidores(ids: string[], conteo: Map<string, number>,
  * administración (el mismo criterio que ya usa `/artistas`, `leerTira`); sin tira, los artistas de la ciudad con más
  * seguidores entre los que tienen un evento próximo — el founder no fijó un criterio exacto para este respaldo
  * (decisión anotada en la bitácora 191, no en OPEN_LOOPS: no es una decisión del founder, es la lectura del gestor
- * de "un criterio razonable" que pidió el encargo).
+ * de "un criterio razonable" que pidió el encargo). Un destacado exige foto (docs/rediseno/50, H-03): el artista que no la
+ * tiene no entra, aunque esté en la tira; el carril puede quedar con menos de `TOPE_ARTISTAS_DESTACADOS` o vacío.
  */
 export async function cargarArtistasDestacados(supabase: SupabaseClient | null, ciudad: string, ahora: Date = new Date()): Promise<ArtistaLista[]> {
   if (!supabase) return [];
@@ -66,7 +67,7 @@ export async function cargarArtistasDestacados(supabase: SupabaseClient | null, 
   }
   if (ids.length === 0) return [];
 
-  const { data } = await supabase.from("artistas").select("id, slug, nombre, disciplina, detalle, tipo, foto").eq("visible", true).eq("ciudad", ciudad).in("id", ids);
+  const { data } = await supabase.from("artistas").select("id, slug, nombre, disciplina, detalle, tipo, foto").eq("visible", true).eq("ciudad", ciudad).not("foto", "is", null).in("id", ids);
   const artistas = conProximaFecha((data ?? []) as ArtistaResumen[], fechas);
   return (tira.length ? enOrden(tira, artistas) : artistas).slice(0, TOPE_ARTISTAS_DESTACADOS);
 }

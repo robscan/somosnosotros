@@ -100,7 +100,8 @@ export function armarVista(resultado: ResultadoBusqueda, texto: string, desde: G
 
 /** Lo que dice el renglón bajo el nombre, un dato por línea: sus datos y, si es de otra ciudad, la ciudad (el país la distingue: «Córdoba, España»). */
 export function metaDe(e: Encontrado, ciudadActual: string): string[] {
-  return e.ciudad && e.ciudad !== ciudadActual ? [e.detalle, e.ciudad] : [e.detalle];
+  const datos = e.sitio ? `${e.detalle} · ${e.sitio}` : e.detalle;
+  return e.ciudad && e.ciudad !== ciudadActual ? [datos, e.ciudad] : [datos];
 }
 
 /** La meta de un renglón que no lleva rótulo de grupo (el mejor resultado, los recientes): su tipo va delante, en la primera línea («Evento · vie 2 oct · MUNI»). */

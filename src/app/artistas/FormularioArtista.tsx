@@ -10,7 +10,6 @@ import BotonPublicar from "@/components/ui/BotonPublicar";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
-import chip from "@/components/ui/Chip.module.css";
 import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin, IconoCerrar } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
@@ -261,22 +260,17 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
               ) : disciplinaElegida ? (
                 <>
                   <div className={canon.chips}>
-                    <span className={`${chip.chip} ${estilos.chipElegido}`}>
+                    <Chip
+                      variante="quitar"
+                      onClick={() => {
+                        const vacio = alQuitarDisciplina();
+                        setDisciplinaElegida(vacio.disciplinaElegida);
+                        setDetalle(vacio.detalle);
+                        setOtraAbierta(vacio.otraAbierta);
+                      }}
+                    >
                       {etiquetaDisciplina(disciplinaElegida)}
-                      <button
-                        type="button"
-                        className={estilos.quitarChip}
-                        aria-label="Quitar la disciplina elegida"
-                        onClick={() => {
-                          const vacio = alQuitarDisciplina();
-                          setDisciplinaElegida(vacio.disciplinaElegida);
-                          setDetalle(vacio.detalle);
-                          setOtraAbierta(vacio.otraAbierta);
-                        }}
-                      >
-                        <IconoCerrar width={18} height={18} />
-                      </button>
-                    </span>
+                    </Chip>
                   </div>
                   <hr className={estilos.divisorPasos} />
                   {/* Subcategorías ya usadas en esta disciplina (OL-101): elegir una cierra el renglón con el

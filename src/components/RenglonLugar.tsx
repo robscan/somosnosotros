@@ -3,6 +3,7 @@ import { textoDistancia } from "@/lib/agenda";
 import { SIN_FOTO } from "@/lib/imagen";
 import { calleCorta, etiquetaTipo, hrefLugar, textoProximo, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
+import { Chip } from "./ui/Chip";
 import { IconoCalendario, IconoPin } from "./ui/Iconos";
 import Renglon from "./ui/Renglon";
 import styles from "./ui/Renglon.module.css";
@@ -30,7 +31,7 @@ export default function RenglonLugar({ lugar: l, km, boton, alAbrir }: Props) {
   }
   return (
     <Renglon href={hrefLugar(l)} foto={l.portada ?? SIN_FOTO} titulo={l.nombre} accion={boton && <BotonRenglon {...boton} />} onClick={alTocar}>
-      {l.privado && <span className={styles.sello}>Solo tú lo ves</span>}
+      {l.privado && <Chip variante="estado">Solo tú lo ves</Chip>}
       <span className={styles.envuelve}>
         <IconoPin width={15} height={15} />
         {[etiquetaTipo(l.tipo), calleCorta(l.direccion) || "Sin dirección", km !== undefined && textoDistancia(km)].filter(Boolean).join(" · ")}

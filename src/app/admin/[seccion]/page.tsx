@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
-import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
+import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
 import ficha from "@/components/ui/Ficha.module.css";
 import { puedeDestacarse, SIN_DECIDIR, TIPO_DE, textoMotivo } from "@/lib/destacados";
 import { eventoPaso } from "@/lib/fechas";
@@ -59,10 +59,10 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
       <Buscador valor={l.q ?? ""} placeholder={BUSCAR[seccion]} ariaLabel={BUSCAR[seccion]} />
       <Chips ariaLabel={`Filtrar ${TITULO[seccion].toLowerCase()}`}>
         {FILTROS[seccion].map((f) => (
-          <ChipEnlace key={f.valor} activo={l.filtro === f.valor} href={hrefLista(seccion, { q: l.q, filtro: f.valor })}>
+          <Chip key={f.valor} activo={l.filtro === f.valor} href={hrefLista(seccion, { q: l.q, filtro: f.valor })}>
             {f.etiqueta}
             {conteos && <Cuenta n={conteos[f.valor] ?? 0} />}
-          </ChipEnlace>
+          </Chip>
         ))}
       </Chips>
       {error ? (

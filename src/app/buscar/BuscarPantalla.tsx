@@ -7,7 +7,7 @@ import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import { prestarALaBarra } from "@/components/prestamoBarra";
 import Boton from "@/components/ui/Boton";
 import { CampoBuscar } from "@/components/ui/Buscador";
-import { Chip, ChipEnlace, Chips } from "@/components/ui/Chip";
+import { Chip, Chips } from "@/components/ui/Chip";
 import Cerrar from "@/components/ui/Cerrar";
 import Grupo from "@/components/ui/Grupo";
 import Renglon from "@/components/ui/Renglon";
@@ -160,9 +160,9 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
             <li className={styles.atajos}>
               <Chips ariaLabel="Esta semana" envuelve>
                 {atajosDeLaSemana(hoy, slugEnUrl).map((a) => (
-                  <ChipEnlace key={a.etiqueta} href={a.href}>
+                  <Chip key={a.etiqueta} href={a.href}>
                     {a.etiqueta}
-                  </ChipEnlace>
+                  </Chip>
                 ))}
               </Chips>
             </li>

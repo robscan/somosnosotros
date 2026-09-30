@@ -4,7 +4,7 @@ import { cargarEventosSemana } from "./cargarEventosSemana";
 
 const ahora = new Date("2026-09-18T18:00:00Z");
 const evento = { id: "evento", inicio: "2026-09-19T01:00:00Z", termina: "2026-09-19T06:00:00Z", zona: "America/Mexico_City", visible: true, lugar_id: null, lugar: null };
-const artista = (id: string) => ({ artista: { id, nombre: id, foto: null, visible: true }, evento });
+const artista = (id: string) => ({ artista: { id, nombre: id, foto: "/foto.jpg", visible: true }, evento });
 
 function banco(paginas: { data: unknown[] | null; error: object | null }[]) {
   const abortSignal = vi.fn().mockImplementation(() => Promise.resolve(paginas.shift()));

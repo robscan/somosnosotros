@@ -8,7 +8,7 @@ import type { Ciudad, CiudadConDatos } from "@/lib/ciudad";
 import { atajosCuando, elegirEnRango, etiquetaCuando, mismoCuando, type Cuando } from "@/lib/cuando";
 import ChipCiudad from "./Ciudad";
 import Calendario from "./ui/Calendario";
-import { Chip, ChipContexto, ChipQuitar, Chips } from "./ui/Chip";
+import { Chip, Chips } from "./ui/Chip";
 import HojaFiltros, { BloqueFiltro } from "./ui/HojaFiltros";
 import { IconoCalendario, IconoCampana, IconoFiltros } from "./ui/Iconos";
 import Palanca from "./ui/Palanca";
@@ -61,16 +61,22 @@ export default function FilaEventos({ ciudad, ciudades, hrefDeCiudad, hoy, zona,
   return (
     <>
       <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={hrefDeCiudad} />
-      <ChipContexto icono={<IconoCalendario width={16} height={16} />} activo={!!valor.cuando} onClick={() => abrir("cuando")}>
+      <Chip variante="contexto" icono={<IconoCalendario width={16} height={16} />} activo={!!valor.cuando} onClick={() => abrir("cuando")}>
         {valor.cuando ? etiquetaCuando(valor.cuando, hoy, zona) : "Cuándo"}
-      </ChipContexto>
-      <ChipContexto icono={<IconoFiltros width={16} height={16} />} cuenta={filtrosPuestos(valor)} onClick={() => abrir("filtros")}>
+      </Chip>
+      <Chip variante="contexto" icono={<IconoFiltros width={16} height={16} />} cuenta={filtrosPuestos(valor)} onClick={() => abrir("filtros")}>
         Filtros
-      </ChipContexto>
+      </Chip>
       {valor.cuanto.map((clave) => (
-        <ChipQuitar key={clave} texto={CUANTOS.find((c) => c.clave === clave)?.etiqueta ?? clave} onClick={() => quitarCuanto(clave)} />
+        <Chip key={clave} variante="quitar" onClick={() => quitarCuanto(clave)}>
+          {CUANTOS.find((c) => c.clave === clave)?.etiqueta ?? clave}
+        </Chip>
       ))}
-      {valor.siguiendo && <ChipQuitar texto="Solo lo que sigo" onClick={() => onCambiar({ ...valor, siguiendo: false })} />}
+      {valor.siguiendo && (
+        <Chip variante="quitar" onClick={() => onCambiar({ ...valor, siguiendo: false })}>
+          Solo lo que sigo
+        </Chip>
+      )}
       {hoja === "cuando" && <HojaCuando valor={valor} hoy={hoy} zona={zona} agenda={cargada} onAplicar={aplicar} onCerrar={cerrar} />}
       {hoja === "filtros" && <HojaDeFiltros valor={valor} agenda={cargada} onAplicar={aplicar} onCerrar={cerrar} />}
     </>

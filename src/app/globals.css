@@ -55,11 +55,12 @@
   --boton-icono: 48px; /* botón redondo de icono en listas, tarjetas y mapa */
   --boton-icono-grande: 56px; /* botón redondo de icono de las acciones de una ficha */
   --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
+  --alto-chip: 36px; /* alto que se ve de un chip que se toca; su ::before lo lleva a --toque-min */
 
   /* Barras */
   --alto-barra: 56px; /* barra de la app (BarraApp) y cabecera interior de una ficha o una tarea: 56 sin la franja de la hora */
   --alto-filtros: 48px; /* fila de contexto de las pantallas raíz: ciudad, Cuándo y Filtros */
-  --alto-cabecera: 104px; /* lo que mide ui/Cabecera (chips 60 + pestañas 44); ella lo remide en vivo */
+  --alto-cabecera: 96px; /* lo que mide ui/Cabecera (fila 52 + pestañas 44); ella lo remide en vivo */
   --alto-nav: 60px; /* la barra de navegación del teléfono (píldora de 32 + etiqueta), sin el área segura */
   --alto-modos: 56px; /* la tira de tipos de la pantalla de alta (Evento · Lugar · Artista), sin el área segura */
   --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
@@ -127,6 +128,7 @@
   --tarjeta-grande: 165px; /* ancho de la tarjeta de cartel vertical */
   --tarjeta-grande-foto: 248px; /* alto de su foto */
   --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
+  --tarjeta-sola-foto: 264px; /* tope del alto de la foto de una tarjeta sola, que ocupa el ancho del carril */
   --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
   --avatar-ficha: 64px; /* avatar redondo dentro del héroe de la ficha de un artista */
   --avatar-perfil: 72px; /* avatar redondo de la cabecera de una persona (Mi perfil y su ficha) */
@@ -140,6 +142,13 @@
 @media (min-width: 792px) {
   :root {
     --nav-abajo: var(--piso);
+  }
+}
+/* Desde 1048 las tarjetas de cartel vertical crecen (docs/rediseno/50, P10): el carril y su esqueleto siguen los mismos tokens. */
+@media (min-width: 1048px) {
+  :root {
+    --tarjeta-grande: 190px;
+    --tarjeta-grande-foto: 285px;
   }
 }
 

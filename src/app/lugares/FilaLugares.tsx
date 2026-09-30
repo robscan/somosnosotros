@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import ChipCiudad from "@/components/Ciudad";
-import { Chip, ChipContexto, ChipQuitar, Chips, Cuenta } from "@/components/ui/Chip";
+import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
 import HojaFiltros, { BloqueFiltro } from "@/components/ui/HojaFiltros";
 import { IconoCampana, IconoFiltros } from "@/components/ui/Iconos";
 import Palanca from "@/components/ui/Palanca";
@@ -41,13 +41,25 @@ export default function FilaLugares({ ciudad, ciudades, hrefDeCiudad, lugares, h
     <>
       <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={hrefDeCiudad} />
       {conFiltros && (
-        <ChipContexto icono={<IconoFiltros width={16} height={16} />} cuenta={eleccionesPuestas(valor)} onClick={() => setAbierta(true)}>
+        <Chip variante="contexto" icono={<IconoFiltros width={16} height={16} />} cuenta={eleccionesPuestas(valor)} onClick={() => setAbierta(true)}>
           Filtros
-        </ChipContexto>
+        </Chip>
       )}
-      {valor.tipo && <ChipQuitar texto={etiquetaTipo(valor.tipo)} onClick={() => onCambiar({ ...valor, tipo: null })} />}
-      {valor.conEventos && <ChipQuitar texto={CON_EVENTOS.find((c) => c.clave === valor.conEventos)!.puesto} onClick={() => onCambiar({ ...valor, conEventos: null })} />}
-      {valor.soloSigo && <ChipQuitar texto="Solo lo que sigo" onClick={() => onCambiar({ ...valor, soloSigo: false })} />}
+      {valor.tipo && (
+        <Chip variante="quitar" onClick={() => onCambiar({ ...valor, tipo: null })}>
+          {etiquetaTipo(valor.tipo)}
+        </Chip>
+      )}
+      {valor.conEventos && (
+        <Chip variante="quitar" onClick={() => onCambiar({ ...valor, conEventos: null })}>
+          {CON_EVENTOS.find((c) => c.clave === valor.conEventos)!.puesto}
+        </Chip>
+      )}
+      {valor.soloSigo && (
+        <Chip variante="quitar" onClick={() => onCambiar({ ...valor, soloSigo: false })}>
+          Solo lo que sigo
+        </Chip>
+      )}
       {abierta && (
         <HojaDeFiltros
           valor={valor}

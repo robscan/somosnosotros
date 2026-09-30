@@ -1,9 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EventoAgenda } from "./agenda";
 import { etiquetaArtista, hrefArtista, type ArtistaLista } from "./artistas";
-import { hrefEvento, nombreSitio } from "./eventos";
+import { hrefEvento, sitioEnLista } from "./eventos";
 import { diaCorto, formatearCuando, ZONA_INICIAL } from "./fechas";
-import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
+import { esSinFoto, SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 import { etiquetaTipo, hrefLugar, textoProximo, type LugarLista } from "./lugares";
 
 /**
@@ -25,9 +25,9 @@ export type EstadoDestacado = "elegido" | "quitado" | "ninguno";
 /** Lo decidido que sigue vigente, con su plazo y cuándo se decidió: Deshacer lo repone tal cual. */
 export type Decidido = { estado: EstadoDestacado; plazo: string | null; creado: string | null };
 export const SIN_DECIDIR: Decidido = { estado: "ninguno", plazo: null, creado: null };
-/** Una tarjeta de la tira, lista para pintarse. `reciente` (OL-219, insignia «Recién agregado»): solo la ponen las
- *  tarjetas de evento (`tarjetaEvento`); lugares y artistas no tienen fecha de publicación que mostrar así. */
-export type Tarjeta = { id: string; href: string; foto: string; titulo: string; detalle: string; van: number; reciente?: boolean };
+/** Una tarjeta de la tira, lista para pintarse. `detalle` es la primera línea de sus datos (cuándo) y `sitio`, la segunda (dónde);
+ *  `hoy` (empieza hoy) y `van` los pone solo `tarjetaEvento`: lugares y artistas no tienen qué decir así. */
+export type Tarjeta = { id: string; href: string; foto: string; titulo: string; detalle: string; sitio?: string; van: number; hoy?: boolean };
 
 /**
  * Una tarjeta de evento, con lo mínimo para saber si sigue vigente y en qué orden va entre otras (OL-224, bitácora
@@ -39,7 +39,19 @@ export type TarjetaConFecha = Tarjeta & { inicio: string; fin: string | null; zo
 
 /** Foto real primero; el orden de la selección o de las fechas se conserva dentro de cada grupo. */
 export function ordenarTarjetasPorFoto(tarjetas: Tarjeta[]): Tarjeta[] {
-  return tarjetas.toSorted((a, b) => Number(a.foto.includes("/sin-foto")) - Number(b.foto.includes("/sin-foto")));
+  return tarjetas.toSorted((a, b) => Number(esSinFoto(a.foto)) - Number(esSinFoto(b.foto)));
+}
+
+/**
+ * El único rótulo que lleva una tarjeta sobre su foto (docs/rediseno/50, H-02): no se apilan tres sobre el cartel. Lo tuyo primero
+ * («Te interesa»), luego lo que ayuda a decidir: «Hoy» antes que «N van»; sin ninguno, nada. «Recién agregado» ya no es un sello: el
+ * carril que lo agrupa lo dice. `tuyo` es lo que la persona ya decidió (un estado); lo demás, un dato del evento (un sello).
+ */
+export function selloDeTarjeta(t: Pick<Tarjeta, "hoy" | "van">, interesa = false): { texto: string; tuyo: boolean } | null {
+  if (interesa) return { texto: "Te interesa", tuyo: true };
+  if (t.hoy) return { texto: "Hoy", tuyo: false };
+  if (t.van > 0) return { texto: t.van === 1 ? "1 va" : `${t.van} van`, tuyo: false };
+  return null;
 }
 
 /** Lo que elige la administración en lugares y artistas dura dos semanas; un evento, hasta que pasa. */
@@ -61,16 +73,8 @@ export function enOrden<T extends { id: string }>(tira: Destacado[], fichas: T[]
 
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
-/** Ventana de la insignia «Recién agregado» (Inicio, OL-219 segunda vuelta): publicado en los últimos 7 días. Vive
- *  aquí, no en `lib/inicio.ts` (que ya importa de este archivo), para no cerrar un ciclo de importación entre los
- *  dos — coincide con `DIAS_ESTA_SEMANA`, pero es una ventana propia, no la misma constante. */
-export const DIAS_RECIEN_AGREGADO = 7;
-export function esRecienAgregado(creadoEn: string, ahora = new Date()): boolean {
-  return new Date(creadoEn).getTime() >= ahora.getTime() - DIAS_RECIEN_AGREGADO * 86400000;
-}
-
 export function tarjetaEvento(e: EventoAgenda, ahora = new Date()): TarjetaConFecha {
-  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: `${minuscula(formatearCuando(e.inicio, null, ahora, e.zona))} · ${nombreSitio(e)}`, van: e.van, reciente: esRecienAgregado(e.creado_en, ahora), inicio: e.inicio, fin: e.fin, zona: e.zona };
+  return { id: e.id, href: hrefEvento(e), foto: e.imagen ?? e.lugar?.portada ?? SIN_FOTO_ANCHA, titulo: e.titulo, detalle: minuscula(formatearCuando(e.inicio, null, ahora, e.zona)), sitio: sitioEnLista(e), van: e.van, hoy: diaCorto(e.inicio, ahora, e.zona) === "Hoy", inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
 export function tarjetaLugar(l: LugarLista, ahora = new Date()): Tarjeta {

@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { tarjetasDeSemana, type AparicionSemana } from "./eventosSemana";
-import { SIN_FOTO, SIN_FOTO_ANCHA } from "./imagen";
 
 const ahora = new Date("2026-09-18T18:00:00Z"); // Viernes, mediodía en México.
 function aparicion(id: string, inicio = "2026-09-19T01:00:00Z", cambios: Partial<AparicionSemana["evento"]> = {}): AparicionSemana {
   return {
-    ficha: { id, slug: id, nombre: id, foto: null, visible: true },
+    ficha: { id, slug: id, nombre: id, foto: "/foto.jpg", visible: true },
     evento: { id: `evento-${id}`, inicio, termina: "2026-09-26T05:59:59Z", zona: "America/Mexico_City", visible: true, lugar_id: null, lugar: null, ...cambios },
   };
 }
@@ -53,9 +52,15 @@ describe("Con eventos esta semana", () => {
     expect(r[1].detalle).toBe("Mañana · 19:00");
     expect(tarjetas([...datos].reverse())).toEqual(r);
   });
-  it("mantiene enlaces a las fichas y respaldo de imagen para ambos directorios", () => {
-    expect(tarjetas([aparicion("a")])[0]).toMatchObject({ href: "/artistas/a", foto: SIN_FOTO });
-    expect(tarjetasDeSemana([aparicion("l")], "lugares", ahora)[0]).toMatchObject({ href: "/lugares/l", foto: SIN_FOTO_ANCHA });
+  it("mantiene enlaces a las fichas y su foto en ambos directorios", () => {
+    expect(tarjetas([aparicion("a")])[0]).toMatchObject({ href: "/artistas/a", foto: "/foto.jpg" });
+    expect(tarjetasDeSemana([aparicion("l")], "lugares", ahora)[0]).toMatchObject({ href: "/lugares/l", foto: "/foto.jpg" });
+  });
+  it("un destacado exige foto (H-03): la ficha sin ella no entra al carril, aunque tenga eventos", () => {
+    const sinFoto = aparicion("sin-foto");
+    sinFoto.ficha.foto = null;
+    expect(tarjetas([sinFoto, aparicion("con-foto")]).map((a) => a.id)).toEqual(["con-foto"]);
+    expect(tarjetasDeSemana([sinFoto], "lugares", ahora)).toEqual([]);
   });
   it("dos apariciones a la misma hora se desempatan por evento, sin depender del lote", () => {
     const a = aparicion("artista", "2026-09-19T01:00:00Z", { id: "a", zona: "America/Mexico_City" });

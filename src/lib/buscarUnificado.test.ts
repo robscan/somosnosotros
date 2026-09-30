@@ -91,6 +91,9 @@ describe("lo que dice el renglón y a dónde lleva", () => {
     expect(metaDe(hallado("1", "a"), "San Luis Potosí")).toEqual(["dato"]);
     expect(metaDe(hallado("1", "a", "Córdoba, España"), "San Luis Potosí")).toEqual(["dato", "Córdoba, España"]);
   });
+  it("un evento dice cuándo y dónde en una sola línea, aunque la tarjeta del carril los ponga en dos", () => {
+    expect(metaDe({ ...hallado("1", "a"), detalle: "hoy · 18:00", sitio: "MUNI" }, "San Luis Potosí")).toEqual(["hoy · 18:00 · MUNI"]);
+  });
   it("sin rótulo de grupo (mejor resultado, recientes) el tipo va delante de la primera línea", () => {
     expect(metaConTipo("eventos", ["vie 2 oct · MUNI"])).toEqual(["Evento · vie 2 oct · MUNI"]);
     expect(metaConTipo("lugares", ["Museo", "Córdoba, España"])).toEqual(["Lugar · Museo", "Córdoba, España"]);
