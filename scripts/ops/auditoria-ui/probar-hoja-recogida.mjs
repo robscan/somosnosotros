@@ -1,0 +1,27 @@
+// Las dos hojas se recogen al jalar y ninguna se cierra sola: la lista queda con la cantidad; la ficha con su cabecera y solo la ✕ la cierra.
+import { chromium } from "playwright-core";
+const browser = await chromium.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true });
+const page = await browser.newPage({ viewport: { width: 480, height: 1300 } });
+const errores = []; page.on("pageerror", (e) => errores.push(e.message));
+await page.goto(process.argv[2], { waitUntil: "load" }); await page.waitForTimeout(900);
+const click = (sel) => page.evaluate((s) => document.querySelector(s).dispatchEvent(new MouseEvent("click", { bubbles: true })), sel);
+const estado = () => page.evaluate(() => { const p = document.querySelector('.pantalla[data-id="lugares"]'); const c = p.querySelector(".hoja-lugares"); const cu = c.querySelector(".cuerpo-hoja").getBoundingClientRect(); const nav = document.querySelector(".navegacion").getBoundingClientRect(); const f = c.querySelector(".ficha-hoja"); return { estado: p.dataset.hojaEstado, scroll: Math.round(c.scrollTop), peek: Math.round(nav.top - cu.top), ficha: !!p.dataset.ficha, compacta: f.hasAttribute("data-compacta"), navOculta: document.getElementById("app").hasAttribute("data-nav-oculta") }; });
+const sobreCuerpo = async () => { const b = await page.evaluate(() => { const r = document.querySelector(".cuerpo-hoja").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 40 }; }); await page.mouse.move(b.x, b.y); };
+await click('.navegacion [data-ir="lugares"]'); await page.waitForTimeout(700);
+console.log("lista asoma", JSON.stringify(await estado()));
+await sobreCuerpo(); await page.mouse.wheel(0, -200); await page.waitForTimeout(700);
+console.log("jalar lista → recogida (solo cantidad)", JSON.stringify(await estado()));
+await sobreCuerpo(); await page.mouse.wheel(0, 320); await page.waitForTimeout(700);
+console.log("subir → asoma", JSON.stringify(await estado()));
+await click('.lienzo .lugar.destacado'); await page.waitForTimeout(700);
+console.log("ficha abierta (foto + KPI)", JSON.stringify(await estado()));
+await sobreCuerpo(); await page.mouse.wheel(0, -400); await page.waitForTimeout(800);
+console.log("jalar ficha → recogida (cabecera), no se cierra", JSON.stringify(await estado()));
+await sobreCuerpo(); await page.mouse.wheel(0, 900); await page.waitForTimeout(900);
+console.log("subir → llena", JSON.stringify(await estado()));
+await click('[data-atras-hoja]'); await page.waitForTimeout(900);
+console.log("Atrás → foto + KPI", JSON.stringify(await estado()));
+await click('[data-cerrar-ficha]'); await page.waitForTimeout(700);
+console.log("✕ → lista en su estado", JSON.stringify(await estado()));
+console.log("errores", errores);
+await browser.close();
