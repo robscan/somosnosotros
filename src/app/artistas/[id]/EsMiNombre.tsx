@@ -79,7 +79,7 @@ export default function EsMiNombre({ artistaId, slug, nombre, conSesion, correo,
         <h3 className={styles.titulo}>Listo</h3>
         <p className={styles.hecho}>
           <IconoOk width={18} height={18} />
-          <span>{aprobado ? "Ya es tuya: puedes editarla y publicar sus fechas." : `El administrador lo revisa y te escribe a ${correo}.`}</span>
+          <span>{aprobado ? "Ya es tuya: puedes editarla y publicar sus fechas." : `La administración lo revisa y te escribe a ${correo}.`}</span>
         </p>
       </>
     ) : (

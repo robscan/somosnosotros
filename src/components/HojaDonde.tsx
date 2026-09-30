@@ -746,7 +746,7 @@ export default function HojaDonde(props: Props) {
               )}
             {modo === "no-encontrado" && (
               <li className={styles.avisoNoEncontrado} role="status">
-                <b>«{q.trim()}» no está registrado.</b>
+                <b>«{q.trim()}» no tiene ficha.</b>
                 {evento ? "Agrégalo, o toca el mapa para ubicarlo." : "Toca el mapa para ubicarlo."}
               </li>
             )}
@@ -755,7 +755,7 @@ export default function HojaDonde(props: Props) {
                 Buscando…
               </li>
             )}
-            {/* Con «no está registrado» ya dicho arriba, repetir el error de red no cabe ni hace falta (además de que los dos
+            {/* Con «no tiene ficha» ya dicho arriba, repetir el error de red no cabe ni hace falta (además de que los dos
                 juntos podían alargar la lista hasta tapar la barra de acciones): el aviso de red solo se suma cuando SÍ hay
                 resultados. */}
             {conTextoLargo && modo === "resultados" && errorBusqueda && (

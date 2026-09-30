@@ -57,7 +57,7 @@ describe("armazón: el «+» de la barra", () => {
   it("lleva a la pantalla de alta con el tipo de la sección, y la ciudad que se está viendo solo al evento y al artista", () => {
     expect(enlaceDeAlta("evento", null)).toEqual({ href: "/nuevo?tipo=evento", etiqueta: "Publicar un evento" });
     expect(enlaceDeAlta("evento", "queretaro").href).toBe("/nuevo?tipo=evento&ciudad=queretaro");
-    expect(enlaceDeAlta("artista", "queretaro")).toEqual({ href: "/nuevo?tipo=artista&ciudad=queretaro", etiqueta: "Registrar un artista" });
+    expect(enlaceDeAlta("artista", "queretaro")).toEqual({ href: "/nuevo?tipo=artista&ciudad=queretaro", etiqueta: "Registrar artista" });
     expect(enlaceDeAlta("lugar", "queretaro")).toEqual({ href: "/nuevo?tipo=lugar", etiqueta: "Registrar un lugar" });
   });
   it("con el nombre que se buscó y no se encontró, el alta abre con él puesto (y bien escrito en la URL)", () => {

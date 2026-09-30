@@ -88,7 +88,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
           <li>
             <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={ORIGEN} className={renglon.ajuste}>
               <IconoCompartir width={20} height={20} />
-              <b>Invita a tus amigos</b>
+              <b>Invita a tus amistades</b>
               <small>Se comparte el enlace del sitio</small>
               <IconoChevronDerecha />
             </BotonCompartir>

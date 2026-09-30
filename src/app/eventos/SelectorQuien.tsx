@@ -100,7 +100,7 @@ export default function SelectorQuien({ valor, onCambio, mios, ciudadContexto = 
         </div>
       )}
       <label htmlFor="campo-quien" className={styles.etiqueta}>
-        {valor.length ? "Otro artista o grupo" : "Nombre del artista o grupo"}
+        {valor.length ? "Otra persona o grupo" : "Nombre de artista o grupo"}
       </label>
       <span className={limpiar.caja}>
         <input
@@ -126,7 +126,7 @@ export default function SelectorQuien({ valor, onCambio, mios, ciudadContexto = 
         <ContadorCaracteres valor={texto} tope={LIMITES_ARTISTA.nombre} />
       </span>
       {(sugerencias.length > 0 || ofrecerCrear) && (
-        <ul className={renglon.tarjeta} role="listbox" aria-label="Artistas encontrados">
+        <ul className={renglon.tarjeta} role="listbox" aria-label="Fichas de artista encontradas">
           {sugerencias.map((a) => (
             <li key={a.id}>
               <button type="button" role="option" aria-selected={false} className={`${sug.renglon} ${sug.conMini}`} onClick={() => elegir(a)}>
@@ -154,7 +154,7 @@ export default function SelectorQuien({ valor, onCambio, mios, ciudadContexto = 
           )}
         </ul>
       )}
-      {valor.length === 0 && q.length < MIN_LETRAS && <p className={styles.nota}>Escribe dos letras y te sugerimos los que ya están registrados. Si no está, lo creamos con el nombre.</p>}
+      {valor.length === 0 && q.length < MIN_LETRAS && <p className={styles.nota}>Escribe dos letras y te sugerimos las fichas que ya existen. Si no hay, la creamos con el nombre.</p>}
     </div>
   );
 }

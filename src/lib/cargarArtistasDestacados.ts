@@ -5,7 +5,7 @@ import { enOrden, leerTira } from "./destacados";
 import { sitioEnLista } from "./eventos";
 import { filtroSinPasar } from "./fechas";
 
-/** Tope del carril "Artistas destacados" de Inicio (OL-156, segunda vuelta): una tira chica, no el directorio. */
+/** Tope del carril "Artistas destacadxs" de Inicio (OL-156, segunda vuelta): una tira chica, no el directorio. */
 export const TOPE_ARTISTAS_DESTACADOS = 12;
 
 type EventoConLugar = { id: string; titulo: string; inicio: string; zona: string; sitio_texto: string | null; sitio_direccion: string | null; sitio_reservado: boolean; lugar: { nombre: string } | { nombre: string }[] | null };
@@ -25,7 +25,7 @@ export function ordenarPorSeguidores(ids: string[], conteo: Map<string, number>,
 }
 
 /**
- * Los artistas del carril "Artistas destacados" de Inicio, con su próxima fecha: primero la tira que elige la
+ * Los artistas del carril "Artistas destacadxs" de Inicio, con su próxima fecha: primero la tira que elige la
  * administración (el mismo criterio que ya usa `/artistas`, `leerTira`); sin tira, los artistas de la ciudad con más
  * seguidores entre los que tienen un evento próximo — el founder no fijó un criterio exacto para este respaldo
  * (decisión anotada en la bitácora 191, no en OPEN_LOOPS: no es una decisión del founder, es la lectura del gestor

@@ -2,7 +2,7 @@ import { limpiar } from "./formulario";
 
 /**
  * Enlaces y redes de lugares y artistas (docs/rediseno/09-enlaces-flujo-y-estados.md).
- * La persona no elige la red: pega un enlace, un @usuario o un teléfono y el sistema reconoce
+ * La persona no elige la red: pega un enlace, un @perfil o un teléfono y el sistema reconoce
  * de qué red es por el dominio. Lo que no reconoce queda como "sitio" con su dominio de etiqueta.
  */
 export const REDES = [

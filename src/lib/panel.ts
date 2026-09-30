@@ -520,11 +520,11 @@ export const FILTROS = {
   ],
   artistas: [
     { valor: "todos", etiqueta: "Todos", vacio: "Aún no hay artistas." },
-    { valor: "destacados", etiqueta: "Destacados", vacio: "Ningún artista destacado ahora." },
+    { valor: "destacados", etiqueta: "Destacados", vacio: "Ninguna ficha de artista destacada ahora." },
     { valor: "por_reclamar", etiqueta: "Por reclamar", vacio: "No hay fichas del catálogo por reclamar." },
     { valor: "llevados", etiqueta: "Llevados por su gente", vacio: "Aún nadie lleva su ficha." },
-    { valor: "sin_foto", etiqueta: "Sin foto", vacio: "Todos los artistas tienen foto." },
-    { valor: "ocultos", etiqueta: "Ocultos", vacio: "Ningún artista oculto." },
+    { valor: "sin_foto", etiqueta: "Sin foto", vacio: "Todas las fichas de artista tienen foto." },
+    { valor: "ocultos", etiqueta: "Ocultos", vacio: "Ninguna ficha de artista oculta." },
   ],
 } as const;
 export type SeccionPanel = keyof typeof FILTROS;

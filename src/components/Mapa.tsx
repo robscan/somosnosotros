@@ -8,7 +8,7 @@ import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { diaPin } from "@/lib/fechas";
 import { hrefLugar, type LugarLista } from "@/lib/lugares";
-import { colorDiseno, RADIO_TOQUE, type EstadoMapa } from "@/lib/mapa";
+import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa } from "@/lib/mapa";
 import { propiedadesPin, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
 import styles from "./Mapa.module.css";
 
@@ -233,6 +233,7 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
         center: [ciudad.centro.lng, ciudad.centro.lat],
         zoom: ciudad.zoom,
         language: "es",
+        locale: TEXTOS_MAPBOX,
         attributionControl: false,
         logoPosition: "top-left", // abajo va la hoja de Lugares
       });

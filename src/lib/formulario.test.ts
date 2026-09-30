@@ -34,6 +34,6 @@ describe("qué falta en cada alta", () => {
   it("artista: solo el nombre, y que no esté ya registrado en su ciudad", () => {
     expect(faltaEnArtista({ nombre: "", repetido: false })).toBe("Falta el nombre.");
     expect(faltaEnArtista({ nombre: " Los Vecinos ", repetido: false })).toBeNull();
-    expect(faltaEnArtista({ nombre: "Los Vecinos", repetido: true })).toBe("Ese artista ya está registrado.");
+    expect(faltaEnArtista({ nombre: "Los Vecinos", repetido: true })).toBe("Ese nombre ya tiene ficha.");
   });
 });

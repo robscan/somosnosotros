@@ -24,5 +24,5 @@ export default function CampoImagenUrl({ valor, onCambio }: { valor: string | nu
     setError(undefined);
     onCambio(t);
   }
-  return <Campo etiqueta="O pega la dirección de una imagen" name="imagen_url" value={texto} onChange={(e) => cambiar(e.target.value)} placeholder="https://…" inputMode="url" autoCapitalize="none" autoComplete="off" ayuda="Solo el administrador. Una imagen que ya está publicada en otro sitio." error={error} />;
+  return <Campo etiqueta="O pega la dirección de una imagen" name="imagen_url" value={texto} onChange={(e) => cambiar(e.target.value)} placeholder="https://…" inputMode="url" autoCapitalize="none" autoComplete="off" ayuda="Solo la administración. Una imagen que ya está publicada en otro sitio." error={error} />;
 }

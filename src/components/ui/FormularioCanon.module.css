@@ -1,6 +1,6 @@
 /* ==========================================================================
    El canon de formulario (docs/rediseno/13, 15 y 26; bitácora 039): lo comparten el alta de lugar, el alta de
-   artista, Editar perfil y el alta de evento. 1. Campo con icono · 2. Estado, error y "ya está registrado" ·
+   artista, Editar perfil y el alta de evento. 1. Campo con icono · 2. Estado, error y "ya tiene ficha" ·
    3. Renglones resueltos (la piel `resuelto` de ui/Renglon: aquí solo su cámara) · 4. Cuerpo: chips, entrada,
    subir foto · 5. La nota bajo el botón: una sola, y dice qué falta (doc 50, H-29 y H-32)
    ========================================================================== */
@@ -173,7 +173,7 @@
   }
 }
 
-/* 2. Estado ("Buscando…"), error y lo que ya está registrado. */
+/* 2. Estado ("Buscando…"), error y lo que ya tiene ficha. */
 .estado {
   margin-bottom: var(--espacio-2);
   color: var(--texto-suave);

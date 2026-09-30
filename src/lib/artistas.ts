@@ -325,7 +325,7 @@ export function validarArtista(
     ciudad: ciudadCanonica(limpiar(entrada.ciudad)) || CIUDAD_INICIAL.nombre,
   };
   const errores: ErroresArtista = {};
-  if (!datos.nombre) errores.nombre = "Escribe el nombre del artista o grupo.";
+  if (!datos.nombre) errores.nombre = "Escribe el nombre de artista o grupo.";
   else if (datos.nombre.length > LIMITES_ARTISTA.nombre) errores.nombre = `Máximo ${LIMITES_ARTISTA.nombre} caracteres.`;
   if (disciplina !== "por_completar" && !DISCIPLINAS.some((d) => d.valor === disciplina)) errores.disciplina = "Elige qué hace.";
   if (!TIPOS_ARTISTA.some((t) => t.valor === tipo)) errores.tipo = "Elige si es solista, grupo o colectivo.";

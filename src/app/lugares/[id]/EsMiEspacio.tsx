@@ -50,7 +50,7 @@ export default function EsMiEspacio({ lugarId, nombre, correo, origen }: Props) 
               <h3 className={styles.titulo}>Listo</h3>
               <p className={styles.hecho}>
                 <IconoOk width={18} height={18} />
-                <span>El administrador lo revisa y te escribe a {correo}.</span>
+                <span>La administración lo revisa y te escribe a {correo}.</span>
               </p>
             </>
           ) : (

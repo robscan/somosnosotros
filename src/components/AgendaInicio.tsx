@@ -141,7 +141,7 @@ function AgendaLista({
   function cuerpo() {
     if (filtros.siguiendo && seguidos === null) {
       return (
-        <Vacio titulo="Siguiendo" texto="Aquí verás lo que pasa en los lugares y con los artistas que sigues. Entra para seguir a los tuyos.">
+        <Vacio titulo="Siguiendo" texto="Aquí verás lo que pasa en lugares y con artistas que sigues. Entra para seguir a quienes te importan.">
           <Boton href="/entrar?siguiente=/agenda" variante="secundario" ancho="contenido">
             Entrar
           </Boton>
@@ -149,7 +149,7 @@ function AgendaLista({
       );
     }
     if (filtros.siguiendo && seguidos !== null && seguidos.length === 0 && eventosSeguidos.length === 0) {
-      return <Vacio titulo="Siguiendo" texto="Todavía no sigues ningún lugar ni artista. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
+      return <Vacio titulo="Siguiendo" texto="Todavía no sigues lugares ni artistas. En su ficha, toca Seguir y sus eventos aparecerán aquí." />;
     }
     if (total === 0) {
       // Vacío por causa: dice qué se puso, y la salida.

@@ -6,7 +6,7 @@ import type { GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker } from "mapbox
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import type { LugarResumen } from "@/lib/lugares";
-import { colorDiseno, RADIO_TOQUE, type EstadoMapa } from "@/lib/mapa";
+import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa } from "@/lib/mapa";
 import styles from "./Mapa.module.css";
 
 type Punto = { lat: number; lng: number };
@@ -137,6 +137,7 @@ export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarE
         center: [inicio.lng, inicio.lat],
         zoom: seleccion ? 16 : ciudad.zoom,
         language: "es",
+        locale: TEXTOS_MAPBOX,
         attributionControl: false,
         logoPosition: "bottom-left",
       });

@@ -98,7 +98,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           )}
           {error === "tiene-eventos" && (
             <p className="aviso-error" role="alert">
-              Este lugar tiene eventos publicados por otras personas; no se puede borrar. Si ya no existe, ocúltalo o avisa al administrador.
+              Este lugar tiene eventos publicados por otras personas; no se puede borrar. Si ya no existe, ocúltalo o avisa a la administración.
             </p>
           )}
           {error === "borrar" && (
@@ -113,7 +113,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
           ) : (
             !lugar.visible && (
               <p className={`aviso-error ${ficha.oculto}`} role="status">
-                Este lugar está oculto: solo lo ven su autor, su cuenta ligada y el administrador.
+                Este lugar está oculto: solo lo ven quien lo publicó, su cuenta ligada y la administración.
               </p>
             )
           )}

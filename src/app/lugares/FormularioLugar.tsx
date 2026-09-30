@@ -108,7 +108,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
   const ultimaBusqueda = useRef("");
   const nombreElegido = useRef("");
   const versionBusquedaNombre = useRef(0);
-  // La lista de sugerencias y el aviso "Ya está registrado" flotan sobre el layout, anclados al campo del nombre
+  // La lista de sugerencias y el aviso "Ya tiene ficha" flotan sobre el layout, anclados al campo del nombre
   // (ui/ListaFlotante), y solo viven mientras el campo tiene el foco: es un autocompletado, tapar lo de abajo con
   // el teclado abierto es natural, pero un panel que se queda tapando el siguiente paso (Dónde) sin poder cerrarlo
   // es peor que empujarlo (revisión del gestor, 2026-09-21). Al salir del campo se cierra solo; si sigue habiendo
@@ -307,7 +307,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
             </p>
           )
         )}
-        {/* La lista de sugerencias y "Ya está registrado" flotan sobre el layout, sin empujar Dónde, Tipo, Más ni el
+        {/* La lista de sugerencias y "Ya tiene ficha" flotan sobre el layout, sin empujar Dónde, Tipo, Más ni el
             botón, y solo viven mientras el campo del nombre tiene el foco (revisión del gestor, 2026-09-21: un
             autocompletado tapa lo de abajo con el teclado abierto, pero se cierra solo al salir del campo — la línea
             de arriba toma el relevo). Mismo patrón que `HojaDonde`: el estado ("Buscando…"), el aviso y las
@@ -323,7 +323,7 @@ export default function FormularioLugar({ accion, lugar, usuarioId, nombreInicia
                 <li className={`${canon.existe} ${canon.existeFlotante}`} role="status">
                   <IconoOk width={20} height={20} />
                   <span>
-                    <b>Ya está registrado:</b>{" "}
+                    <b>Ya tiene ficha:</b>{" "}
                     {existentes.map((e, i) => (
                       <Fragment key={e.id}>
                         {i > 0 ? " · " : ""}

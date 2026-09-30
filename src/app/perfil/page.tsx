@@ -44,7 +44,7 @@ export default async function PaginaPerfil() {
         misArtistas={conArtistasLigados(misArtistas) && <MisArtistas artistas={misArtistas} />}
       />
       <Boton href={`/personas/${persona.perfil.id}`} variante="texto" ancho="contenido" className={styles.enlace}>
-        Así te ven los demás
+        Así te ve la gente
       </Boton>
     </main>
   );

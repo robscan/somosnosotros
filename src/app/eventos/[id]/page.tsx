@@ -352,7 +352,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           )}
           {(!e.visible || paso) && (
             <p className={`aviso-error ${ficha.oculto}`} role="status">
-              {paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven su autor y el administrador.
+              {paso ? "Este evento ya pasó" : "Este evento está oculto"}: solo lo ven quien lo publicó y la administración.
             </p>
           )}
         </div>

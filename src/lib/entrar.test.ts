@@ -14,7 +14,7 @@ describe("motivoEntrar", () => {
   it("publicar y registrar vuelven a su sección; perfil y sin destino, a Entrar a secas", () => {
     expect(motivoEntrar("/nuevo?tipo=evento")).toEqual({ tipo: "publicar", titulo: "Entra para publicar", origen: "/" });
     expect(motivoEntrar("/nuevo?lugar=abc")).toEqual({ tipo: "publicar", titulo: "Entra para publicar", origen: "/" });
-    expect(motivoEntrar("/nuevo?tipo=artista&ciudad=queretaro")).toEqual({ tipo: "registrar", titulo: "Entra para registrar un artista", origen: "/artistas" });
+    expect(motivoEntrar("/nuevo?tipo=artista&ciudad=queretaro")).toEqual({ tipo: "registrar", titulo: "Entra para registrar artista", origen: "/artistas" });
     expect(motivoEntrar("/nuevo?tipo=lugar").titulo).toBe("Entra para registrar un lugar");
     expect(motivoEntrar("/perfil")).toEqual({ tipo: "ninguno", titulo: "Entrar", origen: "/" });
     expect(motivoEntrar(`/eventos/${ID}`)).toEqual({ tipo: "ninguno", titulo: "Entrar", origen: `/eventos/${ID}` });
