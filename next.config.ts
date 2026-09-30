@@ -35,16 +35,18 @@ const nextConfig: NextConfig = {
   htmlLimitedBots: BOTS_SIN_STREAMING,
   /**
    * Segunda vuelta de Inicio (OL-156): la app abre siempre en Inicio y Agenda pasa a `/agenda`. "/inicio" ya no
-   * existe (redirige 308 a "/"). Un enlace viejo que pedía la Agenda en la raíz con un filtro o una búsqueda
-   * (`/?filtro=…`, `/?q=…`) tampoco tiene ya sentido ahí — "/" es Inicio, sin esos parámetros — así que se manda a
-   * `/agenda`; los parámetros que no se nombran en `destination` viajan solos (comportamiento de Next). Sin
-   * parámetros, "/" no redirige a nada: es la pantalla de Inicio de verdad.
+   * existe (redirige 308 a "/"). Un enlace viejo que pedía la Agenda en la raíz con un filtro (`/?filtro=…`) tampoco
+   * tiene ya sentido ahí — "/" es Inicio, sin ese parámetro — así que se manda a `/agenda`; los parámetros que no se
+   * nombran en `destination` viajan solos (comportamiento de Next). Sin parámetros, "/" no redirige a nada: es la
+   * pantalla de Inicio de verdad.
    */
   async redirects() {
     return [
       { source: "/inicio", destination: "/", permanent: true },
       { source: "/", has: [{ type: "query", key: "filtro" }], destination: "/agenda", permanent: true },
-      { source: "/", has: [{ type: "query", key: "q" }], destination: "/agenda", permanent: true },
+      // Buscar por nombre es la lupa de la barra (`/buscar`, OL-237): un enlace viejo que filtraba por nombre en Inicio, Agenda,
+      // Lugares o Artistas (`?q=…`) lleva a Buscar con lo escrito.
+      ...["/", "/agenda", "/lugares", "/artistas"].map((source) => ({ source, has: [{ type: "query" as const, key: "q" }], destination: "/buscar", permanent: true })),
       // Las tres altas eran tres pantallas; hoy son una (`/nuevo`, con su tira de tipos). Un enlace viejo (`?lugar=`, `?desde=`,
       // `?ciudad=`…) llega con lo suyo: lo que no se nombra en `destination` viaja solo.
       { source: "/eventos/nuevo", destination: "/nuevo?tipo=evento", permanent: true },

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import styles from "./Grupo.module.css";
 
 type Props = {
-  /** Sin título (los resultados de una búsqueda) es la lista sola, con el mismo aire. */
+  /** Sin título (lo que sigue una persona, cuando lo separan los chips) es la lista sola, con el mismo aire. */
   titulo?: string;
   /** Cuántos renglones trae el grupo; con más de uno se dice junto al título («Hoy · 2»). */
   cuenta?: number;
