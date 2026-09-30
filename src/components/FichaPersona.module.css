@@ -1,16 +1,20 @@
 /* Ficha de persona (Mi perfil y ficha ajena; docs/rediseno/13, decisiones 5 a 7).
-   1. Cabecera · 2. Sobre mí y completar · 3. Listas por pestaña */
+   1. Cabecera · 2. Sobre mí y completar · 3. Lo que dice una lista sin nada */
 
-/* 1. Cabecera plana: foto | nombre + acciones (Ajustes y Compartir) a la derecha; colonia debajo. */
+/* 1. Cabecera plana: foto | nombre + acciones (Ajustes y Compartir, botones redondos con borde) a la derecha; colonia debajo. La misma
+   en Mi perfil y en la ficha de otra persona, con el avatar del prototipo firmado y un poco de aire arriba. El aire entre columnas
+   es de 16 y, en una pantalla muy angosta, se acorta (4,5 % del ancho) para que el nombre no empuje las acciones fuera de la
+   cabecera; la columna del nombre nunca pasa de lo que sobra (`minmax(0, 1fr)`) y un nombre sin cortes se parte antes que
+   invadir los botones. */
 .cabecera {
   display: grid;
-  grid-template-columns: 96px 1fr auto;
+  grid-template-columns: var(--avatar-perfil) minmax(0, 1fr) auto;
   grid-template-areas:
     "foto nombre acciones"
     "foto colonia colonia";
-  column-gap: var(--espacio-4);
+  column-gap: min(var(--espacio-4), 4.5cqw);
   align-items: center;
-  margin: var(--espacio-3) 0 var(--espacio-3);
+  margin: var(--espacio-4) 0 var(--espacio-3);
 }
 .acciones {
   grid-area: acciones;
@@ -20,8 +24,8 @@
 }
 .avatar {
   grid-area: foto;
-  width: 96px;
-  height: 96px;
+  width: var(--avatar-perfil);
+  height: var(--avatar-perfil);
   border-radius: 50%;
   object-fit: cover;
   background: var(--fondo-miniatura);
@@ -30,7 +34,7 @@
   display: grid;
   place-items: center;
   color: var(--texto-suave);
-  font-size: var(--letra-3xl);
+  font-size: var(--letra-2xl);
   font-weight: 700;
 }
 .nombre {
@@ -38,25 +42,13 @@
   align-self: end;
   font-size: var(--letra-2xl);
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 .colonia {
   grid-area: colonia;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-/* Acciones de icono: 44 pt, con borde para que se lean como botones; el nombre va en aria-label. */
-.accion {
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  cursor: pointer;
-}
-
 /* 2. Sobre mí y el aviso de completar (solo la mía, si falta algo). */
 .sobreMi {
   margin-bottom: var(--espacio-2);
@@ -65,8 +57,8 @@
 }
 .completa {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
-  column-gap: 12px;
+  grid-template-columns: var(--columna-icono) 1fr auto;
+  column-gap: var(--espacio-3);
   align-items: center;
   margin: var(--espacio-2) 0;
   padding: 10px 14px;
@@ -78,19 +70,8 @@
 .completa > svg {
   color: var(--primario);
 }
-.completa > a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-weight: 700;
-  text-decoration: none;
-}
 .reservada {
-  padding: var(--espacio-4) 0;
+  padding-block: var(--espacio-4);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
@@ -98,28 +79,16 @@
   display: grid;
   gap: var(--espacio-3);
   justify-items: start;
-  padding: var(--espacio-4) 0;
+  padding-block: var(--espacio-4);
 }
 .bloqueado > p {
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
 
-/* 3. Listas: días en gris, renglones de la agenda o de lugares y artistas; vacíos con salida. */
-.dia {
-  padding: 12px 0 4px;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-}
-.lista {
-  list-style: none;
-}
+/* 3. Lo que dice una lista sin nada, con su salida. La letra es la de `ficha.vacio` (ui/Ficha); aquí, su aire. */
 .vacio {
   padding: var(--espacio-3) 0;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.4;
 }
 .vacio a {
   color: var(--primario);

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
+import { enlaceDeAlta } from "@/lib/armazon";
 import { artistaIgual, hrefArtista, validarArtista, type ArtistaResumen, type ErroresArtista } from "@/lib/artistas";
 import { esUuid } from "@/lib/formulario";
 import type { MotivoReclamo } from "@/lib/reportes";
@@ -50,7 +51,7 @@ async function existenteIgual(supabase: Cliente, nombre: string, ciudad: string)
 
 /** Alta de artista. Si ya hay uno con el mismo nombre, devuelve el existente para preguntar "¿es este?" (decisión 5). */
 export async function crearArtista(_previo: ResultadoArtista | null, formData: FormData): Promise<ResultadoArtista> {
-  const { supabase, user } = await sesionOEntrar("/artistas/nuevo");
+  const { supabase, user } = await sesionOEntrar(enlaceDeAlta("artista", null).href);
   const esAdmin = await esAdminDeSesion(supabase, user.id);
   const { datos, errores } = validarArtista(leer(formData), { esAdmin });
   if (Object.keys(errores).length) return { ok: false, errores };
@@ -60,7 +61,7 @@ export async function crearArtista(_previo: ResultadoArtista | null, formData: F
     .insert({ ...datos, creado_por: user.id })
     .select("id, slug")
     .single();
-  if (error?.code === "23505") return { ok: false, errores: {}, existente: await existenteIgual(supabase, datos.nombre, datos.ciudad), general: "Ya hay un artista con ese nombre." };
+  if (error?.code === "23505") return { ok: false, errores: {}, existente: await existenteIgual(supabase, datos.nombre, datos.ciudad), general: "Ya hay una ficha con ese nombre." };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. Intenta de nuevo." };
 
   // "Soy yo / es mi grupo": la cuenta queda ligada; podrá editar y publicar sus fechas sin teclear el nombre.
@@ -80,7 +81,7 @@ export async function actualizarArtista(id: string, _previo: ResultadoArtista | 
   const { nombre, disciplina, detalle, tipo, descripcion, foto, redes, ciudad } = datos;
   const cambios = { nombre, disciplina, detalle, tipo, descripcion, foto, redes, ciudad };
   const { data, error } = await supabase.from("artistas").update(cambios).eq("id", id).select("id, slug").maybeSingle();
-  if (error?.code === "23505") return { ok: false, errores: { nombre: `Ya hay otro artista con ese nombre en ${ciudad}.` } };
+  if (error?.code === "23505") return { ok: false, errores: { nombre: `Ya hay otra ficha con ese nombre en ${ciudad}.` } };
   if (error || !data) return { ok: false, errores: {}, general: "No se pudo guardar. ¿Sigues con sesión y es tu ficha?" };
 
   revalidar(id, data.slug);

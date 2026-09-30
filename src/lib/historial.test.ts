@@ -132,7 +132,7 @@ describe("marca de navegación: sobre un historial", () => {
     next.apilar(h, "/lugares/7/editar");
     expect(vuelveA(h.state, h.length, "/lugares/7")).toBe(true);
     next.volver(h);
-    next.apilar(h, "/eventos/nuevo?lugar=7");
+    next.apilar(h, "/nuevo?lugar=7");
     expect(vuelveA(h.state, h.length, "/eventos/9?nuevo=1")).toBe(false);
   });
   it("salir a la pantalla madre reemplaza: la entrada sigue siendo la primera", () => {

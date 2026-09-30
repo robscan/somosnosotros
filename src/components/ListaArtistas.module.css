@@ -1,16 +1,10 @@
-/* Lista de artistas (docs/rediseno/08-artistas-flujo-y-estados.md, decisiones 1 y 2). La cabecera es ui/Cabecera;
-   los renglones, Renglon.module.css; el conteo y el vacío, Lista.module.css; la tira de letras,
-   TiraLetras.module.css. */
+/* Lista de artistas (docs/rediseno/08-artistas-flujo-y-estados.md, decisiones 1 y 2). La cabecera es ui/Cabecera; los
+   grupos por letra, ui/Grupo; los renglones, ui/Renglon.module.css; el conteo y el vacío, Lista.module.css; la tira de
+   letras, TiraLetras.module.css. */
 
 /* Ver más: el Botón secundario, con el gutter de la columna, tras la última página */
 .verMas {
   width: auto;
   margin: var(--espacio-4) var(--gutter) 0;
-}
-
-/* Renglones */
-.lista {
-  list-style: none;
-  padding: 0 var(--gutter);
 }
 

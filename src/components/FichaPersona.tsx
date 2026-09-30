@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import type { EventoAgenda } from "@/lib/agenda";
 import { textoCompartirPersona } from "@/lib/perfil";
@@ -6,6 +5,8 @@ import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import type { Perfil } from "@/lib/supabase/servidor";
 import ActividadPersona, { type Gestos } from "./ActividadPersona";
 import BotonCompartir from "./BotonCompartir";
+import Boton from "./ui/Boton";
+import BotonIcono, { claseBotonIcono } from "./ui/BotonIcono";
 import { IconoCompartir, IconoEngrane, IconoPersona } from "./ui/Iconos";
 import styles from "./FichaPersona.module.css";
 
@@ -39,7 +40,7 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
   const reservada = !mia && !!perfil.reservado;
   const incompleto = mia && (!perfil.colonia || !perfil.bio);
 
-  return (
+  const cabeza = (
     <>
       <div className={styles.cabecera}>
         {perfil.foto ? (
@@ -57,19 +58,15 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
         {/* Las dos acciones de la ficha juntas, arriba a la derecha (corrección del founder, 2026-09-15). */}
         <div className={styles.acciones}>
           {mia && (
-            <Link
-              href="/ajustes"
-              className={styles.accion}
-              aria-label="Ajustes"
-            >
+            <BotonIcono href="/ajustes" relieve="contorno" aria-label="Ajustes">
               <IconoEngrane width={22} height={22} />
-            </Link>
+            </BotonIcono>
           )}
           <BotonCompartir
             titulo={perfil.nombre}
             texto={textoCompartirPersona(perfil.nombre, eventos.length, mia)}
             url={`${origen}/personas/${perfil.id}`}
-            className={styles.accion}
+            className={claseBotonIcono({ relieve: "contorno" })}
             ariaLabel="Compartir"
           >
             <IconoCompartir width={22} height={22} />
@@ -90,17 +87,26 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
                 : "una línea sobre ti"}
             : así te reconocen en “quién va”.
           </span>
-          <Link href="/ajustes/editar">Completar</Link>
+          <Boton href="/ajustes/editar" forma="pildora" alto="control" ancho="contenido">
+            Completar
+          </Boton>
         </p>
       )}
       {misArtistas}
+    </>
+  );
+  return (
+    <>
+      {/* Mi perfil y la ficha de otra persona son de la misma familia (docs/rediseno/50, 5.3 y P6): la página no lleva aire a los
+          lados y cada bloque pone el suyo; sus listas, que son grupos de día pegajosos, lo traen. */}
+      <div className="columna">{cabeza}</div>
       {bloqueado ? (
-        <div className={styles.bloqueado}>
+        <div className={`columna ${styles.bloqueado}`}>
           <p>Bloqueaste a esta persona: no ves lo que publica.</p>
           {bloqueado}
         </div>
       ) : reservada ? (
-        <p className={styles.reservada}>
+        <p className={`columna ${styles.reservada}`}>
           Perfil reservado: solo se ve el nombre.
         </p>
       ) : (

@@ -5,7 +5,7 @@ import HojaInstalar from "@/components/HojaInstalar";
 import { IconoChevronDerecha, IconoInstalar, IconoInstalarComputadora } from "@/components/ui/Iconos";
 import { decidirInstalar, pasosInstalar } from "@/lib/plataforma";
 import { useInstalarApp, usePlataforma } from "@/lib/useAvisosTelefono";
-import styles from "./ajustes.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 /**
  * "Instalar la app" en Ajustes › Somos Nosotros (decisión 7 de docs/rediseno/17). Solo donde se puede y mientras no esté
@@ -24,7 +24,7 @@ export default function InstalarApp() {
   const icono = plataforma.computadora ? <IconoInstalarComputadora width={20} height={20} /> : <IconoInstalar width={20} height={20} />;
   if (como === "abrir-en-safari" || como === "abrir-en-navegador") {
     return (
-      <li className={`${styles.fila} ${styles.apagada}`}>
+      <li className={`${renglon.ajuste} ${renglon.apagado}`}>
         {icono}
         <b>Instalar la app</b>
         <small>Ábrela en {como === "abrir-en-safari" ? "Safari" : "tu navegador"} para instalarla</small>
@@ -36,7 +36,7 @@ export default function InstalarApp() {
     <li>
       <button
         type="button"
-        className={styles.fila}
+        className={renglon.ajuste}
         onClick={async () => {
           if (como === "pasos-safari") return setHoja(true);
           if (await instalar()) setInstalada(true);
@@ -45,9 +45,7 @@ export default function InstalarApp() {
         {icono}
         <b>Instalar la app</b>
         <small>{detalle}</small>
-        <span className={styles.valor}>
-          <IconoChevronDerecha />
-        </span>
+        <IconoChevronDerecha />
       </button>
       {hoja && <HojaInstalar onCerrar={() => setHoja(false)} />}
     </li>

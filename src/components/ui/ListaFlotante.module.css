@@ -3,7 +3,7 @@
    propio scroll cuando hay más opciones de las que caben. */
 .flotante {
   position: fixed;
-  z-index: 60;
+  z-index: var(--z-encima);
   margin: 0;
   padding: 0;
   list-style: none;

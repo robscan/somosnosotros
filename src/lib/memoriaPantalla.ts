@@ -3,7 +3,7 @@
  * y volver, la pantalla vuelve exactamente donde estaba: la pestaña o filtro, lo escrito en la búsqueda y el scroll.
  * Vive en sessionStorage (muere con la pestaña del navegador, nunca sale del teléfono): el estado del listado y el
  * scroll van en entradas distintas por URL (el scroll lo guarda MemoriaScroll para todas las pantallas).
- * Aparte, cada sección (Agenda, Lugares, Artistas) recuerda su última URL para que la barra inferior regrese a ella.
+ * Aparte, cada sección (Agenda, Lugares, Artistas) recuerda su última URL para que la navegación regrese a ella.
  */
 
 export type Memoria<T> = { estado: T };
@@ -41,6 +41,14 @@ export function guardarMemoria<T>(clave: string, memoria: Memoria<T>, almacen: A
   if (!almacen) return;
   try {
     almacen.setItem(PREFIJO + clave, JSON.stringify(memoria));
+  } catch {}
+}
+
+/** Olvida lo guardado para esa URL: una pantalla que se abre de nuevo (Buscar, desde la lupa) empieza vacía. */
+export function borrarMemoria(clave: string, almacen: Almacen | null = almacenDelNavegador()): void {
+  if (!almacen) return;
+  try {
+    almacen.removeItem(PREFIJO + clave);
   } catch {}
 }
 

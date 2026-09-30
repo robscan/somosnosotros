@@ -1,475 +1,419 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { use, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Suspense } from "react";
-import { Cuenta } from "@/components/ui/Chip";
-import BuscadorUnificado from "@/components/BuscadorUnificado";
+import { useSearchParams } from "next/navigation";
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import ListaLugares from "@/components/ListaLugares";
-import PantallaConAviso from "@/components/useCanalDeListas";
-import type { AvisosLista } from "@/components/useSeguirEnLista";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
+import Mapa from "@/components/Mapa";
+import PantallaConAviso from "@/components/useCanalDeListas";
+import { useResuelta } from "@/components/useResuelta";
+import type { AvisosLista } from "@/components/useSeguirEnLista";
 import Aviso from "@/components/ui/Aviso";
 import Boton from "@/components/ui/Boton";
-import { EsqueletoCaja, EsqueletoRenglones } from "@/components/ui/Esqueleto";
-import Hoja from "@/components/ui/Hoja";
-import Mapa from "@/components/Mapa";
-import NavInferior from "@/components/NavInferior";
-import Publicar from "@/components/Publicar";
+import BotonIcono from "@/components/ui/BotonIcono";
 import Cabecera from "@/components/ui/Cabecera";
-import ChipFecha from "@/components/ui/ChipFecha";
-import { IconoCalendario, IconoLista, IconoMapa, IconoUbicacion } from "@/components/ui/Iconos";
-import { useAltoHoja } from "@/components/ui/useAltoHoja";
+import { EsqueletoCaja } from "@/components/ui/Esqueleto";
+import { IconoEncuadrar, IconoUbicacion } from "@/components/ui/Iconos";
+import comun from "@/components/Lista.module.css";
+import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
-import type { Destacado, Tarjeta } from "@/lib/destacados";
-import { SIN_FOTO } from "@/lib/imagen";
-import ChipCiudad from "@/components/Ciudad";
-import { calleCorta, etiquetaTipo, filtrarLugares, hrefLugar, lugaresConEventoElDia, lugaresEncuadreInicial, ordenarLugares, textoProximoPin, tiposPresentes, UMBRAL_BUSCAR_LUGARES, UMBRAL_CHIPS_LUGARES, type LugarLista } from "@/lib/lugares";
+import type { Destacado } from "@/lib/destacados";
+import { eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
-import { PanelPestana, Pestana, PestanaEnlace, Pestanas } from "@/components/ui/Pestanas";
-import { CampoBuscar } from "@/components/ui/Buscador";
-import sug from "@/components/ui/Sugerencia.module.css";
-import listaEsqueletoStyles from "@/components/ListaEsqueleto.module.css";
+import FichaHoja, { type PiezasFicha } from "./FichaHoja";
+import FilaLugares from "./FilaLugares";
+import HojaLugares, { type DondeEstaba, type EstadoHoja, type Manejo } from "./HojaLugares";
 import styles from "./lugares.module.css";
 
-type Vista = "mapa" | "lista";
-/** Cuántos resultados de la búsqueda se listan sobre el mapa (el resto se ve en los pines o en la Lista). */
-const MAX_RESULTADOS_MAPA = 6;
+/** A dónde lleva «Registrar un lugar» cuando la ciudad no tiene ninguno. */
+const ALTA_DE_LUGAR = enlaceDeAlta("lugar", null).href;
+
 type Punto = { lat: number; lng: number };
 type EstadoGeo = "sin-pedir" | "pidiendo" | "negado" | "error";
+type Encuadre = { puntos: Punto[]; vez: number };
 /**
- * Lo que la Cabecera (fuera del `<Suspense>`) le pide al mapa (dentro): buscar y reencuadrar. Un `ref` en vez de
- * levantar el estado del mapa hasta aquí (OL-161) — evita reaccionar a un cambio de prop con un efecto que llama
- * `setState` (la regla `react-hooks/set-state-in-effect` lo rechaza) y ocurre en el mismo toque, sin un repintado de
- * más. `CuerpoLugares` lo rellena al montar; antes de que exista (mientras carga su `<Suspense>`) queda en null y
- * el toque no hace nada, que es correcto: no hay mapa todavía con quién hablar.
+ * La ficha abierta dentro de la hoja: el lugar y lo que llega del servidor (null mientras llega, «fallo» si no se pudo), con lo
+ * diferido de la pantalla (`ExtrasLugares`) que había al pedirlo: si cambia con la ficha abierta —un Seguir revalida la pantalla—,
+ * la ficha se pide de nuevo y no enseña lo de antes (el «Sigues», cuántos lo siguen).
  */
-type InteraccionMapa = { buscar: (v: string) => void; recentrar: (p: Punto) => void };
+type FichaAbierta = { lugar: LugarLista; piezas: PiezasFicha | "fallo" | null; deExtra: ExtrasLugares | null };
 
 /**
- * Lo que solo necesitan el mapa y la lista, nunca la barra ni las pestañas (OL-161, bitácora 196): quién sigue qué,
- * la tira de destacados y la de esta semana. Llega como promesa (`Props.extras`) para que `VistaLugares` pinte su
- * cabecera al instante con solo `lugares`, y `CuerpoLugares` la desenvuelva con `use()` dentro de su `<Suspense>`.
+ * Lo que solo necesitan el mapa y la hoja, nunca la fila de contexto (OL-161, bitácora 196): quién sigue qué y la tira de
+ * destacados. Llega como promesa (`Props.extras`) para que `VistaLugares` pinte su cabecera al instante con solo `lugares`; el mapa
+ * y la hoja salen cuando llega (`useResuelta`).
  */
 export type ExtrasLugares = {
   conSesion: boolean;
-  /** Los lugares que la persona sigue (la lista los marca y deja seguir al deslizar); null = sin sesión. */
+  /** Los lugares que la persona sigue (la lista los marca); null = sin sesión. */
   seguidos: string[] | null;
   avisos: AvisosLista | null;
-  /** La tira de destacados de la ciudad (docs/rediseno/20): arriba de la lista y, en naranja, en el mapa. */
+  /** La tira de destacados de la ciudad (docs/rediseno/20): en naranja, en el mapa. */
   destacados: Destacado[];
-  eventosSemana: Tarjeta[];
 };
 
 type Props = {
+  /** Todos los lugares de la ciudad: la fila de contexto, el mapa y la hoja parten de aquí y cada uno filtra los suyos. */
   lugares: LugarLista[];
-  /** Qué días tienen al menos un evento de un lugar en la ciudad (OL-218): mismo criterio que
-   *  `lugaresConEventoElDia` — un día está activo si algún lugar tiene eventos ese día. Arreglo serializable
-   *  (no `Map`, que no cruza el límite de servidor a cliente); se vuelve `Map` aquí con `useMemo`. */
-  diasActivos: [string, number][];
   ciudad: Ciudad;
   ciudades: CiudadConDatos[];
-  vistaInicial: Vista;
-  /** Tipo elegido, leído de la URL (`?tipo=`); vale para el mapa y la lista. */
-  tipo: string | null;
-  barra: ReactNode;
   extras: Promise<ExtrasLugares>;
-  /** Con qué texto abrir la búsqueda ya escrita (el "Ver todos" del grupo Lugares del buscador único, OL-153). */
-  busquedaInicial?: string;
-  /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan); mínimo elegible
-   *  del chip de fecha (docs/rediseno/45, OL-174). */
+  /** El lugar cuya ficha abre la hoja al llegar (`?lugar=`, el slug o el id): Buscar, desde Lugares, vuelve al mapa con él. */
+  fichaInicial?: string;
+  /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan). */
   hoy: string;
-  /** Zona horaria de la ciudad (la de "hoy" y el chip de fecha). */
-  zona: string;
+  /** Pide al servidor las piezas de la ficha de un lugar (`fichaEnHoja.tsx`). La página la pasa como prop, y no se importa aquí, para
+   *  que los componentes de cliente de esas piezas entren en el manifiesto de esta ruta: si no, Next no las encuentra al enviarlas. */
+  abrirFicha: (idOSlug: string) => Promise<PiezasFicha | null>;
 };
 
+/** Lo que Lugares recuerda de la pantalla al salir de ella (a una ficha, a otra pestaña) y repone al volver. */
+type Memoria = { conEventos: ConEventos | null; soloSigo: boolean; hoja: DondeEstaba & { ficha: string | null } };
+
+/** El tipo que trae la URL (`?tipo=`): solo vale si existe. */
+function tipoDeLaUrl(params: { get(nombre: string): string | null }): string | null {
+  const tipo = params.get("tipo");
+  return tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
+}
+
+/** La dirección de Lugares con lo que vive en la URL: la ciudad (si no es la inicial) y el tipo. */
+function hrefLugares(ciudad: Ciudad, tipo: string | null): string {
+  const consulta = new URLSearchParams();
+  if (ciudad.slug !== CIUDAD_INICIAL.slug) consulta.set("ciudad", ciudad.slug);
+  if (tipo) consulta.set("tipo", tipo);
+  const texto = consulta.toString();
+  return texto ? `/lugares?${texto}` : "/lugares";
+}
+
+/** Los cinco lugares más cercanos a un punto (y el punto): lo que encuadra el botón de ubicación. */
+function encuadreCercanosDe(lugares: LugarLista[], p: Punto): Punto[] {
+  return [p, ...ordenarLugares(lugares, p).lista.slice(0, 5)];
+}
+
 /**
- * Lugares: Mapa y Lista como dos vistas del mismo directorio; el mapa es la primera. Las dos comparten ui/Cabecera:
- * ciudad, el botón que enseña la otra vista y la lupa; debajo, Todos · Cercanos · tipos (OL-087). Cercanos pide la
- * ubicación al tocarlo, no la guarda y es exclusiva con el tipo: en la lista ordena por distancia, en el mapa centra
- * en el punto azul. Decisiones en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/cabeceras.html.
+ * Lugares: el mapa a toda la altura que deja la fila de contexto y, sobre él, la hoja con la lista de lugares y, al tocar un pin
+ * o un renglón, la ficha del lugar dentro de la hoja (docs/rediseno/50, P5b; decisiones 31 a 36 y 58 del founder). La fila lleva la
+ * ciudad y Filtros (tipo, con eventos y, con sesión, lo que sigo); buscar es la lupa de la barra de la app (`app/buscar`), que desde aquí vuelve
+ * con la ficha de un lugar ya abierta (`fichaInicial`). «Mi ubicación» pide la ubicación al tocarla, no la guarda: centra en el punto azul y ordena la lista por cercanía. Al elegir
+ * algo en Filtros, quitar un chip o cambiar de ciudad, la hoja responde: recogida sube a asoma (asoma o llena se quedan), la cantidad dice lo que quedó y
+ * el mapa encuadra los lugares que quedan, sin moverse si no cambió nada (docs/rediseno/50, decisión del founder del 2026-09-30). Decisiones
+ * en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/restructura-ui.html.
  */
-export default function VistaLugares({ lugares, diasActivos, ciudad, ciudades, vistaInicial, tipo, barra, extras, busquedaInicial, hoy, zona }: Props) {
-  const router = useRouter();
-  // El chip de fecha (OL-218) recibe un `Map` ya armado, no la `Promise` que usa Agenda: los eventos de Lugares
-  // ya están cargados aquí (sin `<Suspense>` que esperar) — `useMemo` evita rehacer el `Map` en cada repintado.
-  const diasActivosMapa = useMemo(() => new Map(diasActivos), [diasActivos]);
-  const [vista, setVista] = useState<Vista>(vistaInicial);
+export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaInicial, hoy, abrirFicha }: Props) {
+  // El tipo se elige aquí, sin pedirle nada al servidor (la lista de la ciudad ya está en el teléfono): la lista y el mapa cambian al
+  // instante y la URL lo refleja para poder compartirlo. Si la URL trae otro por su cuenta (otra ciudad, Atrás), el tipo la sigue.
+  const tipoDeUrl = tipoDeLaUrl(useSearchParams());
+  const [tipo, setTipo] = useState(tipoDeUrl);
+  const [tipoVisto, setTipoVisto] = useState(tipoDeUrl);
+  if (tipoDeUrl !== tipoVisto) {
+    setTipoVisto(tipoDeUrl);
+    setTipo(tipoDeUrl);
+  }
+  const [conEventos, setConEventos] = useState<ConEventos | null>(null);
+  const [soloSigo, setSoloSigo] = useState(false);
   const [punto, setPunto] = useState<Punto | null>(null);
   const [vez, setVez] = useState(0);
   const [geo, setGeo] = useState<EstadoGeo>("sin-pedir");
-  // El chip de fecha (docs/rediseno/45, OL-174, mismo componente que Agenda): filtra los pines del Mapa y, desde
-  // OL-210, también la Lista, con la misma regla (`lugaresConEventoElDia`) — el founder pidió que afecte las dos.
-  const [fecha, setFecha] = useState("");
-  // El tipo elegido vive en la URL y vale para las dos vistas: cambiar de Mapa a Lista no lo pierde. Las pestañas
-  // (Todos, Cercanos, tipos) solo necesitan `lugares`, que ya llega resuelto: pintan al instante, con la barra
-  // (OL-161, bitácora 196) — antes esperaban también destacados, la tira de la semana y quién sigue qué.
-  const tipos = lugares.length >= UMBRAL_CHIPS_LUGARES ? tiposPresentes(lugares) : [];
-  const enCiudad = ciudad.slug === CIUDAD_INICIAL.slug ? "" : `&ciudad=${ciudad.slug}`;
-  const hrefTipo = (t: string | null) => `/lugares?vista=${vista}${enCiudad}${t ? `&tipo=${t}` : ""}`;
-  // Cambiar de ciudad conserva la vista y suelta el tipo.
-  const chipCiudad = <ChipCiudad ciudad={ciudad} ciudades={ciudades} hrefDe={(c) => `/lugares?vista=${vista}${c.slug === CIUDAD_INICIAL.slug ? "" : `&ciudad=${c.slug}`}`} />;
-  const lugaresDelTipo = useMemo(() => (tipo ? lugares.filter((l) => l.tipo === tipo) : lugares), [lugares, tipo]);
-  // Una sola búsqueda para las dos vistas, tras la lupa. En el mapa, lo encontrado se encuadra en `CuerpoLugares`
-  // (diferido); aquí solo vive el texto, para que el campo pinte con la cabecera.
-  const [busqueda, setBusqueda] = useState(busquedaInicial ?? "");
-  const [buscando, setBuscando] = useState(!!busquedaInicial);
-  // Al volver de una ficha, la misma vista, lo escrito y el scroll de la lista (el tipo ya viene en la URL; la tira
-  // de letras no selecciona nada que recordar: es un acceso directo, no un filtro, corrección del founder, 2026-09-19).
-  useMemoriaPantalla<{ vista: Vista; busqueda: string; fecha: string }>("lugares", { vista, busqueda, fecha }, (r) => {
-    if (r.vista === "mapa" || r.vista === "lista") setVista(r.vista);
-    if (typeof r.busqueda === "string") setBusqueda(r.busqueda);
-    setBuscando(!!r.busqueda);
-    if (typeof r.fecha === "string") setFecha(r.fecha);
+  const [encuadre, setEncuadre] = useState<Encuadre | null>(null);
+  // Con `fichaInicial` (Buscar, desde Lugares) la ficha ya está abierta desde el primer cuadro: la hoja sube a ella y el mapa se centra.
+  const [inicial] = useState(() => (fichaInicial ? lugares.find((l) => (l.slug || l.id) === fichaInicial) : undefined));
+  const [ficha, setFicha] = useState<FichaAbierta | null>(() => (inicial ? { lugar: inicial, piezas: null, deExtra: null } : null));
+  /** Cambia con cada ficha que se abre por un gesto de la persona (un pin, un renglón): la hoja entra con movimiento. Al reponer la pantalla o
+   *  llegar con la ficha ya abierta no cambia, y la ficha aparece en su sitio. */
+  const [entrada, setEntrada] = useState(0);
+  /** Cómo quedó la hoja al asentarse (para la memoria de pantalla y para dejar libre al mapa lo que ella tapa). */
+  const [hoja, setHoja] = useState<EstadoHoja>({ detente: "asoma", y: 0, cubre: 0 });
+  /** La lista de la hoja ya se desplazó más de una pantalla: aparece el botón de volver arriba (`ui/Cabecera`). */
+  const [lejos, setLejos] = useState(false);
+  const [restaurar, setRestaurar] = useState<DondeEstaba>();
+  /** Lo que tenía el foco al abrir la ficha, para devolvérselo al cerrarla. */
+  const disparador = useRef<HTMLElement | null>(null);
+  /** Lo que se le puede pedir a la hoja (subir a asoma al filtrar). */
+  const hojaRef = useRef<Manejo>(null);
+  /** Lo que la cámara encuadra en cuanto la hoja diga cuánto tapa: el lugar de la ficha que se abre (abre más alta que la lista) o lo que queda
+   *  al filtrar, cuando la hoja recogida sube a asoma. */
+  const porEncuadrar = useRef<Punto[] | null>(inicial ? [inicial] : null);
+  // Lo diferido ya llegado; con otra promesa (cambiar de tipo, un Seguir) se queda lo anterior hasta que llegue lo nuevo, sin que el
+  // mapa y la hoja se vayan y vuelvan.
+  const extra = useResuelta(extras);
+  const seguidos = extra?.seguidos ?? null;
+  // «Solo lo que sigo» existe solo con sesión, que se sabe cuando llega lo diferido: sin ella, un valor de la memoria de pantalla no cuenta.
+  // Mientras llega se deja como esté, para que el chip de quien sí tiene sesión no aparezca tarde.
+  const conSesion = extra?.conSesion;
+  const eleccion = useMemo<EleccionLugares>(() => ({ tipo, conEventos, soloSigo: soloSigo && conSesion !== false }), [tipo, conEventos, soloSigo, conSesion]);
+  // Lo que dejan pasar los filtros: lo que enseñan el mapa y la lista.
+  const visibles = useMemo(() => filtrarPorEleccion(lugares, eleccion, seguidos, hoy), [lugares, eleccion, seguidos, hoy]);
+  const abierta = ficha && lugares.some((l) => l.id === ficha.lugar.id) ? ficha : null;
+  /** Pide las piezas de la ficha al servidor y, cuando llegan, las pone (si esa ficha sigue abierta). */
+  const pedirPiezas = useCallback(
+    (lugar: LugarLista, deExtra: ExtrasLugares | null) => {
+      // Como transición: con la ficha ya a la vista, lo nuevo la reemplaza cuando está listo, sin pasar por el esqueleto.
+      const poner = (piezas: PiezasFicha | "fallo") => startTransition(() => setFicha((f) => (f?.lugar.id === lugar.id ? { ...f, piezas, deExtra } : f)));
+      abrirFicha(lugar.slug || lugar.id).then((piezas) => poner(piezas ?? "fallo"), () => poner("fallo"));
+    },
+    [abrirFicha],
+  );
+  // Lo diferido cambió con la ficha ya abierta (un Seguir revalidó la pantalla): se pide de nuevo, y la anterior se queda a la vista
+  // hasta que llegue la nueva.
+  const fichaActual = useRef(ficha);
+  useLayoutEffect(() => {
+    fichaActual.current = ficha;
   });
-  // Lo que `CuerpoLugares` rellena al montar, para que un toque en la Cabecera (buscar, recentrar) actúe en el
-  // mismo instante en vez de esperar un efecto reaccionando al cambio de prop (ver el tipo `InteraccionMapa`).
-  const mapaRef = useRef<InteraccionMapa | null>(null);
-  function buscar(v: string) {
-    setBusqueda(v);
-    mapaRef.current?.buscar(v);
+  useEffect(() => {
+    const f = fichaActual.current;
+    if (f?.deExtra && f.deExtra !== extra && f.piezas && f.piezas !== "fallo") pedirPiezas(f.lugar, extra);
+  }, [extra, pedirPiezas]);
+
+  const encuadrar = (puntos: Punto[]) => setEncuadre((e) => ({ puntos, vez: (e?.vez ?? 0) + 1 }));
+
+  function abrir(lugar: LugarLista, porGesto = true) {
+    disparador.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Con otra ficha ya abierta la hoja no cambia de altura y la cámara va al momento; si no, espera a lo que tapará la ficha al abrirse.
+    if (abierta) encuadrar([lugar]);
+    else porEncuadrar.current = [lugar];
+    setFicha({ lugar, piezas: null, deExtra: extra });
+    if (porGesto) setEntrada((n) => n + 1);
+    pedirPiezas(lugar, extra);
+  }
+  function alAsentar(estado: EstadoHoja) {
+    setHoja(estado);
+    if (porEncuadrar.current) encuadrar(porEncuadrar.current);
+    porEncuadrar.current = null;
+  }
+  function cerrar() {
+    setFicha(null);
+    if (disparador.current?.isConnected) disparador.current.focus({ preventScroll: true });
+  }
+  /** La persona cambió lo que ve (un filtro, un chip, otra ciudad): la hoja enseña la lista (recogida sube a asoma) y el mapa encuadra `puntos`
+   *  (con null, la cámara se queda donde está). */
+  function mostrarResultado(puntos: Punto[] | null) {
+    if (abierta) return; // con la ficha a la vista la lista no se ve y la cámara es de la ficha
+    porEncuadrar.current = puntos; // la cámara va en cuanto la hoja avise cuánto tapa: ya subió a asoma si estaba recogida
+    hojaRef.current?.mostrarLista();
+  }
+  /** Lo que se elige en Filtros: todo se queda en el teléfono; el tipo, además, en la URL (se comparte y sobrevive al volver atrás). */
+  function cambiar(nueva: EleccionLugares) {
+    setConEventos(nueva.conEventos);
+    setSoloSigo(nueva.soloSigo);
+    if (nueva.tipo !== tipo) {
+      setTipo(nueva.tipo);
+      window.history.replaceState(null, "", hrefLugares(ciudad, nueva.tipo));
+    }
+    const quedan = filtrarPorEleccion(lugares, nueva, seguidos, hoy);
+    // Con lo mismo a la vista, la cámara se queda donde está.
+    mostrarResultado(quedan.length === visibles.length && quedan.every((l, i) => l.id === visibles[i].id) ? null : quedan);
   }
   function pedirUbicacion() {
     setGeo("pidiendo");
-    // Con una posición fresca guardada en el teléfono (de aquí o de la agenda) esto resuelve al momento, sin
-    // volver a llamar al navegador (OL-095, L25 y L50): el botón sigue pidiéndose con un toque, pero no repite
-    // la llamada si ya la tenemos.
+    // Con una posición fresca guardada en el teléfono (de aquí o de la agenda) esto resuelve al momento, sin volver a llamar al
+    // navegador (OL-095, L25 y L50): el botón sigue pidiéndose con un toque, pero no repite la llamada si ya la tenemos.
     leerUbicacionCercana().then(
       (p) => {
         setPunto(p);
         setVez((v) => v + 1);
         setGeo("sin-pedir");
-        mapaRef.current?.recentrar(p);
+        encuadrar(encuadreCercanosDe(visibles, p));
       },
       (error: unknown) => setGeo(error === "negado" ? "negado" : "error"),
     );
   }
-  function cambiarVista(v: Vista) {
-    setVista(v);
-  }
-  /** El botón de ubicación del mapa (docs/rediseno/35): pide la ubicación y encuadra a la persona con los cinco
-   *  lugares más cercanos; si ya la tiene, vuelve a centrar. No toca el tipo elegido: solo mueve la cámara. */
+  /** El botón de ubicación (docs/rediseno/35): pide la ubicación y encuadra a la persona con los cinco lugares más cercanos; si ya la
+   *  tiene, vuelve a centrar. No toca los filtros: solo mueve la cámara y ordena la lista. */
   function centrarEnMi() {
     if (punto) {
       setVez((v) => v + 1);
-      mapaRef.current?.recentrar(punto);
+      encuadrar(encuadreCercanosDe(visibles, punto));
     } else pedirUbicacion();
   }
-  /** Cercanos, en la Lista: con la ubicación ya leída, ordena por cercanía; si no, se pide. Suelta el tipo. */
-  function verCercanos() {
-    if (tipo) router.replace(hrefTipo(null), { scroll: false });
-    if (punto) {
-      setVez((v) => v + 1);
-      mapaRef.current?.recentrar(punto);
-    } else pedirUbicacion();
-  }
-  const notaGeo =
-    geo === "negado"
-      ? "No pudimos leer tu ubicación. Actívala para este sitio en los ajustes del teléfono."
-      : geo === "error"
-        ? "No pudimos leer tu ubicación."
-        : null;
+  const notaGeo = geo === "negado" ? "No pudimos leer tu ubicación. Actívala para este sitio en los ajustes del teléfono." : geo === "error" ? "No pudimos leer tu ubicación." : null;
 
-  // El aviso de abajo y la pregunta de avisos son de la pantalla, no de la Lista: al cambiar a Mapa y volver, la lista se
-  // vuelve a montar, y con un canal suyo la pregunta empezaría de cero cada vez (OL-057, revisión de gestión de cambios).
+  // Al volver de una ficha o de otra pestaña: los filtros, la ficha abierta y la hoja donde estaba (altura y desplazamiento).
+  useMemoriaPantalla<Memoria>("lugares", { conEventos, soloSigo, hoja: { ficha: abierta?.lugar.slug || abierta?.lugar.id || null, detente: hoja.detente, y: hoja.y } }, (r) => {
+    setConEventos(r.conEventos === "hoy" || r.conEventos === "semana" ? r.conEventos : null);
+    setSoloSigo(!!r.soloSigo);
+    if (!r.hoja) return;
+    setRestaurar({ detente: r.hoja.detente, y: r.hoja.y });
+    const lugar = r.hoja.ficha ? lugares.find((l) => (l.slug || l.id) === r.hoja.ficha) : undefined;
+    if (lugar) abrir(lugar, false);
+  });
+
+  // Al cambiar de ciudad la pantalla sigue montada (la URL trae otros lugares): la hoja y el mapa responden como ante un filtro.
+  const ciudadVista = useRef(ciudad.slug);
+  useEffect(() => {
+    if (ciudadVista.current === ciudad.slug) return;
+    ciudadVista.current = ciudad.slug;
+    mostrarResultado(visibles);
+  });
+
+  // Buscar, desde Lugares, llega con `?lugar=`: se piden las piezas de la ficha que ya está abierta y la URL suelta el parámetro (que no se
+  // reabra al volver a la sección). Solo al montar.
+  useEffect(() => {
+    if (!inicial) return;
+    pedirPiezas(inicial, null);
+    window.history.replaceState(null, "", hrefLugares(ciudad, tipo));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al montar
+  }, []);
+
+  // El aviso de abajo y la pregunta de avisos son de la pantalla, no de la hoja: con un canal suyo, cerrar la ficha y abrir otra
+  // empezaría de cero (OL-057, revisión de gestión de cambios).
   return (
     <PantallaConAviso>
-      <main className={`raiz ${vista === "mapa" ? styles.sinRelleno : ""}`}>
-        {barra}
+      <main className={styles.lugares}>
         <Cabecera
-          contexto={
-            <>
-              {/* ui/ChipFecha (docs/rediseno/45, OL-174): antes del chip de ciudad, mismo orden que Agenda. */}
-              <ChipFecha fecha={fecha} onCambiar={setFecha} hoy={hoy} zona={zona} diasActivos={diasActivosMapa} />
-              {chipCiudad}
-            </>
-          }
-          onBuscar={lugares.length >= UMBRAL_BUSCAR_LUGARES ? () => setBuscando(true) : undefined}
-          campo={buscando && <CampoBuscar placeholder="Buscar un lugar" ariaLabel="Buscar un lugar por nombre" valor={busqueda} onCambiar={buscar} onCerrar={() => { setBuscando(false); buscar(""); }} autoFocus />}
-          filtros={
-            <Pestanas ariaLabel="Qué lugares ver">
-              <PestanaEnlace activa={!punto && !tipo} href={hrefTipo(null)} onClick={() => setPunto(null)}>
-                Todos
-                <Cuenta n={lugares.length} />
-              </PestanaEnlace>
-              {/* "Cercanos" solo en la Lista: en el Mapa esa decisión es del botón de ubicación, no de la pestaña
-                  (dos mandos para lo mismo, decisión del founder, 2026-09-22: docs/rediseno/35). */}
-              {vista === "lista" && (
-                <Pestana activa={!!punto} onClick={verCercanos}>
-                  {geo === "pidiendo" ? "Un momento…" : "Cercanos"}
-                </Pestana>
-              )}
-              {tipos.length > 1 &&
-                tipos.map((t) => (
-                  <PestanaEnlace key={t.valor} activa={!punto && tipo === t.valor} href={hrefTipo(t.valor)} onClick={() => setPunto(null)}>
-                    {t.etiqueta}
-                    <Cuenta n={t.n} />
-                  </PestanaEnlace>
-                ))}
-            </Pestanas>
-          }
+          contexto={<FilaLugares ciudad={ciudad} ciudades={ciudades} hrefDeCiudad={(c) => hrefLugares(c, null)} lugares={lugares} hoy={hoy} seguidos={seguidos} conSesion={!!conSesion} valor={eleccion} onCambiar={cambiar} />}
+          volverArriba={{ lejos, volver: () => hojaRef.current?.irA("llena") }}
         />
-
-        {/* El mapa y la lista sí esperan una consulta aparte (quién sigue qué, destacados, la tira de la semana):
-            van en su propio `<Suspense>`, con un esqueleto del mismo tamaño mientras llega (OL-161, bitácora 196). */}
-        <Suspense fallback={<EsqueletoCuerpoLugares vista={vista} />}>
+        {/* El mapa y la hoja esperan una consulta aparte (quién sigue qué, destacados): mientras llega, un esqueleto del alto del mapa
+            (OL-161, bitácora 196). */}
+        {extra ? (
           <CuerpoLugares
-            mapaRef={mapaRef}
-            extras={extras}
-            lugaresDelTipo={lugaresDelTipo}
+            extra={extra}
+            lugares={lugares}
+            visibles={visibles}
             ciudad={ciudad}
-            tipo={tipo}
-            vista={vista}
-            fecha={fecha}
-            busqueda={busqueda}
+            eleccion={eleccion}
             punto={punto}
             vez={vez}
+            encuadre={encuadre}
+            tapaAbajo={hoja.cubre}
             notaGeo={notaGeo}
             geoPidiendo={geo === "pidiendo"}
             onCerrarGeo={() => setGeo("sin-pedir")}
             onUbicacion={centrarEnMi}
-            onCambiarVista={cambiarVista}
+            onEncuadrar={encuadrar}
+            ficha={abierta}
+            entrada={entrada}
+            onAbrir={abrir}
+            onCerrarFicha={cerrar}
+            restaurar={restaurar}
+            alAsentar={alAsentar}
+            alLejos={setLejos}
+            hojaRef={hojaRef}
           />
-        </Suspense>
-
-        <NavInferior />
+        ) : (
+          <EsqueletoCaja className={styles.mapa} />
+        )}
       </main>
     </PantallaConAviso>
   );
 }
 
-/** Los cinco lugares más cercanos a un punto, del tipo elegido (o todos): lo que encuadra el botón de ubicación. */
-function encuadreCercanosDe(lugaresDelTipo: LugarLista[], p: Punto) {
-  const cercanos = ordenarLugares(lugaresDelTipo, p).lista.slice(0, 5);
-  return { puntos: [p, ...cercanos.map((l) => ({ lat: l.lat, lng: l.lng }))] };
+/** Por qué no hay ningún lugar que ver, cuando la ciudad sí tiene (los filtros no dejan pasar ninguno). */
+function porQueNoHay({ tipo, conEventos, soloSigo }: EleccionLugares): string {
+  if (conEventos) return `Ningún lugar tiene eventos ${conEventos === "hoy" ? "hoy" : "esta semana"}.`;
+  if (soloSigo) return "Todavía no sigues ningún lugar.";
+  if (tipo) return `Todavía no hay lugares de tipo ${etiquetaTipo(tipo).toLowerCase()}.`;
+  return "Ningún lugar coincide con lo que elegiste.";
 }
 
-/**
- * Mapa y lista, tras su propia consulta (OL-161, bitácora 196): `use(extras)` la desenvuelve y, mientras está
- * pendiente, suspende — el `<Suspense>` de `VistaLugares` (arriba) enseña `EsqueletoCuerpoLugares`. Todo lo que
- * antes vivía en `VistaLugares` y solo le servía al mapa o a la lista (el encuadre, la tarjeta elegida, el
- * desplegable de resultados) vive aquí ahora; lo que la cabecera necesita mostrar (vista, tipo, la búsqueda escrita,
- * la ubicación pedida) llega como prop desde el componente de arriba, que sigue siendo el dueño de ese estado.
- */
-function CuerpoLugares({
-  mapaRef,
-  extras,
-  lugaresDelTipo,
-  ciudad,
-  tipo,
-  vista,
-  fecha,
-  busqueda,
-  punto,
-  vez,
-  notaGeo,
-  geoPidiendo,
-  onCerrarGeo,
-  onUbicacion,
-  onCambiarVista,
-}: {
-  mapaRef: RefObject<InteraccionMapa | null>;
-  extras: Promise<ExtrasLugares>;
-  lugaresDelTipo: LugarLista[];
+type PropsCuerpo = {
+  extra: ExtrasLugares;
+  lugares: LugarLista[];
+  visibles: LugarLista[];
   ciudad: Ciudad;
-  tipo: string | null;
-  vista: Vista;
-  /** El chip de fecha de la cabecera (docs/rediseno/45, OL-174): "" = sin elegir. Filtra el Mapa y, desde
-   *  OL-210, también la Lista (misma regla, `lugaresConEventoElDia`). */
-  fecha: string;
-  busqueda: string;
+  eleccion: EleccionLugares;
   punto: Punto | null;
   vez: number;
+  encuadre: Encuadre | null;
+  /** Lo que la hoja tapa del mapa por abajo: cada encuadre lo deja libre. */
+  tapaAbajo: number;
   notaGeo: string | null;
   geoPidiendo: boolean;
   onCerrarGeo: () => void;
   onUbicacion: () => void;
-  onCambiarVista: (v: Vista) => void;
-}) {
-  const extra = use(extras);
-  const [elegido, setElegido] = useState<LugarLista | null>(null);
-  const enMapa = useMemo(() => filtrarLugares(lugaresDelTipo, busqueda), [lugaresDelTipo, busqueda]);
-  // El chip de fecha filtra los pines del Mapa con `lugaresConEventoElDia` (docs/rediseno/45).
-  const pinesDelDia = useMemo(() => (fecha ? lugaresConEventoElDia(enMapa, fecha) : enMapa), [enMapa, fecha]);
-  // La Lista usa la misma función sobre `lugaresDelTipo` (antes de la búsqueda, que `ListaLugares` aplica ella
-  // misma): un chip, una regla, dos vistas (OL-210; antes la Lista no filtraba por fecha, pedido literal del
-  // founder que él mismo cambió el 2026-09-25 — "debería afectar la lista también").
-  const lugaresListaDelDia = useMemo(() => (fecha ? lugaresConEventoElDia(lugaresDelTipo, fecha) : lugaresDelTipo), [lugaresDelTipo, fecha]);
-  // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos`
-  // llega null y ningún pin se resalta como seguido. Sin aro en ningún caso (OL-146, 2026-09-23): decisión del
-  // founder tras firmar el doc 35 (2026-09-22) y el doc 37 (2026-09-23).
+  /** Lleva la cámara a estos lugares (el botón «Encuadrar los lugares»). */
+  onEncuadrar: (puntos: Punto[]) => void;
+  ficha: FichaAbierta | null;
+  /** Cambia con cada ficha que se abre por un gesto de la persona: la hoja entra con movimiento. */
+  entrada: number;
+  onAbrir: (lugar: LugarLista) => void;
+  onCerrarFicha: () => void;
+  restaurar: DondeEstaba | undefined;
+  alAsentar: (estado: EstadoHoja) => void;
+  alLejos: (lejos: boolean) => void;
+  hojaRef: RefObject<Manejo | null>;
+};
+
+/**
+ * El mapa y la hoja, ya con lo que llegó de su propia consulta (OL-161, bitácora 196). Lo que la fila necesita mostrar (los
+ * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
+ * de ese estado.
+ */
+function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, onEncuadrar, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
+  const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
+  // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
+  // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
+  // de la ficha abierta, que crece, lleva aro y sombra y queda encima de los demás (P8, 2026-09-29).
   const enTira = useMemo(() => extra.destacados.map((d) => d.id), [extra.destacados]);
   const idsSeguidos = useMemo(() => extra.seguidos ?? [], [extra.seguidos]);
-  // El encuadre al abrir (docs/rediseno/35, "Cómo se decide el encuadre"): los lugares de esta semana y los
-  // destacados; con menos de tres, se completa con los cercanos al centro. Se calcula una sola vez, al montar este
-  // componente — que ahora ocurre justo cuando `extra` ya está disponible, no antes (OL-161).
-  const [encuadre, setEncuadre] = useState<{ puntos: Punto[]; vez: number; paraBusqueda?: boolean } | null>(() => {
-    const iniciales = lugaresEncuadreInicial(lugaresDelTipo, enTira, ciudad.centro);
-    return iniciales.length > 0 ? { puntos: iniciales.map((l) => ({ lat: l.lat, lng: l.lng })), vez: 1 } : null;
+  // El encuadre al abrir (docs/rediseno/35, "Cómo se decide el encuadre"): los lugares de esta semana y los destacados; con
+  // menos de tres, se completa con los cercanos al centro. Se calcula una sola vez, al montar este componente.
+  const [inicial] = useState<Encuadre | null>(() => {
+    const iniciales = lugaresEncuadreInicial(visibles, enTira, ciudad.centro);
+    return iniciales.length > 0 ? { puntos: iniciales, vez: 1 } : null;
   });
-  // Lo encontrado se lista bajo el buscador mientras se escribe; al tocar uno se abre su tarjeta y la lista se cierra.
-  const [listaAbierta, setListaAbierta] = useState(busqueda.trim().length > 0);
-  const resultados = listaAbierta && busqueda.trim() ? enMapa.slice(0, MAX_RESULTADOS_MAPA) : [];
-  function elegirResultado(l: LugarLista) {
-    setListaAbierta(false);
-    setElegido(l);
-    setEncuadre((e) => ({ puntos: [{ lat: l.lat, lng: l.lng }], vez: (e?.vez ?? 0) + 1, paraBusqueda: true }));
-  }
-  // La Cabecera (fuera de este `<Suspense>`) llama a estas dos funciones a través de `mapaRef` en el mismo toque de
-  // teclado o de botón (OL-161): nada de reaccionar a un cambio de prop con un efecto que llama `setState` (la regla
-  // `react-hooks/set-state-in-effect` lo rechaza, y además tardaría un repintado extra). El registro en sí sí es un
-  // efecto, pero no llama `setState`: solo deja escrita la referencia mientras este componente esté montado.
-  useEffect(() => {
-    mapaRef.current = {
-      buscar(v) {
-        if (vista !== "mapa") return;
-        const t = v.trim();
-        setListaAbierta(t.length > 0);
-        if (!t) {
-          setElegido(null);
-          return;
-        }
-        const hallados = filtrarLugares(lugaresDelTipo, t);
-        setElegido(hallados.length === 1 ? hallados[0] : null); // sin resultado o con varios, la tarjeta se cierra
-        if (hallados.length > 0) setEncuadre((e) => ({ puntos: hallados.map((l) => ({ lat: l.lat, lng: l.lng })), vez: (e?.vez ?? 0) + 1, paraBusqueda: true }));
-      },
-      recentrar(p) {
-        setEncuadre((e) => ({ ...encuadreCercanosDe(lugaresDelTipo, p), vez: (e?.vez ?? 0) + 1 }));
-      },
-    };
-    return () => {
-      mapaRef.current = null;
-    };
-  });
-  // Mide la hoja del pin abierta para que el botón de ubicación suba justo por encima, sin taparse nunca
-  // (docs/rediseno/35, "El botón de ubicación"; pedido explícito del founder al ver la primera entrega).
-  const hojaRef = useAltoHoja<HTMLDivElement>(vista === "mapa" && !!elegido);
+  const cantidad = visibles.length === 1 ? "1 lugar" : `${visibles.length} lugares`;
+  // «Encuadrar los lugares» sale cuando ninguno de los lugares (con una ficha abierta, el suyo) queda en lo que se ve del mapa, y los trae de vuelta.
+  const [fuera, setFuera] = useState(false);
+  const conEncuadrar = fuera && (ficha !== null || visibles.length > 0);
+  const encuadrarLosLugares = () => onEncuadrar(lugaresAEncuadrar({ ficha: ficha?.lugar ?? null, hayFiltros: eleccionesPuestas(eleccion) > 0, visibles, destacados: enTira, centro: ciudad.centro }));
 
   return (
     <>
-      {/* Deslizamiento de 200 ms en la dirección de la pestaña (docs/rediseno/38-transiciones-cargador.md,
-          OL-148): Mapa es la 0, Lista la 1, como en el prototipo firmado. */}
-      <PanelPestana posicion={vista === "mapa" ? 0 : 1}>
-      {vista === "mapa" ? (
-        <div className={styles.cajaMapa}>
-          <Mapa
-            lugares={pinesDelDia}
-            encuadre={encuadre}
-            ciudad={ciudad}
-            presentacion="caja"
-            onPin={setElegido}
-            elegido={elegido?.id ?? null}
-            ubicacion={punto ? { ...punto, vez } : null}
-            seguidos={idsSeguidos}
-            destacados={enTira}
-          />
-          <div className={styles.sobreMapa}>
-            {resultados.length > 0 && (
-              <ul className={`${sug.lista} ${styles.resultadosMapa}`} role="listbox" aria-label="Lugares encontrados">
-                {resultados.map((l) => (
-                  <li key={l.id}>
-                    <button type="button" className={`${sug.renglon} ${sug.sinIcono}`} onClick={() => elegirResultado(l)} role="option" aria-selected={elegido?.id === l.id}>
-                      <b>{l.nombre}</b>
-                      <small>
-                        {etiquetaTipo(l.tipo)}
-                        {calleCorta(l.direccion) ? ` · ${calleCorta(l.direccion)}` : ""}
-                      </small>
-                    </button>
-                  </li>
-                ))}
-                {enMapa.length > resultados.length && <li className={styles.resultadoMas}>Y {enMapa.length - resultados.length} más en el mapa</li>}
-              </ul>
-            )}
-            {busqueda.trim() && enMapa.length === 0 && <p className={styles.nadaMapa}>Ningún lugar se llama así. Si existe, regístralo.</p>}
-          </div>
-          {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={styles.avisoMapa} />}
-          {/* Con fecha elegida y ningún lugar con evento ese día (docs/rediseno/45, OL-174): el mapa queda vacío
-              con este aviso, en vez de solo no pintar nada. */}
-          {fecha && pinesDelDia.length === 0 && (
-            <div className={styles.vacioFecha}>
-              <b>Ningún lugar tiene eventos ese día</b>
-              Prueba con otra fecha o quita el filtro para ver todos los lugares.
-            </div>
-          )}
-          <button
-            type="button"
-            className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`}
-            onClick={onUbicacion}
-            aria-label="Mi ubicación"
-          >
-            <IconoUbicacion width={22} height={22} />
-          </button>
-          {elegido && (
-            <Hoja etiqueta="Lugar" onCerrar={() => setElegido(null)}>
-              <div ref={hojaRef} className={styles.hojaLugar}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-                <img src={elegido.portada ?? SIN_FOTO} alt="" className={styles.hojaFoto} />
-                <h3 className={styles.hojaTitulo}>{elegido.nombre}</h3>
-                <span className={styles.hojaMeta}>
-                  {enTira.includes(elegido.id) && <span className={styles.destacado}>Destacado</span>}
-                  <span>{elegido.privado ? "Solo tú lo ves" : etiquetaTipo(elegido.tipo)}</span>
-                  <span>
-                    <IconoCalendario width={15} height={15} />
-                    {elegido.proximo ? <b>{textoProximoPin(elegido.proximo)}</b> : "Sin eventos próximos"}
-                  </span>
-                </span>
-              </div>
-              <Boton href={hrefLugar(elegido)} className={styles.verFicha}>
-                Ver ficha
-              </Boton>
-            </Hoja>
-          )}
-        </div>
-      ) : busqueda.trim().length >= 2 ? (
-        // El buscador único (OL-153, bitácora 188): en Lugares, lugares primero y con más resultados (doc 41,
-        // "El buscador único"). Reemplaza aquí la lista de siempre mientras se busca; Todos/Cercanos/tipos siguen
-        // en la cabecera, y borrar la búsqueda vuelve a `ListaLugares` tal cual.
-        <BuscadorUnificado seccion="lugares" q={busqueda} ciudadSlug={ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug} ciudadNombre={ciudad.nombre} />
-      ) : (
-        <ListaLugares
-          lugares={lugaresListaDelDia}
-          tipo={tipo}
-          fecha={fecha}
-          busqueda={busqueda}
-          punto={punto}
+      <div className={styles.mapa} data-techo-hoja>
+        <Mapa
+          lugares={visibles}
+          encuadre={encuadre ?? inicial}
           ciudad={ciudad}
-          conSesion={extra.conSesion}
-          seguidos={extra.seguidos}
-          avisos={extra.avisos}
-          destacados={extra.destacados}
-          eventosSemana={extra.eventosSemana}
-          aviso={notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={styles.avisoLista} />}
+          onPin={onAbrir}
+          elegido={ficha?.lugar.id ?? null}
+          ubicacion={punto ? { ...punto, vez } : null}
+          seguidos={idsSeguidos}
+          destacados={enTira}
+          tapaAbajo={tapaAbajo}
+          onFuera={setFuera}
+          onDespejar={() => hojaRef.current?.irA("recogida")}
         />
-      )}
-      </PanelPestana>
-
-      {/* El conmutador Mapa · Lista (docs/rediseno/45, OL-174) salió del renglón 1 de la cabecera: ahora flota,
-          secundario, sobre "Registrar lugar" — mismo lugar en las dos vistas. Se retira con la hoja del pin
-          abierta, igual que "Registrar lugar" (no compiten con la hoja, que sube desde abajo). */}
-      {!elegido &&
-        (vista === "mapa" ? (
-          <button type="button" className={styles.verOtraVista} onClick={() => onCambiarVista("lista")}>
-            <IconoLista width={18} height={18} />
-            Ver en lista
-          </button>
+        {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={`${styles.avisoMapa} ${conEncuadrar ? styles.avisoMapaBajo : ""}`} />}
+        <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
+          <IconoUbicacion width={22} height={22} />
+        </BotonIcono>
+        <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.encuadrar} ${conEncuadrar ? "" : styles.encuadrarOculto}`} onClick={encuadrarLosLugares} aria-label="Encuadrar los lugares">
+          <IconoEncuadrar width={22} height={22} />
+        </BotonIcono>
+      </div>
+      <HojaLugares
+        ref={hojaRef}
+        resumen={
+          visibles.length === 0 ? (
+            "Ningún lugar"
+          ) : (
+            <>
+              {cantidad}
+              {punto && <small> · los más cercanos primero</small>}
+            </>
+          )
+        }
+        ficha={ficha && <FichaHoja key={ficha.lugar.id} lugar={ficha.lugar} piezas={ficha.piezas} onCerrar={onCerrarFicha} />}
+        entrada={entrada}
+        desde={restaurar}
+        alAsentar={alAsentar}
+        alLejos={alLejos}
+      >
+        {lista.length > 0 ? (
+          <ListaLugares lugares={lista} km={km} seguidos={extra.seguidos} avisos={extra.avisos} alAbrir={onAbrir} />
+        ) : lugares.length === 0 ? (
+          <section className={comun.vacio}>
+            <h2>Lugares</h2>
+            <p>Aún no hay lugares en {ciudad.nombre}. Registra el primero.</p>
+            <Boton href={extra.conSesion ? ALTA_DE_LUGAR : `/entrar?siguiente=${encodeURIComponent(ALTA_DE_LUGAR)}`} variante="secundario">
+              Registrar un lugar
+            </Boton>
+          </section>
         ) : (
-          <button type="button" className={styles.verOtraVista} onClick={() => onCambiarVista("mapa")}>
-            <IconoMapa width={18} height={18} />
-            Ver en mapa
-          </button>
-        ))}
-      {!elegido && <Publicar que="lugar" />}
+          <p className={styles.nada}>{porQueNoHay(eleccion)}</p>
+        )}
+      </HojaLugares>
     </>
-  );
-}
-
-/** Fallback del `<Suspense>` de `CuerpoLugares`: una caja del alto del mapa, o renglones grises, según la vista. */
-function EsqueletoCuerpoLugares({ vista }: { vista: Vista }) {
-  return vista === "mapa" ? (
-    <EsqueletoCaja className={styles.cajaMapa} />
-  ) : (
-    <div className={listaEsqueletoStyles.lista}>
-      <EsqueletoRenglones cantidad={6} />
-    </div>
   );
 }

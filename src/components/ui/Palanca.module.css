@@ -1,0 +1,55 @@
+/* La palanca (ui/Palanca): el interruptor de toda la app, un solo dibujo. La caja que se toca mide 51×45 y el riel que
+   se ve, 51×31 (el del prototipo firmado, doc 50 bloque 4): siete píxeles de aire arriba y abajo para llegar al
+   mínimo de 44 sin márgenes negativos. La perilla mide 27, con 2 de aire, y recorre 20. Dónde va (el área de un
+   renglón, la celda de una hoja) lo decide quien la usa. El pulsado es el de todos los controles (globals.css) y el
+   movimiento reducido también: ahí se apagan las transiciones. */
+.palanca {
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 45px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.palanca::before,
+.palanca::after {
+  content: "";
+  position: absolute;
+}
+.palanca::before {
+  inset: 7px 0;
+  border-radius: var(--radio-pildora);
+  background: var(--borde);
+  transition: background-color 150ms;
+}
+.palanca::after {
+  top: 9px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: var(--fondo);
+  box-shadow: var(--sombra-perilla);
+  transition: transform 150ms;
+}
+.palanca[aria-checked="true"]::before {
+  background: var(--primario);
+}
+.palanca[aria-checked="true"]::after {
+  transform: translateX(20px);
+}
+.palanca:disabled {
+  opacity: 0.6;
+}
+/* El anillo de foco rodea el riel, no la caja entera que se toca */
+.palanca:focus-visible {
+  outline: none;
+}
+.palanca:focus-visible::before {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}

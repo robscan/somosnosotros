@@ -5,8 +5,8 @@ import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import RenglonArtista from "./RenglonArtista";
 import RenglonLugar from "./RenglonLugar";
 import { Chip, Chips, Cuenta } from "./ui/Chip";
+import Grupo from "./ui/Grupo";
 import type { EstadoBotonRenglon } from "./ui/BotonRenglon";
-import styles from "./FichaPersona.module.css";
 
 /** A partir de cuántos seguidos aparecen los chips para filtrar (misma regla que las listas de Lugares y Artistas). */
 export const UMBRAL_CHIPS_SEGUIDOS = 12;
@@ -26,8 +26,8 @@ type Props = {
 };
 
 /**
- * Lo que sigue una persona: lugares (foto cuadrada) y artistas (redonda) en grupos con subtítulo, como los días de
- * "Va a". Con muchos seguidos, chips para ver solo lugares o solo artistas (pedido del founder, 2026-09-15). Los
+ * Lo que sigue una persona: lugares (foto cuadrada) y artistas (redonda) en grupos con su título pegado (`ui/Grupo`), como los
+ * días de "Va a". Con muchos seguidos, chips para ver solo lugares o solo artistas (pedido del founder, 2026-09-15). Los
  * renglones son los de las listas de Lugares y Artistas, con el botón "Sigues" de quien mira (OL-057, OL-104).
  */
 export default function ListaSeguidos({ lugares, artistas, conChips, lugar, artista }: Props) {
@@ -54,24 +54,18 @@ export default function ListaSeguidos({ lugares, artistas, conChips, lugar, arti
         </Chips>
       )}
       {verLugares && (
-        <>
-          {!conChips && <h3 className={styles.dia}>Lugares · {lugares.length}</h3>}
-          <ul className={styles.lista}>
-            {lugares.map((l) => (
-              <RenglonLugar key={l.id} lugar={l} boton={lugar?.boton(l.id, l.nombre)} />
-            ))}
-          </ul>
-        </>
+        <Grupo titulo={conChips ? undefined : "Lugares"} cuenta={lugares.length}>
+          {lugares.map((l) => (
+            <RenglonLugar key={l.id} lugar={l} boton={lugar?.boton(l.id, l.nombre)} />
+          ))}
+        </Grupo>
       )}
       {verArtistas && (
-        <>
-          {!conChips && <h3 className={styles.dia}>Artistas · {artistas.length}</h3>}
-          <ul className={styles.lista}>
-            {artistas.map((a) => (
-              <RenglonArtista key={a.id} artista={a} boton={artista?.boton(a.id, a.nombre)} />
-            ))}
-          </ul>
-        </>
+        <Grupo titulo={conChips ? undefined : "Artistas"} cuenta={artistas.length}>
+          {artistas.map((a) => (
+            <RenglonArtista key={a.id} artista={a} boton={artista?.boton(a.id, a.nombre)} />
+          ))}
+        </Grupo>
       )}
     </>
   );

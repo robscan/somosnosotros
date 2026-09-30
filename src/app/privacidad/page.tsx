@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Barra from "@/components/ui/Barra";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./legal.module.css";
 
 export const metadata: Metadata = { title: "Aviso de privacidad · Somos Nosotros" };
@@ -14,7 +15,7 @@ export const RESPONSABLE = { nombre: "Somos Nosotros", contacto: "oscar@agenciap
  */
 export default function Privacidad() {
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Aviso de privacidad</h1>
@@ -45,7 +46,7 @@ export default function Privacidad() {
 
         <h2>Fichas tomadas de catálogos públicos</h2>
         <p>
-          Parte de los artistas y lugares se trajeron del Catálogo de Artistas Potosinos de la Dirección de Cultura Municipal: nombre, disciplina, descripción y redes públicas. No copiamos fotos. Los correos de contacto de ese catálogo se guardan aparte, nadie los ve en el sitio, y se usan una sola vez para invitar a cada artista a reclamar su ficha. Si es tu ficha y quieres cambiarla o que se quite, tócala y elige «Reclamar esta ficha», o escríbenos.
+          Parte de las fichas de artistas y lugares se trajeron del Catálogo de Artistas Potosinos de la Dirección de Cultura Municipal: nombre, disciplina, descripción y redes públicas. No copiamos fotos. Los correos de contacto de ese catálogo se guardan aparte, nadie los ve en el sitio, y se usan una sola vez para invitar a cada artista a reclamar su ficha. Si es tu ficha y quieres cambiarla o que se quite, tócala y elige «Reclamar esta ficha», o escríbenos.
         </p>
 
         <h2>Con quién se comparten</h2>

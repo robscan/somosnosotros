@@ -30,6 +30,22 @@ export const IconoCampana = (p: P) => (
     <path d="M10 20a2 2 0 0 0 4 0" />
   </svg>
 );
+/** Seguir un artista: la persona con «+» (la convención de Instagram y X). Decidido, la palomita en verde. */
+export const IconoPersonaMas = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="10" cy="8" r="3.5" />
+    <path d="M3.5 20a6.5 6.5 0 0 1 13 0" />
+    <path d="M19 7.5v6M16 10.5h6" />
+  </svg>
+);
+/** Seguir un lugar: la campana con «+», porque seguir es que te avisen de lo que publica. */
+export const IconoCampanaMas = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+    <path d="M12 9.5v5M9.5 12h5" />
+  </svg>
+);
 export const IconoTelefono = (p: P) => (
   <svg {...base(p)}>
     <rect x="7" y="2.5" width="10" height="19" rx="2" />
@@ -104,6 +120,14 @@ export const IconoBoleto = (p: P) => (
     <path d="M13 8v8" strokeDasharray="2 2" />
   </svg>
 );
+/** Los filtros: dos controles deslizantes (el chip Filtros de la fila de contexto). */
+export const IconoFiltros = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+    <circle cx="15" cy="7" r="2.2" />
+    <circle cx="9" cy="17" r="2.2" />
+  </svg>
+);
 export const IconoCalendario = (p: P) => (
   <svg {...base(p)}>
     <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -120,28 +144,17 @@ export const IconoCaret = (p: P) => (
     <path d="M6 9l6 6 6-6" />
   </svg>
 );
-export const IconoLista = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
-  </svg>
-);
-export const IconoMapa = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" />
-    <path d="M9 4v14M15 6v14" />
-  </svg>
-);
-export const IconoPinMas = (p: P) => (
-  <svg {...base({ strokeWidth: 1.9, ...p })}>
-    <path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z" />
-    <path d="M12 8.5v5M9.5 11h5" />
-  </svg>
-);
 export const IconoUbicacion = (p: P) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="3" />
     <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
     <circle cx="12" cy="12" r="8" />
+  </svg>
+);
+/** Encuadrar: las cuatro esquinas de un marco (el mapa vuelve a enmarcar los lugares). */
+export const IconoEncuadrar = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3" />
   </svg>
 );
 export const IconoRuta = (p: P) => (
@@ -175,23 +188,11 @@ export const IconoWhatsApp = (p: P) => (
     <path d="M9.5 9.5c0 3 2 5 5 5l1-1.5-1.8-.8-.7.7c-.9-.4-1.5-1-1.9-1.9l.7-.7-.8-1.8z" fill="currentColor" stroke="none" />
   </svg>
 );
-export const IconoSitio = (p: P) => (
-  <svg {...base(p)}>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" />
-  </svg>
-);
 export const IconoPuntos = (p: P) => (
   <svg {...base({ fill: "currentColor", stroke: "none", ...p })}>
     <circle cx="5" cy="12" r="1.8" />
     <circle cx="12" cy="12" r="1.8" />
     <circle cx="19" cy="12" r="1.8" />
-  </svg>
-);
-export const IconoEstrellaMas = (p: P) => (
-  <svg {...base({ strokeWidth: 1.9, ...p })}>
-    <path d="M10 3l2.2 4.6 5 .7-3.6 3.5.9 5L10 14.4l-4.5 2.4.9-5L2.8 8.3l5-.7z" />
-    <path d="M19 13v6M16 16h6" />
   </svg>
 );
 export const IconoNota = (p: P) => (
@@ -350,6 +351,13 @@ export const IconoMas = (p: P) => (
     <path d="M12 5v14M5 12h14" />
   </svg>
 );
+/** Publicar, en la barra de la app: el cuadrado redondeado con «+» (la convención de Instagram), del prototipo firmado. */
+export const IconoCrear = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <path d="M12 8v8M8 12h8" />
+  </svg>
+);
 export const IconoOk = (p: P) => (
   <svg {...base({ strokeWidth: 2.2, ...p })}>
     <path d="M5 12.5l4.5 4.5L19 7.5" />
@@ -433,5 +441,13 @@ export const IconoBloquear = (p: P) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="8.5" />
     <path d="M6.5 6.5l11 11" />
+  </svg>
+);
+/** Borrar: el bote de basura (la fila «Borrar» del menú «···» de una ficha). */
+export const IconoBasura = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4.5 7h15M9.5 7V4.5h5V7" />
+    <path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.5h6.4a1.5 1.5 0 0 0 1.5-1.5l.8-12" />
+    <path d="M10 11v6M14 11v6" />
   </svg>
 );

@@ -1,0 +1,347 @@
+/* ==========================================================================
+   El renglón (ui/Renglon; OL-231, doc 50 § 5.2): una sola rejilla con áreas y cuatro pieles.
+   Tres columnas (visual | texto | acción), dos filas de texto (título y meta) y, debajo, el cuerpo. Cada hijo va a su
+   área por lo que es, sin clases de sitio: el primero es lo visual (icono, foto), `b` es el texto principal, `small`
+   el secundario y todo lo demás (un enlace, un botón, una palanca, un valor con su chevron) es la acción; esa regla
+   pesa cero, así que quien nombra su área (el cuerpo de un renglón resuelto, `.cuerpo` y `.nota`) siempre gana.
+   1. La rejilla · 2. Lista: foto, título, meta y botón · 3. Dato: lo que dice una ficha · 4. Ajuste: una fila de
+   Ajustes · 5. Resuelto: una fila de alta o de edición
+   Estados: reposo; pulsado (la app entera, y la fila entera en la lista); elegido (`aria-current`, en la lista: todavía
+   nadie lo pone); pendiente y abierto (un resuelto); apagado (un ajuste sin acción posible); suelto (un ajuste sin tarjeta).
+   ========================================================================== */
+
+/* 1. La rejilla. `.frente` es el enlace de una lista: lleva lo mismo que los demás, sin la columna de la acción. */
+.frente,
+.dato,
+.ajuste,
+.resuelto {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "foto titulo accion"
+    "foto meta accion"
+    "cuerpo cuerpo cuerpo";
+  column-gap: var(--espacio-3);
+  align-items: center;
+  align-content: center;
+  color: var(--texto);
+  text-align: left;
+  text-decoration: none;
+}
+:is(.frente, .dato, .ajuste, .resuelto) > :first-child {
+  grid-area: foto;
+}
+:is(.frente, .dato, .ajuste, .resuelto) > b {
+  grid-area: titulo;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+:is(.frente, .dato, .ajuste, .resuelto) > small {
+  grid-area: meta;
+  min-width: 0;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+:where(.dato, .ajuste, .resuelto) > :where(:not(:first-child, b, small)) {
+  grid-area: accion;
+}
+:is(.dato, .ajuste, .resuelto) > svg:first-child {
+  color: var(--texto-suave);
+}
+
+/* 2. Lista: la fila de Agenda, Lugares, Artistas y de las fichas. El enlace (`.frente`) y el botón son hermanos, nunca
+   un botón dentro de un enlace, que confunde a quien usa lector de pantalla; sin botón, el enlace ocupa la fila. */
+.lista {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  padding: var(--espacio-3) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.frente {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "foto titulo"
+    "foto meta";
+  min-width: 0;
+  min-height: var(--foto-renglon);
+  -webkit-tap-highlight-color: transparent;
+}
+.frente > :first-child {
+  align-self: start;
+}
+/* El botón de acción de la fila (ui/BotonRenglon): el icono a secas, en el color de acción (H-19); decidido, el círculo verde de
+   siempre. */
+.lista > button:not([aria-pressed="true"]) {
+  color: var(--primario);
+}
+.foto {
+  width: var(--foto-renglon);
+  height: var(--foto-renglon);
+  border-radius: var(--radio-chico);
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+/* Artistas: redonda, porque es gente; cuadrada es un lugar (decisión 1 de Artistas). */
+.redonda {
+  border-radius: 50%;
+}
+.frente > b {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* el título de un renglón llega a dos líneas: el resto se corta con puntos suspensivos (H-09) */
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-titulo);
+  font-weight: var(--peso-lista-titulo);
+  font-variation-settings: var(--ancho-lista-titulo);
+  line-height: var(--interlinea-lista);
+  text-wrap: balance;
+}
+/* La meta: un dato por línea (un evento, un lugar, un artista). Ningún dato pasa del borde de su columna (H-17): el que es
+   una sola línea se corta con puntos suspensivos, y el que es una dirección se parte. */
+.frente > small {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: var(--espacio-1);
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-meta);
+  font-variation-settings: var(--ancho-lista-meta);
+}
+.frente > small > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.frente > small > span > :is(span, b) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Lo primero de la línea de un evento no se corta: una etiqueta como «Te interesa» y el cuándo (`b`: la hora y, en Nuevos, el día). Cede lo
+   último, el precio y cuántos van; y si aun así no cabe, la línea se recorta al borde (`overflow`) en vez de pisar el botón. */
+.frente > small > span > :is(b, span:not(:last-child)) {
+  flex: none;
+}
+.frente > small > span > svg {
+  flex: none;
+}
+.frente > small > .envuelve {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.frente > small b {
+  color: var(--texto);
+  font-weight: 500;
+}
+/* Pulsado y, con ratón, al pasar por encima: la fila entera se levanta en blanco con una marca del color de acción a
+   la izquierda; el elegido (`aria-current`) va en el tono suave del color de acción. El resaltado llega a los bordes
+   del gutter sin mover nada (sombra extendida). Va en la fila (con `:has()`) y no en el enlace: parado ahí se cortaba
+   antes de la columna del botón y la fila se veía resaltada a medias. Tocar el botón no cuenta: tiene su estado. */
+.lista:has(.frente:active) {
+  background: var(--fondo);
+  box-shadow: 0 0 0 var(--espacio-5) var(--fondo);
+}
+@media (hover: hover) {
+  .lista {
+    transition:
+      background-color 120ms,
+      box-shadow 120ms;
+  }
+  .lista:has(.frente:hover) {
+    background: var(--fondo);
+    box-shadow:
+      0 0 0 var(--espacio-5) var(--fondo),
+      inset 3px 0 0 var(--primario);
+  }
+  .lista:has(.frente:hover) .frente > b {
+    color: var(--primario);
+  }
+}
+.lista:has(.frente[aria-current="true"]) {
+  background: var(--primario-suave);
+  box-shadow:
+    0 0 0 var(--espacio-5) var(--primario-suave),
+    inset 3px 0 0 var(--primario);
+}
+.frente:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: -2px;
+  border-radius: var(--radio-chico);
+}
+
+/* 3. Dato: lo que dice una ficha, con la letra de la lista. Icono (o foto redonda, o la pila de avatares), principal y secundario;
+   si la fila lleva a otra parte, toda ella es el enlace (`<a class="dato">`) o el botón, y un chevron lo dice. */
+.dato {
+  min-height: var(--control);
+  padding: var(--espacio-2) 0;
+}
+.dato > b {
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-titulo);
+  font-weight: var(--peso-lista-titulo);
+  font-variation-settings: var(--ancho-lista-titulo);
+  line-height: var(--interlinea-lista);
+}
+.dato > small {
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-meta);
+  font-variation-settings: var(--ancho-lista-meta);
+}
+:is(a, button).dato {
+  width: 100%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.dato > svg:not(:first-child) {
+  width: 16px;
+  height: 16px;
+  color: var(--texto-suave);
+}
+.dato > img:first-child {
+  width: var(--espacio-8);
+  height: var(--espacio-8);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--fondo-miniatura);
+}
+
+/* 4. Ajuste: una fila de Ajustes. Es un enlace o un botón (toda ella se toca) o un `<li>` (información, palanca). La
+   acción es un chevron, un valor con su chevron o una `Palanca`. */
+.ajuste {
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
+  width: 100%;
+  min-height: 52px;
+  padding: var(--espacio-2) 14px;
+  border: none;
+  background: none;
+  font: inherit;
+}
+:is(a, button).ajuste {
+  cursor: pointer;
+}
+.ajuste > b {
+  font-size: var(--letra-md);
+  font-weight: 600;
+}
+.ajuste > small {
+  line-height: 1.3;
+}
+.ajuste > svg:not(:first-child),
+.ajuste > span > svg {
+  width: 16px;
+  height: 16px;
+}
+.ajuste > svg:not(:first-child) {
+  color: var(--texto-suave);
+}
+.ajuste > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+/* Suelta: una fila de palanca en una hoja o en una página, sin tarjeta de filas alrededor. Sin el aire de los lados, que ya lo
+   pone quien la aloja. */
+.sola {
+  padding-inline: 0;
+}
+/* Sin acción posible aquí (dice por qué en su detalle): la etiqueta, en gris. */
+.apagado > b {
+  color: var(--texto-suave);
+}
+
+/* La tarjeta de filas: una caja con borde que junta renglones `ajuste` con una raya entre ellos (la hoja «Dónde estás»). */
+.tarjeta {
+  list-style: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  overflow: hidden;
+}
+.tarjeta > li + li {
+  border-top: 1px solid var(--borde);
+}
+
+/* 5. Resuelto: icono | clave / valor | acción; el cuerpo, al abrir, debajo a lo ancho. La clave (`small`) va arriba del
+   valor (`b`). `.renglones` es la lista que los junta, uno por fila y con aire entre ellos. */
+.renglones {
+  list-style: none;
+  display: grid;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
+}
+.resuelto {
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "foto meta accion"
+    "foto titulo accion"
+    "cuerpo cuerpo cuerpo";
+  min-height: 60px;
+  padding: 10px 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.resuelto > small {
+  font-size: var(--letra-xs);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.resuelto > b {
+  font-size: var(--letra-md);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.resuelto > .falta {
+  color: var(--texto-suave);
+  font-weight: 500;
+}
+/* La foto ya puesta ocupa el sitio del icono. */
+.resuelto > img:first-child {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.pendiente {
+  border-style: dashed;
+}
+.abierto {
+  border-color: var(--texto);
+}
+/* Salidas por intención (la cámara, Estoy aquí, la lupa): varios `BotonIcono` con borde en el sitio de la acción. */
+.opciones {
+  display: flex;
+  gap: 6px;
+}
+/* El cuerpo abierto: chips, una entrada, subir foto; y la nota que explica qué falta. */
+.cuerpo {
+  grid-area: cuerpo;
+  display: grid;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-3);
+}
+.cuerpo[hidden] {
+  display: none;
+}
+.nota {
+  grid-area: cuerpo;
+  padding-top: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.nota[role="alert"] {
+  color: var(--error);
+}

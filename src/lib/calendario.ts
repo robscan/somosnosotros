@@ -169,8 +169,8 @@ export function pasoMasCercano(hora: string, paso = 15): string {
   return `${String(Math.floor(acotado / 60)).padStart(2, "0")}:${String(acotado % 60).padStart(2, "0")}`;
 }
 
-/** Los días (YYYY-MM-DD) en que hay al menos un evento, con cuántos, para el calendario propio de `ui/ChipFecha` y
- *  `ui/SelectorFecha` (OL-218): qué días dejar disponibles y cuáles desactivar por "sin eventos". */
+/** Los días (YYYY-MM-DD) en que hay al menos un evento, con cuántos, para el calendario de la hoja Cuándo (OL-218,
+ *  doc 50 P5): qué días llevan su punto. */
 export type DiasActivos = Map<string, number>;
 
 /**
@@ -193,13 +193,13 @@ function rangoDelEvento(e: EventoConRango): { inicio: string; fin: string } {
   return { inicio, fin: finCalculado < inicio ? inicio : finCalculado };
 }
 
-/** ¿Ocupa este evento el día `fecha` (YYYY-MM-DD)? Un evento de varios días cuenta en cada día que ocupa, desde
- *  su día de inicio hasta el de fin (inclusive) — la misma regla que `diasActivosCalendario`, para un evento
- *  solo: la usan Agenda (`filtrarAgenda`) y Lugares (`diasConEvento`) al filtrar por el día del chip, para que
- *  nunca desentonen con lo que el calendario ya marcó como disponible. */
-export function ocupaDia(e: EventoConRango, fecha: string): boolean {
+/** ¿Ocupa este evento algún día entre `desde` y `hasta` (YYYY-MM-DD, ambos incluidos; un día es `desde` = `hasta`)? Un
+ *  evento de varios días cuenta en cada día que ocupa, desde su día de inicio hasta el de fin (inclusive), aunque empiece
+ *  antes del rango o termine después — la misma regla que `diasActivosCalendario`, para un evento solo: Agenda la usa
+ *  (`filtrarAgenda`) al filtrar por Cuándo, para que nunca desentone con lo que el calendario ya marcó como disponible. */
+export function ocupaRango(e: EventoConRango, desde: string, hasta: string): boolean {
   const { inicio, fin } = rangoDelEvento(e);
-  return fecha >= inicio && fecha <= fin;
+  return inicio <= hasta && fin >= desde;
 }
 
 export function diasActivosCalendario(eventos: EventoConRango[]): DiasActivos {

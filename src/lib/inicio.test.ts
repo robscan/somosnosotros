@@ -5,19 +5,15 @@ import {
   carrilEstaSemana,
   carrilEstelar,
   carrilNuevos,
-  carrilPopulares,
   carrilTusPlanes,
   eventosEstaSemana,
-  idsUsadosEnAgenda,
-  limiteBusqueda,
   MINIMO_NUEVOS,
-  MINIMO_POPULARES,
-  ordenBusqueda,
   sinRepetidos,
   TOPE_ESTA_SEMANA,
   TOPE_ESTELAR,
   tituloEstelar,
 } from "./inicio";
+import { corteNuevos, eventosNuevos, listarAgenda, SIN_FILTROS } from "./agenda";
 import type { Agenda } from "./cargarAgenda";
 
 const ahora = new Date("2026-09-23T18:00:00Z");
@@ -76,55 +72,53 @@ describe("Inicio: carril Tus planes (Voy + Me interesa juntos, por fecha)", () =
   it("sin nada en ninguna de las dos listas, no ofrece nada (el carril no existe)", () => expect(carrilTusPlanes([], [])).toEqual([]));
 });
 
-describe("Inicio: carril Populares", () => {
-  it("exige el mínimo de Destacados (3 'Voy') y descarta lo que no llega", () => {
-    expect(MINIMO_POPULARES).toBe(3);
-    const vistos = new Set<string>();
-    const r = carrilPopulares([evento("poco", { van: 2 }), evento("justo", { van: 3 })], vistos);
-    expect(r.map((e) => e.id)).toEqual(["justo"]);
-  });
-  it("ordena de más a menos 'Voy'; a igualdad, el orden de siempre de la agenda", () => {
-    const vistos = new Set<string>();
-    const r = carrilPopulares([
-      evento("bajo", { van: 4, inicio: "2026-09-24T01:00:00Z" }),
-      evento("alto", { van: 20, inicio: "2026-09-25T01:00:00Z" }),
-      evento("empate-b", { van: 4, titulo: "b", inicio: "2026-09-24T01:00:00Z" }),
-    ], vistos);
-    // "bajo" y "empate-b" empatan en van: desempata compararEventos por título ("b" antes que "bajo").
-    expect(r.map((e) => e.id)).toEqual(["alto", "empate-b", "bajo"]);
-  });
-  it("no repite lo ya visto en un carril anterior (tus planes, estelar, esta semana)", () => {
-    const vistos = new Set(["ya-usado"]);
-    const r = carrilPopulares([evento("ya-usado", { van: 50 }), evento("nuevo", { van: 10 })], vistos);
-    expect(r.map((e) => e.id)).toEqual(["nuevo"]);
-  });
-  it("vacío si nada llega al mínimo (el carril, entonces, no se muestra)", () => {
-    expect(carrilPopulares([evento("a", { van: 1 })], new Set())).toEqual([]);
-  });
-});
-
 describe("Inicio: carril estelar (Seleccionados para ti)", () => {
-  it("ordena por destacado, luego por 'Voy', luego por fecha", () => {
-    const destacados = new Set(["d"]);
+  it("los destacados salen primero, en el orden de la administración (no el de fecha ni el de «Voy») y sean o no de lo que se sigue", () => {
     const vistos = new Set<string>();
-    const r = carrilEstelar([
-      evento("a", { van: 20, inicio: "2026-09-24T01:00:00Z" }),
-      evento("d", { van: 1, inicio: "2026-09-25T01:00:00Z" }),
-      evento("b", { van: 20, titulo: "b", inicio: "2026-09-24T01:00:00Z" }),
-    ], destacados, vistos);
-    // "d" no es el que más va, pero es destacado: va primero; "a" y "b" empatan en van, desempata compararEventos.
-    expect(r.map((e) => e.id)).toEqual(["d", "a", "b"]);
+    const r = carrilEstelar(
+      [evento("d2", { van: 0, inicio: "2026-09-28T01:00:00Z" }), evento("d1", { van: 5, inicio: "2026-09-24T01:00:00Z" })], // la administración puso d2 antes que d1
+      [evento("a", { van: 30, inicio: "2026-09-24T01:00:00Z" }), evento("b", { van: 1, inicio: "2026-09-25T01:00:00Z" })],
+      vistos,
+    );
+    expect(r.map((e) => e.id)).toEqual(["d2", "d1", "a", "b"]);
   });
-  it("tiene tope de 12, aunque haya más favoritos", () => {
-    const vistos = new Set<string>();
-    const muchos = Array.from({ length: 20 }, (_, i) => evento(`e${i}`, { van: i }));
+  it("después de los destacados, el resto de lo que se sigue va por «Voy» y luego por fecha", () => {
+    const r = carrilEstelar(
+      [evento("d")],
+      [
+        evento("poco", { van: 1, inicio: "2026-09-24T01:00:00Z" }),
+        evento("tarde", { van: 20, titulo: "tarde", inicio: "2026-09-26T01:00:00Z" }),
+        evento("temprano", { van: 20, titulo: "temprano", inicio: "2026-09-25T01:00:00Z" }),
+      ],
+      new Set(),
+    );
+    expect(r.map((e) => e.id)).toEqual(["d", "temprano", "tarde", "poco"]); // empatan en «Voy»: desempata la fecha
+  });
+  it("un destacado que además se sigue sale una sola vez, en su lugar de destacado", () => {
+    const d = evento("d", { van: 1, inicio: "2026-09-28T01:00:00Z" });
+    const r = carrilEstelar([d], [evento("a", { van: 50 }), d], new Set());
+    expect(r.map((e) => e.id)).toEqual(["d", "a"]);
+  });
+  it("tiene tope de 12, aunque haya más entre destacados y favoritos; los destacados se conservan y el corte cae en los favoritos", () => {
     expect(TOPE_ESTELAR).toBe(12);
-    expect(carrilEstelar(muchos, new Set(), vistos)).toHaveLength(12);
+    const destacados = Array.from({ length: 5 }, (_, i) => evento(`d${i}`));
+    const muchos = Array.from({ length: 20 }, (_, i) => evento(`e${i}`, { van: i }));
+    const r = carrilEstelar(destacados, muchos, new Set());
+    expect(r).toHaveLength(12);
+    expect(r.slice(0, 5).map((e) => e.id)).toEqual(["d0", "d1", "d2", "d3", "d4"]);
+    expect(r.slice(5, 8).map((e) => e.id)).toEqual(["e19", "e18", "e17"]); // entre los favoritos, los que más van
   });
   it("no repite lo que ya usó otro carril", () => {
     const vistos = new Set(["ya-usado"]);
-    const r = carrilEstelar([evento("ya-usado"), evento("nuevo")], new Set(), vistos);
+    const r = carrilEstelar([evento("ya-usado")], [evento("ya-usado"), evento("nuevo")], vistos);
     expect(r.map((e) => e.id)).toEqual(["nuevo"]);
+  });
+  it("solo queda como visto lo que sale: lo que deja fuera el tope de 12 puede salir en otro carril", () => {
+    const vistos = new Set<string>();
+    const muchos = Array.from({ length: 15 }, (_, i) => evento(`e${i}`, { van: 100 - i }));
+    const r = carrilEstelar([], muchos, vistos);
+    expect(vistos).toEqual(new Set(r.map((e) => e.id)));
+    expect(vistos.has("e14")).toBe(false);
   });
   it("el título dice cuál de los dos es: con favoritos, 'Seleccionados para ti'; sin ellos, el respaldo 'Destacados'", () => {
     expect(tituloEstelar(true)).toBe("Seleccionados para ti");
@@ -158,7 +152,7 @@ describe("Inicio: carril Esta semana (todos los próximos 7 días, tope 20)", ()
     const r = carrilEstaSemana([evento("b", { inicio: "2026-09-25T01:00:00Z" }), evento("a", { inicio: "2026-09-24T01:00:00Z" })], vistos, ahora);
     expect(r.map((e) => e.id)).toEqual(["a", "b"]);
   });
-  it("sin mínimo: una sola tarjeta no vacía el carril (a diferencia de Populares o Nuevos eventos)", () => {
+  it("sin mínimo: una sola tarjeta no vacía el carril (a diferencia de Nuevos eventos)", () => {
     const vistos = new Set<string>();
     expect(carrilEstaSemana([evento("sola")], vistos, ahora).map((e) => e.id)).toEqual(["sola"]);
   });
@@ -208,18 +202,35 @@ describe("Inicio: carril Nuevos eventos (publicado hace ≤7 días Y empieza des
     // Con "b" descartado por antiguo, solo quedan 2 candidatos ("a", "c"): bajo el mínimo, el carril no se pinta.
     expect(carrilNuevos([dentroDe7, fueraDe7, otroDentro], vistos, ahora)).toEqual([]);
   });
-  it("con menos de 3 candidatos no se pinta (ni con 1 ni con 2) — mismo umbral que Populares", () => {
-    expect(MINIMO_NUEVOS).toBe(MINIMO_POPULARES);
+  it("con menos de 3 candidatos no se pinta (ni con 1 ni con 2) — el mínimo de Destacados", () => {
+    expect(MINIMO_NUEVOS).toBe(3);
     const uno = [evento("a", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(1) })];
     expect(carrilNuevos(uno, new Set(), ahora)).toEqual([]);
     const dos = [...uno, evento("b", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(2) })];
     expect(carrilNuevos(dos, new Set(), ahora)).toEqual([]);
   });
-  it("un candidato descartado por no llegar al mínimo no toca el conjunto compartido (sigue disponible para Cercanos)", () => {
+  it("un candidato descartado por no llegar al mínimo no toca el conjunto compartido", () => {
     const vistos = new Set(["ya-usado"]);
     const r = carrilNuevos([evento("ya-usado", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(1) }), evento("solo", { creado_en: ahora.toISOString(), inicio: fechaFueraDeEstaSemana(2) })], vistos, ahora);
     expect(r).toEqual([]);
     expect(vistos).toEqual(new Set(["ya-usado"]));
+  });
+  it("«nuevo» es lo mismo que en la pestaña Nuevos de Agenda: el carril trae lo de la pestaña que no cae en Esta semana ni sale en otro carril", () => {
+    const hace = (dias: number) => new Date(ahora.getTime() - dias * 86400000).toISOString();
+    const lejos = (id: string, publicadoHace: number, horas: number) => eventoAgenda(id, { creado_en: hace(publicadoHace), inicio: fechaFueraDeEstaSemana(horas), fin: null });
+    const eventos = [lejos("a", 1, 1), lejos("b", 2, 2), lejos("c", 3, 3), lejos("d", 4, 4), lejos("viejo", 9, 5), eventoAgenda("de-la-semana", { creado_en: hace(0.5) })];
+    const pestana = (desde: number) => listarAgenda(agenda({ eventos }), SIN_FILTROS, desde).map((e) => e.id);
+    // Sin última visita, nuevo es lo de los últimos 7 días, en los dos: «viejo» no entra a ninguno y «de-la-semana» solo a la pestaña (en el carril sería repetirlo).
+    expect(pestana(corteNuevos(null, ahora))).toEqual(["de-la-semana", "a", "b", "c", "d"]);
+    const carril = carrilNuevos(eventos, new Set(), ahora);
+    expect(carril.map((e) => e.id)).toEqual(["a", "b", "c", "d"]);
+    // Con una última visita, `CarrilNuevos` recorta en el teléfono con la misma función que la pestaña: lo que ya se vio se va de los dos.
+    const desdeLaVisita = corteNuevos(hace(2.5), ahora);
+    expect(pestana(desdeLaVisita)).toEqual(["de-la-semana", "a", "b"]);
+    expect(eventosNuevos(carril, desdeLaVisita).map((e) => e.id)).toEqual(["a", "b"]);
+    // Lo que sale en un carril anterior no se repite en este carril, pero la pestaña lo sigue teniendo.
+    expect(carrilNuevos(eventos, new Set(["b"]), ahora).map((e) => e.id)).toEqual(["a", "c", "d"]);
+    expect(pestana(corteNuevos(null, ahora))).toContain("b");
   });
   it("con el mínimo cumplido, sí extiende el conjunto compartido (no repite lo ya visto en un carril anterior)", () => {
     const vistos = new Set(["ya-usado"]);
@@ -236,30 +247,25 @@ describe("Inicio: carril Nuevos eventos (publicado hace ≤7 días Y empieza des
 });
 
 function eventoAgenda(id: string, cambios: Partial<import("./agenda").EventoAgenda> = {}): import("./agenda").EventoAgenda {
-  return { id, titulo: id, inicio: "2026-09-24T01:00:00Z", fin: "2026-09-24T03:00:00Z", imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, zona: "America/Mexico_City", lugar: null, creado_en: "2026-09-01T00:00:00Z", lat: null, lng: null, van: 0, ...cambios };
+  return { id, titulo: id, inicio: "2026-09-24T01:00:00Z", fin: "2026-09-24T03:00:00Z", imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, zona: "America/Mexico_City", lugar: null, creado_en: "2026-09-01T00:00:00Z", van: 0, ...cambios };
 }
 
-describe("Inicio: los carriles de una sola agenda (estelar, esta semana, populares, nuevos), sin repetirse", () => {
-  it("con favoritos: el estelar es 'Seleccionados para ti'; 'Esta semana' se lleva lo que no siguió (aunque sea popular), Populares solo ve lo de otras semanas", () => {
+describe("Inicio: los carriles de una sola agenda (estelar, esta semana, nuevos), sin repetirse", () => {
+  it("con favoritos: el estelar es 'Seleccionados para ti' y 'Esta semana' se lleva lo que no siguió", () => {
     const seguido = eventoAgenda("favorito", { lugar_id: "lugar-1" }); // dentro de la semana (fecha por defecto)
-    // Igual de popular que el de abajo, pero dentro de la semana: se lo lleva "Esta semana" antes de que Populares
-    // tenga oportunidad — el mismo caso que demuestra el prototipo firmado con "Festival Independencia Cultural".
-    const popularEstaSemana = eventoAgenda("popular-esta-semana", { van: 10 });
-    const popularLejano = eventoAgenda("popular-lejano", { van: 10, inicio: "2026-10-25T01:00:00Z", fin: "2026-10-25T03:00:00Z" });
-    const r = calcularCarrilesAgenda(agenda({ eventos: [seguido, popularEstaSemana, popularLejano], seguidos: ["lugar-1"] }), ahora);
+    const otroDeLaSemana = eventoAgenda("otro-de-la-semana", { van: 10 });
+    const lejano = eventoAgenda("lejano", { van: 10, inicio: "2026-10-25T01:00:00Z", fin: "2026-10-25T03:00:00Z" });
+    const r = calcularCarrilesAgenda(agenda({ eventos: [seguido, otroDeLaSemana, lejano], seguidos: ["lugar-1"] }), ahora);
     expect(r.titulo).toBe("Seleccionados para ti");
     expect(r.estelar.map((e) => e.id)).toEqual(["favorito"]);
-    expect(r.estaSemana.map((e) => e.id)).toEqual(["popular-esta-semana"]);
-    expect(r.populares.map((e) => e.id)).toEqual(["popular-lejano"]);
+    expect(r.estaSemana.map((e) => e.id)).toEqual(["otro-de-la-semana"]);
     expect(r.nuevos).toEqual([]);
-    expect(r.vistos).toEqual(new Set(["favorito", "popular-esta-semana", "popular-lejano"]));
   });
-  it("un evento que calificaría para varios carriles solo sale en el primero (estelar gana sobre esta semana, populares y nuevos)", () => {
+  it("un evento que calificaría para varios carriles solo sale en el primero (estelar gana sobre esta semana y nuevos)", () => {
     const e = eventoAgenda("el-mismo", { lugar_id: "lugar-1", van: 50, creado_en: ahora.toISOString() });
     const r = calcularCarrilesAgenda(agenda({ eventos: [e], seguidos: ["lugar-1"] }), ahora);
     expect(r.estelar.map((x) => x.id)).toEqual(["el-mismo"]);
     expect(r.estaSemana).toEqual([]);
-    expect(r.populares).toEqual([]);
     expect(r.nuevos).toEqual([]);
   });
   it("sin favoritos (o sin sesión), el estelar cae al respaldo 'Destacados' — ya sin recorte de 7 días", () => {
@@ -269,40 +275,40 @@ describe("Inicio: los carriles de una sola agenda (estelar, esta semana, popular
     expect(r.estelar.map((e) => e.id)).toEqual(["destacado"]);
     expect(r.estaSemana).toEqual([]);
   });
+  it("con sesión y seguimientos, un destacado de un lugar que no se sigue sale en «Seleccionados para ti», primero, y no se repite en «Esta semana» ni «Nuevos»", () => {
+    const seguido = eventoAgenda("seguido", { lugar_id: "lugar-1", van: 9 });
+    const destacadoAjeno = eventoAgenda("destacado-ajeno", { lugar_id: "lugar-2", van: 0, inicio: "2026-09-27T01:00:00Z", fin: "2026-09-27T03:00:00Z" }); // esta semana y no se sigue
+    const otro = eventoAgenda("otro-de-la-semana", { lugar_id: "lugar-3", van: 3 });
+    const publicadoHaceUnDia = "2026-09-22T18:00:00Z";
+    const lejanos = ["n1", "n2", "n3"].map((id) => eventoAgenda(id, { inicio: "2026-10-20T01:00:00Z", fin: "2026-10-20T03:00:00Z", creado_en: publicadoHaceUnDia }));
+    const r = calcularCarrilesAgenda(agenda({ eventos: [seguido, destacadoAjeno, otro, ...lejanos], seguidos: ["lugar-1"], destacados: [{ id: "destacado-ajeno", motivo: "elegido", hasta: null, van: 0 }] }), ahora);
+    expect(r.titulo).toBe("Seleccionados para ti");
+    expect(r.estelar.map((e) => e.id)).toEqual(["destacado-ajeno", "seguido"]);
+    expect(r.estaSemana.map((e) => e.id)).toEqual(["otro-de-la-semana"]);
+    expect(r.nuevos.map((e) => e.id).sort()).toEqual(["n1", "n2", "n3"]);
+    const todos = [...r.estelar, ...r.estaSemana, ...r.nuevos].map((e) => e.id);
+    expect(new Set(todos).size).toBe(todos.length);
+  });
+  it("con sesión y seguimientos, los destacados van en el orden de la administración y los demás favoritos, después", () => {
+    const f1 = eventoAgenda("f1", { lugar_id: "lugar-1", van: 40 });
+    const d1 = eventoAgenda("d1", { lugar_id: "lugar-9", inicio: "2026-09-25T01:00:00Z" });
+    const d2 = eventoAgenda("d2", { lugar_id: "lugar-8", inicio: "2026-09-24T02:00:00Z" });
+    const r = calcularCarrilesAgenda(
+      agenda({ eventos: [f1, d1, d2], seguidos: ["lugar-1"], destacados: [{ id: "d1", motivo: "elegido", hasta: null, van: 0 }, { id: "d2", motivo: "elegido", hasta: null, van: 0 }] }),
+      ahora,
+    );
+    expect(r.estelar.map((e) => e.id)).toEqual(["d1", "d2", "f1"]); // d1 antes que d2 aunque d2 sea más temprano, y f1 (el que más va) después
+  });
+  it("con más de 12 candidatos, el estelar se corta a 12 y los que no caben quedan para «Esta semana»", () => {
+    const eventos = Array.from({ length: 14 }, (_, i) => eventoAgenda(`e${i}`, { lugar_id: `lugar-${i}`, van: 100 - i }));
+    const r = calcularCarrilesAgenda(agenda({ eventos, seguidos: eventos.map((e) => e.lugar_id!) }), ahora);
+    expect(r.estelar).toHaveLength(12);
+    expect(r.estaSemana.map((e) => e.id).sort()).toEqual(["e12", "e13"]);
+  });
   it("'Tus planes' no le quita eventos a los carriles de descubrir: lo que ya está en tus planes sigue saliendo aquí (founder, OL-221)", () => {
     const enTusPlanes = eventoAgenda("en-tus-planes", { lugar_id: "lugar-1", van: 50 });
     expect(carrilTusPlanes([enTusPlanes], []).map((e) => e.id)).toEqual(["en-tus-planes"]);
     const r = calcularCarrilesAgenda(agenda({ eventos: [enTusPlanes], seguidos: ["lugar-1"] }), ahora);
     expect(r.estelar.map((e) => e.id)).toEqual(["en-tus-planes"]);
-  });
-});
-
-describe("Inicio: idsUsadosEnAgenda", () => {
-  it("solo lo que calculó de esta agenda (sin 'Tus planes', OL-221)", () => {
-    const popular = eventoAgenda("popular", { van: 10, inicio: "2026-10-25T01:00:00Z", fin: "2026-10-25T03:00:00Z" });
-    const ids = idsUsadosEnAgenda(agenda({ eventos: [popular] }), ahora);
-    expect(new Set(ids)).toEqual(new Set(["popular"]));
-  });
-});
-
-describe("Inicio: buscador único, orden de grupos", () => {
-  it("desde Inicio o Agenda: eventos, lugares, artistas", () => {
-    expect(ordenBusqueda("inicio")).toEqual(["eventos", "lugares", "artistas"]);
-    expect(ordenBusqueda("agenda")).toEqual(["eventos", "lugares", "artistas"]);
-  });
-  it("desde Lugares: lugares primero", () => expect(ordenBusqueda("lugares")).toEqual(["lugares", "eventos", "artistas"]));
-  it("desde Artistas: artistas primero", () => expect(ordenBusqueda("artistas")).toEqual(["artistas", "eventos", "lugares"]));
-});
-
-describe("Inicio: buscador único, cuántos por grupo", () => {
-  it("la sección propia trae más (5) que las otras (3)", () => {
-    expect(limiteBusqueda("lugares", "lugares")).toBe(5);
-    expect(limiteBusqueda("lugares", "eventos")).toBe(3);
-    expect(limiteBusqueda("lugares", "artistas")).toBe(3);
-  });
-  it("desde Inicio, sin sección propia, las tres van con el mismo tope corto", () => {
-    expect(limiteBusqueda("inicio", "eventos")).toBe(3);
-    expect(limiteBusqueda("inicio", "lugares")).toBe(3);
-    expect(limiteBusqueda("inicio", "artistas")).toBe(3);
   });
 });

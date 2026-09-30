@@ -1,0 +1,22 @@
+{
+  "cifras": {
+    "bloquesDuplicados": 2,
+    "medidasEnDuro": 344
+  },
+  "excepciones": {
+    "zIndex": [],
+    "colores": [
+      { "archivo": "app/globals.css", "selector": "[data-sigue]", "porque": "Permanente: la máscara solo usa la transparencia; el color de su parada no se ve." },
+      { "archivo": "app/artistas/[id]/letrero/letrero.module.css", "porque": "Permanente: el letrero se imprime, en blanco y negro fijos, sin depender del tema." },
+      { "archivo": "app/entrar/FormularioEntrar.module.css", "porque": "Permanente: los botones de Apple y de Google llevan los colores y bordes de sus guías de marca." },
+      { "archivo": "components/HojaInstalar.module.css", "porque": "Permanente: azul de sistema de iOS en la pista de «Agregar a inicio»." },
+      { "archivo": "components/ui/CodigoQr.module.css", "porque": "Permanente: el código QR va sobre blanco puro para que las cámaras lo lean con cualquier tema." }
+    ],
+    "vw100": [],
+    "margenesNegativos": [
+      { "archivo": "app/eventos/SelectorQuien.module.css", "selector": ".elegido > svg", "porque": "Permanente: la ✕ descuenta su aire interno para quedar donde quedaba la letra." },
+      { "archivo": "app/obra/[id]/mando/mando.module.css", "selector": ".tarjeta[aria-expanded=\"true\"] > span::after", "porque": "Permanente: centra a ojo el chevron girado del selector de la obra (1 px)." },
+      { "archivo": "components/ui/Aviso.module.css", "selector": ".cerrar", "porque": "Permanente: la ✕ mide 44 para el toque y no debe engordar la fila del aviso." }
+    ]
+  }
+}

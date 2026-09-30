@@ -8,6 +8,7 @@ import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { zonaDelSitio } from "@/lib/zona";
 import FormularioEvento from "../../FormularioEvento";
 import { actualizarEvento } from "../../acciones";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 export const metadata = { title: "Editar evento · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -30,13 +31,13 @@ export default async function EditarEvento({ params }: { params: Promise<{ id: s
   if (id !== evento.slug) permanentRedirect(`${hrefEvento(evento)}/editar`);
   if (actual.perfil.rol !== "admin" && evento.creado_por !== actual.perfil.id) redirect(hrefEvento(evento));
   const supabase = await clienteServidor();
-  // `privado`: ver la misma nota en `eventos/nuevo/page.tsx` -la política de lectura ya deja pasar los privados
+  // `privado`: ver la misma nota en `nuevo/page.tsx` -la política de lectura ya deja pasar los privados
   // de la propia cuenta, así que "¿Dónde es?" los puede ofrecer entre las sugerencias (OL-179).
   const { data: lugares } = (await supabase?.from("lugares").select("id, nombre, tipo, direccion, lat, lng, portada, zona, privado").eq("visible", true).order("nombre")) ?? { data: [] };
   const { data: privado } = evento.sitio_reservado ? ((await supabase?.from("eventos_sitio_privado").select("direccion, lat, lng, indicaciones, revelar_desde").eq("evento_id", evento.id).maybeSingle()) ?? { data: null }) : { data: null };
   const [quien, mios] = await Promise.all([cargarQuien(evento.id), cargarMisArtistas(actual.perfil.id)]);
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: hrefEvento(evento), texto: "Volver al evento" }} />
       <h1 className="titulo">Editar evento</h1>
       <FormularioEvento accion={actualizarEvento.bind(null, evento.id)} lugares={(lugares ?? []) as LugarResumen[]} evento={evento} revision={evento.actualizado_en} privado={privado as SitioPrivado | null} zonaSitio={zonaDelSitio(evento, privado as SitioPrivado | null)} modo="editar" usuarioId={actual.perfil.id} quienInicial={quien} mios={mios} esAdmin={actual.perfil.rol === "admin"} />

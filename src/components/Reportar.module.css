@@ -52,13 +52,3 @@
   align-items: center;
   gap: var(--espacio-3);
 }
-.enviar {
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-4);
-  border: none;
-  border-radius: var(--radio);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-weight: 600;
-  cursor: pointer;
-}

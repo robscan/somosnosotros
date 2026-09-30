@@ -26,9 +26,9 @@ beforeEach(() => {
 
 /**
  * elegirAvisos: se llama tras el primer "Voy"/"Seguir" (la hoja ConsentimientoAvisos, en una ficha o en un
- * renglón de lista) y desde Mi perfil. Ninguno de los dos necesita que revalide de inmediato — la hoja ya avisa
- * lo decidido por `onDecidido` (arreglo de la primera vuelta de OL-212) y Mi perfil hace su propio
- * `router.refresh()` — así que desde la tercera vuelta la revalidación se aplaza con `after`.
+ * renglón de lista) y desde Mi perfil. Ninguno de los dos necesita que revalide de inmediato — la pastilla de la ficha
+ * ya no dice qué avisos hay (P6) y Mi perfil hace su propio `router.refresh()` — así que desde la tercera vuelta la
+ * revalidación se aplaza con `after`.
  */
 describe("elegirAvisos", () => {
   it("sin sesión, no guarda ni revalida", async () => {

@@ -1,0 +1,12 @@
+[
+  { "id": "01-inicio", "plantilla": "raíz", "url": "/", "completa": true },
+  { "id": "02-agenda", "plantilla": "raíz", "url": "/agenda", "completa": true },
+  { "id": "03-lugares-mapa", "plantilla": "raíz", "url": "/lugares", "espera": 7000 },
+  { "id": "04-lugares-lista", "plantilla": "raíz", "url": "/lugares?vista=lista", "completa": true },
+  { "id": "05-artistas", "plantilla": "raíz", "url": "/artistas", "completa": true },
+  { "id": "06-ficha-evento", "plantilla": "ficha", "url": "/eventos/concierto-de-la-orquesta-sinfonica-de-san-luis-potosi", "completa": true, "espera": 4000 },
+  { "id": "07-ficha-lugar-4", "plantilla": "ficha", "url": "/lugares/teatro-de-la-paz", "completa": true, "espera": 5000 },
+  { "id": "08-ficha-lugar-5", "plantilla": "ficha", "url": "/lugares/museo-del-ferrocarril-jesus-garcia-corona", "completa": true, "espera": 5000 },
+  { "id": "09-ficha-artista", "plantilla": "ficha", "url": "/artistas/aaron-cadena", "completa": true },
+  { "id": "10-entrar", "plantilla": "tarea", "url": "/entrar" }
+]

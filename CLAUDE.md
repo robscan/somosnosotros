@@ -22,6 +22,6 @@ Next.js (App Router, TypeScript) · Supabase (Postgres + Auth + Storage, proyect
 
 ## Verificación rápida
 ```
-npm run lint && npm run typecheck && npm test
+npm run lint && npm run typecheck && npm test && npm run inventario && npm run medir
 ```
 (los scripts se crean en la Fase 0).

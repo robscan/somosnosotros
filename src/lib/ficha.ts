@@ -1,22 +1,34 @@
+import { diaLocal, fechaCortaChip, horaCorta, ZONA_INICIAL } from "./fechas";
+
 /**
- * Reparto de los círculos de acciones/enlaces de una ficha (evento, lugar, artista — OL-163, bitácora 198;
- * corregido en OL-167, bitácora 202, 2026-09-24). Founder, OL-167: «Te había pedido que en los enlaces de
- * artistas distribuyeras elementos en espacio disponible y que lo hicieras a partir de 2, pero quiero que lo
- * cambies a partir de 3, con dos se percibe como error.» Con 1 o 2, quedan a la izquierda con el espacio normal
- * del carril (el `gap` de `.acciones`), sin estirarse — el flex por defecto ya lo hace, sin clase aparte; con 3
- * o 4 se reparten a todo el ancho con el mismo espacio entre sí (`.accionesRepartidas`); con más de los que
- * caben (`.accionesCarril`) van en un carril deslizable con espacio fijo, y el siguiente círculo asoma por el
- * borde porque su ancho no es múltiplo exacto del espacio visible — el mismo efecto que el carril de Destacados.
- * La decisión es pura (sin medir el DOM): el founder fijó el número que caben a 390 px (cuatro círculos de
- * 56 px con espacio de sobra) como el máximo que se reparte; a partir de ahí, carril.
+ * Los textos de los tres números de una ficha (docs/rediseno/50, P6; `ui/Kpi`): el día y la hora de un evento, la distancia a un
+ * lugar y cuántos próximos hay; y la meta del sitio de un evento, con su distancia (P8). Puros, para probarlos sin pintar nada.
  */
-export const MAXIMO_ACCIONES_REPARTIDAS = 4;
-const MINIMO_ACCIONES_REPARTIDAS = 3;
 
-export type RepartoAcciones = "izquierda" | "repartidas" | "carril";
+/**
+ * Cuándo es un evento: el día («vie 2 oct») y, aparte, la hora en que empieza («19:00»), porque el número no lleva la palabra
+ * «Fecha»: el día ya dice que lo es. Si termina otro día, el día dice hasta cuándo («vie 2 oct – dom 4 oct»).
+ */
+export function kpiCuando(inicio: string, fin: string | null, zona: string = ZONA_INICIAL): { dia: string; hora: string } {
+  const dia = fechaCortaChip(inicio, zona);
+  const otroDia = fin !== null && diaLocal(new Date(fin), zona) !== diaLocal(new Date(inicio), zona);
+  return { dia: otroDia ? `${dia} – ${fechaCortaChip(fin, zona)}` : dia, hora: horaCorta(inicio, zona) };
+}
 
-export function repartoDeAcciones(cantidad: number): RepartoAcciones {
-  if (cantidad < MINIMO_ACCIONES_REPARTIDAS) return "izquierda";
-  if (cantidad <= MAXIMO_ACCIONES_REPARTIDAS) return "repartidas";
-  return "carril";
+/** La distancia en línea recta a un lugar: «550 m» hasta el kilómetro, después «1,4 km» y, de 10 en adelante, sin decimales. */
+export function kpiDistancia(km: number): string {
+  if (km < 1) return `${Math.max(50, Math.round((km * 1000) / 50) * 50)} m`;
+  return `${km < 10 ? km.toFixed(1).replace(".", ",").replace(",0", "") : Math.round(km)} km`;
+}
+
+/** La meta del renglón de un sitio: su dirección y, si ya se sabe a cuánto está de quien mira, la distancia al final («Av. Manuel Nava 101 · 3,2 km»). */
+export function metaSitio(direccion: string | null, km: number | null): string {
+  return [direccion, km === null ? null : kpiDistancia(km)].filter(Boolean).join(" · ");
+}
+
+/** Cuántos eventos (o fechas, con `femenino`) vienen: «Ninguno», «1 próximo», «3 próximos». */
+export function kpiProximos(cuantos: number, femenino = false): string {
+  if (cuantos === 0) return femenino ? "Ninguna" : "Ninguno";
+  const proximo = femenino ? "próxima" : "próximo";
+  return cuantos === 1 ? `1 ${proximo}` : `${cuantos} ${proximo}s`;
 }

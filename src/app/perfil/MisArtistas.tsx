@@ -1,7 +1,8 @@
 import Link from "next/link";
+import Boton from "@/components/ui/Boton";
+import { claseBotonIcono } from "@/components/ui/BotonIcono";
 import CompartirFicha from "@/components/ui/CompartirFicha";
 import { etiquetaArtista, hrefArtista, type ArtistaResumen } from "@/lib/artistas";
-import ficha from "@/components/ui/Ficha.module.css";
 import styles from "./MisArtistas.module.css";
 
 export type ArtistaLigadoConQr = { artista: ArtistaResumen; url: string; svg: string };
@@ -10,8 +11,8 @@ export type ArtistaLigadoConQr = { artista: ArtistaResumen; url: string; svg: st
  * «Mis artistas» en Mi perfil (OL-154, doc 40b; tarjeta repuesta en OL-163; corrección del founder sobre esa
  * misma pieza, 2026-09-23: fuera el botón de texto «Ver ficha»/«Ver mi ficha de artista»). La tarjeta blanca de
  * siempre, pero ahora el compartir es el que se toca a la derecha: mismo canon circular elevado que las acciones
- * de la ficha (`ui/Ficha.module.css`, `.accionIcono`), sin letrero — no hace falta uno nuevo para la misma idea
- * de botón. La tarjeta entera es el enlace a la ficha (`.frente`, como `RenglonArtista`/`Renglon.module.css`) y
+ * de la ficha (`ui/BotonIcono`, grande y elevado), sin letrero — no hace falta uno nuevo para la misma idea
+ * de botón. La tarjeta entera es el enlace a la ficha (`.frente`, como el renglón de lista de `ui/Renglon`) y
  * el compartir es su hermano, nunca su hijo (el mismo patrón que el botón sobre una tarjeta de `Destacados`):
  * así el toque en un botón nunca navega ni se confunde con el toque en el otro. Quien llama decide si se
  * muestra: sin artistas ligados, el bloque entero no aparece. El QR de cada uno ya viene calculado
@@ -41,10 +42,10 @@ export default function MisArtistas({ artistas }: { artistas: ArtistaLigadoConQr
               <small>{etiquetaArtista(a)}</small>
             </span>
           </Link>
-          <Link href={`${hrefArtista(a)}/novedades/nueva`} className={styles.publicar}>
+          <Boton href={`${hrefArtista(a)}/novedades/nueva`} variante="texto" ancho="contenido">
             Publicar
-          </Link>
-          <CompartirFicha titulo={a.nombre} texto={`${a.nombre} · ${etiquetaArtista(a)}`} url={url} svg={svg} etiqueta={`Compartir la ficha de ${a.nombre}`} className={ficha.accionIcono} slug={a.slug} />
+          </Boton>
+          <CompartirFicha titulo={a.nombre} texto={`${a.nombre} · ${etiquetaArtista(a)}`} url={url} svg={svg} etiqueta={`Compartir la ficha de ${a.nombre}`} className={claseBotonIcono({ tamano: "grande", relieve: "elevado" })} slug={a.slug} />
         </div>
       ))}
     </div>

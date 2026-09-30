@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
-import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
+import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
 import { IconoChevronDerecha } from "@/components/ui/Iconos";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { detallePersona, FILTROS, hrefLista, leerLista, PAGINA_PANEL, vacioDe } from "@/lib/panel";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import Avatar from "../Avatar";
@@ -27,16 +27,16 @@ export default async function Personas({ searchParams }: { searchParams: Promise
   const { filas, total, conteos, error } = await cargarPersonas(l);
   const ahora = new Date();
   return (
-    <main className={`${ficha.pagina} ${styles.lista}`}>
+    <main className={`${plantilla.paginaContenido} ${styles.lista}`}>
       <Barra volver={{ href: "/admin", texto: "Administración" }} />
       <h1 className={styles.titulo}>Personas</h1>
       <Buscador valor={l.q ?? ""} placeholder="Buscar por nombre o correo" ariaLabel="Buscar persona por nombre o correo" />
       <Chips ariaLabel="Filtrar personas">
         {FILTROS.personas.map((f) => (
-          <ChipEnlace key={f.valor} activo={l.filtro === f.valor} href={hrefLista("personas", { q: l.q, filtro: f.valor })}>
+          <Chip key={f.valor} activo={l.filtro === f.valor} href={hrefLista("personas", { q: l.q, filtro: f.valor })}>
             {f.etiqueta}
             {conteos && <Cuenta n={conteos[f.valor] ?? 0} />}
-          </ChipEnlace>
+          </Chip>
         ))}
       </Chips>
       {error ? (

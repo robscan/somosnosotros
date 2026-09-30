@@ -17,19 +17,19 @@
 }
 .enlace {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) auto;
+  grid-template-columns: var(--columna-icono) minmax(0, 1fr) auto;
   align-items: start;
   column-gap: var(--espacio-3);
 }
 /* Con más de un enlace hay algo que reordenar: una columna más, el agarre (OL-184). */
 .enlace.conAgarre {
-  grid-template-columns: var(--toque-min) 24px minmax(0, 1fr) auto;
+  grid-template-columns: var(--toque-min) var(--columna-icono) minmax(0, 1fr) auto;
 }
 .enlace > svg {
   color: var(--texto-suave);
   /* Alinea con la caja del campo (`.control`), no con la etiqueta "Título" de encima: alto de la etiqueta
      más su margen (`ui/Campo.module.css`, `.etiqueta`). */
-  margin-top: 20px;
+  margin-top: var(--espacio-5);
 }
 /* El campo del título (ui/Campo): penúltimo hijo de la rejilla tanto con agarre (4 columnas) como sin él (3),
    así no hace falta una regla distinta para cada caso. Sin este min-width:0 la pista minmax(0, 1fr) no basta,
@@ -48,7 +48,7 @@
   background: none;
   padding: 0;
   margin: 0;
-  margin-top: 8px;
+  margin-top: var(--espacio-2);
   font: inherit;
   display: grid;
   place-items: center;
@@ -60,18 +60,6 @@
 }
 .agarre:active {
   cursor: grabbing;
-}
-/* Anuncio del nuevo puesto tras arrastrar o mover con flechas (OL-184): se oye, no se ve. */
-.soloLector {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 .quitar {
   display: grid;
@@ -110,20 +98,6 @@
 }
 .campo[aria-invalid="true"] {
   border-color: var(--error);
-}
-.agregar {
-  min-height: var(--toque);
-  padding: 0 var(--espacio-4);
-  border: 1px solid var(--texto);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  color: var(--texto);
-  font-weight: 700;
-  cursor: pointer;
-}
-.agregar:disabled {
-  border-color: var(--borde);
-  color: var(--texto-suave);
 }
 .ayuda {
   color: var(--texto-suave);

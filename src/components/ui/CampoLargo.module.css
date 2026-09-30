@@ -61,7 +61,7 @@
 .capa {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: calc(var(--z-encima) + 1);
   display: flex;
   flex-direction: column;
   background: var(--fondo);
@@ -97,7 +97,7 @@
   border: none;
   resize: none;
   background: var(--fondo);
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
   line-height: 1.4;
 }
 .area:focus {

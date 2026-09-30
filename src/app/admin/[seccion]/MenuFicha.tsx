@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import BotonIcono from "@/components/ui/BotonIcono";
 import Hoja from "@/components/ui/Hoja";
 import { IconoDestello, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPuntos } from "@/components/ui/Iconos";
 import { opcionDestacar, TIPO_DE, type Decidido, type Destacado } from "@/lib/destacados";
@@ -42,9 +43,9 @@ export default function MenuFicha({ seccion, id, nombre, visible, destacable, de
 
   return (
     <>
-      <button type="button" className={styles.puntos} onClick={() => setAbierto(true)} aria-label={`Más acciones de ${nombre}`} aria-haspopup="dialog">
+      <BotonIcono onClick={() => setAbierto(true)} aria-label={`Más acciones de ${nombre}`} aria-haspopup="dialog">
         <IconoPuntos width={22} height={22} />
-      </button>
+      </BotonIcono>
       {abierto && (
         <Hoja etiqueta={`Acciones de ${nombre}`} onCerrar={() => setAbierto(false)}>
           <h3>{nombre}</h3>

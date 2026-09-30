@@ -1,9 +1,11 @@
-/* Al pie de Mi perfil: cómo me ven los demás. Sin borde propio: el último renglón de la lista ya cierra con su línea. */
-.pie {
-  padding: var(--espacio-4) 0;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
+/* Mi perfil no lleva cabecera pegajosa: los títulos de día se pegan justo bajo la barra de la app, sin lo que
+   `--alto-cabecera` guarda de partida para las pantallas que sí la llevan. */
+.perfil {
+  --alto-cabecera: 0px;
 }
-.pie a {
-  color: var(--texto-suave);
+
+/* Al pie de Mi perfil: cómo me ven los demás. Un botón de texto con el aire de la página. */
+.enlace {
+  justify-self: start;
+  margin: var(--espacio-3) var(--gutter) 0;
 }

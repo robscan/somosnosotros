@@ -1,8 +1,15 @@
+/* El botón de la app (ui/Boton): cuatro variantes, dos formas, dos altos y dos anchos. Solo dibuja y mide: dónde va y
+   cuánto aire lo separa de lo de al lado lo decide quien lo usa. El pulsado y el foco visible son los de todos los
+   controles (globals.css). Lo único que se le ajusta desde fuera, sin pelear con sus reglas (dos módulos de la misma
+   fuerza se pisan según el orden en que llegue cada uno), son dos variables: `--boton-relleno` y `--boton-hueco`
+   (el hueco entre el icono y el texto). */
 .boton {
-  display: block;
-  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--boton-hueco, var(--espacio-2)); /* el icono y el texto (Voy, Seguir) */
   min-height: var(--toque);
-  padding: var(--espacio-3) var(--espacio-4);
+  padding: var(--boton-relleno, var(--espacio-2) var(--espacio-4));
   border: 1px solid transparent;
   border-radius: var(--radio);
   font-size: var(--letra-lg);
@@ -12,11 +19,30 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.boton:disabled {
-  opacity: 0.55;
-  cursor: default;
+
+/* Alto y forma */
+.control {
+  min-height: var(--control);
+  font-size: var(--letra-sm);
 }
-.principal {
+.pildora {
+  border-radius: var(--radio-pildora);
+}
+
+/* Ancho: a todo lo de su caja, o lo que mide su texto (sin partirlo en dos renglones). El ancho del completo pesa cero
+   (`:where`): si quien lo usa le pone uno propio (con márgenes a los lados), gana siempre. */
+.completo {
+  display: flex;
+}
+:where(.completo) {
+  width: 100%;
+}
+.contenido {
+  white-space: nowrap;
+}
+
+/* Variantes */
+.primario {
   background: var(--primario);
   color: var(--primario-texto);
 }
@@ -29,4 +55,48 @@
   background: var(--fondo);
   color: var(--error);
   border-color: var(--borde);
+}
+.texto {
+  min-height: var(--control);
+  padding: 0 var(--espacio-2);
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-sm);
+}
+
+/* Flotante: la pastilla de una acción principal (Me interesa, Voy, Seguir): píldora de una línea con la letra de los títulos y la
+   sombra de lo que flota. Lo que ya quedó (`aria-pressed`): el primario, en verde («Vas», «Sigues»); el secundario, del color de acción. */
+.flotante {
+  --boton-relleno: 0 var(--espacio-5) 0 var(--espacio-4);
+  border-color: transparent;
+  border-radius: var(--radio-pildora);
+  font-size: var(--letra-md);
+  font-variation-settings: var(--ancho-titulo);
+  box-shadow: var(--sombra-flotante);
+}
+.primario[aria-pressed="true"] {
+  background: var(--ok);
+}
+.secundario[aria-pressed="true"] {
+  color: var(--primario);
+}
+
+/* Deshabilitado (con `disabled`, o con `aria-disabled` cuando el motivo se lee en pantalla) y en camino: el toque ya
+   se mandó y el servidor no ha respondido (un enlace lo sabe solo, con `EnCamino`; un botón, con `aria-busy`). */
+.boton:disabled,
+.boton[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: default;
+}
+.boton[aria-busy="true"],
+.boton:has(> .enCamino) {
+  animation: latido 0.9s ease-in-out infinite;
+}
+.enCamino {
+  display: none;
+}
+@keyframes latido {
+  50% {
+    opacity: 0.55;
+  }
 }

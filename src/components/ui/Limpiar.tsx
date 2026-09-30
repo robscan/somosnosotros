@@ -1,5 +1,6 @@
 "use client";
 
+import BotonIcono from "./BotonIcono";
 import { IconoCerrar } from "./Iconos";
 import styles from "./Limpiar.module.css";
 
@@ -12,8 +13,7 @@ import styles from "./Limpiar.module.css";
 export default function Limpiar({ visible, etiqueta = "Borrar lo escrito" }: { visible: boolean; etiqueta?: string }) {
   if (!visible) return null;
   return (
-    <button
-      type="button"
+    <BotonIcono
       className={styles.limpiar}
       aria-label={etiqueta}
       onMouseDown={(e) => e.preventDefault()} /* el campo no pierde el foco ni se cierra el teclado */
@@ -27,6 +27,6 @@ export default function Limpiar({ visible, etiqueta = "Borrar lo escrito" }: { v
       }}
     >
       <IconoCerrar width={16} height={16} />
-    </button>
+    </BotonIcono>
   );
 }

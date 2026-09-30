@@ -27,5 +27,5 @@ export default async function CarrilTusPlanes({ personaPromise, avisos, verTodos
   const asistencias: Record<string, "voy" | "me_interesa"> = {};
   for (const e of persona?.eventos ?? []) asistencias[e.id] = "voy";
   for (const e of persona?.interesan ?? []) asistencias[e.id] = "me_interesa";
-  return <CarrilEventosCliente tarjetas={eventos.map((e) => tarjetaEvento(e, ahora))} asistencias={asistencias} avisos={avisos} titulo="Tus planes" tamano="mediana" memoria="inicio-tus-planes" verTodosHref={verTodosHref} tusPlanes />;
+  return <CarrilEventosCliente tarjetas={eventos.map((e) => tarjetaEvento(e, ahora))} asistencias={asistencias} avisos={avisos} titulo="Tus planes" tamano="mediana" memoria="inicio-tus-planes" verTodos={{ href: verTodosHref, etiqueta: "Ver mi perfil" }} tusPlanes />;
 }

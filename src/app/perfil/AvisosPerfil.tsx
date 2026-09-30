@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import HojaInstalar from "@/components/HojaInstalar";
 import { IconoComputadora, IconoCorreo, IconoTelefono } from "@/components/ui/Iconos";
+import Palanca from "@/components/ui/Palanca";
 import { elegirAvisos } from "@/app/avisos/acciones";
 import { dondeSeActivan, dondeSeRegistra, enEste, type EstadoPush, type Plataforma } from "@/lib/plataforma";
 import { desuscribirPush, detalleNoSoportado, suscribirPush } from "@/lib/pushCliente";
 import { useEstadoPush, usePlataforma } from "@/lib/useAvisosTelefono";
+import renglon from "@/components/ui/Renglon.module.css";
 import ajustes from "@/app/ajustes/ajustes.module.css";
 import { borrarSuscripcionPush, guardarSuscripcionPush } from "./acciones";
 
@@ -107,22 +109,19 @@ export default function AvisosPerfil({ correo: correoInicial, correoTexto, llave
 
   return (
     <>
-      <li className={ajustes.fila}>
+      <li className={renglon.ajuste}>
         <IconoCorreo width={20} height={20} />
         <b>Por correo</b>
         <small>{correoTexto} · cada correo trae su baja</small>
-        <button type="button" role="switch" aria-checked={correo} aria-label="Avisos por correo" className={ajustes.palanca} onClick={cambiarCorreo} disabled={trabajando} />
+        <Palanca encendida={correo} aria-label="Avisos por correo" onClick={cambiarCorreo} disabled={trabajando} />
       </li>
-      <li className={ajustes.fila}>
+      <li className={renglon.ajuste}>
         {plataforma?.computadora ? <IconoComputadora width={20} height={20} /> : <IconoTelefono width={20} height={20} />}
         <b>{plataforma?.computadora ? "En esta computadora" : "En el teléfono"}</b>
         <small>{subtitulo(estado, plataforma, llavePush)}</small>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={estado === "encendido"}
+        <Palanca
+          encendida={estado === "encendido"}
           aria-label={plataforma?.computadora ? "Avisos en esta computadora" : "Avisos en el teléfono"}
-          className={ajustes.palanca}
           onClick={cambiarTelefono}
           disabled={trabajando || !tocable}
         />

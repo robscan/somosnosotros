@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { pedirSalida } from "@/lib/guardiaSalida";
 import { alVolver, hayAnterior, registrarVolverVisible, vuelveADestino } from "../Navegacion";
+import Boton from "./Boton";
+import BotonIcono from "./BotonIcono";
 import { IconoChevronIzquierda } from "./Iconos";
 import styles from "./Atras.module.css";
 
@@ -90,14 +92,30 @@ export function useTerminar(): (destino: string, opciones?: OpcionesTerminar) =>
  * un lugar, un artista o un enlace compartido), así que vuelve a la pantalla anterior de verdad. Sin pantalla anterior
  * (enlace compartido, app recién abierta) lleva a `href`, la pantalla madre. Píldora con chevron, alineada a la
  * izquierda (topografía de navegación). `texto` se conserva para quien lo lea (aria-label); a la vista, "Atrás".
- * Si la pantalla tiene algo sin publicar (guardia de salida), primero pregunta ella.
+ * Si la pantalla tiene algo sin publicar (guardia de salida), primero pregunta ella. Sin `prefetch`: la pantalla
+ * madre no se pide hasta que se vuelve a ella.
  */
 export default function Atras({ href, texto }: { href: string; texto: string }) {
   const volver = useVolver(href);
   return (
-    <a href={href} className={styles.atras} onClick={volver} aria-label={`Atrás (${texto})`}>
+    <Boton href={href} prefetch={false} variante="secundario" forma="pildora" alto="control" ancho="contenido" className={styles.atras} onClick={volver} aria-label={`Atrás (${texto})`}>
       <IconoChevronIzquierda width={18} height={18} />
       <span>Atrás</span>
-    </a>
+    </Boton>
+  );
+}
+
+/**
+ * El mismo Atrás, solo con el chevron, para la barra de la app (44: desde 792 la ficha no lleva cabecera propia y su Atrás vive ahí)
+ * y para la barra de una ficha (48 y en círculo blanco sobre su portada, `tamano` y `relieve` de `ui/BotonIcono`). Vuelve igual
+ * que el otro (`useVolver`).
+ */
+export function AtrasIcono({ href, texto, tamano, relieve }: { href: string; texto: string; tamano?: "control" | "accion"; relieve?: "plano" | "elevado" | "contorno" }) {
+  const volver = useVolver(href);
+  const glifo = tamano === "accion" ? 22 : 26;
+  return (
+    <BotonIcono href={href} prefetch={false} tamano={tamano} relieve={relieve} onClick={volver} aria-label={`Atrás (${texto})`}>
+      <IconoChevronIzquierda width={glifo} height={glifo} />
+    </BotonIcono>
   );
 }

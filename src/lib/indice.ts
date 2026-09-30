@@ -9,23 +9,16 @@ export function letraDe(nombre: string): string {
 /** El id del encabezado de un grupo en la página. */
 export const idGrupo = (letra: string) => `grupo-${letra === "#" ? "num" : letra}`;
 
-/**
- * Cada elemento de una lista ya ordenada, con la letra de su grupo cuando es el primero de él (`null` en los demás,
- * para no repetir el encabezado). No fuerza A–Z: sigue el orden real de la lista, sea cual sea.
- */
-export function conGrupos<T>(lista: T[], nombre: (x: T) => string): { x: T; grupo: string | null }[] {
-  let anterior: string | null = null;
-  return lista.map((x) => {
-    const l = letraDe(nombre(x));
-    const grupo = l === anterior ? null : l;
-    anterior = l;
-    return { x, grupo };
-  });
-}
-
-/** Las letras con al menos un elemento, en el orden en que aparecen en la lista (para la tira: solo esas, sin apagar nada). */
-export function letrasPresentes<T>(lista: T[], nombre: (x: T) => string): string[] {
-  return conGrupos(lista, nombre).flatMap((f) => (f.grupo ? [f.grupo] : []));
+/** Una lista ya ordenada, partida en grupos por letra en el orden real de la lista (uno por cada racha de la misma letra). */
+export function agruparPorLetra<T>(lista: T[], nombre: (x: T) => string): { letra: string; items: T[] }[] {
+  const grupos: { letra: string; items: T[] }[] = [];
+  for (const x of lista) {
+    const letra = letraDe(nombre(x));
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo?.letra === letra) ultimo.items.push(x);
+    else grupos.push({ letra, items: [x] });
+  }
+  return grupos;
 }
 
 /**

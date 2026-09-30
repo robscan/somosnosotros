@@ -37,7 +37,7 @@ const TEXTO_MOTIVO_ADMIN: Record<MotivoAdmin, string> = {
   reporte: "Alguien envió un reporte",
   nuevo_evento: "Se publicó un evento nuevo",
   nuevo_lugar: "Se publicó un lugar nuevo",
-  nuevo_artista: "Se publicó un artista nuevo",
+  nuevo_artista: "Se publicó una ficha de artista nueva",
   registro: "Alguien se registró",
 };
 

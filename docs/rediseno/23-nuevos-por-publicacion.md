@@ -1,5 +1,25 @@
 # 23 · "Nuevos": lo recién publicado, arriba
 
+## Revivida en la reestructura (founder, 2026-09-30; OL-245, bitácora 273, ajuste 11)
+
+«Por favor revive la tab de "Nuevos" en agenda.» La pestaña (se había ido con la segunda vuelta de Inicio, OL-156) vuelve como **Todos · Nuevos**,
+el último renglón de la cabecera de Agenda. Lo firmado abajo sigue valiendo (por día de publicación, desde la última visita con tope de 7 días, 20
+como máximo, el día del evento en el renglón); esto es lo que cambia, que **manda sobre lo de abajo donde lo contradiga**:
+
+- **Sin consulta aparte.** Sale de los mismos eventos que Agenda ya trae (`lib/agenda`: `eventosNuevos` y `listarAgenda`), así que no hay «Cargando»,
+  «Reintentar» ni tope en el servidor: si el evento está en Todos, está en Nuevos cuando toca. Vale para lo que Agenda carga (los 300 más próximos).
+- **La pestaña vive en la URL** (`/agenda?ver=nuevos`; sin el parámetro, Todos) y cambiarla reemplaza la dirección, sin apilar historial. La memoria de
+  pantalla repone filtros, renglones y la última visita con la que se armó la lista, así que volver de una ficha trae la misma.
+- **Los filtros de la fila de contexto** (ciudad, Cuándo, Cuánto, «Solo lo que sigo») **valen igual en las dos pestañas**; el tope de 20 se aplica después
+  de ellos, y el botón «Ver N eventos» de cada hoja cuenta dentro de la pestaña que se ve.
+- **La marca sigue en el teléfono, por ciudad, pero dice otra cosa:** la publicación más reciente que estaba cargada al mirar, más un milisegundo
+  (`lib/nuevosVisto`), no la hora del toque. Todo sale del reloj del servidor (un teléfono con la hora mal puesta no esconde nada) y lo publicado
+  mientras tanto sigue siendo nuevo. Con filtros puestos mirar Nuevos no la avanza: lo que no se enseñó sigue siendo nuevo.
+- **Un solo «nuevo».** El carril «Nuevos eventos» de Inicio y esta pestaña parten de `eventosNuevos`; el carril, ya en el teléfono (`CarrilNuevos`),
+  deja lo que sigue siendo nuevo para la persona y su «Ver la agenda» lleva a esta pestaña (conservando la ciudad). Tras mirar la pestaña, el carril se va.
+- **El vacío es solo la frase** «Nada nuevo desde tu última visita.» (sin invitación ni botón «Publicar evento»: sustituye a los dos textos del vacío
+  de más abajo, por indicación del gestor de cambios).
+
 ## Decision vigente: resumen de 20 (2026-09-18)
 
 El founder acepta un maximo de **20 eventos** y autoriza publicar ese ajuste:

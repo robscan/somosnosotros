@@ -1,4 +1,4 @@
-/* Panel de administración (docs/rediseno/19). La página es la de Ajustes (ui/Ficha .pagina): barra blanca, contenido en
+/* Panel de administración (docs/rediseno/19). La página es la de Ajustes (ui/Plantilla .paginaContenido): barra blanca, contenido en
    su tono, grupos con rótulo y tarjetas de renglones. Maquetación plana: cada bloque es hijo directo de main y cada dato,
    hijo directo de su renglón con grid-template-areas.
    1. Títulos y grupos · 2. Pendiente · 3. Indicadores · 4. Renglones (Gestionar y ficha de persona) ·
@@ -6,7 +6,7 @@
 
 /* ---------- 1. Títulos y grupos ---------- */
 .titulo {
-  margin: var(--espacio-3) 0 var(--espacio-1);
+  margin: 0 0 var(--espacio-1);
   font-size: var(--letra-2xl);
 }
 .grupo {
@@ -14,7 +14,7 @@
   align-items: baseline;
   gap: var(--espacio-2);
   margin: var(--espacio-5) 0 var(--espacio-2);
-  padding-left: 4px;
+  padding-left: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-xs);
   font-weight: 600;
@@ -24,14 +24,23 @@
 .grupo > b {
   color: var(--primario);
 }
+/* Los márgenes de la página no se funden (es una rejilla): tras el título, que ya deja el suyo, el grupo completa hasta sus 20 */
+.titulo + .grupo {
+  margin-top: var(--espacio-4);
+}
 .nota {
-  margin: calc(-1 * var(--espacio-1)) 0 var(--espacio-2) 4px;
+  margin: 0 0 var(--espacio-2) var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-/* Los chips de las listas corren a todo lo ancho: la franja sale del gutter con una sola regla */
+/* El rótulo de un grupo con nota debajo deja 4 y no 8: la nota es suya */
+.conNota {
+  margin-bottom: var(--espacio-1);
+}
+/* Los chips de las listas corren a todo lo ancho: la franja ocupa las tres columnas de la página, con el aire de los lados dentro */
 .lista > [role="group"] {
-  margin: var(--espacio-3) calc(-1 * var(--gutter)) 0;
+  grid-column: 1 / -1;
+  margin: var(--espacio-3) 0 0;
   padding-inline: var(--gutter);
 }
 
@@ -93,7 +102,7 @@ p.hecho {
 }
 .pendiente {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   grid-template-areas:
     "icono que que"
     "icono ficha ficha"
@@ -155,14 +164,14 @@ a.ficha::after,
 }
 .pendiente > q {
   grid-area: mensaje;
-  margin-top: 4px;
+  margin-top: var(--espacio-1);
   overflow-wrap: anywhere;
   font-size: var(--letra-md);
   line-height: 1.35;
 }
 .pendiente > small {
   grid-area: quien;
-  margin-top: 4px;
+  margin-top: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
@@ -290,7 +299,7 @@ a.ficha::after,
   width: 100%;
   max-width: 88px;
   height: 28px;
-  margin-bottom: 4px;
+  margin-bottom: var(--espacio-1);
 }
 .indicador > svg polyline {
   fill: none;
@@ -365,7 +374,7 @@ a.ficha::after,
   font-variant-numeric: proportional-nums;
 }
 .pasoEmbudo > b > small {
-  margin-left: 4px;
+  margin-left: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-xs);
   font-weight: 600;
@@ -375,14 +384,14 @@ a.ficha::after,
 }
 .barraEmbudo {
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--fondo-suave);
   overflow: hidden;
 }
 .barraEmbudo > i {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--primario);
   font-style: normal;
 }
@@ -394,22 +403,12 @@ a.ficha::after,
 }
 
 /* ---------- 4. Renglones en tarjeta: Gestionar (etiqueta y detalle) y la ficha de una persona (clave y valor) ---------- */
-.tarjeta {
-  list-style: none;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  overflow: hidden;
-}
-.tarjeta > li + li {
-  border-top: 1px solid var(--borde);
-}
 /* "Leyó 20 y publicó 18 este mes": con esto se decide una petición de más lecturas (docs/rediseno/23). */
 .numeros {
   grid-area: numeros;
   margin: 2px 0;
   padding: var(--espacio-2) 10px;
-  border-radius: 8px;
+  border-radius: var(--radio);
   background: var(--fondo-suave);
   font-size: var(--letra-sm);
 }
@@ -420,7 +419,7 @@ a.ficha::after,
 .fila,
 .dato {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   grid-template-areas:
     "icono etiqueta accion"
     "icono detalle accion"
@@ -454,7 +453,7 @@ a.ficha::after,
   grid-area: accion;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-md);
   font-variant-numeric: tabular-nums;
@@ -466,7 +465,7 @@ a.ficha::after,
 .dato > small {
   grid-area: etiqueta;
   color: var(--texto-suave);
-  font-size: 0.75rem;
+  font-size: var(--letra-2xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -491,7 +490,7 @@ a.ficha::after,
   min-height: var(--toque-min);
   padding: 0 14px;
   border: 1px solid var(--borde);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--fondo);
   color: var(--primario);
   font-size: var(--letra-sm);
@@ -514,7 +513,6 @@ a.ficha::after,
     "avatar detalle";
   column-gap: 14px;
   align-items: center;
-  margin-top: var(--espacio-3);
 }
 .cabecera > h1 {
   grid-area: nombre;
@@ -606,11 +604,11 @@ a.ficha::after,
 .etiqueta {
   display: inline-block;
   margin-left: 6px;
-  padding: 1px 8px;
-  border-radius: 999px;
+  padding: 1px var(--espacio-2);
+  border-radius: var(--radio-pildora);
   background: var(--fondo-miniatura);
   color: var(--texto-suave);
-  font-size: 0.75rem;
+  font-size: var(--letra-2xs);
   font-weight: 600;
   vertical-align: 2px;
   white-space: nowrap;
@@ -647,7 +645,7 @@ a.ficha::after,
   grid-area: foto;
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: var(--radio-chico);
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
@@ -660,20 +658,6 @@ a.ficha::after,
 }
 .oculta > a > .foto {
   opacity: 0.45;
-}
-.puntos {
-  display: grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: var(--texto-suave);
-  cursor: pointer;
-}
-.puntos:active {
-  background: var(--fondo-suave);
 }
 .verMas {
   margin-top: var(--espacio-4);
@@ -704,7 +688,6 @@ a.ficha::after,
 }
 .menu {
   list-style: none;
-  margin-inline: calc(-1 * var(--gutter));
 }
 .menu > li:last-child {
   margin-top: 6px;
@@ -712,12 +695,12 @@ a.ficha::after,
 }
 .menuItem {
   display: grid;
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: var(--columna-icono) 1fr;
   column-gap: 14px;
   align-items: center;
   width: 100%;
   min-height: 54px;
-  padding: 0 var(--gutter);
+  padding: 0;
   border: none;
   background: none;
   color: var(--texto);
@@ -752,6 +735,10 @@ a.ficha::after,
   margin: var(--espacio-5) 0;
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+}
+/* Tras el rótulo de un grupo, que ya deja sus 8, el vacío completa hasta sus 20 */
+.grupo + .vacio {
+  margin-top: var(--espacio-3);
 }
 .error {
   display: grid;

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
+import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoPincel } from "@/components/ui/Iconos";
-import estilosBorrar from "@/components/Borrar.module.css";
+import estilosBorrar from "@/components/ui/Confirmar.module.css";
 import { abrirCanalObra } from "@/lib/canal-obra";
 import { EVENTO_BORRAR, type MensajeBorrar } from "@/lib/pincel";
 import { clienteNavegador } from "@/lib/supabase/navegador";
@@ -81,9 +82,9 @@ export default function BorrarPared({ obraId, perfilId }: { obraId: string; perf
       {confirmar && (
         <Hoja etiqueta="Borrar la pared" onCerrar={cerrar}>
           <div className={estilosBorrar.confirmar}>
-            <span className={estilosBorrar.icono} aria-hidden="true">
+            <IconoEnCirculo>
               <IconoPincel width={28} height={28} />
-            </span>
+            </IconoEnCirculo>
             {estado === "hecho" ? (
               <>
                 <h3>La pared quedó limpia</h3>
@@ -97,9 +98,9 @@ export default function BorrarPared({ obraId, perfilId }: { obraId: string; perf
                 <h3>¿Borrar todo lo pintado?</h3>
                 <p>No se puede deshacer. La obra sigue abierta.</p>
                 {error && <p role="alert">{error}</p>}
-                <button type="button" className={estilosBorrar.peligro} disabled={estado === "borrando"} onClick={borrar}>
+                <Boton type="button" variante="peligro" ancho="contenido" disabled={estado === "borrando"} onClick={borrar}>
                   {estado === "borrando" ? "Borrando…" : "Sí, borrar"}
-                </button>
+                </Boton>
                 <button type="button" className={estilosBorrar.enlace} onClick={cerrar}>
                   Cancelar
                 </button>

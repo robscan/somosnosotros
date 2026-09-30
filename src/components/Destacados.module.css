@@ -1,57 +1,43 @@
-/* La tira de destacados (docs/rediseno/20): título y un carril que se desliza de lado, con la siguiente tarjeta asomando.
-   Cada tarjeta es un grid de hijos directos: foto, cuántos van (encima de la foto), título y detalle. */
+/* La tira de destacados (docs/rediseno/20; doc 50, P10): título y un carril que se desliza de lado, con la siguiente tarjeta asomando.
+   El carril es una rejilla de tres filas (foto, título, datos) y cada tarjeta la comparte con `subgrid`: los títulos y los datos de todas
+   quedan alineados aunque uno ocupe dos líneas. Las medidas son los tokens `--tarjeta-*` de `:root` (a 1048 crece la tarjeta grande);
+   el esqueleto (CarrilEsqueleto) usa este mismo CSS, así que no hay un número copiado. */
 /*
  * Espaciado (founder, 2026-09-23, tras probar en producción, OL-156): la barra de título con "Ver todos" queda más
  * lejos del carril, para no tocar la primera tarjeta sin querer al tocar "Ver todos" — 4px (`--espacio-1`) → 16px
  * (`--espacio-4`), los "unos 12px más" que pidió. El espacio ENTRE carriles (el `padding-top` de este mismo bloque,
- * de un `.destacados` al siguiente) tiene que notarse claramente más grande que ese: 32px fijos, el doble, siguiendo
- * el ejemplo del founder ("32px entre grupos frente a 12 dentro") — no hay un token de espaciado de 32px en la
- * escala (llega a --espacio-6, 24px), así que va literal, con esta nota de dónde sale el número.
+ * de un `.destacados` al siguiente) tiene que notarse claramente más grande que ese: 32px (`--espacio-7`), el doble,
+ * siguiendo el ejemplo del founder ("32px entre grupos frente a 12 dentro").
  */
 .destacados {
   display: grid;
   gap: var(--espacio-4);
-  padding-top: 32px;
-  /* El alto reservado por el esqueleto (CarrilEsqueleto) para que el colapso de un carril vacío (`.vacio`, más abajo)
-     empiece del mismo alto en vez de saltar. */
-  --alto-mediana: 246px;
-  --alto-grande: 360px;
-  --alto-chica: 230px;
+  padding-top: var(--espacio-7);
 }
+/* El título a la izquierda y, a la derecha, el enlace que dice a dónde lleva. */
 .cabecera {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding-inline: var(--gutter);
 }
-/* Un carril vacío colapsa desde el alto del esqueleto (arranca ahí con `@starting-style`, la "entrada" de este nodo
-   nuevo) hasta 0, en vez de desaparecer de golpe (founder, tras probar en producción, OL-156). Overflow oculto:
-   durante la transición no se ve nada de un carril que, total, no tiene tarjetas. */
+/* Un carril vacío no deja hueco (OL-156): lo que ocupaba su lugar (el esqueleto) se recoge de 1fr a 0fr y se desvanece en vez de
+   desaparecer de golpe. `@starting-style` da el punto de partida al nodo nuevo, sin conocer su alto. */
 .vacio {
-  gap: 0;
-  padding-top: 0;
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
+  transition:
+    grid-template-rows 0.2s ease,
+    opacity 0.2s ease;
+  @starting-style {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+.vacio > div {
+  min-height: 0;
   overflow: hidden;
-  transition: max-height .2s ease, opacity .2s ease, padding-top .2s ease;
-  transition-behavior: allow-discrete;
-}
-.vacio.grande {
-  @starting-style {
-    max-height: var(--alto-grande);
-    opacity: 1;
-  }
-}
-.vacio.redondas {
-  @starting-style {
-    max-height: var(--alto-chica);
-    opacity: 1;
-  }
-}
-.vacio:not(.grande):not(.redondas) {
-  @starting-style {
-    max-height: var(--alto-mediana);
-    opacity: 1;
-  }
 }
 .destacados h2 {
   font-size: var(--letra-xl);
@@ -60,36 +46,35 @@
   line-height: 1.1;
 }
 /*
- * El chevron en vez de «Ver todos» (founder, 2026-09-25, OL-219: «un angle icon ">" [...] se parece al canon de
- * Apple Music»). Todo el título + chevron es un solo enlace (nunca un botón aparte): `.tituloCarril` mide al menos
- * `--toque-min` (44px) de alto, aunque el glifo dibujado (`.chevron`) sea de 20px — un toque cerca del icono, no
- * solo sobre él, no falla.
+ * El enlace de la derecha (doc 50, puntos 60 y 61): dice a dónde lleva, del color de acción, con su chevron. Mide al
+ * menos `--toque-min` (44px) de alto, aunque el glifo dibujado sea de 18px.
  */
-.tituloCarril {
+.verTodo {
   display: inline-flex;
   align-items: center;
+  gap: 2px;
   min-height: var(--toque-min);
-  color: var(--texto);
+  padding-left: var(--espacio-2);
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 600;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
-.chevron {
-  display: inline-flex;
+.verTodo > svg {
   flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: var(--toque-min);
-  margin-right: -10px;
-  color: var(--texto-suave);
 }
+
+/* El carril: tres filas (foto, título, datos) y una columna por tarjeta. Es la mediana; `.grande`, `.chica` y `.sola` cambian sus
+   medidas, y solo eso. Arriba del carril queda sitio para el anillo de foco: el desplazamiento recorta. */
 .carril {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 220px;
-  gap: var(--espacio-3);
+  grid-auto-columns: var(--tarjeta-mediana);
+  grid-template-rows: var(--tarjeta-mediana-foto) auto auto;
+  gap: var(--espacio-1) var(--espacio-3);
   overflow-x: auto;
-  padding: var(--espacio-1) var(--gutter) var(--espacio-2); /* arriba, sitio para el anillo de foco: el desplazamiento recorta */
+  padding: var(--espacio-1) var(--gutter) var(--espacio-2);
   list-style: none;
   scroll-snap-type: x mandatory;
   scroll-padding-inline: var(--gutter);
@@ -101,22 +86,29 @@
 }
 .carril > li {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: subgrid;
+  grid-row: 1 / -1;
   min-width: 0;
   scroll-snap-align: start;
 }
-/* El botón (OL-106, bitácora 141): hermano de `.tarjeta` (el <a>), nunca su hijo — flota sobre la esquina superior
-   derecha de la foto. Se selecciona por estructura (`> button`), no por una clase de `ui/BotonRenglon`: esa pieza
-   no sabe que vive en un carril, y así no hace falta tocar su CSS para colocarlo aquí. */
+/* El botón (OL-106, bitácora 141): hermano de `.tarjeta` (el <a>), nunca su hijo — flota sobre la esquina superior derecha de
+   la foto. Se selecciona por estructura (`> button`), no por una clase de `ui/BotonIcono`: ese componente no sabe que vive en
+   un carril, y así no hace falta tocar su CSS para colocarlo aquí. */
 .carril > li > button {
   position: absolute;
   top: var(--espacio-2);
   right: var(--espacio-2);
 }
+
+/* La tarjeta: hija de la rejilla del carril por sus tres filas. */
 .tarjeta {
   display: grid;
-  grid-template-rows: 132px auto auto;
-  grid-template-areas: "foto" "titulo" "detalle";
-  row-gap: var(--espacio-1);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: subgrid;
+  grid-row: 1 / -1;
+  min-width: 0;
   color: var(--texto);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
@@ -126,127 +118,117 @@
   outline-offset: 2px;
   border-radius: var(--radio);
 }
-.foto {
-  grid-area: foto;
+.tarjeta > .foto {
+  grid-area: 1 / 1;
   width: 100%;
   height: 100%;
   border-radius: var(--radio);
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
-/* El único contenedor con `grid-area: foto` de la tarjeta (OL-176): «Te interesa» y «N van», si están los dos, van
-   apilados en columna abajo a la izquierda de la foto (el orden se decidió midiendo legibilidad: interesa arriba). */
-.chips {
-  grid-area: foto;
+/* Un solo rótulo por foto (H-02), abajo a la izquierda. */
+.tarjeta > .rotulo {
+  grid-area: 1 / 1;
   align-self: end;
   justify-self: start;
-  display: grid;
-  gap: 4px;
-  justify-items: start;
   margin: 0 0 var(--espacio-2) var(--espacio-2);
 }
-/* «N van» y «Recién agregado» (OL-219): la misma insignia de fondo vidrio, no una pieza nueva. */
-.van, .reciente {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espacio-1);
-  padding: 2px var(--espacio-2) 2px 6px;
-  border-radius: 999px;
-  background: var(--vidrio);
-  font-size: var(--letra-xs);
-  font-weight: 700;
-}
-/* Mismos tokens que `.meta > .estado` del renglón (Renglon.module.css): ya trae fondo propio (`--primario-suave`),
-   así que se lee igual de bien sobre la foto sin necesitar el vidrio de `.van`. */
-.interesa {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 0 var(--espacio-2) 0 6px;
-  border-radius: 999px;
-  background: var(--primario-suave);
-  color: var(--primario);
-  font-size: var(--letra-xs);
-  font-weight: 700;
-}
-.tarjeta b {
-  grid-area: titulo;
+.tarjeta > b {
+  grid-area: 2 / 1;
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font-size: var(--letra-md);
-  font-weight: 700;
-  font-variation-settings: var(--ancho-titulo);
-  line-height: 1.15;
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-tarjeta-titulo);
+  font-weight: var(--peso-lista-titulo);
+  font-variation-settings: var(--ancho-lista-titulo);
+  line-height: var(--interlinea-lista);
 }
-.tarjeta small {
-  grid-area: detalle;
-  overflow: hidden;
+/* Los datos: cuándo y dónde, una línea cada uno, cortadas con puntos suspensivos. Las dos líneas quedan juntas aunque la fila
+   la haya crecido otra tarjeta. */
+.tarjeta > small {
+  grid-area: 3 / 1;
+  display: grid;
+  align-content: start;
   color: var(--texto-suave);
-  font-size: var(--letra-sm);
+  font-family: var(--fuente-lista);
+  font-size: var(--letra-lista-meta);
+  font-variation-settings: var(--ancho-lista-meta);
+  line-height: 1.3;
+}
+.tarjeta > small > span {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Sin foto (H-03): sin bloque de imagen. El fondo suave de lo que no tiene foto ocupa el sitio de la foto y del título, con el nombre
+   grande y el rótulo dentro; los datos siguen debajo, como en toda tarjeta. El fondo es de un pseudoelemento (un relleno de la
+   tarjeta sumaría a las filas del carril) y el aire es relleno del nombre, que cabe en la fila de la foto. */
+.sinFoto::before {
+  content: "";
+  grid-area: 1 / 1 / 3 / 2;
+  border-radius: var(--radio);
+  background: var(--fondo-miniatura);
+}
+.sinFoto > b {
+  grid-area: 1 / 1 / 3 / 2;
+  align-self: start;
+  padding: var(--espacio-3) calc(var(--boton-icono) + var(--espacio-3)) 0 var(--espacio-3); /* el botón queda a la derecha */
+  font-size: var(--letra-xl);
+  -webkit-line-clamp: 3;
+}
+.sinFoto > .rotulo {
+  grid-row: 1 / 3;
+  margin: 0 0 var(--espacio-3) var(--espacio-3);
+}
+
 /*
- * Solo «Destacados» (lo que elige la administración) va con cartel vertical, angosto (founder, 2026-09-18; corrección
- * del gestor de cambios, 2026-09-23, bitácora 188: la primera entrega salía casi cuadrada y de casi todo el ancho,
- * una sola tarjeta por pantalla — lo firmado es angosta, proporción de cartel 2:3, para que quepan dos tarjetas
- * completas y el borde de una tercera a 390 px de ancho). «Con eventos esta semana» conserva el tamaño de antes, en
- * las dos secciones (corrección del founder, 2026-09-19: había crecido de más con el PR de los directorios
- * alfabéticos). El carril conserva el desplazamiento real y la siguiente tarjeta asoma, sin recorte artificial
- * (precisión del founder, 2026-09-18).
+ * Solo «Destacados» (lo que elige la administración) va con cartel vertical, angosto (founder, 2026-09-18; corrección del gestor de
+ * cambios, 2026-09-23, bitácora 188: proporción de cartel 2:3, para que quepan dos tarjetas completas y el borde de una tercera a
+ * 390 px de ancho). «Con eventos esta semana» conserva el tamaño de antes (corrección del founder, 2026-09-19). El carril conserva
+ * el desplazamiento real y la siguiente tarjeta asoma, sin recorte artificial (precisión del founder, 2026-09-18).
  */
 .grande {
-  grid-auto-columns: 165px;
-}
-.grande .tarjeta {
-  grid-template-rows: 248px auto auto;
+  grid-auto-columns: var(--tarjeta-grande);
+  grid-template-rows: var(--tarjeta-grande-foto) auto auto;
 }
 
-/* Artistas, en «Con eventos esta semana»: redondos como su avatar, angostos y al centro. */
-.redondas {
-  grid-auto-columns: 104px;
-  /* El botón flota sobre el perímetro del círculo (abajo) y sobresale por arriba: sin este espacio de sobra,
-     `overflow-x: auto` recorta también el desborde vertical (medido: overflow-y computa a "auto" igual). */
-  padding-top: calc(9px + var(--espacio-1));
+/* Lugares y artistas: redondos como su avatar, angostos y al centro. El botón queda en la esquina de la tarjeta, sobre el borde de
+   la foto (founder, 2026-09-21: «que el icono de check salga del contenedor de círculo»), sin salirse de su caja; la fecha va
+   completa aunque ocupe dos líneas (founder, 2026-09-19). */
+.chica {
+  grid-auto-columns: var(--tarjeta-chica);
+  grid-template-rows: var(--tarjeta-chica) auto auto;
 }
-.redondas .tarjeta {
-  grid-template-rows: 104px auto auto;
+.chica .tarjeta {
   text-align: center;
 }
-.redondas .foto {
+.chica .foto {
   border-radius: 50%;
 }
-/* Círculo de 104 px (radio 52) y botón de 48 px (radio 24): su centro cae en el punto del círculo a 45° arriba a la
-   derecha (52 + 52·cos45° ≈ 88.8, 52 − 52·sin45° ≈ 15.2), es decir, ~9 px fuera de la esquina (founder, 2026-09-21:
-   "que el icono de check salga del contenedor de círculo, que flote sobre el perímetro"). Verificado con
-   getBoundingClientRect: la distancia real entre los centros midió 52.3 px, el mismo radio de la foto. */
-.redondas > li > button {
-  top: -9px;
-  right: -9px;
+.chica > li > button {
+  top: 0;
+  right: 0;
+}
+.chica .tarjeta > small > span {
+  white-space: normal;
 }
 
 /*
- * Una sola tarjeta (OL-226, founder: «prefiero que siempre se muestre la imagen arriba y el texto abajo para tener
- * espacio suficiente para chips»): a lo ancho, con la imagen arriba en 5:3 y los sellos dentro de ella, abajo a la
- * izquierda, como en cualquier otra tarjeta. La fila de la foto mide lo que la imagen: con un alto fijo, los sellos
- * quedaban colgando fuera de ella (founder, 2026-09-26). Las redondas de artistas no cambian.
+ * Una sola tarjeta (OL-226, founder: «prefiero que siempre se muestre la imagen arriba y el texto abajo para tener espacio
+ * suficiente para chips»): a lo ancho, con la imagen arriba en 5:3 y el rótulo dentro de ella, abajo a la izquierda, como en
+ * cualquier otra tarjeta. La fila de la foto mide lo que la imagen: con un alto fijo, el rótulo quedaba colgando fuera de ella
+ * (founder, 2026-09-26). Las redondas de artistas no cambian.
  */
-.uno:not(.redondas) {
+.sola {
   grid-auto-columns: 100%;
-}
-.uno:not(.redondas) .tarjeta {
   grid-template-rows: auto auto auto;
 }
-.uno:not(.redondas) .foto {
+.sola .foto {
   height: auto;
-  max-height: 264px;
+  max-height: var(--tarjeta-sola-foto);
   aspect-ratio: 5 / 3;
-}
-
-/* En el carril semanal, fecha y hora completas incluso en las tarjetas redondas. */
-.detalleCompleto .tarjeta small {
-  white-space: normal;
 }

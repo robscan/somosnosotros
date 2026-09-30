@@ -6,10 +6,10 @@ import type { GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker } from "mapbox
 import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import type { LugarResumen } from "@/lib/lugares";
-import styles from "./MapaDondeEs.module.css";
+import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa } from "@/lib/mapa";
+import styles from "./Mapa.module.css";
 
 type Punto = { lat: number; lng: number };
-type EstadoMapa = "cargando" | "listo" | "sin-token" | "error";
 
 type Props = {
   /** Lugares registrados de la ciudad, como pines tocables con su nombre (docs/rediseno/43, paso 1). */
@@ -27,7 +27,7 @@ type Props = {
   paddingInferior?: number;
   /** Tocar un lugar registrado. */
   onLugar: (id: string) => void;
-  /** Tocar un punto de interés del propio estilo de Mapbox (si el estilo lo expone; ver HojaDondeEs.tsx). */
+  /** Tocar un punto de interés del propio estilo de Mapbox (si el estilo lo expone; ver HojaDonde.tsx). */
   onPoi: (nombre: string, punto: Punto) => void;
   /** Tocar cualquier otro punto del mapa (o un POI, si el estilo no expone ninguno tocable). */
   onPunto: (punto: Punto) => void;
@@ -38,14 +38,7 @@ type Props = {
 const FUENTE = "donde-es-lugares";
 const CAPA_PUNTOS = "donde-es-puntos";
 const CAPA_NOMBRES = "donde-es-nombres";
-/** El dedo necesita más radio que el punto (10 px) para acertar (mismo criterio que Mapa.tsx). */
-const RADIO_TOQUE = 18;
 const SIN_LUGARES: LugarResumen[] = [];
-
-function colorDiseno(nombre: string, reserva: string) {
-  if (typeof document === "undefined") return reserva;
-  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || reserva;
-}
 
 function aGeoJSON(lugares: LugarResumen[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
   return {
@@ -80,7 +73,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
  * Un punto de interés del propio estilo de Mapbox (una plaza, un parque…), si el estilo lo trae en una capa con
  * nombre reconocible ("poi" en el id de la capa o en su `source-layer`, como en los estilos Streets/Standard de
  * Mapbox). Es "lo que Mapbox exponga en el estilo actual" (encargo OL-173): si la cuenta usa un estilo que no trae
- * ninguna, esto nunca encuentra nada y el toque cae en un punto vacío, sin romperse (ver la nota en HojaDondeEs.tsx
+ * ninguna, esto nunca encuentra nada y el toque cae en un punto vacío, sin romperse (ver la nota en HojaDonde.tsx
  * sobre qué se pudo comprobar sin token de Mapbox en este entorno).
  */
 function poiTocado(mapa: MapaGL, e: MapMouseEvent): { nombre: string; punto: Punto } | null {
@@ -102,11 +95,11 @@ function poiTocado(mapa: MapaGL, e: MapMouseEvent): { nombre: string; punto: Pun
 }
 
 /**
- * El mapa de fondo de "¿Dónde es?" (OL-173): a diferencia de `Mapa.tsx` ("modo ver" con los lugares, "modo elegir"
- * con un pin suelto), esta pantalla necesita las dos cosas a la vez -lugares tocables Y un pin que se mueve a
- * cualquier punto- y ningún modo de `Mapa.tsx` las da juntas. Se escribe aparte, con el mismo patrón (single
- * instancia, capas por datos, tema claro forzado) para no tocar `Mapa.tsx` mientras OL-174 trabaja ahí a la vez
- * (instrucción del gestor). Documentado en la bitácora 208 como algo por unificar más adelante.
+ * El mapa de fondo de "¿Dónde es?" (OL-173): a diferencia de `Mapa.tsx` (los lugares de Lugares), esta pantalla
+ * necesita a la vez lugares tocables Y un pin que se mueve a cualquier punto. Comparte con `Mapa.tsx` su hoja de estilo y lo
+ * mínimo de `lib/mapa` (el mismo patrón: una sola instancia, capas por datos, tema claro forzado), pero no su código: los pines
+ * de Lugares llevan tamaño, prioridad y nombre por lugar, y se encuadran con la hoja; este tiene un pin suelto que se arrastra y
+ * una cámara que lo sigue con el margen de la hoja de abajo. Unirlos en un componente con dos modos habría sido más código, no menos.
  */
 export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarEn, ciudad = CIUDAD_INICIAL, yo = null, paddingInferior = 0, onLugar, onPoi, onPunto, onArrastre }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
@@ -144,6 +137,7 @@ export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarE
         center: [inicio.lng, inicio.lat],
         zoom: seleccion ? 16 : ciudad.zoom,
         language: "es",
+        locale: TEXTOS_MAPBOX,
         attributionControl: false,
         logoPosition: "bottom-left",
       });

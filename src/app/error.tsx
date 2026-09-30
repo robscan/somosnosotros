@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Atras from "@/components/ui/Atras";
 import Boton from "@/components/ui/Boton";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 /**
  * Algo falló al cargar una pantalla. Se dice en español, se ofrece reintentar y volver a la agenda.
@@ -13,7 +14,7 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
     console.error("Pantalla con error:", error.digest ?? error.message);
   }, [error]);
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <h1 className="titulo">Algo falló</h1>
       <p className="subtitulo">No se pudo cargar esta pantalla. Suele arreglarse al intentar de nuevo.</p>
       <Boton type="button" onClick={() => retry()}>

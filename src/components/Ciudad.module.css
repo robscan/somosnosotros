@@ -1,20 +1,16 @@
-/* Hoja de ciudades: un renglón por ciudad, nombre a la izquierda y lo que tiene a la derecha */
-.opcion {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  min-height: var(--toque);
-  padding: 0 var(--espacio-1);
-  border-bottom: 1px solid var(--borde);
-  color: var(--texto);
-  font-size: var(--letra-md);
-  text-decoration: none;
-}
-.opcion span:last-child {
+/* La hoja «Dónde estás» (Ciudad.tsx): la nota, el aviso si no se pudo leer la ubicación y el bloque de «Otra ciudad»
+   (el campo y sus sugerencias, que aparecen juntos bajo la lista). Las filas son las de ui/Renglon. */
+.aviso {
+  margin-top: var(--espacio-3);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
+  line-height: 1.35;
 }
-.elegida {
-  font-weight: 700;
+.otra {
+  display: grid;
+  gap: var(--espacio-2);
+  margin-top: var(--espacio-3);
+}
+.otra > p {
+  margin: 0;
 }

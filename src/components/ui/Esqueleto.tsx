@@ -1,3 +1,6 @@
+import { Kpis } from "./Kpi";
+import kpi from "./Kpi.module.css";
+import renglon from "./Renglon.module.css";
 import styles from "./Esqueleto.module.css";
 
 /**
@@ -7,20 +10,20 @@ import styles from "./Esqueleto.module.css";
  * (la animación vive en `Esqueleto.module.css`, una sola regla para todas las variantes).
  *
  * Variantes:
- * - `EsqueletoRenglon`: una fila de listado (foto 64×64, título, una línea de meta) — mismo alto que `Renglon.module.css`.
- * - `EsqueletoTarjeta`: tarjeta de carril, grande/mediana/chica — las medidas que ya tenía `CarrilEsqueleto`.
- * - `EsqueletoCabeceraFicha`: foto + nombre + dos líneas de meta, para la cabecera de una ficha.
+ * - `EsqueletoRenglon`: una fila de listado, el mismo renglón de lista de `ui/Renglon` con barras en lugar de foto, título
+ *   y meta: no lleva una medida propia, así que mide lo que el renglón.
+ * - `EsqueletoKpi` y `EsqueletoKpis`: uno o los tres números de una ficha, la misma tarjeta de `ui/Kpi`.
  * - `EsqueletoBloqueTexto`: unas líneas de párrafo, para bloques de texto que llegan después.
  */
 
 export function EsqueletoRenglon({ redonda = false }: { redonda?: boolean }) {
   return (
-    <li className={styles.renglon} aria-hidden="true">
-      <span className={`${styles.foto} ${styles.respira} ${redonda ? styles.fotoRedonda : ""}`} />
-      <span className={styles.renglonTextos}>
+    <li className={renglon.lista} aria-hidden="true">
+      <div className={renglon.frente}>
+        <span className={`${renglon.foto} ${styles.respira} ${redonda ? renglon.redonda : ""}`} />
         <span className={`${styles.linea} ${styles.respira} ${styles.tituloRenglon}`} />
         <span className={`${styles.linea} ${styles.respira} ${styles.metaRenglon}`} />
-      </span>
+      </div>
     </li>
   );
 }
@@ -36,30 +39,33 @@ export function EsqueletoRenglones({ cantidad = 5, redonda = false }: { cantidad
   );
 }
 
-export function EsqueletoTarjeta({ tamano = "mediana" }: { tamano?: "grande" | "mediana" | "chica" }) {
+/** Un número de la ficha mientras llega su consulta: la misma tarjeta (`ui/Kpi`), con el icono, lo que es y el valor en gris. */
+export function EsqueletoKpi() {
   return (
-    <div className={`${styles.tarjeta} ${styles[tamano]}`} aria-hidden="true">
-      <span className={`${styles.foto} ${styles.respira}`} />
-      <span className={`${styles.linea} ${styles.respira}`} />
-      <span className={`${styles.linea} ${styles.respira} ${styles.corta}`} />
-    </div>
+    <li aria-hidden="true">
+      <div className={kpi.kpi}>
+        <span className={`${styles.iconoKpi} ${styles.respira}`} />
+        <span className={`${styles.linea} ${styles.respira} ${styles.etiquetaKpi}`} />
+        <span className={`${styles.linea} ${styles.respira} ${styles.valorKpi}`} />
+      </div>
+    </li>
   );
 }
 
-export function EsqueletoCabeceraFicha() {
+/** Los tres números de una ficha que llegan juntos. */
+export function EsqueletoKpis() {
   return (
-    <div className={styles.cabeceraFicha} aria-hidden="true">
-      <span className={`${styles.fotoFicha} ${styles.respira}`} />
-      <span className={`${styles.linea} ${styles.respira} ${styles.nombreFicha}`} />
-      <span className={`${styles.linea} ${styles.respira} ${styles.metaFicha}`} />
-      <span className={`${styles.linea} ${styles.respira} ${styles.metaFicha} ${styles.corta}`} />
-    </div>
+    <Kpis>
+      <EsqueletoKpi />
+      <EsqueletoKpi />
+      <EsqueletoKpi />
+    </Kpis>
   );
 }
 
 /**
  * Una caja rectangular que respira, sin medida propia: el tamaño lo pone quien la usa (una clase con alto/ancho,
- * como `.cajaMapa` de Lugares). Para lo que no encaja en renglón, tarjeta o cabecera de ficha — el mapa mientras
+ * como `.cajaMapa` de Lugares). Para lo que no encaja en renglón, tarjeta o número de ficha — el mapa mientras
  * carga (OL-161, bitácora 196).
  */
 export function EsqueletoCaja({ className = "" }: { className?: string }) {

@@ -1,0 +1,75 @@
+/* Registrar un lugar sosteniendo el dedo en el mapa (ver PulsacionEnMapa.tsx). */
+
+/* El anillo que dice «sigue sosteniendo»: nace en el punto y crece hasta cerrarse justo cuando hay pulsación larga; su duración la pone la pantalla
+   (`--anillo-dura`, de las mismas medidas que la espera). Fijo en su sitio: si el mapa se mueve, la pulsación se cancela y el anillo se va. Más ancho
+   que la yema, para verse alrededor del dedo. */
+.anillo {
+  position: absolute;
+  z-index: var(--z-sobre);
+  box-sizing: border-box;
+  width: calc(var(--espacio-8) * 2);
+  height: calc(var(--espacio-8) * 2);
+  border: 2px solid var(--primario);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: anillo var(--anillo-dura) var(--curva) forwards;
+}
+@keyframes anillo {
+  from {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0.2;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* La marca: el punto en el color de acción con su halo, como el punto azul de «tú estás aquí». La pone un marcador de Mapbox (sin eventos de puntero: ver `PulsacionEnMapa.tsx`). */
+.marca {
+  display: grid;
+  place-items: center;
+  width: var(--control);
+  height: var(--control);
+  border-radius: 50%;
+  background: var(--primario-suave);
+}
+.marca::after {
+  content: "";
+  width: var(--espacio-4);
+  height: var(--espacio-4);
+  border-radius: 50%;
+  background: var(--primario);
+  border: 2px solid var(--fondo);
+  box-shadow: var(--sombra-punto);
+}
+
+/* La ventanita de Mapbox (que acomoda la tarjeta dentro de la pantalla): blanca, con las esquinas y la sombra de una tarjeta de la app. */
+.ventana :global(.mapboxgl-popup-content) {
+  padding: var(--espacio-3);
+  border-radius: var(--radio-grande);
+  box-shadow: var(--sombra-flotante);
+}
+
+/* La tarjeta: el nombre del sitio (o «Lugar nuevo») con su ✕ y, debajo, el botón. Mapbox le pone su letra a todo el mapa: aquí la de la app. */
+.tarjeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--espacio-2);
+  max-width: min(60vw, var(--panel));
+  font-family: var(--fuente);
+  font-size: var(--letra-md);
+  line-height: 1.3;
+  color: var(--texto);
+}
+.tarjeta > b {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+.tarjeta > :last-child {
+  grid-column: 1 / -1;
+}

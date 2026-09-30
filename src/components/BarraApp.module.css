@@ -1,0 +1,67 @@
+/* La barra de la app (docs/rediseno/50, P4 y P7), del prototipo firmado (bloque «2. El armazón»): blanca y pegajosa arriba. En
+   el teléfono no lleva filete: con la fila de contexto de las raíces (ui/Cabecera) es una sola región y el único filete va bajo
+   esa fila. Desde 792 ocupa todo el ancho y su filete cruza la ventana, con el carril debajo. Tres celdas de una rejilla: un
+   lado, el logotipo y el otro lado. Los dos lados valen lo mismo (`--flanco` y lo que sobre, a partes iguales), así el logotipo
+   queda en el centro exacto de la barra pase lo que pase en ellos: con o sin sesión, con o sin Atrás y menú, y también mientras
+   la sesión llega del servidor. */
+.barra {
+  /* Lo que reserva cada lado junto al logotipo: un botón de la barra y sitio para el siguiente (la campana, con sesión). */
+  --flanco: calc(var(--control) + 3.5rem);
+  grid-area: barra;
+  position: sticky;
+  top: 0;
+  z-index: calc(var(--z-pegajoso) + 1);
+  display: grid;
+  grid-template-columns: minmax(var(--flanco), 1fr) auto minmax(var(--flanco), 1fr);
+  align-items: center;
+  height: calc(var(--alto-barra) + var(--tope));
+  padding: var(--tope) calc(var(--gutter) - var(--espacio-2)) 0;
+  background: var(--fondo);
+  transition:
+    transform var(--duracion-recogida) var(--curva),
+    visibility 0s;
+}
+/* Cada lado es una fila de botones: el izquierdo desde su borde, el derecho hacia el suyo. */
+.lado {
+  display: flex;
+  align-items: center;
+}
+.derecho {
+  justify-content: flex-end;
+}
+/* El lugar de Atrás y el del menú «···»: en el teléfono no hay (la barra no se ve con una ficha); desde 792 se reservan
+   aunque no haya ficha, para que lo demás no se mueva al pasar de una pantalla a otra. */
+.hueco {
+  display: none;
+}
+/* En una ventana muy angosta (320) el logotipo se achica dentro de su celda en vez de pasar bajo un lado. */
+.logotipo {
+  min-width: 0;
+}
+.logotipo > img {
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Recogida (Armazon.tsx, solo en el teléfono): al bajar sube y se va, y la fila de contexto sube con ella (`--barra-vista`).
+   La visibilidad cambia al terminar de subir, para que lo recogido no se pueda tocar ni leer. */
+:global([data-recogida]) .barra {
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition:
+    transform var(--duracion-recogida) var(--curva),
+    visibility 0s var(--duracion-recogida);
+}
+
+/* Desde 792, con una ficha a la vista, trae Atrás junto al «+» y el menú junto a la sesión, y la ficha ya no lleva cabecera
+   propia. Sus lados reservan sitio para ellos aunque no haya ficha, y su filete cierra la región. */
+@media (min-width: 792px) {
+  .barra {
+    padding-inline: var(--espacio-4);
+    box-shadow: inset 0 -1px 0 var(--borde);
+  }
+  .hueco {
+    display: flex;
+    min-width: var(--control);
+  }
+}

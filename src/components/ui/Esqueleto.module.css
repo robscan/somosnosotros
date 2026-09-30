@@ -18,94 +18,45 @@
   border-radius: var(--radio);
 }
 
-/* Renglón de listado: mismas medidas que Renglon.module.css (.renglon/.frente/.foto/.titulo/.meta), para que la
-   fila real caiga encima sin saltar. */
+/* Renglón de listado: el mismo renglón de lista (ui/Renglon) con barras en lugar de foto, título y meta. Alto, foto,
+   aire y filete son los suyos; aquí solo va lo que dibuja una barra: su largo y el alto de la letra que sustituye. */
 .listaRenglones {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.renglon {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
-  column-gap: var(--espacio-3);
-  align-items: center;
-  min-height: 64px;
-  padding: var(--espacio-3) 0;
-  border-bottom: 1px solid var(--borde);
-}
-.renglon .foto {
-  width: 64px;
-  height: 64px;
-  border-radius: 10px;
-}
-.fotoRedonda {
-  border-radius: 50%;
-}
-.renglonTextos {
-  display: grid;
-  row-gap: 8px;
-}
 .tituloRenglon {
+  grid-area: titulo;
   width: 65%;
-  height: 19px;
+  height: var(--letra-lista-titulo);
 }
 .metaRenglon {
+  grid-area: meta;
   width: 45%;
-  height: 15px;
+  height: var(--letra-lista-meta);
+  margin-top: var(--espacio-2);
 }
 
-/* Tarjeta de carril: mismas medidas que traía CarrilEsqueleto.module.css. */
-.tarjeta {
-  display: grid;
-  row-gap: var(--espacio-1);
-  width: 220px;
+/* Un número de ficha: la misma tarjeta (ui/Kpi) con un icono del tamaño del real y dos barras del alto de su letra. */
+.iconoKpi {
+  grid-area: icono;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radio-chico);
 }
-.tarjeta .foto {
-  height: 132px;
-  border-radius: var(--radio);
+.etiquetaKpi {
+  grid-area: etiqueta;
+  width: 60%;
+  height: var(--letra-2xs);
 }
-.tarjeta .linea {
-  height: 14px;
+.valorKpi {
+  grid-area: valor;
+  width: 70%;
+  height: 1.15rem;
 }
+
 .corta {
   width: 60%;
-}
-.grande {
-  width: 165px;
-}
-.grande .foto {
-  height: 248px;
-}
-.chica {
-  width: 104px;
-}
-.chica .foto {
-  height: 104px;
-  border-radius: 50%;
-}
-.chica .linea {
-  justify-self: center;
-  width: 80%;
-}
-
-/* Cabecera de ficha: foto, nombre, dos líneas de meta (evento/lugar/artista). */
-.cabeceraFicha {
-  display: grid;
-  row-gap: var(--espacio-2);
-  padding: var(--espacio-3) var(--gutter);
-}
-.fotoFicha {
-  height: 220px;
-  border-radius: var(--radio);
-}
-.nombreFicha {
-  width: 70%;
-  height: 24px;
-}
-.metaFicha {
-  width: 50%;
-  height: 16px;
 }
 
 /* Bloque de texto: unas líneas de párrafo. */

@@ -1,10 +1,10 @@
 :root {
-  /* Alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone, OL-209). En Safari y en la web
-     instalada del iPhone vale 0: ahí el navegador ya deja la página debajo de la hora. */
-  --tope: env(safe-area-inset-top, 0px);
   color-scheme: light; /* tema claro, sin modo oscuro (DEFINICION) */
 
-  /* Variables de diseño: una sola fuente de verdad para color, espacio y forma. */
+  /* Variables de diseño: una sola fuente de verdad para color, aire, forma, capas y medidas. Sus valores son los del
+     prototipo firmado de la reestructura de la interfaz (OL-227; doc 50, 5.1). */
+
+  /* Color */
   --fondo: #ffffff;
   --fondo-suave: #f4f4f2;
   --fondo-contenido: #f6f5f1; /* zona de contenido de las pantallas raíz: distinta de la cabecera y la nav, que son blancas */
@@ -15,49 +15,116 @@
   --primario-texto: #ffffff;
   --primario-suave: color-mix(in srgb, var(--primario) 12%, white); /* fondo del estado seleccionado ("✓ Voy"); derivado del primario (doc 37), antes #e3f0f2 fijo */
   --error: #b3261e; /* rojo solo para errores y borrar */
+  --error-suave: #fdf3f2; /* fondo de un campo con error */
   --ok: #1f6f43; /* verde: algo ya decidido (Vas, Sigues) — distinto de --primario a propósito, para no invitar a tocarlo otra vez (OL-106) */
+  --ok-suave: color-mix(in srgb, var(--ok) 12%, white); /* fondo suave de lo ya decidido; derivado de --ok como --primario-suave */
   --destacado: #d35400; /* naranja cempasúchil: los destacados en el mapa (founder, 2026-09-16); 3.8:1 con el fondo del mapa */
   --destacado-texto: #a94400; /* el mismo naranja para letra: 5.5:1 sobre el fondo de contenido */
   --destacado-suave: #fbebdd; /* fondo de la etiqueta "Destacado" en el panel */
+  --sistema-azul: #1a73e8; /* azul de los mapas: el punto de «tú estás aquí» */
+  --sistema-azul-halo: color-mix(in srgb, var(--sistema-azul) 18%, transparent); /* el halo que rodea a ese punto */
   --fondo-miniatura: #e6e6e2; /* miniaturas y avatares sin foto */
   --fondo-mapa: #eef0ec; /* tono claro mientras carga el mapa: nunca pantalla negra */
   --asa: #d9d9d9; /* asa del panel inferior */
+  --asa-ancho: 36px; /* el asa de una hoja mide 36 × 4 */
+  --asa-alto: 4px;
   --vidrio: rgba(255, 255, 255, 0.92); /* rótulos sobre el mapa */
+  --velo-titulo: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.44) 55%, rgba(0, 0, 0, 0)); /* oscurece el pie de una portada para que se lea el título que va encima */
+  --velo-barra: rgba(0, 0, 0, 0.6); /* oscurece la portada detrás del título de la barra compacta de una ficha */
+  --velo-hoja: rgba(0, 0, 0, 0.32); /* oscurece lo que queda detrás de una hoja */
+  --fondo-visor: rgba(0, 0, 0, 0.94); /* el visor de carteles: casi negro, para que el cartel destaque */
+  --fondo-video: #14181c; /* el marco de un video mientras carga */
+  --fondo-audio: #f2f2f2; /* el marco de un reproductor de audio mientras carga */
+  --fondo-pared: #fbfaf8; /* el hueso de la pared de la obra colectiva y del marco de su instantánea: un punto más cálido que el blanco */
+  --barra-desplazamiento: rgba(0, 0, 0, 0.28); /* la barra de desplazamiento de la hoja de Lugares cuando llena */
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.08);
   --sombra-panel: 0 -2px 16px rgba(0, 0, 0, 0.1);
   --sombra-flotante: 0 6px 20px rgba(0, 0, 0, 0.22);
+  --sombra-asa: 0 0 3px rgba(0, 0, 0, 0.35); /* el asa de la hoja de Lugares */
+  --sombra-punto: 0 1px 4px rgba(0, 0, 0, 0.3); /* el punto «tú estás aquí» del mapa */
+  --sombra-perilla: 0 1px 3px rgba(0, 0, 0, 0.3); /* la perilla de un interruptor */
 
-  --radio: 12px;
-  --radio-grande: 16px;
+  /* El mando de una obra colectiva. Su botón y su aviso de turno siguen brillando en el azul petróleo de antes del violeta (OL-146),
+     aunque el botón ya sea violeta: quien decida si pasan al primario cambia solo estas líneas. */
+  --mando-brillo: 0 12px 28px rgba(15, 107, 124, 0.35);
+  --mando-anillo: 0 0 0 10px rgba(15, 107, 124, 0.22);
+  --mando-aviso: 0 10px 24px rgba(15, 107, 124, 0.4);
+  --mando-brillo-ok: 0 12px 28px color-mix(in srgb, var(--ok) 35%, transparent); /* encendido: el mismo brillo, en el verde de lo decidido */
+  --mando-anillo-ok: 0 0 0 10px color-mix(in srgb, var(--ok) 22%, transparent);
+  --contorno-tinta: inset 0 0 0 1px rgba(0, 0, 0, 0.12); /* la muestra de una tinta */
+  --contorno-tinta-clara: inset 0 0 0 1.5px rgba(0, 0, 0, 0.32); /* la de la tinta blanca, para verse sobre el fondo claro */
+
+  /* Aire: de 4 a 40, para el espacio entre cosas y el relleno */
   --espacio-1: 4px;
   --espacio-2: 8px;
   --espacio-3: 12px;
   --espacio-4: 16px;
   --espacio-5: 20px;
   --espacio-6: 24px;
-  --alto-barra: 56px; /* barra superior: logotipo y sesión, o regreso y logotipo */
-  --alto-nav: 60px; /* barra de navegación inferior (píldora de 32 + etiqueta), sin el área segura */
-  --alto-cabecera: 100px; /* lo que ui/Cabecera deja a la vista (chips 56 + pestañas 44); ella lo remide en vivo */
-  --toque: 48px; /* alto de botones y campos: cómodo para el pulgar */
-  --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
+  --espacio-7: 32px;
+  --espacio-8: 40px;
 
-  /* Una sola columna en cualquier pantalla (decisión de maquetación, 2026-09-14). En el teléfono el gutter es 20px;
-     en tablet y escritorio crece solo lo que sobra a cada lado de la columna, así el contenido queda centrado y
-     las barras (superior, inferior) siguen a lo ancho. Sin media queries ni envoltorios: todo gutter
-     horizontal de página se escribe var(--gutter). Los botones y sangrías siguen con --espacio-N.
-     Solo en cajas que van a todo lo ancho de la ventana: una caja que ya mide la columna (ui/Hoja) usa --espacio-5. */
-  --columna: 600px;
-  --al-centro: calc((100vw - var(--columna)) / 2); /* lo que sobra a cada lado; negativo en el teléfono. Sobre el ancho de la
-     ventana, no del contenedor: así vale lo mismo dentro de cualquier caja y un margen negativo llega al borde de la pantalla */
-  --gutter: max(var(--espacio-5), var(--al-centro));
+  /* Forma */
+  --radio-chico: 4px; /* fotos de renglón */
+  --radio: 8px; /* botones, campos y tarjetas */
+  --radio-grande: 12px; /* portadas y tarjetas grandes */
+  --radio-hoja: 24px; /* las dos esquinas de arriba de una hoja */
+  --radio-pildora: 999px; /* chips, sellos y botones en píldora */
+
+  /* Controles: lo que se toca */
+  --control: 44px; /* alto de lo que se toca en barras y cabeceras */
+  --toque: 48px; /* alto de botones y campos: cómodo para el pulgar */
+  --boton-icono: 48px; /* botón redondo de icono en listas, tarjetas y mapa */
+  --boton-icono-grande: 56px; /* botón redondo de icono de las acciones de una ficha */
+  --toque-min: 44px; /* mínimo absoluto de cualquier cosa que se pulsa (chips, pestañas, enlaces) */
+  --columna-icono: 24px; /* la columna del icono en un renglón: icono | texto | acción */
+  --alto-chip: 36px; /* alto que se ve de un chip que se toca; su ::before lo lleva a --toque-min */
+
+  /* Barras */
+  --alto-barra: 56px; /* barra de la app (BarraApp) y cabecera interior de una ficha o una tarea: 56 sin la franja de la hora */
+  --alto-cabecera: 96px; /* lo que mide ui/Cabecera (fila 52 + pestañas 44); ella lo remide en vivo */
+  --alto-nav: 60px; /* la barra de navegación del teléfono (píldora de 32 + etiqueta), sin el área segura */
+  --alto-modos: 56px; /* la tira de tipos de la pantalla de alta (Evento · Lugar · Artista), sin el área segura */
+  --ancho-carril-nav: 88px; /* la navegación como carril a la izquierda, en tableta y escritorio */
+
+  /* Zonas seguras. `--tope` es el alto de la franja de la hora cuando la página llega hasta arriba (app de iPhone,
+     OL-209); en Safari y en la web instalada del iPhone vale 0: ahí el navegador ya deja la página debajo de la hora. */
+  --tope: env(safe-area-inset-top, 0px);
+  --piso: env(safe-area-inset-bottom, 0px); /* zona segura de abajo (la barra de gestos del iPhone); 0 donde el navegador ya la deja libre */
+  --nav-abajo: calc(var(--alto-nav) + var(--piso)); /* lo que ocupa abajo la navegación con su zona segura: la barra del teléfono; desde 792 (el carril), solo la zona segura */
+
+  /* Capas, de abajo arriba. Dos cosas de la misma banda se separan con +1 o −1, nunca con un número suelto. */
+  --z-sobre: 1; /* sobre su vecino dentro de la misma caja: un botón sobre el lienzo del mapa, el título sobre la portada */
+  --z-pegajoso: 10; /* cabeceras y barras que se quedan pegadas al desplazar; los títulos de día y la tira de letras, justo bajo ellas (−1) */
+  --z-flotante: 20; /* fijo al pie sobre el contenido: navegación y barra de acciones; los botones flotantes, +1 */
+  --z-barra: 30; /* franja de la hora y avisos con Deshacer, sobre lo flotante */
+  --z-hoja: 40; /* hojas que suben desde abajo, con su fondo */
+  --z-capa: 50; /* capas a pantalla completa: el visor del cartel; «¿Dónde es?», +1 */
+  --z-encima: 60; /* lo que va sobre cualquier capa: la lista flotante; el texto largo, +1 */
+
+  /* Anchos. Una sola columna en cualquier pantalla (decisión de maquetación, 2026-09-14). En el teléfono el gutter es
+     20px; en tablet y escritorio crece solo lo que sobra a cada lado de la columna, así el contenido queda centrado en lo que
+     la pantalla ocupa (con el carril, la ventana menos el carril). Todo gutter horizontal de página se escribe var(--gutter).
+     Los botones y sangrías siguen con --espacio-N. Solo en cajas que van a todo lo ancho de la pantalla: una caja que ya mide
+     la columna (ui/Hoja) usa --espacio-5. Desde 1048 las raíces y las fichas pasan a la columna ancha (Armazon.module.css). */
+  --columna: 600px; /* ancho de lectura */
+  --columna-ancha: 960px; /* ancho de lectura de las raíces y las fichas en escritorio */
+  --panel: 400px; /* la lista que va junto al mapa */
+  /* Se mide sobre el ancho de la pantalla, que es un contenedor (`container-type` en Armazon.module.css): `100cqw` no cuenta la
+     barra de desplazamiento clásica que `100vw` sí incluye (H-38) ni el carril de la navegación. Lo que se pinta fuera de ella
+     (lo que sube por portal a `body`) no tiene contenedor y mide la ventana. Se va cuando las plantillas usen `.columna` en vez
+     de este gutter. */
+  --gutter: max(var(--espacio-5), calc((100cqw - var(--columna)) / 2));
 
   /* Escala de letra en rem: si la persona agranda el texto en su teléfono, todo crece con él.
      Un punto más grande que con la letra del sistema: la condensada se percibe más chica (LINEA_GRAFICA). */
+  --letra-2xs: 0.75rem; /* 12px: etiquetas de la navegación y sellos */
   --letra-xs: 0.875rem; /* 14px: etiquetas en mayúsculas, cuándo */
   --letra-sm: 0.9375rem; /* 15px: detalle, ayuda, error */
   --letra-md: 1.0625rem; /* 17px: texto y campos */
   --letra-lg: 1.125rem; /* 18px: botón principal */
   --letra-xl: 1.1875rem; /* 19px: título de sección y de tarjeta */
+  --letra-campo: max(16px, var(--letra-md)); /* la de un campo: nunca baja de 16px, o Safari hace zoom al enfocarlo */
   --letra-2xl: 1.625rem; /* 26px: título de pantalla */
   --letra-3xl: 1.875rem; /* 30px: nombre del lugar o evento */
   --alto-logo: 1.75rem; /* 28px: dibujo SMSNSTRS en la barra de las pantallas raíz */
@@ -68,6 +135,60 @@
   --ancho-texto: "wdth" 80;
 
   --fuente: var(--fuente-bricolage), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Letra de listas y tarjetas (título y datos de un renglón o una tarjeta): la marca sigue en títulos, KPI y botones */
+  --fuente-lista: var(--fuente);
+  --ancho-lista-titulo: var(--ancho-titulo);
+  --ancho-lista-meta: var(--ancho-texto);
+  --letra-lista-titulo: var(--letra-xl); /* 19px */
+  --letra-tarjeta-titulo: var(--letra-md); /* 17px */
+  --letra-lista-meta: var(--letra-sm); /* 15px */
+  --peso-lista-titulo: 700;
+  --interlinea-lista: 1.15;
+
+  /* Tarjetas del carril y foto del renglón: las medidas de la pieza y de su esqueleto */
+  --tarjeta-mediana: 220px; /* ancho de la tarjeta mediana */
+  --tarjeta-mediana-foto: 132px; /* alto de su foto */
+  --tarjeta-grande: 165px; /* ancho de la tarjeta de cartel vertical */
+  --tarjeta-grande-foto: 248px; /* alto de su foto */
+  --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
+  --tarjeta-sola-foto: 264px; /* tope del alto de la foto de una tarjeta sola, que ocupa el ancho del carril */
+  --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
+  --avatar-ficha: 64px; /* avatar redondo dentro del héroe de la ficha de un artista */
+  --avatar-perfil: 72px; /* avatar redondo de la cabecera de una persona (Mi perfil y su ficha) */
+
+  /* Movimiento */
+  --duracion: 200ms; /* transición corriente: barras, hojas, cabeceras */
+  --duracion-ficha: 220ms; /* una ficha al entrar o salir */
+  --curva: cubic-bezier(0.22, 0.61, 0.36, 1); /* aceleración de todo lo que se mueve */
+  /* Lo que entra y sale con movimiento: la hoja de Lugares con una ficha (`HojaLugares`) y los chips que se ponen o se quitan de la fila de
+     contexto (`Chip`); los dos leen esto con `lib/movimiento`. Entra con el resorte «Gentle» de Figma (rigidez 100, amortiguación 15, masa 1:
+     rebasa un 2,8 % y queda quieta en unos 0,8 s) y sale con el mismo, recortado donde ya no se ve (la primera vez que llega a su recorrido, a
+     los 366 ms). Cada curva trae aquí su respaldo `cubic-bezier`; el resorte de verdad (`linear()`) lo pone el `@supports` de abajo. */
+  --duracion-resorte: 800ms;
+  --curva-resorte: cubic-bezier(0.35, 0.7, 0.1, 1.15);
+  --duracion-salida: 366ms;
+  --curva-salida: cubic-bezier(0.25, 0.05, 0.45, 0.9);
+  --escala-chip: 0.8; /* de qué tamaño parte un chip al entrar a la fila de contexto y a cuál llega al salir */
+}
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    --curva-resorte: linear(0, 0.0275, 0.0969, 0.1914, 0.2982, 0.4081, 0.5143, 0.6124, 0.7, 0.7757, 0.8394, 0.8915, 0.9329, 0.9649, 0.9886, 1.0056, 1.0169, 1.0239, 1.0274, 1.0284, 1.0276, 1.0256, 1.0229, 1.0199, 1.0168, 1.0138, 1.011, 1.0085, 1.0064, 1.0046, 1.0031, 1.0019, 1);
+    --curva-salida: linear(0, 0.0233, 0.0828, 0.1654, 0.2608, 0.3611, 0.4604, 0.5546, 0.6411, 0.7183, 0.7855, 0.8426, 0.8901, 0.9287, 0.9592, 0.9826, 1);
+  }
+}
+/* Desde 792 la navegación es un carril a la izquierda (docs/rediseno/50, P7): abajo ya no hay barra, solo la zona segura. */
+@media (min-width: 792px) {
+  :root {
+    --nav-abajo: var(--piso);
+  }
+}
+/* Desde 1048 las tarjetas de cartel vertical crecen (docs/rediseno/50, P10): el carril y su esqueleto siguen los mismos tokens. */
+@media (min-width: 1048px) {
+  :root {
+    --tarjeta-grande: 190px;
+    --tarjeta-grande-foto: 285px;
+  }
 }
 
 * {
@@ -118,41 +239,49 @@ select {
 input,
 textarea,
 select {
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
+}
+
+/* El campo escondido que la lupa de la barra enfoca con el toque (`BarraApp`): fuera de la barra, que en el teléfono se esconde al llegar
+   a Buscar, y con 16 px como todos los campos (iOS no hace zoom). */
+.cebo-de-teclado {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* La franja de la hora (OL-209): fija, del color de las cabeceras, encima de lo que se desplaza y debajo de las hojas
-   (z 40). Sin ella, en la app de iPhone el contenido pasaba bajo el reloj al desplazar. Donde `--tope` vale 0 no se ve. */
+   (`--z-hoja`). Sin ella, en la app de iPhone el contenido pasaba bajo el reloj al desplazar. Donde `--tope` vale 0 no
+   se ve. */
 body::before {
   content: "";
   position: fixed;
   inset: 0 0 auto;
   height: var(--tope);
   background: var(--fondo);
-  z-index: 30;
+  z-index: var(--z-barra);
   pointer-events: none;
 }
 
-/* Pantallas raíz (Agenda, Lugares, Artistas): barra arriba, contenido en su tono, navegación inferior fija. */
-.raiz {
-  min-height: 100dvh;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + 96px);
-  background: var(--fondo-contenido);
+/* Ancho de un bloque (doc 50, 5.3): la página no lleva aire a los lados y cada bloque pone el suyo. `.columna` mide como mucho la
+   columna más su aire y se centra sola, sin medir la ventana (H-38); lo que llega a los dos bordes (un carril, una barra, una
+   portada) no lleva clase: ocupa la rejilla entera. */
+.columna {
+  width: 100%;
+  max-width: calc(var(--columna) + 2 * var(--espacio-5));
+  margin-inline: auto;
+  padding-inline: var(--espacio-5);
 }
-
-/* Pantallas de formulario: scroll normal, el botón va en el flujo y nunca queda bajo el teclado. */
-.pagina {
-  min-height: 100dvh;
-  padding: calc(var(--espacio-5) + env(safe-area-inset-top, 0px)) var(--gutter)
-    calc(var(--espacio-6) + env(safe-area-inset-bottom, 0px));
-}
-/* Con una barra interior (Entrar y las 8 altas/ediciones: `ui/Barra.tsx`, `volver` o `cerrar`), ella ya pone su
-   propio colchón de zona segura (`Barra.module.css` `.interior`, pegajosa arriba): sumarlo aquí también dejaba un
-   hueco doble antes de la barra, más grande que en una ficha (OL-205, auditoría OL-202 problema 2,
-   docs/rediseno/48-shell-ios.md §2). Sin barra (error, 404) el colchón de aquí sigue siendo el único que hay. */
-.pagina:has(> header:first-child) {
-  padding-top: 0;
+/* Una tira que se desliza de lado y todavía tiene más a la derecha (`useTiraQueSigue` le pone `data-sigue`): su borde
+   derecho se desvanece, para que no parezca que termina ahí (H-11). */
+[data-sigue] {
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--espacio-6)), transparent);
 }
 
 .titulo {

@@ -11,7 +11,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--espacio-3);
-  margin-bottom: var(--espacio-4);
   padding: var(--espacio-3);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
@@ -32,9 +31,9 @@
   width: 100%;
   min-width: 0;
   min-height: var(--toque-min);
-  padding: 0 12px;
+  padding: 0 var(--espacio-3);
   border: 1px solid var(--borde);
-  border-radius: 10px;
+  border-radius: var(--radio);
   background: var(--fondo);
   color: var(--texto);
   font: inherit;
@@ -59,7 +58,7 @@
 .datos {
   display: grid;
   gap: var(--espacio-2);
-  margin: var(--espacio-3) 0;
+  margin: var(--espacio-2) 0 var(--espacio-3);
 }
 .dato {
   display: flex;
@@ -138,7 +137,7 @@
   object-fit: contain;
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  background: #fbfaf8;
+  background: var(--fondo-pared);
 }
 .instantanea > figcaption {
   color: var(--texto-suave);
@@ -176,7 +175,7 @@
     align-content: start;
     min-height: 0;
     padding: 0;
-    background: #fff;
+    background: var(--fondo);
   }
   .fichaObra > :not(.nombre):not(.qr) {
     display: none;
@@ -239,23 +238,13 @@
 .contador {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--espacio-1);
   flex: none;
 }
 .contador button {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
   font-size: 20px;
   font-weight: 700;
   color: var(--primario);
-  cursor: pointer;
-}
-.contador button:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 .contador input {
   width: 44px;
@@ -277,30 +266,3 @@
   line-height: 1.4;
 }
 
-/* Interruptor «Pincel apagado» (OL-121): mismo dibujo de fila que .campoCupo, con la palanca de ui/Ajustes a la
-   derecha (import cruzado, como ya hace ReservaPerfil). */
-.interruptorPincel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--espacio-3);
-  padding: 14px;
-  margin-top: var(--espacio-2);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-}
-.interruptorPincel > div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-.interruptorPincel b {
-  font-weight: 600;
-  font-size: 16px;
-}
-.interruptorPincel small {
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.35;
-}

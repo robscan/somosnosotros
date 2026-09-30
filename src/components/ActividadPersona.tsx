@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { ArtistaSeguido, LugarSeguido } from "@/app/personas/consultas";
 import { mismaMemoria, pestanasDePersona, recordar, unirVistos, type Memoria } from "@/lib/actividad";
 import type { Asistencia } from "@/lib/deslizar";
 import { agruparPorDia, type EventoAgenda } from "@/lib/agenda";
 import ListaSeguidos, { UMBRAL_CHIPS_SEGUIDOS } from "./ListaSeguidos";
+import Grupo from "./ui/Grupo";
 import PestanasPersona, { type Pestana } from "./PestanasPersona";
 import RenglonEvento from "./RenglonEvento";
 import { useAsistenciaEnLista, type Decididas } from "./useAsistenciaEnLista";
 import { AvisoAbajo, useCanalDeListas } from "./useCanalDeListas";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
+import ficha from "./ui/Ficha.module.css";
 import styles from "./FichaPersona.module.css";
 
 /**
@@ -70,20 +72,20 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
   const estado = gestos ? asistencia.estado : () => null;
   const sigo = (id: string) => (esLugar.has(id) ? seguirLugar.sigo(id) : seguirArtista.sigo(id));
 
+  // Cada día es un grupo con su título pegado (`ui/Grupo`), en Mi perfil y en la ficha de otra persona.
   const listaEventos = (lista: EventoAgenda[], vacio: ReactNode, conSello: boolean) =>
     lista.length === 0 ? (
-      <p className={styles.vacio}>{vacio}</p>
+      <p className={`${ficha.vacio} ${styles.vacio}`}>{vacio}</p>
     ) : (
-      agruparPorDia(lista).map((g) => (
-        <Fragment key={g.clave}>
-          <h3 className={styles.dia}>{g.titulo}</h3>
-          <ul className={styles.lista} aria-label={g.titulo}>
+      agruparPorDia(lista).map((g) => {
+        return (
+          <Grupo key={g.clave} titulo={g.titulo} cuenta={g.eventos.length}>
             {g.eventos.map((e) => (
               <RenglonEvento key={e.id} evento={e} estado={conSello ? estado(e.id) : null} boton={gestos ? asistencia.boton(e) : undefined} />
             ))}
-          </ul>
-        </Fragment>
-      ))
+          </Grupo>
+        );
+      })
     );
 
   const enPestanas = (estado: (id: string) => Asistencia, sigo: (id: string) => boolean) => pestanasDePersona({ mia, eventos: lista.eventos, lugares: lista.lugares, artistas: lista.artistas, estado, sigo, vistas });
@@ -106,13 +108,13 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
     contenido:
       p.clave === "sigue" ? (
         p.n === 0 ? (
-          <p className={styles.vacio}>
+          <p className={`${ficha.vacio} ${styles.vacio}`}>
             {mia ? (
               <>
                 Todavía no sigues nada. <Link href="/lugares">Ver lugares</Link> · <Link href="/artistas">Ver artistas</Link>
               </>
             ) : (
-              "Todavía no sigue ningún lugar ni artista."
+              "Todavía no sigue lugares ni artistas."
             )}
           </p>
         ) : (

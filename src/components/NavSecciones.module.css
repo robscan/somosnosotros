@@ -1,0 +1,110 @@
+/* La navegación entre las cinco secciones (NavSecciones.tsx). En el teléfono, una barra fija al pie, elevada sobre el contenido,
+   que se recoge con la barra de arriba: baja y se va al bajar, y vuelve al subir; y se va también mientras la hoja de Lugares
+   cubre la ventana (`data-llena`). Solo la ven las raíces: el armazón la esconde en las demás vistas (`Armazon.module.css`). Desde 792 es un carril a la izquierda, una columna de la rejilla del armazón bajo la
+   barra de la app, en dos grupos (las cuatro secciones arriba, Perfil abajo), que no se guarda. El destino activo lleva una
+   píldora de color detrás del icono. */
+.nav {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: var(--z-flotante);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* Inicio · Agenda · Lugares · Artistas · Perfil */
+  height: var(--nav-abajo);
+  /* Los cinco destinos se reparten en la columna; a cada lado queda lo que sobra del ancho de la barra (fija: su 100% es la ventana) */
+  padding: 0 max(var(--espacio-1), calc((100% - var(--columna)) / 2)) var(--piso);
+  background: var(--fondo);
+  border-top: 1px solid var(--borde);
+  box-shadow: var(--sombra-panel);
+  transition:
+    transform var(--duracion-recogida) var(--curva),
+    visibility 0s;
+}
+:global([data-recogida]) .nav,
+:global([data-llena]) .nav {
+  transform: translateY(100%);
+  visibility: hidden;
+  transition:
+    transform var(--duracion-recogida) var(--curva),
+    visibility 0s var(--duracion-recogida);
+}
+.destino {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--texto-suave);
+  text-decoration: none;
+  font-size: var(--letra-2xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  -webkit-tap-highlight-color: transparent;
+}
+/* La píldora: siempre ocupa su sitio (nada salta al cambiar de destino); solo el activo la pinta */
+.icono {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 32px;
+  border-radius: var(--radio-pildora);
+  transition: background-color 150ms;
+}
+.destino:active .icono {
+  background: var(--fondo-suave);
+}
+.activo {
+  color: var(--primario);
+}
+.activo .icono {
+  background: var(--primario);
+  color: var(--primario-texto);
+}
+.activo span:last-child {
+  font-weight: 700;
+}
+
+/* El carril: sticky bajo la barra de la app, del alto de lo que queda de la ventana (con la ventana muy baja, un teléfono de
+   lado, se desplaza dentro de sí). Sus filas: las cuatro secciones, lo que sobre y Perfil al final. */
+@media (min-width: 792px) {
+  .nav {
+    position: sticky;
+    inset: var(--barra-flujo) auto auto;
+    grid-area: nav;
+    align-self: start;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(4, max-content) minmax(0, 1fr) max-content;
+    justify-items: center;
+    row-gap: var(--espacio-2);
+    height: calc(100dvh - var(--barra-flujo));
+    padding: var(--espacio-4) var(--espacio-2) calc(var(--espacio-4) + var(--piso));
+    overflow-y: auto;
+    border-top: 0;
+    border-right: 1px solid var(--borde);
+    box-shadow: none;
+  }
+  .destino {
+    width: 72px;
+    padding: 6px 0;
+    border-radius: var(--radio);
+  }
+  .perfil {
+    grid-row: 6;
+  }
+}
+
+/* La foto de la persona (o su inicial) en la píldora de Perfil (PerfilEnNav): con el destino activo, un aro blanco la separa del violeta */
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+  font-size: 11px;
+  font-weight: 700;
+  object-fit: cover;
+}
+.activo .avatar {
+  box-shadow: 0 0 0 2px var(--primario-texto);
+}

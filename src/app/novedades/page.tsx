@@ -4,7 +4,7 @@ import { IconoCalendarioMas, IconoCampana, IconoPersonas, IconoReloj } from "@/c
 import { hrefEvento } from "@/lib/eventos";
 import { agruparNovedades } from "@/lib/novedades";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { cargarNovedades } from "./consultas";
 import MarcarVistas from "./MarcarVistas";
 import TelefonoAun from "./TelefonoAun";
@@ -20,11 +20,11 @@ export default async function Novedades() {
   const actual = await usuarioActual();
   if (!actual) {
     return (
-      <main className={ficha.pagina}>
+      <main className={plantilla.paginaContenido}>
         <Barra volver={{ href: "/", texto: "Agenda" }} />
         <h1 className={styles.titulo}>Novedades</h1>
         <p className={styles.vacio}>
-          Aquí verás lo nuevo en los lugares y artistas que sigas, y los cambios en lo que vas. <Link href="/entrar?siguiente=/novedades">Entra</Link> para seguir a los tuyos.
+          Aquí verás lo nuevo en lugares y artistas que sigas, y los cambios en lo que vas. <Link href="/entrar?siguiente=/novedades">Entra</Link> para seguir a quienes te importan.
         </p>
       </main>
     );
@@ -32,13 +32,13 @@ export default async function Novedades() {
   const { lista, sigue } = await cargarNovedades(actual.perfil.id, actual.perfil.novedades_vistas_en ?? null);
   const grupos = agruparNovedades(lista);
   return (
-    <main className={ficha.pagina}>
+    <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/", texto: "Agenda" }} />
       <MarcarVistas />
       <h1 className={styles.titulo}>Novedades</h1>
       {sigue === 0 && lista.length === 0 ? (
         <p className={styles.vacio}>
-          Todavía no sigues nada. En la ficha de un lugar o artista toca Seguir y aquí verás lo que publiquen. <Link href="/lugares">Ver lugares</Link> · <Link href="/artistas">Ver artistas</Link>
+          Todavía no sigues nada. En la ficha de un lugar o de artista toca Seguir y aquí verás lo que publiquen. <Link href="/lugares">Ver lugares</Link> · <Link href="/artistas">Ver artistas</Link>
         </p>
       ) : lista.length === 0 ? (
         <p className={styles.vacio}>Nada nuevo en las últimas dos semanas. Sigues {sigue === 1 ? "1 lugar o artista" : `${sigue} lugares y artistas`}.</p>

@@ -1,6 +1,6 @@
 import { puntoValido } from "@/lib/buscarLugares";
 import type { Punto } from "@/lib/geo";
-import type { OtroSitio } from "./HojaDondeEs";
+import type { OtroSitio } from "@/lib/eventos";
 
 export function textoDelSitio(otro: OtroSitio): string {
   const nombre = otro.sitioTexto.trim();

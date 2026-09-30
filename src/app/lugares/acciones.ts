@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { after } from "next/server";
+import { enlaceDeAlta } from "@/lib/armazon";
 import { deducirTipo } from "@/lib/buscarLugares";
 import { esUuid } from "@/lib/formulario";
 import { rutaSegura } from "@/lib/rutas";
@@ -43,7 +44,7 @@ function privadoPermitido(pedido: boolean): boolean {
 
 /** Alta de lugar. Si hay uno parecido a menos de 150 m y no se confirmó, devuelve los parecidos para preguntar "¿es este?". */
 export async function crearLugar(_previo: ResultadoLugar | null, formData: FormData): Promise<ResultadoLugar> {
-  const { supabase, user } = await sesionOEntrar("/lugares/nuevo");
+  const { supabase, user } = await sesionOEntrar(enlaceDeAlta("lugar", null).href);
   const esAdmin = await esAdminDeSesion(supabase, user.id);
   const { datos, errores } = validarLugar(leer(formData), { esAdmin });
   if (Object.keys(errores).length) return { ok: false, errores };
@@ -74,7 +75,7 @@ export type ResultadoLugarDesdeEvento = { ok: true; id: string; reutilizado: boo
  * `privado` desde OL-179). Reutiliza `crearLugar` entero -misma validación, mismos 150 m ("un lugar es un lugar",
  * docs/DEFINICION.md)-, así que si ya hay un lugar parecido no se duplica: se usa el que ya existe
  * (`reutilizado: true`) en vez de fallar o preguntar de nuevo, porque la pantalla de agregar no tiene espacio para
- * el "¿es este?" completo de `/lugares/nuevo`. El tipo no lo pide el panel corto (docs/rediseno/43: solo nombre,
+ * el "¿es este?" completo del alta de lugar (`/nuevo`). El tipo no lo pide el panel corto (docs/rediseno/43: solo nombre,
  * dirección y el interruptor): se deduce del nombre, igual que hace `FormularioLugar` cuando nadie lo elige a
  * mano; sin pista, "otro". `siguiente` se manda solo para que `crearLugar` NO redirija (aquí se usa el resultado
  * en línea, sin navegar).
@@ -85,7 +86,7 @@ export type ResultadoLugarDesdeEvento = { ok: true; id: string; reutilizado: boo
  * aquí y no se intenta. Si `reutilizado` viene `true` con `privado` pedido, el lugar encontrado es público de
  * verdad (por lo mismo que acaba de decirse) y quien llama debe avisarlo ("ya existe como lugar público") en vez
  * de tratarlo como privado. El EVENTO que llama a esta acción decide por su cuenta cómo guardarse (reservado o
- * no; ver `HojaDondeEs.tsx`) — esta función solo registra o reutiliza el lugar, nunca el evento.
+ * no; ver `HojaDonde.tsx`) — esta función solo registra o reutiliza el lugar, nunca el evento.
  */
 export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: string; lat: number; lng: number; ciudad: string; volverA: string; privado: boolean }): Promise<ResultadoLugarDesdeEvento> {
   const fd = new FormData();
@@ -96,7 +97,7 @@ export async function crearLugarDesdeEvento(datos: { nombre: string; direccion: 
   fd.set("lng", String(datos.lng));
   fd.set("ciudad", datos.ciudad);
   fd.set("privado", datos.privado ? "1" : "0");
-  fd.set("siguiente", rutaSegura(datos.volverA, "/eventos/nuevo"));
+  fd.set("siguiente", rutaSegura(datos.volverA, enlaceDeAlta("evento", null).href));
   const r = await crearLugar(null, fd);
   if (r.ok) return { ok: true, id: r.id, reutilizado: false };
   if (r.parecidos && r.parecidos.length > 0) return { ok: true, id: r.parecidos[0].id, reutilizado: true };
@@ -138,7 +139,7 @@ export async function cambiarVisible(id: string, visible: boolean) {
  * inmediato solo repintaría de más la pantalla en la que ya se está (cualquier `revalidatePath` en la acción hace
  * que Next vuelva a renderizar toda la ruta actual en la misma respuesta, sin importar qué ruta se le pase). Con
  * `after` la invalidación aplica igual para la próxima vez que se pida cada ruta, sin repintar esta. La ficha
- * (`Seguir.tsx`, sin tocar) no manda `diferir`: sigue viendo su "N personas lo siguen" al día en el mismo toque.
+ * (`Seguir.tsx`, sin tocar) no manda `diferir`: sigue viendo su número de «Siguen» al día en el mismo toque.
  */
 export async function cambiarSeguimiento(lugarId: string, seguir: boolean, diferir = false): Promise<boolean> {
   const { supabase, user } = await sesionOEntrar(`/lugares/${lugarId}?accion=${seguir ? "seguir" : ""}`);

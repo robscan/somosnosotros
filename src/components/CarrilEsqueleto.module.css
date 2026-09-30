@@ -1,18 +1,5 @@
-/* Mismas medidas que Destacados.module.css: la cabecera y el carril reales caen encima sin saltar. La medida de
-   cada tarjeta la da `EsqueletoTarjeta` (OL-158, `ui/Esqueleto.module.css`); aquí solo queda la cabecera del carril
-   y el respiro de sus dos líneas (título, "ver todos"). */
-.esqueleto {
-  display: grid;
-  gap: var(--espacio-4);
-  padding-top: 32px;
-}
-.cabecera {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--espacio-2);
-  padding-inline: var(--gutter);
-}
+/* Lo único propio del esqueleto de un carril: el largo de sus barras. La rejilla, la tarjeta y el respiro son los de
+   `Destacados.module.css` y `ui/Esqueleto.module.css`. */
 .titulo {
   width: 160px;
   height: 20px;
@@ -23,29 +10,7 @@
   height: 14px;
   border-radius: var(--radio);
 }
-.carril {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  gap: var(--espacio-3);
-  overflow: hidden;
-  padding: var(--espacio-1) var(--gutter) var(--espacio-2);
-}
-/* El respiro (founder: "que se note que está cargando, no que está roto"): un tono va y viene despacio. */
-.titulo, .verTodos {
-  background: var(--fondo-miniatura);
-  animation: respirar 1.2s ease-in-out infinite;
-}
-@keyframes respirar {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .55; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .titulo, .verTodos { animation: none; }
-}
-
-/* Tamaño chica (lugares/artistas con eventos, artistas destacados): redonda, angosta y al centro; el carril baja
-   un poco para alinear con la versión real (`Destacados.module.css`, `.chica`). */
-.chica .carril {
-  padding-top: calc(9px + var(--espacio-1));
+/* La segunda línea de los datos, más corta que la primera. */
+.corta {
+  width: 60%;
 }

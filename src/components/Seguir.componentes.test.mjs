@@ -20,7 +20,7 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 let browser, server, dir, origin;
 
 const mocks = {
-  "next/link": "import React from 'react';export default function Link(p){const {href,...r}=p;return React.createElement('a',{href,...r})}",
+  "next/link": "import React from 'react';export function useLinkStatus(){return {pending:false}}export default function Link(p){const {href,...r}=p;return React.createElement('a',{href,...r})}",
   "next/navigation": "export function useRouter(){return {refresh(){window.qa.refrescos++},push(){},replace(){}}}",
   // Push/avisos: deterministico y sin permisos reales del navegador — lo que se prueba aqui es la recarga, no el
   // permiso de notificaciones (ya cubierto por otras piezas, bitacora 147/164/166).
@@ -50,7 +50,7 @@ before(async () => {
         const [sigo, setSigo] = useState(false);
         async function accion(seguir){window.qa.acciones.push(seguir); setSigo(seguir); return true}
         return React.createElement(Seguir, {
-          que: 'lugar', nombre: 'Lugar de prueba', sigo, conSesion: true, cuenta: 'cuenta-1',
+          que: new URLSearchParams(location.search).get('que') || 'lugar', nombre: 'Lugar de prueba', sigo, conSesion: true, cuenta: 'cuenta-1',
           accion, hrefEntrar: '/lugares/l1?accion=seguir', avisosPreguntado: false, avisosCorreo: false,
           correo: 'p...@example.com', llavePush: '',
         });
@@ -84,7 +84,7 @@ before(async () => {
     ["/app.css", ["text/css", await readFile(join(dir, "app.css"))]],
   ]);
   server = createServer((req, res) => {
-    const a = assets.get(req.url);
+    const a = assets.get(req.url.split("?")[0]);
     res.writeHead(a ? 200 : 404, { "Content-Type": `${a?.[0] ?? "text/plain"}; charset=utf-8` });
     res.end(a?.[1] ?? "");
   });
@@ -99,7 +99,7 @@ after(async () => {
   if (dir) await rm(dir, { recursive: true, force: true });
 });
 
-async function nuevaPagina(t) {
+async function nuevaPagina(t, consulta = "") {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
   t.after(() => context.close());
   const p = await context.newPage();
@@ -107,7 +107,7 @@ async function nuevaPagina(t) {
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   t.after(() => assert.deepEqual(errors, []));
-  await p.goto(origin);
+  await p.goto(origin + consulta);
   await p.waitForSelector("text=Seguir");
   return p;
 }
@@ -137,4 +137,39 @@ test("primer Seguir: cerrar la hoja de avisos con la X (sin contestar) tampoco r
   const refrescos = await p.evaluate(() => window.qa.refrescos);
   assert.equal(cargas, 1, "el script del bundle se ejecuto mas de una vez: la pagina se recargo de verdad");
   assert.equal(refrescos, 0, "cerrar la hoja con la X llamo a router.refresh() (recarga del arbol de servidor)");
+});
+
+test("el botón Seguir lleva el glifo de lo que se sigue: la campana con «+» en un lugar, la persona con «+» en un artista", async (t) => {
+  const trazos = async (consulta) => (await nuevaPagina(t, consulta)).getByRole("button", { name: "Seguir" }).locator("path").evaluateAll((ps) => ps.map((x) => x.getAttribute("d")));
+  assert.ok((await trazos("")).includes("M12 9.5v5M9.5 12h5"), "un lugar lleva la campana con «+»");
+  assert.ok((await trazos("?que=artista")).includes("M19 7.5v6M16 10.5h6"), "un artista lleva la persona con «+»");
+});
+
+/** El color llega en el cuadro siguiente (con «reducir movimiento» las transiciones duran 0,01 ms, pero no cero): se espera a que llegue. */
+async function colorLlega(p, loc, propiedad, esperado, mensaje) {
+  let visto;
+  for (let i = 0; i < 100; i++) {
+    visto = await loc.evaluate((e, k) => getComputedStyle(e)[k], propiedad);
+    if (visto === esperado) return;
+    await p.waitForTimeout(20);
+  }
+  assert.equal(visto, esperado, mensaje);
+}
+
+test("la pastilla flotante dice Seguir y, ya seguido, Sigues en verde con su palomita y sin nota; tocarla otra vez deja de seguir", async (t) => {
+  const p = await nuevaPagina(t);
+  const pastilla = (nombre) => p.getByRole("button", { name: nombre, exact: true });
+  assert.equal(await pastilla("Seguir").getAttribute("aria-pressed"), "false");
+  await colorLlega(p, pastilla("Seguir"), "backgroundColor", "rgb(109, 52, 200)", "sin decidir: el violeta de la acción");
+  await pastilla("Seguir").click();
+  await p.getByRole("button", { name: "No, gracias" }).click(); // la primera vez pregunta por los avisos
+  await p.waitForSelector('[aria-label="Avisos"]', { state: "detached" });
+  await pastilla("Sigues").waitFor();
+  assert.equal(await pastilla("Sigues").getAttribute("aria-pressed"), "true");
+  await colorLlega(p, pastilla("Sigues"), "backgroundColor", "rgb(31, 111, 67)", "decidido: el verde de lo que ya quedó");
+  assert.equal(await pastilla("Sigues").innerText(), "Sigues", "sin nota dentro de la pastilla");
+  assert.ok((await pastilla("Sigues").locator("path").evaluateAll((ps) => ps.map((x) => x.getAttribute("d")))).includes("M5 12.5l4.5 4.5L19 7.5"), "con la palomita");
+  await pastilla("Sigues").click();
+  await pastilla("Seguir").waitFor();
+  assert.deepEqual(await p.evaluate(() => window.qa.acciones), [true, false]);
 });

@@ -1,20 +1,8 @@
 /* Reclamar una ficha ("Soy yo / es mi grupo" en Artistas, "¿Es tu espacio?" en Lugares): letrero, bloque y hoja */
-.enlace {
-  display: block;
-  width: 100%;
-  min-height: var(--toque);
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--texto);
-  font-size: var(--letra-md);
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-}
 /* Letrero discreto al final de la ficha por confirmar: una pregunta en gris, subrayada, que abre la hoja */
 .discreto {
   display: inline-block;
+  justify-self: start;
   min-height: var(--toque-min);
   padding: var(--espacio-3) 0;
   border: none;
@@ -37,12 +25,6 @@
   margin-bottom: var(--espacio-3);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
-}
-.editar,
-.quitar {
-  display: flex;
-  justify-content: center;
-  width: 100%;
 }
 .quitar {
   margin-top: var(--espacio-3);

@@ -21,11 +21,11 @@ describe("etiquetaMotivo", () => {
   it("lee el reclamo según la ficha de la que viene", () => {
     expect(etiquetaMotivo("es_mio", "lugar")).toBe("Dice que es su espacio y quiere llevar la ficha");
     expect(etiquetaMotivo("retirar", "lugar")).toBe("Dice que es su espacio y pide que se quite");
-    expect(etiquetaMotivo("es_mio", "artista")).toBe("Dice que es él o su grupo y quiere llevar la ficha");
+    expect(etiquetaMotivo("es_mio", "artista")).toBe("Dice que es esa persona o su grupo y quiere llevar la ficha");
   });
   it("sin tipo, o con uno que no se reclama, se lee como el de artista", () => {
-    expect(etiquetaMotivo("es_mio")).toBe("Dice que es él o su grupo y quiere llevar la ficha");
-    expect(etiquetaMotivo("retirar", "evento")).toBe("Dice que es él o su grupo y pide que se quite");
+    expect(etiquetaMotivo("es_mio")).toBe("Dice que es esa persona o su grupo y quiere llevar la ficha");
+    expect(etiquetaMotivo("retirar", "evento")).toBe("Dice que es esa persona o su grupo y pide que se quite");
   });
   it("los motivos de reportar no cambian con la ficha, y lo desconocido se dice tal cual", () => {
     expect(etiquetaMotivo("duplicado", "lugar")).toBe("Está repetido");

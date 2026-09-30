@@ -37,7 +37,8 @@ function esOcultable(tipo: string): tipo is TipoOcultable {
 function revalidarFicha(tipo: TipoOcultable, id: string) {
   revalidatePath("/admin");
   revalidatePath(`/admin${RUTA[tipo]}`);
-  revalidatePath("/");
+  // El punto de Administración (pendientes por revisar) vive en la barra de la app, en el layout.
+  revalidatePath("/", "layout");
   revalidatePath(RUTA[tipo]);
   revalidatePath(`${RUTA[tipo]}/${id}`);
 }
@@ -73,7 +74,7 @@ export async function decidirPendiente(reporteId: string, decision: Decision): P
     const liga = await supabase.from(tabla).upsert({ [columna]: r.objeto_id, perfil_id: r.creado_por }, { onConflict: `${columna},perfil_id`, ignoreDuplicates: true });
     if (liga.error) return { ok: false, error: "No se pudo pasar la ficha. Intenta de nuevo." };
     const autor = await supabase.from(TABLA[tipo]).update({ creado_por: r.creado_por }).eq("id", r.objeto_id);
-    if (autor.error) return { ok: false, error: "La ficha quedó ligada, pero no cambió de autor. Intenta de nuevo." };
+    if (autor.error) return { ok: false, error: "La ficha quedó ligada, pero no cambió de autoría. Intenta de nuevo." };
   }
 
   const { error: cerrar } = await supabase.from("reportes").update({ atendido: true }).eq("id", reporteId);

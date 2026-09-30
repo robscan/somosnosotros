@@ -79,7 +79,7 @@ export default function FormularioNovedad({ accion, artistaNombre, modo, inicial
         </div>
       )}
       {!errorUrl && !reconocido && !urlLimpia && (
-        <p className={canon.cuerpoNota}>Funciona con enlaces de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud.</p>
+        <p className={canon.notaCampo}>Funciona con enlaces de YouTube, Vimeo, SoundCloud, Bandcamp o Mixcloud.</p>
       )}
 
       <Campo

@@ -1,102 +1,78 @@
-/* La cabecera única (ui/Cabecera): una rejilla plana. Renglón 1 = contexto | acciones (o el campo de búsqueda a
-   todo lo ancho); debajo, a todo lo ancho, las pestañas y el segundo nivel. Blanca sobre el tono del contenido, con
-   la raya común abajo. Compacta: sube lo que mide el renglón 1 (`--fila1`, lo mide ui/Cabecera). */
+/* La cabecera única (ui/Cabecera): una rejilla plana de una columna. La fila de contexto y, debajo, a todo lo ancho, las
+   pestañas y el segundo nivel. Blanca como la barra de la app y pegada justo bajo ella (`--barra-vista`, del armazón): cuando
+   la barra se recoge, sube con ella. Con la barra es una sola región: entre las dos no hay raya, y la raya común va solo abajo;
+   desde 792 la raya es la de la barra, que cruza la ventana sobre el carril, y la fila no lleva la suya. */
 .cabecera {
   position: sticky;
-  top: var(--tope);
-  z-index: 10;
+  top: var(--barra-vista, var(--tope));
+  z-index: var(--z-pegajoso);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   background: var(--fondo);
   box-shadow: inset 0 -1px 0 var(--borde);
-  transition: top var(--cabecera-animacion, 0.2s) ease;
+  transition: top var(--duracion-recogida, var(--duracion)) var(--curva);
 }
-.cabecera > * {
-  grid-column: 1 / -1;
-}
-.cabecera[data-compacta] {
-  top: calc(var(--tope) - var(--fila1, 56px));
+/* Al jalar hacia abajo (el rebote del desplazamiento) la fila se separa de la barra: lo que asoma entre las dos es este
+   relleno blanco, no el fondo del listado. Solo se ve en ese rebote. */
+.cabecera::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 300px;
+  background: var(--fondo);
+  pointer-events: none;
 }
 
-/* Renglón 1 */
-.contexto,
-.acciones,
-.campo {
+/* La fila de contexto. Si los chips no caben, se desliza de lado sin barra (`useTiraQueSigue` avisa cuándo hay más). */
+.contexto {
   display: flex;
   align-items: center;
   gap: var(--espacio-2);
-  padding-block: var(--espacio-1) var(--espacio-3);
+  padding: var(--espacio-1) var(--gutter) var(--espacio-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-padding-inline: var(--gutter);
 }
-.contexto {
-  grid-column: 1;
-  padding-left: var(--gutter);
+.contexto::-webkit-scrollbar {
+  display: none;
 }
-.acciones {
-  grid-column: 2;
-  padding: var(--espacio-1) var(--gutter) var(--espacio-3) var(--espacio-2);
+/* Desde 792 la fila va centrada en la pantalla, como en el prototipo firmado (doc 50, puntos 39 y 56); si los chips no caben, se
+   deslizan desde el primero. */
+@media (min-width: 792px) {
+  .cabecera {
+    box-shadow: none;
+  }
+  .contexto {
+    justify-content: safe center;
+  }
 }
-.acciones:empty {
-  padding: 0;
-}
-.campo {
-  padding-inline: var(--gutter);
-}
-/* El campo (ui/Buscador) con el alto de los chips de contexto; su ✕ también, o el renglón crecería al abrirlo */
-.campo > label {
-  flex: 1;
-  height: 40px;
-  min-height: 0;
-}
-.campo button {
-  min-height: 40px;
-}
-.campo input {
-  font-size: var(--letra-md);
-}
-.redondo {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
-  color: var(--texto);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.redondo > svg {
-  width: 18px;
-  height: 18px;
-}
-.redondo:active {
-  background: var(--fondo-suave);
-}
-
-/* Renglón 2 y segundo nivel: el gutter de la columna */
-.cabecera > [role="tablist"] {
-  padding-inline: var(--gutter);
-}
-.cabecera > [role="group"] {
+/* El segundo nivel (un grupo de chips): el gutter de la columna. Pesa cero (`:where`): la tira de letras, que también es un
+   grupo, trae sus propias medidas y gana siempre. */
+:where(.cabecera > [role="group"]) {
   margin: 0;
   padding: var(--espacio-3) var(--gutter);
 }
 
-/* Volver arriba: a la izquierda, a la altura del botón flotante de publicar (Publicar.module.css) */
+/* Volver arriba (ui/BotonIcono): abajo a la izquierda, sobre la navegación; si la navegación se va (teléfono: se recoge al
+   bajar, o la hoja de Lugares llena la ventana), baja con ella. Es una herramienta, no una acción: su glifo es oscuro, como el del
+   botón de ubicación del mapa. Al ser fijo, mide desde el borde de la ventana: desde 792 pasa el carril antes de llegar a la columna. */
 .volver {
   position: fixed;
   left: var(--gutter);
-  bottom: calc(var(--alto-nav) + env(safe-area-inset-bottom, 0px) + var(--espacio-4));
-  z-index: 21;
-  display: grid;
-  place-items: center;
-  width: var(--toque);
-  height: var(--toque);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
+  bottom: calc(var(--nav-abajo) + var(--espacio-4));
+  z-index: calc(var(--z-flotante) + 1);
+  transition: bottom var(--duracion-recogida, var(--duracion)) var(--curva);
+}
+:global([data-recogida]) .volver,
+:global([data-llena]) .volver {
+  bottom: calc(var(--piso) + var(--espacio-4));
+}
+@media (min-width: 792px) {
+  .volver {
+    left: calc(var(--ancho-carril-nav) + var(--gutter));
+  }
+}
+.volver > svg {
   color: var(--texto);
-  box-shadow: var(--sombra-flotante);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }

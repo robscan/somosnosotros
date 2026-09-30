@@ -1,6 +1,5 @@
-/* Descripción en cuatro líneas y "más" que la despliega en el sitio */
+/* Descripción en cuatro líneas y "más" que la despliega en el sitio. Sin márgenes propios: el bloque que la contiene (ui/Ficha) pone el aire. */
 .texto {
-  margin-bottom: var(--espacio-1);
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
@@ -13,8 +12,8 @@
 }
 .mas {
   display: block;
+  justify-self: start;
   min-height: var(--toque-min);
-  margin-bottom: var(--espacio-4);
   border: none;
   background: none;
   color: var(--texto-suave);

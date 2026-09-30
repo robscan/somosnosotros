@@ -11,7 +11,6 @@ export async function marcarNovedadesVistas(): Promise<void> {
   } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
   if (!supabase || !user) return;
   await supabase.from("perfiles").update({ novedades_vistas_en: new Date().toISOString() }).eq("id", user.id);
-  revalidatePath("/");
-  revalidatePath("/lugares");
-  revalidatePath("/artistas");
+  // La campana vive en la barra de la app, en el layout: se revalida el layout entero, no cada pantalla.
+  revalidatePath("/", "layout");
 }

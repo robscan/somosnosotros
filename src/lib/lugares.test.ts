@@ -1,31 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, diasConEvento, filtrarLugares, hrefLugar, lugaresConEventoElDia, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, tiposPresentes, validarLugar } from "./lugares";
+import { calleCorta, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresAEncuadrar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
     expect(normalizarNombre("  Casa de Cultura  #3 — Potosí ")).toBe("casa de cultura 3 potosi");
-  });
-});
-
-describe("filtrarLugares", () => {
-  const lugares = [
-    { nombre: "Teatro de la Paz", direccion: "Villerías 2" },
-    { nombre: "Galería Ángel", direccion: null },
-  ];
-  it("busca sin acentos y a medias", () => {
-    expect(filtrarLugares(lugares, "angel").map((l) => l.nombre)).toEqual(["Galería Ángel"]);
-    expect(filtrarLugares(lugares, "VILLER").map((l) => l.nombre)).toEqual(["Teatro de la Paz"]);
-    expect(filtrarLugares(lugares, "")).toHaveLength(2);
-  });
-  it("filtra por tipo y lista los tipos presentes en el orden cerrado", () => {
-    const l = [
-      { nombre: "Foro Uno", direccion: null, tipo: "foro" },
-      { nombre: "Galería Dos", direccion: null, tipo: "galeria" },
-      { nombre: "Foro Tres", direccion: "Calle 3", tipo: "foro" },
-    ];
-    expect(filtrarLugares(l, "", "foro").map((x) => x.nombre)).toEqual(["Foro Uno", "Foro Tres"]);
-    expect(filtrarLugares(l, "tres", "foro").map((x) => x.nombre)).toEqual(["Foro Tres"]);
-    expect(tiposPresentes(l).map((t) => t.valor)).toEqual(["foro", "galeria"]);
   });
 });
 
@@ -92,6 +70,16 @@ describe("calleCorta", () => {
   });
 });
 
+describe("partesDeDireccion (la fila «Dónde» de una ficha)", () => {
+  it("la calle y, aparte, lo demás", () => {
+    expect(partesDeDireccion("Manuel José Othón s/n esq. Chico Sein, Centro Histórico, 78000, San Luis Potosí, S.L.P.")).toEqual({ calle: "Manuel José Othón s/n esq. Chico Sein", resto: "Centro Histórico, 78000, San Luis Potosí, S.L.P." });
+  });
+  it("sin comas, todo es la calle; sin dirección, nada", () => {
+    expect(partesDeDireccion("Jardín de Tequis 3")).toEqual({ calle: "Jardín de Tequis 3", resto: "" });
+    expect(partesDeDireccion(null)).toEqual({ calle: "", resto: "" });
+  });
+});
+
 describe("ordenarLugares", () => {
   const base = { tipo: "foro" as const, direccion: null, portada: null };
   const a = { ...base, id: "a", nombre: "Zeta", lat: 22.15, lng: -100.98, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City", titulo: "Evento" } };
@@ -135,6 +123,37 @@ describe("lugaresEncuadreInicial", () => {
   });
 });
 
+describe("lugaresAEncuadrar: lo que encuadra «Encuadrar los lugares»", () => {
+  const AHORA = new Date("2026-09-19T16:00:00Z");
+  const centro = { lat: 22.1497, lng: -100.9764 };
+  const base = { tipo: "foro" as const, direccion: null, portada: null, proximo: null };
+  const conEvento = { ...base, id: "a", nombre: "A", lat: 22.15, lng: -100.97, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City", titulo: "Evento" } };
+  const cerca = { ...base, id: "b", nombre: "B", lat: 22.15, lng: -100.98 };
+  const lejos = { ...base, id: "c", nombre: "C", lat: 25, lng: -105 };
+  const visibles = [conEvento, cerca, lejos];
+
+  it("con una ficha abierta, su lugar y nada más: como al abrirla", () => {
+    expect(lugaresAEncuadrar({ ficha: lejos, hayFiltros: false, visibles, destacados: [], centro, ahora: AHORA }).map((l) => l.id)).toEqual(["c"]);
+    expect(lugaresAEncuadrar({ ficha: lejos, hayFiltros: true, visibles, destacados: [], centro, ahora: AHORA }).map((l) => l.id)).toEqual(["c"]);
+  });
+
+  it("con filtros puestos, todo lo que dejan pasar: como al elegirlos", () => {
+    expect(lugaresAEncuadrar({ ficha: null, hayFiltros: true, visibles: [cerca, lejos], destacados: [], centro, ahora: AHORA }).map((l) => l.id)).toEqual(["b", "c"]);
+  });
+
+  it("sin filtros ni ficha, lo mismo que al abrir el mapa: esta semana, destacados y, si faltan, los cercanos al centro", () => {
+    const esperado = lugaresEncuadreInicial(visibles, ["c"], centro, AHORA).map((l) => l.id);
+    expect(lugaresAEncuadrar({ ficha: null, hayFiltros: false, visibles, destacados: ["c"], centro, ahora: AHORA }).map((l) => l.id)).toEqual(esperado);
+    expect(esperado).toContain("a");
+    expect(esperado).toContain("c");
+  });
+
+  it("sin lugares que ver, nada que encuadrar", () => {
+    expect(lugaresAEncuadrar({ ficha: null, hayFiltros: true, visibles: [], destacados: [], centro, ahora: AHORA })).toEqual([]);
+    expect(lugaresAEncuadrar({ ficha: null, hayFiltros: false, visibles: [], destacados: [], centro, ahora: AHORA })).toEqual([]);
+  });
+});
+
 describe("conProximo", () => {
   it("toma el primer evento de cada lugar y deja null a los demás", () => {
     const r = conProximo([{ id: "a" }, { id: "b" }], [
@@ -147,44 +166,68 @@ describe("conProximo", () => {
   });
 });
 
-describe("diasConEvento y lugaresConEventoElDia (docs/rediseno/45, OL-174: chip de fecha; OL-210: misma regla para el Mapa y la Lista)", () => {
+describe("diasConEvento y los filtros de Lugares (docs/rediseno/45, OL-174; docs/rediseno/50, P5b: Con eventos, Tipo y Siguiendo)", () => {
   const eventos = [
     { inicio: "2026-09-25T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" }, // jue 24, 19:00 SLP
     { inicio: "2026-09-27T01:00:00Z", lugar_id: "a", zona: "America/Mexico_City" }, // sáb 26, 19:00 SLP: segundo evento del mismo lugar
     { inicio: "2026-09-25T01:00:00Z", lugar_id: "b", zona: "America/Mexico_City" },
     { inicio: "2026-09-25T01:00:00Z", lugar_id: null, zona: "America/Mexico_City" }, // sin lugar: se ignora
+    { inicio: "2026-10-03T01:00:00Z", lugar_id: "c", zona: "America/Mexico_City" }, // vie 2 oct, 19:00 SLP: fuera de la semana
   ];
+  const lugares = [
+    { id: "a", tipo: "foro" },
+    { id: "b", tipo: "museo" },
+    { id: "c", tipo: "foro" },
+    { id: "d", tipo: "museo" },
+  ];
+  const conDias = diasConEvento(lugares, eventos);
+
   it("junta, por lugar, los días (en la zona del evento) en que tiene evento, sin repetir", () => {
-    const r = diasConEvento([{ id: "a" }, { id: "b" }, { id: "c" }], eventos);
-    expect(r.find((l) => l.id === "a")!.diasEvento).toEqual(["2026-09-24", "2026-09-26"]);
-    expect(r.find((l) => l.id === "b")!.diasEvento).toEqual(["2026-09-24"]);
-    expect(r.find((l) => l.id === "c")!.diasEvento).toEqual([]); // sin eventos: lista vacía, no undefined
+    expect(conDias.find((l) => l.id === "a")!.diasEvento).toEqual(["2026-09-24", "2026-09-26"]);
+    expect(conDias.find((l) => l.id === "b")!.diasEvento).toEqual(["2026-09-24"]);
+    expect(conDias.find((l) => l.id === "d")!.diasEvento).toEqual([]); // sin eventos: lista vacía, no undefined
   });
-  it("filtra los lugares con evento ese día; los demás salen del mapa", () => {
-    const conDias = diasConEvento([{ id: "a" }, { id: "b" }, { id: "c" }], eventos);
-    expect(lugaresConEventoElDia(conDias, "2026-09-24").map((l) => l.id)).toEqual(["a", "b"]);
-    expect(lugaresConEventoElDia(conDias, "2026-09-26").map((l) => l.id)).toEqual(["a"]);
-    expect(lugaresConEventoElDia(conDias, "2026-09-21")).toEqual([]); // ningún lugar tiene evento ese día
-  });
-  it("OL-210: la misma función (y el mismo resultado) es lo que filtra la Lista, no una regla propia de esa vista", () => {
-    const conDias = diasConEvento([{ id: "a" }, { id: "b" }, { id: "c" }], eventos);
-    // `VistaLugares` llama a `lugaresConEventoElDia` una vez para los pines del Mapa (sobre los lugares ya
-    // filtrados por búsqueda) y otra para `ListaLugares` (sobre los lugares ya filtrados por tipo, antes de la
-    // búsqueda que la propia Lista aplica): dos llamadas al mismo lugar de la función, no dos implementaciones.
-    const paraElMapa = lugaresConEventoElDia(conDias, "2026-09-24");
-    const paraLaLista = lugaresConEventoElDia(conDias, "2026-09-24");
-    expect(paraLaLista).toEqual(paraElMapa);
-    expect(paraLaLista.map((l) => l.id)).toEqual(["a", "b"]);
-  });
-  it("un evento de varios días cuenta en cada día que ocupa, igual que el calendario de ChipFecha (OL-218)", () => {
-    // Sin esto, el calendario podía marcar un día como disponible (`diasActivosCalendario`, misma consulta) y el
-    // mapa o la lista de Lugares salir vacíos al elegirlo — confirmado con un evento del 6 al 8 de octubre,
-    // bitácora 247.
+  it("un evento de varios días cuenta en cada día que ocupa (OL-218)", () => {
+    // Un evento del 6 al 8 de octubre hace que el lugar salga «con eventos» los tres días (bitácora 247).
     const conRango = [{ inicio: "2026-10-06T17:00:00Z", fin: "2026-10-09T02:00:00Z", lugar_id: "a", zona: "America/Mexico_City" }]; // 11:00-20:00 SLP, del 6 al 8
     const r = diasConEvento([{ id: "a" }], conRango);
     expect(r[0].diasEvento).toEqual(["2026-10-06", "2026-10-07", "2026-10-08"]);
-    expect(lugaresConEventoElDia(r, "2026-10-07").map((l) => l.id)).toEqual(["a"]);
-    expect(lugaresConEventoElDia(r, "2026-10-09")).toEqual([]);
+    expect(lugaresConEventoEn(r, "2026-10-07", "2026-10-07").map((l) => l.id)).toEqual(["a"]);
+    expect(lugaresConEventoEn(r, "2026-10-09", "2026-10-09")).toEqual([]);
+  });
+  it("con eventos entre dos días: los dos extremos cuentan", () => {
+    expect(lugaresConEventoEn(conDias, "2026-09-24", "2026-09-24").map((l) => l.id)).toEqual(["a", "b"]);
+    expect(lugaresConEventoEn(conDias, "2026-09-25", "2026-09-26").map((l) => l.id)).toEqual(["a"]);
+    expect(lugaresConEventoEn(conDias, "2026-09-21", "2026-09-23")).toEqual([]);
+  });
+
+  const hoy = "2026-09-24"; // jueves: «esta semana» son los siete días del 24 al 30
+  const ids = (r: { id: string }[]) => r.map((l) => l.id);
+  it("sin nada puesto salen todos", () => {
+    expect(filtrarPorEleccion(conDias, SIN_ELECCION, null, hoy)).toEqual(conDias);
+    expect(eleccionesPuestas(SIN_ELECCION)).toBe(0);
+  });
+  it("con eventos hoy: solo los que tienen evento hoy", () => {
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, conEventos: "hoy" }, null, hoy))).toEqual(["a", "b"]);
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, conEventos: "hoy" }, null, "2026-09-25"))).toEqual([]);
+  });
+  it("con eventos esta semana: los próximos siete días desde hoy, ni antes ni después", () => {
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, conEventos: "semana" }, null, hoy))).toEqual(["a", "b"]); // c es el 2 de octubre: día 9
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, conEventos: "semana" }, null, "2026-09-27"))).toEqual(["c"]); // 27 al 3: solo c
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, conEventos: "semana" }, null, "2026-09-27"))).not.toContain("a"); // a fue el 24 y el 26
+  });
+  it("tipo y con eventos se suman", () => {
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, tipo: "foro", conEventos: "semana" }, null, hoy))).toEqual(["a"]);
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, tipo: "museo" }, null, hoy))).toEqual(["b", "d"]);
+  });
+  it("solo lo que sigo: los lugares que sigue; sin sesión (o sin saberlo todavía) ninguno", () => {
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, soloSigo: true }, ["b", "c"], hoy))).toEqual(["b", "c"]);
+    expect(ids(filtrarPorEleccion(conDias, { ...SIN_ELECCION, soloSigo: true }, null, hoy))).toEqual([]);
+    expect(ids(filtrarPorEleccion(conDias, { tipo: "foro", conEventos: null, soloSigo: true }, ["b", "c"], hoy))).toEqual(["c"]);
+  });
+  it("cuenta lo que hay puesto", () => {
+    expect(eleccionesPuestas({ tipo: "foro", conEventos: "hoy", soloSigo: true })).toBe(3);
+    expect(eleccionesPuestas({ tipo: null, conEventos: "semana", soloSigo: false })).toBe(1);
   });
 });
 

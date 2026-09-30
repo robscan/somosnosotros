@@ -2,7 +2,7 @@
  * Carga a la agenda los eventos elegidos de las agendas de las instituciones. Entran como los publica el admin
  * (--autor) y pasan la misma validación que el formulario (lib/eventos · validarEvento). No avisa a quienes siguen el
  * lugar: es una carga de agenda, no una publicación. Se salta lo pasado y lo que ya está (mismo título a la misma hora).
- * Quién se presenta se liga solo si el artista ya está registrado con ese nombre exacto; aquí no se crean artistas.
+ * Quién se presenta se liga solo si ya hay una ficha de artista con ese nombre exacto; aquí no se crean artistas.
  * Uso: node scripts/instituciones/correr.mjs importar-eventos <eventos.json> --autor <id del admin> [--simular] [--salida <carpeta>]
  */
 import { readFileSync } from "node:fs";
@@ -41,7 +41,7 @@ async function main() {
   for (const e of propuestos) {
     const lugar = resolverLugar(e.lugar, lugares);
     if (e.lugar && !lugar) {
-      informe.sinLugar.push(`- ${e.titulo} · «${e.lugar}» no está registrado (o se parece a varios)`);
+      informe.sinLugar.push(`- ${e.titulo} · «${e.lugar}» no tiene ficha (o se parece a varios)`);
       continue;
     }
     const { datos, errores } = validarEvento(formularioDeEvento(e, lugar?.id ?? null));

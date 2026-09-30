@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import FormularioPerfil from "./FormularioPerfil";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 export const metadata = { title: "Editar perfil · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -14,7 +15,7 @@ export default async function EditarPerfil() {
   const actual = await usuarioActual();
   if (!actual) redirect("/entrar?siguiente=/ajustes/editar");
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: "/ajustes", texto: "Ajustes" }} />
       <h1 className="titulo">Editar perfil</h1>
       <FormularioPerfil perfil={actual.perfil} correo={actual.correo ? enmascararCorreo(actual.correo) : "tu correo"} />

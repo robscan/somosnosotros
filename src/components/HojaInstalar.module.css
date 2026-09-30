@@ -82,7 +82,7 @@
   place-items: center;
   width: 60px;
   height: 30px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: #0a84ff; /* azul de iOS */
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;

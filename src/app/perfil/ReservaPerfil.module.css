@@ -1,27 +1,4 @@
-/* Hoja de "Perfil" (público / reservado): título, explicación e interruptor. */
-/* Interruptor: grid con áreas; el texto suelto ("Reservado") cae en la celda libre, el detalle debajo y la palanca
-   (la de Ajustes, con grid-area: accion) a la derecha. */
-.interruptor {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "etiqueta accion"
-    "detalle accion";
-  column-gap: var(--espacio-3);
-  row-gap: 2px;
-  align-items: center;
-  min-height: 56px;
-  padding-block: var(--espacio-2);
-  border-top: 1px solid var(--borde);
-  font-size: var(--letra-md);
-  font-weight: 600;
-}
-.interruptor small {
-  grid-area: detalle;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  font-weight: 400;
-}
+/* Hoja de "Perfil" (público / reservado): título, explicación e interruptor (la fila de palanca suelta de ui/Renglon). */
 .nota {
   margin-top: var(--espacio-3);
   color: var(--texto-suave);

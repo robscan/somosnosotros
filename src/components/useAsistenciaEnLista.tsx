@@ -26,7 +26,7 @@ type EventoLista = { id: string; slug?: string | null; titulo: string } & Partia
  *  tarjetas de carril (`Destacados`, con `tarjetaEvento`) lo traen completo; un renglón de Agenda/ficha, no. */
 function tarjetaDe(e: EventoLista): TarjetaConFecha | null {
   if (e.href === undefined || e.foto === undefined || e.detalle === undefined || e.van === undefined || e.inicio === undefined || e.fin === undefined || e.zona === undefined) return null;
-  return { id: e.id, href: e.href, foto: e.foto, titulo: e.titulo, detalle: e.detalle, van: e.van, reciente: e.reciente, inicio: e.inicio, fin: e.fin, zona: e.zona };
+  return { id: e.id, href: e.href, foto: e.foto, titulo: e.titulo, detalle: e.detalle, sitio: e.sitio, van: e.van, hoy: e.hoy, inicio: e.inicio, fin: e.fin, zona: e.zona };
 }
 
 /**
@@ -45,7 +45,7 @@ function tarjetaDe(e: EventoLista): TarjetaConFecha | null {
  *
  * Al guardar bien, además de la corrección, se guarda junto con la decisión la tarjeta del renglón, si la trae
  * (`tarjetaDe`; OL-224, bitácora 253): con eso, «Tus planes» puede agregarla al instante aunque el toque haya sido en
- * otra fila de Inicio (Destacados, Esta semana, Populares, Nuevos, Cerca de ti…) — este hook no sabe nada de "Tus
+ * otra fila de Inicio (Destacados, Esta semana, Nuevos…) — este hook no sabe nada de "Tus
  * planes", solo dejar la miga; quien la recoge es `tarjetasTusPlanes`, en `CarrilEventosCliente`.
  *
  * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,
@@ -149,10 +149,11 @@ export function useAsistenciaEnLista(decididas: Decididas, avisos: AvisosLista |
     const decidido = previo === "voy";
     const ruta = hrefEvento(e);
     return {
+      objeto: "evento",
       decidido,
-      // El nombre no cambia con el estado (sería contradictorio con `aria-pressed`, que ya lo dice): "conmutador presionado"
-      // con un nombre que dice "ya no vas" suena al revés.
-      nombreAccesible: `Voy — ${e.titulo}`,
+      // El nombre dice el estado, nunca la acción contraria (con `aria-pressed` un «ya no vas» suena al revés, bitácora 139):
+      // «Voy — …» por decidir y «Ya vas — …» decidido.
+      nombreAccesible: `${decidido ? "Ya vas" : "Voy"} — ${e.titulo}`,
       alTocar: () => {
         if (decididas === null) {
           // Sin sesión: la ficha aplica la acción al volver de entrar (y, tras Voy, hace la pregunta de avisos una vez).

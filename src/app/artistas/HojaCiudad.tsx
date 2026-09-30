@@ -10,6 +10,7 @@ import { buscarCiudades, type CiudadEncontrada } from "@/lib/geocodificar";
 import canon from "@/components/ui/FormularioCanon.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./HojaCiudad.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 type Props = {
   /** La ciudad que tiene el renglón ahora. */
@@ -73,7 +74,7 @@ export default function HojaCiudad({ ciudad, ciudades, onElegir, onCerrar }: Pro
       </label>
 
       {!buscando && (
-        <ul className={sug.lista} role="listbox" aria-label="Ciudades con artistas">
+        <ul className={renglon.tarjeta} role="listbox" aria-label="Ciudades con artistas">
           {ciudades.map((c) => (
             <li key={c.slug}>
               <button type="button" className={sug.renglon} onClick={() => elegir(c.nombre)} role="option" aria-selected={c.nombre === ciudad}>
@@ -102,7 +103,7 @@ export default function HojaCiudad({ ciudad, ciudades, onElegir, onCerrar }: Pro
         </p>
       )}
       {llego && "ciudades" in llego && llego.ciudades.length > 0 && (
-        <ul className={sug.lista} role="listbox" aria-label="Ciudades encontradas">
+        <ul className={renglon.tarjeta} role="listbox" aria-label="Ciudades encontradas">
           {llego.ciudades.map((c) => (
             <li key={`${c.ciudad}|${c.donde}`}>
               <button type="button" className={sug.renglon} onClick={() => elegir(c.ciudad)} role="option" aria-selected={c.ciudad === ciudad}>

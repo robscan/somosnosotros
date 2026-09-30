@@ -40,7 +40,7 @@ const sinDatosServidor = () => "";
  * fila sigue mostrando una copia vieja (`staleTimes`, hasta 60 s, o Atrás), y borrarla ahí perdería la tarjeta antes
  * de que esta fila la usara (bug real, visto al reproducir con Chrome: ir y volver de Agenda la borraba).
  */
-export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, titulo, tamano, memoria, verTodosHref, tusPlanes = false }: { tarjetas: TarjetaConFecha[]; asistencias: Decididas; avisos: AvisosLista | null; titulo: string; tamano: "grande" | "mediana"; memoria: string; verTodosHref: string; tusPlanes?: boolean }) {
+export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, titulo, tamano, memoria, verTodos, tusPlanes = false }: { tarjetas: TarjetaConFecha[]; asistencias: Decididas; avisos: AvisosLista | null; titulo: string; tamano: "grande" | "mediana"; memoria: string; verTodos: { href: string; etiqueta: string }; tusPlanes?: boolean }) {
   const canal = useCanalDePantalla();
   const asistencia = useAsistenciaEnLista(asistencias, avisos, canal);
   const cuenta = avisos?.cuenta ?? null;
@@ -53,7 +53,7 @@ export default function CarrilEventosCliente({ tarjetas, asistencias, avisos, ti
   const visibles = tusPlanes ? tarjetasTusPlanes(cuenta, tarjetas, new Date()).filter((t) => asistencia.estado(t.id) !== null) : tarjetas;
   return (
     <>
-      <Destacados tarjetas={visibles} grande={tamano === "grande"} memoria={memoria} encabezado={titulo} verTodos={{ href: verTodosHref }} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
+      <Destacados tarjetas={visibles} tamano={tamano} memoria={memoria} encabezado={titulo} verTodos={verTodos} boton={(t) => asistencia.boton(t)} estadoDe={asistencia.estado} />
       {asistencia.extras}
     </>
   );

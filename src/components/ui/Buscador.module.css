@@ -7,7 +7,7 @@
   min-height: var(--toque-min);
   padding: 0 var(--espacio-3);
   border: 1px solid var(--borde);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--fondo);
 }
 .buscar > svg {

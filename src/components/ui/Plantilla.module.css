@@ -1,0 +1,55 @@
+/* ==========================================================================
+   Las plantillas de pantalla (docs/rediseno/50, 5.3): la rejilla de cada tipo de pantalla, escrita una sola vez.
+   La página no lleva aire a los lados y cada bloque pone el suyo (`.columna`, o `--gutter` donde el fondo llega a los bordes);
+   nada se escapa del aire con un margen negativo. `--barra-flujo` es lo que la barra de la app ocupa arriba (lo pone el armazón).
+   1. Raíz · 2. Página de tarea y de formulario
+   ========================================================================== */
+
+/* 1. Pantallas raíz (Inicio, Agenda, Artistas, Perfil; docs/rediseno/50, 5.3): una rejilla de una columna en el tono del contenido,
+   bajo la barra de la app. La cabecera es la del área `cabecera` y cada bloque de lo que sigue, una fila. `.raiz` deja sitio abajo para
+   la navegación (`--nav-abajo`: la barra fija del teléfono); `.raizSinNav` es la misma sin ella (Buscar y la ficha de una persona, que
+   en el teléfono llevan su propia barra y no la navegación): solo la zona segura. */
+.raiz,
+.raizSinNav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "cabecera";
+  grid-auto-rows: max-content;
+  align-content: start;
+  min-height: calc(100dvh - var(--barra-flujo, 0px));
+  background: var(--fondo-contenido);
+}
+.raiz {
+  padding-bottom: calc(var(--nav-abajo) + var(--espacio-6));
+}
+.raizSinNav {
+  padding-bottom: calc(var(--espacio-6) + var(--piso));
+}
+:is(.raiz, .raizSinNav) > header {
+  grid-area: cabecera;
+}
+
+/* 2. Pantallas de tarea y de formulario (`<main className={plantilla.pagina}>`): una rejilla de tres columnas, el aire de los lados
+   (`--gutter`) a cada lado y la columna en medio, donde va todo lo que no diga otra cosa. La barra interior (`ui/Barra`, un `header`)
+   ocupa las tres y llega de borde a borde. Scroll normal: el botón va en el flujo y nunca queda bajo el teclado. Sin barra (error,
+   404), lo primero baja lo que pide la zona segura de arriba; con ella, la barra ya lo pone (`Barra.module.css` `.interior`; OL-205,
+   auditoría OL-202 problema 2, docs/rediseno/48-shell-ios.md §2). `.paginaContenido` es la misma sobre el tono del contenido y con más
+   aire abajo (Ajustes, administración, Novedades). */
+.pagina,
+.paginaContenido {
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
+  align-content: start;
+  min-height: calc(100dvh - var(--barra-flujo, 0px));
+  padding-bottom: calc(var(--espacio-6) + var(--piso));
+}
+:where(.pagina, .paginaContenido) > * {
+  grid-column: 2;
+}
+.pagina > :first-child:not(header) {
+  margin-top: calc(var(--espacio-5) + env(safe-area-inset-top, 0px));
+}
+.paginaContenido {
+  padding-bottom: calc(var(--espacio-8) + var(--piso));
+  background: var(--fondo-contenido);
+}

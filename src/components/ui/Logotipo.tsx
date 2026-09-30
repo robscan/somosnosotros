@@ -9,6 +9,8 @@ import styles from "./Logotipo.module.css";
 type Props = {
   /** Versión para tamaños chicos: dedos más gruesos y calzado sin cordones (barra interior). */
   chico?: boolean;
+  /** Dónde va: lo decide la barra que lo aloja. */
+  className?: string;
 };
 
 /**
@@ -17,7 +19,7 @@ type Props = {
  * Ya en el inicio (con o sin filtro) no apila historial y conserva la ciudad: sigue siendo la misma pantalla (OL-055).
  * Dos nodos: el enlace (área de toque de 44 px) y el dibujo. La altura va en rem y crece con el texto del teléfono.
  */
-export default function Logotipo({ chico = false }: Props) {
+export default function Logotipo({ chico = false, className }: Props) {
   const enInicio = usePathname() === "/";
   const router = useRouter();
   function alTocar(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -26,7 +28,7 @@ export default function Logotipo({ chico = false }: Props) {
     router.replace(raizConCiudad("/", window.location.search));
   }
   return (
-    <Link href="/" replace={enInicio} onClick={alTocar} className={styles.logotipo} aria-label="Somos Nosotros, ir al inicio">
+    <Link href="/" replace={enInicio} onClick={alTocar} className={[styles.logotipo, className].filter(Boolean).join(" ")} aria-label="Somos Nosotros, ir al inicio">
       <Image
         src={chico ? "/logotipo-chico.svg" : "/logotipo.svg"}
         alt=""

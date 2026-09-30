@@ -3,9 +3,11 @@
 import { type CSSProperties, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { etiquetaEnlace, LIMITE_ENLACES, LIMITE_TITULO_ENLACE, reconocerEnlace, type Enlace } from "@/lib/enlaces";
 import { indiceDestino, mover } from "@/lib/reordenar";
+import Boton from "./ui/Boton";
 import Campo from "./ui/Campo";
 import IconoRed from "./ui/IconoRed";
 import { IconoAgarre, IconoCerrar } from "./ui/Iconos";
+import SoloLector from "./ui/SoloLector";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import styles from "./SelectorEnlaces.module.css";
@@ -18,7 +20,7 @@ type Arrastre = { indice: number; objetivo: number; inicioY: number; desplazamie
 
 /**
  * Enlaces y redes sin elegir la red (docs/rediseno/09-enlaces-flujo-y-estados.md): la persona pega un
- * enlace, un @usuario o un teléfono; el sistema reconoce de qué red es y lo enseña con su icono.
+ * enlace, un @perfil o un teléfono; el sistema reconoce de qué red es y lo enseña con su icono.
  * Tantos como haga falta; se quitan con ✕. Viaja al servidor como JSON en un campo oculto.
  *
  * Reordenar (OL-184): con más de un enlace, cada renglón lleva un agarre a la izquierda. Arrastre con eventos
@@ -54,7 +56,7 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
   function agregar() {
     const e = reconocerEnlace(texto);
     if (!e) {
-      setAviso(texto.trim() ? "No parece un enlace, un @usuario ni un teléfono." : null);
+      setAviso(texto.trim() ? "No parece un enlace, un @perfil ni un teléfono." : null);
       return;
     }
     if (enlaces.some((x) => x.url === e.url)) {
@@ -126,7 +128,7 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
   function estiloFila(indice: number): CSSProperties | undefined {
     if (!arrastre) return undefined;
     if (indice === arrastre.indice) {
-      return { transform: `translateY(${arrastre.desplazamiento}px)`, transition: "none", zIndex: 2, boxShadow: "var(--sombra-panel)", position: "relative" };
+      return { transform: `translateY(${arrastre.desplazamiento}px)`, transition: "none", zIndex: "calc(var(--z-pegajoso) - 1)", boxShadow: "var(--sombra-panel)", position: "relative" };
     }
     const { indice: origen, objetivo, altoRenglon: alto } = arrastre;
     let salto = 0;
@@ -200,9 +202,8 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
           ))}
         </ul>
       )}
-      <p className={styles.soloLector} aria-live="polite">
-        {anuncio}
-      </p>
+      {/* El nuevo puesto tras arrastrar o mover con flechas (OL-184): se oye, no se ve. */}
+      <SoloLector aria-live="polite">{anuncio}</SoloLector>
       {!lleno && (
         <>
           <label htmlFor="campo-enlace" className={styles.etiqueta}>
@@ -236,9 +237,9 @@ export default function SelectorEnlaces({ inicial, error }: Props) {
               />
               <Limpiar visible={!!texto} />
             </span>
-            <button type="button" className={styles.agregar} onClick={agregar} disabled={!texto.trim()}>
+            <Boton type="button" variante="secundario" ancho="contenido" onClick={agregar} disabled={!texto.trim()}>
               Añadir
-            </button>
+            </Boton>
           </div>
           {(aviso || error) && (
             <p id="campo-enlace-aviso" className={styles.aviso} role="alert">

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Suspense } from "react";
+import Heroe from "@/components/ui/Heroe";
 
 /**
  * OL-161 (bitácora 196): la cabecera de la ficha (foto, nombre, dirección, JSON-LD, canonical) tiene que salir en
@@ -81,11 +82,17 @@ function* recorrer(nodo: unknown): Generator<{ type: unknown; props: Record<stri
 describe("ficha de lugar: la cabecera pinta antes que sus eventos (OL-161)", () => {
   it("el árbol inicial trae el nombre, el JSON-LD y deja quién sigue y sus eventos en Suspense", async () => {
     const { default: FichaLugar } = await import("./page");
+    const { default: CuerpoLugar } = await import("./CuerpoLugar");
     const arbol = await FichaLugar({ params: Promise.resolve({ id: "lugar-de-prueba" }), searchParams: Promise.resolve({}) });
-    const elementos = [...recorrer(arbol)];
+    const enPagina = [...recorrer(arbol)];
+    // El cuerpo (datos, acciones, eventos) es un componente aparte, el mismo de la hoja de Lugares: se abre igual, sin pintarlo.
+    const cuerpo = enPagina.find((e) => e.type === CuerpoLugar);
+    expect(cuerpo).toBeTruthy();
+    const elementos = [...enPagina, ...recorrer(CuerpoLugar(cuerpo!.props as Parameters<typeof CuerpoLugar>[0]))];
 
-    const h1 = elementos.find((e) => e.type === "h1");
-    expect(h1?.props?.children).toBe("Lugar de prueba");
+    // El héroe (portada y nombre, `ui/Heroe`) sale con la página, sin esperar nada.
+    const heroe = elementos.find((e) => e.type === Heroe);
+    expect(heroe?.props?.titulo).toBe("Lugar de prueba");
 
     const jsonLd = elementos.find((e) => e.type === "script" && e.props?.type === "application/ld+json");
     expect(jsonLd).toBeTruthy();
@@ -93,7 +100,7 @@ describe("ficha de lugar: la cabecera pinta antes que sus eventos (OL-161)", () 
     expect(datos["@type"]).toBe("Place");
     expect(datos.name).toBe("Lugar de prueba");
 
-    // Cuánta gente lo sigue + su próximo evento (un renglón, un Suspense) y "Próximos eventos" (otro): dos límites.
+    // Cuántos eventos vienen y cuánta gente lo sigue (dos números, un Suspense) y "Próximos eventos" (otro): dos límites.
     const suspenses = elementos.filter((e) => e.type === Suspense);
     expect(suspenses.length).toBe(2);
   });

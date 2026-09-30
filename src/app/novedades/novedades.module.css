@@ -1,7 +1,7 @@
 /* Novedades: título, grupos por día, renglón con icono por causa; lo no visto lleva un punto a la derecha. */
 .titulo {
   font-size: var(--letra-2xl);
-  margin: var(--espacio-3) 0 var(--espacio-2);
+  margin: 0 0 var(--espacio-2);
 }
 .vacio {
   padding: var(--espacio-3) 0;
@@ -14,7 +14,7 @@
   font-weight: 600;
 }
 .grupo h2 {
-  padding: 12px 0 4px;
+  padding: var(--espacio-3) 0 var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
   font-weight: 700;
@@ -30,8 +30,8 @@
     "icono que"
     "icono evento"
     "icono cuando";
-  column-gap: 12px;
-  padding: 12px 20px 12px 0;
+  column-gap: var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-5) var(--espacio-3) 0;
   border-bottom: 1px solid var(--borde);
   color: var(--texto);
   text-decoration: none;
@@ -76,8 +76,8 @@
 /* Al pie, solo si el teléfono está apagado: icono, frase y la acción. */
 .telefono {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
-  column-gap: 12px;
+  grid-template-columns: var(--columna-icono) 1fr auto;
+  column-gap: var(--espacio-3);
   align-items: center;
   margin-top: var(--espacio-4);
   padding: var(--espacio-3) var(--espacio-4);
@@ -96,7 +96,7 @@
   align-items: center;
   padding: 0 var(--espacio-4);
   border: 1px solid var(--borde);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   color: var(--primario);
   font-weight: 700;
   text-decoration: none;

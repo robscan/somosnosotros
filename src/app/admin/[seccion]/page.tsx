@@ -3,8 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
-import { ChipEnlace, Chips, Cuenta } from "@/components/ui/Chip";
-import ficha from "@/components/ui/Ficha.module.css";
+import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { puedeDestacarse, SIN_DECIDIR, TIPO_DE, textoMotivo } from "@/lib/destacados";
 import { eventoPaso } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
@@ -53,16 +53,16 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
   const redonda = seccion === "artistas" ? styles.redonda : "";
 
   return (
-    <main className={`${ficha.pagina} ${styles.lista}`}>
+    <main className={`${plantilla.paginaContenido} ${styles.lista}`}>
       <Barra volver={{ href: "/admin", texto: "Administración" }} />
       <h1 className={styles.titulo}>{TITULO[seccion]}</h1>
       <Buscador valor={l.q ?? ""} placeholder={BUSCAR[seccion]} ariaLabel={BUSCAR[seccion]} />
       <Chips ariaLabel={`Filtrar ${TITULO[seccion].toLowerCase()}`}>
         {FILTROS[seccion].map((f) => (
-          <ChipEnlace key={f.valor} activo={l.filtro === f.valor} href={hrefLista(seccion, { q: l.q, filtro: f.valor })}>
+          <Chip key={f.valor} activo={l.filtro === f.valor} href={hrefLista(seccion, { q: l.q, filtro: f.valor })}>
             {f.etiqueta}
             {conteos && <Cuenta n={conteos[f.valor] ?? 0} />}
-          </ChipEnlace>
+          </Chip>
         ))}
       </Chips>
       {error ? (

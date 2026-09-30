@@ -1,4 +1,5 @@
 import { ciudadCanonica } from "./ciudad";
+import type { Punto } from "./geo";
 import { esUuid, limpiar } from "./formulario";
 import { localAIso, ZONA_INICIAL, zonaSegura } from "./fechas";
 import { imagenPermitida } from "./imagenes";
@@ -8,6 +9,24 @@ export { LIMITES_EVENTO } from "./limites";
 
 /** Dónde es el evento: en un lugar registrado, en otro sitio (público) o en un sitio reservado (dirección con condiciones). */
 export type ModoSitio = "lugar" | "otro" | "reservado";
+
+/** Lo que resuelve Dónde cuando no es un lugar registrado: el sitio, su pin y, si es reservado, la dirección exacta. */
+export type OtroSitio = {
+  reservado: boolean;
+  sitioTexto: string;
+  /** Direccion publica estructurada, nunca parte del alias persistido. */
+  direccion?: string;
+  nombreLegacy?: boolean;
+  referenciaLegacy?: string;
+  pinPendiente?: boolean;
+  sitioPunto: Punto | null;
+  direccionPrivada: string;
+  privadoPunto: Punto | null;
+  revelarHoras: number;
+  indicaciones: string;
+  /** La ciudad del pin, deducida por Mapbox al ponerlo (null hasta entonces). */
+  ciudad: string | null;
+};
 
 /** Cuánto antes del inicio se revela un sitio reservado a las personas con sesión. */
 export const REVELAR_OPCIONES = [
@@ -163,6 +182,15 @@ export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "si
   const texto = [e.sitio_texto, e.sitio_direccion].filter(Boolean).join(" · ");
   if (texto) return texto;
   return "Sitio por confirmar";
+}
+
+/**
+ * El sitio para una lista (H-09, doc 50): el mismo nombre sin la dirección postal, que `nombreSitio` suma cuando el evento es
+ * «en otro sitio» y que en la lista partía el renglón en tres líneas. La dirección vive en la ficha del evento. Un evento
+ * sin nombre de sitio pero con dirección la conserva: es lo único que dice dónde es.
+ */
+export function sitioEnLista(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado">): string {
+  return nombreSitio({ ...e, sitio_direccion: e.sitio_texto ? null : e.sitio_direccion });
 }
 
 /** JSON-LD no convierte un alias legacy en direccion ni publica la direccion reservada. */

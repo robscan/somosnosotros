@@ -83,7 +83,7 @@ export function useCanalDePantalla(): CanalDeListas | undefined {
 
 /**
  * Un canal para toda una pantalla y su único aviso abajo. Las fichas lo ponen en su `template` (uno nuevo por ficha), así
- * la lista de eventos y la barra de Seguir o de Voy comparten aviso y pregunta.
+ * la lista de eventos y la pastilla de Seguir o de Voy comparten aviso y pregunta.
  */
 export default function PantallaConAviso({ children }: { children: ReactNode }) {
   const canal = useCanalDeListas();

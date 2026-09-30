@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { IconoChevronDerecha, IconoPincel } from "@/components/ui/Iconos";
 import { formatearCuando } from "@/lib/fechas";
 import { usuarioActual } from "@/lib/supabase/servidor";
@@ -10,6 +10,7 @@ import CrearObraAqui from "./CrearObraAqui";
 import InterruptorPincel from "./InterruptorPincel";
 import { cargarAjustePincel, cargarEstadoGlobalPincel, cargarLugaresParaObra, cargarObras, TOPE_OBRAS_ABIERTAS } from "./consultas";
 import Reintentar from "../Reintentar";
+import renglon from "@/components/ui/Renglon.module.css";
 
 export const metadata = { title: "Obras colectivas · Administración · Somos Nosotros", robots: { index: false, follow: false } };
 
@@ -33,7 +34,7 @@ export default async function ObrasColectivas() {
   const puedeCrear = estadoGlobal ? estadoGlobal.abiertas < TOPE_OBRAS_ABIERTAS : true;
 
   return (
-    <main className={ficha.pagina}>
+    <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/admin", texto: "Administración" }} />
       <h1 className={styles.titulo}>Obras colectivas</h1>
 
@@ -53,7 +54,7 @@ export default async function ObrasColectivas() {
       ) : obras.length === 0 ? (
         <p className={styles.vacio}>Todavía no hay ninguna obra colectiva. Actívala desde un evento o aquí arriba.</p>
       ) : (
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           {obras.map((o) => (
             <li key={o.id}>
               <Link href={`/admin/obras-colectivas/${o.id}`} className={styles.fila}>

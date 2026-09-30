@@ -1,28 +1,27 @@
-/* Cartel o portada: banda baja a ancho completo (cover); un toque la enseña entera */
-.banda {
-  position: relative;
+/* La imagen de una ficha (Cartel). Héroe: la portada 3:2 a todo lo ancho, sin lupa; el título de la ficha va encima, sobre su velo
+   (ui/Heroe). En una pantalla apaisada el 3:2 se comería la ventana: el alto se topa a 60 % de ella, y la imagen ya recorta con
+   `object-fit`. Avatar: la foto redonda de un artista, con un aro blanco que la separa de la portada. */
+.heroe {
   display: block;
   width: 100%;
-  height: 220px;
-  margin: var(--espacio-1) 0 var(--espacio-4);
+  max-height: 60dvh;
+  aspect-ratio: 3 / 2;
   padding: 0;
   border: none;
-  border-radius: var(--radio);
   overflow: hidden;
   background: var(--fondo-miniatura);
   cursor: zoom-in;
 }
-/* Avatar de la ficha de artista: redondo, 112 px, sin lupa; el toque lo abre entero igual */
 .avatar {
   display: block;
-  width: 112px;
-  height: 112px;
-  margin: var(--espacio-1) 0 var(--espacio-3);
+  width: var(--avatar-ficha);
+  height: var(--avatar-ficha);
   padding: 0;
   border: none;
   border-radius: 50%;
   overflow: hidden;
   background: var(--fondo-miniatura);
+  box-shadow: 0 0 0 2px var(--fondo);
   cursor: zoom-in;
 }
 /* Sin portada: la imagen del símbolo SN llena la caja y no se abre */
@@ -36,25 +35,16 @@
   height: 100%;
   object-fit: cover;
 }
-.lupa {
-  position: absolute;
-  right: var(--espacio-2);
-  bottom: var(--espacio-2);
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--vidrio);
-  color: var(--texto);
-}
+/* El visor: la imagen entera sobre negro, a pantalla completa; tocar donde sea (o la ✕) la cierra */
 .visor {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-capa);
   display: grid;
   place-items: center;
-  background: #000;
+  background: var(--fondo-visor);
+  cursor: zoom-out;
+  animation: fundir var(--duracion) var(--curva);
 }
 .visorImagen {
   max-width: 100%;
@@ -63,14 +53,12 @@
 }
 .visorCerrar {
   position: absolute;
-  top: calc(var(--espacio-3) + env(safe-area-inset-top, 0px));
-  right: var(--espacio-3);
-  display: grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
+  top: calc(var(--tope) + var(--espacio-2));
+  right: var(--espacio-2);
+  color: var(--primario-texto);
+}
+@keyframes fundir {
+  from {
+    opacity: 0;
+  }
 }

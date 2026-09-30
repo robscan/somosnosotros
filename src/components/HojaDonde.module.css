@@ -1,0 +1,396 @@
+/* La hoja «Dónde» (`HojaDonde`; OL-173, docs/rediseno/43, variante B; el punto de un lugar, OL-211): «¿Dónde es?» del alta de
+   evento y «¿Dónde está?» del alta de lugar, una sola pantalla completa. El mapa llena todo el hueco entre el campo y el pie;
+   sobre él flotan el resumen del pin, la lista de sugerencias (ui/ListaFlotante, en su propio portal) y, solo en el evento, el
+   panel «Agregar lugar» y la barra de acciones. Mismo patrón de capa fija que CampoLargo.module.css (`.capa`/`.cabecera`),
+   con «‹ Atrás» además de «Listo» (docs/rediseno/39-texto-largo.md más el pedido explícito del founder de una vuelta atrás
+   real, doc 43). */
+.capa {
+  position: fixed;
+  inset: 0;
+  /* Por debajo de ui/ListaFlotante (`--z-encima`, portal a document.body): la lista flotante de esta misma hoja tiene
+     que pintarse ENCIMA de la pantalla completa, no debajo (a diferencia de CampoLargo, que no usa ninguna lista
+     flotante y por eso puede ir en `--z-encima` + 1). Por encima de ui/Hoja (`--z-hoja`) y de Cartel (`--z-capa`): nada
+     de eso convive con esta pantalla a la vez. Dentro, cada pieza usa la banda de la escala que le toca, en el orden de
+     siempre: campo, resumen y aviso, barra de acciones, hoja «Agregar lugar», «Estoy aquí». */
+  z-index: calc(var(--z-capa) + 1);
+  display: flex;
+  flex-direction: column;
+  background: var(--fondo);
+}
+.cabecera {
+  flex: none;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--espacio-3);
+  min-height: var(--alto-barra);
+  padding: env(safe-area-inset-top, 0px) var(--gutter) 0;
+  border-bottom: 1px solid var(--borde);
+}
+.cabecera h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: var(--letra-lg);
+  font-weight: 700;
+}
+.atras,
+.listo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-1);
+  border: none;
+  background: none;
+  color: var(--primario);
+  font-size: var(--letra-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+.listo:disabled {
+  color: var(--texto-suave);
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cuerpo {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* El campo, siempre visible y siempre arriba: nunca lo tapa el mapa ni la lista. */
+.campo {
+  position: relative;
+  z-index: var(--z-pegajoso);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque);
+  margin: 10px var(--gutter);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  box-shadow: var(--sombra);
+}
+.campo > svg:first-child {
+  flex: none;
+  color: var(--texto-suave);
+}
+.campo input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: var(--letra-campo);
+  color: var(--texto);
+}
+.campo input:focus {
+  outline: none;
+}
+
+/* El mapa de fondo, edge-to-edge (encargo OL-173): llena todo el resto del alto. */
+.mapaLleno {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* "Estoy aquí" sobre el mapa: abajo a la izquierda, sube cuando la barra de acciones o la hoja "Agregar lugar"
+   están a la vista. z-index por encima de la hoja (`--z-hoja`) a propósito -OL-182, doc 43 segunda versión: "el botón
+   flotante Estoy aquí queda encima de la hoja, no debajo"-, aunque en la práctica nunca se superponen (el bottom
+   se calcula para que quede siempre arriba de lo que haya). Es un ui/BotonIcono; su glifo es oscuro, como el del
+   botón de ubicación del mapa de Lugares. */
+.estoyAqui {
+  position: absolute;
+  left: var(--gutter);
+  z-index: calc(var(--z-hoja) + 1);
+  transition: bottom 120ms ease;
+}
+.estoyAqui > svg {
+  color: var(--texto);
+}
+
+.avisoUbicacion {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: var(--espacio-3);
+  z-index: var(--z-flotante);
+  margin: 0;
+  padding: var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--vidrio);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  box-shadow: var(--sombra);
+}
+
+/* El resumen del pin elegido: en un evento, el nombre (fijo o editable) y la dirección; en un lugar, solo la dirección (el nombre vive
+   en el formulario de fuera). Con el aviso si se arrastró o si ya existe uno cerca. */
+.resumen {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: var(--espacio-3);
+  z-index: var(--z-flotante);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--espacio-2);
+  padding: var(--espacio-3);
+  border-radius: var(--radio);
+  background: var(--vidrio);
+  box-shadow: var(--sombra-flotante);
+  font-size: var(--letra-sm);
+  color: var(--texto-suave);
+}
+.resumen > svg {
+  flex: none;
+  color: var(--primario);
+  align-self: center;
+}
+.resumen b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--texto);
+  font-weight: 700;
+}
+.nombreEditable {
+  flex: 1 1 140px;
+  min-width: 0;
+  border: none;
+  border-bottom: 1.5px dashed var(--primario);
+  background: none;
+  padding: 2px 0;
+  font: inherit;
+  font-size: var(--letra-campo);
+  font-weight: 700;
+  color: var(--texto);
+}
+.nombreEditable:focus {
+  outline: none;
+}
+.resumenDireccion {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.notaAjuste {
+  flex: 0 0 100%;
+  margin-top: 2px;
+  font-weight: 700;
+  color: var(--primario);
+}
+.notaAjuste a {
+  color: var(--primario);
+  text-decoration: underline;
+}
+
+/* Las filas de la lista flotante (dentro de ui/ListaFlotante): reutiliza ui/Sugerencia.module.css; aquí solo lo
+   que no cubre (avisos y el separador entre lugares y lo de Mapbox). */
+.avisoFlotante {
+  padding: var(--espacio-3);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.avisoFlotante[role="alert"] {
+  color: var(--error);
+}
+.avisoNoEncontrado {
+  padding: var(--espacio-3);
+  font-size: var(--letra-md);
+  line-height: 1.35;
+}
+.avisoNoEncontrado > b {
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Marca chica junto al nombre, en la lista flotante: «Privado» (OL-179: un lugar propio entre las sugerencias que nadie más
+   ve) en el evento, «Ya existe» (OL-211: un lugar que esta hoja no deja elegir) en el lugar. */
+.marca {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: var(--radio-pildora);
+  background: var(--fondo-suave);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+/* Barra de acciones, variante B: pegada sobre el teclado (JS mueve `bottom`) o al pie sin él. */
+.barraAcciones {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: var(--z-barra);
+  display: flex;
+  gap: var(--espacio-2);
+  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-3) + var(--piso));
+  background: var(--fondo);
+  box-shadow: var(--sombra-panel);
+  transition: bottom 120ms ease;
+}
+.accionAgregar {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--toque);
+  padding: 0 var(--espacio-2);
+  border: none;
+  border-radius: var(--radio);
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: var(--letra-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.accionAgregar > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hoja "Agregar lugar", segunda versión (OL-182, doc 43): a media pantalla, pegada abajo -sobre el teclado cuando
+   lo hay, mismo mecanismo que .barraAcciones (JS mueve `bottom`)-, dejando el mapa y el pin siempre visibles
+   arriba (`MapaDondeEs` recibe `paddingInferior`). Antes de esta pieza era un panel flotante que tapaba el mapa
+   entero y "Ajusta el pin en el mapa" no se podía cumplir -el defecto que reportó el founder en producción.
+   `--z-hoja`: por debajo de "Estoy aquí" (`--z-hoja` + 1, doc 43: "queda encima de la hoja, no debajo") y de
+   ListaFlotante (`--z-encima`, portal), por encima de .barraAcciones (`--z-barra`, nunca conviven: la barra se oculta
+   en modo "agregar"). */
+.hojaAgregar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-hoja);
+  display: flex;
+  flex-direction: column;
+  padding: var(--espacio-2) var(--gutter) calc(var(--espacio-4) + var(--piso));
+  border-radius: var(--radio-hoja) var(--radio-hoja) 0 0;
+  background: var(--fondo);
+  box-shadow: var(--sombra-panel);
+  transition:
+    bottom 120ms ease,
+    top 120ms ease;
+}
+/* Con las sugerencias de dirección abiertas y sin sitio abajo del campo (pegado sobre el teclado): la hoja se
+   estira hacia arriba y se hace desplazable por dentro; un efecto en HojaDonde.tsx pone el scroll para que el
+   campo "Dirección" quede arriba del todo -así la lista SIEMPRE abre debajo del campo en uso, nunca encima
+   (regla dura del founder, 2026-09-24: "si sugieres algo sea debajo del campo que estoy usando"). */
+.hojaAgregar.expandida {
+  top: var(--espacio-3);
+  overflow-y: auto;
+}
+/* Ningún hijo se encoge (flex-shrink: 0): con la hoja expandida y desplazable, el contenido manda su alto de
+   verdad y lo que no quepa se ve con scroll -nunca aplastado. */
+.hojaAgregar > * {
+  flex-shrink: 0;
+}
+.asaHoja {
+  align-self: center;
+  flex: none;
+  width: var(--asa-ancho);
+  height: var(--asa-alto);
+  margin-bottom: var(--espacio-2);
+  border-radius: var(--radio-pildora);
+  background: var(--borde);
+}
+.hojaAgregar h3 {
+  flex: none;
+  margin-bottom: var(--espacio-3);
+  font-size: var(--letra-md);
+  font-weight: 700;
+}
+.campoPanel {
+  display: block;
+  margin-bottom: var(--espacio-3);
+}
+.campoPanel > span {
+  display: block;
+  margin-bottom: var(--espacio-1);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+/* ">" (hijo directo), NO "espacio" (cualquier descendiente): el campo "Nombre" tiene su <input> como hijo directo
+   de este mismo .campoPanel, pero el de "Dirección" vive un nivel más adentro, dentro de .campoDireccion (abajo).
+   Con un selector descendiente ("campoPanel input"), esta regla TAMBIÉN alcanzaba a ese input anidado -con más
+   especificidad que ".campoDireccion input" de abajo- y le dibujaba su propia caja (borde, fondo) DENTRO de la
+   caja de .campoDireccion: la sobreanidación por la que el founder ya llamó la atención tres veces
+   (MEMORIA_GESTOR.md). El hijo directo excluye al de Dirección sin pelear especificidad. */
+.campoPanel > input[type="text"] {
+  width: 100%;
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  font-size: var(--letra-campo);
+}
+/* El campo "Dirección" de la hoja (OL-182): ya no es texto fijo -era "Ajusta el pin en el mapa", imposible de
+   cumplir cuando el propio panel tapaba el mapa-, es un campo de búsqueda real: UN solo marco (lupa + texto),
+   mismo trato visual que el campo principal (.campo, arriba) pero sin su margen (va dentro de .campoPanel, que ya
+   separa) -receta de .campo: el input no lleva NINGÚN borde/fondo propio, el foco se marca en el contenedor. */
+.campoDireccion {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--toque-min);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+}
+.campoDireccion:focus-within {
+  border-color: var(--primario);
+}
+.campoDireccion > svg {
+  flex: none;
+  color: var(--texto-suave);
+}
+.campoDireccion input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--letra-campo);
+  color: var(--texto);
+}
+/* «Es un lugar privado»: una fila de palanca suelta (la piel `ajuste sola` de ui/Renglon); aquí solo su sitio en la hoja. */
+.privado {
+  margin: var(--espacio-1) 0 var(--espacio-4);
+}
+.notaError {
+  margin-bottom: var(--espacio-2);
+  color: var(--error);
+  font-size: var(--letra-sm);
+}
+/* El porqué del botón "Guardar" apagado (OL-182): debajo de él, nunca dentro (canon de formularios, OL-100). */
+.ayudaGuardar {
+  margin-top: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-xs);
+  line-height: 1.4;
+  text-align: center;
+}

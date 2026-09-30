@@ -1,0 +1,55 @@
+/* ==========================================================================
+   La pantalla de alta (docs/rediseno/50, P9; prototipo firmado): una tarea de tres filas sobre la rejilla de la plantilla `pagina` (`ui/Plantilla`):
+   la barra interior, el formulario del tipo elegido —que se lleva lo que sobre— y la tira de tipos, que se queda al pie de la
+   ventana aunque el formulario sea corto. Los formularios que no están a la vista van escondidos (`hidden`) y no ocupan fila.
+   1. La rejilla · 2. La tira de tipos
+   ========================================================================== */
+
+/* 1. Sin aire abajo: lo pone la propia tira. Con `main` delante, gana a la plantilla sin depender del orden de las hojas. */
+main.alta {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding-bottom: 0;
+}
+main.alta > form {
+  padding-block: var(--espacio-3) var(--espacio-4);
+}
+
+/* 2. Evento · Lugar · Artista: de borde a borde y pegada abajo (sobre la zona segura del iPhone). El elegido va más oscuro y
+   con un punto debajo. Cada uno mide el alto de la tira y al menos 64 de ancho: el pulgar los alcanza. */
+.tira {
+  grid-column: 1 / -1;
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-flotante);
+  display: flex;
+  justify-content: center;
+  gap: var(--espacio-7);
+  height: calc(var(--alto-modos) + var(--piso));
+  padding-bottom: var(--piso);
+  background: var(--fondo);
+  border-top: 1px solid var(--borde);
+}
+.tipo {
+  min-width: 64px;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.tipo[aria-pressed="true"] {
+  color: var(--texto);
+  font-weight: 800;
+}
+.tipo[aria-pressed="true"]::after {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 6px;
+  margin: 2px auto 0;
+  border-radius: 50%;
+  background: var(--texto);
+}

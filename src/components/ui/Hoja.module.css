@@ -1,23 +1,23 @@
 .fondo {
   position: fixed;
   inset: 0;
-  z-index: 40;
-  background: rgba(0, 0, 0, 0.32);
+  z-index: var(--z-hoja);
+  background: var(--velo-hoja);
 }
 .hoja {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  max-width: var(--columna); /* en escritorio, del ancho de la columna y centrada */
+  max-width: var(--columna); /* desde 792, del ancho de la columna y centrada */
   margin-inline: auto;
   max-height: calc(100% - 48px);
   overflow-y: auto;
   /* A los lados, el relleno del teléfono y no var(--gutter): el gutter crece con la ventana para centrar lo que va a todo
      lo ancho, y dentro de una hoja que ya mide la columna se comía el ancho (en escritorio el texto quedaba en una tira de
      44 px; founder, 2026-09-16). En el teléfono es el mismo valor. */
-  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + env(safe-area-inset-bottom, 0px));
-  border-radius: var(--radio-grande) var(--radio-grande) 0 0;
+  padding: var(--espacio-3) var(--espacio-5) calc(var(--espacio-5) + var(--piso));
+  border-radius: var(--radio-hoja) var(--radio-hoja) 0 0;
   background: var(--fondo);
   box-shadow: var(--sombra-panel);
 }
@@ -25,11 +25,28 @@
 .hoja::before {
   content: "";
   display: block;
-  width: 36px;
-  height: 4px;
+  width: var(--asa-ancho);
+  height: var(--asa-alto);
   margin: 0 auto var(--espacio-3);
   border-radius: 2px;
   background: var(--asa);
+}
+/* Desde 792 la hoja es un diálogo al centro de la ventana: las cuatro esquinas redondas y sin asa, que no hay borde de abajo del que
+   subirla. */
+@media (min-width: 792px) {
+  .fondo {
+    display: grid;
+    place-items: center;
+  }
+  .hoja {
+    position: relative;
+    width: 100%;
+    padding-bottom: var(--espacio-4);
+    border-radius: var(--radio-hoja);
+  }
+  .hoja::before {
+    display: none;
+  }
 }
 /* Título y texto de apoyo como hijos directos de la hoja. Con :where() no pesan: una hoja puede afinar los suyos. */
 :where(.hoja) > h3 {
@@ -40,6 +57,8 @@
 :where(.hoja) > h3:has(+ p) {
   margin-bottom: var(--espacio-1);
 }
+/* La nota de una hoja: el párrafo que sigue a su título o abre su cuerpo (`hoja.nota`, en las hojas que llevan su título en la cabecera). */
+.nota,
 :where(.hoja) > h3 + p {
   margin-bottom: var(--espacio-3);
   color: var(--texto-suave);
@@ -71,10 +90,13 @@
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-/* A toda la altura, pegada al borde superior seguro (notch / isla): abajo sigue el área segura de siempre. */
-.completa {
-  height: calc(100% - env(safe-area-inset-top, 0px));
-  max-height: none;
+/* El pie: siempre a la vista bajo el cuerpo, con su raya arriba. Quien lo llena pone sus botones. */
+.pie {
+  display: flex;
+  gap: var(--espacio-3);
+  margin-top: var(--espacio-3);
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--borde);
 }
 .plano {
   display: flex;

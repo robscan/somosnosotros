@@ -1,9 +1,8 @@
 /* ==========================================================================
    El canon de formulario (docs/rediseno/13, 15 y 26; bitácora 039): lo comparten el alta de lugar, el alta de
-   artista, Editar perfil y el alta de evento. 1. Campo con icono · 2. Estado, error y "ya está registrado" ·
-   3. Renglones resueltos (icono | clave / valor / acción; cuerpo debajo al abrir) · 4. Cuerpo: chips, entrada,
-   subir foto · 5. El botón dice solo su acción; la ayuda de qué falta va bajo el campo o el renglón (founder,
-   2026-09-21, canon ampliado)
+   artista, Editar perfil y el alta de evento. 1. Campo con icono · 2. Estado, error y "ya tiene ficha" ·
+   3. Renglones resueltos (la piel `resuelto` de ui/Renglon: aquí solo su cámara) · 4. Cuerpo: chips, entrada,
+   subir foto · 5. La nota bajo el botón: una sola, y dice qué falta (doc 50, H-29 y H-32)
    ========================================================================== */
 
 /* 1. El campo de arriba: el icono dentro, sin etiqueta ni frase de ayuda. */
@@ -26,7 +25,7 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
 }
 .campo > input:focus {
   border-color: var(--texto);
@@ -36,10 +35,6 @@
   border-color: var(--error);
 }
 
-/* Sin icono a la izquierda. */
-.sinIcono > input {
-  padding-left: 14px;
-}
 /* El campo vacío se marca como faltante, mismo peso que ".pendiente" en los renglones: borde discontinuo, sin
    rojo de error (ese color se reserva para un error de verdad, tras intentar publicar). Founder, 2026-09-21:
    con un cartel sin título el campo del nombre no se veía faltante (OL-113). */
@@ -58,7 +53,7 @@
   align-items: center;
   min-height: 76px;
   margin-bottom: var(--espacio-6);
-  padding: 12px 16px;
+  padding: var(--espacio-3) var(--espacio-4);
   border: 1px solid var(--primario);
   border-radius: var(--radio);
   background: var(--primario-suave);
@@ -92,7 +87,7 @@
 .miniaturaCartel {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--radio);
   object-fit: cover;
   background: var(--fondo-miniatura);
 }
@@ -137,31 +132,21 @@
 }
 .cartelFallo {
   border-color: var(--error);
-  /* Rojo muy lavado: no hay token para el fondo de error porque solo se usa aquí. */
-  background: #fdf3f2;
+  background: var(--error-suave);
 }
 .cartelFallo small {
   color: var(--error);
 }
-/* "Probar con otra foto": lo dice, pero el control es el recuadro entero (nada interactivo dentro de un label). */
+/* "Probar con otra foto": lo dice (ui/Boton en una etiqueta, `claseBoton`), pero el control es el recuadro entero
+   (nada interactivo dentro de un label). */
 .rehacerCartel {
-  display: block;
   width: fit-content;
-  margin-top: 8px;
-  min-height: 36px;
-  padding: 0 12px;
-  border: 1px solid var(--borde);
-  border-radius: 999px;
-  background: var(--fondo);
-  color: var(--primario);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  line-height: 34px;
+  margin-top: var(--espacio-2);
 }
 .barritaCartel {
   display: block;
   height: 4px;
-  margin-top: 8px;
+  margin-top: var(--espacio-2);
   border-radius: 2px;
   background: var(--fondo-miniatura);
   overflow: hidden;
@@ -188,9 +173,9 @@
   }
 }
 
-/* 2. Estado ("Buscando…"), error y lo que ya está registrado. */
+/* 2. Estado ("Buscando…"), error y lo que ya tiene ficha. */
 .estado {
-  margin: calc(-1 * var(--espacio-2)) 0 var(--espacio-2);
+  margin-bottom: var(--espacio-2);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
@@ -201,7 +186,7 @@
 }
 .existe {
   display: grid;
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: var(--columna-icono) 1fr;
   column-gap: 10px;
   align-items: center;
   margin-bottom: var(--espacio-3);
@@ -218,159 +203,57 @@
   color: var(--primario);
   font-weight: 700;
 }
-
-/* 3. Renglones resueltos: icono | clave / valor | acción; el cuerpo, al abrir, debajo a lo ancho. */
-.renglones {
-  list-style: none;
-  display: grid;
-  gap: var(--espacio-2);
-  margin-bottom: var(--espacio-4);
+/* «Ya existe» dentro de la lista flotante (ui/ListaFlotante) es el único contenido: el margen de abajo dejaba una franja blanca vacía
+   debajo del aviso (revisión del gestor, 2026-09-21). El panel mide lo que mide su contenido. */
+.existeFlotante {
+  margin-bottom: 0;
 }
-.resuelto {
-  display: grid;
-  grid-template-columns: 24px 1fr auto;
-  grid-template-areas:
-    "icono clave accion"
-    "icono valor accion"
-    "cuerpo cuerpo cuerpo";
-  column-gap: 12px;
-  align-items: center;
-  align-content: center;
-  min-height: 60px;
-  padding: 10px 14px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-}
-.pendiente {
-  border-style: dashed;
-}
-.abierta {
-  border-color: var(--texto);
-}
-.resuelto > svg {
-  grid-area: icono;
-  color: var(--texto-suave);
-}
-/* La foto ya puesta ocupa el sitio del icono. */
-.miniatura {
-  grid-area: icono;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.clave {
-  grid-area: clave;
-  color: var(--texto-suave);
-  font-size: var(--letra-xs);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.valor {
-  grid-area: valor;
-  font-size: var(--letra-md);
-  font-weight: 600;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-.falta {
-  color: var(--texto-suave);
-  font-weight: 500;
-}
-.cambiar {
-  grid-area: accion;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-2);
-  border: none;
-  background: none;
-  color: var(--primario);
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-/* Salidas por intención: iconos redondos a la derecha (la cámara, Estoy aquí, la lupa). */
-.opciones {
-  grid-area: accion;
+/* Al salir del campo del nombre, si sigue habiendo una coincidencia, esta línea toma el relevo del panel: un renglón que no se sale
+   de una línea, con el nombre recortado con puntos si hace falta y «Ver» siempre visible (revisión del gestor, 2026-09-21: el panel
+   tapaba lo de abajo sin poder cerrarse). Pegada al campo (mismo padding-top que `renglon.nota`); abajo, la separación normal entre
+   renglones (`renglon.renglones` usa `--espacio-2` de gap). */
+.notaExiste {
   display: flex;
-  gap: 6px;
+  align-items: baseline;
+  gap: var(--espacio-1);
+  padding-top: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
 }
-.accionIcono {
-  grid-area: accion; /* solo, va directo al área; dentro de .opciones (flex) no aplica */
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  border: 1px solid var(--borde);
-  border-radius: 50%;
-  background: var(--fondo);
+.notaExiste > span {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.notaExiste a {
+  flex-shrink: 0;
+  color: var(--primario);
+  font-weight: 700;
+}
+.nombreRecortado {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--texto);
-  cursor: pointer;
 }
-.accionIcono:disabled {
-  opacity: 0.6;
+
+/* 3. Renglones resueltos: son la piel `resuelto` de ui/Renglon (Renglon.module.css). Aquí queda solo lo de dentro de un
+   renglón que es del formulario: la cámara, una etiqueta con forma de botón que lleva escondido el campo de archivo. */
+.salida {
+  position: relative;
 }
-/* La cámara es un label con el campo de archivo escondido dentro. */
-.accionIcono > input {
+.salida > input,
+.subir input {
   position: absolute;
   width: 1px;
   height: 1px;
   opacity: 0;
 }
-/* Interruptor en el renglón (Soy yo / es mi grupo). */
-.palanca {
-  grid-area: accion;
-  position: relative;
-  width: 51px;
-  height: 31px;
-  border: none;
-  border-radius: 999px;
-  background: var(--borde);
-  cursor: pointer;
-  transition: background-color 150ms;
-}
-.palanca::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 27px;
-  height: 27px;
-  border-radius: 50%;
-  background: var(--fondo);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform 150ms;
-}
-.palanca[aria-checked="true"] {
-  background: var(--primario);
-}
-.palanca[aria-checked="true"]::after {
-  transform: translateX(20px);
-}
 
-/* 4. El cuerpo abierto: chips, una entrada, subir foto. */
-.cuerpo {
-  grid-area: cuerpo;
-  display: grid;
-  gap: var(--espacio-3);
-  padding-top: var(--espacio-3);
-}
-.cuerpo[hidden] {
-  display: none;
-}
-.cuerpoNota {
-  grid-area: cuerpo;
-  padding-top: var(--espacio-2);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.cuerpoNota[role="alert"] {
-  color: var(--error);
-}
-/* La ayuda bajo un campo suelto (no un renglón de canon.resuelto): mismo aspecto que .cuerpoNota, sin
+/* 4. Lo que va dentro de un cuerpo abierto: chips, una entrada, subir foto. */
+/* La ayuda bajo un campo suelto (no un renglón resuelto): mismo aspecto que la `nota` de un renglón (ui/Renglon), sin
    grid-area — esa clase solo se reutiliza dentro de la rejilla para la que fue escrita (regla del gestor,
    2026-09-21, tras el bug de "Es en otro sitio"). */
 .notaCampo {
@@ -390,7 +273,7 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
 }
 textarea.entrada {
   min-height: 84px;
@@ -412,16 +295,13 @@ textarea.entrada {
   border-radius: var(--radio);
   cursor: pointer;
 }
-.subir input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .palanca,
-  .palanca::after {
-    transition: none;
-  }
+/* 5. La nota bajo el botón de publicar: lo único que dice qué falta («Falta el nombre y dónde es.»). Mientras algo falte el botón va
+   apagado, y la nota se actualiza al completar. Una vez cada cosa: lo que un renglón ya dice con su valor «Falta» y su borde
+   discontinuo no se repite en un mensaje debajo de él. */
+.notaBoton {
+  margin-top: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  text-align: center;
 }

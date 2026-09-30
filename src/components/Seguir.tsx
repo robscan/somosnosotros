@@ -1,22 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
+import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
-import { IconoMas, IconoOk } from "@/components/ui/Iconos";
+import { IconoCampanaMas, IconoOk, IconoPersonaMas } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
-import { useAltoBarraFija } from "@/components/ui/useAltoBarraFija";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
-import { enEste } from "@/lib/plataforma";
 import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
-import { useEstadoPush, usePlataforma } from "@/lib/useAvisosTelefono";
 import { AvisoAbajo, HojaAbierta, useCanalDeListas, useCanalDePantalla } from "./useCanalDeListas";
 import { borrarDecisionesVisita } from "@/lib/decisionesVisita";
 
 type Props = {
-  /** Lugar ("sus eventos") o artista ("sus fechas"): cambia la promesa y la hoja de avisos. */
+  /** Lugar ("sus eventos") o artista ("sus fechas"): cambia el glifo de la pastilla y la hoja de avisos. */
   que: "lugar" | "artista";
   nombre: string;
   sigo: boolean;
@@ -29,42 +26,33 @@ type Props = {
   hrefEntrar: string;
   /** Ya se le preguntó por los avisos (tras un Voy o al seguir otra cosa); no se vuelve a preguntar. */
   avisosPreguntado: boolean;
-  avisosCorreo: boolean;
   /** Correo enmascarado, para la confirmación. */
   correo: string;
   llavePush: string;
 };
 
 /**
- * Barra inferior pegajosa: "Seguir" lleno a lo ancho. Con decisión, estado "✓ Sigues" con la promesa concreta y
- * "Dejar de seguir". Sin sesión, lleva a entrar y se aplica al volver. Lugares (decisión 9) y Artistas (decisión 9).
- * Con docs/rediseno/17: la pregunta de avisos sale tras el toque de Seguir (o al volver de entrar tras tocarlo), nunca sola
- * al abrir la ficha (decisión 6); la promesa dice "en este teléfono" solo si este teléfono está dado de alta (decisión 5).
- * Si no se pudo guardar (o no hay red), la barra vuelve a como estaba y un aviso ofrece Reintentar, como en las listas
- * (bitácora 085). Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de un fallo anterior, y Reintentar
- * solo actúa si su toque sigue siendo el último. El aviso y la pregunta son de toda la pantalla (useCanalDeListas): en una
- * ficha los comparte con su lista de eventos, así no se encinan ni se pregunta dos veces (OL-057).
+ * La pastilla flotante de la ficha de un lugar o de un artista (docs/rediseno/50, P6): «Seguir» y, ya seguido, «Sigues» en verde con
+ * su palomita; tocarla otra vez deja de seguir. Sin nota dentro de la pastilla. Sin sesión, lleva a entrar y se aplica al volver.
+ * Lugares (decisión 9) y Artistas (decisión 9). Con docs/rediseno/17: la pregunta de avisos sale tras el toque de Seguir (o al volver de
+ * entrar tras tocarlo), nunca sola al abrir la ficha (decisión 6). Si no se pudo guardar (o no hay red), la pastilla vuelve a como estaba
+ * y un aviso ofrece Reintentar, como en las listas (bitácora 085). Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de
+ * un fallo anterior, y Reintentar solo actúa si su toque sigue siendo el último. El aviso y la pregunta son de toda la pantalla
+ * (useCanalDeListas): en una ficha los comparte con su lista de eventos, así no se encinan ni se pregunta dos veces (OL-057).
  */
-export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, hrefEntrar, avisosPreguntado, avisosCorreo, correo, llavePush }: Props) {
-  const plataforma = usePlataforma();
+export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, hrefEntrar, avisosPreguntado, correo, llavePush }: Props) {
   const [pendiente, iniciar] = useTransition();
   const [estado, fijar] = useOptimistic(sigo, (_a, nuevo: boolean) => nuevo);
   const [hoja, setHoja] = useState(false);
-  // Lo que se eligió en la hoja de avisos, para la promesa de la barra: llega de la propia hoja (onDecidido), nunca
-  // pidiendo la página entera de nuevo (antes `router.refresh()` al cerrarla, OL-212 — recargaba todo por una
-  // frase, con esqueletos de "Próximos eventos" parpadeando de vuelta).
-  const [correoElegido, setCorreoElegido] = useState(avisosCorreo);
-  const [preguntadoLocal, setPreguntadoLocal] = useState(avisosPreguntado);
   const toques = useRef<Toques>({});
-  const barra = useAltoBarraFija<HTMLDivElement>();
   const propio = useCanalDeListas();
   const dePantalla = useCanalDePantalla();
   const canal = dePantalla ?? propio;
   const { avisar, limpiar, tomarPregunta } = canal;
   // El dueño de sus avisos en la pantalla: al tocar quita el suyo, nunca el Reintentar de un renglón.
   const de = useId();
-  const [telefono] = useEstadoPush(llavePush, conSesion && sigo);
-  const cosas = que === "artista" ? "fechas" : "eventos";
+  // Seguir es que te avisen: la campana con «+» para un lugar y la persona con «+» para un artista.
+  const Glifo = que === "artista" ? IconoPersonaMas : IconoCampanaMas;
   const ruta = hrefEntrar.split("?")[0];
 
   // Volvió de entrar tras tocar Seguir: la pregunta continúa ese toque, una sola vez.
@@ -101,51 +89,30 @@ export default function Seguir({ que, nombre, sigo, conSesion, cuenta, accion, h
   function cerrarHoja() {
     setHoja(false);
   }
-  /** Lo que quedó guardado en la hoja (correo sí/no, ya contestada): la barra lo sabe sin pedirle nada al servidor. */
-  function alDecidirAvisos(decision: { correo: boolean }) {
-    setCorreoElegido(decision.correo);
-    setPreguntadoLocal(true);
-  }
-
-  const canales = [correoElegido && "por correo", telefono === "encendido" && enEste(plataforma)].filter(Boolean);
-  const promesa = canales.length ? `Te avisamos ${canales.join(" y ")} de sus ${cosas}` : preguntadoLocal ? "Sin avisos; se cambia en Ajustes" : null;
 
   if (!conSesion) {
     return (
-      <div ref={barra} className={`${ficha.accionFija} ${ficha.accionUnica}`}>
-        <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEntrar)}`} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
-          <IconoMas width={20} height={20} />
+      <div className={ficha.flotantes} data-flotantes>
+        <Boton href={`/entrar?siguiente=${encodeURIComponent(hrefEntrar)}`} ancho="contenido" flotante onClick={() => anotarIntencion(ruta)}>
+          <Glifo width={20} height={20} />
           Seguir
-        </Link>
+        </Boton>
       </div>
     );
   }
   return (
     <>
-      <div ref={barra} className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ficha.accionUnica}`}>
-        {estado ? (
-          <>
-            <span className={ficha.seleccionado} aria-live="polite">
-              <IconoOk width={20} height={20} />
-              Sigues
-              {promesa && <small>{promesa}</small>}
-            </span>
-            <button type="button" className={ficha.secundario} onClick={() => cambiar(false)} disabled={pendiente}>
-              Dejar de seguir
-            </button>
-          </>
-        ) : (
-          <button type="button" className={ficha.primaria} onClick={() => cambiar(true)} disabled={pendiente}>
-            <IconoMas width={20} height={20} />
-            Seguir
-          </button>
-        )}
+      <div className={ficha.flotantes} data-flotantes>
+        <Boton type="button" ancho="contenido" flotante aria-pressed={estado} aria-busy={pendiente} onClick={() => cambiar(!estado)}>
+          {estado ? <IconoOk width={20} height={20} /> : <Glifo width={20} height={20} />}
+          {estado ? "Sigues" : "Seguir"}
+        </Boton>
       </div>
       {!dePantalla && <AvisoAbajo canal={propio} />}
       {hoja && <HojaAbierta canal={canal} />}
       {hoja && (
         <Hoja etiqueta="Avisos" onCerrar={cerrarHoja}>
-          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={cerrarHoja} onDecidido={alDecidirAvisos} />
+          <ConsentimientoAvisos contexto={que === "artista" ? "seguir-artista" : "seguir"} titulo={nombre} cuenta={cuenta} correo={correo} llavePush={llavePush} onListo={cerrarHoja} />
         </Hoja>
       )}
     </>

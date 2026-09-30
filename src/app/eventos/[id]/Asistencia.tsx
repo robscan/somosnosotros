@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
 import ConsentimientoAvisos from "@/components/ConsentimientoAvisos";
+import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import { IconoEstrella, IconoOk } from "@/components/ui/Iconos";
 import ficha from "@/components/ui/Ficha.module.css";
-import { useAltoBarraFija } from "@/components/ui/useAltoBarraFija";
 import { hayQuePreguntar } from "@/lib/avisosPreguntados";
 import { anotarIntencion, tomarIntencion } from "@/lib/intencionAvisos";
 import { esElUltimo, siSigueSiendoElUltimo, tocar, type Toques } from "@/lib/toques";
@@ -14,7 +13,6 @@ import { AvisoAbajo, HojaAbierta, useCanalDeListas, useCanalDePantalla } from "@
 import { hrefEvento } from "@/lib/eventos";
 import { borrarDecisionesVisita } from "@/lib/decisionesVisita";
 import { cambiarAsistencia, type EstadoAsistencia } from "../acciones";
-import styles from "./ficha.module.css";
 
 type Props = {
   eventoId: string;
@@ -31,25 +29,20 @@ type Props = {
   llavePush: string;
 };
 
-/** Los mismos iconos que las acciones al deslizar (prototipo de la bitácora 071): Voy con palomita, Me interesa con estrella. */
-const OK = <IconoOk width={20} height={20} />;
-const ESTRELLA = <IconoEstrella width={20} height={20} />;
-
 /**
- * Barra inferior pegajosa: la única acción primaria de la ficha. Sin decisión: "Me interesa" en texto y "Voy" lleno.
- * Con decisión, la barra pasa a estado: "✓ Voy · Ya estás en la lista" + Cancelar, o "✓ Me interesa" + Voy.
- * Sin sesión, los botones llevan a entrar y la decisión se aplica al volver. La hoja de avisos sale tras el toque de
- * "Voy" (o al volver de entrar tras tocarlo), nunca sola al abrir la ficha (decisión 6 de docs/rediseno/17). Si no se
- * pudo guardar (o no hay red), la barra vuelve a como estaba y un aviso ofrece Reintentar, como en las listas (bitácora 085).
- * Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de un fallo anterior, y Reintentar solo actúa si su
- * toque sigue siendo el último. El aviso y la pregunta son de toda la pantalla (useCanalDeListas), como en las demás fichas.
+ * Las dos pastillas flotantes de la ficha (docs/rediseno/50, P6): «Me interesa» y «Voy». Cada una es un conmutador: tocarla
+ * decide y volver a tocarla lo quita. Decidido, «Voy» pasa a «Vas» (verde, con su palomita) y «Me interesa» a «Te interesa» (con la
+ * estrella llena); sin nota dentro de la pastilla. Sin sesión, las pastillas llevan a entrar y la decisión se aplica al volver. La
+ * hoja de avisos sale tras el toque de «Voy» (o al volver de entrar tras tocarlo), nunca sola al abrir la ficha (decisión 6 de
+ * docs/rediseno/17). Si no se pudo guardar (o no hay red), la pastilla vuelve a como estaba y un aviso ofrece Reintentar, como en las
+ * listas (bitácora 085). Cada toque lleva su número (lib/toques): uno nuevo cierra el aviso de un fallo anterior, y Reintentar solo
+ * actúa si su toque sigue siendo el último. El aviso y la pregunta son de toda la pantalla (useCanalDeListas), como en las demás fichas.
  */
 export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, conSesion, cuenta, avisosPreguntado, correo, llavePush }: Props) {
   const [pendiente, iniciar] = useTransition();
   const [estado, fijarOptimista] = useOptimistic<EstadoAsistencia, EstadoAsistencia>(miEstado, (_a, nuevo) => nuevo);
   const [hoja, setHoja] = useState(false);
   const toques = useRef<Toques>({});
-  const barra = useAltoBarraFija<HTMLDivElement>();
   const propio = useCanalDeListas();
   const dePantalla = useCanalDePantalla();
   const canal = dePantalla ?? propio;
@@ -89,66 +82,35 @@ export default function Asistencia({ eventoId, eventoSlug, titulo, miEstado, con
   }
   const entrar = (accion: string) => `/entrar?siguiente=${encodeURIComponent(`${ruta}?accion=${accion}`)}`;
 
-  let contenido: React.ReactNode;
-  if (!conSesion) {
-    contenido = (
-      <>
-        <Link href={entrar("me_interesa")} className={styles.interesa}>
-          {ESTRELLA}
-          Me interesa
-        </Link>
-        <Link href={entrar("voy")} className={ficha.primaria} onClick={() => anotarIntencion(ruta)}>
-          {OK}
-          Voy
-        </Link>
-      </>
-    );
-  } else if (estado === "voy") {
-    contenido = (
-      <>
-        <span className={ficha.seleccionado} aria-live="polite">
-          {OK}
-          Voy
-          <small>Ya estás en la lista</small>
-        </span>
-        <button type="button" className={ficha.secundario} onClick={() => cambiar(null)} disabled={pendiente}>
-          Cancelar
-        </button>
-      </>
-    );
-  } else if (estado === "me_interesa") {
-    contenido = (
-      <>
-        <span className={ficha.seleccionado} aria-live="polite">
-          {ESTRELLA}
-          Me interesa
-          <small>Guardado en Mi perfil</small>
-        </span>
-        <button type="button" className={ficha.primaria} onClick={() => cambiar("voy")} disabled={pendiente}>
-          {OK}
-          Voy
-        </button>
-      </>
-    );
-  } else {
-    contenido = (
-      <>
-        <button type="button" className={styles.interesa} onClick={() => cambiar("me_interesa")} disabled={pendiente}>
-          {ESTRELLA}
-          Me interesa
-        </button>
-        <button type="button" className={ficha.primaria} onClick={() => cambiar("voy")} disabled={pendiente}>
-          {OK}
-          Voy
-        </button>
-      </>
-    );
-  }
+  const voy = estado === "voy";
+  const interesa = estado === "me_interesa";
 
   return (
     <>
-      <div ref={barra} className={`${ficha.accionFija} ${estado ? ficha.accionEstado : ""}`}>
-        {contenido}
+      <div className={ficha.flotantes} data-flotantes>
+        {conSesion ? (
+          <>
+            <Boton type="button" variante="secundario" ancho="contenido" flotante aria-pressed={interesa} aria-busy={pendiente} onClick={() => cambiar(interesa ? null : "me_interesa")}>
+              <IconoEstrella width={20} height={20} fill={interesa ? "currentColor" : "none"} />
+              {interesa ? "Te interesa" : "Me interesa"}
+            </Boton>
+            <Boton type="button" ancho="contenido" flotante aria-pressed={voy} aria-busy={pendiente} onClick={() => cambiar(voy ? null : "voy")}>
+              <IconoOk width={20} height={20} />
+              {voy ? "Vas" : "Voy"}
+            </Boton>
+          </>
+        ) : (
+          <>
+            <Boton href={entrar("me_interesa")} variante="secundario" ancho="contenido" flotante>
+              <IconoEstrella width={20} height={20} />
+              Me interesa
+            </Boton>
+            <Boton href={entrar("voy")} ancho="contenido" flotante onClick={() => anotarIntencion(ruta)}>
+              <IconoOk width={20} height={20} />
+              Voy
+            </Boton>
+          </>
+        )}
       </div>
       {!dePantalla && <AvisoAbajo canal={propio} />}
       {hoja && <HojaAbierta canal={canal} />}

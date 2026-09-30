@@ -5,6 +5,7 @@ import { guardarSuscripcionPush } from "@/app/perfil/acciones";
 import { dondeSeActivan, dondeSeRegistra, enEste } from "@/lib/plataforma";
 import { observarEstadoPush, suscribirPush } from "@/lib/pushCliente";
 import { usePlataforma } from "@/lib/useAvisosTelefono";
+import Boton from "./ui/Boton";
 import { IconoCampana, IconoCerrar, IconoOk, IconoPendiente } from "./ui/Iconos";
 import styles from "./ActivarAvisos.module.css";
 
@@ -114,9 +115,9 @@ export default function ActivarAvisos({ llavePush }: { llavePush: string }) {
         {fallo ? "Vuelve a intentarlo" : trabajando ? "Un momento" : "Para recordarte lo que vas y lo que sigues"}
         {fallo && detalle && <span className={styles.detalleTecnico}>{detalle}</span>}
       </small>
-      <button type="button" className={styles.boton} onClick={activar} disabled={trabajando}>
+      <Boton type="button" forma="pildora" alto="control" ancho="contenido" className={styles.boton} onClick={activar} disabled={trabajando}>
         {trabajando ? "Activando…" : fallo ? "Intentar de nuevo" : "Activar"}
-      </button>
+      </Boton>
       {cerrar}
     </p>
   );

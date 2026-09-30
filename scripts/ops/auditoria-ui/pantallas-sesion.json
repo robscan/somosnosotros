@@ -1,0 +1,16 @@
+[
+  { "id": "s01-inicio-sesion", "plantilla": "raíz", "url": "/", "completa": true },
+  { "id": "s02-agenda-sesion", "plantilla": "raíz", "url": "/agenda", "completa": true },
+  { "id": "s03-alta-evento", "plantilla": "tarea", "url": "/nuevo?tipo=evento", "completa": true },
+  { "id": "s04-ajustes", "plantilla": "tarea", "url": "/ajustes", "completa": true },
+  { "id": "s05-perfil", "plantilla": "raíz", "url": "/perfil", "completa": true },
+  { "id": "s06-ficha-evento-voy", "plantilla": "ficha", "url": "/eventos/lxs-colocaos-la-ultima-fogueada", "completa": true },
+  { "id": "s07-alta-lugar", "plantilla": "tarea", "url": "/nuevo?tipo=lugar", "completa": true },
+  { "id": "s08-editar-perfil", "plantilla": "tarea", "url": "/ajustes/editar" },
+  { "id": "s09-novedades", "plantilla": "tarea", "url": "/novedades" },
+  { "id": "s10-buscar", "plantilla": "tarea", "url": "/buscar" },
+  { "id": "s11-alta-artista", "plantilla": "tarea", "url": "/nuevo?tipo=artista" },
+  { "id": "s12-lugares-hoja-llena", "plantilla": "hoja", "url": "/lugares", "paso": "hoja-llena" },
+  { "id": "s13-lugares-ficha-en-hoja", "plantilla": "hoja", "url": "/lugares?lugar=teatro-de-la-paz" },
+  { "id": "s14-agenda-nuevos", "plantilla": "raíz", "url": "/agenda?ver=nuevos", "completa": true }
+]

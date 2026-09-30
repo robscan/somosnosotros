@@ -1,5 +1,6 @@
-import { diasActivosCalendario } from "./calendario";
+import { diasActivosCalendario, sumarDiasIso } from "./calendario";
 import { CIUDAD_INICIAL, ciudadCanonica } from "./ciudad";
+import { DIAS_ESTA_SEMANA } from "./cuando";
 import { distanciaKm, type Punto } from "./geo";
 import { limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
@@ -53,8 +54,8 @@ export function hrefLugar(l: { id: string; slug?: string | null }): string {
 /** El evento más cercano de un lugar: lo que dice si el lugar tiene vida. */
 export type ProximoEvento = { id: string; inicio: string; zona: string; titulo: string };
 
-/** Lo que la lista, el mapa y la tarjeta del pin enseñan de cada lugar. `diasEvento` es opcional: solo lo
- *  necesita el mapa, para el chip de fecha (docs/rediseno/45, OL-174); las demás pantallas no lo piden. */
+/** Lo que el mapa y la lista enseñan de cada lugar. `diasEvento` es opcional: solo lo necesitan los filtros de Lugares
+ *  (Con eventos); las demás pantallas no lo piden. */
 export type LugarLista = LugarResumen & { proximo: ProximoEvento | null; diasEvento?: string[] };
 
 export type Lugar = LugarResumen & {
@@ -78,6 +79,12 @@ export function calleCorta(direccion: string | null | undefined): string {
     .map((p) => p.trim())
     .filter((p) => p && !/\b\d{5}\b/.test(p) && !/san luis potos[íi]|s\.?l\.?p\.?$|méxico$|mexico$/i.test(p));
   return partes[0] ?? direccion.trim();
+}
+
+/** Una dirección en dos: la calle («Manuel José Othón s/n esq. Chico Sein») y lo demás («Centro Histórico, 78000, San Luis Potosí»). */
+export function partesDeDireccion(direccion: string | null | undefined): { calle: string; resto: string } {
+  const [calle = "", ...resto] = (direccion ?? "").split(",").map((p) => p.trim());
+  return { calle, resto: resto.join(", ") };
 }
 
 type Distancia = Punto;
@@ -115,16 +122,20 @@ export function lugaresEncuadreInicial<T extends LugarLista>(lugares: T[], desta
   return [...candidatos, ...cercanos.slice(0, TOPE_ENCUADRE_INICIAL - candidatos.length)];
 }
 
+/**
+ * Qué encuadra el botón «Encuadrar los lugares» cuando la persona movió el mapa y los perdió de vista (docs/rediseno/35): con una ficha abierta,
+ * su lugar, como al abrirla; con filtros puestos, lo que dejan pasar, como al elegirlos; si no, lo mismo que al abrir el mapa
+ * (`lugaresEncuadreInicial`).
+ */
+export function lugaresAEncuadrar<T extends LugarLista>(p: { ficha: T | null; hayFiltros: boolean; visibles: T[]; destacados: string[]; centro: Punto; ahora?: Date }): T[] {
+  if (p.ficha) return [p.ficha];
+  return p.hayFiltros ? p.visibles : lugaresEncuadreInicial(p.visibles, p.destacados, p.centro, p.ahora);
+}
+
 /** "Próximo: hoy · 19:30" · "Próximo: mié 16 de sep · 19:00", con la hora de la zona del evento. */
 export function textoProximo(p: Pick<ProximoEvento, "inicio" | "zona">, ahora: Date = new Date()): string {
   const cuando = formatearCuando(p.inicio, null, ahora, p.zona);
   return `Próximo: ${cuando.charAt(0).toLowerCase()}${cuando.slice(1)}`;
-}
-
-/** "Hoy · 20:00 · Orquesta Sinfónica de SLP": el próximo evento en la hoja del pin del mapa (docs/rediseno/35), con
- *  el nombre del evento y sin el prefijo "Próximo:" de la lista. */
-export function textoProximoPin(p: Pick<ProximoEvento, "inicio" | "zona" | "titulo">, ahora: Date = new Date()): string {
-  return `${formatearCuando(p.inicio, null, ahora, p.zona)} · ${p.titulo}`;
 }
 
 /** Une lugares con su evento más próximo (los eventos vienen ordenados por inicio). */
@@ -135,13 +146,11 @@ export function conProximo<T extends { id: string }>(lugares: T[], eventos: (Pro
 }
 
 /**
- * Cada lugar con los días (YYYY-MM-DD, en la zona del propio evento) en que tiene al menos un evento próximo: lo
- * que el chip de fecha del mapa de Lugares necesita para filtrar pines por día (docs/rediseno/45, OL-174). Los
- * mismos eventos que ya carga `cargar()` para el "próximo evento" de cada pin (`conProximo`), sin otra consulta:
- * esa consulta no tiene tope de días, solo de cuántos eventos trae (500), así que cualquier fecha que la persona
- * elija ya está entre los datos que el mapa recibió. Un evento de varios días cuenta en cada día que ocupa
- * (`diasActivosCalendario`, OL-218): sin esto, el calendario podía marcar un día como disponible y el mapa/lista
- * salir vacíos al elegirlo (confirmado con un evento de ejemplo del 6 al 8 de octubre, bitácora 247).
+ * Cada lugar con los días (YYYY-MM-DD, en la zona del propio evento) en que tiene al menos un evento próximo: lo que
+ * «Con eventos» de los filtros de Lugares necesita para dejar pasar hoy o esta semana (docs/rediseno/45, OL-174). Los
+ * mismos eventos que ya carga `cargar()` para el "próximo evento" de cada lugar (`conProximo`), sin otra consulta. Un
+ * evento de varios días cuenta en cada día que ocupa (`diasActivosCalendario`, OL-218): el evento del 6 al 8 de octubre
+ * hace que el lugar salga «con eventos» los tres días, bitácora 247.
  */
 export function diasConEvento<T extends { id: string }>(lugares: T[], eventos: { inicio: string; fin?: string | null; zona: string; lugar_id: string | null }[]): (T & { diasEvento: string[] })[] {
   const porLugar = new Map<string, { inicio: string; fin: string | null; zona: string }[]>();
@@ -154,11 +163,35 @@ export function diasConEvento<T extends { id: string }>(lugares: T[], eventos: {
   return lugares.map((l) => ({ ...l, diasEvento: [...diasActivosCalendario(porLugar.get(l.id) ?? []).keys()] }));
 }
 
-/** Los lugares con al menos un evento ese día (docs/rediseno/45, OL-174): lo que pinta el mapa con el chip de
- *  fecha elegido. Desde OL-210 la Lista usa la misma función (no una regla propia) para filtrar sus renglones —
- *  el founder pidió que el chip afecte también la lista, no solo el mapa. */
-export function lugaresConEventoElDia<T extends { diasEvento?: string[] }>(lugares: T[], fecha: string): T[] {
-  return lugares.filter((l) => l.diasEvento?.includes(fecha));
+/** Los lugares con al menos un evento entre dos días (YYYY-MM-DD, los dos dentro): «Con eventos» de los filtros de Lugares. */
+export function lugaresConEventoEn<T extends { diasEvento?: string[] }>(lugares: T[], desde: string, hasta: string): T[] {
+  return lugares.filter((l) => l.diasEvento?.some((d) => d >= desde && d <= hasta));
+}
+
+/**
+ * Lo que se elige en Filtros de Lugares (docs/rediseno/50, P5b): un tipo, con eventos hoy o esta semana (los próximos siete
+ * días desde hoy, como el carril de Inicio) y solo lo que la persona sigue. Sin nada puesto salen todos los lugares.
+ */
+export type ConEventos = "hoy" | "semana";
+export type EleccionLugares = { tipo: string | null; conEventos: ConEventos | null; soloSigo: boolean };
+export const SIN_ELECCION: EleccionLugares = { tipo: null, conEventos: null, soloSigo: false };
+/** Cómo se llama cada opción de «Con eventos»: en el bloque de la hoja y, ya puesta, en su chip de la fila. */
+export const CON_EVENTOS: readonly { clave: ConEventos; etiqueta: string; puesto: string }[] = [
+  { clave: "semana", etiqueta: "Esta semana", puesto: "Con eventos esta semana" },
+  { clave: "hoy", etiqueta: "Hoy", puesto: "Con eventos hoy" },
+];
+
+/** Cuántos filtros hay puestos: lo que dice el número del chip Filtros. */
+export const eleccionesPuestas = (e: EleccionLugares) => [e.tipo, e.conEventos, e.soloSigo].filter(Boolean).length;
+
+/**
+ * Los lugares que dejan pasar los filtros elegidos. `hoy` (YYYY-MM-DD en la ciudad) cuenta los eventos; `seguidos` son los
+ * lugares que sigue la persona, null si no hay sesión (o aún no llegan): con «solo lo que sigo» entonces no sale ninguno.
+ */
+export function filtrarPorEleccion<T extends { id: string; tipo?: string; diasEvento?: string[] }>(lugares: T[], e: EleccionLugares, seguidos: string[] | null, hoy: string): T[] {
+  const conEventos = e.conEventos ? lugaresConEventoEn(lugares, hoy, e.conEventos === "hoy" ? hoy : sumarDiasIso(hoy, DIAS_ESTA_SEMANA - 1)) : lugares;
+  const sigue = new Set(seguidos ?? []);
+  return conEventos.filter((l) => (!e.tipo || l.tipo === e.tipo) && (!e.soloSigo || sigue.has(l.id)));
 }
 
 export { LIMITES_LUGAR } from "./limites";
@@ -187,15 +220,7 @@ export function normalizarNombre(t: string): string {
     .trim();
 }
 
-/** Filtra la lista por nombre (y dirección) escrito a medias, sin importar acentos ni mayúsculas. */
-export function filtrarLugares<T extends { nombre: string; direccion: string | null; tipo?: string }>(lugares: T[], busqueda: string, tipo: string | null = null): T[] {
-  const q = normalizarNombre(busqueda);
-  return lugares.filter((l) => (!tipo || l.tipo === tipo) && (!q || normalizarNombre(`${l.nombre} ${l.direccion ?? ""}`).includes(q)));
-}
-
-/** Umbral a partir del cual aparece la búsqueda por nombre (lista y mapa). */
-export const UMBRAL_BUSCAR_LUGARES = 8;
-/** Umbral a partir del cual aparecen los chips de tipo (lista y mapa). */
+/** Umbral a partir del cual aparece el chip Filtros (tipo, con eventos, lo que sigo). */
 export const UMBRAL_CHIPS_LUGARES = 8;
 
 /** Los tipos con al menos un lugar y cuántos hay de cada uno, en el orden de la lista cerrada (Todos va aparte). */

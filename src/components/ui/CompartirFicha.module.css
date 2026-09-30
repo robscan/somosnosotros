@@ -35,7 +35,7 @@
   min-height: 38px;
   padding: 0 var(--espacio-3);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radio);
   background: var(--primario-suave);
   color: var(--primario);
   font-size: var(--letra-sm);
@@ -65,20 +65,5 @@
   font-weight: 700;
   text-align: center;
   text-decoration: none;
-  cursor: pointer;
-}
-.nativo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--espacio-2);
-  width: 100%;
-  min-height: var(--toque);
-  border: none;
-  border-radius: var(--radio);
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-lg);
-  font-weight: 700;
   cursor: pointer;
 }

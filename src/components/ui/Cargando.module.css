@@ -1,6 +1,7 @@
 /* El símbolo SN centrado en el hueco de contenido: en Cargando (pantallas interiores, toda la página) y en
    CargandoRaiz (pantallas raíz, entre la barra y la navegación, que se quedan fijas). */
-.centro {
+/* `main` o `div` delante: como página entera (Cargando), gana a la plantilla `pagina` sin depender del orden de las hojas. */
+:is(main, div).centro {
   display: grid;
   place-items: center;
   min-height: 50vh;

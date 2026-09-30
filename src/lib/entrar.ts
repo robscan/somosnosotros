@@ -27,8 +27,13 @@ export function motivoEntrar(siguiente: string): Motivo {
   if (accion === "me_interesa" && seccion === "eventos") return { tipo: "interesa", titulo: "Entra para marcar que te interesa", origen };
   if (accion === "seguir" && (seccion === "lugares" || seccion === "artistas") && id && UUID.test(id)) return { tipo: "seguir", titulo: "Entra para seguir", origen, tabla: seccion, id };
   if (accion === "mio" && seccion === "artistas") return { tipo: "mio", titulo: "Entra para decir que eres tú", origen };
-  if (id === "nuevo" && seccion === "eventos") return { tipo: "publicar", titulo: "Entra para publicar", origen: "/" };
-  if (id === "nuevo" && (seccion === "lugares" || seccion === "artistas")) return { tipo: "registrar", titulo: `Entra para registrar ${seccion === "lugares" ? "un lugar" : "un artista"}`, origen: `/${seccion}` };
+  if (seccion === "nuevo") {
+    // La pantalla de alta (`/nuevo?tipo=`): cada tipo vuelve a su sección; un evento (o lo que no dice tipo), al inicio.
+    const tipo = url.searchParams.get("tipo");
+    if (tipo === "lugar") return { tipo: "registrar", titulo: "Entra para registrar un lugar", origen: "/lugares" };
+    if (tipo === "artista") return { tipo: "registrar", titulo: "Entra para registrar artista", origen: "/artistas" };
+    return { tipo: "publicar", titulo: "Entra para publicar", origen: "/" };
+  }
   if (seccion === "perfil" || seccion === "admin") return { tipo: "ninguno", titulo: "Entrar", origen: "/" };
   return { tipo: "ninguno", titulo: "Entrar", origen };
 }

@@ -8,7 +8,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { textoPendientes } from "@/lib/panel";
 import { TEXTO_INVITAR } from "@/lib/perfil";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import AvisosPerfil from "@/app/perfil/AvisosPerfil";
 import ReservaPerfil from "@/app/perfil/ReservaPerfil";
 import { borrarMiCuenta } from "@/app/perfil/acciones";
@@ -16,6 +16,7 @@ import { contarPendientes } from "@/app/admin/consultas";
 import AvisoSalidaAjuste from "./AvisoSalidaAjuste";
 import BotonSalir from "./BotonSalir";
 import InstalarApp from "./InstalarApp";
+import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./ajustes.module.css";
 
 export const metadata = { title: "Ajustes · Somos Nosotros", robots: { index: false, follow: false } };
@@ -34,7 +35,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
   // Administración dice lo pendiente (docs/rediseno/19, decisión 12).
   const pendientes = perfil.rol === "admin" ? await contarPendientes() : null;
   return (
-    <main className={ficha.pagina}>
+    <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/perfil", texto: "Mi perfil" }} />
       <h1 className={styles.titulo}>Ajustes</h1>
       {error === "borrar" && (
@@ -44,40 +45,36 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
       )}
       <div className={styles.ajustes}>
         <h2>Tu ficha</h2>
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           <li>
-            <Link href="/ajustes/editar" className={styles.fila}>
+            <Link href="/ajustes/editar" className={renglon.ajuste}>
               <IconoLapiz width={20} height={20} />
               <b>Editar</b>
               <small>Foto, nombre, colonia, sobre ti</small>
-              <span className={styles.valor}>
-                <IconoChevronDerecha />
-              </span>
+              <IconoChevronDerecha />
             </Link>
           </li>
           <ReservaPerfil reservado={perfil.reservado === true} />
         </ul>
 
         <h2>Avisos</h2>
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           <AvisosPerfil correo={perfil.avisos_correo === true} correoTexto={correo} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
         </ul>
 
         <h2>Cuenta</h2>
-        <ul className={styles.tarjeta}>
-          <li className={styles.fila}>
+        <ul className={renglon.tarjeta}>
+          <li className={renglon.ajuste}>
             <IconoPersona width={20} height={20} />
             <b>Entras con {correo}</b>
             <small>Sin contraseña: cada vez te mandamos un código</small>
           </li>
           <li>
-            <Link href="/ajustes/bloqueados" className={styles.fila}>
+            <Link href="/ajustes/bloqueados" className={renglon.ajuste}>
               <IconoBloquear width={20} height={20} />
               <b>Personas bloqueadas</b>
               <small>Dejaste de ver lo que publican</small>
-              <span className={styles.valor}>
-                <IconoChevronDerecha />
-              </span>
+              <IconoChevronDerecha />
             </Link>
           </li>
           <li>
@@ -86,57 +83,47 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
         </ul>
 
         <h2>Somos Nosotros</h2>
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           <InstalarApp />
           <li>
-            <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={ORIGEN} className={styles.fila}>
+            <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={ORIGEN} className={renglon.ajuste}>
               <IconoCompartir width={20} height={20} />
-              <b>Invita a tus amigos</b>
+              <b>Invita a tus amistades</b>
               <small>Se comparte el enlace del sitio</small>
-              <span className={styles.valor}>
-                <IconoChevronDerecha />
-              </span>
+              <IconoChevronDerecha />
             </BotonCompartir>
           </li>
           {perfil.rol === "admin" && (
             <li>
-              <Link href="/admin" className={styles.fila}>
+              <Link href="/admin" className={renglon.ajuste}>
                 <IconoHerramientas width={20} height={20} />
                 <b>Administración</b>
                 <small>{pendientes === null ? "Pendientes, indicadores, personas y fichas" : textoPendientes(pendientes)}</small>
-                <span className={styles.valor}>
-                  <IconoChevronDerecha />
-                </span>
+                <IconoChevronDerecha />
               </Link>
             </li>
           )}
           <AvisoSalidaAjuste />
           <li>
-            <Link href="/ayuda" className={styles.fila}>
+            <Link href="/ayuda" className={renglon.ajuste}>
               <IconoAyuda width={20} height={20} />
               <b>Ayuda</b>
               <small>Preguntas frecuentes y cómo escribirnos</small>
-              <span className={styles.valor}>
-                <IconoChevronDerecha />
-              </span>
+              <IconoChevronDerecha />
             </Link>
           </li>
           <li>
-            <Link href="/privacidad" className={styles.fila}>
+            <Link href="/privacidad" className={renglon.ajuste}>
               <IconoEscudo width={20} height={20} />
               <b>Aviso de privacidad</b>
-              <span className={styles.valor}>
-                <IconoChevronDerecha />
-              </span>
+              <IconoChevronDerecha />
             </Link>
           </li>
           <li>
-            <Link href="/reglas" className={styles.fila}>
+            <Link href="/reglas" className={renglon.ajuste}>
               <IconoLibro width={20} height={20} />
               <b>Reglas de uso</b>
-              <span className={styles.valor}>
-                <IconoChevronDerecha />
-              </span>
+              <IconoChevronDerecha />
             </Link>
           </li>
         </ul>

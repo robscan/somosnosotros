@@ -1,58 +1,14 @@
-.entrar {
-  display: inline-flex;
-  align-items: center;
-  min-height: 40px;
-  padding: 0 var(--espacio-4);
-  border-radius: 999px;
-  background: var(--primario);
-  color: var(--primario-texto);
-  font-size: var(--letra-md);
-  font-weight: 700;
-  text-decoration: none;
-}
-.perfil {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--toque-min);
-  min-height: var(--toque-min);
-  text-decoration: none;
-}
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-  display: inline-grid;
-  place-items: center;
-  font-size: var(--letra-sm);
-  font-weight: 700;
-  color: var(--texto-suave);
-}
+/* Lo que la sesión pone en la barra de la app: hijos directos de uno de sus dos lados (BarraApp). */
 
-/* Campana de Novedades: 44 pt, con un punto del color de acción cuando hay algo no visto. */
-.campana {
+/* La campana de Novedades y el acceso a Administración (L40, OL-115) llevan un punto del color de acción cuando hay
+   algo no visto o por revisar. */
+.conPunto {
   position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  color: var(--texto);
-}
-/* Acceso a Administración (L40, OL-115): mismo tamaño y punto que la campana, entre ella y la foto. */
-.admin {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: var(--toque-min);
-  height: var(--toque-min);
-  color: var(--texto);
 }
 .punto {
   position: absolute;
-  top: 9px;
-  right: 9px;
+  top: var(--espacio-2);
+  right: var(--espacio-2);
   width: 9px;
   height: 9px;
   border-radius: 50%;

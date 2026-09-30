@@ -1,6 +1,6 @@
 /**
  * Limpia la URL antes de enviarla a Vercel Analytics.
- * - Quita parámetros de consulta (query string): búsqueda, ciudad y tokens de invitación/reclamación.
+ * - Quita parámetros de consulta (query string): búsqueda, ciudad, el nombre que se buscó (`?nombre=`, del vacío de Buscar al alta) y tokens de invitación/reclamación.
  * - Evita rastrear rutas privadas: admin, perfil, ajustes y enlacescon token.
  * - Solo se envían rutas públicas sin identificación personal.
  * - Devuelve la URL ABSOLUTA (con esquema y dominio): Vercel Analytics rechaza URLs relativas.
@@ -12,7 +12,7 @@
  * Parámetros privados que llevan información del usuario o identificación.
  * Se quitan del `?` para no enviarlos a Vercel.
  */
-const PARAMETROS_PRIVADOS = new Set(["q", "buscar", "ciudad", "token", "codigo"]);
+const PARAMETROS_PRIVADOS = new Set(["q", "buscar", "nombre", "ciudad", "token", "codigo"]);
 
 /**
  * Prefijos de ruta que son privadas y no se tracean.
