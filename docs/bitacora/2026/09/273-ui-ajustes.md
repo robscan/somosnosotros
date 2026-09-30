@@ -1,6 +1,6 @@
 # 273 · Ajustes del founder tras revisar las vistas previas (OL-245)
 
-**Fecha:** 2026-09-30 · **Rama:** `ui-ajustes`, desde `origin/ui-lenguaje` (`2c57dc46`) · **OL:** OL-245 · **PR:** por abrir contra `main` (va al final de la cadena #266 · #268 → #282, sin unir) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
+**Fecha:** 2026-09-30 · **Rama:** `ui-ajustes`, desde `origin/ui-lenguaje` (`2c57dc46`) · **OL:** OL-245 · **PR:** #283 contra `main` (sin unir; va al final de la cadena #266 · #268 → #282) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
 
 ## Pedido
 
