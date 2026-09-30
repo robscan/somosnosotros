@@ -9,7 +9,7 @@ import { configPublica } from "@/lib/config";
 import { diaPin } from "@/lib/fechas";
 import { hrefLugar, type LugarLista } from "@/lib/lugares";
 import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa } from "@/lib/mapa";
-import { propiedadesPin, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
+import { prioridadPin, propiedadesPin, rangosDeDias, RADIO_MEDIANO, TAMANO_DIA, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
 import styles from "./Mapa.module.css";
 
 type Punto = { lat: number; lng: number };
@@ -38,15 +38,20 @@ type Props = {
   destacados?: string[];
 };
 
-/** Los lugares van en capas del propio mapa (no en elementos encima). De abajo arriba: sombra del elegido, círculos, nombres, nombre del
- *  elegido y, encima de todo, el día de cada pin junto con su huella (ver `agregarCapas`). */
+/** Los lugares van en capas del propio mapa (no en elementos encima). De abajo arriba, que es de menor a mayor rango (Mapbox coloca primero la
+ *  capa de más arriba y esconde lo que choca con lo ya colocado): sombra del elegido, puntos, nombres, huellas de los puntos, discos con día,
+ *  pin del elegido y su nombre (ver `agregarCapas`). */
 const FUENTE_LUGARES = "lugares";
 const CAPA_SOMBRA = "lugares-sombra";
 const CAPA_PUNTOS = "lugares-puntos";
 const CAPA_NOMBRES = "lugares-nombres";
+const CAPA_HUELLAS = "lugares-huellas";
+const CAPA_DISCOS = "lugares-discos";
+const CAPA_PIN_ELEGIDO = "lugares-pin-elegido";
 const CAPA_NOMBRE_ELEGIDO = "lugares-nombre-elegido";
-const CAPA_PINES = "lugares-pines";
 const HUELLA = "huella-pin";
+/** Los discos con día son imágenes, una por color y grosor de aro (`disco|#6d34c8|1.5`): se dibujan la primera vez que una capa las pide. */
+const DISCO = "disco|";
 /** Fuente de los nombres: existe en la cuenta de Mapbox (Noto Sans, la del estilo, da 404; ver OPEN_LOOPS). */
 const FUENTE_NOMBRES = ["DIN Pro Bold", "Arial Unicode MS Bold"];
 /** Dónde puede ir un nombre, en el orden en que Mapbox lo intenta: `top` es el texto debajo del pin (como siempre), luego encima, a la
@@ -59,34 +64,52 @@ const SIN_DESTACADOS: string[] = [];
 const sinMovimiento = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Lo que las capas leen de cada lugar (`propiedadesPin` más lo que dice el propio lugar). */
-type PropiedadesLugar = PropiedadesPin & { id: string; nombre: string; dia: string; elegido: boolean };
+type PropiedadesLugar = PropiedadesPin & { id: string; nombre: string; dia: string; elegido: boolean; rango: number };
 
 /**
  * Tamaño, color y prioridad ya calculados por lugar (`@/lib/pines`, OL-146 y P8): así las capas solo leen la propiedad
  * (`["get", "radio"]`, `["get", "colorPunto"]`…) y las reglas se prueban aparte, sin levantar Mapbox. El color del nombre repite el del
- * punto, salvo el destacado (naranja más oscuro, `--destacado-texto`, para que el texto siga con 4.5:1 sobre el fondo del mapa).
+ * punto, salvo el destacado (naranja más oscuro, `--destacado-texto`, para que el texto siga con 4.5:1 sobre el fondo del mapa). `rango` es
+ * el orden en que los discos con día eligen sitio (`rangosDeDias`): nada depende del zoom ni de lo que se vea, lo decide Mapbox.
  */
 function aGeoJSON(lugares: LugarLista[], seguidos: string[], destacados: string[], elegido: string | null, coloresPunto: ColoresPin, coloresTexto: ColoresPin): GeoJSON.FeatureCollection<GeoJSON.Point, PropiedadesLugar> {
   const ahora = new Date();
+  const estados = lugares.map((l) => ({ dia: l.proximo ? diaPin(l.proximo.inicio, ahora, l.proximo.zona) : null, privado: !!l.privado, seguido: seguidos.includes(l.id), destacado: destacados.includes(l.id), elegido: l.id === elegido }));
+  const rangos = rangosDeDias(lugares.flatMap((l, i) => (estados[i].dia && l.proximo ? [{ id: l.id, prioridad: prioridadPin(estados[i]), inicio: Date.parse(l.proximo.inicio) }] : [])));
   return {
     type: "FeatureCollection",
-    features: lugares.map((l) => {
-      const dia = l.proximo ? diaPin(l.proximo.inicio, ahora, l.proximo.zona) : null;
-      const estado = { dia, privado: !!l.privado, seguido: seguidos.includes(l.id), destacado: destacados.includes(l.id), elegido: l.id === elegido };
-      return {
-        type: "Feature",
-        id: l.id,
-        geometry: { type: "Point", coordinates: [l.lng, l.lat] },
-        properties: { id: l.id, nombre: l.nombre, dia: dia ?? "", elegido: estado.elegido, ...propiedadesPin(estado, coloresPunto, coloresTexto) },
-      };
-    }),
+    features: lugares.map((l, i) => ({
+      type: "Feature",
+      id: l.id,
+      geometry: { type: "Point", coordinates: [l.lng, l.lat] },
+      properties: { id: l.id, nombre: l.nombre, dia: estados[i].dia ?? "", elegido: estados[i].elegido, rango: rangos.get(l.id) ?? 0, ...propiedadesPin(estados[i], coloresPunto, coloresTexto) },
+    })),
   };
+}
+
+/** Un disco con día como imagen, tal como lo pintaba el círculo: del color del pin, con su aro blanco por fuera (`disco|color|aro`). Se dibuja a la
+ *  densidad de la pantalla para que quede nítido. */
+function dibujarDisco(id: string, fondo: string): { imagen: ImageData; escala: number } {
+  const [color, aro] = id.slice(DISCO.length).split("|");
+  const radio = RADIO_MEDIANO + Number(aro);
+  const escala = Math.min(4, Math.max(2, Math.ceil(window.devicePixelRatio)));
+  const lado = Math.ceil(radio * 2) * escala;
+  const lienzo = document.createElement("canvas");
+  lienzo.width = lienzo.height = lado;
+  const c = lienzo.getContext("2d")!;
+  for (const [relleno, r] of [[fondo, radio], [color, RADIO_MEDIANO]] as const) {
+    c.fillStyle = relleno;
+    c.beginPath();
+    c.arc(lado / 2, lado / 2, r * escala, 0, 2 * Math.PI);
+    c.fill();
+  }
+  return { imagen: c.getImageData(0, 0, lado, lado), escala };
 }
 
 /** Los nombres, uno por lugar: en negrita, con halo y del color del pin. Mapbox los acomoda alrededor del pin
  *  (`text-variable-anchor`, el que gana el sitio es el de mayor prioridad) y esconde el que no cabe, nunca el pin. El del elegido va en
- *  su propia capa, un punto más grande y con halo más ancho, y con `text-allow-overlap` no se esconde: Mapbox le busca primero un sitio
- *  sin pisar a nadie y, si no lo hay, lo pone en el primero. */
+ *  su propia capa, un punto más grande y con halo más ancho, y arriba de todas: Mapbox lo coloca primero, sin esconderlo (`text-allow-overlap`),
+ *  y todo lo demás cede ante él. */
 function capaNombres(id: string, filter: ExpressionSpecification, elegido: boolean, fondo: string): SymbolLayerSpecification {
   return {
     id,
@@ -112,16 +135,24 @@ function capaNombres(id: string, filter: ExpressionSpecification, elegido: boole
 }
 
 /**
- * El TAMAÑO del círculo dice si hay evento esta semana (mediano con "Hoy" o el día en tres letras, chico sin él) y el COLOR dice qué es el
- * lugar (`@/lib/pines`). Sin aro, salvo en el elegido: crece, lleva un aro blanco ancho y una sombra suave debajo, y queda encima de los
- * demás. Un nombre nunca cae sobre un pin: los círculos no cuentan para las colisiones de Mapbox, así que la capa de arriba
- * (`CAPA_PINES`) reserva la huella de cada pin —una imagen vacía de 1×1 px estirada a su tamaño— y pinta el día en blanco y negrita al
- * centro del círculo, sin esconderse nunca. Por ir arriba, Mapbox la coloca antes que los nombres: cada nombre busca su sitio alrededor
- * del pin y, si no cabe, se esconde.
+ * Nada se pinta sobre un letrero, a ningún zoom: lo decide el motor de colisiones de Mapbox, que coloca primero la capa de más arriba y
+ * esconde lo que choca con lo ya colocado. Cada lugar es un punto chico de su color (`CAPA_PUNTOS`, que no cede: el lugar nunca desaparece); solo el
+ * elegido lleva ahí su disco grande con aro y una sombra suave debajo. Los que tienen evento esta semana llevan encima un disco con su día
+ * (`CAPA_DISCOS`: un símbolo con la imagen del disco y el día centrado, que salen los dos o ninguno), que se esconde, y deja ver su punto, si
+ * choca con algo de más rango: por su llave de orden (`rango`), el pin del elegido o su nombre. Los círculos no cuentan para las colisiones,
+ * así que las huellas de los puntos (`CAPA_HUELLAS`: una imagen vacía de 1×1 px estirada al tamaño del punto) reservan su sitio para que
+ * ningún nombre pise un punto. De abajo arriba: sombra del elegido · puntos · nombres · huellas · discos con día · pin del elegido (su huella
+ * grande y su día, siempre) · nombre del elegido (siempre: se coloca primero, y debajo de su pin).
  */
 function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
   const fondo = colorDiseno("--fondo", "#ffffff");
   const esElegido: ExpressionSpecification = ["==", ["get", "elegido"], true];
+  const noElegido: ExpressionSpecification = ["!=", ["get", "elegido"], true];
+  mapa.on("styleimagemissing", ({ id }) => {
+    if (!id.startsWith(DISCO) || mapa.hasImage(id)) return;
+    const { imagen, escala } = dibujarDisco(id, fondo);
+    mapa.addImage(id, imagen, { pixelRatio: escala });
+  });
   mapa.addSource(FUENTE_LUGARES, { type: "geojson", data: datos, promoteId: "id" });
   mapa.addImage(HUELLA, { width: 1, height: 1, data: new Uint8Array(4) });
   mapa.addLayer({
@@ -143,12 +174,33 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
       "circle-stroke-width": ["get", "borde"],
     },
   });
-  mapa.addLayer(capaNombres(CAPA_NOMBRES, ["!=", ["get", "elegido"], true], false, fondo));
-  mapa.addLayer(capaNombres(CAPA_NOMBRE_ELEGIDO, esElegido, true, fondo));
+  mapa.addLayer(capaNombres(CAPA_NOMBRES, noElegido, false, fondo));
   mapa.addLayer({
-    id: CAPA_PINES,
+    id: CAPA_HUELLAS,
     type: "symbol",
     source: FUENTE_LUGARES,
+    filter: noElegido,
+    layout: { "icon-image": HUELLA, "icon-size": ["*", 2, ["get", "huella"]], "icon-allow-overlap": true },
+  });
+  mapa.addLayer({
+    id: CAPA_DISCOS,
+    type: "symbol",
+    source: FUENTE_LUGARES,
+    filter: ["all", noElegido, ["!=", ["get", "dia"], ""]],
+    layout: {
+      "icon-image": ["concat", DISCO, ["get", "colorPunto"], "|", ["to-string", ["get", "borde"]]],
+      "text-field": ["get", "dia"],
+      "text-font": FUENTE_NOMBRES,
+      "text-size": TAMANO_DIA,
+      "symbol-sort-key": ["get", "rango"], // Mapbox coloca primero la llave menor: el de más rango
+    },
+    paint: { "text-color": fondo },
+  });
+  mapa.addLayer({
+    id: CAPA_PIN_ELEGIDO,
+    type: "symbol",
+    source: FUENTE_LUGARES,
+    filter: esElegido,
     layout: {
       "icon-image": HUELLA,
       "icon-size": ["*", 2, ["get", "huella"]],
@@ -161,9 +213,10 @@ function agregarCapas(mapa: MapaGL, datos: GeoJSON.FeatureCollection) {
     },
     paint: { "text-color": fondo },
   });
+  mapa.addLayer(capaNombres(CAPA_NOMBRE_ELEGIDO, esElegido, true, fondo));
 }
 
-/** El lugar bajo el toque: se busca en un cuadro alrededor del punto (círculo o nombre) y gana el más cercano. */
+/** El lugar bajo el toque: se busca en un cuadro alrededor del punto (punto, disco con día o nombre) y gana el más cercano. */
 function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
   if (!mapa.getLayer(CAPA_PUNTOS)) return null;
   const { x, y } = e.point;
@@ -172,7 +225,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
       [x - RADIO_TOQUE, y - RADIO_TOQUE],
       [x + RADIO_TOQUE, y + RADIO_TOQUE],
     ],
-    { layers: [CAPA_PUNTOS, CAPA_NOMBRES, CAPA_NOMBRE_ELEGIDO] },
+    { layers: [CAPA_PUNTOS, CAPA_DISCOS, CAPA_NOMBRES, CAPA_NOMBRE_ELEGIDO] },
   );
   let mejor: { id: string; d: number } | null = null;
   for (const f of cerca) {

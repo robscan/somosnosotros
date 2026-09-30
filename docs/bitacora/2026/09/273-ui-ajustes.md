@@ -107,6 +107,55 @@ En cada caso `x0` y `x1` de la portada son los del contenedor (0 y el ancho de l
 14. **`273-14` · evento a 844×390 (a 2×):** antes, la foto de 640×427, más alta que la ventana, con la pastilla «Me interesa · Voy» sobre ella y ningún dato a la vista; después, la foto de 756×234 con el título a la izquierda y los números «18:00», «Costo» y «Van» debajo (el tercero, en parte bajo la pastilla).
 15. **`273-15` · evento a 1280×800, sin cambios:** dos columnas, la portada como tarjeta con esquinas a 20 px bajo la barra, el título en tinta a la derecha, los números, las acciones y «Dónde»; idéntica a la de antes, píxel por píxel (una sola imagen).
 
+## 4. Mapa: nada se pinta sobre un letrero, a ningún zoom
+
+**Founder (2026-09-30), dos mensajes con capturas del iPhone:** «Hay traslape de letreros. Eso ya lo habías corregido no?» y, tras un primer intento por nivel de zoom, «Que extraño el traslape se resolvió solo a un nivel de zoom. Pero más lejos se repite».
+
+**La causa.** Los discos con día eran círculos de Mapbox (capa `circle`) con el día como texto aparte. Los círculos no entran en el motor de colisiones (solo los símbolos: texto e imágenes), así que dos discos de lugares cercanos se encimaban a cualquier zoom en que su distancia en pantalla fuera menor que dos radios, y solo los nombres cedían. P8 lo había dejado dicho (bitácora 266, punto 3: «Si el founder quiere uno solo de verdad, hay que dibujar las imágenes de los pines con canvas»): esta sección lo hace, y **sustituye esa salvedad**. Un primer intento, por nivel de zoom (quitar el día de los discos por debajo de cierto zoom), se descartó: arreglaba un zoom y dejaba otros, como vio el founder.
+
+**Qué cambió** (`lib/pines.ts` y su prueba, y `Mapa.tsx`):
+- **La regla la pone el motor de colisiones**, sin oyentes de zoom ni `setData` al mover el mapa: Mapbox coloca primero la capa de más arriba y, dentro de ella, la llave de orden menor, y esconde lo que choca con lo ya colocado. El rango, de mayor a menor: el pin elegido y su nombre; los pines con día (seguido > destacado > con día; a igual prioridad, el evento más próximo, y luego el id: `rangosDeDias`, con su prueba); los nombres. **El que no cabe cede:** un disco con día se queda en su punto chico de color (el lugar sigue ahí); un nombre no se pinta.
+- **Capas, de abajo arriba:** sombra del elegido · puntos (todos los lugares, punto chico de su color; solo el elegido conserva su disco grande con aro) · nombres · huellas de los puntos · **discos con día** · pin del elegido (su disco grande y su día, siempre) · nombre del elegido (siempre: se coloca primero).
+- **El disco con día es ahora un símbolo:** una imagen del disco (su color y su aro blanco) y el día centrado como texto del mismo símbolo; salen los dos o ninguno. Hay una imagen por color y grosor de aro (a lo más unas ocho), dibujadas con un lienzo a la primera vez que la capa las pide (`styleimagemissing`) y a la densidad de la pantalla; el día sigue siendo texto, en la letra de siempre.
+- **Las huellas:** como los círculos no cuentan para las colisiones, cada punto reserva su sitio con una imagen vacía de 1×1 px estirada a su tamaño, para que ningún nombre pise un punto (lo que P8 ya cumplía, ahora también con los discos que ceden).
+- El toque consulta la capa nueva (`lugarTocado`). El pulso, la sombra, los colores, los tamaños y las prioridades de los nombres no cambian.
+
+**Medida** (mapa real, respaldo denso inventado solo en la carpeta de trabajo: 40 lugares, 13 con evento esta semana, seis a menos de 150 m en el Centro, dos pegados aparte y veintitantos puntos; 390×844, barrido de zoom 11 a 17 cada 0,5 con `queryRenderedFeatures`; «antes» es `origin/ui-lenguaje`). «Pares» son dos discos pintados que se tocan (distancia entre centros menor que la suma de sus radios); «sobre el elegido», discos con día que tocan el disco del elegido (Foro Sotanito, dentro del racimo).
+
+| Zoom | Sin elegido, antes: pintados · pares | Sin elegido, después | Con elegido, antes: pintados · pares · sobre el elegido | Con elegido, después |
+|---|---|---|---|---|
+| 11 | 13 · **48** | 2 · **0** | 12 · 39 · **11** | 1 · 0 · **0** |
+| 12 | 13 · **28** | 4 · **0** | 12 · 20 · **9** | 2 · 0 · **0** |
+| 13 | 12 · **19** | 5 · **0** | 11 · 13 · **6** | 3 · 0 · **0** |
+| 14 | 12 · **13** | 6 · **0** | 10 · 9 · **5** | 5 · 0 · **0** |
+| 15 | 10 · **3** | 6 · **0** | 9 · 2 · **4** | 3 · 0 · **0** |
+| 16 | 9 · **1** | 8 · **0** | 8 · 1 · 0 | 6 · 0 · 0 |
+| 17 | 6 · 0 | 6 · 0 | 4 · 0 · 0 | 4 · 0 · 0 |
+
+A 1 280×800 con el elegido a zoom 13: antes 13 pares y 6 discos sobre el elegido; después 0 y 0. En las 26 lecturas de zoom (con y sin elegido) y en el escritorio, antes y después, **0 nombres sobre un pin o un punto, 0 lugares a la vista sin punto ni disco, 0 discos que toquen la caja del nombre del elegido y el nombre del elegido pintado siempre**. A zoom 16,5 y 17 nadie cede: los discos caben.
+
+- **Sin parpadeo.** Al elegir un lugar (toque al pin) y al soltarlo (la ✕), en cada cuadro que pinta el mapa se lee con `readPixels` un punto de cada disco (arriba del día, dentro del color), siguiéndolo con `project()`. Cinco escenarios y dos fases en cada uno (zoom 15 con el encuadre real de la app; zoom 13, 14 y 14,5 con la cámara quieta, para que solo cambien los datos), 36 discos que siguen pintados antes y después: **830 cuadros leídos, 0 con cambio de color** (más de 25/255). Los discos pegados al elegido, que sí deben ceder, se funden en 7 a 13 cuadros (unos 300 ms): el método ve un fundido cuando lo hay. Uno pegado al borde de arriba a zoom 14 queda fuera del lienzo y no se puede leer; no cuenta.
+- **El toque sigue igual:** tocar un disco con día (MUNI, a 153 px del vecino más cercano) y tocar el punto de un lugar cuyo disco cedió (Sala Tercer Piso, a 15 px de otro) abren la ficha del lugar tocado.
+- **El disco nuevo contra el círculo de hoy, por píxeles** (los tres colores del pin a zoom 17, recortes de 64×64 px a 2×): diferencia media de **0,75 a 0,98 sobre 255 por canal**; 1,3 a 2,0 % de los píxeles difieren más de 8 (el borde, por el suavizado) y unos 160 más de 32 (el aro); el color del centro es **idéntico**: `#6d34c8`, `#1f6f43` y `#d35400` antes y después.
+
+**Lo que conviene saber (límites, para el founder y el gestor):**
+- Las cajas de colisión de Mapbox son cuadrados alineados a los ejes: dos discos en diagonal que no se tocan (entre 27 y unos 38 px entre centros) pueden ceder igual. Cede de más, nunca de menos (a zoom 15, el Museo del Virreinato, el destacado, queda como punto junto al «Jue» seguido aunque sus círculos no se toquen).
+- El nombre del elegido manda sobre todo, también sobre un punto: los puntos chicos que caen bajo su nombre pasan de 0–2 a 0–3 por vista (el nombre lleva halo). Nunca pisa un disco con día.
+- Un disco que cede deja su nombre donde estaba (a la distancia del disco), para que al volver no salte.
+- Un lugar con día que cede queda como punto de su color: para verlo con su día hay que acercarse o quitar al vecino de más rango.
+
+**Pruebas nuevas:** siete en `pines.test.ts` (22 en el archivo): `radioCirculo` y `huellaCirculo` (todos los lugares son punto chico con o sin día; el elegido conserva su disco grande; el nombre se acomoda fuera del disco aunque ceda) y `rangosDeDias` (más prioridad primero, el evento más próximo a igual prioridad, el id a igual evento, rangos distintos de 0 a n - 1). Las capas, con Mapbox de verdad, se comprueban con las medidas de arriba.
+
+**Capturas** (`docs/rediseno/capturas-273/`, teléfono 390×844 a 2× con la hoja de lugares; escritorio 1280×800; mismo mapa denso, «antes» con `origin/ui-lenguaje`):
+
+16. **`273-16` · zoom 12 sin elegido:** antes, el racimo del Centro es una pila de discos («Mar», «Sáb», «Hoy», «Vie», «Jue») con las letras encimadas; después, un solo disco, «Jue» en verde (el lugar que sigue Ana, el de más rango), con el resto del racimo como puntos chicos de su color; siguen con disco «Lun» (ACHE Galería), «Dom» (MUNI) y «Jue» (Casa de Cultura del Barrio de San Miguelito), que no chocan con nada, cada uno con su nombre entero.
+17. **`273-17` · zoom 13,5 sin elegido:** antes, el racimo aún encimado y, al sur, «Sáb» sobre «Vie» (el par pegado a 25 m); después, «Jue» en verde con «Sáb» (Teatro de la Paz) y el resto a su alrededor, y el par del sur con un solo disco, «Vie» (el evento más próximo), y el otro como punto; los nombres («Casa Mata Cultural», «Teatro de la Paz», «Taller Ex Convento») sin tocar ningún pin.
+18. **`273-18` · zoom 15 sin elegido:** antes, seis discos pegados en el racimo (el naranja del destacado, «Jue», «Lun», «Hoy», «Vie», «Dom») con los bordes tocándose y «Sáb» sobre «Vie» al sur; después, «Jue», «Lun» y «Dom» con disco, «Hoy», «Vie» y el naranja como puntos, el nombre «Galería del Portal» en verde sobre su disco y el par del sur con uno solo.
+19. **`273-19` · zoom 12 con Foro Sotanito elegido (ficha abierta):** antes, el pin grande «Vie» con nueve discos chicos tocándolo y encimándose entre ellos; después, el pin limpio con «Foro Sotanito» debajo, los vecinos como puntos y con disco solo los lejanos («Lun», «Dom», «Jue»).
+20. **`273-20` · zoom 14 con el elegido:** antes, cinco discos («Sáb» naranja, «Jue», «Lun», «Hoy», «Dom») pisando el pin y el nombre; después, el pin «Vie» con su nombre debajo y solo un punto naranja asomando junto al aro; siguen con disco «Sáb» (Teatro de la Paz) a la derecha y «Vie» (Taller Ex Convento) al sur.
+21. **`273-21` · escritorio, el panel con el elegido a zoom 13:** antes, el pin «Vie» con seis discos tocándolo (se leen «Sáb» y «Dom» entre las letras encimadas); después, el pin limpio con «Foro Sotanito» debajo y más nombres legibles («Casa Mata Cultural», «Taller La Ceiba», «Galería Ex Fábrica», «Museo del Ferrocarril Jesús García Corona») sin pisar ningún pin; «Lun», «Mar», «Dom» y «Jue» lejos, con su disco.
+22. **`273-22` · el disco nuevo contra el círculo de hoy** (una fila por color: violeta «Hoy», verde «Jue» con su aro más ancho, naranja «Sáb»; columnas: antes · después · diferencia ×4): el disco y el día se ven iguales a 3×; la diferencia es solo un anillo fino rojo en el borde (el suavizado), nada adentro.
+
 ## Comprobaciones
 
 Con los tres ajustes puestos: `npm run lint` (sin avisos), `npm run typecheck` y `npm test` (119 archivos, **1 584** pruebas: 1 585 de P13, menos 2 de la opacidad y más 1 de `tiempoEnMs`); `next build` sin variables de entorno, como la CI; `npm run inventario` («sin novedades»: 344 medidas en duro, las mismas); `npm run medir` (23 pantallas × 4 anchos, «sin novedades»); y `npm run test:componentes` con `CHROME_EXECUTABLE` en el Chrome de la Mac: **113 de 113** (las 11 de la hoja, con las dos nuevas). Sin migraciones ni variables de entorno. Al cerrar se borraron `.env.local` y `.next` (la llave del mapa queda incrustada en la compilación), se apagaron los procesos propios (respaldo, app e intermediarios) y el simulador volvió a quedar apagado, como estaba. Ninguna llave, ningún correo real y ningún `.env` en el repositorio (la búsqueda de `pk.eyJ` en el árbol da 0).

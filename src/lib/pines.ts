@@ -2,8 +2,12 @@
  * Cómo se dibuja un pin del mapa de Lugares (docs/rediseno/37-color-primario.md, OL-146; docs/rediseno/50, P8). Lógica pura para que
  * `Mapa.tsx` la ponga en el GeoJSON, las capas solo lean la propiedad y las pruebas la comprueben sin levantar Mapbox.
  *
- * - El TAMAÑO dice si hay evento esta semana; el COLOR dice qué es el lugar. Privado (solo lo ve el admin) siempre gris; si no, gana
- *   seguido > destacado > con evento > nada (tinta).
+ * - El COLOR dice qué es el lugar: privado (solo lo ve el admin) siempre gris; si no, gana seguido > destacado > con evento > nada (tinta).
+ *   Todos los lugares son un punto chico de su color, siempre. Los que tienen evento esta semana llevan encima un disco con su día (un
+ *   símbolo, imagen y texto a la vez) que Mapbox coloca con su motor de colisiones: nada se pinta sobre un letrero a ningún zoom, y el
+ *   disco que choca con algo de más rango cede (el lugar sigue ahí, como punto), de modo que dos discos con día nunca se enciman
+ *   (founder, 2026-09-30: «Hay traslape de letreros»). El rango, de mayor a menor: el elegido y su nombre; los pines con día (por su
+ *   prioridad y, a igual prioridad, el evento más próximo y el id: `rangosDeDias`); los nombres.
  * - Sin aro en los pines (el founder lo quitó por "demasiado ruido visual", 2026-09-23), salvo en uno: el lugar de la ficha abierta,
  *   el elegido, que crece, lleva un aro blanco ancho y una sombra, y no cambia de color ni de forma (founder, 2026-09-29). Los demás
  *   se quedan como están: el elegido ya se ve activo, y atenuarlos los transparentaba unos sobre otros (founder, 2026-09-30).
@@ -46,19 +50,29 @@ export type ColoresPin = {
   privado: string;
 };
 
-/** 12 px con día, 5 px sin él, el mismo tamaño con o sin resalte (el founder: "los mismos dos tamaños", OL-128); el elegido, ×1,9. */
+/** Cómo se ve el pin cuando le cabe su día: 12 px con día, 5 px sin él, el mismo tamaño con o sin resalte (el founder: "los mismos dos tamaños", OL-128); el elegido, ×1,9. */
 export function radioPin({ dia, elegido }: Pick<EstadoLugarPin, "dia" | "elegido">): number {
   const radio = dia ? RADIO_MEDIANO : RADIO_PEQUENO;
   return elegido ? radio * ESCALA_ELEGIDO : radio;
+}
+
+/** El radio del círculo que pinta la capa de puntos: el punto chico de todos los lugares y, en el elegido, su disco grande (el disco con día de los demás es un símbolo). */
+export function radioCirculo(estado: Pick<EstadoLugarPin, "dia" | "elegido">): number {
+  return estado.elegido ? radioPin(estado) : RADIO_PEQUENO;
 }
 
 export function bordePin({ seguido, elegido }: Pick<EstadoLugarPin, "seguido" | "elegido">): number {
   return elegido ? BORDE_ELEGIDO : seguido ? BORDE_SEGUIDO : BORDE_NORMAL;
 }
 
-/** Cuánto ocupa el pin entero, con su borde (Mapbox lo dibuja por fuera del círculo): lo que ningún nombre debe pisar (el radio de su huella). */
+/** Cuánto ocupa el pin entero con su día, con su borde (Mapbox lo dibuja por fuera del círculo): lo que ningún nombre debe pisar (el radio de su huella). */
 export function huellaPin(estado: Pick<EstadoLugarPin, "dia" | "seguido" | "elegido">): number {
   return radioPin(estado) + bordePin(estado);
+}
+
+/** Lo mismo del círculo de la capa de puntos: lo que reserva un punto (o el disco grande del elegido) para que ningún nombre lo pise. */
+export function huellaCirculo(estado: Pick<EstadoLugarPin, "dia" | "seguido" | "elegido">): number {
+  return radioCirculo(estado) + bordePin(estado);
 }
 
 /** El color del punto (o del nombre, con el juego de colores de texto que corresponda). El elegido conserva el suyo. */
@@ -83,17 +97,17 @@ export function tamanoDia({ elegido }: Pick<EstadoLugarPin, "elegido">): number 
   return elegido ? TAMANO_DIA * ESCALA_ELEGIDO : TAMANO_DIA;
 }
 
-/** A qué distancia de su pin queda el nombre, en ems del propio nombre: fuera de su huella, con un poco de aire. */
+/** A qué distancia de su pin queda el nombre, en ems del propio nombre: fuera de su huella con su disco (aunque el disco ceda, el nombre se acomoda igual), con un poco de aire. */
 export function distanciaNombre(estado: Pick<EstadoLugarPin, "dia" | "seguido" | "elegido">): number {
   return (huellaPin(estado) + AIRE_DEL_NOMBRE) / (estado.elegido ? TAMANO_NOMBRE_ELEGIDO : TAMANO_NOMBRE);
 }
 
-/** Todo lo que las capas del mapa leen de un pin: cada regla de arriba, ya calculada. */
+/** Todo lo que las capas del mapa leen de un pin: cada regla de arriba, ya calculada. `radio` y `huella` son los del círculo de la capa de puntos. */
 export function propiedadesPin(estado: EstadoLugarPin, coloresPunto: ColoresPin, coloresTexto: ColoresPin) {
   return {
-    radio: radioPin(estado),
+    radio: radioCirculo(estado),
     borde: bordePin(estado),
-    huella: huellaPin(estado),
+    huella: huellaCirculo(estado),
     prioridad: prioridadPin(estado),
     tamanoDia: tamanoDia(estado),
     distanciaNombre: distanciaNombre(estado),
@@ -103,3 +117,13 @@ export function propiedadesPin(estado: EstadoLugarPin, coloresPunto: ColoresPin,
 }
 
 export type PropiedadesPin = ReturnType<typeof propiedadesPin>;
+
+/**
+ * El orden en que los pines con día eligen sitio: más prioridad primero; a igual prioridad, el evento más próximo (`inicio`, en ms) y,
+ * si empatan, el id. Devuelve el rango de cada uno (0 = el primero): es la llave de orden de la capa de discos, y Mapbox coloca primero al de
+ * menor llave y esconde al que choca con él.
+ */
+export function rangosDeDias(pines: { id: string; prioridad: number; inicio: number }[]): Map<string, number> {
+  const orden = [...pines].sort((a, b) => b.prioridad - a.prioridad || a.inicio - b.inicio || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return new Map(orden.map((pin, rango) => [pin.id, rango]));
+}
