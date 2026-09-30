@@ -47,14 +47,19 @@ export function carrilTusPlanes<T extends Pick<EventoAgenda, "id" | "titulo" | "
 export const TOPE_ESTELAR = 12;
 
 /**
- * El carril estelar de Inicio, con sesión y seguimientos: "Seleccionados para ti", ponderado (destacado, luego
- * «Voy», luego fecha) y con tope de 12 — sustituye al carril de destacados de la primera vuelta (bitácora 188).
+ * El carril estelar de Inicio, con sesión y seguimientos: «Seleccionados para ti». Primero los destacados de la administración, en su
+ * orden (`tira_destacados`), sean o no de lo que la persona sigue; después el resto de lo que sigue, por «Voy» y luego por fecha.
+ * Sin repetidos y con tope de 12. Solo lo que sale queda como visto: lo que el tope deja fuera puede salir en «Esta semana» o «Nuevos».
+ *
+ * Cambia la regla de la bitácora 188 (ahí los destacados solo ordenaban dentro de los favoritos) por decisión del founder del 2026-09-30:
+ * «Que pasó con eventos destacados? Ya no se ven en el inicio cuando usuario tiene sección activa. Los puedes meter en seleccionados para ti?».
  */
-export function carrilEstelar<T extends Pick<EventoAgenda, "id" | "van" | "titulo" | "inicio">>(favoritos: T[], idsDestacados: Set<string>, vistos: Set<string>): T[] {
-  const candidatos = sinRepetidos(favoritos, vistos);
-  return candidatos
-    .toSorted((a, b) => Number(idsDestacados.has(b.id)) - Number(idsDestacados.has(a.id)) || b.van - a.van || compararEventos(a, b))
-    .slice(0, TOPE_ESTELAR);
+export function carrilEstelar<T extends Pick<EventoAgenda, "id" | "van" | "titulo" | "inicio">>(destacadosEnOrden: T[], favoritos: T[], vistos: Set<string>): T[] {
+  const idsDestacados = new Set(destacadosEnOrden.map((e) => e.id));
+  const resto = favoritos.filter((e) => !idsDestacados.has(e.id)).toSorted((a, b) => b.van - a.van || compararEventos(a, b));
+  const propios = sinRepetidos([...destacadosEnOrden, ...resto], new Set(vistos)).slice(0, TOPE_ESTELAR);
+  for (const e of propios) vistos.add(e.id);
+  return propios;
 }
 
 /**
@@ -69,9 +74,9 @@ export function carrilDestacados<T extends { id: string }>(destacadosEnOrden: T[
   return sinRepetidos(destacadosEnOrden, vistos).slice(0, TOPE_ESTELAR);
 }
 
-/** Título del carril estelar: "Seleccionados para ti" si hay algo que mostrar de lo que la persona sigue; si no, el
- *  respaldo "Destacados" (renombrados en la segunda vuelta del prototipo de OL-219: antes "De tus favoritos" y
- *  "Destacados esta semana"). */
+/** Título del carril estelar: "Seleccionados para ti" si la persona sigue algo con eventos próximos (y entonces lleva, primero, los
+ *  destacados de la administración); si no, el respaldo "Destacados" (renombrados en la segunda vuelta del prototipo de OL-219: antes
+ *  "De tus favoritos" y "Destacados esta semana"). */
 export function tituloEstelar(hayFavoritos: boolean): string {
   return hayFavoritos ? "Seleccionados para ti" : "Destacados";
 }
@@ -124,9 +129,8 @@ export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date())
   const vistos = new Set<string>();
   const favoritos = filtrarAgenda(agenda.eventos, { siguiendo: true, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: null });
   const hayFavoritos = favoritos.length > 0;
-  const estelar = hayFavoritos
-    ? carrilEstelar(favoritos, new Set(agenda.destacados.map((d) => d.id)), vistos)
-    : carrilDestacados(enOrden(agenda.destacados, agenda.eventos), vistos);
+  const destacados = enOrden(agenda.destacados, agenda.eventos);
+  const estelar = hayFavoritos ? carrilEstelar(destacados, favoritos, vistos) : carrilDestacados(destacados, vistos);
   const estaSemana = carrilEstaSemana(agenda.eventos, vistos, ahora);
   const nuevos = carrilNuevos(agenda.eventos, vistos, ahora);
   return { titulo: tituloEstelar(hayFavoritos), estelar, estaSemana, nuevos };

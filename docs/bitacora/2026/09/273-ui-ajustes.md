@@ -310,6 +310,35 @@ A 1 280×800 con el elegido a zoom 13: antes 13 pares y 6 discos sobre el elegid
 46. **`273-46` · 320×568:** el mapa corto con los dos botones enteros sobre la hoja, que asoma con «9 lugares» y dos renglones, y el aire de 12 px entre el segundo botón y ella.
 47. **`273-47` · con el aviso de ubicación:** sin permiso, el aviso oscuro «No pudimos leer tu ubicación…» con su ✕ queda bajo los dos botones, sin taparlos.
 
+## 10. Los destacados vuelven a Inicio, dentro de «Seleccionados para ti»
+
+**Founder (2026-09-30):** «Que pasó con eventos destacados? Ya no se ven en el inicio cuando usuario tiene sección activa. Los puedes meter en seleccionados para ti?»
+
+**Qué pasaba.** Con sesión y seguimientos el carril estelar de Inicio es «Seleccionados para ti» y, por la regla de la bitácora 188 y del doc 41, solo entraban eventos de lo que la persona sigue: los destacados de la administración (`tira_destacados`) solo servían para ordenar dentro de esos favoritos. Un destacado de un lugar que no se sigue no salía en ese carril (y solo aparecía, por su fecha o su publicación, en «Esta semana» o «Nuevos», o en ninguno).
+
+**Qué cambió** (`lib/inicio.ts`, lógica pura; sin pantallas ni migraciones). **Cambia la regla de la bitácora 188 por decisión del founder de hoy** (el doc 41 todavía la describe con la regla vieja; no se tocó):
+- `carrilEstelar(destacadosEnOrden, favoritos, vistos)` toma los destacados **en el orden de la administración** (`enOrden(agenda.destacados, agenda.eventos)`, el mismo que usa `carrilDestacados`) y, después, el resto de los favoritos por «Voy» y luego por fecha, como hasta hoy. Sin repetidos (un destacado que además se sigue sale una vez, en su lugar de destacado) y con el tope de `TOPE_ESTELAR` (12).
+- **El título no cambia:** «Seleccionados para ti» si hay favoritos; sin favoritos (o sin sesión) sigue «Destacados», con el respaldo de siempre (`carrilDestacados`).
+- «Esta semana» y «Nuevos» siguen sin repetir lo que el estelar usó (`vistos`); «Tus planes» sigue fuera de esa regla. Los comentarios de `carrilEstelar` y de `tituloEstelar` dicen la regla nueva.
+- **Un detalle de paso:** ahora solo queda como visto lo que el estelar **muestra**. Antes `sinRepetidos` marcaba como vistos todos los favoritos, también los que el tope de 12 dejaba fuera, que no salían en ningún carril; ahora esos pueden salir en «Esta semana» o «Nuevos» si les toca.
+
+**Medida** (Inicio con la sesión de Ana, que sigue a la Casa de Cultura del Barrio de San Miguelito y a un artista, en el respaldo local; sus cuatro destacados son de lugares que no sigue: MUNI, Centro Cultural Universitario Bicentenario y Aether; 390×844):
+
+| Carril | Antes | Después |
+|---|---|---|
+| Tus planes | Charla de la Cristiada · LXS COLOCAOS · Leonora | igual |
+| Seleccionados para ti | Charla de la Cristiada · Concierto de la Orquesta Sinfónica · Cine de barrio | **LXS COLOCAOS · Master Class · Leonora · DESIERTO** (los cuatro destacados, en el orden de la administración) **y después** Charla de la Cristiada · Concierto · Cine de barrio |
+| Esta semana | Delirium · LXS COLOCAOS · Inauguración de Uno de Uno · Susurros · Macario | Delirium · Inauguración de Uno de Uno · Susurros · Macario (**LXS COLOCAOS ya no se repite**) |
+| Nuevos eventos | DESIERTO · Master Class · Leonora · OCA | **no se pinta**: con los tres destacados ya en el estelar solo queda OCA, por debajo del mínimo de 3 (`MINIMO_NUEVOS`) |
+
+**Una consecuencia a la vista, para el gestor:** en este respaldo, «Nuevos eventos» sale de Inicio porque sus tres primeros eran destacados. Es la regla que se pidió («Esta semana» y «Nuevos» no repiten lo del estelar) junto con el mínimo de 3 de «Nuevos»; si el founder prefiere conservar el carril habría que dejarle repetir destacados o bajar el mínimo. No se tocó.
+
+**Pruebas** (`lib/inicio.test.ts`): las tres de `carrilEstelar` pasan a la firma nueva y se suman cuatro, más tres con una sola agenda. Con sesión y seguimientos: un destacado de un lugar que no se sigue sale en el estelar, **primero**, y no se repite en «Esta semana» ni en «Nuevos» (nada aparece dos veces entre los carriles); los destacados salen **en el orden de la administración** (no el de fecha ni el de «Voy») y los demás favoritos después; los favoritos no destacados van por «Voy» y fecha; un destacado que también se sigue sale una vez; con más de 12 candidatos se corta a 12 (los destacados se conservan y el corte cae en los favoritos) y lo que queda fuera puede salir en «Esta semana»; solo queda como visto lo que sale; sin favoritos, el carril sigue siendo «Destacados» tal cual (la prueba que ya había). Se comprobó que fallan si el estelar ignora los destacados.
+
+**Capturas** (`docs/rediseno/capturas-273/`, 390×844 a 2×, Inicio desplazado hasta «Seleccionados para ti»):
+
+48. **`273-48` · «Seleccionados para ti» antes y después:** antes, el carril abre con la Charla de la Cristiada (palomita verde de «Voy») y el Concierto de la Orquesta Sinfónica, y «Esta semana» con Delirium y LXS COLOCAOS; después, abre con LXS COLOCAOS (cartel del MUNI, con «2 van» y la palomita de «Voy»), Master Class y Leonora (destacados de lugares que no se siguen), y «Esta semana» pasa de Delirium a la Inauguración de Uno de Uno, sin repetir LXS COLOCAOS.
+
 ## Comprobaciones
 
 Con los tres ajustes puestos: `npm run lint` (sin avisos), `npm run typecheck` y `npm test` (119 archivos, **1 584** pruebas: 1 585 de P13, menos 2 de la opacidad y más 1 de `tiempoEnMs`); `next build` sin variables de entorno, como la CI; `npm run inventario` («sin novedades»: 344 medidas en duro, las mismas); `npm run medir` (23 pantallas × 4 anchos, «sin novedades»); y `npm run test:componentes` con `CHROME_EXECUTABLE` en el Chrome de la Mac: **113 de 113** (las 11 de la hoja, con las dos nuevas). Sin migraciones ni variables de entorno. Al cerrar se borraron `.env.local` y `.next` (la llave del mapa queda incrustada en la compilación), se apagaron los procesos propios (respaldo, app e intermediarios) y el simulador volvió a quedar apagado, como estaba. Ninguna llave, ningún correo real y ningún `.env` en el repositorio (la búsqueda de `pk.eyJ` en el árbol da 0).
