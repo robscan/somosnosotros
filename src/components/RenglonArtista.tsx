@@ -3,7 +3,6 @@ import { SIN_FOTO } from "@/lib/imagen";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { IconoCalendario, IconoEstrella, IconoMascara, IconoNota, IconoPincel, IconoPluma } from "./ui/Iconos";
 import Renglon from "./ui/Renglon";
-import styles from "./ui/Renglon.module.css";
 
 /** Icono de lo que hace: nota (música), máscara (teatro, danza, circo), pincel (artes visuales, cine), pluma (letras). */
 export function IconoDisciplina({ disciplina }: { disciplina: Disciplina }) {
@@ -43,7 +42,7 @@ export default function RenglonArtista({ artista: a, boton }: Props) {
         <span>{etiquetaArtista(a)}</span>
       </span>
       {a.proxima && (
-        <span className={styles.envuelve}>
+        <span>
           <IconoCalendario width={15} height={15} />
           <b>{textoProximaFecha(a.proxima)}</b>
         </span>

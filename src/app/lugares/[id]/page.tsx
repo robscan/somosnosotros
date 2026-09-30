@@ -1,157 +1,23 @@
-import { cache, Suspense } from "react";
-import { esUuid } from "@/lib/formulario";
-import { cargarDestacado } from "@/app/admin/consultas";
-import DestacarFicha from "@/app/admin/DestacarFicha";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import Borrar from "@/components/Borrar";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
-import Desplegable from "@/components/Desplegable";
-import { EsqueletoDato, EsqueletoRenglones } from "@/components/ui/Esqueleto";
-import EventosPorDia from "@/components/EventosPorDia";
-import MapaFicha from "@/components/MapaFicha";
-import Reportar from "@/components/Reportar";
 import Barra from "@/components/ui/Barra";
 import Boton, { claseBoton } from "@/components/ui/Boton";
-import { claseBotonIcono } from "@/components/ui/BotonIcono";
-import EnlaceExterno from "@/components/ui/EnlaceExterno";
-import { IconoCalendario, IconoCompartir, IconoPersonas, IconoPin, IconoRuta } from "@/components/ui/Iconos";
-import IconoRed from "@/components/ui/IconoRed";
 import MenuAcciones from "@/components/ui/MenuAcciones";
-import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
-import renglon from "@/components/ui/Renglon.module.css";
-import type { EventoAgenda } from "@/lib/agenda";
-import { enmascararCorreo } from "@/lib/comunidad";
-import { puedeDestacarse } from "@/lib/destacados";
-import { filtroSinPasar } from "@/lib/fechas";
-import { etiquetaEnlace, normalizarRedes } from "@/lib/enlaces";
-import { repartoDeAcciones } from "@/lib/ficha";
-import { etiquetaLugar, etiquetaTipo, hrefLugar, textoProximo, type Lugar } from "@/lib/lugares";
-import { jsonLdLugar, jsonLdMigajas } from "@/lib/estructurados";
-import { ORIGENES } from "@/lib/origen";
-import { clienteServidor, usuarioActual, type Perfil } from "@/lib/supabase/servidor";
-import Seguir from "@/components/Seguir";
-import { avisosParaListas } from "@/app/avisos/paraListas";
-import { decididasDe } from "@/app/eventos/decididas";
-import { borrarLugar, cambiarSeguimiento, cambiarVisible } from "../acciones";
-import EsMiEspacio from "./EsMiEspacio";
 import styles from "@/components/ui/FichaLista.module.css";
+import { normalizarRedes } from "@/lib/enlaces";
+import { jsonLdLugar, jsonLdMigajas } from "@/lib/estructurados";
+import { etiquetaLugar, etiquetaTipo, hrefLugar } from "@/lib/lugares";
+import { clienteServidor } from "@/lib/supabase/servidor";
+import CuerpoLugar, { cargarFicha, cargarLugar, OpcionesLugar, ORIGEN, SeguirLugar } from "./CuerpoLugar";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
-type LugarConAutor = Lugar & { autor: { id: string; nombre: string } | null };
 
-const ORIGEN = "https://somosnosotros.org";
-/** El círculo de cada acción (ui/BotonIcono) y el botón compartir de la tarjeta «Publicado» (ui/Boton, en su celda). */
-const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
+/** El botón compartir de la tarjeta «Publicado» (ui/Boton, en su celda). */
 const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${ficha.publicadoBoton}`;
-
-/**
- * Se busca por slug (la dirección de hoy) y, si no aparece nada, por UUID (la dirección vieja, para que siga
- * resolviendo). Mismo criterio que artistas (OL-114).
- */
-async function cargarLugar(idOSlug: string): Promise<LugarConAutor | null> {
-  const supabase = await clienteServidor();
-  if (!supabase) return null;
-  const columnas = "id, slug, nombre, tipo, direccion, lat, lng, portada, descripcion, ciudad, redes, creado_por, visible, privado, origen, autor:perfiles!lugares_creado_por_fkey(id, nombre)";
-  const porSlug = await supabase.from("lugares").select(columnas).eq("slug", idOSlug).maybeSingle();
-  const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("lugares").select(columnas).eq("id", idOSlug).maybeSingle()).data : null);
-  if (!data) return null;
-  const autor = Array.isArray(data.autor) ? (data.autor[0] ?? null) : data.autor;
-  return { ...(data as unknown as Lugar), autor: autor as LugarConAutor["autor"] };
-}
-
-/** Los eventos próximos del lugar, con cuántos van, listos para el renglón de la agenda. */
-async function cargarEventos(lugar: Lugar): Promise<EventoAgenda[]> {
-  const supabase = await clienteServidor();
-  if (!supabase) return [];
-  const { data } = await supabase.from("eventos").select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en").eq("lugar_id", lugar.id).eq("visible", true).or(filtroSinPasar()).order("inicio").order("titulo").order("id").limit(30);
-  const filas = (data ?? []) as Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng">[];
-  if (filas.length === 0) return [];
-  // Solo se cuenta, no se muestra quién; tope de sobra contra el corte silencioso de PostgREST.
-  const { data: a } = await supabase
-    .from("asistencias")
-    .select("evento_id")
-    .eq("estado", "voy")
-    .in(
-      "evento_id",
-      filas.map((f) => f.id),
-    )
-    .limit(2000);
-  const van = new Map<string, number>();
-  for (const f of a ?? []) van.set(f.evento_id as string, (van.get(f.evento_id as string) ?? 0) + 1);
-  return filas.map((f) => ({ ...f, lugar: { nombre: lugar.nombre, portada: lugar.portada }, lat: lugar.lat, lng: lugar.lng, van: van.get(f.id) ?? 0 }));
-}
-
-// `cargarEventos` y cuántos siguen al lugar se piden de nuevo abajo (`MetaLugar` y `SeccionEventosLugar`, en
-// `<Suspense>` separados): `cache()` de React las memoiza por argumento para que sea una sola consulta por petición
-// (OL-161, bitácora 196; mismo patrón que `cargarLigadas` en la ficha de artista).
-const cargarEventosCache = cache(cargarEventos);
-const cargarSeguidoresLugarCache = cache(async (lugarId: string): Promise<number> => {
-  const supabase = await clienteServidor();
-  const { data } = (await supabase?.rpc("cuenta_seguidores", { p_lugar: lugarId })) ?? { data: 0 };
-  return Number(data ?? 0);
-});
-
-/**
- * Cuántos siguen al lugar y su próximo evento: los dos renglones de `<ul className={ficha.datos}>` que piden una
- * consulta aparte de la del lugar (OL-161). Se difieren en `<Suspense>`, con un renglón de esqueleto del mismo alto
- * mientras llegan; la cabecera (foto, nombre, dirección) no los espera.
- */
-async function MetaLugar({ lugar }: { lugar: LugarConAutor }) {
-  const [seguidores, eventos] = await Promise.all([cargarSeguidoresLugarCache(lugar.id), cargarEventosCache(lugar)]);
-  return seguidores === 0 && !eventos[0] ? (
-    <li className={renglon.dato}>
-      <IconoCalendario width={20} height={20} />
-      <small>Sin eventos próximos · Nadie lo sigue todavía</small>
-    </li>
-  ) : (
-    <>
-      <li className={renglon.dato}>
-        <IconoPersonas width={20} height={20} />
-        <b>{seguidores === 0 ? "Nadie lo sigue todavía" : seguidores === 1 ? "1 persona lo sigue" : `${seguidores} personas lo siguen`}</b>
-      </li>
-      <li className={renglon.dato}>
-        <IconoCalendario width={20} height={20} />
-        <b>{eventos[0] ? textoProximo(eventos[0]) : "Sin eventos próximos"}</b>
-        {eventos[0] && (
-          <Salto destino="eventos">ver</Salto>
-        )}
-      </li>
-    </>
-  );
-}
-
-/** "Próximos eventos" entero: la misma consulta que `MetaLugar`, memoizada por `cache()`, más quién decidió qué. */
-async function SeccionEventosLugar({ lugar, actual, hrefPublicarAqui }: { lugar: LugarConAutor; actual: { correo: string | null; perfil: Perfil } | null; hrefPublicarAqui: string }) {
-  const eventos = await cargarEventosCache(lugar);
-  const decididas = await decididasDe(actual?.perfil.id ?? null, eventos.map((e) => e.id));
-  return (
-    <section className={styles.lista} id="eventos" aria-label="Próximos eventos">
-      <h2>
-        Próximos eventos
-        {eventos.length > 0 && <span> · {eventos.length}</span>}
-      </h2>
-      {eventos.length === 0 && <p className={styles.vacio}>Aún no hay eventos aquí. ¿Organizas algo? Publícalo.</p>}
-      <EventosPorDia eventos={eventos} sinSitio decididas={decididas} avisos={avisosParaListas(actual)} />
-      <Boton href={hrefPublicarAqui} variante="secundario" className={styles.publicar}>
-        Publicar un evento aquí
-      </Boton>
-    </section>
-  );
-}
-
-/** Fallback de `SeccionEventosLugar`: el título fijo (sin el conteo, que sí espera la consulta) y renglones grises. */
-function EsqueletoSeccionEventos() {
-  return (
-    <section className={styles.lista} id="eventos" aria-label="Próximos eventos" aria-hidden="true">
-      <h2>Próximos eventos</h2>
-      <EsqueletoRenglones cantidad={3} redonda />
-    </section>
-  );
-}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
@@ -175,8 +41,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function FichaLugar({ params, searchParams }: Params) {
   const { id } = await params;
   const { nuevo, accion, error } = (await searchParams) ?? {};
-  const [lugar, actual] = await Promise.all([cargarLugar(id), usuarioActual()]);
-  if (!lugar) notFound();
+  const f = await cargarFicha(id);
+  if (!f) notFound();
+  const { lugar, actual, puedeEditar } = f;
   // La dirección vieja (/lugares/<uuid>) sigue resolviendo, pero se redirige a la de hoy (el slug); permanente
   // porque es el mismo lugar para siempre (OL-119, mismo criterio que artistas). Se preservan los parámetros.
   if (id !== lugar.slug) {
@@ -187,41 +54,14 @@ export default async function FichaLugar({ params, searchParams }: Params) {
     const q = p.toString();
     permanentRedirect(`${hrefLugar(lugar)}${q ? `?${q}` : ""}`);
   }
-  const supabase = await clienteServidor();
   // Venía de entrar con la intención de seguir: se aplica sola.
   if (actual && accion === "seguir") {
+    const supabase = await clienteServidor();
     await supabase?.from("seguimientos").upsert({ usuario_id: actual.perfil.id, lugar_id: lugar.id }, { onConflict: "usuario_id,lugar_id", ignoreDuplicates: true });
     redirect(hrefLugar(lugar));
   }
-  // Cuántos lo siguen y sus eventos próximos son consultas aparte, diferidas en `<Suspense>` (OL-161, bitácora
-  // 196: `MetaLugar` y `SeccionEventosLugar`, memoizadas con `cache()` para pedirse una sola vez). La cabecera
-  // (foto, nombre, dirección), el menú de administración y "Cómo llegar/Compartir" no las esperan.
-  const [mio, lig] = await Promise.all([
-    actual && supabase ? supabase.from("seguimientos").select("usuario_id").eq("lugar_id", lugar.id).eq("usuario_id", actual.perfil.id).maybeSingle() : Promise.resolve({ data: null }),
-    supabase?.from("lugares_cuentas").select("perfil_id").eq("lugar_id", lugar.id) ?? Promise.resolve({ data: [] as { perfil_id: string }[] }),
-  ]);
-  const ligados = (lig.data ?? []) as { perfil_id: string }[];
-  const sigo = !!mio.data;
-  const esAdmin = actual?.perfil.rol === "admin";
-  const destacable = esAdmin && puedeDestacarse(lugar) ? await cargarDestacado("lugar", lugar.id) : null;
-  // Edita el autor, la cuenta ligada ("¿Es tu espacio?", atendido por el administrador) o el administrador.
-  const esAutor = !!actual && actual.perfil.id === lugar.creado_por;
-  const estaLigado = !!actual && ligados.some((l) => l.perfil_id === actual.perfil.id);
-  const puedeEditar = esAdmin || esAutor || estaLigado;
-  const puedeBorrar = esAdmin || esAutor; // borrar es del autor y del administrador (la política de la base lo exige)
-  const redes = normalizarRedes(lugar.redes);
-  const faltanDetalles = !lugar.descripcion && !lugar.portada && redes.length === 0;
+  const faltanDetalles = !lugar.descripcion && !lugar.portada && normalizarRedes(lugar.redes).length === 0;
   const url = `${ORIGEN}${hrefLugar(lugar)}`;
-  const comoLlegar = `https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`;
-  // Compartir no sirve en un lugar privado: el enlace no le abre a nadie más que a su autor y a la administración
-  // (founder, 2026-09-24, OL-179: «esconde si no sirve botón de compartir»). Cómo llegar se queda.
-  const reparto = repartoDeAcciones((lugar.privado ? 1 : 2) + redes.length);
-  const claseReparto = reparto === "repartidas" ? ficha.accionesRepartidas : reparto === "carril" ? ficha.accionesCarril : "";
-  const hrefPublicarAqui = actual ? `/eventos/nuevo?lugar=${lugar.id}` : `/entrar?siguiente=${encodeURIComponent(`/eventos/nuevo?lugar=${lugar.id}`)}`;
-  // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos eventos tiene: el menú de administración sigue
-  // en el HTML inicial y no puede esperar esa consulta aparte.
-  const avisoBorrar = "Se borra el lugar, con sus eventos (próximos y pasados).";
-  const correo = actual?.correo ? enmascararCorreo(actual.correo) : "tu correo";
   // JSON-LD (OL-143, doc 36): un lugar oculto o privado no lo vería un visitante sin sesión; sin datos de personas.
   const jsonLdVisible = lugar.visible && !lugar.privado;
   const jsonLd = jsonLdVisible ? jsonLdLugar({ nombre: lugar.nombre, descripcion: lugar.descripcion, direccion: lugar.direccion, ciudad: lugar.ciudad, lat: lugar.lat, lng: lugar.lng, imagen: lugar.portada, url: hrefLugar(lugar) }) : null;
@@ -235,31 +75,7 @@ export default async function FichaLugar({ params, searchParams }: Params) {
         volver={{ href: "/lugares", texto: "Lugares" }}
         derecha={
           <MenuAcciones>
-            {puedeEditar && (
-              <li>
-                <Link href={`${hrefLugar(lugar)}/editar`} className={ficha.menuItem}>
-                  Editar
-                </Link>
-              </li>
-            )}
-            {destacable && <DestacarFicha tipo="lugar" id={lugar.id} {...destacable} />}
-            {esAdmin && (
-              <li>
-                <form action={cambiarVisible.bind(null, lugar.id, !lugar.visible)}>
-                  <button type="submit" className={ficha.menuItem}>
-                    {lugar.visible ? "Ocultar del mapa" : "Volver a mostrar"}
-                  </button>
-                </form>
-              </li>
-            )}
-            <li className={ficha.menuItem}>
-              <Reportar tipo="lugar" objetoId={lugar.id} volver={hrefLugar(lugar)} conSesion={!!actual} />
-            </li>
-            {puedeBorrar && (
-              <li className={ficha.menuItem}>
-                <Borrar que="el lugar" icono="lugar" aviso={avisoBorrar} accion={borrarLugar.bind(null, lugar.id)} />
-              </li>
-            )}
+            <OpcionesLugar f={f} />
           </MenuAcciones>
         }
       />
@@ -309,73 +125,8 @@ export default async function FichaLugar({ params, searchParams }: Params) {
       <h1 className={`${ficha.titulo} ${ficha.tituloConEtiqueta}`}>{lugar.nombre}</h1>
       <p className={ficha.etiqueta}>{etiquetaLugar(lugar)}</p>
 
-      <ul className={ficha.datos}>
-        <li className={renglon.dato}>
-          <IconoPin width={20} height={20} />
-          <b>{lugar.direccion ?? "Sin dirección"}</b>
-        </li>
-        <Suspense fallback={<EsqueletoDato />}>
-          <MetaLugar lugar={lugar} />
-        </Suspense>
-      </ul>
-
-      {/* Los accionables van arriba del mapa (founder, OL-225, 2026-09-26: "así se ven mas"). */}
-      <div className={`${ficha.acciones} ${claseReparto}`}>
-        <a href={comoLlegar} className={ficha.accion} target="_blank" rel="noopener noreferrer">
-          <span className={CIRCULO}>
-            <IconoRuta />
-          </span>
-          Cómo llegar
-        </a>
-        {!lugar.privado && (
-          <BotonCompartir titulo={lugar.nombre} texto={`${lugar.nombre} · ${etiquetaTipo(lugar.tipo)}${lugar.direccion ? ` · ${lugar.direccion}` : ""}`} url={url} className={ficha.accion}>
-            <span className={CIRCULO}>
-              <IconoCompartir />
-            </span>
-            Compartir
-          </BotonCompartir>
-        )}
-        {redes.map((r) => (
-          <EnlaceExterno key={r.url} href={r.url} className={ficha.accion}>
-            <span className={CIRCULO}>
-              <IconoRed red={r.red} />
-            </span>
-            {/* Título editable de hasta 30 caracteres (OL-168): a dos líneas con puntos suspensivos, nunca
-                fuera de la pantalla (ficha.accionEtiqueta). */}
-            <span className={ficha.accionEtiqueta}>{etiquetaEnlace(r)}</span>
-          </EnlaceExterno>
-        ))}
-      </div>
-
-      <MapaFicha punto={{ lat: lugar.lat, lng: lugar.lng }} href={comoLlegar} alt={lugar.nombre} />
-
-      {lugar.descripcion && <Desplegable texto={lugar.descripcion} />}
-
-      <Suspense fallback={<EsqueletoSeccionEventos />}>
-        <SeccionEventosLugar lugar={lugar} actual={actual} hrefPublicarAqui={hrefPublicarAqui} />
-      </Suspense>
-
-      {/* Sin pie de origen para las fichas del catálogo (decisión del founder, 2026-09-14): solo se dice quién la publicó cuando hay quién. */}
-      {!(lugar.origen && !lugar.autor) && (
-        <p className={ficha.autor}>Publicado por {lugar.autor ? <Link href={`/personas/${lugar.autor.id}`}>{lugar.autor.nombre}</Link> : "una cuenta borrada"}.</p>
-      )}
-      {/* Quien lleva el espacio de verdad puede pedir la ficha: al final, discreto y solo con sesión (sin sesión
-          no se ofrece, para no invitar a reclamos ajenos). El origen se dice dentro de la hoja, no en la ficha. */}
-      {actual && !puedeEditar && <EsMiEspacio lugarId={lugar.id} nombre={lugar.nombre} correo={correo} origen={lugar.origen ? ORIGENES[lugar.origen].nombre : undefined} />}
-
-      <Seguir
-        que="lugar"
-        nombre={lugar.nombre}
-        sigo={sigo}
-        conSesion={!!actual}
-        cuenta={actual?.perfil.id ?? ""}
-        accion={cambiarSeguimiento.bind(null, lugar.id)}
-        hrefEntrar={`${hrefLugar(lugar)}?accion=seguir`}
-        avisosPreguntado={actual?.perfil.avisos_preguntado ?? true}
-        avisosCorreo={actual?.perfil.avisos_correo ?? false}
-        correo={correo}
-        llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
-      />
+      <CuerpoLugar f={f} />
+      <SeguirLugar f={f} />
     </main>
   );
 }

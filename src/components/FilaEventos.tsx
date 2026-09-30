@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CUANTOS, filtrosPuestos, listarAgenda, type Cuanto, type FiltrosAgenda } from "@/lib/agenda";
 import { diasActivosCalendario } from "@/lib/calendario";
 import type { Agenda } from "@/lib/cargarAgenda";
@@ -13,6 +13,7 @@ import HojaFiltros, { BloqueFiltro } from "./ui/HojaFiltros";
 import { IconoCalendario, IconoCampana, IconoFiltros } from "./ui/Iconos";
 import Palanca from "./ui/Palanca";
 import renglon from "./ui/Renglon.module.css";
+import { useResuelta } from "./useResuelta";
 
 type Props = {
   ciudad: Ciudad;
@@ -31,19 +32,6 @@ type Props = {
   /** Al aplicar una hoja o quitar un filtro puesto: Agenda lo guarda; Inicio lleva a Agenda con eso puesto. */
   onCambiar: (valor: FiltrosAgenda) => void;
 };
-
-/** La agenda ya cargada, o null mientras llega: lo que hay que esperar no frena a la fila, que se pinta con la barra. */
-function useResuelta<T>(promesa: Promise<T>): T | null {
-  const [valor, setValor] = useState<T | null>(null);
-  useEffect(() => {
-    let vigente = true;
-    promesa.then((v) => vigente && setValor(v), () => {});
-    return () => {
-      vigente = false;
-    };
-  }, [promesa]);
-  return valor;
-}
 
 /** «Ver 14 eventos», «Ver 1 evento», «Sin eventos»; sin saber todavía cuántos, «Ver eventos». */
 const cuantosEventos = (n: number | null) => (n === null ? "Ver eventos" : n === 0 ? "Sin eventos" : n === 1 ? "Ver 1 evento" : `Ver ${n} eventos`);
@@ -130,7 +118,7 @@ function HojaCuando({ valor, hoy, zona, agenda, busqueda, onAplicar, onCerrar }:
           Todos los próximos
         </Chip>
       </Chips>
-      {eligiendo && <Calendario hoy={hoy} zona={zona} desde={borrador?.desde ?? ""} hasta={borrador?.hasta ?? ""} diasActivos={dias} sinEventos="marcar" sinSemanasPasadas permiteQuitar onElegir={(dia) => setBorrador(elegirEnRango(borrador, dia))} />}
+      {eligiendo && <Calendario hoy={hoy} zona={zona} desde={borrador?.desde ?? ""} hasta={borrador?.hasta ?? ""} diasActivos={dias} sinSemanasPasadas permiteQuitar onElegir={(dia) => setBorrador(elegirEnRango(borrador, dia))} />}
     </HojaFiltros>
   );
 }

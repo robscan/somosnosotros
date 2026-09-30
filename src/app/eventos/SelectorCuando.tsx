@@ -63,8 +63,8 @@ function etiquetaDuracion(horas: number): string {
  * Hasta OL-218 (bitácora 247) el selector nativo (`<input type="date|time">`) seguía siendo la rama táctil/móvil
  * (la hoja propia solo reemplazaba al nativo en escritorio con puntero fino, OL-162, bitácora 197 — el nativo de
  * Chrome no aparece en la app instalada en un monitor externo, bitácora 195, OL-160). Precisión del founder en
- * OL-218: "el mismo componente de hoja se usa... en el alta y la edición de evento", sin acotarlo a escritorio —
- * la misma unificación que ya hizo `ui/ChipFecha` para Agenda y Lugares. Ya no hay rama nativa aquí tampoco.
+ * OL-218: "el mismo componente de hoja se usa... en el alta y la edición de evento", sin acotarlo a escritorio. Ya no
+ * hay rama nativa aquí tampoco.
  */
 export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInicio, errorFin, sugeridaActual }: Props) {
   const { fecha, hora } = partir(inicio);
@@ -143,14 +143,12 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
 
       {hoja === "inicio" && (
         <SelectorFecha
-          // Precisión del founder (OL-218, bitácora 247): "Selecciona la fecha del evento" en el alta y la
-          // edición, mismo canon que Agenda y Lugares ("Selecciona una fecha") pero para un campo, no un filtro.
+          // Precisión del founder (OL-218, bitácora 247): "Selecciona la fecha del evento" en el alta y la edición.
           titulo="Selecciona la fecha del evento"
           fecha={fecha}
           hora={hora || "19:00"}
           zona={zona}
           conHora
-          modo="campo"
           sugerida={sugeridaHoja}
           duracion={etiquetaDuracion(duracion)}
           onListo={(f, h) => {
@@ -167,7 +165,6 @@ export default function SelectorCuando({ inicio, fin, zona, onCambio, errorInici
           hora={finP.hora}
           zona={zona}
           conHora
-          modo="campo"
           onListo={(f, h) => {
             if (h) fijarFin(f, h);
             cerrarHoja();

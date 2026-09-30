@@ -40,6 +40,13 @@
 .contexto::-webkit-scrollbar {
   display: none;
 }
+/* Desde 792 la fila va centrada en la ventana, como en el prototipo firmado (doc 50, puntos 39 y 56); si los chips no caben, se
+   deslizan desde el primero. */
+@media (min-width: 792px) {
+  .contexto {
+    justify-content: safe center;
+  }
+}
 /* El campo (ui/Buscador) con el alto de los chips de contexto; su ✕ también, o la fila crecería al abrirlo */
 .campo > label {
   flex: 1;
@@ -53,13 +60,8 @@
   font-size: var(--letra-md);
 }
 
-/* Las pestañas y el segundo nivel: el gutter de la columna. Las pestañas no dibujan su raya de la base: la raya común
-   va solo debajo de toda la cabecera, no entre sus filas. El segundo nivel (un grupo de chips) pesa cero (`:where`): la
-   tira de letras, que también es un grupo, trae sus propias medidas y gana siempre. */
-.cabecera > [role="tablist"] {
-  padding-inline: var(--gutter);
-  box-shadow: none;
-}
+/* El segundo nivel (un grupo de chips): el gutter de la columna. Pesa cero (`:where`): la tira de letras, que también es un
+   grupo, trae sus propias medidas y gana siempre. */
 :where(.cabecera > [role="group"]) {
   margin: 0;
   padding: var(--espacio-3) var(--gutter);

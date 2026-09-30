@@ -9,9 +9,8 @@ const SECCION_DE_RUTA: Record<string, string> = { "/": "agenda", "/lugares": "lu
 
 /**
  * Fundido de 200 ms al cambiar de sección en la barra inferior (Agenda ↔ Lugares ↔ Artistas), como pidió el
- * founder (L46, docs/rediseno/38-transiciones-cargador.md). Nada más se anima aquí: ni las pestañas dentro de una
- * sección (viven en `ui/Pestanas`), ni las fichas (tienen su propio `template.tsx`), ni la barra o el scroll
- * repuesto por la memoria de pantalla.
+ * founder (L46, docs/rediseno/38-transiciones-cargador.md). Nada más se anima aquí: ni las fichas (tienen su propio
+ * `template.tsx`), ni la barra o el scroll repuesto por la memoria de pantalla.
  *
  * `template.tsx` se vuelve a montar en cada navegación (a propósito, así lo documenta Next): por eso la sección
  * "anterior" no puede vivir en el estado de este componente (se perdería en cada remontaje) y vive en una

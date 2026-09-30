@@ -12,6 +12,7 @@ const PASO = 6;
 /** Tras cada cambio no se reacciona a otro: sin parpadeo cuando el dedo duda. */
 const CALMA_MS = 300;
 const RECOGER = "armazon:recoger";
+const RECOGIDA = "armazon:recogida";
 
 /**
  * Antes de llevar la pantalla a un punto (la tira de letras): la barra se recoge al momento y sin animar, así quien
@@ -19,6 +20,14 @@ const RECOGER = "armazon:recoger";
  */
 export function recogerBarra() {
   window.dispatchEvent(new Event(RECOGER));
+}
+
+/**
+ * Una pantalla que llena la ventana (la hoja de Lugares, cuando ya la cubre) pide que la barra y la navegación se vayan y,
+ * cuando deja de llenarla, que vuelvan: con la misma animación que al bajar la página.
+ */
+export function pedirRecogida(si: boolean) {
+  window.dispatchEvent(new CustomEvent(RECOGIDA, { detail: si }));
 }
 
 /**
@@ -61,12 +70,15 @@ export default function Armazon({ barra, nav, children }: { barra: ReactNode; na
       window.clearTimeout(sinAnimar);
       sinAnimar = window.setTimeout(() => el.style.removeProperty("--duracion-recogida"), CALMA_MS);
     };
+    const alPedirla = (e: Event) => recoger((e as CustomEvent<boolean>).detail);
     window.addEventListener("scroll", alDesplazar, { passive: true });
     window.addEventListener(RECOGER, alSaltar);
+    window.addEventListener(RECOGIDA, alPedirla);
     return () => {
       window.clearTimeout(sinAnimar);
       window.removeEventListener("scroll", alDesplazar);
       window.removeEventListener(RECOGER, alSaltar);
+      window.removeEventListener(RECOGIDA, alPedirla);
     };
   }, []);
 

@@ -25,58 +25,10 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  text-decoration: none; /* la que es enlace (PestanaEnlace) */
   -webkit-tap-highlight-color: transparent;
 }
 .pestana[aria-selected="true"] {
   color: var(--primario);
   border-bottom-color: var(--primario);
   font-weight: 700;
-}
-/* En camino: el toque ya se mandó y el servidor no ha respondido; la pestaña late con el color de acción */
-.pestana:has(> .enCamino) {
-  color: var(--primario);
-  animation: latido 0.9s ease-in-out infinite;
-}
-.enCamino {
-  display: none;
-}
-@keyframes latido {
-  50% {
-    opacity: 0.55;
-  }
-}
-
-/* PanelPestana: deslizamiento de 200 ms en la dirección de la pestaña tocada (docs/rediseno/38). */
-@keyframes deslizaDerecha {
-  from {
-    opacity: 0;
-    transform: translateX(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-@keyframes deslizaIzquierda {
-  from {
-    opacity: 0;
-    transform: translateX(-18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-.entraDerecha {
-  animation: deslizaDerecha 200ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
-.entraIzquierda {
-  animation: deslizaIzquierda 200ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
-@media (prefers-reduced-motion: reduce) {
-  .entraDerecha,
-  .entraIzquierda {
-    animation: none;
-  }
 }

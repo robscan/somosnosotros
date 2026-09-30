@@ -32,7 +32,7 @@ describe("agenda", () => {
     expect(filtrarAgenda([slp, madrid], ctx).lista.map((e) => e.id)).toEqual(["madrid"]);
   });
   it("el chip de fecha también encuentra un evento de varios días en cualquiera de los días que ocupa (OL-218)", () => {
-    // Del 6 al 8 de octubre: el calendario de ChipFecha marca los tres días como disponibles (`diasActivosCalendario`)
+    // Del 6 al 8 de octubre: el calendario de Cuándo marca los tres días con evento (`diasActivosCalendario`)
     // — sin esto, elegir el 7 (no el día de inicio) filtraba a una lista vacía (bitácora 247).
     const varios = evento({ id: "varios", inicio: "2026-10-06T17:00:00Z", fin: "2026-10-08T20:00:00Z" });
     const ctxSinFin = { filtro: "todos" as const, punto: null, seguidos: null, cuando: null, ahora: AHORA };

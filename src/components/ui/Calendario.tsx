@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { etiquetaDia, hayMesAnterior, haySiguienteMes, mesAnterior, mesInicial, mesSiguiente, semanasDelMes, sumarDiasIso, type DiaCalendario, type DiasActivos } from "@/lib/calendario";
 import { diaLargo } from "@/lib/fechas";
 import { IconoCaret } from "./Iconos";
-import SoloLector from "./SoloLector";
 import styles from "./Calendario.module.css";
 
 const DIAS_SEMANA = ["L", "M", "M", "J", "V", "S", "D"];
@@ -24,12 +23,9 @@ type Props = {
   desde: string;
   /** El último día del rango; igual a `desde` con un solo día. */
   hasta: string;
-  /** Qué días tienen al menos un evento y cuántos (OL-218). Sin él (el alta de un evento) todos los días futuros se
-   *  pueden elegir y ninguno lleva punto. */
+  /** Qué días tienen al menos un evento y cuántos (OL-218): los que sí llevan un punto (Cuándo; los sin eventos se pueden
+   *  elegir y el botón dice «Sin eventos» si el rango queda vacío). Sin él (el alta de un evento) ninguno lo lleva. */
   diasActivos?: DiasActivos;
-  /** Qué pasa con los días sin eventos: `desactivar` los apaga y no se pueden elegir (Lugares); `marcar` los deja elegibles
-   *  y solo pone un punto bajo los que sí tienen (Cuándo: el botón dice «Sin eventos» si el rango queda vacío). */
-  sinEventos?: "desactivar" | "marcar";
   /** Un día pasado que sí se puede elegir: el de un evento ya pasado que se edita (precisión del founder, OL-218). */
   pasadoPermitido?: string;
   /** Sin las semanas que ya pasaron enteras (Cuándo: el mes en curso arranca en la semana de hoy). */
@@ -43,10 +39,10 @@ type Props = {
 /**
  * El calendario del mes (OL-162, bitácora 197; extraído de `SelectorFecha` en P5 para que la hoja Cuándo lo use dentro de
  * sí misma, sin copiarlo): flechas de mes, lunes a domingo, hoy marcado, los pasados apagados y, con `diasActivos`, un
- * punto o un apagado según `sinEventos`. Un día elegido va en círculo lleno; con un rango, los dos extremos van llenos y los
+ * punto en los que tienen eventos. Un día elegido va en círculo lleno; con un rango, los dos extremos van llenos y los
  * de en medio en el tono suave. Teclado de rejilla: flechas entre días (y meses), Enter o espacio para elegir.
  */
-export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, sinEventos = "desactivar", pasadoPermitido, sinSemanasPasadas = false, permiteQuitar, onElegir }: Props) {
+export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, pasadoPermitido, sinSemanasPasadas = false, permiteQuitar, onElegir }: Props) {
   const limite = min && min > hoy ? min : hoy;
   const [anio, setAnio] = useState(() => mesInicial(desde, limite).anio);
   const [mes, setMes] = useState(() => mesInicial(desde, limite).mes);
@@ -58,9 +54,8 @@ export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, 
   const puedeMesSiguiente = haySiguienteMes(anio, mes, diasActivos);
   const ahora = new Date();
 
-  /** Un día pasado se bloquea siempre, salvo `pasadoPermitido`. */
-  const bloqueado = (d: DiaCalendario) => d.pasado && d.fecha !== pasadoPermitido;
-  const apagado = (d: DiaCalendario) => d.delMes && (bloqueado(d) || (sinEventos === "desactivar" && diasActivos !== undefined && !d.pasado && !diasActivos.has(d.fecha)));
+  /** Un día pasado se apaga siempre, salvo `pasadoPermitido`. */
+  const apagado = (d: DiaCalendario) => d.delMes && d.pasado && d.fecha !== pasadoPermitido;
 
   function irAMes(delta: 1 | -1) {
     const { anio: a, mes: m } = delta === 1 ? mesSiguiente(anio, mes) : mesAnterior(anio, mes);
@@ -148,7 +143,7 @@ export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, 
                   role={d.delMes ? "gridcell" : undefined}
                   key={d.fecha}
                   data-fecha={d.delMes ? d.fecha : undefined}
-                  className={[styles.dia, !d.delMes && styles.fuera, d.hoy && styles.hoy, extremo && styles.elegido, enRango && styles.enRango, apagado(d) && styles.desactivado, d.delMes && !d.pasado && conEventos && sinEventos === "marcar" && styles.conEventos].filter(Boolean).join(" ")}
+                  className={[styles.dia, !d.delMes && styles.fuera, d.hoy && styles.hoy, extremo && styles.elegido, enRango && styles.enRango, apagado(d) && styles.desactivado, d.delMes && !d.pasado && conEventos && styles.conEventos].filter(Boolean).join(" ")}
                   tabIndex={d.delMes && d.fecha === foco ? 0 : -1}
                   aria-current={d.delMes && d.hoy ? "date" : undefined}
                   aria-selected={d.delMes ? extremo || enRango : undefined}
@@ -162,46 +157,6 @@ export default function Calendario({ hoy, min, zona, desde, hasta, diasActivos, 
                 </button>
               );
             })}
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-/**
- * El estado «cargando» (bitácora 245/247): mientras no se sabe qué días tienen eventos (una `Promise` de `diasActivos`
- * sin resolver), quien usa el calendario suspende y en su lugar sale esto — el mismo título y las mismas flechas de mes
- * (apagadas: no se sabe todavía hasta dónde hay datos), la rejilla como un esqueleto del mismo tamaño (5 semanas × 7)
- * para que nada salte al llegar los datos, y un aviso que solo oyen los lectores de pantalla.
- */
-export function CalendarioCargando({ hoy, min, desde }: { hoy: string; min?: string; desde: string }) {
-  const { anio, mes } = mesInicial(desde, min && min > hoy ? min : hoy);
-  return (
-    <>
-      <div className={styles.cabeceraMes}>
-        <button type="button" className={styles.flecha} aria-label="Mes anterior" disabled>
-          <IconoCaret width={18} height={18} className={styles.izquierda} />
-        </button>
-        <strong>{tituloMes(anio, mes)}</strong>
-        <button type="button" className={styles.flecha} aria-label="Mes siguiente" disabled>
-          <IconoCaret width={18} height={18} className={styles.derecha} />
-        </button>
-      </div>
-      <div className={styles.diasSemana} aria-hidden="true">
-        {DIAS_SEMANA.map((d, i) => (
-          <span key={i}>{d}</span>
-        ))}
-      </div>
-      <SoloLector role="status" aria-live="polite">
-        Cargando los días con eventos…
-      </SoloLector>
-      <div className={styles.grid} aria-hidden="true">
-        {Array.from({ length: 5 }).map((_semana, i) => (
-          <div className={styles.semana} key={i}>
-            {Array.from({ length: 7 }).map((_celda, j) => (
-              <span className={styles.celda} key={j} />
-            ))}
           </div>
         ))}
       </div>

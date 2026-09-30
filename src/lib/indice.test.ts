@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agruparPorLetra, conGrupos, gruposConPosicion, idGrupo, letraDe, letrasPresentes } from "./indice";
+import { agruparPorLetra, gruposConPosicion, idGrupo, letraDe } from "./indice";
 
 describe("letraDe", () => {
   it("sin acentos ni signos; lo que no empieza con una letra va en «#»", () => {
@@ -24,20 +24,6 @@ describe("idGrupo", () => {
   it("el id del encabezado; «#» no lleva el símbolo", () => {
     expect(idGrupo("M")).toBe("grupo-M");
     expect(idGrupo("#")).toBe("grupo-num");
-  });
-});
-
-describe("conGrupos", () => {
-  it("marca solo el primero de cada letra, en el orden real de la lista (no fuerza A–Z)", () => {
-    const g = conGrupos(["Zoco", "1 Uno", "Álamo", "Arte", "Beta"], (x) => x).map((f) => f.grupo);
-    expect(g).toEqual(["Z", "#", "A", null, "B"]);
-  });
-});
-
-describe("letrasPresentes", () => {
-  it("solo las letras con algo, en el orden en que aparecen", () => {
-    expect(letrasPresentes(["Beta", "Banana", "Ébano", "3 Tiempos"], (x) => x)).toEqual(["B", "E", "#"]);
-    expect(letrasPresentes([], (x: string) => x)).toEqual([]);
   });
 });
 

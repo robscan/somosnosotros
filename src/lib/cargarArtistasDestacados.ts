@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { conProximaFecha, type ArtistaLista, type ArtistaResumen, type FechaDeArtista } from "./artistas";
 import { enOrden, leerTira } from "./destacados";
-import { nombreSitio } from "./eventos";
+import { sitioEnLista } from "./eventos";
 import { filtroSinPasar } from "./fechas";
 
 /** Tope del carril "Artistas destacados" de Inicio (OL-156, segunda vuelta): una tira chica, no el directorio. */
@@ -50,7 +50,7 @@ export async function cargarArtistasDestacados(supabase: SupabaseClient | null, 
     const e = Array.isArray(fila.evento) ? fila.evento[0] : fila.evento;
     if (!e) continue;
     const lugar = Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar;
-    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
+    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: sitioEnLista({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
   }
 
   let ids: string[];

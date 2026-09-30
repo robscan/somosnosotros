@@ -1,0 +1,156 @@
+/* ==========================================================================
+   La hoja de Lugares (docs/rediseno/50, P5b; bloque «8. Lugares» del prototipo firmado).
+   La hoja es un solo elemento que cubre la pantalla, de la franja de estado al pie, y DESPLAZA: un hueco arriba (`::before`, la hoja
+   entera menos lo que asoma recogida) y luego el cuerpo blanco, que asoma desde abajo. Arrastrar el cuerpo lo sube; cuando su borde
+   llega arriba (llena) el mismo gesto sigue desplazando el contenido: una sola inercia. Las alturas las mide y las asienta
+   `HojaLugares.tsx`, y el CSS solo lee `data-hoja` (recogida · asoma · media · llena), que pone la hoja en el teléfono.
+   1. La hoja · 2. El cuerpo y su franja · 3. Desde 792, el panel
+   ========================================================================== */
+
+/* 1. La hoja. En el teléfono va sobre la barra y la fila de contexto (llena las cubre) y bajo la navegación. Recibe todos los toques
+   —en el iPhone, un desplazador con `pointer-events: none` no desplaza—; para que el mapa reciba los del hueco, `HojaLugares`
+   la recorta en reposo (`clip-path`). `--alto-franja` es lo que se ve de la lista recogida (el asa y la cantidad); con una ficha
+   abierta, lo que se ve es su cabecera. */
+.hoja {
+  --alto-franja: 64px;
+  --hoja-recogida: var(--alto-franja);
+  position: fixed;
+  inset: var(--tope) 0 0;
+  z-index: calc(var(--z-flotante) - 1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* La posición de la hoja la lleva HojaLugares, no el navegador: sin anclaje, que la movía sola al cambiar lo que hay dentro. */
+  overflow-anchor: none;
+  scrollbar-width: none;
+}
+.hoja[data-ficha] {
+  --hoja-recogida: calc(20px + var(--boton-icono) + var(--espacio-2));
+}
+/* Hasta que la hoja mide sus alturas y se pone en la suya (`data-hoja`, al hidratar) no se ve: así, al cargar la página, no salta de
+   recogida a asoma. */
+@media (max-width: 791px) {
+  .hoja:not([data-hoja]) {
+    visibility: hidden;
+  }
+}
+.hoja::-webkit-scrollbar {
+  display: none;
+}
+.hoja::before {
+  content: "";
+  display: block;
+  height: calc(100% - var(--nav-abajo) - var(--hoja-recogida));
+}
+/* Llena, la hoja enseña su barra de desplazamiento (la del sistema en el iPhone, al desplazar; una fina en los navegadores de
+   escritorio): la hoja cubre la pantalla y la barra es la suya. */
+.hoja[data-hoja="llena"] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+}
+.hoja[data-hoja="llena"]::-webkit-scrollbar {
+  display: block;
+}
+
+/* 2. El cuerpo blanco, con las esquinas de arriba redondas (llena, cuadrado), y su franja: el asa y la cantidad, lo que queda a la
+   vista con la hoja recogida. El asa es un botón que cubre toda la franja (pasa de 44) y la cantidad va debajo de él. */
+.cuerpo {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
+  min-height: 100%;
+  padding-bottom: var(--nav-abajo);
+  background: var(--fondo);
+  border-radius: var(--radio-hoja) var(--radio-hoja) 0 0;
+  box-shadow: var(--sombra-panel);
+  overflow: clip;
+  transition: border-radius 150ms;
+}
+.hoja[data-hoja="llena"] .cuerpo {
+  border-radius: 0;
+}
+/* Con la ficha abierta, la ficha misma pone el aire de abajo: su barra de Seguir llega al pie de la hoja, no a un colchón de más. */
+.hoja[data-ficha] .cuerpo {
+  padding-bottom: 0;
+}
+/* Con la ficha abierta, la franja y la lista siguen en su sitio (la lista conserva su desplazamiento) pero no se ven. */
+.hoja[data-ficha] .cuerpo > :not([data-ficha-hoja]) {
+  display: none;
+}
+.franja {
+  display: grid;
+  height: var(--alto-franja);
+}
+.franja > * {
+  grid-area: 1 / 1;
+}
+.asa {
+  display: grid;
+  align-content: start;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
+}
+.asa::before {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 4px;
+  margin: var(--espacio-2) auto 0;
+  border-radius: 2px;
+  background: var(--asa);
+}
+.resumen {
+  align-self: end;
+  padding: 0 var(--gutter) var(--espacio-2);
+  font-size: var(--letra-xl);
+  line-height: 28px;
+  font-variation-settings: var(--ancho-titulo);
+}
+.resumen small {
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+  font-weight: 500;
+  font-variation-settings: var(--ancho-texto);
+}
+
+/* 3. Desde 792 la hoja es el panel izquierdo (400 px), sin hueco ni asa, y desplaza como cualquier panel; el mapa ocupa el resto.
+   La navegación sigue siendo la barra de abajo hasta que sea un carril (P7): el panel acaba donde ella empieza. */
+@media (min-width: 792px) {
+  .hoja {
+    --gutter: var(--espacio-5);
+    position: static;
+    grid-area: hoja;
+    min-height: 0;
+    border-right: 1px solid var(--borde);
+    background: var(--fondo-contenido);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+  }
+  .hoja::-webkit-scrollbar {
+    display: block;
+  }
+  .hoja::before,
+  .asa {
+    display: none;
+  }
+  .cuerpo {
+    min-height: 0;
+    padding-bottom: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--fondo-contenido);
+  }
+  .franja {
+    height: auto;
+  }
+  .resumen {
+    padding-top: var(--espacio-3);
+    font-size: var(--letra-lg);
+  }
+}

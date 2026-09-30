@@ -15,12 +15,12 @@ type EstadoMapa = "cargando" | "listo" | "sin-token" | "error";
 type Punto = { lat: number; lng: number };
 
 type Props = {
-  /** "ver": pantalla completa con los lugares. "elegir": recuadro con un pin que se arrastra (alta/edición). */
+  /** "ver": los lugares, llenando la caja donde se pone. "elegir": recuadro con un pin que se arrastra (alta/edición). */
   modo?: "ver" | "elegir";
   lugares?: LugarLista[];
-  /** Solo en "ver": al tocar un lugar (o el mapa, con null). Sin esto, el lugar navega a su ficha. */
-  onPin?: (lugar: LugarLista | null) => void;
-  /** Solo en "ver": id del lugar resaltado (el de la tarjeta abierta). */
+  /** Solo en "ver": al tocar un lugar. Sin esto, el lugar navega a su ficha. */
+  onPin?: (lugar: LugarLista) => void;
+  /** Solo en "ver": id del lugar resaltado (el de la ficha abierta). */
   elegido?: string | null;
   /** La persona en el mapa (punto azul); `vez` cambia con cada toque al botón de ubicación para volver a centrar. En "elegir" solo se pinta: el pin es quien centra. */
   ubicacion?: (Punto & { vez: number }) | null;
@@ -29,12 +29,13 @@ type Props = {
   onCambio?: (p: Punto) => void;
   /** Solo en "ver": lugar en el que centrar el mapa al abrir. */
   centrarEn?: Punto | null;
-  /** Solo en "ver": puntos que encuadrar; `vez` cambia con cada encuadre nuevo (búsqueda, encuadre inicial o "cercanos").
-   *  Uno solo: se acerca a él. `paraBusqueda` deja más aire arriba, para no tapar la lista de resultados de la lupa. */
-  encuadre?: { puntos: Punto[]; vez: number; paraBusqueda?: boolean } | null;
+  /** Solo en "ver": puntos que encuadrar; `vez` cambia con cada encuadre nuevo (búsqueda, encuadre inicial, "cercanos" o el
+   *  lugar cuya ficha se abre). Uno solo: se acerca a él. */
+  encuadre?: { puntos: Punto[]; vez: number } | null;
+  /** Solo en "ver": lo que una hoja tapa del mapa por abajo (px). Cada encuadre lo deja libre, para que el lugar o los
+   *  lugares encuadrados no queden detrás de ella (la hoja de Lugares, que cambia de altura). */
+  tapaAbajo?: number;
   ciudad?: Ciudad;
-  /** "pantalla": fijo a toda la pantalla (con panel encima). "caja": llena el contenedor donde se pone. */
-  presentacion?: "pantalla" | "caja";
   /** Solo en "ver": los lugares que la persona sigue (con sesión), en verde (`--ok`), encima de los demás. El
    *  resalte lo lleva el seguido, no el destacado (docs/rediseno/35, decisión del founder tras firmar, 2026-09-22;
    *  el color, corrección del founder, 2026-09-22, OL-128: "el mismo color de seguidos"). Sin aro: el founder lo
@@ -196,7 +197,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
  * Único renderer de mapa de la app (acuerdo del council: "un solo renderer de mapa").
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, encuadre = null, ciudad = CIUDAD_INICIAL, presentacion = "pantalla", seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS }: Props) {
+export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null, ubicacion = null, valor = null, onCambio, centrarEn = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
@@ -205,6 +206,11 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
   useEffect(() => {
     onPinRef.current = onPin;
   }, [onPin]);
+  // Cada encuadre lee la última altura de la hoja sin repetirse cuando ella cambia (la cámara solo se mueve al encuadrar).
+  const tapaRef = useRef(tapaAbajo);
+  useEffect(() => {
+    tapaRef.current = tapaAbajo;
+  }, [tapaAbajo]);
   const pinElegirRef = useRef<Marker | null>(null);
   const onCambioRef = useRef(onCambio);
   useEffect(() => {
@@ -236,10 +242,10 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
         zoom: centrarEn || valor ? 16 : ciudad.zoom,
         language: "es",
         attributionControl: false,
-        logoPosition: "bottom-left", // arriba van los chips de tipo
+        logoPosition: modo === "ver" ? "top-left" : "bottom-left", // abajo, en "ver", va la hoja de Lugares
       });
       mapaRef.current = mapa;
-      mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), modo === "ver" ? "bottom-left" : "bottom-right");
+      mapa.addControl(new mapboxgl.AttributionControl({ compact: true }), modo === "ver" ? "top-left" : "bottom-right");
       mapa.on("style.load", () => {
         const importaStandard = mapa?.getStyle()?.imports?.some((i) => i.id === "basemap");
         if (importaStandard) mapa?.setConfigProperty("basemap", "lightPreset", "day");
@@ -252,12 +258,13 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
       if (modo === "elegir") {
         mapa.on("click", (e) => onCambioRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
       } else {
-        // Tocar un lugar abre su tarjeta (o su ficha); tocar fuera cierra la tarjeta.
+        // Tocar un lugar abre su ficha; tocar fuera no hace nada.
         mapa.on("click", (e) => {
           const id = mapa ? lugarTocado(mapa, e) : null;
-          const lugar = id ? (lugaresRef.current.get(id) ?? null) : null;
-          if (lugar && !onPinRef.current) routerRef.current.push(hrefLugar(lugar));
-          else onPinRef.current?.(lugar);
+          const lugar = id ? lugaresRef.current.get(id) : undefined;
+          if (!lugar) return;
+          if (onPinRef.current) onPinRef.current(lugar);
+          else routerRef.current.push(hrefLugar(lugar));
         });
         // Con ratón, la mano sobre un lugar.
         mapa.on("mousemove", (e) => {
@@ -298,7 +305,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     else agregarCapas(mapa, datos);
   }, [estado, modo, lugares, seguidos, destacados]);
 
-  // Los puntos a encuadrar: uno solo, el mapa se acerca (dejando sitio a la tarjeta); varios, se encuadran. Sirve
+  // Los puntos a encuadrar: uno solo, el mapa se acerca (dejando libre lo que tapa la hoja); varios, se encuadran. Sirve
   // para lo que encontró la búsqueda, el encuadre inicial (lugares de la semana y destacados) y "cercanos" (la
   // persona y los cinco lugares más próximos): quien llama decide qué puntos manda (docs/rediseno/35).
   useEffect(() => {
@@ -308,12 +315,12 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     const duration = sinMovimiento ? 0 : 600;
     if (encuadre.puntos.length === 1) {
       const p = encuadre.puntos[0];
-      mapa.flyTo({ center: [p.lng, p.lat], zoom: Math.max(mapa.getZoom(), 15), offset: encuadre.paraBusqueda ? [0, -48] : [0, 0], duration });
+      mapa.flyTo({ center: [p.lng, p.lat], zoom: Math.max(mapa.getZoom(), 15), padding: { bottom: tapaRef.current }, duration });
       return;
     }
     let cancelado = false;
-    const arriba = encuadre.paraBusqueda ? 132 : 56;
-    const abajo = encuadre.paraBusqueda ? 96 : presentacion === "pantalla" ? Math.round(window.innerHeight * 0.5) + 24 : 72;
+    const arriba = 56;
+    const abajo = Math.max(72, tapaRef.current + 24);
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
       const limites = new mapboxgl.LngLatBounds();
@@ -323,9 +330,9 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
     return () => {
       cancelado = true;
     };
-  }, [estado, modo, encuadre, presentacion]);
+  }, [estado, modo, encuadre]);
 
-  // El lugar de la tarjeta abierta se ve más grande.
+  // El lugar de la ficha abierta se ve más grande.
   useEffect(() => {
     const mapa = mapaRef.current;
     if (estado !== "listo" || !mapa || !mapa.getSource(FUENTE_LUGARES)) return;
@@ -394,7 +401,7 @@ export default function Mapa({ modo = "ver", lugares = [], onPin, elegido = null
   }, [estado, modo, valor]);
 
   return (
-    <div className={modo !== "ver" ? styles.mapaEmbebido : presentacion === "caja" ? styles.mapaCaja : styles.mapa} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
+    <div className={modo !== "ver" ? styles.mapaEmbebido : styles.mapa} aria-label={`Mapa de ${ciudad.nombre}`} role="region">
       <div ref={contenedor} className={styles.lienzo} />
       {estado !== "listo" && (
         <p className={styles.aviso} role="status">

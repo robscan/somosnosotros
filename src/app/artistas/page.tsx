@@ -11,7 +11,7 @@ import LetreroCorreoLigado from "./LetreroCorreoLigado";
 import { CIUDAD_INICIAL, ciudadPorSlug, type Ciudad } from "@/lib/ciudad";
 import { cargarCiudadesDeArtistas } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
-import { nombreSitio } from "@/lib/eventos";
+import { sitioEnLista } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { gruposConPosicion } from "@/lib/indice";
 import { normalizarNombre } from "@/lib/lugares";
@@ -108,7 +108,7 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
     const e = Array.isArray(fila.evento) ? fila.evento[0] : fila.evento;
     if (!e) continue;
     const lugar = Array.isArray(e.lugar) ? (e.lugar[0] ?? null) : e.lugar;
-    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: nombreSitio({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
+    fechas.push({ artista_id: fila.artista_id, evento: { id: e.id, titulo: e.titulo, inicio: e.inicio, zona: e.zona, sitio: sitioEnLista({ lugar: lugar ? { nombre: lugar.nombre, portada: null } : null, sitio_texto: e.sitio_texto, sitio_direccion: e.sitio_direccion, sitio_reservado: e.sitio_reservado }) } });
   }
   const porDisciplina = ((d1.data ?? []) as { disciplina: string; n: number }[]).filter((x) => x.n > 0);
   const totalCiudad = porDisciplina.reduce((s, x) => s + Number(x.n), 0);

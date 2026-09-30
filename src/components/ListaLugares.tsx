@@ -1,121 +1,59 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { Ciudad } from "@/lib/ciudad";
-import { enOrden, tarjetaLugar, type Destacado, type Tarjeta } from "@/lib/destacados";
-import { conGrupos, idGrupo } from "@/lib/indice";
-import { etiquetaTipo, filtrarLugares, ordenarLugares, type LugarLista } from "@/lib/lugares";
+import { useEffect, useRef, useState } from "react";
+import type { LugarLista } from "@/lib/lugares";
 import { siguienteTanda, tandaInicial } from "@/lib/tandas";
 import CargarMas from "./ui/CargarMas";
-import Destacados from "./Destacados";
 import RenglonLugar from "./RenglonLugar";
 import { useCanalDePantalla } from "./useCanalDeListas";
 import { useCentinela } from "./useCentinela";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
-import Boton from "@/components/ui/Boton";
-import comun from "./Lista.module.css";
 import styles from "./ListaLugares.module.css";
 
 type Props = {
+  /** Los lugares que se ven, ya filtrados y en su orden. */
   lugares: LugarLista[];
-  punto: { lat: number; lng: number } | null;
-  ciudad: Ciudad;
-  conSesion: boolean;
-  /** Tipo ya aplicado por VistaLugares (los lugares llegan filtrados); solo para el texto del vacío. */
-  tipo?: string | null;
-  /** El chip de fecha ya aplicado por VistaLugares (`lugaresConEventoElDia`, OL-210): `lugares` llega filtrado;
-   *  esta prop es solo para distinguir, en el texto del vacío, "sin fecha" de "no había lugares que cargar". */
-  fecha?: string;
-  /** La búsqueda por nombre vive en la cabecera de VistaLugares: la misma sirve al mapa. */
-  busqueda: string;
-  /** El aviso de ubicación, arriba de la lista. */
-  aviso?: ReactNode;
-  /** Los lugares que la persona sigue (se ven y cambian al deslizar); null = sin sesión. */
-  seguidos?: string[] | null;
+  /** La distancia de cada uno desde quien mira, si se sabe (la lista se ordena por cercanía). */
+  km: Map<string, number>;
+  /** Los lugares que la persona sigue (se ven y cambian con el botón de cada renglón); null = sin sesión. */
+  seguidos: string[] | null;
   /** Para la pregunta de avisos tras el primer Seguir; null = sin sesión. */
-  avisos?: AvisosLista | null;
-  /** La tira de destacados (docs/rediseno/20); se va con un tipo, una búsqueda o una fecha elegida (OL-210). */
-  destacados?: Destacado[];
-  eventosSemana?: Tarjeta[];
+  avisos: AvisosLista | null;
+  /** Tocar un renglón abre el lugar (la ficha dentro de la hoja) en vez de ir a su página. */
+  alAbrir: (lugar: LugarLista) => void;
 };
 
 /**
- * Lista de lugares: renglones como los de la agenda (foto, nombre, calle, próximo evento); alfabético por defecto,
- * con encabezados de letra y una tira de acceso directo en la cabecera (corrección del founder, 2026-09-19: no
- * filtra, lleva al grupo), o por distancia con la ubicación. Con Cercanos o búsqueda, los encabezados y la tira se van, y se ordena
- * por cercanía o se busca en todo. La búsqueda, Cercanos, los tipos y el chip de fecha van en la cabecera de
- * VistaLugares, que los comparte con el mapa; `lugares` ya llega filtrado por fecha desde ahí (OL-210).
+ * Los renglones de la hoja de Lugares (docs/rediseno/50, P5b): foto, nombre, qué es, calle y kilómetros, próximo evento y el
+ * botón de seguir. Ya llegan filtrados (Filtros y la lupa viven en la fila de contexto de `VistaLugares`, que los comparte con
+ * el mapa) y en su orden: por cercanía con la ubicación, y alfabético sin ella. La cantidad y lo que dice una lista vacía son
+ * de la propia hoja. Si la pantalla puso su canal (Lugares), el aviso y la pregunta son de ella.
  */
-export default function ListaLugares({ lugares, tipo = null, fecha = "", busqueda, punto, ciudad, conSesion, aviso, seguidos = null, avisos = null, destacados = [], eventosSemana = [] }: Props) {
-  const { lista, km } = ordenarLugares(filtrarLugares(lugares, busqueda), punto);
-  // Sin Cercanos ni búsqueda, la lista se agrupa por letra (y la tira de la cabecera de VistaLugares lleva a cada
-  // grupo); con cualquiera de las dos, no tiene sentido (el orden ya no es alfabético) y se van las dos cosas.
-  const alfabetico = !punto && !busqueda.trim();
-  const filas = alfabetico ? conGrupos(lista, (l) => l.nombre) : lista.map((x) => ({ x, grupo: null }));
-  // Al deslizar un lugar: Seguir (decisión del founder, 2026-09-16; bitácora 071).
-  // Si la pantalla puso su canal (Lugares, con Mapa y Lista), el aviso y la pregunta son de ella: cambiar de vista no
-  // empieza de cero. Sin canal de pantalla, la lista sigue con el suyo.
+export default function ListaLugares({ lugares, km, seguidos, avisos, alAbrir }: Props) {
   const seguir = useSeguirEnLista("lugar", seguidos, avisos, useCanalDePantalla());
-  const hrefNuevo = conSesion ? "/lugares/nuevo" : "/entrar?siguiente=/lugares/nuevo";
 
-  // Carga progresiva (OL-158): la lista ya está completa en el teléfono (como siempre); lo que se reparte en tandas
-  // es cuánto se pinta de una vez, para que la primera línea de contenido se vea antes en una ciudad con muchos
-  // lugares. Se acota de nuevo cada vez que cambia el total (otro tipo, Cercanos, una búsqueda).
-  const [mostrados, setMostrados] = useState(() => tandaInicial(filas.length).mostrados);
-  const totalAnteriorRef = useRef(filas.length);
+  // Carga progresiva (OL-158): la lista ya está completa en el teléfono (como siempre); lo que se reparte en tandas es cuánto
+  // se pinta de una vez, para que la primera línea de contenido se vea antes en una ciudad con muchos lugares. Se acota de nuevo
+  // cada vez que cambia el total (otro filtro, Cercanos, una búsqueda).
+  const [mostrados, setMostrados] = useState(() => tandaInicial(lugares.length).mostrados);
+  const totalAnteriorRef = useRef(lugares.length);
   useEffect(() => {
-    if (totalAnteriorRef.current !== filas.length) {
-      totalAnteriorRef.current = filas.length;
-      setMostrados(tandaInicial(filas.length).mostrados);
+    if (totalAnteriorRef.current !== lugares.length) {
+      totalAnteriorRef.current = lugares.length;
+      setMostrados(tandaInicial(lugares.length).mostrados);
     }
-  }, [filas.length]);
-  const filasVisibles = filas.slice(0, mostrados);
-  const hayMasLugares = mostrados < filas.length;
-  const centinelaRef = useCentinela(hayMasLugares, () => setMostrados((m) => siguienteTanda(filas.length, m).mostrados));
+  }, [lugares.length]);
+  const hayMas = mostrados < lugares.length;
+  const centinelaRef = useCentinela(hayMas, () => setMostrados((m) => siguienteTanda(lugares.length, m).mostrados));
 
-  // "Aún no hay lugares" es la ciudad genuinamente vacía: con una fecha elegida, `lugares` puede llegar en 0
-  // porque ningún lugar tiene evento ese día (OL-210), no porque la ciudad no tenga ninguno — ese caso usa el
-  // texto del `<p className={comun.conteo}>` de abajo, no esta tarjeta.
-  if (lugares.length === 0 && !tipo && !fecha) {
-    return (
-      <section className={comun.vacio}>
-        <h2>Lugares</h2>
-        <p>Aún no hay lugares en {ciudad.nombre}. Registra el primero.</p>
-        <Boton href={hrefNuevo} variante="secundario">
-          Registrar un lugar
-        </Boton>
-      </section>
-    );
-  }
   return (
     <section className={styles.lista} aria-label="Lugares">
-      {aviso}
-      {/* Como con un tipo o una búsqueda, las tiras se van con una fecha elegida (OL-210): son curaduría de la
-          ciudad entera, no del día elegido, y seguir mostrándolas repetiría el bug de esta pieza a otra escala. */}
-      {!tipo && !busqueda.trim() && !fecha && <Destacados tarjetas={enOrden(destacados, lugares).map((l) => tarjetaLugar(l))} grande boton={(t) => seguir.boton(t.id, t.titulo)} />}
-      {!tipo && !busqueda.trim() && !fecha && <Destacados tarjetas={eventosSemana} encabezado="Con eventos esta semana" memoria="eventos-semana" detalleCompleto boton={(t) => seguir.boton(t.id, t.titulo)} />}
-      <p className={comun.conteo}>
-        {lista.length === 0
-          ? busqueda.trim()
-            ? "Ningún lugar se llama así. Si existe, regístralo."
-            : fecha
-              ? // Mismo texto que el vacío del Mapa con esta fecha (docs/rediseno/45, OL-174; OL-210: ahora también
-                // la Lista): con o sin tipo elegido, ninguno tiene evento ese día.
-                "Ningún lugar tiene eventos ese día."
-              : `Todavía no hay lugares de tipo ${etiquetaTipo(tipo ?? "").toLowerCase()}.`
-          : `${lista.length === 1 ? "1 lugar" : `${lista.length} lugares`}${punto ? " · ordenados por cercanía" : ""}`}
-      </p>
       <ul>
-        {filasVisibles.map(({ x: l, grupo }) => [
-          grupo && (
-            <li key={grupo} id={idGrupo(grupo)} className={comun.grupo} aria-hidden>
-              {grupo}
-            </li>
-          ),
-          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={seguir.boton(l.id, l.nombre)} />,
-        ])}
+        {lugares.slice(0, mostrados).map((l) => (
+          <RenglonLugar key={l.id} lugar={l} km={km.get(l.id)} boton={seguir.boton(l.id, l.nombre)} alAbrir={() => alAbrir(l)} />
+        ))}
       </ul>
-      <CargarMas hayMas={hayMasLugares} centinelaRef={centinelaRef} onVerMas={() => setMostrados((m) => siguienteTanda(filas.length, m).mostrados)} />
+      <CargarMas hayMas={hayMas} centinelaRef={centinelaRef} onVerMas={() => setMostrados((m) => siguienteTanda(lugares.length, m).mostrados)} />
       {seguir.extras}
     </section>
   );
