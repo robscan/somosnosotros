@@ -9,6 +9,7 @@ import { configPublica } from "@/lib/config";
 import { diaPin } from "@/lib/fechas";
 import { hrefLugar, type LugarLista } from "@/lib/lugares";
 import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa } from "@/lib/mapa";
+import { sinMovimiento } from "@/lib/movimiento";
 import { prioridadPin, propiedadesPin, rangosDeDias, RADIO_MEDIANO, TAMANO_DIA, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
 import styles from "./Mapa.module.css";
 
@@ -60,8 +61,6 @@ const ANCLAS_NOMBRE: ("top" | "bottom" | "left" | "right")[] = ["top", "bottom",
 /** Una sola lista vacía para el valor por defecto: una nueva en cada render volvería a pintar las capas. */
 const SIN_SEGUIDOS: string[] = [];
 const SIN_DESTACADOS: string[] = [];
-
-const sinMovimiento = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Lo que las capas leen de cada lugar (`propiedadesPin` más lo que dice el propio lugar). */
 type PropiedadesLugar = PropiedadesPin & { id: string; nombre: string; dia: string; elegido: boolean; rango: number };

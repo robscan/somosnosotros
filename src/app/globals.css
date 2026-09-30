@@ -161,14 +161,15 @@
   --duracion: 200ms; /* transición corriente: barras, hojas, cabeceras */
   --duracion-ficha: 220ms; /* una ficha al entrar o salir */
   --curva: cubic-bezier(0.22, 0.61, 0.36, 1); /* aceleración de todo lo que se mueve */
-  /* La hoja de Lugares con una ficha (`HojaLugares` los lee). Entra desde el borde de abajo con el resorte «Gentle» de
-     Figma (rigidez 100, amortiguación 15, masa 1: rebasa un 2,8 % y queda quieta en unos 0,8 s) y sale hacia él con el mismo, recortado donde ya
-     no se ve (la primera vez que llega a su recorrido, a los 366 ms). Cada curva trae aquí su respaldo `cubic-bezier`; el resorte de verdad
-     (`linear()`) lo pone el `@supports` de abajo. */
+  /* Lo que entra y sale con movimiento: la hoja de Lugares con una ficha (`HojaLugares`) y los chips que se ponen o se quitan de la fila de
+     contexto (`Chip`); los dos leen esto con `lib/movimiento`. Entra con el resorte «Gentle» de Figma (rigidez 100, amortiguación 15, masa 1:
+     rebasa un 2,8 % y queda quieta en unos 0,8 s) y sale con el mismo, recortado donde ya no se ve (la primera vez que llega a su recorrido, a
+     los 366 ms). Cada curva trae aquí su respaldo `cubic-bezier`; el resorte de verdad (`linear()`) lo pone el `@supports` de abajo. */
   --duracion-resorte: 800ms;
   --curva-resorte: cubic-bezier(0.35, 0.7, 0.1, 1.15);
   --duracion-salida: 366ms;
   --curva-salida: cubic-bezier(0.25, 0.05, 0.45, 0.9);
+  --escala-chip: 0.8; /* de qué tamaño parte un chip al entrar a la fila de contexto y a cuál llega al salir */
 }
 @supports (animation-timing-function: linear(0, 1)) {
   :root {

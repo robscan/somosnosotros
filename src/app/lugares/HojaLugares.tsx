@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type ReactNode, type Ref } from "react";
 import { avisarHoja } from "@/components/Armazon";
 import { CARRIL } from "@/lib/armazon";
-import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, tiempoEnMs, type Detente, type Detentes } from "@/lib/hoja";
+import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
+import { movimiento, sinMovimiento } from "@/lib/movimiento";
 import styles from "./HojaLugares.module.css";
 
 /** La lista asoma con dos renglones y medio: el tercero sale cortado a propósito, para que se entienda que hay más. */
@@ -15,18 +16,10 @@ const REBORDE = 24;
 
 /** Desde el carril la hoja es el panel de la izquierda, sin alturas ni asa. */
 const enPanel = () => window.matchMedia(CARRIL).matches;
-/** Quien pidió menos movimiento en su teléfono no ve la hoja entrar ni salir. */
-const sinMovimiento = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Lo que se ve del cuerpo de la hoja, del borde de abajo de la pantalla hasta su borde de arriba (px): lo que recorre al entrar o salir. Es
  *  una resta entre la hoja y su cuerpo, que se mueven juntos, así que da lo mismo aunque un movimiento esté a medias. */
 const visible = (hoja: HTMLElement, cuerpo: HTMLElement) => hoja.getBoundingClientRect().bottom - cuerpo.getBoundingClientRect().top;
-
-/** Cómo se mueve la hoja, según `globals.css` (`--duracion-<nombre>` y `--curva-<nombre>`): el resorte de la entrada y su recorte, la salida. */
-function movimiento(nombre: "resorte" | "salida"): KeyframeAnimationOptions {
-  const css = getComputedStyle(document.documentElement);
-  return { duration: tiempoEnMs(css.getPropertyValue(`--duracion-${nombre}`)), easing: css.getPropertyValue(`--curva-${nombre}`) };
-}
 
 /** Lo que la hoja mide de sí misma en el DOM, todo en posiciones de desplazamiento (`y`). */
 type Medidas = {

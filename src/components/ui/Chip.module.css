@@ -18,6 +18,7 @@
 .toque {
   position: relative;
   flex: none;
+  transform-origin: left center; /* al entrar y al salir de la fila de contexto crece y se encoge desde su borde izquierdo (`Chip`) */
   min-height: var(--alto-chip);
   padding: 0 var(--espacio-3);
   border: 1px solid var(--borde);

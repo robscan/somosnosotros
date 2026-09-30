@@ -1,7 +1,8 @@
 /** Prueba de componente de `FilaLugares` (docs/rediseno/50, P5b): la fila de contexto de Lugares con su hoja de Filtros, dentro de la `Cabecera` real
  *  y con sus estilos, en Chrome real a 390×844. Cubre (ajuste del founder, 2026-09-30) que «Solo lo que sigo» solo se ofrece con sesión: con ella,
  *  el bloque «Siguiendo» con su palanca, que al aplicarse pone el chip de la fila con su ✕; sin ella, la hoja trae Tipo y Con eventos, sin el
- *  título «Siguiendo», sin palanca y sin una raya de más.
+ *  título «Siguiendo», sin palanca y sin una raya de más. Y (ajuste del founder, 2026-09-30) que lo que se pone o se quita de la fila se nota:
+ *  el chip entra con el resorte, el del tipo se anima en su sitio al cambiarlo, y al quitar uno sale antes de quitarse el filtro.
  * PLAYWRIGHT_MODULE=/ruta/playwright-core/index.mjs CHROME_EXECUTABLE=/ruta/chrome node --test este-archivo
  */
 import { after, before, test } from "node:test";
@@ -15,8 +16,8 @@ import { build } from "esbuild";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const HOY = "2026-09-29";
-// Ocho lugares (el umbral de Filtros), de dos tipos.
-const LUGARES = Array.from({ length: 8 }, (_, i) => ({ id: `l${i}`, slug: `l${i}`, nombre: `Lugar ${i}`, tipo: i < 5 ? "museo" : "foro", direccion: null, lat: 22.15, lng: -100.97, portada: null, proximo: null }));
+// Ocho lugares (el umbral de Filtros), de dos tipos; los pares tienen un evento mañana.
+const LUGARES = Array.from({ length: 8 }, (_, i) => ({ id: `l${i}`, slug: `l${i}`, nombre: `Lugar ${i}`, tipo: i < 5 ? "museo" : "foro", direccion: null, lat: 22.15, lng: -100.97, portada: null, proximo: null, diasEvento: i % 2 === 0 ? ["2026-09-30"] : [] }));
 let browser, server, dir, origin;
 
 const mocks = {
@@ -105,5 +106,35 @@ test("Filtros de Lugares sin sesión: Tipo y Con eventos, sin el título «Sigui
   assert.equal(await aplicar(dialogo).innerText(), "Ver 3 lugares");
   await aplicar(dialogo).click();
   assert.deepEqual(await page.evaluate(() => window.qa.cambios.at(-1)), { tipo: "foro", conEventos: null, soloSigo: false });
+  await context.close();
+});
+
+/** Lo que anima un chip de la fila (por su nombre accesible): la duración y las propiedades de cada animación en curso. */
+const animaciones = (page, nombre) =>
+  page.getByRole("button", { name: nombre }).evaluate((e) => e.getAnimations().map((a) => ({ duracion: a.effect.getTiming().duration, propiedades: [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((k) => !["offset", "easing", "composite", "computedOffset"].includes(k)).sort() })));
+
+test("los chips de Lugares entran al ponerse, el del tipo se anima en su sitio al cambiarlo, y al quitar uno sale antes de quitarse el filtro", async () => {
+  const { context, page, dialogo } = await abrir();
+  await page.waitForTimeout(200);
+  await dialogo.getByRole("button", { name: /^Museo/ }).click();
+  await dialogo.getByRole("button", { name: "Esta semana" }).click();
+  await aplicar(dialogo).click();
+  const entra = [{ duracion: 800, propiedades: ["opacity", "transform"] }];
+  assert.deepEqual(await animaciones(page, "Quitar Museo"), entra);
+  assert.deepEqual(await animaciones(page, "Quitar Con eventos esta semana"), entra);
+  await page.waitForTimeout(900);
+  // Cambiar el tipo no pone un chip nuevo: el mismo chip se anima en su sitio con su valor.
+  await page.getByRole("button", { name: /^Filtros/ }).click();
+  await page.getByRole("dialog", { name: "Filtros" }).getByRole("button", { name: /^Foro/ }).click();
+  await aplicar(page.getByRole("dialog", { name: "Filtros" })).click();
+  assert.deepEqual(await animaciones(page, "Quitar Foro"), entra, "el chip del tipo se anima en su sitio");
+  await page.waitForTimeout(900);
+  // Quitarlo: primero sale, y solo entonces el filtro deja de estar puesto.
+  const antes = await page.evaluate(() => window.qa.cambios.length);
+  await page.getByRole("button", { name: "Quitar Foro" }).click();
+  assert.equal(await page.evaluate(() => window.qa.cambios.length), antes, "el filtro sigue puesto mientras el chip sale");
+  assert.deepEqual(await animaciones(page, "Quitar Foro"), [{ duracion: 366, propiedades: ["marginRight", "opacity", "transform"] }]);
+  await page.waitForFunction((n) => window.qa.cambios.length === n + 1, antes);
+  assert.deepEqual(await page.evaluate(() => window.qa.cambios.at(-1)), { tipo: null, conEventos: "semana", soloSigo: false });
   await context.close();
 });

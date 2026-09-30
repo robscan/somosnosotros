@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, masCercano, tiempoEnMs, type Detentes } from "./hoja";
+import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, masCercano, type Detentes } from "./hoja";
 
 /** Las alturas de la lista en un teléfono de 844: la franja, dos renglones y medio de 94 y el hueco que la deja llena. */
 const LISTA: Detentes = { recogida: 0, asoma: 235, llena: 690 };
@@ -145,14 +145,5 @@ describe("cabeceraCompacta: también dice dónde vive la pastilla de Seguir", ()
   it("con la hoja recogida en el teléfono es compacta (la pastilla se esconde); en el panel no hay recogida", () => {
     expect(cabeceraCompacta(0, 300, "recogida", false)).toBe(true);
     expect(cabeceraCompacta(0, 300, "recogida", true)).toBe(false);
-  });
-});
-
-describe("tiempoEnMs: lo que el minificador hace con las duraciones de globals.css", () => {
-  it("lee los milisegundos tal cual y los segundos que deja el minificador (800ms sale como .8s)", () => {
-    expect(tiempoEnMs("800ms")).toBe(800);
-    expect(tiempoEnMs(" 366ms ")).toBe(366);
-    expect(tiempoEnMs(".8s")).toBe(800);
-    expect(tiempoEnMs("0.366s")).toBe(366);
   });
 });
