@@ -13,12 +13,12 @@ import Boton from "@/components/ui/Boton";
 import BotonIcono from "@/components/ui/BotonIcono";
 import Cabecera from "@/components/ui/Cabecera";
 import { EsqueletoCaja } from "@/components/ui/Esqueleto";
-import { IconoUbicacion } from "@/components/ui/Iconos";
+import { IconoEncuadrar, IconoUbicacion } from "@/components/ui/Iconos";
 import comun from "@/components/Lista.module.css";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
-import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { eleccionesPuestas, etiquetaTipo, filtrarPorEleccion, lugaresAEncuadrar, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
@@ -280,6 +280,7 @@ export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaI
             geoPidiendo={geo === "pidiendo"}
             onCerrarGeo={() => setGeo("sin-pedir")}
             onUbicacion={centrarEnMi}
+            onEncuadrar={encuadrar}
             ficha={abierta}
             entrada={entrada}
             onAbrir={abrir}
@@ -320,6 +321,8 @@ type PropsCuerpo = {
   geoPidiendo: boolean;
   onCerrarGeo: () => void;
   onUbicacion: () => void;
+  /** Lleva la cámara a estos lugares (el botón «Encuadrar los lugares»). */
+  onEncuadrar: (puntos: Punto[]) => void;
   ficha: FichaAbierta | null;
   /** Cambia con cada ficha que se abre por un gesto de la persona: la hoja entra con movimiento. */
   entrada: number;
@@ -336,7 +339,7 @@ type PropsCuerpo = {
  * filtros, la ubicación pedida, la ficha abierta) llega como prop desde el componente de arriba, que es el dueño
  * de ese estado.
  */
-function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
+function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez, encuadre, tapaAbajo, notaGeo, geoPidiendo, onCerrarGeo, onUbicacion, onEncuadrar, ficha, entrada, onAbrir, onCerrarFicha, restaurar, alAsentar, alLejos, hojaRef }: PropsCuerpo) {
   const { lista, km } = useMemo(() => ordenarLugares(visibles, punto), [visibles, punto]);
   // En el mapa, los destacados van en naranja y los seguidos en verde (gana el verde); sin sesión, `seguidos` llega null y ningún
   // pin se resalta como seguido. Sin aro (OL-146, 2026-09-23: decisión del founder tras firmar el doc 35 y el 37), salvo el del lugar
@@ -350,6 +353,10 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
     return iniciales.length > 0 ? { puntos: iniciales, vez: 1 } : null;
   });
   const cantidad = visibles.length === 1 ? "1 lugar" : `${visibles.length} lugares`;
+  // «Encuadrar los lugares» sale cuando ninguno de los lugares (con una ficha abierta, el suyo) queda en lo que se ve del mapa, y los trae de vuelta.
+  const [fuera, setFuera] = useState(false);
+  const conEncuadrar = fuera && (ficha !== null || visibles.length > 0);
+  const encuadrarLosLugares = () => onEncuadrar(lugaresAEncuadrar({ ficha: ficha?.lugar ?? null, hayFiltros: eleccionesPuestas(eleccion) > 0, visibles, destacados: enTira, centro: ciudad.centro }));
 
   return (
     <>
@@ -364,10 +371,14 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           seguidos={idsSeguidos}
           destacados={enTira}
           tapaAbajo={tapaAbajo}
+          onFuera={setFuera}
         />
-        {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={styles.avisoMapa} />}
+        {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={`${styles.avisoMapa} ${conEncuadrar ? styles.avisoMapaBajo : ""}`} />}
         <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
           <IconoUbicacion width={22} height={22} />
+        </BotonIcono>
+        <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.encuadrar} ${conEncuadrar ? "" : styles.encuadrarOculto}`} onClick={encuadrarLosLugares} aria-label="Encuadrar los lugares">
+          <IconoEncuadrar width={22} height={22} />
         </BotonIcono>
       </div>
       <HojaLugares

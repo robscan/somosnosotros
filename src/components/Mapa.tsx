@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { ExpressionSpecification, GeoJSONSource, Map as MapaGL, MapMouseEvent, Marker, SymbolLayerSpecification } from "mapbox-gl";
@@ -12,6 +12,7 @@ import { colorDiseno, RADIO_TOQUE, TEXTOS_MAPBOX, type EstadoMapa } from "@/lib/
 import { sinMovimiento } from "@/lib/movimiento";
 import { prioridadPin, propiedadesPin, rangosDeDias, RADIO_MEDIANO, TAMANO_DIA, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
 import styles from "./Mapa.module.css";
+import { useFueraDeVista } from "./useFueraDeVista";
 
 type Punto = { lat: number; lng: number };
 
@@ -37,6 +38,9 @@ type Props = {
   /** Los lugares destacados por el administrador (docs/rediseno/20). Van en naranja (`--destacado`) salvo que además sean
    *  seguidos, que gana (OL-146/doc rediseno/37). */
   destacados?: string[];
+  /** Avisa cuando ninguno de los lugares que se ven en el mapa (con una ficha abierta, el suyo) cae en lo que se ve de él —su caja menos lo
+   *  que tapa la hoja—, y cuando vuelve alguno: el botón de encuadrar aparece y se va con eso (`useFueraDeVista`). */
+  onFuera?: (fuera: boolean) => void;
 };
 
 /** Los lugares van en capas del propio mapa (no en elementos encima). De abajo arriba, que es de menor a mayor rango (Mapbox coloca primero la
@@ -242,7 +246,7 @@ function lugarTocado(mapa: MapaGL, e: MapMouseEvent): string | null {
  * Mapa de los lugares, llenando la caja donde se pone (acuerdo del council: "un solo renderer de mapa" para Lugares).
  * Tema claro siempre: si el estilo se basa en Mapbox Standard se fuerza el preset de día. Plano, sin perspectiva.
  */
-export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS }: Props) {
+export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = null, encuadre = null, ciudad = CIUDAD_INICIAL, tapaAbajo = 0, seguidos = SIN_SEGUIDOS, destacados = SIN_DESTACADOS, onFuera }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapaGL | null>(null);
   const lugaresRef = useRef<Map<string, LugarLista>>(new Map());
@@ -264,6 +268,9 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
     routerRef.current = router;
   }, [router]);
   const [estado, setEstado] = useState<EstadoMapa>(() => (configPublica().mapboxToken ? "cargando" : "sin-token"));
+  // Lo que cuenta para «¿se ve alguno?»: con una ficha abierta, su lugar; si no, todos los que hay en el mapa.
+  const aVer = useMemo(() => (elegido ? lugares.filter((l) => l.id === elegido) : lugares), [lugares, elegido]);
+  useFueraDeVista(mapaRef, estado === "listo", aVer, tapaAbajo, onFuera);
 
   // Crear el mapa una vez.
   useEffect(() => {

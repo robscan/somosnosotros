@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calleCorta, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
+import { calleCorta, conProximo, diasConEvento, eleccionesPuestas, filtrarPorEleccion, hrefLugar, lugaresAEncuadrar, lugaresConEventoEn, lugaresEncuadreInicial, normalizarNombre, ordenarLugares, partesDeDireccion, SIN_ELECCION, tiposPresentes, validarLugar } from "./lugares";
 
 describe("normalizarNombre", () => {
   it("quita acentos, mayúsculas y signos", () => {
@@ -120,6 +120,37 @@ describe("lugaresEncuadreInicial", () => {
     const cerca = { ...base, id: "b", nombre: "B", lat: 22.15, lng: -100.98 };
     const r = lugaresEncuadreInicial([lejano, cerca], [], centro, AHORA);
     expect(r.map((l) => l.id)).toEqual(["b", "a"]); // ninguno es candidato: se completa por cercanía, "a" queda al final
+  });
+});
+
+describe("lugaresAEncuadrar: lo que encuadra «Encuadrar los lugares»", () => {
+  const AHORA = new Date("2026-09-19T16:00:00Z");
+  const centro = { lat: 22.1497, lng: -100.9764 };
+  const base = { tipo: "foro" as const, direccion: null, portada: null, proximo: null };
+  const conEvento = { ...base, id: "a", nombre: "A", lat: 22.15, lng: -100.97, proximo: { id: "e1", inicio: "2026-09-20T01:00:00Z", zona: "America/Mexico_City", titulo: "Evento" } };
+  const cerca = { ...base, id: "b", nombre: "B", lat: 22.15, lng: -100.98 };
+  const lejos = { ...base, id: "c", nombre: "C", lat: 25, lng: -105 };
+  const visibles = [conEvento, cerca, lejos];
+
+  it("con una ficha abierta, su lugar y nada más: como al abrirla", () => {
+    expect(lugaresAEncuadrar({ ficha: lejos, hayFiltros: false, visibles, destacados: [], centro, ahora: AHORA }).map((l) => l.id)).toEqual(["c"]);
+    expect(lugaresAEncuadrar({ ficha: lejos, hayFiltros: true, visibles, destacados: [], centro, ahora: AHORA }).map((l) => l.id)).toEqual(["c"]);
+  });
+
+  it("con filtros puestos, todo lo que dejan pasar: como al elegirlos", () => {
+    expect(lugaresAEncuadrar({ ficha: null, hayFiltros: true, visibles: [cerca, lejos], destacados: [], centro, ahora: AHORA }).map((l) => l.id)).toEqual(["b", "c"]);
+  });
+
+  it("sin filtros ni ficha, lo mismo que al abrir el mapa: esta semana, destacados y, si faltan, los cercanos al centro", () => {
+    const esperado = lugaresEncuadreInicial(visibles, ["c"], centro, AHORA).map((l) => l.id);
+    expect(lugaresAEncuadrar({ ficha: null, hayFiltros: false, visibles, destacados: ["c"], centro, ahora: AHORA }).map((l) => l.id)).toEqual(esperado);
+    expect(esperado).toContain("a");
+    expect(esperado).toContain("c");
+  });
+
+  it("sin lugares que ver, nada que encuadrar", () => {
+    expect(lugaresAEncuadrar({ ficha: null, hayFiltros: true, visibles: [], destacados: [], centro, ahora: AHORA })).toEqual([]);
+    expect(lugaresAEncuadrar({ ficha: null, hayFiltros: false, visibles: [], destacados: [], centro, ahora: AHORA })).toEqual([]);
   });
 });
 

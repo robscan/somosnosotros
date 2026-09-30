@@ -153,9 +153,11 @@ export default function HojaLugares({ resumen, ficha, entrada, desde, alAsentar,
     }
     const lista = franja.current!.nextElementSibling;
     const fila = lista?.querySelector("li");
-    // Lo que el mapa deja libre arriba: los mandos que flotan sobre él (`data-libre`) con el mismo aire arriba y abajo.
-    const mando = techo.querySelector("[data-libre]")?.getBoundingClientRect();
-    const libre = mando ? 2 * (mando.top - techo.getBoundingClientRect().top) + mando.height : 0;
+    // Lo que el mapa deja libre arriba: los mandos que flotan sobre él (`data-libre`: «Mi ubicación» y «Encuadrar los lugares», que ocupa su sitio
+    // aunque esté oculto) con el mismo aire arriba del primero y abajo del último.
+    const arribaDelMapa = techo.getBoundingClientRect().top;
+    const mandos = [...techo.querySelectorAll("[data-libre]")].map((m) => m.getBoundingClientRect());
+    const libre = mandos.length ? mandos[0].top - arribaDelMapa + Math.max(...mandos.map((m) => m.bottom)) - arribaDelMapa : 0;
     const asoma = alturaAsoma(fila ? RENGLONES_QUE_ASOMAN * fila.offsetHeight : (lista?.getBoundingClientRect().height ?? 0), llena, libre);
     return { detentes: { recogida: 0, asoma, llena }, franja: franja.current!.offsetHeight, compactaDesde: Infinity };
   }, []);
