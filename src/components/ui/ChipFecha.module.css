@@ -30,19 +30,6 @@
   margin-right: 0;
   color: var(--texto-suave);
 }
-/* "Cambiar la fecha," antes del texto corto (OL-218): se oye, no se ve — sin ella, un lector de pantalla anuncia
-   solo la fecha ("mié 30 sep") sin decir que tocarla reabre el selector. */
-.soloLector {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
 .quitar {
   position: relative;
   display: grid;

@@ -61,18 +61,6 @@
 .agarre:active {
   cursor: grabbing;
 }
-/* Anuncio del nuevo puesto tras arrastrar o mover con flechas (OL-184): se oye, no se ve. */
-.soloLector {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
 .quitar {
   display: grid;
   place-items: center;

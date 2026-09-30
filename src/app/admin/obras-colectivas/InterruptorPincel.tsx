@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import ajustes from "@/app/ajustes/ajustes.module.css";
+import Palanca from "@/components/ui/Palanca";
 import { formatearLargo } from "@/lib/fechas";
 import { cambiarPincelActivo } from "./acciones";
 import styles from "./obras.module.css";
 
 /**
  * Interruptor «Pincel apagado» (OL-121, founder 2026-09-22): apagado, la pared y el mando dejan de pintar y el
- * canal en vivo no responde, sin desplegar nada. Reutiliza la palanca de Ajustes (`ajustes.palanca`, ya usada en
- * `ReservaPerfil`): mismo dibujo de interruptor en toda la app. Se guarda al tocar, como el resto del panel.
+ * canal en vivo no responde, sin desplegar nada. Usa la `Palanca` de toda la app. Se guarda al tocar, como el resto del panel.
  */
 export default function InterruptorPincel({
   activo: inicial,
@@ -44,7 +43,7 @@ export default function InterruptorPincel({
             {cambiadoPorNombre ? `Último cambio: ${cambiadoPorNombre}, ${formatearLargo(cambiadoEn, new Date())}` : "Sin cambios todavía: sigue como se instaló."}
           </small>
         </div>
-        <button type="button" role="switch" aria-checked={activo} aria-label="Pincel encendido" className={ajustes.palanca} onClick={cambiar} disabled={pendiente} />
+        <Palanca encendida={activo} aria-label="Pincel encendido" onClick={cambiar} disabled={pendiente} />
       </div>
       {error && (
         <p className={styles.error} role="alert">

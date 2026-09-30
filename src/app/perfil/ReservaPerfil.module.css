@@ -1,6 +1,6 @@
 /* Hoja de "Perfil" (público / reservado): título, explicación e interruptor. */
-/* Interruptor: grid con áreas; el texto suelto ("Reservado") cae en la celda libre, el detalle debajo y la palanca
-   (la de Ajustes, con grid-area: accion) a la derecha. */
+/* Interruptor: grid con áreas; el texto suelto ("Reservado") cae en la celda libre, el detalle debajo y la `Palanca`
+   a la derecha. */
 .interruptor {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -15,6 +15,9 @@
   border-top: 1px solid var(--borde);
   font-size: var(--letra-md);
   font-weight: 600;
+}
+.interruptor > [role="switch"] {
+  grid-area: accion;
 }
 .interruptor small {
   grid-area: detalle;

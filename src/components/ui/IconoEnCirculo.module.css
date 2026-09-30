@@ -1,0 +1,10 @@
+/* El icono grande sobre un círculo gris (ui/IconoEnCirculo): encabeza un estado que dice qué pasó o qué se va a hacer. */
+.circulo {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--fondo-miniatura);
+  color: var(--texto-suave);
+}

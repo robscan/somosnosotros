@@ -124,7 +124,7 @@
   --tarjeta-grande: 165px; /* ancho de la tarjeta de cartel vertical */
   --tarjeta-grande-foto: 248px; /* alto de su foto */
   --tarjeta-chica: 104px; /* lado de la tarjeta redonda de un artista */
-  --foto-renglon: 56px; /* lado de la foto de un renglón de lista (hoy mide 64: baja a 56 con el renglón nuevo) */
+  --foto-renglon: 56px; /* lado de la foto de un renglón de lista y de su esqueleto (ui/Renglon) */
 
   /* Movimiento */
   --duracion: 200ms; /* transición corriente: barras, hojas, cabeceras */

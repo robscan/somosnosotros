@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { textoDistancia } from "@/lib/agenda";
 import { SIN_FOTO } from "@/lib/imagen";
 import { calleCorta, hrefLugar, textoProximo, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { IconoCalendario, IconoPin } from "./ui/Iconos";
-import styles from "./Renglon.module.css";
+import Renglon from "./ui/Renglon";
+import styles from "./ui/Renglon.module.css";
 
 type Props = {
   lugar: Pick<LugarResumen, "id" | "slug" | "nombre" | "direccion" | "portada" | "privado"> & { proximo?: ProximoEvento | null };
@@ -20,27 +20,19 @@ type Props = {
  */
 export default function RenglonLugar({ lugar: l, km, boton }: Props) {
   return (
-    <li className={styles.renglon}>
-      <Link href={hrefLugar(l)} className={styles.frente}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage */}
-        <img src={l.portada ?? SIN_FOTO} alt="" className={styles.foto} />
-        <span className={styles.titulo}>{l.nombre}</span>
-        <span className={`${styles.meta} ${styles.metaColumna}`}>
-          {l.privado && <span className={styles.sello}>Solo tú lo ves</span>}
-          <span className={styles.lugar}>
-            <IconoPin width={15} height={15} />
-            {calleCorta(l.direccion) || "Sin dirección"}
-            {km !== undefined ? ` · ${textoDistancia(km)}` : ""}
-          </span>
-          {l.proximo && (
-            <span>
-              <IconoCalendario width={15} height={15} />
-              <b>{textoProximo(l.proximo)}</b>
-            </span>
-          )}
+    <Renglon href={hrefLugar(l)} foto={l.portada ?? SIN_FOTO} titulo={l.nombre} columna accion={boton && <BotonRenglon {...boton} />}>
+      {l.privado && <span className={styles.sello}>Solo tú lo ves</span>}
+      <span className={styles.envuelve}>
+        <IconoPin width={15} height={15} />
+        {calleCorta(l.direccion) || "Sin dirección"}
+        {km !== undefined ? ` · ${textoDistancia(km)}` : ""}
+      </span>
+      {l.proximo && (
+        <span>
+          <IconoCalendario width={15} height={15} />
+          <b>{textoProximo(l.proximo)}</b>
         </span>
-      </Link>
-      {boton && <BotonRenglon {...boton} />}
-    </li>
+      )}
+    </Renglon>
   );
 }

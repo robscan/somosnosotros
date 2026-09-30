@@ -11,7 +11,6 @@ import {
   type ProveedorNovedadArtista,
 } from "@/lib/novedadesArtista";
 import ficha from "@/components/ui/Ficha.module.css";
-import canon from "@/components/ui/FormularioCanon.module.css";
 import styles from "./SeccionNovedades.module.css";
 
 export type NovedadParaFicha = {
@@ -63,7 +62,7 @@ export default function SeccionNovedades({
       <h2 className={styles.cabecera}>
         <span className={styles.tituloSeccion}>Novedades</span>
         {hrefPublicar && (
-          <Link href={hrefPublicar} className={canon.cambiar}>
+          <Link href={hrefPublicar} className={styles.accion}>
             Publicar
           </Link>
         )}
@@ -84,7 +83,7 @@ export default function SeccionNovedades({
                     {!n.visible && <span className={styles.oculta}> · Oculta</span>}
                   </span>
                   {hrefPublicar && (
-                    <Link href={`${hrefFicha}/novedades/${n.id}/editar`} className={canon.cambiar} aria-label={`Editar novedad: ${n.titulo || ETIQUETA_PROVEEDOR_NOVEDAD_ARTISTA[n.proveedor]}`}>
+                    <Link href={`${hrefFicha}/novedades/${n.id}/editar`} className={styles.accion} aria-label={`Editar novedad: ${n.titulo || ETIQUETA_PROVEEDOR_NOVEDAD_ARTISTA[n.proveedor]}`}>
                       Editar
                     </Link>
                   )}
@@ -93,7 +92,7 @@ export default function SeccionNovedades({
             ))}
           </ul>
           {hayMas && (
-            <button type="button" className={`${canon.cambiar} ${styles.masBoton}`} onClick={() => setAbierto(true)}>
+            <button type="button" className={`${styles.accion} ${styles.masBoton}`} onClick={() => setAbierto(true)}>
               Ver más
             </button>
           )}

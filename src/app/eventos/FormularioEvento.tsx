@@ -38,6 +38,7 @@ import { camposIniciales, crearGestosFlyer, quienTrasLeerCartel, type CampoFlyer
 import { sitioListo, textoDelSitio } from "./direccionEvento";
 import SelectorQuien from "./SelectorQuien";
 import canon from "@/components/ui/FormularioCanon.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./FormularioEvento.module.css";
 
 type Abierta = "cuando" | "quien" | "cuanto" | null;
@@ -572,8 +573,8 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
             {errores.titulo}
           </p>
         ) : (
-          // La ayuda va bajo el campo, con su propia clase: canon.cuerpoNota lleva grid-area: cuerpo, pensada
-          // para el cuerpo de un renglón de canon.resuelto. Aquí, sin una rejilla alrededor, ese grid-area no
+          // La ayuda va bajo el campo, con su propia clase: renglon.nota lleva grid-area: cuerpo, pensada
+          // para el cuerpo de un renglón de renglon.resuelto. Aquí, sin una rejilla alrededor, ese grid-area no
           // rompía nada (no era la causa de que se viera "fácil de perder": eso era el borde sin marcar y el
           // placeholder genérico, ver más abajo) pero es la clase equivocada — la del gestor: una clase del
           // canon solo se reutiliza dentro de la rejilla para la que fue escrita.
@@ -584,17 +585,17 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
           )
         )}
 
-        <ul className={canon.renglones}>
+        <ul className={renglon.renglones}>
           {/* 2. Cuándo: hoy a las 19:00 ya resuelto; al abrir, Empieza y Termina como el calendario del teléfono. */}
-          <li className={`${canon.resuelto} ${abierta === "cuando" ? canon.abierta : ""}`}>
+          <li className={`${renglon.resuelto} ${abierta === "cuando" ? renglon.abierto : ""}`}>
             <IconoReloj width={20} height={20} />
-            <span className={canon.clave}>Cuándo</span>
-            <span className={`${canon.valor} ${inicioIso ? "" : canon.falta}`}>{valorCuando}</span>
-            <button type="button" className={canon.cambiar} onClick={() => setAbierta((a) => (a === "cuando" ? null : "cuando"))} aria-expanded={abierta === "cuando"}>
+            <small>Cuándo</small>
+            <b className={inicioIso ? undefined : renglon.falta}>{valorCuando}</b>
+            <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setAbierta((a) => (a === "cuando" ? null : "cuando"))} aria-expanded={abierta === "cuando"}>
               {abierta === "cuando" ? "Listo" : "Cambiar"}
-            </button>
+            </Boton>
             {abierta === "cuando" && (
-              <div className={canon.cuerpo}>
+              <div className={renglon.cuerpo}>
                 <SelectorCuando
                   inicio={inicio}
                   fin={fin}
@@ -612,78 +613,78 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               </div>
             )}
             {abierta !== "cuando" && (errores.inicio || errores.fin) && (
-              <p className={canon.cuerpoNota} role="alert">
+              <p className={renglon.nota} role="alert">
                 {errores.inicio ?? errores.fin}
               </p>
             )}
           </li>
 
           {/* 3. Dónde: una sola salida, la lupa abre la hoja "Dónde es" (decisión 2). */}
-          <li className={`${canon.resuelto} ${dondeResuelto ? "" : canon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${dondeResuelto ? "" : renglon.pendiente}`}>
             <IconoPin width={20} height={20} />
-            <span className={canon.clave}>Dónde</span>
+            <small>Dónde</small>
             {dondeResuelto ? (
               <>
-                <span className={canon.valor}>{valorDonde}</span>
-                <button type="button" className={canon.cambiar} onClick={() => setHoja(true)}>
+                <b>{valorDonde}</b>
+                <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setHoja(true)}>
                   Cambiar
-                </button>
+                </Boton>
               </>
             ) : dondeConfirmar ? (
               // Leído del cartel o de una sugerencia, pero el pin no está confirmado: "Confirmar", no "Falta" (L3).
               // Una sola línea leída, no el nombre y la dirección juntos (textoDelSitio): revisión del gestor tras
               // el aviso del founder sobre formularios que se salen de la tarjeta con datos largos.
               <>
-                <span className={canon.valor}>{otro.direccion?.trim() || otro.sitioTexto}</span>
-                <button type="button" className={canon.cambiar} onClick={() => setHoja(true)}>
+                <b>{otro.direccion?.trim() || otro.sitioTexto}</b>
+                <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setHoja(true)}>
                   Confirmar
-                </button>
+                </Boton>
               </>
             ) : (
               <>
-                <span className={`${canon.valor} ${canon.falta}`}>Falta</span>
-                <BotonIcono relieve="contorno" className={canon.salida} onClick={() => setHoja(true)} aria-label="Buscar el lugar" title="Buscar el lugar">
+                <b className={renglon.falta}>Falta</b>
+                <BotonIcono relieve="contorno" onClick={() => setHoja(true)} aria-label="Buscar el lugar" title="Buscar el lugar">
                   <IconoBuscar width={22} height={22} />
                 </BotonIcono>
               </>
             )}
             {/* La ayuda va bajo el campo, no dentro del botón de publicar (founder, 2026-09-21: canon para todos los formularios). */}
             {errorDonde ? (
-              <p className={canon.cuerpoNota} role="alert">
+              <p className={renglon.nota} role="alert">
                 {errorDonde}
               </p>
             ) : dondeConfirmar ? (
-              <p className={canon.cuerpoNota}>Confirma la ubicación en el mapa.</p>
+              <p className={renglon.nota}>Confirma la ubicación en el mapa.</p>
             ) : dondeVacio ? (
-              <p className={canon.cuerpoNota}>Falta ubicación.</p>
+              <p className={renglon.nota}>Falta ubicación.</p>
             ) : null}
           </li>
 
           {/* 4. Quién: opcional, no detiene la publicación (Artistas, decisión 12). */}
-          <li className={`${canon.resuelto} ${abierta === "quien" ? canon.abierta : quien.length ? "" : canon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${abierta === "quien" ? renglon.abierto : quien.length ? "" : renglon.pendiente}`}>
             <IconoPersonas width={20} height={20} />
-            <span className={canon.clave}>Quién</span>
-            <span className={`${canon.valor} ${quien.length ? "" : canon.falta}`}>{valorQuien}</span>
-            <button type="button" className={canon.cambiar} onClick={() => setAbierta((a) => (a === "quien" ? null : "quien"))} aria-expanded={abierta === "quien"}>
+            <small>Quién</small>
+            <b className={quien.length ? undefined : renglon.falta}>{valorQuien}</b>
+            <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setAbierta((a) => (a === "quien" ? null : "quien"))} aria-expanded={abierta === "quien"}>
               {abierta === "quien" ? "Listo" : quien.length ? "Cambiar" : "Agregar"}
-            </button>
+            </Boton>
             {abierta === "quien" && (
-              <div className={canon.cuerpo}>
+              <div className={renglon.cuerpo}>
                 <SelectorQuien valor={quien} onCambio={(q) => { gestos.current.tocar("quien"); setQuien(q); }} mios={mios} ciudadContexto={ciudadContexto?.nombre} />
               </div>
             )}
           </li>
 
           {/* 5. Cuánto: gratis ya resuelto; al abrir, Gratis / Con costo y el precio. */}
-          <li className={`${canon.resuelto} ${abierta === "cuanto" ? canon.abierta : ""}`}>
+          <li className={`${renglon.resuelto} ${abierta === "cuanto" ? renglon.abierto : ""}`}>
             <IconoBoleto width={20} height={20} />
-            <span className={canon.clave}>Cuánto</span>
-            <span className={canon.valor}>{valorCuanto}</span>
-            <button type="button" className={canon.cambiar} onClick={() => setAbierta((a) => (a === "cuanto" ? null : "cuanto"))} aria-expanded={abierta === "cuanto"}>
+            <small>Cuánto</small>
+            <b>{valorCuanto}</b>
+            <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setAbierta((a) => (a === "cuanto" ? null : "cuanto"))} aria-expanded={abierta === "cuanto"}>
               {abierta === "cuanto" ? "Listo" : "Cambiar"}
-            </button>
+            </Boton>
             {abierta === "cuanto" && (
-              <div className={canon.cuerpo}>
+              <div className={renglon.cuerpo}>
                 <div className={canon.chips}>
                   <Chip activo={gratis} onClick={() => { gestos.current.tocar("cuanto"); setGratis(true); setCooperacion(false); }}>
                     Gratis
@@ -710,21 +711,21 @@ export default function FormularioEvento({ accion, lugares, lugarInicial, evento
               </div>
             )}
             {abierta !== "cuanto" && errores.precio && (
-              <p className={canon.cuerpoNota} role="alert">
+              <p className={renglon.nota} role="alert">
                 {errores.precio}
               </p>
             )}
           </li>
 
           {/* 6. Más: descripción, enlace, cartel o foto. Se esconde, no se desmonta. */}
-          <li className={`${canon.resuelto} ${masAbierto ? canon.abierta : canon.pendiente}`}>
+          <li className={`${renglon.resuelto} ${masAbierto ? renglon.abierto : renglon.pendiente}`}>
             <IconoMas width={20} height={20} />
-            <span className={canon.clave}>Más</span>
-            <span className={`${canon.valor} ${canon.falta}`}>Descripción, enlace, {imagen ? "imagen" : "foto"}</span>
-            <button type="button" className={canon.cambiar} onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
+            <small>Más</small>
+            <b className={renglon.falta}>Descripción, enlace, {imagen ? "imagen" : "foto"}</b>
+            <Boton type="button" variante="texto" alto="control" ancho="contenido" onClick={() => setMasAbierto((a) => !a)} aria-expanded={masAbierto}>
               {masAbierto ? "Listo" : "Agregar"}
-            </button>
-            <div className={canon.cuerpo} hidden={!masAbierto}>
+            </Boton>
+            <div className={renglon.cuerpo} hidden={!masAbierto}>
               <Campo etiqueta="Descripción" name="descripcion" multilinea value={descripcion} onChange={(e) => { gestos.current.tocar("descripcion"); setDescripcion(e.target.value); }} maxLength={LIMITES_EVENTO.descripcion} error={errores.descripcion} mostrarContador />
               <Campo etiqueta="Enlace" name="enlace" value={enlace} onChange={(e) => { gestos.current.tocar("enlace"); setEnlace(e.target.value); }} placeholder="Boletos, más información…" inputMode="url" autoCapitalize="none" autoComplete="off" error={errores.enlace} />
               {imagen && (

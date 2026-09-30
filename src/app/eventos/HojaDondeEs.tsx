@@ -6,6 +6,7 @@ import BotonIcono from "@/components/ui/BotonIcono";
 import Limpiar from "@/components/ui/Limpiar";
 import { IconoBuscar, IconoChevronIzquierda, IconoMas, IconoPin, IconoUbicacion } from "@/components/ui/Iconos";
 import ListaFlotante from "@/components/ui/ListaFlotante";
+import Palanca from "@/components/ui/Palanca";
 import MapaDondeEs from "@/components/MapaDondeEs";
 import { LIMITES_EVENTO, type ModoSitio } from "@/lib/eventos";
 import type { Punto } from "@/lib/geo";
@@ -786,7 +787,7 @@ export default function HojaDondeEs({ lugares, modoSitio, lugarId, otro, yo, ubi
                   <b>Es un lugar privado</b>
                   <small>Solo tú lo ves; podrás volver a usarlo en otros eventos</small>
                 </div>
-                <button type="button" role="switch" aria-checked={privadoAgregar} aria-label="Lugar privado" className={styles.palanca} onClick={() => setPrivadoAgregar((v) => !v)} />
+                <Palanca encendida={privadoAgregar} aria-label="Lugar privado" onClick={() => setPrivadoAgregar((v) => !v)} />
               </div>
               {errorAgregar && (
                 <p className={styles.notaError} role="alert">

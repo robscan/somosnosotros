@@ -12,7 +12,7 @@ import BotonCalendario from "@/components/BotonCalendario";
 import BotonCompartir from "@/components/BotonCompartir";
 import Cartel from "@/components/Cartel";
 import Desplegable from "@/components/Desplegable";
-import { EsqueletoBloqueTexto } from "@/components/ui/Esqueleto";
+import { EsqueletoBloqueTexto, EsqueletoDato } from "@/components/ui/Esqueleto";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
 import MapaFicha from "@/components/MapaFicha";
 import Reportar from "@/components/Reportar";
@@ -23,6 +23,7 @@ import { IconoBoleto, IconoCalendarioAgregar, IconoCompartir, IconoEstrella, Ico
 import MenuAcciones from "@/components/ui/MenuAcciones";
 import Salto from "@/components/ui/Salto";
 import ficha from "@/components/ui/Ficha.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 import { cargarQuien } from "@/app/artistas/consultas";
 import { enmascararCorreo, type Asistente } from "@/lib/comunidad";
 import { puedeDestacarse } from "@/lib/destacados";
@@ -110,8 +111,8 @@ const cargarTotalVanCache = cache(async (id: string): Promise<number> => {
 
 /**
  * Con quién se presenta y cuánta gente va: dos renglones de `<ul className={ficha.datos}>` que piden una consulta
- * aparte de la del evento (OL-161). Van en `<Suspense>`, con dos renglones de esqueleto del mismo alto mientras
- * llegan (`EsqueletoBloqueTexto`, canon de `docs/PRINCIPIOS_UX.md`).
+ * aparte de la del evento (OL-161). Van en `<Suspense>`, con un renglón de esqueleto del mismo alto mientras llegan
+ * (el de «Van N personas», que siempre aparece; `EsqueletoDato`, canon de `docs/PRINCIPIOS_UX.md`).
  */
 async function DatosQuienEvento({ eventoId, miId }: { eventoId: string; miId: string | null }) {
   const [asistencias, quien, totalVanRpc] = await Promise.all([cargarAsistenciasCache(eventoId, miId), cargarQuienCache(eventoId), cargarTotalVanCache(eventoId)]);
@@ -119,7 +120,7 @@ async function DatosQuienEvento({ eventoId, miId }: { eventoId: string; miId: st
   return (
     <>
       {quien.length > 0 && (
-        <li className={ficha.dato}>
+        <li className={renglon.dato}>
           <IconoEstrella width={20} height={20} />
           <b>
             Con{" "}
@@ -132,25 +133,14 @@ async function DatosQuienEvento({ eventoId, miId }: { eventoId: string; miId: st
           </b>
         </li>
       )}
-      <li className={ficha.dato}>
+      <li className={renglon.dato}>
         <IconoPersonas width={20} height={20} />
         <b>{totalVan === 0 ? "Nadie ha dicho que va todavía" : totalVan === 1 ? "Va 1 persona" : `Van ${totalVan} personas`}</b>
         {totalVan > 0 && (
-          <Salto destino="quien-va" className={ficha.datoEnlace}>
-            ver
-          </Salto>
+          <Salto destino="quien-va">ver</Salto>
         )}
       </li>
     </>
-  );
-}
-
-/** Fallback de `DatosQuienEvento`: un solo renglón del mismo alto (el de "Van N personas", que siempre aparece). */
-function EsqueletoDatosQuien() {
-  return (
-    <li className={ficha.dato} aria-hidden="true">
-      <EsqueletoBloqueTexto lineas={1} />
-    </li>
   );
 }
 
@@ -368,12 +358,12 @@ export default async function FichaEvento({ params, searchParams }: Params) {
       <h1 className={ficha.titulo}>{e.titulo}</h1>
 
       <ul className={ficha.datos}>
-        <li className={ficha.dato}>
+        <li className={renglon.dato}>
           <IconoReloj width={20} height={20} />
           <b>{formatearLargo(e.inicio, new Date(), e.fin, e.zona)}</b>
         </li>
         {e.lugar && (
-          <li className={ficha.dato}>
+          <li className={renglon.dato}>
             <IconoPin width={20} height={20} />
             <b>
               <Link href={hrefLugar(e.lugar)}>{e.lugar.nombre}</Link>
@@ -382,14 +372,14 @@ export default async function FichaEvento({ params, searchParams }: Params) {
           </li>
         )}
         {!e.lugar && e.sitio_texto && !e.sitio_reservado && (
-          <li className={ficha.dato}>
+          <li className={renglon.dato}>
             <IconoPin width={20} height={20} />
             <b>{e.sitio_texto}</b>
             {e.sitio_direccion && <small>{e.sitio_direccion}</small>}
           </li>
         )}
         {e.sitio_reservado && (
-          <li className={ficha.dato}>
+          <li className={renglon.dato}>
             {privado ? <IconoPin width={20} height={20} /> : ICONO_CANDADO}
             <b>{privado ? privado.direccion : `${e.sitio_texto} · sitio reservado`}</b>
             {privado ? (
@@ -400,16 +390,14 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               <small>Entra para ver la dirección cuando toque.</small>
             )}
             {!privado && !actual && (
-              <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEvento(e))}`} className={ficha.datoEnlace}>
-                Entrar
-              </Link>
+              <Link href={`/entrar?siguiente=${encodeURIComponent(hrefEvento(e))}`}>Entrar</Link>
             )}
           </li>
         )}
-        <Suspense fallback={<EsqueletoDatosQuien />}>
+        <Suspense fallback={<EsqueletoDato />}>
           <DatosQuienEvento eventoId={e.id} miId={actual?.perfil.id ?? null} />
         </Suspense>
-        <li className={ficha.dato}>
+        <li className={renglon.dato}>
           <IconoBoleto width={20} height={20} />
           <b>{e.precio ?? "Gratis"}</b>
         </li>

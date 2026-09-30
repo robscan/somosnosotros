@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { bloquear } from "@/app/personas/acciones";
 import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
+import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoBloquear } from "@/components/ui/Iconos";
 import styles from "./Bloquear.module.css";
 
@@ -50,9 +51,9 @@ export default function Bloquear({ personaId, nombre, volver, conSesion }: Props
       {abierta && (
         <Hoja etiqueta={`Bloquear a ${nombre}`} onCerrar={() => setAbierta(false)}>
           <div className={styles.confirmar}>
-            <span className={styles.icono} aria-hidden="true">
+            <IconoEnCirculo>
               <IconoBloquear width={28} height={28} />
-            </span>
+            </IconoEnCirculo>
             <h3>¿Bloquear a {nombre}?</h3>
             <p>Dejas de ver sus eventos y sus novedades en Inicio y en la Agenda. {nombre} no recibe ningún aviso. Puedes deshacerlo cuando quieras, desde Ajustes.</p>
             {error && (

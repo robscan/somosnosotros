@@ -41,56 +41,13 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
+/* La lista de datos: cada uno es un renglón `dato` (ui/Renglon.module.css) */
 .datos {
   list-style: none;
   display: grid;
   gap: 2px;
   margin-bottom: var(--espacio-4);
 }
-/* Renglón de dato sin envoltorios: icono, principal, secundario (opcional) y acción (opcional) son hijos directos. */
-.dato {
-  display: grid;
-  grid-template-columns: 22px 1fr auto;
-  grid-template-areas:
-    "icono principal accion"
-    "icono secundario accion";
-  column-gap: 10px;
-  align-items: center;
-  align-content: center;
-  min-height: 40px;
-  font-size: var(--letra-md);
-}
-.dato > svg {
-  grid-area: icono;
-  color: var(--texto-suave);
-}
-.dato b {
-  grid-area: principal;
-  font-weight: 500;
-}
-/* Dato en gris que ocupa la línea principal ("Sin fechas próximas · Nadie lo sigue todavía") */
-.dato .suave {
-  grid-area: principal;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.dato small {
-  grid-area: secundario;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-.dato .datoEnlace {
-  grid-area: accion;
-}
-.datoEnlace {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--toque-min);
-  padding: 0 var(--espacio-2);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-}
-
 /* Acción deshabilitada con explicación ("Cómo llegar · sin dirección") */
 .accion small {
   color: var(--texto-suave);

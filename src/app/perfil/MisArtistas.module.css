@@ -1,8 +1,8 @@
 /* «Mis artistas» en Mi perfil (OL-154; tarjeta repuesta en OL-163; sin botón de texto, corrección del founder
    sobre esa misma pieza): mismo rótulo en mayúsculas que Ajustes, tarjetas iguales para uno o varios artistas
    (región común). La tarjeta es un grid de tres columnas — el enlace (`.frente`), "Publicar" (OL-175, doc 44) y
-   el compartir, hermanos, nunca uno anidado dentro del otro — mismo patrón que `Renglon.module.css`
-   (`.renglon`/`.frente`); el círculo de compartir es el canon de `ui/BotonIcono`, sin una clase propia para la
+   el compartir, hermanos, nunca uno anidado dentro del otro — mismo patrón que el renglón de lista
+   de `ui/Renglon` (`.lista`/`.frente`); el círculo de compartir es el canon de `ui/BotonIcono`, sin una clase propia para la
    misma idea. */
 .seccion {
   margin: var(--espacio-4) 0 var(--espacio-5);

@@ -6,17 +6,8 @@
   padding: 48px var(--gutter) 0;
   text-align: center;
 }
-.icono {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  margin-bottom: var(--espacio-2);
-  border-radius: 50%;
-  background: var(--fondo-miniatura);
-  color: var(--texto-suave);
-}
 .vacio h1 {
+  margin-top: var(--espacio-2); /* con el hueco de la rejilla, los 16 px que lo separan del icono */
   font-size: var(--letra-2xl);
   font-weight: 700;
 }

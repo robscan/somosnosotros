@@ -2,8 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 import { IconoEnlace } from "@/components/ui/Iconos";
+import Palanca from "@/components/ui/Palanca";
 import { guardarSinAvisoSalida, sinAvisoSalida, suscribirseAvisoSalida } from "@/lib/avisoSalida";
-import styles from "./ajustes.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 const alm = () => (typeof window === "undefined" ? null : window.localStorage);
 const instantanea = () => !sinAvisoSalida(alm());
@@ -18,11 +19,11 @@ export default function AvisoSalidaAjuste() {
     guardarSinAvisoSalida(alm(), avisar); // si avisar era true, pasa a "sin aviso" = true
   }
   return (
-    <li className={styles.fila}>
+    <li className={renglon.ajuste}>
       <IconoEnlace width={20} height={20} />
       <b>Avisar al salir del sitio</b>
       <small>Boletos, redes y sitios de artistas y lugares</small>
-      <button type="button" role="switch" aria-checked={avisar} aria-label="Avisar al salir del sitio" className={styles.palanca} onClick={alternar} />
+      <Palanca encendida={avisar} aria-label="Avisar al salir del sitio" onClick={alternar} />
     </li>
   );
 }
