@@ -102,11 +102,11 @@ function poiTocado(mapa: MapaGL, e: MapMouseEvent): { nombre: string; punto: Pun
 }
 
 /**
- * El mapa de fondo de "¿Dónde es?" (OL-173): a diferencia de `Mapa.tsx` ("modo ver" con los lugares, "modo elegir"
- * con un pin suelto), esta pantalla necesita las dos cosas a la vez -lugares tocables Y un pin que se mueve a
- * cualquier punto- y ningún modo de `Mapa.tsx` las da juntas. Se escribe aparte, con el mismo patrón (single
- * instancia, capas por datos, tema claro forzado) para no tocar `Mapa.tsx` mientras OL-174 trabaja ahí a la vez
- * (instrucción del gestor). Documentado en la bitácora 208 como algo por unificar más adelante.
+ * El mapa de fondo de "¿Dónde es?" (OL-173): a diferencia de `Mapa.tsx` (los lugares de Lugares), esta pantalla
+ * necesita a la vez lugares tocables Y un pin que se mueve a cualquier punto. Se escribió aparte, con el mismo patrón
+ * (single instancia, capas por datos, tema claro forzado), para no tocar `Mapa.tsx` mientras OL-174 trabajaba ahí a la
+ * vez (instrucción del gestor); `Mapa.tsx` ya no tiene el modo «elegir» (P8), así que este es el único mapa con pin suelto.
+ * Documentado en la bitácora 208 como algo por unificar más adelante.
  */
 export default function MapaDondeEs({ lugares = SIN_LUGARES, seleccion, centrarEn, ciudad = CIUDAD_INICIAL, yo = null, paddingInferior = 0, onLugar, onPoi, onPunto, onArrastre }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);

@@ -38,6 +38,7 @@ import { eventoPaso, formatearCuando, formatearLargo } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { borrarEvento, cambiarVisibleEvento, type EstadoAsistencia } from "../acciones";
 import Asistencia from "./Asistencia";
+import MetaSitio from "./MetaSitio";
 import QuienVa from "./QuienVa";
 import styles from "./ficha.module.css";
 
@@ -233,6 +234,8 @@ export default async function FichaEvento({ params, searchParams }: Params) {
   const argsSitio = { lugar: e.lugar, sitioReservado: e.sitio_reservado, sitioLat: e.sitio_lat, sitioLng: e.sitio_lng, privado };
   const comoLlegar = enlaceComoLlegar(argsSitio);
   const puntoMapa = puntoComoLlegar(argsSitio);
+  // Solo la coordenada, para la distancia del renglón del sitio: `puntoMapa` puede ser el lugar entero y no tiene por qué viajar al teléfono.
+  const puntoDistancia = puntoMapa && { lat: puntoMapa.lat, lng: puntoMapa.lng };
   // Sin el conteo (diferido) el aviso de borrar ya no dice cuántos "Voy" hay: el menú de administración sigue en el
   // HTML inicial (OL-161) y no puede esperar esa consulta aparte.
   const avisoBorrar = 'Se borra el evento, con los "Voy" que tenga.';
@@ -411,7 +414,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               <Link href={hrefLugar(e.lugar)} className={renglon.dato}>
                 <IconoPin width={20} height={20} />
                 <b>{e.lugar.nombre}</b>
-                {e.lugar.direccion && <small>{e.lugar.direccion}</small>}
+                <MetaSitio direccion={e.lugar.direccion} punto={puntoDistancia} />
                 <IconoChevronDerecha />
               </Link>
             )}
@@ -419,7 +422,7 @@ export default async function FichaEvento({ params, searchParams }: Params) {
               <div className={renglon.dato}>
                 <IconoPin width={20} height={20} />
                 <b>{e.sitio_texto}</b>
-                {e.sitio_direccion && <small>{e.sitio_direccion}</small>}
+                <MetaSitio direccion={e.sitio_direccion} punto={puntoDistancia} />
               </div>
             )}
             {e.sitio_reservado &&
