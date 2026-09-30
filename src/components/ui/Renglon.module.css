@@ -83,6 +83,10 @@
   border-radius: 50%;
 }
 .frente > b {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* el título de un renglón llega a dos líneas: el resto se corta con puntos suspensivos (H-09) */
   font-family: var(--fuente-lista);
   font-size: var(--letra-lista-titulo);
   font-weight: var(--peso-lista-titulo);
@@ -90,20 +94,17 @@
   line-height: var(--interlinea-lista);
   text-wrap: balance;
 }
-/* La meta: un dato tras otro (un evento) o uno por línea (un lugar, un artista). Ningún dato pasa del borde de su
-   columna (H-17): el que es una sola línea se corta con puntos suspensivos, y el que es una dirección se parte. */
+/* La meta: un dato por línea (un evento, un lugar, un artista). Ningún dato pasa del borde de su columna (H-17): el que es
+   una sola línea se corta con puntos suspensivos, y el que es una dirección se parte. */
 .frente > small {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px var(--espacio-3);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   margin-top: var(--espacio-1);
   font-family: var(--fuente-lista);
   font-size: var(--letra-lista-meta);
   font-variation-settings: var(--ancho-lista-meta);
-}
-.columna {
-  flex-direction: column;
-  align-items: flex-start;
 }
 .frente > small > span {
   display: inline-flex;
@@ -242,6 +243,18 @@
 /* Sin acción posible aquí (dice por qué en su detalle): la etiqueta, en gris. */
 .apagado > b {
   color: var(--texto-suave);
+}
+
+/* La tarjeta de filas: una caja con borde que junta renglones `ajuste` con una raya entre ellos (la hoja «Dónde estás»). */
+.tarjeta {
+  list-style: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  overflow: hidden;
+}
+.tarjeta > li + li {
+  border-top: 1px solid var(--borde);
 }
 
 /* 5. Resuelto: icono | clave / valor | acción; el cuerpo, al abrir, debajo a lo ancho. La clave (`small`) va arriba del

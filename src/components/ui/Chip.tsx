@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import EnCamino from "./EnCamino";
+import { IconoCerrar } from "./Iconos";
+import SoloLector from "./SoloLector";
 import styles from "./Chip.module.css";
 
 /** Opción de un toque (día, hora, duración, tipo). Activa = elegida. */
@@ -47,10 +49,39 @@ export function Cuenta({ n }: { n: number }) {
   return <span className={styles.cuenta}>{n}</span>;
 }
 
-/** Fila de chips que se desliza a lo ancho sin barra de scroll. */
-export function Chips({ etiqueta, children, ariaLabel }: { etiqueta?: string; children: ReactNode; ariaLabel: string }) {
+/**
+ * Un chip de la fila de contexto (Cuándo, Filtros; el de ciudad lleva su propia hoja, `ChipCiudad`): con su icono y, si ya
+ * tiene un valor, en el color de acción. Con `cuenta` (los filtros puestos) lleva su número en un círculo. Abre una hoja.
+ */
+export function ChipContexto({ icono, activo = false, cuenta = 0, onClick, children }: { icono: ReactNode; activo?: boolean; cuenta?: number; onClick: () => void; children: ReactNode }) {
   return (
-    <div className={styles.chips} role="group" aria-label={ariaLabel}>
+    <button type="button" className={`${styles.chip} ${styles.deContexto} ${activo ? styles.activo : ""}`} onClick={onClick} aria-haspopup="dialog">
+      {icono}
+      <span>{children}</span>
+      {cuenta > 0 && (
+        <span className={styles.cuentaFiltros}>
+          {cuenta}
+          <SoloLector> puestos</SoloLector>
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** Un filtro puesto, en la fila de contexto: chip activo con su ✕; tocarlo lo quita. */
+export function ChipQuitar({ texto, onClick }: { texto: string; onClick: () => void }) {
+  return (
+    <button type="button" className={`${styles.chip} ${styles.activo} ${styles.quitar}`} onClick={onClick} aria-label={`Quitar ${texto}`}>
+      {texto}
+      <IconoCerrar width={16} height={16} />
+    </button>
+  );
+}
+
+/** Fila de chips que se desliza a lo ancho sin barra de scroll; con `envuelve`, los chips pasan al renglón de abajo (una hoja). */
+export function Chips({ etiqueta, children, ariaLabel, envuelve = false }: { etiqueta?: string; children: ReactNode; ariaLabel: string; envuelve?: boolean }) {
+  return (
+    <div className={envuelve ? `${styles.chips} ${styles.envuelve}` : styles.chips} role="group" aria-label={ariaLabel}>
       {etiqueta && <span className={styles.etiquetaChips}>{etiqueta}</span>}
       {children}
     </div>

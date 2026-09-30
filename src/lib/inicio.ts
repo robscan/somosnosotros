@@ -1,17 +1,18 @@
 import { compararEventos, filtrarAgenda, type EventoAgenda } from "./agenda";
 import type { Agenda } from "./cargarAgenda";
+import { DIAS_ESTA_SEMANA } from "./cuando";
 import { enOrden } from "./destacados";
 
 /**
- * Inicio: nueve carriles (docs/rediseno/41, tercera vuelta OL-219, bitácora 246/248). Aquí solo lo que se puede
- * probar sin base de datos ni navegador: la ventana de "esta semana", el peso de "Tus planes" y del carril estelar,
- * el orden de Populares y de Nuevos eventos (con su criterio nuevo, que ya no compite con "Esta semana"), que no se
- * repita un evento entre carriles y en qué orden salen los grupos del buscador único según la sección.
+ * Inicio: seis carriles (docs/rediseno/41, tercera vuelta OL-219, bitácora 246/248; doc 50, P5, quitó «Cerca de ti»,
+ * «Populares» y «Artistas con eventos»: el prototipo firmado trae esos seis). Aquí solo lo que se puede probar sin
+ * base de datos ni navegador: la ventana de "esta semana", el peso de "Tus planes" y del carril estelar, el orden de
+ * Nuevos eventos (con su criterio nuevo, que ya no compite con "Esta semana"), que no se repita un evento entre carriles
+ * y en qué orden salen los grupos del buscador único según la sección.
  */
 
-/** "Esta semana" = próximos 7 días desde ahora, igual que `cargarCercanos()` (decisión del founder, segunda vuelta
- *  de doc 41): no es la semana de calendario. Un evento que ya empezó cuenta si todavía no termina. */
-export const DIAS_ESTA_SEMANA = 7;
+/** "Esta semana" = próximos 7 días desde ahora (decisión del founder, segunda vuelta de doc 41): no es la semana de
+ *  calendario (`DIAS_ESTA_SEMANA`, lib/cuando). Un evento que ya empezó cuenta si todavía no termina. */
 export function eventosEstaSemana<T extends Pick<EventoAgenda, "inicio" | "fin">>(eventos: T[], ahora: Date = new Date()): T[] {
   const desde = ahora.getTime();
   const hasta = desde + DIAS_ESTA_SEMANA * 86400000;
@@ -21,7 +22,7 @@ export function eventosEstaSemana<T extends Pick<EventoAgenda, "inicio" | "fin">
 /**
  * Ningún evento se repite entre dos carriles de Inicio (doc 41, "Sin duplicar eventos"): el que ya salió en uno
  * anterior no vuelve a salir en el siguiente. `vistos` se muta a propósito: cada carril se calcula en el orden de
- * la pantalla (favoritos, destacados, cercanos, populares) y cada uno amplía el conjunto para el que sigue.
+ * la pantalla (favoritos, destacados, esta semana, nuevos) y cada uno amplía el conjunto para el que sigue.
  */
 export function sinRepetidos<T extends { id: string }>(eventos: T[], vistos: Set<string>): T[] {
   const propios: T[] = [];
@@ -40,20 +41,6 @@ export function sinRepetidos<T extends { id: string }>(eventos: T[], vistos: Set
  */
 export function carrilTusPlanes<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio">>(voy: T[], interesan: T[]): T[] {
   return [...voy, ...interesan].toSorted(compararEventos).slice(0, TOPE_ESTELAR);
-}
-
-/** Mismo mínimo que Destacados (doc 20: al menos 3 "Voy", sin contar administración) para no inventar un segundo
- *  criterio de popularidad que compita con el ya firmado. */
-export const MINIMO_POPULARES = 3;
-
-/** El carril "Populares" (antes "Eventos populares"; OL-219 le quitó el "Eventos" del nombre, no el criterio):
- *  de mayor a menor número de "Voy", indistinto entre semanas; a igualdad, el orden de siempre de la agenda. */
-export function carrilPopulares<T extends Pick<EventoAgenda, "id" | "van" | "titulo" | "inicio">>(eventos: T[], vistos: Set<string>): T[] {
-  const candidatos = sinRepetidos(
-    eventos.filter((e) => e.van >= MINIMO_POPULARES),
-    vistos,
-  );
-  return candidatos.toSorted((a, b) => b.van - a.van || compararEventos(a, b));
 }
 
 /** Tope del carril estelar (decisión del founder, segunda vuelta de doc 41): "Seleccionados para ti" (antes "De tus
@@ -96,7 +83,7 @@ export const TOPE_ESTA_SEMANA = 20;
 
 /**
  * «Esta semana» (nuevo, OL-219): todos los eventos de los próximos 7 días, por fecha, con o sin sesión. A
- * diferencia de Populares o de Nuevos eventos, no tiene piso: con 1 o 2 eventos se ve igual de corto, nunca vacío de
+ * diferencia de Nuevos eventos, no tiene piso: con 1 o 2 eventos se ve igual de corto, nunca vacío de
  * mentira (esa regla es solo de Nuevos eventos, ver `carrilNuevos`).
  */
 export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | "inicio" | "fin">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
@@ -104,9 +91,9 @@ export function carrilEstaSemana<T extends Pick<EventoAgenda, "id" | "titulo" | 
   return sinRepetidos(candidatos, vistos).slice(0, TOPE_ESTA_SEMANA);
 }
 
-/** Mismo umbral que Populares (doc 41, segunda vuelta del prototipo): con menos de 3 candidatos, "Nuevos eventos"
- *  no se pinta — ni con 1 ni con 2, el mismo colapso sin hueco que un carril vacío. */
-export const MINIMO_NUEVOS = MINIMO_POPULARES;
+/** Mínimo de Destacados (doc 20: al menos 3): con menos de 3 candidatos, "Nuevos eventos" no se pinta — ni con 1 ni con
+ *  2, el mismo colapso sin hueco que un carril vacío. */
+export const MINIMO_NUEVOS = 3;
 
 /**
  * "Nuevos eventos" (segunda vuelta del prototipo de OL-219, cambia de criterio, no solo de nombre): publicado en
@@ -116,8 +103,7 @@ export const MINIMO_NUEVOS = MINIMO_POPULARES;
  * atrás; a igual publicación, el orden de siempre de la agenda.
  *
  * El umbral de 3 se comprueba ANTES de tocar `vistos`: un candidato que no llega al mínimo no se muta al conjunto
- * compartido, para que un carril que de todos modos no se pinta no le quite, por accidente, un evento a "Cerca de
- * ti" (que llega después, en el cliente).
+ * compartido, para que un carril que de todos modos no se pinta no le quite, por accidente, un evento a otro.
  */
 export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "titulo" | "inicio">>(eventos: T[], vistos: Set<string>, ahora: Date = new Date()): T[] {
   const publicadoDesde = ahora.getTime() - DIAS_ESTA_SEMANA * 86400000;
@@ -128,31 +114,23 @@ export function carrilNuevos<T extends Pick<EventoAgenda, "id" | "creado_en" | "
   return candidatos.toSorted((a, b) => b.creado_en.localeCompare(a.creado_en) || compararEventos(a, b));
 }
 
-/** Los cuatro carriles de eventos de Inicio que salen de una sola `cargarAgenda` (estelar, esta semana, populares,
- *  nuevos): se calculan juntos y puros, a partir del mismo objeto `Agenda`, para poder recalcularlos sin red desde
- *  cualquier carril que los pida (streaming, OL-156: cada carril puede recalcular esto por su cuenta sin depender
- *  del orden de llegada de otro). "Tus planes" no entra en la regla de no repetir (founder, 2026-09-26, OL-221): es la
- *  agenda de la persona, no un carril de descubrir; si le quitaba eventos a estos, al tocar «Voy» el evento
- *  desaparecía de la fila donde se tocó. Aquí sigue saliendo, con su check de «Voy». */
-export type CarrilesDeAgenda = { titulo: string; estelar: EventoAgenda[]; estaSemana: EventoAgenda[]; populares: EventoAgenda[]; nuevos: EventoAgenda[]; vistos: Set<string> };
+/** Los tres carriles de eventos de Inicio que salen de una sola `cargarAgenda` (estelar, esta semana, nuevos): se calculan
+ *  juntos y puros, a partir del mismo objeto `Agenda`, para poder recalcularlos sin red desde cualquier carril que los
+ *  pida (streaming, OL-156: cada carril puede recalcular esto por su cuenta sin depender del orden de llegada de otro).
+ *  "Tus planes" no entra en la regla de no repetir (founder, 2026-09-26, OL-221): es la agenda de la persona, no un
+ *  carril de descubrir; si le quitaba eventos a estos, al tocar «Voy» el evento desaparecía de la fila donde se tocó.
+ *  Aquí sigue saliendo, con su check de «Voy». */
+export type CarrilesDeAgenda = { titulo: string; estelar: EventoAgenda[]; estaSemana: EventoAgenda[]; nuevos: EventoAgenda[] };
 export function calcularCarrilesAgenda(agenda: Agenda, ahora: Date = new Date()): CarrilesDeAgenda {
   const vistos = new Set<string>();
-  const favoritos = filtrarAgenda(agenda.eventos, { filtro: "siguiendo", punto: null, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, fecha: "", ahora }).lista;
+  const favoritos = filtrarAgenda(agenda.eventos, { filtro: "siguiendo", punto: null, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: null, ahora }).lista;
   const hayFavoritos = favoritos.length > 0;
   const estelar = hayFavoritos
     ? carrilEstelar(favoritos, new Set(agenda.destacados.map((d) => d.id)), vistos)
     : carrilDestacados(enOrden(agenda.destacados, agenda.eventos), vistos);
   const estaSemana = carrilEstaSemana(agenda.eventos, vistos, ahora);
-  const populares = carrilPopulares(agenda.eventos, vistos);
   const nuevos = carrilNuevos(agenda.eventos, vistos, ahora);
-  return { titulo: tituloEstelar(hayFavoritos), estelar, estaSemana, populares, nuevos, vistos };
-}
-
-/** Los ids que ya usaron los carriles de eventos de Inicio (estelar, esta semana, populares, nuevos; no "Tus planes"):
- *  el carril de Cercanos (cliente, en `Inicio.tsx`) los recibe para tampoco repetirlos, sin tener que esperar a los
- *  otros. Con esto, "Cerca de ti" excluye también lo que ya se llevó "Esta semana" (founder, encargo de OL-219). */
-export function idsUsadosEnAgenda(agenda: Agenda, ahora: Date = new Date()): string[] {
-  return [...calcularCarrilesAgenda(agenda, ahora).vistos];
+  return { titulo: tituloEstelar(hayFavoritos), estelar, estaSemana, nuevos };
 }
 
 export type SeccionBuscador = "inicio" | "agenda" | "lugares" | "artistas";

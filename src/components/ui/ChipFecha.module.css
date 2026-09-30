@@ -4,8 +4,8 @@
    `BotonIcono` con borde como la lupa de al lado. */
 
 /* Con fecha elegida: pastilla con el texto corto y su quitar (✕). La clase va dos veces para pesar más que el
-   borde de ui/Chip sin depender del orden de los módulos (mismo motivo que antes en AgendaInicio.module.css). Del
-   alto de los demás chips (44): sus dos botones miden 44 y sobresalen por encima del borde, sin estirar la pastilla. */
+   borde de ui/Chip sin depender del orden de los módulos. Del alto de los demás chips (44): sus dos botones miden
+   44 y sobresalen por encima del borde, sin estirar la pastilla. */
 .conFecha.conFecha {
   height: var(--control);
   gap: 6px;

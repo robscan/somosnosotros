@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import ActivarAvisos from "@/components/ActivarAvisos";
 import AgendaInicio from "@/components/AgendaInicio";
 import ListaEsqueleto from "@/components/ListaEsqueleto";
+import { filtrosDeUrl } from "@/lib/agenda";
 import { cargarAgenda } from "@/lib/cargarAgenda";
 import { CIUDAD_INICIAL, ciudadPorSlug } from "@/lib/ciudad";
 import { cargarCiudades } from "@/lib/ciudades";
@@ -11,7 +12,7 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import styles from "./agenda.module.css";
 import type { Metadata } from "next";
 
-type SearchParams = { cuenta?: string; ciudad?: string; filtro?: string; q?: string };
+type SearchParams = { cuenta?: string; ciudad?: string; filtro?: string; q?: string; desde?: string; hasta?: string; cuanto?: string };
 
 /**
  * Agenda (OL-156, segunda vuelta): pasa de la raíz a `/agenda` — la app abre siempre en Inicio, `/` (docs/rediseno/41).
@@ -42,20 +43,17 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
  * que no esperan nada.
  */
 async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { cuenta, ciudad: slug, filtro, q } = await searchParams;
+  const { cuenta, ciudad: slug, filtro, q, desde, hasta, cuanto } = await searchParams;
   // Las ciudades salen de los lugares que hay (crecimiento orgánico, decisión del founder 2026-09-16); junto con la
   // sesión son rápidas y no llevan la consulta pesada de eventos, así que se esperan aquí. `cargarAgenda` (eventos,
   // quién sigue qué, qué decidió la persona) no se espera: se pasa como promesa y se difiere dentro de `AgendaInicio`
-  // — la cabecera (fecha, ciudad, pestañas, lupa) pinta con la barra, y solo la lista lleva esqueleto (OL-161,
+  // — la cabecera (ciudad, Cuándo, Filtros, lupa) pinta con la barra, y solo la lista lleva esqueleto (OL-161,
   // bitácora 196; antes, el gestor observó en la captura 01 de la bitácora 193 que también la cabecera salía como
   // esqueleto).
   const [ciudades, actual] = await Promise.all([cargarCiudades(), usuarioActual()]);
   const ciudad = ciudadPorSlug(slug, ciudades);
   const agenda = cargarAgenda(ciudad, actual?.perfil.id ?? null);
   const aviso = cuenta === "borrada" ? "Tu cuenta quedó borrada. Gracias por haber estado." : null;
-  // "Ver todos" de un carril de Inicio llega con la pestaña ya elegida (?filtro=siguiendo, OL-156): cualquier otro
-  // valor (un enlace viejo a "cercanos" o "nuevos") cae a Todos, porque esas pestañas ya no existen aquí.
-  const filtroInicial = filtro === "siguiendo" ? "siguiendo" : undefined;
   // La pregunta de avisos tras el primer Voy al deslizar, como en la ficha: sale de la sesión, no de `cargarAgenda`.
   const avisos = actual ? { cuenta: actual.perfil.id, preguntado: actual.perfil.avisos_preguntado ?? true, correo: actual.correo ? enmascararCorreo(actual.correo) : "tu correo", llavePush: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" } : null;
 
@@ -68,7 +66,9 @@ async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchP
       )}
       <AgendaInicio
         key={ciudad.slug}
-        filtroInicial={filtroInicial}
+        // Con lo que llega en la URL abre la pantalla (Cuándo o Filtros elegidos desde Inicio, un «solo lo que sigo»); lo que
+        // no se reconoce, como un enlace viejo con `?filtro=cercanos`, se ignora.
+        filtrosIniciales={filtrosDeUrl({ desde, hasta, cuanto, filtro })}
         busquedaInicial={q}
         agenda={agenda}
         ciudad={ciudad}

@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadPorNombre, ciudadPorSlug, raizConCiudad, slugDeCiudad } from "./ciudad";
+import { armarCiudades, armarCiudadesDeArtistas, CIUDADES, CIUDAD_INICIAL, ciudadCanonica, ciudadMasCercana, ciudadPorNombre, ciudadPorSlug, raizConCiudad, slugDeCiudad, type Ciudad } from "./ciudad";
 
 describe("ciudad", () => {
+  it("«Cerca de ti» lleva a la ciudad cuyo centro queda más cerca, y sin lista, a la inicial", () => {
+    const queretaro = { ...CIUDAD_INICIAL, slug: "queretaro", nombre: "Querétaro", centro: { lng: -100.39, lat: 20.59 } };
+    const ciudades = [CIUDAD_INICIAL, queretaro];
+    expect(ciudadMasCercana({ lat: 20.6, lng: -100.4 }, ciudades).slug).toBe("queretaro");
+    expect(ciudadMasCercana({ lat: 22.15, lng: -100.98 }, ciudades).slug).toBe("san-luis-potosi");
+    const ninguna: Ciudad[] = [];
+    expect(ciudadMasCercana({ lat: 40.4, lng: -3.7 }, ninguna).slug).toBe("san-luis-potosi");
+  });
   it("la raíz de una sección conserva la ciudad y suelta lo demás", () => {
     expect(raizConCiudad("/lugares", "?vista=lista&tipo=museo&ciudad=madrid")).toBe("/lugares?ciudad=madrid");
     expect(raizConCiudad("/", "?cuenta=borrada")).toBe("/");

@@ -73,10 +73,11 @@
   color: var(--texto-suave);
   cursor: default;
 }
-/* Chip de contexto de la cabecera (fecha, ciudad): en negrita, con el icono suave; el texto se corta antes que
-   empujar la lupa fuera de la fila (una ciudad de nombre largo). */
+/* Chip de contexto de la cabecera (ciudad, Cuándo, Filtros): en negrita, con el icono suave. No se encoge (`.chip` es
+   `flex: none`): si la fila no cabe, se desliza de lado (`useTiraQueSigue`); solo un nombre más largo que la fila se corta
+   con puntos suspensivos. */
 .deContexto {
-  flex: 0 1 auto;
+  max-width: 100%;
   min-width: 0;
   gap: 6px;
   padding: 0 var(--espacio-3) 0 10px;
@@ -89,6 +90,40 @@
 .deContexto > span {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.activo.deContexto > svg {
+  color: inherit;
+}
+/* La cuenta de filtros puestos, dentro del chip Filtros: un círculo del color de acción (del texto, si el chip está activo). */
+.cuentaFiltros {
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--primario);
+  color: var(--primario-texto);
+  font-size: var(--letra-2xs);
+  font-weight: 700;
+}
+.activo .cuentaFiltros {
+  background: var(--primario-texto);
+  color: var(--primario);
+}
+/* Un filtro puesto con su ✕: activo, con la ✕ pegada al texto y menos aire a la derecha. */
+.quitar {
+  gap: 6px;
+  padding-right: var(--espacio-3);
+}
+.quitar > svg {
+  margin-right: 0;
+}
+/* En una hoja los chips no se deslizan: pasan al renglón de abajo. */
+.envuelve {
+  flex-wrap: wrap;
+  overflow: visible;
 }
 .chipNativo {
   position: relative;

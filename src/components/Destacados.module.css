@@ -17,9 +17,11 @@
   --alto-grande: 360px;
   --alto-chica: 230px;
 }
+/* El título a la izquierda y, a la derecha, el enlace que dice a dónde lleva. */
 .cabecera {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding-inline: var(--gutter);
 }
 /* Un carril vacío colapsa desde el alto del esqueleto (arranca ahí con `@starting-style`, la "entrada" de este nodo
@@ -59,28 +61,23 @@
   line-height: 1.1;
 }
 /*
- * El chevron en vez de «Ver todos» (founder, 2026-09-25, OL-219: «un angle icon ">" [...] se parece al canon de
- * Apple Music»). Todo el título + chevron es un solo enlace (nunca un botón aparte): `.tituloCarril` mide al menos
- * `--toque-min` (44px) de alto, aunque el glifo dibujado (`.chevron`) sea de 20px — un toque cerca del icono, no
- * solo sobre él, no falla.
+ * El enlace de la derecha (doc 50, puntos 60 y 61): dice a dónde lleva, del color de acción, con su chevron. Mide al
+ * menos `--toque-min` (44px) de alto, aunque el glifo dibujado sea de 18px.
  */
-.tituloCarril {
+.verTodo {
   display: inline-flex;
   align-items: center;
+  gap: 2px;
   min-height: var(--toque-min);
-  color: var(--texto);
+  padding-left: var(--espacio-2);
+  color: var(--primario);
+  font-size: var(--letra-sm);
+  font-weight: 600;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
-.chevron {
-  display: inline-flex;
+.verTodo > svg {
   flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: var(--toque-min);
-  margin-right: -10px;
-  color: var(--texto-suave);
 }
 .carril {
   display: grid;

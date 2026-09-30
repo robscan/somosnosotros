@@ -17,3 +17,66 @@
 .kpi[aria-selected="true"] > b {
   color: var(--primario);
 }
+
+/* Mi perfil (`raiz`): tarjetas con su icono y letrero arriba y el número grande debajo (prototipo firmado). Las que haya
+   se reparten el ancho; la elegida lleva el color de acción. Lo que no es un grupo de día (un vacío, los chips y las
+   listas de lo que sigo) recibe el aire de la página; los grupos (`section`, ui/Grupo) ya lo traen. */
+.tarjetas {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--espacio-2);
+  margin: var(--espacio-4) var(--gutter) var(--espacio-3);
+}
+.tarjeta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icono etiqueta"
+    "valor valor";
+  align-items: center;
+  align-content: start;
+  column-gap: var(--espacio-1);
+  row-gap: var(--espacio-1);
+  padding: 10px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tarjeta > svg {
+  grid-area: icono;
+  color: var(--texto-suave);
+}
+.tarjeta > small {
+  grid-area: etiqueta;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--texto-suave);
+  font-size: var(--letra-2xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tarjeta > b {
+  grid-area: valor;
+  font-size: var(--letra-2xl);
+  font-weight: 700;
+  font-variation-settings: var(--ancho-titulo);
+  line-height: 1.15;
+}
+.tarjeta[aria-selected="true"] {
+  border-color: var(--primario);
+}
+.tarjeta[aria-selected="true"] > svg,
+.tarjeta[aria-selected="true"] > b {
+  color: var(--primario);
+}
+.panelRaiz > :not(section) {
+  padding-inline: var(--gutter);
+}

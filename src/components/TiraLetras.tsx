@@ -3,20 +3,17 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { idGrupo } from "@/lib/indice";
 import { recogerBarra } from "./Armazon";
+import { useTiraQueSigue } from "./ui/useTiraQueSigue";
 import styles from "./TiraLetras.module.css";
 
 /**
- * Cuánto miden, ya pegados, los `position: sticky` que hay ANTES de un elemento en el documento — sin importar el
- * anidamiento (en Lugares el header pegado es hermano de la lista; en Artistas es su primer hijo). Ignora al propio
- * elemento y a lo que hay dentro de él.
+ * Cuánto mide, ya pegada, la cabecera de la pantalla (barra incluida si se ve): lo que queda arriba y tapa el principio de
+ * un grupo al saltar a él. Los títulos de los grupos anteriores también son pegajosos, pero al llegar al grupo de una letra ya
+ * no están a la vista: solo cuenta la cabecera.
  */
-function tapaAntesDe(destino: HTMLElement): number {
-  return Math.max(0, ...[...document.querySelectorAll<HTMLElement>("main *")].map((e) => {
-    if (e === destino || e.contains(destino) || destino.contains(e)) return 0;
-    if (!(destino.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_PRECEDING)) return 0;
-    const s = getComputedStyle(e);
-    return s.position === "sticky" ? (parseFloat(s.top) || 0) + e.offsetHeight : 0;
-  }));
+function tapaDeLaCabecera(): number {
+  const cabecera = document.querySelector<HTMLElement>("main header");
+  return cabecera ? (parseFloat(getComputedStyle(cabecera).top) || 0) + cabecera.offsetHeight : 0;
 }
 
 /**
@@ -27,7 +24,7 @@ export function irAlGrupo(letra: string): boolean {
   const grupo = document.getElementById(idGrupo(letra));
   if (!grupo) return false;
   recogerBarra();
-  window.scrollTo({ top: grupo.getBoundingClientRect().top + window.scrollY - tapaAntesDe(grupo) });
+  window.scrollTo({ top: grupo.getBoundingClientRect().top + window.scrollY - tapaDeLaCabecera() });
   return true;
 }
 
@@ -86,6 +83,7 @@ export function useLetraActiva(letras: string[], tira: RefObject<HTMLElement | n
  * Se va con la búsqueda.
  */
 export default function TiraLetras({ ref, letras, activa, alTocar }: { ref: RefObject<HTMLDivElement | null>; letras: string[]; activa: string | null; alTocar: (letra: string) => void }) {
+  useTiraQueSigue(ref);
   if (letras.length === 0) return null;
   return (
     <div ref={ref} role="group" aria-label="Ir a una letra" className={styles.tira}>

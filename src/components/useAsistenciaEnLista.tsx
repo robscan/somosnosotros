@@ -45,7 +45,7 @@ function tarjetaDe(e: EventoLista): TarjetaConFecha | null {
  *
  * Al guardar bien, además de la corrección, se guarda junto con la decisión la tarjeta del renglón, si la trae
  * (`tarjetaDe`; OL-224, bitácora 253): con eso, «Tus planes» puede agregarla al instante aunque el toque haya sido en
- * otra fila de Inicio (Destacados, Esta semana, Populares, Nuevos, Cerca de ti…) — este hook no sabe nada de "Tus
+ * otra fila de Inicio (Destacados, Esta semana, Nuevos…) — este hook no sabe nada de "Tus
  * planes", solo dejar la miga; quien la recoge es `tarjetasTusPlanes`, en `CarrilEventosCliente`.
  *
  * `canal`: el aviso y la pregunta de avisos compartidos con las otras listas de la pantalla (useCanalDeListas); sin él,

@@ -1,8 +1,10 @@
-import { ocupaDia } from "./calendario";
+import { ocupaRango } from "./calendario";
+import type { Agenda } from "./cargarAgenda";
+import { cuandoDeUrl, type Cuando } from "./cuando";
 import { distanciaKm } from "./geo";
 import type { EventoResumen } from "./eventos";
-import { nombreSitio } from "./eventos";
-import { diaCorto, diaLocal, ZONA_INICIAL } from "./fechas";
+import { esCooperacion, nombreSitio } from "./eventos";
+import { diaCorto, diaLocal, localAIso, ZONA_INICIAL } from "./fechas";
 import { compararNombres, normalizarNombre } from "./lugares";
 
 /** Lo que la agenda del inicio necesita de cada evento, además del resumen. */
@@ -19,17 +21,11 @@ export type EventoAgenda = EventoResumen & {
 };
 
 /**
- * "cercanos" y "nuevos" siguen siendo valores válidos del tipo (los usan `filtrarAgenda` y los carriles de Inicio,
- * que calculan sus propias listas de "cercanos esta semana" y "nuevos esta semana" con este mismo filtro) pero ya
- * no son pestañas de la Agenda (OL-156, segunda vuelta): esos dos carriles viven en Inicio, y Agenda queda como
- * lista directa con Todos y Siguiendo. Un enlace viejo con `?filtro=cercanos` o `?filtro=nuevos` cae a Todos, porque
- * `AgendaInicio` solo reconoce "siguiendo" como filtro inicial válido (ver su prop `filtroInicial`).
+ * Qué lista devuelve `filtrarAgenda`: "todos" y "siguiendo" son lo que Agenda muestra (la hoja Filtros pone «solo lo que
+ * sigo»). "cercanos" y "nuevos" quedan de cuando esos dos eran pestañas y carriles de Inicio (OL-156; P5, doc 50, los quitó
+ * de Inicio): ninguna pantalla los pide ya, solo las pruebas.
  */
 export type Filtro = "todos" | "cercanos" | "siguiendo" | "nuevos";
-export const FILTROS: { clave: Filtro; etiqueta: string }[] = [
-  { clave: "todos", etiqueta: "Todos" },
-  { clave: "siguiendo", etiqueta: "Siguiendo" },
-];
 
 export type Punto = { lat: number; lng: number };
 export type Grupo<T> = { clave: string; titulo: string; eventos: T[] };
@@ -50,15 +46,18 @@ export function compararEventos(a: Ordenable, b: Ordenable): number {
 /**
  * Agrupa por día, cada evento en el día de su zona: "Hoy", "Mañana" y luego cada día con eventos, en orden.
  * Dentro de cada día van en orden de agenda; con `ordenDado`, en el orden en que llegan (Cercanos: por distancia).
+ * Con `desde` (el primer día de un Cuándo), un evento que empezó antes y sigue en curso va en ese primer día, no en el
+ * que ya pasó fuera del rango.
  */
-export function agruparPorDia<T extends Agrupable>(eventos: T[], ahora: Date = new Date(), ordenDado = false): Grupo<T>[] {
+export function agruparPorDia<T extends Agrupable>(eventos: T[], ahora: Date = new Date(), ordenDado = false, desde = ""): Grupo<T>[] {
   const grupos = new Map<string, Grupo<T>>();
   const lista = ordenDado ? eventos : [...eventos].sort(compararEventos);
   for (const e of lista) {
-    const clave = diaLocal(new Date(e.inicio), e.zona);
+    const propio = diaLocal(new Date(e.inicio), e.zona);
+    const clave = propio < desde ? desde : propio;
     let g = grupos.get(clave);
     if (!g) {
-      g = { clave, titulo: diaCorto(e.inicio, ahora, e.zona), eventos: [] };
+      g = { clave, titulo: diaCorto(clave === propio ? e.inicio : (localAIso(`${clave}T12:00`, e.zona) ?? e.inicio), ahora, e.zona), eventos: [] };
       grupos.set(clave, g);
     }
     g.eventos.push(e);
@@ -146,6 +145,46 @@ export function agruparPorPublicacion<T extends Ordenable & Pick<EventoAgenda, "
   return [...grupos.values()].sort((a, b) => TITULOS_PUBLICACION.indexOf(a.titulo) - TITULOS_PUBLICACION.indexOf(b.titulo));
 }
 
+/** Cuánto cuesta (la hoja Filtros): sin precio es gratis y «Cooperación solidaria» es el costo sin cifra (OL-140). */
+export type Cuanto = "gratis" | "cooperacion";
+export const CUANTOS: { clave: Cuanto; etiqueta: string }[] = [
+  { clave: "gratis", etiqueta: "Gratis" },
+  { clave: "cooperacion", etiqueta: "Cooperación" },
+];
+const cuesta = (e: Pick<EventoAgenda, "precio">, cuanto: readonly Cuanto[] = []) => cuanto.length === 0 || cuanto.some((c) => (c === "gratis" ? e.precio === null : esCooperacion(e.precio)));
+
+/** Lo que la persona puso en la fila de contexto de Agenda (y de Inicio): Cuándo, Cuánto y si solo lo que sigue. */
+export type FiltrosAgenda = { cuando: Cuando | null; cuanto: Cuanto[]; siguiendo: boolean };
+export const SIN_FILTROS: FiltrosAgenda = { cuando: null, cuanto: [], siguiendo: false };
+
+/** Cuántos filtros de la hoja Filtros hay puestos (Cuándo no cuenta: tiene su propio chip). */
+export const filtrosPuestos = (f: FiltrosAgenda) => f.cuanto.length + (f.siguiendo ? 1 : 0);
+
+/** A Agenda con esos filtros: la URL es su estado inicial (después Agenda lo lleva en el teléfono, sin apilar historial). */
+export function hrefAgenda(f: FiltrosAgenda, ciudad?: string | null): string {
+  const p = new URLSearchParams();
+  if (ciudad) p.set("ciudad", ciudad);
+  if (f.cuando) {
+    p.set("desde", f.cuando.desde);
+    if (f.cuando.hasta !== f.cuando.desde) p.set("hasta", f.cuando.hasta);
+  }
+  if (f.cuanto.length > 0) p.set("cuanto", f.cuanto.join(","));
+  if (f.siguiendo) p.set("filtro", "siguiendo");
+  const consulta = p.toString();
+  return consulta ? `/agenda?${consulta}` : "/agenda";
+}
+
+/** Los filtros que guardó la memoria de pantalla, sin fiarse de su forma: una versión anterior de la pantalla guardaba otra. */
+export function filtrosRecordados(f: Partial<FiltrosAgenda> | undefined): FiltrosAgenda {
+  return { cuando: cuandoDeUrl(f?.cuando?.desde, f?.cuando?.hasta), cuanto: CUANTOS.map((c) => c.clave).filter((c) => f?.cuanto?.includes(c)), siguiendo: f?.siguiendo === true };
+}
+
+/** Los filtros que llegan en la URL de Agenda; lo que no se reconoce (un enlace viejo, `?filtro=cercanos`) se ignora. */
+export function filtrosDeUrl(p: { desde?: string; hasta?: string; cuanto?: string; filtro?: string }): FiltrosAgenda {
+  const cuantos = (p.cuanto ?? "").split(",");
+  return { cuando: cuandoDeUrl(p.desde, p.hasta), cuanto: CUANTOS.map((c) => c.clave).filter((c) => cuantos.includes(c)), siguiendo: p.filtro === "siguiendo" };
+}
+
 export type ContextoFiltro = {
   filtro: Filtro;
   /** Ubicación de la persona (solo con su permiso); null si no la dio. */
@@ -154,8 +193,10 @@ export type ContextoFiltro = {
   seguidos: string[] | null;
   /** Eventos en los que se presenta un artista que sigue (Artistas, decisión 10). */
   eventosSeguidos?: string[];
-  /** Día elegido con el chip (YYYY-MM-DD) o "": cada evento cuenta en el día de su zona. */
-  fecha: string;
+  /** Los días elegidos con Cuándo, o null: un evento cuenta en cada día que ocupa, en la zona del propio evento. */
+  cuando: Cuando | null;
+  /** Solo lo gratis, solo lo de cooperación o los dos; vacío o sin él, cualquier precio. */
+  cuanto?: readonly Cuanto[];
   /** Desde cuándo cuenta como nuevo (`corteNuevos`, leído del teléfono); sin él, el tope de DIAS_NUEVOS. */
   corte?: number;
   ahora: Date;
@@ -169,10 +210,10 @@ export type ContextoFiltro = {
  * (era el defecto que el founder vio el 2026-09-17, bitácora 099).
  */
 export function filtrarAgenda<T extends EventoAgenda>(eventos: T[], ctx: ContextoFiltro): { lista: T[]; km: Map<string, number> } {
-  // Un evento de varios días cuenta en cada día que ocupa (OL-218, `ocupaDia`): sin esto, el chip de fecha podía
-  // marcar un día como "disponible" en el calendario (por un evento que lo ocupa sin empezar ahí) y, al elegirlo,
-  // la lista salía vacía — confirmado con un evento de ejemplo del 6 al 8 de octubre, bitácora 247.
-  let lista = eventos.filter((e) => !ctx.fecha || ocupaDia(e, ctx.fecha)).sort(compararEventos);
+  // Un evento de varios días cuenta en cada día que ocupa (OL-218, `ocupaRango`): sin esto, el calendario podía marcar
+  // un día como "disponible" (por un evento que lo ocupa sin empezar ahí) y, al elegirlo, la lista salía vacía —
+  // confirmado con un evento de ejemplo del 6 al 8 de octubre, bitácora 247.
+  let lista = eventos.filter((e) => (!ctx.cuando || ocupaRango(e, ctx.cuando.desde, ctx.cuando.hasta)) && cuesta(e, ctx.cuanto)).sort(compararEventos);
   const km = new Map<string, number>();
   if (ctx.filtro === "cercanos" && ctx.punto) {
     for (const e of lista) {
@@ -204,4 +245,13 @@ export function buscarEventos<T extends Pick<EventoAgenda, "titulo" | "lugar" | 
     const texto = normalizarNombre(`${e.titulo} ${nombreSitio(e)} ${(e.artistas ?? []).join(" ")}`);
     return palabras.every((p) => texto.includes(p));
   });
+}
+
+/**
+ * Lo que Agenda lista con esos filtros y esa búsqueda, en orden de agenda. La lista y el número de cada botón «Ver N eventos»
+ * de las hojas de Cuándo y Filtros salen de aquí: lo que dice el botón es lo que se ve al tocarlo.
+ */
+export function listarAgenda(agenda: Pick<Agenda, "eventos" | "seguidos" | "eventosSeguidos">, filtros: FiltrosAgenda, busqueda: string, ahora: Date): EventoAgenda[] {
+  const { lista } = filtrarAgenda(agenda.eventos, { filtro: filtros.siguiendo ? "siguiendo" : "todos", punto: null, seguidos: agenda.seguidos, eventosSeguidos: agenda.eventosSeguidos, cuando: filtros.cuando, cuanto: filtros.cuanto, ahora });
+  return buscarEventos(lista, busqueda);
 }

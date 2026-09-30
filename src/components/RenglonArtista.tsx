@@ -37,7 +37,7 @@ type Props = {
  */
 export default function RenglonArtista({ artista: a, boton }: Props) {
   return (
-    <Renglon href={hrefArtista(a)} foto={a.foto ?? SIN_FOTO} redonda perezosa titulo={a.nombre} columna accion={boton && <BotonRenglon {...boton} />}>
+    <Renglon href={hrefArtista(a)} foto={a.foto ?? SIN_FOTO} redonda perezosa titulo={a.nombre} accion={boton && <BotonRenglon {...boton} />}>
       <span>
         <IconoDisciplina disciplina={a.disciplina} />
         <span>{etiquetaArtista(a)}</span>

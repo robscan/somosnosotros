@@ -4,12 +4,12 @@ import { tarjetaEvento } from "@/lib/destacados";
 import { calcularCarrilesAgenda } from "@/lib/inicio";
 import CarrilEventosCliente from "./CarrilEventosCliente";
 
-type Parte = "estelar" | "estaSemana" | "populares" | "nuevos";
+type Parte = "estelar" | "estaSemana" | "nuevos";
 
 /**
- * Componente de servidor: espera la misma `cargarAgenda` que comparten los cuatro carriles "Seleccionados para ti"
- * (o "Destacados"), "Esta semana", "Populares" y "Nuevos eventos" (OL-156, segunda vuelta; "Esta semana" y el
- * criterio nuevo de "Nuevos eventos", OL-219) — una consulta, no cuatro — y recalcula los carriles completos de
+ * Componente de servidor: espera la misma `cargarAgenda` que comparten los tres carriles "Seleccionados para ti"
+ * (o "Destacados"), "Esta semana" y "Nuevos eventos" (OL-156, segunda vuelta; "Esta semana" y el criterio nuevo de
+ * "Nuevos eventos", OL-219) — una consulta, no tres — y recalcula los carriles completos de
  * forma pura para quedarse solo con el suyo: así cada `<Suspense>` es independiente de verdad (no importa en qué
  * orden resuelvan los otros), sin repetir la consulta a la base ni compartir un `Set` mutable entre streams.
  * "Tus planes" no les quita eventos (OL-221): ver `calcularCarrilesAgenda`, `lib/inicio.ts`.
@@ -23,8 +23,6 @@ export default async function CarrilAgenda({ parte, agendaPromise, avisos, verTo
       ? { titulo: carriles.titulo, eventos: carriles.estelar, tamano: "grande" as const, memoria: "inicio-estelar" }
       : parte === "estaSemana"
         ? { titulo: "Esta semana", eventos: carriles.estaSemana, tamano: "mediana" as const, memoria: "inicio-esta-semana" }
-        : parte === "populares"
-          ? { titulo: "Populares", eventos: carriles.populares, tamano: "mediana" as const, memoria: "inicio-populares" }
-          : { titulo: "Nuevos eventos", eventos: carriles.nuevos, tamano: "mediana" as const, memoria: "inicio-nuevos" };
-  return <CarrilEventosCliente tarjetas={datos.eventos.map((e) => tarjetaEvento(e, ahora))} asistencias={agenda.asistencias} avisos={avisos} titulo={datos.titulo} tamano={datos.tamano} memoria={datos.memoria} verTodosHref={verTodosHref} />;
+        : { titulo: "Nuevos eventos", eventos: carriles.nuevos, tamano: "mediana" as const, memoria: "inicio-nuevos" };
+  return <CarrilEventosCliente tarjetas={datos.eventos.map((e) => tarjetaEvento(e, ahora))} asistencias={agenda.asistencias} avisos={avisos} titulo={datos.titulo} tamano={datos.tamano} memoria={datos.memoria} verTodos={{ href: verTodosHref, etiqueta: "Ver la agenda" }} />;
 }

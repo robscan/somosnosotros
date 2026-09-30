@@ -10,26 +10,13 @@
   .respira { animation: none; }
 }
 .cabecera {
-  display: grid;
-  row-gap: var(--espacio-2);
-  padding: var(--espacio-1) var(--gutter) var(--espacio-3);
-}
-.fila1 {
   display: flex;
   gap: var(--espacio-2);
+  padding: var(--espacio-1) var(--gutter) var(--espacio-3);
 }
 .chip {
   width: 96px;
   height: var(--control);
-  border-radius: var(--radio-pildora);
-}
-.pestanas {
-  display: flex;
-  gap: var(--espacio-2);
-}
-.pestana {
-  width: 84px;
-  height: 36px;
   border-radius: var(--radio-pildora);
 }
 .lista {

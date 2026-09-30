@@ -165,6 +165,15 @@ export function nombreSitio(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "si
   return "Sitio por confirmar";
 }
 
+/**
+ * El sitio para una lista (H-09, doc 50): el mismo nombre sin la dirección postal, que `nombreSitio` suma cuando el evento es
+ * «en otro sitio» y que en la lista partía el renglón en tres líneas. La dirección vive en la ficha del evento. Un evento
+ * sin nombre de sitio pero con dirección la conserva: es lo único que dice dónde es.
+ */
+export function sitioEnLista(e: Pick<EventoResumen, "lugar" | "sitio_texto" | "sitio_direccion" | "sitio_reservado">): string {
+  return nombreSitio({ ...e, sitio_direccion: e.sitio_texto ? null : e.sitio_direccion });
+}
+
 /** JSON-LD no convierte un alias legacy en direccion ni publica la direccion reservada. */
 export function direccionPublicaSitio(e: Pick<Evento, "sitio_direccion" | "sitio_reservado" | "ciudad">): { direccion: string; ciudad: string } | null {
   return !e.sitio_reservado && e.sitio_direccion ? { direccion: e.sitio_direccion, ciudad: e.ciudad } : null;

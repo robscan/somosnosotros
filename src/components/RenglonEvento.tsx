@@ -1,17 +1,15 @@
 import type { EventoAgenda } from "@/lib/agenda";
-import { textoDistancia } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
-import { hrefEvento, nombreSitio } from "@/lib/eventos";
+import { hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { diaCorto, horaCorta } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
-import { IconoBoleto, IconoCalendario, IconoEstrella, IconoPersonas, IconoPin, IconoReloj } from "./ui/Iconos";
+import { IconoCalendario, IconoEstrella, IconoPin, IconoReloj } from "./ui/Iconos";
 import Renglon from "./ui/Renglon";
 import styles from "./ui/Renglon.module.css";
 
 type Props = {
   evento: EventoAgenda;
-  km?: number;
   /** En la ficha de un lugar el sitio es obvio: no se repite. */
   sinSitio?: boolean;
   /** Lo que la persona ya decidió (con sesión): "Te interesa" se ve en los datos; "voy" ya lo dice el botón. */
@@ -26,43 +24,37 @@ type Props = {
   conDia?: boolean;
 };
 
-/** Renglón de evento: foto a la izquierda (la del evento o la del lugar), título y datos con icono. */
-export default function RenglonEvento({ evento: e, km, sinSitio = false, estado = null, boton, conDia = false }: Props) {
+/**
+ * Renglón de evento: foto a la izquierda (la del evento o la del lugar), el título y dos líneas de datos, cada una cortada
+ * con puntos suspensivos (H-09, doc 50: antes crecía hasta 190 px con la dirección postal y cada dato en su renglón). La
+ * primera es cuándo —«19:00», con el día si hace falta— y, tras un punto, lo que no es gratis y cuántos van (sin «Gratis» en
+ * todos); la segunda, el nombre del sitio, sin su dirección postal (esa vive en la ficha).
+ */
+export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false }: Props) {
   const foto = e.imagen ?? e.lugar?.portada ?? SIN_FOTO;
+  const ademas = [e.precio, e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
   return (
     <Renglon href={hrefEvento(e)} foto={foto} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
-      {estado === "me_interesa" && (
-        <span className={styles.estado}>
-          <IconoEstrella width={14} height={14} />
-          Te interesa
-        </span>
-      )}
       <span>
+        {estado === "me_interesa" && (
+          <span className={styles.estado}>
+            <IconoEstrella width={14} height={14} />
+            Te interesa
+          </span>
+        )}
         {conDia ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}
         <b>
           {conDia && `${diaCorto(e.inicio, new Date(), e.zona)} · `}
           {horaCorta(e.inicio, e.zona)}
         </b>
+        {ademas && <span>· {ademas}</span>}
       </span>
       {!sinSitio && (
-        <span className={styles.envuelve}>
-          <IconoPin width={15} height={15} />
-          {nombreSitio(e)}
-          {km !== undefined ? ` · ${textoDistancia(km)}` : ""}
-        </span>
-      )}
-      {e.van > 0 && (
         <span>
-          <IconoPersonas width={15} height={15} />
-          <span>
-            {e.van} {e.van === 1 ? "va" : "van"}
-          </span>
+          <IconoPin width={15} height={15} />
+          <span>{sitioEnLista(e)}</span>
         </span>
       )}
-      <span>
-        <IconoBoleto width={15} height={15} />
-        <span>{e.precio ?? "Gratis"}</span>
-      </span>
     </Renglon>
   );
 }

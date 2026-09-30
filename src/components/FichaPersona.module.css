@@ -12,6 +12,18 @@
   align-items: center;
   margin: var(--espacio-3) 0 var(--espacio-3);
 }
+/* Mi perfil (raíz): el avatar de 72 del prototipo firmado y un poco de aire arriba, bajo la barra de la app. */
+.deRaiz {
+  grid-template-columns: 72px 1fr auto;
+  margin-top: var(--espacio-4);
+}
+.deRaiz > .avatar {
+  width: 72px;
+  height: 72px;
+}
+.deRaiz > .avatarVacio {
+  font-size: var(--letra-2xl);
+}
 .acciones {
   grid-area: acciones;
   align-self: end;

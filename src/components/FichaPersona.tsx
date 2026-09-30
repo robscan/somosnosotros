@@ -40,9 +40,9 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
   const reservada = !mia && !!perfil.reservado;
   const incompleto = mia && (!perfil.colonia || !perfil.bio);
 
-  return (
+  const cabeza = (
     <>
-      <div className={styles.cabecera}>
+      <div className={mia ? `${styles.cabecera} ${styles.deRaiz}` : styles.cabecera}>
         {perfil.foto ? (
           // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
           <img src={perfil.foto} alt="" className={styles.avatar} />
@@ -93,6 +93,13 @@ export default function FichaPersona({ perfil, mia, eventos, interesan = [], lug
         </p>
       )}
       {misArtistas}
+    </>
+  );
+  return (
+    <>
+      {/* Mi perfil es una raíz (docs/rediseno/50, 5.3): la página no lleva aire a los lados y cada bloque pone el suyo; sus listas,
+          que son grupos de día pegajosos, lo traen. La ficha de otra persona sigue dentro del aire de su página. */}
+      {mia ? <div className="columna">{cabeza}</div> : cabeza}
       {bloqueado ? (
         <div className={styles.bloqueado}>
           <p>Bloqueaste a esta persona: no ves lo que publica.</p>
