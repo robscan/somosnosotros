@@ -1,4 +1,6 @@
+import { hrefAgenda, SIN_FILTROS } from "./agenda";
 import { CIUDAD_INICIAL, slugDeCiudad } from "./ciudad";
+import { atajosCuando } from "./cuando";
 import type { Tarjeta } from "./destacados";
 import { normalizarNombre } from "./lugares";
 
@@ -51,22 +53,23 @@ export function ordenarPorCiudad<T extends { ciudad: string }>(lista: T[], orden
 export type Hallazgo = { grupo: GrupoBuscador; encontrado: Encontrado };
 
 /**
- * «Mejor resultado»: si lo escrito es el nombre de algo, o el principio de su nombre (sin acentos ni mayúsculas), ese resultado
- * va arriba de todo, sea del tipo que sea: es lo que el sistema infiere que se buscaba. Un nombre igual gana a uno que solo empieza
- * igual; a igualdad, el del tipo de la sección desde la que se abrió Buscar y, si no, el primero de la lista (la de su ciudad).
+ * «Mejor resultado» (founder, 2026-09-29): solo cuando lo escrito es el nombre entero de algo (sin acentos ni mayúsculas) o, si no,
+ * cuando solo encaja al principio del nombre de una sola cosa entre todos los tipos: es lo que el sistema infiere que se buscaba.
+ * Con varios que empiezan igual («museo») no hay mejor resultado y los grupos bastan. Un nombre entero gana a los que solo empiezan
+ * igual; con dos nombres enteros, el del tipo de la sección de origen y, a igualdad, el primero de la lista (la de su ciudad).
  */
 export function mejorResultado(resultado: ResultadoBusqueda, texto: string, desde: GrupoBuscador): Hallazgo | null {
   const buscado = normalizarNombre(texto);
   if (!buscado) return null;
-  let empieza: Hallazgo | null = null;
+  const empiezan: Hallazgo[] = [];
   for (const grupo of ordenBusqueda(desde)) {
     for (const encontrado of resultado[grupo]) {
       const nombre = normalizarNombre(encontrado.titulo);
       if (nombre === buscado) return { grupo, encontrado };
-      if (!empieza && nombre.startsWith(buscado)) empieza = { grupo, encontrado };
+      if (nombre.startsWith(buscado)) empiezan.push({ grupo, encontrado });
     }
   }
-  return empieza;
+  return empiezan.length === 1 ? empiezan[0] : null;
 }
 
 /** Lo que se ve con el texto escrito: el mejor resultado, los grupos que quedan y los tipos que trajo la búsqueda (los chips). */
@@ -80,14 +83,15 @@ export type Vista = {
 };
 
 /**
- * Arma lo que se ve. Con «Todo», el mejor resultado y un grupo por tipo, cada uno sin el mejor; con un tipo elegido, solo ese tipo,
- * completo (y su mejor resultado, si lo tiene). Los grupos vacíos no salen.
+ * Arma lo que se ve. Con «Todo», el mejor resultado (si lo hay) y un grupo por tipo, cada uno sin el mejor; con un tipo elegido, solo
+ * ese tipo, completo (y el mejor resultado solo si es de ese tipo: se busca entre todos los tipos, así que no cambia con el chip).
+ * Los grupos vacíos no salen.
  */
 export function armarVista(resultado: ResultadoBusqueda, texto: string, desde: GrupoBuscador, tipo: GrupoBuscador | null): Vista {
   const tipos = ordenBusqueda(desde).filter((g) => resultado[g].length > 0);
   const elegido = tipo && tipos.includes(tipo) ? tipo : null;
-  const buscable = elegido ? { ...SIN_RESULTADOS_BUSQUEDA, [elegido]: resultado[elegido] } : resultado;
-  const mejor = mejorResultado(buscable, texto, desde);
+  const hallado = mejorResultado(resultado, texto, desde);
+  const mejor = hallado && (!elegido || hallado.grupo === elegido) ? hallado : null;
   const grupos = (elegido ? [elegido] : tipos)
     .map((grupo) => ({ grupo, encontrados: resultado[grupo].filter((e) => e !== mejor?.encontrado) }))
     .filter((g) => g.encontrados.length > 0);
@@ -114,4 +118,18 @@ export function hrefEnMapa(e: Encontrado): string {
   if (ciudad && ciudad !== CIUDAD_INICIAL.slug) consulta.set("ciudad", ciudad);
   consulta.set("lugar", e.href.split("/").pop() ?? e.id);
   return `/lugares?${consulta}`;
+}
+
+/**
+ * Los atajos de «Esta semana» en Buscar (founder, 2026-09-29): tres fijos, en este orden, sin consulta. Cada uno lleva a Agenda con el
+ * filtro que ya existe puesto (los de la hoja Cuándo y Filtros): Hoy, Fin de semana (el sábado y el domingo de esta semana) y Gratis.
+ * `hoy` es YYYY-MM-DD en la zona de la ciudad y `ciudad` su slug en la URL (null es la inicial).
+ */
+export function atajosDeLaSemana(hoy: string, ciudad: string | null): { etiqueta: string; href: string }[] {
+  const cuando = (etiqueta: string) => atajosCuando(hoy).find((a) => a.etiqueta === etiqueta)!.cuando;
+  return [
+    { etiqueta: "Hoy", href: hrefAgenda({ ...SIN_FILTROS, cuando: cuando("Hoy") }, ciudad) },
+    { etiqueta: "Fin de semana", href: hrefAgenda({ ...SIN_FILTROS, cuando: cuando("Fin de semana") }, ciudad) },
+    { etiqueta: "Gratis", href: hrefAgenda({ ...SIN_FILTROS, cuanto: ["gratis"] }, ciudad) },
+  ];
 }

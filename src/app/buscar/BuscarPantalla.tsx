@@ -5,15 +5,14 @@ import { buscarUnificado } from "@/app/accionesBuscar";
 import ChipCiudad from "@/components/Ciudad";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
 import { prestarALaBarra } from "@/components/prestamoBarra";
-import { useResuelta } from "@/components/useResuelta";
 import Boton from "@/components/ui/Boton";
 import { CampoBuscar } from "@/components/ui/Buscador";
-import { Chip, Chips } from "@/components/ui/Chip";
+import { Chip, ChipEnlace, Chips } from "@/components/ui/Chip";
 import Cerrar from "@/components/ui/Cerrar";
 import Grupo from "@/components/ui/Grupo";
 import Renglon from "@/components/ui/Renglon";
 import { enlaceDeBusqueda } from "@/lib/armazon";
-import { armarVista, hrefEnMapa, metaConTipo, metaDe, POR_GRUPO, ROTULO, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
+import { armarVista, atajosDeLaSemana, hrefEnMapa, metaConTipo, metaDe, POR_GRUPO, ROTULO, type Encontrado, type GrupoBuscador, type ResultadoBusqueda } from "@/lib/buscarUnificado";
 import { CIUDAD_INICIAL, ciudadesPorCercania, raizConCiudad, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { normalizarNombre } from "@/lib/lugares";
 import { crudoDeRecientes, guardarReciente, leerRecientes, type Reciente } from "@/lib/recientesBusqueda";
@@ -37,8 +36,8 @@ type Props = {
   ciudades: CiudadConDatos[];
   /** El tipo de la sección desde la que se abrió Buscar: su grupo sale primero. */
   desde: GrupoBuscador;
-  /** Los atajos de «Esta semana», que llegan aparte: no frenan al campo. */
-  tipos: Promise<string[]>;
+  /** Hoy en la ciudad, YYYY-MM-DD (lo decide el servidor para que cliente y servidor coincidan): los atajos de la semana se cuentan desde ahí. */
+  hoy: string;
 };
 
 /** Un dato por línea bajo el nombre del renglón; cada uno se corta con puntos suspensivos al llegar al borde. */
@@ -59,23 +58,24 @@ function useRecientes(): Reciente[] {
 
 /**
  * Buscar (docs/rediseno/50, OL-237; prototipo firmado, «Buscar»): la pantalla de la lupa de la barra, desde cualquier sección y en
- * los tres tamaños. Una barra de tarea con el campo y la ✕. Antes de escribir: la ciudad, lo último que se abrió desde aquí y los
- * atajos de esta semana; tocar uno busca esa palabra. Con texto (desde dos letras, sin acentos, tras una espera corta): el mejor
- * resultado si lo escrito es el nombre de algo y una lista en grupos por tipo, el de la sección de origen primero; tres por grupo y
- * «Ver N más» que despliega ahí mismo. Con más de un tipo en lo encontrado, chips para dejar solo uno. La persona nunca elige dónde
- * buscar: las tres cosas se buscan a la vez. Elegir un resultado abre su ficha (desde Lugares, un lugar vuelve al mapa con su ficha en
- * la hoja) y Atrás repone esta pantalla como estaba.
+ * los tres tamaños. Una barra de tarea con el campo y la ✕. Antes de escribir: la ciudad, lo último que se abrió desde aquí y tres
+ * atajos de la semana (Hoy, Fin de semana, Gratis) que llevan a Agenda con ese filtro puesto. Con texto (desde dos letras, sin
+ * acentos, tras una espera corta): el mejor resultado solo si lo escrito es el nombre entero de algo o solo encaja al inicio de un
+ * único nombre, y una lista en grupos por tipo, el de la sección de origen primero; tres por grupo y «Ver N más» que despliega ahí
+ * mismo. Con más de un tipo en lo encontrado, chips para dejar solo uno. La persona nunca elige dónde buscar: las tres cosas se
+ * buscan a la vez. Elegir un resultado abre su ficha (desde Lugares, un lugar vuelve al mapa con su ficha en la hoja) y Atrás repone
+ * esta pantalla como estaba.
  */
-export default function BuscarPantalla({ ciudad, ciudades, desde, tipos }: Props) {
+export default function BuscarPantalla({ ciudad, ciudades, desde, hoy }: Props) {
   const [texto, setTexto] = useState("");
   const [tipo, setTipo] = useState<GrupoBuscador | null>(null);
   const [abiertos, setAbiertos] = useState<GrupoBuscador[]>([]);
   const [respuesta, setRespuesta] = useState<Respuesta | null>(null);
   const campo = useRef<HTMLInputElement>(null);
   const orden = useMemo(() => ciudadesPorCercania(ciudad, ciudades), [ciudad, ciudades]);
-  const semana = useResuelta(tipos);
   const recientes = useRecientes();
 
+  const slugEnUrl = ciudad.slug === CIUDAD_INICIAL.slug ? null : ciudad.slug;
   const consulta = texto.trim();
   const buscable = normalizarNombre(consulta).length >= 2;
   const cargando = buscable && respuesta?.texto !== consulta;
@@ -134,7 +134,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, tipos }: Props
     <main className={styles.buscar}>
       <form role="search" className={styles.barra} onSubmit={alEnviar}>
         <CampoBuscar inputRef={campo} valor={texto} onCambiar={setTexto} placeholder="Buscar un evento, lugar o artista" ariaLabel="Buscar un evento, lugar o artista" autoFocus borrar={false} />
-        <Cerrar href={raizConCiudad(salida.raiz, ciudad.slug === CIUDAD_INICIAL.slug ? "" : `ciudad=${ciudad.slug}`)} texto={salida.texto} relieve="plano" />
+        <Cerrar href={raizConCiudad(salida.raiz, slugEnUrl ? `ciudad=${slugEnUrl}` : "")} texto={salida.texto} relieve="plano" />
       </form>
 
       {!buscable && (
@@ -151,19 +151,18 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, tipos }: Props
               ))}
             </Grupo>
           )}
-          {semana && semana.length > 0 && (
-            <Grupo titulo="Esta semana">
-              <li className={styles.atajos}>
-                <Chips ariaLabel="Esta semana" envuelve>
-                  {semana.map((t) => (
-                    <Chip key={t} onClick={() => setTexto(t)}>
-                      {t}
-                    </Chip>
-                  ))}
-                </Chips>
-              </li>
-            </Grupo>
-          )}
+          {/* Cada atajo reemplaza a Buscar por Agenda (filtrar no es navegar): Atrás desde Agenda no vuelve aquí. */}
+          <Grupo titulo="Esta semana">
+            <li className={styles.atajos}>
+              <Chips ariaLabel="Esta semana" envuelve>
+                {atajosDeLaSemana(hoy, slugEnUrl).map((a) => (
+                  <ChipEnlace key={a.etiqueta} href={a.href}>
+                    {a.etiqueta}
+                  </ChipEnlace>
+                ))}
+              </Chips>
+            </li>
+          </Grupo>
         </>
       )}
 
