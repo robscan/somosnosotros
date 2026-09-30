@@ -9,6 +9,7 @@ import { leerUbicacionCercana } from "@/lib/ubicacion";
 import { CampoBuscar } from "./ui/Buscador";
 import { Chip } from "./ui/Chip";
 import Hoja from "./ui/Hoja";
+import hoja from "./ui/Hoja.module.css";
 import { IconoBuscar, IconoCaret, IconoChevronDerecha, IconoOk, IconoPin, IconoUbicacion } from "./ui/Iconos";
 import renglon from "./ui/Renglon.module.css";
 import styles from "./Ciudad.module.css";
@@ -64,7 +65,7 @@ function HojaDonde({ ciudad, ciudades, hrefDe, onCerrar }: Props & { onCerrar: (
 
   return (
     <Hoja etiqueta="Dónde estás" titulo="Dónde estás" onCerrar={onCerrar}>
-      <p className={styles.nota}>Lo cercano va primero y lo demás después: la ciudad ordena, no limita.</p>
+      <p className={hoja.nota}>Lo cercano va primero y lo demás después: la ciudad ordena, no limita.</p>
       <ul className={renglon.tarjeta}>
         <li>
           <button type="button" className={renglon.ajuste} onClick={cercaDeTi}>
@@ -113,7 +114,7 @@ function HojaDonde({ ciudad, ciudades, hrefDe, onCerrar }: Props & { onCerrar: (
               ))}
             </ul>
           ) : (
-            <p className={styles.nota}>
+            <p className={hoja.nota}>
               {buscado ? `Nada con «${texto.trim()}».` : "Aún no hay otras ciudades."} {deArtistas ? "Registra un artista en otra ciudad y aparecerá aquí." : "Registra un lugar en otra ciudad y aparecerá aquí."}
             </p>
           )}

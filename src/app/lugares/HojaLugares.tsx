@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, type ReactNode, type Ref } from "react";
 import { avisarHoja } from "@/components/Armazon";
 import { CARRIL } from "@/lib/armazon";
-import { alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
+import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, type Detente, type Detentes } from "@/lib/hoja";
 import styles from "./HojaLugares.module.css";
 
 /** La lista asoma con dos renglones y medio: el tercero sale cortado a propósito, para que se entienda que hay más. */
@@ -122,7 +122,10 @@ export default function HojaLugares({ resumen, ficha, desde, alAsentar, ref, chi
     }
     const lista = franja.current!.nextElementSibling;
     const fila = lista?.querySelector("li");
-    const asoma = Math.min(llena, fila ? RENGLONES_QUE_ASOMAN * fila.offsetHeight : (lista?.getBoundingClientRect().height ?? 0));
+    // Lo que el mapa deja libre arriba: los mandos que flotan sobre él (`data-libre`) con el mismo aire arriba y abajo.
+    const mando = techo.querySelector("[data-libre]")?.getBoundingClientRect();
+    const libre = mando ? 2 * (mando.top - techo.getBoundingClientRect().top) + mando.height : 0;
+    const asoma = alturaAsoma(fila ? RENGLONES_QUE_ASOMAN * fila.offsetHeight : (lista?.getBoundingClientRect().height ?? 0), llena, libre);
     return { detentes: { recogida: 0, asoma, llena }, franja: franja.current!.offsetHeight, compactaDesde: Infinity };
   }, []);
 

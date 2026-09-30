@@ -25,7 +25,7 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
 }
 .campo > input:focus {
   border-color: var(--texto);
@@ -186,7 +186,7 @@
 }
 .existe {
   display: grid;
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: var(--columna-icono) 1fr;
   column-gap: 10px;
   align-items: center;
   margin-bottom: var(--espacio-3);
@@ -203,13 +203,49 @@
   color: var(--primario);
   font-weight: 700;
 }
+/* «Ya existe» dentro de la lista flotante (ui/ListaFlotante) es el único contenido: el margen de abajo dejaba una franja blanca vacía
+   debajo del aviso (revisión del gestor, 2026-09-21). El panel mide lo que mide su contenido. */
+.existeFlotante {
+  margin-bottom: 0;
+}
+/* Al salir del campo del nombre, si sigue habiendo una coincidencia, esta línea toma el relevo del panel: un renglón que no se sale
+   de una línea, con el nombre recortado con puntos si hace falta y «Ver» siempre visible (revisión del gestor, 2026-09-21: el panel
+   tapaba lo de abajo sin poder cerrarse). Pegada al campo (mismo padding-top que `renglon.nota`); abajo, la separación normal entre
+   renglones (`renglon.renglones` usa `--espacio-2` de gap). */
+.notaExiste {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espacio-1);
+  padding-top: var(--espacio-2);
+  margin-bottom: var(--espacio-2);
+  color: var(--texto-suave);
+  font-size: var(--letra-sm);
+}
+.notaExiste > span {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.notaExiste a {
+  flex-shrink: 0;
+  color: var(--primario);
+  font-weight: 700;
+}
+.nombreRecortado {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--texto);
+}
 
 /* 3. Renglones resueltos: son la piel `resuelto` de ui/Renglon (Renglon.module.css). Aquí queda solo lo de dentro de un
    renglón que es del formulario: la cámara, una etiqueta con forma de botón que lleva escondido el campo de archivo. */
 .salida {
   position: relative;
 }
-.salida > input {
+.salida > input,
+.subir input {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -237,7 +273,7 @@
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: max(16px, var(--letra-md));
+  font-size: var(--letra-campo);
 }
 textarea.entrada {
   min-height: 84px;
@@ -258,12 +294,6 @@ textarea.entrada {
   border: 1px solid var(--borde);
   border-radius: var(--radio);
   cursor: pointer;
-}
-.subir input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
 }
 
 /* 5. La nota bajo el botón de publicar: lo único que dice qué falta («Falta el nombre y dónde es.»). Mientras algo falte el botón va

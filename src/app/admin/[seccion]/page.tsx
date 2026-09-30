@@ -4,7 +4,7 @@ import Barra from "@/components/ui/Barra";
 import Boton from "@/components/ui/Boton";
 import Buscador from "@/components/ui/Buscador";
 import { Chip, Chips, Cuenta } from "@/components/ui/Chip";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { puedeDestacarse, SIN_DECIDIR, TIPO_DE, textoMotivo } from "@/lib/destacados";
 import { eventoPaso } from "@/lib/fechas";
 import { SIN_FOTO } from "@/lib/imagen";
@@ -53,7 +53,7 @@ export default async function ListaFichas({ params, searchParams }: { params: Pr
   const redonda = seccion === "artistas" ? styles.redonda : "";
 
   return (
-    <main className={`${ficha.pagina} ${styles.lista}`}>
+    <main className={`${plantilla.paginaContenido} ${styles.lista}`}>
       <Barra volver={{ href: "/admin", texto: "Administración" }} />
       <h1 className={styles.titulo}>{TITULO[seccion]}</h1>
       <Buscador valor={l.q ?? ""} placeholder={BUSCAR[seccion]} ariaLabel={BUSCAR[seccion]} />

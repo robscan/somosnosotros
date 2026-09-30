@@ -5,8 +5,8 @@ import Boton from "./ui/Boton";
 import Hoja from "./ui/Hoja";
 import IconoEnCirculo from "./ui/IconoEnCirculo";
 import { IconoBasura, IconoCalendario, IconoEstrella, IconoPersona, IconoPin, IconoPincel } from "./ui/Iconos";
+import estilos from "./ui/Confirmar.module.css";
 import renglon from "./ui/Renglon.module.css";
-import styles from "./Borrar.module.css";
 
 const ICONOS = { evento: IconoCalendario, lugar: IconoPin, artista: IconoEstrella, persona: IconoPersona, obra: IconoPincel };
 
@@ -36,13 +36,13 @@ export default function Borrar({ que, aviso, accion, icono, fila = false }: Prop
           <b>Borrar {que}</b>
         </button>
       ) : (
-        <button type="button" className={styles.enlace} onClick={() => setConfirmar(true)}>
+        <button type="button" className={estilos.enlace} onClick={() => setConfirmar(true)}>
           Borrar {que}
         </button>
       )}
       {confirmar && (
         <Hoja etiqueta={`Borrar ${que}`} onCerrar={() => setConfirmar(false)}>
-          <div className={styles.confirmar}>
+          <div className={estilos.confirmar}>
             <IconoEnCirculo>
               <Icono width={28} height={28} />
             </IconoEnCirculo>
@@ -51,7 +51,7 @@ export default function Borrar({ que, aviso, accion, icono, fila = false }: Prop
             <Boton type="button" variante="peligro" ancho="contenido" disabled={pendiente} onClick={() => iniciar(() => accion())}>
               {pendiente ? "Borrando…" : `Sí, borrar ${que}`}
             </Boton>
-            <button type="button" className={styles.enlace} onClick={() => setConfirmar(false)}>
+            <button type="button" className={estilos.enlace} onClick={() => setConfirmar(false)}>
               Cancelar
             </button>
           </div>

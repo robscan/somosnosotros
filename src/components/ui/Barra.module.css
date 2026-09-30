@@ -6,7 +6,7 @@
   background: var(--fondo);
 }
 
-/* Franja de borde a borde: ocupa las tres columnas de la página (`.pagina`: el aire, la columna y el aire), sin salirse del aire con
+/* Franja de borde a borde: ocupa las tres columnas de la página (la plantilla `pagina`: el aire, la columna y el aire), sin salirse del aire con
    un margen negativo; pegajosa arriba y con borde; tres columnas para que lo del centro (el logotipo o el título) quede siempre al
    centro, haya regreso o ✕. Pegajosa bajo lo que la barra de la app deje pegado (`--barra-vista`): nada en el teléfono, donde esta
    cabecera es la única barra; la barra de la app desde 792. */

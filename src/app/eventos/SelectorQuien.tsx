@@ -12,6 +12,7 @@ import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import sug from "@/components/ui/Sugerencia.module.css";
 import styles from "./SelectorQuien.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 type Props = {
   valor: QuienItem[];
@@ -125,7 +126,7 @@ export default function SelectorQuien({ valor, onCambio, mios, ciudadContexto = 
         <ContadorCaracteres valor={texto} tope={LIMITES_ARTISTA.nombre} />
       </span>
       {(sugerencias.length > 0 || ofrecerCrear) && (
-        <ul className={sug.lista} role="listbox" aria-label="Artistas encontrados">
+        <ul className={renglon.tarjeta} role="listbox" aria-label="Artistas encontrados">
           {sugerencias.map((a) => (
             <li key={a.id}>
               <button type="button" role="option" aria-selected={false} className={`${sug.renglon} ${sug.conMini}`} onClick={() => elegir(a)}>

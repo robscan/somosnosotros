@@ -58,6 +58,15 @@ export function alturaLlena(m: { arribaDelCuerpo: number; y: number; arribaDeLaH
 }
 
 /**
+ * Cuánto sube la lista al asomar: lo que piden sus renglones (`pide`), sin pasar de lo que deja libre el mapa. La hoja asomada tapa
+ * `llena − asoma` de menos del mapa, y en una ventana baja eso taparía los mandos que flotan sobre él (`libre`: el aire que necesitan,
+ * arriba y abajo de cada uno): cede lo que haga falta y el mapa conserva su franja de arriba.
+ */
+export function alturaAsoma(pide: number, llena: number, libre: number): number {
+  return Math.max(0, Math.min(pide, llena - libre));
+}
+
+/**
  * A dónde va la hoja cuando cambia lo que la persona ve (un filtro, un chip, otra ciudad): recogida sube a asoma para enseñar el
  * resultado; en asoma o llena se queda donde está.
  */

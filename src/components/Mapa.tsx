@@ -8,10 +8,10 @@ import { CIUDAD_INICIAL, type Ciudad } from "@/lib/ciudad";
 import { configPublica } from "@/lib/config";
 import { diaPin } from "@/lib/fechas";
 import { hrefLugar, type LugarLista } from "@/lib/lugares";
+import { colorDiseno, RADIO_TOQUE, type EstadoMapa } from "@/lib/mapa";
 import { propiedadesPin, TAMANO_NOMBRE, TAMANO_NOMBRE_ELEGIDO, type ColoresPin, type PropiedadesPin } from "@/lib/pines";
 import styles from "./Mapa.module.css";
 
-type EstadoMapa = "cargando" | "listo" | "sin-token" | "error";
 type Punto = { lat: number; lng: number };
 
 type Props = {
@@ -52,8 +52,6 @@ const FUENTE_NOMBRES = ["DIN Pro Bold", "Arial Unicode MS Bold"];
 /** Dónde puede ir un nombre, en el orden en que Mapbox lo intenta: `top` es el texto debajo del pin (como siempre), luego encima, a la
  *  derecha y a la izquierda. */
 const ANCLAS_NOMBRE: ("top" | "bottom" | "left" | "right")[] = ["top", "bottom", "left", "right"];
-/** Radio del toque alrededor de un punto (el punto mide 10 px; el dedo necesita más). */
-const RADIO_TOQUE = 18;
 /** Una sola lista vacía para el valor por defecto: una nueva en cada render volvería a pintar las capas. */
 const SIN_SEGUIDOS: string[] = [];
 const SIN_DESTACADOS: string[] = [];
@@ -62,12 +60,6 @@ const sinMovimiento = () => window.matchMedia("(prefers-reduced-motion: reduce)"
 
 /** Lo que las capas leen de cada lugar (`propiedadesPin` más lo que dice el propio lugar). */
 type PropiedadesLugar = PropiedadesPin & { id: string; nombre: string; dia: string; elegido: boolean };
-
-/** Color de una variable de diseño, porque Mapbox pide el valor literal. */
-function colorDiseno(nombre: string, reserva: string) {
-  if (typeof document === "undefined") return reserva;
-  return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim() || reserva;
-}
 
 /**
  * Tamaño, color, prioridad y opacidad ya calculados por lugar (`@/lib/pines`, OL-146 y P8): así las capas solo leen la propiedad

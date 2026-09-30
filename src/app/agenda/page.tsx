@@ -9,6 +9,7 @@ import { cargarCiudades } from "@/lib/ciudades";
 import { enmascararCorreo } from "@/lib/comunidad";
 import { diaLocal } from "@/lib/fechas";
 import { usuarioActual } from "@/lib/supabase/servidor";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./agenda.module.css";
 import type { Metadata } from "next";
 
@@ -90,7 +91,7 @@ async function AgendaContenido({ searchParams }: { searchParams: Promise<SearchP
  */
 export default function Agenda({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
-    <main className="raiz">
+    <main className={plantilla.raiz}>
       <Suspense fallback={<ListaEsqueleto />}>
         <AgendaContenido searchParams={searchParams} />
       </Suspense>

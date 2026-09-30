@@ -14,13 +14,13 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { sitioEnLista } from "@/lib/eventos";
 import { filtroSinPasar } from "@/lib/fechas";
 import { gruposConPosicion } from "@/lib/indice";
-import { normalizarNombre } from "@/lib/lugares";
 import { qrDeUrl } from "@/lib/qr";
 import { ORIGEN } from "@/lib/sitemap";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./page.module.css";
 
-type SearchParams = { ciudad?: string; hace?: string; que?: string; q?: string; n?: string };
+type SearchParams = { ciudad?: string; hace?: string; que?: string; n?: string };
 
 /**
  * El canonical conserva la ciudad cuando no es la inicial ("el contexto ordena, no limita": OL-029) y descarta el
@@ -53,11 +53,11 @@ type Evento = { id: string; titulo: string; inicio: string; zona: string; sitio_
 type Opcion = { valor: string; etiqueta: string };
 export type Cargado = {
   artistas: ArtistaLista[];
-  /** Cuántos cumplen el filtro (disciplina, detalle o búsqueda), se vean o no (la página trae `n`). */
+  /** Cuántos cumplen el filtro (disciplina o detalle), se vean o no (la página trae `n`). */
   total: number;
   /** Cuántos faltan por ver tras los que trae la página. */
   quedan: number;
-  /** Cuántos hay en la ciudad sin ningún filtro: decide si aparecen la búsqueda y los chips. */
+  /** Cuántos hay en la ciudad sin ningún filtro: decide si aparecen los chips. */
   totalCiudad: number;
   disciplinas: Opcion[];
   detalles: Opcion[];
@@ -72,35 +72,30 @@ export type Cargado = {
 
 /**
  * Los artistas de la ciudad con su fecha más próxima y dónde (decisión 1), filtrados y paginados en el servidor:
- * la disciplina, el detalle y lo escrito vienen de la URL (revisión 2026-09-14, A2), de `n` en `n`, en orden
+ * la disciplina y el detalle vienen de la URL (revisión 2026-09-14, A2), de `n` en `n`, en orden
  * alfabético real (`nombre_orden`). La tira de letras no filtra (corrección del founder, 2026-09-19: es un acceso
  * directo): sus posiciones salen de una consulta aparte, de una sola columna y sin límite de página, para saber
  * cuánto pedir sin traer fotos ni el catálogo completo de golpe. Sin carriles propios (OL-165): la tira de
  * destacados y "Con eventos esta semana" ya viven en Inicio.
  */
-async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
+async function cargar(f: FiltroLeido, ciudad: string): Promise<Cargado> {
   const vacio: Cargado = { artistas: [], total: 0, quedan: 0, totalCiudad: 0, disciplinas: [], detalles: [], letras: [], posiciones: {} };
   const supabase = await clienteServidor();
   if (!supabase) return vacio;
-  const ciudad = ciudadNombre;
-
-  const q = f.q ? normalizarNombre(f.q).replace(/[,()]/g, "") : "";
   const [f1, d1, d2, presencia] = await Promise.all([
     // Las filas van por la hora de su evento (`evento(inicio)` ordena las filas; `order` con `referencedTable` solo ordenaba
     // dentro del evento ligado), así el corte de 500 se queda con lo más próximo. Lo que se ordena debe ir en el select.
     supabase.from("eventos_artistas").select("artista_id, evento:eventos!inner(id, titulo, inicio, zona, sitio_texto, sitio_direccion, sitio_reservado, lugar:lugares(nombre))").eq("evento.visible", true).or(filtroSinPasar(), { referencedTable: "evento" }).order("evento(inicio)").order("evento(titulo)").order("evento(id)").order("artista_id").limit(500),
     supabase.rpc("disciplinas_con_artistas", { p_ciudad: ciudad }),
     f.hace ? supabase.rpc("detalles_de_disciplina", { p_ciudad: ciudad, p_disciplina: f.hace }) : Promise.resolve({ data: [] as { clave: string; etiqueta: string; n: number }[] }),
-    // Solo el nombre, ya ordenado, para la tira: dónde empieza cada letra. No aplica con búsqueda, que la esconde.
+    // Solo el nombre, ya ordenado, para la tira: dónde empieza cada letra.
     // Una sola columna, sin foto ni disciplina: no es el catálogo completo, aunque no esté recortada por página.
-    !q
-      ? (() => {
-          let c = supabase.from("artistas").select("nombre_orden").eq("visible", true).eq("ciudad", ciudad);
-          if (f.hace) c = c.eq("disciplina", f.hace);
-          if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
-          return c.order("nombre_orden").limit(5000);
-        })()
-      : Promise.resolve({ data: [] as { nombre_orden: string }[] }),
+    (() => {
+      let c = supabase.from("artistas").select("nombre_orden").eq("visible", true).eq("ciudad", ciudad);
+      if (f.hace) c = c.eq("disciplina", f.hace);
+      if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
+      return c.order("nombre_orden").limit(5000);
+    })(),
   ]);
   // Todas las fechas con su sitio; la próxima de cada artista la elige `conProximaFecha`, no el orden de llegada.
   const fechas: FechaDeArtista[] = [];
@@ -118,14 +113,10 @@ async function cargar(f: FiltroLeido, ciudadNombre: string): Promise<Cargado> {
   const letras = grupos.map((g) => g.letra);
   const posiciones = Object.fromEntries(grupos.map((g) => [g.letra, g.desde]));
 
-  const base = () => {
-    let c = supabase.from("artistas").select("id, slug, nombre, disciplina, detalle, tipo, foto", { count: "exact" }).eq("visible", true).eq("ciudad", ciudad);
-    if (f.hace) c = c.eq("disciplina", f.hace);
-    if (f.que) c = c.ilike("detalle", f.que.replace(/[%_]/g, ""));
-    if (q) c = c.or(`nombre_orden.ilike.%${q}%,detalle.ilike.%${q}%`);
-    return c;
-  };
-  const a = await base().order("nombre_orden").range(0, f.n - 1);
+  let lista = supabase.from("artistas").select("id, slug, nombre, disciplina, detalle, tipo, foto", { count: "exact" }).eq("visible", true).eq("ciudad", ciudad);
+  if (f.hace) lista = lista.eq("disciplina", f.hace);
+  if (f.que) lista = lista.ilike("detalle", f.que.replace(/[%_]/g, ""));
+  const a = await lista.order("nombre_orden").range(0, f.n - 1);
   const artistas = conProximaFecha((a.data ?? []) as ArtistaResumen[], fechas);
   return { artistas, total: a.count ?? 0, quedan: Math.max(0, (a.count ?? 0) - artistas.length), totalCiudad, disciplinas, detalles, letras, posiciones };
 }
@@ -182,7 +173,7 @@ async function ArtistasContenido({ searchParams }: { searchParams: Promise<Searc
 /** Artistas: quiénes hacen la cultura de la ciudad, con su próxima fecha. Decisiones en docs/rediseno/08-artistas-flujo-y-estados.md. */
 export default function Artistas({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
-    <main className="raiz">
+    <main className={plantilla.raiz}>
       <Suspense fallback={<ListaEsqueleto redonda />}>
         <ArtistasContenido searchParams={searchParams} />
       </Suspense>

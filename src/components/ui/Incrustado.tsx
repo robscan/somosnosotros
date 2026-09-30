@@ -7,8 +7,8 @@ const PROVEEDORES_DE_VIDEO = new Set<ProveedorNovedadArtista>(["youtube", "vimeo
 /**
  * El reproductor de una novedad de artista (doc 44 §2/§3, OL-181): recibe el resultado ya armado y validado de
  * `incrustadoDeNovedad` (nunca la fila cruda) y solo pinta el `<iframe>`, con el `sandbox`/`allow`/alto que le dan.
- * Los proveedores 16:9 (YouTube, Vimeo) comparten el mismo marco que `ui/VideoEmbed` (que sigue aparte, sin
- * tocarse: lo usa "Video" de Redes, OL-154); los de audio (SoundCloud, Mixcloud, Bandcamp) usan un alto fijo por
+ * Los proveedores 16:9 (YouTube, Vimeo) comparten el marco con `ui/VideoEmbed` (el «Video» de Redes, OL-154, que arma
+ * su propio `src`); los de audio (SoundCloud, Mixcloud, Bandcamp) usan un alto fijo por
  * proveedor, sin salto al cargar.
  */
 export default function Incrustado({ incrustado, proveedor, nombre }: { incrustado: IncrustadoType; proveedor: ProveedorNovedadArtista; nombre: string }) {

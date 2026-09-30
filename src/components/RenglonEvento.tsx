@@ -2,7 +2,6 @@ import type { EventoAgenda } from "@/lib/agenda";
 import type { Asistencia } from "@/lib/deslizar";
 import { hrefEvento, sitioEnLista } from "@/lib/eventos";
 import { diaCorto, horaCorta } from "@/lib/fechas";
-import { SIN_FOTO } from "@/lib/imagen";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { Chip } from "./ui/Chip";
 import { IconoCalendario, IconoPin, IconoReloj } from "./ui/Iconos";
@@ -31,10 +30,9 @@ type Props = {
  * todos); la segunda, el nombre del sitio, sin su dirección postal (esa vive en la ficha).
  */
 export default function RenglonEvento({ evento: e, sinSitio = false, estado = null, boton, conDia = false }: Props) {
-  const foto = e.imagen ?? e.lugar?.portada ?? SIN_FOTO;
   const ademas = [e.precio, e.van > 0 ? `${e.van} ${e.van === 1 ? "va" : "van"}` : null].filter(Boolean).join(" · ");
   return (
-    <Renglon href={hrefEvento(e)} foto={foto} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
+    <Renglon href={hrefEvento(e)} foto={e.imagen ?? e.lugar?.portada ?? null} titulo={e.titulo} accion={boton && <BotonRenglon {...boton} />}>
       <span>
         {estado === "me_interesa" && <Chip variante="estado">Te interesa</Chip>}
         {conDia ? <IconoCalendario width={15} height={15} /> : <IconoReloj width={15} height={15} />}

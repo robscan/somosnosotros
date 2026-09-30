@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import ListaLugares from "@/components/ListaLugares";
 import { useMemoriaPantalla } from "@/components/MemoriaPantalla";
@@ -18,7 +18,7 @@ import comun from "@/components/Lista.module.css";
 import { enlaceDeAlta } from "@/lib/armazon";
 import { CIUDAD_INICIAL, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import type { Destacado } from "@/lib/destacados";
-import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
+import { etiquetaTipo, filtrarPorEleccion, lugaresEncuadreInicial, ordenarLugares, TIPOS, type ConEventos, type EleccionLugares, type LugarLista } from "@/lib/lugares";
 import { leerUbicacionCercana } from "@/lib/ubicacion";
 import FichaHoja, { type PiezasFicha } from "./FichaHoja";
 import FilaLugares from "./FilaLugares";
@@ -57,8 +57,6 @@ type Props = {
   lugares: LugarLista[];
   ciudad: Ciudad;
   ciudades: CiudadConDatos[];
-  /** Tipo elegido, leído de la URL (`?tipo=`). */
-  tipo: string | null;
   extras: Promise<ExtrasLugares>;
   /** El lugar cuya ficha abre la hoja al llegar (`?lugar=`, el slug o el id): Buscar, desde Lugares, vuelve al mapa con él. */
   fichaInicial?: string;
@@ -71,6 +69,12 @@ type Props = {
 
 /** Lo que Lugares recuerda de la pantalla al salir de ella (a una ficha, a otra pestaña) y repone al volver. */
 type Memoria = { conEventos: ConEventos | null; soloSigo: boolean; hoja: DondeEstaba & { ficha: string | null } };
+
+/** El tipo que trae la URL (`?tipo=`): solo vale si existe. */
+function tipoDeLaUrl(params: { get(nombre: string): string | null }): string | null {
+  const tipo = params.get("tipo");
+  return tipo && TIPOS.some((t) => t.valor === tipo) ? tipo : null;
+}
 
 /** La dirección de Lugares con lo que vive en la URL: la ciudad (si no es la inicial) y el tipo. */
 function hrefLugares(ciudad: Ciudad, tipo: string | null): string {
@@ -95,8 +99,16 @@ function encuadreCercanosDe(lugares: LugarLista[], p: Punto): Punto[] {
  * el mapa encuadra los lugares que quedan, sin moverse si no cambió nada (docs/rediseno/50, decisión del founder del 2026-09-30). Decisiones
  * en docs/rediseno/06-lugares-flujo-y-estados.md y docs/rediseno/prototipos/restructura-ui.html.
  */
-export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, fichaInicial, hoy, abrirFicha }: Props) {
-  const router = useRouter();
+export default function VistaLugares({ lugares, ciudad, ciudades, extras, fichaInicial, hoy, abrirFicha }: Props) {
+  // El tipo se elige aquí, sin pedirle nada al servidor (la lista de la ciudad ya está en el teléfono): la lista y el mapa cambian al
+  // instante y la URL lo refleja para poder compartirlo. Si la URL trae otro por su cuenta (otra ciudad, Atrás), el tipo la sigue.
+  const tipoDeUrl = tipoDeLaUrl(useSearchParams());
+  const [tipo, setTipo] = useState(tipoDeUrl);
+  const [tipoVisto, setTipoVisto] = useState(tipoDeUrl);
+  if (tipoDeUrl !== tipoVisto) {
+    setTipoVisto(tipoDeUrl);
+    setTipo(tipoDeUrl);
+  }
   const [conEventos, setConEventos] = useState<ConEventos | null>(null);
   const [soloSigo, setSoloSigo] = useState(false);
   const [punto, setPunto] = useState<Punto | null>(null);
@@ -170,11 +182,14 @@ export default function VistaLugares({ lugares, ciudad, ciudades, tipo, extras, 
     porEncuadrar.current = puntos; // la cámara va en cuanto la hoja avise cuánto tapa: ya subió a asoma si estaba recogida
     hojaRef.current?.mostrarLista();
   }
-  /** Lo que se elige en Filtros: el tipo vive en la URL (se comparte y sobrevive al volver atrás), lo demás en el teléfono. */
+  /** Lo que se elige en Filtros: todo se queda en el teléfono; el tipo, además, en la URL (se comparte y sobrevive al volver atrás). */
   function cambiar(nueva: EleccionLugares) {
     setConEventos(nueva.conEventos);
     setSoloSigo(nueva.soloSigo);
-    if (nueva.tipo !== tipo) router.replace(hrefLugares(ciudad, nueva.tipo), { scroll: false });
+    if (nueva.tipo !== tipo) {
+      setTipo(nueva.tipo);
+      window.history.replaceState(null, "", hrefLugares(ciudad, nueva.tipo));
+    }
     const quedan = filtrarPorEleccion(lugares, nueva, seguidos, hoy);
     // Con lo mismo a la vista, la cámara se queda donde está.
     mostrarResultado(quedan.length === visibles.length && quedan.every((l, i) => l.id === visibles[i].id) ? null : quedan);
@@ -336,7 +351,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           tapaAbajo={tapaAbajo}
         />
         {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={styles.avisoMapa} />}
-        <BotonIcono tamano="accion" relieve="elevado" className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
+        <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
           <IconoUbicacion width={22} height={22} />
         </BotonIcono>
       </div>

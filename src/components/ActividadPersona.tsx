@@ -13,6 +13,7 @@ import RenglonEvento from "./RenglonEvento";
 import { useAsistenciaEnLista, type Decididas } from "./useAsistenciaEnLista";
 import { AvisoAbajo, useCanalDeListas } from "./useCanalDeListas";
 import { useSeguirEnLista, type AvisosLista } from "./useSeguirEnLista";
+import ficha from "./ui/Ficha.module.css";
 import styles from "./FichaPersona.module.css";
 
 /**
@@ -74,7 +75,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
   // Cada día es un grupo con su título pegado (`ui/Grupo`), en Mi perfil y en la ficha de otra persona.
   const listaEventos = (lista: EventoAgenda[], vacio: ReactNode, conSello: boolean) =>
     lista.length === 0 ? (
-      <p className={styles.vacio}>{vacio}</p>
+      <p className={`${ficha.vacio} ${styles.vacio}`}>{vacio}</p>
     ) : (
       agruparPorDia(lista).map((g) => {
         return (
@@ -107,7 +108,7 @@ export default function ActividadPersona({ mia, eventos, interesan, lugares, art
     contenido:
       p.clave === "sigue" ? (
         p.n === 0 ? (
-          <p className={styles.vacio}>
+          <p className={`${ficha.vacio} ${styles.vacio}`}>
             {mia ? (
               <>
                 Todavía no sigues nada. <Link href="/lugares">Ver lugares</Link> · <Link href="/artistas">Ver artistas</Link>

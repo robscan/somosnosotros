@@ -8,7 +8,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { textoPendientes } from "@/lib/panel";
 import { TEXTO_INVITAR } from "@/lib/perfil";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import AvisosPerfil from "@/app/perfil/AvisosPerfil";
 import ReservaPerfil from "@/app/perfil/ReservaPerfil";
 import { borrarMiCuenta } from "@/app/perfil/acciones";
@@ -35,7 +35,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
   // Administración dice lo pendiente (docs/rediseno/19, decisión 12).
   const pendientes = perfil.rol === "admin" ? await contarPendientes() : null;
   return (
-    <main className={ficha.pagina}>
+    <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/perfil", texto: "Mi perfil" }} />
       <h1 className={styles.titulo}>Ajustes</h1>
       {error === "borrar" && (
@@ -45,7 +45,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
       )}
       <div className={styles.ajustes}>
         <h2>Tu ficha</h2>
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           <li>
             <Link href="/ajustes/editar" className={renglon.ajuste}>
               <IconoLapiz width={20} height={20} />
@@ -58,12 +58,12 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
         </ul>
 
         <h2>Avisos</h2>
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           <AvisosPerfil correo={perfil.avisos_correo === true} correoTexto={correo} llavePush={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
         </ul>
 
         <h2>Cuenta</h2>
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           <li className={renglon.ajuste}>
             <IconoPersona width={20} height={20} />
             <b>Entras con {correo}</b>
@@ -83,7 +83,7 @@ export default async function Ajustes({ searchParams }: { searchParams: Promise<
         </ul>
 
         <h2>Somos Nosotros</h2>
-        <ul className={styles.tarjeta}>
+        <ul className={renglon.tarjeta}>
           <InstalarApp />
           <li>
             <BotonCompartir titulo="Somos Nosotros" texto={TEXTO_INVITAR} url={ORIGEN} className={renglon.ajuste}>

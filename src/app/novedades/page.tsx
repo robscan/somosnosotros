@@ -4,7 +4,7 @@ import { IconoCalendarioMas, IconoCampana, IconoPersonas, IconoReloj } from "@/c
 import { hrefEvento } from "@/lib/eventos";
 import { agruparNovedades } from "@/lib/novedades";
 import { usuarioActual } from "@/lib/supabase/servidor";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { cargarNovedades } from "./consultas";
 import MarcarVistas from "./MarcarVistas";
 import TelefonoAun from "./TelefonoAun";
@@ -20,7 +20,7 @@ export default async function Novedades() {
   const actual = await usuarioActual();
   if (!actual) {
     return (
-      <main className={ficha.pagina}>
+      <main className={plantilla.paginaContenido}>
         <Barra volver={{ href: "/", texto: "Agenda" }} />
         <h1 className={styles.titulo}>Novedades</h1>
         <p className={styles.vacio}>
@@ -32,7 +32,7 @@ export default async function Novedades() {
   const { lista, sigue } = await cargarNovedades(actual.perfil.id, actual.perfil.novedades_vistas_en ?? null);
   const grupos = agruparNovedades(lista);
   return (
-    <main className={ficha.pagina}>
+    <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/", texto: "Agenda" }} />
       <MarcarVistas />
       <h1 className={styles.titulo}>Novedades</h1>

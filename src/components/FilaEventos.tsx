@@ -95,7 +95,7 @@ function HojaCuando({ valor, hoy, zona, agenda, onAplicar, onCerrar }: PropsHoja
   // El calendario se ve mientras se elige con él: al abrir con un valor que no es un atajo, ya viene abierto.
   const [eligiendo, setEligiendo] = useState(() => !!valor.cuando && !atajos.some((a) => mismoCuando(a.cuando, valor.cuando)));
   const dias = useMemo(() => (agenda ? diasActivosCalendario(agenda.eventos) : undefined), [agenda]);
-  const n = agenda ? listarAgenda(agenda, { ...valor, cuando: borrador }, new Date()).length : null;
+  const n = agenda ? listarAgenda(agenda, { ...valor, cuando: borrador }).length : null;
   const elegir = (cuando: Cuando | null) => {
     setBorrador(cuando);
     setEligiendo(false);
@@ -130,7 +130,7 @@ function HojaCuando({ valor, hoy, zona, agenda, onAplicar, onCerrar }: PropsHoja
 /** Filtros: cuánto cuesta (uno, otro o los dos) y si solo lo que sigue la persona. */
 function HojaDeFiltros({ valor, agenda, onAplicar, onCerrar }: PropsHoja) {
   const [borrador, setBorrador] = useState({ cuanto: valor.cuanto, siguiendo: valor.siguiendo });
-  const n = agenda ? listarAgenda(agenda, { ...valor, ...borrador }, new Date()).length : null;
+  const n = agenda ? listarAgenda(agenda, { ...valor, ...borrador }).length : null;
   const alternar = (clave: Cuanto) => setBorrador((b) => ({ ...b, cuanto: b.cuanto.includes(clave) ? b.cuanto.filter((c) => c !== clave) : [...b.cuanto, clave] }));
 
   return (

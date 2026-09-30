@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Barra from "@/components/ui/Barra";
-import ficha from "@/components/ui/Ficha.module.css";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import { esUuid } from "@/lib/formulario";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { cargarObraParaPintar, cargarPincelActivo } from "../../consultas";
@@ -30,7 +30,7 @@ export default async function MandoDeObra({ params, searchParams }: { params: Pr
   // controles, sin abrir el canal.
   if (!(await cargarPincelActivo())) {
     return (
-      <main className={ficha.pagina}>
+      <main className={plantilla.paginaContenido}>
         <Barra volver={{ href: "/", texto: "Salir" }} />
         <p className={styles.cerrada}>Pincel está apagado por ahora.</p>
       </main>
@@ -41,7 +41,7 @@ export default async function MandoDeObra({ params, searchParams }: { params: Pr
 
   if (obra.estado !== "abierta") {
     return (
-      <main className={ficha.pagina}>
+      <main className={plantilla.paginaContenido}>
         <Barra volver={{ href: "/", texto: "Agenda" }} />
         <p className={styles.cerrada}>«{obra.nombre}» ya cerró. Ya no se puede pintar ahí.</p>
       </main>
@@ -49,7 +49,7 @@ export default async function MandoDeObra({ params, searchParams }: { params: Pr
   }
 
   return (
-    <main className={ficha.pagina}>
+    <main className={plantilla.paginaContenido}>
       <Barra volver={{ href: "/", texto: "Salir" }} />
       <Mando
         obraId={obra.id}

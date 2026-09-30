@@ -43,12 +43,12 @@
 .asa::before {
   content: "";
   display: block;
-  width: 36px;
-  height: 4px;
+  width: var(--asa-ancho);
+  height: var(--asa-alto);
   margin: var(--espacio-2) auto 0;
   border-radius: 2px;
   background: var(--vidrio);
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--sombra-asa);
 }
 
 /* Desde 792 la hoja es un panel: sin alturas no hay asa. Va después de ella para ganarle el `display`. */

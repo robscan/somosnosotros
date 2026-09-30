@@ -48,7 +48,7 @@
    escritorio): la hoja cubre la pantalla y la barra es la suya. */
 .hoja[data-hoja="llena"] {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+  scrollbar-color: var(--barra-desplazamiento) transparent;
 }
 .hoja[data-hoja="llena"]::-webkit-scrollbar {
   display: block;
@@ -102,8 +102,8 @@
 .asa::before {
   content: "";
   display: block;
-  width: 36px;
-  height: 4px;
+  width: var(--asa-ancho);
+  height: var(--asa-alto);
   margin: var(--espacio-2) auto 0;
   border-radius: 2px;
   background: var(--asa);
@@ -133,7 +133,7 @@
     border-right: 1px solid var(--borde);
     background: var(--fondo-contenido);
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+    scrollbar-color: var(--barra-desplazamiento) transparent;
   }
   .hoja::-webkit-scrollbar {
     display: block;

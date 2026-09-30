@@ -24,7 +24,7 @@ const EVENTOS = [
   ["e3", "2026-10-04T01:00:00Z", "Cooperación solidaria", null],
   ["e4", "2026-10-05T01:00:00Z", "$150", null],
   ["e5", "2026-10-11T01:00:00Z", null, null],
-].map(([id, inicio, precio, lugar_id]) => ({ id, titulo: `Evento ${id}`, inicio, fin: null, imagen: null, precio, lugar_id, sitio_texto: null, sitio_reservado: false, zona: "America/Mexico_City", lugar: null, creado_en: "2026-09-01T00:00:00Z", lat: null, lng: null, van: 0 }));
+].map(([id, inicio, precio, lugar_id]) => ({ id, titulo: `Evento ${id}`, inicio, fin: null, imagen: null, precio, lugar_id, sitio_texto: null, sitio_reservado: false, zona: "America/Mexico_City", lugar: null, creado_en: "2026-09-01T00:00:00Z", van: 0 }));
 let browser, server, dir, origin;
 
 const mocks = {

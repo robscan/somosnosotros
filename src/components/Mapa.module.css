@@ -1,7 +1,7 @@
+/* El mapa llena su caja, que es de quien lo pone (el hueco bajo la fila de contexto en Lugares; entre el campo y el panel en «¿Dónde es?»). */
 .mapa {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   background: var(--fondo-mapa);
 }
 
@@ -32,7 +32,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(26, 115, 232, 0.18);
+  background: var(--sistema-azul-halo);
   pointer-events: none;
 }
 .yo::after {
@@ -41,8 +41,8 @@
   height: 14px;
   border-radius: 50%;
   background: var(--sistema-azul);
-  border: 2.5px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  border: 2.5px solid var(--fondo);
+  box-shadow: var(--sombra-punto);
 }
 
 /* Un pulso al elegir un lugar (P8; se retira borrando este bloque y su efecto en `Mapa.tsx`): un anillo del color del pin y del tamaño de

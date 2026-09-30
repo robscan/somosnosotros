@@ -42,8 +42,10 @@ export function useSalirSinPublicar(pantalla: RefObject<HTMLElement | null>, olv
   return (
     <Hoja etiqueta="Salir sin publicar" onCerrar={seguir}>
       <div className={styles.salida}>
-        <h3>¿Salir sin publicar?</h3>
-        <p>Se borra lo que escribiste.</p>
+        <div className={styles.encabezado}>
+          <h3>¿Salir sin publicar?</h3>
+          <p>Se borra lo que escribiste.</p>
+        </div>
         <Boton type="button" onClick={seguir}>
           Seguir editando
         </Boton>

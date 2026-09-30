@@ -4,7 +4,7 @@ import { esUuid, limpiar } from "./formulario";
 import { enlacesDesdeJson, type Enlace } from "./enlaces";
 import { formatearCuando } from "./fechas";
 import { imagenPermitida } from "./imagenes";
-import { compararNombres, normalizarNombre } from "./lugares";
+import { normalizarNombre } from "./lugares";
 import type { Origen } from "./origen";
 import { LIMITES_ARTISTA } from "./limites";
 
@@ -32,8 +32,6 @@ export { LIMITES_ARTISTA } from "./limites";
 
 /** Umbral a partir del cual aparecen los chips de disciplina (decisión 2). */
 export const UMBRAL_CHIPS_ARTISTAS = 12;
-/** Un detalle (género, técnica) merece chip cuando lo comparten al menos tantos artistas de la disciplina elegida. */
-export const MINIMO_POR_DETALLE = 3;
 
 export type ArtistaResumen = {
   id: string;
@@ -140,23 +138,16 @@ export function deducirDisciplina(nombre: string): Disciplina {
   return "musica";
 }
 
-/** Orden del directorio: alfabético, sin distinguir acentos, mayúsculas ni signos. */
-export function ordenarArtistas<T extends ArtistaLista>(artistas: T[]): T[] {
-  return [...artistas].sort((a, b) => compararNombres(a.nombre, b.nombre));
-}
-
-/** Filtra por nombre escrito a medias, sin acentos ni mayúsculas. */
-export type FiltroArtistas = { disciplina?: string | null; detalle?: string | null };
-
 /** Cuántos artistas trae cada página de la lista; "Ver más" suma otros tantos. */
 export const PAGINA_ARTISTAS = 100;
 
 /**
  * Lo que va en la URL de /artistas: la ciudad (slug; ausente = la inicial), qué hacen (`hace`), qué en concreto
- * (`que`), lo escrito (`q`) y cuántos se ven (`n`). La letra de la tira no filtra ni vive en la URL (corrección del
- * founder, 2026-09-19): es un acceso directo, no un filtro; tocarla puede pedir más `n` para que su grupo esté cargado.
+ * (`que`) y cuántos se ven (`n`). La letra de la tira no filtra ni vive en la URL (corrección del founder, 2026-09-19):
+ * es un acceso directo, no un filtro; tocarla puede pedir más `n` para que su grupo esté cargado. Buscar por nombre es
+ * la lupa de la barra (`/buscar`).
  */
-export type FiltroUrlArtistas = { ciudad?: string | null; hace?: string | null; que?: string | null; q?: string | null; n?: number | null };
+export type FiltroUrlArtistas = { ciudad?: string | null; hace?: string | null; que?: string | null; n?: number | null };
 
 /** La URL de la lista con un filtro; sin parámetros vacíos, para que el enlace sea limpio y compartible. */
 export function hrefArtistas(f: FiltroUrlArtistas): string {
@@ -164,52 +155,17 @@ export function hrefArtistas(f: FiltroUrlArtistas): string {
   if (f.ciudad && f.ciudad !== CIUDAD_INICIAL.slug) p.set("ciudad", f.ciudad);
   if (f.hace) p.set("hace", f.hace);
   if (f.que) p.set("que", f.que);
-  if (f.q?.trim()) p.set("q", f.q.trim());
   if (f.n && f.n > PAGINA_ARTISTAS) p.set("n", String(f.n));
   const s = p.toString();
   return s ? `/artistas?${s}` : "/artistas";
 }
 
 /** Lee el filtro de la URL con valores seguros: la disciplina debe existir; `n` es un múltiplo de la página. */
-export type FiltroLeido = { hace: string | null; que: string | null; q: string | null; n: number };
-export function filtroDesdeUrl(p: { hace?: string; que?: string; q?: string; n?: string }): FiltroLeido {
+export type FiltroLeido = { hace: string | null; que: string | null; n: number };
+export function filtroDesdeUrl(p: { hace?: string; que?: string; n?: string }): FiltroLeido {
   const hace = p.hace && DISCIPLINAS.some((d) => d.valor === p.hace) ? p.hace : null;
   const n = Number(p.n);
-  return { hace, que: hace && p.que?.trim() ? p.que.trim().slice(0, 60) : null, q: p.q?.trim().slice(0, 80) || null, n: Number.isInteger(n) && n > PAGINA_ARTISTAS ? Math.min(n, 5000) : PAGINA_ARTISTAS };
-}
-
-/** Por nombre o detalle escrito, y por los chips: disciplina y, dentro de ella, detalle (género, técnica). */
-export function filtrarArtistas<T extends { nombre: string; disciplina?: string; detalle?: string | null }>(artistas: T[], busqueda: string, filtro: FiltroArtistas = {}): T[] {
-  const q = normalizarNombre(busqueda);
-  const detalle = filtro.detalle ? normalizarNombre(filtro.detalle) : null;
-  return artistas.filter((a) => {
-    if (filtro.disciplina && a.disciplina !== filtro.disciplina) return false;
-    if (detalle && normalizarNombre(a.detalle ?? "") !== detalle) return false;
-    return !q || normalizarNombre(`${a.nombre} ${a.detalle ?? ""}`).includes(q);
-  });
-}
-
-/** Las disciplinas con al menos un artista, en el orden de la lista cerrada (Todos va aparte). */
-export function disciplinasPresentes<T extends { disciplina?: string }>(artistas: T[]): { valor: string; etiqueta: string }[] {
-  const hay = new Set(artistas.map((a) => a.disciplina));
-  return DISCIPLINAS.filter((d) => hay.has(d.valor));
-}
-
-/**
- * Segundo nivel de chips: los detalles (género musical, técnica) de la disciplina elegida que comparten
- * al menos MINIMO_POR_DETALLE artistas, de más a menos frecuente. Con menos de dos, no hay segundo nivel.
- */
-export function detallesDe<T extends { disciplina?: string; detalle?: string | null }>(artistas: T[], disciplina: string): { valor: string; etiqueta: string }[] {
-  const cuenta = new Map<string, { etiqueta: string; n: number }>();
-  for (const a of artistas) {
-    if (a.disciplina !== disciplina || !a.detalle) continue;
-    const clave = normalizarNombre(a.detalle);
-    const actual = cuenta.get(clave);
-    if (actual) actual.n += 1;
-    else cuenta.set(clave, { etiqueta: a.detalle.charAt(0).toUpperCase() + a.detalle.slice(1), n: 1 });
-  }
-  const lista = [...cuenta.entries()].filter(([, v]) => v.n >= MINIMO_POR_DETALLE).sort((a, b) => b[1].n - a[1].n || a[1].etiqueta.localeCompare(b[1].etiqueta, "es"));
-  return lista.length >= 2 ? lista.map(([valor, v]) => ({ valor, etiqueta: v.etiqueta })) : [];
+  return { hace, que: hace && p.que?.trim() ? p.que.trim().slice(0, 60) : null, n: Number.isInteger(n) && n > PAGINA_ARTISTAS ? Math.min(n, 5000) : PAGINA_ARTISTAS };
 }
 
 /** Una subcategoría (detalle) ya usada en una disciplina, tal como la trae `subcategorias_de` (migración OL-101). */

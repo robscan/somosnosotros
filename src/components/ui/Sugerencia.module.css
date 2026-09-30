@@ -1,20 +1,10 @@
 /* ==========================================================================
-   Lista de sugerencias: la caja con borde y el renglón (icono o foto | nombre / detalle). La usan Dónde está,
-   el alta de lugar, Dónde es, Quién y los resultados del mapa de Lugares (pasada de maquetación, 2026-09-16).
+   Lista de sugerencias: el renglón (icono o miniatura | nombre / detalle); la caja con borde que los junta es `renglon.tarjeta`
+   (ui/Renglon). La usan Dónde está, el alta de lugar, Dónde es y Quién (pasada de maquetación, 2026-09-16).
    ========================================================================== */
-.lista {
-  list-style: none;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  overflow: hidden;
-}
-.lista > li + li {
-  border-top: 1px solid var(--borde);
-}
 .renglon {
   display: grid;
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: var(--columna-icono) 1fr;
   grid-template-areas:
     "icono nombre"
     "icono detalle";
@@ -49,19 +39,7 @@
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-/* Con foto cuadrada (lugares) o miniatura redonda (artistas); sin icono (resultados del mapa) */
-.conFoto {
-  grid-template-columns: 40px 1fr;
-  column-gap: var(--espacio-3);
-}
-.foto {
-  grid-area: icono;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radio-chico);
-  object-fit: cover;
-  background: var(--fondo-miniatura);
-}
+/* Con miniatura redonda (artistas) */
 .conMini {
   grid-template-columns: 28px 1fr;
 }
@@ -72,12 +50,6 @@
   border-radius: 50%;
   object-fit: cover;
   background: var(--fondo-miniatura);
-}
-.sinIcono {
-  grid-template-columns: 1fr;
-  grid-template-areas:
-    "nombre"
-    "detalle";
 }
 /* Una dirección como sugerencia (alta de lugar): el nombre en normal y "Usar la dirección" en color de acción */
 .direccion > b {

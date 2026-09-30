@@ -13,6 +13,7 @@ import { enmascararCorreo } from "@/lib/comunidad";
 import { tarjetaArtista } from "@/lib/destacados";
 import { diaLocal } from "@/lib/fechas";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import plantilla from "@/components/ui/Plantilla.module.css";
 
 type SearchParams = { ciudad?: string };
 
@@ -53,7 +54,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
 
   // Sin await: cada promesa viaja tal cual a su carril, que la espera dentro de su propio <Suspense>.
   const agendaPromise = cargarAgenda(ciudad, usuarioId, supabase);
-  const semanaLugaresPromise = cargarEventosSemana(supabase, "lugares", ciudad.nombre, ahora);
+  const semanaLugaresPromise = cargarEventosSemana(supabase, ciudad.nombre, ahora);
   const artistasDestacadosPromise = cargarArtistasDestacados(supabase, ciudad.nombre, ahora).then((lista) => lista.map((a) => tarjetaArtista(a, ahora)));
   const seguidosArtistasPromise: Promise<string[] | null> =
     usuarioId && supabase
@@ -71,7 +72,7 @@ export default async function InicioPagina({ searchParams }: { searchParams: Pro
   const conCiudad = (raiz: string) => (ciudad.slug === CIUDAD_INICIAL.slug ? raiz : `${raiz}?ciudad=${ciudad.slug}`);
 
   return (
-    <main className="raiz">
+    <main className={plantilla.raiz}>
       <Inicio
         key={ciudad.slug}
         ciudad={ciudad}

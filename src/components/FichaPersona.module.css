@@ -2,14 +2,17 @@
    1. Cabecera · 2. Sobre mí y completar · 3. Lo que dice una lista sin nada */
 
 /* 1. Cabecera plana: foto | nombre + acciones (Ajustes y Compartir, botones redondos con borde) a la derecha; colonia debajo. La misma
-   en Mi perfil y en la ficha de otra persona, con el avatar del prototipo firmado y un poco de aire arriba. */
+   en Mi perfil y en la ficha de otra persona, con el avatar del prototipo firmado y un poco de aire arriba. El aire entre columnas
+   es de 16 y, en una pantalla muy angosta, se acorta (4,5 % del ancho) para que el nombre no empuje las acciones fuera de la
+   cabecera; la columna del nombre nunca pasa de lo que sobra (`minmax(0, 1fr)`) y un nombre sin cortes se parte antes que
+   invadir los botones. */
 .cabecera {
   display: grid;
-  grid-template-columns: var(--avatar-perfil) 1fr auto;
+  grid-template-columns: var(--avatar-perfil) minmax(0, 1fr) auto;
   grid-template-areas:
     "foto nombre acciones"
     "foto colonia colonia";
-  column-gap: var(--espacio-4);
+  column-gap: min(var(--espacio-4), 4.5cqw);
   align-items: center;
   margin: var(--espacio-4) 0 var(--espacio-3);
 }
@@ -39,6 +42,7 @@
   align-self: end;
   font-size: var(--letra-2xl);
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 .colonia {
   grid-area: colonia;
@@ -53,7 +57,7 @@
 }
 .completa {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   column-gap: var(--espacio-3);
   align-items: center;
   margin: var(--espacio-2) 0;
@@ -82,12 +86,9 @@
   font-size: var(--letra-sm);
 }
 
-/* 3. Lo que dice una lista sin nada, con su salida. */
+/* 3. Lo que dice una lista sin nada, con su salida. La letra es la de `ficha.vacio` (ui/Ficha); aquí, su aire. */
 .vacio {
   padding: var(--espacio-3) 0;
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.4;
 }
 .vacio a {
   color: var(--primario);

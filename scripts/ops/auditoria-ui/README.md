@@ -1,7 +1,7 @@
 # Protección y auditoría de la interfaz (OL-227 y OL-242, bitácoras 256 y 270)
 
 Herramientas de operación (no son código de la app). Las dos primeras son las pruebas que corre la CI en cada PR
-(doc `docs/rediseno/50-restructura-ui.md`, § 9); el resto son las herramientas con las que se auditó la app.
+(doc `docs/rediseno/50-restructura-ui.md`, § 9); el resto es lo que queda de la auditoría, el respaldo local y el prototipo.
 
 ## Las dos pruebas
 
@@ -48,15 +48,13 @@ respaldo-local/server.mjs 8823`, un `.env.local` temporal con `NEXT_PUBLIC_SUPAB
 anon inventada, `next build && next start -p 3100`, y la sesión es la cookie `sb-127-auth-token` que exporta `fixture.mjs`
 (`cookie`). Nunca toca producción ni un `.env` real.
 
-## La auditoría
+## Lo que queda de la auditoría
 
 - `medir.js`: lo que se evalúa dentro de cada página: nodos y profundidad bajo `<body>`, envoltorios, desbordes, márgenes
   negativos, apilamiento, toques reales menores de 44, accionables tapados, solapes y contraste. Lo usan la prueba y
-  `auditar.mjs`.
-- `auditar.mjs <base> <pantallas.json> <dirPng> <dirJson> [cookies.json|-] [movil,tableta,escritorio]`: captura y mide con
-  `playwright-core` y el Chrome real de la Mac. `resumir.mjs <dirJson> [filtro]` imprime el resumen; `medidas.mjs <base>
-  [cookies.json]` mide defectos concretos (sus selectores son de antes de la reestructura).
-- `inventario-css.mjs` ya no escribe informe: es la prueba de arriba.
+  `medir-prototipo.mjs`. Los informes con los que se auditó (`auditar.mjs`, `resumir.mjs` y `medidas.mjs`) se retiraron en la
+  bitácora 271: la prueba de arriba dice lo mismo y además falla. El informe viejo del inventario sigue en el historial
+  (`scripts/ops/auditoria-ui/inventario-css.mjs` en el commit 33f92dfe).
 - `comprimir.mjs <destino> origen.png=nombre.png …`: copia capturas al repo como PNG de paleta (sharp del `node_modules`).
 
 ## Prototipo de la reestructura (OL-227, doc 50 § 6)

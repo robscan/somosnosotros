@@ -37,5 +37,3 @@ export async function reducirImagen(archivo: File, ladoMaximo = LADO_MAXIMO): Pr
  *  Se generan una vez con docs/diseno/logotipo/sin-foto-sn.mjs: la cuadrada para miniaturas y avatares, la ancha para la portada de las fichas. */
 export const SIN_FOTO = "/sin-foto.png";
 export const SIN_FOTO_ANCHA = "/sin-foto-ancha.png";
-/** Si una imagen es una de esas de relleno: una tarjeta de carril sin foto no lleva bloque de imagen, y la que sí la tiene va antes. */
-export const esSinFoto = (src: string) => src === SIN_FOTO || src === SIN_FOTO_ANCHA;

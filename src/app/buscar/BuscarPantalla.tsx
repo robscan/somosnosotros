@@ -16,6 +16,7 @@ import { armarVista, atajosDeLaSemana, hrefEnMapa, metaConTipo, metaDe, POR_GRUP
 import { CIUDAD_INICIAL, ciudadesPorCercania, raizConCiudad, type Ciudad, type CiudadConDatos } from "@/lib/ciudad";
 import { normalizarNombre } from "@/lib/lugares";
 import { crudoDeRecientes, guardarReciente, leerRecientes, type Reciente } from "@/lib/recientesBusqueda";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./buscar.module.css";
 
 /** Cuánto se espera, tras la última letra, antes de buscar (ms). */
@@ -135,7 +136,7 @@ export default function BuscarPantalla({ ciudad, ciudades, desde, hoy, conSesion
 
   const salida = SALIDA[desde];
   return (
-    <main className={styles.buscar}>
+    <main className={`${plantilla.raizSinNav} ${styles.buscar}`}>
       <form role="search" className={styles.barra} onSubmit={alEnviar}>
         <CampoBuscar inputRef={campo} valor={texto} onCambiar={setTexto} placeholder="Buscar un evento, lugar o artista" ariaLabel="Buscar un evento, lugar o artista" autoFocus borrar={false} />
         <Cerrar href={raizConCiudad(salida.raiz, slugEnUrl ? `ciudad=${slugEnUrl}` : "")} texto={salida.texto} relieve="plano" />

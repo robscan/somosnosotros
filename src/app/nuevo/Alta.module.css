@@ -1,11 +1,11 @@
 /* ==========================================================================
-   La pantalla de alta (docs/rediseno/50, P9; prototipo firmado): una tarea de tres filas sobre la rejilla de `.pagina` (globals.css):
+   La pantalla de alta (docs/rediseno/50, P9; prototipo firmado): una tarea de tres filas sobre la rejilla de la plantilla `pagina` (`ui/Plantilla`):
    la barra interior, el formulario del tipo elegido —que se lleva lo que sobre— y la tira de tipos, que se queda al pie de la
    ventana aunque el formulario sea corto. Los formularios que no están a la vista van escondidos (`hidden`) y no ocupan fila.
    1. La rejilla · 2. La tira de tipos
    ========================================================================== */
 
-/* 1. Sin aire abajo: lo pone la propia tira. Con `main` delante, gana a `.pagina` sin depender del orden de las hojas. */
+/* 1. Sin aire abajo: lo pone la propia tira. Con `main` delante, gana a la plantilla sin depender del orden de las hojas. */
 main.alta {
   grid-template-rows: auto minmax(0, 1fr) auto;
   padding-bottom: 0;

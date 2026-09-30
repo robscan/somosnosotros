@@ -204,7 +204,7 @@ describe("Inicio: carril Nuevos eventos (publicado hace ≤7 días Y empieza des
 });
 
 function eventoAgenda(id: string, cambios: Partial<import("./agenda").EventoAgenda> = {}): import("./agenda").EventoAgenda {
-  return { id, titulo: id, inicio: "2026-09-24T01:00:00Z", fin: "2026-09-24T03:00:00Z", imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, zona: "America/Mexico_City", lugar: null, creado_en: "2026-09-01T00:00:00Z", lat: null, lng: null, van: 0, ...cambios };
+  return { id, titulo: id, inicio: "2026-09-24T01:00:00Z", fin: "2026-09-24T03:00:00Z", imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, zona: "America/Mexico_City", lugar: null, creado_en: "2026-09-01T00:00:00Z", van: 0, ...cambios };
 }
 
 describe("Inicio: los carriles de una sola agenda (estelar, esta semana, nuevos), sin repetirse", () => {

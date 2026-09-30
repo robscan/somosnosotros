@@ -40,7 +40,7 @@
   z-index: var(--z-capa);
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.94);
+  background: var(--fondo-visor);
   cursor: zoom-out;
   animation: fundir var(--duracion) var(--curva);
 }

@@ -144,17 +144,6 @@ export const IconoCaret = (p: P) => (
     <path d="M6 9l6 6 6-6" />
   </svg>
 );
-export const IconoLista = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
-  </svg>
-);
-export const IconoMapa = (p: P) => (
-  <svg {...base(p)}>
-    <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" />
-    <path d="M9 4v14M15 6v14" />
-  </svg>
-);
 export const IconoUbicacion = (p: P) => (
   <svg {...base(p)}>
     <circle cx="12" cy="12" r="3" />
@@ -191,12 +180,6 @@ export const IconoWhatsApp = (p: P) => (
   <svg {...base(p)}>
     <path d="M4 20l1.3-3.8A8 8 0 1 1 8 19.2z" />
     <path d="M9.5 9.5c0 3 2 5 5 5l1-1.5-1.8-.8-.7.7c-.9-.4-1.5-1-1.9-1.9l.7-.7-.8-1.8z" fill="currentColor" stroke="none" />
-  </svg>
-);
-export const IconoSitio = (p: P) => (
-  <svg {...base(p)}>
-    <circle cx="12" cy="12" r="8.5" />
-    <path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" />
   </svg>
 );
 export const IconoPuntos = (p: P) => (

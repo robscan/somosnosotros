@@ -1,10 +1,4 @@
-/* La hoja de opciones (ui/HojaFiltros): la nota de arriba y los bloques; el pie con sus botones es el de ui/Hoja. */
-.nota {
-  margin-bottom: var(--espacio-3);
-  color: var(--texto-suave);
-  font-size: var(--letra-sm);
-  line-height: 1.35;
-}
+/* La hoja de opciones (ui/HojaFiltros): la nota de arriba (`hoja.nota`) y los bloques; el pie con sus botones es el de ui/Hoja. */
 .bloque + .bloque {
   margin-top: var(--espacio-4);
 }

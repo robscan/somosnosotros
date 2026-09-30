@@ -114,7 +114,7 @@
 }
 .titulo {
   align-self: end;
-  z-index: 1;
+  z-index: var(--z-sobre);
   display: grid;
   justify-items: start;
   gap: var(--espacio-2);
@@ -345,16 +345,9 @@
 }
 
 /* 9. La ficha de una persona no lleva héroe: una barra blanca (con su raya) y, debajo, lo mismo que Mi perfil, con el aire de
-   cada bloque. La página de formulario (Ajustes, administración, Novedades) es la de siempre: aire a los lados y sitio al pie. */
+   cada bloque (`ui/Plantilla` `.raizSinNav`). Sus títulos de día se pegan bajo esa barra; desde 792 la barra es la de la app. */
 .persona {
   --alto-cabecera: calc(var(--alto-barra) + var(--tope));
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-auto-rows: max-content;
-  align-content: start;
-  min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding-bottom: calc(var(--espacio-6) + var(--piso));
-  background: var(--fondo-contenido);
 }
 @media (min-width: 792px) {
   .persona {
@@ -382,20 +375,6 @@
     display: none;
   }
 }
-/* La página de formulario o de tarea sobre el tono del contenido: la misma rejilla que `.pagina` de globals.css (el aire, la columna y
-   el aire; la barra interior ocupa las tres), con más aire abajo. */
-.pagina {
-  display: grid;
-  grid-template-columns: var(--gutter) minmax(0, 1fr) var(--gutter);
-  align-content: start;
-  min-height: calc(100dvh - var(--barra-flujo, 0px));
-  padding-bottom: calc(var(--espacio-8) + var(--piso));
-  background: var(--fondo-contenido);
-}
-:where(.pagina) > * {
-  grid-column: 2;
-}
-
 /* El menú «···» de una ficha (dentro de la hoja): sus filas son las de Ajustes (ui/Renglon), en su tarjeta */
 .menu {
   margin-top: var(--espacio-4);

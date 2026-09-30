@@ -23,7 +23,7 @@ type Props =
  * pantalla al centro (el único encabezado de la página) y ✕ a la derecha (canon del prototipo firmado). Las raíces no la llevan: su
  * barra es la de la app (`BarraApp`, en el layout); las fichas, la suya (`BarraFicha`). Una tarea con regreso la conserva desde 792,
  * pero sin el logotipo, que ya trae la barra de la app: le quedan su Atrás.
- * Va como hija directa de `.pagina` (o de `ficha.pagina`), que le da las tres columnas de la rejilla.
+ * Va como hija directa de la plantilla `pagina` (o `paginaContenido`, de `ui/Plantilla`), que le da las tres columnas de la rejilla.
  */
 export default function Barra(props: Props) {
   if (props.cerrar) {

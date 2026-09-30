@@ -9,8 +9,6 @@ type Props = {
   etiqueta: string;
   /** Con título, la cabecera (asa, título y ✕) queda fija y solo el cuerpo se desplaza (OL-137). */
   titulo?: string;
-  /** Abre a toda la altura, pegada al borde superior seguro (OL-137: campo, mapa y lista caben). */
-  completa?: boolean;
   /** El cuerpo no se desplaza: quien lo llena reparte el alto y desplaza solo lo suyo (OL-137: el mapa nunca se mueve). */
   plano?: boolean;
   /** Lo que queda siempre a la vista bajo el cuerpo, con su raya arriba (los botones de una hoja de filtros: Limpiar y Ver N). Solo con `titulo`. */
@@ -36,7 +34,7 @@ let abiertas = 0;
 const enNavegador = () => true;
 const enServidor = () => false;
 
-export default function Hoja({ etiqueta, titulo, completa = false, plano = false, pie, onCerrar, children }: Props) {
+export default function Hoja({ etiqueta, titulo, plano = false, pie, onCerrar, children }: Props) {
   const montada = useSyncExternalStore(nada, enNavegador, enServidor);
   const [marco, setMarco] = useState<{ top: number; height: number } | null>(null);
   useEffect(() => {
@@ -73,7 +71,7 @@ export default function Hoja({ etiqueta, titulo, completa = false, plano = false
   if (!montada) return null;
   return createPortal(
     <div className={styles.fondo} style={marco ? { top: marco.top, height: marco.height, bottom: "auto" } : undefined} onClick={onCerrar}>
-      <div className={[styles.hoja, titulo && styles.conCabecera, completa && styles.completa].filter(Boolean).join(" ")} role="dialog" aria-label={etiqueta} onClick={(e) => e.stopPropagation()} onTouchMove={alArrastrar}>
+      <div className={[styles.hoja, titulo && styles.conCabecera].filter(Boolean).join(" ")} role="dialog" aria-label={etiqueta} onClick={(e) => e.stopPropagation()} onTouchMove={alArrastrar}>
         <button type="button" className={styles.cerrar} onClick={onCerrar} aria-label="Cerrar">
           <IconoCerrar width={22} height={22} />
         </button>

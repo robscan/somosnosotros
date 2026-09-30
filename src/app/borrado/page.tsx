@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Boton from "@/components/ui/Boton";
+import plantilla from "@/components/ui/Plantilla.module.css";
+import confirmar from "@/components/ui/Confirmar.module.css";
 import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoCalendario, IconoEstrella, IconoPin } from "@/components/ui/Iconos";
 import { enlaceDeAlta } from "@/lib/armazon";
@@ -18,8 +20,8 @@ export default async function Borrado({ searchParams }: { searchParams: Promise<
   const { que } = await searchParams;
   const t = TEXTOS[(que as keyof typeof TEXTOS) in TEXTOS ? (que as keyof typeof TEXTOS) : "evento"];
   return (
-    <main className="raiz">
-      <section className={styles.vacio} role="status" aria-live="polite">
+    <main className={plantilla.raiz}>
+      <section className={`columna ${confirmar.confirmar} ${styles.vacio}`} role="status" aria-live="polite">
         <IconoEnCirculo>
           <t.Icono width={28} height={28} />
         </IconoEnCirculo>

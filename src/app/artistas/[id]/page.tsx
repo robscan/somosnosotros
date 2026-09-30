@@ -17,10 +17,9 @@ import EventosPorDia from "@/components/EventosPorDia";
 import Reportar from "@/components/Reportar";
 import Seguir from "@/components/Seguir";
 import BarraFicha from "@/components/ui/BarraFicha";
-import Boton, { claseBoton } from "@/components/ui/Boton";
-import { claseBotonIcono } from "@/components/ui/BotonIcono";
+import Boton from "@/components/ui/Boton";
 import EnlaceExterno from "@/components/ui/EnlaceExterno";
-import Ficha from "@/components/ui/Ficha";
+import Ficha, { BOTON_PUBLICADO, CIRCULO } from "@/components/ui/Ficha";
 import Heroe from "@/components/ui/Heroe";
 import { IconoCalendario, IconoCompartir, IconoLapiz, IconoOjo, IconoOjoTachado, IconoPersonas, IconoPin } from "@/components/ui/Iconos";
 import IconoRed from "@/components/ui/IconoRed";
@@ -48,12 +47,9 @@ import SeccionNovedades, { type NovedadParaFicha } from "./SeccionNovedades";
 
 type Params = { params: Promise<{ id: string }>; searchParams?: Promise<{ nuevo?: string; accion?: string; error?: string }> };
 type ArtistaConAutor = Artista & { autor: { id: string; nombre: string } | null };
-type FilaEvento = Omit<EventoAgenda, "lugar" | "van" | "lat" | "lng"> & { lugar: { nombre: string; portada: string | null; lat: number; lng: number } | { nombre: string; portada: string | null; lat: number; lng: number }[] | null };
+type FilaEvento = Omit<EventoAgenda, "lugar" | "van"> & { lugar: { nombre: string; portada: string | null } | { nombre: string; portada: string | null }[] | null };
 
 const ORIGEN = "https://somosnosotros.org";
-/** El círculo de cada acción (ui/BotonIcono) y el botón de la tarjeta «Publicado» (ui/Boton, en su celda). */
-const CIRCULO = claseBotonIcono({ tamano: "grande", relieve: "elevado" });
-const BOTON_PUBLICADO = `${claseBoton({ variante: "secundario", alto: "control", ancho: "contenido" })} ${ficha.publicadoBoton}`;
 
 /**
  * Quién lleva la ficha (una fila por cuenta ligada). `generateMetadata` y la ficha necesitan la misma pregunta —
@@ -86,7 +82,7 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("eventos")
-    .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, lugar:lugares(nombre, portada, lat, lng), eventos_artistas!inner(artista_id)")
+    .select("id, slug, titulo, inicio, fin, zona, imagen, precio, lugar_id, sitio_texto, sitio_direccion, sitio_reservado, creado_en, lugar:lugares(nombre, portada), eventos_artistas!inner(artista_id)")
     .eq("eventos_artistas.artista_id", artistaId)
     .eq("visible", true)
     .or(filtroSinPasar())
@@ -108,10 +104,7 @@ async function cargarFechas(artistaId: string): Promise<EventoAgenda[]> {
     .limit(2000);
   const van = new Map<string, number>();
   for (const f of a ?? []) van.set(f.evento_id as string, (van.get(f.evento_id as string) ?? 0) + 1);
-  return filas.map((f) => {
-    const lugar = Array.isArray(f.lugar) ? (f.lugar[0] ?? null) : f.lugar;
-    return { ...f, lugar, lat: null, lng: null, van: van.get(f.id) ?? 0 };
-  });
+  return filas.map((f) => ({ ...f, lugar: Array.isArray(f.lugar) ? (f.lugar[0] ?? null) : f.lugar, van: van.get(f.id) ?? 0 }));
 }
 
 /** Las novedades del artista, más nueva primero (doc 44 §4, OL-175). El `src` del reproductor se arma y valida

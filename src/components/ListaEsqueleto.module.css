@@ -1,23 +1,7 @@
-.respira {
-  background: var(--fondo-miniatura);
-  animation: respirar 1.2s ease-in-out infinite;
-}
-@keyframes respirar {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .55; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .respira { animation: none; }
-}
-.cabecera {
-  display: flex;
-  gap: var(--espacio-2);
-  padding: var(--espacio-1) var(--gutter) var(--espacio-3);
-}
 .chip {
+  flex: none;
   width: 96px;
-  height: var(--control);
-  border-radius: var(--radio-pildora);
+  height: var(--alto-chip);
 }
 .lista {
   padding-inline: var(--gutter);

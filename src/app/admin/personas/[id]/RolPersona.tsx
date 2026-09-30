@@ -7,6 +7,7 @@ import { IconoEscudo, IconoOk } from "@/components/ui/Iconos";
 import type { EstadoRol } from "@/lib/panel";
 import { cambiarRol } from "../../acciones";
 import styles from "../../admin.module.css";
+import renglon from "@/components/ui/Renglon.module.css";
 
 /**
  * El renglón de Rol, al final y solo (decisión 9): el estado y la acción posible. Hacer o quitar administrador pasa por
@@ -42,7 +43,7 @@ export default function RolPersona({ perfilId, nombre, estado }: { perfilId: str
           <span>{hecho}</span>
         </p>
       )}
-      <ul className={styles.tarjeta}>
+      <ul className={renglon.tarjeta}>
         <li className={styles.fila}>
           <IconoEscudo width={20} height={20} />
           <b>{estado.etiqueta}</b>

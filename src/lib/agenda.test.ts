@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { agruparPorDia, agruparPorPublicacion, buscarEventos, corteNuevos, DIAS_NUEVOS, distanciaKm, filtrarAgenda, filtrosDeUrl, filtrosPuestos, hrefAgenda, listarAgenda, SIN_FILTROS, textoDistancia, tituloPublicacion, type EventoAgenda } from "./agenda";
+import { agruparPorDia, buscarEventos, filtrarAgenda, filtrosDeUrl, filtrosPuestos, hrefAgenda, listarAgenda, SIN_FILTROS, textoDistancia, type EventoAgenda, type EventoBuscable } from "./agenda";
+import { distanciaKm } from "./geo";
 
 // "ahora": lunes 14 sep 2026, 12:00 hora de la ciudad (18:00Z)
 const AHORA = new Date("2026-09-14T18:00:00Z");
 /** Cuándo de un solo día. */
 const dia = (d: string) => ({ desde: d, hasta: d });
+/** Sin ningún filtro puesto: todo lo que hay, en orden de agenda. */
+const sinFiltros = { siguiendo: false, seguidos: null, cuando: null };
 
 function evento(p: Partial<EventoAgenda> & { id: string; inicio: string }): EventoAgenda {
-  return { titulo: p.id, fin: null, imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, lugar: null, creado_en: "2026-09-01T00:00:00Z", lat: null, lng: null, van: 0, zona: "America/Mexico_City", ...p };
+  return { titulo: p.id, fin: null, imagen: null, precio: null, lugar_id: null, sitio_texto: null, sitio_reservado: false, lugar: null, creado_en: "2026-09-01T00:00:00Z", van: 0, zona: "America/Mexico_City", ...p };
 }
 
 describe("agenda", () => {
@@ -28,32 +31,21 @@ describe("agenda", () => {
       ["2026-09-14", "Hoy", ["slp"]],
       ["2026-09-15", "Mañana", ["madrid"]],
     ]);
-    const ctx = { filtro: "todos" as const, punto: null, seguidos: null, cuando: dia("2026-09-15"), ahora: AHORA };
-    expect(filtrarAgenda([slp, madrid], ctx).lista.map((e) => e.id)).toEqual(["madrid"]);
+    expect(filtrarAgenda([slp, madrid], { ...sinFiltros, cuando: dia("2026-09-15") }).map((e) => e.id)).toEqual(["madrid"]);
   });
   it("el chip de fecha también encuentra un evento de varios días en cualquiera de los días que ocupa (OL-218)", () => {
     // Del 6 al 8 de octubre: el calendario de Cuándo marca los tres días con evento (`diasActivosCalendario`)
     // — sin esto, elegir el 7 (no el día de inicio) filtraba a una lista vacía (bitácora 247).
     const varios = evento({ id: "varios", inicio: "2026-10-06T17:00:00Z", fin: "2026-10-08T20:00:00Z" });
-    const ctxSinFin = { filtro: "todos" as const, punto: null, seguidos: null, cuando: null, ahora: AHORA };
     for (const d of ["2026-10-06", "2026-10-07", "2026-10-08"]) {
-      expect(filtrarAgenda([varios], { ...ctxSinFin, cuando: dia(d) }).lista.map((e) => e.id)).toEqual(["varios"]);
+      expect(filtrarAgenda([varios], { ...sinFiltros, cuando: dia(d) }).map((e) => e.id)).toEqual(["varios"]);
     }
-    expect(filtrarAgenda([varios], { ...ctxSinFin, cuando: dia("2026-10-05") }).lista).toEqual([]);
-    expect(filtrarAgenda([varios], { ...ctxSinFin, cuando: dia("2026-10-09") }).lista).toEqual([]);
-  });
-  it("con orden dado, respeta el orden dentro del día (Cercanos: por distancia) y los días siguen en orden", () => {
-    const grupos = agruparPorDia(
-      [evento({ id: "lejos-manana", inicio: "2026-09-16T01:00:00Z" }), evento({ id: "cerca-hoy-tarde", inicio: "2026-09-15T01:00:00Z" }), evento({ id: "lejos-hoy-temprano", inicio: "2026-09-14T23:00:00Z" })],
-      AHORA,
-      true,
-    );
-    expect(grupos.map((g) => g.titulo)).toEqual(["Hoy", "Mañana"]);
-    expect(grupos[0].eventos.map((e) => e.id)).toEqual(["cerca-hoy-tarde", "lejos-hoy-temprano"]);
+    expect(filtrarAgenda([varios], { ...sinFiltros, cuando: dia("2026-10-05") })).toEqual([]);
+    expect(filtrarAgenda([varios], { ...sinFiltros, cuando: dia("2026-10-09") })).toEqual([]);
   });
   it("a la misma hora ordena por título y luego por id, llegue como llegue de la base", () => {
-    // Jueves 17 a las 19:00 en la ciudad, en el mismo lugar y agregados a la vez: empatan también en Cercanos y Nuevos.
-    const comun = { inicio: "2026-09-18T01:00:00Z", creado_en: "2026-09-13T00:00:00Z", lugar_id: "L1", lugar: { nombre: "Casa", portada: null, lat: 22.1449, lng: -100.9753 } };
+    // Jueves 17 a las 19:00 en la ciudad, en el mismo lugar y agregados a la vez.
+    const comun = { inicio: "2026-09-18T01:00:00Z", creado_en: "2026-09-13T00:00:00Z", lugar_id: "L1", lugar: { nombre: "Casa", portada: null } };
     const llegada = [
       evento({ ...comun, id: "e1", titulo: "Lectura del Taller de Creación Literaria" }),
       evento({ ...comun, id: "e4", titulo: "Mariachi" }),
@@ -64,9 +56,8 @@ describe("agenda", () => {
     for (const eventos of [llegada, [...llegada].reverse()]) {
       expect(agruparPorDia(eventos, AHORA)[0].eventos.map((e) => e.id)).toEqual(esperado);
       // Con el día elegido la lista se pinta tal cual sale del filtro (el caso del jueves 17 en el iPhone).
-      for (const filtro of ["todos", "cercanos", "siguiendo", "nuevos"] as const) {
-        const { lista } = filtrarAgenda(eventos, { filtro, punto: { lat: 22.1497, lng: -100.9764 }, seguidos: ["L1"], cuando: dia("2026-09-17"), ahora: AHORA });
-        expect(lista.map((e) => e.id)).toEqual(esperado);
+      for (const siguiendo of [false, true]) {
+        expect(filtrarAgenda(eventos, { siguiendo, seguidos: ["L1"], cuando: dia("2026-09-17") }).map((e) => e.id)).toEqual(esperado);
       }
     }
   });
@@ -79,24 +70,23 @@ describe("agenda", () => {
     expect(textoDistancia(2.4)).toBe("a 2.4 km");
     expect(textoDistancia(12.6)).toBe("a 13 km");
   });
-  it("filtra por cercanía, seguidos, nuevos y día", () => {
-    const lejos = evento({ id: "lejos", inicio: "2026-09-15T01:00:00Z", lat: 22.2, lng: -101.1, creado_en: "2026-09-13T00:00:00Z" });
-    const cerca = evento({ id: "cerca", inicio: "2026-09-15T02:00:00Z", lugar_id: "L1", lugar: { nombre: "Casa", portada: null, lat: 22.1449, lng: -100.9753 } });
+  it("filtra por seguidos y por día", () => {
+    const lejos = evento({ id: "lejos", inicio: "2026-09-15T01:00:00Z" });
+    const cerca = evento({ id: "cerca", inicio: "2026-09-15T02:00:00Z", lugar_id: "L1", lugar: { nombre: "Casa", portada: null } });
     const eventos = [lejos, cerca];
-    const punto = { lat: 22.1497, lng: -100.9764 };
-    expect(filtrarAgenda(eventos, { filtro: "cercanos", punto, seguidos: null, cuando: null, ahora: AHORA }).lista.map((e) => e.id)).toEqual(["cerca", "lejos"]);
-    expect(filtrarAgenda(eventos, { filtro: "siguiendo", punto: null, seguidos: ["L1"], cuando: null, ahora: AHORA }).lista.map((e) => e.id)).toEqual(["cerca"]);
-    expect(filtrarAgenda(eventos, { filtro: "nuevos", punto: null, seguidos: null, cuando: null, ahora: AHORA }).lista.map((e) => e.id)).toEqual(["lejos"]);
-    expect(filtrarAgenda(eventos, { filtro: "todos", punto: null, seguidos: null, cuando: dia("2026-09-14"), ahora: AHORA }).lista.map((e) => e.id)).toEqual(["lejos", "cerca"]);
-    expect(filtrarAgenda(eventos, { filtro: "todos", punto: null, seguidos: null, cuando: dia("2026-09-20"), ahora: AHORA }).lista).toEqual([]);
-    // El de "cerca" se publicó el 1 de septiembre: queda fuera del tope de 7 días.
+    expect(filtrarAgenda(eventos, { ...sinFiltros, siguiendo: true, seguidos: ["L1"] }).map((e) => e.id)).toEqual(["cerca"]);
+    expect(filtrarAgenda(eventos, { ...sinFiltros, siguiendo: true, seguidos: null })).toEqual([]);
+    expect(filtrarAgenda(eventos, { ...sinFiltros, siguiendo: true, seguidos: null, eventosSeguidos: ["lejos"] }).map((e) => e.id)).toEqual(["lejos"]);
+    expect(filtrarAgenda(eventos, { ...sinFiltros, cuando: dia("2026-09-14") }).map((e) => e.id)).toEqual(["lejos", "cerca"]);
+    expect(filtrarAgenda(eventos, { ...sinFiltros, cuando: dia("2026-09-20") })).toEqual([]);
   });
 
   it("busca por título, sitio o artista, a medias y sin acentos; cada palabra escrita tiene que estar", () => {
+    const con = (artistas: string[], e: EventoAgenda): EventoBuscable => ({ ...e, artistas });
     const lista = [
-      evento({ id: "a", inicio: "2026-09-15T01:00:00Z", titulo: "Noche de jazz", lugar: { nombre: "Museo Leonora Carrington", portada: null } }),
-      evento({ id: "b", inicio: "2026-09-15T01:00:00Z", titulo: "Función de títeres", sitio_texto: "Jardín de San Miguelito", artistas: ["Camerata de San Luis"] }),
-      evento({ id: "c", inicio: "2026-09-15T01:00:00Z", titulo: "Lectura", lugar: null }),
+      con([], evento({ id: "a", inicio: "2026-09-15T01:00:00Z", titulo: "Noche de jazz", lugar: { nombre: "Museo Leonora Carrington", portada: null } })),
+      con(["Camerata de San Luis"], evento({ id: "b", inicio: "2026-09-15T01:00:00Z", titulo: "Función de títeres", sitio_texto: "Jardín de San Miguelito" })),
+      con([], evento({ id: "c", inicio: "2026-09-15T01:00:00Z", titulo: "Lectura", lugar: null })),
     ];
     expect(buscarEventos(lista, "").map((e) => e.id)).toEqual(["a", "b", "c"]);
     expect(buscarEventos(lista, "JAZZ").map((e) => e.id)).toEqual(["a"]);
@@ -108,130 +98,7 @@ describe("agenda", () => {
   });
 });
 
-describe("Nuevos: lo recién publicado, arriba", () => {
-  // Jueves 17 de septiembre de 2026, 18:00 en la ciudad. Lo que el founder vio el día que lo pidió.
-  const HOY = new Date("2026-09-17T18:00:00Z");
-  const suyo = evento({ id: "suyo", inicio: "2026-10-08T23:00:00Z", creado_en: "2026-09-17T17:00:00Z" });
-  const hoyPronto = evento({ id: "hoy-pronto", inicio: "2026-09-19T03:00:00Z", creado_en: "2026-09-17T16:00:00Z" });
-  const ayer = evento({ id: "ayer", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-16T10:00:00Z" });
-  const semana = evento({ id: "semana", inicio: "2026-09-20T01:00:00Z", creado_en: "2026-09-14T10:00:00Z" });
-  const eventos = [ayer, semana, suyo, hoyPronto];
-  const ctx = { filtro: "nuevos" as const, punto: null, seguidos: null, cuando: null, ahora: HOY };
-
-  it("pone arriba lo último publicado, aunque el evento sea el más lejano", () => {
-    // El caso del founder: publica un taller del 8 de octubre y espera verlo primero. Con `agruparPorDia` salía
-    // último, porque los grupos van por el día del evento; de ahí esta prueba de las dos piezas juntas.
-    const { lista } = filtrarAgenda(eventos, ctx);
-    const pintado = agruparPorPublicacion(lista, HOY).flatMap((g) => g.eventos.map((e) => e.id));
-    expect(pintado[0]).toBe("suyo");
-    expect(pintado).toEqual(["suyo", "hoy-pronto", "ayer", "semana"]);
-  });
-
-  it("agrupa por cuándo se publicó, con el primer grupo sin fecha", () => {
-    const grupos = agruparPorPublicacion(filtrarAgenda(eventos, ctx).lista, HOY);
-    expect(grupos.map((g) => [g.titulo, g.eventos.length])).toEqual([
-      ["Lo más nuevo", 2],
-      ["Publicado ayer", 1],
-      ["Esta semana", 1],
-    ]);
-    // El primer grupo no promete un día: quien vuelve tras tres días ve arriba lo de anteayer.
-    expect(tituloPublicacion("2026-09-15T10:00:00Z", HOY)).toBe("Esta semana");
-  });
-
-  it("lo publicado a la vez va en orden de agenda, para que dos cargas no lo traigan distinto", () => {
-    const a = evento({ id: "a", titulo: "Bailar", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-17T12:00:00Z" });
-    const b = evento({ id: "b", titulo: "Almorzar", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-17T12:00:00Z" });
-    expect(agruparPorPublicacion([a, b], HOY)[0].eventos.map((e) => e.id)).toEqual(["b", "a"]);
-    expect(agruparPorPublicacion([b, a], HOY)[0].eventos.map((e) => e.id)).toEqual(["b", "a"]);
-  });
-
-  describe("el corte: desde la última visita, con tope de 7 días", () => {
-    const tope = HOY.getTime() - 7 * 86400000;
-
-    it("sin marca, vale el tope", () => {
-      expect(corteNuevos(null, HOY)).toBe(tope);
-      expect(corteNuevos(undefined, HOY)).toBe(tope);
-    });
-
-    it("con marca de ayer, manda la marca", () => {
-      expect(corteNuevos("2026-09-16T18:00:00Z", HOY)).toBe(new Date("2026-09-16T18:00:00Z").getTime());
-    });
-
-    it("con marca de hace un mes, manda el tope: no se muestran cuatro semanas", () => {
-      expect(corteNuevos("2026-08-17T18:00:00Z", HOY)).toBe(tope);
-    });
-
-    it("con el reloj mal puesto (marca en el futuro) o marca ilegible, vale el tope", () => {
-      expect(corteNuevos("2026-12-31T00:00:00Z", HOY)).toBe(tope);
-      expect(corteNuevos("no es una fecha", HOY)).toBe(tope);
-      expect(corteNuevos("", HOY)).toBe(tope);
-    });
-
-    it("el corte decide qué entra a la pestaña", () => {
-      const soloHoy = filtrarAgenda(eventos, { ...ctx, corte: corteNuevos("2026-09-17T00:00:00Z", HOY) });
-      expect(soloHoy.lista.map((e) => e.id)).toEqual(["suyo", "hoy-pronto"]);
-      const nada = filtrarAgenda(eventos, { ...ctx, corte: corteNuevos("2026-09-17T17:30:00Z", HOY) });
-      expect(nada.lista).toEqual([]);
-    });
-  });
-
-  it("Todos y Cercanos no cambian: siguen por día del evento", () => {
-    const todos = filtrarAgenda(eventos, { ...ctx, filtro: "todos" });
-    expect(agruparPorDia(todos.lista, HOY).map((g) => g.titulo)).toEqual(["Mañana", "sáb 19 de sep", "jue 8 de oct"]);
-    expect(todos.lista.map((e) => e.id)).toEqual(["ayer", "hoy-pronto", "semana", "suyo"]);
-    const cercanos = filtrarAgenda(eventos, { ...ctx, filtro: "cercanos" });
-    expect(cercanos.lista.map((e) => e.id)).toEqual(["ayer", "hoy-pronto", "semana", "suyo"]);
-  });
-});
-
-/** Lo que salió de la revisión de gestión de cambios del 2026-09-17: cada hallazgo, con su prueba. */
-describe("Nuevos: los bordes del corte y de los grupos", () => {
-  const HOY = new Date("2026-09-17T18:00:00Z");
-  const ZONA_SLP = "America/Mexico_City";
-
-  it("el tope se aplica también a un corte ya calculado, venga de donde venga", () => {
-    // Un corte que la memoria de pantalla repone tras días con la pestaña abierta no puede abrir más de 7 días.
-    const hace30dias = HOY.getTime() - 30 * 86400000;
-    expect(corteNuevos(hace30dias, HOY)).toBe(HOY.getTime() - DIAS_NUEVOS * 86400000);
-    // Uno más reciente que el tope sí manda.
-    const ayer = HOY.getTime() - 86400000;
-    expect(corteNuevos(ayer, HOY)).toBe(ayer);
-    // Y uno del futuro, o inválido, cae al tope.
-    expect(corteNuevos(HOY.getTime() + 86400000, HOY)).toBe(HOY.getTime() - DIAS_NUEVOS * 86400000);
-    expect(corteNuevos(Number.NaN, HOY)).toBe(HOY.getTime() - DIAS_NUEVOS * 86400000);
-  });
-
-  it("el filtro acota el corte que le llega: una pestaña vieja no abre un mes", () => {
-    const viejo = evento({ id: "viejo", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-08-20T10:00:00Z" });
-    const nuevo = evento({ id: "nuevo", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-17T10:00:00Z" });
-    const ctx = { filtro: "nuevos" as const, punto: null, seguidos: null, cuando: null, ahora: HOY };
-    const conCorteDeUnMes = filtrarAgenda([viejo, nuevo], { ...ctx, corte: HOY.getTime() - 30 * 86400000 });
-    expect(conCorteDeUnMes.lista.map((e) => e.id)).toEqual(["nuevo"]);
-  });
-
-  it("el grupo se cuenta en la zona de quien mira, no en la de la ciudad", () => {
-    // Publicado a las 07:00 del 17 en Madrid: allí es de hoy; en San Luis, todavía del 16.
-    const enMadrid = "2026-09-17T05:00:00Z";
-    const ahoraMadrid = new Date("2026-09-17T09:00:00Z");
-    expect(tituloPublicacion(enMadrid, ahoraMadrid, "Europe/Madrid")).toBe("Lo más nuevo");
-    expect(tituloPublicacion(enMadrid, ahoraMadrid, ZONA_SLP)).toBe("Publicado ayer");
-    // Y al revés: lo de ayer a las 23:30 en Tijuana no es "Lo más nuevo" allí.
-    const tijuana = "2026-09-17T06:30:00Z";
-    expect(tituloPublicacion(tijuana, new Date("2026-09-17T20:00:00Z"), "America/Tijuana")).toBe("Publicado ayer");
-  });
-
-  it("lo publicado 'en el futuro' por un reloj atrasado va con lo de hoy, y primero", () => {
-    const futuro = evento({ id: "futuro", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-18T12:00:00Z" });
-    const hoy = evento({ id: "hoy", inicio: "2026-09-19T01:00:00Z", creado_en: "2026-09-17T10:00:00Z" });
-    expect(tituloPublicacion(futuro.creado_en, HOY, ZONA_SLP)).toBe("Lo más nuevo");
-    const grupos = agruparPorPublicacion([hoy, futuro], HOY, ZONA_SLP);
-    expect(grupos.map((g) => g.titulo)).toEqual(["Lo más nuevo"]);
-    expect(grupos[0].eventos.map((e) => e.id)).toEqual(["futuro", "hoy"]);
-  });
-});
-
 describe("Cuándo y Cuánto en la agenda (docs/rediseno/50, P5)", () => {
-  const ctx = { filtro: "todos" as const, punto: null, seguidos: null, cuando: null, ahora: AHORA };
   // Todos a las 19:00 de la ciudad (01:00Z del día siguiente): lun 14, mar 15, sáb 19, dom 20 y lun 21 de sep.
   const lun = evento({ id: "lun", inicio: "2026-09-15T01:00:00Z" });
   const mar = evento({ id: "mar", inicio: "2026-09-16T01:00:00Z" });
@@ -241,21 +108,21 @@ describe("Cuándo y Cuánto en la agenda (docs/rediseno/50, P5)", () => {
   const todos = [lun, mar, sab, dom, lun21];
 
   it("un rango deja los eventos de todos sus días, con los dos extremos dentro", () => {
-    const enRango = (desde: string, hasta: string) => filtrarAgenda(todos, { ...ctx, cuando: { desde, hasta } }).lista.map((e) => e.id);
+    const enRango = (desde: string, hasta: string) => filtrarAgenda(todos, { ...sinFiltros, cuando: { desde, hasta } }).map((e) => e.id);
     expect(enRango("2026-09-19", "2026-09-20")).toEqual(["sab", "dom"]);
     expect(enRango("2026-09-14", "2026-09-15")).toEqual(["lun", "mar"]);
     expect(enRango("2026-09-17", "2026-09-18")).toEqual([]);
   });
   it("un evento de varios días cuenta si su tramo toca el rango, aunque empiece antes o termine después", () => {
     const expo = evento({ id: "expo", inicio: "2026-09-10T17:00:00Z", fin: "2026-09-30T20:00:00Z" });
-    expect(filtrarAgenda([expo], { ...ctx, cuando: { desde: "2026-09-19", hasta: "2026-09-20" } }).lista.map((e) => e.id)).toEqual(["expo"]);
-    expect(filtrarAgenda([expo], { ...ctx, cuando: { desde: "2026-10-01", hasta: "2026-10-02" } }).lista).toEqual([]);
+    expect(filtrarAgenda([expo], { ...sinFiltros, cuando: { desde: "2026-09-19", hasta: "2026-09-20" } }).map((e) => e.id)).toEqual(["expo"]);
+    expect(filtrarAgenda([expo], { ...sinFiltros, cuando: { desde: "2026-10-01", hasta: "2026-10-02" } })).toEqual([]);
   });
   it("Cuánto deja lo gratis (sin precio), lo de cooperación, o los dos; vacío no filtra", () => {
     const gratis = evento({ id: "gratis", inicio: "2026-09-19T01:00:00Z", precio: null });
     const coop = evento({ id: "coop", inicio: "2026-09-19T02:00:00Z", precio: "Cooperación solidaria" });
     const pago = evento({ id: "pago", inicio: "2026-09-19T03:00:00Z", precio: "$150" });
-    const de = (cuanto: ("gratis" | "cooperacion")[]) => filtrarAgenda([gratis, coop, pago], { ...ctx, cuanto }).lista.map((e) => e.id);
+    const de = (cuanto: ("gratis" | "cooperacion")[]) => filtrarAgenda([gratis, coop, pago], { ...sinFiltros, cuanto }).map((e) => e.id);
     expect(de(["gratis"])).toEqual(["gratis"]);
     expect(de(["cooperacion"])).toEqual(["coop"]);
     expect(de(["gratis", "cooperacion"])).toEqual(["gratis", "coop"]);
@@ -263,7 +130,7 @@ describe("Cuándo y Cuánto en la agenda (docs/rediseno/50, P5)", () => {
   });
   it("con `desde`, lo que empezó antes va en el primer día del rango y no en el que ya pasó", () => {
     const expo = evento({ id: "expo", inicio: "2026-09-10T17:00:00Z", fin: "2026-09-30T20:00:00Z" });
-    const grupos = agruparPorDia([expo, sab], AHORA, false, "2026-09-19");
+    const grupos = agruparPorDia([expo, sab], AHORA, "2026-09-19");
     expect(grupos.map((g) => [g.clave, g.titulo, g.eventos.map((e) => e.id)])).toEqual([["2026-09-19", "sáb 19 de sep", ["expo", "sab"]]]);
   });
   it("listarAgenda: lo que dice cada botón «Ver N eventos» es lo que la lista trae con esos filtros", () => {
@@ -272,7 +139,7 @@ describe("Cuándo y Cuánto en la agenda (docs/rediseno/50, P5)", () => {
     const cine = evento({ id: "cine", titulo: "Cine de barrio", inicio: "2026-09-20T02:00:00Z", precio: "$50" });
     const domingo = evento({ id: "domingo", titulo: "Jazz en el parque", inicio: "2026-09-21T01:00:00Z", precio: "Cooperación solidaria" });
     const agenda = { eventos: [cine, domingo, jazz], seguidos: ["L1"], eventosSeguidos: [] };
-    const ids = (f: Partial<typeof SIN_FILTROS>) => listarAgenda(agenda, { ...SIN_FILTROS, ...f }, AHORA).map((e) => e.id);
+    const ids = (f: Partial<typeof SIN_FILTROS>) => listarAgenda(agenda, { ...SIN_FILTROS, ...f }).map((e) => e.id);
     expect(ids({})).toEqual(["jazz", "cine", "domingo"]);
     expect(ids({ cuando: { desde: "2026-09-19", hasta: "2026-09-19" } })).toEqual(["jazz", "cine"]);
     expect(ids({ siguiendo: true })).toEqual(["jazz"]);

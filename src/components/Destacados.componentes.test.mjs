@@ -64,7 +64,7 @@ before(async () => {
       // Alineación y datos: un título de una línea junto a uno de dos, y un sitio más largo que la tarjeta; una tarjeta sin foto.
       const corta = tarjeta('titulo-corto', 0, { titulo: 'Corto' });
       const larga = tarjeta('titulo-largo', 0, { titulo: 'Un título tan largo que necesita dos líneas para decirse entero', sitio: 'Un sitio con un nombre larguísimo que no cabe en la tarjeta' });
-      const sinFoto = tarjeta('sin-foto', 2, { titulo: 'Macario, Xantolo camino al Mictlán', foto: '/sin-foto-ancha.png', hoy: true });
+      const sinFoto = tarjeta('sin-foto', 2, { titulo: 'Macario, Xantolo camino al Mictlán', foto: null, hoy: true });
 
       const grandes = [tarjeta('grande-a', 1), tarjeta('grande-b', 0)];
       const redondas = ['uno', 'dos', 'tres'].map((id) => tarjeta('lug-' + id, 0, { sitio: undefined, detalle: 'mié 30 sep · 19:00' }));

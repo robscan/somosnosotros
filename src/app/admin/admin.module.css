@@ -1,4 +1,4 @@
-/* Panel de administración (docs/rediseno/19). La página es la de Ajustes (ui/Ficha .pagina): barra blanca, contenido en
+/* Panel de administración (docs/rediseno/19). La página es la de Ajustes (ui/Plantilla .paginaContenido): barra blanca, contenido en
    su tono, grupos con rótulo y tarjetas de renglones. Maquetación plana: cada bloque es hijo directo de main y cada dato,
    hijo directo de su renglón con grid-template-areas.
    1. Títulos y grupos · 2. Pendiente · 3. Indicadores · 4. Renglones (Gestionar y ficha de persona) ·
@@ -29,13 +29,18 @@
   margin-top: var(--espacio-4);
 }
 .nota {
-  margin: calc(-1 * var(--espacio-1)) 0 var(--espacio-2) var(--espacio-1);
+  margin: 0 0 var(--espacio-2) var(--espacio-1);
   color: var(--texto-suave);
   font-size: var(--letra-sm);
 }
-/* Los chips de las listas corren a todo lo ancho: la franja sale del gutter con una sola regla */
+/* El rótulo de un grupo con nota debajo deja 4 y no 8: la nota es suya */
+.conNota {
+  margin-bottom: var(--espacio-1);
+}
+/* Los chips de las listas corren a todo lo ancho: la franja ocupa las tres columnas de la página, con el aire de los lados dentro */
 .lista > [role="group"] {
-  margin: var(--espacio-3) calc(-1 * var(--gutter)) 0;
+  grid-column: 1 / -1;
+  margin: var(--espacio-3) 0 0;
   padding-inline: var(--gutter);
 }
 
@@ -97,7 +102,7 @@ p.hecho {
 }
 .pendiente {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   grid-template-areas:
     "icono que que"
     "icono ficha ficha"
@@ -398,16 +403,6 @@ a.ficha::after,
 }
 
 /* ---------- 4. Renglones en tarjeta: Gestionar (etiqueta y detalle) y la ficha de una persona (clave y valor) ---------- */
-.tarjeta {
-  list-style: none;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--fondo);
-  overflow: hidden;
-}
-.tarjeta > li + li {
-  border-top: 1px solid var(--borde);
-}
 /* "Leyó 20 y publicó 18 este mes": con esto se decide una petición de más lecturas (docs/rediseno/23). */
 .numeros {
   grid-area: numeros;
@@ -424,7 +419,7 @@ a.ficha::after,
 .fila,
 .dato {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: var(--columna-icono) 1fr auto;
   grid-template-areas:
     "icono etiqueta accion"
     "icono detalle accion"
@@ -693,7 +688,6 @@ a.ficha::after,
 }
 .menu {
   list-style: none;
-  margin-inline: calc(-1 * var(--gutter));
 }
 .menu > li:last-child {
   margin-top: 6px;
@@ -701,12 +695,12 @@ a.ficha::after,
 }
 .menuItem {
   display: grid;
-  grid-template-columns: 24px 1fr;
+  grid-template-columns: var(--columna-icono) 1fr;
   column-gap: 14px;
   align-items: center;
   width: 100%;
   min-height: 54px;
-  padding: 0 var(--gutter);
+  padding: 0;
   border: none;
   background: none;
   color: var(--texto);

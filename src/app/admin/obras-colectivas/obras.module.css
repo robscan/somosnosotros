@@ -137,7 +137,7 @@
   object-fit: contain;
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  background: #fbfaf8;
+  background: var(--fondo-pared);
 }
 .instantanea > figcaption {
   color: var(--texto-suave);
@@ -175,7 +175,7 @@
     align-content: start;
     min-height: 0;
     padding: 0;
-    background: #fff;
+    background: var(--fondo);
   }
   .fichaObra > :not(.nombre):not(.qr) {
     display: none;

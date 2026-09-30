@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-hoja);
-  background: rgba(0, 0, 0, 0.32);
+  background: var(--velo-hoja);
 }
 .hoja {
   position: absolute;
@@ -25,8 +25,8 @@
 .hoja::before {
   content: "";
   display: block;
-  width: 36px;
-  height: 4px;
+  width: var(--asa-ancho);
+  height: var(--asa-alto);
   margin: 0 auto var(--espacio-3);
   border-radius: 2px;
   background: var(--asa);
@@ -57,6 +57,8 @@
 :where(.hoja) > h3:has(+ p) {
   margin-bottom: var(--espacio-1);
 }
+/* La nota de una hoja: el párrafo que sigue a su título o abre su cuerpo (`hoja.nota`, en las hojas que llevan su título en la cabecera). */
+.nota,
 :where(.hoja) > h3 + p {
   margin-bottom: var(--espacio-3);
   color: var(--texto-suave);
@@ -95,11 +97,6 @@
   margin-top: var(--espacio-3);
   padding-top: var(--espacio-3);
   border-top: 1px solid var(--borde);
-}
-/* A toda la altura, pegada al borde superior seguro (notch / isla): abajo sigue el área segura de siempre. */
-.completa {
-  height: calc(100% - env(safe-area-inset-top, 0px));
-  max-height: none;
 }
 .plano {
   display: flex;

@@ -8,6 +8,7 @@ import Boton from "@/components/ui/Boton";
 import Hoja from "@/components/ui/Hoja";
 import IconoEnCirculo from "@/components/ui/IconoEnCirculo";
 import { IconoBloquear } from "@/components/ui/Iconos";
+import estilos from "@/components/ui/Confirmar.module.css";
 import renglon from "@/components/ui/Renglon.module.css";
 import styles from "./Bloquear.module.css";
 
@@ -53,7 +54,7 @@ export default function Bloquear({ personaId, nombre, volver, conSesion }: Props
       </button>
       {abierta && (
         <Hoja etiqueta={`Bloquear a ${nombre}`} onCerrar={() => setAbierta(false)}>
-          <div className={styles.confirmar}>
+          <div className={`${estilos.confirmar} ${styles.confirmar}`}>
             <IconoEnCirculo>
               <IconoBloquear width={28} height={28} />
             </IconoEnCirculo>
@@ -67,7 +68,7 @@ export default function Bloquear({ personaId, nombre, volver, conSesion }: Props
             <Boton type="button" ancho="contenido" disabled={pendiente} onClick={confirmar}>
               {pendiente ? "Bloqueando…" : "Sí, bloquear"}
             </Boton>
-            <button type="button" className={styles.cancelar} onClick={() => setAbierta(false)} disabled={pendiente}>
+            <button type="button" className={estilos.enlace} onClick={() => setAbierta(false)} disabled={pendiente}>
               Cancelar
             </button>
           </div>

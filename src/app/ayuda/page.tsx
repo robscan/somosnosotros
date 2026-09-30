@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Barra from "@/components/ui/Barra";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "../privacidad/legal.module.css";
 
 const DESCRIPCION = "Cómo usar Somos Nosotros: publicar un evento, seguir lugares y artistas, avisos, borrar tu cuenta y cómo escribirnos.";
@@ -14,7 +15,7 @@ export const metadata: Metadata = { title: "Ayuda · Somos Nosotros", descriptio
  */
 export default function Ayuda() {
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Ayuda</h1>

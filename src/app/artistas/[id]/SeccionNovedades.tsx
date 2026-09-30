@@ -63,7 +63,7 @@ export default function SeccionNovedades({
         )}
       </h2>
       {novedades.length === 0 ? (
-        <p className={styles.vacio}>Aún no hay novedades.</p>
+        <p className={`${ficha.vacio} ${styles.vacio}`}>Aún no hay novedades.</p>
       ) : (
         <>
           <ul className={styles.lista}>

@@ -1,6 +1,5 @@
 import type { MouseEvent } from "react";
 import { textoDistancia } from "@/lib/agenda";
-import { SIN_FOTO } from "@/lib/imagen";
 import { calleCorta, etiquetaTipo, hrefLugar, textoProximo, type LugarResumen, type ProximoEvento } from "@/lib/lugares";
 import BotonRenglon, { type EstadoBotonRenglon } from "./ui/BotonRenglon";
 import { Chip } from "./ui/Chip";
@@ -30,7 +29,7 @@ export default function RenglonLugar({ lugar: l, km, boton, alAbrir }: Props) {
     alAbrir();
   }
   return (
-    <Renglon href={hrefLugar(l)} foto={l.portada ?? SIN_FOTO} titulo={l.nombre} accion={boton && <BotonRenglon {...boton} />} onClick={alTocar}>
+    <Renglon href={hrefLugar(l)} foto={l.portada} titulo={l.nombre} accion={boton && <BotonRenglon {...boton} />} onClick={alTocar}>
       {l.privado && <Chip variante="estado">Solo tú lo ves</Chip>}
       <span className={styles.envuelve}>
         <IconoPin width={15} height={15} />

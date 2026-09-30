@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Barra from "@/components/ui/Barra";
+import plantilla from "@/components/ui/Plantilla.module.css";
 import styles from "./legal.module.css";
 
 export const metadata: Metadata = { title: "Aviso de privacidad · Somos Nosotros" };
@@ -14,7 +15,7 @@ export const RESPONSABLE = { nombre: "Somos Nosotros", contacto: "oscar@agenciap
  */
 export default function Privacidad() {
   return (
-    <main className="pagina">
+    <main className={plantilla.pagina}>
       <Barra volver={{ href: "/", texto: "Volver" }} />
       <div className={styles.texto}>
         <h1 className="titulo">Aviso de privacidad</h1>

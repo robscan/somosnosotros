@@ -2,7 +2,7 @@
 .pared {
   position: fixed;
   inset: 0;
-  background: #fbfaf8;
+  background: var(--fondo-pared);
   overflow: hidden;
 }
 /* OL-135 (founder: «se deformó el dibujo… que mantenga aspect ratio y solo se escale»): el marco es el área 16:9
@@ -24,8 +24,8 @@
 }
 .titulo {
   position: absolute;
-  top: 24px;
-  left: 24px;
+  top: var(--espacio-6);
+  left: var(--espacio-6);
   /* OL-120: el QR vive arriba a la derecha; el título cede ancho (se parte) antes que chocar con él. */
   right: clamp(190px, 12vw, 250px);
   z-index: var(--z-flotante);
@@ -52,8 +52,8 @@
    controles. El de Administración no cambia. */
 .qr {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: var(--espacio-6);
+  right: var(--espacio-6);
   z-index: var(--z-flotante);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -94,8 +94,8 @@
    otro fundido: todo en una animación. */
 .esquina {
   position: absolute;
-  left: 24px;
-  right: 24px; /* con `left` y `right` la esquina mide la ventana menos 24px por lado, y la sonda se topa ahí */
+  left: var(--espacio-6);
+  right: var(--espacio-6); /* con `left` y `right` la esquina mide la ventana menos 24px por lado, y la sonda se topa ahí */
   bottom: 88px;
   z-index: calc(var(--z-flotante) + 1);
   display: grid;
@@ -182,7 +182,7 @@
   margin: 0;
   padding: var(--espacio-2) 10px;
   border-radius: var(--radio);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--vidrio);
   color: var(--error);
   font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
