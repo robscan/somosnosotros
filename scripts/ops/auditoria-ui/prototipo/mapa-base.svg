@@ -1,0 +1,32 @@
+<symbol id="base" viewBox="0 0 640 900">
+      <rect width="640" height="900" fill="#fafaf8"/>
+      <!-- cerros al sur y parques -->
+      <path d="M0 700 Q80 640 160 690 T320 700 T480 740 T640 700 V900 H0 Z" fill="#e4efdd"/>
+      <path d="M0 780 Q90 720 180 770 T360 790 T640 780 V900 H0 Z" fill="#d6e8cc"/>
+      <path d="M0 40 L110 40 L120 150 L40 170 L0 140 Z" fill="#d3e9c8"/>
+      <rect x="300" y="330" width="80" height="60" rx="4" fill="#cfe8c4"/>
+      <rect x="330" y="435" width="34" height="34" rx="3" fill="#dcead2"/>
+      <!-- calles -->
+      <g stroke="#e4e4df" stroke-width="2">
+        <path d="M0 180H640M0 220H520M0 260H640M100 300H640M0 340H300M380 340H640M0 380H640M0 460H640M60 500H640M0 540H420M480 540H640M0 580H640M140 620H640M0 660H360M0 700H640"/>
+        <path d="M80 140V700M120 100V820M160 180V900M200 100V560M240 220V900M280 100V700M360 100V600M400 180V900M440 100V700M480 220V900M520 100V620M560 180V900M600 300V900"/>
+        <path d="M0 120 Q200 100 320 130 T640 90" fill="none" stroke-width="3"/>
+        <path d="M440 900 Q470 700 560 640 T640 480" fill="none" stroke-width="3"/>
+      </g>
+      <g stroke="#d6d6d2" stroke-width="5" fill="none" stroke-linecap="round">
+        <path d="M0 420H640"/>
+        <path d="M320 100V900"/>
+        <path d="M0 640 L640 260"/>
+        <path d="M60 100 Q40 400 120 900"/>
+      </g>
+      <g class="calle-nombre">
+        <text x="140" y="413">Av. Venustiano Carranza</text>
+        <text x="334" y="260" transform="rotate(-90 334 260)">Av. Universidad</text>
+      </g>
+      <g class="colonia">
+        <text x="285" y="445" text-anchor="middle">Centro</text>
+        <text x="340" y="365" text-anchor="middle">Alameda</text>
+        <text x="60" y="110">Tangamanga</text>
+        <text x="520" y="560" text-anchor="middle">Lomas</text>
+      </g>
+    </symbol>
