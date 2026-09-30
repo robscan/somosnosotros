@@ -10,7 +10,7 @@ Herramientas de operación (no son código de la app). Las dos primeras son las 
   o si el número de bloques duplicados o de medidas en duro (píxeles fuera de los tokens, salvo 0, 1 y 2) sube respecto a lo
   aceptado. Que baje está bien.
 - **`npm run medir`** (un minuto; necesita Chrome o Chromium). Levanta el respaldo local y la app compilada contra él, abre las
-  23 pantallas de `pantallas-prod.json` y `pantallas-sesion.json` a 320, 390, 820 y 1280 px y falla si una pantalla pasa de su
+  pantallas de `pantallas-prod.json` y `pantallas-sesion.json` a 320, 390, 820 y 1280 px y falla si una pantalla pasa de su
   presupuesto de nodos o de profundidad, o si tiene: un hijo fuera de la caja de su padre, desplazamiento horizontal, un
   control cuyo toque real mide menos de 44 (se prueba con `elementFromPoint`, no con la caja: un chip de 36 con un `::before`
   de 44 pasa), un accionable tapado por un elemento fijo que el desplazamiento no libera, un margen negativo o un error de

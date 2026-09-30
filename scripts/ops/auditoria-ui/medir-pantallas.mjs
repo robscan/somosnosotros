@@ -25,13 +25,13 @@ const ALTOS = [568, 844, 1180, 800]; // el iPhone SE de primera generación, un 
 const AHORA = "2026-10-07T16:00:00Z"; // un miércoles a las 10:00 en Ciudad de México
 const UA_IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
 const UA_IPAD = "Mozilla/5.0 (iPad; CPU OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1";
-const DISPOSITIVOS = [
-  { isMobile: true, hasTouch: true, userAgent: UA_IPHONE },
-  { isMobile: true, hasTouch: true, userAgent: UA_IPHONE },
-  { isMobile: true, hasTouch: true, userAgent: UA_IPAD },
-  {},
-];
-const ESTILO_DE_MAPA = { version: 8, sources: {}, layers: [{ id: "fondo", type: "background", paint: { "background-color": "#e8e6df" } }] };
+const dispositivo = (ancho) => (ancho >= 1000 ? {} : { isMobile: true, hasTouch: true, userAgent: ancho >= 800 ? UA_IPAD : UA_IPHONE });
+// Un estilo vacío pero con atribución: así Mapbox pinta también su ⓘ, como con el estilo real.
+const ESTILO_DE_MAPA = {
+  version: 8,
+  sources: { mapa: { type: "geojson", data: { type: "FeatureCollection", features: [] }, attribution: "© Mapbox" } },
+  layers: [{ id: "fondo", type: "background", paint: { "background-color": "#e8e6df" } }, { id: "mapa", type: "line", source: "mapa" }],
+};
 const IMAGEN = '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="#b9b4a8"/></svg>';
 const MAC = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
@@ -108,7 +108,7 @@ async function aquietar(page) {
 }
 async function medirPantalla(browser, medirJs, base, p, i) {
   const [ancho, alto] = [ANCHOS[i], ALTOS[i]];
-  const ctx = await browser.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: 1, locale: "es-MX", timezoneId: "America/Mexico_City", ...DISPOSITIVOS[i] });
+  const ctx = await browser.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: 1, locale: "es-MX", timezoneId: "America/Mexico_City", ...dispositivo(ancho) });
   try {
     await ctx.clock.setFixedTime(new Date(AHORA));
     if (p.sesion) await ctx.addCookies([{ name: "sb-127-auth-token", value: cookie, url: base }]);
@@ -198,30 +198,29 @@ try {
   // ---------- el resultado ----------
   const limpio = (s) => String(s).replace(/-module__[\w-]{5,8}__/g, "/");
   const cifras = (p, campo) => ANCHOS.map((_, i) => medidas.get(`${p.id}@${i}`)?.[campo] ?? "—");
-  if (args.includes("--aceptar")) {
+  const aceptar = args.includes("--aceptar");
+  if (aceptar) {
     const bloque = pantallas.map((p) => `    ${JSON.stringify(p.id)}: { "nodos": [${cifras(p, "nodos").join(", ")}], "profundidad": [${cifras(p, "profundidadMax").join(", ")}] }`);
     const previo = fs.readFileSync(ACEPTADAS, "utf8"); // los presupuestos van al final del archivo: lo de antes (anchos, excepciones) no se toca
     fs.writeFileSync(ACEPTADAS, `${previo.slice(0, previo.indexOf('  "presupuestos"'))}  "presupuestos": {\n${bloque.join(",\n")}\n  }\n}\n`);
-    console.log(`medidas: presupuestos aceptados para ${pantallas.length} pantallas`);
-    process.exitCode = fallos.some((f) => f.regla === "carga") ? 1 : 0;
-  } else {
-    console.log(`\n${"plantilla".padEnd(10)}${"pantalla".padEnd(28)}nodos ${ANCHOS.join(" ")}   profundidad`);
-    for (const p of pantallas) console.log(`${(p.plantilla ?? "").padEnd(10)}${p.id.padEnd(28)}${cifras(p, "nodos").join(" ").padEnd(22)}${cifras(p, "profundidadMax").join(" ")}`);
-    const bajaron = pantallas.filter((p) => aceptadas.presupuestos[p.id] && ANCHOS.some((_, i) => (medidas.get(`${p.id}@${i}`)?.nodos ?? Infinity) < aceptadas.presupuestos[p.id].nodos[i]));
-    if (bajaron.length) console.log(`\n${bajaron.length} pantallas bajaron de nodos: anótalo con \`npm run medir -- --aceptar\``);
-    aceptadas.excepciones.forEach((e, i) => usadas.has(i) || console.log(`excepción sin uso en esta corrida (¿ya no hace falta?): ${e.regla} ${e.elemento}`));
-    if (fallos.length) {
-      const grupos = Map.groupBy(fallos, (f) => `${f.regla} · ${f.pantalla} · ${limpio(f.que)}`);
-      console.error(`\nLa prueba falla (${grupos.size} hallazgos):`);
-      for (const [clave, lista] of grupos) {
-        const anchos = [...new Set(lista.map((f) => f.ancho))].sort((a, b) => a - b);
-        const iguales = Math.round(lista.length / anchos.length);
-        console.error(`  - ${clave}\n      a ${anchos.join(", ")} px: ${limpio(lista[0].detalle)}${iguales > 1 ? ` (y ${iguales - 1} elementos más iguales)` : ""}`);
-      }
-      process.exitCode = 1;
-    }
-    console.log(`\nmedidas: ${pantallas.length} pantallas × ${ANCHOS.length} anchos en ${Math.round((Date.now() - inicio) / 1000)} s, ${fallos.length ? "CON FALLOS" : "sin novedades"}`);
   }
+  const problemas = aceptar ? fallos.filter((f) => f.regla !== "presupuesto") : fallos; // al aceptar, el presupuesto es justo lo que se anota
+  console.log(`\n${"plantilla".padEnd(10)}${"pantalla".padEnd(28)}nodos ${ANCHOS.join(" ")}   profundidad`);
+  for (const p of pantallas) console.log(`${(p.plantilla ?? "").padEnd(10)}${p.id.padEnd(28)}${cifras(p, "nodos").join(" ").padEnd(22)}${cifras(p, "profundidadMax").join(" ")}`);
+  const bajaron = pantallas.filter((p) => ANCHOS.some((_, i) => medidas.get(`${p.id}@${i}`)?.nodos < aceptadas.presupuestos[p.id]?.nodos[i]));
+  if (bajaron.length && !aceptar) console.log(`\n${bajaron.length} pantallas bajaron de nodos: anótalo con \`npm run medir -- --aceptar\``);
+  if (!solo) aceptadas.excepciones.forEach((e, i) => usadas.has(i) || console.log(`excepción sin uso en esta corrida (¿ya no hace falta?): ${e.regla} ${e.elemento}`));
+  if (problemas.length) {
+    const grupos = Map.groupBy(problemas, (f) => `${f.regla} · ${f.pantalla} · ${limpio(f.que)}`);
+    console.error(`\nLa prueba falla (${grupos.size} hallazgos):`);
+    for (const [clave, lista] of grupos) {
+      const anchos = [...new Set(lista.map((f) => f.ancho))].sort((a, b) => a - b);
+      const iguales = Math.round(lista.length / anchos.length);
+      console.error(`  - ${clave}\n      a ${anchos.join(", ")} px: ${limpio(lista[0].detalle)}${iguales > 1 ? ` (y ${iguales - 1} elementos más iguales)` : ""}`);
+    }
+    process.exitCode = 1;
+  }
+  console.log(`\nmedidas: ${pantallas.length} pantallas × ${ANCHOS.length} anchos en ${Math.round((Date.now() - inicio) / 1000)} s, ${problemas.length ? "CON FALLOS" : aceptar ? "presupuestos anotados" : "sin novedades"}`);
 } catch (e) {
   console.error(e.message);
   process.exitCode = 1;
