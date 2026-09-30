@@ -1,0 +1,11 @@
+[
+  { "id": "s01-inicio-sesion", "url": "/", "completa": true },
+  { "id": "s02-agenda-sesion", "url": "/agenda", "completa": true },
+  { "id": "s03-alta-evento", "url": "/eventos/nuevo", "completa": true },
+  { "id": "s04-ajustes", "url": "/ajustes", "completa": true },
+  { "id": "s05-perfil", "url": "/perfil", "completa": true },
+  { "id": "s06-ficha-evento-voy", "url": "/eventos/lxs-colocaos-la-ultima-fogueada", "completa": true },
+  { "id": "s07-alta-lugar", "url": "/lugares/nuevo", "completa": true },
+  { "id": "s08-editar-perfil", "url": "/ajustes/editar" },
+  { "id": "s09-novedades", "url": "/novedades" }
+]
