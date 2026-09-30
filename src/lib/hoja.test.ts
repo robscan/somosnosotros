@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, masCercano, type Detentes } from "./hoja";
+import { alturaAsoma, alturaLlena, alturaSiguiente, cabeceraCompacta, destinoAlAsentar, detenteAlFiltrar, estadoEn, masCercano, type Detentes } from "./hoja";
 
 /** Las alturas de la lista en un teléfono de 844: la franja, dos renglones y medio de 94 y el hueco que la deja llena. */
 const LISTA: Detentes = { recogida: 0, asoma: 235, llena: 690 };
@@ -98,6 +98,22 @@ describe("alturaLlena: hasta dónde sube cada hoja", () => {
       expect(alturaLlena({ ...recogida, arribaDelCuerpo: 720 - y, y, conFicha: false })).toBe(604);
       expect(alturaLlena({ ...recogida, arribaDelCuerpo: 720 - y, y, conFicha: true })).toBe(720);
     }
+  });
+});
+
+describe("alturaAsoma: la lista asoma sin tapar los mandos del mapa", () => {
+  it("con sitio de sobra pide lo que piden sus renglones", () => {
+    expect(alturaAsoma(235, 604, 72)).toBe(235);
+    expect(alturaAsoma(235, 604, 0)).toBe(235);
+  });
+
+  it("en una ventana baja cede lo que haga falta: el mapa conserva el aire de «Mi ubicación» (12 + 48 + 12) arriba", () => {
+    // Un teléfono de 568: el mapa deja 336 de hueco a la hoja y los dos renglones y medio piden 290.
+    expect(alturaAsoma(290, 336, 72)).toBe(264);
+  });
+
+  it("nunca baja de cero", () => {
+    expect(alturaAsoma(100, 40, 72)).toBe(0);
   });
 });
 

@@ -345,7 +345,7 @@ function CuerpoLugares({ extra, lugares, visibles, ciudad, eleccion, punto, vez,
           tapaAbajo={tapaAbajo}
         />
         {notaGeo && <Aviso texto={notaGeo} onCerrar={onCerrarGeo} className={styles.avisoMapa} />}
-        <BotonIcono tamano="accion" relieve="elevado" className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
+        <BotonIcono tamano="accion" relieve="elevado" data-libre className={`${styles.ubicacion} ${punto ? styles.ubicacionActiva : ""} ${geoPidiendo ? styles.ubicacionPidiendo : ""}`} onClick={onUbicacion} aria-label="Mi ubicación">
           <IconoUbicacion width={22} height={22} />
         </BotonIcono>
       </div>
