@@ -1,6 +1,6 @@
 # 267 · P9 Altas: una sola hoja Dónde, un solo mensaje y el botón que dice qué falta (OL-239)
 
-**Fecha:** 2026-09-29 · **Rama:** `ui-altas`, desde `origin/ui-mapa` (`468f1b30`) · **OL:** OL-239 · **PR:** PR_POR_PONER (sin unir; va montado sobre #276, `ui-mapa`, que va sobre #275, #274, #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Cierra la pieza P9 del plan de OL-227 (doc 50, § 7; H-29 a H-32) con lo que el founder decidió el 2026-09-29.
+**Fecha:** 2026-09-29 · **Rama:** `ui-altas`, desde `origin/ui-mapa` (`468f1b30`) · **OL:** OL-239 · **PR:** #277 (sin unir; va montado sobre #276, `ui-mapa`, que va sobre #275, #274, #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Cierra la pieza P9 del plan de OL-227 (doc 50, § 7; H-29 a H-32) con lo que el founder decidió el 2026-09-29.
 
 ## Pedido
 
