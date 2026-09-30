@@ -1,6 +1,6 @@
 # 266 · P8 Mapa: el pin elegido, un símbolo por lugar y la distancia (OL-238)
 
-**Fecha:** 2026-09-29 · **Rama:** `ui-mapa`, desde `origin/ui-buscar` (`b93aa22f`, y rebasada sobre `9d51a6d4`, los ajustes del founder a Buscar que llegaron mientras trabajaba) · **OL:** OL-238 · **PR:** por abrir (va montado sobre #275, `ui-buscar`, que va sobre #274, #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Cierra la pieza P8 del plan de OL-227 (doc 50, § 7; H-12) con lo que el founder decidió el 2026-09-29 tras ver P5b y P6.
+**Fecha:** 2026-09-29 · **Rama:** `ui-mapa`, desde `origin/ui-buscar` (`b93aa22f`, y rebasada sobre `9d51a6d4`, los ajustes del founder a Buscar que llegaron mientras trabajaba) · **OL:** OL-238 · **PR:** #276 (sin unir; va montado sobre #275, `ui-buscar`, que va sobre #274, #273, #272, #271, #270, #269 y #268) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows. Cierra la pieza P8 del plan de OL-227 (doc 50, § 7; H-12) con lo que el founder decidió el 2026-09-29 tras ver P5b y P6.
 
 ## Pedido
 
