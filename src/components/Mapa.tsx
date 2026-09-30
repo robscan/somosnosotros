@@ -317,11 +317,13 @@ export default function Mapa({ lugares = [], onPin, elegido = null, ubicacion = 
     let cancelado = false;
     const arriba = 56;
     const abajo = Math.max(72, tapaRef.current + 24);
+    // A cada lado, la mitad del nombre más ancho (9 em de 15 px = 135 px) y un poco de aire: el nombre de un pin de los extremos no toca el borde.
+    const lado = 72;
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelado) return;
       const limites = new mapboxgl.LngLatBounds();
       encuadre.puntos.forEach((p) => limites.extend([p.lng, p.lat]));
-      mapa.fitBounds(limites, { padding: { top: arriba, left: 48, right: 48, bottom: abajo }, maxZoom: 15, duration });
+      mapa.fitBounds(limites, { padding: { top: arriba, left: lado, right: lado, bottom: abajo }, maxZoom: 15, duration });
     });
     return () => {
       cancelado = true;
