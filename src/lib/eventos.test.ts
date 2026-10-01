@@ -110,13 +110,13 @@ describe("validarEvento", () => {
 
 describe("claseDeCosto", () => {
   it("sin precio o con «Gratis» escrito a mano es gratis", () => {
-    for (const precio of [null, undefined, "", "  ", "Gratis", "gratis "]) expect(claseDeCosto(precio)).toBe("gratis");
+    for (const precio of [null, undefined, "", "  ", "Gratis", "gratis ", "Entrada libre", "Sin costo"]) expect(claseDeCosto(precio)).toBe("gratis");
   });
   it("lo que empieza por «Cooperación» es cooperación", () => {
     for (const precio of [COOPERACION_SOLIDARIA, "Cooperación voluntaria", "cooperacion"]) expect(claseDeCosto(precio)).toBe("cooperacion");
   });
   it("cualquier otro texto es con costo, con cifra o sin ella", () => {
-    for (const precio of ["$150", "$120 a $250", "taquilla", "Con costo", "$100 estudiantes"]) expect(claseDeCosto(precio)).toBe("costo");
+    for (const precio of ["$150", "$120 a $250", "taquilla", "Con costo", "$100 estudiantes", "Gratis con boleto de entrada al museo", "Costo por confirmar"]) expect(claseDeCosto(precio)).toBe("costo");
   });
 });
 

@@ -79,7 +79,7 @@ export type ClaseDeCosto = "gratis" | "cooperacion" | "costo";
  */
 export function claseDeCosto(precio: string | null | undefined): ClaseDeCosto {
   const texto = (precio ?? "").trim();
-  if (texto === "" || /^gratis$/i.test(texto)) return "gratis";
+  if (texto === "" || /^(gratis|gratuito|entrada libre|libre|sin costo)$/i.test(texto)) return "gratis";
   return /^cooperaci[oó]n/i.test(texto) ? "cooperacion" : "costo";
 }
 
