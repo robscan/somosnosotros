@@ -31,7 +31,7 @@
     "s08-editar-perfil": { "nodos": [40, 40, 72, 72], "profundidad": [8, 8, 8, 8] },
     "s09-novedades": { "nodos": [45, 45, 77, 73], "profundidad": [8, 8, 8, 8] },
     "s10-buscar": { "nodos": [23, 23, 57, 57], "profundidad": [8, 8, 8, 8] },
-    "s11-alta-artista": { "nodos": [52, 52, 86, 86], "profundidad": [9, 9, 9, 9] },
+    "s11-alta-artista": { "nodos": [60, 60, 94, 94], "profundidad": [9, 9, 9, 9] },
     "s12-lugares-hoja-llena": { "nodos": [180, 178, 179, 179], "profundidad": [12, 12, 12, 12] },
     "s13-lugares-ficha-en-hoja": { "nodos": [164, 164, 165, 165], "profundidad": [14, 14, 14, 14] },
     "s14-agenda-nuevos": { "nodos": [186, 186, 188, 188], "profundidad": [10, 10, 10, 10] }
