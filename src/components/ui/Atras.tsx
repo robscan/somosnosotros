@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { pedirSalida } from "@/lib/guardiaSalida";
-import { alVolver, hayAnterior, registrarVolverVisible, vuelveADestino } from "../Navegacion";
+import { alVolver, destinoSinHistorial, hayAnterior, registrarVolverVisible, vuelveADestino } from "../Navegacion";
 import Boton from "./Boton";
 import BotonIcono from "./BotonIcono";
 import { IconoChevronIzquierda } from "./Iconos";
@@ -31,10 +31,12 @@ export function useVolver(href: string): (e: React.MouseEvent<HTMLAnchorElement>
   const router = useRouter();
   const irse = useCallback(() => {
     const anterior = hayAnterior();
+    // Sin historial al que volver (enlace compartido, o la vuelta de Apple en la app de iPhone) se va a la pantalla de la que se vino, si se sabe, y si no a la madre.
+    const adonde = anterior ? href : (destinoSinHistorial() ?? href);
     const ir = () => {
       if (anterior) router.back();
-      else if (new URL(href, window.location.href).pathname === window.location.pathname) window.location.replace(href);
-      else router.replace(href);
+      else if (new URL(adonde, window.location.href).pathname === window.location.pathname) window.location.replace(adonde);
+      else router.replace(adonde);
     };
     if (pedirSalida(ir)) return;
     ir();

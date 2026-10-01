@@ -9,7 +9,7 @@ import { IconoCorreo } from "@/components/ui/Iconos";
 import { LogoApple, LogoGoogle } from "@/components/ui/LogosEntrar";
 import { enmascararCorreo, limpiarCodigo } from "@/lib/entrar";
 import { NOMBRE_PROVEEDOR, type Proveedor } from "@/lib/entrarCon";
-import { apuntarVuelta, desdeElReferente, haciaDonde, leerDesde } from "@/lib/historial";
+import { apuntarVuelta, desdeElReferente, haciaDonde, leerAntes, leerDesde } from "@/lib/historial";
 import { correoValido } from "@/lib/perfil";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 import Limpiar from "@/components/ui/Limpiar";
@@ -132,7 +132,10 @@ export default function FormularioEntrar({ siguiente, proveedores, largo }: Prop
   /** Lo que se apunta para el regreso: cuántas entradas tiene el historial y hasta dónde retroceder al volver (`haciaDonde`). */
   function apunte() {
     const desde = deDondeVengo();
-    apuntarVuelta(window.sessionStorage, { siguiente, largo: window.history.length, hacia: haciaDonde(desde, siguiente), detras: desde !== null, cuando: Date.now() });
+    const hacia = haciaDonde(desde, siguiente);
+    // La pantalla que debe quedar detrás del destino tras volver: la de antes de la de origen si se vuelve a ella (Voy desde una ficha) o la de origen si no (el «+»).
+    const previa = hacia === "origen" ? leerAntes(window.history.state) : desde;
+    apuntarVuelta(window.sessionStorage, { siguiente, largo: window.history.length, hacia, detras: desde !== null, cuando: Date.now(), previa });
   }
 
   /**
