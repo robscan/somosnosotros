@@ -1,6 +1,6 @@
 # 278 · Atrás muerto en la app de iPhone tras entrar con Apple (OL-250)
 
-**Fecha:** 2026-10-01 · **Rama:** `atras-app-nativa`, desde `origin/main` (`9e7cf703`, con #288 ya publicado) · **OL:** OL-250 · **PR:** pendiente (ver al pie) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
+**Fecha:** 2026-10-01 · **Rama:** `atras-app-nativa`, desde `origin/main` (`9e7cf703`, con #288 ya publicado) · **OL:** OL-250 · **PR:** #289 contra `main` (sin unir) · **Modelo:** Sonnet 5.5. Sin subagentes, council ni workflows.
 
 ## Lo que vio el founder
 
