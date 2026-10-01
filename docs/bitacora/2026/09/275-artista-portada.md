@@ -1,6 +1,6 @@
 # 275 · Portada de artista (OL-247)
 
-**Fecha:** 2026-09-30 · **Rama:** `artista-portada`, desde `origin/main` · **OL:** OL-247 · **PR:** pendiente (sin unir hasta el «publica» del founder) · **Quién:** operador de la pieza.
+**Fecha:** 2026-09-30 · **Rama:** `artista-portada`, desde `origin/main` · **OL:** OL-247 · **PR:** [#286](https://github.com/robscan/somosnosotros/pull/286) (sin unir hasta el «publica» del founder) · **Quién:** operador de la pieza.
 
 ## Pedido
 
