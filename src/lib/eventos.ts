@@ -71,6 +71,18 @@ export type Evento = {
 export const COOPERACION_SOLIDARIA = "Cooperación solidaria";
 export const esCooperacion = (precio: string | null | undefined): boolean => precio === COOPERACION_SOLIDARIA;
 
+/** Cuánto cuesta un evento, en tres clases que lo cubren todo: cada evento cae en una y solo una. */
+export type ClaseDeCosto = "gratis" | "cooperacion" | "costo";
+/**
+ * La clase de un evento según su `precio` (texto libre): sin precio (o «Gratis» escrito a mano) es gratis; un texto que empieza por
+ * «Cooperación» (el del formulario, OL-140, o uno escrito a mano) es cooperación; cualquier otra cosa («$150», «$120 a $250», «taquilla») es con costo.
+ */
+export function claseDeCosto(precio: string | null | undefined): ClaseDeCosto {
+  const texto = (precio ?? "").trim();
+  if (texto === "" || /^gratis$/i.test(texto)) return "gratis";
+  return /^cooperaci[oó]n/i.test(texto) ? "cooperacion" : "costo";
+}
+
 export type EventoResumen = Pick<Evento, "id" | "titulo" | "inicio" | "fin" | "imagen" | "precio" | "lugar_id" | "sitio_texto" | "sitio_reservado" | "zona"> & {
   /** Opcional porque no todas las consultas lo piden todavía (bitácora 154); `hrefEvento` cae al UUID cuando falta. */
   slug?: string | null;

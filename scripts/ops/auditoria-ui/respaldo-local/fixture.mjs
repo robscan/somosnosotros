@@ -73,7 +73,7 @@ const E = {
   oca: "bbbb0001-0000-4000-8000-000000000012",
   desierto: "bbbb0001-0000-4000-8000-000000000013",
 };
-function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = "Gratis", creadoHace = 20, descripcion = null, enlace = null, imagen }) {
+function evento({ id, slug, titulo, dias, hora, dur = 2, lugar_id = null, sitio = null, precio = null, creadoHace = 20, descripcion = null, enlace = null, imagen }) {
   const inicio = iso(fecha(dias, hora));
   const fin = masHoras(inicio, dur);
   return {
