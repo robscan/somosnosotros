@@ -68,7 +68,7 @@ const cargarLigadas = cache(async (id: string): Promise<{ perfil_id: string }[]>
 async function cargarArtista(idOSlug: string): Promise<ArtistaConAutor | null> {
   const supabase = await clienteServidor();
   if (!supabase) return null;
-  const columnas = "id, slug, nombre, disciplina, detalle, tipo, foto, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)";
+  const columnas = "id, slug, nombre, disciplina, detalle, tipo, foto, portada, descripcion, ciudad, redes, creado_por, visible, origen, autor:perfiles!artistas_creado_por_fkey(id, nombre)";
   const porSlug = await supabase.from("artistas").select(columnas).eq("slug", idOSlug).maybeSingle();
   const data = porSlug.data ?? (esUuid(idOSlug) ? (await supabase.from("artistas").select(columnas).eq("id", idOSlug).maybeSingle()).data : null);
   if (!data) return null;
@@ -203,7 +203,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // indexable por el enlace desde /artistas aunque el interruptor la dejara fuera del mapa del sitio.
   const sinIndexar = a.origen === "capo" && !CAPO_SIN_RECLAMAR_EN_SITEMAP && (await cargarLigadas(a.id)).length === 0;
   // Sin foto, la imagen por defecto del sitio: el enlace compartido nunca sale sin imagen (OL-143, doc 36).
-  const imagen = a.foto ?? "/portada.png";
+  const imagen = a.portada ?? a.foto ?? "/portada.png";
   return {
     title: `${a.nombre} · Somos Nosotros`,
     description: descripcion,
@@ -258,7 +258,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   // revisión previa; el resto de las redes (incluido un video con forma irreconocible) sigue como botón de enlace.
   const videos = redes.map((r) => videoEmbedDe(r)).filter((v): v is NonNullable<typeof v> => v !== null);
   const redesConEnlace = redes.filter((r) => !videoEmbedDe(r));
-  const faltanDetalles = a.disciplina === "por_completar" || (!a.descripcion && !a.foto && redes.length === 0);
+  const faltanDetalles = a.disciplina === "por_completar" || (!a.descripcion && !a.foto && !a.portada && redes.length === 0);
   // Novedades, fase 1 (doc 44, OL-175): "Publicar" solo para quien gestiona la ficha (mismo criterio que Editar).
   const hrefPublicarNovedad = puedeEditar ? `${hrefArtista(a)}/novedades/nueva` : null;
   const url = `${ORIGEN}${hrefArtista(a)}`;
@@ -274,15 +274,15 @@ export default async function FichaArtista({ params, searchParams }: Params) {
   // interruptor que `generateMetadata`); solo redes ya públicas y registradas, nunca un dato de contacto.
   const sinIndexar = a.origen === "capo" && !CAPO_SIN_RECLAMAR_EN_SITEMAP && ligados.length === 0;
   const jsonLdVisible = a.visible && !sinIndexar;
-  const jsonLd = jsonLdVisible ? jsonLdArtista({ nombre: a.nombre, descripcion: a.descripcion, imagen: a.foto, url: hrefArtista(a), esGrupo: a.tipo !== "solista", redes: redes.map((r) => r.url) }) : null;
+  const jsonLd = jsonLdVisible ? jsonLdArtista({ nombre: a.nombre, descripcion: a.descripcion, imagen: a.portada ?? a.foto, url: hrefArtista(a), esGrupo: a.tipo !== "solista", redes: redes.map((r) => r.url) }) : null;
   const migajas = jsonLdVisible ? jsonLdMigajas([{ nombre: "Inicio", url: "/" }, { nombre: "Artistas", url: "/artistas" }, { nombre: a.nombre, url: hrefArtista(a) }]) : null;
 
   const detalle = a.detalle ? a.detalle.charAt(0).toUpperCase() + a.detalle.slice(1) : null;
   const hayAvisos = nuevo === "1" || (puedeEditar && faltanDetalles) || error === "borrar" || !a.visible;
 
   return (
-    // Un artista aún no tiene portada propia: el héroe lleva el símbolo SN y su foto va de avatar (docs/rediseno/50, puntos 41 y 49).
-    <Ficha portada={null}>
+    // Con portada propia (OL-247) el héroe la enseña; sin ella lleva el símbolo SN. La foto va siempre de avatar (docs/rediseno/50, puntos 41 y 49).
+    <Ficha portada={a.portada}>
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
       {migajas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(migajas).replace(/</g, "\\u003c") }} />}
       <BarraFicha volver={{ href: "/artistas", texto: "Artistas" }} titulo={a.nombre}>
@@ -322,7 +322,7 @@ export default async function FichaArtista({ params, searchParams }: Params) {
       {/* Volvió de entrar con "Soy yo / es mi grupo" en la mano: la hoja se abre sola. */}
       {actual && accion === "mio" && !puedeEditar && <EsMiNombre artistaId={a.id} slug={a.slug} nombre={a.nombre} conSesion correo={correo} soloHoja />}
       <Heroe
-        portada={null}
+        portada={a.portada}
         alt={`Portada de ${a.nombre}`}
         avatar={{ src: a.foto, alt: `Foto de ${a.nombre}` }}
         etiqueta={etiquetaDisciplina(a.disciplina)}

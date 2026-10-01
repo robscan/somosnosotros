@@ -10,7 +10,7 @@ import BotonPublicar from "@/components/ui/BotonPublicar";
 import Campo from "@/components/ui/Campo";
 import ContadorCaracteres from "@/components/ui/ContadorCaracteres";
 import { Chip } from "@/components/ui/Chip";
-import { IconoCamara, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin, IconoCerrar } from "@/components/ui/Iconos";
+import { IconoCamara, IconoEncuadrar, IconoEstrella, IconoMas, IconoNota, IconoOk, IconoPersona, IconoPersonas, IconoPin, IconoCerrar } from "@/components/ui/Iconos";
 import Limpiar from "@/components/ui/Limpiar";
 import limpiar from "@/components/ui/Limpiar.module.css";
 import ListaFlotante from "@/components/ui/ListaFlotante";
@@ -81,8 +81,10 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
   const [ciudad, setCiudad] = useState(ciudadInicial);
   const [soy, setSoy] = useState(false);
   const [foto, setFoto] = useState<string | null>(artista?.foto ?? null);
+  const [portada, setPortada] = useState<string | null>(artista?.portada ?? null);
   const [subiendo, setSubiendo] = useState(false);
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
+  const [errorPortada, setErrorPortada] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<Abierta>(null);
   const [masAbierto, setMasAbierto] = useState(!esAlta);
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
@@ -137,14 +139,16 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
     return () => clearTimeout(t);
   }, [nombre, artista?.id]);
 
-  async function alElegirFoto(e: React.ChangeEvent<HTMLInputElement>) {
+  /** Foto (el avatar) y portada (la imagen ancha de la cabecera) se suben igual; solo cambia dónde se guarda. */
+  async function subirImagen(e: React.ChangeEvent<HTMLInputElement>, cual: "foto" | "portada") {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
+    const [poner, ponerError] = cual === "foto" ? [setFoto, setErrorFoto] : [setPortada, setErrorPortada];
     setSubiendo(true);
-    setErrorFoto(null);
-    const r = await subirFoto("artistas", usuarioId, "foto", archivo);
-    if ("error" in r) setErrorFoto(r.error);
-    else setFoto(r.url);
+    ponerError(null);
+    const r = await subirFoto("artistas", usuarioId, cual, archivo, cual);
+    if ("error" in r) ponerError(r.error);
+    else poner(r.url);
     setSubiendo(false);
   }
 
@@ -403,7 +407,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           <div className={renglon.opciones}>
             <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={foto ? "Cambiar la foto" : "Elegir una foto"}>
               <IconoCamara width={22} height={22} />
-              <input type="file" accept="image/*" onChange={alElegirFoto} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
+              <input type="file" accept="image/*" onChange={(e) => subirImagen(e, "foto")} disabled={subiendo} aria-label={foto ? "Cambiar la foto" : "Elegir una foto"} />
             </label>
             {foto && (
               <BotonIcono relieve="contorno" onClick={() => setFoto(null)} title="Quitar la foto" aria-label="Quitar la foto">
@@ -418,7 +422,35 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           )}
         </li>
 
-        {/* 6. Soy yo / es mi grupo (solo en el alta; después lo liga el administrador). Al encender, el valor dice qué da. */}
+        {/* 6. Portada: opcional, la imagen ancha de la cabecera; sin ella la ficha lleva el símbolo SN. */}
+        <li className={`${renglon.resuelto} ${portada ? "" : renglon.pendiente}`}>
+          {portada ? (
+            // eslint-disable-next-line @next/next/no-img-element -- URL externa de Storage
+            <img src={portada} alt="" />
+          ) : (
+            <IconoEncuadrar width={20} height={20} />
+          )}
+          <small>Portada</small>
+          <b className={portada ? undefined : renglon.falta}>{subiendo ? "Subiendo…" : portada ? "Lista" : "Sin portada"}</b>
+          <div className={renglon.opciones}>
+            <label className={`${claseBotonIcono({ relieve: "contorno" })} ${canon.salida}`} title={portada ? "Cambiar la portada" : "Elegir una portada"}>
+              <IconoCamara width={22} height={22} />
+              <input type="file" accept="image/*" onChange={(e) => subirImagen(e, "portada")} disabled={subiendo} aria-label={portada ? "Cambiar la portada" : "Elegir una portada"} />
+            </label>
+            {portada && (
+              <BotonIcono relieve="contorno" onClick={() => setPortada(null)} title="Quitar la portada" aria-label="Quitar la portada">
+                <IconoCerrar width={22} height={22} />
+              </BotonIcono>
+            )}
+          </div>
+          {(errorPortada || errores.portada) && (
+            <p className={renglon.nota} role="alert">
+              {errorPortada ?? errores.portada}
+            </p>
+          )}
+        </li>
+
+        {/* 7. Soy yo / es mi grupo (solo en el alta; después lo liga el administrador). Al encender, el valor dice qué da. */}
         {esAlta && (
           <li className={renglon.resuelto}>
             <IconoPersona width={20} height={20} />
@@ -428,7 +460,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           </li>
         )}
 
-        {/* 7. Más: redes y descripción. Se esconde, no se desmonta: lo escrito se queda aunque se cierre. */}
+        {/* 8. Más: redes y descripción. Se esconde, no se desmonta: lo escrito se queda aunque se cierre. */}
         <li className={`${renglon.resuelto} ${masAbierto ? renglon.abierto : renglon.pendiente}`}>
           <IconoMas width={20} height={20} />
           <small>Más</small>
@@ -439,7 +471,8 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
           <div className={renglon.cuerpo} hidden={!masAbierto}>
             <SelectorEnlaces inicial={normalizarRedes(artista?.redes)} error={errores.enlaces} />
             <Campo etiqueta="Descripción" name="descripcion" multilinea defaultValue={artista?.descripcion ?? ""} maxLength={LIMITES_ARTISTA.descripcion} placeholder="Qué hace y dónde suele estar" error={errores.descripcion} mostrarContador />
-            {esAdmin && <CampoImagenUrl valor={foto} onCambio={setFoto} />}
+            {esAdmin && <CampoImagenUrl etiqueta="O pega la dirección de la foto" valor={foto} onCambio={setFoto} />}
+            {esAdmin && <CampoImagenUrl etiqueta="O pega la dirección de la portada" valor={portada} onCambio={setPortada} />}
           </div>
         </li>
       </ul>
@@ -447,6 +480,7 @@ export default function FormularioArtista({ accion, artista, usuarioId, nombreIn
       <input type="hidden" name="disciplina" value={disciplina} />
       <input type="hidden" name="tipo" value={tipo} />
       <input type="hidden" name="foto" value={foto ?? ""} />
+      <input type="hidden" name="portada" value={portada ?? ""} />
       <input type="hidden" name="soy" value={soy ? "1" : ""} />
       {/* El campo de texto de detalle solo está en el DOM cuando se ve (renglón abierto, sin subcategorías
           conocidas o en "Otra…"); en cualquier otro momento, este oculto lleva el valor al enviar. */}

@@ -50,6 +50,8 @@ export type ProximaFecha = { id: string; inicio: string; sitio: string; zona: st
 export type ArtistaLista = ArtistaResumen & { proxima: ProximaFecha | null };
 
 export type Artista = ArtistaResumen & {
+  /** Imagen ancha de la cabecera (OL-247); sin ella, el símbolo SN. */
+  portada: string | null;
   descripcion: string | null;
   ciudad: string;
   /** Enlaces y redes reconocidos (lib/enlaces); en la base es JSON. */
@@ -295,17 +297,18 @@ export type DatosArtista = {
   tipo: TipoArtista;
   descripcion: string | null;
   foto: string | null;
+  portada: string | null;
   redes: Enlace[];
   /** La ciudad del renglón Ciudad (de entrada, la elegida en Artistas); vacía, la inicial. */
   ciudad: string;
 };
-export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "enlaces", string>>;
+export type ErroresArtista = Partial<Record<"nombre" | "disciplina" | "tipo" | "detalle" | "descripcion" | "foto" | "portada" | "enlaces", string>>;
 
 
 /** `esAdmin` viene siempre del rol real de la sesión (la acción de servidor lo comprueba); `fotoActual` es la
  *  que ya estaba guardada, para no romper una edición que reenvía sin tocarla la foto de una ficha importada
  *  de otro dominio (S-01, docs/rediseno/46). */
-export type OpcionesValidarArtista = { esAdmin?: boolean; fotoActual?: string | null };
+export type OpcionesValidarArtista = { esAdmin?: boolean; fotoActual?: string | null; portadaActual?: string | null };
 
 export function validarArtista(
   entrada: Record<string, FormDataEntryValue | null | undefined>,
@@ -321,6 +324,7 @@ export function validarArtista(
     tipo,
     descripcion: limpiar(entrada.descripcion) || null,
     foto: limpiar(entrada.foto) || null,
+    portada: limpiar(entrada.portada) || null,
     redes,
     ciudad: ciudadCanonica(limpiar(entrada.ciudad)) || CIUDAD_INICIAL.nombre,
   };
@@ -332,6 +336,7 @@ export function validarArtista(
   if (datos.detalle && datos.detalle.length > LIMITES_ARTISTA.detalle) errores.detalle = `Máximo ${LIMITES_ARTISTA.detalle} caracteres.`;
   if (datos.descripcion && datos.descripcion.length > LIMITES_ARTISTA.descripcion) errores.descripcion = `Máximo ${LIMITES_ARTISTA.descripcion} caracteres.`;
   if (datos.foto && !imagenPermitida(datos.foto, { esAdmin: !!opciones.esAdmin, actual: opciones.fotoActual })) errores.foto = "La foto no se subió bien. Intenta de nuevo.";
+  if (datos.portada && !imagenPermitida(datos.portada, { esAdmin: !!opciones.esAdmin, actual: opciones.portadaActual })) errores.portada = "La portada no se subió bien. Intenta de nuevo.";
   if (redes.some((e) => e.url.length > 300)) errores.enlaces = "Hay un enlace demasiado largo.";
   return { datos, errores };
 }
