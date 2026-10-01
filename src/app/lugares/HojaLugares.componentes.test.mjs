@@ -349,7 +349,7 @@ test("al soltar, la hoja va directo a su altura: un jalón rápido, a la siguien
   const alturas = async (esperado, mensaje) => { const e = await estado(page); cerca(e.y, esperado, 2); assert.equal(e.hoja, { 0: "recogida", 250: "asoma", 660: "llena" }[esperado], mensaje); };
 
   // Rápido hacia arriba, aunque no pase de la mitad: a la siguiente (de asoma, llena; de recogida, asoma), sin pararse a medio camino.
-  const sube = await jalar(page, cdp, { y0: 700, dy: -70, ms: 80 });
+  const sube = await jalar(page, cdp, { y0: 700, dy: -100, ms: 70 });
   cerca(sube.final, LLENA, 2);
   assert.equal(sube.parada, 0, "una sola animación, sin parar a medio camino");
   assert.ok(sube.mayor <= LLENA + 1, "no se pasa de llena");
@@ -360,10 +360,10 @@ test("al soltar, la hoja va directo a su altura: un jalón rápido, a la siguien
   cerca(baja.final, asoma, 2);
   assert.equal(baja.parada, 0);
   assert.ok(baja.hastaQuieta < 1000);
-  const recoge = await jalar(page, cdp, { y0: 500, dy: 70, ms: 80 });
+  const recoge = await jalar(page, cdp, { y0: 500, dy: 100, ms: 70 });
   cerca(recoge.final, 0, 2);
   assert.equal(recoge.parada, 0);
-  const sube2 = await jalar(page, cdp, { y0: 750, dy: -90, ms: 90 });
+  const sube2 = await jalar(page, cdp, { y0: 750, dy: -110, ms: 70 });
   cerca(sube2.final, asoma, 2);
   assert.equal(sube2.parada, 0);
   // Lento y soltando quieto: a la más cercana, que es la de donde salió.
