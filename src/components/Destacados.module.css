@@ -68,10 +68,11 @@
 /* El carril: tres filas (foto, título, datos) y una columna por tarjeta. Es la mediana; `.grande`, `.chica` y `.sola` cambian sus
    medidas, y solo eso. Arriba del carril queda sitio para el anillo de foco: el desplazamiento recorta. */
 .carril {
+  --foto: var(--tarjeta-mediana-foto); /* el alto de la fila de la foto; `.grande` y `.chica` lo cambian */
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: var(--tarjeta-mediana);
-  grid-template-rows: var(--tarjeta-mediana-foto) auto auto;
+  grid-template-rows: var(--foto) auto auto;
   gap: var(--espacio-1) var(--espacio-3);
   overflow-x: auto;
   padding: var(--espacio-1) var(--gutter) var(--espacio-2);
@@ -118,10 +119,12 @@
   outline-offset: 2px;
   border-radius: var(--radio);
 }
+/* La foto mide lo que su fila, con el alto dicho (`--foto`) y no en porcentaje: en Safari (iOS 26, iPhone del founder, 2026-09-30)
+   `height: 100%` dentro de la subrejilla se resolvía como `auto` al llegar la imagen, y la foto crecía a su alto natural sobre el título. */
 .tarjeta > .foto {
   grid-area: 1 / 1;
   width: 100%;
-  height: 100%;
+  height: var(--foto);
   border-radius: var(--radio);
   object-fit: cover;
   background: var(--fondo-miniatura);
@@ -192,16 +195,16 @@
  * el desplazamiento real y la siguiente tarjeta asoma, sin recorte artificial (precisión del founder, 2026-09-18).
  */
 .grande {
+  --foto: var(--tarjeta-grande-foto);
   grid-auto-columns: var(--tarjeta-grande);
-  grid-template-rows: var(--tarjeta-grande-foto) auto auto;
 }
 
 /* Lugares y artistas: redondos como su avatar, angostos y al centro. El botón queda en la esquina de la tarjeta, sobre el borde de
    la foto (founder, 2026-09-21: «que el icono de check salga del contenedor de círculo»), sin salirse de su caja; la fecha va
    completa aunque ocupe dos líneas (founder, 2026-09-19). */
 .chica {
+  --foto: var(--tarjeta-chica);
   grid-auto-columns: var(--tarjeta-chica);
-  grid-template-rows: var(--tarjeta-chica) auto auto;
 }
 .chica .tarjeta {
   text-align: center;
